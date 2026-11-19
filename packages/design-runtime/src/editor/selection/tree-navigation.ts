@@ -14,92 +14,92 @@ function clientPointToArtboard(
   artboardRect?: Dynamic,
   frameWidth?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    typeof input == "number" &&
-    Number.isFinite(input) &&
-    Math.abs(input) < 1e6;
-  if (!callback(clientX) || !callback(clientY)) return null;
-  let value: Dynamic = frameWidth ? artboardRect.width / frameWidth : 1;
+  let isUsableCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+    typeof coordinate == "number" &&
+    Number.isFinite(coordinate) &&
+    Math.abs(coordinate) < 1e6;
+  if (!isUsableCoordinate(clientX) || !isUsableCoordinate(clientY)) return null;
+  let scale: Dynamic = frameWidth ? artboardRect.width / frameWidth : 1;
   return {
     x: Math.min(
       artboardRect.right,
-      Math.max(artboardRect.left, clientX * value + artboardRect.left),
+      Math.max(artboardRect.left, clientX * scale + artboardRect.left),
     ),
     y: Math.min(
       artboardRect.bottom,
-      Math.max(artboardRect.top, clientY * value + artboardRect.top),
+      Math.max(artboardRect.top, clientY * scale + artboardRect.top),
     ),
   };
 }
-function navigableChildIds(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input
-    .childTids(options)
+function navigableChildIds(model?: Dynamic, parentTid?: Dynamic): Dynamic {
+  return model
+    .childTids(parentTid)
     .filter(
-      (input2?: Dynamic): Dynamic =>
-        SelectionTreeNavigationTest(input, input2),
+      (tid?: Dynamic): Dynamic =>
+        SelectionTreeNavigationTest(model, tid),
     );
 }
-function selectionChildren(input?: Dynamic, options?: Dynamic): Dynamic {
+function selectionChildren(model?: Dynamic, tids?: Dynamic): Dynamic {
   return SelectionTreeNavigationHandler(
-    SelectionTreeNavigationFilter(input, options).flatMap(
-      (input2?: Dynamic): Dynamic => navigableChildIds(input, input2),
+    SelectionTreeNavigationFilter(model, tids).flatMap(
+      (tid?: Dynamic): Dynamic => navigableChildIds(model, tid),
     ),
   );
 }
-function selectionParents(input?: Dynamic, options?: Dynamic): Dynamic {
+function selectionParents(model?: Dynamic, tids?: Dynamic): Dynamic {
   return SelectionTreeNavigationHandler(
-    SelectionTreeNavigationFilter(input, options)
-      .map((input2?: Dynamic): Dynamic => input.parentTid(input2))
-      .filter((input2?: Dynamic): Dynamic => input2 != null),
+    SelectionTreeNavigationFilter(model, tids)
+      .map((tid?: Dynamic): Dynamic => model.parentTid(tid))
+      .filter((parentTid?: Dynamic): Dynamic => parentTid != null),
   );
 }
 function selectionAdjacentSiblings(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
+  direction?: Dynamic,
 ): Dynamic {
   return SelectionTreeNavigationHandler(
-    SelectionTreeNavigationFilter(input, options).map(
-      (input2?: Dynamic): Dynamic => {
-        let value: Dynamic = navigableChildIds(
-            input,
-            input.parentTid(input2),
+    SelectionTreeNavigationFilter(model, tids).map(
+      (tid?: Dynamic): Dynamic => {
+        let siblings: Dynamic = navigableChildIds(
+            model,
+            model.parentTid(tid),
           ),
-          value2: Dynamic = value.indexOf(input2);
-        return value2 < 0 || value.length < 2
-          ? input2
-          : value[
-              (value2 + (context === "next" ? 1 : value.length - 1)) %
-                value.length
+          index: Dynamic = siblings.indexOf(tid);
+        return index < 0 || siblings.length < 2
+          ? tid
+          : siblings[
+              (index + (direction === "next" ? 1 : siblings.length - 1)) %
+                siblings.length
             ];
       },
     ),
   );
 }
-function selectionSiblingIds(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = SelectionTreeNavigationFilter(input, options)[0];
+function selectionSiblingIds(model?: Dynamic, tids?: Dynamic): Dynamic {
+  let firstTid: Dynamic = SelectionTreeNavigationFilter(model, tids)[0];
   return navigableChildIds(
-    input,
-    value == null ? null : input.parentTid(value),
+    model,
+    firstTid == null ? null : model.parentTid(firstTid),
   );
 }
-function promotedSvgSelection(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = SelectionTreeNavigationFilter(input, options),
-    value2: Dynamic = SelectionTreeNavigationHandler(
-      value.map(
-        (input2?: Dynamic): Dynamic =>
-          promoteSvgShapeToRoot(input, input2),
+function promotedSvgSelection(model?: Dynamic, tids?: Dynamic): Dynamic {
+  let validTids: Dynamic = SelectionTreeNavigationFilter(model, tids),
+    targets: Dynamic = SelectionTreeNavigationHandler(
+      validTids.map(
+        (tid?: Dynamic): Dynamic =>
+          promoteSvgShapeToRoot(model, tid),
       ),
     ),
-    value3: Dynamic =
-      value2.length !== value.length ||
-      value2.some(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          input2 !== value[options2],
+    hasPromoted: Dynamic =
+      targets.length !== validTids.length ||
+      targets.some(
+        (target?: Dynamic, index?: Dynamic): Dynamic =>
+          target !== validTids[index],
       );
   return {
-    targets: value2,
-    promoted: value3,
+    targets: targets,
+    promoted: hasPromoted,
   };
 }
 export {
@@ -120,21 +120,21 @@ export function installEditorSelectionTreeNavigation(): () => void {
     SelectionTreeNavigationHelmetScHelmetPattern =
       /^(helmet|sc-helmet|script|style|link|noscript|template)$/i;
     SelectionTreeNavigationTest = (
-      input?: Dynamic,
-      options?: Dynamic,
+      model?: Dynamic,
+      tid?: Dynamic,
     ): Dynamic =>
       !SelectionTreeNavigationHelmetScHelmetPattern.test(
-        input.tagName(options) ?? "",
+        model.tagName(tid) ?? "",
       );
     SelectionTreeNavigationFilter = (
-      input?: Dynamic,
-      options?: Dynamic,
+      model?: Dynamic,
+      tids?: Dynamic,
     ): Dynamic =>
-      options.filter(
-        (input2?: Dynamic): Dynamic => input.element(input2) != null,
+      tids.filter(
+        (tid?: Dynamic): Dynamic => model.element(tid) != null,
       );
-    SelectionTreeNavigationHandler = (input?: Dynamic): Dynamic => [
-      ...new Set(input),
+    SelectionTreeNavigationHandler = (tids?: Dynamic): Dynamic => [
+      ...new Set(tids),
     ];
   };
 }

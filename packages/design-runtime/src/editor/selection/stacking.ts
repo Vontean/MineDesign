@@ -7,83 +7,83 @@ var SelectionStackingFilter: Dynamic;
 var SelectionStackingIndexOf: Dynamic;
 var SelectionStackingEvery: Dynamic;
 function canReorderSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
+  offset?: Dynamic,
 ): Dynamic {
-  return options.some((input2?: Dynamic): Dynamic => {
-    let value: Dynamic = SelectionStackingIndexOf(input, input2);
+  return tids.some((tid?: Dynamic): Dynamic => {
+    let index: Dynamic = SelectionStackingIndexOf(model, tid);
     return (
-      value >= 0 &&
-      value + context >= 0 &&
-      value + context < SelectionStackingFilter(input, input2).length
+      index >= 0 &&
+      index + offset >= 0 &&
+      index + offset < SelectionStackingFilter(model, tid).length
     );
   });
 }
 function selectionAtStackBoundary(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
+  tid?: Dynamic,
+  direction?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = SelectionStackingFilter(input, context),
-    length: Dynamic = value2.filter(
-      (input2?: Dynamic): Dynamic => options.includes(input2),
+  let siblings: Dynamic = SelectionStackingFilter(model, tid),
+    selectedCount: Dynamic = siblings.filter(
+      (sibling?: Dynamic): Dynamic => tids.includes(sibling),
     ).length;
   return (
-    value < 0 ? value2.slice(0, length) : value2.slice(value2.length - length)
-  ).every((input2?: Dynamic): Dynamic => options.includes(input2));
+    direction < 0 ? siblings.slice(0, selectedCount) : siblings.slice(siblings.length - selectedCount)
+  ).every((sibling?: Dynamic): Dynamic => tids.includes(sibling));
 }
 function reorderModelSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = false,
+  model?: Dynamic,
+  tids?: Dynamic,
+  direction?: Dynamic,
+  toEdge: Dynamic = false,
 ): Dynamic {
-  let value2: Dynamic = options
-      .map((input2?: Dynamic): Dynamic => input.element(input2))
-      .filter((input2?: Dynamic): Dynamic => input2 != null),
-    value3: Dynamic = [...options].sort(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        SelectionStackingIndexOf(input, input2) -
-        SelectionStackingIndexOf(input, options2),
+  let elements: Dynamic = tids
+      .map((tid?: Dynamic): Dynamic => model.element(tid))
+      .filter((element?: Dynamic): Dynamic => element != null),
+    sortedTids: Dynamic = [...tids].sort(
+      (first?: Dynamic, second?: Dynamic): Dynamic =>
+        SelectionStackingIndexOf(model, first) -
+        SelectionStackingIndexOf(model, second),
     ),
-    value4: Dynamic = context > 0 !== value ? value3.reverse() : value3,
+    orderedTids: Dynamic = direction > 0 !== toEdge ? sortedTids.reverse() : sortedTids,
     values: Dynamic = new Set();
-  if (value)
-    for (let value5 of value4 as Dynamic)
-      selectionAtStackBoundary(input, options, value5, context) &&
-        values.add(input.parentTid(value5));
+  if (toEdge)
+    for (let tid of orderedTids as Dynamic)
+      selectionAtStackBoundary(model, tids, tid, direction) &&
+        values.add(model.parentTid(tid));
   let flag: Dynamic = false;
-  for (let value5 of value4 as Dynamic) {
-    if (value && values.has(input.parentTid(value5))) continue;
-    let value6: Dynamic = SelectionStackingFilter(input, value5),
-      value7: Dynamic = value6.indexOf(value5);
-    if (value7 < 0) continue;
-    let value8: Dynamic = value
-      ? context < 0
+  for (let tid of orderedTids as Dynamic) {
+    if (toEdge && values.has(model.parentTid(tid))) continue;
+    let siblings: Dynamic = SelectionStackingFilter(model, tid),
+      currentIndex: Dynamic = siblings.indexOf(tid);
+    if (currentIndex < 0) continue;
+    let targetIndex: Dynamic = toEdge
+      ? direction < 0
         ? 0
-        : value6.length - 1
-      : value7 + context;
-    value8 < 0 ||
-      value8 >= value6.length ||
-      value8 === value7 ||
+        : siblings.length - 1
+      : currentIndex + direction;
+    targetIndex < 0 ||
+      targetIndex >= siblings.length ||
+      targetIndex === currentIndex ||
       (flag =
-        input.moveRelative(
-          value5,
-          value6[value8],
-          context < 0 ? "before" : "after",
+        model.moveRelative(
+          tid,
+          siblings[targetIndex],
+          direction < 0 ? "before" : "after",
         ) || flag);
   }
-  return flag ? value2 : null;
+  return flag ? elements : null;
 }
-function modelIdsFromElements(input?: Dynamic): Dynamic {
-  return input
+function modelIdsFromElements(elements?: Dynamic): Dynamic {
+  return elements
     .map(
       (element?: Dynamic): Dynamic =>
         parseInt(element.getAttribute("data-dc-tpl") ?? "-1", 10),
     )
-    .filter((input2?: Dynamic): Dynamic => input2 >= 0);
+    .filter((templateId?: Dynamic): Dynamic => templateId >= 0);
 }
 export {
   canReorderSelection,
@@ -96,20 +96,20 @@ export {
 };
 export function installEditorSelectionStacking(): () => void {
   return () => {
-    SelectionStackingFilter = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input
-        .childTids(input.parentTid(options))
-        .filter((input2?: Dynamic): Dynamic => input.isOutlineRow(input2));
-    SelectionStackingIndexOf = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      SelectionStackingFilter(input, options).indexOf(options);
+    SelectionStackingFilter = (model?: Dynamic, tid?: Dynamic): Dynamic =>
+      model
+        .childTids(model.parentTid(tid))
+        .filter((childTid?: Dynamic): Dynamic => model.isOutlineRow(childTid));
+    SelectionStackingIndexOf = (model?: Dynamic, tid?: Dynamic): Dynamic =>
+      SelectionStackingFilter(model, tid).indexOf(tid);
     SelectionStackingEvery = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      model?: Dynamic,
+      tids?: Dynamic,
+      direction?: Dynamic,
     ): Dynamic =>
-      options.every(
-        (input2?: Dynamic): Dynamic =>
-          selectionAtStackBoundary(input, options, input2, context),
+      tids.every(
+        (tid?: Dynamic): Dynamic =>
+          selectionAtStackBoundary(model, tids, tid, direction),
       );
   };
 }

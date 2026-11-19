@@ -15,17 +15,17 @@ var jsxSessionArtboardState: Dynamic;
 var SessionArtboardStatePausedCurrentTimeDurationConfig: Dynamic;
 var SessionArtboardStateEscape: Dynamic;
 var SessionArtboardStateHandler: Dynamic;
-function setArtboardWritableCheck(input?: Dynamic): Dynamic {
-  SessionArtboardStateAlias_2 = input;
+function setArtboardWritableCheck(check?: Dynamic): Dynamic {
+  SessionArtboardStateAlias_2 = check;
 }
-function isArtboardWritable(input?: Dynamic): Dynamic {
+function isArtboardWritable(file?: Dynamic): Dynamic {
   return SessionArtboardStateAlias_2 === "cannot tell"
-    ? SessionArtboardStateAlias === input
-    : SessionArtboardStateAlias_2?.(input) === true;
+    ? SessionArtboardStateAlias === file
+    : SessionArtboardStateAlias_2?.(file) === true;
 }
-function artboardStorePath(input?: Dynamic): Dynamic {
+function artboardStorePath(file?: Dynamic): Dynamic {
   return (
-    BoardsValue + "/" + encodeStorePathSegment(input)
+    BoardsValue + "/" + encodeStorePathSegment(file)
   );
 }
 function currentEditingArtboardPath(): Dynamic {
@@ -36,11 +36,11 @@ function currentEditingArtboardPath(): Dynamic {
 function currentEditingArtboard(): Dynamic {
   return SessionArtboardStateAlias;
 }
-function setCurrentEditingArtboard(input?: Dynamic): Dynamic {
-  if (input === SessionArtboardStateAlias) return null;
-  let value: Dynamic = currentEditingArtboardPath();
-  SessionArtboardStateAlias = input;
-  return value;
+function setCurrentEditingArtboard(file?: Dynamic): Dynamic {
+  if (file === SessionArtboardStateAlias) return null;
+  let previousPath: Dynamic = currentEditingArtboardPath();
+  SessionArtboardStateAlias = file;
+  return previousPath;
 }
 export {
   artboardStorePath,
@@ -80,11 +80,11 @@ export function installEditorSessionArtboardState(): () => void {
       seekable: false,
       failed: false,
     };
-    SessionArtboardStateEscape = (input?: Dynamic): Dynamic =>
-      '[data-mega-annotation="' + CSS.escape(input) + '"] video';
+    SessionArtboardStateEscape = (annotationId?: Dynamic): Dynamic =>
+      '[data-mega-annotation="' + CSS.escape(annotationId) + '"] video';
     SessionArtboardStateHandler = (
-      input?: Dynamic,
-      options?: Dynamic,
-    ): Dynamic => "video[" + input + '="' + String(options) + '"]';
+      attribute?: Dynamic,
+      attributeValue?: Dynamic,
+    ): Dynamic => "video[" + attribute + '="' + String(attributeValue) + '"]';
   };
 }

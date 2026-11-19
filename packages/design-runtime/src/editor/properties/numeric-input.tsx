@@ -19,7 +19,7 @@ var reactPropertiesNumericInput: Dynamic;
 var jsxPropertiesNumericInput: Dynamic;
 var PropertiesNumericInputLimit: Dynamic;
 function NumericInput({
-  value: value,
+  value: currentValue,
   onValue: onValue,
   onScrub: onScrub,
   onScrubEnd: onScrubEnd,
@@ -28,7 +28,7 @@ function NumericInput({
   unitScrubs = true,
   refuseLetters = false,
   ownUnit = typeof unit == "string" ? unit : undefined,
-  min: min2,
+  min: minValue,
   max: max,
   step: step,
   scrubOrigin: scrubOrigin,
@@ -40,128 +40,128 @@ function NumericInput({
   mixed = false,
   steppers = true,
   fullWidth = true,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   "aria-label": ariaLabel,
   inputRef: inputRef,
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0, reactPropertiesToolOptions.useRef)(null),
-    value3: Dynamic = (0, reactPropertiesToolOptions.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value2.current = input;
+  let inputElementRef: Dynamic = (0, reactPropertiesToolOptions.useRef)(null),
+    setInputRef: Dynamic = (0, reactPropertiesToolOptions.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        inputElementRef.current = element;
         typeof inputRef == "function"
-          ? inputRef(input)
-          : inputRef && (inputRef.current = input);
+          ? inputRef(element)
+          : inputRef && (inputRef.current = element);
       },
       [inputRef],
     ),
-    value4: Dynamic = unit != null && unit !== false && unit !== "",
-    value5: Dynamic =
-      value === undefined &&
+    hasUnit: Dynamic = unit != null && unit !== false && unit !== "",
+    placeholderNumber: Dynamic =
+      currentValue === undefined &&
       !mixed &&
       emptyStepFrom !== null &&
       placeholder !== undefined &&
       /^-?\d+(\.\d+)?$/.test(placeholder)
         ? Number(placeholder)
         : undefined,
-    value6: Dynamic = value ?? value5,
-    value7: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
-    value8: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
-    value9: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
-    value10: Dynamic = (0, reactPropertiesToolOptions.useRef)(""),
-    value11: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
-    callback: Dynamic = (): Dynamic => {
-      let value21: Dynamic = value10.current.toLowerCase();
-      value10.current = "";
+    effectiveValue: Dynamic = currentValue ?? placeholderNumber,
+    isCancelingRef: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
+    keepSelectionRef: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
+    isProgrammaticBlurRef: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
+    typedLettersRef: Dynamic = (0, reactPropertiesToolOptions.useRef)(""),
+    skipNextCommitRef: Dynamic = (0, reactPropertiesToolOptions.useRef)(false),
+    consumeInvalidLetters: Dynamic = (): Dynamic => {
+      let typedLetters: Dynamic = typedLettersRef.current.toLowerCase();
+      typedLettersRef.current = "";
       return !refuseLetters ||
-        !value21 ||
-        value21 === (ownUnit ?? "").toLowerCase()
+        !typedLetters ||
+        typedLetters === (ownUnit ?? "").toLowerCase()
         ? false
-        : (value9.current && (value11.current = true), true);
+        : (isProgrammaticBlurRef.current && (skipNextCommitRef.current = true), true);
     },
-    value12: Dynamic = step ?? 1,
-    value13: Dynamic = smallStep ?? Math.min(0.1, value12),
-    value14: Dynamic =
+    stepSize: Dynamic = step ?? 1,
+    fineStep: Dynamic = smallStep ?? Math.min(0.1, stepSize),
+    accessibleName: Dynamic =
       ariaLabel ||
       (typeof prefix == "string" && prefix !== "" ? prefix : undefined),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      if (!value7.current) {
-        if (callback()) {
+    commitValue: Dynamic = (committedValue?: Dynamic): Dynamic => {
+      if (!isCancelingRef.current) {
+        if (consumeInvalidLetters()) {
           announce(
-            invalidNumericValueMessage(value14, ownUnit),
+            invalidNumericValueMessage(accessibleName, ownUnit),
           );
           return;
         }
-        if (input === null) {
+        if (committedValue === null) {
           clearable &&
             !mixed &&
-            value !== undefined &&
-            !(value9.current && emptyStepFrom !== undefined) &&
+            currentValue !== undefined &&
+            !(isProgrammaticBlurRef.current && emptyStepFrom !== undefined) &&
             onValue(undefined);
           return;
         }
-        value === undefined &&
-          min2 !== undefined &&
-          (input = Math.max(min2, input));
-        value === undefined &&
+        currentValue === undefined &&
+          minValue !== undefined &&
+          (committedValue = Math.max(minValue, committedValue));
+        currentValue === undefined &&
           max !== undefined &&
-          (input = Math.min(max, input));
-        (mixed || input !== value) && onValue(input);
+          (committedValue = Math.min(max, committedValue));
+        (mixed || committedValue !== currentValue) && onValue(committedValue);
       }
     },
-    callback3: Dynamic = (event?: Dynamic): Dynamic => {
-      value8.current = false;
-      value11.current = false;
+    handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
+      keepSelectionRef.current = false;
+      skipNextCommitRef.current = false;
       !event.metaKey &&
         !event.ctrlKey &&
         (/^[a-zA-Z%]$/.test(event.key)
-          ? (value10.current += event.key)
-          : /^[0-9.\-]$/.test(event.key) && (value10.current = ""));
+          ? (typedLettersRef.current += event.key)
+          : /^[0-9.\-]$/.test(event.key) && (typedLettersRef.current = ""));
       if (event.key === "Enter") {
         event.preventDefault();
-        let current: Dynamic = value2.current;
-        current?.blur();
-        current?.focus();
-        current?.select();
-        value8.current = true;
+        let inputElement: Dynamic = inputElementRef.current;
+        inputElement?.blur();
+        inputElement?.focus();
+        inputElement?.select();
+        keepSelectionRef.current = true;
         queueMicrotask((): Dynamic => {
-          !value8.current ||
-            !current ||
-            ((value8.current = false),
-            current.ownerDocument.activeElement === current &&
-              current.select());
+          !keepSelectionRef.current ||
+            !inputElement ||
+            ((keepSelectionRef.current = false),
+            inputElement.ownerDocument.activeElement === inputElement &&
+              inputElement.select());
         });
         return;
       }
       if (event.key === "Escape") {
         event.preventDefault();
-        value10.current = "";
-        value7.current = true;
-        value2.current?.blur();
-        value7.current = false;
+        typedLettersRef.current = "";
+        isCancelingRef.current = true;
+        inputElementRef.current?.blur();
+        isCancelingRef.current = false;
         return;
       }
       if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         if (
           emptyStepFrom !== undefined &&
-          (value2.current?.value ?? "").trim() === ""
+          (inputElementRef.current?.value ?? "").trim() === ""
         ) {
           let preventBaseUIHandler: Dynamic = event.preventBaseUIHandler;
           preventBaseUIHandler && preventBaseUIHandler.call(event);
           event.preventDefault();
           event.stopPropagation();
-          callback6(event.key === "ArrowUp" ? 1 : -1, event);
+          stepBy(event.key === "ArrowUp" ? 1 : -1, event);
         }
-        let current: Dynamic = value2.current;
-        value8.current = true;
+        let inputElement: Dynamic = inputElementRef.current;
+        keepSelectionRef.current = true;
         setTimeout((): Dynamic => {
-          !value8.current ||
-            !current ||
-            ((value8.current = false),
-            current.ownerDocument.activeElement === current &&
-              current.select());
+          !keepSelectionRef.current ||
+            !inputElement ||
+            ((keepSelectionRef.current = false),
+            inputElement.ownerDocument.activeElement === inputElement &&
+              inputElement.select());
         }, 0);
         return;
       }
@@ -175,145 +175,145 @@ function NumericInput({
       }
       event.stopPropagation();
     },
-    value15: Dynamic =
-      value ??
+    scrubBaseValue: Dynamic =
+      currentValue ??
       (typeof emptyStepFrom == "number" && Number.isFinite(emptyStepFrom)
         ? emptyStepFrom
         : onScrub
-          ? value5
+          ? placeholderNumber
           : undefined),
-    value16: Dynamic = !disabled2 && !mixed && value15 !== undefined,
-    [value17, value18]: Dynamic = (0,
+    canScrub: Dynamic = !isDisabled && !mixed && scrubBaseValue !== undefined,
+    [scrubPreview, setScrubPreview]: Dynamic = (0,
     reactPropertiesToolOptions.useState)(null),
-    value19: Dynamic = useNumericScrub({
-      value: value15 ?? NaN,
+    startScrub: Dynamic = useNumericScrub({
+      value: scrubBaseValue ?? NaN,
       step: step,
-      min: min2,
+      min: minValue,
       max: max,
       origin: scrubOrigin,
-      disabled: !value16,
-      onScrub: (input?: Dynamic): Dynamic => {
-        value18(
-          (input2?: Dynamic): Dynamic => ({
-            from: input2 ? input2.from : value,
-            v: input,
+      disabled: !canScrub,
+      onScrub: (scrubbedValue?: Dynamic): Dynamic => {
+        setScrubPreview(
+          (previousPreview?: Dynamic): Dynamic => ({
+            from: previousPreview ? previousPreview.from : currentValue,
+            v: scrubbedValue,
             hostMoved:
-              !!input2 &&
-              (input2.hostMoved || !Object.is(value, input2.from)),
+              !!previousPreview &&
+              (previousPreview.hostMoved || !Object.is(currentValue, previousPreview.from)),
           }),
         );
-        (onScrub ?? onValue)(input);
+        (onScrub ?? onValue)(scrubbedValue);
       },
       onScrubEnd: (): Dynamic => {
-        value18(null);
+        setScrubPreview(null);
         onScrubEnd?.();
       },
     }),
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      value19(input);
-      input.stopPropagation();
+    handleScrubMouseDown: Dynamic = (event?: Dynamic): Dynamic => {
+      startScrub(event);
+      event.stopPropagation();
     },
-    callback5: Dynamic = (): Dynamic => {
-      let current: Dynamic = value2.current;
-      if (current) {
-        value11.current = false;
-        if (current.ownerDocument.activeElement === current) {
-          value9.current = true;
+    focusInput: Dynamic = (): Dynamic => {
+      let inputElement: Dynamic = inputElementRef.current;
+      if (inputElement) {
+        skipNextCommitRef.current = false;
+        if (inputElement.ownerDocument.activeElement === inputElement) {
+          isProgrammaticBlurRef.current = true;
           try {
-            current.blur();
+            inputElement.blur();
           } finally {
-            value9.current = false;
+            isProgrammaticBlurRef.current = false;
           }
         }
-        current.focus({
+        inputElement.focus({
           preventScroll: true,
         });
       }
     },
-    callback6: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value21: Dynamic =
-          value6 === undefined || mixed
+    stepBy: Dynamic = (direction?: Dynamic, modifiers?: Dynamic): Dynamic => {
+      let displayedText: Dynamic =
+          effectiveValue === undefined || mixed
             ? ""
-            : numericInputFormatter.format(value6),
-        callback7: Dynamic = (): Dynamic =>
-          value11.current
-            ? ((value11.current = false), (value10.current = ""), true)
+            : numericInputFormatter.format(effectiveValue),
+        consumeSkipFlag: Dynamic = (): Dynamic =>
+          skipNextCommitRef.current
+            ? ((skipNextCommitRef.current = false), (typedLettersRef.current = ""), true)
             : false;
-      if (callback7()) return;
-      let current: Dynamic = value2.current;
-      current &&
-        current.ownerDocument.activeElement === current &&
-        current.value !== value21 &&
-        callback5();
-      if (callback7()) return;
-      value10.current = "";
-      let value22: Dynamic = value2.current?.value ?? "",
-        value23: Dynamic =
-          value22 !== value21 ? Number.parseFloat(value22) : Number.NaN,
-        value24: Dynamic = mixed || value22.trim() === "";
-      if (value24 && !Number.isFinite(value23) && emptyStepFrom === null)
+      if (consumeSkipFlag()) return;
+      let inputElement: Dynamic = inputElementRef.current;
+      inputElement &&
+        inputElement.ownerDocument.activeElement === inputElement &&
+        inputElement.value !== displayedText &&
+        focusInput();
+      if (consumeSkipFlag()) return;
+      typedLettersRef.current = "";
+      let typedText: Dynamic = inputElementRef.current?.value ?? "",
+        parsedTyped: Dynamic =
+          typedText !== displayedText ? Number.parseFloat(typedText) : Number.NaN,
+        isTypedEmpty: Dynamic = mixed || typedText.trim() === "";
+      if (isTypedEmpty && !Number.isFinite(parsedTyped) && emptyStepFrom === null)
         return;
-      let value25: Dynamic = Number.isFinite(value23)
-          ? value23
-          : value24
-            ? (emptyStepFrom ?? min2 ?? 0)
-            : (value6 ?? 0),
-        value26: Dynamic = options.altKey
-          ? value13
-          : value12 * (options.shiftKey ? 10 : 1),
-        value27: Dynamic = Math.min(
+      let baseValue: Dynamic = Number.isFinite(parsedTyped)
+          ? parsedTyped
+          : isTypedEmpty
+            ? (emptyStepFrom ?? minValue ?? 0)
+            : (effectiveValue ?? 0),
+        stepAmount: Dynamic = modifiers.altKey
+          ? fineStep
+          : stepSize * (modifiers.shiftKey ? 10 : 1),
+        decimalPlaces: Dynamic = Math.min(
           20,
           Math.max(
-            numericInputDecimalPlaces(value25),
-            numericInputDecimalPlaces(value12),
-            options.altKey
-              ? numericInputDecimalPlaces(value13)
+            numericInputDecimalPlaces(baseValue),
+            numericInputDecimalPlaces(stepSize),
+            modifiers.altKey
+              ? numericInputDecimalPlaces(fineStep)
               : 0,
           ),
         ),
-        value28: Dynamic = Number(
-          (value25 + input * value26).toFixed(value27),
+        steppedValue: Dynamic = Number(
+          (baseValue + direction * stepAmount).toFixed(decimalPlaces),
         );
-      min2 !== undefined && (value28 = Math.max(min2, value28));
-      max !== undefined && (value28 = Math.min(max, value28));
-      (mixed || value28 !== value6) && onValue(value28);
+      minValue !== undefined && (steppedValue = Math.max(minValue, steppedValue));
+      max !== undefined && (steppedValue = Math.min(max, steppedValue));
+      (mixed || steppedValue !== effectiveValue) && onValue(steppedValue);
     },
-    state: Dynamic = {
-      ref: value3,
+    inputProps: Dynamic = {
+      ref: setInputRef,
       value: mixed
         ? null
-        : ((value17 && !value17.hostMoved && Object.is(value17.from, value)
-            ? value17.v
-            : value6) ?? null),
-      onValueCommitted: callback2,
-      min: min2,
+        : ((scrubPreview && !scrubPreview.hostMoved && Object.is(scrubPreview.from, currentValue)
+            ? scrubPreview.v
+            : effectiveValue) ?? null),
+      onValueCommitted: commitValue,
+      min: minValue,
       max: max,
-      step: value12,
-      largeStep: value12 * 10,
-      smallStep: value13,
+      step: stepSize,
+      largeStep: stepSize * 10,
+      smallStep: fineStep,
       format: PropertiesNumericScrubberUseGroupingConfig,
       locale: "en-US",
       inputMode: "decimal",
-      "aria-label": value14,
-      disabled: disabled2,
+      "aria-label": accessibleName,
+      disabled: isDisabled,
       placeholder: mixed ? MixedValue : (placeholder ?? hint),
-      onKeyDown: callback3,
+      onKeyDown: handleKeyDown,
       onFocus: (event?: Dynamic): Dynamic => {
         event.preventDefault();
         event.currentTarget.select();
-        value10.current = "";
+        typedLettersRef.current = "";
       },
     },
-    value20: Dynamic = steppers;
+    showSteppers: Dynamic = steppers;
   return (
     <NumberInput
-      {...state}
+      {...inputProps}
       title={title}
       fullWidth={fullWidth}
       className={joinClassNames(
         "group/field min-w-12",
         !mixed &&
-          value5 === undefined &&
+          placeholderNumber === undefined &&
           placeholder !== undefined &&
           placeholder !== MixedValue &&
           "[&_input]:placeholder:text-primary",
@@ -323,14 +323,14 @@ function NumericInput({
         prefix !== undefined && prefix !== "" ? (
           <span
             data-scrub={""}
-            onMouseDown={value16 ? callback4 : undefined}
+            onMouseDown={canScrub ? handleScrubMouseDown : undefined}
             onPointerDown={
-              value16 ? captureNumericPointer : undefined
+              canScrub ? captureNumericPointer : undefined
             }
             className={joinClassNames(
               PropertiesNumericScrubberClassNames,
               "inline-flex items-center text-caption-medium",
-              value16 && "cursor-ew-resize",
+              canScrub && "cursor-ew-resize",
             )}
           >
             {prefix}
@@ -338,24 +338,24 @@ function NumericInput({
         ) : undefined
       }
       slotEnd={
-        value4 || value20 ? (
+        hasUnit || showSteppers ? (
           <span className={"flex items-center gap-2"}>
-            {value4 ? (<span
+            {hasUnit ? (<span
                 data-scrub={""}
-                onMouseDown={value16 && unitScrubs ? callback4 : undefined}
+                onMouseDown={canScrub && unitScrubs ? handleScrubMouseDown : undefined}
                 onPointerDown={
-                  value16 && unitScrubs
+                  canScrub && unitScrubs
                     ? captureNumericPointer
                     : undefined
                 }
                 className={joinClassNames(
                   PropertiesNumericScrubberResolvedValue,
-                  value16 && unitScrubs && "cursor-ew-resize",
+                  canScrub && unitScrubs && "cursor-ew-resize",
                 )}
               >
                 {unit}
               </span>) : (null)}
-            {value20 ? (<span
+            {showSteppers ? (<span
                 className={
                   "hidden flex-col group-focus-within/field:flex pointer-coarse:hidden!"
                 }
@@ -364,16 +364,16 @@ function NumericInput({
                   type={"button"}
                   tabIndex={-1}
                   aria-label={
-                    value14 ? (((IncreaseValue) + (" ")) + (value14)) : (IncreaseValue)
+                    accessibleName ? (((IncreaseValue) + (" ")) + (accessibleName)) : (IncreaseValue)
                   }
                   className={PropertiesNumericScrubberClassNames_2}
-                  disabled={disabled2}
+                  disabled={isDisabled}
                   onMouseDown={(event?: Dynamic): Dynamic => {
                     event.preventDefault();
-                    event.button === 0 && callback5();
+                    event.button === 0 && focusInput();
                   }}
-                  onMouseLeave={(): Dynamic => (value11.current = false)}
-                  onClick={(input?: Dynamic): Dynamic => callback6(1, input)}
+                  onMouseLeave={(): Dynamic => (skipNextCommitRef.current = false)}
+                  onClick={(event?: Dynamic): Dynamic => stepBy(1, event)}
                 >
                   <EditorIcon name={"CaretUp"} size={12} />
                 </button>
@@ -381,16 +381,16 @@ function NumericInput({
                   type={"button"}
                   tabIndex={-1}
                   aria-label={
-                    value14 ? (((DecreaseValue) + (" ")) + (value14)) : (DecreaseValue)
+                    accessibleName ? (((DecreaseValue) + (" ")) + (accessibleName)) : (DecreaseValue)
                   }
                   className={PropertiesNumericScrubberClassNames_2}
-                  disabled={disabled2}
+                  disabled={isDisabled}
                   onMouseDown={(event?: Dynamic): Dynamic => {
                     event.preventDefault();
-                    event.button === 0 && callback5();
+                    event.button === 0 && focusInput();
                   }}
-                  onMouseLeave={(): Dynamic => (value11.current = false)}
-                  onClick={(input?: Dynamic): Dynamic => callback6(-1, input)}
+                  onMouseLeave={(): Dynamic => (skipNextCommitRef.current = false)}
+                  onClick={(event?: Dynamic): Dynamic => stepBy(-1, event)}
                 >
                   <EditorIcon name={"CaretDown"} size={12} />
                 </button>

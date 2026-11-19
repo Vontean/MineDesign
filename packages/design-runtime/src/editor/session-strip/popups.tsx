@@ -39,21 +39,21 @@ var SessionStripPopupsJoinValue_2: Dynamic;
 var SessionStripPopupsHandler: Dynamic;
 var SessionStripPopupsTarget: Dynamic;
 var SessionStripPopupsLabel: Dynamic;
-function useSessionPopupFocus(input?: Dynamic, options?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0,
+function useSessionPopupFocus(isOpen?: Dynamic, openPopup?: Dynamic): Dynamic {
+  let [isByKey, setIsByKey]: Dynamic = (0,
     reactInspectorArtboardRadius_2.useState)(false),
-    value3: Dynamic = (0, reactInspectorArtboardRadius_2.useRef)(
+    bodyRef: Dynamic = (0, reactInspectorArtboardRadius_2.useRef)(
       null,
     ),
     callback: Dynamic = (): Dynamic =>
-      SessionStripPopupsHandler(value3.current);
+      SessionStripPopupsHandler(bodyRef.current);
   return {
-    byKey: value,
-    body: value3,
+    byKey: isByKey,
+    body: bodyRef,
     initialFocus: callback,
     keyed: {
       onKeyDown: (event?: Dynamic): Dynamic => {
-        if (event.key === "Enter" || event.key === " ") value2(true);
+        if (event.key === "Enter" || event.key === " ") setIsByKey(true);
         else if (
           event.key === "ArrowDown" &&
           !event.defaultPrevented &&
@@ -63,45 +63,45 @@ function useSessionPopupFocus(input?: Dynamic, options?: Dynamic): Dynamic {
           !event.shiftKey
         ) {
           let currentTarget: Dynamic = event.currentTarget;
-          for (let value4 of (document as Dynamic).querySelectorAll(
+          for (let overlay of (document as Dynamic).querySelectorAll(
             blockingOverlaySelector,
           ) as Dynamic)
             if (
               !(
-                value4.matches("[data-mc-scrim]") ||
-                isClosedOverlay(value4)
+                overlay.matches("[data-mc-scrim]") ||
+                isClosedOverlay(overlay)
               ) &&
               !(
                 currentTarget instanceof Node &&
-                value4.contains(currentTarget)
+                overlay.contains(currentTarget)
               ) &&
               !(
-                input &&
-                value3.current !== null &&
-                value4.contains(value3.current)
+                isOpen &&
+                bodyRef.current !== null &&
+                overlay.contains(bodyRef.current)
               )
             )
               return;
-          if (input) {
-            let value4: Dynamic =
-                value3.current?.closest("[data-mc-popover]") ?? null,
-              value5: Dynamic =
+          if (isOpen) {
+            let popoverElement: Dynamic =
+                bodyRef.current?.closest("[data-mc-popover]") ?? null,
+              focusTarget: Dynamic =
                 callback() ??
-                (value4 !== null
-                  ? (getFocusableElements(value4)[0] ?? null)
+                (popoverElement !== null
+                  ? (getFocusableElements(popoverElement)[0] ?? null)
                   : null);
-            if (value5 === null) return;
+            if (focusTarget === null) return;
             event.preventDefault();
-            value2(true);
-            value5.focus();
+            setIsByKey(true);
+            focusTarget.focus();
             return;
           }
           event.preventDefault();
-          value2(true);
-          options();
+          setIsByKey(true);
+          openPopup();
         }
       },
-      onPointerDown: (): Dynamic => value2(false),
+      onPointerDown: (): Dynamic => setIsByKey(false),
     },
   };
 }
@@ -110,22 +110,22 @@ function SessionPopup({
   title: title,
   icon: icon,
   readout: readout,
-  disabled: disabled2,
+  disabled: isDisabled,
   align = "left",
   popoverClassName: popoverClassName,
   editsAreUndoSteps: editsAreUndoSteps,
   children: children,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [isOpen, setIsOpen]: Dynamic = (0,
     reactInspectorArtboardRadius_2.useState)(false),
     {
-      byKey: value3,
-      body: value4,
-      initialFocus: value5,
-      keyed: value6,
-    }: Dynamic = useSessionPopupFocus(value, (): Dynamic => value2(true)),
-    value7: Dynamic =
+      byKey: usesKeyboard,
+      body: bodyRef,
+      initialFocus: initialFocus,
+      keyed: keyedProps,
+    }: Dynamic = useSessionPopupFocus(isOpen, (): Dynamic => setIsOpen(true)),
+    iconElement: Dynamic =
       typeof icon == "string" ? (
         icon
       ) : (
@@ -135,27 +135,27 @@ function SessionPopup({
           className={"shrink-0"}
         />
       ),
-    value8: Dynamic =
+    trigger: Dynamic =
       readout === undefined ? (
         <SessionStripButton
           data-testid={testid}
-          icon={value7}
+          icon={iconElement}
           title={title}
           aria-label={title}
-          className={value ? SessionStripPopupsClassNames : undefined}
-          disabled={disabled2}
-          {...value6}
+          className={isOpen ? SessionStripPopupsClassNames : undefined}
+          disabled={isDisabled}
+          {...keyedProps}
         />
       ) : (
         <SessionStripButton
           data-testid={testid}
-          icon={value7}
+          icon={iconElement}
           title={title}
           aria-label={title}
-          className={value ? SessionStripPopupsClassNames : undefined}
-          disabled={disabled2}
+          className={isOpen ? SessionStripPopupsClassNames : undefined}
+          disabled={isDisabled}
           chevron={true}
-          {...value6}
+          {...keyedProps}
         >
           <span className={"tabular-nums"}>{readout}</span>
         </SessionStripButton>
@@ -163,24 +163,24 @@ function SessionPopup({
   return (
     <span className={"relative inline-flex"}>
       <EditorPopover
-        open={value}
-        onOpen={(): Dynamic => value2(true)}
-        onClose={(): Dynamic => value2(false)}
-        trigger={value8}
+        open={isOpen}
+        onOpen={(): Dynamic => setIsOpen(true)}
+        onClose={(): Dynamic => setIsOpen(false)}
+        trigger={trigger}
         align={align}
-        focusOnOpen={value3}
-        initialFocus={value5}
+        focusOnOpen={usesKeyboard}
+        initialFocus={initialFocus}
         keepFocus={true}
         padding={"none"}
         className={joinClassNames("p-2", popoverClassName)}
         editsAreUndoSteps={editsAreUndoSteps}
       >
         <div
-          ref={value4}
+          ref={bodyRef}
           data-session-strip={""}
           onKeyDownCapture={preventInputEnterSubmit}
         >
-          {typeof children == "function" ? (children((): Dynamic => value2(false))) : (children)}
+          {typeof children == "function" ? (children((): Dynamic => setIsOpen(false))) : (children)}
         </div>
       </EditorPopover>
     </span>
@@ -190,10 +190,10 @@ function SessionChoicePopup({
   testid: testid,
   title: title,
   face: face,
-  value: value,
-  options: options,
+  value: selectedValue,
+  options: choices,
   onChange: onChange,
-  disabled: disabled2,
+  disabled: isDisabled,
 }: Dynamic): Dynamic {
   useUiLocale();
   return (
@@ -202,9 +202,9 @@ function SessionChoicePopup({
       title={title}
       icon={face}
       popoverClassName={"min-w-0!"}
-      disabled={disabled2}
+      disabled={isDisabled}
     >
-      {(input?: Dynamic): Dynamic => (
+      {(closePopup?: Dynamic): Dynamic => (
         <div
           role={"group"}
           aria-label={title}
@@ -214,37 +214,37 @@ function SessionChoicePopup({
             across: true,
           })}
         >
-          {options.map(
-            (input2?: Dynamic): Dynamic =>
+          {choices.map(
+            (choice?: Dynamic): Dynamic =>
               (() => {
                 const _Component = SessionStripButton_r;
                 const _props = {
                   "data-testid": testid
-                    ? testid + "-" + input2.value
+                    ? testid + "-" + choice.value
                     : undefined,
                   icon:
-                    typeof input2.icon == "string" ? (
-                      input2.icon
+                    typeof choice.icon == "string" ? (
+                      choice.icon
                     ) : (
                       <Icon
-                        customIcon={input2.icon}
+                        customIcon={choice.icon}
                         size={"auto"}
                         className={"shrink-0"}
                       />
                     ),
-                  title: input2.disabledReason ?? input2.label,
-                  "aria-label": input2.label,
+                  title: choice.disabledReason ?? choice.label,
+                  "aria-label": choice.label,
                   "aria-pressed":
-                    input2.disabledReason !== undefined
+                    choice.disabledReason !== undefined
                       ? undefined
-                      : input2.value === value,
-                  disabled: input2.disabledReason !== undefined,
+                      : choice.value === selectedValue,
+                  disabled: choice.disabledReason !== undefined,
                   onClick: (): Dynamic => {
-                    input();
-                    input2.value !== value && onChange(input2.value);
+                    closePopup();
+                    choice.value !== selectedValue && onChange(choice.value);
                   },
                 } as const;
-                const _key = input2.value;
+                const _key = choice.value;
                 return <_Component key={_key} {..._props} />;
               })(),
           )}
@@ -255,70 +255,70 @@ function SessionChoicePopup({
 }
 function SessionTypographyPopup({
   testid: testid,
-  value: value,
+  value: selectedValue,
   chipText: chipText,
-  options: options,
+  options: typographyOptions,
   onChange: onChange,
   custom: custom,
   systemHeader: systemHeader,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value2, value3]: Dynamic = (0,
+  let [isOpen, setIsOpen]: Dynamic = (0,
     reactInspectorArtboardRadius_2.useState)(false),
     {
-      byKey: value4,
-      body: value5,
-      initialFocus: value6,
-      keyed: value7,
-    }: Dynamic = useSessionPopupFocus(value2, (): Dynamic => value3(true)),
-    value8: Dynamic = options.length > 0 || systemHeader != null,
-    [value9, value10]: Dynamic = (0,
+      byKey: usesKeyboard,
+      body: bodyRef,
+      initialFocus: initialFocus,
+      keyed: keyedProps,
+    }: Dynamic = useSessionPopupFocus(isOpen, (): Dynamic => setIsOpen(true)),
+    hasStylePicker: Dynamic = typographyOptions.length > 0 || systemHeader != null,
+    [styleMode, setStyleMode]: Dynamic = (0,
     reactInspectorArtboardRadius_2.useState)("system"),
-    value11: Dynamic = value8 ? value9 : "custom",
-    value12: Dynamic =
-      options.some((input?: Dynamic): Dynamic => input.group !== undefined) ||
-      options.length > PropertiesNumericInputLimit,
-    [value13, value14]: Dynamic = (0,
+    activeMode: Dynamic = hasStylePicker ? styleMode : "custom",
+    isSearchable: Dynamic =
+      typographyOptions.some((option?: Dynamic): Dynamic => option.group !== undefined) ||
+      typographyOptions.length > PropertiesNumericInputLimit,
+    [searchText, setSearchText]: Dynamic = (0,
     reactInspectorArtboardRadius_2.useState)("");
-  !value2 && value13 !== "" && value14("");
-  let value15: Dynamic = value12 ? value13.trim().toLowerCase() : "",
-    value16: Dynamic = options.filter(
-      (input?: Dynamic): Dynamic =>
+  !isOpen && searchText !== "" && setSearchText("");
+  let searchQuery: Dynamic = isSearchable ? searchText.trim().toLowerCase() : "",
+    filteredOptions: Dynamic = typographyOptions.filter(
+      (option?: Dynamic): Dynamic =>
         pickerSearchMatches(
-          value15,
-          input.text,
-          input.hint,
-          input.subgroup,
-          input.group,
+          searchQuery,
+          option.text,
+          option.hint,
+          option.subgroup,
+          option.group,
         ),
     ),
-    value17: Dynamic = options.reduce(
-      (input?: Dynamic, options2?: Dynamic, context?: Dynamic): Dynamic => {
-        let value20: Dynamic =
-          options2.group !== undefined &&
-          options2.group !== options[context - 1]?.group;
+    rowCount: Dynamic = typographyOptions.reduce(
+      (count?: Dynamic, option?: Dynamic, index?: Dynamic): Dynamic => {
+        let startsGroup: Dynamic =
+          option.group !== undefined &&
+          option.group !== typographyOptions[index - 1]?.group;
         return (
-          input +
+          count +
           1 +
-          (value20 ? 1 : 0) +
-          (options2.subgroup !== undefined &&
-          (value20 || options2.subgroup !== options[context - 1]?.subgroup)
+          (startsGroup ? 1 : 0) +
+          (option.subgroup !== undefined &&
+          (startsGroup || option.subgroup !== typographyOptions[index - 1]?.subgroup)
             ? 1
             : 0)
         );
       },
       0,
     ),
-    value18: Dynamic = value8
+    planHeight: Dynamic = hasStylePicker
       ? Math.max(
           SessionStripPopupsConstant,
           52 +
             (systemHeader != null ? 40 : 0) +
-            (value12 ? 36 : 0) +
-            Math.min(384, 32 * value17),
+            (isSearchable ? 36 : 0) +
+            Math.min(384, 32 * rowCount),
         )
       : undefined,
-    value19: Dynamic = (
+    trigger: Dynamic = (
       <SessionStripButton
         data-testid={testid}
         data-mc-bordered={""}
@@ -326,9 +326,9 @@ function SessionTypographyPopup({
         chevron={true}
         className={joinClassNames(
           "rounded-lg border border-border-line px-2",
-          value2 && SessionStripPopupsClassNames,
+          isOpen && SessionStripPopupsClassNames,
         )}
-        {...value7}
+        {...keyedProps}
       >
         <span className={"inline-flex items-center gap-1.5"}>
           <EditorIcon
@@ -345,25 +345,25 @@ function SessionTypographyPopup({
   return (
     <span className={"relative inline-flex"}>
       <EditorPopover
-        open={value2}
-        onOpen={(): Dynamic => value3(true)}
-        onClose={(): Dynamic => value3(false)}
-        trigger={value19}
+        open={isOpen}
+        onOpen={(): Dynamic => setIsOpen(true)}
+        onClose={(): Dynamic => setIsOpen(false)}
+        trigger={trigger}
         align={"left"}
-        focusOnOpen={value4}
-        initialFocus={value6}
+        focusOnOpen={usesKeyboard}
+        initialFocus={initialFocus}
         keepFocus={true}
         padding={"none"}
-        planHeight={value18}
+        planHeight={planHeight}
         className={"w-60 p-2 pointer-coarse:w-auto pointer-coarse:min-w-60"}
       >
         <div
-          ref={value5}
+          ref={bodyRef}
           data-session-strip={""}
           onKeyDownCapture={preventInputEnterSubmit}
         >
-          {value8 ? (<ColorHexInput value={value11} onChange={value10} />) : (null)}
-          {value11 === "system" ? (<div role={"group"} aria-label={uiMessage("inspector.popups.textStyle")}>
+          {hasStylePicker ? (<ColorHexInput value={activeMode} onChange={setStyleMode} />) : (null)}
+          {activeMode === "system" ? (<div role={"group"} aria-label={uiMessage("inspector.popups.textStyle")}>
               {systemHeader}
               <div
                 data-search-scope={""}
@@ -371,20 +371,20 @@ function SessionTypographyPopup({
                   '[data-kit="MenuItem"]',
                 )}
               >
-                {value12 ? (<PickerSearchInput
-                    value={value13}
-                    onChange={value14}
+                {isSearchable ? (<PickerSearchInput
+                    value={searchText}
+                    onChange={setSearchText}
                     label={ColorContrastCopyLabel_5}
                     rowSelector={'[data-kit="MenuItem"]'}
                     onEnterIndex={(): Dynamic =>
                       pickerSearchInitialIndex(
-                        value15,
-                        value16.map((input?: Dynamic): Dynamic => input.text),
+                        searchQuery,
+                        filteredOptions.map((option?: Dynamic): Dynamic => option.text),
                       )
                     }
                     data-testid={testid ? testid + "-search" : undefined}
                   />) : (null)}
-                {value16.length === 0 ? (<p
+                {filteredOptions.length === 0 ? (<p
                     role={"status"}
                     className={"px-2 py-1 text-footnote text-muted"}
                   >
@@ -395,44 +395,44 @@ function SessionTypographyPopup({
                     "kit-scrollbar max-h-[min(24rem,max(6rem,calc(var(--available-height,100vh)_-_8rem)))] overflow-y-auto"
                   }
                 >
-                  {value16.map(
-                    (input?: Dynamic, options2?: Dynamic): Dynamic => {
-                      let value20: Dynamic =
-                          input.group !== undefined &&
-                          input.group !== value16[options2 - 1]?.group,
-                        value21: Dynamic =
-                          input.subgroup !== undefined &&
-                          (value20 ||
-                            input.subgroup !==
-                              value16[options2 - 1]?.subgroup);
+                  {filteredOptions.map(
+                    (option?: Dynamic, index?: Dynamic): Dynamic => {
+                      let startsGroup: Dynamic =
+                          option.group !== undefined &&
+                          option.group !== filteredOptions[index - 1]?.group,
+                        startsSubgroup: Dynamic =
+                          option.subgroup !== undefined &&
+                          (startsGroup ||
+                            option.subgroup !==
+                              filteredOptions[index - 1]?.subgroup);
                       return (() => {
                         const _Component2 =
                           reactInspectorArtboardRadius_2.Fragment;
                         const _props2 = {
                           children: [
-                            value20 ? (
+                            startsGroup ? (
                               <PickerListHeader
-                                text={input.group}
+                                text={option.group}
                                 title={true}
                               />
                             ) : null,
-                            value21 ? (
+                            startsSubgroup ? (
                               <PickerListHeader
-                                text={input.subgroup}
+                                text={option.subgroup}
                               />
                             ) : null,
                             <EditorMenuItem
-                              checked={input.value === value}
-                              title={input.title}
+                              checked={option.value === selectedValue}
+                              title={option.title}
                               data-testid={
                                 testid
-                                  ? testid + "-" + input.value
+                                  ? testid + "-" + option.value
                                   : undefined
                               }
                               onClick={(): Dynamic => {
-                                value3(false);
-                                input.value !== value &&
-                                  onChange(input.value);
+                                setIsOpen(false);
+                                option.value !== selectedValue &&
+                                  onChange(option.value);
                               }}
                             >
                               <span
@@ -448,20 +448,20 @@ function SessionTypographyPopup({
                                     "flex min-w-0 overflow-x-clip pe-1 [font-variation-settings:normal]"
                                   }
                                 >
-                                  {input.label}
+                                  {option.label}
                                 </span>
-                                {input.hint !== undefined ? (<span
+                                {option.hint !== undefined ? (<span
                                     className={
                                       "shrink-0 text-footnote text-muted"
                                     }
                                   >
-                                    {input.hint}
+                                    {option.hint}
                                   </span>) : (null)}
                               </span>
                             </EditorMenuItem>,
                           ],
                         } as const;
-                        const _key2 = input.value;
+                        const _key2 = option.value;
                         return <_Component2 key={_key2} {..._props2} />;
                       })();
                     },
@@ -501,10 +501,10 @@ function CustomTypographyEditor({ c: c }: Dynamic): Dynamic {
           items={includeCurrentFontVariant(c.face.faces, c.face)}
           value={fontVariantKey(c.face.weight, c.face.italic)}
           onOpenChange={c.face.onOpenChange}
-          onChange={(input?: Dynamic): Dynamic => {
-            let value: Dynamic = parseFontVariantKey(input);
-            value !== undefined &&
-              c.face.onChange(value.weight, value.italic);
+          onChange={(variantKey?: Dynamic): Dynamic => {
+            let variant: Dynamic = parseFontVariantKey(variantKey);
+            variant !== undefined &&
+              c.face.onChange(variant.weight, variant.italic);
           }}
           popupAttrs={SessionStripPopupsDataSessionStripConfig}
         />
@@ -540,52 +540,52 @@ function CustomTypographyEditor({ c: c }: Dynamic): Dynamic {
 }
 function SessionActionsPopover(source?: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [isOpen, setIsOpen]: Dynamic = (0,
     reactInspectorArtboardRadius_2.useState)(false),
-    value3: Dynamic = (0, reactInspectorArtboardRadius_2.useRef)(
+    onOpenChangeRef: Dynamic = (0, reactInspectorArtboardRadius_2.useRef)(
       source.onOpenChange,
     );
-  value3.current = source.onOpenChange;
+  onOpenChangeRef.current = source.onOpenChange;
   (0, reactInspectorArtboardRadius_2.useEffect)(
-    (): Dynamic => value3.current?.(value),
-    [value],
+    (): Dynamic => onOpenChangeRef.current?.(isOpen),
+    [isOpen],
   );
   let {
-      byKey: value4,
-      body: value5,
-      initialFocus: value6,
-      keyed: value7,
-    }: Dynamic = useSessionPopupFocus(value, (): Dynamic => value2(true)),
-    value8: Dynamic =
+      byKey: usesKeyboard,
+      body: bodyRef,
+      initialFocus: initialFocus,
+      keyed: keyedProps,
+    }: Dynamic = useSessionPopupFocus(isOpen, (): Dynamic => setIsOpen(true)),
+    hasCustomSwatches: Dynamic =
       source.custom !== undefined &&
       source.swatches.some(
-        (input?: Dynamic): Dynamic =>
-          input.empty !== true && input.name !== "default",
+        (swatch?: Dynamic): Dynamic =>
+          swatch.empty !== true && swatch.name !== "default",
       ),
-    value9: Dynamic = (
+    trigger: Dynamic = (
       <SessionStripButton
         data-testid={source.testid}
         title={source.title}
         aria-label={source.title}
         icon={<SessionColorSwatch css={source.paint} />}
-        className={value ? SessionStripPopupsClassNames : undefined}
-        {...value7}
+        className={isOpen ? SessionStripPopupsClassNames : undefined}
+        {...keyedProps}
       />
     );
   return (
     <span className={"relative inline-flex"}>
       <EditorPopover
-        open={value}
-        onOpen={(): Dynamic => value2(true)}
-        onClose={(): Dynamic => value2(false)}
-        trigger={value9}
+        open={isOpen}
+        onOpen={(): Dynamic => setIsOpen(true)}
+        onClose={(): Dynamic => setIsOpen(false)}
+        trigger={trigger}
         align={"left"}
-        focusOnOpen={value4}
-        initialFocus={value6}
+        focusOnOpen={usesKeyboard}
+        initialFocus={initialFocus}
         keepFocus={true}
         padding={"none"}
         planHeight={
-          value8 || source.kind !== undefined
+          hasCustomSwatches || source.kind !== undefined
             ? ColorPickerConstant
             : undefined
         }
@@ -593,7 +593,7 @@ function SessionActionsPopover(source?: Dynamic): Dynamic {
         editsAreUndoSteps={source.editsAreUndoSteps}
       >
         <div
-          ref={value5}
+          ref={bodyRef}
           data-session-strip={""}
           onKeyDownCapture={preventInputEnterSubmit}
           onMouseDown={SessionStripPopupsTarget}
@@ -603,29 +603,29 @@ function SessionActionsPopover(source?: Dynamic): Dynamic {
             title={source.title}
             swatches={source.swatches}
             current={source.value}
-            onSwatch={(input?: Dynamic): Dynamic => {
-              source.onSwatch(input);
-              let value10: Dynamic = source.custom?.contrast;
+            onSwatch={(swatchName?: Dynamic): Dynamic => {
+              source.onSwatch(swatchName);
+              let contrastBase: Dynamic = source.custom?.contrast;
               if (
-                value10 === undefined ||
+                contrastBase === undefined ||
                 source.custom?.quietSwatch === true
               )
                 return;
-              let value11: Dynamic = source.swatches.find(
-                (input2?: Dynamic): Dynamic => input2.name === input,
+              let swatchColor: Dynamic = source.swatches.find(
+                (swatch?: Dynamic): Dynamic => swatch.name === swatchName,
               )?.color;
-              value11 !== undefined &&
+              swatchColor !== undefined &&
                 announce((): Dynamic => {
-                  let value12: Dynamic = evaluateColorContrast(
-                    value11,
-                    value10,
+                  let contrastResults: Dynamic = evaluateColorContrast(
+                    swatchColor,
+                    contrastBase,
                   );
-                  return value12 === undefined
+                  return contrastResults === undefined
                     ? null
-                    : summarizeContrastResults(value12).spoken;
+                    : summarizeContrastResults(contrastResults).spoken;
                 });
             }}
-            onPicked={(): Dynamic => value2(false)}
+            onPicked={(): Dynamic => setIsOpen(false)}
             fold={true}
             color={
               source.custom !== undefined
@@ -672,7 +672,7 @@ function SessionImageReplaceButton({
   src: src,
   title: title,
   onClick: onClick,
-  disabled: disabled2,
+  disabled: isDisabled,
 }: Dynamic): Dynamic {
   useUiLocale();
   return (
@@ -680,7 +680,7 @@ function SessionImageReplaceButton({
       data-testid={"frame-image-replace"}
       title={title}
       aria-label={title}
-      disabled={disabled2}
+      disabled={isDisabled}
       onClick={onClick}
       className={"px-1"}
     >
@@ -734,9 +734,9 @@ export function installEditorSessionStripPopups(): () => void {
     );
     SessionStripPopupsClassNames = "bg-fill-ghost-hover";
     SessionStripPopupsConstant = 180;
-    SessionStripPopupsClosest = (input?: Dynamic): Dynamic =>
-      input instanceof Element &&
-      input.closest(editableElementSelector) !== null;
+    SessionStripPopupsClosest = (target?: Dynamic): Dynamic =>
+      target instanceof Element &&
+      target.closest(editableElementSelector) !== null;
     SessionStripPopupsDataSessionStripConfig = {
       "data-session-strip": "popup",
     };
@@ -746,15 +746,15 @@ export function installEditorSessionStripPopups(): () => void {
       "[data-icon-row] button",
     ];
     SessionStripPopupsJoinValue = SessionStripPopupsItems.map(
-      (input?: Dynamic): Dynamic =>
-        input + '[aria-pressed="true"]:not(:disabled)',
+      (selector?: Dynamic): Dynamic =>
+        selector + '[aria-pressed="true"]:not(:disabled)',
     ).join(", ");
     SessionStripPopupsJoinValue_2 = SessionStripPopupsItems.map(
-      (input?: Dynamic): Dynamic => input + ":not(:disabled)",
+      (selector?: Dynamic): Dynamic => selector + ":not(:disabled)",
     ).join(", ");
-    SessionStripPopupsHandler = (input?: Dynamic): Dynamic =>
-      input?.querySelector(SessionStripPopupsJoinValue) ??
-      input?.querySelector(SessionStripPopupsJoinValue_2) ??
+    SessionStripPopupsHandler = (root?: Dynamic): Dynamic =>
+      root?.querySelector(SessionStripPopupsJoinValue) ??
+      root?.querySelector(SessionStripPopupsJoinValue_2) ??
       null;
     SessionStripPopupsTarget = (event?: Dynamic): Dynamic => {
       !SessionStripPopupsClosest(event.target) &&

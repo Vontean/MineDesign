@@ -17,35 +17,35 @@ var SelectionHostAlias_3: Dynamic;
 var SelectionHostSubscribers: Dynamic;
 var SelectionHostAdd: Dynamic;
 var HostedEditorErrorBoundary: Dynamic;
-function setSelectionActionHandler(input?: Dynamic): Dynamic {
-  SelectionHostAlias = input;
+function setSelectionActionHandler(handler?: Dynamic): Dynamic {
+  SelectionHostAlias = handler;
 }
-function setEditorReadyPromise(input?: Dynamic): Dynamic {
-  SelectionHostThenValue = input.then(
-    (input2?: Dynamic): Dynamic => input2 === true,
+function setEditorReadyPromise(readyPromise?: Dynamic): Dynamic {
+  SelectionHostThenValue = readyPromise.then(
+    (isReady?: Dynamic): Dynamic => isReady === true,
     (): Dynamic => false,
   );
 }
-function setSelectionHostFactory(input?: Dynamic): Dynamic {
-  SelectionHostAlias_2 = input;
+function setSelectionHostFactory(factory?: Dynamic): Dynamic {
+  SelectionHostAlias_2 = factory;
 }
-function setHostedEditorComponent(input?: Dynamic): Dynamic {
-  if (SelectionHostAlias_3 !== input) {
-    SelectionHostAlias_3 = input;
-    for (let value of [...SelectionHostSubscribers] as Dynamic) value();
+function setHostedEditorComponent(component?: Dynamic): Dynamic {
+  if (SelectionHostAlias_3 !== component) {
+    SelectionHostAlias_3 = component;
+    for (let notifySubscriber of [...SelectionHostSubscribers] as Dynamic) notifySubscriber();
   }
 }
 function HostedEditor({ host: host }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactSelectionHost.useSyncExternalStore)(
+  let HostedEditorComponent: Dynamic = (0, reactSelectionHost.useSyncExternalStore)(
     SelectionHostAdd,
     (): Dynamic => SelectionHostAlias_3,
     (): Dynamic => null,
   );
-  return value === null ? null : (
+  return HostedEditorComponent === null ? null : (
     <HostedEditorErrorBoundary>
       {(() => {
-        const _Component = value;
+        const _Component = HostedEditorComponent;
         return <_Component host={host()} />;
       })()}
     </HostedEditorErrorBoundary>
@@ -76,19 +76,19 @@ export function installEditorSelectionHost(): () => void {
       1,
     );
     selectedElementLocations = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      files?: Dynamic,
+      locationMap?: Dynamic,
+      currentNameOf?: Dynamic,
     ): Dynamic =>
-      input.flatMap((input2?: Dynamic): Dynamic => {
-        let entry: Dynamic = options.get(input2);
+      files.flatMap((file?: Dynamic): Dynamic => {
+        let entry: Dynamic = locationMap.get(file);
         return entry !== undefined &&
           entry.name !== null &&
-          entry.name === context(input2) &&
+          entry.name === currentNameOf(file) &&
           entry.tids.length > 0
           ? [
               {
-                file: input2,
+                file: file,
                 tids: [...entry.tids],
               },
             ]
@@ -98,17 +98,17 @@ export function installEditorSelectionHost(): () => void {
     SelectionHostThenValue = null;
     awaitEditorReady = (): Dynamic =>
       SelectionHostThenValue ?? Promise.resolve(false);
-    runSelectionAction = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    runSelectionAction = (action?: Dynamic, payload?: Dynamic): Dynamic =>
       SelectionHostAlias === null
         ? Promise.resolve(null)
-        : SelectionHostAlias(input, options);
+        : SelectionHostAlias(action, payload);
     SelectionHostAlias_2 = null;
     SelectionHostAlias_3 = null;
     SelectionHostSubscribers = new Set();
-    SelectionHostAdd = (input?: Dynamic): Dynamic => (
-      SelectionHostSubscribers.add(input),
+    SelectionHostAdd = (subscriber?: Dynamic): Dynamic => (
+      SelectionHostSubscribers.add(subscriber),
       (): Dynamic => {
-        SelectionHostSubscribers.delete(input);
+        SelectionHostSubscribers.delete(subscriber);
       }
     );
     HostedEditorErrorBoundary = class extends reactSelectionHost.Component {

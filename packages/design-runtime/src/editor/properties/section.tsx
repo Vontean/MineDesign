@@ -25,8 +25,8 @@ function PropertySectionHeader({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = onToggle !== undefined,
-    value2: Dynamic = joinClassNames(
+  let isToggleable: Dynamic = onToggle !== undefined,
+    headerClassName: Dynamic = joinClassNames(
       "flex min-w-0 shrink-0 items-center gap-xs select-none",
       PropertiesPrimitivesClassNames_3,
       subsection
@@ -34,7 +34,7 @@ function PropertySectionHeader({
         : "min-h-10 border-t border-alpha-2 py-2 text-body-semibold text-primary first:border-t-0",
       className,
     ),
-    value3: Dynamic = value ? (
+    expandIcon: Dynamic = isToggleable ? (
       <span
         aria-hidden={"true"}
         className={
@@ -51,25 +51,25 @@ function PropertySectionHeader({
         />
       </span>
     ) : null;
-  return value && !actions ? (
+  return isToggleable && !actions ? (
     <h3 className={"contents"}>
       <button
         type={"button"}
         aria-expanded={!collapsed}
         onClick={onToggle}
         className={joinClassNames(
-          value2,
+          headerClassName,
           "w-full cursor-default text-left outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
         )}
       >
         <span className={"min-w-0 flex-1 truncate"}>{title}</span>
-        {value3}
+        {expandIcon}
       </button>
     </h3>
   ) : (
     <div
       onClick={
-        value
+        isToggleable
           ? (event?: Dynamic): Dynamic => {
               isNestedPropertyControl(
                 event.currentTarget,
@@ -79,16 +79,16 @@ function PropertySectionHeader({
           : undefined
       }
       className={joinClassNames(
-        value2,
-        value && "cursor-default",
+        headerClassName,
+        isToggleable && "cursor-default",
       )}
     >
       <h3 className={"contents"}>
-        {value ? (<button
+        {isToggleable ? (<button
             type={"button"}
             aria-expanded={!collapsed}
-            onClick={(input?: Dynamic): Dynamic => {
-              input.stopPropagation();
+            onClick={(event?: Dynamic): Dynamic => {
+              event.stopPropagation();
               onToggle();
             }}
             className={
@@ -104,14 +104,14 @@ function PropertySectionHeader({
             PropertiesPrimitivesClassNames_4,
           )}
           onClick={
-            value
-              ? (input?: Dynamic): Dynamic => input.stopPropagation()
+            isToggleable
+              ? (event?: Dynamic): Dynamic => event.stopPropagation()
               : undefined
           }
         >
           {actions}
         </span>) : (null)}
-      {value3}
+      {expandIcon}
     </div>
   );
 }
@@ -147,79 +147,79 @@ function PropertySection({
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic =
+  let hasChildren: Dynamic =
       reactInspectorContext_4.Children.toArray(children).length > 0,
-    [value2, value3]: Dynamic = (0, reactInspectorContext_4.useState)(
+    [isOpen, setIsOpen]: Dynamic = (0, reactInspectorContext_4.useState)(
       defaultOpen,
     ),
-    value4: Dynamic = collapsed !== undefined;
-  value4 && collapsible && warnConflictingSectionControl();
+    isControlled: Dynamic = collapsed !== undefined;
+  isControlled && collapsible && warnConflictingSectionControl();
   collapsible && title === undefined && warnMissingSectionTitle();
-  let value5: Dynamic = !value4 && !!collapsible && title !== undefined,
-    value6: Dynamic = value4 ? collapsed : value5 ? !value2 : undefined,
-    value7: Dynamic = value5
+  let isSelfControlled: Dynamic = !isControlled && !!collapsible && title !== undefined,
+    isCollapsed: Dynamic = isControlled ? collapsed : isSelfControlled ? !isOpen : undefined,
+    handleToggle: Dynamic = isSelfControlled
       ? (): Dynamic => {
-          value3((input?: Dynamic): Dynamic => !input);
+          setIsOpen((wasOpen?: Dynamic): Dynamic => !wasOpen);
           onToggle?.();
         }
       : onToggle,
-    value8: Dynamic = value6 !== true,
-    value9: Dynamic = typeof title == "string" ? title : undefined,
-    value10: Dynamic = actions ?? action,
-    value11: Dynamic = value10 != null && value10 !== false,
-    value12: Dynamic =
+    isExpanded: Dynamic = isCollapsed !== true,
+    sectionName: Dynamic = typeof title == "string" ? title : undefined,
+    headerActions: Dynamic = actions ?? action,
+    hasHeaderActions: Dynamic = headerActions != null && headerActions !== false,
+    addMenu: Dynamic =
       addItems !== undefined && addItems.length > 0 ? (
         <PropertyActions
-          section={value9}
+          section={sectionName}
           aria-label={addLabel}
           items={addItems}
           defaultOpen={defaultAddOpen}
         />
       ) : null,
-    value13: Dynamic =
-      value12 !== null || value11 ? (
+    headerTrailing: Dynamic =
+      addMenu !== null || hasHeaderActions ? (
         <jsxPropertiesPrimitives_2.Fragment>
-          {value12}
-          {value11 ? (value10) : (null)}
+          {addMenu}
+          {hasHeaderActions ? (headerActions) : (null)}
         </jsxPropertiesPrimitives_2.Fragment>
       ) : undefined,
-    value14: Dynamic = joinClassNames(
+    sectionClassName: Dynamic = joinClassNames(
       "flex min-w-0 shrink-0 flex-col",
       !subsection && "border-alpha-2 [&:not(:first-child)]:border-t",
       title === undefined && !subsection && "[&:not(:first-child)]:pt-2",
       iconColumn && "[--pp-iconcol:var(--cds-h-control)]",
       className,
     ),
-    value15: Dynamic =
+    header: Dynamic =
       title !== undefined ? (
         <PropertySectionHeader
           title={title}
-          actions={value13}
-          collapsed={value6}
-          onToggle={value7}
+          actions={headerTrailing}
+          collapsed={isCollapsed}
+          onToggle={handleToggle}
           subsection={subsection}
         />
       ) : null,
-    value16: Dynamic = (
+    body: Dynamic = (
       <div data-pp-section-body={""} className={"flex min-w-0 flex-col pb-2"}>
         {children}
       </div>
     );
-  return value6 !== undefined ? (
+  return isCollapsed !== undefined ? (
     <ComponentsCollapsibleRootTriggerPanelConfig.Root
-      open={value8}
+      open={isExpanded}
       data-testid={dataTestid}
-      className={value14}
+      className={sectionClassName}
     >
-      {value15}
-      {value ? (<ComponentsCollapsibleRootTriggerPanelConfig.Panel>
-          {value16}
+      {header}
+      {hasChildren ? (<ComponentsCollapsibleRootTriggerPanelConfig.Panel>
+          {body}
         </ComponentsCollapsibleRootTriggerPanelConfig.Panel>) : (null)}
     </ComponentsCollapsibleRootTriggerPanelConfig.Root>
   ) : (
-    <div data-testid={dataTestid} className={value14}>
-      {value15}
-      {value ? (value16) : (null)}
+    <div data-testid={dataTestid} className={sectionClassName}>
+      {header}
+      {hasChildren ? (body) : (null)}
     </div>
   );
 }

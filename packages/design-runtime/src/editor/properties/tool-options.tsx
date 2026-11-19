@@ -11,39 +11,39 @@ import { toModuleNamespace } from "../../module-helpers";
 var reactPropertiesToolOptions: Dynamic;
 var reactPropertiesToolOptions_2: Dynamic;
 function toolSegmentOption(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  optionValue?: Dynamic,
+  tooltipText?: Dynamic,
+  isDisabled?: Dynamic,
 ): Dynamic {
-  let state: Dynamic = {
-    value: input,
-    tooltip: options,
-    ...(context !== undefined
+  let baseOption: Dynamic = {
+    value: optionValue,
+    tooltip: tooltipText,
+    ...(isDisabled !== undefined
       ? {
-          disabled: context,
+          disabled: isDisabled,
         }
       : {}),
   };
-  if (input === "image")
+  if (optionValue === "image")
     return {
-      ...state,
+      ...baseOption,
       icon: "Image",
     };
-  let value: Dynamic = PropertiesTooltipColorGradientConfig[input];
-  return value === undefined
+  let optionIcon: Dynamic = PropertiesTooltipColorGradientConfig[optionValue];
+  return optionIcon === undefined
     ? {
-        ...state,
-        label: options,
+        ...baseOption,
+        label: tooltipText,
       }
     : {
-        ...state,
+        ...baseOption,
         label: (0, reactPropertiesTooltip_3.createElement)(
           reactPropertiesTooltip_3.Fragment,
           null,
           (0, reactPropertiesTooltip_3.createElement)(
             PropertyOptionIcon,
             {
-              icon: value,
+              icon: optionIcon,
             },
           ),
           (0, reactPropertiesTooltip_3.createElement)(
@@ -51,7 +51,7 @@ function toolSegmentOption(
             {
               className: "sr-only",
             },
-            options,
+            tooltipText,
           ),
         ),
       };
@@ -60,17 +60,17 @@ function PropertyOptionIcon({
   icon: icon,
   className: className,
 }: Dynamic): Dynamic {
-  let value: Dynamic = className ?? "shrink-0";
+  let iconClassName: Dynamic = className ?? "shrink-0";
   return typeof icon == "string"
     ? (0, reactPropertiesTooltip_3.createElement)(Icon, {
         name: icon,
         size: "auto",
-        className: value,
+        className: iconClassName,
       })
     : (0, reactPropertiesTooltip_3.createElement)(Icon, {
         customIcon: icon,
         size: "auto",
-        className: value,
+        className: iconClassName,
       });
 }
 export {

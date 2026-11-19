@@ -3,93 +3,93 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 
-function createTypingQuietScheduler(input?: Dynamic): Dynamic {
-  let value: Dynamic = null,
-    flag: Dynamic = false,
-    value2: Dynamic = null,
-    value3: Dynamic,
-    callback: Dynamic = (): Dynamic => {
-      clearTimeout(value3);
-      if (!value || value2 === null) return;
-      let value4: Dynamic = value.beat + input.quietMs - Date.now();
-      if (value4 > 0) {
-        value3 = setTimeout(callback, value4);
+function createTypingQuietScheduler(host?: Dynamic): Dynamic {
+  let activeBox: Dynamic = null,
+    isDragLive: Dynamic = false,
+    pendingKind: Dynamic = null,
+    quietTimer: Dynamic,
+    checkQuiet: Dynamic = (): Dynamic => {
+      clearTimeout(quietTimer);
+      if (!activeBox || pendingKind === null) return;
+      let remainingMs: Dynamic = activeBox.beat + host.quietMs - Date.now();
+      if (remainingMs > 0) {
+        quietTimer = setTimeout(checkQuiet, remainingMs);
         return;
       }
       if (
-        value.asked === 0 &&
-        value.beat > 0 &&
-        input.theirsOnItsWay?.() &&
-        Date.now() - (value.waits ||= Date.now()) < input.quietMs
+        activeBox.asked === 0 &&
+        activeBox.beat > 0 &&
+        host.theirsOnItsWay?.() &&
+        Date.now() - (activeBox.waits ||= Date.now()) < host.quietMs
       ) {
-        value3 = setTimeout(callback, 100);
+        quietTimer = setTimeout(checkQuiet, 100);
         return;
       }
-      if (value.asked === 2) return callback4();
-      value.asked++;
-      value.beat = Date.now();
-      input.closeBox().then(callback, callback);
+      if (activeBox.asked === 2) return closeBoxNow();
+      activeBox.asked++;
+      activeBox.beat = Date.now();
+      host.closeBox().then(checkQuiet, checkQuiet);
     },
-    callback2: Dynamic = (): Dynamic => {
-      if (value || flag || value2 === null) return;
-      let value4: Dynamic = value2;
-      value2 = null;
-      input.give(value4);
+    flushPending: Dynamic = (): Dynamic => {
+      if (activeBox || isDragLive || pendingKind === null) return;
+      let flushedKind: Dynamic = pendingKind;
+      pendingKind = null;
+      host.give(flushedKind);
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = value2 === null;
-      (value4 || input2 === "rebuild") && (value2 = input2);
-      value4 && value && !input.caretInFrame() && (value.beat = 0);
-      value4 && callback();
+    requestSync: Dynamic = (kind?: Dynamic): Dynamic => {
+      let wasIdle: Dynamic = pendingKind === null;
+      (wasIdle || kind === "rebuild") && (pendingKind = kind);
+      wasIdle && activeBox && !host.caretInFrame() && (activeBox.beat = 0);
+      wasIdle && checkQuiet();
     },
-    callback4: Dynamic = (): Dynamic => {
-      clearTimeout(value3);
-      value = null;
-      callback2();
+    closeBoxNow: Dynamic = (): Dynamic => {
+      clearTimeout(quietTimer);
+      activeBox = null;
+      flushPending();
     };
   return {
     boxOpen(): Dynamic {
-      value = {
-        shown: value?.shown ?? null,
-        newBox: value?.newBox ?? null,
+      activeBox = {
+        shown: activeBox?.shown ?? null,
+        newBox: activeBox?.newBox ?? null,
         beat: Date.now(),
         asked: 0,
         waits: 0,
       };
     },
     beat(): Dynamic {
-      value &&
-        (value = {
-          ...value,
+      activeBox &&
+        (activeBox = {
+          ...activeBox,
           beat: Date.now(),
           asked: 0,
           waits: 0,
         });
     },
-    boxClosed: callback4,
-    dragLive(input2: Dynamic): Dynamic {
-      flag = input2;
-      callback2();
+    boxClosed: closeBoxNow,
+    dragLive(isDragging: Dynamic): Dynamic {
+      isDragLive = isDragging;
+      flushPending();
     },
     gone(): Dynamic {
-      flag = false;
-      callback4();
+      isDragLive = false;
+      closeBoxNow();
     },
-    replaced(input2: Dynamic, options: Dynamic = null): Dynamic {
-      !value ||
-        !input2 ||
-        (value.shown || (value.newBox = options),
-        (value.shown ??= input2),
-        callback3("push"));
+    replaced(shownBox: Dynamic, newBox: Dynamic = null): Dynamic {
+      !activeBox ||
+        !shownBox ||
+        (activeBox.shown || (activeBox.newBox = newBox),
+        (activeBox.shown ??= shownBox),
+        requestSync("push"));
     },
-    shown: (): Dynamic => value?.shown ?? null,
-    newBox: (): Dynamic => value?.newBox ?? null,
-    holds(input2: Dynamic): Dynamic {
-      return (input2 === "push" ? !value?.shown : !value && !flag)
+    shown: (): Dynamic => activeBox?.shown ?? null,
+    newBox: (): Dynamic => activeBox?.newBox ?? null,
+    holds(kind: Dynamic): Dynamic {
+      return (kind === "push" ? !activeBox?.shown : !activeBox && !isDragLive)
         ? false
-        : (callback3(input2), true);
+        : (requestSync(kind), true);
     },
-    owes: (): Dynamic => value2 !== null,
+    owes: (): Dynamic => pendingKind !== null,
   };
 }
 export {

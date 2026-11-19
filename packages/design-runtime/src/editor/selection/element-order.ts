@@ -6,42 +6,42 @@ import { svgShapeTags } from "../inspector/style-metadata";
 
 var selectedRootElementIds: Dynamic;
 var selectedElementsInDocumentOrder: Dynamic;
-function promoteSvgShapeToRoot(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.element(options);
-  if (!value || !svgShapeTags.has(value.tagName.toLowerCase()))
-    return options;
-  let ancestor: Dynamic = value.closest("svg");
-  if (!ancestor) return options;
-  let value2: Dynamic = parseInt(
-    ancestor.getAttribute("data-dc-tpl") ?? "-1",
+function promoteSvgShapeToRoot(model?: Dynamic, tid?: Dynamic): Dynamic {
+  let element: Dynamic = model.element(tid);
+  if (!element || !svgShapeTags.has(element.tagName.toLowerCase()))
+    return tid;
+  let svgAncestor: Dynamic = element.closest("svg");
+  if (!svgAncestor) return tid;
+  let templateId: Dynamic = parseInt(
+    svgAncestor.getAttribute("data-dc-tpl") ?? "-1",
     10,
   );
-  return value2 >= 0 ? value2 : options;
+  return templateId >= 0 ? templateId : tid;
 }
 function containsUneditableSelection(
-  input?: Dynamic,
-  options?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
 ): Dynamic {
-  return options.some(
-    (input2?: Dynamic): Dynamic =>
-      input.element(input2) == null || input.isLoopDriven(input2),
+  return tids.some(
+    (tid?: Dynamic): Dynamic =>
+      model.element(tid) == null || model.isLoopDriven(tid),
   );
 }
-function copySelectedElementsHtml(input?: Dynamic, items?: Dynamic): Dynamic {
-  if (items.length === 0 || containsUneditableSelection(input, items))
+function copySelectedElementsHtml(model?: Dynamic, items?: Dynamic): Dynamic {
+  if (items.length === 0 || containsUneditableSelection(model, items))
     return null;
-  let value: Dynamic = selectedRootElementIds(input, [
+  let htmlParts: Dynamic = selectedRootElementIds(model, [
     ...new Set(
       items.map(
-        (input2?: Dynamic): Dynamic => promoteSvgShapeToRoot(input, input2),
+        (tid?: Dynamic): Dynamic => promoteSvgShapeToRoot(model, tid),
       ),
     ),
   ])
-    .map((input2?: Dynamic): Dynamic => input.subtreeHtml(input2))
-    .filter((input2?: Dynamic): Dynamic => input2 != null);
-  return value.length === 0
+    .map((rootTid?: Dynamic): Dynamic => model.subtreeHtml(rootTid))
+    .filter((html?: Dynamic): Dynamic => html != null);
+  return htmlParts.length === 0
     ? null
-    : value.join(`
+    : htmlParts.join(`
 `);
 }
 export {
@@ -53,33 +53,33 @@ export {
 };
 export function installEditorSelectionElementOrder(): () => void {
   return () => {
-    selectedRootElementIds = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      options.filter(
-        (input2?: Dynamic): Dynamic =>
-          !options.some(
-            (input3?: Dynamic): Dynamic =>
-              input3 !== input2 && input.isWithin(input3, input2),
+    selectedRootElementIds = (model?: Dynamic, tids?: Dynamic): Dynamic =>
+      tids.filter(
+        (tid?: Dynamic): Dynamic =>
+          !tids.some(
+            (otherTid?: Dynamic): Dynamic =>
+              otherTid !== tid && model.isWithin(otherTid, tid),
           ),
       );
     selectedElementsInDocumentOrder = (
-      input?: Dynamic,
-      options?: Dynamic,
+      model?: Dynamic,
+      tids?: Dynamic,
     ): Dynamic =>
-      options
+      tids
         .map(
-          (input2?: Dynamic): Dynamic => ({
-            t: input2,
-            e: input.element(input2),
+          (tid?: Dynamic): Dynamic => ({
+            t: tid,
+            e: model.element(tid),
           }),
         )
-        .filter((input2?: Dynamic): Dynamic => input2.e != null)
+        .filter((entry?: Dynamic): Dynamic => entry.e != null)
         .sort(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-            input2.e.compareDocumentPosition(options2.e) &
+          (first?: Dynamic, second?: Dynamic): Dynamic =>
+            first.e.compareDocumentPosition(second.e) &
             Node.DOCUMENT_POSITION_FOLLOWING
               ? -1
               : 1,
         )
-        .map((input2?: Dynamic): Dynamic => input2.t);
+        .map((entry?: Dynamic): Dynamic => entry.t);
   };
 }

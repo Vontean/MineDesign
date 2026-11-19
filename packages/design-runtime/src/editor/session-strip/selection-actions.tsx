@@ -18,8 +18,8 @@ function SelectionSessionActions({
   testids: testids,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useTouchToolbar() ? onDelete : undefined,
-    value2: Dynamic =
+  let touchDeleteHandler: Dynamic = useTouchToolbar() ? onDelete : undefined,
+    disabledReasons: Dynamic =
       typeof disabledReason == "string"
         ? {
             more: disabledReason,
@@ -27,39 +27,39 @@ function SelectionSessionActions({
         : (disabledReason ?? {});
   return lead == null &&
     onComment === null &&
-    value === undefined &&
+    touchDeleteHandler === undefined &&
     onOpenInspector === undefined &&
-    value2.more === undefined ? null : (
+    disabledReasons.more === undefined ? null : (
     <SessionStripGroup>
       {lead}
       {onComment !== null && (<SessionStripButton
           icon={"ChatAdd"}
           data-testid={testids?.comment}
-          title={value2.comment ?? (uiMessage("inspector.selectionActions.commentOnThisElement"))}
+          title={disabledReasons.comment ?? (uiMessage("inspector.selectionActions.commentOnThisElement"))}
           aria-label={uiMessage("inspector.selectionActions.comment")}
-          disabled={value2.comment !== undefined}
-          onClick={(input?: Dynamic): Dynamic =>
-            onComment(input.currentTarget)
+          disabled={disabledReasons.comment !== undefined}
+          onClick={(event?: Dynamic): Dynamic =>
+            onComment(event.currentTarget)
           }
         />)}
-      {value !== undefined && (<SessionStripButton
+      {touchDeleteHandler !== undefined && (<SessionStripButton
           icon={"Trash"}
           data-testid={testids?.delete ?? "frame-delete"}
-          title={value2.delete ?? (deleteTitle)}
+          title={disabledReasons.delete ?? (deleteTitle)}
           aria-label={uiMessage("inspector.selectionActions.delete")}
-          disabled={value2.delete !== undefined}
-          onClick={value}
+          disabled={disabledReasons.delete !== undefined}
+          onClick={touchDeleteHandler}
         />)}
-      {onOpenInspector !== undefined || value2.more !== undefined && (<SessionStripButton
+      {onOpenInspector !== undefined || disabledReasons.more !== undefined && (<SessionStripButton
           icon={"DotsVertical"}
           data-testid={testids?.more ?? "frame-more"}
           title={
-            value2.more ?? moreMenu?.label ?? (uiMessage("inspector.selectionActions.openThePropertiesPanel"))
+            disabledReasons.more ?? moreMenu?.label ?? (uiMessage("inspector.selectionActions.openThePropertiesPanel"))
           }
           aria-label={moreMenu?.label ?? (uiMessage("inspector.selectionActions.properties"))}
           aria-haspopup={moreMenu ? "menu" : undefined}
           aria-expanded={moreMenu?.open}
-          disabled={value2.more !== undefined}
+          disabled={disabledReasons.more !== undefined}
           onClick={onOpenInspector}
         />)}
     </SessionStripGroup>

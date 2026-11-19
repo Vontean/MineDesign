@@ -15,18 +15,18 @@ function getSessionStripScrollRow(element?: Dynamic): Dynamic {
   return element.querySelector("[data-mc-row]") ?? element;
 }
 function revealSessionStripControl(
-  input?: Dynamic,
-  options?: Dynamic,
+  strip?: Dynamic,
+  control?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = getSessionStripScrollRow(input),
-    bounds: Dynamic = options.getBoundingClientRect(),
-    bounds2: Dynamic = value.getBoundingClientRect();
-  bounds.left < bounds2.left + SessionStripRevealConstant
-    ? (value.scrollLeft -=
-        bounds2.left + SessionStripRevealConstant - bounds.left)
-    : bounds.right > bounds2.right - SessionStripRevealConstant &&
-      (value.scrollLeft +=
-        bounds.right - (bounds2.right - SessionStripRevealConstant));
+  let scrollRow: Dynamic = getSessionStripScrollRow(strip),
+    controlRect: Dynamic = control.getBoundingClientRect(),
+    rowRect: Dynamic = scrollRow.getBoundingClientRect();
+  controlRect.left < rowRect.left + SessionStripRevealConstant
+    ? (scrollRow.scrollLeft -=
+        rowRect.left + SessionStripRevealConstant - controlRect.left)
+    : controlRect.right > rowRect.right - SessionStripRevealConstant &&
+      (scrollRow.scrollLeft +=
+        controlRect.right - (rowRect.right - SessionStripRevealConstant));
 }
 export {
   getSessionStripScrollRow,

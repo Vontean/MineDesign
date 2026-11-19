@@ -21,7 +21,7 @@ var SessionStripTextStartCenterEndConfig: Dynamic;
 var SessionStripTextStartCenterEndConfig_2: Dynamic;
 var SessionStripTextClassNames: Dynamic;
 function SessionLinkInput({
-  value: value,
+  value: linkText,
   invalid: invalid,
   invalidHint: invalidHint,
   onChange: onChange,
@@ -53,14 +53,14 @@ function SessionLinkInput({
         autoFocus={true}
         aria-label={uiMessage("inspector.text.linkURL")}
         placeholder={"https://\u2026"}
-        value={value}
+        value={linkText}
         aria-invalid={invalid || undefined}
         onChange={(event?: Dynamic): Dynamic => onChange(event.target.value)}
-        onPointerDown={(input?: Dynamic): Dynamic => input.stopPropagation()}
+        onPointerDown={(event?: Dynamic): Dynamic => event.stopPropagation()}
         onBlur={onBlur}
-        onKeyDown={(input?: Dynamic): Dynamic => {
-          input.stopPropagation();
-          onKeyDown(input);
+        onKeyDown={(event?: Dynamic): Dynamic => {
+          event.stopPropagation();
+          onKeyDown(event);
         }}
         className={SessionStripTextClassNames}
         title={
@@ -82,207 +82,207 @@ function SessionLinkInput({
     </span>
   );
 }
-function normalizeSessionLink(input?: Dynamic): Dynamic {
-  let value: Dynamic = /^https?:\/\//i.test(input.trim())
-    ? input.trim()
-    : "https://" + input.trim();
-  value = value.replace(
+function normalizeSessionLink(rawLink?: Dynamic): Dynamic {
+  let url: Dynamic = /^https?:\/\//i.test(rawLink.trim())
+    ? rawLink.trim()
+    : "https://" + rawLink.trim();
+  url = url.replace(
     /^https?:\/\//i,
-    (input2?: Dynamic): Dynamic => input2.toLowerCase(),
+    (scheme?: Dynamic): Dynamic => scheme.toLowerCase(),
   );
-  return /^https?:\/\/\S+$/.test(value) && value.length <= 2048
-    ? value
+  return /^https?:\/\/\S+$/.test(url) && url.length <= 2048
+    ? url
     : null;
 }
-function TextSessionStrip(input?: Dynamic): Dynamic {
+function TextSessionStrip(props?: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = input.testidPrefix ?? "frame-text",
-    [value2, value3]: Dynamic = (0,
+  let testidPrefix: Dynamic = props.testidPrefix ?? "frame-text",
+    [linkDraft, setLinkDraft]: Dynamic = (0,
     reactInspectorArtboardRadius.useState)(null),
-    [value4, value5]: Dynamic = (0,
+    [isLinkInvalid, setIsLinkInvalid]: Dynamic = (0,
     reactInspectorArtboardRadius.useState)(false),
-    callback: Dynamic = (): Dynamic => {
-      value3(null);
-      value5(false);
+    closeLinkEditor: Dynamic = (): Dynamic => {
+      setLinkDraft(null);
+      setIsLinkInvalid(false);
     },
-    value6: Dynamic =
-      input.link !== undefined && "onChange" in input.link
-        ? input.link
+    linkConfig: Dynamic =
+      props.link !== undefined && "onChange" in props.link
+        ? props.link
         : null;
-  if (value6 !== null && value2 !== null)
+  if (linkConfig !== null && linkDraft !== null)
     return (
       <SessionLinkInput
-        value={value2}
-        invalid={value4}
-        invalidHint={value6.invalidHint}
-        onChange={(input2?: Dynamic): Dynamic => {
-          value5(false);
-          value3(input2);
+        value={linkDraft}
+        invalid={isLinkInvalid}
+        invalidHint={linkConfig.invalidHint}
+        onChange={(text?: Dynamic): Dynamic => {
+          setIsLinkInvalid(false);
+          setLinkDraft(text);
         }}
-        onBlur={(input2?: Dynamic): Dynamic => {
-          input2.relatedTarget?.closest("[data-link-mode]") || callback();
+        onBlur={(event?: Dynamic): Dynamic => {
+          event.relatedTarget?.closest("[data-link-mode]") || closeLinkEditor();
         }}
-        onCancel={callback}
+        onCancel={closeLinkEditor}
         onRemove={
-          value6.editable && value6.href !== undefined
+          linkConfig.editable && linkConfig.href !== undefined
             ? (): Dynamic => {
-                value6.onChange(undefined);
-                callback();
+                linkConfig.onChange(undefined);
+                closeLinkEditor();
               }
             : undefined
         }
         onKeyDown={(event?: Dynamic): Dynamic => {
-          event.key === "Escape" && (event.preventDefault(), callback());
+          event.key === "Escape" && (event.preventDefault(), closeLinkEditor());
           if (event.key === "Enter") {
             event.preventDefault();
-            let value8: Dynamic = (value6.normalize ?? normalizeSessionLink)(
-              value2,
+            let normalizedLink: Dynamic = (linkConfig.normalize ?? normalizeSessionLink)(
+              linkDraft,
             );
-            if (value8 === null) return value5(true);
-            value6.onChange(value8);
-            callback();
+            if (normalizedLink === null) return setIsLinkInvalid(true);
+            linkConfig.onChange(normalizedLink);
+            closeLinkEditor();
           }
         }}
       />
     );
-  let selKey: Dynamic = input.selKey,
-    callback2: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value8?: Dynamic,
+  let selKey: Dynamic = props.selKey,
+    renderFormatButton: Dynamic = (
+      label?: Dynamic,
+      iconName?: Dynamic,
+      buttonConfig?: Dynamic,
+      shortcutKey?: Dynamic,
     ): Dynamic => (
       <SessionStripButton
-        data-testid={value + "-" + input2.toLowerCase()}
+        data-testid={testidPrefix + "-" + label.toLowerCase()}
         title={
-          (context.disabledReason) ?? ((context.title ?? ({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[input2])) + (value8 !== undefined && input.shortcuts !== false ? (((" (") + (keyboardShortcutLabel(value8))) + (")")) : ("")))
+          (buttonConfig.disabledReason) ?? ((buttonConfig.title ?? ({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[label])) + (shortcutKey !== undefined && props.shortcuts !== false ? (((" (") + (keyboardShortcutLabel(shortcutKey))) + (")")) : ("")))
         }
-        aria-label={({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[input2])}
+        aria-label={({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[label])}
         aria-pressed={
-          context.disabledReason != null ? undefined : context.pressed
+          buttonConfig.disabledReason != null ? undefined : buttonConfig.pressed
         }
-        disabled={context.disabledReason != null}
-        icon={options}
-        onClick={context.onClick}
+        disabled={buttonConfig.disabledReason != null}
+        icon={iconName}
+        onClick={buttonConfig.onClick}
       />
     ),
-    value7: Dynamic = (
-      input.align?.options ?? ["start", "center", "end", "justify"]
+    alignOptions: Dynamic = (
+      props.align?.options ?? ["start", "center", "end", "justify"]
     ).map(
-      (input2?: Dynamic): Dynamic => ({
-        value: input2,
-        label: SessionStripTextStartCenterEndConfig[input2],
-        icon: SessionStripTextStartCenterEndConfig_2[input2],
-        disabledReason: input.align?.disabledReasons?.[input2],
+      (alignment?: Dynamic): Dynamic => ({
+        value: alignment,
+        label: SessionStripTextStartCenterEndConfig[alignment],
+        icon: SessionStripTextStartCenterEndConfig_2[alignment],
+        disabledReason: props.align?.disabledReasons?.[alignment],
       }),
     );
   return (
     <jsxSessionStripText.Fragment>
       <SessionStripGroup wrap={true}>
-        {input.style !== undefined && (<SessionTypographyPopup
+        {props.style !== undefined && (<SessionTypographyPopup
             key={"ts:" + selKey}
-            testid={value + "-style"}
-            value={input.style.value}
-            chipText={input.style.chipText}
-            options={input.style.options}
-            onChange={input.style.onChange}
-            custom={input.style.custom}
+            testid={testidPrefix + "-style"}
+            value={props.style.value}
+            chipText={props.style.chipText}
+            options={props.style.options}
+            onChange={props.style.onChange}
+            custom={props.style.custom}
           />)}
-        {input.color !== undefined && (<SessionActionsPopover
+        {props.color !== undefined && (<SessionActionsPopover
             key={"c:" + selKey}
-            {...input.color}
-            testid={input.color.testid ?? value + "-color"}
+            {...props.color}
+            testid={props.color.testid ?? testidPrefix + "-color"}
           />)}
-        {callback2("Bold", "TextBold", input.bold, "B")}
-        {callback2("Italic", "TextItalics", input.italic, "I")}
-        {input.underline !== undefined && (callback2("Underline", "TextUnderline", input.underline, "U"))}
-        {input.link !== undefined && (value6 !== null ? (<SessionStripButton
-              data-testid={value + "-link"}
+        {renderFormatButton("Bold", "TextBold", props.bold, "B")}
+        {renderFormatButton("Italic", "TextItalics", props.italic, "I")}
+        {props.underline !== undefined && (renderFormatButton("Underline", "TextUnderline", props.underline, "U"))}
+        {props.link !== undefined && (linkConfig !== null ? (<SessionStripButton
+              data-testid={testidPrefix + "-link"}
               icon={"Link"}
               aria-label={uiMessage("inspector.text.link")}
               title={
-                value6.disabledReason ?? (value6.editable ? (value6.href !== undefined ? (uiMessage("inspector.text.editTheLink", { value1: String(value6.href) })) : (uiMessage("inspector.text.setTheLink"))) : (value6.href !== undefined ? (uiMessage("inspector.text.removeTheLink2", { value1: String(value6.href) })) : (uiMessage("inspector.text.linkTheWholeText"))))
+                linkConfig.disabledReason ?? (linkConfig.editable ? (linkConfig.href !== undefined ? (uiMessage("inspector.text.editTheLink", { value1: String(linkConfig.href) })) : (uiMessage("inspector.text.setTheLink"))) : (linkConfig.href !== undefined ? (uiMessage("inspector.text.removeTheLink2", { value1: String(linkConfig.href) })) : (uiMessage("inspector.text.linkTheWholeText"))))
               }
-              aria-pressed={value6.href !== undefined}
-              disabled={value6.disabledReason != null}
+              aria-pressed={linkConfig.href !== undefined}
+              disabled={linkConfig.disabledReason != null}
               onClick={(): Dynamic =>
-                value6.editable
-                  ? value3(value6.href ?? "")
-                  : value6.href !== undefined
-                    ? value6.onChange(undefined)
-                    : value3("")
+                linkConfig.editable
+                  ? setLinkDraft(linkConfig.href ?? "")
+                  : linkConfig.href !== undefined
+                    ? linkConfig.onChange(undefined)
+                    : setLinkDraft("")
               }
-            />) : (callback2("Link", "Link", input.link)))}
+            />) : (renderFormatButton("Link", "Link", props.link)))}
       </SessionStripGroup>
-      {input.list !== undefined || input.align !== undefined && (<jsxSessionStripText.Fragment>
-          {input.compact ? (null) : (<SessionStripDivider />)}
+      {props.list !== undefined || props.align !== undefined && (<jsxSessionStripText.Fragment>
+          {props.compact ? (null) : (<SessionStripDivider />)}
           <SessionStripGroup wrap={true}>
-            {input.list !== undefined && (<SessionChoicePopup
+            {props.list !== undefined && (<SessionChoicePopup
                 key={"li:" + selKey}
-                testid={value + "-list"}
+                testid={testidPrefix + "-list"}
                 title={
-                  input.list.disabledReason ?? (uiMessage("inspector.text.list", { value1: String(input.list.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextNoneBulletNumberConfig[
-                          input.list.value
+                  props.list.disabledReason ?? (uiMessage("inspector.text.list", { value1: String(props.list.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextNoneBulletNumberConfig[
+                          props.list.value
                         ])) }))
                 }
                 face={
-                  input.list.value === "number"
+                  props.list.value === "number"
                     ? "ListNumbered"
                     : "ListBullet"
                 }
-                value={input.list.value}
+                value={props.list.value}
                 options={SessionStripTextItems}
-                onChange={input.list.onChange}
-                disabled={input.list.disabledReason != null}
+                onChange={props.list.onChange}
+                disabled={props.list.disabledReason != null}
               />)}
-            {input.align !== undefined && (<SessionChoicePopup
+            {props.align !== undefined && (<SessionChoicePopup
                 key={"al:" + selKey}
-                testid={value + "-align"}
+                testid={testidPrefix + "-align"}
                 title={
-                  uiMessage("inspector.text.alignment", { value1: String(input.align.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextStartCenterEndConfig[input.align.value])) })
+                  uiMessage("inspector.text.alignment", { value1: String(props.align.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextStartCenterEndConfig[props.align.value])) })
                 }
                 face={
                   SessionStripTextStartCenterEndConfig_2[
-                    input.align.value ?? "start"
+                    props.align.value ?? "start"
                   ]
                 }
-                value={input.align.value}
-                options={value7}
-                onChange={input.align.onChange}
+                value={props.align.value}
+                options={alignOptions}
+                onChange={props.align.onChange}
               />)}
           </SessionStripGroup>
         </jsxSessionStripText.Fragment>)}
-      {input.extra != null && (<jsxSessionStripText.Fragment>
-          {input.compact ? (null) : (<SessionStripDivider />)}
+      {props.extra != null && (<jsxSessionStripText.Fragment>
+          {props.compact ? (null) : (<SessionStripDivider />)}
           <reactInspectorArtboardRadius.Fragment key={"x:" + selKey}>
-            {input.extra}
+            {props.extra}
           </reactInspectorArtboardRadius.Fragment>
         </jsxSessionStripText.Fragment>)}
-      {input.trailing != null && (<jsxSessionStripText.Fragment>
-          {input.compact ? (null) : (<SessionStripDivider />)}
-          {input.trailing}
+      {props.trailing != null && (<jsxSessionStripText.Fragment>
+          {props.compact ? (null) : (<SessionStripDivider />)}
+          {props.trailing}
         </jsxSessionStripText.Fragment>)}
-      {input.onEdit !== undefined ||
-        input.onComment !== null ||
-        input.onOpenInspector !== undefined ||
-        input.inspectorDisabledReason !== undefined && (<jsxSessionStripText.Fragment>
-          {input.compact ? (null) : (<SessionStripDivider />)}
+      {props.onEdit !== undefined ||
+        props.onComment !== null ||
+        props.onOpenInspector !== undefined ||
+        props.inspectorDisabledReason !== undefined && (<jsxSessionStripText.Fragment>
+          {props.compact ? (null) : (<SessionStripDivider />)}
           <SelectionSessionActions
             lead={
-              input.onEdit !== undefined ? (
+              props.onEdit !== undefined ? (
                 <SessionStripButton
-                  data-testid={value + "-edit"}
+                  data-testid={testidPrefix + "-edit"}
                   icon={"Edit"}
                   title={uiMessage("inspector.text.editTheText")}
                   aria-label={uiMessage("inspector.text.editText")}
-                  onClick={input.onEdit}
+                  onClick={props.onEdit}
                 />
               ) : undefined
             }
-            onComment={input.onComment}
-            onOpenInspector={input.onOpenInspector}
-            disabledReason={input.inspectorDisabledReason}
-            testids={input.tailTestids}
+            onComment={props.onComment}
+            onOpenInspector={props.onOpenInspector}
+            disabledReason={props.inspectorDisabledReason}
+            testids={props.tailTestids}
           />
         </jsxSessionStripText.Fragment>)}
     </jsxSessionStripText.Fragment>

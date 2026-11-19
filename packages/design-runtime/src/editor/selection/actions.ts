@@ -7,28 +7,28 @@ import {
 var SelectionActionsReplace: Dynamic;
 var SelectionActionsHelmetScHelmetPattern: Dynamic;
 function selectionActionFailureMessage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  actionKind?: Dynamic,
+  conflictedArtboardCount?: Dynamic,
+  hasConflicts?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input === "delete" ? uiMessage("inspector.actions.pressDelete") : "duplicate";
-  if (!context)
+  let retryVerb: Dynamic = actionKind === "delete" ? uiMessage("inspector.actions.pressDelete") : "duplicate";
+  if (!hasConflicts)
     return (
       uiMessage("inspector.actions.couldnT") +
-      input +
+      actionKind +
       " the elements you selected: someone else\u2019s edit arrived first. Select them again and " +
-      value +
+      retryVerb +
       "."
     );
-  let value2: Dynamic =
-    options === 1 ? uiMessage("inspector.actions.oneArtboard") : options + " artboards";
+  let artboardCountLabel: Dynamic =
+    conflictedArtboardCount === 1 ? uiMessage("inspector.actions.oneArtboard") : conflictedArtboardCount + " artboards";
   return (
-    (input === "delete" ? "Deleted" : "Duplicated") +
+    (actionKind === "delete" ? "Deleted" : "Duplicated") +
     ", except in " +
-    value2 +
+    artboardCountLabel +
     " that someone else just changed. Select the elements there again and " +
-    value +
-    (input === "delete" ? "." : " again.")
+    retryVerb +
+    (actionKind === "delete" ? "." : " again.")
   );
 }
 export {
@@ -38,8 +38,8 @@ export {
 };
 export function installEditorSelectionActions(): () => void {
   return () => {
-    SelectionActionsReplace = (input?: Dynamic): Dynamic =>
-      (input.split("/").pop() ?? input).replace(/\.dc\.html$/, "");
+    SelectionActionsReplace = (filePath?: Dynamic): Dynamic =>
+      (filePath.split("/").pop() ?? filePath).replace(/\.dc\.html$/, "");
     SelectionActionsHelmetScHelmetPattern =
       /^(helmet|sc-helmet|script|style|link|noscript|template)$/i;
   };

@@ -21,7 +21,7 @@ import { CdsIsland } from "../platform/cds-island";
 
 function DesignPropertiesSidebar({ children: children }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = usePanelWidth(312);
+  let panelWidth: Dynamic = usePanelWidth(312);
   return (
     <div
       data-testid={"dc-edit-side-panel"}
@@ -30,11 +30,11 @@ function DesignPropertiesSidebar({ children: children }: Dynamic): Dynamic {
         "relative flex h-full shrink-0 flex-col border-l bg-surface-panel [--pp-label-w:72px]"
       }
       style={{
-        width: value.width,
+        width: panelWidth.width,
       }}
     >
       {children}
-      <PanelWidthGrip {...value} label={uiMessage("inspector.propertiesPanel.resizePropertiesPanel")} />
+      <PanelWidthGrip {...panelWidth} label={uiMessage("inspector.propertiesPanel.resizePropertiesPanel")} />
     </div>
   );
 }
@@ -43,15 +43,15 @@ function AnchoredDesignProperties({
   readOnly = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useInspectorPosture(),
-    value2: Dynamic = useElementById(inspectorPanelId),
-    [value3]: Dynamic = useInspectorOpen(),
-    value4: Dynamic = useDesignColorTokens("appifact"),
-    value5: Dynamic = (0, reactCanvasShape_2.useMemo)(
+  let inspectorPosture: Dynamic = useInspectorPosture(),
+    panelHost: Dynamic = useElementById(inspectorPanelId),
+    [isInspectorOpen]: Dynamic = useInspectorOpen(),
+    colorTokenSet: Dynamic = useDesignColorTokens("appifact"),
+    inspectorContextValue: Dynamic = (0, reactCanvasShape_2.useMemo)(
       (): Dynamic => ({
         dsColorTokens: activeDesignColorTokens(
-          value4.tokens,
-          value4.themes,
+          colorTokenSet.tokens,
+          colorTokenSet.themes,
           undefined,
         ),
         artboardColors: InspectorEditorItems_2,
@@ -60,11 +60,11 @@ function AnchoredDesignProperties({
         setScrubbing: (): Dynamic => {},
         editsAreUndoSteps: true,
       }),
-      [value4],
+      [colorTokenSet],
     );
-  if (value2 == null || !value3) return null;
-  let value6: Dynamic = (
-    <InspectorContext.Provider value={value5}>
+  if (panelHost == null || !isInspectorOpen) return null;
+  let inspectorContent: Dynamic = (
+    <InspectorContext.Provider value={inspectorContextValue}>
       <div
         data-testid={"dc-anchored-content"}
         className={cn(
@@ -81,16 +81,16 @@ function AnchoredDesignProperties({
   );
   return (0, reactDomCanvasShape_2.createPortal)(
     <CdsIsland density={"compact"} className={"contents"}>
-      {value === "wide" ? (<DesignPropertiesSidebar>{value6}</DesignPropertiesSidebar>) : (<InspectorPanelShell
+      {inspectorPosture === "wide" ? (<DesignPropertiesSidebar>{inspectorContent}</DesignPropertiesSidebar>) : (<InspectorPanelShell
           posture={"sheet"}
           filled={true}
           headerAt={"top"}
           data-testid={"dc-edit-side-panel"}
         >
-          {value6}
+          {inspectorContent}
         </InspectorPanelShell>)}
     </CdsIsland>,
-    value2,
+    panelHost,
   );
 }
 export {

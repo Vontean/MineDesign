@@ -14,72 +14,72 @@ var PropertiesTransformRowRowColumnRowReverseConfig: Dynamic;
 function TransformAxisRow({
   label: label,
   name: name,
-  value: value,
+  value: currentValue,
   unit: unit,
   step: step,
   mixed: mixed,
-  disabled: disabled2,
+  disabled: isDisabled,
   onChange: onChange,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic =
+  let displayStep: Dynamic =
       getFineUnitStep(unit, undefined) != null ? 0.1 : step,
-    value3: Dynamic = useStyleCommitScrub(
-      (input?: Dynamic): Dynamic =>
+    commitScrub: Dynamic = useStyleCommitScrub(
+      (newValue?: Dynamic): Dynamic =>
         onChange({
-          value: input,
+          value: newValue,
           unit: unit,
         }),
     );
   return (
     <div className={"min-w-[4.25rem] flex-1 basis-[4.25rem]"}>
       <NumericInput
-        value={mixed ? undefined : roundCssNumber(value, unit)}
+        value={mixed ? undefined : roundCssNumber(currentValue, unit)}
         mixed={mixed}
         prefix={label}
         unit={unit && unit !== "px" && unit !== "deg" ? unit : undefined}
         refuseLetters={true}
         ownUnit={unit}
-        step={value2}
-        smallStep={value2 === 0.1 ? 0.01 : undefined}
+        step={displayStep}
+        smallStep={displayStep === 0.1 ? 0.01 : undefined}
         emptyStepFrom={mixed ? null : undefined}
         steppers={false}
         aria-label={name}
-        disabled={disabled2}
-        onValue={(input?: Dynamic): Dynamic => {
-          input === undefined ||
-            (!mixed && input === value) ||
+        disabled={isDisabled}
+        onValue={(enteredValue?: Dynamic): Dynamic => {
+          enteredValue === undefined ||
+            (!mixed && enteredValue === currentValue) ||
             onChange({
-              value: input,
+              value: enteredValue,
               unit: unit,
             });
         }}
-        onScrub={mixed ? undefined : value3.onScrub}
-        onScrubEnd={value3.onScrubEnd}
+        onScrub={mixed ? undefined : commitScrub.onScrub}
+        onScrubEnd={commitScrub.onScrubEnd}
       />
     </div>
   );
 }
 function PropertyTransformRow({
-  state: state,
+  state: propertyState,
   onCommit: onCommit,
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = state.mixed ? "" : (state.value ?? ""),
-    value2: Dynamic = parseCssTransform(value);
-  if (!value2)
+  let transformText: Dynamic = propertyState.mixed ? "" : (propertyState.value ?? ""),
+    parsedTransform: Dynamic = parseCssTransform(transformText);
+  if (!parsedTransform)
     return (
       <PropertyCssTextRow
-        state={state}
+        state={propertyState}
         onCommit={onCommit}
         shell={shell}
       />
     );
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-    let value3: Dynamic = serializeCssTransform(input);
-    (!state.mixed && value3 === value) ||
-      onCommit(state.prop, value3 || (state.inheritedFrom ? "none" : null));
+  let commitTransform: Dynamic = (nextTransform?: Dynamic): Dynamic => {
+    let serializedTransform: Dynamic = serializeCssTransform(nextTransform);
+    (!propertyState.mixed && serializedTransform === transformText) ||
+      onCommit(propertyState.prop, serializedTransform || (propertyState.inheritedFrom ? "none" : null));
   };
   return (
     <PropertyRow {...shell} className={"items-start"}>
@@ -87,75 +87,75 @@ function PropertyTransformRow({
         <TransformAxisRow
           label={"X"}
           name={"Move X"}
-          value={value2.x.value}
-          unit={value2.x.unit || "px"}
+          value={parsedTransform.x.value}
+          unit={parsedTransform.x.unit || "px"}
           step={1}
-          mixed={state.mixed}
-          disabled={state.disabled}
-          onChange={(input?: Dynamic): Dynamic =>
-            callback({
-              ...value2,
-              x: input,
+          mixed={propertyState.mixed}
+          disabled={propertyState.disabled}
+          onChange={(nextX?: Dynamic): Dynamic =>
+            commitTransform({
+              ...parsedTransform,
+              x: nextX,
             })
           }
         />
         <TransformAxisRow
           label={"Y"}
           name={"Move Y"}
-          value={value2.y.value}
-          unit={value2.y.unit || "px"}
+          value={parsedTransform.y.value}
+          unit={parsedTransform.y.unit || "px"}
           step={1}
-          mixed={state.mixed}
-          disabled={state.disabled}
-          onChange={(input?: Dynamic): Dynamic =>
-            callback({
-              ...value2,
-              y: input,
+          mixed={propertyState.mixed}
+          disabled={propertyState.disabled}
+          onChange={(nextY?: Dynamic): Dynamic =>
+            commitTransform({
+              ...parsedTransform,
+              y: nextY,
             })
           }
         />
         <TransformAxisRow
           label={"\u2220"}
           name={"Rotate"}
-          value={value2.rotate.value}
-          unit={value2.rotate.unit || "deg"}
+          value={parsedTransform.rotate.value}
+          unit={parsedTransform.rotate.unit || "deg"}
           step={1}
-          mixed={state.mixed}
-          disabled={state.disabled}
-          onChange={(input?: Dynamic): Dynamic =>
-            callback({
-              ...value2,
-              rotate: input,
+          mixed={propertyState.mixed}
+          disabled={propertyState.disabled}
+          onChange={(nextRotate?: Dynamic): Dynamic =>
+            commitTransform({
+              ...parsedTransform,
+              rotate: nextRotate,
             })
           }
         />
         <TransformAxisRow
           label={"\u2922x"}
           name={"Scale X"}
-          value={value2.scaleX}
+          value={parsedTransform.scaleX}
           unit={""}
           step={0.01}
-          mixed={state.mixed}
-          disabled={state.disabled}
-          onChange={(input?: Dynamic): Dynamic =>
-            callback({
-              ...value2,
-              scaleX: input.value,
+          mixed={propertyState.mixed}
+          disabled={propertyState.disabled}
+          onChange={(nextScaleX?: Dynamic): Dynamic =>
+            commitTransform({
+              ...parsedTransform,
+              scaleX: nextScaleX.value,
             })
           }
         />
         <TransformAxisRow
           label={"\u2922y"}
           name={"Scale Y"}
-          value={value2.scaleY}
+          value={parsedTransform.scaleY}
           unit={""}
           step={0.01}
-          mixed={state.mixed}
-          disabled={state.disabled}
-          onChange={(input?: Dynamic): Dynamic =>
-            callback({
-              ...value2,
-              scaleY: input.value,
+          mixed={propertyState.mixed}
+          disabled={propertyState.disabled}
+          onChange={(nextScaleY?: Dynamic): Dynamic =>
+            commitTransform({
+              ...parsedTransform,
+              scaleY: nextScaleY.value,
             })
           }
         />

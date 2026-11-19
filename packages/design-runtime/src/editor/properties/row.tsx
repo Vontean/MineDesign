@@ -18,7 +18,7 @@ function PropertyRow({
   resetLabel: resetLabel,
   description: description,
   onPress: onPress,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   labelProps: labelProps,
   actions: actions,
@@ -29,41 +29,41 @@ function PropertyRow({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = typeof label == "string" ? label : undefined,
-    value2: Dynamic = (0, reactInspectorContext_4.useRef)(null),
-    value3: Dynamic = (0, reactInspectorContext_4.useId)(),
-    value4: Dynamic = (0, reactInspectorContext_4.useRef)(false);
+  let labelText: Dynamic = typeof label == "string" ? label : undefined,
+    contentRef: Dynamic = (0, reactInspectorContext_4.useRef)(null),
+    descriptionId: Dynamic = (0, reactInspectorContext_4.useId)(),
+    hadDescriptionRef: Dynamic = (0, reactInspectorContext_4.useRef)(false);
   (0, reactInspectorContext_4.useLayoutEffect)((): Dynamic => {
-    if (!description && !value4.current) return;
-    let current: Dynamic = value2.current;
-    if (!current) return;
-    let value9: Dynamic = current.querySelectorAll(
+    if (!description && !hadDescriptionRef.current) return;
+    let rowElement: Dynamic = contentRef.current;
+    if (!rowElement) return;
+    let focusableControls: Dynamic = rowElement.querySelectorAll(
       'input:not([type="hidden"]), textarea, select, [role="combobox"], [role="radiogroup"], [role="switch"], button[aria-haspopup], button[aria-expanded]',
     );
-    for (let value10 of value9 as Dynamic) {
-      let value11: Dynamic = (value10.getAttribute("aria-describedby") ?? "")
+    for (let control of focusableControls as Dynamic) {
+      let describedByIds: Dynamic = (control.getAttribute("aria-describedby") ?? "")
         .split(/\s+/)
-        .filter((input?: Dynamic): Dynamic => input && input !== value3);
-      description && value11.push(value3);
-      value11.length > 0
-        ? value10.setAttribute("aria-describedby", value11.join(" "))
-        : value10.removeAttribute("aria-describedby");
+        .filter((id?: Dynamic): Dynamic => id && id !== descriptionId);
+      description && describedByIds.push(descriptionId);
+      describedByIds.length > 0
+        ? control.setAttribute("aria-describedby", describedByIds.join(" "))
+        : control.removeAttribute("aria-describedby");
     }
-    value4.current = !!description;
+    hadDescriptionRef.current = !!description;
   });
-  let [value5, value6]: Dynamic = (0,
+  let [isActionsOpen, setIsActionsOpen]: Dynamic = (0,
     reactInspectorContext_4.useState)(defaultActionsOpen),
-    value7: Dynamic =
+    menuActions: Dynamic =
       actions !== undefined && actions.length > 0 ? actions : undefined;
-  value7 === undefined && value5 && value6(false);
-  let value8: Dynamic = (0, reactInspectorContext_4.useRef)(false);
+  menuActions === undefined && isActionsOpen && setIsActionsOpen(false);
+  let isTouchPressRef: Dynamic = (0, reactInspectorContext_4.useRef)(false);
   return (
     <div
       data-property-row={""}
       {...props}
       title={title}
       onClick={
-        onPress && !disabled2
+        onPress && !isDisabled
           ? (event?: Dynamic): Dynamic => {
               isNestedPropertyControl(
                 event.currentTarget,
@@ -79,18 +79,18 @@ function PropertyRow({
           ? "grid-cols-[var(--pp-label-w,80px)_minmax(0,1fr)] pointer-coarse:grid-cols-[calc(var(--pp-label-w,80px)*13/12)_minmax(0,1fr)]"
           : "grid-cols-[minmax(0,1fr)]",
         "min-h-[var(--prop-row-h,32px)] pointer-coarse:min-h-[var(--prop-row-h,40px)]",
-        disabled2 && "cursor-not-allowed",
+        isDisabled && "cursor-not-allowed",
         className,
       )}
     >
       {label !== undefined && (<div
           className={joinClassNames(
             "flex min-w-0 items-center",
-            disabled2 && "opacity-50",
+            isDisabled && "opacity-50",
           )}
         >
           <span
-            title={title === undefined ? (value) : (undefined)}
+            title={title === undefined ? (labelText) : (undefined)}
             {...labelProps}
             className={joinClassNames(
               "min-w-0 truncate text-footnote text-muted select-none",
@@ -99,7 +99,7 @@ function PropertyRow({
           >
             {label}
           </span>
-          {onReset && !disabled2 && (<span
+          {onReset && !isDisabled && (<span
               className={joinClassNames(
                 "flex w-0 shrink-0 overflow-hidden",
                 "focus-within:w-auto focus-within:overflow-visible",
@@ -113,25 +113,25 @@ function PropertyRow({
                 iconOnly={true}
                 icon={"ArrowCounterClockwise"}
                 aria-label={
-                  (resetLabel) ?? (value ? (((ResetValue) + (" ")) + (value)) : (ResetValue))
+                  (resetLabel) ?? (labelText ? (((ResetValue) + (" ")) + (labelText)) : (ResetValue))
                 }
                 tooltipSide={"left"}
-                disabled={disabled2}
-                onPointerDown={(input?: Dynamic): Dynamic => {
-                  value8.current = input.pointerType === "touch";
+                disabled={isDisabled}
+                onPointerDown={(event?: Dynamic): Dynamic => {
+                  isTouchPressRef.current = event.pointerType === "touch";
                 }}
-                onClick={(input?: Dynamic): Dynamic => {
-                  let value9: Dynamic = input.currentTarget
+                onClick={(event?: Dynamic): Dynamic => {
+                  let firstControl: Dynamic = event.currentTarget
                       .closest("[data-property-row]")
                       ?.querySelector(
                         'input, button:not([data-kit="row-reset"]), [tabindex="0"]',
                       ),
-                    current: Dynamic = value8.current;
-                  value8.current = false;
-                  let value10: Dynamic =
-                    value9?.matches("input, textarea, [contenteditable]") ??
+                    wasTouchPress: Dynamic = isTouchPressRef.current;
+                  isTouchPressRef.current = false;
+                  let isTextEntry: Dynamic =
+                    firstControl?.matches("input, textarea, [contenteditable]") ??
                     false;
-                  value9 && !(current && value10) && value9.focus();
+                  firstControl && !(wasTouchPress && isTextEntry) && firstControl.focus();
                   onReset();
                 }}
                 data-kit={"row-reset"}
@@ -140,7 +140,7 @@ function PropertyRow({
             </span>)}
         </div>)}
       <div
-        ref={value2}
+        ref={contentRef}
         className={joinClassNames(
           "flex min-w-0 items-center gap-2",
           trailing === undefined &&
@@ -148,26 +148,26 @@ function PropertyRow({
         )}
       >
         {children}
-        {description ? (<span id={value3} hidden={true} data-kit={"row-description"}>
+        {description ? (<span id={descriptionId} hidden={true} data-kit={"row-description"}>
             {description}
           </span>) : (null)}
-        {value7 !== undefined ? (<MenuMenuAssignValue
+        {menuActions !== undefined ? (<MenuMenuAssignValue
             iconOnly={true}
             icon={"DotsHorizontal"}
             variant={"ghost"}
             aria-label={actionsLabel}
             tooltip={actionsLabel}
             align={"end"}
-            disabled={disabled2}
-            open={value5}
-            onOpenChange={value6}
-            items={value7.map(
-              (input?: Dynamic): Dynamic => ({
-                label: input.label,
-                onSelect: input.onSelect,
-                variant: input.variant,
-                disabled: input.disabled,
-                separatorBefore: input.separatorBefore,
+            disabled={isDisabled}
+            open={isActionsOpen}
+            onOpenChange={setIsActionsOpen}
+            items={menuActions.map(
+              (action?: Dynamic): Dynamic => ({
+                label: action.label,
+                onSelect: action.onSelect,
+                variant: action.variant,
+                disabled: action.disabled,
+                separatorBefore: action.separatorBefore,
               }),
             )}
             className={"-ml-1 pointer-coarse:ml-0 shrink-0"}

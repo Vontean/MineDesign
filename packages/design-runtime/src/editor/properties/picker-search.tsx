@@ -13,37 +13,37 @@ var jsxPropertiesPickerSearch: Dynamic;
 var joinClassNamesValue_3: Dynamic;
 var PropertiesPickerSearchMdLgConfig: Dynamic;
 function pickerSearchMatches(
-  input?: Dynamic,
-  ...options: Dynamic[]
+  query?: Dynamic,
+  ...candidates: Dynamic[]
 ): Dynamic {
-  let value: Dynamic = input.trim().toLowerCase();
+  let normalizedQuery: Dynamic = query.trim().toLowerCase();
   return (
-    value === "" ||
-    options.some(
-      (input2?: Dynamic): Dynamic =>
-        input2 !== undefined && input2.toLowerCase().includes(value),
+    normalizedQuery === "" ||
+    candidates.some(
+      (candidate?: Dynamic): Dynamic =>
+        candidate !== undefined && candidate.toLowerCase().includes(normalizedQuery),
     )
   );
 }
 function pickerSearchInitialIndex(
-  input?: Dynamic,
-  options?: Dynamic,
+  query?: Dynamic,
+  labels?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.trim().toLowerCase(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      options.findIndex(
-        (input3?: Dynamic): Dynamic => input2(input3.toLowerCase()),
+  let normalizedQuery: Dynamic = query.trim().toLowerCase(),
+    findLabelIndex: Dynamic = (predicate?: Dynamic): Dynamic =>
+      labels.findIndex(
+        (label?: Dynamic): Dynamic => predicate(label.toLowerCase()),
       );
   return (
     [
-      callback((input2?: Dynamic): Dynamic => input2 === value),
-      callback((input2?: Dynamic): Dynamic => input2.startsWith(value)),
-    ].find((input2?: Dynamic): Dynamic => input2 >= 0) ?? 0
+      findLabelIndex((label?: Dynamic): Dynamic => label === normalizedQuery),
+      findLabelIndex((label?: Dynamic): Dynamic => label.startsWith(normalizedQuery)),
+    ].find((index?: Dynamic): Dynamic => index >= 0) ?? 0
   );
 }
 function pickerSearchKeyHandler(
-  input?: Dynamic,
-  { across: options = false }: Dynamic = {},
+  itemSelector?: Dynamic,
+  { across: acrossColumns = false }: Dynamic = {},
 ): Dynamic {
   return (event?: Dynamic): Dynamic => {
     if (
@@ -55,41 +55,41 @@ function pickerSearchKeyHandler(
       event.nativeEvent.isComposing
     )
       return;
-    let value: Dynamic =
-        event.key === "ArrowUp" || (options && event.key === "ArrowLeft"),
-      value2: Dynamic =
-        event.key === "ArrowDown" || (options && event.key === "ArrowRight");
-    if (!value && !value2 && event.key !== "Home" && event.key !== "End")
+    let isPrevious: Dynamic =
+        event.key === "ArrowUp" || (acrossColumns && event.key === "ArrowLeft"),
+      isNext: Dynamic =
+        event.key === "ArrowDown" || (acrossColumns && event.key === "ArrowRight");
+    if (!isPrevious && !isNext && event.key !== "Home" && event.key !== "End")
       return;
     let target: Dynamic = event.target;
     if (!(target instanceof HTMLElement)) return;
-    let value3: Dynamic = Array.from(
-        event.currentTarget.querySelectorAll(input),
-      ).flatMap((input2?: Dynamic): Dynamic => {
-        if (!input2.matches(":disabled")) return [input2];
-        let parentElement: Dynamic = input2.parentElement;
+    let focusableItems: Dynamic = Array.from(
+        event.currentTarget.querySelectorAll(itemSelector),
+      ).flatMap((item?: Dynamic): Dynamic => {
+        if (!item.matches(":disabled")) return [item];
+        let parentElement: Dynamic = item.parentElement;
         return parentElement !== null &&
           parentElement !== event.currentTarget &&
           parentElement.tabIndex >= 0 &&
-          parentElement.firstElementChild === input2 &&
-          parentElement.querySelectorAll(input).length === 1
+          parentElement.firstElementChild === item &&
+          parentElement.querySelectorAll(itemSelector).length === 1
           ? [parentElement]
           : [];
       }),
-      value4: Dynamic = value3.indexOf(target);
-    if (value4 === -1) return;
-    let value5: Dynamic =
+      currentIndex: Dynamic = focusableItems.indexOf(target);
+    if (currentIndex === -1) return;
+    let nextIndex: Dynamic =
       event.key === "Home"
         ? 0
         : event.key === "End"
-          ? value3.length - 1
-          : (value4 + (value2 ? 1 : -1) + value3.length) % value3.length;
+          ? focusableItems.length - 1
+          : (currentIndex + (isNext ? 1 : -1) + focusableItems.length) % focusableItems.length;
     event.preventDefault();
-    value3[value5].focus();
+    focusableItems[nextIndex].focus();
   };
 }
 function PickerSearchInput({
-  value: value,
+  value: searchText,
   onChange: onChange,
   label: label,
   rowSelector: rowSelector,
@@ -101,34 +101,34 @@ function PickerSearchInput({
   return (
     <div className={className ?? "mt-0.5 mb-2 w-0 min-w-full"}>
       <TextInput
-        value={value}
+        value={searchText}
         onChange={(event?: Dynamic): Dynamic => onChange(event.target.value)}
         onKeyDown={(event?: Dynamic): Dynamic => {
           if (event.nativeEvent.isComposing) return;
-          let value2: Dynamic = Array.from(
+          let rows: Dynamic = Array.from(
               event.currentTarget
                 .closest("[data-search-scope]")
                 ?.querySelectorAll(rowSelector) ?? [],
             ).filter(
-              (input?: Dynamic): Dynamic => !input.matches(":disabled"),
+              (row?: Dynamic): Dynamic => !row.matches(":disabled"),
             ),
-            value3: Dynamic =
+            edgeRow: Dynamic =
               event.key === "ArrowDown"
-                ? value2[0]
+                ? rows[0]
                 : event.key === "ArrowUp"
-                  ? value2[value2.length - 1]
+                  ? rows[rows.length - 1]
                   : undefined;
-          if (value3 !== undefined) {
+          if (edgeRow !== undefined) {
             event.preventDefault();
-            value3.focus();
+            edgeRow.focus();
           } else if (
             event.key === "Enter" &&
-            value.trim() !== "" &&
-            value2.length > 0
+            searchText.trim() !== "" &&
+            rows.length > 0
           ) {
             event.preventDefault();
-            value2[onEnterIndex?.() ?? 0]?.click();
-          } else if (event.key === "Escape" && value !== "") {
+            rows[onEnterIndex?.() ?? 0]?.click();
+          } else if (event.key === "Escape" && searchText !== "") {
             event.preventDefault();
             event.stopPropagation();
             onChange("");

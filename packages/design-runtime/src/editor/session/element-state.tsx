@@ -19,132 +19,132 @@ var SessionElementStateCache_3: Dynamic;
 var CropIsNotAvailableHereForMessage: Dynamic;
 var SessionElementStateUnloadedTurnedAutoConfig: Dynamic;
 function updateElementSessionState(
-  input?: Dynamic,
-  options?: Dynamic,
+  file?: Dynamic,
+  patch?: Dynamic,
 ): Dynamic {
   let state: Dynamic = {
-    ...SessionElementStateGet(input),
-    ...options,
+    ...SessionElementStateGet(file),
+    ...patch,
   };
   if (
-    JSON.stringify(state) !== JSON.stringify(SessionElementStateGet(input))
+    JSON.stringify(state) !== JSON.stringify(SessionElementStateGet(file))
   ) {
     JSON.stringify(state) ===
     JSON.stringify(SessionElementStateCroppingTargetSelectedConfig)
-      ? SessionElementStateCache.delete(input)
-      : SessionElementStateCache.set(input, state);
-    for (let value of SessionElementStateSubscribers as Dynamic) value();
+      ? SessionElementStateCache.delete(file)
+      : SessionElementStateCache.set(file, state);
+    for (let notifySubscriber of SessionElementStateSubscribers as Dynamic) notifySubscriber();
   }
 }
-function useElementSessionState(input?: Dynamic): Dynamic {
+function useElementSessionState(file?: Dynamic): Dynamic {
   return (0, reactSessionElementState.useSyncExternalStore)(
-    (input2?: Dynamic): Dynamic => (
-      SessionElementStateSubscribers.add(input2),
-      (): Dynamic => SessionElementStateSubscribers.delete(input2)
+    (onChange?: Dynamic): Dynamic => (
+      SessionElementStateSubscribers.add(onChange),
+      (): Dynamic => SessionElementStateSubscribers.delete(onChange)
     ),
     (): Dynamic =>
-      input === null
+      file === null
         ? SessionElementStateCroppingTargetSelectedConfig
-        : SessionElementStateGet(input),
+        : SessionElementStateGet(file),
   );
 }
-function registerElementSession(input?: Dynamic, options?: Dynamic): Dynamic {
-  SessionElementStateCache_2.set(input, [
-    ...(SessionElementStateCache_2.get(input) ?? []),
+function registerElementSession(file?: Dynamic, element?: Dynamic): Dynamic {
+  SessionElementStateCache_2.set(file, [
+    ...(SessionElementStateCache_2.get(file) ?? []),
     {
-      el: options,
+      el: element,
     },
   ]);
 }
 function unregisterElementSession(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  file?: Dynamic,
+  element?: Dynamic,
+  isDeferred?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = [...(SessionElementStateCache_2.get(input) ?? [])]
+  let entry: Dynamic = [...(SessionElementStateCache_2.get(file) ?? [])]
     .reverse()
-    .find((input2?: Dynamic): Dynamic => input2.el === options);
-  value &&
-    (context
-      ? setTimeout((): Dynamic => SessionElementStateKey(input, value), 3e3)
-      : SessionElementStateKey(input, value));
+    .find((item?: Dynamic): Dynamic => item.el === element);
+  entry &&
+    (isDeferred
+      ? setTimeout((): Dynamic => SessionElementStateKey(file, entry), 3e3)
+      : SessionElementStateKey(file, entry));
 }
 function dispatchElementSessionGesture(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = false,
+  file?: Dynamic,
+  gesture?: Dynamic,
+  model?: Dynamic,
+  shouldRelease: Dynamic = false,
 ): Dynamic {
-  let value2: Dynamic = SessionElementStateCache_2.get(input) ?? [],
-    value3: Dynamic =
-      options.gestureKey === undefined
+  let entries: Dynamic = SessionElementStateCache_2.get(file) ?? [],
+    entry: Dynamic =
+      gesture.gestureKey === undefined
         ? undefined
-        : value2.find(
-            (input2?: Dynamic): Dynamic => input2.key === options.gestureKey,
+        : entries.find(
+            (item?: Dynamic): Dynamic => item.key === gesture.gestureKey,
           );
-  if (!value3) {
+  if (!entry) {
     if (
       SessionElementStateItems.includes(
-        input + "|" + String(options.gestureKey),
+        file + "|" + String(gesture.gestureKey),
       ) ||
-      ((value3 = value2.find(
-        (input2?: Dynamic): Dynamic => input2.key === undefined,
+      ((entry = entries.find(
+        (item?: Dynamic): Dynamic => item.key === undefined,
       )),
-      !value3 ||
-        options.gestureKey === undefined ||
-        context.element(options.tid) !== value3.el)
+      !entry ||
+        gesture.gestureKey === undefined ||
+        model.element(gesture.tid) !== entry.el)
     )
       return null;
-    value3.key = options.gestureKey;
+    entry.key = gesture.gestureKey;
   }
-  value && SessionElementStateKey(input, value3);
-  let value4: Dynamic = parseInt(
-    value3.el.getAttribute(DcTplAttribute) ?? "",
+  shouldRelease && SessionElementStateKey(file, entry);
+  let tid: Dynamic = parseInt(
+    entry.el.getAttribute(DcTplAttribute) ?? "",
     10,
   );
-  return context.element(value4) === value3.el ? value4 : null;
+  return model.element(tid) === entry.el ? tid : null;
 }
 function registerLateGesture(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  file?: Dynamic,
+  gestureKey?: Dynamic,
+  pendingGesture?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input + "|" + String(options);
-  SessionElementStateCache_3.set(value, context);
+  let lateKey: Dynamic = file + "|" + String(gestureKey);
+  SessionElementStateCache_3.set(lateKey, pendingGesture);
   setTimeout((): Dynamic => {
-    SessionElementStateCache_3.get(value) === context &&
-      (SessionElementStateCache_3.delete(value), context.lapsed("late"));
+    SessionElementStateCache_3.get(lateKey) === pendingGesture &&
+      (SessionElementStateCache_3.delete(lateKey), pendingGesture.lapsed("late"));
   }, 3e3);
 }
 function claimLateGesture(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  file?: Dynamic,
+  gestureKey?: Dynamic,
+  element?: Dynamic,
+  isFinalClaim?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = input + "|" + String(options),
-    entry: Dynamic = SessionElementStateCache_3.get(value2);
+  let lateKey: Dynamic = file + "|" + String(gestureKey),
+    entry: Dynamic = SessionElementStateCache_3.get(lateKey);
   return entry === undefined
-    ? value
+    ? isFinalClaim
       ? undefined
       : null
-    : !value && entry.el !== context
+    : !isFinalClaim && entry.el !== element
       ? null
-      : (SessionElementStateCache_3.delete(value2),
-        value && entry.el === context
+      : (SessionElementStateCache_3.delete(lateKey),
+        isFinalClaim && entry.el === element
           ? entry.edits
-          : (entry.lapsed("stale"), value ? undefined : null));
+          : (entry.lapsed("stale"), isFinalClaim ? undefined : null));
 }
 function activeCropElement(): Dynamic {
-  for (let [value, value2] of SessionElementStateCache as Dynamic)
-    if (value2.cropping !== null) return value;
+  for (let [file, state] of SessionElementStateCache as Dynamic)
+    if (state.cropping !== null) return file;
   return null;
 }
 function useActiveCropElement(): Dynamic {
   return (0, reactSessionElementState.useSyncExternalStore)(
-    (input?: Dynamic): Dynamic => (
-      SessionElementStateSubscribers.add(input),
-      (): Dynamic => SessionElementStateSubscribers.delete(input)
+    (onChange?: Dynamic): Dynamic => (
+      SessionElementStateSubscribers.add(onChange),
+      (): Dynamic => SessionElementStateSubscribers.delete(onChange)
     ),
     activeCropElement,
   );
@@ -184,21 +184,21 @@ export function installEditorSessionElementState(): () => void {
     };
     SessionElementStateCache = new Map();
     SessionElementStateSubscribers = new Set();
-    SessionElementStateGet = (input?: Dynamic): Dynamic =>
-      SessionElementStateCache.get(input) ??
+    SessionElementStateGet = (file?: Dynamic): Dynamic =>
+      SessionElementStateCache.get(file) ??
       SessionElementStateCroppingTargetSelectedConfig;
     SessionElementStateCache_2 = new Map();
     SessionElementStateItems = [];
-    SessionElementStateKey = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      options.key !== undefined &&
-        SessionElementStateItems.push(input + "|" + options.key) > 32 &&
+    SessionElementStateKey = (file?: Dynamic, entry?: Dynamic): Dynamic => {
+      entry.key !== undefined &&
+        SessionElementStateItems.push(file + "|" + entry.key) > 32 &&
         SessionElementStateItems.shift();
-      let value: Dynamic = (SessionElementStateCache_2.get(input) ?? []).filter(
-        (input2?: Dynamic): Dynamic => input2 !== options,
+      let remaining: Dynamic = (SessionElementStateCache_2.get(file) ?? []).filter(
+        (item?: Dynamic): Dynamic => item !== entry,
       );
-      value.length
-        ? SessionElementStateCache_2.set(input, value)
-        : SessionElementStateCache_2.delete(input);
+      remaining.length
+        ? SessionElementStateCache_2.set(file, remaining)
+        : SessionElementStateCache_2.delete(file);
     };
     SessionElementStateCache_3 = new Map();
     CropIsNotAvailableHereForMessage =

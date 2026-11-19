@@ -20,20 +20,20 @@ var TextAlignCenterValue: Dynamic;
 var TextAlignRightValue: Dynamic;
 var TextAlignJustifyValue: Dynamic;
 var LineHeightValue: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_2: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_3: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_4: Dynamic;
+var borderWeightIcon: Dynamic;
+var borderSidesIcon: Dynamic;
+var cornerRadiusIcon: Dynamic;
+var cornerEachIcon: Dynamic;
 var CropValue: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_5: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_6: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_7: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_8: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_9: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_10: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_11: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_12: Dynamic;
-var PropertiesTooltipNameViewBoxPathsConfig_13: Dynamic;
+var spacingIcon: Dynamic;
+var strokeSolidIcon: Dynamic;
+var strokeDashedIcon: Dynamic;
+var strokeDottedIcon: Dynamic;
+var tableRowsIcon: Dynamic;
+var tableColumnsIcon: Dynamic;
+var fillSolidIcon: Dynamic;
+var fillGradientIcon: Dynamic;
+var angleIcon: Dynamic;
 var PropertiesTooltipColorGradientConfig: Dynamic;
 function EditorTooltip({
   tip: tip,
@@ -77,19 +77,19 @@ export {
   LineHeightValue,
   PropertiesTooltipColorGradientConfig,
   PropertiesTooltipHandler,
-  PropertiesTooltipNameViewBoxPathsConfig,
-  PropertiesTooltipNameViewBoxPathsConfig_10,
-  PropertiesTooltipNameViewBoxPathsConfig_11,
-  PropertiesTooltipNameViewBoxPathsConfig_12,
-  PropertiesTooltipNameViewBoxPathsConfig_13,
-  PropertiesTooltipNameViewBoxPathsConfig_2,
-  PropertiesTooltipNameViewBoxPathsConfig_3,
-  PropertiesTooltipNameViewBoxPathsConfig_4,
-  PropertiesTooltipNameViewBoxPathsConfig_5,
-  PropertiesTooltipNameViewBoxPathsConfig_6,
-  PropertiesTooltipNameViewBoxPathsConfig_7,
-  PropertiesTooltipNameViewBoxPathsConfig_8,
-  PropertiesTooltipNameViewBoxPathsConfig_9,
+  borderWeightIcon as PropertiesTooltipNameViewBoxPathsConfig,
+  tableColumnsIcon as PropertiesTooltipNameViewBoxPathsConfig_10,
+  fillSolidIcon as PropertiesTooltipNameViewBoxPathsConfig_11,
+  fillGradientIcon as PropertiesTooltipNameViewBoxPathsConfig_12,
+  angleIcon as PropertiesTooltipNameViewBoxPathsConfig_13,
+  borderSidesIcon as PropertiesTooltipNameViewBoxPathsConfig_2,
+  cornerRadiusIcon as PropertiesTooltipNameViewBoxPathsConfig_3,
+  cornerEachIcon as PropertiesTooltipNameViewBoxPathsConfig_4,
+  spacingIcon as PropertiesTooltipNameViewBoxPathsConfig_5,
+  strokeSolidIcon as PropertiesTooltipNameViewBoxPathsConfig_6,
+  strokeDashedIcon as PropertiesTooltipNameViewBoxPathsConfig_7,
+  strokeDottedIcon as PropertiesTooltipNameViewBoxPathsConfig_8,
+  tableRowsIcon as PropertiesTooltipNameViewBoxPathsConfig_9,
   reactPropertiesTooltip,
   reactPropertiesTooltip_2,
   reactPropertiesTooltip_3,
@@ -120,35 +120,35 @@ export function installEditorPropertiesTooltip(): () => void {
     );
     initializeCdsIndex();
     PropertiesTooltipHandler = (
-      input?: Dynamic,
-      options: Dynamic = 1,
+      pathData?: Dynamic,
+      strokeWidth: Dynamic = 1,
     ): Dynamic => ({
-      d: input,
-      strokeWidth: options,
+      d: pathData,
+      strokeWidth: strokeWidth,
     });
     TextAlignLeftValue = "TextAlignLeft";
     TextAlignCenterValue = "TextAlignCenter";
     TextAlignRightValue = "TextAlignRight";
     TextAlignJustifyValue = "TextAlignJustify";
     LineHeightValue = "LineHeight";
-    PropertiesTooltipNameViewBoxPathsConfig = {
+    borderWeightIcon = {
       name: "BorderWeight",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler("M3.2 3H12.8"), PropertiesTooltipHandler("M3.2 8H12.8", 1.5), PropertiesTooltipHandler("M3.2 13H12.8", 2)]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_2 = {
+    borderSidesIcon = {
       name: "BorderSides",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
           "M5.327 2.655H10.673M5.327 13.345H10.673M2.655 5.328V10.673M13.345 5.328V10.673",
         )]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_3 = {
+    cornerRadiusIcon = {
       name: "CornerRadius",
       viewBox: 16,
       paths: [PropertiesTooltipHandler("M3 14V9C3 5.686 5.686 3 9 3H14")],
     };
-    PropertiesTooltipNameViewBoxPathsConfig_4 = {
+    cornerEachIcon = {
       name: "CornerEach",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
@@ -156,7 +156,7 @@ export function installEditorPropertiesTooltip(): () => void {
         )]; },
     };
     CropValue = "Crop";
-    PropertiesTooltipNameViewBoxPathsConfig_5 = {
+    spacingIcon = {
       name: "Spacing",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
@@ -165,17 +165,17 @@ export function installEditorPropertiesTooltip(): () => void {
           "M6 5.6H10C10.221 5.6 10.4 5.779 10.4 6V10C10.4 10.221 10.221 10.4 10 10.4H6C5.779 10.4 5.6 10.221 5.6 10V6C5.6 5.779 5.779 5.6 6 5.6Z",
         )]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_6 = {
+    strokeSolidIcon = {
       name: "StrokeSolid",
       viewBox: 16,
       paths: [PropertiesTooltipHandler("M2 8H14", 1.5)],
     };
-    PropertiesTooltipNameViewBoxPathsConfig_7 = {
+    strokeDashedIcon = {
       name: "StrokeDashed",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler("M1.5 8H4.5M6.5 8H9.5M11.5 8H14.5", 1.5)]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_8 = {
+    strokeDottedIcon = {
       name: "StrokeDotted",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
@@ -183,33 +183,33 @@ export function installEditorPropertiesTooltip(): () => void {
           1.5,
         )]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_9 = {
+    tableRowsIcon = {
       name: "TableRows",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
           "M3.865 4H12.135M3.865 8H12.135M3.865 12H12.135",
         )]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_10 = {
+    tableColumnsIcon = {
       name: "TableColumns",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
           "M4 3.865V12.135M8 3.865V12.135M12 3.865V12.135",
         )]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_11 = {
+    fillSolidIcon = {
       name: "FillSolid",
       viewBox: 16,
       get paths() { return ["M4.25 3H11.75C12.44 3 13 3.56 13 4.25V11.75C13 12.44 12.44 13 11.75 13H4.25C3.56 13 3 12.44 3 11.75V4.25C3 3.56 3.56 3 4.25 3Z"]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_12 = {
+    fillGradientIcon = {
       name: "FillGradient",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
           "M4.25 3.5H11.75C12.164 3.5 12.5 3.836 12.5 4.25V11.75C12.5 12.164 12.164 12.5 11.75 12.5H4.25C3.836 12.5 3.5 12.164 3.5 11.75V4.25C3.5 3.836 3.836 3.5 4.25 3.5Z",
         ), "M12 6V11.75C12 11.888 11.888 12 11.75 12H6L12 6Z", "M10.2 4L4 10.2V8.5L8.5 4H10.2Z"]; },
     };
-    PropertiesTooltipNameViewBoxPathsConfig_13 = {
+    angleIcon = {
       name: "Angle",
       viewBox: 16,
       get paths() { return [PropertiesTooltipHandler(
@@ -217,8 +217,8 @@ export function installEditorPropertiesTooltip(): () => void {
         )]; },
     };
     PropertiesTooltipColorGradientConfig = {
-      color: PropertiesTooltipNameViewBoxPathsConfig_11,
-      gradient: PropertiesTooltipNameViewBoxPathsConfig_12,
+      color: fillSolidIcon,
+      gradient: fillGradientIcon,
     };
   };
 }

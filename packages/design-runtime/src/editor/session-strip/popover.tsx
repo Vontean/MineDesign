@@ -17,64 +17,64 @@ import { toModuleNamespace } from "../../module-helpers";
 var jsxSessionStripPopover: Dynamic;
 var reactSessionStripPopover: Dynamic;
 var jsxSessionStripPopover_2: Dynamic;
-function SessionStripPopover(input?: Dynamic): Dynamic {
+function SessionStripPopover(props?: Dynamic): Dynamic {
   useUiLocale();
   let {
-      label: value,
-      tip: value2,
-      descriptionSuffix: value3,
-      children: value4,
-      align: value11 = "start",
-      side: value12 = "bottom",
-      open: value5,
-      onOpenChange: value6,
-      disabled: value13 = false,
-      disabledTip: value7,
-      finalFocus: value8,
-      className: value9,
-      "data-testid": value10,
-    }: Dynamic = input,
-    value14: Dynamic = (0, reactCollaborationPeerBadge_3.useContext)(
+      label: label,
+      tip: tip,
+      descriptionSuffix: descriptionSuffix,
+      children: children,
+      align: align = "start",
+      side: side = "bottom",
+      open: controlledOpen,
+      onOpenChange: onOpenChange,
+      disabled: disabled = false,
+      disabledTip: disabledTip,
+      finalFocus: finalFocus,
+      className: className,
+      "data-testid": testId,
+    }: Dynamic = props,
+    isToolbarContext: Dynamic = (0, reactCollaborationPeerBadge_3.useContext)(
       ToolbarPrimitivesContext,
     ),
-    value15: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+    wrapperRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
       null,
     ),
-    value16: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+    popupRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
       null,
     ),
-    [value17, value18]: Dynamic = (0,
+    [uncontrolledOpen, setUncontrolledOpen]: Dynamic = (0,
     reactCollaborationPeerBadge_3.useState)(false),
-    value19: Dynamic = value5 ?? value17,
-    [value20, value21]: Dynamic = (0,
+    isOpenValue: Dynamic = controlledOpen ?? uncontrolledOpen,
+    [isFocusWithin, setIsFocusWithin]: Dynamic = (0,
     reactCollaborationPeerBadge_3.useState)(false),
-    value22: Dynamic = value8 === true ? undefined : value8,
-    value23: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+    popupFinalFocus: Dynamic = finalFocus === true ? undefined : finalFocus,
+    pendingFocusRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
       false,
     ),
-    value24: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)({
-      disabled: value13,
-      popupFinalFocus: value22,
+    latestPropsRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)({
+      disabled: disabled,
+      popupFinalFocus: popupFinalFocus,
     });
-  value24.current = {
-    disabled: value13,
-    popupFinalFocus: value22,
+  latestPropsRef.current = {
+    disabled: disabled,
+    popupFinalFocus: popupFinalFocus,
   };
-  let value25: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+  let hadFocusVisibleRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
       false,
     ),
-    value26: Dynamic = (0, reactCollaborationPeerBadge_3.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        value16.current = input2;
-        input2 === null &&
+    popupRefCallback: Dynamic = (0, reactCollaborationPeerBadge_3.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        popupRef.current = element;
+        element === null &&
           setTimeout((): Dynamic => {
-            value23.current = false;
-            let current: Dynamic = value15.current;
+            pendingFocusRef.current = false;
+            let current: Dynamic = wrapperRef.current;
             if (
-              !value25.current ||
-              !value24.current.disabled ||
+              !hadFocusVisibleRef.current ||
+              !latestPropsRef.current.disabled ||
               current === null ||
-              value24.current.popupFinalFocus === false ||
+              latestPropsRef.current.popupFinalFocus === false ||
               !current.ownerDocument.hasFocus()
             )
               return;
@@ -89,56 +89,56 @@ function SessionStripPopover(input?: Dynamic): Dynamic {
       },
       [],
     ),
-    value27: Dynamic = input.icon ?? input.glyph,
-    value28: Dynamic =
-      input.readout === undefined || input.readout === ""
-        ? value
-        : input.readout + ", " + value,
-    value29: Dynamic =
-      input.readout === undefined ? input.pressed : undefined,
-    value30: Dynamic = input.readout === undefined && input.emphasis === true,
-    value31: Dynamic = input.iconOnly === true || (value14 && !value30),
-    value32: Dynamic = useDisabledToolbarItem({
-      disabled: value13,
-      name: value28,
-      reason: value7 ?? value2,
-      pressed: value29,
+    iconName: Dynamic = props.icon ?? props.glyph,
+    accessibleName: Dynamic =
+      props.readout === undefined || props.readout === ""
+        ? label
+        : props.readout + ", " + label,
+    isPressed: Dynamic =
+      props.readout === undefined ? props.pressed : undefined,
+    isEmphasized: Dynamic = props.readout === undefined && props.emphasis === true,
+    isIconOnly: Dynamic = props.iconOnly === true || (isToolbarContext && !isEmphasized),
+    disabledItem: Dynamic = useDisabledToolbarItem({
+      disabled: disabled,
+      name: accessibleName,
+      reason: disabledTip ?? tip,
+      pressed: isPressed,
       expanded: false,
       hasPopup: "menu",
     });
-  useToolbarPress(value15, value13);
+  useToolbarPress(wrapperRef, disabled);
   let content: Dynamic = toolbarItemTooltip({
-      label: value,
-      tip: value2,
-      disabledTip: value7,
-      disabled: value13,
+      label: label,
+      tip: tip,
+      disabledTip: disabledTip,
+      disabled: disabled,
     }).content,
-    value33: Dynamic = useToolbarItemAccessibility({
-      disabled: value13,
-      name: value28,
+    accessibility: Dynamic = useToolbarItemAccessibility({
+      disabled: disabled,
+      name: accessibleName,
       tip: content,
-      descriptionSuffix: value3,
+      descriptionSuffix: descriptionSuffix,
     }),
-    value34: Dynamic =
-      input.readout !== undefined ? (
+    trigger: Dynamic =
+      props.readout !== undefined ? (
         <MenuMenuAssignValue.Trigger
           render={
             <Button
               variant={"ghost"}
-              disabled={value13}
-              aria-label={value28}
-              aria-describedby={value33.describedBy}
-              {...value32.inner}
-              data-testid={value10}
+              disabled={disabled}
+              aria-label={accessibleName}
+              aria-describedby={accessibility.describedBy}
+              {...disabledItem.inner}
+              data-testid={testId}
               className={"shrink-0 tabular-nums"}
             >
-              {input.readoutSizer === undefined ? (input.readout) : (<span
-                  data-sizer={input.readoutSizer}
+              {props.readoutSizer === undefined ? (props.readout) : (<span
+                  data-sizer={props.readoutSizer}
                   className={
                     "inline-flex flex-col items-center before:invisible before:h-0 before:content-[attr(data-sizer)]"
                   }
                 >
-                  {input.readout}
+                  {props.readout}
                 </span>)}
               <ToolbarCaret />
             </Button>
@@ -147,125 +147,125 @@ function SessionStripPopover(input?: Dynamic): Dynamic {
       ) : (
         <MenuMenuAssignValue.Trigger
           render={
-            value31 && input.caret !== true ? (
+            isIconOnly && props.caret !== true ? (
               <Button
                 iconOnly={true}
                 variant={"ghost"}
-                icon={value27}
-                pressed={value29}
-                disabled={value13}
-                aria-label={value}
-                aria-describedby={value33.describedBy}
-                {...value32.inner}
-                data-testid={value10}
+                icon={iconName}
+                pressed={isPressed}
+                disabled={disabled}
+                aria-label={label}
+                aria-describedby={accessibility.describedBy}
+                {...disabledItem.inner}
+                data-testid={testId}
                 className={"shrink-0"}
               />
             ) : (
               <Button
                 variant={
-                  value30 ? (value13 ? "secondary" : "primary") : "ghost"
+                  isEmphasized ? (disabled ? "secondary" : "primary") : "ghost"
                 }
-                icon={value27}
-                pressed={value29}
-                disabled={value13}
-                aria-label={value}
-                aria-describedby={value33.describedBy}
-                {...value32.inner}
-                data-testid={value10}
+                icon={iconName}
+                pressed={isPressed}
+                disabled={disabled}
+                aria-label={label}
+                aria-describedby={accessibility.describedBy}
+                {...disabledItem.inner}
+                data-testid={testId}
                 className={"shrink-0"}
               >
-                {value31 ? (null) : (value)}
-                {input.caret === true ? (<ToolbarCaret inherit={value30 && !value13} />) : (null)}
+                {isIconOnly ? (null) : (label)}
+                {props.caret === true ? (<ToolbarCaret inherit={isEmphasized && !disabled} />) : (null)}
               </Button>
             )
           }
         />
       ),
-    value35: Dynamic = joinClassNames(
+    wrapperClassName: Dynamic = joinClassNames(
       "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
-      value9,
+      className,
     );
   (0, reactCollaborationPeerBadge_3.useLayoutEffect)((): Dynamic => {
-    value13 &&
-      value19 &&
-      (value5 === undefined && value18(false), value6?.(false));
-    value21(
-      !value13 &&
-        value15.current !== null &&
-        value15.current.contains(value15.current.ownerDocument.activeElement),
+    disabled &&
+      isOpenValue &&
+      (controlledOpen === undefined && setUncontrolledOpen(false), onOpenChange?.(false));
+    setIsFocusWithin(
+      !disabled &&
+        wrapperRef.current !== null &&
+        wrapperRef.current.contains(wrapperRef.current.ownerDocument.activeElement),
     );
-  }, [value13]);
-  let value36: Dynamic = value19 && !value13,
-    value37: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+  }, [disabled]);
+  let isEffectivelyOpen: Dynamic = isOpenValue && !disabled,
+    wasOpenRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
       false,
     );
   (0, reactCollaborationPeerBadge_3.useLayoutEffect)((): Dynamic => {
-    value37.current &&
-      !value36 &&
-      (value25.current =
-        value16.current?.querySelector(":focus-visible") != null);
-    if (value37.current && !value36 && !value13 && value22 !== false) {
-      let current: Dynamic = value15.current;
+    wasOpenRef.current &&
+      !isEffectivelyOpen &&
+      (hadFocusVisibleRef.current =
+        popupRef.current?.querySelector(":focus-visible") != null);
+    if (wasOpenRef.current && !isEffectivelyOpen && !disabled && popupFinalFocus !== false) {
+      let current: Dynamic = wrapperRef.current;
       current !== null &&
       current.contains(current.ownerDocument.activeElement)
-        ? value21(true)
-        : (value23.current = true);
+        ? setIsFocusWithin(true)
+        : (pendingFocusRef.current = true);
     }
-    value37.current = value36;
-  }, [value36]);
+    wasOpenRef.current = isEffectivelyOpen;
+  }, [isEffectivelyOpen]);
   return (
     <MenuMenuAssignValue.Root
-      open={value36}
-      disabled={value13}
-      onOpenChange={(input2?: Dynamic): Dynamic => {
-        value5 === undefined && value18(input2);
-        value6?.(input2);
+      open={isEffectivelyOpen}
+      disabled={disabled}
+      onOpenChange={(nextOpen?: Dynamic): Dynamic => {
+        controlledOpen === undefined && setUncontrolledOpen(nextOpen);
+        onOpenChange?.(nextOpen);
       }}
     >
       <Tooltip
         content={content}
-        side={value12}
+        side={side}
         hoverable={false}
-        open={!value13 && (value19 || value20) ? false : undefined}
+        open={!disabled && (isOpenValue || isFocusWithin) ? false : undefined}
       >
         <span
-          ref={value15}
-          tabIndex={value13 ? 0 : -1}
-          {...value32.props}
-          onPointerEnter={value20 ? (): Dynamic => value21(false) : undefined}
-          onBlur={value20 ? (): Dynamic => value21(false) : undefined}
-          onFocus={(input2?: Dynamic): Dynamic => {
-            let relatedTarget: Dynamic = input2.relatedTarget,
-              value38: Dynamic =
+          ref={wrapperRef}
+          tabIndex={disabled ? 0 : -1}
+          {...disabledItem.props}
+          onPointerEnter={isFocusWithin ? (): Dynamic => setIsFocusWithin(false) : undefined}
+          onBlur={isFocusWithin ? (): Dynamic => setIsFocusWithin(false) : undefined}
+          onFocus={(event?: Dynamic): Dynamic => {
+            let relatedTarget: Dynamic = event.relatedTarget,
+              isFocusFromOutside: Dynamic =
                 relatedTarget !== null &&
                 relatedTarget.isConnected &&
-                !value16.current?.contains(relatedTarget) &&
-                !value15.current?.contains(relatedTarget);
-            value23.current
-              ? ((value23.current = false),
-                !value38 && !value13 && value21(true))
-              : value20 && value38 && value21(false);
+                !popupRef.current?.contains(relatedTarget) &&
+                !wrapperRef.current?.contains(relatedTarget);
+            pendingFocusRef.current
+              ? ((pendingFocusRef.current = false),
+                !isFocusFromOutside && !disabled && setIsFocusWithin(true))
+              : isFocusWithin && isFocusFromOutside && setIsFocusWithin(false);
           }}
           data-tb-icon={
-            input.readout === undefined && input.caret !== true && value31
+            props.readout === undefined && props.caret !== true && isIconOnly
               ? ""
               : undefined
           }
-          data-tb-readout={input.readout !== undefined ? "" : undefined}
-          className={value35}
+          data-tb-readout={props.readout !== undefined ? "" : undefined}
+          className={wrapperClassName}
         >
-          {value34}
-          {value33.mirror}
-          {value32.mirror}
+          {trigger}
+          {accessibility.mirror}
+          {disabledItem.mirror}
         </span>
       </Tooltip>
       <MenuMenuAssignValue.Popup
-        ref={value26}
-        side={value12}
-        align={value11}
-        finalFocus={value22}
+        ref={popupRefCallback}
+        side={side}
+        align={align}
+        finalFocus={popupFinalFocus}
       >
-        {value4}
+        {children}
       </MenuMenuAssignValue.Popup>
     </MenuMenuAssignValue.Root>
   );

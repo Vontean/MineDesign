@@ -9,22 +9,22 @@ import { reactPropertiesShadowEffects } from "./shadow-effects";
 import { toModuleNamespace } from "../../module-helpers";
 
 var jsxPropertiesLiveScrub: Dynamic;
-function useLiveStyleScrub(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactPropertiesShadowEffects.useRef)(
-    input,
+function useLiveStyleScrub(latestOptions?: Dynamic): Dynamic {
+  let optionsRef: Dynamic = (0, reactPropertiesShadowEffects.useRef)(
+    latestOptions,
   );
-  value.current = input;
-  let [value2, value3]: Dynamic = (0,
+  optionsRef.current = latestOptions;
+  let [liveValue, setLiveValue]: Dynamic = (0,
     reactPropertiesShadowEffects.useState)(null),
-    { setOverlayHidden: value4, setScrubbing: value5 }: Dynamic = useInspectorContext(),
-    value6: Dynamic = (0, reactPropertiesShadowEffects.useRef)(null);
+    { setOverlayHidden: setOverlayHidden, setScrubbing: setScrubbing }: Dynamic = useInspectorContext(),
+    cancelActiveScrubRef: Dynamic = (0, reactPropertiesShadowEffects.useRef)(null);
   (0, reactPropertiesShadowEffects.useEffect)(
-    (): Dynamic => (): Dynamic => value6.current?.(),
+    (): Dynamic => (): Dynamic => cancelActiveScrubRef.current?.(),
     [],
   );
   return {
     start: (event?: Dynamic): Dynamic => {
-      if (value.current.disabled) return;
+      if (optionsRef.current.disabled) return;
       event.preventDefault();
       let currentTarget: Dynamic = event.currentTarget,
         pointerId: Dynamic = event.pointerId;
@@ -36,127 +36,127 @@ function useLiveStyleScrub(input?: Dynamic): Dynamic {
           activeElement.tagName === "TEXTAREA") &&
         activeElement.blur();
       let clientX: Dynamic = event.clientX,
-        value7: Dynamic = clientX,
-        value8: Dynamic = null,
-        value9: Dynamic = NaN,
-        flag: Dynamic = false,
-        flag2: Dynamic = false,
-        flag3: Dynamic = false,
-        index: Dynamic = 0,
-        callback: Dynamic = (input2?: Dynamic): Dynamic => {
-          let current: Dynamic = value.current;
-          if (input2 === current.min || input2 === current.max) return input2;
-          let value10: Dynamic = snapNumericStep(
-            input2,
-            current.step ?? 1,
+        lastClientX: Dynamic = clientX,
+        scrubValue: Dynamic = null,
+        startValue: Dynamic = NaN,
+        hasPassedThreshold: Dynamic = false,
+        hasChangedValue: Dynamic = false,
+        isOverlayHidden: Dynamic = false,
+        frameRequestId: Dynamic = 0,
+        snapToLimits: Dynamic = (rawValue?: Dynamic): Dynamic => {
+          let scrubOptions: Dynamic = optionsRef.current;
+          if (rawValue === scrubOptions.min || rawValue === scrubOptions.max) return rawValue;
+          let snappedValue: Dynamic = snapNumericStep(
+            rawValue,
+            scrubOptions.step ?? 1,
           );
-          current.min != null && (value10 = Math.max(current.min, value10));
-          current.max != null && (value10 = Math.min(current.max, value10));
-          return value10;
+          scrubOptions.min != null && (snappedValue = Math.max(scrubOptions.min, snappedValue));
+          scrubOptions.max != null && (snappedValue = Math.min(scrubOptions.max, snappedValue));
+          return snappedValue;
         },
-        callback2: Dynamic = (): Dynamic => {
-          index = 0;
-          if (value8 == null || !flag2) return;
-          let value10: Dynamic = callback(value8);
-          flag3 && value3(value10);
-          value.current.onScrub(value10);
+        flushScrubFrame: Dynamic = (): Dynamic => {
+          frameRequestId = 0;
+          if (scrubValue == null || !hasChangedValue) return;
+          let nextValue: Dynamic = snapToLimits(scrubValue);
+          isOverlayHidden && setLiveValue(nextValue);
+          optionsRef.current.onScrub(nextValue);
         },
-        callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-          if (input2.buttons === 0) return callback4();
-          let current: Dynamic = value.current,
-            value10: Dynamic = input2.clientX - value7;
-          value10 !== 0 &&
-            (value8 == null &&
-              (value9 = value8 =
-                Number.isFinite(current.value) ? current.value : 0),
-            (value7 = input2.clientX),
-            flag3 || ((flag3 = true), value4(true), value5(true)),
-            (value8 +=
-              value10 * (current.step ?? 1) * (input2.shiftKey ? 10 : 1)),
-            current.min != null && (value8 = Math.max(current.min, value8)),
-            current.max != null && (value8 = Math.min(current.max, value8)),
-            Math.abs(input2.clientX - clientX) > 0.5 && (flag = true),
-            flag && callback(value8) !== value9 && (flag2 = true),
-            index || (index = requestAnimationFrame(callback2)));
+        handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+          if (moveEvent.buttons === 0) return endScrub();
+          let scrubOptions: Dynamic = optionsRef.current,
+            deltaX: Dynamic = moveEvent.clientX - lastClientX;
+          deltaX !== 0 &&
+            (scrubValue == null &&
+              (startValue = scrubValue =
+                Number.isFinite(scrubOptions.value) ? scrubOptions.value : 0),
+            (lastClientX = moveEvent.clientX),
+            isOverlayHidden || ((isOverlayHidden = true), setOverlayHidden(true), setScrubbing(true)),
+            (scrubValue +=
+              deltaX * (scrubOptions.step ?? 1) * (moveEvent.shiftKey ? 10 : 1)),
+            scrubOptions.min != null && (scrubValue = Math.max(scrubOptions.min, scrubValue)),
+            scrubOptions.max != null && (scrubValue = Math.min(scrubOptions.max, scrubValue)),
+            Math.abs(moveEvent.clientX - clientX) > 0.5 && (hasPassedThreshold = true),
+            hasPassedThreshold && snapToLimits(scrubValue) !== startValue && (hasChangedValue = true),
+            frameRequestId || (frameRequestId = requestAnimationFrame(flushScrubFrame)));
         },
-        flag4: Dynamic = false,
-        callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-          (input2 instanceof PointerEvent &&
-            input2.pointerId !== pointerId) ||
-            flag4 ||
-            ((flag4 = true),
-            (value6.current = null),
-            currentTarget.removeEventListener("pointermove", callback3),
-            currentTarget.removeEventListener("pointerup", callback4),
-            currentTarget.removeEventListener("pointercancel", callback4),
+        hasEnded: Dynamic = false,
+        endScrub: Dynamic = (endEvent?: Dynamic): Dynamic => {
+          (endEvent instanceof PointerEvent &&
+            endEvent.pointerId !== pointerId) ||
+            hasEnded ||
+            ((hasEnded = true),
+            (cancelActiveScrubRef.current = null),
+            currentTarget.removeEventListener("pointermove", handlePointerMove),
+            currentTarget.removeEventListener("pointerup", endScrub),
+            currentTarget.removeEventListener("pointercancel", endScrub),
             currentTarget.removeEventListener(
               "lostpointercapture",
-              callback4,
+              endScrub,
             ),
             (window as Dynamic).removeEventListener(
               "pointerup",
-              callback4,
+              endScrub,
               true,
             ),
             (window as Dynamic).removeEventListener(
               "pointercancel",
-              callback4,
+              endScrub,
               true,
             ),
             (window as Dynamic).removeEventListener(
               "keydown",
-              callback5,
+              handleEscapeKey,
               true,
             ),
-            index && (cancelAnimationFrame(index), callback2()),
-            flag3 && (value3(null), value5(false), value4(false)));
+            frameRequestId && (cancelAnimationFrame(frameRequestId), flushScrubFrame()),
+            isOverlayHidden && (setLiveValue(null), setScrubbing(false), setOverlayHidden(false)));
         };
-      currentTarget.addEventListener("pointermove", callback3);
-      currentTarget.addEventListener("pointerup", callback4);
-      currentTarget.addEventListener("pointercancel", callback4);
-      currentTarget.addEventListener("lostpointercapture", callback4);
-      let callback5: Dynamic = (event2?: Dynamic): Dynamic => {
-        event2.key === "Escape" &&
-          (flag3 && event2.preventDefault(), callback4());
+      currentTarget.addEventListener("pointermove", handlePointerMove);
+      currentTarget.addEventListener("pointerup", endScrub);
+      currentTarget.addEventListener("pointercancel", endScrub);
+      currentTarget.addEventListener("lostpointercapture", endScrub);
+      let handleEscapeKey: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+        keyEvent.key === "Escape" &&
+          (isOverlayHidden && keyEvent.preventDefault(), endScrub());
       };
-      (window as Dynamic).addEventListener("pointerup", callback4, true);
-      (window as Dynamic).addEventListener("pointercancel", callback4, true);
-      (window as Dynamic).addEventListener("keydown", callback5, true);
-      value6.current = callback4;
+      (window as Dynamic).addEventListener("pointerup", endScrub, true);
+      (window as Dynamic).addEventListener("pointercancel", endScrub, true);
+      (window as Dynamic).addEventListener("keydown", handleEscapeKey, true);
+      cancelActiveScrubRef.current = endScrub;
     },
-    live: value2,
+    live: liveValue,
   };
 }
-function useStyleCommitScrub(input?: Dynamic): Dynamic {
-  let { setOverlayHidden: value, setScrubbing: value2 }: Dynamic = useInspectorContext(),
-    value3: Dynamic = (0, reactPropertiesShadowEffects.useRef)(false),
-    value4: Dynamic = (0, reactPropertiesShadowEffects.useRef)(true),
-    value5: Dynamic = (0, reactPropertiesShadowEffects.useRef)(input);
-  value5.current = input;
+function useStyleCommitScrub(latestCommit?: Dynamic): Dynamic {
+  let { setOverlayHidden: setOverlayHidden, setScrubbing: setScrubbing }: Dynamic = useInspectorContext(),
+    isScrubbingRef: Dynamic = (0, reactPropertiesShadowEffects.useRef)(false),
+    isMountedRef: Dynamic = (0, reactPropertiesShadowEffects.useRef)(true),
+    commitRef: Dynamic = (0, reactPropertiesShadowEffects.useRef)(latestCommit);
+  commitRef.current = latestCommit;
   (0, reactPropertiesShadowEffects.useEffect)(
     (): Dynamic => (
-      (value4.current = true),
+      (isMountedRef.current = true),
       (): Dynamic => {
-        value4.current = false;
-        value3.current &&
-          ((value3.current = false), value2(false), value(false));
+        isMountedRef.current = false;
+        isScrubbingRef.current &&
+          ((isScrubbingRef.current = false), setScrubbing(false), setOverlayHidden(false));
       }
     ),
-    [value, value2],
+    [setOverlayHidden, setScrubbing],
   );
   return {
-    onScrub: (input2?: Dynamic): Dynamic => {
-      value4.current &&
-        (value3.current ||
-          ((value3.current = true), value(true), value2(true)),
-        value5.current(input2));
+    onScrub: (scrubValue?: Dynamic): Dynamic => {
+      isMountedRef.current &&
+        (isScrubbingRef.current ||
+          ((isScrubbingRef.current = true), setOverlayHidden(true), setScrubbing(true)),
+        commitRef.current(scrubValue));
     },
-    onScrubEnd: (input2?: Dynamic): Dynamic => {
-      value3.current &&
-        (typeof input2 == "function" && input2(),
-        (value3.current = false),
-        value2(false),
-        value(false));
+    onScrubEnd: (afterEnd?: Dynamic): Dynamic => {
+      isScrubbingRef.current &&
+        (typeof afterEnd == "function" && afterEnd(),
+        (isScrubbingRef.current = false),
+        setScrubbing(false),
+        setOverlayHidden(false));
     },
   };
 }

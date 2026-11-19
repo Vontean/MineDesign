@@ -5,102 +5,102 @@ import { setPickerSelection } from "../picker/bridge";
 import { type Dynamic } from "../../runtime-types";
 
 /** 在编辑会话中按撤销或重做时运行：回放元素模型的一步历史，同步组件属性值或脚本的暂存内容，推送实时模型、标脏并恢复该步对应的选中。 */
-export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryApply: Dynamic; readonly onHistoryDrop: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly value: Dynamic; readonly value105: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, input?: Dynamic): Dynamic {
+export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryApply: Dynamic; readonly onHistoryDrop: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly value: Dynamic; readonly value105: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, direction?: Dynamic): Dynamic {
         if (deps.readOnlyRef.current) return;
-        let value307: Dynamic =
+        let artboardName: Dynamic =
             deps.value66.current ?? deps.value49.current?.name ?? deps.rootName,
-          value308: Dynamic = deps.modelRef.current.state(value307);
-        if (!value308) return;
-        let model: Dynamic = value308.model,
-          length: Dynamic = value308[input].length,
-          length2: Dynamic = value308.redo.length,
-          value309: Dynamic = applyElementUndo(value308, input, {
+          modelState: Dynamic = deps.modelRef.current.state(artboardName);
+        if (!modelState) return;
+        let model: Dynamic = modelState.model,
+          stackLengthBefore: Dynamic = modelState[direction].length,
+          redoLengthBefore: Dynamic = modelState.redo.length,
+          undoResult: Dynamic = applyElementUndo(modelState, direction, {
             overrides: deps.dcPropsRef.current.values,
           });
-        if (!value309) {
+        if (!undoResult) {
           deps.value65.current = null;
-          if (value308[input].length < length) {
-            if (input === "undo")
+          if (modelState[direction].length < stackLengthBefore) {
+            if (direction === "undo")
               for (
-                let length3: Dynamic = value308.redo.length;
-                length3 < length2;
-                length3++
+                let redoLength: Dynamic = modelState.redo.length;
+                redoLength < redoLengthBefore;
+                redoLength++
               )
                 deps.onHistoryDrop?.("redo");
-            deps.onHistoryDrop?.(input);
+            deps.onHistoryDrop?.(direction);
           }
           deps.incrementSessionEpoch();
           return;
         }
-        deps.onHistoryApply?.(input);
+        deps.onHistoryApply?.(direction);
         deps.value65.current = null;
-        if (value309.kind === "prop") {
-          if (value309.episode === "closed")
-            delete deps.value.current[value309.prop];
-          else if (value309.episode === "reopened") {
-            let current2: Dynamic = deps.dcPropsRef.current;
-            deps.value.current[value309.prop] = Object.hasOwn(
-              current2.values,
-              value309.prop,
+        if (undoResult.kind === "prop") {
+          if (undoResult.episode === "closed")
+            delete deps.value.current[undoResult.prop];
+          else if (undoResult.episode === "reopened") {
+            let dcProps: Dynamic = deps.dcPropsRef.current;
+            deps.value.current[undoResult.prop] = Object.hasOwn(
+              dcProps.values,
+              undoResult.prop,
             )
               ? {
                   had: true,
-                  value: current2.values[value309.prop],
+                  value: dcProps.values[undoResult.prop],
                 }
               : {
                   had: false,
                 };
           }
-          deps.dcPropsRef.current.setProp(value309.prop, value309.liveValue);
-          deps.markModelDirty(value307);
+          deps.dcPropsRef.current.setProp(undoResult.prop, undoResult.liveValue);
+          deps.markModelDirty(artboardName);
           deps.incrementSessionEpoch();
           return;
         }
-        if (value309.kind === "script") {
+        if (undoResult.kind === "script") {
           emitEditorEvent("dc-update", {
-            name: value307,
-            path: value308.path,
+            name: artboardName,
+            path: modelState.path,
             kind: "js",
-            content: value309.js,
+            content: undoResult.js,
             streaming: false,
             viewportKey: "dc-model",
           });
-          deps.markModelDirty(value307);
+          deps.markModelDirty(artboardName);
           deps.incrementSessionEpoch();
           return;
         }
-        deps.pushLiveModel(value307, value308);
-        deps.markModelDirty(value307);
-        let current: Dynamic = deps.value49.current;
-        if (current?.name === value307) {
-          let value310: Dynamic = value308.model.sameSkeleton(model)
-            ? current.tids.filter(
-                (input2?: Dynamic): Dynamic =>
-                  value308.model.element(input2) != null,
+        deps.pushLiveModel(artboardName, modelState);
+        deps.markModelDirty(artboardName);
+        let currentSelection: Dynamic = deps.value49.current;
+        if (currentSelection?.name === artboardName) {
+          let validTids: Dynamic = modelState.model.sameSkeleton(model)
+            ? currentSelection.tids.filter(
+                (tid?: Dynamic): Dynamic =>
+                  modelState.model.element(tid) != null,
               )
             : [];
-          if (value310.length > 0) {
-            deps.value105(value307, value310, undefined, undefined, true);
-            let value311: Dynamic = deps.value67();
-            value311 &&
+          if (validTids.length > 0) {
+            deps.value105(artboardName, validTids, undefined, undefined, true);
+            let pickerTarget: Dynamic = deps.value67();
+            pickerTarget &&
               setTimeout((): Dynamic => {
-                let current2: Dynamic = deps.value49.current;
-                current2?.name === current.name &&
+                let latestSelection: Dynamic = deps.value49.current;
+                latestSelection?.name === currentSelection.name &&
                   InspectorEditorEvery(
-                    current2.tids,
-                    value310,
+                    latestSelection.tids,
+                    validTids,
                   ) &&
                   setPickerSelection(
-                    value311,
-                    value310,
-                    current.name,
+                    pickerTarget,
+                    validTids,
+                    currentSelection.name,
                   );
               }, 60);
           } else {
             deps.value50.current++;
             deps.value3(null);
-            let value311: Dynamic = deps.value67();
-            value311 && setPickerSelection(value311, null, null);
+            let pickerTarget: Dynamic = deps.value67();
+            pickerTarget && setPickerSelection(pickerTarget, null, null);
           }
         }
         deps.incrementSessionEpoch();

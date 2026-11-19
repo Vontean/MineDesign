@@ -15,103 +15,103 @@ import { PropertyRow } from "./row";
 function PropertyShadowRow({
   label: label,
   prop = "box-shadow",
-  value: value,
-  disabled: disabled2,
+  value: shadowValue,
+  disabled: isDisabled,
   mixed: mixed,
   inherited: inherited,
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = prop === "text-shadow",
-    [value3, value4]: Dynamic = (0,
+  let isTextShadow: Dynamic = prop === "text-shadow",
+    [isOpen, setIsOpen]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)(false),
-    { setOverlayHidden: value5 }: Dynamic = useInspectorContext();
+    { setOverlayHidden: setOverlayHidden }: Dynamic = useInspectorContext();
   (0, reactPropertiesAssetPicker_3.useEffect)((): Dynamic => {
-    if (value3) {
-      value5(true);
-      return (): Dynamic => value5(false);
+    if (isOpen) {
+      setOverlayHidden(true);
+      return (): Dynamic => setOverlayHidden(false);
     }
-  }, [value3, value5]);
-  let value6: Dynamic = parseCssBoxShadow(value),
-    value7: Dynamic = mixed
+  }, [isOpen, setOverlayHidden]);
+  let parsedShadow: Dynamic = parseCssBoxShadow(shadowValue),
+    summaryText: Dynamic = mixed
       ? "Mixed"
-      : value6
-        ? `${value6.x} ${value6.y} ${value6.blur}`
-        : value && classifyStyleValue(value).kind !== "literal"
-          ? value
+      : parsedShadow
+        ? `${parsedShadow.x} ${parsedShadow.y} ${parsedShadow.blur}`
+        : shadowValue && classifyStyleValue(shadowValue).kind !== "literal"
+          ? shadowValue
           : "None",
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+    commitShadow: Dynamic = (shadow?: Dynamic): Dynamic =>
       onCommitMany([
         {
           prop: prop,
-          value: input
-            ? value2
-              ? `${input.x}px ${input.y}px ${input.blur}px ${input.color}`
-              : serializeCssBoxShadow(input)
+          value: shadow
+            ? isTextShadow
+              ? `${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.color}`
+              : serializeCssBoxShadow(shadow)
             : null,
         },
       ]),
-    value8: Dynamic = value6 ?? CssGradientsXYBlurConfig;
+    editableShadow: Dynamic = parsedShadow ?? CssGradientsXYBlurConfig;
   return (
     <PropertyAssetPopup
-      open={value3}
-      onOpenChange={(input?: Dynamic): Dynamic => {
-        input &&
-          !value &&
+      open={isOpen}
+      onOpenChange={(nextOpen?: Dynamic): Dynamic => {
+        nextOpen &&
+          !shadowValue &&
           !mixed &&
-          callback(CssGradientsXYBlurConfig);
-        value4(input);
+          commitShadow(CssGradientsXYBlurConfig);
+        setIsOpen(nextOpen);
       }}
       title={label}
       removeLabel={"Remove shadow"}
-      removeDisabled={disabled2 || (!value && !mixed) || !!inherited}
-      onRemove={(): Dynamic => callback(null)}
+      removeDisabled={isDisabled || (!shadowValue && !mixed) || !!inherited}
+      onRemove={(): Dynamic => commitShadow(null)}
       data-testid={"dc-shadow-popover"}
       trigger={
         <PropertySelectTrigger
-          aria-label={uiMessage("inspector.shadowRow.undefined", { value1: String(label), value2: String(value7) })}
-          disabled={disabled2}
+          aria-label={uiMessage("inspector.shadowRow.undefined", { value1: String(label), value2: String(summaryText) })}
+          disabled={isDisabled}
           chip={
             <CssColorWell
               css={
-                value6
-                  ? `radial-gradient(circle at 35% 35%, ${value6.color}, transparent)`
+                parsedShadow
+                  ? `radial-gradient(circle at 35% 35%, ${parsedShadow.color}, transparent)`
                   : undefined
               }
             />
           }
           muted={mixed}
         >
-          {value7}
+          {summaryText}
         </PropertySelectTrigger>
       }
     >
-      {!value6 && (value || mixed) && (<PropertyRow>
+      {!parsedShadow && (shadowValue || mixed) && (<PropertyRow>
           <Button
             variant={"secondary"}
             size={"sm"}
-            disabled={disabled2}
+            disabled={isDisabled}
             onClick={(): Dynamic =>
-              callback(CssGradientsXYBlurConfig)
+              commitShadow(CssGradientsXYBlurConfig)
             }
           >
             {uiMessage("inspector.shadowRow.addShadow")}
           </Button>
         </PropertyRow>)}
-      {value6 && (<jsxPropertiesAssetPicker_3.Fragment>
+      {parsedShadow && (<jsxPropertiesAssetPicker_3.Fragment>
           <PropertyRow label={uiMessage("inspector.shadowRow.offset")}>
             <div className={"flex min-w-0 flex-1 items-center gap-2"}>
               <CssNumericPopupInput
                 name={"Horizontal offset"}
                 prefix={"X"}
                 unit={""}
-                value={value8.x}
+                value={editableShadow.x}
                 steppers={false}
-                disabled={disabled2}
-                onChange={(input?: Dynamic): Dynamic =>
-                  callback({
-                    ...value8,
-                    x: input,
+                disabled={isDisabled}
+                onChange={(nextX?: Dynamic): Dynamic =>
+                  commitShadow({
+                    ...editableShadow,
+                    x: nextX,
                   })
                 }
               />
@@ -119,13 +119,13 @@ function PropertyShadowRow({
                 name={"Vertical offset"}
                 prefix={"Y"}
                 unit={""}
-                value={value8.y}
+                value={editableShadow.y}
                 steppers={false}
-                disabled={disabled2}
-                onChange={(input?: Dynamic): Dynamic =>
-                  callback({
-                    ...value8,
-                    y: input,
+                disabled={isDisabled}
+                onChange={(nextY?: Dynamic): Dynamic =>
+                  commitShadow({
+                    ...editableShadow,
+                    y: nextY,
                   })
                 }
               />
@@ -133,36 +133,36 @@ function PropertyShadowRow({
           </PropertyRow>
           <CssNumericPopupRow
             label={uiMessage("inspector.shadowRow.blur")}
-            value={value8.blur}
-            disabled={disabled2}
+            value={editableShadow.blur}
+            disabled={isDisabled}
             min={0}
-            onChange={(input?: Dynamic): Dynamic =>
-              callback({
-                ...value8,
-                blur: input,
+            onChange={(nextBlur?: Dynamic): Dynamic =>
+              commitShadow({
+                ...editableShadow,
+                blur: nextBlur,
               })
             }
           />
-          {!value2 && (<CssNumericPopupRow
+          {!isTextShadow && (<CssNumericPopupRow
               label={uiMessage("inspector.shadowRow.spread")}
-              value={value8.spread}
-              disabled={disabled2}
-              onChange={(input?: Dynamic): Dynamic =>
-                callback({
-                  ...value8,
-                  spread: input,
+              value={editableShadow.spread}
+              disabled={isDisabled}
+              onChange={(nextSpread?: Dynamic): Dynamic =>
+                commitShadow({
+                  ...editableShadow,
+                  spread: nextSpread,
                 })
               }
             />)}
           <PropertyPopupField label={uiMessage("inspector.shadowRow.color")}>
             <AuthoredColorPicker
-              value={value8.color}
-              disabled={disabled2}
+              value={editableShadow.color}
+              disabled={isDisabled}
               plain={true}
-              onChange={(input?: Dynamic): Dynamic =>
-                callback({
-                  ...value8,
-                  color: input,
+              onChange={(nextColor?: Dynamic): Dynamic =>
+                commitShadow({
+                  ...editableShadow,
+                  color: nextColor,
                 })
               }
             />

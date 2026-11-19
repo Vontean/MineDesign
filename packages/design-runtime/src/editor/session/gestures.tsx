@@ -27,757 +27,757 @@ import { setSvgLineEndpoints } from "../svg/layout";
 import { type Dynamic } from "../../runtime-types";
 
 /** 画板内拖动元素过程中（收到 movePreview 消息）运行：以手势开始时的模型为基线，在模型里预演重排、跟随元素或绝对定位后的位置并推送实时预览，被拒绝的目标会标记出来。 */
-export function previewElementMoveGesture(deps: { readonly baselineTemplateId: Dynamic; readonly clearScheduledTextWork: Dynamic; readonly maxBaselineMaps: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value26: Dynamic; readonly value28: Dynamic }, input?: Dynamic): Dynamic {
-        if ((input.name || deps.rootName) !== deps.rootName) return;
+export function previewElementMoveGesture(deps: { readonly baselineTemplateId: Dynamic; readonly clearScheduledTextWork: Dynamic; readonly maxBaselineMaps: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value26: Dynamic; readonly value28: Dynamic }, message?: Dynamic): Dynamic {
+        if ((message.name || deps.rootName) !== deps.rootName) return;
         deps.clearScheduledTextWork();
-        let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value307) return;
-        let current: Dynamic = deps.value26.current;
-        if (!current || current.gestureKey !== input.gestureKey) {
-          if (!value307.model.element(input.tid)) return;
-          for (let value315 of ModelModelStateDataDcDraggingDataDcDragParentDataDcDragFollowerValues as Dynamic)
-            value307.model.takeMarkerAttr(value315);
-          current = {
-            gestureKey: input.gestureKey,
-            baseline: value307.model.serialize(),
-            movingTid: input.tid,
-            movingCurrentTid: input.tid,
+        let modelState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!modelState) return;
+        let gesture: Dynamic = deps.value26.current;
+        if (!gesture || gesture.gestureKey !== message.gestureKey) {
+          if (!modelState.model.element(message.tid)) return;
+          for (let markerAttr of ModelModelStateDataDcDraggingDataDcDragParentDataDcDragFollowerValues as Dynamic)
+            modelState.model.takeMarkerAttr(markerAttr);
+          gesture = {
+            gestureKey: message.gestureKey,
+            baseline: modelState.model.serialize(),
+            movingTid: message.tid,
+            movingCurrentTid: message.tid,
             currentToBaseline: null,
             lastFlow: null,
             epoch: 0,
             maps: [],
             lastRefused: null,
             block: sameParentDropGroup(
-              value307.model,
-              input.tid,
-              input.group,
+              modelState.model,
+              message.tid,
+              message.group,
             ),
           };
-          let current2: Dynamic = deps.value28.current;
-          current2 &&
-            current2.gestureKey === input.gestureKey &&
-            ((current.epoch = current2.epoch),
-            (current.maps = current2.maps),
-            (current.positioned = current2.positioned));
+          let savedGesture: Dynamic = deps.value28.current;
+          savedGesture &&
+            savedGesture.gestureKey === message.gestureKey &&
+            ((gesture.epoch = savedGesture.epoch),
+            (gesture.maps = savedGesture.maps),
+            (gesture.positioned = savedGesture.positioned));
           deps.value28.current = null;
-          deps.value26.current = current;
+          deps.value26.current = gesture;
         }
-        let value308: Dynamic = deps.baselineTemplateId(
-            input.targetTid,
-            input.epoch,
+        let baselineTargetTid: Dynamic = deps.baselineTemplateId(
+            message.targetTid,
+            message.epoch,
           ),
-          movingTid: Dynamic = current.movingTid;
-        if (!input.absolute) {
+          movingTid: Dynamic = gesture.movingTid;
+        if (!message.absolute) {
           if (
-            value308 === movingTid ||
-            (value308 != null &&
-              current.lastFlow !== null &&
-              current.block?.includes(value308))
+            baselineTargetTid === movingTid ||
+            (baselineTargetTid != null &&
+              gesture.lastFlow !== null &&
+              gesture.block?.includes(baselineTargetTid))
           )
             return;
-          let value315: Dynamic = current.lastFlow ?? current.lastRefused;
+          let lastDecision: Dynamic = gesture.lastFlow ?? gesture.lastRefused;
           if (
-            value315 &&
-            value315.targetTid === value308 &&
-            value315.position === input.position
+            lastDecision &&
+            lastDecision.targetTid === baselineTargetTid &&
+            lastDecision.position === message.position
           )
             return;
         }
-        current.lastFlow = null;
-        current.lastRefused = null;
-        current.followerCurrent = undefined;
-        value307.model = value307.model.rebuild(current.baseline);
+        gesture.lastFlow = null;
+        gesture.lastRefused = null;
+        gesture.followerCurrent = undefined;
+        modelState.model = modelState.model.rebuild(gesture.baseline);
         if (
-          containsUneditableSelection(value307.model, [
+          containsUneditableSelection(modelState.model, [
             movingTid,
           ]) ||
-          (value308 != null &&
-            containsUneditableSelection(value307.model, [
-              value308,
+          (baselineTargetTid != null &&
+            containsUneditableSelection(modelState.model, [
+              baselineTargetTid,
             ]))
         ) {
-          current.currentToBaseline = null;
-          current.movingCurrentTid = movingTid;
-          deps.pushLiveModel(deps.rootName, value307);
+          gesture.currentToBaseline = null;
+          gesture.movingCurrentTid = movingTid;
+          deps.pushLiveModel(deps.rootName, modelState);
           return;
         }
-        let value309: Dynamic = value307.model.parentTid(movingTid),
-          value310: Dynamic = value309;
+        let originalParentTid: Dynamic = modelState.model.parentTid(movingTid),
+          dragParentTid: Dynamic = originalParentTid;
         for (
           ;
-          value310 != null &&
-          /^sc-(if|for)$/.test(value307.model.tagName(value310) ?? "");
+          dragParentTid != null &&
+          /^sc-(if|for)$/.test(modelState.model.tagName(dragParentTid) ?? "");
 
         )
-          value310 = value307.model.parentTid(value310);
-        let value311: Dynamic = input.absolute ? null : current.block,
-          value312: Dynamic = value311
-            ? value307.model.isBlockInPlace(
-                value311,
-                value308,
-                input.position,
+          dragParentTid = modelState.model.parentTid(dragParentTid);
+        let dragBlock: Dynamic = message.absolute ? null : gesture.block,
+          isAlreadyInPlace: Dynamic = dragBlock
+            ? modelState.model.isBlockInPlace(
+                dragBlock,
+                baselineTargetTid,
+                message.position,
               )
-            : input.absolute === true
-              ? value307.model.isInPlace(
+            : message.absolute === true
+              ? modelState.model.isInPlace(
                   movingTid,
-                  value308,
-                  input.position,
+                  baselineTargetTid,
+                  message.position,
                 ) ||
-                (input.position === "into" &&
-                  value308 != null &&
-                  value309 === value308)
-              : value307.model.isRenderedInPlace(
+                (message.position === "into" &&
+                  baselineTargetTid != null &&
+                  originalParentTid === baselineTargetTid)
+              : modelState.model.isRenderedInPlace(
                   movingTid,
-                  value308,
-                  input.position,
+                  baselineTargetTid,
+                  message.position,
                 );
         if (
           !(
-            !value307.model.targetParentLocked(value308, input.position) &&
-            (value312 ||
-              (value311
-                ? value307.model.moveBlockRelative(
-                    value311,
-                    value308,
-                    input.position,
+            !modelState.model.targetParentLocked(baselineTargetTid, message.position) &&
+            (isAlreadyInPlace ||
+              (dragBlock
+                ? modelState.model.moveBlockRelative(
+                    dragBlock,
+                    baselineTargetTid,
+                    message.position,
                   )
-                : value307.model.moveRelative(
+                : modelState.model.moveRelative(
                     movingTid,
-                    value308,
-                    input.position,
+                    baselineTargetTid,
+                    message.position,
                   )))
           )
         ) {
-          input.absolute ||
-            (current.lastRefused = {
-              targetTid: value308,
-              position: input.position,
+          message.absolute ||
+            (gesture.lastRefused = {
+              targetTid: baselineTargetTid,
+              position: message.position,
             });
-          current.epoch += 1;
-          current.maps[current.epoch] = null;
-          current.epoch > deps.maxBaselineMaps &&
-            (current.maps[current.epoch - deps.maxBaselineMaps] = undefined);
-          value307.model.setAttribute(
+          gesture.epoch += 1;
+          gesture.maps[gesture.epoch] = null;
+          gesture.epoch > deps.maxBaselineMaps &&
+            (gesture.maps[gesture.epoch - deps.maxBaselineMaps] = undefined);
+          modelState.model.setAttribute(
             movingTid,
             "data-dc-dragging",
-            String(current.epoch),
+            String(gesture.epoch),
           );
-          value310 != null &&
-            value307.model.setAttribute(
-              value310,
+          dragParentTid != null &&
+            modelState.model.setAttribute(
+              dragParentTid,
               "data-dc-drag-parent",
-              String(current.epoch),
+              String(gesture.epoch),
             );
           markBlockedDragElements(
-            value307.model,
-            current.block,
+            modelState.model,
+            gesture.block,
             movingTid,
           );
-          current.currentToBaseline = null;
-          current.movingCurrentTid = movingTid;
-          deps.pushLiveModel(deps.rootName, value307);
-          value307.previewBaseline = current.baseline;
+          gesture.currentToBaseline = null;
+          gesture.movingCurrentTid = movingTid;
+          deps.pushLiveModel(deps.rootName, modelState);
+          modelState.previewBaseline = gesture.baseline;
           return;
         }
-        input.absolute ||
-          (current.lastFlow = {
-            targetTid: value308,
-            position: input.position,
+        message.absolute ||
+          (gesture.lastFlow = {
+            targetTid: baselineTargetTid,
+            position: message.position,
           });
-        if (value312 && !input.absolute && current.epoch === 0) return;
-        if (input.clearPositioning)
-          for (let value315 of [
+        if (isAlreadyInPlace && !message.absolute && gesture.epoch === 0) return;
+        if (message.clearPositioning)
+          for (let property of [
             "position",
             "left",
             "top",
             "right",
             "bottom",
           ] as Dynamic)
-            value307.model.setStyleProperty(movingTid, value315, null);
-        let items2: Dynamic = [];
-        if (input.absolute) {
-          let value315: Dynamic = value307.model.inlineStyleValue(
+            modelState.model.setStyleProperty(movingTid, property, null);
+        let followerElements: Dynamic = [];
+        if (message.absolute) {
+          let positionValue: Dynamic = modelState.model.inlineStyleValue(
             movingTid,
             "position",
           );
-          value315 !== "absolute" &&
-            value315 !== "fixed" &&
-            value307.model.setStyleProperty(
+          positionValue !== "absolute" &&
+            positionValue !== "fixed" &&
+            modelState.model.setStyleProperty(
               movingTid,
               "position",
               "absolute",
             );
-          for (let [value316, value317] of Object.entries(
-            input.absStyles ?? {},
+          for (let [property, styleValue] of Object.entries(
+            message.absStyles ?? {},
           ) as Dynamic) {
-            value307.model.setStyleProperty(movingTid, value316, value317);
-            for (let value318 of (LayoutMoveElementsLeftRightTopConfig[value316] ??
+            modelState.model.setStyleProperty(movingTid, property, styleValue);
+            for (let resetProperty of (LayoutMoveElementsLeftRightTopConfig[property] ??
               []) as Dynamic)
-              value307.model.setStyleProperty(movingTid, value318, null);
+              modelState.model.setStyleProperty(movingTid, resetProperty, null);
           }
-          (input.parentNeedsPositioning ||
-            current.positioned?.has(value308 ?? -1)) &&
-            value308 != null &&
-            !value307.model.inlineStyleValue(value308, "position") &&
-            (value307.model.setStyleProperty(
-              value308,
+          (message.parentNeedsPositioning ||
+            gesture.positioned?.has(baselineTargetTid ?? -1)) &&
+            baselineTargetTid != null &&
+            !modelState.model.inlineStyleValue(baselineTargetTid, "position") &&
+            (modelState.model.setStyleProperty(
+              baselineTargetTid,
               "position",
               "relative",
             ),
-            (current.positioned ??= new Set()).add(value308));
-          items2 = input.followers?.length
+            (gesture.positioned ??= new Set()).add(baselineTargetTid));
+          followerElements = message.followers?.length
             ? displacedDropFollowers(
-                value307.model,
-                input.followers,
+                modelState.model,
+                message.followers,
                 movingTid,
-                value308,
+                baselineTargetTid,
                 true,
-              ).map((input2?: Dynamic): Dynamic => input2.el)
+              ).map((follower?: Dynamic): Dynamic => follower.el)
             : [];
         }
-        if (input.flatten) {
-          let value315: Dynamic = [
-            ...(input.flatten.parentStatic === true ? [value309] : []),
-            ...(Array.isArray(input.flatten.siblings)
-              ? input.flatten.siblings
+        if (message.flatten) {
+          let staticTids: Dynamic = [
+            ...(message.flatten.parentStatic === true ? [originalParentTid] : []),
+            ...(Array.isArray(message.flatten.siblings)
+              ? message.flatten.siblings
                   .slice(0, 200)
                   .filter(
-                    (input2?: Dynamic): Dynamic => input2?.static === true,
+                    (sibling?: Dynamic): Dynamic => sibling?.static === true,
                   )
-                  .map((input2?: Dynamic): Dynamic => input2.tid)
+                  .map((sibling?: Dynamic): Dynamic => sibling.tid)
               : []),
           ].filter(
-            (input2?: Dynamic): Dynamic =>
-              Number.isInteger(input2) &&
-              value307.model.element(input2) != null &&
-              !value307.model.inlineStyleValue(input2, "position"),
+            (tid?: Dynamic): Dynamic =>
+              Number.isInteger(tid) &&
+              modelState.model.element(tid) != null &&
+              !modelState.model.inlineStyleValue(tid, "position"),
           );
           restoreGroupPosition(
-            value307.model,
-            input.flatten,
+            modelState.model,
+            message.flatten,
             movingTid,
-            value309,
+            originalParentTid,
           );
-          for (let value316 of value315 as Dynamic)
-            value307.model.inlineStyleValue(value316, "position") &&
-              (current.positioned ??= new Set()).add(value316);
+          for (let tid of staticTids as Dynamic)
+            modelState.model.inlineStyleValue(tid, "position") &&
+              (gesture.positioned ??= new Set()).add(tid);
         }
-        if (value307.model.parentTid(movingTid) !== value309) {
+        if (modelState.model.parentTid(movingTid) !== originalParentTid) {
           freezeInheritedTextStyle(
-            value307.model,
+            modelState.model,
             movingTid,
-            input.freezeStyle,
+            message.freezeStyle,
           );
-          for (let value315 of (input.group ?? []) as Dynamic)
-            value315.tid !== movingTid &&
-              value311?.includes(value315.tid) &&
+          for (let member of (message.group ?? []) as Dynamic)
+            member.tid !== movingTid &&
+              dragBlock?.includes(member.tid) &&
               freezeInheritedTextStyle(
-                value307.model,
-                value315.tid,
-                value315.freezeStyle,
+                modelState.model,
+                member.tid,
+                member.freezeStyle,
               );
         }
-        current.epoch += 1;
-        value307.model.setAttribute(
+        gesture.epoch += 1;
+        modelState.model.setAttribute(
           movingTid,
           "data-dc-dragging",
-          String(current.epoch),
+          String(gesture.epoch),
         );
-        value310 != null &&
-          value307.model.setAttribute(
-            value310,
+        dragParentTid != null &&
+          modelState.model.setAttribute(
+            dragParentTid,
             "data-dc-drag-parent",
-            String(current.epoch),
+            String(gesture.epoch),
           );
-        for (let value315 of (input.markFollowers ?? []) as Dynamic)
-          value315 !== movingTid &&
-            value307.model.element(value315) &&
-            !containsUneditableSelection(value307.model, [
-              value315,
+        for (let followerTid of (message.markFollowers ?? []) as Dynamic)
+          followerTid !== movingTid &&
+            modelState.model.element(followerTid) &&
+            !containsUneditableSelection(modelState.model, [
+              followerTid,
             ]) &&
-            value307.model.setAttribute(
-              value315,
+            modelState.model.setAttribute(
+              followerTid,
               "data-dc-drag-follower",
-              String(value315),
+              String(followerTid),
             );
         markBlockedDragElements(
-          value307.model,
-          current.block,
+          modelState.model,
+          gesture.block,
           movingTid,
         );
-        let value313: Dynamic = value307.model.elementCount(),
-          entries: Dynamic = new Map(),
-          value314: Dynamic = value307.model.element(movingTid);
-        for (let index: Dynamic = 0; index < value313; index++) {
-          let value315: Dynamic = value307.model.element(index);
-          value315 && entries.set(value315, index);
+        let elementCount: Dynamic = modelState.model.elementCount(),
+          baselineIndexByElement: Dynamic = new Map(),
+          movingElement: Dynamic = modelState.model.element(movingTid);
+        for (let index: Dynamic = 0; index < elementCount; index++) {
+          let element: Dynamic = modelState.model.element(index);
+          element && baselineIndexByElement.set(element, index);
         }
-        value307.model.restamp();
-        let items3: Dynamic = [];
-        for (let index: Dynamic = 0; index < value313; index++) {
-          let value315: Dynamic = value307.model.element(index);
-          items3[index] = value315 ? (entries.get(value315) ?? index) : index;
+        modelState.model.restamp();
+        let currentToBaseline: Dynamic = [];
+        for (let index: Dynamic = 0; index < elementCount; index++) {
+          let element: Dynamic = modelState.model.element(index);
+          currentToBaseline[index] = element ? (baselineIndexByElement.get(element) ?? index) : index;
         }
-        current.currentToBaseline = items3;
-        current.maps[current.epoch] = items3;
-        current.epoch > deps.maxBaselineMaps &&
-          (current.maps[current.epoch - deps.maxBaselineMaps] = undefined);
-        current.movingCurrentTid = value314
+        gesture.currentToBaseline = currentToBaseline;
+        gesture.maps[gesture.epoch] = currentToBaseline;
+        gesture.epoch > deps.maxBaselineMaps &&
+          (gesture.maps[gesture.epoch - deps.maxBaselineMaps] = undefined);
+        gesture.movingCurrentTid = movingElement
           ? parseInt(
-              value314.getAttribute("data-dc-tpl") ?? String(movingTid),
+              movingElement.getAttribute("data-dc-tpl") ?? String(movingTid),
               10,
             )
           : movingTid;
-        current.followerCurrent = new Map();
-        for (let value315 of items2 as Dynamic) {
-          let entry: Dynamic = entries.get(value315),
-            value316: Dynamic = parseInt(
-              value315.getAttribute("data-dc-tpl") ?? "-1",
+        gesture.followerCurrent = new Map();
+        for (let followerElement of followerElements as Dynamic) {
+          let baselineIndex: Dynamic = baselineIndexByElement.get(followerElement),
+            currentTid: Dynamic = parseInt(
+              followerElement.getAttribute("data-dc-tpl") ?? "-1",
               10,
             );
-          entry !== undefined &&
-            value316 >= 0 &&
-            current.followerCurrent.set(entry, value316);
+          baselineIndex !== undefined &&
+            currentTid >= 0 &&
+            gesture.followerCurrent.set(baselineIndex, currentTid);
         }
-        deps.pushLiveModel(deps.rootName, value307);
-        value307.previewBaseline = current.baseline;
+        deps.pushLiveModel(deps.rootName, modelState);
+        modelState.previewBaseline = gesture.baseline;
       }
 
 /** 画板内拖动元素松手时（收到 move 消息）运行：把元素移动到目标位置（重排或绝对定位，含同组与跟随元素），模型拒绝时回到基线，成功则记录撤销、标脏并重新选中移动后的元素。 */
-export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork: Dynamic; readonly epochBaselineMapping: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value111: Dynamic; readonly value117: Dynamic; readonly value26: Dynamic; readonly value27: Dynamic; readonly value28: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, input?: Dynamic): Dynamic {
-        if ((input.name || deps.rootName) !== deps.rootName) return;
-        let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value307) return void deps.value117();
-        deps.value27.forget(input.gestureKey ?? "");
-        let current: Dynamic = deps.value26.current,
-          value308: Dynamic =
-            input.absolute || input.alt
+export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork: Dynamic; readonly epochBaselineMapping: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value111: Dynamic; readonly value117: Dynamic; readonly value26: Dynamic; readonly value27: Dynamic; readonly value28: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, message?: Dynamic): Dynamic {
+        if ((message.name || deps.rootName) !== deps.rootName) return;
+        let modelState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!modelState) return void deps.value117();
+        deps.value27.forget(message.gestureKey ?? "");
+        let gesture: Dynamic = deps.value26.current,
+          dragBlock: Dynamic =
+            message.absolute || message.alt
               ? null
-              : current !== null && current.gestureKey === input.gestureKey
-                ? current.block
+              : gesture !== null && gesture.gestureKey === message.gestureKey
+                ? gesture.block
                 : undefined,
-          targetTid: Dynamic = input.targetTid,
-          position: Dynamic = input.position,
-          current2: Dynamic = deps.value28.current,
-          value309: Dynamic =
-            current !== null && current.gestureKey === input.gestureKey
-              ? current.positioned
-              : current2 !== null && current2.gestureKey === input.gestureKey
-                ? current2.positioned
+          targetTid: Dynamic = message.targetTid,
+          position: Dynamic = message.position,
+          savedGesture: Dynamic = deps.value28.current,
+          positionedSet: Dynamic =
+            gesture !== null && gesture.gestureKey === message.gestureKey
+              ? gesture.positioned
+              : savedGesture !== null && savedGesture.gestureKey === message.gestureKey
+                ? savedGesture.positioned
                 : undefined;
         deps.value28.current = null;
         if (
-          !current &&
-          current2 &&
-          current2.gestureKey === input.gestureKey &&
+          !gesture &&
+          savedGesture &&
+          savedGesture.gestureKey === message.gestureKey &&
           targetTid != null
         ) {
-          let value315: Dynamic = deps.epochBaselineMapping(current2, input.epoch);
-          value315 && (targetTid = value315[targetTid] ?? targetTid);
+          let baselineMapping: Dynamic = deps.epochBaselineMapping(savedGesture, message.epoch);
+          baselineMapping && (targetTid = baselineMapping[targetTid] ?? targetTid);
         }
-        if (current)
+        if (gesture)
           if (
-            ((value307.previewBaseline = undefined),
-            !input.absolute &&
-              !input.alt &&
-              current.gestureKey === input.gestureKey)
+            ((modelState.previewBaseline = undefined),
+            !message.absolute &&
+              !message.alt &&
+              gesture.gestureKey === message.gestureKey)
           ) {
-            let lastFlow: Dynamic = current.lastFlow;
-            value307.model = value307.model.rebuild(current.baseline);
+            let lastFlow: Dynamic = gesture.lastFlow;
+            modelState.model = modelState.model.rebuild(gesture.baseline);
             deps.value26.current = null;
             if (
               !lastFlow ||
-              (current.block
-                ? value307.model.isBlockInPlace(
-                    current.block,
+              (gesture.block
+                ? modelState.model.isBlockInPlace(
+                    gesture.block,
                     lastFlow.targetTid,
                     lastFlow.position,
                   )
-                : value307.model.isRenderedInPlace(
-                    current.movingTid,
+                : modelState.model.isRenderedInPlace(
+                    gesture.movingTid,
                     lastFlow.targetTid,
                     lastFlow.position,
                   ))
             ) {
-              deps.pushLiveModel(deps.rootName, value307);
-              current.epoch > 0 && deps.value111();
+              deps.pushLiveModel(deps.rootName, modelState);
+              gesture.epoch > 0 && deps.value111();
               return;
             }
             targetTid = lastFlow.targetTid;
             position = lastFlow.position;
           } else {
             if (targetTid != null) {
-              let value315: Dynamic = deps.epochBaselineMapping(
-                current,
-                input.epoch,
+              let baselineMapping: Dynamic = deps.epochBaselineMapping(
+                gesture,
+                message.epoch,
               );
-              value315 && (targetTid = value315[targetTid] ?? targetTid);
+              baselineMapping && (targetTid = baselineMapping[targetTid] ?? targetTid);
             }
-            value307.model = value307.model.rebuild(current.baseline);
+            modelState.model = modelState.model.rebuild(gesture.baseline);
             deps.value26.current = null;
           }
-        value308 === undefined &&
-          (value308 = sameParentDropGroup(
-            value307.model,
-            input.tid,
-            input.group,
+        dragBlock === undefined &&
+          (dragBlock = sameParentDropGroup(
+            modelState.model,
+            message.tid,
+            message.group,
           ));
-        value308 && value308[0] !== input.tid && (value308 = null);
-        let callback7: Dynamic = (): Dynamic => {
-            current &&
-              (deps.pushLiveModel(deps.rootName, value307),
-              current.epoch > 0 && deps.value111());
+        dragBlock && dragBlock[0] !== message.tid && (dragBlock = null);
+        let restoreLivePreview: Dynamic = (): Dynamic => {
+            gesture &&
+              (deps.pushLiveModel(deps.rootName, modelState),
+              gesture.epoch > 0 && deps.value111());
           },
-          state: Dynamic = {
-            tid: input.tid,
+          moveRequest: Dynamic = {
+            tid: message.tid,
             targetTid: targetTid,
             position: position,
-            alt: input.alt === true,
-            absolute: input.absolute === true,
-            breakout: input.breakout,
-            fixed: input.fixed,
-            absStyles: input.absStyles,
-            parentNeedsPositioning: input.parentNeedsPositioning,
-            previewPositioned: value309,
-            flatten: input.flatten,
-            followers: input.followers,
-            group: input.group,
-            block: value308,
+            alt: message.alt === true,
+            absolute: message.absolute === true,
+            breakout: message.breakout,
+            fixed: message.fixed,
+            absStyles: message.absStyles,
+            parentNeedsPositioning: message.parentNeedsPositioning,
+            previewPositioned: positionedSet,
+            flatten: message.flatten,
+            followers: message.followers,
+            group: message.group,
+            block: dragBlock,
             previewBlock:
-              current !== null &&
-              current.gestureKey === input.gestureKey &&
-              !!current.block,
-            clearPositioning: input.clearPositioning,
-            freezeStyle: input.freezeStyle,
+              gesture !== null &&
+              gesture.gestureKey === message.gestureKey &&
+              !!gesture.block,
+            clearPositioning: message.clearPositioning,
+            freezeStyle: message.freezeStyle,
           },
-          value310: Dynamic = elementMoveRefusal(
-            value307.model,
-            state,
+          refusal: Dynamic = elementMoveRefusal(
+            modelState.model,
+            moveRequest,
           );
         if (
-          value310 === "loop-driven" ||
-          value310 === "model-refused" ||
-          value310 === "in-place"
+          refusal === "loop-driven" ||
+          refusal === "model-refused" ||
+          refusal === "in-place"
         ) {
-          deps.pushLiveModel(deps.rootName, value307);
-          current && current.epoch > 0 && deps.value111();
+          deps.pushLiveModel(deps.rootName, modelState);
+          gesture && gesture.epoch > 0 && deps.value111();
           return;
         }
-        if (value310 !== null) {
-          callback7();
+        if (refusal !== null) {
+          restoreLivePreview();
           return;
         }
-        let redo: Dynamic = value307.redo,
-          value311: Dynamic = deps.value101(
+        let redo: Dynamic = modelState.redo,
+          undoMark: Dynamic = deps.value101(
             deps.rootName,
-            input.gestureKey ?? `move-${input.tid}-${Date.now()}`,
-            value307,
+            message.gestureKey ?? `move-${message.tid}-${Date.now()}`,
+            modelState,
           ),
-          value312: Dynamic = moveModelElement(value307, state);
-        if (!value312) {
-          deps.value102(value307, value311, redo);
-          deps.pushLiveModel(deps.rootName, value307);
-          current && current.epoch > 0 && deps.value111();
+          moveResult: Dynamic = moveModelElement(modelState, moveRequest);
+        if (!moveResult) {
+          deps.value102(modelState, undoMark, redo);
+          deps.pushLiveModel(deps.rootName, modelState);
+          gesture && gesture.epoch > 0 && deps.value111();
           return;
         }
-        let { newTid: value313, groupTids: value314 }: Dynamic = value312;
+        let { newTid: newTid, groupTids: groupTids }: Dynamic = moveResult;
         deps.value66.current = deps.rootName;
         deps.clearScheduledTextWork();
-        deps.pushLiveModel(deps.rootName, value307);
+        deps.pushLiveModel(deps.rootName, modelState);
         deps.markModelDirty(deps.rootName);
         deps.incrementSessionEpoch();
-        if (value313 >= 0) {
-          let items2: Dynamic = [
-              value313,
-              ...value314.filter(
-                (input2?: Dynamic): Dynamic =>
-                  input2 !== value313 && input2 >= 0,
+        if (newTid >= 0) {
+          let selectedTids: Dynamic = [
+              newTid,
+              ...groupTids.filter(
+                (tid?: Dynamic): Dynamic =>
+                  tid !== newTid && tid >= 0,
               ),
             ],
-            value315: Dynamic = deps.value67();
-          value315 &&
+            pickerTarget: Dynamic = deps.value67();
+          pickerTarget &&
             setTimeout(
               (): Dynamic =>
-                setPickerSelection(value315, items2, deps.rootName),
+                setPickerSelection(pickerTarget, selectedTids, deps.rootName),
               60,
             );
-          deps.value105(deps.rootName, items2);
+          deps.value105(deps.rootName, selectedTids);
         }
-        let callback8: Dynamic = async (
-          input2?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
-          value315?: Dynamic,
-          extra?: Dynamic,
+        let clearRedundantFrozenStyles: Dynamic = async (
+          tid?: Dynamic,
+          element?: Dynamic,
+          pinnedStyles?: Dynamic,
+          freezeStyle?: Dynamic,
+          isAfterPaint?: Dynamic,
         ): Promise<Dynamic> => {
-          let value316: Dynamic = deps.value67(),
-            value317: Dynamic = deps.modelRef.current.state(deps.rootName);
+          let pickerTarget: Dynamic = deps.value67(),
+            currentState: Dynamic = deps.modelRef.current.state(deps.rootName);
           if (
-            !value316 ||
-            !value317 ||
-            value317.model.element(input2) !== options
+            !pickerTarget ||
+            !currentState ||
+            currentState.model.element(tid) !== element
           )
             return;
-          let value318: Dynamic = await inspectPickerSelection(
-            value316,
-            input2,
+          let inspection: Dynamic = await inspectPickerSelection(
+            pickerTarget,
+            tid,
             deps.rootName,
-            [...context.keys()],
+            [...pinnedStyles.keys()],
             {
               unpinned: true,
-              afterPaint: extra,
+              afterPaint: isAfterPaint,
             },
           );
           if (
-            deps.modelRef.current.state(deps.rootName) !== value317 ||
-            value317.model.element(input2) !== options
+            deps.modelRef.current.state(deps.rootName) !== currentState ||
+            currentState.model.element(tid) !== element
           )
             return;
-          if (!value318) {
-            extra ||
+          if (!inspection) {
+            isAfterPaint ||
               setTimeout((): Dynamic => {
-                callback8(input2, options, context, value315, true);
+                clearRedundantFrozenStyles(tid, element, pinnedStyles, freezeStyle, true);
               }, 300);
             return;
           }
-          let value319: Dynamic = frozenInheritedStyleEdits(
-            context,
-            value318.computed,
-            value315,
-            (input3?: Dynamic): Dynamic =>
-              value317.model.inlineStyleValue(input2, input3),
+          let propertiesToClear: Dynamic = frozenInheritedStyleEdits(
+            pinnedStyles,
+            inspection.computed,
+            freezeStyle,
+            (property?: Dynamic): Dynamic =>
+              currentState.model.inlineStyleValue(tid, property),
           );
-          if (value319.length !== 0) {
-            for (let value320 of value319 as Dynamic)
-              value317.model.setStyleProperty(input2, value320, null);
-            deps.pushLiveModel(deps.rootName, value317);
+          if (propertiesToClear.length !== 0) {
+            for (let property of propertiesToClear as Dynamic)
+              currentState.model.setStyleProperty(tid, property, null);
+            deps.pushLiveModel(deps.rootName, currentState);
             deps.markModelDirty(deps.rootName);
             deps.incrementSessionEpoch();
           }
         };
-        for (let value315 of value312.pins as Dynamic)
+        for (let pin of moveResult.pins as Dynamic)
           setTimeout((): Dynamic => {
-            callback8(
-              value315.tid,
-              value315.el,
-              value315.pinned,
-              value315.freeze,
+            clearRedundantFrozenStyles(
+              pin.tid,
+              pin.el,
+              pin.pinned,
+              pin.freeze,
               false,
             );
           }, 120);
       }
 
 /** 画板内拖动缩放手柄结束时（收到 resize 消息）运行：把新的宽高与位置样式写入元素（裁剪模式下作用于裁剪目标），合并到本次手势的撤销记录并标脏。 */
-export function commitElementResizeGesture(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value105: Dynamic; readonly value117: Dynamic; readonly value27: Dynamic; readonly value49: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic }, input?: Dynamic): Dynamic {
-        if ((input.name ?? deps.rootName) !== deps.rootName) return;
-        let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value307) return void deps.value117();
-        let value308: Dynamic =
-            input.crop === true
+export function commitElementResizeGesture(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value105: Dynamic; readonly value117: Dynamic; readonly value27: Dynamic; readonly value49: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic }, message?: Dynamic): Dynamic {
+        if ((message.name ?? deps.rootName) !== deps.rootName) return;
+        let modelState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!modelState) return void deps.value117();
+        let targetTid: Dynamic =
+            message.crop === true
               ? dispatchElementSessionGesture(
                   deps.rootName,
-                  input,
-                  value307.model,
+                  message,
+                  modelState.model,
                   true,
                 )
-              : input.tid,
-          value309: Dynamic =
-            value308 === null ? null : value307.model.element(value308);
-        if (!value309 && input.crop !== true) return;
-        let value310: Dynamic = claimLateGesture(
+              : message.tid,
+          targetElement: Dynamic =
+            targetTid === null ? null : modelState.model.element(targetTid);
+        if (!targetElement && message.crop !== true) return;
+        let lateEdits: Dynamic = claimLateGesture(
           deps.rootName,
-          input.tid,
-          value309,
-          input.crop === true,
+          message.tid,
+          targetElement,
+          message.crop === true,
         );
-        if (value310 === undefined || value308 === null) {
-          deps.pushLiveModel(deps.rootName, value307);
+        if (lateEdits === undefined || targetTid === null) {
+          deps.pushLiveModel(deps.rootName, modelState);
           return;
         }
-        let current: Dynamic = deps.value65.current,
-          value311: Dynamic =
-            !!current &&
-            current.name === deps.rootName &&
-            current.key === input.gestureKey;
-        deps.value27.forget(input.gestureKey ?? "");
-        value311 ||
+        let lastUndoMark: Dynamic = deps.value65.current,
+          isSameGesture: Dynamic =
+            !!lastUndoMark &&
+            lastUndoMark.name === deps.rootName &&
+            lastUndoMark.key === message.gestureKey;
+        deps.value27.forget(message.gestureKey ?? "");
+        isSameGesture ||
           deps.value101(
             deps.rootName,
-            input.gestureKey ?? `resize-${input.tid}`,
-            value307,
+            message.gestureKey ?? `resize-${message.tid}`,
+            modelState,
           );
-        input.width != null &&
-          value307.model.setStyleProperty(
-            value308,
+        message.width != null &&
+          modelState.model.setStyleProperty(
+            targetTid,
             "width",
-            `${input.width}px`,
+            `${message.width}px`,
           );
-        input.height != null &&
-          value307.model.setStyleProperty(
-            value308,
+        message.height != null &&
+          modelState.model.setStyleProperty(
+            targetTid,
             "height",
-            `${input.height}px`,
+            `${message.height}px`,
           );
-        input.left != null &&
-          value307.model.setStyleProperty(
-            value308,
+        message.left != null &&
+          modelState.model.setStyleProperty(
+            targetTid,
             "left",
-            `${input.left}px`,
+            `${message.left}px`,
           );
-        input.top != null &&
-          value307.model.setStyleProperty(value308, "top", `${input.top}px`);
-        input.right != null &&
-          value307.model.setStyleProperty(
-            value308,
+        message.top != null &&
+          modelState.model.setStyleProperty(targetTid, "top", `${message.top}px`);
+        message.right != null &&
+          modelState.model.setStyleProperty(
+            targetTid,
             "right",
-            `${input.right}px`,
+            `${message.right}px`,
           );
-        input.bottom != null &&
-          value307.model.setStyleProperty(
-            value308,
+        message.bottom != null &&
+          modelState.model.setStyleProperty(
+            targetTid,
             "bottom",
-            `${input.bottom}px`,
+            `${message.bottom}px`,
           );
-        for (let [value312, value313] of (value310 ?? []) as Dynamic)
-          value307.model.setStyleProperty(value308, value312, value313);
+        for (let [property, styleValue] of (lateEdits ?? []) as Dynamic)
+          modelState.model.setStyleProperty(targetTid, property, styleValue);
         deps.value66.current = deps.rootName;
-        deps.pushLiveModel(deps.rootName, value307);
+        deps.pushLiveModel(deps.rootName, modelState);
         deps.markModelDirty(deps.rootName);
         deps.incrementSessionEpoch();
-        let current2: Dynamic = deps.value49.current;
-        current2?.name === deps.rootName && deps.value105(deps.rootName, current2.tids);
+        let selection: Dynamic = deps.value49.current;
+        selection?.name === deps.rootName && deps.value105(deps.rootName, selection.tids);
       }
 
 /** 拖动线条或箭头端点时（收到 strokeEndpoint 消息）运行：重新计算 SVG 线段端点、箭头和外框尺寸并写回模型，标脏后重新选中该图形。 */
-export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value105: Dynamic; readonly value117: Dynamic; readonly value49: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, input?: Dynamic): Dynamic {
-        if ((input.name ?? deps.rootName) !== deps.rootName) return;
-        let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value307) return void deps.value117();
+export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value105: Dynamic; readonly value117: Dynamic; readonly value49: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, message?: Dynamic): Dynamic {
+        if ((message.name ?? deps.rootName) !== deps.rootName) return;
+        let modelState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!modelState) return void deps.value117();
         if (
-          !value307.model.element(input.tid) ||
-          value307.model.tagName(input.tid) !== "svg" ||
-          !/^[MLCZE\d\s.,-]+$/i.test(input.d)
+          !modelState.model.element(message.tid) ||
+          modelState.model.tagName(message.tid) !== "svg" ||
+          !/^[MLCZE\d\s.,-]+$/i.test(message.d)
         )
           return;
-        let value308: Dynamic = value307.model.element(input.tid),
-          value309: Dynamic = value308
-            ? inspectSvgArrow(value308)
+        let svgElement: Dynamic = modelState.model.element(message.tid),
+          arrow: Dynamic = svgElement
+            ? inspectSvgArrow(svgElement)
             : null,
-          value310: Dynamic = value307.model.childTids(input.tid),
-          value311: Dynamic =
-            !value309 &&
-            input.unitScale === undefined &&
-            input.isArrow !== true &&
-            value310.length === 1 &&
-            value307.model.tagName(value310[0]) === "path" &&
-            value307.model.attribute(value310[0], "transform") == null &&
-            value307.model.attributes(input.tid).preserveAspectRatio ===
+          childTids: Dynamic = modelState.model.childTids(message.tid),
+          bareShaftTid: Dynamic =
+            !arrow &&
+            message.unitScale === undefined &&
+            message.isArrow !== true &&
+            childTids.length === 1 &&
+            modelState.model.tagName(childTids[0]) === "path" &&
+            modelState.model.attribute(childTids[0], "transform") == null &&
+            modelState.model.attributes(message.tid).preserveAspectRatio ===
               "none"
-              ? value310[0]
+              ? childTids[0]
               : null;
-        if (!value308 || (!value309 && value311 == null)) {
-          deps.pushLiveModel(deps.rootName, value307);
+        if (!svgElement || (!arrow && bareShaftTid == null)) {
+          deps.pushLiveModel(deps.rootName, modelState);
           return;
         }
-        let callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-            Number.isFinite(input2)
-              ? Math.max(-1e6, Math.min(1e6, input2))
+        let clampCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+            Number.isFinite(coordinate)
+              ? Math.max(-1e6, Math.min(1e6, coordinate))
               : 0,
-          value312: Dynamic = callback7(input.left),
-          value313: Dynamic = callback7(input.top),
-          value314: Dynamic = Math.max(1, callback7(input.width)),
-          value315: Dynamic = Math.max(1, callback7(input.height)),
-          value316: Dynamic = normalizePasteScale(
-            input.unitScale,
+          left: Dynamic = clampCoordinate(message.left),
+          top: Dynamic = clampCoordinate(message.top),
+          width: Dynamic = Math.max(1, clampCoordinate(message.width)),
+          height: Dynamic = Math.max(1, clampCoordinate(message.height)),
+          unitScale: Dynamic = normalizePasteScale(
+            message.unitScale,
           );
-        if (value316 == null) {
-          deps.pushLiveModel(deps.rootName, value307);
+        if (unitScale == null) {
+          deps.pushLiveModel(deps.rootName, modelState);
           return;
         }
         deps.value101(
           deps.rootName,
-          input.gestureKey ?? `endpoint-${input.tid}`,
-          value307,
+          message.gestureKey ?? `endpoint-${message.tid}`,
+          modelState,
         );
-        setModelElementRect(value307.model, input.tid, {
-          left: value312,
-          top: value313,
-          width: value314,
-          height: value315,
+        setModelElementRect(modelState.model, message.tid, {
+          left: left,
+          top: top,
+          width: width,
+          height: height,
         });
-        let value317: Dynamic = null,
-          value318: Dynamic =
+        let remappedTids: Dynamic = null,
+          selectedElements: Dynamic =
             deps.value49.current?.name === deps.rootName
               ? deps.value49.current.tids
                   .map(
-                    (input2?: Dynamic): Dynamic =>
-                      value307.model.element(input2),
+                    (tid?: Dynamic): Dynamic =>
+                      modelState.model.element(tid),
                   )
-                  .filter((input2?: Dynamic): Dynamic => input2 != null)
+                  .filter((element?: Dynamic): Dynamic => element != null)
               : [];
-        if (value311 != null)
-          value307.model.setAttribute(value311, "d", input.d);
+        if (bareShaftTid != null)
+          modelState.model.setAttribute(bareShaftTid, "d", message.d);
         else if (
           resizeSvgArrow(
-            value307.model,
-            input.tid,
-            input.d,
-            value316,
-            normalizeSvgStrokeProperties(input.paint),
-            normalizeSvgStrokeProperties(input.svgPaint),
+            modelState.model,
+            message.tid,
+            message.d,
+            unitScale,
+            normalizeSvgStrokeProperties(message.paint),
+            normalizeSvgStrokeProperties(message.svgPaint),
           )?.restamped
         ) {
-          let value319: Dynamic = null;
-          for (let value320 of value308.children as Dynamic)
-            value320.tagName.toLowerCase() === "path" &&
-              (value319 = value320);
-          value317 = [
+          let shaftElement: Dynamic = null;
+          for (let child of svgElement.children as Dynamic)
+            child.tagName.toLowerCase() === "path" &&
+              (shaftElement = child);
+          remappedTids = [
             ...new Set(
-              value318
+              selectedElements
                 .map((element?: Dynamic): Dynamic => {
-                  let value320: Dynamic = parseInt(
+                  let tid: Dynamic = parseInt(
                       element.getAttribute(DcTplAttribute) ?? "-1",
                       10,
                     ),
-                    value321: Dynamic =
-                      value320 >= 0 &&
-                      value307.model.element(value320) === element
+                    anchorElement: Dynamic =
+                      tid >= 0 &&
+                      modelState.model.element(tid) === element
                         ? element
-                        : value319;
-                  return value321
+                        : shaftElement;
+                  return anchorElement
                     ? parseInt(
-                        value321.getAttribute(DcTplAttribute) ?? "-1",
+                        anchorElement.getAttribute(DcTplAttribute) ?? "-1",
                         10,
                       )
                     : -1;
                 })
-                .filter((input2?: Dynamic): Dynamic => input2 >= 0),
+                .filter((tid?: Dynamic): Dynamic => tid >= 0),
             ),
           ];
         }
         deps.value66.current = deps.rootName;
-        deps.pushLiveModel(deps.rootName, value307);
+        deps.pushLiveModel(deps.rootName, modelState);
         deps.markModelDirty(deps.rootName);
         deps.incrementSessionEpoch();
-        let current: Dynamic = deps.value49.current;
-        if (current?.name === deps.rootName) {
-          let value319: Dynamic =
-            value317 && value317.length > 0 ? value317 : current.tids;
-          deps.value105(deps.rootName, value319);
+        let selection: Dynamic = deps.value49.current;
+        if (selection?.name === deps.rootName) {
+          let nextTids: Dynamic =
+            remappedTids && remappedTids.length > 0 ? remappedTids : selection.tids;
+          deps.value105(deps.rootName, nextTids);
           if (
-            value319.length !== current.tids.length ||
-            value319.some(
-              (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                input2 !== current.tids[options],
+            nextTids.length !== selection.tids.length ||
+            nextTids.some(
+              (tid?: Dynamic, index?: Dynamic): Dynamic =>
+                tid !== selection.tids[index],
             )
           ) {
-            let value320: Dynamic = deps.value67();
-            value320 &&
+            let pickerTarget: Dynamic = deps.value67();
+            pickerTarget &&
               setTimeout(
                 (): Dynamic =>
                   setPickerSelection(
-                    value320,
-                    value319,
+                    pickerTarget,
+                    nextTids,
                     deps.rootName,
                   ),
                 60,
@@ -787,181 +787,181 @@ export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch
       }
 
 /** 画板内手势进行中（收到 stylePreview 消息）运行：首次变化时记下撤销点和元素原有的内联样式，把预览样式写入模型，并在下一帧把实时模型推送给代理画板。 */
-export function applyLiveStylePreview(deps: { readonly delegatedFileRef: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value121: Dynamic; readonly value26: Dynamic; readonly value27: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic }, input?: Dynamic): Dynamic {
-        if ((input.name || deps.rootName) !== deps.rootName) return;
-        let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
+export function applyLiveStylePreview(deps: { readonly delegatedFileRef: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value121: Dynamic; readonly value26: Dynamic; readonly value27: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic }, message?: Dynamic): Dynamic {
+        if ((message.name || deps.rootName) !== deps.rootName) return;
+        let modelState: Dynamic = deps.modelRef.current.state(deps.rootName);
         if (
-          !value307 ||
-          (input.crop === true &&
+          !modelState ||
+          (message.crop === true &&
             dispatchElementSessionGesture(
               deps.rootName,
-              input,
-              value307.model,
-            ) !== input.tid)
+              message,
+              modelState.model,
+            ) !== message.tid)
         )
           return;
-        let current: Dynamic = deps.value26.current,
-          value308: Dynamic =
-            current !== null && current.gestureKey === input.gestureKey
-              ? current
+        let gesture: Dynamic = deps.value26.current,
+          activeGesture: Dynamic =
+            gesture !== null && gesture.gestureKey === message.gestureKey
+              ? gesture
               : null,
-          value309: Dynamic =
-            value308 !== null && input.follower === true
-              ? value308.followerCurrent?.get(input.tid)
+          followerTid: Dynamic =
+            activeGesture !== null && message.follower === true
+              ? activeGesture.followerCurrent?.get(message.tid)
               : undefined;
         if (
-          value308 !== null &&
-          input.follower === true &&
-          value309 === undefined
+          activeGesture !== null &&
+          message.follower === true &&
+          followerTid === undefined
         )
           return;
-        let value310: Dynamic =
-            value308 !== null &&
-            (input.tid === value308.movingTid || value309 !== undefined),
-          value311: Dynamic =
-            value308 === null || !value310
-              ? input.tid
-              : (value309 ?? value308.movingCurrentTid);
+        let isMovingTarget: Dynamic =
+            activeGesture !== null &&
+            (message.tid === activeGesture.movingTid || followerTid !== undefined),
+          targetTid: Dynamic =
+            activeGesture === null || !isMovingTarget
+              ? message.tid
+              : (followerTid ?? activeGesture.movingCurrentTid);
         if (
-          !value307.model.element(value311) ||
-          containsUneditableSelection(value307.model, [value311])
+          !modelState.model.element(targetTid) ||
+          containsUneditableSelection(modelState.model, [targetTid])
         )
           return;
-        if (!value310) {
-          let current2: Dynamic = deps.value65.current;
-          current2 &&
-            current2.name === deps.rootName &&
-            current2.key === input.gestureKey &&
-            (current2.at = Date.now());
-          deps.value101(deps.rootName, input.gestureKey, value307);
+        if (!isMovingTarget) {
+          let undoMark: Dynamic = deps.value65.current;
+          undoMark &&
+            undoMark.name === deps.rootName &&
+            undoMark.key === message.gestureKey &&
+            (undoMark.at = Date.now());
+          deps.value101(deps.rootName, message.gestureKey, modelState);
           deps.value27.capture(
-            input.gestureKey,
-            value311,
-            (): Dynamic => value307.model.inlineStyleAttr(value311),
+            message.gestureKey,
+            targetTid,
+            (): Dynamic => modelState.model.inlineStyleAttr(targetTid),
           );
         }
-        let flag: Dynamic = false;
-        for (let [value312, value313] of Object.entries(
-          input.styles,
+        let didChange: Dynamic = false;
+        for (let [property, styleValue] of Object.entries(
+          message.styles,
         ) as Dynamic)
-          value307.model.setStyleProperty(value311, value312, value313) &&
-            (flag = true);
-        flag &&
+          modelState.model.setStyleProperty(targetTid, property, styleValue) &&
+            (didChange = true);
+        didChange &&
           ((deps.value66.current = deps.rootName),
           deps.delegatedFileRef.current &&
             !deps.value121.current &&
             ((deps.value121.current = true),
             requestAnimationFrame((): Dynamic => {
               deps.value121.current = false;
-              let value312: Dynamic = deps.modelRef.current.state(deps.rootName);
-              value312 && deps.pushLiveModel(deps.rootName, value312);
+              let latestState: Dynamic = deps.modelRef.current.state(deps.rootName);
+              latestState && deps.pushLiveModel(deps.rootName, latestState);
             })));
       }
 
 /** 多选元素整体旋转或缩放结束时（收到 groupTransform 消息）运行：先把未参与的元素恢复为基线样式，再把各成员的新尺寸、位置、旋转或线段端点写回模型；没有有效成员时撤销本次记录。 */
-export function commitElementGroupTransform(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryDrop: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value105: Dynamic; readonly value117: Dynamic; readonly value27: Dynamic; readonly value49: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value307?: Dynamic): Dynamic {
-        if ((context ?? deps.rootName) !== deps.rootName) return;
-        let value308: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value308) return void deps.value117();
-        let value309: Dynamic = options ?? "",
-          value310: Dynamic = value307.filter(
-            (input2?: Dynamic): Dynamic =>
-              value308.model.element(input2.tid) &&
-              !containsUneditableSelection(value308.model, [
-                input2.tid,
+export function commitElementGroupTransform(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryDrop: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value105: Dynamic; readonly value117: Dynamic; readonly value27: Dynamic; readonly value49: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic }, groupId?: Dynamic,
+        gestureKey?: Dynamic,
+        artboardName?: Dynamic,
+        members?: Dynamic): Dynamic {
+        if ((artboardName ?? deps.rootName) !== deps.rootName) return;
+        let modelState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!modelState) return void deps.value117();
+        let resolvedKey: Dynamic = gestureKey ?? "",
+          validMembers: Dynamic = members.filter(
+            (member?: Dynamic): Dynamic =>
+              modelState.model.element(member.tid) &&
+              !containsUneditableSelection(modelState.model, [
+                member.tid,
               ]),
           ),
           values: Dynamic = new Set(
-            value310
-              .filter((input2?: Dynamic): Dynamic => !input2.stroke)
-              .map((input2?: Dynamic): Dynamic => input2.tid),
+            validMembers
+              .filter((member?: Dynamic): Dynamic => !member.stroke)
+              .map((member?: Dynamic): Dynamic => member.tid),
           );
-        for (let value312 of deps.value27.tids(value309) as Dynamic) {
-          if (values.has(value312) || !value308.model.element(value312))
+        for (let tid of deps.value27.tids(resolvedKey) as Dynamic) {
+          if (values.has(tid) || !modelState.model.element(tid))
             continue;
-          let value313: Dynamic = deps.value27.baselineFor(value309, value312);
-          value313 !== undefined &&
-            value308.model.setInlineStyleAttr(value312, value313);
+          let baselineStyle: Dynamic = deps.value27.baselineFor(resolvedKey, tid);
+          baselineStyle !== undefined &&
+            modelState.model.setInlineStyleAttr(tid, baselineStyle);
         }
-        let current: Dynamic = deps.value65.current,
-          value311: Dynamic =
-            !!current &&
-            current.name === deps.rootName &&
-            current.key === value309;
-        if (value310.length === 0) {
-          value311 &&
-            (value308.undo.pop(),
+        let undoMark: Dynamic = deps.value65.current,
+          isSameGesture: Dynamic =
+            !!undoMark &&
+            undoMark.name === deps.rootName &&
+            undoMark.key === resolvedKey;
+        if (validMembers.length === 0) {
+          isSameGesture &&
+            (modelState.undo.pop(),
             deps.onHistoryDrop?.("undo"),
             (deps.value65.current = null));
-          deps.value27.forget(value309);
-          deps.pushLiveModel(deps.rootName, value308);
+          deps.value27.forget(resolvedKey);
+          deps.pushLiveModel(deps.rootName, modelState);
           return;
         }
-        value311 || deps.value101(deps.rootName, options ?? `group-${input}`, value308);
-        for (let value312 of value310 as Dynamic) {
-          if (value312.stroke) {
-            let value314: Dynamic =
-                value308.model.tagName(value312.tid) === "svg"
-                  ? value308.model.element(value312.tid)
+        isSameGesture || deps.value101(deps.rootName, gestureKey ?? `group-${groupId}`, modelState);
+        for (let member of validMembers as Dynamic) {
+          if (member.stroke) {
+            let svgElement: Dynamic =
+                modelState.model.tagName(member.tid) === "svg"
+                  ? modelState.model.element(member.tid)
                   : null,
-              value315: Dynamic = value314
-                ? inspectSvgArrow(value314)
+              arrow: Dynamic = svgElement
+                ? inspectSvgArrow(svgElement)
                 : null,
-              value316: Dynamic =
-                value315 && !value315.legacy
+              shaftTid: Dynamic =
+                arrow && !arrow.legacy
                   ? parseInt(
-                      value315.shaft.getAttribute(DcTplAttribute) ??
+                      arrow.shaft.getAttribute(DcTplAttribute) ??
                         "-1",
                       10,
                     )
                   : -1,
-              value317: Dynamic = (
+              endpoints: Dynamic = (
                 /^M ([-\d.]+) ([-\d.]+) L ([-\d.]+) ([-\d.]+)$/.exec(
-                  value312.stroke.d,
+                  member.stroke.d,
                 ) ?? []
               )
                 .slice(1)
                 .map(Number);
             if (
-              value316 < 0 ||
-              value317.length !== 4 ||
-              value317.some(
-                (input2?: Dynamic): Dynamic => !Number.isFinite(input2),
+              shaftTid < 0 ||
+              endpoints.length !== 4 ||
+              endpoints.some(
+                (coordinate?: Dynamic): Dynamic => !Number.isFinite(coordinate),
               )
             )
               continue;
             setModelElementRect(
-              value308.model,
-              value312.tid,
-              value312.stroke,
+              modelState.model,
+              member.tid,
+              member.stroke,
             );
             normalizeSvgElementSizing(
-              value308.model,
-              value312.tid,
+              modelState.model,
+              member.tid,
             );
             copySvgStrokeProperties(
-              value308.model,
-              value316,
-              value312.tid,
-              value312.stroke.unitScale,
-              value312.stroke.paint,
-              value312.stroke.svgPaint,
+              modelState.model,
+              shaftTid,
+              member.tid,
+              member.stroke.unitScale,
+              member.stroke.paint,
+              member.stroke.svgPaint,
             );
             setSvgLineEndpoints(
-              value308.model,
-              value316,
-              value317[0],
-              value317[1],
-              value317[2],
-              value317[3],
+              modelState.model,
+              shaftTid,
+              endpoints[0],
+              endpoints[1],
+              endpoints[2],
+              endpoints[3],
             );
             continue;
           }
-          let value313: Dynamic = value312.styles ?? {},
-            state: Dynamic = {
+          let styles: Dynamic = member.styles ?? {},
+            oppositeSide: Dynamic = {
               left: "right",
               right: "left",
               top: "bottom",
@@ -969,63 +969,63 @@ export function commitElementGroupTransform(deps: { readonly incrementSessionEpo
             };
           if (
             ["left", "top", "right", "bottom"].some(
-              (input2?: Dynamic): Dynamic => value313[input2] !== undefined,
+              (side?: Dynamic): Dynamic => styles[side] !== undefined,
             )
           ) {
-            let value314: Dynamic = value308.model.inlineStyleValue(
-              value312.tid,
+            let position: Dynamic = modelState.model.inlineStyleValue(
+              member.tid,
               "position",
             );
-            value314 !== "absolute" &&
-              value314 !== "fixed" &&
-              value308.model.setStyleProperty(
-                value312.tid,
+            position !== "absolute" &&
+              position !== "fixed" &&
+              modelState.model.setStyleProperty(
+                member.tid,
                 "position",
-                value312.fixed ? "fixed" : "absolute",
+                member.fixed ? "fixed" : "absolute",
               );
           }
-          for (let [value314, value315] of Object.entries(
-            value313,
+          for (let [property, styleValue] of Object.entries(
+            styles,
           ) as Dynamic) {
-            value308.model.setStyleProperty(value312.tid, value314, value315);
-            state[value314] &&
-              value308.model.setStyleProperty(
-                value312.tid,
-                state[value314],
+            modelState.model.setStyleProperty(member.tid, property, styleValue);
+            oppositeSide[property] &&
+              modelState.model.setStyleProperty(
+                member.tid,
+                oppositeSide[property],
                 null,
               );
           }
-          if (value312.angle !== undefined) {
-            let value314: Dynamic = parseCssTransform(
-              value308.model.effectiveStyleValue(value312.tid, "transform"),
+          if (member.angle !== undefined) {
+            let transform: Dynamic = parseCssTransform(
+              modelState.model.effectiveStyleValue(member.tid, "transform"),
             );
-            if (value314)
-              value308.model.setStyleProperty(
-                value312.tid,
+            if (transform)
+              modelState.model.setStyleProperty(
+                member.tid,
                 "transform",
                 serializeCssTransform({
-                  ...value314,
+                  ...transform,
                   rotate: {
-                    value: Math.round(value312.angle),
+                    value: Math.round(member.angle),
                     unit: "deg",
                   },
                 }) || null,
               );
             else {
-              let value315: Dynamic = deps.value27.baselineFor(
-                options ?? "",
-                value312.tid,
+              let baselineStyle: Dynamic = deps.value27.baselineFor(
+                gestureKey ?? "",
+                member.tid,
               );
-              value315 !== undefined &&
-                value308.model.setInlineStyleAttr(value312.tid, value315);
+              baselineStyle !== undefined &&
+                modelState.model.setInlineStyleAttr(member.tid, baselineStyle);
             }
           }
         }
-        deps.value27.forget(options ?? "");
+        deps.value27.forget(gestureKey ?? "");
         deps.value66.current = deps.rootName;
-        deps.pushLiveModel(deps.rootName, value308);
+        deps.pushLiveModel(deps.rootName, modelState);
         deps.markModelDirty(deps.rootName);
         deps.incrementSessionEpoch();
-        let current2: Dynamic = deps.value49.current;
-        current2?.name === deps.rootName && deps.value105(deps.rootName, current2.tids);
+        let selection: Dynamic = deps.value49.current;
+        selection?.name === deps.rootName && deps.value105(deps.rootName, selection.tids);
       }

@@ -18,9 +18,9 @@ var HostValue: Dynamic;
 function toggleBoardSelection(selection?: Dynamic, item?: Dynamic): Dynamic {
   let files: Dynamic = new Set(selection.files),
     notes: Dynamic = new Set(selection.notes),
-    [value, value2]: Dynamic =
+    [targetSet, targetKey]: Dynamic =
       "file" in item ? [files, item.file] : [notes, item.note];
-  value.has(value2) ? value.delete(value2) : value.add(value2);
+  targetSet.has(targetKey) ? targetSet.delete(targetKey) : targetSet.add(targetKey);
   return {
     files: files,
     notes: notes,
@@ -46,49 +46,49 @@ function createCanvasSelection(
   };
 }
 function selectionFromParts(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  artboards?: Dynamic,
+  notes?: Dynamic,
+  elements?: Dynamic,
+  primary?: Dynamic,
 ): Dynamic {
-  return createCanvasSelection(input, options, context, value);
+  return createCanvasSelection(artboards, notes, elements, primary);
 }
-function selectionFromBoards(input?: Dynamic): Dynamic {
+function selectionFromBoards(boards?: Dynamic): Dynamic {
   return createCanvasSelection(
-    input.files,
-    input.notes,
+    boards.files,
+    boards.notes,
     SelectionCanvasSelectionCache,
     null,
   );
 }
-function selectionFromArtboards(input?: Dynamic): Dynamic {
+function selectionFromArtboards(artboards?: Dynamic): Dynamic {
   return selectionFromBoards({
-    files: input,
+    files: artboards,
     notes: SelectionCanvasSelectionSubscribers,
   });
 }
-function toggleCanvasSelection(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = canvasBoardSelection(input);
-  for (let value2 of options.files as Dynamic)
-    value = toggleBoardSelection(value, {
-      file: value2,
+function toggleCanvasSelection(selection?: Dynamic, boards?: Dynamic): Dynamic {
+  let boardSelection: Dynamic = canvasBoardSelection(selection);
+  for (let file of boards.files as Dynamic)
+    boardSelection = toggleBoardSelection(boardSelection, {
+      file: file,
     });
-  for (let value2 of options.notes as Dynamic)
-    value = toggleBoardSelection(value, {
-      note: value2,
+  for (let note of boards.notes as Dynamic)
+    boardSelection = toggleBoardSelection(boardSelection, {
+      note: note,
     });
-  let elements: Dynamic = input.elements;
-  for (let value2 of value.files as Dynamic)
-    if (!input.artboards.has(value2) && elements.has(value2)) {
+  let elements: Dynamic = selection.elements;
+  for (let file of boardSelection.files as Dynamic)
+    if (!selection.artboards.has(file) && elements.has(file)) {
       let entries: Dynamic = new Map(elements);
-      entries.delete(value2);
+      entries.delete(file);
       elements = entries;
     }
   return createCanvasSelection(
-    value.files,
-    value.notes,
+    boardSelection.files,
+    boardSelection.notes,
     elements,
-    input.primary,
+    selection.primary,
   );
 }
 function selectionFromElements(file?: Dynamic, entry?: Dynamic): Dynamic {
@@ -100,343 +100,343 @@ function selectionFromElements(file?: Dynamic, entry?: Dynamic): Dynamic {
   );
 }
 function promoteToArtboardSelection(
-  input?: Dynamic,
-  options?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
 ): Dynamic {
-  if (input.artboards.has(options) && !input.elements.has(options))
-    return input;
-  let value: Dynamic = input.artboards.has(options)
-      ? input.artboards
-      : new Set([...input.artboards, options]),
-    elements: Dynamic = input.elements;
-  if (elements.has(options)) {
+  if (selection.artboards.has(file) && !selection.elements.has(file))
+    return selection;
+  let artboards: Dynamic = selection.artboards.has(file)
+      ? selection.artboards
+      : new Set([...selection.artboards, file]),
+    elements: Dynamic = selection.elements;
+  if (elements.has(file)) {
     let entries: Dynamic = new Map(elements);
-    entries.delete(options);
+    entries.delete(file);
     elements = entries;
   }
-  return createCanvasSelection(value, input.notes, elements, input.primary);
+  return createCanvasSelection(artboards, selection.notes, elements, selection.primary);
 }
 function setCanvasElementSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
+  entry?: Dynamic,
+  isAdditive?: Dynamic,
 ): Dynamic {
-  if (!value)
-    return context == null
+  if (!isAdditive)
+    return entry == null
       ? emptyCanvasSelection
-      : selectionFromElements(options, context);
+      : selectionFromElements(file, entry);
   if (
-    context != null &&
-    shouldPromoteElementSelection(input, options, context.tids)
+    entry != null &&
+    shouldPromoteElementSelection(selection, file, entry.tids)
   )
-    return promoteToArtboardSelection(input, options);
-  let entries: Dynamic = new Map(input.elements);
-  context == null ? entries.delete(options) : entries.set(options, context);
+    return promoteToArtboardSelection(selection, file);
+  let entries: Dynamic = new Map(selection.elements);
+  entry == null ? entries.delete(file) : entries.set(file, entry);
   return createCanvasSelection(
-    input.artboards,
-    input.notes,
+    selection.artboards,
+    selection.notes,
     entries,
-    context != null ? options : input.primary,
+    entry != null ? file : selection.primary,
   );
 }
 function toggleCanvasElementIds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
+  tids?: Dynamic,
+  entryInfo?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = input.elements.get(options),
-    value2: Dynamic = entry
+  let entry: Dynamic = selection.elements.get(file),
+    nextTids: Dynamic = entry
       ? entry.tids.filter(
-          (input2?: Dynamic): Dynamic => !context.includes(input2),
+          (tid?: Dynamic): Dynamic => !tids.includes(tid),
         )
       : [];
-  for (let value3 of context as Dynamic)
-    (!entry || !entry.tids.includes(value3)) && value2.push(value3);
-  return updateCanvasElementSelection(input, options, value2, value);
+  for (let tid of tids as Dynamic)
+    (!entry || !entry.tids.includes(tid)) && nextTids.push(tid);
+  return updateCanvasElementSelection(selection, file, nextTids, entryInfo);
 }
 function shouldPromoteElementSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
+  tids?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.elements.get(options)?.tids ?? [];
+  let currentTids: Dynamic = selection.elements.get(file)?.tids ?? [];
   return (
-    input.artboards.size > 0 &&
-    context.some((input2?: Dynamic): Dynamic => !value.includes(input2))
+    selection.artboards.size > 0 &&
+    tids.some((tid?: Dynamic): Dynamic => !currentTids.includes(tid))
   );
 }
 function updateCanvasElementSelection(
-  input?: Dynamic,
-  options?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
   items?: Dynamic,
-  value?: Dynamic,
+  entryInfo?: Dynamic,
 ): Dynamic {
-  if (shouldPromoteElementSelection(input, options, items))
-    return promoteToArtboardSelection(input, options);
-  let entries: Dynamic = new Map(input.elements);
+  if (shouldPromoteElementSelection(selection, file, items))
+    return promoteToArtboardSelection(selection, file);
+  let entries: Dynamic = new Map(selection.elements);
   items.length === 0
-    ? entries.delete(options)
-    : entries.set(options, {
-        name: value.name,
+    ? entries.delete(file)
+    : entries.set(file, {
+        name: entryInfo.name,
         tids: [...items],
-        rect: value.rect ?? null,
+        rect: entryInfo.rect ?? null,
         count: items.length,
       });
   return createCanvasSelection(
-    input.artboards,
-    input.notes,
+    selection.artboards,
+    selection.notes,
     entries,
-    items.length > 0 ? options : input.primary,
+    items.length > 0 ? file : selection.primary,
   );
 }
 function mergeCanvasSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  selection?: Dynamic,
+  incoming?: Dynamic,
+  isToggle?: Dynamic,
 ): Dynamic {
-  let value: Dynamic,
-    value2: Dynamic,
+  let artboards: Dynamic,
+    notes: Dynamic,
     entries: Dynamic = new Map();
-  if (context) {
-    let value3: Dynamic = canvasBoardSelection(input);
-    for (let value4 of options.files as Dynamic)
-      value3 = toggleBoardSelection(value3, {
-        file: value4,
+  if (isToggle) {
+    let boardSelection: Dynamic = canvasBoardSelection(selection);
+    for (let file of incoming.files as Dynamic)
+      boardSelection = toggleBoardSelection(boardSelection, {
+        file: file,
       });
-    for (let value4 of options.notes as Dynamic)
-      value3 = toggleBoardSelection(value3, {
-        note: value4,
+    for (let note of incoming.notes as Dynamic)
+      boardSelection = toggleBoardSelection(boardSelection, {
+        note: note,
       });
-    value = new Set(value3.files);
-    value2 = new Set(value3.notes);
-    for (let [value4, value5] of input.elements as Dynamic) {
-      let value6: Dynamic = options.elements.get(value4)?.tids ?? [],
-        items: Dynamic = [
-          ...value5.tids.filter(
-            (input2?: Dynamic): Dynamic => !value6.includes(input2),
+    artboards = new Set(boardSelection.files);
+    notes = new Set(boardSelection.notes);
+    for (let [file, currentEntry] of selection.elements as Dynamic) {
+      let incomingTids: Dynamic = incoming.elements.get(file)?.tids ?? [],
+        mergedTids: Dynamic = [
+          ...currentEntry.tids.filter(
+            (tid?: Dynamic): Dynamic => !incomingTids.includes(tid),
           ),
-          ...value6.filter(
-            (input2?: Dynamic): Dynamic => !value5.tids.includes(input2),
+          ...incomingTids.filter(
+            (tid?: Dynamic): Dynamic => !currentEntry.tids.includes(tid),
           ),
         ];
-      items.length > 0 &&
-        entries.set(value4, {
-          name: value5.name,
-          tids: items,
+      mergedTids.length > 0 &&
+        entries.set(file, {
+          name: currentEntry.name,
+          tids: mergedTids,
           rect: null,
-          count: items.length,
+          count: mergedTids.length,
         });
     }
-    for (let [value4, value5] of options.elements as Dynamic)
-      !input.elements.has(value4) &&
-        value5.tids.length > 0 &&
-        entries.set(value4, {
-          name: value5.name,
-          tids: [...value5.tids],
+    for (let [file, incomingEntry] of incoming.elements as Dynamic)
+      !selection.elements.has(file) &&
+        incomingEntry.tids.length > 0 &&
+        entries.set(file, {
+          name: incomingEntry.name,
+          tids: [...incomingEntry.tids],
           rect: null,
-          count: value5.tids.length,
+          count: incomingEntry.tids.length,
         });
   } else {
-    value = new Set(options.files);
-    value2 = new Set(options.notes);
-    for (let [value3, value4] of options.elements as Dynamic)
-      value4.tids.length > 0 &&
-        entries.set(value3, {
-          name: value4.name,
-          tids: [...value4.tids],
+    artboards = new Set(incoming.files);
+    notes = new Set(incoming.notes);
+    for (let [file, incomingEntry] of incoming.elements as Dynamic)
+      incomingEntry.tids.length > 0 &&
+        entries.set(file, {
+          name: incomingEntry.name,
+          tids: [...incomingEntry.tids],
           rect: null,
-          count: value4.tids.length,
+          count: incomingEntry.tids.length,
         });
   }
-  if (value.size > 0)
-    for (let [value3, value4] of entries as Dynamic) {
-      let value5: Dynamic = context
-        ? (input.elements.get(value3)?.tids ?? [])
+  if (artboards.size > 0)
+    for (let [file, entry] of entries as Dynamic) {
+      let previousTids: Dynamic = isToggle
+        ? (selection.elements.get(file)?.tids ?? [])
         : [];
-      (value4.tids.some(
-        (input2?: Dynamic): Dynamic => !value5.includes(input2),
+      (entry.tids.some(
+        (tid?: Dynamic): Dynamic => !previousTids.includes(tid),
       ) ||
-        value.has(value3)) &&
-        (entries.delete(value3), value.add(value3));
+        artboards.has(file)) &&
+        (entries.delete(file), artboards.add(file));
     }
-  return createCanvasSelection(value, value2, entries, input.primary);
+  return createCanvasSelection(artboards, notes, entries, selection.primary);
 }
 function filterSelectedArtboards(
-  input?: Dynamic,
-  options?: Dynamic,
+  selection?: Dynamic,
+  shouldKeep?: Dynamic,
 ): Dynamic {
-  let values: Dynamic = new Set([...input.artboards].filter(options)),
-    entries: Dynamic = new Map(
-      [...input.elements].filter(
-        ([input2]: Dynamic): Dynamic => options(input2),
+  let keptArtboards: Dynamic = new Set([...selection.artboards].filter(shouldKeep)),
+    keptEntries: Dynamic = new Map(
+      [...selection.elements].filter(
+        ([file]: Dynamic): Dynamic => shouldKeep(file),
       ),
     );
-  return values.size === input.artboards.size &&
-    entries.size === input.elements.size
-    ? input
-    : createCanvasSelection(values, input.notes, entries, input.primary);
+  return keptArtboards.size === selection.artboards.size &&
+    keptEntries.size === selection.elements.size
+    ? selection
+    : createCanvasSelection(keptArtboards, selection.notes, keptEntries, selection.primary);
 }
 function replaceSelectedElements(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  selection?: Dynamic,
+  elements?: Dynamic,
+  primary?: Dynamic,
 ): Dynamic {
   return createCanvasSelection(
-    input.artboards,
-    input.notes,
-    options,
-    context,
+    selection.artboards,
+    selection.notes,
+    elements,
+    primary,
   );
 }
-function filterSelectedElements(input?: Dynamic, options?: Dynamic): Dynamic {
+function filterSelectedElements(selection?: Dynamic, shouldKeep?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(
-    [...input.elements].filter(
-      ([input2]: Dynamic): Dynamic => options(input2),
+    [...selection.elements].filter(
+      ([file]: Dynamic): Dynamic => shouldKeep(file),
     ),
   );
-  return entries.size === input.elements.size
-    ? input
+  return entries.size === selection.elements.size
+    ? selection
     : createCanvasSelection(
-        input.artboards,
-        input.notes,
+        selection.artboards,
+        selection.notes,
         entries,
-        input.primary,
+        selection.primary,
       );
 }
 function synchronizeSelectedElementIds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
+  resolveTids?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = input.elements.get(options);
+  let entry: Dynamic = selection.elements.get(file);
   if (
     !entry ||
     (entry.name != null &&
-      entry.name !== SelectionActionsReplace(options))
+      entry.name !== SelectionActionsReplace(file))
   )
-    return input;
-  let value: Dynamic =
+    return selection;
+  let liveTids: Dynamic =
     entry.name == null
       ? []
-      : context(entry.tids).filter(
-          (input2?: Dynamic): Dynamic => input2 != null,
+      : resolveTids(entry.tids).filter(
+          (tid?: Dynamic): Dynamic => tid != null,
         );
-  if (value.length === 0)
+  if (liveTids.length === 0)
     return filterSelectedElements(
-      input,
-      (input2?: Dynamic): Dynamic => input2 !== options,
+      selection,
+      (candidate?: Dynamic): Dynamic => candidate !== file,
     );
   if (
-    value.length === entry.tids.length &&
-    value.every(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        input2 === entry.tids[options2],
+    liveTids.length === entry.tids.length &&
+    liveTids.every(
+      (tid?: Dynamic, index?: Dynamic): Dynamic =>
+        tid === entry.tids[index],
     )
   )
-    return input;
-  let entries: Dynamic = new Map(input.elements);
-  entries.set(options, {
+    return selection;
+  let entries: Dynamic = new Map(selection.elements);
+  entries.set(file, {
     ...entry,
-    tids: value,
+    tids: liveTids,
     rect: null,
-    count: value.length === entry.tids.length ? entry.count : value.length,
+    count: liveTids.length === entry.tids.length ? entry.count : liveTids.length,
   });
   return createCanvasSelection(
-    input.artboards,
-    input.notes,
+    selection.artboards,
+    selection.notes,
     entries,
-    input.primary,
+    selection.primary,
   );
 }
 function reconcileSelectedElementIds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
+  resolveTids?: Dynamic,
+  previousFile?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = synchronizeSelectedElementIds(
-      input,
-      options,
-      context ?? ((): Dynamic => []),
+  let synced: Dynamic = synchronizeSelectedElementIds(
+      selection,
+      file,
+      resolveTids ?? ((): Dynamic => []),
     ),
-    entry: Dynamic = value2.elements.get(options),
-    value3: Dynamic =
+    entry: Dynamic = synced.elements.get(file),
+    isCurrent: Dynamic =
       entry != null &&
-      entry.name === SelectionActionsReplace(options);
+      entry.name === SelectionActionsReplace(file);
   return {
-    next: value2,
+    next: synced,
     tell:
-      !value3 || (value2 === input && options === value) ? null : entry.tids,
+      !isCurrent || (synced === selection && file === previousFile) ? null : entry.tids,
   };
 }
 function filterSelectedAnnotations(
-  input?: Dynamic,
-  options?: Dynamic,
+  selection?: Dynamic,
+  shouldKeep?: Dynamic,
 ): Dynamic {
-  let values: Dynamic = new Set([...input.notes].filter(options));
-  return values.size === input.notes.size
-    ? input
+  let values: Dynamic = new Set([...selection.notes].filter(shouldKeep));
+  return values.size === selection.notes.size
+    ? selection
     : createCanvasSelection(
-        input.artboards,
+        selection.artboards,
         values,
-        input.elements,
-        input.primary,
+        selection.elements,
+        selection.primary,
       );
 }
-function clearSelectedBoards(input?: Dynamic): Dynamic {
-  return input.artboards.size === 0 && input.notes.size === 0
-    ? input
+function clearSelectedBoards(selection?: Dynamic): Dynamic {
+  return selection.artboards.size === 0 && selection.notes.size === 0
+    ? selection
     : createCanvasSelection(
         SelectionCanvasSelectionSubscribers,
         SelectionCanvasSelectionSubscribers,
-        input.elements,
-        input.primary,
+        selection.elements,
+        selection.primary,
       );
 }
 function applyHostSelectionResponse(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  selection?: Dynamic,
+  file?: Dynamic,
+  response?: Dynamic,
 ): Dynamic {
-  let { entry: value }: Dynamic = context;
-  if (context.re != null && context.re.startsWith(HostValue)) {
+  let { entry: entry }: Dynamic = response;
+  if (response.re != null && response.re.startsWith(HostValue)) {
     if (
-      value == null ||
-      !input.elements.has(options) ||
-      shouldPromoteElementSelection(input, options, value.tids)
+      entry == null ||
+      !selection.elements.has(file) ||
+      shouldPromoteElementSelection(selection, file, entry.tids)
     )
       return {
         kind: "confirm",
       };
-    let entries: Dynamic = new Map(input.elements);
-    entries.set(options, value);
+    let entries: Dynamic = new Map(selection.elements);
+    entries.set(file, entry);
     return {
       kind: "apply",
       next: createCanvasSelection(
-        input.artboards,
-        input.notes,
+        selection.artboards,
+        selection.notes,
         entries,
-        options,
+        file,
       ),
     };
   }
-  return context.additive
-    ? value != null &&
-      shouldPromoteElementSelection(input, options, value.tids)
+  return response.additive
+    ? entry != null &&
+      shouldPromoteElementSelection(selection, file, entry.tids)
       ? {
           kind: "apply",
-          next: promoteToArtboardSelection(input, options),
+          next: promoteToArtboardSelection(selection, file),
           pushback: "clear",
         }
       : {
           kind: "apply",
-          next: setCanvasElementSelection(input, options, value, true),
+          next: setCanvasElementSelection(selection, file, entry, true),
         }
     : {
         kind: "apply",
-        next: setCanvasElementSelection(input, options, value, false),
+        next: setCanvasElementSelection(selection, file, entry, false),
       };
 }
 export {
@@ -487,32 +487,32 @@ export function installEditorSelectionCanvasSelection(): () => void {
       files: SelectionCanvasSelectionSubscribers,
       notes: SelectionCanvasSelectionSubscribers,
     };
-    boardSelectionCount = (input?: Dynamic): Dynamic =>
-      input.files.size + input.notes.size;
-    hasBoardSelection = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      "file" in options
-        ? input.files.has(options.file)
-        : input.notes.has(options.note);
-    boardSelectionItems = (input?: Dynamic): Dynamic =>
-      "file" in input
+    boardSelectionCount = (boards?: Dynamic): Dynamic =>
+      boards.files.size + boards.notes.size;
+    hasBoardSelection = (boards?: Dynamic, item?: Dynamic): Dynamic =>
+      "file" in item
+        ? boards.files.has(item.file)
+        : boards.notes.has(item.note);
+    boardSelectionItems = (item?: Dynamic): Dynamic =>
+      "file" in item
         ? {
-            files: new Set([input.file]),
+            files: new Set([item.file]),
             notes: SelectionCanvasSelectionSubscribers,
           }
         : {
             files: SelectionCanvasSelectionSubscribers,
-            notes: new Set([input.note]),
+            notes: new Set([item.note]),
           };
     isEmptyCanvasSelection = (selection?: Dynamic): Dynamic =>
       selection.artboards.size === 0 &&
       selection.notes.size === 0 &&
       selection.elements.size === 0;
-    canvasBoardSelection = (input?: Dynamic): Dynamic => ({
-      files: input.artboards,
-      notes: input.notes,
+    canvasBoardSelection = (selection?: Dynamic): Dynamic => ({
+      files: selection.artboards,
+      notes: selection.notes,
     });
-    canvasElementSelectionCount = (input?: Dynamic): Dynamic =>
-      input.elements.size === 0 && input.artboards.size + input.notes.size > 0;
+    canvasElementSelectionCount = (selection?: Dynamic): Dynamic =>
+      selection.elements.size === 0 && selection.artboards.size + selection.notes.size > 0;
     HostValue = "host:";
   };
 }

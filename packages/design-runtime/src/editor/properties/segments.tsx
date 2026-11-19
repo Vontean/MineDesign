@@ -19,40 +19,40 @@ var PropertiesSegmentsSideCornerConfig: Dynamic;
 var PropertiesSegmentsItems: Dynamic;
 function PropertySegments({
   label: label,
-  options: options,
-  value: value,
+  options: segmentOptions,
+  value: selectedValue,
   inherited: inherited,
   inheritedHint = InheritedValue,
   onChange: onChange,
-  disabled: disabled2,
+  disabled: isDisabled,
   mixed: mixed,
   vertical: vertical,
   compact: compact,
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic =
-      value === undefined && !mixed && inherited !== undefined,
-    value3: Dynamic = options.every(
-      (input?: Dynamic): Dynamic =>
-        input.glyph !== undefined || input.icon !== undefined,
+  let isShowingInherited: Dynamic =
+      selectedValue === undefined && !mixed && inherited !== undefined,
+    allHaveVisuals: Dynamic = segmentOptions.every(
+      (option?: Dynamic): Dynamic =>
+        option.glyph !== undefined || option.icon !== undefined,
     ),
-    value4: Dynamic = mixed ? "" : (value ?? inherited ?? ""),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (input.tooltip ?? input.label) +
-      (value2 && input.value === inherited ? " (" + inheritedHint + ")" : "");
+    displayValue: Dynamic = mixed ? "" : (selectedValue ?? inherited ?? ""),
+    optionTooltip: Dynamic = (option?: Dynamic): Dynamic =>
+      (option.tooltip ?? option.label) +
+      (isShowingInherited && option.value === inherited ? " (" + inheritedHint + ")" : "");
   return (
     <span
       className={joinClassNames(
         "block min-w-0 flex-1",
         compact
           ? ChromePanelCloseClassNames_2
-          : value3 && ChromePanelCloseClassNames,
+          : allHaveVisuals && ChromePanelCloseClassNames,
       )}
       data-testid={dataTestid}
-      data-inherited={value2 ? "" : undefined}
+      data-inherited={isShowingInherited ? "" : undefined}
       onClickCapture={
-        value2 && !disabled2
+        isShowingInherited && !isDisabled
           ? (event?: Dynamic): Dynamic => {
               let ancestor: Dynamic = event.target.closest('[role="radio"]');
               ancestor !== null &&
@@ -66,101 +66,101 @@ function PropertySegments({
       <SegmentedControl
         aria-label={label}
         fullWidth={true}
-        segments={options.map(
-          (input?: Dynamic): Dynamic =>
-            input.icon !== undefined
+        segments={segmentOptions.map(
+          (option?: Dynamic): Dynamic =>
+            option.icon !== undefined
               ? {
-                  value: input.value,
-                  icon: input.icon,
-                  tooltip: callback(input),
-                  disabled: disabled2 || input.whyDisabled !== undefined,
-                  disabledReason: input.whyDisabled,
+                  value: option.value,
+                  icon: option.icon,
+                  tooltip: optionTooltip(option),
+                  disabled: isDisabled || option.whyDisabled !== undefined,
+                  disabledReason: option.whyDisabled,
                 }
               : {
-                  value: input.value,
+                  value: option.value,
                   label:
-                    input.glyph !== undefined ? (
+                    option.glyph !== undefined ? (
                       <span
                         role={"img"}
-                        aria-label={input.label}
+                        aria-label={option.label}
                         className={joinClassNames(
                           "inline-flex",
                           vertical && "rotate-90",
                         )}
                       >
-                        <PropertyOptionIcon icon={input.glyph} />
+                        <PropertyOptionIcon icon={option.glyph} />
                       </span>
                     ) : (
-                      input.label
+                      option.label
                     ),
-                  tooltip: callback(input),
-                  disabled: disabled2 || input.whyDisabled !== undefined,
-                  disabledReason: input.whyDisabled,
+                  tooltip: optionTooltip(option),
+                  disabled: isDisabled || option.whyDisabled !== undefined,
+                  disabledReason: option.whyDisabled,
                 },
         )}
-        value={value4}
-        onChange={(input?: Dynamic): Dynamic => {
-          disabled2 ||
-            options.find(
-              (input2?: Dynamic): Dynamic => input2.value === input,
+        value={displayValue}
+        onChange={(nextValue?: Dynamic): Dynamic => {
+          isDisabled ||
+            segmentOptions.find(
+              (option?: Dynamic): Dynamic => option.value === nextValue,
             )?.whyDisabled !== undefined ||
-            ((mixed || input !== value) && onChange(input));
+            ((mixed || nextValue !== selectedValue) && onChange(nextValue));
         }}
       />
     </span>
   );
 }
-function PropertySegmentsRow(input?: Dynamic): Dynamic {
+function PropertySegmentsRow(rowProps?: Dynamic): Dynamic {
   useUiLocale();
   let {
-      label: value,
-      onReset: value2,
-      title: value3,
-      description: value4,
-      trailing: value5,
-      options: value6,
-      disabled: value7,
-      "data-testid": value8,
-      ...value9
-    }: Dynamic = input,
-    value10: Dynamic = (
+      label: label,
+      onReset: onReset,
+      title: title,
+      description: description,
+      trailing: trailing,
+      options: segmentOptions,
+      disabled: isDisabled,
+      "data-testid": testId,
+      ...segmentProps
+    }: Dynamic = rowProps,
+    segmentsControl: Dynamic = (
       <PropertySegments
-        {...value9}
-        label={value}
-        options={value6}
-        disabled={value7}
-        data-testid={value8 ? value8 + "-segments" : undefined}
+        {...segmentProps}
+        label={label}
+        options={segmentOptions}
+        disabled={isDisabled}
+        data-testid={testId ? testId + "-segments" : undefined}
       />
     );
-  return value6.length > 4 ? (
-    <div className={"contents"} data-testid={value8}>
+  return segmentOptions.length > 4 ? (
+    <div className={"contents"} data-testid={testId}>
       <PropertyRow
-        label={value}
-        title={value3}
-        onReset={value2}
-        disabled={value7}
+        label={label}
+        title={title}
+        onReset={onReset}
+        disabled={isDisabled}
         className={"min-h-0 pt-1"}
       />
       <PropertyRow
-        title={value3}
-        description={value4}
-        trailing={value5}
-        disabled={value7}
+        title={title}
+        description={description}
+        trailing={trailing}
+        disabled={isDisabled}
       >
-        {value10}
+        {segmentsControl}
       </PropertyRow>
     </div>
   ) : (
     <PropertyRow
-      label={value}
-      title={value3}
-      description={value4}
-      onReset={value2}
-      trailing={value5}
-      disabled={value7}
-      data-testid={value8}
+      label={label}
+      title={title}
+      description={description}
+      onReset={onReset}
+      trailing={trailing}
+      disabled={isDisabled}
+      data-testid={testId}
     >
-      {value10}
+      {segmentsControl}
     </PropertyRow>
   );
 }

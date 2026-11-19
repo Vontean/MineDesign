@@ -50,75 +50,75 @@ function ZoomToolIcon(): Dynamic {
   );
 }
 function isNestedPropertyControl(
-  input?: Dynamic,
-  options?: Dynamic,
+  rowElement?: Dynamic,
+  targetElement?: Dynamic,
 ): Dynamic {
   if (
-    options.closest(PropertiesPrimitivesLabel) ||
-    options.closest('[data-kit="row-trailing"]') ||
-    options.closest("[data-mc-scrim], [data-base-ui-inert]")
+    targetElement.closest(PropertiesPrimitivesLabel) ||
+    targetElement.closest('[data-kit="row-trailing"]') ||
+    targetElement.closest("[data-mc-scrim], [data-base-ui-inert]")
   )
     return true;
-  let ancestor: Dynamic = options.closest(blockingOverlaySelector);
-  return ancestor !== null && !ancestor.contains(input);
+  let blockingOverlay: Dynamic = targetElement.closest(blockingOverlaySelector);
+  return blockingOverlay !== null && !blockingOverlay.contains(rowElement);
 }
 function PropertyActions({
   section: section,
   "aria-label": ariaLabel,
   items: items,
   align = "end",
-  disabled: disabled2,
+  disabled: isDisabled,
   open: open,
   onOpenChange: onOpenChange,
   defaultOpen = false,
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactPropertiesPrimitives.useState)(
+  let [isOpenInternal, setIsOpenInternal]: Dynamic = (0, reactPropertiesPrimitives.useState)(
       defaultOpen,
     ),
-    value3: Dynamic = open !== undefined;
+    isControlled: Dynamic = open !== undefined;
   if (items.length === 0) {
-    !value3 && value && value2(false);
+    !isControlled && isOpenInternal && setIsOpenInternal(false);
     return null;
   }
-  let value4: Dynamic =
+  let menuLabel: Dynamic =
       ariaLabel ??
       (section !== undefined && section !== ""
         ? ColorContrastCopyHandler(section)
         : "Add"),
-    value5: Dynamic = (
+    menuElement: Dynamic = (
       <MenuMenuAssignValue
         iconOnly={true}
         icon={"Add"}
         variant={"ghost"}
-        aria-label={value4}
-        tooltip={value4}
-        disabled={disabled2}
+        aria-label={menuLabel}
+        tooltip={menuLabel}
+        disabled={isDisabled}
         align={align}
-        open={value3 ? open : value}
-        onOpenChange={(input?: Dynamic): Dynamic => {
-          value3 || value2(input);
-          onOpenChange?.(input);
+        open={isControlled ? open : isOpenInternal}
+        onOpenChange={(nextOpen?: Dynamic): Dynamic => {
+          isControlled || setIsOpenInternal(nextOpen);
+          onOpenChange?.(nextOpen);
         }}
-        items={items.map((input?: Dynamic): Dynamic => {
-          let value6: Dynamic =
-            input.disabledReason !== undefined && input.disabledReason !== "";
+        items={items.map((action?: Dynamic): Dynamic => {
+          let hasDisabledReason: Dynamic =
+            action.disabledReason !== undefined && action.disabledReason !== "";
           return {
-            label: input.label,
-            onSelect: input.onSelect,
-            disabled: input.disabled === true || value6,
-            disabledReason: value6 ? input.disabledReason : undefined,
-            description: input.description,
+            label: action.label,
+            onSelect: action.onSelect,
+            disabled: action.disabled === true || hasDisabledReason,
+            disabledReason: hasDisabledReason ? action.disabledReason : undefined,
+            description: action.description,
           };
         })}
       />
     );
   return dataTestid === undefined ? (
-    value5
+    menuElement
   ) : (
     <span data-testid={dataTestid} className={"inline-flex"}>
-      {value5}
+      {menuElement}
     </span>
   );
 }
@@ -207,12 +207,12 @@ export function installEditorPropertiesPrimitives(): () => void {
           type = "button",
           ...props
         }: Dynamic,
-        options?: Dynamic,
+        forwardedRef?: Dynamic,
       ): Dynamic {
         return (
           <button
             {...props}
-            ref={options}
+            ref={forwardedRef}
             type={type}
             className={joinClassNames(
               chip != null

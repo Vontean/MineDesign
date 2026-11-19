@@ -30,41 +30,41 @@ var SessionStripPointerStateLimit_6: Dynamic;
 var SessionStripPointerStateElementCache: Dynamic;
 var SessionStripContext: Dynamic;
 function recentStripPointer(
-  input?: Dynamic,
-  options: Dynamic = false,
+  pointer?: Dynamic,
+  allowStray: Dynamic = false,
 ): Dynamic {
-  return input === null ||
-    input.ended === null ||
-    (input.onStrip && !(options && input.stray === true)) ||
-    input.inPopup ||
-    input.mouse ||
-    !(input.ended.at - input.began.at >= 0)
+  return pointer === null ||
+    pointer.ended === null ||
+    (pointer.onStrip && !(allowStray && pointer.stray === true)) ||
+    pointer.inPopup ||
+    pointer.mouse ||
+    !(pointer.ended.at - pointer.began.at >= 0)
     ? null
-    : input;
+    : pointer;
 }
-function observeSessionStripPointers(input?: Dynamic): Dynamic {
-  SessionStripPointerStateObservedElements.has(input) ||
-    (SessionStripPointerStateObservedElements.add(input),
-    input.addEventListener(
+function observeSessionStripPointers(root?: Dynamic): Dynamic {
+  SessionStripPointerStateObservedElements.has(root) ||
+    (SessionStripPointerStateObservedElements.add(root),
+    root.addEventListener(
       "pointerdown",
       (event?: Dynamic): Dynamic => {
         if (event.isPrimary === false) return;
-        let value: Dynamic = SessionStripPointerStateNow();
-        for (let value7 of Array.from(
-          input.querySelectorAll("[data-mc-through]"),
+        let now: Dynamic = SessionStripPointerStateNow();
+        for (let element of Array.from(
+          root.querySelectorAll("[data-mc-through]"),
         ) as Dynamic) {
-          let value8: Dynamic = Number(
-            value7.getAttribute("data-mc-through") || Number.NaN,
+          let expiresAt: Dynamic = Number(
+            element.getAttribute("data-mc-through") || Number.NaN,
           );
-          (value !== null &&
-            value < value8 &&
-            value8 - value <= SessionStripPointerStateLimit_5) ||
-            value7.removeAttribute("data-mc-through");
+          (now !== null &&
+            now < expiresAt &&
+            expiresAt - now <= SessionStripPointerStateLimit_5) ||
+            element.removeAttribute("data-mc-through");
         }
         let target: Dynamic = event.target,
-          value2: Dynamic = target?.closest?.("[data-mc-strip]") ?? null,
-          state: Dynamic = {
-            onStrip: value2 !== null,
+          stripElement: Dynamic = target?.closest?.("[data-mc-strip]") ?? null,
+          pointerRecord: Dynamic = {
+            onStrip: stripElement !== null,
             inPopup:
               target?.closest?.(blockingOverlaySelector) != null,
             mouse: event.pointerType === "mouse",
@@ -72,50 +72,50 @@ function observeSessionStripPointers(input?: Dynamic): Dynamic {
               x: event.clientX,
               y: event.clientY,
               at: event.timeStamp,
-              perf: value,
+              perf: now,
             },
             ended: null,
           },
-          value3: Dynamic = value === null ? -1 : value - event.timeStamp;
-        value2 !== null &&
+          eventAgeMs: Dynamic = now === null ? -1 : now - event.timeStamp;
+        stripElement !== null &&
           event.pointerType !== "mouse" &&
-          value3 >= 0 &&
-          value3 <= SessionStripPointerStateLimit_4 &&
-          (state.early = event.timeStamp < sessionStripHoldUntil(value2));
-        let value4: Dynamic = recentStripPointer(
+          eventAgeMs >= 0 &&
+          eventAgeMs <= SessionStripPointerStateLimit_4 &&
+          (pointerRecord.early = event.timeStamp < sessionStripHoldUntil(stripElement));
+        let previousPointer: Dynamic = recentStripPointer(
             SessionStripPointerStateAlias,
             true,
           ),
-          value5: Dynamic =
-            value4 === null ? -1 : event.timeStamp - value4.ended.at,
-          value6: Dynamic =
-            value4 === null ? 0 : (value4.runAt ?? value4.ended.at);
-        value4 !== null &&
-          value5 >= 0 &&
-          value5 <= SessionStripPointerStateLimit &&
-          event.timeStamp - value6 < SessionStripPointerStateLimit_3 &&
-          ((state.runAt = value6),
-          (state.stray =
+          sincePreviousEndMs: Dynamic =
+            previousPointer === null ? -1 : event.timeStamp - previousPointer.ended.at,
+          previousRunAt: Dynamic =
+            previousPointer === null ? 0 : (previousPointer.runAt ?? previousPointer.ended.at);
+        previousPointer !== null &&
+          sincePreviousEndMs >= 0 &&
+          sincePreviousEndMs <= SessionStripPointerStateLimit &&
+          event.timeStamp - previousRunAt < SessionStripPointerStateLimit_3 &&
+          ((pointerRecord.runAt = previousRunAt),
+          (pointerRecord.stray =
             event.pointerType !== "mouse" &&
-            value2 !== null &&
+            stripElement !== null &&
             SessionStripPointerStateGetBoundingClientRect(
-              value2,
-              value4.ended.x,
-              value4.ended.y,
+              stripElement,
+              previousPointer.ended.x,
+              previousPointer.ended.y,
             )));
-        SessionStripPointerStateAlias = state;
+        SessionStripPointerStateAlias = pointerRecord;
       },
       true,
     ),
-    input.addEventListener(
+    root.addEventListener(
       "pointerup",
-      (input2?: Dynamic): Dynamic => {
-        input2.isPrimary !== false &&
+      (event?: Dynamic): Dynamic => {
+        event.isPrimary !== false &&
           SessionStripPointerStateAlias !== null &&
           (SessionStripPointerStateAlias.ended = {
-            at: input2.timeStamp,
-            x: input2.clientX,
-            y: input2.clientY,
+            at: event.timeStamp,
+            x: event.clientX,
+            y: event.clientY,
             perf: SessionStripPointerStateNow(),
           });
         refreshSessionStripPointers();
@@ -123,31 +123,31 @@ function observeSessionStripPointers(input?: Dynamic): Dynamic {
       true,
     ));
 }
-function suppressSessionStripClick(input?: Dynamic): Dynamic {
-  let value: Dynamic = SessionStripPointerStateAlias;
-  return input.detail === 0 || value === null
+function suppressSessionStripClick(event?: Dynamic): Dynamic {
+  let pointer: Dynamic = SessionStripPointerStateAlias;
+  return event.detail === 0 || pointer === null
     ? false
-    : value.stray === true || value.early === true
+    : pointer.stray === true || pointer.early === true
       ? SessionStripPointerStateAbs(
-          input,
-          value.began.at,
-          value.began.x,
-          value.began.y,
+          event,
+          pointer.began.at,
+          pointer.began.x,
+          pointer.began.y,
         ) ||
-        (value.ended !== null &&
+        (pointer.ended !== null &&
           SessionStripPointerStateAbs(
-            input,
-            value.ended.at,
-            value.ended.x,
-            value.ended.y,
+            event,
+            pointer.ended.at,
+            pointer.ended.x,
+            pointer.ended.y,
           ))
-      : !value.onStrip &&
-        value.ended !== null &&
+      : !pointer.onStrip &&
+        pointer.ended !== null &&
         SessionStripPointerStateAbs(
-          input,
-          value.ended.at,
-          value.ended.x,
-          value.ended.y,
+          event,
+          pointer.ended.at,
+          pointer.ended.x,
+          pointer.ended.y,
         );
 }
 function sessionStripUsesTouch(): Dynamic {
@@ -161,173 +161,173 @@ function sessionStripUsesTouch(): Dynamic {
   }
 }
 function recordSessionStripOcclusion(
-  input?: Dynamic,
-  options?: Dynamic,
+  strip?: Dynamic,
+  shouldTrack?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = SessionStripPointerStateElementCache.get(input);
-  if (!options) {
-    entry !== undefined && SessionStripPointerStateElementCache.delete(input);
+  let entry: Dynamic = SessionStripPointerStateElementCache.get(strip);
+  if (!shouldTrack) {
+    entry !== undefined && SessionStripPointerStateElementCache.delete(strip);
     return;
   }
-  let value: Dynamic = SessionStripPointerStateNow(),
-    bounds: Dynamic = input.getBoundingClientRect(),
-    value2: Dynamic =
+  let now: Dynamic = SessionStripPointerStateNow(),
+    bounds: Dynamic = strip.getBoundingClientRect(),
+    hasMoved: Dynamic =
       entry === undefined ||
       Math.abs(bounds.left - entry.left) > SessionStripPointerStateLimit_6 ||
       Math.abs(bounds.top - entry.top) > SessionStripPointerStateLimit_6,
-    value3: Dynamic = SessionStripPointerStateAlias,
-    value4: Dynamic =
-      value3 === null
+    lastPointer: Dynamic = SessionStripPointerStateAlias,
+    lastPointerAt: Dynamic =
+      lastPointer === null
         ? null
-        : value3.ended === null
-          ? value3.began.perf
-          : value3.ended.perf,
-    value5: Dynamic = value === null || value4 === null ? -1 : value - value4,
-    value6: Dynamic =
-      value3 !== null &&
-      ((value3.onStrip && value3.stray !== true && value3.early !== true) ||
-        value3.inPopup) &&
-      value5 >= 0 &&
-      value5 <=
-        (value3.ended === null
+        : lastPointer.ended === null
+          ? lastPointer.began.perf
+          : lastPointer.ended.perf,
+    sinceLastPointerMs: Dynamic = now === null || lastPointerAt === null ? -1 : now - lastPointerAt,
+    isStripPointerSettling: Dynamic =
+      lastPointer !== null &&
+      ((lastPointer.onStrip && lastPointer.stray !== true && lastPointer.early !== true) ||
+        lastPointer.inPopup) &&
+      sinceLastPointerMs >= 0 &&
+      sinceLastPointerMs <=
+        (lastPointer.ended === null
           ? SessionStripPointerStateLimit_3
           : SessionStripPointerStateLimit);
-  value6 &&
+  isStripPointerSettling &&
     entry !== undefined &&
     ([entry.left, entry.top] = [bounds.left, bounds.top]);
   if (
-    !value2 ||
-    value === null ||
+    !hasMoved ||
+    now === null ||
     !(bounds.width > 0 && bounds.height > 0) ||
     !sessionStripUsesTouch()
   )
     return;
-  if (value6) {
+  if (isStripPointerSettling) {
     entry === undefined &&
-      SessionStripPointerStateElementCache.set(input, {
+      SessionStripPointerStateElementCache.set(strip, {
         left: bounds.left,
         top: bounds.top,
         end: 0,
-        since: value,
+        since: now,
         movedAt: 0,
       });
     return;
   }
-  let value7: Dynamic =
+  let since: Dynamic =
       entry !== undefined &&
-      (value < entry.end ||
-        value - entry.movedAt <= SessionStripPointerStateLimit_3)
+      (now < entry.end ||
+        now - entry.movedAt <= SessionStripPointerStateLimit_3)
         ? entry.since
-        : value,
-    state: Dynamic = {
+        : now,
+    nextEntry: Dynamic = {
       left: bounds.left,
       top: bounds.top,
       end: Math.min(
-        value +
+        now +
           SessionStripPointerStateConstant +
           SessionStripPointerStateLimit,
-        value7 + SessionStripPointerStateLimit_5,
+        since + SessionStripPointerStateLimit_5,
       ),
-      since: value7,
-      movedAt: value,
+      since: since,
+      movedAt: now,
     };
-  SessionStripPointerStateElementCache.set(input, state);
+  SessionStripPointerStateElementCache.set(strip, nextEntry);
   SessionStripPointerStateHandler((): Dynamic => {
-    let value8: Dynamic = SessionStripPointerStateNow();
-    value8 !== null &&
-      SessionStripPointerStateElementCache.get(input) === state &&
-      (state.end = Math.min(
-        state.end,
-        value8 + SessionStripPointerStateLimit,
+    let currentTime: Dynamic = SessionStripPointerStateNow();
+    currentTime !== null &&
+      SessionStripPointerStateElementCache.get(strip) === nextEntry &&
+      (nextEntry.end = Math.min(
+        nextEntry.end,
+        currentTime + SessionStripPointerStateLimit,
       ));
     refreshSessionStripPointers();
   });
 }
-function sessionStripHoldUntil(input?: Dynamic): Dynamic {
-  let value: Dynamic = recentStripPointer(SessionStripPointerStateAlias),
-    value2: Dynamic =
-      value !== null &&
-      value.end !== undefined &&
+function sessionStripHoldUntil(strip?: Dynamic): Dynamic {
+  let pointer: Dynamic = recentStripPointer(SessionStripPointerStateAlias),
+    pointerHoldUntil: Dynamic =
+      pointer !== null &&
+      pointer.end !== undefined &&
       SessionStripPointerStateGetBoundingClientRect(
-        input,
-        value.ended.x,
-        value.ended.y,
+        strip,
+        pointer.ended.x,
+        pointer.ended.y,
       )
-        ? value.end
+        ? pointer.end
         : 0;
   return Math.max(
-    SessionStripPointerStateElementCache.get(input)?.end ?? 0,
-    value2,
+    SessionStripPointerStateElementCache.get(strip)?.end ?? 0,
+    pointerHoldUntil,
   );
 }
 function sessionStripPointerDeadline(
-  input?: Dynamic,
-  options?: Dynamic,
+  strip?: Dynamic,
+  now?: Dynamic,
 ): Dynamic {
   return Math.max(
-    SessionStripPointerStateElementCache.get(input)?.end ?? 0,
-    sessionStripReleaseDeadline(input, options),
+    SessionStripPointerStateElementCache.get(strip)?.end ?? 0,
+    sessionStripReleaseDeadline(strip, now),
   );
 }
 function sessionStripReleaseDeadline(
-  input?: Dynamic,
-  options?: Dynamic,
+  strip?: Dynamic,
+  now?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = recentStripPointer(SessionStripPointerStateAlias);
-  if (value === null || value.ended.perf === null) return 0;
-  if (value.end === undefined) {
-    let value2: Dynamic = options - value.ended.perf;
+  let pointer: Dynamic = recentStripPointer(SessionStripPointerStateAlias);
+  if (pointer === null || pointer.ended.perf === null) return 0;
+  if (pointer.end === undefined) {
+    let sinceReleaseMs: Dynamic = now - pointer.ended.perf;
     if (
-      !(value2 >= 0 && value2 <= SessionStripPointerStateLimit_4) ||
+      !(sinceReleaseMs >= 0 && sinceReleaseMs <= SessionStripPointerStateLimit_4) ||
       !SessionStripPointerStateGetBoundingClientRect(
-        input,
-        value.ended.x,
-        value.ended.y,
+        strip,
+        pointer.ended.x,
+        pointer.ended.y,
       )
     )
       return 0;
-    let value3: Dynamic =
+    let beganBeforeFloor: Dynamic =
       SessionStripPointerStateMinValue !== null &&
-      value.began.perf !== null &&
-      value.began.perf < SessionStripPointerStateMinValue;
-    value3 ||
+      pointer.began.perf !== null &&
+      pointer.began.perf < SessionStripPointerStateMinValue;
+    beganBeforeFloor ||
       (SessionStripPointerStateMinValue =
-        options +
+        now +
         SessionStripPointerStateConstant +
         SessionStripPointerStateLimit_3);
-    let value4: Dynamic = SessionStripPointerStateMinValue ?? 0;
-    value.end = Math.min(
-      options +
+    let floorDeadline: Dynamic = SessionStripPointerStateMinValue ?? 0;
+    pointer.end = Math.min(
+      now +
         SessionStripPointerStateConstant +
         SessionStripPointerStateLimit,
-      value4,
+      floorDeadline,
     );
     SessionStripPointerStateHandler((): Dynamic => {
-      let value5: Dynamic = SessionStripPointerStateNow();
-      value5 !== null &&
-        !value3 &&
-        SessionStripPointerStateMinValue === value4 &&
+      let currentTime: Dynamic = SessionStripPointerStateNow();
+      currentTime !== null &&
+        !beganBeforeFloor &&
+        SessionStripPointerStateMinValue === floorDeadline &&
         (SessionStripPointerStateMinValue = Math.min(
-          value4,
-          value5 + SessionStripPointerStateLimit_3,
+          floorDeadline,
+          currentTime + SessionStripPointerStateLimit_3,
         ));
-      value5 !== null &&
-        value.end !== undefined &&
-        (value.end = Math.min(
-          value.end,
-          value5 + SessionStripPointerStateLimit,
+      currentTime !== null &&
+        pointer.end !== undefined &&
+        (pointer.end = Math.min(
+          pointer.end,
+          currentTime + SessionStripPointerStateLimit,
           SessionStripPointerStateMinValue ?? 0,
         ));
       refreshSessionStripPointers();
     });
   }
-  return options < value.end &&
+  return now < pointer.end &&
     SessionStripPointerStateGetBoundingClientRect(
-      input,
-      value.ended.x,
-      value.ended.y,
+      strip,
+      pointer.ended.x,
+      pointer.ended.y,
     )
-    ? value.end
+    ? pointer.end
     : 0;
 }
 export {
@@ -360,9 +360,9 @@ export {
   sessionStripUsesTouch,
   suppressSessionStripClick,
 };
-export function set_SessionStripPointerStateCurrentState(value: any): any {
-  SessionStripPointerStateCurrentState = value;
-  return value;
+export function set_SessionStripPointerStateCurrentState(nextState: any): any {
+  SessionStripPointerStateCurrentState = nextState;
+  return nextState;
 }
 export function installEditorSessionStripPointerState(): () => void {
   return () => {
@@ -386,36 +386,36 @@ export function installEditorSessionStripPointerState(): () => void {
     SessionStripPointerStateConstant = 3e3;
     SessionStripPointerStateLimit_5 = 8e3;
     SessionStripPointerStateGetBoundingClientRect = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      element?: Dynamic,
+      pointX?: Dynamic,
+      pointY?: Dynamic,
     ): Dynamic => {
-      let bounds: Dynamic = input.getBoundingClientRect();
+      let bounds: Dynamic = element.getBoundingClientRect();
       return (
         bounds.width > 0 &&
         bounds.height > 0 &&
-        options >= bounds.left &&
-        options <= bounds.right &&
-        context >= bounds.top &&
-        context <= bounds.bottom
+        pointX >= bounds.left &&
+        pointX <= bounds.right &&
+        pointY >= bounds.top &&
+        pointY <= bounds.bottom
       );
     };
     typeof document !== "undefined" && observeSessionStripPointers(document);
     SessionStripPointerStateAbs = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
+      event?: Dynamic,
+      startAt?: Dynamic,
+      startX?: Dynamic,
+      startY?: Dynamic,
     ): Dynamic =>
-      Math.abs(input.timeStamp - options) <= SessionStripPointerStateLimit &&
-      Math.abs(input.clientX - context) <= SessionStripPointerStateLimit_2 &&
-      Math.abs(input.clientY - value) <= SessionStripPointerStateLimit_2;
+      Math.abs(event.timeStamp - startAt) <= SessionStripPointerStateLimit &&
+      Math.abs(event.clientX - startX) <= SessionStripPointerStateLimit_2 &&
+      Math.abs(event.clientY - startY) <= SessionStripPointerStateLimit_2;
     SessionStripPointerStateSubscribers = new Set();
     SessionStripPointerStateCurrentState = null;
     SessionStripPointerStateMinValue = null;
-    SessionStripPointerStateHandler = (input?: Dynamic): Dynamic => {
+    SessionStripPointerStateHandler = (callback?: Dynamic): Dynamic => {
       typeof requestAnimationFrame == "function" &&
-        requestAnimationFrame((): Dynamic => requestAnimationFrame(input));
+        requestAnimationFrame((): Dynamic => requestAnimationFrame(callback));
     };
     SessionStripPointerStateLimit_6 = 4;
     SessionStripPointerStateElementCache = new WeakMap();

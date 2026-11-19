@@ -19,38 +19,38 @@ import { PopoverValue } from "../../platform/frame-host-bridge";
 import { set_SessionStripPointerStateCurrentState } from "./pointer-state";
 var SessionStripButton: Dynamic;
 function updateSessionStripScrollAttrs(
-  input?: Dynamic,
-  options?: Dynamic,
+  strip?: Dynamic,
+  row?: Dynamic,
 ): Dynamic {
-  input.toggleAttribute("data-mc-more-start", options.scrollLeft > 1);
-  input.toggleAttribute(
+  strip.toggleAttribute("data-mc-more-start", row.scrollLeft > 1);
+  strip.toggleAttribute(
     "data-mc-more-end",
-    options.scrollLeft < options.scrollWidth - options.clientWidth - 1,
+    row.scrollLeft < row.scrollWidth - row.clientWidth - 1,
   );
 }
 function refreshSessionStripPointers(): Dynamic {
   SessionStripPointerStateCurrentState !== null &&
     clearTimeout(SessionStripPointerStateCurrentState);
   set_SessionStripPointerStateCurrentState(null);
-  let value: Dynamic = SessionStripPointerStateNow(),
+  let now: Dynamic = SessionStripPointerStateNow(),
     index: Dynamic = 0;
-  for (let value2 of SessionStripPointerStateSubscribers as Dynamic) {
-    let value3: Dynamic =
-      value === null
+  for (let stripElement of SessionStripPointerStateSubscribers as Dynamic) {
+    let deadline: Dynamic =
+      now === null
         ? 0
-        : sessionStripPointerDeadline(value2, value);
-    value !== null && value < value3
-      ? (value2.setAttribute("data-mc-through", String(Math.ceil(value3))),
-        (index = Math.max(index, value3)))
-      : value2.removeAttribute("data-mc-through");
+        : sessionStripPointerDeadline(stripElement, now);
+    now !== null && now < deadline
+      ? (stripElement.setAttribute("data-mc-through", String(Math.ceil(deadline))),
+        (index = Math.max(index, deadline)))
+      : stripElement.removeAttribute("data-mc-through");
   }
-  value !== null &&
+  now !== null &&
     index > 0 &&
     (set_SessionStripPointerStateCurrentState(setTimeout(
       refreshSessionStripPointers,
       Math.min(
         SessionStripPointerStateLimit,
-        Math.max(0, index - value),
+        Math.max(0, index - now),
       ) + 1,
     )));
 }
@@ -73,13 +73,13 @@ function SessionStrip({
     (): Dynamic => observeSessionStripPointers(document),
     [],
   );
-  let value: Dynamic = (0, reactSessionStripPointerState.useRef)(
+  let stripRef: Dynamic = (0, reactSessionStripPointerState.useRef)(
       null,
     ),
-    value2: Dynamic = (0, reactSessionStripPointerState.useRef)(null),
-    value3: Dynamic = useTouchToolbar();
+    rowRef: Dynamic = (0, reactSessionStripPointerState.useRef)(null),
+    isTouchToolbar: Dynamic = useTouchToolbar();
   (0, reactSessionStripPointerState.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value.current;
+    let current: Dynamic = stripRef.current;
     if (current !== null) {
       SessionStripPointerStateSubscribers.add(current);
       return (): Dynamic => {
@@ -92,70 +92,70 @@ function SessionStrip({
     }
   }, []);
   (0, reactSessionStripPointerState.useLayoutEffect)((): Dynamic => {
-    value.current !== null &&
+    stripRef.current !== null &&
       recordSessionStripOcclusion(
-        value.current,
+        stripRef.current,
         coversSelection === true,
       );
     refreshSessionStripPointers();
-    value.current !== null &&
-      value2.current !== null &&
-      updateSessionStripScrollAttrs(value.current, value2.current);
+    stripRef.current !== null &&
+      rowRef.current !== null &&
+      updateSessionStripScrollAttrs(stripRef.current, rowRef.current);
   });
   (0, reactSessionStripPointerState.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value.current,
-      current2: Dynamic = value2.current;
+    let current: Dynamic = stripRef.current,
+      rowElement: Dynamic = rowRef.current;
     if (
       current === null ||
-      current2 === null ||
+      rowElement === null ||
       typeof ResizeObserver === "undefined"
     )
       return;
     let observer: Dynamic = new ResizeObserver(
-      (): Dynamic => updateSessionStripScrollAttrs(current, current2),
+      (): Dynamic => updateSessionStripScrollAttrs(current, rowElement),
     );
-    observer.observe(current2);
+    observer.observe(rowElement);
     return (): Dynamic => observer.disconnect();
   }, []);
   (0, reactSessionStripPointerState.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value.current,
-      current2: Dynamic = value2.current;
+    let current: Dynamic = stripRef.current,
+      rowElement: Dynamic = rowRef.current;
     if (
       surface !== "popover" ||
       current === null ||
-      current2 === null ||
+      rowElement === null ||
       typeof ResizeObserver === "undefined"
     )
       return;
-    let callback: Dynamic = (): Dynamic => {
-        let element: Dynamic = current2.querySelector('[data-cds="Button"]'),
-          value4: Dynamic = getComputedStyle(current2),
-          value5: Dynamic =
+    let updateWrapped: Dynamic = (): Dynamic => {
+        let element: Dynamic = rowElement.querySelector('[data-cds="Button"]'),
+          rowStyle: Dynamic = getComputedStyle(rowElement),
+          singleLineHeight: Dynamic =
             (element?.offsetHeight ?? 0) +
-            (parseFloat(value4.paddingTop) || 0) +
-            (parseFloat(value4.paddingBottom) || 0);
+            (parseFloat(rowStyle.paddingTop) || 0) +
+            (parseFloat(rowStyle.paddingBottom) || 0);
         current.toggleAttribute(
           "data-mc-wrapped",
-          element !== null && current2.clientHeight > value5 + 1,
+          element !== null && rowElement.clientHeight > singleLineHeight + 1,
         );
       },
-      observer: Dynamic = new ResizeObserver(callback);
-    observer.observe(current2);
-    callback();
+      observer: Dynamic = new ResizeObserver(updateWrapped);
+    observer.observe(rowElement);
+    updateWrapped();
     return (): Dynamic => observer.disconnect();
   }, [surface]);
   return (
     <CdsRoot
-      density={surface === "popover" && value3 ? "comfortable" : "compact"}
+      density={surface === "popover" && isTouchToolbar ? "comfortable" : "compact"}
       render={
         <Surface
           elevation={PopoverValue}
           role={"toolbar"}
           data-mc-strip={""}
           data-mc-surface={surface}
-          onPointerDown={(input?: Dynamic): Dynamic => {
-            input.stopPropagation();
-            onPointerDown?.(input);
+          onPointerDown={(event?: Dynamic): Dynamic => {
+            event.stopPropagation();
+            onPointerDown?.(event);
           }}
           onMouseDownCapture={(event?: Dynamic): Dynamic => {
             event.currentTarget.contains(event.target) &&
@@ -183,21 +183,21 @@ function SessionStrip({
             className,
           )}
           {...props}
-          ref={value}
+          ref={stripRef}
         />
       }
     >
       <div className={"relative min-w-0 flex-auto rounded-[inherit]"}>
         <div
-          ref={value2}
+          ref={rowRef}
           data-mc-row={""}
-          onScroll={(input?: Dynamic): Dynamic => {
-            value.current !== null &&
+          onScroll={(event?: Dynamic): Dynamic => {
+            stripRef.current !== null &&
               updateSessionStripScrollAttrs(
-                value.current,
-                input.currentTarget,
+                stripRef.current,
+                event.currentTarget,
               );
-            onScroll?.(input);
+            onScroll?.(event);
           }}
           className={joinClassNames(
             "flex min-w-0 items-center gap-[var(--mc-strip-gap)] rounded-[inherit] p-[var(--mc-strip-pad)]",
@@ -251,7 +251,7 @@ function SessionStripGroup({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactSessionStripPointerState.useContext)(
+  let isWrapContext: Dynamic = (0, reactSessionStripPointerState.useContext)(
     SessionStripContext,
   );
   return (
@@ -260,7 +260,7 @@ function SessionStripGroup({
       className={joinClassNames(
         "flex items-center gap-y-1",
         fields ? "gap-x-1" : "gap-x-[var(--mc-group-gap,4px)]",
-        wrap && value && "max-w-full shrink-0 flex-wrap",
+        wrap && isWrapContext && "max-w-full shrink-0 flex-wrap",
         className,
       )}
       {...props}
@@ -297,75 +297,75 @@ export function installEditorSessionStripSessionStrip(): () => void {
           icon: icon,
           children: children,
           title: title,
-          disabled: disabled2,
+          disabled: disabledProp,
           "aria-pressed": ariaPressed,
           "aria-label": ariaLabel,
           "aria-expanded": ariaExpanded,
           "aria-describedby": ariaDescribedby,
           ...props
         }: Dynamic,
-        options?: Dynamic,
+        forwardedRef?: Dynamic,
       ): Dynamic {
-        let value: Dynamic =
+        let isPressed: Dynamic =
             ariaPressed === undefined
               ? undefined
               : ariaPressed === true || ariaPressed === "true",
-          callback: Dynamic = (event?: Dynamic): Dynamic => {
+          handleMouseDown: Dynamic = (event?: Dynamic): Dynamic => {
             event.preventDefault();
             onMouseDown?.(event);
           },
-          value2: Dynamic = disabled2 === true,
-          value3: Dynamic =
+          isDisabled: Dynamic = disabledProp === true,
+          tooltipSide: Dynamic =
             (0, reactSessionStripPointerState.useContext)(
               ChromeFocusContext,
             ) ?? "top",
-          value4: Dynamic =
+          accessibleName: Dynamic =
             ariaLabel ?? (typeof children == "string" ? children : undefined),
-          value5: Dynamic = useDisabledToolbarItem({
-            disabled: value2 && title !== undefined,
-            name: value4 ?? title ?? "",
+          disabledItem: Dynamic = useDisabledToolbarItem({
+            disabled: isDisabled && title !== undefined,
+            name: accessibleName ?? title ?? "",
             reason: title,
             pressed: ariaPressed,
             expanded: ariaExpanded,
             hasPopup: props["aria-haspopup"],
           }),
-          value6: Dynamic = (0, reactSessionStripPointerState.useRef)(
+          wrapperRef: Dynamic = (0, reactSessionStripPointerState.useRef)(
             null,
           );
-        useToolbarPress(value6, value2 && title !== undefined);
-        let value7: Dynamic = (0,
+        useToolbarPress(wrapperRef, isDisabled && title !== undefined);
+        let hintId: Dynamic = (0,
           reactSessionStripPointerState.useId)(),
-          value8: Dynamic =
-            !value2 && !!title && value4?.startsWith(title) !== true,
-          value9: Dynamic =
-            [ariaDescribedby, value8 ? value7 : undefined]
+          hasDisabledHint: Dynamic =
+            !isDisabled && !!title && accessibleName?.startsWith(title) !== true,
+          describedBy: Dynamic =
+            [ariaDescribedby, hasDisabledHint ? hintId : undefined]
               .filter(Boolean)
               .join(" ") || undefined,
-          state: Dynamic = {
-            ref: options,
+          buttonProps: Dynamic = {
+            ref: forwardedRef,
             variant: "ghost",
             type: type ?? "button",
-            pressed: value,
-            disabled: disabled2,
+            pressed: isPressed,
+            disabled: disabledProp,
             "aria-expanded": ariaExpanded,
-            "aria-describedby": value9,
-            onMouseDown: callback,
+            "aria-describedby": describedBy,
+            onMouseDown: handleMouseDown,
             className: joinClassNames("shrink-0", className),
             ...props,
             "data-mc-item": "",
-            ...value5.inner,
+            ...disabledItem.inner,
           },
-          value10: Dynamic =
+          button: Dynamic =
             icon !== undefined && children == null ? (
               <Button
-                {...state}
+                {...buttonProps}
                 iconOnly={true}
                 icon={icon}
                 aria-label={ariaLabel ?? ("")}
                 tooltip={false}
               />
             ) : (
-              <Button {...state} icon={icon} aria-label={ariaLabel}>
+              <Button {...buttonProps} icon={icon} aria-label={ariaLabel}>
                 {children}
                 {chevron === true ? (<Icon
                     name={"CaretDown"}
@@ -375,32 +375,32 @@ export function installEditorSessionStripSessionStrip(): () => void {
               </Button>
             );
         return title === undefined ? (
-          value10
+          button
         ) : (
           <Tooltip
             content={title}
-            side={value3}
+            side={tooltipSide}
             hoverable={false}
             open={
-              (ariaExpanded === true || ariaExpanded === "true") && !value2
+              (ariaExpanded === true || ariaExpanded === "true") && !isDisabled
                 ? false
                 : undefined
             }
           >
             <span
-              ref={value6}
-              tabIndex={value2 ? 0 : -1}
-              {...value5.props}
+              ref={wrapperRef}
+              tabIndex={isDisabled ? 0 : -1}
+              {...disabledItem.props}
               data-tip={title}
               className={
                 "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus"
               }
             >
-              {value10}
-              {value8 ? (<span hidden={true} id={value7}>
+              {button}
+              {hasDisabledHint ? (<span hidden={true} id={hintId}>
                   {title}
                 </span>) : (null)}
-              {value5.mirror}
+              {disabledItem.mirror}
             </span>
           </Tooltip>
         );
