@@ -26,11 +26,11 @@ var TOKEN_SCALE_SECTION_IDS: Record<Token.ScaleKind, string>;
 var TOKEN_SCALE_VALIDATION_MESSAGES: Record<Token.ScaleKind, string>;
 var TOKEN_SCALE_LABELS: Record<Token.ScaleKind, string>;
 var GROUPABLE_TOKEN_SCALE_KINDS: Set<Token.ScaleKind>;
-function cssLengthPreviewPixels(value: string): number | null {
-  if (value === "0") {
+function cssLengthPreviewPixels(cssLength: string): number | null {
+  if (cssLength === "0") {
     return 0;
   }
-  let match = TOKEN_SCALE_CSS_LENGTH_PATTERN.exec(value);
+  let match = TOKEN_SCALE_CSS_LENGTH_PATTERN.exec(cssLength);
   if (match === null) {
     return null;
   }
@@ -53,12 +53,12 @@ function PlainTokenValueEditor({
   useUiLocale();
   let value = useTextCommit({
     value: t.value,
-    validate: (input: string) =>
-      normalizeScalarTokenValue("extra", input) === undefined
+    validate: (rawValue: string) =>
+      normalizeScalarTokenValue("extra", rawValue) === undefined
         ? TOKEN_SCALE_VALIDATION_MESSAGES.extra
         : null,
-    commit: (input: string): void => {
-      edit.value(t.name, input);
+    commit: (newValue: string): void => {
+      edit.value(t.name, newValue);
       edit.done();
     },
   });
@@ -94,17 +94,17 @@ function LengthTokenValueEditor({
       n: 0,
       unit: "px",
     },
-    callback = (input: number): string =>
-      String(Math.round(input * 1000) / 1000) + value.unit,
-    callback2 = (input: number | undefined): void => {
-      if (input === undefined) {
+    callback = (scalarValue: number): string =>
+      String(Math.round(scalarValue * 1000) / 1000) + value.unit,
+    handleValue = (inputValue: number | undefined): void => {
+      if (inputValue === undefined) {
         return;
       }
-      let value2 = callback(input);
+      let normalizedValue = callback(inputValue);
       if (
-        normalizeScalarTokenValue(kind, value2) !== undefined
+        normalizeScalarTokenValue(kind, normalizedValue) !== undefined
       ) {
-        edit.value(t.name, value2);
+        edit.value(t.name, normalizedValue);
         edit.done();
       }
     };
@@ -123,13 +123,13 @@ function LengthTokenValueEditor({
         max={MAX_EDITABLE_CSS_LENGTH}
         step={cssLengthInputStep(value.unit)}
         steppers={false}
-        onValue={callback2}
-        onScrub={(input: number): void => {
-          let value2 = callback(input);
+        onValue={handleValue}
+        onScrub={(scrubValue: number): void => {
+          let normalizedValue = callback(scrubValue);
           if (
-            normalizeScalarTokenValue(kind, value2) !== undefined
+            normalizeScalarTokenValue(kind, normalizedValue) !== undefined
           ) {
-            edit.value(t.name, value2);
+            edit.value(t.name, normalizedValue);
           }
         }}
         onScrubEnd={() => edit.done()}
@@ -146,7 +146,7 @@ function TokenScaleRow({
 }: Token.TokenScaleRowProps): React.ReactElement {
   useUiLocale();
   let value = TOKEN_SCALE_SECTION_IDS[kind],
-    value2 = useRowContextMenu(
+    rowContext = useRowContextMenu(
       edit !== undefined || t.value !== "",
     ),
     callback = () =>
@@ -155,14 +155,14 @@ function TokenScaleRow({
           '[data-testid="ds-' + value + "-name-" + t.name + '"]',
         )
         ?.click(),
-    value3: string = "ds-" + value + "-value-" + t.name;
+    testId: string = "ds-" + value + "-value-" + t.name;
   return (
     <div
       className={"ds-brow ds-tokrow ds-crow group/row"}
       role={"row"}
       data-testid={"ds-" + value + "-" + t.name}
       {...commentTargetProps("token", t.name)}
-      {...value2.rowProps}
+      {...rowContext.rowProps}
     >
       {[<span
           className={"ds-cname ds-brow-name min-w-0 font-mono"}
@@ -174,7 +174,7 @@ function TokenScaleRow({
             commit={
               edit === undefined
                 ? undefined
-                : (input: string) => edit.rename(t.name, input)
+                : (name: string) => edit.rename(t.name, name)
             }
             data-testid={"ds-" + value + "-name-" + t.name}
           />
@@ -183,14 +183,14 @@ function TokenScaleRow({
               className={
                 "ds-brow-value min-w-0 truncate font-mono text-body text-muted"
               }
-              data-testid={value3}
+              data-testid={testId}
             >
               {t.value}
-            </span>) : (kind === "extra" ? (<PlainTokenValueEditor t={t} edit={edit} testid={value3} />) : (<LengthTokenValueEditor
+            </span>) : (kind === "extra" ? (<PlainTokenValueEditor t={t} edit={edit} testid={testId} />) : (<LengthTokenValueEditor
               t={t}
               kind={kind}
               edit={edit}
-              testid={value3}
+              testid={testId}
             />))}
         </span>, <span
           className={
@@ -206,7 +206,7 @@ function TokenScaleRow({
               onChange={
                 edit === undefined
                   ? undefined
-                  : (input: string) => edit.usage(t.name, input)
+                  : (usage: string) => edit.usage(t.name, usage)
               }
               onDone={edit?.done}
               data-testid={"ds-" + value + "-usage-" + t.name}
@@ -219,9 +219,9 @@ function TokenScaleRow({
             ) : null]}
         </span>, <RowContextMenu
           title={t.name}
-          at={value2.at}
-          anchor={value2.anchor}
-          onClose={value2.close}
+          at={rowContext.at}
+          anchor={rowContext.anchor}
+          onClose={rowContext.close}
           testid={"ds-" + value + "-menu-" + t.name}
           actions={{
             ...(edit !== undefined
@@ -256,13 +256,13 @@ function tokenScaleGroups(
 function extraTokenScaleGroups(
   families: Token.ExtraScaleFamily[],
 ): Token.ScaleGroup[] {
-  return families.map((input) => ({
+  return families.map((family) => ({
     kind: "extra",
     name: "",
-    tokens: input.scale.tokens,
+    tokens: family.scale.tokens,
     family: {
-      key: input.key,
-      title: input.title,
+      key: family.key,
+      title: family.title,
     },
   }));
 }
@@ -306,21 +306,21 @@ function TokenScaleSections({
     <div className={"ds-scales flex flex-col"}>
       {groups.map((source) => {
         let value = editFor?.(source),
-          values = new Set(source.tokens.map((input) => input.name)),
-          value2 = headFor?.(source) ?? {
+          values = new Set(source.tokens.map((token) => token.name)),
+          sectionHeader = headFor?.(source) ?? {
             title: tokenScaleGroupLabel(source),
           },
-          value3: string =
+          sectionTestId: string =
             source.family !== undefined
               ? "ds-family-" + source.family.key
               : "ds-" + TOKEN_SCALE_SECTION_IDS[source.kind];
         return (() => {
-          const _Element2 = TokenTableSection;
-          const _elementProps2 = {
+          const TokenSection = TokenTableSection;
+          const sectionProps = {
             className: "ds-scale ds-scale-" + source.kind,
             name: null,
-            "data-testid": value3,
-            "aria-label": value2.title,
+            "data-testid": sectionTestId,
+            "aria-label": sectionHeader.title,
             children: (
               <div className={"ds-srows"}>
                 <div
@@ -342,11 +342,11 @@ function TokenScaleSections({
                           className={"ds-cgutter"}
                           aria-hidden={"true"}
                         />]}
-                    </div>, source.tokens.map((input) =>
+                    </div>, source.tokens.map((token) =>
                       (() => {
                         const _Element = TokenScaleRow;
                         const _elementProps = {
-                          t: input,
+                          t: token,
                           kind: source.kind,
                           section:
                             source.family !== undefined
@@ -355,7 +355,7 @@ function TokenScaleSections({
                           taken: values,
                           edit: value,
                         };
-                        const _elementKey = input.name;
+                        const _elementKey = token.name;
                         return (
                           <_Element key={_elementKey} {..._elementProps} />
                         );
@@ -365,8 +365,8 @@ function TokenScaleSections({
               </div>
             ),
           };
-          const _elementKey2 = tokenScaleGroupId(source);
-          return <_Element2 key={_elementKey2} {..._elementProps2} />;
+          const sectionKey = tokenScaleGroupId(source);
+          return <TokenSection key={sectionKey} {...sectionProps} />;
         })();
       })}
     </div>

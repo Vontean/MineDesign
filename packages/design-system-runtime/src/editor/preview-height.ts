@@ -103,13 +103,13 @@ function collapsedBottomMargin(
   return margin;
 }
 function measurePreviewDocumentHeight(
-  document2: Document,
+  previewDocument: Document,
   frameWindow: Window,
 ): number {
-  let body = document2.body;
+  let body = previewDocument.body;
   if (body === null) {
     return Math.ceil(
-      elementDocumentBottom(document2.documentElement, frameWindow),
+      elementDocumentBottom(previewDocument.documentElement, frameWindow),
     );
   }
   let bodyStyle = frameWindow.getComputedStyle(body),
@@ -120,11 +120,11 @@ function measurePreviewDocumentHeight(
     childBottom = -1 / 0,
     childMargin = 0;
   for (let value of normalFlowChildren(body, frameWindow)) {
-    let value2 = elementDocumentBottom(value, frameWindow),
-      value3 = collapsedBottomMargin(value, frameWindow);
-    if (value2 + value3 > childBottom + childMargin) {
-      childBottom = value2;
-      childMargin = value3;
+    let resizeObserver = elementDocumentBottom(value, frameWindow),
+      documentHeight = collapsedBottomMargin(value, frameWindow);
+    if (resizeObserver + documentHeight > childBottom + childMargin) {
+      childBottom = resizeObserver;
+      childMargin = documentHeight;
     }
   }
   let bodyBottom = elementDocumentBottom(body, frameWindow) + bottomMargin,
@@ -151,11 +151,11 @@ function accessiblePreviewDocument(iframe: HTMLIFrameElement): {
   fw: Editor.PreviewFrameWindow;
 } | null {
   try {
-    let { contentDocument: value, contentWindow: value2 } = iframe;
-    if (value !== null && value2 !== null && value.body !== null) {
+    let { contentDocument: value, contentWindow: resizeObserverA } = iframe;
+    if (value !== null && resizeObserverA !== null && value.body !== null) {
       return {
         d: value as Editor.PreviewAnimationDocument,
-        fw: value2 as Editor.PreviewFrameWindow,
+        fw: resizeObserverA as Editor.PreviewFrameWindow,
       };
     } else {
       return null;
@@ -167,122 +167,122 @@ function accessiblePreviewDocument(iframe: HTMLIFrameElement): {
 function observePreviewHeight(
   iframe: HTMLIFrameElement,
   onHeight: (height: number) => void,
-  options?: number,
+  heightLimit?: number,
 ): () => void {
   let value = accessiblePreviewDocument(iframe),
-    value2 = value?.fw.ResizeObserver;
-  if (value === null || typeof value2 !== "function") {
+    resizeObserverB = value?.fw.ResizeObserver;
+  if (value === null || typeof resizeObserverB !== "function") {
     return (): void => {
       return;
     };
   }
-  let { d: value3, fw: value4 } = value,
-    documentElement = value3.documentElement,
-    body = value3.body,
-    callback = () => measurePreviewDocumentHeight(value3, value4),
+  let { d: documentHeightA, fw: frameWindow } = value,
+    documentElement = documentHeightA.documentElement,
+    body = documentHeightA.body,
+    callback = () => measurePreviewDocumentHeight(documentHeightA, frameWindow),
     flag: boolean = false,
-    innerHeight = value4.innerHeight,
-    value5 = callback(),
+    innerHeight = frameWindow.innerHeight,
+    measuredHeight = callback(),
     index = 0,
-    value6 =
-      options !== undefined && innerHeight > options
-        ? innerHeight - options
+    heightDelta =
+      heightLimit !== undefined && innerHeight > heightLimit
+        ? innerHeight - heightLimit
         : 0,
-    value7 = clampPreviewHeight(value5),
-    index2 = 0,
-    value8 = value5,
-    index3 = 0,
+    clampedHeight = clampPreviewHeight(measuredHeight),
+    resizeIndex = 0,
+    previousHeight = measuredHeight,
+    resizeIndexA = 0,
     items: Editor.AnimatedPreviewHeight[] = [],
-    flag2: boolean = false,
-    index4: number = 0,
-    index5: number = 0,
-    flag3: boolean = false,
-    index6: number = 0,
-    index7 = 0,
-    index8 = 0,
-    value9: ReturnType<typeof setTimeout> | undefined,
-    flag4: boolean = false,
-    flag5: boolean = false,
-    value10 = PREVIEW_FONT_WAIT_TIMEOUT_MS,
-    value11: ReturnType<typeof setTimeout> | undefined,
-    index9 = 0,
-    value12: number | undefined = Math.max(
+    isStable: boolean = false,
+    resizeIndexB: number = 0,
+    resizeIndexC: number = 0,
+    isStableA: boolean = false,
+    resizeIndexD: number = 0,
+    resizeIndexE = 0,
+    resizeIndexF = 0,
+    settleTimer: ReturnType<typeof setTimeout> | undefined,
+    isStableB: boolean = false,
+    isStableC: boolean = false,
+    fontWaitTimeout = PREVIEW_FONT_WAIT_TIMEOUT_MS,
+    fontWaitTimer: ReturnType<typeof setTimeout> | undefined,
+    resizeIndexG = 0,
+    minimumHeight: number | undefined = Math.max(
       documentElement.scrollHeight,
       body.scrollHeight,
     ),
-    value13: ReturnType<typeof setTimeout> | undefined = setTimeout(
-      () => value17(callback3),
+    resizeTimer: ReturnType<typeof setTimeout> | undefined = setTimeout(
+      () => scheduleUpdate(handleResizeA),
       MAX_AUTO_PREVIEW_HEIGHT,
     ),
-    flag6 = false,
-    index10: number = 0,
-    flag7: boolean = true,
-    callback2 = (): void => {
-      let value19: boolean =
-        Math.max(value4.innerHeight, value12 ?? 0) + 1 <
+    isStableD = false,
+    resizeIndexH: number = 0,
+    isStableE: boolean = true,
+    handleResize = (): void => {
+      let previewValue: boolean =
+        Math.max(frameWindow.innerHeight, minimumHeight ?? 0) + 1 <
         Math.max(documentElement.scrollHeight, body.scrollHeight);
-      if (value19 === flag6) {
+      if (previewValue === isStableD) {
         return;
       }
-      flag6 = value19;
-      if (value19) {
-        if (Date.now() - index10 < PREVIEW_FONT_WAIT_TIMEOUT_MS) {
+      isStableD = previewValue;
+      if (previewValue) {
+        if (Date.now() - resizeIndexH < PREVIEW_FONT_WAIT_TIMEOUT_MS) {
           documentElement.style.setProperty("scrollbar-gutter", "stable");
         }
         documentElement.style.setProperty("overflow", "auto", "important");
       } else {
-        index10 = Date.now();
-        value4.scrollTo(0, 0);
+        resizeIndexH = Date.now();
+        frameWindow.scrollTo(0, 0);
         documentElement.style.removeProperty("overflow");
       }
     },
-    callback3 = (): void => {
-      if (value13 !== undefined) {
-        clearTimeout(value13);
+    handleResizeA = (): void => {
+      if (resizeTimer !== undefined) {
+        clearTimeout(resizeTimer);
       }
-      value13 = undefined;
-      value12 = undefined;
-      if (value11 === undefined) {
-        callback2();
-      }
-    },
-    callback4 = () =>
-      documentElement.getClientRects().length > 0 && value4.innerHeight > 0,
-    value14 = callback4(),
-    callback5 = (): void => {
-      let innerHeight2 = value4.innerHeight;
-      if (!callback4()) {
-        return;
-      }
-      let value19 = callback();
-      if (!value14) {
-        value14 = true;
-        innerHeight = innerHeight2;
-        value5 = value19;
-        value7 = clampPreviewHeight(value19);
-        return;
-      }
-      if (innerHeight2 === innerHeight) {
-        value5 = value19;
-        return;
-      }
-      index3 = value19 - value5;
-      index = Math.max(0, index + index3);
-      index2 = innerHeight2 - innerHeight;
-      value8 = value5;
-      index5 = Date.now();
-      flag3 = true;
-      flag2 = false;
-      items = index5 - index4 <= PREVIEW_RESIZE_MARGIN_PX ? [] : callback13();
-      innerHeight = innerHeight2;
-      value5 = value19;
-      callback3();
-      if (index3 < -1) {
-        callback14();
+      resizeTimer = undefined;
+      minimumHeight = undefined;
+      if (fontWaitTimer === undefined) {
+        handleResize();
       }
     },
-    callback6 = (): string => {
-      if (index2 === 0) {
+    handleResizeB = () =>
+      documentElement.getClientRects().length > 0 && frameWindow.innerHeight > 0,
+    hasChanged = handleResizeB(),
+    handleResizeC = (): void => {
+      let viewportHeight = frameWindow.innerHeight;
+      if (!handleResizeB()) {
+        return;
+      }
+      let previewValueA = callback();
+      if (!hasChanged) {
+        hasChanged = true;
+        innerHeight = viewportHeight;
+        measuredHeight = previewValueA;
+        clampedHeight = clampPreviewHeight(previewValueA);
+        return;
+      }
+      if (viewportHeight === innerHeight) {
+        measuredHeight = previewValueA;
+        return;
+      }
+      resizeIndexA = previewValueA - measuredHeight;
+      index = Math.max(0, index + resizeIndexA);
+      resizeIndex = viewportHeight - innerHeight;
+      previousHeight = measuredHeight;
+      resizeIndexC = Date.now();
+      isStableA = true;
+      isStable = false;
+      items = resizeIndexC - resizeIndexB <= PREVIEW_RESIZE_MARGIN_PX ? [] : handleResizeK();
+      innerHeight = viewportHeight;
+      measuredHeight = previewValueA;
+      handleResizeA();
+      if (resizeIndexA < -1) {
+        handleResizeL();
+      }
+    },
+    handleResizeD = (): string => {
+      if (resizeIndex === 0) {
         return "judged";
       }
       if (
@@ -290,163 +290,163 @@ function observePreviewHeight(
           ({ a: a, el: el2 }) =>
             el2.isConnected && (a.playState === "running" || a.pending),
         ) &&
-        Date.now() - index5 < PREVIEW_RESIZE_MAX_HEIGHT
+        Date.now() - resizeIndexC < PREVIEW_RESIZE_MAX_HEIGHT
       ) {
         return "deferred";
       }
-      let value19 = value5 - value8,
-        flag9: boolean = false;
-      if (!flag2 && Math.abs(value19) <= 1 && Math.abs(index2) >= 2) {
-        flag9 = index !== 0;
-        callback7();
+      let previewValueB = measuredHeight - previousHeight,
+        isStableF: boolean = false;
+      if (!isStable && Math.abs(previewValueB) <= 1 && Math.abs(resizeIndex) >= 2) {
+        isStableF = index !== 0;
+        handleResizeE();
         index = 0;
       } else if (items.length > 0) {
         index = Math.max(
           0,
           index +
             items.reduce(
-              (input, { el: el2, h0: h02 }) =>
-                input + (el2.offsetHeight - h02),
+              (event, { el: el2, h0: h02 }) =>
+                event + (el2.offsetHeight - h02),
               0,
             ),
         );
       }
       items = [];
-      if (value6 > 0 && Math.abs(index2) >= 2) {
+      if (heightDelta > 0 && Math.abs(resizeIndex) >= 2) {
         index += Math.round(
-          Math.max(0, Math.min(1, value19 / index2)) * value6,
+          Math.max(0, Math.min(1, previewValueB / resizeIndex)) * heightDelta,
         );
-        value6 = 0;
+        heightDelta = 0;
       }
-      index2 = 0;
-      index3 = 0;
-      if (flag9) {
+      resizeIndex = 0;
+      resizeIndexA = 0;
+      if (isStableF) {
         return "healed";
       } else {
         return "judged";
       }
     },
-    callback7 = (): void => {
-      index -= index8;
-      index8 = 0;
-      if (value9 !== undefined) {
-        clearTimeout(value9);
+    handleResizeE = (): void => {
+      index -= resizeIndexF;
+      resizeIndexF = 0;
+      if (settleTimer !== undefined) {
+        clearTimeout(settleTimer);
       }
-      value9 = undefined;
+      settleTimer = undefined;
     },
-    callback8 = () =>
-      index6 !== 0 &&
-      Date.now() - index6 < PREVIEW_RESIZE_ANIMATION_WINDOW_MS,
-    flag8: boolean = false,
-    callback9 = (input: Event & { repeat?: boolean }): void => {
-      if (!input.isTrusted) {
+    handleResizeF = () =>
+      resizeIndexD !== 0 &&
+      Date.now() - resizeIndexD < PREVIEW_RESIZE_ANIMATION_WINDOW_MS,
+    isStableG: boolean = false,
+    handleResizeG = (eventA: Event & { repeat?: boolean }): void => {
+      if (!eventA.isTrusted) {
         return;
       }
-      if (input.type === "pointerdown" || input.type === "pointercancel") {
-        flag8 = input.type === "pointercancel";
+      if (eventA.type === "pointerdown" || eventA.type === "pointercancel") {
+        isStableG = eventA.type === "pointercancel";
         return;
       }
-      if (input.type === "pointerup" && flag8) {
+      if (eventA.type === "pointerup" && isStableG) {
         return;
       }
-      if (input.type === "keydown" && input.repeat) {
+      if (eventA.type === "keydown" && eventA.repeat) {
         return;
       }
-      index6 = Date.now();
+      resizeIndexD = Date.now();
     },
-    callback10 = (): void => {
-      value11 = undefined;
-      if (!callback4()) {
+    handleResizeH = (): void => {
+      fontWaitTimer = undefined;
+      if (!handleResizeB()) {
         return;
       }
-      callback5();
-      value5 = callback();
-      let value19 = callback6();
-      if (value19 === "deferred") {
-        callback2();
+      handleResizeC();
+      measuredHeight = callback();
+      let previewValueC = handleResizeD();
+      if (previewValueC === "deferred") {
+        handleResize();
         return;
       }
-      let value20: boolean = value19 === "healed",
-        value21 = clampPreviewHeight(value5 - index);
-      if (value21 > value7 + 1 && !value20) {
-        let value23: boolean = flag3;
-        flag3 = false;
-        if (value23 && callback8()) {
-          flag5 = false;
-          if (index8 > 0) {
-            callback7();
+      let previewValueD: boolean = previewValueC === "healed",
+        previewValueE = clampPreviewHeight(measuredHeight - index);
+      if (previewValueE > clampedHeight + 1 && !previewValueD) {
+        let previewValueF: boolean = isStableA;
+        isStableA = false;
+        if (previewValueF && handleResizeF()) {
+          isStableC = false;
+          if (resizeIndexF > 0) {
+            handleResizeE();
           }
-          value21 = clampPreviewHeight(value5 - index);
-        } else if (value23) {
-          index7 += 1;
-          if (index7 > 2) {
-            index8 += value21 - value7;
-            index += value21 - value7;
-            value21 = value7;
-            if (flag5) {
-              value10 *= 3;
+          previewValueE = clampPreviewHeight(measuredHeight - index);
+        } else if (previewValueF) {
+          resizeIndexE += 1;
+          if (resizeIndexE > 2) {
+            resizeIndexF += previewValueE - clampedHeight;
+            index += previewValueE - clampedHeight;
+            previewValueE = clampedHeight;
+            if (isStableC) {
+              fontWaitTimeout *= 3;
             }
-            if (value9 === undefined) {
-              value9 = setTimeout(
+            if (settleTimer === undefined) {
+              settleTimer = setTimeout(
                 () =>
-                  value17((): void => {
-                    value9 = undefined;
-                    flag4 = true;
-                    callback7();
-                    callback14();
+                  scheduleUpdate((): void => {
+                    settleTimer = undefined;
+                    isStableB = true;
+                    handleResizeE();
+                    handleResizeL();
                   }),
-                value10,
+                fontWaitTimeout,
               );
             }
           }
-          flag5 = false;
-        } else if (flag4) {
-          flag4 = false;
-          flag5 = true;
+          isStableC = false;
+        } else if (isStableB) {
+          isStableB = false;
+          isStableC = true;
         } else {
-          flag5 = false;
-          value10 = PREVIEW_FONT_WAIT_TIMEOUT_MS;
-          if (index8 > 0) {
-            callback7();
+          isStableC = false;
+          fontWaitTimeout = PREVIEW_FONT_WAIT_TIMEOUT_MS;
+          if (resizeIndexF > 0) {
+            handleResizeE();
           } else {
-            index7 = 0;
+            resizeIndexE = 0;
           }
-          value21 = clampPreviewHeight(value5 - index);
+          previewValueE = clampPreviewHeight(measuredHeight - index);
         }
-      } else if (value21 < value7 - 1) {
-        index7 = 0;
+      } else if (previewValueE < clampedHeight - 1) {
+        resizeIndexE = 0;
       }
-      let value22 = options !== undefined && innerHeight <= options + 1;
+      let previewValueG = heightLimit !== undefined && innerHeight <= heightLimit + 1;
       if (
-        Math.abs(value21 - value7) >= 2 ||
-        (flag7 &&
-          (value21 < innerHeight - 1 ||
-            (value22 && value21 > innerHeight + 1)))
+        Math.abs(previewValueE - clampedHeight) >= 2 ||
+        (isStableE &&
+          (previewValueE < innerHeight - 1 ||
+            (previewValueG && previewValueE > innerHeight + 1)))
       ) {
-        value7 = value21;
-        value12 = value21;
-        index6 = 0;
-        if (value13 !== undefined) {
-          clearTimeout(value13);
+        clampedHeight = previewValueE;
+        minimumHeight = previewValueE;
+        resizeIndexD = 0;
+        if (resizeTimer !== undefined) {
+          clearTimeout(resizeTimer);
         }
-        value13 = setTimeout(
-          () => value17(callback3),
+        resizeTimer = setTimeout(
+          () => scheduleUpdate(handleResizeA),
           MAX_AUTO_PREVIEW_HEIGHT,
         );
-        onHeight(value21);
+        onHeight(previewValueE);
       }
-      flag7 = false;
-      callback2();
+      isStableE = false;
+      handleResize();
     },
-    callback11 = (): Editor.PreviewAnimation[] => {
+    handleResizeI = (): Editor.PreviewAnimation[] => {
       try {
-        if (typeof value3.getAnimations === "function") {
-          return value3
+        if (typeof documentHeightA.getAnimations === "function") {
+          return documentHeightA
             .getAnimations()
             .filter(
-              (input) =>
-                input.playState === "running" &&
-                input.effect?.getTiming().iterations !== 1 / 0,
+              (eventB) =>
+                eventB.playState === "running" &&
+                eventB.effect?.getTiming().iterations !== 1 / 0,
             );
         } else {
           return [];
@@ -455,36 +455,36 @@ function observePreviewHeight(
         return [];
       }
     },
-    callback12 = (): boolean => callback11().length > 0,
-    callback13 = () => {
-      let value19 = callback11()
+    handleResizeJ = (): boolean => handleResizeI().length > 0,
+    handleResizeK = () => {
+      let previewValueH = handleResizeI()
         .filter(
-          (input) =>
-            Number(input.currentTime ?? 0) <= PREVIEW_RESIZE_MIN_DELAY_MS &&
+          (eventC) =>
+            Number(eventC.currentTime ?? 0) <= PREVIEW_RESIZE_MIN_DELAY_MS &&
             !NON_LAYOUT_TRANSITION_PROPERTIES.test(
-              input.transitionProperty ?? "",
+              eventC.transitionProperty ?? "",
             ),
         )
-        .map((input) => ({
-          a: input,
-          el: input.effect?.target,
+        .map((eventD) => ({
+          a: eventD,
+          el: eventD.effect?.target,
         }))
         .filter(
-          (input: {
+          (eventE: {
             a: Editor.PreviewAnimation;
             el: Element | null | undefined;
-          }): input is { a: Editor.PreviewAnimation; el: HTMLElement } =>
-            input.el !== null &&
-            input.el !== undefined &&
-            typeof (input.el as HTMLElement).offsetHeight === "number",
+          }): eventE is { a: Editor.PreviewAnimation; el: HTMLElement } =>
+            eventE.el !== null &&
+            eventE.el !== undefined &&
+            typeof (eventE.el as HTMLElement).offsetHeight === "number",
         );
-      return value19
+      return previewValueH
         .filter(
-          ({ el: el2 }, options2) =>
-            value19.findIndex((input): boolean => input.el === el2) ===
-              options2 &&
-            !value19.some(
-              (input) => input.el !== el2 && input.el.contains(el2),
+          ({ el: el2 }, heightLimitA) =>
+            previewValueH.findIndex((eventF): boolean => eventF.el === el2) ===
+              heightLimitA &&
+            !previewValueH.some(
+              (eventG) => eventG.el !== el2 && eventG.el.contains(el2),
             ),
         )
         .map(({ a: a, el: el2 }) => ({
@@ -493,105 +493,105 @@ function observePreviewHeight(
           h0: el2.offsetHeight,
         }));
     },
-    callback14 = (): void => {
-      value17(callback5);
+    handleResizeL = (): void => {
+      scheduleUpdate(handleResizeC);
       if (flag) {
         return;
       }
-      let value19: number = Date.now();
-      if (value11 === undefined) {
-        index9 = value19;
+      let previewValueI: number = Date.now();
+      if (fontWaitTimer === undefined) {
+        resizeIndexG = previewValueI;
       } else if (
-        value19 - index9 >
-        (callback12() ? PREVIEW_RESIZE_SETTLE_MS : MAX_AUTO_PREVIEW_HEIGHT) -
+        previewValueI - resizeIndexG >
+        (handleResizeJ() ? PREVIEW_RESIZE_SETTLE_MS : MAX_AUTO_PREVIEW_HEIGHT) -
           DEFAULT_PREVIEW_HEIGHT
       ) {
         return;
       } else {
-        clearTimeout(value11);
+        clearTimeout(fontWaitTimer);
       }
-      value11 = setTimeout(() => value17(callback10), DEFAULT_PREVIEW_HEIGHT);
+      fontWaitTimer = setTimeout(() => scheduleUpdate(handleResizeH), DEFAULT_PREVIEW_HEIGHT);
     },
-    value15 = new value2(callback14);
-  value15.observe(body);
+    observer = new resizeObserverB(handleResizeL);
+  observer.observe(body);
   for (
     let firstElementChild = body.firstElementChild;
     firstElementChild !== null;
     firstElementChild = firstElementChild.nextElementSibling
   ) {
-    value15.observe(firstElementChild);
+    observer.observe(firstElementChild);
   }
-  let value16 =
-    typeof value4.MutationObserver === "function"
-      ? new value4.MutationObserver((input: MutationRecord[]): void => {
-          flag2 = true;
-          index4 = Date.now();
-          for (let value19 of input) {
-            if (value19.target !== body || value19.type !== "childList") {
+  let mutationObserver =
+    typeof frameWindow.MutationObserver === "function"
+      ? new frameWindow.MutationObserver((eventH: MutationRecord[]): void => {
+          isStable = true;
+          resizeIndexB = Date.now();
+          for (let previewValueJ of eventH) {
+            if (previewValueJ.target !== body || previewValueJ.type !== "childList") {
               continue;
             }
-            value19.addedNodes.forEach((input2): void => {
-              if (input2.nodeType === 1) {
-                value15.observe(input2 as Element);
+            previewValueJ.addedNodes.forEach((eventI): void => {
+              if (eventI.nodeType === 1) {
+                observer.observe(eventI as Element);
               }
             });
-            value19.removedNodes.forEach((input2): void => {
-              if (input2.nodeType === 1) {
-                value15.unobserve(input2 as Element);
+            previewValueJ.removedNodes.forEach((eventJ): void => {
+              if (eventJ.nodeType === 1) {
+                observer.unobserve(eventJ as Element);
               }
             });
           }
-          callback14();
+          handleResizeL();
         })
       : null;
-  value16?.observe(body, {
+  mutationObserver?.observe(body, {
     subtree: true,
     childList: true,
     attributes: true,
     characterData: true,
   });
-  value4.addEventListener("resize", callback14);
-  value3.addEventListener("transitionend", callback14, true);
-  value3.addEventListener("animationend", callback14, true);
-  for (let value19 of PREVIEW_RESIZE_ACTIVITY_EVENTS) {
-    value3.addEventListener(value19, callback9, true);
+  frameWindow.addEventListener("resize", handleResizeL);
+  documentHeightA.addEventListener("transitionend", handleResizeL, true);
+  documentHeightA.addEventListener("animationend", handleResizeL, true);
+  for (let previewValueK of PREVIEW_RESIZE_ACTIVITY_EVENTS) {
+    documentHeightA.addEventListener(previewValueK, handleResizeG, true);
   }
-  function value17(input: () => void): void {
+  function scheduleUpdate(eventK: () => void): void {
     if (flag) {
       return;
     }
     try {
-      input();
+      eventK();
     } catch {
-      value18();
+      cleanup();
     }
   }
-  function value18(): void {
+  function cleanup(): void {
     if (flag) {
       return;
     }
     flag = true;
-    if (value11 !== undefined) {
-      clearTimeout(value11);
+    if (fontWaitTimer !== undefined) {
+      clearTimeout(fontWaitTimer);
     }
-    if (value13 !== undefined) {
-      clearTimeout(value13);
+    if (resizeTimer !== undefined) {
+      clearTimeout(resizeTimer);
     }
-    if (value9 !== undefined) {
-      clearTimeout(value9);
+    if (settleTimer !== undefined) {
+      clearTimeout(settleTimer);
     }
-    value15.disconnect();
-    value16?.disconnect();
+    observer.disconnect();
+    mutationObserver?.disconnect();
     try {
-      value4.removeEventListener("resize", callback14);
-      value3.removeEventListener("transitionend", callback14, true);
-      value3.removeEventListener("animationend", callback14, true);
-      for (let value19 of PREVIEW_RESIZE_ACTIVITY_EVENTS) {
-        value3.removeEventListener(value19, callback9, true);
+      frameWindow.removeEventListener("resize", handleResizeL);
+      documentHeightA.removeEventListener("transitionend", handleResizeL, true);
+      documentHeightA.removeEventListener("animationend", handleResizeL, true);
+      for (let previewValueL of PREVIEW_RESIZE_ACTIVITY_EVENTS) {
+        documentHeightA.removeEventListener(previewValueL, handleResizeG, true);
       }
     } catch {}
   }
-  return value18;
+  return cleanup;
 }
 export {
   accessiblePreviewDocument,

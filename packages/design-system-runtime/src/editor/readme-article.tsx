@@ -17,24 +17,24 @@ function removeTokenShortcutComments(markdown: string): string {
       `
 `,
     )
-    .filter((input: string): boolean => {
-      let value2 = /^\s*(`{3,}|~{3,})/.exec(input)?.[1] ?? null;
+    .filter((line: string): boolean => {
+      let fence = /^\s*(`{3,}|~{3,})/.exec(line)?.[1] ?? null;
       if (value !== null) {
         if (
-          value2 !== null &&
-          value2[0] === value[0] &&
-          value2.length >= value.length
+          fence !== null &&
+          fence[0] === value[0] &&
+          fence.length >= value.length
         ) {
           value = null;
         }
         return true;
       }
-      if (value2 !== null) {
-        value = value2;
+      if (fence !== null) {
+        value = fence;
         return true;
       }
       return !/^[ \t]*<\!--[ \t]*tokens:[ \t]*(?:spacing|radius)[ \t]*-->[ \t]*\r?$/.test(
-        input,
+        line,
       );
     }).join(`
 `);

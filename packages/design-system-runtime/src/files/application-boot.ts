@@ -79,22 +79,22 @@ function configureLegacyDesignSystemBoot(
 }
 async function probeLegacyDesignSystemWriteAccess(): Promise<boolean | null> {
   let writeDenied: boolean = false,
-    probe = new Promise<boolean | null>((input): void => {
+    probe = new Promise<boolean | null>((resolveProbe): void => {
       let count: number = 2,
-        callback = (input2: boolean | null | undefined) => {
-          if (input2 === true) {
-            return input(true);
+        callback = (capabilityResult: boolean | null | undefined) => {
+          if (capabilityResult === true) {
+            return resolveProbe(true);
           }
-          if (input2 === false) {
+          if (capabilityResult === false) {
             writeDenied = true;
           }
           if (--count === 0) {
-            input(writeDenied ? false : null);
+            resolveProbe(writeDenied ? false : null);
           }
         };
       currentUserCanEdit().then(callback);
-      getAssetsCapability().then((input2) =>
-        callback(input2 === null ? null : true),
+      getAssetsCapability().then((capability) =>
+        callback(capability === null ? null : true),
       );
     }),
     timer: ReturnType<typeof setTimeout> | undefined;
@@ -102,9 +102,9 @@ async function probeLegacyDesignSystemWriteAccess(): Promise<boolean | null> {
     return await Promise.race([
       probe,
       new Promise<boolean | null>(
-        (input) =>
+        (resolve) =>
           (timer = setTimeout(
-            () => input(writeDenied ? false : null),
+            () => resolve(writeDenied ? false : null),
             capabilityLoadTimeoutMs,
           )),
       ),
@@ -214,14 +214,14 @@ function applyFileHomeReadAnswers(
   answers: Record<string, Boot.LegacyAnswerKind> | undefined,
 ): Boot.FileHomes {
   let answerState = (
-    input: string,
-    options: Boot.FileHomeKind,
+    path: string,
+    homeKind: Boot.FileHomeKind,
   ): Boot.FileHomeKind =>
-    answers?.[input] === "unread"
+    answers?.[path] === "unread"
       ? "unread"
-      : answers?.[input] === "missing"
+      : answers?.[path] === "missing"
         ? "absent"
-        : options;
+        : homeKind;
   return {
     ...homes,
     project: answerState(FILES_INDEX_PROJECT_PATH, homes.project),
@@ -236,37 +236,37 @@ async function readDesignSystemInitialState(
 ): Promise<Boot.LegacyInitialState> {
   try {
     let values = new Set<string>(),
-      callback = async (input: string) => {
+      callback = async (path: string) => {
         let controller = new AbortController(),
-          value3 = values.has(input);
-        values.add(input);
-        let value4 = setTimeout(
+          isCached = values.has(path);
+        values.add(path);
+        let timeoutId = setTimeout(
           () => controller.abort(),
-          value3
+          isCached
             ? STORE_META_RETRY_MS
             : STORE_META_LOADING_NOTICE_MS,
         );
         try {
-          return await fetch(input, {
+          return await fetch(path, {
             signal: controller.signal,
           });
         } finally {
-          clearTimeout(value4);
+          clearTimeout(timeoutId);
         }
       },
       value = unreadDesignSystemFileHomes(),
-      callback2 = (
-        input: Record<string, Boot.LegacyAnswerKind> | undefined,
+      applyAnswers = (
+        answers: Record<string, Boot.LegacyAnswerKind> | undefined,
       ) => {
-        let value3 = applyFileHomeReadAnswers(value, input);
+        let stateAnswers = applyFileHomeReadAnswers(value, answers);
         return chooseDesignSystemFileHome({
-          ...value3,
+          ...stateAnswers,
           sameText:
-            value3.projectText !== undefined &&
-            value3.projectText === value3.rootText,
+            stateAnswers.projectText !== undefined &&
+            stateAnswers.projectText === stateAnswers.rootText,
         });
       },
-      callback3 = () =>
+      readBootState = () =>
         readLegacyDesignSystemState({
           stateFiles: [FILES_INDEX_PROJECT_PATH],
           demoFile: DESIGN_SYSTEM_DEMO_PATH,
@@ -274,37 +274,37 @@ async function readDesignSystemInitialState(
           mayWrite: async () =>
             (await determineSlidesWriteAccess()).canWrite,
           refusedWaits: BOOT_FILE_READ_RETRY_DELAYS_MS,
-          read: (input: string, options: string) =>
-            readDesignSystemBootStateFile(input, options, value),
+          read: (path: string, mode: string) =>
+            readDesignSystemBootStateFile(path, mode, value),
           ...(onOwn !== undefined
             ? {
                 onOwn: (
-                  input: Boot.RawEnvelope | "missing" | "unreadable",
-                  options: Record<string, Boot.LegacyAnswerKind>,
-                ) => onOwn(input, callback2(options)),
+                  envelope: Boot.RawEnvelope | "missing" | "unreadable",
+                  answers: Record<string, Boot.LegacyAnswerKind>,
+                ) => onOwn(envelope, applyAnswers(answers)),
               }
             : {}),
         }),
-      value2 = await callback3();
+      bootState = await readBootState();
     if (
-      value2.stateFileAnswers?.[FILES_INDEX_PROJECT_PATH] === "unread"
+      bootState.stateFileAnswers?.[FILES_INDEX_PROJECT_PATH] === "unread"
     ) {
       await new Promise<void>(
-        (input) =>
-          void setTimeout(input, STORE_MODE_DECISION_TIMEOUT_MS),
+        (resolve) =>
+          void setTimeout(resolve, STORE_MODE_DECISION_TIMEOUT_MS),
       );
       Object.assign(value, unreadDesignSystemFileHomes());
-      value2 = await callback3();
+      bootState = await readBootState();
     }
     designSystemFileHomes = applyFileHomeReadAnswers(
       value,
-      value2.stateFileAnswers,
+      bootState.stateFileAnswers,
     );
     recordDesignSystemFileHomeDecision(
-      value2,
-      callback2(value2.stateFileAnswers),
+      bootState,
+      applyAnswers(bootState.stateFileAnswers),
     );
-    return value2;
+    return bootState;
   } catch (value: unknown) {
     designSystemFileHomes = {
       project: "unread",
@@ -358,10 +358,10 @@ async function bootLegacyDesignSystemMode(
     );
   }
   if (mode === "start-tree") {
-    let callback = (input: string): void => {
-      configureLegacyDesignSystemBoot(outcome, null, input);
-      if (BOOT_LIVE_NOTICE_MESSAGES.has(input)) {
-        waitForBootLiveAnnouncer(input);
+    let callback = (noticeMessage: string): void => {
+      configureLegacyDesignSystemBoot(outcome, null, noticeMessage);
+      if (BOOT_LIVE_NOTICE_MESSAGES.has(noticeMessage)) {
+        waitForBootLiveAnnouncer(noticeMessage);
       }
       prepareDesignSystemThumbnailCapture();
     };
@@ -495,9 +495,9 @@ export {
   get_UNREAD_LEGACY_STORE_CHANGES_MESSAGE,
   unreadDesignSystemFileHomes,
 };
-export function set_perFileDesignSystemBooted(value: any): any {
-  perFileDesignSystemBooted = value;
-  return value;
+export function set_perFileDesignSystemBooted(bootValue: any): any {
+  perFileDesignSystemBooted = bootValue;
+  return bootValue;
 }
 export function installFilesApplicationBoot(): () => void {
   return () => {
@@ -515,8 +515,8 @@ export function installFilesApplicationBoot(): () => void {
     resolveDesignSystemFirstPaint = (): void => {
       return;
     };
-    designSystemFirstPaint = new Promise<void>((input): void => {
-      resolveDesignSystemFirstPaint = input;
+    designSystemFirstPaint = new Promise<void>((resolve): void => {
+      resolveDesignSystemFirstPaint = resolve;
     });
     hasIgnoredLegacyRootFile = false;
     IGNORED_LEGACY_ROOT_FILE_MESSAGE =
@@ -536,7 +536,7 @@ export function installFilesApplicationBoot(): () => void {
       project: "unread",
       root: "unread",
     };
-    designSystemStateLayout = (input: Boot.RawEnvelope): "tree" | "envelope" =>
-      readTreeIndex(input) !== undefined ? "tree" : "envelope";
+    designSystemStateLayout = (envelope: Boot.RawEnvelope): "tree" | "envelope" =>
+      readTreeIndex(envelope) !== undefined ? "tree" : "envelope";
   };
 }

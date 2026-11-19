@@ -31,44 +31,44 @@ var DESIGN_SYSTEM_SETUP_MESSAGE: string;
 var REOPEN_FAILED_MESSAGE: string;
 var BOOT_LIVE_NOTICE_MESSAGES: Set<string>;
 async function readAuthoritativeStoreMeta(
-  options: Boot.MetaReadOptions,
+  readOptions: Boot.MetaReadOptions,
   timeoutMs: number = STORE_META_READ_TIMEOUT_MS,
   timers: Boot.TimerPair = globalThis,
 ): Promise<Boot.MetaOutcome> {
-  let getMeta = options.handle?.doc(SYSTEM_META_DOCUMENT_PATH).get;
+  let getMeta = readOptions.handle?.doc(SYSTEM_META_DOCUMENT_PATH).get;
   if (typeof getMeta !== "function") {
-    return readStoreMetaThroughSubscription(options.port, timeoutMs, timers);
+    return readStoreMetaThroughSubscription(readOptions.port, timeoutMs, timers);
   }
   let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       getMeta
-        .call(options.handle?.doc(SYSTEM_META_DOCUMENT_PATH))
+        .call(readOptions.handle?.doc(SYSTEM_META_DOCUMENT_PATH))
         .then(
           (
-            input: Boot.NativeLegacyDocumentSnapshot,
+            snapshot: Boot.NativeLegacyDocumentSnapshot,
           ): Boot.MetaOutcome | Promise<Boot.MetaOutcome> =>
-            input.exists
-              ? presentStoreMeta(input.data?.())
-              : input.metadata?.fromCache === true
+            snapshot.exists
+              ? presentStoreMeta(snapshot.data?.())
+              : snapshot.metadata?.fromCache === true
                 ? readStoreMetaThroughSubscription(
-                    options.port,
+                    readOptions.port,
                     timeoutMs,
                     timers,
                   )
                 : {
                     state: "absent",
                   },
-          (input: unknown): Boot.MetaOutcome => ({
+          (error: unknown): Boot.MetaOutcome => ({
             state: "unavailable",
-            fault: storeMetaFaultCode(input),
+            fault: storeMetaFaultCode(error),
           }),
         ),
       new Promise<Boot.MetaOutcome>(
-        (input) =>
+        (resolve) =>
           (timeout = timers.setTimeout(
             () =>
-              input({
+              resolve({
                 state: "unavailable",
                 fault: "timeout",
               }),
@@ -85,20 +85,20 @@ function readStoreMetaThroughSubscription(
   timeoutMs: number,
   timers: Boot.TimerPair,
 ): Promise<Boot.MetaOutcome> {
-  return new Promise<Boot.MetaOutcome>((input): void => {
+  return new Promise<Boot.MetaOutcome>((resolve): void => {
     let flag: boolean = false,
       value: { data: unknown } | null = null,
-      value2: (() => void) | undefined,
-      callback = (input2: Boot.MetaOutcome): void => {
+      cancelWait: (() => void) | undefined,
+      callback = (outcome: Boot.MetaOutcome): void => {
         if (flag) {
           return;
         }
         flag = true;
-        timers.clearTimeout(value3);
-        queueMicrotask(() => value2?.());
-        input(input2);
+        timers.clearTimeout(timeoutId);
+        queueMicrotask(() => cancelWait?.());
+        resolve(outcome);
       },
-      value3 = timers.setTimeout(
+      timeoutId = timers.setTimeout(
         () =>
           callback({
             state: "unavailable",
@@ -106,35 +106,35 @@ function readStoreMetaThroughSubscription(
           }),
         timeoutMs,
       );
-    value2 = port.subscribe(
+    cancelWait = port.subscribe(
       SYSTEM_COLLECTION,
-      (input2, options): void => {
-        for (let value4 of input2) {
-          if (value4.path === SYSTEM_META_DOCUMENT_PATH) {
+      (snapshots, changeOptions): void => {
+        for (let snapshot of snapshots) {
+          if (snapshot.path === SYSTEM_META_DOCUMENT_PATH) {
             value =
-              value4.type !== "removed"
+              snapshot.type !== "removed"
                 ? {
-                    data: value4.data,
+                    data: snapshot.data,
                   }
                 : null;
           }
         }
         if (value !== null) {
           callback(presentStoreMeta(value.data));
-        } else if (!options.fromCache) {
+        } else if (!changeOptions.fromCache) {
           callback({
             state: "absent",
           });
         }
       },
-      (input2) =>
+      (error) =>
         callback({
           state: "unavailable",
-          fault: input2.code,
+          fault: error.code,
         }),
     );
     if (flag) {
-      value2!();
+      cancelWait!();
     }
   });
 }
@@ -185,62 +185,62 @@ function chooseDesignSystemFileHome(
   };
 }
 async function chooseDesignSystemBootMode(
-  options: Boot.BootModeOptions,
+  bootOptions: Boot.BootModeOptions,
 ): Promise<"files" | "tree" | "start-tree" | "readonly-store"> {
-  if (options.typePage) {
+  if (bootOptions.typePage) {
     return "files";
   }
-  if (options.origin === "instance" && options.ownLayout === "tree") {
+  if (bootOptions.origin === "instance" && bootOptions.ownLayout === "tree") {
     return "tree";
   }
   let missingOwnState =
-    options.origin === "demo" && options.stateFileFound === false;
+    bootOptions.origin === "demo" && bootOptions.stateFileFound === false;
   if (
     missingOwnState &&
-    options.storeAbsent &&
-    !options.forcedReadOnly &&
-    (await options.mayStartOnFiles())
+    bootOptions.storeAbsent &&
+    !bootOptions.forcedReadOnly &&
+    (await bootOptions.mayStartOnFiles())
   ) {
     return "start-tree";
   }
   if (
     missingOwnState &&
-    !options.emulator &&
-    (!options.storeAbsent || options.forcedReadOnly)
+    !bootOptions.emulator &&
+    (!bootOptions.storeAbsent || bootOptions.forcedReadOnly)
   ) {
     return "readonly-store";
   }
   return "files";
 }
 function chooseTreeBootOutcome(
-  options: Boot.TreeBootOptions,
+  treeOptions: Boot.TreeBootOptions,
 ): Boot.TreeBootOutcome {
-  if (options.project === "unread") {
+  if (treeOptions.project === "unread") {
     return {
       boot: "readonly",
       reason: uiMessage("design-system.bootDecisions.couldnTReadThisDesign"),
     };
   }
-  if (options.origin === "instance" && options.tree) {
+  if (treeOptions.origin === "instance" && treeOptions.tree) {
     return {
       boot: "tree",
-      ...(options.pipeline
+      ...(treeOptions.pipeline
         ? {
             readOnly: uiMessage("design-system.bootDecisions.thisDesignSystemIsKept"),
           }
-        : options.editingOff
+        : treeOptions.editingOff
           ? {
               readOnly: uiMessage("design-system.bootDecisions.migratedFromTheStandaloneVersion"),
             }
           : {}),
     };
   }
-  if (options.project === "marked") {
+  if (treeOptions.project === "marked") {
     return {
       boot: "failed",
     };
   }
-  if (options.project !== "absent") {
+  if (treeOptions.project !== "absent") {
     return {
       boot: "readonly",
       reason: INVALID_PROJECT_INDEX_MESSAGE,
@@ -248,7 +248,7 @@ function chooseTreeBootOutcome(
   }
   return {
     boot: "empty",
-    ...(options.pipeline
+    ...(treeOptions.pipeline
       ? {
           readOnly: uiMessage("design-system.bootDecisions.thisDesignSystemIsKept"),
         }
@@ -256,59 +256,59 @@ function chooseTreeBootOutcome(
   };
 }
 async function mayInitializeEmptyFilesStore(
-  options: Boot.MayInitializeOptions,
+  initOptions: Boot.MayInitializeOptions,
 ): Promise<boolean> {
-  if (!options.canReopen || options.automation || options.pipeline) {
+  if (!initOptions.canReopen || initOptions.automation || initOptions.pipeline) {
     return false;
   }
-  if (!(await options.switchOn())) {
+  if (!(await initOptions.switchOn())) {
     return false;
   }
-  return options.canWrite();
+  return initOptions.canWrite();
 }
-function isRecentSingleFileMoveNote(options: {
+function isRecentSingleFileMoveNote(moveOptions: {
   singleFileHere: boolean;
   canReopen: boolean;
   noteAt: number | null | undefined;
   now: number;
 }): boolean {
   return (
-    options.singleFileHere &&
-    options.canReopen &&
-    options.noteAt !== null &&
-    Number.isFinite(options.noteAt) &&
-    options.now - (options.noteAt as number) >= 0 &&
-    options.now - (options.noteAt as number) < 60000
+    moveOptions.singleFileHere &&
+    moveOptions.canReopen &&
+    moveOptions.noteAt !== null &&
+    Number.isFinite(moveOptions.noteAt) &&
+    moveOptions.now - (moveOptions.noteAt as number) >= 0 &&
+    moveOptions.now - (moveOptions.noteAt as number) < 60000
   );
 }
-function holdCleanSingleFileForMigration(options: {
+function holdCleanSingleFileForMigration(holdOptions: {
   clean(): boolean;
   leaveNote(): boolean | undefined;
   hold(): void;
 }): boolean {
-  if (!options.clean() || !options.leaveNote()) {
+  if (!holdOptions.clean() || !holdOptions.leaveNote()) {
     return false;
   }
-  options.hold();
+  holdOptions.hold();
   return true;
 }
 function completeSingleFileMigrationBoot(
-  options: Boot.CompleteMigrationOptions,
+  migrationOptions: Boot.CompleteMigrationOptions,
 ): void {
-  if (options.end === "landed") {
+  if (migrationOptions.end === "landed") {
     return;
   }
-  if (options.end === "busy") {
-    return options.waitForTheirs();
+  if (migrationOptions.end === "busy") {
+    return migrationOptions.waitForTheirs();
   }
-  options.skip();
-  if (options.notice !== undefined) {
-    options.carryNotice(options.notice);
+  migrationOptions.skip();
+  if (migrationOptions.notice !== undefined) {
+    migrationOptions.carryNotice(migrationOptions.notice);
   }
-  if (options.end === "restart") {
-    options.restart();
+  if (migrationOptions.end === "restart") {
+    migrationOptions.restart();
   } else {
-    options.reload();
+    migrationOptions.reload();
   }
 }
 function singleFileMigrationExit(
@@ -343,25 +343,25 @@ function singleFileMigrationExit(
     return "reload";
   }
 }
-function isRecentMigrationAttempt(options: {
+function isRecentMigrationAttempt(attemptOptions: {
   runningAt: number | null | undefined;
   now: number;
 }): boolean {
   return (
-    options.runningAt !== null &&
-    Number.isFinite(options.runningAt) &&
-    options.now - (options.runningAt as number) >= 0 &&
-    options.now - (options.runningAt as number) < 600000
+    attemptOptions.runningAt !== null &&
+    Number.isFinite(attemptOptions.runningAt) &&
+    attemptOptions.now - (attemptOptions.runningAt as number) >= 0 &&
+    attemptOptions.now - (attemptOptions.runningAt as number) < 600000
   );
 }
-function migrationOtherTabWaitOutcome(options: {
+function migrationOtherTabWaitOutcome(otherTabOptions: {
   movedTo: boolean;
   waitedMs: number;
 }): "landed" | "wait" | "gave-up" {
-  if (options.movedTo) {
+  if (otherTabOptions.movedTo) {
     return "landed";
   } else {
-    if (options.waitedMs < MIGRATION_OTHER_TAB_WAIT_MS) {
+    if (otherTabOptions.waitedMs < MIGRATION_OTHER_TAB_WAIT_MS) {
       return "wait";
     } else {
       return "gave-up";
@@ -392,41 +392,41 @@ function readRecentMigrationNotice(
   }
 }
 async function mayMigrateDesignSystem(
-  options: Boot.MayMigrateOptions,
+  migrationOptions: Boot.MayMigrateOptions,
 ): Promise<boolean> {
   if (
-    options.typeHost ||
-    options.pipeline ||
-    lastChangeIsImported(options.lastChange) ||
-    options.automation ||
-    options.skipped ||
-    !options.canReopen
+    migrationOptions.typeHost ||
+    migrationOptions.pipeline ||
+    lastChangeIsImported(migrationOptions.lastChange) ||
+    migrationOptions.automation ||
+    migrationOptions.skipped ||
+    !migrationOptions.canReopen
   ) {
     return false;
   }
-  if (!(await options.switchOn())) {
+  if (!(await migrationOptions.switchOn())) {
     return false;
   }
-  return options.canWrite();
+  return migrationOptions.canWrite();
 }
-function mountInitializedFilesOutcome(options: {
+function mountInitializedFilesOutcome(mountOptions: {
   started: string;
   mount(message: string): void;
   reopen(): void;
   reload(): void;
 }): boolean {
-  if (options.started === "no") {
+  if (mountOptions.started === "no") {
     return false;
   }
-  if (options.started === "exists" || options.started === "unsure") {
-    options.mount(uiMessage("design-system.bootDecisions.couldnTReadThisDesign"));
+  if (mountOptions.started === "exists" || mountOptions.started === "unsure") {
+    mountOptions.mount(uiMessage("design-system.bootDecisions.couldnTReadThisDesign"));
   } else if (
-    (options.mount(uiMessage("design-system.bootDecisions.thisDesignSystemIsBeing2")),
-    options.started === "created")
+    (mountOptions.mount(uiMessage("design-system.bootDecisions.thisDesignSystemIsBeing2")),
+    mountOptions.started === "created")
   ) {
-    options.reopen();
+    mountOptions.reopen();
   } else {
-    options.reload();
+    mountOptions.reload();
   }
   return true;
 }
@@ -443,36 +443,36 @@ function resolveMigratedReadonlyReason(
   }
   return access.reason ?? uiMessage("design-system.bootDecisions.thisDesignSystemCanT");
 }
-function editingOffTransition(options: {
+function editingOffTransition(transitionOptions: {
   offAtBoot: boolean;
   offNow: boolean;
   canWrite: boolean;
 }): "on" | "off" | null {
-  if (options.offAtBoot) {
-    if (options.offNow) {
+  if (transitionOptions.offAtBoot) {
+    if (transitionOptions.offNow) {
       return null;
     } else {
       return "on";
     }
   }
-  if (options.offNow && options.canWrite) {
+  if (transitionOptions.offNow && transitionOptions.canWrite) {
     return "off";
   } else {
     return null;
   }
 }
-function restartWithReloadFallback(options: Boot.RestartFallback): void {
-  if (options.restart === undefined) {
-    return options.ask();
+function restartWithReloadFallback(restartOptions: Boot.RestartFallback): void {
+  if (restartOptions.restart === undefined) {
+    return restartOptions.ask();
   }
   try {
-    options.restart({
-      note: options.note,
+    restartOptions.restart({
+      note: restartOptions.note,
     });
   } catch {
-    return options.ask();
+    return restartOptions.ask();
   }
-  options.setTimeout(options.ask, options.watchdogMs);
+  restartOptions.setTimeout(restartOptions.ask, restartOptions.watchdogMs);
 }
 function get_PIPELINE_READONLY_MESSAGE() {
   return uiMessage("design-system.bootDecisions.thisDesignSystemIsKept");
@@ -564,21 +564,21 @@ export function installFilesBootDecisions(): () => void {
     DESIGN_SYSTEM_CHANGED_MESSAGE =
       "This design system has changed. The page reopens in a moment.";
     DESIGN_SYSTEM_READONLY_MESSAGE = "This design system can’t be edited here.";
-    storeMetaFaultCode = (input) => {
-      let value = (input as { code?: unknown } | null | undefined)?.code;
+    storeMetaFaultCode = (error) => {
+      let value = (error as { code?: unknown } | null | undefined)?.code;
       if (typeof value === "string") {
         return value;
       } else {
         return "error";
       }
     };
-    presentStoreMeta = (input) =>
-      typeof input === "object" &&
-      input !== null &&
-      Object.keys(input).length > 0
+    presentStoreMeta = (metadata) =>
+      typeof metadata === "object" &&
+      metadata !== null &&
+      Object.keys(metadata).length > 0
         ? {
             state: "present",
-            meta: input,
+            meta: metadata,
           }
         : {
             state: "present",

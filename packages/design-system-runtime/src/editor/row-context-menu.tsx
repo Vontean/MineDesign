@@ -30,9 +30,9 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
     value.style.opacity = "0";
     document.body.appendChild(value);
     value.select();
-    let value2 = document.execCommand("copy");
+    let didCopy = document.execCommand("copy");
     value.remove();
-    return value2;
+    return didCopy;
   } catch {
     return false;
   }
@@ -55,14 +55,14 @@ function RemoveRowButton({
       className={
         "ds-row-trash opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
       }
-      onClick={(input: React.MouseEvent<HTMLButtonElement>): void => {
-        input.stopPropagation();
+      onClick={(event: React.MouseEvent<HTMLButtonElement>): void => {
+        event.stopPropagation();
         let value =
           tabIndex === -1
             ? (): void => {
                 return;
               }
-            : restoreFocusAfterRemoval(input.currentTarget);
+            : restoreFocusAfterRemoval(event.currentTarget);
         onRemove();
         value();
       }}
@@ -82,12 +82,12 @@ function RemoveRowButton({
   );
 }
 function useRowContextMenu(enabled: boolean = true): Token.RowContextState {
-  let [value, value2] = reactRowContextMenu.useState<Token.RowPoint | null>(
+  let [value, setPoint] = reactRowContextMenu.useState<Token.RowPoint | null>(
       null,
     ),
-    [value3, value4] = reactRowContextMenu.useState<"point" | "tap">("point"),
+    [anchor, setMode] = reactRowContextMenu.useState<"point" | "tap">("point"),
     ref = reactRowContextMenu.useRef<Token.RowTouchSession | null>(null),
-    ref2 = reactRowContextMenu.useRef(false),
+    touchActiveRef = reactRowContextMenu.useRef(false),
     callback = () => {
       let current = ref.current;
       if (current === null) {
@@ -98,13 +98,13 @@ function useRowContextMenu(enabled: boolean = true): Token.RowContextState {
       return current.fired;
     };
   reactRowContextMenu.useEffect(() => () => void callback(), []);
-  let callback2 = (input: HTMLElement, options: HTMLElement) =>
-    !input.contains(options) ||
-    options.closest('input, textarea, [contenteditable="true"]') !== null;
+  let isOutsideTarget = (source: HTMLElement, target: HTMLElement) =>
+    !source.contains(target) ||
+    target.closest('input, textarea, [contenteditable="true"]') !== null;
   return {
     at: value,
-    anchor: value3,
-    close: () => value2(null),
+    anchor: anchor,
+    close: () => setPoint(null),
     rowProps: {
       onTouchStart: (
         event: React.TouchEvent<HTMLElement> & {
@@ -116,34 +116,34 @@ function useRowContextMenu(enabled: boolean = true): Token.RowContextState {
           return;
         }
         let target = event.target;
-        if (callback2(event.currentTarget, target)) {
+        if (isOutsideTarget(event.currentTarget, target)) {
           return;
         }
-        let { clientX: value5, clientY: value6 } = event.touches[0];
+        let { clientX: touchX, clientY: touchY } = event.touches[0];
         ref.current = {
-          x: value5,
-          y: value6,
+          x: touchX,
+          y: touchY,
           fired: false,
           timer: window.setTimeout((): void => {
             if (ref.current !== null) {
               ref.current.fired = true;
             }
-            value4("tap");
-            value2({
-              x: value5,
-              y: value6,
+            setMode("tap");
+            setPoint({
+              x: touchX,
+              y: touchY,
             });
           }, ROW_CONTEXT_LONG_PRESS_MS),
         };
       },
-      onTouchMove: (input: React.TouchEvent<HTMLElement>): void => {
+      onTouchMove: (event: React.TouchEvent<HTMLElement>): void => {
         let current = ref.current,
-          value5 = input.touches[0];
+          touch = event.touches[0];
         if (
           current !== null &&
           !current.fired &&
-          value5 !== undefined &&
-          Math.hypot(value5.clientX - current.x, value5.clientY - current.y) >
+          touch !== undefined &&
+          Math.hypot(touch.clientX - current.x, touch.clientY - current.y) >
             ROW_CONTEXT_MOVE_TOLERANCE_PX
         ) {
           callback();
@@ -156,8 +156,8 @@ function useRowContextMenu(enabled: boolean = true): Token.RowContextState {
       ): void => {
         if (callback()) {
           event.preventDefault();
-          ref2.current = true;
-          window.setTimeout(() => (ref2.current = false), 400);
+          touchActiveRef.current = true;
+          window.setTimeout(() => (touchActiveRef.current = false), 400);
         }
       },
       onTouchCancel: () => void callback(),
@@ -166,8 +166,8 @@ function useRowContextMenu(enabled: boolean = true): Token.RowContextState {
           target: HTMLElement;
         },
       ): void => {
-        if (ref2.current && event.currentTarget.contains(event.target)) {
-          ref2.current = false;
+        if (touchActiveRef.current && event.currentTarget.contains(event.target)) {
+          touchActiveRef.current = false;
           event.preventDefault();
           event.stopPropagation();
         }
@@ -181,7 +181,7 @@ function useRowContextMenu(enabled: boolean = true): Token.RowContextState {
           return;
         }
         let target = event.target;
-        if (callback2(event.currentTarget, target)) {
+        if (isOutsideTarget(event.currentTarget, target)) {
           return;
         }
         event.preventDefault();
@@ -189,9 +189,9 @@ function useRowContextMenu(enabled: boolean = true): Token.RowContextState {
           return;
         }
         callback();
-        value4("point");
+        setMode("point");
         let bounds = event.currentTarget.getBoundingClientRect();
-        value2(
+        setPoint(
           event.clientX === 0 && event.clientY === 0
             ? {
                 x: bounds.left + 24,
@@ -217,12 +217,12 @@ function RowContextMenu({
   useUiLocale();
   let {
       rename: value,
-      copy: value2,
-      remove: value3,
-      removeLabel: value5 = "Remove",
-      goto: value4,
-      gotoLabel: value6 = uiMessage("design-system.rowContextMenu.goToTarget"),
-      inherit: value7 = [],
+      copy: copyValue,
+      remove: removeAction,
+      removeLabel: removeLabel = "Remove",
+      goto: gotoAction,
+      gotoLabel: gotoLabel = uiMessage("design-system.rowContextMenu.goToTarget"),
+      inherit: inheritActions = [],
     } = actions,
     ref = reactRowContextMenu.useRef<HTMLSpanElement | null>(null);
   return (
@@ -238,29 +238,29 @@ function RowContextMenu({
           title={title}
           className={"min-w-[11rem]"}
         >
-          {[value4 !== undefined ? (
+          {[gotoAction !== undefined ? (
               <Menu.Item
                 icon={"ArrowRight"}
-                onClick={() => requestAnimationFrame(value4)}
+                onClick={() => requestAnimationFrame(gotoAction)}
                 data-testid={
                   testid !== undefined ? testid + "-goto" : undefined
                 }
               >
-                {value6}
+                {gotoLabel}
               </Menu.Item>
-            ) : null, value7.map((input, options) =>
+            ) : null, inheritActions.map((action, index) =>
               (() => {
                 const _Element = Menu.Item;
                 const _elementProps = {
                   icon: "ArrowCounterClockwise",
-                  onClick: input.run,
+                  onClick: action.run,
                   "data-testid":
                     testid !== undefined
-                      ? testid + "-inherit-" + String(options)
+                      ? testid + "-inherit-" + String(index)
                       : undefined,
-                  children: input.label,
+                  children: action.label,
                 };
-                const _elementKey = "inh" + String(options);
+                const _elementKey = "inh" + String(index);
                 return <_Element key={_elementKey} {..._elementProps} />;
               })(),
             ), value !== undefined ? (
@@ -273,13 +273,13 @@ function RowContextMenu({
               >
                 {uiMessage("design-system.rowContextMenu.rename")}
               </Menu.Item>
-            ) : null, value2 !== undefined && value2 !== "" ? (
+            ) : null, copyValue !== undefined && copyValue !== "" ? (
               <Menu.Item
                 icon={"Copy"}
                 onClick={() =>
-                  void copyTextToClipboard(value2).then((input: boolean) =>
+                  void copyTextToClipboard(copyValue).then((didCopy: boolean) =>
                     showEditorNotification(
-                      input ? "Copied " + value2 : "Couldn’t copy",
+                      didCopy ? "Copied " + copyValue : "Couldn’t copy",
                     ),
                   )
                 }
@@ -289,16 +289,16 @@ function RowContextMenu({
               >
                 {uiMessage("design-system.rowContextMenu.copyValue")}
               </Menu.Item>
-            ) : null, value3 !== undefined ? (
+            ) : null, removeAction !== undefined ? (
               <jsxRowContextMenu.Fragment>
                 {[value !== undefined ||
-                  (value2 !== undefined && value2 !== "") ? (
+                  (copyValue !== undefined && copyValue !== "") ? (
                     <Menu.Separator />
                   ) : null, <Menu.Item
                     icon={"Trash"}
                     variant={"danger"}
                     onClick={(): void => {
-                      let value8 =
+                      let restoreFocus =
                         ref.current !== null
                           ? restoreFocusAfterRemoval(
                               ref.current,
@@ -307,14 +307,14 @@ function RowContextMenu({
                           : (): void => {
                               return;
                             };
-                      value3();
-                      value8();
+                      removeAction();
+                      restoreFocus();
                     }}
                     data-testid={
                       testid !== undefined ? testid + "-remove" : undefined
                     }
                   >
-                    {value5}
+                    {removeLabel}
                   </Menu.Item>]}
               </jsxRowContextMenu.Fragment>
             ) : null]}

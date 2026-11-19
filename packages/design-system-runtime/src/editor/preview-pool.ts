@@ -33,28 +33,28 @@ export function installEditorPreviewPool(): () => void {
       listeners = new Set<() => void>();
       clock = 0;
       constructor(
-        input: number = 8,
-        options: () => number = (): number => Date.now(),
+        maxLive: number = 8,
+        now: () => number = (): number => Date.now(),
       ) {
-        this.maxLive = input;
-        this.now = options;
+        this.maxLive = maxLive;
+        this.now = now;
       }
-      phase(input: string): Editor.PreviewPoolPhase {
-        return this.entries.get(input)?.phase ?? "idle";
+      phase(ownerId: string): Editor.PreviewPoolPhase {
+        return this.entries.get(ownerId)?.phase ?? "idle";
       }
-      subscribe(input: () => void) {
-        this.listeners.add(input);
-        return () => this.listeners.delete(input);
+      subscribe(listener: () => void) {
+        this.listeners.add(listener);
+        return () => this.listeners.delete(listener);
       }
       snapshot(): Editor.PreviewPoolSnapshot {
         let items: string[] = [],
           value: string | null = null;
-        for (let [value2, value3] of this.entries) {
-          if (value3.phase === "live") {
-            items.push(value2);
+        for (let [ownerId, entry] of this.entries) {
+          if (entry.phase === "live") {
+            items.push(ownerId);
           }
-          if (value3.booting) {
-            value = value2;
+          if (entry.booting) {
+            value = ownerId;
           }
         }
         return {
@@ -63,47 +63,47 @@ export function installEditorPreviewPool(): () => void {
           booting: value,
         };
       }
-      visible(input: string, options: boolean): void {
-        let value = this.entry(input);
+      visible(ownerId: string, isVisible: boolean): void {
+        let value = this.entry(ownerId);
         if (
-          value.visible === options &&
-          (options ? value.phase !== "idle" : true)
+          value.visible === isVisible &&
+          (isVisible ? value.phase !== "idle" : true)
         ) {
-          if (options) {
+          if (isVisible) {
             value.lastVisible = ++this.clock;
           }
           return;
         }
-        value.visible = options;
-        if (options) {
+        value.visible = isVisible;
+        if (isVisible) {
           value.lastVisible = ++this.clock;
           if (value.phase === "idle") {
             value.phase = "queued";
-            this.queue.push(input);
+            this.queue.push(ownerId);
           }
         } else if (value.phase === "queued") {
           value.phase = "idle";
-          let value2 = this.queue.indexOf(input);
-          if (value2 >= 0) {
-            this.queue.splice(value2, 1);
+          let queueIndex = this.queue.indexOf(ownerId);
+          if (queueIndex >= 0) {
+            this.queue.splice(queueIndex, 1);
           }
         }
         this.pump();
       }
-      booted(input: string): void {
-        let entry = this.entries.get(input);
+      booted(ownerId: string): void {
+        let entry = this.entries.get(ownerId);
         if (entry === undefined || !entry.booting) {
           return;
         }
         entry.booting = false;
         this.pump();
       }
-      remove(input: string): void {
-        if (this.entries.get(input) === undefined) {
+      remove(ownerId: string): void {
+        if (this.entries.get(ownerId) === undefined) {
           return;
         }
-        this.entries.delete(input);
-        let value = this.queue.indexOf(input);
+        this.entries.delete(ownerId);
+        let value = this.queue.indexOf(ownerId);
         if (value >= 0) {
           this.queue.splice(value, 1);
         }
@@ -112,9 +112,9 @@ export function installEditorPreviewPool(): () => void {
       tick(): void {
         let value = this.now(),
           flag: boolean = false;
-        for (let value2 of this.entries.values()) {
-          if (value2.booting && value - value2.bootStartedAt >= 6000) {
-            value2.booting = false;
+        for (let entry of this.entries.values()) {
+          if (entry.booting && value - entry.bootStartedAt >= 6000) {
+            entry.booting = false;
             flag = true;
           }
         }
@@ -122,8 +122,8 @@ export function installEditorPreviewPool(): () => void {
           this.pump();
         }
       }
-      entry(input: string): Editor.PreviewPoolEntry {
-        let entry = this.entries.get(input);
+      entry(ownerId: string): Editor.PreviewPoolEntry {
+        let entry = this.entries.get(ownerId);
         if (entry === undefined) {
           entry = {
             phase: "idle",
@@ -132,7 +132,7 @@ export function installEditorPreviewPool(): () => void {
             booting: false,
             bootStartedAt: 0,
           };
-          this.entries.set(input, entry);
+          this.entries.set(ownerId, entry);
         }
         return entry;
       }
@@ -179,16 +179,16 @@ export function installEditorPreviewPool(): () => void {
       }
       evictOne(): boolean {
         let value: string | null = null,
-          value2 = 1 / 0;
-        for (let [value3, value4] of this.entries) {
+          oldestTimestamp = 1 / 0;
+        for (let [ownerId, poolEntry] of this.entries) {
           if (
-            value4.phase === "live" &&
-            !value4.visible &&
-            !value4.booting &&
-            value4.lastVisible < value2
+            poolEntry.phase === "live" &&
+            !poolEntry.visible &&
+            !poolEntry.booting &&
+            poolEntry.lastVisible < oldestTimestamp
           ) {
-            value2 = value4.lastVisible;
-            value = value3;
+            oldestTimestamp = poolEntry.lastVisible;
+            value = ownerId;
           }
         }
         if (value === null) {

@@ -19,8 +19,8 @@ import { PropertyPopup } from "../ui/property-popover";
 var reactUsageEditor: typeof import("react");
 var jsxUsageEditor: typeof import("react/jsx-runtime");
 var prefersCoarsePointer: () => boolean;
-function hasUsageNote(value: string | undefined) {
-  return value !== undefined && value.trim() !== "";
+function hasUsageNote(note: string | undefined) {
+  return note !== undefined && note.trim() !== "";
 }
 function focusUsageEditorBackground(
   event: React.MouseEvent<HTMLDivElement>,
@@ -47,7 +47,7 @@ function focusUsageEditorBackground(
   value?.collapseToEnd();
 }
 function UsageNoteEditor({
-  value: value,
+  value: note,
   label: label,
   onChange: onChange,
   onDone: onDone,
@@ -58,40 +58,40 @@ function UsageNoteEditor({
   anchorKey: anchorKey,
 }: UsageNoteEditorProps) {
   useUiLocale();
-  let value2: boolean = onChange !== undefined,
-    value3 = hasUsageNote(value),
-    [value4, value5] = reactUsageEditor.useState(false),
+  let canEdit: boolean = onChange !== undefined,
+    hasNote = hasUsageNote(note),
+    [isOpen, setIsOpen] = reactUsageEditor.useState(false),
     ref = reactUsageEditor.useRef(false),
-    ref2 = reactUsageEditor.useRef(false);
+    pointerDownRef = reactUsageEditor.useRef(false);
   reactUsageEditor.useEffect(() => {
-    let callback2 = (): void => {
-        ref2.current = true;
+    let handleKeyDown = (): void => {
+        pointerDownRef.current = true;
       },
-      callback3 = (): void => {
-        ref2.current = false;
+      handlePointerDown = (): void => {
+        pointerDownRef.current = false;
       };
-    window.addEventListener("keydown", callback2, true);
-    window.addEventListener("pointerdown", callback3, true);
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("pointerdown", handlePointerDown, true);
     return (): void => {
-      window.removeEventListener("keydown", callback2, true);
-      window.removeEventListener("pointerdown", callback3, true);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("pointerdown", handlePointerDown, true);
     };
   }, []);
-  let ref3 = reactUsageEditor.useRef<HTMLSpanElement | null>(null),
-    ref4 = reactUsageEditor.useRef<HTMLElement | null>(null),
-    ref5 = reactUsageEditor.useRef(false);
-  if (!value2 && !value3) {
+  let labelRef = reactUsageEditor.useRef<HTMLSpanElement | null>(null),
+    popupRef = reactUsageEditor.useRef<HTMLElement | null>(null),
+    stripPressRef = reactUsageEditor.useRef(false);
+  if (!canEdit && !hasNote) {
     return null;
   }
-  let value6 =
-      value4 || value3 || !value2 ? title : uiMessage("design-system.usageNotes.add") + title.toLowerCase(),
+  let ariaLabel =
+      isOpen || hasNote || !canEdit ? title : uiMessage("design-system.usageNotes.add") + title.toLowerCase(),
     callback = (): void => {
-      value5(false);
-      if (!ref.current && !ref2.current) {
+      setIsOpen(false);
+      if (!ref.current && !pointerDownRef.current) {
         return;
       }
-      let current = ref4.current,
-        callback2 = (): void => {
+      let current = popupRef.current,
+        scheduleFocus = (): void => {
           let activeElement = document.activeElement;
           if (
             activeElement === null ||
@@ -99,28 +99,28 @@ function UsageNoteEditor({
             !activeElement.isConnected ||
             (current !== null && current.contains(activeElement))
           ) {
-            ref3.current?.querySelector("button")?.focus({
+            labelRef.current?.querySelector("button")?.focus({
               preventScroll: true,
             });
           }
         };
-      requestAnimationFrame(callback2);
-      setTimeout(callback2, 200);
+      requestAnimationFrame(scheduleFocus);
+      setTimeout(scheduleFocus, 200);
     };
   return (
     <span
-      ref={ref3}
+      ref={labelRef}
       className={"ds-nmark-anchor relative inline-flex"}
-      onClick={(input: React.MouseEvent<HTMLElement>) =>
-        input.stopPropagation()
+      onClick={(event: React.MouseEvent<HTMLElement>) =>
+        event.stopPropagation()
       }
     >
       <PropertyPopup
-        open={value4}
-        onOpen={() => value5(true)}
+        open={isOpen}
+        onOpen={() => setIsOpen(true)}
         onClose={(): void => {
-          if (ref5.current) {
-            ref5.current = false;
+          if (stripPressRef.current) {
+            stripPressRef.current = false;
             return;
           }
           callback();
@@ -138,28 +138,28 @@ function UsageNoteEditor({
               <Icon
                 name={"Note"}
                 size={"sm"}
-                className={value3 ? "text-warning" : "text-muted"}
+                className={hasNote ? "text-warning" : "text-muted"}
               />
             }
-            aria-label={((value6) + (": ")) + (label)}
-            tooltip={value6}
+            aria-label={((ariaLabel) + (": ")) + (label)}
+            tooltip={ariaLabel}
             className={joinClassNames(
               "ds-nmark",
-              !value3 &&
+              !hasNote &&
                 "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 pointer-coarse:opacity-100",
             )}
-            data-has={value3 ? "" : undefined}
+            data-has={hasNote ? "" : undefined}
             data-testid={
               dataTestid !== undefined ? dataTestid + "-mark" : undefined
             }
-            onClick={(input: React.MouseEvent<HTMLElement>): void => {
-              ref.current = input.detail === 0;
+            onClick={(event: React.MouseEvent<HTMLElement>): void => {
+              ref.current = event.detail === 0;
             }}
           />
         }
       >
-        {value4 ? (<NotesPopoverEditor
-            value={value}
+        {isOpen ? (<NotesPopoverEditor
+            value={note}
             label={label}
             title={title}
             placeholder={placeholder}
@@ -167,10 +167,10 @@ function UsageNoteEditor({
             onChange={onChange}
             onDone={onDone}
             takeCaret={
-              ref.current || (value2 && !value3 && !prefersCoarsePointer())
+              ref.current || (canEdit && !hasNote && !prefersCoarsePointer())
             }
-            stripPress={ref5}
-            popup={ref4}
+            stripPress={stripPressRef}
+            popup={popupRef}
             onClose={callback}
             testid={dataTestid}
             anchorKey={anchorKey}
@@ -180,7 +180,7 @@ function UsageNoteEditor({
   );
 }
 function NotesPopoverEditor({
-  value: value,
+  value: note,
   label: label,
   title: title,
   placeholder = "",
@@ -195,7 +195,7 @@ function NotesPopoverEditor({
   anchorKey: anchorKey,
 }: NotesPopoverEditorProps) {
   useUiLocale();
-  let value2: boolean = onChange !== undefined,
+  let canEdit: boolean = onChange !== undefined,
     ref = reactUsageEditor.useRef<{
       open: boolean;
       done?: () => void;
@@ -211,85 +211,85 @@ function NotesPopoverEditor({
     },
     [],
   );
-  let ref2 = reactUsageEditor.useRef<HTMLDivElement | null>(null);
+  let popupRef = reactUsageEditor.useRef<HTMLDivElement | null>(null);
   reactUsageEditor.useEffect((): void => {
     popup.current =
-      ref2.current?.closest('[data-cds="Popover"]')?.parentElement ??
-      ref2.current?.closest(".ds-postit") ??
+      popupRef.current?.closest('[data-cds="Popover"]')?.parentElement ??
+      popupRef.current?.closest(".ds-postit") ??
       null;
   }, [popup]);
   reactUsageEditor.useEffect(() => {
-    if (!takeCaret || !value2) {
+    if (!takeCaret || !canEdit) {
       return;
     }
-    let value3 = requestAnimationFrame((): void => {
-      let value4 = ref2.current?.querySelector<HTMLElement>(
+    let animationFrame = requestAnimationFrame((): void => {
+      let editorElement = popupRef.current?.querySelector<HTMLElement>(
         ".ds-readme-editable",
       );
-      if (value4 === null || value4 === undefined) {
+      if (editorElement === null || editorElement === undefined) {
         return;
       }
-      value4.focus({
+      editorElement.focus({
         preventScroll: true,
       });
-      let value5 = value4.ownerDocument.getSelection();
-      value5?.selectAllChildren(value4);
-      value5?.collapseToEnd();
+      let selection = editorElement.ownerDocument.getSelection();
+      selection?.selectAllChildren(editorElement);
+      selection?.collapseToEnd();
     });
-    return () => cancelAnimationFrame(value3);
+    return () => cancelAnimationFrame(animationFrame);
   }, []);
   reactUsageEditor.useEffect(() => {
-    let callback2 = () => {
+    let isEditorFocused = () => {
         let activeElement = document.activeElement;
         return (
           activeElement !== null &&
-          (ref2.current?.contains(activeElement) ?? false)
+          (popupRef.current?.contains(activeElement) ?? false)
         );
       },
-      callback3 = (): void => {
+      handleEditorFocus = (): void => {
         stripPress.current = true;
         setTimeout((): void => {
           stripPress.current = false;
         }, 0);
       },
-      callback4 = (event: PointerEvent): void => {
-        let value3 =
+      handlePointerDown = (event: PointerEvent): void => {
+        let focusedElement =
             event.target instanceof Element
               ? event.target.closest("[data-mc-strip]")
               : null,
           activeElement = document.activeElement;
         if (
-          value3 !== null &&
+          focusedElement !== null &&
           activeElement !== null &&
-          (callback2() || value3.contains(activeElement))
+          (isEditorFocused() || focusedElement.contains(activeElement))
         ) {
-          callback3();
+          handleEditorFocus();
         }
       },
-      callback5 = (): void => {
-        if (callback2()) {
-          callback3();
+      handleResize = (): void => {
+        if (isEditorFocused()) {
+          handleEditorFocus();
         }
       },
-      callback6 = (event: Event): void => {
+      handleScroll = (event: Event): void => {
         if (
-          callback2() &&
+          isEditorFocused() &&
           prefersCoarsePointer() &&
           !(
             event.target instanceof Node &&
-            (ref2.current?.contains(event.target) ?? false)
+            (popupRef.current?.contains(event.target) ?? false)
           )
         ) {
-          callback3();
+          handleEditorFocus();
         }
       };
-    window.addEventListener("pointerdown", callback4, true);
-    window.addEventListener("resize", callback5, true);
-    window.addEventListener("scroll", callback6, true);
+    window.addEventListener("pointerdown", handlePointerDown, true);
+    window.addEventListener("resize", handleResize, true);
+    window.addEventListener("scroll", handleScroll, true);
     return (): void => {
-      window.removeEventListener("pointerdown", callback4, true);
-      window.removeEventListener("resize", callback5, true);
-      window.removeEventListener("scroll", callback6, true);
+      window.removeEventListener("pointerdown", handlePointerDown, true);
+      window.removeEventListener("resize", handleResize, true);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [stripPress]);
   let callback = (): void => {
@@ -320,7 +320,7 @@ function NotesPopoverEditor({
               }
             >
               {title}
-            </span>, value2 && hasUsageNote(value) ? (
+            </span>, canEdit && hasUsageNote(note) ? (
               <Button
                 variant={"ghost"}
                 size={"xs"}
@@ -356,14 +356,14 @@ function NotesPopoverEditor({
               }
             />]}
         </div>, <div
-          ref={ref2}
+          ref={popupRef}
           className={"ds-postit-body ds-desc ds-comp-about prose min-w-0"}
-          onMouseDown={value2 ? focusUsageEditorBackground : undefined}
+          onMouseDown={canEdit ? focusUsageEditorBackground : undefined}
           data-testid={testid !== undefined ? testid + "-cell" : undefined}
         >
           <MarkdownEditor
-            markdown={value!}
-            readOnly={!value2}
+            markdown={note!}
+            readOnly={!canEdit}
             placeholder={placeholder}
             label={((label) + (" ")) + (title.toLowerCase())}
             {...(testid !== undefined
@@ -373,9 +373,9 @@ function NotesPopoverEditor({
               : {})}
             {...(onChange !== undefined
               ? {
-                  onMarkdown: (input: string): void => {
+                  onMarkdown: (markdown: string): void => {
                     ref.current.open = true;
-                    onChange(input);
+                    onChange(markdown);
                   },
                 }
               : {})}

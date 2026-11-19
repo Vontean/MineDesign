@@ -78,16 +78,16 @@ function clearPreviewStorageOnce(
   clearedPreviewStorageWindows.add(environment);
   for (let value of ["localStorage", "sessionStorage"] as const) {
     try {
-      let value2 = environment[value],
+      let storedValue = environment[value],
         items = [];
-      for (let index: number = 0; index < value2.length; index++) {
-        let value3 = value2.key(index);
-        if (value3 !== null && value3.indexOf(PREVIEW_STORAGE_PREFIX) === 0) {
-          items.push(value3);
+      for (let index: number = 0; index < storedValue.length; index++) {
+        let resolvedUrl = storedValue.key(index);
+        if (resolvedUrl !== null && resolvedUrl.indexOf(PREVIEW_STORAGE_PREFIX) === 0) {
+          items.push(resolvedUrl);
         }
       }
-      for (let value3 of items) {
-        value2.removeItem(value3);
+      for (let resolvedUrlA of items) {
+        storedValue.removeItem(resolvedUrlA);
       }
     } catch {}
   }
@@ -124,7 +124,7 @@ function swatchRuntimeKey(head: Editor.PreviewRuntimeHead): string {
     return cached;
   }
   let key = (head.runtimeTags ?? [])
-      .map((input): string => input.src + "#" + input.integrity)
+      .map((reference): string => reference.src + "#" + reference.integrity)
       .join(","),
     value: string =
       (key === "" ? "" : key + "|") +
@@ -148,7 +148,7 @@ function swatchHeadsEqual(
       right.mode === left.mode &&
       right.runtimeScripts.length === left.runtimeScripts.length &&
       right.runtimeScripts.every(
-        (input, options): boolean => input === left.runtimeScripts[options],
+        (referenceA, swatchOptions): boolean => referenceA === left.runtimeScripts[swatchOptions],
       ) &&
       JSON.stringify(right.runtimeTags ?? []) ===
         JSON.stringify(left.runtimeTags ?? [])
@@ -157,12 +157,12 @@ function swatchHeadsEqual(
     return;
   }
   let entry = swatchHeadKeyCache.get(left),
-    entry2 = swatchRuntimeKeyCache.get(left);
+    cachedEntry = swatchRuntimeKeyCache.get(left);
   if (entry !== undefined) {
     swatchHeadKeyCache.set(right, entry);
   }
-  if (entry2 !== undefined) {
-    swatchRuntimeKeyCache.set(right, entry2);
+  if (cachedEntry !== undefined) {
+    swatchRuntimeKeyCache.set(right, cachedEntry);
   }
 }
 function nextSwatchHeadId(environment: object): string {
@@ -231,8 +231,8 @@ function retainSwatchHead(
   }
   existingId = nextSwatchHeadId(environment);
   registeredSwatchHeadIds.set(head, existingId);
-  let id = (input: string | number): void => {
-    let value = swatchHeadPieceReference(head, input);
+  let id = (referenceB: string | number): void => {
+    let value = swatchHeadPieceReference(head, referenceB);
     if (value !== undefined) {
       onMissed?.(value);
     }
@@ -295,16 +295,16 @@ function swatchHeadPiecesScript(
   pieces: readonly Editor.HeadScriptPiece[],
   withUrlFallback: boolean,
 ): string {
-  let callback = (input: Editor.HeadScriptPiece) => {
-    if (typeof input === "number") {
-      if (!Number.isInteger(input) || input < 0) {
+  let callback = (referenceC: Editor.HeadScriptPiece) => {
+    if (typeof referenceC === "number") {
+      if (!Number.isInteger(referenceC) || referenceC < 0) {
         throw Error(
-          uiMessage("design-system.swatchRuntime.swatchHeadPieceOutsideIts") + String(input),
+          uiMessage("design-system.swatchRuntime.swatchHeadPieceOutsideIts") + String(referenceC),
         );
       }
       return (
         "  js(H.runtimeScripts[" +
-        String(input) +
+        String(referenceC) +
         `]);
 `
       );
@@ -322,7 +322,7 @@ function swatchHeadPiecesScript(
 `,
       b: `  js(H.bundleJs);
 `,
-    }[input];
+    }[referenceC];
   };
   return (
     `(function () {
@@ -446,7 +446,7 @@ function swatchHtmlAttributes(head: Editor.PreviewRuntimeHead): string {
   let classes =
       themeId === mode
         ? [themeId]
-        : [themeId, mode].filter((input): boolean => input !== ""),
+        : [themeId, mode].filter((referenceD): boolean => referenceD !== ""),
     colorScheme =
       head.colorScheme === "dark" || head.colorScheme === "light"
         ? head.colorScheme
@@ -508,10 +508,10 @@ function swatchHeadPlacement(
   body: string;
 } {
   let inlineHeadScript = (
-    input?: readonly Editor.HeadScriptPiece[],
-    options: boolean = false,
+    referenceE?: readonly Editor.HeadScriptPiece[],
+    swatchOptionsA: boolean = false,
   ): string =>
-    "<script>" + swatchHeadScript(headId, input, options) + "<\/script>";
+    "<script>" + swatchHeadScript(headId, referenceE, swatchOptionsA) + "<\/script>";
   if (urls === undefined) {
     return {
       head: "",
@@ -519,9 +519,9 @@ function swatchHeadPlacement(
     };
   }
   let scriptTags = [
-      ...urls.runtimeScripts.map((input, options) => ({
-        piece: options,
-        ref: input,
+      ...urls.runtimeScripts.map((referenceF, swatchOptionsB) => ({
+        piece: swatchOptionsB,
+        ref: referenceF,
       })),
       {
         piece: "b" as const,
@@ -539,7 +539,7 @@ function swatchHeadPlacement(
         : swatchPublishedPieceTag("c", urls.bundleCss),
     hasPublishedTags =
       cssTag !== undefined ||
-      scriptTags.some((input): boolean => input.tag !== undefined),
+      scriptTags.some((referenceG): boolean => referenceG.tag !== undefined),
     hasUrlPieces = hasPublishedTags || (!holdFonts && urls.fonts.length > 0),
     bodyHtml = "",
     pendingPieces: Editor.HeadScriptPiece[] = [
@@ -559,12 +559,12 @@ function swatchHeadPlacement(
       pendingPieces = [];
       firstBlock = false;
     };
-  for (let { piece: value, tag: value2 } of scriptTags) {
-    if (value2 === undefined) {
+  for (let { piece: value, tag: storedValueA } of scriptTags) {
+    if (storedValueA === undefined) {
       pendingPieces.push(value);
     } else {
       flushInlinePieces();
-      bodyHtml += value2;
+      bodyHtml += storedValueA;
     }
   }
   flushInlinePieces();
@@ -611,29 +611,29 @@ function syncSwatchTheme(
           element.getAttribute("src") ?? element.getAttribute("href") ?? "",
       ),
     ),
-    value2: string[] | undefined;
+    storedValueB: string[] | undefined;
   try {
-    value2 = iframe.contentWindow?.performance
+    storedValueB = iframe.contentWindow?.performance
       .getEntriesByType("resource")
-      .map((input) => new URL(input.name).pathname);
+      .map((referenceH) => new URL(referenceH.name).pathname);
   } catch {
-    value2 = undefined;
+    storedValueB = undefined;
   }
-  if (value2 !== undefined) {
-    let callback = (input: Editor.SwatchUrlReference) =>
-        value2!.includes(input.url),
-      value5 = head.find(
-        (input) => values.has(input.url) && !callback(input),
+  if (storedValueB !== undefined) {
+    let callback = (referenceI: Editor.SwatchUrlReference) =>
+        storedValueB!.includes(referenceI.url),
+      fontReference = head.find(
+        (referenceJ) => values.has(referenceJ.url) && !callback(referenceJ),
       );
-    if (value5 !== undefined) {
+    if (fontReference !== undefined) {
       return {
         state: "waiting",
-        on: value5,
+        on: fontReference,
       };
     }
     if (
       value.readyState === "loading" &&
-      head.some((input): boolean => !values.has(input.url))
+      head.some((referenceK): boolean => !values.has(referenceK.url))
     ) {
       return {
         state: "not-reached",
@@ -644,12 +644,12 @@ function syncSwatchTheme(
       };
     }
   }
-  let value3 = items[items.length - 1],
-    value4 =
-      value3?.getAttribute("src") ?? value3?.getAttribute("href") ?? null;
+  let resolvedUrlB = items[items.length - 1],
+    matchedReference =
+      resolvedUrlB?.getAttribute("src") ?? resolvedUrlB?.getAttribute("href") ?? null;
   return {
     state: "waiting",
-    on: head.find((input): boolean => input.url === value4),
+    on: head.find((referenceL): boolean => referenceL.url === matchedReference),
   };
 }
 function swatchHeadWithHeldFonts(
@@ -676,42 +676,42 @@ function swatchHeadWithHeldFonts(
     text = new URL(".", changes).pathname;
   } catch {}
   let callback = (
-      input: Editor.SwatchUrlReference | undefined,
-    ): input is Editor.SwatchUrlReference =>
-      input !== undefined &&
+      referenceM: Editor.SwatchUrlReference | undefined,
+    ): referenceM is Editor.SwatchUrlReference =>
+      referenceM !== undefined &&
       text.length > 1 &&
-      input.url.startsWith(text) &&
-      (heldFonts === undefined || heldFonts(input.url)),
-    callback2 = (input: Editor.SwatchUrlReference | undefined) =>
-      callback(input) && swatchPublishedPieceTag("b", input) !== undefined
-        ? input
+      referenceM.url.startsWith(text) &&
+      (heldFonts === undefined || heldFonts(referenceM.url)),
+    isHeldFont = (referenceN: Editor.SwatchUrlReference | undefined) =>
+      callback(referenceN) && swatchPublishedPieceTag("b", referenceN) !== undefined
+        ? referenceN
         : undefined,
-    value2 = urls.fonts.every(callback),
-    value3 = callback2(urls.bundleJs),
+    storedValueC = urls.fonts.every(callback),
+    resolvedUrlC = isHeldFont(urls.bundleJs),
     state = {
-      bundleCss: value3 === undefined ? undefined : callback2(urls.bundleCss),
-      runtimeScripts: value.map(callback2),
-      bundleJs: value3,
-      fonts: value2 ? urls.fonts : [],
+      bundleCss: resolvedUrlC === undefined ? undefined : isHeldFont(urls.bundleCss),
+      runtimeScripts: value.map(isHeldFont),
+      bundleJs: resolvedUrlC,
+      fonts: storedValueC ? urls.fonts : [],
     },
-    value4 = [
+    matchedReferenceA = [
       state.bundleCss,
       ...state.runtimeScripts,
       state.bundleJs,
     ].filter(
-      (input): input is Editor.SwatchUrlReference => input !== undefined,
+      (referenceO): referenceO is Editor.SwatchUrlReference => referenceO !== undefined,
     );
-  if (value4.length === 0 && urls.fonts.length === 0) {
+  if (matchedReferenceA.length === 0 && urls.fonts.length === 0) {
     return {
       urls: undefined,
       heldFonts: false,
-      awaited: value4,
+      awaited: matchedReferenceA,
     };
   }
   return {
     urls: state,
-    heldFonts: urls.fonts.length > 0 && !value2,
-    awaited: value4,
+    heldFonts: urls.fonts.length > 0 && !storedValueC,
+    awaited: matchedReferenceA,
   };
 }
 function windowOrigin(environment: {
@@ -731,256 +731,256 @@ function windowOrigin(environment: {
   }
 }
 function createLiveSwatch(
-  options: Editor.LiveSwatchOptions,
+  swatchOptionsC: Editor.LiveSwatchOptions,
 ): Editor.LiveSwatch {
-  let value = options.doc ?? document,
-    value2 = options.win ?? window;
-  clearPreviewStorageOnce(value2);
-  let value3 = retainSwatchHead(value2, options.head, options.onUrlMissed),
-    value4 = value.createElement("iframe");
-  value4.setAttribute("sandbox", PREVIEW_IFRAME_SANDBOX);
-  let value5 = swatchHeadWithHeldFonts(
-      options.head,
+  let value = swatchOptionsC.doc ?? document,
+    storedValueD = swatchOptionsC.win ?? window;
+  clearPreviewStorageOnce(storedValueD);
+  let resolvedUrlD = retainSwatchHead(storedValueD, swatchOptionsC.head, swatchOptionsC.onUrlMissed),
+    matchedReferenceB = value.createElement("iframe");
+  matchedReferenceB.setAttribute("sandbox", PREVIEW_IFRAME_SANDBOX);
+  let fontReferenceA = swatchHeadWithHeldFonts(
+      swatchOptionsC.head,
       value.baseURI,
-      options.urlOffered,
+      swatchOptionsC.urlOffered,
     ),
-    value6 = swatchDocumentHtml(
-      options.html,
+    documentHtml = swatchDocumentHtml(
+      swatchOptionsC.html,
       {
-        ...options.head,
-        urls: value5.urls,
+        ...swatchOptionsC.head,
+        urls: fontReferenceA.urls,
       },
-      value3,
-      value5.heldFonts,
+      resolvedUrlD,
+      fontReferenceA.heldFonts,
     ),
-    value7 =
-      options.cardFile !== undefined &&
-      isPreviewRunnerAvailable(value2)
-        ? previewRunnerAddresses(options.cardFile, value.baseURI)
+    pageAddress =
+      swatchOptionsC.cardFile !== undefined &&
+      isPreviewRunnerAvailable(storedValueD)
+        ? previewRunnerAddresses(swatchOptionsC.cardFile, value.baseURI)
         : null,
-    value8 =
-      value7 !== null && !swatchRequiresPageAddress(value2, options)
-        ? value7
+    cardTarget =
+      pageAddress !== null && !swatchRequiresPageAddress(storedValueD, swatchOptionsC)
+        ? pageAddress
         : null,
-    value9: number | undefined,
-    value10 =
-      value8 !== null
+    runnerStartedAt: number | undefined,
+    runnerState =
+      cardTarget !== null
         ? registerPreviewRunnerDocument(
-            value2,
-            value8.card,
-            value6,
+            storedValueD,
+            cardTarget.card,
+            documentHtml,
             {
-              remove: () => value4.remove(),
-              notify: () => value14("suspended", ""),
+              remove: () => matchedReferenceB.remove(),
+              notify: () => reportRunnerOutcome("suspended", ""),
               taken: (): void => {
-                value9 = value2.performance.now();
+                runnerStartedAt = storedValueD.performance.now();
               },
             },
           )
         : undefined;
-  if (value10 === undefined) {
-    value9 = value2.performance.now();
+  if (runnerState === undefined) {
+    runnerStartedAt = storedValueD.performance.now();
   }
-  value4.setAttribute(
+  matchedReferenceB.setAttribute(
     SWATCH_ATTRIBUTE,
-    value10 !== undefined ? "runner" : "",
+    runnerState !== undefined ? "runner" : "",
   );
-  value4.tabIndex = -1;
-  value4.referrerPolicy = "no-referrer";
-  value4.title = options.title;
-  value4.style.width = "100%";
-  value4.style.height = "100%";
-  value4.style.border = "0";
-  value4.style.display = "block";
-  value4.style.background = "transparent";
+  matchedReferenceB.tabIndex = -1;
+  matchedReferenceB.referrerPolicy = "no-referrer";
+  matchedReferenceB.title = swatchOptionsC.title;
+  matchedReferenceB.style.width = "100%";
+  matchedReferenceB.style.height = "100%";
+  matchedReferenceB.style.border = "0";
+  matchedReferenceB.style.display = "block";
+  matchedReferenceB.style.background = "transparent";
   let flag: boolean = false,
-    flag2: boolean = false,
+    isAvailable: boolean = false,
     callback = (): void => {
       return;
     };
-  function value11(): void {
+  function releaseRunner(): void {
     if (flag) {
       return;
     }
     flag = true;
     callback();
-    options.onNavigated();
+    swatchOptionsC.onNavigated();
   }
-  let value12: ReturnType<typeof setTimeout> | undefined,
-    value13: boolean = value10 === undefined;
-  function value14(
-    input: "suspended" | "refused" | "unclear",
-    options2: string,
+  let cleanupTimer: ReturnType<typeof setTimeout> | undefined,
+    isRunnerUnavailable: boolean = runnerState === undefined;
+  function reportRunnerOutcome(
+    referenceP: "suspended" | "refused" | "unclear",
+    swatchOptionsD: string,
   ) {
-    if (value13 || flag2 || value10 === undefined) {
+    if (isRunnerUnavailable || isAvailable || runnerState === undefined) {
       return;
     }
-    value13 = true;
-    if (input === "suspended") {
-      return void options.onUndelivered?.();
+    isRunnerUnavailable = true;
+    if (referenceP === "suspended") {
+      return void swatchOptionsC.onUndelivered?.();
     }
-    removePreviewRunnerDocument(value2, value10);
+    removePreviewRunnerDocument(storedValueD, runnerState);
     if (
-      recordPreviewRunnerOutcome(value2, input, value10).tell
+      recordPreviewRunnerOutcome(storedValueD, referenceP, runnerState).tell
     ) {
       console.warn(
         'design-system: "' +
-          options.title +
+          swatchOptionsC.title +
           '" could not load through ' +
           PREVIEW_RUNNER_PATH +
           " (" +
-          options2 +
+          swatchOptionsD +
           ") and was loaded without an address of its own, so files its card names by relative path will not load" +
-          (isPreviewRunnerCoolingDown(value2)
+          (isPreviewRunnerCoolingDown(storedValueD)
             ? "; previews that start in the next moment load the same way, and ones that start after that try " +
               PREVIEW_RUNNER_PATH +
               " again"
-            : isPreviewRunnerAvailable(value2)
+            : isPreviewRunnerAvailable(storedValueD)
               ? ""
               : "; later previews on this page will load the same way until the page is reloaded"),
       );
     }
-    options.onUndelivered?.();
+    swatchOptionsC.onUndelivered?.();
   }
   let index = 0;
-  value4.addEventListener("load", () => {
-    if (value8 !== null && value10 !== undefined && !value13) {
-      if (isBlankPreviewFrame(value4)) {
+  matchedReferenceB.addEventListener("load", () => {
+    if (cardTarget !== null && runnerState !== undefined && !isRunnerUnavailable) {
+      if (isBlankPreviewFrame(matchedReferenceB)) {
         return;
       }
-      if (hasPreviewRunnerDocument(value2, value10)) {
-        return value14(
+      if (hasPreviewRunnerDocument(storedValueD, runnerState)) {
+        return reportRunnerOutcome(
           "refused",
           "run.html was missing, was refused, or loaded without running the preview",
         );
       }
-      if (previewFramePathname(value4) === value8.runner) {
-        return value14("unclear", uiMessage("design-system.swatchRuntime.itDidNotReachIts"));
+      if (previewFramePathname(matchedReferenceB) === cardTarget.runner) {
+        return reportRunnerOutcome("unclear", uiMessage("design-system.swatchRuntime.itDidNotReachIts"));
       }
-      value13 = true;
-      recordPreviewRunnerOutcome(value2, "worked", value10);
+      isRunnerUnavailable = true;
+      recordPreviewRunnerOutcome(storedValueD, "worked", runnerState);
     }
     index += 1;
     if (index > 1) {
-      value11();
+      releaseRunner();
     }
   });
-  let flag3: boolean = false,
-    value15 = windowOrigin(value2),
-    callback2 = (dataset: MessageEvent<unknown>): void => {
-      let value16 = classifyPreviewMessage(
+  let isAvailableA: boolean = false,
+    swatchValue = windowOrigin(storedValueD),
+    isHeldFontA = (dataset: MessageEvent<unknown>): void => {
+      let swatchValueA = classifyPreviewMessage(
         {
           source: dataset.source,
           origin: dataset.origin,
           data: dataset.data,
         },
-        value4.contentWindow,
-        value15,
+        matchedReferenceB.contentWindow,
+        swatchValue,
         flag,
       );
-      if (value16 === "navigating") {
-        value11();
-      } else if (value16 === "ready") {
-        if (!flag3) {
-          flag3 = true;
-          options.onReady?.(previewMessageHeight(dataset.data));
-          if (options.onContentHeight !== undefined && !flag) {
+      if (swatchValueA === "navigating") {
+        releaseRunner();
+      } else if (swatchValueA === "ready") {
+        if (!isAvailableA) {
+          isAvailableA = true;
+          swatchOptionsC.onReady?.(previewMessageHeight(dataset.data));
+          if (swatchOptionsC.onContentHeight !== undefined && !flag) {
             callback = observePreviewHeight(
-              value4,
-              options.onContentHeight,
-              options.declaredHeight,
+              matchedReferenceB,
+              swatchOptionsC.onContentHeight,
+              swatchOptionsC.declaredHeight,
             );
           }
         }
-      } else if (value16 === "error" || value16 === "error-react") {
-        options.onError?.(value16 === "error-react" ? "react" : undefined);
+      } else if (swatchValueA === "error" || swatchValueA === "error-react") {
+        swatchOptionsC.onError?.(swatchValueA === "error-react" ? "react" : undefined);
       }
     };
-  value2.addEventListener("message", callback2);
-  if (value8 === null || value10 === undefined) {
-    value4.srcdoc = value6;
+  storedValueD.addEventListener("message", isHeldFontA);
+  if (cardTarget === null || runnerState === undefined) {
+    matchedReferenceB.srcdoc = documentHtml;
   } else {
-    value4.src = value8.runner + "#" + value10;
-    let value16 = options.runnerAskMs ?? PREVIEW_BOOT_TIMEOUT_MS,
-      index2 = 0,
-      index3 = 0,
-      callback3 = (): void => {
+    matchedReferenceB.src = cardTarget.runner + "#" + runnerState;
+    let swatchValueB = swatchOptionsC.runnerAskMs ?? PREVIEW_BOOT_TIMEOUT_MS,
+      swatchValueC = 0,
+      swatchValueD = 0,
+      isHeldFontB = (): void => {
         if (
-          value13 ||
-          !hasPreviewRunnerDocument(value2, value10)
+          isRunnerUnavailable ||
+          !hasPreviewRunnerDocument(storedValueD, runnerState)
         ) {
           return;
         }
         if (
           value.hidden ||
-          (previewFramePathname(value4) === value8.runner &&
-            (index2 += 1) <= 3) ||
-          (wasPreviewRunnerRecentlyTaken(value2, value16) &&
-            (index3 += 1) <= 8)
+          (previewFramePathname(matchedReferenceB) === cardTarget.runner &&
+            (swatchValueC += 1) <= 3) ||
+          (wasPreviewRunnerRecentlyTaken(storedValueD, swatchValueB) &&
+            (swatchValueD += 1) <= 8)
         ) {
-          value12 = setTimeout(callback3, value16);
+          cleanupTimer = setTimeout(isHeldFontB, swatchValueB);
         } else {
-          value12 = setTimeout((): void => {
-            if (hasPreviewRunnerDocument(value2, value10)) {
-              value14("unclear", "run.html did not start in time");
+          cleanupTimer = setTimeout((): void => {
+            if (hasPreviewRunnerDocument(storedValueD, runnerState)) {
+              reportRunnerOutcome("unclear", "run.html did not start in time");
             }
           }, 0);
         }
       };
-    value12 = setTimeout(callback3, value16);
+    cleanupTimer = setTimeout(isHeldFontB, swatchValueB);
   }
   return {
-    iframe: value4,
-    awaited: value5.awaited,
-    headProgress: () => syncSwatchTheme(value4, value5.awaited),
+    iframe: matchedReferenceB,
+    awaited: fontReferenceA.awaited,
+    headProgress: () => syncSwatchTheme(matchedReferenceB, fontReferenceA.awaited),
     documentAgeMs: () =>
-      value9 === undefined ? undefined : value2.performance.now() - value9,
+      runnerStartedAt === undefined ? undefined : storedValueD.performance.now() - runnerStartedAt,
     dispose: (): void => {
-      if (flag2) {
+      if (isAvailable) {
         return;
       }
-      flag2 = true;
+      isAvailable = true;
       callback();
-      clearTimeout(value12);
-      value2.removeEventListener("message", callback2);
-      if (value10 !== undefined) {
-        removePreviewRunnerDocument(value2, value10);
+      clearTimeout(cleanupTimer);
+      storedValueD.removeEventListener("message", isHeldFontA);
+      if (runnerState !== undefined) {
+        removePreviewRunnerDocument(storedValueD, runnerState);
       }
-      value4.remove();
-      releaseSwatchHead(value2, value3);
+      matchedReferenceB.remove();
+      releaseSwatchHead(storedValueD, resolvedUrlD);
     },
   };
 }
 function swatchRequiresPageAddress(
   environment: object,
-  options: Editor.LiveSwatchOptions,
+  swatchOptionsE: Editor.LiveSwatchOptions,
 ): boolean {
   let bundleHasPageReference = bundlePageAddressReferenceCache.get(
-    options.head,
+    swatchOptionsE.head,
   );
   if (bundleHasPageReference === undefined) {
     bundlePageAddressReferenceCache.set(
-      options.head,
+      swatchOptionsE.head,
       (bundleHasPageReference =
         hasRawProjectReferences(
-          options.head.bundleCss,
+          swatchOptionsE.head.bundleCss,
           "bundle",
         ) ||
         hasRawProjectReferences(
-          options.head.bundleJs,
+          swatchOptionsE.head.bundleJs,
           "bundle",
         )),
     );
   }
   let hasPageReference =
       bundleHasPageReference ||
-      hasRawProjectReferences(options.html, "card"),
+      hasRawProjectReferences(swatchOptionsE.html, "card"),
     blockedScript =
       !hasPageReference &&
-      options.fromProps !== true &&
+      swatchOptionsE.fromProps !== true &&
       blockedPreviewScriptReference(
-        options.html,
-        options.cardFile ?? "",
+        swatchOptionsE.html,
+        swatchOptionsE.cardFile ?? "",
       );
   if (!hasPageReference && blockedScript === false) {
     return false;
@@ -988,7 +988,7 @@ function swatchRequiresPageAddress(
   let reported = reportedPageAddressReasons.get(environment) ?? new Set();
   reportedPageAddressReasons.set(environment, reported);
   let propsHavePageReference =
-      !bundleHasPageReference && options.fromProps === true,
+      !bundleHasPageReference && swatchOptionsE.fromProps === true,
     reasonKey: string = bundleHasPageReference
       ? ""
       : (blockedScript !== false
@@ -997,12 +997,12 @@ function swatchRequiresPageAddress(
           : propsHavePageReference
             ? `props
 `
-            : "") + (options.cardFile ?? "");
+            : "") + (swatchOptionsE.cardFile ?? "");
   if (!reported.has(reasonKey)) {
     if ((reported.add(reasonKey), typeof blockedScript === "string")) {
       console.info(
         'design-system: "' +
-          options.title +
+          swatchOptionsE.title +
           '" keeps the page’s address because its card names a script by a relative path (' +
           JSON.stringify(
             blockedScript.length > 80
@@ -1015,14 +1015,14 @@ function swatchRequiresPageAddress(
     } else if (blockedScript) {
       console.info(
         'design-system: "' +
-          options.title +
+          swatchOptionsE.title +
           `" keeps the page’s address because an inline script in its card imports './…' or '../…', or its import map points to such a path, which may be a file the page adds itself and would then run twice. So a file named relative to the card will not load. ` +
           BLOCKED_SCRIPT_IMPORT_GUIDANCE,
       );
     } else if (propsHavePageReference) {
       console.info(
         'design-system: "' +
-          options.title +
+          swatchOptionsE.title +
           '" keeps the page’s address while a value in Props reads as a path from the page’s folder ("_blob/…" or "project/…"), so a file named relative to the card will not load there. If it is a path, write it as "/_blob/<id>" or relative to the card and the preview gets its card’s address.',
       );
     } else {
@@ -1030,7 +1030,7 @@ function swatchRequiresPageAddress(
         "design-system: " +
           (bundleHasPageReference
             ? "this system’s previews keep"
-            : '"' + options.title + '" keeps') +
+            : '"' + swatchOptionsE.title + '" keeps') +
           " the page’s address, so a file named relative to the card will not load there: " +
           (bundleHasPageReference
             ? "its bundle.css or bundle.js"

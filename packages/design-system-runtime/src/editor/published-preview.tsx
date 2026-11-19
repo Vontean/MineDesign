@@ -53,11 +53,11 @@ var SAVE_STATES_WITH_CURRENT_ADDRESSES: Record<
 var subscribePublishedPreviewCache: (listener: () => void) => () => void;
 var publishedPreviewGeneration: () => number;
 function createPublishedFilesRegistry(
-  options: Editor.PublishedRegistryOptions = {},
+  registryOptions: Editor.PublishedRegistryOptions = {},
 ): Editor.PublishedFilesRegistry {
-  let fetchListing = options.fetchListing ?? fetchProjectFilesListing,
-    addressedVersion = options.addressedVersion ?? addressedVersionFromPage,
-    now = options.now ?? ((): number => Date.now()),
+  let fetchListing = registryOptions.fetchListing ?? fetchProjectFilesListing,
+    addressedVersion = registryOptions.addressedVersion ?? addressedVersionFromPage,
+    now = registryOptions.now ?? ((): number => Date.now()),
     heldListing: Editor.PublishedListing | undefined,
     fetching: boolean = false,
     retryStates = new Map<string, Editor.ListingRetryState>(),
@@ -71,76 +71,76 @@ function createPublishedFilesRegistry(
     };
   async function refreshListing(): Promise<void> {
     let value = addressedVersion(),
-      callback = (input: boolean = false): void => {
-        let value2 = (retryStates.get(value)?.tries ?? 0) + 1;
+      callback = (isNarrowed: boolean = false): void => {
+        let attemptCount = (retryStates.get(value)?.tries ?? 0) + 1;
         retryStates.set(value, {
-          tries: value2,
-          narrowed: input,
-          until: input
+          tries: attemptCount,
+          narrowed: isNarrowed,
+          until: isNarrowed
             ? Number.POSITIVE_INFINITY
             : now() +
-              (value2 >= FILES_LISTING_MAX_ATTEMPTS
+              (attemptCount >= FILES_LISTING_MAX_ATTEMPTS
                 ? FILES_LISTING_EXHAUSTED_RETRY_MS
                 : FILES_LISTING_RETRY_MS),
         });
       },
       flag: boolean = false;
     try {
-      let value2 = (await fetchListing()) as
+      let listing = (await fetchListing()) as
           | Editor.PublishedListingWire
           | null
           | undefined,
-        value3 = addressedVersion(),
-        value4 = value2?.files;
-      if (value3 !== value) {
+        currentAddressedVersion = addressedVersion(),
+        listedFiles = listing?.files;
+      if (currentAddressedVersion !== value) {
       } else if (
-        value3 === "" ||
-        value2?.ver !== value3 ||
-        value4 === null ||
-        typeof value4 !== "object" ||
-        Array.isArray(value4)
+        currentAddressedVersion === "" ||
+        listing?.ver !== currentAddressedVersion ||
+        listedFiles === null ||
+        typeof listedFiles !== "object" ||
+        Array.isArray(listedFiles)
       ) {
         callback();
-      } else if (value2!.narrowed === true) {
+      } else if (listing!.narrowed === true) {
         heldListing = undefined;
         callback(true);
       } else {
         let entries = new Map<string, Model.PublishedFileFacts>(),
-          flag2: boolean = true;
-        for (let [value5, value6] of Object.entries(
-          value4 as Record<
+          complete: boolean = true;
+        for (let [filePath, fileEntry] of Object.entries(
+          listedFiles as Record<
             string,
             Editor.PublishedFileWire | undefined | null
           >,
         )) {
           if (
-            !value5.startsWith(PROJECT_FILE_PREFIXEditorFilesIndex)
+            !filePath.startsWith(PROJECT_FILE_PREFIXEditorFilesIndex)
           ) {
             continue;
           }
           if (
-            typeof value6?.sha256 === "string" &&
-            FILE_SHA256_PATTERNEditorPublishedPreview.test(value6.sha256) &&
-            typeof value6.size === "number" &&
-            value6.size >= 0 &&
-            typeof value6.contentType === "string" &&
-            value6.contentType !== ""
+            typeof fileEntry?.sha256 === "string" &&
+            FILE_SHA256_PATTERNEditorPublishedPreview.test(fileEntry.sha256) &&
+            typeof fileEntry.size === "number" &&
+            fileEntry.size >= 0 &&
+            typeof fileEntry.contentType === "string" &&
+            fileEntry.contentType !== ""
           ) {
-            entries.set(value5, {
-              sha256: value6.sha256,
-              size: value6.size,
-              contentType: value6.contentType,
+            entries.set(filePath, {
+              sha256: fileEntry.sha256,
+              size: fileEntry.size,
+              contentType: fileEntry.contentType,
             });
           } else {
-            flag2 = false;
+            complete = false;
           }
         }
         heldListing = {
-          version: value3,
+          version: currentAddressedVersion,
           facts: entries,
-          complete: flag2,
+          complete: complete,
         };
-        retryStates.delete(value3);
+        retryStates.delete(currentAddressedVersion);
         flag = true;
       }
     } catch {
@@ -153,11 +153,11 @@ function createPublishedFilesRegistry(
     }
   }
   return {
-    addressedFile(input: string) {
+    addressedFile(filePath: string) {
       let value = addressedVersion();
       if (
         value === "" ||
-        !input.startsWith(PROJECT_FILE_PREFIXEditorFilesIndex)
+        !filePath.startsWith(PROJECT_FILE_PREFIXEditorFilesIndex)
       ) {
         return;
       }
@@ -169,7 +169,7 @@ function createPublishedFilesRegistry(
         return;
       }
       return (
-        heldListing.facts.get(input) ??
+        heldListing.facts.get(filePath) ??
         (heldListing.complete ? null : undefined)
       );
     },
@@ -196,9 +196,9 @@ function createPublishedFilesRegistry(
         }
       }
     },
-    onAddressedChange(input: () => void) {
-      subscribers.add(input);
-      return () => void subscribers.delete(input);
+    onAddressedChange(listener: () => void) {
+      subscribers.add(listener);
+      return () => void subscribers.delete(listener);
     },
   };
 }
@@ -218,8 +218,8 @@ function hasAddressDependentPreviewCode(
   for (let value of contents.matchAll(
     /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]*))/gi,
   )) {
-    let value2 = (value[1] ?? value[2] ?? value[3] ?? "").trim();
-    if (value2 !== "" && !/^(?:data:|https?:|\/)/i.test(value2)) {
+    let reference = (value[1] ?? value[2] ?? value[3] ?? "").trim();
+    if (reference !== "" && !/^(?:data:|https?:|\/)/i.test(reference)) {
       return true;
     }
   }
@@ -237,30 +237,30 @@ function publishedFileBytes(
     return null;
   }
   try {
-    let value2 = atob(contents.slice(value.payloadOffset)),
-      value3 = new Uint8Array(value2.length);
-    for (let index: number = 0; index < value2.length; index++) {
-      value3[index] = value2.charCodeAt(index);
+    let encodedContent = atob(contents.slice(value.payloadOffset)),
+      decodedBytes = new Uint8Array(encodedContent.length);
+    for (let index: number = 0; index < encodedContent.length; index++) {
+      decodedBytes[index] = encodedContent.charCodeAt(index);
     }
-    return value3;
+    return decodedBytes;
   } catch {
     return null;
   }
 }
 function createPublishedPreviewCache(
-  options: Editor.PublishedPreviewCacheOptions = {},
+  cacheOptions: Editor.PublishedPreviewCacheOptions = {},
 ): Editor.PublishedPreviewCache {
   let enabled =
-      options.enabled ??
+      cacheOptions.enabled ??
       (() => isPreviewRunnerEnabled(globalThis)),
-    addressedFile = options.addressedFile ?? addressedFileEntry,
-    baseURI = options.baseURI ?? (() => globalThis.document?.baseURI ?? ""),
-    hash = options.hash ?? sha256,
+    addressedFile = cacheOptions.addressedFile ?? addressedFileEntry,
+    baseURI = cacheOptions.baseURI ?? (() => globalThis.document?.baseURI ?? ""),
+    hash = cacheOptions.hash ?? sha256,
     setTimer =
-      options.setTimer ??
-      ((input: () => void, options2: number) => setTimeout(input, options2)),
-    warn = options.warn ?? ((input: string) => console.warn(input)),
-    info = options.info ?? ((input: string) => console.info(input)),
+      cacheOptions.setTimer ??
+      ((timerCallback: () => void, delayMs: number) => setTimeout(timerCallback, delayMs)),
+    warn = cacheOptions.warn ?? ((message: string) => console.warn(message)),
+    info = cacheOptions.info ?? ((message: string) => console.info(message)),
     fileHashCache = new Map<string, Editor.PreviewHashEntry>(),
     failedAddressRoots = new Set<string>(),
     unusableAddressRoots = new Set<string>(),
@@ -280,13 +280,13 @@ function createPublishedPreviewCache(
         value();
       }
     };
-  (options.onAddressedChange ?? subscribeAddressedFileEntries)((): void => {
+  (cacheOptions.onAddressedChange ?? subscribeAddressedFileEntries)((): void => {
     listingFailures = 0;
     unusableAddressRoots.clear();
     notify();
   });
-  let addressRoot = (input: string) =>
-      PUBLISHED_FILE_ADDRESS_ROOT_PATTERN.exec(input)?.[1] ?? "",
+  let addressRoot = (url: string) =>
+      PUBLISHED_FILE_ADDRESS_ROOT_PATTERN.exec(url)?.[1] ?? "",
     currentAddressRoot = () => {
       try {
         return addressRoot(new URL(baseURI()).pathname);
@@ -294,9 +294,9 @@ function createPublishedPreviewCache(
         return "";
       }
     };
-  function noteUnusableListing(input: string) {
-    if (input !== lastAddressRoot) {
-      lastAddressRoot = input;
+  function noteUnusableListing(unusableAddressRoot: string) {
+    if (unusableAddressRoot !== lastAddressRoot) {
+      lastAddressRoot = unusableAddressRoot;
       listingFailures = 0;
     }
     if (listingCooldown) {
@@ -306,7 +306,7 @@ function createPublishedPreviewCache(
       info(
         "design-system: the list of this version’s published files could not be used on this page, so previews use the page’s own copies of the system’s files. Nothing is lost.",
       );
-      return void unusableAddressRoots.add(input);
+      return void unusableAddressRoots.add(unusableAddressRoot);
     }
     listingCooldown = true;
     setTimer(
@@ -319,25 +319,25 @@ function createPublishedPreviewCache(
     listingFailures += 1;
   }
   function hashContents(
-    input: string,
-    options2: string,
-    context: Editor.PublishedFileKind,
+    content: string,
+    source: string,
+    fileKind: Editor.PublishedFileKind,
   ) {
-    let entry = fileHashCache.get(input);
-    if (entry === undefined || entry.value !== options2) {
+    let entry = fileHashCache.get(content);
+    if (entry === undefined || entry.value !== source) {
       let state: Editor.PreviewHashEntry = {
-        value: options2,
+        value: source,
         stays:
-          (context === "font" &&
-            parseDataUriHeader(options2)?.base64 !== true) ||
-          hasAddressDependentPreviewCode(options2, context),
+          (fileKind === "font" &&
+            parseDataUriHeader(source)?.base64 !== true) ||
+          hasAddressDependentPreviewCode(source, fileKind),
       };
-      fileHashCache.set(input, (entry = state));
+      fileHashCache.set(content, (entry = state));
       if (!state.stays) {
         pendingHashes += 1;
-        let callback = (input2?: string): void => {
-          if (input2 !== undefined) {
-            state.sha = input2;
+        let callback = (hashValue?: string): void => {
+          if (hashValue !== undefined) {
+            state.sha = hashValue;
           }
           pendingHashes -= 1;
           if (pendingHashes === 0) {
@@ -345,8 +345,8 @@ function createPublishedPreviewCache(
           }
         };
         Promise.resolve()
-          .then(() => publishedFileBytes(options2, context))
-          .then((input2) => (input2 === null ? undefined : hash(input2)))
+          .then(() => publishedFileBytes(source, fileKind))
+          .then((hashValue) => (hashValue === null ? undefined : hash(hashValue)))
           .then(callback, () => callback());
       }
     }
@@ -356,7 +356,7 @@ function createPublishedPreviewCache(
       return entry.sha;
     }
   }
-  function publishedFileAddress(input: string) {
+  function publishedFileAddress(filePath: string) {
     let value = baseURI();
     if (urlCache.base !== value) {
       urlCache = {
@@ -364,34 +364,34 @@ function createPublishedPreviewCache(
         urls: new Map<string, string | undefined>(),
       };
     }
-    if (!urlCache.urls.has(input)) {
-      let value2: string | undefined;
+    if (!urlCache.urls.has(filePath)) {
+      let localUrl: string | undefined;
       try {
-        value2 = /^https?:/i.test(value)
+        localUrl = /^https?:/i.test(value)
           ? new URL(
               encodeRelativeUrlPath(
-                projectFilePath(input),
+                projectFilePath(filePath),
               ),
               value,
             ).pathname
           : undefined;
       } catch {
-        value2 = undefined;
+        localUrl = undefined;
       }
       urlCache.urls.set(
-        input,
-        value2 !== undefined && SWATCH_LOCAL_URL_PATTERN.test(value2)
-          ? value2
+        filePath,
+        localUrl !== undefined && SWATCH_LOCAL_URL_PATTERN.test(localUrl)
+          ? localUrl
           : undefined,
       );
     }
-    return urlCache.urls.get(input);
+    return urlCache.urls.get(filePath);
   }
   return {
     publishedUrl(
-      input: string,
+      filePath: string,
       items: string,
-      context: Editor.PublishedFileKind,
+      fileKind: Editor.PublishedFileKind,
     ) {
       let value = currentAddressRoot();
       if (
@@ -402,62 +402,62 @@ function createPublishedPreviewCache(
       ) {
         return;
       }
-      let value2 = addressedFile(projectFilePath(input));
-      if (value2 === undefined) {
+      let addressedEntry = addressedFile(projectFilePath(filePath));
+      if (addressedEntry === undefined) {
         noteUnusableListing(value);
       }
       if (
-        value2 === undefined ||
-        value2 === null ||
-        !PREVIEW_FILE_MIME_PREDICATES[context](
-          (value2.contentType.split(";")[0] ?? "").trim().toLowerCase(),
+        addressedEntry === undefined ||
+        addressedEntry === null ||
+        !PREVIEW_FILE_MIME_PREDICATES[fileKind](
+          (addressedEntry.contentType.split(";")[0] ?? "").trim().toLowerCase(),
         )
       ) {
         return;
       }
-      let value3 = publishedFileAddress(input);
-      if (value3 === undefined || addressRoot(value3) !== value) {
+      let publishedUrl = publishedFileAddress(filePath);
+      if (publishedUrl === undefined || addressRoot(publishedUrl) !== value) {
         return;
       }
       if (
-        context === "font"
-          ? estimateDataUriBytes(items) !== value2.size
-          : value2.size < items.length || value2.size > items.length * 3
+        fileKind === "font"
+          ? estimateDataUriBytes(items) !== addressedEntry.size
+          : addressedEntry.size < items.length || addressedEntry.size > items.length * 3
       ) {
         return;
       }
-      let value4 = hashContents(input, items, context);
-      if (value4 !== undefined && value4 === value2.sha256) {
+      let contentHash = hashContents(filePath, items, fileKind);
+      if (contentHash !== undefined && contentHash === addressedEntry.sha256) {
         return {
-          url: value3,
-          integrity: sha256Integrity(value4),
+          url: publishedUrl,
+          integrity: sha256Integrity(contentHash),
         };
       } else {
         return undefined;
       }
     },
     noteFailed(
-      input: string,
-      options2: string | undefined,
-      context?: string | number,
+      url: string,
+      reason: string | undefined,
+      status?: string | number,
     ): void {
-      let value = addressRoot(input);
+      let value = addressRoot(url);
       if (value === "" || failedAddressRoots.has(value)) {
         return;
       }
       failedAddressRoots.add(value);
-      let value2: string =
-        context === undefined
-          ? uiMessage("design-system.publishedPreview.couldNotLoad") + options2 + " from its URL"
-          : options2 +
+      let message: string =
+        status === undefined
+          ? uiMessage("design-system.publishedPreview.couldNotLoad") + reason + " from its URL"
+          : reason +
             " did not finish loading from its URL in " +
-            context +
+            status +
             " s";
       warn(
         "design-system: " +
-          value2 +
+          message +
           " (" +
-          input +
+          url +
           "), so previews on this page use the page’s own copies of the system’s files. Nothing is lost. Reload the page to load them by URL again.",
       );
       notify();
@@ -470,39 +470,39 @@ function createPublishedPreviewCache(
       failedAddressRoots.add(value);
       notify();
     },
-    stillOffered: (input: string): boolean =>
-      !failedAddressRoots.has(addressRoot(input)),
+    stillOffered: (url: string): boolean =>
+      !failedAddressRoots.has(addressRoot(url)),
     generation: () => generation,
-    subscribe(input: () => void) {
-      subscribers.add(input);
-      return () => void subscribers.delete(input);
+    subscribe(listener: () => void) {
+      subscribers.add(listener);
+      return () => void subscribers.delete(listener);
     },
   };
 }
 function subscribePublishedPreviewToSaveState(
-  document2: Pick<
+  document: Pick<
     Application.ApplicationDocument,
     "saveState" | "subscribeSave"
   >,
   cache: Editor.PublishedPreviewCache = publishedPreviewCache,
 ): () => void {
   let update = (): void => {
-    if (!SAVE_STATES_WITH_CURRENT_ADDRESSES[document2.saveState().status]) {
+    if (!SAVE_STATES_WITH_CURRENT_ADDRESSES[document.saveState().status]) {
       cache.noteAddressBehind();
     }
   };
   update();
-  return document2.subscribeSave(update);
+  return document.subscribeSave(update);
 }
 function usePublishedPreviewGeneration(
-  document2: Pick<
+  document: Pick<
     Application.ApplicationDocument,
     "saveState" | "subscribeSave"
   >,
 ): number {
   reactPublishedPreview.useEffect(
-    () => subscribePublishedPreviewToSaveState(document2),
-    [document2],
+    () => subscribePublishedPreviewToSaveState(document),
+    [document],
   );
   return reactPublishedPreview.useSyncExternalStore(
     subscribePublishedPreviewCache,
@@ -558,11 +558,11 @@ export function installEditorPublishedPreview(): () => void {
     addressedVersionFromPage = () => {
       try {
         let value = globalThis,
-          value2 =
+          version =
             value.document?.baseURI !== undefined
               ? new URL(value.document.baseURI).pathname
               : (value.location?.pathname ?? "");
-        return ADDRESSED_VERSION_PATH_PATTERN.exec(value2)?.[1] ?? "";
+        return ADDRESSED_VERSION_PATH_PATTERN.exec(version)?.[1] ?? "";
       } catch {
         return "";
       }
@@ -583,10 +583,10 @@ export function installEditorPublishedPreview(): () => void {
     subscribeAddressedFileEntries = (listener: () => void) =>
       publishedFilesRegistry.onAddressedChange(listener);
     PREVIEW_FILE_MIME_PREDICATES = {
-      style: (input: string): boolean => input === "text/css",
-      script: (input: string) =>
-        input === "text/javascript" || input === "application/javascript",
-      font: (input: string) => input.startsWith("font/"),
+      style: (mimeType: string): boolean => mimeType === "text/css",
+      script: (mimeType: string) =>
+        mimeType === "text/javascript" || mimeType === "application/javascript",
+      font: (mimeType: string) => mimeType.startsWith("font/"),
     };
     PUBLISHED_FILE_ADDRESS_ROOT_PATTERN = /^(.*?\/_f\/[^/]+\/)/;
     MAX_PUBLISHED_LISTING_FAILURES = 4;
@@ -594,7 +594,7 @@ export function installEditorPublishedPreview(): () => void {
       "sha256-" +
       btoa(
         String.fromCharCode(
-          ...(hexDigest.match(/../g) ?? []).map((input) => parseInt(input, 16)),
+          ...(hexDigest.match(/../g) ?? []).map((hexByte) => parseInt(hexByte, 16)),
         ),
       );
     publishedPreviewCache = createPublishedPreviewCache();

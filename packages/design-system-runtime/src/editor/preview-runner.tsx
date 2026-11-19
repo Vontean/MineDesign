@@ -30,11 +30,11 @@ var PREVIEW_RUNNER_BACKOFF_MS: number[];
 var componentPreviewPath: (name: string) => string;
 function getOrCreatePreviewDocumentRegistry<Doc, State extends object>(
   environment: object,
-  options: Editor.PreviewRegistryOptions,
+  registryOptions: Editor.PreviewRegistryOptions,
   createState: () => State,
 ): Editor.StatefulPreviewRegistry<Doc, State> {
   let globalObject = environment as Record<string, unknown>,
-    existing = globalObject[options.global];
+    existing = globalObject[registryOptions.global];
   if (
     existing != null &&
     (existing as Partial<Editor.PreviewDocumentRegistry<Doc>>).docs instanceof
@@ -50,31 +50,31 @@ function getOrCreatePreviewDocumentRegistry<Doc, State extends object>(
       waiting: waiting,
       seq: 0,
       tookAt: 0,
-      take: (input: string) => {
-        let entry = documents.get(input);
+      take: (ownerId: string) => {
+        let entry = documents.get(ownerId);
         if (entry !== undefined) {
           registry.tookAt = performance.now();
           try {
-            waiting.get(input)?.taken?.();
+            waiting.get(ownerId)?.taken?.();
           } catch {}
         }
-        documents.delete(input);
-        waiting.delete(input);
+        documents.delete(ownerId);
+        waiting.delete(ownerId);
         return entry;
       },
     };
-  globalObject[options.global] = registry;
+  globalObject[registryOptions.global] = registry;
   return registry;
 }
 function registerPreviewDocument<Doc>(
   registry: Editor.PreviewDocumentRegistry<Doc>,
-  options: Editor.PreviewRegistryOptions,
-  document2: Doc,
+  registryOptions: Editor.PreviewRegistryOptions,
+  document: Doc,
   waiting?: Editor.PreviewWaiting,
 ): string {
   registry.seq += 1;
-  let token: string = options.tokenPrefix + String(registry.seq);
-  registry.docs.set(token, document2);
+  let token: string = registryOptions.tokenPrefix + String(registry.seq);
+  registry.docs.set(token, document);
   if (waiting !== undefined) {
     registry.waiting.set(token, waiting);
   }
@@ -117,21 +117,21 @@ function isDisallowedRelativeScriptSource(
       ),
       pathname = new URL(PREVIEW_PROJECT_PREFIX, PREVIEW_VALIDATION_BASE_URL)
         .pathname,
-      value2 = decodeURIComponent(value.pathname)
+      decodedPath = decodeURIComponent(value.pathname)
         .toLowerCase()
         .replace(/\/+/g, "/")
         .replace(/\/$/, "");
     if (
       value.origin !== new URL(PREVIEW_VALIDATION_BASE_URL).origin ||
-      !value2.startsWith(pathname) ||
-      /[\\\u0000-\u001f]|\/\.\.?(?:\/|$)/.test(value2)
+      !decodedPath.startsWith(pathname) ||
+      /[\\\u0000-\u001f]|\/\.\.?(?:\/|$)/.test(decodedPath)
     ) {
       return true;
     }
-    let value3 = value2.slice(pathname.length);
+    let relativePath = decodedPath.slice(pathname.length);
     return (
-      value3.startsWith(DESIGN_SYSTEM_PATHS.libDir) ||
-      /(?:^|\/)_vendor\/|(?:^|\/)(?:_ds_)?bundle\.js$/.test(value3)
+      relativePath.startsWith(DESIGN_SYSTEM_PATHS.libDir) ||
+      /(?:^|\/)_vendor\/|(?:^|\/)(?:_ds_)?bundle\.js$/.test(relativePath)
     );
   } catch {
     return true;
@@ -142,9 +142,9 @@ function blockedPreviewScriptReference(
   cardPath: string,
   strict: boolean = false,
 ): boolean | string {
-  let findNext = (input: RegExp, options: number) => {
-      input.lastIndex = options;
-      return input.exec(html)?.index ?? -1;
+  let findNext = (pattern: RegExp, offset: number) => {
+      pattern.lastIndex = offset;
+      return pattern.exec(html)?.index ?? -1;
     },
     openScriptPattern: RegExp = /<script/gi,
     closeScriptPattern: RegExp = /<\/script[ \t\n\f\r/>]/gi,
@@ -153,101 +153,101 @@ function blockedPreviewScriptReference(
     scannedImportMapEnd = 0,
     hasBaseTag = /<base[ \t\n\f\r/>]/i.test(html);
   for (let value = findNext(openScriptPattern, 0); value >= 0; ) {
-    let value2 = value + 7;
-    if (value2 < html.length && !/[ \t\n\f\r/>]/.test(html[value2])) {
-      value = findNext(openScriptPattern, value2);
+    let attributeEnd = value + 7;
+    if (attributeEnd < html.length && !/[ \t\n\f\r/>]/.test(html[attributeEnd])) {
+      value = findNext(openScriptPattern, attributeEnd);
       continue;
     }
     for (
       let text = "",
         flag = false,
-        flag2: boolean = false,
-        flag3: boolean = false;
-      value2 < html.length;
-      value2++
+        insideImportMap: boolean = false,
+        insideScript: boolean = false;
+      attributeEnd < html.length;
+      attributeEnd++
     ) {
-      let value7 = html[value2],
-        value8 =
-          value7 === " " ||
-          value7 ===
+      let character = html[attributeEnd],
+        isWhitespace =
+          character === " " ||
+          character ===
             `
 ` ||
-          value7 === "\t" ||
-          value7 === "\f" ||
-          value7 === "\r";
+          character === "\t" ||
+          character === "\f" ||
+          character === "\r";
       if (text !== "") {
-        text = value7 === text ? "" : text;
-      } else if (value7 === ">") {
+        text = character === text ? "" : text;
+      } else if (character === ">") {
         break;
-      } else if (flag3) {
-        flag3 = !value8;
-      } else if (flag2) {
-        if (!value8) {
-          if (((flag2 = false), value7 === '"' || value7 === "'")) {
-            text = value7;
+      } else if (insideScript) {
+        insideScript = !isWhitespace;
+      } else if (insideImportMap) {
+        if (!isWhitespace) {
+          if (((insideImportMap = false), character === '"' || character === "'")) {
+            text = character;
           } else {
-            flag3 = true;
+            insideScript = true;
           }
         }
       } else if (!flag) {
-        flag = !value8 && value7 !== "/";
-      } else if (value7 === "/" || value7 === "=") {
+        flag = !isWhitespace && character !== "/";
+      } else if (character === "/" || character === "=") {
         flag = false;
-        flag2 = value7 === "=";
+        insideImportMap = character === "=";
       }
     }
-    let value3: string | undefined, value4: string | undefined;
-    for (let value7 of html
-      .slice(value + 7, value2)
+    let scriptType: string | undefined, scriptSource: string | undefined;
+    for (let attribute of html
+      .slice(value + 7, attributeEnd)
       .matchAll(SCRIPT_TAG_ATTRIBUTE_PATTERN)) {
-      let value8 = trimScriptAttributeWhitespace(
-        value7[2] ?? value7[3] ?? value7[4] ?? "",
+      let attributeValue = trimScriptAttributeWhitespace(
+        attribute[2] ?? attribute[3] ?? attribute[4] ?? "",
       );
-      if (value7[1].toLowerCase() === "type") {
-        value3 ??= value8.toLowerCase();
-      } else if (value7[1].toLowerCase() === "src") {
-        value4 ??= value8;
+      if (attribute[1].toLowerCase() === "type") {
+        scriptType ??= attributeValue.toLowerCase();
+      } else if (attribute[1].toLowerCase() === "src") {
+        scriptSource ??= attributeValue;
       }
     }
-    let value5 = EXECUTABLE_SCRIPT_TYPE_PATTERN.test(value3 ?? ""),
-      value6 = scriptEnd === -1 || value < scriptEnd;
-    if (!value6) {
-      scriptEnd = findNext(closeScriptPattern, value2);
+    let isExecutable = EXECUTABLE_SCRIPT_TYPE_PATTERN.test(scriptType ?? ""),
+      scriptBeforeEnd = scriptEnd === -1 || value < scriptEnd;
+    if (!scriptBeforeEnd) {
+      scriptEnd = findNext(closeScriptPattern, attributeEnd);
     }
-    if (value4 !== undefined) {
+    if (scriptSource !== undefined) {
       if (
-        value5 &&
-        value4 !== "" &&
-        !/^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(value4) &&
+        isExecutable &&
+        scriptSource !== "" &&
+        !/^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(scriptSource) &&
         (strict ||
-          value6 ||
+          scriptBeforeEnd ||
           hasBaseTag ||
-          isDisallowedRelativeScriptSource(value4, cardPath))
+          isDisallowedRelativeScriptSource(scriptSource, cardPath))
       ) {
-        return value4;
+        return scriptSource;
       }
-    } else if (!strict && (value5 || value3 === "importmap")) {
-      if (scriptEnd !== -1 && scriptEnd < value2) {
-        scriptEnd = findNext(closeScriptPattern, value2);
+    } else if (!strict && (isExecutable || scriptType === "importmap")) {
+      if (scriptEnd !== -1 && scriptEnd < attributeEnd) {
+        scriptEnd = findNext(closeScriptPattern, attributeEnd);
       }
-      let value7 = scriptEnd < 0 ? html.length : scriptEnd,
-        value8: boolean = value3 === "importmap";
+      let scanEnd = scriptEnd < 0 ? html.length : scriptEnd,
+        isImportMap: boolean = scriptType === "importmap";
       if (
-        value7 > (value8 ? scannedImportMapEnd : scannedInlineEnd) &&
-        (value8
+        scanEnd > (isImportMap ? scannedImportMapEnd : scannedInlineEnd) &&
+        (isImportMap
           ? RELATIVE_IMPORT_MAP_PATTERN
           : RELATIVE_SCRIPT_IMPORT_PATTERN
-        ).test(html.slice(value2 + 1, value7))
+        ).test(html.slice(attributeEnd + 1, scanEnd))
       ) {
         return true;
       }
-      if (value8) {
-        scannedImportMapEnd = value7;
+      if (isImportMap) {
+        scannedImportMapEnd = scanEnd;
       } else {
-        scannedInlineEnd = value7;
+        scannedInlineEnd = scanEnd;
       }
     }
-    value = findNext(openScriptPattern, value2);
+    value = findNext(openScriptPattern, attributeEnd);
   }
   return false;
 }

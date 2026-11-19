@@ -36,12 +36,12 @@ function PipelineChangeSummary({
     return null;
   }
   let value = relativeChangeTime(change.at, now),
-    value2: string = change.via !== undefined ? " via " + change.via : "";
+    viaLabel: string = change.via !== undefined ? " via " + change.via : "";
   return (
     <TooltipWrapper
       tip={
         (((change.by +
-        value2) + (" · ")) + (change.at)) + (change.note !== undefined ? ((" — ") + (change.note)) : (""))
+        viaLabel) + (" · ")) + (change.at)) + (change.note !== undefined ? ((" — ") + (change.note)) : (""))
       }
       wrap={true}
     >
@@ -52,7 +52,7 @@ function PipelineChangeSummary({
       >
         {[uiMessage("design-system.pipelineBanners.lastChange"), <span className={"ds-last-change-by text-secondary"}>
             {change.by}
-          </span>, value2, value !== "" ? ((" · ") + (value)) : (""), change.note !== undefined ? (
+          </span>, viaLabel, value !== "" ? ((" · ") + (value)) : (""), change.note !== undefined ? (
             <span className={"ds-last-change-note"}>
               {[" — “", change.note, "”"]}
             </span>
@@ -79,13 +79,13 @@ function PipelineChangeBanner({
   now?: number;
 }): React.ReactElement | null {
   useUiLocale();
-  let [value, value2] = reactPipelineBanners.useState(() =>
+  let [value, setDismissed] = reactPipelineBanners.useState(() =>
     isPipelineBannerDismissed(change.at),
   );
   if (value) {
     return null;
   }
-  let value3 = relativeChangeTime(change.at, now);
+  let relativeTime = relativeChangeTime(change.at, now);
   return (
     <div {...UNCOMMENTABLE_PROPS}>
       <Callout
@@ -97,13 +97,13 @@ function PipelineChangeBanner({
               "1",
             );
           } catch {}
-          value2(true);
+          setDismissed(true);
         }}
         data-testid={"ds-pipeline-banner"}
         className={"ds-pipeline-banner"}
       >
         <span className={"ds-pipeline-banner-text"}>
-          {[uiMessage("design-system.pipelineBanners.writtenByAPipeline"), <span className={"font-mono"}>{change.via ?? ("")}</span>, ")", value3 !== "" ? ((" ") + (value3)) : (""), ". Edits here may be overwritten on its next run."]}
+          {[uiMessage("design-system.pipelineBanners.writtenByAPipeline"), <span className={"font-mono"}>{change.via ?? ("")}</span>, ")", relativeTime !== "" ? ((" ") + (relativeTime)) : (""), ". Edits here may be overwritten on its next run."]}
         </span>
       </Callout>
     </div>
@@ -116,26 +116,26 @@ function MigrationLeftOutBanner(): React.ReactElement | null {
       getStoredSystemStatus as () => Editor.PipelineStoredStatus,
       getStoredSystemStatus as () => Editor.PipelineStoredStatus,
     ),
-    value2: string =
+    sessionKey: string =
       LEFT_OUT_BANNER_STORAGE_PREFIX +
       (value.convertedAt ?? "") +
       "/" +
       String(value.carried.length + value.carriedMore),
-    [value3, value4] = reactPipelineBanners.useState(false),
-    value5 = value.carried.filter(
-      (input): boolean => input.form === "omitted",
+    [isDismissed, setDismissed] = reactPipelineBanners.useState(false),
+    carriedFiles = value.carried.filter(
+      (entry): boolean => entry.form === "omitted",
     ),
-    value6 = value5.length + (value.carriedMore > 0 ? value.carriedMore : 0);
-  if (value3 || value6 === 0 || isSessionBannerDismissed(value2)) {
+    carriedCount = carriedFiles.length + (value.carriedMore > 0 ? value.carriedMore : 0);
+  if (isDismissed || carriedCount === 0 || isSessionBannerDismissed(sessionKey)) {
     return null;
   }
   let callback = (): void => {
       try {
-        sessionStorage.setItem(value2, "1");
+        sessionStorage.setItem(sessionKey, "1");
       } catch {}
-      value4(true);
+      setDismissed(true);
     },
-    value7 = value5.slice(0, 3);
+    visibleFiles = carriedFiles.slice(0, 3);
   return (
     <div {...UNCOMMENTABLE_PROPS}>
       <Callout
@@ -145,22 +145,22 @@ function MigrationLeftOutBanner(): React.ReactElement | null {
         className={"ds-left-out-banner"}
       >
         <span className={"ds-left-out-banner-text"}>
-          {[uiMessage("design-system.pipelineBanners.couldnTBeKeptWhen", { value1: String(value.carriedMore > 0 ? (uiMessage("design-system.pipelineBanners.atLeast")) : ("")), value2: String(countedChangeNoun(value6, "file")) }), value7.map((input, options) =>
+          {[uiMessage("design-system.pipelineBanners.couldnTBeKeptWhen", { value1: String(value.carriedMore > 0 ? (uiMessage("design-system.pipelineBanners.atLeast")) : ("")), value2: String(countedChangeNoun(carriedCount, "file")) }), visibleFiles.map((file, index) =>
               (() => {
                 const _Element = "span";
                 const _elementProps = {
                   children: [
-                    options > 0 ? "; " : "",
-                    <span className={"font-mono"}>{input.path}</span>,
+                    index > 0 ? "; " : "",
+                    <span className={"font-mono"}>{file.path}</span>,
                     <span className={"text-muted"}>
-                      {[" (", input.reason, ")"]}
+                      {[" (", file.reason, ")"]}
                     </span>,
                   ],
                 };
-                const _elementKey = input.path;
+                const _elementKey = file.path;
                 return <_Element key={_elementKey} {..._elementProps} />;
               })(),
-            ), value5.length > value7.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(value6 - value7.length)) })) : ("."), uiMessage("design-system.pipelineBanners.theyRemainInThisArtifact"), "’", uiMessage("design-system.pipelineBanners.sEarlierVersions")]}
+            ), carriedFiles.length > visibleFiles.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(carriedCount - visibleFiles.length)) })) : ("."), uiMessage("design-system.pipelineBanners.theyRemainInThisArtifact"), "’", uiMessage("design-system.pipelineBanners.sEarlierVersions")]}
         </span>
       </Callout>
     </div>
@@ -180,36 +180,36 @@ function IndexRecoveryBanner(): React.ReactElement | null {
       getRemoteTextProblems as () => Map<string, string>,
       getRemoteTextProblems as () => Map<string, string>,
     ),
-    [value2, value3] = reactPipelineBanners.useState(false);
-  if (value2 || value.size === 0) {
+    [isDismissed, setDismissed] = reactPipelineBanners.useState(false);
+  if (isDismissed || value.size === 0) {
     return null;
   }
-  let value4 = [...value].slice(0, 3);
+  let recentChanges = [...value].slice(0, 3);
   return (
     <div {...UNCOMMENTABLE_PROPS}>
       <Callout
         variant={"warning"}
-        onDismiss={() => value3(true)}
+        onDismiss={() => setDismissed(true)}
         data-testid={"ds-refused-code-banner"}
         className={"ds-left-out-banner"}
       >
         <span className={"ds-left-out-banner-text"}>
-          {[uiMessage("design-system.pipelineBanners.addedHereCouldNotBe", { value1: String(countedChangeNoun(value.size, "file")) }), value4.map(([input, input2], options) =>
+          {[uiMessage("design-system.pipelineBanners.addedHereCouldNotBe", { value1: String(countedChangeNoun(value.size, "file")) }), recentChanges.map(([filePath, reason], index) =>
               (() => {
-                const _Element2 = "span";
-                const _elementProps2 = {
+                const FileLabel = "span";
+                const fileProps = {
                   children: [
-                    options > 0 ? "; " : "",
-                    <span className={"font-mono"}>{input}</span>,
+                    index > 0 ? "; " : "",
+                    <span className={"font-mono"}>{filePath}</span>,
                     <span className={"text-muted"}>
-                      {[" (", input2, ")"]}
+                      {[" (", reason, ")"]}
                     </span>,
                   ],
                 };
-                const _elementKey2 = input;
-                return <_Element2 key={_elementKey2} {..._elementProps2} />;
+                const fileKey = filePath;
+                return <FileLabel key={fileKey} {...fileProps} />;
               })(),
-            ), value.size > value4.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(value.size - value4.length)) })) : (".")]}
+            ), value.size > recentChanges.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(value.size - recentChanges.length)) })) : (".")]}
         </span>
       </Callout>
     </div>

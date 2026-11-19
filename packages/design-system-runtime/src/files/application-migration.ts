@@ -33,11 +33,11 @@ async function runDesignSystemFilesMigration(
     typeof document !== "undefined" &&
     document.visibilityState === "hidden"
   ) {
-    await new Promise<void>((input) =>
+    await new Promise<void>((resolve) =>
       document.addEventListener("visibilitychange", function value(): void {
         if (document.visibilityState !== "hidden") {
           document.removeEventListener("visibilitychange", value);
-          input();
+          resolve();
         }
       }),
     );
@@ -47,9 +47,9 @@ async function runDesignSystemFilesMigration(
     }),
     store = createLegacyDatabasePort(storeHandle),
     blobReadable: boolean = true,
-    stop = (input: string | undefined, options: boolean = true): void => {
+    stop = (notice: string | undefined, shouldNotify: boolean = true): void => {
       skipMigrationForTab();
-      if (options) {
+      if (shouldNotify) {
         recordMigrationStoppedForChange(
           home === "file" &&
             singleFileMigrationBootHeld &&
@@ -61,16 +61,16 @@ async function runDesignSystemFilesMigration(
       if (home === "file" && singleFileMigrationBootHeld) {
         set_singleFileMigrationBootExit({
           end: singleFileMigrationBootExit.end,
-          ...(input !== undefined
+          ...(notice !== undefined
             ? {
-                notice: input,
+                notice: notice,
               }
             : {}),
         });
         return;
       }
-      if (input !== undefined) {
-        showEditorPromiseNotification(input, null);
+      if (notice !== undefined) {
+        showEditorPromiseNotification(notice, null);
       }
     },
     singleFile: Model.FileTextRead | undefined;
@@ -115,7 +115,7 @@ async function runDesignSystemFilesMigration(
         ? MIGRATION_TOO_LARGE_MESSAGE
         : unpublishableMigrationFilesMessage(
             preflight.unpublishable.map(
-              (input: { path: string }) => input.path,
+              (file: { path: string }) => file.path,
             ),
           ),
       true,
@@ -138,8 +138,8 @@ async function runDesignSystemFilesMigration(
       timers: designSystemMigrationTimers,
       fetchBlob: readMigrationArtifactBlob,
       artifactId: location.host,
-      onStage: (input: string) =>
-        console.info("[design-system] move to files: " + input),
+      onStage: (stage: string) =>
+        console.info("[design-system] move to files: " + stage),
     });
   reportMigrationFailure(outcome);
   let nextAction = designSystemMigrationNextAction(outcome);

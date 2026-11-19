@@ -18,24 +18,24 @@ function PreviewFitBox({
 }: Editor.PreviewFitBoxProps): React.ReactElement {
   useUiLocale();
   let ref = reactPreviewFit.useRef<HTMLDivElement | null>(null),
-    ref2 = reactPreviewFit.useRef<HTMLDivElement | null>(null),
-    [value, value2] = reactPreviewFit.useState(height);
+    containerRef = reactPreviewFit.useRef<HTMLDivElement | null>(null),
+    [value, setHeight] = reactPreviewFit.useState(height);
   reactPreviewFit.useLayoutEffect(() => {
     let current = ref.current,
-      current2 = ref2.current;
-    if (current === null || current2 === null) {
+      container = containerRef.current;
+    if (current === null || container === null) {
       return;
     }
     let callback = (): void => {
-      current2.style.transform =
+      container.style.transform =
         "scale(" +
         String(
           previewFitScale(current.getBoundingClientRect().width, width),
         ) +
         ")";
-      let offsetHeight = current2.offsetHeight;
+      let offsetHeight = container.offsetHeight;
       if (offsetHeight > 0) {
-        value2(offsetHeight);
+        setHeight(offsetHeight);
       }
     };
     callback();
@@ -44,23 +44,23 @@ function PreviewFitBox({
     }
     let observer = new ResizeObserver(callback);
     observer.observe(current);
-    observer.observe(current2);
+    observer.observe(container);
     return () => observer.disconnect();
   }, [width]);
-  let value3: number = Math.max(height, value);
+  let maxHeight: number = Math.max(height, value);
   return (
     <div
       ref={ref}
       className={"relative w-full overflow-hidden"}
       style={{
         maxWidth: width,
-        aspectRatio: String(width) + " / " + String(value3),
-        maxHeight: value3,
+        aspectRatio: String(width) + " / " + String(maxHeight),
+        maxHeight: maxHeight,
       }}
       data-testid={dataTestid + "-box"}
     >
       <div
-        ref={ref2}
+        ref={containerRef}
         style={{
           position: "absolute",
           top: 0,

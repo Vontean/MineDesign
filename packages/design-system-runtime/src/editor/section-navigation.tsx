@@ -21,12 +21,12 @@ function findEditorCard(
   target: M.EditorCardTarget,
 ): HTMLElement | null {
   let value = editorCardKey(target.kind, target.key);
-  for (let value2 of root?.querySelectorAll("[data-card-key]") ?? []) {
+  for (let card of root?.querySelectorAll("[data-card-key]") ?? []) {
     if (
-      value2 instanceof HTMLElement &&
-      value2.getAttribute("data-card-key") === value
+      card instanceof HTMLElement &&
+      card.getAttribute("data-card-key") === value
     ) {
-      return value2;
+      return card;
     }
   }
   return null;
@@ -43,16 +43,16 @@ function scrollEditorCardIntoView(
   }
   element.classList.add("ds-flash");
   if (immediate === "title") {
-    let element2 = element.querySelector(".ds-rn-title.kit-rn-editable");
-    if (element2 instanceof HTMLElement) {
-      element2.click();
+    let titleElement = element.querySelector(".ds-rn-title.kit-rn-editable");
+    if (titleElement instanceof HTMLElement) {
+      titleElement.click();
     }
   } else if (immediate) {
-    let element2 = element.querySelector(
+    let titleElement = element.querySelector(
       'textarea, [contenteditable="true"]',
     );
-    if (element2 instanceof HTMLElement) {
-      element2.focus({
+    if (titleElement instanceof HTMLElement) {
+      titleElement.focus({
         preventScroll: true,
       });
     }
@@ -65,7 +65,7 @@ function scrollEditorCardIntoView(
 function useEditorCardFlash(
   root: React.RefObject<HTMLElement | null>,
 ): M.EditorCardFlashState {
-  let [value, value2] =
+  let [value, setFlashedTarget] =
     reactSectionNavigationEditorSectionNavigation.useState<M.EditorCardTarget | null>(
       null,
     );
@@ -73,22 +73,22 @@ function useEditorCardFlash(
     if (value === null) {
       return;
     }
-    let value3 = findEditorCard(root.current, value);
-    if (value3 === null) {
-      let value4 = window.setTimeout(
+    let cardElement = findEditorCard(root.current, value);
+    if (cardElement === null) {
+      let flashTimer = window.setTimeout(
         () =>
-          value2((input: M.EditorCardTarget | null) =>
-            input === value ? null : input,
+          setFlashedTarget((target: M.EditorCardTarget | null) =>
+            target === value ? null : target,
           ),
         CARD_RETRY_TIMEOUT_MS,
       );
-      return () => window.clearTimeout(value4);
+      return () => window.clearTimeout(flashTimer);
     }
-    scrollEditorCardIntoView(value3, value.focus ?? false);
-    value2(null);
+    scrollEditorCardIntoView(cardElement, value.focus ?? false);
+    setFlashedTarget(null);
   });
   return {
-    reveal: value2,
+    reveal: setFlashedTarget,
     pending: value,
   };
 }
@@ -112,28 +112,28 @@ function useEditorSectionNavigation({
   shown: shown,
   miss: miss,
 }: M.SectionNavigationProps) {
-  let [value, value2] =
+  let [value, setRevealTarget] =
       reactSectionNavigationEditorSectionNavigation.useState<M.SectionNavigationTarget | null>(
         null,
       ),
-    [, value3] = reactSectionNavigationEditorSectionNavigation.useState(0),
+    [, setRevealVersion] = reactSectionNavigationEditorSectionNavigation.useState(0),
     ref = reactSectionNavigationEditorSectionNavigation.useRef<
       (() => void) | null
     >(null),
-    ref2 =
+    flashTimerRef =
       reactSectionNavigationEditorSectionNavigation.useRef<M.SectionFlash | null>(
         null,
       ),
     callback =
       reactSectionNavigationEditorSectionNavigation.useCallback((): void => {
         ref.current?.();
-        value2(null);
+        setRevealTarget(null);
       }, []),
-    ref3 = reactSectionNavigationEditorSectionNavigation.useRef({
+    sectionsRef = reactSectionNavigationEditorSectionNavigation.useRef({
       shown: shown,
       miss: miss,
     });
-  ref3.current = {
+  sectionsRef.current = {
     shown: shown,
     miss: miss,
   };
@@ -145,90 +145,90 @@ function useEditorSectionNavigation({
     if (value === null) {
       return;
     }
-    let value4 = findCommentTarget(
+    let targetElement = findCommentTarget(
       sections.current[value.section],
       value.target,
     );
-    if (value4 === null) {
-      let value7 = window.setTimeout(
+    if (targetElement === null) {
+      let scrollTimer = window.setTimeout(
           (): void => {
-            value2((input: M.SectionNavigationTarget | null) =>
-              input === value ? null : input,
+            setRevealTarget((target: M.SectionNavigationTarget | null) =>
+              target === value ? null : target,
             );
-            ref3.current.miss(value);
+            sectionsRef.current.miss(value);
           },
           Math.max(0, value.until - Date.now()),
         ),
-        value8 = sections.current[value.section],
-        value9 =
-          value8 !== null &&
-          value8 !== undefined &&
+        sectionElement = sections.current[value.section],
+        sectionObserver =
+          sectionElement !== null &&
+          sectionElement !== undefined &&
           typeof window.MutationObserver === "function"
             ? new window.MutationObserver((): void => {
-                if (findCommentTarget(value8, value.target) !== null) {
-                  value3((input: number) => input + 1);
+                if (findCommentTarget(sectionElement, value.target) !== null) {
+                  setRevealVersion((version: number) => version + 1);
                 }
               })
             : null;
-      if (value8 !== null && value8 !== undefined) {
-        value9?.observe(value8, {
+      if (sectionElement !== null && sectionElement !== undefined) {
+        sectionObserver?.observe(sectionElement, {
           childList: true,
           subtree: true,
         });
       }
-      let callback4 = () => value2(null);
-      for (let value10 of USER_SCROLL_INTERRUPTION_EVENTS) {
-        port?.addEventListener(value10, callback4, {
+      let clearUserScroll = () => setRevealTarget(null);
+      for (let eventType of USER_SCROLL_INTERRUPTION_EVENTS) {
+        port?.addEventListener(eventType, clearUserScroll, {
           passive: true,
         });
       }
       return (): void => {
-        window.clearTimeout(value7);
-        value9?.disconnect();
-        for (let value10 of USER_SCROLL_INTERRUPTION_EVENTS) {
-          port?.removeEventListener(value10, callback4);
+        window.clearTimeout(scrollTimer);
+        sectionObserver?.disconnect();
+        for (let eventType of USER_SCROLL_INTERRUPTION_EVENTS) {
+          port?.removeEventListener(eventType, clearUserScroll);
         }
       };
     }
-    value2(null);
+    setRevealTarget(null);
     ref.current?.();
-    if (port !== null && value4.getClientRects().length === 0) {
-      ref3.current.miss(value);
+    if (port !== null && targetElement.getClientRects().length === 0) {
+      sectionsRef.current.miss(value);
       return;
     }
-    let callback2 = (): void => {
+    let updateSectionBounds = (): void => {
       if (port === null) {
-        value4.scrollIntoView?.({
+        targetElement.scrollIntoView?.({
           behavior: "instant",
           block: "center",
         });
         return;
       }
-      if (!value4.isConnected || value4.getClientRects().length === 0) {
+      if (!targetElement.isConnected || targetElement.getClientRects().length === 0) {
         ref.current?.();
         return;
       }
-      let bounds = value4.getBoundingClientRect(),
-        value7: number =
+      let bounds = targetElement.getBoundingClientRect(),
+        scrollTop: number =
           bounds.height > port.clientHeight - SECTION_SCROLL_MARGIN_PX
             ? SECTION_SCROLL_MARGIN_PX
             : (port.clientHeight - bounds.height) / 2,
-        value8: number = Math.max(
+        targetScrollTop: number = Math.max(
           0,
           port.scrollTop +
             bounds.top -
             port.getBoundingClientRect().top -
-            value7,
+            scrollTop,
         );
-      if (Math.abs(value8 - port.scrollTop) >= 1) {
+      if (Math.abs(targetScrollTop - port.scrollTop) >= 1) {
         port.scrollTo({
-          top: value8,
+          top: targetScrollTop,
           behavior: "instant",
         });
       }
     };
-    callback2();
-    ref3.current.shown(value);
+    updateSectionBounds();
+    sectionsRef.current.shown(value);
     if (
       document.activeElement === null ||
       document.activeElement === document.body
@@ -237,49 +237,49 @@ function useEditorSectionNavigation({
         preventScroll: true,
       });
     }
-    if (ref2.current !== null) {
-      window.clearTimeout(ref2.current.timer);
-      ref2.current.el.classList.remove("ds-flash");
+    if (flashTimerRef.current !== null) {
+      window.clearTimeout(flashTimerRef.current.timer);
+      flashTimerRef.current.el.classList.remove("ds-flash");
     }
-    value4.offsetWidth;
-    value4.classList.add("ds-flash");
-    ref2.current = {
-      el: value4,
+    targetElement.offsetWidth;
+    targetElement.classList.add("ds-flash");
+    flashTimerRef.current = {
+      el: targetElement,
       timer: window.setTimeout(
-        () => value4.classList.remove("ds-flash"),
+        () => targetElement.classList.remove("ds-flash"),
         CARD_FLASH_DURATION_MS,
       ),
     };
-    let value5 =
+    let observer =
       port !== null && typeof ResizeObserver === "function"
-        ? new ResizeObserver(callback2)
+        ? new ResizeObserver(updateSectionBounds)
         : null;
-    if (value5 !== null && port !== null) {
-      for (let value7 of Array.from<Element>(port.children)) {
-        value5.observe(value7);
+    if (observer !== null && port !== null) {
+      for (let child of Array.from<Element>(port.children)) {
+        observer.observe(child);
       }
     }
-    let callback3 = (): void => {
+    let cancelUserScroll = (): void => {
         ref.current = null;
-        value5?.disconnect();
-        window.clearTimeout(value6);
-        for (let value7 of USER_SCROLL_INTERRUPTION_EVENTS) {
-          port?.removeEventListener(value7, callback3);
+        observer?.disconnect();
+        window.clearTimeout(cancelTimer);
+        for (let eventType of USER_SCROLL_INTERRUPTION_EVENTS) {
+          port?.removeEventListener(eventType, cancelUserScroll);
         }
       },
-      value6 = window.setTimeout(callback3, SECTION_SCROLL_CANCEL_TIMEOUT_MS);
-    ref.current = callback3;
-    for (let value7 of USER_SCROLL_INTERRUPTION_EVENTS) {
-      port?.addEventListener(value7, callback3, {
+      cancelTimer = window.setTimeout(cancelUserScroll, SECTION_SCROLL_CANCEL_TIMEOUT_MS);
+    ref.current = cancelUserScroll;
+    for (let eventType of USER_SCROLL_INTERRUPTION_EVENTS) {
+      port?.addEventListener(eventType, cancelUserScroll, {
         passive: true,
       });
     }
   });
   return {
     reveal: reactSectionNavigationEditorSectionNavigation.useCallback(
-      (input: Application.EditorSectionReveal) =>
-        value2({
-          ...input,
+      (reveal: Application.EditorSectionReveal) =>
+        setRevealTarget({
+          ...reveal,
           until: Date.now() + SECTION_SCROLL_TARGET_TIMEOUT_MS,
         }),
       [],
@@ -295,26 +295,26 @@ function createEditorSectionNavigationActions({
   say: say,
 }: Application.EditorSectionNavigationActionOptions): Application.EditorSectionNavigationActions {
   return {
-    shown: (input: Application.EditorSectionReveal): void => {
-      mark(input.section);
+    shown: (reveal: Application.EditorSectionReveal): void => {
+      mark(reveal.section);
       say(
         uiMessage("design-system.sectionNavigation.inView") +
-          input.label +
+          reveal.label +
           ", in " +
-          (sectionLabel(input.section) ?? uiMessage("design-system.sectionNavigation.thisPage")) +
+          (sectionLabel(reveal.section) ?? uiMessage("design-system.sectionNavigation.thisPage")) +
           ".",
       );
     },
-    miss: (input: Application.EditorSectionReveal): void => {
-      let value = sectionLabel(input.section);
+    miss: (reveal: Application.EditorSectionReveal): void => {
+      let value = sectionLabel(reveal.section);
       if (value === undefined) {
         return;
       }
       let activeElement = document.activeElement;
-      show(input.section);
+      show(reveal.section);
       if (
         document.activeElement === activeElement ||
-        document.activeElement !== sectionEl(input.section)
+        document.activeElement !== sectionEl(reveal.section)
       ) {
         say(uiMessage("design-system.sectionNavigation.inView") + value + ".");
       }

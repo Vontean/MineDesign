@@ -41,25 +41,25 @@ function parseSingleBoxShadow(shadow: string): Token.SingleBoxShadow | null {
   ) {
     return null;
   }
-  let value2: RegExp =
+  let shadowValue: RegExp =
       /((?:rgba?|hsla?|oklch|oklab|lab|lch|color)\([^)]*\)|#[0-9a-f]{3,8}|\b[a-z]+\b)/i,
-    value3 =
+    shadowLayers =
       value.match(
         /(?:(?:rgba?|hsla?|oklch|oklab|lab|lch|color)\([^)]*\))|\S+/gi,
       ) ?? [],
     items: number[] = [],
-    value4: string | null = null;
-  for (let value5 of value3) {
-    let value6 = /^(-?(?:\d+|\d*\.\d+))(px)?$/.exec(value5);
-    if (value6 !== null && (value6[2] === "px" || value6[1] === "0")) {
-      items.push(Number(value6[1]));
-    } else if (value4 === null && value2.test(value5)) {
-      value4 = value5;
+    shadowParsed: string | null = null;
+  for (let shadowColor of shadowLayers) {
+    let shadowMatch = /^(-?(?:\d+|\d*\.\d+))(px)?$/.exec(shadowColor);
+    if (shadowMatch !== null && (shadowMatch[2] === "px" || shadowMatch[1] === "0")) {
+      items.push(Number(shadowMatch[1]));
+    } else if (shadowParsed === null && shadowValue.test(shadowColor)) {
+      shadowParsed = shadowColor;
     } else {
       return null;
     }
   }
-  if (items.length < 2 || items.length > 4 || value4 === null) {
+  if (items.length < 2 || items.length > 4 || shadowParsed === null) {
     return null;
   }
   return {
@@ -67,12 +67,12 @@ function parseSingleBoxShadow(shadow: string): Token.SingleBoxShadow | null {
     y: items[1] ?? 0,
     blur: items[2] ?? 0,
     spread: items[3] ?? 0,
-    color: value4,
+    color: shadowParsed,
   };
 }
 function serializeSingleBoxShadow(shadow: Token.SingleBoxShadow): string {
-  let callback = (input: number): string =>
-    input === 0 ? "0" : String(input) + "px";
+  let callback = (shadowInput: number): string =>
+    shadowInput === 0 ? "0" : String(shadowInput) + "px";
   return [
     callback(shadow.x),
     callback(shadow.y),
@@ -91,27 +91,27 @@ function boxShadowSummary(shadow: string): Token.ShadowSummary {
       color: null,
     };
   }
-  let value2 = parseSingleBoxShadow(value);
-  if (value2 !== null) {
+  let shadowValueA = parseSingleBoxShadow(value);
+  if (shadowValueA !== null) {
     return {
       text:
-        String(value2.x) +
+        String(shadowValueA.x) +
         ", " +
-        String(value2.y) +
+        String(shadowValueA.y) +
         " · " +
-        String(value2.blur) +
+        String(shadowValueA.blur) +
         "px" +
-        (value2.spread !== undefined && value2.spread !== 0
-          ? " · " + String(value2.spread) + "px"
+        (shadowValueA.spread !== undefined && shadowValueA.spread !== 0
+          ? " · " + String(shadowValueA.spread) + "px"
           : ""),
-      color: value2.color,
+      color: shadowValueA.color,
     };
   }
-  let value3 = splitBoxShadowLayers(value),
-    value4 = parseSingleBoxShadow(value3[0] ?? "");
+  let shadowLayersA = splitBoxShadowLayers(value),
+    shadowParsedA = parseSingleBoxShadow(shadowLayersA[0] ?? "");
   return {
-    text: value3.length > 1 ? String(value3.length) + " layers" : value,
-    color: value4?.color ?? null,
+    text: shadowLayersA.length > 1 ? String(shadowLayersA.length) + " layers" : value,
+    color: shadowParsedA?.color ?? null,
   };
 }
 function splitBoxShadowLayers(shadow: string): string[] {
@@ -121,26 +121,26 @@ function splitBoxShadowLayers(shadow: string): string[] {
   }
   let items = [],
     index: number = 0,
-    index2 = 0;
-  for (let index3: number = 0; index3 < value.length; index3++) {
-    let value2 = value[index3];
-    if (value2 === "(") {
+    shadowValueB = 0;
+  for (let shadowValueC: number = 0; shadowValueC < value.length; shadowValueC++) {
+    let shadowValueD = value[shadowValueC];
+    if (shadowValueD === "(") {
       index++;
-    } else if (value2 === ")") {
+    } else if (shadowValueD === ")") {
       index = Math.max(0, index - 1);
-    } else if (value2 === "," && index === 0) {
-      items.push(value.slice(index2, index3).trim());
-      index2 = index3 + 1;
+    } else if (shadowValueD === "," && index === 0) {
+      items.push(value.slice(shadowValueB, shadowValueC).trim());
+      shadowValueB = shadowValueC + 1;
     }
   }
-  items.push(value.slice(index2).trim());
+  items.push(value.slice(shadowValueB).trim());
   return items.filter(
-    (input) => input !== "" && input.toLowerCase() !== "none",
+    (shadowInputA) => shadowInputA !== "" && shadowInputA.toLowerCase() !== "none",
   );
 }
 function ShadowValueEditor({
   label: label,
-  value: value,
+  value: shadowValueE,
   onChange: onChange,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
@@ -150,50 +150,50 @@ function ShadowValueEditor({
   editsAreUndoSteps: editsAreUndoSteps,
 }: Token.ShadowValueEditorProps): React.ReactElement {
   useUiLocale();
-  let value2 = splitBoxShadowLayers(value),
-    value3 = value2.length === 0 ? [""] : value2,
-    value4: boolean = value3.length <= 1,
-    ref = reactShadowEditors.useRef(value);
-  ref.current = value;
+  let shadowValueF = splitBoxShadowLayers(shadowValueE),
+    shadowLayersB = shadowValueF.length === 0 ? [""] : shadowValueF,
+    shadowParsedB: boolean = shadowLayersB.length <= 1,
+    ref = reactShadowEditors.useRef(shadowValueE);
+  ref.current = shadowValueE;
   let callback = () => {
-      let value13 = splitBoxShadowLayers(ref.current);
-      if (value13.length === 0) {
+      let shadowValueG = splitBoxShadowLayers(ref.current);
+      if (shadowValueG.length === 0) {
         return [""];
       } else {
-        return value13;
+        return shadowValueG;
       }
     },
-    callback2 = (input: number, options: string) => {
-      let value13 = callback();
-      if (input < value13.length) {
+    shadowHandler = (shadowInputB: number, shadowOption: string) => {
+      let shadowValueH = callback();
+      if (shadowInputB < shadowValueH.length) {
         return joinBoxShadowLayers(
-          value13.map((input2, options2) =>
-            options2 === input ? options : input2,
+          shadowValueH.map((shadowInputC, shadowOptionA) =>
+            shadowOptionA === shadowInputB ? shadowOption : shadowInputC,
           ),
         );
       } else {
         return null;
       }
     },
-    callback3 = (input: number, options: string): void => {
-      let value13 = callback2(input, options);
-      if (value13 !== null) {
-        ref.current = value13;
-        onChange(value13);
+    shadowHandlerA = (shadowInputD: number, shadowOptionB: string): void => {
+      let shadowValueI = shadowHandler(shadowInputD, shadowOptionB);
+      if (shadowValueI !== null) {
+        ref.current = shadowValueI;
+        onChange(shadowValueI);
       }
     },
-    [value5, value6] = reactShadowEditors.useState(false),
-    [value7, value8] = reactShadowEditors.useState<number | null>(null);
+    [shadowColorA, shadowMatchA] = reactShadowEditors.useState(false),
+    [shadowIndex, shadowState] = reactShadowEditors.useState<number | null>(null);
   reactShadowEditors.useEffect((): void => {
-    if (!value5) {
-      value8(null);
+    if (!shadowColorA) {
+      shadowState(null);
     }
-  }, [value5]);
-  let ref2 = reactShadowEditors.useRef(false),
-    ref3 = reactShadowEditors.useRef(false),
-    ref4 = reactShadowEditors.useRef<HTMLSpanElement | null>(null),
-    ref5 = reactShadowEditors.useRef<HTMLDivElement | null>(null),
-    callback4 = (): void => {
+  }, [shadowColorA]);
+  let shadowRef = reactShadowEditors.useRef(false),
+    shadowRefA = reactShadowEditors.useRef(false),
+    shadowRefB = reactShadowEditors.useRef<HTMLSpanElement | null>(null),
+    shadowRefC = reactShadowEditors.useRef<HTMLDivElement | null>(null),
+    shadowHandlerB = (): void => {
       let activeElement = document.activeElement;
       if (
         activeElement instanceof HTMLElement &&
@@ -202,44 +202,44 @@ function ShadowValueEditor({
         reactDomShadowEditors.flushSync(() => activeElement.blur());
       }
     },
-    callback5 = (input: number): void => {
-      callback4();
-      let value13 = joinBoxShadowLayers(
-        callback().filter((input2, options): boolean => options !== input),
+    shadowHandlerC = (shadowInputE: number): void => {
+      shadowHandlerB();
+      let shadowValueJ = joinBoxShadowLayers(
+        callback().filter((shadowInputF, shadowOptionC): boolean => shadowOptionC !== shadowInputE),
       );
-      ref.current = value13;
-      onChange(value13);
-      value8(null);
+      ref.current = shadowValueJ;
+      onChange(shadowValueJ);
+      shadowState(null);
     },
-    callback6 = (input: React.MouseEvent<HTMLButtonElement>): void => {
-      callback4();
-      ref3.current = input.detail === 0;
-      let value13 = callback().filter(
-          (input2): boolean => input2.trim() !== "",
+    shadowHandlerD = (shadowInputG: React.MouseEvent<HTMLButtonElement>): void => {
+      shadowHandlerB();
+      shadowRefA.current = shadowInputG.detail === 0;
+      let shadowValueK = callback().filter(
+          (shadowInputH): boolean => shadowInputH.trim() !== "",
         ),
-        value14 = joinBoxShadowLayers([...value13, DEFAULT_BOX_SHADOW]);
-      ref.current = value14;
-      onChange(value14);
-      value8(value13.length);
+        shadowValueL = joinBoxShadowLayers([...shadowValueK, DEFAULT_BOX_SHADOW]);
+      ref.current = shadowValueL;
+      onChange(shadowValueL);
+      shadowState(shadowValueK.length);
     },
-    callback7 = () =>
-      ref5.current?.closest('[data-kit="effect-editor"]') ?? ref5.current,
-    callback8 = (): "bottom" | "right" =>
+    shadowHandlerE = () =>
+      shadowRefC.current?.closest('[data-kit="effect-editor"]') ?? shadowRefC.current,
+    shadowHandlerF = (): "bottom" | "right" =>
       typeof window !== "undefined" && window.innerWidth < 720
         ? "bottom"
         : "right",
-    value9 =
-      value.trim() === ""
+    shadowValueM =
+      shadowValueE.trim() === ""
         ? {
             text: "none",
             color: null,
           }
-        : boxShadowSummary(value),
-    callback9 = (input: string) =>
-      /^#|^rgba?\(/i.test(input)
-        ? input
-        : (colorCssForPicker(input) ?? input),
-    value10 = (
+        : boxShadowSummary(shadowValueE),
+    shadowHandlerG = (shadowInputI: string) =>
+      /^#|^rgba?\(/i.test(shadowInputI)
+        ? shadowInputI
+        : (colorCssForPicker(shadowInputI) ?? shadowInputI),
+    shadowValueN = (
       <Button
         variant={"ghost"}
         size={"sm"}
@@ -248,17 +248,17 @@ function ShadowValueEditor({
         aria-label={uiMessage("design-system.shadows.addALayer")}
         tooltip={uiMessage("design-system.shadows.addLayer")}
         className={"ml-auto"}
-        onClick={callback6}
+        onClick={shadowHandlerD}
         data-testid={testid + "-add-layer"}
       />
     ),
-    callback10 = (input: React.ReactNode, options: boolean) => (
+    shadowHandlerH = (shadowInputJ: React.ReactNode, shadowOptionD: boolean) => (
       <span className={"flex w-full items-center gap-1"}>
-        {[<span className={"min-w-0 truncate"}>{input}</span>, options ? value10 : null]}
+        {[<span className={"min-w-0 truncate"}>{shadowInputJ}</span>, shadowOptionD ? shadowValueN : null]}
       </span>
     ),
-    value11 =
-      clear !== undefined && value.trim() !== "" ? (
+    shadowValueO =
+      clear !== undefined && shadowValueE.trim() !== "" ? (
         <div className={"px-md pb-sm"}>
           <TextLink
             className={"text-footnote"}
@@ -266,7 +266,7 @@ function ShadowValueEditor({
             iconPosition={"start"}
             onClick={(): void => {
               clear.run();
-              value6(false);
+              shadowMatchA(false);
             }}
             data-testid={testid + "-clear"}
           >
@@ -274,64 +274,64 @@ function ShadowValueEditor({
           </TextLink>
         </div>
       ) : null,
-    callback11 = (
-      input: number,
-      options: React.ReactNode,
-      context: boolean,
-      value13: () => void,
+    shadowHandlerI = (
+      shadowInputK: number,
+      shadowOptionE: React.ReactNode,
+      shadowValueP: boolean,
+      shadowValueQ: () => void,
     ) => {
-      let value14 = value3[input] ?? "",
-        value15 =
-          value14.trim() === ""
+      let shadowValueR = shadowLayersB[shadowInputK] ?? "",
+        shadowValueS =
+          shadowValueR.trim() === ""
             ? DEFAULT_BOX_SHADOW_VALUES
-            : parseSingleBoxShadow(value14),
-        value16 = value15 !== null ? callback9(value15.color) : "",
-        value17 =
-          value15 !== null
+            : parseSingleBoxShadow(shadowValueR),
+        shadowValueT = shadowValueS !== null ? shadowHandlerG(shadowValueS.color) : "",
+        shadowValueU =
+          shadowValueS !== null
             ? {
-                ...value15,
-                color: value16,
+                ...shadowValueS,
+                color: shadowValueT,
               }
             : null,
-        callback12 = (input2: Token.SingleBoxShadow) =>
-          value15 !== null && input2.color === value16
+        shadowHandlerJ = (shadowInputL: Token.SingleBoxShadow) =>
+          shadowValueS !== null && shadowInputL.color === shadowValueT
             ? {
-                ...input2,
-                color: value15.color,
+                ...shadowInputL,
+                color: shadowValueS.color,
               }
-            : input2;
-      if (value17 !== null) {
+            : shadowInputL;
+      if (shadowValueU !== null) {
         return (
           <ShadowPropertyEditor
-            title={callback10(options, context)}
-            value={value17}
+            title={shadowHandlerH(shadowOptionE, shadowValueP)}
+            value={shadowValueU}
             spread={true}
             editsAreUndoSteps={editsAreUndoSteps}
-            onChange={(input2: Token.SingleBoxShadow) =>
-              callback3(input, serializeSingleBoxShadow(callback12(input2)))
+            onChange={(shadowInputM: Token.SingleBoxShadow) =>
+              shadowHandlerA(shadowInputK, serializeSingleBoxShadow(shadowHandlerJ(shadowInputM)))
             }
             {...(onLive !== undefined && onLiveEnd !== undefined
               ? {
-                  onLive: (input2: Token.SingleBoxShadow): void => {
-                    let value18 = callback2(
-                      input,
-                      serializeSingleBoxShadow(callback12(input2)),
+                  onLive: (shadowInputN: Token.SingleBoxShadow): void => {
+                    let shadowValueV = shadowHandler(
+                      shadowInputK,
+                      serializeSingleBoxShadow(shadowHandlerJ(shadowInputN)),
                     );
-                    if (value18 !== null) {
-                      onLive(value18);
+                    if (shadowValueV !== null) {
+                      onLive(shadowValueV);
                     }
                   },
                   onLiveEnd: onLiveEnd,
                 }
               : {})}
-            onClose={value13}
+            onClose={shadowValueQ}
           />
         );
       } else {
         return (
           <PropertyPopoverPanel
-            title={callback10(options, context)}
-            onClose={value13}
+            title={shadowHandlerH(shadowOptionE, shadowValueP)}
+            onClose={shadowValueQ}
             labelWidth={"0px"}
           >
             <p
@@ -340,45 +340,45 @@ function ShadowValueEditor({
             >
               {[uiMessage("design-system.shadows.writtenAsCSS"), <span
                   className={"block truncate font-mono text-caption"}
-                  title={value14}
+                  title={shadowValueR}
                 >
-                  {value14}
+                  {shadowValueR}
                 </span>, uiMessage("design-system.shadows.askTheAgentToChange")]}
             </p>
           </PropertyPopoverPanel>
         );
       }
     },
-    value12 = value7 !== null && value7 < value3.length ? value7 : null;
+    shadowValueW = shadowIndex !== null && shadowIndex < shadowLayersB.length ? shadowIndex : null;
   return (
     <span
       className={"relative flex min-w-0 flex-1"}
-      ref={ref4}
+      ref={shadowRefB}
       data-testid={testid}
     >
       <PropertyPopover
-        open={value5}
+        open={shadowColorA}
         editsAreUndoSteps={editsAreUndoSteps}
-        onOpenChange={(input: boolean): void => {
-          if (!input) {
-            callback4();
+        onOpenChange={(shadowInputO: boolean): void => {
+          if (!shadowInputO) {
+            shadowHandlerB();
           }
-          value6(input);
+          shadowMatchA(shadowInputO);
         }}
         trigger={
           <PropertyPopoverTrigger
             label={label}
-            color={value9.color !== null ? callback9(value9.color) : null}
-            text={value9.text}
-            onClick={(input: React.MouseEvent<HTMLButtonElement>): void => {
-              ref2.current = input.detail === 0;
+            color={shadowValueM.color !== null ? shadowHandlerG(shadowValueM.color) : null}
+            text={shadowValueM.text}
+            onClick={(shadowInputP: React.MouseEvent<HTMLButtonElement>): void => {
+              shadowRef.current = shadowInputP.detail === 0;
             }}
           />
         }
-        anchor={() => ref4.current}
+        anchor={() => shadowRefB.current}
         side={"bottom"}
-        focusOnOpen={ref2.current}
-        className={value4 ? undefined : "w-[17rem]"}
+        focusOnOpen={shadowRef.current}
+        className={shadowParsedB ? undefined : "w-[17rem]"}
       >
         <CdsRoot density={"compact"} className={"contents"}>
           <div
@@ -395,27 +395,27 @@ function ShadowValueEditor({
                   className: "contents",
                 })}
           >
-            {!value5 ? (null) : (value4 ? (<jsxShadowEditors.Fragment>
-                {[callback11(0, "Shadow", true, (): void => {
-                    callback4();
-                    value6(false);
-                  }), value11]}
+            {!shadowColorA ? (null) : (shadowParsedB ? (<jsxShadowEditors.Fragment>
+                {[shadowHandlerI(0, "Shadow", true, (): void => {
+                    shadowHandlerB();
+                    shadowMatchA(false);
+                  }), shadowValueO]}
               </jsxShadowEditors.Fragment>) : (<PropertyPopoverPanel
-                title={callback10("Shadow", true)}
+                title={shadowHandlerH("Shadow", true)}
                 onClose={(): void => {
-                  callback4();
-                  value6(false);
+                  shadowHandlerB();
+                  shadowMatchA(false);
                 }}
                 labelWidth={"0px"}
               >
                 {[<div
-                    ref={ref5}
+                    ref={shadowRefC}
                     className={"flex flex-col gap-1 px-md pb-sm"}
                     data-step={"2"}
                     data-testid={testid + "-layers"}
                   >
-                    {value3.map((input, options) => {
-                      let value13 = boxShadowSummary(input);
+                    {shadowLayersB.map((shadowInputQ, shadowOptionF) => {
+                      let shadowValueX = boxShadowSummary(shadowInputQ);
                       return (() => {
                         const _Element = "span";
                         const _elementProps = {
@@ -424,37 +424,37 @@ function ShadowValueEditor({
                             <span
                               className={"relative flex min-w-0 flex-1"}
                               data-testid={
-                                testid + "-layer-" + String(options)
+                                testid + "-layer-" + String(shadowOptionF)
                               }
                             >
                               <PropertyPopover
-                                open={value12 === options}
+                                open={shadowValueW === shadowOptionF}
                                 editsAreUndoSteps={editsAreUndoSteps}
-                                onOpenChange={(input2: boolean): void => {
-                                  callback4();
-                                  value8(input2 ? options : null);
+                                onOpenChange={(shadowInputR: boolean): void => {
+                                  shadowHandlerB();
+                                  shadowState(shadowInputR ? shadowOptionF : null);
                                 }}
                                 trigger={
                                   <PropertyPopoverTrigger
                                     label={
-                                      ((label) + (" · layer ")) + (String(options + 1))
+                                      ((label) + (" · layer ")) + (String(shadowOptionF + 1))
                                     }
                                     color={
-                                      value13.color !== null
-                                        ? callback9(value13.color)
+                                      shadowValueX.color !== null
+                                        ? shadowHandlerG(shadowValueX.color)
                                         : null
                                     }
-                                    text={value13.text}
+                                    text={shadowValueX.text}
                                     onClick={(
-                                      input2: React.MouseEvent<HTMLButtonElement>,
+                                      shadowInputS: React.MouseEvent<HTMLButtonElement>,
                                     ): void => {
-                                      ref3.current = input2.detail === 0;
+                                      shadowRefA.current = shadowInputS.detail === 0;
                                     }}
                                   />
                                 }
-                                anchor={callback7}
-                                side={callback8()}
-                                focusOnOpen={ref3.current}
+                                anchor={shadowHandlerE}
+                                side={shadowHandlerF()}
+                                focusOnOpen={shadowRefA.current}
                               >
                                 <CdsRoot
                                   density={"compact"}
@@ -462,29 +462,29 @@ function ShadowValueEditor({
                                 >
                                   <div
                                     {...(anchorKey !== undefined &&
-                                    value12 === options
+                                    shadowValueW === shadowOptionF
                                       ? {
                                           role: "group",
-                                          get "aria-label"() { return uiMessage("design-system.shadows.layer", { value1: String(label), value2: String(String(options + 1)) }); },
+                                          get "aria-label"() { return uiMessage("design-system.shadows.layer", { value1: String(label), value2: String(String(shadowOptionF + 1)) }); },
                                           ...commentTargetProps(
                                             "editor",
                                             "shadow/" +
                                               anchorKey +
                                               "/layer-" +
-                                              String(options + 1),
+                                              String(shadowOptionF + 1),
                                           ),
                                         }
                                       : {
                                           className: "contents",
                                         })}
                                   >
-                                    {value12 === options ? (callback11(
-                                          options,
-                                          uiMessage("design-system.shadows.layer2") + String(options + 1),
+                                    {shadowValueW === shadowOptionF ? (shadowHandlerI(
+                                          shadowOptionF,
+                                          uiMessage("design-system.shadows.layer2") + String(shadowOptionF + 1),
                                           false,
                                           (): void => {
-                                            callback4();
-                                            value8(null);
+                                            shadowHandlerB();
+                                            shadowState(null);
                                           },
                                         )) : (null)}
                                   </div>
@@ -492,19 +492,19 @@ function ShadowValueEditor({
                               </PropertyPopover>
                             </span>,
                             <RemovePropertyButton
-                              label={(uiMessage("design-system.shadows.layer3")) + (String(options + 1))}
-                              disabled={value3.length === 1}
-                              onClick={() => callback5(options)}
+                              label={(uiMessage("design-system.shadows.layer3")) + (String(shadowOptionF + 1))}
+                              disabled={shadowLayersB.length === 1}
+                              onClick={() => shadowHandlerC(shadowOptionF)}
                             />,
                           ],
                         };
-                        const _elementKey = options;
+                        const _elementKey = shadowOptionF;
                         return (
                           <_Element key={_elementKey} {..._elementProps} />
                         );
                       })();
                     })}
-                  </div>, value11]}
+                  </div>, shadowValueO]}
               </PropertyPopoverPanel>))}
           </div>
         </CdsRoot>
@@ -521,7 +521,7 @@ function ShadowValueCell({
   useUiLocale();
   let value = t.value[theme.id] ?? "";
   if (edit === undefined) {
-    let value2 = boxShadowSummary(value);
+    let shadowValueY = boxShadowSummary(value);
     return (
       <TooltipWrapper tip={uiMessage("design-system.shadows.copy2", { value1: String(value) })}>
         <Button
@@ -543,16 +543,16 @@ function ShadowValueCell({
           data-testid={testid}
           onClick={() =>
             void copyTextToClipboard(value).then(
-              (input: boolean) =>
+              (shadowInputT: boolean) =>
                 showEditorNotification(
-                  input
+                  shadowInputT
                     ? "Copied " + t.name + " (" + theme.name + ")"
                     : "Couldn’t copy",
                 ),
             )
           }
         >
-          <span className={"min-w-0 truncate"}>{value2.text}</span>
+          <span className={"min-w-0 truncate"}>{shadowValueY.text}</span>
         </Button>
       </TooltipWrapper>
     );
@@ -563,10 +563,10 @@ function ShadowValueCell({
       anchorKey={t.name + ":" + theme.id}
       value={value}
       editsAreUndoSteps={true}
-      onChange={(input: string) => edit.value(t.name, theme.id, input)}
+      onChange={(shadowInputU: string) => edit.value(t.name, theme.id, shadowInputU)}
       {...(edit.live !== undefined && edit.done !== undefined
         ? {
-            onLive: (input: string) => edit.live?.(t.name, theme.id, input),
+            onLive: (shadowInputV: string) => edit.live?.(t.name, theme.id, shadowInputV),
             onLiveEnd: () => edit.done?.(),
           }
         : {})}
@@ -586,10 +586,10 @@ function ShadowTokenRow({
   let value = useRowContextMenu(
       edit !== undefined || (t.value[preview.id] ?? "") !== "",
     ),
-    value2 =
+    shadowValueZ =
       edit === undefined
         ? undefined
-        : (input: string) => edit.rename(t.name, input),
+        : (shadowInputW: string) => edit.rename(t.name, shadowInputW),
     callback = () =>
       document
         .querySelector<HTMLElement>(
@@ -615,57 +615,57 @@ function ShadowTokenRow({
           <EditableName
             name={t.name}
             taken={taken}
-            commit={value2}
+            commit={shadowValueZ}
             data-testid={"ds-shadow-name-" + t.name}
           />
         </span>, <span className={"ds-ccells contents"}>
-          {themes.map((input) =>
+          {themes.map((shadowInputX) =>
             (() => {
-              const _Element2 = "span";
-              const _elementProps2 = {
+              const ShadowNameTag = "span";
+              const shadowNameProps = {
                 className:
                   "ds-ccell ds-shcell flex min-w-0 flex-col items-stretch gap-sm",
                 role: "cell",
-                "data-theme": themes.length > 1 ? input.name : undefined,
+                "data-theme": themes.length > 1 ? shadowInputX.name : undefined,
                 children: [
                   <span
                     className={"ds-shadow-well"}
                     style={
-                      grounds?.[input.id] !== undefined
+                      grounds?.[shadowInputX.id] !== undefined
                         ? {
-                            background: grounds[input.id].well,
+                            background: grounds[shadowInputX.id].well,
                           }
                         : undefined
                     }
-                    data-testid={"ds-shadow-stage-" + t.name + "-" + input.id}
+                    data-testid={"ds-shadow-stage-" + t.name + "-" + shadowInputX.id}
                   >
                     <span
                       className={"ds-shadow-surface"}
                       style={{
-                        ...safeShadowPreviewStyle(t.value[input.id] ?? ""),
-                        ...(grounds?.[input.id] !== undefined
+                        ...safeShadowPreviewStyle(t.value[shadowInputX.id] ?? ""),
+                        ...(grounds?.[shadowInputX.id] !== undefined
                           ? {
-                              background: grounds[input.id].card,
+                              background: grounds[shadowInputX.id].card,
                             }
                           : {}),
                       }}
                       data-testid={
                         "ds-shadow-surface-" +
                         t.name +
-                        (input.id === preview.id ? "" : "-" + input.id)
+                        (shadowInputX.id === preview.id ? "" : "-" + shadowInputX.id)
                       }
                     />
                   </span>,
                   <ShadowValueCell
                     t={t}
-                    theme={input}
+                    theme={shadowInputX}
                     edit={edit}
-                    testid={"ds-shadow-summary-" + t.name + "-" + input.id}
+                    testid={"ds-shadow-summary-" + t.name + "-" + shadowInputX.id}
                   />,
                 ],
               };
-              const _elementKey2 = input.id;
-              return <_Element2 key={_elementKey2} {..._elementProps2} />;
+              const shadowNameKey = shadowInputX.id;
+              return <ShadowNameTag key={shadowNameKey} {...shadowNameProps} />;
             })(),
           )}
         </span>, <span
@@ -682,7 +682,7 @@ function ShadowTokenRow({
               onChange={
                 edit === undefined
                   ? undefined
-                  : (input: string) => edit.usage(t.name, input)
+                  : (shadowInputY: string) => edit.usage(t.name, shadowInputY)
               }
               onDone={edit?.done}
               data-testid={"ds-shadow-usage-" + t.name}
@@ -725,8 +725,8 @@ function ShadowsSection({
   if (shadows.tokens.length === 0) {
     return null;
   }
-  let values = new Set(shadows.tokens.map((input) => input.name)),
-    value = themes.find((input): boolean => input.id === previewThemeId) ??
+  let values = new Set(shadows.tokens.map((shadowInputZ) => shadowInputZ.name)),
+    value = themes.find((theme): boolean => theme.id === previewThemeId) ??
       themes[0] ?? {
         id: "",
         name: "",
@@ -753,18 +753,18 @@ function ShadowsSection({
               role={"row"}
               {...UNCOMMENTABLE_PROPS}
             >
-              {[<span role={"columnheader"}>{uiMessage("design-system.shadows.name")}</span>, themes.map((input) =>
+              {[<span role={"columnheader"}>{uiMessage("design-system.shadows.name")}</span>, themes.map((theme) =>
                   (() => {
-                    const _Element3 = "span";
-                    const _elementProps3 = {
+                    const ShadowThemeTag = "span";
+                    const shadowValue_ = {
                       role: "columnheader",
                       className: "truncate",
-                      title: input.name,
-                      children: input.name,
+                      title: theme.name,
+                      children: theme.name,
                     };
-                    const _elementKey3 = input.id;
+                    const themeKey = theme.id;
                     return (
-                      <_Element3 key={_elementKey3} {..._elementProps3} />
+                      <ShadowThemeTag key={themeKey} {...shadowValue_} />
                     );
                   })(),
                 ), <span
@@ -772,19 +772,19 @@ function ShadowsSection({
                   className={"ds-cgutter"}
                   aria-hidden={"true"}
                 />]}
-            </div>, shadows.tokens.map((input) =>
+            </div>, shadows.tokens.map((token) =>
               (() => {
-                const _Element4 = ShadowTokenRow;
-                const _elementProps4 = {
-                  t: input,
+                const ShadowTokenComponent = ShadowTokenRow;
+                const shadowValueb = {
+                  t: token,
                   themes: themes,
                   grounds: grounds,
                   preview: value,
                   taken: values,
                   edit: edit,
                 };
-                const _elementKey4 = input.name;
-                return <_Element4 key={_elementKey4} {..._elementProps4} />;
+                const shadowValuec = token.name;
+                return <ShadowTokenComponent key={shadowValuec} {...shadowValueb} />;
               })(),
             )]}
         </div>
@@ -853,8 +853,8 @@ export function installEditorShadows(): () => void {
         : {};
     joinBoxShadowLayers = (layers: string[]) =>
       layers
-        .map((input) => input.trim())
-        .filter((input): boolean => input !== "")
+        .map((layer) => layer.trim())
+        .filter((shadowInput_): boolean => shadowInput_ !== "")
         .join(", ");
     DEFAULT_BOX_SHADOW = "0 1px 3px rgba(0, 0, 0, 0.16)";
     DEFAULT_BOX_SHADOW_VALUES = {

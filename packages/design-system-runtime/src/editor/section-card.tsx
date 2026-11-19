@@ -39,23 +39,23 @@ function restoreFocusAfterRemoval(
       parentElement === null
         ? -1
         : [...parentElement.children]
-            .filter((input) =>
-              input.matches(".ds-tokrow, tr, [data-card-key]"),
+            .filter((childElement) =>
+              childElement.matches(".ds-tokrow, tr, [data-card-key]"),
             )
             .indexOf(ancestor),
     items: Element[] = [];
   for (
-    let value2 = parentElement;
-    value2 !== null && value2 !== ownerDocument.body;
-    value2 = value2.parentElement
+    let focusTarget = parentElement;
+    focusTarget !== null && focusTarget !== ownerDocument.body;
+    focusTarget = focusTarget.parentElement
   ) {
-    if (value2.matches('section, table, [role="table"]')) {
+    if (focusTarget.matches('section, table, [role="table"]')) {
       items.push(
         ...[
-          value2,
-          value2.nextElementSibling,
-          value2.previousElementSibling,
-        ].filter((input): input is Element => input !== null),
+          focusTarget,
+          focusTarget.nextElementSibling,
+          focusTarget.previousElementSibling,
+        ].filter((candidateElement): candidateElement is Element => candidateElement !== null),
       );
     }
   }
@@ -76,24 +76,24 @@ function restoreFocusAfterRemoval(
       if (activeElement !== null && activeElement !== ownerDocument.body) {
         return;
       }
-      let value2 =
+      let siblings =
         parentElement !== null && parentElement.isConnected
-          ? [...parentElement.children].filter((input) =>
-              input.matches(".ds-tokrow, tr, [data-card-key]"),
+          ? [...parentElement.children].filter((childElement) =>
+              childElement.matches(".ds-tokrow, tr, [data-card-key]"),
             )
           : [];
-      for (let value3 of [value2[value], value2[value - 1], ...items]) {
-        if (value3 === undefined || !value3.isConnected) {
+      for (let candidate of [siblings[value], siblings[value - 1], ...items]) {
+        if (candidate === undefined || !candidate.isConnected) {
           continue;
         }
-        let value4 =
-          value3 instanceof HTMLElement && value3.tabIndex >= 0
-            ? value3
-            : value3.querySelector<HTMLElement>(
+        let focusable =
+          candidate instanceof HTMLElement && candidate.tabIndex >= 0
+            ? candidate
+            : candidate.querySelector<HTMLElement>(
                 'button:not([disabled]), input:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])',
               );
-        if (value4 !== null) {
-          value4.focus();
+        if (focusable !== null) {
+          focusable.focus();
           return;
         }
       }
@@ -116,22 +116,22 @@ function scrollEditorElementIntoView(element: HTMLElement | null): void {
     return;
   }
   let value = nearestScrollableAncestor(element),
-    value2 =
+    scrollTop =
       value === document.documentElement
         ? 0
         : value.getBoundingClientRect().top,
-    value3 = element.getBoundingClientRect().top - value2;
-  if (value3 >= 0) {
+    offsetTop = element.getBoundingClientRect().top - scrollTop;
+  if (offsetTop >= 0) {
     return;
   }
-  let value4: number = Math.max(0, value.scrollTop + value3);
+  let nextScrollTop: number = Math.max(0, value.scrollTop + offsetTop);
   if (typeof value.scrollTo === "function") {
     value.scrollTo({
-      top: value4,
+      top: nextScrollTop,
       behavior: "instant",
     });
   } else {
-    value.scrollTop = value4;
+    value.scrollTop = nextScrollTop;
   }
 }
 function isSectionHeadBackgroundEvent(
@@ -199,10 +199,10 @@ function RemoveSectionButton({
         onClick={
           onRemove === undefined
             ? undefined
-            : (input: React.MouseEvent<HTMLButtonElement>): void => {
-                let value2 = restoreFocusAfterRemoval(input.currentTarget);
+            : (event: React.MouseEvent<HTMLButtonElement>): void => {
+                let restoreFocus = restoreFocusAfterRemoval(event.currentTarget);
                 onRemove();
-                value2();
+                restoreFocus();
               }
         }
         onKeyDown={(event: React.KeyboardEvent<HTMLButtonElement>): void => {
@@ -230,17 +230,17 @@ function SectionCard({
   children: children,
 }: Token.SectionCardProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactSectionCollapse.useState(false),
+  let [value, setCollapsed] = reactSectionCollapse.useState(false),
     ref = reactSectionCollapse.useRef<HTMLDivElement | null>(null);
   reactSectionCollapse.useLayoutEffect((): void => {
     if (value) {
       scrollEditorElementIntoView(ref.current?.parentElement ?? null);
     }
   }, [value]);
-  let callback = () => value2((input): boolean => !input),
-    value3 = head["data-testid"],
-    value4: boolean = head.onRename !== undefined,
-    value5 = value4 ? (
+  let callback = () => setCollapsed((isOpen): boolean => !isOpen),
+    testId = head["data-testid"],
+    hasRename: boolean = head.onRename !== undefined,
+    renameInput = hasRename ? (
       (() => {
         const _Element = EditableName;
         const _elementProps = {
@@ -249,31 +249,31 @@ function SectionCard({
           defaultTitle: head.defaultTitle,
           placeholder: head.autoEdit?.placeholder ?? head.placeholder,
           taken: EMPTY_DOC_LINKS,
-          commit: (input: string) => head.onRename?.(input) ?? true,
+          commit: (name: string) => head.onRename?.(name) ?? true,
           autoEdit: head.autoEdit !== undefined,
           onEditing:
             head.autoEdit !== undefined
-              ? (input: boolean): void => {
-                  if (!input) {
+              ? (isOpen: boolean): void => {
+                  if (!isOpen) {
                     head.autoEdit?.onEnd();
                   }
                 }
               : undefined,
-          "data-testid": value3 !== undefined ? value3 + "-title" : undefined,
-          inputTestId: value3 !== undefined ? value3 + "-field" : undefined,
+          "data-testid": testId !== undefined ? testId + "-title" : undefined,
+          inputTestId: testId !== undefined ? testId + "-field" : undefined,
         };
         const _elementKey = head.autoEdit !== undefined ? "naming" : "named";
         return <_Element key={_elementKey} {..._elementProps} />;
       })()
     ) : (
       <span
-        data-testid={value3 !== undefined ? value3 + "-title" : undefined}
+        data-testid={testId !== undefined ? testId + "-title" : undefined}
       >
         {head.title}
       </span>
     ),
-    value6 =
-      actions !== undefined || head.onRemove !== undefined || value4 ? (
+    cardActions =
+      actions !== undefined || head.onRemove !== undefined || hasRename ? (
         <jsxSectionCard.Fragment>
           {[actions, head.onRemove !== undefined ? (
               <RemoveSectionButton
@@ -282,10 +282,10 @@ function SectionCard({
                 onRemove={head.onRemove}
                 icon={flat ? "Trash" : "X"}
                 data-testid={
-                  value3 !== undefined ? value3 + "-delete" : undefined
+                  testId !== undefined ? testId + "-delete" : undefined
                 }
               />
-            ) : null, value4 && !flat ? (
+            ) : null, hasRename && !flat ? (
               <SectionCollapseButton
                 open={!value}
                 onToggle={callback}
@@ -315,13 +315,13 @@ function SectionCard({
             !value && "border-b border-alpha-2",
           )}
           data-expanded={String(!value)}
-          data-testid={value3}
+          data-testid={testId}
           onClick={
-            value4 && !flat
+            hasRename && !flat
               ? (
-                  input: React.MouseEvent<HTMLDivElement>,
+                  event: React.MouseEvent<HTMLDivElement>,
                 ): void => {
-                  if (isSectionHeadBackgroundEvent(input)) {
+                  if (isSectionHeadBackgroundEvent(event)) {
                     callback();
                   }
                 }
@@ -330,10 +330,10 @@ function SectionCard({
           {...(anchorId !== undefined ? COMMENT_TARGET_PROPS : {})}
         >
           <PropertySectionHeader
-            title={value5}
-            actions={value6}
+            title={renameInput}
+            actions={cardActions}
             collapsed={value}
-            onToggle={value4 || flat ? undefined : callback}
+            onToggle={hasRename || flat ? undefined : callback}
           />
         </div>, <Collapsible.Panel keepMounted={true}>
           <div className={"flex min-w-0 flex-col"}>{children}</div>

@@ -45,16 +45,16 @@ var CUSTOM_FONT_FAMILY_SENTINEL: string;
 var MAX_TYPE_SAMPLE_LENGTH: number;
 var TYPE_CARD_KEY_PREFIX: string;
 var TYPOGRAPHY_SECTION_LABEL: string;
-function parseTypographyLength(value: string, fallback: number): number {
-  let value2 = /^(\d{1,4}(?:\.\d{1,6})?)(px|rem|em|%)?$/.exec(value.trim());
-  if (value2 === null) {
+function parseTypographyLength(fontValue: string, fallback: number): number {
+  let fontValueA = /^(\d{1,4}(?:\.\d{1,6})?)(px|rem|em|%)?$/.exec(fontValue.trim());
+  if (fontValueA === null) {
     return fallback;
   }
-  let value3: number = Number(value2[1] ?? String(fallback));
-  if (value2[2] === "rem" || value2[2] === "em") {
-    return value3 * 16;
+  let fontState: number = Number(fontValueA[1] ?? String(fallback));
+  if (fontValueA[2] === "rem" || fontValueA[2] === "em") {
+    return fontState * 16;
   } else {
-    return value3;
+    return fontState;
   }
 }
 function typeStylePreviewStyle(
@@ -66,15 +66,15 @@ function typeStylePreviewStyle(
       6,
       160,
     ),
-    value2 = style.lineHeight.trim(),
-    value3 = /[a-z%]/.test(value2)
+    fontValueB = style.lineHeight.trim(),
+    fontStateA = /[a-z%]/.test(fontValueB)
       ? clampTypographyNumber(
-          parseTypographyLength(value2, value * 1.3),
+          parseTypographyLength(fontValueB, value * 1.3),
           6,
           400,
         ) + "px"
-      : clampTypographyNumber(Number(value2), 0.5, 4),
-    value4 =
+      : clampTypographyNumber(Number(fontValueB), 0.5, 4),
+    fontWeight =
       typeof style.fontWeight === "number"
         ? clampTypographyNumber(Math.round(style.fontWeight), 1, 1000)
         : clampTypographyNumber(
@@ -85,8 +85,8 @@ function typeStylePreviewStyle(
     state: React.CSSProperties = {
       fontFamily: fontFamily,
       fontSize: value,
-      lineHeight: value3,
-      fontWeight: value4,
+      lineHeight: fontStateA,
+      fontWeight: fontWeight,
       letterSpacing: style.letterSpacing,
       fontStyle: style.fontStyle === "italic" ? "italic" : "normal",
     };
@@ -139,7 +139,7 @@ function MissingFontNotice({
       >
         {[value ? (uiMessage("design-system.typography.aFontFileIs")) : (uiMessage("design-system.typography.fontFilesAre", { value1: String(String(missing.length)) })), uiMessage("design-system.typography.referencedButNotUploaded"), <span className={"font-mono"}>
             {missing
-              .map((input) => fontFileDisplayPath(input.path))
+              .map((fontInput) => fontFileDisplayPath(fontInput.path))
               .join(", ")}
           </span>, edit !== undefined ? (uiMessage("design-system.typography.addWithUploadFont", { value1: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) })) : (uiMessage("design-system.typography.anEditorCanUpload", { value1: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) }))]}
       </Callout>
@@ -156,44 +156,44 @@ function FontFilesList({
       className={"ds-fontrows flex flex-col"}
       data-testid={"ds-fonts-card"}
     >
-      {fams.flatMap(([input, input2]) => {
+      {fams.flatMap(([fontInputA, fontInputB]) => {
         let entries = new Map<string, number>();
-        return input2.map((input3, options) => {
+        return fontInputB.map((fontInputC, fontOption) => {
           let value: string =
-              input +
+              fontInputA +
               "/" +
-              input3.path +
+              fontInputC.path +
               ":" +
-              input3.weight +
+              fontInputC.weight +
               ":" +
-              input3.style,
-            value2 = (entries.get(value) ?? 0) + 1;
-          entries.set(value, value2);
+              fontInputC.style,
+            fontValueC = (entries.get(value) ?? 0) + 1;
+          entries.set(value, fontValueC);
           return (() => {
             const _Element = "div";
             const _elementProps = {
               className:
                 "ds-frow ds-tokrow group/row flex items-center gap-x-md",
-              "data-testid": "ds-font-" + input3.path + "#" + String(options),
+              "data-testid": "ds-font-" + fontInputC.path + "#" + String(fontOption),
               ...commentTargetProps(
                 "font",
-                value + (value2 > 1 ? "#" + String(value2) : ""),
+                value + (fontValueC > 1 ? "#" + String(fontValueC) : ""),
               ),
               children: [
                 <TooltipWrapper
                   tip={
-                    (input3.path) + (input3.asset === true
+                    (fontInputC.path) + (fontInputC.asset === true
                       ? " — a font file under assets/, not a face of the type system"
-                      : input3.stray === true
+                      : fontInputC.stray === true
                         ? " — not referenced by any tokens.json font face"
                         : "")
                   }
                   className={"min-w-0 flex-[1_1_10rem]"}
                 >
                   <span className={"min-w-0 truncate text-body text-primary"}>
-                    {[fontFileDisplayPath(input3.path), input3.asset === true ? (
+                    {[fontFileDisplayPath(fontInputC.path), fontInputC.asset === true ? (
                         <span className={"text-muted"}>{" · asset"}</span>
-                      ) : input3.stray === true ? (
+                      ) : fontInputC.stray === true ? (
                         <span className={"text-muted"}>
                           {" · unreferenced"}
                         </span>
@@ -205,30 +205,30 @@ function FontFilesList({
                     "ds-fontrow-preview min-w-0 flex-[2_10_6rem] truncate text-body text-muted"
                   }
                   style={{
-                    fontFamily: fontFamilyStack(input, [
-                      input3.path,
+                    fontFamily: fontFamilyStack(fontInputA, [
+                      fontInputC.path,
                     ]),
-                    fontWeight: input3.weight.split(" ")[0],
+                    fontWeight: fontInputC.weight.split(" ")[0],
                     fontStyle:
-                      input3.style === "italic" ? "italic" : "normal",
+                      fontInputC.style === "italic" ? "italic" : "normal",
                   }}
                   aria-hidden={"true"}
                 >
-                  {[input, " ", fontFileSlantLabel(input3.weight), input3.style === "italic" ? " italic" : ""]}
+                  {[fontInputA, " ", fontFileSlantLabel(fontInputC.weight), fontInputC.style === "italic" ? " italic" : ""]}
                 </span>,
                 <RemoveSectionButton
-                  label={fontFileDisplayPath(input3.path)}
+                  label={fontFileDisplayPath(fontInputC.path)}
                   verb={"Remove"}
                   onRemove={
                     onRemoveFont === undefined
                       ? undefined
-                      : () => onRemoveFont(input3)
+                      : () => onRemoveFont(fontInputC)
                   }
                 />,
               ],
             };
             const _elementKey =
-              input + ":" + String(options) + ":" + input3.path;
+              fontInputA + ":" + String(fontOption) + ":" + fontInputC.path;
             return <_Element key={_elementKey} {..._elementProps} />;
           })();
         });
@@ -237,7 +237,7 @@ function FontFilesList({
   );
 }
 function FontFamilyPicker({
-  value: value,
+  value: fontValueD,
   familyKey: familyKey,
   families: families,
   familyNames: familyNames,
@@ -248,62 +248,62 @@ function FontFamilyPicker({
   disabled: disabled,
 }: Token.FontFamilyPickerProps): React.ReactElement {
   useUiLocale();
-  let callback = (input: string) => {
-      let value6 = input.trim().toLowerCase();
+  let callback = (fontInputD: string) => {
+      let fontInputValue = fontInputD.trim().toLowerCase();
       return Object.keys(families).find(
-        (input2) =>
-          input2 === value6 ||
-          (familyNames?.[input2] ?? "").toLowerCase() === value6,
+        (fontInputE) =>
+          fontInputE === fontInputValue ||
+          (familyNames?.[fontInputE] ?? "").toLowerCase() === fontInputValue,
       );
     },
     values = new Set(
-      Object.keys(families).map((input) =>
-        (familyNames?.[input] ?? input).toLowerCase(),
+      Object.keys(families).map((fontInputF) =>
+        (familyNames?.[fontInputF] ?? fontInputF).toLowerCase(),
       ),
     ),
-    callback2 = (input: string): boolean => {
-      let value6 = input.toLowerCase();
-      if (values.has(value6)) {
+    typeHandler = (fontInputG: string): boolean => {
+      let fontInputValueA = fontInputG.toLowerCase();
+      if (values.has(fontInputValueA)) {
         return false;
       }
-      values.add(value6);
+      values.add(fontInputValueA);
       return true;
     },
     items: import("../contracts/controls").SelectOption<string>[] = [
-      ...Object.keys(families).map((input) => ({
-        value: "fam:" + input,
-        label: familyNames?.[input] ?? input,
+      ...Object.keys(families).map((fontInputH) => ({
+        value: "fam:" + fontInputH,
+        label: familyNames?.[fontInputH] ?? fontInputH,
         labelStyle: {
-          fontFamily: families[input],
+          fontFamily: families[fontInputH],
         },
         get group() { return uiMessage("design-system.typography.thisSystem"); },
       })),
-      ...fontNames.filter(callback2).map((input) => ({
-        value: "font:" + input,
-        label: input,
+      ...fontNames.filter(typeHandler).map((fontInputI) => ({
+        value: "font:" + fontInputI,
+        label: fontInputI,
         labelStyle: {
-          fontFamily: "'" + input + "'",
+          fontFamily: "'" + fontInputI + "'",
         },
         get group() { return uiMessage("design-system.typography.fontFiles"); },
       })),
       ...WEB_SAFE_FONT_CATALOG.map(
-        (input: { family: string }) => input.family,
+        (fontInputJ: { family: string }) => fontInputJ.family,
       )
-        .filter(callback2)
-        .map((input: string) => ({
-          value: "font:" + input,
-          label: input,
+        .filter(typeHandler)
+        .map((fontInputK: string) => ({
+          value: "font:" + fontInputK,
+          label: fontInputK,
           labelStyle: {
-            fontFamily: input,
+            fontFamily: fontInputK,
           },
           get group() { return uiMessage("design-system.typography.webSafe"); },
         })),
-      ...GOOGLE_FONT_FAMILY_NAMES.filter(callback2).map(
-        (input: string) => ({
-          value: "font:" + input,
-          label: input,
+      ...GOOGLE_FONT_FAMILY_NAMES.filter(typeHandler).map(
+        (fontInputL: string) => ({
+          value: "font:" + fontInputL,
+          label: fontInputL,
           labelStyle: {
-            fontFamily: "'" + input + "'",
+            fontFamily: "'" + fontInputL + "'",
           },
           group: "Google Fonts",
         }),
@@ -314,93 +314,93 @@ function FontFamilyPicker({
         separatorBefore: true,
       },
     ],
-    value2 =
+    fontValueE =
       familyKey !== undefined && familyKey !== ""
         ? familyKey
-        : callback(value),
-    value3: string | string | null =
-      value2 !== undefined
-        ? "fam:" + value2
-        : items.some((input): boolean => input.value === "font:" + value)
-          ? "font:" + value
+        : callback(fontValueD),
+    fontStateB: string | string | null =
+      fontValueE !== undefined
+        ? "fam:" + fontValueE
+        : items.some((fontInputM): boolean => fontInputM.value === "font:" + fontValueD)
+          ? "font:" + fontValueD
           : null,
-    [value4, value5] = (
+    [fontWeightA, fontValueF] = (
       reactGoogleFontCatalog as typeof React
     ).useState(false),
     ref = (reactGoogleFontCatalog as typeof React).useRef(""),
-    ref2 = (reactGoogleFontCatalog as typeof React).useRef<ReturnType<
+    fontRef = (reactGoogleFontCatalog as typeof React).useRef<ReturnType<
       typeof setTimeout
     > | null>(null),
-    callback3 = (): void => {
-      if (ref2.current !== null) {
-        clearTimeout(ref2.current);
-        ref2.current = null;
+    typeHandlerA = (): void => {
+      if (fontRef.current !== null) {
+        clearTimeout(fontRef.current);
+        fontRef.current = null;
       }
     };
   (reactGoogleFontCatalog as typeof React).useEffect(
-    () => callback3,
+    () => typeHandlerA,
     [],
   );
-  let callback4 = (input: string): void => {
-      if (input === CUSTOM_FONT_FAMILY_SENTINEL) {
-        value5(true);
+  let typeHandlerB = (fontInputN: string): void => {
+      if (fontInputN === CUSTOM_FONT_FAMILY_SENTINEL) {
+        fontValueF(true);
         return;
       }
-      let value6 = input.startsWith("fam:") ? null : input.slice(5);
-      if (value6 === null) {
-        let value8 = input.slice(4);
-        if (value8 !== value2) {
-          onFamily(value8);
+      let fontInputValueB = fontInputN.startsWith("fam:") ? null : fontInputN.slice(5);
+      if (fontInputValueB === null) {
+        let fontLabel = fontInputN.slice(4);
+        if (fontLabel !== fontValueE) {
+          onFamily(fontLabel);
         }
         return;
       }
-      let value7 = callback(value6);
-      if (value7 !== undefined) {
-        if (value7 !== value2) {
-          onFamily(value7);
+      let fontOptionValue = callback(fontInputValueB);
+      if (fontOptionValue !== undefined) {
+        if (fontOptionValue !== fontValueE) {
+          onFamily(fontOptionValue);
         }
       } else {
-        onFont(value6);
+        onFont(fontInputValueB);
       }
     },
-    callback5 = (input: string): void => {
+    typeHandlerC = (fontInputO: string): void => {
       ref.current = "";
-      let value6 = input.replace(/\s+/g, " ").trim();
-      if (value6 === "" || value6.toLowerCase() === value.toLowerCase()) {
+      let fontInputValueC = fontInputO.replace(/\s+/g, " ").trim();
+      if (fontInputValueC === "" || fontInputValueC.toLowerCase() === fontValueD.toLowerCase()) {
         return;
       }
-      let value7 = callback(value6);
-      if (value7 !== undefined) {
-        onFamily(value7);
+      let fontOptionValueA = callback(fontInputValueC);
+      if (fontOptionValueA !== undefined) {
+        onFamily(fontOptionValueA);
       } else {
-        onFont(value6);
+        onFont(fontInputValueC);
       }
     },
-    ref3 = (reactGoogleFontCatalog as typeof React).useRef(callback5);
-  ref3.current = callback5;
+    fontRefA = (reactGoogleFontCatalog as typeof React).useRef(typeHandlerC);
+  fontRefA.current = typeHandlerC;
   (reactGoogleFontCatalog as typeof React).useEffect(
     () => (): void => {
       if (ref.current.trim() !== "") {
-        ref3.current(ref.current);
+        fontRefA.current(ref.current);
       }
     },
     [],
   );
-  let ref4 = (
+  let fontRefB = (
       reactGoogleFontCatalog as typeof React
     ).useRef<HTMLSpanElement | null>(null),
-    callback6 = (): void => {
-      callback3();
-      value5(false);
+    typeHandlerD = (): void => {
+      typeHandlerA();
+      fontValueF(false);
       requestAnimationFrame(() =>
-        ref4.current?.querySelector<HTMLElement>("button")?.focus({
+        fontRefB.current?.querySelector<HTMLElement>("button")?.focus({
           preventScroll: true,
         }),
       );
     };
   return (
     <span
-      ref={ref4}
+      ref={fontRefB}
       className={"ds-fontfield block min-w-0 flex-1"}
       data-testid={testid}
     >
@@ -408,22 +408,22 @@ function FontFamilyPicker({
           aria-label={uiMessage("design-system.typography.font")}
           popupAttrs={UNCOMMENTABLE_PROPS}
           items={items}
-          value={value3}
-          placeholder={value === "" ? (undefined) : (value)}
-          hint={value === "" ? "Font" : undefined}
+          value={fontStateB}
+          placeholder={fontValueD === "" ? (undefined) : (fontValueD)}
+          hint={fontValueD === "" ? "Font" : undefined}
           disabled={disabled}
           searchable={true}
           searchLabel={"Search fonts…"}
-          onOpenChange={(input: boolean): void => {
-            if (input) {
+          onOpenChange={(fontInputP: boolean): void => {
+            if (fontInputP) {
               ensureGoogleFonts(
                 GOOGLE_FONT_FAMILY_NAMES,
               );
             }
           }}
-          onChange={callback4}
+          onChange={typeHandlerB}
           data-testid={testid + "-menu"}
-        />, value4 ? (
+        />, fontWeightA ? (
           <span className={"mt-1 block"}>
             <TextInput
               autoFocus={true}
@@ -437,18 +437,18 @@ function FontFamilyPicker({
               data-form-type={"other"}
               data-testid={testid + "-custom"}
               onChange={(
-                input: React.ChangeEvent<HTMLInputElement>,
+                fontInputQ: React.ChangeEvent<HTMLInputElement>,
               ): void => {
-                ref.current = input.currentTarget.value;
+                ref.current = fontInputQ.currentTarget.value;
               }}
-              onFocus={callback3}
-              onBlur={(input: React.FocusEvent<HTMLInputElement>): void => {
-                callback5(input.currentTarget.value);
-                callback3();
-                ref2.current = setTimeout((): void => {
-                  ref2.current = null;
+              onFocus={typeHandlerA}
+              onBlur={(fontInputR: React.FocusEvent<HTMLInputElement>): void => {
+                typeHandlerC(fontInputR.currentTarget.value);
+                typeHandlerA();
+                fontRef.current = setTimeout((): void => {
+                  fontRef.current = null;
                   ref.current = "";
-                  value5(false);
+                  fontValueF(false);
                 }, 250);
               }}
               onKeyDown={(
@@ -457,13 +457,13 @@ function FontFamilyPicker({
                 if (event.key === "Enter") {
                   event.preventDefault();
                   event.stopPropagation();
-                  callback5(event.currentTarget.value);
-                  callback6();
+                  typeHandlerC(event.currentTarget.value);
+                  typeHandlerD();
                 }
                 if (event.key === "Escape") {
                   event.stopPropagation();
                   ref.current = "";
-                  callback6();
+                  typeHandlerD();
                 }
               }}
             />
@@ -488,104 +488,104 @@ function TypeStyleFields({
   anchorKey: anchorKey,
 }: Token.TypeStyleFieldsProps): React.ReactElement {
   useUiLocale();
-  let value = FONT_WEIGHT_LABELS.map(([input, input2]) => ({
-      value: String(input),
-      label: uiFontWeight(input),
+  let value = FONT_WEIGHT_LABELS.map(([fontInputS, fontInputT]) => ({
+      value: String(fontInputS),
+      label: uiFontWeight(fontInputS),
     })),
-    value2 = parseEditableCssLength(v.fontSize) ?? {
+    fontValueG = parseEditableCssLength(v.fontSize) ?? {
       n: parseTypographyLength(v.fontSize, 16),
       unit: "px",
     },
-    value3 = parseEditableCssLength(v.lineHeight) ?? {
+    fontStateC = parseEditableCssLength(v.lineHeight) ?? {
       n: parseTypographyLength(v.lineHeight, 1.4),
       unit: "",
     },
-    value4 =
+    fontWeightB =
       v.letterSpacing === undefined ||
       v.letterSpacing === "normal" ||
       v.letterSpacing.trim() === ""
         ? "0"
         : v.letterSpacing,
-    value5 =
-      value4 === "0"
+    fontValueH =
+      fontWeightB === "0"
         ? {
             n: 0,
             unit: "em",
           }
-        : (parseEditableCssLength(value4) ?? {
+        : (parseEditableCssLength(fontWeightB) ?? {
             n: 0,
             unit: "em",
           }),
-    value6 = value5.unit === "" ? "em" : value5.unit,
+    fontInputValueD = fontValueH.unit === "" ? "em" : fontValueH.unit,
     callback = (
-      input: Token.TypographyField,
-      options: string,
-      context: number,
+      fontInputU: Token.TypographyField,
+      fontOptionA: string,
+      fontValueI: number,
     ) => {
-      let value13: string = String(Math.round(context * 1e6) / 1e6) + options,
-        value14 =
-          input === "letterSpacing"
-            ? (normalizeLetterSpacing(value13) ?? value13)
-            : value13;
+      let fontValueJ: string = String(Math.round(fontValueI * 1e6) / 1e6) + fontOptionA,
+        fontValueK =
+          fontInputU === "letterSpacing"
+            ? (normalizeLetterSpacing(fontValueJ) ?? fontValueJ)
+            : fontValueJ;
       if (
-        normalizeTypographyProperty(input, value14, {}) !==
+        normalizeTypographyProperty(fontInputU, fontValueK, {}) !==
         undefined
       ) {
-        return value14;
+        return fontValueK;
       } else {
         return undefined;
       }
     },
-    callback2 =
-      (input: Token.TypographyField, options: string) =>
-      (input2: number | undefined): void => {
-        let value13 =
-          input2 === undefined ? undefined : callback(input, options, input2);
-        if (value13 !== undefined) {
-          onField(input, value13);
+    typeHandlerE =
+      (fontInputV: Token.TypographyField, fontOptionB: string) =>
+      (fontInputW: number | undefined): void => {
+        let fontValueL =
+          fontInputW === undefined ? undefined : callback(fontInputV, fontOptionB, fontInputW);
+        if (fontValueL !== undefined) {
+          onField(fontInputV, fontValueL);
         }
       },
-    callback3 = (input: Token.TypographyField, options: string) =>
+    typeHandlerF = (fontInputX: Token.TypographyField, fontOptionC: string) =>
       onLive === undefined
         ? {}
         : {
-            onScrub: (input2: number): void => {
-              let value13 = callback(input, options, input2);
-              if (value13 !== undefined) {
-                onLive(input, value13);
+            onScrub: (fontInputY: number): void => {
+              let fontValueM = callback(fontInputX, fontOptionC, fontInputY);
+              if (fontValueM !== undefined) {
+                onLive(fontInputX, fontValueM);
               }
             },
             onScrubEnd: () => onLiveEnd?.(),
           },
-    value7 =
+    fontOptionValueB =
       v.family === ""
         ? (fontLabel ?? "")
         : (familyNames?.[v.family] ?? v.family),
-    callback4 = (input: string, options: string) =>
+    typeHandlerG = (fontInputZ: string, fontOptionD: string) =>
       anchorKey !== undefined
         ? {
             role: "group",
-            "aria-label": options,
+            "aria-label": fontOptionD,
             ...commentTargetProps(
               "knob",
-              anchorKey + "/" + input,
+              anchorKey + "/" + fontInputZ,
             ),
           }
         : {},
-    value8 = (
+    fontLabelA = (
       <span
         className={"block min-w-0 flex-1"}
-        {...callback4("family", "Font")}
+        {...typeHandlerG("family", "Font")}
       >
         <FontFamilyPicker
-          value={value7}
+          value={fontOptionValueB}
           familyKey={v.family}
           families={families}
           familyNames={familyNames}
           fontNames={fontNames}
-          onFamily={(input: string): void => {
-            if (input !== v.family) {
-              onField("family", input);
+          onFamily={(family: string): void => {
+            if (family !== v.family) {
+              onField("family", family);
             }
           }}
           onFont={onFont}
@@ -593,118 +593,118 @@ function TypeStyleFields({
         />
       </span>
     ),
-    value9 = (
-      <span className={"min-w-0"} {...callback4("weight", "Weight")}>
+    fontSelection = (
+      <span className={"min-w-0"} {...typeHandlerG("weight", "Weight")}>
         <Select
           aria-label={uiMessage("design-system.typography.weight")}
           popupAttrs={UNCOMMENTABLE_PROPS}
           items={value}
           value={String(v.fontWeight)}
-          onChange={(input: string): void => {
-            if (input !== String(v.fontWeight)) {
-              onField("fontWeight", input);
+          onChange={(fontWeight: string): void => {
+            if (fontWeight !== String(v.fontWeight)) {
+              onField("fontWeight", fontWeight);
             }
           }}
           data-testid={testid + "-weight"}
         />
       </span>
     ),
-    value10 = (
+    fontText = (
       <span
         data-testid={testid + "-size"}
         data-knob={"size"}
         className={"min-w-0"}
-        {...callback4("size", "Size")}
+        {...typeHandlerG("size", "Size")}
       >
         <PropertyNumberInput
           aria-label={uiMessage("design-system.typography.size")}
           inputRef={inputRef}
-          unit={value2.unit || "px"}
-          value={value2.n}
+          unit={fontValueG.unit || "px"}
+          value={fontValueG.n}
           min={
-            cssLengthInputBounds(value2.unit || "px", 1, 400)[0]
+            cssLengthInputBounds(fontValueG.unit || "px", 1, 400)[0]
           }
           max={MAX_EDITABLE_CSS_LENGTH}
-          step={cssLengthInputStep(value2.unit || "px")}
+          step={cssLengthInputStep(fontValueG.unit || "px")}
           steppers={false}
           refuseLetters={true}
           fullWidth={true}
-          onValue={callback2("fontSize", value2.unit || "px")}
-          {...callback3("fontSize", value2.unit || "px")}
+          onValue={typeHandlerE("fontSize", fontValueG.unit || "px")}
+          {...typeHandlerF("fontSize", fontValueG.unit || "px")}
         />
       </span>
     ),
-    value11 = (
+    fontValueN = (
       <span
         data-testid={testid + "-lh"}
         data-knob={"lh"}
         className={"min-w-0"}
-        {...callback4("line-height", uiMessage("design-system.typography.lineHeight"))}
+        {...typeHandlerG("line-height", uiMessage("design-system.typography.lineHeight"))}
       >
         <PropertyNumberInput
           aria-label={uiMessage("design-system.typography.lineHeight")}
           inputRef={inputRef}
           prefix={<LineHeightIcon />}
-          unit={value3.unit !== "" ? value3.unit : undefined}
-          value={value3.n}
+          unit={fontStateC.unit !== "" ? fontStateC.unit : undefined}
+          value={fontStateC.n}
           min={
-            value3.unit === ""
+            fontStateC.unit === ""
               ? 0.5
-              : cssLengthInputBounds(value3.unit, 0, 400)[0]
+              : cssLengthInputBounds(fontStateC.unit, 0, 400)[0]
           }
-          max={value3.unit === "" ? 10 : MAX_EDITABLE_CSS_LENGTH}
+          max={fontStateC.unit === "" ? 10 : MAX_EDITABLE_CSS_LENGTH}
           step={
-            value3.unit === ""
+            fontStateC.unit === ""
               ? 0.05
-              : cssLengthInputStep(value3.unit)
+              : cssLengthInputStep(fontStateC.unit)
           }
           steppers={false}
           refuseLetters={true}
           fullWidth={true}
-          onValue={callback2("lineHeight", value3.unit)}
-          {...callback3("lineHeight", value3.unit)}
+          onValue={typeHandlerE("lineHeight", fontStateC.unit)}
+          {...typeHandlerF("lineHeight", fontStateC.unit)}
         />
       </span>
     ),
-    value12 = (
+    fontValueO = (
       <span
         data-testid={testid + "-ls"}
         data-knob={"ls"}
         className={"min-w-0"}
-        {...callback4("letter-spacing", uiMessage("design-system.typography.letterSpacing"))}
+        {...typeHandlerG("letter-spacing", uiMessage("design-system.typography.letterSpacing"))}
       >
         <PropertyNumberInput
           aria-label={uiMessage("design-system.typography.tracking")}
           inputRef={inputRef}
           prefix={<LetterSpacingIcon />}
-          unit={value6}
-          value={value5.n}
-          min={value6 === "px" ? -20 : -1}
-          max={value6 === "px" ? 40 : 2}
-          step={value6 === "px" ? 0.5 : 0.01}
+          unit={fontInputValueD}
+          value={fontValueH.n}
+          min={fontInputValueD === "px" ? -20 : -1}
+          max={fontInputValueD === "px" ? 40 : 2}
+          step={fontInputValueD === "px" ? 0.5 : 0.01}
           steppers={false}
           refuseLetters={true}
           fullWidth={true}
-          onValue={callback2("letterSpacing", value6)}
-          {...callback3("letterSpacing", value6)}
+          onValue={typeHandlerE("letterSpacing", fontInputValueD)}
+          {...typeHandlerF("letterSpacing", fontInputValueD)}
         />
       </span>
     ),
-    callback5 = (input: React.ReactNode, options: React.ReactNode) => (
+    typeHandlerH = (label: React.ReactNode, fontOptionE: React.ReactNode) => (
       <span className={"grid min-w-0 grid-cols-2 gap-sm"}>
-        {[input, options]}
+        {[label, fontOptionE]}
       </span>
     );
   if (row !== undefined) {
     return (
       <jsxTypographyEditors.Fragment>
-        {[row(uiMessage("design-system.typography.font"), value8), row(uiMessage("design-system.typography.weight"), callback5(value9, value10)), row(uiMessage("design-system.typography.lineHeight"), callback5(value11, value12))]}
+        {[row(uiMessage("design-system.typography.font"), fontLabelA), row(uiMessage("design-system.typography.weight"), typeHandlerH(fontSelection, fontText)), row(uiMessage("design-system.typography.lineHeight"), typeHandlerH(fontValueN, fontValueO))]}
       </jsxTypographyEditors.Fragment>
     );
   }
   return (
     <div className={"ds-tedit grid grid-cols-2 gap-sm"} data-testid={testid}>
-      {[<span className={"col-span-2 min-w-0"}>{value8}</span>, value9, value10, value11, value12]}
+      {[<span className={"col-span-2 min-w-0"}>{fontLabelA}</span>, fontSelection, fontText, fontValueN, fontValueO]}
     </div>
   );
 }
@@ -735,15 +735,15 @@ function TypeStyleMetricEditors({
         fontNames={fontNames}
         testid={"ds-strip"}
         anchorKey={s.name}
-        onField={(input: Token.TypographyField, options: string): void => {
-          edit.setField(s.name, input, options);
+        onField={(field: Token.TypographyField, fontOptionF: string): void => {
+          edit.setField(s.name, field, fontOptionF);
           edit.done();
         }}
-        onLive={(input: Token.TypographyField, options: string) =>
-          edit.setField(s.name, input, options)
+        onLive={(fontInput_: Token.TypographyField, fontOptionG: string) =>
+          edit.setField(s.name, fontInput_, fontOptionG)
         }
         onLiveEnd={() => edit.done()}
-        onFont={(input: string) => edit.setFont?.(s.name, input)}
+        onFont={(fontFamily: string) => edit.setFont?.(s.name, fontFamily)}
       />
     </div>
   );
@@ -757,19 +757,19 @@ function TypeStyleSpecimen({
   edit: edit,
 }: Token.TypeStyleSpecimenProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = (
+  let [value, fontValueP] = (
       reactGoogleFontCatalog as typeof React
     ).useState(false),
     ref = (reactGoogleFontCatalog as typeof React).useRef(false),
-    ref2 = (
+    fontRefC = (
       reactGoogleFontCatalog as typeof React
     ).useRef<HTMLSpanElement | null>(null),
-    value3: string =
+    fontStateD: string =
       (familyNames?.[famKey] ?? famKey) +
       " · " +
       s.fontSize.replace(/px$/, "");
   if (edit === undefined) {
-    let value4: string =
+    let fontWeightC: string =
       (familyNames?.[famKey] ?? famKey) +
       " · " +
       s.fontSize.replace(/px$/, "") +
@@ -787,30 +787,30 @@ function TypeStyleSpecimen({
         className={"ds-tchip-read min-w-0 text-footnote text-muted"}
         data-testid={"ds-style-chip-" + s.name}
       >
-        {value4}
+        {fontWeightC}
       </span>
     );
   }
   return (
     <span
       className={"ds-tchip-anchor relative flex min-w-0"}
-      ref={ref2}
+      ref={fontRefC}
       data-testid={"ds-style-chip-" + s.name}
     >
       <PropertyPopover
         open={value}
         editsAreUndoSteps={true}
-        onOpenChange={value2}
+        onOpenChange={fontValueP}
         trigger={
           <PropertyPopoverTrigger
             label={uiMessage("design-system.typography.edit", { value1: String(s.name) })}
-            text={value3}
-            onClick={(input: React.MouseEvent<HTMLButtonElement>): void => {
-              ref.current = input.detail === 0;
+            text={fontStateD}
+            onClick={(fontInputa: React.MouseEvent<HTMLButtonElement>): void => {
+              ref.current = fontInputa.detail === 0;
             }}
           />
         }
-        anchor={() => ref2.current}
+        anchor={() => fontRefC.current}
         side={"bottom"}
         focusOnOpen={ref.current}
         className={"w-[17rem]"}
@@ -826,7 +826,7 @@ function TypeStyleSpecimen({
             >
               <PropertyPopoverPanel
                 title={uiMessage("design-system.typography.text")}
-                onClose={() => value2(false)}
+                onClose={() => fontValueP(false)}
               >
                 <TypeStyleMetricEditors
                   s={s}
@@ -843,16 +843,16 @@ function TypeStyleSpecimen({
     </span>
   );
 }
-function normalizeLetterSpacing(value: string): string | null {
-  let value2 = value.trim().toLowerCase();
-  if (value2 === "" || value2 === "0") {
+function normalizeLetterSpacing(fontValueQ: string): string | null {
+  let fontValueR = fontValueQ.trim().toLowerCase();
+  if (fontValueR === "" || fontValueR === "0") {
     return "0";
   }
-  if (/^-?(?:\d+|\d*\.\d+)(?:px|rem|em)$/.test(value2)) {
-    return value2;
+  if (/^-?(?:\d+|\d*\.\d+)(?:px|rem|em)$/.test(fontValueR)) {
+    return fontValueR;
   }
-  if (/^-?(?:\d+|\d*\.\d+)$/.test(value2)) {
-    return value2 + "em";
+  if (/^-?(?:\d+|\d*\.\d+)$/.test(fontValueR)) {
+    return fontValueR + "em";
   }
   return null;
 }
@@ -869,29 +869,29 @@ function TypeStyleRow({
   let familyKey = s.familyKey ?? g.family,
     z = families[familyKey] ?? "system-ui, sans-serif",
     value = typeStylePreviewStyle(s, z),
-    value2 = clampTypographyNumber(
+    fontValueS = clampTypographyNumber(
       parseTypographyLength(s.fontSize, 14),
       6,
       160,
     ),
-    value3: number = Math.min(MAX_TYPE_SAMPLE_LENGTH, value2),
+    fontStateE: number = Math.min(MAX_TYPE_SAMPLE_LENGTH, fontValueS),
     state = {
       ...value,
-      fontSize: String(value3) + "px",
-      ...(value3 < value2 && typeof value.lineHeight === "string"
+      fontSize: String(fontStateE) + "px",
+      ...(fontStateE < fontValueS && typeof value.lineHeight === "string"
         ? {
             lineHeight:
               String(
                 Math.round(
-                  (parseTypographyLength(value.lineHeight, value2 * 1.3) *
-                    value3) /
-                    value2,
+                  (parseTypographyLength(value.lineHeight, fontValueS * 1.3) *
+                    fontStateE) /
+                    fontValueS,
                 ),
               ) + "px",
           }
         : {}),
     },
-    value4 = useRowContextMenu(),
+    fontWeightD = useRowContextMenu(),
     callback = () =>
       document
         .querySelector<HTMLElement>(
@@ -904,7 +904,7 @@ function TypeStyleRow({
       className={"ds-wrow ds-trow ds-tokrow ds-crow group/row"}
       data-testid={"ds-style-" + s.name}
       {...commentTargetProps("style", s.name)}
-      {...value4.rowProps}
+      {...fontWeightD.rowProps}
     >
       {[<span
           className={
@@ -920,7 +920,7 @@ function TypeStyleRow({
             commit={
               edit === undefined
                 ? undefined
-                : (input: string) => edit.rename(s.name, input)
+                : (fontInputb: string) => edit.rename(s.name, fontInputb)
             }
             data-testid={"ds-style-name-" + s.name}
           />
@@ -958,7 +958,7 @@ function TypeStyleRow({
               onChange={
                 edit === undefined
                   ? undefined
-                  : (input: string) => edit.setUsage(s.name, input)
+                  : (fontInputc: string) => edit.setUsage(s.name, fontInputc)
               }
               onDone={edit?.done}
               data-testid={"ds-style-usage-" + s.name}
@@ -971,9 +971,9 @@ function TypeStyleRow({
             ) : null]}
         </span>, <RowContextMenu
           title={s.name}
-          at={value4.at}
-          anchor={value4.anchor}
-          onClose={value4.close}
+          at={fontWeightD.at}
+          anchor={fontWeightD.anchor}
+          onClose={fontWeightD.close}
           testid={"ds-style-menu-" + s.name}
           actions={{
             ...(edit !== undefined
@@ -1034,12 +1034,12 @@ function TypographySection({
   headFor: headFor,
 }: Token.TypographySectionProps): React.ReactElement | null {
   useUiLocale();
-  let value = fonts.filter((input): boolean => input.missing === true),
-    value2 = groupFontsByFamily(
-      fonts.filter((input): boolean => input.missing !== true),
+  let value = fonts.filter((fontInputd): boolean => fontInputd.missing === true),
+    fontValueT = groupFontsByFamily(
+      fonts.filter((fontInpute): boolean => fontInpute.missing !== true),
     );
   if (
-    groups.reduce((input, options) => input + options.styles.length, 0) ===
+    groups.reduce((fontInputf, fontOptionH) => fontInputf + fontOptionH.styles.length, 0) ===
       0 &&
     fonts.length === 0 &&
     groups.length === 0 &&
@@ -1048,17 +1048,17 @@ function TypographySection({
     return null;
   }
   let values = new Set(
-      groups.flatMap((input) => input.styles.map((input2) => input2.name)),
+      groups.flatMap((fontInputg) => fontInputg.styles.map((fontInputh) => fontInputh.name)),
     ),
-    values2 = new Set(groups.map((input) => input.name)),
+    fontValueU = new Set(groups.map((fontInputi) => fontInputi.name)),
     items = [
       ...new Set(
         fonts
-          .filter((input): boolean => input.asset !== true)
-          .map((input) => input.family),
+          .filter((fontInputj): boolean => fontInputj.asset !== true)
+          .map((fontInputk) => fontInputk.family),
       ),
     ],
-    value3 =
+    fontStateF =
       edit?.uploadFont !== undefined ? (
         <EditorActionButton
           onClick={edit.uploadFont}
@@ -1067,7 +1067,7 @@ function TypographySection({
           data-testid={"ds-fonts-upload"}
         />
       ) : undefined,
-    value4 = (
+    fontWeightE = (
       <div
         className={"ds-wrow ds-trow ds-crow ds-chead text-caption text-muted"}
         role={"row"}
@@ -1087,29 +1087,29 @@ function TypographySection({
     >
       {[groups.length === 0 && edit !== undefined ? (
           <EmptyEditorList text={"No type sets yet"} />
-        ) : null, groups.map((input) => {
+        ) : null, groups.map((fontInputl) => {
           let state: Token.SectionHead = {
-              title: input.name,
-              defaultTitle: input.name,
-              "data-testid": TYPE_CARD_KEY_PREFIX + input.name,
-              ...headFor?.(input),
+              title: fontInputl.name,
+              defaultTitle: fontInputl.name,
+              "data-testid": TYPE_CARD_KEY_PREFIX + fontInputl.name,
+              ...headFor?.(fontInputl),
             },
-            value5 =
-              state["data-testid"] ?? TYPE_CARD_KEY_PREFIX + input.name;
+            fontValueV =
+              state["data-testid"] ?? TYPE_CARD_KEY_PREFIX + fontInputl.name;
           return (() => {
-            const _Element3 = "section";
-            const _elementProps3 = {
+            const TypographySectionTag = "section";
+            const fontValueX = {
               className: "ds-tgroup flex min-w-0 flex-col",
               "aria-label": state.title,
-              "data-testid": "ds-type-" + input.name,
-              "data-card-key": "type:" + input.name,
-              "data-id": commentTargetId("tset", input.name),
+              "data-testid": "ds-type-" + fontInputl.name,
+              "data-card-key": "type:" + fontInputl.name,
+              "data-id": commentTargetId("tset", fontInputl.name),
               children: [
                 <div
                   className={
                     "ds-cgroup-head flex min-h-10 min-w-0 items-center gap-xs pb-xs"
                   }
-                  data-testid={"ds-type-" + input.name + "-head"}
+                  data-testid={"ds-type-" + fontInputl.name + "-head"}
                   {...COMMENT_TARGET_PROPS}
                 >
                   {[<span className={"min-w-0 flex-1"}>
@@ -1117,16 +1117,16 @@ function TypographySection({
                         kind={"title"}
                         name={state.title}
                         defaultTitle={state.defaultTitle}
-                        taken={values2}
+                        taken={fontValueU}
                         className={"ds-gname"}
                         commit={
                           state.onRename === undefined
                             ? undefined
-                            : (input2: string) =>
-                                state.onRename?.(input2) ?? true
+                            : (fontInputm: string) =>
+                                state.onRename?.(fontInputm) ?? true
                         }
-                        data-testid={value5 + "-title"}
-                        inputTestId={value5 + "-field"}
+                        data-testid={fontValueV + "-title"}
+                        inputTestId={fontValueV + "-field"}
                       />
                     </span>, state.onRemove !== undefined ? (
                       <RemoveSectionButton
@@ -1134,7 +1134,7 @@ function TypographySection({
                         icon={"Trash"}
                         why={state.removeWhy}
                         onRemove={state.onRemove}
-                        data-testid={value5 + "-delete"}
+                        data-testid={fontValueV + "-delete"}
                       />
                     ) : null, edit?.add !== undefined ? (
                       <Button
@@ -1144,13 +1144,13 @@ function TypographySection({
                         icon={"Add"}
                         aria-label={uiMessage("design-system.typography.addATypeStyleTo", { value1: String(state.title) })}
                         tooltip={uiMessage("design-system.typography.addStyle")}
-                        onClick={() => edit.add?.(input.name)}
-                        data-testid={"ds-style-add-" + input.name}
+                        onClick={() => edit.add?.(fontInputl.name)}
+                        data-testid={"ds-style-add-" + fontInputl.name}
                         {...UNCOMMENTABLE_PROPS}
                       />
                     ) : null]}
                 </div>,
-                input.styles.length === 0 ? (
+                fontInputl.styles.length === 0 ? (
                   <EmptyEditorList text={"No type styles yet"} />
                 ) : null,
                 <div className={"ds-cscroll overflow-x-auto"}>
@@ -1158,26 +1158,26 @@ function TypographySection({
                     className={"ds-ttable ds-ctable ds-wtable"}
                     role={"table"}
                     aria-label={(state.title) + (" styles")}
-                    hidden={input.styles.length === 0}
+                    hidden={fontInputl.styles.length === 0}
                     data-edit={edit !== undefined ? "" : undefined}
                   >
-                    {[value4, input.styles.map((input2) =>
+                    {[fontWeightE, fontInputl.styles.map((fontInputn) =>
                         (() => {
-                          const _Element2 = TypeStyleRow;
-                          const _elementProps2 = {
-                            s: input2,
-                            g: input,
+                          const TypographyRowComponent = TypeStyleRow;
+                          const fontValueZ = {
+                            s: fontInputn,
+                            g: fontInputl,
                             families: families,
                             familyNames: familyNames,
                             fontNames: items,
                             taken: values,
                             edit: edit,
                           };
-                          const _elementKey2 = input2.name;
+                          const typographyKey = fontInputn.name;
                           return (
-                            <_Element2
-                              key={_elementKey2}
-                              {..._elementProps2}
+                            <TypographyRowComponent
+                              key={typographyKey}
+                              {...fontValueZ}
                             />
                           );
                         })(),
@@ -1186,8 +1186,8 @@ function TypographySection({
                 </div>,
               ],
             };
-            const _elementKey3 = input.name;
-            return <_Element3 key={_elementKey3} {..._elementProps3} />;
+            const sectionKey = fontInputl.name;
+            return <TypographySectionTag key={sectionKey} {...fontValueX} />;
           })();
         }), fonts.length > 0 || edit !== undefined ? (
           <section
@@ -1207,13 +1207,13 @@ function TypographySection({
                     data-testid={"ds-card-fonts-title"}
                   >
                     {uiMessage("design-system.typography.fontFiles")}
-                  </span>, value3]}
+                  </span>, fontStateF]}
               </div>, <div className={"ds-ttable ds-tfonts"}>
                 {[value.length > 0 ? (
                     <MissingFontNotice missing={value} edit={edit} />
-                  ) : null, value2.length > 0 ? (
+                  ) : null, fontValueT.length > 0 ? (
                     <FontFilesList
-                      fams={value2}
+                      fams={fontValueT}
                       onRemoveFont={onRemoveFont}
                     />
                   ) : (
@@ -1273,12 +1273,12 @@ export function installEditorTypography(): () => void {
       [800, "Heavy"],
     ];
     clampTypographyNumber = (
-      value: number,
+      numericValue: number,
       minimum: number,
       maximum: number,
     ) =>
-      Number.isFinite(value)
-        ? Math.min(maximum, Math.max(minimum, value))
+      Number.isFinite(numericValue)
+        ? Math.min(maximum, Math.max(minimum, numericValue))
         : minimum;
     DEFAULT_TYPE_SAMPLE = "The quick brown fox jumps over the lazy dog";
     fontFileDisplayPath = (path: string) =>

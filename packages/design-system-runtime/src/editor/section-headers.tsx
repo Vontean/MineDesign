@@ -83,8 +83,8 @@ function SectionAddButton({
       icon={icon}
       disabled={disabled}
       aria-label={what}
-      onClick={(input: React.MouseEvent<HTMLButtonElement>) =>
-        onClick(input.currentTarget)
+      onClick={(event: React.MouseEvent<HTMLButtonElement>) =>
+        onClick(event.currentTarget)
       }
       data-testid={dataTestid}
     >

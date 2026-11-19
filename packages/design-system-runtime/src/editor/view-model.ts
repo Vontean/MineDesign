@@ -22,23 +22,23 @@ function tokenGroupRenamePairs(
 ): [string, string][] {
   let items: [string, string][] = [];
   for (let value of names) {
-    let value2 =
+    let prefix =
         namespace !== "" &&
         value.startsWith(namespace) &&
         value.length > namespace.length
           ? namespace
           : "",
-      value3 = value.slice(value2.length);
+      suffix = value.slice(prefix.length);
     if (previousGroup === "") {
-      items.push([value, value2 + nextGroup + "-" + value3]);
+      items.push([value, prefix + nextGroup + "-" + suffix]);
       continue;
     }
-    if (value3 !== previousGroup && !value3.startsWith(previousGroup + "-")) {
+    if (suffix !== previousGroup && !suffix.startsWith(previousGroup + "-")) {
       continue;
     }
     items.push([
       value,
-      value2 + nextGroup + value3.slice(previousGroup.length),
+      prefix + nextGroup + suffix.slice(previousGroup.length),
     ]);
   }
   return items;
@@ -47,41 +47,41 @@ function colorGroupsForEditor(
   tokens: Model.NormalizedTokens,
 ): Application.EditorColorGroup[] {
   return groupColorPaletteTokens(tokens).map(
-    (input: {
+    (group: {
       name: string;
       tokens: Model.ColorToken[];
       numeric?: boolean;
     }) => ({
-      name: input.name,
-      tokens: input.tokens.map((input2: Model.ColorToken) => {
+      name: group.name,
+      tokens: group.tokens.map((token: Model.ColorToken) => {
         let value: Application.EditorColorToken["alias"];
-        for (let value2 of tokens.color.themes) {
-          let value3 = colorAliasTarget(
+        for (let theme of tokens.color.themes) {
+          let aliasTarget = colorAliasTarget(
             colorValueForThemeModelTokens(
-              input2,
-              value2.id,
+              token,
+              theme.id,
               tokens,
             ),
           );
-          if (value3 !== undefined) {
-            (value ??= {})[value2.id] = {
-              to: value3,
+          if (aliasTarget !== undefined) {
+            (value ??= {})[theme.id] = {
+              to: aliasTarget,
               css: resolveColorTokenValue(
-                input2,
-                value2.id,
+                token,
+                theme.id,
                 tokens,
               ),
             };
           }
         }
         return {
-          name: input2.name,
-          value: input2.value,
+          name: token.name,
+          value: token.value,
           alias: value,
-          usage: optionalNonemptyText(input2.usage),
+          usage: optionalNonemptyText(token.usage),
         };
       }),
-      ...(input.numeric
+      ...(group.numeric
         ? {
             numeric: true,
           }
@@ -92,21 +92,21 @@ function colorGroupsForEditor(
 function typeGroupsForEditor(
   groups: Model.TypographyGroup[],
 ): Application.EditorTypeGroup[] {
-  return groups.map((input) => ({
-    name: input.name,
-    family: input.family,
-    note: optionalNonemptyText(input.note),
-    styles: input.styles.map((input2) => ({
-      name: input2.name,
-      fontSize: input2.fontSize,
-      lineHeight: input2.lineHeight,
-      fontWeight: input2.fontWeight,
-      letterSpacing: input2.letterSpacing,
-      fontStyle: input2.fontStyle,
-      opticalSize: input2.opticalSize ?? undefined,
-      familyKey: input2.family !== "" ? input2.family : undefined,
-      sample: optionalNonemptyText(input2.sample),
-      usage: optionalNonemptyText(input2.usage),
+  return groups.map((group) => ({
+    name: group.name,
+    family: group.family,
+    note: optionalNonemptyText(group.note),
+    styles: group.styles.map((style) => ({
+      name: style.name,
+      fontSize: style.fontSize,
+      lineHeight: style.lineHeight,
+      fontWeight: style.fontWeight,
+      letterSpacing: style.letterSpacing,
+      fontStyle: style.fontStyle,
+      opticalSize: style.opticalSize ?? undefined,
+      familyKey: style.family !== "" ? style.family : undefined,
+      sample: optionalNonemptyText(style.sample),
+      usage: optionalNonemptyText(style.usage),
     })),
   }));
 }
@@ -115,27 +115,27 @@ function fontFamiliesForEditor(
   fonts: Model.ParsedFont[],
 ): Record<string, string> {
   let state: Record<string, string> = {};
-  for (let [value, value2] of Object.entries(families)) {
-    let value3 = firstCssFontFamily(value2),
-      value4 = fonts
+  for (let [value, fontFamily] of Object.entries(families)) {
+    let firstFamily = firstCssFontFamily(fontFamily),
+      fontFiles = fonts
         .filter(
-          (input) =>
-            !input.missing &&
-            input.src !== "" &&
-            value3 !== null &&
-            input.family.toLowerCase() === value3.toLowerCase(),
+          (font) =>
+            !font.missing &&
+            font.src !== "" &&
+            firstFamily !== null &&
+            font.family.toLowerCase() === firstFamily.toLowerCase(),
         )
-        .map((input) => input.path);
+        .map((fontPath) => fontPath.path);
     state[value] =
-      value3 === null
-        ? value2
-        : fontFamilyStack(value3, value4) + ", " + value2;
+      firstFamily === null
+        ? fontFamily
+        : fontFamilyStack(firstFamily, fontFiles) + ", " + fontFamily;
   }
   return state;
 }
-function firstCssFontFamily(value: string): string | null {
+function firstCssFontFamily(fontFamily: string): string | null {
   let match = /^\s*(?:"([^"]{1,80})"|'([^']{1,80})'|([^,'"]{1,80}))/.exec(
-    value,
+    fontFamily,
   );
   if (match === null) {
     return null;
@@ -152,25 +152,25 @@ function fontFilesForEditor(
   assetFonts: Model.ParsedFont[] = [],
 ): Application.EditorFont[] {
   let callback = (
-    input: Model.ParsedFont,
-    options: boolean,
+    font: Model.ParsedFont,
+    isAssetFont: boolean,
   ): Application.EditorFont => ({
-    path: input.path,
-    family: input.family,
-    weight: input.weight,
-    style: input.style,
-    format: input.format,
-    missing: input.missing,
-    stray: !input.referenced,
-    ...(options
+    path: font.path,
+    family: font.family,
+    weight: font.weight,
+    style: font.style,
+    format: font.format,
+    missing: font.missing,
+    stray: !font.referenced,
+    ...(isAssetFont
       ? {
           asset: true,
         }
       : {}),
   });
   return [
-    ...fonts.map((input) => callback(input, false)),
-    ...assetFonts.map((input) => callback(input, true)),
+    ...fonts.map((font) => callback(font, false)),
+    ...assetFonts.map((font) => callback(font, true)),
   ];
 }
 function tokenScaleForEditor(
@@ -178,10 +178,10 @@ function tokenScaleForEditor(
 ): Application.EditorScale {
   return {
     note: optionalNonemptyText(scale.note),
-    tokens: scale.tokens.map((input) => ({
-      name: input.name,
-      value: input.value,
-      usage: optionalNonemptyText(input.usage),
+    tokens: scale.tokens.map((token) => ({
+      name: token.name,
+      value: token.value,
+      usage: optionalNonemptyText(token.usage),
     })),
   };
 }
@@ -201,22 +201,22 @@ function extraTokenFamiliesForEditor(
   tokens: Model.NormalizedTokens,
 ): Application.EditorExtraScale[] {
   return tokens.extra
-    .filter((input): boolean => input.tokens.length > 0)
-    .map((input) => ({
-      key: input.key,
-      id: "family:" + input.key,
-      title: humanizeTokenFamily(input.key),
-      scale: tokenScaleForEditor(input),
+    .filter((group): boolean => group.tokens.length > 0)
+    .map((family) => ({
+      key: family.key,
+      id: "family:" + family.key,
+      title: humanizeTokenFamily(family.key),
+      scale: tokenScaleForEditor(family),
     }));
 }
 function documentSectionsForEditor(
   docs: Model.ParsedDesignSystem["docs"],
 ): Application.ApplicationView["docs"] {
-  return docs.map((input) => ({
-    path: input.path,
-    id: "doc:" + input.path,
-    title: input.title,
-    markdown: input.markdown,
+  return docs.map((document) => ({
+    path: document.path,
+    id: "doc:" + document.path,
+    title: document.title,
+    markdown: document.markdown,
   }));
 }
 function shadowScaleForEditor(
@@ -224,52 +224,52 @@ function shadowScaleForEditor(
 ): Application.ApplicationView["shadows"] {
   return {
     note: optionalNonemptyText(tokens.shadow.note),
-    tokens: tokens.shadow.tokens.map((input) => ({
-      name: input.name,
+    tokens: tokens.shadow.tokens.map((token) => ({
+      name: token.name,
       value: Object.fromEntries(
-        tokens.color.themes.map((input2) => [
-          input2.id,
-          shadowValueForTheme(input, input2.id, tokens),
+        tokens.color.themes.map((theme) => [
+          theme.id,
+          shadowValueForTheme(token, theme.id, tokens),
         ]),
       ),
-      usage: optionalNonemptyText(input.usage),
+      usage: optionalNonemptyText(token.usage),
     })),
   };
 }
 function componentsForEditor(
   components: Model.ParsedComponent[],
 ): Application.EditorComponent[] {
-  return components.map((input) => ({
-    name: input.name,
-    previewHtml: input.previewHtml ?? undefined,
-    previewHeight: input.previewHeight,
-    ...(input.previewWidth !== null
+  return components.map((component) => ({
+    name: component.name,
+    previewHtml: component.previewHtml ?? undefined,
+    previewHeight: component.previewHeight,
+    ...(component.previewWidth !== null
       ? {
-          previewWidth: input.previewWidth,
+          previewWidth: component.previewWidth,
         }
       : {}),
-    guidelines: input.guidelinesMd ?? undefined,
-    ...(input.guidelinesPath !== null
+    guidelines: component.guidelinesMd ?? undefined,
+    ...(component.guidelinesPath !== null
       ? {
-          guidelinesPath: input.guidelinesPath,
+          guidelinesPath: component.guidelinesPath,
         }
       : {}),
-    ...(input.dts !== null
+    ...(component.dts !== null
       ? {
-          types: input.dts,
+          types: component.dts,
         }
       : {}),
-    ...(input.group !== ""
+    ...(component.group !== ""
       ? {
-          group: input.group,
+          group: component.group,
         }
       : {}),
-    ...(input.subtitle !== ""
+    ...(component.subtitle !== ""
       ? {
-          subtitle: input.subtitle,
+          subtitle: component.subtitle,
         }
       : {}),
-    ...(input.floor
+    ...(component.floor
       ? {
           floor: true,
         }
@@ -293,19 +293,19 @@ function assetGroupsForEditor(
   groups: Model.ParsedAssetGroup[],
 ): Application.EditorAssetGroup[] {
   return groups
-    .map((input) => ({
-      name: input.name,
-      slug: input.slug,
+    .map((assetGroup) => ({
+      name: assetGroup.name,
+      slug: assetGroup.slug,
       folder:
-        input.name === UNGROUPED_ASSETS_NAME
+        assetGroup.name === UNGROUPED_ASSETS_NAME
           ? "assets/"
-          : "assets/" + input.name + "/",
-      tile: input.tile,
-      assets: input.assets
+          : "assets/" + assetGroup.name + "/",
+      tile: assetGroup.tile,
+      assets: assetGroup.assets
         .filter((source): boolean => source.kind !== "font")
-        .map((input2) => assetForEditor(input2)),
+        .map((asset) => assetForEditor(asset)),
     }))
-    .filter((input): boolean => input.assets.length > 0);
+    .filter((group): boolean => group.assets.length > 0);
 }
 function hasOnlyManifestFile(files: Model.FileTable): boolean {
   for (let value in files) {
@@ -320,7 +320,7 @@ function emptyDesignSystemSections(
   storage: { storedBytes: number },
 ): Set<string> {
   let values = new Set<string>();
-  if (view.colorGroups.every((input): boolean => input.tokens.length === 0)) {
+  if (view.colorGroups.every((group): boolean => group.tokens.length === 0)) {
     values.add("colors");
   }
   if (view.typeGroups.length === 0 && view.fonts.length === 0) {
@@ -356,13 +356,13 @@ function starterSectionState(
     };
   }
   let starterSections = new Set(
-    STARTER_SECTION_IDS.filter((input) => emptySections.has(input)),
+    STARTER_SECTION_IDS.filter((sectionId) => emptySections.has(sectionId)),
   );
   return {
     hint:
       !hasStarter &&
-      STARTER_SECTION_IDS.every((input) =>
-        input === "assets" ? assetsEmpty : emptySections.has(input),
+      STARTER_SECTION_IDS.every((sectionId) =>
+        sectionId === "assets" ? assetsEmpty : emptySections.has(sectionId),
       ),
     starter: starterSections,
   };
@@ -376,12 +376,12 @@ function designSystemEditorView(
     families: fontFamiliesForEditor(model.tokens.type.families, model.fonts),
     familyNames: Object.fromEntries(
       Object.entries(model.tokens.type.families).flatMap(
-        ([input, input2]) => {
-          let value = firstCssFontFamily(input2);
+        ([fontKey, fontFamily]) => {
+          let value = firstCssFontFamily(fontFamily);
           if (value === null) {
             return [];
           } else {
-            return [[input, value]];
+            return [[fontKey, value]];
           }
         },
       ),

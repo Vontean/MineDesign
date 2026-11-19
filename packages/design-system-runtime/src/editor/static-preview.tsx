@@ -20,10 +20,10 @@ function staticPreviewDocumentHtml(
   html: string,
   head: Editor.PreviewRuntimeHead,
 ): string {
-  let callback = (input: string): string =>
-    input === ""
+  let callback = (htmlContent: string): string =>
+    htmlContent === ""
       ? ""
-      : "<style>" + input.replace(/<\/(?=style)/gi, "<\\/") + "</style>";
+      : "<style>" + htmlContent.replace(/<\/(?=style)/gi, "<\\/") + "</style>";
   return (
     "<!doctype html><html" +
     swatchHtmlAttributes(head) +
@@ -52,18 +52,18 @@ function StaticPreviewFrame({
       [html, head],
     ),
     value = validatedPreviewDimension(pageW, 1280),
-    value2 = validatedPreviewDimension(pageH, 720),
-    value3 = fitWidth / value,
+    pageHeight = validatedPreviewDimension(pageH, 720),
+    scale = fitWidth / value,
     state: React.CSSProperties = {
       width: fitWidth,
-      height: value2 * value3,
+      height: pageHeight * scale,
       overflow: "hidden",
       position: "relative",
     },
-    state2: React.CSSProperties = {
+    containerStyle: React.CSSProperties = {
       width: value,
-      height: value2,
-      transform: "scale(" + String(value3) + ")",
+      height: pageHeight,
+      transform: "scale(" + String(scale) + ")",
       transformOrigin: "top left",
       border: "0",
       display: "block",
@@ -77,7 +77,7 @@ function StaticPreviewFrame({
           title={title}
           loading={"lazy"}
           tabIndex={-1}
-          style={state2}
+          style={containerStyle}
         />, <span className={"ds-page-shield"} />]}
     </div>
   );
@@ -102,13 +102,13 @@ export function installEditorStaticPreview(): () => void {
     );
     EMPTY_STATIC_PREVIEW_HTML = "";
     validatedPreviewDimension = (
-      value: number | undefined,
+      dimension: number | undefined,
       fallback: number,
     ) =>
-      Number.isFinite(value) &&
-      (value as number) >= 16 &&
-      (value as number) <= 1e4
-        ? value!
+      Number.isFinite(dimension) &&
+      (dimension as number) >= 16 &&
+      (dimension as number) <= 1e4
+        ? dimension!
         : fallback;
   };
 }
