@@ -127,11 +127,11 @@ function FilesBrowser({
     typesByEntry = reactFilesBrowser.useMemo(
       () =>
         new Map<string, BrowserEntryType>(
-          rows.map((input: BrowserRow) => [
-            fileBrowserEntryKey(input.entry),
-            input.entry.kind === "folder"
+          rows.map((row: BrowserRow) => [
+            fileBrowserEntryKey(row.entry),
+            row.entry.kind === "folder"
               ? "folder"
-              : (typeOf?.(input.entry) ?? input.entry.type),
+              : (typeOf?.(row.entry) ?? row.entry.type),
           ]),
         ),
       [rows],
@@ -144,7 +144,7 @@ function FilesBrowser({
     mobileBackRef =
       reactFilesBrowser.useRef<HTMLButtonElement | null>(null),
     selectedRowIndex = rows.findIndex(
-      (input: BrowserRow) => fileBrowserEntryKey(input.entry) === selectedKey,
+      (row: BrowserRow) => fileBrowserEntryKey(row.entry) === selectedKey,
     ),
     selectedEntry = rows[selectedRowIndex]?.entry,
     mobilePreviewVisible =
@@ -157,23 +157,23 @@ function FilesBrowser({
       sections: virtualSectionIndices,
     } = reactFilesBrowser.useMemo(() => {
       let items: VirtualFileItem[] = [],
-        items2: number[] = [],
-        items3: number[] = [];
-      rows.forEach((input: BrowserRow, options: number) => {
-        if (input.section !== undefined) {
-          items3.push(
+        itemOffsets: number[] = [],
+        sectionStarts: number[] = [];
+      rows.forEach((row: BrowserRow, rowIndex: number) => {
+        if (row.section !== undefined) {
+          sectionStarts.push(
             items.push({
               kind: "section",
-              label: input.section,
-              first: input.first === true,
+              label: row.section,
+              first: row.first === true,
             }) - 1,
           );
         }
-        items2.push(items.length);
+        itemOffsets.push(items.length);
         items.push({
           kind: "row",
-          row: input,
-          at: options,
+          row: row,
+          at: rowIndex,
         });
       });
       let value = items.map((source: VirtualFileItem) =>
@@ -185,8 +185,8 @@ function FilesBrowser({
         items: items,
         heights: value,
         stack: stackVirtualFileRows(value),
-        itemOfRow: items2,
-        sections: items3,
+        itemOfRow: itemOffsets,
+        sections: sectionStarts,
       };
     }, [rows]),
     [scrollTop, setScrollTop] = reactFilesBrowser.useState(0),
@@ -232,19 +232,19 @@ function FilesBrowser({
     visibleItemIndices.push(selectedVirtualItem);
   }
   let pinnedSectionIndex = virtualSectionIndices
-      .filter((input: number) => virtualStack.tops[input] <= scrollTop)
+      .filter((rowIndex: number) => virtualStack.tops[rowIndex] <= scrollTop)
       .at(-1),
     pinnedSection =
       pinnedSectionIndex === undefined
         ? undefined
         : virtualItems[pinnedSectionIndex],
-    scrollToRow = (input: number) => {
+    scrollToRow = (rowIndex: number) => {
       let current = treeRef.current,
-        value = virtualRowIndices[input];
+        value = virtualRowIndices[rowIndex];
       if (current === null || value === undefined) {
         return;
       }
-      let value2 = virtualFileRowScrollTop(
+      let targetScrollTop = virtualFileRowScrollTop(
         virtualStack,
         rowHeights,
         value,
@@ -254,7 +254,7 @@ function FilesBrowser({
           : FILE_BROWSER_FALLBACK_VIEWPORT_HEIGHT,
         FILE_BROWSER_SECTION_HEIGHT,
       );
-      current.scrollTop = value2;
+      current.scrollTop = targetScrollTop;
       setScrollTop(current.scrollTop);
     },
     listHasMountedRef = reactFilesBrowser.useRef(false);
@@ -264,20 +264,20 @@ function FilesBrowser({
         activeElement instanceof HTMLElement &&
         (activeElement.isContentEditable ||
           ["INPUT", "TEXTAREA", "SELECT"].includes(activeElement.tagName)),
-      value2 = activeElement === null || activeElement === document.body;
-    if (listHasMountedRef.current ? value2 : !value) {
+      isBodyActive = activeElement === null || activeElement === document.body;
+    if (listHasMountedRef.current ? isBodyActive : !value) {
       treeRef.current?.focus({
         preventScroll: true,
       });
     }
     listHasMountedRef.current = true;
   }, [empty]);
-  let enterFolder = (input: string) => {
-      setFolderPath(input);
+  let enterFolder = (path: string) => {
+      setFolderPath(path);
       setExpandedFolders(new Set());
       setSelectedKey(
         initialFileBrowserSelection(
-          fileBrowserFolder(tree, input) ?? tree,
+          fileBrowserFolder(tree, path) ?? tree,
           disabledReason,
         ),
       );
@@ -287,13 +287,13 @@ function FilesBrowser({
       }
       setScrollTop(0);
     },
-    toggleFolder = (input: string) =>
-      setExpandedFolders((input2: Set<string>) => {
-        let values = new Set(input2);
-        if (values.has(input)) {
-          values.delete(input);
+    toggleFolder = (path: string) =>
+      setExpandedFolders((expanded: Set<string>) => {
+        let values = new Set(expanded);
+        if (values.has(path)) {
+          values.delete(path);
         } else {
-          values.add(input);
+          values.add(path);
         }
         return values;
       }),
@@ -389,14 +389,14 @@ function FilesBrowser({
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
-      let callback = (input: number) => {
-        let value = Math.max(0, Math.min(rows.length - 1, input)),
-          value2 = rows[value];
-        if (!value2) {
+      let callback = (rowIndex: number) => {
+        let value = Math.max(0, Math.min(rows.length - 1, rowIndex)),
+          row = rows[value];
+        if (!row) {
           return;
         }
         event.preventDefault();
-        setSelectedKey(fileBrowserEntryKey(value2.entry));
+        setSelectedKey(fileBrowserEntryKey(row.entry));
         if (!mobile) {
           setShowMobilePreview(false);
         }
@@ -438,10 +438,10 @@ function FilesBrowser({
           toggleFolder(selectedEntry.path);
         } else {
           let value = rows.findIndex(
-            (input: BrowserRow) =>
-              input.entry.kind === "folder" &&
-              input.entry.path === parentFolderPath(selectedEntry.path) &&
-              input.depth === (rows[selectedRowIndex]?.depth ?? 0) - 1,
+            (row: BrowserRow) =>
+              row.entry.kind === "folder" &&
+              row.entry.path === parentFolderPath(selectedEntry.path) &&
+              row.depth === (rows[selectedRowIndex]?.depth ?? 0) - 1,
           );
           if (value >= 0) {
             callback(value);
@@ -587,8 +587,8 @@ function FilesBrowser({
                   return <_Element key={_elementKey} {..._elementProps} />;
                 })()
               : (() => {
-                  const _Element4 = "div";
-                  const _elementProps4 = {
+                  const ListElement = "div";
+                  const listProps = {
                     ref: treeRef,
                     role: "tree",
                     get "aria-label"() { return uiMessage("design-system.fileBrowser.files"); },
@@ -603,8 +603,8 @@ function FilesBrowser({
                       mobilePreviewVisible && "hidden",
                     ),
                     onKeyDown: handleTreeKey,
-                    onScroll: (input: React.UIEvent<HTMLDivElement>) =>
-                      setScrollTop(input.currentTarget.scrollTop),
+                    onScroll: (scrollEvent: React.UIEvent<HTMLDivElement>) =>
+                      setScrollTop(scrollEvent.currentTarget.scrollTop),
                     children: [
                       pinnedSection?.kind === "section" ? (
                         <div
@@ -626,31 +626,31 @@ function FilesBrowser({
                           height: virtualStack.total,
                         }}
                       >
-                        {visibleItemIndices.map((input: number) => {
-                          let value = virtualItems[input];
+                        {visibleItemIndices.map((rowIndex: number) => {
+                          let value = virtualItems[rowIndex];
                           if (value.kind === "section") {
                             return (() => {
-                              const _Element2 = FileBrowserSectionHeading;
-                              const _elementProps2 = {
+                              const SectionHeading = FileBrowserSectionHeading;
+                              const headingProps = {
                                 label: value.label,
                                 first: value.first,
-                                top: virtualStack.tops[input],
+                                top: virtualStack.tops[rowIndex],
                               };
-                              const _elementKey2 = "s:" + value.label;
+                              const headingKey = "s:" + value.label;
                               return (
-                                <_Element2
-                                  key={_elementKey2}
-                                  {..._elementProps2}
+                                <SectionHeading
+                                  key={headingKey}
+                                  {...headingProps}
                                 />
                               );
                             })();
                           } else {
                             return (() => {
-                              const _Element3 = FileBrowserRow;
-                              const _elementProps3 = {
+                              const FileRow = FileBrowserRow;
+                              const fileRowProps = {
                                 id: entryDomId(value.row.entry),
                                 row: value.row,
-                                top: virtualStack.tops[input],
+                                top: virtualStack.tops[rowIndex],
                                 type:
                                   typesByEntry.get(
                                     fileBrowserEntryKey(value.row.entry),
@@ -672,13 +672,13 @@ function FilesBrowser({
                                 onToggle: () =>
                                   toggleFolder(value.row.entry.path),
                               };
-                              const _elementKey3 = fileBrowserEntryKey(
+                              const fileRowKey = fileBrowserEntryKey(
                                 value.row.entry,
                               );
                               return (
-                                <_Element3
-                                  key={_elementKey3}
-                                  {..._elementProps3}
+                                <FileRow
+                                  key={fileRowKey}
+                                  {...fileRowProps}
                                 />
                               );
                             })();
@@ -687,8 +687,8 @@ function FilesBrowser({
                       </div>,
                     ],
                   };
-                  const _elementKey4 = "list";
-                  return <_Element4 key={_elementKey4} {..._elementProps4} />;
+                  const listKey = "list";
+                  return <ListElement key={listKey} {...listProps} />;
                 })(), mobile && !mobilePreviewVisible ? null : previewPanel]}
         </div>]}
     </div>
@@ -715,13 +715,13 @@ function FileBrowserBreadcrumbs({
         "flex min-w-0 items-center gap-0.5 overflow-x-auto p-px [scrollbar-width:none]"
       }
     >
-      {items.map((input: string, options: number) => {
-        let value = options === items.length - 1;
+      {items.map((path: string, pathIndex: number) => {
+        let value = pathIndex === items.length - 1;
         return (() => {
-          const _Element5 = reactFilesBrowser.Fragment;
-          const _elementProps5 = {
+          const Fragment = reactFilesBrowser.Fragment;
+          const breadcrumbProps = {
             children: [
-              options > 0 ? (
+              pathIndex > 0 ? (
                 <span
                   aria-hidden={"true"}
                   className={"flex shrink-0 items-center text-disabled"}
@@ -741,18 +741,18 @@ function FileBrowserBreadcrumbs({
                 )}
                 onClick={() => {
                   if (!value) {
-                    onEnter(items.slice(1, options + 1).join("/"));
+                    onEnter(items.slice(1, pathIndex + 1).join("/"));
                   }
                 }}
               >
-                {options === 0 ? (input) : (visibleFileName(
-                      fileBrowserFolderLabel(input),
+                {pathIndex === 0 ? (path) : (visibleFileName(
+                      fileBrowserFolderLabel(path),
                     ))}
               </button>,
             ],
           };
-          const _elementKey5 = String(options) + "/" + input;
-          return <_Element5 key={_elementKey5} {..._elementProps5} />;
+          const breadcrumbKey = String(pathIndex) + "/" + path;
+          return <Fragment key={breadcrumbKey} {...breadcrumbProps} />;
         })();
       })}
     </nav>
@@ -801,13 +801,13 @@ function FileBrowserRow({
   onToggle: onToggle,
 }: BrowserRowProps) {
   useUiLocale();
-  let { entry: value, depth: value2 } = row,
-    value3 = visibleFileName(
+  let { entry: value, depth: depth } = row,
+    displayName = visibleFileName(
       value.kind === "folder"
         ? fileBrowserFolderLabel(value.name)
         : value.name,
     ),
-    value4 =
+    metadataText =
       value.kind === "file"
         ? formatFileBrowserBytes(value.size)
         : "";
@@ -815,7 +815,7 @@ function FileBrowserRow({
     <div
       id={id}
       role={"treeitem"}
-      aria-level={value2 + 1}
+      aria-level={depth + 1}
       aria-setsize={row.of}
       aria-posinset={row.pos}
       aria-selected={selected}
@@ -824,7 +824,7 @@ function FileBrowserRow({
       data-testid={"files-browser-row"}
       data-path={value.path}
       title={
-        (dimmed ?? tip) ?? (value4 !== "" ? (((value3) + (" · ")) + (value4)) : (value3))
+        (dimmed ?? tip) ?? (metadataText !== "" ? (((displayName) + (" · ")) + (metadataText)) : (displayName))
       }
       className={joinClassNames(
         "group absolute inset-x-0 flex cursor-default items-center gap-2 border-b-[0.5px] pr-3.5",
@@ -836,7 +836,7 @@ function FileBrowserRow({
       style={{
         top: top,
         height: FILE_BROWSER_ROW_HEIGHT,
-        paddingLeft: 14 + value2 * 20,
+        paddingLeft: 14 + depth * 20,
       }}
       onClick={onSelect}
       onDoubleClick={dimmed !== undefined ? undefined : onOpen}
@@ -850,12 +850,12 @@ function FileBrowserRow({
               selected ? "text-on-accent" : "text-secondary",
               selected && FILE_BROWSER_SELECTED_FORCED_COLORS_CLASS,
             )}
-            onClick={(input: React.MouseEvent<HTMLElement>) => {
-              input.stopPropagation();
+            onClick={(clickEvent: React.MouseEvent<HTMLElement>) => {
+              clickEvent.stopPropagation();
               onToggle();
             }}
-            onDoubleClick={(input: React.MouseEvent<HTMLElement>) =>
-              input.stopPropagation()
+            onDoubleClick={(clickEvent: React.MouseEvent<HTMLElement>) =>
+              clickEvent.stopPropagation()
             }
           >
             <Icon
@@ -874,7 +874,7 @@ function FileBrowserRow({
                 selected && FILE_BROWSER_SELECTED_FORCED_COLORS_CLASS,
               )}
             >
-              {value3}
+              {displayName}
             </span>, <span
               className={joinClassNames(
                 "mt-px min-h-[13px] truncate text-[10px]",
@@ -891,7 +891,7 @@ function FileBrowserRow({
             selected && FILE_BROWSER_SELECTED_FORCED_COLORS_CLASS,
           )}
         >
-          {value4}
+          {metadataText}
         </span>]}
     </div>
   );
@@ -945,14 +945,14 @@ function FileBrowserIcon({ type: type, size: size }: BrowserIconProps) {
       </span>
     );
   } else if (type === "deck") {
-    let value2 = Math.round(size * 0.72),
-      value3 = Math.max(2, Math.round(size * 0.09));
+    let iconSize = Math.round(size * 0.72),
+      strokeWidth = Math.max(2, Math.round(size * 0.09));
     value = (
       <span
         style={{
           position: "relative",
           width: size,
-          height: value2,
+          height: iconSize,
           display: "block",
         }}
       >
@@ -961,8 +961,8 @@ function FileBrowserIcon({ type: type, size: size }: BrowserIconProps) {
               position: "absolute",
               top: 0,
               left: 0,
-              width: size - value3,
-              height: value2 - value3,
+              width: size - strokeWidth,
+              height: iconSize - strokeWidth,
               background: FILE_BROWSER_ICON_COLORS.surface,
               border: "1px solid " + FILE_BROWSER_ICON_COLORS.line,
               borderRadius: 3,
@@ -972,8 +972,8 @@ function FileBrowserIcon({ type: type, size: size }: BrowserIconProps) {
               position: "absolute",
               bottom: 0,
               right: 0,
-              width: size - value3,
-              height: value2 - value3,
+              width: size - strokeWidth,
+              height: iconSize - strokeWidth,
               background: FILE_BROWSER_ICON_GRADIENTS.deck,
               border: "1px solid " + FILE_BROWSER_ICON_COLORS.line,
               borderRadius: 3,
@@ -1103,13 +1103,13 @@ function FileBrowserPreview({
 }: BrowserPreviewProps) {
   useUiLocale();
   let value = useMediaQuery(FILE_BROWSER_NO_HOVER_QUERY),
-    value2 = joinClassNames(
+    previewClassName = joinClassNames(
       "flex flex-col items-center overflow-auto bg-page p-5",
       big ? "min-w-0 flex-1" : "min-w-[180px] flex-[0_0_40%]",
     );
   if (!entry) {
     return (
-      <div data-testid={"files-browser-preview"} className={value2}>
+      <div data-testid={"files-browser-preview"} className={previewClassName}>
         <div
           className={
             "flex flex-1 items-center justify-center text-xs text-secondary"
@@ -1120,14 +1120,14 @@ function FileBrowserPreview({
       </div>
     );
   }
-  let value3 = visibleFileName(
+  let displayName = visibleFileName(
       entry.kind === "folder"
         ? fileBrowserFolderLabel(entry.name)
         : entry.name,
     ),
-    value4 = onOpen !== undefined && whyNot === undefined,
-    value5 = fileBrowserMetadataText(entry),
-    value6 =
+    canOpen = onOpen !== undefined && whyNot === undefined,
+    metadataText = fileBrowserMetadataText(entry),
+    previewSource =
       value &&
       entry.kind === "file" &&
       source !== undefined &&
@@ -1142,10 +1142,10 @@ function FileBrowserPreview({
           }))
         : undefined;
   return (
-    <div data-testid={"files-browser-preview"} className={value2}>
+    <div data-testid={"files-browser-preview"} className={previewClassName}>
       {[(() => {
-          const _Element6 = FileBrowserPreviewCard;
-          const _elementProps6 = {
+          const PreviewCard = FileBrowserPreviewCard;
+          const previewProps = {
             entry: entry,
             type: type,
             tip: whyNot ?? tip,
@@ -1154,10 +1154,10 @@ function FileBrowserPreview({
             reads: reads,
             htmlAsText: htmlAsText,
             preview: preview,
-            onOpen: value4 ? onOpen : undefined,
+            onOpen: canOpen ? onOpen : undefined,
           };
-          const _elementKey6 = entry.kind + ":" + entry.path;
-          return <_Element6 key={_elementKey6} {..._elementProps6} />;
+          const previewKey = entry.kind + ":" + entry.path;
+          return <PreviewCard key={previewKey} {...previewProps} />;
         })(), <div
           className={"my-3 flex flex-wrap items-center justify-center gap-2"}
         >
@@ -1169,7 +1169,7 @@ function FileBrowserPreview({
                   entry.kind === "folder" ? "FolderOpen" : "ArrowOutSquare"
                 }
                 data-testid={"files-browser-open"}
-                disabled={!value4}
+                disabled={!canOpen}
                 disabledReason={whyNot}
                 onClick={onOpen}
               >
@@ -1179,8 +1179,8 @@ function FileBrowserPreview({
             download !== undefined &&
             source !== undefined
               ? (() => {
-                  const _Element7 = FileBrowserDownloadButton;
-                  const _elementProps7 = {
+                  const DownloadButton = FileBrowserDownloadButton;
+                  const downloadProps = {
                     file: entry,
                     from: download,
                     source: source,
@@ -1188,8 +1188,8 @@ function FileBrowserPreview({
                     withheld: withheld,
                     noHover: value,
                   };
-                  const _elementKey7 = "dl:" + entry.path;
-                  return <_Element7 key={_elementKey7} {..._elementProps7} />;
+                  const downloadKey = "dl:" + entry.path;
+                  return <DownloadButton key={downloadKey} {...downloadProps} />;
                 })()
               : null, value && whyNot !== undefined ? (
               <div
@@ -1200,14 +1200,14 @@ function FileBrowserPreview({
               >
                 {whyNot}
               </div>
-            ) : null, value && whyNot === undefined && value6 !== undefined ? (
+            ) : null, value && whyNot === undefined && previewSource !== undefined ? (
               <div
                 data-testid={"files-browser-preview-note"}
                 className={
                   "basis-full text-center text-[11px] leading-[1.4] text-secondary"
                 }
               >
-                {value6}
+                {previewSource}
               </div>
             ) : null]}
         </div>, <div
@@ -1215,16 +1215,16 @@ function FileBrowserPreview({
             "mb-1 text-center text-sm font-semibold break-words text-primary"
           }
         >
-          {value3}
+          {displayName}
         </div>, <div
           className={
             "mb-3.5 text-center text-[11px] leading-[1.4] text-secondary"
           }
         >
           {kind}
-        </div>, value5 === "" ? null : (
+        </div>, metadataText === "" ? null : (
           <div className={"text-center text-[11px] text-secondary"}>
-            {value5}
+            {metadataText}
           </div>
         ), footer]}
     </div>
@@ -1308,8 +1308,8 @@ function decodeFileDataUri(dataUri: string) {
   try {
     if (/;base64$/i.test(match[2] ?? "")) {
       return {
-        bytes: Uint8Array.from(atob(payload), (input: string) =>
-          input.charCodeAt(0),
+        bytes: Uint8Array.from(atob(payload), (byte: string) =>
+          byte.charCodeAt(0),
         ),
         contentType: (match[1] ?? "").toLowerCase() || "text/plain",
       };
@@ -1407,17 +1407,17 @@ function useFileBrowserDownload(
             setNote(uiMessage("design-system.fileBrowser.downloadsArenTAvailableIn"));
             return;
           }
-          let value2 = await downloadsWithheld();
+          let downloadResult = await downloadsWithheld();
           if (value.signal.aborted) {
             return;
           }
-          if (value2) {
+          if (downloadResult) {
             setNote(get_DOWNLOADS_UNAVAILABLE_MESSAGE());
             return;
           }
-          let value3: DownloadData;
+          let downloadData: DownloadData;
           try {
-            value3 =
+            downloadData =
               download.url === undefined
                 ? await readFileBrowserDownload(
                     name,
@@ -1426,18 +1426,18 @@ function useFileBrowserDownload(
                     value.signal,
                   )
                 : await readArtifactBlobDownload(download.url, value.signal);
-          } catch (value5: unknown) {
+          } catch (error: unknown) {
             if (value.signal.aborted) {
               return;
             }
-            let value6: unknown = (value5 as Partial<HttpError> | null)
+            let errorStatus: unknown = (error as Partial<HttpError> | null)
               ?.status;
             setNote(
-              value6 === 404 || value6 === 403 || value6 === 401
+              errorStatus === 404 || errorStatus === 403 || errorStatus === 401
                 ? uiMessage("design-system.fileBrowser.thisFileIsnTAvailable")
-                : typeof value6 === "number" && value6 > 0
+                : typeof errorStatus === "number" && errorStatus > 0
                   ? uiMessage("design-system.fileBrowser.couldnTDownloadThisFile") +
-                    String(value6) +
+                    String(errorStatus) +
                     "). Try again"
                   : uiMessage("design-system.fileBrowser.couldnTDownloadThisFile2"),
             );
@@ -1450,7 +1450,7 @@ function useFileBrowserDownload(
           if (
             !fileDownloadMimeMatchesName(
               name,
-              value3.contentType,
+              downloadData.contentType,
               download.type,
             )
           ) {
@@ -1459,24 +1459,24 @@ function useFileBrowserDownload(
             );
             return;
           }
-          let value4 = await saveThroughShell(
-            new Blob([value3.bytes], {
-              type: value3.contentType,
+          let saveResult = await saveThroughShell(
+            new Blob([downloadData.bytes], {
+              type: downloadData.contentType,
             }),
             name,
           );
           if (value.signal.aborted) {
             return;
           }
-          if (value4.outcome === "saved") {
+          if (saveResult.outcome === "saved") {
             setNote(uiMessage("design-system.fileBrowser.saved") + visibleFileName(name));
-          } else if (value4.outcome === "withheld") {
+          } else if (saveResult.outcome === "withheld") {
             setNote(get_DOWNLOADS_UNAVAILABLE_MESSAGE());
-          } else if (value4.outcome === "unsupported") {
+          } else if (saveResult.outcome === "unsupported") {
             setNote(
-              value4.code === "no_shell_save"
+              saveResult.code === "no_shell_save"
                 ? uiMessage("design-system.fileBrowser.downloadsArenTAvailableIn")
-                : fileDownloadFailureMessage(name, value4.code),
+                : fileDownloadFailureMessage(name, saveResult.code),
             );
           }
         } catch {
@@ -1502,7 +1502,7 @@ function FileBrowserDownloadButton({
 }: BrowserDownloadButtonProps) {
   useUiLocale();
   let value = useFileBrowserDownload(file, from, source, reads, withheld),
-    value2 = value.note ?? (noHover ? (value.tip ?? null) : null);
+    note = value.note ?? (noHover ? (value.tip ?? null) : null);
   return (
     <jsxFilesBrowser.Fragment>
       {[<Button
@@ -1520,10 +1520,10 @@ function FileBrowserDownloadButton({
           data-testid={"files-browser-download-note"}
           className={joinClassNames(
             "basis-full text-center text-[11px] leading-[1.4] text-secondary",
-            value2 === null && "sr-only",
+            note === null && "sr-only",
           )}
         >
-          {value2 ?? ("")}
+          {note ?? ("")}
         </div>]}
     </jsxFilesBrowser.Fragment>
   );
@@ -1532,24 +1532,24 @@ function useFilePreviewWidth(): [
   React.Dispatch<React.SetStateAction<HTMLDivElement | null>>,
   number,
 ] {
-  let [value, value2] =
+  let [value, containerWidth] =
       reactFilesBrowser.useState<HTMLDivElement | null>(null),
-    [value3, value4] = reactFilesBrowser.useState(0);
+    [previewWidth, setPreviewWidth] = reactFilesBrowser.useState(0);
   reactFilesBrowser.useLayoutEffect(() => {
     if (value === null) {
       return;
     }
-    value4(value.getBoundingClientRect().width);
+    setPreviewWidth(value.getBoundingClientRect().width);
     if (typeof ResizeObserver === "undefined") {
       return;
     }
     let observer = new ResizeObserver(() =>
-      value4(value.getBoundingClientRect().width),
+      setPreviewWidth(value.getBoundingClientRect().width),
     );
     observer.observe(value);
     return () => observer.disconnect();
   }, [value]);
-  return [value2, value3];
+  return [containerWidth, previewWidth];
 }
 function FileBrowserPreviewCard({
   entry: entry,
@@ -1563,12 +1563,12 @@ function FileBrowserPreviewCard({
   onOpen: onOpen,
 }: BrowserPreviewCardProps) {
   useUiLocale();
-  let [value, value2] = useFilePreviewWidth(),
-    value3 =
+  let [value, previewWidth] = useFilePreviewWidth(),
+    previewElement =
       entry.kind === "file" && preview !== undefined
-        ? preview(entry, value2)
+        ? preview(entry, previewWidth)
         : undefined;
-  if (value3 !== undefined) {
+  if (previewElement !== undefined) {
     return (
       <div
         ref={value}
@@ -1581,17 +1581,17 @@ function FileBrowserPreviewCard({
         onClick={onOpen}
         title={onOpen ? (uiMessage("design-system.fileBrowser.clickToOpen")) : (undefined)}
       >
-        {value2 > 0 ? (value3) : (null)}
+        {previewWidth > 0 ? (previewElement) : (null)}
       </div>
     );
   }
-  let value4 =
+  let sourceKind =
     entry.kind === "file" && source !== undefined
       ? fileBrowserPreviewKind(entry, {
           htmlAsText: htmlAsText,
         })
       : "none";
-  if (entry.kind === "file" && source !== undefined && value4 === "image") {
+  if (entry.kind === "file" && source !== undefined && sourceKind === "image") {
     return (
       <FileBrowserImagePreview
         file={entry}
@@ -1601,7 +1601,7 @@ function FileBrowserPreviewCard({
       />
     );
   }
-  if (entry.kind === "file" && source !== undefined && value4 === "text") {
+  if (entry.kind === "file" && source !== undefined && sourceKind === "text") {
     return (
       <FileBrowserTextPreview source={source} reads={reads} tall={tall} />
     );
@@ -1633,51 +1633,51 @@ function FileBrowserImagePreview({
 }: BrowserImagePreviewProps) {
   useUiLocale();
   let value = "url" in source ? source.url : null,
-    value2 = "text" in source ? source.text : null,
-    value3 = "dataUri" in source ? source.dataUri : null,
-    value4 = file.contentType ?? "image/svg+xml",
+    textSource = "text" in source ? source.text : null,
+    dataUriSource = "dataUri" in source ? source.dataUri : null,
+    contentType = file.contentType ?? "image/svg+xml",
     memo = reactFilesBrowser.useMemo(() => {
-      if (value2 === null) {
-        return value ?? value3;
+      if (textSource === null) {
+        return value ?? dataUriSource;
       }
       try {
         return (
-          "data:" + value4 + ";charset=utf-8," + encodeURIComponent(value2)
+          "data:" + contentType + ";charset=utf-8," + encodeURIComponent(textSource)
         );
       } catch {
         return null;
       }
-    }, [value, value2, value3, value4]),
-    [value5, value6] = reactFilesBrowser.useState(0),
-    [value7, value8] = reactFilesBrowser.useState("drawing"),
+    }, [value, textSource, dataUriSource, contentType]),
+    [retryAttempt, setRetryIndex] = reactFilesBrowser.useState(0),
+    [imageState, setImageState] = reactFilesBrowser.useState("drawing"),
     ref = reactFilesBrowser.useRef<AbortController | null>(null);
   reactFilesBrowser.useEffect(() => {
-    value6(0);
-    value8("drawing");
-    ref2.current = false;
+    setRetryIndex(0);
+    setImageState("drawing");
+    hasRetried.current = false;
     return () => ref.current?.abort();
   }, [memo]);
-  let ref2 = reactFilesBrowser.useRef(false),
+  let hasRetried = reactFilesBrowser.useRef(false),
     callback = () => {
-      let value9 = fileFetchRetryDelays(retryMs)[value5];
-      if (value === null || ref2.current || value9 === undefined) {
-        return value8("failed");
+      let retryDelay = fileFetchRetryDelays(retryMs)[retryAttempt];
+      if (value === null || hasRetried.current || retryDelay === undefined) {
+        return setImageState("failed");
       }
-      let value10 = (ref.current = new AbortController());
-      value8("waiting");
+      let abortController = (ref.current = new AbortController());
+      setImageState("waiting");
       fetch(value, {
         credentials: "same-origin",
-        signal: value10.signal,
+        signal: abortController.signal,
       })
         .then((state: Response) => {
           state.body?.cancel().catch(() => {
             return;
           });
-          if (value10.signal.aborted) {
+          if (abortController.signal.aborted) {
             return;
           }
           if (state.ok) {
-            ref2.current = true;
+            hasRetried.current = true;
           } else if (
             !isRetryableFileReadAccessError({
               status: state.status,
@@ -1685,19 +1685,19 @@ function FileBrowserImagePreview({
           ) {
             throw Error(uiMessage("design-system.fileBrowser.willNotDraw"));
           }
-          return new Promise((input: (value?: unknown) => void) =>
-            setTimeout(input, state.ok ? 0 : value9),
+          return new Promise((resolve: (value?: unknown) => void) =>
+            setTimeout(resolve, state.ok ? 0 : retryDelay),
           );
         })
         .then(() => {
-          if (!value10.signal.aborted) {
-            value6((input: number) => input + 1);
-            value8("drawing");
+          if (!abortController.signal.aborted) {
+            setRetryIndex((retryIndex: number) => retryIndex + 1);
+            setImageState("drawing");
           }
         })
         .catch(() => {
-          if (!value10.signal.aborted) {
-            value8("failed");
+          if (!abortController.signal.aborted) {
+            setImageState("failed");
           }
         });
     };
@@ -1707,9 +1707,9 @@ function FileBrowserImagePreview({
       className={FILE_BROWSER_PREVIEW_CARD_CLASS}
       style={fileBrowserPreviewCardStyle(tall)}
     >
-      {value7 === "failed" || memo === null ? (<div className={"text-xs text-secondary"}>
+      {imageState === "failed" || memo === null ? (<div className={"text-xs text-secondary"}>
           {uiMessage("design-system.fileBrowser.couldnTLoadThisFile")}
-        </div>) : (value7 === "waiting" ? (<div className={"text-xs text-secondary"}>
+        </div>) : (imageState === "waiting" ? (<div className={"text-xs text-secondary"}>
           {FILE_BROWSER_LOADING_TEXT}
         </div>) : ((() => {
           const _Element8 = "img";
@@ -1721,7 +1721,7 @@ function FileBrowserImagePreview({
             className:
               "pointer-events-none h-full w-full object-contain select-none",
           };
-          const _elementKey8 = value5;
+          const _elementKey8 = retryAttempt;
           return <_Element8 key={_elementKey8} {..._elementProps8} />;
         })()))}
     </div>
@@ -1733,61 +1733,61 @@ function FileBrowserTextPreview({
   tall: tall,
 }: BrowserTextPreviewProps) {
   useUiLocale();
-  let { retryMs: value, fresh: value2 } = reads,
-    value3 = "url" in source ? source.url : null,
-    value4 = "text" in source ? source.text : null,
-    value5 = "dataUri" in source ? source.dataUri : null,
+  let { retryMs: value, fresh: retryMs } = reads,
+    sourceUrl = "url" in source ? source.url : null,
+    sourceText = "text" in source ? source.text : null,
+    sourceDataUri = "dataUri" in source ? source.dataUri : null,
     memo = reactFilesBrowser.useMemo(() => {
-      if (value4 !== null) {
-        return value4;
+      if (sourceText !== null) {
+        return sourceText;
       }
-      if (value5 === null) {
+      if (sourceDataUri === null) {
         return null;
       }
-      let value10 = decodeFileDataUri(value5);
-      if (value10 === null) {
+      let decodedData = decodeFileDataUri(sourceDataUri);
+      if (decodedData === null) {
         return "failed";
       } else {
-        return new TextDecoder("utf-8").decode(value10.bytes);
+        return new TextDecoder("utf-8").decode(decodedData.bytes);
       }
-    }, [value4, value5]),
-    [value6, value7] = reactFilesBrowser.useState<string | null>(
+    }, [sourceText, sourceDataUri]),
+    [textPreview, setTextPreview] = reactFilesBrowser.useState<string | null>(
       null,
     );
   reactFilesBrowser.useEffect(() => {
-    if (value3 === null) {
+    if (sourceUrl === null) {
       return;
     }
     let controller = new AbortController();
-    value7(null);
-    fetchFileWithRetries(value3, value, controller.signal, value2)
+    setTextPreview(null);
+    fetchFileWithRetries(sourceUrl, value, controller.signal, retryMs)
       .then(
-        async (input: Response): Promise<string> =>
-          responseMimeType(input) === "text/html"
-            ? stripFrameRuntimeBlock(await input.text())
-            : input.text(),
+        async (response: Response): Promise<string> =>
+          responseMimeType(response) === "text/html"
+            ? stripFrameRuntimeBlock(await response.text())
+            : response.text(),
       )
-      .then((input: string) => {
+      .then((text: string) => {
         if (!controller.signal.aborted) {
-          value7(input);
+          setTextPreview(text);
         }
       })
       .catch(() => {
         if (!controller.signal.aborted) {
-          value7("failed");
+          setTextPreview("failed");
         }
       });
     return () => controller.abort();
-  }, [value3, value, value2]);
-  let value8 = value3 === null ? memo : value6,
-    value9 =
-      value8 === null || value8 === "failed"
+  }, [sourceUrl, value, retryMs]);
+  let displayText = sourceUrl === null ? memo : textPreview,
+    textOverflowNotice =
+      displayText === null || displayText === "failed"
         ? ""
-        : value8.length > MAX_FILE_BROWSER_TEXT_BYTES
-          ? value8.slice(0, MAX_FILE_BROWSER_TEXT_BYTES) +
+        : displayText.length > MAX_FILE_BROWSER_TEXT_BYTES
+          ? displayText.slice(0, MAX_FILE_BROWSER_TEXT_BYTES) +
             `
 …`
-          : value8;
+          : displayText;
   return (
     <div
       data-testid={"files-browser-card"}
@@ -1796,12 +1796,12 @@ function FileBrowserTextPreview({
       }
       style={fileBrowserPreviewCardStyle(tall)}
     >
-      {value8 === "failed" || value8 === null ? (<div
+      {displayText === "failed" || displayText === null ? (<div
           className={
             "flex h-full items-center justify-center text-xs text-secondary"
           }
         >
-          {value8 === null ? (FILE_BROWSER_LOADING_TEXT) : (uiMessage("design-system.fileBrowser.couldnTLoadThisFile"))}
+          {displayText === null ? (FILE_BROWSER_LOADING_TEXT) : (uiMessage("design-system.fileBrowser.couldnTLoadThisFile"))}
         </div>) : (<pre
           data-testid={"files-browser-text"}
           className={joinClassNames(
@@ -1809,7 +1809,7 @@ function FileBrowserTextPreview({
             tall ? "text-[11px]" : "text-[10px]",
           )}
         >
-          {value9}
+          {textOverflowNotice}
         </pre>)}
     </div>
   );
@@ -1892,46 +1892,46 @@ export function installFilesUiFileBrowser(): () => void {
       hover: "var(--cds-fill-ghost-hover)",
       line: "var(--cds-border)",
     };
-    encodeFilePathPart = (input: string) => {
+    encodeFilePathPart = (pathPart: string) => {
       try {
-        return encodeURIComponent(input);
+        return encodeURIComponent(pathPart);
       } catch {
         return encodeURIComponent(
-          input.replace(/[\uD800-\uDFFF]/g, String.fromCharCode(65533)),
+          pathPart.replace(/[\uD800-\uDFFF]/g, String.fromCharCode(65533)),
         );
       }
     };
-    projectFileUrl = (input: string) =>
+    projectFileUrl = (path: string) =>
       PROJECT_FILE_PREFIX +
-      input.split("/").map(encodeFilePathPart).join("/");
-    fileBrowserDefaultSource = (input: BrowserFile) => ({
-      url: projectFileUrl(input.path),
+      path.split("/").map(encodeFilePathPart).join("/");
+    fileBrowserDefaultSource = (file: BrowserFile) => ({
+      url: projectFileUrl(file.path),
     });
-    fileCountLabel = (input: number, options: string) =>
-      input.toLocaleString("en-US") + " " + options + (input === 1 ? "" : "s");
-    parentFolderPath = (input: string) =>
-      input.includes("/") ? input.slice(0, input.lastIndexOf("/")) : "";
+    fileCountLabel = (count: number, label: string) =>
+      count.toLocaleString("en-US") + " " + label + (count === 1 ? "" : "s");
+    parentFolderPath = (folderPath: string) =>
+      folderPath.includes("/") ? folderPath.slice(0, folderPath.lastIndexOf("/")) : "";
     fileBrowserEntryKey = (source: BrowserEntry) =>
       source.kind + ":" + source.path;
     fileBrowserEntryEncoder = new TextEncoder();
-    fileBrowserEntryId = (input: string) =>
+    fileBrowserEntryId = (path: string) =>
       Array.from<number, string>(
-        fileBrowserEntryEncoder.encode(input),
-        (input2: number) => input2.toString(16).padStart(2, "0"),
+        fileBrowserEntryEncoder.encode(path),
+        (byte: number) => byte.toString(16).padStart(2, "0"),
       ).join("");
     initialFileBrowserSelection = (
-      input: BrowserFolder,
-      options: (entry: BrowserEntry) => string | undefined,
+      folder: BrowserFolder,
+      entryKey: (entry: BrowserEntry) => string | undefined,
     ) => {
-      let value = flattenFileBrowserTree(input, new Set()).filter(
-          (input2: BrowserRow) => input2.entry.kind === "file",
+      let value = flattenFileBrowserTree(folder, new Set()).filter(
+          (row: BrowserRow) => row.entry.kind === "file",
         ),
-        value2 =
+        fileRow =
           value.find(
-            (input2: BrowserRow) => options(input2.entry) === undefined,
+            (row: BrowserRow) => entryKey(row.entry) === undefined,
           ) ?? value[0];
-      if (value2) {
-        return fileBrowserEntryKey(value2.entry);
+      if (fileRow) {
+        return fileBrowserEntryKey(fileRow.entry);
       } else {
         return null;
       }
@@ -1950,35 +1950,35 @@ export function installFilesUiFileBrowser(): () => void {
     FILE_BROWSER_ICON_SHADOW = "0 1px 2px rgba(0,0,0,0.04)";
     MAX_DOWNLOAD_EXTENSION_LABEL_LENGTH = 12;
     fileDownloadMimeMatchesName = (
-      input: string,
-      options: string,
-      context?: string,
+      filePath: string,
+      expectedMime: string,
+      sourceMime?: string,
     ) => {
-      let value = context ?? downloadMimeTypeFromName(input);
+      let value = sourceMime ?? downloadMimeTypeFromName(filePath);
       if (value !== undefined) {
-        return options === value;
+        return expectedMime === value;
       }
-      let value2 = fileMimeTypeFromPath(
-        sanitizedFileName(input),
+      let pathMime = fileMimeTypeFromPath(
+        sanitizedFileName(filePath),
       );
       return (
-        value2 === undefined || options === value2 || options === "text/plain"
+        pathMime === undefined || expectedMime === pathMime || expectedMime === "text/plain"
       );
     };
-    responseMimeType = (input: Response) =>
-      (input.headers.get("content-type") ?? "")
+    responseMimeType = (response: Response) =>
+      (response.headers.get("content-type") ?? "")
         .split(";")[0]
         .trim()
         .toLowerCase();
-    fileFetchHttpError = (input: number) =>
-      Object.assign(Error("HTTP " + String(input)), {
-        status: input,
+    fileFetchHttpError = (status: number) =>
+      Object.assign(Error("HTTP " + String(status)), {
+        status: status,
       });
-    fileFetchRetryDelays = (input: number) => {
+    fileFetchRetryDelays = (retryMs: number) => {
       let items: number[] = [];
       for (
         let index = 0, count = 150;
-        index + count <= input;
+        index + count <= retryMs;
         index += count, count = Math.min(count * 2, 2000)
       ) {
         items.push(count);
@@ -1988,8 +1988,8 @@ export function installFilesUiFileBrowser(): () => void {
     FILE_DOWNLOAD_MAX_RETRY_MS = 4000;
     FILE_BROWSER_PREVIEW_CARD_CLASS =
       "relative flex w-full items-center justify-center overflow-hidden rounded-lg border bg-fill-control shadow-[0_4px_16px_rgba(0,0,0,0.1),0_1px_4px_rgba(0,0,0,0.06)]";
-    fileBrowserPreviewCardStyle = (input: boolean | undefined) =>
-      input
+    fileBrowserPreviewCardStyle = (isCompact: boolean | undefined) =>
+      isCompact
         ? {
             height: "52vh",
           }

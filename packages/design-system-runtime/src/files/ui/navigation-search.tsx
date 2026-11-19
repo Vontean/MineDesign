@@ -70,7 +70,7 @@ function captureFindBarKey(event: KeyboardEvent): void {
     return;
   }
   event.stopImmediatePropagation();
-  let value2 =
+  let isFindBarShortcut =
       !event.ctrlKey &&
       !event.metaKey &&
       !event.altKey &&
@@ -78,13 +78,13 @@ function captureFindBarKey(event: KeyboardEvent): void {
       event.key !== "Tab" &&
       event.key !== "Enter" &&
       event.key !== " ",
-    value3 =
+    isEscapeShortcut =
       (event.ctrlKey || event.metaKey) &&
       !event.altKey &&
-      FIND_BAR_EDIT_SHORTCUTS.some((input) =>
-        matchesLatinShortcut(event, input),
+      FIND_BAR_EDIT_SHORTCUTS.some((shortcut) =>
+        matchesLatinShortcut(event, shortcut),
       );
-  if (!flag && event.type === "keydown" && (value2 || value3)) {
+  if (!flag && event.type === "keydown" && (isFindBarShortcut || isEscapeShortcut)) {
     event.preventDefault();
   }
 }
@@ -105,16 +105,16 @@ function captureFindBarClipboard(event: ClipboardEvent): void {
   event.stopImmediatePropagation();
   event.preventDefault();
 }
-function installFindBarEventGuards(input: Window): void {
-  if (findBarGuardedWindows.has(input)) {
+function installFindBarEventGuards(window: Window): void {
+  if (findBarGuardedWindows.has(window)) {
     return;
   }
-  findBarGuardedWindows.add(input);
+  findBarGuardedWindows.add(window);
   for (let value of ["keydown", "keyup", "keypress"] as const) {
-    input.addEventListener(value, captureFindBarKey, true);
+    window.addEventListener(value, captureFindBarKey, true);
   }
   for (let value of ["cut", "copy", "paste"] as const) {
-    input.addEventListener(value, captureFindBarClipboard, true);
+    window.addEventListener(value, captureFindBarClipboard, true);
   }
 }
 function isPrimaryShortcutModifier(
@@ -140,11 +140,11 @@ function tokenSearchEntries(
   section: string,
   scale: EditorScale,
 ): SearchEntry[] {
-  return scale.tokens.map((input) => ({
+  return scale.tokens.map((token) => ({
     section: section,
-    label: input.name,
-    words: searchEntryWords(input.value, input.usage),
-    target: commentTargetId("token", input.name),
+    label: token.name,
+    words: searchEntryWords(token.value, token.usage),
+    target: commentTargetId("token", token.name),
   }));
 }
 function buildSectionSearchIndex(
@@ -153,75 +153,75 @@ function buildSectionSearchIndex(
   sectionTitles: Readonly<Record<string, string>> = {},
 ) {
   let entriesBySection: Record<string, SearchEntry[]> = {
-    readme: snapshot.docs.map((input) => ({
+    readme: snapshot.docs.map((document) => ({
       section: "readme",
-      label: input.title,
-      words: searchEntryWords(input.path),
-      target: commentTargetId("doc", input.path),
+      label: document.title,
+      words: searchEntryWords(document.path),
+      target: commentTargetId("doc", document.path),
     })),
-    colors: snapshot.colorGroups.flatMap((input) =>
-      input.tokens.map((input2) => ({
+    colors: snapshot.colorGroups.flatMap((colorGroup) =>
+      colorGroup.tokens.map((token) => ({
         section: "colors",
-        label: input2.name,
+        label: token.name,
         words: searchEntryWords(
-          ...Object.values(input2.value),
-          ...Object.values(input2.alias ?? {}).map((input3) => input3.css),
-          input2.usage,
+          ...Object.values(token.value),
+          ...Object.values(token.alias ?? {}).map((alias) => alias.css),
+          token.usage,
         ),
-        target: commentTargetId("token", input2.name),
+        target: commentTargetId("token", token.name),
       })),
     ),
-    type: snapshot.typeGroups.flatMap((input) => [
+    type: snapshot.typeGroups.flatMap((typeGroup) => [
       {
         section: "type",
-        label: input.name,
+        label: typeGroup.name,
         words: searchEntryWords(
-          snapshot.familyNames[input.family],
-          input.note,
+          snapshot.familyNames[typeGroup.family],
+          typeGroup.note,
         ),
-        target: commentTargetId("tset", input.name),
+        target: commentTargetId("tset", typeGroup.name),
       },
-      ...input.styles.map((input2) => ({
+      ...typeGroup.styles.map((style) => ({
         section: "type",
-        label: input2.name,
+        label: style.name,
         words: searchEntryWords(
-          input2.fontSize,
-          input2.fontWeight,
-          snapshot.familyNames[input2.familyKey ?? input.family],
-          input2.usage,
+          style.fontSize,
+          style.fontWeight,
+          snapshot.familyNames[style.familyKey ?? typeGroup.family],
+          style.usage,
         ),
-        target: commentTargetId("style", input2.name),
+        target: commentTargetId("style", style.name),
       })),
     ]),
     spacing: tokenSearchEntries("spacing", snapshot.spacing),
     corners: tokenSearchEntries("corners", snapshot.corners),
-    shadows: snapshot.shadows.tokens.map((input) => ({
+    shadows: snapshot.shadows.tokens.map((shadow) => ({
       section: "shadows",
-      label: input.name,
-      words: searchEntryWords(input.usage, ...Object.values(input.value)),
-      target: commentTargetId("token", input.name),
+      label: shadow.name,
+      words: searchEntryWords(shadow.usage, ...Object.values(shadow.value)),
+      target: commentTargetId("token", shadow.name),
     })),
-    components: snapshot.components.map((input) => ({
+    components: snapshot.components.map((component) => ({
       section: "components",
-      label: input.name,
+      label: component.name,
       words: [],
-      target: commentTargetId("comp", input.name),
+      target: commentTargetId("comp", component.name),
     })),
-    assets: snapshot.assetGroups.flatMap((input) => [
+    assets: snapshot.assetGroups.flatMap((assetGroup) => [
       {
         section: "assets",
         label:
-          sectionTitles["assets:" + input.name] ??
-          assetGroupDisplayName(input.name),
-        words: searchEntryWords(input.folder),
-        target: commentTargetId("agroup", input.name),
+          sectionTitles["assets:" + assetGroup.name] ??
+          assetGroupDisplayName(assetGroup.name),
+        words: searchEntryWords(assetGroup.folder),
+        target: commentTargetId("agroup", assetGroup.name),
       },
-      ...input.assets.map((input2) => ({
+      ...assetGroup.assets.map((asset) => ({
         section: "assets",
-        label: input2.name,
-        words: searchEntryWords(input2.path),
-        target: commentTargetId("asset", input2.path),
-        asset: input2.path,
+        label: asset.name,
+        words: searchEntryWords(asset.path),
+        target: commentTargetId("asset", asset.path),
+        asset: asset.path,
       })),
     ]),
   };
@@ -232,13 +232,13 @@ function buildSectionSearchIndex(
         value.scale,
       );
   }
-  return sections.flatMap((input) => [
+  return sections.flatMap((section) => [
     {
-      section: input.id,
-      label: input.label,
+      section: section.id,
+      label: section.label,
       words: [],
     },
-    ...(entriesBySection[input.id] ?? []),
+    ...(entriesBySection[section.id] ?? []),
   ]);
 }
 function rankSectionSearchResults(
@@ -249,36 +249,36 @@ function rankSectionSearchResults(
   let terms = query
       .toLowerCase()
       .split(/\s+/)
-      .filter((input) => input !== ""),
+      .filter((term) => term !== ""),
     phrase = terms.join(" "),
     ranked: RankedSearchEntry[] = [];
   for (let value of terms.length === 0 ? [] : index) {
     if (
-      !terms.every((input) =>
-        optionMatchesQuery(input, value.label, ...value.words),
+      !terms.every((term) =>
+        optionMatchesQuery(term, value.label, ...value.words),
       )
     ) {
       continue;
     }
-    let value2 = value.label.toLowerCase();
+    let labelText = value.label.toLowerCase();
     ranked.push({
       entry: value,
       rank:
-        value2 === phrase
+        labelText === phrase
           ? 0
-          : value2.startsWith(phrase)
+          : labelText.startsWith(phrase)
             ? 1
-            : terms.every((input) =>
-                  optionMatchesQuery(input, value.label),
+            : terms.every((term) =>
+                  optionMatchesQuery(term, value.label),
                 )
               ? 2
               : 3,
     });
   }
-  let targeted = ranked.filter((input) => input.entry.target !== undefined),
+  let targeted = ranked.filter((result) => result.entry.target !== undefined),
     shown = new Set(
       [...targeted]
-        .sort((input, options) => input.rank - options.rank)
+        .sort((left, right) => left.rank - right.rank)
         .slice(0, limit),
     ),
     groups: SearchRankGroup[] = [];
@@ -286,10 +286,10 @@ function rankSectionSearchResults(
     if (value.entry.target !== undefined && !shown.has(value)) {
       continue;
     }
-    let value2 = groups[groups.length - 1];
-    if (value2 === undefined || value2.section !== value.entry.section) {
+    let lastGroup = groups[groups.length - 1];
+    if (lastGroup === undefined || lastGroup.section !== value.entry.section) {
       groups.push(
-        (value2 = {
+        (lastGroup = {
           section: value.entry.section,
           named: [],
           other: [],
@@ -297,9 +297,9 @@ function rankSectionSearchResults(
       );
     }
     if (value.entry.target === undefined) {
-      value2.head = value.rank;
+      lastGroup.head = value.rank;
     } else {
-      (value.rank < 3 ? value2.named : value2.other).push(value);
+      (value.rank < 3 ? lastGroup.named : lastGroup.other).push(value);
     }
   }
   let row = 0,
@@ -307,36 +307,36 @@ function rankSectionSearchResults(
       rank: 4,
       row: 0,
     },
-    considerBest = (input: number, options: number) => {
-      if (input < best.rank) {
+    considerBest = (rank: number, rowIndex: number) => {
+      if (rank < best.rank) {
         best = {
-          rank: input,
-          row: options,
+          rank: rank,
+          row: rowIndex,
         };
       }
     };
   return {
-    groups: groups.map((input) => {
-      if (input.head !== undefined) {
-        considerBest(input.head, row);
+    groups: groups.map((group) => {
+      if (group.head !== undefined) {
+        considerBest(group.head, row);
       }
       row++;
-      let value = [...input.named, ...input.other].map((input2) => {
-        considerBest(input2.rank, row++);
+      let value = [...group.named, ...group.other].map((result) => {
+        considerBest(result.rank, row++);
         return {
-          entry: input2.entry,
+          entry: result.entry,
           detail:
-            input2.rank < 3
+            result.rank < 3
               ? undefined
-              : input2.entry.words.find((input3) =>
-                  terms.some((input4) =>
-                    optionMatchesQuery(input4, input3),
+              : result.entry.words.find((word) =>
+                  terms.some((term) =>
+                    optionMatchesQuery(term, word),
                   ),
                 ),
         };
       });
       return {
-        section: input.section,
+        section: group.section,
         hits: value,
       };
     }),
@@ -360,7 +360,7 @@ function searchSectionsAndFiles(
       FILE_SEARCH_MATCH_LIMIT,
     ),
     rowOffset = result.groups.reduce(
-      (input, options) => input + 1 + options.hits.length,
+      (count, row) => count + 1 + row.hits.length,
       0,
     );
   return {
@@ -382,12 +382,12 @@ function createNavigationPillActivity(
     held = false,
     holdUntil = 0,
     timer: ReturnType<NavigationPillClock["setTimeout"]> | undefined,
-    setActive = (input: boolean) => {
-      if (input === active) {
+    setActive = (isActive: boolean) => {
+      if (isActive === active) {
         return;
       }
-      active = input;
-      onChange(input);
+      active = isActive;
+      onChange(isActive);
     },
     check = () => {
       timer = undefined;
@@ -401,23 +401,23 @@ function createNavigationPillActivity(
         timer = timers.setTimeout(check, value);
       }
     },
-    extend = (input: number) => {
-      holdUntil = Math.max(holdUntil, timers.now() + input);
+    extend = (durationMs: number) => {
+      holdUntil = Math.max(holdUntil, timers.now() + durationMs);
       setActive(true);
       if (timer === undefined) {
-        timer = timers.setTimeout(check, input);
+        timer = timers.setTimeout(check, durationMs);
       }
     };
   return {
-    bump(input = holdMs) {
-      extend(input);
+    bump(durationMs = holdMs) {
+      extend(durationMs);
     },
-    hold(input: boolean) {
-      if (input === held) {
+    hold(isHeld: boolean) {
+      if (isHeld === held) {
         return;
       }
-      held = input;
-      if (input) {
+      held = isHeld;
+      if (isHeld) {
         setActive(true);
       } else {
         extend(holdMs);
@@ -466,9 +466,9 @@ export function installFilesUiNavigationSearch(): () => void {
       installFindBarEventGuards(window);
     }
     NAV_SEARCH_MATCH_LIMIT = 100;
-    searchEntryWords = (...input) =>
-      input
-        .filter((input2) => input2 !== undefined && input2 !== "")
+    searchEntryWords = (...terms) =>
+      terms
+        .filter((term) => term !== undefined && term !== "")
         .map(String);
     FILE_SEARCH_MATCH_LIMIT = 20;
   };

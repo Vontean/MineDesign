@@ -82,19 +82,19 @@ function createFocusRegionController(
   regions: () => FocusRegion[],
   {
     blocked = () => hasOpenOverlay(),
-    rendered = (input) => input.getClientRects().length > 0,
+    rendered = (element) => element.getClientRects().length > 0,
     say = announceLiveMessage,
     now = () => Date.now(),
   }: FocusRegionOptions = {},
 ): FocusRegionController {
   let lastFocusedByRegion = new WeakMap<HTMLElement, HTMLElement>(),
     liveRegions = (): LiveFocusRegion[] =>
-      regions().flatMap((input) => {
-        let value = input.el();
+      regions().flatMap((region) => {
+        let value = region.el();
         if (value && value.isConnected) {
           return [
             {
-              region: input,
+              region: region,
               el: value,
             },
           ];
@@ -103,64 +103,64 @@ function createFocusRegionController(
         }
       }),
     regionIndexContaining = (
-      input: LiveFocusRegion[],
-      options: Element | null,
+      focusRegions: LiveFocusRegion[],
+      element: Element | null,
     ) => {
-      if (!(options instanceof HTMLElement)) {
+      if (!(element instanceof HTMLElement)) {
         return -1;
       }
       let value = -1;
-      input.forEach((input2, options2) => {
+      focusRegions.forEach((region, index) => {
         if (
-          input2.el.contains(options) &&
-          (value === -1 || input[value].el.contains(input2.el))
+          region.el.contains(element) &&
+          (value === -1 || focusRegions[value].el.contains(region.el))
         ) {
-          value = options2;
+          value = index;
         }
       });
       return value;
     },
-    activeRegionIndex = (input: LiveFocusRegion[]) =>
-      regionIndexContaining(input, document.activeElement),
-    focusRegion = (input: LiveFocusRegion[], options: LiveFocusRegion) => {
-      let value = input.filter(
-          (input2) => input2 !== options && options.el.contains(input2.el),
+    activeRegionIndex = (activeRegions: LiveFocusRegion[]) =>
+      regionIndexContaining(activeRegions, document.activeElement),
+    focusRegion = (focusableRegions: LiveFocusRegion[], targetRegion: LiveFocusRegion) => {
+      let value = focusableRegions.filter(
+          (region) => region !== targetRegion && targetRegion.el.contains(region.el),
         ),
-        entry = lastFocusedByRegion.get(options.el),
+        entry = lastFocusedByRegion.get(targetRegion.el),
         items = [
-          entry && entry.isConnected && options.el.contains(entry)
+          entry && entry.isConnected && targetRegion.el.contains(entry)
             ? entry
             : null,
-          options.region.fallback?.() ?? null,
-          ...options.el.querySelectorAll<HTMLElement>(
+          targetRegion.region.fallback?.() ?? null,
+          ...targetRegion.el.querySelectorAll<HTMLElement>(
             FOCUS_REGION_FOCUSABLE_SELECTOR,
           ),
         ];
-      for (let value2 of items) {
+      for (let candidateElement of items) {
         if (
-          !value2 ||
-          value2 === options.el ||
-          value.some((input2) => input2.el.contains(value2)) ||
-          !isFocusableRegionElement(value2, rendered)
+          !candidateElement ||
+          candidateElement === targetRegion.el ||
+          value.some((regionElement) => regionElement.el.contains(candidateElement)) ||
+          !isFocusableRegionElement(candidateElement, rendered)
         ) {
           continue;
         }
-        value2.focus();
-        if (document.activeElement === value2) {
+        candidateElement.focus();
+        if (document.activeElement === candidateElement) {
           return true;
         }
       }
       return (
-        options.region.landOnSelf === true &&
-        focusRegionElementIsVisible(options.el, rendered) &&
-        focusRegionSelf(options.el)
+        targetRegion.region.landOnSelf === true &&
+        focusRegionElementIsVisible(targetRegion.el, rendered) &&
+        focusRegionSelf(targetRegion.el)
       );
     },
     hasMoved = false,
     lastHintAt = Number.NEGATIVE_INFINITY,
     moveAcrossRegions = (
-      input: number,
-      options: boolean,
+      direction: number,
+      includeHome: boolean,
     ): false | "owner" | "moved" => {
       if (blocked()) {
         return false;
@@ -170,33 +170,33 @@ function createFocusRegionController(
       if (length === 0) {
         return false;
       }
-      let value2 = activeRegionIndex(value),
-        value3 =
-          value2 !== -1
-            ? value2
-            : value.findIndex((input2) => input2.region.home);
+      let currentIndex = activeRegionIndex(value),
+        homeIndex =
+          currentIndex !== -1
+            ? currentIndex
+            : value.findIndex((region) => region.region.home);
       for (let count = 1; count <= length; count++) {
-        let value4 = (((value3 + input * count) % length) + length) % length;
-        if (value4 === value2) {
+        let nextIndex = (((homeIndex + direction * count) % length) + length) % length;
+        if (nextIndex === currentIndex) {
           continue;
         }
-        let value5 = value[value4];
-        if (value5.region.ownsKey === true) {
-          if (!options) {
+        let nextRegion = value[nextIndex];
+        if (nextRegion.region.ownsKey === true) {
+          if (!includeHome) {
             continue;
           }
           hasMoved = true;
           return "owner";
         }
-        if (focusRegion(value, value5)) {
+        if (focusRegion(value, nextRegion)) {
           hasMoved = true;
           return "moved";
         }
       }
       return false;
     },
-    move = (input: number) => moveAcrossRegions(input, false) === "moved",
-    hint = (input: string) => {
+    move = (direction: number) => moveAcrossRegions(direction, false) === "moved",
+    hint = (message: string) => {
       if (hasMoved) {
         return;
       }
@@ -205,14 +205,14 @@ function createFocusRegionController(
         return;
       }
       lastHintAt = value;
-      say(focusRegionHint(input));
+      say(focusRegionHint(message));
     },
     rememberFocus = (event: FocusEvent) => {
       let value = liveRegions(),
-        value2 = event.target instanceof Element ? event.target : null,
-        value3 = regionIndexContaining(value, value2);
-      if (value3 !== -1 && value2 !== value[value3].el) {
-        lastFocusedByRegion.set(value[value3].el, value2 as HTMLElement);
+        focusedElement = event.target instanceof Element ? event.target : null,
+        regionIndex = regionIndexContaining(value, focusedElement);
+      if (regionIndex !== -1 && focusedElement !== value[regionIndex].el) {
+        lastFocusedByRegion.set(value[regionIndex].el, focusedElement as HTMLElement);
       }
     },
     onKeyDown = (event: KeyboardEvent) => {
@@ -232,7 +232,7 @@ function createFocusRegionController(
       if (value === "owner") {
         return;
       }
-      if (liveRegions().some((input) => input.region.ownsKey)) {
+      if (liveRegions().some((region) => region.region.ownsKey)) {
         event.stopPropagation();
       }
     };
@@ -263,7 +263,7 @@ function useFocusRegions(regions: FocusRegion[]) {
   }, []);
   return reactFocusRegions.useMemo(
     () => ({
-      hint: (input: string) => controllerRef.current?.hint(input),
+      hint: (message: string) => controllerRef.current?.hint(message),
     }),
     [],
   );

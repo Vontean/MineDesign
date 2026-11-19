@@ -27,9 +27,9 @@ var STATIC_PREVIEW_NOTE: string;
 function getFileAvailabilityRevision(): number {
   return fileAvailabilityRevision;
 }
-function subscribeFileAvailability(input: () => void): () => boolean {
-  fileAvailabilitySubscribers.add(input);
-  return () => fileAvailabilitySubscribers.delete(input);
+function subscribeFileAvailability(subscriber: () => void): () => boolean {
+  fileAvailabilitySubscribers.add(subscriber);
+  return () => fileAvailabilitySubscribers.delete(subscriber);
 }
 function fileAvailabilityUrlPath(path: string): string {
   let normalized = encodeRelativeUrlPath(path),
@@ -84,8 +84,8 @@ function probeFileAvailability(
   let fetchHead =
     headFetch ??
     (typeof fetch === "function"
-      ? (input: string) =>
-          fetch(input, {
+      ? (url: string) =>
+          fetch(url, {
             method: "HEAD",
             credentials: "same-origin",
             cache: "no-cache",
@@ -100,13 +100,13 @@ function probeFileAvailability(
     let flag = false;
     try {
       let value = await fetchHead(fileAvailabilityUrlPath(path)),
-        value2 = (value.headers?.get("content-type") ?? "").toLowerCase(),
-        value3 = value.headers?.get("content-length") ?? null;
+        contentType = (value.headers?.get("content-type") ?? "").toLowerCase(),
+        contentLength = value.headers?.get("content-length") ?? null;
       flag =
         value.ok &&
-        value2.startsWith(mimePrefix) &&
+        contentType.startsWith(mimePrefix) &&
         (bytes <= 0 ||
-          (value3 !== null && value3 !== "" && Number(value3) === bytes));
+          (contentLength !== null && contentLength !== "" && Number(contentLength) === bytes));
     } catch {
       flag = false;
     }
@@ -120,7 +120,7 @@ function useFileAvailability(files: Preview.FileAvailabilityEntry[]): number {
       getFileAvailabilityRevision,
       getFileAvailabilityRevision,
     ),
-    fingerprint = files.map((input) => input.path + ":" + String(input.bytes))
+    fingerprint = files.map((fileEntry) => fileEntry.path + ":" + String(fileEntry.bytes))
       .join(`
 `);
   reactFileAvailability.useEffect(() => {
@@ -159,16 +159,16 @@ function FluidComponentPreview({
   stage: stage,
 }: Preview.FluidComponentPreviewProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactComponentPreviews.useState(false);
-  reactComponentPreviews.useEffect(() => value2(true), []);
+  let [value, isReady] = reactComponentPreviews.useState(false);
+  reactComponentPreviews.useEffect(() => isReady(true), []);
   let ref = reactComponentPreviews.useRef<HTMLDivElement | null>(null),
-    [value3, value4] = reactComponentPreviews.useState(0);
+    [containerWidth, setContainerWidth] = reactComponentPreviews.useState(0);
   reactComponentPreviews.useEffect(() => {
     let current = ref.current;
     if (current === null) {
       return;
     }
-    let callback = () => value4(Math.round(current.clientWidth));
+    let callback = () => setContainerWidth(Math.round(current.clientWidth));
     callback();
     if (typeof ResizeObserver === "undefined") {
       return;
@@ -177,26 +177,26 @@ function FluidComponentPreview({
     observer.observe(current);
     return () => observer.disconnect();
   }, []);
-  let value5 = responsivePreviewHeight(height, value3),
-    value6 = componentPreviewSource(c, ph, stage);
+  let previewHeight = responsivePreviewHeight(height, containerWidth),
+    previewSource = componentPreviewSource(c, ph, stage);
   return (
     <div
       ref={ref}
       className={"ds-comp-preview-fill"}
       style={{
-        minHeight: value5,
+        minHeight: previewHeight,
       }}
     >
-      {value && value6.html !== undefined ? (<ComponentPreview
-          html={value6.html}
-          cardFile={value6.file}
-          fromProps={value6.fromProps}
+      {value && previewSource.html !== undefined ? (<ComponentPreview
+          html={previewSource.html}
+          cardFile={previewSource.file}
+          fromProps={previewSource.fromProps}
           head={ph.head}
-          height={value5}
+          height={previewHeight}
           title={uiMessage("design-system.previewAvailability.preview", { value1: String(c.name) })}
-          {...(value6.staticReason !== undefined
+          {...(previewSource.staticReason !== undefined
             ? {
-                staticReason: value6.staticReason,
+                staticReason: previewSource.staticReason,
               }
             : {})}
           data-testid={"ds-comp-preview-" + c.name}
@@ -212,10 +212,10 @@ function ScaledComponentPreview({
   stage: stage,
 }: Preview.ScaledComponentPreviewProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactComponentPreviews.useState(false);
-  reactComponentPreviews.useEffect(() => value2(true), []);
-  let [value3, value4] = reactComponentPreviews.useState<string | null>(null),
-    value5 = componentPreviewSource(c, ph, stage);
+  let [value, isReady] = reactComponentPreviews.useState(false);
+  reactComponentPreviews.useEffect(() => isReady(true), []);
+  let [staticNote, setStaticNote] = reactComponentPreviews.useState<string | null>(null),
+    previewSource = componentPreviewSource(c, ph, stage);
   return (
     <div className={"ds-comp-preview-fill"}>
       {[<PreviewFitBox
@@ -223,28 +223,28 @@ function ScaledComponentPreview({
           height={height}
           data-testid={"ds-comp-scaled-" + c.name}
         >
-          {value && value5.html !== undefined ? (<ComponentPreview
-              html={value5.html}
-              cardFile={value5.file}
-              fromProps={value5.fromProps}
+          {value && previewSource.html !== undefined ? (<ComponentPreview
+              html={previewSource.html}
+              cardFile={previewSource.file}
+              fromProps={previewSource.fromProps}
               head={ph.head}
               height={height}
               title={uiMessage("design-system.previewAvailability.preview", { value1: String(c.name) })}
-              {...(value5.staticReason !== undefined
+              {...(previewSource.staticReason !== undefined
                 ? {
-                    staticReason: value5.staticReason,
+                    staticReason: previewSource.staticReason,
                   }
                 : {})}
               staticPageWidth={width}
-              onStaticNote={value4}
+              onStaticNote={setStaticNote}
               data-testid={"ds-comp-preview-" + c.name}
             />) : (null)}
-        </PreviewFitBox>, value3 !== null ? (
+        </PreviewFitBox>, staticNote !== null ? (
           <p
             className={"ds-swatch-note ds-pad mt-xs text-footnote text-muted"}
             data-testid={"ds-comp-preview-note-" + c.name}
           >
-            {value3}
+            {staticNote}
           </p>
         ) : null]}
     </div>
@@ -319,8 +319,8 @@ export function installFilesUiPreviewAvailability(): () => void {
     fileAvailabilityPending = new Set();
     fileAvailabilitySubscribers = new Set();
     fileAvailabilityRevision = 0;
-    fileAvailabilityCacheKey = (input: string, options: number) =>
-      input + "\x00" + String(options);
+    fileAvailabilityCacheKey = (filePath: string, bytes: number) =>
+      filePath + "\x00" + String(bytes);
     fileAvailabilityNotifyPending = false;
     reactComponentPreviews = toModuleNamespace(
       loadReactNamespace(),

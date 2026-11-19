@@ -61,9 +61,9 @@ function initialSectionFromHash(
 }
 function replaceSectionHash(section: string): void {
   try {
-    let { location: value, history: value2 } = window;
+    let { location: value, history: history } = window;
     if (value.protocol !== "about:" && value.hash !== "#" + section) {
-      value2.replaceState(null, "", "#" + section);
+      history.replaceState(null, "", "#" + section);
     }
   } catch {}
 }
@@ -93,19 +93,19 @@ function PendingSectionRow({
   panel: panel,
 }: PendingSectionRowProps) {
   useUiLocale();
-  let [value, value2] = reactSectionNavigation.useState(false),
+  let [value, setOpen] = reactSectionNavigation.useState(false),
     ref = reactSectionNavigation.useRef(false);
   return (
     <div className={"relative flex w-full shrink-0"}>
       <PropertyPopup
         open={value}
-        onOpen={() => value2(true)}
-        onClose={() => value2(false)}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
         align={"left"}
         popupAttrs={UNCOMMENTABLE_PROPS}
         focusOnOpen={ref.current}
         aria-label={row.label}
-        trigger={(input: React.HTMLAttributes<HTMLElement>) => (
+        trigger={(triggerProps: React.HTMLAttributes<HTMLElement>) => (
           <TooltipWrapper
             tip={tip}
             side={"bottom"}
@@ -113,16 +113,16 @@ function PendingSectionRow({
             className={"w-full"}
           >
             <Button
-              {...input}
+              {...triggerProps}
               variant={"ghost"}
               size={"sm"}
               icon={sectionIconName(row.id)}
               aria-describedby={tipId}
               className={"ds-navrow ds-navrow-pending w-full justify-start"}
               data-testid={"ds-pending-" + row.id}
-              onClick={(input2: React.MouseEvent<HTMLElement>) => {
-                ref.current = input2.detail === 0;
-                input.onClick?.(input2);
+              onClick={(clickEvent: React.MouseEvent<HTMLElement>) => {
+                ref.current = clickEvent.detail === 0;
+                triggerProps.onClick?.(clickEvent);
               }}
             >
               {row.label}
@@ -130,7 +130,7 @@ function PendingSectionRow({
           </TooltipWrapper>
         )}
       >
-        {value ? (panel(row, () => value2(false))) : (null)}
+        {value ? (panel(row, () => setOpen(false))) : (null)}
       </PropertyPopup>
     </div>
   );
@@ -148,24 +148,24 @@ function SectionNavigationRows({
   let items = [...sections, ...tail],
     value =
       hits === undefined
-        ? items.map((input) => ({
-            section: input.id,
+        ? items.map((section) => ({
+            section: section.id,
             hits: [],
           }))
         : hits.result.groups,
-    value2 = reactSectionNavigation.useId();
+    descriptionId = reactSectionNavigation.useId();
   return (
     <jsxSectionNavigation.Fragment>
-      {value.map((input) => {
-        let value3 = items.find((input2) => input2.id === input.section);
-        if (value3 === undefined) {
+      {value.map((row) => {
+        let section = items.find((candidate) => candidate.id === row.section);
+        if (section === undefined) {
           return null;
         } else {
           return (() => {
-            const _Element3 = jsxSectionNavigation.Fragment;
-            const _elementProps3 = {
+            const SectionRowElement = jsxSectionNavigation.Fragment;
+            const sectionRowProps = {
               children: [
-                value3 === tail[0] && input !== value[0] ? (
+                section === tail[0] && row !== value[0] ? (
                   <div
                     aria-hidden={"true"}
                     className={"my-1 shrink-0 border-t border-border-line"}
@@ -175,80 +175,80 @@ function SectionNavigationRows({
                 <Button
                   variant={"ghost"}
                   size={"sm"}
-                  icon={sectionIconName(value3.id)}
+                  icon={sectionIconName(section.id)}
                   aria-current={
-                    value3.id === current ? "location" : undefined
+                    section.id === current ? "location" : undefined
                   }
                   aria-label={
-                    value3.count !== undefined && value3.count > 0 ? (((value3.label) + (", ")) + (value3.count.toLocaleString("en-US"))) : (undefined)
+                    section.count !== undefined && section.count > 0 ? (((section.label) + (", ")) + (section.count.toLocaleString("en-US"))) : (undefined)
                   }
                   className={"ds-navrow w-full justify-start"}
-                  data-testid={"ds-jump-" + value3.id}
-                  onClick={() => onJump(value3.id)}
+                  data-testid={"ds-jump-" + section.id}
+                  onClick={() => onJump(section.id)}
                 >
-                  {[value3.label, marks?.has(value3.id) === true ? (
+                  {[section.label, marks?.has(section.id) === true ? (
                       <NavigationConflictMark />
-                    ) : null, value3.count !== undefined && value3.count > 0 ? (
+                    ) : null, section.count !== undefined && section.count > 0 ? (
                       <span
                         className={
                           "pl-xs text-caption tabular-nums text-muted"
                         }
-                        title={value3.countLabel}
+                        title={section.countLabel}
                         data-testid={"ds-nav-count"}
                       >
-                        {value3.count.toLocaleString("en-US")}
+                        {section.count.toLocaleString("en-US")}
                       </span>
                     ) : null]}
                 </Button>,
-                input.hits.map((input2, options) =>
+                row.hits.map((hit, hitIndex) =>
                   (() => {
                     const _Element = Button_r;
                     const _elementProps = {
                       variant: "ghost" as const,
                       size: "sm" as const,
-                      get "aria-label"() { return input2.detail !== undefined ? (((input2.entry.label) + (", ")) + (input2.detail)) : (undefined); },
+                      get "aria-label"() { return hit.detail !== undefined ? (((hit.entry.label) + (", ")) + (hit.detail)) : (undefined); },
                       className: "ds-navrow ds-navhit w-full justify-start",
                       "data-testid": "ds-search-hit",
-                      onClick: () => hits?.onPick(input2.entry),
+                      onClick: () => hits?.onPick(hit.entry),
                       children: [
                         <span className={"max-w-full shrink-0 truncate"}>
-                          {input2.entry.label}
+                          {hit.entry.label}
                         </span>,
-                        input2.detail !== undefined ? (
+                        hit.detail !== undefined ? (
                           <span
                             className={
                               "min-w-0 truncate pl-xs text-caption text-muted"
                             }
                           >
-                            {input2.detail}
+                            {hit.detail}
                           </span>
                         ) : null,
                       ],
                     };
-                    const _elementKey = options;
+                    const _elementKey = hitIndex;
                     return <_Element key={_elementKey} {..._elementProps} />;
                   })(),
                 ),
                 hits === undefined &&
-                value3 === sections[sections.length - 1] &&
+                section === sections[sections.length - 1] &&
                 pending !== undefined ? (
                   <TooltipProvider>
-                    {[<span id={value2} hidden={true}>
+                    {[<span id={descriptionId} hidden={true}>
                         {pending.tip}
-                      </span>, pending.rows.map((input2) =>
+                      </span>, pending.rows.map((pendingRow) =>
                         (() => {
-                          const _Element2 = PendingSectionRow;
-                          const _elementProps2 = {
-                            row: input2,
+                          const PendingRowElement = PendingSectionRow;
+                          const pendingRowProps = {
+                            row: pendingRow,
                             tip: pending.tip,
-                            tipId: value2,
+                            tipId: descriptionId,
                             panel: pending.panel,
                           };
-                          const _elementKey2 = input2.id;
+                          const pendingRowKey = pendingRow.id;
                           return (
-                            <_Element2
-                              key={_elementKey2}
-                              {..._elementProps2}
+                            <PendingRowElement
+                              key={pendingRowKey}
+                              {...pendingRowProps}
                             />
                           );
                         })(),
@@ -257,30 +257,30 @@ function SectionNavigationRows({
                 ) : null,
               ],
             };
-            const _elementKey3 = value3.id;
-            return <_Element3 key={_elementKey3} {..._elementProps3} />;
+            const sectionRowKey = section.id;
+            return <SectionRowElement key={sectionRowKey} {...sectionRowProps} />;
           })();
         }
       })}
     </jsxSectionNavigation.Fragment>
   );
 }
-function focusAndSelectSearchInput(input: HTMLInputElement | null): boolean {
-  if (input === null || input.ownerDocument.activeElement === input) {
+function focusAndSelectSearchInput(inputElement: HTMLInputElement | null): boolean {
+  if (inputElement === null || inputElement.ownerDocument.activeElement === inputElement) {
     return false;
   }
-  input.focus();
-  input.select();
-  return input.ownerDocument.activeElement === input;
+  inputElement.focus();
+  inputElement.select();
+  return inputElement.ownerDocument.activeElement === inputElement;
 }
 function hasOtherOpenOverlay(searchInput: HTMLInputElement | null): boolean {
   return Array.from(
     document.querySelectorAll(OPEN_OVERLAY_SELECTOR),
   ).some(
-    (input) =>
-      !input.contains(searchInput) &&
-      !input.hasAttribute("data-mc-scrim") &&
-      !isOverlayClosed(input),
+    (element) =>
+      !element.contains(searchInput) &&
+      !element.hasAttribute("data-mc-scrim") &&
+      !isOverlayClosed(element),
   );
 }
 function useSectionNavigationSearch(
@@ -336,8 +336,8 @@ function useSectionNavigationSearch(
 function useSearchEscapeToRow() {
   let ref = reactSectionNavigation.useRef(-1 / 0);
   return {
-    onCompositionEnd: (input: React.CompositionEvent) => {
-      ref.current = input.timeStamp;
+    onCompositionEnd: (compositionEvent: React.CompositionEvent) => {
+      ref.current = compositionEvent.timeStamp;
     },
     onKeyDown: (event: React.KeyboardEvent) => {
       let target = event.target;
@@ -378,12 +378,12 @@ function SectionSearchField({
 }: SectionSearchFieldProps) {
   useUiLocale();
   let value = useSearchEscapeToRow(),
-    value2 = reactSectionNavigation.useId();
+    descriptionId = reactSectionNavigation.useId();
   reactSectionNavigation.useEffect(() => {
-    let value3 = box.current?.querySelector("input");
-    value3?.setAttribute("aria-describedby", value2);
-    return () => value3?.removeAttribute("aria-describedby");
-  }, [box, value2]);
+    let searchInput = box.current?.querySelector("input");
+    searchInput?.setAttribute("aria-describedby", descriptionId);
+    return () => searchInput?.removeAttribute("aria-describedby");
+  }, [box, descriptionId]);
   return (
     <CdsRoot
       density={"compact"}
@@ -399,7 +399,7 @@ function SectionSearchField({
             onEnterIndex={() => result?.bestRow ?? 0}
             className={"mb-sm w-0 min-w-full"}
             data-testid={"ds-search"}
-          />, <span id={value2} hidden={true}>
+          />, <span id={descriptionId} hidden={true}>
             {NAV_SEARCH_BROWSER_FIND_HINT}
           </span>]}
       </span>
@@ -419,7 +419,7 @@ function SectionSearchStatus({
           : result.hidden > 0
             ? uiMessage("design-system.navigation.searchHidden", {shown: result.total-result.hidden, total: result.total})
             : null,
-    value2 =
+    statusText =
       result === null
         ? ""
         : uiMessage(result.total === 1 ? "design-system.navigation.match" : "design-system.navigation.matches", {count: result.total});
@@ -433,7 +433,7 @@ function SectionSearchStatus({
       role={"status"}
       data-testid={"ds-search-note"}
     >
-      {value ?? (value2)}
+      {value ?? (statusText)}
     </p>
   );
 }
@@ -452,8 +452,8 @@ function SidebarSectionNavigation({
   useUiLocale();
   let value = useSectionNavigationSearch(
     search,
-    (input) =>
-      !hasOpenOverlay() && focusAndSelectSearchInput(input),
+    (inputElement) =>
+      !hasOpenOverlay() && focusAndSelectSearchInput(inputElement),
   );
   return (
     <nav
@@ -576,42 +576,42 @@ function FloatingSectionNavigation({
   pending: pending,
 }: FloatingNavigationProps) {
   useUiLocale();
-  let [value, value2] = reactSectionNavigation.useState(false),
-    [value3, value4] = reactSectionNavigation.useState(false),
-    [value5, value6] = reactSectionNavigation.useState(false),
+  let [value, setOpen] = reactSectionNavigation.useState(false),
+    [isSearchOpen, setSearchOpen] = reactSectionNavigation.useState(false),
+    [isFocusOpen, setFocusOpen] = reactSectionNavigation.useState(false),
     ref = reactSectionNavigation.useRef(false),
-    ref2 = reactSectionNavigation.useRef<HTMLDivElement | null>(null),
-    value7 = useSectionNavigationSearch(search, (input) => {
+    navigationRef = reactSectionNavigation.useRef<HTMLDivElement | null>(null),
+    searchController = useSectionNavigationSearch(search, (element) => {
       if (value) {
         return (
-          !hasOtherOpenOverlay(input) && focusAndSelectSearchInput(input)
+          !hasOtherOpenOverlay(element) && focusAndSelectSearchInput(element)
         );
       }
       if (
         hasOpenOverlay() ||
-        ref2.current === null ||
-        ref2.current.closest("[inert]") !== null
+        navigationRef.current === null ||
+        navigationRef.current.closest("[inert]") !== null
       ) {
         return false;
       }
-      ref2.current.querySelector<HTMLElement>(".ds-nav-fab-btn")?.focus();
+      navigationRef.current.querySelector<HTMLElement>(".ds-nav-fab-btn")?.focus();
       ref.current = true;
-      value2(true);
+      setOpen(true);
       return true;
     }),
     callback = () => {
-      value2(false);
-      value7.setQuery("");
+      setOpen(false);
+      searchController.setQuery("");
     },
-    value8 = pending && {
+    pendingSearch = pending && {
       ...pending,
-      panel: (input: SectionRow, options: () => void) =>
-        pending.panel(input, () => {
-          options();
+      panel: (row: SectionRow, closePanel: () => void) =>
+        pending.panel(row, () => {
+          closePanel();
           callback();
         }),
     },
-    callback2 = (input: SearchEntry) => {
+    handlePick = (entry: SearchEntry) => {
       callback();
       window.setTimeout(() => {
         let activeElement = document.activeElement;
@@ -621,21 +621,21 @@ function FloatingSectionNavigation({
         ) {
           activeElement.blur();
         }
-        search?.onPick(input);
+        search?.onPick(entry);
       }, 0);
     },
-    value9 = reactSectionNavigation.useId(),
-    value10 = sections.findIndex((input) => input.id === current),
-    value11 = value10 >= 0 ? sections[value10] : undefined,
-    value12 =
-      useNavigationPillActivity(port, value || value3 || value5) &&
-      value11 !== undefined;
+    navigationId = reactSectionNavigation.useId(),
+    currentIndex = sections.findIndex((section) => section.id === current),
+    currentSection = currentIndex >= 0 ? sections[currentIndex] : undefined,
+    wideLayout =
+      useNavigationPillActivity(port, value || isSearchOpen || isFocusOpen) &&
+      currentSection !== undefined;
   return (
     <div
-      ref={(input: HTMLDivElement | null) => {
-        ref2.current = input;
-        assignReactRef(edgeRef, input);
-        assignReactRef(navRef, input);
+      ref={(element: HTMLDivElement | null) => {
+        navigationRef.current = element;
+        assignReactRef(edgeRef, element);
+        assignReactRef(navRef, element);
       }}
       className={"ds-nav-fab"}
       data-testid={"ds-nav-fab"}
@@ -648,49 +648,49 @@ function FloatingSectionNavigation({
       >
         {[<PropertyPopup
             open={value}
-            onOpen={() => value2(true)}
+            onOpen={() => setOpen(true)}
             onClose={callback}
             trigger={
               <Button
                 variant={"secondary"}
-                icon={value12 ? sectionIconName(current) : "Menu"}
+                icon={wideLayout ? sectionIconName(current) : "Menu"}
                 aria-label={uiMessage("design-system.navigation.sections")}
                 aria-describedby={
-                  value11 === undefined
+                  currentSection === undefined
                     ? undefined
-                    : value9 + "-n " + value9 + "-c"
+                    : navigationId + "-n " + navigationId + "-c"
                 }
                 className={"ds-nav-fab-btn"}
-                data-wide={value12 ? "" : undefined}
+                data-wide={wideLayout ? "" : undefined}
                 data-testid={"ds-section-menu"}
-                onPointerMove={(input: React.PointerEvent) => {
-                  if (input.pointerType === "mouse") {
-                    value4(true);
+                onPointerMove={(pointerEvent: React.PointerEvent) => {
+                  if (pointerEvent.pointerType === "mouse") {
+                    setSearchOpen(true);
                   }
                 }}
-                onPointerLeave={() => value4(false)}
-                onFocus={(input: React.FocusEvent<HTMLElement>) =>
-                  value6(isFocusVisible(input.currentTarget))
+                onPointerLeave={() => setSearchOpen(false)}
+                onFocus={(focusEvent: React.FocusEvent<HTMLElement>) =>
+                  setFocusOpen(isFocusVisible(focusEvent.currentTarget))
                 }
-                onBlur={() => value6(false)}
-                onClick={(input: React.MouseEvent) => {
-                  ref.current = input.detail === 0;
+                onBlur={() => setFocusOpen(false)}
+                onClick={(clickEvent: React.MouseEvent) => {
+                  ref.current = clickEvent.detail === 0;
                 }}
               >
                 <span className={"ds-nav-fab-label"} aria-hidden={"true"}>
                   <span className={"ds-nav-fab-text"}>
                     {[<span
                         className={"truncate"}
-                        id={value9 + "-n"}
+                        id={navigationId + "-n"}
                         data-testid={"ds-section-pill-name"}
                       >
-                        {value11?.label ?? ("")}
+                        {currentSection?.label ?? ("")}
                       </span>, <span
                         className={"text-caption tabular-nums text-muted"}
-                        id={value9 + "-c"}
+                        id={navigationId + "-c"}
                         data-testid={"ds-section-pill-at"}
                       >
-                        {value11 === undefined ? ("") : uiMessage("design-system.navigation.position", {current: value10 + 1, total: sections.length})}
+                        {currentSection === undefined ? ("") : uiMessage("design-system.navigation.position", {current: currentIndex + 1, total: sections.length})}
                       </span>]}
                   </span>
                 </span>
@@ -714,30 +714,30 @@ function FloatingSectionNavigation({
                 {...UNCOMMENTABLE_PROPS}
               >
                 {[search !== undefined ? (
-                    <SectionSearchField {...value7} />
+                    <SectionSearchField {...searchController} />
                   ) : null, <div className={NAV_SECTION_LIST_CLASS}>
                     {[<SectionNavigationRows
                         sections={sections}
                         tail={tail}
                         current={current}
-                        onJump={(input: string) => {
+                        onJump={(path: string) => {
                           callback();
-                          window.setTimeout(() => onJump(input), 0);
+                          window.setTimeout(() => onJump(path), 0);
                         }}
                         marks={marks}
-                        pending={value8}
+                        pending={pendingSearch}
                         hits={
-                          value7.result !== null && search !== undefined
+                          searchController.result !== null && search !== undefined
                             ? {
-                                result: value7.result,
-                                onPick: callback2,
+                                result: searchController.result,
+                                onPick: handlePick,
                               }
                             : undefined
                         }
                       />, search !== undefined ? (
                         <SectionSearchStatus
-                          query={value7.query}
-                          result={value7.result}
+                          query={searchController.query}
+                          result={searchController.result}
                         />
                       ) : null]}
                   </div>, footer !== undefined ? (

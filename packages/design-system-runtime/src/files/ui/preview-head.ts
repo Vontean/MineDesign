@@ -73,7 +73,7 @@ function previewFontSource(
     if (reference.store !== "blob") {
       let value = isHeldFilePointer(path, file)
         ? (addressedProjectFileUrl(path) ??
-          system.fonts.find((input) => input.path === path)?.src ??
+          system.fonts.find((font) => font.path === path)?.src ??
           "")
         : "";
       try {
@@ -88,7 +88,7 @@ function previewFontSource(
     }
     if (isClaudeEmulator()) {
       let value =
-        system.fonts.find((input) => input.path === path)?.src ?? "";
+        system.fonts.find((font) => font.path === path)?.src ?? "";
       if (value === "") {
         return null;
       } else {
@@ -136,7 +136,7 @@ html{color-scheme:` +
 }
 function darkThemeId(system: Preview.PreviewSystem): string | undefined {
   return system.tokens.color.themes.find(
-    (input) => /dark/i.test(input.id) || /dark/i.test(input.name),
+    (library) => /dark/i.test(library.id) || /dark/i.test(library.name),
   )?.id;
 }
 function defaultPreviewThemeId(
@@ -154,29 +154,29 @@ function previewLibraries(
   let addReact =
       previewStaticNoticeSnapshot() &&
       system.bundle.js !== null &&
-      !system.bundle.declared.some((input) =>
+      !system.bundle.declared.some((declaredLibrary) =>
         REACT_LIBRARY_CATALOG.some(
-          (input2: { name: string }) => input2.name === input.name,
+          (library: { name: string }) => library.name === declaredLibrary.name,
         ),
       ),
     declared = addReact
       ? [
           ...REACT_LIBRARY_CATALOG.map(
-            (input: { name: string; version: string }) => ({
-              name: input.name,
-              version: input.version,
+            (library: { name: string; version: string }) => ({
+              name: library.name,
+              version: library.version,
             }),
           ),
           ...system.bundle.declared,
         ]
       : system.bundle.declared,
-    hasLibraryFile = (input: string) =>
-      system.bundle.libraries.load.some((input2) => input2.file === input) ||
+    hasLibraryFile = (filePath: string) =>
+      system.bundle.libraries.load.some((library) => library.file === filePath) ||
       (addReact &&
         REACT_LIBRARY_CATALOG.some(
-          (input2: { packedFile: string }) => input2.packedFile === input,
+          (library: { packedFile: string }) => library.packedFile === filePath,
         ) &&
-        Object.hasOwn(system.files, input));
+        Object.hasOwn(system.files, filePath));
   return {
     addReact: addReact,
     libraries:
@@ -195,19 +195,19 @@ function previewStaticStatus(
   libraries: Model.ResolvedLibraries = previewLibraries(system).libraries,
 ): Preview.PreviewStaticStatus {
   if (system.bundle.js !== null && libraries.missing.length > 0) {
-    let { missing: value, missingFiles: value2 } = libraries,
-      value3 = Object.freeze(
-        value2.length === value.length
-          ? [...value2]
-          : value.map((input) => "components/lib/… for " + input),
+    let { missing: value, missingFiles: missingFiles } = libraries,
+      missingSummaries = Object.freeze(
+        missingFiles.length === value.length
+          ? [...missingFiles]
+          : value.map((filePath) => "components/lib/… for " + filePath),
       );
     return {
       staticReason:
         uiMessage("design-system.previewHead.previewsCanTRun") +
-        (value3.length === 1
+        (missingSummaries.length === 1
           ? "1 file is missing."
-          : String(value3.length) + " files are missing."),
-      staticMissing: value3,
+          : String(missingSummaries.length) + " files are missing."),
+      staticMissing: missingSummaries,
     };
   }
   return {
@@ -234,54 +234,54 @@ function createPreviewHead(
   }
   let selectedTheme =
       themeId !== undefined &&
-      system.tokens.color.themes.some((input) => input.id === themeId)
+      system.tokens.color.themes.some((theme) => theme.id === themeId)
         ? themeId
         : defaultPreviewThemeId(system, mode),
     { addReact: addReact, libraries: libraries } = previewLibraries(system),
     useLiveUrls =
       preferUrl && preferLivePreviewUrls && supportsLivePreviewUrls(),
     heldUrl = (
-      input: string,
-      options: "style" | "script" | "font",
+      filePath: string,
+      fileType: "style" | "script" | "font",
     ): Preview.PreviewHeldUrl | undefined => {
-      let value = useLiveUrls ? system.files[input] : undefined,
-        value2 =
+      let value = useLiveUrls ? system.files[filePath] : undefined,
+        preview =
           value === undefined || value === ""
             ? undefined
-            : publishedPreviewUrl(input, value, options);
-      if (value2 === undefined) {
+            : publishedPreviewUrl(filePath, value, fileType);
+      if (preview === undefined) {
         return undefined;
       } else {
         return Object.freeze({
-          ...value2,
-          file: input,
+          ...preview,
+          file: filePath,
         });
       }
     },
     bundleCssUrl = heldUrl(DESIGN_SYSTEM_PATHS.bundleCss, "style"),
     libraryScriptUrls: (Preview.PreviewHeldUrl | undefined)[] =
-      libraries.load.map((input) => heldUrl(input.file, "script")),
+      libraries.load.map((library) => heldUrl(library.file, "script")),
     bundleJsUrl = heldUrl(DESIGN_SYSTEM_PATHS.bundleJs, "script"),
     fontUrls: Preview.PreviewFontUrl[] = !useLiveUrls
       ? []
-      : system.tokens.type.fonts.flatMap((input) => {
-          let value = system.files[input.file],
-            value2 =
+      : system.tokens.type.fonts.flatMap((font) => {
+          let value = system.files[font.file],
+            preview =
               value === undefined ||
               parseDataUriHeader(value) === null
                 ? undefined
-                : publishedPreviewUrl(input.file, value, "font");
-          if (value2 === undefined) {
+                : publishedPreviewUrl(font.file, value, "font");
+          if (preview === undefined) {
             return [];
           } else {
             return [
               Object.freeze({
-                url: value2.url,
-                file: input.file,
+                url: preview.url,
+                file: font.file,
                 face: Object.freeze({
-                  family: input.family,
-                  weight: String(input.weight),
-                  style: String(input.style),
+                  family: font.family,
+                  weight: String(font.weight),
+                  style: String(font.style),
                 }),
               }),
             ];
@@ -294,7 +294,7 @@ function createPreviewHead(
         : !useLiveUrls
           ? "g" + String(getFileAvailabilityRevision())
           : [bundleCssUrl, ...libraryScriptUrls, bundleJsUrl, ...fontUrls]
-              .map((input) => input?.url ?? "")
+              .map((preview) => preview?.url ?? "")
               .join(",")),
     baseCacheKey =
       mode +
@@ -329,11 +329,11 @@ function createPreviewHead(
         : ""),
     fontsCss = generateFontFacesCss(
       system.tokens,
-      (input: string) => previewFontSource(system, input, preferUrl),
+      (fontPath: string) => previewFontSource(system, fontPath, preferUrl),
     ),
     fontsKey = generateFontFacesCss(
       system.tokens,
-      (input: string) => previewFontIdentity(system, input),
+      (fontPath: string) => previewFontIdentity(system, fontPath),
     ),
     { staticReason: staticReason, staticMissing: staticMissing } =
       previewStaticStatus(system, libraries),
@@ -342,7 +342,7 @@ function createPreviewHead(
       fontUrls.length > 0 ||
       (runnable &&
         [bundleCssUrl, bundleJsUrl, ...libraryScriptUrls].some(
-          (input) => input !== undefined,
+          (url) => url !== undefined,
         )),
     result: Preview.PreviewHeadResult = Object.freeze({
       head: Object.freeze({
@@ -357,10 +357,10 @@ function createPreviewHead(
         ),
         runtimeTags: Object.freeze(
           staticReason === ""
-            ? libraries.fetch.map((input) =>
+            ? libraries.fetch.map((library) =>
                 Object.freeze({
-                  src: input.url,
-                  integrity: input.integrity,
+                  src: library.url,
+                  integrity: library.integrity,
                 }),
               )
             : [],
@@ -370,7 +370,7 @@ function createPreviewHead(
           ? {
               fontsCssHeld: generateFontFacesCss(
                 system.tokens,
-                (input: string) => previewFontSource(system, input, false),
+                (fontPath: string) => previewFontSource(system, fontPath, false),
               ),
             }
           : {}),

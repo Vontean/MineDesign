@@ -51,23 +51,23 @@ var flaggedDesignSystemFiles: (doc: DesignFilesDocument) => Set<string>;
 var designSystemDocumentIsReadonly: (doc: DesignFilesDocument) => boolean;
 function designSystemFileHome(
   path: string,
-  context: FileHomeContext,
+  pageContext: FileHomeContext,
 ): FileHome {
-  let sectionHome: (section: string) => FileHome = (input: string) =>
-    context.listsSection?.(input) === false
+  let sectionHome: (section: string) => FileHome = (sectionId: string) =>
+    pageContext.listsSection?.(sectionId) === false
       ? {
           at: "nowhere",
         }
       : {
           at: "section",
-          id: input,
+          id: sectionId,
         };
-  if (context.leftOut.has(path)) {
+  if (pageContext.leftOut.has(path)) {
     return {
       at: "nowhere",
     };
   }
-  if (!context.held(path)) {
+  if (!pageContext.held(path)) {
     if (
       isGeneratedSystemPath(path) ||
       path === DESIGN_SYSTEM_PATHS.manifest
@@ -89,7 +89,7 @@ function designSystemFileHome(
   }
   if (
     path === DESIGN_SYSTEM_COVER_PREVIEW_PATH &&
-    context.bareCover === true
+    pageContext.bareCover === true
   ) {
     return sectionHome("readme");
   }
@@ -174,55 +174,55 @@ function useDesignSystemFilesBrowser({
   let openRef = reactDesignSystemFiles.useRef(false),
     retryOwedRef = reactDesignSystemFiles.useRef(false),
     refreshListing = reactDesignSystemFiles.useCallback(
-      (input: boolean) => {
-        let callback = (input2: number) => {
+      (isRetryable: boolean) => {
+        let callback = (attempt: number) => {
           clearTimeout(retryTimerRef.current);
           abortRef.current?.abort();
           retryOwedRef.current = false;
           let value = (abortRef.current = new AbortController()),
-            callback2 = () => {
+            retryListing = () => {
               if (openRef.current) {
                 retryOwedRef.current = true;
                 return;
               }
-              let value2 = FILES_LISTING_NARROWED_RETRY_DELAYS_MS[input2];
-              if (value2 !== undefined) {
+              let retryDelay = FILES_LISTING_NARROWED_RETRY_DELAYS_MS[attempt];
+              if (retryDelay !== undefined) {
                 retryTimerRef.current = setTimeout(
-                  () => callback(input2 + 1),
-                  value2,
+                  () => callback(attempt + 1),
+                  retryDelay,
                 );
               }
             };
           fetchFileWithRetries(
             FILES_LISTING_URL,
-            input2 === 0 ? FILES_BROWSER_READ_RETRY_MS : 0,
+            attempt === 0 ? FILES_BROWSER_READ_RETRY_MS : 0,
             value.signal,
-            input || input2 > 0,
+            isRetryable || attempt > 0,
           )
-            .then((input3: Response) => input3.json())
-            .then((input3: ExternalFileListing | null) => {
+            .then((response: Response) => response.json())
+            .then((listingResponse: ExternalFileListing | null) => {
               if (value.signal.aborted) {
                 return;
               }
               if (
-                input3 === null ||
-                typeof input3 !== "object" ||
-                input3.files === null ||
-                typeof input3.files !== "object" ||
-                Array.isArray(input3.files)
+                listingResponse === null ||
+                typeof listingResponse !== "object" ||
+                listingResponse.files === null ||
+                typeof listingResponse.files !== "object" ||
+                Array.isArray(listingResponse.files)
               ) {
                 throw Error(uiMessage("design-system.designSystemFiles.notAListing"));
               }
-              let value2 = input3.narrowed === true;
+              let isNarrowed = listingResponse.narrowed === true;
               setListing({
                 files: projectListingFiles(
-                  input3.files,
+                  listingResponse.files,
                   "design_system",
                 ),
-                narrowed: value2,
+                narrowed: isNarrowed,
               });
-              if (value2 && mayEditRef.current) {
-                callback2();
+              if (isNarrowed && mayEditRef.current) {
+                retryListing();
               }
             })
             .catch(() => {
@@ -230,10 +230,10 @@ function useDesignSystemFilesBrowser({
                 return;
               }
               let current = openRef.current;
-              setListing((input3: FileListingState) =>
-                current ? "failed" : (input3 ?? "failed"),
+              setListing((currentListing: FileListingState) =>
+                current ? "failed" : (currentListing ?? "failed"),
               );
-              callback2();
+              retryListing();
             });
         };
         callback(0);
@@ -281,14 +281,14 @@ function useDesignSystemFilesBrowser({
   }
   let pageContext = reactDesignSystemFiles.useMemo(
       () => ({
-        held: (input: string) => Object.hasOwn(files, input),
+        held: (filePath: string) => Object.hasOwn(files, filePath),
         leftOut: new Set([...otherFiles, ...docsLeftOut]),
         bareCover: !components.some(
-          (input: import("../../contracts").ParsedComponent) =>
-            input.name === COVER_COMPONENT_NAME,
+          (component: import("../../contracts").ParsedComponent) =>
+            component.name === COVER_COMPONENT_NAME,
         ),
-        listsSection: (input: string) =>
-          sections.some((input2: DesignFilesSection) => input2.id === input),
+        listsSection: (sectionId: string) =>
+          sections.some((section: DesignFilesSection) => section.id === sectionId),
       }),
       [files, otherFiles, docsLeftOut, components, sections],
     ),
@@ -298,19 +298,19 @@ function useDesignSystemFilesBrowser({
         : listing.files,
     browserPaths = reactDesignSystemFiles.useMemo(() => {
       let value = listedFiles
-          .map((input: BrowserListingEntry) => input.path)
+          .map((entry: BrowserListingEntry) => entry.path)
           .filter(
-            (input: string) =>
-              Object.hasOwn(files, input) ||
-              !everHeldPathsRef.current.paths.has(input),
+            (path: string) =>
+              Object.hasOwn(files, path) ||
+              !everHeldPathsRef.current.paths.has(path),
           ),
         values = new Set(value);
-      for (let value2 of Object.keys(files)) {
+      for (let filePath of Object.keys(files)) {
         if (
-          !values.has(value2) &&
-          !isHiddenBrowserPath(value2)
+          !values.has(filePath) &&
+          !isHiddenBrowserPath(filePath)
         ) {
-          value.push(value2);
+          value.push(filePath);
         }
       }
       return value;
@@ -318,14 +318,14 @@ function useDesignSystemFilesBrowser({
     unshownPaths = reactDesignSystemFiles.useMemo(
       () =>
         browserPaths.filter(
-          (input: string) =>
-            !input.startsWith(DESIGN_SYSTEM_PATHS.archivedDir) &&
-            designSystemFileHome(input, pageContext).at === "nowhere",
+          (path: string) =>
+            !path.startsWith(DESIGN_SYSTEM_PATHS.archivedDir) &&
+            designSystemFileHome(path, pageContext).at === "nowhere",
         ),
       [browserPaths, pageContext],
     ),
     show = reactDesignSystemFiles.useCallback(
-      (input?: string) => {
+      (path?: string) => {
         if (!usesFilePort) {
           return;
         }
@@ -333,16 +333,16 @@ function useDesignSystemFilesBrowser({
           document.activeElement instanceof HTMLElement
             ? document.activeElement
             : null;
-        if (input !== undefined) {
-          setReveal((input2: BrowserReveal | null) => ({
-            path: input,
-            n: (input2?.n ?? 0) + 1,
+        if (path !== undefined) {
+          setReveal((previousReveal: BrowserReveal | null) => ({
+            path: path,
+            n: (previousReveal?.n ?? 0) + 1,
           }));
         }
         setOpen(true);
         openRef.current = true;
-        setListing((input2: FileListingState) =>
-          input2 === "failed" ? null : input2,
+        setListing((previousListing: FileListingState) =>
+          previousListing === "failed" ? null : previousListing,
         );
         lastListedFilesRef.current = files;
         refreshListing(true);
@@ -350,7 +350,7 @@ function useDesignSystemFilesBrowser({
       [usesFilePort, files, refreshListing],
     ),
     closeInternal = reactDesignSystemFiles.useCallback(
-      (input: boolean) => {
+      (isOpen: boolean) => {
         if (!open) {
           return;
         }
@@ -368,7 +368,7 @@ function useDesignSystemFilesBrowser({
         }
         let current = restoreFocusRef.current;
         restoreFocusRef.current = null;
-        if (input && current !== null && current.isConnected) {
+        if (isOpen && current !== null && current.isConnected) {
           current.focus({
             preventScroll: true,
           });
@@ -377,13 +377,13 @@ function useDesignSystemFilesBrowser({
       [open, listing, refreshListing],
     ),
     close = reactDesignSystemFiles.useCallback(
-      (input: boolean = true) => closeInternal(input),
+      (shouldNotify: boolean = true) => closeInternal(shouldNotify),
       [closeInternal],
     ),
     leave = reactDesignSystemFiles.useCallback(
-      (input: () => void) => {
+      (afterClose: () => void) => {
         closeInternal(false);
-        input();
+        afterClose();
       },
       [closeInternal],
     );
@@ -461,7 +461,7 @@ function useDesignSystemFilesBrowser({
           refreshListing(true);
         }}
         onClose={() => close()}
-        goTo={(input: string) => leave(() => jump(input))}
+        goTo={(path: string) => leave(() => jump(path))}
       />
     ),
     searchEntries = reactDesignSystemFiles.useMemo(
@@ -474,13 +474,13 @@ function useDesignSystemFilesBrowser({
                 label: uiMessage("design-system.fileBrowser.files"),
                 words: [],
               },
-              ...unshownPaths.map((input: string) => ({
+              ...unshownPaths.map((path: string) => ({
                 section: FILES_SECTION_ID,
                 label: visibleFileName(
-                  input.slice(input.lastIndexOf("/") + 1),
+                  path.slice(path.lastIndexOf("/") + 1),
                 ),
-                words: [visibleFileName(input)],
-                target: input,
+                words: [visibleFileName(path)],
+                target: path,
               })),
             ],
       [usesFilePort, unshownPaths, uiLocale],
@@ -527,85 +527,85 @@ function DesignSystemFilesLayer({
   useUiLocale();
   let memo = reactDesignSystemFiles.useMemo(() => {
       let entries = new Map<string, BrowserListingEntry>(
-        listed.map((input: BrowserListingEntry) => [input.path, input]),
+        listed.map((entry: BrowserListingEntry) => [entry.path, entry]),
       );
       return buildFileBrowserTree(
-        paths.map((input: string) => {
-          let value4 = Object.hasOwn(files, input) ? files[input] : undefined,
-            entry = entries.get(input);
+        paths.map((path: string) => {
+          let currentFileContent = Object.hasOwn(files, path) ? files[path] : undefined,
+            entry = entries.get(path);
           if (
             entry !== undefined ||
-            value4 === undefined ||
-            storagePointerForFile(input, value4) !== null
+            currentFileContent === undefined ||
+            storagePointerForFile(path, currentFileContent) !== null
           ) {
             return (
               entry ?? {
-                path: input,
+                path: path,
               }
             );
           }
-          let value5 = publishableFileMimeType(input, value4);
+          let contentType = publishableFileMimeType(path, currentFileContent);
           return {
-            path: input,
-            size: heldBrowserFileByteSize(input, value4),
-            ...(value5 !== null
+            path: path,
+            size: heldBrowserFileByteSize(path, currentFileContent),
+            ...(contentType !== null
               ? {
-                  contentType: value5,
+                  contentType: contentType,
                 }
               : {}),
           };
         }),
       );
     }, [listed, paths, files]),
-    [value, value2] = reactDesignSystemFiles.useState(() =>
+    [value, setFlagged] = reactDesignSystemFiles.useState(() =>
       flaggedDesignSystemFiles(doc),
     );
   reactDesignSystemFiles.useEffect(() => {
-    value2(flaggedDesignSystemFiles(doc));
+    setFlagged(flaggedDesignSystemFiles(doc));
     return doc.subscribeFlagged?.(() =>
-      value2(flaggedDesignSystemFiles(doc)),
+      setFlagged(flaggedDesignSystemFiles(doc)),
     );
   }, [doc]);
-  let memo2 = reactDesignSystemFiles.useMemo(() => {
+  let conflictPaths = reactDesignSystemFiles.useMemo(() => {
       let entries: Map<string, string> = new Map(
         filesLeftOutOfMigration(files)
           .filter(
-            (input: { path: string; reason: string }) =>
+            (conflict: { path: string; reason: string }) =>
               !isHeldFilePointer(
-                input.path,
-                files[input.path] ?? "",
+                conflict.path,
+                files[conflict.path] ?? "",
               ),
           )
-          .map((input: { path: string; reason: string }) => [
-            input.path,
-            input.reason,
+          .map((conflict: { path: string; reason: string }) => [
+            conflict.path,
+            conflict.reason,
           ]),
       );
-      for (let value4 of value) {
-        entries.set(value4, FILES_BROWSER_CONFLICT_REASON);
+      for (let filePath of value) {
+        entries.set(filePath, FILES_BROWSER_CONFLICT_REASON);
       }
       return entries;
     }, [files, value]),
-    callback = (input: BrowserFile) => {
-      let value4 = designSystemFileHome(input.path, page);
-      if (value4.at === "section") {
+    callback = (browserFile: BrowserFile) => {
+      let fileHome = designSystemFileHome(browserFile.path, page);
+      if (fileHome.at === "section") {
         return sections.find(
-          (input2: DesignFilesSection) => input2.id === value4.id,
+          (section: DesignFilesSection) => section.id === fileHome.id,
         );
       } else {
         return undefined;
       }
     },
-    value3 =
+    isConflict =
       designSystemDocumentIsReadonly(doc) &&
       listed.some(
-        (input: BrowserListingEntry) =>
-          input.path === DESIGN_SYSTEM_PATHS.manifest,
+        (entry: BrowserListingEntry) =>
+          entry.path === DESIGN_SYSTEM_PATHS.manifest,
       ),
-    callback2 = (input: BrowserFile) =>
-      Object.hasOwn(files, input.path) &&
-      !(value3 && input.path === DESIGN_SYSTEM_PATHS.manifest)
-        ? files[input.path]
+    fileContent = (browserFile: BrowserFile) =>
+      Object.hasOwn(files, browserFile.path) &&
+      !(isConflict && browserFile.path === DESIGN_SYSTEM_PATHS.manifest)
+        ? files[browserFile.path]
         : undefined;
   return (
     <div
@@ -637,8 +637,8 @@ function DesignSystemFilesLayer({
             tree={memo}
             onClose={onClose}
             rootLabel={uiMessage("design-system.fileBrowser.files")}
-            sourceOf={(input: BrowserFile) =>
-              heldFileBrowserSource(input.path, callback2(input))
+            sourceOf={(browserFile: BrowserFile) =>
+              heldFileBrowserSource(browserFile.path, fileContent(browserFile))
             }
             retryMs={FILES_BROWSER_READ_RETRY_MS}
             fresh={true}
@@ -648,37 +648,37 @@ function DesignSystemFilesLayer({
               unsure === "listing" ? ("") : (unsure !== null ? (FILES_LISTING_EMPTY_MESSAGES[unsure]) : (uiMessage("design-system.designSystemFiles.thisDesignSystemHasNo")))
             }
             downloadOf={() => ({})}
-            kindLine={(input: BrowserFile, options: string) => {
-              let value4 = designSystemFileHome(input.path, page),
-                value5 =
-                  value4.at === "written"
+            kindLine={(browserFile: BrowserFile, kind: string) => {
+              let fileHome = designSystemFileHome(browserFile.path, page),
+                kindDescription =
+                  fileHome.at === "written"
                     ? " · Generated by this page on every save"
-                    : value4.at === "section"
+                    : fileHome.at === "section"
                       ? " · Shown in " +
-                        (callback(input)?.label ?? "a section of the page")
+                        (callback(browserFile)?.label ?? "a section of the page")
                       : "";
               return (
-                options +
-                value5 +
-                (memo2.has(input.path) ? " · Not saved" : "")
+                kind +
+                kindDescription +
+                (conflictPaths.has(browserFile.path) ? " · Not saved" : "")
               );
             }}
-            footerOf={(input: BrowserFile) => {
-              let value4 = callback(input),
-                value5 =
-                  value4 === undefined ? null : (
+            footerOf={(browserFile: BrowserFile) => {
+              let fileHome = callback(browserFile),
+                footer =
+                  fileHome === undefined ? null : (
                     <Button
                       variant={"ghost"}
                       size={"sm"}
                       icon={"ArrowRight"}
                       className={"mt-3"}
                       data-testid={"ds-files-home"}
-                      onClick={() => goTo(value4.id)}
+                      onClick={() => goTo(fileHome.id)}
                     >
-                      {uiMessage("design-system.designSystemFiles.goTo", {label:value4.label})}
+                      {uiMessage("design-system.designSystemFiles.goTo", {label:fileHome.label})}
                     </Button>
                   ),
-                entry = memo2.get(input.path);
+                entry = conflictPaths.get(browserFile.path);
               if (entry !== undefined) {
                 return (
                   <jsxDesignSystemFiles.Fragment>
@@ -687,16 +687,16 @@ function DesignSystemFilesLayer({
                         className={FILES_BROWSER_NOTE_CLASS}
                       >
                         {uiMessage("design-system.designSystemFiles.notSaved", {file:entry})}
-                      </p>, value5]}
+                      </p>, footer]}
                   </jsxDesignSystemFiles.Fragment>
                 );
               }
-              if (value5 !== null) {
-                return value5;
+              if (footer !== null) {
+                return footer;
               }
               if (
-                designSystemFileHome(input.path, page).at === "written" &&
-                callback2(input) === undefined
+                designSystemFileHome(browserFile.path, page).at === "written" &&
+                fileContent(browserFile) === undefined
               ) {
                 return (
                   <p
@@ -778,8 +778,8 @@ export function installFilesUiDesignSystemFiles(): () => void {
     FILES_LISTING_CONTENT_REFRESH_MS = 600;
     FILES_LISTING_NARROWED_RETRY_DELAYS_MS = [4000, 12000, 36000];
     EMPTY_BROWSER_FILE_LIST = [];
-    heldBrowserFileByteSize = (input: string, items: string) => {
-      let value = isTextFilePath(input)
+    heldBrowserFileByteSize = (filePath: string, items: string) => {
+      let value = isTextFilePath(filePath)
         ? null
         : /^data:[^,]*;base64,/i.exec(items);
       if (value === null) {
@@ -801,9 +801,9 @@ export function installFilesUiDesignSystemFiles(): () => void {
     };
     FILES_BROWSER_CONFLICT_REASON =
       "someone else saved a newer version, and this tab has changes of its own that are not saved";
-    flaggedDesignSystemFiles = (input: DesignFilesDocument) =>
-      new Set(input.flagged?.() ?? []);
-    designSystemDocumentIsReadonly = (input: DesignFilesDocument) =>
-      input.readOnly?.() === true;
+    flaggedDesignSystemFiles = (document: DesignFilesDocument) =>
+      new Set(document.flagged?.() ?? []);
+    designSystemDocumentIsReadonly = (document: DesignFilesDocument) =>
+      document.readOnly?.() === true;
   };
 }

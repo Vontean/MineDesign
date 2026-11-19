@@ -82,7 +82,7 @@ function fileBrowserFolderLabel(folder: string) {
 function isHiddenBrowserPath(path: string) {
   let parts = path.split("/");
   return (
-    parts.some((input: string) => input.startsWith(".") || input === "") ||
+    parts.some((pathPart: string) => pathPart.startsWith(".") || pathPart === "") ||
     parts[parts.length - 1] === "project-data.json"
   );
 }
@@ -91,44 +91,44 @@ function projectListingFiles(
   type: FileArtifactType,
 ) {
   let rows: BrowserListingEntry[] = [];
-  for (let [value, value2] of Object.entries(files)) {
+  for (let [value, fileValue] of Object.entries(files)) {
     if (
       !value.startsWith(PROJECT_FILE_PREFIX) ||
       isReservedProjectFile(type, value)
     ) {
       continue;
     }
-    let value3 = value.slice(PROJECT_FILE_PREFIX.length);
+    let relativePath = value.slice(PROJECT_FILE_PREFIX.length);
     if (
-      value3 === "" ||
-      value3.endsWith("/") ||
-      isHiddenBrowserPath(value3)
+      relativePath === "" ||
+      relativePath.endsWith("/") ||
+      isHiddenBrowserPath(relativePath)
     ) {
       continue;
     }
-    let value4 =
-        value2 !== null && typeof value2 === "object"
-          ? (value2 as BrowserFileMetadata)
+    let fileSize =
+        fileValue !== null && typeof fileValue === "object"
+          ? (fileValue as BrowserFileMetadata)
           : {},
-      value5 = fileBrowserSize(value4.size),
-      value6 = fileBrowserContentType(value4.contentType);
+      displaySize = fileBrowserSize(fileSize.size),
+      contentType = fileBrowserContentType(fileSize.contentType);
     rows.push({
-      path: value3,
-      ...(value5 !== undefined
+      path: relativePath,
+      ...(displaySize !== undefined
         ? {
-            size: value5,
+            size: displaySize,
           }
         : {}),
-      ...(value6 !== undefined
+      ...(contentType !== undefined
         ? {
-            contentType: value6,
+            contentType: contentType,
           }
         : {}),
     });
   }
   return rows.sort(
-    (input: BrowserListingEntry, options: BrowserListingEntry) =>
-      compareFileNames(input.path, options.path),
+    (leftEntry: BrowserListingEntry, rightEntry: BrowserListingEntry) =>
+      compareFileNames(leftEntry.path, rightEntry.path),
   );
 }
 function buildFileBrowserTree(
@@ -147,38 +147,38 @@ function buildFileBrowserTree(
     if (isHiddenBrowserPath(value.path)) {
       continue;
     }
-    let value2 = value.path.split("/"),
-      value3 = root;
-    for (let index = 0; index < value2.length - 1; index += 1) {
-      let value5 = value2[index],
-        value6 = value3.path === "" ? value5 : value3.path + "/" + value5,
-        entry = folders.get(value6);
+    let pathParts = value.path.split("/"),
+      folder = root;
+    for (let index = 0; index < pathParts.length - 1; index += 1) {
+      let folderName = pathParts[index],
+        folderPath = folder.path === "" ? folderName : folder.path + "/" + folderName,
+        entry = folders.get(folderPath);
       if (!entry) {
         entry = {
           kind: "folder",
-          name: value5,
-          path: value6,
+          name: folderName,
+          path: folderPath,
           folders: [],
           files: [],
         };
-        folders.set(value6, entry);
-        value3.folders.push(entry);
+        folders.set(folderPath, entry);
+        folder.folders.push(entry);
       }
-      value3 = entry;
+      folder = entry;
     }
-    let value4 = value2[value2.length - 1];
+    let fileName = pathParts[pathParts.length - 1];
     if (seen.has(value.path)) {
       continue;
     }
     seen.add(value.path);
-    value3.files.push({
+    folder.files.push({
       kind: "file",
-      name: value4,
+      name: fileName,
       path: value.path,
       type:
         value.attachment !== undefined || value.notCarried === true
           ? "other"
-          : fileBrowserTypeFromName(value4),
+          : fileBrowserTypeFromName(fileName),
       ...(value.size !== undefined
         ? {
             size: value.size,
@@ -200,28 +200,28 @@ function buildFileBrowserTree(
           : {}),
     });
   }
-  let sortFolder = (input: BrowserFolder) => {
-    input.folders.sort(
+  let sortFolder = (folder: BrowserFolder) => {
+    folder.folders.sort(
       (
-        input2: {
+        leftFolder: {
           name: string;
         },
-        options: {
+        rightFolder: {
           name: string;
         },
-      ) => compareFileNames(input2.name, options.name),
+      ) => compareFileNames(leftFolder.name, rightFolder.name),
     );
-    input.files.sort(
+    folder.files.sort(
       (
-        input2: {
+        leftFile: {
           name: string;
         },
-        options: {
+        rightFile: {
           name: string;
         },
-      ) => compareFileNames(input2.name, options.name),
+      ) => compareFileNames(leftFile.name, rightFile.name),
     );
-    input.folders.forEach(sortFolder);
+    folder.folders.forEach(sortFolder);
   };
   sortFolder(root);
   return root;
@@ -237,7 +237,7 @@ function fileBrowserFolder(
   for (let value of path.split("/")) {
     if (
       ((folder = folder!.folders.find(
-        (input: BrowserFolder) => input.name === value,
+        (folderCandidate: BrowserFolder) => folderCandidate.name === value,
       )),
       !folder)
     ) {
@@ -248,12 +248,12 @@ function fileBrowserFolder(
 }
 function fileBrowserFolderSections(folder: BrowserFolder) {
   let sections = new Map<BrowserSection, BrowserEntry[]>(),
-    append = (input: BrowserSection, options: BrowserEntry) => {
-      let entry = sections.get(input);
+    append = (section: BrowserSection, browserEntry: BrowserEntry) => {
+      let entry = sections.get(section);
       if (entry) {
-        entry.push(options);
+        entry.push(browserEntry);
       } else {
-        sections.set(input, [options]);
+        sections.set(section, [browserEntry]);
       }
     };
   for (let value of folder.folders) {
@@ -262,11 +262,11 @@ function fileBrowserFolderSections(folder: BrowserFolder) {
   for (let value of folder.files) {
     append(FILE_BROWSER_SECTION_BY_TYPE[value.type], value);
   }
-  return FILE_BROWSER_SECTION_ORDER.filter((input: BrowserSection) =>
-    sections.has(input),
-  ).map((input: BrowserSection) => ({
-    label: input,
-    entries: sections.get(input)!,
+  return FILE_BROWSER_SECTION_ORDER.filter((section: BrowserSection) =>
+    sections.has(section),
+  ).map((section: BrowserSection) => ({
+    label: section,
+    entries: sections.get(section)!,
   }));
 }
 function formatFileBrowserBytes(bytes: number | undefined) {
@@ -291,7 +291,7 @@ function fileBrowserMetadataText(entry: BrowserEntry) {
       ? name.slice(name.lastIndexOf(".") + 1).toUpperCase()
       : "";
   return [formatFileBrowserBytes(entry.size), extension]
-    .filter((input: string) => input !== "")
+    .filter((path: string) => path !== "")
     .join(" · ");
 }
 function flattenFileBrowserTree(
@@ -299,33 +299,33 @@ function flattenFileBrowserTree(
   expanded: ReadonlySet<string>,
 ) {
   let rows: BrowserRow[] = [],
-    visit = (input: BrowserFolder, options: number) => {
-      let value = input.folders.length + input.files.length,
+    visit = (sourceFolder: BrowserFolder, depth: number) => {
+      let value = sourceFolder.folders.length + sourceFolder.files.length,
         index = 0;
-      fileBrowserFolderSections(input).forEach(
+      fileBrowserFolderSections(sourceFolder).forEach(
         (
-          input2: {
+          section: {
             label: BrowserSection;
             entries: BrowserEntry[];
           },
-          options2: number,
+          firstIndex: number,
         ) => {
-          input2.entries.forEach((source: BrowserEntry, options3: number) => {
+          section.entries.forEach((source: BrowserEntry, entryIndex: number) => {
             index += 1;
             rows.push({
               entry: source,
-              depth: options,
+              depth: depth,
               pos: index,
               of: value,
-              ...(options === 0 && options3 === 0
+              ...(depth === 0 && entryIndex === 0
                 ? {
-                    section: input2.label,
-                    first: options2 === 0,
+                    section: section.label,
+                    first: firstIndex === 0,
                   }
                 : {}),
             });
             if (source.kind === "folder" && expanded.has(source.path)) {
-              visit(source, options + 1);
+              visit(source, depth + 1);
             }
           });
         },
@@ -336,7 +336,7 @@ function flattenFileBrowserTree(
 }
 function fileBrowserPreviewKind(
   entry: BrowserFile,
-  options: BrowserPreviewOptions = {},
+  previewOptions: BrowserPreviewOptions = {},
 ) {
   if (entry.attachment !== undefined || entry.notCarried === true) {
     return "none";
@@ -349,7 +349,7 @@ function fileBrowserPreviewKind(
   }
   if (
     (entry.type === "html"
-      ? options.htmlAsText === true
+      ? previewOptions.htmlAsText === true
       : entry.type === "jsx" ||
         entry.type === "css" ||
         entry.type === "js" ||
@@ -366,13 +366,13 @@ function fileBrowserPreviewKind(
 }
 function fileBrowserNoPreviewReason(
   entry: BrowserFile,
-  options: BrowserPreviewOptions = {},
+  previewOptions: BrowserPreviewOptions = {},
 ) {
   let probe = {
     ...entry,
     size: 0,
   };
-  if (fileBrowserPreviewKind(probe, options) !== "text") {
+  if (fileBrowserPreviewKind(probe, previewOptions) !== "text") {
     return uiMessage("design-system.fileTree.previewIsnTAvailableFor");
   }
   if (entry.size === undefined) {
@@ -387,8 +387,8 @@ function folderFileCount(folder: BrowserFolder): number {
     count =
       folder.files.length +
       folder.folders.reduce(
-        (input: number, options: BrowserFolder) =>
-          input + folderFileCount(options),
+        (fileCount: number, childFolder: BrowserFolder) =>
+          fileCount + folderFileCount(childFolder),
         0,
       );
     folderFileCountCache.set(folder, count);
@@ -462,9 +462,9 @@ function virtualFileRowScrollTop(
   if (value - stickyHeight < scrollTop) {
     return Math.max(0, value - stickyHeight);
   }
-  let value2 = value + heights[row];
-  if (value2 > scrollTop + viewportHeight) {
-    return value2 - viewportHeight;
+  let rowBottom = value + heights[row];
+  if (rowBottom > scrollTop + viewportHeight) {
+    return rowBottom - viewportHeight;
   } else {
     return scrollTop;
   }
@@ -558,19 +558,19 @@ export function installFilesUiFileTree(): () => void {
       json: "Data file",
       other: "File",
     };
-    fileBrowserSize = (input: unknown) =>
-      typeof input === "number" && Number.isFinite(input) && input >= 0
-        ? input
+    fileBrowserSize = (size: unknown) =>
+      typeof size === "number" && Number.isFinite(size) && size >= 0
+        ? size
         : undefined;
     fileBrowserContentType = (items: unknown) =>
       typeof items === "string" && items.length > 0 ? items : undefined;
-    visibleFileName = (input: string) =>
-      input.replace(
+    visibleFileName = (fileName: string) =>
+      fileName.replace(
         DOWNLOAD_NAME_IGNORABLE_PATTERN,
-        (input2: string) => (input2 === "‌" || input2 === "‍" ? input2 : ""),
+        (character: string) => (character === "‌" || character === "‍" ? character : ""),
       );
-    sanitizedFileName = (input: string) =>
-      input
+    sanitizedFileName = (fileName: string) =>
+      fileName
         .replace(DOWNLOAD_NAME_IGNORABLE_PATTERN, "")
         .replace(/(^|[\s.])\p{M}+/gu, "$1")
         .replace(/[\s.]+$/, "");
@@ -578,9 +578,9 @@ export function installFilesUiFileTree(): () => void {
       numeric: true,
       sensitivity: "base",
     });
-    compareFileNames = (input: string, options: string) =>
-      fileNameCollator.compare(input, options) ||
-      (input < options ? -1 : input > options ? 1 : 0);
+    compareFileNames = (leftName: string, rightName: string) =>
+      fileNameCollator.compare(leftName, rightName) ||
+      (leftName < rightName ? -1 : leftName > rightName ? 1 : 0);
     MAX_FILE_BROWSER_TEXT_BYTES = 524288;
     folderFileCountCache = new WeakMap();
     DOWNLOAD_MIME_TYPES_BY_EXTENSION = {

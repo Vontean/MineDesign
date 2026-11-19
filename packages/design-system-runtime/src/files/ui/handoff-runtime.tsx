@@ -55,7 +55,7 @@ function previewLibraryScripts(
   },
   files: Readonly<Record<string, string | undefined>>,
 ): string[] {
-  return libraries.load.map((input) => files[input.file] ?? "");
+  return libraries.load.map((library) => files[library.file] ?? "");
 }
 export {
   ARTIFACT_CLIPBOARD_ATTRIBUTE,
@@ -100,7 +100,7 @@ export function installFilesUiHandoffRuntime(): () => void {
     try {
       let value = localStorage.getItem(HANDOFF_TARGET_STORAGE_KEY);
       preferredHandoffTarget =
-        HANDOFF_TARGETS.find((input) => input === value) ?? null;
+        HANDOFF_TARGETS.find((target) => target === value) ?? null;
     } catch {
       preferredHandoffTarget = null;
     }
