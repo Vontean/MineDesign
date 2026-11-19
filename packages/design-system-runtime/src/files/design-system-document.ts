@@ -29,59 +29,59 @@ import { parseManifestBundleMetadata } from "../model/manifest-metadata";
 import { generatedReadmeTail, mergeReadmeWithGeneratedTail } from "../model/stored-file-codec";
 
 function createDesignSystemFilesDocument(
-  options: M.DesignSystemFilesDocumentOptions,
+  documentOptions: M.DesignSystemFilesDocumentOptions,
 ): M.DesignSystemFilesDocument {
   setHeldFileBaseUrl(
     PROJECT_FILE_PREFIXEditorFilesIndex,
   );
   let lazy: F.LazyReadState | undefined =
-    options.lazy === true &&
-    (options.port.mayWrite ?? options.port.canWrite) === false
+    documentOptions.lazy === true &&
+    (documentOptions.port.mayWrite ?? documentOptions.port.canWrite) === false
       ? {
           rows: new Map(),
         }
       : undefined;
   setAllowAllBinaryFilePointers(lazy !== undefined);
   let indexPath: string =
-      options.indexPath ?? FILES_INDEX_PROJECT_PATH,
+      documentOptions.indexPath ?? FILES_INDEX_PROJECT_PATH,
     flags: Map<string, M.DocumentFlag> = new Map(),
     flaggedPaths: Set<string> = new Set(),
     flagSubscribers: Set<() => void> = new Set(),
     saveSubscribers: Set<(state: M.DocumentSaveState) => void> = new Set(),
-    timers: Core.FilesTimers = options.timers ?? {
-      setTimeout: (input: () => void, options2: number) =>
-        setTimeout(input, options2),
-      clearTimeout: (input: ReturnType<typeof setTimeout>) =>
-        clearTimeout(input),
+    timers: Core.FilesTimers = documentOptions.timers ?? {
+      setTimeout: (timerCallback: () => void, delayMs: number) =>
+        setTimeout(timerCallback, delayMs),
+      clearTimeout: (timerHandle: ReturnType<typeof setTimeout>) =>
+        clearTimeout(timerHandle),
       now: (): number => Date.now(),
       random: (): number => Math.random(),
     },
     storage =
-      options.storage !== undefined
-        ? options.storage
+      documentOptions.storage !== undefined
+        ? documentOptions.storage
         : safeSessionStorage(),
     carryStorageKey =
       HOT_CARRY_STORAGE_PREFIX +
-      (options.stashKey ?? currentDesignSystemArtifactPath()),
+      (documentOptions.stashKey ?? currentDesignSystemArtifactPath()),
     events: M.DocumentEvent[] = [],
-    emit = (input: string, options2?: unknown): void => {
+    emit = (eventType: string, eventData?: unknown): void => {
       events.push({
-        type: input,
-        data: options2,
+        type: eventType,
+        data: eventData,
       });
       if (events.length > 200) {
         events.shift();
       }
       try {
-        options.onEvent?.(input, options2);
+        documentOptions.onEvent?.(eventType, eventData);
       } catch {}
     },
-    notice = (input: string): void => {
+    notice = (message: string): void => {
       try {
-        options.onNotice?.(input);
+        documentOptions.onNotice?.(message);
       } catch {}
     },
-    clashPolicy = options.clash ?? "mine",
+    clashPolicy = documentOptions.clash ?? "mine",
     preparing = false,
     carrying: boolean = false,
     isBusy = () => {
@@ -89,7 +89,7 @@ function createDesignSystemFilesDocument(
         return (
           preparing ||
           carrying ||
-          (options.isBusy ?? (() => activeElementIsEditing()))()
+          (documentOptions.isBusy ?? (() => activeElementIsEditing()))()
         );
       } catch {
         return preparing || carrying;
@@ -97,33 +97,33 @@ function createDesignSystemFilesDocument(
     },
     noticedClashShas: Map<string, string | null | undefined> = new Map(),
     pathRevisions: Map<string, number> = new Map(),
-    advancePathRevision = (input: string): void => {
-      pathRevisions.set(input, (pathRevisions.get(input) ?? 0) + 1);
+    advancePathRevision = (filePath: string): void => {
+      pathRevisions.set(filePath, (pathRevisions.get(filePath) ?? 0) + 1);
     },
     notifyFlags = (): void => {
-      for (let value2 of [...flagSubscribers]) {
+      for (let flagSubscriber of [...flagSubscribers]) {
         try {
-          value2();
+          flagSubscriber();
         } catch {}
       }
       let value = enhancedDocument.saveState();
-      for (let value2 of [...saveSubscribers]) {
+      for (let saveSubscriber of [...saveSubscribers]) {
         try {
-          value2(value);
+          saveSubscriber(value);
         } catch {}
       }
     },
-    port = options.port,
-    liveSha = (input: string): string | null | undefined =>
-      port.liveSha?.(projectFilePath(input)),
+    port = documentOptions.port,
+    liveSha = (filePath: string): string | null | undefined =>
+      port.liveSha?.(projectFilePath(filePath)),
     readTexts: Map<string, string> = new Map(),
     readShas: Map<string, string> = new Map(),
     locallyHeldTexts: Map<string, string | undefined> = new Map(),
-    heldText = (input: string, options2 = document2.content().files) =>
-      Object.hasOwn(options2, input) ? options2[input] : undefined,
-    textIsLocallyHeld = (input: string, options2: string) =>
-      locallyHeldTexts.has(input) &&
-      locallyHeldTexts.get(input) === heldText(options2),
+    heldText = (filePath: string, fileContents = document.content().files) =>
+      Object.hasOwn(fileContents, filePath) ? fileContents[filePath] : undefined,
+    textIsLocallyHeld = (filePath: string, textKey: string) =>
+      locallyHeldTexts.has(filePath) &&
+      locallyHeldTexts.get(filePath) === heldText(textKey),
     preReadBases: Map<string, M.PreReadBase> = new Map(),
     materializedFingerprints: Map<string, string> = new Map(),
     textFingerprint = (items: string): string =>
@@ -139,60 +139,60 @@ function createDesignSystemFilesDocument(
         return;
       }
     },
-    recordVersion = (input: string): void => {
+    recordVersion = (version: string): void => {
       latestFrameVersion = frameVersionFromBaseUri();
-      if (input !== latestVersion) {
-        latestVersion = input;
+      if (version !== latestVersion) {
+        latestVersion = version;
         notifyAddressedFiles();
       }
     },
     recentPublishes: Map<string, M.RecentPublish> = new Map(),
     recentHeals: Map<string, number> = new Map(),
-    consumeRecentHeal = (input: string) => {
-      let entry = recentHeals.get(input);
-      recentHeals.delete(input);
+    consumeRecentHeal = (filePath: string) => {
+      let entry = recentHeals.get(filePath);
+      recentHeals.delete(filePath);
       return entry !== undefined && timers.now() - entry <= 1e4;
     },
     recentHealTimes: Map<string, number[]> = new Map(),
     mergingTokenPaths: Set<string> = new Set(),
     encoder = new TextEncoder(),
-    currentFileText = (input: string): string | null => {
-      let value = document2.content().files[input];
+    currentFileText = (filePath: string): string | null => {
+      let value = document.content().files[filePath];
       if (typeof value === "string") {
         return value;
       } else {
         return null;
       }
     },
-    keepOutOfUndo = (input: string): void => {
+    keepOutOfUndo = (filePath: string): void => {
       for (let value of undoCommands) {
-        value.keepOut(new Set([input]));
+        value.keepOut(new Set([filePath]));
       }
     },
-    takeRemoteFile = (input: string): void => {
-      let value: string = projectFilePath(input);
-      document2.held().add(value);
-      let value2: boolean = liveSha(input) === null;
-      document2.releaseHold(value);
-      if (value2) {
+    takeRemoteFile = (filePath: string): void => {
+      let value: string = projectFilePath(filePath);
+      document.held().add(value);
+      let wasMissingRemotely: boolean = liveSha(filePath) === null;
+      document.releaseHold(value);
+      if (wasMissingRemotely) {
         readTexts.delete(value);
         readShas.delete(value);
-        recentPublishes.delete(input);
+        recentPublishes.delete(filePath);
       }
     },
-    replaceFileText = (input: string, options2: string): void => {
-      keepOutOfUndo(input);
-      document2.updateContent(
-        (input2) =>
+    replaceFileText = (filePath: string, fileText: string): void => {
+      keepOutOfUndo(filePath);
+      document.updateContent(
+        (documentContent) =>
           refreshManifest(
             {
-              ...input2,
+              ...documentContent,
               files: Object.freeze({
-                ...input2.files,
-                [input]: options2,
+                ...documentContent.files,
+                [filePath]: fileText,
               }),
             },
-            document2.title(),
+            document.title(),
           ),
         {
           auto: true,
@@ -214,139 +214,139 @@ function createDesignSystemFilesDocument(
       return state;
     }
     try {
-      let value2 = JSON.parse(value) as M.CarryStorageWire,
-        value3 = timers.now(),
-        callback = (input: unknown): input is number =>
-          typeof input === "number" &&
-          value3 - input <= HOT_CARRY_MAX_AGE_MS;
-      for (let [value6, value7] of Object.entries(value2.files ?? {})) {
-        let value8 = parseCarriedFileEdit(value7),
-          value9 = value7?.at;
-        if (value8 !== undefined && callback(value9)) {
-          state.files[value6] = {
-            ...value8,
-            at: value9,
+      let carryStorage = JSON.parse(value) as M.CarryStorageWire,
+        storageTimestamp = timers.now(),
+        callback = (timestamp: unknown): timestamp is number =>
+          typeof timestamp === "number" &&
+          storageTimestamp - timestamp <= HOT_CARRY_MAX_AGE_MS;
+      for (let [filePath, carriedFile] of Object.entries(carryStorage.files ?? {})) {
+        let parsedEdit = parseCarriedFileEdit(carriedFile),
+          editTimestamp = carriedFile?.at;
+        if (parsedEdit !== undefined && callback(editTimestamp)) {
+          state.files[filePath] = {
+            ...parsedEdit,
+            at: editTimestamp,
           };
         }
       }
-      let value4 = readCarriedIndexEdit(value2.index),
-        value5 = value2.index?.at;
-      if (value4 !== undefined && callback(value5)) {
+      let carriedIndex = readCarriedIndexEdit(carryStorage.index),
+        indexTimestamp = carryStorage.index?.at;
+      if (carriedIndex !== undefined && callback(indexTimestamp)) {
         state.index = {
-          ...value4,
-          at: value5,
+          ...carriedIndex,
+          at: indexTimestamp,
         };
       }
     } catch {}
     return state;
   }
-  function writeCarryStorage(input: M.CarryStorageState): void {
+  function writeCarryStorage(carryState: M.CarryStorageState): void {
     try {
       if (
-        Object.keys(input.files).length === 0 &&
-        input.index === undefined
+        Object.keys(carryState.files).length === 0 &&
+        carryState.index === undefined
       ) {
         storage?.removeItem(carryStorageKey);
       } else {
-        storage?.setItem(carryStorageKey, JSON.stringify(input));
+        storage?.setItem(carryStorageKey, JSON.stringify(carryState));
       }
     } catch {}
   }
   function stashOversizedCarry(
-    input: Record<string, F.CarriedFileEdit>,
-    options2?: F.CarriedIndexEdit,
+    carriedFiles: Record<string, F.CarriedFileEdit>,
+    carriedIndex?: F.CarriedIndexEdit,
   ): void {
     if (
       storage === null ||
       storage === undefined ||
-      (Object.keys(input).length === 0 && options2 === undefined)
+      (Object.keys(carriedFiles).length === 0 && carriedIndex === undefined)
     ) {
       return;
     }
     let value = readCarryStorage(),
-      value2 = timers.now(),
-      callback = (input2: F.CarriedFileEdit) =>
-        input2.text.length + (input2.baseText?.length ?? 0),
-      value3 = Object.values(value.files).reduce(
-        (input2, options3) => input2 + callback(options3),
+      savedAt = timers.now(),
+      callback = (fileEdit: F.CarriedFileEdit) =>
+        fileEdit.text.length + (fileEdit.baseText?.length ?? 0),
+      totalChars = Object.values(value.files).reduce(
+        (runningTotal, nextFileEdit) => runningTotal + callback(nextFileEdit),
         0,
       );
-    for (let [value4, value5] of Object.entries(input)) {
+    for (let [filePath, fileEdit] of Object.entries(carriedFiles)) {
       if (
-        !(value4 in value.files) &&
+        !(filePath in value.files) &&
         Object.keys(value.files).length >= HOT_CARRY_MAX_FILES
       ) {
         continue;
       }
-      if (value3 + callback(value5) > HOT_CARRY_MAX_TOTAL_CHARS) {
+      if (totalChars + callback(fileEdit) > HOT_CARRY_MAX_TOTAL_CHARS) {
         continue;
       }
-      value.files[value4] = {
-        ...value5,
-        at: value2,
+      value.files[filePath] = {
+        ...fileEdit,
+        at: savedAt,
       };
-      value3 += callback(value5);
+      totalChars += callback(fileEdit);
     }
-    if (options2 !== undefined) {
+    if (carriedIndex !== undefined) {
       value.index = {
-        ...options2,
-        at: value2,
+        ...carriedIndex,
+        at: savedAt,
       };
     }
     writeCarryStorage(value);
   }
   function consumeCarryStorage(
-    input: readonly string[],
-    options2?: boolean,
+    requestedPaths: readonly string[],
+    includeCarriedIndex?: boolean,
   ): { files: Map<string, F.CarriedFileEdit>; index?: F.CarriedIndexEdit } {
     let value = readCarryStorage(),
       entries = new Map<string, F.CarriedFileEdit>();
-    for (let value3 of input) {
-      let value4 = value.files[value3];
-      if (value4 === undefined) {
+    for (let filePath of requestedPaths) {
+      let fileEdit = value.files[filePath];
+      if (fileEdit === undefined) {
         continue;
       }
-      entries.set(value3, {
-        text: value4.text,
-        ...(value4.base !== undefined
+      entries.set(filePath, {
+        text: fileEdit.text,
+        ...(fileEdit.base !== undefined
           ? {
-              base: value4.base,
+              base: fileEdit.base,
             }
           : {}),
-        ...(value4.baseText !== undefined
+        ...(fileEdit.baseText !== undefined
           ? {
-              baseText: value4.baseText,
+              baseText: fileEdit.baseText,
             }
           : {}),
       });
-      delete value.files[value3];
+      delete value.files[filePath];
     }
-    let value2 =
-      options2 && value.index !== undefined
+    let carriedIndex =
+      includeCarriedIndex && value.index !== undefined
         ? {
             base: value.index.base,
             mine: value.index.mine,
           }
         : undefined;
-    if (options2) {
+    if (includeCarriedIndex) {
       delete value.index;
     }
     writeCarryStorage(value);
     return {
       files: entries,
-      ...(value2 !== undefined
+      ...(carriedIndex !== undefined
         ? {
-            index: value2,
+            index: carriedIndex,
           }
         : {}),
     };
   }
-  function clearCarriedFiles(input: readonly string[]): void {
+  function clearCarriedFiles(paths: readonly string[]): void {
     let value = readCarryStorage(),
       flag: boolean = false;
-    for (let value2 of input) {
-      if (value2 in value.files) {
-        delete value.files[value2];
+    for (let filePath of paths) {
+      if (filePath in value.files) {
+        delete value.files[filePath];
         flag = true;
       }
     }
@@ -354,280 +354,280 @@ function createDesignSystemFilesDocument(
       writeCarryStorage(value);
     }
   }
-  function purgeCarryStorage(input: string): void {
+  function purgeCarryStorage(reason: string): void {
     try {
       storage?.removeItem(carryStorageKey);
     } catch {}
     emit("carry-purged", {
-      why: input,
+      why: reason,
     });
   }
   function flagClashingFile(
-    input: string,
-    options2: string,
-    context: string | null | undefined,
-    value?: string,
-    extra?: string,
-    detail = clashPolicy === "ask",
+    filePath: string,
+    clashReason: string,
+    baseSha: string | null | undefined,
+    detailMessage?: string,
+    additionalClash?: string,
+    shouldPrompt = clashPolicy === "ask",
   ): void {
-    if (options2 === "edit" && !detail && !flags.has(input)) {
-      if (clashPolicy === "mine" && fileMatchesReadBase(input)) {
-        queue.withdraw(projectFilePath(input));
+    if (clashReason === "edit" && !shouldPrompt && !flags.has(filePath)) {
+      if (clashPolicy === "mine" && fileMatchesReadBase(filePath)) {
+        queue.withdraw(projectFilePath(filePath));
         refreshUnchangedLocalFile(
-          input,
-          projectFilePath(input),
-          context !== undefined ? context : (liveSha(input) ?? null),
+          filePath,
+          projectFilePath(filePath),
+          baseSha !== undefined ? baseSha : (liveSha(filePath) ?? null),
         );
         return;
       }
-      if (fileMatchesCurrentPublish(input)) {
-        queue.withdraw(projectFilePath(input));
-        keepOutOfUndo(input);
-        takeRemoteFile(input);
+      if (fileMatchesCurrentPublish(filePath)) {
+        queue.withdraw(projectFilePath(filePath));
+        keepOutOfUndo(filePath);
+        takeRemoteFile(filePath);
         return;
       }
       if (clashPolicy === "mine") {
-        keepMineAndRepublish(input, context);
+        keepMineAndRepublish(filePath, baseSha);
         return;
       }
-      if (!restoredStashPaths.has(input) && !fileSaveIsStuck(input)) {
-        queue.withdraw(projectFilePath(input));
+      if (!restoredStashPaths.has(filePath) && !fileSaveIsStuck(filePath)) {
+        queue.withdraw(projectFilePath(filePath));
         revertToTheirs(
-          input,
-          projectFilePath(input),
-          context ?? null,
+          filePath,
+          projectFilePath(filePath),
+          baseSha ?? null,
         );
         return;
       }
     }
-    let entry = flags.get(input),
-      value2 = extra ?? entry?.clash;
-    flags.set(input, {
-      path: input,
-      why: entry?.why ?? options2,
-      theirsSha: context,
+    let entry = flags.get(filePath),
+      clashMessage = additionalClash ?? entry?.clash;
+    flags.set(filePath, {
+      path: filePath,
+      why: entry?.why ?? clashReason,
+      theirsSha: baseSha,
       since: entry?.since ?? timers.now(),
-      ...(value2 !== undefined
+      ...(clashMessage !== undefined
         ? {
-            clash: value2,
+            clash: clashMessage,
           }
         : {}),
     });
-    flaggedPaths.add(input);
-    queue.withdraw(projectFilePath(input));
+    flaggedPaths.add(filePath);
+    queue.withdraw(projectFilePath(filePath));
     if (entry === undefined) {
       emit("flag", {
-        path: projectFilePath(input),
-        why: options2,
-        theirs: context ?? null,
-        ...(value2 !== undefined
+        path: projectFilePath(filePath),
+        why: clashReason,
+        theirs: baseSha ?? null,
+        ...(clashMessage !== undefined
           ? {
-              clash: value2,
+              clash: clashMessage,
             }
           : {}),
       });
     }
-    if (!noticedClashShas.has(input)) {
-      noticedClashShas.set(input, context);
+    if (!noticedClashShas.has(filePath)) {
+      noticedClashShas.set(filePath, baseSha);
       notice(
-        value ??
-          (context === null
+        detailMessage ??
+          (baseSha === null
             ? uiMessage("design-system.designSystemDocument.someoneElseDeleted") +
-              fileBaseName(input) +
+              fileBaseName(filePath) +
               " while you were editing it. Your version is kept here and was not saved." +
               FILE_CONFLICT_CHOICE_SUFFIX
             : uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-              fileBaseName(input) +
+              fileBaseName(filePath) +
               " while you were editing it. Your version is kept here and was not saved over theirs." +
               FILE_CONFLICT_CHOICE_SUFFIX),
       );
     }
-    if (entry === undefined || entry.theirsSha !== context) {
+    if (entry === undefined || entry.theirsSha !== baseSha) {
       notifyFlags();
     }
   }
-  function unflagFile(input: string): void {
-    noticedClashShas.delete(input);
-    clearCarriedFiles([input]);
-    flaggedPaths.delete(input);
-    if (flags.delete(input)) {
+  function unflagFile(filePath: string): void {
+    noticedClashShas.delete(filePath);
+    clearCarriedFiles([filePath]);
+    flaggedPaths.delete(filePath);
+    if (flags.delete(filePath)) {
       notifyFlags();
     }
   }
   function keepMineAndRepublish(
-    input: string,
-    options2: string | null | undefined,
+    filePath: string,
+    providedSha: string | null | undefined,
   ): void {
-    let value: string = projectFilePath(input),
-      value2 = options2 !== undefined ? options2 : liveSha(input);
-    if (currentFileText(input) === null && value2 !== null) {
+    let value: string = projectFilePath(filePath),
+      remoteSha = providedSha !== undefined ? providedSha : liveSha(filePath);
+    if (currentFileText(filePath) === null && remoteSha !== null) {
       queue.withdraw(value);
-      keepOutOfUndo(input);
-      takeRemoteFile(input);
+      keepOutOfUndo(filePath);
+      takeRemoteFile(filePath);
       return;
     }
-    document2.held().delete(value);
-    for (let value3 of undoCommands) {
-      value3.retoken(input);
+    document.held().delete(value);
+    for (let undoCommand of undoCommands) {
+      undoCommand.retoken(filePath);
     }
     markDirty(
       value,
-      currentFileText(input) === null
+      currentFileText(filePath) === null
         ? (): null => null
-        : fileValueProvider(input),
-      value2 ?? null,
+        : fileValueProvider(filePath),
+      remoteSha ?? null,
     );
     emit("clash-mine", {
       path: value,
-      theirs: value2 ?? null,
+      theirs: remoteSha ?? null,
     });
     if (!isBusy()) {
       enhancedDocument.flushNow();
     }
   }
-  let fileMatchesCurrentPublish = (input: string) => {
-      let value = currentFileText(input);
+  let fileMatchesCurrentPublish = (filePath: string) => {
+      let value = currentFileText(filePath);
       return (
         value !== null &&
-        recentPublishes.get(input)?.text === value &&
-        readTexts.get(projectFilePath(input)) === value
+        recentPublishes.get(filePath)?.text === value &&
+        readTexts.get(projectFilePath(filePath)) === value
       );
     },
-    fileMatchesReadBase = (input: string) => {
-      let value = currentFileText(input);
+    fileMatchesReadBase = (filePath: string) => {
+      let value = currentFileText(filePath);
       return (
         value !== null &&
-        readTexts.get(projectFilePath(input)) === value
+        readTexts.get(projectFilePath(filePath)) === value
       );
     },
     restoredStashPaths: Set<string> = new Set(),
-    fileSaveIsStuck = (input: string) =>
+    fileSaveIsStuck = (filePath: string) =>
       queue
         .state()
-        .stuck?.paths?.includes(projectFilePath(input)) ===
-        true || queue.unsendable().has(projectFilePath(input)),
+        .stuck?.paths?.includes(projectFilePath(filePath)) ===
+        true || queue.unsendable().has(projectFilePath(filePath)),
     remoteRevertPending: Set<string> = new Set(),
     remoteRevertTokens: Map<string, object> = new Map();
   function revertToTheirs(
-    input: string,
-    options2: string,
-    context: string | null,
+    filePath: string,
+    remotePath: string,
+    remoteSha: string | null,
   ): void {
-    if (remoteRevertPending.has(input)) {
+    if (remoteRevertPending.has(filePath)) {
       return;
     }
-    remoteRevertPending.add(input);
+    remoteRevertPending.add(filePath);
     emit("conflict-reverted", {
-      path: options2,
-      theirs: context,
+      path: remotePath,
+      theirs: remoteSha,
     });
     let callback = (): void => {
-      if (document2.loadState() !== "live") {
-        remoteRevertPending.delete(input);
+      if (document.loadState() !== "live") {
+        remoteRevertPending.delete(filePath);
         return;
       }
       if (isBusy()) {
         timers.setTimeout(callback, 500);
         return;
       }
-      queue.withdraw(options2);
-      let entry = readShas.get(options2);
-      keepOutOfUndo(input);
-      takeRemoteFile(input);
-      let callback2 = (): boolean =>
-          liveSha(input) === null
-            ? currentFileText(input) === null
-            : readShas.get(options2) !== entry,
+      queue.withdraw(remotePath);
+      let entry = readShas.get(remotePath);
+      keepOutOfUndo(filePath);
+      takeRemoteFile(filePath);
+      let retryCheck = (): boolean =>
+          liveSha(filePath) === null
+            ? currentFileText(filePath) === null
+            : readShas.get(remotePath) !== entry,
         index: number = 0,
-        callback3 = (): void => {
-          if (!callback2() && index++ < 30) {
-            timers.setTimeout(callback3, 100);
+        scheduleRetry = (): void => {
+          if (!retryCheck() && index++ < 30) {
+            timers.setTimeout(scheduleRetry, 100);
             return;
           }
-          remoteRevertPending.delete(input);
-          if (!callback2()) {
-            advancePathRevision(input);
+          remoteRevertPending.delete(filePath);
+          if (!retryCheck()) {
+            advancePathRevision(filePath);
             flagClashingFile(
-              input,
+              filePath,
               "edit",
-              context,
+              remoteSha,
               undefined,
               undefined,
               true,
             );
             return;
           }
-          advancePathRevision(input);
-          if (flags.has(input)) {
-            unflagFile(input);
+          advancePathRevision(filePath);
+          if (flags.has(filePath)) {
+            unflagFile(filePath);
           }
-          pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.tookTheirs"), true);
+          pruneUndoPaths(new Set([filePath]), uiMessage("design-system.designSystemDocument.tookTheirs"), true);
           notice(
-            fileBaseName(input) +
-              (currentFileText(input) === null
+            fileBaseName(filePath) +
+              (currentFileText(filePath) === null
                 ? " deleted remotely"
                 : " changed remotely"),
           );
         };
-      callback3();
+      scheduleRetry();
     };
     callback();
   }
   function refreshUnchangedLocalFile(
-    input: string,
-    options2: string,
-    context: string | null,
+    filePath: string,
+    remotePath: string,
+    remoteSha: string | null,
   ): void {
-    document2.held().delete(options2);
-    if (!fileMatchesCurrentPublish(input)) {
+    document.held().delete(remotePath);
+    if (!fileMatchesCurrentPublish(filePath)) {
       for (let value of undoCommands) {
-        value.retoken(input);
+        value.retoken(filePath);
       }
     }
-    if (remoteRevertPending.has(input)) {
+    if (remoteRevertPending.has(filePath)) {
       return;
     }
-    remoteRevertPending.add(input);
+    remoteRevertPending.add(filePath);
     emit("clash-nothing-mine", {
-      path: options2,
-      theirs: context,
+      path: remotePath,
+      theirs: remoteSha,
     });
     let state = {};
-    remoteRevertTokens.set(input, state);
+    remoteRevertTokens.set(filePath, state);
     let callback = (): void => {
-        if (remoteRevertTokens.get(input) === state) {
-          remoteRevertTokens.delete(input);
-          remoteRevertPending.delete(input);
+        if (remoteRevertTokens.get(filePath) === state) {
+          remoteRevertTokens.delete(filePath);
+          remoteRevertPending.delete(filePath);
         }
       },
       items = [1000, 3000, 1e4, 30000],
       index = 0,
-      callback2 = async (): Promise<void> => {
+      refresh = async (): Promise<void> => {
         if (
-          remoteRevertTokens.get(input) !== state ||
+          remoteRevertTokens.get(filePath) !== state ||
           disposed ||
-          document2.loadState() !== "live" ||
-          flags.has(input) ||
-          !fileMatchesReadBase(input)
+          document.loadState() !== "live" ||
+          flags.has(filePath) ||
+          !fileMatchesReadBase(filePath)
         ) {
           return callback();
         }
         if (isBusy()) {
-          timers.setTimeout(() => void callback2(), 500);
+          timers.setTimeout(() => void refresh(), 500);
           return;
         }
-        if (readShas.get(options2) === liveSha(input)) {
+        if (readShas.get(remotePath) === liveSha(filePath)) {
           return callback();
         }
         let promise = new Promise<undefined>(
-            (input2) => void timers.setTimeout(() => input2(undefined), 5000),
+            (resolve) => void timers.setTimeout(() => resolve(undefined), 5000),
           ),
           value =
-            liveSha(input) === null
+            liveSha(filePath) === null
               ? await null
               : await Promise.race([
                   retryFileRead(
-                    () => options.port.readBytes(options2),
+                    () => documentOptions.port.readBytes(remotePath),
                     timers,
                   ).catch((): void => {
                     return;
@@ -635,299 +635,299 @@ function createDesignSystemFilesDocument(
                   promise,
                 ]);
         if (
-          remoteRevertTokens.get(input) !== state ||
+          remoteRevertTokens.get(filePath) !== state ||
           disposed ||
-          document2.loadState() !== "live" ||
-          flags.has(input) ||
-          !fileMatchesReadBase(input)
+          document.loadState() !== "live" ||
+          flags.has(filePath) ||
+          !fileMatchesReadBase(filePath)
         ) {
           return callback();
         }
         if (
-          readShas.get(options2) === liveSha(input) ||
+          readShas.get(remotePath) === liveSha(filePath) ||
           (value !== undefined &&
             value !== null &&
-            value.sha256 === readShas.get(options2))
+            value.sha256 === readShas.get(remotePath))
         ) {
           return callback();
         }
-        let value2 = liveSha(input),
-          value3 =
+        let liveShaValue = liveSha(filePath),
+          isChanged =
             value !== undefined &&
             (value === null
-              ? value2 !== null
-              : value2 !== undefined && value2 !== value.sha256);
-        if (value === undefined || value3) {
-          let value4 = items[index];
-          if (value4 === undefined) {
+              ? liveShaValue !== null
+              : liveShaValue !== undefined && liveShaValue !== value.sha256);
+        if (value === undefined || isChanged) {
+          let retryDelay = items[index];
+          if (retryDelay === undefined) {
             return callback();
           }
-          timers.setTimeout(() => void callback2(), value3 ? 0 : value4);
+          timers.setTimeout(() => void refresh(), isChanged ? 0 : retryDelay);
           index += 1;
           return;
         }
         if (isBusy()) {
-          timers.setTimeout(() => void callback2(), 500);
+          timers.setTimeout(() => void refresh(), 500);
           return;
         }
         callback();
         if (value !== null) {
-          port.primeRead?.(options2, value);
+          port.primeRead?.(remotePath, value);
         }
-        keepOutOfUndo(input);
-        takeRemoteFile(input);
+        keepOutOfUndo(filePath);
+        takeRemoteFile(filePath);
         if (value === null) {
-          readTexts.delete(options2);
-          readShas.delete(options2);
-          recentPublishes.delete(input);
+          readTexts.delete(remotePath);
+          readShas.delete(remotePath);
+          recentPublishes.delete(filePath);
         }
-        advancePathRevision(input);
-        pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.tookTheirs"));
+        advancePathRevision(filePath);
+        pruneUndoPaths(new Set([filePath]), uiMessage("design-system.designSystemDocument.tookTheirs"));
       };
-    callback2();
+    refresh();
   }
   function resolveOrFlagClash(
-    input: string,
-    options2: string,
-    context: string | null | undefined,
-    value?: string,
+    filePath: string,
+    clashReason: string,
+    baseSha: string | null | undefined,
+    detailMessage?: string,
   ): void {
-    if (clashPolicy !== "mine" && restoredStashPaths.has(input)) {
-      flagClashingFile(input, options2, context, value);
+    if (clashPolicy !== "mine" && restoredStashPaths.has(filePath)) {
+      flagClashingFile(filePath, clashReason, baseSha, detailMessage);
       return;
     }
-    let entry = flags.get(input);
+    let entry = flags.get(filePath);
     if (
-      !isTokenFilePath(input) ||
-      context === null ||
+      !isTokenFilePath(filePath) ||
+      baseSha === null ||
       (entry !== undefined &&
         (entry.why !== "edit" || entry.clash !== undefined))
     ) {
-      flagClashingFile(input, options2, context, value);
+      flagClashingFile(filePath, clashReason, baseSha, detailMessage);
       return;
     }
-    queue.withdraw(projectFilePath(input));
-    if (mergingTokenPaths.has(input)) {
+    queue.withdraw(projectFilePath(filePath));
+    if (mergingTokenPaths.has(filePath)) {
       return;
     }
-    mergingTokenPaths.add(input);
+    mergingTokenPaths.add(filePath);
     notifyFlags();
-    mergeClashingTokenFile(input, options2, context, value).catch(
+    mergeClashingTokenFile(filePath, clashReason, baseSha, detailMessage).catch(
       (): void => {
-        mergingTokenPaths.delete(input);
-        flagClashingFile(input, options2, context, value);
+        mergingTokenPaths.delete(filePath);
+        flagClashingFile(filePath, clashReason, baseSha, detailMessage);
       },
     );
   }
   async function mergeClashingTokenFile(
-    input: string,
-    options2: string,
-    context: string | null | undefined,
-    value?: string,
+    filePath: string,
+    remotePath: string,
+    baseSha: string | null | undefined,
+    detailMessage?: string,
   ): Promise<void> {
-    let value2: string = projectFilePath(input),
-      value3: Core.FileTextRead | undefined;
+    let absolutePath: string = projectFilePath(filePath),
+      remoteFile: Core.FileTextRead | undefined;
     try {
-      value3 = await retryFileRead(
-        () => options.port.readText(value2),
+      remoteFile = await retryFileRead(
+        () => documentOptions.port.readText(absolutePath),
         timers,
       );
     } catch {
-      value3 = undefined;
+      remoteFile = undefined;
     }
-    mergingTokenPaths.delete(input);
-    let entry = readTexts.get(value2),
-      entry2 = readShas.get(value2),
-      value4 = currentFileText(input),
-      entry3 = flags.get(input);
+    mergingTokenPaths.delete(filePath);
+    let entry = readTexts.get(absolutePath),
+      remoteSha = readShas.get(absolutePath),
+      localText = currentFileText(filePath),
+      clashEntry = flags.get(filePath);
     if (
-      value3 === undefined ||
+      remoteFile === undefined ||
       entry === undefined ||
-      value4 === null ||
-      (entry3 !== undefined &&
-        (entry3.why !== "edit" || entry3.clash !== undefined))
+      localText === null ||
+      (clashEntry !== undefined &&
+        (clashEntry.why !== "edit" || clashEntry.clash !== undefined))
     ) {
-      flagClashingFile(input, options2, value3?.sha256 ?? context, value);
+      flagClashingFile(filePath, remotePath, remoteFile?.sha256 ?? baseSha, detailMessage);
       return;
     }
-    if (value3.sha256 === entry2) {
-      if (context !== undefined && context !== value3.sha256) {
-        flagClashingFile(input, options2, context, value);
+    if (remoteFile.sha256 === remoteSha) {
+      if (baseSha !== undefined && baseSha !== remoteFile.sha256) {
+        flagClashingFile(filePath, remotePath, baseSha, detailMessage);
         return;
       }
-      if (flags.has(input)) {
-        unflagFile(input);
+      if (flags.has(filePath)) {
+        unflagFile(filePath);
       }
-      markDirty(value2, fileValueProvider(input), value3.sha256);
+      markDirty(absolutePath, fileValueProvider(filePath), remoteFile.sha256);
       enhancedDocument.flushNow();
       notifyFlags();
       return;
     }
-    let value5 = mergeSupportedFileThreeWays(
-      input,
+    let mergeResult = mergeSupportedFileThreeWays(
+      filePath,
       entry,
-      value4,
-      value3.text,
+      localText,
+      remoteFile.text,
     );
     if (
       clashPolicy === "mine" &&
-      value5 !== null &&
-      !value5.ok &&
-      value5.why === "conflict"
+      mergeResult !== null &&
+      !mergeResult.ok &&
+      mergeResult.why === "conflict"
     ) {
-      let value6 = mergeSupportedFileThreeWays(
-        input,
+      let tokenMergeResult = mergeSupportedFileThreeWays(
+        filePath,
         entry,
-        value3.text,
-        value4,
+        remoteFile.text,
+        localText,
         "theirs",
       );
-      if (value6 !== null && value6.ok) {
-        value5 = {
+      if (tokenMergeResult !== null && tokenMergeResult.ok) {
+        mergeResult = {
           ok: true,
-          text: value6.text,
+          text: tokenMergeResult.text,
           kept: [],
         };
       }
     }
-    if (value5 === null || !value5.ok) {
-      let value6 =
-        value5 !== null && value5.why === "conflict"
-          ? summarizeConflictNames(value5.conflicts)
+    if (mergeResult === null || !mergeResult.ok) {
+      let fallbackText =
+        mergeResult !== null && mergeResult.why === "conflict"
+          ? summarizeConflictNames(mergeResult.conflicts)
           : undefined;
       flagClashingFile(
-        input,
-        options2,
-        value3.sha256,
-        value6 !== undefined
+        filePath,
+        remotePath,
+        remoteFile.sha256,
+        fallbackText !== undefined
           ? uiMessage("design-system.designSystemDocument.youAndSomeoneElseBoth") +
-              value6 +
+              fallbackText +
               " in " +
-              fileBaseName(input) +
+              fileBaseName(filePath) +
               ". Theirs was saved first; yours is kept here and was not saved over theirs." +
               FILE_CONFLICT_CHOICE_SUFFIX
-          : value,
-        value6,
+          : detailMessage,
+        fallbackText,
       );
       return;
     }
-    advancePathRevision(input);
-    if (flags.has(input)) {
-      unflagFile(input);
+    advancePathRevision(filePath);
+    if (flags.has(filePath)) {
+      unflagFile(filePath);
     }
-    readTexts.set(value2, value3.text);
-    readShas.set(value2, value3.sha256);
+    readTexts.set(absolutePath, remoteFile.text);
+    readShas.set(absolutePath, remoteFile.sha256);
     if (
       fileContentsSemanticallyEqual(
-        input,
-        value5.text,
-        value3.text,
+        filePath,
+        mergeResult.text,
+        remoteFile.text,
       )
     ) {
       try {
-        port.primeRead?.(value2, {
-          bytes: encoder.encode(value3.text),
-          sha256: value3.sha256,
+        port.primeRead?.(absolutePath, {
+          bytes: encoder.encode(remoteFile.text),
+          sha256: remoteFile.sha256,
           contentType:
-            publishableFileMimeType(input, value3.text) ??
+            publishableFileMimeType(filePath, remoteFile.text) ??
             "text/plain",
         });
       } catch {}
-      queue.withdraw(value2);
-      keepOutOfUndo(input);
-      takeRemoteFile(input);
+      queue.withdraw(absolutePath);
+      keepOutOfUndo(filePath);
+      takeRemoteFile(filePath);
       emit("merged", {
-        path: value2,
-        theirs: value3.sha256,
+        path: absolutePath,
+        theirs: remoteFile.sha256,
         wrote: false,
-        why: options2,
+        why: remotePath,
       });
       notifyFlags();
       return;
     }
-    document2.held().delete(value2);
-    replaceFileText(input, value5.text);
-    markDirty(value2, fileValueProvider(input), value3.sha256);
+    document.held().delete(absolutePath);
+    replaceFileText(filePath, mergeResult.text);
+    markDirty(absolutePath, fileValueProvider(filePath), remoteFile.sha256);
     emit("merged", {
-      path: value2,
-      theirs: value3.sha256,
+      path: absolutePath,
+      theirs: remoteFile.sha256,
       wrote: true,
-      why: options2,
+      why: remotePath,
     });
     enhancedDocument.flushNow();
     notifyFlags();
   }
   function healSimultaneousPublish(
-    input: string,
-    options2: string | null,
+    filePath: string,
+    remoteSha: string | null,
   ): void {
-    let entry = recentPublishes.get(input);
+    let entry = recentPublishes.get(filePath);
     if (
       entry === undefined ||
       entry.healed === true ||
-      options2 === null ||
-      entry.sha === options2 ||
+      remoteSha === null ||
+      entry.sha === remoteSha ||
       timers.now() - entry.at > RECENT_PUBLISH_HEAL_WINDOW_MS ||
       entry.base === undefined
     ) {
       return;
     }
-    let value = currentFileText(input);
+    let value = currentFileText(filePath);
     if (value === null || value === entry.text) {
       return;
     }
-    recentPublishes.delete(input);
-    if (isTokenFilePath(input)) {
-      let value2 = mergeSupportedFileThreeWays(
-        input,
+    recentPublishes.delete(filePath);
+    if (isTokenFilePath(filePath)) {
+      let mergeResult = mergeSupportedFileThreeWays(
+        filePath,
         entry.base,
         entry.text,
         value,
         "theirs",
       );
-      if (value2 === null || !value2.ok) {
+      if (mergeResult === null || !mergeResult.ok) {
         return;
       }
-      let value3: boolean = !fileContentsSemanticallyEqual(
-        input,
-        value2.text,
+      let shouldRestoreMergedEdits: boolean = !fileContentsSemanticallyEqual(
+        filePath,
+        mergeResult.text,
         value,
       );
-      if (value3) {
-        let value4 = timers.now(),
-          value5 = (recentHealTimes.get(input) ?? []).filter(
-            (input2): boolean => value4 - input2 <= 60000,
+      if (shouldRestoreMergedEdits) {
+        let now = timers.now(),
+          healTimes = (recentHealTimes.get(filePath) ?? []).filter(
+            (timestamp): boolean => now - timestamp <= 60000,
           );
-        if (value5.length >= 3) {
-          value3 = false;
+        if (healTimes.length >= 3) {
+          shouldRestoreMergedEdits = false;
         } else {
-          value5.push(value4);
-          recentHealTimes.set(input, value5);
+          healTimes.push(now);
+          recentHealTimes.set(filePath, healTimes);
         }
       }
-      if (value3) {
+      if (shouldRestoreMergedEdits) {
         emit("healed", {
-          path: projectFilePath(input),
-          theirs: options2,
-          kept: value2.kept,
+          path: projectFilePath(filePath),
+          theirs: remoteSha,
+          kept: mergeResult.kept,
         });
-        recentHeals.set(input, timers.now());
-        replaceFileText(input, value2.text);
+        recentHeals.set(filePath, timers.now());
+        replaceFileText(filePath, mergeResult.text);
         enhancedDocument.flushNow();
       }
       if (
         clashPolicy !== "mine" &&
-        value2.kept.length > 0 &&
-        (value3 ||
+        mergeResult.kept.length > 0 &&
+        (shouldRestoreMergedEdits ||
           timers.now() - entry.at <= RECENT_PUBLISH_CLASH_NOTICE_MS)
       ) {
         notice(
           uiMessage("design-system.designSystemDocument.someoneElseSaved") +
-            fileBaseName(input) +
+            fileBaseName(filePath) +
             " at the same moment as you. For " +
-            summarizeConflictNames(value2.kept) +
+            summarizeConflictNames(mergeResult.kept) +
             ", which you both changed, theirs is kept." +
-            (value3 ? " Your other changes were put back." : ""),
+            (shouldRestoreMergedEdits ? " Your other changes were put back." : ""),
         );
       }
       return;
@@ -939,16 +939,16 @@ function createDesignSystemFilesDocument(
       return;
     }
     emit("overwritten", {
-      path: projectFilePath(input),
-      theirs: options2,
+      path: projectFilePath(filePath),
+      theirs: remoteSha,
     });
-    replaceFileText(input, entry.text);
+    replaceFileText(filePath, entry.text);
     flagClashingFile(
-      input,
+      filePath,
       "overwritten",
-      options2,
+      remoteSha,
       uiMessage("design-system.designSystemDocument.someoneElseSaved") +
-        fileBaseName(input) +
+        fileBaseName(filePath) +
         " at the same moment as you, and their version replaced yours. Yours is back here and is not saved." +
         FILE_CONFLICT_CHOICE_SUFFIX,
     );
@@ -966,48 +966,48 @@ function createDesignSystemFilesDocument(
     pendingForeignIndexChanges: F.FileIndexDelta[] = [],
     lastIndexBase: Core.FilesIndex | undefined,
     publishingIndexBases: Core.FilesIndex[] = [];
-  function recordForeignIndexChanges(input?: Core.FilesIndex): void {
-    let value = document2.index().base();
+  function recordForeignIndexChanges(foreignIndex?: Core.FilesIndex): void {
+    let value = document.index().base();
     if (
-      publishingIndexBases.some((input2) =>
-        mergeValuesEqual(input2, value),
+      publishingIndexBases.some((publishingIndex) =>
+        mergeValuesEqual(publishingIndex, value),
       )
     ) {
       lastIndexBase = cloneMergeValue(value);
       return;
     }
-    if (input !== undefined) {
+    if (foreignIndex !== undefined) {
       let state: Partial<Core.FilesIndex> = {},
-        state2: Partial<Core.FilesIndex> = {};
-      for (let value2 of UNDO_INDEX_FIELDS) {
-        if (!mergeValuesEqual(input[value2], value[value2])) {
+        foreignChanges: Partial<Core.FilesIndex> = {};
+      for (let fieldName of UNDO_INDEX_FIELDS) {
+        if (!mergeValuesEqual(foreignIndex[fieldName], value[fieldName])) {
           (
             state as Record<
               keyof Core.FilesIndex,
               Core.FilesIndex[keyof Core.FilesIndex]
             >
-          )[value2] = cloneMergeValue(input[value2]);
+          )[fieldName] = cloneMergeValue(foreignIndex[fieldName]);
           (
-            state2 as Record<
+            foreignChanges as Record<
               keyof Core.FilesIndex,
               Core.FilesIndex[keyof Core.FilesIndex]
             >
-          )[value2] = cloneMergeValue(value[value2]);
+          )[fieldName] = cloneMergeValue(value[fieldName]);
         }
       }
-      if (Object.keys(state2).length + Object.keys(state).length > 0) {
+      if (Object.keys(foreignChanges).length + Object.keys(state).length > 0) {
         pendingForeignIndexChanges.push({
           from: state,
-          to: state2,
+          to: foreignChanges,
         });
       }
     }
     lastIndexBase = cloneMergeValue(value);
   }
   function flushForeignIndexChanges(): void {
-    for (let value2 of pendingForeignIndexChanges.splice(0)) {
+    for (let change of pendingForeignIndexChanges.splice(0)) {
       foreignIndexChanges.push({
-        ...value2,
+        ...change,
         seq: nextForeignChangeSeq++,
       });
     }
@@ -1020,8 +1020,8 @@ function createDesignSystemFilesDocument(
       let seq = foreignIndexChanges[index].seq;
       if (
         foreignIndexChanges.length <= 2000 &&
-        undoCommands.some((input, options2) =>
-          input.needsTheirs(seq, options2 === undoCommands.length - 1),
+        undoCommands.some((undoCommand, commandIndex) =>
+          undoCommand.needsTheirs(seq, commandIndex === undoCommands.length - 1),
         )
       ) {
         index++;
@@ -1034,25 +1034,25 @@ function createDesignSystemFilesDocument(
   let undoStack: F.FileMutationBatch | undefined,
     undoCommands: M.UndoCommand[] = [];
   function pruneUndoPaths(
-    input: ReadonlySet<string>,
-    options2: string,
-    context = false,
+    paths: ReadonlySet<string>,
+    reason: string,
+    includeContext = false,
   ): void {
     let index: number = 0,
-      index2: number = 0;
+      droppedCount: number = 0;
     for (let value of undoCommands) {
-      let value2 = value.dropPaths(input);
-      if (value2 === "emptied") {
-        index2++;
-      } else if (value2 === "trimmed") {
+      let dropResult = value.dropPaths(paths);
+      if (dropResult === "emptied") {
+        droppedCount++;
+      } else if (dropResult === "trimmed") {
         index++;
       }
     }
-    if (index2 > 0) {
+    if (droppedCount > 0) {
       undoStack?.prune(
-        (input2) =>
-          supportsDroppedPaths(input2 as M.UndoCommand) &&
-          (input2 as M.UndoCommand).dropped,
+        (undoCommand) =>
+          supportsDroppedPaths(undoCommand as M.UndoCommand) &&
+          (undoCommand as M.UndoCommand).dropped,
       );
     }
     for (let value: number = undoCommands.length - 1; value >= 0; value--) {
@@ -1060,54 +1060,54 @@ function createDesignSystemFilesDocument(
         undoCommands.splice(value, 1);
       }
     }
-    if (index2 + index === 0) {
+    if (droppedCount + index === 0) {
       return;
     }
     emit("undo-pruned", {
-      paths: [...input].map(projectFilePath),
-      why: options2,
-      entriesDropped: index2,
+      paths: [...paths].map(projectFilePath),
+      why: reason,
+      entriesDropped: droppedCount,
       entriesTrimmed: index,
     });
-    if (!context) {
+    if (!includeContext) {
       notice(
         uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-          summarizeFileNames([...input]) +
+          summarizeFileNames([...paths]) +
           ", so your earlier edits to " +
-          (input.size === 1 ? "it" : "them") +
+          (paths.size === 1 ? "it" : "them") +
           " can no longer be undone from here.",
       );
     }
   }
   function applyUndoDelta(
-    input: F.FileMergeResult,
-    options2: "undo" | "redo",
-    context: string,
+    mergeDelta: F.FileMergeResult,
+    direction: "undo" | "redo",
+    description: string,
   ): void {
     let state = {
-      label: context,
-      files: input.files.map(projectFilePath),
-      index: input.index,
-      indexOnly: input.index && input.files.length === 0,
-      localOnly: input.localOnly.map(projectFilePath),
-      skipped: input.skipped.map(projectFilePath),
-      indexKept: input.indexKept,
+      label: description,
+      files: mergeDelta.files.map(projectFilePath),
+      index: mergeDelta.index,
+      indexOnly: mergeDelta.index && mergeDelta.files.length === 0,
+      localOnly: mergeDelta.localOnly.map(projectFilePath),
+      skipped: mergeDelta.skipped.map(projectFilePath),
+      indexKept: mergeDelta.indexKept,
     };
-    if (input.empty) {
-      emit(options2, {
+    if (mergeDelta.empty) {
+      emit(direction, {
         ...state,
         nothing: true,
       });
-      if (input.skipped.length + input.indexKept.length > 0) {
+      if (mergeDelta.skipped.length + mergeDelta.indexKept.length > 0) {
         notice(
           uiMessage("design-system.designSystemDocument.nothingTo") +
-            options2 +
+            direction +
             " there any more: " +
             [
-              ...input.skipped.map(fileBaseName),
+              ...mergeDelta.skipped.map(fileBaseName),
               ...describeIndexConflicts(
-                input.indexKept,
-                document2.index().get(),
+                mergeDelta.indexKept,
+                document.index().get(),
               ),
             ].join(", ") +
             " changed since.",
@@ -1118,231 +1118,231 @@ function createDesignSystemFilesDocument(
     let value = refreshManifest(
       {
         v: 2,
-        files: freezeSortedFileTable(input.next),
+        files: freezeSortedFileTable(mergeDelta.next),
       },
-      document2.title(),
+      document.title(),
     );
-    document2.setContent(value);
-    for (let value2 of input.localOnly) {
+    document.setContent(value);
+    for (let filePath of mergeDelta.localOnly) {
       flagClashingFile(
-        value2,
+        filePath,
         "undo",
-        liveSha(value2),
+        liveSha(filePath),
         uiMessage("design-system.designSystemDocument.someoneElseSavedANewer") +
-          fileBaseName(value2) +
+          fileBaseName(filePath) +
           " since that step. Your " +
-          options2 +
+          direction +
           " shows here but was not saved over theirs." +
           FILE_CONFLICT_CHOICE_SUFFIX,
       );
     }
-    if (input.indexKept.length > 0) {
+    if (mergeDelta.indexKept.length > 0) {
       notice(
         uiMessage("design-system.designSystemDocument.partOfThat") +
-          options2 +
+          direction +
           " was left as it is because someone else changed it since: " +
           describeIndexConflicts(
-            input.indexKept,
-            document2.index().get(),
+            mergeDelta.indexKept,
+            document.index().get(),
           ).join(", ") +
           ".",
       );
     }
-    emit(options2, state);
+    emit(direction, state);
     enhancedDocument.flushNow();
   }
   let mergeUndoTokenText = (
-    input: string,
-    options2: string,
-    context: string,
-    value: string,
+    filePath: string,
+    remoteText: string,
+    baseText: string,
+    localText: string,
   ) => {
     if (
-      !isTokenFilePath(input) ||
-      flags.has(input) ||
-      document2.held().has(projectFilePath(input))
+      !isTokenFilePath(filePath) ||
+      flags.has(filePath) ||
+      document.held().has(projectFilePath(filePath))
     ) {
       return null;
     }
-    let value2 = mergeSupportedFileThreeWays(
-      input,
-      options2,
-      context,
-      value,
+    let mergeResult = mergeSupportedFileThreeWays(
+      filePath,
+      remoteText,
+      baseText,
+      localText,
     );
-    if (value2 === null || !value2.ok) {
+    if (mergeResult === null || !mergeResult.ok) {
       return null;
     }
     if (
-      fileContentsSemanticallyEqual(input, value2.text, value)
+      fileContentsSemanticallyEqual(filePath, mergeResult.text, localText)
     ) {
-      return value;
+      return localText;
     } else {
-      return value2.text;
+      return mergeResult.text;
     }
   };
   function createUndoCommand(
-    input: string,
-    options2: () => M.DocumentUndoPair,
-    context: { applied?: boolean } = {},
+    undoFilePath: string,
+    capturePair: () => M.DocumentUndoPair,
+    commandState: { applied?: boolean } = {},
   ) {
     let entries = new Map(pathRevisions),
       value: number = nextForeignChangeSeq,
-      value2: number = nextForeignChangeSeq,
-      value3: number = nextForeignChangeSeq,
+      endSeq: number = nextForeignChangeSeq,
+      nextEndSeq: number = nextForeignChangeSeq,
       values = new Set<string>(),
-      values2 = new Set<string>(),
+      excludedPaths = new Set<string>(),
       flag: boolean = false,
-      value4: boolean = context.applied === true,
-      callback = (input2: string) =>
-        flags.has(input2) ||
-        document2.held().has(projectFilePath(input2)) ||
-        (entries.get(input2) ?? 0) !== (pathRevisions.get(input2) ?? 0),
-      callback2 = (input2: "undo" | "redo"): void => {
-        let { before: value5, after: value6 } = options2(),
-          value7 = input2 === "undo" ? value6 : value5,
-          value8 = input2 === "undo" ? value5 : value6,
-          value9 = foreignIndexChanges.filter(
-            (input3) => input3.seq >= value && input3.seq < value2,
+      wasApplied: boolean = commandState.applied === true,
+      callback = (filePath: string) =>
+        flags.has(filePath) ||
+        document.held().has(projectFilePath(filePath)) ||
+        (entries.get(filePath) ?? 0) !== (pathRevisions.get(filePath) ?? 0),
+      applyDirection = (direction: "undo" | "redo"): void => {
+        let { before: beforeState, after: afterState } = capturePair(),
+          selectedState = direction === "undo" ? afterState : beforeState,
+          previousState = direction === "undo" ? beforeState : afterState,
+          earlierChanges = foreignIndexChanges.filter(
+            (change) => change.seq >= value && change.seq < endSeq,
           ),
-          value10 = foreignIndexChanges.filter(
-            (input3) => input3.seq >= value2 && input3.seq < value3,
+          laterChanges = foreignIndexChanges.filter(
+            (change) => change.seq >= endSeq && change.seq < nextEndSeq,
           ),
-          callback3 = () =>
-            value9.reduce(
-              (input3: Core.FilesIndex, options3: F.FileIndexDelta) =>
+          applyForeignChanges = () =>
+            earlierChanges.reduce(
+              (indexState: Core.FilesIndex, indexDelta: F.FileIndexDelta) =>
                 mergeFilesIndex(
-                  options3.from,
-                  options3.to,
-                  input3,
+                  indexDelta.from,
+                  indexDelta.to,
+                  indexState,
                 ).index,
-              buildFilesIndex(document2.title(), value5.files),
+              buildFilesIndex(document.title(), beforeState.files),
             ),
           items = [
-            ...value9,
-            ...(value10.length > 0
+            ...earlierChanges,
+            ...(laterChanges.length > 0
               ? [
                   indexUndoForeignChanges(
-                    value10,
+                    laterChanges,
                     values,
-                    callback3(),
+                    applyForeignChanges(),
                   ),
                 ]
               : []),
           ];
         applyUndoDelta(
           mergeDesignSystemFiles(
-            document2.content().files,
-            document2.title(),
-            value7.files,
-            value8.files,
+            document.content().files,
+            document.title(),
+            selectedState.files,
+            previousState.files,
             {
               stale: callback,
-              excluded: values2,
+              excluded: excludedPaths,
               merge: mergeUndoTokenText,
               theirIndex: items,
-              earlierSide: input2 === "undo" ? "to" : "from",
+              earlierSide: direction === "undo" ? "to" : "from",
             },
           ),
-          input2,
-          input,
+          direction,
+          undoFilePath,
         );
         entries = new Map(pathRevisions);
       },
       state: M.UndoCommand = {
-        label: input,
+        label: undoFilePath,
         do(): void {
-          if (!value4) {
-            value4 = true;
-            document2.setContent(options2().after);
+          if (!wasApplied) {
+            wasApplied = true;
+            document.setContent(capturePair().after);
             entries = new Map(pathRevisions);
             return;
           }
-          callback2("redo");
+          applyDirection("redo");
         },
         undo(): void {
-          callback2("undo");
+          applyDirection("undo");
         },
         touch(): void {
           entries = new Map(pathRevisions);
-          value2 = nextForeignChangeSeq;
+          endSeq = nextForeignChangeSeq;
         },
-        spanTheirs(input2, options3): void {
+        spanTheirs(paths, indexOverrides): void {
           if (flag) {
             return;
           }
-          let { before: value5, after: value6 } = options2(),
-            value7: Core.FilesIndex = buildFilesIndex(
-              document2.title(),
-              value6.files,
+          let { before: beforeState, after: afterState } = capturePair(),
+            beforeIndex: Core.FilesIndex = buildFilesIndex(
+              document.title(),
+              afterState.files,
             ),
-            value8: Core.FilesIndex = buildFilesIndex(
-              document2.title(),
-              value5.files,
+            afterIndex: Core.FilesIndex = buildFilesIndex(
+              document.title(),
+              beforeState.files,
             ),
-            value9 = input2.filter((input3) => {
-              let value10 = indexPresentationField(
-                options3,
-                input3,
+            changedPaths = paths.filter((path) => {
+              let field = indexPresentationField(
+                indexOverrides,
+                path,
               );
               return (
-                value10 !== undefined &&
-                indexPresentationField(value7, input3) ===
-                  value10 &&
-                indexPresentationField(value8, input3) !==
-                  value10
+                field !== undefined &&
+                indexPresentationField(beforeIndex, path) ===
+                  field &&
+                indexPresentationField(afterIndex, path) !==
+                  field
               );
             });
-          if (value9.length > 0) {
-            value3 = nextForeignChangeSeq;
-            for (let value10 of value9) {
-              values.add(value10);
+          if (changedPaths.length > 0) {
+            nextEndSeq = nextForeignChangeSeq;
+            for (let path of changedPaths) {
+              values.add(path);
             }
           }
         },
-        needsTheirs: (input2, options3) =>
+        needsTheirs: (sequence, isLastCommand) =>
           !flag &&
-          input2 >= value &&
-          (options3 || input2 < Math.max(value2, value3)),
-        retoken(input2): void {
-          if (pathRevisions.has(input2)) {
-            entries.set(input2, pathRevisions.get(input2)!);
+          sequence >= value &&
+          (isLastCommand || sequence < Math.max(endSeq, nextEndSeq)),
+        retoken(filePath): void {
+          if (pathRevisions.has(filePath)) {
+            entries.set(filePath, pathRevisions.get(filePath)!);
           }
         },
-        keepOut(input2): void {
+        keepOut(paths): void {
           if (flag) {
             return;
           }
-          let { before: value5, after: value6 } = options2();
-          for (let value7 of input2) {
-            if (value5.files[value7] === value6.files[value7]) {
-              values2.add(value7);
+          let { before: beforeState, after: afterState } = capturePair();
+          for (let filePath of paths) {
+            if (beforeState.files[filePath] === afterState.files[filePath]) {
+              excludedPaths.add(filePath);
             }
           }
         },
-        dropPaths(input2): "untouched" | "emptied" | "trimmed" {
+        dropPaths(paths): "untouched" | "emptied" | "trimmed" {
           if (flag) {
             return "untouched";
           }
-          let { before: value5, after: value6 } = options2(),
-            value7 = changedProjectFilePaths(
-              value5.files,
-              value6.files,
-              document2.title(),
+          let { before: beforeState, after: afterState } = capturePair(),
+            changedFiles = changedProjectFilePaths(
+              beforeState.files,
+              afterState.files,
+              document.title(),
             ),
-            flag2: boolean = false;
-          for (let value8 of value7.files) {
-            if (input2.has(value8) && !values2.has(value8)) {
-              values2.add(value8);
-              flag2 = true;
+            hasChangedPath: boolean = false;
+          for (let filePath of changedFiles.files) {
+            if (paths.has(filePath) && !excludedPaths.has(filePath)) {
+              excludedPaths.add(filePath);
+              hasChangedPath = true;
             }
           }
-          if (!flag2) {
+          if (!hasChangedPath) {
             return "untouched";
           }
           if (
-            !value7.index &&
-            value7.files.every((input3) => values2.has(input3))
+            !changedFiles.index &&
+            changedFiles.files.every((filePath) => excludedPaths.has(filePath))
           ) {
             flag = true;
             return "emptied";
@@ -1352,7 +1352,7 @@ function createDesignSystemFilesDocument(
         get dropped(): boolean {
           return flag;
         },
-        leavesAlone: (input2) => values2.has(input2),
+        leavesAlone: (filePath) => excludedPaths.has(filePath),
       };
     undoCommands.push(state);
     if (undoCommands.length > 400) {
@@ -1397,14 +1397,14 @@ function createDesignSystemFilesDocument(
     },
     readmeHeading = (): string =>
       "# " +
-      (document2.title().replace(/\s+/g, " ").trim() || uiMessage("design-system.designSystemDocument.designSystem")) +
+      (document.title().replace(/\s+/g, " ").trim() || uiMessage("design-system.designSystemDocument.designSystem")) +
       `
 `;
   function ensureReactPreviewLibraries(): void {
     if (!previewStaticNoticeSnapshot()) {
       return;
     }
-    let files = document2.content().files;
+    let files = document.content().files;
     if (files[DESIGN_SYSTEM_PATHS.bundleJs] === undefined) {
       return;
     }
@@ -1413,38 +1413,38 @@ function createDesignSystemFilesDocument(
         files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
       ).libraries ?? [];
     if (
-      value.some((input) =>
+      value.some((library) =>
         REACT_LIBRARY_CATALOG.some(
-          (input2): boolean => input2.name === input.name,
+          (existingLibrary): boolean => existingLibrary.name === library.name,
         ),
       )
     ) {
       return;
     }
-    let value2 = stringifyManifestWithinBudget({
+    let manifestText = stringifyManifestWithinBudget({
       ...parseManifest(
         files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
       ),
       manifestVersion: DESIGN_SYSTEM_MANIFEST_VERSION,
       libraries: [
-        ...REACT_LIBRARY_CATALOG.map((input) => ({
-          name: input.name,
+        ...REACT_LIBRARY_CATALOG.map((library) => ({
+          name: library.name,
           version: "18",
         })),
         ...value,
       ],
     });
-    document2.updateContent(
-      (input) =>
+    document.updateContent(
+      (library) =>
         refreshManifest(
           {
-            ...input,
+            ...library,
             files: Object.freeze({
-              ...input.files,
-              [DESIGN_SYSTEM_PATHS.manifest]: value2,
+              ...library.files,
+              [DESIGN_SYSTEM_PATHS.manifest]: manifestText,
             }),
           },
-          document2.title(),
+          document.title(),
         ),
       {
         auto: true,
@@ -1463,22 +1463,22 @@ function createDesignSystemFilesDocument(
     ownershipRetryAttempt: number = 0,
     ownershipProbeTimeoutMs: number = 1e4,
     ownershipRetryDelays: number[] = [2000, 5000, 15000, 30000, 60000, 60000],
-    fileWasGeneratedByEditor = (input: string, options2: string) => {
+    fileWasGeneratedByEditor = (filePath: string, fileText: string) => {
       let value: string =
-        relativeProjectFilePath(input) ?? input;
+        relativeProjectFilePath(filePath) ?? filePath;
       if (value !== DESIGN_SYSTEM_PATHS.manifest) {
-        return hasGeneratedSystemHeader(value, options2);
+        return hasGeneratedSystemHeader(value, fileText);
       }
       try {
-        let value2: { manifestVersion?: unknown; files?: unknown } | null =
-          JSON.parse(options2);
+        let parsedFile: { manifestVersion?: unknown; files?: unknown } | null =
+          JSON.parse(fileText);
         return (
-          value2 !== null &&
-          typeof value2 === "object" &&
-          !Array.isArray(value2) &&
-          typeof value2.manifestVersion === "number" &&
-          (value2.manifestVersion <= DESIGN_SYSTEM_MANIFEST_VERSION ||
-            Array.isArray(value2.files))
+          parsedFile !== null &&
+          typeof parsedFile === "object" &&
+          !Array.isArray(parsedFile) &&
+          typeof parsedFile.manifestVersion === "number" &&
+          (parsedFile.manifestVersion <= DESIGN_SYSTEM_MANIFEST_VERSION ||
+            Array.isArray(parsedFile.files))
         );
       } catch {
         return false;
@@ -1486,7 +1486,7 @@ function createDesignSystemFilesDocument(
     },
     ownershipProbePending = () =>
       [...generatedOwnership.values()].some(
-        (input): boolean => typeof input === "number",
+        (numericValue): boolean => typeof numericValue === "number",
       ),
     generatedWorkPending = () =>
       !disposed &&
@@ -1501,34 +1501,34 @@ function createDesignSystemFilesDocument(
         return;
       }
       generatedPendingNotified = value;
-      let value2 = enhancedDocument.saveState();
-      for (let value3 of [...saveSubscribers]) {
+      let saveState = enhancedDocument.saveState();
+      for (let subscriber of [...saveSubscribers]) {
         try {
-          value3(value2);
+          subscriber(saveState);
         } catch {}
       }
     },
     announceForeignFiles = (): void => {
       let value = foreignFileNotices;
       foreignFileNotices = [];
-      for (let value2 of ["write", "remove"]) {
-        let value3 = value
-          .filter((input): boolean => input.wanted === value2)
-          .map((input) => input.name);
-        if (value3.length === 0) {
+      for (let operation of ["write", "remove"]) {
+        let fileNames = value
+          .filter((change): boolean => change.wanted === operation)
+          .map((fileEntry) => fileEntry.name);
+        if (fileNames.length === 0) {
           continue;
         }
         reportMigrationAnalytics(
           MIGRATION_ANALYTICS_EVENTS.foreignFilesNoticed,
         );
-        let value4: boolean = value3.length === 1;
+        let singleFile: boolean = fileNames.length === 1;
         notice(
-          summarizeFileNames(value3) +
-            (value4
+          summarizeFileNames(fileNames) +
+            (singleFile
               ? " in this system was not made by this editor, so it is left as it is"
               : " in this system were not made by this editor, so they are left as they are") +
-            (value2 === "write"
-              ? value4
+            (operation === "write"
+              ? singleFile
                 ? "; changes you make here are not written to it."
                 : "; changes you make here are not written to them."
               : "."),
@@ -1576,93 +1576,93 @@ function createDesignSystemFilesDocument(
         finishOwnershipProbe();
       }, ownershipRetryDelays[ownershipRetryAttempt++]);
     },
-    recordForeignFile = (input: string, options2: string): void => {
-      generatedOwnership.set(input, "theirs");
-      if (!foreignFileNoticePaths.has(input)) {
-        foreignFileNoticePaths.add(input);
+    recordForeignFile = (filePath: string, operation: string): void => {
+      generatedOwnership.set(filePath, "theirs");
+      if (!foreignFileNoticePaths.has(filePath)) {
+        foreignFileNoticePaths.add(filePath);
         foreignFileNotices.push({
-          name: relativeProjectFilePath(input) ?? input,
-          wanted: options2,
+          name: relativeProjectFilePath(filePath) ?? filePath,
+          wanted: operation,
         });
       }
     },
-    withOwnershipDeadline = <Value>(input: Promise<Value>): Promise<Value> =>
-      new Promise<Value>((input2, options2): void => {
+    withOwnershipDeadline = <Value>(promise: Promise<Value>): Promise<Value> =>
+      new Promise<Value>((resolve, reject): void => {
         let value = timers.setTimeout(
           () =>
-            options2({
+            reject({
               code: "deadline",
             }),
           ownershipProbeTimeoutMs,
         );
-        input.then(
-          (input3): void => {
+        promise.then(
+          (rejectedValue): void => {
             timers.clearTimeout(value);
-            input2(input3);
+            resolve(rejectedValue);
           },
-          (input3: unknown): void => {
+          (error: unknown): void => {
             timers.clearTimeout(value);
-            options2(input3);
+            reject(error);
           },
         );
       });
   function canGenerateFile(
-    input: string,
-    options2: "write" | "remove",
+    filePath: string,
+    operation: "write" | "remove",
   ): boolean {
-    if (port.liveSha?.(input) === null) {
+    if (port.liveSha?.(filePath) === null) {
       return true;
     }
-    let entry = generatedOwnership.get(input);
+    let entry = generatedOwnership.get(filePath);
     if (entry !== undefined) {
       return entry === "ours";
     }
     let peekBytes = port.peekBytes;
     if (peekBytes === undefined) {
-      recordForeignFile(input, options2);
+      recordForeignFile(filePath, operation);
       ownershipProbeChain.then(finishOwnershipProbe);
       return false;
     }
     let value = ++ownershipProbeGeneration;
-    generatedOwnership.set(input, value);
+    generatedOwnership.set(filePath, value);
     ownershipProbeChain = ownershipProbeChain
       .then(() =>
         withOwnershipDeadline(
-          retryFileRead(() => peekBytes(input), timers),
+          retryFileRead(() => peekBytes(filePath), timers),
         ),
       )
       .then(
-        (input2): string =>
+        (bytes): string =>
           fileWasGeneratedByEditor(
-            input,
-            new TextDecoder().decode(input2.bytes),
+            filePath,
+            new TextDecoder().decode(bytes.bytes),
           )
             ? "ours"
             : "theirs",
-        (input2: { code?: string } | undefined): string | undefined =>
-          input2?.code === "not_found" &&
-          typeof port.liveSha?.(input) !== "string"
+        (error: { code?: string } | undefined): string | undefined =>
+          error?.code === "not_found" &&
+          typeof port.liveSha?.(filePath) !== "string"
             ? "ours"
             : undefined,
       )
-      .then((input2) => {
-        if (disposed || generatedOwnership.get(input) !== value) {
+      .then((ownershipResult) => {
+        if (disposed || generatedOwnership.get(filePath) !== value) {
           return finishOwnershipProbe();
         }
-        if (input2 === undefined) {
-          generatedOwnership.delete(input);
+        if (ownershipResult === undefined) {
+          generatedOwnership.delete(filePath);
           scheduleOwnershipRetry();
-        } else if (((ownershipRetryAttempt = 0), input2 === "theirs")) {
-          recordForeignFile(input, options2);
+        } else if (((ownershipRetryAttempt = 0), ownershipResult === "theirs")) {
+          recordForeignFile(filePath, operation);
         } else {
-          generatedOwnership.set(input, "ours");
+          generatedOwnership.set(filePath, "ours");
           ownedFilesDiscovered = true;
         }
         finishOwnershipProbe();
       })
       .catch((): void => {
-        if (generatedOwnership.get(input) === value) {
-          generatedOwnership.delete(input);
+        if (generatedOwnership.get(filePath) === value) {
+          generatedOwnership.delete(filePath);
           scheduleOwnershipRetry();
         }
         finishOwnershipProbe();
@@ -1694,94 +1694,94 @@ function createDesignSystemFilesDocument(
   };
   function regenerate(): string[] {
     if (
-      options.generated !== true ||
+      documentOptions.generated !== true ||
       !personChanged ||
-      document2.readOnly() ||
-      document2.loadState() !== "live" ||
+      document.readOnly() ||
+      document.loadState() !== "live" ||
       flags.size > 0
     ) {
       return [];
     }
     ensureReactPreviewLibraries();
-    let files = document2.content().files;
+    let files = document.content().files;
     if (
       files === lastGeneratedFiles &&
-      document2.title() === lastGeneratedTitle
+      document.title() === lastGeneratedTitle
     ) {
       return [];
     }
     lastGeneratedFiles = files;
-    lastGeneratedTitle = document2.title();
+    lastGeneratedTitle = document.title();
     let items: string[] = [],
       value: Map<string, string> = validDerivedProjectFiles(
         files,
       );
-    for (let [value4, value5] of value) {
-      if (generatedTexts.get(value4) === value5) {
+    for (let [filePath, fileText] of value) {
+      if (generatedTexts.get(filePath) === fileText) {
         continue;
       }
-      if (port.liveSha?.(value4) === sha256Sync(value5)) {
-        generatedTexts.set(value4, value5);
+      if (port.liveSha?.(filePath) === sha256Sync(fileText)) {
+        generatedTexts.set(filePath, fileText);
         continue;
       }
-      if (!canGenerateFile(value4, "write")) {
+      if (!canGenerateFile(filePath, "write")) {
         continue;
       }
-      generatedTexts.set(value4, value5);
-      queue.markDirty(value4, () => value5);
-      items.push(value4);
+      generatedTexts.set(filePath, fileText);
+      queue.markDirty(filePath, () => fileText);
+      items.push(filePath);
     }
     let values = new Set<string>(
         damagedDerivedProjectPaths(files),
       ),
-      value2 = [...values].filter(
-        (input): boolean => !damagedGeneratedPaths.has(input),
+      damagedPaths = [...values].filter(
+        (filePath): boolean => !damagedGeneratedPaths.has(filePath),
       );
-    for (let value4 of damagedGeneratedPaths) {
-      if (!values.has(value4)) {
-        damagedGeneratedPaths.delete(value4);
+    for (let filePath of damagedGeneratedPaths) {
+      if (!values.has(filePath)) {
+        damagedGeneratedPaths.delete(filePath);
       }
     }
-    for (let value4 of value2) {
-      damagedGeneratedPaths.add(value4);
+    for (let filePath of damagedPaths) {
+      damagedGeneratedPaths.add(filePath);
     }
-    if (value2.length > 0) {
-      let value4: boolean = value2.length === 1,
-        value5 = value2.some(
-          (input): boolean => typeof port.liveSha?.(input) === "string",
+    if (damagedPaths.length > 0) {
+      let singlePath: boolean = damagedPaths.length === 1,
+        hasPublishedFiles = damagedPaths.some(
+          (filePath): boolean => typeof port.liveSha?.(filePath) === "string",
         );
       notice(
         summarizeFileNames(
-          value2.map(
-            (input) => relativeProjectFilePath(input) ?? input,
+          damagedPaths.map(
+            (filePath) => relativeProjectFilePath(filePath) ?? filePath,
           ),
         ) +
-          (value4 ? " is" : " are") +
+          (singlePath ? " is" : " are") +
           " not being updated. Find the " +
           DAMAGED_FILE_REPLACEMENT_CHARACTER +
           " in your tokens, names, notes or READMEs and type it again." +
-          (value5 ? " What is published stays as it is until then." : ""),
+          (hasPublishedFiles ? " What is published stays as it is until then." : ""),
       );
     }
-    let value3 = port.knownListing?.();
-    for (let value4 of new Set([
+    let knownListing = port.knownListing?.();
+    for (let filePath of new Set([
       ...generatedTexts.keys(),
-      ...(value3 !== undefined
-        ? [...value3.keys()].filter(isDerivedProjectPath)
+      ...(knownListing !== undefined
+        ? [...knownListing.keys()].filter(isDerivedProjectPath)
         : []),
     ])) {
-      if (value.has(value4) || values.has(value4)) {
+      if (value.has(filePath) || values.has(filePath)) {
         continue;
       }
-      generatedTexts.delete(value4);
-      if (port.liveSha?.(value4) === null) {
+      generatedTexts.delete(filePath);
+      if (port.liveSha?.(filePath) === null) {
         continue;
       }
-      if (!canGenerateFile(value4, "remove")) {
+      if (!canGenerateFile(filePath, "remove")) {
         continue;
       }
-      queue.markDirty(value4, (): null => null);
-      items.push(value4);
+      queue.markDirty(filePath, (): null => null);
+      items.push(filePath);
     }
     updateReadmeTail(files, items);
     generateMissingReadme(files, items);
@@ -1797,18 +1797,18 @@ function createDesignSystemFilesDocument(
     ),
     CONSUMER_PROJECT_PATH_HINT: string =
       "Every path named below is under `project/` in this design system: read `project/api/tokens.md`, not `api/tokens.md`.",
-    wireReadme = (input: string): string => {
+    wireReadme = (readmeText: string): string => {
       let value = generatedReadmeTail(
         generatedConsumptionReadme(
           Object.freeze({
-            ...document2.content().files,
-            [DESIGN_SYSTEM_PATHS.readme]: input,
+            ...document.content().files,
+            [DESIGN_SYSTEM_PATHS.readme]: readmeText,
           }),
           PROJECT_FILE_PREFIXEditorFilesIndex,
         ),
       );
       return mergeReadmeWithGeneratedTail(
-        input,
+        readmeText,
         value.replace(
           /^(## Consuming this system[^\n]*\n)/,
           `$1
@@ -1821,8 +1821,8 @@ function createDesignSystemFilesDocument(
     },
     lastWireReadme: string | undefined,
     readmeTailPending: boolean = false;
-  function updateReadmeTail(input: Core.FileTable, items: string[]): void {
-    let value = input[DESIGN_SYSTEM_PATHS.readme];
+  function updateReadmeTail(fileTable: Core.FileTable, items: string[]): void {
+    let value = fileTable[DESIGN_SYSTEM_PATHS.readme];
     if (
       items.length === 0 ||
       typeof value !== "string" ||
@@ -1832,22 +1832,22 @@ function createDesignSystemFilesDocument(
     ) {
       return;
     }
-    let value2 = wireReadme(value);
-    if (value2 === lastWireReadme) {
+    let wireText = wireReadme(value);
+    if (wireText === lastWireReadme) {
       return;
     }
-    let value3 = port.liveSha?.(projectReadmePath);
+    let publishedSha = port.liveSha?.(projectReadmePath);
     if (
-      typeof value3 === "string" &&
-      value3 !== readShas.get(projectReadmePath)
+      typeof publishedSha === "string" &&
+      publishedSha !== readShas.get(projectReadmePath)
     ) {
       return;
     }
-    lastWireReadme = value2;
+    lastWireReadme = wireText;
     if (
-      value3 === undefined ||
-      value3 === null ||
-      value3 === sha256Sync(value2)
+      publishedSha === undefined ||
+      publishedSha === null ||
+      publishedSha === sha256Sync(wireText)
     ) {
       return;
     }
@@ -1859,10 +1859,10 @@ function createDesignSystemFilesDocument(
     items.push(projectReadmePath);
   }
   function generateMissingReadme(
-    input: Core.FileTable,
-    options2: string[],
+    fileTable: Core.FileTable,
+    changedPaths: string[],
   ): void {
-    if (input[DESIGN_SYSTEM_PATHS.readme] !== undefined) {
+    if (fileTable[DESIGN_SYSTEM_PATHS.readme] !== undefined) {
       generatedReadme = undefined;
       return;
     }
@@ -1870,42 +1870,42 @@ function createDesignSystemFilesDocument(
       return;
     }
     let value = port.liveSha?.(projectReadmePath),
-      value2 = readmeHeading(),
-      value3 = wireReadme(value2),
-      value4: boolean = value === null,
-      value5 =
+      readmeText = readmeHeading(),
+      wireText = wireReadme(readmeText),
+      readmeMissing: boolean = value === null,
+      readmeUnchanged =
         value !== undefined ? value : port.heldSha?.(projectReadmePath),
-      value6 =
+      readmeMatches =
         generatedReadme?.sha !== undefined &&
-        value5 === generatedReadme.sha &&
-        (value2 !== generatedReadme.text || value3 !== generatedReadme.wire);
-    if (!value4 && !value6) {
+        readmeUnchanged === generatedReadme.sha &&
+        (readmeText !== generatedReadme.text || wireText !== generatedReadme.wire);
+    if (!readmeMissing && !readmeMatches) {
       return;
     }
-    let value7 = value4 ? null : generatedReadme!.sha;
+    let previousSha = readmeMissing ? null : generatedReadme!.sha;
     generatedReadme = {
-      text: value2,
-      wire: value3,
-      ...(value4
+      text: readmeText,
+      wire: wireText,
+      ...(readmeMissing
         ? {}
         : {
-            sha: value7,
+            sha: previousSha,
           }),
     };
-    generatedReadmeTexts.add(value2);
+    generatedReadmeTexts.add(readmeText);
     generatedReadmePending = true;
-    markDirty(projectReadmePath, () => value2, value7);
-    options2.push(projectReadmePath);
+    markDirty(projectReadmePath, () => readmeText, previousSha);
+    changedPaths.push(projectReadmePath);
   }
   async function writeReadmeTail(): Promise<boolean> {
     if (
-      options.generated !== true ||
-      document2.readOnly() ||
-      document2.loadState() !== "live"
+      documentOptions.generated !== true ||
+      document.readOnly() ||
+      document.loadState() !== "live"
     ) {
       return false;
     }
-    let value = document2.content().files[DESIGN_SYSTEM_PATHS.readme];
+    let value = document.content().files[DESIGN_SYSTEM_PATHS.readme];
     if (
       typeof value !== "string" ||
       flags.has(DESIGN_SYSTEM_PATHS.readme) ||
@@ -1914,28 +1914,28 @@ function createDesignSystemFilesDocument(
     ) {
       return false;
     }
-    let value2 = wireReadme(value),
-      value3 = port.liveSha?.(projectReadmePath);
+    let wireText = wireReadme(value),
+      publishedSha = port.liveSha?.(projectReadmePath);
     if (
-      value3 === undefined ||
-      value3 === null ||
-      value3 === sha256Sync(value2) ||
-      fileContentContainsRuntimeMarkers(value2)
+      publishedSha === undefined ||
+      publishedSha === null ||
+      publishedSha === sha256Sync(wireText) ||
+      fileContentContainsRuntimeMarkers(wireText)
     ) {
       return false;
     }
-    let value4 = await options.port
+    let remoteReadme = await documentOptions.port
       .readText(projectReadmePath)
       .catch((): null => null);
     if (
-      value4 === null ||
-      value4.text.includes("## Consuming this system") ||
-      document2.readOnly() ||
+      remoteReadme === null ||
+      remoteReadme.text.includes("## Consuming this system") ||
+      document.readOnly() ||
       readTexts.get(projectReadmePath) !== value
     ) {
       return false;
     }
-    lastWireReadme = value2;
+    lastWireReadme = wireText;
     readmeTailPending = true;
     queue.markDirty(
       projectReadmePath,
@@ -1984,66 +1984,66 @@ function createDesignSystemFilesDocument(
     flaggedRestoreEdits: Map<string, F.CarriedFileEdit> = new Map(),
     restoreConsumed: boolean = false,
     lateRemovalNoticePaths: Set<string> = new Set(),
-    tablePort: M.DesignSystemTablePort = createDesignSystemFilesPort(options.port, {
+    tablePort: M.DesignSystemTablePort = createDesignSystemFilesPort(documentOptions.port, {
       ...(lazy !== undefined
         ? {
             lazy: lazy,
           }
         : {}),
-      wireText: (input: string, options2: string) =>
-        input === projectReadmePath && options.generated === true
-          ? wireReadme(options2)
-          : options2,
-      tableText: (input: string, options2: string) =>
-        input === projectReadmePath
-          ? stripGeneratedReadmeTail(options2)
-          : options2,
-      onReadText(input: string, options2: string, context: string): void {
+      wireText: (filePath: string, fileText: string) =>
+        filePath === projectReadmePath && documentOptions.generated === true
+          ? wireReadme(fileText)
+          : fileText,
+      tableText: (filePath: string, fileText: string) =>
+        filePath === projectReadmePath
+          ? stripGeneratedReadmeTail(fileText)
+          : fileText,
+      onReadText(filePath: string, fileText: string, fileSha: string): void {
         let value: string | undefined = relativeProjectFilePath(
-          input,
+          filePath,
         );
         if (value === undefined) {
           return;
         }
-        let entry = readTexts.get(input);
+        let entry = readTexts.get(filePath);
         if (
-          document2.loadState() === "live" &&
-          !preReadBases.has(input) &&
-          readShas.get(input) !== context &&
-          heldText(value) !== options2
+          document.loadState() === "live" &&
+          !preReadBases.has(filePath) &&
+          readShas.get(filePath) !== fileSha &&
+          heldText(value) !== fileText
         ) {
-          preReadBases.set(input, {
-            sha: readShas.get(input) ?? null,
+          preReadBases.set(filePath, {
+            sha: readShas.get(filePath) ?? null,
             text: entry,
           });
         }
-        readShas.set(input, context);
-        if (isHeldFilePointer(value, options2)) {
-          readTexts.delete(input);
+        readShas.set(filePath, fileSha);
+        if (isHeldFilePointer(value, fileText)) {
+          readTexts.delete(filePath);
         } else {
-          readTexts.set(input, options2);
+          readTexts.set(filePath, fileText);
         }
-        let value2 = heldText(value);
+        let heldFileText = heldText(value);
         if (
-          document2.loadState() === "live" &&
-          value2 !== options2 &&
-          value2 === entry &&
-          !locallyHeldTexts.has(input)
+          document.loadState() === "live" &&
+          heldFileText !== fileText &&
+          heldFileText === entry &&
+          !locallyHeldTexts.has(filePath)
         ) {
-          locallyHeldTexts.set(input, value2);
+          locallyHeldTexts.set(filePath, heldFileText);
         }
       },
       onDownloadsRefused(): void {
         timers.setTimeout(
           () =>
-            void document2.save().catch((): void => {
+            void document.save().catch((): void => {
               return;
             }),
           0,
         );
       },
-      onSend(input: Record<string, Core.FilePublishInput>): void {
-        let value = input[indexPath];
+      onSend(files: Record<string, Core.FilePublishInput>): void {
+        let value = files[indexPath];
         if (typeof value !== "string") {
           return;
         }
@@ -2055,249 +2055,249 @@ function createDesignSystemFilesDocument(
           }
         } catch {}
       },
-      onPublish(input: M.FilePublishReport): void {
+      onPublish(publishReport: M.FilePublishReport): void {
         if (
-          input.ok &&
-          input.paths.length > 0 &&
-          typeof input.version === "string" &&
-          input.version !== "" &&
-          options.port.version().version === input.version
+          publishReport.ok &&
+          publishReport.paths.length > 0 &&
+          typeof publishReport.version === "string" &&
+          publishReport.version !== "" &&
+          documentOptions.port.version().version === publishReport.version
         ) {
-          recordVersion(input.version);
+          recordVersion(publishReport.version);
         }
-        let value = input.texts?.[projectReadmePath],
-          value2 =
-            input.paths.includes(projectReadmePath) &&
+        let value = publishReport.texts?.[projectReadmePath],
+          readmeIsCurrent =
+            publishReport.paths.includes(projectReadmePath) &&
             currentFileText(DESIGN_SYSTEM_PATHS.readme) === null &&
             generatedReadme !== undefined &&
             (value === undefined
               ? generatedReadmePending
               : typeof value === "string" && generatedReadmeTexts.has(value));
         if (
-          input.paths.includes(projectReadmePath) &&
+          publishReport.paths.includes(projectReadmePath) &&
           (value === undefined ||
             generatedReadme === undefined ||
             value === generatedReadme.text)
         ) {
           generatedReadmePending = false;
         }
-        if (input.ok && generatedReadme !== undefined && value2) {
-          let value6 = input.texts?.[projectReadmePath],
-            value7 = port.liveSha?.(projectReadmePath);
-          if (typeof value6 === "string" && typeof value7 === "string") {
+        if (publishReport.ok && generatedReadme !== undefined && readmeIsCurrent) {
+          let readmeText = publishReport.texts?.[projectReadmePath],
+            readmeSha = port.liveSha?.(projectReadmePath);
+          if (typeof readmeText === "string" && typeof readmeSha === "string") {
             generatedReadme = {
-              text: value6,
-              wire: wireReadme(value6),
-              sha: value7,
+              text: readmeText,
+              wire: wireReadme(readmeText),
+              sha: readmeSha,
             };
-            if (value6 !== readmeHeading()) {
+            if (readmeText !== readmeHeading()) {
               scheduleReadmeRegeneration();
             }
           }
         }
         if (
-          !input.ok &&
-          input.code === "conflict" &&
+          !publishReport.ok &&
+          publishReport.code === "conflict" &&
           generatedReadme !== undefined &&
-          value2
+          readmeIsCurrent
         ) {
-          let value6: boolean = generatedReadme.sha !== undefined;
+          let hasReadmeSha: boolean = generatedReadme.sha !== undefined;
           generatedReadme = undefined;
           queue.withdraw(projectReadmePath);
           generatedReadmeConflictCount += 1;
           if (
-            value6 ||
+            hasReadmeSha ||
             port.liveSha?.(projectReadmePath) !== null ||
             generatedReadmeConflictCount >= 2
           ) {
             generatedReadmeStopped = true;
           }
         }
-        if (input.ok && typeof input.texts?.[indexPath] === "string") {
+        if (publishReport.ok && typeof publishReport.texts?.[indexPath] === "string") {
           try {
-            lastIndexBase = JSON.parse(input.texts[indexPath]);
+            lastIndexBase = JSON.parse(publishReport.texts[indexPath]);
           } catch {}
         }
-        if (input.paths.includes(indexPath)) {
+        if (publishReport.paths.includes(indexPath)) {
           publishingIndexBases.length = 0;
         }
-        if (input.ok && input.paths.includes(indexPath)) {
-          for (let [value6, value7] of publishingIndexFieldRevisions) {
-            if (localIndexFieldRevisions.get(value6) === value7) {
-              localIndexFieldRevisions.delete(value6);
+        if (publishReport.ok && publishReport.paths.includes(indexPath)) {
+          for (let [fieldName, fieldRevision] of publishingIndexFieldRevisions) {
+            if (localIndexFieldRevisions.get(fieldName) === fieldRevision) {
+              localIndexFieldRevisions.delete(fieldName);
             }
           }
         }
-        if (input.ok && input.texts !== undefined) {
-          for (let [value6, value7] of Object.entries(input.texts)) {
-            let value8: string | undefined = relativeProjectFilePath(value6);
+        if (publishReport.ok && publishReport.texts !== undefined) {
+          for (let [publishedPath, publishedText] of Object.entries(publishReport.texts)) {
+            let relativePath: string | undefined = relativeProjectFilePath(publishedPath);
             if (
-              value8 === undefined ||
-              isDerivedProjectPath(value6)
+              relativePath === undefined ||
+              isDerivedProjectPath(publishedPath)
             ) {
               continue;
             }
-            if (value6 === projectReadmePath && value7 !== null && value2) {
-              readTexts.delete(value6);
-              readShas.delete(value6);
-              recentPublishes.delete(value8);
+            if (publishedPath === projectReadmePath && publishedText !== null && readmeIsCurrent) {
+              readTexts.delete(publishedPath);
+              readShas.delete(publishedPath);
+              recentPublishes.delete(relativePath);
               continue;
             }
             if (
-              value6 === projectReadmePath &&
-              value7 === null &&
+              publishedPath === projectReadmePath &&
+              publishedText === null &&
               currentFileText(DESIGN_SYSTEM_PATHS.readme) === null
             ) {
               scheduleReadmeRegeneration();
             }
-            let value9 = input.shas?.[value6];
-            if (value6 === projectReadmePath) {
+            let publishedSha = publishReport.shas?.[publishedPath];
+            if (publishedPath === projectReadmePath) {
               readmeTailPending = false;
             }
-            restoredStashPaths.delete(value8);
-            preReadBases.delete(value6);
-            if (value7 === null) {
-              readTexts.delete(value6);
-              readShas.delete(value6);
-              recentPublishes.delete(value8);
+            restoredStashPaths.delete(relativePath);
+            preReadBases.delete(publishedPath);
+            if (publishedText === null) {
+              readTexts.delete(publishedPath);
+              readShas.delete(publishedPath);
+              recentPublishes.delete(relativePath);
               continue;
             }
-            recentPublishes.set(value8, {
+            recentPublishes.set(relativePath, {
               at: timers.now(),
-              text: value7,
-              base: readTexts.get(value6),
-              sha: value9,
-              ...(consumeRecentHeal(value8)
+              text: publishedText,
+              base: readTexts.get(publishedPath),
+              sha: publishedSha,
+              ...(consumeRecentHeal(relativePath)
                 ? {
                     healed: true,
                   }
                 : {}),
             });
-            readTexts.set(value6, value7);
-            if (value9 !== undefined) {
-              readShas.set(value6, value9);
+            readTexts.set(publishedPath, publishedText);
+            if (publishedSha !== undefined) {
+              readShas.set(publishedPath, publishedSha);
             } else {
-              readShas.delete(value6);
+              readShas.delete(publishedPath);
             }
           }
         }
-        if (input.ok) {
-          for (let value6 of input.paths) {
-            if (isDerivedProjectPath(value6)) {
-              if (input.texts !== undefined && input.texts[value6] === null) {
-                generatedOwnership.delete(value6);
+        if (publishReport.ok) {
+          for (let publishedPath of publishReport.paths) {
+            if (isDerivedProjectPath(publishedPath)) {
+              if (publishReport.texts !== undefined && publishReport.texts[publishedPath] === null) {
+                generatedOwnership.delete(publishedPath);
               } else {
-                generatedOwnership.set(value6, "ours");
+                generatedOwnership.set(publishedPath, "ours");
               }
             }
           }
         }
-        let value3 = input.paths.includes(indexPath),
-          value4 = input.paths.filter(isDerivedProjectPath),
-          value5 = input.paths.filter(
-            (input2) =>
-              input2 !== indexPath &&
-              !isDerivedProjectPath(input2),
+        let includesIndex = publishReport.paths.includes(indexPath),
+          generatedPaths = publishReport.paths.filter(isDerivedProjectPath),
+          sourcePaths = publishReport.paths.filter(
+            (path) =>
+              path !== indexPath &&
+              !isDerivedProjectPath(path),
           );
         emit("save", {
-          ok: input.ok,
-          ...(input.code !== undefined
+          ok: publishReport.ok,
+          ...(publishReport.code !== undefined
             ? {
-                code: input.code,
+                code: publishReport.code,
               }
             : {}),
-          ...(input.version !== undefined
+          ...(publishReport.version !== undefined
             ? {
-                version: input.version,
+                version: publishReport.version,
               }
             : {}),
-          files: value5,
-          generated: value4,
-          index: value3,
-          indexOnly: value3 && value5.length === 0 && value4.length === 0,
+          files: sourcePaths,
+          generated: generatedPaths,
+          index: includesIndex,
+          indexOnly: includesIndex && sourcePaths.length === 0 && generatedPaths.length === 0,
         });
       },
     }),
-    document2: M.BaseFilesDocument = createFilesDocument({
+    document: M.BaseFilesDocument = createFilesDocument({
       codec: designSystemFilesCodec(indexPath, lazy),
-      ...(options.startWhenNoIndex !== undefined
+      ...(documentOptions.startWhenNoIndex !== undefined
         ? {
-            startWhenNoIndex: options.startWhenNoIndex,
+            startWhenNoIndex: documentOptions.startWhenNoIndex,
           }
         : {}),
-      parseContent: options.parseContent,
-      initialContent: options.initialContent,
-      ...(options.defaultTitle !== undefined
+      parseContent: documentOptions.parseContent,
+      initialContent: documentOptions.initialContent,
+      ...(documentOptions.defaultTitle !== undefined
         ? {
-            defaultTitle: options.defaultTitle,
+            defaultTitle: documentOptions.defaultTitle,
           }
         : {}),
       port: tablePort,
-      ...(options.readOnlyReason !== undefined
+      ...(documentOptions.readOnlyReason !== undefined
         ? {
-            readOnlyReason: options.readOnlyReason,
+            readOnlyReason: documentOptions.readOnlyReason,
           }
         : {}),
-      ...(options.onNotice !== undefined
+      ...(documentOptions.onNotice !== undefined
         ? {
-            onNotice: options.onNotice,
+            onNotice: documentOptions.onNotice,
           }
         : {}),
-      onConflict(input: F.FileSaveConflict): void {
-        if (isDerivedProjectPath(input.path)) {
-          generatedOwnership.delete(input.path);
-          queue.withdraw(input.path);
-          generatedTexts.delete(input.path);
+      onConflict(conflict: F.FileSaveConflict): void {
+        if (isDerivedProjectPath(conflict.path)) {
+          generatedOwnership.delete(conflict.path);
+          queue.withdraw(conflict.path);
+          generatedTexts.delete(conflict.path);
           lastGeneratedFiles = undefined;
           emit("generated-behind", {
-            path: input.path,
+            path: conflict.path,
           });
           scheduleGeneratedRetry();
           return;
         }
         if (
-          input.path === projectReadmePath &&
+          conflict.path === projectReadmePath &&
           readmeTailPending &&
           currentFileText(DESIGN_SYSTEM_PATHS.readme) ===
             readTexts.get(projectReadmePath)
         ) {
           readmeTailPending = false;
           lastWireReadme = undefined;
-          queue.withdraw(input.path);
+          queue.withdraw(conflict.path);
           lastGeneratedFiles = undefined;
           emit("generated-behind", {
-            path: input.path,
+            path: conflict.path,
           });
           if (clashPolicy === "mine") {
             refreshUnchangedLocalFile(
               DESIGN_SYSTEM_PATHS.readme,
-              input.path,
-              input.theirsSha,
+              conflict.path,
+              conflict.theirsSha,
             );
           }
           scheduleGeneratedRetry();
           return;
         }
         let value: string =
-          relativeProjectFilePath(input.path) ?? input.path;
+          relativeProjectFilePath(conflict.path) ?? conflict.path;
         advancePathRevision(value);
-        resolveOrFlagClash(value, "edit", input.theirsSha);
+        resolveOrFlagClash(value, "edit", conflict.theirsSha);
       },
       onRemoteApplied(
-        input: F.FilesRemoteAppliedRow[],
-        options2: Core.FileRemoteChange,
+        appliedRows: F.FilesRemoteAppliedRow[],
+        remoteChange: Core.FileRemoteChange,
       ): void {
         if (
-          typeof options2.to.version === "string" &&
-          options2.to.version !== ""
+          typeof remoteChange.to.version === "string" &&
+          remoteChange.to.version !== ""
         ) {
-          recordVersion(options2.to.version);
+          recordVersion(remoteChange.to.version);
         }
-        let value = [...lateRemovalNoticePaths].filter((input2) =>
-          input.some(
-            (input3) =>
-              input3.decision === "removed" &&
-              relativeProjectFilePath(input3.path) === input2,
+        let value = [...lateRemovalNoticePaths].filter((filePath) =>
+          appliedRows.some(
+            (row) =>
+              row.decision === "removed" &&
+              relativeProjectFilePath(row.path) === filePath,
           ),
         );
         lateRemovalNoticePaths.clear();
@@ -2312,179 +2312,179 @@ function createDesignSystemFilesDocument(
           );
         }
         let values = new Set<string>(),
-          values2 = new Set<string>();
-        for (let value2 of input) {
+          removedPaths = new Set<string>();
+        for (let row of appliedRows) {
           emit("rebase", {
-            path: value2.path,
-            decision: value2.decision,
-            sha: value2.sha256,
-            from: options2.from.version,
-            to: options2.to.version,
+            path: row.path,
+            decision: row.decision,
+            sha: row.sha256,
+            from: remoteChange.from.version,
+            to: remoteChange.to.version,
           });
           if (
-            isDerivedProjectPath(value2.path) &&
+            isDerivedProjectPath(row.path) &&
             !(
-              generatedOwnership.get(value2.path) === "ours" &&
-              value2.sha256 !== null &&
-              port.heldSha?.(value2.path) === value2.sha256
+              generatedOwnership.get(row.path) === "ours" &&
+              row.sha256 !== null &&
+              port.heldSha?.(row.path) === row.sha256
             )
           ) {
-            generatedOwnership.delete(value2.path);
+            generatedOwnership.delete(row.path);
           }
-          let value3: string | undefined = relativeProjectFilePath(value2.path);
+          let relativePath: string | undefined = relativeProjectFilePath(row.path);
           if (
-            value3 === undefined ||
-            value2.decision === "ignored" ||
-            value2.decision === "index"
+            relativePath === undefined ||
+            row.decision === "ignored" ||
+            row.decision === "index"
           ) {
             continue;
           }
-          if (value2.path === projectReadmePath) {
+          if (row.path === projectReadmePath) {
             generatedReadme = undefined;
           }
-          advancePathRevision(value3);
-          values2.add(value3);
-          if (value2.decision === "held") {
-            resolveOrFlagClash(value3, "edit", value2.sha256);
+          advancePathRevision(relativePath);
+          removedPaths.add(relativePath);
+          if (row.decision === "held") {
+            resolveOrFlagClash(relativePath, "edit", row.sha256);
             continue;
           }
-          if (!isTokenFilePath(value3)) {
-            values.add(value3);
+          if (!isTokenFilePath(relativePath)) {
+            values.add(relativePath);
           }
-          if (flags.has(value3)) {
-            unflagFile(value3);
+          if (flags.has(relativePath)) {
+            unflagFile(relativePath);
           }
-          if (value2.decision === "removed") {
-            readTexts.delete(value2.path);
-            readShas.delete(value2.path);
-            recentPublishes.delete(value3);
+          if (row.decision === "removed") {
+            readTexts.delete(row.path);
+            readShas.delete(row.path);
+            recentPublishes.delete(relativePath);
           } else {
-            healSimultaneousPublish(value3, value2.sha256);
+            healSimultaneousPublish(relativePath, row.sha256);
           }
         }
-        if (input.some((input2): boolean => input2.decision === "index")) {
+        if (appliedRows.some((row): boolean => row.decision === "index")) {
           recordForeignIndexChanges(lastIndexBase);
         }
         flushForeignIndexChanges();
-        if (values2.size > 0) {
-          for (let value2 of undoCommands) {
-            value2.keepOut(values2);
+        if (removedPaths.size > 0) {
+          for (let undoCommand of undoCommands) {
+            undoCommand.keepOut(removedPaths);
           }
         }
         if (values.size > 0) {
           pruneUndoPaths(values, "adopted");
         }
       },
-      onIndexMerged(input: F.IndexMergeNotice): void {
-        recordForeignIndexChanges(input.base);
-        if (input.conflicts.length > 0) {
+      onIndexMerged(indexMerge: F.IndexMergeNotice): void {
+        recordForeignIndexChanges(indexMerge.base);
+        if (indexMerge.conflicts.length > 0) {
           flushForeignIndexChanges();
         }
-        let value = authoredIndexMergeConflicts(input);
+        let value = authoredIndexMergeConflicts(indexMerge);
         emit("index-merged", {
-          conflicts: input.conflicts,
+          conflicts: indexMerge.conflicts,
           lost: value,
         });
-        let value2 =
-            clashPolicy === "mine" ? keepMineIndexPresentation(input) : [],
-          value3 = value.filter(
-            (input2): boolean => !value2.includes(input2),
+        let knownFields =
+            clashPolicy === "mine" ? keepMineIndexPresentation(indexMerge) : [],
+          conflictingFields = value.filter(
+            (fieldName): boolean => !knownFields.includes(fieldName),
           );
-        if (value3.length > 0) {
+        if (conflictingFields.length > 0) {
           notice(
             uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-              describeIndexConflicts(value3, input.merged).join(
+              describeIndexConflicts(conflictingFields, indexMerge.merged).join(
                 ", ",
               ) +
               " at the same time as you. Theirs was saved first, so theirs was kept.",
           );
         }
-        let value4 = document2.index(),
-          value5 = invalidAssetGroupOrders(
-            value4.get(),
-            (input2) => {
-              let value6: string = "assets/" + input2 + "/",
+        let indexStore = document.index(),
+          invalidOrders = invalidAssetGroupOrders(
+            indexStore.get(),
+            (groupName) => {
+              let groupPrefix: string = "assets/" + groupName + "/",
                 values = new Set<string>();
-              for (let value7 of Object.keys(document2.content().files)) {
+              for (let filePath of Object.keys(document.content().files)) {
                 if (
-                  value7.startsWith(value6) &&
-                  !(document2.content().files[value7] ?? "").startsWith(
+                  filePath.startsWith(groupPrefix) &&
+                  !(document.content().files[filePath] ?? "").startsWith(
                     "blob:",
                   )
                 ) {
-                  values.add(value7.slice(value6.length));
+                  values.add(filePath.slice(groupPrefix.length));
                 }
               }
               return values;
             },
           );
-        if (Object.keys(value5).length > 0) {
-          value4.update((input2): void => {
-            for (let [value6, value7] of Object.entries(value5)) {
-              let value8 = input2.assetGroups?.[value6];
-              if (value8 !== undefined) {
-                value8.order = value7;
+        if (Object.keys(invalidOrders).length > 0) {
+          indexStore.update((indexContent): void => {
+            for (let [groupName, order] of Object.entries(invalidOrders)) {
+              let assetGroup = indexContent.assetGroups?.[groupName];
+              if (assetGroup !== undefined) {
+                assetGroup.order = order;
               }
             }
           });
           emit("index-orders", {
-            groups: Object.keys(value5),
+            groups: Object.keys(invalidOrders),
           });
         }
       },
       isBusy: isBusy,
-      snapshot: (input) =>
-        snapshotHotCarry(input as { handoff?: boolean } | undefined),
-      restore: (input) =>
-        restoreHotCarry(input as M.RawHotCarry | null | undefined),
-      ...(options.hot !== undefined
+      snapshot: (carryState) =>
+        snapshotHotCarry(carryState as { handoff?: boolean } | undefined),
+      restore: (carryState) =>
+        restoreHotCarry(carryState as M.RawHotCarry | null | undefined),
+      ...(documentOptions.hot !== undefined
         ? {
-            hot: options.hot,
+            hot: documentOptions.hot,
           }
         : {}),
-      ...(options.timers !== undefined
+      ...(documentOptions.timers !== undefined
         ? {
-            timers: options.timers,
+            timers: documentOptions.timers,
           }
         : {}),
-      ...(options.commitMs !== undefined
+      ...(documentOptions.commitMs !== undefined
         ? {
-            commitMs: options.commitMs,
+            commitMs: documentOptions.commitMs,
           }
         : {}),
-      ...(options.early !== undefined
+      ...(documentOptions.early !== undefined
         ? {
-            early: options.early,
+            early: documentOptions.early,
           }
         : {}),
-      ...(options.onHotEvent !== undefined
+      ...(documentOptions.onHotEvent !== undefined
         ? {
-            onHotEvent: options.onHotEvent,
+            onHotEvent: documentOptions.onHotEvent,
           }
         : {}),
-      ...(options.onBeforeRestart !== undefined
+      ...(documentOptions.onBeforeRestart !== undefined
         ? {
-            onBeforeRestart: options.onBeforeRestart,
+            onBeforeRestart: documentOptions.onBeforeRestart,
           }
         : {}),
-      ...(options.reveal !== undefined
+      ...(documentOptions.reveal !== undefined
         ? {
-            reveal: options.reveal,
+            reveal: documentOptions.reveal,
           }
         : {}),
-      ...(options.saveStash !== undefined
+      ...(documentOptions.saveStash !== undefined
         ? {
             saveStash: prioritizeStashedTextEdits(
               stripEditingOffFromStashedIndex(
-                options.saveStash,
+                documentOptions.saveStash,
                 indexPath,
               ),
             ),
           }
         : {}),
-      ...(options.paced !== undefined
+      ...(documentOptions.paced !== undefined
         ? {
-            paced: options.paced,
+            paced: documentOptions.paced,
           }
         : {}),
       peers: EMPTY_FILES_PEER_SOURCE,
@@ -2493,47 +2493,47 @@ function createDesignSystemFilesDocument(
     publishingIndexFieldRevisions: Map<string, number> = new Map(),
     indexFieldRevision: number = 0,
     indexFieldSnapshot: M.IndexFieldSnapshot | undefined,
-    trackLocalIndexChanges = (input?: boolean): void => {
-      let files = document2.content().files,
-        value = document2.title(),
-        value2 = files[DESIGN_SYSTEM_PATHS.manifest];
+    trackLocalIndexChanges = (isRemoteUpdate?: boolean): void => {
+      let files = document.content().files,
+        value = document.title(),
+        manifestText = files[DESIGN_SYSTEM_PATHS.manifest];
       if (
         indexFieldSnapshot !== undefined &&
         indexFieldSnapshot.title === value &&
-        indexFieldSnapshot.manifest === value2
+        indexFieldSnapshot.manifest === manifestText
       ) {
         return;
       }
-      let value3: Core.FilesIndex = buildFilesIndex(
+      let currentIndex: Core.FilesIndex = buildFilesIndex(
         value,
         files,
       );
-      if (!input && indexFieldSnapshot !== undefined) {
+      if (!isRemoteUpdate && indexFieldSnapshot !== undefined) {
         let ix2 = indexFieldSnapshot.ix;
-        if (ix2.title !== value3.title) {
+        if (ix2.title !== currentIndex.title) {
           localIndexFieldRevisions.set("title", ++indexFieldRevision);
         }
-        for (let value4 of new Set([
+        for (let sectionName of new Set([
           ...Object.keys(ix2.sections ?? {}),
-          ...Object.keys(value3.sections ?? {}),
+          ...Object.keys(currentIndex.sections ?? {}),
         ])) {
-          if (ix2.sections?.[value4] !== value3.sections?.[value4]) {
+          if (ix2.sections?.[sectionName] !== currentIndex.sections?.[sectionName]) {
             localIndexFieldRevisions.set(
-              "sections/" + value4,
+              "sections/" + sectionName,
               ++indexFieldRevision,
             );
           }
         }
-        for (let value4 of new Set([
+        for (let groupName of new Set([
           ...Object.keys(ix2.assetGroups ?? {}),
-          ...Object.keys(value3.assetGroups ?? {}),
+          ...Object.keys(currentIndex.assetGroups ?? {}),
         ])) {
           if (
-            ix2.assetGroups?.[value4]?.tile !==
-            value3.assetGroups?.[value4]?.tile
+            ix2.assetGroups?.[groupName]?.tile !==
+            currentIndex.assetGroups?.[groupName]?.tile
           ) {
             localIndexFieldRevisions.set(
-              "assetGroups/" + value4 + "/tile",
+              "assetGroups/" + groupName + "/tile",
               ++indexFieldRevision,
             );
           }
@@ -2541,73 +2541,73 @@ function createDesignSystemFilesDocument(
       }
       indexFieldSnapshot = {
         title: value,
-        manifest: value2,
-        ix: value3,
+        manifest: manifestText,
+        ix: currentIndex,
       };
     };
-  function keepMineIndexPresentation(input: F.IndexMergeNotice): string[] {
+  function keepMineIndexPresentation(mergeNotice: F.IndexMergeNotice): string[] {
     let value: Core.FilesIndex = buildFilesIndex(
-        document2.title(),
-        document2.content().files,
-        input.merged,
+        document.title(),
+        document.content().files,
+        mergeNotice.merged,
       ),
       items: string[] = [];
-    document2.index().update((input2): void => {
-      for (let value2 of input.conflicts) {
-        if (!localIndexFieldRevisions.has(value2)) {
+    document.index().update((index): void => {
+      for (let fieldName of mergeNotice.conflicts) {
+        if (!localIndexFieldRevisions.has(fieldName)) {
           continue;
         }
-        if (value2 === "title") {
-          input2.title = value.title;
-          items.push(value2);
+        if (fieldName === "title") {
+          index.title = value.title;
+          items.push(fieldName);
           continue;
         }
-        if (value2.startsWith("sections/")) {
-          let value6 = value2.slice(9),
-            value7 = value.sections?.[value6];
-          if (typeof value7 === "string") {
-            input2.sections = {
-              ...(input2.sections ?? {}),
-              [value6]: value7,
+        if (fieldName.startsWith("sections/")) {
+          let sectionName = fieldName.slice(9),
+            sectionValue = value.sections?.[sectionName];
+          if (typeof sectionValue === "string") {
+            index.sections = {
+              ...(index.sections ?? {}),
+              [sectionName]: sectionValue,
             };
-            items.push(value2);
+            items.push(fieldName);
           }
           continue;
         }
-        let value3 = /^assetGroups\/([^/]+)\/tile$/.exec(value2),
-          value4 =
-            value3 !== null ? input2.assetGroups?.[value3[1]] : undefined,
-          value5 =
-            value3 !== null
-              ? value.assetGroups?.[value3[1]]?.tile
+        let tileMatch = /^assetGroups\/([^/]+)\/tile$/.exec(fieldName),
+          localGroup =
+            tileMatch !== null ? index.assetGroups?.[tileMatch[1]] : undefined,
+          remoteGroup =
+            tileMatch !== null
+              ? value.assetGroups?.[tileMatch[1]]?.tile
               : undefined;
-        if (value4 !== undefined && value5 !== undefined) {
-          value4.tile = value5;
-          items.push(value2);
+        if (localGroup !== undefined && remoteGroup !== undefined) {
+          localGroup.tile = remoteGroup;
+          items.push(fieldName);
         }
       }
-      for (let [value2, value3] of Object.entries<string>(
+      for (let [sectionName, sectionValue] of Object.entries<string>(
         value.sections ?? {},
       )) {
         if (
-          !localIndexFieldRevisions.has("sections/" + value2) ||
-          Object.hasOwn(input2.sections ?? {}, value2) ||
-          !Object.hasOwn(input.base.sections ?? {}, value2) ||
-          input.base.sections?.[value2] === value3
+          !localIndexFieldRevisions.has("sections/" + sectionName) ||
+          Object.hasOwn(index.sections ?? {}, sectionName) ||
+          !Object.hasOwn(mergeNotice.base.sections ?? {}, sectionName) ||
+          mergeNotice.base.sections?.[sectionName] === sectionValue
         ) {
           continue;
         }
-        input2.sections = {
-          ...(input2.sections ?? {}),
-          [value2]: value3,
+        index.sections = {
+          ...(index.sections ?? {}),
+          [sectionName]: sectionValue,
         };
-        items.push("sections/" + value2);
+        items.push("sections/" + sectionName);
       }
     });
     if (items.length > 0) {
       flushForeignIndexChanges();
-      for (let value2 of undoCommands) {
-        value2.spanTheirs(items, value);
+      for (let undoCommand of undoCommands) {
+        undoCommand.spanTheirs(items, value);
       }
       emit("index-mine-kept", {
         keys: items,
@@ -2618,21 +2618,21 @@ function createDesignSystemFilesDocument(
     }
     return items;
   }
-  document2.subscribe((input) =>
-    trackLocalIndexChanges(input?.remote === true),
+  document.subscribe((change) =>
+    trackLocalIndexChanges(change?.remote === true),
   );
-  document2.whenLive().then(
+  document.whenLive().then(
     () => trackLocalIndexChanges(true),
     (): void => {
       return;
     },
   );
-  let queue = document2.queue();
-  document2.whenLive().then(
+  let queue = document.queue();
+  document.whenLive().then(
     (): void => {
       if (lastIndexBase === undefined) {
         lastIndexBase = cloneMergeValue(
-          document2.index().base(),
+          document.index().base(),
         );
       }
     },
@@ -2640,22 +2640,22 @@ function createDesignSystemFilesDocument(
       return;
     },
   );
-  let fileValueProvider = (input: string) => () => {
-      let value = currentFileText(input);
+  let fileValueProvider = (filePath: string) => () => {
+      let value = currentFileText(filePath);
       if (value === null) {
-        throw Error(input + " is no longer in the table");
+        throw Error(filePath + " is no longer in the table");
       }
       return value;
     },
     markDirty = (
-      input: string,
-      options2: () => Core.FilePublishInput,
-      context: string | null | undefined,
-    ) => queue.markDirty(input, options2, context),
-    previousContentFiles = document2.content().files;
-  document2.subscribe((input): void => {
-    let files = document2.content().files;
-    if (input?.remote === true && files !== previousContentFiles) {
+      filePath: string,
+      publishInput: () => Core.FilePublishInput,
+      baseSha: string | null | undefined,
+    ) => queue.markDirty(filePath, publishInput, baseSha),
+    previousContentFiles = document.content().files;
+  document.subscribe((change): void => {
+    let files = document.content().files;
+    if (change?.remote === true && files !== previousContentFiles) {
       for (let value of new Set([
         ...Object.keys(files),
         ...Object.keys(previousContentFiles),
@@ -2668,27 +2668,27 @@ function createDesignSystemFilesDocument(
         }
       }
     }
-    if (input?.remote === true) {
+    if (change?.remote === true) {
       recordForeignIndexChanges(lastIndexBase);
       flushForeignIndexChanges();
     }
-    for (let [value, value2] of locallyHeldTexts) {
-      let value3: string = relativeProjectFilePath(value)!;
-      if (value3 === undefined || heldText(value3, files) !== value2) {
+    for (let [value, heldTextValue] of locallyHeldTexts) {
+      let relativePath: string = relativeProjectFilePath(value)!;
+      if (relativePath === undefined || heldText(relativePath, files) !== heldTextValue) {
         locallyHeldTexts.delete(value);
       }
     }
     for (let value of preReadBases.keys()) {
-      let value2: string | undefined = relativeProjectFilePath(
+      let relativePath: string | undefined = relativeProjectFilePath(
         value,
       );
       if (
-        value2 === undefined ||
+        relativePath === undefined ||
         !readShas.has(value) ||
-        (Object.hasOwn(files, value2) &&
-          (isHeldFilePointer(value2, files[value2])
+        (Object.hasOwn(files, relativePath) &&
+          (isHeldFilePointer(relativePath, files[relativePath])
             ? !readTexts.has(value)
-            : files[value2] === readTexts.get(value)))
+            : files[relativePath] === readTexts.get(value)))
       ) {
         preReadBases.delete(value);
       }
@@ -2696,8 +2696,8 @@ function createDesignSystemFilesDocument(
     previousContentFiles = files;
   });
   let enhancedDocument: M.DesignSystemFilesDocument =
-      document2 as M.DesignSystemFilesDocument,
-    disposeDocument = document2.dispose.bind(document2);
+      document as M.DesignSystemFilesDocument,
+    disposeDocument = document.dispose.bind(document);
   enhancedDocument.dispose = (): void => {
     disposed = true;
     if (ownershipRetryTimer !== undefined) {
@@ -2714,36 +2714,36 @@ function createDesignSystemFilesDocument(
     }
     disposeDocument();
   };
-  let restoreStash = document2.restoreStash.bind(document2);
+  let restoreStash = document.restoreStash.bind(document);
   enhancedDocument.restoreStash = () => {
-    let files = document2.content().files,
-      callback = (input: string | undefined): void => {
-        let value2 =
-          document2.content().files[DESIGN_SYSTEM_PATHS.readme];
+    let files = document.content().files,
+      callback = (readmeText: string | undefined): void => {
+        let currentReadme =
+          document.content().files[DESIGN_SYSTEM_PATHS.readme];
         if (
-          value2 === undefined ||
-          value2 === input ||
-          !/^# [^\n]*\n?$/.test(value2)
+          currentReadme === undefined ||
+          currentReadme === readmeText ||
+          !/^# [^\n]*\n?$/.test(currentReadme)
         ) {
           return;
         }
-        document2.updateContent(
-          (input2) => {
-            let { [DESIGN_SYSTEM_PATHS.readme]: files2, ...files3 } =
-              input2.files;
+        document.updateContent(
+          (content) => {
+            let { [DESIGN_SYSTEM_PATHS.readme]: readmeFile, ...otherFiles } =
+              content.files;
             return refreshManifest(
               {
-                ...input2,
+                ...content,
                 files: Object.freeze(
-                  input === undefined
-                    ? files3
+                  readmeText === undefined
+                    ? otherFiles
                     : {
-                        ...files3,
-                        [DESIGN_SYSTEM_PATHS.readme]: input,
+                        ...otherFiles,
+                        [DESIGN_SYSTEM_PATHS.readme]: readmeText,
                       },
                 ),
               },
-              document2.title(),
+              document.title(),
             );
           },
           {
@@ -2751,7 +2751,7 @@ function createDesignSystemFilesDocument(
           },
         );
         let entry = readShas.get(projectReadmePath);
-        if (input === readTexts.get(projectReadmePath)) {
+        if (readmeText === readTexts.get(projectReadmePath)) {
           queue.withdraw(projectReadmePath);
         } else if (typeof entry === "string") {
           markDirty(
@@ -2759,7 +2759,7 @@ function createDesignSystemFilesDocument(
             () => currentFileText(DESIGN_SYSTEM_PATHS.readme),
             entry,
           );
-        } else if (input !== undefined) {
+        } else if (readmeText !== undefined) {
           markDirty(
             projectReadmePath,
             () => currentFileText(DESIGN_SYSTEM_PATHS.readme),
@@ -2774,213 +2774,213 @@ function createDesignSystemFilesDocument(
       value = restoreStash();
     if (value !== undefined) {
       callback(files[DESIGN_SYSTEM_PATHS.readme]);
-      let value2 = value.do.bind(value);
+      let invoke = value.do.bind(value);
       value.do = (): void => {
-        let value3 =
-          document2.content().files[DESIGN_SYSTEM_PATHS.readme];
-        value2();
-        callback(value3);
+        let readmeText =
+          document.content().files[DESIGN_SYSTEM_PATHS.readme];
+        invoke();
+        callback(readmeText);
       };
     }
     if (value !== undefined) {
-      let files2 = document2.content().files;
-      for (let value2 of new Set([
+      let currentFiles = document.content().files;
+      for (let filePath of new Set([
         ...Object.keys(files),
-        ...Object.keys(files2),
+        ...Object.keys(currentFiles),
       ])) {
-        if (files[value2] !== files2[value2]) {
-          restoredStashPaths.add(value2);
+        if (files[filePath] !== currentFiles[filePath]) {
+          restoredStashPaths.add(filePath);
         }
       }
     }
     return value;
   };
-  document2.subscribeLoad((): void => {
+  document.subscribeLoad((): void => {
     if (
-      document2.loadState() === "failed" &&
-      document2.bootFailure() === "access_revoked"
+      document.loadState() === "failed" &&
+      document.bootFailure() === "access_revoked"
     ) {
       purgeCarryStorage(uiMessage("design-system.designSystemDocument.accessRevoked"));
     }
   });
   function unsavedTextPaths(): string[] {
-    if (document2.loadState() !== "live" || document2.readOnly()) {
+    if (document.loadState() !== "live" || document.readOnly()) {
       return [];
     }
     let items = [];
-    for (let [value, value2] of projectFilesForSave(
-      document2.content().files,
+    for (let [value, fileText] of projectFilesForSave(
+      document.content().files,
     ) as Map<string, string>) {
-      let value3: string = relativeProjectFilePath(value)!;
+      let relativePath: string = relativeProjectFilePath(value)!;
       if (
-        flags.has(value3) ||
-        !isTextFilePath(value3) ||
-        readTexts.get(value) === value2 ||
-        textIsLocallyHeld(value, value3) ||
-        preReadBases.get(value)?.text === value2
+        flags.has(relativePath) ||
+        !isTextFilePath(relativePath) ||
+        readTexts.get(value) === fileText ||
+        textIsLocallyHeld(value, relativePath) ||
+        preReadBases.get(value)?.text === fileText
       ) {
         continue;
       }
-      items.push(value3);
+      items.push(relativePath);
     }
     return items;
   }
   function unsavedRemovedFiles(): Record<string, string | null> {
     let state: Record<string, string | null> = {};
-    if (document2.loadState() !== "live" || document2.readOnly()) {
+    if (document.loadState() !== "live" || document.readOnly()) {
       return state;
     }
-    let files = document2.content().files;
+    let files = document.content().files;
     for (let value of new Set([...readTexts.keys(), ...readShas.keys()])) {
-      let value2: string | undefined = relativeProjectFilePath(
+      let relativePath: string | undefined = relativeProjectFilePath(
           value,
         ),
         entry = preReadBases.get(value);
       if (
-        value2 !== undefined &&
-        !Object.hasOwn(files, value2) &&
-        !flags.has(value2) &&
-        !textIsLocallyHeld(value, value2) &&
+        relativePath !== undefined &&
+        !Object.hasOwn(files, relativePath) &&
+        !flags.has(relativePath) &&
+        !textIsLocallyHeld(value, relativePath) &&
         entry?.sha !== null
       ) {
-        state[value2] = entry?.sha ?? readShas.get(value) ?? null;
+        state[relativePath] = entry?.sha ?? readShas.get(value) ?? null;
       }
     }
     return state;
   }
   function unsavedBinaryPaths(): string[] {
     let items: string[] = [];
-    if (document2.loadState() !== "live" || document2.readOnly()) {
+    if (document.loadState() !== "live" || document.readOnly()) {
       return items;
     }
-    for (let [value, value2] of projectFilesForSave(
-      document2.content().files,
+    for (let [value, fileText] of projectFilesForSave(
+      document.content().files,
     ) as Map<string, string>) {
-      let value3: string = relativeProjectFilePath(value)!;
+      let relativePath: string = relativeProjectFilePath(value)!;
       if (
-        isTextFilePath(value3) ||
-        flags.has(value3) ||
-        textIsLocallyHeld(value, value3)
+        isTextFilePath(relativePath) ||
+        flags.has(relativePath) ||
+        textIsLocallyHeld(value, relativePath)
       ) {
         continue;
       }
       if (
-        isHeldFilePointer(value3, value2)
+        isHeldFilePointer(relativePath, fileText)
           ? !readShas.has(value)
-          : readTexts.get(value) !== value2
+          : readTexts.get(value) !== fileText
       ) {
-        items.push(value3);
+        items.push(relativePath);
       }
     }
     return items;
   }
-  function snapshotHotCarry(input?: {
+  function snapshotHotCarry(carryInput?: {
     handoff?: boolean;
   }): M.HotCarrySnapshot {
     let value = (
-        options.snapshotView ??
-        ((input2) => snapshotDesignSystemView(input2))
+        documentOptions.snapshotView ??
+        ((viewState) => snapshotDesignSystemView(viewState))
       )(flaggedPaths),
-      value2 = unsavedTextPaths(),
-      value3 = unsavedRemovedFiles(),
-      value4 = document2.index(),
-      value5 = indexWithoutTitleAndDocs(value4.base()),
-      value6 = indexWithoutTitleAndDocs(value4.get()),
-      value7 =
-        document2.loadState() === "live" &&
-        !document2.readOnly() &&
-        !mergeValuesEqual(value5, value6),
-      value8 = unsavedBinaryPaths();
+      pendingTextPaths = unsavedTextPaths(),
+      pendingRemovedFiles = unsavedRemovedFiles(),
+      indexStore = document.index(),
+      baseIndex = indexWithoutTitleAndDocs(indexStore.base()),
+      currentIndex = indexWithoutTitleAndDocs(indexStore.get()),
+      indexChanged =
+        document.loadState() === "live" &&
+        !document.readOnly() &&
+        !mergeValuesEqual(baseIndex, currentIndex),
+      pendingBinaryPaths = unsavedBinaryPaths();
     if (
       flags.size === 0 &&
-      value2.length === 0 &&
-      !value7 &&
-      Object.keys(value3).length === 0 &&
-      value8.length === 0
+      pendingTextPaths.length === 0 &&
+      !indexChanged &&
+      Object.keys(pendingRemovedFiles).length === 0 &&
+      pendingBinaryPaths.length === 0
     ) {
       return value;
     }
     let state: Record<string, F.CarriedFileEdit> = {},
-      state2: Record<string, F.CarriedFileEdit> = {},
-      state3: Record<string, F.CarriedFileEdit> = {},
+      inlineTextEdits: Record<string, F.CarriedFileEdit> = {},
+      oversizedTextEdits: Record<string, F.CarriedFileEdit> = {},
       items = [],
-      value9 = HOT_CARRY_MAX_INLINE_CHARS,
-      files = document2.content().files,
+      inlineBudget = HOT_CARRY_MAX_INLINE_CHARS,
+      files = document.content().files,
       values = new Set(
-        Object.keys(value3).map((input2) =>
-          readTexts.get(projectFilePath(input2)),
+        Object.keys(pendingRemovedFiles).map((filePath) =>
+          readTexts.get(projectFilePath(filePath)),
         ),
       ),
-      values2 = new Set(
-        Object.keys(value3).map((input2) =>
-          materializedFingerprints.get(projectFilePath(input2)),
+      materializedValues = new Set(
+        Object.keys(pendingRemovedFiles).map((filePath) =>
+          materializedFingerprints.get(projectFilePath(filePath)),
         ),
       ),
       callback = (
-        input2: string,
-        options2: Record<string, F.CarriedFileEdit>,
-        context: F.CarriedFileEdit,
+        filePath: string,
+        targetEdits: Record<string, F.CarriedFileEdit>,
+        fileEdit: F.CarriedFileEdit,
       ): void => {
-        let value13 = context.text.length + (context.baseText?.length ?? 0);
-        if (value13 <= value9) {
-          options2[input2] = context;
-          value9 -= value13;
+        let editLength = fileEdit.text.length + (fileEdit.baseText?.length ?? 0);
+        if (editLength <= inlineBudget) {
+          targetEdits[filePath] = fileEdit;
+          inlineBudget -= editLength;
           return;
         }
-        state3[input2] = context;
+        oversizedTextEdits[filePath] = fileEdit;
       };
-    for (let value13 of flags.keys()) {
-      let value14 = files[value13];
-      if (typeof value14 === "string") {
-        callback(value13, state, {
-          text: value14,
-          base: flags.get(value13)?.theirsSha ?? null,
+    for (let filePath of flags.keys()) {
+      let fileText = files[filePath];
+      if (typeof fileText === "string") {
+        callback(filePath, state, {
+          text: fileText,
+          base: flags.get(filePath)?.theirsSha ?? null,
         });
       }
     }
-    for (let value13 of value2) {
-      let value14: string = projectFilePath(value13);
-      items.push(value13);
-      let entry = preReadBases.get(value14),
-        value15 = entry !== undefined ? entry.text : readTexts.get(value14);
-      callback(value13, state2, {
-        text: files[value13],
+    for (let filePath of pendingTextPaths) {
+      let absolutePath: string = projectFilePath(filePath);
+      items.push(filePath);
+      let entry = preReadBases.get(absolutePath),
+        baseText = entry !== undefined ? entry.text : readTexts.get(absolutePath);
+      callback(filePath, inlineTextEdits, {
+        text: files[filePath],
         base:
-          entry !== undefined ? entry.sha : (readShas.get(value14) ?? null),
-        ...(isTokenFilePath(value13) && value15 !== undefined
+          entry !== undefined ? entry.sha : (readShas.get(absolutePath) ?? null),
+        ...(isTokenFilePath(filePath) && baseText !== undefined
           ? {
-              baseText: value15,
+              baseText: baseText,
             }
           : {}),
       });
     }
-    let value10: F.CarriedIndexEdit | undefined,
-      value11: F.CarriedIndexEdit | undefined;
-    if (value7) {
-      let state4 = {
-          base: value5,
-          mine: value6,
+    let indexEdit: F.CarriedIndexEdit | undefined,
+      pendingIndexEdit: F.CarriedIndexEdit | undefined;
+    if (indexChanged) {
+      let indexSnapshot = {
+          base: baseIndex,
+          mine: currentIndex,
         },
-        length = JSON.stringify(state4).length;
-      if (length <= value9) {
-        value10 = state4;
-        value9 -= length;
+        length = JSON.stringify(indexSnapshot).length;
+      if (length <= inlineBudget) {
+        indexEdit = indexSnapshot;
+        inlineBudget -= length;
       } else {
-        value11 = state4;
+        pendingIndexEdit = indexSnapshot;
       }
     }
-    stashOversizedCarry(state3, value11);
-    let value12 = document2.queue();
+    stashOversizedCarry(oversizedTextEdits, pendingIndexEdit);
+    let saveQueue = document.queue();
     if (
-      input?.handoff !== false &&
-      Object.keys(state3).length === 0 &&
-      value11 === undefined &&
-      value8.length === 0 &&
-      value12.state().stuck === undefined &&
-      value12.conflicted().size === 0 &&
-      value12.unsendable().size === 0
+      carryInput?.handoff !== false &&
+      Object.keys(oversizedTextEdits).length === 0 &&
+      pendingIndexEdit === undefined &&
+      pendingBinaryPaths.length === 0 &&
+      saveQueue.state().stuck === undefined &&
+      saveQueue.conflicted().size === 0 &&
+      saveQueue.unsendable().size === 0
     ) {
-      value12.stashHandedOff();
+      saveQueue.stashHandedOff();
     }
     return {
       ...value,
@@ -2992,61 +2992,61 @@ function createDesignSystemFilesDocument(
         : {}),
       ...(items.length > 0
         ? {
-            unsaved: state2,
+            unsaved: inlineTextEdits,
             unsavedNames: items,
           }
         : {}),
-      ...(Object.keys(value3).length > 0
+      ...(Object.keys(pendingRemovedFiles).length > 0
         ? {
-            removed: value3,
+            removed: pendingRemovedFiles,
           }
         : {}),
-      ...(Object.keys(value3).length > 0 || value8.length > 0
+      ...(Object.keys(pendingRemovedFiles).length > 0 || pendingBinaryPaths.length > 0
         ? {
-            binariesLeft: value8.slice(0, 200),
-            binariesNew: value8
+            binariesLeft: pendingBinaryPaths.slice(0, 200),
+            binariesNew: pendingBinaryPaths
               .filter(
-                (input2) =>
-                  !values.has(files[input2]) &&
-                  !values2.has(textFingerprint(files[input2])),
+                (filePath) =>
+                  !values.has(files[filePath]) &&
+                  !materializedValues.has(textFingerprint(files[filePath])),
               )
               .slice(0, 200),
           }
         : {}),
-      ...(value7
+      ...(indexChanged
         ? {
             indexUnsaved: true,
-            ...(value10 !== undefined
+            ...(indexEdit !== undefined
               ? {
-                  index: value10,
+                  index: indexEdit,
                 }
               : {}),
           }
         : {}),
     };
   }
-  function restoreHotCarry(input: M.RawHotCarry | null | undefined) {
-    if (input === undefined || input === null || restoreConsumed) {
+  function restoreHotCarry(carryInput: M.RawHotCarry | null | undefined) {
+    if (carryInput === undefined || carryInput === null || restoreConsumed) {
       return;
     }
     restoreConsumed = true;
-    let value = input,
-      value2: boolean =
-        (input as Record<string, unknown>)[
+    let value = carryInput,
+      hasValidIndex: boolean =
+        (carryInput as Record<string, unknown>)[
           HOT_CARRY_PROTOCOL_FIELD
         ] === 1,
-      value3 = value2
+      unsavedPaths = hasValidIndex
         ? []
         : [
             ...new Set([
               ...(Array.isArray(value.unsavedNames)
                 ? (value.unsavedNames as unknown[]).filter(
-                    (input2: unknown): input2 is string =>
-                      typeof input2 === "string",
+                    (candidate: unknown): candidate is string =>
+                      typeof candidate === "string",
                   )
                 : [
                     ...readCarriedFileEdits(
-                      input,
+                      carryInput,
                       "unsaved",
                     ).keys(),
                   ]),
@@ -3056,88 +3056,88 @@ function createDesignSystemFilesDocument(
             ]),
           ].slice(0, 200);
     if (
-      !value2 &&
-      (value3.length > 0 ||
+      !hasValidIndex &&
+      (unsavedPaths.length > 0 ||
         value.indexUnsaved === true ||
         value.index !== undefined)
     ) {
       let {
-        unsaved: value4,
-        unsavedNames: value5,
-        removed: value6,
-        index: value7,
-        indexUnsaved: value8,
-        binariesLeft: value9,
-        ...value10
-      } = input;
-      consumeCarryStorage(value3, true);
+        unsaved: unsavedFiles,
+        unsavedNames: unsavedNames,
+        removed: removedFiles,
+        index: carriedIndex,
+        indexUnsaved: indexIsUnsaved,
+        binariesLeft: remainingBinaries,
+        ...carryEdits
+      } = carryInput;
+      consumeCarryStorage(unsavedPaths, true);
       emit("restore-lost", {
-        paths: value3.map(projectFilePath),
+        paths: unsavedPaths.map(projectFilePath),
         why: "the page that reloaded was an older build",
       });
       notice(
         uiMessage("design-system.designSystemDocument.thePageReloadedAndYour") +
-          (value3.length > 0
-            ? " to " + summarizeFileNames(value3)
+          (unsavedPaths.length > 0
+            ? " to " + summarizeFileNames(unsavedPaths)
             : "") +
           " could not be carried across. What is saved is shown; those changes are gone.",
       );
-      return void restoreHotCarryEdits(value10);
+      return void restoreHotCarryEdits(carryEdits);
     }
-    restoreHotCarryEdits(input);
+    restoreHotCarryEdits(carryInput);
   }
-  function restoreHotCarryEdits(input: M.RawHotCarry): void {
-    let value = input,
-      value2 = (
-        options.restoreView ??
-        ((input2) => restoreDesignSystemView(input2))
-      )(input),
-      value3 = readCarriedFileEdits(input),
-      value4 = readCarriedFileEdits(input, "unsaved"),
-      value5 = Array.isArray(value.unsavedNames)
+  function restoreHotCarryEdits(carryInput: M.RawHotCarry): void {
+    let value = carryInput,
+      allPaths = (
+        documentOptions.restoreView ??
+        ((viewState) => restoreDesignSystemView(viewState))
+      )(carryInput),
+      flaggedFiles = readCarriedFileEdits(carryInput),
+      unsavedFiles = readCarriedFileEdits(carryInput, "unsaved"),
+      unsavedNames = Array.isArray(value.unsavedNames)
         ? (value.unsavedNames as unknown[])
             .filter(
-              (input2: unknown): input2 is string =>
-                typeof input2 === "string",
+              (path: unknown): path is string =>
+                typeof path === "string",
             )
             .slice(0, 200)
-        : [...value4.keys()],
-      value6 = readCarriedIndexEdit(value.index),
-      value7 = value.indexUnsaved === true || value6 !== undefined,
-      value8 = consumeCarryStorage(
+        : [...unsavedFiles.keys()],
+      carriedIndex = readCarriedIndexEdit(value.index),
+      indexIsUnsaved = value.indexUnsaved === true || carriedIndex !== undefined,
+      carryStorage = consumeCarryStorage(
         [
-          ...value2.filter((input2): boolean => !value3.has(input2)),
-          ...value5.filter((input2): boolean => !value4.has(input2)),
+          ...allPaths.filter((path): boolean => !flaggedFiles.has(path)),
+          ...unsavedNames.filter((path): boolean => !unsavedFiles.has(path)),
         ],
-        value7 && value6 === undefined,
+        indexIsUnsaved && carriedIndex === undefined,
       );
-    for (let value16 of value2) {
-      let value17 = value3.get(value16) ?? value8.files.get(value16);
-      if (value17 !== undefined) {
-        flaggedRestoreEdits.set(value16, value17);
+    for (let path of allPaths) {
+      let fileEdit = flaggedFiles.get(path) ?? carryStorage.files.get(path);
+      if (fileEdit !== undefined) {
+        flaggedRestoreEdits.set(path, fileEdit);
       }
     }
     let entries = new Map<string, F.CarriedFileEdit>();
-    for (let value16 of value5) {
-      let value17 = value4.get(value16) ?? value8.files.get(value16);
-      if (value17 !== undefined) {
-        entries.set(value16, value17);
+    for (let path of unsavedNames) {
+      let fileEdit = unsavedFiles.get(path) ?? carryStorage.files.get(path);
+      if (fileEdit !== undefined) {
+        entries.set(path, fileEdit);
       }
     }
-    let value9 = value6 ?? value8.index,
+    let indexEdit = carriedIndex ?? carryStorage.index,
       items = [
-        ...value2.filter(
-          (input2): boolean => !flaggedRestoreEdits.has(input2),
+        ...allPaths.filter(
+          (path): boolean => !flaggedRestoreEdits.has(path),
         ),
-        ...value5.filter((input2): boolean => !entries.has(input2)),
-        ...(value7 && value9 === undefined ? [indexPath] : []),
+        ...unsavedNames.filter((path): boolean => !entries.has(path)),
+        ...(indexIsUnsaved && indexEdit === undefined ? [indexPath] : []),
       ];
     if (items.length > 0) {
       emit("restore-lost", {
-        paths: items.map((input2) =>
-          input2 === indexPath
-            ? input2
-            : projectFilePath(input2),
+        paths: items.map((path) =>
+          path === indexPath
+            ? path
+            : projectFilePath(path),
         ),
       });
       notice(
@@ -3146,229 +3146,229 @@ function createDesignSystemFilesDocument(
           " could not be carried across. What is saved is shown; those changes are gone.",
       );
     }
-    let entries2 = new Map<string, string | null>();
+    let removedFiles = new Map<string, string | null>();
     if (typeof value.removed === "object" && value.removed !== null) {
-      for (let [value16, value17] of Object.entries<unknown>(
+      for (let [path, removedText] of Object.entries<unknown>(
         value.removed as Record<string, unknown>,
       ).slice(0, 200)) {
-        if (typeof value17 === "string" || value17 === null) {
-          entries2.set(value16, value17);
+        if (typeof removedText === "string" || removedText === null) {
+          removedFiles.set(path, removedText);
         }
       }
     }
-    let value10 = Array.isArray(value.binariesLeft)
+    let remainingBinaries = Array.isArray(value.binariesLeft)
         ? (value.binariesLeft as unknown[]).filter(
-            (input2: unknown): input2 is string => typeof input2 === "string",
+            (path: unknown): path is string => typeof path === "string",
           )
         : undefined,
-      value11 =
+      removedNames =
         (Array.isArray(value.unsavedNames) &&
           value.unsavedNames.length > 200) ||
         (typeof value.removed === "object" &&
           value.removed !== null &&
           Object.keys(value.removed).length > 200),
-      value12 = items.some(
-        (input2) =>
-          input2 !== indexPath && isTextFilePath(input2),
+      hasTextFiles = items.some(
+        (path) =>
+          path !== indexPath && isTextFilePath(path),
       ),
-      value13 =
-        value10 === undefined ||
-        value10.length > 0 ||
+      hasBinaryFiles =
+        remainingBinaries === undefined ||
+        remainingBinaries.length > 0 ||
         items.some(
-          (input2) =>
-            input2 !== indexPath && !isTextFilePath(input2),
+          (path) =>
+            path !== indexPath && !isTextFilePath(path),
         ),
-      value14 = [...entries2.keys()].filter(
-        (input2) =>
-          value11 ||
-          (isTextFilePath(input2) ? value12 : value13),
+      removedPaths = [...removedFiles.keys()].filter(
+        (path) =>
+          removedNames ||
+          (isTextFilePath(path) ? hasTextFiles : hasBinaryFiles),
       );
-    for (let value16 of value14) {
-      entries2.delete(value16);
+    for (let path of removedPaths) {
+      removedFiles.delete(path);
     }
-    let value15 = Array.isArray(value.binariesNew)
+    let newBinaries = Array.isArray(value.binariesNew)
       ? (value.binariesNew as unknown[]).filter(
-          (input2: unknown): input2 is string => typeof input2 === "string",
+          (path: unknown): path is string => typeof path === "string",
         )
       : [];
     if (
       flaggedRestoreEdits.size === 0 &&
       entries.size === 0 &&
-      value9 === undefined &&
-      entries2.size === 0 &&
-      value14.length === 0 &&
-      value15.length === 0
+      indexEdit === undefined &&
+      removedFiles.size === 0 &&
+      removedPaths.length === 0 &&
+      newBinaries.length === 0
     ) {
       return;
     }
     let callback = (): void => {
-        let items2 = [],
-          items3 = [],
-          value16 = value14.filter((input2) =>
-            Object.hasOwn(document2.content().files, input2),
+        let missingPaths = [],
+          conflictPaths = [],
+          restoredPaths = removedPaths.filter((path) =>
+            Object.hasOwn(document.content().files, path),
           );
-        if (value16.length > 0) {
+        if (restoredPaths.length > 0) {
           emit("restore-unremoved", {
-            paths: value16.map(projectFilePath),
+            paths: restoredPaths.map(projectFilePath),
           });
-          for (let value19 of value16) {
-            lateRemovalNoticePaths.add(value19);
+          for (let path of restoredPaths) {
+            lateRemovalNoticePaths.add(path);
           }
-          let value18: boolean = value16.length === 1;
+          let singlePath: boolean = restoredPaths.length === 1;
           notice(
             uiMessage("design-system.designSystemDocument.thePageReloadedBeforeYour") +
-              summarizeFileNames(value16) +
+              summarizeFileNames(restoredPaths) +
               " was saved, so it did not go through: " +
-              (value18
-                ? summarizeFileNames(value16) + " is"
+              (singlePath
+                ? summarizeFileNames(restoredPaths) + " is"
                 : uiMessage("design-system.designSystemDocument.theyAre")) +
               " still here. Do it again. If you had renamed " +
-              (value18 ? "it" : "one") +
+              (singlePath ? "it" : "one") +
               " and " +
-              (value18 ? "the" : "its") +
+              (singlePath ? "the" : "its") +
               " new name is here too, remove the one you do not want.",
           );
         }
-        for (let [value18, value19] of entries) {
-          let value20 = currentFileText(value18);
+        for (let [filePath, fileEdit] of entries) {
+          let localText = currentFileText(filePath);
           if (
-            value20 !== null &&
+            localText !== null &&
             fileContentsSemanticallyEqual(
-              value18,
-              value20,
-              value19.text,
+              filePath,
+              localText,
+              fileEdit.text,
             )
           ) {
             continue;
           }
-          let value21 = liveSha(value18),
-            value22 =
-              value21 !== undefined &&
-              value19.base !== undefined &&
-              value21 !== value19.base;
-          if (value22 && value20 !== null && value19.baseText !== undefined) {
-            let value23 = mergeSupportedFileThreeWays(
-              value18,
-              value19.baseText,
-              value19.text,
-              value20,
+          let liveShaValue = liveSha(filePath),
+            canMerge =
+              liveShaValue !== undefined &&
+              fileEdit.base !== undefined &&
+              liveShaValue !== fileEdit.base;
+          if (canMerge && localText !== null && fileEdit.baseText !== undefined) {
+            let mergeResult = mergeSupportedFileThreeWays(
+              filePath,
+              fileEdit.baseText,
+              fileEdit.text,
+              localText,
             );
-            if (value23 !== null && value23.ok) {
+            if (mergeResult !== null && mergeResult.ok) {
               if (
                 !fileContentsSemanticallyEqual(
-                  value18,
-                  value23.text,
-                  value20,
+                  filePath,
+                  mergeResult.text,
+                  localText,
                 )
               ) {
-                replaceFileText(value18, value23.text);
-                items3.push(value18);
+                replaceFileText(filePath, mergeResult.text);
+                conflictPaths.push(filePath);
               }
               continue;
             }
           }
-          replaceFileText(value18, value19.text);
-          items3.push(value18);
-          if (value22) {
+          replaceFileText(filePath, fileEdit.text);
+          conflictPaths.push(filePath);
+          if (canMerge) {
             flagClashingFile(
-              value18,
+              filePath,
               "restored",
-              value21,
+              liveShaValue,
               uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-                fileBaseName(value18) +
+                fileBaseName(filePath) +
                 " while the page reloaded. Your unsaved version is back on screen and was not saved over theirs." +
                 FILE_CONFLICT_CHOICE_SUFFIX,
             );
           }
         }
-        let items4 = [];
-        for (let [value18, value19] of entries2) {
+        let removedMissingPaths = [];
+        for (let [filePath, removedSha] of removedFiles) {
           if (
-            currentFileText(value18) === null &&
-            !Object.hasOwn(document2.content().files, value18)
+            currentFileText(filePath) === null &&
+            !Object.hasOwn(document.content().files, filePath)
           ) {
             continue;
           }
-          let value20 = liveSha(value18);
+          let liveShaValue = liveSha(filePath);
           if (
-            value20 !== undefined &&
-            value19 !== null &&
-            value20 !== value19
+            liveShaValue !== undefined &&
+            removedSha !== null &&
+            liveShaValue !== removedSha
           ) {
-            items4.push(value18);
+            removedMissingPaths.push(filePath);
             continue;
           }
-          document2.updateContent(
-            (input2) => {
-              let { [value18]: files, ...files2 } = input2.files;
+          document.updateContent(
+            (content) => {
+              let { [filePath]: files, ...remainingFiles } = content.files;
               return refreshManifest(
                 {
-                  ...input2,
-                  files: Object.freeze(files2),
+                  ...content,
+                  files: Object.freeze(remainingFiles),
                 },
-                document2.title(),
+                document.title(),
               );
             },
             {
               auto: true,
             },
           );
-          items3.push(value18);
+          conflictPaths.push(filePath);
         }
-        if (items4.length > 0) {
+        if (removedMissingPaths.length > 0) {
           notice(
             uiMessage("design-system.designSystemDocument.youHadRemoved") +
-              summarizeFileNames(items4) +
+              summarizeFileNames(removedMissingPaths) +
               " just before the page reloaded, and someone else changed " +
-              (items4.length === 1 ? "it" : "them") +
+              (removedMissingPaths.length === 1 ? "it" : "them") +
               " meanwhile, so " +
-              (items4.length === 1 ? uiMessage("design-system.designSystemDocument.itWas") : uiMessage("design-system.designSystemDocument.theyWere")) +
+              (removedMissingPaths.length === 1 ? uiMessage("design-system.designSystemDocument.itWas") : uiMessage("design-system.designSystemDocument.theyWere")) +
               " left in place.",
           );
         }
-        let items5: string[] = [],
+        let indexKeptPaths: string[] = [],
           flag: boolean = false;
-        if (value9 !== undefined) {
-          let entry = document2.index().get(),
-            value18 = (value10 ?? [])
+        if (indexEdit !== undefined) {
+          let entry = document.index().get(),
+            missingBinaries = (remainingBinaries ?? [])
               .map(encodeFileIndexKey as (path: string) => string)
               .filter(
-                (input2) =>
-                  Object.hasOwn(value9.base.blobs ?? {}, input2) &&
-                  !Object.hasOwn(value9.mine.blobs ?? {}, input2),
+                (blobPath) =>
+                  Object.hasOwn(indexEdit.base.blobs ?? {}, blobPath) &&
+                  !Object.hasOwn(indexEdit.mine.blobs ?? {}, blobPath),
               ),
-            value19 =
-              value18.length === 0
-                ? value9.mine
+            blobData =
+              missingBinaries.length === 0
+                ? indexEdit.mine
                 : {
-                    ...value9.mine,
+                    ...indexEdit.mine,
                     blobs: {
-                      ...value9.mine.blobs,
+                      ...indexEdit.mine.blobs,
                       ...Object.fromEntries(
-                        value18.map((input2) => [
-                          input2,
-                          value9.base.blobs[input2],
+                        missingBinaries.map((blobPath) => [
+                          blobPath,
+                          indexEdit.base.blobs[blobPath],
                         ]),
                       ),
                     },
                   },
-            { index: value20, kept: value21 } = mergeFilesIndex(
-              value9.base,
-              value19,
+            { index: mergedIndex, kept: keptIndexFields } = mergeFilesIndex(
+              indexEdit.base,
+              blobData,
               entry,
             );
-          items5 = value21.filter(
-            (input2) =>
-              !input2.startsWith("docs") &&
-              input2 !== "title" &&
-              !isGeneratedIndexField(input2),
+          indexKeptPaths = keptIndexFields.filter(
+            (fieldName) =>
+              !fieldName.startsWith("docs") &&
+              fieldName !== "title" &&
+              !isGeneratedIndexField(fieldName),
           );
-          if (!mergeValuesEqual(value20, entry)) {
+          if (!mergeValuesEqual(mergedIndex, entry)) {
             let files: Core.FileTable = restoreFilesFromIndex(
-              value20,
-              projectFilesForSave(document2.content().files),
+              mergedIndex,
+              projectFilesForSave(document.content().files),
             ).content.files;
-            document2.updateContent(
+            document.updateContent(
               () =>
                 refreshManifest(
                   {
@@ -3377,7 +3377,7 @@ function createDesignSystemFilesDocument(
                       ...files,
                     }),
                   },
-                  document2.title(),
+                  document.title(),
                 ),
               {
                 auto: true,
@@ -3385,195 +3385,195 @@ function createDesignSystemFilesDocument(
             );
             flag = true;
           }
-          if (items5.length > 0) {
+          if (indexKeptPaths.length > 0) {
             notice(
               uiMessage("design-system.designSystemDocument.partOfYourUnsavedChange") +
                 describeIndexConflicts(
-                  items5,
-                  document2.index().get(),
+                  indexKeptPaths,
+                  document.index().get(),
                 ).join(", ") +
                 ".",
             );
           }
         }
-        let value17 = value15.filter(
-          (input2): boolean =>
-            !Object.hasOwn(document2.content().files, input2),
+        let newBinaryPaths = newBinaries.filter(
+          (filePath): boolean =>
+            !Object.hasOwn(document.content().files, filePath),
         );
-        if (value17.length > 0) {
+        if (newBinaryPaths.length > 0) {
           emit("restore-lost", {
-            paths: value17.map(projectFilePath),
+            paths: newBinaryPaths.map(projectFilePath),
           });
           notice(
             uiMessage("design-system.designSystemDocument.thePageReloadedBefore") +
-              summarizeFileNames(value17) +
+              summarizeFileNames(newBinaryPaths) +
               " " +
-              (value17.length === 1 ? "was" : "were") +
+              (newBinaryPaths.length === 1 ? "was" : "were") +
               " saved, so " +
-              (value17.length === 1 ? uiMessage("design-system.designSystemDocument.itIs") : uiMessage("design-system.designSystemDocument.theyAre")) +
+              (newBinaryPaths.length === 1 ? uiMessage("design-system.designSystemDocument.itIs") : uiMessage("design-system.designSystemDocument.theyAre")) +
               " gone. Add " +
-              (value17.length === 1 ? "it" : "them") +
+              (newBinaryPaths.length === 1 ? "it" : "them") +
               " again.",
           );
         }
-        if (items3.length > 0 || flag) {
+        if (conflictPaths.length > 0 || flag) {
           emit("resumed", {
-            paths: items3.map(projectFilePath),
+            paths: conflictPaths.map(projectFilePath),
             index: flag,
-            indexKept: items5,
+            indexKept: indexKeptPaths,
           });
           enhancedDocument.flushNow();
         }
-        for (let [value18, value19] of flaggedRestoreEdits) {
-          let value20 = currentFileText(value18);
-          if (value20 !== null && value20 === value19.text) {
+        for (let [filePath, fileEdit] of flaggedRestoreEdits) {
+          let localText = currentFileText(filePath);
+          if (localText !== null && localText === fileEdit.text) {
             continue;
           }
-          replaceFileText(value18, value19.text);
-          flags.set(value18, {
-            path: value18,
+          replaceFileText(filePath, fileEdit.text);
+          flags.set(filePath, {
+            path: filePath,
             why: "restored",
-            theirsSha: liveSha(value18),
+            theirsSha: liveSha(filePath),
             since: timers.now(),
           });
-          flaggedPaths.add(value18);
-          noticedClashShas.set(value18, liveSha(value18));
-          queue.withdraw(projectFilePath(value18));
-          items2.push(value18);
+          flaggedPaths.add(filePath);
+          noticedClashShas.set(filePath, liveSha(filePath));
+          queue.withdraw(projectFilePath(filePath));
+          missingPaths.push(filePath);
         }
         flaggedRestoreEdits.clear();
-        if (items2.length > 0) {
+        if (missingPaths.length > 0) {
           emit("restored", {
-            paths: items2.map(projectFilePath),
+            paths: missingPaths.map(projectFilePath),
           });
           notifyFlags();
         }
       },
-      callback2 = async (): Promise<void> => {
-        let entries3 = new Map([...flaggedRestoreEdits, ...entries]);
+      restoreCallback = async (): Promise<void> => {
+        let restoredEntries = new Map([...flaggedRestoreEdits, ...entries]);
         flaggedRestoreEdits.clear();
-        let value16 = [...entries2.keys(), ...value14].filter((input2) =>
-            Object.hasOwn(document2.content().files, input2),
+        let missingPaths = [...removedFiles.keys(), ...removedPaths].filter((filePath) =>
+            Object.hasOwn(document.content().files, filePath),
           ),
-          value17 =
-            value9 !== undefined &&
-            !indexAuthoredFieldsEqual(value9.base, value9.mine);
-        if (entries3.size === 0 && !value17 && value16.length === 0) {
+          indexMissing =
+            indexEdit !== undefined &&
+            !indexAuthoredFieldsEqual(indexEdit.base, indexEdit.mine);
+        if (restoredEntries.size === 0 && !indexMissing && missingPaths.length === 0) {
           return;
         }
         let values = new Set<string>();
-        if (options.saveStash !== undefined && entries3.size > 0) {
-          let value23 = await options.saveStash.put(
-              [...entries3].map(([input2, input3]) => ({
-                path: projectFilePath(input2),
-                text: input3.text,
-                base: input3.base ?? null,
+        if (documentOptions.saveStash !== undefined && restoredEntries.size > 0) {
+          let stashResult = await documentOptions.saveStash.put(
+              [...restoredEntries].map(([filePath, fileEdit]) => ({
+                path: projectFilePath(filePath),
+                text: fileEdit.text,
+                base: fileEdit.base ?? null,
               })),
-              options.port.version().version,
+              documentOptions.port.version().version,
             ),
-            value24 = value23
+            stashedPaths = stashResult
               ? []
-              : ((await options.saveStash.read())?.edits ?? []);
-          values = value23
-            ? new Set(entries3.keys())
+              : ((await documentOptions.saveStash.read())?.edits ?? []);
+          values = stashResult
+            ? new Set(restoredEntries.keys())
             : new Set(
-                value24.flatMap((input2) => {
-                  let value25: string | undefined = relativeProjectFilePath(input2.path);
+                stashedPaths.flatMap((stashedEdit) => {
+                  let relativePath: string | undefined = relativeProjectFilePath(stashedEdit.path);
                   if (
-                    value25 !== undefined &&
-                    entries3.get(value25)?.text === input2.text
+                    relativePath !== undefined &&
+                    restoredEntries.get(relativePath)?.text === stashedEdit.text
                   ) {
-                    return [value25];
+                    return [relativePath];
                   } else {
                     return [];
                   }
                 }),
               );
         }
-        let value18 = [...entries3.keys()].filter((input2) =>
-            values.has(input2),
+        let restoredPaths = [...restoredEntries.keys()].filter((filePath) =>
+            values.has(filePath),
           ),
-          value19 = value16.filter(
-            (input2): boolean => !entries3.has(input2),
+          unrestoredPaths = missingPaths.filter(
+            (filePath): boolean => !restoredEntries.has(filePath),
           ),
-          items2 = [
-            ...[...entries3.keys()].filter(
-              (input2): boolean => !values.has(input2),
+          discardedPaths = [
+            ...[...restoredEntries.keys()].filter(
+              (filePath): boolean => !values.has(filePath),
             ),
-            ...(value17 ? [indexPath] : []),
+            ...(indexMissing ? [indexPath] : []),
           ],
-          callback4 = (input2: readonly string[]) =>
-            input2.map((input3) =>
-              input3 === indexPath
-                ? input3
-                : projectFilePath(input3),
+          formatPaths = (paths: readonly string[]) =>
+            paths.map((filePath) =>
+              filePath === indexPath
+                ? filePath
+                : projectFilePath(filePath),
             );
-        if (value18.length > 0) {
+        if (restoredPaths.length > 0) {
           emit("restore-kept", {
-            paths: callback4(value18),
+            paths: formatPaths(restoredPaths),
           });
         }
-        if (items2.length + value19.length > 0) {
+        if (discardedPaths.length + unrestoredPaths.length > 0) {
           emit("restore-lost", {
-            paths: callback4([...items2, ...value19]),
+            paths: formatPaths([...discardedPaths, ...unrestoredPaths]),
           });
         }
         let text: string = uiMessage("design-system.designSystemDocument.thePageReloadedAndOpened"),
-          value20: string =
-            value18.length > 0
+          textPrefix: string =
+            restoredPaths.length > 0
               ? uiMessage("design-system.designSystemDocument.yourVersionOf") +
-                summarizeFileNames(value18) +
+                summarizeFileNames(restoredPaths) +
                 " is kept on this device for " +
                 CRASH_STASH_RETENTION_LABEL +
                 ". Reload to try getting it back. "
               : "",
-          value21: string =
-            items2.length > 0
+          textMiddle: string =
+            discardedPaths.length > 0
               ? uiMessage("design-system.designSystemDocument.yourUnsavedChangesTo") +
-                summarizeFileNames(items2) +
+                summarizeFileNames(discardedPaths) +
                 " could not be kept here and are gone. "
               : "",
-          value22: string =
-            value19.length > 0
+          textSuffix: string =
+            unrestoredPaths.length > 0
               ? uiMessage("design-system.designSystemDocument.youHadRemoved") +
-                summarizeFileNames(value19) +
+                summarizeFileNames(unrestoredPaths) +
                 "; that was not kept, and " +
-                (value19.length === 1 ? uiMessage("design-system.designSystemDocument.theFileIs") : uiMessage("design-system.designSystemDocument.theFilesAre")) +
+                (unrestoredPaths.length === 1 ? uiMessage("design-system.designSystemDocument.theFileIs") : uiMessage("design-system.designSystemDocument.theFilesAre")) +
                 " still here."
               : "";
-        notice((text + value20 + value21 + value22).trim());
+        notice((text + textPrefix + textMiddle + textSuffix).trim());
       },
-      callback3 = () => {
-        let value16 = document2.loadState();
-        if (value16 === "live" && !document2.readOnly()) {
+      finishRestore = () => {
+        let loadState = document.loadState();
+        if (loadState === "live" && !document.readOnly()) {
           return callback();
         }
-        if (value16 === "live" && options.port.mayWrite === true) {
-          return void callback2();
+        if (loadState === "live" && documentOptions.port.mayWrite === true) {
+          return void restoreCallback();
         }
         if (
-          value16 === "live" ||
-          (value16 === "failed" &&
-            document2.bootFailure() === "access_revoked")
+          loadState === "live" ||
+          (loadState === "failed" &&
+            document.bootFailure() === "access_revoked")
         ) {
           flaggedRestoreEdits.clear();
           return;
         }
-        let callback4 = (): void => {
+        let retryRestore = (): void => {
           return;
         };
-        callback4 = document2.subscribeLoad((): void => {
-          if (document2.loadState() === "loading") {
+        retryRestore = document.subscribeLoad((): void => {
+          if (document.loadState() === "loading") {
             return;
           }
-          callback4();
-          callback3();
+          retryRestore();
+          finishRestore();
         });
       };
-    Promise.resolve().then(callback3);
+    Promise.resolve().then(finishRestore);
   }
-  document2.subscribe((input): void => {
-    if (input?.remote === true) {
+  document.subscribe((change): void => {
+    if (change?.remote === true) {
       return;
     }
     if (!personChanged && queue.pending()) {
@@ -3587,7 +3587,7 @@ function createDesignSystemFilesDocument(
     for (let value of mergingTokenPaths) {
       queue.withdraw(projectFilePath(value));
     }
-    if (options.generated === true) {
+    if (documentOptions.generated === true) {
       if (regenerationTimer !== undefined) {
         timers.clearTimeout(regenerationTimer);
       }
@@ -3596,7 +3596,7 @@ function createDesignSystemFilesDocument(
           regenerationTimer = undefined;
           regenerate();
         },
-        Math.min(300, Math.floor((options.commitMs ?? 800) / 2)),
+        Math.min(300, Math.floor((documentOptions.commitMs ?? 800) / 2)),
       );
     }
   });
@@ -3609,7 +3609,7 @@ function createDesignSystemFilesDocument(
   enhancedQueue.pending = () =>
     queue.pending() || hasHeldConflicts() || generatedWorkPending();
   enhancedDocument.queue = () => enhancedQueue;
-  let originalSaveState = document2.saveState.bind(document2);
+  let originalSaveState = document.saveState.bind(document);
   enhancedDocument.saveState = () => {
     let value = originalSaveState();
     if (flags.size === 0) {
@@ -3624,15 +3624,15 @@ function createDesignSystemFilesDocument(
         return value;
       }
     }
-    let value2 = queue.state(),
-      value3 =
+    let queueState = queue.state(),
+      hasUnsendableFiles =
         value.status === "error" &&
-        value2.unsendable !== undefined &&
+        queueState.unsendable !== undefined &&
         value.message ===
-          formatUnsendableFilesMessage(value2.unsendable, {
-            stashed: value2.unsendableStashed === true,
+          formatUnsendableFilesMessage(queueState.unsendable, {
+            stashed: queueState.unsendableStashed === true,
           });
-    if (value.status !== "ready" && value.status !== "dirty" && !value3) {
+    if (value.status !== "ready" && value.status !== "dirty" && !hasUnsendableFiles) {
       return value;
     }
     return {
@@ -3645,7 +3645,7 @@ function createDesignSystemFilesDocument(
         " a newer version from someone else and yours is not saved. Choose theirs, yours, or yours as a copy.",
     };
   };
-  let originalSubscribeSave = document2.subscribeSave.bind(document2),
+  let originalSubscribeSave = document.subscribeSave.bind(document),
     queueIsClean = () => {
       let value = queue.state();
       return (
@@ -3657,26 +3657,26 @@ function createDesignSystemFilesDocument(
       carrying = false;
     }
   });
-  enhancedDocument.subscribeSave = (input) => {
-    saveSubscribers.add(input);
+  enhancedDocument.subscribeSave = (subscriber) => {
+    saveSubscribers.add(subscriber);
     let value = originalSubscribeSave(() =>
-      input(enhancedDocument.saveState()),
+      subscriber(enhancedDocument.saveState()),
     );
     return (): void => {
-      saveSubscribers.delete(input);
+      saveSubscribers.delete(subscriber);
       value();
     };
   };
   enhancedDocument.dirty = () =>
     queue.pending() || hasHeldConflicts() || generatedWorkPending();
-  let originalFlushNow = document2.flushNow.bind(document2);
+  let originalFlushNow = document.flushNow.bind(document);
   enhancedDocument.flushNow = (): void => {
     regenerate();
     originalFlushNow();
   };
   enhancedDocument.save = async (): Promise<void> => {
-    if (document2.loadState() === "failed") {
-      document2.retryLoad();
+    if (document.loadState() === "failed") {
+      document.retryLoad();
       return;
     }
     enhancedDocument.flushNow();
@@ -3686,7 +3686,7 @@ function createDesignSystemFilesDocument(
   enhancedDocument.stuck = () => {
     let value = queue.state(),
       stuck = value.stuck,
-      value2: string =
+      messageSuffix: string =
         value.unsendable !== undefined
           ? " " +
             formatUnsendableFilesMessage(value.unsendable, {
@@ -3701,47 +3701,47 @@ function createDesignSystemFilesDocument(
         code: stuck.code,
         since: stuck.since,
         retryable: stuck.retryable,
-        message: describeStuckSave(stuck, timers.now()) + value2,
+        message: describeStuckSave(stuck, timers.now()) + messageSuffix,
       };
     }
   };
-  enhancedDocument.retryStuck = () => document2.retrySave();
+  enhancedDocument.retryStuck = () => document.retrySave();
   enhancedDocument.flagged = () => flaggedPaths;
   enhancedDocument.flags = () => flags;
-  enhancedDocument.subscribeFlagged = (input) => {
-    flagSubscribers.add(input);
-    return () => void flagSubscribers.delete(input);
+  enhancedDocument.subscribeFlagged = (subscriber) => {
+    flagSubscribers.add(subscriber);
+    return () => void flagSubscribers.delete(subscriber);
   };
-  enhancedDocument.resolveFlagged = (input, options2): void => {
-    if (!flags.has(input)) {
+  enhancedDocument.resolveFlagged = (filePath, choice): void => {
+    if (!flags.has(filePath)) {
       return;
     }
-    if (options2 === "mine" && remoteRevertTokens.delete(input)) {
-      remoteRevertPending.delete(input);
+    if (choice === "mine" && remoteRevertTokens.delete(filePath)) {
+      remoteRevertPending.delete(filePath);
     }
-    let value: string = projectFilePath(input),
-      value2 = currentFileText(input);
-    if (options2 === "copy") {
-      let files = document2.content().files,
-        value4 =
-          value2 === null
+    let value: string = projectFilePath(filePath),
+      localText = currentFileText(filePath);
+    if (choice === "copy") {
+      let files = document.content().files,
+        remotePath =
+          localText === null
             ? null
-            : availableConflictCopyName(input, (input2) => {
-                let value5 = port.liveSha?.(
-                  projectFilePath(input2),
+            : availableConflictCopyName(filePath, (candidatePath) => {
+                let candidateSha = port.liveSha?.(
+                  projectFilePath(candidatePath),
                 );
                 return (
-                  !Object.hasOwn(files, input2) &&
+                  !Object.hasOwn(files, candidatePath) &&
                   isProjectContentPath(
-                    projectFilePath(input2),
+                    projectFilePath(candidatePath),
                   ) &&
-                  (value5 === undefined || value5 === null)
+                  (candidateSha === undefined || candidateSha === null)
                 );
               });
-      if (value4 === null || value2 === null) {
+      if (remotePath === null || localText === null) {
         notice(
           uiMessage("design-system.designSystemDocument.thereIsNoFreeName") +
-            fileBaseName(input) +
+            fileBaseName(filePath) +
             " for a copy. Choose theirs or yours instead.",
         );
         return;
@@ -3750,21 +3750,21 @@ function createDesignSystemFilesDocument(
       emit("flag-resolved", {
         path: value,
         choice: "copy",
-        copy: projectFilePath(value4),
+        copy: projectFilePath(remotePath),
       });
-      replaceFileText(value4, value2);
-      advancePathRevision(input);
-      unflagFile(input);
-      pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.keptAsACopy"));
-      keepOutOfUndo(input);
-      takeRemoteFile(input);
+      replaceFileText(remotePath, localText);
+      advancePathRevision(filePath);
+      unflagFile(filePath);
+      pruneUndoPaths(new Set([filePath]), uiMessage("design-system.designSystemDocument.keptAsACopy"));
+      keepOutOfUndo(filePath);
+      takeRemoteFile(filePath);
       notice(
         uiMessage("design-system.designSystemDocument.yourVersionOf") +
-          fileBaseName(input) +
+          fileBaseName(filePath) +
           " is kept as " +
-          fileBaseName(value4) +
+          fileBaseName(remotePath) +
           "; " +
-          fileBaseName(input) +
+          fileBaseName(filePath) +
           " now has theirs.",
       );
       enhancedDocument.flushNow();
@@ -3773,186 +3773,186 @@ function createDesignSystemFilesDocument(
     queue.withdraw(value);
     emit("flag-resolved", {
       path: value,
-      choice: options2,
+      choice: choice,
     });
-    if (options2 === "theirs") {
-      advancePathRevision(input);
-      unflagFile(input);
-      pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.tookTheirs"));
-      keepOutOfUndo(input);
-      takeRemoteFile(input);
+    if (choice === "theirs") {
+      advancePathRevision(filePath);
+      unflagFile(filePath);
+      pruneUndoPaths(new Set([filePath]), uiMessage("design-system.designSystemDocument.tookTheirs"));
+      keepOutOfUndo(filePath);
+      takeRemoteFile(filePath);
       return;
     }
-    let value3 = liveSha(input);
-    document2.held().delete(value);
-    unflagFile(input);
-    for (let value4 of undoCommands) {
-      value4.retoken(input);
+    let liveShaValue = liveSha(filePath);
+    document.held().delete(value);
+    unflagFile(filePath);
+    for (let undoCommand of undoCommands) {
+      undoCommand.retoken(filePath);
     }
-    markDirty(value, () => value2, value3 ?? null);
+    markDirty(value, () => localText, liveShaValue ?? null);
     enhancedDocument.flushNow();
   };
-  enhancedDocument.flaggedSides = async (input) => {
-    let value = currentFileText(input),
-      value2: string | null = null;
-    if (liveSha(input) !== null) {
+  enhancedDocument.flaggedSides = async (filePath) => {
+    let value = currentFileText(filePath),
+      remoteText: string | null = null;
+    if (liveSha(filePath) !== null) {
       try {
-        value2 = (
+        remoteText = (
           await createDesignSystemFilesPort(
-            options.port,
-          ).readText(projectFilePath(input))
+            documentOptions.port,
+          ).readText(projectFilePath(filePath))
         ).text;
       } catch {
-        value2 = null;
+        remoteText = null;
       }
     }
     return {
       mine: value,
-      theirs: value2,
+      theirs: remoteText,
     };
   };
   enhancedDocument.stepCommand = createUndoCommand;
-  enhancedDocument.bindUndoStack = (input): void => {
-    undoStack = input;
+  enhancedDocument.bindUndoStack = (undoStackValue): void => {
+    undoStack = undoStackValue;
   };
   enhancedDocument.regenerate = regenerate;
   enhancedDocument.writeReadmeTail = writeReadmeTail;
   enhancedDocument.personChanged = (): boolean => personChanged;
   enhancedDocument.events = () => events;
   let entryProblem = (
-    input: string,
-    options2: string,
+    filePath: string,
+    fileText: string,
   ): M.EntryProblem | undefined => {
     let value: { reason: string } | undefined = filesLeftOutOfMigration({
-      [input]: options2,
+      [filePath]: fileText,
     })[0];
     if (value !== undefined) {
       return {
         why: value.reason,
         cause:
-          explainUnpublishableFile(input, options2)?.cause ??
-          (!isTextFilePath(input) &&
-          storagePointerForFile(input, options2) === null
+          explainUnpublishableFile(filePath, fileText)?.cause ??
+          (!isTextFilePath(filePath) &&
+          storagePointerForFile(filePath, fileText) === null
             ? "unreadable"
             : "other"),
       };
     }
-    let value2: M.EntryProblem | undefined;
+    let problemDetail: M.EntryProblem | undefined;
     try {
-      value2 = tablePort.entryProblemDetail(
-        projectFilePath(input),
-        options2,
+      problemDetail = tablePort.entryProblemDetail(
+        projectFilePath(filePath),
+        fileText,
       );
     } catch {
-      value2 = filePublishRejection(
-        projectFilePath(input),
-        options2,
+      problemDetail = filePublishRejection(
+        projectFilePath(filePath),
+        fileText,
       );
     }
-    if (value2 !== undefined) {
-      return value2;
+    if (problemDetail !== undefined) {
+      return problemDetail;
     }
-    let value3 = filePublishSizeRejection(options2);
-    if (value3 === undefined) {
+    let sizeProblem = filePublishSizeRejection(fileText);
+    if (sizeProblem === undefined) {
       return undefined;
     } else {
       return {
-        why: value3,
+        why: sizeProblem,
         cause: "size",
       };
     }
   };
   enhancedDocument.neverSaves = entryProblem;
-  enhancedDocument.editProblem = (input, options2): undefined | string => {
-    let files = input.files,
-      files2 = options2.files;
-    if (files === files2) {
+  enhancedDocument.editProblem = (nextDocument, nextOptions): undefined | string => {
+    let files = nextDocument.files,
+      nextFiles = nextOptions.files;
+    if (files === nextFiles) {
       return;
     }
     let value = Object.keys(files).filter(
-        (input2): boolean => !Object.hasOwn(files2, input2),
+        (filePath): boolean => !Object.hasOwn(nextFiles, filePath),
       ),
-      value2 =
+      addedPaths =
         value.length === 0
           ? []
-          : Object.keys(files2).filter(
-              (input2): boolean => !Object.hasOwn(files, input2),
+          : Object.keys(nextFiles).filter(
+              (filePath): boolean => !Object.hasOwn(files, filePath),
             );
-    for (let value3 of value2.length === 0 ? [] : value) {
-      let value4 = files[value3],
-        value5 = value2.findIndex(
-          (input2): boolean => files2[input2] === value4,
+    for (let filePath of addedPaths.length === 0 ? [] : value) {
+      let currentFileValue = files[filePath],
+        matchingIndex = addedPaths.findIndex(
+          (candidatePath): boolean => nextFiles[candidatePath] === currentFileValue,
         );
-      if (value5 < 0) {
+      if (matchingIndex < 0) {
         continue;
       }
-      let value6 = value2.splice(value5, 1)[0],
-        callback = (input2: string) => entryProblem(input2, value4)?.why;
+      let renamedPath = addedPaths.splice(matchingIndex, 1)[0],
+        callback = (path: string) => entryProblem(path, currentFileValue)?.why;
       if (
         !projectFilesForSave({
-          [value3]: value4,
-        }).has(projectFilePath(value3))
+          [filePath]: currentFileValue,
+        }).has(projectFilePath(filePath))
       ) {
         continue;
       }
       if (
         !(
-          isHeldFilePointer(value3, value4) ||
+          isHeldFilePointer(filePath, currentFileValue) ||
           isHeldFilePointer(
-            value3,
-            document2.content().files[value3] ?? "",
+            filePath,
+            document.content().files[filePath] ?? "",
           )
         ) &&
-        !readShas.has(projectFilePath(value3)) &&
-        callback(value3) !== undefined
+        !readShas.has(projectFilePath(filePath)) &&
+        callback(filePath) !== undefined
       ) {
         continue;
       }
-      let value7 = callback(value6);
-      if (value7 === undefined) {
+      let problemReason = callback(renamedPath);
+      if (problemReason === undefined) {
         continue;
       }
-      let value8: boolean =
-          value7 === filePublishSizeRejection(value4),
-        value9 =
-          fileBaseName(value6) ===
-          fileBaseName(value3)
-            ? value6.replace(/^assets\//, "")
-            : fileBaseName(value6),
-        value10: string = !isPublishableFilePathModelFileTable(
-          projectFilePath(value6),
+      let isSizeProblem: boolean =
+          problemReason === filePublishSizeRejection(currentFileValue),
+        displayName =
+          fileBaseName(renamedPath) ===
+          fileBaseName(filePath)
+            ? renamedPath.replace(/^assets\//, "")
+            : fileBaseName(renamedPath),
+        guidance: string = !isPublishableFilePathModelFileTable(
+          projectFilePath(renamedPath),
         )
-          ? /[%;:?#\\]/.test(value6)
+          ? /[%;:?#\\]/.test(renamedPath)
             ? uiMessage("design-system.designSystemDocument.chooseANameWithoutOr")
-            : new TextEncoder().encode(projectFilePath(value6))
+            : new TextEncoder().encode(projectFilePath(renamedPath))
                   .length > 512
               ? uiMessage("design-system.designSystemDocument.chooseAShorterName")
               : uiMessage("design-system.designSystemDocument.chooseAnotherName")
-          : value8 && !isTextFilePath(value6)
+          : isSizeProblem && !isTextFilePath(renamedPath)
             ? uiMessage("design-system.designSystemDocument.itIsTooLargeFor") +
               String(
                 ((MAX_FILE_PUBLISH_ENCODED_BYTES / 4) * 3) / 1048576,
               ) +
               " MB): keep it where it is, or replace it with a smaller copy first."
-            : value7.charAt(0).toUpperCase() +
-              value7.slice(1) +
-              (/[.!?]$/.test(value7) ? "" : "."),
-        value11: string =
+            : problemReason.charAt(0).toUpperCase() +
+              problemReason.slice(1) +
+              (/[.!?]$/.test(problemReason) ? "" : "."),
+        problemMessage: string =
           uiMessage("design-system.designSystemDocument.nothingWasChanged") +
-          value9 +
+          displayName +
           '" cannot be saved, so "' +
-          fileBaseName(value3) +
+          fileBaseName(filePath) +
           '" would have been lost. ' +
-          value10;
-      notice(value11);
-      return value11;
+          guidance;
+      notice(problemMessage);
+      return problemMessage;
     }
     return;
   };
-  enhancedDocument.heldGone = (input): boolean =>
-    port.liveSha?.(projectFilePath(input)) === null;
-  enhancedDocument.heldShaOf = (input) =>
-    readShas.get(projectFilePath(input));
+  enhancedDocument.heldGone = (filePath): boolean =>
+    port.liveSha?.(projectFilePath(filePath)) === null;
+  enhancedDocument.heldShaOf = (filePath) =>
+    readShas.get(projectFilePath(filePath));
   setFileVersionResolver(enhancedDocument.heldShaOf);
   setAddressedVersionResolver(() =>
     frameVersionFromBaseUri() === latestFrameVersion
@@ -3960,10 +3960,10 @@ function createDesignSystemFilesDocument(
       : undefined,
   );
   let readFreshHeldBytes: (url: string) => Promise<Uint8Array | null> =
-    options.readAt ??
-    (async (input: string): Promise<Uint8Array | null> => {
+    documentOptions.readAt ??
+    (async (url: string): Promise<Uint8Array | null> => {
       try {
-        let value = await fetch(input, {
+        let value = await fetch(url, {
           credentials: "same-origin",
           cache: "no-store",
         });
@@ -3976,8 +3976,8 @@ function createDesignSystemFilesDocument(
         return null;
       }
     });
-  enhancedDocument.setPreparing = (input): void => {
-    preparing = input;
+  enhancedDocument.setPreparing = (isPreparing): void => {
+    preparing = isPreparing;
   };
   enhancedDocument.carrying = (): void => {
     carrying = true;
@@ -3988,101 +3988,101 @@ function createDesignSystemFilesDocument(
     }, 2000);
   };
   enhancedDocument.busy = () => isBusy();
-  enhancedDocument.sendProblem = (input, options2) => {
+  enhancedDocument.sendProblem = (filePath, fileText) => {
     let value: string | undefined;
     try {
       value = tablePort.entryProblem?.(
-        projectFilePath(input),
-        options2,
+        projectFilePath(filePath),
+        fileText,
       );
     } catch {
       value = undefined;
     }
-    return value ?? filePublishSizeRejection(options2);
+    return value ?? filePublishSizeRejection(fileText);
   };
-  enhancedDocument.tell = (input) => notice(input);
+  enhancedDocument.tell = (message) => notice(message);
   enhancedDocument.heldBytes = async (
-    input,
+    filePath,
   ): Promise<M.HeldBytesResult | null> => {
-    if (document2.readOnly() || document2.loadState() !== "live") {
+    if (document.readOnly() || document.loadState() !== "live") {
       return null;
     }
-    let value = document2.content().files[input];
+    let value = document.content().files[filePath];
     if (
       value === undefined ||
-      !isHeldFilePointer(input, value)
+      !isHeldFilePointer(filePath, value)
     ) {
       return null;
     }
-    let value2: string = projectFilePath(input),
-      value3 = pathRevisions.get(input) ?? 0,
-      value4 = port.liveSha?.(value2);
-    if (value4 === null) {
+    let absolutePath: string = projectFilePath(filePath),
+      pathRevision = pathRevisions.get(filePath) ?? 0,
+      liveShaValue = port.liveSha?.(absolutePath);
+    if (liveShaValue === null) {
       return null;
     }
-    let value5 = addressedProjectFileUrl(input),
-      value6 = value5 === undefined ? null : await readFreshHeldBytes(value5),
-      value7 =
-        value6 === null ? undefined : await sha256(value6);
+    let addressedUrl = addressedProjectFileUrl(filePath),
+      fileBytes = addressedUrl === undefined ? null : await readFreshHeldBytes(addressedUrl),
+      fileSha =
+        fileBytes === null ? undefined : await sha256(fileBytes);
     if (
-      value6 === null ||
-      (typeof value4 === "string" && value4 !== value7)
+      fileBytes === null ||
+      (typeof liveShaValue === "string" && liveShaValue !== fileSha)
     ) {
       try {
-        value6 = (
+        fileBytes = (
           await retryFileRead(
-            () => options.port.readBytes(value2),
+            () => documentOptions.port.readBytes(absolutePath),
             timers,
           )
         ).bytes;
       } catch {
         return null;
       }
-      value7 = await sha256(value6);
+      fileSha = await sha256(fileBytes);
     }
     if (
-      value7 === undefined ||
-      (typeof value4 === "string" && value4 !== value7)
+      fileSha === undefined ||
+      (typeof liveShaValue === "string" && liveShaValue !== fileSha)
     ) {
       return null;
     }
     if (
-      document2.content().files[input] !== value ||
-      (pathRevisions.get(input) ?? 0) !== value3
+      document.content().files[filePath] !== value ||
+      (pathRevisions.get(filePath) ?? 0) !== pathRevision
     ) {
       return null;
     }
-    let value8 = bytesToFileDataUri(
-      value6,
-      publishableFileMimeType(input) ??
+    let dataUri = bytesToFileDataUri(
+      fileBytes,
+      publishableFileMimeType(filePath) ??
         "application/octet-stream",
     );
-    materializedFingerprints.delete(value2);
-    materializedFingerprints.set(value2, textFingerprint(value8));
+    materializedFingerprints.delete(absolutePath);
+    materializedFingerprints.set(absolutePath, textFingerprint(dataUri));
     if (materializedFingerprints.size > 256) {
       materializedFingerprints.delete(
         materializedFingerprints.keys().next().value!,
       );
     }
     return {
-      value: value8,
+      value: dataUri,
       witness: {
-        rev: value3,
-        sha: value7,
+        rev: pathRevision,
+        sha: fileSha,
       },
     };
   };
   enhancedDocument.heldStillGood = (
-    input,
-    options2,
+    filePath,
+    witness,
   ): "gone" | "changed" | "good" => {
-    let value = port.liveSha?.(projectFilePath(input));
+    let value = port.liveSha?.(projectFilePath(filePath));
     if (value === null) {
       return "gone";
     }
     if (
-      (pathRevisions.get(input) ?? 0) !== options2.rev ||
-      (typeof value === "string" && value !== options2.sha)
+      (pathRevisions.get(filePath) ?? 0) !== witness.rev ||
+      (typeof value === "string" && value !== witness.sha)
     ) {
       return "changed";
     } else {
@@ -4090,43 +4090,43 @@ function createDesignSystemFilesDocument(
     }
   };
   enhancedDocument.materializeOwed = async (
-    input: (
+    readBlob: (
       id: string,
     ) => Promise<{ bytes: Uint8Array } | null> = readOwedArtifactBlob,
   ) => {
-    if (document2.readOnly() || document2.loadState() !== "live") {
+    if (document.readOnly() || document.loadState() !== "live") {
       return [];
     }
     let items = [];
-    for (let { path: value, id: value2 } of blobFilesOwedToFileStorage(
-      document2.content().files,
-      options.home ?? DEFAULT_FILE_STORAGE_POLICY,
+    for (let { path: value, id: blobId } of blobFilesOwedToFileStorage(
+      document.content().files,
+      documentOptions.home ?? DEFAULT_FILE_STORAGE_POLICY,
     ) as { path: string; id: string }[]) {
-      let value3 = await input(value2);
-      if (value3 === null) {
+      let blobData = await readBlob(blobId);
+      if (blobData === null) {
         continue;
       }
-      let value4 = isTextFilePath(value)
-        ? new TextDecoder().decode(value3.bytes)
+      let materializedValue = isTextFilePath(value)
+        ? new TextDecoder().decode(blobData.bytes)
         : bytesToFileDataUri(
-            value3.bytes,
+            blobData.bytes,
             publishableFileMimeType(value) ??
               "application/octet-stream",
           );
-      if (entryProblem(value, value4) !== undefined) {
+      if (entryProblem(value, materializedValue) !== undefined) {
         continue;
       }
-      document2.updateContent(
-        (input2) =>
-          input2.files[value] === "blob:" + value2
+      document.updateContent(
+        (fileEntry) =>
+          fileEntry.files[value] === "blob:" + blobId
             ? {
-                ...input2,
+                ...fileEntry,
                 files: Object.freeze({
-                  ...input2.files,
-                  [value]: value4,
+                  ...fileEntry.files,
+                  [value]: materializedValue,
                 }),
               }
-            : input2,
+            : fileEntry,
         {
           auto: true,
         },

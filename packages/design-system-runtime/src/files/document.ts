@@ -21,46 +21,46 @@ import { createFilesSaveQueue } from "./save-queue";
 import { recordArtifactEdit } from "../host/artifact-edit-count";
 
 function createFilesDocument<Index extends { v: number }, Content>(
-  options: FilesDocumentOptions<Index, Content>,
+  documentOptions: FilesDocumentOptions<Index, Content>,
 ): FilesDocument<Index, Content> {
-  let { codec: codec, port: port } = options,
-    timers = options.timers ?? {
-      setTimeout: (input: () => void, options2: number) =>
-        setTimeout(input, options2),
-      clearTimeout: (input: ReturnType<typeof setTimeout>) =>
-        clearTimeout(input),
+  let { codec: codec, port: port } = documentOptions,
+    timers = documentOptions.timers ?? {
+      setTimeout: (documentInput: () => void, documentOptionsA: number) =>
+        setTimeout(documentInput, documentOptionsA),
+      clearTimeout: (documentInputA: ReturnType<typeof setTimeout>) =>
+        clearTimeout(documentInputA),
       now: (): number => Date.now(),
       random: (): number => Math.random(),
     },
     codecWants =
       codec.wants ??
-      ((input: Files.FileListingRow) =>
-        input.path.startsWith(PROJECT_FILE_PREFIX) &&
-        isTextFileListingRow(input)),
-    wantsFile = (input: Files.FileListingRow) =>
-      !isInternalPath(input.path) && codecWants(input),
-    parseContent = (input: unknown, options2: Content) => {
+      ((documentInputB: Files.FileListingRow) =>
+        documentInputB.path.startsWith(PROJECT_FILE_PREFIX) &&
+        isTextFileListingRow(documentInputB)),
+    wantsFile = (documentInputC: Files.FileListingRow) =>
+      !isInternalPath(documentInputC.path) && codecWants(documentInputC),
+    parseContent = (documentInputD: unknown, documentOptionsB: Content) => {
       try {
-        return options.parseContent(input);
+        return documentOptions.parseContent(documentInputD);
       } catch {
-        return options2;
+        return documentOptionsB;
       }
     },
-    parseTitle = (input: unknown, options2: string) =>
+    parseTitle = (documentInputE: unknown, documentOptionsC: string) =>
       normalizeArtifactTitle(
-        typeof input === "string" ? input.trim() : input,
-      ) ?? options2,
+        typeof documentInputE === "string" ? documentInputE.trim() : documentInputE,
+      ) ?? documentOptionsC,
     state: FileDocumentState<Content> = {
-      title: parseTitle(options.defaultTitle, "Appifact"),
-      content: options.initialContent,
+      title: parseTitle(documentOptions.defaultTitle, "Appifact"),
+      content: documentOptions.initialContent,
       comments: [],
     },
     fileTexts: Map<string, string> = new Map(),
     fileBaseShas: Map<string, string | null> = new Map(),
     savedFileTexts: Map<string, string> = new Map(),
-    fileChangedHere = (input: string) =>
-      fileTexts.has(input) &&
-      fileTexts.get(input) !== savedFileTexts.get(input),
+    fileChangedHere = (documentInputF: string) =>
+      fileTexts.has(documentInputF) &&
+      fileTexts.get(documentInputF) !== savedFileTexts.get(documentInputF),
     heldRemotePaths: Set<string> = new Set(),
     loadState: "loading" | "failed" | "live" = "loading",
     lastError: { code: string; message: string } | undefined,
@@ -78,101 +78,101 @@ function createFilesDocument<Index extends { v: number }, Content>(
       port: port,
       schema: codec.schema,
       empty: codec.emptyIndex,
-      externalMembers: (input: string) =>
-        codec.externalMembers?.(input, fileTexts),
+      externalMembers: (documentInputG: string) =>
+        codec.externalMembers?.(documentInputG, fileTexts),
     }),
     reloadIndex = indexStore.reloadAndMerge.bind(indexStore),
-    reloadAndMergeIndex = async (input: boolean): Promise<string[]> => {
+    reloadAndMergeIndex = async (documentInputH: boolean): Promise<string[]> => {
       let value = indexStore.dirty(),
-        value2 = cloneMergeValue(indexStore.base()),
-        value3 = cloneMergeValue(indexStore.get()),
-        value4 = await reloadIndex(),
-        value5: boolean = !mergeValuesEqual(
+        documentValue = cloneMergeValue(indexStore.base()),
+        documentState = cloneMergeValue(indexStore.get()),
+        documentResult = await reloadIndex(),
+        documentEntry: boolean = !mergeValuesEqual(
           indexStore.base(),
-          value2,
+          documentValue,
         );
-      if (value && value5) {
+      if (value && documentEntry) {
         try {
-          options.onIndexMerged?.({
-            conflicts: value4,
-            base: value2,
-            mine: value3,
+          documentOptions.onIndexMerged?.({
+            conflicts: documentResult,
+            base: documentValue,
+            mine: documentState,
             merged: indexStore.get(),
           });
         } catch {}
       }
-      if (value5 && input) {
+      if (documentEntry && documentInputH) {
         composeState(true);
       }
-      return value4;
+      return documentResult;
     };
   indexStore.reloadAndMerge = () => reloadAndMergeIndex(true);
   let queue = createFilesSaveQueue({
       port: port,
       index: indexStore,
       timers: timers,
-      ...(options.saveStash !== undefined
+      ...(documentOptions.saveStash !== undefined
         ? {
-            stash: options.saveStash,
+            stash: documentOptions.saveStash,
           }
         : {}),
-      ...(options.paced !== undefined
+      ...(documentOptions.paced !== undefined
         ? {
-            paced: options.paced,
+            paced: documentOptions.paced,
           }
         : {}),
-      ...(options.peers !== undefined
+      ...(documentOptions.peers !== undefined
         ? {
-            peers: options.peers,
+            peers: documentOptions.peers,
           }
         : {}),
       onConflict(
-        input: import("../contracts/files-core").FileSaveConflict,
+        documentInputI: import("../contracts/files-core").FileSaveConflict,
       ): void {
-        if (options.onConflict) {
-          options.onConflict(input);
+        if (documentOptions.onConflict) {
+          documentOptions.onConflict(documentInputI);
         } else {
-          options.onNotice?.(
+          documentOptions.onNotice?.(
             uiMessage("design-system.document.someoneElseChanged") +
-              input.path.slice(input.path.lastIndexOf("/") + 1) +
+              documentInputI.path.slice(documentInputI.path.lastIndexOf("/") + 1) +
               " while you were editing it. Your version was not saved over theirs.",
           );
         }
       },
       onState(
-        input: import("../contracts/files-core").FileSaveQueueState,
+        documentInputJ: import("../contracts/files-core").FileSaveQueueState,
       ): void {
         if (
-          input.lastError === undefined &&
-          input.dirty === 0 &&
-          !input.inFlight
+          documentInputJ.lastError === undefined &&
+          documentInputJ.dirty === 0 &&
+          !documentInputJ.inFlight
         ) {
           lastSyncedAt = timers.now();
-          for (let [value, value2] of fileTexts) {
+          for (let [value, documentValueA] of fileTexts) {
             if (
               !queue.conflicted().has(value) &&
               !queue.withdrawn().has(value) &&
               !queue.unsendable().has(value)
             ) {
-              savedFileTexts.set(value, value2);
+              savedFileTexts.set(value, documentValueA);
             }
           }
         }
         lastError =
-          input.lastError !== undefined
+          documentInputJ.lastError !== undefined
             ? {
-                code: input.lastError,
-                message: input.lastError,
+                code: documentInputJ.lastError,
+                message: documentInputJ.lastError,
               }
             : undefined;
         notifySave();
       },
     }),
-    notifyChange = (input?: boolean): void => {
+    notifyChange = (documentInputK?: boolean): void => {
       for (let value of [...changeSubscribers]) {
         try {
           value(
-            input
+            documentInputK
               ? {
                   remote: true,
                 }
@@ -183,9 +183,9 @@ function createFilesDocument<Index extends { v: number }, Content>(
     },
     notifySave = (): void => {
       let value = saveState();
-      for (let value2 of [...saveSubscribers]) {
+      for (let documentValueB of [...saveSubscribers]) {
         try {
-          value2(value);
+          documentValueB(value);
         } catch {}
       }
     },
@@ -214,9 +214,9 @@ function createFilesDocument<Index extends { v: number }, Content>(
     if (readOnly()) {
       return {
         status: "readonly",
-        ...(options.readOnlyReason !== undefined
+        ...(documentOptions.readOnlyReason !== undefined
           ? {
-              message: options.readOnlyReason,
+              message: documentOptions.readOnlyReason,
             }
           : (bootNarrowed || port.narrowed === true) &&
               port.mayWrite !== false
@@ -227,7 +227,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       };
     }
     let value = queue.state(),
-      value2: boolean = value.unsendableStashed === true;
+      documentValueC: boolean = value.unsendableStashed === true;
     if (value.stuck !== undefined) {
       return {
         status: "error",
@@ -237,7 +237,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
             ? " " +
               formatUnsendableFilesMessage(value.unsendable, {
                 restSaved: false,
-                stashed: value2,
+                stashed: documentValueC,
               })
             : ""),
         code: value.stuck.code,
@@ -264,16 +264,16 @@ function createFilesDocument<Index extends { v: number }, Content>(
       return {
         status: "error",
         message: formatUnsendableFilesMessage(value.unsendable, {
-          stashed: value2,
+          stashed: documentValueC,
         }),
         code: "invalid_content",
         leftOut: value.unsendable.map(
-          (input: {
+          (documentInputL: {
             path: string;
             cause: import("../contracts/files-core").UnsendableCause;
           }) => ({
-            id: input.path,
-            cause: input.cause,
+            id: documentInputL.path,
+            cause: documentInputL.cause,
           }),
         ),
       };
@@ -282,7 +282,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       status: "ready",
     };
   }
-  function composeState(input: boolean): void {
+  function composeState(documentInputM: boolean): void {
     let value = codec.compose(indexStore.get(), fileTexts);
     state = {
       title: parseTitle(value.title, state.title),
@@ -291,64 +291,64 @@ function createFilesDocument<Index extends { v: number }, Content>(
     };
     composedPaths.clear();
     try {
-      for (let value2 of codec.filesOf(state).keys()) {
-        composedPaths.add(value2);
+      for (let documentValueD of codec.filesOf(state).keys()) {
+        composedPaths.add(documentValueD);
       }
     } catch {}
-    notifyChange(input);
+    notifyChange(documentInputM);
   }
   function queueContentChanges(): void {
     let value = codec.filesOf(state);
-    for (let [value3, value4] of value) {
-      knownOwnedPaths.add(value3);
-      composedPaths.add(value3);
-      if (fileTexts.get(value3) === value4) {
+    for (let [documentStateA, documentResultA] of value) {
+      knownOwnedPaths.add(documentStateA);
+      composedPaths.add(documentStateA);
+      if (fileTexts.get(documentStateA) === documentResultA) {
         continue;
       }
-      fileTexts.set(value3, value4);
-      queue.markDirty(value3, () => value4, fileBaseShas.get(value3) ?? null);
+      fileTexts.set(documentStateA, documentResultA);
+      queue.markDirty(documentStateA, () => documentResultA, fileBaseShas.get(documentStateA) ?? null);
     }
-    for (let value3 of [...fileTexts.keys()]) {
+    for (let documentStateB of [...fileTexts.keys()]) {
       if (
-        value.has(value3) ||
-        isInternalPath(value3) ||
-        !ownsComposedPath(value3)
+        value.has(documentStateB) ||
+        isInternalPath(documentStateB) ||
+        !ownsComposedPath(documentStateB)
       ) {
         continue;
       }
-      fileTexts.delete(value3);
+      fileTexts.delete(documentStateB);
       queue.markDirty(
-        value3,
+        documentStateB,
         (): null => null,
-        fileBaseShas.get(value3) ?? null,
+        fileBaseShas.get(documentStateB) ?? null,
       );
     }
-    let value2 = codec.indexOf(state, indexStore.get());
+    let documentValueE = codec.indexOf(state, indexStore.get());
     if (
       indexNeedsInitialWrite ||
-      !mergeValuesEqual(value2, indexStore.get())
+      !mergeValuesEqual(documentValueE, indexStore.get())
     ) {
       indexNeedsInitialWrite = false;
-      indexStore.update((input) =>
-        removeMissingMergeProperties(input, value2),
+      indexStore.update((documentInputN) =>
+        removeMissingMergeProperties(documentInputN, documentValueE),
       );
     }
   }
   let knownOwnedPaths: Set<string> = new Set(),
     composedPaths: Set<string> = new Set(),
-    ownsComposedPath = (input: string) =>
-      knownOwnedPaths.has(input) && composedPaths.has(input),
-    isInternalPath = (input: string) =>
-      input === codec.indexPath ||
+    ownsComposedPath = (documentInputO: string) =>
+      knownOwnedPaths.has(documentInputO) && composedPaths.has(documentInputO),
+    isInternalPath = (documentInputP: string) =>
+      documentInputP === codec.indexPath ||
       (codec.type !== undefined
-        ? isReservedProjectFile(codec.type, input)
-        : input === MIGRATION_MANIFEST_PATH);
-  function contentChanged(input?: boolean): void {
+        ? isReservedProjectFile(codec.type, documentInputP)
+        : documentInputP === MIGRATION_MANIFEST_PATH);
+  function contentChanged(documentInputQ?: boolean): void {
     if (readOnly() || disposed) {
       return;
     }
     personChanged = true;
-    if (!input) {
+    if (!documentInputQ) {
       recordArtifactEdit();
     }
     queueContentChanges();
@@ -360,7 +360,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
     commitTimer = timers.setTimeout((): void => {
       commitTimer = undefined;
       queue.commit();
-    }, options.commitMs ?? 800);
+    }, documentOptions.commitMs ?? 800);
   }
   let stashOffer: CrashStashOffer,
     restoreCount = 0,
@@ -369,23 +369,23 @@ function createFilesDocument<Index extends { v: number }, Content>(
     loadRetryAttempt = 0,
     loadPromise: Promise<void>,
     bootFailure: { error: unknown; at: number } | undefined;
-  function scheduleLoadRetry(input: number, options2: boolean = false): void {
+  function scheduleLoadRetry(documentInputR: number, documentOptionsD: boolean = false): void {
     if (disposed) {
       return;
     }
     if (loadRetryTimer !== undefined) {
-      if (!options2 || timers.now() + input >= loadRetryAt) {
+      if (!documentOptionsD || timers.now() + documentInputR >= loadRetryAt) {
         return;
       }
       timers.clearTimeout(loadRetryTimer);
     }
-    loadRetryAt = timers.now() + input;
+    loadRetryAt = timers.now() + documentInputR;
     loadRetryTimer = timers.setTimeout((): void => {
       loadRetryTimer = undefined;
       retryLoad(false);
-    }, input);
+    }, documentInputR);
   }
-  function retryLoad(input: boolean): void {
+  function retryLoad(documentInputS: boolean): void {
     if (loadState !== "failed" || disposed) {
       return;
     }
@@ -395,36 +395,36 @@ function createFilesDocument<Index extends { v: number }, Content>(
     }
     loadState = "loading";
     notifyLoad();
-    loadPromise = loadFiles(input);
+    loadPromise = loadFiles(documentInputS);
   }
   let resolveWhenLive: () => void,
-    whenLive: Promise<void> = new Promise<void>((input): void => {
-      resolveWhenLive = input;
+    whenLive: Promise<void> = new Promise<void>((documentInputT): void => {
+      resolveWhenLive = documentInputT;
     });
-  async function loadFiles(input: boolean = false): Promise<void> {
+  async function loadFiles(documentInputU: boolean = false): Promise<void> {
     let value = timers.now();
     try {
       bootNarrowed = false;
       bootFailureCode = undefined;
-      let value2 = await readFilesBootState({
+      let documentValueF = await readFilesBootState({
         port: port,
         indexPath: codec.indexPath,
         wants: wantsFile,
         timers: timers,
         mayWrite: port.mayWrite ?? port.canWrite,
-        ...(options.early !== undefined
+        ...(documentOptions.early !== undefined
           ? {
-              early: options.early,
+              early: documentOptions.early,
             }
           : {}),
       });
-      bootNarrowed = value2.narrowed === true;
-      indexStore.loadText(value2.index.text, value2.index.sha256);
-      for (let [value3, value4] of value2.files) {
-        fileTexts.set(value3, value4.text);
-        savedFileTexts.set(value3, value4.text);
-        fileBaseShas.set(value3, value4.sha256);
-        knownOwnedPaths.add(value3);
+      bootNarrowed = documentValueF.narrowed === true;
+      indexStore.loadText(documentValueF.index.text, documentValueF.index.sha256);
+      for (let [documentStateC, documentResultB] of documentValueF.files) {
+        fileTexts.set(documentStateC, documentResultB.text);
+        savedFileTexts.set(documentStateC, documentResultB.text);
+        fileBaseShas.set(documentStateC, documentResultB.sha256);
+        knownOwnedPaths.add(documentStateC);
       }
       loadState = "live";
       lastSyncedAt = timers.now();
@@ -432,29 +432,29 @@ function createFilesDocument<Index extends { v: number }, Content>(
       bootFailure = undefined;
       composeState(false);
       resolveWhenLive();
-      if (options.saveStash !== undefined && !readOnly()) {
+      if (documentOptions.saveStash !== undefined && !readOnly()) {
         let values = new Set(
-          value2.listing.map((input2: Files.FileListingRow) => input2.path),
+          documentValueF.listing.map((documentInputV: Files.FileListingRow) => documentInputV.path),
         );
         stashOffer = await applyCrashStashEdits(
-          options.saveStash,
-          (input2) =>
-            input2 === codec.indexPath
+          documentOptions.saveStash,
+          (documentInputW) =>
+            documentInputW === codec.indexPath
               ? indexStore.serialize()
-              : (value2.files.get(input2)?.text ??
-                (values.has(input2) ? undefined : null)),
+              : (documentValueF.files.get(documentInputW)?.text ??
+                (values.has(documentInputW) ? undefined : null)),
         );
       }
-    } catch (value2: unknown) {
+    } catch (documentValueG: unknown) {
       if (
-        options.startWhenNoIndex !== undefined &&
-        value2 instanceof BootReadError &&
-        (value2 as Error & { code: string; narrowed?: boolean }).code ===
+        documentOptions.startWhenNoIndex !== undefined &&
+        documentValueG instanceof BootReadError &&
+        (documentValueG as Error & { code: string; narrowed?: boolean }).code ===
           "no_index" &&
-        (value2 as Error & { code: string; narrowed?: boolean }).narrowed ===
+        (documentValueG as Error & { code: string; narrowed?: boolean }).narrowed ===
           false
       ) {
-        indexStore.init(options.startWhenNoIndex());
+        indexStore.init(documentOptions.startWhenNoIndex());
         queue.withdraw(codec.indexPath);
         indexNeedsInitialWrite = true;
         loadState = "live";
@@ -463,11 +463,11 @@ function createFilesDocument<Index extends { v: number }, Content>(
         bootFailure = undefined;
         composeState(false);
         resolveWhenLive();
-        if (options.saveStash !== undefined && !readOnly()) {
+        if (documentOptions.saveStash !== undefined && !readOnly()) {
           stashOffer = await applyCrashStashEdits(
-            options.saveStash,
-            (input2) =>
-              input2 === codec.indexPath ? indexStore.serialize() : null,
+            documentOptions.saveStash,
+            (documentInputX) =>
+              documentInputX === codec.indexPath ? indexStore.serialize() : null,
           );
         }
         notifyLoad();
@@ -475,88 +475,88 @@ function createFilesDocument<Index extends { v: number }, Content>(
         return;
       }
       if (
-        value2 instanceof BootReadError &&
-        (value2 as Error & { code: string; narrowed?: boolean }).code ===
+        documentValueG instanceof BootReadError &&
+        (documentValueG as Error & { code: string; narrowed?: boolean }).code ===
           "access_revoked"
       ) {
-        await options.saveStash?.clearArtifact();
+        await documentOptions.saveStash?.clearArtifact();
       }
       loadState = "failed";
       bootFailureCode =
-        value2 instanceof BootReadError
-          ? (value2 as Error & { code: string; narrowed?: boolean }).code
+        documentValueG instanceof BootReadError
+          ? (documentValueG as Error & { code: string; narrowed?: boolean }).code
           : undefined;
       lastError = {
         code: "timeout",
         message:
-          value2 instanceof Error
-            ? value2.message
-            : String((value2 as FileRetryError | null)?.message ?? value2),
+          documentValueG instanceof Error
+            ? documentValueG.message
+            : String((documentValueG as FileRetryError | null)?.message ?? documentValueG),
       };
       bootFailure = {
-        error: value2,
+        error: documentValueG,
         at: value,
       };
-      let value3 = getBootstrapRetryDelay(
-        value2,
+      let documentStateD = getBootstrapRetryDelay(
+        documentValueG,
         loadRetryAttempt,
       );
-      if (value3 !== undefined) {
-        if (!input) {
+      if (documentStateD !== undefined) {
+        if (!documentInputU) {
           loadRetryAttempt += 1;
         }
-        scheduleLoadRetry(value3);
+        scheduleLoadRetry(documentStateD);
       }
     }
     notifyLoad();
     notifySave();
   }
-  function restoreStashEdits(input: NonNullable<CrashStashOffer>): void {
-    for (let value2 of input.edits) {
+  function restoreStashEdits(documentInputY: NonNullable<CrashStashOffer>): void {
+    for (let documentValueH of documentInputY.edits) {
       if (
-        isInternalPath(value2.path) ||
-        !value2.path.startsWith(PROJECT_FILE_PREFIX)
+        isInternalPath(documentValueH.path) ||
+        !documentValueH.path.startsWith(PROJECT_FILE_PREFIX)
       ) {
         continue;
       }
-      let text = value2.text;
+      let text = documentValueH.text;
       if (text === null) {
-        fileTexts.delete(value2.path);
+        fileTexts.delete(documentValueH.path);
       } else {
-        fileTexts.set(value2.path, text);
-        knownOwnedPaths.add(value2.path);
+        fileTexts.set(documentValueH.path, text);
+        knownOwnedPaths.add(documentValueH.path);
       }
-      if (value2.base === null) {
-        fileBaseShas.delete(value2.path);
+      if (documentValueH.base === null) {
+        fileBaseShas.delete(documentValueH.path);
       } else {
-        fileBaseShas.set(value2.path, value2.base);
+        fileBaseShas.set(documentValueH.path, documentValueH.base);
       }
-      queue.markDirty(value2.path, () => text, value2.base);
+      queue.markDirty(documentValueH.path, () => text, documentValueH.base);
     }
-    let value = input.edits.find(
-      (input2): boolean => input2.path === codec.indexPath,
+    let value = documentInputY.edits.find(
+      (documentInputZ): boolean => documentInputZ.path === codec.indexPath,
     );
     if (value !== undefined && value.text !== null) {
-      let value2: Index | undefined;
+      let documentValueI: Index | undefined;
       try {
-        value2 = indexStore.parse(value.text);
+        documentValueI = indexStore.parse(value.text);
       } catch {
-        value2 = undefined;
+        documentValueI = undefined;
       }
-      if (value2 !== undefined) {
-        let value3 = mergeDocumentValues(
+      if (documentValueI !== undefined) {
+        let documentStateE = mergeDocumentValues(
           codec.emptyIndex(),
-          value2,
+          documentValueI,
           indexStore.get(),
           codec.schema,
           {
-            externalMembers: (input2) =>
-              codec.externalMembers?.(input2, fileTexts),
+            externalMembers: (memberName) =>
+              codec.externalMembers?.(memberName, fileTexts),
           },
         );
-        if (!mergeValuesEqual(value3, indexStore.get())) {
-          indexStore.update((input2) =>
-            removeMissingMergeProperties(input2, value3),
+        if (!mergeValuesEqual(documentStateE, indexStore.get())) {
+          indexStore.update((indexState) =>
+            removeMissingMergeProperties(indexState, documentStateE),
           );
         }
       }
@@ -571,30 +571,30 @@ function createFilesDocument<Index extends { v: number }, Content>(
     commitTimer = timers.setTimeout((): void => {
       commitTimer = undefined;
       queue.commit();
-    }, options.commitMs ?? 800);
+    }, documentOptions.commitMs ?? 800);
   }
   async function applyRemote(
-    input: Files.FileRemoteChange,
-    options2?: Map<string, Files.FileBytesRead>,
+    remoteChange: Files.FileRemoteChange,
+    documentOptionsE?: Map<string, Files.FileBytesRead>,
   ): Promise<void> {
     if (loadState === "failed") {
-      let value2 =
+      let documentValueJ =
         bootFailure === undefined
           ? 0
           : filesBootRetryDelayForHotUpdate(
               bootFailure.error,
-              input,
+              remoteChange,
               codec.indexPath,
               timers.now() - bootFailure.at,
             );
-      if (value2 === 0) {
+      if (documentValueJ === 0) {
         retryLoad(false);
-      } else if (value2 !== undefined) {
-        scheduleLoadRetry(value2, true);
+      } else if (documentValueJ !== undefined) {
+        scheduleLoadRetry(documentValueJ, true);
       }
     }
-    for (let value2 = loadPromise; ; value2 = loadPromise) {
-      if ((await value2, value2 === loadPromise)) {
+    for (let documentValueK = loadPromise; ; documentValueK = loadPromise) {
+      if ((await documentValueK, documentValueK === loadPromise)) {
         break;
       }
     }
@@ -607,86 +607,86 @@ function createFilesDocument<Index extends { v: number }, Content>(
     let flag: boolean = false,
       items: FilesRemoteAppliedRow[] = [],
       callback = (
-        input2: Files.ChangedFileRow,
-        options3: FilesRemoteAppliedRow["decision"],
+        changedFile: Files.ChangedFileRow,
+        documentOptionsF: FilesRemoteAppliedRow["decision"],
       ): void => {
         items.push({
-          path: input2.path,
-          sha256: input2.sha256,
-          decision: options3,
+          path: changedFile.path,
+          sha256: changedFile.sha256,
+          decision: documentOptionsF,
         });
       },
       value = filesPortExtensions(port),
-      callback2 = (input2: string) => {
-        let value2 = value.heldSha?.(input2);
+      documentHandler = (documentInput_: string) => {
+        let documentValueL = value.heldSha?.(documentInput_);
         return (
-          value.wroteSinceAdopt?.(input2) === true &&
-          typeof value2 === "string" &&
+          value.wroteSinceAdopt?.(documentInput_) === true &&
+          typeof documentValueL === "string" &&
           queue.isOwnEcho({
-            path: input2,
-            sha256: value2,
+            path: documentInput_,
+            sha256: documentValueL,
           })
         );
       };
-    for (let value2 of input.changed) {
-      if (value2.path === codec.indexPath) {
-        flag = value2.sha256 !== null;
-        callback(value2, "index");
+    for (let documentValueM of remoteChange.changed) {
+      if (documentValueM.path === codec.indexPath) {
+        flag = documentValueM.sha256 !== null;
+        callback(documentValueM, "index");
         continue;
       }
-      if (value2.sha256 === null) {
-        if (value.wroteSinceAdopt?.(value2.path) === true) {
-          callback(value2, "ignored");
+      if (documentValueM.sha256 === null) {
+        if (value.wroteSinceAdopt?.(documentValueM.path) === true) {
+          callback(documentValueM, "ignored");
           continue;
         }
-        if (fileChangedHere(value2.path)) {
-          heldRemotePaths.add(value2.path);
-          callback(value2, "held");
+        if (fileChangedHere(documentValueM.path)) {
+          heldRemotePaths.add(documentValueM.path);
+          callback(documentValueM, "held");
           continue;
         }
-        if (fileTexts.delete(value2.path)) {
-          fileBaseShas.delete(value2.path);
-          savedFileTexts.delete(value2.path);
-          knownOwnedPaths.delete(value2.path);
-          callback(value2, "removed");
+        if (fileTexts.delete(documentValueM.path)) {
+          fileBaseShas.delete(documentValueM.path);
+          savedFileTexts.delete(documentValueM.path);
+          knownOwnedPaths.delete(documentValueM.path);
+          callback(documentValueM, "removed");
         } else {
-          callback(value2, "ignored");
+          callback(documentValueM, "ignored");
         }
         continue;
       }
       if (
-        !fileTexts.has(value2.path) &&
+        !fileTexts.has(documentValueM.path) &&
         !wantsFile({
-          path: value2.path,
-          sha256: value2.sha256,
+          path: documentValueM.path,
+          sha256: documentValueM.sha256,
           size: 0,
-          contentType: options2?.get(value2.path)?.contentType ?? "text/html",
+          contentType: documentOptionsE?.get(documentValueM.path)?.contentType ?? "text/html",
         })
       ) {
-        callback(value2, "ignored");
+        callback(documentValueM, "ignored");
         continue;
       }
-      if (callback2(value2.path)) {
-        callback(value2, "ignored");
+      if (documentHandler(documentValueM.path)) {
+        callback(documentValueM, "ignored");
         continue;
       }
       if (
-        options.holdRemote?.(value2.path) === true ||
-        fileChangedHere(value2.path)
+        documentOptions.holdRemote?.(documentValueM.path) === true ||
+        fileChangedHere(documentValueM.path)
       ) {
-        heldRemotePaths.add(value2.path);
-        callback(value2, "held");
+        heldRemotePaths.add(documentValueM.path);
+        callback(documentValueM, "held");
         continue;
       }
-      let value3 = await retryFileRead(
-        () => port.readText(value2.path),
+      let documentStateF = await retryFileRead(
+        () => port.readText(documentValueM.path),
         timers,
       );
-      fileTexts.set(value2.path, value3.text);
-      savedFileTexts.set(value2.path, value3.text);
-      fileBaseShas.set(value2.path, value3.sha256);
-      knownOwnedPaths.add(value2.path);
-      callback(value2, "theirs");
+      fileTexts.set(documentValueM.path, documentStateF.text);
+      savedFileTexts.set(documentValueM.path, documentStateF.text);
+      fileBaseShas.set(documentValueM.path, documentStateF.sha256);
+      knownOwnedPaths.add(documentValueM.path);
+      callback(documentValueM, "theirs");
     }
     if (flag) {
       await retryFileRead(
@@ -697,7 +697,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
     composeState(true);
     if (items.length > 0) {
       try {
-        options.onRemoteApplied?.(items, input);
+        documentOptions.onRemoteApplied?.(items, remoteChange);
       } catch {}
     }
   }
@@ -705,31 +705,31 @@ function createFilesDocument<Index extends { v: number }, Content>(
   let firstLoad = loadPromise,
     hotController = createFilesHotUpdateController({
       port: port,
-      hot: options.hot,
-      embedded: options.embedded,
-      isBusy: options.isBusy,
-      snapshot: options.snapshot,
-      restore: options.restore,
+      hot: documentOptions.hot,
+      embedded: documentOptions.embedded,
+      isBusy: documentOptions.isBusy,
+      snapshot: documentOptions.snapshot,
+      restore: documentOptions.restore,
       timers: timers,
       applyRemote: applyRemote,
-      ...(options.early !== undefined
+      ...(documentOptions.early !== undefined
         ? {
-            early: options.early,
+            early: documentOptions.early,
           }
         : {}),
-      ...(options.onHotEvent !== undefined
+      ...(documentOptions.onHotEvent !== undefined
         ? {
-            onEvent: options.onHotEvent,
+            onEvent: documentOptions.onHotEvent,
           }
         : {}),
-      ...(options.onBeforeRestart !== undefined
+      ...(documentOptions.onBeforeRestart !== undefined
         ? {
-            onBeforeRestart: options.onBeforeRestart,
+            onBeforeRestart: documentOptions.onBeforeRestart,
           }
         : {}),
-      ...(options.reveal !== undefined
+      ...(documentOptions.reveal !== undefined
         ? {
-            reveal: options.reveal,
+            reveal: documentOptions.reveal,
           }
         : {}),
     }),
@@ -738,18 +738,18 @@ function createFilesDocument<Index extends { v: number }, Content>(
           return;
         }
       : port.onRemoteChange(
-          (input) =>
-            void applyRemote(input).catch((): void => {
+          (change) =>
+            void applyRemote(change).catch((): void => {
               return;
             }),
         ),
-    document2: FilesDocument<Index, Content> = {
+    documentValueN: FilesDocument<Index, Content> = {
       saveMode: (): "auto" => "auto",
       state: () => state,
       content: () => state.content,
       title: () => state.title,
-      setTitle(input: string): void {
-        let value = normalizeTitleInput(input);
+      setTitle(documentInputa: string): void {
+        let value = normalizeTitleInput(documentInputa);
         if (value === state.title) {
           return;
         }
@@ -759,27 +759,27 @@ function createFilesDocument<Index extends { v: number }, Content>(
         };
         contentChanged();
       },
-      setContent(input: Content): void {
+      setContent(documentInputb: Content): void {
         state = {
           ...state,
-          content: input,
+          content: documentInputb,
         };
         contentChanged();
       },
       updateContent(
-        input: (content: Content) => Content,
-        options2?: { auto?: boolean },
+        documentInputc: (content: Content) => Content,
+        documentOptionsG?: { auto?: boolean },
       ): void {
         state = {
           ...state,
-          content: input(state.content),
+          content: documentInputc(state.content),
         };
-        contentChanged(options2?.auto);
+        contentChanged(documentOptionsG?.auto);
       },
       comments: () => state.comments,
-      addComment(input) {
-        let state2 = {
-          ...input,
+      addComment(documentInputd) {
+        let documentValueO = {
+          ...documentInputd,
           id: "c" + String(timers.now()) + String(state.comments.length),
           at: timers.now(),
         };
@@ -787,17 +787,17 @@ function createFilesDocument<Index extends { v: number }, Content>(
           ...state,
           comments: [
             ...state.comments,
-            state2 as import("../contracts/platform-host").ArtifactComment,
+            documentValueO as import("../contracts/platform-host").ArtifactComment,
           ],
         };
         notifyChange();
-        return state2 as import("../contracts/platform-host").ArtifactComment;
+        return documentValueO as import("../contracts/platform-host").ArtifactComment;
       },
-      removeComment(input): void {
+      removeComment(documentInpute): void {
         state = {
           ...state,
           comments: state.comments.filter(
-            (input2): boolean => input2.id !== input,
+            (documentInputf): boolean => documentInputf.id !== documentInpute,
           ),
         };
         notifyChange();
@@ -822,10 +822,10 @@ function createFilesDocument<Index extends { v: number }, Content>(
       },
       async save(): Promise<void> {
         if (loadState === "failed") {
-          document2.retryLoad();
+          documentValueN.retryLoad();
           return;
         }
-        document2.flushNow();
+        documentValueN.flushNow();
         await queue.settle();
       },
       stashOffer: () =>
@@ -840,7 +840,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
           return;
         }
         stashOffer = undefined;
-        let value2 = state;
+        let documentValueP = state;
         restoreStashEdits(value);
         restoreCount += 1;
         notifyChange();
@@ -851,30 +851,30 @@ function createFilesDocument<Index extends { v: number }, Content>(
             notifyChange();
           },
           undo: (): void => {
-            state = value2;
+            state = documentValueP;
             contentChanged();
           },
         };
       },
       discardStash(): void {
         stashOffer = undefined;
-        options.saveStash?.clearOffered();
+        documentOptions.saveStash?.clearOffered();
       },
       restoreCount: () => restoreCount,
-      subscribe(input) {
-        changeSubscribers.add(input);
-        return () => void changeSubscribers.delete(input);
+      subscribe(documentInputg) {
+        changeSubscribers.add(documentInputg);
+        return () => void changeSubscribers.delete(documentInputg);
       },
-      subscribeSave(input) {
-        saveSubscribers.add(input);
-        return () => void saveSubscribers.delete(input);
+      subscribeSave(documentInputh) {
+        saveSubscribers.add(documentInputh);
+        return () => void saveSubscribers.delete(documentInputh);
       },
       loadState: () => loadState,
       shown: (): boolean => loadState === "live",
       cachedSettled: (): boolean => false,
-      subscribeLoad(input) {
-        loadSubscribers.add(input);
-        return () => void loadSubscribers.delete(input);
+      subscribeLoad(documentInputi) {
+        loadSubscribers.add(documentInputi);
+        return () => void loadSubscribers.delete(documentInputi);
       },
       flushNow(): void {
         if (commitTimer !== undefined) {
@@ -890,36 +890,36 @@ function createFilesDocument<Index extends { v: number }, Content>(
         loadState === "failed" ? bootFailureCode : undefined,
       storeUntouched: () =>
         loadState === "live" && !personChanged && fileTexts.size === 0,
-      releaseHold(input): void {
-        if (!heldRemotePaths.delete(input) && !fileChangedHere(input)) {
+      releaseHold(documentInputj): void {
+        if (!heldRemotePaths.delete(documentInputj) && !fileChangedHere(documentInputj)) {
           return;
         }
-        if (queue.unsendable().has(input)) {
-          queue.withdraw(input);
+        if (queue.unsendable().has(documentInputj)) {
+          queue.withdraw(documentInputj);
         }
         if (
-          filesPortExtensions(port).liveSha?.(input) === null
+          filesPortExtensions(port).liveSha?.(documentInputj) === null
         ) {
-          if (queue.conflicted().has(input)) {
+          if (queue.conflicted().has(documentInputj)) {
             return;
           }
-          if (fileTexts.delete(input)) {
-            fileBaseShas.delete(input);
-            savedFileTexts.delete(input);
-            knownOwnedPaths.delete(input);
+          if (fileTexts.delete(documentInputj)) {
+            fileBaseShas.delete(documentInputj);
+            savedFileTexts.delete(documentInputj);
+            knownOwnedPaths.delete(documentInputj);
             composeState(true);
           }
           return;
         }
-        retryFileRead(() => port.readText(input), timers).then(
-          (input2): void => {
-            if (queue.conflicted().has(input)) {
+        retryFileRead(() => port.readText(documentInputj), timers).then(
+          (documentInputk): void => {
+            if (queue.conflicted().has(documentInputj)) {
               return;
             }
-            fileTexts.set(input, input2.text);
-            savedFileTexts.set(input, input2.text);
-            fileBaseShas.set(input, input2.sha256);
-            knownOwnedPaths.add(input);
+            fileTexts.set(documentInputj, documentInputk.text);
+            savedFileTexts.set(documentInputj, documentInputk.text);
+            fileBaseShas.set(documentInputj, documentInputk.sha256);
+            knownOwnedPaths.add(documentInputj);
             composeState(true);
           },
           (): void => {
@@ -961,9 +961,9 @@ function createFilesDocument<Index extends { v: number }, Content>(
       whenLive: () => whenLive,
       held: () => heldRemotePaths,
       retrySave: () => queue.retryNow(),
-      applyRemote: (input) => applyRemote(input),
+      applyRemote: (documentInputl) => applyRemote(documentInputl),
     };
-  return document2;
+  return documentValueN;
 }
 export {
   createFilesDocument,

@@ -12,19 +12,19 @@ import { CREATED_ON_FILES_MARKER_KEY, createdOnFilesMarker, MOVED_TO_MARKER_KEY,
 
 var ARTIFACT_REOPENED_STORAGE_KEY: string;
 async function initializeEmptyFilesStore(
-  options: Boot.InitializeStoreOptions,
+  initOptions: Boot.InitializeStoreOptions,
 ): Promise<Boot.InitializeStoreResult> {
   try {
-    if (!options.files.canWrite) {
+    if (!initOptions.files.canWrite) {
       return {
         result: "skipped",
         reason: "not_writer",
       };
     }
     let value = await readJsonFileState(
-      options.files,
-      options.indexPath,
-      options.timers,
+      initOptions.files,
+      initOptions.indexPath,
+      initOptions.timers,
     );
     if (value.state === "unreadable") {
       return {
@@ -44,17 +44,17 @@ async function initializeEmptyFilesStore(
     let callback = async (): Promise<
         Extract<Boot.InitializeStoreResult, { result: "skipped" }> | undefined
       > => {
-        let value6 =
-          options.otherHome === undefined
+        let fileState =
+          initOptions.otherHome === undefined
             ? "absent"
-            : await options.otherHome();
-        if (value6 === "content") {
+            : await initOptions.otherHome();
+        if (fileState === "content") {
           return {
             result: "skipped",
             reason: "store_has_content",
           };
         } else {
-          if (value6 === "unreadable") {
+          if (fileState === "unreadable") {
             return {
               result: "skipped",
               reason: "index_unreadable",
@@ -64,59 +64,59 @@ async function initializeEmptyFilesStore(
           }
         }
       },
-      value2 = await callback();
-    if (value2 !== undefined) {
-      return value2;
+      loadedState = await callback();
+    if (loadedState !== undefined) {
+      return loadedState;
     }
-    if (!(await options.storeUntouched())) {
+    if (!(await initOptions.storeUntouched())) {
       return {
         result: "skipped",
         reason: "store_has_content",
       };
     }
     let state = {
-        ...options.emptyIndex(),
+        ...initOptions.emptyIndex(),
         [CREATED_ON_FILES_MARKER_KEY]: createdOnFilesMarker({
-          at: options.at,
+          at: initOptions.at,
         }),
       },
-      state2 = {
-        [options.indexPath]: options.serializeIndex(state),
+      indexDocument = {
+        [initOptions.indexPath]: initOptions.serializeIndex(state),
       };
-    if (options.mark !== undefined) {
-      let state3 = {
+    if (initOptions.mark !== undefined) {
+      let migrationState = {
         v: 1,
-        type: options.mark.type,
-        at: options.at,
-        ...(options.mark.artifactId !== undefined
+        type: initOptions.mark.type,
+        at: initOptions.at,
+        ...(initOptions.mark.artifactId !== undefined
           ? {
-              artifact: options.mark.artifactId,
+              artifact: initOptions.mark.artifactId,
             }
           : {}),
         documents: {
-          [options.mark.metaPath]: await hashStoreDocument({}),
+          [initOptions.mark.metaPath]: await hashStoreDocument({}),
         },
         fields: {
-          [options.mark.metaPath]: await hashStoreFields({}),
+          [initOptions.mark.metaPath]: await hashStoreFields({}),
         },
         files: {},
       };
-      state2[MIGRATION_SENTINEL_PATH] = serializeIndexDocument(state3);
+      indexDocument[MIGRATION_SENTINEL_PATH] = serializeIndexDocument(migrationState);
     }
-    let value3 = await readJsonFileState(
-      options.files,
-      options.indexPath,
-      options.timers,
+    let indexState = await readJsonFileState(
+      initOptions.files,
+      initOptions.indexPath,
+      initOptions.timers,
     );
-    if (value3.state === "unreadable") {
+    if (indexState.state === "unreadable") {
       return {
         result: "skipped",
         reason: "index_unreadable",
       };
     }
     if (
-      value3.state === "read" &&
-      readFileMigrationMarker(value3.value) !== null
+      indexState.state === "read" &&
+      readFileMigrationMarker(indexState.value) !== null
     ) {
       return {
         result: "skipped",
@@ -124,57 +124,57 @@ async function initializeEmptyFilesStore(
       };
     }
     if (
-      value3.state === "read" &&
-      options.rootHoldsContent?.(value3.value) === true
+      indexState.state === "read" &&
+      initOptions.rootHoldsContent?.(indexState.value) === true
     ) {
       return {
         result: "skipped",
         reason: "store_has_content",
       };
     }
-    let value4 = await callback();
-    if (value4 !== undefined) {
-      return value4;
+    let existingState = await callback();
+    if (existingState !== undefined) {
+      return existingState;
     }
-    let value5 = await options.files.publish(state2, {
+    let publishResult = await initOptions.files.publish(indexDocument, {
       ifMatch: Object.fromEntries(
-        Object.keys(state2).map((input) => [
-          input,
-          input === options.indexPath && value3.state === "read"
-            ? value3.sha256
+        Object.keys(indexDocument).map((path) => [
+          path,
+          path === initOptions.indexPath && indexState.state === "read"
+            ? indexState.sha256
             : null,
         ]),
       ),
     });
-    if (!value5.ok) {
+    if (!publishResult.ok) {
       return {
         result: "failed",
-        code: value5.code,
+        code: publishResult.code,
       };
     }
-    if (options.mark !== undefined) {
-      let { store: mark, metaPath: mark2 } = options.mark,
-        state3 = {
+    if (initOptions.mark !== undefined) {
+      let { store: mark, metaPath: metaPath } = initOptions.mark,
+        updatedState = {
           [MOVED_TO_MARKER_KEY]: movedToMarker({
-            path: options.indexPath,
-            ver: value5.version,
-            at: options.at,
+            path: initOptions.indexPath,
+            ver: publishResult.version,
+            at: initOptions.at,
           }),
         };
       if (
-        !(await mark.update(mark2, state3).then(
+        !(await mark.update(metaPath, updatedState).then(
           (): boolean => true,
           (): boolean => false,
         )) &&
         mark.set !== undefined
       ) {
         if (
-          !(await mark.get(mark2).then(
-            (input): boolean => input !== null,
+          !(await mark.get(metaPath).then(
+            (nonNullValue): boolean => nonNullValue !== null,
             (): boolean => true,
           ))
         ) {
-          await mark.set(mark2, state3).catch((): void => {
+          await mark.set(metaPath, updatedState).catch((): void => {
             return;
           });
         }
@@ -182,7 +182,7 @@ async function initializeEmptyFilesStore(
     }
     return {
       result: "created",
-      version: value5.version,
+      version: publishResult.version,
     };
   } catch {
     return {
@@ -192,41 +192,41 @@ async function initializeEmptyFilesStore(
   }
 }
 function announceAndWaitToReopen(
-  options: Boot.AnnounceReopenOptions,
+  reopenOptions: Boot.AnnounceReopenOptions,
 ): Promise<void> {
-  let timers = options.timers,
-    leadMs = options.leadMs ?? 2500,
-    maxTypingHoldMs = leadMs + (options.maxHoldMs ?? 15000),
+  let timers = reopenOptions.timers,
+    leadMs = reopenOptions.leadMs ?? 2500,
+    maxTypingHoldMs = leadMs + (reopenOptions.maxHoldMs ?? 15000),
     startedAt = timers.now();
   try {
-    options.say(options.message);
+    reopenOptions.say(reopenOptions.message);
   } catch {}
   let isTyping = (): boolean | undefined => {
       try {
-        return options.isTyping?.() === true;
+        return reopenOptions.isTyping?.() === true;
       } catch {
         return false;
       }
     },
     hasUnsentEdits = (): boolean | undefined => {
       try {
-        return options.hasUnsentEdits?.() === true;
+        return reopenOptions.hasUnsentEdits?.() === true;
       } catch {
         return false;
       }
     };
-  return new Promise((input): void => {
+  return new Promise((resolve): void => {
     let callback = (): void => {
-        if (options.note !== undefined) {
+        if (reopenOptions.note !== undefined) {
           try {
-            options.note.store?.setItem(
+            reopenOptions.note.store?.setItem(
               "appifact-reopened",
               JSON.stringify({
-                why: options.note.why,
+                why: reopenOptions.note.why,
                 at: timers.now(),
-                ...(options.note.focus !== undefined
+                ...(reopenOptions.note.focus !== undefined
                   ? {
-                      focus: options.note.focus,
+                      focus: reopenOptions.note.focus,
                     }
                   : {}),
               }),
@@ -234,12 +234,12 @@ function announceAndWaitToReopen(
           } catch {}
         }
         try {
-          options.reopen();
+          reopenOptions.reopen();
         } finally {
-          input();
+          resolve();
         }
       },
-      callback2 = (): void => {
+      waitForReopen = (): void => {
         let value = timers.now() - startedAt;
         if (
           value >= leadMs &&
@@ -250,11 +250,11 @@ function announceAndWaitToReopen(
           return;
         }
         timers.setTimeout(
-          callback2,
+          waitForReopen,
           value < leadMs ? Math.min(leadMs - value, 250) : 250,
         );
       };
-    callback2();
+    waitForReopen();
   });
 }
 function consumeReopenMessage(
@@ -305,17 +305,17 @@ function consumeReopenMessage(
   }
 }
 function announceReopenedArtifact(
-  options: Boot.AnnounceReopenedOptions,
+  reopenOptions: Boot.AnnounceReopenedOptions,
 ): boolean {
-  let note = consumeReopenMessage(options.store, options.now);
+  let note = consumeReopenMessage(reopenOptions.store, reopenOptions.now);
   if (note === undefined) {
     return false;
   }
   try {
-    options.focus(note.focus);
+    reopenOptions.focus(note.focus);
   } catch {}
   try {
-    options.say(options.message(note));
+    reopenOptions.say(reopenOptions.message(note));
   } catch {}
   return true;
 }

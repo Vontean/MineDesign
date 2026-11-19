@@ -19,17 +19,17 @@ var fileMayStayByReference: (
 ) => boolean;
 function createDesignSystemFilesPort(
   port: Model.BrowserFilesPort,
-  options: Migration.DesignSystemPortOptions = {},
+  portOptions: Migration.DesignSystemPortOptions = {},
 ): Migration.DesignSystemFilesPort {
   let extensions = port,
-    lazy = options.lazy,
+    lazy = portOptions.lazy,
     downloadsRefused = false,
     listingRequestId: number = 0,
     lastListingResponseId = 0,
     lastPublishedVersion = "",
     convertPublishInput = (
-      input: string,
-      options2: Model.FilePublishInput,
+      portInput: string,
+      portOptionsA: Model.FilePublishInput,
     ):
       | "held"
       | "untyped"
@@ -38,82 +38,82 @@ function createDesignSystemFilesPort(
           value: Model.FilePublishInput;
           bytes?: Uint8Array<ArrayBuffer>;
         } => {
-      let value = relativeProjectFilePath(input);
+      let value = relativeProjectFilePath(portInput);
       if (
-        options2 === null ||
+        portOptionsA === null ||
         value === undefined ||
-        typeof options2 !== "string"
+        typeof portOptionsA !== "string"
       ) {
         return {
-          value: options2,
+          value: portOptionsA,
         };
       }
-      if (isHeldFilePointer(value, options2)) {
+      if (isHeldFilePointer(value, portOptionsA)) {
         return "held";
       }
-      let value2 = publishableFileMimeType(value, options2);
-      if (value2 === null) {
+      let portValue = publishableFileMimeType(value, portOptionsA);
+      if (portValue === null) {
         return "untyped";
       }
       if (isTextFilePath(value)) {
         return {
           value: {
-            content: options.wireText?.(input, options2) ?? options2,
-            contentType: value2,
+            content: portOptions.wireText?.(portInput, portOptionsA) ?? portOptionsA,
+            contentType: portValue,
           },
         };
       }
-      let value3 = decodeHeldFileDataUri(options2);
-      if (value3 === null) {
+      let portState = decodeHeldFileDataUri(portOptionsA);
+      if (portState === null) {
         return "unreadable";
       }
       return {
-        value: isTextMimeType(value2)
+        value: isTextMimeType(portValue)
           ? {
               content: new TextDecoder("utf-8", {
                 ignoreBOM: true,
-              }).decode(value3.bytes),
-              contentType: value2,
+              }).decode(portState.bytes),
+              contentType: portValue,
             }
           : {
-              content: new Blob([value3.bytes], {
-                type: value2,
+              content: new Blob([portState.bytes], {
+                type: portValue,
               }),
-              contentType: value2,
+              contentType: portValue,
             },
-        bytes: value3.bytes,
+        bytes: portState.bytes,
       };
     },
-    referenceSha = (input: string) => {
-      let value = relativeProjectFilePath(input);
+    referenceSha = (portInputA: string) => {
+      let value = relativeProjectFilePath(portInputA);
       if (
         value === undefined ||
-        !fileMayStayByReference(input, value, lazy) ||
-        extensions.wroteSinceAdopt?.(input) !== false
+        !fileMayStayByReference(portInputA, value, lazy) ||
+        extensions.wroteSinceAdopt?.(portInputA) !== false
       ) {
         return;
       }
-      let value2 = extensions.liveSha?.(input);
+      let portValueA = extensions.liveSha?.(portInputA);
       if (
         lazy !== undefined &&
         isTextFilePath(value) &&
-        lazy.rows.get(input)?.sha256 !== value2
+        lazy.rows.get(portInputA)?.sha256 !== portValueA
       ) {
         return;
       }
-      if (typeof value2 === "string" && value2 !== "") {
-        return value2;
+      if (typeof portValueA === "string" && portValueA !== "") {
+        return portValueA;
       } else {
         return undefined;
       }
     },
     entryProblemDetail = (
-      input: string,
-      options2: Model.FilePublishInput,
+      portInputB: string,
+      portOptionsB: Model.FilePublishInput,
     ): Migration.PublishProblem | undefined => {
-      let value = convertPublishInput(input, options2);
+      let value = convertPublishInput(portInputB, portOptionsB);
       if (value === "held") {
-        if (extensions.liveSha?.(input) === null) {
+        if (extensions.liveSha?.(portInputB) === null) {
           return {
             why: "its published copy is missing; add the file again",
             cause: "gone",
@@ -131,8 +131,8 @@ function createDesignSystemFilesPort(
       if (value === "untyped") {
         return (
           explainUnpublishableFile(
-            relativeProjectFilePath(input),
-            options2 as string,
+            relativeProjectFilePath(portInputB),
+            portOptionsB as string,
           ) ?? {
             why: "files of this kind cannot be saved here. Use another format",
             cause: "kind",
@@ -157,7 +157,7 @@ function createDesignSystemFilesPort(
           cause: "kind",
         };
       }
-      return filePublishRejection(input, value.value);
+      return filePublishRejection(portInputB, value.value);
     },
     adapter: Migration.DesignSystemFilesPort = {
       list: () => {
@@ -165,64 +165,64 @@ function createDesignSystemFilesPort(
           return port.list();
         }
         let value = ++listingRequestId;
-        return port.list().then((input) => {
+        return port.list().then((portInputC) => {
           if (value > lastListingResponseId) {
             lastListingResponseId = value;
-            updateLazyReadListing(lazy, input);
+            updateLazyReadListing(lazy, portInputC);
           }
-          return input;
+          return portInputC;
         });
       },
-      readBytes: (input) => port.readBytes(input),
-      answersByReference: (input) =>
-        referenceSha(input) !== undefined ||
+      readBytes: (portInputD) => port.readBytes(portInputD),
+      answersByReference: (portInputE) =>
+        referenceSha(portInputE) !== undefined ||
         (lazy !== undefined &&
-          lazyFileReadMode(lazy, input) === "skipped"),
-      async readText(input: string): Promise<Model.FileTextRead> {
+          lazyFileReadMode(lazy, portInputE) === "skipped"),
+      async readText(portInputF: string): Promise<Model.FileTextRead> {
         if (
-          !isBinaryProjectFilePath(input) &&
-          referenceSha(input) === undefined
+          !isBinaryProjectFilePath(portInputF) &&
+          referenceSha(portInputF) === undefined
         ) {
-          let value5 = await port.readText(input),
-            value6 =
-              options.tableText === undefined
-                ? value5
+          let portData = await port.readText(portInputF),
+            portValueB =
+              portOptions.tableText === undefined
+                ? portData
                 : {
-                    text: options.tableText(input, value5.text),
-                    sha256: value5.sha256,
+                    text: portOptions.tableText(portInputF, portData.text),
+                    sha256: portData.sha256,
                   };
           try {
-            options.onReadText?.(input, value6.text, value6.sha256);
+            portOptions.onReadText?.(portInputF, portValueB.text, portValueB.sha256);
           } catch {}
-          return value6;
+          return portValueB;
         }
-        let value = referenceSha(input);
+        let value = referenceSha(portInputF);
         if (value !== undefined) {
           try {
-            options.onReadText?.(input, filePointer(), value);
+            portOptions.onReadText?.(portInputF, filePointer(), value);
           } catch {}
           return {
             text: filePointer(),
             sha256: value,
           };
         }
-        let value2 = await port.readBytes(input),
-          value3 =
+        let portValueC = await port.readBytes(portInputF),
+          portStateA =
             publishableFileMimeType(
-              relativeProjectFilePath(input),
+              relativeProjectFilePath(portInputF),
             ) ?? "application/octet-stream",
-          value4 = bytesToFileDataUri(value2.bytes, value3);
+          portResult = bytesToFileDataUri(portValueC.bytes, portStateA);
         try {
-          options.onReadText?.(input, value4, value2.sha256);
+          portOptions.onReadText?.(portInputF, portResult, portValueC.sha256);
         } catch {}
         return {
-          text: value4,
-          sha256: value2.sha256,
+          text: portResult,
+          sha256: portValueC.sha256,
         };
       },
       async publish(
-        input: Model.FilePublishEntries,
-        options2?: Model.FilePublishPreconditions,
+        portInputG: Model.FilePublishEntries,
+        portOptionsC?: Model.FilePublishPreconditions,
       ): Promise<Model.FilePublishResult> {
         if (lazy !== undefined) {
           return {
@@ -231,44 +231,44 @@ function createDesignSystemFilesPort(
           };
         }
         let state: Model.FilePublishEntries = {},
-          state2: Record<string, Promise<string>> = {},
-          state3: Record<string, string> = {},
+          portValueD: Record<string, Promise<string>> = {},
+          portValueE: Record<string, string> = {},
           items: string[] = [];
-        for (let [value3, value4] of Object.entries(input)) {
-          let value5 = convertPublishInput(value3, value4);
-          if (value5 === "held") {
-            let value6 = extensions.liveSha?.(value3),
-              value7 = options2?.ifMatch?.[value3];
-            if (typeof value6 === "string" && value6 !== "") {
-              state3[value3] = value6;
-            } else if (value6 !== null && typeof value7 === "string") {
-              state3[value3] = value7;
+        for (let [portStateB, portResultA] of Object.entries(portInputG)) {
+          let portDataA = convertPublishInput(portStateB, portResultA);
+          if (portDataA === "held") {
+            let portValueF = extensions.liveSha?.(portStateB),
+              portValueG = portOptionsC?.ifMatch?.[portStateB];
+            if (typeof portValueF === "string" && portValueF !== "") {
+              portValueE[portStateB] = portValueF;
+            } else if (portValueF !== null && typeof portValueG === "string") {
+              portValueE[portStateB] = portValueG;
             }
-            items.push(value3);
+            items.push(portStateB);
             continue;
           }
-          if (value5 === "untyped" || value5 === "unreadable") {
+          if (portDataA === "untyped" || portDataA === "unreadable") {
             return {
               ok: false,
               code: "invalid_content",
             };
           }
-          state[value3] = value5.value;
-          if (value5.bytes !== undefined) {
-            state2[value3] = sha256(value5.bytes);
+          state[portStateB] = portDataA.value;
+          if (portDataA.bytes !== undefined) {
+            portValueD[portStateB] = sha256(portDataA.bytes);
           }
         }
-        let state4: Record<string, string | null> = {};
-        for (let [value3, value4] of Object.entries(input)) {
+        let portValueH: Record<string, string | null> = {};
+        for (let [portStateC, portResultB] of Object.entries(portInputG)) {
           if (
-            (value4 === null || typeof value4 === "string") &&
-            !items.includes(value3)
+            (portResultB === null || typeof portResultB === "string") &&
+            !items.includes(portStateC)
           ) {
-            state4[value3] = value4;
+            portValueH[portStateC] = portResultB;
           }
         }
         try {
-          options.onSend?.(state4);
+          portOptions.onSend?.(portValueH);
         } catch {}
         let value: Model.FilePublishResult =
           items.length > 0 && Object.keys(state).length === 0
@@ -278,7 +278,7 @@ function createDesignSystemFilesPort(
                 unchanged: true,
                 shas: {},
               }
-            : await port.publish(state, options2);
+            : await port.publish(state, portOptionsC);
         if (
           value.ok &&
           Object.keys(state).length > 0 &&
@@ -286,83 +286,83 @@ function createDesignSystemFilesPort(
         ) {
           lastPublishedVersion = value.version;
         }
-        let value2 =
+        let portValueI =
           value.ok && value.shas !== undefined
             ? {
                 ...value,
                 shas: {
-                  ...state3,
+                  ...portValueE,
                   ...value.shas,
                 },
               }
             : value;
-        if (!value2.ok && value2.code === "invalid_content") {
-          let value3 = Object.values(state).some(isDownloadOnlyPublishInput);
-          if (value3 && !downloadsRefused) {
+        if (!portValueI.ok && portValueI.code === "invalid_content") {
+          let portStateD = Object.values(state).some(isDownloadOnlyPublishInput);
+          if (portStateD && !downloadsRefused) {
             try {
-              options.onDownloadsRefused?.();
+              portOptions.onDownloadsRefused?.();
             } catch {}
           }
-          downloadsRefused = value3;
+          downloadsRefused = portStateD;
         }
-        let callback = (input2?: Record<string, string>): void => {
+        let callback = (portInputH?: Record<string, string>): void => {
           try {
-            options.onPublish?.({
+            portOptions.onPublish?.({
               paths: Object.keys(state),
-              ok: value2.ok,
+              ok: portValueI.ok,
               ...(items.length > 0
                 ? {
                     held: items,
                   }
                 : {}),
-              ...(value2.ok
+              ...(portValueI.ok
                 ? {
-                    version: value2.version,
-                    texts: state4,
-                    ...(input2 !== undefined
+                    version: portValueI.version,
+                    texts: portValueH,
+                    ...(portInputH !== undefined
                       ? {
-                          shas: input2,
+                          shas: portInputH,
                         }
                       : {}),
                   }
                 : {
-                    code: value2.code,
+                    code: portValueI.code,
                   }),
             });
           } catch {}
         };
-        if (!value2.ok || value2.shas !== undefined) {
-          callback(value2.ok ? value2.shas : undefined);
-          return value2;
+        if (!portValueI.ok || portValueI.shas !== undefined) {
+          callback(portValueI.ok ? portValueI.shas : undefined);
+          return portValueI;
         }
-        let state5 = {
-          ...state3,
+        let portValueJ = {
+          ...portValueE,
         };
-        for (let [value3, value4] of Object.entries(state2)) {
-          state5[value3] = await value4;
+        for (let [portStateE, portResultC] of Object.entries(portValueD)) {
+          portValueJ[portStateE] = await portResultC;
         }
-        for (let [value3, value4] of Object.entries(state)) {
-          if (value4 !== null && state5[value3] === undefined) {
-            state5[value3] = await sha256(
+        for (let [portStateF, portResultD] of Object.entries(state)) {
+          if (portResultD !== null && portValueJ[portStateF] === undefined) {
+            portValueJ[portStateF] = await sha256(
               (
                 new TextEncoder().encode as (
-                  input: unknown,
+                  portInputG: unknown,
                 ) => Uint8Array<ArrayBuffer>
               )(
-                typeof value4 === "string"
-                  ? value4
-                  : (value4 as { content?: unknown }).content,
+                typeof portResultD === "string"
+                  ? portResultD
+                  : (portResultD as { content?: unknown }).content,
               ),
             );
           }
         }
-        callback(state5);
+        callback(portValueJ);
         return {
-          ...value2,
-          shas: state5,
+          ...portValueI,
+          shas: portValueJ,
         };
       },
-      onRemoteChange: (input) => port.onRemoteChange(input),
+      onRemoteChange: (portInputI) => port.onRemoteChange(portInputI),
       get canWrite() {
         return port.canWrite;
       },
@@ -373,22 +373,22 @@ function createDesignSystemFilesPort(
         return port.mayWrite;
       },
       version: () => port.version(),
-      entryProblem: (input, options2) =>
-        entryProblemDetail(input, options2)?.why,
+      entryProblem: (portInputJ, portOptionsD) =>
+        entryProblemDetail(portInputJ, portOptionsD)?.why,
       entryProblemDetail: entryProblemDetail,
     };
   if (typeof extensions.liveSha === "function") {
-    adapter.liveSha = (input) => extensions.liveSha!(input);
+    adapter.liveSha = (portInputK) => extensions.liveSha!(portInputK);
   }
   if (typeof extensions.heldSha === "function") {
-    adapter.heldSha = (input) => extensions.heldSha!(input);
+    adapter.heldSha = (portInputL) => extensions.heldSha!(portInputL);
   }
   if (typeof extensions.noteRemote === "function") {
-    adapter.noteRemote = (input) => extensions.noteRemote!(input);
+    adapter.noteRemote = (portInputM) => extensions.noteRemote!(portInputM);
   }
   if (typeof extensions.noteAdopted === "function") {
-    adapter.noteAdopted = (input, options2) =>
-      extensions.noteAdopted!(input, options2);
+    adapter.noteAdopted = (portInputN, portOptionsE) =>
+      extensions.noteAdopted!(portInputN, portOptionsE);
   }
   if (typeof extensions.knownListing === "function") {
     adapter.knownListing = () => extensions.knownListing!();
@@ -400,18 +400,18 @@ function createDesignSystemFilesPort(
     adapter.listUnlessNarrowed = () => extensions.listUnlessNarrowed!();
   }
   if (typeof extensions.primeRead === "function") {
-    adapter.primeRead = (input, options2) =>
-      extensions.primeRead!(input, options2);
+    adapter.primeRead = (portInputO, portOptionsF) =>
+      extensions.primeRead!(portInputO, portOptionsF);
   }
   if (typeof extensions.noteIncoming === "function") {
-    adapter.noteIncoming = (input) => extensions.noteIncoming!(input);
+    adapter.noteIncoming = (portInputP) => extensions.noteIncoming!(portInputP);
   }
   if (typeof extensions.olderThanMyWrite === "function") {
-    adapter.olderThanMyWrite = (input, options2) =>
-      extensions.olderThanMyWrite!(input, options2);
+    adapter.olderThanMyWrite = (portInputQ, portOptionsG) =>
+      extensions.olderThanMyWrite!(portInputQ, portOptionsG);
   }
   if (typeof extensions.wroteSinceAdopt === "function") {
-    adapter.wroteSinceAdopt = (input) => extensions.wroteSinceAdopt!(input);
+    adapter.wroteSinceAdopt = (portInputR) => extensions.wroteSinceAdopt!(portInputR);
   }
   return adapter;
 }
@@ -425,19 +425,19 @@ export {
 export function installFilesDesignSystemPort(): () => void {
   return () => {
     DAMAGED_FILE_REPLACEMENT_CHARACTER = String.fromCharCode(65533);
-    isBinaryProjectFilePath = (input) => {
-      let value = relativeProjectFilePath(input);
+    isBinaryProjectFilePath = (portInputS) => {
+      let value = relativeProjectFilePath(portInputS);
       return value !== undefined && !isTextFilePath(value);
     };
-    isDownloadOnlyPublishInput = (input) =>
-      input !== null &&
-      typeof input === "object" &&
-      !(input instanceof Blob) &&
-      FILE_BINARY_MIME_TYPES.has(input.contentType ?? "");
-    fileMayStayByReference = (input, options, context) =>
-      canUseHeldFilePointer(options) &&
-      (context === undefined
-        ? assetKindForPath(options) !== "video"
-        : lazyFileReadMode(context, input) === "held");
+    isDownloadOnlyPublishInput = (portInputT) =>
+      portInputT !== null &&
+      typeof portInputT === "object" &&
+      !(portInputT instanceof Blob) &&
+      FILE_BINARY_MIME_TYPES.has(portInputT.contentType ?? "");
+    fileMayStayByReference = (portInputU, portOptionsH, portValueK) =>
+      canUseHeldFilePointer(portOptionsH) &&
+      (portValueK === undefined
+        ? assetKindForPath(portOptionsH) !== "video"
+        : lazyFileReadMode(portValueK, portInputU) === "held");
   };
 }

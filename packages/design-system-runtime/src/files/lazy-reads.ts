@@ -9,17 +9,17 @@ var LAZY_READ_SKIPPED_CONTENT_KINDS: Set<Files.FileKind>;
 var listingRowIsSvg: (row: Files.FileListingRow | undefined) => boolean;
 function lazyReadLastDocumentPath(listing: Files.FileListingRow[]) {
   let documents = listing
-      .flatMap((input: Files.FileListingRow) => {
-        let value = relativeProjectFilePath(input.path);
+      .flatMap((entry: Files.FileListingRow) => {
+        let value = relativeProjectFilePath(entry.path);
         if (
           value !== undefined &&
-          isProjectContentPath(input.path) &&
+          isProjectContentPath(entry.path) &&
           classifyDesignSystemFile(value) === "doc"
         ) {
           return [
             {
               p: value,
-              size: input.size,
+              size: entry.size,
             },
           ];
         } else {
@@ -28,9 +28,9 @@ function lazyReadLastDocumentPath(listing: Files.FileListingRow[]) {
       })
       .sort(
         (
-          input: { p: string; size: number },
-          options: { p: string; size: number },
-        ): number => (input.p < options.p ? -1 : 1),
+          left: { p: string; size: number },
+          right: { p: string; size: number },
+        ): number => (left.p < right.p ? -1 : 1),
       ),
     count: number = 0;
   for (let value of documents) {
@@ -48,7 +48,7 @@ function updateLazyReadListing(
   listing: Files.FileListingRow[],
 ): void {
   lazy.rows = new Map(
-    listing.map((input: Files.FileListingRow) => [input.path, input]),
+    listing.map((entry: Files.FileListingRow) => [entry.path, entry]),
   );
   let lastDoc = lazyReadLastDocumentPath(listing);
   if (lastDoc === undefined) {
@@ -105,8 +105,8 @@ export function installFilesLazyReads(): () => void {
       "componentOther",
       "componentSource",
     ]);
-    listingRowIsSvg = (input: Files.FileListingRow | undefined): boolean =>
-      (input?.contentType.split(";")[0] ?? "").trim().toLowerCase() ===
+    listingRowIsSvg = (entry: Files.FileListingRow | undefined): boolean =>
+      (entry?.contentType.split(";")[0] ?? "").trim().toLowerCase() ===
       "image/svg+xml";
   };
 }

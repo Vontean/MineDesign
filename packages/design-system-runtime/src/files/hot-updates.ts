@@ -57,52 +57,52 @@ function canRestartArtifact(
   return typeof hot?.restart === "function" && hasHotRestartKey(windowName);
 }
 function waitForHotUpdateIdle(
-  input: PromiseLike<unknown> | unknown,
-  options: HotIdleOptions = {},
+  updateInput: PromiseLike<unknown> | unknown,
+  updateOptions: HotIdleOptions = {},
 ) {
-  let value = options.timers ?? {
-      setTimeout: (input2: () => void, options2: number) =>
-        setTimeout(input2, options2),
-      clearTimeout: (input2: ReturnType<typeof setTimeout>) =>
-        clearTimeout(input2),
+  let value = updateOptions.timers ?? {
+      setTimeout: (updateInputA: () => void, updateOptionsA: number) =>
+        setTimeout(updateInputA, updateOptionsA),
+      clearTimeout: (updateInputB: ReturnType<typeof setTimeout>) =>
+        clearTimeout(updateInputB),
     },
     callback = () => value.now?.() ?? Date.now(),
-    value2 = callback();
-  return new Promise<void>((input2): void => {
+    updateValue = callback();
+  return new Promise<void>((updateInputC): void => {
     let flag: boolean = false,
-      callback2 = (input3: boolean): void => {
+      updateHandler = (updateInputD: boolean): void => {
         if (flag) {
           return;
         }
         flag = true;
-        if (!input3) {
-          value.clearTimeout?.(value3);
+        if (!updateInputD) {
+          value.clearTimeout?.(updateState);
         }
         try {
-          options.onEvent?.({
+          updateOptions.onEvent?.({
             type: "reveal",
-            heldMs: callback() - value2,
-            timedOut: input3,
-            carried: options.carried === true,
+            heldMs: callback() - updateValue,
+            timedOut: updateInputD,
+            carried: updateOptions.carried === true,
           });
         } catch {}
-        input2();
+        updateInputC();
       },
-      value3 = value.setTimeout(
-        () => callback2(true),
-        options.holdMs ?? HOT_INDEX_RECHECK_DELAY_MS,
+      updateState = value.setTimeout(
+        () => updateHandler(true),
+        updateOptions.holdMs ?? HOT_INDEX_RECHECK_DELAY_MS,
       );
-    Promise.resolve(input).then(
-      () => callback2(false),
-      () => callback2(false),
+    Promise.resolve(updateInput).then(
+      () => updateHandler(false),
+      () => updateHandler(false),
     );
   });
 }
 function createFilesHotUpdateController(
-  options: FilesHotOptions,
+  updateOptionsB: FilesHotOptions,
 ): FilesHotController {
   let hot: FilesHotCapability | null =
-      options.hot !== undefined ? options.hot : getHotCapability(),
+      updateOptionsB.hot !== undefined ? updateOptionsB.hot : getHotCapability(),
     counters: FilesHotStats = {
       updates: 0,
       applied: 0,
@@ -112,7 +112,7 @@ function createFilesHotUpdateController(
     },
     events: FilesHotEvent[] = [];
   if (
-    options.embedded === true ||
+    updateOptionsB.embedded === true ||
     hot === null ||
     typeof hot.accept !== "function"
   ) {
@@ -127,15 +127,15 @@ function createFilesHotUpdateController(
       events: events,
     };
   }
-  let { port: port } = options,
+  let { port: port } = updateOptionsB,
     portExtensions = filesPortExtensions(port),
-    isCodePath = options.isCode ?? isRuntimeInternalFilePath,
-    retryDelays = options.retryMs ?? BOOT_FILE_READ_RETRY_DELAYS_MS,
-    timers = options.timers ?? {
-      setTimeout: (input: () => void, options2: number) =>
-        setTimeout(input, options2),
-      clearTimeout: (input: ReturnType<typeof setTimeout>) =>
-        clearTimeout(input),
+    isCodePath = updateOptionsB.isCode ?? isRuntimeInternalFilePath,
+    retryDelays = updateOptionsB.retryMs ?? BOOT_FILE_READ_RETRY_DELAYS_MS,
+    timers = updateOptionsB.timers ?? {
+      setTimeout: (updateInputE: () => void, updateOptionsC: number) =>
+        setTimeout(updateInputE, updateOptionsC),
+      clearTimeout: (updateInputF: ReturnType<typeof setTimeout>) =>
+        clearTimeout(updateInputF),
       now: (): number => Date.now(),
     },
     now = () => timers.now?.() ?? Date.now(),
@@ -146,9 +146,9 @@ function createFilesHotUpdateController(
     fallbackListing: Map<string, string> | undefined;
   if (portExtensions.knownListing === undefined) {
     port.list().then(
-      (input): void => {
+      (updateInputG): void => {
         fallbackListing ??= new Map(
-          input.map((input2) => [input2.path, input2.sha256]),
+          updateInputG.map((updateInputH) => [updateInputH.path, updateInputH.sha256]),
         );
       },
       (): void => {
@@ -156,26 +156,26 @@ function createFilesHotUpdateController(
       },
     );
   }
-  function emitEvent(input: FilesHotEvent): void {
-    events.push(input);
+  function emitEvent(updateInputI: FilesHotEvent): void {
+    events.push(updateInputI);
     if (events.length > HOT_EVENT_HISTORY_LIMIT) {
       events.shift();
     }
     try {
-      if (options.onEvent) {
-        options.onEvent(input);
+      if (updateOptionsB.onEvent) {
+        updateOptionsB.onEvent(updateInputI);
       } else {
-        globalThis.console?.debug?.("[hot]", JSON.stringify(input));
+        globalThis.console?.debug?.("[hot]", JSON.stringify(updateInputI));
       }
     } catch {}
   }
-  let beforeRestart = (input: string): void => {
+  let beforeRestart = (updateInputJ: string): void => {
     try {
-      options.onBeforeRestart?.(input);
+      updateOptionsB.onBeforeRestart?.(updateInputJ);
     } catch {}
   };
-  function scheduleRestart(input: string, options2: number = 0): void {
-    restartNote ??= input;
+  function scheduleRestart(updateInputK: string, updateOptionsD: number = 0): void {
+    restartNote ??= updateInputK;
     if (restartTimer !== undefined || disposed) {
       return;
     }
@@ -184,8 +184,8 @@ function createFilesHotUpdateController(
       if (disposed || restartNote === undefined) {
         return;
       }
-      if (options.isBusy?.() === true) {
-        restartTimer = timers.setTimeout(callback, options.busyPollMs ?? 250);
+      if (updateOptionsB.isBusy?.() === true) {
+        restartTimer = timers.setTimeout(callback, updateOptionsB.busyPollMs ?? 250);
         return;
       }
       let value = now();
@@ -203,219 +203,219 @@ function createFilesHotUpdateController(
         return;
       }
       recentRestartTimes.push(value);
-      let value2 = restartNote;
+      let updateValueA = restartNote;
       restartNote = undefined;
       counters.restarts += 1;
-      beforeRestart(value2);
+      beforeRestart(updateValueA);
       try {
         hot!.restart?.({
-          note: value2,
+          note: updateValueA,
         });
       } catch {}
     };
-    restartTimer = timers.setTimeout(callback, options2);
+    restartTimer = timers.setTimeout(callback, updateOptionsD);
   }
   async function diffListing(): Promise<Files.ChangedFileRow[]> {
     let entries = new Map(
         portExtensions.knownListing?.() ?? fallbackListing ?? [],
       ),
-      entries2 = new Map(
-        (await listWritableFiles(port)).map((input) => [
-          input.path,
-          input.sha256,
+      updateValueB = new Map(
+        (await listWritableFiles(port)).map((updateInputL) => [
+          updateInputL.path,
+          updateInputL.sha256,
         ]),
       );
-    fallbackListing = entries2;
+    fallbackListing = updateValueB;
     let items: Files.ChangedFileRow[] = [];
-    for (let [value, value2] of entries2) {
-      if (entries.get(value) !== value2) {
+    for (let [value, updateValueC] of updateValueB) {
+      if (entries.get(value) !== updateValueC) {
         items.push({
           path: value,
-          sha256: value2,
+          sha256: updateValueC,
         });
       }
     }
     for (let value of entries.keys()) {
-      if (!entries2.has(value)) {
+      if (!updateValueB.has(value)) {
         items.push({
           path: value,
           sha256: null,
         });
       }
     }
-    return items.sort((input, options2): number =>
-      input.path < options2.path ? -1 : 1,
+    return items.sort((updateInputM, updateOptionsE): number =>
+      updateInputM.path < updateOptionsE.path ? -1 : 1,
     );
   }
   function acceptUpdate(
-    input: Host.HotUpdate,
+    updateInputN: Host.HotUpdate,
   ): void | "deferred" | Promise<"applied"> {
     if (disposed) {
-      return void input.restart?.();
+      return void updateInputN.restart?.();
     }
     counters.updates += 1;
-    let value = hotListingDescriptor(input.from),
-      value2 = hotListingDescriptor(input.to),
-      value3: boolean = options.isBusy?.() === true,
-      value4: string | string | undefined =
-        input.required !== "none"
+    let value = hotListingDescriptor(updateInputN.from),
+      updateValueD = hotListingDescriptor(updateInputN.to),
+      updateStateA: boolean = updateOptionsB.isBusy?.() === true,
+      updateResult: string | string | undefined =
+        updateInputN.required !== "none"
           ? "required"
-          : input.changed !== null &&
-              input.changed.some((input2) => isCodePath(input2.path))
+          : updateInputN.changed !== null &&
+              updateInputN.changed.some((updateInputO) => isCodePath(updateInputO.path))
             ? "code"
             : undefined,
       state: FilesHotEvent = {
         type: "update",
         from: value.version,
-        to: value2.version,
+        to: updateValueD.version,
         ...(value.seq !== undefined
           ? {
               fromSeq: value.seq,
             }
           : {}),
-        ...(value2.seq !== undefined
+        ...(updateValueD.seq !== undefined
           ? {
-              toSeq: value2.seq,
+              toSeq: updateValueD.seq,
             }
           : {}),
-        required: String(input.required),
-        shape: hotAdoptMethodKind(input),
-        changed: describeHotChangedPaths(input.changed, isCodePath),
-        busy: value3,
+        required: String(updateInputN.required),
+        shape: hotAdoptMethodKind(updateInputN),
+        changed: describeHotChangedPaths(updateInputN.changed, isCodePath),
+        busy: updateStateA,
       };
-    if (value4 !== undefined) {
-      let value6: string =
-          value4 === "code"
+    if (updateResult !== undefined) {
+      let updateData: string =
+          updateResult === "code"
             ? uiMessage("design-system.hotUpdates.aChangedPathIsThe") +
-              (input.changed ?? [])
-                .filter((input2) => isCodePath(input2.path))
-                .map((input2) => input2.path)
+              (updateInputN.changed ?? [])
+                .filter((updateInputP) => isCodePath(updateInputP.path))
+                .map((updateInputQ) => updateInputQ.path)
                 .join(", ")
-            : uiMessage("design-system.hotUpdates.requiredIs") + String(input.required),
-        value7 =
-          value4 === "code" && input.changed !== null
-            ? input.changed.filter(
-                (input2): boolean => !isCodePath(input2.path),
+            : uiMessage("design-system.hotUpdates.requiredIs") + String(updateInputN.required),
+        updateItem =
+          updateResult === "code" && updateInputN.changed !== null
+            ? updateInputN.changed.filter(
+                (updateInputR): boolean => !isCodePath(updateInputR.path),
               )
             : [];
       if (
-        value3 &&
-        options.contentWhileBusy !== false &&
-        value7.length > 0 &&
-        typeof input.adopt === "function"
+        updateStateA &&
+        updateOptionsB.contentWhileBusy !== false &&
+        updateItem.length > 0 &&
+        typeof updateInputN.adopt === "function"
       ) {
         try {
-          input.adopt();
-        } catch (value9: unknown) {
+          updateInputN.adopt();
+        } catch (updateValueE: unknown) {
           emitEvent({
             ...state,
             decision: "restart",
-            get why() { return ("u.adopt() threw: ") + (shortHotErrorMessage(value9)); },
+            get why() { return ("u.adopt() threw: ") + (shortHotErrorMessage(updateValueE)); },
           });
           beforeRestart(uiMessage("design-system.hotUpdates.adoptFailed"));
-          return void input.restart?.();
+          return void updateInputN.restart?.();
         }
         emitEvent({
           ...state,
           decision: "adopt",
-          get why() { return (((value6) + ("; the person is busy, so the ")) + (String(value7.length))) + (" content row(s) are applied in place now and the restart waits"); },
+          get why() { return (((updateData) + ("; the person is busy, so the ")) + (String(updateItem.length))) + (" content row(s) are applied in place now and the restart waits"); },
         });
         emitEvent({
           type: "deferred",
           from: value.version,
-          to: value2.version,
+          to: updateValueD.version,
           reason: "code",
         });
         counters.deferred += 1;
-        let value8 = now();
+        let updateValueF = now();
         try {
-          portExtensions.noteAdopted?.(value2, value);
+          portExtensions.noteAdopted?.(updateValueD, value);
         } catch {}
-        scheduleRestart("deferred-update", options.busyPollMs ?? 250);
-        return applyUpdateRows(value7, value, value2, value8, false).catch(
-          (input2: unknown): "applied" => {
+        scheduleRestart("deferred-update", updateOptionsB.busyPollMs ?? 250);
+        return applyUpdateRows(updateItem, value, updateValueD, updateValueF, false).catch(
+          (updateInputS: unknown): "applied" => {
             emitEvent({
               type: "restart",
               from: value.version,
-              to: value2.version,
+              to: updateValueD.version,
               reason: "apply-failed",
               asked: true,
-              error: shortHotErrorMessage(input2),
+              error: shortHotErrorMessage(updateInputS),
             });
             scheduleRestart("apply-failed");
             return "applied";
           },
         );
       }
-      if (value3 && typeof input.defer === "function") {
-        input.defer();
+      if (updateStateA && typeof updateInputN.defer === "function") {
+        updateInputN.defer();
         counters.deferred += 1;
         emitEvent({
           ...state,
           decision: "defer",
-          get why() { return (value6) + ("; the person is mid-gesture or typing, so the restart waits"); },
+          get why() { return (updateData) + ("; the person is mid-gesture or typing, so the restart waits"); },
         });
         emitEvent({
           type: "deferred",
           from: value.version,
-          to: value2.version,
-          reason: value4,
+          to: updateValueD.version,
+          reason: updateResult,
         });
-        scheduleRestart("deferred-update", options.busyPollMs ?? 250);
+        scheduleRestart("deferred-update", updateOptionsB.busyPollMs ?? 250);
         return "deferred";
       }
       counters.restarts += 1;
       emitEvent({
         ...state,
         decision: "restart",
-        why: value6,
+        why: updateData,
       });
       emitEvent({
         type: "restart",
         from: value.version,
-        to: value2.version,
-        reason: value4,
+        to: updateValueD.version,
+        reason: updateResult,
         asked: true,
       });
       beforeRestart(
-        value4 === "code"
+        updateResult === "code"
           ? uiMessage("design-system.hotUpdates.codeChanged")
-          : "required: " + String(input.required),
+          : "required: " + String(updateInputN.required),
       );
-      return void input.restart?.();
+      return void updateInputN.restart?.();
     }
     try {
-      input.adopt?.();
-    } catch (value6: unknown) {
+      updateInputN.adopt?.();
+    } catch (updateDataA: unknown) {
       emitEvent({
         ...state,
         decision: "restart",
-        get why() { return ("u.adopt() threw: ") + (shortHotErrorMessage(value6)); },
+        get why() { return ("u.adopt() threw: ") + (shortHotErrorMessage(updateDataA)); },
       });
       beforeRestart(uiMessage("design-system.hotUpdates.adoptFailed"));
-      return void input.restart?.();
+      return void updateInputN.restart?.();
     }
     emitEvent({
       ...state,
       decision: "adopt",
       why:
-        input.changed === null
+        updateInputN.changed === null
           ? uiMessage("design-system.hotUpdates.theShellSentNoDiff")
           : uiMessage("design-system.hotUpdates.contentOnly"),
     });
-    let value5 = now();
+    let updateEntry = now();
     try {
-      portExtensions.noteAdopted?.(value2, value);
+      portExtensions.noteAdopted?.(updateValueD, value);
     } catch {}
-    return applyUpdateRows(input.changed, value, value2, value5, false).catch(
-      (input2: unknown): "applied" => {
+    return applyUpdateRows(updateInputN.changed, value, updateValueD, updateEntry, false).catch(
+      (updateInputT: unknown): "applied" => {
         emitEvent({
           type: "restart",
           from: value.version,
-          to: value2.version,
+          to: updateValueD.version,
           reason: "apply-failed",
           asked: true,
-          error: shortHotErrorMessage(input2),
+          error: shortHotErrorMessage(updateInputT),
         });
         scheduleRestart("apply-failed");
         return "applied";
@@ -423,222 +423,222 @@ function createFilesHotUpdateController(
     );
   }
   async function applyUpdateRows(
-    input: Host.HotFileChange[] | null,
-    options2: Files.FileVersion,
-    context: Files.FileVersion,
-    value: number,
-    extra: boolean,
+    updateInputU: Host.HotFileChange[] | null,
+    updateOptionsF: Files.FileVersion,
+    updateValueG: Files.FileVersion,
+    updateValueH: number,
+    updateValueI: boolean,
   ): Promise<"applied"> {
     let index = 0,
       flag: boolean = false,
-      callback = (input2: string, options3?: unknown): "applied" => {
+      callback = (updateInputV: string, updateOptionsG?: unknown): "applied" => {
         emitEvent({
           type: "restart",
-          from: options2.version,
-          to: context.version,
-          reason: input2,
+          from: updateOptionsF.version,
+          to: updateValueG.version,
+          reason: updateInputV,
           asked: true,
-          ...(options3 !== undefined
+          ...(updateOptionsG !== undefined
             ? {
-                error: shortHotErrorMessage(options3),
+                error: shortHotErrorMessage(updateOptionsG),
               }
             : {}),
         });
-        scheduleRestart(input2);
+        scheduleRestart(updateInputV);
         return "applied";
       },
-      callback2 = (input2: unknown) => {
-        let value9: unknown = (input2 as FileRetryError | null)?.status;
-        if (typeof value9 === "number") {
-          return value9;
+      updateHandlerA = (updateInputW: unknown) => {
+        let updateValueJ: unknown = (updateInputW as FileRetryError | null)?.status;
+        if (typeof updateValueJ === "number") {
+          return updateValueJ;
         } else {
           return undefined;
         }
       },
-      callback3 = <Result>(
-        input2: string,
-        options3: () => Promise<Result>,
+      updateHandlerB = <Result>(
+        updateInputX: string,
+        updateOptionsH: () => Promise<Result>,
       ): Promise<Result> => {
-        let index2 = 0;
+        let updateValueK = 0;
         return retryFileRead(
           () => {
-            index2 += 1;
-            return options3();
+            updateValueK += 1;
+            return updateOptionsH();
           },
           timers,
-          (input3, options4): void => {
+          (updateInputY, updateOptionsI): void => {
             index += 1;
             counters.fetchRetries += 1;
-            let value9 = callback2(options4),
-              value10: unknown = (
-                options4 as
+            let updateValueL = updateHandlerA(updateOptionsI),
+              updateValueM: unknown = (
+                updateOptionsI as
                   | (FileRetryError & { redirectedTo?: unknown })
                   | null
               )?.redirectedTo;
             emitEvent({
               type: "fetch",
-              to: context.version,
-              path: input2,
-              attempt: input3,
+              to: updateValueG.version,
+              path: updateInputX,
+              attempt: updateInputY,
               ok: false,
-              ...(value9 !== undefined
+              ...(updateValueL !== undefined
                 ? {
-                    status: value9,
+                    status: updateValueL,
                   }
                 : {}),
-              msAfterAdopt: now() - value,
-              ...(typeof value10 === "string"
+              msAfterAdopt: now() - updateValueH,
+              ...(typeof updateValueM === "string"
                 ? {
-                    redirectedTo: value10,
+                    redirectedTo: updateValueM,
                   }
                 : {}),
             });
-            if (input3 >= MAX_HOT_FETCH_RETRIES && !flag) {
+            if (updateInputY >= MAX_HOT_FETCH_RETRIES && !flag) {
               flag = true;
               emitEvent({
                 type: "pending",
-                from: options2.version,
-                to: context.version,
-                paths: [input2],
-                msAfterAdopt: now() - value,
+                from: updateOptionsF.version,
+                to: updateValueG.version,
+                paths: [updateInputX],
+                msAfterAdopt: now() - updateValueH,
               });
             }
           },
           retryDelays,
-        ).then((input3) => {
+        ).then((updateInputZ) => {
           emitEvent({
             type: "fetch",
-            to: context.version,
-            path: input2,
-            attempt: index2,
+            to: updateValueG.version,
+            path: updateInputX,
+            attempt: updateValueK,
             ok: true,
-            msAfterAdopt: now() - value,
+            msAfterAdopt: now() - updateValueH,
           });
-          return input3;
+          return updateInputZ;
         });
       },
-      value2: Files.ChangedFileRow[];
+      updateValueN: Files.ChangedFileRow[];
     try {
-      value2 =
-        input === null
-          ? await callback3("_files.json", diffListing)
-          : input.map((input2) => ({
-              path: input2.path,
-              sha256: hotChangedPathSha(input2),
+      updateValueN =
+        updateInputU === null
+          ? await updateHandlerB("_files.json", diffListing)
+          : updateInputU.map((fileEntry) => ({
+              path: fileEntry.path,
+              sha256: hotChangedPathSha(fileEntry),
             }));
-    } catch (value9: unknown) {
-      return callback("fetch-exhausted", value9);
+    } catch (updateValueO: unknown) {
+      return callback("fetch-exhausted", updateValueO);
     }
-    if (input === null && value2.some((input2) => isCodePath(input2.path))) {
+    if (updateInputU === null && updateValueN.some((fileEntry) => isCodePath(fileEntry.path))) {
       if (
-        options.contentWhileBusy !== false &&
-        options.isBusy?.() === true &&
-        value2.some((input2): boolean => !isCodePath(input2.path))
+        updateOptionsB.contentWhileBusy !== false &&
+        updateOptionsB.isBusy?.() === true &&
+        updateValueN.some((fileEntry): boolean => !isCodePath(fileEntry.path))
       ) {
         emitEvent({
           type: "restart",
-          from: options2.version,
-          to: context.version,
+          from: updateOptionsF.version,
+          to: updateValueG.version,
           reason: "code-after-adopt",
           asked: true,
         });
         scheduleRestart("code-after-adopt");
-        value2 = value2.filter((input2): boolean => !isCodePath(input2.path));
+        updateValueN = updateValueN.filter((fileEntry): boolean => !isCodePath(fileEntry.path));
       } else {
         return callback("code-after-adopt");
       }
     }
-    if (fallbackListing !== undefined && input !== null) {
-      for (let value9 of value2) {
-        if (value9.sha256 === null) {
-          fallbackListing.delete(value9.path);
+    if (fallbackListing !== undefined && updateInputU !== null) {
+      for (let updateValueP of updateValueN) {
+        if (updateValueP.sha256 === null) {
+          fallbackListing.delete(updateValueP.path);
         } else {
-          fallbackListing.set(value9.path, value9.sha256);
+          fallbackListing.set(updateValueP.path, updateValueP.sha256);
         }
       }
     }
-    value2 = value2.filter(
-      (input2): boolean =>
-        portExtensions.olderThanMyWrite?.(context.version, input2.path) !==
+    updateValueN = updateValueN.filter(
+      (updateInput_): boolean =>
+        portExtensions.olderThanMyWrite?.(updateValueG.version, updateInput_.path) !==
         true,
     );
-    let value3 = extra
-      ? value2.slice()
-      : value2.filter((input2) => {
-          let value9 = portExtensions.heldSha?.(input2.path);
-          if (value9 === undefined || value9 !== input2.sha256) {
+    let updateStateB = updateValueI
+      ? updateValueN.slice()
+      : updateValueN.filter((fileEntry) => {
+          let updateValueQ = portExtensions.heldSha?.(fileEntry.path);
+          if (updateValueQ === undefined || updateValueQ !== fileEntry.sha256) {
             return true;
           }
-          let value10 = portExtensions.liveSha?.(input2.path);
-          return value10 !== undefined && value10 !== input2.sha256;
+          let updateValueR = portExtensions.liveSha?.(fileEntry.path);
+          return updateValueR !== undefined && updateValueR !== fileEntry.sha256;
         });
     try {
-      portExtensions.noteIncoming?.(value2);
+      portExtensions.noteIncoming?.(updateValueN);
     } catch {}
-    let callback4 = (input2: string): boolean | undefined => {
+    let updateHandlerC = (updateInputa: string): boolean | undefined => {
         try {
-          return portExtensions.answersByReference?.(input2) === true;
+          return portExtensions.answersByReference?.(updateInputa) === true;
         } catch {
           return false;
         }
       },
-      value4 = value3.filter((input2): boolean => input2.sha256 !== null),
-      value5 = value4.filter((input2): boolean => !callback4(input2.path)),
+      updateResultA = updateStateB.filter((updateInputb): boolean => updateInputb.sha256 !== null),
+      updateEntryA = updateResultA.filter((updateInputc): boolean => !updateHandlerC(updateInputc.path)),
       entries: Map<string, Files.FileBytesRead> = new Map(),
-      value6: number | undefined,
-      value7: unknown;
-    if (value5.length === 0 && value4.length > 0 && input !== null) {
+      updateDataB: number | undefined,
+      updateItemA: unknown;
+    if (updateEntryA.length === 0 && updateResultA.length > 0 && updateInputU !== null) {
       try {
-        await callback3("_files.json", () =>
+        await updateHandlerB("_files.json", () =>
           listWritableFiles(port),
         );
-        value6 = now() - value;
-      } catch (value9: unknown) {
-        return callback("fetch-exhausted", value9);
+        updateDataB = now() - updateValueH;
+      } catch (updateValueS: unknown) {
+        return callback("fetch-exhausted", updateValueS);
       }
     }
-    let value8 = await Promise.all(
-      value5.map((input2) =>
-        callback3<Files.FileBytesRead>(input2.path, () =>
-          port.readBytes(input2.path),
+    let updateValueT = await Promise.all(
+      updateEntryA.map((updateInputd) =>
+        updateHandlerB<Files.FileBytesRead>(updateInputd.path, () =>
+          port.readBytes(updateInputd.path),
         ).then(
-          (input3): boolean => {
-            value6 ??= now() - value;
-            let state2 = {
-              ...input3,
-              sha256: input2.sha256 ?? input3.sha256,
+          (updateInpute): boolean => {
+            updateDataB ??= now() - updateValueH;
+            let updateValueU = {
+              ...updateInpute,
+              sha256: updateInputd.sha256 ?? updateInpute.sha256,
             };
-            entries.set(input2.path, state2);
+            entries.set(updateInputd.path, updateValueU);
             try {
-              portExtensions.primeRead?.(input2.path, state2);
+              portExtensions.primeRead?.(updateInputd.path, updateValueU);
             } catch {}
             return true;
           },
-          (input3: unknown): boolean => {
-            value7 = input3;
+          (updateInputf: unknown): boolean => {
+            updateItemA = updateInputf;
             return false;
           },
         ),
       ),
     );
-    if (value6 !== undefined) {
-      counters.lastGrantLagMs = value6;
-      counters.maxGrantLagMs = Math.max(counters.maxGrantLagMs ?? 0, value6);
+    if (updateDataB !== undefined) {
+      counters.lastGrantLagMs = updateDataB;
+      counters.maxGrantLagMs = Math.max(counters.maxGrantLagMs ?? 0, updateDataB);
     }
-    if (value8.includes(false)) {
-      return callback("fetch-exhausted", value7);
+    if (updateValueT.includes(false)) {
+      return callback("fetch-exhausted", updateItemA);
     }
     let state: Files.FileRemoteChange = {
-      from: options2,
-      to: context,
-      changed: value3,
+      from: updateOptionsF,
+      to: updateValueG,
+      changed: updateStateB,
     };
     try {
-      if (value3.length > 0) {
-        await options.applyRemote(state, entries);
+      if (updateStateB.length > 0) {
+        await updateOptionsB.applyRemote(state, entries);
       }
-    } catch (value9: unknown) {
-      return callback("apply-failed", value9);
+    } catch (updateValueV: unknown) {
+      return callback("apply-failed", updateValueV);
     }
     try {
       portExtensions.noteRemote?.(state);
@@ -646,25 +646,25 @@ function createFilesHotUpdateController(
     counters.applied += 1;
     emitEvent({
       type: "applied",
-      from: options2.version,
-      to: context.version,
-      rows: value2.length,
-      applied: value3.length,
+      from: updateOptionsF.version,
+      to: updateValueG.version,
+      rows: updateValueN.length,
+      applied: updateStateB.length,
       fetched: entries.size,
-      ...(value4.length > value5.length
+      ...(updateResultA.length > updateEntryA.length
         ? {
-            skipped: value4.length - value5.length,
+            skipped: updateResultA.length - updateEntryA.length,
           }
         : {}),
       retries: index,
-      ...(value6 !== undefined
+      ...(updateDataB !== undefined
         ? {
-            grantLagMs: value6,
+            grantLagMs: updateDataB,
           }
         : {}),
-      ms: now() - value,
-      paths: value3.map((input2) => input2.path),
-      ...(extra
+      ms: now() - updateValueH,
+      paths: updateStateB.map((updateInputg) => updateInputg.path),
+      ...(updateValueI
         ? {
             early: true,
           }
@@ -673,31 +673,31 @@ function createFilesHotUpdateController(
     return "applied";
   }
   let earlyUpdates =
-    options.early ?? currentHotReloadBridge(hot);
-  if (options.snapshot !== undefined && typeof hot.snapshot === "function") {
-    hot.snapshot((input: unknown) =>
-      disposed ? undefined : options.snapshot!(input),
+    updateOptionsB.early ?? currentHotReloadBridge(hot);
+  if (updateOptionsB.snapshot !== undefined && typeof hot.snapshot === "function") {
+    hot.snapshot((updateInputh: unknown) =>
+      disposed ? undefined : updateOptionsB.snapshot!(updateInputh),
     );
   }
   if (
     earlyUpdates?.attach === undefined &&
-    (options.restore !== undefined || options.reveal !== undefined) &&
+    (updateOptionsB.restore !== undefined || updateOptionsB.reveal !== undefined) &&
     typeof hot.ready === "function"
   ) {
-    hot.ready((input: unknown) => {
+    hot.ready((updateInputi: unknown) => {
       if (disposed) {
         return;
       }
       try {
-        options.restore?.(input);
+        updateOptionsB.restore?.(updateInputi);
       } catch {}
-      if (options.reveal === undefined) {
+      if (updateOptionsB.reveal === undefined) {
         return undefined;
       } else {
-        return waitForHotUpdateIdle(options.reveal, {
-          holdMs: options.revealHoldMs,
+        return waitForHotUpdateIdle(updateOptionsB.reveal, {
+          holdMs: updateOptionsB.revealHoldMs,
           timers: timers,
-          carried: input !== undefined && input !== null,
+          carried: updateInputi !== undefined && updateInputi !== null,
           onEvent: emitEvent,
         });
       }
@@ -706,24 +706,24 @@ function createFilesHotUpdateController(
   hot.accept(acceptUpdate);
   if (earlyUpdates !== undefined) {
     earlyUpdates.attach?.({
-      ...(options.snapshot !== undefined
+      ...(updateOptionsB.snapshot !== undefined
         ? {
-            snapshot: (input: unknown) =>
-              disposed ? undefined : options.snapshot!(input),
+            snapshot: (updateInputj: unknown) =>
+              disposed ? undefined : updateOptionsB.snapshot!(updateInputj),
           }
         : {}),
-      ...(options.restore !== undefined
+      ...(updateOptionsB.restore !== undefined
         ? {
-            restore: (input: unknown): void => {
+            restore: (updateInputk: unknown): void => {
               if (!disposed) {
-                options.restore!(input);
+                updateOptionsB.restore!(updateInputk);
               }
             },
           }
         : {}),
-      ...(options.reveal !== undefined
+      ...(updateOptionsB.reveal !== undefined
         ? {
-            reveal: options.reveal,
+            reveal: updateOptionsB.reveal,
           }
         : {}),
       onEvent: emitEvent,
@@ -739,39 +739,39 @@ function createFilesHotUpdateController(
         reason: "deferred-update",
         asked: true,
       });
-      scheduleRestart("deferred-update", options.busyPollMs ?? 250);
+      scheduleRestart("deferred-update", updateOptionsB.busyPollMs ?? 250);
     }
-    let value2 = earlyUpdates.queued.splice(0);
-    if (value2.length > 0) {
-      let value3 = value2.some((input): boolean => input.changed === null),
+    let updateValueW = earlyUpdates.queued.splice(0);
+    if (updateValueW.length > 0) {
+      let updateStateC = updateValueW.some((updateInputl): boolean => updateInputl.changed === null),
         entries: Map<string, Host.HotFileChange> = new Map();
-      if (!value3) {
-        for (let value6 of value2) {
-          for (let value7 of value6.changed!) {
-            entries.set(value7.path, value7);
+      if (!updateStateC) {
+        for (let updateDataC of updateValueW) {
+          for (let updateItemB of updateDataC.changed!) {
+            entries.set(updateItemB.path, updateItemB);
           }
         }
       }
-      let value4 = value2[0],
-        value5 = value2[value2.length - 1];
-      counters.updates += value2.length;
+      let updateResultB = updateValueW[0],
+        updateEntryB = updateValueW[updateValueW.length - 1];
+      counters.updates += updateValueW.length;
       try {
-        portExtensions.noteAdopted?.(value5.to, value4.from);
+        portExtensions.noteAdopted?.(updateEntryB.to, updateResultB.from);
       } catch {}
       applyUpdateRows(
-        value3 ? null : [...entries.values()],
-        value4.from,
-        value5.to,
-        value4.at,
+        updateStateC ? null : [...entries.values()],
+        updateResultB.from,
+        updateEntryB.to,
+        updateResultB.at,
         true,
-      ).catch((input: unknown): void => {
+      ).catch((updateInputm: unknown): void => {
         emitEvent({
           type: "restart",
-          from: value4.from.version,
-          to: value5.to.version,
+          from: updateResultB.from.version,
+          to: updateEntryB.to.version,
           reason: "apply-failed",
           asked: true,
-          error: shortHotErrorMessage(input),
+          error: shortHotErrorMessage(updateInputm),
         });
         scheduleRestart("apply-failed");
       });
@@ -839,32 +839,32 @@ export function installFilesHotUpdates(): () => void {
         : typeof source.to === "string"
           ? source.to
           : null;
-    shortHotErrorMessage = (input: unknown) =>
-      (input instanceof Error
-        ? input.message
-        : String((input as FileRetryError | null)?.message ?? input)
+    shortHotErrorMessage = (updateInputn: unknown) =>
+      (updateInputn instanceof Error
+        ? updateInputn.message
+        : String((updateInputn as FileRetryError | null)?.message ?? updateInputn)
       ).slice(0, 120);
-    hotListingDescriptor = (input: Host.HotVersion) => ({
-      version: input.ver,
-      ...(input.seq !== undefined
+    hotListingDescriptor = (updateInputo: Host.HotVersion) => ({
+      version: updateInputo.ver,
+      ...(updateInputo.seq !== undefined
         ? {
-            seq: input.seq,
+            seq: updateInputo.seq,
           }
         : {}),
     });
     describeHotChangedPaths = (
-      input: Host.HotFileChange[] | null,
-      options: (path: string) => boolean,
+      updateInputp: Host.HotFileChange[] | null,
+      updateOptionsJ: (path: string) => boolean,
     ) =>
-      input === null
+      updateInputp === null
         ? null
-        : input.map((source: Host.HotFileChange) => ({
+        : updateInputp.map((source: Host.HotFileChange) => ({
             path: source.path,
             kind: String(source.kind),
-            klass: options(source.path) ? "code" : "content",
+            klass: updateOptionsJ(source.path) ? "code" : "content",
           }));
-    hotAdoptMethodKind = (input: Host.HotUpdate): string =>
-      typeof input.adopt === "function" ? "calls" : "string";
+    hotAdoptMethodKind = (updateInputq: Host.HotUpdate): string =>
+      typeof updateInputq.adopt === "function" ? "calls" : "string";
     HOT_INDEX_RECHECK_DELAY_MS = 4500;
   };
 }

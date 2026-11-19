@@ -77,30 +77,30 @@ function invalidAssetGroupOrders(
   knownGroupFiles: (name: string) => ReadonlySet<string> = () => new Set(),
 ) {
   let fixedOrders: Record<string, string[]> = {};
-  for (let [value, value2] of Object.entries(index.assetGroups ?? {})) {
-    if (typeof value2 !== "object" || value2 === null) {
+  for (let [value, groupIndex] of Object.entries(index.assetGroups ?? {})) {
+    if (typeof groupIndex !== "object" || groupIndex === null) {
       continue;
     }
-    let value3 = Array.isArray(value2.order) ? value2.order : [];
-    if (value3.length === 0) {
+    let order = Array.isArray(groupIndex.order) ? groupIndex.order : [];
+    if (order.length === 0) {
       continue;
     }
     let values = new Set([
-        ...Object.values(value2.files ?? {})
-          .map((input: Files.IndexBlobRecord) => input?.name)
-          .filter((input: string): boolean => typeof input === "string"),
-        ...knownGroupFiles(value2.name),
+        ...Object.values(groupIndex.files ?? {})
+          .map((name: Files.IndexBlobRecord) => name?.name)
+          .filter((name: string): boolean => typeof name === "string"),
+        ...knownGroupFiles(groupIndex.name),
       ]),
-      values2 = new Set(),
-      value4 = value3.filter(
-        (input: string) =>
-          typeof input === "string" &&
-          values.has(input) &&
-          !values2.has(input) &&
-          (values2.add(input), true),
+      seenNames = new Set(),
+      fixedOrder = order.filter(
+        (name: string) =>
+          typeof name === "string" &&
+          values.has(name) &&
+          !seenNames.has(name) &&
+          (seenNames.add(name), true),
       );
-    if (!mergeValuesEqual(value4, value3)) {
-      fixedOrders[value] = value4;
+    if (!mergeValuesEqual(fixedOrder, order)) {
+      fixedOrders[value] = fixedOrder;
     }
   }
   return fixedOrders;
@@ -110,12 +110,12 @@ function indexAuthoredFieldsEqual(
   right: import("../contracts/files-core").CarriedFilesIndex,
 ) {
   let authoredFields = (
-    input: import("../contracts/files-core").CarriedFilesIndex,
+    index: import("../contracts/files-core").CarriedFilesIndex,
   ) =>
     Object.fromEntries(
-      Object.entries(input).filter(
-        ([input2]: [string, unknown]): boolean =>
-          !isGeneratedIndexField(input2),
+      Object.entries(index).filter(
+        ([field]: [string, unknown]): boolean =>
+          !isGeneratedIndexField(field),
       ),
     );
   return mergeValuesEqual(
@@ -126,8 +126,8 @@ function indexAuthoredFieldsEqual(
 function authoredIndexMergeConflicts(merge: IndexMergeNotice) {
   let conflicts = new Set(
     merge.conflicts.filter(
-      (input: string) =>
-        !input.startsWith("docs") && !isGeneratedIndexField(input),
+      (path: string) =>
+        !path.startsWith("docs") && !isGeneratedIndexField(path),
     ),
   );
   if (
@@ -136,14 +136,14 @@ function authoredIndexMergeConflicts(merge: IndexMergeNotice) {
   ) {
     conflicts.add("groups");
   }
-  for (let [value, value2] of Object.entries(merge.mine.assetGroups ?? {})) {
-    let value3 = merge.base.assetGroups?.[value]?.order,
-      value4 = merge.merged.assetGroups?.[value]?.order;
+  for (let [value, mergedGroup] of Object.entries(merge.mine.assetGroups ?? {})) {
+    let baseOrder = merge.base.assetGroups?.[value]?.order,
+      mergedOrder = merge.merged.assetGroups?.[value]?.order;
     if (
-      value3 !== undefined &&
-      value4 !== undefined &&
-      !mergeValuesEqual(value2.order, value3) &&
-      !isOrderSubsequence(value2.order, value4)
+      baseOrder !== undefined &&
+      mergedOrder !== undefined &&
+      !mergeValuesEqual(mergedGroup.order, baseOrder) &&
+      !isOrderSubsequence(mergedGroup.order, mergedOrder)
     ) {
       conflicts.add("assetGroups/" + value + "/order");
     }
@@ -158,33 +158,33 @@ function indexUndoForeignChanges(
   let from: IndexPresentationPatch = {},
     to2: IndexPresentationPatch = {};
   for (let value of conflicts) {
-    let value2 = /^assetGroups\/([^/]+)\/tile$/.exec(value)?.[1],
-      value3 = value.startsWith("sections/") ? value.slice(9) : undefined,
-      value4 = [...changes]
+    let groupName = /^assetGroups\/([^/]+)\/tile$/.exec(value)?.[1],
+      sectionName = value.startsWith("sections/") ? value.slice(9) : undefined,
+      change = [...changes]
         .reverse()
-        .find((input: FileIndexDelta) =>
-          value3 !== undefined
-            ? (input.from.sections !== undefined ||
-                input.to.sections !== undefined) &&
-              input.from.sections?.[value3] !== input.to.sections?.[value3]
-            : value2 !== undefined &&
-              (input.from.assetGroups !== undefined ||
-                input.to.assetGroups !== undefined) &&
-              input.from.assetGroups?.[value2]?.tile !==
-                input.to.assetGroups?.[value2]?.tile,
+        .find((delta: FileIndexDelta) =>
+          sectionName !== undefined
+            ? (delta.from.sections !== undefined ||
+                delta.to.sections !== undefined) &&
+              delta.from.sections?.[sectionName] !== delta.to.sections?.[sectionName]
+            : groupName !== undefined &&
+              (delta.from.assetGroups !== undefined ||
+                delta.to.assetGroups !== undefined) &&
+              delta.from.assetGroups?.[groupName]?.tile !==
+                delta.to.assetGroups?.[groupName]?.tile,
         );
-    if (value4 === undefined) {
+    if (change === undefined) {
       continue;
     }
-    if (value3 !== undefined) {
-      (from.sections ??= {})[value3] = index.sections?.[value3];
-      (to2.sections ??= {})[value3] = value4.to.sections?.[value3];
-    } else if (value2 !== undefined) {
-      (from.assetGroups ??= {})[value2] = {
-        tile: index.assetGroups?.[value2]?.tile,
+    if (sectionName !== undefined) {
+      (from.sections ??= {})[sectionName] = index.sections?.[sectionName];
+      (to2.sections ??= {})[sectionName] = change.to.sections?.[sectionName];
+    } else if (groupName !== undefined) {
+      (from.assetGroups ??= {})[groupName] = {
+        tile: index.assetGroups?.[groupName]?.tile,
       };
-      (to2.assetGroups ??= {})[value2] = {
-        tile: value4.to.assetGroups?.[value2]?.tile,
+      (to2.assetGroups ??= {})[groupName] = {
+        tile: change.to.assetGroups?.[groupName]?.tile,
       };
     }
   }
@@ -209,24 +209,24 @@ export function installFilesIndexConflicts(): () => void {
   return () => {
     HOT_CARRY_PROTOCOL_FIELD = "books";
     describeIndexConflicts = (
-      input: readonly string[],
-      options: Files.FilesIndex,
+      paths: readonly string[],
+      index: Files.FilesIndex,
     ) => [
       ...new Set(
-        input.map((input2: string) =>
-          describeIndexConflictPath(input2, options),
+        paths.map((path: string) =>
+          describeIndexConflictPath(path, index),
         ),
       ),
     ];
-    isGeneratedIndexField = (input: string) =>
-      FILE_MIGRATION_MARKER_FIELDS.includes(input.split("/")[0]);
-    indexPresentationField = (input: Files.FilesIndex, options: string) => {
-      if (options.startsWith("sections/")) {
-        return input.sections?.[options.slice(9)];
+    isGeneratedIndexField = (field: string) =>
+      FILE_MIGRATION_MARKER_FIELDS.includes(field.split("/")[0]);
+    indexPresentationField = (index: Files.FilesIndex, path: string) => {
+      if (path.startsWith("sections/")) {
+        return index.sections?.[path.slice(9)];
       }
-      let value = /^assetGroups\/([^/]+)\/tile$/.exec(options);
+      let value = /^assetGroups\/([^/]+)\/tile$/.exec(path);
       if (value !== null) {
-        return input.assetGroups?.[value[1]]?.tile;
+        return index.assetGroups?.[value[1]]?.tile;
       } else {
         return undefined;
       }
