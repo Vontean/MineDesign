@@ -7,7 +7,7 @@ import { initializeNpm_usehooks_ts_p0, load_react } from "../../dependencies";
 import { parseNoteBlocks } from "../notes/blocks";
 import { NotesDomHandler_2 } from "../notes/dom";
 import { parseNoteInlineMarkdown } from "../notes/inline-markdown";
-import { OutlineNativeMenuLabelGlyphConfig, OutlineNativeMenuLabelGlyphConfig_2, OutlineNativeMenuLimit, OutlineNativeMenuReplace, OutlineNativeMenuSlice, OutlineNativeMenuTitle1RectOvalConfig } from "./native-menu";
+import { OutlineNativeMenuLabelGlyphConfig as elementLabelGlyph, OutlineNativeMenuLabelGlyphConfig_2 as videoLabelGlyph, OutlineNativeMenuLimit, OutlineNativeMenuReplace, OutlineNativeMenuSlice, OutlineNativeMenuTitle1RectOvalConfig } from "./native-menu";
 import { toModuleNamespace } from "../../module-helpers";
 
 var OutlineAnnotationsSlice: Dynamic;
@@ -24,86 +24,86 @@ function annotationFirstTextLine(source?: Dynamic): Dynamic {
       NotesDomHandler_2(source.text).trim().split(`
 `)[0] ?? ""
     );
-  let value: Dynamic = parseNoteBlocks(source.text.trim())[0],
-    value2: Dynamic =
-      value == null
+  let firstBlock: Dynamic = parseNoteBlocks(source.text.trim())[0],
+    firstLineMarkdown: Dynamic =
+      firstBlock == null
         ? ""
-        : value.kind === "p"
-          ? value.text
-          : (value.items[0] ?? "");
-  return parseNoteInlineMarkdown(value2, {
+        : firstBlock.kind === "p"
+          ? firstBlock.text
+          : (firstBlock.items[0] ?? "");
+  return parseNoteInlineMarkdown(firstLineMarkdown, {
     escapes: true,
     literalUnsafeLinks: true,
   })
-    .map((input?: Dynamic): Dynamic => input.text)
+    .map((token?: Dynamic): Dynamic => token.text)
     .join("");
 }
 function annotationOutlineDetail(source?: Dynamic): Dynamic {
   if (source.kind === "image") {
-    let value2: Dynamic = OutlineNativeMenuReplace(
+    let altText: Dynamic = OutlineNativeMenuReplace(
       source.alt ?? "",
     );
-    return value2
+    return altText
       ? {
-          detail: OutlineAnnotationsSlice(value2),
-          ...(value2.length > OutlineNativeMenuLimit
+          detail: OutlineAnnotationsSlice(altText),
+          ...(altText.length > OutlineNativeMenuLimit
             ? {
-                detailTitle: value2,
+                detailTitle: altText,
               }
             : {}),
         }
       : {};
   }
   if (!("text" in source)) return {};
-  let value: Dynamic = annotationFirstTextLine(source).trim();
-  return value
+  let firstLine: Dynamic = annotationFirstTextLine(source).trim();
+  return firstLine
     ? {
-        detail: `\u201C${OutlineNativeMenuSlice(value)}\u201D`,
+        detail: `\u201C${OutlineNativeMenuSlice(firstLine)}\u201D`,
       }
     : {};
 }
 function annotationOutlineNode(source?: Dynamic): Dynamic {
-  let value: Dynamic =
+  let nodeStyle: Dynamic =
     source.kind === undefined
-      ? OutlineNativeMenuLabelGlyphConfig
+      ? elementLabelGlyph
       : source.kind === "image" && source.video !== undefined
-        ? OutlineNativeMenuLabelGlyphConfig_2
+        ? videoLabelGlyph
         : OutlineNativeMenuTitle1RectOvalConfig[source.kind];
   return {
     id: source.id,
-    label: value.label,
-    glyph: value.glyph,
+    label: nodeStyle.label,
+    glyph: nodeStyle.glyph,
     ...annotationOutlineDetail(source),
   };
 }
 function reconcileAnnotationOutline(
-  input?: Dynamic,
-  options?: Dynamic,
+  annotations?: Dynamic,
+  rowCache?: Dynamic,
 ): Dynamic {
-  let values: Dynamic = new Set(),
-    value: Dynamic = input.map((source?: Dynamic): Dynamic => {
-      values.add(source.id);
-      let value2: Dynamic =
+  let currentIds: Dynamic = new Set(),
+    rows: Dynamic = annotations.map((source?: Dynamic): Dynamic => {
+      currentIds.add(source.id);
+      let cacheKey: Dynamic =
           source.kind === "image"
             ? (source.video !== undefined ? "video:" : "") +
               (source.alt ?? "")
             : "text" in source
               ? source.text
               : undefined,
-        entry: Dynamic = options.get(source.id);
-      if (entry && entry.kind === source.kind && entry.text === value2)
+        entry: Dynamic = rowCache.get(source.id);
+      if (entry && entry.kind === source.kind && entry.text === cacheKey)
         return entry.row;
-      let value3: Dynamic = annotationOutlineNode(source);
-      options.set(source.id, {
+      let row: Dynamic = annotationOutlineNode(source);
+      rowCache.set(source.id, {
         kind: source.kind,
-        text: value2,
-        row: value3,
+        text: cacheKey,
+        row: row,
       });
-      return value3;
+      return row;
     });
-  for (let value2 of options.keys() as Dynamic)
-    values.has(value2) || options.delete(value2);
-  return value;
+  for (let cachedId of rowCache.keys() as Dynamic)
+    currentIds.has(cachedId) || rowCache.delete(cachedId);
+  return rows;
 }
 export {
   ADrawnLineOrPathCannotMessage,
@@ -137,68 +137,68 @@ export function installEditorOutlineAnnotations(): () => void {
     initializeNpm_usehooks_ts_p0();
     OutlineAnnotationsIsWorkerConfig = {
       isWorker: false,
-      emitOmEvent(input: Dynamic, options: Dynamic): Dynamic {
+      emitOmEvent(eventName: Dynamic, eventDetail: Dynamic): Dynamic {
         (window as Dynamic).dispatchEvent(
-          new CustomEvent(input, {
-            detail: options,
+          new CustomEvent(eventName, {
+            detail: eventDetail,
           }),
         );
       },
-      onOmEvent(input: Dynamic, options: Dynamic): Dynamic {
-        let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-          options(input2.detail);
-        (window as Dynamic).addEventListener(input, callback);
+      onOmEvent(eventName: Dynamic, handler: Dynamic): Dynamic {
+        let handleEvent: Dynamic = (event?: Dynamic): Dynamic =>
+          handler(event.detail);
+        (window as Dynamic).addEventListener(eventName, handleEvent);
         return (): Dynamic =>
-          (window as Dynamic).removeEventListener(input, callback);
+          (window as Dynamic).removeEventListener(eventName, handleEvent);
       },
-      roundtrip(input: Dynamic): Dynamic {
-        return new Promise((input2?: Dynamic): Dynamic => {
-          let callback: Dynamic = (): Dynamic => {
-            value();
-            input2({
+      roundtrip(request: Dynamic): Dynamic {
+        return new Promise((resolve?: Dynamic): Dynamic => {
+          let handleAbort: Dynamic = (): Dynamic => {
+            cleanup();
+            resolve({
               ok: false,
               error: "Aborted",
             });
           };
-          function value(): Dynamic {
-            clearTimeout(value2);
+          function cleanup(): Dynamic {
+            clearTimeout(timeoutId);
             (window as Dynamic).removeEventListener(
-              input.responseEvent,
-              value3,
+              request.responseEvent,
+              handleResponse,
             );
-            input.signal?.removeEventListener("abort", callback);
+            request.signal?.removeEventListener("abort", handleAbort);
           }
-          let value2: Dynamic = setTimeout((): Dynamic => {
-            value();
-            input2({
+          let timeoutId: Dynamic = setTimeout((): Dynamic => {
+            cleanup();
+            resolve({
               ok: false,
-              error: input.timeoutError,
+              error: request.timeoutError,
             });
-          }, input.timeout);
-          function value3(input3?: Dynamic): Dynamic {
-            let detail: Dynamic = input3.detail;
-            if (input.filter && !input.filter(detail)) return;
-            value();
-            let value4: Dynamic = input.reject?.(detail);
-            input2(
-              value4
+          }, request.timeout);
+          function handleResponse(event?: Dynamic): Dynamic {
+            let detail: Dynamic = event.detail;
+            if (request.filter && !request.filter(detail)) return;
+            cleanup();
+            let rejection: Dynamic = request.reject?.(detail);
+            resolve(
+              rejection
                 ? {
                     ok: false,
-                    error: value4,
+                    error: rejection,
                   }
                 : {
                     ok: true,
-                    value: input.extract(detail),
+                    value: request.extract(detail),
                   },
             );
           }
-          (window as Dynamic).addEventListener(input.responseEvent, value3);
-          input.signal?.addEventListener("abort", callback, {
+          (window as Dynamic).addEventListener(request.responseEvent, handleResponse);
+          request.signal?.addEventListener("abort", handleAbort, {
             once: true,
           });
           (window as Dynamic).dispatchEvent(
-            new CustomEvent(input.dispatch.name, {
-              detail: input.dispatch.detail,
+            new CustomEvent(request.dispatch.name, {
+              detail: request.dispatch.detail,
             }),
           );
         });
@@ -208,43 +208,43 @@ export function installEditorOutlineAnnotations(): () => void {
       },
       mirrorPreviewFile(): Dynamic {},
       broadcastSubagents(): Dynamic {},
-      readSetting(input: Dynamic): Dynamic {
+      readSetting(key: Dynamic): Dynamic {
         try {
-          return localStorage.getItem(input) ?? sessionStorage.getItem(input);
+          return localStorage.getItem(key) ?? sessionStorage.getItem(key);
         } catch {
           return null;
         }
       },
       trackTurnEvent(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
-        value: Dynamic,
+        eventType: Dynamic,
+        properties: Dynamic,
+        chatId: Dynamic,
+        projectId: Dynamic,
       ): Dynamic {
         (window as Dynamic).dispatchEvent(
           new CustomEvent("telemetry:track", {
             detail: {
-              eventType: input,
-              properties: options,
-              chatId: context,
-              projectId: value,
+              eventType: eventType,
+              properties: properties,
+              chatId: chatId,
+              projectId: projectId,
             },
           }),
         );
       },
       reportSpan(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
-        value: Dynamic,
+        name: Dynamic,
+        spanOptions: Dynamic,
+        chatId: Dynamic,
+        projectId: Dynamic,
       ): Dynamic {
         (window as Dynamic).dispatchEvent(
           new CustomEvent("telemetry:span", {
             detail: {
-              name: input,
-              opts: options,
-              chatId: context,
-              projectId: value,
+              name: name,
+              opts: spanOptions,
+              chatId: chatId,
+              projectId: projectId,
             },
           }),
         );

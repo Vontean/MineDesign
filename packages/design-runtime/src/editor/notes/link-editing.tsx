@@ -5,279 +5,279 @@ import {
 import { load_react_jsx_runtime } from "../../dependencies";
 import { ContenteditableFalseValue, NotesAutoformatCaretPositionFromPoint, NotesAutoformatParentNode } from "./autoformat";
 import { toModuleNamespace } from "../../module-helpers";
-import { annotationTextStyle, PlatformFileContentConstant_10, PlatformFileContentConstant_9, PlatformFileContentMatch, PlatformFileContentMaxW, PlatformFileContentMin } from "../../platform/file-content";
+import { annotationTextStyle, PlatformFileContentConstant_10 as noteMaxWidth, PlatformFileContentConstant_9 as noteMinWidth, PlatformFileContentMatch, PlatformFileContentMaxW, PlatformFileContentMin } from "../../platform/file-content";
 
 var jsxNotesLinkEditing: Dynamic;
 var NotesLinkEditingLabel: Dynamic;
 var NotesLinkEditingClosest: Dynamic;
 var Fef3a2Value: Dynamic;
 var noteLinkHighlightColor: Dynamic;
-var NotesLinkEditingGrayRedOrangeConfig: Dynamic;
-var NotesLinkEditingGrayRedOrangeConfig_2: Dynamic;
+var noteTextColors: Dynamic;
+var noteFillColors: Dynamic;
 var NotesLinkEditingHandler: Dynamic;
 var NotesLinkEditingHandler_2: Dynamic;
 var NotesLinkEditingLh: Dynamic;
 var NotesLinkEditingKind: Dynamic;
 var NotesLinkEditingSize: Dynamic;
 var NotesLinkEditingMin: Dynamic;
-function createNoteLinkEditor(input?: Dynamic): Dynamic {
-  let value: Dynamic = null,
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value2: Dynamic = input2
-        ? (input2 instanceof Element
-            ? input2
-            : input2.parentElement
+function createNoteLinkEditor(editor?: Dynamic): Dynamic {
+  let dragState: Dynamic = null,
+    findChip: Dynamic = (node?: Dynamic): Dynamic => {
+      let chip: Dynamic = node
+        ? (node instanceof Element
+            ? node
+            : node.parentElement
           )?.closest(ContenteditableFalseValue)
         : null;
-      return value2 && input.contains(value2) ? value2 : null;
+      return chip && editor.contains(chip) ? chip : null;
     },
-    callback2: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    chipAtPoint: Dynamic = (
+      clientX?: Dynamic,
+      clientY?: Dynamic,
+      target?: Dynamic,
     ): Dynamic => {
-      let value2: Dynamic = NotesAutoformatCaretPositionFromPoint(input2, options);
+      let caretPoint: Dynamic = NotesAutoformatCaretPositionFromPoint(clientX, clientY);
       return (
-        callback(value2 ? value2[0] : null) ??
-        callback(context instanceof Node ? context : null)
+        findChip(caretPoint ? caretPoint[0] : null) ??
+        findChip(target instanceof Node ? target : null)
       );
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
+    isSelectionInside: Dynamic = (chip?: Dynamic): Dynamic =>
       !!(window as Dynamic).getSelection()?.anchorNode &&
-      input2.contains((window as Dynamic).getSelection().anchorNode),
-    callback4: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      chip.contains((window as Dynamic).getSelection().anchorNode),
+    extendSelectionAcrossChip: Dynamic = (
+      selection?: Dynamic,
+      anchorPoint?: Dynamic,
+      chip?: Dynamic,
     ): Dynamic => {
-      let parentNode: Dynamic = context.parentNode,
-        value2: Dynamic = [...parentNode.childNodes].indexOf(context),
-        value3: Dynamic = (document as Dynamic).createRange();
-      value3.setStart(...options);
-      input2.setBaseAndExtent(
-        ...options,
+      let parentNode: Dynamic = chip.parentNode,
+        chipIndex: Dynamic = [...parentNode.childNodes].indexOf(chip),
+        anchorRange: Dynamic = (document as Dynamic).createRange();
+      anchorRange.setStart(...anchorPoint);
+      selection.setBaseAndExtent(
+        ...anchorPoint,
         parentNode,
-        value3.comparePoint(parentNode, value2) < 0 ? value2 : value2 + 1,
+        anchorRange.comparePoint(parentNode, chipIndex) < 0 ? chipIndex : chipIndex + 1,
       );
     },
-    callback5: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value2?: Dynamic,
+    updateDragSelection: Dynamic = (
+      drag?: Dynamic,
+      pointerX?: Dynamic,
+      pointerY?: Dynamic,
+      hoveredChip?: Dynamic,
     ): Dynamic => {
-      let value3: Dynamic = (window as Dynamic).getSelection();
-      if (value !== input2 || !value3 || value3.rangeCount === 0) return;
-      if (!input2.chip && !input2.anchor) {
-        let value11: Dynamic = value2 ?? callback(value3.focusNode);
-        value11 &&
-          input.contains(value3.anchorNode) &&
-          !callback(value3.anchorNode) &&
-          callback4(
-            value3,
-            [value3.anchorNode, value3.anchorOffset],
-            value11,
+      let selection: Dynamic = (window as Dynamic).getSelection();
+      if (dragState !== drag || !selection || selection.rangeCount === 0) return;
+      if (!drag.chip && !drag.anchor) {
+        let focusChip: Dynamic = hoveredChip ?? findChip(selection.focusNode);
+        focusChip &&
+          editor.contains(selection.anchorNode) &&
+          !findChip(selection.anchorNode) &&
+          extendSelectionAcrossChip(
+            selection,
+            [selection.anchorNode, selection.anchorOffset],
+            focusChip,
           );
         return;
       }
-      let bounds: Dynamic = input.getBoundingClientRect(),
-        value4: Dynamic = Math.min(
-          Math.max(options, bounds.left + 1, 0),
+      let bounds: Dynamic = editor.getBoundingClientRect(),
+        clampedX: Dynamic = Math.min(
+          Math.max(pointerX, bounds.left + 1, 0),
           bounds.right - 1,
           (window as Dynamic).innerWidth - 1,
         ),
-        value5: Dynamic = Math.min(
-          Math.max(context, bounds.top + 1, 0),
+        clampedY: Dynamic = Math.min(
+          Math.max(pointerY, bounds.top + 1, 0),
           bounds.bottom - 1,
           (window as Dynamic).innerHeight - 1,
         ),
-        value6: Dynamic = NotesAutoformatCaretPositionFromPoint(
-          value4,
-          value5,
+        caretPosition: Dynamic = NotesAutoformatCaretPositionFromPoint(
+          clampedX,
+          clampedY,
         ),
-        value7: Dynamic =
-          value6 &&
-          (value6[0] instanceof Element
-            ? value6[0]
-            : value6[0].parentElement),
-        value8: Dynamic =
-          !!value6 &&
-          !!value7 &&
-          input.contains(value7) &&
-          !value7.closest(ContenteditableFalseValue),
-        value9: Dynamic = value2 ?? (value6 ? callback(value6[0]) : null),
-        value10: Dynamic = input2.chip?.parentNode;
-      if (input2.chip && value10) {
-        let value11: Dynamic = [...value10.childNodes].indexOf(input2.chip),
-          value12: Dynamic = (document as Dynamic).createRange();
-        value12.setStart(value10, value11 + 1);
-        if (value8)
-          input2.anchor = [
-            value10,
-            value12.comparePoint(value6[0], value6[1]) < 0
-              ? value11 + 1
-              : value11,
+        caretElement: Dynamic =
+          caretPosition &&
+          (caretPosition[0] instanceof Element
+            ? caretPosition[0]
+            : caretPosition[0].parentElement),
+        isInEditableText: Dynamic =
+          !!caretPosition &&
+          !!caretElement &&
+          editor.contains(caretElement) &&
+          !caretElement.closest(ContenteditableFalseValue),
+        targetChip: Dynamic = hoveredChip ?? (caretPosition ? findChip(caretPosition[0]) : null),
+        chipParent: Dynamic = drag.chip?.parentNode;
+      if (drag.chip && chipParent) {
+        let chipIndex: Dynamic = [...chipParent.childNodes].indexOf(drag.chip),
+          chipRange: Dynamic = (document as Dynamic).createRange();
+        chipRange.setStart(chipParent, chipIndex + 1);
+        if (isInEditableText)
+          drag.anchor = [
+            chipParent,
+            chipRange.comparePoint(caretPosition[0], caretPosition[1]) < 0
+              ? chipIndex + 1
+              : chipIndex,
           ];
-        else if (value9 && value9 !== input2.chip)
-          input2.anchor = [
-            value10,
-            input2.chip.compareDocumentPosition(value9) &
+        else if (targetChip && targetChip !== drag.chip)
+          drag.anchor = [
+            chipParent,
+            drag.chip.compareDocumentPosition(targetChip) &
             Node.DOCUMENT_POSITION_PRECEDING
-              ? value11 + 1
-              : value11,
+              ? chipIndex + 1
+              : chipIndex,
           ];
-        else if (!input2.anchor) {
-          let value13: Dynamic = input2.chip.getClientRects()[0];
-          input2.anchor = [
-            value10,
-            value13 &&
-            (context < value13.top ||
-              (context <= value13.bottom && options < value13.left))
-              ? value11 + 1
-              : value11,
+        else if (!drag.anchor) {
+          let chipRect: Dynamic = drag.chip.getClientRects()[0];
+          drag.anchor = [
+            chipParent,
+            chipRect &&
+            (pointerY < chipRect.top ||
+              (pointerY <= chipRect.bottom && pointerX < chipRect.left))
+              ? chipIndex + 1
+              : chipIndex,
           ];
         }
       }
-      input2.anchor &&
-        (value8
-          ? value3.setBaseAndExtent(...input2.anchor, value6[0], value6[1])
-          : (value9 ?? input2.chip) &&
-            callback4(value3, input2.anchor, value9 ?? input2.chip));
+      drag.anchor &&
+        (isInEditableText
+          ? selection.setBaseAndExtent(...drag.anchor, caretPosition[0], caretPosition[1])
+          : (targetChip ?? drag.chip) &&
+            extendSelectionAcrossChip(selection, drag.anchor, targetChip ?? drag.chip));
     },
-    callback6: Dynamic = (event?: Dynamic): Dynamic => {
-      let value2: Dynamic = value;
+    handleMouseMove: Dynamic = (event?: Dynamic): Dynamic => {
+      let drag: Dynamic = dragState;
       if (
-        !value2 ||
+        !drag ||
         event.buttons !== 1 ||
-        (cancelAnimationFrame(value2.raf),
-        Math.hypot(event.clientX - value2.x, event.clientY - value2.y) < 5)
+        (cancelAnimationFrame(drag.raf),
+        Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 5)
       )
         return;
-      let value3: Dynamic = callback2(
+      let hoveredChip: Dynamic = chipAtPoint(
         event.clientX,
         event.clientY,
         event.target,
       );
       if (
-        value2.chip &&
-        !value2.anchor &&
-        value3 === value2.chip &&
-        callback3(value2.chip)
+        drag.chip &&
+        !drag.anchor &&
+        hoveredChip === drag.chip &&
+        isSelectionInside(drag.chip)
       )
         return;
-      let { clientX: value4, clientY: value5 }: Dynamic = event;
-      value2.raf = requestAnimationFrame(
-        (): Dynamic => callback5(value2, value4, value5, value3),
+      let { clientX: pointerX, clientY: pointerY }: Dynamic = event;
+      drag.raf = requestAnimationFrame(
+        (): Dynamic => updateDragSelection(drag, pointerX, pointerY, hoveredChip),
       );
     },
-    callback7: Dynamic = (event?: Dynamic): Dynamic => {
-      let value2: Dynamic = value;
-      value2 && cancelAnimationFrame(value2.raf);
-      if (value2 && event instanceof MouseEvent && event.type === "mouseup") {
-        let value3: Dynamic = (window as Dynamic).getSelection(),
-          value4: Dynamic = callback2(
+    endDrag: Dynamic = (event?: Dynamic): Dynamic => {
+      let drag: Dynamic = dragState;
+      drag && cancelAnimationFrame(drag.raf);
+      if (drag && event instanceof MouseEvent && event.type === "mouseup") {
+        let selection: Dynamic = (window as Dynamic).getSelection(),
+          hoveredChip: Dynamic = chipAtPoint(
             event.clientX,
             event.clientY,
             event.target,
           );
-        Math.hypot(event.clientX - value2.x, event.clientY - value2.y) < 5
-          ? value3 &&
-            value2.chip &&
-            (value3.isCollapsed ||
-              !value2.chip.contains(value3.anchorNode) ||
-              !value2.chip.contains(value3.focusNode)) &&
-            NotesAutoformatParentNode(value3, value2.chip)
-          : (value2.chip &&
-              !value2.anchor &&
-              value4 === value2.chip &&
-              callback3(value2.chip)) ||
-            callback5(value2, event.clientX, event.clientY, value4);
+        Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 5
+          ? selection &&
+            drag.chip &&
+            (selection.isCollapsed ||
+              !drag.chip.contains(selection.anchorNode) ||
+              !drag.chip.contains(selection.focusNode)) &&
+            NotesAutoformatParentNode(selection, drag.chip)
+          : (drag.chip &&
+              !drag.anchor &&
+              hoveredChip === drag.chip &&
+              isSelectionInside(drag.chip)) ||
+            updateDragSelection(drag, event.clientX, event.clientY, hoveredChip);
       }
-      value = null;
+      dragState = null;
       event?.type === "mouseup" &&
         requestAnimationFrame((): Dynamic => {
-          let value3: Dynamic = (window as Dynamic).getSelection();
-          if (!value3 || value3.rangeCount === 0) return;
-          let value4: Dynamic = callback(value3.anchorNode),
-            value5: Dynamic = callback(value3.focusNode);
-          value3.isCollapsed
-            ? value5 && NotesAutoformatParentNode(value3, value5)
-            : value5 && !value4 && input.contains(value3.anchorNode)
-              ? callback4(
-                  value3,
-                  [value3.anchorNode, value3.anchorOffset],
-                  value5,
+          let selection: Dynamic = (window as Dynamic).getSelection();
+          if (!selection || selection.rangeCount === 0) return;
+          let anchorChip: Dynamic = findChip(selection.anchorNode),
+            focusChip: Dynamic = findChip(selection.focusNode);
+          selection.isCollapsed
+            ? focusChip && NotesAutoformatParentNode(selection, focusChip)
+            : focusChip && !anchorChip && editor.contains(selection.anchorNode)
+              ? extendSelectionAcrossChip(
+                  selection,
+                  [selection.anchorNode, selection.anchorOffset],
+                  focusChip,
                 )
-              : value4 &&
-                !value5 &&
-                input.contains(value3.focusNode) &&
-                callback4(
-                  value3,
-                  [value3.focusNode, value3.focusOffset],
-                  value4,
+              : anchorChip &&
+                !focusChip &&
+                editor.contains(selection.focusNode) &&
+                extendSelectionAcrossChip(
+                  selection,
+                  [selection.focusNode, selection.focusOffset],
+                  anchorChip,
                 );
         });
     };
-  (window as Dynamic).addEventListener("mousemove", callback6, true);
-  (window as Dynamic).addEventListener("pointerdown", callback7, true);
-  (window as Dynamic).addEventListener("mouseup", callback7, true);
-  (window as Dynamic).addEventListener("pointercancel", callback7, true);
+  (window as Dynamic).addEventListener("mousemove", handleMouseMove, true);
+  (window as Dynamic).addEventListener("pointerdown", endDrag, true);
+  (window as Dynamic).addEventListener("mouseup", endDrag, true);
+  (window as Dynamic).addEventListener("pointercancel", endDrag, true);
   return {
     onMouseDown(event: Dynamic): Dynamic {
       if (event.button !== 0) return;
-      let value2: Dynamic =
+      let isPlainClick: Dynamic =
           !event.shiftKey &&
           !event.metaKey &&
           !event.ctrlKey &&
           !event.altKey,
-        value3: Dynamic = (window as Dynamic).getSelection(),
-        value4: Dynamic = NotesAutoformatCaretPositionFromPoint(
+        selection: Dynamic = (window as Dynamic).getSelection(),
+        caretPoint: Dynamic = NotesAutoformatCaretPositionFromPoint(
           event.clientX,
           event.clientY,
         ),
-        value5: Dynamic =
-          callback(value4 ? value4[0] : null) ?? callback(event.target),
-        value6: Dynamic =
-          value2 &&
+        chip: Dynamic =
+          findChip(caretPoint ? caretPoint[0] : null) ?? findChip(event.target),
+        isDraggingSelection: Dynamic =
+          isPlainClick &&
           event.detail < 2 &&
-          !!value3 &&
-          !!value4 &&
-          !value3.isCollapsed &&
-          value3.rangeCount > 0 &&
-          value3.getRangeAt(0).isPointInRange(...value4);
-      value = {
+          !!selection &&
+          !!caretPoint &&
+          !selection.isCollapsed &&
+          selection.rangeCount > 0 &&
+          selection.getRangeAt(0).isPointInRange(...caretPoint);
+      dragState = {
         x: event.clientX,
         y: event.clientY,
-        chip: value2 ? value5 : null,
-        anchor: value6 && !value5 ? value4 : null,
+        chip: isPlainClick ? chip : null,
+        anchor: isDraggingSelection && !chip ? caretPoint : null,
         raf: 0,
       };
-      if (value6) {
+      if (isDraggingSelection) {
         event.preventDefault();
-        value5
-          ? NotesAutoformatParentNode(value3, value5)
-          : value3.collapse(...value4);
-        input.focus();
+        chip
+          ? NotesAutoformatParentNode(selection, chip)
+          : selection.collapse(...caretPoint);
+        editor.focus();
         return;
       }
-      if (!value5 || !value2 || !value3 || event.detail < 2) return;
+      if (!chip || !isPlainClick || !selection || event.detail < 2) return;
       event.preventDefault();
-      value = null;
-      let parentNode: Dynamic = value5.parentNode,
-        value7: Dynamic = [...parentNode.childNodes].indexOf(value5);
-      value3.setBaseAndExtent(parentNode, value7, parentNode, value7 + 1);
-      input.focus();
+      dragState = null;
+      let parentNode: Dynamic = chip.parentNode,
+        chipIndex: Dynamic = [...parentNode.childNodes].indexOf(chip);
+      selection.setBaseAndExtent(parentNode, chipIndex, parentNode, chipIndex + 1);
+      editor.focus();
     },
     stop(): Dynamic {
-      (window as Dynamic).removeEventListener("mousemove", callback6, true);
-      (window as Dynamic).removeEventListener("pointerdown", callback7, true);
-      (window as Dynamic).removeEventListener("mouseup", callback7, true);
+      (window as Dynamic).removeEventListener("mousemove", handleMouseMove, true);
+      (window as Dynamic).removeEventListener("pointerdown", endDrag, true);
+      (window as Dynamic).removeEventListener("mouseup", endDrag, true);
       (window as Dynamic).removeEventListener(
         "pointercancel",
-        callback7,
+        endDrag,
         true,
       );
-      callback7();
+      endDrag();
     },
   };
 }
@@ -287,8 +287,8 @@ export {
   jsxNotesLinkEditing,
   noteLinkHighlightColor,
   NotesLinkEditingClosest,
-  NotesLinkEditingGrayRedOrangeConfig,
-  NotesLinkEditingGrayRedOrangeConfig_2,
+  noteTextColors as NotesLinkEditingGrayRedOrangeConfig,
+  noteFillColors as NotesLinkEditingGrayRedOrangeConfig_2,
   NotesLinkEditingHandler,
   NotesLinkEditingHandler_2,
   NotesLinkEditingKind,
@@ -304,12 +304,12 @@ export function installEditorNotesLinkEditing(): () => void {
       1,
     );
     NotesLinkEditingLabel = "[data-note-typing-strip], [data-mc-popover]";
-    NotesLinkEditingClosest = (input?: Dynamic): Dynamic =>
-      input instanceof Element && input.closest(NotesLinkEditingLabel) !== null;
+    NotesLinkEditingClosest = (node?: Dynamic): Dynamic =>
+      node instanceof Element && node.closest(NotesLinkEditingLabel) !== null;
     // MineDesign：便签与形状底色取 Excalidraw 的背景色板（open-color 第 2 档），文字用它的默认墨色
     Fef3a2Value = "#ffec99";
     noteLinkHighlightColor = "#1e1e1e";
-    NotesLinkEditingGrayRedOrangeConfig = {
+    noteTextColors = {
       gray: "#73726c",
       red: "#c62828",
       orange: "#a05c00",
@@ -319,7 +319,7 @@ export function installEditorNotesLinkEditing(): () => void {
       purple: "#6a64a8",
       pink: "#ad4d72",
     };
-    NotesLinkEditingGrayRedOrangeConfig_2 = {
+    noteFillColors = {
       gray: "#e9ecef",
       red: "#ffc9c9",
       orange: "#ffd8a8",
@@ -329,70 +329,70 @@ export function installEditorNotesLinkEditing(): () => void {
       purple: "#d0bfff",
       pink: "#fcc2d7",
     };
-    NotesLinkEditingHandler = (input?: Dynamic): Dynamic =>
-      input === "default"
+    NotesLinkEditingHandler = (colorName?: Dynamic): Dynamic =>
+      colorName === "default"
         ? Fef3a2Value
-        : NotesLinkEditingGrayRedOrangeConfig_2[input];
+        : noteFillColors[colorName];
     NotesLinkEditingHandler_2 = (
-      input?: Dynamic,
-      options?: Dynamic,
+      kind?: Dynamic,
+      colorName?: Dynamic,
     ): Dynamic => {
-      let value: Dynamic =
-        options === "default"
+      let textColor: Dynamic =
+        colorName === "default"
           ? undefined
-          : NotesLinkEditingGrayRedOrangeConfig[options];
-      return input !== "title1"
-        ? (value ?? noteLinkHighlightColor)
-        : value === undefined
+          : noteTextColors[colorName];
+      return kind !== "title1"
+        ? (textColor ?? noteLinkHighlightColor)
+        : textColor === undefined
           ? "var(--cds-text-primary)"
           : "color-mix(in oklab, " +
-            value +
+            textColor +
             " var(--om-title-ink, 100%), var(--cds-text-primary))";
     };
-    NotesLinkEditingLh = (input?: Dynamic): Dynamic => {
-      let { size: value }: Dynamic = annotationTextStyle(input),
-        value2: Dynamic = PlatformFileContentMin(value);
-      return Math.round(value * value2.lh) + 2 * value2.py;
+    NotesLinkEditingLh = (annotation?: Dynamic): Dynamic => {
+      let { size: fontSize }: Dynamic = annotationTextStyle(annotation),
+        metrics: Dynamic = PlatformFileContentMin(fontSize);
+      return Math.round(fontSize * metrics.lh) + 2 * metrics.py;
     };
     NotesLinkEditingKind = (source?: Dynamic): Dynamic => {
       if (source.kind !== "title1") return source.w;
-      let { size: value }: Dynamic = annotationTextStyle(source),
-        value2: Dynamic = source.text
+      let { size: fontSize }: Dynamic = annotationTextStyle(source),
+        widestLine: Dynamic = source.text
           .split(
             `
 `,
           )
           .reduce(
-            (input?: Dynamic, options?: Dynamic): Dynamic =>
+            (widest?: Dynamic, line?: Dynamic): Dynamic =>
               Math.max(
-                input,
-                PlatformFileContentMatch(options, value),
+                widest,
+                PlatformFileContentMatch(line, fontSize),
               ),
             0,
           );
       return Math.min(
         PlatformFileContentMaxW(source),
-        value2 + 2 * PlatformFileContentMin(value).px,
+        widestLine + 2 * PlatformFileContentMin(fontSize).px,
       );
     };
-    NotesLinkEditingSize = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = annotationTextStyle(input),
-        value2: Dynamic = PlatformFileContentMin(value.size);
+    NotesLinkEditingSize = (annotation?: Dynamic): Dynamic => {
+      let textStyle: Dynamic = annotationTextStyle(annotation),
+        metrics: Dynamic = PlatformFileContentMin(textStyle.size);
       return {
-        color: NotesLinkEditingHandler_2(value.kind, value.color),
-        fontSize: value.size,
-        fontWeight: value.bold ? 700 : undefined,
-        fontStyle: value.italic ? "italic" : undefined,
-        lineHeight: value2.lh,
-        letterSpacing: value2.ls,
-        padding: String(value2.py) + "px " + String(value2.px) + "px",
-        minHeight: NotesLinkEditingLh(input),
+        color: NotesLinkEditingHandler_2(textStyle.kind, textStyle.color),
+        fontSize: textStyle.size,
+        fontWeight: textStyle.bold ? 700 : undefined,
+        fontStyle: textStyle.italic ? "italic" : undefined,
+        lineHeight: metrics.lh,
+        letterSpacing: metrics.ls,
+        padding: String(metrics.py) + "px " + String(metrics.px) + "px",
+        minHeight: NotesLinkEditingLh(annotation),
       };
     };
-    NotesLinkEditingMin = (input?: Dynamic): Dynamic =>
+    NotesLinkEditingMin = (width?: Dynamic): Dynamic =>
       Math.min(
-        PlatformFileContentConstant_10,
-        Math.max(PlatformFileContentConstant_9, Math.round(input)),
+        noteMaxWidth,
+        Math.max(noteMinWidth, Math.round(width)),
       );
   };
 }

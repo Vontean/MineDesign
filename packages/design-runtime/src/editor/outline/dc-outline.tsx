@@ -19,13 +19,13 @@ import { ChromeToolIconsColumnRowTextConfig, ChromeToolIconsNoteTitleRectConfig 
 import { OutlineValue } from "../inspector/modes";
 import { isContextMenuShortcut, reactKeyboardEditActions } from "../keyboard/edit-actions";
 import { DcKeyBrowsedAttribute } from "../keyboard/find";
-import { CanTReadThisArtboardSFileAskMessage, OutlineElementGlyph, OutlineGlyphsClassNames_2, OutlineGlyphsClassNames_3, OutlineGlyphsClassNames_4, OutlineGlyphsColorConfig, OutlineGlyphsConstant, OutlineGlyphsConstant_2, OutlineGlyphsConstant_3, OutlineGlyphsConstant_4, OutlineGlyphsConstant_5, OutlineGlyphsConstant_6, OutlineGlyphsLabel, OutlineGlyphsNativeEvent, OutlineGlyphsResolvedValue, OutlineGlyphsResolvedValue_2, OutlineGlyphsResolvedValue_3, OutlineGlyphsScForScIfDcImportSet, OutlineGlyphsSubscribers, OutlineIconGlyph } from "./glyphs";
+import { CanTReadThisArtboardSFileAskMessage, OutlineElementGlyph, OutlineGlyphsClassNames_2, OutlineGlyphsClassNames_3, OutlineGlyphsClassNames_4, OutlineGlyphsColorConfig, OutlineGlyphsConstant, OutlineGlyphsConstant_2 as layersListMaxSize, OutlineGlyphsConstant_3 as layersListDefaultSize, OutlineGlyphsConstant_4 as treeRowBaseIndent, OutlineGlyphsConstant_5 as treeIndentPerLevel, OutlineGlyphsConstant_6 as treeToggleColumnWidth, OutlineGlyphsLabel, OutlineGlyphsNativeEvent, OutlineGlyphsResolvedValue, OutlineGlyphsResolvedValue_2 as selectedRowClasses, OutlineGlyphsResolvedValue_3 as selectedRowSecondaryClasses, OutlineGlyphsScForScIfDcImportSet, OutlineGlyphsSubscribers, OutlineIconGlyph } from "./glyphs";
 import { OutlineRenameInput, OutlineRenameLimit } from "./rename";
 import { flattenOutlineRows, outlineAncestorMap, OutlineTreeHandler, OutlineTreeHandler_2, OutlineTreeHandler_3, scrollOutlineRowIntoView } from "./tree";
 import { CdsIsland, initializePlatformCdsIsland } from "../../platform/cds-island";
 
 var OutlineDcOutlineConstant: Dynamic;
-var OutlineDcOutlineConstant_2: Dynamic;
+var OutlineDcOutlineLongSuppressDelay: Dynamic;
 var OutlineDcOutlineHandler: Dynamic;
 var OutlineDcOutlineTarget: Dynamic;
 var nativeContextMenuTimeout: Dynamic;
@@ -45,290 +45,290 @@ function DcOutline({
   artboards: artboards,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [listHeight, setListHeight]: Dynamic = (0,
     reactKeyboardEditActions.useState)(
-      OutlineGlyphsConstant_3,
+      layersListDefaultSize,
     ),
-    value3: Dynamic = (0, reactKeyboardEditActions.useId)(),
-    [value4, value5]: Dynamic = (0,
+    idPrefix: Dynamic = (0, reactKeyboardEditActions.useId)(),
+    [expandedTids, setExpandedTids]: Dynamic = (0,
     reactKeyboardEditActions.useState)((): Dynamic => new Set()),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      artboards && input != null
-        ? (artboards.expanded[input] ?? OutlineGlyphsSubscribers)
-        : value4,
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (artboards && input != null) {
-        let value45: Dynamic =
-            artboards.expanded[input] ?? OutlineGlyphsSubscribers,
-          value46: Dynamic = options(value45);
-        value46 !== value45 && artboards.onExpandedChange(input, value46);
-      } else value5((input2?: Dynamic): Dynamic => options(input2));
+    getExpanded: Dynamic = (artboardKey?: Dynamic): Dynamic =>
+      artboards && artboardKey != null
+        ? (artboards.expanded[artboardKey] ?? OutlineGlyphsSubscribers)
+        : expandedTids,
+    updateExpanded: Dynamic = (artboardKey?: Dynamic, update?: Dynamic): Dynamic => {
+      if (artboards && artboardKey != null) {
+        let currentExpanded: Dynamic =
+            artboards.expanded[artboardKey] ?? OutlineGlyphsSubscribers,
+          nextExpanded: Dynamic = update(currentExpanded);
+        nextExpanded !== currentExpanded && artboards.onExpandedChange(artboardKey, nextExpanded);
+      } else setExpandedTids((prevExpanded?: Dynamic): Dynamic => update(prevExpanded));
     },
-    value6: Dynamic = artboards ? artboards.focused : null,
-    value7: Dynamic = callback(value6),
-    value8: Dynamic = (0, reactKeyboardEditActions.useMemo)(
+    focusedArtboard: Dynamic = artboards ? artboards.focused : null,
+    focusedExpanded: Dynamic = getExpanded(focusedArtboard),
+    ancestorMap: Dynamic = (0, reactKeyboardEditActions.useMemo)(
       (): Dynamic => outlineAncestorMap(nodes),
       [nodes],
     ),
-    [value9, value10]: Dynamic = (0,
+    [renamingTid, setRenamingTid]: Dynamic = (0,
     reactKeyboardEditActions.useState)(null),
-    [value11, value12]: Dynamic = (0,
+    [renameDraft, setRenameDraft]: Dynamic = (0,
     reactKeyboardEditActions.useState)(""),
-    [value13, value14]: Dynamic = (0,
+    [contextMenu, setContextMenu]: Dynamic = (0,
     reactKeyboardEditActions.useState)(null),
-    [value15, value16]: Dynamic = (0,
+    [draggingTid, setDraggingTid]: Dynamic = (0,
     reactKeyboardEditActions.useState)(null),
-    [value17, value18]: Dynamic = (0,
+    [lastCloseRenameOn, setLastCloseRenameOn]: Dynamic = (0,
     reactKeyboardEditActions.useState)(closeRenameOn);
-  closeRenameOn !== value17 &&
-    (value18(closeRenameOn), value10(null), value16(null));
-  let [value19, value20]: Dynamic = (0,
+  closeRenameOn !== lastCloseRenameOn &&
+    (setLastCloseRenameOn(closeRenameOn), setRenamingTid(null), setDraggingTid(null));
+  let [dropTarget, setDropTarget]: Dynamic = (0,
     reactKeyboardEditActions.useState)(null),
-    value21: Dynamic = artboards?.cursor,
-    [value22, value23]: Dynamic = (0,
+    artboardCursor: Dynamic = artboards?.cursor,
+    [cursorKey, setCursorKey]: Dynamic = (0,
     reactKeyboardEditActions.useState)(
-      (): Dynamic => value21?.key ?? null,
+      (): Dynamic => artboardCursor?.key ?? null,
     ),
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      value21 && (value21.key = input);
-      value23(input);
+    setCursor: Dynamic = (key?: Dynamic): Dynamic => {
+      artboardCursor && (artboardCursor.key = key);
+      setCursorKey(key);
     },
-    value24: Dynamic = (0, reactKeyboardEditActions.useRef)(0),
-    value25: Dynamic =
+    refocusStampRef: Dynamic = (0, reactKeyboardEditActions.useRef)(0),
+    selectionSignature: Dynamic =
       selectedTids.length > 0
-        ? `${value6 ?? ""}:${selectedTids.join(",")}`
+        ? `${focusedArtboard ?? ""}:${selectedTids.join(",")}`
         : "",
-    [value26]: Dynamic = (0, reactKeyboardEditActions.useState)(
+    [fallbackRevealed]: Dynamic = (0, reactKeyboardEditActions.useState)(
       (): Dynamic => ({
         path: "",
         row: "",
       }),
     ),
-    value27: Dynamic = artboards?.revealed ?? value26,
-    value28: Dynamic = (0, reactKeyboardEditActions.useRef)(
-      artboards ? artboards.revealed.path : value25,
+    revealed: Dynamic = artboards?.revealed ?? fallbackRevealed,
+    lastRevealedRef: Dynamic = (0, reactKeyboardEditActions.useRef)(
+      artboards ? artboards.revealed.path : selectionSignature,
     );
   (0, reactKeyboardEditActions.useEffect)((): Dynamic => {
     if (selectedTids.length === 0) {
-      value28.current = "";
-      value27.path = "";
+      lastRevealedRef.current = "";
+      revealed.path = "";
       return;
     }
-    let value45: Dynamic = value25;
-    value45 !== value28.current &&
+    let signature: Dynamic = selectionSignature;
+    signature !== lastRevealedRef.current &&
       artboards &&
       !artboards.open.has(artboards.focused) &&
       artboards.onToggleOpen(artboards.focused, true);
-    value28.current = value45;
-    value27.path = value45;
-    callback2(value6, (input?: Dynamic): Dynamic => {
-      let values: Dynamic = new Set(input);
-      for (let value46 of selectedTids as Dynamic)
-        for (let value47 of (value8.get(value46) ?? []) as Dynamic)
-          values.add(value47);
-      return values.size === input.size ? input : values;
+    lastRevealedRef.current = signature;
+    revealed.path = signature;
+    updateExpanded(focusedArtboard, (expanded?: Dynamic): Dynamic => {
+      let values: Dynamic = new Set(expanded);
+      for (let selectedTid of selectedTids as Dynamic)
+        for (let ancestorTid of (ancestorMap.get(selectedTid) ?? []) as Dynamic)
+          values.add(ancestorTid);
+      return values.size === expanded.size ? expanded : values;
     });
-  }, [selectedTids, value8]);
-  let value29: Dynamic = (0, reactKeyboardEditActions.useRef)(null),
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      let value45: Dynamic =
-        value29.current?.querySelectorAll("[data-row-key]");
-      for (let value46 of (value45 ?? []) as Dynamic)
-        if (value46.dataset.rowKey === input) return value46;
+  }, [selectedTids, ancestorMap]);
+  let treeRef: Dynamic = (0, reactKeyboardEditActions.useRef)(null),
+    findRowElement: Dynamic = (rowKey?: Dynamic): Dynamic => {
+      let rowElements: Dynamic =
+        treeRef.current?.querySelectorAll("[data-row-key]");
+      for (let rowElement of (rowElements ?? []) as Dynamic)
+        if (rowElement.dataset.rowKey === rowKey) return rowElement;
       return null;
     },
-    value30: Dynamic = artboards?.scroll,
-    value31: Dynamic = (0, reactKeyboardEditActions.useRef)(false),
-    value32: Dynamic = (0, reactKeyboardEditActions.useRef)(true);
+    scrollState: Dynamic = artboards?.scroll,
+    isRestoringScrollRef: Dynamic = (0, reactKeyboardEditActions.useRef)(false),
+    needsScrollRestoreRef: Dynamic = (0, reactKeyboardEditActions.useRef)(true);
   (0, reactKeyboardEditActions.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value29.current;
+    let current: Dynamic = treeRef.current;
     !current ||
-      !value30 ||
-      !value32.current ||
-      ((value31.current = true),
-      (current.scrollTop = value30.current),
-      Math.abs(current.scrollTop - value30.current) <= 0.5 &&
-        (value32.current = false),
+      !scrollState ||
+      !needsScrollRestoreRef.current ||
+      ((isRestoringScrollRef.current = true),
+      (current.scrollTop = scrollState.current),
+      Math.abs(current.scrollTop - scrollState.current) <= 0.5 &&
+        (needsScrollRestoreRef.current = false),
       requestAnimationFrame((): Dynamic => {
-        value31.current = false;
+        isRestoringScrollRef.current = false;
       }));
-  }, [value30, nodes, artboards?.trees, artboards?.open]);
-  let callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      scrollOutlineRowIntoView(value29.current, input, true) &&
-        (value32.current = false);
+  }, [scrollState, nodes, artboards?.trees, artboards?.open]);
+  let revealRow: Dynamic = (rowElement?: Dynamic): Dynamic => {
+      scrollOutlineRowIntoView(treeRef.current, rowElement, true) &&
+        (needsScrollRestoreRef.current = false);
     },
-    value33: Dynamic =
-      value25 +
+    revealSignature: Dynamic =
+      selectionSignature +
       "|" +
       [...(artboards?.selectedObjects ?? [])].sort().join(",") +
       "|" +
       [...(artboards?.selected ?? [])].sort().join(","),
-    value34: Dynamic = (0, reactKeyboardEditActions.useRef)(false),
-    value35: Dynamic = (0, reactKeyboardEditActions.useRef)(null);
+    justPressedRef: Dynamic = (0, reactKeyboardEditActions.useRef)(false),
+    blurredTargetRef: Dynamic = (0, reactKeyboardEditActions.useRef)(null);
   (0, reactKeyboardEditActions.useEffect)((): Dynamic => {
-    let callback16: Dynamic = (): Dynamic => {
-      setTimeout((): Dynamic => (value35.current = null), 0);
+    let clearBlurredTarget: Dynamic = (): Dynamic => {
+      setTimeout((): Dynamic => (blurredTargetRef.current = null), 0);
     };
-    (window as Dynamic).addEventListener("focus", callback16);
+    (window as Dynamic).addEventListener("focus", clearBlurredTarget);
     return (): Dynamic =>
-      (window as Dynamic).removeEventListener("focus", callback16);
+      (window as Dynamic).removeEventListener("focus", clearBlurredTarget);
   }, []);
-  let callback6: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value29.current;
+  let setKeyboardBrowsed: Dynamic = (isBrowsed?: Dynamic): Dynamic => {
+      let current: Dynamic = treeRef.current;
       current &&
-        (input
+        (isBrowsed
           ? current.setAttribute(DcKeyBrowsedAttribute, "")
           : current.removeAttribute(DcKeyBrowsedAttribute));
     },
-    callback7: Dynamic = (): Dynamic => {
-      value35.current = null;
-      value34.current = true;
-      setTimeout((): Dynamic => (value34.current = false), 0);
+    handlePointerDown: Dynamic = (): Dynamic => {
+      blurredTargetRef.current = null;
+      justPressedRef.current = true;
+      setTimeout((): Dynamic => (justPressedRef.current = false), 0);
     },
-    callback8: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    revealNewSelection: Dynamic = (
+      selectedIds?: Dynamic,
+      previousIdsRef?: Dynamic,
+      testIdPrefix?: Dynamic,
     ): Dynamic => {
-      let current: Dynamic = options.current;
-      options.current = input ?? new Set();
-      let value45: Dynamic = input
-        ? [...input].find((input2?: Dynamic): Dynamic => !current.has(input2))
+      let current: Dynamic = previousIdsRef.current;
+      previousIdsRef.current = selectedIds ?? new Set();
+      let addedId: Dynamic = selectedIds
+        ? [...selectedIds].find((id?: Dynamic): Dynamic => !current.has(id))
         : undefined;
-      if (value45 == null) return;
-      value27.row = value33;
-      let value46: Dynamic = requestAnimationFrame((): Dynamic => {
-        let value47: Dynamic = value29.current?.querySelector(
-          `[data-testid="${context}-${CSS.escape(value45)}"]`,
+      if (addedId == null) return;
+      revealed.row = revealSignature;
+      let frameId: Dynamic = requestAnimationFrame((): Dynamic => {
+        let rowElement: Dynamic = treeRef.current?.querySelector(
+          `[data-testid="${testIdPrefix}-${CSS.escape(addedId)}"]`,
         );
-        value47 && callback5(value47);
+        rowElement && revealRow(rowElement);
       });
-      return (): Dynamic => cancelAnimationFrame(value46);
+      return (): Dynamic => cancelAnimationFrame(frameId);
     },
-    value36: Dynamic = artboards?.selected,
-    value37: Dynamic = (0, reactKeyboardEditActions.useRef)(
+    selectedArtboards: Dynamic = artboards?.selected,
+    previousArtboardsRef: Dynamic = (0, reactKeyboardEditActions.useRef)(
       new Set(),
     );
   (0, reactKeyboardEditActions.useEffect)(
-    (): Dynamic => callback8(value36, value37, "dc-outline-artboard"),
-    [value36],
+    (): Dynamic => revealNewSelection(selectedArtboards, previousArtboardsRef, "dc-outline-artboard"),
+    [selectedArtboards],
   );
-  let value38: Dynamic = artboards?.selectedObjects,
-    value39: Dynamic = (0, reactKeyboardEditActions.useRef)(
+  let selectedObjects: Dynamic = artboards?.selectedObjects,
+    previousObjectsRef: Dynamic = (0, reactKeyboardEditActions.useRef)(
       new Set(),
     );
   (0, reactKeyboardEditActions.useEffect)(
-    (): Dynamic => callback8(value38, value39, "dc-outline-object"),
-    [value38],
+    (): Dynamic => revealNewSelection(selectedObjects, previousObjectsRef, "dc-outline-object"),
+    [selectedObjects],
   );
   (0, reactKeyboardEditActions.useEffect)((): Dynamic => {
     if (selectedTids.length === 0) {
-      value27.row = "";
+      revealed.row = "";
       return;
     }
-    if (value27.row === value33) return;
-    let value45: Dynamic = selectedTids[0];
+    if (revealed.row === revealSignature) return;
+    let firstTid: Dynamic = selectedTids[0];
     if (
-      !(value8.get(value45) ?? []).every(
-        (input?: Dynamic): Dynamic => value7.has(input),
+      !(ancestorMap.get(firstTid) ?? []).every(
+        (ancestorTid?: Dynamic): Dynamic => focusedExpanded.has(ancestorTid),
       )
     )
       return;
-    let value46: Dynamic = requestAnimationFrame((): Dynamic => {
-      let value47: Dynamic = value29.current?.querySelector(
-        `[data-testid="dc-outline-${value45}"]`,
+    let frameId: Dynamic = requestAnimationFrame((): Dynamic => {
+      let rowElement: Dynamic = treeRef.current?.querySelector(
+        `[data-testid="dc-outline-${firstTid}"]`,
       );
-      value47 && ((value27.row = value33), callback5(value47));
+      rowElement && ((revealed.row = revealSignature), revealRow(rowElement));
     });
-    return (): Dynamic => cancelAnimationFrame(value46);
-  }, [selectedTids, value33, value7, value8, artboards?.open]);
+    return (): Dynamic => cancelAnimationFrame(frameId);
+  }, [selectedTids, revealSignature, focusedExpanded, ancestorMap, artboards?.open]);
   (0, reactKeyboardEditActions.useEffect)(
     (): Dynamic => (): Dynamic => {
-      value27.row = "";
+      revealed.row = "";
     },
-    [value27],
+    [revealed],
   );
-  let value40: Dynamic = (0, reactKeyboardEditActions.useRef)(value),
-    callback9: Dynamic = (input?: Dynamic): Dynamic =>
-      value2(
+  let listHeightRef: Dynamic = (0, reactKeyboardEditActions.useRef)(listHeight),
+    resizeList: Dynamic = (delta?: Dynamic): Dynamic =>
+      setListHeight(
         Math.min(
-          OutlineGlyphsConstant_2,
-          Math.max(OutlineGlyphsConstant, value40.current + input),
+          layersListMaxSize,
+          Math.max(OutlineGlyphsConstant, listHeightRef.current + delta),
         ),
       ),
-    value41: Dynamic = flattenOutlineRows(
+    visibleRows: Dynamic = flattenOutlineRows(
       nodes,
       artboards,
-      callback,
+      getExpanded,
     ),
-    value42: Dynamic = ((): Dynamic => {
+    tabStopKey: Dynamic = ((): Dynamic => {
       let values: Dynamic = new Set(
-        value41.map((input?: Dynamic): Dynamic => input.key),
+        visibleRows.map((row?: Dynamic): Dynamic => row.key),
       );
-      if (value22 != null && values.has(value22)) return value22;
-      let value45: Dynamic =
+      if (cursorKey != null && values.has(cursorKey)) return cursorKey;
+      let selectedKey: Dynamic =
         selectedTids.length > 0
-          ? OutlineTreeHandler_3(value6, selectedTids[0])
+          ? OutlineTreeHandler_3(focusedArtboard, selectedTids[0])
           : null;
-      if (value45 != null && values.has(value45)) return value45;
-      let value46: Dynamic = artboards?.objects.find(
-        (input?: Dynamic): Dynamic => artboards.selectedObjects.has(input.id),
+      if (selectedKey != null && values.has(selectedKey)) return selectedKey;
+      let selectedObject: Dynamic = artboards?.objects.find(
+        (objectItem?: Dynamic): Dynamic => artboards.selectedObjects.has(objectItem.id),
       );
-      if (value46) return OutlineTreeHandler_2(value46.id);
-      let value47: Dynamic = artboards?.rows.find(
-        (input?: Dynamic): Dynamic => artboards.selected.has(input.file),
+      if (selectedObject) return OutlineTreeHandler_2(selectedObject.id);
+      let selectedRow: Dynamic = artboards?.rows.find(
+        (artboardRow?: Dynamic): Dynamic => artboards.selected.has(artboardRow.file),
       );
-      return value47
-        ? OutlineTreeHandler(value47.file)
-        : (value41[0]?.key ?? null);
+      return selectedRow
+        ? OutlineTreeHandler(selectedRow.file)
+        : (visibleRows[0]?.key ?? null);
     })(),
-    callback10: Dynamic = (input?: Dynamic): Dynamic => {
-      callback3(input);
-      let value45: Dynamic = callback4(input);
-      value45 &&
-        (value45.focus({
+    focusRow: Dynamic = (key?: Dynamic): Dynamic => {
+      setCursor(key);
+      let rowElement: Dynamic = findRowElement(key);
+      rowElement &&
+        (rowElement.focus({
           preventScroll: true,
         }),
-        scrollOutlineRowIntoView(value29.current, value45));
+        scrollOutlineRowIntoView(treeRef.current, rowElement));
     },
-    callback11: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (input.tid == null) {
-        input.file != null && artboards?.onToggleOpen(input.file, options);
+    setRowOpen: Dynamic = (row?: Dynamic, isOpen?: Dynamic): Dynamic => {
+      if (row.tid == null) {
+        row.file != null && artboards?.onToggleOpen(row.file, isOpen);
         return;
       }
-      let tid: Dynamic = input.tid;
-      callback2(input.file, (input2?: Dynamic): Dynamic => {
-        if (input2.has(tid) === options) return input2;
-        let values: Dynamic = new Set(input2);
-        options ? values.add(tid) : values.delete(tid);
+      let tid: Dynamic = row.tid;
+      updateExpanded(row.file, (expanded?: Dynamic): Dynamic => {
+        if (expanded.has(tid) === isOpen) return expanded;
+        let values: Dynamic = new Set(expanded);
+        isOpen ? values.add(tid) : values.delete(tid);
         return values;
       });
     },
-    callback12: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      callback3(input.key);
-      if (input.object != null)
+    activateRow: Dynamic = (row?: Dynamic, isMultiSelect?: Dynamic): Dynamic => {
+      setCursor(row.key);
+      if (row.object != null)
         return !artboards ||
-          (!options && artboards.selectedObjects.has(input.object))
+          (!isMultiSelect && artboards.selectedObjects.has(row.object))
           ? false
-          : (artboards.onSelectObject(input.object, options), true);
-      if (artboards && options && input.tid == null && input.file != null) {
-        artboards.onToggleSelected(input.file);
+          : (artboards.onSelectObject(row.object, isMultiSelect), true);
+      if (artboards && isMultiSelect && row.tid == null && row.file != null) {
+        artboards.onToggleSelected(row.file);
         return true;
       }
       if (
         artboards &&
-        input.file != null &&
-        input.file !== artboards.focused
+        row.file != null &&
+        row.file !== artboards.focused
       ) {
         let cursor: Dynamic = artboards.cursor,
-          value45: Dynamic =
-            (value24.current =
+          refocusStamp: Dynamic =
+            (refocusStampRef.current =
             cursor.refocusAt =
               Date.now()),
-          callback16: Dynamic = (): Dynamic => {
-            cursor.refocusAt === value45 && (cursor.refocusAt = 0);
+          clearRefocus: Dynamic = (): Dynamic => {
+            cursor.refocusAt === refocusStamp && (cursor.refocusAt = 0);
           };
-        (document as Dynamic).addEventListener("pointerdown", callback16, {
+        (document as Dynamic).addEventListener("pointerdown", clearRefocus, {
           capture: true,
           once: true,
         });
@@ -336,27 +336,27 @@ function DcOutline({
           (): Dynamic =>
             (document as Dynamic).removeEventListener(
               "pointerdown",
-              callback16,
+              clearRefocus,
               {
                 capture: true,
               },
             ),
           OutlineRenameLimit,
         );
-        input.tid == null
-          ? artboards.onFocus(input.file)
-          : artboards.onSelectIn(input.file, input.tid);
+        row.tid == null
+          ? artboards.onFocus(row.file)
+          : artboards.onSelectIn(row.file, row.tid);
         return true;
       }
-      return input.tid == null
-        ? artboards?.selected.has(input.file)
+      return row.tid == null
+        ? artboards?.selected.has(row.file)
           ? false
-          : (artboards?.onFocus(input.file), true)
-        : !options && selectedTids.includes(input.tid)
+          : (artboards?.onFocus(row.file), true)
+        : !isMultiSelect && selectedTids.includes(row.tid)
           ? false
-          : (onSelect(input.tid, options), true);
+          : (onSelect(row.tid, isMultiSelect), true);
     },
-    callback13: Dynamic = (event?: Dynamic): Dynamic => {
+    handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (
         event.altKey ||
         ((event.metaKey || event.ctrlKey) && event.key !== " ")
@@ -365,17 +365,17 @@ function DcOutline({
       let target: Dynamic = event.target,
         ancestor: Dynamic = target.closest('[role="treeitem"]');
       if (!ancestor || !event.currentTarget.contains(ancestor)) return;
-      let value45: Dynamic = value41.findIndex(
-        (input?: Dynamic): Dynamic => input.key === ancestor.dataset.rowKey,
+      let rowIndex: Dynamic = visibleRows.findIndex(
+        (row?: Dynamic): Dynamic => row.key === ancestor.dataset.rowKey,
       );
-      if (value45 < 0) return;
-      let value46: Dynamic = value41[value45],
-        value47: Dynamic = target === ancestor,
-        value48: Dynamic = value41.length - 1;
+      if (rowIndex < 0) return;
+      let currentRow: Dynamic = visibleRows[rowIndex],
+        isRowFocused: Dynamic = target === ancestor,
+        lastIndex: Dynamic = visibleRows.length - 1;
       if (isContextMenuShortcut(event)) {
         event.preventDefault();
         !event.repeat &&
-          value13 === null &&
+          contextMenu === null &&
           ancestor.dispatchEvent(
             new MouseEvent("contextmenu", {
               bubbles: true,
@@ -386,35 +386,35 @@ function DcOutline({
       }
       switch (event.key) {
         case "ArrowDown":
-          callback10(value41[Math.min(value45 + 1, value48)].key);
+          focusRow(visibleRows[Math.min(rowIndex + 1, lastIndex)].key);
           break;
         case "ArrowUp":
-          callback10(value41[Math.max(value45 - 1, 0)].key);
+          focusRow(visibleRows[Math.max(rowIndex - 1, 0)].key);
           break;
         case "Home":
-          callback10(value41[0].key);
+          focusRow(visibleRows[0].key);
           break;
         case "End":
-          callback10(value41[value48].key);
+          focusRow(visibleRows[lastIndex].key);
           break;
         case "ArrowRight":
-          value46.expandable && !value46.open
-            ? callback11(value46, true)
-            : value46.open &&
-              value45 < value48 &&
-              callback10(value41[value45 + 1].key);
+          currentRow.expandable && !currentRow.open
+            ? setRowOpen(currentRow, true)
+            : currentRow.open &&
+              rowIndex < lastIndex &&
+              focusRow(visibleRows[rowIndex + 1].key);
           break;
         case "ArrowLeft":
-          value46.open
-            ? callback11(value46, false)
-            : value46.parentKey != null && callback10(value46.parentKey);
+          currentRow.open
+            ? setRowOpen(currentRow, false)
+            : currentRow.parentKey != null && focusRow(currentRow.parentKey);
           break;
         case " ":
           if (
-            !value47 ||
+            !isRowFocused ||
             (!event.repeat &&
-              !callback12(
-                value46,
+              !activateRow(
+                currentRow,
                 event.shiftKey || event.metaKey || event.ctrlKey,
               ))
           )
@@ -422,287 +422,287 @@ function DcOutline({
           break;
         case "Enter":
           if (
-            !value47 ||
+            !isRowFocused ||
             event.shiftKey ||
-            (!event.repeat && !callback12(value46, false))
+            (!event.repeat && !activateRow(currentRow, false))
           )
             return;
           break;
         default:
           return;
       }
-      event.key !== " " && event.key !== "Enter" && callback6(true);
+      event.key !== " " && event.key !== "Enter" && setKeyboardBrowsed(true);
       event.preventDefault();
     };
   (0, reactKeyboardEditActions.useLayoutEffect)((): Dynamic => {
     if (
-      !value21 ||
-      value21.refocusAt === 0 ||
-      value21.refocusAt === value24.current
+      !artboardCursor ||
+      artboardCursor.refocusAt === 0 ||
+      artboardCursor.refocusAt === refocusStampRef.current
     )
       return;
     let activeElement: Dynamic = (document as Dynamic).activeElement;
     if (
-      Date.now() - value21.refocusAt > OutlineRenameLimit ||
+      Date.now() - artboardCursor.refocusAt > OutlineRenameLimit ||
       (activeElement != null &&
         activeElement !== (document as Dynamic).body &&
         activeElement.closest('[data-testid="dc-outline"]') == null)
     ) {
-      value21.refocusAt = 0;
+      artboardCursor.refocusAt = 0;
       return;
     }
-    let value45: Dynamic =
-      value21.key != null ? callback4(value21.key) : null;
-    value45 &&
-      ((value21.refocusAt = 0),
-      value45.focus({
+    let rowElement: Dynamic =
+      artboardCursor.key != null ? findRowElement(artboardCursor.key) : null;
+    rowElement &&
+      ((artboardCursor.refocusAt = 0),
+      rowElement.focus({
         preventScroll: true,
       }),
-      scrollOutlineRowIntoView(value29.current, value45));
+      scrollOutlineRowIntoView(treeRef.current, rowElement));
   });
-  let value43: Dynamic = (0, reactKeyboardEditActions.useRef)(
+  let onHoverRef: Dynamic = (0, reactKeyboardEditActions.useRef)(
     onHover,
   );
   (0, reactKeyboardEditActions.useEffect)((): Dynamic => {
-    value43.current = onHover;
+    onHoverRef.current = onHover;
   });
   (0, reactKeyboardEditActions.useEffect)(
-    (): Dynamic => (): Dynamic => value43.current(null),
+    (): Dynamic => (): Dynamic => onHoverRef.current(null),
     [],
   );
-  let value44: Dynamic = (0, reactKeyboardEditActions.useRef)(null);
+  let lastFocusedRowRef: Dynamic = (0, reactKeyboardEditActions.useRef)(null);
   (0, reactKeyboardEditActions.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value44.current,
+    let current: Dynamic = lastFocusedRowRef.current,
       activeElement: Dynamic = (document as Dynamic).activeElement;
     if (
       current != null &&
       (activeElement == null ||
         activeElement === (document as Dynamic).body) &&
-      value41.length > 0 &&
-      !value41.some((input?: Dynamic): Dynamic => input.key === current.key)
+      visibleRows.length > 0 &&
+      !visibleRows.some((row?: Dynamic): Dynamic => row.key === current.key)
     ) {
-      let value47: Dynamic =
-        value29.current?.hasAttribute(DcKeyBrowsedAttribute) === true;
-      callback10(value41[Math.min(current.index, value41.length - 1)].key);
-      callback6(value47);
+      let wasKeyBrowsed: Dynamic =
+        treeRef.current?.hasAttribute(DcKeyBrowsedAttribute) === true;
+      focusRow(visibleRows[Math.min(current.index, visibleRows.length - 1)].key);
+      setKeyboardBrowsed(wasKeyBrowsed);
     }
-    let activeElement2: Dynamic = (document as Dynamic).activeElement,
-      value45: Dynamic =
-        activeElement2 != null && value29.current?.contains(activeElement2)
-          ? activeElement2
+    let focusedElement: Dynamic = (document as Dynamic).activeElement,
+      focusedKey: Dynamic =
+        focusedElement != null && treeRef.current?.contains(focusedElement)
+          ? focusedElement
               .closest('[role="treeitem"]')
               ?.getAttribute("data-row-key")
           : null,
-      value46: Dynamic =
-        value45 != null
-          ? value41.findIndex(
-              (input?: Dynamic): Dynamic => input.key === value45,
+      focusedIndex: Dynamic =
+        focusedKey != null
+          ? visibleRows.findIndex(
+              (row?: Dynamic): Dynamic => row.key === focusedKey,
             )
           : -1;
-    value44.current =
-      value45 != null && value46 >= 0
+    lastFocusedRowRef.current =
+      focusedKey != null && focusedIndex >= 0
         ? {
-            key: value45,
-            index: value46,
+            key: focusedKey,
+            index: focusedIndex,
           }
         : null;
   });
-  let callback14: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value45: Dynamic = null,
+  let renderNode: Dynamic = (
+      node?: Dynamic,
+      depth?: Dynamic,
+      position?: Dynamic,
+      artboardKey: Dynamic = null,
     ): Dynamic => {
-      let value46: Dynamic = value45 ?? value6,
-        value47: Dynamic = callback(value46).has(input.tid),
-        value48: Dynamic = input.children.length > 0,
-        value49: Dynamic = OutlineTreeHandler_3(
-          value46,
-          input.tid,
+      let treeKey: Dynamic = artboardKey ?? focusedArtboard,
+        isOpen: Dynamic = getExpanded(treeKey).has(node.tid),
+        hasChildren: Dynamic = node.children.length > 0,
+        rowKey: Dynamic = OutlineTreeHandler_3(
+          treeKey,
+          node.tid,
         ),
-        value50: Dynamic =
-          value45 == null
-            ? selectedTids.includes(input.tid)
-            : (artboards?.selectedIn[value45] ?? []).includes(input.tid),
-        value51: Dynamic = value45 == null && value19?.tid === input.tid,
-        value52: Dynamic =
-          value50 || (value51 && value19?.position === "into"),
-        value53: Dynamic = input.hidden || input.grayed === true,
-        value54: Dynamic = input.component != null,
-        value55: Dynamic = input.detail
-          ? `${uiNodeLabel(input)} ${input.detail}`
-          : uiNodeLabel(input),
-        value56: Dynamic = input.glyph
-          ? ChromeToolIconsColumnRowTextConfig[input.glyph]
+        isSelected: Dynamic =
+          artboardKey == null
+            ? selectedTids.includes(node.tid)
+            : (artboards?.selectedIn[artboardKey] ?? []).includes(node.tid),
+        isDropTarget: Dynamic = artboardKey == null && dropTarget?.tid === node.tid,
+        isHighlighted: Dynamic =
+          isSelected || (isDropTarget && dropTarget?.position === "into"),
+        isDimmed: Dynamic = node.hidden || node.grayed === true,
+        isComponent: Dynamic = node.component != null,
+        labelText: Dynamic = node.detail
+          ? `${uiNodeLabel(node)} ${node.detail}`
+          : uiNodeLabel(node),
+        glyphIcon: Dynamic = node.glyph
+          ? ChromeToolIconsColumnRowTextConfig[node.glyph]
           : undefined,
-        value57: Dynamic =
-          value45 == null ? directiveState?.[input.tid] : undefined,
-        value58: Dynamic =
-          input.tag === "sc-if" && value57?.on != null
-            ? value57.on
+        directive: Dynamic =
+          artboardKey == null ? directiveState?.[node.tid] : undefined,
+        directiveBadge: Dynamic =
+          node.tag === "sc-if" && directive?.on != null
+            ? directive.on
               ? "on"
               : "off"
-            : input.tag === "sc-for" && value57?.count != null
-              ? value57.count === 0
+            : node.tag === "sc-for" && directive?.count != null
+              ? directive.count === 0
                 ? "empty"
-                : value57.count === 1
+                : directive.count === 1
                   ? "1 item"
-                  : `${value57.count} items`
+                  : `${directive.count} items`
               : null;
       return (() => {
-        const _Component = "div";
-        const _props = {
+        const NodeRowTag = "div";
+        const nodeRowProps = {
           children: [
-            value51 && value19?.position === "before" && (
+            isDropTarget && dropTarget?.position === "before" && (
               <div
                 className={"h-0.5 rounded-[1px] bg-fill-accent"}
                 style={{
                   marginLeft:
-                    OutlineGlyphsConstant_4 +
-                    options * OutlineGlyphsConstant_5 +
-                    OutlineGlyphsConstant_6,
+                    treeRowBaseIndent +
+                    depth * treeIndentPerLevel +
+                    treeToggleColumnWidth,
                 }}
               />
             ),
             <div
               role={"treeitem"}
-              aria-level={options + 1}
-              aria-posinset={context.index + 1}
-              aria-setsize={context.count}
-              aria-expanded={value48 ? value47 : undefined}
-              aria-selected={value52}
+              aria-level={depth + 1}
+              aria-posinset={position.index + 1}
+              aria-setsize={position.count}
+              aria-expanded={hasChildren ? isOpen : undefined}
+              aria-selected={isHighlighted}
               aria-label={[
-                uiNodeLabel(input),
-                value54 ? "component" : null,
-                value58,
-                input.detail,
-                input.hidden ? "hidden" : null,
+                uiNodeLabel(node),
+                isComponent ? "component" : null,
+                directiveBadge,
+                node.detail,
+                node.hidden ? "hidden" : null,
               ]
                 .filter(
-                  (input2?: Dynamic): Dynamic =>
-                    input2 != null && input2 !== "",
+                  (part?: Dynamic): Dynamic =>
+                    part != null && part !== "",
                 )
                 .join(", ")}
-              tabIndex={value49 === value42 ? 0 : -1}
-              data-row-key={value49}
+              tabIndex={rowKey === tabStopKey ? 0 : -1}
+              data-row-key={rowKey}
               className={cn(
                 OutlineGlyphsClassNames_2,
-                value52
-                  ? OutlineGlyphsResolvedValue_2
+                isHighlighted
+                  ? selectedRowClasses
                   : OutlineGlyphsClassNames_4,
               )}
               style={{
                 paddingLeft:
-                  OutlineGlyphsConstant_4 +
-                  options * OutlineGlyphsConstant_5,
+                  treeRowBaseIndent +
+                  depth * treeIndentPerLevel,
               }}
               onFocus={(event?: Dynamic): Dynamic => {
                 event.target === event.currentTarget &&
-                  (callback3(value49),
-                  onHover(value45 == null ? input.tid : null));
+                  (setCursor(rowKey),
+                  onHover(artboardKey == null ? node.tid : null));
               }}
-              onClick={(input2?: Dynamic): Dynamic => {
-                let value59: Dynamic =
-                    input2.shiftKey || input2.metaKey || input2.ctrlKey,
-                  value60: Dynamic = value41.find(
-                    (input3?: Dynamic): Dynamic => input3.key === value49,
+              onClick={(event?: Dynamic): Dynamic => {
+                let isMultiSelect: Dynamic =
+                    event.shiftKey || event.metaKey || event.ctrlKey,
+                  rowEntry: Dynamic = visibleRows.find(
+                    (row?: Dynamic): Dynamic => row.key === rowKey,
                   );
-                (input2.detail === 0 &&
-                  value60 &&
-                  callback12(value60, value59)) ||
-                  (value45 != null
-                    ? artboards?.onSelectIn(value45, input.tid)
-                    : onSelect(input.tid, value59));
+                (event.detail === 0 &&
+                  rowEntry &&
+                  activateRow(rowEntry, isMultiSelect)) ||
+                  (artboardKey != null
+                    ? artboards?.onSelectIn(artboardKey, node.tid)
+                    : onSelect(node.tid, isMultiSelect));
               }}
-              onDoubleClick={(input2?: Dynamic): Dynamic => {
+              onDoubleClick={(event?: Dynamic): Dynamic => {
                 !onRename ||
-                  value45 != null ||
-                  (input2.stopPropagation(),
-                  value10(input.tid),
-                  value12(input.userLabel ?? ""));
+                  artboardKey != null ||
+                  (event.stopPropagation(),
+                  setRenamingTid(node.tid),
+                  setRenameDraft(node.userLabel ?? ""));
               }}
               onContextMenu={(event?: Dynamic): Dynamic => {
-                if (!contextActions || value45 != null) return;
+                if (!contextActions || artboardKey != null) return;
                 event.preventDefault();
-                selectedTids.includes(input.tid) ||
-                  onSelect(input.tid, false, "contextmenu");
-                let value59: Dynamic = contextActions(input.tid);
-                value59.length !== 0 &&
-                  value14({
+                selectedTids.includes(node.tid) ||
+                  onSelect(node.tid, false, "contextmenu");
+                let menuItems: Dynamic = contextActions(node.tid);
+                menuItems.length !== 0 &&
+                  setContextMenu({
                     ...OutlineGlyphsNativeEvent(event),
-                    items: value59.map(OutlineGlyphsLabel),
-                    get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
+                    items: menuItems.map(OutlineGlyphsLabel),
+                    get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(node)) }); },
                   });
               }}
               onMouseEnter={(): Dynamic => {
-                onHover(value45 == null ? input.tid : null);
+                onHover(artboardKey == null ? node.tid : null);
               }}
               data-testid={
-                value45 == null
-                  ? `dc-outline-${input.tid}`
-                  : `dc-outline-in-${value45}-${input.tid}`
+                artboardKey == null
+                  ? `dc-outline-${node.tid}`
+                  : `dc-outline-in-${artboardKey}-${node.tid}`
               }
-              data-tag={input.tag}
-              draggable={!!onMove && value45 == null && value9 !== input.tid}
+              data-tag={node.tag}
+              draggable={!!onMove && artboardKey == null && renamingTid !== node.tid}
               onDragStart={(event?: Dynamic): Dynamic => {
-                if (value45 != null) {
+                if (artboardKey != null) {
                   event.preventDefault();
                   return;
                 }
-                value16(input.tid);
+                setDraggingTid(node.tid);
                 event.dataTransfer.effectAllowed = "move";
-                event.dataTransfer.setData("text/plain", String(input.tid));
+                event.dataTransfer.setData("text/plain", String(node.tid));
               }}
               onDragEnd={(): Dynamic => {
-                value16(null);
-                value20(null);
+                setDraggingTid(null);
+                setDropTarget(null);
               }}
               onDragOver={(event?: Dynamic): Dynamic => {
                 if (
-                  value45 != null ||
-                  value15 == null ||
-                  value15 === input.tid
+                  artboardKey != null ||
+                  draggingTid == null ||
+                  draggingTid === node.tid
                 )
                   return;
                 event.preventDefault();
                 let bounds: Dynamic =
                     event.currentTarget.getBoundingClientRect(),
-                  value59: Dynamic =
+                  pointerRatio: Dynamic =
                     (event.clientY - bounds.top) / bounds.height,
-                  value60: Dynamic =
-                    value59 < 0.25
+                  dropPosition: Dynamic =
+                    pointerRatio < 0.25
                       ? "before"
-                      : value59 > 0.75
+                      : pointerRatio > 0.75
                         ? "after"
                         : "into";
-                value20(
-                  (input2?: Dynamic): Dynamic =>
-                    input2?.tid === input.tid && input2.position === value60
-                      ? input2
+                setDropTarget(
+                  (prevTarget?: Dynamic): Dynamic =>
+                    prevTarget?.tid === node.tid && prevTarget.position === dropPosition
+                      ? prevTarget
                       : {
-                          tid: input.tid,
-                          position: value60,
+                          tid: node.tid,
+                          position: dropPosition,
                         },
                 );
               }}
               onDrop={(event?: Dynamic): Dynamic => {
-                value45 == null &&
+                artboardKey == null &&
                   (event.preventDefault(),
-                  value15 != null &&
-                    value19 &&
-                    value15 !== value19.tid &&
-                    onMove?.(value15, value19.tid, value19.position),
-                  value16(null),
-                  value20(null));
+                  draggingTid != null &&
+                    dropTarget &&
+                    draggingTid !== dropTarget.tid &&
+                    onMove?.(draggingTid, dropTarget.tid, dropTarget.position),
+                  setDraggingTid(null),
+                  setDropTarget(null));
               }}
             >
-              {value48 ? (<Button
+              {hasChildren ? (<Button
                   variant={"ghost"}
                   size={"xs"}
                   iconOnly={true}
                   tooltip={false}
-                  aria-label={(value47 ? uiMessage("inspector.dcOutline.collapse") : uiMessage("inspector.dcOutline.expand")) + value55}
-                  aria-expanded={value47}
+                  aria-label={(isOpen ? uiMessage("inspector.dcOutline.collapse") : uiMessage("inspector.dcOutline.expand")) + labelText}
+                  aria-expanded={isOpen}
                   tabIndex={-1}
                   className={"shrink-0"}
                   icon={
@@ -711,245 +711,245 @@ function DcOutline({
                       size={"xs"}
                       className={cn(
                         "text-muted transition-transform duration-fast",
-                        value47 ? "rotate-90" : "rotate-0",
+                        isOpen ? "rotate-90" : "rotate-0",
                       )}
                     />
                   }
-                  onClick={(input2?: Dynamic): Dynamic => {
-                    input2.stopPropagation();
-                    callback2(value46, (input3?: Dynamic): Dynamic => {
-                      let values: Dynamic = new Set(input3);
-                      values.has(input.tid)
-                        ? values.delete(input.tid)
-                        : values.add(input.tid);
+                  onClick={(event?: Dynamic): Dynamic => {
+                    event.stopPropagation();
+                    updateExpanded(treeKey, (prevExpanded?: Dynamic): Dynamic => {
+                      let values: Dynamic = new Set(prevExpanded);
+                      values.has(node.tid)
+                        ? values.delete(node.tid)
+                        : values.add(node.tid);
                       return values;
                     });
                   }}
-                  onDoubleClick={(input2?: Dynamic): Dynamic =>
-                    input2.stopPropagation()
+                  onDoubleClick={(event?: Dynamic): Dynamic =>
+                    event.stopPropagation()
                   }
                 />) : (<span
                   aria-hidden={true}
                   className={"shrink-0"}
                   style={{
-                    width: OutlineGlyphsConstant_6,
+                    width: treeToggleColumnWidth,
                   }}
                 />)}
-              {value56 ? (<OutlineIconGlyph
-                  icon={value56}
-                  dimmed={value53}
+              {glyphIcon ? (<OutlineIconGlyph
+                  icon={glyphIcon}
+                  dimmed={isDimmed}
                   ink={
-                    value54
+                    isComponent
                       ? OutlineGlyphsColorConfig.color
                       : undefined
                   }
-                />) : (<OutlineElementGlyph dimmed={value53} />)}
-              {value9 === input.tid && value45 == null ? (<TextInput
+                />) : (<OutlineElementGlyph dimmed={isDimmed} />)}
+              {renamingTid === node.tid && artboardKey == null ? (<TextInput
                   size={"sm"}
                   fullWidth={false}
                   className={"min-w-0 flex-1"}
                   aria-label={uiMessage("inspector.dcOutline.layerName")}
                   autoFocus={true}
-                  value={value11}
-                  placeholder={uiNodeLabel(input)}
+                  value={renameDraft}
+                  placeholder={uiNodeLabel(node)}
                   onChange={(event?: Dynamic): Dynamic =>
-                    value12(event.target.value)
+                    setRenameDraft(event.target.value)
                   }
-                  onClick={(input2?: Dynamic): Dynamic =>
-                    input2.stopPropagation()
+                  onClick={(event?: Dynamic): Dynamic =>
+                    event.stopPropagation()
                   }
-                  onDoubleClick={(input2?: Dynamic): Dynamic =>
-                    input2.stopPropagation()
+                  onDoubleClick={(event?: Dynamic): Dynamic =>
+                    event.stopPropagation()
                   }
-                  onContextMenu={(input2?: Dynamic): Dynamic =>
-                    input2.stopPropagation()
+                  onContextMenu={(event?: Dynamic): Dynamic =>
+                    event.stopPropagation()
                   }
-                  onFocus={(input2?: Dynamic): Dynamic =>
-                    input2.currentTarget.select()
+                  onFocus={(event?: Dynamic): Dynamic =>
+                    event.currentTarget.select()
                   }
-                  onBlur={(): Dynamic => value10(null)}
-                  onKeyDown={(input2?: Dynamic): Dynamic => {
-                    if (input2.key === "Enter") {
-                      let value59: Dynamic = value11.trim();
-                      value59
-                        ? onRename?.(input.tid, value59)
-                        : input.userLabel && onRename?.(input.tid, "");
-                      value10(null);
-                    } else input2.key === "Escape" && value10(null);
-                    input2.stopPropagation();
+                  onBlur={(): Dynamic => setRenamingTid(null)}
+                  onKeyDown={(event?: Dynamic): Dynamic => {
+                    if (event.key === "Enter") {
+                      let trimmedName: Dynamic = renameDraft.trim();
+                      trimmedName
+                        ? onRename?.(node.tid, trimmedName)
+                        : node.userLabel && onRename?.(node.tid, "");
+                      setRenamingTid(null);
+                    } else event.key === "Escape" && setRenamingTid(null);
+                    event.stopPropagation();
                   }}
                 />) : (<span
                   className={cn(
                     "min-w-0 flex-initial truncate",
                     OutlineGlyphsClassNames_3,
                     OutlineGlyphsScForScIfDcImportSet.has(
-                      input.tag,
+                      node.tag,
                     ) &&
-                      !value54 &&
+                      !isComponent &&
                       "italic",
-                    value53 ? "opacity-50" : "opacity-100",
+                    isDimmed ? "opacity-50" : "opacity-100",
                   )}
                   style={
-                    value54 ? OutlineGlyphsColorConfig : undefined
+                    isComponent ? OutlineGlyphsColorConfig : undefined
                   }
-                  title={input.component?.ref}
+                  title={node.component?.ref}
                 >
-                  {uiNodeLabel(input)}
+                  {uiNodeLabel(node)}
                 </span>)}
-              {value58 != null && (<Badge
+              {directiveBadge != null && (<Badge
                   variant={"neutral"}
                   size={"xxs"}
                   className={cn(
                     "ml-1.5 shrink-0",
-                    value53 ? "opacity-50" : "opacity-100",
+                    isDimmed ? "opacity-50" : "opacity-100",
                   )}
                 >
-                  {value58}
+                  {directiveBadge}
                 </Badge>)}
-              {value9 !== input.tid && (<span
+              {renamingTid !== node.tid && (<span
                   className={cn(
                     "mx-1.5 min-w-0 flex-auto shrink-[9999] truncate",
                     OutlineGlyphsClassNames_3,
-                    !value54 && "text-muted",
-                    value53
+                    !isComponent && "text-muted",
+                    isDimmed
                       ? "opacity-50"
-                      : value54
+                      : isComponent
                         ? "opacity-60"
                         : "opacity-100",
                   )}
                   style={
-                    value54 ? OutlineGlyphsColorConfig : undefined
+                    isComponent ? OutlineGlyphsColorConfig : undefined
                   }
-                  title={input.component?.ref}
+                  title={node.component?.ref}
                 >
-                  {input.detail ?? ("")}
+                  {node.detail ?? ("")}
                 </span>)}
-              {!input.noHide && value45 == null && onToggleHidden && (<Button
+              {!node.noHide && artboardKey == null && onToggleHidden && (<Button
                   variant={"ghost"}
                   size={"xs"}
                   iconOnly={true}
                   icon={
                     <Icon
-                      name={input.hidden ? "EyeSlash" : "Eye"}
+                      name={node.hidden ? "EyeSlash" : "Eye"}
                       size={"xs"}
                       className={
                         "text-muted group-hover/eye:text-primary group-focus-visible/eye:text-primary"
                       }
                     />
                   }
-                  aria-label={(input.hidden ? uiMessage("inspector.dcOutline.show2") : uiMessage("inspector.dcOutline.hide")) + value55}
-                  tooltip={input.hidden ? (uiMessage("inspector.dcOutline.show")) : ("Hide")}
-                  tabIndex={value49 === value42 ? 0 : -1}
+                  aria-label={(node.hidden ? uiMessage("inspector.dcOutline.show2") : uiMessage("inspector.dcOutline.hide")) + labelText}
+                  tooltip={node.hidden ? (uiMessage("inspector.dcOutline.show")) : ("Hide")}
+                  tabIndex={rowKey === tabStopKey ? 0 : -1}
                   className={cn(
                     "group/eye shrink-0",
-                    input.hidden
+                    node.hidden
                       ? "opacity-100"
                       : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 focus-visible:opacity-100",
                   )}
-                  onClick={(input2?: Dynamic): Dynamic => {
-                    input2.stopPropagation();
-                    onToggleHidden(input.tid, !input.hidden);
+                  onClick={(event?: Dynamic): Dynamic => {
+                    event.stopPropagation();
+                    onToggleHidden(node.tid, !node.hidden);
                   }}
-                  onDoubleClick={(input2?: Dynamic): Dynamic =>
-                    input2.stopPropagation()
+                  onDoubleClick={(event?: Dynamic): Dynamic =>
+                    event.stopPropagation()
                   }
                 />)}
             </div>,
-            value51 && value19?.position === "after" && (
+            isDropTarget && dropTarget?.position === "after" && (
               <div
                 className={"h-0.5 rounded-[1px] bg-fill-accent"}
                 style={{
                   marginLeft:
-                    OutlineGlyphsConstant_4 +
-                    options * OutlineGlyphsConstant_5 +
-                    OutlineGlyphsConstant_6,
+                    treeRowBaseIndent +
+                    depth * treeIndentPerLevel +
+                    treeToggleColumnWidth,
                 }}
               />
             ),
-            value47 &&
-              value48 &&
-              input.children.map(
-                (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                  callback14(
-                    input2,
-                    options + 1,
+            isOpen &&
+              hasChildren &&
+              node.children.map(
+                (child?: Dynamic, childIndex?: Dynamic): Dynamic =>
+                  renderNode(
+                    child,
+                    depth + 1,
                     {
-                      index: options2,
-                      count: input.children.length,
+                      index: childIndex,
+                      count: node.children.length,
                     },
-                    value45,
+                    artboardKey,
                   ),
               ),
           ],
         } as const;
-        const _key = value45 == null ? input.tid : `${value45}:${input.tid}`;
-        return <_Component key={_key} {..._props} />;
+        const nodeRowKey = artboardKey == null ? node.tid : `${artboardKey}:${node.tid}`;
+        return <NodeRowTag key={nodeRowKey} {...nodeRowProps} />;
       })();
     },
-    callback15: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
+    renderObjectRow: Dynamic = (objectItem?: Dynamic, index?: Dynamic): Dynamic => {
       if (!artboards) return null;
-      let value45: Dynamic = OutlineTreeHandler_2(input.id),
-        value46: Dynamic = artboards.selectedObjects.has(input.id);
+      let rowKey: Dynamic = OutlineTreeHandler_2(objectItem.id),
+        isSelected: Dynamic = artboards.selectedObjects.has(objectItem.id);
       return (() => {
-        const _Component2 = "div";
-        const _props2 = {
+        const ObjectRowTag = "div";
+        const objectRowProps = {
           role: "treeitem",
           "aria-level": 1,
-          "aria-posinset": options + 1,
+          "aria-posinset": index + 1,
           "aria-setsize": artboards.objects.length + artboards.rows.length,
-          "aria-selected": value46,
-          "aria-label": input.detail
-            ? `${uiNodeLabel(input)}, ${input.detail}`
-            : uiNodeLabel(input),
-          tabIndex: value45 === value42 ? 0 : -1,
-          "data-row-key": value45,
+          "aria-selected": isSelected,
+          "aria-label": objectItem.detail
+            ? `${uiNodeLabel(objectItem)}, ${objectItem.detail}`
+            : uiNodeLabel(objectItem),
+          tabIndex: rowKey === tabStopKey ? 0 : -1,
+          "data-row-key": rowKey,
           className: cn(
             OutlineGlyphsClassNames_2,
-            value46
-              ? OutlineGlyphsResolvedValue_2
+            isSelected
+              ? selectedRowClasses
               : OutlineGlyphsClassNames_4,
           ),
           style: {
-            paddingLeft: OutlineGlyphsConstant_4,
+            paddingLeft: treeRowBaseIndent,
           },
           onFocus: (event?: Dynamic): Dynamic => {
             event.target === event.currentTarget &&
-              (callback3(value45), onHover(null));
+              (setCursor(rowKey), onHover(null));
           },
-          onClick: (input2?: Dynamic): Dynamic => {
-            let value47: Dynamic =
-                input2.shiftKey || input2.metaKey || input2.ctrlKey,
-              value48: Dynamic = value41.find(
-                (input3?: Dynamic): Dynamic => input3.key === value45,
+          onClick: (event?: Dynamic): Dynamic => {
+            let isMultiSelect: Dynamic =
+                event.shiftKey || event.metaKey || event.ctrlKey,
+              rowEntry: Dynamic = visibleRows.find(
+                (row?: Dynamic): Dynamic => row.key === rowKey,
               );
-            (input2.detail === 0 &&
-              value48 &&
-              callback12(value48, value47)) ||
-              artboards.onSelectObject(input.id, value47);
+            (event.detail === 0 &&
+              rowEntry &&
+              activateRow(rowEntry, isMultiSelect)) ||
+              artboards.onSelectObject(objectItem.id, isMultiSelect);
           },
           onContextMenu: (event?: Dynamic): Dynamic => {
             if (!artboards.objectContextActions) return;
             event.preventDefault();
-            let value47: Dynamic = artboards.objectContextActions(input.id);
-            value47.length !== 0 &&
-              value14({
+            let menuItems: Dynamic = artboards.objectContextActions(objectItem.id);
+            menuItems.length !== 0 &&
+              setContextMenu({
                 ...OutlineGlyphsNativeEvent(event),
-                items: value47.map(OutlineGlyphsLabel),
-                get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
+                items: menuItems.map(OutlineGlyphsLabel),
+                get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(objectItem)) }); },
               });
           },
           onMouseEnter: (): Dynamic => onHover(null),
-          "data-testid": `dc-outline-object-${input.id}`,
+          "data-testid": `dc-outline-object-${objectItem.id}`,
           children: [
             <span
               aria-hidden={true}
               className={"shrink-0"}
               style={{
-                width: OutlineGlyphsConstant_6,
+                width: treeToggleColumnWidth,
               }}
             />,
             <OutlineIconGlyph
-              icon={ChromeToolIconsNoteTitleRectConfig[input.glyph]}
+              icon={ChromeToolIconsNoteTitleRectConfig[objectItem.glyph]}
               dimmed={false}
             />,
             <span
@@ -958,21 +958,21 @@ function DcOutline({
                 OutlineGlyphsClassNames_3,
               )}
             >
-              {uiNodeLabel(input)}
+              {uiNodeLabel(objectItem)}
             </span>,
             <span
               className={cn(
                 "mx-1.5 min-w-0 flex-auto shrink-[9999] truncate text-muted",
                 OutlineGlyphsClassNames_3,
               )}
-              title={input.detailTitle}
+              title={objectItem.detailTitle}
             >
-              {input.detail ?? ("")}
+              {objectItem.detail ?? ("")}
             </span>,
           ],
         } as const;
-        const _key2 = input.id;
-        return <_Component2 key={_key2} {..._props2} />;
+        const objectRowKey = objectItem.id;
+        return <ObjectRowTag key={objectRowKey} {...objectRowProps} />;
       })();
     };
   return (
@@ -985,7 +985,7 @@ function DcOutline({
     >
       <DeferredTooltipProvider>
         <div
-          ref={value29}
+          ref={treeRef}
           role={"tree"}
           aria-label={uiMessage("inspector.dcOutline.layers")}
           aria-multiselectable={"true"}
@@ -998,156 +998,156 @@ function DcOutline({
             fill
               ? undefined
               : {
-                  height: value,
+                  height: listHeight,
                 }
           }
-          onKeyDown={callback13}
+          onKeyDown={handleKeyDown}
           onMouseLeave={(): Dynamic => onHover(null)}
-          onPointerDown={callback7}
-          onMouseDown={callback7}
+          onPointerDown={handlePointerDown}
+          onMouseDown={handlePointerDown}
           onFocus={(event?: Dynamic): Dynamic => {
             let ancestor: Dynamic = event.target.closest('[role="treeitem"]'),
-              value45: Dynamic = ancestor?.getAttribute("data-row-key"),
-              value46: Dynamic =
-                value45 != null
-                  ? value41.findIndex(
-                      (input?: Dynamic): Dynamic => input.key === value45,
+              rowKey: Dynamic = ancestor?.getAttribute("data-row-key"),
+              rowIndex: Dynamic =
+                rowKey != null
+                  ? visibleRows.findIndex(
+                      (row?: Dynamic): Dynamic => row.key === rowKey,
                     )
                   : -1;
-            value45 != null &&
-              value46 >= 0 &&
-              (value44.current = {
-                key: value45,
-                index: value46,
+            rowKey != null &&
+              rowIndex >= 0 &&
+              (lastFocusedRowRef.current = {
+                key: rowKey,
+                index: rowIndex,
               });
             if (ancestor != null) {
               let relatedTarget: Dynamic = event.relatedTarget,
-                value47: Dynamic =
-                  value35.current === event.target &&
+                isRestoredFocus: Dynamic =
+                  blurredTargetRef.current === event.target &&
                   (relatedTarget == null ||
                     !relatedTarget.isConnected ||
                     relatedTarget.closest(
                       OutlineGlyphsResolvedValue,
                     ) != null);
-              value35.current = null;
-              value34.current ? callback6(false) : value47 || callback6(true);
+              blurredTargetRef.current = null;
+              justPressedRef.current ? setKeyboardBrowsed(false) : isRestoredFocus || setKeyboardBrowsed(true);
             }
           }}
           onBlur={(event?: Dynamic): Dynamic => {
             if (event.currentTarget.contains(event.relatedTarget)) return;
             let ownerDocument: Dynamic = event.currentTarget.ownerDocument,
               relatedTarget: Dynamic = event.relatedTarget;
-            value35.current =
+            blurredTargetRef.current =
               !ownerDocument.hasFocus() ||
               hasBlockingOverlay(ownerDocument) ||
               relatedTarget?.closest(OutlineGlyphsResolvedValue) !=
                 null
                 ? event.target
                 : null;
-            value44.current = null;
+            lastFocusedRowRef.current = null;
             onHover(null);
           }}
-          onScroll={(input?: Dynamic): Dynamic => {
-            value30 &&
-              !value31.current &&
-              ((value30.current = input.currentTarget.scrollTop),
-              (value32.current = false));
+          onScroll={(event?: Dynamic): Dynamic => {
+            scrollState &&
+              !isRestoringScrollRef.current &&
+              ((scrollState.current = event.currentTarget.scrollTop),
+              (needsScrollRestoreRef.current = false));
           }}
           data-testid={"dc-outline"}
         >
-          {artboards?.objects.map(callback15)}
+          {artboards?.objects.map(renderObjectRow)}
           {artboards ? (artboards.rows.map(
-              (input?: Dynamic, options?: Dynamic): Dynamic => {
-                let value45: Dynamic = input.file === artboards.focused,
-                  value46: Dynamic = OutlineTreeHandler(
-                    input.file,
+              (artboardRow?: Dynamic, rowIndex?: Dynamic): Dynamic => {
+                let isFocused: Dynamic = artboardRow.file === artboards.focused,
+                  rowKey: Dynamic = OutlineTreeHandler(
+                    artboardRow.file,
                   ),
-                  value47: Dynamic = value45
+                  fileNodes: Dynamic = isFocused
                     ? nodes
-                    : artboards.trees[input.file],
-                  value48: Dynamic = value47 != null && value47.length > 0,
-                  value49: Dynamic =
-                    value48 && artboards.open.has(input.file),
-                  value50: Dynamic = artboards.cover === input.file,
-                  value51: Dynamic =
-                    artboards.components?.has(input.file) === true,
-                  value52: Dynamic =
-                    artboards.trees[input.file] === null
-                      ? value3 + "-unreadable-" + String(options)
+                    : artboards.trees[artboardRow.file],
+                  hasNodes: Dynamic = fileNodes != null && fileNodes.length > 0,
+                  isOpen: Dynamic =
+                    hasNodes && artboards.open.has(artboardRow.file),
+                  isCover: Dynamic = artboards.cover === artboardRow.file,
+                  isComponent: Dynamic =
+                    artboards.components?.has(artboardRow.file) === true,
+                  unreadableId: Dynamic =
+                    artboards.trees[artboardRow.file] === null
+                      ? idPrefix + "-unreadable-" + String(rowIndex)
                       : undefined;
                 return (() => {
-                  const _Component3 = "div";
-                  const _props3 = {
+                  const ArtboardRowTag = "div";
+                  const artboardRowProps = {
                     children: [
                       <div
                         role={"treeitem"}
                         aria-level={1}
-                        aria-posinset={artboards.objects.length + options + 1}
+                        aria-posinset={artboards.objects.length + rowIndex + 1}
                         aria-setsize={
                           artboards.objects.length + artboards.rows.length
                         }
-                        aria-expanded={value48 ? value49 : undefined}
-                        aria-selected={artboards.selected.has(input.file)}
-                        aria-current={value45 || undefined}
+                        aria-expanded={hasNodes ? isOpen : undefined}
+                        aria-selected={artboards.selected.has(artboardRow.file)}
+                        aria-current={isFocused || undefined}
                         aria-label={
-                          uiNodeLabel(input) + (value51 ? uiMessage("inspector.dcOutline.component") : "") + (value50 ? uiMessage("inspector.dcOutline.thumbnail") : "")
+                          uiNodeLabel(artboardRow) + (isComponent ? uiMessage("inspector.dcOutline.component") : "") + (isCover ? uiMessage("inspector.dcOutline.thumbnail") : "")
                         }
-                        aria-describedby={value52}
-                        tabIndex={value46 === value42 ? 0 : -1}
-                        data-row-key={value46}
+                        aria-describedby={unreadableId}
+                        tabIndex={rowKey === tabStopKey ? 0 : -1}
+                        data-row-key={rowKey}
                         className={cn(
                           OutlineGlyphsClassNames_2,
-                          artboards.selected.has(input.file)
-                            ? OutlineGlyphsResolvedValue_3
+                          artboards.selected.has(artboardRow.file)
+                            ? selectedRowSecondaryClasses
                             : OutlineGlyphsClassNames_4,
                         )}
                         style={{
-                          paddingLeft: OutlineGlyphsConstant_4,
+                          paddingLeft: treeRowBaseIndent,
                         }}
                         onFocus={(event?: Dynamic): Dynamic => {
                           event.target === event.currentTarget &&
-                            (callback3(value46), onHover(null));
+                            (setCursor(rowKey), onHover(null));
                         }}
-                        onClick={(input2?: Dynamic): Dynamic => {
-                          let value53: Dynamic =
-                              input2.shiftKey ||
-                              input2.metaKey ||
-                              input2.ctrlKey,
-                            value54: Dynamic = value41.find(
-                              (input3?: Dynamic): Dynamic =>
-                                input3.key === value46,
+                        onClick={(event?: Dynamic): Dynamic => {
+                          let isMultiSelect: Dynamic =
+                              event.shiftKey ||
+                              event.metaKey ||
+                              event.ctrlKey,
+                            rowEntry: Dynamic = visibleRows.find(
+                              (row?: Dynamic): Dynamic =>
+                                row.key === rowKey,
                             );
-                          (input2.detail === 0 &&
-                            value54 &&
-                            callback12(value54, value53)) ||
-                            (value53
-                              ? artboards.onToggleSelected(input.file)
-                              : artboards.onFocus(input.file));
+                          (event.detail === 0 &&
+                            rowEntry &&
+                            activateRow(rowEntry, isMultiSelect)) ||
+                            (isMultiSelect
+                              ? artboards.onToggleSelected(artboardRow.file)
+                              : artboards.onFocus(artboardRow.file));
                         }}
                         onContextMenu={(event?: Dynamic): Dynamic => {
                           if (!artboards.contextActions) return;
                           event.preventDefault();
-                          let value53: Dynamic = artboards.contextActions(
-                            input.file,
+                          let menuItems: Dynamic = artboards.contextActions(
+                            artboardRow.file,
                           );
-                          value53.length !== 0 &&
-                            value14({
+                          menuItems.length !== 0 &&
+                            setContextMenu({
                               ...OutlineGlyphsNativeEvent(event),
-                              items: value53.map(OutlineGlyphsLabel),
-                              get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
+                              items: menuItems.map(OutlineGlyphsLabel),
+                              get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(artboardRow)) }); },
                             });
                         }}
-                        data-testid={`dc-outline-artboard-${input.file}`}
+                        data-testid={`dc-outline-artboard-${artboardRow.file}`}
                       >
-                        {value48 ? (<Button
+                        {hasNodes ? (<Button
                             variant={"ghost"}
                             size={"xs"}
                             iconOnly={true}
                             tooltip={false}
                             aria-label={
-                              (value49 ? uiMessage("inspector.dcOutline.collapse") : uiMessage("inspector.dcOutline.expand")) + uiNodeLabel(input)
+                              (isOpen ? uiMessage("inspector.dcOutline.collapse") : uiMessage("inspector.dcOutline.expand")) + uiNodeLabel(artboardRow)
                             }
-                            aria-expanded={value49}
+                            aria-expanded={isOpen}
                             tabIndex={-1}
                             className={"shrink-0"}
                             icon={
@@ -1156,22 +1156,22 @@ function DcOutline({
                                 size={"xs"}
                                 className={cn(
                                   "text-muted transition-transform duration-fast",
-                                  value49 ? "rotate-90" : "rotate-0",
+                                  isOpen ? "rotate-90" : "rotate-0",
                                 )}
                               />
                             }
-                            onClick={(input2?: Dynamic): Dynamic => {
-                              input2.stopPropagation();
-                              artboards.onToggleOpen(input.file, !value49);
+                            onClick={(event?: Dynamic): Dynamic => {
+                              event.stopPropagation();
+                              artboards.onToggleOpen(artboardRow.file, !isOpen);
                             }}
-                            onDoubleClick={(input2?: Dynamic): Dynamic =>
-                              input2.stopPropagation()
+                            onDoubleClick={(event?: Dynamic): Dynamic =>
+                              event.stopPropagation()
                             }
                           />) : (<span
                             aria-hidden={true}
                             className={"shrink-0"}
                             style={{
-                              width: OutlineGlyphsConstant_6,
+                              width: treeToggleColumnWidth,
                             }}
                           />)}
                         <div
@@ -1183,20 +1183,20 @@ function DcOutline({
                             }
                             dimmed={false}
                             ink={
-                              value51
+                              isComponent
                                 ? OutlineGlyphsColorConfig.color
                                 : undefined
                             }
                           />
-                          {artboards.renaming === input.file ? (<OutlineRenameInput
-                              label={uiNodeLabel(input)}
+                          {artboards.renaming === artboardRow.file ? (<OutlineRenameInput
+                              label={uiNodeLabel(artboardRow)}
                               onDone={(
-                                input2?: Dynamic,
-                                options2?: Dynamic,
+                                newName?: Dynamic,
+                                shouldRefocus?: Dynamic,
                               ): Dynamic => {
-                                artboards.onRename?.(input.file, input2);
-                                options2 &&
-                                  callback4(value46)?.focus({
+                                artboards.onRename?.(artboardRow.file, newName);
+                                shouldRefocus &&
+                                  findRowElement(rowKey)?.focus({
                                     preventScroll: true,
                                   });
                               }}
@@ -1206,14 +1206,14 @@ function DcOutline({
                                 OutlineGlyphsClassNames_3,
                               )}
                               style={
-                                value51
+                                isComponent
                                   ? OutlineGlyphsColorConfig
                                   : undefined
                               }
                             >
-                              {uiNodeLabel(input)}
+                              {uiNodeLabel(artboardRow)}
                             </span>)}
-                          {value50 && artboards.renaming !== input.file && (<Icon
+                          {isCover && artboards.renaming !== artboardRow.file && (<Icon
                               name={"Image"}
                               size={"xs"}
                               data-testid={"dc-outline-cover"}
@@ -1222,36 +1222,36 @@ function DcOutline({
                                 OutlineGlyphsClassNames_3,
                               )}
                             />)}
-                          {value52 != null && (<span id={value52} hidden={true}>
+                          {unreadableId != null && (<span id={unreadableId} hidden={true}>
                               {CanTReadThisArtboardSFileAskMessage}
                             </span>)}
                         </div>
                       </div>,
-                      value49 &&
-                        value47.map(
-                          (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                            callback14(
-                              input2,
+                      isOpen &&
+                        fileNodes.map(
+                          (child?: Dynamic, childIndex?: Dynamic): Dynamic =>
+                            renderNode(
+                              child,
                               1,
                               {
-                                index: options2,
-                                count: value47.length,
+                                index: childIndex,
+                                count: fileNodes.length,
                               },
-                              value45 ? null : input.file,
+                              isFocused ? null : artboardRow.file,
                             ),
                         ),
                     ],
                   } as const;
-                  const _key3 = input.file;
-                  return <_Component3 key={_key3} {..._props3} />;
+                  const artboardRowKey = artboardRow.file;
+                  return <ArtboardRowTag key={artboardRowKey} {...artboardRowProps} />;
                 })();
               },
             )) : (nodes.length === 0 ? (<div className={"px-3.5 py-2.5 text-caption text-muted"}>
               {uiMessage("inspector.dcOutline.noElementsYet")}
             </div>) : (nodes.map(
-              (input?: Dynamic, options?: Dynamic): Dynamic =>
-                callback14(input, 0, {
-                  index: options,
+              (node?: Dynamic, index?: Dynamic): Dynamic =>
+                renderNode(node, 0, {
+                  index: index,
                   count: nodes.length,
                 }),
             )))}
@@ -1261,28 +1261,28 @@ function DcOutline({
       {!fill && (<ComponentsSelectionPointsComponent
           side={"bottom"}
           aria-label={uiMessage("inspector.dcOutline.resizeLayersList")}
-          aria-valuenow={value}
+          aria-valuenow={listHeight}
           aria-valuemin={OutlineGlyphsConstant}
-          aria-valuemax={OutlineGlyphsConstant_2}
+          aria-valuemax={layersListMaxSize}
           className={"z-10 [--cds-ring-inner:1px] [--cds-ring-outer:0px]"}
           onResizeStart={(): Dynamic => {
-            value40.current = value;
+            listHeightRef.current = listHeight;
           }}
-          onResize={callback9}
-          onKeyDown={(input?: Dynamic): Dynamic => {
-            (input.key.startsWith("Arrow") ||
-              input.key === "Enter" ||
-              input.key === " ") &&
-              input.stopPropagation();
+          onResize={resizeList}
+          onKeyDown={(event?: Dynamic): Dynamic => {
+            (event.key.startsWith("Arrow") ||
+              event.key === "Enter" ||
+              event.key === " ") &&
+              event.stopPropagation();
           }}
         />)}
       <EditorMenu
-        at={value13}
-        onClose={(): Dynamic => value14(null)}
-        items={value13?.items ?? []}
+        at={contextMenu}
+        onClose={(): Dynamic => setContextMenu(null)}
+        items={contextMenu?.items ?? []}
         minWidth={180}
-        label={value13?.label}
-        focusFirstItem={value13?.keyboard}
+        label={contextMenu?.label}
+        focusFirstItem={contextMenu?.keyboard}
         owner={OutlineValue}
       />
     </CdsIsland>
@@ -1292,22 +1292,22 @@ export {
   DcOutline,
   nativeContextMenuTimeout,
   OutlineDcOutlineConstant,
-  OutlineDcOutlineConstant_2,
+  OutlineDcOutlineLongSuppressDelay as OutlineDcOutlineConstant_2,
   OutlineDcOutlineHandler,
   OutlineDcOutlineRemoveEventListener,
   OutlineDcOutlineTarget,
 };
-export function set_nativeContextMenuTimeout(value: any): any {
-  nativeContextMenuTimeout = value;
-  return value;
+export function set_nativeContextMenuTimeout(timeoutId: any): any {
+  nativeContextMenuTimeout = timeoutId;
+  return timeoutId;
 }
 export function installEditorOutlineDcOutline(): () => void {
   return () => {
     initializePlatformCdsIsland();
     OutlineDcOutlineConstant = 500;
-    OutlineDcOutlineConstant_2 = 3e4;
-    OutlineDcOutlineHandler = (input?: Dynamic): Dynamic =>
-      input?.closest?.(
+    OutlineDcOutlineLongSuppressDelay = 3e4;
+    OutlineDcOutlineHandler = (target?: Dynamic): Dynamic =>
+      target?.closest?.(
         'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
       ) != null;
     OutlineDcOutlineTarget = (event?: Dynamic): Dynamic => {

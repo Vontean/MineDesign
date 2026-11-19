@@ -21,347 +21,347 @@ function describeMergeField(source?: Dynamic): Dynamic {
         " of " +
         ModelPublishingHandler(source.tag);
 }
-function sameModelStructure(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (!input.sameSkeleton(options)) return false;
-  let value: Dynamic = input.elementCount();
+function sameModelStructure(baseModel?: Dynamic, otherModel?: Dynamic): Dynamic {
+  if (!baseModel.sameSkeleton(otherModel)) return false;
+  let value: Dynamic = baseModel.elementCount();
   for (let index: Dynamic = 0; index < value; index++)
-    if (input.parentTid(index) !== options.parentTid(index)) return false;
+    if (baseModel.parentTid(index) !== otherModel.parentTid(index)) return false;
   return true;
 }
-function elementAttributeMap(input?: Dynamic): Dynamic {
+function elementAttributeMap(element?: Dynamic): Dynamic {
   let entries: Dynamic = new Map();
-  for (let value of [...input.attributes] as Dynamic)
-    value.name !== DcTplAttribute &&
-      value.name !== "style" &&
-      entries.set(value.name, value.value);
+  for (let attribute of [...element.attributes] as Dynamic)
+    attribute.name !== DcTplAttribute &&
+      attribute.name !== "style" &&
+      entries.set(attribute.name, attribute.value);
   return entries;
 }
 function elementStyleMap(element?: Dynamic): Dynamic {
   let entries: Dynamic = new Map();
-  for (let value of parseStyleDeclarations(
+  for (let declaration of parseStyleDeclarations(
     element.getAttribute("style"),
   ) as Dynamic)
-    entries.set(value.prop, value.value);
+    entries.set(declaration.prop, declaration.value);
   return entries;
 }
-function elementTextSlots(input?: Dynamic): Dynamic {
-  let items: Dynamic = [""];
-  for (let value of [...input.childNodes] as Dynamic)
-    value.nodeType === 1
-      ? items.push("")
-      : value.nodeType === 3 &&
-        (items[items.length - 1] += value.nodeValue ?? "");
-  return items;
+function elementTextSlots(element?: Dynamic): Dynamic {
+  let slots: Dynamic = [""];
+  for (let childNode of [...element.childNodes] as Dynamic)
+    childNode.nodeType === 1
+      ? slots.push("")
+      : childNode.nodeType === 3 &&
+        (slots[slots.length - 1] += childNode.nodeValue ?? "");
+  return slots;
 }
 function replaceElementTextSlot(
   element?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  slotIndex?: Dynamic,
+  slotText?: Dynamic,
 ): Dynamic {
   let index: Dynamic = 0,
-    flag: Dynamic = false;
-  for (let value of [...element.childNodes] as Dynamic) {
-    if (value.nodeType === 1) {
-      index === options &&
-        !flag &&
-        context !== "" &&
+    hasInserted: Dynamic = false;
+  for (let childNode of [...element.childNodes] as Dynamic) {
+    if (childNode.nodeType === 1) {
+      index === slotIndex &&
+        !hasInserted &&
+        slotText !== "" &&
         (element.insertBefore(
-          element.ownerDocument.createTextNode(context),
-          value,
+          element.ownerDocument.createTextNode(slotText),
+          childNode,
         ),
-        (flag = true));
+        (hasInserted = true));
       index += 1;
       continue;
     }
-    value.nodeType !== 3 ||
-      index !== options ||
-      (!flag && context !== ""
-        ? ((value.nodeValue = context), (flag = true))
-        : value.remove());
+    childNode.nodeType !== 3 ||
+      index !== slotIndex ||
+      (!hasInserted && slotText !== ""
+        ? ((childNode.nodeValue = slotText), (hasInserted = true))
+        : childNode.remove());
   }
-  !flag &&
-    context !== "" &&
-    index === options &&
-    element.appendChild(element.ownerDocument.createTextNode(context));
+  !hasInserted &&
+    slotText !== "" &&
+    index === slotIndex &&
+    element.appendChild(element.ownerDocument.createTextNode(slotText));
 }
 function mergeDcTemplates(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  baseHtml?: Dynamic,
+  mineHtml?: Dynamic,
+  theirsHtml?: Dynamic,
+  modelOptions?: Dynamic,
 ): Dynamic {
-  let items: Dynamic = [],
-    items2: Dynamic = [],
-    state: Dynamic = {
+  let appliedChanges: Dynamic = [],
+    overlaps: Dynamic = [],
+    guard: Dynamic = {
       baseTheirs: false,
       baseMine: false,
     },
-    callback: Dynamic = (input2?: Dynamic): Dynamic => ({
+    fail: Dynamic = (reason?: Dynamic): Dynamic => ({
       ok: false,
-      why: input2,
+      why: reason,
       applied: [],
       overlaps: [],
-      guard: state,
+      guard: guard,
     });
   try {
-    if (options === input)
+    if (mineHtml === baseHtml)
       return {
         ok: true,
-        merged: context,
-        applied: items,
-        overlaps: items2,
+        merged: theirsHtml,
+        applied: appliedChanges,
+        overlaps: overlaps,
         guard: {
           baseTheirs: true,
           baseMine: true,
         },
       };
-    if (context === input || context === options)
+    if (theirsHtml === baseHtml || theirsHtml === mineHtml)
       return {
         ok: true,
-        merged: options,
-        applied: items,
-        overlaps: items2,
+        merged: mineHtml,
+        applied: appliedChanges,
+        overlaps: overlaps,
         guard: {
           baseTheirs: true,
           baseMine: true,
         },
       };
-    let value2: Dynamic = new DcEditorModel(input, value),
-      value3: Dynamic = new DcEditorModel(options, value),
-      value4: Dynamic = new DcEditorModel(context, value);
-    state.baseTheirs = sameModelStructure(value2, value4);
-    state.baseMine = sameModelStructure(value2, value3);
-    if (!state.baseTheirs)
-      return callback(
+    let baseModel: Dynamic = new DcEditorModel(baseHtml, modelOptions),
+      mineModel: Dynamic = new DcEditorModel(mineHtml, modelOptions),
+      theirsModel: Dynamic = new DcEditorModel(theirsHtml, modelOptions);
+    guard.baseTheirs = sameModelStructure(baseModel, theirsModel);
+    guard.baseMine = sameModelStructure(baseModel, mineModel);
+    if (!guard.baseTheirs)
+      return fail(
         "their version added, removed, moved or retagged elements",
       );
-    if (!state.baseMine)
-      return callback("my edit added, removed, moved or retagged elements");
+    if (!guard.baseMine)
+      return fail("my edit added, removed, moved or retagged elements");
     if (
-      value2.rootText() !== value3.rootText() &&
-      value2.rootText() !== value4.rootText() &&
-      value3.rootText() !== value4.rootText()
+      baseModel.rootText() !== mineModel.rootText() &&
+      baseModel.rootText() !== theirsModel.rootText() &&
+      mineModel.rootText() !== theirsModel.rootText()
     )
-      return callback("both sides changed text at the template root");
-    let value5: Dynamic = value2.elementCount();
-    for (let index: Dynamic = 0; index < value5; index++) {
-      let value7: Dynamic = value2.element(index),
-        value8: Dynamic = value3.element(index),
-        value9: Dynamic = value4.element(index),
-        value10: Dynamic = value7.tagName.toLowerCase(),
-        value11: Dynamic = elementAttributeMap(value7),
-        value12: Dynamic = elementAttributeMap(value8),
-        value13: Dynamic = elementAttributeMap(value9);
-      for (let value20 of new Set([
-        ...value11.keys(),
-        ...value12.keys(),
+      return fail("both sides changed text at the template root");
+    let elementTotal: Dynamic = baseModel.elementCount();
+    for (let index: Dynamic = 0; index < elementTotal; index++) {
+      let baseElement: Dynamic = baseModel.element(index),
+        mineElement: Dynamic = mineModel.element(index),
+        theirsElement: Dynamic = theirsModel.element(index),
+        tagName: Dynamic = baseElement.tagName.toLowerCase(),
+        baseAttributes: Dynamic = elementAttributeMap(baseElement),
+        mineAttributes: Dynamic = elementAttributeMap(mineElement),
+        theirsAttributes: Dynamic = elementAttributeMap(theirsElement);
+      for (let attributeName of new Set([
+        ...baseAttributes.keys(),
+        ...mineAttributes.keys(),
       ]) as Dynamic) {
-        let value21: Dynamic = value11.get(value20) ?? null,
-          value22: Dynamic = value12.get(value20) ?? null,
-          value23: Dynamic = value13.get(value20) ?? null;
-        if (value21 === value22 || value22 === value23) continue;
-        let state2: Dynamic = {
+        let baseAttribute: Dynamic = baseAttributes.get(attributeName) ?? null,
+          mineAttribute: Dynamic = mineAttributes.get(attributeName) ?? null,
+          theirsAttribute: Dynamic = theirsAttributes.get(attributeName) ?? null;
+        if (baseAttribute === mineAttribute || mineAttribute === theirsAttribute) continue;
+        let attributeChange: Dynamic = {
           tid: index,
-          tag: value10,
+          tag: tagName,
           kind: "attr",
-          name: value20,
-          from: value21,
-          to: value22,
+          name: attributeName,
+          from: baseAttribute,
+          to: mineAttribute,
         };
-        value23 !== value21 &&
-          items2.push({
-            ...state2,
-            theirs: value23,
+        theirsAttribute !== baseAttribute &&
+          overlaps.push({
+            ...attributeChange,
+            theirs: theirsAttribute,
           });
-        value22 === null
-          ? value9.removeAttribute(value20)
-          : value9.setAttribute(value20, value22);
-        items.push(state2);
+        mineAttribute === null
+          ? theirsElement.removeAttribute(attributeName)
+          : theirsElement.setAttribute(attributeName, mineAttribute);
+        appliedChanges.push(attributeChange);
       }
-      let value14: Dynamic = elementStyleMap(value7),
-        value15: Dynamic = elementStyleMap(value8),
-        value16: Dynamic = elementStyleMap(value9);
-      for (let value20 of new Set([
-        ...value14.keys(),
-        ...value15.keys(),
+      let baseStyles: Dynamic = elementStyleMap(baseElement),
+        mineStyles: Dynamic = elementStyleMap(mineElement),
+        theirsStyles: Dynamic = elementStyleMap(theirsElement);
+      for (let styleName of new Set([
+        ...baseStyles.keys(),
+        ...mineStyles.keys(),
       ]) as Dynamic) {
-        let value21: Dynamic = value14.get(value20) ?? null,
-          value22: Dynamic = value15.get(value20) ?? null,
-          value23: Dynamic = value16.get(value20) ?? null;
-        if (value21 === value22 || value22 === value23) continue;
-        let state2: Dynamic = {
+        let baseStyle: Dynamic = baseStyles.get(styleName) ?? null,
+          mineStyle: Dynamic = mineStyles.get(styleName) ?? null,
+          theirsStyle: Dynamic = theirsStyles.get(styleName) ?? null;
+        if (baseStyle === mineStyle || mineStyle === theirsStyle) continue;
+        let styleChange: Dynamic = {
           tid: index,
-          tag: value10,
+          tag: tagName,
           kind: "style",
-          name: value20,
-          from: value21,
-          to: value22,
+          name: styleName,
+          from: baseStyle,
+          to: mineStyle,
         };
-        value23 !== value21 &&
-          items2.push({
-            ...state2,
-            theirs: value23,
+        theirsStyle !== baseStyle &&
+          overlaps.push({
+            ...styleChange,
+            theirs: theirsStyle,
           });
-        value4.setStyleProperty(index, value20, value22);
-        items.push(state2);
+        theirsModel.setStyleProperty(index, styleName, mineStyle);
+        appliedChanges.push(styleChange);
       }
-      let value17: Dynamic = elementTextSlots(value7),
-        value18: Dynamic = elementTextSlots(value8),
-        value19: Dynamic = elementTextSlots(value9);
+      let baseSlots: Dynamic = elementTextSlots(baseElement),
+        mineSlots: Dynamic = elementTextSlots(mineElement),
+        theirsSlots: Dynamic = elementTextSlots(theirsElement);
       if (
-        value17.length !== value18.length ||
-        value17.length !== value19.length
+        baseSlots.length !== mineSlots.length ||
+        baseSlots.length !== theirsSlots.length
       )
-        return callback(
+        return fail(
           "text and elements are interleaved differently in <" +
-            value10 +
+            tagName +
             ">",
         );
-      for (let index2: Dynamic = 0; index2 < value17.length; index2++) {
+      for (let slotIndex: Dynamic = 0; slotIndex < baseSlots.length; slotIndex++) {
         if (
-          value17[index2] === value18[index2] ||
-          value18[index2] === value19[index2]
+          baseSlots[slotIndex] === mineSlots[slotIndex] ||
+          mineSlots[slotIndex] === theirsSlots[slotIndex]
         )
           continue;
         if (
-          ModelThreeWayMergeSCRIPTSTYLETEXTAREASet.has(value7.tagName) &&
-          value19[index2] !== value17[index2]
+          ModelThreeWayMergeSCRIPTSTYLETEXTAREASet.has(baseElement.tagName) &&
+          theirsSlots[slotIndex] !== baseSlots[slotIndex]
         )
-          return callback("both sides rewrote the <" + value10 + "> body");
-        let state2: Dynamic = {
+          return fail("both sides rewrote the <" + tagName + "> body");
+        let textChange: Dynamic = {
           tid: index,
-          tag: value10,
+          tag: tagName,
           kind: "text",
-          name: String(index2),
-          from: value17[index2],
-          to: value18[index2],
+          name: String(slotIndex),
+          from: baseSlots[slotIndex],
+          to: mineSlots[slotIndex],
         };
-        value19[index2] !== value17[index2] &&
-          items2.push({
-            ...state2,
-            theirs: value19[index2],
+        theirsSlots[slotIndex] !== baseSlots[slotIndex] &&
+          overlaps.push({
+            ...textChange,
+            theirs: theirsSlots[slotIndex],
           });
-        replaceElementTextSlot(value9, index2, value18[index2]);
-        items.push(state2);
+        replaceElementTextSlot(theirsElement, slotIndex, mineSlots[slotIndex]);
+        appliedChanges.push(textChange);
       }
     }
-    let value6: Dynamic = value4.serialize();
-    value3.rootText() !== value2.rootText() &&
-      value4.rootText() === value2.rootText() &&
-      items.length === 0 &&
-      (value6 = options);
+    let mergedHtml: Dynamic = theirsModel.serialize();
+    mineModel.rootText() !== baseModel.rootText() &&
+      theirsModel.rootText() === baseModel.rootText() &&
+      appliedChanges.length === 0 &&
+      (mergedHtml = mineHtml);
     return {
       ok: true,
-      merged: value6,
-      applied: items,
-      overlaps: items2,
-      guard: state,
+      merged: mergedHtml,
+      applied: appliedChanges,
+      overlaps: overlaps,
+      guard: guard,
     };
-  } catch (value2: Dynamic) {
-    return callback(
+  } catch (error: Dynamic) {
+    return fail(
       "the merge threw: " +
-        (value2 instanceof Error ? value2.message : String(value2)),
+        (error instanceof Error ? error.message : String(error)),
     );
   }
 }
-function splitDcDocumentRegions(input?: Dynamic): Dynamic {
-  let value: Dynamic = parseDcHtmlDocument(input);
-  if (!value) return null;
-  let value2: Dynamic = getDcPropsJson(input),
-    value3: Dynamic = replaceDcTemplate(input, value, ""),
-    value4: Dynamic = parseDcHtmlDocument(value3);
-  value4?.jsMatch && (value3 = setDcScript(value3, value4, ""));
-  value2 !== null &&
-    (value3 = setDcPropsJson(value3, "{}") ?? value3);
+function splitDcDocumentRegions(html?: Dynamic): Dynamic {
+  let parsedDocument: Dynamic = parseDcHtmlDocument(html);
+  if (!parsedDocument) return null;
+  let propsJson: Dynamic = getDcPropsJson(html),
+    outerHtml: Dynamic = replaceDcTemplate(html, parsedDocument, ""),
+    outerDocument: Dynamic = parseDcHtmlDocument(outerHtml);
+  outerDocument?.jsMatch && (outerHtml = setDcScript(outerHtml, outerDocument, ""));
+  propsJson !== null &&
+    (outerHtml = setDcPropsJson(outerHtml, "{}") ?? outerHtml);
   return {
-    template: value.template,
-    js: value.js,
-    props: value2,
-    outer: value3,
+    template: parsedDocument.template,
+    js: parsedDocument.js,
+    props: propsJson,
+    outer: outerHtml,
   };
 }
 function mergeDcProps(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  baseProps?: Dynamic,
+  mineProps?: Dynamic,
+  theirsProps?: Dynamic,
+  appliedChanges?: Dynamic,
+  overlaps?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (input2 === null) return {};
+  let parsePropsObject: Dynamic = (propsText?: Dynamic): Dynamic => {
+      if (propsText === null) return {};
       try {
-        let value5: Dynamic = JSON.parse(input2);
-        return value5 !== null &&
-          typeof value5 == "object" &&
-          !Array.isArray(value5)
-          ? value5
+        let parsed: Dynamic = JSON.parse(propsText);
+        return parsed !== null &&
+          typeof parsed == "object" &&
+          !Array.isArray(parsed)
+          ? parsed
           : null;
       } catch {
         return null;
       }
     },
-    value2: Dynamic = callback(input),
-    value3: Dynamic = callback(options),
-    value4: Dynamic = callback(context);
-  if (value2 === null || value3 === null || value4 === null) return;
-  let callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 === undefined ? null : JSON.stringify(input2),
-    state: Dynamic = {
-      ...value4,
+    baseObject: Dynamic = parsePropsObject(baseProps),
+    mineObject: Dynamic = parsePropsObject(mineProps),
+    theirsObject: Dynamic = parsePropsObject(theirsProps);
+  if (baseObject === null || mineObject === null || theirsObject === null) return;
+  let serializeProp: Dynamic = (propValue?: Dynamic): Dynamic =>
+      propValue === undefined ? null : JSON.stringify(propValue),
+    mergedObject: Dynamic = {
+      ...theirsObject,
     };
-  for (let value5 of new Set([
-    ...Object.keys(value2),
-    ...Object.keys(value3),
+  for (let propKey of new Set([
+    ...Object.keys(baseObject),
+    ...Object.keys(mineObject),
   ]) as Dynamic) {
-    let value6: Dynamic = callback2(value2[value5]),
-      value7: Dynamic = callback2(value3[value5]),
-      value8: Dynamic = callback2(value4[value5]);
-    if (value6 === value7 || value7 === value8) continue;
-    let state2: Dynamic = {
+    let baseValue: Dynamic = serializeProp(baseObject[propKey]),
+      mineValue: Dynamic = serializeProp(mineObject[propKey]),
+      theirsValue: Dynamic = serializeProp(theirsObject[propKey]);
+    if (baseValue === mineValue || mineValue === theirsValue) continue;
+    let propChange: Dynamic = {
       tid: -1,
       tag: "script",
       kind: "props-key",
-      name: value5,
-      from: value6,
-      to: value7,
+      name: propKey,
+      from: baseValue,
+      to: mineValue,
     };
-    value8 !== value6 &&
-      extra.push({
-        ...state2,
-        theirs: value8,
+    theirsValue !== baseValue &&
+      overlaps.push({
+        ...propChange,
+        theirs: theirsValue,
       });
-    value7 === null ? delete state[value5] : (state[value5] = value3[value5]);
-    value.push(state2);
+    mineValue === null ? delete mergedObject[propKey] : (mergedObject[propKey] = mineObject[propKey]);
+    appliedChanges.push(propChange);
   }
-  return JSON.stringify(state);
+  return JSON.stringify(mergedObject);
 }
 function mergeDcDocuments(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  baseHtml?: Dynamic,
+  mineHtml?: Dynamic,
+  theirsHtml?: Dynamic,
 ): Dynamic {
-  let state: Dynamic = {
+  let regions: Dynamic = {
       template: "same",
       script: "same",
       outer: "same",
     },
-    callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => ({
+    fail: Dynamic = (reason?: Dynamic, extraFields?: Dynamic): Dynamic => ({
       ok: false,
-      why: input2,
+      why: reason,
       applied: [],
       overlaps: [],
       guard: {
         baseTheirs: false,
         baseMine: false,
       },
-      ...options2,
-      regions: state,
+      ...extraFields,
+      regions: regions,
     });
   try {
-    if (options === input || options === context)
+    if (mineHtml === baseHtml || mineHtml === theirsHtml)
       return {
         ok: true,
-        merged: context,
+        merged: theirsHtml,
         applied: [],
         overlaps: [],
         guard: {
@@ -374,10 +374,10 @@ function mergeDcDocuments(
           outer: "theirs",
         },
       };
-    if (context === input)
+    if (theirsHtml === baseHtml)
       return {
         ok: true,
-        merged: options,
+        merged: mineHtml,
         applied: [],
         overlaps: [],
         guard: {
@@ -390,115 +390,115 @@ function mergeDcDocuments(
           outer: "mine",
         },
       };
-    let value: Dynamic = splitDcDocumentRegions(input),
-      value2: Dynamic = splitDcDocumentRegions(options),
-      value3: Dynamic = splitDcDocumentRegions(context);
-    if (!value || !value2 || !value3)
-      return callback("not a parseable .dc.html on every side");
-    let items: Dynamic = [],
-      items2: Dynamic = [],
-      state2: Dynamic = {
+    let baseRegions: Dynamic = splitDcDocumentRegions(baseHtml),
+      mineRegions: Dynamic = splitDcDocumentRegions(mineHtml),
+      theirsRegions: Dynamic = splitDcDocumentRegions(theirsHtml);
+    if (!baseRegions || !mineRegions || !theirsRegions)
+      return fail("not a parseable .dc.html on every side");
+    let appliedChanges: Dynamic = [],
+      overlaps: Dynamic = [],
+      guard: Dynamic = {
         baseTheirs: true,
         baseMine: true,
       },
-      value4: Dynamic = classifyThreeWayChange(
-        value.js,
-        value2.js,
-        value3.js,
+      scriptChange: Dynamic = classifyThreeWayChange(
+        baseRegions.js,
+        mineRegions.js,
+        theirsRegions.js,
       );
-    if (value4 === "both")
-      return callback("both sides rewrote the logic script");
-    state.script = value4;
-    let value5: Dynamic = classifyThreeWayChange(
-      value.outer,
-      value2.outer,
-      value3.outer,
+    if (scriptChange === "both")
+      return fail("both sides rewrote the logic script");
+    regions.script = scriptChange;
+    let outerChange: Dynamic = classifyThreeWayChange(
+      baseRegions.outer,
+      mineRegions.outer,
+      theirsRegions.outer,
     );
-    if (value5 === "both")
-      return callback(
+    if (outerChange === "both")
+      return fail(
         "both sides changed the document outside the template (head or script tag)",
       );
-    let value6: Dynamic = classifyThreeWayChange(
-        value.props,
-        value2.props,
-        value3.props,
+    let propsChange: Dynamic = classifyThreeWayChange(
+        baseRegions.props,
+        mineRegions.props,
+        theirsRegions.props,
       ),
-      value7: Dynamic = value6 === "mine" ? value2.props : value3.props;
+      mergedProps: Dynamic = propsChange === "mine" ? mineRegions.props : theirsRegions.props;
     if (
-      value6 === "both" &&
-      ((value7 = mergeDcProps(
-        value.props,
-        value2.props,
-        value3.props,
-        items,
-        items2,
+      propsChange === "both" &&
+      ((mergedProps = mergeDcProps(
+        baseRegions.props,
+        mineRegions.props,
+        theirsRegions.props,
+        appliedChanges,
+        overlaps,
       )),
-      value7 === undefined)
+      mergedProps === undefined)
     )
-      return callback(
+      return fail(
         "both sides changed data-props and one of them is not a JSON object",
       );
-    state.outer =
-      value6 === "both"
+    regions.outer =
+      propsChange === "both"
         ? "merged"
-        : value5 === "same"
-          ? value6 === "same"
+        : outerChange === "same"
+          ? propsChange === "same"
             ? "same"
-            : value6
-          : value5 === value6 || value6 === "same"
-            ? value5
+            : propsChange
+          : outerChange === propsChange || propsChange === "same"
+            ? outerChange
             : "merged";
-    let template: Dynamic = value3.template,
-      value8: Dynamic = classifyThreeWayChange(
-        value.template,
-        value2.template,
-        value3.template,
+    let template: Dynamic = theirsRegions.template,
+      templateChange: Dynamic = classifyThreeWayChange(
+        baseRegions.template,
+        mineRegions.template,
+        theirsRegions.template,
       );
-    state.template = value8 === "both" ? "merged" : value8;
-    if (value8 === "mine") template = value2.template;
-    else if (value8 === "both") {
-      let value14: Dynamic = mergeDcTemplates(
-        value.template,
-        value2.template,
-        value3.template,
+    regions.template = templateChange === "both" ? "merged" : templateChange;
+    if (templateChange === "mine") template = mineRegions.template;
+    else if (templateChange === "both") {
+      let templateMerge: Dynamic = mergeDcTemplates(
+        baseRegions.template,
+        mineRegions.template,
+        theirsRegions.template,
       );
-      state2 = value14.guard;
-      if (!value14.ok || value14.merged === undefined)
-        return callback(value14.why ?? "the template could not be merged", {
-          guard: state2,
+      guard = templateMerge.guard;
+      if (!templateMerge.ok || templateMerge.merged === undefined)
+        return fail(templateMerge.why ?? "the template could not be merged", {
+          guard: guard,
         });
-      template = value14.merged;
-      items.push(...value14.applied);
-      items2.push(...value14.overlaps);
+      template = templateMerge.merged;
+      appliedChanges.push(...templateMerge.applied);
+      overlaps.push(...templateMerge.overlaps);
     }
-    let value9: Dynamic = value5 === "mine" ? options : context,
-      value10: Dynamic = parseDcHtmlDocument(value9);
-    if (!value10) return callback("the kept document did not parse");
-    value9 = replaceDcTemplate(value9, value10, template);
-    let value11: Dynamic = value4 === "mine" ? value2.js : value3.js,
-      value12: Dynamic = parseDcHtmlDocument(value9);
-    if (!value12) return callback("the composed document did not parse");
-    value12.js !== value11 &&
-      (value9 = setDcScript(value9, value12, value11));
-    getDcPropsJson(value9) !== (value7 ?? null) &&
-      value7 !== null &&
-      value7 !== undefined &&
-      (value9 = setDcPropsJson(value9, value7) ?? value9);
-    let value13: Dynamic = splitDcDocumentRegions(value9);
-    return !value13 || value13.template !== template || value13.js !== value11
-      ? callback("the composed document did not round-trip")
+    let composedHtml: Dynamic = outerChange === "mine" ? mineHtml : theirsHtml,
+      keptDocument: Dynamic = parseDcHtmlDocument(composedHtml);
+    if (!keptDocument) return fail("the kept document did not parse");
+    composedHtml = replaceDcTemplate(composedHtml, keptDocument, template);
+    let keptScript: Dynamic = scriptChange === "mine" ? mineRegions.js : theirsRegions.js,
+      composedDocument: Dynamic = parseDcHtmlDocument(composedHtml);
+    if (!composedDocument) return fail("the composed document did not parse");
+    composedDocument.js !== keptScript &&
+      (composedHtml = setDcScript(composedHtml, composedDocument, keptScript));
+    getDcPropsJson(composedHtml) !== (mergedProps ?? null) &&
+      mergedProps !== null &&
+      mergedProps !== undefined &&
+      (composedHtml = setDcPropsJson(composedHtml, mergedProps) ?? composedHtml);
+    let roundTrip: Dynamic = splitDcDocumentRegions(composedHtml);
+    return !roundTrip || roundTrip.template !== template || roundTrip.js !== keptScript
+      ? fail("the composed document did not round-trip")
       : {
           ok: true,
-          merged: value9,
-          applied: items,
-          overlaps: items2,
-          guard: state2,
-          regions: state,
+          merged: composedHtml,
+          applied: appliedChanges,
+          overlaps: overlaps,
+          guard: guard,
+          regions: regions,
         };
-  } catch (value: Dynamic) {
-    return callback(
+  } catch (error: Dynamic) {
+    return fail(
       "the merge threw: " +
-        (value instanceof Error ? value.message : String(value)),
+        (error instanceof Error ? error.message : String(error)),
     );
   }
 }
@@ -525,17 +525,17 @@ export function installEditorModelThreeWayMerge(): () => void {
       "TITLE",
     ]);
     classifyThreeWayChange = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      base?: Dynamic,
+      mine?: Dynamic,
+      theirs?: Dynamic,
     ): Dynamic =>
-      options === context
-        ? options === input
+      mine === theirs
+        ? mine === base
           ? "same"
           : "theirs"
-        : options === input
+        : mine === base
           ? "theirs"
-          : context === input
+          : theirs === base
             ? "mine"
             : "both";
   };

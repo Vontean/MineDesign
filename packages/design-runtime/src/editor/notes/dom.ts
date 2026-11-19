@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { NotesBlocksHandler, NotesBlocksPattern_3, NotesBlocksReplace, parseNoteBlocks } from "./blocks";
+import { NotesBlocksHandler, NotesBlocksPattern_3 as escapedMarkerPattern, NotesBlocksReplace, parseNoteBlocks } from "./blocks";
 import { escapeMarkdownInline } from "./inline-markdown";
 
 var NotesDomRepeat: Dynamic;
@@ -15,15 +15,15 @@ var NotesDomReplace: Dynamic;
 var NotesDomHandler_2: Dynamic;
 function createNoteInlineDom(
   doc?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  markdown?: Dynamic,
+  parseOptions?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = NotesBlocksHandler(options, context);
-  return value.every((input?: Dynamic): Dynamic => input.text === "")
+  let tokens: Dynamic = NotesBlocksHandler(markdown, parseOptions);
+  return tokens.every((token?: Dynamic): Dynamic => token.text === "")
     ? [doc.createElement("br")]
-    : value.map((source?: Dynamic): Dynamic => {
+    : tokens.map((source?: Dynamic): Dynamic => {
         if (source.kind === "text") return doc.createTextNode(source.text);
-        let value2: Dynamic = doc.createElement(
+        let element: Dynamic = doc.createElement(
           (
             {
               bold: "strong",
@@ -33,168 +33,168 @@ function createNoteInlineDom(
             } as Dynamic
           )[source.kind],
         );
-        value2.textContent = source.text;
+        element.textContent = source.text;
         (source.kind === "code" || source.kind === "link") &&
-          (value2.contentEditable = "false");
+          (element.contentEditable = "false");
         source.kind === "link" &&
-          ((value2.dataset.href = source.href), (value2.title = source.href));
-        return value2;
+          ((element.dataset.href = source.href), (element.title = source.href));
+        return element;
       });
 }
 function applyNoteMarkdownDom(
   element?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  markdown?: Dynamic,
+  parseOptions?: Dynamic,
 ): Dynamic {
   let ownerDocument: Dynamic = element.ownerDocument;
   element.replaceChildren();
-  for (let value of parseNoteBlocks(
-    options,
-    context,
+  for (let block of parseNoteBlocks(
+    markdown,
+    parseOptions,
   ) as Dynamic) {
-    if (value.kind === "p") {
-      let value3: Dynamic = ownerDocument.createElement("div");
-      value3.append(
-        ...createNoteInlineDom(ownerDocument, value.text, context?.linksTo),
+    if (block.kind === "p") {
+      let paragraph: Dynamic = ownerDocument.createElement("div");
+      paragraph.append(
+        ...createNoteInlineDom(ownerDocument, block.text, parseOptions?.linksTo),
       );
-      element.append(value3);
+      element.append(paragraph);
       continue;
     }
-    let value2: Dynamic = ownerDocument.createElement(value.kind);
-    value.kind === "ol" &&
-      value.start !== 1 &&
-      value2.setAttribute("start", String(value.start));
-    for (let value3 of value.items as Dynamic) {
-      let value4: Dynamic = ownerDocument.createElement("li");
-      value4.append(
-        ...createNoteInlineDom(ownerDocument, value3, context?.linksTo),
+    let listElement: Dynamic = ownerDocument.createElement(block.kind);
+    block.kind === "ol" &&
+      block.start !== 1 &&
+      listElement.setAttribute("start", String(block.start));
+    for (let itemText of block.items as Dynamic) {
+      let listItem: Dynamic = ownerDocument.createElement("li");
+      listItem.append(
+        ...createNoteInlineDom(ownerDocument, itemText, parseOptions?.linksTo),
       );
-      value2.append(value4);
+      listElement.append(listItem);
     }
-    element.append(value2);
+    element.append(listElement);
   }
 }
-function serializeNoteDom(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options?.lists !== false,
-    items: Dynamic = [],
-    text: Dynamic = "",
-    items2: Dynamic = [],
-    value2: Dynamic = null,
-    value3: Dynamic = null,
-    flag: Dynamic = false,
-    state: Dynamic = {
+function serializeNoteDom(root?: Dynamic, serializeOptions?: Dynamic): Dynamic {
+  let listsEnabled: Dynamic = serializeOptions?.lists !== false,
+    lines: Dynamic = [],
+    linePrefix: Dynamic = "",
+    lineSegments: Dynamic = [],
+    pendingRun: Dynamic = null,
+    activeFormat: Dynamic = null,
+    hasLineContent: Dynamic = false,
+    formatMarkers: Dynamic = {
       bold: "**",
       italic: "*",
       code: "`",
     },
-    callback: Dynamic = (): Dynamic => {
-      if (!value2) return;
-      let [, value4 = "", value5 = "", value6 = ""]: Dynamic =
-        (value2.k === "code" ? /^()(.*)()$/s : /^(\s*)(.*?)(\s*)$/s).exec(
-          value2.text,
+    flushPendingRun: Dynamic = (): Dynamic => {
+      if (!pendingRun) return;
+      let [, leadingSpace = "", innerText = "", trailingSpace = ""]: Dynamic =
+        (pendingRun.k === "code" ? /^()(.*)()$/s : /^(\s*)(.*?)(\s*)$/s).exec(
+          pendingRun.text,
         ) ?? [];
-      value5 === "" || (value2.k === "code" && !NotesDomHandler(value5))
-        ? items2.push({
+      innerText === "" || (pendingRun.k === "code" && !NotesDomHandler(innerText))
+        ? lineSegments.push({
             k: "text",
-            text: value2.text,
+            text: pendingRun.text,
           })
-        : items2.push(
+        : lineSegments.push(
             {
               k: "text",
-              text: value4,
+              text: leadingSpace,
             },
             {
-              k: value2.k,
-              text: value5,
+              k: pendingRun.k,
+              text: innerText,
             },
             {
               k: "text",
-              text: value6,
+              text: trailingSpace,
             },
           );
-      value2 = null;
+      pendingRun = null;
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      let items3: Dynamic = [];
-      for (let value4 of input2 as Dynamic) {
-        let value5: Dynamic = items3[items3.length - 1];
-        value4.k === "text" && value5?.k === "text"
-          ? (value5.text += value4.text)
-          : (value4.text !== "" || value4.k !== "text") &&
-            items3.push({
-              ...value4,
+    fingerprintSegments: Dynamic = (segments?: Dynamic): Dynamic => {
+      let mergedSegments: Dynamic = [];
+      for (let segment of segments as Dynamic) {
+        let lastSegment: Dynamic = mergedSegments[mergedSegments.length - 1];
+        segment.k === "text" && lastSegment?.k === "text"
+          ? (lastSegment.text += segment.text)
+          : (segment.text !== "" || segment.k !== "text") &&
+            mergedSegments.push({
+              ...segment,
             });
       }
-      return items3
+      return mergedSegments
         .map(
-          (input3?: Dynamic): Dynamic =>
-            input3.k + "" + input3.text + "" + (input3.href ?? ""),
+          (mergedSegment?: Dynamic): Dynamic =>
+            mergedSegment.k + "" + mergedSegment.text + "" + (mergedSegment.href ?? ""),
         )
         .join("");
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.replace(/[\\[\]]/g, "\\$&"),
-    callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-      let items3: Dynamic = [];
-      for (let value4 of input2 as Dynamic) {
-        value4.k === "code" &&
-          items3[items3.length - 1]?.k === "code" &&
-          items3.push({
+    escapeLinkText: Dynamic = (text?: Dynamic): Dynamic =>
+      text.replace(/[\\[\]]/g, "\\$&"),
+    separateAdjacentCode: Dynamic = (segments?: Dynamic): Dynamic => {
+      let spacedSegments: Dynamic = [];
+      for (let segment of segments as Dynamic) {
+        segment.k === "code" &&
+          spacedSegments[spacedSegments.length - 1]?.k === "code" &&
+          spacedSegments.push({
             k: "text",
             text: " ",
           });
-        items3.push(value4);
+        spacedSegments.push(segment);
       }
-      return items3;
+      return spacedSegments;
     },
-    callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2
+    renderSegments: Dynamic = (segments?: Dynamic): Dynamic =>
+      segments
         .map(
-          (input3?: Dynamic): Dynamic =>
-            input3.k === "text"
-              ? escapeMarkdownInline(input3.text)
-              : input3.k === "link"
+          (segment?: Dynamic): Dynamic =>
+            segment.k === "text"
+              ? escapeMarkdownInline(segment.text)
+              : segment.k === "link"
                 ? "[" +
-                  callback3(input3.text) +
+                  escapeLinkText(segment.text) +
                   "](" +
-                  (input3.href ?? "").replace(/[\\[]/g, "\\$&") +
+                  (segment.href ?? "").replace(/[\\[]/g, "\\$&") +
                   ")"
-                : input3.k === "code"
-                  ? (NotesDomRepeat(input3.text) ??
-                    escapeMarkdownInline(input3.text))
-                  : state[input3.k] +
-                    escapeMarkdownInline(input3.text) +
-                    state[input3.k],
+                : segment.k === "code"
+                  ? (NotesDomRepeat(segment.text) ??
+                    escapeMarkdownInline(segment.text))
+                  : formatMarkers[segment.k] +
+                    escapeMarkdownInline(segment.text) +
+                    formatMarkers[segment.k],
         )
         .join(""),
-    callback6: Dynamic = (): Dynamic => {
-      callback();
-      if (flag) {
-        items2 = callback4(items2);
-        let value4: Dynamic = callback5(items2);
-        text === "" &&
-          value &&
-          (value4 = NotesBlocksReplace(value4));
-        callback2(callback7(value4)) !== callback2(items2) &&
-          (value4 = callback5(
-            items2.map(
-              (input2?: Dynamic): Dynamic =>
-                input2.k === "bold" || input2.k === "italic"
+    flushLine: Dynamic = (): Dynamic => {
+      flushPendingRun();
+      if (hasLineContent) {
+        lineSegments = separateAdjacentCode(lineSegments);
+        let lineText: Dynamic = renderSegments(lineSegments);
+        linePrefix === "" &&
+          listsEnabled &&
+          (lineText = NotesBlocksReplace(lineText));
+        fingerprintSegments(reparseSegments(lineText)) !== fingerprintSegments(lineSegments) &&
+          (lineText = renderSegments(
+            lineSegments.map(
+              (segment?: Dynamic): Dynamic =>
+                segment.k === "bold" || segment.k === "italic"
                   ? {
                       k: "text",
-                      text: input2.text,
+                      text: segment.text,
                     }
-                  : input2,
+                  : segment,
             ),
           ));
-        items.push(text + value4);
+        lines.push(linePrefix + lineText);
       }
-      items2 = [];
-      flag = false;
+      lineSegments = [];
+      hasLineContent = false;
     },
-    callback7: Dynamic = (input2?: Dynamic): Dynamic =>
+    reparseSegments: Dynamic = (markdownText?: Dynamic): Dynamic =>
       NotesBlocksHandler(
-        value ? input2.replace(NotesBlocksPattern_3, "$1$2") : input2,
+        listsEnabled ? markdownText.replace(escapedMarkerPattern, "$1$2") : markdownText,
       ).map(
         (source?: Dynamic): Dynamic => ({
           k: source.kind,
@@ -202,135 +202,135 @@ function serializeNoteDom(input?: Dynamic, options?: Dynamic): Dynamic {
           href: source.kind === "link" ? source.href : undefined,
         }),
       ),
-    callback8: Dynamic = (input2?: Dynamic): Dynamic => {
-      input2
+    appendText: Dynamic = (rawText?: Dynamic): Dynamic => {
+      rawText
         .replace(/\u00a0/g, " ")
         .split(
           `
 `,
         )
-        .forEach((input3?: Dynamic, options2?: Dynamic): Dynamic => {
-          options2 > 0 && ((flag = true), callback6());
-          input3 !== "" &&
-            (value3
-              ? ((value2 ??= {
-                  k: value3.k,
+        .forEach((lineText?: Dynamic, lineIndex?: Dynamic): Dynamic => {
+          lineIndex > 0 && ((hasLineContent = true), flushLine());
+          lineText !== "" &&
+            (activeFormat
+              ? ((pendingRun ??= {
+                  k: activeFormat.k,
                   text: "",
-                }).text += input3)
-              : items2.push({
+                }).text += lineText)
+              : lineSegments.push({
                   k: "text",
-                  text: input3,
+                  text: lineText,
                 }),
-            (flag = true));
+            (hasLineContent = true));
         });
     },
-    callback9: Dynamic = (input2?: Dynamic): Dynamic => {
-      let parentElement: Dynamic = input2.parentElement;
+    listItemMarker: Dynamic = (listItem?: Dynamic): Dynamic => {
+      let parentElement: Dynamic = listItem.parentElement;
       if (!parentElement) return "";
       if (parentElement.tagName !== "OL") return "- ";
-      let value4: Dynamic = Number.parseInt(
+      let startAttribute: Dynamic = Number.parseInt(
           parentElement.getAttribute("start") ?? "1",
           10,
         ),
-        value5: Dynamic = Number.isFinite(value4) && value4 >= 0 ? value4 : 1;
+        itemNumber: Dynamic = Number.isFinite(startAttribute) && startAttribute >= 0 ? startAttribute : 1;
       for (
-        let previousElementSibling: Dynamic = input2.previousElementSibling;
+        let previousElementSibling: Dynamic = listItem.previousElementSibling;
         previousElementSibling;
         previousElementSibling = previousElementSibling.previousElementSibling
       )
-        previousElementSibling.tagName === "LI" && (value5 += 1);
-      return String(Math.min(value5, 999)) + ". ";
+        previousElementSibling.tagName === "LI" && (itemNumber += 1);
+      return String(Math.min(itemNumber, 999)) + ". ";
     },
-    callback10: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (input2.nodeType === 3) {
-        callback8(input2.nodeValue ?? "");
+    walkNode: Dynamic = (node?: Dynamic): Dynamic => {
+      if (node.nodeType === 3) {
+        appendText(node.nodeValue ?? "");
         return;
       }
-      if (input2.nodeType !== 1) return;
-      let value4: Dynamic = input2,
-        tagName: Dynamic = value4.tagName;
+      if (node.nodeType !== 1) return;
+      let element: Dynamic = node,
+        tagName: Dynamic = element.tagName;
       if (tagName === "BR") {
-        let parentElement: Dynamic = value4.parentElement,
-          value8: Dynamic =
+        let parentElement: Dynamic = element.parentElement,
+          isBlockBoundary: Dynamic =
             parentElement !== null &&
-            (parentElement === input ||
+            (parentElement === root ||
               NotesDomBLOCKQUOTESECTIONPattern.test(parentElement.tagName));
         if (
-          value8 &&
-          value4.previousSibling === null &&
-          value4.nextSibling?.contentEditable === "false"
+          isBlockBoundary &&
+          element.previousSibling === null &&
+          element.nextSibling?.contentEditable === "false"
         )
           return;
-        value8 && value4.nextSibling === null
-          ? (flag = true)
-          : ((flag = true), callback6());
+        isBlockBoundary && element.nextSibling === null
+          ? (hasLineContent = true)
+          : ((hasLineContent = true), flushLine());
         return;
       }
       if (NotesDomBLOCKQUOTESECTIONPattern.test(tagName)) {
-        callback6();
-        let value8: Dynamic = text;
-        tagName === "LI" && value && (text = callback9(value4));
-        let length: Dynamic = items.length;
-        value4.childNodes.forEach(callback10);
-        tagName === "LI" && items.length === length && (flag = true);
-        callback6();
-        text = value8;
+        flushLine();
+        let savedPrefix: Dynamic = linePrefix;
+        tagName === "LI" && listsEnabled && (linePrefix = listItemMarker(element));
+        let length: Dynamic = lines.length;
+        element.childNodes.forEach(walkNode);
+        tagName === "LI" && lines.length === length && (hasLineContent = true);
+        flushLine();
+        linePrefix = savedPrefix;
         return;
       }
-      let value5: Dynamic = (value4.textContent ?? "").replace(
+      let elementText: Dynamic = (element.textContent ?? "").replace(
           /[\n\u00a0]/g,
           " ",
         ),
-        value6: Dynamic =
+        specialSegment: Dynamic =
           tagName === "A" &&
-          NotesDomHttpsPattern.test(value4.dataset.href ?? "") &&
-          value5 !== ""
+          NotesDomHttpsPattern.test(element.dataset.href ?? "") &&
+          elementText !== ""
             ? {
                 k: "link",
-                text: value5,
-                href: value4.dataset.href ?? "",
+                text: elementText,
+                href: element.dataset.href ?? "",
               }
-            : tagName === "CODE" && value5 !== "" && NotesDomHandler(value5)
+            : tagName === "CODE" && elementText !== "" && NotesDomHandler(elementText)
               ? {
                   k: "code",
-                  text: value5,
+                  text: elementText,
                 }
               : null;
-      if (value6 !== null) {
-        callback();
-        items2.push(value6);
-        flag = true;
+      if (specialSegment !== null) {
+        flushPendingRun();
+        lineSegments.push(specialSegment);
+        hasLineContent = true;
         return;
       }
       if (tagName === "A") {
-        value4.childNodes.forEach(callback10);
+        element.childNodes.forEach(walkNode);
         return;
       }
-      let value7: Dynamic = NotesDomBSTRONGIConfig[tagName];
-      if (value7 !== undefined && value3 === null) {
-        value3 = {
-          k: value7,
+      let formatKind: Dynamic = NotesDomBSTRONGIConfig[tagName];
+      if (formatKind !== undefined && activeFormat === null) {
+        activeFormat = {
+          k: formatKind,
         };
-        value4.childNodes.forEach(callback10);
-        callback();
-        value3 = null;
+        element.childNodes.forEach(walkNode);
+        flushPendingRun();
+        activeFormat = null;
         return;
       }
-      value4.childNodes.forEach(callback10);
+      element.childNodes.forEach(walkNode);
     };
-  input.childNodes.forEach(callback10);
-  callback6();
-  return items.join(`
+  root.childNodes.forEach(walkNode);
+  flushLine();
+  return lines.join(`
 `);
 }
-function normalizeNoteLineBreaks(input?: Dynamic): Dynamic {
-  for (let value of [...input.querySelectorAll("br")] as Dynamic) {
-    let value2: Dynamic = value.nextSibling?.contentEditable === "false";
-    value2 && value.previousSibling === null && value.parentElement !== input
-      ? (value.dataset.notePh = "")
-      : value.dataset.notePh !== undefined &&
-        (value.previousSibling !== null || !value2) &&
-        value.remove();
+function normalizeNoteLineBreaks(editor?: Dynamic): Dynamic {
+  for (let lineBreak of [...editor.querySelectorAll("br")] as Dynamic) {
+    let nextIsUneditable: Dynamic = lineBreak.nextSibling?.contentEditable === "false";
+    nextIsUneditable && lineBreak.previousSibling === null && lineBreak.parentElement !== editor
+      ? (lineBreak.dataset.notePh = "")
+      : lineBreak.dataset.notePh !== undefined &&
+        (lineBreak.previousSibling !== null || !nextIsUneditable) &&
+        lineBreak.remove();
   }
 }
 export {
@@ -349,28 +349,28 @@ export {
 };
 export function installEditorNotesDom(): () => void {
   return () => {
-    NotesDomRepeat = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = "`".repeat(
-        (input.match(/\u0060+/g) ?? []).reduce(
-          (input2?: Dynamic, items?: Dynamic): Dynamic =>
-            Math.max(input2, items.length),
+    NotesDomRepeat = (codeText?: Dynamic): Dynamic => {
+      let fence: Dynamic = "`".repeat(
+        (codeText.match(/\u0060+/g) ?? []).reduce(
+          (maxRun?: Dynamic, run?: Dynamic): Dynamic =>
+            Math.max(maxRun, run.length),
           0,
         ) + 1,
       );
-      for (let value2 of ["", " "] as Dynamic) {
-        let value3: Dynamic = value + value2 + input + value2 + value,
-          value4: Dynamic = NotesBlocksHandler(value3);
+      for (let padding of ["", " "] as Dynamic) {
+        let candidate: Dynamic = fence + padding + codeText + padding + fence,
+          parsedTokens: Dynamic = NotesBlocksHandler(candidate);
         if (
-          value4.length === 1 &&
-          value4[0]?.kind === "code" &&
-          value4[0].text === input
+          parsedTokens.length === 1 &&
+          parsedTokens[0]?.kind === "code" &&
+          parsedTokens[0].text === codeText
         )
-          return value3;
+          return candidate;
       }
       return null;
     };
-    NotesDomHandler = (input?: Dynamic): Dynamic =>
-      NotesDomRepeat(input) !== null;
+    NotesDomHandler = (text?: Dynamic): Dynamic =>
+      NotesDomRepeat(text) !== null;
     NotesDomBSTRONGIConfig = {
       B: "bold",
       STRONG: "bold",
@@ -381,37 +381,37 @@ export function installEditorNotesDom(): () => void {
     NotesDomBLOCKQUOTESECTIONPattern =
       /^(DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|SECTION|ARTICLE|TABLE|TR)$/;
     NotesDomHttpsPattern = /^https?:\/\/[^)\s]*$/;
-    NotesDomJoin = (input?: Dynamic): Dynamic =>
-      input
+    NotesDomJoin = (text?: Dynamic): Dynamic =>
+      text
         .split(
           `
 `,
         )
         .map(
-          (input2?: Dynamic): Dynamic =>
+          (line?: Dynamic): Dynamic =>
             NotesBlocksReplace(
-              escapeMarkdownInline(input2),
+              escapeMarkdownInline(line),
             ),
         ).join(`
 `);
-    NotesDomReplace = (input?: Dynamic): Dynamic =>
-      input
+    NotesDomReplace = (text?: Dynamic): Dynamic =>
+      text
         .split(
           `
 `,
         )
         .map(
-          (input2?: Dynamic): Dynamic =>
-            input2.replace(NotesBlocksPattern_3, "$1$2"),
+          (line?: Dynamic): Dynamic =>
+            line.replace(escapedMarkerPattern, "$1$2"),
         )
         .join(
           `
 `,
         )
         .replace(/\\([*\u0060[\]\\])/g, "$1");
-    NotesDomHandler_2 = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = NotesDomReplace(input);
-      return NotesDomJoin(value) === input ? value : input;
+    NotesDomHandler_2 = (text?: Dynamic): Dynamic => {
+      let unescapedText: Dynamic = NotesDomReplace(text);
+      return NotesDomJoin(unescapedText) === text ? unescapedText : text;
     };
   };
 }

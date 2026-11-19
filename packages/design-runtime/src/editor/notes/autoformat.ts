@@ -13,158 +13,158 @@ var NotesAutoformatCaretPositionFromPoint: Dynamic;
 var NotesAutoformatExecCommand: Dynamic;
 var NotesAutoformatOnPasteOnDropOnDragStartConfig: Dynamic;
 function noteAutoformatShortcut(
-  input?: Dynamic,
-  options: Dynamic = false,
+  typedText?: Dynamic,
+  allowListMarkers: Dynamic = false,
 ): Dynamic {
-  let value: Dynamic = input.replace(/\u00a0/g, " ");
-  if (options) {
-    value = value.replace(/^ +/, "");
-    if (value === "\u2022 ") return "ul";
-    if (/^\d{1,3}\. $/.test(value)) return "ol";
+  let normalizedText: Dynamic = typedText.replace(/\u00a0/g, " ");
+  if (allowListMarkers) {
+    normalizedText = normalizedText.replace(/^ +/, "");
+    if (normalizedText === "\u2022 ") return "ul";
+    if (/^\d{1,3}\. $/.test(normalizedText)) return "ol";
   }
-  for (let [value2, value3] of NotesAutoformatItems as Dynamic)
-    if (value === value2) return value3;
+  for (let [marker, blockType] of NotesAutoformatItems as Dynamic)
+    if (normalizedText === marker) return blockType;
   return null;
 }
-function applyNoteAutoformat(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.execCommand("styleWithCSS", false, "false");
-  options === "ul"
-    ? input.execCommand("insertUnorderedList")
-    : options === "ol"
-      ? input.execCommand("insertOrderedList")
-      : options === "quote"
-        ? input.execCommand("formatBlock", false, "BLOCKQUOTE")
-        : input.execCommand("formatBlock", false, options.toUpperCase());
+function applyNoteAutoformat(ownerDocument?: Dynamic, blockType?: Dynamic): Dynamic {
+  ownerDocument.execCommand("styleWithCSS", false, "false");
+  blockType === "ul"
+    ? ownerDocument.execCommand("insertUnorderedList")
+    : blockType === "ol"
+      ? ownerDocument.execCommand("insertOrderedList")
+      : blockType === "quote"
+        ? ownerDocument.execCommand("formatBlock", false, "BLOCKQUOTE")
+        : ownerDocument.execCommand("formatBlock", false, blockType.toUpperCase());
 }
 function handleNoteAutoformat(
   element?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = false,
+  inputEvent?: Dynamic,
+  readEditorText?: Dynamic,
+  allowedBlockTypes?: Dynamic,
+  allowListMarkers: Dynamic = false,
 ): Dynamic {
   if (noteAutoformatExecuting) return false;
   let ownerDocument: Dynamic = element.ownerDocument,
     entry: Dynamic = NotesAutoformatElementCache.get(element);
   NotesAutoformatElementCache.delete(element);
   if (
-    options.inputType === "historyUndo" ||
-    options.inputType === "historyRedo"
+    inputEvent.inputType === "historyUndo" ||
+    inputEvent.inputType === "historyRedo"
   ) {
     if (entry === undefined) return false;
-    let value10: Dynamic = options.inputType === "historyUndo";
+    let isUndo: Dynamic = inputEvent.inputType === "historyUndo";
     if (
-      !(value10 ? entry.undoArmed : entry.redoArmed) ||
-      context(element) !== entry.intermediate
+      !(isUndo ? entry.undoArmed : entry.redoArmed) ||
+      readEditorText(element) !== entry.intermediate
     )
       return false;
     noteAutoformatExecuting = true;
     try {
-      ownerDocument.execCommand(value10 ? "undo" : "redo");
+      ownerDocument.execCommand(isUndo ? "undo" : "redo");
     } finally {
       noteAutoformatExecuting = false;
     }
     NotesAutoformatElementCache.set(element, {
       ...entry,
-      undoArmed: !value10,
-      redoArmed: value10,
+      undoArmed: !isUndo,
+      redoArmed: isUndo,
     });
     return false;
   }
   if (
-    options.inputType !== "insertText" ||
-    (options.data !== " " && options.data !== "\xA0")
+    inputEvent.inputType !== "insertText" ||
+    (inputEvent.data !== " " && inputEvent.data !== "\xA0")
   )
     return false;
-  let value2: Dynamic = ownerDocument.getSelection();
-  if (value2 === null || value2.rangeCount === 0 || !value2.isCollapsed)
+  let selection: Dynamic = ownerDocument.getSelection();
+  if (selection === null || selection.rangeCount === 0 || !selection.isCollapsed)
     return false;
-  let value3: Dynamic = value2.getRangeAt(0);
-  if (!element.contains(value3.startContainer)) return false;
-  let value4: Dynamic = element,
-    value5: Dynamic =
-      value3.startContainer.nodeType === 3
-        ? value3.startContainer.parentElement
-        : value3.startContainer;
+  let caretRange: Dynamic = selection.getRangeAt(0);
+  if (!element.contains(caretRange.startContainer)) return false;
+  let blockRoot: Dynamic = element,
+    currentNode: Dynamic =
+      caretRange.startContainer.nodeType === 3
+        ? caretRange.startContainer.parentElement
+        : caretRange.startContainer;
   for (
     ;
-    value5 !== null && value5 !== element;
-    value5 = value5.parentElement
+    currentNode !== null && currentNode !== element;
+    currentNode = currentNode.parentElement
   ) {
     if (
-      /^(LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|TABLE|CODE|A)$/.test(value5.tagName)
+      /^(LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|TABLE|CODE|A)$/.test(currentNode.tagName)
     )
       return false;
-    value4 === element &&
-      (value5.tagName === "DIV" || value5.tagName === "P") &&
-      (value4 = value5);
+    blockRoot === element &&
+      (currentNode.tagName === "DIV" || currentNode.tagName === "P") &&
+      (blockRoot = currentNode);
   }
-  let value6: Dynamic = ownerDocument.createRange();
-  value6.selectNodeContents(value4);
-  value6.setEnd(value3.startContainer, value3.startOffset);
-  if (value6.cloneContents().querySelector('[contenteditable="false"]'))
+  let markerRange: Dynamic = ownerDocument.createRange();
+  markerRange.selectNodeContents(blockRoot);
+  markerRange.setEnd(caretRange.startContainer, caretRange.startOffset);
+  if (markerRange.cloneContents().querySelector('[contenteditable="false"]'))
     return false;
-  let value7: Dynamic = noteAutoformatShortcut(value6.toString(), extra);
-  if (value7 === null || (value !== undefined && !value.includes(value7)))
+  let blockType: Dynamic = noteAutoformatShortcut(markerRange.toString(), allowListMarkers);
+  if (blockType === null || (allowedBlockTypes !== undefined && !allowedBlockTypes.includes(blockType)))
     return false;
-  let value8: Dynamic =
-    extra && value7 === "ol"
-      ? Number.parseInt(value6.toString().trim(), 10)
+  let listStart: Dynamic =
+    allowListMarkers && blockType === "ol"
+      ? Number.parseInt(markerRange.toString().trim(), 10)
       : 1;
-  value2.removeAllRanges();
-  value2.addRange(value6);
+  selection.removeAllRanges();
+  selection.addRange(markerRange);
   ownerDocument.execCommand("delete");
-  let value9: Dynamic = context(element);
-  applyNoteAutoformat(ownerDocument, value7);
-  if (value8 > 1) {
-    let value10: Dynamic = ownerDocument.getSelection()?.anchorNode ?? null,
-      value11: Dynamic = (
-        value10?.nodeType === 1 ? value10 : value10?.parentElement
+  let textBeforeFormat: Dynamic = readEditorText(element);
+  applyNoteAutoformat(ownerDocument, blockType);
+  if (listStart > 1) {
+    let anchorNode: Dynamic = ownerDocument.getSelection()?.anchorNode ?? null,
+      orderedList: Dynamic = (
+        anchorNode?.nodeType === 1 ? anchorNode : anchorNode?.parentElement
       )?.closest("li")?.parentElement;
-    value11?.tagName === "OL" &&
-      value11.childElementCount === 1 &&
-      value11.setAttribute("start", String(value8));
+    orderedList?.tagName === "OL" &&
+      orderedList.childElementCount === 1 &&
+      orderedList.setAttribute("start", String(listStart));
   }
   NotesAutoformatElementCache.set(element, {
-    intermediate: value9,
+    intermediate: textBeforeFormat,
     undoArmed: true,
     redoArmed: false,
   });
   return true;
 }
 function installNoteInputRules(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  editor?: Dynamic,
+  getFormatState?: Dynamic,
+  inputOptions?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (event?: Dynamic): Dynamic => {
+  let handleBeforeInput: Dynamic = (event?: Dynamic): Dynamic => {
     if (
       NotesFormattingHandler() ||
       typeof event.inputType != "string"
     )
       return;
     if (
-      context?.lists === false &&
+      inputOptions?.lists === false &&
       /^insert(Un)?orderedList$/i.test(event.inputType)
     )
       return event.preventDefault();
     if (!event.inputType.startsWith("format")) return;
     event.preventDefault();
-    let value: Dynamic = options();
-    value &&
+    let formatState: Dynamic = getFormatState();
+    formatState &&
       (event.inputType === "formatBold" ||
         event.inputType === "formatItalic") &&
       toggleNoteFormatting(
         event.inputType === "formatBold" ? "bold" : "italic",
-        value,
+        formatState,
       );
   };
-  input.addEventListener("beforeinput", callback);
-  return (): Dynamic => input.removeEventListener("beforeinput", callback);
+  editor.addEventListener("beforeinput", handleBeforeInput);
+  return (): Dynamic => editor.removeEventListener("beforeinput", handleBeforeInput);
 }
 function handleNoteFormattingShortcut(
   event?: Dynamic,
-  options?: Dynamic,
+  formatState?: Dynamic,
 ): Dynamic {
   if (
     !(event.metaKey || event.ctrlKey) ||
@@ -174,30 +174,30 @@ function handleNoteFormattingShortcut(
   )
     return false;
   event.preventDefault();
-  let value: Dynamic = event.key.toLowerCase();
-  options &&
-    value !== "u" &&
+  let formatKey: Dynamic = event.key.toLowerCase();
+  formatState &&
+    formatKey !== "u" &&
     toggleNoteFormatting(
-      value === "b" ? "bold" : "italic",
-      options,
+      formatKey === "b" ? "bold" : "italic",
+      formatState,
     );
   return true;
 }
-function moveNoteCaretToEnd(input?: Dynamic): Dynamic {
-  let value: Dynamic = (window as Dynamic).getSelection();
-  if (!value || !input.lastChild) return false;
-  let value2: Dynamic = input;
+function moveNoteCaretToEnd(editor?: Dynamic): Dynamic {
+  let selection: Dynamic = (window as Dynamic).getSelection();
+  if (!selection || !editor.lastChild) return false;
+  let deepestNode: Dynamic = editor;
   for (
     ;
-    value2.lastChild && /^(DIV|UL|OL|LI)$/.test(value2.lastChild.nodeName);
+    deepestNode.lastChild && /^(DIV|UL|OL|LI)$/.test(deepestNode.lastChild.nodeName);
 
   )
-    value2 = value2.lastChild;
-  let value3: Dynamic = (document as Dynamic).createRange();
-  value3.selectNodeContents(value2);
-  value3.collapse(false);
-  value.removeAllRanges();
-  value.addRange(value3);
+    deepestNode = deepestNode.lastChild;
+  let caretRange: Dynamic = (document as Dynamic).createRange();
+  caretRange.selectNodeContents(deepestNode);
+  caretRange.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(caretRange);
   return true;
 }
 export {
@@ -231,32 +231,32 @@ export function installEditorNotesAutoformat(): () => void {
     noteAutoformatExecuting = false;
     ContenteditableFalseValue = '[contenteditable="false"]';
     NotesAutoformatParentNode = (
-      input?: Dynamic,
-      options?: Dynamic,
+      range?: Dynamic,
+      node?: Dynamic,
     ): Dynamic => {
-      let parentNode: Dynamic = options.parentNode;
-      input.collapse(
+      let parentNode: Dynamic = node.parentNode;
+      range.collapse(
         parentNode,
-        [...parentNode.childNodes].indexOf(options) + 1,
+        [...parentNode.childNodes].indexOf(node) + 1,
       );
     };
     NotesAutoformatCaretPositionFromPoint = (
-      input?: Dynamic,
-      options?: Dynamic,
+      x?: Dynamic,
+      y?: Dynamic,
     ): Dynamic => {
-      let value: Dynamic = (document as Dynamic).caretPositionFromPoint?.(
-        input,
-        options,
+      let caretPosition: Dynamic = (document as Dynamic).caretPositionFromPoint?.(
+        x,
+        y,
       );
-      if (value) return [value.offsetNode, value.offset];
-      let value2: Dynamic = (document as Dynamic).caretRangeFromPoint?.(
-        input,
-        options,
+      if (caretPosition) return [caretPosition.offsetNode, caretPosition.offset];
+      let caretRange: Dynamic = (document as Dynamic).caretRangeFromPoint?.(
+        x,
+        y,
       );
-      return value2 ? [value2.startContainer, value2.startOffset] : null;
+      return caretRange ? [caretRange.startContainer, caretRange.startOffset] : null;
     };
-    NotesAutoformatExecCommand = (input?: Dynamic): Dynamic => {
-      input && (document as Dynamic).execCommand("insertText", false, input);
+    NotesAutoformatExecCommand = (text?: Dynamic): Dynamic => {
+      text && (document as Dynamic).execCommand("insertText", false, text);
     };
     NotesAutoformatOnPasteOnDropOnDragStartConfig = {
       onPaste: (event?: Dynamic): Dynamic => {

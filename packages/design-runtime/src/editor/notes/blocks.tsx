@@ -8,77 +8,77 @@ import { parseNoteInlineMarkdown } from "./inline-markdown";
 import { toModuleNamespace } from "../../module-helpers";
 
 var jsxNotesBlocks: Dynamic;
-var NotesBlocksPattern: Dynamic;
-var NotesBlocksPattern_2: Dynamic;
-var NotesBlocksPattern_3: Dynamic;
+var bulletListPattern: Dynamic;
+var orderedListPattern: Dynamic;
+var escapedMarkerPattern: Dynamic;
 var NotesBlocksReplace: Dynamic;
-var NotesBlocksReplace_2: Dynamic;
+var normalizeBlocksText: Dynamic;
 var NotesBlocksEscapesLiteralUnsafeLinksConfig: Dynamic;
 var NotesBlocksHandler: Dynamic;
 var NotesBlocksMap: Dynamic;
-function parseNoteBlocks(input?: Dynamic, options?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    value: Dynamic = options?.lists !== false;
-  for (let value2 of input
+function parseNoteBlocks(text?: Dynamic, parseOptions?: Dynamic): Dynamic {
+  let blocks: Dynamic = [],
+    listsEnabled: Dynamic = parseOptions?.lists !== false;
+  for (let line of text
     .replace(/\u00a0/g, " ")
     .replace(/[\uFDD0-\uFDD4]/g, "")
     .replace(/\n$/, "").split(`
 `) as Dynamic) {
-    let value3: Dynamic = items[items.length - 1],
-      value4: Dynamic = value ? NotesBlocksPattern.exec(value2) : null,
-      value5: Dynamic =
-        value4 || !value ? null : NotesBlocksPattern_2.exec(value2);
-    value4
-      ? value3?.kind === "ul"
-        ? value3.items.push(value4[1] ?? "")
-        : items.push({
+    let lastBlock: Dynamic = blocks[blocks.length - 1],
+      bulletMatch: Dynamic = listsEnabled ? bulletListPattern.exec(line) : null,
+      orderedMatch: Dynamic =
+        bulletMatch || !listsEnabled ? null : orderedListPattern.exec(line);
+    bulletMatch
+      ? lastBlock?.kind === "ul"
+        ? lastBlock.items.push(bulletMatch[1] ?? "")
+        : blocks.push({
             kind: "ul",
-            items: [value4[1] ?? ""],
+            items: [bulletMatch[1] ?? ""],
           })
-      : value5
-        ? value3?.kind === "ol"
-          ? value3.items.push(value5[2] ?? "")
-          : items.push({
+      : orderedMatch
+        ? lastBlock?.kind === "ol"
+          ? lastBlock.items.push(orderedMatch[2] ?? "")
+          : blocks.push({
               kind: "ol",
-              start: Number(value5[1]),
-              items: [value5[2] ?? ""],
+              start: Number(orderedMatch[1]),
+              items: [orderedMatch[2] ?? ""],
             })
-        : items.push({
+        : blocks.push({
             kind: "p",
-            text: value
-              ? value2.replace(NotesBlocksPattern_3, "$1$2")
-              : value2,
+            text: listsEnabled
+              ? line.replace(escapedMarkerPattern, "$1$2")
+              : line,
           });
   }
-  return items;
+  return blocks;
 }
-function serializeNoteBlocks(input?: Dynamic): Dynamic {
-  let items: Dynamic = [];
-  for (let value of input as Dynamic)
-    if (value.kind === "p") items.push(NotesBlocksReplace(value.text));
-    else if (value.kind === "ul")
-      for (let value2 of value.items as Dynamic) items.push("- " + value2);
+function serializeNoteBlocks(blocks?: Dynamic): Dynamic {
+  let lines: Dynamic = [];
+  for (let block of blocks as Dynamic)
+    if (block.kind === "p") lines.push(NotesBlocksReplace(block.text));
+    else if (block.kind === "ul")
+      for (let item of block.items as Dynamic) lines.push("- " + item);
     else
-      value.items.forEach(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          items.push(
-            String(Math.min(value.start + options, 999)) + ". " + input2,
+      block.items.forEach(
+        (item?: Dynamic, itemIndex?: Dynamic): Dynamic =>
+          lines.push(
+            String(Math.min(block.start + itemIndex, 999)) + ". " + item,
           ),
       );
-  return items.join(`
+  return lines.join(`
 `);
 }
-function renderNoteInlineMarkdown(input?: Dynamic): Dynamic {
-  return NotesBlocksHandler(input).map(
-    (source?: Dynamic, options?: Dynamic): Dynamic =>
+function renderNoteInlineMarkdown(text?: Dynamic): Dynamic {
+  return NotesBlocksHandler(text).map(
+    (source?: Dynamic, index?: Dynamic): Dynamic =>
       source.kind === "bold" ? (
-        <strong key={options}>{source.text}</strong>
+        <strong key={index}>{source.text}</strong>
       ) : source.kind === "italic" ? (
-        <em key={options}>{source.text}</em>
+        <em key={index}>{source.text}</em>
       ) : source.kind === "code" ? (
-        <code key={options}>{source.text}</code>
+        <code key={index}>{source.text}</code>
       ) : source.kind === "link" ? (
-        <a key={options} data-href={source.href} title={source.href}>
+        <a key={index} data-href={source.href} title={source.href}>
           {source.text}
         </a>
       ) : (
@@ -86,30 +86,30 @@ function renderNoteInlineMarkdown(input?: Dynamic): Dynamic {
       ),
   );
 }
-function noteRichTextCost(input?: Dynamic): Dynamic {
-  let index: Dynamic = 0;
-  for (let value of parseNoteBlocks(input) as Dynamic)
-    for (let value2 of (value.kind === "p"
-      ? [value.text]
-      : value.items) as Dynamic)
-      index +=
+function noteRichTextCost(text?: Dynamic): Dynamic {
+  let cost: Dynamic = 0;
+  for (let block of parseNoteBlocks(text) as Dynamic)
+    for (let item of (block.kind === "p"
+      ? [block.text]
+      : block.items) as Dynamic)
+      cost +=
         1 +
-        NotesBlocksHandler(value2).filter(
+        NotesBlocksHandler(item).filter(
           (source?: Dynamic): Dynamic => source.kind !== "text",
         ).length;
-  return index;
+  return cost;
 }
-function renderNoteMarkdown(input?: Dynamic): Dynamic {
-  return parseNoteBlocks(input).map(
-    (source?: Dynamic, options?: Dynamic): Dynamic =>
+function renderNoteMarkdown(text?: Dynamic): Dynamic {
+  return parseNoteBlocks(text).map(
+    (source?: Dynamic, index?: Dynamic): Dynamic =>
       source.kind === "p" ? (
-        <div key={options}>
+        <div key={index}>
           {source.text === "" ? (<br />) : (renderNoteInlineMarkdown(source.text))}
         </div>
       ) : source.kind === "ul" ? (
-        <ul key={options}>{NotesBlocksMap(source.items)}</ul>
+        <ul key={index}>{NotesBlocksMap(source.items)}</ul>
       ) : (
-        <ol key={options} start={source.start}>
+        <ol key={index} start={source.start}>
           {NotesBlocksMap(source.items)}
         </ol>
       ),
@@ -121,11 +121,11 @@ export {
   NotesBlocksEscapesLiteralUnsafeLinksConfig,
   NotesBlocksHandler,
   NotesBlocksMap,
-  NotesBlocksPattern,
-  NotesBlocksPattern_2,
-  NotesBlocksPattern_3,
+  bulletListPattern as NotesBlocksPattern,
+  orderedListPattern as NotesBlocksPattern_2,
+  escapedMarkerPattern as NotesBlocksPattern_3,
   NotesBlocksReplace,
-  NotesBlocksReplace_2,
+  normalizeBlocksText as NotesBlocksReplace_2,
   parseNoteBlocks,
   renderNoteInlineMarkdown,
   renderNoteMarkdown,
@@ -137,36 +137,36 @@ export function installEditorNotesBlocks(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    NotesBlocksPattern = /^ *[-•*] (.*)$/;
-    NotesBlocksPattern_2 = /^ *(\d{1,3})\. (.*)$/;
-    NotesBlocksPattern_3 = /^( *(?:\d{1,3})?)\\([-•.](?= ))/;
-    NotesBlocksReplace = (input?: Dynamic): Dynamic =>
-      input
+    bulletListPattern = /^ *[-•*] (.*)$/;
+    orderedListPattern = /^ *(\d{1,3})\. (.*)$/;
+    escapedMarkerPattern = /^( *(?:\d{1,3})?)\\([-•.](?= ))/;
+    NotesBlocksReplace = (text?: Dynamic): Dynamic =>
+      text
         .replace(/^( *)([-•])(?= )/, "$1\\$2")
         .replace(/^( *\d{1,3})\.(?= )/, "$1\\.");
-    NotesBlocksReplace_2 = (input?: Dynamic): Dynamic =>
-      serializeNoteBlocks(parseNoteBlocks(input))
+    normalizeBlocksText = (text?: Dynamic): Dynamic =>
+      serializeNoteBlocks(parseNoteBlocks(text))
         .replace(/(?:\n(?:- |\d{1,3}\. )?)+$/, "")
         .replace(/^(?:- |\d{1,3}\. )$/, "");
     NotesBlocksEscapesLiteralUnsafeLinksConfig = {
       escapes: true,
       literalUnsafeLinks: true,
     };
-    NotesBlocksHandler = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    NotesBlocksHandler = (text?: Dynamic, linksTo?: Dynamic): Dynamic =>
       parseNoteInlineMarkdown(
-        input,
-        options
+        text,
+        linksTo
           ? {
               ...NotesBlocksEscapesLiteralUnsafeLinksConfig,
-              linksTo: options,
+              linksTo: linksTo,
             }
           : NotesBlocksEscapesLiteralUnsafeLinksConfig,
       );
-    NotesBlocksMap = (input?: Dynamic): Dynamic =>
-      input.map(
-        (input2?: Dynamic, options?: Dynamic): Dynamic => (
-          <li key={options}>
-            {input2 === "" ? (<br />) : (renderNoteInlineMarkdown(input2))}
+    NotesBlocksMap = (items?: Dynamic): Dynamic =>
+      items.map(
+        (item?: Dynamic, index?: Dynamic): Dynamic => (
+          <li key={index}>
+            {item === "" ? (<br />) : (renderNoteInlineMarkdown(item))}
           </li>
         ),
       );

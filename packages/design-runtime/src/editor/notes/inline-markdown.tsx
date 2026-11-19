@@ -10,168 +10,168 @@ var jsxNotesInlineMarkdown: Dynamic;
 var NotesInlineMarkdownPattern: Dynamic;
 var Value_4: Dynamic;
 var NotesInlineMarkdownUFDDUFDDPattern: Dynamic;
-var NotesInlineMarkdownReplace: Dynamic;
-var NotesInlineMarkdownReplace_2: Dynamic;
-function trimCodeSpanPadding(input?: Dynamic, options?: Dynamic): Dynamic {
+var encodeEscapes: Dynamic;
+var decodeEscapes: Dynamic;
+function trimCodeSpanPadding(text?: Dynamic, span?: Dynamic): Dynamic {
   if (
-    options.to - options.from > 2 &&
-    input.charCodeAt(options.from) === 32 &&
-    input.charCodeAt(options.to - 1) === 32
+    span.to - span.from > 2 &&
+    text.charCodeAt(span.from) === 32 &&
+    text.charCodeAt(span.to - 1) === 32
   ) {
-    let from: Dynamic = options.from;
-    for (; from < options.to && input.charCodeAt(from) === 32; ) from++;
-    let value: Dynamic = options.to - 1;
-    for (; value > from && input.charCodeAt(value) === 32; ) value--;
+    let from: Dynamic = span.from;
+    for (; from < span.to && text.charCodeAt(from) === 32; ) from++;
+    let innerEnd: Dynamic = span.to - 1;
+    for (; innerEnd > from && text.charCodeAt(innerEnd) === 32; ) innerEnd--;
     if (
-      from < options.to &&
-      (input.charCodeAt(from) === 96 || input.charCodeAt(value) === 96)
+      from < span.to &&
+      (text.charCodeAt(from) === 96 || text.charCodeAt(innerEnd) === 96)
     )
-      return input.slice(options.from + 1, options.to - 1);
+      return text.slice(span.from + 1, span.to - 1);
   }
-  return input.slice(options.from, options.to);
+  return text.slice(span.from, span.to);
 }
-function scanMarkdownCodeSpans(items?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
-    items3: Dynamic = [];
-  for (let index2: Dynamic = 0; index2 < items.length; ) {
-    if (items.charCodeAt(index2) !== 96) {
-      index2++;
+function scanMarkdownCodeSpans(text?: Dynamic): Dynamic {
+  let runStarts: Dynamic = [],
+    runLengths: Dynamic = [];
+  for (let scanIndex: Dynamic = 0; scanIndex < text.length; ) {
+    if (text.charCodeAt(scanIndex) !== 96) {
+      scanIndex++;
       continue;
     }
-    let value2: Dynamic = index2;
-    for (; value2 < items.length && items.charCodeAt(value2) === 96; )
-      value2++;
-    items2.push(index2);
-    items3.push(value2 - index2);
-    index2 = value2;
+    let runEnd: Dynamic = scanIndex;
+    for (; runEnd < text.length && text.charCodeAt(runEnd) === 96; )
+      runEnd++;
+    runStarts.push(scanIndex);
+    runLengths.push(runEnd - scanIndex);
+    scanIndex = runEnd;
   }
-  let value: Dynamic = new Array(items2.length).fill(-1),
-    entries: Dynamic = new Map();
-  for (let value2: Dynamic = items2.length - 1; value2 >= 0; value2--) {
-    value[value2] = entries.get(items3[value2]) ?? -1;
-    entries.set(items3[value2], value2);
+  let closingRunIndex: Dynamic = new Array(runStarts.length).fill(-1),
+    nextRunByLength: Dynamic = new Map();
+  for (let runIndex: Dynamic = runStarts.length - 1; runIndex >= 0; runIndex--) {
+    closingRunIndex[runIndex] = nextRunByLength.get(runLengths[runIndex]) ?? -1;
+    nextRunByLength.set(runLengths[runIndex], runIndex);
   }
   let index: Dynamic = 0;
-  return (input?: Dynamic): Dynamic => {
-    for (; index < items2.length; index++) {
-      let value2: Dynamic = items2[index];
-      if (value2 < input) continue;
-      let value3: Dynamic = value[index];
-      if (value3 < 0) continue;
-      let value4: Dynamic = items3[index];
+  return (fromIndex?: Dynamic): Dynamic => {
+    for (; index < runStarts.length; index++) {
+      let openStart: Dynamic = runStarts[index];
+      if (openStart < fromIndex) continue;
+      let closeRun: Dynamic = closingRunIndex[index];
+      if (closeRun < 0) continue;
+      let runLength: Dynamic = runLengths[index];
       return {
-        start: value2,
-        end: items2[value3] + value4,
-        from: value2 + value4,
-        to: items2[value3],
+        start: openStart,
+        end: runStarts[closeRun] + runLength,
+        from: openStart + runLength,
+        to: runStarts[closeRun],
       };
     }
   };
 }
-function escapeMarkdownInline(input?: Dynamic): Dynamic {
-  return input.replace(/[*\u0060[\]\\]/g, "\\$&");
+function escapeMarkdownInline(text?: Dynamic): Dynamic {
+  return text.replace(/[*\u0060[\]\\]/g, "\\$&");
 }
 function parseNoteInlineMarkdown(
-  input?: Dynamic,
-  options?: Dynamic,
+  markdown?: Dynamic,
+  parseOptions?: Dynamic,
 ): Dynamic {
-  let items: Dynamic = [],
-    value: Dynamic =
-      options?.escapes === true ? NotesInlineMarkdownReplace(input) : input,
-    value2: Dynamic = scanMarkdownCodeSpans(value),
-    value3: Dynamic,
+  let tokens: Dynamic = [],
+    workingText: Dynamic =
+      parseOptions?.escapes === true ? encodeEscapes(markdown) : markdown,
+    findNextCodeSpan: Dynamic = scanMarkdownCodeSpans(workingText),
+    pendingMatch: Dynamic,
     index: Dynamic = 0;
-  for (; index < value.length; ) {
-    let value4: Dynamic = value2(index);
-    (value3 === undefined || (value3 !== null && value3.index < index)) &&
+  for (; index < workingText.length; ) {
+    let codeSpan: Dynamic = findNextCodeSpan(index);
+    (pendingMatch === undefined || (pendingMatch !== null && pendingMatch.index < index)) &&
       ((NotesInlineMarkdownPattern.lastIndex = index),
-      (value3 = NotesInlineMarkdownPattern.exec(value)));
-    if (value3 === null && value4 === undefined) {
-      items.push({
+      (pendingMatch = NotesInlineMarkdownPattern.exec(workingText)));
+    if (pendingMatch === null && codeSpan === undefined) {
+      tokens.push({
         kind: "text",
-        text: value.slice(index),
+        text: workingText.slice(index),
       });
       break;
     }
     if (
-      value4 !== undefined &&
-      (value3 === null || value4.start < value3.index)
+      codeSpan !== undefined &&
+      (pendingMatch === null || codeSpan.start < pendingMatch.index)
     ) {
-      value4.start > index &&
-        items.push({
+      codeSpan.start > index &&
+        tokens.push({
           kind: "text",
-          text: value.slice(index, value4.start),
+          text: workingText.slice(index, codeSpan.start),
         });
-      items.push({
+      tokens.push({
         kind: "code",
-        text: trimCodeSpanPadding(value, value4),
+        text: trimCodeSpanPadding(workingText, codeSpan),
       });
-      index = value4.end;
+      index = codeSpan.end;
       continue;
     }
-    let value5: Dynamic = value3;
-    value5.index > index &&
-      items.push({
+    let match: Dynamic = pendingMatch;
+    match.index > index &&
+      tokens.push({
         kind: "text",
-        text: value.slice(index, value5.index),
+        text: workingText.slice(index, match.index),
       });
-    value5[2] !== undefined
-      ? items.push({
+    match[2] !== undefined
+      ? tokens.push({
           kind: "bold",
-          text: value5[2],
+          text: match[2],
         })
-      : value5[4] !== undefined
-        ? items.push({
+      : match[4] !== undefined
+        ? tokens.push({
             kind: "italic",
-            text: value5[4],
+            text: match[4],
           })
-        : value5[6] !== undefined &&
-          value5[7] !== undefined &&
-          (LinksNavigationHttpsPattern.test(value5[7]) &&
-          (options?.linksTo === undefined ||
-            options.linksTo.has(
-              value === input
-                ? value5[7]
-                : NotesInlineMarkdownReplace_2(value5[7]),
+        : match[6] !== undefined &&
+          match[7] !== undefined &&
+          (LinksNavigationHttpsPattern.test(match[7]) &&
+          (parseOptions?.linksTo === undefined ||
+            parseOptions.linksTo.has(
+              workingText === markdown
+                ? match[7]
+                : decodeEscapes(match[7]),
             ))
-            ? items.push({
+            ? tokens.push({
                 kind: "link",
-                text: value5[6],
-                href: value5[7],
+                text: match[6],
+                href: match[7],
               })
-            : items.push({
+            : tokens.push({
                 kind: "text",
                 text:
-                  options?.literalUnsafeLinks === true
-                    ? value5[0]
-                    : value5[6],
+                  parseOptions?.literalUnsafeLinks === true
+                    ? match[0]
+                    : match[6],
               }));
-    index = value5.index + value5[0].length;
+    index = match.index + match[0].length;
   }
-  let items2: Dynamic = [];
-  for (let value4 of items as Dynamic) {
-    let value5: Dynamic = items2[items2.length - 1];
-    value4.kind === "text" && value5?.kind === "text"
-      ? (value5.text += value4.text)
-      : items2.push(value4);
+  let mergedTokens: Dynamic = [];
+  for (let token of tokens as Dynamic) {
+    let lastToken: Dynamic = mergedTokens[mergedTokens.length - 1];
+    token.kind === "text" && lastToken?.kind === "text"
+      ? (lastToken.text += token.text)
+      : mergedTokens.push(token);
   }
-  if (value !== input)
-    for (let value4 of items2 as Dynamic) {
-      value4.text = NotesInlineMarkdownReplace_2(
-        value4.text,
-        value4.kind === "code",
+  if (workingText !== markdown)
+    for (let mergedToken of mergedTokens as Dynamic) {
+      mergedToken.text = decodeEscapes(
+        mergedToken.text,
+        mergedToken.kind === "code",
       );
-      value4.kind === "link" &&
-        (value4.href = NotesInlineMarkdownReplace_2(value4.href));
+      mergedToken.kind === "link" &&
+        (mergedToken.href = decodeEscapes(mergedToken.href));
     }
-  return items2;
+  return mergedTokens;
 }
 export {
   escapeMarkdownInline,
   jsxNotesInlineMarkdown,
   NotesInlineMarkdownPattern,
-  NotesInlineMarkdownReplace,
-  NotesInlineMarkdownReplace_2,
+  encodeEscapes as NotesInlineMarkdownReplace,
+  decodeEscapes as NotesInlineMarkdownReplace_2,
   NotesInlineMarkdownUFDDUFDDPattern,
   parseNoteInlineMarkdown,
   scanMarkdownCodeSpans,
@@ -188,22 +188,22 @@ export function installEditorNotesInlineMarkdown(): () => void {
       /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(\[([^\]\[]+)\]\(([^)\s\[]+)\))/g;
     Value_4 = "*`[]\\";
     NotesInlineMarkdownUFDDUFDDPattern = /[\uFDD0-\uFDD4]/g;
-    NotesInlineMarkdownReplace = (input?: Dynamic): Dynamic =>
-      input
+    encodeEscapes = (text?: Dynamic): Dynamic =>
+      text
         .replace(NotesInlineMarkdownUFDDUFDDPattern, "")
         .replace(
           /\\([*\u0060[\]\\])/g,
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            String.fromCharCode(64976 + Value_4.indexOf(options)),
+          (matchedText?: Dynamic, escapedChar?: Dynamic): Dynamic =>
+            String.fromCharCode(64976 + Value_4.indexOf(escapedChar)),
         );
-    NotesInlineMarkdownReplace_2 = (
-      input?: Dynamic,
-      options: Dynamic = false,
+    decodeEscapes = (
+      text?: Dynamic,
+      shouldEscape: Dynamic = false,
     ): Dynamic =>
-      input.replace(
+      text.replace(
         NotesInlineMarkdownUFDDUFDDPattern,
-        (input2?: Dynamic): Dynamic =>
-          (options ? "\\" : "") + (Value_4[input2.charCodeAt(0) - 64976] ?? ""),
+        (placeholder?: Dynamic): Dynamic =>
+          (shouldEscape ? "\\" : "") + (Value_4[placeholder.charCodeAt(0) - 64976] ?? ""),
       );
   };
 }

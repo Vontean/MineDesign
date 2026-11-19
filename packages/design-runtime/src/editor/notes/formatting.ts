@@ -11,8 +11,8 @@ var NotesFormattingExecCommand: Dynamic;
 var NotesFormattingHandler_2: Dynamic;
 var NotesFormattingGetSelection: Dynamic;
 function getNoteFormattingState(
-  input: Dynamic = document,
-  options?: Dynamic,
+  ownerDocument: Dynamic = document,
+  knownState?: Dynamic,
 ): Dynamic {
   let state: Dynamic = {
       bold: false,
@@ -24,74 +24,74 @@ function getNoteFormattingState(
       ul: false,
       ol: false,
     },
-    value: Dynamic = input.getSelection(),
-    value2: Dynamic =
-      value && value.rangeCount > 0 && !value.isCollapsed
-        ? value.getRangeAt(0)
+    selection: Dynamic = ownerDocument.getSelection(),
+    selectedRange: Dynamic =
+      selection && selection.rangeCount > 0 && !selection.isCollapsed
+        ? selection.getRangeAt(0)
         : null;
-  !value2 &&
-    options &&
-    value?.rangeCount &&
-    typeof input.queryCommandState == "function" &&
-    (!options.bold &&
-      input.queryCommandState("bold") &&
+  !selectedRange &&
+    knownState &&
+    selection?.rangeCount &&
+    typeof ownerDocument.queryCommandState == "function" &&
+    (!knownState.bold &&
+      ownerDocument.queryCommandState("bold") &&
       (state.bold = state.inBold = true),
-    !options.italic &&
-      input.queryCommandState("italic") &&
+    !knownState.italic &&
+      ownerDocument.queryCommandState("italic") &&
       (state.italic = state.inItalic = true));
-  let value3: Dynamic = null,
-    value4: Dynamic = value2
-      ? value2.commonAncestorContainer
-      : (value?.anchorNode ?? null);
-  for (; value4 && value4.nodeType !== 9; value4 = value4.parentNode) {
-    if (value4.nodeType !== 1) continue;
-    let value5: Dynamic = value4;
-    if (value5.contentEditable === "true") {
-      value3 = value5;
+  let editableRoot: Dynamic = null,
+    currentNode: Dynamic = selectedRange
+      ? selectedRange.commonAncestorContainer
+      : (selection?.anchorNode ?? null);
+  for (; currentNode && currentNode.nodeType !== 9; currentNode = currentNode.parentNode) {
+    if (currentNode.nodeType !== 1) continue;
+    let element: Dynamic = currentNode;
+    if (element.contentEditable === "true") {
+      editableRoot = element;
       break;
     }
-    /^(B|STRONG)$/.test(value5.tagName)
+    /^(B|STRONG)$/.test(element.tagName)
       ? (state.bold = state.inBold = true)
-      : /^(I|EM)$/.test(value5.tagName)
+      : /^(I|EM)$/.test(element.tagName)
         ? (state.italic = state.inItalic = true)
-        : !state.ul && !state.ol && value5.tagName === "UL"
+        : !state.ul && !state.ol && element.tagName === "UL"
           ? (state.ul = true)
           : !state.ul &&
             !state.ol &&
-            value5.tagName === "OL" &&
+            element.tagName === "OL" &&
             (state.ol = true);
   }
-  if (value3 && value2) {
-    let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      [...value3.querySelectorAll(input2)].some(
-        (input3?: Dynamic): Dynamic => value2.intersectsNode(input3),
+  if (editableRoot && selectedRange) {
+    let matchesSelector: Dynamic = (selector?: Dynamic): Dynamic =>
+      [...editableRoot.querySelectorAll(selector)].some(
+        (node?: Dynamic): Dynamic => selectedRange.intersectsNode(node),
       );
-    state.bold ||= callback("b,strong");
-    state.italic ||= callback("i,em");
-    let flag: Dynamic = true,
-      flag2: Dynamic = true,
-      flag3: Dynamic = true,
-      flag4: Dynamic = true,
-      flag5: Dynamic = false,
-      value5: Dynamic = input.createTreeWalker(value3, 4);
+    state.bold ||= matchesSelector("b,strong");
+    state.italic ||= matchesSelector("i,em");
+    let allBold: Dynamic = true,
+      allItalic: Dynamic = true,
+      allUnorderedList: Dynamic = true,
+      allOrderedList: Dynamic = true,
+      hasTextNodes: Dynamic = false,
+      textWalker: Dynamic = ownerDocument.createTreeWalker(editableRoot, 4);
     for (
-      let value6: Dynamic = value5.nextNode();
-      value6;
-      value6 = value5.nextNode()
+      let textNode: Dynamic = textWalker.nextNode();
+      textNode;
+      textNode = textWalker.nextNode()
     ) {
-      if (!value2.intersectsNode(value6)) continue;
-      flag5 = true;
-      let parentElement: Dynamic = value6.parentElement;
-      flag &&= !!parentElement?.closest("b,strong");
-      flag2 &&= !!parentElement?.closest("i,em");
-      flag3 &&= !!parentElement?.closest("ul");
-      flag4 &&= !!parentElement?.closest("ol");
+      if (!selectedRange.intersectsNode(textNode)) continue;
+      hasTextNodes = true;
+      let parentElement: Dynamic = textNode.parentElement;
+      allBold &&= !!parentElement?.closest("b,strong");
+      allItalic &&= !!parentElement?.closest("i,em");
+      allUnorderedList &&= !!parentElement?.closest("ul");
+      allOrderedList &&= !!parentElement?.closest("ol");
     }
-    state.allBold = state.inBold || (flag5 && flag);
-    state.allItalic = state.inItalic || (flag5 && flag2);
+    state.allBold = state.inBold || (hasTextNodes && allBold);
+    state.allItalic = state.inItalic || (hasTextNodes && allItalic);
     !state.ul &&
       !state.ol &&
-      ((state.ul = flag5 && flag3), (state.ol = flag5 && !flag3 && flag4));
+      ((state.ul = hasTextNodes && allUnorderedList), (state.ol = hasTextNodes && !allUnorderedList && allOrderedList));
   } else {
     state.allBold = state.inBold;
     state.allItalic = state.inItalic;
@@ -99,82 +99,82 @@ function getNoteFormattingState(
   return state;
 }
 function noteFormattingRefusal(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = document,
-  value: Dynamic = NotesFormattingStyledNestsConfig,
+  format?: Dynamic,
+  knownState?: Dynamic,
+  ownerDocument: Dynamic = document,
+  messages: Dynamic = NotesFormattingStyledNestsConfig,
 ): Dynamic {
-  if (options[input]) return value.styled(input);
-  let value2: Dynamic = getNoteFormattingState(context, options);
-  return (input === "bold" ? value2.inBold : value2.inItalic)
+  if (knownState[format]) return messages.styled(format);
+  let formatState: Dynamic = getNoteFormattingState(ownerDocument, knownState);
+  return (format === "bold" ? formatState.inBold : formatState.inItalic)
     ? ""
-    : (input === "bold" ? value2.italic : value2.bold)
-      ? value.nests
+    : (format === "bold" ? formatState.italic : formatState.bold)
+      ? messages.nests
       : "";
 }
 function toggleNoteFormatting(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = document,
+  format?: Dynamic,
+  knownState?: Dynamic,
+  ownerDocument: Dynamic = document,
 ): Dynamic {
-  noteFormattingRefusal(input, options, context) === "" &&
-    (NotesFormattingGetSelection(context),
-    NotesFormattingExecCommand(context, input));
+  noteFormattingRefusal(format, knownState, ownerDocument) === "" &&
+    (NotesFormattingGetSelection(ownerDocument),
+    NotesFormattingExecCommand(ownerDocument, format));
 }
 function toggleNoteList(
-  input?: Dynamic,
-  options: Dynamic = document,
+  listType?: Dynamic,
+  ownerDocument: Dynamic = document,
 ): Dynamic {
-  NotesFormattingGetSelection(options);
-  let value: Dynamic = options.getSelection(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic =
-        input2?.nodeType === 1 ? input2 : (input2?.parentElement ?? null);
+  NotesFormattingGetSelection(ownerDocument);
+  let selection: Dynamic = ownerDocument.getSelection(),
+    findBlock: Dynamic = (node?: Dynamic): Dynamic => {
+      let element: Dynamic =
+        node?.nodeType === 1 ? node : (node?.parentElement ?? null);
       return (
-        value4?.closest("li") ??
-        value4?.closest('[contenteditable="true"] > *') ??
+        element?.closest("li") ??
+        element?.closest('[contenteditable="true"] > *') ??
         null
       );
     },
-    value2: Dynamic = -1;
-  if (value && value.isCollapsed && value.anchorNode) {
-    let value4: Dynamic = callback(value.anchorNode);
-    if (value4) {
-      let value5: Dynamic = options.createRange();
-      value5.selectNodeContents(value4);
-      value5.setEnd(value.anchorNode, value.anchorOffset);
-      value2 = value5.toString().length;
+    caretOffset: Dynamic = -1;
+  if (selection && selection.isCollapsed && selection.anchorNode) {
+    let currentBlock: Dynamic = findBlock(selection.anchorNode);
+    if (currentBlock) {
+      let offsetRange: Dynamic = ownerDocument.createRange();
+      offsetRange.selectNodeContents(currentBlock);
+      offsetRange.setEnd(selection.anchorNode, selection.anchorOffset);
+      caretOffset = offsetRange.toString().length;
     }
   }
   NotesFormattingExecCommand(
-    options,
-    input === "ul" ? "insertUnorderedList" : "insertOrderedList",
+    ownerDocument,
+    listType === "ul" ? "insertUnorderedList" : "insertOrderedList",
   );
-  let value3: Dynamic =
-    value2 >= 0 && value?.anchorNode ? callback(value.anchorNode) : null;
-  if (value3 && value) {
-    let value4: Dynamic = options.createTreeWalker(value3, 4);
+  let newBlock: Dynamic =
+    caretOffset >= 0 && selection?.anchorNode ? findBlock(selection.anchorNode) : null;
+  if (newBlock && selection) {
+    let textWalker: Dynamic = ownerDocument.createTreeWalker(newBlock, 4);
     for (
-      let value5: Dynamic = value4.nextNode(), value6: Dynamic = value2;
-      value5;
-      value5 = value4.nextNode()
+      let textNode: Dynamic = textWalker.nextNode(), remainingOffset: Dynamic = caretOffset;
+      textNode;
+      textNode = textWalker.nextNode()
     ) {
-      let length: Dynamic = (value5.nodeValue ?? "").length,
-        value7: Dynamic = value5.parentElement?.closest(
+      let length: Dynamic = (textNode.nodeValue ?? "").length,
+        nonEditableAncestor: Dynamic = textNode.parentElement?.closest(
           '[contenteditable="false"]',
         );
-      if (value6 <= length && !value7) {
-        value.collapse(value5, value6);
+      if (remainingOffset <= length && !nonEditableAncestor) {
+        selection.collapse(textNode, remainingOffset);
         break;
       }
-      if (value6 <= length && value7?.parentNode) {
-        value.collapse(
-          value7.parentNode,
-          [...value7.parentNode.childNodes].indexOf(value7) + 1,
+      if (remainingOffset <= length && nonEditableAncestor?.parentNode) {
+        selection.collapse(
+          nonEditableAncestor.parentNode,
+          [...nonEditableAncestor.parentNode.childNodes].indexOf(nonEditableAncestor) + 1,
         );
         break;
       }
-      value6 -= length;
+      remainingOffset -= length;
     }
   }
 }
@@ -193,33 +193,33 @@ export {
 export function installEditorNotesFormatting(): () => void {
   return () => {
     NotesFormattingStyledNestsConfig = {
-      styled: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.formatting.theWholeNoteIsAlready") + input + " (its style)",
+      styled: (formatLabel?: Dynamic): Dynamic =>
+        uiMessage("inspector.formatting.theWholeNoteIsAlready") + formatLabel + " (its style)",
       nests: "Bold and italic do not combine in a note",
     };
     noteFormattingExecuting = false;
     NotesFormattingHandler = (): Dynamic => noteFormattingExecuting;
     NotesFormattingExecCommand = (
-      input?: Dynamic,
-      options?: Dynamic,
+      ownerDocument?: Dynamic,
+      command?: Dynamic,
     ): Dynamic => {
       noteFormattingExecuting = true;
       try {
-        input.execCommand("styleWithCSS", false, "false");
-        input.execCommand(options);
+        ownerDocument.execCommand("styleWithCSS", false, "false");
+        ownerDocument.execCommand(command);
       } finally {
         noteFormattingExecuting = false;
       }
     };
-    NotesFormattingHandler_2 = (input?: Dynamic): Dynamic =>
-      (input?.nodeType === 1 ? input : (input?.parentElement ?? null))?.closest(
+    NotesFormattingHandler_2 = (node?: Dynamic): Dynamic =>
+      (node?.nodeType === 1 ? node : (node?.parentElement ?? null))?.closest(
         '[contenteditable="true"]',
       ) ?? null;
-    NotesFormattingGetSelection = (input: Dynamic = document): Dynamic => {
-      let value: Dynamic = NotesFormattingHandler_2(
-        input.getSelection()?.anchorNode,
+    NotesFormattingGetSelection = (ownerDocument: Dynamic = document): Dynamic => {
+      let editableRoot: Dynamic = NotesFormattingHandler_2(
+        ownerDocument.getSelection()?.anchorNode,
       );
-      value && input.activeElement !== value && value.focus();
+      editableRoot && ownerDocument.activeElement !== editableRoot && editableRoot.focus();
     };
   };
 }

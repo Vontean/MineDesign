@@ -17,368 +17,368 @@ import { resetUndoHistory, trimUndoHistory } from "../undo/history";
 import { projectFilesystem, trackEmbeddedWrite } from "../../platform/file-content";
 
 function useDcModel(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  projectPath?: Dynamic,
+  filePath?: Dynamic,
+  hookOptions?: Dynamic,
 ): Dynamic {
   let {
-      enabled: value,
-      sessionHeld: value2,
-      nonDcFile: value3 = false,
-    }: Dynamic = context,
-    value4: Dynamic = (0, reactOutlineAnnotations.useRef)(context);
-  value4.current = context;
-  let value5: Dynamic = (0, reactOutlineAnnotations.useRef)(value3);
-  value5.current = value3;
-  let value6: Dynamic = (0, reactOutlineAnnotations.useRef)(value2);
-  value6.current = value2;
-  let value7: Dynamic = artboardComponentName(options),
-    value8: Dynamic = options.includes("/")
-      ? options.slice(0, options.lastIndexOf("/"))
+      enabled: isEnabled,
+      sessionHeld: sessionHeld,
+      nonDcFile: nonDcFile = false,
+    }: Dynamic = hookOptions,
+    optionsRef: Dynamic = (0, reactOutlineAnnotations.useRef)(hookOptions);
+  optionsRef.current = hookOptions;
+  let nonDcFileRef: Dynamic = (0, reactOutlineAnnotations.useRef)(nonDcFile);
+  nonDcFileRef.current = nonDcFile;
+  let sessionHeldRef: Dynamic = (0, reactOutlineAnnotations.useRef)(sessionHeld);
+  sessionHeldRef.current = sessionHeld;
+  let rootName: Dynamic = artboardComponentName(filePath),
+    directory: Dynamic = filePath.includes("/")
+      ? filePath.slice(0, filePath.lastIndexOf("/"))
       : "",
-    value9: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic =>
-        input2 === value7
-          ? options
-          : value8
-            ? `${value8}/${input2}.dc.html`
-            : `${input2}.dc.html`,
-      [value8, options, value7],
+    resolveFilePath: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (componentName?: Dynamic): Dynamic =>
+        componentName === rootName
+          ? filePath
+          : directory
+            ? `${directory}/${componentName}.dc.html`
+            : `${componentName}.dc.html`,
+      [directory, filePath, rootName],
     ),
-    value10: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value11: Dynamic = (0, reactOutlineAnnotations.useRef)(false),
-    value12: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value13: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        let entry: Dynamic = value10.current.get(input2);
+    entriesRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    isMountedRef: Dynamic = (0, reactOutlineAnnotations.useRef)(false),
+    undoFloorsRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    releaseEntry: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic): Dynamic => {
+        let entry: Dynamic = entriesRef.current.get(name);
         entry &&
-          value12.current.set(
-            input2,
+          undoFloorsRef.current.set(
+            name,
             (entry.undoFloor ?? 0) + entry.undo.length + entry.redo.length,
           );
-        value10.current.delete(input2);
+        entriesRef.current.delete(name);
       },
       [],
     ),
-    value14: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value15: Dynamic = (0, reactOutlineAnnotations.useRef)(new Set()),
-    value16: Dynamic = (0, reactOutlineAnnotations.useRef)(new Set()),
-    value17: Dynamic = (0, reactOutlineAnnotations.useRef)(
+    ownWriteCountsRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    deferredEchoPathsRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Set()),
+    retryPathsRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Set()),
+    reloadFromDiskRef: Dynamic = (0, reactOutlineAnnotations.useRef)(
       (): Dynamic => Promise.resolve(),
     ),
-    value18: Dynamic = (0, reactOutlineAnnotations.useRef)(value);
-  value18.current = value;
-  let value19: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic =>
+    enabledRef: Dynamic = (0, reactOutlineAnnotations.useRef)(isEnabled);
+  enabledRef.current = isEnabled;
+  let readFile: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (path?: Dynamic): Dynamic =>
         projectFilesystem.readFileWithVersion
-          ? projectFilesystem.readFileWithVersion(input2)
-          : projectFilesystem.readFile(input2).then(
-              (input3?: Dynamic): Dynamic => ({
-                content: input3,
+          ? projectFilesystem.readFileWithVersion(path)
+          : projectFilesystem.readFile(path).then(
+              (content?: Dynamic): Dynamic => ({
+                content: content,
                 version: undefined,
               }),
             ),
       [],
     ),
-    value20: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic => value10.current.get(input2) ?? null,
+    getEntry: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic): Dynamic => entriesRef.current.get(name) ?? null,
       [],
     ),
-    value21: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      async (input2?: Dynamic): Promise<Dynamic> => {
-        let entry: Dynamic = value10.current.get(input2);
+    ensureModel: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      async (name?: Dynamic): Promise<Dynamic> => {
+        let entry: Dynamic = entriesRef.current.get(name);
         if (entry) return entry;
-        if (value5.current) {
-          if (input2 !== value7) return null;
-          let value60: Dynamic = await value4.current.fetchLiveBody?.(value7);
-          if (value60 == null) return null;
-          let value61: Dynamic = new DcEditorModel(value60, {
+        if (nonDcFileRef.current) {
+          if (name !== rootName) return null;
+          let liveBody: Dynamic = await optionsRef.current.fetchLiveBody?.(rootName);
+          if (liveBody == null) return null;
+          let liveModel: Dynamic = new DcEditorModel(liveBody, {
               raw: true,
             }),
-            state2: Dynamic = {
-              path: options,
+            liveEntry: Dynamic = {
+              path: filePath,
               src: "",
-              model: value61,
-              originalTemplate: value61.serialize(),
+              model: liveModel,
+              originalTemplate: liveModel.serialize(),
               undo: [],
               redo: [],
-              undoFloor: value12.current.get(input2) ?? 0,
+              undoFloor: undoFloorsRef.current.get(name) ?? 0,
               dirty: false,
             },
-            entry3: Dynamic = value10.current.get(input2);
-          return entry3 || (value10.current.set(input2, state2), state2);
+            racedLiveEntry: Dynamic = entriesRef.current.get(name);
+          return racedLiveEntry || (entriesRef.current.set(name, liveEntry), liveEntry);
         }
-        let value53: Dynamic = value9(input2),
-          current: Dynamic = value10.current,
-          value54: Dynamic =
-            input2 === value7 ? value4.current.historyKeeper : undefined,
-          callback: Dynamic = (): Dynamic =>
-            value11.current && value10.current === current;
-        value54?.holds(value53) &&
-          !(await value54.whenSettled(value53)) &&
-          callback() &&
-          value54.drop(value53, "unsaved");
-        let value55: Dynamic, value56: Dynamic;
+        let relativePath: Dynamic = resolveFilePath(name),
+          current: Dynamic = entriesRef.current,
+          historyKeeper: Dynamic =
+            name === rootName ? optionsRef.current.historyKeeper : undefined,
+          isStillCurrent: Dynamic = (): Dynamic =>
+            isMountedRef.current && entriesRef.current === current;
+        historyKeeper?.holds(relativePath) &&
+          !(await historyKeeper.whenSettled(relativePath)) &&
+          isStillCurrent() &&
+          historyKeeper.drop(relativePath, "unsaved");
+        let fileSource: Dynamic, fileVersion: Dynamic;
         try {
           if (projectFilesystem.readFileWithVersion) {
-            let value60: Dynamic =
+            let readResult: Dynamic =
               await projectFilesystem.readFileWithVersion(
-                `${input}/${value53}`,
+                `${projectPath}/${relativePath}`,
               );
-            value55 = value60.content;
-            value56 = value60.version;
+            fileSource = readResult.content;
+            fileVersion = readResult.version;
           } else
-            value55 = await projectFilesystem.readFile(
-              `${input}/${value53}`,
+            fileSource = await projectFilesystem.readFile(
+              `${projectPath}/${relativePath}`,
             );
-        } catch (value60: Dynamic) {
-          console.error("[dc-model] failed to read", value53, value60);
-          value54 && callback() && value54.drop(value53, "load");
+        } catch (readError: Dynamic) {
+          console.error("[dc-model] failed to read", relativePath, readError);
+          historyKeeper && isStillCurrent() && historyKeeper.drop(relativePath, "load");
           return null;
         }
-        let value57: Dynamic = parseDcHtmlDocument(value55);
-        if (!value57) {
+        let parsedDocument: Dynamic = parseDcHtmlDocument(fileSource);
+        if (!parsedDocument) {
           warnUnreadableDcDocument(
-            input + "/" + value53,
-            value55,
+            projectPath + "/" + relativePath,
+            fileSource,
             "its elements cannot be listed, selected or edited",
           );
-          value54 && callback() && value54.drop(value53, "load");
+          historyKeeper && isStillCurrent() && historyKeeper.drop(relativePath, "load");
           return null;
         }
-        let value58: Dynamic = new DcEditorModel(value57.template, {
+        let fileModel: Dynamic = new DcEditorModel(parsedDocument.template, {
             raw: false,
           }),
-          state: Dynamic = {
-            path: value53,
-            src: value55,
-            model: value58,
-            originalTemplate: value58.serialize(),
+          newEntry: Dynamic = {
+            path: relativePath,
+            src: fileSource,
+            model: fileModel,
+            originalTemplate: fileModel.serialize(),
             undo: [],
             redo: [],
-            undoFloor: value12.current.get(input2) ?? 0,
+            undoFloor: undoFloorsRef.current.get(name) ?? 0,
             dirty: false,
-            ...(value56 !== undefined
+            ...(fileVersion !== undefined
               ? {
-                  adoptedVersion: value56,
-                  baseVersion: value56,
+                  adoptedVersion: fileVersion,
+                  baseVersion: fileVersion,
                 }
               : {}),
           },
-          entry2: Dynamic = value10.current.get(input2);
-        if (entry2) return entry2;
-        let value59: Dynamic =
-          value54 && callback()
-            ? value54.take(value53, value55, value4.current.historyEpoch)
+          racedFileEntry: Dynamic = entriesRef.current.get(name);
+        if (racedFileEntry) return racedFileEntry;
+        let restoredHistory: Dynamic =
+          historyKeeper && isStillCurrent()
+            ? historyKeeper.take(relativePath, fileSource, optionsRef.current.historyEpoch)
             : null;
-        value59 &&
-          ((state.undo = value59.undo),
-          (state.redo = value59.redo),
-          (state.undoFloor = value59.undoFloor));
-        value10.current.set(input2, state);
-        return state;
+        restoredHistory &&
+          ((newEntry.undo = restoredHistory.undo),
+          (newEntry.redo = restoredHistory.redo),
+          (newEntry.undoFloor = restoredHistory.undoFloor));
+        entriesRef.current.set(name, newEntry);
+        return newEntry;
       },
-      [options, value9, input, value7],
+      [filePath, resolveFilePath, projectPath, rootName],
     ),
-    value22: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        let entry: Dynamic = value10.current.get(input2);
-        if (!(!entry || value4.current.holdPush?.(input2))) {
-          if (value5.current) {
+    pushLive: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic): Dynamic => {
+        let entry: Dynamic = entriesRef.current.get(name);
+        if (!(!entry || optionsRef.current.holdPush?.(name))) {
+          if (nonDcFileRef.current) {
             emitEditorEvent("nondc-push-body", {
-              name: input2,
+              name: name,
               content: entry.model.serialize(),
             });
-            value4.current.onPushLive?.(input2);
+            optionsRef.current.onPushLive?.(name);
             return;
           }
           emitEditorEvent("dc-update", {
-            name: input2,
+            name: name,
             path: entry.path,
             kind: "html",
             content: entry.model.serialize(),
             streaming: false,
             viewportKey: DcModelKey,
           });
-          value4.current.onPushLive?.(input2);
+          optionsRef.current.onPushLive?.(name);
         }
       },
       [],
     ),
-    value23: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        if (value5.current) return;
-        let entry: Dynamic = value10.current.get(input2);
+    saveToDisk: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic): Dynamic => {
+        if (nonDcFileRef.current) return;
+        let entry: Dynamic = entriesRef.current.get(name);
         if (!entry?.dirty) {
-          value25.current.delete(input2);
+          editCountsRef.current.delete(name);
           return;
         }
         try {
-          let value53: Dynamic = parseDcHtmlDocument(entry.src);
-          if (!value53) return;
-          let value54: Dynamic = replaceDcTemplate(
+          let sourceDocument: Dynamic = parseDcHtmlDocument(entry.src);
+          if (!sourceDocument) return;
+          let composedHtml: Dynamic = replaceDcTemplate(
             entry.src,
-            value53,
+            sourceDocument,
             serializeStableModel(entry),
           );
           if (entry.pendingScript !== undefined) {
-            let value55: Dynamic = parseDcHtmlDocument(value54);
-            value55 &&
-              (value54 = setDcScript(
-                value54,
-                value55,
+            let scriptDocument: Dynamic = parseDcHtmlDocument(composedHtml);
+            scriptDocument &&
+              (composedHtml = setDcScript(
+                composedHtml,
+                scriptDocument,
                 entry.pendingScript,
               ));
           }
-          let entry2: Dynamic = value25.current.get(input2),
-            flag: Dynamic = true;
+          let editCountAtStart: Dynamic = editCountsRef.current.get(name),
+            canClearEdits: Dynamic = true;
           if (entry.pendingProps !== undefined) {
-            let value55: Dynamic = getPendingPropKeys(
-              value54,
+            let mergedHtml: Dynamic = getPendingPropKeys(
+              composedHtml,
               entry.pendingProps,
             );
-            value55 === null ? (flag = false) : (value54 = value55);
+            mergedHtml === null ? (canClearEdits = false) : (composedHtml = mergedHtml);
           }
-          let current: Dynamic = value14.current;
-          current.set(entry.path, (current.get(entry.path) ?? 0) + 1);
+          let ownWriteCounts: Dynamic = ownWriteCountsRef.current;
+          ownWriteCounts.set(entry.path, (ownWriteCounts.get(entry.path) ?? 0) + 1);
           expectLocalFileEcho(entry.path);
-          value26.current.set(input2, value54);
+          mirroredSourceRef.current.set(name, composedHtml);
           projectFilesystem
-            .writeFile(input + "/" + entry.path, value54)
+            .writeFile(projectPath + "/" + entry.path, composedHtml)
             .then((): Dynamic => {
-              value27.current.set(
-                input2,
-                (value27.current.get(input2) ?? 0) + 1,
+              landedWritesRef.current.set(
+                name,
+                (landedWritesRef.current.get(name) ?? 0) + 1,
               );
-              flag &&
-                value25.current.get(input2) === entry2 &&
-                value25.current.delete(input2);
+              canClearEdits &&
+                editCountsRef.current.get(name) === editCountAtStart &&
+                editCountsRef.current.delete(name);
             })
             .catch((): Dynamic => {})
             .finally((): Dynamic => {
               setTimeout((): Dynamic => {
-                let value55: Dynamic = current.get(entry.path) ?? 0;
-                value55 <= 1
-                  ? current.delete(entry.path)
-                  : current.set(entry.path, value55 - 1);
+                let remainingWrites: Dynamic = ownWriteCounts.get(entry.path) ?? 0;
+                remainingWrites <= 1
+                  ? ownWriteCounts.delete(entry.path)
+                  : ownWriteCounts.set(entry.path, remainingWrites - 1);
                 consumeLocalFileEcho(entry.path);
               }, 500);
             });
         } catch {}
       },
-      [input],
+      [projectPath],
     ),
-    value24: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value25: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value26: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value27: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value28: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value29: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map());
+    editTimersRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    editCountsRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    mirroredSourceRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    landedWritesRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    recentContentsRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    writeResolversRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map());
   (0, reactOutlineAnnotations.useEffect)((): Dynamic => {
-    let current: Dynamic = value24.current,
-      current2: Dynamic = value29.current;
+    let timers: Dynamic = editTimersRef.current,
+      resolvers: Dynamic = writeResolversRef.current;
     return (): Dynamic => {
-      for (let value53 of current.values() as Dynamic) clearTimeout(value53);
-      current.clear();
-      for (let value53 of current2.values() as Dynamic) value53();
-      current2.clear();
+      for (let timerId of timers.values() as Dynamic) clearTimeout(timerId);
+      timers.clear();
+      for (let resolveWrite of resolvers.values() as Dynamic) resolveWrite();
+      resolvers.clear();
     };
   }, []);
-  let value30: Dynamic = (0, reactOutlineAnnotations.useRef)(
+  let lastImmediateSaveRef: Dynamic = (0, reactOutlineAnnotations.useRef)(
       new Map(),
     ),
-    value31: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-        let entry: Dynamic = value10.current.get(input2);
+    markDirty: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic, markOptions?: Dynamic): Dynamic => {
+        let entry: Dynamic = entriesRef.current.get(name);
         if (!entry) return;
         entry.dirty = true;
         entry.previewBaseline = undefined;
         ModelHistoryRebaseHandler_3();
-        value25.current.set(input2, (value25.current.get(input2) ?? 0) + 1);
-        value4.current.onLocalEdit?.(input2);
-        let current: Dynamic = value24.current,
-          current2: Dynamic = value29.current,
-          entry2: Dynamic = current.get(input2);
-        entry2 && clearTimeout(entry2);
-        current2.get(input2)?.();
-        let value53: Dynamic;
+        editCountsRef.current.set(name, (editCountsRef.current.get(name) ?? 0) + 1);
+        optionsRef.current.onLocalEdit?.(name);
+        let timers: Dynamic = editTimersRef.current,
+          resolvers: Dynamic = writeResolversRef.current,
+          existingTimer: Dynamic = timers.get(name);
+        existingTimer && clearTimeout(existingTimer);
+        resolvers.get(name)?.();
+        let resolveWrite: Dynamic;
         trackEmbeddedWrite(
-          new Promise((input3?: Dynamic): Dynamic => (value53 = input3)),
+          new Promise((resolve?: Dynamic): Dynamic => (resolveWrite = resolve)),
         );
-        current2.set(input2, value53);
-        let value54: Dynamic = Date.now(),
-          value55: Dynamic =
-            options2?.now === true &&
-            value54 - (value30.current.get(input2) ?? 0) > 800;
-        value55 && value30.current.set(input2, value54);
-        current.set(
-          input2,
+        resolvers.set(name, resolveWrite);
+        let now: Dynamic = Date.now(),
+          saveNow: Dynamic =
+            markOptions?.now === true &&
+            now - (lastImmediateSaveRef.current.get(name) ?? 0) > 800;
+        saveNow && lastImmediateSaveRef.current.set(name, now);
+        timers.set(
+          name,
           setTimeout(
             (): Dynamic => {
-              current.delete(input2);
-              current2.delete(input2);
-              value23(input2);
-              value53();
+              timers.delete(name);
+              resolvers.delete(name);
+              saveToDisk(name);
+              resolveWrite();
             },
-            value55 ? 0 : 800,
+            saveNow ? 0 : 800,
           ),
         );
       },
-      [value23],
+      [saveToDisk],
     ),
-    value32: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value33: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
-    value34: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      async (input2?: Dynamic): Promise<Dynamic> => {
-        let current: Dynamic = value10.current,
-          entry: Dynamic = current.get(input2);
+    writeQueueRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    queuedWritesRef: Dynamic = (0, reactOutlineAnnotations.useRef)(new Map()),
+    refreshFromDisk: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      async (name?: Dynamic): Promise<Dynamic> => {
+        let entries: Dynamic = entriesRef.current,
+          entry: Dynamic = entries.get(name);
         if (entry) {
           entry.custodyGen = (entry.custodyGen ?? 0) + 1;
-          if (value5.current) {
-            current.delete(input2);
+          if (nonDcFileRef.current) {
+            entries.delete(name);
             return;
           }
           try {
-            let value53: Dynamic = projectFilesystem
+            let readVersioned: Dynamic = projectFilesystem
                 .readFileWithVersion
-                ? (input3?: Dynamic): Dynamic =>
-                    projectFilesystem.readFileWithVersion(input3)
-                : async (input3?: Dynamic): Promise<Dynamic> => ({
-                    content: await projectFilesystem.readFile(input3),
+                ? (path?: Dynamic): Dynamic =>
+                    projectFilesystem.readFileWithVersion(path)
+                : async (path?: Dynamic): Promise<Dynamic> => ({
+                    content: await projectFilesystem.readFile(path),
                     version: undefined,
                   }),
-              { content: value54, version: value55 }: Dynamic = await value53(
-                `${input}/${entry.path}`,
+              { content: diskSource, version: diskVersion }: Dynamic = await readVersioned(
+                `${projectPath}/${entry.path}`,
               );
             if (
-              value55 !== undefined &&
+              diskVersion !== undefined &&
               entry.adoptedVersion !== undefined &&
-              value55 < entry.adoptedVersion
+              diskVersion < entry.adoptedVersion
             )
               return;
-            let value56: Dynamic = parseDcHtmlDocument(value54);
-            if (!value56) {
+            let diskDocument: Dynamic = parseDcHtmlDocument(diskSource);
+            if (!diskDocument) {
               warnUnreadableDcDocument(
-                input + "/" + entry.path,
-                value54,
+                projectPath + "/" + entry.path,
+                diskSource,
                 "the editor keeps showing the version it last read",
               );
               return;
             }
             entry.dirty = false;
             entry.carriedEditCount = 0;
-            entry.src = value54;
-            value26.current.delete(input2);
-            let value57: Dynamic = ModelHistoryRebaseDelete(
+            entry.src = diskSource;
+            mirroredSourceRef.current.delete(name);
+            let rebaseHandled: Dynamic = ModelHistoryRebaseDelete(
               entry.path,
             );
-            ModelHistoryRebaseHandler_2() && !value57
+            ModelHistoryRebaseHandler_2() && !rebaseHandled
               ? ModelHistoryRebaseUndo(
-                  input2,
+                  name,
                   rebaseModelHistory(
                     entry,
                     entry.model.serialize(),
-                    value56.template,
+                    diskDocument.template,
                   ),
                 )
               : resetUndoHistory(entry);
@@ -386,207 +386,207 @@ function useDcModel(
               ((entry.pendingScript = undefined),
               (entry.pendingScriptBase = undefined),
               emitEditorEvent("dc-update", {
-                name: input2,
+                name: name,
                 path: entry.path,
                 kind: "js",
-                content: value56.js,
+                content: diskDocument.js,
                 streaming: false,
                 viewportKey: DcModelKey,
               }));
             if (entry.pendingProps !== undefined) {
-              let value59: Dynamic = Object.keys(entry.pendingProps);
+              let droppedPropKeys: Dynamic = Object.keys(entry.pendingProps);
               entry.pendingProps = undefined;
               entry.pendingPropsBase = undefined;
-              value4.current.onPendingPropsDropped?.(input2, value59);
+              optionsRef.current.onPendingPropsDropped?.(name, droppedPropKeys);
             }
-            let value58: Dynamic = entry.previewBaseline !== undefined;
+            let hadPreviewBaseline: Dynamic = entry.previewBaseline !== undefined;
             entry.previewBaseline = undefined;
-            if (value56.template !== entry.model.serialize()) {
-              let value59: Dynamic = value58 ? null : entry.model;
-              entry.model = entry.model.rebuild(value56.template);
+            if (diskDocument.template !== entry.model.serialize()) {
+              let previousModel: Dynamic = hadPreviewBaseline ? null : entry.model;
+              entry.model = entry.model.rebuild(diskDocument.template);
               entry.liveStampsStale = false;
               entry.stampGen = (entry.stampGen ?? -1) + 1;
-              value4.current.onExternalReparse?.(input2, value59);
+              optionsRef.current.onExternalReparse?.(name, previousModel);
             }
             entry.originalTemplate = entry.model.serialize();
-            value55 !== undefined &&
-              (adoptModelVersion(entry, value55),
+            diskVersion !== undefined &&
+              (adoptModelVersion(entry, diskVersion),
               (entry.baseVersion === undefined ||
-                value55 > entry.baseVersion) &&
-                (entry.baseVersion = value55),
-              value4.current.onAdopted?.(entry.path, value55, value54));
-            value22(input2);
+                diskVersion > entry.baseVersion) &&
+                (entry.baseVersion = diskVersion),
+              optionsRef.current.onAdopted?.(entry.path, diskVersion, diskSource));
+            pushLive(name);
           } catch {
           } finally {
             entry.custodyGen = (entry.custodyGen ?? 0) + 1;
           }
         }
       },
-      [input, value22],
+      [projectPath, pushLive],
     ),
-    value35: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        if (value5.current) {
-          let entry3: Dynamic = value10.current.get(input2);
-          entry3 && (entry3.dirty = false);
+    writeNow: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic): Dynamic => {
+        if (nonDcFileRef.current) {
+          let cleanEntry: Dynamic = entriesRef.current.get(name);
+          cleanEntry && (cleanEntry.dirty = false);
           return Promise.resolve("noop");
         }
-        let current: Dynamic = value10.current,
-          entry: Dynamic = current.get(input2);
+        let entries: Dynamic = entriesRef.current,
+          entry: Dynamic = entries.get(name);
         if (entry && getPreDragBaseline(entry) === undefined)
-          for (let value61 of ModelModelStateDataDcDraggingDataDcDragParentDataDcDragFollowerValues as Dynamic)
-            entry.model.takeMarkerAttr(value61);
-        let value53: Dynamic = entry
+          for (let markerAttr of ModelModelStateDataDcDraggingDataDcDragParentDataDcDragFollowerValues as Dynamic)
+            entry.model.takeMarkerAttr(markerAttr);
+        let payload: Dynamic = entry
             ? serializeStableModel(entry)
             : undefined,
-          value54: Dynamic = entry?.pendingScript,
-          value55: Dynamic = entry?.pendingScriptBase,
-          value56: Dynamic = entry?.pendingProps,
-          value57: Dynamic = entry?.pendingPropsBase,
-          value58: Dynamic = entry
-            ? value4.current.getBaseline?.(entry.path)
+          pendingScript: Dynamic = entry?.pendingScript,
+          pendingScriptBase: Dynamic = entry?.pendingScriptBase,
+          pendingProps: Dynamic = entry?.pendingProps,
+          pendingPropsBase: Dynamic = entry?.pendingPropsBase,
+          baseline: Dynamic = entry
+            ? optionsRef.current.getBaseline?.(entry.path)
             : undefined,
-          value59: Dynamic = entry?.custodyGen ?? 0,
-          entry2: Dynamic = value33.current.get(input2);
+          custodyGen: Dynamic = entry?.custodyGen ?? 0,
+          queuedWrite: Dynamic = queuedWritesRef.current.get(name);
         if (
-          entry2 &&
-          entry2.models === current &&
-          entry2.payload === value53 &&
-          entry2.pendingScript === value54 &&
-          entry2.pendingProps === value56
+          queuedWrite &&
+          queuedWrite.models === entries &&
+          queuedWrite.payload === payload &&
+          queuedWrite.pendingScript === pendingScript &&
+          queuedWrite.pendingProps === pendingProps
         )
-          return entry2.run;
-        let state: Dynamic = {},
-          callback: Dynamic = async (): Promise<Dynamic> => {
-            let entry3: Dynamic = value33.current.get(input2);
-            entry3 &&
-              entry3.token === state &&
-              value33.current.delete(input2);
-            let callback2: Dynamic = (): Dynamic =>
-              value33.current.has(input2);
+          return queuedWrite.run;
+        let token: Dynamic = {},
+          runWrite: Dynamic = async (): Promise<Dynamic> => {
+            let currentQueued: Dynamic = queuedWritesRef.current.get(name);
+            currentQueued &&
+              currentQueued.token === token &&
+              queuedWritesRef.current.delete(name);
+            let hasQueuedSuccessor: Dynamic = (): Dynamic =>
+              queuedWritesRef.current.has(name);
             if (
               !entry ||
-              value53 === undefined ||
-              (entry.custodyGen ?? 0) !== value59
+              payload === undefined ||
+              (entry.custodyGen ?? 0) !== custodyGen
             )
               return "noop";
             try {
-              await value4.current.writes?.awaitWriteClearance();
+              await optionsRef.current.writes?.awaitWriteClearance();
             } catch {}
-            let state2: Dynamic = {},
-              entry4: Dynamic = value26.current.get(input2);
+            let mirrorInfo: Dynamic = {},
+              mirroredSource: Dynamic = mirroredSourceRef.current.get(name);
             if (
-              entry4 !== undefined &&
+              mirroredSource !== undefined &&
               projectFilesystem.readFileWithVersion
             )
               try {
                 let content: Dynamic = (
                   await projectFilesystem.readFileWithVersion(
-                    `${input}/${entry.path}`,
+                    `${projectPath}/${entry.path}`,
                   )
                 ).content;
-                state2 = {
-                  mirrored: entry4,
-                  diskIsMirror: content === entry4,
+                mirrorInfo = {
+                  mirrored: mirroredSource,
+                  diskIsMirror: content === mirroredSource,
                 };
               } catch {
-                state2 = {
-                  mirrored: entry4,
+                mirrorInfo = {
+                  mirrored: mirroredSource,
                 };
               }
-            if ((entry.custodyGen ?? 0) !== value59) return "noop";
-            let current2: Dynamic = value14.current;
-            current2.set(entry.path, (current2.get(entry.path) ?? 0) + 1);
+            if ((entry.custodyGen ?? 0) !== custodyGen) return "noop";
+            let pathWriteCounts: Dynamic = ownWriteCountsRef.current;
+            pathWriteCounts.set(entry.path, (pathWriteCounts.get(entry.path) ?? 0) + 1);
             expectLocalFileEcho(entry.path);
-            let flag: Dynamic = true,
-              callback3: Dynamic = (): Dynamic => {
-                flag &&
-                  ((flag = false),
+            let echoPending: Dynamic = true,
+              releaseEcho: Dynamic = (): Dynamic => {
+                echoPending &&
+                  ((echoPending = false),
                   consumeLocalFileEcho(entry.path));
               },
-              flag2: Dynamic = false,
-              text: Dynamic = "failed",
-              callback4: Dynamic = (input3?: Dynamic): Dynamic =>
-                input3?.code === 10;
-            value39.current += 1;
+              conflictHandled: Dynamic = false,
+              outcome: Dynamic = "failed",
+              isVersionConflict: Dynamic = (error?: Dynamic): Dynamic =>
+                error?.code === 10;
+            writesInFlightRef.current += 1;
             try {
-              let state3: Dynamic = {
+              let fileIo: Dynamic = {
                   write: projectFilesystem.writeFileVersioned
                     ? (
-                        input3?: Dynamic,
-                        options2?: Dynamic,
-                        context2?: Dynamic,
+                        path?: Dynamic,
+                        content?: Dynamic,
+                        writeOptions?: Dynamic,
                       ): Dynamic =>
                         projectFilesystem.writeFileVersioned(
-                          input3,
-                          options2,
+                          path,
+                          content,
                           {
-                            baseline: context2?.baseline,
-                            conflictPolicy: value4.current.writes
+                            baseline: writeOptions?.baseline,
+                            conflictPolicy: optionsRef.current.writes
                               ?.onWriteConflict
                               ? "fail"
                               : "merge",
                           },
                         )
-                    : (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-                        projectFilesystem.writeFile(input3, options2),
-                  read: (input3?: Dynamic): Dynamic =>
-                    projectFilesystem.readFile(input3),
+                    : (path?: Dynamic, content?: Dynamic): Dynamic =>
+                        projectFilesystem.writeFile(path, content),
+                  read: (path?: Dynamic): Dynamic =>
+                    projectFilesystem.readFile(path),
                   readWithVersion: projectFilesystem
                     .readFileWithVersion
-                    ? (input3?: Dynamic): Dynamic =>
-                        projectFilesystem.readFileWithVersion(input3)
+                    ? (path?: Dynamic): Dynamic =>
+                        projectFilesystem.readFileWithVersion(path)
                     : undefined,
                 },
-                callback5: Dynamic = (): Dynamic => ({
-                  hasQueuedSuccessor: callback2(),
-                  baselineAtCall: value58,
-                  pendingScriptAtCall: value54,
-                  pendingScriptBaseAtCall: value55,
-                  pendingPropsAtCall: value56,
-                  pendingPropsBaseAtCall: value57,
-                  ...state2,
+                makeWriteContext: Dynamic = (): Dynamic => ({
+                  hasQueuedSuccessor: hasQueuedSuccessor(),
+                  baselineAtCall: baseline,
+                  pendingScriptAtCall: pendingScript,
+                  pendingScriptBaseAtCall: pendingScriptBase,
+                  pendingPropsAtCall: pendingProps,
+                  pendingPropsBaseAtCall: pendingPropsBase,
+                  ...mirrorInfo,
                 }),
-                value61: Dynamic = await publishModelChanges(
+                publishResult: Dynamic = await publishModelChanges(
                   entry,
-                  input,
-                  state3,
-                  value53,
-                  callback5(),
+                  projectPath,
+                  fileIo,
+                  payload,
+                  makeWriteContext(),
                 );
               switch (
-                (value61.kind === "failed" &&
-                  !callback4(value61.error) &&
-                  (value61 = await publishModelChanges(
+                (publishResult.kind === "failed" &&
+                  !isVersionConflict(publishResult.error) &&
+                  (publishResult = await publishModelChanges(
                     entry,
-                    input,
-                    state3,
-                    value53,
-                    callback5(),
+                    projectPath,
+                    fileIo,
+                    payload,
+                    makeWriteContext(),
                   )),
-                value61.version !== undefined &&
-                  adoptModelVersion(entry, value61.version),
-                value61.kind)
+                publishResult.version !== undefined &&
+                  adoptModelVersion(entry, publishResult.version),
+                publishResult.kind)
               ) {
                 case "noop":
-                  text = "noop";
-                  callback3();
+                  outcome = "noop";
+                  releaseEcho();
                   break;
                 case "failed": {
-                  text = "failed";
-                  callback3();
-                  let value62: Dynamic = callback4(value61.error);
+                  outcome = "failed";
+                  releaseEcho();
+                  let isConflict: Dynamic = isVersionConflict(publishResult.error);
                   if (
-                    value62 &&
-                    value4.current.writes?.onWriteConflict &&
-                    !callback2()
+                    isConflict &&
+                    optionsRef.current.writes?.onWriteConflict &&
+                    !hasQueuedSuccessor()
                   ) {
-                    flag2 = true;
+                    conflictHandled = true;
                     if (
-                      (value54 !== undefined || value56 !== undefined) &&
+                      (pendingScript !== undefined || pendingProps !== undefined) &&
                       rebuildModelTemplate(
                         entry.model,
-                        value53,
+                        payload,
                       ) ===
                         rebuildModelTemplate(
                           entry.model,
@@ -598,14 +598,14 @@ function useDcModel(
                         entry.path,
                       );
                       try {
-                        value4.current.writes?.onWriteReverted(
-                          input2,
-                          value61.error,
+                        optionsRef.current.writes?.onWriteReverted(
+                          name,
+                          publishResult.error,
                         );
-                      } catch (value63: Dynamic) {
+                      } catch (callbackError: Dynamic) {
                         console.error(
                           "[dc-model] revert callback threw:",
-                          value63,
+                          callbackError,
                         );
                       }
                     } else {
@@ -614,453 +614,453 @@ function useDcModel(
                         entry.path,
                       );
                       try {
-                        value4.current.writes.onWriteConflict(
-                          input2,
+                        optionsRef.current.writes.onWriteConflict(
+                          name,
                           entry.path,
                           entry.originalTemplate,
-                          value53,
+                          payload,
                         );
-                      } catch (value63: Dynamic) {
+                      } catch (callbackError: Dynamic) {
                         console.error(
                           "[dc-model] onWriteConflict threw:",
-                          value63,
+                          callbackError,
                         );
                       }
                     }
-                    await value34(input2);
+                    await refreshFromDisk(name);
                     break;
                   }
-                  if (!value62 && !callback2()) {
+                  if (!isConflict && !hasQueuedSuccessor()) {
                     console.error(
                       "[dc-model] write failed twice \u2014 reverting to disk:",
-                      value61.error,
+                      publishResult.error,
                     );
-                    flag2 = true;
+                    conflictHandled = true;
                     try {
-                      value4.current.writes?.onWriteReverted(
-                        input2,
-                        value61.error,
+                      optionsRef.current.writes?.onWriteReverted(
+                        name,
+                        publishResult.error,
                       );
-                    } catch (value63: Dynamic) {
+                    } catch (callbackError: Dynamic) {
                       console.error(
                         "[dc-model] revert callback threw:",
-                        value63,
+                        callbackError,
                       );
                     }
-                    await value34(input2);
+                    await refreshFromDisk(name);
                     break;
                   }
-                  console.error("[dc-model] write failed:", value61.error);
-                  flag2 = true;
-                  value4.current.writes?.onWriteError(value61.error);
+                  console.error("[dc-model] write failed:", publishResult.error);
+                  conflictHandled = true;
+                  optionsRef.current.writes?.onWriteError(publishResult.error);
                   break;
                 }
                 case "saved-adopted":
                   if (
                     ((entry.adoptedMerge = true),
-                    (text = "saved"),
-                    value10.current === current &&
-                      !callback2() &&
-                      entry.model.serialize() === value53)
+                    (outcome = "saved"),
+                    entriesRef.current === entries &&
+                      !hasQueuedSuccessor() &&
+                      entry.model.serialize() === payload)
                   )
                     try {
-                      value4.current.writes?.onSavedAdopted(
-                        input2,
-                        value61.saved,
+                      optionsRef.current.writes?.onSavedAdopted(
+                        name,
+                        publishResult.saved,
                       );
-                    } catch (value62: Dynamic) {
+                    } catch (callbackError: Dynamic) {
                       console.error(
                         "[dc-model] onSavedAdopted threw after landed write:",
-                        value62,
+                        callbackError,
                       );
                     }
                   break;
                 case "saved":
-                  text = "saved";
+                  outcome = "saved";
                   break;
               }
-              (value61.kind === "saved" ||
-                value61.kind === "saved-adopted") &&
-                entry4 !== undefined &&
-                value26.current.get(input2) === entry4 &&
-                value26.current.delete(input2);
+              (publishResult.kind === "saved" ||
+                publishResult.kind === "saved-adopted") &&
+                mirroredSource !== undefined &&
+                mirroredSourceRef.current.get(name) === mirroredSource &&
+                mirroredSourceRef.current.delete(name);
               if (
-                (value61.kind === "noop" ||
-                  value61.kind === "saved" ||
-                  value61.kind === "saved-adopted") &&
-                value61.settledProps !== undefined &&
-                value4.current.onPendingPropsSettled !== undefined &&
-                value10.current === current
+                (publishResult.kind === "noop" ||
+                  publishResult.kind === "saved" ||
+                  publishResult.kind === "saved-adopted") &&
+                publishResult.settledProps !== undefined &&
+                optionsRef.current.onPendingPropsSettled !== undefined &&
+                entriesRef.current === entries
               ) {
-                let value62: Dynamic = current.get(input2)?.pendingProps,
-                  state4: Dynamic = {};
-                for (let [value63, value64] of Object.entries(
-                  value61.settledProps,
+                let currentPendingProps: Dynamic = entries.get(name)?.pendingProps,
+                  settledProps: Dynamic = {};
+                for (let [propKey, propValue] of Object.entries(
+                  publishResult.settledProps,
                 ) as Dynamic) {
-                  let value65: Dynamic =
-                    value62 !== undefined && Object.hasOwn(value62, value63)
-                      ? value62[value63]
+                  let currentValue: Dynamic =
+                    currentPendingProps !== undefined && Object.hasOwn(currentPendingProps, propKey)
+                      ? currentPendingProps[propKey]
                       : undefined;
-                  (value65 === undefined || value65 === value64) &&
-                    (state4[value63] = value64);
+                  (currentValue === undefined || currentValue === propValue) &&
+                    (settledProps[propKey] = propValue);
                 }
-                if (Object.keys(state4).length > 0)
+                if (Object.keys(settledProps).length > 0)
                   try {
-                    value4.current.onPendingPropsSettled(input2, state4);
-                  } catch (value63: Dynamic) {
+                    optionsRef.current.onPendingPropsSettled(name, settledProps);
+                  } catch (callbackError: Dynamic) {
                     console.error(
                       "[dc-model] onPendingPropsSettled threw after settle:",
-                      value63,
+                      callbackError,
                     );
                   }
               }
-              text === "saved" &&
-                markLocalFileChange(input, entry.path);
-            } catch (value61: Dynamic) {
-              text === "failed"
+              outcome === "saved" &&
+                markLocalFileChange(projectPath, entry.path);
+            } catch (saveError: Dynamic) {
+              outcome === "failed"
                 ? ((entry.dirty = true),
-                  value25.current.set(
-                    input2,
-                    (value25.current.get(input2) ?? 0) + 1,
+                  editCountsRef.current.set(
+                    name,
+                    (editCountsRef.current.get(name) ?? 0) + 1,
                   ),
-                  callback3(),
-                  flag2 || value4.current.writes?.onWriteError(value61))
+                  releaseEcho(),
+                  conflictHandled || optionsRef.current.writes?.onWriteError(saveError))
                 : console.error(
                     "[dc-model] post-save callback threw after landed write:",
-                    value61,
+                    saveError,
                   );
             } finally {
-              value39.current -= 1;
+              writesInFlightRef.current -= 1;
               setTimeout((): Dynamic => {
-                let value61: Dynamic = current2.get(entry.path) ?? 0;
-                value61 <= 1
-                  ? (current2.delete(entry.path),
-                    value15.current.delete(entry.path) &&
-                      value17.current(entry.path))
-                  : current2.set(entry.path, value61 - 1);
+                let remainingWrites: Dynamic = pathWriteCounts.get(entry.path) ?? 0;
+                remainingWrites <= 1
+                  ? (pathWriteCounts.delete(entry.path),
+                    deferredEchoPathsRef.current.delete(entry.path) &&
+                      reloadFromDiskRef.current(entry.path))
+                  : pathWriteCounts.set(entry.path, remainingWrites - 1);
               }, 500);
             }
-            return text;
+            return outcome;
           },
-          value60: Dynamic = serializeAsyncFileTask(
-            value32.current,
-            input2,
-            callback,
+          writeTask: Dynamic = serializeAsyncFileTask(
+            writeQueueRef.current,
+            name,
+            runWrite,
           );
         entry &&
-          value53 !== undefined &&
-          value33.current.set(input2, {
-            token: state,
-            models: current,
-            payload: value53,
-            pendingScript: value54,
-            pendingProps: value56,
-            run: value60,
+          payload !== undefined &&
+          queuedWritesRef.current.set(name, {
+            token: token,
+            models: entries,
+            payload: payload,
+            pendingScript: pendingScript,
+            pendingProps: pendingProps,
+            run: writeTask,
           });
-        return value60;
+        return writeTask;
       },
-      [input, value34],
+      [projectPath, refreshFromDisk],
     ),
-    value36: Dynamic = (0,
+    flushAll: Dynamic = (0,
     reactOutlineAnnotations
       .useCallback)(async (): Promise<Dynamic> => {
-      let items: Dynamic = [];
-      for (let [value53, value54] of value10.current as Dynamic)
-        value54.dirty && items.push(value35(value53));
-      await Promise.allSettled(items);
-    }, [value35]),
-    value37: Dynamic = (0, reactOutlineAnnotations.useRef)(value36);
-  value37.current = value36;
-  let value38: Dynamic = (0,
+      let pendingFlushes: Dynamic = [];
+      for (let [name, entry] of entriesRef.current as Dynamic)
+        entry.dirty && pendingFlushes.push(writeNow(name));
+      await Promise.allSettled(pendingFlushes);
+    }, [writeNow]),
+    flushAllRef: Dynamic = (0, reactOutlineAnnotations.useRef)(flushAll);
+  flushAllRef.current = flushAll;
+  let anyDirty: Dynamic = (0,
     reactOutlineAnnotations.useCallback)((): Dynamic => {
-      for (let value53 of value10.current.values() as Dynamic)
-        if (value53.dirty) return true;
+      for (let entry of entriesRef.current.values() as Dynamic)
+        if (entry.dirty) return true;
       return false;
     }, []),
-    value39: Dynamic = (0, reactOutlineAnnotations.useRef)(0),
-    value40: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (): Dynamic => value39.current > 0,
+    writesInFlightRef: Dynamic = (0, reactOutlineAnnotations.useRef)(0),
+    anyWriteInFlight: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (): Dynamic => writesInFlightRef.current > 0,
       [],
     ),
-    value41: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic => value32.current.has(input2),
+    commitInFlight: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic): Dynamic => writeQueueRef.current.has(name),
       [],
     ),
-    value42: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value53: Dynamic = value10.current.get(input2) ?? null;
-        return !value53 || !recordModelUndo(value53, options2)
+    pushUndoSnapshot: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic, snapshot?: Dynamic): Dynamic => {
+        let entry: Dynamic = entriesRef.current.get(name) ?? null;
+        return !entry || !recordModelUndo(entry, snapshot)
           ? false
-          : (value4.current.onBeforeMutate?.(
-              input2,
-              value53,
-              options2,
+          : (optionsRef.current.onBeforeMutate?.(
+              name,
+              entry,
+              snapshot,
               false,
             ),
             true);
       },
       [],
     ),
-    value43: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+    mutate: Dynamic = (0, reactOutlineAnnotations.useCallback)(
       async (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        context2?: Dynamic,
+        name?: Dynamic,
+        mutator?: Dynamic,
+        mutateOptions?: Dynamic,
       ): Promise<Dynamic> => {
-        let value53: Dynamic = context2?.structural ?? true,
-          value54: Dynamic = value53 || (context2?.pushUndo ?? false),
-          value55: Dynamic = context2?.restamp ?? true,
-          value56: Dynamic = context2?.pushLive ?? true,
-          current: Dynamic = value6.current,
-          value57: Dynamic = await value21(input2);
-        if (!value57) return false;
-        let value58: Dynamic = value54 ? value57.model.serialize() : "";
-        return options2(value57.model, value57)
-          ? ((value57.previewBaseline = undefined),
-            (value57.stampGen = (value57.stampGen ?? -1) + 1),
-            value54 &&
-              (value57.undo.push(value58),
+        let isStructural: Dynamic = mutateOptions?.structural ?? true,
+          shouldPushUndo: Dynamic = isStructural || (mutateOptions?.pushUndo ?? false),
+          shouldRestamp: Dynamic = mutateOptions?.restamp ?? true,
+          shouldPushLive: Dynamic = mutateOptions?.pushLive ?? true,
+          isSessionHeld: Dynamic = sessionHeldRef.current,
+          entry: Dynamic = await ensureModel(name);
+        if (!entry) return false;
+        let undoSnapshot: Dynamic = shouldPushUndo ? entry.model.serialize() : "";
+        return mutator(entry.model, entry)
+          ? ((entry.previewBaseline = undefined),
+            (entry.stampGen = (entry.stampGen ?? -1) + 1),
+            shouldPushUndo &&
+              (entry.undo.push(undoSnapshot),
               trimUndoHistory(
-                value57,
-                value57.undo.length - ModelModelStateConstant,
+                entry,
+                entry.undo.length - ModelModelStateConstant,
               ),
-              (value57.redo = []),
-              value4.current.onBeforeMutate?.(
-                input2,
-                value57,
-                value58,
-                value53,
+              (entry.redo = []),
+              optionsRef.current.onBeforeMutate?.(
+                name,
+                entry,
+                undoSnapshot,
+                isStructural,
               )),
-            value55 && value57.model.restamp(),
-            value56 && value22(input2),
-            value55 && value56
-              ? (value57.liveStampsStale = false)
-              : value53 && (value57.liveStampsStale = true),
-            (value57.dirty = true),
-            current
-              ? (value31(input2), "applied-dirty")
-              : (await value35(input2)) === "failed"
+            shouldRestamp && entry.model.restamp(),
+            shouldPushLive && pushLive(name),
+            shouldRestamp && shouldPushLive
+              ? (entry.liveStampsStale = false)
+              : isStructural && (entry.liveStampsStale = true),
+            (entry.dirty = true),
+            isSessionHeld
+              ? (markDirty(name), "applied-dirty")
+              : (await writeNow(name)) === "failed"
                 ? "applied-failed"
                 : "applied")
           : "refused";
       },
-      [value21, value22, value35, value31],
+      [ensureModel, pushLive, writeNow, markDirty],
     ),
-    value44: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+    syncEntry: Dynamic = (0, reactOutlineAnnotations.useCallback)(
       async (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        context2?: Dynamic,
+        name?: Dynamic,
+        entry?: Dynamic,
+        syncOptions?: Dynamic,
       ): Promise<Dynamic> => {
-        if (isRecentlyEditedFile(options2.path)) {
-          await value34(input2);
-          ModelHistoryRebaseDelete(options2.path);
+        if (isRecentlyEditedFile(entry.path)) {
+          await refreshFromDisk(name);
+          ModelHistoryRebaseDelete(entry.path);
           if (
             !(
-              options2.dirty ||
-              options2.pendingScript !== undefined ||
-              options2.pendingProps !== undefined
+              entry.dirty ||
+              entry.pendingScript !== undefined ||
+              entry.pendingProps !== undefined
             )
           )
             return;
-          let entry: Dynamic = value24.current.get(input2);
-          entry && clearTimeout(entry);
-          value24.current.delete(input2);
-          value29.current.get(input2)?.();
-          value29.current.delete(input2);
-          value25.current.delete(input2);
-          options2.dirty = false;
-          options2.pendingScript = undefined;
-          options2.pendingScriptBase = undefined;
-          options2.pendingProps = undefined;
-          options2.pendingPropsBase = undefined;
-          resetUndoHistory(options2);
+          let pendingTimer: Dynamic = editTimersRef.current.get(name);
+          pendingTimer && clearTimeout(pendingTimer);
+          editTimersRef.current.delete(name);
+          writeResolversRef.current.get(name)?.();
+          writeResolversRef.current.delete(name);
+          editCountsRef.current.delete(name);
+          entry.dirty = false;
+          entry.pendingScript = undefined;
+          entry.pendingScriptBase = undefined;
+          entry.pendingProps = undefined;
+          entry.pendingPropsBase = undefined;
+          resetUndoHistory(entry);
           try {
-            options2.src = (
-              await value19(`${input}/${options2.path}`)
+            entry.src = (
+              await readFile(`${projectPath}/${entry.path}`)
             ).content;
           } catch {
-            value13(input2);
+            releaseEntry(name);
           }
           return;
         }
         if (
-          value14.current.has(options2.path) &&
-          !value28.current.get(input2)?.size
+          ownWriteCountsRef.current.has(entry.path) &&
+          !recentContentsRef.current.get(name)?.size
         ) {
-          value15.current.add(options2.path);
+          deferredEchoPathsRef.current.add(entry.path);
           return;
         }
-        let callback: Dynamic = (): Dynamic => {
-          !context2?.noRetry &&
-            !value16.current.has(options2.path) &&
-            (value16.current.add(options2.path),
+        let scheduleRetry: Dynamic = (): Dynamic => {
+          !syncOptions?.noRetry &&
+            !retryPathsRef.current.has(entry.path) &&
+            (retryPathsRef.current.add(entry.path),
             setTimeout((): Dynamic => {
-              value16.current.delete(options2.path);
-              value17.current(options2.path, {
+              retryPathsRef.current.delete(entry.path);
+              reloadFromDiskRef.current(entry.path, {
                 noRetry: true,
               });
             }, 2e3));
         };
         try {
-          let value53: Dynamic = value27.current.get(input2) ?? 0,
-            { content: value54, version: value55 }: Dynamic = await value19(
-              `${input}/${options2.path}`,
+          let writesBefore: Dynamic = landedWritesRef.current.get(name) ?? 0,
+            { content: diskSource, version: diskVersion }: Dynamic = await readFile(
+              `${projectPath}/${entry.path}`,
             );
           if (
-            (value14.current.has(options2.path) &&
-              !value28.current.get(input2)?.has(value54)) ||
-            value32.current.has(input2)
+            (ownWriteCountsRef.current.has(entry.path) &&
+              !recentContentsRef.current.get(name)?.has(diskSource)) ||
+            writeQueueRef.current.has(name)
           ) {
-            value15.current.add(options2.path);
+            deferredEchoPathsRef.current.add(entry.path);
             return;
           }
           if (
-            value55 !== undefined &&
-            options2.adoptedVersion !== undefined &&
-            value55 <= options2.adoptedVersion
+            diskVersion !== undefined &&
+            entry.adoptedVersion !== undefined &&
+            diskVersion <= entry.adoptedVersion
           ) {
-            value28.current.get(input2)?.delete(value54);
+            recentContentsRef.current.get(name)?.delete(diskSource);
             return;
           }
           if (
-            options2.dirty ||
-            options2.pendingScript !== undefined ||
-            options2.pendingProps !== undefined
+            entry.dirty ||
+            entry.pendingScript !== undefined ||
+            entry.pendingProps !== undefined
           ) {
-            let value59: Dynamic =
-              value28.current.get(input2)?.has(value54) === true;
-            value59 &&
-              (value27.current.get(input2) ?? 0) === value53 &&
-              (value28.current.get(input2)?.delete(value54),
-              value26.current.set(input2, value54));
+            let isOwnWrite: Dynamic =
+              recentContentsRef.current.get(name)?.has(diskSource) === true;
+            isOwnWrite &&
+              (landedWritesRef.current.get(name) ?? 0) === writesBefore &&
+              (recentContentsRef.current.get(name)?.delete(diskSource),
+              mirroredSourceRef.current.set(name, diskSource));
             if (
-              value4.current.liveStore &&
-              !value25.current.has(input2) &&
-              !value59 &&
-              value54 !== value26.current.get(input2)
+              optionsRef.current.liveStore &&
+              !editCountsRef.current.has(name) &&
+              !isOwnWrite &&
+              diskSource !== mirroredSourceRef.current.get(name)
             ) {
-              await value34(input2);
-              options2.src === value54 ||
-                (value55 !== undefined &&
-                  options2.adoptedVersion !== undefined &&
-                  options2.adoptedVersion >= value55) ||
+              await refreshFromDisk(name);
+              entry.src === diskSource ||
+                (diskVersion !== undefined &&
+                  entry.adoptedVersion !== undefined &&
+                  entry.adoptedVersion >= diskVersion) ||
                 !(
-                  options2.dirty ||
-                  options2.pendingScript !== undefined ||
-                  options2.pendingProps !== undefined
+                  entry.dirty ||
+                  entry.pendingScript !== undefined ||
+                  entry.pendingProps !== undefined
                 ) ||
-                (value54 !== options2.src && (options2.src = value54),
-                callback());
+                (diskSource !== entry.src && (entry.src = diskSource),
+                scheduleRetry());
               return;
             }
-            value54 !== options2.src && (options2.src = value54);
-            value59 && clearSavedPendingProps(options2);
-            value55 !== undefined &&
-              adoptModelVersion(options2, value55);
+            diskSource !== entry.src && (entry.src = diskSource);
+            isOwnWrite && clearSavedPendingProps(entry);
+            diskVersion !== undefined &&
+              adoptModelVersion(entry, diskVersion);
             return;
           }
-          if (value54 === options2.src) {
-            value28.current.get(input2)?.delete(value54);
-            value55 !== undefined &&
-              (adoptModelVersion(options2, value55),
-              (options2.baseVersion === undefined ||
-                value55 > options2.baseVersion) &&
-                (options2.baseVersion = value55));
+          if (diskSource === entry.src) {
+            recentContentsRef.current.get(name)?.delete(diskSource);
+            diskVersion !== undefined &&
+              (adoptModelVersion(entry, diskVersion),
+              (entry.baseVersion === undefined ||
+                diskVersion > entry.baseVersion) &&
+                (entry.baseVersion = diskVersion));
             return;
           }
-          let value56: Dynamic = parseDcHtmlDocument(value54);
-          if (!value56) {
+          let diskDocument: Dynamic = parseDcHtmlDocument(diskSource);
+          if (!diskDocument) {
             warnUnreadableDcDocument(
-              input + "/" + options2.path,
-              value54,
+              projectPath + "/" + entry.path,
+              diskSource,
               "the editor keeps showing the version it last read",
             );
             return;
           }
-          value28.current.get(input2)?.delete(value54);
-          let value57: Dynamic = !sameDcTemplate(
-            value54,
-            options2.src,
+          recentContentsRef.current.get(name)?.delete(diskSource);
+          let templateChanged: Dynamic = !sameDcTemplate(
+            diskSource,
+            entry.src,
           );
-          options2.src = value54;
-          if (value57) {
-            let value59: Dynamic = ModelHistoryRebaseDelete(
-              options2.path,
+          entry.src = diskSource;
+          if (templateChanged) {
+            let rebaseHandled: Dynamic = ModelHistoryRebaseDelete(
+              entry.path,
             );
-            ModelHistoryRebaseHandler_2() && !value59
+            ModelHistoryRebaseHandler_2() && !rebaseHandled
               ? ModelHistoryRebaseUndo(
-                  input2,
+                  name,
                   rebaseModelHistory(
-                    options2,
-                    options2.model.serialize(),
-                    value56.template,
+                    entry,
+                    entry.model.serialize(),
+                    diskDocument.template,
                   ),
                 )
-              : resetUndoHistory(options2);
+              : resetUndoHistory(entry);
           }
-          let value58: Dynamic = options2.previewBaseline !== undefined;
-          options2.previewBaseline = undefined;
-          if (value56.template !== options2.model.serialize()) {
-            let value59: Dynamic = value58 ? null : options2.model;
-            options2.model = options2.model.rebuild(value56.template);
-            options2.stampGen = (options2.stampGen ?? -1) + 1;
-            options2.liveStampsStale = true;
-            options2.originalTemplate = options2.model.serialize();
-            value4.current.onExternalReparse?.(input2, value59);
+          let hadPreviewBaseline: Dynamic = entry.previewBaseline !== undefined;
+          entry.previewBaseline = undefined;
+          if (diskDocument.template !== entry.model.serialize()) {
+            let previousModel: Dynamic = hadPreviewBaseline ? null : entry.model;
+            entry.model = entry.model.rebuild(diskDocument.template);
+            entry.stampGen = (entry.stampGen ?? -1) + 1;
+            entry.liveStampsStale = true;
+            entry.originalTemplate = entry.model.serialize();
+            optionsRef.current.onExternalReparse?.(name, previousModel);
           }
-          value55 !== undefined &&
-            (adoptModelVersion(options2, value55),
-            (options2.baseVersion === undefined ||
-              value55 > options2.baseVersion) &&
-              (options2.baseVersion = value55),
-            value4.current.onAdopted?.(options2.path, value55, value54));
+          diskVersion !== undefined &&
+            (adoptModelVersion(entry, diskVersion),
+            (entry.baseVersion === undefined ||
+              diskVersion > entry.baseVersion) &&
+              (entry.baseVersion = diskVersion),
+            optionsRef.current.onAdopted?.(entry.path, diskVersion, diskSource));
         } catch {
-          callback();
+          scheduleRetry();
         }
       },
-      [input, value19, value34],
+      [projectPath, readFile, refreshFromDisk],
     ),
-    value45: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      async (input2?: Dynamic, options2?: Dynamic): Promise<Dynamic> => {
-        let value53: Dynamic = normalizeProjectFilePath(input2);
-        for (let [value54, value55] of value10.current as Dynamic)
-          value55.path === value53 &&
-            (await value44(value54, value55, options2));
+    syncByPath: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      async (path?: Dynamic, syncOptions?: Dynamic): Promise<Dynamic> => {
+        let normalizedPath: Dynamic = normalizeProjectFilePath(path);
+        for (let [name, entry] of entriesRef.current as Dynamic)
+          entry.path === normalizedPath &&
+            (await syncEntry(name, entry, syncOptions));
       },
-      [value44],
+      [syncEntry],
     );
-  value17.current = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-    !value18.current || value5.current
+  reloadFromDiskRef.current = (path?: Dynamic, syncOptions?: Dynamic): Dynamic =>
+    !enabledRef.current || nonDcFileRef.current
       ? Promise.resolve()
-      : value45(input2, options2);
-  let value46: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value53: Dynamic = value28.current.get(input2) ?? new Set();
-        value53.add(options2);
-        value53.size > 4 && value53.delete(value53.values().next().value);
-        value28.current.set(input2, value53);
+      : syncByPath(path, syncOptions);
+  let noteOwnWrite: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (name?: Dynamic, content?: Dynamic): Dynamic => {
+        let contents: Dynamic = recentContentsRef.current.get(name) ?? new Set();
+        contents.add(content);
+        contents.size > 4 && contents.delete(contents.values().next().value);
+        recentContentsRef.current.set(name, contents);
         return (): Dynamic => {
-          value53.delete(options2);
+          contents.delete(content);
         };
       },
       [],
     ),
-    value47: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      async (input2?: Dynamic): Promise<Dynamic> => {
-        !value || value5.current || (await value45(input2));
+    adoptExternal: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      async (name?: Dynamic): Promise<Dynamic> => {
+        !isEnabled || nonDcFileRef.current || (await syncByPath(name));
       },
-      [value45, value],
+      [syncByPath, isEnabled],
     ),
-    value48: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      async (input2?: Dynamic): Promise<Dynamic> => {
-        if (value5.current)
+    entryCheck: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      async (name?: Dynamic): Promise<Dynamic> => {
+        if (nonDcFileRef.current)
           return {
             outcome: "non-dc",
           };
-        let entry: Dynamic = value10.current.get(input2),
-          value53: Dynamic = await value21(input2);
-        if (!value53)
+        let entry: Dynamic = entriesRef.current.get(name),
+          loadedEntry: Dynamic = await ensureModel(name);
+        if (!loadedEntry)
           return {
             outcome: "read-failed",
           };
@@ -1068,65 +1068,65 @@ function useDcModel(
           return {
             outcome: "cold",
           };
-        let value54: Dynamic =
+        let entryHadEdits: Dynamic =
           entry.dirty ||
           entry.pendingScript !== undefined ||
           entry.pendingProps !== undefined;
-        if (value14.current.has(value53.path) || value32.current.has(input2))
+        if (ownWriteCountsRef.current.has(loadedEntry.path) || writeQueueRef.current.has(name))
           return {
             outcome: "self-write",
           };
         try {
-          let { content: value55, version: value56 }: Dynamic = await value19(
-            `${input}/${value53.path}`,
+          let { content: diskSource, version: diskVersion }: Dynamic = await readFile(
+            `${projectPath}/${loadedEntry.path}`,
           );
           if (
-            value14.current.has(value53.path) ||
-            value32.current.has(input2)
+            ownWriteCountsRef.current.has(loadedEntry.path) ||
+            writeQueueRef.current.has(name)
           )
             return {
               outcome: "self-write",
             };
-          if (value10.current.get(input2) !== value53)
+          if (entriesRef.current.get(name) !== loadedEntry)
             return {
               outcome: "read-failed",
             };
-          let value57: Dynamic =
-            value53.dirty ||
-            value53.pendingScript !== undefined ||
-            value53.pendingProps !== undefined;
-          if (value55 === value53.src) {
-            value56 !== undefined &&
-              (adoptModelVersion(value53, value56),
-              !value57 &&
-                (value53.baseVersion === undefined ||
-                  value56 > value53.baseVersion) &&
-                (value53.baseVersion = value56));
-            if (!value57)
+          let loadedHasEdits: Dynamic =
+            loadedEntry.dirty ||
+            loadedEntry.pendingScript !== undefined ||
+            loadedEntry.pendingProps !== undefined;
+          if (diskSource === loadedEntry.src) {
+            diskVersion !== undefined &&
+              (adoptModelVersion(loadedEntry, diskVersion),
+              !loadedHasEdits &&
+                (loadedEntry.baseVersion === undefined ||
+                  diskVersion > loadedEntry.baseVersion) &&
+                (loadedEntry.baseVersion = diskVersion));
+            if (!loadedHasEdits)
               return {
                 outcome: "fresh",
               };
-            if (value55 === value26.current.get(input2))
+            if (diskSource === mirroredSourceRef.current.get(name))
               return {
                 outcome: "fresh",
               };
-            let value59: Dynamic = parseDcHtmlDocument(value55);
-            return value59
+            let matchedDocument: Dynamic = parseDcHtmlDocument(diskSource);
+            return matchedDocument
               ? rebuildModelTemplate(
-                  value53.model,
-                  value59.template,
+                  loadedEntry.model,
+                  matchedDocument.template,
                 ) !==
                   rebuildModelTemplate(
-                    value53.model,
-                    value53.originalTemplate,
+                    loadedEntry.model,
+                    loadedEntry.originalTemplate,
                   ) ||
-                (value53.pendingScript !== undefined &&
-                  value59.js !== value53.pendingScriptBase) ||
-                (value53.pendingProps !== undefined &&
-                  getDcPropsJson(value55) !==
-                    value53.pendingPropsBase)
+                (loadedEntry.pendingScript !== undefined &&
+                  matchedDocument.js !== loadedEntry.pendingScriptBase) ||
+                (loadedEntry.pendingProps !== undefined &&
+                  getDcPropsJson(diskSource) !==
+                    loadedEntry.pendingPropsBase)
                 ? {
-                    outcome: value54 ? "conflict" : "race-conflict",
+                    outcome: entryHadEdits ? "conflict" : "race-conflict",
                   }
                 : {
                     outcome: "fresh",
@@ -1136,60 +1136,60 @@ function useDcModel(
                 };
           }
           if (
-            value56 !== undefined &&
-            value53.adoptedVersion !== undefined &&
-            value56 <= value53.adoptedVersion
+            diskVersion !== undefined &&
+            loadedEntry.adoptedVersion !== undefined &&
+            diskVersion <= loadedEntry.adoptedVersion
           )
             return {
               outcome: "fresh",
             };
-          let value58: Dynamic = parseDcHtmlDocument(value55);
-          if (!value58)
+          let diskDocument: Dynamic = parseDcHtmlDocument(diskSource);
+          if (!diskDocument)
             return {
               outcome: "unparseable",
             };
-          if (!value57) {
-            await value34(input2);
-            let value59: Dynamic =
-              value53.src === value55 ||
-              (value56 !== undefined &&
-                value53.adoptedVersion !== undefined &&
-                value53.adoptedVersion >= value56);
-            value59 && resetUndoHistory(value53);
+          if (!loadedHasEdits) {
+            await refreshFromDisk(name);
+            let isCaughtUp: Dynamic =
+              loadedEntry.src === diskSource ||
+              (diskVersion !== undefined &&
+                loadedEntry.adoptedVersion !== undefined &&
+                loadedEntry.adoptedVersion >= diskVersion);
+            isCaughtUp && resetUndoHistory(loadedEntry);
             return {
-              outcome: value59 ? "rebuilt" : "read-failed",
+              outcome: isCaughtUp ? "rebuilt" : "read-failed",
             };
           }
-          return value55 === value26.current.get(input2)
-            ? (value56 !== undefined &&
-                adoptModelVersion(value53, value56),
+          return diskSource === mirroredSourceRef.current.get(name)
+            ? (diskVersion !== undefined &&
+                adoptModelVersion(loadedEntry, diskVersion),
               {
                 outcome: "fresh",
               })
             : rebuildModelTemplate(
-                  value53.model,
-                  value58.template,
+                  loadedEntry.model,
+                  diskDocument.template,
                 ) ===
                   rebuildModelTemplate(
-                    value53.model,
-                    value53.originalTemplate,
+                    loadedEntry.model,
+                    loadedEntry.originalTemplate,
                   ) &&
-                (value53.pendingScript === undefined ||
-                  value58.js === value53.pendingScriptBase) &&
-                (value53.pendingProps === undefined ||
-                  getDcPropsJson(value55) ===
-                    value53.pendingPropsBase)
-              ? ((value53.src = value55),
-                value56 !== undefined &&
-                  adoptModelVersion(value53, value56),
+                (loadedEntry.pendingScript === undefined ||
+                  diskDocument.js === loadedEntry.pendingScriptBase) &&
+                (loadedEntry.pendingProps === undefined ||
+                  getDcPropsJson(diskSource) ===
+                    loadedEntry.pendingPropsBase)
+              ? ((loadedEntry.src = diskSource),
+                diskVersion !== undefined &&
+                  adoptModelVersion(loadedEntry, diskVersion),
                 {
                   outcome: "src-advanced",
                 })
-              : (value55 !== value53.src && (value53.src = value55),
-                value56 !== undefined &&
-                  adoptModelVersion(value53, value56),
+              : (diskSource !== loadedEntry.src && (loadedEntry.src = diskSource),
+                diskVersion !== undefined &&
+                  adoptModelVersion(loadedEntry, diskVersion),
                 {
-                  outcome: value54 ? "conflict" : "race-conflict",
+                  outcome: entryHadEdits ? "conflict" : "race-conflict",
                 });
         } catch {
           return {
@@ -1197,124 +1197,124 @@ function useDcModel(
           };
         }
       },
-      [value21, input, value19, value34],
+      [ensureModel, projectPath, readFile, refreshFromDisk],
     );
   (0, reactOutlineAnnotations.useEffect)(
     (): Dynamic => (
-      (value11.current = true),
+      (isMountedRef.current = true),
       (): Dynamic => {
-        value11.current = false;
-        let value53: Dynamic = artboardComponentName(options),
-          value54: Dynamic = value5.current
+        isMountedRef.current = false;
+        let rootKey: Dynamic = artboardComponentName(filePath),
+          rootEntry: Dynamic = nonDcFileRef.current
             ? undefined
-            : value10.current.get(value53);
-        value37.current();
-        let historyKeeper: Dynamic = value4.current.historyKeeper;
+            : entriesRef.current.get(rootKey);
+        flushAllRef.current();
+        let historyKeeper: Dynamic = optionsRef.current.historyKeeper;
         historyKeeper &&
           !(
-            value54 &&
+            rootEntry &&
             historyKeeper.keep(
-              options,
-              value54,
-              value32.current.get(value53) ?? Promise.resolve(),
-              value4.current.historyEpoch,
+              filePath,
+              rootEntry,
+              writeQueueRef.current.get(rootKey) ?? Promise.resolve(),
+              optionsRef.current.historyEpoch,
             )
           ) &&
-          historyKeeper.decline(options);
-        for (let [value55, value56] of value10.current as Dynamic)
-          value12.current.set(
-            value55,
-            (value56.undoFloor ?? 0) +
-              value56.undo.length +
-              value56.redo.length,
+          historyKeeper.decline(filePath);
+        for (let [key, keptEntry] of entriesRef.current as Dynamic)
+          undoFloorsRef.current.set(
+            key,
+            (keptEntry.undoFloor ?? 0) +
+              keptEntry.undo.length +
+              keptEntry.redo.length,
           );
-        value10.current = new Map();
-        value25.current.clear();
-        value26.current.clear();
-        value27.current.clear();
-        value28.current.clear();
+        entriesRef.current = new Map();
+        editCountsRef.current.clear();
+        mirroredSourceRef.current.clear();
+        landedWritesRef.current.clear();
+        recentContentsRef.current.clear();
       }
     ),
-    [input, options],
+    [projectPath, filePath],
   );
-  let value49: Dynamic = (0, reactOutlineAnnotations.useRef)(0),
-    value50: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (): Dynamic => value49.current > 0,
+  let adoptingCountRef: Dynamic = (0, reactOutlineAnnotations.useRef)(0),
+    isAdopting: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (): Dynamic => adoptingCountRef.current > 0,
       [],
     );
   npm_useEventListener_bc(
     "files-changed",
-    (input2?: Dynamic): Dynamic => {
-      if (!value || value3 || input2.detail.projectPath !== input) return;
-      let paths: Dynamic = input2.detail.paths,
-        value53: Dynamic = paths.map(normalizeProjectFilePath);
-      value49.current++;
+    (event?: Dynamic): Dynamic => {
+      if (!isEnabled || nonDcFile || event.detail.projectPath !== projectPath) return;
+      let paths: Dynamic = event.detail.paths,
+        normalizedPaths: Dynamic = paths.map(normalizeProjectFilePath);
+      adoptingCountRef.current++;
       (async (): Promise<Dynamic> => {
         try {
-          for (let [value54, value55] of value10.current as Dynamic)
-            (!value53.includes(value55.path) && !paths.includes("*")) ||
-              (await value44(value54, value55));
+          for (let [name, entry] of entriesRef.current as Dynamic)
+            (!normalizedPaths.includes(entry.path) && !paths.includes("*")) ||
+              (await syncEntry(name, entry));
         } finally {
-          value49.current--;
+          adoptingCountRef.current--;
         }
       })();
     },
   );
-  let value51: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        for (let [value53, value54] of value10.current as Dynamic)
-          input2(value53, value54);
+  let eachEntry: Dynamic = (0, reactOutlineAnnotations.useCallback)(
+      (visit?: Dynamic): Dynamic => {
+        for (let [name, entry] of entriesRef.current as Dynamic)
+          visit(name, entry);
       },
       [],
     ),
-    value52: Dynamic = value13;
+    dropModel: Dynamic = releaseEntry;
   return (0, reactOutlineAnnotations.useMemo)(
     (): Dynamic => ({
-      rootName: value ? value7 : "",
-      sessionHeld: value2,
-      nonDcFile: value3,
-      ensureModel: value21,
-      state: value20,
-      each: value51,
-      dropModel: value52,
-      pushLive: value22,
-      markDirty: value31,
-      writeNow: value35,
-      refreshFromDisk: value34,
-      adoptExternal: value47,
-      adopting: value50,
-      noteOwnWrite: value46,
-      entryCheck: value48,
-      flushAll: value36,
-      anyDirty: value38,
-      anyWriteInFlight: value40,
-      commitInFlight: value41,
-      mutate: value43,
-      pushUndoSnapshot: value42,
+      rootName: isEnabled ? rootName : "",
+      sessionHeld: sessionHeld,
+      nonDcFile: nonDcFile,
+      ensureModel: ensureModel,
+      state: getEntry,
+      each: eachEntry,
+      dropModel: dropModel,
+      pushLive: pushLive,
+      markDirty: markDirty,
+      writeNow: writeNow,
+      refreshFromDisk: refreshFromDisk,
+      adoptExternal: adoptExternal,
+      adopting: isAdopting,
+      noteOwnWrite: noteOwnWrite,
+      entryCheck: entryCheck,
+      flushAll: flushAll,
+      anyDirty: anyDirty,
+      anyWriteInFlight: anyWriteInFlight,
+      commitInFlight: commitInFlight,
+      mutate: mutate,
+      pushUndoSnapshot: pushUndoSnapshot,
     }),
     [
-      value,
-      value7,
-      value2,
-      value3,
-      value21,
-      value20,
-      value51,
-      value52,
-      value22,
-      value31,
-      value35,
-      value34,
-      value47,
-      value50,
-      value46,
-      value48,
-      value36,
-      value38,
-      value40,
-      value41,
-      value43,
-      value42,
+      isEnabled,
+      rootName,
+      sessionHeld,
+      nonDcFile,
+      ensureModel,
+      getEntry,
+      eachEntry,
+      dropModel,
+      pushLive,
+      markDirty,
+      writeNow,
+      refreshFromDisk,
+      adoptExternal,
+      isAdopting,
+      noteOwnWrite,
+      entryCheck,
+      flushAll,
+      anyDirty,
+      anyWriteInFlight,
+      commitInFlight,
+      mutate,
+      pushUndoSnapshot,
     ],
   );
 }
