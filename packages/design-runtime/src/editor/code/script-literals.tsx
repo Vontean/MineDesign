@@ -8,158 +8,158 @@ import { toModuleNamespace } from "../../module-helpers";
 var CodeScriptLiteralsAFAFPattern: Dynamic;
 var reactCodeScriptLiterals: Dynamic;
 function decodeScriptStringEscape(
-  input?: Dynamic,
-  options?: Dynamic,
+  source?: Dynamic,
+  escapeIndex?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input[options];
-  switch (value) {
+  let escapeChar: Dynamic = source[escapeIndex];
+  switch (escapeChar) {
     case "n":
       return {
         ch: `
 `,
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "t":
       return {
         ch: "	",
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "r":
       return {
         ch: "\r",
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "b":
       return {
         ch: "\b",
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "f":
       return {
         ch: "\f",
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "v":
       return {
         ch: "\v",
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "0":
       return {
         ch: "\0",
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "x": {
-      let value2: Dynamic = input.slice(options + 1, options + 3);
-      return value2.length === 2 &&
-        CodeScriptLiteralsAFAFPattern.test(value2[0]) &&
-        CodeScriptLiteralsAFAFPattern.test(value2[1])
+      let hex: Dynamic = source.slice(escapeIndex + 1, escapeIndex + 3);
+      return hex.length === 2 &&
+        CodeScriptLiteralsAFAFPattern.test(hex[0]) &&
+        CodeScriptLiteralsAFAFPattern.test(hex[1])
         ? {
-            ch: String.fromCharCode(parseInt(value2, 16)),
-            next: options + 3,
+            ch: String.fromCharCode(parseInt(hex, 16)),
+            next: escapeIndex + 3,
           }
         : {
-            ch: value,
-            next: options + 1,
+            ch: escapeChar,
+            next: escapeIndex + 1,
           };
     }
     case "u": {
-      if (input[options + 1] === "{") {
-        let value3: Dynamic = input.indexOf("}", options + 2);
-        if (value3 !== -1) {
-          let value4: Dynamic = input.slice(options + 2, value3);
+      if (source[escapeIndex + 1] === "{") {
+        let closeBraceIndex: Dynamic = source.indexOf("}", escapeIndex + 2);
+        if (closeBraceIndex !== -1) {
+          let codePointHex: Dynamic = source.slice(escapeIndex + 2, closeBraceIndex);
           if (
-            value4.length > 0 &&
-            value4.length <= 6 &&
-            /^[0-9a-fA-F]+$/.test(value4)
+            codePointHex.length > 0 &&
+            codePointHex.length <= 6 &&
+            /^[0-9a-fA-F]+$/.test(codePointHex)
           ) {
-            let value5: Dynamic = parseInt(value4, 16);
-            if (value5 <= 1114111)
+            let codePoint: Dynamic = parseInt(codePointHex, 16);
+            if (codePoint <= 1114111)
               return {
-                ch: String.fromCodePoint(value5),
-                next: value3 + 1,
+                ch: String.fromCodePoint(codePoint),
+                next: closeBraceIndex + 1,
               };
           }
         }
         return {
-          ch: value,
-          next: options + 1,
+          ch: escapeChar,
+          next: escapeIndex + 1,
         };
       }
-      let value2: Dynamic = input.slice(options + 1, options + 5);
-      return value2.length === 4 && /^[0-9a-fA-F]+$/.test(value2)
+      let hex: Dynamic = source.slice(escapeIndex + 1, escapeIndex + 5);
+      return hex.length === 4 && /^[0-9a-fA-F]+$/.test(hex)
         ? {
-            ch: String.fromCharCode(parseInt(value2, 16)),
-            next: options + 5,
+            ch: String.fromCharCode(parseInt(hex, 16)),
+            next: escapeIndex + 5,
           }
         : {
-            ch: value,
-            next: options + 1,
+            ch: escapeChar,
+            next: escapeIndex + 1,
           };
     }
     case `
 `:
       return {
         ch: "",
-        next: options + 1,
+        next: escapeIndex + 1,
       };
     case "\r":
       return {
         ch: "",
         next:
-          input[options + 1] ===
+          source[escapeIndex + 1] ===
           `
 `
-            ? options + 2
-            : options + 1,
+            ? escapeIndex + 2
+            : escapeIndex + 1,
       };
     default:
       return {
-        ch: value,
-        next: options + 1,
+        ch: escapeChar,
+        next: escapeIndex + 1,
       };
   }
 }
-function isScriptRegexPosition(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options - 1;
-  for (; value >= 0 && (input[value] === " " || input[value] === "	"); )
-    value--;
-  if (value < 0) return true;
-  let value2: Dynamic = input[value];
-  if (/[\w$\])]/.test(value2)) {
-    let value3: Dynamic = value;
-    for (; value3 >= 0 && /[\w$]/.test(input[value3]); ) value3--;
-    let value4: Dynamic = input.slice(value3 + 1, value + 1);
+function isScriptRegexPosition(source?: Dynamic, position?: Dynamic): Dynamic {
+  let cursor: Dynamic = position - 1;
+  for (; cursor >= 0 && (source[cursor] === " " || source[cursor] === "	"); )
+    cursor--;
+  if (cursor < 0) return true;
+  let previousChar: Dynamic = source[cursor];
+  if (/[\w$\])]/.test(previousChar)) {
+    let wordStart: Dynamic = cursor;
+    for (; wordStart >= 0 && /[\w$]/.test(source[wordStart]); ) wordStart--;
+    let word: Dynamic = source.slice(wordStart + 1, cursor + 1);
     return (
-      value4 === "return" ||
-      value4 === "typeof" ||
-      value4 === "delete" ||
-      value4 === "void" ||
-      value4 === "throw" ||
-      value4 === "in" ||
-      value4 === "of" ||
-      value4 === "instanceof" ||
-      value4 === "new" ||
-      value4 === "yield" ||
-      value4 === "await" ||
-      value4 === "case" ||
-      value4 === "do" ||
-      value4 === "else"
+      word === "return" ||
+      word === "typeof" ||
+      word === "delete" ||
+      word === "void" ||
+      word === "throw" ||
+      word === "in" ||
+      word === "of" ||
+      word === "instanceof" ||
+      word === "new" ||
+      word === "yield" ||
+      word === "await" ||
+      word === "case" ||
+      word === "do" ||
+      word === "else"
     );
   }
   return true;
 }
-function tokenizeScriptLiterals(items?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
+function tokenizeScriptLiterals(source?: Dynamic): Dynamic {
+  let literals: Dynamic = [],
     index: Dynamic = 0,
-    length: Dynamic = items.length;
+    length: Dynamic = source.length;
   for (; index < length; ) {
-    let value: Dynamic = items[index];
-    if (value === "/" && items[index + 1] === "/") {
+    let char: Dynamic = source[index];
+    if (char === "/" && source[index + 1] === "/") {
       for (
         index += 2;
         index < length &&
-        items[index] !==
+        source[index] !==
           `
 `;
 
@@ -167,122 +167,122 @@ function tokenizeScriptLiterals(items?: Dynamic): Dynamic {
         index++;
       continue;
     }
-    if (value === "/" && items[index + 1] === "*") {
+    if (char === "/" && source[index + 1] === "*") {
       for (
         index += 2;
-        index < length && !(items[index] === "*" && items[index + 1] === "/");
+        index < length && !(source[index] === "*" && source[index + 1] === "/");
 
       )
         index++;
       index += 2;
       continue;
     }
-    if (value === "/" && isScriptRegexPosition(items, index)) {
+    if (char === "/" && isScriptRegexPosition(source, index)) {
       index++;
-      let flag: Dynamic = false;
+      let isInCharClass: Dynamic = false;
       for (; index < length; ) {
-        let value2: Dynamic = items[index];
-        if (value2 === "\\") {
+        let regexChar: Dynamic = source[index];
+        if (regexChar === "\\") {
           index += 2;
           continue;
         }
-        if (value2 === "[") flag = true;
-        else if (value2 === "]") flag = false;
-        else if (value2 === "/" && !flag) {
+        if (regexChar === "[") isInCharClass = true;
+        else if (regexChar === "]") isInCharClass = false;
+        else if (regexChar === "/" && !isInCharClass) {
           index++;
           break;
         } else if (
-          value2 ===
+          regexChar ===
           `
 `
         )
           break;
         index++;
       }
-      for (; index < length && /[a-z]/.test(items[index]); ) index++;
+      for (; index < length && /[a-z]/.test(source[index]); ) index++;
       continue;
     }
-    if (value === "'" || value === '"' || value === "`") {
-      let value2: Dynamic = value,
-        value3: Dynamic = index;
+    if (char === "'" || char === '"' || char === "`") {
+      let quote: Dynamic = char,
+        startIndex: Dynamic = index;
       index++;
       let text: Dynamic = "",
-        flag: Dynamic = false,
-        flag2: Dynamic = false;
+        hasInterpolation: Dynamic = false,
+        isClosed: Dynamic = false;
       for (; index < length; ) {
-        let value4: Dynamic = items[index];
-        if (value4 === "\\") {
-          let { ch: value5, next: value6 }: Dynamic =
-            decodeScriptStringEscape(items, index + 1);
-          text += value5;
-          index = value6;
+        let currentChar: Dynamic = source[index];
+        if (currentChar === "\\") {
+          let { ch: decodedChar, next: nextIndex }: Dynamic =
+            decodeScriptStringEscape(source, index + 1);
+          text += decodedChar;
+          index = nextIndex;
           continue;
         }
-        if (value4 === value2) {
+        if (currentChar === quote) {
           index++;
-          flag2 = true;
+          isClosed = true;
           break;
         }
-        if (value2 === "`" && value4 === "$" && items[index + 1] === "{") {
-          flag = true;
+        if (quote === "`" && currentChar === "$" && source[index + 1] === "{") {
+          hasInterpolation = true;
           index += 2;
           let count: Dynamic = 1;
           for (; index < length && count > 0; ) {
-            items[index] === "{" ? count++ : items[index] === "}" && count--;
+            source[index] === "{" ? count++ : source[index] === "}" && count--;
             index++;
           }
           continue;
         }
         if (
-          value2 !== "`" &&
-          (value4 ===
+          quote !== "`" &&
+          (currentChar ===
             `
 ` ||
-            value4 === "\r")
+            currentChar === "\r")
         )
           break;
-        text += value4;
+        text += currentChar;
         index++;
       }
-      flag2 &&
-        !flag &&
+      isClosed &&
+        !hasInterpolation &&
         text.length >= 2 &&
-        items2.push({
+        literals.push({
           value: text,
-          start: value3,
+          start: startIndex,
           end: index,
-          quote: value2,
+          quote: quote,
         });
       continue;
     }
     index++;
   }
-  return items2;
+  return literals;
 }
-function quoteScriptString(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic =
-      options === "`" || options === "'" || options === '"' ? options : "'",
+function quoteScriptString(rawText?: Dynamic, preferredQuote?: Dynamic): Dynamic {
+  let quote: Dynamic =
+      preferredQuote === "`" || preferredQuote === "'" || preferredQuote === '"' ? preferredQuote : "'",
     text: Dynamic = "";
-  for (let value2 of input as Dynamic)
-    value2 === "\\"
+  for (let char of rawText as Dynamic)
+    char === "\\"
       ? (text += "\\\\")
-      : value2 === value
-        ? (text += "\\" + value)
-        : value2 ===
+      : char === quote
+        ? (text += "\\" + quote)
+        : char ===
             `
 `
           ? (text +=
-              value === "`"
+              quote === "`"
                 ? `
 `
                 : "\\n")
-          : value2 === "\r"
+          : char === "\r"
             ? (text += "\\r")
-            : value === "`" && value2 === "$"
+            : quote === "`" && char === "$"
               ? (text += "\\$")
-              : (text += value2);
+              : (text += char);
   text = text.replace(/<(\/?(?:script|x-dc)|!--)/gi, "\\x3C$1");
-  return value + text + value;
+  return quote + text + quote;
 }
 export {
   CodeScriptLiteralsAFAFPattern,

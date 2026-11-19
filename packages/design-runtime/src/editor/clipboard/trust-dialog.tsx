@@ -5,7 +5,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { Button } from "../../cds/button/button";
-import { DialogDialogRootTriggerPopupConfig_2 } from "../../cds/dialog/dialog";
+import { DialogDialogRootTriggerPopupConfig_2 as Dialog } from "../../cds/dialog/dialog";
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { toModuleNamespace } from "../../module-helpers";
@@ -17,34 +17,34 @@ var ClipboardTrustDialogAlias: Dynamic;
 var ClipboardTrustDialogConstant: Dynamic;
 var ClipboardTrustDialogSubscribers: Dynamic;
 var ClipboardTrustDialogHandler: Dynamic;
-function askTrustForCodePaste(input?: Dynamic, options?: Dynamic): Dynamic {
-  return new Promise((input2?: Dynamic): Dynamic => {
-    if (options.aborted || ClipboardTrustDialogSubscribers.size === 0)
-      return input2("cancel");
-    let callback: Dynamic = (): Dynamic => state.settle("cancel"),
+function askTrustForCodePaste(pasteCount?: Dynamic, signal?: Dynamic): Dynamic {
+  return new Promise((resolve?: Dynamic): Dynamic => {
+    if (signal.aborted || ClipboardTrustDialogSubscribers.size === 0)
+      return resolve("cancel");
+    let cancelOnAbort: Dynamic = (): Dynamic => state.settle("cancel"),
       state: Dynamic = {
         id: ClipboardTrustDialogConstant++,
-        n: input,
-        settle: (input3?: Dynamic): Dynamic => {
-          options.removeEventListener("abort", callback);
+        n: pasteCount,
+        settle: (decision?: Dynamic): Dynamic => {
+          signal.removeEventListener("abort", cancelOnAbort);
           ClipboardTrustDialogAlias === state &&
             ((ClipboardTrustDialogAlias = null),
             ClipboardTrustDialogHandler());
-          input2(input3);
+          resolve(decision);
         },
       };
-    options.addEventListener("abort", callback, {
+    signal.addEventListener("abort", cancelOnAbort, {
       once: true,
     });
-    let value: Dynamic = ClipboardTrustDialogAlias;
+    let previousRequest: Dynamic = ClipboardTrustDialogAlias;
     ClipboardTrustDialogAlias = state;
-    value?.settle("cancel");
+    previousRequest?.settle("cancel");
     ClipboardTrustDialogHandler();
   });
 }
 function CodePasteTrustDialog(): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactClipboardTrustDialog.useState)(
+  let [pasteRequest, setPasteRequest]: Dynamic = (0, reactClipboardTrustDialog.useState)(
     (): Dynamic =>
       ClipboardTrustDialogAlias
         ? {
@@ -54,75 +54,75 @@ function CodePasteTrustDialog(): Dynamic {
         : null,
   );
   (0, reactClipboardTrustDialog.useEffect)((): Dynamic => {
-    let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      value2(
-        (input2?: Dynamic): Dynamic =>
-          input
+    let handleRequest: Dynamic = (incomingRequest?: Dynamic): Dynamic =>
+      setPasteRequest(
+        (currentRequest?: Dynamic): Dynamic =>
+          incomingRequest
             ? {
-                p: input,
+                p: incomingRequest,
                 open: true,
               }
-            : input2 && {
-                ...input2,
+            : currentRequest && {
+                ...currentRequest,
                 open: false,
               },
       );
-    ClipboardTrustDialogSubscribers.add(callback);
+    ClipboardTrustDialogSubscribers.add(handleRequest);
     return (): Dynamic => {
-      ClipboardTrustDialogSubscribers.delete(callback);
+      ClipboardTrustDialogSubscribers.delete(handleRequest);
       ClipboardTrustDialogSubscribers.size === 0 &&
         ClipboardTrustDialogAlias?.settle("cancel");
     };
   }, []);
-  let value3: Dynamic = (0, reactClipboardTrustDialog.useRef)(null);
-  if (!value) return null;
-  let { p: value4, open: value5 }: Dynamic = value;
+  let initialFocusRef: Dynamic = (0, reactClipboardTrustDialog.useRef)(null);
+  if (!pasteRequest) return null;
+  let { p: activeRequest, open: isDialogOpen }: Dynamic = pasteRequest;
   return (() => {
-    const _Component = DialogDialogRootTriggerPopupConfig_2.Root;
+    const _Component = Dialog.Root;
     const _props = {
-      open: value5,
-      onOpenChange: (input?: Dynamic): Dynamic => {
-        input || value4.settle("cancel");
+      open: isDialogOpen,
+      onOpenChange: (isOpen?: Dynamic): Dynamic => {
+        isOpen || activeRequest.settle("cancel");
       },
-      onOpenChangeComplete: (input?: Dynamic): Dynamic => {
-        input ||
-          value2(
-            (input2?: Dynamic): Dynamic =>
-              input2?.p === value4 ? null : input2,
+      onOpenChangeComplete: (isOpen?: Dynamic): Dynamic => {
+        isOpen ||
+          setPasteRequest(
+            (currentRequest?: Dynamic): Dynamic =>
+              currentRequest?.p === activeRequest ? null : currentRequest,
           );
       },
       children: (
-        <DialogDialogRootTriggerPopupConfig_2.Popup
+        <Dialog.Popup
           size={"sm"}
-          initialFocus={value3}
+          initialFocus={initialFocusRef}
           data-testid={"design-paste-code-dialog"}
         >
-          <DialogDialogRootTriggerPopupConfig_2.Header
+          <Dialog.Header
             description={ClipboardTrustDialogTitleMessageKeepCodeConfig.message(
-              value4.n,
+              activeRequest.n,
             )}
           >
             {ClipboardTrustDialogTitleMessageKeepCodeConfig.title}
-          </DialogDialogRootTriggerPopupConfig_2.Header>
-          <DialogDialogRootTriggerPopupConfig_2.Footer>
+          </Dialog.Header>
+          <Dialog.Footer>
             <Button
-              ref={value3}
+              ref={initialFocusRef}
               data-initial-focus={""}
-              onClick={(): Dynamic => value4.settle("without-code")}
+              onClick={(): Dynamic => activeRequest.settle("without-code")}
             >
               {ClipboardTrustDialogTitleMessageKeepCodeConfig.dropCode}
             </Button>
             <Button
               variant={"primary"}
-              onClick={(): Dynamic => value4.settle("with-code")}
+              onClick={(): Dynamic => activeRequest.settle("with-code")}
             >
               {ClipboardTrustDialogTitleMessageKeepCodeConfig.keepCode}
             </Button>
-          </DialogDialogRootTriggerPopupConfig_2.Footer>
-        </DialogDialogRootTriggerPopupConfig_2.Popup>
+          </Dialog.Footer>
+        </Dialog.Popup>
       ),
     } as const;
-    const _key = value4.id;
+    const _key = activeRequest.id;
     return <_Component key={_key} {..._props} />;
   })();
 }
@@ -150,21 +150,21 @@ export function installEditorClipboardTrustDialog(): () => void {
     );
     ClipboardTrustDialogTitleMessageKeepCodeConfig = {
       get title() { return uiMessage("inspector.trustDialog.pasteWithCode"); },
-      message: (input?: Dynamic): Dynamic =>
-        input === 1
+      message: (count?: Dynamic): Dynamic =>
+        count === 1
           ? uiMessage("inspector.trustDialog.onlyIfYouCopiedThis")
           : uiMessage("inspector.trustDialog.onlyIfYouCopiedThese"),
       keepCode: "Paste with code",
       dropCode: "Paste without code",
-      dropped: (input?: Dynamic): Dynamic =>
-        input === 1 ? ", without its code" : ", without their code",
+      dropped: (count?: Dynamic): Dynamic =>
+        count === 1 ? ", without its code" : ", without their code",
     };
     ClipboardTrustDialogAlias = null;
     ClipboardTrustDialogConstant = 1;
     ClipboardTrustDialogSubscribers = new Set();
     ClipboardTrustDialogHandler = (): Dynamic => {
-      for (let value of ClipboardTrustDialogSubscribers as Dynamic)
-        value(ClipboardTrustDialogAlias);
+      for (let subscriber of ClipboardTrustDialogSubscribers as Dynamic)
+        subscriber(ClipboardTrustDialogAlias);
     };
   };
 }

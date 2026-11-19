@@ -13,45 +13,45 @@ function parseRgbaColor(cssColor?: Dynamic): Dynamic {
   let normalized: Dynamic = cssColor.trim(),
     hexDigits: Dynamic = hexColorPattern.exec(normalized)?.[1];
   if (hexDigits !== undefined) {
-    let value6: Dynamic =
+    let expandedHex: Dynamic =
         hexDigits.length <= 4
           ? hexDigits.replace(
               /[0-9a-f]/gi,
-              (input?: Dynamic): Dynamic => input + input,
+              (char?: Dynamic): Dynamic => char + char,
             )
           : hexDigits,
-      callback2: Dynamic = (input?: Dynamic): Dynamic =>
-        parseInt(value6.slice(input * 2, input * 2 + 2), 16) / 255;
+      channelAt: Dynamic = (index?: Dynamic): Dynamic =>
+        parseInt(expandedHex.slice(index * 2, index * 2 + 2), 16) / 255;
     return {
-      r: callback2(0),
-      g: callback2(1),
-      b: callback2(2),
-      a: value6.length === 8 ? callback2(3) : 1,
+      r: channelAt(0),
+      g: channelAt(1),
+      b: channelAt(2),
+      a: expandedHex.length === 8 ? channelAt(3) : 1,
     };
   }
-  let value: Dynamic = rgbColorPattern.exec(normalized);
-  if (value === null) return;
-  let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      clampColorChannel(Number(input) / (options === "%" ? 100 : 255)),
-    value2: Dynamic = callback(value[1], value[2]),
-    value3: Dynamic = callback(value[3], value[4]),
-    value4: Dynamic = callback(value[5], value[6]),
-    value5: Dynamic =
-      value[7] === undefined
+  let rgbMatch: Dynamic = rgbColorPattern.exec(normalized);
+  if (rgbMatch === null) return;
+  let normalizeChannel: Dynamic = (raw?: Dynamic, unit?: Dynamic): Dynamic =>
+      clampColorChannel(Number(raw) / (unit === "%" ? 100 : 255)),
+    red: Dynamic = normalizeChannel(rgbMatch[1], rgbMatch[2]),
+    green: Dynamic = normalizeChannel(rgbMatch[3], rgbMatch[4]),
+    blue: Dynamic = normalizeChannel(rgbMatch[5], rgbMatch[6]),
+    alpha: Dynamic =
+      rgbMatch[7] === undefined
         ? 1
-        : clampColorChannel(Number(value[7]) / (value[8] === "%" ? 100 : 1));
-  return [value2, value3, value4, value5].every(Number.isFinite)
+        : clampColorChannel(Number(rgbMatch[7]) / (rgbMatch[8] === "%" ? 100 : 1));
+  return [red, green, blue, alpha].every(Number.isFinite)
     ? {
-        r: value2,
-        g: value3,
-        b: value4,
-        a: value5,
+        r: red,
+        g: green,
+        b: blue,
+        a: alpha,
       }
     : undefined;
 }
 function relativeLuminance(color?: Dynamic): Dynamic {
-  let linearize: Dynamic = (input?: Dynamic): Dynamic =>
-    input <= 0.03928 ? input / 12.92 : ((input + 0.055) / 1.055) ** 2.4;
+  let linearize: Dynamic = (channel?: Dynamic): Dynamic =>
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   return (
     0.2126 * linearize(color.r) +
     0.7152 * linearize(color.g) +
@@ -62,8 +62,8 @@ function compositeRgbaColor(
   foreground?: Dynamic,
   background?: Dynamic,
 ): Dynamic {
-  let blend: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-    foreground.a * input + (1 - foreground.a) * options;
+  let blend: Dynamic = (foregroundChannel?: Dynamic, backgroundChannel?: Dynamic): Dynamic =>
+    foreground.a * foregroundChannel + (1 - foreground.a) * backgroundChannel;
   return {
     r: blend(foreground.r, background.r),
     g: blend(foreground.g, background.g),
@@ -80,35 +80,35 @@ function contrastRatio(foreground?: Dynamic, background?: Dynamic): Dynamic {
     ? (foregroundLuminance + 0.05) / (backgroundLuminance + 0.05)
     : (backgroundLuminance + 0.05) / (foregroundLuminance + 0.05);
 }
-function evaluateColorContrast(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic =
-    typeof input == "string" ? parseRgbaColor(input) : input;
-  if (value === undefined) return;
-  let value2: Dynamic = contrastThresholds[options.role ?? "text"],
-    value3: Dynamic = Array.isArray(options.against)
-      ? options.against
-      : [options.against],
-    items: Dynamic = [];
-  for (let value4 of value3 as Dynamic) {
-    let value5: Dynamic = parseRgbaColor(value4.css);
-    if (value5 === undefined) continue;
-    let value6: Dynamic = contrastRatio(value, {
-      ...value5,
+function evaluateColorContrast(color?: Dynamic, settings?: Dynamic): Dynamic {
+  let foreground: Dynamic =
+    typeof color == "string" ? parseRgbaColor(color) : color;
+  if (foreground === undefined) return;
+  let minRatio: Dynamic = contrastThresholds[settings.role ?? "text"],
+    grounds: Dynamic = Array.isArray(settings.against)
+      ? settings.against
+      : [settings.against],
+    results: Dynamic = [];
+  for (let ground of grounds as Dynamic) {
+    let groundColor: Dynamic = parseRgbaColor(ground.css);
+    if (groundColor === undefined) continue;
+    let ratio: Dynamic = contrastRatio(foreground, {
+      ...groundColor,
       a: 1,
     });
-    items.push({
-      ground: value4,
-      ratio: value6,
-      min: value2,
-      passes: value6 + ColorContrastConstant >= value2,
+    results.push({
+      ground: ground,
+      ratio: ratio,
+      min: minRatio,
+      passes: ratio + ColorContrastConstant >= minRatio,
     });
   }
-  return items.length > 0 ? items : undefined;
+  return results.length > 0 ? results : undefined;
 }
 function worstContrastResult(results?: Dynamic): Dynamic {
   let worst: Dynamic = results[0];
-  for (let value of results as Dynamic)
-    value.ratio < worst.ratio && (worst = value);
+  for (let result of results as Dynamic)
+    result.ratio < worst.ratio && (worst = result);
   return worst;
 }
 function formatContrastRatio(ratio?: Dynamic): Dynamic {
@@ -118,8 +118,8 @@ function formatSpokenContrastRatio(ratio?: Dynamic): Dynamic {
   return formatContrastNumber(ratio) + " to 1";
 }
 function rgbaToHex(color?: Dynamic): Dynamic {
-  let channelToHex: Dynamic = (input?: Dynamic): Dynamic =>
-    Math.round(clampColorChannel(input) * 255)
+  let channelToHex: Dynamic = (channel?: Dynamic): Dynamic =>
+    Math.round(clampColorChannel(channel) * 255)
       .toString(16)
       .padStart(2, "0")
       .toUpperCase();
@@ -153,20 +153,20 @@ export function installEditorColorContrast(): () => void {
     hexColorPattern = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
     rgbColorPattern =
       /^rgba?\(\s*([\d.]+)(%?)[\s,]+([\d.]+)(%?)[\s,]+([\d.]+)(%?)(?:[\s,/]+([\d.]+)(%?))?\s*\)$/i;
-    clampColorChannel = (input?: Dynamic): Dynamic =>
-      input < 0 ? 0 : input > 1 ? 1 : input;
+    clampColorChannel = (channel?: Dynamic): Dynamic =>
+      channel < 0 ? 0 : channel > 1 ? 1 : channel;
     ColorContrastConstant = 1e-9;
     contrastThresholds = {
       text: 4.5,
       largeText: 3,
       graphic: 3,
     };
-    formatContrastNumber = (input?: Dynamic): Dynamic => {
-      let value: Dynamic =
-        Math.floor((input + ColorContrastConstant) * 10) / 10;
-      return value < 10 || !Number.isInteger(value)
-        ? value.toFixed(1)
-        : String(value);
+    formatContrastNumber = (ratio?: Dynamic): Dynamic => {
+      let rounded: Dynamic =
+        Math.floor((ratio + ColorContrastConstant) * 10) / 10;
+      return rounded < 10 || !Number.isInteger(rounded)
+        ? rounded.toFixed(1)
+        : String(rounded);
     };
   };
 }

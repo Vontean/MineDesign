@@ -8,7 +8,7 @@ import { initializeNpm_usehooks_ts_p0, load_react } from "../../dependencies";
 import { discardedCodeChangesAnnouncement, sourceLineErrorAnnouncement } from "../accessibility/announcements";
 import { announce } from "../accessibility/announcer";
 import { ChromeScrollbarLabel, FloatingScrollbar } from "../chrome/scrollbar";
-import { CodePropertyCodeConstant_2, CodePropertyCodeResolvedValue, getSelectionCodeEntries, parseInspectorCode, selectionCodeText, serializeSelectionCode, useCodeErrorAnnouncement } from "./property-code";
+import { CodePropertyCodeConstant_2 as discardAnnouncementDelayMs, CodePropertyCodeResolvedValue, getSelectionCodeEntries, parseInspectorCode, selectionCodeText, serializeSelectionCode, useCodeErrorAnnouncement } from "./property-code";
 import { reactInspectorAnnotation } from "../inspector/annotation";
 import { ClassStyleTargets, findInspectorOutlineNode, isTextStyleProperty, sharedInheritedTextStyle } from "../inspector/class-targets";
 import { toModuleNamespace } from "../../module-helpers";
@@ -27,326 +27,326 @@ function InspectorCodePanel({
   onEdits: onEdits,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [codeText, setCodeText]: Dynamic = (0,
     reactInspectorAnnotation.useState)(
       (): Dynamic => selectionCodeText(model, tids),
     ),
-    [value3, value4]: Dynamic = (0,
+    [inheritedGroups, setInheritedGroups]: Dynamic = (0,
     reactInspectorAnnotation.useState)([]),
-    [value5, value6]: Dynamic = (0,
+    [codeError, setCodeError]: Dynamic = (0,
     reactInspectorAnnotation.useState)(null),
-    value7: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
-    value8: Dynamic = (0, reactInspectorAnnotation.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value7.current = input;
+    textareaElementRef: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
+    setTextareaRef: Dynamic = (0, reactInspectorAnnotation.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        textareaElementRef.current = element;
         typeof textareaRef == "function"
-          ? textareaRef(input)
-          : textareaRef && (textareaRef.current = input);
+          ? textareaRef(element)
+          : textareaRef && (textareaRef.current = element);
       },
       [textareaRef],
     ),
-    value9: Dynamic = (0, reactInspectorAnnotation.useRef)(new Map()),
-    value10: Dynamic = (0, reactInspectorAnnotation.useRef)(false),
-    value11: Dynamic = (0, reactInspectorAnnotation.useRef)(false),
-    value12: Dynamic = (0, reactInspectorAnnotation.useMemo)(
+    appliedPropsRef: Dynamic = (0, reactInspectorAnnotation.useRef)(new Map()),
+    isFocusedRef: Dynamic = (0, reactInspectorAnnotation.useRef)(false),
+    hasPendingEditRef: Dynamic = (0, reactInspectorAnnotation.useRef)(false),
+    resetFromModel: Dynamic = (0, reactInspectorAnnotation.useMemo)(
       (): Dynamic => (): Dynamic => {
-        let value30: Dynamic = getSelectionCodeEntries(
+        let selectionCode: Dynamic = getSelectionCodeEntries(
           model,
           tids,
         );
-        value9.current = new Map(
-          value30.entries.map(
-            (input?: Dynamic): Dynamic => [input.key, input.value],
+        appliedPropsRef.current = new Map(
+          selectionCode.entries.map(
+            (entry?: Dynamic): Dynamic => [entry.key, entry.value],
           ),
         );
-        value2(
-          serializeSelectionCode(value30.entries, value30.mixed),
+        setCodeText(
+          serializeSelectionCode(selectionCode.entries, selectionCode.mixed),
         );
-        value4(sharedInheritedTextStyle(model, tids));
-        value6(null);
-        value11.current = false;
+        setInheritedGroups(sharedInheritedTextStyle(model, tids));
+        setCodeError(null);
+        hasPendingEditRef.current = false;
       },
       [model, tids],
     ),
-    value13: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      value13.current &&
-        (window as Dynamic).clearTimeout(value13.current.timer);
-      let value30: Dynamic = (window as Dynamic).setTimeout((): Dynamic => {
-        value13.current = null;
-        announce(input);
-      }, options);
-      value13.current = {
-        sentence: input,
-        timer: value30,
+    pendingAnnouncementRef: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
+    scheduleAnnouncement: Dynamic = (sentence?: Dynamic, delayMs?: Dynamic): Dynamic => {
+      pendingAnnouncementRef.current &&
+        (window as Dynamic).clearTimeout(pendingAnnouncementRef.current.timer);
+      let timer: Dynamic = (window as Dynamic).setTimeout((): Dynamic => {
+        pendingAnnouncementRef.current = null;
+        announce(sentence);
+      }, delayMs);
+      pendingAnnouncementRef.current = {
+        sentence: sentence,
+        timer: timer,
       };
     },
-    value14: Dynamic = (0, reactInspectorAnnotation.useEffectEvent)(
+    flushPendingAnnouncement: Dynamic = (0, reactInspectorAnnotation.useEffectEvent)(
       (): Dynamic => {
-        value13.current &&
-          callback(
-            value13.current.sentence,
+        pendingAnnouncementRef.current &&
+          scheduleAnnouncement(
+            pendingAnnouncementRef.current.sentence,
             CodePropertyCodeResolvedValue,
           );
       },
     );
   (0, reactInspectorAnnotation.useEffect)((): Dynamic => {
-    value12();
-    value14();
+    resetFromModel();
+    flushPendingAnnouncement();
   }, [selKey]);
   (0, reactInspectorAnnotation.useEffect)((): Dynamic => {
-    value10.current || value12();
+    isFocusedRef.current || resetFromModel();
   }, [modelSig, model]);
-  let value15: Dynamic = (0, reactInspectorAnnotation.useRef)(null);
+  let commitTimerRef: Dynamic = (0, reactInspectorAnnotation.useRef)(null);
   (0, reactInspectorAnnotation.useEffect)(
     (): Dynamic => (): Dynamic => {
-      value15.current != null &&
-        (window as Dynamic).clearTimeout(value15.current);
+      commitTimerRef.current != null &&
+        (window as Dynamic).clearTimeout(commitTimerRef.current);
     },
     [],
   );
-  let callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value30: Dynamic = parseInspectorCode(input);
-      if (!value30.ok) {
-        value6({
-          line: value30.line,
-          message: value30.message,
+  let applyCode: Dynamic = (codeSource?: Dynamic, isLive?: Dynamic): Dynamic => {
+      let parsed: Dynamic = parseInspectorCode(codeSource);
+      if (!parsed.ok) {
+        setCodeError({
+          line: parsed.line,
+          message: parsed.message,
         });
         return;
       }
-      value6(null);
-      value11.current = false;
+      setCodeError(null);
+      hasPendingEditRef.current = false;
       let items: Dynamic = [];
-      for (let [value31, value32] of value30.map as Dynamic)
-        value9.current.get(value31) !== value32 &&
+      for (let [property, propertyValue] of parsed.map as Dynamic)
+        appliedPropsRef.current.get(property) !== propertyValue &&
           items.push({
-            prop: value31,
-            value: value32,
+            prop: property,
+            value: propertyValue,
           });
-      for (let value31 of value9.current.keys() as Dynamic)
-        value30.map.has(value31) ||
+      for (let property of appliedPropsRef.current.keys() as Dynamic)
+        parsed.map.has(property) ||
           items.push({
-            prop: value31,
+            prop: property,
             value: null,
           });
       items.length !== 0 &&
-        ((value9.current = value30.map),
+        ((appliedPropsRef.current = parsed.map),
         onEdits(items, {
-          live: options,
+          live: isLive,
         }));
     },
-    value16: Dynamic = value5
-      ? sourceLineErrorAnnouncement(value5.line, value5.message)
+    errorAnnouncement: Dynamic = codeError
+      ? sourceLineErrorAnnouncement(codeError.line, codeError.message)
       : undefined,
-    value17: Dynamic = (0, reactInspectorAnnotation.useId)();
-  useCodeErrorAnnouncement(value16, value);
-  let callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      value2(input);
+    errorId: Dynamic = (0, reactInspectorAnnotation.useId)();
+  useCodeErrorAnnouncement(errorAnnouncement, codeText);
+  let handleCodeChange: Dynamic = (nextText?: Dynamic): Dynamic => {
+      setCodeText(nextText);
       !readOnly &&
-        ((value11.current = true),
-        value15.current != null &&
-          (window as Dynamic).clearTimeout(value15.current),
-        (value15.current = (window as Dynamic).setTimeout(
-          (): Dynamic => callback2(input, true),
+        ((hasPendingEditRef.current = true),
+        commitTimerRef.current != null &&
+          (window as Dynamic).clearTimeout(commitTimerRef.current),
+        (commitTimerRef.current = (window as Dynamic).setTimeout(
+          (): Dynamic => applyCode(nextText, true),
           220,
         )));
     },
-    value18: Dynamic = tids.length > 1,
-    value19: Dynamic = value18 ? uiMessage("inspector.inspectorCodePanel.theseElements") : uiMessage("inspector.inspectorCodePanel.thisElement"),
-    callback4: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
+    hasManyElements: Dynamic = tids.length > 1,
+    subjectLabel: Dynamic = hasManyElements ? uiMessage("inspector.inspectorCodePanel.theseElements") : uiMessage("inspector.inspectorCodePanel.thisElement"),
+    getLockReason: Dynamic = (property?: Dynamic, propertyValue?: Dynamic): Dynamic => {
       if (readOnly)
         return (
-          (value18 ? uiMessage("inspector.inspectorCodePanel.theseElementsAre") : uiMessage("inspector.inspectorCodePanel.thisElementIs")) +
+          (hasManyElements ? uiMessage("inspector.inspectorCodePanel.theseElementsAre") : uiMessage("inspector.inspectorCodePanel.thisElementIs")) +
           " read-only here."
         );
-      if (isTextStyleProperty(input, options))
+      if (isTextStyleProperty(property, propertyValue))
         return uiMessage("inspector.inspectorCodePanel.thisValueIsRelativeTo");
-      if (/var\(|\{\{/i.test(options))
+      if (/var\(|\{\{/i.test(propertyValue))
         return uiMessage("inspector.inspectorCodePanel.thisValueDependsOnWhere");
-      let value30: Dynamic = parseInspectorCode(value);
-      if (!value30.ok) return uiMessage("inspector.inspectorCodePanel.fixTheMarkedLineIn");
-      if (value30.map.has(input))
-        return uiMessage("inspector.inspectorCodePanel.theFieldAlreadyHasA") + input + ".";
-      if (!parseInspectorCode(input + ": " + options + ";").ok)
+      let parsedCode: Dynamic = parseInspectorCode(codeText);
+      if (!parsedCode.ok) return uiMessage("inspector.inspectorCodePanel.fixTheMarkedLineIn");
+      if (parsedCode.map.has(property))
+        return uiMessage("inspector.inspectorCodePanel.theFieldAlreadyHasA") + property + ".";
+      if (!parseInspectorCode(property + ": " + propertyValue + ";").ok)
         return uiMessage("inspector.inspectorCodePanel.thisValueCanTBe");
     },
-    value20: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
-    value21: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
-    value22: Dynamic = (0, reactInspectorAnnotation.useRef)(0),
-    callback5: Dynamic = (): Dynamic => [
-      ...(value20.current?.querySelectorAll(
+    inheritedPanelRef: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
+    focusIndexRef: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
+    lastSetAtRef: Dynamic = (0, reactInspectorAnnotation.useRef)(0),
+    getSetButtons: Dynamic = (): Dynamic => [
+      ...(inheritedPanelRef.current?.querySelectorAll(
         "[data-inherited-set]:not(:disabled)",
       ) ?? []),
     ],
-    callback6: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (callback4(input, options) !== undefined) return;
-      let value30: Dynamic = Date.now();
-      if (value30 - value22.current < 400) return;
-      value22.current = value30;
-      value15.current != null &&
-        (window as Dynamic).clearTimeout(value15.current);
-      let value31: Dynamic = value.split(`
+    handleInheritedSet: Dynamic = (property?: Dynamic, propertyValue?: Dynamic): Dynamic => {
+      if (getLockReason(property, propertyValue) !== undefined) return;
+      let now: Dynamic = Date.now();
+      if (now - lastSetAtRef.current < 400) return;
+      lastSetAtRef.current = now;
+      commitTimerRef.current != null &&
+        (window as Dynamic).clearTimeout(commitTimerRef.current);
+      let lines: Dynamic = codeText.split(`
 `),
-        value32: Dynamic = value31.findIndex(
-          (input2?: Dynamic): Dynamic => input2.trim().startsWith("@"),
+        atRuleIndex: Dynamic = lines.findIndex(
+          (line?: Dynamic): Dynamic => line.trim().startsWith("@"),
         ),
-        value33: Dynamic = (value32 < 0 ? value31 : value31.slice(0, value32))
+        declarations: Dynamic = (atRuleIndex < 0 ? lines : lines.slice(0, atRuleIndex))
           .join(
             `
 `,
           )
           .trimEnd(),
-        value34: Dynamic =
-          value32 < 0
+        atRuleText: Dynamic =
+          atRuleIndex < 0
             ? ""
-            : value31.slice(value32).join(`
+            : lines.slice(atRuleIndex).join(`
 `);
-      value21.current = callback5().findIndex(
-        (input2?: Dynamic): Dynamic =>
-          input2 === (document as Dynamic).activeElement,
+      focusIndexRef.current = getSetButtons().findIndex(
+        (button?: Dynamic): Dynamic =>
+          button === (document as Dynamic).activeElement,
       );
-      callback2(
-        [value33, input + ": " + options + ";"].filter(
-          (input2?: Dynamic): Dynamic => input2 !== "",
+      applyCode(
+        [declarations, property + ": " + propertyValue + ";"].filter(
+          (part?: Dynamic): Dynamic => part !== "",
         ).join(`
 `) +
-          (value34 === ""
+          (atRuleText === ""
             ? ""
             : `
 
-` + value34),
+` + atRuleText),
         false,
       );
-      value12();
+      resetFromModel();
     };
   (0, reactInspectorAnnotation.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value21.current;
-    value21.current = null;
+    let current: Dynamic = focusIndexRef.current;
+    focusIndexRef.current = null;
     if (current == null || current < 0) return;
-    let value30: Dynamic = callback5();
-    value30[Math.min(current, value30.length - 1)]?.focus();
-  }, [value3]);
-  let value23: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
-    [value24, value25]: Dynamic = (0,
+    let buttons: Dynamic = getSetButtons();
+    buttons[Math.min(current, buttons.length - 1)]?.focus();
+  }, [inheritedGroups]);
+  let scrollContainerRef: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
+    [containerWidth, setContainerWidth]: Dynamic = (0,
     reactInspectorAnnotation.useState)(0);
   (0, reactInspectorAnnotation.useEffect)((): Dynamic => {
-    let current: Dynamic = value23.current;
+    let current: Dynamic = scrollContainerRef.current;
     if (!current || typeof ResizeObserver === "undefined") return;
     let observer: Dynamic = new ResizeObserver(
-      (): Dynamic => value25(current.clientWidth),
+      (): Dynamic => setContainerWidth(current.clientWidth),
     );
     observer.observe(current);
     return (): Dynamic => observer.disconnect();
   }, []);
-  let value26: Dynamic =
+  let supportsFieldSizing: Dynamic =
     typeof CSS !== "undefined" &&
     CSS.supports?.("field-sizing", "content") === true;
   (0, reactInspectorAnnotation.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value7.current;
-    if (!current || value26) return;
-    let value30: Dynamic = value23.current?.scrollTop ?? 0;
+    let current: Dynamic = textareaElementRef.current;
+    if (!current || supportsFieldSizing) return;
+    let scrollTop: Dynamic = scrollContainerRef.current?.scrollTop ?? 0;
     current.style.height = "auto";
     current.style.height = String(current.scrollHeight) + "px";
-    value23.current && (value23.current.scrollTop = value30);
-  }, [value, value24, value26]);
-  let value27: Dynamic =
+    scrollContainerRef.current && (scrollContainerRef.current.scrollTop = scrollTop);
+  }, [codeText, containerWidth, supportsFieldSizing]);
+  let outlineNode: Dynamic =
       tids.length === 1
         ? findInspectorOutlineNode(outline, tids[0])
         : null,
-    value28: Dynamic = tids.length === 1 ? model.tagName?.(tids[0]) : null,
-    value29: Dynamic = uiMessage("inspector.inspectorCodePanel.nothingSetOn") + value19;
+    tagName: Dynamic = tids.length === 1 ? model.tagName?.(tids[0]) : null,
+    emptyHint: Dynamic = uiMessage("inspector.inspectorCodePanel.nothingSetOn") + subjectLabel;
   return (
     <div
       data-testid={"dc-code-pane"}
       className={"relative flex min-h-[10rem] flex-1 flex-col"}
     >
       <div
-        ref={value23}
+        ref={scrollContainerRef}
         className={
           "flex min-h-0 flex-1 flex-col overflow-y-auto bg-surface-2 " +
           ChromeScrollbarLabel
         }
         onMouseDown={(event?: Dynamic): Dynamic => {
           event.target !== event.currentTarget ||
-            !value7.current ||
+            !textareaElementRef.current ||
             (event.preventDefault(),
-            value7.current.focus(),
-            value7.current.setSelectionRange(value.length, value.length));
+            textareaElementRef.current.focus(),
+            textareaElementRef.current.setSelectionRange(codeText.length, codeText.length));
         }}
       >
-        {value28 && (<div
+        {tagName && (<div
             data-testid={"dc-code-subject"}
             className={
               "truncate px-3.5 pt-2.5 font-mono text-[11px] text-muted select-none"
             }
           >
-            {(("<") + (value28)) + (">")}
-            {value27?.detail ? (<span className={"ml-2 font-sans"}>{value27.detail}</span>) : (null)}
+            {(("<") + (tagName)) + (">")}
+            {outlineNode?.detail ? (<span className={"ml-2 font-sans"}>{outlineNode.detail}</span>) : (null)}
           </div>)}
         <textarea
-          ref={value8}
+          ref={setTextareaRef}
           data-testid={"dc-code-text"}
-          value={value}
+          value={codeText}
           readOnly={readOnly}
           spellCheck={false}
           autoCapitalize={"off"}
           autoCorrect={"off"}
           aria-label={uiMessage("inspector.inspectorCodePanel.cSSAndAttributes")}
-          aria-invalid={value5 != null}
-          aria-describedby={value16 === undefined ? undefined : value17}
+          aria-invalid={codeError != null}
+          aria-describedby={errorAnnouncement === undefined ? undefined : errorId}
           title={
-            value5 ? (uiMessage("inspector.inspectorCodePanel.line", { value1: String(String(value5.line)), value2: String(value5.message) })) : (undefined)
+            codeError ? (uiMessage("inspector.inspectorCodePanel.line", { value1: String(String(codeError.line)), value2: String(codeError.message) })) : (undefined)
           }
           onChange={(event?: Dynamic): Dynamic =>
-            callback3(event.target.value)
+            handleCodeChange(event.target.value)
           }
           onFocus={(): Dynamic => {
-            value10.current = true;
+            isFocusedRef.current = true;
           }}
           onBlur={(): Dynamic => {
-            value10.current = false;
-            value15.current != null &&
-              ((window as Dynamic).clearTimeout(value15.current),
-              (value15.current = null));
-            callback2(value, false);
-            let value30: Dynamic = parseInspectorCode(value);
-            !value30.ok &&
-              value11.current &&
-              callback(
-                discardedCodeChangesAnnouncement(value30.line),
-                CodePropertyCodeConstant_2,
+            isFocusedRef.current = false;
+            commitTimerRef.current != null &&
+              ((window as Dynamic).clearTimeout(commitTimerRef.current),
+              (commitTimerRef.current = null));
+            applyCode(codeText, false);
+            let parsedCode: Dynamic = parseInspectorCode(codeText);
+            !parsedCode.ok &&
+              hasPendingEditRef.current &&
+              scheduleAnnouncement(
+                discardedCodeChangesAnnouncement(parsedCode.line),
+                discardAnnouncementDelayMs,
               );
-            value12();
+            resetFromModel();
           }}
-          onKeyDown={(input?: Dynamic): Dynamic => {
-            input.stopPropagation();
-            input.key === "Escape" && input.currentTarget.blur();
+          onKeyDown={(event?: Dynamic): Dynamic => {
+            event.stopPropagation();
+            event.key === "Escape" && event.currentTarget.blur();
           }}
           className={
             "block min-h-[6rem] w-full shrink-0 resize-none overflow-hidden border-0 bg-transparent px-3.5 py-3 [field-sizing:content] supports-[field-sizing:content]:min-h-[4.5rem] font-mono text-[11.5px] leading-[1.55] whitespace-pre-wrap [overflow-wrap:anywhere] text-primary outline-none [tab-size:2] " +
-            (value5 ? "shadow-[inset_-3px_0_0_#b42318]" : "")
+            (codeError ? "shadow-[inset_-3px_0_0_#b42318]" : "")
           }
           placeholder={
-            tids.length === 0 ? (uiMessage("inspector.inspectorCodePanel.selectAnElementToSee")) : (readOnly ? ((value29) + (".")) : (value29 +
+            tids.length === 0 ? (uiMessage("inspector.inspectorCodePanel.selectAnElementToSee")) : (readOnly ? ((emptyHint) + (".")) : (emptyHint +
                   ` yet.
-Type  color: red;  to style ` + value18 ? (uiMessage("inspector.inspectorCodePanel.them")) : ((uiMessage("inspector.inspectorCodePanel.it")) + ("."))))
+Type  color: red;  to style ` + hasManyElements ? (uiMessage("inspector.inspectorCodePanel.them")) : ((uiMessage("inspector.inspectorCodePanel.it")) + ("."))))
           }
         />
-        <div ref={value20} className={"contents"}>
+        <div ref={inheritedPanelRef} className={"contents"}>
           <ClassStyleTargets
-            groups={value3}
+            groups={inheritedGroups}
             outline={outline}
-            many={value18}
-            lockFor={callback4}
-            onSet={callback6}
+            many={hasManyElements}
+            lockFor={getLockReason}
+            onSet={handleInheritedSet}
             onSelectTid={onSelectTid}
             onHoverTid={onHoverTid}
           />
         </div>
       </div>
-      <FloatingScrollbar target={value23} />
-      {value16 !== undefined && (<span id={value17} hidden={true}>
-          {value16}
+      <FloatingScrollbar target={scrollContainerRef} />
+      {errorAnnouncement !== undefined && (<span id={errorId} hidden={true}>
+          {errorAnnouncement}
         </span>)}
     </div>
   );

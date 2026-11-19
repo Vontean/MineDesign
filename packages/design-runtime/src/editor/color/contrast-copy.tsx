@@ -15,83 +15,83 @@ var CloseValue: Dynamic;
 var TypeValue: Dynamic;
 var MixedValue: Dynamic;
 var ColorValue: Dynamic;
-var ColorContrastCopyLabel_2: Dynamic;
-var ColorContrastCopyLabel_3: Dynamic;
+var ColorContrastCopySearchColorsLabel: Dynamic;
+var ColorContrastCopyNoMatchesLabel: Dynamic;
 var InThisArtboardMessage: Dynamic;
-var ColorContrastCopyLabel_4: Dynamic;
-var ColorContrastCopyLabel_5: Dynamic;
+var ColorContrastCopyInTheseArtboardsLabel: Dynamic;
+var ColorContrastCopySearchStylesLabel: Dynamic;
 var IncreaseValue: Dynamic;
 var DecreaseValue: Dynamic;
 var InheritedValue: Dynamic;
-var ColorContrastCopyLabel_6: Dynamic;
-var ColorContrastCopyLabel_7: Dynamic;
+var ColorContrastCopyPerSideLabel: Dynamic;
+var ColorContrastCopyPerCornerLabel: Dynamic;
 var EditValue: Dynamic;
 var HideValue: Dynamic;
-var ColorContrastCopyLabel_8: Dynamic;
+var ColorContrastCopyValuesDifferLabel: Dynamic;
 var ColorContrastCopyTopRightBottomValues: Dynamic;
 var ColorContrastCopyItems: Dynamic;
 var OnValue: Dynamic;
-var ColorContrastCopyLabel_9: Dynamic;
-var ColorContrastCopyLabel_10: Dynamic;
-var ColorContrastCopyLabel_11: Dynamic;
+var ColorContrastCopyGoodContrastLabel: Dynamic;
+var ColorContrastCopyPoorContrastLabel: Dynamic;
+var ColorContrastCopyUseReadableShadeLabel: Dynamic;
 function invalidNumericValueMessage(
-  input?: Dynamic,
-  options?: Dynamic,
+  fieldName?: Dynamic,
+  unitHint?: Dynamic,
 ): Dynamic {
   return (
     uiMessage("inspector.contrastCopy.nothingChanged") +
-    (input ?? uiMessage("inspector.contrastCopy.thisField")) +
+    (fieldName ?? uiMessage("inspector.contrastCopy.thisField")) +
     " takes a number " +
-    (options ? uiMessage("inspector.contrastCopy.in") + options : "only") +
+    (unitHint ? uiMessage("inspector.contrastCopy.in") + unitHint : "only") +
     "."
   );
 }
-function additionalPassingGroundsMessage(input?: Dynamic): Dynamic {
-  return input > 0
+function additionalPassingGroundsMessage(count?: Dynamic): Dynamic {
+  return count > 0
     ? "; " +
-        String(input) +
-        (input === 1 ? " more ground passes" : " more grounds pass")
+        String(count) +
+        (count === 1 ? " more ground passes" : " more grounds pass")
     : "";
 }
-function contrastSentence(input?: Dynamic): Dynamic {
+function contrastSentence(result?: Dynamic): Dynamic {
   return (
-    (input.passes ? ColorContrastCopyLabel_9 : ColorContrastCopyLabel_10) +
+    (result.passes ? ColorContrastCopyGoodContrastLabel : ColorContrastCopyPoorContrastLabel) +
     ", " +
-    input.ratio +
+    result.ratio +
     " " +
     OnValue +
     " " +
-    input.ground +
-    (input.passes ? "" : ", below " + input.min)
+    result.ground +
+    (result.passes ? "" : ", below " + result.min)
   );
 }
-function detailedContrastSentence(input?: Dynamic): Dynamic {
-  let value: Dynamic = contrastSentence(input),
-    value2: Dynamic = input.alsoFailing ?? [];
-  value2.length > 0 &&
-    (value += "; also below " + input.min + " on " + value2.join(" and "));
-  return value + additionalPassingGroundsMessage(input.alsoPassing ?? 0);
+function detailedContrastSentence(result?: Dynamic): Dynamic {
+  let sentence: Dynamic = contrastSentence(result),
+    failingGrounds: Dynamic = result.alsoFailing ?? [];
+  failingGrounds.length > 0 &&
+    (sentence += "; also below " + result.min + " on " + failingGrounds.join(" and "));
+  return sentence + additionalPassingGroundsMessage(result.alsoPassing ?? 0);
 }
-function summarizedContrastSentence(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.alsoFailing ?? 0;
+function summarizedContrastSentence(result?: Dynamic): Dynamic {
+  let failingCount: Dynamic = result.alsoFailing ?? 0;
   return (
-    contrastSentence(input) +
-    (value > 0
+    contrastSentence(result) +
+    (failingCount > 0
       ? "; also too low on " +
-        String(value) +
-        (value === 1 ? " more ground" : " more grounds")
+        String(failingCount) +
+        (failingCount === 1 ? " more ground" : " more grounds")
       : "") +
-    additionalPassingGroundsMessage(input.alsoPassing ?? 0)
+    additionalPassingGroundsMessage(result.alsoPassing ?? 0)
   );
 }
-function readableShadeDescription(input?: Dynamic): Dynamic {
+function readableShadeDescription(shade?: Dynamic): Dynamic {
   return (
     uiMessage("inspector.contrastCopy.changesTheColorTo") +
-    input.hex +
+    shade.hex +
     ", contrast " +
-    input.ratio +
+    shade.ratio +
     " on " +
-    input.ground
+    shade.ground
   );
 }
 export {
@@ -100,16 +100,16 @@ export {
   ColorContrastCopyHandler,
   ColorContrastCopyItems,
   ColorContrastCopyLabel,
-  ColorContrastCopyLabel_10,
-  ColorContrastCopyLabel_11,
-  ColorContrastCopyLabel_2,
-  ColorContrastCopyLabel_3,
-  ColorContrastCopyLabel_4,
-  ColorContrastCopyLabel_5,
-  ColorContrastCopyLabel_6,
-  ColorContrastCopyLabel_7,
-  ColorContrastCopyLabel_8,
-  ColorContrastCopyLabel_9,
+  ColorContrastCopyPoorContrastLabel as ColorContrastCopyLabel_10,
+  ColorContrastCopyUseReadableShadeLabel as ColorContrastCopyLabel_11,
+  ColorContrastCopySearchColorsLabel as ColorContrastCopyLabel_2,
+  ColorContrastCopyNoMatchesLabel as ColorContrastCopyLabel_3,
+  ColorContrastCopyInTheseArtboardsLabel as ColorContrastCopyLabel_4,
+  ColorContrastCopySearchStylesLabel as ColorContrastCopyLabel_5,
+  ColorContrastCopyPerSideLabel as ColorContrastCopyLabel_6,
+  ColorContrastCopyPerCornerLabel as ColorContrastCopyLabel_7,
+  ColorContrastCopyValuesDifferLabel as ColorContrastCopyLabel_8,
+  ColorContrastCopyGoodContrastLabel as ColorContrastCopyLabel_9,
   ColorContrastCopyTopRightBottomValues,
   ColorValue,
   contrastSentence,
@@ -138,24 +138,24 @@ export function installEditorColorContrastCopy(): () => void {
     initializeCdsIndex();
     ResetValue = "Reset";
     ColorContrastCopyLabel = uiMessage("inspector.contrastCopy.moreActions");
-    ColorContrastCopyHandler = (input?: Dynamic): Dynamic => uiMessage("inspector.contrastCopy.addTo") + input;
+    ColorContrastCopyHandler = (target?: Dynamic): Dynamic => uiMessage("inspector.contrastCopy.addTo") + target;
     CloseValue = "Close";
     TypeValue = "Type";
     MixedValue = "Mixed";
     ColorValue = "Color";
-    ColorContrastCopyLabel_2 = uiMessage("inspector.contrastCopy.searchColors");
-    ColorContrastCopyLabel_3 = uiMessage("inspector.contrastCopy.noMatches");
+    ColorContrastCopySearchColorsLabel = uiMessage("inspector.contrastCopy.searchColors");
+    ColorContrastCopyNoMatchesLabel = uiMessage("inspector.contrastCopy.noMatches");
     InThisArtboardMessage = uiMessage("inspector.contrastCopy.inThisArtboard");
-    ColorContrastCopyLabel_4 = uiMessage("inspector.contrastCopy.inTheseArtboards");
-    ColorContrastCopyLabel_5 = uiMessage("inspector.contrastCopy.searchStyles");
+    ColorContrastCopyInTheseArtboardsLabel = uiMessage("inspector.contrastCopy.inTheseArtboards");
+    ColorContrastCopySearchStylesLabel = uiMessage("inspector.contrastCopy.searchStyles");
     IncreaseValue = "Increase";
     DecreaseValue = "Decrease";
     InheritedValue = "inherited";
-    ColorContrastCopyLabel_6 = uiMessage("inspector.contrastCopy.perSide");
-    ColorContrastCopyLabel_7 = uiMessage("inspector.contrastCopy.perCorner");
+    ColorContrastCopyPerSideLabel = uiMessage("inspector.contrastCopy.perSide");
+    ColorContrastCopyPerCornerLabel = uiMessage("inspector.contrastCopy.perCorner");
     EditValue = "Edit";
     HideValue = "Hide";
-    ColorContrastCopyLabel_8 =
+    ColorContrastCopyValuesDifferLabel =
       uiMessage("inspector.contrastCopy.theValuesDifferMakeThem");
     ColorContrastCopyTopRightBottomValues = ["Top", "Right", "Bottom", "Left"];
     ColorContrastCopyItems = [
@@ -165,8 +165,8 @@ export function installEditorColorContrastCopy(): () => void {
       uiMessage("inspector.contrastCopy.bottomLeft"),
     ];
     OnValue = "on";
-    ColorContrastCopyLabel_9 = uiMessage("inspector.contrastCopy.goodContrast");
-    ColorContrastCopyLabel_10 = uiMessage("inspector.contrastCopy.poorContrast");
-    ColorContrastCopyLabel_11 = uiMessage("inspector.contrastCopy.useAReadableShade");
+    ColorContrastCopyGoodContrastLabel = uiMessage("inspector.contrastCopy.goodContrast");
+    ColorContrastCopyPoorContrastLabel = uiMessage("inspector.contrastCopy.poorContrast");
+    ColorContrastCopyUseReadableShadeLabel = uiMessage("inspector.contrastCopy.useAReadableShade");
   };
 }

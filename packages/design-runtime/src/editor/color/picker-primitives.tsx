@@ -11,65 +11,65 @@ import { toModuleNamespace } from "../../module-helpers";
 var jsxColorPickerPrimitives: Dynamic;
 var alphaCheckerboardBackground: Dynamic;
 var ColorPickerPrimitivesClassNames: Dynamic;
-function joinPickerClasses(...input: Dynamic[]): Dynamic {
-  return input.filter(Boolean).join(" ");
+function joinPickerClasses(...classNames: Dynamic[]): Dynamic {
+  return classNames.filter(Boolean).join(" ");
 }
 function rgbToHsva(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  red?: Dynamic,
+  green?: Dynamic,
+  blue?: Dynamic,
+  alpha?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = Math.max(input, options, context),
-    value3: Dynamic = Math.min(input, options, context),
-    value4: Dynamic = value2 - value3,
-    index: Dynamic = 0;
-  value4 !== 0 &&
-    (value2 === input
-      ? (index = ((options - context) / value4) % 6)
-      : value2 === options
-        ? (index = (context - input) / value4 + 2)
-        : (index = (input - options) / value4 + 4),
-    (index *= 60),
-    index < 0 && (index += 360));
-  let value5: Dynamic = value2 === 0 ? 0 : value4 / value2;
+  let max: Dynamic = Math.max(red, green, blue),
+    min: Dynamic = Math.min(red, green, blue),
+    delta: Dynamic = max - min,
+    hue: Dynamic = 0;
+  delta !== 0 &&
+    (max === red
+      ? (hue = ((green - blue) / delta) % 6)
+      : max === green
+        ? (hue = (blue - red) / delta + 2)
+        : (hue = (red - green) / delta + 4),
+    (hue *= 60),
+    hue < 0 && (hue += 360));
+  let saturation: Dynamic = max === 0 ? 0 : delta / max;
   return {
-    h: index,
-    s: value5,
-    v: value2,
-    a: value,
+    h: hue,
+    s: saturation,
+    v: max,
+    a: alpha,
   };
 }
 function parseHsvaColor(cssColor?: Dynamic): Dynamic {
   let hex: Dynamic = cssColor.match(/^#([0-9a-f]{3,8})$/i)?.[1];
   if (hex && hex.length !== 5 && hex.length !== 7) {
-    let value4: Dynamic =
+    let expandedHex: Dynamic =
         hex.length <= 4
           ? hex.replace(
               /[0-9a-f]/gi,
-              (input?: Dynamic): Dynamic => input + input,
+              (char?: Dynamic): Dynamic => char + char,
             )
           : hex.padEnd(8, "f"),
-      callback: Dynamic = (input?: Dynamic): Dynamic =>
-        parseInt(value4.slice(input * 2, input * 2 + 2), 16) / 255;
+      channelAt: Dynamic = (index?: Dynamic): Dynamic =>
+        parseInt(expandedHex.slice(index * 2, index * 2 + 2), 16) / 255;
     return rgbToHsva(
-      callback(0),
-      callback(1),
-      callback(2),
-      hex.length === 4 || hex.length === 8 ? callback(3) : 1,
+      channelAt(0),
+      channelAt(1),
+      channelAt(2),
+      hex.length === 4 || hex.length === 8 ? channelAt(3) : 1,
     );
   }
-  let value: Dynamic = cssColor.match(
+  let rgbMatch: Dynamic = cssColor.match(
     /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/,
   );
-  if (value) {
-    let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      Math.min(1, Math.max(0, input));
+  if (rgbMatch) {
+    let clampUnitInterval: Dynamic = (channel?: Dynamic): Dynamic =>
+      Math.min(1, Math.max(0, channel));
     return rgbToHsva(
-      callback(+(value[1] ?? 0) / 255),
-      callback(+(value[2] ?? 0) / 255),
-      callback(+(value[3] ?? 0) / 255),
-      value[4] != null ? callback(+value[4]) : 1,
+      clampUnitInterval(+(rgbMatch[1] ?? 0) / 255),
+      clampUnitInterval(+(rgbMatch[2] ?? 0) / 255),
+      clampUnitInterval(+(rgbMatch[3] ?? 0) / 255),
+      rgbMatch[4] != null ? clampUnitInterval(+rgbMatch[4]) : 1,
     );
   }
   if (
@@ -82,20 +82,20 @@ function parseHsvaColor(cssColor?: Dynamic): Dynamic {
       v: 0,
       a: 1,
     };
-  let value2: Dynamic = (document as Dynamic).createElement("div");
-  value2.style.color = cssColor;
-  (document as Dynamic).body.appendChild(value2);
-  let color: Dynamic = getComputedStyle(value2).color;
-  (document as Dynamic).body.removeChild(value2);
-  let value3: Dynamic = color.match(
+  let probeElement: Dynamic = (document as Dynamic).createElement("div");
+  probeElement.style.color = cssColor;
+  (document as Dynamic).body.appendChild(probeElement);
+  let color: Dynamic = getComputedStyle(probeElement).color;
+  (document as Dynamic).body.removeChild(probeElement);
+  let computedMatch: Dynamic = color.match(
     /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/,
   );
-  return value3
+  return computedMatch
     ? rgbToHsva(
-        +(value3[1] ?? 0) / 255,
-        +(value3[2] ?? 0) / 255,
-        +(value3[3] ?? 0) / 255,
-        value3[4] != null ? +value3[4] : 1,
+        +(computedMatch[1] ?? 0) / 255,
+        +(computedMatch[2] ?? 0) / 255,
+        +(computedMatch[3] ?? 0) / 255,
+        computedMatch[4] != null ? +computedMatch[4] : 1,
       )
     : {
         h: 0,
@@ -105,51 +105,51 @@ function parseHsvaColor(cssColor?: Dynamic): Dynamic {
       };
 }
 function hsvaToRgbaCss(color?: Dynamic): Dynamic {
-  let { h: value, s: value2, v: value3, a: value4 }: Dynamic = color,
-    value5: Dynamic = value3 * value2,
-    value6: Dynamic = value5 * (1 - Math.abs(((value / 60) % 2) - 1)),
-    value7: Dynamic = value3 - value5,
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    index3: Dynamic = 0;
-  value < 60
-    ? ((index = value5), (index2 = value6))
-    : value < 120
-      ? ((index = value6), (index2 = value5))
-      : value < 180
-        ? ((index2 = value5), (index3 = value6))
-        : value < 240
-          ? ((index2 = value6), (index3 = value5))
-          : value < 300
-            ? ((index = value6), (index3 = value5))
-            : ((index = value5), (index3 = value6));
-  let value8: Dynamic = Math.round((index + value7) * 255),
-    value9: Dynamic = Math.round((index2 + value7) * 255),
-    value10: Dynamic = Math.round((index3 + value7) * 255);
-  return value4 < 1
-    ? `rgba(${value8}, ${value9}, ${value10}, ${+value4.toFixed(3)})`
-    : `rgb(${value8}, ${value9}, ${value10})`;
+  let { h: hue, s: saturation, v: brightness, a: alpha }: Dynamic = color,
+    chroma: Dynamic = brightness * saturation,
+    secondary: Dynamic = chroma * (1 - Math.abs(((hue / 60) % 2) - 1)),
+    matchOffset: Dynamic = brightness - chroma,
+    redBase: Dynamic = 0,
+    greenBase: Dynamic = 0,
+    blueBase: Dynamic = 0;
+  hue < 60
+    ? ((redBase = chroma), (greenBase = secondary))
+    : hue < 120
+      ? ((redBase = secondary), (greenBase = chroma))
+      : hue < 180
+        ? ((greenBase = chroma), (blueBase = secondary))
+        : hue < 240
+          ? ((greenBase = secondary), (blueBase = chroma))
+          : hue < 300
+            ? ((redBase = secondary), (blueBase = chroma))
+            : ((redBase = chroma), (blueBase = secondary));
+  let red: Dynamic = Math.round((redBase + matchOffset) * 255),
+    green: Dynamic = Math.round((greenBase + matchOffset) * 255),
+    blue: Dynamic = Math.round((blueBase + matchOffset) * 255);
+  return alpha < 1
+    ? `rgba(${red}, ${green}, ${blue}, ${+alpha.toFixed(3)})`
+    : `rgb(${red}, ${green}, ${blue})`;
 }
 function hsvaToRgbHex(color?: Dynamic): Dynamic {
-  let value: Dynamic = hsvaToRgbaCss({
+  let rgbMatch: Dynamic = hsvaToRgbaCss({
     ...color,
     a: 1,
   }).match(/(\d+),\s*(\d+),\s*(\d+)/);
-  return value
+  return rgbMatch
     ? "#" +
-        [+(value[1] ?? 0), +(value[2] ?? 0), +(value[3] ?? 0)]
+        [+(rgbMatch[1] ?? 0), +(rgbMatch[2] ?? 0), +(rgbMatch[3] ?? 0)]
           .map(
-            (input?: Dynamic): Dynamic => input.toString(16).padStart(2, "0"),
+            (channel?: Dynamic): Dynamic => channel.toString(16).padStart(2, "0"),
           )
           .join("")
           .toUpperCase()
     : "#000000";
 }
 function hsvaToRgbaHex(color?: Dynamic): Dynamic {
-  let value: Dynamic = hsvaToRgbHex(color);
+  let rgbHex: Dynamic = hsvaToRgbHex(color);
   return color.a >= 1
-    ? value
-    : value +
+    ? rgbHex
+    : rgbHex +
         Math.round(color.a * 255)
           .toString(16)
           .padStart(2, "0")
@@ -168,8 +168,8 @@ async function pickEyeDropperColor(): Promise<Dynamic> {
 }
 function trackColorPickerDrag(
   event?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  onMove?: Dynamic,
+  onEnd?: Dynamic,
 ): Dynamic {
   event.preventDefault();
   let currentTarget: Dynamic = event.currentTarget,
@@ -178,28 +178,28 @@ function trackColorPickerDrag(
   try {
     currentTarget.setPointerCapture(pointerId);
   } catch {}
-  options(event.clientX, event.clientY, bounds);
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      input.pointerId === pointerId &&
-        options(input.clientX, input.clientY, bounds);
+  onMove(event.clientX, event.clientY, bounds);
+  let handleMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+      moveEvent.pointerId === pointerId &&
+        onMove(moveEvent.clientX, moveEvent.clientY, bounds);
     },
-    callback2: Dynamic = (): Dynamic => {
-      (window as Dynamic).removeEventListener("pointermove", callback);
-      (window as Dynamic).removeEventListener("pointerup", callback3);
-      (window as Dynamic).removeEventListener("pointercancel", callback3);
+    stopTracking: Dynamic = (): Dynamic => {
+      (window as Dynamic).removeEventListener("pointermove", handleMove);
+      (window as Dynamic).removeEventListener("pointerup", handleUp);
+      (window as Dynamic).removeEventListener("pointercancel", handleUp);
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      input.pointerId === pointerId && (callback2(), context?.());
+    handleUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
+      upEvent.pointerId === pointerId && (stopTracking(), onEnd?.());
     };
-  (window as Dynamic).addEventListener("pointermove", callback);
-  (window as Dynamic).addEventListener("pointerup", callback3);
-  (window as Dynamic).addEventListener("pointercancel", callback3);
-  return callback2;
+  (window as Dynamic).addEventListener("pointermove", handleMove);
+  (window as Dynamic).addEventListener("pointerup", handleUp);
+  (window as Dynamic).addEventListener("pointercancel", handleUp);
+  return stopTracking;
 }
-function colorSliderPosition(input?: Dynamic, options?: Dynamic): Dynamic {
+function colorSliderPosition(clientX?: Dynamic, bounds?: Dynamic): Dynamic {
   return Math.max(
     0,
-    Math.min(1, (input - options.left - 7) / (options.width - 14)),
+    Math.min(1, (clientX - bounds.left - 7) / (bounds.width - 14)),
   );
 }
 function PickerRowText({ text: text, title = false }: Dynamic): Dynamic {
@@ -271,12 +271,12 @@ function ColorSwatchRow({
   current = false,
   onClick: onClick,
   readOnly = false,
-  disabled: disabled2 = false,
+  disabled: isDisabled = false,
   title: title,
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (
+  let rowContent: Dynamic = (
     <jsxColorPickerPrimitives.Fragment>
       <ColorSwatchDot paint={paint} current={current} />
       <span className={"min-w-0 flex-1 truncate text-footnote text-primary"}>
@@ -307,26 +307,26 @@ function ColorSwatchRow({
       )}
       {...props}
     >
-      {value}
+      {rowContent}
     </div>
   ) : (
     <button
       type={"button"}
-      title={disabled2 ? (undefined) : (title ?? (label))}
+      title={isDisabled ? (undefined) : (title ?? (label))}
       aria-label={label}
       aria-pressed={current}
-      disabled={disabled2}
+      disabled={isDisabled}
       onClick={onClick}
       className={joinPickerClasses(
         ColorPickerPrimitivesClassNames,
-        disabled2
+        isDisabled
           ? "pointer-events-none opacity-50"
           : "cursor-default hover:bg-fill-ghost-hover focus-visible:outline-hidden focus-visible:shadow-focus forced-colors:focus-visible:-outline-offset-2",
         current && "bg-fill-ghost-hover",
       )}
       {...props}
     >
-      {value}
+      {rowContent}
     </button>
   );
 }

@@ -3,145 +3,145 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { injected_svgCapture as injected_svgCapture_r } from "../../dependencies";
-import { AccessibilityAnnouncementsLabel_4 } from "../accessibility/announcements";
-import { ClipboardPngCopyASwitchSet, ClipboardPngCopyDataImagePattern, ClipboardPngCopyPattern, ClipboardPngCopySubscribers, ClipboardPngCopySubscribers_2, HttpWwwW3Org1999XlinkValue, HttpWwwW3Org2000SvgValue_2, HttpWwwW3Org2000XmlnsValue, HttpWwwW3OrgXML1998NamespaceValue } from "./png-copy";
+import { AccessibilityAnnouncementsLabel_4 as genericCopyFailureMessage } from "../accessibility/announcements";
+import { ClipboardPngCopyASwitchSet, ClipboardPngCopyDataImagePattern, ClipboardPngCopyPattern, ClipboardPngCopySubscribers, ClipboardPngCopySubscribers_2 as svgUrlAttributeNames, HttpWwwW3Org1999XlinkValue, HttpWwwW3Org2000SvgValue_2, HttpWwwW3Org2000XmlnsValue, HttpWwwW3OrgXML1998NamespaceValue } from "./png-copy";
 import { describeCaptureFailure } from "../../export/capture-warnings";
 
-function containsSvgExternalResource(input?: Dynamic): Dynamic {
+function containsSvgExternalResource(cssValue?: Dynamic): Dynamic {
   return (
-    input.includes("\\") ||
+    cssValue.includes("\\") ||
     /(?:url|image|image-set|src)\s*\(/i.test(
-      input.replace(/url\(\s*(['"]?)#[^)]*\1\s*\)/gi, ""),
+      cssValue.replace(/url\(\s*(['"]?)#[^)]*\1\s*\)/gi, ""),
     )
   );
 }
 function sanitizeSvgClipboardDom(element?: Dynamic): Dynamic {
-  let index: Dynamic = 0;
+  let blankImageCount: Dynamic = 0;
   (element.localName === "title" || element.localName === "desc") &&
     (element.textContent = element.textContent ?? "");
-  for (let value of [...element.childNodes] as Dynamic)
-    if (value.nodeType === Node.CDATA_SECTION_NODE)
-      value.replaceWith(
-        element.ownerDocument.createTextNode(value.nodeValue ?? ""),
+  for (let child of [...element.childNodes] as Dynamic)
+    if (child.nodeType === Node.CDATA_SECTION_NODE)
+      child.replaceWith(
+        element.ownerDocument.createTextNode(child.nodeValue ?? ""),
       );
-    else if (value.nodeType === Node.ELEMENT_NODE) {
-      let value2: Dynamic = value;
+    else if (child.nodeType === Node.ELEMENT_NODE) {
+      let childElement: Dynamic = child;
       if (
-        value2.namespaceURI === HttpWwwW3Org2000SvgValue_2 &&
-        ClipboardPngCopyASwitchSet.has(value2.localName)
+        childElement.namespaceURI === HttpWwwW3Org2000SvgValue_2 &&
+        ClipboardPngCopyASwitchSet.has(childElement.localName)
       ) {
-        let value3: Dynamic = element.ownerDocument.createElementNS(
+        let groupElement: Dynamic = element.ownerDocument.createElementNS(
           HttpWwwW3Org2000SvgValue_2,
           "g",
         );
-        if (value2.localName === "switch") {
-          let items: Dynamic = [...value2.children],
-            value4: Dynamic =
-              items.find(
-                (input?: Dynamic): Dynamic =>
-                  !input.hasAttribute("systemLanguage") &&
-                  !input.hasAttribute("requiredExtensions") &&
-                  !input.hasAttribute("requiredFeatures"),
-              ) ?? items[0];
-          value4 && value3.append(value4);
-        } else value3.append(...value2.childNodes);
-        value2.replaceWith(value3);
-        index += sanitizeSvgClipboardDom(value3);
+        if (childElement.localName === "switch") {
+          let switchChildren: Dynamic = [...childElement.children],
+            visibleChild: Dynamic =
+              switchChildren.find(
+                (candidate?: Dynamic): Dynamic =>
+                  !candidate.hasAttribute("systemLanguage") &&
+                  !candidate.hasAttribute("requiredExtensions") &&
+                  !candidate.hasAttribute("requiredFeatures"),
+              ) ?? switchChildren[0];
+          visibleChild && groupElement.append(visibleChild);
+        } else groupElement.append(...childElement.childNodes);
+        childElement.replaceWith(groupElement);
+        blankImageCount += sanitizeSvgClipboardDom(groupElement);
       } else
-        value2.namespaceURI !== HttpWwwW3Org2000SvgValue_2 ||
-        !ClipboardPngCopySubscribers.has(value2.localName)
-          ? value2.remove()
-          : (index += sanitizeSvgClipboardDom(value2));
-    } else value.nodeType !== Node.TEXT_NODE && value.remove();
-  for (let value of [...element.attributes] as Dynamic) {
-    let localName: Dynamic = value.localName,
-      value2: Dynamic = localName.toLowerCase(),
-      value3: Dynamic =
+        childElement.namespaceURI !== HttpWwwW3Org2000SvgValue_2 ||
+        !ClipboardPngCopySubscribers.has(childElement.localName)
+          ? childElement.remove()
+          : (blankImageCount += sanitizeSvgClipboardDom(childElement));
+    } else child.nodeType !== Node.TEXT_NODE && child.remove();
+  for (let attribute of [...element.attributes] as Dynamic) {
+    let localName: Dynamic = attribute.localName,
+      lowerName: Dynamic = localName.toLowerCase(),
+      isHrefAttribute: Dynamic =
         localName === "href" &&
-        (value.namespaceURI === null ||
-          value.namespaceURI === HttpWwwW3Org1999XlinkValue);
+        (attribute.namespaceURI === null ||
+          attribute.namespaceURI === HttpWwwW3Org1999XlinkValue);
     if (
-      value.namespaceURI === HttpWwwW3Org2000XmlnsValue &&
-      (value.value === HttpWwwW3Org2000SvgValue_2 ||
-        value.value === HttpWwwW3Org1999XlinkValue)
+      attribute.namespaceURI === HttpWwwW3Org2000XmlnsValue &&
+      (attribute.value === HttpWwwW3Org2000SvgValue_2 ||
+        attribute.value === HttpWwwW3Org1999XlinkValue)
     )
       continue;
-    (((value.namespaceURI === null && !value.name.includes(":")) ||
-      value3 ||
-      (value.namespaceURI === HttpWwwW3OrgXML1998NamespaceValue &&
+    (((attribute.namespaceURI === null && !attribute.name.includes(":")) ||
+      isHrefAttribute ||
+      (attribute.namespaceURI === HttpWwwW3OrgXML1998NamespaceValue &&
         localName === "space")) &&
       !/^(on|data-|aria-)/i.test(localName) &&
-      value2 !== "class" &&
-      !ClipboardPngCopySubscribers_2.has(value2) &&
-      (value3 || value2 !== "href") &&
-      !containsSvgExternalResource(value.value) &&
-      (value3
-        ? ClipboardPngCopyPattern.test(value.value) ||
+      lowerName !== "class" &&
+      !svgUrlAttributeNames.has(lowerName) &&
+      (isHrefAttribute || lowerName !== "href") &&
+      !containsSvgExternalResource(attribute.value) &&
+      (isHrefAttribute
+        ? ClipboardPngCopyPattern.test(attribute.value) ||
           (element.localName === "image" &&
-            ClipboardPngCopyDataImagePattern.test(value.value))
-        : !/^\s*(?:javascript|vbscript|data):/i.test(value.value))) ||
-      element.removeAttributeNS(value.namespaceURI, localName);
+            ClipboardPngCopyDataImagePattern.test(attribute.value))
+        : !/^\s*(?:javascript|vbscript|data):/i.test(attribute.value))) ||
+      element.removeAttributeNS(attribute.namespaceURI, localName);
   }
   element.localName === "image" &&
     !element.getAttribute("href") &&
     !element.getAttributeNS(HttpWwwW3Org1999XlinkValue, "href") &&
-    index++;
-  return index;
+    blankImageCount++;
+  return blankImageCount;
 }
-function sanitizeSvgClipboard(input?: Dynamic): Dynamic {
-  let value: Dynamic = new DOMParser().parseFromString(
-      input,
+function sanitizeSvgClipboard(svgText?: Dynamic): Dynamic {
+  let svgDocument: Dynamic = new DOMParser().parseFromString(
+      svgText,
       "image/svg+xml",
     ),
-    documentElement: Dynamic = value.documentElement;
+    documentElement: Dynamic = svgDocument.documentElement;
   if (
     documentElement.namespaceURI !== HttpWwwW3Org2000SvgValue_2 ||
     documentElement.localName !== "svg" ||
-    value.getElementsByTagNameNS("*", "parsererror").length > 0
+    svgDocument.getElementsByTagNameNS("*", "parsererror").length > 0
   )
     return null;
-  let value2: Dynamic = sanitizeSvgClipboardDom(documentElement);
+  let blankCount: Dynamic = sanitizeSvgClipboardDom(documentElement);
   return {
     svg: new XMLSerializer().serializeToString(documentElement),
-    blank: value2,
+    blank: blankCount,
   };
 }
-function svgClipboardMimeTypes(input: Dynamic = window): Dynamic {
-  let ClipboardItem: Dynamic = input.ClipboardItem;
+function svgClipboardMimeTypes(hostWindow: Dynamic = window): Dynamic {
+  let ClipboardItem: Dynamic = hostWindow.ClipboardItem;
   return typeof ClipboardItem?.supports == "function" &&
     ClipboardItem.supports("image/svg+xml")
     ? ["text/plain", "image/svg+xml"]
     : ["text/plain"];
 }
-function parseSvgCaptureReply(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null)
+function parseSvgCaptureReply(reply?: Dynamic): Dynamic {
+  if (typeof reply != "object" || reply === null)
     return {
       ok: false,
       softError: "bad-reply",
     };
-  let value: Dynamic = input;
-  if (value.e === "no-selection" || value.e === "zero-size")
+  let replyRecord: Dynamic = reply;
+  if (replyRecord.e === "no-selection" || replyRecord.e === "zero-size")
     return {
       ok: false,
-      softError: value.e,
+      softError: replyRecord.e,
     };
-  let value2: Dynamic =
-    typeof value.s == "string" ? sanitizeSvgClipboard(value.s) : null;
-  return value2 === null
+  let sanitized: Dynamic =
+    typeof replyRecord.s == "string" ? sanitizeSvgClipboard(replyRecord.s) : null;
+  return sanitized === null
     ? {
         ok: false,
         softError: "bad-reply",
       }
     : {
         ok: true,
-        ...value2,
-        clipped: value.clipped === true,
+        ...sanitized,
+        clipped: replyRecord.clipped === true,
       };
 }
 async function captureClipboardSvg(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = null,
+  preview?: Dynamic,
+  captureOptions?: Dynamic,
+  captureContext: Dynamic = null,
 ): Promise<Dynamic> {
   let injected_svgCapture: Dynamic = injected_svgCapture_r;
   if (!injected_svgCapture)
@@ -149,63 +149,63 @@ async function captureClipboardSvg(
       ok: false,
       softError: "bad-reply",
     };
-  let value: Dynamic = await input.executeJavaScript(
+  let reply: Dynamic = await preview.executeJavaScript(
     "(function(){" +
       injected_svgCapture +
       ";return window.__dcSvgCapture(" +
-      JSON.stringify(options) +
+      JSON.stringify(captureOptions) +
       "," +
-      JSON.stringify(context) +
+      JSON.stringify(captureContext) +
       ");})()",
     15e3,
   );
-  return parseSvgCaptureReply(value);
+  return parseSvgCaptureReply(reply);
 }
-function svgCopyErrorMessage(input?: Dynamic): Dynamic {
-  let value: Dynamic = input instanceof Error ? input.message : "";
-  return /^(executeJavaScript timed out|preview is blocked)/.test(value)
-    ? describeCaptureFailure(input)
-    : AccessibilityAnnouncementsLabel_4;
+function svgCopyErrorMessage(error?: Dynamic): Dynamic {
+  let message: Dynamic = error instanceof Error ? error.message : "";
+  return /^(executeJavaScript timed out|preview is blocked)/.test(message)
+    ? describeCaptureFailure(error)
+    : genericCopyFailureMessage;
 }
 async function writeClipboardSvg(
-  input?: Dynamic,
-  options: Dynamic = window,
+  svgPromise?: Dynamic,
+  hostWindow: Dynamic = window,
 ): Promise<Dynamic> {
-  let ClipboardItem: Dynamic = options.ClipboardItem,
-    clipboard: Dynamic = options.navigator.clipboard;
+  let ClipboardItem: Dynamic = hostWindow.ClipboardItem,
+    clipboard: Dynamic = hostWindow.navigator.clipboard;
   if (
     typeof ClipboardItem != "function" ||
     typeof clipboard?.write != "function"
   )
     return "refused";
-  let value: Dynamic = input.catch((): Dynamic => null),
-    value2: Dynamic = Object.fromEntries(
-      svgClipboardMimeTypes(options).map(
-        (input2?: Dynamic): Dynamic => [
-          input2,
-          value.then(
-            (input3?: Dynamic): Dynamic =>
-              input3 === null
+  let svgOrNull: Dynamic = svgPromise.catch((): Dynamic => null),
+    blobPromisesByType: Dynamic = Object.fromEntries(
+      svgClipboardMimeTypes(hostWindow).map(
+        (mimeType?: Dynamic): Dynamic => [
+          mimeType,
+          svgOrNull.then(
+            (svg?: Dynamic): Dynamic =>
+              svg === null
                 ? Promise.reject(new Error("no picture"))
-                : new Blob([input3], {
-                    type: input2,
+                : new Blob([svg], {
+                    type: mimeType,
                   }),
           ),
         ],
       ),
     );
-  for (let value3 of Object.values(value2) as Dynamic)
-    value3.catch((): Dynamic => {});
+  for (let blobPromise of Object.values(blobPromisesByType) as Dynamic)
+    blobPromise.catch((): Dynamic => {});
   try {
-    await clipboard.write([new ClipboardItem(value2)]);
-    return (await value) !== null ? "copied" : "no-picture";
+    await clipboard.write([new ClipboardItem(blobPromisesByType)]);
+    return (await svgOrNull) !== null ? "copied" : "no-picture";
   } catch {
-    let value3: Dynamic = await value;
-    if (value3 === null) return "no-picture";
+    let svg: Dynamic = await svgOrNull;
+    if (svg === null) return "no-picture";
     try {
       await clipboard.write([
         new ClipboardItem({
-          "text/plain": new Blob([value3], {
+          "text/plain": new Blob([svg], {
             type: "text/plain",
           }),
         }),

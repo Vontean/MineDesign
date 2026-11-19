@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { readClipboardObject } from "./native";
-import { PlatformFileContentLimit_5 } from "../../platform/file-content";
+import { PlatformFileContentLimit_5 as maxAnnotationCount } from "../../platform/file-content";
 
 var DesignElementsKey: Dynamic;
 var DesignArtboardsKey: Dynamic;
@@ -13,41 +13,41 @@ var ClipboardStateHandler: Dynamic;
 var ClipboardStateCurrentState: Dynamic;
 var ClipboardStateConstant: Dynamic;
 var ClipboardStateAlias: Dynamic;
-var ClipboardStateResolvedValue_2: Dynamic;
+var ClipboardStateBufferRendition: Dynamic;
 var ClipboardStateSliceValue: Dynamic;
 var ClipboardStateFilterValue: Dynamic;
-var ClipboardStateConstant_2: Dynamic;
+var ClipboardStateSequenceCounter: Dynamic;
 var localClipboardSequence: Dynamic;
-var ClipboardStateFilterValue_2: Dynamic;
+var ClipboardStateDeferredTasks: Dynamic;
 var ClipboardStateDelayMs: Dynamic;
 var ClipboardStateObservedElements: Dynamic;
 var ClipboardStateLimit: Dynamic;
 var hasPendingClipboardMarks: Dynamic;
-var ClipboardStateConstant_3: Dynamic;
-var ClipboardStateLimit_2: Dynamic;
-var ClipboardStateAlias_2: Dynamic;
-var ClipboardStateAlias_3: Dynamic;
+var ClipboardStateGeneration: Dynamic;
+var ClipboardStateMarkMaxAgeMs: Dynamic;
+var ClipboardStateArtboardItems: Dynamic;
+var ClipboardStateArtboardAnnotations: Dynamic;
 var ClipboardStateNowValue: Dynamic;
-var ClipboardStateResolvedValue_3: Dynamic;
-var ClipboardStateResolvedValue_4: Dynamic;
+var ClipboardStateArtboardStamp: Dynamic;
+var ClipboardStateArtboardRendition: Dynamic;
 var ClipboardStateReplace: Dynamic;
-function clipboardObjectStamp(input?: Dynamic): Dynamic {
-  if (input?.kind !== DesignElementsKey && input?.kind !== DesignArtboardsKey)
+function clipboardObjectStamp(clipboardObject?: Dynamic): Dynamic {
+  if (clipboardObject?.kind !== DesignElementsKey && clipboardObject?.kind !== DesignArtboardsKey)
     return null;
-  let value: Dynamic = input.data?.stamp;
-  return typeof value == "string" && value.length > 0 && value.length <= 64
-    ? value
+  let stamp: Dynamic = clipboardObject.data?.stamp;
+  return typeof stamp == "string" && stamp.length > 0 && stamp.length <= 64
+    ? stamp
     : null;
 }
-function readBoundedClipboardObject(input?: Dynamic): Dynamic {
-  return (input.clipboardData?.getData("text/html") ?? "").length >
+function readBoundedClipboardObject(event?: Dynamic): Dynamic {
+  return (event.clipboardData?.getData("text/html") ?? "").length >
     ClipboardStateResolvedValue
     ? undefined
-    : readClipboardObject(input);
+    : readClipboardObject(event);
 }
-function readArtboardClipboard(input?: Dynamic): Dynamic {
-  if (input?.kind !== DesignArtboardsKey) return;
-  let data: Dynamic = input.data;
+function readArtboardClipboard(clipboardObject?: Dynamic): Dynamic {
+  if (clipboardObject?.kind !== DesignArtboardsKey) return;
+  let data: Dynamic = clipboardObject.data;
   return ClipboardStateIsArray(data) ||
     (Array.isArray(data?.annotations) && data.annotations.length > 0) ||
     ClipboardStateHandler(data?.leftOut) > 0 ||
@@ -55,173 +55,173 @@ function readArtboardClipboard(input?: Dynamic): Dynamic {
     ? data
     : undefined;
 }
-function expireClipboardMarks(input?: Dynamic): Dynamic {
+function expireClipboardMarks(now?: Dynamic): Dynamic {
   ClipboardStateFilterValue = ClipboardStateFilterValue.filter(
-    (input2?: Dynamic): Dynamic =>
-      input2.droppedAt > 0
-        ? input - input2.droppedAt < ClipboardStateLimit
-        : input - input2.at < ClipboardStateLimit_2,
+    (mark?: Dynamic): Dynamic =>
+      mark.droppedAt > 0
+        ? now - mark.droppedAt < ClipboardStateLimit
+        : now - mark.at < ClipboardStateMarkMaxAgeMs,
   );
   runDeferredClipboardTasks();
 }
 function runDeferredClipboardTasks(): Dynamic {
-  let value: Dynamic = ClipboardStateFilterValue_2.filter(
-    (input?: Dynamic): Dynamic => !hasPendingClipboardMarks(input.until),
+  let readyTasks: Dynamic = ClipboardStateDeferredTasks.filter(
+    (task?: Dynamic): Dynamic => !hasPendingClipboardMarks(task.until),
   );
-  if (value.length !== 0) {
-    ClipboardStateFilterValue_2 = ClipboardStateFilterValue_2.filter(
-      (input?: Dynamic): Dynamic => !value.includes(input),
+  if (readyTasks.length !== 0) {
+    ClipboardStateDeferredTasks = ClipboardStateDeferredTasks.filter(
+      (task?: Dynamic): Dynamic => !readyTasks.includes(task),
     );
-    for (let value2 of value as Dynamic) {
-      clearTimeout(value2.timer);
-      setTimeout(value2.run, 0);
+    for (let task of readyTasks as Dynamic) {
+      clearTimeout(task.timer);
+      setTimeout(task.run, 0);
     }
   }
 }
-function afterClipboardSettled(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = ClipboardStateConstant_2;
-  if (!hasPendingClipboardMarks(value)) return input();
+function afterClipboardSettled(run?: Dynamic, onTimeout?: Dynamic): Dynamic {
+  let sequence: Dynamic = ClipboardStateSequenceCounter;
+  if (!hasPendingClipboardMarks(sequence)) return run();
   let state: Dynamic = {
-    until: value,
-    run: input,
+    until: sequence,
+    run: run,
     timer: setTimeout((): Dynamic => {
-      ClipboardStateFilterValue_2 = ClipboardStateFilterValue_2.filter(
-        (input2?: Dynamic): Dynamic => input2 !== state,
+      ClipboardStateDeferredTasks = ClipboardStateDeferredTasks.filter(
+        (task?: Dynamic): Dynamic => task !== state,
       );
-      options?.();
+      onTimeout?.();
     }, ClipboardStateDelayMs),
   };
-  ClipboardStateFilterValue_2.push(state);
+  ClipboardStateDeferredTasks.push(state);
 }
 function isClipboardSettling(): Dynamic {
-  return hasPendingClipboardMarks(ClipboardStateConstant_2);
+  return hasPendingClipboardMarks(ClipboardStateSequenceCounter);
 }
-function markConsumedClipboardStamp(input?: Dynamic): Dynamic {
-  ClipboardStateObservedElements.add(input);
+function markConsumedClipboardStamp(stamp?: Dynamic): Dynamic {
+  ClipboardStateObservedElements.add(stamp);
 }
-function isClipboardStampConsumed(input?: Dynamic): Dynamic {
-  return ClipboardStateObservedElements.has(input);
+function isClipboardStampConsumed(stamp?: Dynamic): Dynamic {
+  return ClipboardStateObservedElements.has(stamp);
 }
 function clipboardGeneration(): Dynamic {
-  return ClipboardStateConstant_3;
+  return ClipboardStateGeneration;
 }
 function clearClipboardStamps(): Dynamic {
-  for (let value of [
+  for (let stamp of [
     ClipboardStateAlias,
-    ClipboardStateResolvedValue_3,
+    ClipboardStateArtboardStamp,
   ] as Dynamic)
-    value &&
-      (ClipboardStateSliceValue = [value, ...ClipboardStateSliceValue].slice(
+    stamp &&
+      (ClipboardStateSliceValue = [stamp, ...ClipboardStateSliceValue].slice(
         0,
         8,
       ));
   ClipboardStateAlias = null;
-  ClipboardStateResolvedValue_2 = null;
-  ClipboardStateResolvedValue_3 = null;
-  ClipboardStateResolvedValue_4 = null;
+  ClipboardStateBufferRendition = null;
+  ClipboardStateArtboardStamp = null;
+  ClipboardStateArtboardRendition = null;
 }
 function getElementClipboard(): Dynamic {
   return ClipboardStateCurrentState;
 }
-function setElementClipboard(input?: Dynamic, options?: Dynamic): Dynamic {
-  ClipboardStateConstant_3++;
+function setElementClipboard(buffer?: Dynamic, copyOptions?: Dynamic): Dynamic {
+  ClipboardStateGeneration++;
   clearClipboardStamps();
-  localClipboardSequence = ++ClipboardStateConstant_2;
-  ClipboardStateCurrentState = input;
-  ClipboardStateAlias = options?.stamp ?? null;
-  ClipboardStateResolvedValue_2 =
-    ClipboardStateAlias != null && options?.rendition
-      ? options.rendition
+  localClipboardSequence = ++ClipboardStateSequenceCounter;
+  ClipboardStateCurrentState = buffer;
+  ClipboardStateAlias = copyOptions?.stamp ?? null;
+  ClipboardStateBufferRendition =
+    ClipboardStateAlias != null && copyOptions?.rendition
+      ? copyOptions.rendition
       : null;
   ClipboardStateConstant =
-    options?.inTabOnly && ClipboardStateAlias == null ? Date.now() : 0;
-  ClipboardStateAlias_2 = null;
-  ClipboardStateAlias_3 = [];
+    copyOptions?.inTabOnly && ClipboardStateAlias == null ? Date.now() : 0;
+  ClipboardStateArtboardItems = null;
+  ClipboardStateArtboardAnnotations = [];
 }
-function markLocalElementClipboard(input?: Dynamic): Dynamic {
-  ClipboardStateCurrentState === input &&
+function markLocalElementClipboard(buffer?: Dynamic): Dynamic {
+  ClipboardStateCurrentState === buffer &&
     (ClipboardStateConstant = Date.now());
 }
-function rememberClipboardStamp(input?: Dynamic): Dynamic {
-  input &&
-    (ClipboardStateSliceValue = [input, ...ClipboardStateSliceValue].slice(
+function rememberClipboardStamp(stamp?: Dynamic): Dynamic {
+  stamp &&
+    (ClipboardStateSliceValue = [stamp, ...ClipboardStateSliceValue].slice(
       0,
       8,
     ));
 }
 function mirrorArtboardClipboardStamp(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = Date.now(),
+  stamp?: Dynamic,
+  rendition?: Dynamic,
+  now: Dynamic = Date.now(),
 ): Dynamic {
-  ClipboardStateAlias_2 == null ||
-    ClipboardStateResolvedValue_3 != null ||
-    context - ClipboardStateNowValue > 2e3 ||
-    ((ClipboardStateResolvedValue_3 = input),
-    (ClipboardStateResolvedValue_4 = options || null));
+  ClipboardStateArtboardItems == null ||
+    ClipboardStateArtboardStamp != null ||
+    now - ClipboardStateNowValue > 2e3 ||
+    ((ClipboardStateArtboardStamp = stamp),
+    (ClipboardStateArtboardRendition = rendition || null));
 }
 function claimClipboardMark(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = Date.now(),
+  stamp?: Dynamic,
+  rendition?: Dynamic,
+  now: Dynamic = Date.now(),
 ): Dynamic {
-  expireClipboardMarks(context);
-  let value: Dynamic =
+  expireClipboardMarks(now);
+  let hasFreshLocalBuffer: Dynamic =
       ClipboardStateCurrentState != null &&
       ClipboardStateConstant !== 0 &&
-      context - ClipboardStateConstant <= 2e3,
-    value2: Dynamic = ClipboardStateFilterValue.find(
-      (input2?: Dynamic): Dynamic => input2.mark == null && input2.markable,
+      now - ClipboardStateConstant <= 2e3,
+    pendingMark: Dynamic = ClipboardStateFilterValue.find(
+      (mark?: Dynamic): Dynamic => mark.mark == null && mark.markable,
     ),
-    value3: Dynamic =
-      value2 && !(value && localClipboardSequence > value2.seq)
-        ? value2
+    claimedMark: Dynamic =
+      pendingMark && !(hasFreshLocalBuffer && localClipboardSequence > pendingMark.seq)
+        ? pendingMark
         : undefined;
-  value2 &&
-    !value3 &&
-    value2.droppedAt > 0 &&
+  pendingMark &&
+    !claimedMark &&
+    pendingMark.droppedAt > 0 &&
     (ClipboardStateFilterValue = ClipboardStateFilterValue.filter(
-      (input2?: Dynamic): Dynamic => input2 !== value2,
+      (mark?: Dynamic): Dynamic => mark !== pendingMark,
     ));
-  return value3 && value3.droppedAt > 0
+  return claimedMark && claimedMark.droppedAt > 0
     ? ((ClipboardStateFilterValue = ClipboardStateFilterValue.filter(
-        (input2?: Dynamic): Dynamic => input2 !== value3,
+        (mark?: Dynamic): Dynamic => mark !== claimedMark,
       )),
-      rememberClipboardStamp(input),
+      rememberClipboardStamp(stamp),
       false)
-    : value3
-      ? ((value3.mark = {
-          stamp: input,
-          rendition: options || null,
+    : claimedMark
+      ? ((claimedMark.mark = {
+          stamp: stamp,
+          rendition: rendition || null,
         }),
         true)
-      : value
-        ? ((ClipboardStateAlias = input),
-          (ClipboardStateResolvedValue_2 = options || null),
+      : hasFreshLocalBuffer
+        ? ((ClipboardStateAlias = stamp),
+          (ClipboardStateBufferRendition = rendition || null),
           (ClipboardStateConstant = 0),
           true)
         : false;
 }
-function startClipboardMark(input?: Dynamic): Dynamic {
+function startClipboardMark(markOptions?: Dynamic): Dynamic {
   let state: Dynamic = {
     at: Date.now(),
-    seq: ++ClipboardStateConstant_2,
+    seq: ++ClipboardStateSequenceCounter,
     mark: null,
     droppedAt: 0,
-    markable: input?.markable ?? true,
+    markable: markOptions?.markable ?? true,
   };
-  ClipboardStateConstant_3++;
+  ClipboardStateGeneration++;
   expireClipboardMarks(state.at);
   ClipboardStateFilterValue = ClipboardStateFilterValue.filter(
-    (input2?: Dynamic): Dynamic => input2.droppedAt === 0,
+    (mark?: Dynamic): Dynamic => mark.droppedAt === 0,
   );
   ClipboardStateFilterValue.push(state);
   return {
-    write: (input2?: Dynamic): Dynamic => {
+    write: (buffer?: Dynamic): Dynamic => {
       ClipboardStateFilterValue = ClipboardStateFilterValue.filter(
-        (input3?: Dynamic): Dynamic => input3 !== state,
+        (mark?: Dynamic): Dynamic => mark !== state,
       );
-      setElementClipboard(input2, {
+      setElementClipboard(buffer, {
         inTabOnly: true,
         stamp: state.mark?.stamp,
         rendition: state.mark?.rendition,
@@ -232,113 +232,113 @@ function startClipboardMark(input?: Dynamic): Dynamic {
       state.mark == null && state.markable
         ? (state.droppedAt = Date.now())
         : ((ClipboardStateFilterValue = ClipboardStateFilterValue.filter(
-            (input2?: Dynamic): Dynamic => input2 !== state,
+            (mark?: Dynamic): Dynamic => mark !== state,
           )),
           rememberClipboardStamp(state.mark?.stamp));
       runDeferredClipboardTasks();
     },
   };
 }
-function sameClipboardText(input?: Dynamic, options?: Dynamic): Dynamic {
+function sameClipboardText(text?: Dynamic, otherText?: Dynamic): Dynamic {
   return (
-    options != null &&
-    options !== "" &&
-    ClipboardStateReplace(input) === ClipboardStateReplace(options)
+    otherText != null &&
+    otherText !== "" &&
+    ClipboardStateReplace(text) === ClipboardStateReplace(otherText)
   );
 }
 function resolveClipboardSource(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  source?: Dynamic,
+  clipboard?: Dynamic,
+  now?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.stamp == null && !options.hasImage,
-    value2: Dynamic =
-      options.stamp != null &&
-      (input.supersededStamps ?? []).includes(options.stamp),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      context - input2 < ClipboardStateLimit_2;
-  return input.artboardClip
-    ? (options.stamp != null && options.stamp === input.artboardClipStamp) ||
-      (value &&
-        sameClipboardText(options.text, input.artboardClipRendition)) ||
-      value2 ||
-      (input.artboardClipStamp == null && callback(input.artboardClipAt))
+  let isTextOnly: Dynamic = clipboard.stamp == null && !clipboard.hasImage,
+    isSupersededStamp: Dynamic =
+      clipboard.stamp != null &&
+      (source.supersededStamps ?? []).includes(clipboard.stamp),
+    isRecent: Dynamic = (timestamp?: Dynamic): Dynamic =>
+      now - timestamp < ClipboardStateMarkMaxAgeMs;
+  return source.artboardClip
+    ? (clipboard.stamp != null && clipboard.stamp === source.artboardClipStamp) ||
+      (isTextOnly &&
+        sameClipboardText(clipboard.text, source.artboardClipRendition)) ||
+      isSupersededStamp ||
+      (source.artboardClipStamp == null && isRecent(source.artboardClipAt))
       ? "artboards"
-      : options.artboards != null
+      : clipboard.artboards != null
         ? "foreign-artboards"
-        : options.hasImage
+        : clipboard.hasImage
           ? "image"
-          : options.text.trim() !== ""
+          : clipboard.text.trim() !== ""
             ? "text"
-            : options.stamp != null
+            : clipboard.stamp != null
               ? "nothing"
               : "artboards"
-    : input.buffer != null &&
-        ((options.stamp != null && options.stamp === input.bufferStamp) ||
-          (value &&
-            (sameClipboardText(options.text, input.buffer) ||
-              sameClipboardText(options.text, input.bufferRendition))) ||
-          value2 ||
-          (input.unmirroredAt > 0 && callback(input.unmirroredAt)))
+    : source.buffer != null &&
+        ((clipboard.stamp != null && clipboard.stamp === source.bufferStamp) ||
+          (isTextOnly &&
+            (sameClipboardText(clipboard.text, source.buffer) ||
+              sameClipboardText(clipboard.text, source.bufferRendition))) ||
+          isSupersededStamp ||
+          (source.unmirroredAt > 0 && isRecent(source.unmirroredAt)))
       ? "buffer"
-      : options.artboards != null
+      : clipboard.artboards != null
         ? "foreign-artboards"
-        : options.hasImage
+        : clipboard.hasImage
           ? "image"
-          : options.text.trim() !== ""
+          : clipboard.text.trim() !== ""
             ? "text"
-            : input.buffer != null && options.stamp == null
+            : source.buffer != null && clipboard.stamp == null
               ? "buffer"
               : "nothing";
 }
 function getActiveClipboardSource(
-  input?: Dynamic,
-  options: Dynamic = Date.now(),
+  clipboard?: Dynamic,
+  now: Dynamic = Date.now(),
 ): Dynamic {
   return resolveClipboardSource(
     {
       buffer: ClipboardStateCurrentState,
       bufferStamp: ClipboardStateAlias,
-      bufferRendition: ClipboardStateResolvedValue_2,
+      bufferRendition: ClipboardStateBufferRendition,
       unmirroredAt: ClipboardStateConstant,
-      artboardClip: ClipboardStateAlias_2 != null,
+      artboardClip: ClipboardStateArtboardItems != null,
       artboardClipAt: ClipboardStateNowValue,
-      artboardClipStamp: ClipboardStateResolvedValue_3,
-      artboardClipRendition: ClipboardStateResolvedValue_4,
+      artboardClipStamp: ClipboardStateArtboardStamp,
+      artboardClipRendition: ClipboardStateArtboardRendition,
       supersededStamps: ClipboardStateSliceValue,
     },
-    input,
-    options,
+    clipboard,
+    now,
   );
 }
 function clearClipboardBuffers(): Dynamic {
   clearClipboardStamps();
   ClipboardStateCurrentState = null;
   ClipboardStateConstant = 0;
-  ClipboardStateAlias_2 = null;
-  ClipboardStateAlias_3 = [];
+  ClipboardStateArtboardItems = null;
+  ClipboardStateArtboardAnnotations = [];
 }
 function getArtboardClipboard(): Dynamic {
-  return ClipboardStateAlias_2;
+  return ClipboardStateArtboardItems;
 }
 function getAnnotationClipboard(): Dynamic {
-  return ClipboardStateAlias_2 == null ? [] : ClipboardStateAlias_3;
+  return ClipboardStateArtboardItems == null ? [] : ClipboardStateArtboardAnnotations;
 }
 function setArtboardClipboard(
-  items?: Dynamic,
-  options?: Dynamic,
-  items2: Dynamic = [],
+  artboards?: Dynamic,
+  stampOptions?: Dynamic,
+  annotations: Dynamic = [],
 ): Dynamic {
-  (items.length === 0 && items2.length === 0) ||
-    (ClipboardStateConstant_3++,
+  (artboards.length === 0 && annotations.length === 0) ||
+    (ClipboardStateGeneration++,
     clearClipboardStamps(),
-    (ClipboardStateAlias_2 = items),
-    (ClipboardStateAlias_3 = items2),
+    (ClipboardStateArtboardItems = artboards),
+    (ClipboardStateArtboardAnnotations = annotations),
     (ClipboardStateNowValue = Date.now()),
-    (ClipboardStateResolvedValue_3 = options?.stamp ?? null),
-    (ClipboardStateResolvedValue_4 =
-      ClipboardStateResolvedValue_3 != null && options?.rendition
-        ? options.rendition
+    (ClipboardStateArtboardStamp = stampOptions?.stamp ?? null),
+    (ClipboardStateArtboardRendition =
+      ClipboardStateArtboardStamp != null && stampOptions?.rendition
+        ? stampOptions.rendition
         : null),
     (ClipboardStateCurrentState = null));
 }
@@ -350,26 +350,26 @@ export {
   clipboardGeneration,
   clipboardObjectStamp,
   ClipboardStateAlias,
-  ClipboardStateAlias_2,
-  ClipboardStateAlias_3,
+  ClipboardStateArtboardItems as ClipboardStateAlias_2,
+  ClipboardStateArtboardAnnotations as ClipboardStateAlias_3,
   ClipboardStateConstant,
-  ClipboardStateConstant_2,
-  ClipboardStateConstant_3,
+  ClipboardStateSequenceCounter as ClipboardStateConstant_2,
+  ClipboardStateGeneration as ClipboardStateConstant_3,
   ClipboardStateCurrentState,
   ClipboardStateDelayMs,
   ClipboardStateFilterValue,
-  ClipboardStateFilterValue_2,
+  ClipboardStateDeferredTasks as ClipboardStateFilterValue_2,
   ClipboardStateHandler,
   ClipboardStateIsArray,
   ClipboardStateLimit,
-  ClipboardStateLimit_2,
+  ClipboardStateMarkMaxAgeMs as ClipboardStateLimit_2,
   ClipboardStateNowValue,
   ClipboardStateObservedElements,
   ClipboardStateReplace,
   ClipboardStateResolvedValue,
-  ClipboardStateResolvedValue_2,
-  ClipboardStateResolvedValue_3,
-  ClipboardStateResolvedValue_4,
+  ClipboardStateBufferRendition as ClipboardStateResolvedValue_2,
+  ClipboardStateArtboardStamp as ClipboardStateResolvedValue_3,
+  ClipboardStateArtboardRendition as ClipboardStateResolvedValue_4,
   ClipboardStateSliceValue,
   DesignArtboardsKey,
   DesignElementsKey,
@@ -400,49 +400,49 @@ export function installEditorClipboardState(): () => void {
     DesignElementsKey = "design-elements";
     DesignArtboardsKey = "design-artboards";
     ClipboardStateResolvedValue = 34 * 1024 * 1024;
-    ClipboardStateIsArray = (input?: Dynamic): Dynamic =>
-      typeof input == "object" &&
-      input !== null &&
-      Array.isArray(input.artboards) &&
-      input.artboards.length > 0;
-    ClipboardStateHandler = (input?: Dynamic): Dynamic =>
-      typeof input == "number" &&
-      Number.isInteger(input) &&
-      input > 0 &&
-      input <= PlatformFileContentLimit_5
-        ? input
+    ClipboardStateIsArray = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "object" &&
+      candidate !== null &&
+      Array.isArray(candidate.artboards) &&
+      candidate.artboards.length > 0;
+    ClipboardStateHandler = (count?: Dynamic): Dynamic =>
+      typeof count == "number" &&
+      Number.isInteger(count) &&
+      count > 0 &&
+      count <= maxAnnotationCount
+        ? count
         : 0;
     ClipboardStateCurrentState = null;
     ClipboardStateConstant = 0;
     ClipboardStateAlias = null;
-    ClipboardStateResolvedValue_2 = null;
+    ClipboardStateBufferRendition = null;
     ClipboardStateSliceValue = [];
     ClipboardStateFilterValue = [];
-    ClipboardStateConstant_2 = 0;
+    ClipboardStateSequenceCounter = 0;
     localClipboardSequence = 0;
-    ClipboardStateFilterValue_2 = [];
+    ClipboardStateDeferredTasks = [];
     ClipboardStateDelayMs = 3e3;
     ClipboardStateObservedElements = new WeakSet();
     ClipboardStateLimit = 2e3;
     hasPendingClipboardMarks = (
-      input?: Dynamic,
-      options: Dynamic = Date.now(),
+      untilSequence?: Dynamic,
+      now: Dynamic = Date.now(),
     ): Dynamic =>
       ClipboardStateFilterValue.some(
-        (input2?: Dynamic): Dynamic =>
-          input2.droppedAt === 0 &&
-          input2.seq <= input &&
-          options - input2.at < ClipboardStateLimit_2,
+        (mark?: Dynamic): Dynamic =>
+          mark.droppedAt === 0 &&
+          mark.seq <= untilSequence &&
+          now - mark.at < ClipboardStateMarkMaxAgeMs,
       );
-    ClipboardStateConstant_3 = 0;
-    ClipboardStateLimit_2 = 3e4;
-    ClipboardStateAlias_2 = null;
-    ClipboardStateAlias_3 = [];
+    ClipboardStateGeneration = 0;
+    ClipboardStateMarkMaxAgeMs = 3e4;
+    ClipboardStateArtboardItems = null;
+    ClipboardStateArtboardAnnotations = [];
     ClipboardStateNowValue = 0;
-    ClipboardStateResolvedValue_3 = null;
-    ClipboardStateResolvedValue_4 = null;
-    ClipboardStateReplace = (input?: Dynamic): Dynamic =>
-      input.replace(
+    ClipboardStateArtboardStamp = null;
+    ClipboardStateArtboardRendition = null;
+    ClipboardStateReplace = (text?: Dynamic): Dynamic =>
+      text.replace(
         /\r\n?/g,
         `
 `,

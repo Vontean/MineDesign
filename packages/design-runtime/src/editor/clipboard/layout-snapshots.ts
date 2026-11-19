@@ -12,38 +12,38 @@ var ClipboardLayoutSnapshotsMarginGridAreaConfig: Dynamic;
 var ClipboardLayoutSnapshotsBeforeAfterIntoSet: Dynamic;
 var ClipboardLayoutSnapshotsIsArray: Dynamic;
 var ClipboardLayoutSnapshotsHandler: Dynamic;
-var ClipboardLayoutSnapshotsPattern_2: Dynamic;
+var ClipboardLayoutSnapshotsPositivePxPattern: Dynamic;
 var ClipboardLayoutSnapshotsStrokeStrokeWidthStrokeLinecapSet: Dynamic;
-function normalizeFrozenLayoutStyle(input?: Dynamic): Dynamic {
+function normalizeFrozenLayoutStyle(style?: Dynamic): Dynamic {
   let state: Dynamic = {};
-  if (typeof input != "object" || input == null) return state;
-  for (let [value, value2] of Object.entries(input) as Dynamic) {
-    if (Object.hasOwn(ClipboardLayoutSnapshotsMarginGridAreaConfig, value)) {
-      value2 === ClipboardLayoutSnapshotsMarginGridAreaConfig[value] &&
-        (state[value] = value2);
+  if (typeof style != "object" || style == null) return state;
+  for (let [propertyName, propertyValue] of Object.entries(style) as Dynamic) {
+    if (Object.hasOwn(ClipboardLayoutSnapshotsMarginGridAreaConfig, propertyName)) {
+      propertyValue === ClipboardLayoutSnapshotsMarginGridAreaConfig[propertyName] &&
+        (state[propertyName] = propertyValue);
       continue;
     }
-    ClipboardLayoutSnapshotsLeftTopRightSet.has(value) &&
-      (typeof value2 != "string" ||
-        !ClipboardLayoutSnapshotsPattern.test(value2) ||
-        ((value === "width" || value === "height") &&
-          value2.startsWith("-")) ||
-        (state[value] = value2));
+    ClipboardLayoutSnapshotsLeftTopRightSet.has(propertyName) &&
+      (typeof propertyValue != "string" ||
+        !ClipboardLayoutSnapshotsPattern.test(propertyValue) ||
+        ((propertyName === "width" || propertyName === "height") &&
+          propertyValue.startsWith("-")) ||
+        (state[propertyName] = propertyValue));
   }
   return state;
 }
-function parsePastedElementRects(input?: Dynamic): Dynamic {
+function parsePastedElementRects(elements?: Dynamic): Dynamic {
   let values: Dynamic = new Set(),
     items: Dynamic = [];
-  for (let value of input.slice(0, 500) as Dynamic) {
-    if (value == null || typeof value != "object") continue;
-    let tid: Dynamic = value.tid;
+  for (let element of elements.slice(0, 500) as Dynamic) {
+    if (element == null || typeof element != "object") continue;
+    let tid: Dynamic = element.tid;
     if (!Number.isInteger(tid) || values.has(tid)) continue;
-    let value2: Dynamic = normalizeFrozenLayoutStyle(value.absStyles);
-    if (Object.keys(value2).length === 0) continue;
+    let absStyles: Dynamic = normalizeFrozenLayoutStyle(element.absStyles);
+    if (Object.keys(absStyles).length === 0) continue;
     values.add(tid);
-    let freezeStyle: Dynamic = value.freezeStyle,
-      value3: Dynamic =
+    let freezeStyle: Dynamic = element.freezeStyle,
+      freezeStyleObject: Dynamic =
         freezeStyle != null &&
         typeof freezeStyle == "object" &&
         !Array.isArray(freezeStyle)
@@ -51,29 +51,29 @@ function parsePastedElementRects(input?: Dynamic): Dynamic {
           : undefined;
     items.push({
       tid: tid,
-      absStyles: value2,
-      fixed: value.fixed === true,
-      ...(value3
+      absStyles: absStyles,
+      fixed: element.fixed === true,
+      ...(freezeStyleObject
         ? {
-            freezeStyle: value3,
+            freezeStyle: freezeStyleObject,
           }
         : {}),
     });
   }
   return items;
 }
-function parsePastedElementKinds(input?: Dynamic): Dynamic {
+function parsePastedElementKinds(elements?: Dynamic): Dynamic {
   let values: Dynamic = new Set(),
     items: Dynamic = [];
-  for (let value of input.slice(0, 500) as Dynamic) {
-    let value2: Dynamic =
-      value != null && typeof value == "object" ? value.tid : undefined;
-    if (!Number.isInteger(value2) || value2 < 0 || values.has(value2))
+  for (let element of elements.slice(0, 500) as Dynamic) {
+    let tid: Dynamic =
+      element != null && typeof element == "object" ? element.tid : undefined;
+    if (!Number.isInteger(tid) || tid < 0 || values.has(tid))
       continue;
-    values.add(value2);
-    let freezeStyle: Dynamic = value.freezeStyle;
+    values.add(tid);
+    let freezeStyle: Dynamic = element.freezeStyle;
     items.push({
-      tid: value2,
+      tid: tid,
       freezeStyle:
         freezeStyle != null &&
         typeof freezeStyle == "object" &&
@@ -84,332 +84,332 @@ function parsePastedElementKinds(input?: Dynamic): Dynamic {
   }
   return items;
 }
-function parseGroupLayoutSnapshot(input?: Dynamic): Dynamic {
-  if (input == null || typeof input != "object") return;
-  let value: Dynamic = input,
-    value2: Dynamic = ClipboardLayoutSnapshotsHandler(value.parentTid);
-  if (value2 === undefined) return;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" && Number.isFinite(input2) ? input2 : 0,
-    value3: Dynamic = Array.isArray(value.siblings)
-      ? value.siblings.slice(0, 200).flatMap((input2?: Dynamic): Dynamic => {
-          if (input2 == null || typeof input2 != "object") return [];
-          let value4: Dynamic = input2;
-          return Number.isInteger(value4.tid)
+function parseGroupLayoutSnapshot(rawSnapshot?: Dynamic): Dynamic {
+  if (rawSnapshot == null || typeof rawSnapshot != "object") return;
+  let snapshot: Dynamic = rawSnapshot,
+    parentTid: Dynamic = ClipboardLayoutSnapshotsHandler(snapshot.parentTid);
+  if (parentTid === undefined) return;
+  let toFiniteNumber: Dynamic = (numericValue?: Dynamic): Dynamic =>
+      typeof numericValue == "number" && Number.isFinite(numericValue) ? numericValue : 0,
+    siblings: Dynamic = Array.isArray(snapshot.siblings)
+      ? snapshot.siblings.slice(0, 200).flatMap((sibling?: Dynamic): Dynamic => {
+          if (sibling == null || typeof sibling != "object") return [];
+          let siblingRecord: Dynamic = sibling;
+          return Number.isInteger(siblingRecord.tid)
             ? [
                 {
-                  tid: value4.tid,
-                  left: callback(value4.left),
-                  top: callback(value4.top),
-                  w: callback(value4.w),
-                  h: callback(value4.h),
-                  static: value4.static === true,
+                  tid: siblingRecord.tid,
+                  left: toFiniteNumber(siblingRecord.left),
+                  top: toFiniteNumber(siblingRecord.top),
+                  w: toFiniteNumber(siblingRecord.w),
+                  h: toFiniteNumber(siblingRecord.h),
+                  static: siblingRecord.static === true,
                 },
               ]
             : [];
         })
       : [];
   return {
-    parentTid: value2,
-    parentStatic: value.parentStatic === true,
-    w: callback(value.w),
-    h: callback(value.h),
-    siblings: value3,
+    parentTid: parentTid,
+    parentStatic: snapshot.parentStatic === true,
+    w: toFiniteNumber(snapshot.w),
+    h: toFiniteNumber(snapshot.h),
+    siblings: siblings,
   };
 }
 function parseElementMoveSnapshot(
-  input?: Dynamic,
-  options?: Dynamic,
+  rawMove?: Dynamic,
+  movableTids?: Dynamic,
 ): Dynamic {
-  if (input == null || typeof input != "object") return null;
-  let value: Dynamic = input;
+  if (rawMove == null || typeof rawMove != "object") return null;
+  let move: Dynamic = rawMove;
   if (
-    !Number.isInteger(value.tid) ||
-    !options.includes(value.tid) ||
-    value.alt === true
+    !Number.isInteger(move.tid) ||
+    !movableTids.includes(move.tid) ||
+    move.alt === true
   )
     return null;
-  let value2: Dynamic = ClipboardLayoutSnapshotsHandler(value.targetTid);
+  let targetTid: Dynamic = ClipboardLayoutSnapshotsHandler(move.targetTid);
   if (
-    value2 === undefined ||
-    typeof value.position != "string" ||
-    !ClipboardLayoutSnapshotsBeforeAfterIntoSet.has(value.position)
+    targetTid === undefined ||
+    typeof move.position != "string" ||
+    !ClipboardLayoutSnapshotsBeforeAfterIntoSet.has(move.position)
   )
     return null;
-  let value3: Dynamic = value.absolute === true,
-    value4: Dynamic = Array.isArray(value.followers)
-      ? parsePastedElementRects(value.followers).filter(
-          (input2?: Dynamic): Dynamic => options.includes(input2.tid),
+  let isAbsolute: Dynamic = move.absolute === true,
+    followers: Dynamic = Array.isArray(move.followers)
+      ? parsePastedElementRects(move.followers).filter(
+          (follower?: Dynamic): Dynamic => movableTids.includes(follower.tid),
         )
       : undefined,
-    value5: Dynamic = Array.isArray(value.group)
-      ? parsePastedElementKinds(value.group).filter(
-          (input2?: Dynamic): Dynamic => options.includes(input2.tid),
+    group: Dynamic = Array.isArray(move.group)
+      ? parsePastedElementKinds(move.group).filter(
+          (groupItem?: Dynamic): Dynamic => movableTids.includes(groupItem.tid),
         )
       : undefined;
   return {
-    tid: value.tid,
-    targetTid: value2,
-    position: value.position,
-    alt: value.alt === true,
-    absolute: value3,
-    ...(value.breakout === true
+    tid: move.tid,
+    targetTid: targetTid,
+    position: move.position,
+    alt: move.alt === true,
+    absolute: isAbsolute,
+    ...(move.breakout === true
       ? {
           breakout: true,
         }
       : {}),
-    ...(value.fixed === true
+    ...(move.fixed === true
       ? {
           fixed: true,
         }
       : {}),
-    ...(value.absStyles != null
+    ...(move.absStyles != null
       ? {
-          absStyles: normalizeFrozenLayoutStyle(value.absStyles),
+          absStyles: normalizeFrozenLayoutStyle(move.absStyles),
         }
       : {}),
-    ...(value.parentNeedsPositioning === true
+    ...(move.parentNeedsPositioning === true
       ? {
           parentNeedsPositioning: true,
         }
       : {}),
-    ...(value3 && value.flatten != null
+    ...(isAbsolute && move.flatten != null
       ? {
-          flatten: parseGroupLayoutSnapshot(value.flatten),
+          flatten: parseGroupLayoutSnapshot(move.flatten),
         }
       : {}),
-    ...(value4 && value4.length > 0
+    ...(followers && followers.length > 0
       ? {
-          followers: value4,
+          followers: followers,
         }
       : {}),
-    ...(value5 && value5.length > 0
+    ...(group && group.length > 0
       ? {
-          group: value5,
+          group: group,
         }
       : {}),
     block: null,
-    ...(value.clearPositioning === true
+    ...(move.clearPositioning === true
       ? {
           clearPositioning: true,
         }
       : {}),
-    ...(ClipboardLayoutSnapshotsIsArray(value.freezeStyle)
+    ...(ClipboardLayoutSnapshotsIsArray(move.freezeStyle)
       ? {
-          freezeStyle: ClipboardLayoutSnapshotsIsArray(value.freezeStyle),
+          freezeStyle: ClipboardLayoutSnapshotsIsArray(move.freezeStyle),
         }
       : {}),
   };
 }
-function parseGroupMoveSnapshot(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input == null || typeof input != "object") return null;
-  let value: Dynamic = input,
-    value2: Dynamic = ClipboardLayoutSnapshotsHandler(value.container);
+function parseGroupMoveSnapshot(rawMove?: Dynamic, memberTids?: Dynamic): Dynamic {
+  if (rawMove == null || typeof rawMove != "object") return null;
+  let move: Dynamic = rawMove,
+    container: Dynamic = ClipboardLayoutSnapshotsHandler(move.container);
   if (
-    value2 === undefined ||
-    !Array.isArray(value.members) ||
-    value.members.length > 500
+    container === undefined ||
+    !Array.isArray(move.members) ||
+    move.members.length > 500
   )
     return null;
-  let items: Dynamic = [],
-    items2: Dynamic = [],
-    values: Dynamic = new Set();
-  for (let value3 of value.members as Dynamic) {
-    if (value3 == null || typeof value3 != "object") continue;
-    let value4: Dynamic = value3;
+  let landingMoves: Dynamic = [],
+    refusedTids: Dynamic = [],
+    handledTids: Dynamic = new Set();
+  for (let member of move.members as Dynamic) {
+    if (member == null || typeof member != "object") continue;
+    let memberRecord: Dynamic = member;
     if (
-      !Number.isInteger(value4.tid) ||
-      !options.includes(value4.tid) ||
-      values.has(value4.tid)
+      !Number.isInteger(memberRecord.tid) ||
+      !memberTids.includes(memberRecord.tid) ||
+      handledTids.has(memberRecord.tid)
     )
       continue;
-    if (typeof value4.refused == "string") {
-      values.add(value4.tid);
-      items2.push(value4.tid);
+    if (typeof memberRecord.refused == "string") {
+      handledTids.add(memberRecord.tid);
+      refusedTids.push(memberRecord.tid);
       continue;
     }
-    let value5: Dynamic = ClipboardLayoutSnapshotsHandler(value4.targetTid);
+    let targetTid: Dynamic = ClipboardLayoutSnapshotsHandler(memberRecord.targetTid);
     if (
-      value5 === undefined ||
-      typeof value4.position != "string" ||
-      !ClipboardLayoutSnapshotsBeforeAfterIntoSet.has(value4.position) ||
-      (value4.position === "root-end" ? value5 !== null : value5 === null)
+      targetTid === undefined ||
+      typeof memberRecord.position != "string" ||
+      !ClipboardLayoutSnapshotsBeforeAfterIntoSet.has(memberRecord.position) ||
+      (memberRecord.position === "root-end" ? targetTid !== null : targetTid === null)
     )
       continue;
-    let value6: Dynamic = value4.absolute === true;
+    let isAbsolute: Dynamic = memberRecord.absolute === true;
     if (
-      value6 &&
-      value4.position !== "into" &&
-      value4.position !== "root-end"
+      isAbsolute &&
+      memberRecord.position !== "into" &&
+      memberRecord.position !== "root-end"
     )
       continue;
-    let value7: Dynamic = value6
-        ? normalizeFrozenLayoutStyle(value4.absStyles)
+    let absStyles: Dynamic = isAbsolute
+        ? normalizeFrozenLayoutStyle(memberRecord.absStyles)
         : undefined,
-      value8: Dynamic = value7
+      positionStyles: Dynamic = absStyles
         ? Object.fromEntries(
-            Object.entries(value7).filter(
-              ([input2]: Dynamic): Dynamic =>
-                input2 === "left" ||
-                input2 === "top" ||
-                input2 === "width" ||
-                input2 === "height",
+            Object.entries(absStyles).filter(
+              ([propertyName]: Dynamic): Dynamic =>
+                propertyName === "left" ||
+                propertyName === "top" ||
+                propertyName === "width" ||
+                propertyName === "height",
             ),
           )
         : undefined;
-    (value6 && (!value8 || !("left" in value8) || !("top" in value8))) ||
-      (values.add(value4.tid),
-      items.push({
-        tid: value4.tid,
-        targetTid: value5,
-        position: value4.position,
-        absolute: value6,
-        ...(value8
+    (isAbsolute && (!positionStyles || !("left" in positionStyles) || !("top" in positionStyles))) ||
+      (handledTids.add(memberRecord.tid),
+      landingMoves.push({
+        tid: memberRecord.tid,
+        targetTid: targetTid,
+        position: memberRecord.position,
+        absolute: isAbsolute,
+        ...(positionStyles
           ? {
-              absStyles: value8,
+              absStyles: positionStyles,
             }
           : {}),
-        ...(value4.parentNeedsPositioning === true && value5 !== null
+        ...(memberRecord.parentNeedsPositioning === true && targetTid !== null
           ? {
               parentNeedsPositioning: true,
             }
           : {}),
       }));
   }
-  for (let value3 of options as Dynamic)
-    values.has(value3) || items2.push(value3);
+  for (let tid of memberTids as Dynamic)
+    handledTids.has(tid) || refusedTids.push(tid);
   return {
-    container: value2,
-    landing: items,
-    refused: items2,
+    container: container,
+    landing: landingMoves,
+    refused: refusedTids,
   };
 }
-function normalizePasteScale(input?: Dynamic): Dynamic {
-  return input === undefined
+function normalizePasteScale(scale?: Dynamic): Dynamic {
+  return scale === undefined
     ? 1
-    : typeof input == "number" &&
-        Number.isFinite(input) &&
-        input > 1e-4 &&
-        input < 1e4
-      ? input
+    : typeof scale == "number" &&
+        Number.isFinite(scale) &&
+        scale > 1e-4 &&
+        scale < 1e4
+      ? scale
       : null;
 }
-function normalizeSvgStrokeProperties(input?: Dynamic): Dynamic {
+function normalizeSvgStrokeProperties(properties?: Dynamic): Dynamic {
   let state: Dynamic = {};
-  if (input == null || typeof input != "object") return state;
-  for (let [value, value2] of Object.entries(input) as Dynamic)
-    ClipboardLayoutSnapshotsStrokeStrokeWidthStrokeLinecapSet.has(value) &&
-      typeof value2 == "string" &&
-      value2.length <= 64 &&
-      (/^(?![\s\S]*url\()[\w #(),.%\/-]+$/i.test(value2) ||
-        /^url\((#[\w-]+|"#[\w-]+")\)$/.test(value2)) &&
-      (state[value] = value2);
+  if (properties == null || typeof properties != "object") return state;
+  for (let [propertyName, propertyValue] of Object.entries(properties) as Dynamic)
+    ClipboardLayoutSnapshotsStrokeStrokeWidthStrokeLinecapSet.has(propertyName) &&
+      typeof propertyValue == "string" &&
+      propertyValue.length <= 64 &&
+      (/^(?![\s\S]*url\()[\w #(),.%\/-]+$/i.test(propertyValue) ||
+        /^url\((#[\w-]+|"#[\w-]+")\)$/.test(propertyValue)) &&
+      (state[propertyName] = propertyValue);
   return state;
 }
-function parseVectorElements(input?: Dynamic): Dynamic {
+function parseVectorElements(elements?: Dynamic): Dynamic {
   let items: Dynamic = [];
-  if (!Array.isArray(input)) return items;
-  let values: Dynamic = new Set(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" &&
-      Number.isFinite(input2) &&
-      Math.abs(input2) < 1e6;
-  for (let value of input.slice(0, 500) as Dynamic) {
-    if (value == null || typeof value != "object") continue;
+  if (!Array.isArray(elements)) return items;
+  let seenTids: Dynamic = new Set(),
+    isReasonableNumber: Dynamic = (numericValue?: Dynamic): Dynamic =>
+      typeof numericValue == "number" &&
+      Number.isFinite(numericValue) &&
+      Math.abs(numericValue) < 1e6;
+  for (let element of elements.slice(0, 500) as Dynamic) {
+    if (element == null || typeof element != "object") continue;
     let {
-      tid: value2,
-      styles: value3,
-      angle: value4,
-      stroke: value5,
-      fixed: value6,
-    }: Dynamic = value;
-    if (!Number.isInteger(value2) || value2 < 0 || values.has(value2))
+      tid: tid,
+      styles: styles,
+      angle: angle,
+      stroke: stroke,
+      fixed: fixed,
+    }: Dynamic = element;
+    if (!Number.isInteger(tid) || tid < 0 || seenTids.has(tid))
       continue;
     let state: Dynamic = {
-      tid: value2,
+      tid: tid,
     };
-    if (typeof value3 == "object" && value3 != null) {
-      let value7: Dynamic = normalizeFrozenLayoutStyle(value3),
-        state2: Dynamic = {};
-      for (let value8 of ["left", "top", "right", "bottom"] as Dynamic)
-        value7[value8] !== undefined && (state2[value8] = value7[value8]);
-      for (let value8 of ["width", "height"] as Dynamic) {
-        let value9: Dynamic = value3[value8];
-        typeof value9 == "string" &&
-          ClipboardLayoutSnapshotsPattern_2.test(value9) &&
-          parseFloat(value9) >= 1 &&
-          (state2[value8] = value9);
+    if (typeof styles == "object" && styles != null) {
+      let normalizedStyles: Dynamic = normalizeFrozenLayoutStyle(styles),
+        styleOverrides: Dynamic = {};
+      for (let edge of ["left", "top", "right", "bottom"] as Dynamic)
+        normalizedStyles[edge] !== undefined && (styleOverrides[edge] = normalizedStyles[edge]);
+      for (let dimension of ["width", "height"] as Dynamic) {
+        let dimensionValue: Dynamic = styles[dimension];
+        typeof dimensionValue == "string" &&
+          ClipboardLayoutSnapshotsPositivePxPattern.test(dimensionValue) &&
+          parseFloat(dimensionValue) >= 1 &&
+          (styleOverrides[dimension] = dimensionValue);
       }
-      state2.left !== undefined && delete state2.right;
-      state2.top !== undefined && delete state2.bottom;
-      Object.keys(state2).length > 0 && (state.styles = state2);
+      styleOverrides.left !== undefined && delete styleOverrides.right;
+      styleOverrides.top !== undefined && delete styleOverrides.bottom;
+      Object.keys(styleOverrides).length > 0 && (state.styles = styleOverrides);
     }
-    value6 === true && (state.fixed = true);
-    typeof value4 == "number" &&
-      Number.isFinite(value4) &&
-      Math.abs(value4) <= 360 &&
-      (state.angle = value4);
-    if (typeof value5 == "object" && value5 != null) {
-      let value7: Dynamic = value5,
-        value8: Dynamic = normalizePasteScale(value7.unitScale);
-      value8 != null &&
-        callback(value7.left) &&
-        callback(value7.top) &&
-        callback(value7.width) &&
-        callback(value7.height) &&
-        typeof value7.d == "string" &&
-        value7.d.length <= 256 &&
-        /^[MLZE\d\s.,-]+$/i.test(value7.d) &&
+    fixed === true && (state.fixed = true);
+    typeof angle == "number" &&
+      Number.isFinite(angle) &&
+      Math.abs(angle) <= 360 &&
+      (state.angle = angle);
+    if (typeof stroke == "object" && stroke != null) {
+      let strokeRecord: Dynamic = stroke,
+        unitScale: Dynamic = normalizePasteScale(strokeRecord.unitScale);
+      unitScale != null &&
+        isReasonableNumber(strokeRecord.left) &&
+        isReasonableNumber(strokeRecord.top) &&
+        isReasonableNumber(strokeRecord.width) &&
+        isReasonableNumber(strokeRecord.height) &&
+        typeof strokeRecord.d == "string" &&
+        strokeRecord.d.length <= 256 &&
+        /^[MLZE\d\s.,-]+$/i.test(strokeRecord.d) &&
         (state.stroke = {
-          left: value7.left,
-          top: value7.top,
-          width: Math.max(1, value7.width),
-          height: Math.max(1, value7.height),
-          d: value7.d,
-          isArrow: value7.isArrow === true,
-          unitScale: value8,
-          paint: normalizeSvgStrokeProperties(value7.paint),
-          svgPaint: normalizeSvgStrokeProperties(value7.svgPaint),
+          left: strokeRecord.left,
+          top: strokeRecord.top,
+          width: Math.max(1, strokeRecord.width),
+          height: Math.max(1, strokeRecord.height),
+          d: strokeRecord.d,
+          isArrow: strokeRecord.isArrow === true,
+          unitScale: unitScale,
+          paint: normalizeSvgStrokeProperties(strokeRecord.paint),
+          svgPaint: normalizeSvgStrokeProperties(strokeRecord.svgPaint),
         });
     }
     (state.styles || state.angle !== undefined || state.stroke) &&
-      (values.add(state.tid), items.push(state));
+      (seenTids.add(state.tid), items.push(state));
   }
   return items;
 }
-function normalizeComputedStyleCarry(input?: Dynamic): Dynamic {
+function normalizeComputedStyleCarry(styles?: Dynamic): Dynamic {
   let state: Dynamic = {};
-  if (typeof input != "object" || input == null) return state;
-  for (let [value, value2] of Object.entries(input) as Dynamic) {
+  if (typeof styles != "object" || styles == null) return state;
+  for (let [propertyName, propertyValue] of Object.entries(styles) as Dynamic) {
     if (
-      !/^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$/.test(value) ||
-      isUnsafeCssProperty(value) ||
+      !/^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$/.test(propertyName) ||
+      isUnsafeCssProperty(propertyName) ||
       ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(
-        value,
+        propertyName,
       ) ||
-      typeof value2 != "string"
+      typeof propertyValue != "string"
     )
       continue;
-    let value3: Dynamic = value2.trim();
-    value3.length === 0 ||
-      value3.length > 2048 ||
-      /;|[\r\n]/.test(value3) ||
-      /\\$/.test(value3) ||
+    let trimmedValue: Dynamic = propertyValue.trim();
+    trimmedValue.length === 0 ||
+      trimmedValue.length > 2048 ||
+      /;|[\r\n]/.test(trimmedValue) ||
+      /\\$/.test(trimmedValue) ||
       ClipboardHtmlSanitizationExpressionMozBindingPattern.test(
-        decodeCssEscapes(value3).replace(
+        decodeCssEscapes(trimmedValue).replace(
           /[\u0000\t\n\r\f]/g,
           "",
         ),
       ) ||
       ClipboardHtmlSanitizationAZPattern.test(
         decodeCssEscapes(
-          removeCssStrings(value3),
+          removeCssStrings(trimmedValue),
         ).replace(/[\u0000\t\n\r\f]/g, ""),
       ) ||
       ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(
-        value3,
+        trimmedValue,
       ) ||
-      (state[value] = value3);
+      (state[propertyName] = trimmedValue);
   }
   return state;
 }
@@ -420,7 +420,7 @@ export {
   ClipboardLayoutSnapshotsLeftTopRightSet,
   ClipboardLayoutSnapshotsMarginGridAreaConfig,
   ClipboardLayoutSnapshotsPattern,
-  ClipboardLayoutSnapshotsPattern_2,
+  ClipboardLayoutSnapshotsPositivePxPattern as ClipboardLayoutSnapshotsPattern_2,
   ClipboardLayoutSnapshotsScriptStyleXmpSet,
   ClipboardLayoutSnapshotsStrokeStrokeWidthStrokeLinecapSet,
   normalizeComputedStyleCarry,
@@ -465,17 +465,17 @@ export function installEditorClipboardLayoutSnapshots(): () => void {
       "into",
       "root-end",
     ]);
-    ClipboardLayoutSnapshotsIsArray = (input?: Dynamic): Dynamic =>
-      input != null && typeof input == "object" && !Array.isArray(input)
-        ? input
+    ClipboardLayoutSnapshotsIsArray = (candidate?: Dynamic): Dynamic =>
+      candidate != null && typeof candidate == "object" && !Array.isArray(candidate)
+        ? candidate
         : undefined;
-    ClipboardLayoutSnapshotsHandler = (input?: Dynamic): Dynamic =>
-      input == null
+    ClipboardLayoutSnapshotsHandler = (tid?: Dynamic): Dynamic =>
+      tid == null
         ? null
-        : Number.isInteger(input) && input >= 0 && input <= 1e6
-          ? input
+        : Number.isInteger(tid) && tid >= 0 && tid <= 1e6
+          ? tid
           : undefined;
-    ClipboardLayoutSnapshotsPattern_2 = /^\d{1,6}(?:\.\d{1,4})?px$/;
+    ClipboardLayoutSnapshotsPositivePxPattern = /^\d{1,6}(?:\.\d{1,4})?px$/;
     ClipboardLayoutSnapshotsStrokeStrokeWidthStrokeLinecapSet = new Set([
       "stroke",
       "stroke-width",

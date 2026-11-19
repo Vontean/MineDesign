@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardHtmlSanitizationAnimateSetAnimatemotionSet, ClipboardHtmlSanitizationScriptDataDcScriptPattern, ClipboardHtmlSanitizationSubscribers_2, createNativeDomAccessors, isPastedStylePreserved, isSafePastedSrcset, isSafePastedUrl } from "./html-sanitization";
+import { ClipboardHtmlSanitizationAnimateSetAnimatemotionSet, ClipboardHtmlSanitizationScriptDataDcScriptPattern, ClipboardHtmlSanitizationSubscribers_2 as urlAttributeNames, createNativeDomAccessors, isPastedStylePreserved, isSafePastedSrcset, isSafePastedUrl } from "./html-sanitization";
 import { ClipboardLayoutSnapshotsScriptStyleXmpSet } from "./layout-snapshots";
 import { DcTplAttribute, fromParserHtml } from "../html/authoring";
 import { ScCamelValue, toParserHtml } from "../html/tag-normalization";
@@ -11,235 +11,235 @@ import { promoteSvgShapeToRoot, selectedRootElementIds } from "../selection/elem
 var ClipboardTemplateFlatteningAZaZPattern: Dynamic;
 var unsafeTemplateCodePattern: Dynamic;
 var ClipboardTemplateFlatteningMatch: Dynamic;
-var ClipboardTemplateFlatteningAZaZPattern_2: Dynamic;
+var ClipboardTemplateFlatteningSoleVariablePattern: Dynamic;
 var ClipboardTemplateFlatteningScriptStyleIframeSet: Dynamic;
 var ClipboardTemplateFlatteningSubscribers: Dynamic;
 var ClipboardTemplateFlatteningLimit: Dynamic;
 var ClipboardTemplateFlatteningTrueFalseNullSet: Dynamic;
 var ClipboardTemplateFlatteningHelmetScriptPattern: Dynamic;
 function substituteTemplateValues(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  template?: Dynamic,
+  resolveValue?: Dynamic,
+  keepNumericPlaceholders: Dynamic = false,
 ): Dynamic {
-  return input.replace(
+  return template.replace(
     ClipboardTemplateFlatteningAZaZPattern,
-    (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value: Dynamic = options(options2);
-      return typeof value == "boolean" || value === null
-        ? "{{" + String(value) + "}}"
-        : typeof value == "number"
-          ? Number.isFinite(value)
-            ? context && /^-?\d+(\.\d+)?$/.test(String(value))
-              ? "{{" + String(value) + "}}"
-              : String(value)
-            : input2
-          : typeof value != "string" ||
-              /[{}]/.test(value) ||
+    (placeholder?: Dynamic, variableName?: Dynamic): Dynamic => {
+      let resolved: Dynamic = resolveValue(variableName);
+      return typeof resolved == "boolean" || resolved === null
+        ? "{{" + String(resolved) + "}}"
+        : typeof resolved == "number"
+          ? Number.isFinite(resolved)
+            ? keepNumericPlaceholders && /^-?\d+(\.\d+)?$/.test(String(resolved))
+              ? "{{" + String(resolved) + "}}"
+              : String(resolved)
+            : placeholder
+          : typeof resolved != "string" ||
+              /[{}]/.test(resolved) ||
               ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(
-                value,
+                resolved,
               )
-            ? input2
-            : value;
+            ? placeholder
+            : resolved;
     },
   );
 }
 function flattenTemplateValues(
-  input?: Dynamic,
-  options?: Dynamic,
+  html?: Dynamic,
+  resolveValue?: Dynamic,
   doc: Dynamic = document,
 ): Dynamic {
-  if (!input.includes("{{")) return input;
+  if (!html.includes("{{")) return html;
   try {
-    let value: Dynamic = createNativeDomAccessors(doc.body),
-      value2: Dynamic = doc.createElement("template");
-    value2.innerHTML = toParserHtml(input);
-    let index: Dynamic = 0,
-      index2: Dynamic = 0,
-      callback: Dynamic = (items?: Dynamic, items2?: Dynamic): Dynamic => {
-        index2 += items2.length - items.length;
-        if (index2 > ClipboardTemplateFlatteningLimit)
+    let dom: Dynamic = createNativeDomAccessors(doc.body),
+      templateElement: Dynamic = doc.createElement("template");
+    templateElement.innerHTML = toParserHtml(html);
+    let changeCount: Dynamic = 0,
+      addedLength: Dynamic = 0,
+      trackBudget: Dynamic = (oldText?: Dynamic, newText?: Dynamic): Dynamic => {
+        addedLength += newText.length - oldText.length;
+        if (addedLength > ClipboardTemplateFlatteningLimit)
           throw new RangeError("bake budget");
       },
-      callback2: Dynamic = (
-        input2?: Dynamic,
-        options2?: Dynamic,
+      flattenNode: Dynamic = (
+        node?: Dynamic,
+        parentTag?: Dynamic,
       ): Dynamic => {
-        let value4: Dynamic = value.nodeType(input2);
-        if (value4 === 3) {
+        let nodeType: Dynamic = dom.nodeType(node);
+        if (nodeType === 3) {
           if (
-            ClipboardLayoutSnapshotsScriptStyleXmpSet.has(options2) ||
-            options2 === "textarea" ||
-            options2 === "title"
+            ClipboardLayoutSnapshotsScriptStyleXmpSet.has(parentTag) ||
+            parentTag === "textarea" ||
+            parentTag === "title"
           )
             return;
-          let value8: Dynamic = input2.nodeValue ?? "",
-            value9: Dynamic = substituteTemplateValues(value8, options);
-          value9 !== value8 &&
-            (callback(value8, value9), (input2.nodeValue = value9), index++);
+          let oldText: Dynamic = node.nodeValue ?? "",
+            newText: Dynamic = substituteTemplateValues(oldText, resolveValue);
+          newText !== oldText &&
+            (trackBudget(oldText, newText), (node.nodeValue = newText), changeCount++);
           return;
         }
-        if (value4 !== 1) return;
-        let value5: Dynamic = input2,
-          value6: Dynamic = value.tagName(value5).toLowerCase(),
-          value7: Dynamic = value6.startsWith("sc-raw-")
-            ? value6.slice(7)
-            : value6;
+        if (nodeType !== 1) return;
+        let element: Dynamic = node,
+          tagName: Dynamic = dom.tagName(element).toLowerCase(),
+          baseTag: Dynamic = tagName.startsWith("sc-raw-")
+            ? tagName.slice(7)
+            : tagName;
         if (
           !(
-            value7.includes(":") ||
+            baseTag.includes(":") ||
             ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(
-              "<" + value7,
+              "<" + baseTag,
             )
           )
         ) {
-          if (!ClipboardTemplateFlatteningScriptStyleIframeSet.has(value7))
-            for (let value8 of Array.from(
-              value.attributes(value5),
+          if (!ClipboardTemplateFlatteningScriptStyleIframeSet.has(baseTag))
+            for (let attribute of Array.from(
+              dom.attributes(element),
             ) as Dynamic) {
-              let value9: Dynamic = value8.name.startsWith(
+              let attributeName: Dynamic = attribute.name.startsWith(
                   ScCamelValue,
                 )
-                  ? value8.name.slice(ScCamelValue.length)
-                  : value8.name,
-                value10: Dynamic = value9
+                  ? attribute.name.slice(ScCamelValue.length)
+                  : attribute.name,
+                normalizedName: Dynamic = attributeName
                   .toLowerCase()
                   .replace(/[^a-z]/g, "");
               if (
-                !value8.value.includes("{{") ||
-                value10.startsWith("on") ||
-                value9.startsWith("sc-") ||
+                !attribute.value.includes("{{") ||
+                normalizedName.startsWith("on") ||
+                attributeName.startsWith("sc-") ||
                 ["srcdoc", "formaction", "ping", "contenteditable"].includes(
-                  value10,
+                  normalizedName,
                 ) ||
-                ((value7 === "x-import" || value7 === "dc-import") &&
-                  ["from", "import", "src"].includes(value10))
+                ((baseTag === "x-import" || baseTag === "dc-import") &&
+                  ["from", "import", "src"].includes(normalizedName))
               )
                 continue;
-              let value11: Dynamic = value10.startsWith("style"),
-                value12: Dynamic = substituteTemplateValues(
-                  value8.value,
-                  options,
-                  !value11 &&
-                    ClipboardTemplateFlatteningAZaZPattern_2.test(
-                      value8.value,
+              let isStyleAttribute: Dynamic = normalizedName.startsWith("style"),
+                newValue: Dynamic = substituteTemplateValues(
+                  attribute.value,
+                  resolveValue,
+                  !isStyleAttribute &&
+                    ClipboardTemplateFlatteningSoleVariablePattern.test(
+                      attribute.value,
                     ),
                 );
-              if (value12 !== value8.value) {
-                if (value11) {
-                  if (!isPastedStylePreserved(value12)) continue;
+              if (newValue !== attribute.value) {
+                if (isStyleAttribute) {
+                  if (!isPastedStylePreserved(newValue)) continue;
                 } else if (
-                  value10 === "srcset" ||
-                  value10 === "imagesrcset"
+                  normalizedName === "srcset" ||
+                  normalizedName === "imagesrcset"
                 ) {
-                  if (!isSafePastedSrcset(value12)) continue;
+                  if (!isSafePastedSrcset(newValue)) continue;
                 } else if (
-                  ClipboardTemplateFlatteningSubscribers.has(value10) &&
+                  ClipboardTemplateFlatteningSubscribers.has(normalizedName) &&
                   !isSafePastedUrl(
-                    value12,
-                    value10 === "src" ||
-                      value10 === "poster" ||
-                      value7 === "image" ||
-                      value7 === "feimage",
+                    newValue,
+                    normalizedName === "src" ||
+                      normalizedName === "poster" ||
+                      baseTag === "image" ||
+                      baseTag === "feimage",
                   )
                 )
                   continue;
-                callback(value8.value, value12);
-                value.setAttribute(value5, value8.name, value12);
-                index++;
+                trackBudget(attribute.value, newValue);
+                dom.setAttribute(element, attribute.name, newValue);
+                changeCount++;
               }
             }
-          if (value7 !== "template")
-            for (let value8 of Array.from(
-              value.childNodes(value5),
+          if (baseTag !== "template")
+            for (let childNode of Array.from(
+              dom.childNodes(element),
             ) as Dynamic)
-              callback2(value8, value7);
+              flattenNode(childNode, baseTag);
         }
       };
-    for (let value4 of Array.from(value2.content.childNodes) as Dynamic)
-      callback2(value4, "");
-    if (index === 0) return input;
-    let value3: Dynamic = fromParserHtml(value2.innerHTML);
-    return ClipboardTemplateFlatteningMatch(value3) >
-      ClipboardTemplateFlatteningMatch(input)
-      ? input
-      : value3;
+    for (let rootNode of Array.from(templateElement.content.childNodes) as Dynamic)
+      flattenNode(rootNode, "");
+    if (changeCount === 0) return html;
+    let flattened: Dynamic = fromParserHtml(templateElement.innerHTML);
+    return ClipboardTemplateFlatteningMatch(flattened) >
+      ClipboardTemplateFlatteningMatch(html)
+      ? html
+      : flattened;
   } catch {
-    return input;
+    return html;
   }
 }
-function getLoopTemplateVariables(input?: Dynamic): Dynamic {
-  let values: Dynamic = new Set();
-  if (!/<sc-for\b/i.test(input)) return values;
-  let value: Dynamic = (document as Dynamic).createElement("template");
-  value.innerHTML = input;
-  for (let value2 of Array.from(
-    value.content.querySelectorAll("sc-for"),
+function getLoopTemplateVariables(html?: Dynamic): Dynamic {
+  let variables: Dynamic = new Set();
+  if (!/<sc-for\b/i.test(html)) return variables;
+  let templateElement: Dynamic = (document as Dynamic).createElement("template");
+  templateElement.innerHTML = html;
+  for (let loopElement of Array.from(
+    templateElement.content.querySelectorAll("sc-for"),
   ) as Dynamic)
-    values.add((value2.getAttribute("as") ?? "").trim() || "item");
-  return values;
+    variables.add((loopElement.getAttribute("as") ?? "").trim() || "item");
+  return variables;
 }
 function flattenSelectionTemplates(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  editorApi?: Dynamic,
+  selectedIds?: Dynamic,
+  html?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = selectedRootElementIds(input, [
+  let selectedElements: Dynamic = selectedRootElementIds(editorApi, [
       ...new Set(
-        options.map(
-          (input2?: Dynamic): Dynamic =>
-            promoteSvgShapeToRoot(input, input2),
+        selectedIds.map(
+          (id?: Dynamic): Dynamic =>
+            promoteSvgShapeToRoot(editorApi, id),
         ),
       ),
-    ]).map((input2?: Dynamic): Dynamic => input.element(input2)),
-    value2: Dynamic = context;
+    ]).map((id?: Dynamic): Dynamic => editorApi.element(id)),
+    wrappedHtml: Dynamic = html;
   for (
-    let value3: Dynamic = value[0]?.parentElement ?? null;
-    value3;
-    value3 = value3.parentElement
+    let ancestor: Dynamic = selectedElements[0]?.parentElement ?? null;
+    ancestor;
+    ancestor = ancestor.parentElement
   ) {
     if (
-      value3.tagName.toLowerCase() !== "x-import" ||
-      value3.hasAttribute("data-uneditable") ||
-      !value.every(
-        (input2?: Dynamic): Dynamic =>
-          input2 != null && input2 !== value3 && value3.contains(input2),
+      ancestor.tagName.toLowerCase() !== "x-import" ||
+      ancestor.hasAttribute("data-uneditable") ||
+      !selectedElements.every(
+        (element?: Dynamic): Dynamic =>
+          element != null && element !== ancestor && ancestor.contains(element),
       )
     )
       continue;
-    let flag: Dynamic = true;
+    let hasNoSiblings: Dynamic = true;
     for (
-      let value7: Dynamic = value3;
-      value7 && flag;
-      value7 = value7.parentElement
+      let chainElement: Dynamic = ancestor;
+      chainElement && hasNoSiblings;
+      chainElement = chainElement.parentElement
     )
-      flag = [...(value7.parentNode?.children ?? [])].every(
-        (input2?: Dynamic): Dynamic =>
-          input2 === value7 ||
-          ClipboardTemplateFlatteningHelmetScriptPattern.test(input2.tagName),
+      hasNoSiblings = [...(chainElement.parentNode?.children ?? [])].every(
+        (sibling?: Dynamic): Dynamic =>
+          sibling === chainElement ||
+          ClipboardTemplateFlatteningHelmetScriptPattern.test(sibling.tagName),
       );
-    if (!flag) continue;
-    let value4: Dynamic = value3.cloneNode(false);
-    value4.removeAttribute(DcTplAttribute);
-    value4.removeAttribute("style");
-    let value5: Dynamic = (document as Dynamic).createElement("template");
-    value5.content.appendChild(value4);
-    let value6: Dynamic = fromParserHtml(value5.innerHTML),
+    if (!hasNoSiblings) continue;
+    let wrapperClone: Dynamic = ancestor.cloneNode(false);
+    wrapperClone.removeAttribute(DcTplAttribute);
+    wrapperClone.removeAttribute("style");
+    let templateElement: Dynamic = (document as Dynamic).createElement("template");
+    templateElement.content.appendChild(wrapperClone);
+    let wrapperHtml: Dynamic = fromParserHtml(templateElement.innerHTML),
       text: Dynamic = "</x-import>";
-    value2 =
-      value6.slice(0, value6.length - text.length) +
+    wrappedHtml =
+      wrapperHtml.slice(0, wrapperHtml.length - text.length) +
       `
 ` +
-      value2 +
+      wrappedHtml +
       `
 ` +
       text;
   }
-  return value2;
+  return wrappedHtml;
 }
 export {
   ClipboardTemplateFlatteningAZaZPattern,
-  ClipboardTemplateFlatteningAZaZPattern_2,
+  ClipboardTemplateFlatteningSoleVariablePattern as ClipboardTemplateFlatteningAZaZPattern_2,
   ClipboardTemplateFlatteningHelmetScriptPattern,
   ClipboardTemplateFlatteningLimit,
   ClipboardTemplateFlatteningMatch,
@@ -260,9 +260,9 @@ export function installEditorClipboardTemplateFlattening(): () => void {
       ClipboardHtmlSanitizationScriptDataDcScriptPattern.source,
       "gi",
     );
-    ClipboardTemplateFlatteningMatch = (input?: Dynamic): Dynamic =>
-      input.match(unsafeTemplateCodePattern)?.length ?? 0;
-    ClipboardTemplateFlatteningAZaZPattern_2 =
+    ClipboardTemplateFlatteningMatch = (html?: Dynamic): Dynamic =>
+      html.match(unsafeTemplateCodePattern)?.length ?? 0;
+    ClipboardTemplateFlatteningSoleVariablePattern =
       /^\s*\{\{\s*[A-Za-z_$][\w$]*\s*\}\}\s*$/;
     ClipboardTemplateFlatteningScriptStyleIframeSet = new Set([
       "script",
@@ -276,8 +276,8 @@ export function installEditorClipboardTemplateFlattening(): () => void {
       ...ClipboardHtmlSanitizationAnimateSetAnimatemotionSet,
     ]);
     ClipboardTemplateFlatteningSubscribers = new Set(
-      [...ClipboardHtmlSanitizationSubscribers_2].map(
-        (input?: Dynamic): Dynamic => input.replace(/[^a-z]/g, ""),
+      [...urlAttributeNames].map(
+        (attributeName?: Dynamic): Dynamic => attributeName.replace(/[^a-z]/g, ""),
       ),
     );
     ClipboardTemplateFlatteningLimit = 2e5;

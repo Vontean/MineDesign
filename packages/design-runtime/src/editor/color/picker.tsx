@@ -15,29 +15,29 @@ import { alphaCheckerboardBackground, colorSliderPosition, hsvaToRgbaCss, hsvaTo
 var ColorPickerConstant: Dynamic;
 var ColorPickerLabel: Dynamic;
 function ColorHexInput({
-  value: value,
+  value: source,
   onChange: onChange,
   className = "mb-2",
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
+  let containerRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
+    handleValueChange: Dynamic = (nextValue?: Dynamic): Dynamic => {
       let activeElement: Dynamic = (document as Dynamic).activeElement,
-        value3: Dynamic =
-          value2.current?.closest('[data-mc-popover], [role="dialog"]') ??
-          value2.current?.parentElement;
+        popoverElement: Dynamic =
+          containerRef.current?.closest('[data-mc-popover], [role="dialog"]') ??
+          containerRef.current?.parentElement;
       activeElement instanceof HTMLElement &&
-        value3 &&
-        value3.contains(activeElement) &&
-        !value2.current.contains(activeElement) &&
+        popoverElement &&
+        popoverElement.contains(activeElement) &&
+        !containerRef.current.contains(activeElement) &&
         activeElement.blur();
-      onChange(input);
+      onChange(nextValue);
     };
   return (
     <TabsTabsRootListTabConfig.Root
-      ref={value2}
-      value={value}
-      onValueChange={(input?: Dynamic): Dynamic => callback(input)}
+      ref={containerRef}
+      value={source}
+      onValueChange={(nextValue?: Dynamic): Dynamic => handleValueChange(nextValue)}
     >
       <TabsTabsRootListTabConfig.List
         aria-label={uiMessage("inspector.picker.source")}
@@ -55,7 +55,7 @@ function ColorHexInput({
   );
 }
 function ColorPicker({
-  value: value,
+  value: colorValue,
   unset: unset,
   opaque: opaque,
   onChange: onChange,
@@ -63,344 +63,344 @@ function ColorPicker({
   contrast: contrast,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
+  let applyOpaque: Dynamic = (color?: Dynamic): Dynamic =>
       opaque
         ? {
-            ...input,
+            ...color,
             a: 1,
           }
-        : input,
-    [value2, value3]: Dynamic = (0,
+        : color,
+    [hsva, setHsva]: Dynamic = (0,
     reactAccessibilityAnnouncer.useState)(
-      (): Dynamic => callback(parseHsvaColor(value)),
+      (): Dynamic => applyOpaque(parseHsvaColor(colorValue)),
     ),
-    value4: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(value2);
-  value4.current = value2;
-  let value5: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
+    hsvaRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(hsva);
+  hsvaRef.current = hsva;
+  let isCancelingRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
       false,
     ),
-    [value6, value7]: Dynamic = (0,
+    [hexText, setHexText]: Dynamic = (0,
     reactAccessibilityAnnouncer.useState)(
-      (): Dynamic => hsvaToRgbHex(value2),
+      (): Dynamic => hsvaToRgbHex(hsva),
     ),
-    [value8, value9]: Dynamic = (0,
+    [alphaText, setAlphaText]: Dynamic = (0,
     reactAccessibilityAnnouncer.useState)(
-      (): Dynamic => Math.round(value2.a * 100).toString(),
+      (): Dynamic => Math.round(hsva.a * 100).toString(),
     ),
-    value10: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
-    value11: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
-    value12: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
+    hexInputRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
+    alphaInputRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
+    isUnsetRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
       unset ?? false,
     );
-  value12.current = unset ?? false;
-  let value13: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
+  isUnsetRef.current = unset ?? false;
+  let isOpaqueRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
     opaque ?? false,
   );
-  value13.current = opaque ?? false;
-  let value14: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
+  isOpaqueRef.current = opaque ?? false;
+  let onPickEndRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
     onPickEnd,
   );
-  value14.current = onPickEnd;
-  let value15: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
+  onPickEndRef.current = onPickEnd;
+  let contrastRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
     contrast,
   );
-  value15.current = contrast;
-  let value16: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
-      (input?: Dynamic, options?: Dynamic): Dynamic => {
-        value14.current?.(input);
-        let current: Dynamic = value15.current;
-        !options ||
+  contrastRef.current = contrast;
+  let commitPick: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
+      (hexColor?: Dynamic, shouldAnnounce?: Dynamic): Dynamic => {
+        onPickEndRef.current?.(hexColor);
+        let current: Dynamic = contrastRef.current;
+        !shouldAnnounce ||
           current === undefined ||
           announce((): Dynamic => {
-            let value39: Dynamic = evaluateColorContrast(
-              input,
+            let results: Dynamic = evaluateColorContrast(
+              hexColor,
               current,
             );
-            return value39 === undefined
+            return results === undefined
               ? null
-              : summarizeContrastResults(value39).spoken;
+              : summarizeContrastResults(results).spoken;
           });
       },
       [],
     ),
-    value17: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(false),
-    value18: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(value),
-    value19: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value18.current = input;
-        let value39: Dynamic = callback(parseHsvaColor(input));
-        hsvaToRgbaHex(value39) !==
-          hsvaToRgbaHex(value4.current) &&
-          (value3(value39),
-          (value4.current = value39),
-          value7(hsvaToRgbHex(value39)),
-          value9(Math.round(value39.a * 100).toString()));
+    isHexEditedRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(false),
+    lastEmittedRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(colorValue),
+    syncFromValue: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
+      (cssColor?: Dynamic): Dynamic => {
+        lastEmittedRef.current = cssColor;
+        let parsed: Dynamic = applyOpaque(parseHsvaColor(cssColor));
+        hsvaToRgbaHex(parsed) !==
+          hsvaToRgbaHex(hsvaRef.current) &&
+          (setHsva(parsed),
+          (hsvaRef.current = parsed),
+          setHexText(hsvaToRgbHex(parsed)),
+          setAlphaText(Math.round(parsed.a * 100).toString()));
       },
       [],
     );
   (0, reactAccessibilityAnnouncer.useEffect)((): Dynamic => {
-    if (value === value18.current) return;
+    if (colorValue === lastEmittedRef.current) return;
     let activeElement: Dynamic = (document as Dynamic).activeElement;
-    activeElement === value10.current ||
-      activeElement === value11.current ||
-      value19(value);
-  }, [value, value19]);
-  let callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (options) return;
-      let relatedTarget: Dynamic = input.relatedTarget;
+    activeElement === hexInputRef.current ||
+      activeElement === alphaInputRef.current ||
+      syncFromValue(colorValue);
+  }, [colorValue, syncFromValue]);
+  let handleBlur: Dynamic = (event?: Dynamic, didCommit?: Dynamic): Dynamic => {
+      if (didCommit) return;
+      let relatedTarget: Dynamic = event.relatedTarget;
       (relatedTarget !== null &&
-        (relatedTarget === value10.current ||
-          relatedTarget === value11.current)) ||
-        (value !== value18.current && value19(value));
+        (relatedTarget === hexInputRef.current ||
+          relatedTarget === alphaInputRef.current)) ||
+        (colorValue !== lastEmittedRef.current && syncFromValue(colorValue));
     },
-    value20: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let value39: Dynamic = value13.current
+    applyColor: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
+      (color?: Dynamic): Dynamic => {
+        let nextColor: Dynamic = isOpaqueRef.current
             ? {
-                ...input,
+                ...color,
                 a: 1,
               }
-            : input,
-          value40: Dynamic = hsvaToRgbaHex(value39),
-          value41: Dynamic =
-            value40 !== hsvaToRgbaHex(value4.current);
-        value3(value39);
-        value4.current = value39;
-        value7(hsvaToRgbHex(value39));
-        value9(Math.round(value39.a * 100).toString());
-        return !value41 && !value12.current
+            : color,
+          nextHex: Dynamic = hsvaToRgbaHex(nextColor),
+          hasChanged: Dynamic =
+            nextHex !== hsvaToRgbaHex(hsvaRef.current);
+        setHsva(nextColor);
+        hsvaRef.current = nextColor;
+        setHexText(hsvaToRgbHex(nextColor));
+        setAlphaText(Math.round(nextColor.a * 100).toString());
+        return !hasChanged && !isUnsetRef.current
           ? false
-          : ((value18.current = value40), onChange(value40), true);
+          : ((lastEmittedRef.current = nextHex), onChange(nextHex), true);
       },
       [onChange],
     ),
-    value21: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let value39: Dynamic = value13.current
+    commitColor: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
+      (color?: Dynamic): Dynamic => {
+        let nextColor: Dynamic = isOpaqueRef.current
           ? {
-              ...input,
+              ...color,
               a: 1,
             }
-          : input;
-        return !value12.current &&
-          hsvaToRgbaHex(value39) ===
-            hsvaToRgbaHex(value4.current)
-          ? (value7(hsvaToRgbHex(value4.current)),
-            value9(Math.round(value4.current.a * 100).toString()),
+          : color;
+        return !isUnsetRef.current &&
+          hsvaToRgbaHex(nextColor) ===
+            hsvaToRgbaHex(hsvaRef.current)
+          ? (setHexText(hsvaToRgbHex(hsvaRef.current)),
+            setAlphaText(Math.round(hsvaRef.current.a * 100).toString()),
             false)
-          : (value20(value39),
-            value16(hsvaToRgbaHex(value39), true),
+          : (applyColor(nextColor),
+            commitPick(hsvaToRgbaHex(nextColor), true),
             true);
       },
-      [value20, value16],
+      [applyColor, commitPick],
     ),
-    value22: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
+    createFinishPick: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
       (): Dynamic =>
-        (input?: Dynamic): Dynamic => {
-          value16(hsvaToRgbaHex(value4.current), input);
+        (shouldAnnounce?: Dynamic): Dynamic => {
+          commitPick(hsvaToRgbaHex(hsvaRef.current), shouldAnnounce);
         },
-      [value16],
+      [commitPick],
     ),
-    value23: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
+    cleanupsRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(
       new Set(),
     ),
-    [value24, value25]: Dynamic = (0,
+    [dragState, setDragState]: Dynamic = (0,
     reactAccessibilityAnnouncer.useState)(undefined),
-    value26: Dynamic = value24 !== undefined,
-    value27: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
-    value28: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(false),
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      input || value10.current?.focus();
+    isDragging: Dynamic = dragState !== undefined,
+    fixButtonRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(null),
+    fixAppliedRef: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(false),
+    restoreFocus: Dynamic = (shouldRestore?: Dynamic): Dynamic => {
+      shouldRestore || hexInputRef.current?.focus();
     };
   (0, reactAccessibilityAnnouncer.useEffect)(
     (): Dynamic => (): Dynamic => {
-      for (let value39 of value23.current as Dynamic) value39();
-      value23.current.clear();
+      for (let cleanup of cleanupsRef.current as Dynamic) cleanup();
+      cleanupsRef.current.clear();
     },
     [],
   );
-  let callback4: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (input.button !== 0) return;
-      value27.current?.contains((document as Dynamic).activeElement) &&
-        callback3(input.pointerType === "touch");
-      value25(
-        (input2?: Dynamic): Dynamic =>
-          input2 ?? {
-            shade: value34,
+  let startDrag: Dynamic = (event?: Dynamic, onMove?: Dynamic): Dynamic => {
+      if (event.button !== 0) return;
+      fixButtonRef.current?.contains((document as Dynamic).activeElement) &&
+        restoreFocus(event.pointerType === "touch");
+      setDragState(
+        (previousState?: Dynamic): Dynamic =>
+          previousState ?? {
+            shade: readableShade,
           },
       );
-      let value39: Dynamic = value22(),
+      let finishPick: Dynamic = createFinishPick(),
         flag: Dynamic = false,
-        callback13: Dynamic = (): Dynamic => {},
-        callback14: Dynamic = (input2?: Dynamic): Dynamic => {
-          value23.current.delete(callback15);
-          value23.current.size === 0 && value25(undefined);
-          callback13();
-          flag && ((flag = false), value39(input2));
+        stopTracking: Dynamic = (): Dynamic => {},
+        finishDrag: Dynamic = (shouldCommit?: Dynamic): Dynamic => {
+          cleanupsRef.current.delete(cancelDrag);
+          cleanupsRef.current.size === 0 && setDragState(undefined);
+          stopTracking();
+          flag && ((flag = false), finishPick(shouldCommit));
         },
-        callback15: Dynamic = (): Dynamic => callback14(false);
-      callback13 = trackColorPickerDrag(
-        input,
+        cancelDrag: Dynamic = (): Dynamic => finishDrag(false);
+      stopTracking = trackColorPickerDrag(
+        event,
         (
-          input2?: Dynamic,
-          options2?: Dynamic,
-          context?: Dynamic,
+          clientX?: Dynamic,
+          clientY?: Dynamic,
+          bounds?: Dynamic,
         ): Dynamic => {
-          options(input2, options2, context) && (flag = true);
+          onMove(clientX, clientY, bounds) && (flag = true);
         },
-        (): Dynamic => callback14(true),
+        (): Dynamic => finishDrag(true),
       );
-      value23.current.add(callback15);
+      cleanupsRef.current.add(cancelDrag);
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic =>
-      callback4(
-        input,
-        (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-          value20({
-            ...value4.current,
-            s: colorSliderPosition(input2, context),
+    handleAreaPointerDown: Dynamic = (event?: Dynamic): Dynamic =>
+      startDrag(
+        event,
+        (clientX?: Dynamic, clientY?: Dynamic, bounds?: Dynamic): Dynamic =>
+          applyColor({
+            ...hsvaRef.current,
+            s: colorSliderPosition(clientX, bounds),
             v:
               1 -
               Math.max(
                 0,
                 Math.min(
                   1,
-                  (options - context.top - 7) / (context.height - 14),
+                  (clientY - bounds.top - 7) / (bounds.height - 14),
                 ),
               ),
           }),
       ),
-    callback6: Dynamic = (input?: Dynamic): Dynamic =>
-      callback4(
-        input,
-        (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-          value20({
-            ...value4.current,
-            h: colorSliderPosition(input2, context) * 360,
+    handleHuePointerDown: Dynamic = (event?: Dynamic): Dynamic =>
+      startDrag(
+        event,
+        (clientX?: Dynamic, clientY?: Dynamic, bounds?: Dynamic): Dynamic =>
+          applyColor({
+            ...hsvaRef.current,
+            h: colorSliderPosition(clientX, bounds) * 360,
           }),
       ),
-    callback7: Dynamic = (input?: Dynamic): Dynamic =>
-      callback4(
-        input,
-        (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-          value20({
-            ...value4.current,
-            a: colorSliderPosition(input2, context),
+    handleAlphaPointerDown: Dynamic = (event?: Dynamic): Dynamic =>
+      startDrag(
+        event,
+        (clientX?: Dynamic, clientY?: Dynamic, bounds?: Dynamic): Dynamic =>
+          applyColor({
+            ...hsvaRef.current,
+            a: colorSliderPosition(clientX, bounds),
           }),
       ),
-    callback8: Dynamic = async (): Promise<Dynamic> => {
-      let value39: Dynamic = await pickEyeDropperColor();
-      value39 &&
-        value21({
-          ...parseHsvaColor(value39),
-          a: value4.current.a,
+    handleEyeDropper: Dynamic = async (): Promise<Dynamic> => {
+      let pickedColor: Dynamic = await pickEyeDropperColor();
+      pickedColor &&
+        commitColor({
+          ...parseHsvaColor(pickedColor),
+          a: hsvaRef.current.a,
         });
     },
-    callback9: Dynamic = (): Dynamic => {
-      if (value5.current) {
-        value5.current = false;
+    commitHexText: Dynamic = (): Dynamic => {
+      if (isCancelingRef.current) {
+        isCancelingRef.current = false;
         return false;
       }
-      if (value12.current && !value17.current) return false;
-      let value39: Dynamic = value6.trim();
+      if (isUnsetRef.current && !isHexEditedRef.current) return false;
+      let trimmedHex: Dynamic = hexText.trim();
       if (
         /^#?(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(
-          value39,
+          trimmedHex,
         )
       ) {
-        let value40: Dynamic = parseHsvaColor(
-            value39.startsWith("#") ? value39 : "#" + value39,
+        let parsedHex: Dynamic = parseHsvaColor(
+            trimmedHex.startsWith("#") ? trimmedHex : "#" + trimmedHex,
           ),
-          length: Dynamic = value39.replace(/^#/, "").length;
-        return value21(
+          length: Dynamic = trimmedHex.replace(/^#/, "").length;
+        return commitColor(
           length === 4 || length === 8
-            ? value40
+            ? parsedHex
             : {
-                ...value40,
-                a: value2.a,
+                ...parsedHex,
+                a: hsva.a,
               },
         );
       }
-      value7(hsvaToRgbHex(value2));
+      setHexText(hsvaToRgbHex(hsva));
       return false;
     },
-    callback10: Dynamic = (): Dynamic => {
-      if (value5.current) {
-        value5.current = false;
+    commitAlphaText: Dynamic = (): Dynamic => {
+      if (isCancelingRef.current) {
+        isCancelingRef.current = false;
         return false;
       }
-      let value39: Dynamic = parseFloat(value8);
-      return isNaN(value39) ||
-        Math.round(value39) === Math.round(value2.a * 100)
-        ? (value9(Math.round(value2.a * 100).toString()), false)
-        : value21({
-            ...value2,
-            a: Math.max(0, Math.min(1, value39 / 100)),
+      let alphaPercent: Dynamic = parseFloat(alphaText);
+      return isNaN(alphaPercent) ||
+        Math.round(alphaPercent) === Math.round(hsva.a * 100)
+        ? (setAlphaText(Math.round(hsva.a * 100).toString()), false)
+        : commitColor({
+            ...hsva,
+            a: Math.max(0, Math.min(1, alphaPercent / 100)),
           });
     },
-    value29: Dynamic = hsvaToRgbaCss({
-      ...value2,
+    opaqueCss: Dynamic = hsvaToRgbaCss({
+      ...hsva,
       a: 1,
     }),
-    value30: Dynamic = hsvaToRgbaHex(value2),
-    value31: Dynamic =
+    hexWithAlpha: Dynamic = hsvaToRgbaHex(hsva),
+    contrastKey: Dynamic =
       contrast === undefined ? undefined : JSON.stringify(contrast),
-    value32: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
+    stableContrast: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
       (): Dynamic => contrast,
-      [value31],
+      [contrastKey],
     ),
-    value33: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
+    contrastResults: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
       (): Dynamic =>
-        value32 === undefined
+        stableContrast === undefined
           ? undefined
-          : evaluateColorContrast(value30, value32),
-      [value32, value30],
+          : evaluateColorContrast(hexWithAlpha, stableContrast),
+      [stableContrast, hexWithAlpha],
     ),
-    value34: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
+    readableShade: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
       (): Dynamic =>
-        value32 === undefined || value26
+        stableContrast === undefined || isDragging
           ? undefined
-          : findReadableShade(value30, value32),
-      [value32, value30, value26],
+          : findReadableShade(hexWithAlpha, stableContrast),
+      [stableContrast, hexWithAlpha, isDragging],
     ),
-    value35: Dynamic = value24 !== undefined ? value24.shade : value34,
-    value36: Dynamic = value33 !== undefined && value35 !== undefined;
+    shownShade: Dynamic = dragState !== undefined ? dragState.shade : readableShade,
+    hasAdvice: Dynamic = contrastResults !== undefined && shownShade !== undefined;
   (0, reactAccessibilityAnnouncer.useLayoutEffect)((): Dynamic => {
-    value28.current &&
-      ((value28.current = false), value36 || value10.current?.focus());
-  }, [value36]);
-  let callback11: Dynamic = (input?: Dynamic): Dynamic => {
-      value34 !== undefined &&
-        (value21(parseHsvaColor(value34.css)), callback3(input));
+    fixAppliedRef.current &&
+      ((fixAppliedRef.current = false), hasAdvice || hexInputRef.current?.focus());
+  }, [hasAdvice]);
+  let useReadableShade: Dynamic = (shouldRestore?: Dynamic): Dynamic => {
+      readableShade !== undefined &&
+        (commitColor(parseHsvaColor(readableShade.css)), restoreFocus(shouldRestore));
     },
-    callback12: Dynamic = (): Dynamic => {
-      value28.current = true;
+    markFixGone: Dynamic = (): Dynamic => {
+      fixAppliedRef.current = true;
     },
-    value37: Dynamic = (0, reactAccessibilityAnnouncer.useId)(),
-    value38: Dynamic = value33 === undefined ? undefined : value37;
+    sentenceId: Dynamic = (0, reactAccessibilityAnnouncer.useId)(),
+    describedBy: Dynamic = contrastResults === undefined ? undefined : sentenceId;
   return (
     <div className={"flex w-full min-w-56 flex-col"}>
       <div
         className={"relative aspect-[3/2] w-full touch-none rounded-md"}
         style={{
-          background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${value2.h}, 100%, 50%))`,
+          background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${hsva.h}, 100%, 50%))`,
         }}
-        onPointerDown={callback5}
+        onPointerDown={handleAreaPointerDown}
       >
         <div
           className={
             "pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3)]"
           }
           style={{
-            left: `calc(${value2.s} * (100% - 14px) + 7px)`,
-            top: `calc(${1 - value2.v} * (100% - 14px) + 7px)`,
-            background: value29,
+            left: `calc(${hsva.s} * (100% - 14px) + 7px)`,
+            top: `calc(${1 - hsva.v} * (100% - 14px) + 7px)`,
+            background: opaqueCss,
           }}
         />
       </div>
       <div
         className={"relative touch-none pt-2 pb-1 pointer-coarse:py-3.5"}
-        onPointerDown={callback6}
+        onPointerDown={handleHuePointerDown}
       >
         <div
           className={
@@ -412,20 +412,20 @@ function ColorPicker({
               "pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3)]"
             }
             style={{
-              left: `calc(${value2.h / 360} * (100% - 14px) + 7px)`,
-              background: `hsl(${value2.h}, 100%, 50%)`,
+              left: `calc(${hsva.h / 360} * (100% - 14px) + 7px)`,
+              background: `hsl(${hsva.h}, 100%, 50%)`,
             }}
           />
         </div>
       </div>
       {!opaque && (<div
           className={"relative touch-none py-1 pointer-coarse:py-3.5"}
-          onPointerDown={callback7}
+          onPointerDown={handleAlphaPointerDown}
         >
           <div
             className={"relative h-3 w-full rounded-md"}
             style={{
-              background: `linear-gradient(to right, transparent, ${value29}), ${alphaCheckerboardBackground}`,
+              background: `linear-gradient(to right, transparent, ${opaqueCss}), ${alphaCheckerboardBackground}`,
             }}
           >
             <div
@@ -433,8 +433,8 @@ function ColorPicker({
                 "pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3)]"
               }
               style={{
-                left: `calc(${value2.a} * (100% - 14px) + 7px)`,
-                background: hsvaToRgbaCss(value2),
+                left: `calc(${hsva.a} * (100% - 14px) + 7px)`,
+                background: hsvaToRgbaCss(hsva),
               }}
             />
           </div>
@@ -444,7 +444,7 @@ function ColorPicker({
             type={"button"}
             title={uiMessage("inspector.picker.pickColorFromScreen")}
             aria-label={uiMessage("inspector.picker.pickColorFromScreen")}
-            onClick={callback8}
+            onClick={handleEyeDropper}
             className={
               "flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted outline-none hover:bg-alpha-1 hover:text-primary focus-visible:outline-hidden focus-visible:shadow-focus pointer-coarse:h-10 pointer-coarse:w-10"
             }
@@ -457,29 +457,29 @@ function ColorPicker({
           }
         >
           <input
-            ref={value10}
+            ref={hexInputRef}
             className={
               "h-full min-w-0 flex-1 bg-transparent px-1.5 font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
             }
-            value={value6}
+            value={hexText}
             aria-label={uiMessage("inspector.picker.hexColor")}
-            aria-describedby={value38}
+            aria-describedby={describedBy}
             onChange={(event?: Dynamic): Dynamic => {
-              value17.current = true;
-              value7(event.target.value);
+              isHexEditedRef.current = true;
+              setHexText(event.target.value);
             }}
             onFocus={(): Dynamic => {
-              value17.current = false;
+              isHexEditedRef.current = false;
             }}
-            onBlur={(input?: Dynamic): Dynamic =>
-              callback2(input, callback9())
+            onBlur={(event?: Dynamic): Dynamic =>
+              handleBlur(event, commitHexText())
             }
             onKeyDown={(event?: Dynamic): Dynamic => {
               event.key === "Enter"
                 ? event.target.blur()
                 : event.key === "Escape" &&
-                  ((value5.current = true),
-                  value7(hsvaToRgbHex(value2)),
+                  ((isCancelingRef.current = true),
+                  setHexText(hsvaToRgbHex(hsva)),
                   event.target.blur());
               event.stopPropagation();
             }}
@@ -487,25 +487,25 @@ function ColorPicker({
           {!opaque && (<jsxColorPickerPrimitives.Fragment>
               <div className={"my-1 w-px shrink-0 self-stretch bg-alpha-2"} />
               <input
-                ref={value11}
+                ref={alphaInputRef}
                 className={
                   "h-full w-[34px] bg-transparent pl-1.5 pr-1 text-right font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
                 }
-                value={value8}
+                value={alphaText}
                 aria-label={uiMessage("inspector.picker.alphaPercent")}
-                aria-describedby={value38}
+                aria-describedby={describedBy}
                 onChange={(event?: Dynamic): Dynamic =>
-                  value9(event.target.value)
+                  setAlphaText(event.target.value)
                 }
-                onBlur={(input?: Dynamic): Dynamic =>
-                  callback2(input, callback10())
+                onBlur={(event?: Dynamic): Dynamic =>
+                  handleBlur(event, commitAlphaText())
                 }
                 onKeyDown={(event?: Dynamic): Dynamic => {
                   event.key === "Enter"
                     ? event.target.blur()
                     : event.key === "Escape" &&
-                      ((value5.current = true),
-                      value9(Math.round(value2.a * 100).toString()),
+                      ((isCancelingRef.current = true),
+                      setAlphaText(Math.round(hsva.a * 100).toString()),
                       event.target.blur());
                   event.stopPropagation();
                 }}
@@ -514,21 +514,21 @@ function ColorPicker({
             </jsxColorPickerPrimitives.Fragment>)}
         </div>
       </div>
-      {value33 !== undefined ? (<ContrastAdvice
-          fg={value30}
-          results={value33}
-          sentenceId={value37}
-          {...(value36
+      {contrastResults !== undefined ? (<ContrastAdvice
+          fg={hexWithAlpha}
+          results={contrastResults}
+          sentenceId={sentenceId}
+          {...(hasAdvice
             ? {
                 fix: {
-                  css: value35.css,
-                  ratio: value35.ratio,
-                  ground: value35.ground.label,
-                  onUse: callback11,
+                  css: shownShade.css,
+                  ratio: shownShade.ratio,
+                  ground: shownShade.ground.label,
+                  onUse: useReadableShade,
                 },
-                fixHeld: value26,
-                fixRef: value27,
-                onFixGoneFocused: callback12,
+                fixHeld: isDragging,
+                fixRef: fixButtonRef,
+                onFixGoneFocused: markFixGone,
               }
             : {})}
         />) : (null)}

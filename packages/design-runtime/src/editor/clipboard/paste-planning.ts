@@ -9,7 +9,7 @@ import { ClipboardFileTransferRegistry } from "./file-transfer";
 import { clipboardPictureEntries, normalizeClipboardPictureCss, parseAnnotationClipboard } from "./pictures";
 import { ClipboardStateHandler } from "./state";
 import { noteRichTextCost } from "../notes/blocks";
-import { PlatformFileContentResolvedValue_11, serializeCanvasMetadata } from "../../platform/file-content";
+import { PlatformFileContentResolvedValue_11 as fileSizeLimit, serializeCanvasMetadata } from "../../platform/file-content";
 
 var ClipboardPastePlanningResolvedValue: Dynamic;
 var ClipboardPastePlanningLimit: Dynamic;
@@ -19,167 +19,167 @@ var ClipboardPastePlanningHandler: Dynamic;
 var ClipboardPastePlanningIsArray: Dynamic;
 var ClipboardPastePlanningAnnotations: Dynamic;
 function buildAnnotationPaste(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = [],
+  items?: Dynamic,
+  pictureMode?: Dynamic,
+  pictures: Dynamic = [],
 ): Dynamic {
-  let value: Dynamic = context.map(
-      (input2?: Dynamic): Dynamic =>
-        normalizeClipboardPictureCss(input2, options),
+  let normalizedPictures: Dynamic = pictures.map(
+      (picture?: Dynamic): Dynamic =>
+        normalizeClipboardPictureCss(picture, pictureMode),
     ),
-    value2: Dynamic = value.map(
-      (input2?: Dynamic): Dynamic => input2.picture,
+    carriedPictures: Dynamic = normalizedPictures.map(
+      (normalized?: Dynamic): Dynamic => normalized.picture,
     ),
-    values: Dynamic = new Set(
-      value
-        .filter((input2?: Dynamic): Dynamic => input2.plain)
-        .map((input2?: Dynamic): Dynamic => input2.picture.spec.id),
+    plainPictureIds: Dynamic = new Set(
+      normalizedPictures
+        .filter((normalized?: Dynamic): Dynamic => normalized.plain)
+        .map((normalized?: Dynamic): Dynamic => normalized.picture.spec.id),
     );
-  if (options)
+  if (pictureMode)
     return {
-      land: [...input],
+      land: [...items],
       plain: 0,
       notesOut: 0,
-      pictures: value2,
-      plainPictures: values,
+      pictures: carriedPictures,
+      plainPictures: plainPictureIds,
     };
-  let value3: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic =>
-        ClipboardAnnotationsIncludes_2(input2.spec),
+  let noteItems: Dynamic = items.filter(
+      (item?: Dynamic): Dynamic =>
+        ClipboardAnnotationsIncludes_2(item.spec),
     ),
-    value4: Dynamic = ClipboardPastePlanningKind(
-      value3.map((input2?: Dynamic): Dynamic => input2.spec),
+    exceedsNoteLimit: Dynamic = ClipboardPastePlanningKind(
+      noteItems.map((item?: Dynamic): Dynamic => item.spec),
     ),
-    index: Dynamic = 0;
+    plainCount: Dynamic = 0;
   return {
-    land: input
+    land: items
       .filter(
-        (input2?: Dynamic): Dynamic =>
+        (item?: Dynamic): Dynamic =>
           !(
-            value4 && ClipboardAnnotationsIncludes_2(input2.spec)
+            exceedsNoteLimit && ClipboardAnnotationsIncludes_2(item.spec)
           ),
       )
-      .map((input2?: Dynamic): Dynamic => {
-        if (!("css" in input2.spec) || input2.spec.css === undefined)
-          return input2;
-        index++;
-        let { css: spec, ...spec2 }: Dynamic = input2.spec;
+      .map((item?: Dynamic): Dynamic => {
+        if (!("css" in item.spec) || item.spec.css === undefined)
+          return item;
+        plainCount++;
+        let { css: droppedCss, ...specWithoutCss }: Dynamic = item.spec;
         return {
-          ...input2,
-          spec: spec2,
+          ...item,
+          spec: specWithoutCss,
         };
       }),
-    plain: index,
-    notesOut: value4 ? value3.length : 0,
-    pictures: value2,
-    plainPictures: values,
+    plain: plainCount,
+    notesOut: exceedsNoteLimit ? noteItems.length : 0,
+    pictures: carriedPictures,
+    plainPictures: plainPictureIds,
   };
 }
 function parseAnnotationPaste(
-  input?: Dynamic,
-  options: Dynamic = (): Dynamic => true,
+  clipboardPayload?: Dynamic,
+  fitsLimit: Dynamic = (): Dynamic => true,
 ): Dynamic {
-  let value: Dynamic = parseAnnotationClipboard(input);
-  if (value === null)
+  let parsed: Dynamic = parseAnnotationClipboard(clipboardPayload);
+  if (parsed === null)
     return {
       land: null,
-      say: ClipboardPastePlanningHandler(input)
+      say: ClipboardPastePlanningHandler(clipboardPayload)
         ? ClipboardFileTransferRegistry.tooMuchStayed
         : ClipboardFileTransferRegistry.unreadable,
     };
-  let value2: Dynamic = clipboardPictureEntries(value.entries),
-    value3: Dynamic = value2.entries.map(
-      (input2?: Dynamic): Dynamic => input2.spec,
+  let pictureEntries: Dynamic = clipboardPictureEntries(parsed.entries),
+    entrySpecs: Dynamic = pictureEntries.entries.map(
+      (entry?: Dynamic): Dynamic => entry.spec,
     ),
-    value4: Dynamic = value.pictures
+    normalizedPictures: Dynamic = parsed.pictures
       .slice(0, ClipboardAnnotationsLimit)
       .map(
-        (input2?: Dynamic): Dynamic =>
-          normalizeClipboardPictureCss(input2, false),
+        (picture?: Dynamic): Dynamic =>
+          normalizeClipboardPictureCss(picture, false),
       ),
-    value5: Dynamic = value4.map(
-      (input2?: Dynamic): Dynamic => input2.picture,
+    carriedPictures: Dynamic = normalizedPictures.map(
+      (normalized?: Dynamic): Dynamic => normalized.picture,
     ),
-    value6: Dynamic =
-      value.unread > 0
-        ? ClipboardFileTransferRegistry.alsoUnread(value.unread)
+    unreadNote: Dynamic =
+      parsed.unread > 0
+        ? ClipboardFileTransferRegistry.alsoUnread(parsed.unread)
         : "";
   if (
-    value3.length === 0 &&
-    value5.length === 0 &&
-    value.unreadPictures === 0
+    entrySpecs.length === 0 &&
+    carriedPictures.length === 0 &&
+    parsed.unreadPictures === 0
   )
     return {
       land: null,
       say:
-        (value2.shapes > 0
+        (pictureEntries.shapes > 0
           ? ClipboardFileTransferRegistry.onlyShapes +
             ClipboardFileTransferRegistry.alsoLeftOut(
-              value.leftOut,
-              value.videos,
+              parsed.leftOut,
+              parsed.videos,
             )
           : ClipboardFileTransferRegistry.onlyLeftOut(
-              value.leftOut,
-              value.videos,
-            )) + value6,
+              parsed.leftOut,
+              parsed.videos,
+            )) + unreadNote,
     };
-  if (ClipboardPastePlanningKind(value3))
+  if (ClipboardPastePlanningKind(entrySpecs))
     return {
       land: null,
       say: ClipboardFileTransferRegistry.tooMuchUnasked,
     };
-  if (!options(value3))
+  if (!fitsLimit(entrySpecs))
     return {
       land: null,
       say: ClipboardFileTransferRegistry.wontFit,
       error: true,
     };
-  let values: Dynamic = new Set(
-      value4
-        .filter((input2?: Dynamic): Dynamic => input2.plain)
-        .map((input2?: Dynamic): Dynamic => input2.picture.spec.id),
+  let plainPictureIds: Dynamic = new Set(
+      normalizedPictures
+        .filter((normalized?: Dynamic): Dynamic => normalized.plain)
+        .map((normalized?: Dynamic): Dynamic => normalized.picture.spec.id),
     ),
-    callback: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    buildSay: Dynamic = (
+      specs?: Dynamic,
+      landedEntries?: Dynamic,
+      failedCount?: Dynamic,
     ): Dynamic =>
       ClipboardFileTransferRegistry.pasted(
-        input2,
-        value.leftOut,
-        value.unread,
-        value2.shapes,
+        specs,
+        parsed.leftOut,
+        parsed.unread,
+        pictureEntries.shapes,
         {
-          videos: value.videos,
-          failed: context + value.unreadPictures,
-          overCap: value.pictures.length - value5.length,
-          plain: options2.filter(
-            (input3?: Dynamic): Dynamic => values.has(input3.spec.id),
+          videos: parsed.videos,
+          failed: failedCount + parsed.unreadPictures,
+          overCap: parsed.pictures.length - carriedPictures.length,
+          plain: landedEntries.filter(
+            (entry?: Dynamic): Dynamic => plainPictureIds.has(entry.spec.id),
           ).length,
         },
       );
-  return value5.length === 0 && value3.length === 0
+  return carriedPictures.length === 0 && entrySpecs.length === 0
     ? {
         land: null,
-        say: callback([], [], 0),
+        say: buildSay([], [], 0),
       }
-    : value5.length === 0
+    : carriedPictures.length === 0
       ? {
-          land: value2.entries,
-          say: callback(value3, [], 0),
+          land: pictureEntries.entries,
+          say: buildSay(entrySpecs, [], 0),
         }
       : {
-          land: value2.entries,
+          land: pictureEntries.entries,
           say: "",
           pictures: {
-            carried: value5,
-            assets: parseClipboardAssets(input, value5),
-            said: callback,
+            carried: carriedPictures,
+            assets: parseClipboardAssets(clipboardPayload, carriedPictures),
+            said: buildSay,
           },
         };
 }
 function normalizeAnnotationPasteOrigin(items?: Dynamic): Dynamic {
-  let value: Dynamic =
+  let origin: Dynamic =
     items.length === 0
       ? {
           x: 0,
@@ -188,20 +188,20 @@ function normalizeAnnotationPasteOrigin(items?: Dynamic): Dynamic {
       : {
           x:
             0 -
-            Math.min(...items.map((input?: Dynamic): Dynamic => input.dx)),
+            Math.min(...items.map((item?: Dynamic): Dynamic => item.dx)),
           y:
             0 -
-            Math.min(...items.map((input?: Dynamic): Dynamic => input.dy)),
+            Math.min(...items.map((item?: Dynamic): Dynamic => item.dy)),
         };
   return {
     group: items.map(
-      (input?: Dynamic): Dynamic => ({
-        ...input,
-        dx: input.dx + value.x,
-        dy: input.dy + value.y,
+      (item?: Dynamic): Dynamic => ({
+        ...item,
+        dx: item.dx + origin.x,
+        dy: item.dy + origin.y,
       }),
     ),
-    shift: value,
+    shift: origin,
   };
 }
 export {
@@ -221,42 +221,42 @@ export function installEditorClipboardPastePlanning(): () => void {
     ClipboardPastePlanningResolvedValue = 128 * 1024;
     ClipboardPastePlanningLimit = 1e4;
     ClipboardPastePlanningConstant = 3;
-    ClipboardPastePlanningKind = (input?: Dynamic): Dynamic => {
-      let index: Dynamic = 0,
-        index2: Dynamic = 0;
-      for (let value of input as Dynamic)
+    ClipboardPastePlanningKind = (specs?: Dynamic): Dynamic => {
+      let textLength: Dynamic = 0,
+        richTextCost: Dynamic = 0;
+      for (let spec of specs as Dynamic)
         if (
-          ((index +=
-            ClipboardAnnotationsGetLength(value) *
-            (value.kind === "title1" ? ClipboardPastePlanningConstant : 1)),
-          "text" in value &&
-            (index2 += noteRichTextCost(value.text)),
-          index > ClipboardPastePlanningResolvedValue ||
-            index2 > ClipboardPastePlanningLimit)
+          ((textLength +=
+            ClipboardAnnotationsGetLength(spec) *
+            (spec.kind === "title1" ? ClipboardPastePlanningConstant : 1)),
+          "text" in spec &&
+            (richTextCost += noteRichTextCost(spec.text)),
+          textLength > ClipboardPastePlanningResolvedValue ||
+            richTextCost > ClipboardPastePlanningLimit)
         )
           return true;
       return false;
     };
-    ClipboardPastePlanningHandler = (input?: Dynamic): Dynamic =>
-      ClipboardStateHandler(input?.stayed) > 0;
-    ClipboardPastePlanningIsArray = (input?: Dynamic): Dynamic =>
-      typeof input == "object" &&
-      input !== null &&
-      Array.isArray(input.annotations) &&
-      input.annotations.length > 0;
+    ClipboardPastePlanningHandler = (payload?: Dynamic): Dynamic =>
+      ClipboardStateHandler(payload?.stayed) > 0;
+    ClipboardPastePlanningIsArray = (payload?: Dynamic): Dynamic =>
+      typeof payload == "object" &&
+      payload !== null &&
+      Array.isArray(payload.annotations) &&
+      payload.annotations.length > 0;
     ClipboardPastePlanningAnnotations = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = 0,
+      metadata?: Dynamic,
+      extraAnnotations?: Dynamic,
+      reservedBytes: Dynamic = 0,
     ): Dynamic => {
-      let value: Dynamic = serializeCanvasMetadata({
-        ...input,
-        annotations: [...(input.annotations ?? []), ...options],
+      let serialized: Dynamic = serializeCanvasMetadata({
+        ...metadata,
+        annotations: [...(metadata.annotations ?? []), ...extraAnnotations],
       });
       return (
-        ClipboardArtboardsEncode(value) &&
-        ClipboardArtboardsTextEncoder.encode(value).length + context <=
-          PlatformFileContentResolvedValue_11
+        ClipboardArtboardsEncode(serialized) &&
+        ClipboardArtboardsTextEncoder.encode(serialized).length + reservedBytes <=
+          fileSizeLimit
       );
     };
   };

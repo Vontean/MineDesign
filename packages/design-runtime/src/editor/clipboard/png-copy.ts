@@ -14,74 +14,74 @@ var ClipboardPngCopySubscribers: Dynamic;
 var ClipboardPngCopyASwitchSet: Dynamic;
 var ClipboardPngCopyPattern: Dynamic;
 var ClipboardPngCopyDataImagePattern: Dynamic;
-var ClipboardPngCopySubscribers_2: Dynamic;
-function supportsClipboardImages(input: Dynamic = window): Dynamic {
+var ClipboardPngCopyUrlAttributeSet: Dynamic;
+function supportsClipboardImages(hostWindow: Dynamic = window): Dynamic {
   return (
-    typeof input.ClipboardItem == "function" &&
-    typeof input.navigator.clipboard?.write == "function"
+    typeof hostWindow.ClipboardItem == "function" &&
+    typeof hostWindow.navigator.clipboard?.write == "function"
   );
 }
 async function allowsClipboardImages(
-  input: Dynamic = capabilityTimeoutMs,
+  timeoutMs: Dynamic = capabilityTimeoutMs,
 ): Promise<Dynamic> {
   if (
     !hasCapabilityLoader() ||
     !downloadsCapabilityDeclared()
   )
     return true;
-  let value: Dynamic;
+  let timeoutHandle: Dynamic;
   try {
     let promise: Dynamic = new Promise(
-        (input2?: Dynamic): Dynamic =>
-          (value = setTimeout(input2, input, "late")),
+        (resolve?: Dynamic): Dynamic =>
+          (timeoutHandle = setTimeout(resolve, timeoutMs, "late")),
       ),
-      value2: Dynamic = await Promise.race([
+      outcome: Dynamic = await Promise.race([
         requestHostCapability("downloads"),
         promise,
       ]);
-    return value2 != null && value2 !== "late";
+    return outcome != null && outcome !== "late";
   } catch {
     return false;
   } finally {
-    clearTimeout(value);
+    clearTimeout(timeoutHandle);
   }
 }
-function pngDataUrlToBlob(input?: Dynamic): Dynamic {
-  return new Blob([dataUrlToBytes(input)], {
+function pngDataUrlToBlob(dataUrl?: Dynamic): Dynamic {
+  return new Blob([dataUrlToBytes(dataUrl)], {
     type: "image/png",
   });
 }
 async function writeClipboardPng(
-  input?: Dynamic,
-  options: Dynamic = window,
+  pngPromise?: Dynamic,
+  hostWindow: Dynamic = window,
 ): Promise<Dynamic> {
-  let ClipboardItem: Dynamic = options.ClipboardItem,
-    clipboard: Dynamic = options.navigator.clipboard;
+  let ClipboardItem: Dynamic = hostWindow.ClipboardItem,
+    clipboard: Dynamic = hostWindow.navigator.clipboard;
   if (
     typeof ClipboardItem != "function" ||
     typeof clipboard?.write != "function"
   )
     return "refused";
-  let value: Dynamic = input.catch((): Dynamic => null),
-    value2: Dynamic = value.then(
-      (input2?: Dynamic): Dynamic =>
-        input2 ?? Promise.reject(new Error("no picture")),
+  let pngOrNull: Dynamic = pngPromise.catch((): Dynamic => null),
+    rejectingPromise: Dynamic = pngOrNull.then(
+      (blob?: Dynamic): Dynamic =>
+        blob ?? Promise.reject(new Error("no picture")),
     );
-  value2.catch((): Dynamic => {});
+  rejectingPromise.catch((): Dynamic => {});
   try {
     await clipboard.write([
       new ClipboardItem({
-        "image/png": value2,
+        "image/png": rejectingPromise,
       }),
     ]);
-    return (await value) !== null ? "copied" : "no-picture";
+    return (await pngOrNull) !== null ? "copied" : "no-picture";
   } catch {
-    let value3: Dynamic = await value;
-    if (!value3) return "no-picture";
+    let blob: Dynamic = await pngOrNull;
+    if (!blob) return "no-picture";
     try {
       await clipboard.write([
         new ClipboardItem({
-          "image/png": value3,
+          "image/png": blob,
         }),
       ]);
       return "copied";
@@ -96,7 +96,7 @@ export {
   ClipboardPngCopyDataImagePattern,
   ClipboardPngCopyPattern,
   ClipboardPngCopySubscribers,
-  ClipboardPngCopySubscribers_2,
+  ClipboardPngCopyUrlAttributeSet as ClipboardPngCopySubscribers_2,
   HttpWwwW3Org1999XlinkValue,
   HttpWwwW3Org2000SvgValue_2,
   HttpWwwW3Org2000XmlnsValue,
@@ -167,7 +167,7 @@ export function installEditorClipboardPngCopy(): () => void {
     ClipboardPngCopyPattern = /^\s*#/;
     ClipboardPngCopyDataImagePattern =
       /^\s*data:image\/(?:png|jpeg|gif|webp|avif|bmp)[;,]/i;
-    ClipboardPngCopySubscribers_2 = new Set([
+    ClipboardPngCopyUrlAttributeSet = new Set([
       "src",
       "srcset",
       "srcdoc",

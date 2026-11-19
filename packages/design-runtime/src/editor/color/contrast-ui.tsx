@@ -9,85 +9,85 @@ import { Icon } from "../../cds/components/icon";
 import { load_react_jsx_runtime } from "../../dependencies";
 import { AccessibilityAnnouncerLimit } from "../accessibility/announcer";
 import { joinClassNames } from "../chrome/overlay-state";
-import { ColorContrastCopyLabel_10, ColorContrastCopyLabel_11, ColorContrastCopyLabel_9, detailedContrastSentence, OnValue, reactColorContrastCopy, readableShadeDescription, summarizedContrastSentence } from "./contrast-copy";
+import { ColorContrastCopyLabel_10 as poorContrastLabel, ColorContrastCopyLabel_11 as readableShadeLabel, ColorContrastCopyLabel_9 as goodContrastLabel, detailedContrastSentence, OnValue, reactColorContrastCopy, readableShadeDescription, summarizedContrastSentence } from "./contrast-copy";
 import { formatContrastRatio, formatSpokenContrastRatio, parseRgbaColor, worstContrastResult } from "./contrast";
 import { toModuleNamespace } from "../../module-helpers";
 
 var jsxColorContrastUi: Dynamic;
 var withoutAlpha: Dynamic;
 var contrastVerdictClassName: Dynamic;
-function summarizeContrastResults(input?: Dynamic): Dynamic {
-  let value: Dynamic = worstContrastResult(input),
-    value2: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic => input2 !== value,
+function summarizeContrastResults(results?: Dynamic): Dynamic {
+  let worst: Dynamic = worstContrastResult(results),
+    others: Dynamic = results.filter(
+      (result?: Dynamic): Dynamic => result !== worst,
     ),
-    items: Dynamic = [
-      value,
-      ...value2.sort(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2.ratio - options.ratio,
+    ordered: Dynamic = [
+      worst,
+      ...others.sort(
+        (result?: Dynamic, otherResult?: Dynamic): Dynamic =>
+          result.ratio - otherResult.ratio,
       ),
     ],
     state: Dynamic = {
-      ratio: formatSpokenContrastRatio(value.ratio),
-      ground: value.ground.label,
-      passes: value.passes,
-      min: formatSpokenContrastRatio(value.min),
-      alsoPassing: value2.filter((input2?: Dynamic): Dynamic => input2.passes)
+      ratio: formatSpokenContrastRatio(worst.ratio),
+      ground: worst.ground.label,
+      passes: worst.passes,
+      min: formatSpokenContrastRatio(worst.min),
+      alsoPassing: others.filter((result?: Dynamic): Dynamic => result.passes)
         .length,
     },
-    value3: Dynamic = value2.filter(
-      (input2?: Dynamic): Dynamic => !input2.passes,
+    failing: Dynamic = others.filter(
+      (result?: Dynamic): Dynamic => !result.passes,
     ),
-    value4: Dynamic = summarizedContrastSentence({
+    spoken: Dynamic = summarizedContrastSentence({
       ...state,
-      alsoFailing: value3.length,
+      alsoFailing: failing.length,
     }),
-    value5: Dynamic = value4.length - AccessibilityAnnouncerLimit;
-  if (value5 > 0) {
-    let value6: Dynamic = state.ground
-      .slice(0, Math.max(1, state.ground.length - value5 - 1))
+    overflow: Dynamic = spoken.length - AccessibilityAnnouncerLimit;
+  if (overflow > 0) {
+    let truncatedGround: Dynamic = state.ground
+      .slice(0, Math.max(1, state.ground.length - overflow - 1))
       .replace(/[\uD800-\uDBFF]$/, "");
-    value4 = summarizedContrastSentence({
+    spoken = summarizedContrastSentence({
       ...state,
-      ground: value6 + "\u2026",
-      alsoFailing: value3.length,
+      ground: truncatedGround + "\u2026",
+      alsoFailing: failing.length,
     });
   }
   return {
-    worst: value,
-    title: items
+    worst: worst,
+    title: ordered
       .map(
-        (input2?: Dynamic): Dynamic =>
-          formatContrastRatio(input2.ratio) +
+        (result?: Dynamic): Dynamic =>
+          formatContrastRatio(result.ratio) +
           " " +
           OnValue +
           " " +
-          input2.ground.label,
+          result.ground.label,
       )
       .join(" \xB7 "),
     sentence: detailedContrastSentence({
       ...state,
-      alsoFailing: value3.map(
-        (input2?: Dynamic): Dynamic => input2.ground.label,
+      alsoFailing: failing.map(
+        (result?: Dynamic): Dynamic => result.ground.label,
       ),
     }),
-    spoken: value4,
+    spoken: spoken,
   };
 }
-function rgbaCssValue(input?: Dynamic): Dynamic {
-  if (input === undefined) return;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    Math.round(input2 * 255);
+function rgbaCssValue(rgba?: Dynamic): Dynamic {
+  if (rgba === undefined) return;
+  let callback: Dynamic = (channel?: Dynamic): Dynamic =>
+    Math.round(channel * 255);
   return (
     "rgb(" +
-    String(callback(input.r)) +
+    String(callback(rgba.r)) +
     " " +
-    String(callback(input.g)) +
+    String(callback(rgba.g)) +
     " " +
-    String(callback(input.b)) +
+    String(callback(rgba.b)) +
     " / " +
-    String(Math.round(input.a * 1e3) / 1e3) +
+    String(Math.round(rgba.a * 1e3) / 1e3) +
     ")"
   );
 }
@@ -97,13 +97,13 @@ function ContrastMark({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = summarizeContrastResults(results),
-    worst: Dynamic = value.worst;
+  let summary: Dynamic = summarizeContrastResults(results),
+    worst: Dynamic = summary.worst;
   return (
     <span
       data-kit={"contrast-mark"}
       data-verdict={worst.passes ? "pass" : "fail"}
-      title={value.title}
+      title={summary.title}
       aria-hidden={sentence ? undefined : true}
       className={joinClassNames(
         "inline-flex shrink-0 items-center gap-0.5 text-caption",
@@ -117,7 +117,7 @@ function ContrastMark({
           {formatContrastRatio(worst.ratio)}
         </span>
       </span>
-      {sentence ? (<span className={"sr-only"}>{value.sentence}</span>) : (null)}
+      {sentence ? (<span className={"sr-only"}>{summary.sentence}</span>) : (null)}
     </span>
   );
 }
@@ -127,14 +127,14 @@ function ContrastLockup({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = summarizeContrastResults(results),
-    worst: Dynamic = value.worst;
+  let summary: Dynamic = summarizeContrastResults(results),
+    worst: Dynamic = summary.worst;
   return (
     <span
       data-kit={"contrast-lockup"}
       data-verdict={worst.passes ? "pass" : "fail"}
       aria-hidden={"true"}
-      title={value.title}
+      title={summary.title}
       className={joinClassNames(
         "inline-flex min-w-0 items-center gap-1.5 text-caption leading-4",
         className,
@@ -157,7 +157,7 @@ function ContrastLockup({
         <Icon name={"TextAa"} size={"xs"} />
       </span>
       <span className={worst.passes ? "text-primary" : "text-warning"}>
-        {worst.passes ? (ColorContrastCopyLabel_9) : (ColorContrastCopyLabel_10)}
+        {worst.passes ? (goodContrastLabel) : (poorContrastLabel)}
       </span>
     </span>
   );
@@ -172,8 +172,8 @@ function ContrastAdvice({
   onFixGoneFocused: onFixGoneFocused,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = summarizeContrastResults(results),
-    worst: Dynamic = value.worst;
+  let summary: Dynamic = summarizeContrastResults(results),
+    worst: Dynamic = summary.worst;
   return (
     <div
       className={
@@ -187,7 +187,7 @@ function ContrastAdvice({
       >
         <ContrastLockup fg={fg2} results={results} />
         <span id={sentenceId} className={"sr-only"}>
-          {value.sentence}
+          {summary.sentence}
         </span>
       </span>
       {fix !== undefined ? (<ReadableShadeButton
@@ -206,38 +206,38 @@ function ReadableShadeButton({
   onGoneFocused: onGoneFocused,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactColorContrastCopy.useId)(),
-    value2: Dynamic = (0, reactColorContrastCopy.useRef)(false),
-    value3: Dynamic = (0, reactColorContrastCopy.useRef)(null),
-    value4: Dynamic = (0, reactColorContrastCopy.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value3.current = input;
+  let descriptionId: Dynamic = (0, reactColorContrastCopy.useId)(),
+    isTouchRef: Dynamic = (0, reactColorContrastCopy.useRef)(false),
+    rootElementRef: Dynamic = (0, reactColorContrastCopy.useRef)(null),
+    setRootRef: Dynamic = (0, reactColorContrastCopy.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        rootElementRef.current = element;
         typeof rootRef == "function"
-          ? rootRef(input)
-          : rootRef && (rootRef.current = input);
+          ? rootRef(element)
+          : rootRef && (rootRef.current = element);
       },
       [rootRef],
     ),
-    value5: Dynamic = (0, reactColorContrastCopy.useRef)(false),
-    value6: Dynamic = (0, reactColorContrastCopy.useRef)(held);
-  value6.current = held;
-  let value7: Dynamic = (0, reactColorContrastCopy.useRef)(
+    wasClickedRef: Dynamic = (0, reactColorContrastCopy.useRef)(false),
+    heldRef: Dynamic = (0, reactColorContrastCopy.useRef)(held);
+  heldRef.current = held;
+  let onGoneFocusedRef: Dynamic = (0, reactColorContrastCopy.useRef)(
     onGoneFocused,
   );
-  value7.current = onGoneFocused;
+  onGoneFocusedRef.current = onGoneFocused;
   (0, reactColorContrastCopy.useLayoutEffect)(
     (): Dynamic => (): Dynamic => {
-      value5.current ||
-        value6.current ||
-        value3.current === null ||
-        (value3.current.contains((document as Dynamic).activeElement) &&
-          value7.current?.());
+      wasClickedRef.current ||
+        heldRef.current ||
+        rootElementRef.current === null ||
+        (rootElementRef.current.contains((document as Dynamic).activeElement) &&
+          onGoneFocusedRef.current?.());
     },
     [],
   );
   return (
     <span
-      ref={value4}
+      ref={setRootRef}
       data-kit={"contrast-fix"}
       data-shade={fix.css}
       aria-hidden={held ? true : undefined}
@@ -251,21 +251,21 @@ function ReadableShadeButton({
         title={
           ((((((fix.css) + (" \xB7 ")) + (formatContrastRatio(fix.ratio))) + (" ")) + (OnValue)) + (" ")) + (fix.ground)
         }
-        aria-describedby={value}
+        aria-describedby={descriptionId}
         disabled={held}
-        onPointerDown={(input?: Dynamic): Dynamic => {
-          value2.current = input.pointerType === "touch";
+        onPointerDown={(event?: Dynamic): Dynamic => {
+          isTouchRef.current = event.pointerType === "touch";
         }}
         onClick={(): Dynamic => {
-          let current: Dynamic = value2.current;
-          value2.current = false;
-          value5.current = current;
+          let current: Dynamic = isTouchRef.current;
+          isTouchRef.current = false;
+          wasClickedRef.current = current;
           fix.onUse(current);
         }}
       >
-        {ColorContrastCopyLabel_11}
+        {readableShadeLabel}
       </Button>
-      <span id={value} className={"sr-only"}>
+      <span id={descriptionId} className={"sr-only"}>
         {readableShadeDescription({
           hex: fix.css,
           ratio: formatSpokenContrastRatio(fix.ratio),
@@ -292,14 +292,14 @@ export function installEditorColorContrastUi(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    withoutAlpha = (input?: Dynamic): Dynamic =>
-      input === undefined
+    withoutAlpha = (rgba?: Dynamic): Dynamic =>
+      rgba === undefined
         ? undefined
         : {
-            ...input,
+            ...rgba,
             a: 1,
           };
-    contrastVerdictClassName = (input?: Dynamic): Dynamic =>
-      input ? "text-secondary" : "text-warning";
+    contrastVerdictClassName = (passes?: Dynamic): Dynamic =>
+      passes ? "text-secondary" : "text-warning";
   };
 }

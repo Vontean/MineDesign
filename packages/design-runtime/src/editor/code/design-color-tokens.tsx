@@ -12,25 +12,25 @@ import { initializePlatformCdsIsland } from "../../platform/cds-island";
 
 var reactCodeDesignColorTokens: Dynamic;
 var jsxCodeDesignColorTokens: Dynamic;
-function useDesignColorTokens(input?: Dynamic): Dynamic {
-  let value: Dynamic = useDesignSystems();
+function useDesignColorTokens(unusedOptions?: Dynamic): Dynamic {
+  let designSystems: Dynamic = useDesignSystems();
   return (0, reactCodeScriptLiterals.useMemo)((): Dynamic => {
-    let values: Dynamic = new Set(),
+    let seenNames: Dynamic = new Set(),
       items: Dynamic = [];
-    for (let value2 of value as Dynamic)
-      for (let value3 of value2.colors as Dynamic)
-        values.has(value3.name) ||
-          (values.add(value3.name),
+    for (let designSystem of designSystems as Dynamic)
+      for (let color of designSystem.colors as Dynamic)
+        seenNames.has(color.name) ||
+          (seenNames.add(color.name),
           items.push({
-            name: "--" + value3.name,
-            value: value3.value,
-            ...colorTokenGroupLabels(value2, value3),
+            name: "--" + color.name,
+            value: color.value,
+            ...colorTokenGroupLabels(designSystem, color),
           }));
     return {
       tokens: items,
       themes: [],
     };
-  }, [value]);
+  }, [designSystems]);
 }
 export {
   jsxCodeDesignColorTokens,

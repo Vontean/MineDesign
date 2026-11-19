@@ -11,75 +11,75 @@ var ClipboardNativeObservedElements: Dynamic;
 var AppifactObjectAttribute: Dynamic;
 var clipboardObjectAttributePattern: Dynamic;
 var ClipboardNativeResolvedValue: Dynamic;
-function setClipboardMirror(input?: Dynamic): Dynamic {
-  ClipboardNativeAlias = input;
-  if (input === undefined || ClipboardNativeObservedElements.has(document))
+function setClipboardMirror(mirror?: Dynamic): Dynamic {
+  ClipboardNativeAlias = mirror;
+  if (mirror === undefined || ClipboardNativeObservedElements.has(document))
     return;
   ClipboardNativeObservedElements.add(document);
-  let callback: Dynamic = (): Dynamic => setClipboardMirror(undefined);
-  (document as Dynamic).addEventListener("copy", callback, true);
-  (document as Dynamic).addEventListener("cut", callback, true);
-  (window as Dynamic).addEventListener("blur", callback);
+  let clearMirror: Dynamic = (): Dynamic => setClipboardMirror(undefined);
+  (document as Dynamic).addEventListener("copy", clearMirror, true);
+  (document as Dynamic).addEventListener("cut", clearMirror, true);
+  (window as Dynamic).addEventListener("blur", clearMirror);
 }
-async function writeClipboardText(input?: Dynamic): Promise<Dynamic> {
+async function writeClipboardText(text?: Dynamic): Promise<Dynamic> {
   try {
-    await navigator.clipboard.writeText(input);
+    await navigator.clipboard.writeText(text);
     setClipboardMirror(undefined);
     return true;
   } catch {}
   try {
-    let value: Dynamic = (document as Dynamic).createElement("textarea");
-    value.value = input;
-    value.style.position = "fixed";
-    value.style.opacity = "0";
-    (document as Dynamic).body.appendChild(value);
-    value.select();
-    let value2: Dynamic = (document as Dynamic).execCommand("copy");
-    value.remove();
-    return value2;
+    let textarea: Dynamic = (document as Dynamic).createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    (document as Dynamic).body.appendChild(textarea);
+    textarea.select();
+    let didCopy: Dynamic = (document as Dynamic).execCommand("copy");
+    textarea.remove();
+    return didCopy;
   } catch {
     return false;
   }
 }
-function encodeClipboardUtf8(input?: Dynamic): Dynamic {
-  let value: Dynamic = new TextEncoder().encode(input),
+function encodeClipboardUtf8(plainText?: Dynamic): Dynamic {
+  let bytes: Dynamic = new TextEncoder().encode(plainText),
     text: Dynamic = "";
-  for (let index: Dynamic = 0; index < value.length; index += 32768)
-    text += String.fromCharCode(...value.subarray(index, index + 32768));
+  for (let index: Dynamic = 0; index < bytes.length; index += 32768)
+    text += String.fromCharCode(...bytes.subarray(index, index + 32768));
   return btoa(text);
 }
-function decodeClipboardUtf8(input?: Dynamic): Dynamic {
+function decodeClipboardUtf8(encoded?: Dynamic): Dynamic {
   try {
-    let value: Dynamic = atob(input),
-      value2: Dynamic = new Uint8Array(value.length);
-    for (let index: Dynamic = 0; index < value.length; index++)
-      value2[index] = value.charCodeAt(index);
-    return new TextDecoder().decode(value2);
+    let binary: Dynamic = atob(encoded),
+      bytes: Dynamic = new Uint8Array(binary.length);
+    for (let index: Dynamic = 0; index < binary.length; index++)
+      bytes[index] = binary.charCodeAt(index);
+    return new TextDecoder().decode(bytes);
   } catch {
     return;
   }
 }
-function escapeClipboardHtml(input?: Dynamic): Dynamic {
-  return input
+function escapeClipboardHtml(html?: Dynamic): Dynamic {
+  return html
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
 function writeClipboardObject(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  event?: Dynamic,
+  kind?: Dynamic,
+  payload?: Dynamic,
 ): Dynamic {
-  let clipboardData: Dynamic = input.clipboardData;
+  let clipboardData: Dynamic = event.clipboardData;
   if (!clipboardData) return false;
   let state: Dynamic = {
     appifact: 1,
-    kind: options,
-    data: context.data,
+    kind: kind,
+    data: payload.data,
   };
   try {
-    clipboardData.setData("text/plain", context.text);
+    clipboardData.setData("text/plain", payload.text);
     clipboardData.setData(
       "text/html",
       "<span " +
@@ -87,47 +87,47 @@ function writeClipboardObject(
         '="' +
         encodeClipboardUtf8(JSON.stringify(state)) +
         '">' +
-        escapeClipboardHtml(context.text) +
+        escapeClipboardHtml(payload.text) +
         "</span>",
     );
   } catch {
     return false;
   }
   ClipboardNativeResolvedValue =
-    context.text === ""
+    payload.text === ""
       ? undefined
       : {
-          kind: options,
-          data: context.data,
-          text: context.text,
+          kind: kind,
+          data: payload.data,
+          text: payload.text,
         };
   setClipboardMirror({
-    kind: options,
-    data: context.data,
+    kind: kind,
+    data: payload.data,
   });
   return true;
 }
-function readClipboardObject(input?: Dynamic): Dynamic {
-  let clipboardData: Dynamic = input.clipboardData;
+function readClipboardObject(event?: Dynamic): Dynamic {
+  let clipboardData: Dynamic = event.clipboardData;
   if (!clipboardData) return;
-  let value: Dynamic = clipboardData.getData("text/html"),
-    value2: Dynamic =
-      value === "" ? null : clipboardObjectAttributePattern.exec(value);
-  if (value2?.[1] !== undefined) {
-    let value3: Dynamic = decodeClipboardUtf8(value2[1]);
-    if (value3 !== undefined)
+  let html: Dynamic = clipboardData.getData("text/html"),
+    match: Dynamic =
+      html === "" ? null : clipboardObjectAttributePattern.exec(html);
+  if (match?.[1] !== undefined) {
+    let decodedJson: Dynamic = decodeClipboardUtf8(match[1]);
+    if (decodedJson !== undefined)
       try {
-        let value4: Dynamic = JSON.parse(value3);
+        let parsed: Dynamic = JSON.parse(decodedJson);
         if (
-          typeof value4 == "object" &&
-          value4 !== null &&
-          value4.appifact === 1 &&
-          typeof value4.kind == "string" &&
-          Object.hasOwn(value4, "data")
+          typeof parsed == "object" &&
+          parsed !== null &&
+          parsed.appifact === 1 &&
+          typeof parsed.kind == "string" &&
+          Object.hasOwn(parsed, "data")
         )
           return {
-            kind: value4.kind,
-            data: value4.data,
+            kind: parsed.kind,
+            data: parsed.data,
           };
       } catch {}
   }
@@ -142,62 +142,62 @@ function readClipboardObject(input?: Dynamic): Dynamic {
     };
 }
 function clipboardContainsFileNames(
-  input?: Dynamic,
-  options?: Dynamic,
+  files?: Dynamic,
+  text?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.trim();
-  if (value === "" || /^https?:\/\/\S+$/.test(value)) return true;
-  let values: Dynamic = new Set(
-    input.map((input2?: Dynamic): Dynamic => input2.name),
+  let trimmedText: Dynamic = text.trim();
+  if (trimmedText === "" || /^https?:\/\/\S+$/.test(trimmedText)) return true;
+  let fileNames: Dynamic = new Set(
+    files.map((file?: Dynamic): Dynamic => file.name),
   );
-  return value
+  return trimmedText
     .split(/\r\n|\r|\n/)
     .every(
-      (input2?: Dynamic): Dynamic =>
-        values.has(normalizeClipboardFileName(input2)),
+      (line?: Dynamic): Dynamic =>
+        fileNames.has(normalizeClipboardFileName(line)),
     );
 }
-function normalizeClipboardFileName(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trim().replace(/^"(.*)"$/, "$1");
-  if (!/^(file:\/\/|\/|\\\\|[A-Za-z]:[\\/])/i.test(value)) return value;
-  if (/^file:/i.test(value))
+function normalizeClipboardFileName(fileName?: Dynamic): Dynamic {
+  let name: Dynamic = fileName.trim().replace(/^"(.*)"$/, "$1");
+  if (!/^(file:\/\/|\/|\\\\|[A-Za-z]:[\\/])/i.test(name)) return name;
+  if (/^file:/i.test(name))
     try {
-      value = decodeURIComponent(value);
+      name = decodeURIComponent(name);
     } catch {}
-  return value.slice(
-    Math.max(value.lastIndexOf("/"), value.lastIndexOf("\\")) + 1,
+  return name.slice(
+    Math.max(name.lastIndexOf("/"), name.lastIndexOf("\\")) + 1,
   );
 }
-function copyClipboardObject(input?: Dynamic, options?: Dynamic): Dynamic {
-  let flag: Dynamic = false,
-    callback: Dynamic = (event?: Dynamic): Dynamic => {
+function copyClipboardObject(kind?: Dynamic, payload?: Dynamic): Dynamic {
+  let didWrite: Dynamic = false,
+    handleCopy: Dynamic = (event?: Dynamic): Dynamic => {
       event.preventDefault();
-      flag = writeClipboardObject(event, input, options);
+      didWrite = writeClipboardObject(event, kind, payload);
     },
     activeElement: Dynamic = (document as Dynamic).activeElement,
-    value: Dynamic = (document as Dynamic).createElement("textarea");
-  value.value = options.text === "" ? " " : options.text;
-  value.style.position = "fixed";
-  value.style.opacity = "0";
-  (document as Dynamic).body.appendChild(value);
-  value.select();
-  (document as Dynamic).addEventListener("copy", callback, {
+    textarea: Dynamic = (document as Dynamic).createElement("textarea");
+  textarea.value = payload.text === "" ? " " : payload.text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  (document as Dynamic).body.appendChild(textarea);
+  textarea.select();
+  (document as Dynamic).addEventListener("copy", handleCopy, {
     capture: true,
     once: true,
   });
   try {
     (document as Dynamic).execCommand("copy");
   } catch {}
-  (document as Dynamic).removeEventListener("copy", callback, {
+  (document as Dynamic).removeEventListener("copy", handleCopy, {
     capture: true,
   });
-  value.remove();
+  textarea.remove();
   activeElement instanceof HTMLElement &&
     activeElement.isConnected &&
     activeElement.focus({
       preventScroll: true,
     });
-  return flag;
+  return didWrite;
 }
 export {
   AppifactObjectAttribute,

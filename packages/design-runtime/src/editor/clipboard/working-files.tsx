@@ -14,38 +14,38 @@ var ClipboardWorkingFilesHandler: Dynamic;
 var reactClipboardWorkingFiles: Dynamic;
 var AppifactExtraExportFormatsValue: Dynamic;
 var ClipboardWorkingFilesConstant: Dynamic;
-function createWorkingFileMap(input?: Dynamic): Dynamic {
-  let values: Dynamic = new Set(
-      parseCanvasMetadata(input[canvasMetadataFile], {
-        ...input,
-      }).artboards.map((input2?: Dynamic): Dynamic => input2.file),
+function createWorkingFileMap(files?: Dynamic): Dynamic {
+  let artboardFiles: Dynamic = new Set(
+      parseCanvasMetadata(files[canvasMetadataFile], {
+        ...files,
+      }).artboards.map((artboard?: Dynamic): Dynamic => artboard.file),
     ),
     entries: Dynamic = new Map();
-  for (let [value, value2] of Object.entries(input) as Dynamic)
-    entries.set(values.has(value) ? value : Value_5 + value, value2);
+  for (let [fileName, fileContent] of Object.entries(files) as Dynamic)
+    entries.set(artboardFiles.has(fileName) ? fileName : Value_5 + fileName, fileContent);
   return entries;
 }
 function createCurrentWorkingGeneration(): Dynamic {
-  let value: Dynamic = ++ClipboardWorkingFilesConstant;
-  return (): Dynamic => value === ClipboardWorkingFilesConstant;
+  let generation: Dynamic = ++ClipboardWorkingFilesConstant;
+  return (): Dynamic => generation === ClipboardWorkingFilesConstant;
 }
 function useClipboardFeatureFlag(): Dynamic {
-  let [value, value2]: Dynamic = (0, reactClipboardWorkingFiles.useState)(
+  let [isEnabled, setIsEnabled]: Dynamic = (0, reactClipboardWorkingFiles.useState)(
     false,
   );
   (0, reactClipboardWorkingFiles.useEffect)((): Dynamic => {
-    let flag: Dynamic = true;
+    let isMounted: Dynamic = true;
     awaitFeatureFlag(
       AppifactExtraExportFormatsValue,
       false,
-    ).then((input?: Dynamic): Dynamic => {
-      flag && value2(input);
+    ).then((enabled?: Dynamic): Dynamic => {
+      isMounted && setIsEnabled(enabled);
     });
     return (): Dynamic => {
-      flag = false;
+      isMounted = false;
     };
   }, []);
-  return value;
+  return isEnabled;
 }
 export {
   AppifactExtraExportFormatsValue,
@@ -58,10 +58,10 @@ export {
 };
 export function installEditorClipboardWorkingFiles(): () => void {
   return () => {
-    ClipboardWorkingFilesHandler = (input?: Dynamic): Dynamic =>
+    ClipboardWorkingFilesHandler = (announcementDetail?: Dynamic): Dynamic =>
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       uiMessage("inspector.workingFiles.theAgentIsAdding") +
-      AccessibilityAnnouncementsHandler(input);
+      AccessibilityAnnouncementsHandler(announcementDetail);
     reactClipboardWorkingFiles = toModuleNamespace(
       load_react(),
       1,

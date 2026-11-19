@@ -10,242 +10,242 @@ import { reactInspectorAnnotation } from "../inspector/annotation";
 import { InspectorClassTargetsDataDcDataScPattern } from "../inspector/class-targets";
 
 var CodePropertyCodeConstant: Dynamic;
-var CodePropertyCodeConstant_2: Dynamic;
+var CodePropertyCodeDiscardDelayMs: Dynamic;
 var CodePropertyCodeResolvedValue: Dynamic;
 function getSelectionCodeEntries(
-  input?: Dynamic,
-  options?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.map((input2?: Dynamic): Dynamic => {
+  let perElementMaps: Dynamic = tids.map((tid?: Dynamic): Dynamic => {
     let entries: Dynamic = new Map();
-    for (let value5 of parseStyleDeclarations(
-      input.effectiveStyleAttr(input2),
+    for (let declaration of parseStyleDeclarations(
+      model.effectiveStyleAttr(tid),
     ) as Dynamic)
-      entries.set(value5.prop, value5.value);
-    let value4: Dynamic = input.attributes(input2);
-    for (let [value5, value6] of Object.entries(value4) as Dynamic)
-      InspectorClassTargetsDataDcDataScPattern.test(value5) ||
-        entries.set("@" + value5, value6);
+      entries.set(declaration.prop, declaration.value);
+    let attributes: Dynamic = model.attributes(tid);
+    for (let [attributeName, attributeValue] of Object.entries(attributes) as Dynamic)
+      InspectorClassTargetsDataDcDataScPattern.test(attributeName) ||
+        entries.set("@" + attributeName, attributeValue);
     return entries;
   });
-  if (value.length === 0)
+  if (perElementMaps.length === 0)
     return {
       entries: [],
       mixed: [],
     };
-  let value2: Dynamic = value[0],
-    items: Dynamic = [],
-    items2: Dynamic = [],
-    values: Dynamic = new Set();
-  for (let value4 of value as Dynamic)
-    for (let value5 of value4.keys() as Dynamic) values.add(value5);
-  let value3: Dynamic = [
-    ...value2.keys(),
-    ...[...values].filter((input2?: Dynamic): Dynamic => !value2.has(input2)),
+  let firstMap: Dynamic = perElementMaps[0],
+    sharedEntries: Dynamic = [],
+    mixedKeys: Dynamic = [],
+    allKeys: Dynamic = new Set();
+  for (let map of perElementMaps as Dynamic)
+    for (let key of map.keys() as Dynamic) allKeys.add(key);
+  let orderedKeys: Dynamic = [
+    ...firstMap.keys(),
+    ...[...allKeys].filter((key?: Dynamic): Dynamic => !firstMap.has(key)),
   ].sort(
-    (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      Number(input2.startsWith("@")) - Number(options2.startsWith("@")),
+    (key?: Dynamic, otherKey?: Dynamic): Dynamic =>
+      Number(key.startsWith("@")) - Number(otherKey.startsWith("@")),
   );
-  for (let value4 of value3 as Dynamic) {
-    let value5: Dynamic = value.map(
-      (input2?: Dynamic): Dynamic => input2.get(value4),
+  for (let key of orderedKeys as Dynamic) {
+    let values: Dynamic = perElementMaps.map(
+      (map?: Dynamic): Dynamic => map.get(key),
     );
-    value5.every(
-      (input2?: Dynamic): Dynamic =>
-        input2 !== undefined && input2 === value5[0],
+    values.every(
+      (entryValue?: Dynamic): Dynamic =>
+        entryValue !== undefined && entryValue === values[0],
     )
-      ? items.push({
-          key: value4,
-          value: value5[0],
+      ? sharedEntries.push({
+          key: key,
+          value: values[0],
         })
-      : items2.push(value4);
+      : mixedKeys.push(key);
   }
   return {
-    entries: items,
-    mixed: items2,
+    entries: sharedEntries,
+    mixed: mixedKeys,
   };
 }
-function serializeSelectionCode(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic => !input2.key.startsWith("@"),
+function serializeSelectionCode(entries?: Dynamic, mixedKeys?: Dynamic): Dynamic {
+  let styleEntries: Dynamic = entries.filter(
+      (entry?: Dynamic): Dynamic => !entry.key.startsWith("@"),
     ),
-    value2: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic => input2.key.startsWith("@"),
+    attributeEntries: Dynamic = entries.filter(
+      (entry?: Dynamic): Dynamic => entry.key.startsWith("@"),
     ),
-    items: Dynamic = [];
-  for (let value3 of value as Dynamic)
-    items.push(value3.key + ": " + value3.value + ";");
-  for (let value3 of options.filter(
-    (input2?: Dynamic): Dynamic => !input2.startsWith("@"),
+    lines: Dynamic = [];
+  for (let entry of styleEntries as Dynamic)
+    lines.push(entry.key + ": " + entry.value + ";");
+  for (let mixedKey of mixedKeys.filter(
+    (key?: Dynamic): Dynamic => !key.startsWith("@"),
   ) as Dynamic)
-    items.push("// " + value3 + ": (mixed)");
+    lines.push("// " + mixedKey + ": (mixed)");
   if (
-    value2.length > 0 ||
-    options.some((input2?: Dynamic): Dynamic => input2.startsWith("@"))
+    attributeEntries.length > 0 ||
+    mixedKeys.some((key?: Dynamic): Dynamic => key.startsWith("@"))
   ) {
-    items.length > 0 && items.push("");
-    for (let value3 of value2 as Dynamic)
-      items.push(value3.key + ": " + value3.value);
-    for (let value3 of options.filter(
-      (input2?: Dynamic): Dynamic => input2.startsWith("@"),
+    lines.length > 0 && lines.push("");
+    for (let entry of attributeEntries as Dynamic)
+      lines.push(entry.key + ": " + entry.value);
+    for (let mixedKey of mixedKeys.filter(
+      (key?: Dynamic): Dynamic => key.startsWith("@"),
     ) as Dynamic)
-      items.push("// " + value3 + ": (mixed)");
+      lines.push("// " + mixedKey + ": (mixed)");
   }
-  return items.join(`
+  return lines.join(`
 `);
 }
-function selectionCodeText(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = getSelectionCodeEntries(input, options);
-  return serializeSelectionCode(value.entries, value.mixed);
+function selectionCodeText(model?: Dynamic, tids?: Dynamic): Dynamic {
+  let selection: Dynamic = getSelectionCodeEntries(model, tids);
+  return serializeSelectionCode(selection.entries, selection.mixed);
 }
-function focusPropertyCodeLine(input?: Dynamic, items?: Dynamic): Dynamic {
-  let value: Dynamic = input.value.split(`
+function focusPropertyCodeLine(textarea?: Dynamic, property?: Dynamic): Dynamic {
+  let lines: Dynamic = textarea.value.split(`
 `),
-    value2: Dynamic = value.findIndex(
-      (input2?: Dynamic): Dynamic =>
-        input2.trimStart().startsWith(items + ":"),
+    lineIndex: Dynamic = lines.findIndex(
+      (line?: Dynamic): Dynamic =>
+        line.trimStart().startsWith(property + ":"),
     );
-  if (value2 < 0) return;
-  let value3: Dynamic = value[value2],
-    value4: Dynamic = value
-      .slice(0, value2)
+  if (lineIndex < 0) return;
+  let currentLine: Dynamic = lines[lineIndex],
+    lineStart: Dynamic = lines
+      .slice(0, lineIndex)
       .reduce(
-        (input2?: Dynamic, items2?: Dynamic): Dynamic =>
-          input2 + items2.length + 1,
+        (offset?: Dynamic, previousLine?: Dynamic): Dynamic =>
+          offset + previousLine.length + 1,
         0,
       ),
-    value5: Dynamic = value3.slice(
-      value3.indexOf(items + ":") + items.length + 1,
+    afterColon: Dynamic = currentLine.slice(
+      currentLine.indexOf(property + ":") + property.length + 1,
     );
-  input.setSelectionRange(
-    value4 + value3.length - value5.trimStart().length,
-    value4 + value3.length,
+  textarea.setSelectionRange(
+    lineStart + currentLine.length - afterColon.trimStart().length,
+    lineStart + currentLine.length,
   );
-  let parentElement: Dynamic = input.parentElement;
+  let parentElement: Dynamic = textarea.parentElement;
   parentElement &&
     (parentElement.scrollTop = Math.max(
       0,
-      input.offsetTop -
+      textarea.offsetTop -
         parentElement.offsetTop +
-        (value4 / Math.max(1, input.value.length)) * input.offsetHeight -
+        (lineStart / Math.max(1, textarea.value.length)) * textarea.offsetHeight -
         parentElement.clientHeight / 2,
     ));
 }
-function parseInspectorCode(input?: Dynamic): Dynamic {
+function parseInspectorCode(code?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(),
-    value: Dynamic = input.split(`
+    lines: Dynamic = code.split(`
 `);
-  for (let index: Dynamic = 0; index < value.length; index++) {
-    let value2: Dynamic = value[index].trim();
-    if (value2 === "" || value2.startsWith("//")) continue;
-    if (value2.startsWith("/*")) {
-      if (value2.endsWith("*/")) continue;
+  for (let index: Dynamic = 0; index < lines.length; index++) {
+    let lineText: Dynamic = lines[index].trim();
+    if (lineText === "" || lineText.startsWith("//")) continue;
+    if (lineText.startsWith("/*")) {
+      if (lineText.endsWith("*/")) continue;
       return {
         ok: false,
         line: index + 1,
         get message() { return uiMessage("inspector.propertyCode.unterminatedComment"); },
       };
     }
-    value2.endsWith(";") && (value2 = value2.slice(0, -1).trimEnd());
-    let value3: Dynamic = value2.startsWith("@")
+    lineText.endsWith(";") && (lineText = lineText.slice(0, -1).trimEnd());
+    let match: Dynamic = lineText.startsWith("@")
       ? (/^(@[A-Za-z_][\w-]*(?::[A-Za-z_][\w-]*)*?)\s*:(?=\s|$)\s*([\s\S]*)$/.exec(
-          value2,
-        ) ?? /^(@[A-Za-z_][\w-]*)\s*:\s*([\s\S]*)$/.exec(value2))
-      : /^(-{0,2}[A-Za-z_][\w-]*)\s*:\s*([\s\S]*)$/.exec(value2);
-    if (!value3)
+          lineText,
+        ) ?? /^(@[A-Za-z_][\w-]*)\s*:\s*([\s\S]*)$/.exec(lineText))
+      : /^(-{0,2}[A-Za-z_][\w-]*)\s*:\s*([\s\S]*)$/.exec(lineText);
+    if (!match)
       return {
         ok: false,
         line: index + 1,
         get message() { return uiMessage("inspector.propertyCode.expectedNameValue"); },
       };
-    let value4: Dynamic = value3[1].startsWith("@")
-        ? value3[1]
-        : normalizeCssProperty(value3[1]),
-      value5: Dynamic = value3[2].trim();
-    if (value5 === "" && !value4.startsWith("@"))
+    let property: Dynamic = match[1].startsWith("@")
+        ? match[1]
+        : normalizeCssProperty(match[1]),
+      valueText: Dynamic = match[2].trim();
+    if (valueText === "" && !property.startsWith("@"))
       return {
         ok: false,
         line: index + 1,
         get message() { return uiMessage("inspector.propertyCode.missingValue"); },
       };
-    if (!value4.startsWith("@")) {
-      let index2: Dynamic = 0,
-        value6: Dynamic = null,
+    if (!property.startsWith("@")) {
+      let parenDepth: Dynamic = 0,
+        quoteChar: Dynamic = null,
         text: Dynamic = "",
         flag: Dynamic = true;
-      for (let index3: Dynamic = 0; index3 < value5.length; index3++) {
-        let value7: Dynamic = value5[index3];
-        if (value6) {
-          value7 === value6 && (value6 = null);
+      for (let charIndex: Dynamic = 0; charIndex < valueText.length; charIndex++) {
+        let char: Dynamic = valueText[charIndex];
+        if (quoteChar) {
+          char === quoteChar && (quoteChar = null);
           continue;
         }
-        if (flag && value7 === "{" && value5[index3 + 1] === "{") {
-          let value8: Dynamic = value5.indexOf("}}", index3 + 3);
-          flag = value8 >= 0;
+        if (flag && char === "{" && valueText[charIndex + 1] === "{") {
+          let closeIndex: Dynamic = valueText.indexOf("}}", charIndex + 3);
+          flag = closeIndex >= 0;
           if (flag) {
-            let value9: Dynamic = value5.slice(index3 + 2, value8);
-            if (value9.replace(/"[^"]*"|'[^']*'/g, "").includes(";"))
+            let expression: Dynamic = valueText.slice(charIndex + 2, closeIndex);
+            if (expression.replace(/"[^"]*"|'[^']*'/g, "").includes(";"))
               return {
                 ok: false,
                 line: index + 1,
                 get message() { return uiMessage("inspector.propertyCode.unexpected"); },
               };
-            text += value9;
-            index3 = value8 + 1;
+            text += expression;
+            charIndex = closeIndex + 1;
             continue;
           }
         }
-        if (value7 === '"' || value7 === "'") value6 = value7;
-        else if (value7 === "(") index2++;
-        else if (value7 === ")") index2--;
+        if (char === '"' || char === "'") quoteChar = char;
+        else if (char === "(") parenDepth++;
+        else if (char === ")") parenDepth--;
         else if (
-          index2 === 0 &&
-          (value7 === "{" || value7 === "}" || value7 === ";")
+          parenDepth === 0 &&
+          (char === "{" || char === "}" || char === ";")
         )
           return {
             ok: false,
             line: index + 1,
-            message: uiMessage("inspector.propertyCode.unexpected2") + value7,
+            message: uiMessage("inspector.propertyCode.unexpected2") + char,
           };
-        if (index2 < 0)
+        if (parenDepth < 0)
           return {
             ok: false,
             line: index + 1,
             get message() { return uiMessage("inspector.propertyCode.unbalanced"); },
           };
       }
-      if (index2 !== 0 || value6)
+      if (parenDepth !== 0 || quoteChar)
         return {
           ok: false,
           line: index + 1,
           get message() { return uiMessage("inspector.propertyCode.unbalancedOrQuote"); },
         };
-      if (/[{}]/.test(value5)) {
-        let value7: Dynamic = parseStyleDeclarations(
-          "--a: " + value5 + "; --b: 0",
+      if (/[{}]/.test(valueText)) {
+        let probe: Dynamic = parseStyleDeclarations(
+          "--a: " + valueText + "; --b: 0",
         );
-        if (value7.length !== 2 || value7[0].value !== value5) {
-          let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-              text.split(input2).length % 2 === 0,
-            value8: Dynamic =
-              callback("'") ||
-              callback('"') ||
+        if (probe.length !== 2 || probe[0].value !== valueText) {
+          let hasUnbalancedQuote: Dynamic = (quote?: Dynamic): Dynamic =>
+              text.split(quote).length % 2 === 0,
+            isUnbalanced: Dynamic =
+              hasUnbalancedQuote("'") ||
+              hasUnbalancedQuote('"') ||
               text.split("(").length !== text.split(")").length;
           return {
             ok: false,
             line: index + 1,
-            message: value8 ? uiMessage("inspector.propertyCode.unbalancedOrQuote2") : uiMessage("inspector.propertyCode.unexpected3"),
+            message: isUnbalanced ? uiMessage("inspector.propertyCode.unbalancedOrQuote2") : uiMessage("inspector.propertyCode.unexpected3"),
           };
         }
       }
     }
-    if (entries.has(value4))
+    if (entries.has(property))
       return {
         ok: false,
         line: index + 1,
-        message: uiMessage("inspector.propertyCode.duplicate") + value4,
+        message: uiMessage("inspector.propertyCode.duplicate") + property,
       };
-    entries.set(value4, value5);
+    entries.set(property, valueText);
   }
   return {
     ok: true,
@@ -253,25 +253,25 @@ function parseInspectorCode(input?: Dynamic): Dynamic {
   };
 }
 function useCodeErrorAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
+  errorAnnouncement?: Dynamic,
+  codeText?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, reactInspectorAnnotation.useRef)(
+  let lastAnnouncedRef: Dynamic = (0, reactInspectorAnnotation.useRef)(
     undefined,
   );
   (0, reactInspectorAnnotation.useEffect)((): Dynamic => {
-    input === undefined && (value.current = undefined);
-    if (input === undefined || input === value.current) return;
-    let value2: Dynamic = (window as Dynamic).setTimeout((): Dynamic => {
-      value.current = input;
-      announce(pausedChangesAnnouncement(input));
+    errorAnnouncement === undefined && (lastAnnouncedRef.current = undefined);
+    if (errorAnnouncement === undefined || errorAnnouncement === lastAnnouncedRef.current) return;
+    let timer: Dynamic = (window as Dynamic).setTimeout((): Dynamic => {
+      lastAnnouncedRef.current = errorAnnouncement;
+      announce(pausedChangesAnnouncement(errorAnnouncement));
     }, CodePropertyCodeConstant);
-    return (): Dynamic => (window as Dynamic).clearTimeout(value2);
-  }, [input, options]);
+    return (): Dynamic => (window as Dynamic).clearTimeout(timer);
+  }, [errorAnnouncement, codeText]);
 }
 export {
   CodePropertyCodeConstant,
-  CodePropertyCodeConstant_2,
+  CodePropertyCodeDiscardDelayMs as CodePropertyCodeConstant_2,
   CodePropertyCodeResolvedValue,
   focusPropertyCodeLine,
   getSelectionCodeEntries,
@@ -283,7 +283,7 @@ export {
 export function installEditorCodePropertyCode(): () => void {
   return () => {
     CodePropertyCodeConstant = 2e3;
-    CodePropertyCodeConstant_2 = 1e3;
+    CodePropertyCodeDiscardDelayMs = 1e3;
     CodePropertyCodeResolvedValue =
       AccessibilityAnnouncerConstant + 250;
   };
