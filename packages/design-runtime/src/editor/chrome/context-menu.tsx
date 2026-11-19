@@ -28,27 +28,27 @@ function EditorContextMenu({
   focusFirstItem = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = at !== null;
-  useEscapeReleaseSuppression(value && focusFirstItem);
-  let value2: Dynamic = (0, reactChromeTheme_2.useRef)(null),
-    value3: Dynamic = (0, reactChromeTheme_2.useRef)(onClose);
-  value3.current = onClose;
-  let [value4, value5]: Dynamic = (0, reactChromeTheme_2.useState)(
+  let isOpen: Dynamic = at !== null;
+  useEscapeReleaseSuppression(isOpen && focusFirstItem);
+  let popupRef: Dynamic = (0, reactChromeTheme_2.useRef)(null),
+    onCloseRef: Dynamic = (0, reactChromeTheme_2.useRef)(onClose);
+  onCloseRef.current = onClose;
+  let [isMounted, setIsMounted]: Dynamic = (0, reactChromeTheme_2.useState)(
       false,
     ),
-    value6: Dynamic = (0, reactChromeTheme_2.useRef)(null);
+    lastMenuRef: Dynamic = (0, reactChromeTheme_2.useRef)(null);
   (0, reactChromeTheme_2.useLayoutEffect)((): Dynamic => {
     at &&
-      ((value6.current = {
+      ((lastMenuRef.current = {
         at: at,
         children: children,
         title: title,
         name: title ?? ariaLabel,
         anchor: anchor ?? "point",
       }),
-      value5(true));
+      setIsMounted(true));
   }, [at, children, title, ariaLabel, anchor]);
-  let value7: Dynamic = at
+  let currentMenu: Dynamic = at
       ? {
           at: at,
           children: children,
@@ -56,25 +56,25 @@ function EditorContextMenu({
           name: title ?? ariaLabel,
           anchor: anchor ?? "point",
         }
-      : value6.current,
-    value8: Dynamic = value7?.anchor === "tap",
-    value9: Dynamic = value7?.at.x,
-    value10: Dynamic = value7?.at.y,
-    value11: Dynamic = (0,
+      : lastMenuRef.current,
+    isTapAnchor: Dynamic = currentMenu?.anchor === "tap",
+    anchorX: Dynamic = currentMenu?.at.x,
+    anchorY: Dynamic = currentMenu?.at.y,
+    virtualAnchor: Dynamic = (0,
     reactChromeTheme_2.useMemo)((): Dynamic => {
-      if (value9 === undefined || value10 === undefined) return;
+      if (anchorX === undefined || anchorY === undefined) return;
       let state: Dynamic = {
-        x: value9,
-        y: value10,
-        left: value9,
-        top: value10,
-        right: value9,
-        bottom: value10,
+        x: anchorX,
+        y: anchorY,
+        left: anchorX,
+        top: anchorY,
+        right: anchorX,
+        bottom: anchorY,
         width: 0,
         height: 0,
         toJSON: (): Dynamic => ({
-          x: value9,
-          y: value10,
+          x: anchorX,
+          y: anchorY,
           width: 0,
           height: 0,
         }),
@@ -82,24 +82,24 @@ function EditorContextMenu({
       return {
         getBoundingClientRect: (): Dynamic => state,
       };
-    }, [value9, value10]),
-    value12: Dynamic = (0, reactChromeTheme_2.useRef)(null);
+    }, [anchorX, anchorY]),
+    previousFocusRef: Dynamic = (0, reactChromeTheme_2.useRef)(null);
   (0, reactChromeTheme_2.useLayoutEffect)((): Dynamic => {
-    if (!value) return;
+    if (!isOpen) return;
     let activeElement: Dynamic = (document as Dynamic).activeElement;
-    (value4 &&
+    (isMounted &&
       (activeElement === (document as Dynamic).body ||
-        (value2.current?.contains(activeElement) ?? false))) ||
-      (value12.current =
+        (popupRef.current?.contains(activeElement) ?? false))) ||
+      (previousFocusRef.current =
         activeElement instanceof HTMLElement &&
         activeElement !== (document as Dynamic).body
           ? activeElement
           : null);
-  }, [value, value4]);
+  }, [isOpen, isMounted]);
   (0, reactChromeTheme_2.useEffect)((): Dynamic => {
-    if (!value || !focusFirstItem) return;
-    let value13: Dynamic = requestAnimationFrame((): Dynamic => {
-      let current: Dynamic = value2.current;
+    if (!isOpen || !focusFirstItem) return;
+    let frameId: Dynamic = requestAnimationFrame((): Dynamic => {
+      let current: Dynamic = popupRef.current;
       if (current === null) return;
       let activeElement: Dynamic = (document as Dynamic).activeElement;
       if (
@@ -107,7 +107,7 @@ function EditorContextMenu({
         activeElement !== (document as Dynamic).body &&
         activeElement !== current &&
         !current.contains(activeElement) &&
-        activeElement !== value12.current
+        activeElement !== previousFocusRef.current
       )
         return;
       let element: Dynamic = current.querySelector(
@@ -115,42 +115,42 @@ function EditorContextMenu({
       );
       element !== null && element.focus();
     });
-    return (): Dynamic => cancelAnimationFrame(value13);
-  }, [value, focusFirstItem]);
+    return (): Dynamic => cancelAnimationFrame(frameId);
+  }, [isOpen, focusFirstItem]);
   return (
     <jsxChromeContextMenu.Fragment>
-      {value ? (<R_usePopoverDismissal
-          onClose={(): Dynamic => value3.current()}
+      {isOpen ? (<R_usePopoverDismissal
+          onClose={(): Dynamic => onCloseRef.current()}
         />) : (null)}
       <MenuMenuAssignValue.Root
-        open={value}
+        open={isOpen}
         modal={false}
-        onOpenChange={(input?: Dynamic, options?: Dynamic): Dynamic => {
-          if (!input) {
-            if (options.reason === "outside-press") {
-              let value13: Dynamic = options.event?.target;
+        onOpenChange={(nextOpen?: Dynamic, changeDetails?: Dynamic): Dynamic => {
+          if (!nextOpen) {
+            if (changeDetails.reason === "outside-press") {
+              let eventTarget: Dynamic = changeDetails.event?.target;
               if (
-                value13 instanceof Element &&
-                value13.hasAttribute("data-mc-scrim")
+                eventTarget instanceof Element &&
+                eventTarget.hasAttribute("data-mc-scrim")
               ) {
-                options.cancel();
+                changeDetails.cancel();
                 return;
               }
             }
-            value3.current();
+            onCloseRef.current();
           }
         }}
-        onOpenChangeComplete={(input?: Dynamic): Dynamic => {
-          input || value5(false);
+        onOpenChangeComplete={(nextOpen?: Dynamic): Dynamic => {
+          nextOpen || setIsMounted(false);
         }}
       >
         <MenuMenuAssignValue.Popup
-          ref={value2}
-          anchor={value11}
+          ref={popupRef}
+          anchor={virtualAnchor}
           side={"bottom"}
-          align={value8 ? "center" : "start"}
-          sideOffset={value8 ? ChromeContextMenuConstant : 0}
-          aria-label={value7?.name}
+          align={isTapAnchor ? "center" : "start"}
+          sideOffset={isTapAnchor ? ChromeContextMenuConstant : 0}
+          aria-label={currentMenu?.name}
           {...popupAttrs}
           data-mc-chrome={""}
           data-mc-menu={""}
@@ -159,14 +159,14 @@ function EditorContextMenu({
             if (
               activeElement instanceof HTMLElement &&
               activeElement !== (document as Dynamic).body &&
-              !(value2.current?.contains(activeElement) ?? false)
+              !(popupRef.current?.contains(activeElement) ?? false)
             )
               return false;
-            let value13: Dynamic =
-              value12.current?.isConnected === true ? value12.current : null;
+            let returnTarget: Dynamic =
+              previousFocusRef.current?.isConnected === true ? previousFocusRef.current : null;
             (returnFocus !== undefined
-              ? returnFocus(value13)
-              : value13
+              ? returnFocus(returnTarget)
+              : returnTarget
             )?.focus({
               preventScroll: true,
             });
@@ -176,11 +176,11 @@ function EditorContextMenu({
             event.preventDefault();
             event.stopPropagation();
           }}
-          onKeyDown={(input?: Dynamic): Dynamic => {
-            input.key !== "Tab" &&
-              !input.metaKey &&
-              !input.ctrlKey &&
-              input.stopPropagation();
+          onKeyDown={(event?: Dynamic): Dynamic => {
+            event.key !== "Tab" &&
+              !event.metaKey &&
+              !event.ctrlKey &&
+              event.stopPropagation();
           }}
           className={className}
           style={
@@ -191,23 +191,23 @@ function EditorContextMenu({
               : undefined
           }
         >
-          {value7?.title !== undefined ? (<MenuMenuAssignValue.Header className={"truncate"}>
-              {value7.title}
+          {currentMenu?.title !== undefined ? (<MenuMenuAssignValue.Header className={"truncate"}>
+              {currentMenu.title}
             </MenuMenuAssignValue.Header>) : (null)}
-          {value7?.children}
+          {currentMenu?.children}
         </MenuMenuAssignValue.Popup>
       </MenuMenuAssignValue.Root>
     </jsxChromeContextMenu.Fragment>
   );
 }
-function normalizeEditorMenuItems(input?: Dynamic): Dynamic {
+function normalizeEditorMenuItems(items?: Dynamic): Dynamic {
   return renderMenuItems(
-    input.map(
-      (input2?: Dynamic): Dynamic =>
-        input2 === "separator" || !input2.disabledReason
-          ? input2
+    items.map(
+      (item?: Dynamic): Dynamic =>
+        item === "separator" || !item.disabledReason
+          ? item
           : {
-              ...input2,
+              ...item,
               disabled: true,
             },
     ),
@@ -263,11 +263,11 @@ export function installEditorChromeContextMenu(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    ChromeContextMenuIsConnected = (input?: Dynamic): Dynamic => (
-      input !== null &&
+    ChromeContextMenuIsConnected = (element?: Dynamic): Dynamic => (
+      element !== null &&
         queueMicrotask((): Dynamic => {
-          input.isConnected &&
-            input.focus({
+          element.isConnected &&
+            element.focus({
               preventScroll: true,
             });
         }),

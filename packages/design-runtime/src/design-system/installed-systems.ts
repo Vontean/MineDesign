@@ -2,44 +2,44 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { DesignSystemPathsConstant, DesignSystemPathsConstant_2, DesignSystemPathsConstant_3, DesignSystemPathsPattern_2, DesignSystemPathsPattern_3, DesignSystemPathsResolvedValue_2, designSystemProjectPrefix, isDesignSystemNamespace } from "./paths";
+import { DesignSystemPathsConstant, DesignSystemPathsConstant_2 as maxDisplayTextLength, DesignSystemPathsConstant_3 as maxArtifactTextLength, DesignSystemPathsPattern_2 as strictControlCharPattern, DesignSystemPathsPattern_3 as titleControlCharPattern, DesignSystemPathsResolvedValue_2 as maxTokensFileBytes, designSystemProjectPrefix, isDesignSystemNamespace } from "./paths";
 
 var normalizeDisplayText: Dynamic;
-function parseInstalledDesignSystems(input?: Dynamic): Dynamic {
-  let value: Dynamic = input?.designSystems,
-    value2: Dynamic = Array.isArray(value)
-      ? value
-      : typeof value == "object" && value !== null
-        ? Object.values(value)
+function parseInstalledDesignSystems(projectConfig?: Dynamic): Dynamic {
+  let rawSystems: Dynamic = projectConfig?.designSystems,
+    systemList: Dynamic = Array.isArray(rawSystems)
+      ? rawSystems
+      : typeof rawSystems == "object" && rawSystems !== null
+        ? Object.values(rawSystems)
         : [],
     entries: Dynamic = new Map();
-  for (let value3 of value2 as Dynamic) {
-    if (typeof value3 != "object" || value3 === null || Array.isArray(value3))
+  for (let rawSystem of systemList as Dynamic) {
+    if (typeof rawSystem != "object" || rawSystem === null || Array.isArray(rawSystem))
       continue;
-    let value4: Dynamic = value3,
-      value5: Dynamic = normalizeDisplayText(
-        value4.title,
-        DesignSystemPathsConstant_2,
-        DesignSystemPathsPattern_3,
+    let record: Dynamic = rawSystem,
+      title: Dynamic = normalizeDisplayText(
+        record.title,
+        maxDisplayTextLength,
+        titleControlCharPattern,
       ),
-      value6: Dynamic = normalizeDisplayText(
-        value4.artifact,
-        DesignSystemPathsConstant_3,
+      artifact: Dynamic = normalizeDisplayText(
+        record.artifact,
+        maxArtifactTextLength,
       );
-    !isDesignSystemNamespace(value4.namespace) ||
-      value5 === undefined ||
-      value6 === undefined ||
-      entries.set(value4.namespace, {
-        title: value5,
-        namespace: value4.namespace,
-        artifact: value6,
+    !isDesignSystemNamespace(record.namespace) ||
+      title === undefined ||
+      artifact === undefined ||
+      entries.set(record.namespace, {
+        title: title,
+        namespace: record.namespace,
+        artifact: artifact,
         version:
           normalizeDisplayText(
-            value4.version,
-            DesignSystemPathsConstant_2,
+            record.version,
+            maxDisplayTextLength,
           ) ?? null,
-        copiedAt: normalizeDisplayText(value4.copiedAt, 40) ?? "",
-        ...(value4.unpinned === true
+        copiedAt: normalizeDisplayText(record.copiedAt, 40) ?? "",
+        ...(record.unpinned === true
           ? {
               unpinned: true,
             }
@@ -48,61 +48,61 @@ function parseInstalledDesignSystems(input?: Dynamic): Dynamic {
   }
   return [...entries.values()].slice(0, DesignSystemPathsConstant);
 }
-function designSystemTokensPath(input?: Dynamic): Dynamic {
-  return designSystemProjectPrefix(input) + "tokens.json";
+function designSystemTokensPath(namespaceId?: Dynamic): Dynamic {
+  return designSystemProjectPrefix(namespaceId) + "tokens.json";
 }
 function readInstalledDesignSystemTokens(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  projectConfig?: Dynamic,
+  readFileText?: Dynamic,
+  carriedTokens?: Dynamic,
 ): Dynamic {
   let items: Dynamic = [];
-  for (let value4 of parseInstalledDesignSystems(input) as Dynamic) {
-    let value5: Dynamic = options(designSystemTokensPath(value4.namespace));
+  for (let system of parseInstalledDesignSystems(projectConfig) as Dynamic) {
+    let tokensText: Dynamic = readFileText(designSystemTokensPath(system.namespace));
     if (
       !(
-        value5 === undefined ||
-        value5.length > DesignSystemPathsResolvedValue_2
+        tokensText === undefined ||
+        tokensText.length > maxTokensFileBytes
       )
     )
       try {
-        let value6: Dynamic = JSON.parse(value5);
-        typeof value6 == "object" &&
-          value6 !== null &&
+        let parsedTokens: Dynamic = JSON.parse(tokensText);
+        typeof parsedTokens == "object" &&
+          parsedTokens !== null &&
           items.push({
-            title: value4.title,
-            tokens: value6,
+            title: system.title,
+            tokens: parsedTokens,
           });
       } catch {
         continue;
       }
   }
   if (items.length === 0) return;
-  let value: Dynamic =
-      typeof context == "object" && context !== null ? context : {},
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "object" && input2 !== null,
-    value2: Dynamic = Array.isArray(value.systems)
-      ? value.systems
-      : value.systems === undefined &&
-          (callback(value.color) || callback(value.type))
+  let carriedConfig: Dynamic =
+      typeof carriedTokens == "object" && carriedTokens !== null ? carriedTokens : {},
+    callback: Dynamic = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "object" && candidate !== null,
+    carriedSystems: Dynamic = Array.isArray(carriedConfig.systems)
+      ? carriedConfig.systems
+      : carriedConfig.systems === undefined &&
+          (callback(carriedConfig.color) || callback(carriedConfig.type))
         ? [
             {
-              tokens: context,
+              tokens: carriedTokens,
             },
           ]
         : undefined,
-    value3: Dynamic = Array.isArray(value2)
-      ? value2.filter(
-          (input2?: Dynamic): Dynamic =>
+    remainingCarriedSystems: Dynamic = Array.isArray(carriedSystems)
+      ? carriedSystems.filter(
+          (carriedSystem?: Dynamic): Dynamic =>
             !items.some(
-              (input3?: Dynamic): Dynamic => input3.title === input2?.title,
+              (installedItem?: Dynamic): Dynamic => installedItem.title === carriedSystem?.title,
             ),
         )
       : [];
   return {
     v: 1,
-    systems: [...items, ...value3],
+    systems: [...items, ...remainingCarriedSystems],
   };
 }
 export {
@@ -114,15 +114,15 @@ export {
 export function installDesignSystemInstalledSystems(): () => void {
   return () => {
     normalizeDisplayText = (
-      items?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = DesignSystemPathsPattern_2,
+      text?: Dynamic,
+      maxLength?: Dynamic,
+      forbiddenPattern: Dynamic = strictControlCharPattern,
     ): Dynamic =>
-      typeof items == "string" &&
-      items.trim() !== "" &&
-      items.length <= options &&
-      !context.test(items)
-        ? items.trim()
+      typeof text == "string" &&
+      text.trim() !== "" &&
+      text.length <= maxLength &&
+      !forbiddenPattern.test(text)
+        ? text.trim()
         : undefined;
   };
 }

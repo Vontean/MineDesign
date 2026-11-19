@@ -19,33 +19,33 @@ function DocumentSaveStatus({
   belowPickerBar = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [, value]: Dynamic = (0, reactChromeSaveStatus.useState)(0);
+  let [, rerender]: Dynamic = (0, reactChromeSaveStatus.useState)(0);
   (0, reactChromeSaveStatus.useEffect)((): Dynamic => {
-    let value3: Dynamic = doc.subscribe(
-        (): Dynamic => value((input?: Dynamic): Dynamic => input + 1),
+    let unsubscribeDoc: Dynamic = doc.subscribe(
+        (): Dynamic => rerender((tick?: Dynamic): Dynamic => tick + 1),
       ),
-      value4: Dynamic = doc.subscribeSave(
-        (): Dynamic => value((input?: Dynamic): Dynamic => input + 1),
+      unsubscribeSave: Dynamic = doc.subscribeSave(
+        (): Dynamic => rerender((tick?: Dynamic): Dynamic => tick + 1),
       );
     return (): Dynamic => {
-      value3();
-      value4();
+      unsubscribeDoc();
+      unsubscribeSave();
     };
   }, [doc]);
   (0, reactChromeSaveStatus.useEffect)((): Dynamic => {
-    let callback: Dynamic = (event?: Dynamic): Dynamic => {
+    let handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
       event.defaultPrevented ||
         ((event.metaKey || event.ctrlKey) &&
           event.key.toLowerCase() === "s" &&
           (event.preventDefault(),
           doc.readOnly() || (onSave ? onSave() : doc.save())));
     };
-    (window as Dynamic).addEventListener("keydown", callback);
+    (window as Dynamic).addEventListener("keydown", handleKeyDown);
     return (): Dynamic =>
-      (window as Dynamic).removeEventListener("keydown", callback);
+      (window as Dynamic).removeEventListener("keydown", handleKeyDown);
   }, [doc]);
   if (!doc.stashOffer()) return null;
-  let value2: Dynamic = doc.readOnly();
+  let isReadOnly: Dynamic = doc.readOnly();
   return (
     <CdsIsland className={"contents"}>
       <div
@@ -60,7 +60,7 @@ function DocumentSaveStatus({
       >
         <span className={"min-w-0 text-footnote text-secondary"}>
           {uiMessage("inspector.saveStatus.youHaveUnsavedWorkFromAPreviousSession")}
-          {value2 ? (uiMessage("inspector.saveStatus.thisViewCanTSave")) : ("")}
+          {isReadOnly ? (uiMessage("inspector.saveStatus.thisViewCanTSave")) : ("")}
         </span>
         <span className={"ml-auto flex shrink-0 items-center gap-1"}>
           <Button

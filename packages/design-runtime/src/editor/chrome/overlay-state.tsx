@@ -12,56 +12,56 @@ var undoStepOverlayAttribute: Dynamic;
 var heldUndoStepOverlayAttribute: Dynamic;
 var undoStepPointerState: Dynamic;
 var undoStepOverlayProps: Dynamic;
-function joinClassNames(...input: Dynamic[]): Dynamic {
-  return input.filter(Boolean).join(" ");
+function joinClassNames(...classNames: Dynamic[]): Dynamic {
+  return classNames.filter(Boolean).join(" ");
 }
-function hasOpenCdsOverlay(input: Dynamic = document): Dynamic {
-  for (let value of input.querySelectorAll(openCdsOverlaySelector) as Dynamic)
-    if (value.hasAttribute("data-open")) return true;
+function hasOpenCdsOverlay(root: Dynamic = document): Dynamic {
+  for (let overlay of root.querySelectorAll(openCdsOverlaySelector) as Dynamic)
+    if (overlay.hasAttribute("data-open")) return true;
   return false;
 }
-function hasBlockingOverlay(input: Dynamic = document): Dynamic {
-  for (let value of input.querySelectorAll(
+function hasBlockingOverlay(root: Dynamic = document): Dynamic {
+  for (let overlay of root.querySelectorAll(
     blockingOverlaySelector,
   ) as Dynamic)
-    if (!isClosedOverlay(value)) return true;
+    if (!isClosedOverlay(overlay)) return true;
   return false;
 }
-function holdOverlayUndoStep(input?: Dynamic): Dynamic {
-  if (input.button !== 0) return;
-  let currentTarget: Dynamic = input.currentTarget,
+function holdOverlayUndoStep(pointerEvent?: Dynamic): Dynamic {
+  if (pointerEvent.button !== 0) return;
+  let currentTarget: Dynamic = pointerEvent.currentTarget,
     ownerDocument: Dynamic = currentTarget.ownerDocument,
-    pointerId: Dynamic = input.pointerId,
-    value: Dynamic = undoStepPointerState.get(currentTarget) ?? new Set();
-  undoStepPointerState.set(currentTarget, value);
-  value.add(pointerId);
+    pointerId: Dynamic = pointerEvent.pointerId,
+    activePointerIds: Dynamic = undoStepPointerState.get(currentTarget) ?? new Set();
+  undoStepPointerState.set(currentTarget, activePointerIds);
+  activePointerIds.add(pointerId);
   currentTarget.setAttribute(heldUndoStepOverlayAttribute, "");
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-    input2.pointerId === pointerId &&
-      (value.delete(pointerId),
-      value.size === 0 &&
+  let handlePointerEnd: Dynamic = (endEvent?: Dynamic): Dynamic => {
+    endEvent.pointerId === pointerId &&
+      (activePointerIds.delete(pointerId),
+      activePointerIds.size === 0 &&
         currentTarget.removeAttribute(heldUndoStepOverlayAttribute),
-      ownerDocument.removeEventListener("pointerup", callback, true),
-      ownerDocument.removeEventListener("pointercancel", callback, true));
+      ownerDocument.removeEventListener("pointerup", handlePointerEnd, true),
+      ownerDocument.removeEventListener("pointercancel", handlePointerEnd, true));
   };
-  ownerDocument.addEventListener("pointerup", callback, true);
-  ownerDocument.addEventListener("pointercancel", callback, true);
+  ownerDocument.addEventListener("pointerup", handlePointerEnd, true);
+  ownerDocument.addEventListener("pointercancel", handlePointerEnd, true);
 }
-function isUndoBlockedByOverlay(input: Dynamic = document): Dynamic {
-  for (let value of input.querySelectorAll(
+function isUndoBlockedByOverlay(root: Dynamic = document): Dynamic {
+  for (let overlay of root.querySelectorAll(
     blockingOverlaySelector,
   ) as Dynamic) {
-    if (value.hasAttribute(heldUndoStepOverlayAttribute)) return true;
+    if (overlay.hasAttribute(heldUndoStepOverlayAttribute)) return true;
     if (
-      !(value.hasAttribute("data-mc-scrim") || isClosedOverlay(value)) &&
-      !value.hasAttribute(undoStepOverlayAttribute)
+      !(overlay.hasAttribute("data-mc-scrim") || isClosedOverlay(overlay)) &&
+      !overlay.hasAttribute(undoStepOverlayAttribute)
     )
       return true;
   }
   return false;
 }
-function isClosedOverlay(input?: Dynamic): Dynamic {
-  return (input.closest("[data-open], [data-closed]") ?? input).hasAttribute(
+function isClosedOverlay(overlay?: Dynamic): Dynamic {
+  return (overlay.closest("[data-open], [data-closed]") ?? overlay).hasAttribute(
     "data-closed",
   );
 }

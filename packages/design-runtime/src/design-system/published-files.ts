@@ -14,19 +14,19 @@ var DesignSystemPublishedFilesItems: Dynamic;
 var DesignSystemPublishedFilesResolvedValue: Dynamic;
 var DesignSystemPublishedFilesConstant: Dynamic;
 var DesignSystemPublishedFilesCache_2: Dynamic;
-var DesignSystemPublishedFilesSubscribers_2: Dynamic;
-var DesignSystemPublishedFilesResolvedValue_2: Dynamic;
-var DesignSystemPublishedFilesSubscribers_3: Dynamic;
+var invalidatedNamespaces: Dynamic;
+var publishedFilePaths: Dynamic;
+var invalidatedRoots: Dynamic;
 var getPublishedProjectRootValue: Dynamic;
-var DesignSystemPublishedFilesItems_2: Dynamic;
+var knownPublishedVersions: Dynamic;
 var DesignSystemPublishedFilesLimit: Dynamic;
 var versionedProjectRootPattern: Dynamic;
-var DesignSystemPublishedFilesConstant_2: Dynamic;
+var publishedProjectRevision: Dynamic;
 function getDesignSystemFiles(): Dynamic {
   return DesignSystemPublishedFilesFromEntriesValue;
 }
-function getDesignSystemFileUrl(input?: Dynamic): Dynamic {
-  let entry: Dynamic = DesignSystemPublishedFilesCache.get(input);
+function getDesignSystemFileUrl(fileKey?: Dynamic): Dynamic {
+  let entry: Dynamic = DesignSystemPublishedFilesCache.get(fileKey);
   if (!(entry === undefined || typeof document === "undefined"))
     try {
       return new URL(
@@ -37,149 +37,149 @@ function getDesignSystemFileUrl(input?: Dynamic): Dynamic {
       return;
     }
 }
-function designSystemNamespaceFromUrl(input?: Dynamic): Dynamic {
+function designSystemNamespaceFromUrl(fileUrl?: Dynamic): Dynamic {
   try {
     let href: Dynamic = new URL(
         ProjectValue + "ds/",
         (document as Dynamic).baseURI,
       ).href,
-      value: Dynamic = input.startsWith(href)
-        ? input.slice(href.length).split("/")[0]
+      namespaceName: Dynamic = fileUrl.startsWith(href)
+        ? fileUrl.slice(href.length).split("/")[0]
         : undefined;
-    return value === undefined ||
-      value === "" ||
-      !input.startsWith(href + value + "/")
+    return namespaceName === undefined ||
+      namespaceName === "" ||
+      !fileUrl.startsWith(href + namespaceName + "/")
       ? undefined
-      : href + value + "/";
+      : href + namespaceName + "/";
   } catch {
     return;
   }
 }
 function invalidateDesignSystemUrl(
-  input?: Dynamic,
-  options?: Dynamic,
+  urlCache?: Dynamic,
+  changedUrl?: Dynamic,
 ): Dynamic {
-  if (typeof options != "string" || !input.has(options)) return;
-  input.clear();
-  let value: Dynamic = designSystemNamespaceFromUrl(options);
-  return value === undefined ||
-    DesignSystemPublishedFilesSubscribers_2.has(value)
+  if (typeof changedUrl != "string" || !urlCache.has(changedUrl)) return;
+  urlCache.clear();
+  let namespaceUrl: Dynamic = designSystemNamespaceFromUrl(changedUrl);
+  return namespaceUrl === undefined ||
+    invalidatedNamespaces.has(namespaceUrl)
     ? "again"
-    : (DesignSystemPublishedFilesSubscribers_2.add(value),
+    : (invalidatedNamespaces.add(namespaceUrl),
       (DesignSystemPublishedFilesConstant += 1),
       "first");
 }
-function resetPublishedFileIndex(input?: Dynamic): Dynamic {
+function resetPublishedFileIndex(publishedFiles?: Dynamic): Dynamic {
   DesignSystemPublishedFilesConstant += 1;
-  DesignSystemPublishedFilesConstant_2 += 1;
-  DesignSystemPublishedFilesSubscribers_2.clear();
-  DesignSystemPublishedFilesSubscribers_3.clear();
+  publishedProjectRevision += 1;
+  invalidatedNamespaces.clear();
+  invalidatedRoots.clear();
   DesignSystemPublishedFilesResolvedValue =
-    input === undefined ? undefined : new Map();
-  DesignSystemPublishedFilesResolvedValue_2 =
-    input === undefined ? undefined : new Set(Object.keys(input));
+    publishedFiles === undefined ? undefined : new Map();
+  publishedFilePaths =
+    publishedFiles === undefined ? undefined : new Set(Object.keys(publishedFiles));
   getPublishedProjectRootValue =
-    input === undefined ? undefined : getPublishedProjectRoot();
-  DesignSystemPublishedFilesItems_2.length = 0;
-  for (let [value, value2] of Object.entries(input ?? {}) as Dynamic) {
-    let { sha256: value3, contentType: value4 }: Dynamic = value2 ?? {};
-    typeof value3 == "string" &&
-      DesignSystemPublishedFilesResolvedValue.set(value, {
-        sha256: value3,
-        ...(typeof value4 == "string"
+    publishedFiles === undefined ? undefined : getPublishedProjectRoot();
+  knownPublishedVersions.length = 0;
+  for (let [filePath, fileInfo] of Object.entries(publishedFiles ?? {}) as Dynamic) {
+    let { sha256: fileSha256, contentType: fileContentType }: Dynamic = fileInfo ?? {};
+    typeof fileSha256 == "string" &&
+      DesignSystemPublishedFilesResolvedValue.set(filePath, {
+        sha256: fileSha256,
+        ...(typeof fileContentType == "string"
           ? {
-              contentType: value4,
+              contentType: fileContentType,
             }
           : {}),
       });
   }
 }
-function removePublishedFiles(input?: Dynamic): Dynamic {
-  for (let value of input as Dynamic)
-    DesignSystemPublishedFilesResolvedValue?.delete(value) === true &&
-      ((DesignSystemPublishedFilesConstant_2 += 1),
-      value.startsWith(ProjectValue + "ds/") &&
+function removePublishedFiles(removedPaths?: Dynamic): Dynamic {
+  for (let removedPath of removedPaths as Dynamic)
+    DesignSystemPublishedFilesResolvedValue?.delete(removedPath) === true &&
+      ((publishedProjectRevision += 1),
+      removedPath.startsWith(ProjectValue + "ds/") &&
         (DesignSystemPublishedFilesConstant += 1));
 }
-function updatePublishedFileIndex(input?: Dynamic): Dynamic {
+function updatePublishedFileIndex(fileChanges?: Dynamic): Dynamic {
   DesignSystemPublishedFilesConstant += 1;
-  DesignSystemPublishedFilesConstant_2 += 1;
+  publishedProjectRevision += 1;
   DesignSystemPublishedFilesResolvedValue !== undefined &&
     (getPublishedProjectRootValue = getPublishedProjectRoot());
-  DesignSystemPublishedFilesItems_2.length = 0;
-  for (let value of input as Dynamic)
-    value.sha256 === null
-      ? (DesignSystemPublishedFilesResolvedValue?.delete(value.path),
-        DesignSystemPublishedFilesResolvedValue_2?.delete(value.path))
-      : (DesignSystemPublishedFilesResolvedValue?.set(value.path, {
-          sha256: value.sha256,
+  knownPublishedVersions.length = 0;
+  for (let fileChange of fileChanges as Dynamic)
+    fileChange.sha256 === null
+      ? (DesignSystemPublishedFilesResolvedValue?.delete(fileChange.path),
+        publishedFilePaths?.delete(fileChange.path))
+      : (DesignSystemPublishedFilesResolvedValue?.set(fileChange.path, {
+          sha256: fileChange.sha256,
         }),
-        DesignSystemPublishedFilesResolvedValue_2?.add(value.path));
+        publishedFilePaths?.add(fileChange.path));
 }
 function resolvePublishedDesignSystemFile(
-  input?: Dynamic,
-  options?: Dynamic,
+  relativePath?: Dynamic,
+  fileText?: Dynamic,
 ): Dynamic {
   if (
-    !DesignSystemPublishedFilesPattern.test(input) ||
+    !DesignSystemPublishedFilesPattern.test(relativePath) ||
     typeof document === "undefined" ||
     typeof location === "undefined" ||
-    input
+    relativePath
       .split("/")
       .some(
-        (input2?: Dynamic): Dynamic =>
-          input2 === "" || input2 === "." || input2 === "..",
+        (segment?: Dynamic): Dynamic =>
+          segment === "" || segment === "." || segment === "..",
       )
   )
     return;
-  let value: Dynamic = DesignSystemPublishedFilesResolvedValue?.get(
-    ProjectValue + input,
+  let publishedEntry: Dynamic = DesignSystemPublishedFilesResolvedValue?.get(
+    ProjectValue + relativePath,
   );
   if (
-    value === undefined ||
-    (value.contentType !== undefined &&
+    publishedEntry === undefined ||
+    (publishedEntry.contentType !== undefined &&
       !DesignSystemPublishedFilesItems.some(
-        ([input2, input3]: Dynamic): Dynamic =>
-          input2.test(input) && input3.test(value.contentType),
+        ([pathPattern, contentTypePattern]: Dynamic): Dynamic =>
+          pathPattern.test(relativePath) && contentTypePattern.test(publishedEntry.contentType),
       ))
   )
     return;
   let origin: Dynamic = (globalThis as Dynamic).origin;
   if (origin === undefined || origin === "null") return;
-  let entry: Dynamic = DesignSystemPublishedFilesCache_2.get(input);
-  entry?.text !== options &&
+  let entry: Dynamic = DesignSystemPublishedFilesCache_2.get(relativePath);
+  entry?.text !== fileText &&
     DesignSystemPublishedFilesCache_2.set(
-      input,
+      relativePath,
       (entry = {
-        text: options,
-        sha256: sha256Fallback(options),
+        text: fileText,
+        sha256: sha256Fallback(fileText),
       }),
     );
-  if (entry.sha256 === value.sha256)
+  if (entry.sha256 === publishedEntry.sha256)
     try {
-      let value2: Dynamic = new URL(
+      let fileUrlObject: Dynamic = new URL(
         ProjectValue +
-          input.split("/").map(encodeURIComponent).join("/"),
+          relativePath.split("/").map(encodeURIComponent).join("/"),
         (document as Dynamic).baseURI,
       );
-      return value2.origin === location.origin &&
-        !DesignSystemPublishedFilesSubscribers_2.has(
-          designSystemNamespaceFromUrl(value2.href) ?? "",
+      return fileUrlObject.origin === location.origin &&
+        !invalidatedNamespaces.has(
+          designSystemNamespaceFromUrl(fileUrlObject.href) ?? "",
         )
-        ? value2.href
+        ? fileUrlObject.href
         : undefined;
     } catch {
       return;
     }
 }
-function decodePublishedImage(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (!PlatformFileContentWebpAvifPattern.test(input)) return options;
+function decodePublishedImage(relativePath?: Dynamic, fileText?: Dynamic): Dynamic {
+  if (!PlatformFileContentWebpAvifPattern.test(relativePath)) return fileText;
   try {
-    let value: Dynamic = atob(options),
-      value2: Dynamic = new Uint8Array(value.length);
-    for (let index: Dynamic = 0; index < value.length; index += 1)
-      value2[index] = value.charCodeAt(index);
-    return value2;
+    let binaryText: Dynamic = atob(fileText),
+      bytes: Dynamic = new Uint8Array(binaryText.length);
+    for (let index: Dynamic = 0; index < binaryText.length; index += 1)
+      bytes[index] = binaryText.charCodeAt(index);
+    return bytes;
   } catch {
     return;
   }
@@ -190,144 +190,144 @@ function getPublishedProjectRoot(): Dynamic {
   let origin: Dynamic = (globalThis as Dynamic).origin;
   if (!(origin === undefined || origin === "null"))
     try {
-      let value: Dynamic = new URL(
+      let rootUrl: Dynamic = new URL(
         ProjectValue,
         (document as Dynamic).baseURI,
       );
-      return value.origin === location.origin ? value.href : undefined;
+      return rootUrl.origin === location.origin ? rootUrl.href : undefined;
     } catch {
       return;
     }
 }
-function recordPublishedVersion(input?: Dynamic): Dynamic {
-  !input.ok ||
-    input.own !== true ||
-    input.version === undefined ||
-    !/^[A-Za-z0-9_-]{1,64}$/.test(input.version) ||
+function recordPublishedVersion(publishResult?: Dynamic): Dynamic {
+  !publishResult.ok ||
+    publishResult.own !== true ||
+    publishResult.version === undefined ||
+    !/^[A-Za-z0-9_-]{1,64}$/.test(publishResult.version) ||
     getPublishedProjectRootValue === undefined ||
-    (DesignSystemPublishedFilesItems_2.push(input.version),
-    DesignSystemPublishedFilesItems_2.length >
+    (knownPublishedVersions.push(publishResult.version),
+    knownPublishedVersions.length >
       DesignSystemPublishedFilesLimit &&
-      DesignSystemPublishedFilesItems_2.shift());
+      knownPublishedVersions.shift());
 }
-function isKnownPublishedVersion(input?: Dynamic): Dynamic {
-  let value: Dynamic = versionedProjectRootPattern.exec(input),
-    value2: Dynamic =
+function isKnownPublishedVersion(rootUrl?: Dynamic): Dynamic {
+  let candidateMatch: Dynamic = versionedProjectRootPattern.exec(rootUrl),
+    currentMatch: Dynamic =
       getPublishedProjectRootValue === undefined
         ? null
         : versionedProjectRootPattern.exec(getPublishedProjectRootValue);
   return (
-    value !== null &&
-    value2 !== null &&
-    value[1] === value2[1] &&
-    DesignSystemPublishedFilesItems_2.includes(value[2])
+    candidateMatch !== null &&
+    currentMatch !== null &&
+    candidateMatch[1] === currentMatch[1] &&
+    knownPublishedVersions.includes(candidateMatch[2])
   );
 }
-function describesPublishedRoot(input?: Dynamic): Dynamic {
-  return DesignSystemPublishedFilesSubscribers_3.has(input)
+function describesPublishedRoot(rootUrl?: Dynamic): Dynamic {
+  return invalidatedRoots.has(rootUrl)
     ? false
-    : input === getPublishedProjectRootValue
-      ? DesignSystemPublishedFilesItems_2.length <
+    : rootUrl === getPublishedProjectRootValue
+      ? knownPublishedVersions.length <
         DesignSystemPublishedFilesLimit
-      : isKnownPublishedVersion(input);
+      : isKnownPublishedVersion(rootUrl);
 }
 function getCurrentPublishedProjectRoot(): Dynamic {
   if (DesignSystemPublishedFilesResolvedValue === undefined) return;
-  let value: Dynamic = getPublishedProjectRoot();
-  return value !== undefined &&
-    !DesignSystemPublishedFilesSubscribers_3.has(value) &&
-    (value === getPublishedProjectRootValue || isKnownPublishedVersion(value))
-    ? value
+  let currentRoot: Dynamic = getPublishedProjectRoot();
+  return currentRoot !== undefined &&
+    !invalidatedRoots.has(currentRoot) &&
+    (currentRoot === getPublishedProjectRootValue || isKnownPublishedVersion(currentRoot))
+    ? currentRoot
     : undefined;
 }
 function isFilePublishedWithMimeType(
-  input?: Dynamic,
-  options?: Dynamic,
+  relativePath?: Dynamic,
+  fileText?: Dynamic,
 ): Dynamic {
   if (
-    input
+    relativePath
       .split("/")
       .some(
-        (input2?: Dynamic): Dynamic =>
-          input2 === "" || input2 === "." || input2 === "..",
+        (segment?: Dynamic): Dynamic =>
+          segment === "" || segment === "." || segment === "..",
       )
   )
     return false;
-  let value: Dynamic = DesignSystemPublishedFilesResolvedValue?.get(
-    ProjectValue + input,
+  let publishedEntry: Dynamic = DesignSystemPublishedFilesResolvedValue?.get(
+    ProjectValue + relativePath,
   );
-  if (value === undefined) return false;
-  let value2: Dynamic = DesignSystemPublishedFilesItems.find(
-    ([input2]: Dynamic): Dynamic => input2.test(input),
+  if (publishedEntry === undefined) return false;
+  let mimeRule: Dynamic = DesignSystemPublishedFilesItems.find(
+    ([pathPattern]: Dynamic): Dynamic => pathPattern.test(relativePath),
   );
   if (
-    value2 !== undefined &&
-    value.contentType !== undefined &&
-    !value2[1].test(value.contentType)
+    mimeRule !== undefined &&
+    publishedEntry.contentType !== undefined &&
+    !mimeRule[1].test(publishedEntry.contentType)
   )
     return false;
-  let entry: Dynamic = DesignSystemPublishedFilesCache_2.get(input);
-  if (entry?.text !== options) {
-    let value3: Dynamic = decodePublishedImage(input, options);
-    if (value3 === undefined) return false;
+  let entry: Dynamic = DesignSystemPublishedFilesCache_2.get(relativePath);
+  if (entry?.text !== fileText) {
+    let decodedContent: Dynamic = decodePublishedImage(relativePath, fileText);
+    if (decodedContent === undefined) return false;
     DesignSystemPublishedFilesCache_2.set(
-      input,
+      relativePath,
       (entry = {
-        text: options,
-        sha256: sha256Fallback(value3),
+        text: fileText,
+        sha256: sha256Fallback(decodedContent),
       }),
     );
   }
-  return entry.sha256 === value.sha256;
+  return entry.sha256 === publishedEntry.sha256;
 }
-function isFilePublishedAtAddress(input?: Dynamic): Dynamic {
+function isFilePublishedAtAddress(relativePath?: Dynamic): Dynamic {
   return (
-    DesignSystemPublishedFilesResolvedValue_2?.has(
-      ProjectValue + input,
+    publishedFilePaths?.has(
+      ProjectValue + relativePath,
     ) === true
   );
 }
-function lookupPublishedUrl(items?: Dynamic, options?: Dynamic): Dynamic {
+function lookupPublishedUrl(rootUrl?: Dynamic, requestUrl?: Dynamic): Dynamic {
   if (
     !(
-      items === undefined ||
-      typeof options != "string" ||
-      !options.startsWith(items)
+      rootUrl === undefined ||
+      typeof requestUrl != "string" ||
+      !requestUrl.startsWith(rootUrl)
     )
   )
     try {
-      let value: Dynamic = decodeURIComponent(
-        options.slice(items.length).split(/[?#]/)[0]!,
+      let relativePath: Dynamic = decodeURIComponent(
+        requestUrl.slice(rootUrl.length).split(/[?#]/)[0]!,
       );
-      return (isKnownPublishedVersion(items)
+      return (isKnownPublishedVersion(rootUrl)
         ? DesignSystemPublishedFilesResolvedValue?.has(
-            ProjectValue + value,
+            ProjectValue + relativePath,
           ) === true
-        : isFilePublishedAtAddress(value)) && !/\.dc\.html$/i.test(value)
-        ? value
+        : isFilePublishedAtAddress(relativePath)) && !/\.dc\.html$/i.test(relativePath)
+        ? relativePath
         : undefined;
     } catch {
       return;
     }
 }
 function invalidatePublishedRoot(
-  input?: Dynamic,
-  options?: Dynamic,
+  rootUrl?: Dynamic,
+  requestUrl?: Dynamic,
 ): Dynamic {
   if (
-    !(input === undefined || lookupPublishedUrl(input, options) === undefined)
+    !(rootUrl === undefined || lookupPublishedUrl(rootUrl, requestUrl) === undefined)
   )
-    return DesignSystemPublishedFilesSubscribers_3.has(input)
+    return invalidatedRoots.has(rootUrl)
       ? "again"
-      : (DesignSystemPublishedFilesSubscribers_3.add(input),
-        (DesignSystemPublishedFilesConstant_2 += 1),
+      : (invalidatedRoots.add(rootUrl),
+        (publishedProjectRevision += 1),
         "first");
 }
 function publishedProjectCacheKey(): Dynamic {
   return (
     (getCurrentPublishedProjectRoot() ?? "") +
     "#" +
-    String(DesignSystemPublishedFilesConstant_2)
+    String(publishedProjectRevision)
   );
 }
 function designSystemCacheKey(): Dynamic {
@@ -351,17 +351,17 @@ export {
   DesignSystemPublishedFilesCache,
   DesignSystemPublishedFilesCache_2,
   DesignSystemPublishedFilesConstant,
-  DesignSystemPublishedFilesConstant_2,
+  publishedProjectRevision as DesignSystemPublishedFilesConstant_2,
   DesignSystemPublishedFilesFromEntriesValue,
   DesignSystemPublishedFilesItems,
-  DesignSystemPublishedFilesItems_2,
+  knownPublishedVersions as DesignSystemPublishedFilesItems_2,
   DesignSystemPublishedFilesLimit,
   DesignSystemPublishedFilesPattern,
   DesignSystemPublishedFilesResolvedValue,
-  DesignSystemPublishedFilesResolvedValue_2,
+  publishedFilePaths as DesignSystemPublishedFilesResolvedValue_2,
   DesignSystemPublishedFilesSubscribers,
-  DesignSystemPublishedFilesSubscribers_2,
-  DesignSystemPublishedFilesSubscribers_3,
+  invalidatedNamespaces as DesignSystemPublishedFilesSubscribers_2,
+  invalidatedRoots as DesignSystemPublishedFilesSubscribers_3,
   getCurrentPublishedProjectRoot,
   getDesignSystemFiles,
   getDesignSystemFileUrl,
@@ -381,13 +381,13 @@ export {
   updatePublishedFileIndex,
   versionedProjectRootPattern,
 };
-export function set_DesignSystemPublishedFilesAlias(value: any): any {
-  DesignSystemPublishedFilesAlias = value;
-  return value;
+export function set_DesignSystemPublishedFilesAlias(newValue: any): any {
+  DesignSystemPublishedFilesAlias = newValue;
+  return newValue;
 }
-export function set_DesignSystemPublishedFilesFromEntriesValue(value: any): any {
-  DesignSystemPublishedFilesFromEntriesValue = value;
-  return value;
+export function set_DesignSystemPublishedFilesFromEntriesValue(newValue: any): any {
+  DesignSystemPublishedFilesFromEntriesValue = newValue;
+  return newValue;
 }
 export function installDesignSystemPublishedFiles(): () => void {
   return () => {
@@ -402,13 +402,13 @@ export function installDesignSystemPublishedFiles(): () => void {
     ];
     DesignSystemPublishedFilesConstant = 0;
     DesignSystemPublishedFilesCache_2 = new Map();
-    DesignSystemPublishedFilesSubscribers_2 = new Set();
-    DesignSystemPublishedFilesSubscribers_3 = new Set();
-    DesignSystemPublishedFilesItems_2 = [];
+    invalidatedNamespaces = new Set();
+    invalidatedRoots = new Set();
+    knownPublishedVersions = [];
     DesignSystemPublishedFilesLimit = 16;
     versionedProjectRootPattern = new RegExp(
       "^(.*/_f/)([^/]+)/" + ProjectValue + "$",
     );
-    DesignSystemPublishedFilesConstant_2 = 0;
+    publishedProjectRevision = 0;
   };
 }

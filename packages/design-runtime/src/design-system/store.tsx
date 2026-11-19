@@ -11,20 +11,20 @@ var reactDesignSystemStore: Dynamic;
 var DesignSystemStoreItems: Dynamic;
 var DesignSystemStoreResolvedValue: Dynamic;
 var DesignSystemStoreAlias: Dynamic;
-var DesignSystemStoreAlias_2: Dynamic;
+var serializedDesignSystems: Dynamic;
 var DesignSystemStoreSubscribers: Dynamic;
 var DesignSystemStoreResolvedValueAlias: Dynamic;
-var DesignSystemStoreSubscribers_2: Dynamic;
-function setDesignSystems(input?: Dynamic): Dynamic {
-  if (input === DesignSystemStoreAlias) return;
-  DesignSystemStoreAlias = input;
-  let value: Dynamic = parseDesignSystems(input),
-    value2: Dynamic = JSON.stringify(value);
-  if (value2 !== DesignSystemStoreAlias_2) {
-    DesignSystemStoreAlias_2 = value2;
+var colorVariableNames: Dynamic;
+function setDesignSystems(rawDesignSystems?: Dynamic): Dynamic {
+  if (rawDesignSystems === DesignSystemStoreAlias) return;
+  DesignSystemStoreAlias = rawDesignSystems;
+  let parsedSystems: Dynamic = parseDesignSystems(rawDesignSystems),
+    serializedSystems: Dynamic = JSON.stringify(parsedSystems);
+  if (serializedSystems !== serializedDesignSystems) {
+    serializedDesignSystems = serializedSystems;
     DesignSystemStoreResolvedValue =
-      value.length === 0 ? DesignSystemStoreItems : value;
-    for (let value3 of DesignSystemStoreSubscribers as Dynamic) value3();
+      parsedSystems.length === 0 ? DesignSystemStoreItems : parsedSystems;
+    for (let notifyListener of DesignSystemStoreSubscribers as Dynamic) notifyListener();
   }
 }
 function getDesignSystems(): Dynamic {
@@ -33,18 +33,18 @@ function getDesignSystems(): Dynamic {
 function getDesignSystemColorVariables(): Dynamic {
   DesignSystemStoreResolvedValueAlias !== DesignSystemStoreResolvedValue &&
     ((DesignSystemStoreResolvedValueAlias = DesignSystemStoreResolvedValue),
-    (DesignSystemStoreSubscribers_2 = new Set(
+    (colorVariableNames = new Set(
       DesignSystemStoreResolvedValue.flatMap(
-        (input?: Dynamic): Dynamic =>
-          input.colors.map((input2?: Dynamic): Dynamic => "--" + input2.name),
+        (system?: Dynamic): Dynamic =>
+          system.colors.map((color?: Dynamic): Dynamic => "--" + color.name),
       ),
     )));
-  return DesignSystemStoreSubscribers_2;
+  return colorVariableNames;
 }
-function subscribeDesignSystems(input?: Dynamic): Dynamic {
-  DesignSystemStoreSubscribers.add(input);
+function subscribeDesignSystems(listener?: Dynamic): Dynamic {
+  DesignSystemStoreSubscribers.add(listener);
   return (): Dynamic => {
-    DesignSystemStoreSubscribers.delete(input);
+    DesignSystemStoreSubscribers.delete(listener);
   };
 }
 function useDesignSystems(): Dynamic {
@@ -57,29 +57,29 @@ function useDesignSystems(): Dynamic {
 function hasDesignSystems(items?: Dynamic): Dynamic {
   return items.length > 0;
 }
-function designSystemColorOptions(input?: Dynamic): Dynamic {
-  return input.flatMap(
-    (input2?: Dynamic): Dynamic =>
-      input2.colors.map(
-        (input3?: Dynamic): Dynamic => ({
-          name: input3.name,
-          value: input3.value,
-          label: input3.name,
-          ...colorTokenGroupLabels(input2, input3),
+function designSystemColorOptions(systems?: Dynamic): Dynamic {
+  return systems.flatMap(
+    (system?: Dynamic): Dynamic =>
+      system.colors.map(
+        (color?: Dynamic): Dynamic => ({
+          name: color.name,
+          value: color.value,
+          label: color.name,
+          ...colorTokenGroupLabels(system, color),
         }),
       ),
   );
 }
-function designSystemTypographyOptions(input?: Dynamic): Dynamic {
-  return input.flatMap(
-    (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      (input2.type ?? []).map(
-        (input3?: Dynamic): Dynamic => ({
-          id: "ds-" + String(options) + "-" + input3.name,
-          system: options,
-          style: input3,
-          subtitle: typographyStyleSubtitle(input3),
-          ...typographyGroupLabels(input2, input3),
+function designSystemTypographyOptions(systems?: Dynamic): Dynamic {
+  return systems.flatMap(
+    (system?: Dynamic, systemIndex?: Dynamic): Dynamic =>
+      (system.type ?? []).map(
+        (style?: Dynamic): Dynamic => ({
+          id: "ds-" + String(systemIndex) + "-" + style.name,
+          system: systemIndex,
+          style: style,
+          subtitle: typographyStyleSubtitle(style),
+          ...typographyGroupLabels(system, style),
         }),
       ),
   );
@@ -87,12 +87,12 @@ function designSystemTypographyOptions(input?: Dynamic): Dynamic {
 export {
   designSystemColorOptions,
   DesignSystemStoreAlias,
-  DesignSystemStoreAlias_2,
+  serializedDesignSystems as DesignSystemStoreAlias_2,
   DesignSystemStoreItems,
   DesignSystemStoreResolvedValue,
   DesignSystemStoreResolvedValueAlias,
   DesignSystemStoreSubscribers,
-  DesignSystemStoreSubscribers_2,
+  colorVariableNames as DesignSystemStoreSubscribers_2,
   designSystemTypographyOptions,
   getDesignSystemColorVariables,
   getDesignSystems,
@@ -110,8 +110,8 @@ export function installDesignSystemStore(): () => void {
     );
     DesignSystemStoreItems = [];
     DesignSystemStoreResolvedValue = DesignSystemStoreItems;
-    DesignSystemStoreAlias_2 = "[]";
+    serializedDesignSystems = "[]";
     DesignSystemStoreSubscribers = new Set();
-    DesignSystemStoreSubscribers_2 = new Set();
+    colorVariableNames = new Set();
   };
 }

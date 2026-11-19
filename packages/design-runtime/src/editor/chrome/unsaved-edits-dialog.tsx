@@ -16,12 +16,12 @@ function UnsavedEditsDialog({
   onChoose: onChoose,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [choice, setChoice]: Dynamic = (0,
   reactCodeDesignColorTokens.useState)("keep");
   (0, reactCodeDesignColorTokens.useEffect)((): Dynamic => {
-    open || value2("keep");
+    open || setChoice("keep");
   }, [open]);
-  let value3: Dynamic =
+  let editsDescription: Dynamic =
     editCount === 1
       ? uiMessage("inspector.unsavedEditsDialog.yourUnsavedEdit")
       : editCount > 1
@@ -31,20 +31,20 @@ function UnsavedEditsDialog({
     <CdsIsland className={"contents"}>
       <DialogDialogRootTriggerPopupConfig.Root
         open={open}
-        onOpenChange={(input?: Dynamic): Dynamic =>
-          !input && onChoose("keep")
+        onOpenChange={(isOpen?: Dynamic): Dynamic =>
+          !isOpen && onChoose("keep")
         }
       >
         <DialogDialogRootTriggerPopupConfig.Popup size={"sm"}>
           <DialogDialogRootTriggerPopupConfig.Header
             showClose={false}
-            description={uiMessage("inspector.unsavedEditsDialog.itWasUpdatedOutsideThisEditorWhatDoYouWantToDoWith", { value1: String(value3) })}
+            description={uiMessage("inspector.unsavedEditsDialog.itWasUpdatedOutsideThisEditorWhatDoYouWantToDoWith", { value1: String(editsDescription) })}
           >
             {uiMessage("inspector.unsavedEditsDialog.thisFileChanged")}
           </DialogDialogRootTriggerPopupConfig.Header>
           <ComponentsRadioGroupAssignValue
-            value={value}
-            onChange={value2}
+            value={choice}
+            onChange={setChoice}
             options={[
               {
                 value: "reload",
@@ -61,7 +61,7 @@ function UnsavedEditsDialog({
           <DialogDialogRootTriggerPopupConfig.Footer>
             <Button
               variant={"primary"}
-              onClick={(): Dynamic => onChoose(value)}
+              onClick={(): Dynamic => onChoose(choice)}
             >
               {uiMessage("inspector.unsavedEditsDialog.okay")}
             </Button>

@@ -14,246 +14,246 @@ import { toModuleNamespace } from "../../module-helpers";
 var jsxChromeInspectorSheet: Dynamic;
 var ChromeInspectorSheetMediaQuery: Dynamic;
 var ChromeInspectorSheetConstant: Dynamic;
-var ChromeInspectorSheetConstant_2: Dynamic;
+var panelInsetPx: Dynamic;
 var reactChromeInspectorSheet: Dynamic;
 function clampInspectorSheetTop(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  topPx?: Dynamic,
+  sheetHeightPx?: Dynamic,
+  viewportHeightPx?: Dynamic,
 ): Dynamic {
-  return Math.max(0, Math.min(input, context - options - 12));
+  return Math.max(0, Math.min(topPx, viewportHeightPx - sheetHeightPx - 12));
 }
 function inspectorKeyboardHeightState(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  previousKeyboardInset?: Dynamic,
+  keyboardInset?: Dynamic,
+  currentHeightPx?: Dynamic,
+  storedPreKeyboardPx?: Dynamic,
+  heightLimits?: Dynamic,
 ): Dynamic {
-  return input <= 0 && options > 0
-    ? context == null
+  return previousKeyboardInset <= 0 && keyboardInset > 0
+    ? currentHeightPx == null
       ? {
-          heldPx: clampInspectorSheetHeight(extra.snapPx, extra),
+          heldPx: clampInspectorSheetHeight(heightLimits.snapPx, heightLimits),
           storedPreKeyboardPx: "auto",
         }
       : {
-          heldPx: clampInspectorSheetHeight(context, extra),
-          storedPreKeyboardPx: context,
+          heldPx: clampInspectorSheetHeight(currentHeightPx, heightLimits),
+          storedPreKeyboardPx: currentHeightPx,
         }
-    : context == null
+    : currentHeightPx == null
       ? {
-          heldPx: context,
-          storedPreKeyboardPx: value,
+          heldPx: currentHeightPx,
+          storedPreKeyboardPx: storedPreKeyboardPx,
         }
-      : input > 0 && options <= 0
-        ? value === "auto"
+      : previousKeyboardInset > 0 && keyboardInset <= 0
+        ? storedPreKeyboardPx === "auto"
           ? {
               heldPx: null,
               storedPreKeyboardPx: null,
             }
           : {
-              heldPx: clampInspectorSheetHeight(value ?? context, extra),
+              heldPx: clampInspectorSheetHeight(storedPreKeyboardPx ?? currentHeightPx, heightLimits),
               storedPreKeyboardPx: null,
             }
         : {
-            heldPx: clampInspectorSheetHeight(context, extra),
-            storedPreKeyboardPx: value,
+            heldPx: clampInspectorSheetHeight(currentHeightPx, heightLimits),
+            storedPreKeyboardPx: storedPreKeyboardPx,
           };
 }
 function inspectorSheetHeightLimits(
-  input?: Dynamic,
-  options: Dynamic = 0,
-  context: Dynamic = 0,
+  viewportHeight?: Dynamic,
+  keyboardInset: Dynamic = 0,
+  bottomPadding: Dynamic = 0,
 ): Dynamic {
-  let value: Dynamic = Math.round(input * 0.47);
+  let snapHeight: Dynamic = Math.round(viewportHeight * 0.47);
   return {
-    snapPx: value,
-    floorPx: Math.max(90, Math.min(90 + context, value)),
+    snapPx: snapHeight,
+    floorPx: Math.max(90, Math.min(90 + bottomPadding, snapHeight)),
     ceilingPx: Math.max(
-      options > 0 ? 90 : Math.round(input * 0.47),
-      input - options - 12,
+      keyboardInset > 0 ? 90 : Math.round(viewportHeight * 0.47),
+      viewportHeight - keyboardInset - 12,
     ),
   };
 }
 function clampInspectorSheetHeight(
-  input?: Dynamic,
-  options?: Dynamic,
+  heightPx?: Dynamic,
+  limits?: Dynamic,
 ): Dynamic {
-  return Math.min(options.ceilingPx, Math.max(options.floorPx, input));
+  return Math.min(limits.ceilingPx, Math.max(limits.floorPx, heightPx));
 }
 function inspectorSheetTop(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  viewportHeight?: Dynamic,
+  visualHeight?: Dynamic,
+  offsetTop?: Dynamic,
+  scale?: Dynamic,
 ): Dynamic {
-  return Math.max(0, Math.round(input - (options * value + context)));
+  return Math.max(0, Math.round(viewportHeight - (visualHeight * scale + offsetTop)));
 }
-function useInspectorSheetHeight(input?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0,
+function useInspectorSheetHeight(isSheetActive?: Dynamic): Dynamic {
+  let [heightPx, setHeightPx]: Dynamic = (0,
     reactCodeInspectorCodePanel.useState)(undefined),
-    [value3, value4]: Dynamic = (0,
+    [isDragging, setIsDragging]: Dynamic = (0,
     reactCodeInspectorCodePanel.useState)(false),
-    [value5, value6]: Dynamic = (0,
+    [keyboardInset, setKeyboardInset]: Dynamic = (0,
     reactCodeInspectorCodePanel.useState)(0),
-    value7: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(null),
-    value8: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(0),
-    value9: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(0),
-    value10: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(null),
-    value11: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(0),
-    value12: Dynamic = (0,
+    sheetRef: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(null),
+    lastParentHeightRef: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(0),
+    previousKeyboardInsetRef: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(0),
+    storedPreKeyboardRef: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(null),
+    keyboardInsetRef: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(0),
+    getParentHeight: Dynamic = (0,
     reactCodeInspectorCodePanel.useCallback)((): Dynamic => {
-      let value17: Dynamic =
-        value7.current?.closest("[data-posture]")?.offsetParent
+      let measuredHeight: Dynamic =
+        sheetRef.current?.closest("[data-posture]")?.offsetParent
           ?.clientHeight ?? 0;
-      value17 > 0 && (value8.current = value17);
-      return value8.current || (window as Dynamic).innerHeight;
+      measuredHeight > 0 && (lastParentHeightRef.current = measuredHeight);
+      return lastParentHeightRef.current || (window as Dynamic).innerHeight;
     }, []),
-    value13: Dynamic = (0,
+    getHeightLimits: Dynamic = (0,
     reactCodeInspectorCodePanel.useCallback)((): Dynamic => {
-      let value17: Dynamic = value7.current?.closest("[data-posture]"),
-        value18: Dynamic = Math.round(
+      let postureElement: Dynamic = sheetRef.current?.closest("[data-posture]"),
+        bottomPadding: Dynamic = Math.round(
           parseFloat(
-            value17?.ownerDocument.defaultView?.getComputedStyle(value17)
+            postureElement?.ownerDocument.defaultView?.getComputedStyle(postureElement)
               .paddingBottom ?? "",
           ) || 0,
         );
-      return inspectorSheetHeightLimits(value12(), value11.current, value18);
-    }, [value12]);
+      return inspectorSheetHeightLimits(getParentHeight(), keyboardInsetRef.current, bottomPadding);
+    }, [getParentHeight]);
   (0, reactCodeInspectorCodePanel.useEffect)((): Dynamic => {
-    input ||
-      (value2(undefined), (value10.current = null), (value9.current = 0));
-  }, [input]);
+    isSheetActive ||
+      (setHeightPx(undefined), (storedPreKeyboardRef.current = null), (previousKeyboardInsetRef.current = 0));
+  }, [isSheetActive]);
   (0, reactCodeInspectorCodePanel.useEffect)((): Dynamic => {
-    if (!input) return;
-    let callback: Dynamic = (): Dynamic => {
-      let value17: Dynamic = value13();
-      value2(
-        (input2?: Dynamic): Dynamic =>
-          input2 == null
-            ? input2
-            : clampInspectorSheetHeight(input2, value17),
+    if (!isSheetActive) return;
+    let handleResize: Dynamic = (): Dynamic => {
+      let limits: Dynamic = getHeightLimits();
+      setHeightPx(
+        (currentHeight?: Dynamic): Dynamic =>
+          currentHeight == null
+            ? currentHeight
+            : clampInspectorSheetHeight(currentHeight, limits),
       );
     };
-    (window as Dynamic).addEventListener("resize", callback);
+    (window as Dynamic).addEventListener("resize", handleResize);
     return (): Dynamic =>
-      (window as Dynamic).removeEventListener("resize", callback);
-  }, [input, value13]);
+      (window as Dynamic).removeEventListener("resize", handleResize);
+  }, [isSheetActive, getHeightLimits]);
   (0, reactCodeInspectorCodePanel.useEffect)((): Dynamic => {
-    if (!input) return;
-    let current: Dynamic = value9.current;
-    value9.current = value5;
-    if (current === value5) return;
-    let value17: Dynamic = inspectorKeyboardHeightState(
+    if (!isSheetActive) return;
+    let current: Dynamic = previousKeyboardInsetRef.current;
+    previousKeyboardInsetRef.current = keyboardInset;
+    if (current === keyboardInset) return;
+    let nextState: Dynamic = inspectorKeyboardHeightState(
       current,
-      value5,
-      value ?? null,
-      value10.current,
-      value13(),
+      keyboardInset,
+      heightPx ?? null,
+      storedPreKeyboardRef.current,
+      getHeightLimits(),
     );
-    value10.current = value17.storedPreKeyboardPx;
-    value2(value17.heldPx ?? undefined);
-  }, [input, value5, value13]);
+    storedPreKeyboardRef.current = nextState.storedPreKeyboardPx;
+    setHeightPx(nextState.heldPx ?? undefined);
+  }, [isSheetActive, keyboardInset, getHeightLimits]);
   (0, reactCodeInspectorCodePanel.useEffect)((): Dynamic => {
-    if (!input) return;
+    if (!isSheetActive) return;
     let visualViewport: Dynamic = (window as Dynamic).visualViewport;
     if (!visualViewport) return;
-    let callback: Dynamic = (): Dynamic => {
-      let value17: Dynamic = inspectorSheetTop(
+    let handleViewportChange: Dynamic = (): Dynamic => {
+      let inset: Dynamic = inspectorSheetTop(
         (window as Dynamic).innerHeight,
         visualViewport.height,
         visualViewport.offsetTop,
         visualViewport.scale,
       );
-      value11.current = value17;
-      value6(value17);
+      keyboardInsetRef.current = inset;
+      setKeyboardInset(inset);
     };
-    callback();
-    visualViewport.addEventListener("resize", callback);
-    visualViewport.addEventListener("scroll", callback);
+    handleViewportChange();
+    visualViewport.addEventListener("resize", handleViewportChange);
+    visualViewport.addEventListener("scroll", handleViewportChange);
     return (): Dynamic => {
-      visualViewport.removeEventListener("resize", callback);
-      visualViewport.removeEventListener("scroll", callback);
-      value6(0);
+      visualViewport.removeEventListener("resize", handleViewportChange);
+      visualViewport.removeEventListener("scroll", handleViewportChange);
+      setKeyboardInset(0);
     };
-  }, [input]);
-  let value14: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(
+  }, [isSheetActive]);
+  let dragStateRef: Dynamic = (0, reactCodeInspectorCodePanel.useRef)(
       null,
     ),
-    value15: Dynamic = (0, reactCodeInspectorCodePanel.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        if (!input) return;
-        let value17: Dynamic = value13(),
-          value18: Dynamic = value ?? value17.snapPx;
-        value14.current = {
-          startY: input2.clientY,
-          startH: value18,
+    handlePointerDown: Dynamic = (0, reactCodeInspectorCodePanel.useCallback)(
+      (event?: Dynamic): Dynamic => {
+        if (!isSheetActive) return;
+        let initialLimits: Dynamic = getHeightLimits(),
+          startHeight: Dynamic = heightPx ?? initialLimits.snapPx;
+        dragStateRef.current = {
+          startY: event.clientY,
+          startH: startHeight,
         };
-        value4(true);
-        let currentTarget: Dynamic = input2.currentTarget;
-        currentTarget.setPointerCapture(input2.pointerId);
-        let callback: Dynamic = (input3?: Dynamic): Dynamic => {
-            let current: Dynamic = value14.current;
+        setIsDragging(true);
+        let currentTarget: Dynamic = event.currentTarget;
+        currentTarget.setPointerCapture(event.pointerId);
+        let handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+            let current: Dynamic = dragStateRef.current;
             if (!current) return;
-            let value19: Dynamic = clampInspectorSheetHeight(
-              current.startH + (current.startY - input3.clientY),
-              value13(),
+            let nextHeight: Dynamic = clampInspectorSheetHeight(
+              current.startH + (current.startY - moveEvent.clientY),
+              getHeightLimits(),
             );
-            current.lastH = value19;
-            value2(value19);
+            current.lastH = nextHeight;
+            setHeightPx(nextHeight);
           },
-          callback2: Dynamic = (input3?: Dynamic): Dynamic => {
-            let current: Dynamic = value14.current;
-            value14.current = null;
-            value4(false);
-            currentTarget.removeEventListener("pointermove", callback);
-            currentTarget.removeEventListener("pointerup", callback2);
-            currentTarget.removeEventListener("pointercancel", callback2);
+          handlePointerEnd: Dynamic = (endEvent?: Dynamic): Dynamic => {
+            let current: Dynamic = dragStateRef.current;
+            dragStateRef.current = null;
+            setIsDragging(false);
+            currentTarget.removeEventListener("pointermove", handlePointerMove);
+            currentTarget.removeEventListener("pointerup", handlePointerEnd);
+            currentTarget.removeEventListener("pointercancel", handlePointerEnd);
             if (!current) return;
-            let value19: Dynamic = value13(),
-              value20: Dynamic = clampInspectorSheetHeight(
+            let limits: Dynamic = getHeightLimits(),
+              finalHeight: Dynamic = clampInspectorSheetHeight(
                 current.lastH ?? current.startH,
-                value19,
+                limits,
               );
-            value11.current > 0 && (value10.current = value20);
-            value2(value20);
+            keyboardInsetRef.current > 0 && (storedPreKeyboardRef.current = finalHeight);
+            setHeightPx(finalHeight);
           };
-        currentTarget.addEventListener("pointermove", callback);
-        currentTarget.addEventListener("pointerup", callback2);
-        currentTarget.addEventListener("pointercancel", callback2);
+        currentTarget.addEventListener("pointermove", handlePointerMove);
+        currentTarget.addEventListener("pointerup", handlePointerEnd);
+        currentTarget.addEventListener("pointercancel", handlePointerEnd);
       },
-      [input, value13, value],
+      [isSheetActive, getHeightLimits, heightPx],
     ),
-    value16: Dynamic = (0, reactCodeInspectorCodePanel.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        value7.current = input2;
+    setSheetRef: Dynamic = (0, reactCodeInspectorCodePanel.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        sheetRef.current = element;
       },
       [],
     );
   return (0, reactCodeInspectorCodePanel.useMemo)(
     (): Dynamic => ({
-      heightPx: input ? value : undefined,
-      dragging: value3,
+      heightPx: isSheetActive ? heightPx : undefined,
+      dragging: isDragging,
       keyboardInset: ((): Dynamic => {
-        if (!input) return 0;
-        let value17: Dynamic = value12();
+        if (!isSheetActive) return 0;
+        let parentHeight: Dynamic = getParentHeight();
         return clampInspectorSheetTop(
-          value5,
-          value ?? inspectorSheetHeightLimits(value17, value5).ceilingPx,
-          value17,
+          keyboardInset,
+          heightPx ?? inspectorSheetHeightLimits(parentHeight, keyboardInset).ceilingPx,
+          parentHeight,
         );
       })(),
       handleProps: {
-        onPointerDown: value15,
+        onPointerDown: handlePointerDown,
         style: {
           touchAction: "none",
         },
       },
       contentProps: {
-        ref: value16,
+        ref: setSheetRef,
       },
     }),
-    [input, value3, value, value5, value15, value16],
+    [isSheetActive, isDragging, heightPx, keyboardInset, handlePointerDown, setSheetRef],
   );
 }
 function useInspectorPosture(): Dynamic {
@@ -262,21 +262,21 @@ function useInspectorPosture(): Dynamic {
     : "wide";
 }
 function inspectorShellStyle(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  posture?: Dynamic,
+  isFilled?: Dynamic,
+  heightPx?: Dynamic,
 ): Dynamic {
-  return input === "wide"
+  return posture === "wide"
     ? {
         container: cn(
           "absolute z-20 flex flex-col overflow-hidden rounded-xl",
           "border bg-surface-2 shadow-lg",
         ),
         style: {
-          top: ChromeInspectorSheetConstant_2,
-          right: ChromeInspectorSheetConstant_2,
+          top: panelInsetPx,
+          right: panelInsetPx,
           width: ChromeInspectorSheetConstant,
-          maxHeight: `calc(100% - ${ChromeInspectorSheetConstant_2 * 2}px)`,
+          maxHeight: `calc(100% - ${panelInsetPx * 2}px)`,
         },
         contentClass: cn(
           "min-h-0 overflow-y-auto border-t",
@@ -291,9 +291,9 @@ function inspectorShellStyle(
           "pb-[var(--mc-foot-inset,0px)]",
         ),
         style: {
-          height: options
-            ? context != null
-              ? `${context}px`
+          height: isFilled
+            ? heightPx != null
+              ? `${heightPx}px`
               : `calc((100dvh - 68px) * ${0.47})`
             : undefined,
         },
@@ -301,7 +301,7 @@ function inspectorShellStyle(
           "flex min-h-0 flex-1 flex-col overflow-y-auto",
           ChromeScrollbarLabel,
         ),
-        showHandle: options,
+        showHandle: isFilled,
       };
 }
 function InspectorPanelShell({
@@ -313,18 +313,18 @@ function InspectorPanelShell({
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useInspectorSheetHeight(posture === "sheet" && filled),
-    value2: Dynamic = inspectorShellStyle(posture, filled, value.heightPx),
-    value3: Dynamic =
-      posture === "sheet" && !value.dragging
+  let sheetState: Dynamic = useInspectorSheetHeight(posture === "sheet" && filled),
+    shellStyle: Dynamic = inspectorShellStyle(posture, filled, sheetState.heightPx),
+    transitionClass: Dynamic =
+      posture === "sheet" && !sheetState.dragging
         ? "transition-[height,transform] duration-200 ease-out motion-reduce:transition-none"
         : undefined,
-    value4: Dynamic = filled ? (
+    content: Dynamic = filled ? (
       <div
         data-testid={"dc-anchored-content"}
-        ref={posture === "sheet" ? value.contentProps.ref : undefined}
+        ref={posture === "sheet" ? sheetState.contentProps.ref : undefined}
         className={cn(
-          value2.contentClass,
+          shellStyle.contentClass,
           "pb-3 select-none [&_input]:select-text [&_textarea]:select-text [--pp-label-w:88px]",
         )}
       >
@@ -336,28 +336,28 @@ function InspectorPanelShell({
     <div
       data-testid={dataTestid}
       data-posture={posture}
-      className={cn(value2.container, value3)}
+      className={cn(shellStyle.container, transitionClass)}
       style={{
-        ...value2.style,
-        ...(value.keyboardInset > 0
+        ...shellStyle.style,
+        ...(sheetState.keyboardInset > 0
           ? {
-              transform: `translateY(-${value.keyboardInset}px)`,
-              paddingBottom: `max(0px, calc(var(--mc-foot-inset, 0px) - ${value.keyboardInset}px))`,
+              transform: `translateY(-${sheetState.keyboardInset}px)`,
+              paddingBottom: `max(0px, calc(var(--mc-foot-inset, 0px) - ${sheetState.keyboardInset}px))`,
             }
           : null),
       }}
     >
       {posture === "wide" ? (<jsxChromeInspectorSheet.Fragment>
           {headerRow && (<div className={"shrink-0"}>{headerRow}</div>)}
-          {value4}
+          {content}
         </jsxChromeInspectorSheet.Fragment>) : (<jsxChromeInspectorSheet.Fragment>
-          {value2.showHandle && (<div
+          {shellStyle.showHandle && (<div
               data-testid={"dc-sheet-handle"}
               className={
                 "absolute inset-x-0 -top-1.5 z-10 h-3 cursor-row-resize touch-none"
               }
-              onPointerDown={value.handleProps.onPointerDown}
-              style={value.handleProps.style}
+              onPointerDown={sheetState.handleProps.onPointerDown}
+              style={sheetState.handleProps.style}
             >
               <span
                 aria-hidden={"true"}
@@ -367,7 +367,7 @@ function InspectorPanelShell({
               />
             </div>)}
           {headerRow != null && headerAt === "top" && (<div className={"shrink-0 border-b"}>{headerRow}</div>)}
-          {value4}
+          {content}
           {headerRow && headerAt === "bottom" && (<div
               className={cn("shrink-0", filled && "border-t")}
             >
@@ -379,7 +379,7 @@ function InspectorPanelShell({
 }
 export {
   ChromeInspectorSheetConstant,
-  ChromeInspectorSheetConstant_2,
+  panelInsetPx as ChromeInspectorSheetConstant_2,
   ChromeInspectorSheetMediaQuery,
   clampInspectorSheetHeight,
   clampInspectorSheetTop,
@@ -401,7 +401,7 @@ export function installEditorChromeInspectorSheet(): () => void {
     );
     ChromeInspectorSheetMediaQuery = "(max-width: 599px)";
     ChromeInspectorSheetConstant = 257;
-    ChromeInspectorSheetConstant_2 = 12;
+    panelInsetPx = 12;
     reactChromeInspectorSheet = toModuleNamespace(
       load_react(),
       1,

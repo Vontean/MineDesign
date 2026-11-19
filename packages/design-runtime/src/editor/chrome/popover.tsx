@@ -15,88 +15,88 @@ import { toModuleNamespace } from "../../module-helpers";
 var jsxChromePopover: Dynamic;
 var ChromePopoverItems: Dynamic;
 function usePopoverDismissal({ onClose: onClose }: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactChromeFocus.useRef)(onClose);
-  value.current = onClose;
-  let value2: Dynamic = (0, reactChromeFocus.useRef)(null),
-    value3: Dynamic = (0, reactChromeFocus.useRef)(false),
-    [value4, value5]: Dynamic = (0, reactChromeFocus.useState)(false),
-    value6: Dynamic = (0, reactChromeFocus.useRef)(false);
+  let latestOnCloseRef: Dynamic = (0, reactChromeFocus.useRef)(onClose);
+  latestOnCloseRef.current = onClose;
+  let scrimRef: Dynamic = (0, reactChromeFocus.useRef)(null),
+    isPointerPressedRef: Dynamic = (0, reactChromeFocus.useRef)(false),
+    [isDragging, setIsDragging]: Dynamic = (0, reactChromeFocus.useState)(false),
+    isDraggingRef: Dynamic = (0, reactChromeFocus.useRef)(false);
   (0, reactChromeFocus.useEffect)((): Dynamic => {
-    let callback: Dynamic = (): Dynamic => {
-        value6.current = true;
-        value2.current && (value2.current.style.pointerEvents = "none");
-        value5(true);
+    let handleDragStart: Dynamic = (): Dynamic => {
+        isDraggingRef.current = true;
+        scrimRef.current && (scrimRef.current.style.pointerEvents = "none");
+        setIsDragging(true);
       },
-      callback2: Dynamic = (): Dynamic => {
-        value6.current = false;
-        value2.current && (value2.current.style.pointerEvents = "");
-        value5(false);
+      handleDragEnd: Dynamic = (): Dynamic => {
+        isDraggingRef.current = false;
+        scrimRef.current && (scrimRef.current.style.pointerEvents = "");
+        setIsDragging(false);
       };
-    (document as Dynamic).addEventListener("dragstart", callback, true);
-    (document as Dynamic).addEventListener("dragend", callback2, true);
-    (document as Dynamic).addEventListener("drop", callback2, true);
-    let current: Dynamic = value2.current,
-      callback3: Dynamic = (event?: Dynamic): Dynamic => {
+    (document as Dynamic).addEventListener("dragstart", handleDragStart, true);
+    (document as Dynamic).addEventListener("dragend", handleDragEnd, true);
+    (document as Dynamic).addEventListener("drop", handleDragEnd, true);
+    let current: Dynamic = scrimRef.current,
+      handleWheel: Dynamic = (event?: Dynamic): Dynamic => {
         event.preventDefault();
         if (!current) return;
         current.style.pointerEvents = "none";
         blurPopoverTextInput();
-        value.current();
-        let value7: Dynamic = (document as Dynamic).elementFromPoint?.(
+        latestOnCloseRef.current();
+        let elementUnderPointer: Dynamic = (document as Dynamic).elementFromPoint?.(
           event.clientX,
           event.clientY,
         );
-        value7 &&
-          value7 !== current &&
-          value7.dispatchEvent(new WheelEvent("wheel", event));
+        elementUnderPointer &&
+          elementUnderPointer !== current &&
+          elementUnderPointer.dispatchEvent(new WheelEvent("wheel", event));
       },
-      callback4: Dynamic = (event?: Dynamic): Dynamic => {
+      handleGesture: Dynamic = (event?: Dynamic): Dynamic => {
         event.preventDefault();
         current && (current.style.pointerEvents = "none");
         blurPopoverTextInput();
-        value.current();
+        latestOnCloseRef.current();
       };
-    current?.addEventListener("wheel", callback3, {
+    current?.addEventListener("wheel", handleWheel, {
       passive: false,
     });
-    current?.addEventListener("gesturestart", callback4, {
+    current?.addEventListener("gesturestart", handleGesture, {
       passive: false,
     });
-    current?.addEventListener("gesturechange", callback4, {
+    current?.addEventListener("gesturechange", handleGesture, {
       passive: false,
     });
     return (): Dynamic => {
-      (document as Dynamic).removeEventListener("dragstart", callback, true);
-      (document as Dynamic).removeEventListener("dragend", callback2, true);
-      (document as Dynamic).removeEventListener("drop", callback2, true);
-      current?.removeEventListener("wheel", callback3);
-      current?.removeEventListener("gesturestart", callback4);
-      current?.removeEventListener("gesturechange", callback4);
+      (document as Dynamic).removeEventListener("dragstart", handleDragStart, true);
+      (document as Dynamic).removeEventListener("dragend", handleDragEnd, true);
+      (document as Dynamic).removeEventListener("drop", handleDragEnd, true);
+      current?.removeEventListener("wheel", handleWheel);
+      current?.removeEventListener("gesturestart", handleGesture);
+      current?.removeEventListener("gesturechange", handleGesture);
     };
   }, []);
   return (0, reactDomChromeFocus.createPortal)(
     <div
-      ref={value2}
+      ref={scrimRef}
       data-mc-scrim={""}
       aria-hidden={"true"}
       className={"fixed inset-0 z-scrim"}
       style={{
-        pointerEvents: value4 ? "none" : undefined,
+        pointerEvents: isDragging ? "none" : undefined,
       }}
       onPointerDown={(event?: Dynamic): Dynamic => {
         event.preventDefault();
         event.stopPropagation();
         blurPopoverTextInput();
         event.button === 0
-          ? (value3.current = true)
+          ? (isPointerPressedRef.current = true)
           : ((event.currentTarget.style.pointerEvents = "none"), onClose());
       }}
       onPointerCancel={(): Dynamic => {
-        value3.current && ((value3.current = false), onClose());
+        isPointerPressedRef.current && ((isPointerPressedRef.current = false), onClose());
       }}
-      onClick={(input?: Dynamic): Dynamic => {
-        input.stopPropagation();
-        value3.current && ((value3.current = false), onClose());
+      onClick={(event?: Dynamic): Dynamic => {
+        event.stopPropagation();
+        isPointerPressedRef.current && ((isPointerPressedRef.current = false), onClose());
       }}
       onContextMenu={(event?: Dynamic): Dynamic => {
         event.preventDefault();
@@ -105,50 +105,50 @@ function usePopoverDismissal({ onClose: onClose }: Dynamic): Dynamic {
         onClose();
       }}
       onDragEnter={(): Dynamic => {
-        value6.current || (blurPopoverTextInput(), onClose());
+        isDraggingRef.current || (blurPopoverTextInput(), onClose());
       }}
     />,
     (document as Dynamic).body,
   );
 }
-function suppressEscapeRelease(input?: Dynamic): Dynamic {
-  let value: Dynamic = input,
-    flag: Dynamic = false,
-    flag2: Dynamic = false,
-    callback: Dynamic = (): Dynamic => {
-      (window as Dynamic).removeEventListener("keydown", callback2, true);
-      (window as Dynamic).removeEventListener("keyup", callback2, true);
-      (window as Dynamic).removeEventListener("click", callback4, true);
-      (window as Dynamic).removeEventListener("blur", callback3);
+function suppressEscapeRelease(isEnterInitiallyDown?: Dynamic): Dynamic {
+  let isEnterDown: Dynamic = isEnterInitiallyDown,
+    isEnterRepeating: Dynamic = false,
+    isReleaseRequested: Dynamic = false,
+    removeListeners: Dynamic = (): Dynamic => {
+      (window as Dynamic).removeEventListener("keydown", handleEnterKey, true);
+      (window as Dynamic).removeEventListener("keyup", handleEnterKey, true);
+      (window as Dynamic).removeEventListener("click", handleClick, true);
+      (window as Dynamic).removeEventListener("blur", handleBlur);
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      input2.key === "Enter" &&
-        ((value = input2.type === "keydown"),
-        (flag = value && input2.repeat),
-        flag2 && !flag && callback());
+    handleEnterKey: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+      keyEvent.key === "Enter" &&
+        ((isEnterDown = keyEvent.type === "keydown"),
+        (isEnterRepeating = isEnterDown && keyEvent.repeat),
+        isReleaseRequested && !isEnterRepeating && removeListeners());
     },
-    callback3: Dynamic = (): Dynamic => {
-      value = flag = false;
-      flag2 && callback();
+    handleBlur: Dynamic = (): Dynamic => {
+      isEnterDown = isEnterRepeating = false;
+      isReleaseRequested && removeListeners();
     },
-    callback4: Dynamic = (event?: Dynamic): Dynamic => {
-      !flag ||
+    handleClick: Dynamic = (event?: Dynamic): Dynamic => {
+      !isEnterRepeating ||
         event.detail !== 0 ||
         (event.preventDefault(), event.stopPropagation());
     };
-  (window as Dynamic).addEventListener("keydown", callback2, true);
-  (window as Dynamic).addEventListener("keyup", callback2, true);
-  (window as Dynamic).addEventListener("click", callback4, true);
-  (window as Dynamic).addEventListener("blur", callback3);
+  (window as Dynamic).addEventListener("keydown", handleEnterKey, true);
+  (window as Dynamic).addEventListener("keyup", handleEnterKey, true);
+  (window as Dynamic).addEventListener("click", handleClick, true);
+  (window as Dynamic).addEventListener("blur", handleBlur);
   return (): Dynamic => {
-    flag2 = true;
-    value || callback();
+    isReleaseRequested = true;
+    isEnterDown || removeListeners();
   };
 }
-function useEscapeReleaseSuppression(input?: Dynamic): Dynamic {
+function useEscapeReleaseSuppression(isActive?: Dynamic): Dynamic {
   (0, reactChromeTheme_3.useEffect)(
-    (): Dynamic => (input ? suppressEscapeRelease(false) : undefined),
-    [input],
+    (): Dynamic => (isActive ? suppressEscapeRelease(false) : undefined),
+    [isActive],
   );
 }
 function clearEscapeReleaseSuppression(): Dynamic {
@@ -174,51 +174,51 @@ function EditorPopover({
   keepFocus = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactChromeTheme_3.useRef)(null);
+  let popupRef: Dynamic = (0, reactChromeTheme_3.useRef)(null);
   useEscapeReleaseSuppression(open && focusOnOpen);
-  let value2: Dynamic = (0, reactChromeTheme_3.useRef)(null),
-    value3: Dynamic = (0, reactChromeTheme_3.useContext)(
+  let anchorMarkerRef: Dynamic = (0, reactChromeTheme_3.useRef)(null),
+    focusContextSide: Dynamic = (0, reactChromeTheme_3.useContext)(
       ChromeFocusContext,
     ),
-    value4: Dynamic = side === undefined ? value3 : undefined,
-    value5: Dynamic = side ?? value4 ?? "bottom",
-    value6: Dynamic = value5 === "bottom" || value5 === "top",
-    [value7, value8]: Dynamic = (0, reactChromeTheme_3.useState)({
-      side: value6 ? value5 : "bottom",
+    contextSide: Dynamic = side === undefined ? focusContextSide : undefined,
+    resolvedSide: Dynamic = side ?? contextSide ?? "bottom",
+    isVerticalSide: Dynamic = resolvedSide === "bottom" || resolvedSide === "top",
+    [placement, setPlacement]: Dynamic = (0, reactChromeTheme_3.useState)({
+      side: isVerticalSide ? resolvedSide : "bottom",
       maxHeight: undefined,
     });
   (0, reactChromeTheme_3.useLayoutEffect)((): Dynamic => {
     open &&
-      value8(
-        value6 && planHeight !== undefined
+      setPlacement(
+        isVerticalSide && planHeight !== undefined
           ? choosePopoverPlacement(
-              positionAnchor?.() ?? value2.current?.parentElement,
+              positionAnchor?.() ?? anchorMarkerRef.current?.parentElement,
               planHeight,
-              value5,
-              value4 !== undefined ? ChromeFocusConstant : undefined,
+              resolvedSide,
+              contextSide !== undefined ? ChromeFocusConstant : undefined,
             )
           : {
-              side: value6 ? value5 : "bottom",
+              side: isVerticalSide ? resolvedSide : "bottom",
               maxHeight: undefined,
             },
       );
   }, [open]);
-  let value9: Dynamic = value6 && planHeight !== undefined,
-    value10: Dynamic = value6 ? value7.side : value5,
-    value11: Dynamic = (0, reactChromeTheme_3.useRef)(onClose);
-  value11.current = onClose;
-  let value12: Dynamic = (0, reactChromeTheme_3.useRef)(onOpen);
-  value12.current = onOpen;
-  let value13: Dynamic = (0, reactChromeTheme_3.useRef)(false);
+  let shouldLimitHeight: Dynamic = isVerticalSide && planHeight !== undefined,
+    popupSide: Dynamic = isVerticalSide ? placement.side : resolvedSide,
+    onCloseRef: Dynamic = (0, reactChromeTheme_3.useRef)(onClose);
+  onCloseRef.current = onClose;
+  let onOpenRef: Dynamic = (0, reactChromeTheme_3.useRef)(onOpen);
+  onOpenRef.current = onOpen;
+  let hasClosedRef: Dynamic = (0, reactChromeTheme_3.useRef)(false);
   (0, reactChromeTheme_3.useEffect)((): Dynamic => {
     if (!open) return;
-    value13.current = false;
-    let value14: Dynamic = Symbol("popover");
-    ChromePopoverItems.push(value14);
-    let callback: Dynamic = (): Dynamic =>
-        ChromePopoverItems[ChromePopoverItems.length - 1] === value14,
-      callback2: Dynamic = (event?: Dynamic): Dynamic => {
-        if (!callback()) return;
+    hasClosedRef.current = false;
+    let popoverToken: Dynamic = Symbol("popover");
+    ChromePopoverItems.push(popoverToken);
+    let isTopmostPopover: Dynamic = (): Dynamic =>
+        ChromePopoverItems[ChromePopoverItems.length - 1] === popoverToken,
+      handlePointerDownOutside: Dynamic = (event?: Dynamic): Dynamic => {
+        if (!isTopmostPopover()) return;
         let target: Dynamic = event.target;
         if (
           (target instanceof Element &&
@@ -228,117 +228,117 @@ function EditorPopover({
             target.closest(openCdsOverlaySelector) !== null)
         )
           return;
-        let value15: Dynamic =
-            value2.current?.parentElement?.contains(target) ?? false,
-          value16: Dynamic = value.current?.contains(target) ?? false;
-        !value15 && !value16 && value11.current();
+        let isInsideAnchorParent: Dynamic =
+            anchorMarkerRef.current?.parentElement?.contains(target) ?? false,
+          isInsidePopup: Dynamic = popupRef.current?.contains(target) ?? false;
+        !isInsideAnchorParent && !isInsidePopup && onCloseRef.current();
       },
-      callback3: Dynamic = (event?: Dynamic): Dynamic => {
+      handleStripPointerDown: Dynamic = (event?: Dynamic): Dynamic => {
         let target: Dynamic = event.target;
         target instanceof Element &&
           target.closest("[data-mc-strip]") !== null &&
-          callback2(event);
+          handlePointerDownOutside(event);
       },
-      callback4: Dynamic = (event?: Dynamic): Dynamic => {
+      handleWindowKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
         event.defaultPrevented ||
-          !callback() ||
+          !isTopmostPopover() ||
           hasOpenCdsOverlay() ||
           (event.key === "Escape" &&
-            (event.preventDefault(), value11.current()));
+            (event.preventDefault(), onCloseRef.current()));
       },
-      callback5: Dynamic = (event?: Dynamic): Dynamic => {
+      handleEscapeCapture: Dynamic = (event?: Dynamic): Dynamic => {
         if (
           event.key !== "Escape" ||
           event.defaultPrevented ||
           event.isComposing ||
-          !callback() ||
+          !isTopmostPopover() ||
           hasOpenCdsOverlay()
         )
           return;
         let target: Dynamic = event.target;
         (target &&
-          (value.current?.contains(target) ||
+          (popupRef.current?.contains(target) ||
             target.closest("[data-mc-popover]") !== null) &&
           (target.tagName === "INPUT" ||
             target.tagName === "TEXTAREA" ||
             target.isContentEditable)) ||
           (event.preventDefault(),
           event.stopPropagation(),
-          value11.current());
+          onCloseRef.current());
       };
-    (document as Dynamic).addEventListener("pointerdown", callback2);
-    (document as Dynamic).addEventListener("pointerdown", callback3, {
+    (document as Dynamic).addEventListener("pointerdown", handlePointerDownOutside);
+    (document as Dynamic).addEventListener("pointerdown", handleStripPointerDown, {
       capture: true,
     });
-    (window as Dynamic).addEventListener("keydown", callback4);
-    (window as Dynamic).addEventListener("keydown", callback5, {
+    (window as Dynamic).addEventListener("keydown", handleWindowKeyDown);
+    (window as Dynamic).addEventListener("keydown", handleEscapeCapture, {
       capture: true,
     });
     return (): Dynamic => {
-      let value15: Dynamic = ChromePopoverItems.indexOf(value14);
-      value15 >= 0 && ChromePopoverItems.splice(value15, 1);
-      (document as Dynamic).removeEventListener("pointerdown", callback2);
-      (document as Dynamic).removeEventListener("pointerdown", callback3, {
+      let tokenIndex: Dynamic = ChromePopoverItems.indexOf(popoverToken);
+      tokenIndex >= 0 && ChromePopoverItems.splice(tokenIndex, 1);
+      (document as Dynamic).removeEventListener("pointerdown", handlePointerDownOutside);
+      (document as Dynamic).removeEventListener("pointerdown", handleStripPointerDown, {
         capture: true,
       });
-      (window as Dynamic).removeEventListener("keydown", callback4);
-      (window as Dynamic).removeEventListener("keydown", callback5, {
+      (window as Dynamic).removeEventListener("keydown", handleWindowKeyDown);
+      (window as Dynamic).removeEventListener("keydown", handleEscapeCapture, {
         capture: true,
       });
     };
   }, [open]);
   return (
     <jsxChromePopover.Fragment>
-      <span ref={value2} className={"hidden"} aria-hidden={"true"} />
+      <span ref={anchorMarkerRef} className={"hidden"} aria-hidden={"true"} />
       {open ? ((() => {
             const _Component = usePopoverDismissal;
-            return <_Component onClose={(): Dynamic => value11.current()} />;
+            return <_Component onClose={(): Dynamic => onCloseRef.current()} />;
           })()) : (null)}
       <PopoverPopoverRootTriggerPopupConfig.Root
         open={open}
-        onOpenChange={(input?: Dynamic, options?: Dynamic): Dynamic => {
-          if (input) {
-            value12.current?.();
+        onOpenChange={(isOpening?: Dynamic, changeDetails?: Dynamic): Dynamic => {
+          if (isOpening) {
+            onOpenRef.current?.();
             return;
           }
-          if (options.reason === "escape-key") {
-            options.event.defaultPrevented ||
-              (options.event.preventDefault(),
-              value13.current || value11.current(),
-              (value13.current = true));
-            options.cancel();
+          if (changeDetails.reason === "escape-key") {
+            changeDetails.event.defaultPrevented ||
+              (changeDetails.event.preventDefault(),
+              hasClosedRef.current || onCloseRef.current(),
+              (hasClosedRef.current = true));
+            changeDetails.cancel();
             return;
           }
           if (
-            options.reason === "trigger-press" ||
-            options.reason === "imperative-action" ||
-            options.reason === "close-press" ||
-            (options.reason === "focus-out" &&
-              isBaseUiFocusGuard(options))
+            changeDetails.reason === "trigger-press" ||
+            changeDetails.reason === "imperative-action" ||
+            changeDetails.reason === "close-press" ||
+            (changeDetails.reason === "focus-out" &&
+              isBaseUiFocusGuard(changeDetails))
           ) {
-            value13.current || value11.current();
-            value13.current = true;
+            hasClosedRef.current || onCloseRef.current();
+            hasClosedRef.current = true;
             return;
           }
-          options.cancel();
+          changeDetails.cancel();
         }}
       >
         {trigger !== undefined ? (<PopoverPopoverRootTriggerPopupConfig.Trigger
             render={trigger}
           />) : (null)}
         <PopoverPopoverRootTriggerPopupConfig.Popup
-          ref={value}
+          ref={popupRef}
           aria-label={ariaLabel}
           anchor={(): Dynamic =>
-            positionAnchor?.() ?? value2.current?.parentElement ?? null
+            positionAnchor?.() ?? anchorMarkerRef.current?.parentElement ?? null
           }
-          side={value10}
-          align={!value6 || align === "left" ? "start" : "end"}
-          sideOffset={value5 === "right" ? 12 : value5 === "left" ? 8 : 4}
+          side={popupSide}
+          align={!isVerticalSide || align === "left" ? "start" : "end"}
+          sideOffset={resolvedSide === "right" ? 12 : resolvedSide === "left" ? 8 : 4}
           style={
-            value9 && value7.maxHeight !== undefined
+            shouldLimitHeight && placement.maxHeight !== undefined
               ? {
-                  maxHeight: `min(${value7.maxHeight}px, var(--available-height))`,
+                  maxHeight: `min(${placement.maxHeight}px, var(--available-height))`,
                 }
               : undefined
           }
@@ -351,24 +351,24 @@ function EditorPopover({
             focusOnOpen && trigger === undefined
               ? (event?: Dynamic): Dynamic => {
                   if (event.key !== "Tab") return;
-                  let current: Dynamic = value.current;
+                  let current: Dynamic = popupRef.current;
                   if (
                     !current ||
                     !current.contains((document as Dynamic).activeElement)
                   )
                     return;
-                  let value14: Dynamic = getFocusableElements(
+                  let focusableElements: Dynamic = getFocusableElements(
                     current,
                   );
-                  if (value14.length === 0) return;
-                  let value15: Dynamic = value14[0],
-                    value16: Dynamic = value14[value14.length - 1];
+                  if (focusableElements.length === 0) return;
+                  let firstFocusable: Dynamic = focusableElements[0],
+                    lastFocusable: Dynamic = focusableElements[focusableElements.length - 1];
                   event.shiftKey &&
-                  (document as Dynamic).activeElement === value15
-                    ? (event.preventDefault(), value16?.focus())
+                  (document as Dynamic).activeElement === firstFocusable
+                    ? (event.preventDefault(), lastFocusable?.focus())
                     : !event.shiftKey &&
-                      (document as Dynamic).activeElement === value16 &&
-                      (event.preventDefault(), value15?.focus());
+                      (document as Dynamic).activeElement === lastFocusable &&
+                      (event.preventDefault(), firstFocusable?.focus());
                 }
               : undefined
           }

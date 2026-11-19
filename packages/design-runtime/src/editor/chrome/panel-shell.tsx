@@ -32,25 +32,25 @@ function PanelHeader({
   trailing: trailing,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = tabs !== undefined && tabs.length > 0;
+  let hasTabs: Dynamic = tabs !== undefined && tabs.length > 0;
   return (
     <jsxChromePanelShell.Fragment>
-      {value ? (<TabsTabsRootListTabConfig.List
+      {hasTabs ? (<TabsTabsRootListTabConfig.List
           aria-label={tabsLabel}
           activateOnFocus={activateOnFocus}
           className={"min-w-0 flex-1"}
         >
           {tabs.map(
-            (input?: Dynamic): Dynamic =>
+            (tab?: Dynamic): Dynamic =>
               (() => {
                 const _Component = TabsTabsRootListTabConfig.Tab;
                 const _props = {
-                  value: input.value,
-                  onClick: input.onClick,
-                  "data-testid": input["data-testid"],
-                  children: input.label,
+                  value: tab.value,
+                  onClick: tab.onClick,
+                  "data-testid": tab["data-testid"],
+                  children: tab.label,
                 } as const;
-                const _key = input.value;
+                const _key = tab.value;
                 return <_Component key={_key} {..._props} />;
               })(),
           )}
@@ -79,49 +79,49 @@ function PanelHeader({
     </jsxChromePanelShell.Fragment>
   );
 }
-function usePanelTab(input?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0, reactChromePanelShell_2.useState)(
-    input.tabs?.[0]?.value ?? "",
+function usePanelTab(props?: Dynamic): Dynamic {
+  let [internalTab, setInternalTab]: Dynamic = (0, reactChromePanelShell_2.useState)(
+    props.tabs?.[0]?.value ?? "",
   );
   return [
-    input.tab ?? value,
-    (input2?: Dynamic): Dynamic => {
-      value2(input2);
-      input.onTabChange?.(input2);
+    props.tab ?? internalTab,
+    (nextTab?: Dynamic): Dynamic => {
+      setInternalTab(nextTab);
+      props.onTabChange?.(nextTab);
     },
   ];
 }
-function PanelShell(input?: Dynamic): Dynamic {
+function PanelShell(props?: Dynamic): Dynamic {
   useUiLocale();
   let {
-      tabs: value,
-      className: value2,
-      "data-testid": value3,
-    }: Dynamic = input,
-    [value4, value5]: Dynamic = usePanelTab(input);
-  return value !== undefined && value.length > 0 ? (
+      tabs: tabItems,
+      className: shellClassName,
+      "data-testid": testId,
+    }: Dynamic = props,
+    [activeTab, setActiveTab]: Dynamic = usePanelTab(props);
+  return tabItems !== undefined && tabItems.length > 0 ? (
     <TabsTabsRootListTabConfig.Root
-      value={value4}
-      onValueChange={(input2?: Dynamic): Dynamic => value5(input2)}
+      value={activeTab}
+      onValueChange={(nextTab?: Dynamic): Dynamic => setActiveTab(nextTab)}
       data-kit={"panel-header"}
-      data-testid={value3}
+      data-testid={testId}
       className={joinClassNames(
         ChromePanelShellClassNames,
-        value2,
+        shellClassName,
       )}
     >
-      <PanelHeader {...input} />
+      <PanelHeader {...props} />
     </TabsTabsRootListTabConfig.Root>
   ) : (
     <div
       data-kit={"panel-header"}
-      data-testid={value3}
+      data-testid={testId}
       className={joinClassNames(
         ChromePanelShellClassNames,
-        value2,
+        shellClassName,
       )}
     >
-      <PanelHeader {...input} />
+      <PanelHeader {...props} />
     </div>
   );
 }
@@ -166,16 +166,16 @@ export function installEditorChromePanelShell(): () => void {
       1,
     );
     ChromePanelShellComponent = (0, reactChromePanelShell.forwardRef)(function (
-      input?: Dynamic,
-      options?: Dynamic,
+      props?: Dynamic,
+      forwardedRef?: Dynamic,
     ): Dynamic {
       return (
         <Button
-          ref={options}
+          ref={forwardedRef}
           iconOnly={true}
           size={"xs"}
           variant={"ghost"}
-          {...input}
+          {...props}
         />
       );
     });

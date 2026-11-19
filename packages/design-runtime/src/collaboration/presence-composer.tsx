@@ -3,130 +3,130 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { CollaborationPeerCursorsConstant_2, CollaborationPeerCursorsConstant_3, CollaborationPeerCursorsConstant_4, CollaborationPeerCursorsDelayMs_2, CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig, normalizePeerMessage, peerCollaboratorIndex, peerCollaboratorToken, reactCollaborationPeerCursors_3 } from "./peer-cursors";
+import { CollaborationPeerCursorsConstant_2 as peerMessageMaxLength, CollaborationPeerCursorsConstant_3 as peerChatHoldMs, CollaborationPeerCursorsConstant_4 as peerChatFadeMs, CollaborationPeerCursorsDelayMs_2, CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig, normalizePeerMessage, peerCollaboratorIndex, peerCollaboratorToken, reactCollaborationPeerCursors_3 } from "./peer-cursors";
 import { hasBlockingOverlay } from "../editor/chrome/overlay-state";
 import { roomPeersStore } from "../platform/file-content";
 
 var CollaborationPresenceComposerJoin: Dynamic;
-function isPeerTextInput(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function isPeerTextInput(target?: Dynamic): Dynamic {
+  let element: Dynamic = target;
   return (
-    value != null &&
-    typeof value.tagName == "string" &&
-    (/^(INPUT|TEXTAREA|SELECT)$/.test(value.tagName) ||
-      value.isContentEditable === true)
+    element != null &&
+    typeof element.tagName == "string" &&
+    (/^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName) ||
+      element.isContentEditable === true)
   );
 }
 function usePresenceComposer({
   reporter: reporter,
   color: color,
   canOpen: canOpen,
-  idleMs = CollaborationPeerCursorsConstant_3,
+  idleMs = peerChatHoldMs,
 }: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0,
+  let [isOpen, setIsOpen]: Dynamic = (0,
     reactCollaborationPeerCursors_3.useState)(false),
-    [value3, value4]: Dynamic = (0,
+    [isLeaving, setIsLeaving]: Dynamic = (0,
     reactCollaborationPeerCursors_3.useState)(false),
-    [value5, value6]: Dynamic = (0,
+    [draft, setDraft]: Dynamic = (0,
     reactCollaborationPeerCursors_3.useState)(""),
-    [value7, value8]: Dynamic = (0,
+    [isFading, setIsFading]: Dynamic = (0,
     reactCollaborationPeerCursors_3.useState)(false),
-    value9: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    closeTimerRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
       undefined,
     ),
-    [value10, value11]: Dynamic = (0,
+    [bubbleColor, setBubbleColor]: Dynamic = (0,
     reactCollaborationPeerCursors_3.useState)(""),
-    [value12, value13]: Dynamic = (0,
+    [anchorPoint, setAnchorPoint]: Dynamic = (0,
     reactCollaborationPeerCursors_3.useState)(null),
-    value14: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    pointerRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
       null,
     ),
-    value15: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    isActiveRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
       false,
     );
-  value15.current = value && !value3;
-  let value16: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+  isActiveRef.current = isOpen && !isLeaving;
+  let bubbleRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
       null,
     ),
-    value17: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    inputRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
       null,
     ),
-    value18: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    previousFocusRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
       null,
     ),
-    value19: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    timersRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
       [],
     ),
-    value20: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)({
+    latestPropsRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)({
       reporter: reporter,
       canOpen: canOpen,
       idleMs: idleMs,
       color: color,
     });
-  value20.current = {
+  latestPropsRef.current = {
     reporter: reporter,
     canOpen: canOpen,
     idleMs: idleMs,
     color: color,
   };
-  let callback: Dynamic = (): Dynamic => {
-      for (let value22 of value19.current as Dynamic) clearTimeout(value22);
-      value19.current = [];
+  let clearTimers: Dynamic = (): Dynamic => {
+      for (let timerId of timersRef.current as Dynamic) clearTimeout(timerId);
+      timersRef.current = [];
     },
-    callback2: Dynamic = (): Dynamic => {
-      callback();
-      value20.current.reporter()?.say("");
-      value4(true);
-      clearTimeout(value9.current);
-      value9.current = setTimeout((): Dynamic => {
-        value2(false);
-        value4(false);
-        value6("");
-        value8(false);
+    closeComposer: Dynamic = (): Dynamic => {
+      clearTimers();
+      latestPropsRef.current.reporter()?.say("");
+      setIsLeaving(true);
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = setTimeout((): Dynamic => {
+        setIsOpen(false);
+        setIsLeaving(false);
+        setDraft("");
+        setIsFading(false);
       }, CollaborationPeerCursorsDelayMs_2);
-      let current: Dynamic = value18.current;
-      value18.current = null;
+      let current: Dynamic = previousFocusRef.current;
+      previousFocusRef.current = null;
       let activeElement: Dynamic = (document as Dynamic).activeElement;
-      (activeElement === value17.current ||
+      (activeElement === inputRef.current ||
         activeElement === null ||
         activeElement === (document as Dynamic).body) &&
         (document as Dynamic).hasFocus() &&
         current?.isConnected &&
         typeof current.focus == "function" &&
         current.focus();
-      (document as Dynamic).activeElement === value17.current &&
-        value17.current?.blur();
+      (document as Dynamic).activeElement === inputRef.current &&
+        inputRef.current?.blur();
     },
-    value21: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
-      callback2,
+    closeComposerRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+      closeComposer,
     );
-  value21.current = callback2;
-  let callback3: Dynamic = (): Dynamic => {
-      callback();
-      value8(false);
-      let idleMs2: Dynamic = value20.current.idleMs;
-      value19.current = [
-        setTimeout((): Dynamic => value8(true), idleMs2),
+  closeComposerRef.current = closeComposer;
+  let restartIdleTimers: Dynamic = (): Dynamic => {
+      clearTimers();
+      setIsFading(false);
+      let currentIdleMs: Dynamic = latestPropsRef.current.idleMs;
+      timersRef.current = [
+        setTimeout((): Dynamic => setIsFading(true), currentIdleMs),
         setTimeout(
-          (): Dynamic => value21.current(),
-          idleMs2 + CollaborationPeerCursorsConstant_4,
+          (): Dynamic => closeComposerRef.current(),
+          currentIdleMs + peerChatFadeMs,
         ),
       ];
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      value20.current
+    reportMessage: Dynamic = (message?: Dynamic): Dynamic => {
+      latestPropsRef.current
         .reporter()
-        ?.say(normalizePeerMessage(input).trim());
+        ?.say(normalizePeerMessage(message).trim());
     };
   (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
-    let callback5: Dynamic = (input?: Dynamic): Dynamic => {
-        value14.current = {
-          x: input.clientX,
-          y: input.clientY,
+    let handlePointerMove: Dynamic = (event?: Dynamic): Dynamic => {
+        pointerRef.current = {
+          x: event.clientX,
+          y: event.clientY,
         };
-        value15.current && value13(value14.current);
+        isActiveRef.current && setAnchorPoint(pointerRef.current);
       },
-      callback6: Dynamic = (event?: Dynamic): Dynamic => {
+      handleSlashKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
         if (
           event.key !== "/" ||
           event.metaKey ||
@@ -138,119 +138,119 @@ function usePresenceComposer({
         )
           return;
         let {
-          reporter: current,
-          canOpen: current2,
-          color: current3,
-        }: Dynamic = value20.current;
+          reporter: getPresenceReporter,
+          canOpen: canOpenComposer,
+          color: peerColorHex,
+        }: Dynamic = latestPropsRef.current;
         if (
           isPeerTextInput(event.target) ||
-          (current2 !== undefined && !current2(event))
+          (canOpenComposer !== undefined && !canOpenComposer(event))
         )
           return;
-        if (value15.current) {
-          (document as Dynamic).activeElement !== value17.current &&
-            (event.preventDefault(), value17.current?.focus(), callback3());
+        if (isActiveRef.current) {
+          (document as Dynamic).activeElement !== inputRef.current &&
+            (event.preventDefault(), inputRef.current?.focus(), restartIdleTimers());
           return;
         }
-        if (current()?.live() !== true) return;
+        if (getPresenceReporter()?.live() !== true) return;
         event.preventDefault();
-        value18.current = (document as Dynamic).activeElement;
-        let value22: Dynamic = roomPeersStore
+        previousFocusRef.current = (document as Dynamic).activeElement;
+        let selfPeer: Dynamic = roomPeersStore
           .getSnapshot()
-          .find((input?: Dynamic): Dynamic => input.sameTab);
-        value11(
+          .find((peer?: Dynamic): Dynamic => peer.sameTab);
+        setBubbleColor(
           peerCollaboratorToken(
-            peerCollaboratorIndex(current3, value22?.peer ?? ""),
+            peerCollaboratorIndex(peerColorHex, selfPeer?.peer ?? ""),
           ),
         );
-        value13(value14.current);
-        value6("");
-        value8(false);
-        clearTimeout(value9.current);
-        value4(false);
-        value2(true);
-        callback3();
-        value17.current?.focus();
+        setAnchorPoint(pointerRef.current);
+        setDraft("");
+        setIsFading(false);
+        clearTimeout(closeTimerRef.current);
+        setIsLeaving(false);
+        setIsOpen(true);
+        restartIdleTimers();
+        inputRef.current?.focus();
       },
       flag: Dynamic = false,
-      callback7: Dynamic = (event?: Dynamic): Dynamic => {
+      handleEscapeKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
         if (event.key === "Escape") {
           if (!event.repeat) {
-            let value22: Dynamic =
+            let hasModifier: Dynamic =
               event.metaKey ||
               event.ctrlKey ||
               event.altKey ||
               event.shiftKey;
             flag =
-              value15.current &&
+              isActiveRef.current &&
               !event.defaultPrevented &&
               !event.isComposing &&
               event.keyCode !== 229 &&
-              !value22 &&
+              !hasModifier &&
               !isPeerTextInput(event.target) &&
               !hasBlockingOverlay();
           }
           flag &&
             (event.preventDefault(),
             event.stopPropagation(),
-            event.repeat || value21.current());
+            event.repeat || closeComposerRef.current());
         }
       },
-      callback8: Dynamic = (input?: Dynamic): Dynamic => {
-        (input.type === "blur" || input.key === "Escape") && (flag = false);
+      resetEscapeGuard: Dynamic = (event?: Dynamic): Dynamic => {
+        (event.type === "blur" || event.key === "Escape") && (flag = false);
       };
-    (window as Dynamic).addEventListener("pointermove", callback5, true);
-    (window as Dynamic).addEventListener("keydown", callback6);
-    (window as Dynamic).addEventListener("keydown", callback7, true);
-    (window as Dynamic).addEventListener("keyup", callback8, true);
-    (window as Dynamic).addEventListener("blur", callback8);
+    (window as Dynamic).addEventListener("pointermove", handlePointerMove, true);
+    (window as Dynamic).addEventListener("keydown", handleSlashKeyDown);
+    (window as Dynamic).addEventListener("keydown", handleEscapeKeyDown, true);
+    (window as Dynamic).addEventListener("keyup", resetEscapeGuard, true);
+    (window as Dynamic).addEventListener("blur", resetEscapeGuard);
     return (): Dynamic => {
-      (window as Dynamic).removeEventListener("pointermove", callback5, true);
-      (window as Dynamic).removeEventListener("keydown", callback6);
-      (window as Dynamic).removeEventListener("keydown", callback7, true);
-      (window as Dynamic).removeEventListener("keyup", callback8, true);
-      (window as Dynamic).removeEventListener("blur", callback8);
+      (window as Dynamic).removeEventListener("pointermove", handlePointerMove, true);
+      (window as Dynamic).removeEventListener("keydown", handleSlashKeyDown);
+      (window as Dynamic).removeEventListener("keydown", handleEscapeKeyDown, true);
+      (window as Dynamic).removeEventListener("keyup", resetEscapeGuard, true);
+      (window as Dynamic).removeEventListener("blur", resetEscapeGuard);
     };
   }, []);
   (0, reactCollaborationPeerCursors_3.useEffect)(
     (): Dynamic => (): Dynamic => {
-      for (let value22 of value19.current as Dynamic) clearTimeout(value22);
-      clearTimeout(value9.current);
-      value20.current.reporter()?.say("");
+      for (let timerId of timersRef.current as Dynamic) clearTimeout(timerId);
+      clearTimeout(closeTimerRef.current);
+      latestPropsRef.current.reporter()?.say("");
     },
     [],
   );
   (0, reactCollaborationPeerCursors_3.useLayoutEffect)(
     (): Dynamic => {
-      let current: Dynamic = value16.current;
+      let current: Dynamic = bubbleRef.current;
       if (!current) return;
-      let value22: Dynamic = value12 ?? {
+      let anchor: Dynamic = anchorPoint ?? {
           x: (window as Dynamic).innerWidth / 2,
           y: (window as Dynamic).innerHeight / 2,
         },
         offsetWidth: Dynamic = current.offsetWidth,
         offsetHeight: Dynamic = current.offsetHeight,
-        value23: Dynamic = Math.max(
+        left: Dynamic = Math.max(
           4,
           Math.min(
-            value22.x + 10,
+            anchor.x + 10,
             (window as Dynamic).innerWidth - offsetWidth - 4,
           ),
         ),
-        value24: Dynamic =
-          value22.y + 16 + offsetHeight > (window as Dynamic).innerHeight - 4
-            ? Math.max(4, value22.y - 12 - offsetHeight)
-            : value22.y + 16;
+        top: Dynamic =
+          anchor.y + 16 + offsetHeight > (window as Dynamic).innerHeight - 4
+            ? Math.max(4, anchor.y - 12 - offsetHeight)
+            : anchor.y + 16;
       current.style.transform =
-        "translate(" + value23 + "px," + value24 + "px)";
+        "translate(" + left + "px," + top + "px)";
     },
   );
-  return value ? (
+  return isOpen ? (
     <div
-      ref={value16}
+      ref={bubbleRef}
       className={"mc-cursor-chat-self"}
-      data-fading={value7 ? "true" : undefined}
-      data-leaving={value3 ? "true" : undefined}
+      data-fading={isFading ? "true" : undefined}
+      data-leaving={isLeaving ? "true" : undefined}
       style={{
         ...CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig,
         "--mc-chat-hold": idleMs + "ms",
@@ -259,45 +259,45 @@ function usePresenceComposer({
       <label
         className={"mc-cursor-chat"}
         style={{
-          background: value10,
+          background: bubbleColor,
         }}
       >
         <span className={"mc-cursor-chat-sizer"} aria-hidden={"true"}>
-          {value5 || (" ")}
+          {draft || (" ")}
         </span>
         <input
-          ref={value17}
+          ref={inputRef}
           className={"mc-cursor-chat-input"}
           aria-label={uiMessage("canvas.presenceComposer.cursorChat")}
           autoFocus={true}
           autoComplete={"off"}
           spellCheck={false}
           size={1}
-          readOnly={value3}
-          value={value5}
+          readOnly={isLeaving}
+          value={draft}
           onChange={(event?: Dynamic): Dynamic => {
-            callback3();
-            let value22: Dynamic = CollaborationPresenceComposerJoin(
+            restartIdleTimers();
+            let trimmedText: Dynamic = CollaborationPresenceComposerJoin(
               event.target.value,
             );
-            value6(value22);
-            callback4(value22);
+            setDraft(trimmedText);
+            reportMessage(trimmedText);
           }}
           onKeyDown={(event?: Dynamic): Dynamic => {
-            value3 ||
+            isLeaving ||
               event.nativeEvent.isComposing ||
-              (callback3(),
+              (restartIdleTimers(),
               event.key === "Escape"
                 ? (event.preventDefault(),
                   event.stopPropagation(),
-                  value5 === ""
-                    ? callback2()
-                    : (value6(""), callback4(""), callback3()))
+                  draft === ""
+                    ? closeComposer()
+                    : (setDraft(""), reportMessage(""), restartIdleTimers()))
                 : event.key === "Enter"
-                  ? (event.preventDefault(), value6(""))
+                  ? (event.preventDefault(), setDraft(""))
                   : event.key === "/" &&
                     event.repeat &&
-                    value5 === "" &&
+                    draft === "" &&
                     event.preventDefault());
           }}
         />
@@ -312,9 +312,9 @@ export {
 };
 export function installCollaborationPresenceComposer(): () => void {
   return () => {
-    CollaborationPresenceComposerJoin = (input?: Dynamic): Dynamic =>
-      Array.from(input)
-        .slice(0, CollaborationPeerCursorsConstant_2)
+    CollaborationPresenceComposerJoin = (text?: Dynamic): Dynamic =>
+      Array.from(text)
+        .slice(0, peerMessageMaxLength)
         .join("");
   };
 }

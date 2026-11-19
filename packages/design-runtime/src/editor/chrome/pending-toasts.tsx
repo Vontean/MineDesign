@@ -12,104 +12,104 @@ var ChromePendingToastsFilterValue: Dynamic;
 var ChromePendingToastsCurrentState: Dynamic;
 var ChromePendingToastsConstant: Dynamic;
 var ChromePendingToastsSubscribers: Dynamic;
-var ChromePendingToastsSubscribers_2: Dynamic;
+var pinnedStateListeners: Dynamic;
 function notifyPendingToasts(): Dynamic {
-  for (let value of ChromePendingToastsSubscribers as Dynamic)
-    value(ChromePendingToastsFilterValue);
+  for (let listener of ChromePendingToastsSubscribers as Dynamic)
+    listener(ChromePendingToastsFilterValue);
 }
-function showEditorToast(input?: Dynamic, options: Dynamic = 6e3): Dynamic {
-  let value: Dynamic = ChromePendingToastsConstant++;
+function showEditorToast(text?: Dynamic, durationMs: Dynamic = 6e3): Dynamic {
+  let toastId: Dynamic = ChromePendingToastsConstant++;
   ChromePendingToastsFilterValue = [
     ...ChromePendingToastsFilterValue,
     {
-      id: value,
-      text: input,
-      durationMs: options,
+      id: toastId,
+      text: text,
+      durationMs: durationMs,
     },
   ];
   notifyPendingToasts();
-  return value;
+  return toastId;
 }
 function showEditorActionToast(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  text?: Dynamic,
+  action?: Dynamic,
+  onClose?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = ChromePendingToastsConstant++;
+  let toastId: Dynamic = ChromePendingToastsConstant++;
   ChromePendingToastsFilterValue = [
     ...ChromePendingToastsFilterValue,
     {
-      id: value,
-      text: input,
+      id: toastId,
+      text: text,
       durationMs: 0,
-      action: options,
-      ...(context
+      action: action,
+      ...(onClose
         ? {
-            onClose: context,
+            onClose: onClose,
           }
         : {}),
     },
   ];
   notifyPendingToasts();
-  return value;
+  return toastId;
 }
-function closeEditorToast(input?: Dynamic): Dynamic {
+function closeEditorToast(toastId?: Dynamic): Dynamic {
   ChromePendingToastsFilterValue.some(
-    (input2?: Dynamic): Dynamic => input2.id === input,
+    (toast?: Dynamic): Dynamic => toast.id === toastId,
   ) &&
     ((ChromePendingToastsFilterValue = ChromePendingToastsFilterValue.filter(
-      (input2?: Dynamic): Dynamic => input2.id !== input,
+      (toast?: Dynamic): Dynamic => toast.id !== toastId,
     )),
     notifyPendingToasts());
 }
-function subscribeEditorToasts(input?: Dynamic): Dynamic {
-  ChromePendingToastsSubscribers.add(input);
-  input(ChromePendingToastsFilterValue);
+function subscribeEditorToasts(listener?: Dynamic): Dynamic {
+  ChromePendingToastsSubscribers.add(listener);
+  listener(ChromePendingToastsFilterValue);
   return (): Dynamic => {
-    ChromePendingToastsSubscribers.delete(input);
+    ChromePendingToastsSubscribers.delete(listener);
   };
 }
 function PendingEditorToasts(): Dynamic {
   let {
-      add: value,
-      close: value2,
-      setPinned: value3,
+      add: addToast,
+      close: closeToast,
+      setPinned: setPinned,
     }: Dynamic = useToastManager(),
-    value4: Dynamic = (0, reactChromePendingToasts.useRef)(new Map());
+    toastHandles: Dynamic = (0, reactChromePendingToasts.useRef)(new Map());
   (0, reactChromePendingToasts.useEffect)((): Dynamic => {
-    let callback: Dynamic = (input?: Dynamic): Dynamic => value3(input);
-    ChromePendingToastsSubscribers_2.add(callback);
+    let forwardPinned: Dynamic = (pinned?: Dynamic): Dynamic => setPinned(pinned);
+    pinnedStateListeners.add(forwardPinned);
     ChromePendingToastsCurrentState !== null &&
-      callback(ChromePendingToastsCurrentState);
+      forwardPinned(ChromePendingToastsCurrentState);
     return (): Dynamic => {
-      ChromePendingToastsSubscribers_2.delete(callback);
+      pinnedStateListeners.delete(forwardPinned);
     };
-  }, [value3]);
+  }, [setPinned]);
   (0, reactChromePendingToasts.useEffect)((): Dynamic => {
-    let current: Dynamic = value4.current;
-    return subscribeEditorToasts((input?: Dynamic): Dynamic => {
-      let values: Dynamic = new Set(
-        input.map((input2?: Dynamic): Dynamic => input2.id),
+    let current: Dynamic = toastHandles.current;
+    return subscribeEditorToasts((toasts?: Dynamic): Dynamic => {
+      let activeIds: Dynamic = new Set(
+        toasts.map((toast?: Dynamic): Dynamic => toast.id),
       );
-      for (let value5 of input as Dynamic) {
-        if (current.has(value5.id)) continue;
-        let value6: Dynamic = value({
-          title: value5.text,
-          action: value5.action,
-          timeout: Math.max(0, value5.durationMs),
+      for (let toast of toasts as Dynamic) {
+        if (current.has(toast.id)) continue;
+        let handle: Dynamic = addToast({
+          title: toast.text,
+          action: toast.action,
+          timeout: Math.max(0, toast.durationMs),
           dedupe: false,
           onClose: (): Dynamic => {
-            current.delete(value5.id);
-            closeEditorToast(value5.id);
-            value5.onClose?.();
+            current.delete(toast.id);
+            closeEditorToast(toast.id);
+            toast.onClose?.();
           },
         });
-        current.set(value5.id, value6);
+        current.set(toast.id, handle);
       }
-      for (let [value5, value6] of [...current] as Dynamic)
-        values.has(value5) || (current.delete(value5), value2(value6));
+      for (let [toastId, handle] of [...current] as Dynamic)
+        activeIds.has(toastId) || (current.delete(toastId), closeToast(handle));
     });
-  }, [value, value2]);
+  }, [addToast, closeToast]);
   return null;
 }
 export {
@@ -117,7 +117,7 @@ export {
   ChromePendingToastsCurrentState,
   ChromePendingToastsFilterValue,
   ChromePendingToastsSubscribers,
-  ChromePendingToastsSubscribers_2,
+  pinnedStateListeners as ChromePendingToastsSubscribers_2,
   closeEditorToast,
   notifyPendingToasts,
   PendingEditorToasts,
@@ -137,6 +137,6 @@ export function installEditorChromePendingToasts(): () => void {
     ChromePendingToastsCurrentState = null;
     ChromePendingToastsConstant = 1;
     ChromePendingToastsSubscribers = new Set();
-    ChromePendingToastsSubscribers_2 = new Set();
+    pinnedStateListeners = new Set();
   };
 }

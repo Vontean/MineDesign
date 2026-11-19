@@ -8,18 +8,18 @@ import { ToolbarPrimitivesMediaQuery } from "../toolbar/primitives";
 var McSideValue: Dynamic;
 var ChromePanelWidthHandler: Dynamic;
 var ChromePanelWidthConstant: Dynamic;
-var ChromePanelWidthConstant_2: Dynamic;
-function readPanelPreference(input?: Dynamic, options?: Dynamic): Dynamic {
+var compactMinPanelWidth: Dynamic;
+function readPanelPreference(key?: Dynamic, isValid?: Dynamic): Dynamic {
   try {
-    let value: Dynamic = localStorage.getItem(McSideValue + input);
-    if (value === null) return;
-    let value2: Dynamic = JSON.parse(value);
-    if (options(value2)) return value2;
+    let storedText: Dynamic = localStorage.getItem(McSideValue + key);
+    if (storedText === null) return;
+    let storedValue: Dynamic = JSON.parse(storedText);
+    if (isValid(storedValue)) return storedValue;
   } catch {}
 }
-function writePanelPreference(input?: Dynamic, options?: Dynamic): Dynamic {
+function writePanelPreference(key?: Dynamic, value?: Dynamic): Dynamic {
   try {
-    localStorage.setItem(McSideValue + input, JSON.stringify(options));
+    localStorage.setItem(McSideValue + key, JSON.stringify(value));
   } catch {}
 }
 function panelMaximumWidth(): Dynamic {
@@ -28,107 +28,107 @@ function panelMaximumWidth(): Dynamic {
     Math.min(560, (window as Dynamic).innerWidth - 120),
   );
 }
-function clampPanelWidth(input?: Dynamic): Dynamic {
+function clampPanelWidth(width?: Dynamic): Dynamic {
   return Math.max(
     ChromePanelWidthConstant,
-    Math.min(panelMaximumWidth(), Math.round(input)),
+    Math.min(panelMaximumWidth(), Math.round(width)),
   );
 }
 function startPanelResizeGesture(
   event?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = "touch",
+  axis?: Dynamic,
+  callbacks?: Dynamic,
+  pointerMode: Dynamic = "touch",
 ): Dynamic {
-  let callback: Dynamic = (): Dynamic => {};
+  let noop: Dynamic = (): Dynamic => {};
   if (
-    (value === "touch" && event.pointerType === "mouse") ||
+    (pointerMode === "touch" && event.pointerType === "mouse") ||
     !event.isPrimary ||
     event.button !== 0
   )
-    return callback;
+    return noop;
   event.preventDefault();
   let currentTarget: Dynamic = event.currentTarget,
     pointerId: Dynamic = event.pointerId;
   currentTarget.setPointerCapture?.(pointerId);
-  let callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      options === "x" ? input.clientX : input.clientY,
-    value2: Dynamic = callback2(event),
-    value3: Dynamic = "pointer:" + pointerId,
-    flag: Dynamic = false,
-    flag2: Dynamic = false;
-  context.onResizeStart(value3);
-  let callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input.pointerId !== pointerId) return;
-      let value4: Dynamic = callback2(input) - value2;
-      Math.abs(value4) > 3 && (flag = true);
-      context.onResize(value4, value3);
+  let readPointerPosition: Dynamic = (pointerEvent?: Dynamic): Dynamic =>
+      axis === "x" ? pointerEvent.clientX : pointerEvent.clientY,
+    startPosition: Dynamic = readPointerPosition(event),
+    gestureId: Dynamic = "pointer:" + pointerId,
+    hasMoved: Dynamic = false,
+    isEnded: Dynamic = false;
+  callbacks.onResizeStart(gestureId);
+  let handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+      if (moveEvent.pointerId !== pointerId) return;
+      let delta: Dynamic = readPointerPosition(moveEvent) - startPosition;
+      Math.abs(delta) > 3 && (hasMoved = true);
+      callbacks.onResize(delta, gestureId);
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      flag2 ||
-        ((flag2 = true),
-        (window as Dynamic).removeEventListener("pointermove", callback3),
-        (window as Dynamic).removeEventListener("pointerup", callback5),
-        (window as Dynamic).removeEventListener("pointercancel", callback5),
-        currentTarget.removeEventListener("lostpointercapture", callback5),
-        context.onResizeEnd(flag, value3, input));
+    endGesture: Dynamic = (endEvent?: Dynamic): Dynamic => {
+      isEnded ||
+        ((isEnded = true),
+        (window as Dynamic).removeEventListener("pointermove", handlePointerMove),
+        (window as Dynamic).removeEventListener("pointerup", handlePointerEnd),
+        (window as Dynamic).removeEventListener("pointercancel", handlePointerEnd),
+        currentTarget.removeEventListener("lostpointercapture", handlePointerEnd),
+        callbacks.onResizeEnd(hasMoved, gestureId, endEvent));
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      input.pointerId === pointerId && callback4();
+    handlePointerEnd: Dynamic = (endEvent?: Dynamic): Dynamic => {
+      endEvent.pointerId === pointerId && endGesture();
     };
-  (window as Dynamic).addEventListener("pointermove", callback3);
-  (window as Dynamic).addEventListener("pointerup", callback5);
-  (window as Dynamic).addEventListener("pointercancel", callback5);
-  currentTarget.addEventListener("lostpointercapture", callback5);
-  return callback4;
+  (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+  (window as Dynamic).addEventListener("pointerup", handlePointerEnd);
+  (window as Dynamic).addEventListener("pointercancel", handlePointerEnd);
+  currentTarget.addEventListener("lostpointercapture", handlePointerEnd);
+  return endGesture;
 }
-function usePanelWidth(input: Dynamic = 304, options?: Dynamic): Dynamic {
-  let [value]: Dynamic = (0, reactChromePanelShell.useState)(
+function usePanelWidth(initialWidth: Dynamic = 304, onWidthChange?: Dynamic): Dynamic {
+  let [defaultWidth]: Dynamic = (0, reactChromePanelShell.useState)(
       (): Dynamic =>
         typeof matchMedia == "function" &&
         matchMedia(ToolbarPrimitivesMediaQuery).matches
-          ? Math.max(input, ChromePanelWidthConstant_2)
-          : input,
+          ? Math.max(initialWidth, compactMinPanelWidth)
+          : initialWidth,
     ),
-    [value2, value3]: Dynamic = (0, reactChromePanelShell.useState)(
+    [width, setWidth]: Dynamic = (0, reactChromePanelShell.useState)(
       (): Dynamic =>
-        readPanelPreference("width", ChromePanelWidthHandler) ?? value,
+        readPanelPreference("width", ChromePanelWidthHandler) ?? defaultWidth,
     ),
-    [value4, value5]: Dynamic = (0, reactChromePanelShell.useState)(
+    [maxWidth, setMaxWidth]: Dynamic = (0, reactChromePanelShell.useState)(
       panelMaximumWidth,
     );
   (0, reactChromePanelShell.useLayoutEffect)((): Dynamic => {
-    let callback: Dynamic = (): Dynamic => {
-      value5(panelMaximumWidth());
-      value3((input2?: Dynamic): Dynamic => clampPanelWidth(input2));
+    let updateLimits: Dynamic = (): Dynamic => {
+      setMaxWidth(panelMaximumWidth());
+      setWidth((currentWidth?: Dynamic): Dynamic => clampPanelWidth(currentWidth));
     };
-    callback();
-    (window as Dynamic).addEventListener("resize", callback);
+    updateLimits();
+    (window as Dynamic).addEventListener("resize", updateLimits);
     return (): Dynamic =>
-      (window as Dynamic).removeEventListener("resize", callback);
+      (window as Dynamic).removeEventListener("resize", updateLimits);
   }, []);
-  let value6: Dynamic = (0, reactChromePanelShell.useRef)(value2),
-    value7: Dynamic = (0, reactChromePanelShell.useRef)(options);
+  let widthRef: Dynamic = (0, reactChromePanelShell.useRef)(width),
+    onWidthChangeRef: Dynamic = (0, reactChromePanelShell.useRef)(onWidthChange);
   (0, reactChromePanelShell.useLayoutEffect)((): Dynamic => {
-    value6.current = value2;
-    value7.current = options;
+    widthRef.current = width;
+    onWidthChangeRef.current = onWidthChange;
   });
-  let value8: Dynamic = (0, reactChromePanelShell.useRef)(value2),
-    value9: Dynamic = (0, reactChromePanelShell.useMemo)(
+  let gestureStartWidthRef: Dynamic = (0, reactChromePanelShell.useRef)(width),
+    gesture: Dynamic = (0, reactChromePanelShell.useMemo)(
       (): Dynamic => ({
         onResizeStart: (): Dynamic => {
-          value8.current = value6.current;
+          gestureStartWidthRef.current = widthRef.current;
         },
-        onResize: (input2?: Dynamic): Dynamic => {
-          let value10: Dynamic = clampPanelWidth(value8.current - input2);
-          value3(value10);
-          value7.current?.(value10, value8.current);
+        onResize: (deltaPx?: Dynamic): Dynamic => {
+          let nextWidth: Dynamic = clampPanelWidth(gestureStartWidthRef.current - deltaPx);
+          setWidth(nextWidth);
+          onWidthChangeRef.current?.(nextWidth, gestureStartWidthRef.current);
         },
         onResizeEnd: (): Dynamic => {
-          value3(
-            (input2?: Dynamic): Dynamic => (
-              writePanelPreference("width", input2),
-              input2
+          setWidth(
+            (currentWidth?: Dynamic): Dynamic => (
+              writePanelPreference("width", currentWidth),
+              currentWidth
             ),
           );
         },
@@ -136,16 +136,16 @@ function usePanelWidth(input: Dynamic = 304, options?: Dynamic): Dynamic {
       [],
     );
   return {
-    width: value2,
+    width: width,
     min: ChromePanelWidthConstant,
-    max: value4,
-    defaultWidth: value,
-    gesture: value9,
+    max: maxWidth,
+    defaultWidth: defaultWidth,
+    gesture: gesture,
   };
 }
 export {
   ChromePanelWidthConstant,
-  ChromePanelWidthConstant_2,
+  compactMinPanelWidth as ChromePanelWidthConstant_2,
   ChromePanelWidthHandler,
   clampPanelWidth,
   McSideValue,
@@ -158,9 +158,9 @@ export {
 export function installEditorChromePanelWidth(): () => void {
   return () => {
     McSideValue = "mc-side/";
-    ChromePanelWidthHandler = (input?: Dynamic): Dynamic =>
-      typeof input == "number" && Number.isFinite(input);
+    ChromePanelWidthHandler = (value?: Dynamic): Dynamic =>
+      typeof value == "number" && Number.isFinite(value);
     ChromePanelWidthConstant = 285;
-    ChromePanelWidthConstant_2 = 376;
+    compactMinPanelWidth = 376;
   };
 }

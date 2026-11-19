@@ -108,9 +108,9 @@ export function layoutCommentCards(
   targets: readonly CardTarget[],
   sizes: Readonly<Record<string, CardSize>>,
   bounds: CardBounds,
-  options: Partial<CardLayoutOptions> = {},
+  layoutOptions: Partial<CardLayoutOptions> = {},
 ): CardPlacement[] {
-  const { offsetX, offsetY, gap, pinRadius, defaultSize } = { ...DEFAULT_CARD_LAYOUT_OPTIONS, ...options };
+  const { offsetX, offsetY, gap, pinRadius, defaultSize } = { ...DEFAULT_CARD_LAYOUT_OPTIONS, ...layoutOptions };
   // 目标点本身也是障碍：卡片不能盖住任何一个编号圆点
   const pins: Box[] = targets.map(target => ({
     left: target.x - pinRadius,

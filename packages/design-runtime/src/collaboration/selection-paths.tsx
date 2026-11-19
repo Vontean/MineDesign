@@ -18,38 +18,38 @@ var encodedElementPathPattern: Dynamic;
 var CollaborationSelectionPathsLimit: Dynamic;
 var jsxCollaborationSelectionPaths: Dynamic;
 var CollaborationSelectionPathsConstant: Dynamic;
-var CollaborationSelectionPathsConstant_2: Dynamic;
+var selectionRefreshDirtyDelayMs: Dynamic;
 var CollaborationSelectionPathsItems: Dynamic;
 var CollaborationSelectionPathsCache: Dynamic;
 var CanvasPeerSelectionRings: Dynamic;
-function parseSelectedElementPath(input?: Dynamic): Dynamic {
-  if (!encodedElementPathPattern.test(input)) return null;
-  let value: Dynamic = input.indexOf("#");
+function parseSelectedElementPath(path?: Dynamic): Dynamic {
+  if (!encodedElementPathPattern.test(path)) return null;
+  let hashIndex: Dynamic = path.indexOf("#");
   return {
-    name: input.slice(0, value),
-    tid: parseInt(input.slice(value + 1), 10),
+    name: path.slice(0, hashIndex),
+    tid: parseInt(path.slice(hashIndex + 1), 10),
   };
 }
-function normalizeSelectedArtboardPaths(input?: Dynamic): Dynamic {
+function normalizeSelectedArtboardPaths(paths?: Dynamic): Dynamic {
   let items: Dynamic = [];
-  for (let value of input as Dynamic) {
-    let value2: Dynamic = encodeArtboardSelectionPath(value);
-    value2 !== null && items.push(value2);
+  for (let path of paths as Dynamic) {
+    let encodedPath: Dynamic = encodeArtboardSelectionPath(path);
+    encodedPath !== null && items.push(encodedPath);
     if (items.length === 20) break;
   }
   return items;
 }
-function encodeArtboardSelectionPath(input?: Dynamic): Dynamic {
-  if (!input.endsWith(".dc.html")) return null;
-  let value: Dynamic;
+function encodeArtboardSelectionPath(path?: Dynamic): Dynamic {
+  if (!path.endsWith(".dc.html")) return null;
+  let encoded: Dynamic;
   try {
-    value = encodeURIComponent(input.slice(0, -8)) + ".dc.html";
+    encoded = encodeURIComponent(path.slice(0, -8)) + ".dc.html";
   } catch {
     return null;
   }
-  return value.length <= CollaborationSelectionPathsLimit &&
-    encodedArtboardPathPattern.test(value)
-    ? value
+  return encoded.length <= CollaborationSelectionPathsLimit &&
+    encodedArtboardPathPattern.test(encoded)
+    ? encoded
     : null;
 }
 function createPeerSelectionStore(): Dynamic {
@@ -57,84 +57,84 @@ function createPeerSelectionStore(): Dynamic {
     values: Dynamic = new Set();
   return {
     get: (): Dynamic => entries,
-    set(input: Dynamic): Dynamic {
-      entries = input;
-      for (let value of [...values] as Dynamic) value();
+    set(nextEntries: Dynamic): Dynamic {
+      entries = nextEntries;
+      for (let listener of [...values] as Dynamic) listener();
     },
-    subscribe(input: Dynamic): Dynamic {
-      values.add(input);
-      return (): Dynamic => values.delete(input);
+    subscribe(listener: Dynamic): Dynamic {
+      values.add(listener);
+      return (): Dynamic => values.delete(listener);
     },
   };
 }
 function resolvePeerElementSelections(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = null,
+  groups?: Dynamic,
+  artboardsByName?: Dynamic,
+  rectsByFile?: Dynamic,
+  targetFile: Dynamic = null,
 ): Dynamic {
   let entries: Dynamic = new Map();
-  for (let value2 of input as Dynamic) {
+  for (let group of groups as Dynamic) {
     let items: Dynamic = [],
       values: Dynamic = new Set();
-    for (let value3 of value2.selected as Dynamic) {
-      let value4: Dynamic = parseSelectedElementPath(value3),
-        value5: Dynamic = value4 ? options.get(value4.name) : undefined;
-      if (!value4 || !value5 || (value !== null && value5.file !== value))
+    for (let selectedPath of group.selected as Dynamic) {
+      let parsedPath: Dynamic = parseSelectedElementPath(selectedPath),
+        artboard: Dynamic = parsedPath ? artboardsByName.get(parsedPath.name) : undefined;
+      if (!parsedPath || !artboard || (targetFile !== null && artboard.file !== targetFile))
         continue;
-      let value6: Dynamic = value === null;
-      (context.get(value5.file)?.get(value4.tid) ?? []).forEach(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-          let value7: Dynamic = value6 ? Math.max(0, input2.x) : input2.x,
-            value8: Dynamic = value6 ? Math.max(0, input2.y) : input2.y,
-            value9: Dynamic = value6
-              ? Math.min(value5.w, input2.x + input2.w)
-              : input2.x + input2.w,
-            value10: Dynamic = value6
-              ? Math.min(value5.h, input2.y + input2.h)
-              : input2.y + input2.h;
-          if (value9 <= value7 || value10 <= value8) return;
-          values.add(value4.name);
+      let isFullCanvas: Dynamic = targetFile === null;
+      (rectsByFile.get(artboard.file)?.get(parsedPath.tid) ?? []).forEach(
+        (rect?: Dynamic, rectIndex?: Dynamic): Dynamic => {
+          let left: Dynamic = isFullCanvas ? Math.max(0, rect.x) : rect.x,
+            top: Dynamic = isFullCanvas ? Math.max(0, rect.y) : rect.y,
+            right: Dynamic = isFullCanvas
+              ? Math.min(artboard.w, rect.x + rect.w)
+              : rect.x + rect.w,
+            bottom: Dynamic = isFullCanvas
+              ? Math.min(artboard.h, rect.y + rect.h)
+              : rect.y + rect.h;
+          if (right <= left || bottom <= top) return;
+          values.add(parsedPath.name);
           let state: Dynamic = {
-            key: value2.peer + "|" + value3 + "|" + String(options2),
-            x: value7,
-            y: value8,
-            w: value9 - value7,
-            h: value10 - value8,
-            collaborator: value2.collaborator,
+            key: group.peer + "|" + selectedPath + "|" + String(rectIndex),
+            x: left,
+            y: top,
+            w: right - left,
+            h: bottom - top,
+            collaborator: group.collaborator,
           };
           items.push({
-            file: value5.file,
+            file: artboard.file,
             ring: state,
           });
         },
       );
     }
-    let items2: Dynamic = [];
-    for (let value3 of (value !== null
+    let artboardItems: Dynamic = [];
+    for (let artboardName of (targetFile !== null
       ? []
-      : (value2.lists.selectedArtboards ?? [])) as Dynamic) {
-      let entry: Dynamic = options.get(value3);
+      : (group.lists.selectedArtboards ?? [])) as Dynamic) {
+      let entry: Dynamic = artboardsByName.get(artboardName);
       !entry ||
-        values.has(value3) ||
-        items2.push({
+        values.has(artboardName) ||
+        artboardItems.push({
           file: entry.file,
           ring: {
-            key: value2.peer + "|" + value3,
+            key: group.peer + "|" + artboardName,
             x: 0,
             y: 0,
             w: entry.w,
             h: entry.h,
-            collaborator: value2.collaborator,
+            collaborator: group.collaborator,
           },
         });
     }
-    for (let { file: value3, ring: value4 } of [
-      ...items2,
+    for (let { file: file, ring: ring } of [
+      ...artboardItems,
       ...items,
     ] as Dynamic) {
-      let entry: Dynamic = entries.get(value3);
-      entry ? entry.push(value4) : entries.set(value3, [value4]);
+      let entry: Dynamic = entries.get(file);
+      entry ? entry.push(ring) : entries.set(file, [ring]);
     }
   }
   return entries;
@@ -146,128 +146,128 @@ function useCanvasPeerSelections({
   store: store,
   fullFile = null,
 }: Dynamic): Dynamic {
-  let value: Dynamic = usePeerSelectionGroups(
+  let liveGroups: Dynamic = usePeerSelectionGroups(
       {
         page: pageId === "" ? null : pageId,
       },
       ["selectedArtboards"],
     ),
-    value2: Dynamic =
+    visibleGroups: Dynamic =
       embedMemoryPrefix() === ""
-        ? value
+        ? liveGroups
         : CollaborationSelectionPathsItems,
-    value3: Dynamic = (0,
+    artboardsByName: Dynamic = (0,
     reactCollaborationPeerCursors.useMemo)((): Dynamic => {
-      let entries2: Dynamic = new Map();
-      for (let value15 of artboards as Dynamic) {
-        let value16: Dynamic = encodeArtboardSelectionPath(value15.file);
-        value16 !== null && entries2.set(value16, value15);
+      let byName: Dynamic = new Map();
+      for (let artboardItem of artboards as Dynamic) {
+        let encodedFile: Dynamic = encodeArtboardSelectionPath(artboardItem.file);
+        encodedFile !== null && byName.set(encodedFile, artboardItem);
       }
-      return entries2;
+      return byName;
     }, [artboards]),
     entries: Dynamic = new Map();
-  for (let value15 of value2 as Dynamic)
-    for (let value16 of value15.selected as Dynamic) {
-      let value17: Dynamic = parseSelectedElementPath(value16),
-        value18: Dynamic = value17 ? value3.get(value17.name) : undefined;
+  for (let group of visibleGroups as Dynamic)
+    for (let selectedPath of group.selected as Dynamic) {
+      let parsedPath: Dynamic = parseSelectedElementPath(selectedPath),
+        artboardEntry: Dynamic = parsedPath ? artboardsByName.get(parsedPath.name) : undefined;
       if (
-        !value17 ||
-        !value18 ||
-        (fullFile !== null && value18.file !== fullFile)
+        !parsedPath ||
+        !artboardEntry ||
+        (fullFile !== null && artboardEntry.file !== fullFile)
       )
         continue;
-      let value19: Dynamic = entries.get(value18.file) ?? [];
-      value19.includes(value17.tid) || value19.push(value17.tid);
-      entries.set(value18.file, value19);
+      let tids: Dynamic = entries.get(artboardEntry.file) ?? [];
+      tids.includes(parsedPath.tid) || tids.push(parsedPath.tid);
+      entries.set(artboardEntry.file, tids);
     }
-  for (let value15 of entries.values() as Dynamic)
-    value15.sort(
-      (input?: Dynamic, options?: Dynamic): Dynamic => input - options,
+  for (let tidList of entries.values() as Dynamic)
+    tidList.sort(
+      (first?: Dynamic, second?: Dynamic): Dynamic => first - second,
     );
-  let value4: Dynamic = JSON.stringify([
+  let selectionKey: Dynamic = JSON.stringify([
       fullFile,
       ...[...entries].sort(
-        ([input]: Dynamic, [options]: Dynamic): Dynamic =>
-          input < options ? -1 : input > options ? 1 : 0,
+        ([fileA]: Dynamic, [fileB]: Dynamic): Dynamic =>
+          fileA < fileB ? -1 : fileA > fileB ? 1 : 0,
       ),
     ]),
-    value5: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
+    fullFileRef: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
       fullFile,
     );
-  value5.current = fullFile;
-  let value6: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
+  fullFileRef.current = fullFile;
+  let selectedTidsRef: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
     entries,
   );
-  value6.current = entries;
-  let value7: Dynamic = entries.size > 0,
-    [value8, value9]: Dynamic = (0,
+  selectedTidsRef.current = entries;
+  let hasSelection: Dynamic = entries.size > 0,
+    [measured, setMeasured]: Dynamic = (0,
     reactCollaborationPeerCursors.useState)({
       full: null,
       rects: CollaborationSelectionPathsCache,
     }),
-    value10: Dynamic =
-      value8.full === fullFile
-        ? value8.rects
+    currentRects: Dynamic =
+      measured.full === fullFile
+        ? measured.rects
         : CollaborationSelectionPathsCache,
-    value11: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
+    scheduleRefreshRef: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
       (): Dynamic => {},
     );
   (0, reactCollaborationPeerCursors.useEffect)((): Dynamic => {
-    if (!value7) {
-      value9(
-        (input?: Dynamic): Dynamic =>
-          input.rects.size === 0
-            ? input
+    if (!hasSelection) {
+      setMeasured(
+        (prev?: Dynamic): Dynamic =>
+          prev.rects.size === 0
+            ? prev
             : {
-                full: input.full,
+                full: prev.full,
                 rects: CollaborationSelectionPathsCache,
               },
       );
       return;
     }
     let flag: Dynamic = false,
-      flag2: Dynamic = false,
-      flag3: Dynamic = false,
-      index: Dynamic = 0,
-      value15: Dynamic,
-      callback: Dynamic = (input?: Dynamic): Dynamic => {
-        clearTimeout(value15);
-        value15 = setTimeout((): Dynamic => {
-          callback2();
-        }, input);
+      isMeasuring: Dynamic = false,
+      isRefreshQueued: Dynamic = false,
+      lastRunAt: Dynamic = 0,
+      refreshTimer: Dynamic,
+      scheduleMeasure: Dynamic = (delayMs?: Dynamic): Dynamic => {
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout((): Dynamic => {
+          measureRects();
+        }, delayMs);
       },
-      callback2: Dynamic = async (): Promise<Dynamic> => {
-        flag2 = true;
-        flag3 = false;
-        index = Date.now();
-        let current: Dynamic = value6.current,
-          current2: Dynamic = value5.current,
-          entries2: Dynamic = new Map();
+      measureRects: Dynamic = async (): Promise<Dynamic> => {
+        isMeasuring = true;
+        isRefreshQueued = false;
+        lastRunAt = Date.now();
+        let targets: Dynamic = selectedTidsRef.current,
+          activeFullFile: Dynamic = fullFileRef.current,
+          measuredRects: Dynamic = new Map();
         try {
           await Promise.all(
-            [...current].map(
-              async ([input, input2]: Dynamic): Promise<Dynamic> => {
-                let entry: Dynamic = handlesRef.current.get(input),
-                  value16: Dynamic =
+            [...targets].map(
+              async ([file, tids]: Dynamic): Promise<Dynamic> => {
+                let entry: Dynamic = handlesRef.current.get(file),
+                  handle: Dynamic =
                     entry?.isReady() && !entry.isBlocked()
                       ? createPreviewHandle(
                           entry.webviewRef.current,
                         )
                       : null;
-                if (!value16) return;
-                let value17: Dynamic = await pickerPeerRects(
-                  value16,
-                  input2,
-                  input === current2,
+                if (!handle) return;
+                let rects: Dynamic = await pickerPeerRects(
+                  handle,
+                  tids,
+                  file === activeFullFile,
                 );
-                value17 &&
-                  entries2.set(
-                    input,
+                rects &&
+                  measuredRects.set(
+                    file,
                     new Map(
-                      value17.map(
-                        (input3?: Dynamic, options?: Dynamic): Dynamic => [
-                          input2[options],
-                          input3,
+                      rects.map(
+                        (rect?: Dynamic, index?: Dynamic): Dynamic => [
+                          tids[index],
+                          rect,
                         ],
                       ),
                     ),
@@ -276,88 +276,88 @@ function useCanvasPeerSelections({
             ),
           );
         } finally {
-          flag2 = false;
+          isMeasuring = false;
           flag ||
-            callback(
-              flag3
-                ? CollaborationSelectionPathsConstant_2
+            scheduleMeasure(
+              isRefreshQueued
+                ? selectionRefreshDirtyDelayMs
                 : CollaborationSelectionPathsConstant,
             );
         }
         flag ||
-          current2 !== value5.current ||
-          value9((input?: Dynamic): Dynamic => {
-            let value16: Dynamic =
-                input.full === current2
-                  ? input.rects
+          activeFullFile !== fullFileRef.current ||
+          setMeasured((prev?: Dynamic): Dynamic => {
+            let prevRects: Dynamic =
+                prev.full === activeFullFile
+                  ? prev.rects
                   : CollaborationSelectionPathsCache,
-              entries3: Dynamic = new Map();
-            for (let value17 of value6.current.keys() as Dynamic) {
-              let value18: Dynamic =
-                entries2.get(value17) ?? value16.get(value17);
-              value18 && entries3.set(value17, value18);
+              nextRects: Dynamic = new Map();
+            for (let file of selectedTidsRef.current.keys() as Dynamic) {
+              let fileRects: Dynamic =
+                measuredRects.get(file) ?? prevRects.get(file);
+              fileRects && nextRects.set(file, fileRects);
             }
-            return input.full === current2 &&
+            return prev.full === activeFullFile &&
               JSON.stringify(
-                [...value16].map(
-                  ([input2, input3]: Dynamic): Dynamic => [
-                    input2,
-                    [...input3],
+                [...prevRects].map(
+                  ([file, rects]: Dynamic): Dynamic => [
+                    file,
+                    [...rects],
                   ],
                 ),
               ) ===
                 JSON.stringify(
-                  [...entries3].map(
-                    ([input2, input3]: Dynamic): Dynamic => [
-                      input2,
-                      [...input3],
+                  [...nextRects].map(
+                    ([file, rects]: Dynamic): Dynamic => [
+                      file,
+                      [...rects],
                     ],
                   ),
                 )
-              ? input
+              ? prev
               : {
-                  full: current2,
-                  rects: entries3,
+                  full: activeFullFile,
+                  rects: nextRects,
                 };
           });
       };
-    value11.current = (): Dynamic => {
-      flag2
-        ? (flag3 = true)
-        : callback(
+    scheduleRefreshRef.current = (): Dynamic => {
+      isMeasuring
+        ? (isRefreshQueued = true)
+        : scheduleMeasure(
             Math.max(
               0,
               Math.min(
-                CollaborationSelectionPathsConstant_2,
-                index + CollaborationSelectionPathsConstant - Date.now(),
+                selectionRefreshDirtyDelayMs,
+                lastRunAt + CollaborationSelectionPathsConstant - Date.now(),
               ),
             ),
           );
     };
-    callback(0);
+    scheduleMeasure(0);
     return (): Dynamic => {
       flag = true;
-      clearTimeout(value15);
-      value11.current = (): Dynamic => {};
+      clearTimeout(refreshTimer);
+      scheduleRefreshRef.current = (): Dynamic => {};
     };
-  }, [value7]);
+  }, [hasSelection]);
   (0, reactCollaborationPeerCursors.useEffect)(
-    (): Dynamic => value11.current(),
-    [value4],
+    (): Dynamic => scheduleRefreshRef.current(),
+    [selectionKey],
   );
-  let value12: Dynamic = resolvePeerElementSelections(
-      value2,
-      value3,
-      value10,
+  let peerRings: Dynamic = resolvePeerElementSelections(
+      visibleGroups,
+      artboardsByName,
+      currentRects,
       fullFile,
     ),
-    value13: Dynamic = JSON.stringify([...value12]),
-    value14: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
+    ringsKey: Dynamic = JSON.stringify([...peerRings]),
+    lastRingsKeyRef: Dynamic = (0, reactCollaborationPeerCursors.useRef)(
       null,
     );
   (0, reactCollaborationPeerCursors.useLayoutEffect)((): Dynamic => {
-    value13 !== value14.current &&
-      ((value14.current = value13), store.set(value12));
+    ringsKey !== lastRingsKeyRef.current &&
+      ((lastRingsKeyRef.current = ringsKey), store.set(peerRings));
   });
   (0, reactCollaborationPeerCursors.useEffect)(
     (): Dynamic => (): Dynamic => store.set(new Map()),
@@ -366,24 +366,24 @@ function useCanvasPeerSelections({
   return null;
 }
 function clipPeerRects(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  rects?: Dynamic,
+  scroll?: Dynamic,
+  box?: Dynamic,
 ): Dynamic {
-  return input.flatMap((input2?: Dynamic): Dynamic => {
-    let value: Dynamic = Math.max(0, input2.x - options.x),
-      value2: Dynamic = Math.max(0, input2.y - options.y),
-      value3: Dynamic = Math.min(context.w, input2.x - options.x + input2.w),
-      value4: Dynamic = Math.min(context.h, input2.y - options.y + input2.h);
-    return value3 <= value || value4 <= value2
+  return rects.flatMap((rect?: Dynamic): Dynamic => {
+    let left: Dynamic = Math.max(0, rect.x - scroll.x),
+      top: Dynamic = Math.max(0, rect.y - scroll.y),
+      right: Dynamic = Math.min(box.w, rect.x - scroll.x + rect.w),
+      bottom: Dynamic = Math.min(box.h, rect.y - scroll.y + rect.h);
+    return right <= left || bottom <= top
       ? []
       : [
           {
-            ...input2,
-            x: value,
-            y: value2,
-            w: value3 - value,
-            h: value4 - value2,
+            ...rect,
+            x: left,
+            y: top,
+            w: right - left,
+            h: bottom - top,
           },
         ];
   });
@@ -401,17 +401,17 @@ function ArtboardPeerSelectionRings({
       store.get,
       store.get,
     ).get(file),
-    value: Dynamic = (0,
+    scrollOffset: Dynamic = (0,
     reactCollaborationPeerCursors.useSyncExternalStore)(
       scroll.subscribe,
       (): Dynamic => scroll.get(file),
       (): Dynamic => scroll.get(file),
     ),
-    value2: Dynamic = entry ? clipPeerRects(entry, value, box) : [];
-  return value2.length > 0 ? (
+    clippedRects: Dynamic = entry ? clipPeerRects(entry, scrollOffset, box) : [];
+  return clippedRects.length > 0 ? (
     <ViewportScale>
-      {(input?: Dynamic): Dynamic => (
-        <PeerSelectionRings rings={value2} scale={input} />
+      {(scale?: Dynamic): Dynamic => (
+        <PeerSelectionRings rings={clippedRects} scale={scale} />
       )}
     </ViewportScale>
   ) : null;
@@ -423,7 +423,7 @@ export {
   clipPeerRects,
   CollaborationSelectionPathsCache,
   CollaborationSelectionPathsConstant,
-  CollaborationSelectionPathsConstant_2,
+  selectionRefreshDirtyDelayMs as CollaborationSelectionPathsConstant_2,
   CollaborationSelectionPathsItems,
   CollaborationSelectionPathsLimit,
   createPeerSelectionStore,
@@ -453,7 +453,7 @@ export function installCollaborationSelectionPaths(): () => void {
       1,
     );
     CollaborationSelectionPathsConstant = 1e3;
-    CollaborationSelectionPathsConstant_2 = 150;
+    selectionRefreshDirtyDelayMs = 150;
     CollaborationSelectionPathsItems = [];
     CollaborationSelectionPathsCache = new Map();
     CanvasPeerSelectionRings = (0, reactCollaborationPeerCursors.memo)(
@@ -466,8 +466,8 @@ export function installCollaborationSelectionPaths(): () => void {
         ).get(file);
         return entry && entry.length > 0 ? (
           <ViewportScale>
-            {(input?: Dynamic): Dynamic => (
-              <PeerSelectionRings rings={entry} scale={input} />
+            {(scale?: Dynamic): Dynamic => (
+              <PeerSelectionRings rings={entry} scale={scale} />
             )}
           </ViewportScale>
         ) : null;

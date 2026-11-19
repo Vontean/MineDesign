@@ -18,7 +18,7 @@ var reactChromeResizeGrip: Dynamic;
 var ChromeResizeGripCurrentState: Dynamic;
 function PanelWidthGrip({
   width: width,
-  min: min2,
+  min: minWidth,
   max: max,
   defaultWidth: defaultWidth,
   gesture: gesture,
@@ -26,11 +26,11 @@ function PanelWidthGrip({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let callback: Dynamic =
-    (input?: Dynamic): Dynamic =>
+  let createResizeTo: Dynamic =
+    (targetWidth?: Dynamic): Dynamic =>
     (): Dynamic => {
       gesture.onResizeStart("keys");
-      gesture.onResize(width - input, "keys");
+      gesture.onResize(width - targetWidth, "keys");
       gesture.onResizeEnd(true, "keys");
     };
   return (
@@ -39,13 +39,13 @@ function PanelWidthGrip({
       name={"panel"}
       label={label}
       now={width}
-      min={min2}
+      min={minWidth}
       max={max}
       valueText={String(width) + " pixels wide"}
       gesture={gesture}
-      onHome={callback(min2)}
-      onEnd={callback(max)}
-      onReset={callback(defaultWidth)}
+      onHome={createResizeTo(minWidth)}
+      onEnd={createResizeTo(max)}
+      onReset={createResizeTo(defaultWidth)}
       className={joinClassNames(
         "[&:not(:focus-visible)>[data-cds-part=resize-pill]]:opacity-0",
         className,
@@ -57,12 +57,12 @@ function PanelResizeGrip({
   name: name,
   label: label,
   now: now,
-  min: min2,
+  min: minValue,
   max: max,
   valueText: valueText,
   side = "top",
   gesture: gesture,
-  disabled: disabled2 = false,
+  disabled: isDisabled = false,
   unavailableTip: unavailableTip,
   onHome: onHome,
   onEnd: onEnd,
@@ -72,115 +72,115 @@ function PanelResizeGrip({
   grabTargetClassName: grabTargetClassName,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = side === "inline-start",
-    value2: Dynamic = (0, reactChromePanelShell.useRef)(gesture);
-  value2.current = gesture;
-  let value3: Dynamic = (0, reactChromePanelShell.useRef)(disabled2);
-  value3.current = disabled2;
-  let [value4, value5]: Dynamic = (0, reactChromePanelShell.useState)(
+  let isInlineStart: Dynamic = side === "inline-start",
+    gestureRef: Dynamic = (0, reactChromePanelShell.useRef)(gesture);
+  gestureRef.current = gesture;
+  let isDisabledRef: Dynamic = (0, reactChromePanelShell.useRef)(isDisabled);
+  isDisabledRef.current = isDisabled;
+  let [isGripActive, setIsGripActive]: Dynamic = (0, reactChromePanelShell.useState)(
       false,
     ),
-    [value6, value7]: Dynamic = (0, reactChromePanelShell.useState)(
+    [isFocused, setIsFocused]: Dynamic = (0, reactChromePanelShell.useState)(
       false,
     ),
-    [value8, value9]: Dynamic = (0, reactChromePanelShell.useState)(
+    [isTooltipDismissed, setIsTooltipDismissed]: Dynamic = (0, reactChromePanelShell.useState)(
       false,
     ),
-    value10: Dynamic = (0, reactChromePanelShell.useId)(),
-    value11: Dynamic = (0, reactChromePanelShell.useRef)(null),
-    value12: Dynamic = (0, reactChromePanelShell.useRef)(null);
+    tipId: Dynamic = (0, reactChromePanelShell.useId)(),
+    activeSourceRef: Dynamic = (0, reactChromePanelShell.useRef)(null),
+    cancelGestureRef: Dynamic = (0, reactChromePanelShell.useRef)(null);
   (0, reactChromePanelShell.useEffect)(
-    (): Dynamic => (): Dynamic => value12.current?.(true),
+    (): Dynamic => (): Dynamic => cancelGestureRef.current?.(true),
     [],
   );
-  let value13: Dynamic = (0, reactChromePanelShell.useRef)([
+  let recentResizeEndsRef: Dynamic = (0, reactChromePanelShell.useRef)([
       false,
       false,
     ]),
-    value14: Dynamic = (0, reactChromePanelShell.useMemo)(
+    resizeGesture: Dynamic = (0, reactChromePanelShell.useMemo)(
       (): Dynamic => ({
-        onResizeStart: (input: Dynamic = "keys"): Dynamic => {
-          value3.current ||
-            (value11.current === input &&
-              (value12.current
-                ? value12.current()
-                : ((value11.current = null),
-                  value2.current.onResizeEnd(true, input))),
-            value11.current === null &&
-              ((value11.current = input),
-              value5(true),
-              value2.current.onResizeStart(input)));
+        onResizeStart: (source: Dynamic = "keys"): Dynamic => {
+          isDisabledRef.current ||
+            (activeSourceRef.current === source &&
+              (cancelGestureRef.current
+                ? cancelGestureRef.current()
+                : ((activeSourceRef.current = null),
+                  gestureRef.current.onResizeEnd(true, source))),
+            activeSourceRef.current === null &&
+              ((activeSourceRef.current = source),
+              setIsGripActive(true),
+              gestureRef.current.onResizeStart(source)));
         },
-        onResize: (input?: Dynamic, options: Dynamic = "keys"): Dynamic => {
-          value11.current === options &&
-            value2.current.onResize(input, options);
+        onResize: (delta?: Dynamic, source: Dynamic = "keys"): Dynamic => {
+          activeSourceRef.current === source &&
+            gestureRef.current.onResize(delta, source);
         },
         onResizeEnd: (
-          input?: Dynamic,
-          options: Dynamic = "keys",
-          context?: Dynamic,
+          committed?: Dynamic,
+          source: Dynamic = "keys",
+          endContext?: Dynamic,
         ): Dynamic => {
-          value11.current === options &&
-            ((value11.current = null),
-            (value12.current = null),
-            value5(false),
-            options !== "keys" &&
-              (value13.current = [value13.current[1], input]),
-            value2.current.onResizeEnd(input, options, context));
+          activeSourceRef.current === source &&
+            ((activeSourceRef.current = null),
+            (cancelGestureRef.current = null),
+            setIsGripActive(false),
+            source !== "keys" &&
+              (recentResizeEndsRef.current = [recentResizeEndsRef.current[1], committed]),
+            gestureRef.current.onResizeEnd(committed, source, endContext));
         },
       }),
       [],
     ),
-    callback: Dynamic = (event?: Dynamic, options?: Dynamic): Dynamic => {
-      let value18: Dynamic = "pointer:" + event.pointerId;
+    startPointerResize: Dynamic = (event?: Dynamic, pointerMode?: Dynamic): Dynamic => {
+      let pointerSource: Dynamic = "pointer:" + event.pointerId;
       if (
-        value3.current ||
-        (value11.current !== null && value11.current !== value18)
+        isDisabledRef.current ||
+        (activeSourceRef.current !== null && activeSourceRef.current !== pointerSource)
       ) {
         event.isPrimary &&
           event.button === 0 &&
-          !(options === "touch" && event.pointerType === "mouse") &&
+          !(pointerMode === "touch" && event.pointerType === "mouse") &&
           event.preventDefault();
         return;
       }
-      let value19: Dynamic = startPanelResizeGesture(
+      let cancelResize: Dynamic = startPanelResizeGesture(
         event,
-        value ? "x" : "y",
-        value14,
-        options,
+        isInlineStart ? "x" : "y",
+        resizeGesture,
+        pointerMode,
       );
-      value11.current === value18 && (value12.current = value19);
+      activeSourceRef.current === pointerSource && (cancelGestureRef.current = cancelResize);
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      !disabled2 && value11.current === null && input?.();
+    runKeyAction: Dynamic = (action?: Dynamic): Dynamic => {
+      !isDisabled && activeSourceRef.current === null && action?.();
     },
-    value15: Dynamic = disabled2 ? unavailableTip : undefined;
+    disabledTip: Dynamic = isDisabled ? unavailableTip : undefined;
   (0, reactChromePanelShell.useEffect)((): Dynamic => {
-    disabled2 || value9(false);
-  }, [disabled2]);
-  let value16: Dynamic = value15 !== undefined && value6 && !value8,
-    value17: Dynamic = (
+    isDisabled || setIsTooltipDismissed(false);
+  }, [isDisabled]);
+  let isTooltipOpen: Dynamic = disabledTip !== undefined && isFocused && !isTooltipDismissed,
+    gripElement: Dynamic = (
       <ComponentsSelectionPointsComponent
         side={side}
         aria-label={label}
         aria-valuenow={now}
-        aria-valuemin={min2}
+        aria-valuemin={minValue}
         aria-valuemax={max}
         aria-valuetext={valueText}
-        aria-disabled={disabled2 || undefined}
-        aria-describedby={value15 !== undefined ? value10 : undefined}
+        aria-disabled={isDisabled || undefined}
+        aria-describedby={disabledTip !== undefined ? tipId : undefined}
         data-kit={name + "-resize"}
-        onResizeStart={value14.onResizeStart}
-        onResize={value14.onResize}
-        onResizeEnd={value14.onResizeEnd}
-        onPointerDown={(input?: Dynamic): Dynamic => callback(input, "all")}
+        onResizeStart={resizeGesture.onResizeStart}
+        onResize={resizeGesture.onResize}
+        onResizeEnd={resizeGesture.onResizeEnd}
+        onPointerDown={(event?: Dynamic): Dynamic => startPointerResize(event, "all")}
         onFocus={(): Dynamic => {
-          value7(true);
-          value9(false);
+          setIsFocused(true);
+          setIsTooltipDismissed(false);
         }}
-        onBlur={(): Dynamic => value7(false)}
+        onBlur={(): Dynamic => setIsFocused(false)}
         onDoubleClick={(): Dynamic => {
-          !value13.current[0] && !value13.current[1] && callback2(onReset);
+          !recentResizeEndsRef.current[0] && !recentResizeEndsRef.current[1] && runKeyAction(onReset);
         }}
         onKeyDown={(event?: Dynamic): Dynamic => {
           if (
@@ -191,22 +191,22 @@ function PanelResizeGrip({
             (event.key !== "Home" && event.key !== "End")
           )
             return;
-          let value18: Dynamic = disabled2
+          let keyAction: Dynamic = isDisabled
             ? undefined
             : event.key === "Home"
               ? onHome
               : onEnd;
-          value18 && (event.preventDefault(), callback2(value18));
+          keyAction && (event.preventDefault(), runKeyAction(keyAction));
         }}
         className={joinClassNames(
           "z-10 touch-none [--cds-ring-outer:1px] [--cds-ring-inner:0px]",
-          value4 && "[--cds-resize-pill-force:1]",
-          disabled2
+          isGripActive && "[--cds-resize-pill-force:1]",
+          isDisabled
             ? "pointer-events-none pointer-coarse:[--cds-resize-pill-force:0.2]"
-            : !value &&
-                !value4 &&
+            : !isInlineStart &&
+                !isGripActive &&
                 "pointer-coarse:[--cds-resize-pill-force:0.5] [&:hover:not(:focus-visible)>[data-cds-part=resize-pill]]:opacity-50",
-          !value &&
+          !isInlineStart &&
             "[&:not(:focus-visible)>[data-cds-part=resize-pill]]:top-[calc(50%+6px)]",
           className,
         )}
@@ -214,15 +214,15 @@ function PanelResizeGrip({
     );
   return (
     <jsxChromePanelShell_2.Fragment>
-      {disabled2 ? (null) : (<div
+      {isDisabled ? (null) : (<div
           data-kit={name + "-grab"}
-          onPointerDown={(input?: Dynamic): Dynamic =>
-            callback(input, value ? "all" : "touch")
+          onPointerDown={(event?: Dynamic): Dynamic =>
+            startPointerResize(event, isInlineStart ? "all" : "touch")
           }
           aria-hidden={"true"}
           className={joinClassNames(
             "absolute z-10 hidden touch-none",
-            value
+            isInlineStart
               ? "inset-y-0 left-0 w-0 flex-col items-center"
               : "inset-x-0 top-0 h-0 items-start",
             grabClassName,
@@ -230,30 +230,30 @@ function PanelResizeGrip({
         >
           <span
             className={joinClassNames(
-              value ? "h-full w-10 cursor-col-resize" : "h-10 w-24",
+              isInlineStart ? "h-full w-10 cursor-col-resize" : "h-10 w-24",
               grabTargetClassName,
             )}
           />
         </div>)}
       <Tooltip
-        content={value15 ?? ""}
-        side={value ? "left" : "top"}
-        open={value16}
-        onOpenChange={(input?: Dynamic): Dynamic => {
-          !input && value16 && value9(true);
+        content={disabledTip ?? ""}
+        side={isInlineStart ? "left" : "top"}
+        open={isTooltipOpen}
+        onOpenChange={(isOpen?: Dynamic): Dynamic => {
+          !isOpen && isTooltipOpen && setIsTooltipDismissed(true);
         }}
       >
-        {value17}
+        {gripElement}
       </Tooltip>
-      {value15 !== undefined ? (<jsxChromePanelShell_2.Fragment>
-          <span id={value10} hidden={true}>
-            {value15}
+      {disabledTip !== undefined ? (<jsxChromePanelShell_2.Fragment>
+          <span id={tipId} hidden={true}>
+            {disabledTip}
           </span>
           <EditorTooltip
-            tip={value15}
-            side={value ? "left" : "top"}
+            tip={disabledTip}
+            side={isInlineStart ? "left" : "top"}
             className={
-              value
+              isInlineStart
                 ? "absolute! inset-y-0 -left-1.5 z-10 w-3 cursor-default"
                 : "absolute! inset-x-0 -top-1.5 z-10 h-3 cursor-default"
             }

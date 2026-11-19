@@ -388,7 +388,7 @@ export function clampCommentAreaToViewport(
   viewportHeight: number,
   minSize: number = 8,
 ): CommentRect {
-  const clamp = (value: number, low: number, high: number): number => Math.max(low, Math.min(high, value));
+  const clamp = (amount: number, low: number, high: number): number => Math.max(low, Math.min(high, amount));
   const x = clamp(area.x, 0, Math.max(0, viewportWidth - minSize));
   const y = clamp(area.y, 0, Math.max(0, viewportHeight - minSize));
   const right = clamp(area.x + area.w, x + minSize, Math.max(viewportWidth, x + minSize));

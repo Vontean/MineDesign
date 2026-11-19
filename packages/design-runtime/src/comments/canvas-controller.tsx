@@ -16,7 +16,7 @@ import { moveObjectCommentArea, normalizeObjectCommentArea, normalizeObjectComme
 import { CommentPointer, commentPointerCursor } from "./pointer";
 import { CommentCardLayer, isCommentCardEvent } from "./comment-cards";
 import { load_react_jsx_runtime } from "../dependencies";
-import { AccessibilityAnnouncementsLabel_24 } from "../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_24 as commentModePausedMessage } from "../editor/accessibility/announcements";
 import { announce } from "../editor/accessibility/announcer";
 import { blockingOverlaySelector } from "../editor/chrome/overlay-state";
 import { isEditingInputTarget } from "../editor/keyboard/find";
@@ -39,7 +39,7 @@ var commentClickMovementThresholdPixels: Dynamic;
 var maxCommentAreaElementLabels: Dynamic;
 var commentScopeKey: Dynamic;
 var commentRectsEqual: Dynamic;
-function useCanvasComments(options?: Dynamic): Dynamic {
+function useCanvasComments(hookOptions?: Dynamic): Dynamic {
   let {
       manifest: manifest,
       pageKey: pageKey,
@@ -49,182 +49,182 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       fullscreenFile: fullscreenFile,
       fullscreenFrame: fullscreenFrame,
       armedTool: armedTool,
-    }: Dynamic = options,
-    value: Dynamic = (0, react_mi.useRef)(options);
-  value.current = options;
-  let value2: Dynamic = (0, react_mi.useRef)(null),
-    [value3, value4]: Dynamic = (0, react_mi.useState)(false),
-    value5: Dynamic = (0, react_mi.useRef)(Number.NEGATIVE_INFINITY),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      new Proxy(input, {
-        get(input2: Dynamic, options2: Dynamic): Dynamic {
-          if (options2 === "compose")
+    }: Dynamic = hookOptions,
+    value: Dynamic = (0, react_mi.useRef)(hookOptions);
+  value.current = hookOptions;
+  let controllerRef: Dynamic = (0, react_mi.useRef)(null),
+    [hasController, setHasController]: Dynamic = (0, react_mi.useState)(false),
+    lastComposeAtRef: Dynamic = (0, react_mi.useRef)(Number.NEGATIVE_INFINITY),
+    callback: Dynamic = (controller?: Dynamic): Dynamic =>
+      new Proxy(controller, {
+        get(target: Dynamic, property: Dynamic): Dynamic {
+          if (property === "compose")
             return (
-              input3?: Dynamic,
-              options3?: Dynamic,
-              context?: Dynamic,
+              composeAnchor?: Dynamic,
+              composeLocation?: Dynamic,
+              composeExtras?: Dynamic,
             ): Dynamic => (
-              (value5.current = performance.now()),
-              input2.compose(input3, options3, context)
+              (lastComposeAtRef.current = performance.now()),
+              target.compose(composeAnchor, composeLocation, composeExtras)
             );
-          let entry: Dynamic = Reflect.get(input2, options2, input2);
-          return typeof entry == "function" ? entry.bind(input2) : entry;
+          let entry: Dynamic = Reflect.get(target, property, target);
+          return typeof entry == "function" ? entry.bind(target) : entry;
         },
       }),
-    [value6, value7]: Dynamic = (0, react_mi.useState)(false),
-    value8: Dynamic = useViewport(value6, camera),
-    value9: Dynamic = (0, react_mi.useRef)(value6);
-  value9.current = value6;
-  let [value10, value11]: Dynamic = (0, react_mi.useState)(false),
-    [value12, value13]: Dynamic = (0, react_mi.useState)([]),
-    value14: Dynamic = (0, react_mi.useRef)(value12);
-  value14.current = value12;
-  let value15: Dynamic = (0, react_mi.useRef)(new Map()),
-    [, value16]: Dynamic = (0, react_mi.useState)(0),
-    callback2: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value64: Dynamic = value15.current.get(input) ?? null;
-      options2
-        ? value15.current.set(input, options2)
-        : value15.current.delete(input);
-      commentRectsEqual(value64, options2) ||
-        value16((input2?: Dynamic): Dynamic => input2 + 1);
+    [isCommentMode, setIsCommentMode]: Dynamic = (0, react_mi.useState)(false),
+    viewport: Dynamic = useViewport(isCommentMode, camera),
+    isCommentModeRef: Dynamic = (0, react_mi.useRef)(isCommentMode);
+  isCommentModeRef.current = isCommentMode;
+  let [isComposing, setIsComposing]: Dynamic = (0, react_mi.useState)(false),
+    [threads, setThreads]: Dynamic = (0, react_mi.useState)([]),
+    threadsRef: Dynamic = (0, react_mi.useRef)(threads);
+  threadsRef.current = threads;
+  let pageRectsRef: Dynamic = (0, react_mi.useRef)(new Map()),
+    [, setPageRectVersion]: Dynamic = (0, react_mi.useState)(0),
+    setPageRect: Dynamic = (file?: Dynamic, rect?: Dynamic): Dynamic => {
+      let previousRect: Dynamic = pageRectsRef.current.get(file) ?? null;
+      rect
+        ? pageRectsRef.current.set(file, rect)
+        : pageRectsRef.current.delete(file);
+      commentRectsEqual(previousRect, rect) ||
+        setPageRectVersion((version?: Dynamic): Dynamic => version + 1);
     },
-    [value17, value18]: Dynamic = (0, react_mi.useState)(new Map()),
-    [value19, value20]: Dynamic = (0, react_mi.useState)(null),
+    [elementRects, setElementRects]: Dynamic = (0, react_mi.useState)(new Map()),
+    [hoverRect, setHoverRect]: Dynamic = (0, react_mi.useState)(null),
     // MineDesign：点中元素后输入评论期间，继续框住这个元素（同 Codex），输入框关掉再放开
     [mdnHeldRect, mdnSetHeldRect]: Dynamic = (0, react_mi.useState)(
       null,
     ),
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      value20(
-        (input2?: Dynamic): Dynamic =>
-          commentRectsEqual(input2, input) ? input2 : input,
+    updateHoverRect: Dynamic = (rect?: Dynamic): Dynamic =>
+      setHoverRect(
+        (previous?: Dynamic): Dynamic =>
+          commentRectsEqual(previous, rect) ? previous : rect,
       ),
-    value21: Dynamic = (0, react_mi.useRef)(0),
-    value22: Dynamic = (0, react_mi.useRef)(null),
-    [value23, value24]: Dynamic = (0, react_mi.useState)(null),
-    value25: Dynamic = (0, react_mi.useRef)("");
+    hoverGenerationRef: Dynamic = (0, react_mi.useRef)(0),
+    lastPointerRef: Dynamic = (0, react_mi.useRef)(null),
+    [revealThreadId, setRevealThreadId]: Dynamic = (0, react_mi.useState)(null),
+    lastPlacedJsonRef: Dynamic = (0, react_mi.useRef)("");
   (0, react_mi.useEffect)((): Dynamic => {
     let flag: Dynamic = false;
     bindCustomAnchors({
-      mode: (input?: Dynamic): Dynamic => {
-        value7(input);
-        value.current.onModeChange?.(input);
-        value21.current += 1;
-        value22.current = null;
-        callback3(null);
-        value25.current = "";
+      mode: (isModeOn?: Dynamic): Dynamic => {
+        setIsCommentMode(isModeOn);
+        value.current.onModeChange?.(isModeOn);
+        hoverGenerationRef.current += 1;
+        lastPointerRef.current = null;
+        updateHoverRect(null);
+        lastPlacedJsonRef.current = "";
       },
-      threads: (input?: Dynamic): Dynamic => {
-        value25.current = "";
-        value13(input);
-        input.some((input2?: Dynamic): Dynamic => input2.active) &&
-          value31.current.show(null);
+      threads: (nextThreads?: Dynamic): Dynamic => {
+        lastPlacedJsonRef.current = "";
+        setThreads(nextThreads);
+        nextThreads.some((thread?: Dynamic): Dynamic => thread.active) &&
+          pendingAreaRef.current.show(null);
       },
-      composing: value11,
-      move: (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        value38.current(input, options2),
+      composing: setIsComposing,
+      move: (threadId?: Dynamic, position?: Dynamic): Dynamic =>
+        resolveThreadMoveRef.current(threadId, position),
       hotkey: true,
-      reveal: (input?: Dynamic): Dynamic => {
-        let value64: Dynamic = value14.current.find(
-            (input2?: Dynamic): Dynamic => input2.id === input,
+      reveal: (threadId?: Dynamic): Dynamic => {
+        let foundThread: Dynamic = threadsRef.current.find(
+            (thread?: Dynamic): Dynamic => thread.id === threadId,
           ),
-          value65: Dynamic = value64
-            ? parseDesignCommentAnchor(value64.anchor)
+          parsedAnchor: Dynamic = foundThread
+            ? parseDesignCommentAnchor(foundThread.anchor)
             : null;
-        if (!value65) return;
-        let value66: Dynamic =
-          value65.kind === "el" ||
-          value65.kind === "artboard" ||
-          value65.kind === "area"
+        if (!parsedAnchor) return;
+        let revealTarget: Dynamic =
+          parsedAnchor.kind === "el" ||
+          parsedAnchor.kind === "artboard" ||
+          parsedAnchor.kind === "area"
             ? {
                 kind: "artboard",
-                match: (input2?: Dynamic): Dynamic =>
-                  stableAnchorHash(input2) === value65.fileHash,
+                match: (file?: Dynamic): Dynamic =>
+                  stableAnchorHash(file) === parsedAnchor.fileHash,
               }
-            : value65.kind === "note" || value65.kind === "notearea"
+            : parsedAnchor.kind === "note" || parsedAnchor.kind === "notearea"
               ? {
                   kind: "note",
-                  match: (input2?: Dynamic): Dynamic =>
-                    stableAnchorHash(input2) === value65.idHash,
+                  match: (noteId?: Dynamic): Dynamic =>
+                    stableAnchorHash(noteId) === parsedAnchor.idHash,
                 }
-              : value65.kind === "boards"
+              : parsedAnchor.kind === "boards"
                 ? {
                     kind: "artboard",
-                    match: (input2?: Dynamic): Dynamic =>
-                      value65.boards.some(
-                        (input3?: Dynamic): Dynamic =>
-                          input3.fileHash ===
-                          stableAnchorHash(input2),
+                    match: (file?: Dynamic): Dynamic =>
+                      parsedAnchor.boards.some(
+                        (board?: Dynamic): Dynamic =>
+                          board.fileHash ===
+                          stableAnchorHash(file),
                       ),
                     boards: true,
                   }
                 : {
                     kind: "page",
-                    match: (input2?: Dynamic): Dynamic =>
-                      stableAnchorHash(input2) ===
-                      value65.pageHash,
+                    match: (pageId?: Dynamic): Dynamic =>
+                      stableAnchorHash(pageId) ===
+                      parsedAnchor.pageHash,
                   };
-        value.current.onReveal?.(value66) !== false && value24(input);
+        value.current.onReveal?.(revealTarget) !== false && setRevealThreadId(threadId);
       },
-    }).then((input?: Dynamic): Dynamic => {
+    }).then((controller?: Dynamic): Dynamic => {
       if (flag) {
-        input?.release();
+        controller?.release();
         return;
       }
-      value2.current = input;
-      value4(input != null);
-      value.current.onController?.(input && callback(input));
+      controllerRef.current = controller;
+      setHasController(controller != null);
+      value.current.onController?.(controller && callback(controller));
     });
     return (): Dynamic => {
       flag = true;
-      value2.current?.release();
-      value2.current = null;
+      controllerRef.current?.release();
+      controllerRef.current = null;
       value.current.onController?.(null);
     };
   }, []);
-  let callback4: Dynamic = (): Dynamic => {
-    let current: Dynamic = value2.current;
+  let exitCommentMode: Dynamic = (): Dynamic => {
+    let current: Dynamic = controllerRef.current;
     typeof current?.exitMode == "function" && current.exitMode();
   };
   (0, react_mi.useEffect)((): Dynamic => {
-    if (!value6) return;
-    let callback38: Dynamic = (event?: Dynamic): Dynamic => {
+    if (!isCommentMode) return;
+    let handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (event.button !== 0) return;
-      let value64: Dynamic =
+      let target: Dynamic =
         event.target instanceof Element ? event.target : null;
-      value64?.closest(
+      target?.closest(
         '[data-mega-chrome="comments"],[data-view-control],[data-mc-scrim]',
       ) ||
-        (value64?.closest(blockingOverlaySelector) &&
+        (target?.closest(blockingOverlaySelector) &&
           (document as Dynamic).querySelector(
             '[data-view-control] [aria-expanded="true"]',
           )) ||
-        callback4();
+        exitCommentMode();
     };
-    (document as Dynamic).addEventListener("pointerdown", callback38, true);
+    (document as Dynamic).addEventListener("pointerdown", handlePointerDown, true);
     return (): Dynamic =>
       (document as Dynamic).removeEventListener(
         "pointerdown",
-        callback38,
+        handlePointerDown,
         true,
       );
-  }, [value6]);
+  }, [isCommentMode]);
   (0, react_mi.useEffect)((): Dynamic => {
-    value6 && armedTool != null && armedTool !== "select" && callback4();
+    isCommentMode && armedTool != null && armedTool !== "select" && exitCommentMode();
   }, [armedTool]);
   (0, react_mi.useEffect)((): Dynamic => {
-    if (!value3) return;
-    let callback38: Dynamic = (): Dynamic => {
-        let current: Dynamic = value2.current;
+    if (!hasController) return;
+    let toggleCommentMode: Dynamic = (): Dynamic => {
+        let current: Dynamic = controllerRef.current;
         return typeof current?.enterMode != "function" ||
           value.current.keyHeld ||
           hasBlockingEditorOverlay()
           ? false
-          : (value9.current ? current.exitMode?.() : current.enterMode(),
+          : (isCommentModeRef.current ? current.exitMode?.() : current.enterMode(),
             true);
       },
-      callback39: Dynamic = (event?: Dynamic): Dynamic => {
+      handleCommentKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
         (event.key !== "c" && event.key !== "C") ||
           event.shiftKey ||
           event.metaKey ||
@@ -237,159 +237,159 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           shouldKeepLocalKeyboardEvent(event) ||
           (event.target instanceof Element &&
             event.target.closest("[data-mega-selection-strip]") !== null) ||
-          (callback38() && event.preventDefault());
+          (toggleCommentMode() && event.preventDefault());
       },
-      callback40: Dynamic = (): Dynamic => {
-        callback38();
+      handleCommentKeyEvent: Dynamic = (): Dynamic => {
+        toggleCommentMode();
       };
-    (window as Dynamic).addEventListener("keydown", callback39);
-    (window as Dynamic).addEventListener("canvas-comment-key", callback40);
+    (window as Dynamic).addEventListener("keydown", handleCommentKeyDown);
+    (window as Dynamic).addEventListener("canvas-comment-key", handleCommentKeyEvent);
     return (): Dynamic => {
-      (window as Dynamic).removeEventListener("keydown", callback39);
+      (window as Dynamic).removeEventListener("keydown", handleCommentKeyDown);
       (window as Dynamic).removeEventListener(
         "canvas-comment-key",
-        callback40,
+        handleCommentKeyEvent,
       );
     };
-  }, [value3]);
-  let callback5: Dynamic = (input?: Dynamic): Dynamic =>
+  }, [hasController]);
+  let findArtboardByFile: Dynamic = (file?: Dynamic): Dynamic =>
       manifest.artboards.find(
-        (input2?: Dynamic): Dynamic => input2.file === input,
+        (artboard?: Dynamic): Dynamic => artboard.file === file,
       ) ?? null,
-    callback6: Dynamic = (input?: Dynamic): Dynamic =>
+    findFileByHash: Dynamic = (hash?: Dynamic): Dynamic =>
       manifest.artboards.find(
-        (input2?: Dynamic): Dynamic =>
-          stableAnchorHash(input2.file) === input,
+        (artboard?: Dynamic): Dynamic =>
+          stableAnchorHash(artboard.file) === hash,
       )?.file ?? null,
-    value26: Dynamic = (0, react_mi.useRef)(callback6);
-  value26.current = callback6;
-  let callback7: Dynamic = (input?: Dynamic): Dynamic =>
+    findFileByHashRef: Dynamic = (0, react_mi.useRef)(findFileByHash);
+  findFileByHashRef.current = findFileByHash;
+  let findNoteByHash: Dynamic = (hash?: Dynamic): Dynamic =>
       (manifest.annotations ?? []).find(
-        (input2?: Dynamic): Dynamic =>
-          stableAnchorHash(input2.id) === input,
+        (note?: Dynamic): Dynamic =>
+          stableAnchorHash(note.id) === hash,
       ) ?? null,
-    callback8: Dynamic = (input?: Dynamic): Dynamic =>
+    findNoteById: Dynamic = (noteId?: Dynamic): Dynamic =>
       (manifest.annotations ?? []).find(
-        (input2?: Dynamic): Dynamic => input2.id === input,
+        (note?: Dynamic): Dynamic => note.id === noteId,
       ) ?? null,
-    callback9: Dynamic = (input?: Dynamic): Dynamic =>
-      fullscreenFile == null || fullscreenFile === input,
-    callback10: Dynamic = (input?: Dynamic): Dynamic =>
-      input.file === fullscreenFile && fullscreenFrame
+    isFileVisible: Dynamic = (file?: Dynamic): Dynamic =>
+      fullscreenFile == null || fullscreenFile === file,
+    getArtboardFrame: Dynamic = (artboard?: Dynamic): Dynamic =>
+      artboard.file === fullscreenFile && fullscreenFrame
         ? fullscreenFrame
         : {
-            x: input.x,
-            y: input.y,
-            w: input.w,
-            h: input.h,
+            x: artboard.x,
+            y: artboard.y,
+            w: artboard.w,
+            h: artboard.h,
           };
   (0, react_mi.useLayoutEffect)(
     (): Dynamic => (): Dynamic =>
-      [...value15.current.keys()].forEach(
-        (input?: Dynamic): Dynamic => callback2(input, null),
+      [...pageRectsRef.current.keys()].forEach(
+        (file?: Dynamic): Dynamic => setPageRect(file, null),
       ),
-    [value6, fullscreenFile],
+    [isCommentMode, fullscreenFile],
   );
   (0, react_mi.useEffect)((): Dynamic => {
-    if (!value6) return;
+    if (!isCommentMode) return;
     let flag: Dynamic = false,
-      value64: Dynamic,
-      callback38: Dynamic = async (): Promise<Dynamic> => {
+      refreshTimer: Dynamic,
+      refreshElementRects: Dynamic = async (): Promise<Dynamic> => {
         let entries: Dynamic = new Map();
         fullscreenFile != null && entries.set(fullscreenFile, new Map());
-        for (let value65 of value14.current as Dynamic) {
-          let value66: Dynamic = parseDesignCommentAnchor(
-              value65.anchor,
+        for (let thread of threadsRef.current as Dynamic) {
+          let parsedAnchor: Dynamic = parseDesignCommentAnchor(
+              thread.anchor,
             ),
-            value67: Dynamic =
-              value66?.kind === "artboard" && "px" in value66;
+            isPixelArtboard: Dynamic =
+              parsedAnchor?.kind === "artboard" && "px" in parsedAnchor;
           if (
-            !value66 ||
+            !parsedAnchor ||
             !(
-              value66.kind === "el" ||
-              (value66.kind === "area" && value66.path != null) ||
-              value67
+              parsedAnchor.kind === "el" ||
+              (parsedAnchor.kind === "area" && parsedAnchor.path != null) ||
+              isPixelArtboard
             )
           )
             continue;
-          let value68: Dynamic = value26.current(value66.fileHash);
-          if (value68 == null) continue;
-          if (value67) {
-            entries.has(value68) || entries.set(value68, new Map());
+          let file: Dynamic = findFileByHashRef.current(parsedAnchor.fileHash);
+          if (file == null) continue;
+          if (isPixelArtboard) {
+            entries.has(file) || entries.set(file, new Map());
             continue;
           }
-          let entry: Dynamic = entries.get(value68);
-          entry || entries.set(value68, (entry = new Map()));
-          entry.set(commentScopeKey(value66.path, value66.tid, value66.fp), {
-            path: value66.path,
-            tid: value66.tid,
-            fp: value66.fp,
+          let entry: Dynamic = entries.get(file);
+          entry || entries.set(file, (entry = new Map()));
+          entry.set(commentScopeKey(parsedAnchor.path, parsedAnchor.tid, parsedAnchor.fp), {
+            path: parsedAnchor.path,
+            tid: parsedAnchor.tid,
+            fp: parsedAnchor.fp,
           });
         }
-        let entries2: Dynamic = new Map();
+        let measuredRects: Dynamic = new Map();
         await Promise.all(
           [...entries].map(
-            async ([input, input2]: Dynamic): Promise<Dynamic> => {
+            async ([file, scopes]: Dynamic): Promise<Dynamic> => {
               let entry: Dynamic =
-                  value.current.handlesRef.current.get(input),
-                value65: Dynamic =
+                  value.current.handlesRef.current.get(file),
+                handle: Dynamic =
                   entry?.isReady() && !entry.isBlocked()
                     ? createPreviewHandle(
                         entry.webviewRef.current,
                       )
                     : null,
-                items: Dynamic = [...input2.values()],
-                value66: Dynamic = value65
-                  ? await pickerCommentRects(value65, [
+                items: Dynamic = [...scopes.values()],
+                rects: Dynamic = handle
+                  ? await pickerCommentRects(handle, [
                       {
                         page: true,
                       },
                       ...items,
                     ])
                   : null;
-              value66 &&
-                entries2.set(
-                  input,
+              rects &&
+                measuredRects.set(
+                  file,
                   new Map(
                     items.map(
-                      (input3?: Dynamic, options2?: Dynamic): Dynamic => [
-                        commentScopeKey(input3.path, input3.tid, input3.fp),
-                        value66[options2 + 1] ?? null,
+                      (scope?: Dynamic, index?: Dynamic): Dynamic => [
+                        commentScopeKey(scope.path, scope.tid, scope.fp),
+                        rects[index + 1] ?? null,
                       ],
                     ),
                   ),
                 );
-              flag || callback2(input, value66?.[0] ?? null);
+              flag || setPageRect(file, rects?.[0] ?? null);
             },
           ),
         );
         !flag &&
-          ([...value15.current.keys()]
-            .filter((input?: Dynamic): Dynamic => !entries.has(input))
-            .forEach((input?: Dynamic): Dynamic => callback2(input, null)),
-          value18(
-            (input?: Dynamic): Dynamic => new Map([...input, ...entries2]),
+          ([...pageRectsRef.current.keys()]
+            .filter((file?: Dynamic): Dynamic => !entries.has(file))
+            .forEach((file?: Dynamic): Dynamic => setPageRect(file, null)),
+          setElementRects(
+            (previous?: Dynamic): Dynamic => new Map([...previous, ...measuredRects]),
           ),
-          (value64 = setTimeout((): Dynamic => {
-            callback38();
+          (refreshTimer = setTimeout((): Dynamic => {
+            refreshElementRects();
           }, commentAnchorRefreshIntervalMs)));
       };
-    callback38();
+    refreshElementRects();
     return (): Dynamic => {
       flag = true;
-      clearTimeout(value64);
+      clearTimeout(refreshTimer);
     };
-  }, [value6, value12, fullscreenFile]);
-  let callback11: Dynamic = (source?: Dynamic): Dynamic => {
+  }, [isCommentMode, threads, fullscreenFile]);
+  let resolveAreaRect: Dynamic = (source?: Dynamic): Dynamic => {
       if (source.kind === "notearea") {
-        let value67: Dynamic =
-          fullscreenFile == null ? callback7(source.idHash) : null;
-        return value67
+        let note: Dynamic =
+          fullscreenFile == null ? findNoteByHash(source.idHash) : null;
+        return note
           ? rotatedAnnotationBounds(
-              value67,
+              note,
               objectCommentAreaRect(
-                value67,
-                options.annBox(value67),
+                note,
+                hookOptions.annBox(note),
                 source.box,
               ),
             )
@@ -397,58 +397,58 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       }
       if (source.kind === "boards") {
         if (fullscreenFile != null) return null;
-        let value67: Dynamic = source.boards.flatMap(
-            (input?: Dynamic): Dynamic => {
-              let value69: Dynamic = callback6(input.fileHash),
-                value70: Dynamic =
-                  value69 == null ? null : callback5(value69);
-              return value70
+        let boardRects: Dynamic = source.boards.flatMap(
+            (board?: Dynamic): Dynamic => {
+              let boardFile: Dynamic = findFileByHash(board.fileHash),
+                boardArtboard: Dynamic =
+                  boardFile == null ? null : findArtboardByFile(boardFile);
+              return boardArtboard
                 ? [
                     {
-                      x: value70.x,
-                      y: value70.y,
-                      w: value70.w,
-                      h: value70.h,
+                      x: boardArtboard.x,
+                      y: boardArtboard.y,
+                      w: boardArtboard.w,
+                      h: boardArtboard.h,
                     },
                   ]
                 : [];
             },
           ),
-          value68: Dynamic = unionCommentRects(value67);
-        return value68
-          ? denormalizeCommentArea(value68, source.box)
+          boardsUnion: Dynamic = unionCommentRects(boardRects);
+        return boardsUnion
+          ? denormalizeCommentArea(boardsUnion, source.box)
           : null;
       }
       if (source.kind !== "area") return null;
-      let value64: Dynamic = callback6(source.fileHash),
-        value65: Dynamic = value64 == null ? null : callback5(value64);
-      if (!value65 || value64 == null || !callback9(value64)) return null;
+      let file: Dynamic = findFileByHash(source.fileHash),
+        artboard: Dynamic = file == null ? null : findArtboardByFile(file);
+      if (!artboard || file == null || !isFileVisible(file)) return null;
       if (source.path == null)
         return denormalizeCommentArea(
-          callback10(value65),
+          getArtboardFrame(artboard),
           source.box,
         );
-      let value66: Dynamic = value17
-        .get(value64)
+      let elementRect: Dynamic = elementRects
+        .get(file)
         ?.get(commentScopeKey(source.path, source.tid, source.fp));
-      if (value66 !== undefined)
-        return value66 === null
+      if (elementRect !== undefined)
+        return elementRect === null
           ? null
-          : callback16(
-              value64,
-              denormalizeCommentArea(value66, source.box),
+          : artboardRectToCanvas(
+              file,
+              denormalizeCommentArea(elementRect, source.box),
             );
     },
-    callback12: Dynamic = (source?: Dynamic): Dynamic => {
+    resolveAnchorPoint: Dynamic = (source?: Dynamic): Dynamic => {
       if (source.kind === "canvas") {
-        let value70: Dynamic = manifest.pages?.[0]?.id ?? "",
-          value71: Dynamic = isCanvasPageMatch(
-            (input?: Dynamic): Dynamic =>
-              source.pageHash === stableAnchorHash(input),
-            pageKey === "" ? value70 : pageKey,
-            value70,
+        let firstPageId: Dynamic = manifest.pages?.[0]?.id ?? "",
+          isCurrentPage: Dynamic = isCanvasPageMatch(
+            (pageId?: Dynamic): Dynamic =>
+              source.pageHash === stableAnchorHash(pageId),
+            pageKey === "" ? firstPageId : pageKey,
+            firstPageId,
           );
-        return fullscreenFile == null && value71
+        return fullscreenFile == null && isCurrentPage
           ? {
               x: source.x,
               y: source.y,
@@ -457,78 +457,78 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       }
       if (source.kind === "note") {
         if (fullscreenFile != null) return null;
-        let value70: Dynamic = callback7(source.idHash);
-        if (!value70) return null;
+        let note: Dynamic = findNoteByHash(source.idHash);
+        if (!note) return null;
         if (source.fx != null && source.fy != null)
           return objectCommentPoint(
-            value70,
-            options.annBox(value70),
+            note,
+            hookOptions.annBox(note),
             {
               fx: source.fx,
               fy: source.fy,
             },
           );
-        let value71: Dynamic = rotatedAnnotationBounds(
-          value70,
-          options.annBox(value70),
+        let noteBounds: Dynamic = rotatedAnnotationBounds(
+          note,
+          hookOptions.annBox(note),
         );
         return {
-          x: value71.x + value71.w / 2,
-          y: value71.y + 12,
+          x: noteBounds.x + noteBounds.w / 2,
+          y: noteBounds.y + 12,
         };
       }
       if (source.kind === "notearea") {
-        let value70: Dynamic =
-          fullscreenFile == null ? callback7(source.idHash) : null;
-        return value70
+        let note: Dynamic =
+          fullscreenFile == null ? findNoteByHash(source.idHash) : null;
+        return note
           ? objectCommentAreaHandlePoint(
-              value70,
-              options.annBox(value70),
+              note,
+              hookOptions.annBox(note),
               source.box,
             )
           : null;
       }
       if (source.kind === "area" || source.kind === "boards") {
-        let value70: Dynamic = callback11(source);
-        if (value70)
+        let areaRect: Dynamic = resolveAreaRect(source);
+        if (areaRect)
           return commentAreaHandlePoint(
-            value70,
+            areaRect,
             source.box.corner,
           );
-        if (value70 === null && source.kind === "area") return null;
-        let value71: Dynamic =
+        if (areaRect === null && source.kind === "area") return null;
+        let boardHashes: Dynamic =
           source.kind === "area"
             ? [source.fileHash]
-            : source.boards.map((input?: Dynamic): Dynamic => input.fileHash);
-        for (let value72 of value71 as Dynamic) {
-          let value73: Dynamic = callback6(value72),
-            value74: Dynamic = value73 == null ? null : callback5(value73);
-          if (!value74 || !callback9(value74.file)) continue;
-          let value75: Dynamic = callback10(value74);
+            : source.boards.map((board?: Dynamic): Dynamic => board.fileHash);
+        for (let boardHash of boardHashes as Dynamic) {
+          let boardFile: Dynamic = findFileByHash(boardHash),
+            boardArtboard: Dynamic = boardFile == null ? null : findArtboardByFile(boardFile);
+          if (!boardArtboard || !isFileVisible(boardArtboard.file)) continue;
+          let boardFrame: Dynamic = getArtboardFrame(boardArtboard);
           return {
-            x: value75.x + value75.w / 2,
-            y: value75.y + value75.h / 2,
+            x: boardFrame.x + boardFrame.w / 2,
+            y: boardFrame.y + boardFrame.h / 2,
           };
         }
         return null;
       }
-      let value64: Dynamic = callback6(source.fileHash),
-        value65: Dynamic = value64 == null ? null : callback5(value64);
-      if (!value65 || value64 == null || !callback9(value64)) return null;
-      let value66: Dynamic = callback10(value65);
+      let file: Dynamic = findFileByHash(source.fileHash),
+        artboard: Dynamic = file == null ? null : findArtboardByFile(file);
+      if (!artboard || file == null || !isFileVisible(file)) return null;
+      let frame: Dynamic = getArtboardFrame(artboard);
       if (source.kind === "artboard" && !("px" in source))
         return {
-          x: value66.x + source.fx * value66.w,
-          y: value66.y + source.fy * value66.h,
+          x: frame.x + source.fx * frame.w,
+          y: frame.y + source.fy * frame.h,
         };
       if (source.kind === "artboard") {
-        let entry: Dynamic = value15.current.get(value64);
-        if (!entry && value64 === fullscreenFile)
+        let entry: Dynamic = pageRectsRef.current.get(file);
+        if (!entry && file === fullscreenFile)
           return {
-            x: value66.x + value66.w / 2,
-            y: value66.y + value66.h / 2,
+            x: frame.x + frame.w / 2,
+            y: frame.y + frame.h / 2,
           };
-        let value70: Dynamic =
+        let pixelX: Dynamic =
             (entry?.x ?? 0) +
             (entry
               ? Math.min(
@@ -536,7 +536,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
                   Math.max(0, entry.w - commentPlacementInsetPixels),
                 )
               : source.px),
-          value71: Dynamic =
+          pixelY: Dynamic =
             (entry?.y ?? 0) +
             (entry
               ? Math.min(
@@ -544,437 +544,437 @@ function useCanvasComments(options?: Dynamic): Dynamic {
                   Math.max(0, entry.h - commentPlacementInsetPixels),
                 )
               : source.py);
-        return value70 < 0 ||
-          value71 < 0 ||
-          value70 > value66.w ||
-          value71 > value66.h
+        return pixelX < 0 ||
+          pixelY < 0 ||
+          pixelX > frame.w ||
+          pixelY > frame.h
           ? null
           : {
-              x: value66.x + value70,
-              y: value66.y + value71,
+              x: frame.x + pixelX,
+              y: frame.y + pixelY,
             };
       }
-      let value67: Dynamic = value17
-        .get(value64)
+      let elementRect: Dynamic = elementRects
+        .get(file)
         ?.get(commentScopeKey(source.path, source.tid, source.fp));
-      if (value67 === undefined)
+      if (elementRect === undefined)
         return {
-          x: value66.x + value66.w / 2,
-          y: value66.y + value66.h / 2,
+          x: frame.x + frame.w / 2,
+          y: frame.y + frame.h / 2,
         };
-      if (value67 === null) return null;
-      let value68: Dynamic = value67.x + source.fx * value67.w,
-        value69: Dynamic = value67.y + source.fy * value67.h;
-      return value68 < 0 ||
-        value69 < 0 ||
-        value68 > value66.w ||
-        value69 > value66.h
+      if (elementRect === null) return null;
+      let localX: Dynamic = elementRect.x + source.fx * elementRect.w,
+        localY: Dynamic = elementRect.y + source.fy * elementRect.h;
+      return localX < 0 ||
+        localY < 0 ||
+        localX > frame.w ||
+        localY > frame.h
         ? null
         : {
-            x: value66.x + value68,
-            y: value66.y + value69,
+            x: frame.x + localX,
+            y: frame.y + localY,
           };
     },
-    callback13: Dynamic = (input?: Dynamic): Dynamic => ({
-      x: (input.x - value8.x) * value8.scale,
-      y: (input.y - value8.y) * value8.scale,
+    canvasToLayerPoint: Dynamic = (point?: Dynamic): Dynamic => ({
+      x: (point.x - viewport.x) * viewport.scale,
+      y: (point.y - viewport.y) * viewport.scale,
     });
   (0, react_mi.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value2.current,
-      current2: Dynamic = surfaceRef.current;
-    if (!value6 || !current || !current2) return;
-    let bounds: Dynamic = current2.getBoundingClientRect(),
-      value64: Dynamic = toolbarOverlayHeight(current2),
+    let current: Dynamic = controllerRef.current,
+      surfaceElement: Dynamic = surfaceRef.current;
+    if (!isCommentMode || !current || !surfaceElement) return;
+    let bounds: Dynamic = surfaceElement.getBoundingClientRect(),
+      toolbarHeight: Dynamic = toolbarOverlayHeight(surfaceElement),
       state: Dynamic = {};
-    for (let value66 of value12 as Dynamic) {
-      let value67: Dynamic = parseDesignCommentAnchor(
-          value66.anchor,
+    for (let thread of threads as Dynamic) {
+      let parsedAnchor: Dynamic = parseDesignCommentAnchor(
+          thread.anchor,
         ),
-        value68: Dynamic = value67 ? callback12(value67) : null;
-      if (!value68) continue;
-      let value69: Dynamic = callback13(value68),
+        anchorPoint: Dynamic = parsedAnchor ? resolveAnchorPoint(parsedAnchor) : null;
+      if (!anchorPoint) continue;
+      let layerPoint: Dynamic = canvasToLayerPoint(anchorPoint),
         innerWidth: Dynamic = (window as Dynamic).innerWidth,
         innerHeight: Dynamic = (window as Dynamic).innerHeight,
-        value70: Dynamic =
-          value69.x < 0
-            ? value69.x - innerWidth
-            : value69.x > bounds.width
-              ? value69.x + innerWidth
-              : bounds.left + value69.x,
-        value71: Dynamic =
-          value69.y < value64
-            ? value69.y - innerHeight
-            : value69.y > bounds.height
-              ? value69.y + innerHeight
-              : bounds.top + value69.y;
-      state[value66.id] = {
-        x: Math.round(value70 + (window as Dynamic).scrollX),
-        y: Math.round(value71 + (window as Dynamic).scrollY),
+        clientX: Dynamic =
+          layerPoint.x < 0
+            ? layerPoint.x - innerWidth
+            : layerPoint.x > bounds.width
+              ? layerPoint.x + innerWidth
+              : bounds.left + layerPoint.x,
+        clientY: Dynamic =
+          layerPoint.y < toolbarHeight
+            ? layerPoint.y - innerHeight
+            : layerPoint.y > bounds.height
+              ? layerPoint.y + innerHeight
+              : bounds.top + layerPoint.y;
+      state[thread.id] = {
+        x: Math.round(clientX + (window as Dynamic).scrollX),
+        y: Math.round(clientY + (window as Dynamic).scrollY),
       };
     }
-    let value65: Dynamic = JSON.stringify(state);
-    value65 !== value25.current &&
-      ((value25.current = value65), current.placed(state));
+    let placedJson: Dynamic = JSON.stringify(state);
+    placedJson !== lastPlacedJsonRef.current &&
+      ((lastPlacedJsonRef.current = placedJson), current.placed(state));
   });
   (0, react_mi.useEffect)((): Dynamic => {
-    if (value23 == null) return;
-    let value64: Dynamic = value12.find(
-        (input?: Dynamic): Dynamic => input.id === value23,
+    if (revealThreadId == null) return;
+    let foundThread: Dynamic = threads.find(
+        (thread?: Dynamic): Dynamic => thread.id === revealThreadId,
       ),
-      value65: Dynamic = value64
-        ? parseDesignCommentAnchor(value64.anchor)
+      parsedAnchor: Dynamic = foundThread
+        ? parseDesignCommentAnchor(foundThread.anchor)
         : null,
       current: Dynamic = surfaceRef.current;
-    if (!value65 || !current) {
-      value24(null);
+    if (!parsedAnchor || !current) {
+      setRevealThreadId(null);
       return;
     }
-    let value66: Dynamic = callback12(value65);
+    let targetPoint: Dynamic = resolveAnchorPoint(parsedAnchor);
     if (
-      !value66 &&
-      (value65.kind === "el" ||
-        value65.kind === "artboard" ||
-        value65.kind === "area" ||
-        value65.kind === "boards")
+      !targetPoint &&
+      (parsedAnchor.kind === "el" ||
+        parsedAnchor.kind === "artboard" ||
+        parsedAnchor.kind === "area" ||
+        parsedAnchor.kind === "boards")
     ) {
-      let value71: Dynamic = callback6(
-          value65.kind === "boards"
-            ? (value65.boards[0]?.fileHash ?? "")
-            : value65.fileHash,
+      let boardFile: Dynamic = findFileByHash(
+          parsedAnchor.kind === "boards"
+            ? (parsedAnchor.boards[0]?.fileHash ?? "")
+            : parsedAnchor.fileHash,
         ),
-        value72: Dynamic = value71 == null ? null : callback5(value71);
-      value72 &&
-        (value66 = {
-          x: value72.x + value72.w / 2,
-          y: value72.y + value72.h / 2,
+        artboard: Dynamic = boardFile == null ? null : findArtboardByFile(boardFile);
+      artboard &&
+        (targetPoint = {
+          x: artboard.x + artboard.w / 2,
+          y: artboard.y + artboard.h / 2,
         });
     }
-    if (!value66 || (value24(null), fullscreenFile != null)) return;
-    let value67: Dynamic = toolbarOverlayHeight(current),
-      value68: Dynamic = current.clientWidth || 1,
-      value69: Dynamic = (current.clientHeight || 1) - value67,
-      value70: Dynamic = Math.max(camera.get().scale, 0.5);
+    if (!targetPoint || (setRevealThreadId(null), fullscreenFile != null)) return;
+    let toolbarHeight: Dynamic = toolbarOverlayHeight(current),
+      viewWidth: Dynamic = current.clientWidth || 1,
+      viewHeight: Dynamic = (current.clientHeight || 1) - toolbarHeight,
+      targetScale: Dynamic = Math.max(camera.get().scale, 0.5);
     camera.set(
       {
-        x: value66.x - value68 / (2 * value70),
-        y: value66.y - (value67 + value69 / 2) / value70,
-        scale: value70,
+        x: targetPoint.x - viewWidth / (2 * targetScale),
+        y: targetPoint.y - (toolbarHeight + viewHeight / 2) / targetScale,
+        scale: targetScale,
       },
       true,
     );
-  }, [value23, value12, manifest, value17, fullscreenFile, pageKey, camera]);
-  let callback14: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
+  }, [revealThreadId, threads, manifest, elementRects, fullscreenFile, pageKey, camera]);
+  let hitTestPoint: Dynamic = (
+      clientX?: Dynamic,
+      clientY?: Dynamic,
     ): Dynamic => {
       let current: Dynamic = surfaceRef.current;
       if (!current) return null;
       let bounds: Dynamic = current.getBoundingClientRect(),
-        value64: Dynamic = value8.x + (input - bounds.left) / value8.scale,
-        value65: Dynamic = value8.y + (options2 - bounds.top) / value8.scale;
-      for (let value66 of (document as Dynamic).elementsFromPoint(
-        input,
-        options2,
+        canvasX: Dynamic = viewport.x + (clientX - bounds.left) / viewport.scale,
+        canvasY: Dynamic = viewport.y + (clientY - bounds.top) / viewport.scale;
+      for (let element of (document as Dynamic).elementsFromPoint(
+        clientX,
+        clientY,
       ) as Dynamic) {
-        if (value66.closest('[data-mega-chrome="comments"]')) continue;
-        if (!current.contains(value66)) return null;
-        let ancestor: Dynamic = value66.closest("[data-mega-annotation]");
+        if (element.closest('[data-mega-chrome="comments"]')) continue;
+        if (!current.contains(element)) return null;
+        let ancestor: Dynamic = element.closest("[data-mega-annotation]");
         if (ancestor)
           return {
             kind: "note",
             id: ancestor.getAttribute("data-mega-annotation") ?? "",
             el: ancestor,
-            x: value64,
-            y: value65,
+            x: canvasX,
+            y: canvasY,
           };
-        let ancestor2: Dynamic = value66.closest("[data-mega-artboard]");
-        if (ancestor2) {
-          let value67: Dynamic =
-              ancestor2.getAttribute("data-mega-artboard") ?? "",
-            value68: Dynamic = callback5(value67);
-          if (!value68) return null;
-          let value69: Dynamic = callback10(value68),
-            value70: Dynamic = value64 - value69.x,
-            value71: Dynamic = value65 - value69.y,
-            value72: Dynamic =
-              value70 >= 0 &&
-              value71 >= 0 &&
-              value70 <= value69.w &&
-              value71 <= value69.h,
-            entry: Dynamic = handlesRef.current.get(value67);
-          return value72
+        let artboardElement: Dynamic = element.closest("[data-mega-artboard]");
+        if (artboardElement) {
+          let file: Dynamic =
+              artboardElement.getAttribute("data-mega-artboard") ?? "",
+            artboard: Dynamic = findArtboardByFile(file);
+          if (!artboard) return null;
+          let frame: Dynamic = getArtboardFrame(artboard),
+            localX: Dynamic = canvasX - frame.x,
+            localY: Dynamic = canvasY - frame.y,
+            isInsideFrame: Dynamic =
+              localX >= 0 &&
+              localY >= 0 &&
+              localX <= frame.w &&
+              localY <= frame.h,
+            entry: Dynamic = handlesRef.current.get(file);
+          return isInsideFrame
             ? {
                 kind:
                   entry?.isReady() && !entry.isBlocked() ? "face" : "offFace",
-                file: value67,
-                lx: value70,
-                ly: value71,
+                file: file,
+                lx: localX,
+                ly: localY,
               }
             : {
                 kind: "artboard",
-                file: value67,
-                fx: Math.min(1, Math.max(0, value70 / (value69.w || 1))),
+                file: file,
+                fx: Math.min(1, Math.max(0, localX / (frame.w || 1))),
                 fy: 0,
               };
         }
-        if (value66 === current || value66.parentElement === current)
+        if (element === current || element.parentElement === current)
           return fullscreenFile == null
             ? {
                 kind: "canvas",
-                x: value64,
-                y: value65,
+                x: canvasX,
+                y: canvasY,
               }
             : null;
       }
       return null;
     },
-    callback15: Dynamic = async (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value64?: Dynamic,
+    pickElementAt: Dynamic = async (
+      file?: Dynamic,
+      localX?: Dynamic,
+      localY?: Dynamic,
+      timeoutMs?: Dynamic,
     ): Promise<Dynamic> => {
-      let entry: Dynamic = handlesRef.current.get(input),
-        value65: Dynamic = entry
+      let entry: Dynamic = handlesRef.current.get(file),
+        handle: Dynamic = entry
           ? createPreviewHandle(entry.webviewRef.current)
           : null;
-      return value65
-        ? pickerCommentAt(value65, options2, context, value64)
+      return handle
+        ? pickerCommentAt(handle, localX, localY, timeoutMs)
         : null;
     },
-    callback16: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value64: Dynamic = callback5(input);
-      if (!value64) return null;
-      let value65: Dynamic = callback10(value64),
-        value66: Dynamic = Math.max(0, options2.x),
-        value67: Dynamic = Math.max(0, options2.y),
-        value68: Dynamic = Math.min(value65.w, options2.x + options2.w),
-        value69: Dynamic = Math.min(value65.h, options2.y + options2.h);
-      return value68 <= value66 || value69 <= value67
+    artboardRectToCanvas: Dynamic = (file?: Dynamic, rect?: Dynamic): Dynamic => {
+      let artboard: Dynamic = findArtboardByFile(file);
+      if (!artboard) return null;
+      let frame: Dynamic = getArtboardFrame(artboard),
+        left: Dynamic = Math.max(0, rect.x),
+        top: Dynamic = Math.max(0, rect.y),
+        right: Dynamic = Math.min(frame.w, rect.x + rect.w),
+        bottom: Dynamic = Math.min(frame.h, rect.y + rect.h);
+      return right <= left || bottom <= top
         ? null
         : {
-            x: value65.x + value66,
-            y: value65.y + value67,
-            w: value68 - value66,
-            h: value69 - value67,
+            x: frame.x + left,
+            y: frame.y + top,
+            w: right - left,
+            h: bottom - top,
           };
     },
-    value27: Dynamic = (0, react_mi.useRef)({
+    hoverProbeRef: Dynamic = (0, react_mi.useRef)({
       busy: false,
       next: null,
     }),
-    callback17: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value64: Dynamic = callback14(input, options2);
-      value64?.kind !== "face" &&
-        ((value21.current += 1), (value27.current.next = null));
-      if (!value64 || value64.kind === "canvas") return callback3(null);
-      if (value64.kind === "note") {
+    updateHoverAt: Dynamic = (clientX?: Dynamic, clientY?: Dynamic): Dynamic => {
+      let hit: Dynamic = hitTestPoint(clientX, clientY);
+      hit?.kind !== "face" &&
+        ((hoverGenerationRef.current += 1), (hoverProbeRef.current.next = null));
+      if (!hit || hit.kind === "canvas") return updateHoverRect(null);
+      if (hit.kind === "note") {
         let bounds: Dynamic = surfaceRef.current.getBoundingClientRect(),
-          bounds2: Dynamic = value64.el.getBoundingClientRect();
-        return callback3({
-          x: value8.x + (bounds2.left - bounds.left) / value8.scale,
-          y: value8.y + (bounds2.top - bounds.top) / value8.scale,
-          w: bounds2.width / value8.scale,
-          h: bounds2.height / value8.scale,
+          elementBounds: Dynamic = hit.el.getBoundingClientRect();
+        return updateHoverRect({
+          x: viewport.x + (elementBounds.left - bounds.left) / viewport.scale,
+          y: viewport.y + (elementBounds.top - bounds.top) / viewport.scale,
+          w: elementBounds.width / viewport.scale,
+          h: elementBounds.height / viewport.scale,
         });
       }
-      if (value64.kind === "artboard" || value64.kind === "offFace") {
-        let value65: Dynamic = callback10(callback5(value64.file));
-        return callback3(
-          callback16(value64.file, {
+      if (hit.kind === "artboard" || hit.kind === "offFace") {
+        let frame: Dynamic = getArtboardFrame(findArtboardByFile(hit.file));
+        return updateHoverRect(
+          artboardRectToCanvas(hit.file, {
             x: 0,
             y: 0,
-            w: value65.w,
-            h: value65.h,
+            w: frame.w,
+            h: frame.h,
           }),
         );
       }
-      let current: Dynamic = value21.current,
-        callback38: Dynamic = (): Dynamic => {
-          value27.current.busy = true;
-          callback15(value64.file, value64.lx, value64.ly, 600).then(
-            (input2?: Dynamic): Dynamic => {
-              value27.current.busy = false;
-              let next: Dynamic = value27.current.next;
-              value27.current.next = null;
+      let current: Dynamic = hoverGenerationRef.current,
+        probeElement: Dynamic = (): Dynamic => {
+          hoverProbeRef.current.busy = true;
+          pickElementAt(hit.file, hit.lx, hit.ly, 600).then(
+            (pickResult?: Dynamic): Dynamic => {
+              hoverProbeRef.current.busy = false;
+              let next: Dynamic = hoverProbeRef.current.next;
+              hoverProbeRef.current.next = null;
               next
                 ? next()
-                : current === value21.current &&
-                  callback3(
-                    input2 && input2.path != null
-                      ? callback16(value64.file, input2.rect)
+                : current === hoverGenerationRef.current &&
+                  updateHoverRect(
+                    pickResult && pickResult.path != null
+                      ? artboardRectToCanvas(hit.file, pickResult.rect)
                       : null,
                   );
             },
           );
         };
-      value27.current.busy
-        ? (value27.current.next = callback38)
-        : callback38();
+      hoverProbeRef.current.busy
+        ? (hoverProbeRef.current.next = probeElement)
+        : probeElement();
     },
-    value28: Dynamic = (0, react_mi.useRef)(callback17);
-  value28.current = callback17;
-  let callback18: Dynamic = (input?: Dynamic): Dynamic => {
-    value22.current = {
-      x: input.clientX,
-      y: input.clientY,
+    updateHoverAtRef: Dynamic = (0, react_mi.useRef)(updateHoverAt);
+  updateHoverAtRef.current = updateHoverAt;
+  let handleLayerPointerMove: Dynamic = (event?: Dynamic): Dynamic => {
+    lastPointerRef.current = {
+      x: event.clientX,
+      y: event.clientY,
     };
-    value34.drawing() || callback17(input.clientX, input.clientY);
+    areaMarquee.drawing() || updateHoverAt(event.clientX, event.clientY);
   };
   (0, react_mi.useEffect)((): Dynamic => {
-    let current: Dynamic = value22.current;
-    value6 && current && callback17(current.x, current.y);
-  }, [value8.x, value8.y, value8.scale]);
-  let callback19: Dynamic = async (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context: Dynamic = 3e3,
+    let current: Dynamic = lastPointerRef.current;
+    isCommentMode && current && updateHoverAt(current.x, current.y);
+  }, [viewport.x, viewport.y, viewport.scale]);
+  let resolveClickTarget: Dynamic = async (
+      clientX?: Dynamic,
+      clientY?: Dynamic,
+      timeoutMs: Dynamic = 3e3,
     ): Promise<Dynamic> => {
-      let value64: Dynamic = callback14(input, options2);
-      if (!value64) return null;
-      if (value64.kind === "canvas")
+      let hit: Dynamic = hitTestPoint(clientX, clientY);
+      if (!hit) return null;
+      if (hit.kind === "canvas")
         return {
           anchor: {
             kind: "canvas",
             page: pageKey,
-            x: value64.x,
-            y: value64.y,
+            x: hit.x,
+            y: hit.y,
           },
           label: commentAnchorShortLabel({
             kind: "canvas",
             pages: manifest.pages,
             pageKey: pageKey,
           }),
-          detail: commentCanvasPointDetail(value64.x, value64.y),
+          detail: commentCanvasPointDetail(hit.x, hit.y),
         };
-      if (value64.kind === "note") {
-        let value70: Dynamic = callback8(value64.id),
-          value71: Dynamic = value70 ?? {
+      if (hit.kind === "note") {
+        let note: Dynamic = findNoteById(hit.id),
+          noteInfo: Dynamic = note ?? {
             text: "",
           },
-          value72: Dynamic = value70
+          notePoint: Dynamic = note
             ? normalizeObjectCommentPoint(
-                value70,
-                options.annBox(value70),
-                value64,
+                note,
+                hookOptions.annBox(note),
+                hit,
               )
             : undefined;
         return {
           anchor: {
             kind: "note",
-            id: value64.id,
-            ...value72,
+            id: hit.id,
+            ...notePoint,
           },
           label: commentAnchorShortLabel({
             kind: "note",
-            note: value71,
+            note: noteInfo,
           }),
-          detail: commentObjectPointDetail(value71, value72),
+          detail: commentObjectPointDetail(noteInfo, notePoint),
         };
       }
-      let value65: Dynamic = callback5(value64.file);
-      if (!value65) return null;
-      let value66: Dynamic = commentAnchorShortLabel({
+      let artboard: Dynamic = findArtboardByFile(hit.file);
+      if (!artboard) return null;
+      let artboardLabel: Dynamic = commentAnchorShortLabel({
         kind: "artboard",
-        board: value65,
+        board: artboard,
       });
-      if (value64.kind === "artboard")
+      if (hit.kind === "artboard")
         return {
-          anchor: value64,
-          label: value66,
-          detail: commentArtboardElementDetail(value65),
+          anchor: hit,
+          label: artboardLabel,
+          detail: commentArtboardElementDetail(artboard),
         };
-      let value67: Dynamic = callback10(value65),
-        callback38: Dynamic = (input2?: Dynamic): Dynamic => ({
-          anchor: input2
+      let frame: Dynamic = getArtboardFrame(artboard),
+        artboardPointTarget: Dynamic = (pageRect?: Dynamic): Dynamic => ({
+          anchor: pageRect
             ? {
                 kind: "artboard",
-                file: value64.file,
-                px: value64.lx - input2.x,
-                py: value64.ly - input2.y,
+                file: hit.file,
+                px: hit.lx - pageRect.x,
+                py: hit.ly - pageRect.y,
               }
             : {
                 kind: "artboard",
-                file: value64.file,
-                fx: Math.min(1, Math.max(0, value64.lx / (value67.w || 1))),
-                fy: Math.min(1, Math.max(0, value64.ly / (value67.h || 1))),
+                file: hit.file,
+                fx: Math.min(1, Math.max(0, hit.lx / (frame.w || 1))),
+                fy: Math.min(1, Math.max(0, hit.ly / (frame.h || 1))),
               },
-          label: value66,
-          detail: commentArtboardElementDetail(value65),
+          label: artboardLabel,
+          detail: commentArtboardElementDetail(artboard),
         });
-      if (value64.kind === "offFace")
-        return callback38(
-          handlesRef.current.get(value64.file)?.webviewRef.current
+      if (hit.kind === "offFace")
+        return artboardPointTarget(
+          handlesRef.current.get(hit.file)?.webviewRef.current
             ? null
             : {
                 x: 0,
                 y: 0,
               },
         );
-      let value68: Dynamic = await callback15(
-        value64.file,
-        value64.lx,
-        value64.ly,
-        context,
+      let picked: Dynamic = await pickElementAt(
+        hit.file,
+        hit.lx,
+        hit.ly,
+        timeoutMs,
       );
-      value68?.page && callback2(value64.file, value68.page);
-      if (!value68 || value68.path == null)
-        return callback38(value68?.page ?? null);
+      picked?.page && setPageRect(hit.file, picked.page);
+      if (!picked || picked.path == null)
+        return artboardPointTarget(picked?.page ?? null);
       let state: Dynamic = {
         kind: "el",
-        file: value64.file,
-        path: value68.path,
-        tid: value68.tid,
-        fp: value68.fp,
-        fx: value68.fx,
-        fy: value68.fy,
+        file: hit.file,
+        path: picked.path,
+        tid: picked.tid,
+        fp: picked.fp,
+        fx: picked.fx,
+        fy: picked.fy,
       };
       if (!serializeDesignCommentAnchor(state))
-        return callback38(value68.page ?? null);
-      let entry: Dynamic = handlesRef.current.get(value64.file),
-        value69: Dynamic = describeCommentElement(
+        return artboardPointTarget(picked.page ?? null);
+      let entry: Dynamic = handlesRef.current.get(hit.file),
+        elementLabel: Dynamic = describeCommentElement(
           entry,
-          value68,
+          picked,
         );
       return {
         anchor: state,
         label: commentAnchorShortLabel({
           kind: "el",
-          board: value65,
-          el: value69,
+          board: artboard,
+          el: elementLabel,
         }),
         detail: commentArtboardElementDetail(
-          value65,
-          callback21(entry, value68.tid, value69),
+          artboard,
+          describeElementEntry(entry, picked.tid, elementLabel),
         ),
       };
     },
-    callback20: Dynamic = (input?: Dynamic): Dynamic => {
-      value29.current.cancel();
-      let current: Dynamic = value2.current;
-      if (!current || !value6) return;
+    composeAtPointer: Dynamic = (event?: Dynamic): Dynamic => {
+      operationTokenRef.current.cancel();
+      let current: Dynamic = controllerRef.current;
+      if (!current || !isCommentMode) return;
       let state: Dynamic = {
-        x: input.clientX + (window as Dynamic).scrollX,
-        y: input.clientY + (window as Dynamic).scrollY,
+        x: event.clientX + (window as Dynamic).scrollX,
+        y: event.clientY + (window as Dynamic).scrollY,
       };
-      callback19(input.clientX, input.clientY).then(
-        (input2?: Dynamic): Dynamic => {
-          let value64: Dynamic = input2
-            ? serializeDesignCommentAnchor(input2.anchor)
+      resolveClickTarget(event.clientX, event.clientY).then(
+        (target?: Dynamic): Dynamic => {
+          let serializedAnchor: Dynamic = target
+            ? serializeDesignCommentAnchor(target.anchor)
             : null;
-          value64 &&
+          serializedAnchor &&
             current
-              .compose(value64, state, {
-                label: input2.label,
-                ...(input2.detail
+              .compose(serializedAnchor, state, {
+                label: target.label,
+                ...(target.detail
                   ? {
-                      detail: input2.detail,
+                      detail: target.detail,
                     }
                   : {}),
               })
               .then(
-                (input3?: Dynamic): Dynamic => {
-                  input3.opened && value30.clear();
+                (result?: Dynamic): Dynamic => {
+                  result.opened && pendingArea.clear();
                 },
                 (): Dynamic => {},
               );
@@ -982,67 +982,67 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         (): Dynamic => {},
       );
     },
-    callback21: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    describeElementEntry: Dynamic = (
+      entry?: Dynamic,
+      templateId?: Dynamic,
+      label?: Dynamic,
     ): Dynamic => {
-      let value64: Dynamic =
-        options2 != null ? input?.viewEntries([options2])[0] : undefined;
-      return value64
+      let viewEntry: Dynamic =
+        templateId != null ? entry?.viewEntries([templateId])[0] : undefined;
+      return viewEntry
         ? {
-            path: value64.path,
-            kind: context?.kind ?? value64.kind,
-            text: context?.text ?? value64.words(),
+            path: viewEntry.path,
+            kind: label?.kind ?? viewEntry.kind,
+            text: label?.text ?? viewEntry.words(),
           }
         : null;
     },
-    value29: Dynamic = (0, react_mi.useRef)(
+    operationTokenRef: Dynamic = (0, react_mi.useRef)(
       createCommentOperationToken(),
     ),
-    value30: Dynamic = usePendingCommentArea(
-      value10,
+    pendingArea: Dynamic = usePendingCommentArea(
+      isComposing,
       pageKey +
         `
 ` +
         (fullscreenFile ?? ""),
     ),
-    value31: Dynamic = (0, react_mi.useRef)(value30);
-  value31.current = value30;
-  let { drawn: value32 }: Dynamic = value30,
-    value33: Dynamic = (0, react_mi.useRef)(null),
-    callback22: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value64: Dynamic = surfaceRef.current?.getBoundingClientRect(),
+    pendingAreaRef: Dynamic = (0, react_mi.useRef)(pendingArea);
+  pendingAreaRef.current = pendingArea;
+  let { drawn: drawnAreaRect }: Dynamic = pendingArea,
+    layerRef: Dynamic = (0, react_mi.useRef)(null),
+    clientToCanvas: Dynamic = (clientX?: Dynamic, clientY?: Dynamic): Dynamic => {
+      let bounds: Dynamic = surfaceRef.current?.getBoundingClientRect(),
         entry: Dynamic = camera.get();
-      return value64
+      return bounds
         ? {
-            x: entry.x + (input - value64.left) / entry.scale,
-            y: entry.y + (options2 - value64.top) / entry.scale,
+            x: entry.x + (clientX - bounds.left) / entry.scale,
+            y: entry.y + (clientY - bounds.top) / entry.scale,
           }
         : null;
     },
-    callback23: Dynamic = (input?: Dynamic): Dynamic => {
-      let value64: Dynamic = surfaceRef.current?.getBoundingClientRect(),
+    canvasToClient: Dynamic = (point?: Dynamic): Dynamic => {
+      let bounds: Dynamic = surfaceRef.current?.getBoundingClientRect(),
         entry: Dynamic = camera.get();
-      return value64
+      return bounds
         ? {
-            x: value64.left + (input.x - entry.x) * entry.scale,
-            y: value64.top + (input.y - entry.y) * entry.scale,
+            x: bounds.left + (point.x - entry.x) * entry.scale,
+            y: bounds.top + (point.y - entry.y) * entry.scale,
           }
         : null;
     },
-    value34: Dynamic = useCommentAreaMarquee({
-      toLocal: callback22,
-      toClient: callback23,
+    areaMarquee: Dynamic = useCommentAreaMarquee({
+      toLocal: clientToCanvas,
+      toClient: canvasToClient,
       stage: (): Dynamic => surfaceRef.current,
       slopPx: 10,
-      onClick: (input?: Dynamic): Dynamic =>
-        value37.current({
-          clientX: input.clientX,
-          clientY: input.clientY,
+      onClick: (event?: Dynamic): Dynamic =>
+        composeAtPointerRef.current({
+          clientX: event.clientX,
+          clientY: event.clientY,
         }),
-      onNothing: (): Dynamic => value30.restore(),
-      onLive: (): Dynamic => value30.show(null),
+      onNothing: (): Dynamic => pendingArea.restore(),
+      onLive: (): Dynamic => pendingArea.show(null),
       onArea: ({
         c0: c02,
         c1: c12,
@@ -1055,677 +1055,677 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             w: Math.abs(c12.x - c02.x),
             h: Math.abs(c12.y - c02.y),
           },
-          value64: Dynamic = resizing ? c12 : c02,
-          state2: Dynamic = {
+          pinPoint: Dynamic = resizing ? c12 : c02,
+          areaWithOrigin: Dynamic = {
             ...state,
-            ox: value64.x,
-            oy: value64.y,
+            ox: pinPoint.x,
+            oy: pinPoint.y,
           };
-        value30.show(state2);
-        value36.current(
-          state2,
+        pendingArea.show(areaWithOrigin);
+        composeAreaCommentRef.current(
+          areaWithOrigin,
           {
             x: at.x + (window as Dynamic).scrollX,
             y: at.y + (window as Dynamic).scrollY,
           },
           nearestCommentAreaCorner(state, resizing ? c02 : c12),
-          value29.current.begin(),
+          operationTokenRef.current.begin(),
         );
       },
     }),
-    { marquee: value35 }: Dynamic = value34;
+    { marquee: marqueeState }: Dynamic = areaMarquee;
   (0, react_mi.useEffect)((): Dynamic => {
-    value34.cancel();
-    value29.current.cancel();
-    value6 || value30.clear();
-  }, [value6, pageKey, fullscreenFile]);
-  let callback24: Dynamic = (
+    areaMarquee.cancel();
+    operationTokenRef.current.cancel();
+    isCommentMode || pendingArea.clear();
+  }, [isCommentMode, pageKey, fullscreenFile]);
+  let startAreaDrag: Dynamic = (
       event?: Dynamic,
-      options2?: Dynamic,
+      resizeAnchor?: Dynamic,
     ): Dynamic => {
-      let current: Dynamic = value2.current,
-        current2: Dynamic = value33.current;
+      let current: Dynamic = controllerRef.current,
+        layerElement: Dynamic = layerRef.current;
       return !current ||
-        !current2 ||
+        !layerElement ||
         event.button !== 0 ||
-        options.spaceHeld ||
+        hookOptions.spaceHeld ||
         prefersDragGesture(event, !!current.areas)
         ? false
-        : (mdnSetHeldRect(value19),
-          callback3(null),
-          (value21.current += 1),
-          value34.start(event.nativeEvent, current2, options2));
+        : (mdnSetHeldRect(hoverRect),
+          updateHoverRect(null),
+          (hoverGenerationRef.current += 1),
+          areaMarquee.start(event.nativeEvent, layerElement, resizeAnchor));
     },
-    callback25: Dynamic = async (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value64?: Dynamic,
+    composeAreaComment: Dynamic = async (
+      rect?: Dynamic,
+      position?: Dynamic,
+      corner?: Dynamic,
+      operation?: Dynamic,
     ): Promise<Dynamic> => {
-      let current: Dynamic = value2.current;
-      if (!current || !value6) return;
-      let callback38: Dynamic = (): Dynamic =>
-          value2.current === current && value9.current && value64.live,
-        value65: Dynamic =
+      let current: Dynamic = controllerRef.current;
+      if (!current || !isCommentMode) return;
+      let isOperationLive: Dynamic = (): Dynamic =>
+          controllerRef.current === current && isCommentModeRef.current && operation.live,
+        scopeKey: Dynamic =
           pageKey +
           `
 ` +
           (fullscreenFile ?? ""),
-        callback39: Dynamic = (): Dynamic => {
-          value64.live && value30.restore();
+        restorePending: Dynamic = (): Dynamic => {
+          operation.live && pendingArea.restore();
         },
         flag: Dynamic = false,
-        value66: Dynamic = await callback26(input, context, (): Dynamic => {
+        target: Dynamic = await resolveAreaTarget(rect, corner, (): Dynamic => {
           flag = true;
-          value30.show(null);
+          pendingArea.show(null);
         });
-      if (!value66 && flag) return;
-      let value67: Dynamic = value66
-        ? serializeDesignCommentAnchor(value66.anchor)
+      if (!target && flag) return;
+      let serializedAnchor: Dynamic = target
+        ? serializeDesignCommentAnchor(target.anchor)
         : null;
-      if (!value66 || !value67 || !callback38()) return callback39();
+      if (!target || !serializedAnchor || !isOperationLive()) return restorePending();
       current
-        .compose(value67, options2, {
-          label: value66.label,
-          ...(value66.detail
+        .compose(serializedAnchor, position, {
+          label: target.label,
+          ...(target.detail
             ? {
-                detail: value66.detail,
+                detail: target.detail,
               }
             : {}),
           area: true,
         })
-        .then((input2?: Dynamic): Dynamic => {
-          if (!input2.opened) return callback39();
-          value64.live && value30.hold(input, value65);
-        }, callback39);
+        .then((result?: Dynamic): Dynamic => {
+          if (!result.opened) return restorePending();
+          operation.live && pendingArea.hold(rect, scopeKey);
+        }, restorePending);
     },
-    callback26: Dynamic = async (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value64: Dynamic = 3e3,
+    resolveAreaTarget: Dynamic = async (
+      area?: Dynamic,
+      corner?: Dynamic,
+      onNoBoards?: Dynamic,
+      pickTimeoutMs: Dynamic = 3e3,
     ): Promise<Dynamic> => {
-      let value65: Dynamic = manifest.artboards
-          .filter((input2?: Dynamic): Dynamic => callback9(input2.file))
+      let artboardFrames: Dynamic = manifest.artboards
+          .filter((board?: Dynamic): Dynamic => isFileVisible(board.file))
           .map(
-            (input2?: Dynamic): Dynamic => ({
-              board: input2,
-              frame: callback10(input2),
+            (board?: Dynamic): Dynamic => ({
+              board: board,
+              frame: getArtboardFrame(board),
             }),
           ),
-        value66: Dynamic = artboardsCoveredByCommentArea(
-          input,
-          value65,
+        coveredBoards: Dynamic = artboardsCoveredByCommentArea(
+          area,
+          artboardFrames,
           7,
         ),
-        value67: Dynamic = value66.length > 0,
-        callback38: Dynamic = (input2?: Dynamic): Dynamic =>
-          options.annUnder?.(input2) === true,
-        value68: Dynamic =
+        hasCoveredBoards: Dynamic = coveredBoards.length > 0,
+        isAnnotationUnder: Dynamic = (annotation?: Dynamic): Dynamic =>
+          hookOptions.annUnder?.(annotation) === true,
+        annotations: Dynamic =
           fullscreenFile != null ? [] : (manifest.annotations ?? []),
-        value69: Dynamic = [
-          ...value68.filter(callback38),
-          ...value68.filter(
-            (input2?: Dynamic): Dynamic => !callback38(input2),
+        candidateObjects: Dynamic = [
+          ...annotations.filter(isAnnotationUnder),
+          ...annotations.filter(
+            (annotation?: Dynamic): Dynamic => !isAnnotationUnder(annotation),
           ),
         ]
           .filter(
             (source?: Dynamic): Dynamic =>
               source.kind !== "line" &&
               source.kind !== "arrow" &&
-              !(value67 && callback38(source)),
+              !(hasCoveredBoards && isAnnotationUnder(source)),
           )
           .map(
             (source?: Dynamic): Dynamic => ({
               object: source,
               bounds: rotatedAnnotationBounds(
                 source,
-                options.annBox(source),
+                hookOptions.annBox(source),
               ),
               solid: source.kind !== "pen",
               hides: source.kind === "image" || source.kind === undefined,
-              on: (input2?: Dynamic): Dynamic =>
+              on: (point?: Dynamic): Dynamic =>
                 pointWithinCommentObject(
                   source,
-                  options.annBox(source),
-                  input2,
+                  hookOptions.annBox(source),
+                  point,
                 ),
             }),
           );
-      for (let value73 of objectsCoveredByCommentArea(
-        input,
-        value69,
-        value67,
+      for (let commentObject of objectsCoveredByCommentArea(
+        area,
+        candidateObjects,
+        hasCoveredBoards,
       ) as Dynamic) {
-        let value74: Dynamic = normalizeObjectCommentArea(
-            value73,
-            options.annBox(value73),
-            input,
-            options2,
+        let objectBox: Dynamic = normalizeObjectCommentArea(
+            commentObject,
+            hookOptions.annBox(commentObject),
+            area,
+            corner,
           ),
-          value75: Dynamic = normalizeCommentArea(
-            input,
+          objectArea: Dynamic = normalizeCommentArea(
+            area,
             rotatedAnnotationBounds(
-              value73,
-              options.annBox(value73),
+              commentObject,
+              hookOptions.annBox(commentObject),
             ),
           );
-        if (value74)
+        if (objectBox)
           return {
             anchor: {
               kind: "notearea",
-              id: value73.id,
-              box: value74,
+              id: commentObject.id,
+              box: objectBox,
             },
-            label: commentObjectAreaShortLabel(value73, value75),
-            detail: commentObjectAreaDetail(value73, value74),
+            label: commentObjectAreaShortLabel(commentObject, objectArea),
+            detail: commentObjectAreaDetail(commentObject, objectBox),
           };
       }
-      if (value66.length === 0) {
-        context?.();
+      if (coveredBoards.length === 0) {
+        onNoBoards?.();
         if (fullscreenFile != null) return null;
-        let value73: Dynamic = input.x + input.w / 2,
-          value74: Dynamic = input.y + input.h / 2;
+        let centerX: Dynamic = area.x + area.w / 2,
+          centerY: Dynamic = area.y + area.h / 2;
         return {
           anchor: {
             kind: "canvas",
             page: pageKey,
-            x: value73,
-            y: value74,
+            x: centerX,
+            y: centerY,
           },
           label: commentAnchorShortLabel({
             kind: "canvas",
             pages: manifest.pages,
             pageKey: pageKey,
           }),
-          detail: commentCanvasPointDetail(value73, value74),
+          detail: commentCanvasPointDetail(centerX, centerY),
         };
       }
-      let callback39: Dynamic = async (
-          input2?: Dynamic,
+      let pickEnclosing: Dynamic = async (
+          covered?: Dynamic,
         ): Promise<Dynamic> => {
-          let entry: Dynamic = handlesRef.current.get(input2.board.file),
-            value73: Dynamic =
+          let entry: Dynamic = handlesRef.current.get(covered.board.file),
+            handle: Dynamic =
               entry?.isReady() && !entry.isBlocked()
                 ? createPreviewHandle(entry.webviewRef.current)
                 : null;
-          if (!value73) return null;
-          let value74: Dynamic = input2.inter.x - input2.frame.x,
-            value75: Dynamic = input2.inter.y - input2.frame.y;
+          if (!handle) return null;
+          let left: Dynamic = covered.inter.x - covered.frame.x,
+            top: Dynamic = covered.inter.y - covered.frame.y;
           return pickerCommentIn(
-            value73,
-            value74,
-            value75,
-            value74 + input2.inter.w,
-            value75 + input2.inter.h,
-            value64,
+            handle,
+            left,
+            top,
+            left + covered.inter.w,
+            top + covered.inter.h,
+            pickTimeoutMs,
           );
         },
-        callback40: Dynamic = (
-          input2?: Dynamic,
-          options3?: Dynamic,
+        describeCoveredElements: Dynamic = (
+          covered?: Dynamic,
+          picked?: Dynamic,
         ): Dynamic => {
-          if (!options3) return {};
-          let entry: Dynamic = handlesRef.current.get(input2.board.file),
+          if (!picked) return {};
+          let entry: Dynamic = handlesRef.current.get(covered.board.file),
             items: Dynamic = [];
-          for (let value73 of options3.covered as Dynamic) {
-            let value74: Dynamic = entry?.viewEntries([value73.tid])[0];
-            value74 &&
-              value74.path.startsWith(String(value73.tid) + ":") &&
+          for (let coveredElement of picked.covered as Dynamic) {
+            let viewEntry: Dynamic = entry?.viewEntries([coveredElement.tid])[0];
+            viewEntry &&
+              viewEntry.path.startsWith(String(coveredElement.tid) + ":") &&
               items.push({
-                path: value74.path,
-                kind: value74.kind,
-                text: value74.words(),
+                path: viewEntry.path,
+                kind: viewEntry.kind,
+                text: viewEntry.words(),
               });
           }
           return {
             els: items.slice(0, maxCommentAreaElementLabels),
             total: Math.max(
               items.length,
-              options3.total - (options3.covered.length - items.length),
+              picked.total - (picked.covered.length - items.length),
             ),
           };
         };
-      if (value66.length === 1) {
-        let value73: Dynamic = value66[0],
-          value74: Dynamic =
-            value73.cov >= 0.85 ? null : await callback39(value73),
-          value75: Dynamic = value74?.enclosing,
+      if (coveredBoards.length === 1) {
+        let covered: Dynamic = coveredBoards[0],
+          picked: Dynamic =
+            covered.cov >= 0.85 ? null : await pickEnclosing(covered),
+          enclosing: Dynamic = picked?.enclosing,
           state: Dynamic = {
             kind: "area",
-            file: value73.board.file,
+            file: covered.board.file,
             path: null,
             tid: null,
             box: {
-              ...value73.b,
-              ...(options2 != null
+              ...covered.b,
+              ...(corner != null
                 ? {
-                    corner: options2,
+                    corner: corner,
                   }
                 : {}),
             },
           };
-        if (value75 && value75.path != null) {
-          let value76: Dynamic = commentAreaWithinArtboardContent(value73, value75.rect),
-            value77: Dynamic = value76 && {
+        if (enclosing && enclosing.path != null) {
+          let contentBox: Dynamic = commentAreaWithinArtboardContent(covered, enclosing.rect),
+            enclosingAnchor: Dynamic = contentBox && {
               kind: "area",
-              file: value73.board.file,
-              path: value75.path,
-              tid: value75.tid,
-              fp: value75.fp,
+              file: covered.board.file,
+              path: enclosing.path,
+              tid: enclosing.tid,
+              fp: enclosing.fp,
               box: {
-                ...value76,
-                ...(options2 != null
+                ...contentBox,
+                ...(corner != null
                   ? {
-                      corner: options2,
+                      corner: corner,
                     }
                   : {}),
               },
             };
-          value77 &&
-            serializeDesignCommentAnchor(value77) &&
-            (state = value77);
+          enclosingAnchor &&
+            serializeDesignCommentAnchor(enclosingAnchor) &&
+            (state = enclosingAnchor);
         }
-        let state2: Dynamic = {
-          board: value73.board,
-          cov: value73.cov,
+        let boardSummary: Dynamic = {
+          board: covered.board,
+          cov: covered.cov,
           part: describeCommentAreaLocation(
-            value73.b,
-            value73.cov,
+            covered.b,
+            covered.cov,
           ),
-          ...callback40(value73, value74),
+          ...describeCoveredElements(covered, picked),
         };
         return {
           anchor: state,
-          label: commentArtboardAreaShortLabel([state2]),
-          detail: commentArtboardAreaDetail([state2]),
+          label: commentArtboardAreaShortLabel([boardSummary]),
+          detail: commentArtboardAreaDetail([boardSummary]),
         };
       }
-      let value70: Dynamic = await Promise.all(
-          value66.map(
-            (input2?: Dynamic): Dynamic =>
-              input2.cov < 0.85 ? callback39(input2) : Promise.resolve(null),
+      let pickedList: Dynamic = await Promise.all(
+          coveredBoards.map(
+            (board?: Dynamic): Dynamic =>
+              board.cov < 0.85 ? pickEnclosing(board) : Promise.resolve(null),
           ),
         ),
-        value71: Dynamic = value66.map(
-          (input2?: Dynamic, options3?: Dynamic): Dynamic => ({
-            board: input2.board,
-            cov: input2.cov,
+        boardSummaries: Dynamic = coveredBoards.map(
+          (covered?: Dynamic, index?: Dynamic): Dynamic => ({
+            board: covered.board,
+            cov: covered.cov,
             part: describeCommentAreaLocation(
-              input2.b,
-              input2.cov,
+              covered.b,
+              covered.cov,
             ),
-            ...callback40(input2, value70[options3] ?? null),
+            ...describeCoveredElements(covered, pickedList[index] ?? null),
           }),
         ),
-        value72: Dynamic = unionCommentRects(
-          value66.map((input2?: Dynamic): Dynamic => input2.frame),
+        framesUnion: Dynamic = unionCommentRects(
+          coveredBoards.map((covered?: Dynamic): Dynamic => covered.frame),
         );
       return {
         anchor: {
           kind: "boards",
           page: pageKey,
-          boards: value66.map(
-            (input2?: Dynamic): Dynamic => ({
-              file: input2.board.file,
-              cov: input2.cov,
+          boards: coveredBoards.map(
+            (covered?: Dynamic): Dynamic => ({
+              file: covered.board.file,
+              cov: covered.cov,
             }),
           ),
           box: {
-            ...normalizeCommentArea(input, value72),
-            ...(options2 != null
+            ...normalizeCommentArea(area, framesUnion),
+            ...(corner != null
               ? {
-                  corner: options2,
+                  corner: corner,
                 }
               : {}),
           },
         },
-        label: commentArtboardAreaShortLabel(value71),
-        detail: commentArtboardAreaDetail(value71),
+        label: commentArtboardAreaShortLabel(boardSummaries),
+        detail: commentArtboardAreaDetail(boardSummaries),
       };
     },
-    value36: Dynamic = (0, react_mi.useRef)(callback25);
-  value36.current = callback25;
-  let value37: Dynamic = (0, react_mi.useRef)(callback20);
-  value37.current = callback20;
-  let callback27: Dynamic = async (
-      input?: Dynamic,
-      options2?: Dynamic,
+    composeAreaCommentRef: Dynamic = (0, react_mi.useRef)(composeAreaComment);
+  composeAreaCommentRef.current = composeAreaComment;
+  let composeAtPointerRef: Dynamic = (0, react_mi.useRef)(composeAtPointer);
+  composeAtPointerRef.current = composeAtPointer;
+  let resolveThreadMove: Dynamic = async (
+      threadId?: Dynamic,
+      position?: Dynamic,
     ): Promise<Dynamic> => {
-      if (!value2.current || !value6) return null;
-      let value64: Dynamic = value12.find(
-          (input2?: Dynamic): Dynamic => input2.id === input,
+      if (!controllerRef.current || !isCommentMode) return null;
+      let foundThread: Dynamic = threads.find(
+          (thread?: Dynamic): Dynamic => thread.id === threadId,
         ),
-        value65: Dynamic = value64
-          ? parseDesignCommentAnchor(value64.anchor)
+        parsedAnchor: Dynamic = foundThread
+          ? parseDesignCommentAnchor(foundThread.anchor)
           : null;
-      if (!value65) return null;
+      if (!parsedAnchor) return null;
       let state: Dynamic = {
-        x: options2.x - (window as Dynamic).scrollX,
-        y: options2.y - (window as Dynamic).scrollY,
+        x: position.x - (window as Dynamic).scrollX,
+        y: position.y - (window as Dynamic).scrollY,
       };
-      if (!callback14(state.x, state.y)) return null;
-      let value66: Dynamic;
+      if (!hitTestPoint(state.x, state.y)) return null;
+      let resolvedTarget: Dynamic;
       if (
-        value65.kind === "area" ||
-        value65.kind === "boards" ||
-        value65.kind === "notearea"
+        parsedAnchor.kind === "area" ||
+        parsedAnchor.kind === "boards" ||
+        parsedAnchor.kind === "notearea"
       ) {
-        let value73: Dynamic = callback11(value65),
-          value74: Dynamic =
-            value65.kind === "notearea"
-              ? callback12(value65)
-              : value73
+        let areaRect: Dynamic = resolveAreaRect(parsedAnchor),
+          handlePoint: Dynamic =
+            parsedAnchor.kind === "notearea"
+              ? resolveAnchorPoint(parsedAnchor)
+              : areaRect
                 ? commentAreaHandlePoint(
-                    value73,
-                    value65.box.corner,
+                    areaRect,
+                    parsedAnchor.box.corner,
                   )
                 : null,
-          value75: Dynamic = callback22(state.x, state.y);
+          pointerCanvas: Dynamic = clientToCanvas(state.x, state.y);
         if (
-          !value73 ||
-          !value74 ||
-          !value75 ||
-          (value65.kind === "notearea" &&
-            Math.round(value75.x - value74.x) === 0 &&
-            Math.round(value75.y - value74.y) === 0)
+          !areaRect ||
+          !handlePoint ||
+          !pointerCanvas ||
+          (parsedAnchor.kind === "notearea" &&
+            Math.round(pointerCanvas.x - handlePoint.x) === 0 &&
+            Math.round(pointerCanvas.y - handlePoint.y) === 0)
         )
           return null;
-        let value76: Dynamic =
-            value73.w / ((value65.box.x1 - value65.box.x0) * 100),
-          value77: Dynamic =
-            value73.h / ((value65.box.y1 - value65.box.y0) * 100),
-          value78: Dynamic =
-            value65.kind === "notearea"
-              ? value75.x - value74.x
-              : Math.round((value75.x - value74.x) / value76) * value76,
-          value79: Dynamic =
-            value65.kind === "notearea"
-              ? value75.y - value74.y
-              : Math.round((value75.y - value74.y) / value77) * value77;
-        value66 = await callback26(
+        let pixelUnitX: Dynamic =
+            areaRect.w / ((parsedAnchor.box.x1 - parsedAnchor.box.x0) * 100),
+          pixelUnitY: Dynamic =
+            areaRect.h / ((parsedAnchor.box.y1 - parsedAnchor.box.y0) * 100),
+          deltaX: Dynamic =
+            parsedAnchor.kind === "notearea"
+              ? pointerCanvas.x - handlePoint.x
+              : Math.round((pointerCanvas.x - handlePoint.x) / pixelUnitX) * pixelUnitX,
+          deltaY: Dynamic =
+            parsedAnchor.kind === "notearea"
+              ? pointerCanvas.y - handlePoint.y
+              : Math.round((pointerCanvas.y - handlePoint.y) / pixelUnitY) * pixelUnitY;
+        resolvedTarget = await resolveAreaTarget(
           {
-            x: value73.x + value78,
-            y: value73.y + value79,
-            w: value73.w,
-            h: value73.h,
+            x: areaRect.x + deltaX,
+            y: areaRect.y + deltaY,
+            w: areaRect.w,
+            h: areaRect.h,
           },
-          value65.kind === "notearea"
-            ? nearestCommentAreaCorner(value73, value74)
-            : value65.box.corner,
+          parsedAnchor.kind === "notearea"
+            ? nearestCommentAreaCorner(areaRect, handlePoint)
+            : parsedAnchor.box.corner,
           undefined,
           1500,
         );
-        let value80: Dynamic =
-          value65.kind === "notearea" ? callback7(value65.idHash) : null;
+        let note: Dynamic =
+          parsedAnchor.kind === "notearea" ? findNoteByHash(parsedAnchor.idHash) : null;
         if (
-          value80 &&
-          value66?.anchor.kind === "notearea" &&
-          value66.anchor.id === value80.id
+          note &&
+          resolvedTarget?.anchor.kind === "notearea" &&
+          resolvedTarget.anchor.id === note.id
         ) {
-          let value81: Dynamic = moveObjectCommentArea(
-            value80,
-            options.annBox(value80),
-            value65.box,
-            value74,
-            value75,
+          let movedBox: Dynamic = moveObjectCommentArea(
+            note,
+            hookOptions.annBox(note),
+            parsedAnchor.box,
+            handlePoint,
+            pointerCanvas,
           );
-          if (value81.x0 === value65.box.x0 && value81.y0 === value65.box.y0)
+          if (movedBox.x0 === parsedAnchor.box.x0 && movedBox.y0 === parsedAnchor.box.y0)
             return null;
-          let value82: Dynamic = normalizeCommentArea(
+          let movedArea: Dynamic = normalizeCommentArea(
             rotatedAnnotationBounds(
-              value80,
+              note,
               objectCommentAreaRect(
-                value80,
-                options.annBox(value80),
-                value81,
+                note,
+                hookOptions.annBox(note),
+                movedBox,
               ),
             ),
             rotatedAnnotationBounds(
-              value80,
-              options.annBox(value80),
+              note,
+              hookOptions.annBox(note),
             ),
           );
-          value66 = {
+          resolvedTarget = {
             anchor: {
               kind: "notearea",
-              id: value80.id,
-              box: value81,
+              id: note.id,
+              box: movedBox,
             },
-            label: commentObjectAreaShortLabel(value80, value82),
-            detail: commentObjectAreaDetail(value80, value81),
+            label: commentObjectAreaShortLabel(note, movedArea),
+            detail: commentObjectAreaDetail(note, movedBox),
           };
         }
-        value66 &&
-          value66.anchor.kind !== "area" &&
-          value66.anchor.kind !== "boards" &&
-          value66.anchor.kind !== "notearea" &&
-          (value66 = null);
-      } else value66 = await callback19(state.x, state.y, 1500);
-      let value67: Dynamic = value66
-        ? serializeDesignCommentAnchor(value66.anchor)
+        resolvedTarget &&
+          resolvedTarget.anchor.kind !== "area" &&
+          resolvedTarget.anchor.kind !== "boards" &&
+          resolvedTarget.anchor.kind !== "notearea" &&
+          (resolvedTarget = null);
+      } else resolvedTarget = await resolveClickTarget(state.x, state.y, 1500);
+      let serializedAnchor: Dynamic = resolvedTarget
+        ? serializeDesignCommentAnchor(resolvedTarget.anchor)
         : null;
-      if (!value66 || !value67 || value2.current == null || !value9.current)
+      if (!resolvedTarget || !serializedAnchor || controllerRef.current == null || !isCommentModeRef.current)
         return null;
-      let value68: Dynamic =
-          value66.anchor.kind === "area" ||
-          value66.anchor.kind === "boards" ||
-          value66.anchor.kind === "notearea",
-        value69: Dynamic = parseDesignCommentAnchor(value67),
+      let isAreaTarget: Dynamic =
+          resolvedTarget.anchor.kind === "area" ||
+          resolvedTarget.anchor.kind === "boards" ||
+          resolvedTarget.anchor.kind === "notearea",
+        reparsedAnchor: Dynamic = parseDesignCommentAnchor(serializedAnchor),
         flag: Dynamic = false;
       if (
-        value69 &&
-        (value69.kind === "el" || value69.kind === "area") &&
-        value69.path != null
+        reparsedAnchor &&
+        (reparsedAnchor.kind === "el" || reparsedAnchor.kind === "area") &&
+        reparsedAnchor.path != null
       ) {
-        let value73: Dynamic = callback6(value69.fileHash);
+        let file: Dynamic = findFileByHash(reparsedAnchor.fileHash);
         flag =
-          value73 == null ||
-          value17
-            .get(value73)
-            ?.get(commentScopeKey(value69.path, value69.tid, value69.fp)) ===
+          file == null ||
+          elementRects
+            .get(file)
+            ?.get(commentScopeKey(reparsedAnchor.path, reparsedAnchor.tid, reparsedAnchor.fp)) ===
             undefined;
       }
-      let value70: Dynamic = value69 && !flag ? callback12(value69) : null,
-        value71: Dynamic = value70 ? callback23(value70) : null,
-        value72: Dynamic = value71
+      let anchorPoint: Dynamic = reparsedAnchor && !flag ? resolveAnchorPoint(reparsedAnchor) : null,
+        clientPoint: Dynamic = anchorPoint ? canvasToClient(anchorPoint) : null,
+        placePosition: Dynamic = clientPoint
           ? {
-              x: Math.round(value71.x + (window as Dynamic).scrollX),
-              y: Math.round(value71.y + (window as Dynamic).scrollY),
+              x: Math.round(clientPoint.x + (window as Dynamic).scrollX),
+              y: Math.round(clientPoint.y + (window as Dynamic).scrollY),
             }
-          : options2;
+          : position;
       return {
-        anchor: value67,
-        at: value72,
-        label: value66.label,
-        ...(value66.detail
+        anchor: serializedAnchor,
+        at: placePosition,
+        label: resolvedTarget.label,
+        ...(resolvedTarget.detail
           ? {
-              detail: value66.detail,
+              detail: resolvedTarget.detail,
             }
           : {}),
-        ...(value68
+        ...(isAreaTarget
           ? {
               area: true,
             }
           : {}),
       };
     },
-    value38: Dynamic = (0, react_mi.useRef)(callback27);
-  value38.current = callback27;
-  let value39: Dynamic =
-      value6 && value3
+    resolveThreadMoveRef: Dynamic = (0, react_mi.useRef)(resolveThreadMove);
+  resolveThreadMoveRef.current = resolveThreadMove;
+  let visibleArtboards: Dynamic =
+      isCommentMode && hasController
         ? manifest.artboards.filter(
-            (input?: Dynamic): Dynamic => callback9(input.file),
+            (artboard?: Dynamic): Dynamic => isFileVisible(artboard.file),
           )
         : [],
-    value40: Dynamic =
-      value6 && value3 && value39.length === 0 && fullscreenFile == null,
-    value41: Dynamic = value40
+    hasCanvasTarget: Dynamic =
+      isCommentMode && hasController && visibleArtboards.length === 0 && fullscreenFile == null,
+    targetKeys: Dynamic = hasCanvasTarget
       ? [canvasCommentScopeKey]
-      : value39.map((input?: Dynamic): Dynamic => input.file),
-    value42: Dynamic = (0, react_mi.useRef)(value41);
-  value42.current = value41;
-  let value43: Dynamic = (0, react_mi.useRef)(new Map()),
-    value44: Dynamic = (0, react_mi.useRef)(new Map()),
-    callback28: Dynamic = (input?: Dynamic): Dynamic => {
-      let entry: Dynamic = value44.current.get(input);
+      : visibleArtboards.map((artboard?: Dynamic): Dynamic => artboard.file),
+    targetKeysRef: Dynamic = (0, react_mi.useRef)(targetKeys);
+  targetKeysRef.current = targetKeys;
+  let targetElementsRef: Dynamic = (0, react_mi.useRef)(new Map()),
+    targetRefCallbacksRef: Dynamic = (0, react_mi.useRef)(new Map()),
+    getTargetRef: Dynamic = (key?: Dynamic): Dynamic => {
+      let entry: Dynamic = targetRefCallbacksRef.current.get(key);
       entry ||
-        ((entry = (input2?: Dynamic): Dynamic => {
-          input2
-            ? value43.current.set(input, input2)
-            : (value43.current.delete(input), value44.current.delete(input));
+        ((entry = (element?: Dynamic): Dynamic => {
+          element
+            ? targetElementsRef.current.set(key, element)
+            : (targetElementsRef.current.delete(key), targetRefCallbacksRef.current.delete(key));
         }),
-        value44.current.set(input, entry));
+        targetRefCallbacksRef.current.set(key, entry));
       return entry;
     },
-    callback29: Dynamic = (): Dynamic => {
+    findFocusTarget: Dynamic = (): Dynamic => {
       let current: Dynamic = surfaceRef.current,
         entry: Dynamic = camera.get(),
-        value64: Dynamic = current
+        toolbarHeight: Dynamic = current
           ? toolbarOverlayHeight(current)
           : 0,
-        value65: Dynamic = (current?.clientWidth || 0) / entry.scale,
-        value66: Dynamic = (current?.clientHeight || 0) / entry.scale,
-        callback38: Dynamic = (input?: Dynamic): Dynamic => {
-          let value68: Dynamic =
-            input === canvasCommentScopeKey ? null : callback5(input);
-          if (!value68 || !current) return true;
-          let value69: Dynamic = callback10(value68);
+        viewWidth: Dynamic = (current?.clientWidth || 0) / entry.scale,
+        viewHeight: Dynamic = (current?.clientHeight || 0) / entry.scale,
+        isTargetInView: Dynamic = (key?: Dynamic): Dynamic => {
+          let artboard: Dynamic =
+            key === canvasCommentScopeKey ? null : findArtboardByFile(key);
+          if (!artboard || !current) return true;
+          let frame: Dynamic = getArtboardFrame(artboard);
           return (
-            value69.x < entry.x + value65 &&
-            value69.x + value69.w > entry.x &&
-            value69.y < entry.y + value66 &&
-            value69.y + value69.h > entry.y + value64 / entry.scale
+            frame.x < entry.x + viewWidth &&
+            frame.x + frame.w > entry.x &&
+            frame.y < entry.y + viewHeight &&
+            frame.y + frame.h > entry.y + toolbarHeight / entry.scale
           );
         },
-        value67: Dynamic = null;
-      for (let value68 of value42.current as Dynamic) {
-        let entry2: Dynamic = value43.current.get(value68);
-        if (entry2 && ((value67 ??= entry2), callback38(value68)))
-          return entry2;
+        firstTarget: Dynamic = null;
+      for (let key of targetKeysRef.current as Dynamic) {
+        let targetElement: Dynamic = targetElementsRef.current.get(key);
+        if (targetElement && ((firstTarget ??= targetElement), isTargetInView(key)))
+          return targetElement;
       }
-      return value67;
+      return firstTarget;
     },
-    [value45, value46]: Dynamic = (0, react_mi.useState)(null),
-    value47: Dynamic = (0, react_mi.useRef)(null),
-    callback30: Dynamic = (): Dynamic => {
+    [focusedTargetKey, setFocusedTargetKey]: Dynamic = (0, react_mi.useState)(null),
+    lastComposeTargetRef: Dynamic = (0, react_mi.useRef)(null),
+    restoreTargetFocus: Dynamic = (): Dynamic => {
       setTimeout((): Dynamic => {
-        let current: Dynamic = value47.current,
+        let current: Dynamic = lastComposeTargetRef.current,
           activeElement: Dynamic = (document as Dynamic).activeElement;
         current == null ||
-          !value9.current ||
+          !isCommentModeRef.current ||
           !(document as Dynamic).hasFocus() ||
           ((activeElement === null ||
             activeElement === (document as Dynamic).body ||
             activeElement === (document as Dynamic).documentElement) &&
-            value43.current.get(current)?.focus({
+            targetElementsRef.current.get(current)?.focus({
               preventScroll: true,
             }));
       }, 0);
     };
   (0, react_mi.useEffect)((): Dynamic => {
-    value10 || callback30();
-    value10 || mdnSetHeldRect(null);
-  }, [value10]);
-  let [value48, value49]: Dynamic = (0, react_mi.useState)(false),
-    [value50, value51]: Dynamic = (0, react_mi.useState)(false),
-    value52: Dynamic = (0, react_mi.useRef)({
+    isComposing || restoreTargetFocus();
+    isComposing || mdnSetHeldRect(null);
+  }, [isComposing]);
+  let [isRingVisible, setIsRingVisible]: Dynamic = (0, react_mi.useState)(false),
+    [isMarkerVisible, setIsMarkerVisible]: Dynamic = (0, react_mi.useState)(false),
+    focusVisualRef: Dynamic = (0, react_mi.useRef)({
       ring: false,
       marker: false,
     }),
-    value53: Dynamic = (0, react_mi.useRef)(false),
-    value54: Dynamic = (0, react_mi.useRef)(null),
-    callback31: Dynamic = (
-      input?: Dynamic,
-      options2: Dynamic = input,
+    markerWantedRef: Dynamic = (0, react_mi.useRef)(false),
+    pointerOriginRef: Dynamic = (0, react_mi.useRef)(null),
+    setFocusVisuals: Dynamic = (
+      showRing?: Dynamic,
+      showMarker: Dynamic = showRing,
     ): Dynamic => {
-      let current: Dynamic = value52.current;
-      options2 && !current.marker && (value54.current = null);
-      value53.current = options2;
-      current.ring !== input && value49((current.ring = input));
-      current.marker !== options2 && value51((current.marker = options2));
+      let current: Dynamic = focusVisualRef.current;
+      showMarker && !current.marker && (pointerOriginRef.current = null);
+      markerWantedRef.current = showMarker;
+      current.ring !== showRing && setIsRingVisible((current.ring = showRing));
+      current.marker !== showMarker && setIsMarkerVisible((current.marker = showMarker));
     },
-    value55: Dynamic = (0, react_mi.useRef)(false);
+    tabPressedRef: Dynamic = (0, react_mi.useRef)(false);
   (0, react_mi.useEffect)((): Dynamic => {
-    if (!value6) {
-      value47.current = null;
-      callback31(false);
+    if (!isCommentMode) {
+      lastComposeTargetRef.current = null;
+      setFocusVisuals(false);
       return;
     }
-    let callback38: Dynamic = (input?: Dynamic): Dynamic => {
-        if (!value52.current.marker) return;
-        let current: Dynamic = value54.current;
+    let handlePointerMove: Dynamic = (event?: Dynamic): Dynamic => {
+        if (!focusVisualRef.current.marker) return;
+        let current: Dynamic = pointerOriginRef.current;
         current
-          ? Math.abs(input.clientX - current.x) +
-              Math.abs(input.clientY - current.y) >
+          ? Math.abs(event.clientX - current.x) +
+              Math.abs(event.clientY - current.y) >
               commentClickMovementThresholdPixels &&
-            callback31(value52.current.ring, false)
-          : (value54.current = {
-              x: input.clientX,
-              y: input.clientY,
+            setFocusVisuals(focusVisualRef.current.ring, false)
+          : (pointerOriginRef.current = {
+              x: event.clientX,
+              y: event.clientY,
             });
       },
-      callback39: Dynamic = (input?: Dynamic): Dynamic => {
-        isCommentTargetEvent(input) ||
-          (callback31(false), (value47.current = null));
+      handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
+        isCommentTargetEvent(event) ||
+          (setFocusVisuals(false), (lastComposeTargetRef.current = null));
       },
-      callback40: Dynamic = (input?: Dynamic): Dynamic => {
-        input.key === "Tab" &&
-          ((value55.current = true),
-          setTimeout((): Dynamic => (value55.current = false), 0));
+      handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
+        event.key === "Tab" &&
+          ((tabPressedRef.current = true),
+          setTimeout((): Dynamic => (tabPressedRef.current = false), 0));
       };
-    (document as Dynamic).addEventListener("pointermove", callback38, {
+    (document as Dynamic).addEventListener("pointermove", handlePointerMove, {
       capture: true,
       passive: true,
     });
-    (document as Dynamic).addEventListener("pointerdown", callback39, {
+    (document as Dynamic).addEventListener("pointerdown", handlePointerDown, {
       capture: true,
       passive: true,
     });
-    (document as Dynamic).addEventListener("keydown", callback40, true);
-    (window as Dynamic).addEventListener("focus", callback30);
+    (document as Dynamic).addEventListener("keydown", handleKeyDown, true);
+    (window as Dynamic).addEventListener("focus", restoreTargetFocus);
     return (): Dynamic => {
-      (document as Dynamic).removeEventListener("pointermove", callback38, {
+      (document as Dynamic).removeEventListener("pointermove", handlePointerMove, {
         capture: true,
       });
-      (document as Dynamic).removeEventListener("pointerdown", callback39, {
+      (document as Dynamic).removeEventListener("pointerdown", handlePointerDown, {
         capture: true,
       });
-      (document as Dynamic).removeEventListener("keydown", callback40, true);
-      (window as Dynamic).removeEventListener("focus", callback30);
+      (document as Dynamic).removeEventListener("keydown", handleKeyDown, true);
+      (window as Dynamic).removeEventListener("focus", restoreTargetFocus);
     };
-  }, [value6]);
-  let value56: Dynamic = (0, react_mi.useId)(),
-    value57: Dynamic = (0, react_mi.useRef)(false);
+  }, [isCommentMode]);
+  let hintId: Dynamic = (0, react_mi.useId)(),
+    wasCommentModeReadyRef: Dynamic = (0, react_mi.useRef)(false);
   (0, react_mi.useEffect)((): Dynamic => {
-    let value64: Dynamic = value6 && value3 && !value57.current;
-    value57.current = value6 && value3;
-    if (!value64) return;
-    let value65: Dynamic =
-      performance.now() - value5.current < commentRevealTimeoutMs;
-    value5.current = Number.NEGATIVE_INFINITY;
-    if (value65 || !(document as Dynamic).hasFocus()) return;
+    let justEntered: Dynamic = isCommentMode && hasController && !wasCommentModeReadyRef.current;
+    wasCommentModeReadyRef.current = isCommentMode && hasController;
+    if (!justEntered) return;
+    let composedRecently: Dynamic =
+      performance.now() - lastComposeAtRef.current < commentRevealTimeoutMs;
+    lastComposeAtRef.current = Number.NEGATIVE_INFINITY;
+    if (composedRecently || !(document as Dynamic).hasFocus()) return;
     let activeElement: Dynamic = (document as Dynamic).activeElement,
-      value66: Dynamic =
+      isBodyFocused: Dynamic =
         activeElement === null ||
         activeElement === (document as Dynamic).body ||
         activeElement === (document as Dynamic).documentElement,
-      value67: Dynamic =
+      isArtboardIframeFocused: Dynamic =
         activeElement?.tagName === "IFRAME" &&
         !!activeElement.closest("[data-mega-artboard]") &&
         !!surfaceRef.current?.contains(activeElement);
-    value67 && activeElement.blur();
-    (value66 || value67) &&
-      (callback29()?.focus({
+    isArtboardIframeFocused && activeElement.blur();
+    (isBodyFocused || isArtboardIframeFocused) &&
+      (findFocusTarget()?.focus({
         preventScroll: true,
       }),
       typeof matchMedia == "function" &&
         matchMedia("(hover: none)").matches &&
-        (callback31(false), (value53.current = true)));
-  }, [value6, value3]);
+        (setFocusVisuals(false), (markerWantedRef.current = true)));
+  }, [isCommentMode, hasController]);
   (0, react_mi.useLayoutEffect)((): Dynamic => {
-    if (value45 == null || value43.current.has(value45)) return;
-    value46(null);
+    if (focusedTargetKey == null || targetElementsRef.current.has(focusedTargetKey)) return;
+    setFocusedTargetKey(null);
     let activeElement: Dynamic = (document as Dynamic).activeElement;
     !(document as Dynamic).hasFocus() ||
       !(
@@ -1733,367 +1733,367 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         activeElement === (document as Dynamic).body ||
         activeElement === (document as Dynamic).documentElement
       ) ||
-      (value6
-        ? callback29()?.focus({
+      (isCommentMode
+        ? findFocusTarget()?.focus({
             preventScroll: true,
           })
         : surfaceRef.current
             ?.querySelector(
               '[data-mega-artboard="' +
-                CSS.escape(value45) +
+                CSS.escape(focusedTargetKey) +
                 '"] [data-mega-title-text]',
             )
             ?.focus({
               preventScroll: true,
             }));
   });
-  let callback32: Dynamic = (
-      input?: Dynamic,
-      options2: Dynamic = false,
+  let panToRect: Dynamic = (
+      rect?: Dynamic,
+      instant: Dynamic = false,
     ): Dynamic => {
       let current: Dynamic = surfaceRef.current;
       if (!current || value.current.fullscreenFile != null) return;
-      let callback38: Dynamic = (input2?: Dynamic): Dynamic => {
+      let computeCamera: Dynamic = (viewCamera?: Dynamic): Dynamic => {
         let state: Dynamic = {
             w: current.clientWidth || 1,
             h: current.clientHeight || 1,
             top: toolbarOverlayHeight(current),
           },
-          value64: Dynamic =
-            input.w <= state.w / input2.scale &&
-            input.h <= (state.h - state.top) / input2.scale;
+          fitsView: Dynamic =
+            rect.w <= state.w / viewCamera.scale &&
+            rect.h <= (state.h - state.top) / viewCamera.scale;
         return isArtboardInViewport(
-          input2,
-          value64
-            ? input
+          viewCamera,
+          fitsView
+            ? rect
             : {
-                x: input.x + input.w / 2,
-                y: input.y,
-                w: input.w / 2,
-                h: input.h / 2,
+                x: rect.x + rect.w / 2,
+                y: rect.y,
+                w: rect.w / 2,
+                h: rect.h / 2,
               },
           state,
         );
       };
-      options2 ? camera.set(callback38, true) : camera.glide(callback38);
+      instant ? camera.set(computeCamera, true) : camera.glide(computeCamera);
     },
-    callback33: Dynamic = (input?: Dynamic): Dynamic => {
+    defaultTargetFor: Dynamic = (key?: Dynamic): Dynamic => {
       let current: Dynamic = surfaceRef.current;
       if (!current) return null;
       let entry: Dynamic = camera.get();
-      if (input === canvasCommentScopeKey) {
-        let value68: Dynamic = toolbarOverlayHeight(current),
-          value69: Dynamic =
+      if (key === canvasCommentScopeKey) {
+        let toolbarHeight: Dynamic = toolbarOverlayHeight(current),
+          centerX: Dynamic =
             entry.x + (current.clientWidth || 1) / 2 / entry.scale,
-          value70: Dynamic =
+          centerY: Dynamic =
             entry.y +
-            (value68 + ((current.clientHeight || 1) - value68) / 2) /
+            (toolbarHeight + ((current.clientHeight || 1) - toolbarHeight) / 2) /
               entry.scale;
         return {
           anchor: {
             kind: "canvas",
             page: pageKey,
-            x: value69,
-            y: value70,
+            x: centerX,
+            y: centerY,
           },
           label: commentAnchorShortLabel({
             kind: "canvas",
             pages: manifest.pages,
             pageKey: pageKey,
           }),
-          detail: commentCanvasPointDetail(value69, value70),
+          detail: commentCanvasPointDetail(centerX, centerY),
           p: {
-            x: value69,
-            y: value70,
+            x: centerX,
+            y: centerY,
           },
         };
       }
-      let value64: Dynamic = callback5(input);
-      if (!value64) return null;
-      let value65: Dynamic = callback10(value64),
-        { fx: value66, fy: value67 }: Dynamic = defaultArtboardCommentPoint(value65, entry.scale);
+      let artboard: Dynamic = findArtboardByFile(key);
+      if (!artboard) return null;
+      let frame: Dynamic = getArtboardFrame(artboard),
+        { fx: fx, fy: fy }: Dynamic = defaultArtboardCommentPoint(frame, entry.scale);
       return {
         anchor: {
           kind: "artboard",
-          file: value64.file,
-          fx: value66,
-          fy: value67,
+          file: artboard.file,
+          fx: fx,
+          fy: fy,
         },
         label: commentAnchorShortLabel({
           kind: "artboard",
-          board: value64,
+          board: artboard,
         }),
-        detail: commentArtboardElementDetail(value64),
+        detail: commentArtboardElementDetail(artboard),
         p: {
-          x: value65.x + value66 * value65.w,
-          y: value65.y + value67 * value65.h,
+          x: frame.x + fx * frame.w,
+          y: frame.y + fy * frame.h,
         },
       };
     },
-    callback34: Dynamic = (input?: Dynamic): Dynamic => {
-      value29.current.cancel();
-      let current: Dynamic = value2.current,
-        current2: Dynamic = surfaceRef.current;
-      if (!current || !value6 || !current2) return;
-      let value64: Dynamic = callback33(input),
-        value65: Dynamic = value64
-          ? serializeDesignCommentAnchor(value64.anchor)
+    composeAtTarget: Dynamic = (key?: Dynamic): Dynamic => {
+      operationTokenRef.current.cancel();
+      let current: Dynamic = controllerRef.current,
+        layerElement: Dynamic = surfaceRef.current;
+      if (!current || !isCommentMode || !layerElement) return;
+      let target: Dynamic = defaultTargetFor(key),
+        serializedAnchor: Dynamic = target
+          ? serializeDesignCommentAnchor(target.anchor)
           : null;
-      if (!value64 || !value65) return;
-      let bounds: Dynamic = current2.getBoundingClientRect(),
+      if (!target || !serializedAnchor) return;
+      let bounds: Dynamic = layerElement.getBoundingClientRect(),
         entry: Dynamic = camera.get(),
-        value66: Dynamic = toolbarOverlayHeight(current2),
-        callback38: Dynamic = (
-          input2?: Dynamic,
-          options2?: Dynamic,
-          context?: Dynamic,
+        toolbarHeight: Dynamic = toolbarOverlayHeight(layerElement),
+        clampBetween: Dynamic = (
+          candidate?: Dynamic,
+          min?: Dynamic,
+          max?: Dynamic,
         ): Dynamic =>
-          Math.max(options2, Math.min(Math.max(options2, context), input2)),
+          Math.max(min, Math.min(Math.max(min, max), candidate)),
         state: Dynamic = {
           x: Math.round(
-            callback38(
-              bounds.left + (value64.p.x - entry.x) * entry.scale,
+            clampBetween(
+              bounds.left + (target.p.x - entry.x) * entry.scale,
               bounds.left + commentPointerMovementThreshold,
               bounds.right - commentPointerMovementThreshold,
             ) + (window as Dynamic).scrollX,
           ),
           y: Math.round(
-            callback38(
-              bounds.top + (value64.p.y - entry.y) * entry.scale,
-              bounds.top + value66 + commentPointerMovementThreshold,
+            clampBetween(
+              bounds.top + (target.p.y - entry.y) * entry.scale,
+              bounds.top + toolbarHeight + commentPointerMovementThreshold,
               bounds.bottom - commentPointerMovementThreshold,
             ) + (window as Dynamic).scrollY,
           ),
         };
-      value47.current = input;
+      lastComposeTargetRef.current = key;
       current
-        .compose(value65, state, {
-          label: value64.label,
-          detail: value64.detail,
+        .compose(serializedAnchor, state, {
+          label: target.label,
+          detail: target.detail,
         })
         .then(
-          (input2?: Dynamic): Dynamic => {
-            input2.opened && value30.clear();
+          (result?: Dynamic): Dynamic => {
+            result.opened && pendingArea.clear();
           },
           (): Dynamic => {},
         );
     },
-    callback35: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      let current: Dynamic = value53.current;
-      callback31(true);
-      if (options2 && !current) return;
-      let value64: Dynamic =
-        input === canvasCommentScopeKey ? null : callback5(input);
-      value64 &&
-        callback32(
+    activateTarget: Dynamic = (key?: Dynamic, fromKeyboard?: Dynamic): Dynamic => {
+      let current: Dynamic = markerWantedRef.current;
+      setFocusVisuals(true);
+      if (fromKeyboard && !current) return;
+      let artboard: Dynamic =
+        key === canvasCommentScopeKey ? null : findArtboardByFile(key);
+      artboard &&
+        panToRect(
           {
-            x: value64.x,
-            y: value64.y,
-            w: value64.w,
-            h: value64.h,
+            x: artboard.x,
+            y: artboard.y,
+            w: artboard.w,
+            h: artboard.h,
           },
           true,
         );
-      callback34(input);
+      composeAtTarget(key);
     },
-    callback36: Dynamic = (input?: Dynamic): Dynamic => {
-      let value64: Dynamic = buttonKeyboardActivation(
-        (): Dynamic => callback35(input, true),
+    getTargetHandlers: Dynamic = (key?: Dynamic): Dynamic => {
+      let activation: Dynamic = buttonKeyboardActivation(
+        (): Dynamic => activateTarget(key, true),
       );
       return {
-        onKeyDown(input2: Dynamic): Dynamic {
-          input2.key !== "Enter" && input2.key !== " " && callback31(true);
-          value64.onKeyDown(input2);
+        onKeyDown(event: Dynamic): Dynamic {
+          event.key !== "Enter" && event.key !== " " && setFocusVisuals(true);
+          activation.onKeyDown(event);
         },
-        onKeyUp: value64.onKeyUp,
+        onKeyUp: activation.onKeyUp,
         onClick(event: Dynamic): Dynamic {
           event.target === event.currentTarget &&
             (event.currentTarget.focus({
               preventScroll: true,
             }),
-            callback35(input, false));
+            activateTarget(key, false));
         },
-        onFocus(input2: Dynamic): Dynamic {
-          value47.current = null;
-          value46(input);
-          value54.current = null;
-          callback31(true);
-          let value65: Dynamic =
-            input === canvasCommentScopeKey ? null : callback5(input);
-          value65 &&
-            input2.relatedTarget != null &&
-            callback32({
-              x: value65.x,
-              y: value65.y,
-              w: value65.w,
-              h: value65.h,
+        onFocus(event: Dynamic): Dynamic {
+          lastComposeTargetRef.current = null;
+          setFocusedTargetKey(key);
+          pointerOriginRef.current = null;
+          setFocusVisuals(true);
+          let artboard: Dynamic =
+            key === canvasCommentScopeKey ? null : findArtboardByFile(key);
+          artboard &&
+            event.relatedTarget != null &&
+            panToRect({
+              x: artboard.x,
+              y: artboard.y,
+              w: artboard.w,
+              h: artboard.h,
             });
         },
-        onBlur(input2: Dynamic): Dynamic {
-          value64.onBlur(input2);
-          value46(
-            (input3?: Dynamic): Dynamic => (input3 === input ? null : input3),
+        onBlur(event: Dynamic): Dynamic {
+          activation.onBlur(event);
+          setFocusedTargetKey(
+            (previous?: Dynamic): Dynamic => (previous === key ? null : previous),
           );
-          let relatedTarget: Dynamic = input2.relatedTarget;
-          value55.current &&
+          let relatedTarget: Dynamic = event.relatedTarget;
+          tabPressedRef.current &&
             relatedTarget &&
-            !value33.current?.contains(relatedTarget) &&
+            !layerRef.current?.contains(relatedTarget) &&
             announce(
               (): Dynamic =>
-                value9.current
-                  ? AccessibilityAnnouncementsLabel_24
+                isCommentModeRef.current
+                  ? commentModePausedMessage
                   : null,
             );
         },
       };
     },
-    value58: Dynamic = (0, react_mi.useRef)({
+    wheelAccumulatorRef: Dynamic = (0, react_mi.useRef)({
       dx: 0,
       dy: 0,
       raf: null,
     }),
-    callback37: Dynamic = (input?: Dynamic): Dynamic => {
+    handleWheel: Dynamic = (event?: Dynamic): Dynamic => {
       if (fullscreenFile == null) return;
-      let value64: Dynamic =
-          input.deltaMode === 1
+      let deltaScale: Dynamic =
+          event.deltaMode === 1
             ? 16
-            : input.deltaMode === 2
+            : event.deltaMode === 2
               ? (window as Dynamic).innerHeight
               : 1,
-        current: Dynamic = value58.current;
-      current.dx += input.deltaX * value64;
-      current.dy += input.deltaY * value64;
+        current: Dynamic = wheelAccumulatorRef.current;
+      current.dx += event.deltaX * deltaScale;
+      current.dy += event.deltaY * deltaScale;
       current.raf == null &&
         (current.raf = requestAnimationFrame((): Dynamic => {
-          let { dx: value65, dy: value66 }: Dynamic = current;
-          value58.current = {
+          let { dx: deltaX, dy: deltaY }: Dynamic = current;
+          wheelAccumulatorRef.current = {
             dx: 0,
             dy: 0,
             raf: null,
           };
-          let fullscreenFile2: Dynamic = value.current.fullscreenFile,
-            value67: Dynamic =
-              fullscreenFile2 == null
+          let latestFullscreenFile: Dynamic = value.current.fullscreenFile,
+            handle: Dynamic =
+              latestFullscreenFile == null
                 ? undefined
-                : handlesRef.current.get(fullscreenFile2);
+                : handlesRef.current.get(latestFullscreenFile);
           createPreviewHandle(
-            value67?.webviewRef.current ?? null,
+            handle?.webviewRef.current ?? null,
           )?.executeJavaScriptUnchecked(
             "scrollBy(" +
-              JSON.stringify(value65) +
+              JSON.stringify(deltaX) +
               "," +
-              JSON.stringify(value66) +
+              JSON.stringify(deltaY) +
               ")",
           );
-          let current2: Dynamic = value22.current;
-          current2 && value28.current(current2.x, current2.y);
+          let lastPointer: Dynamic = lastPointerRef.current;
+          lastPointer && updateHoverAtRef.current(lastPointer.x, lastPointer.y);
         }));
     },
-    value59: Dynamic = ((): Dynamic => {
-      let value64: Dynamic = value12.find(
-          (input?: Dynamic): Dynamic => input.active,
+    activeThreadAreaRect: Dynamic = ((): Dynamic => {
+      let activeThread: Dynamic = threads.find(
+          (thread?: Dynamic): Dynamic => thread.active,
         ),
-        value65: Dynamic = value64
-          ? parseDesignCommentAnchor(value64.anchor)
+        parsedAnchor: Dynamic = activeThread
+          ? parseDesignCommentAnchor(activeThread.anchor)
           : null,
-        value66: Dynamic =
-          value65?.kind === "notearea" && fullscreenFile == null
-            ? callback7(value65.idHash)
+        note: Dynamic =
+          parsedAnchor?.kind === "notearea" && fullscreenFile == null
+            ? findNoteByHash(parsedAnchor.idHash)
             : null;
-      return value65?.kind === "notearea"
-        ? value66
+      return parsedAnchor?.kind === "notearea"
+        ? note
           ? objectCommentAreaRect(
-              value66,
-              options.annBox(value66),
-              value65.box,
+              note,
+              hookOptions.annBox(note),
+              parsedAnchor.box,
             )
           : null
-        : value65 && (value65.kind === "area" || value65.kind === "boards")
-          ? (callback11(value65) ?? null)
+        : parsedAnchor && (parsedAnchor.kind === "area" || parsedAnchor.kind === "boards")
+          ? (resolveAreaRect(parsedAnchor) ?? null)
           : null;
     })();
-  if (!value6) return null;
-  let value60: Dynamic =
+  if (!isCommentMode) return null;
+  let layerWidth: Dynamic =
       surfaceRef.current?.clientWidth || (window as Dynamic).innerWidth,
-    value61: Dynamic =
+    layerHeight: Dynamic =
       surfaceRef.current?.clientHeight || (window as Dynamic).innerHeight,
-    value62: Dynamic = ((): Dynamic => {
-      if (value45 == null || !value48) return null;
-      if (value45 === canvasCommentScopeKey) {
-        if (!value40) return null;
-        let value68: Dynamic = callback33(canvasCommentScopeKey);
-        return value68
+    focusRing: Dynamic = ((): Dynamic => {
+      if (focusedTargetKey == null || !isRingVisible) return null;
+      if (focusedTargetKey === canvasCommentScopeKey) {
+        if (!hasCanvasTarget) return null;
+        let canvasTarget: Dynamic = defaultTargetFor(canvasCommentScopeKey);
+        return canvasTarget
           ? {
               inset: commentPointerStrokeInset,
-              px: (value68.p.x - value8.x) * value8.scale,
-              py: (value68.p.y - value8.y) * value8.scale,
+              px: (canvasTarget.p.x - viewport.x) * viewport.scale,
+              py: (canvasTarget.p.y - viewport.y) * viewport.scale,
             }
           : null;
       }
-      let value64: Dynamic = callback5(value45);
-      if (!value64 || !callback9(value64.file)) return null;
-      let value65: Dynamic = callback10(value64),
-        { fx: value66, fy: value67 }: Dynamic = defaultArtboardCommentPoint(value65, value8.scale);
+      let artboard: Dynamic = findArtboardByFile(focusedTargetKey);
+      if (!artboard || !isFileVisible(artboard.file)) return null;
+      let frame: Dynamic = getArtboardFrame(artboard),
+        { fx: fx, fy: fy }: Dynamic = defaultArtboardCommentPoint(frame, viewport.scale);
       return {
-        x: (value65.x - value8.x) * value8.scale,
-        y: (value65.y - value8.y) * value8.scale,
-        w: value65.w * value8.scale,
-        h: value65.h * value8.scale,
-        px: (value65.x + value66 * value65.w - value8.x) * value8.scale,
-        py: (value65.y + value67 * value65.h - value8.y) * value8.scale,
+        x: (frame.x - viewport.x) * viewport.scale,
+        y: (frame.y - viewport.y) * viewport.scale,
+        w: frame.w * viewport.scale,
+        h: frame.h * viewport.scale,
+        px: (frame.x + fx * frame.w - viewport.x) * viewport.scale,
+        py: (frame.y + fy * frame.h - viewport.y) * viewport.scale,
       };
     })(),
-    value63: Dynamic = ((): Dynamic => {
-      if (value35) {
-        let value64: Dynamic = (value35.pin.x - value8.x) * value8.scale,
-          value65: Dynamic = (value35.pin.y - value8.y) * value8.scale,
-          { x1: value66, y1: value67 }: Dynamic = value35;
+    areaOutline: Dynamic = ((): Dynamic => {
+      if (marqueeState) {
+        let pinX: Dynamic = (marqueeState.pin.x - viewport.x) * viewport.scale,
+          pinY: Dynamic = (marqueeState.pin.y - viewport.y) * viewport.scale,
+          { x1: x1, y1: y1 }: Dynamic = marqueeState;
         return {
-          x: Math.min(value64, value66),
-          y: Math.min(value65, value67),
-          w: Math.abs(value66 - value64),
-          h: Math.abs(value67 - value65),
-          ox: value35.resizing ? value66 : value64,
-          oy: value35.resizing ? value67 : value65,
+          x: Math.min(pinX, x1),
+          y: Math.min(pinY, y1),
+          w: Math.abs(x1 - pinX),
+          h: Math.abs(y1 - pinY),
+          ox: marqueeState.resizing ? x1 : pinX,
+          oy: marqueeState.resizing ? y1 : pinY,
         };
       }
-      return value59
+      return activeThreadAreaRect
         ? {
-            x: (value59.x - value8.x) * value8.scale,
-            y: (value59.y - value8.y) * value8.scale,
-            w: value59.w * value8.scale,
-            h: value59.h * value8.scale,
-            deg: value59.deg,
+            x: (activeThreadAreaRect.x - viewport.x) * viewport.scale,
+            y: (activeThreadAreaRect.y - viewport.y) * viewport.scale,
+            w: activeThreadAreaRect.w * viewport.scale,
+            h: activeThreadAreaRect.h * viewport.scale,
+            deg: activeThreadAreaRect.deg,
           }
-        : value32
+        : drawnAreaRect
           ? {
-              x: (value32.x - value8.x) * value8.scale,
-              y: (value32.y - value8.y) * value8.scale,
-              w: value32.w * value8.scale,
-              h: value32.h * value8.scale,
-              ox: (value32.ox - value8.x) * value8.scale,
-              oy: (value32.oy - value8.y) * value8.scale,
+              x: (drawnAreaRect.x - viewport.x) * viewport.scale,
+              y: (drawnAreaRect.y - viewport.y) * viewport.scale,
+              w: drawnAreaRect.w * viewport.scale,
+              h: drawnAreaRect.h * viewport.scale,
+              ox: (drawnAreaRect.ox - viewport.x) * viewport.scale,
+              oy: (drawnAreaRect.oy - viewport.y) * viewport.scale,
             }
           : null;
     })();
   let mdnTargetRect: Dynamic =
-    value19 ?? (value10 && !value32 ? mdnHeldRect : null);
+    hoverRect ?? (isComposing && !drawnAreaRect ? mdnHeldRect : null);
   // MineDesign：评论卡片的目标点与编号圆点同一位置，换成本图层的屏幕坐标；只给可视区域内的
   let mdnCardTop: Dynamic = surfaceRef.current
       ? toolbarOverlayHeight(surfaceRef.current)
       : 0,
-    mdnCardTargets: Dynamic = value12.flatMap((thread?: Dynamic): Dynamic => {
+    mdnCardTargets: Dynamic = threads.flatMap((thread?: Dynamic): Dynamic => {
       let anchor: Dynamic = parseDesignCommentAnchor(thread.anchor),
-        world: Dynamic = anchor ? callback12(anchor) : null;
+        world: Dynamic = anchor ? resolveAnchorPoint(anchor) : null;
       if (!world) return [];
-      let point: Dynamic = callback13(world);
-      return point.x < 0 || point.x > value60 || point.y < mdnCardTop || point.y > value61
+      let point: Dynamic = canvasToLayerPoint(world);
+      return point.x < 0 || point.x > layerWidth || point.y < mdnCardTop || point.y > layerHeight
         ? []
         : [{ id: thread.id, x: point.x, y: point.y }];
     });
   return (
     <div
-      ref={value33}
+      ref={layerRef}
       data-mega-chrome={"comments"}
       data-testid={"mega-comment-layer"}
       className={"absolute inset-0 z-[48]"}
@@ -2103,78 +2103,78 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       onPointerDown={(event?: Dynamic): Dynamic => {
         event.button !== 0 ||
           isCommentTargetEvent(event.nativeEvent) ||
-          callback24(event) ||
+          startAreaDrag(event) ||
           watchPointerRelease(
             event.nativeEvent,
-            (input?: Dynamic): Dynamic => value37.current(input),
+            (releaseEvent?: Dynamic): Dynamic => composeAtPointerRef.current(releaseEvent),
           );
       }}
       onPointerMove={(event?: Dynamic): Dynamic => {
         // MineDesign：指针在评论卡片上时不高亮卡片下面的对象
-        if (!isCommentCardEvent(event.nativeEvent)) return callback18(event);
-        value22.current = null;
-        callback3(null);
+        if (!isCommentCardEvent(event.nativeEvent)) return handleLayerPointerMove(event);
+        lastPointerRef.current = null;
+        updateHoverRect(null);
       }}
       onPointerLeave={(): Dynamic => {
-        value21.current += 1;
-        value27.current.next = null;
-        value22.current = null;
-        callback3(null);
+        hoverGenerationRef.current += 1;
+        hoverProbeRef.current.next = null;
+        lastPointerRef.current = null;
+        updateHoverRect(null);
       }}
-      onWheel={callback37}
+      onWheel={handleWheel}
     >
-      {value63?.deg ? (<div
+      {areaOutline?.deg ? (<div
           className={"pointer-events-none absolute h-0 w-0"}
           style={{
-            left: value63.x + value63.w / 2,
-            top: value63.y + value63.h / 2,
-            transform: "rotate(" + String(value63.deg) + "deg)",
+            left: areaOutline.x + areaOutline.w / 2,
+            top: areaOutline.y + areaOutline.h / 2,
+            transform: "rotate(" + String(areaOutline.deg) + "deg)",
           }}
         >
           <CommentAreaOutline
             rect={{
-              left: -value63.w / 2,
-              top: -value63.h / 2,
-              width: value63.w,
-              height: value63.h,
+              left: -areaOutline.w / 2,
+              top: -areaOutline.h / 2,
+              width: areaOutline.w,
+              height: areaOutline.h,
             }}
             kind={"thread"}
           />
-        </div>) : (value63 && (<CommentAreaOutline
+        </div>) : (areaOutline && (<CommentAreaOutline
             rect={{
-              left: value63.x,
-              top: value63.y,
-              width: value63.w,
-              height: value63.h,
+              left: areaOutline.x,
+              top: areaOutline.y,
+              width: areaOutline.w,
+              height: areaOutline.h,
             }}
             origin={
-              value63.ox != null && value63.oy != null
+              areaOutline.ox != null && areaOutline.oy != null
                 ? {
-                    x: value63.ox,
-                    y: value63.oy,
+                    x: areaOutline.ox,
+                    y: areaOutline.oy,
                   }
                 : null
             }
-            handle={!!value32 && !value35 && !value59}
-            onHandlePointerDown={(input?: Dynamic): Dynamic => {
-              !value32 ||
-                input.button !== 0 ||
-                input.pointerType !== "mouse" ||
-                (input.stopPropagation(),
-                callback24(input, {
+            handle={!!drawnAreaRect && !marqueeState && !activeThreadAreaRect}
+            onHandlePointerDown={(event?: Dynamic): Dynamic => {
+              !drawnAreaRect ||
+                event.button !== 0 ||
+                event.pointerType !== "mouse" ||
+                (event.stopPropagation(),
+                startAreaDrag(event, {
                   x:
-                    value32.ox <= value32.x + value32.w / 2
-                      ? value32.x + value32.w
-                      : value32.x,
+                    drawnAreaRect.ox <= drawnAreaRect.x + drawnAreaRect.w / 2
+                      ? drawnAreaRect.x + drawnAreaRect.w
+                      : drawnAreaRect.x,
                   y:
-                    value32.oy <= value32.y + value32.h / 2
-                      ? value32.y + value32.h
-                      : value32.y,
+                    drawnAreaRect.oy <= drawnAreaRect.y + drawnAreaRect.h / 2
+                      ? drawnAreaRect.y + drawnAreaRect.h
+                      : drawnAreaRect.y,
                 }));
             }}
-            kind={value35 ? "marquee" : value59 ? "thread" : "drawn"}
+            kind={marqueeState ? "marquee" : activeThreadAreaRect ? "thread" : "drawn"}
           />))}
-      {mdnTargetRect && !value35 && (<div
+      {mdnTargetRect && !marqueeState && (<div
           aria-hidden={true}
           className={
             "pointer-events-none absolute rounded border-2 border-editor-comment-target"
@@ -2182,52 +2182,52 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           style={{
             // MineDesign：与 Codex 原生评论一致，蓝色描边之外再盖一层浅蓝，突出正指着的对象
             background: "var(--cds-bg-editor-comment-target, transparent)",
-            left: (mdnTargetRect.x - value8.x) * value8.scale,
-            top: (mdnTargetRect.y - value8.y) * value8.scale,
-            width: mdnTargetRect.w * value8.scale,
-            height: mdnTargetRect.h * value8.scale,
+            left: (mdnTargetRect.x - viewport.x) * viewport.scale,
+            top: (mdnTargetRect.y - viewport.y) * viewport.scale,
+            width: mdnTargetRect.w * viewport.scale,
+            height: mdnTargetRect.h * viewport.scale,
           }}
         />)}
-      {value39.map((input?: Dynamic): Dynamic => {
-        let value64: Dynamic = callback10(input),
-          value65: Dynamic = clampCommentAreaToViewport(
+      {visibleArtboards.map((artboard?: Dynamic): Dynamic => {
+        let frame: Dynamic = getArtboardFrame(artboard),
+          clampedFrame: Dynamic = clampCommentAreaToViewport(
             {
-              x: (value64.x - value8.x) * value8.scale,
-              y: (value64.y - value8.y) * value8.scale,
-              w: value64.w * value8.scale,
-              h: value64.h * value8.scale,
+              x: (frame.x - viewport.x) * viewport.scale,
+              y: (frame.y - viewport.y) * viewport.scale,
+              w: frame.w * viewport.scale,
+              h: frame.h * viewport.scale,
             },
-            value60,
-            value61,
+            layerWidth,
+            layerHeight,
           );
         return (() => {
           const _Component = "div";
           const _props = {
-            ref: callback28(input.file),
+            ref: getTargetRef(artboard.file),
             role: "button",
             tabIndex: 0,
-            "data-mega-comment-target": input.file,
-            "data-testid": "mega-comment-target-" + input.file,
+            "data-mega-comment-target": artboard.file,
+            "data-testid": "mega-comment-target-" + artboard.file,
             "aria-label": commentSurfaceAriaLabel({
               kind: "artboard",
-              board: input,
+              board: artboard,
             }),
-            "aria-describedby": value56,
+            "aria-describedby": hintId,
             className: "pointer-events-none absolute outline-none",
             style: {
-              left: value65.x,
-              top: value65.y,
-              width: value65.w,
-              height: value65.h,
+              left: clampedFrame.x,
+              top: clampedFrame.y,
+              width: clampedFrame.w,
+              height: clampedFrame.h,
             },
-            ...callback36(input.file),
+            ...getTargetHandlers(artboard.file),
           } as const;
-          const _key = input.file;
+          const _key = artboard.file;
           return <_Component key={_key} {..._props} />;
         })();
       })}
-      {value40 && (<div
-          ref={callback28(canvasCommentScopeKey)}
+      {hasCanvasTarget && (<div
+          ref={getTargetRef(canvasCommentScopeKey)}
           role={"button"}
           tabIndex={0}
           data-mega-comment-target={""}
@@ -2237,17 +2237,17 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             pages: manifest.pages,
             pageKey: pageKey,
           })}
-          aria-describedby={value56}
+          aria-describedby={hintId}
           className={"pointer-events-none absolute inset-0 outline-none"}
-          {...callback36(canvasCommentScopeKey)}
+          {...getTargetHandlers(canvasCommentScopeKey)}
         />)}
-      {value41.length > 0 && (<span id={value56} hidden={true}>
+      {targetKeys.length > 0 && (<span id={hintId} hidden={true}>
           {commentTargetKeyboardHint({
-            several: value41.length > 1,
-            canvas: value40,
+            several: targetKeys.length > 1,
+            canvas: hasCanvasTarget,
           })}
         </span>)}
-      {value62 && (<jsx_mg.Fragment>
+      {focusRing && (<jsx_mg.Fragment>
           <div
             aria-hidden={true}
             data-testid={"mega-comment-focus-ring"}
@@ -2255,28 +2255,28 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               "pointer-events-none absolute rounded border-2 border-editor-comment-target"
             }
             style={{
-              ...("inset" in value62
+              ...("inset" in focusRing
                 ? {
-                    top: value62.inset,
-                    right: value62.inset,
-                    bottom: value62.inset,
-                    left: value62.inset,
+                    top: focusRing.inset,
+                    right: focusRing.inset,
+                    bottom: focusRing.inset,
+                    left: focusRing.inset,
                   }
                 : {
-                    left: value62.x,
-                    top: value62.y,
-                    width: value62.w,
-                    height: value62.h,
+                    left: focusRing.x,
+                    top: focusRing.y,
+                    width: focusRing.w,
+                    height: focusRing.h,
                   }),
               boxShadow: `0 0 0 ${commentPointerStrokeInset}px #fff`,
               background: "var(--cds-bg-editor-comment-target, transparent)",
             }}
           />
-          {value50 && (<CommentPointer
+          {isMarkerVisible && (<CommentPointer
               data-testid={"mega-comment-focus-pin"}
               at={{
-                x: value62.px,
-                y: value62.py,
+                x: focusRing.px,
+                y: focusRing.py,
               }}
             />)}
         </jsx_mg.Fragment>)}
@@ -2285,12 +2285,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         bounds={{
           left: 8,
           top: mdnCardTop + 8,
-          right: value60 - 8,
+          right: layerWidth - 8,
           // 底部留出画布工具栏（距底 16px、高 44px）
-          bottom: value61 - 68,
+          bottom: layerHeight - 68,
         }}
-        scale={value8.scale}
-        suppressed={fullscreenFile != null || !!options.mdnHideCommentCards}
+        scale={viewport.scale}
+        suppressed={fullscreenFile != null || !!hookOptions.mdnHideCommentCards}
       />
     </div>
   );
@@ -2324,22 +2324,22 @@ export function installCommentsCanvasController(): () => void {
     commentClickMovementThresholdPixels = 4;
     maxCommentAreaElementLabels = 8;
     commentScopeKey = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      path?: Dynamic,
+      templateId?: Dynamic,
+      fingerprint?: Dynamic,
     ): Dynamic =>
-      String(options) +
-      (context ?? "") +
+      String(templateId) +
+      (fingerprint ?? "") +
       `
 ` +
-      input;
-    commentRectsEqual = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input === options ||
-      (!!input &&
-        !!options &&
-        input.x === options.x &&
-        input.y === options.y &&
-        input.w === options.w &&
-        input.h === options.h);
+      path;
+    commentRectsEqual = (rectA?: Dynamic, rectB?: Dynamic): Dynamic =>
+      rectA === rectB ||
+      (!!rectA &&
+        !!rectB &&
+        rectA.x === rectB.x &&
+        rectA.y === rectB.y &&
+        rectA.w === rectB.w &&
+        rectA.h === rectB.h);
   };
 }

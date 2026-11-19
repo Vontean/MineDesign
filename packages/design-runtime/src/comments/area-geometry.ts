@@ -39,7 +39,7 @@ export interface CommentOperationToken {
   cancel(): void;
 }
 
-export const clampCommentFraction = (value: number): number => Math.min(1, Math.max(0, value));
+export const clampCommentFraction = (fraction: number): number => Math.min(1, Math.max(0, fraction));
 
 export const intersectCommentRects = (first: CommentRect, second: CommentRect): CommentRect | null => {
   const left = Math.max(first.x, second.x);

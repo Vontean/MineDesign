@@ -10,138 +10,138 @@ var sendToClaudeHostMethod: Dynamic;
 var customAnchorsController: Dynamic;
 var claimCustomAnchors: Dynamic;
 var bindCustomAnchors: Dynamic;
-function connectCustomAnchors(host?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic;
+function connectCustomAnchors(host?: Dynamic, hostCallbacks?: Dynamic): Dynamic {
+  let controllerPromise: Dynamic;
   try {
-    value = Promise.resolve(host.customAnchors(options));
-  } catch (value2: Dynamic) {
-    value = Promise.reject(value2);
+    controllerPromise = Promise.resolve(host.customAnchors(hostCallbacks));
+  } catch (error: Dynamic) {
+    controllerPromise = Promise.reject(error);
   }
-  return value.then(
-    (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = input;
-      if (!value2 || typeof value2.compose != "function") {
+  return controllerPromise.then(
+    (resolvedController?: Dynamic): Dynamic => {
+      let controller: Dynamic = resolvedController;
+      if (!controller || typeof controller.compose != "function") {
         console.warn(
           "[design] customAnchors returned no controller; artboard comments stay off",
         );
         return null;
       }
-      if (!sendToClaudeHostMethod(host)) return value2;
-      let value3: Dynamic = null,
-        flag: Dynamic = false;
-      awaitEditorReady().then((input2?: Dynamic): Dynamic => {
-        if (!input2 || flag) return;
-        let value4: Dynamic;
+      if (!sendToClaudeHostMethod(host)) return controller;
+      let stopSendToClaude: Dynamic = null,
+        isReleased: Dynamic = false;
+      awaitEditorReady().then((isEditorReady?: Dynamic): Dynamic => {
+        if (!isEditorReady || isReleased) return;
+        let unsubscribe: Dynamic;
         try {
-          value4 = host.onSendToClaude(runSelectionAction);
+          unsubscribe = host.onSendToClaude(runSelectionAction);
         } catch {
           return;
         }
-        typeof value4 == "function"
-          ? (value3 = value4)
-          : Promise.resolve(value4).catch((): Dynamic => {});
+        typeof unsubscribe == "function"
+          ? (stopSendToClaude = unsubscribe)
+          : Promise.resolve(unsubscribe).catch((): Dynamic => {});
       });
       return {
         compose: (
-          input2?: Dynamic,
-          options2?: Dynamic,
-          context?: Dynamic,
-        ): Dynamic => value2.compose(input2, options2, context),
+          composeAnchor?: Dynamic,
+          composeLocation?: Dynamic,
+          composeExtras?: Dynamic,
+        ): Dynamic => controller.compose(composeAnchor, composeLocation, composeExtras),
         get areas(): Dynamic {
-          return value2.areas;
+          return controller.areas;
         },
-        open: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          value2.open(input2, options2),
-        placed: (input2?: Dynamic): Dynamic => {
-          value2.placed(input2);
+        open: (openTarget?: Dynamic, openDetails?: Dynamic): Dynamic =>
+          controller.open(openTarget, openDetails),
+        placed: (placedAnchor?: Dynamic): Dynamic => {
+          controller.placed(placedAnchor);
         },
-        domAnchor: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          value2.domAnchor(input2, options2),
-        ...(typeof value2.enterMode == "function"
+        domAnchor: (domTarget?: Dynamic, domDetails?: Dynamic): Dynamic =>
+          controller.domAnchor(domTarget, domDetails),
+        ...(typeof controller.enterMode == "function"
           ? {
               enterMode: (): Dynamic => {
-                value2.enterMode?.();
+                controller.enterMode?.();
               },
             }
           : {}),
-        ...(typeof value2.exitMode == "function"
+        ...(typeof controller.exitMode == "function"
           ? {
               exitMode: (): Dynamic => {
-                value2.exitMode?.();
+                controller.exitMode?.();
               },
             }
           : {}),
         release: (): Dynamic => {
-          flag = true;
-          value3?.();
-          value3 = null;
-          value2.release();
+          isReleased = true;
+          stopSendToClaude?.();
+          stopSendToClaude = null;
+          controller.release();
         },
       };
     },
-    (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = input;
+    (rejection?: Dynamic): Dynamic => {
+      let reason: Dynamic = rejection;
       console.warn(
         "[design] customAnchors refused; artboard comments stay off:",
-        value2?.code,
-        value2?.message,
+        reason?.code,
+        reason?.message,
       );
       return null;
     },
   );
 }
 function createCustomAnchorsController(): Dynamic {
-  let value: Dynamic = null,
-    value2: Dynamic = null,
-    flag: Dynamic = false,
-    value3: Dynamic = null,
+  let controllerPromise: Dynamic = null,
+    hostUse: Dynamic = null,
+    hasRetriedUse: Dynamic = false,
+    boundHandlers: Dynamic = null,
     state: Dynamic = {
       mode: false,
       threads: null,
       composing: false,
     },
-    state2: Dynamic = {
-      mode: (input?: Dynamic): Dynamic => {
-        state.mode = input;
-        value3?.mode(input);
+    hostCallbacks: Dynamic = {
+      mode: (isModeOn?: Dynamic): Dynamic => {
+        state.mode = isModeOn;
+        boundHandlers?.mode(isModeOn);
       },
-      threads: (input?: Dynamic): Dynamic => {
-        state.threads = input;
-        value3?.threads(input);
+      threads: (threads?: Dynamic): Dynamic => {
+        state.threads = threads;
+        boundHandlers?.threads(threads);
       },
-      reveal: (input?: Dynamic): Dynamic => {
-        value3?.reveal(input);
+      reveal: (target?: Dynamic): Dynamic => {
+        boundHandlers?.reveal(target);
       },
-      composing: (input?: Dynamic): Dynamic => {
-        state.composing = input;
-        value3?.composing?.(input);
+      composing: (isComposing?: Dynamic): Dynamic => {
+        state.composing = isComposing;
+        boundHandlers?.composing?.(isComposing);
       },
-      move: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        value3?.move?.(input, options) ?? Promise.resolve(null),
+      move: (moveTarget?: Dynamic, moveDetails?: Dynamic): Dynamic =>
+        boundHandlers?.move?.(moveTarget, moveDetails) ?? Promise.resolve(null),
       hotkey: true,
     },
-    callback: Dynamic = (): Dynamic => {
-      if (value !== null) return value;
-      let value4: Dynamic = getCachedHostCapability("comments");
-      if (customAnchorsHostMethod(value4))
-        return (value = connectCustomAnchors(value4, state2));
+    claimController: Dynamic = (): Dynamic => {
+      if (controllerPromise !== null) return controllerPromise;
+      let hostCapability: Dynamic = getCachedHostCapability("comments");
+      if (customAnchorsHostMethod(hostCapability))
+        return (controllerPromise = connectCustomAnchors(hostCapability, hostCallbacks));
       // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
       let claude: Dynamic = (globalThis as Dynamic).designHost;
       return typeof claude?.use != "function"
-        ? (value = Promise.resolve(null))
-        : ((value2 = claude.use.bind(claude)), (value = callback2(value2)));
+        ? (controllerPromise = Promise.resolve(null))
+        : ((hostUse = claude.use.bind(claude)), (controllerPromise = connectViaUse(hostUse)));
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value4: Dynamic;
+    connectViaUse: Dynamic = (use?: Dynamic): Dynamic => {
+      let capabilityPromise: Dynamic;
       try {
-        value4 = Promise.resolve(input("comments"));
+        capabilityPromise = Promise.resolve(use("comments"));
       } catch {
-        value4 = Promise.resolve(null);
+        capabilityPromise = Promise.resolve(null);
       }
-      return value4.then(
-        (input2?: Dynamic): Dynamic =>
-          input2?.available !== false && customAnchorsHostMethod(input2)
-            ? connectCustomAnchors(input2, state2)
+      return capabilityPromise.then(
+        (capability?: Dynamic): Dynamic =>
+          capability?.available !== false && customAnchorsHostMethod(capability)
+            ? connectCustomAnchors(capability, hostCallbacks)
             : (console.warn(
                 "[design] comments capability not served; artboard comments stay off",
               ),
@@ -150,51 +150,51 @@ function createCustomAnchorsController(): Dynamic {
       );
     };
   return {
-    claim: callback,
-    bind: async (input?: Dynamic): Promise<Dynamic> => {
-      let value4: Dynamic = await callback();
-      value4 === null &&
-        value2 !== null &&
-        (flag || ((flag = true), (value = callback2(value2))),
-        (value4 = await value));
-      if (value4 === null) return null;
-      let value5: Dynamic = value4;
-      value3 = input;
-      state.threads !== null && input.threads(state.threads);
-      state.composing && input.composing?.(true);
-      state.mode && input.mode(true);
+    claim: claimController,
+    bind: async (handlers?: Dynamic): Promise<Dynamic> => {
+      let controller: Dynamic = await claimController();
+      controller === null &&
+        hostUse !== null &&
+        (hasRetriedUse || ((hasRetriedUse = true), (controllerPromise = connectViaUse(hostUse))),
+        (controller = await controllerPromise));
+      if (controller === null) return null;
+      let activeController: Dynamic = controller;
+      boundHandlers = handlers;
+      state.threads !== null && handlers.threads(state.threads);
+      state.composing && handlers.composing?.(true);
+      state.mode && handlers.mode(true);
       return {
         compose: (
-          input2?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
-        ): Dynamic => value5.compose(input2, options, context),
+          composeAnchor?: Dynamic,
+          composeLocation?: Dynamic,
+          composeExtras?: Dynamic,
+        ): Dynamic => activeController.compose(composeAnchor, composeLocation, composeExtras),
         get areas(): Dynamic {
-          return value5.areas;
+          return activeController.areas;
         },
-        open: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          value5.open(input2, options),
-        placed: (input2?: Dynamic): Dynamic => {
-          value5.placed(input2);
+        open: (openTarget?: Dynamic, openDetails?: Dynamic): Dynamic =>
+          activeController.open(openTarget, openDetails),
+        placed: (placedAnchor?: Dynamic): Dynamic => {
+          activeController.placed(placedAnchor);
         },
-        domAnchor: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          value5.domAnchor(input2, options),
-        ...(typeof value5.enterMode == "function"
+        domAnchor: (domTarget?: Dynamic, domDetails?: Dynamic): Dynamic =>
+          activeController.domAnchor(domTarget, domDetails),
+        ...(typeof activeController.enterMode == "function"
           ? {
               enterMode: (): Dynamic => {
-                value5.enterMode?.();
+                activeController.enterMode?.();
               },
             }
           : {}),
-        ...(typeof value5.exitMode == "function"
+        ...(typeof activeController.exitMode == "function"
           ? {
               exitMode: (): Dynamic => {
-                value5.exitMode?.();
+                activeController.exitMode?.();
               },
             }
           : {}),
         release: (): Dynamic => {
-          value3 === input && (value3 = null);
+          boundHandlers === handlers && (boundHandlers = null);
         },
       };
     },
@@ -217,7 +217,7 @@ export function installCommentsHostController(): () => void {
     claimCustomAnchors = (): Dynamic => {
       customAnchorsController.claim();
     };
-    bindCustomAnchors = (input?: Dynamic): Dynamic =>
-      customAnchorsController.bind(input);
+    bindCustomAnchors = (handlers?: Dynamic): Dynamic =>
+      customAnchorsController.bind(handlers);
   };
 }

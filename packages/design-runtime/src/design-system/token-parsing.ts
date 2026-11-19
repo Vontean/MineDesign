@@ -6,141 +6,141 @@ import { boundedDesignSystemText, createDesignSystemModel, designSystemName, Des
 import { parseTypographyStyles } from "./typography-parsing";
 
 function parseColorDesignSystem(
-  input?: Dynamic,
-  options: Dynamic = {},
-  context?: Dynamic,
+  designSystemSource?: Dynamic,
+  metadata: Dynamic = {},
+  statsOut?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input?.color;
+  let colorSection: Dynamic = designSystemSource?.color;
   if (
-    typeof value != "object" ||
-    value === null ||
-    !Array.isArray(value.tokens)
+    typeof colorSection != "object" ||
+    colorSection === null ||
+    !Array.isArray(colorSection.tokens)
   )
     return;
-  let value2: Dynamic = Array.isArray(value.themes)
-      ? value.themes.map((input2?: Dynamic): Dynamic => input2)
+  let themes: Dynamic = Array.isArray(colorSection.themes)
+      ? colorSection.themes.map((theme?: Dynamic): Dynamic => theme)
       : [],
-    value3: Dynamic = value2
+    themeIds: Dynamic = themes
       .map(
-        (input2?: Dynamic): Dynamic =>
-          typeof input2?.id == "string" ? input2.id.toLowerCase() : undefined,
+        (theme?: Dynamic): Dynamic =>
+          typeof theme?.id == "string" ? theme.id.toLowerCase() : undefined,
       )
-      .filter((input2?: Dynamic): Dynamic => input2 !== undefined),
-    entries: Dynamic = new Map();
-  value3.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-    entries.has(input2) || entries.set(input2, options2);
+      .filter((themeId?: Dynamic): Dynamic => themeId !== undefined),
+    themeIndexById: Dynamic = new Map();
+  themeIds.forEach((themeId?: Dynamic, themeIndex?: Dynamic): Dynamic => {
+    themeIndexById.has(themeId) || themeIndexById.set(themeId, themeIndex);
   });
-  let entries2: Dynamic = new Map();
-  for (let value7 of value.tokens as Dynamic) {
-    let value8: Dynamic = value7,
-      value9: Dynamic = normalizeColorTokenName(value8?.name);
-    if (value9 === undefined || entries2.has(value9)) continue;
-    let value10: Dynamic = value8?.value,
-      value11: Dynamic = typeof value10 == "string" ? value10 : undefined;
+  let rawTokenValues: Dynamic = new Map();
+  for (let tokenEntry of colorSection.tokens as Dynamic) {
+    let tokenRecord: Dynamic = tokenEntry,
+      tokenName: Dynamic = normalizeColorTokenName(tokenRecord?.name);
+    if (tokenName === undefined || rawTokenValues.has(tokenName)) continue;
+    let rawValue: Dynamic = tokenRecord?.value,
+      defaultValue: Dynamic = typeof rawValue == "string" ? rawValue : undefined;
     if (
-      typeof value10 == "object" &&
-      value10 !== null &&
-      !Array.isArray(value10)
+      typeof rawValue == "object" &&
+      rawValue !== null &&
+      !Array.isArray(rawValue)
     ) {
-      let entries4: Dynamic = new Map(
-          Object.entries(value10).map(
-            ([input2, input3]: Dynamic): Dynamic => [
-              input2.toLowerCase(),
-              input3,
+      let themeValuesById: Dynamic = new Map(
+          Object.entries(rawValue).map(
+            ([themeKey, themeColor]: Dynamic): Dynamic => [
+              themeKey.toLowerCase(),
+              themeColor,
             ],
           ),
         ),
-        value12: Dynamic = 1 / 0;
-      for (let [value13, value14] of entries4 as Dynamic) {
-        if (typeof value14 != "string") continue;
-        let entry: Dynamic = entries.get(value13);
+        bestThemeIndex: Dynamic = 1 / 0;
+      for (let [themeId, themeColor] of themeValuesById as Dynamic) {
+        if (typeof themeColor != "string") continue;
+        let entry: Dynamic = themeIndexById.get(themeId);
         (entry !== undefined
-          ? entry < value12
-          : value12 === 1 / 0 && value11 === undefined) &&
-          ((value11 = value14), entry !== undefined && (value12 = entry));
+          ? entry < bestThemeIndex
+          : bestThemeIndex === 1 / 0 && defaultValue === undefined) &&
+          ((defaultValue = themeColor), entry !== undefined && (bestThemeIndex = entry));
       }
     }
-    entries2.set(value9, typeof value11 == "string" ? value11.trim() : "");
+    rawTokenValues.set(tokenName, typeof defaultValue == "string" ? defaultValue.trim() : "");
   }
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value7: Dynamic = /^\{(.+)\}$/.exec(input2)?.[1];
-      if (value7 === undefined) return normalizeCssColor(input2);
-      let entry: Dynamic = entries2.get(
-        normalizeColorTokenName(value7) ?? "",
+  let resolveColor: Dynamic = (colorText?: Dynamic, depth?: Dynamic): Dynamic => {
+      let referencedName: Dynamic = /^\{(.+)\}$/.exec(colorText)?.[1];
+      if (referencedName === undefined) return normalizeCssColor(colorText);
+      let entry: Dynamic = rawTokenValues.get(
+        normalizeColorTokenName(referencedName) ?? "",
       );
-      return entry !== undefined && options2 < 16
-        ? callback(entry, options2 + 1)
+      return entry !== undefined && depth < 16
+        ? resolveColor(entry, depth + 1)
         : undefined;
     },
-    entries3: Dynamic = new Map(),
+    resolvedColors: Dynamic = new Map(),
     state: Dynamic = {
-      total: entries2.size,
+      total: rawTokenValues.size,
       unresolved: 0,
       truncated: 0,
     };
-  for (let [value7, value8] of entries2 as Dynamic) {
-    let value9: Dynamic = callback(value8, 0);
-    value9 === undefined
+  for (let [tokenName, rawColor] of rawTokenValues as Dynamic) {
+    let resolvedColor: Dynamic = resolveColor(rawColor, 0);
+    resolvedColor === undefined
       ? state.unresolved++
-      : entries3.size >= 600
+      : resolvedColors.size >= 600
         ? state.truncated++
-        : entries3.set(value7, value9);
+        : resolvedColors.set(tokenName, resolvedColor);
   }
-  context !== undefined && Object.assign(context, state);
-  let value4: Dynamic = [...entries2]
+  statsOut !== undefined && Object.assign(statsOut, state);
+  let colorNames: Dynamic = [...rawTokenValues]
       .filter(
-        ([input2, input3]: Dynamic): Dynamic =>
-          entries3.has(input2) ||
-          DesignSystemTypeDeclarationsRgbaHslaPattern.test(input3),
+        ([tokenName, rawColor]: Dynamic): Dynamic =>
+          resolvedColors.has(tokenName) ||
+          DesignSystemTypeDeclarationsRgbaHslaPattern.test(rawColor),
       )
-      .map(([input2]: Dynamic): Dynamic => input2),
-    value5: Dynamic = groupColorTokens(value4).flatMap(
-      (input2?: Dynamic): Dynamic =>
-        input2.names.flatMap(
-          (input3?: Dynamic): Dynamic =>
-            entries3.has(input3)
+      .map(([tokenName]: Dynamic): Dynamic => tokenName),
+    colorGroups: Dynamic = groupColorTokens(colorNames).flatMap(
+      (group?: Dynamic): Dynamic =>
+        group.names.flatMap(
+          (tokenName?: Dynamic): Dynamic =>
+            resolvedColors.has(tokenName)
               ? [
                   {
-                    name: input3,
-                    value: entries3.get(input3),
-                    group: input2.label,
+                    name: tokenName,
+                    value: resolvedColors.get(tokenName),
+                    group: group.label,
                   },
                 ]
               : [],
         ),
     ),
-    value6: Dynamic = value2.find(
-      (input2?: Dynamic): Dynamic => typeof input2?.id == "string",
+    defaultTheme: Dynamic = themes.find(
+      (theme?: Dynamic): Dynamic => typeof theme?.id == "string",
     );
   return createDesignSystemModel(
-    boundedDesignSystemText(options.title, 80) ??
-      designSystemName(input),
-    options.url,
-    typeof value6?.name == "string" ? value6.name : value6?.id,
-    value5,
+    boundedDesignSystemText(metadata.title, 80) ??
+      designSystemName(designSystemSource),
+    metadata.url,
+    typeof defaultTheme?.name == "string" ? defaultTheme.name : defaultTheme?.id,
+    colorGroups,
   );
 }
 function parseCompleteDesignSystem(
-  input?: Dynamic,
-  options: Dynamic = {},
-  context?: Dynamic,
+  designSystemSource?: Dynamic,
+  metadata: Dynamic = {},
+  statsOut?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = parseColorDesignSystem(input, options, context),
-    value2: Dynamic = parseTypographyStyles(input);
-  return value2.length === 0
-    ? value
-    : value !== undefined
+  let colorSystem: Dynamic = parseColorDesignSystem(designSystemSource, metadata, statsOut),
+    typographyStyles: Dynamic = parseTypographyStyles(designSystemSource);
+  return typographyStyles.length === 0
+    ? colorSystem
+    : colorSystem !== undefined
       ? {
-          ...value,
-          type: value2,
+          ...colorSystem,
+          type: typographyStyles,
         }
       : createDesignSystemModel(
-          boundedDesignSystemText(options.title, 80) ??
-            designSystemName(input),
-          options.url,
+          boundedDesignSystemText(metadata.title, 80) ??
+            designSystemName(designSystemSource),
+          metadata.url,
           undefined,
           [],
-          value2,
+          typographyStyles,
         );
 }
 export {

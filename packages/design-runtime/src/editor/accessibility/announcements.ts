@@ -15,781 +15,781 @@ import { isShapeAnnotation } from "../../platform/file-content";
 var AccessibilityAnnouncementsLabel: Dynamic;
 var AccessibilityAnnouncementsUndoRedoConfig: Dynamic;
 var NothingChangedThatStepNoLongerMessage: Dynamic;
-var AccessibilityAnnouncementsUndoRedoConfig_2: Dynamic;
+var undoRedoPastTense: Dynamic;
 var NothingSelectedMessage: Dynamic;
-var AccessibilityAnnouncementsLabel_2: Dynamic;
-var AccessibilityAnnouncementsLabel_3: Dynamic;
-var AccessibilityAnnouncementsLabel_4: Dynamic;
-var AccessibilityAnnouncementsLabel_5: Dynamic;
+var copiedAsPngMessage: Dynamic;
+var copiedAsSvgMessage: Dynamic;
+var conversionFailedMessage: Dynamic;
+var exportStillRunningMessage: Dynamic;
 var ItsPictureCouldnTBeMadeTryMessage: Dynamic;
-var AccessibilityAnnouncementsLabel_6: Dynamic;
-var AccessibilityAnnouncementsLabel_7: Dynamic;
+var notSelectedAnywhereMessage: Dynamic;
+var noWidthOrHeightMessage: Dynamic;
 var ItsPageHasNothingToDrawMessage: Dynamic;
-var AccessibilityAnnouncementsLabel_8: Dynamic;
-var AccessibilityAnnouncementsLabel_9: Dynamic;
-var AccessibilityAnnouncementsLabel_10: Dynamic;
-var AccessibilityAnnouncementsLabel_11: Dynamic;
-var AccessibilityAnnouncementsLabel_12: Dynamic;
-var AccessibilityAnnouncementsLabel_13: Dynamic;
-var AccessibilityAnnouncementsLabel_14: Dynamic;
+var previewStoppedReloadMessage: Dynamic;
+var notVisibleMessage: Dynamic;
+var pasteHereMessage: Dynamic;
+var noteSelectedMessage: Dynamic;
+var shapeSelectedMessage: Dynamic;
+var pictureSelectedMessage: Dynamic;
+var videoSelectedMessage: Dynamic;
 var AccessibilityAnnouncementsLimit: Dynamic;
 var PressReturnToGoIntoThisMessage: Dynamic;
 var ThisIsTheFirstArtboardMessage: Dynamic;
 var ThisIsTheLastArtboardMessage: Dynamic;
 var ThisIsTheOnlyArtboardMessage: Dynamic;
 var AccessibilityAnnouncementsResolvedValue: Dynamic;
-var AccessibilityAnnouncementsLabel_15: Dynamic;
+var layerNavigationHintMessage: Dynamic;
 var AccessibilityAnnouncementsConstant: Dynamic;
 var NoLayersInsideThisOneMessage: Dynamic;
-var AccessibilityAnnouncementsLabel_16: Dynamic;
-var AccessibilityAnnouncementsLabel_17: Dynamic;
+var editingTextHintMessage: Dynamic;
+var textUpdatedMessage: Dynamic;
 var DeletedValue: Dynamic;
 var CutValue: Dynamic;
-var AccessibilityAnnouncementsLabel_18: Dynamic;
-var AccessibilityAnnouncementsLabel_19: Dynamic;
-var AccessibilityAnnouncementsLabel_20: Dynamic;
-var AccessibilityAnnouncementsLabel_21: Dynamic;
-var AccessibilityAnnouncementsLabel_22: Dynamic;
-var AccessibilityAnnouncementsLabel_23: Dynamic;
+var noteDeletedMessage: Dynamic;
+var shapeDeletedMessage: Dynamic;
+var pictureDeletedMessage: Dynamic;
+var videoDeletedMessage: Dynamic;
+var linkRemovedMessage: Dynamic;
+var emptyTextBoxRemovedMessage: Dynamic;
 var AccessibilityAnnouncementsHrefSrcAltConfig: Dynamic;
 var AccessibilityAnnouncementsPattern: Dynamic;
 var AccessibilityAnnouncementsPaddingMarginConfig: Dynamic;
 var AccessibilityAnnouncementsUnexpectedUnexpectedUnexpectedConfig: Dynamic;
-var AccessibilityAnnouncementsLabel_24: Dynamic;
+var commentModePausedMessage: Dynamic;
 var AccessibilityAnnouncementsHandler: Dynamic;
 var AccessibilityAnnouncementsReadyUpdatedChangedConfig: Dynamic;
-function resolveColorTokenValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = cssVariableName(input);
-  if (!value) return;
-  let values: Dynamic = new Set();
-  for (; !values.has(value); ) {
-    values.add(value);
-    let value2: Dynamic = options.find(
-      (input2?: Dynamic): Dynamic => input2.name === value,
+function resolveColorTokenValue(colorReference?: Dynamic, tokens?: Dynamic): Dynamic {
+  let tokenName: Dynamic = cssVariableName(colorReference);
+  if (!tokenName) return;
+  let visitedNames: Dynamic = new Set();
+  for (; !visitedNames.has(tokenName); ) {
+    visitedNames.add(tokenName);
+    let token: Dynamic = tokens.find(
+      (candidate?: Dynamic): Dynamic => candidate.name === tokenName,
     );
-    if (!value2) return;
-    let value3: Dynamic = cssVariableName(value2.value);
-    if (!value3) return value2.value;
-    value = value3;
+    if (!token) return;
+    let nextName: Dynamic = cssVariableName(token.value);
+    if (!nextName) return token.value;
+    tokenName = nextName;
   }
 }
-function contrastTextRole(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === null
+function contrastTextRole(fontSizePx?: Dynamic, fontWeight?: Dynamic): Dynamic {
+  return fontSizePx === null
     ? "text"
-    : input >= 24 || (input >= 18.66 && (options ?? 400) >= 700)
+    : fontSizePx >= 24 || (fontSizePx >= 18.66 && (fontWeight ?? 400) >= 700)
       ? "largeText"
       : "text";
 }
 function textContrastContext(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  cssColor?: Dynamic,
+  fontSize?: Dynamic,
+  fontWeight?: Dynamic,
 ): Dynamic {
   return {
     against: {
-      css: input,
+      css: cssColor,
       label: AccessibilityAnnouncementsLabel,
     },
-    role: contrastTextRole(options, context),
+    role: contrastTextRole(fontSize, fontWeight),
   };
 }
-function resolvedContrastColor(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = resolveColorTokenValue(input, options) ?? input;
-  return parseRgbaColor(value) !== undefined
-    ? value
-    : normalizeCssColor(value);
+function resolvedContrastColor(colorValue?: Dynamic, tokens?: Dynamic): Dynamic {
+  let resolvedColor: Dynamic = resolveColorTokenValue(colorValue, tokens) ?? colorValue;
+  return parseRgbaColor(resolvedColor) !== undefined
+    ? resolvedColor
+    : normalizeCssColor(resolvedColor);
 }
-function findOutlineLocation(input?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (
-    items?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+function findOutlineLocation(outline?: Dynamic, targetTid?: Dynamic): Dynamic {
+  let searchLevel: Dynamic = (
+    nodes?: Dynamic,
+    level?: Dynamic,
+    parent?: Dynamic,
   ): Dynamic => {
-    for (let index: Dynamic = 0; index < items.length; index++) {
-      let value: Dynamic = items[index];
-      if (value.tid === options)
+    for (let index: Dynamic = 0; index < nodes.length; index++) {
+      let node: Dynamic = nodes[index];
+      if (node.tid === targetTid)
         return {
-          node: value,
-          level: options2,
+          node: node,
+          level: level,
           index: index,
-          siblings: items,
-          parent: context,
+          siblings: nodes,
+          parent: parent,
         };
-      let value2: Dynamic = callback(value.children, options2 + 1, value);
-      if (value2) return value2;
+      let found: Dynamic = searchLevel(node.children, level + 1, node);
+      if (found) return found;
     }
     return null;
   };
-  return callback(input, 1, null);
+  return searchLevel(outline, 1, null);
 }
 function adjacentOutlineNode(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  outline?: Dynamic,
+  currentTid?: Dynamic,
+  direction?: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
-      options == null ? null : findOutlineLocation(input, options),
-    value2: Dynamic = value ? value.siblings : input;
-  if (value2.length === 0) return null;
-  if (context === "first") return value2[0];
-  if (context === "last") return value2[value2.length - 1];
-  if (!value)
-    return context === "next" ? value2[0] : value2[value2.length - 1];
-  let length: Dynamic = value2.length;
-  return value2[
-    (value.index + (context === "next" ? 1 : length - 1)) % length
+  let currentLocation: Dynamic =
+      currentTid == null ? null : findOutlineLocation(outline, currentTid),
+    siblings: Dynamic = currentLocation ? currentLocation.siblings : outline;
+  if (siblings.length === 0) return null;
+  if (direction === "first") return siblings[0];
+  if (direction === "last") return siblings[siblings.length - 1];
+  if (!currentLocation)
+    return direction === "next" ? siblings[0] : siblings[siblings.length - 1];
+  let length: Dynamic = siblings.length;
+  return siblings[
+    (currentLocation.index + (direction === "next" ? 1 : length - 1)) % length
   ];
 }
-function deepestSingleOutlineNode(input?: Dynamic): Dynamic {
-  let value: Dynamic = input,
-    value2: Dynamic = null;
-  for (; value.length > 0 && ((value2 = value[0]), !(value.length > 1)); )
-    value = value2.children;
-  return value2;
+function deepestSingleOutlineNode(nodes?: Dynamic): Dynamic {
+  let currentNodes: Dynamic = nodes,
+    deepestNode: Dynamic = null;
+  for (; currentNodes.length > 0 && ((deepestNode = currentNodes[0]), !(currentNodes.length > 1)); )
+    currentNodes = deepestNode.children;
+  return deepestNode;
 }
-function firstNestedOutlineNode(input?: Dynamic): Dynamic {
-  return input.children.length === 0
+function firstNestedOutlineNode(node?: Dynamic): Dynamic {
+  return node.children.length === 0
     ? null
-    : deepestSingleOutlineNode(input.children);
+    : deepestSingleOutlineNode(node.children);
 }
-function outlineSiblingPosition(input?: Dynamic): Dynamic {
-  return String(input.index + 1) + " of " + String(input.siblings.length);
+function outlineSiblingPosition(location?: Dynamic): Dynamic {
+  return String(location.index + 1) + " of " + String(location.siblings.length);
 }
-function pageUndoFailureMessage(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "redo"
+function pageUndoFailureMessage(direction?: Dynamic, isPageRestored?: Dynamic): Dynamic {
+  return direction === "redo"
     ? uiMessage("inspector.announcements.couldnTDeleteThePage")
-    : options
+    : isPageRestored
       ? uiMessage("inspector.announcements.thePageIsBackBut")
       : uiMessage("inspector.announcements.couldnTBringThePage");
 }
 function clipboardActionFailureMessage(
-  input?: Dynamic,
-  options?: Dynamic,
-  source?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = false,
+  direction?: Dynamic,
+  canvasLimit?: Dynamic,
+  sourceElement?: Dynamic,
+  customMessage?: Dynamic,
+  isPartial: Dynamic = false,
 ): Dynamic {
-  let value2: Dynamic =
-    source === undefined
+  let elementKind: Dynamic =
+    sourceElement === undefined
       ? undefined
-      : source.kind === "image"
-        ? source.video !== undefined
+      : sourceElement.kind === "image"
+        ? sourceElement.video !== undefined
           ? "video"
           : "picture"
-        : isShapeAnnotation(source)
+        : isShapeAnnotation(sourceElement)
           ? "shape"
           : "note";
   return (
-    (value ??
-      (value2 === undefined
-        ? input === "undo"
+    (customMessage ??
+      (elementKind === undefined
+        ? direction === "undo"
           ? uiMessage("inspector.announcements.couldnTBringBack") +
-            (extra ? uiMessage("inspector.announcements.theRestOf") : "") +
+            (isPartial ? uiMessage("inspector.announcements.theRestOf") : "") +
             uiMessage("inspector.announcements.whatYouDeleted")
           : uiMessage("inspector.announcements.couldnTAdd") +
-            (extra ? uiMessage("inspector.announcements.theRestOf") : "") +
+            (isPartial ? uiMessage("inspector.announcements.theRestOf") : "") +
             uiMessage("inspector.announcements.theCopiesAgain")
-        : input === "undo"
-          ? uiMessage("inspector.announcements.couldnTBringThe") + value2 + " back: "
-          : uiMessage("inspector.announcements.couldnTAddThe") + value2 + " again: ")) +
+        : direction === "undo"
+          ? uiMessage("inspector.announcements.couldnTBringThe") + elementKind + " back: "
+          : uiMessage("inspector.announcements.couldnTAddThe") + elementKind + " again: ")) +
     uiMessage("inspector.announcements.thisCanvasIsAtIts") +
-    String(options) +
+    String(canvasLimit) +
     ")."
   );
 }
-function undoTargetAnnouncement(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "undo"
-    ? uiMessage("inspector.announcements.theChangeToUndoIs") + options + ". Undo again to take it back."
-    : uiMessage("inspector.announcements.theChangeToRedoIs") + options + ". Redo again to apply it.";
+function undoTargetAnnouncement(direction?: Dynamic, changeLabel?: Dynamic): Dynamic {
+  return direction === "undo"
+    ? uiMessage("inspector.announcements.theChangeToUndoIs") + changeLabel + ". Undo again to take it back."
+    : uiMessage("inspector.announcements.theChangeToRedoIs") + changeLabel + ". Redo again to apply it.";
 }
 function pendingUndoAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
+  direction?: Dynamic,
+  changeLabel?: Dynamic,
 ): Dynamic {
   return (
     uiMessage("inspector.announcements.stillLoading") +
-    options +
+    changeLabel +
     ". " +
-    (input === "undo" ? "Undo" : "Redo") +
+    (direction === "undo" ? "Undo" : "Redo") +
     " again in a moment."
   );
 }
 function changedArtboardsMessage(
-  items?: Dynamic,
-  options?: Dynamic,
+  artboardNames?: Dynamic,
+  isOnOtherPage?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = items.length === 1,
+  let isSingle: Dynamic = artboardNames.length === 1,
     text: Dynamic = " can\u2019t be undone or redone.";
-  return options
-    ? (value ? String(items[0]) : String(items.length) + " artboards") +
+  return isOnOtherPage
+    ? (isSingle ? String(artboardNames[0]) : String(artboardNames.length) + " artboards") +
         " changed while you were on another page, so your earlier changes to " +
-        (value ? "it" : "them") +
+        (isSingle ? "it" : "them") +
         text
-    : (value
-        ? String(items[0]) + "\u2019s undo history was cleared"
+    : (isSingle
+        ? String(artboardNames[0]) + "\u2019s undo history was cleared"
         : uiMessage("inspector.announcements.undoHistoryWasClearedFor") +
-          String(items.length) +
+          String(artboardNames.length) +
           " artboards") +
         ", so earlier changes to " +
-        (value ? "it" : "them") +
+        (isSingle ? "it" : "them") +
         text;
 }
 function summarizeChangedArtboards(
-  items?: Dynamic,
-  items2?: Dynamic,
+  changedOnOtherPage?: Dynamic,
+  clearedHistory?: Dynamic,
 ): Dynamic {
-  let [value2 = "", value]: Dynamic = [
-    items.length > 0 ? changedArtboardsMessage(items, true) : null,
-    items2.length > 0 ? changedArtboardsMessage(items2, false) : null,
-  ].filter((input?: Dynamic): Dynamic => input !== null);
-  return value === undefined
+  let [message = "", description]: Dynamic = [
+    changedOnOtherPage.length > 0 ? changedArtboardsMessage(changedOnOtherPage, true) : null,
+    clearedHistory.length > 0 ? changedArtboardsMessage(clearedHistory, false) : null,
+  ].filter((entry?: Dynamic): Dynamic => entry !== null);
+  return description === undefined
     ? {
-        message: value2,
+        message: message,
       }
     : {
-        message: value2,
-        description: value,
+        message: message,
+        description: description,
       };
 }
-function pngCopyFailureMessage(input?: Dynamic, options?: Dynamic): Dynamic {
-  return pictureCopyFailureMessage(uiMessage("inspector.announcements.aPNG"), input, options);
+function pngCopyFailureMessage(elementName?: Dynamic, reason?: Dynamic): Dynamic {
+  return pictureCopyFailureMessage(uiMessage("inspector.announcements.aPNG"), elementName, reason);
 }
-function svgCopyFailureMessage(input?: Dynamic, options?: Dynamic): Dynamic {
+function svgCopyFailureMessage(elementName?: Dynamic, reason?: Dynamic): Dynamic {
   return (
     uiMessage("inspector.announcements.couldnTCopyThis") +
-    input +
+    elementName +
     " as an SVG: " +
-    (options ?? uiMessage("inspector.announcements.theBrowserDidnTAllow")) +
+    (reason ?? uiMessage("inspector.announcements.theBrowserDidnTAllow")) +
     "."
   );
 }
 function pictureCopyFailureMessage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  formatLabel?: Dynamic,
+  elementName?: Dynamic,
+  reason?: Dynamic,
 ): Dynamic {
   return (
     uiMessage("inspector.announcements.couldnTCopyThis") +
-    options +
+    elementName +
     " as " +
-    input +
+    formatLabel +
     ": " +
-    (context ??
+    (reason ??
       uiMessage("inspector.announcements.theBrowserDidnTAllow2")) +
     "."
   );
 }
-function clippedSvgCopyMessage(input?: Dynamic, options?: Dynamic): Dynamic {
+function clippedSvgCopyMessage(elementName?: Dynamic, isFlowPrintMode?: Dynamic): Dynamic {
   return (
-    input +
+    elementName +
     " runs past its frame, so the SVG stops at the frame" +
-    (options
+    (isFlowPrintMode
       ? "."
       : " \u2014 set Print mode to Flow to copy its full length.")
   );
 }
-function missingSvgImagesMessage(input?: Dynamic): Dynamic {
-  return input === 1
+function missingSvgImagesMessage(count?: Dynamic): Dynamic {
+  return count === 1
     ? uiMessage("inspector.announcements.onePictureCouldnTBe")
-    : String(input) +
+    : String(count) +
         " pictures couldn\u2019t be copied into the SVG and are left empty.";
 }
-function missingCopiedImagesMessage(input?: Dynamic): Dynamic {
-  return input === 1
+function missingCopiedImagesMessage(count?: Dynamic): Dynamic {
+  return count === 1
     ? uiMessage("inspector.announcements.oneImageCouldnTBe")
-    : String(input) +
+    : String(count) +
         " images couldn\u2019t be drawn and are blank in the copied picture.";
 }
-function emptyClipboardMessage(input?: Dynamic): Dynamic {
+function emptyClipboardMessage(pasteShortcut?: Dynamic): Dynamic {
   return (
     uiMessage("inspector.announcements.nothingCopiedInThisDesign") +
-    input +
+    pasteShortcut +
     " to paste a picture or something copied elsewhere."
   );
 }
 function fitContentResultMessage(
-  items?: Dynamic,
-  options?: Dynamic,
+  fitResults?: Dynamic,
+  artboardNames?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input === "grown" || input === "shrunk",
-    length: Dynamic = items.filter(callback).length;
-  if (length > 0 && items.length === 1) return null;
-  if (length === items.length)
-    return uiMessage("inspector.announcements.fitted") + String(length) + " artboards to their content.";
-  if (length > 0) {
-    let value3: Dynamic = fitContentResultMessage(
-      items.filter((input?: Dynamic): Dynamic => !callback(input)),
-      options.filter(
-        (input?: Dynamic, options2?: Dynamic): Dynamic =>
-          !callback(items[options2]),
+  let isFitted: Dynamic = (result?: Dynamic): Dynamic =>
+      result === "grown" || result === "shrunk",
+    fittedCount: Dynamic = fitResults.filter(isFitted).length;
+  if (fittedCount > 0 && fitResults.length === 1) return null;
+  if (fittedCount === fitResults.length)
+    return uiMessage("inspector.announcements.fitted") + String(fittedCount) + " artboards to their content.";
+  if (fittedCount > 0) {
+    let remainingMessage: Dynamic = fitContentResultMessage(
+      fitResults.filter((result?: Dynamic): Dynamic => !isFitted(result)),
+      artboardNames.filter(
+        (artboardName?: Dynamic, index?: Dynamic): Dynamic =>
+          !isFitted(fitResults[index]),
       ),
     );
     return (
       uiMessage("inspector.announcements.fitted") +
-      String(length) +
+      String(fittedCount) +
       " of " +
-      String(items.length) +
+      String(fitResults.length) +
       " artboards to their content" +
-      (value3 === null
+      (remainingMessage === null
         ? "."
-        : "; " + value3.charAt(0).toLowerCase() + value3.slice(1))
+        : "; " + remainingMessage.charAt(0).toLowerCase() + remainingMessage.slice(1))
     );
   }
-  let callback2: Dynamic = (input?: Dynamic): Dynamic => items.indexOf(input),
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      options[input] !== undefined
-        ? '"' + options[input] + '"'
+  let indexOfResult: Dynamic = (result?: Dynamic): Dynamic => fitResults.indexOf(result),
+    artboardLabel: Dynamic = (index?: Dynamic): Dynamic =>
+      artboardNames[index] !== undefined
+        ? '"' + artboardNames[index] + '"'
         : uiMessage("inspector.announcements.thatArtboard"),
-    value: Dynamic = items.length > 1,
-    value2: Dynamic;
-  return (value2 = callback2("unsettled")) >= 0
-    ? callback3(value2) +
+    hasMultiple: Dynamic = fitResults.length > 1,
+    foundIndex: Dynamic;
+  return (foundIndex = indexOfResult("unsettled")) >= 0
+    ? artboardLabel(foundIndex) +
         " stretches to fill whatever height its frame has, so no frame height will hold all of it."
-    : (value2 = callback2("unsized")) >= 0
-      ? callback3(value2) +
+    : (foundIndex = indexOfResult("unsized")) >= 0
+      ? artboardLabel(foundIndex) +
         "\u2019s page has no height of its own to fit to (it sizes itself to its frame), so its frame stays as it is."
-      : (value2 = callback2("changed")) >= 0
-        ? callback3(value2) +
+      : (foundIndex = indexOfResult("changed")) >= 0
+        ? artboardLabel(foundIndex) +
           " was changed while it was being measured, so its frame stays as you set it."
-        : (value2 = callback2("empty")) >= 0
-          ? callback3(value2) +
+        : (foundIndex = indexOfResult("empty")) >= 0
+          ? artboardLabel(foundIndex) +
             " has nothing on its page yet, so its frame stays as it is."
-          : (value2 = callback2("capped")) >= 0
-            ? callback3(value2) +
+          : (foundIndex = indexOfResult("capped")) >= 0
+            ? artboardLabel(foundIndex) +
               " is already as tall as an artboard can be (8000 px)."
-            : (value2 = callback2("hidden")) >= 0
-              ? callback3(value2) +
+            : (foundIndex = indexOfResult("hidden")) >= 0
+              ? artboardLabel(foundIndex) +
                 " is hidden while another artboard is open full window. Close that view, then try again."
-              : (value2 = callback2("stopped")) >= 0
-                ? callback3(value2) +
+              : (foundIndex = indexOfResult("stopped")) >= 0
+                ? artboardLabel(foundIndex) +
                   "\u2019s preview is stopped. Reload it, then try again."
-                : (value2 = callback2("unmeasured")) >= 0
+                : (foundIndex = indexOfResult("unmeasured")) >= 0
                   ? uiMessage("inspector.announcements.couldnTMeasure") +
-                    callback3(value2) +
+                    artboardLabel(foundIndex) +
                     " yet. Try again once it has finished loading."
-                  : (value2 = callback2("keeps")) >= 0
-                    ? callback3(value2) +
+                  : (foundIndex = indexOfResult("keeps")) >= 0
+                    ? artboardLabel(foundIndex) +
                       " is set to Flow or is page-shaped now, so its frame stays as it is."
-                    : items.every(
-                          (input?: Dynamic): Dynamic => input === "gone",
+                    : fitResults.every(
+                          (result?: Dynamic): Dynamic => result === "gone",
                         )
-                      ? value
+                      ? hasMultiple
                         ? uiMessage("inspector.announcements.thoseArtboardsArenTOn")
                         : uiMessage("inspector.announcements.thatArtboardIsnTOn")
-                      : items.every(
-                            (input?: Dynamic): Dynamic =>
-                              input === "matches" || input === "gone",
+                      : fitResults.every(
+                            (result?: Dynamic): Dynamic =>
+                              result === "matches" || result === "gone",
                           )
-                        ? value
+                        ? hasMultiple
                           ? uiMessage("inspector.announcements.nothingToFitThoseFrames")
                           : uiMessage("inspector.announcements.nothingToFit") +
-                            callback3(callback2("matches")) +
+                            artboardLabel(indexOfResult("matches")) +
                             "\u2019s frame is already about as tall as its page."
-                        : value
+                        : hasMultiple
                           ? uiMessage("inspector.announcements.nothingToFitThosePages")
                           : uiMessage("inspector.announcements.nothingToFit") +
-                            callback3(callback2("fits")) +
+                            artboardLabel(indexOfResult("fits")) +
                             "\u2019s page is no taller than its frame.";
 }
-function zoomAnnouncement(input?: Dynamic): Dynamic {
-  return uiMessage("inspector.announcements.zoom") + String(Math.round(input * 100)) + "%";
+function zoomAnnouncement(zoomRatio?: Dynamic): Dynamic {
+  return uiMessage("inspector.announcements.zoom") + String(Math.round(zoomRatio * 100)) + "%";
 }
-function pageAnnouncement(input?: Dynamic): Dynamic {
-  return "Page: " + input;
+function pageAnnouncement(pageName?: Dynamic): Dynamic {
+  return "Page: " + pageName;
 }
-function canvasSelectionKey(input?: Dynamic): Dynamic {
-  return isEmptyCanvasSelection(input)
+function canvasSelectionKey(selection?: Dynamic): Dynamic {
+  return isEmptyCanvasSelection(selection)
     ? "none"
     : "ab:" +
-        [...input.artboards].sort().join(`
+        [...selection.artboards].sort().join(`
 `) +
         "|" +
-        [...input.notes].sort().join(`
+        [...selection.notes].sort().join(`
 `) +
         "|el:" +
-        [...input.elements]
+        [...selection.elements]
           .map(
-            ([input2, input3]: Dynamic): Dynamic =>
-              input2 +
+            ([artboardId, elementSelection]: Dynamic): Dynamic =>
+              artboardId +
               "#" +
-              [...input3.tids]
+              [...elementSelection.tids]
                 .sort(
-                  (input4?: Dynamic, options?: Dynamic): Dynamic =>
-                    input4 - options,
+                  (firstTid?: Dynamic, secondTid?: Dynamic): Dynamic =>
+                    firstTid - secondTid,
                 )
                 .join(".") +
-              (input3.part ? ":" + input3.part : ""),
+              (elementSelection.part ? ":" + elementSelection.part : ""),
           )
           .sort().join(`
 `);
 }
-function findOutlineNode(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (!input) return null;
-  for (let value of input as Dynamic) {
-    if (value.tid === options) return value;
-    let value2: Dynamic = findOutlineNode(value.children, options);
-    if (value2) return value2;
+function findOutlineNode(nodes?: Dynamic, tid?: Dynamic): Dynamic {
+  if (!nodes) return null;
+  for (let node of nodes as Dynamic) {
+    if (node.tid === tid) return node;
+    let found: Dynamic = findOutlineNode(node.children, tid);
+    if (found) return found;
   }
   return null;
 }
-function outlineNodeDescription(input?: Dynamic): Dynamic {
-  if (!input) return "Layer";
-  let value: Dynamic =
-    input.label.length > AccessibilityAnnouncementsLimit
-      ? truncateAccessibleLabel(input.label, AccessibilityAnnouncementsLimit)
-      : input.label;
-  return input.detail ? value + ", " + input.detail : value;
+function outlineNodeDescription(node?: Dynamic): Dynamic {
+  if (!node) return "Layer";
+  let label: Dynamic =
+    node.label.length > AccessibilityAnnouncementsLimit
+      ? truncateAccessibleLabel(node.label, AccessibilityAnnouncementsLimit)
+      : node.label;
+  return node.detail ? label + ", " + node.detail : label;
 }
 function truncateAccessibleLabel(
-  input?: Dynamic,
-  options?: Dynamic,
+  label?: Dynamic,
+  maxLength?: Dynamic,
 ): Dynamic {
   return (
-    input.slice(0, options - 1).replace(/[\uD800-\uDBFF]$/, "") + "\u2026"
+    label.slice(0, maxLength - 1).replace(/[\uD800-\uDBFF]$/, "") + "\u2026"
   );
 }
 function selectionAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = (): Dynamic => "note",
+  selection?: Dynamic,
+  outlinesByArtboard?: Dynamic,
+  getArtboardName?: Dynamic,
+  getNoteKind: Dynamic = (): Dynamic => "note",
 ): Dynamic {
-  if (isEmptyCanvasSelection(input))
+  if (isEmptyCanvasSelection(selection))
     return NothingSelectedMessage;
-  let index: Dynamic = 0;
-  for (let value4 of input.elements.values() as Dynamic)
-    index += value4.tids.length;
-  if (input.artboards.size === 0 && input.notes.size === 0) {
-    if (index !== 1) return String(index) + " layers selected";
-    let [value4, value5]: Dynamic = [...input.elements][0];
+  let layerCount: Dynamic = 0;
+  for (let elementSelection of selection.elements.values() as Dynamic)
+    layerCount += elementSelection.tids.length;
+  if (selection.artboards.size === 0 && selection.notes.size === 0) {
+    if (layerCount !== 1) return String(layerCount) + " layers selected";
+    let [artboardId, elementSelection]: Dynamic = [...selection.elements][0];
     return (
       outlineNodeDescription(
-        findOutlineNode(options[value4], value5.tids[0]),
-      ) + (value5.part === "text" ? " text selected" : " selected")
+        findOutlineNode(outlinesByArtboard[artboardId], elementSelection.tids[0]),
+      ) + (elementSelection.part === "text" ? " text selected" : " selected")
     );
   }
-  if (input.notes.size === 0 && index === 0) {
-    if (input.artboards.size === 1) {
-      let [artboards]: Dynamic = input.artboards;
-      return uiMessage("inspector.announcements.artboard") + context(artboards) + "\u201D selected";
+  if (selection.notes.size === 0 && layerCount === 0) {
+    if (selection.artboards.size === 1) {
+      let [artboards]: Dynamic = selection.artboards;
+      return uiMessage("inspector.announcements.artboard") + getArtboardName(artboards) + "\u201D selected";
     }
-    return String(input.artboards.size) + " artboards selected";
+    return String(selection.artboards.size) + " artboards selected";
   }
-  let value2: Dynamic = [...input.notes].map(value),
-    length: Dynamic = value2.filter(
-      (input2?: Dynamic): Dynamic => input2 === "shape",
+  let noteKinds: Dynamic = [...selection.notes].map(getNoteKind),
+    shapeCount: Dynamic = noteKinds.filter(
+      (noteKind?: Dynamic): Dynamic => noteKind === "shape",
     ).length,
-    length2: Dynamic = value2.filter(
-      (input2?: Dynamic): Dynamic => input2 === "picture",
+    pictureCount: Dynamic = noteKinds.filter(
+      (noteKind?: Dynamic): Dynamic => noteKind === "picture",
     ).length,
-    length3: Dynamic = value2.filter(
-      (input2?: Dynamic): Dynamic => input2 === "video",
+    videoCount: Dynamic = noteKinds.filter(
+      (noteKind?: Dynamic): Dynamic => noteKind === "video",
     ).length,
-    value3: Dynamic = input.notes.size - length - length2 - length3;
-  if (input.artboards.size === 0 && index === 0 && input.notes.size === 1)
-    return length3
-      ? AccessibilityAnnouncementsLabel_14
-      : length2
-        ? AccessibilityAnnouncementsLabel_13
-        : length
-          ? AccessibilityAnnouncementsLabel_12
-          : AccessibilityAnnouncementsLabel_11;
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      input2 === 0
+    noteCount: Dynamic = selection.notes.size - shapeCount - pictureCount - videoCount;
+  if (selection.artboards.size === 0 && layerCount === 0 && selection.notes.size === 1)
+    return videoCount
+      ? videoSelectedMessage
+      : pictureCount
+        ? pictureSelectedMessage
+        : shapeCount
+          ? shapeSelectedMessage
+          : noteSelectedMessage;
+  let countPhrase: Dynamic = (count?: Dynamic, noun?: Dynamic): Dynamic =>
+      count === 0
         ? []
-        : [String(input2) + " " + options2 + (input2 === 1 ? "" : "s")],
-    items: Dynamic = [
-      ...callback(input.artboards.size, "artboard"),
-      ...callback(value3, "note"),
-      ...callback(length, "shape"),
-      ...callback(length2, "picture"),
-      ...callback(length3, "video"),
-      ...callback(index, "layer"),
+        : [String(count) + " " + noun + (count === 1 ? "" : "s")],
+    phrases: Dynamic = [
+      ...countPhrase(selection.artboards.size, "artboard"),
+      ...countPhrase(noteCount, "note"),
+      ...countPhrase(shapeCount, "shape"),
+      ...countPhrase(pictureCount, "picture"),
+      ...countPhrase(videoCount, "video"),
+      ...countPhrase(layerCount, "layer"),
     ];
   return (
-    (items.length > 1 ? items.slice(0, -1).join(", ") + " and " : "") +
-    items[items.length - 1] +
+    (phrases.length > 1 ? phrases.slice(0, -1).join(", ") + " and " : "") +
+    phrases[phrases.length - 1] +
     " selected"
   );
 }
 function artboardPositionAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  index?: Dynamic,
+  total?: Dynamic,
+  artboardName?: Dynamic,
 ): Dynamic {
   return (
     uiMessage("inspector.announcements.artboard2") +
-    String(input + 1) +
+    String(index + 1) +
     " of " +
-    String(options) +
+    String(total) +
     ": " +
-    context
+    artboardName
   );
 }
 function outlineLayerAnnouncement(
-  input?: Dynamic,
-  options: Dynamic = AccessibilityAnnouncementsConstant,
+  location?: Dynamic,
+  maxLength: Dynamic = AccessibilityAnnouncementsConstant,
 ): Dynamic {
-  let value: Dynamic = input.siblings.length <= 1,
-    value2: Dynamic =
+  let isOnlyLayer: Dynamic = location.siblings.length <= 1,
+    suffix: Dynamic =
       " selected, " +
-      (value
+      (isOnlyLayer
         ? uiMessage("inspector.announcements.theOnlyLayerAtThis")
-        : outlineSiblingPosition(input)) +
-      (input.node.hidden ? ", hidden" : "") +
-      (value && input.node.children.length > 0 ? ". Return goes deeper" : ""),
-    value3: Dynamic = outlineNodeDescription(input.node),
-    value4: Dynamic = options - value2.length;
+        : outlineSiblingPosition(location)) +
+      (location.node.hidden ? ", hidden" : "") +
+      (isOnlyLayer && location.node.children.length > 0 ? ". Return goes deeper" : ""),
+    description: Dynamic = outlineNodeDescription(location.node),
+    availableLength: Dynamic = maxLength - suffix.length;
   return (
-    (value3.length > value4
-      ? truncateAccessibleLabel(value3, value4)
-      : value3) + value2
+    (description.length > availableLength
+      ? truncateAccessibleLabel(description, availableLength)
+      : description) + suffix
   );
 }
-function outlineLayerNavigationAnnouncement(input?: Dynamic): Dynamic {
+function outlineLayerNavigationAnnouncement(location?: Dynamic): Dynamic {
   return (
     outlineLayerAnnouncement(
-      input,
+      location,
       AccessibilityAnnouncementsConstant -
         2 -
-        AccessibilityAnnouncementsLabel_15.length,
+        layerNavigationHintMessage.length,
     ) +
     ". " +
-    AccessibilityAnnouncementsLabel_15
+    layerNavigationHintMessage
   );
 }
-function exitOutlineAnnouncement(input?: Dynamic): Dynamic {
-  return uiMessage("inspector.announcements.outOfTheLayersArtboard") + input + "\u201D selected";
+function exitOutlineAnnouncement(artboardName?: Dynamic): Dynamic {
+  return uiMessage("inspector.announcements.outOfTheLayersArtboard") + artboardName + "\u201D selected";
 }
-function artboardNotSelectedAnnouncement(input?: Dynamic): Dynamic {
+function artboardNotSelectedAnnouncement(artboardName?: Dynamic): Dynamic {
   return (
-    uiMessage("inspector.announcements.artboard") + input + "\u201D is not selected. Nothing deleted"
+    uiMessage("inspector.announcements.artboard") + artboardName + "\u201D is not selected. Nothing deleted"
   );
 }
 function elementSelectionAnnouncement(
-  input?: Dynamic,
-  items?: Dynamic,
+  nodes?: Dynamic,
+  tids?: Dynamic,
 ): Dynamic {
-  return items.length === 0
+  return tids.length === 0
     ? NothingSelectedMessage
-    : items.length === 1
-      ? outlineNodeDescription(findOutlineNode(input, items[0])) + " selected"
-      : String(items.length) + " layers selected";
+    : tids.length === 1
+      ? outlineNodeDescription(findOutlineNode(nodes, tids[0])) + " selected"
+      : String(tids.length) + " layers selected";
 }
 function selectionActionRefusalAnnouncement(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = NothingSelectedMessage,
+  layerLabel?: Dynamic,
+  actionDone?: Dynamic,
+  hasSelectableRow?: Dynamic,
+  selectionMessage: Dynamic = NothingSelectedMessage,
 ): Dynamic {
-  let value2: Dynamic =
-    value !== NothingSelectedMessage && value.endsWith(" selected")
-      ? value
+  let currentSelectionText: Dynamic =
+    selectionMessage !== NothingSelectedMessage && selectionMessage.endsWith(" selected")
+      ? selectionMessage
       : "";
-  /^(Note|Shape|Picture|Video) selected$/.test(value2)
-    ? (value2 = uiMessage("inspector.announcements.a") + value2.toLowerCase())
-    : value2 === items + " selected" && (value2 = uiMessage("inspector.announcements.another") + value2);
-  let value3: Dynamic = " is not selected. Nothing " + options + ". ",
-    value4: Dynamic =
-      value2 !== ""
-        ? value2.length > 56
-          ? truncateAccessibleLabel(value2.slice(0, -9), 47) + " selected"
-          : value2
-        : context
+  /^(Note|Shape|Picture|Video) selected$/.test(currentSelectionText)
+    ? (currentSelectionText = uiMessage("inspector.announcements.a") + currentSelectionText.toLowerCase())
+    : currentSelectionText === layerLabel + " selected" && (currentSelectionText = uiMessage("inspector.announcements.another") + currentSelectionText);
+  let refusalText: Dynamic = " is not selected. Nothing " + actionDone + ". ",
+    selectionHint: Dynamic =
+      currentSelectionText !== ""
+        ? currentSelectionText.length > 56
+          ? truncateAccessibleLabel(currentSelectionText.slice(0, -9), 47) + " selected"
+          : currentSelectionText
+        : hasSelectableRow
           ? uiMessage("inspector.announcements.returnSelectsIt")
           : uiMessage("inspector.announcements.returnOnTheRowItself"),
-    value5: Dynamic =
-      AccessibilityAnnouncementsConstant - value3.length - value4.length;
+    availableLength: Dynamic =
+      AccessibilityAnnouncementsConstant - refusalText.length - selectionHint.length;
   return (
-    (items.length > value5 ? truncateAccessibleLabel(items, value5) : items) +
-    value3 +
-    value4
+    (layerLabel.length > availableLength ? truncateAccessibleLabel(layerLabel, availableLength) : layerLabel) +
+    refusalText +
+    selectionHint
   );
 }
-function emptyArtboardSelectionAnnouncement(input?: Dynamic): Dynamic {
-  return uiMessage("inspector.announcements.artboard") + input + "\u201D selected. It has no layers";
+function emptyArtboardSelectionAnnouncement(artboardName?: Dynamic): Dynamic {
+  return uiMessage("inspector.announcements.artboard") + artboardName + "\u201D selected. It has no layers";
 }
-function artboardLoadingAnnouncement(input?: Dynamic): Dynamic {
-  return uiMessage("inspector.announcements.loadingArtboard") + input + "\u201D\u2026";
+function artboardLoadingAnnouncement(artboardName?: Dynamic): Dynamic {
+  return uiMessage("inspector.announcements.loadingArtboard") + artboardName + "\u201D\u2026";
 }
-function artboardLoadFailureAnnouncement(input?: Dynamic): Dynamic {
-  return uiMessage("inspector.announcements.couldnTLoadArtboard") + input + "\u201D";
+function artboardLoadFailureAnnouncement(artboardName?: Dynamic): Dynamic {
+  return uiMessage("inspector.announcements.couldnTLoadArtboard") + artboardName + "\u201D";
 }
-function selectingAnnouncement(input?: Dynamic): Dynamic {
-  return uiMessage("inspector.announcements.stillSelecting") + input;
+function selectingAnnouncement(message?: Dynamic): Dynamic {
+  return uiMessage("inspector.announcements.stillSelecting") + message;
 }
-function selectionReadyAnnouncement(input?: Dynamic): Dynamic {
-  return input + ". " + AccessibilityAnnouncementsLabel_16;
+function selectionReadyAnnouncement(message?: Dynamic): Dynamic {
+  return message + ". " + editingTextHintMessage;
 }
-function artboardsDeletedAnnouncement(items?: Dynamic): Dynamic {
-  return items.length === 1
-    ? uiMessage("inspector.announcements.artboard") + items[0] + "\u201D deleted"
-    : String(items.length) + " artboards deleted";
+function artboardsDeletedAnnouncement(artboardNames?: Dynamic): Dynamic {
+  return artboardNames.length === 1
+    ? uiMessage("inspector.announcements.artboard") + artboardNames[0] + "\u201D deleted"
+    : String(artboardNames.length) + " artboards deleted";
 }
 function pageDeletedAnnouncement(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  pageName?: Dynamic,
+  artboardCount?: Dynamic,
+  objectCount?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = [
-      options > 0
-        ? String(options) + (options === 1 ? " artboard" : " artboards")
+  let contents: Dynamic = [
+      artboardCount > 0
+        ? String(artboardCount) + (artboardCount === 1 ? " artboard" : " artboards")
         : "",
-      context > 0
-        ? String(context) + (context === 1 ? " object" : " objects")
+      objectCount > 0
+        ? String(objectCount) + (objectCount === 1 ? " object" : " objects")
         : "",
-    ].filter((input?: Dynamic): Dynamic => input !== ""),
-    value2: Dynamic =
+    ].filter((part?: Dynamic): Dynamic => part !== ""),
+    suffix: Dynamic =
       "\u201D deleted" +
-      (value.length > 0 ? " with its " + value.join(" and ") : ""),
-    value3: Dynamic = AccessibilityAnnouncementsConstant - 6 - value2.length;
+      (contents.length > 0 ? " with its " + contents.join(" and ") : ""),
+    availableLength: Dynamic = AccessibilityAnnouncementsConstant - 6 - suffix.length;
   return (
     uiMessage("inspector.announcements.page") +
-    (items.length > value3 ? truncateAccessibleLabel(items, value3) : items) +
-    value2
+    (pageName.length > availableLength ? truncateAccessibleLabel(pageName, availableLength) : pageName) +
+    suffix
   );
 }
-function objectsDeletedAnnouncement(input?: Dynamic): Dynamic {
-  return String(input) + " objects deleted";
+function objectsDeletedAnnouncement(count?: Dynamic): Dynamic {
+  return String(count) + " objects deleted";
 }
 function moveDirectionAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
+  dx?: Dynamic,
+  dy?: Dynamic,
 ): Dynamic {
-  return input !== 0 && options === 0
-    ? input < 0
+  return dx !== 0 && dy === 0
+    ? dx < 0
       ? uiMessage("inspector.announcements.movedLeft")
       : uiMessage("inspector.announcements.movedRight")
-    : options !== 0 && input === 0
-      ? options < 0
+    : dy !== 0 && dx === 0
+      ? dy < 0
         ? uiMessage("inspector.announcements.movedUp")
         : uiMessage("inspector.announcements.movedDown")
       : "Moved";
 }
-function flipDirectionAnnouncement(input?: Dynamic): Dynamic {
-  return input === "horizontal"
+function flipDirectionAnnouncement(axis?: Dynamic): Dynamic {
+  return axis === "horizontal"
     ? uiMessage("inspector.announcements.flippedHorizontally")
     : uiMessage("inspector.announcements.flippedVertically");
 }
-function reorderAnnouncement(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options
-    ? input < 0
+function reorderAnnouncement(delta?: Dynamic, isToEnd?: Dynamic): Dynamic {
+  return isToEnd
+    ? delta < 0
       ? uiMessage("inspector.announcements.movedToFirst")
       : uiMessage("inspector.announcements.movedToLast")
-    : input < 0
+    : delta < 0
       ? uiMessage("inspector.announcements.movedUp")
       : uiMessage("inspector.announcements.movedDown");
 }
-function stackingAnnouncement(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options
-    ? input === "front"
+function stackingAnnouncement(side?: Dynamic, didMove?: Dynamic): Dynamic {
+  return didMove
+    ? side === "front"
       ? uiMessage("inspector.announcements.broughtToTheFront")
       : uiMessage("inspector.announcements.sentToTheBack")
-    : input === "front"
+    : side === "front"
       ? uiMessage("inspector.announcements.alreadyAtTheFront")
       : uiMessage("inspector.announcements.alreadyAtTheBack");
 }
-function propertyAnnouncementLabel(input?: Dynamic): Dynamic {
-  if (input === "__text") return "Content";
-  if (input.startsWith("@")) {
-    let value3: Dynamic = input.slice(1);
+function propertyAnnouncementLabel(property?: Dynamic): Dynamic {
+  if (property === "__text") return "Content";
+  if (property.startsWith("@")) {
+    let attributeName: Dynamic = property.slice(1);
     return (
-      AccessibilityAnnouncementsHrefSrcAltConfig[value3] ??
-      humanizePropertyName(value3)
+      AccessibilityAnnouncementsHrefSrcAltConfig[attributeName] ??
+      humanizePropertyName(attributeName)
     );
   }
-  let value: Dynamic = getPropertySpecification(input);
-  if (!value || value.label === "") return humanizePropertyName(input);
-  let value2: Dynamic =
-    AccessibilityAnnouncementsPaddingMarginConfig[value.section];
-  return value2 ? value2 + " " + value.label.toLowerCase() : value.label;
+  let specification: Dynamic = getPropertySpecification(property);
+  if (!specification || specification.label === "") return humanizePropertyName(property);
+  let sectionLabel: Dynamic =
+    AccessibilityAnnouncementsPaddingMarginConfig[specification.section];
+  return sectionLabel ? sectionLabel + " " + specification.label.toLowerCase() : specification.label;
 }
-function humanizePropertyName(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.replace(/^-+/, "").replace(/[-_]+/g, " ").trim();
-  return value === ""
+function humanizePropertyName(name?: Dynamic): Dynamic {
+  let words: Dynamic = name.replace(/^-+/, "").replace(/[-_]+/g, " ").trim();
+  return words === ""
     ? "Property"
-    : value.charAt(0).toUpperCase() + value.slice(1);
+    : words.charAt(0).toUpperCase() + words.slice(1);
 }
-function propertyEditAnnouncement(items?: Dynamic): Dynamic {
-  if (items.length === 0) return "Updated";
-  let value: Dynamic = propertyAnnouncementLabel(items[0].prop);
-  if (items.length > 1)
-    return items.every((input?: Dynamic): Dynamic => input.value == null)
-      ? value + " reset"
-      : value + " updated";
-  let { value: value2 }: Dynamic = items[0];
-  if (value2 == null) return value + " reset";
-  let value3: Dynamic = value2.trim();
-  return AccessibilityAnnouncementsPattern.test(value3)
-    ? value + " " + value3
-    : value + " updated";
+function propertyEditAnnouncement(edits?: Dynamic): Dynamic {
+  if (edits.length === 0) return "Updated";
+  let label: Dynamic = propertyAnnouncementLabel(edits[0].prop);
+  if (edits.length > 1)
+    return edits.every((edit?: Dynamic): Dynamic => edit.value == null)
+      ? label + " reset"
+      : label + " updated";
+  let { value: newValue }: Dynamic = edits[0];
+  if (newValue == null) return label + " reset";
+  let trimmedValue: Dynamic = newValue.trim();
+  return AccessibilityAnnouncementsPattern.test(trimmedValue)
+    ? label + " " + trimmedValue
+    : label + " updated";
 }
 function addContrastToAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = (input2?: Dynamic): Dynamic => input2,
+  message?: Dynamic,
+  edits?: Dynamic,
+  background?: Dynamic,
+  resolveValue: Dynamic = (colorValue?: Dynamic): Dynamic => colorValue,
 ): Dynamic {
-  if (context === undefined) return input;
-  let value2: Dynamic = options.find(
-      (input2?: Dynamic): Dynamic => input2.prop === "color",
+  if (background === undefined) return message;
+  let textColor: Dynamic = edits.find(
+      (edit?: Dynamic): Dynamic => edit.prop === "color",
     )?.value,
-    value3: Dynamic = value2 == null ? undefined : value(value2),
-    value4: Dynamic =
-      value3 === undefined ? undefined : resolvedContrastColor(value3, []),
-    value5: Dynamic =
-      value4 === undefined
+    resolvedValue: Dynamic = textColor == null ? undefined : resolveValue(textColor),
+    cssColor: Dynamic =
+      resolvedValue === undefined ? undefined : resolvedContrastColor(resolvedValue, []),
+    contrastResults: Dynamic =
+      cssColor === undefined
         ? undefined
-        : evaluateColorContrast(value4, context);
-  return value5 === undefined
-    ? input
-    : input + ". " + summarizeContrastResults(value5).spoken;
+        : evaluateColorContrast(cssColor, background);
+  return contrastResults === undefined
+    ? message
+    : message + ". " + summarizeContrastResults(contrastResults).spoken;
 }
 function sourceLineErrorAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
+  line?: Dynamic,
+  errorText?: Dynamic,
 ): Dynamic {
   return (
     uiMessage("inspector.announcements.line") +
-    String(input) +
+    String(line) +
     ": " +
     (AccessibilityAnnouncementsUnexpectedUnexpectedUnexpectedConfig[
-      options
-    ] ?? options.replace(/\s+/g, " "))
+      errorText
+    ] ?? errorText.replace(/\s+/g, " "))
   );
 }
-function pausedChangesAnnouncement(items?: Dynamic): Dynamic {
+function pausedChangesAnnouncement(message?: Dynamic): Dynamic {
   return (
-    (items.length > 80 ? truncateAccessibleLabel(items, 80) : items) +
+    (message.length > 80 ? truncateAccessibleLabel(message, 80) : message) +
     ". Changes are paused until it is fixed"
   );
 }
-function discardedCodeChangesAnnouncement(input?: Dynamic): Dynamic {
+function discardedCodeChangesAnnouncement(count?: Dynamic): Dynamic {
   return (
     uiMessage("inspector.announcements.unappliedChangesInTheCode") +
-    String(input) +
+    String(count) +
     " could not be read"
   );
 }
 function artboardResizeAnnouncement(
-  input?: Dynamic,
-  options?: Dynamic,
+  before?: Dynamic,
+  after?: Dynamic,
 ): Dynamic {
-  let items: Dynamic = [];
-  Math.round(input.w) !== Math.round(options.w) &&
-    items.push(uiMessage("inspector.announcements.width") + String(Math.round(options.w)) + "px");
-  Math.round(input.h) !== Math.round(options.h) &&
-    items.push(
-      (items.length > 0 ? uiMessage("inspector.announcements.height2") : uiMessage("inspector.announcements.height")) +
-        String(Math.round(options.h)) +
+  let changes: Dynamic = [];
+  Math.round(before.w) !== Math.round(after.w) &&
+    changes.push(uiMessage("inspector.announcements.width") + String(Math.round(after.w)) + "px");
+  Math.round(before.h) !== Math.round(after.h) &&
+    changes.push(
+      (changes.length > 0 ? uiMessage("inspector.announcements.height2") : uiMessage("inspector.announcements.height")) +
+        String(Math.round(after.h)) +
         "px",
     );
-  return items.length > 0 ? items.join(", ") : null;
+  return changes.length > 0 ? changes.join(", ") : null;
 }
-function backgroundEditAnnouncement(items?: Dynamic): Dynamic {
-  return items.length > 0 &&
-    items.every((input?: Dynamic): Dynamic => input.value == null)
+function backgroundEditAnnouncement(edits?: Dynamic): Dynamic {
+  return edits.length > 0 &&
+    edits.every((edit?: Dynamic): Dynamic => edit.value == null)
     ? uiMessage("inspector.announcements.backgroundReset")
     : uiMessage("inspector.announcements.backgroundUpdated");
 }
@@ -798,36 +798,36 @@ export {
   AccessibilityAnnouncementsHandler,
   AccessibilityAnnouncementsHrefSrcAltConfig,
   AccessibilityAnnouncementsLabel,
-  AccessibilityAnnouncementsLabel_10,
-  AccessibilityAnnouncementsLabel_11,
-  AccessibilityAnnouncementsLabel_12,
-  AccessibilityAnnouncementsLabel_13,
-  AccessibilityAnnouncementsLabel_14,
-  AccessibilityAnnouncementsLabel_15,
-  AccessibilityAnnouncementsLabel_16,
-  AccessibilityAnnouncementsLabel_17,
-  AccessibilityAnnouncementsLabel_18,
-  AccessibilityAnnouncementsLabel_19,
-  AccessibilityAnnouncementsLabel_2,
-  AccessibilityAnnouncementsLabel_20,
-  AccessibilityAnnouncementsLabel_21,
-  AccessibilityAnnouncementsLabel_22,
-  AccessibilityAnnouncementsLabel_23,
-  AccessibilityAnnouncementsLabel_24,
-  AccessibilityAnnouncementsLabel_3,
-  AccessibilityAnnouncementsLabel_4,
-  AccessibilityAnnouncementsLabel_5,
-  AccessibilityAnnouncementsLabel_6,
-  AccessibilityAnnouncementsLabel_7,
-  AccessibilityAnnouncementsLabel_8,
-  AccessibilityAnnouncementsLabel_9,
+  pasteHereMessage as AccessibilityAnnouncementsLabel_10,
+  noteSelectedMessage as AccessibilityAnnouncementsLabel_11,
+  shapeSelectedMessage as AccessibilityAnnouncementsLabel_12,
+  pictureSelectedMessage as AccessibilityAnnouncementsLabel_13,
+  videoSelectedMessage as AccessibilityAnnouncementsLabel_14,
+  layerNavigationHintMessage as AccessibilityAnnouncementsLabel_15,
+  editingTextHintMessage as AccessibilityAnnouncementsLabel_16,
+  textUpdatedMessage as AccessibilityAnnouncementsLabel_17,
+  noteDeletedMessage as AccessibilityAnnouncementsLabel_18,
+  shapeDeletedMessage as AccessibilityAnnouncementsLabel_19,
+  copiedAsPngMessage as AccessibilityAnnouncementsLabel_2,
+  pictureDeletedMessage as AccessibilityAnnouncementsLabel_20,
+  videoDeletedMessage as AccessibilityAnnouncementsLabel_21,
+  linkRemovedMessage as AccessibilityAnnouncementsLabel_22,
+  emptyTextBoxRemovedMessage as AccessibilityAnnouncementsLabel_23,
+  commentModePausedMessage as AccessibilityAnnouncementsLabel_24,
+  copiedAsSvgMessage as AccessibilityAnnouncementsLabel_3,
+  conversionFailedMessage as AccessibilityAnnouncementsLabel_4,
+  exportStillRunningMessage as AccessibilityAnnouncementsLabel_5,
+  notSelectedAnywhereMessage as AccessibilityAnnouncementsLabel_6,
+  noWidthOrHeightMessage as AccessibilityAnnouncementsLabel_7,
+  previewStoppedReloadMessage as AccessibilityAnnouncementsLabel_8,
+  notVisibleMessage as AccessibilityAnnouncementsLabel_9,
   AccessibilityAnnouncementsLimit,
   AccessibilityAnnouncementsPaddingMarginConfig,
   AccessibilityAnnouncementsPattern,
   AccessibilityAnnouncementsReadyUpdatedChangedConfig,
   AccessibilityAnnouncementsResolvedValue,
   AccessibilityAnnouncementsUndoRedoConfig,
-  AccessibilityAnnouncementsUndoRedoConfig_2,
+  undoRedoPastTense as AccessibilityAnnouncementsUndoRedoConfig_2,
   AccessibilityAnnouncementsUnexpectedUnexpectedUnexpectedConfig,
   addContrastToAnnouncement,
   adjacentOutlineNode,
@@ -908,32 +908,32 @@ export function installEditorAccessibilityAnnouncements(): () => void {
     };
     NothingChangedThatStepNoLongerMessage =
       uiMessage("inspector.announcements.nothingChangedThatStepNo");
-    AccessibilityAnnouncementsUndoRedoConfig_2 = {
+    undoRedoPastTense = {
       undo: "Undone",
       redo: "Redone",
     };
     NothingSelectedMessage = uiMessage("inspector.announcements.nothingSelected");
-    AccessibilityAnnouncementsLabel_2 = uiMessage("inspector.announcements.copiedAsAPNG");
-    AccessibilityAnnouncementsLabel_3 = uiMessage("inspector.announcements.copiedAsAnSVG");
-    AccessibilityAnnouncementsLabel_4 = uiMessage("inspector.announcements.theConversionFailedTryAgain");
-    AccessibilityAnnouncementsLabel_5 =
+    copiedAsPngMessage = uiMessage("inspector.announcements.copiedAsAPNG");
+    copiedAsSvgMessage = uiMessage("inspector.announcements.copiedAsAnSVG");
+    conversionFailedMessage = uiMessage("inspector.announcements.theConversionFailedTryAgain");
+    exportStillRunningMessage =
       uiMessage("inspector.announcements.anotherExportIsStillRunning");
     ItsPictureCouldnTBeMadeTryMessage =
       uiMessage("inspector.announcements.itsPictureCouldnTBe");
-    AccessibilityAnnouncementsLabel_6 =
+    notSelectedAnywhereMessage =
       uiMessage("inspector.announcements.itIsnTSelectedAny");
-    AccessibilityAnnouncementsLabel_7 = uiMessage("inspector.announcements.itHasNoWidthOr");
+    noWidthOrHeightMessage = uiMessage("inspector.announcements.itHasNoWidthOr");
     ItsPageHasNothingToDrawMessage = uiMessage("inspector.announcements.itsPageHasNothingTo");
-    AccessibilityAnnouncementsLabel_8 =
+    previewStoppedReloadMessage =
       uiMessage("inspector.announcements.itsPreviewIsStoppedReload");
-    AccessibilityAnnouncementsLabel_9 =
+    notVisibleMessage =
       uiMessage("inspector.announcements.itIsnTVisibleTo");
-    AccessibilityAnnouncementsLabel_10 =
+    pasteHereMessage =
       uiMessage("inspector.announcements.pasteHerePlacesOneCopied");
-    AccessibilityAnnouncementsLabel_11 = uiMessage("inspector.announcements.noteSelected");
-    AccessibilityAnnouncementsLabel_12 = uiMessage("inspector.announcements.shapeSelected");
-    AccessibilityAnnouncementsLabel_13 = uiMessage("inspector.announcements.pictureSelected");
-    AccessibilityAnnouncementsLabel_14 = uiMessage("inspector.announcements.videoSelected");
+    noteSelectedMessage = uiMessage("inspector.announcements.noteSelected");
+    shapeSelectedMessage = uiMessage("inspector.announcements.shapeSelected");
+    pictureSelectedMessage = uiMessage("inspector.announcements.pictureSelected");
+    videoSelectedMessage = uiMessage("inspector.announcements.videoSelected");
     AccessibilityAnnouncementsLimit = 40;
     PressReturnToGoIntoThisMessage =
       uiMessage("inspector.announcements.pressReturnToGoInto");
@@ -946,21 +946,21 @@ export function installEditorAccessibilityAnnouncements(): () => void {
         ? "Return: deeper \xB7 \u21E7Return: up"
         : "Enter: deeper \xB7 Shift+Enter: up") +
       " \xB7 Esc: leave";
-    AccessibilityAnnouncementsLabel_15 =
+    layerNavigationHintMessage =
       uiMessage("inspector.announcements.tabNextReturnDeeperEscape");
     AccessibilityAnnouncementsConstant = 120;
     NoLayersInsideThisOneMessage = uiMessage("inspector.announcements.noLayersInsideThisOne");
-    AccessibilityAnnouncementsLabel_16 =
+    editingTextHintMessage =
       uiMessage("inspector.announcements.editingTextEscapeOrTab");
-    AccessibilityAnnouncementsLabel_17 = uiMessage("inspector.announcements.textUpdated");
+    textUpdatedMessage = uiMessage("inspector.announcements.textUpdated");
     DeletedValue = "Deleted";
     CutValue = "Cut";
-    AccessibilityAnnouncementsLabel_18 = uiMessage("inspector.announcements.noteDeleted");
-    AccessibilityAnnouncementsLabel_19 = uiMessage("inspector.announcements.shapeDeleted");
-    AccessibilityAnnouncementsLabel_20 = uiMessage("inspector.announcements.pictureDeleted");
-    AccessibilityAnnouncementsLabel_21 = uiMessage("inspector.announcements.videoDeleted");
-    AccessibilityAnnouncementsLabel_22 = uiMessage("inspector.announcements.linkRemoved");
-    AccessibilityAnnouncementsLabel_23 = uiMessage("inspector.announcements.emptyTextBoxRemoved");
+    noteDeletedMessage = uiMessage("inspector.announcements.noteDeleted");
+    shapeDeletedMessage = uiMessage("inspector.announcements.shapeDeleted");
+    pictureDeletedMessage = uiMessage("inspector.announcements.pictureDeleted");
+    videoDeletedMessage = uiMessage("inspector.announcements.videoDeleted");
+    linkRemovedMessage = uiMessage("inspector.announcements.linkRemoved");
+    emptyTextBoxRemovedMessage = uiMessage("inspector.announcements.emptyTextBoxRemoved");
     AccessibilityAnnouncementsHrefSrcAltConfig = {
       href: "Destination",
       get src() { return uiMessage("inspector.announcements.source"); },
@@ -981,19 +981,19 @@ export function installEditorAccessibilityAnnouncements(): () => void {
       "unbalanced )": "unbalanced closing parenthesis",
       "unbalanced ( or quote": "unbalanced parenthesis or quote",
     };
-    AccessibilityAnnouncementsLabel_24 = uiMessage("inspector.announcements.commentModePaused");
-    AccessibilityAnnouncementsHandler = (input?: Dynamic): Dynamic =>
-      String(input) + (input === 1 ? " artboard" : " artboards");
+    commentModePausedMessage = uiMessage("inspector.announcements.commentModePaused");
+    AccessibilityAnnouncementsHandler = (count?: Dynamic): Dynamic =>
+      String(count) + (count === 1 ? " artboard" : " artboards");
     AccessibilityAnnouncementsReadyUpdatedChangedConfig = {
-      ready: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.announcements.designReady") + AccessibilityAnnouncementsHandler(input),
-      updated: (input?: Dynamic): Dynamic =>
-        AccessibilityAnnouncementsHandler(input) + " updated",
-      changed: (input?: Dynamic): Dynamic =>
+      ready: (count?: Dynamic): Dynamic =>
+        uiMessage("inspector.announcements.designReady") + AccessibilityAnnouncementsHandler(count),
+      updated: (count?: Dynamic): Dynamic =>
+        AccessibilityAnnouncementsHandler(count) + " updated",
+      changed: (count?: Dynamic): Dynamic =>
         uiMessage("inspector.announcements.designUpdated") +
-        (input === 0
+        (count === 0
           ? uiMessage("inspector.announcements.noArtboardsLeft")
-          : AccessibilityAnnouncementsHandler(input) + " in all"),
+          : AccessibilityAnnouncementsHandler(count) + " in all"),
     };
   };
 }

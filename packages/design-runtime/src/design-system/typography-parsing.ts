@@ -5,222 +5,222 @@ import {
 import { DesignSystemTypeDeclarationsAZaZAZaZPattern } from "./type-declarations";
 
 var DesignSystemTypographyParsingLimit: Dynamic;
-var DesignSystemTypographyParsingLimit_2: Dynamic;
-var DesignSystemTypographyParsingLimit_3: Dynamic;
+var maxTypographyGroups: Dynamic;
+var maxFontFamilies: Dynamic;
 var DesignSystemTypographyParsingConstant: Dynamic;
 var DesignSystemTypographyParsingPattern: Dynamic;
-var DesignSystemTypographyParsingPattern_2: Dynamic;
+var safeFontFamilyPattern: Dynamic;
 var DesignSystemTypographyParsingHandler: Dynamic;
 var typographyLengthToPixels: Dynamic;
 var DesignSystemTypographyParsing300330400Config: Dynamic;
-function isSafeFontFamily(input?: Dynamic): Dynamic {
+function isSafeFontFamily(fontFamily?: Dynamic): Dynamic {
   if (
-    !DesignSystemTypographyParsingPattern_2.test(input) ||
-    input.includes("/*") ||
-    input.includes("*/")
+    !safeFontFamilyPattern.test(fontFamily) ||
+    fontFamily.includes("/*") ||
+    fontFamily.includes("*/")
   )
     return false;
-  let value: Dynamic = null;
-  for (let value2 of input as Dynamic)
-    value === null
-      ? (value = value2 === '"' || value2 === "'" ? value2 : null)
-      : value2 === value && (value = null);
-  return value === null;
+  let openQuote: Dynamic = null;
+  for (let character of fontFamily as Dynamic)
+    openQuote === null
+      ? (openQuote = character === '"' || character === "'" ? character : null)
+      : character === openQuote && (openQuote = null);
+  return openQuote === null;
 }
-function parseTypographyLength(input?: Dynamic): Dynamic {
-  if (typeof input == "number")
-    return Number.isFinite(input) && Math.abs(input) < 1e4
+function parseTypographyLength(lengthInput?: Dynamic): Dynamic {
+  if (typeof lengthInput == "number")
+    return Number.isFinite(lengthInput) && Math.abs(lengthInput) < 1e4
       ? {
-          n: DesignSystemTypographyParsingHandler(input),
+          n: DesignSystemTypographyParsingHandler(lengthInput),
           unit: "px",
         }
       : undefined;
-  if (typeof input != "string") return;
-  let value: Dynamic = input.trim().toLowerCase();
-  if (value === "0")
+  if (typeof lengthInput != "string") return;
+  let lengthText: Dynamic = lengthInput.trim().toLowerCase();
+  if (lengthText === "0")
     return {
       n: 0,
       unit: "px",
     };
-  let value2: Dynamic = DesignSystemTypographyParsingPattern.exec(value);
-  return value2 === null
+  let lengthMatch: Dynamic = DesignSystemTypographyParsingPattern.exec(lengthText);
+  return lengthMatch === null
     ? undefined
     : {
-        n: Number(value2[1]),
-        unit: value2[2],
+        n: Number(lengthMatch[1]),
+        unit: lengthMatch[2],
       };
 }
-function parseTypographyFamily(input?: Dynamic): Dynamic {
-  let value: Dynamic =
+function parseTypographyFamily(familyStack?: Dynamic): Dynamic {
+  let firstFamilyMatch: Dynamic =
       /^\s*(?:"([^"]{1,80})"|'([^']{1,80})'|([A-Za-z0-9 _-]{1,80}))/.exec(
-        input,
+        familyStack,
       ),
-    value2: Dynamic = (input.split(",").pop() ?? "")
+    lastFamilyName: Dynamic = (familyStack.split(",").pop() ?? "")
       .trim()
       .replace(/^["']|["']$/g, "")
       .toLowerCase(),
-    value3: Dynamic = /mono/.test(value2)
+    genericFamily: Dynamic = /mono/.test(lastFamilyName)
       ? "mono"
-      : /(^|ui-)serif$/.test(value2)
+      : /(^|ui-)serif$/.test(lastFamilyName)
         ? "serif"
         : "sans";
   return {
-    name: (value?.[1] ?? value?.[2] ?? value?.[3] ?? "").trim(),
-    stack: input,
-    generic: value3,
+    name: (firstFamilyMatch?.[1] ?? firstFamilyMatch?.[2] ?? firstFamilyMatch?.[3] ?? "").trim(),
+    stack: familyStack,
+    generic: genericFamily,
   };
 }
-function parseTypographyStyles(input?: Dynamic): Dynamic {
-  let value: Dynamic = input?.type;
-  if (typeof value != "object" || value === null) return [];
-  let entries: Dynamic = new Map();
+function parseTypographyStyles(designSystemSource?: Dynamic): Dynamic {
+  let typeSection: Dynamic = designSystemSource?.type;
+  if (typeof typeSection != "object" || typeSection === null) return [];
+  let fontFamiliesByKey: Dynamic = new Map();
   if (
-    typeof value.families == "object" &&
-    value.families !== null &&
-    !Array.isArray(value.families)
+    typeof typeSection.families == "object" &&
+    typeSection.families !== null &&
+    !Array.isArray(typeSection.families)
   )
-    for (let [value2, value3] of Object.entries(value.families) as Dynamic) {
-      if (entries.size >= DesignSystemTypographyParsingLimit_3) break;
-      let value4: Dynamic = value2.trim().toLowerCase();
-      DesignSystemTypeDeclarationsAZaZAZaZPattern.test(value4) &&
-        typeof value3 == "string" &&
-        isSafeFontFamily(value3.trim()) &&
-        entries.set(value4, value3.trim());
+    for (let [familyKey, familyStackText] of Object.entries(typeSection.families) as Dynamic) {
+      if (fontFamiliesByKey.size >= maxFontFamilies) break;
+      let normalizedFamilyKey: Dynamic = familyKey.trim().toLowerCase();
+      DesignSystemTypeDeclarationsAZaZAZaZPattern.test(normalizedFamilyKey) &&
+        typeof familyStackText == "string" &&
+        isSafeFontFamily(familyStackText.trim()) &&
+        fontFamiliesByKey.set(normalizedFamilyKey, familyStackText.trim());
     }
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "string" && entries.has(input2.trim().toLowerCase())
-        ? input2.trim().toLowerCase()
+  let normalizeFamilyKey: Dynamic = (familyKey?: Dynamic): Dynamic =>
+      typeof familyKey == "string" && fontFamiliesByKey.has(familyKey.trim().toLowerCase())
+        ? familyKey.trim().toLowerCase()
         : "",
-    items: Dynamic = [],
-    values: Dynamic = new Set(),
-    index: Dynamic = 0;
-  for (let value2 of (Array.isArray(value.groups)
-    ? value.groups
+    styles: Dynamic = [],
+    seenStyleNames: Dynamic = new Set(),
+    groupCount: Dynamic = 0;
+  for (let rawGroup of (Array.isArray(typeSection.groups)
+    ? typeSection.groups
     : []) as Dynamic) {
-    if (index >= DesignSystemTypographyParsingLimit_2) break;
-    if (typeof value2 != "object" || value2 === null || Array.isArray(value2))
+    if (groupCount >= maxTypographyGroups) break;
+    if (typeof rawGroup != "object" || rawGroup === null || Array.isArray(rawGroup))
       continue;
-    let value3: Dynamic = value2;
-    index++;
-    let value4: Dynamic =
-        (typeof value3.name == "string"
-          ? [...value3.name]
+    let group: Dynamic = rawGroup;
+    groupCount++;
+    let groupName: Dynamic =
+        (typeof group.name == "string"
+          ? [...group.name]
               .slice(0, DesignSystemTypographyParsingConstant)
               .join("")
           : "") || "Type",
-      value5: Dynamic = callback(value3.family);
-    for (let value6 of (Array.isArray(value3.styles)
-      ? value3.styles
+      groupFamilyKey: Dynamic = normalizeFamilyKey(group.family);
+    for (let rawStyle of (Array.isArray(group.styles)
+      ? group.styles
       : []) as Dynamic) {
-      if (values.size >= DesignSystemTypographyParsingLimit) break;
+      if (seenStyleNames.size >= DesignSystemTypographyParsingLimit) break;
       if (
-        typeof value6 != "object" ||
-        value6 === null ||
-        Array.isArray(value6)
+        typeof rawStyle != "object" ||
+        rawStyle === null ||
+        Array.isArray(rawStyle)
       )
         continue;
-      let value7: Dynamic = value6,
-        value8: Dynamic =
-          typeof value7.name == "string"
-            ? value7.name.trim().replace(/^\./, "")
+      let style: Dynamic = rawStyle,
+        styleName: Dynamic =
+          typeof style.name == "string"
+            ? style.name.trim().replace(/^\./, "")
             : "",
-        value9: Dynamic = parseTypographyLength(value7.fontSize);
+        fontSizeLength: Dynamic = parseTypographyLength(style.fontSize);
       if (
-        !DesignSystemTypeDeclarationsAZaZAZaZPattern.test(value8) ||
-        values.has(value8) ||
-        value9 === undefined
+        !DesignSystemTypeDeclarationsAZaZAZaZPattern.test(styleName) ||
+        seenStyleNames.has(styleName) ||
+        fontSizeLength === undefined
       )
         continue;
-      values.add(value8);
-      let value10: Dynamic = DesignSystemTypographyParsingHandler(
-        typographyLengthToPixels(value9),
+      seenStyleNames.add(styleName);
+      let fontSizePx: Dynamic = DesignSystemTypographyParsingHandler(
+        typographyLengthToPixels(fontSizeLength),
       );
-      if (value10 <= 0) continue;
-      let value11: Dynamic =
-          typeof value7.lineHeight == "string"
-            ? value7.lineHeight.trim()
-            : value7.lineHeight,
-        value12: Dynamic =
-          typeof value11 == "number"
-            ? value11
-            : typeof value11 == "string" && /^\d(?:\.\d{1,6})?$/.test(value11)
-              ? Number(value11)
+      if (fontSizePx <= 0) continue;
+      let rawLineHeight: Dynamic =
+          typeof style.lineHeight == "string"
+            ? style.lineHeight.trim()
+            : style.lineHeight,
+        lineHeightNumber: Dynamic =
+          typeof rawLineHeight == "number"
+            ? rawLineHeight
+            : typeof rawLineHeight == "string" && /^\d(?:\.\d{1,6})?$/.test(rawLineHeight)
+              ? Number(rawLineHeight)
               : undefined,
-        count: Dynamic = 1.4;
-      if (value12 !== undefined && value12 > 0 && value12 < 10)
-        count = DesignSystemTypographyParsingHandler(value12);
-      else if (typeof value11 != "string" || value12 === undefined) {
-        let value17: Dynamic = parseTypographyLength(value11);
-        value17 !== undefined &&
-          (count =
-            value17.n >= 0
+        lineHeightRatio: Dynamic = 1.4;
+      if (lineHeightNumber !== undefined && lineHeightNumber > 0 && lineHeightNumber < 10)
+        lineHeightRatio = DesignSystemTypographyParsingHandler(lineHeightNumber);
+      else if (typeof rawLineHeight != "string" || lineHeightNumber === undefined) {
+        let lineHeightLength: Dynamic = parseTypographyLength(rawLineHeight);
+        lineHeightLength !== undefined &&
+          (lineHeightRatio =
+            lineHeightLength.n >= 0
               ? DesignSystemTypographyParsingHandler(
-                  typographyLengthToPixels(value17) / value10,
+                  typographyLengthToPixels(lineHeightLength) / fontSizePx,
                 )
               : 1.3);
       }
-      let fontWeight: Dynamic = value7.fontWeight,
-        value13: Dynamic =
-          typeof fontWeight == "number" &&
-          Number.isInteger(fontWeight) &&
-          fontWeight >= 1 &&
-          fontWeight <= 1e3
-            ? fontWeight
-            : typeof fontWeight == "string"
-              ? fontWeight.trim() === "bold"
+      let rawFontWeight: Dynamic = style.fontWeight,
+        fontWeightValue: Dynamic =
+          typeof rawFontWeight == "number" &&
+          Number.isInteger(rawFontWeight) &&
+          rawFontWeight >= 1 &&
+          rawFontWeight <= 1e3
+            ? rawFontWeight
+            : typeof rawFontWeight == "string"
+              ? rawFontWeight.trim() === "bold"
                 ? 700
                 : /^(?:[1-9]\d{0,2}|1000)(?:\s+(?:[1-9]\d{0,2}|1000))?$/.test(
-                      fontWeight.trim(),
+                      rawFontWeight.trim(),
                     )
-                  ? Number(fontWeight.trim().split(/\s+/)[0])
+                  ? Number(rawFontWeight.trim().split(/\s+/)[0])
                   : 400
               : 400,
-        value14: Dynamic = parseTypographyLength(value7.letterSpacing),
-        value15: Dynamic =
-          value14 === undefined
+        letterSpacingLength: Dynamic = parseTypographyLength(style.letterSpacing),
+        letterSpacingPx: Dynamic =
+          letterSpacingLength === undefined
             ? 0
             : DesignSystemTypographyParsingHandler(
-                value14.unit === "em"
-                  ? value14.n * value10
-                  : value14.unit === "%"
-                    ? (value14.n / 100) * value10
-                    : value14.unit === "rem"
-                      ? value14.n * 16
-                      : value14.n,
+                letterSpacingLength.unit === "em"
+                  ? letterSpacingLength.n * fontSizePx
+                  : letterSpacingLength.unit === "%"
+                    ? (letterSpacingLength.n / 100) * fontSizePx
+                    : letterSpacingLength.unit === "rem"
+                      ? letterSpacingLength.n * 16
+                      : letterSpacingLength.n,
               ),
-        value16: Dynamic = callback(value7.family) || value5;
-      items.push({
-        name: value8,
-        group: value4,
-        fontSize: value10,
-        lineHeight: count,
-        fontWeight: value13,
-        letterSpacing: value15,
-        italic: value7.fontStyle === "italic",
-        ...(value16 !== ""
+        styleFamilyKey: Dynamic = normalizeFamilyKey(style.family) || groupFamilyKey;
+      styles.push({
+        name: styleName,
+        group: groupName,
+        fontSize: fontSizePx,
+        lineHeight: lineHeightRatio,
+        fontWeight: fontWeightValue,
+        letterSpacing: letterSpacingPx,
+        italic: style.fontStyle === "italic",
+        ...(styleFamilyKey !== ""
           ? {
-              family: parseTypographyFamily(entries.get(value16)),
+              family: parseTypographyFamily(fontFamiliesByKey.get(styleFamilyKey)),
             }
           : {}),
       });
     }
   }
-  return items;
+  return styles;
 }
-function typographyStyleSubtitle(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    String(Math.round(input2 * 10) / 10);
+function typographyStyleSubtitle(style?: Dynamic): Dynamic {
+  let formatNumber: Dynamic = (numericValue?: Dynamic): Dynamic =>
+    String(Math.round(numericValue * 10) / 10);
   return (
-    (input.family !== undefined && input.family.name !== ""
-      ? input.family.name + " \xB7 "
+    (style.family !== undefined && style.family.name !== ""
+      ? style.family.name + " \xB7 "
       : "") +
-    callback(input.fontSize) +
+    formatNumber(style.fontSize) +
     "/" +
-    String(Math.round(input.fontSize * input.lineHeight)) +
+    String(Math.round(style.fontSize * style.lineHeight)) +
     " \xB7 " +
-    (DesignSystemTypographyParsing300330400Config[input.fontWeight] ??
-      String(input.fontWeight)) +
-    (input.italic ? " \xB7 italic" : "")
+    (DesignSystemTypographyParsing300330400Config[style.fontWeight] ??
+      String(style.fontWeight)) +
+    (style.italic ? " \xB7 italic" : "")
   );
 }
 export {
@@ -228,10 +228,10 @@ export {
   DesignSystemTypographyParsingConstant,
   DesignSystemTypographyParsingHandler,
   DesignSystemTypographyParsingLimit,
-  DesignSystemTypographyParsingLimit_2,
-  DesignSystemTypographyParsingLimit_3,
+  maxTypographyGroups as DesignSystemTypographyParsingLimit_2,
+  maxFontFamilies as DesignSystemTypographyParsingLimit_3,
   DesignSystemTypographyParsingPattern,
-  DesignSystemTypographyParsingPattern_2,
+  safeFontFamilyPattern as DesignSystemTypographyParsingPattern_2,
   isSafeFontFamily,
   parseTypographyFamily,
   parseTypographyLength,
@@ -242,16 +242,16 @@ export {
 export function installDesignSystemTypographyParsing(): () => void {
   return () => {
     DesignSystemTypographyParsingLimit = 80;
-    DesignSystemTypographyParsingLimit_2 = 12;
-    DesignSystemTypographyParsingLimit_3 = 12;
+    maxTypographyGroups = 12;
+    maxFontFamilies = 12;
     DesignSystemTypographyParsingConstant = 120;
     DesignSystemTypographyParsingPattern =
       /^(-?\d{1,4}(?:\.\d{1,6})?)(px|rem|em|%)$/;
-    DesignSystemTypographyParsingPattern_2 = /^[^;{}<>()\\\r\n\f]{1,200}$/;
-    DesignSystemTypographyParsingHandler = (input?: Dynamic): Dynamic =>
-      Math.round(input * 1e3) / 1e3;
-    typographyLengthToPixels = (input?: Dynamic): Dynamic =>
-      input.unit === "rem" || input.unit === "em" ? input.n * 16 : input.n;
+    safeFontFamilyPattern = /^[^;{}<>()\\\r\n\f]{1,200}$/;
+    DesignSystemTypographyParsingHandler = (numericValue?: Dynamic): Dynamic =>
+      Math.round(numericValue * 1e3) / 1e3;
+    typographyLengthToPixels = (length?: Dynamic): Dynamic =>
+      length.unit === "rem" || length.unit === "em" ? length.n * 16 : length.n;
     DesignSystemTypographyParsing300330400Config = {
       300: "Light",
       330: "Book",

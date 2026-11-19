@@ -12,77 +12,77 @@ import { roomPeersStore } from "../platform/file-content";
 var jsxCollaborationPeerSelections: Dynamic;
 var CollaborationPeerSelectionsConstant: Dynamic;
 var CollaborationPeerSelectionsLimit: Dynamic;
-function normalizePeerSelectionPaths(input?: Dynamic): Dynamic {
-  if (!Array.isArray(input)) return [];
-  let value: Dynamic = input.filter(
+function normalizePeerSelectionPaths(paths?: Dynamic): Dynamic {
+  if (!Array.isArray(paths)) return [];
+  let validPaths: Dynamic = paths.filter(
     (items?: Dynamic): Dynamic =>
       typeof items == "string" &&
       items.length <= CollaborationPeerSelectionsLimit,
   );
-  return value
+  return validPaths
     .filter(
-      (input2?: Dynamic, options?: Dynamic): Dynamic =>
-        value.lastIndexOf(input2) === options,
+      (path?: Dynamic, index?: Dynamic): Dynamic =>
+        validPaths.lastIndexOf(path) === index,
     )
     .slice(-CollaborationPeerSelectionsConstant);
 }
 function getPeerSelectionGroups(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = [],
+  peers?: Dynamic,
+  scopeFilter?: Dynamic,
+  listKeys: Dynamic = [],
 ): Dynamic {
   let items: Dynamic = [];
-  for (let value of input as Dynamic) {
-    if (value.sameTab) continue;
-    let context2: Dynamic = value.presence.context;
+  for (let peer of peers as Dynamic) {
+    if (peer.sameTab) continue;
+    let presenceContext: Dynamic = peer.presence.context;
     if (
-      typeof context2 != "object" ||
-      context2 === null ||
-      Array.isArray(context2)
+      typeof presenceContext != "object" ||
+      presenceContext === null ||
+      Array.isArray(presenceContext)
     )
       continue;
-    let value2: Dynamic = context2;
+    let peerContext: Dynamic = presenceContext;
     if (
-      Object.keys(options).some(
-        (input2?: Dynamic): Dynamic => value2[input2] !== options[input2],
+      Object.keys(scopeFilter).some(
+        (key?: Dynamic): Dynamic => peerContext[key] !== scopeFilter[key],
       )
     )
       continue;
-    let value3: Dynamic = normalizePeerSelectionPaths(value2.selected),
+    let selectedPaths: Dynamic = normalizePeerSelectionPaths(peerContext.selected),
       state: Dynamic = {},
-      value4: Dynamic = value3.length > 0;
-    for (let value6 of context as Dynamic) {
-      let value7: Dynamic = normalizePeerSelectionPaths(value2[value6]);
-      state[value6] = value7;
-      value7.length > 0 && (value4 = true);
+      hasSelection: Dynamic = selectedPaths.length > 0;
+    for (let listKey of listKeys as Dynamic) {
+      let listPaths: Dynamic = normalizePeerSelectionPaths(peerContext[listKey]);
+      state[listKey] = listPaths;
+      listPaths.length > 0 && (hasSelection = true);
     }
-    if (!value4) continue;
-    let who: Dynamic = value.presence.who,
-      value5: Dynamic = typeof who == "object" && who !== null ? who : {};
+    if (!hasSelection) continue;
+    let who: Dynamic = peer.presence.who,
+      whoInfo: Dynamic = typeof who == "object" && who !== null ? who : {};
     items.push({
-      peer: value.peer,
-      collaborator: peerCollaboratorIndex(value5.c, value.peer),
-      selected: value3,
+      peer: peer.peer,
+      collaborator: peerCollaboratorIndex(whoInfo.c, peer.peer),
+      selected: selectedPaths,
       lists: state,
     });
   }
   return items;
 }
-function usePeerSelectionGroups(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0,
+function usePeerSelectionGroups(scopeFilter?: Dynamic, listKeys?: Dynamic): Dynamic {
+  let peers: Dynamic = (0,
   reactCollaborationPeerCursors_2.useSyncExternalStore)(
     roomPeersStore.subscribe,
     roomPeersStore.getSnapshot,
     roomPeersStore.getSnapshot,
   );
-  return getPeerSelectionGroups(value, input, options);
+  return getPeerSelectionGroups(peers, scopeFilter, listKeys);
 }
 function PeerSelectionRings({
   rings: rings,
   scale: scale,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = Number.isFinite(scale) && scale > 0 ? scale : 1;
+  let ringScale: Dynamic = Number.isFinite(scale) && scale > 0 ? scale : 1;
   return (
     <div
       aria-hidden={"true"}
@@ -94,22 +94,22 @@ function PeerSelectionRings({
       }}
     >
       {rings.map(
-        (input?: Dynamic): Dynamic =>
+        (ring?: Dynamic): Dynamic =>
           (() => {
             const _Component = SelectionRing;
             const _props = {
               "data-peer-ring": "",
               frame: {
-                x: input.x,
-                y: input.y,
-                w: input.w,
-                h: input.h,
+                x: ring.x,
+                y: ring.y,
+                w: ring.w,
+                h: ring.h,
               },
-              scale: value,
-              rotation: input.rotation,
-              collaborator: input.collaborator,
+              scale: ringScale,
+              rotation: ring.rotation,
+              collaborator: ring.collaborator,
             } as const;
-            const _key = input.key;
+            const _key = ring.key;
             return <_Component key={_key} {..._props} />;
           })(),
       )}

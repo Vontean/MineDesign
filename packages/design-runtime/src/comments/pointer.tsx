@@ -75,17 +75,17 @@ export function installCommentsPointer(): () => void {
     commentPointerSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='${commentPointerPath}' fill='${commentPointerFill}' stroke='${commentPointerStroke}' stroke-width='${commentPointerStrokeWidth}'/></svg>`;
     commentPointerCursorUrl = commentPointerSvg.replace(
       /[ '<>#]/g,
-      (input?: Dynamic): Dynamic =>
-        "%" + input.charCodeAt(0).toString(16).toUpperCase(),
+      (character?: Dynamic): Dynamic =>
+        "%" + character.charCodeAt(0).toString(16).toUpperCase(),
     );
     commentPointerCursor = `url("data:image/svg+xml,${commentPointerCursorUrl}") ${commentPointerTip.x} ${commentPointerTip.y}, crosshair`;
     jsx_r1e = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );
-    subtractCssPixels = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      typeof input == "number"
-        ? input - options
-        : `calc(${input} - ${options}px)`;
+    subtractCssPixels = (size?: Dynamic, pixelOffset?: Dynamic): Dynamic =>
+      typeof size == "number"
+        ? size - pixelOffset
+        : `calc(${size} - ${pixelOffset}px)`;
   };
 }

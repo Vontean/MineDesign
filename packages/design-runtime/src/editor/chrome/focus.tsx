@@ -14,34 +14,34 @@ var reactChromeFocus: Dynamic;
 var reactDomChromeFocus: Dynamic;
 var jsxChromeFocus: Dynamic;
 function choosePopoverPlacement(
-  element?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = "bottom",
-  value: Dynamic = options,
+  anchorElement?: Dynamic,
+  desiredHeight?: Dynamic,
+  preferredSide: Dynamic = "bottom",
+  minHeight: Dynamic = desiredHeight,
 ): Dynamic {
-  if (!element)
+  if (!anchorElement)
     return {
-      side: context,
+      side: preferredSide,
       maxHeight: undefined,
     };
-  let bounds: Dynamic = element.getBoundingClientRect(),
-    value2: Dynamic =
-      (element.ownerDocument.defaultView?.innerHeight ?? bounds.bottom) -
+  let bounds: Dynamic = anchorElement.getBoundingClientRect(),
+    spaceBelow: Dynamic =
+      (anchorElement.ownerDocument.defaultView?.innerHeight ?? bounds.bottom) -
       bounds.bottom -
       16,
-    value3: Dynamic = bounds.top - 16,
-    [value4, value5]: Dynamic =
-      context === "top" ? [value3, value2] : [value2, value3],
-    value6: Dynamic =
-      value4 >= Math.min(options, value) || value4 >= value5
-        ? context
-        : context === "top"
+    spaceAbove: Dynamic = bounds.top - 16,
+    [preferredSpace, otherSpace]: Dynamic =
+      preferredSide === "top" ? [spaceAbove, spaceBelow] : [spaceBelow, spaceAbove],
+    side: Dynamic =
+      preferredSpace >= Math.min(desiredHeight, minHeight) || preferredSpace >= otherSpace
+        ? preferredSide
+        : preferredSide === "top"
           ? "bottom"
           : "top",
-    value7: Dynamic = value6 === "bottom" ? value2 : value3;
+    availableSpace: Dynamic = side === "bottom" ? spaceBelow : spaceAbove;
   return {
-    side: value6,
-    maxHeight: value7 < options ? Math.max(value7, 120) : undefined,
+    side: side,
+    maxHeight: availableSpace < desiredHeight ? Math.max(availableSpace, 120) : undefined,
   };
 }
 function blurPopoverTextInput(): Dynamic {

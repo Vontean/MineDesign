@@ -7,7 +7,7 @@ import {
 import { ComponentsSkeletonAssignValue } from "../../cds/components/skeleton";
 import { Spinner } from "../../cds/components/spinner";
 import { TextLink } from "../../cds/components/text-link";
-import { AccessibilityAnnouncerConstant_2 } from "../accessibility/announcer";
+import { AccessibilityAnnouncerConstant_2 as announcerClearMs } from "../accessibility/announcer";
 import { joinClassNames } from "./overlay-state";
 import { jsxSessionStripReveal_2, reactSessionStripReveal_2 } from "../session-strip/reveal";
 
@@ -49,66 +49,66 @@ function DocumentLoadGate({
   children: children,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let callback: Dynamic = (): Dynamic => {
-      let value8: Dynamic =
+  let readLoadState: Dynamic = (): Dynamic => {
+      let state: Dynamic =
         typeof doc.loadState == "function" ? doc.loadState() : "live";
-      return value8 === "loading" || value8 === "failed" ? value8 : "live";
+      return state === "loading" || state === "failed" ? state : "live";
     },
-    [value, value2]: Dynamic = (0,
-    reactSessionStripReveal_2.useState)(callback),
-    [value3, value4]: Dynamic = (0,
+    [loadState, setLoadState]: Dynamic = (0,
+    reactSessionStripReveal_2.useState)(readLoadState),
+    [statusMessage, setStatusMessage]: Dynamic = (0,
     reactSessionStripReveal_2.useState)(""),
-    value5: Dynamic = (0, reactSessionStripReveal_2.useRef)(null),
-    value6: Dynamic = (0, reactSessionStripReveal_2.useRef)(false),
-    value7: Dynamic = (0, reactSessionStripReveal_2.useRef)(true);
+    retryLinkRef: Dynamic = (0, reactSessionStripReveal_2.useRef)(null),
+    hadRetryFocusRef: Dynamic = (0, reactSessionStripReveal_2.useRef)(false),
+    shouldAnnounceRef: Dynamic = (0, reactSessionStripReveal_2.useRef)(true);
   (0, reactSessionStripReveal_2.useEffect)(
     (): Dynamic => (
-      (value6.current = false),
-      (value7.current = true),
-      value2(callback()),
+      (hadRetryFocusRef.current = false),
+      (shouldAnnounceRef.current = true),
+      setLoadState(readLoadState()),
       doc.subscribeLoad?.((): Dynamic => {
-        let value8: Dynamic = callback();
-        value8 === "loading" &&
-          value5.current !== null &&
-          (value6.current =
-            (document as Dynamic).activeElement === value5.current);
-        value2(value8);
+        let nextState: Dynamic = readLoadState();
+        nextState === "loading" &&
+          retryLinkRef.current !== null &&
+          (hadRetryFocusRef.current =
+            (document as Dynamic).activeElement === retryLinkRef.current);
+        setLoadState(nextState);
       })
     ),
     [doc],
   );
   (0, reactSessionStripReveal_2.useEffect)((): Dynamic => {
-    if (value !== "failed") {
-      value === "live" && ((value6.current = false), (value7.current = true));
-      value4("");
+    if (loadState !== "failed") {
+      loadState === "live" && ((hadRetryFocusRef.current = false), (shouldAnnounceRef.current = true));
+      setStatusMessage("");
       return;
     }
     let activeElement: Dynamic = (document as Dynamic).activeElement,
-      value8: Dynamic =
+      isFocusLost: Dynamic =
         (document as Dynamic).hasFocus() &&
         (activeElement === null ||
           activeElement === (document as Dynamic).body ||
           activeElement === (document as Dynamic).documentElement);
-    value6.current &&
-      value8 &&
-      value5.current?.focus({
+    hadRetryFocusRef.current &&
+      isFocusLost &&
+      retryLinkRef.current?.focus({
         preventScroll: true,
       });
-    if (!value7.current) return;
-    let value9: Dynamic = setTimeout((): Dynamic => {
-        value7.current = false;
-        value4(ChromeLoadingLabel);
+    if (!shouldAnnounceRef.current) return;
+    let announceTimer: Dynamic = setTimeout((): Dynamic => {
+        shouldAnnounceRef.current = false;
+        setStatusMessage(ChromeLoadingLabel);
       }, ChromeLoadingDelayMs),
-      value10: Dynamic = setTimeout(
-        (): Dynamic => value4(""),
-        ChromeLoadingDelayMs + AccessibilityAnnouncerConstant_2,
+      clearTimer: Dynamic = setTimeout(
+        (): Dynamic => setStatusMessage(""),
+        ChromeLoadingDelayMs + announcerClearMs,
       );
     return (): Dynamic => {
-      clearTimeout(value9);
-      clearTimeout(value10);
+      clearTimeout(announceTimer);
+      clearTimeout(clearTimer);
     };
-  }, [value]);
-  return value === "live" ? (
+  }, [loadState]);
+  return loadState === "live" ? (
     <jsxSessionStripReveal_2.Fragment>
       {children}
     </jsxSessionStripReveal_2.Fragment>
@@ -119,7 +119,7 @@ function DocumentLoadGate({
         !(skeletonFlush && skeleton != null) &&
           "pt-[var(--tb-overlay-h,0px)]",
       )}
-      aria-busy={value === "loading"}
+      aria-busy={loadState === "loading"}
     >
       {skeleton ?? (<ChromeSkeleton className={"m-6 h-48 rounded-lg"} />)}
       <span
@@ -129,23 +129,23 @@ function DocumentLoadGate({
         aria-atomic={"true"}
         data-kit={"load-status"}
       >
-        {value3}
+        {statusMessage}
       </span>
       <div
         className={
           "pointer-events-none absolute inset-x-0 top-[calc(var(--tb-overlay-h,0px)+1rem)] flex justify-center"
         }
       >
-        {value === "loading" ? (<ChromeLoadingSpinner />) : (<span
+        {loadState === "loading" ? (<ChromeLoadingSpinner />) : (<span
             className={
               "pointer-events-auto inline-flex items-center gap-2 rounded-md border border-border-line bg-panel px-3 py-1.5 text-xs text-fg-muted shadow-sm"
             }
           >
             {ChromeLoadingLabel}
             <TextLink
-              ref={value5}
+              ref={retryLinkRef}
               onClick={(): Dynamic => {
-                value7.current = true;
+                shouldAnnounceRef.current = true;
                 doc.save?.();
               }}
             >

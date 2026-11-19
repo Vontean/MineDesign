@@ -4,467 +4,467 @@ import {
 } from "../../runtime-types";
 import { ClipboardFileTransferHandler_7, ClipboardFileTransferSubscribers, ClipboardFileTransferTest, isCarryableProjectFile } from "./file-transfer";
 import { isLoadingArtboardHtml } from "../../platform/design-document-adapter";
-import { artboardAppearanceProperties, artboardSpecFromProps, canvasMetadataFile, isArtboardFile, isProjectTextFilePath, isTypeDeclarationPath, PlatformFileContentFilesValue, PlatformFileContentLimit_8, PlatformFileContentResolvedValue_11, PlatformFileContentWebpAvifPattern } from "../../platform/file-content";
+import { artboardAppearanceProperties, artboardSpecFromProps, canvasMetadataFile, isArtboardFile, isProjectTextFilePath, isTypeDeclarationPath, PlatformFileContentFilesValue, PlatformFileContentLimit_8 as maxProjectPathLength, PlatformFileContentResolvedValue_11 as maxFileContentBytes, PlatformFileContentWebpAvifPattern } from "../../platform/file-content";
 import { isEmulatorBlobUrl } from "../../platform/image-upload";
 import { getImportedArtboardNames, isProjectSourcePath } from "../../preview/component-imports";
 import { collectProjectDependencyFiles } from "../../preview/dependency-graph";
 
 var ClipboardArtboardsResolvedValue: Dynamic;
 var ClipboardArtboardsLimit: Dynamic;
-var ClipboardArtboardsResolvedValue_2: Dynamic;
+var maxAssetBytes: Dynamic;
 var ClipboardArtboardsBlobBlobPattern: Dynamic;
 var ClipboardArtboardsDataImagePattern: Dynamic;
 var ClipboardArtboardsDataTextPattern: Dynamic;
 var ClipboardArtboardsTest: Dynamic;
 var ClipboardArtboardsDataFontPattern: Dynamic;
-var ClipboardArtboardsDataFontPattern_2: Dynamic;
-var ClipboardArtboardsTest_2: Dynamic;
-var ClipboardArtboardsLimit_2: Dynamic;
+var anyDataFontPattern: Dynamic;
+var isFontDataUrl: Dynamic;
+var maxFontAssets: Dynamic;
 var ClipboardArtboardsConstant: Dynamic;
-var ClipboardArtboardsTest_3: Dynamic;
-var ClipboardArtboardsConstant_2: Dynamic;
+var isSupportedAssetDataUrl: Dynamic;
+var maxReferencedAssetFiles: Dynamic;
 var ClipboardArtboardsReplace: Dynamic;
-var ClipboardArtboardsTest_4: Dynamic;
+var isCarryableAssetPath: Dynamic;
 var ClipboardArtboardsAZaZPattern: Dynamic;
-var ClipboardArtboardsConstant_3: Dynamic;
-var ClipboardArtboardsConstant_4: Dynamic;
+var artboardGap: Dynamic;
+var maxOffset: Dynamic;
 var ClipboardArtboardsBlobPattern: Dynamic;
 var ClipboardArtboardsBlobHttpsPattern: Dynamic;
-var ClipboardArtboardsReplace_2: Dynamic;
+var stripArtboardExtension: Dynamic;
 var artboardBaseName: Dynamic;
 var fileBaseName: Dynamic;
 var clipboardSourceStrings: Dynamic;
 var ClipboardArtboardsTextEncoder: Dynamic;
 var ClipboardArtboardsEncode: Dynamic;
 var ClipboardArtboardsMax: Dynamic;
-function referencedAssetFiles(input?: Dynamic, items?: Dynamic): Dynamic {
-  if (items.length === 0) return [];
-  let values: Dynamic = new Set(input.flatMap(getBlobAssetReferences)),
-    values2: Dynamic = new Set(
-      items
-        .filter((input2?: Dynamic): Dynamic => values.has(input2.ref))
+function referencedAssetFiles(sourceStrings?: Dynamic, candidateFiles?: Dynamic): Dynamic {
+  if (candidateFiles.length === 0) return [];
+  let referencedBlobs: Dynamic = new Set(sourceStrings.flatMap(getBlobAssetReferences)),
+    referencedPaths: Dynamic = new Set(
+      candidateFiles
+        .filter((file?: Dynamic): Dynamic => referencedBlobs.has(file.ref))
         .map(
-          (input2?: Dynamic): Dynamic =>
-            ClipboardArtboardsReplace(input2.path),
+          (file?: Dynamic): Dynamic =>
+            ClipboardArtboardsReplace(file.path),
         ),
     );
-  return items
+  return candidateFiles
     .filter(
-      (input2?: Dynamic): Dynamic =>
-        values2.has(ClipboardArtboardsReplace(input2.path)) &&
-        ClipboardArtboardsTest_4(input2.path),
+      (file?: Dynamic): Dynamic =>
+        referencedPaths.has(ClipboardArtboardsReplace(file.path)) &&
+        isCarryableAssetPath(file.path),
     )
-    .slice(0, ClipboardArtboardsConstant_2);
+    .slice(0, maxReferencedAssetFiles);
 }
-function getBlobAssetReferences(input?: Dynamic): Dynamic {
-  let values: Dynamic = new Set();
-  if (input.includes("_blob/"))
-    for (let value of input.matchAll(
+function getBlobAssetReferences(source?: Dynamic): Dynamic {
+  let references: Dynamic = new Set();
+  if (source.includes("_blob/"))
+    for (let match of source.matchAll(
       ClipboardArtboardsBlobPattern,
     ) as Dynamic)
-      values.add("_blob/" + value[1]);
-  if (input.includes("blob:") && isEmulatorBlobUrl("blob:"))
-    for (let value of input.matchAll(
+      references.add("_blob/" + match[1]);
+  if (source.includes("blob:") && isEmulatorBlobUrl("blob:"))
+    for (let match of source.matchAll(
       ClipboardArtboardsBlobHttpsPattern,
     ) as Dynamic)
-      values.add(value[0]);
-  return [...values];
+      references.add(match[0]);
+  return [...references];
 }
 function collectArtboardClipboardSource(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  selectedArtboards?: Dynamic,
+  artboardSpecs?: Dynamic,
+  files?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.filter(
-    (input2?: Dynamic): Dynamic =>
-      typeof context[input2.file] == "string" &&
-      !isLoadingArtboardHtml(context[input2.file]),
+  let loadedArtboards: Dynamic = selectedArtboards.filter(
+    (artboard?: Dynamic): Dynamic =>
+      typeof files[artboard.file] == "string" &&
+      !isLoadingArtboardHtml(files[artboard.file]),
   );
-  if (value.length === 0) return null;
-  let value2: Dynamic = Math.min(
-      ...value.map((input2?: Dynamic): Dynamic => input2.x),
+  if (loadedArtboards.length === 0) return null;
+  let originX: Dynamic = Math.min(
+      ...loadedArtboards.map((artboard?: Dynamic): Dynamic => artboard.x),
     ),
-    value3: Dynamic = Math.min(
-      ...value.map((input2?: Dynamic): Dynamic => input2.y),
+    originY: Dynamic = Math.min(
+      ...loadedArtboards.map((artboard?: Dynamic): Dynamic => artboard.y),
     ),
-    callback: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
+    toClipboardArtboard: Dynamic = (
+      spec?: Dynamic,
+      offsetX?: Dynamic,
+      offsetY?: Dynamic,
     ): Dynamic => ({
-      src: context[input2.file],
-      stem: ClipboardArtboardsReplace_2(input2.file),
-      dx: options2,
-      dy: context2,
-      w: input2.w,
-      h: input2.h,
-      ...(input2.title
+      src: files[spec.file],
+      stem: stripArtboardExtension(spec.file),
+      dx: offsetX,
+      dy: offsetY,
+      w: spec.w,
+      h: spec.h,
+      ...(spec.title
         ? {
-            title: input2.title,
+            title: spec.title,
           }
         : {}),
-      ...artboardAppearanceProperties(input2),
+      ...artboardAppearanceProperties(spec),
     }),
-    value4: Dynamic = value.map(
-      (input2?: Dynamic): Dynamic =>
-        callback(input2, input2.x - value2, input2.y - value3),
+    clipboardArtboards: Dynamic = loadedArtboards.map(
+      (artboard?: Dynamic): Dynamic =>
+        toClipboardArtboard(artboard, artboard.x - originX, artboard.y - originY),
     ),
-    entries: Dynamic = new Map(
-      Object.keys(context)
+    artboardFileByName: Dynamic = new Map(
+      Object.keys(files)
         .filter(isArtboardFile)
         .map(
-          (input2?: Dynamic): Dynamic => [artboardBaseName(input2), input2],
+          (file?: Dynamic): Dynamic => [artboardBaseName(file), file],
         ),
     ),
-    values: Dynamic = new Set(
-      value.map((input2?: Dynamic): Dynamic => input2.file),
+    includedFiles: Dynamic = new Set(
+      loadedArtboards.map((artboard?: Dynamic): Dynamic => artboard.file),
     ),
-    value5: Dynamic =
+    nextImportX: Dynamic =
       Math.max(
-        ...value4.map((input2?: Dynamic): Dynamic => input2.dx + input2.w),
-      ) + ClipboardArtboardsConstant_3;
-  for (let index: Dynamic = 0; index < value4.length; index++)
-    for (let value6 of getImportedArtboardNames(
-      value4[index].src,
+        ...clipboardArtboards.map((placed?: Dynamic): Dynamic => placed.dx + placed.w),
+      ) + artboardGap;
+  for (let index: Dynamic = 0; index < clipboardArtboards.length; index++)
+    for (let importedName of getImportedArtboardNames(
+      clipboardArtboards[index].src,
     ) as Dynamic) {
-      let entry: Dynamic = entries.get(value6);
+      let entry: Dynamic = artboardFileByName.get(importedName);
       if (
         entry === undefined ||
-        values.has(entry) ||
-        isLoadingArtboardHtml(context[entry])
+        includedFiles.has(entry) ||
+        isLoadingArtboardHtml(files[entry])
       )
         continue;
-      values.add(entry);
-      let value7: Dynamic = options.find(
-        (input2?: Dynamic): Dynamic => input2.file === entry,
+      includedFiles.add(entry);
+      let importedSpec: Dynamic = artboardSpecs.find(
+        (spec?: Dynamic): Dynamic => spec.file === entry,
       ) ?? {
         file: entry,
         x: 0,
         y: 0,
         ...artboardSpecFromProps({}),
       };
-      value4.push(callback(value7, value5, 0));
-      value5 += value7.w + ClipboardArtboardsConstant_3;
+      clipboardArtboards.push(toClipboardArtboard(importedSpec, nextImportX, 0));
+      nextImportX += importedSpec.w + artboardGap;
     }
-  let state: Dynamic = {};
-  for (let [value6, value7] of Object.entries(context) as Dynamic)
-    !isArtboardFile(value6) &&
-      value6 !== canvasMetadataFile &&
-      (state[value6] = value7);
-  let state2: Dynamic = {};
-  for (let value6 of value4 as Dynamic) {
-    let value7: Dynamic = value6.stem + ".dc.html";
-    for (let [value8, value9] of Object.entries(
+  let nonArtboardFiles: Dynamic = {};
+  for (let [filePath, fileContent] of Object.entries(files) as Dynamic)
+    !isArtboardFile(filePath) &&
+      filePath !== canvasMetadataFile &&
+      (nonArtboardFiles[filePath] = fileContent);
+  let carriedFiles: Dynamic = {};
+  for (let placedArtboard of clipboardArtboards as Dynamic) {
+    let artboardPath: Dynamic = placedArtboard.stem + ".dc.html";
+    for (let [dependencyPath, dependencyContent] of Object.entries(
       collectProjectDependencyFiles(
         {
-          ...state,
-          [value7]: value6.src,
+          ...nonArtboardFiles,
+          [artboardPath]: placedArtboard.src,
         },
-        value7,
+        artboardPath,
       ),
     ) as Dynamic)
-      value8 !== value7 && (state2[value8] = value9);
+      dependencyPath !== artboardPath && (carriedFiles[dependencyPath] = dependencyContent);
   }
   return {
-    artboards: value4,
-    carried: state2,
+    artboards: clipboardArtboards,
+    carried: carriedFiles,
     origin: {
-      x: value2,
-      y: value3,
+      x: originX,
+      y: originY,
     },
   };
 }
 function clipboardBlobAssets(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = [],
+  selectedArtboards?: Dynamic,
+  artboardSpecs?: Dynamic,
+  files?: Dynamic,
+  heldFiles: Dynamic = [],
 ): Dynamic {
   if (
-    !Object.values(context).some(
-      (input2?: Dynamic): Dynamic =>
-        getBlobAssetReferences(input2).length > 0,
+    !Object.values(files).some(
+      (content?: Dynamic): Dynamic =>
+        getBlobAssetReferences(content).length > 0,
     )
   )
     return [];
-  let value2: Dynamic = collectArtboardClipboardSource(
-    input,
-    options,
-    context,
+  let source: Dynamic = collectArtboardClipboardSource(
+    selectedArtboards,
+    artboardSpecs,
+    files,
   );
-  if (value2 === null) return [];
-  let value3: Dynamic = clipboardSourceStrings(value2);
+  if (source === null) return [];
+  let sourceStrings: Dynamic = clipboardSourceStrings(source);
   return [
     ...new Set([
-      ...value3.flatMap(getBlobAssetReferences),
-      ...referencedAssetFiles(value3, value).map(
-        (input2?: Dynamic): Dynamic => input2.ref,
+      ...sourceStrings.flatMap(getBlobAssetReferences),
+      ...referencedAssetFiles(sourceStrings, heldFiles).map(
+        (file?: Dynamic): Dynamic => file.ref,
       ),
     ]),
   ];
 }
 function buildArtboardClipboard(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = [],
+  selectedArtboards?: Dynamic,
+  artboardSpecs?: Dynamic,
+  files?: Dynamic,
+  readAsset?: Dynamic,
+  heldFiles: Dynamic = [],
 ): Dynamic {
-  let value2: Dynamic = collectArtboardClipboardSource(
-    input,
-    options,
-    context,
+  let source: Dynamic = collectArtboardClipboardSource(
+    selectedArtboards,
+    artboardSpecs,
+    files,
   );
-  if (value2 === null) return null;
+  if (source === null) return null;
   let {
-      artboards: value3,
-      carried: value4,
-      origin: value5,
-    }: Dynamic = value2,
-    state: Dynamic = {},
-    values: Dynamic = new Set(),
-    values2: Dynamic = new Set(),
-    entries: Dynamic = new Map(),
-    index: Dynamic = 0,
-    value6: Dynamic = clipboardSourceStrings(value2),
-    value7: Dynamic = referencedAssetFiles(value6, extra);
-  for (let value12 of [
-    ...value6.flatMap(getBlobAssetReferences),
-    ...value7.map((input2?: Dynamic): Dynamic => input2.ref),
+      artboards: artboards,
+      carried: carriedFiles,
+      origin: origin,
+    }: Dynamic = source,
+    assets: Dynamic = {},
+    missingRefs: Dynamic = new Set(),
+    unsupportedRefs: Dynamic = new Set(),
+    fontAssets: Dynamic = new Map(),
+    fontsLeftOut: Dynamic = 0,
+    sourceStrings: Dynamic = clipboardSourceStrings(source),
+    heldAssetFiles: Dynamic = referencedAssetFiles(sourceStrings, heldFiles);
+  for (let assetRef of [
+    ...sourceStrings.flatMap(getBlobAssetReferences),
+    ...heldAssetFiles.map((file?: Dynamic): Dynamic => file.ref),
   ] as Dynamic) {
     if (
-      state[value12] !== undefined ||
-      entries.has(value12) ||
-      values.has(value12) ||
-      values2.has(value12)
+      assets[assetRef] !== undefined ||
+      fontAssets.has(assetRef) ||
+      missingRefs.has(assetRef) ||
+      unsupportedRefs.has(assetRef)
     )
       continue;
-    let value13: Dynamic = value(value12);
-    value13 === undefined
-      ? values.add(value12)
-      : value13.length > ClipboardArtboardsResolvedValue_2 ||
-          !ClipboardArtboardsTest_3(value13)
-        ? (values2.add(value12),
-          ClipboardArtboardsDataFontPattern_2.test(value13) && (index += 1))
-        : ClipboardArtboardsDataFontPattern.test(value13)
-          ? entries.set(value12, value13)
-          : Object.keys(state).length < ClipboardArtboardsLimit
-            ? (state[value12] = value13)
-            : values.add(value12);
+    let assetData: Dynamic = readAsset(assetRef);
+    assetData === undefined
+      ? missingRefs.add(assetRef)
+      : assetData.length > maxAssetBytes ||
+          !isSupportedAssetDataUrl(assetData)
+        ? (unsupportedRefs.add(assetRef),
+          anyDataFontPattern.test(assetData) && (fontsLeftOut += 1))
+        : ClipboardArtboardsDataFontPattern.test(assetData)
+          ? fontAssets.set(assetRef, assetData)
+          : Object.keys(assets).length < ClipboardArtboardsLimit
+            ? (assets[assetRef] = assetData)
+            : missingRefs.add(assetRef);
   }
-  let value8: Dynamic = Object.fromEntries(
-      value7
+  let heldMap: Dynamic = Object.fromEntries(
+      heldAssetFiles
         .filter(
-          (input2?: Dynamic): Dynamic => state[input2.ref] !== undefined,
+          (file?: Dynamic): Dynamic => assets[file.ref] !== undefined,
         )
-        .map((input2?: Dynamic): Dynamic => [input2.path, input2.ref]),
+        .map((file?: Dynamic): Dynamic => [file.path, file.ref]),
     ),
-    state2: Dynamic = {
+    clip: Dynamic = {
       v: 1,
-      artboards: value3,
-      files: value4,
-      assets: state,
-      ...(Object.keys(value8).length > 0
+      artboards: artboards,
+      files: carriedFiles,
+      assets: assets,
+      ...(Object.keys(heldMap).length > 0
         ? {
-            held: value8,
+            held: heldMap,
           }
         : {}),
     },
-    callback: Dynamic = (): Dynamic => ({
-      missingAssets: values.size,
-      unsupportedAssets: values2.size,
+    countSkippedAssets: Dynamic = (): Dynamic => ({
+      missingAssets: missingRefs.size,
+      unsupportedAssets: unsupportedRefs.size,
     }),
-    index2: Dynamic = 0;
-  for (let value12 of value3 as Dynamic) index2 += value12.src.length;
-  for (let value12 of Object.values(value4) as Dynamic)
-    index2 += value12.length;
-  for (let value12 of Object.values(state) as Dynamic)
-    index2 += value12.length;
-  if (index2 > ClipboardArtboardsResolvedValue)
+    totalChars: Dynamic = 0;
+  for (let artboard of artboards as Dynamic) totalChars += artboard.src.length;
+  for (let fileContent of Object.values(carriedFiles) as Dynamic)
+    totalChars += fileContent.length;
+  for (let assetContent of Object.values(assets) as Dynamic)
+    totalChars += assetContent.length;
+  if (totalChars > ClipboardArtboardsResolvedValue)
     return {
-      clip: state2,
+      clip: clip,
       json: "",
-      ...callback(),
-      origin: value5,
+      ...countSkippedAssets(),
+      origin: origin,
       tooLarge: true,
     };
-  let value9: Dynamic = JSON.stringify(state2),
-    value10: Dynamic =
+  let clipJson: Dynamic = JSON.stringify(clip),
+    remainingBudget: Dynamic =
       ClipboardArtboardsResolvedValue -
-      value9.length -
+      clipJson.length -
       ClipboardArtboardsConstant;
-  if (value10 < 0)
-    for (let value12 of entries.keys() as Dynamic) values2.add(value12);
-  if (value10 < 0 || (entries.size === 0 && index === 0))
+  if (remainingBudget < 0)
+    for (let fontRef of fontAssets.keys() as Dynamic) unsupportedRefs.add(fontRef);
+  if (remainingBudget < 0 || (fontAssets.size === 0 && fontsLeftOut === 0))
     return {
-      clip: state2,
-      json: value9,
-      ...callback(),
-      origin: value5,
-      tooLarge: value9.length > ClipboardArtboardsResolvedValue,
+      clip: clip,
+      json: clipJson,
+      ...countSkippedAssets(),
+      origin: origin,
+      tooLarge: clipJson.length > ClipboardArtboardsResolvedValue,
     };
-  let index3: Dynamic = 0;
-  for (let [value12, value13] of entries as Dynamic) {
-    let value14: Dynamic =
-      JSON.stringify(value12).length + JSON.stringify(value13).length + 2;
-    index3 < ClipboardArtboardsLimit_2 &&
-    Object.keys(state).length < ClipboardArtboardsLimit &&
-    value14 <= value10
-      ? ((state[value12] = value13), (value10 -= value14), (index3 += 1))
-      : (index += 1);
+  let keptFonts: Dynamic = 0;
+  for (let [fontRef, fontData] of fontAssets as Dynamic) {
+    let entrySize: Dynamic =
+      JSON.stringify(fontRef).length + JSON.stringify(fontData).length + 2;
+    keptFonts < maxFontAssets &&
+    Object.keys(assets).length < ClipboardArtboardsLimit &&
+    entrySize <= remainingBudget
+      ? ((assets[fontRef] = fontData), (remainingBudget -= entrySize), (keptFonts += 1))
+      : (fontsLeftOut += 1);
   }
-  index > 0 && (state2.fontsLeftOut = index);
-  let value11: Dynamic = JSON.stringify(state2);
+  fontsLeftOut > 0 && (clip.fontsLeftOut = fontsLeftOut);
+  let finalJson: Dynamic = JSON.stringify(clip);
   return {
-    clip: state2,
-    json: value11,
-    ...callback(),
-    origin: value5,
-    tooLarge: value11.length > ClipboardArtboardsResolvedValue,
+    clip: clip,
+    json: finalJson,
+    ...countSkippedAssets(),
+    origin: origin,
+    tooLarge: finalJson.length > ClipboardArtboardsResolvedValue,
   };
 }
-function parseArtboardClipboard(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null) return null;
-  let value: Dynamic = input;
-  if (!Array.isArray(value.artboards)) return null;
-  let index: Dynamic = 0,
-    callback: Dynamic = (items4?: Dynamic): Dynamic =>
-      (index += items4.length) <= ClipboardArtboardsResolvedValue,
-    items: Dynamic = [];
-  for (let value5 of value.artboards as Dynamic) {
-    if (items.length >= PlatformFileContentFilesValue) break;
-    if (typeof value5 != "object" || value5 === null) continue;
-    let value6: Dynamic = value5;
+function parseArtboardClipboard(clipboard?: Dynamic): Dynamic {
+  if (typeof clipboard != "object" || clipboard === null) return null;
+  let parsed: Dynamic = clipboard;
+  if (!Array.isArray(parsed.artboards)) return null;
+  let totalChars: Dynamic = 0,
+    fitsBudget: Dynamic = (text?: Dynamic): Dynamic =>
+      (totalChars += text.length) <= ClipboardArtboardsResolvedValue,
+    artboards: Dynamic = [];
+  for (let rawArtboard of parsed.artboards as Dynamic) {
+    if (artboards.length >= PlatformFileContentFilesValue) break;
+    if (typeof rawArtboard != "object" || rawArtboard === null) continue;
+    let artboardEntry: Dynamic = rawArtboard;
     if (
-      typeof value6.src != "string" ||
-      !ClipboardArtboardsEncode(value6.src)
+      typeof artboardEntry.src != "string" ||
+      !ClipboardArtboardsEncode(artboardEntry.src)
     )
       continue;
-    if (!callback(value6.src)) return null;
-    let value7: Dynamic =
-      typeof value6.stem == "string" &&
-      ClipboardFileTransferHandler_7(value6.stem + ".dc.html") &&
-      !ClipboardFileTransferTest(value6.stem)
-        ? value6.stem
+    if (!fitsBudget(artboardEntry.src)) return null;
+    let stem: Dynamic =
+      typeof artboardEntry.stem == "string" &&
+      ClipboardFileTransferHandler_7(artboardEntry.stem + ".dc.html") &&
+      !ClipboardFileTransferTest(artboardEntry.stem)
+        ? artboardEntry.stem
         : "Artboard";
-    items.push({
-      src: value6.src,
-      stem: value7,
-      dx: ClipboardArtboardsMax(value6.dx),
-      dy: ClipboardArtboardsMax(value6.dy),
-      ...artboardSpecFromProps(value6),
+    artboards.push({
+      src: artboardEntry.src,
+      stem: stem,
+      dx: ClipboardArtboardsMax(artboardEntry.dx),
+      dy: ClipboardArtboardsMax(artboardEntry.dy),
+      ...artboardSpecFromProps(artboardEntry),
     });
   }
-  if (items.length === 0) return null;
-  let state: Dynamic = {};
-  if (typeof value.files == "object" && value.files !== null) {
-    let index3: Dynamic = 0;
-    for (let [value5, value6] of Object.entries(value.files) as Dynamic) {
-      if (index3 >= PlatformFileContentFilesValue) break;
+  if (artboards.length === 0) return null;
+  let files: Dynamic = {};
+  if (typeof parsed.files == "object" && parsed.files !== null) {
+    let fileCount: Dynamic = 0;
+    for (let [filePath, fileContent] of Object.entries(parsed.files) as Dynamic) {
+      if (fileCount >= PlatformFileContentFilesValue) break;
       if (
         !(
-          !isCarryableProjectFile(value5) ||
-          typeof value6 != "string" ||
-          !ClipboardArtboardsEncode(value6)
+          !isCarryableProjectFile(filePath) ||
+          typeof fileContent != "string" ||
+          !ClipboardArtboardsEncode(fileContent)
         ) &&
         !(
-          PlatformFileContentWebpAvifPattern.test(value5) &&
-          !ClipboardArtboardsAZaZPattern.test(value6)
+          PlatformFileContentWebpAvifPattern.test(filePath) &&
+          !ClipboardArtboardsAZaZPattern.test(fileContent)
         )
       ) {
-        if (!callback(value6)) return null;
-        state[value5] = value6;
-        index3 += 1;
+        if (!fitsBudget(fileContent)) return null;
+        files[filePath] = fileContent;
+        fileCount += 1;
       }
     }
   }
-  let state2: Dynamic = {},
-    index2: Dynamic = 0;
-  if (typeof value.assets == "object" && value.assets !== null) {
-    let index3: Dynamic = 0,
-      index4: Dynamic = 0;
-    for (let [value5, value6] of Object.entries(value.assets) as Dynamic) {
-      if (index3 >= ClipboardArtboardsLimit) break;
+  let assets: Dynamic = {},
+    droppedFonts: Dynamic = 0;
+  if (typeof parsed.assets == "object" && parsed.assets !== null) {
+    let assetCount: Dynamic = 0,
+      fontCount: Dynamic = 0;
+    for (let [assetRef, assetData] of Object.entries(parsed.assets) as Dynamic) {
+      if (assetCount >= ClipboardArtboardsLimit) break;
       if (
         !(
-          !ClipboardArtboardsBlobBlobPattern.test(value5) ||
-          typeof value6 != "string" ||
-          value6.length > ClipboardArtboardsResolvedValue_2 ||
-          !ClipboardArtboardsTest_3(value6)
+          !ClipboardArtboardsBlobBlobPattern.test(assetRef) ||
+          typeof assetData != "string" ||
+          assetData.length > maxAssetBytes ||
+          !isSupportedAssetDataUrl(assetData)
         )
       ) {
-        if (ClipboardArtboardsDataFontPattern.test(value6)) {
-          if (index4 >= ClipboardArtboardsLimit_2) {
-            index2 += 1;
+        if (ClipboardArtboardsDataFontPattern.test(assetData)) {
+          if (fontCount >= maxFontAssets) {
+            droppedFonts += 1;
             continue;
           }
-          index4 += 1;
+          fontCount += 1;
         }
-        if (!callback(value6)) return null;
-        state2[value5] = value6;
-        index3 += 1;
+        if (!fitsBudget(assetData)) return null;
+        assets[assetRef] = assetData;
+        assetCount += 1;
       }
     }
   }
-  let items2: Dynamic = [
-      ...items.map((input2?: Dynamic): Dynamic => input2.src),
-      ...Object.entries(state)
+  let sourceStrings: Dynamic = [
+      ...artboards.map((artboard?: Dynamic): Dynamic => artboard.src),
+      ...Object.entries(files)
         .filter(
-          ([input2]: Dynamic): Dynamic =>
-            isProjectSourcePath(input2),
+          ([path]: Dynamic): Dynamic =>
+            isProjectSourcePath(path),
         )
-        .map(([, input2]: Dynamic): Dynamic => input2),
+        .map(([, content]: Dynamic): Dynamic => content),
     ],
-    items3: Dynamic = [];
-  if (typeof value.held == "object" && value.held !== null)
-    for (let [value5, value6] of Object.entries(value.held) as Dynamic) {
-      if (items3.length >= ClipboardArtboardsConstant_2 * 4) break;
-      ClipboardArtboardsTest_4(value5) &&
-        typeof value6 == "string" &&
-        state2[value6] !== undefined &&
-        ClipboardArtboardsTest(state2[value6]) &&
-        items3.push({
-          path: value5,
-          ref: value6,
+    heldFiles: Dynamic = [];
+  if (typeof parsed.held == "object" && parsed.held !== null)
+    for (let [heldPath, heldRef] of Object.entries(parsed.held) as Dynamic) {
+      if (heldFiles.length >= maxReferencedAssetFiles * 4) break;
+      isCarryableAssetPath(heldPath) &&
+        typeof heldRef == "string" &&
+        assets[heldRef] !== undefined &&
+        ClipboardArtboardsTest(assets[heldRef]) &&
+        heldFiles.push({
+          path: heldPath,
+          ref: heldRef,
         });
     }
-  let value2: Dynamic = Object.fromEntries(
-      referencedAssetFiles(items2, items3).map(
-        (input2?: Dynamic): Dynamic => [input2.path, input2.ref],
+  let heldMap: Dynamic = Object.fromEntries(
+      referencedAssetFiles(sourceStrings, heldFiles).map(
+        (file?: Dynamic): Dynamic => [file.path, file.ref],
       ),
     ),
-    values: Dynamic = new Set([
-      ...items2.flatMap(getBlobAssetReferences),
-      ...Object.values(value2),
+    referencedRefs: Dynamic = new Set([
+      ...sourceStrings.flatMap(getBlobAssetReferences),
+      ...Object.values(heldMap),
     ]);
-  for (let value5 of Object.keys(state2) as Dynamic)
-    values.has(value5) || delete state2[value5];
-  let length: Dynamic = [...values].filter(
-      (input2?: Dynamic): Dynamic => state2[input2] === undefined,
+  for (let ref of Object.keys(assets) as Dynamic)
+    referencedRefs.has(ref) || delete assets[ref];
+  let missingCount: Dynamic = [...referencedRefs].filter(
+      (ref?: Dynamic): Dynamic => assets[ref] === undefined,
     ).length,
-    value3: Dynamic =
-      typeof value.fontsLeftOut == "number" &&
-      Number.isInteger(value.fontsLeftOut)
-        ? Math.max(0, value.fontsLeftOut)
+    declaredFontsLeftOut: Dynamic =
+      typeof parsed.fontsLeftOut == "number" &&
+      Number.isInteger(parsed.fontsLeftOut)
+        ? Math.max(0, parsed.fontsLeftOut)
         : 0,
-    value4: Dynamic = Math.min(
-      length,
-      value3 + index2,
+    fontsLeftOutCount: Dynamic = Math.min(
+      missingCount,
+      declaredFontsLeftOut + droppedFonts,
       ClipboardArtboardsLimit,
     );
   return {
     v: 1,
-    artboards: items,
-    files: state,
-    assets: state2,
-    ...(Object.keys(value2).length > 0
+    artboards: artboards,
+    files: files,
+    assets: assets,
+    ...(Object.keys(heldMap).length > 0
       ? {
-          held: value2,
+          held: heldMap,
         }
       : {}),
-    ...(value4 > 0
+    ...(fontsLeftOutCount > 0
       ? {
-          fontsLeftOut: value4,
+          fontsLeftOut: fontsLeftOutCount,
         }
       : {}),
   };
@@ -477,25 +477,25 @@ export {
   ClipboardArtboardsBlobHttpsPattern,
   ClipboardArtboardsBlobPattern,
   ClipboardArtboardsConstant,
-  ClipboardArtboardsConstant_2,
-  ClipboardArtboardsConstant_3,
-  ClipboardArtboardsConstant_4,
+  maxReferencedAssetFiles as ClipboardArtboardsConstant_2,
+  artboardGap as ClipboardArtboardsConstant_3,
+  maxOffset as ClipboardArtboardsConstant_4,
   ClipboardArtboardsDataFontPattern,
-  ClipboardArtboardsDataFontPattern_2,
+  anyDataFontPattern as ClipboardArtboardsDataFontPattern_2,
   ClipboardArtboardsDataImagePattern,
   ClipboardArtboardsDataTextPattern,
   ClipboardArtboardsEncode,
   ClipboardArtboardsLimit,
-  ClipboardArtboardsLimit_2,
+  maxFontAssets as ClipboardArtboardsLimit_2,
   ClipboardArtboardsMax,
   ClipboardArtboardsReplace,
-  ClipboardArtboardsReplace_2,
+  stripArtboardExtension as ClipboardArtboardsReplace_2,
   ClipboardArtboardsResolvedValue,
-  ClipboardArtboardsResolvedValue_2,
+  maxAssetBytes as ClipboardArtboardsResolvedValue_2,
   ClipboardArtboardsTest,
-  ClipboardArtboardsTest_2,
-  ClipboardArtboardsTest_3,
-  ClipboardArtboardsTest_4,
+  isFontDataUrl as ClipboardArtboardsTest_2,
+  isSupportedAssetDataUrl as ClipboardArtboardsTest_3,
+  isCarryableAssetPath as ClipboardArtboardsTest_4,
   ClipboardArtboardsTextEncoder,
   clipboardBlobAssets,
   clipboardSourceStrings,
@@ -509,69 +509,69 @@ export function installEditorClipboardArtboards(): () => void {
   return () => {
     ClipboardArtboardsResolvedValue = 8 * 1024 * 1024;
     ClipboardArtboardsLimit = 80;
-    ClipboardArtboardsResolvedValue_2 = 6 * 1024 * 1024;
+    maxAssetBytes = 6 * 1024 * 1024;
     ClipboardArtboardsBlobBlobPattern =
       /^(?:_blob\/[0-9a-f]{32}|blob:https?:\/\/[A-Za-z0-9.:-]{1,80}\/[0-9a-f-]{36})$/;
     ClipboardArtboardsDataImagePattern =
       /^data:image\/(?:png|jpe?g|gif|webp|avif|bmp|svg\+xml);base64,[A-Za-z0-9+/=\s]*$/i;
     ClipboardArtboardsDataTextPattern =
       /^data:(?:text\/(?:css|javascript|plain)|application\/json)(?:;\s*charset="?[\w-]+"?)?;base64,[A-Za-z0-9+/=\s]*$/i;
-    ClipboardArtboardsTest = (input?: Dynamic): Dynamic =>
-      ClipboardArtboardsDataTextPattern.test(input);
+    ClipboardArtboardsTest = (text?: Dynamic): Dynamic =>
+      ClipboardArtboardsDataTextPattern.test(text);
     ClipboardArtboardsDataFontPattern =
       /^data:font\/(?:woff2?|ttf|otf);base64,[A-Za-z0-9+/=\s]*$/i;
-    ClipboardArtboardsDataFontPattern_2 = /^data:font\//i;
-    ClipboardArtboardsTest_2 = (input?: Dynamic): Dynamic =>
-      ClipboardArtboardsDataFontPattern.test(input);
-    ClipboardArtboardsLimit_2 = 24;
+    anyDataFontPattern = /^data:font\//i;
+    isFontDataUrl = (text?: Dynamic): Dynamic =>
+      ClipboardArtboardsDataFontPattern.test(text);
+    maxFontAssets = 24;
     ClipboardArtboardsConstant = 24;
-    ClipboardArtboardsTest_3 = (input?: Dynamic): Dynamic =>
-      ClipboardArtboardsDataImagePattern.test(input) ||
-      ClipboardArtboardsDataTextPattern.test(input) ||
-      ClipboardArtboardsDataFontPattern.test(input);
-    ClipboardArtboardsConstant_2 = 24;
-    ClipboardArtboardsReplace = (input?: Dynamic): Dynamic =>
-      input.replace(/\.(?:d\.ts|css|m?js)$/i, "");
-    ClipboardArtboardsTest_4 = (items?: Dynamic): Dynamic =>
-      typeof items == "string" &&
-      ((isProjectTextFilePath(items) &&
-        /\.(?:css|m?js)$/i.test(items)) ||
-        isTypeDeclarationPath(items)) &&
-      items.length <= PlatformFileContentLimit_8 - 16 &&
-      !/^(?:artifact-type|project)\//i.test(items) &&
+    isSupportedAssetDataUrl = (dataUrl?: Dynamic): Dynamic =>
+      ClipboardArtboardsDataImagePattern.test(dataUrl) ||
+      ClipboardArtboardsDataTextPattern.test(dataUrl) ||
+      ClipboardArtboardsDataFontPattern.test(dataUrl);
+    maxReferencedAssetFiles = 24;
+    ClipboardArtboardsReplace = (fileName?: Dynamic): Dynamic =>
+      fileName.replace(/\.(?:d\.ts|css|m?js)$/i, "");
+    isCarryableAssetPath = (path?: Dynamic): Dynamic =>
+      typeof path == "string" &&
+      ((isProjectTextFilePath(path) &&
+        /\.(?:css|m?js)$/i.test(path)) ||
+        isTypeDeclarationPath(path)) &&
+      path.length <= maxProjectPathLength - 16 &&
+      !/^(?:artifact-type|project)\//i.test(path) &&
       !ClipboardFileTransferSubscribers.has(
-        (items.split("/").pop() ?? items).toLowerCase(),
+        (path.split("/").pop() ?? path).toLowerCase(),
       );
     ClipboardArtboardsAZaZPattern = /^[A-Za-z0-9+/=\s]*$/;
-    ClipboardArtboardsConstant_3 = 80;
-    ClipboardArtboardsConstant_4 = 1e6;
+    artboardGap = 80;
+    maxOffset = 1e6;
     ClipboardArtboardsBlobPattern = /_blob\/([0-9a-f]{32})(?![0-9a-f])/g;
     ClipboardArtboardsBlobHttpsPattern =
       /blob:https?:\/\/[A-Za-z0-9.:-]{1,80}\/[0-9a-f-]{36}/g;
-    ClipboardArtboardsReplace_2 = (input?: Dynamic): Dynamic =>
-      input.replace(/\.dc\.html$/, "");
-    artboardBaseName = (input?: Dynamic): Dynamic =>
-      ClipboardArtboardsReplace_2(input.split("/").pop() ?? input);
-    fileBaseName = (input?: Dynamic): Dynamic =>
-      input.split("/").pop() ?? input;
-    clipboardSourceStrings = (input?: Dynamic): Dynamic => [
-      ...input.artboards.map((input2?: Dynamic): Dynamic => input2.src),
-      ...Object.entries(input.carried)
+    stripArtboardExtension = (fileName?: Dynamic): Dynamic =>
+      fileName.replace(/\.dc\.html$/, "");
+    artboardBaseName = (path?: Dynamic): Dynamic =>
+      stripArtboardExtension(path.split("/").pop() ?? path);
+    fileBaseName = (path?: Dynamic): Dynamic =>
+      path.split("/").pop() ?? path;
+    clipboardSourceStrings = (source?: Dynamic): Dynamic => [
+      ...source.artboards.map((artboard?: Dynamic): Dynamic => artboard.src),
+      ...Object.entries(source.carried)
         .filter(
-          ([input2]: Dynamic): Dynamic =>
-            isProjectSourcePath(input2),
+          ([path]: Dynamic): Dynamic =>
+            isProjectSourcePath(path),
         )
-        .map(([, input2]: Dynamic): Dynamic => input2),
+        .map(([, content]: Dynamic): Dynamic => content),
     ];
     ClipboardArtboardsTextEncoder = new TextEncoder();
-    ClipboardArtboardsEncode = (items?: Dynamic): Dynamic =>
-      items.length <= PlatformFileContentResolvedValue_11 &&
-      (items.length * 3 <= PlatformFileContentResolvedValue_11 ||
-        ClipboardArtboardsTextEncoder.encode(items).length <=
-          PlatformFileContentResolvedValue_11);
-    ClipboardArtboardsMax = (input?: Dynamic, options: Dynamic = 0): Dynamic =>
-      typeof input == "number" && Number.isFinite(input)
-        ? Math.max(options, Math.min(ClipboardArtboardsConstant_4, input))
+    ClipboardArtboardsEncode = (text?: Dynamic): Dynamic =>
+      text.length <= maxFileContentBytes &&
+      (text.length * 3 <= maxFileContentBytes ||
+        ClipboardArtboardsTextEncoder.encode(text).length <=
+          maxFileContentBytes);
+    ClipboardArtboardsMax = (value?: Dynamic, minimum: Dynamic = 0): Dynamic =>
+      typeof value == "number" && Number.isFinite(value)
+        ? Math.max(minimum, Math.min(maxOffset, value))
         : 0;
   };
 }

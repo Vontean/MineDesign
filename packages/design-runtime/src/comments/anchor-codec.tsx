@@ -102,19 +102,19 @@ export const anchorAreaReferencePattern = /^dcr([0-9a-f]{12})(\d):nth-of-type\(1
 export const maxBase36AnchorCoordinate = 36 ** 4 - 1;
 
 /** 比例编码成 4 位十进制（0–9999）；非有限数按 0.5。 */
-export const encodeAnchorFraction = (value: number | null | undefined): string =>
-  String(Math.round(Math.min(1, Math.max(0, Number.isFinite(value) ? (value as number) : 0.5)) * 9999)).padStart(4, "0");
+export const encodeAnchorFraction = (fraction: number | null | undefined): string =>
+  String(Math.round(Math.min(1, Math.max(0, Number.isFinite(fraction) ? (fraction as number) : 0.5)) * 9999)).padStart(4, "0");
 
 export const decodeAnchorFraction = (text: string): number => Number(text) / 9999;
 
-export const encodeBase36AnchorCoordinate = (value: number | null | undefined): string =>
-  Math.round(Math.min(maxBase36AnchorCoordinate, Math.max(0, Number.isFinite(value) ? (value as number) : 0)))
+export const encodeBase36AnchorCoordinate = (coordinate: number | null | undefined): string =>
+  Math.round(Math.min(maxBase36AnchorCoordinate, Math.max(0, Number.isFinite(coordinate) ? (coordinate as number) : 0)))
     .toString(36)
     .padStart(4, "0");
 
 /** 带符号坐标：n/p 加 7 位数字。 */
-export const encodeSignedAnchorCoordinate = (value: number | null | undefined): string => {
-  const rounded = Math.round(Math.min(9999999, Math.max(-9999999, Number.isFinite(value) ? (value as number) : 0)));
+export const encodeSignedAnchorCoordinate = (coordinate: number | null | undefined): string => {
+  const rounded = Math.round(Math.min(9999999, Math.max(-9999999, Number.isFinite(coordinate) ? (coordinate as number) : 0)));
   return (rounded < 0 ? "n" : "p") + String(Math.abs(rounded)).padStart(7, "0");
 };
 
@@ -138,8 +138,8 @@ export const encodeAnchorPayloadSelector = (type: string, payload: string): stri
   "dc" + type + payload + ":nth-of-type(" + String(1) + ")";
 
 /** 区域边界编码成两位百分数；end 为真时按右/下边界向上取整再减 1。 */
-export const encodeAnchorAreaPercent = (value: number | null | undefined, end: boolean): string => {
-  const percent = Math.min(1, Math.max(0, Number.isFinite(value) ? (value as number) : end ? 1 : 0)) * 100;
+export const encodeAnchorAreaPercent = (boundary: number | null | undefined, end: boolean): string => {
+  const percent = Math.min(1, Math.max(0, Number.isFinite(boundary) ? (boundary as number) : end ? 1 : 0)) * 100;
   const cell = Math.min(99, Math.max(0, end ? Math.ceil(percent - 1e-7) - 1 : Math.floor(percent + 1e-7)));
   return String(cell).padStart(2, "0");
 };

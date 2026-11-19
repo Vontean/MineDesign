@@ -12,63 +12,63 @@ var reactAccessibilityAnnouncer_2: Dynamic;
 var jsxAccessibilityAnnouncer: Dynamic;
 var AccessibilityAnnouncerSubscribers: Dynamic;
 var AccessibilityAnnouncerConstant: Dynamic;
-var AccessibilityAnnouncerConstant_2: Dynamic;
+var defaultClearMs: Dynamic;
 var AccessibilityAnnouncerLimit: Dynamic;
-function announce(input?: Dynamic, options: Dynamic = {}): Dynamic {
-  for (let value of AccessibilityAnnouncerSubscribers as Dynamic)
-    value(input, options);
+function announce(message?: Dynamic, announceOptions: Dynamic = {}): Dynamic {
+  for (let subscriber of AccessibilityAnnouncerSubscribers as Dynamic)
+    subscriber(message, announceOptions);
 }
-function subscribeAnnouncements(input?: Dynamic): Dynamic {
-  AccessibilityAnnouncerSubscribers.add(input);
+function subscribeAnnouncements(subscriber?: Dynamic): Dynamic {
+  AccessibilityAnnouncerSubscribers.add(subscriber);
   return (): Dynamic => {
-    AccessibilityAnnouncerSubscribers.delete(input);
+    AccessibilityAnnouncerSubscribers.delete(subscriber);
   };
 }
 function ScreenReaderAnnouncer({
   settleMs = AccessibilityAnnouncerConstant,
-  clearMs = AccessibilityAnnouncerConstant_2,
+  clearMs = defaultClearMs,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactAccessibilityAnnouncer_2.useState)(
+  let [announcement, setAnnouncement]: Dynamic = (0, reactAccessibilityAnnouncer_2.useState)(
     "",
   );
   (0, reactAccessibilityAnnouncer_2.useEffect)((): Dynamic => {
-    let value3: Dynamic,
-      flag: Dynamic = false,
-      value4: Dynamic,
-      value5: Dynamic = subscribeAnnouncements(
-        (input?: Dynamic, options?: Dynamic): Dynamic => {
-          if (value3 !== undefined) {
-            if (options.ifIdle && !flag) return;
-            clearTimeout(value3);
+    let settleTimer: Dynamic,
+      isIdleOnlyPending: Dynamic = false,
+      clearTimer: Dynamic,
+      unsubscribe: Dynamic = subscribeAnnouncements(
+        (message?: Dynamic, announceOptions?: Dynamic): Dynamic => {
+          if (settleTimer !== undefined) {
+            if (announceOptions.ifIdle && !isIdleOnlyPending) return;
+            clearTimeout(settleTimer);
           }
-          flag = options.ifIdle === true;
-          value4 !== undefined && clearTimeout(value4);
-          value4 = undefined;
-          value2("");
-          value3 = setTimeout((): Dynamic => {
-            value3 = undefined;
-            let value6: Dynamic =
-              typeof input == "function" ? input() : input;
-            if (value6 == null || value6 === "") return;
-            let value7: Dynamic =
-              value6.length > AccessibilityAnnouncerLimit
-                ? value6
+          isIdleOnlyPending = announceOptions.ifIdle === true;
+          clearTimer !== undefined && clearTimeout(clearTimer);
+          clearTimer = undefined;
+          setAnnouncement("");
+          settleTimer = setTimeout((): Dynamic => {
+            settleTimer = undefined;
+            let messageText: Dynamic =
+              typeof message == "function" ? message() : message;
+            if (messageText == null || messageText === "") return;
+            let displayText: Dynamic =
+              messageText.length > AccessibilityAnnouncerLimit
+                ? messageText
                     .slice(0, AccessibilityAnnouncerLimit - 1)
                     .replace(/[\uD800-\uDBFF]$/, "") + "\u2026"
-                : value6;
-            value2(value7);
-            value4 = setTimeout((): Dynamic => {
-              value4 = undefined;
-              value2("");
+                : messageText;
+            setAnnouncement(displayText);
+            clearTimer = setTimeout((): Dynamic => {
+              clearTimer = undefined;
+              setAnnouncement("");
             }, clearMs);
           }, settleMs);
         },
       );
     return (): Dynamic => {
-      value5();
-      value3 !== undefined && clearTimeout(value3);
-      value4 !== undefined && clearTimeout(value4);
+      unsubscribe();
+      settleTimer !== undefined && clearTimeout(settleTimer);
+      clearTimer !== undefined && clearTimeout(clearTimer);
     };
   }, [settleMs, clearMs]);
   return (
@@ -79,13 +79,13 @@ function ScreenReaderAnnouncer({
       aria-atomic={"true"}
       data-kit={"live-announcer"}
     >
-      {value}
+      {announcement}
     </span>
   );
 }
 export {
   AccessibilityAnnouncerConstant,
-  AccessibilityAnnouncerConstant_2,
+  defaultClearMs as AccessibilityAnnouncerConstant_2,
   AccessibilityAnnouncerLimit,
   AccessibilityAnnouncerSubscribers,
   announce,
@@ -112,7 +112,7 @@ export function installEditorAccessibilityAnnouncer(): () => void {
     );
     AccessibilityAnnouncerSubscribers = new Set();
     AccessibilityAnnouncerConstant = 350;
-    AccessibilityAnnouncerConstant_2 = 5e3;
+    defaultClearMs = 5e3;
     AccessibilityAnnouncerLimit = 120;
   };
 }

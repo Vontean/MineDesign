@@ -10,7 +10,7 @@ import { useUiText } from "../../comments/feedback-panel";
 import { ChromeToolIconsRectOvalConfig } from "./tool-icons";
 import { jsxInspectorEditor } from "../inspector/editor";
 import { SessionStripPopover } from "../session-strip/popover";
-import { SessionTouchAndHistoryJsxValue, SessionTouchAndHistoryJsxValue_2 } from "../session/touch-and-history";
+import { SessionTouchAndHistoryJsxValue as TextToolGlyph, SessionTouchAndHistoryJsxValue_2 as FrameToolGlyph } from "../session/touch-and-history";
 import { usePhoneCanvas } from "../toolbar/layout";
 import { ToolbarPrimitivesComponent } from "../toolbar/primitives";
 import { designToolForShortcut, designToolIcons, designToolLabels, insertDesignTools, insertMenuIcon, isHostOnlyDesignTool, shapeDesignTools, shapesMenuIcon, ShapeToolGlyph } from "../tools";
@@ -27,60 +27,60 @@ export function installEditorChromeToolSelector(): () => void {
       canvasTools = true,
     }: Dynamic): Dynamic {
       let t: Dynamic = useUiText(),
-        value: Dynamic = usePhoneCanvas(),
-        value2: Dynamic = value
+        isPhoneCanvas: Dynamic = usePhoneCanvas(),
+        menuTools: Dynamic = isPhoneCanvas
           ? insertDesignTools
           : shapeDesignTools,
-        [value3, value4]: Dynamic = (0, reactCanvasShape_2.useState)(
+        [isMenuOpen, setIsMenuOpen]: Dynamic = (0, reactCanvasShape_2.useState)(
           false,
         ),
-        callback: Dynamic = (input?: Dynamic): Dynamic => {
-          value4(false);
-          onPick(input);
+        pickTool: Dynamic = (pickedTool?: Dynamic): Dynamic => {
+          setIsMenuOpen(false);
+          onPick(pickedTool);
         },
-        value5: Dynamic = undefined,
-        value6: Dynamic = undefined,
-        callback2: Dynamic = (input?: Dynamic): Dynamic =>
-          input === "hand"
-            ? value6
-            : isHostOnlyDesignTool(input)
-              ? value5
+        frameDisabledReason: Dynamic = undefined,
+        handDisabledReason: Dynamic = undefined,
+        getDisabledReason: Dynamic = (toolName?: Dynamic): Dynamic =>
+          toolName === "hand"
+            ? handDisabledReason
+            : isHostOnlyDesignTool(toolName)
+              ? frameDisabledReason
               : undefined,
-        callback3: Dynamic = (event?: Dynamic): Dynamic => {
-          if (!value3 || event.metaKey || event.ctrlKey || event.altKey) return;
-          let value7: Dynamic = designToolForShortcut(
+        handleMenuKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
+          if (!isMenuOpen || event.metaKey || event.ctrlKey || event.altKey) return;
+          let shortcutTool: Dynamic = designToolForShortcut(
             event.key,
             event.shiftKey,
           );
-          value7 !== null &&
+          shortcutTool !== null &&
             (event.preventDefault(),
             event.stopPropagation(),
-            callback2(value7) === undefined && callback(value7));
+            getDisabledReason(shortcutTool) === undefined && pickTool(shortcutTool));
         },
-        callback4: Dynamic = (
-          input?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
-          value7?: Dynamic,
-          extra?: Dynamic,
+        renderToolButton: Dynamic = (
+          toolName?: Dynamic,
+          label?: Dynamic,
+          shortcut?: Dynamic,
+          iconProps?: Dynamic,
+          disabledReason?: Dynamic,
         ): Dynamic => (
           <ToolbarPrimitivesComponent
-            {...value7}
+            {...iconProps}
             iconOnly={true}
-            label={options}
-            shortcut={context}
+            label={label}
+            shortcut={shortcut}
             tipSide={"top"}
             pressed={
-              tool === input || (input === "select" && tool === "vector")
+              tool === toolName || (toolName === "select" && tool === "vector")
             }
-            disabled={extra !== undefined}
-            disabledTip={extra}
-            data-testid={"dc-tool-" + input}
-            onClick={(): Dynamic => callback(input)}
+            disabled={disabledReason !== undefined}
+            disabledTip={disabledReason}
+            data-testid={"dc-tool-" + toolName}
+            onClick={(): Dynamic => pickTool(toolName)}
           />
         ),
-        callback5: Dynamic = (request?: Dynamic): Dynamic => {
-          let value7: Dynamic = callback2(request.tool);
+        renderMenuItem: Dynamic = (request?: Dynamic): Dynamic => {
+          let disabledReason: Dynamic = getDisabledReason(request.tool);
           return (() => {
             const _Component = MenuMenuAssignValue.Item;
             const _props = {
@@ -89,9 +89,9 @@ export function installEditorChromeToolSelector(): () => void {
               shortcut: request.shortcut,
               checked: tool === request.tool,
               checkedRole: "radio",
-              disabled: value7 !== undefined,
-              disabledReason: value7 ?? null,
-              onClick: (): Dynamic => callback(request.tool),
+              disabled: disabledReason !== undefined,
+              disabledReason: disabledReason ?? null,
+              onClick: (): Dynamic => pickTool(request.tool),
               children: request.label,
             } as const;
             const _key = request.tool;
@@ -100,91 +100,91 @@ export function installEditorChromeToolSelector(): () => void {
         };
       return (
         <TooltipGroup>
-          {callback4("select", t.toolSelect, "esc", {
+          {renderToolButton("select", t.toolSelect, "esc", {
             icon: "Cursor",
           })}
-          {value ? (null) : (<jsxInspectorEditor.Fragment>
-              {callback4(
+          {isPhoneCanvas ? (null) : (<jsxInspectorEditor.Fragment>
+              {renderToolButton(
                 "hand",
                 t.toolHand,
                 "h",
                 {
                   icon: "Hand",
                 },
-                value6,
+                handDisabledReason,
               )}
-              {callback4(
+              {renderToolButton(
                 "frame",
                 t.toolFrame,
                 "f",
                 {
-                  glyph: SessionTouchAndHistoryJsxValue_2,
+                  glyph: FrameToolGlyph,
                 },
-                value5,
+                frameDisabledReason,
               )}
-              {callback4("text", t.toolText, "t", {
-                glyph: SessionTouchAndHistoryJsxValue,
+              {renderToolButton("text", t.toolText, "t", {
+                glyph: TextToolGlyph,
               })}
-              {callback4(
+              {renderToolButton(
                 "note",
                 t.toolNote,
                 "n",
                 {
                   icon: "Note",
                 },
-                value5,
+                frameDisabledReason,
               )}
-              {callback4("draw", t.toolDraw, "p", {
+              {renderToolButton("draw", t.toolDraw, "p", {
                 icon: "Edit",
               })}
             </jsxInspectorEditor.Fragment>)}
-          <span className={"contents"} onKeyDownCapture={callback3}>
+          <span className={"contents"} onKeyDownCapture={handleMenuKeyDown}>
             <SessionStripPopover
-              {...(value
+              {...(isPhoneCanvas
                 ? (designToolIcons[tool] ?? insertMenuIcon)
                 : shapesMenuIcon)}
               iconOnly={true}
               caret={true}
               label={
-                value ? (designToolLabels[tool] ? (((t.toolTools) + (": ")) + (designToolLabels[tool])) : (t.toolTools)) : (t.toolShapes)
+                isPhoneCanvas ? (designToolLabels[tool] ? (((t.toolTools) + (": ")) + (designToolLabels[tool])) : (t.toolTools)) : (t.toolShapes)
               }
-              tip={value ? t.toolsTip : t.shapesTip}
-              pressed={value2.includes(tool)}
-              data-testid={value ? "dc-tool-add" : "dc-tool-shapes"}
-              open={value3}
-              onOpenChange={value4}
+              tip={isPhoneCanvas ? t.toolsTip : t.shapesTip}
+              pressed={menuTools.includes(tool)}
+              data-testid={isPhoneCanvas ? "dc-tool-add" : "dc-tool-shapes"}
+              open={isMenuOpen}
+              onOpenChange={setIsMenuOpen}
             >
               <MenuMenuAssignValue.Group
-                aria-label={value ? (t.toolTools) : (t.shapesTip)}
+                aria-label={isPhoneCanvas ? (t.toolTools) : (t.shapesTip)}
                 data-dc-tool-menu={""}
               >
-                {value ? (<jsxInspectorEditor.Fragment>
-                    {callback5({
+                {isPhoneCanvas ? (<jsxInspectorEditor.Fragment>
+                    {renderMenuItem({
                       tool: "hand",
                       get label() { return t.toolHand; },
                       shortcut: "h",
                       icon: "Hand",
                     })}
                     <MenuMenuAssignValue.Separator />
-                    {callback5({
+                    {renderMenuItem({
                       tool: "frame",
                       get label() { return t.toolFrame; },
                       shortcut: "f",
-                      icon: SessionTouchAndHistoryJsxValue_2,
+                      icon: FrameToolGlyph,
                     })}
-                    {callback5({
+                    {renderMenuItem({
                       tool: "text",
                       get label() { return t.toolText; },
                       shortcut: "t",
-                      icon: SessionTouchAndHistoryJsxValue,
+                      icon: TextToolGlyph,
                     })}
-                    {callback5({
+                    {renderMenuItem({
                       tool: "note",
                       get label() { return t.toolNote; },
                       shortcut: "n",
                       icon: "Note",
                     })}
-                    {callback5({
+                    {renderMenuItem({
                       tool: "draw",
                       get label() { return t.toolDraw; },
                       shortcut: "p",
@@ -192,7 +192,7 @@ export function installEditorChromeToolSelector(): () => void {
                     })}
                     <MenuMenuAssignValue.Separator />
                   </jsxInspectorEditor.Fragment>) : (null)}
-                {callback5({
+                {renderMenuItem({
                   tool: "rect",
                   get label() { return t.shapeRect; },
                   shortcut: "r",
@@ -200,7 +200,7 @@ export function installEditorChromeToolSelector(): () => void {
                     ChromeToolIconsRectOvalConfig.rect,
                   ),
                 })}
-                {callback5({
+                {renderMenuItem({
                   tool: "oval",
                   get label() { return t.shapeOval; },
                   shortcut: "o",
@@ -209,13 +209,13 @@ export function installEditorChromeToolSelector(): () => void {
                   ),
                 })}
                 <MenuMenuAssignValue.Separator />
-                {callback5({
+                {renderMenuItem({
                   tool: "arrow",
                   get label() { return t.shapeArrow; },
                   shortcut: "shift+l",
                   icon: "ArrowLine",
                 })}
-                {callback5({
+                {renderMenuItem({
                   tool: "line",
                   get label() { return t.shapeLine; },
                   shortcut: "l",

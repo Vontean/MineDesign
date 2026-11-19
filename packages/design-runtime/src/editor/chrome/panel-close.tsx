@@ -12,37 +12,37 @@ var jsxChromePanelClose: Dynamic;
 var jsxChromePanelClose_2: Dynamic;
 var ChromePanelCloseClassNames: Dynamic;
 var ChromePanelCloseClassNames_2: Dynamic;
-function usePanelClose(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactChromeResizeGrip.useRef)({
-    open: input,
-    isOpenNow: options,
+function usePanelClose(isOpen?: Dynamic, isOpenNowCheck?: Dynamic): Dynamic {
+  let latestStateRef: Dynamic = (0, reactChromeResizeGrip.useRef)({
+    open: isOpen,
+    isOpenNow: isOpenNowCheck,
   });
-  value.current = {
-    open: input,
-    isOpenNow: options,
+  latestStateRef.current = {
+    open: isOpen,
+    isOpenNow: isOpenNowCheck,
   };
-  let value2: Dynamic = (0, reactChromeResizeGrip.useRef)(false);
+  let isMountedRef: Dynamic = (0, reactChromeResizeGrip.useRef)(false);
   (0, reactChromeResizeGrip.useEffect)(
     (): Dynamic => (
-      (value2.current = true),
+      (isMountedRef.current = true),
       (): Dynamic => {
-        value2.current = false;
+        isMountedRef.current = false;
       }
     ),
     [],
   );
   (0, reactChromeResizeGrip.useEffect)((): Dynamic => {
-    if (input)
+    if (isOpen)
       return (): Dynamic => {
         ChromeResizeGripCurrentState !== null &&
           requestAnimationFrame((): Dynamic => {
-            let { open: current, isOpenNow: current2 }: Dynamic =
-              value.current;
-            (current2 ? current2() : value2.current && current) ||
+            let { open: current, isOpenNow: latestIsOpenNowCheck }: Dynamic =
+              latestStateRef.current;
+            (latestIsOpenNowCheck ? latestIsOpenNowCheck() : isMountedRef.current && current) ||
               panelCanRestoreFocus();
           });
       };
-  }, [input]);
+  }, [isOpen]);
 }
 function panelCanRestoreFocus(): Dynamic {
   if (
@@ -59,15 +59,15 @@ function panelCanRestoreFocus(): Dynamic {
     )
   )
     return false;
-  let value: Dynamic = ChromeResizeGripCurrentState();
-  return value === null ||
-    !value.isConnected ||
-    value.closest('[inert], [aria-hidden="true"]') !== null
+  let focusTarget: Dynamic = ChromeResizeGripCurrentState();
+  return focusTarget === null ||
+    !focusTarget.isConnected ||
+    focusTarget.closest('[inert], [aria-hidden="true"]') !== null
     ? false
-    : (value.focus({
+    : (focusTarget.focus({
         preventScroll: true,
       }),
-      (document as Dynamic).activeElement === value);
+      (document as Dynamic).activeElement === focusTarget);
 }
 export {
   ChromePanelCloseClassNames,

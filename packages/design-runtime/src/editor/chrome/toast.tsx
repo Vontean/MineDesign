@@ -14,68 +14,68 @@ var ChromeToastInfoSuccessWarningConfig: Dynamic;
 var EditorToastContext: Dynamic;
 function EditorToastProvider({ children: children }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useToastManager(),
-    value2: Dynamic = (0, reactChromeToast.useRef)(value);
+  let toastManager: Dynamic = useToastManager(),
+    toastManagerRef: Dynamic = (0, reactChromeToast.useRef)(toastManager);
   (0, reactChromeToast.useLayoutEffect)((): Dynamic => {
-    value2.current = value;
-  }, [value]);
-  let value3: Dynamic = (0, reactChromeToast.useRef)({
+    toastManagerRef.current = toastManager;
+  }, [toastManager]);
+  let pinnedToastRef: Dynamic = (0, reactChromeToast.useRef)({
       seq: 0,
       id: null,
     }),
-    value4: Dynamic = (0, reactChromeToast.useMemo)(
+    toastApi: Dynamic = (0, reactChromeToast.useMemo)(
       (): Dynamic => ({
         showToast: (
-          input?: Dynamic,
-          options: Dynamic = "info",
-          options2?: Dynamic,
+          title?: Dynamic,
+          variant: Dynamic = "info",
+          toastOptions?: Dynamic,
         ): Dynamic => {
-          if (options2?.pinned) {
-            let current: Dynamic = value3.current,
-              value5: Dynamic = "pinned:" + String(++current.seq);
-            current.id = value5;
-            value2.current.setPinned({
-              title: input,
-              description: options2.description,
-              variant: ChromeToastInfoSuccessWarningConfig[options],
-              action: options2.action,
+          if (toastOptions?.pinned) {
+            let current: Dynamic = pinnedToastRef.current,
+              pinnedId: Dynamic = "pinned:" + String(++current.seq);
+            current.id = pinnedId;
+            toastManagerRef.current.setPinned({
+              title: title,
+              description: toastOptions.description,
+              variant: ChromeToastInfoSuccessWarningConfig[variant],
+              action: toastOptions.action,
               dismissible: true,
               onClose: (): Dynamic => {
-                current.id === value5 && (current.id = null);
-                options2.onClose?.();
+                current.id === pinnedId && (current.id = null);
+                toastOptions.onClose?.();
               },
             });
-            return value5;
+            return pinnedId;
           }
-          return value2.current.add({
-            title: input,
-            description: options2?.description,
-            variant: ChromeToastInfoSuccessWarningConfig[options],
-            action: options2?.action,
-            onClose: options2?.onClose,
+          return toastManagerRef.current.add({
+            title: title,
+            description: toastOptions?.description,
+            variant: ChromeToastInfoSuccessWarningConfig[variant],
+            action: toastOptions?.action,
+            onClose: toastOptions?.onClose,
           });
         },
-        hideToast: (input?: Dynamic): Dynamic => {
-          if (input.startsWith("pinned:")) {
-            value3.current.id === input && value2.current.setPinned(null);
+        hideToast: (toastId?: Dynamic): Dynamic => {
+          if (toastId.startsWith("pinned:")) {
+            pinnedToastRef.current.id === toastId && toastManagerRef.current.setPinned(null);
             return;
           }
-          value2.current.close(input);
+          toastManagerRef.current.close(toastId);
         },
       }),
       [],
     );
   return (
-    <EditorToastContext.Provider value={value4}>
+    <EditorToastContext.Provider value={toastApi}>
       {children}
     </EditorToastContext.Provider>
   );
 }
 function useToast(): Dynamic {
-  let value: Dynamic = (0, reactChromeToast.useContext)(EditorToastContext);
-  if (!value)
+  let toastApi: Dynamic = (0, reactChromeToast.useContext)(EditorToastContext);
+  if (!toastApi)
     throw new Error("useToast must be used within EditorToastProvider");
-  return value;
+  return toastApi;
 }
 export {
   ChromeToastInfoSuccessWarningConfig,

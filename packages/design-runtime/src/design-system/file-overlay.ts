@@ -9,72 +9,72 @@ import { ProjectValue } from "../platform/file-content";
 var DesignSystemFileOverlayKeyCarriedTextsConfig: Dynamic;
 var DesignSystemFileOverlayStoredOverlayOutConfig: Dynamic;
 function refreshDesignSystemFileOverlay(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  projectConfig?: Dynamic,
+  storedFileTexts?: Dynamic,
+  carriedTokens?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = parseInstalledDesignSystems(input),
+  let installedSystems: Dynamic = parseInstalledDesignSystems(projectConfig),
     entries: Dynamic = new Map(
-      value.map((input2?: Dynamic): Dynamic => {
-        let value5: Dynamic = designSystemTokensPath(
-            input2.namespace,
+      installedSystems.map((system?: Dynamic): Dynamic => {
+        let tokensPath: Dynamic = designSystemTokensPath(
+            system.namespace,
           ),
-          value6: Dynamic = value5.slice(ProjectValue.length);
+          relativeTokensPath: Dynamic = tokensPath.slice(ProjectValue.length);
         return [
-          value5,
-          options[value6] ??
-            DesignSystemPublishedFilesFromEntriesValue[value6],
+          tokensPath,
+          storedFileTexts[relativeTokensPath] ??
+            DesignSystemPublishedFilesFromEntriesValue[relativeTokensPath],
         ];
       }),
     ),
-    value2: Dynamic = JSON.stringify(value),
-    value3: Dynamic = DesignSystemFileOverlayKeyCarriedTextsConfig;
+    installedKey: Dynamic = JSON.stringify(installedSystems),
+    cachedOverlay: Dynamic = DesignSystemFileOverlayKeyCarriedTextsConfig;
   if (
-    value3 !== undefined &&
-    value3.key === value2 &&
-    value3.carried === context &&
+    cachedOverlay !== undefined &&
+    cachedOverlay.key === installedKey &&
+    cachedOverlay.carried === carriedTokens &&
     [...entries].every(
-      ([input2, input3]: Dynamic): Dynamic =>
-        value3.texts.get(input2) === input3,
+      ([path, text]: Dynamic): Dynamic =>
+        cachedOverlay.texts.get(path) === text,
     )
   )
-    return value3.doc;
-  let value4: Dynamic =
+    return cachedOverlay.doc;
+  let mergedTokens: Dynamic =
     readInstalledDesignSystemTokens(
-      input,
-      (input2?: Dynamic): Dynamic => entries.get(input2),
-      context,
-    ) ?? context;
+      projectConfig,
+      (path?: Dynamic): Dynamic => entries.get(path),
+      carriedTokens,
+    ) ?? carriedTokens;
   DesignSystemFileOverlayKeyCarriedTextsConfig = {
-    key: value2,
-    carried: context,
+    key: installedKey,
+    carried: carriedTokens,
     texts: entries,
-    doc: value4,
+    doc: mergedTokens,
   };
-  return value4;
+  return mergedTokens;
 }
-function mergeDesignSystemFileOverlay(input?: Dynamic): Dynamic {
+function mergeDesignSystemFileOverlay(storedFiles?: Dynamic): Dynamic {
   return Object.keys(DesignSystemPublishedFilesFromEntriesValue)
     .length === 0
-    ? input
+    ? storedFiles
     : ((DesignSystemFileOverlayStoredOverlayOutConfig === undefined ||
-        DesignSystemFileOverlayStoredOverlayOutConfig.stored !== input ||
+        DesignSystemFileOverlayStoredOverlayOutConfig.stored !== storedFiles ||
         DesignSystemFileOverlayStoredOverlayOutConfig.overlay !==
           DesignSystemPublishedFilesFromEntriesValue) &&
         (DesignSystemFileOverlayStoredOverlayOutConfig = {
-          stored: input,
+          stored: storedFiles,
           overlay: DesignSystemPublishedFilesFromEntriesValue,
           out: {
             ...DesignSystemPublishedFilesFromEntriesValue,
-            ...input,
+            ...storedFiles,
           },
         }),
       DesignSystemFileOverlayStoredOverlayOutConfig.out);
 }
-function subscribeDesignSystemFiles(input?: Dynamic): Dynamic {
-  DesignSystemPublishedFilesSubscribers.add(input);
+function subscribeDesignSystemFiles(listener?: Dynamic): Dynamic {
+  DesignSystemPublishedFilesSubscribers.add(listener);
   return (): Dynamic => {
-    DesignSystemPublishedFilesSubscribers.delete(input);
+    DesignSystemPublishedFilesSubscribers.delete(listener);
   };
 }
 export {

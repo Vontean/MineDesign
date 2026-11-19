@@ -2,8 +2,8 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardAnnotationsTest_3, replaceClipboardPictureSource } from "./annotations";
-import { ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, ClipboardArtboardsResolvedValue_2 } from "./artboards";
+import { ClipboardAnnotationsTest_3 as isSupportedDataImage, replaceClipboardPictureSource } from "./annotations";
+import { ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, ClipboardArtboardsResolvedValue_2 as maxAssetBytes } from "./artboards";
 import { dataUrlToBlob } from "./file-transfer";
 import { readRasterImagePixels } from "./image-validation";
 
@@ -11,130 +11,130 @@ var ClipboardAssetsConstant: Dynamic;
 var ClipboardAssetsHandler: Dynamic;
 var clipboardPayloadUsage: Dynamic;
 async function resolveClipboardPictures(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  placements?: Dynamic,
+  assetsByKey?: Dynamic,
+  abortState?: Dynamic,
+  uploadHooks?: Dynamic,
 ): Promise<Dynamic> {
-  let entries: Dynamic = new Map(),
-    index: Dynamic = 0;
-  for (let value3 of new Set(
-    items.map((input?: Dynamic): Dynamic => input.asset),
+  let blobsByKey: Dynamic = new Map(),
+    totalPixels: Dynamic = 0;
+  for (let assetKey of new Set(
+    placements.map((placement?: Dynamic): Dynamic => placement.asset),
   ) as Dynamic) {
-    let entry: Dynamic = options.get(value3),
-      value4: Dynamic =
+    let entry: Dynamic = assetsByKey.get(assetKey),
+      blob: Dynamic =
         entry === undefined
           ? null
           : dataUrlToBlob(
               entry,
-              "pasted-picture-" + String(entries.size + 1),
+              "pasted-picture-" + String(blobsByKey.size + 1),
             ),
-      value5: Dynamic =
-        value4 === null
+      pixelCount: Dynamic =
+        blob === null
           ? undefined
           : readRasterImagePixels(
-              new Uint8Array(await value4.arrayBuffer()),
+              new Uint8Array(await blob.arrayBuffer()),
             );
-    value4 === null ||
-      value5 === undefined ||
-      index + value5 > value.maxPixels ||
-      ((index += value5), entries.set(value3, value4));
+    blob === null ||
+      pixelCount === undefined ||
+      totalPixels + pixelCount > uploadHooks.maxPixels ||
+      ((totalPixels += pixelCount), blobsByKey.set(assetKey, blob));
   }
-  let entries2: Dynamic = new Map(),
-    items2: Dynamic = [...entries],
-    callback: Dynamic = (): Dynamic =>
+  let uploadedSources: Dynamic = new Map(),
+    pendingBlobs: Dynamic = [...blobsByKey],
+    uploadTimeout: Dynamic = (): Dynamic =>
       new Promise(
-        (input?: Dynamic): Dynamic =>
-          setTimeout(input, value.timeoutMs ?? ClipboardAssetsConstant, null),
+        (resolve?: Dynamic): Dynamic =>
+          setTimeout(resolve, uploadHooks.timeoutMs ?? ClipboardAssetsConstant, null),
       ),
-    callback2: Dynamic = async (): Promise<Dynamic> => {
+    uploadWorker: Dynamic = async (): Promise<Dynamic> => {
       for (
-        let value3: Dynamic = items2.shift();
-        value3 !== undefined && !context.aborted;
-        value3 = items2.shift()
+        let pendingEntry: Dynamic = pendingBlobs.shift();
+        pendingEntry !== undefined && !abortState.aborted;
+        pendingEntry = pendingBlobs.shift()
       ) {
-        let [value4, value5]: Dynamic = value3;
+        let [blobKey, pendingBlob]: Dynamic = pendingEntry;
         if (
           (await Promise.resolve()
-            .then((): Dynamic => value.gate(value5))
+            .then((): Dynamic => uploadHooks.gate(pendingBlob))
             .catch((): Dynamic => "refused")) !== null ||
-          context.aborted
+          abortState.aborted
         )
           continue;
-        let value6: Dynamic = Promise.resolve()
-            .then((): Dynamic => value.upload(value5))
+        let uploadPromise: Dynamic = Promise.resolve()
+            .then((): Dynamic => uploadHooks.upload(pendingBlob))
             .then(
-              (input?: Dynamic): Dynamic =>
-                typeof input?.src == "string" ? input.src : null,
+              (uploaded?: Dynamic): Dynamic =>
+                typeof uploaded?.src == "string" ? uploaded.src : null,
               (): Dynamic => null,
             ),
-          value7: Dynamic = await Promise.race([value6, callback()]);
-        if (value7 === null) {
-          value6
-            .then((input?: Dynamic): Dynamic => {
-              input?.startsWith("./") && value.discard(input.slice(2));
+          uploadedSrc: Dynamic = await Promise.race([uploadPromise, uploadTimeout()]);
+        if (uploadedSrc === null) {
+          uploadPromise
+            .then((abandonedSrc?: Dynamic): Dynamic => {
+              abandonedSrc?.startsWith("./") && uploadHooks.discard(abandonedSrc.slice(2));
             })
             .catch((): Dynamic => {});
           continue;
         }
-        value7.startsWith("./") && value.stored(value7.slice(2));
-        entries2.set(value4, value7);
+        uploadedSrc.startsWith("./") && uploadHooks.stored(uploadedSrc.slice(2));
+        uploadedSources.set(blobKey, uploadedSrc);
       }
     };
   await Promise.all(
     Array.from(
       {
-        length: Math.min(4, items2.length),
+        length: Math.min(4, pendingBlobs.length),
       },
-      callback2,
+      uploadWorker,
     ),
   );
-  let value2: Dynamic = items.flatMap((input?: Dynamic): Dynamic => {
-    let entry: Dynamic = entries2.get(input.asset),
-      value3: Dynamic =
+  let landed: Dynamic = placements.flatMap((placement?: Dynamic): Dynamic => {
+    let entry: Dynamic = uploadedSources.get(placement.asset),
+      replaced: Dynamic =
         entry === undefined
           ? null
-          : replaceClipboardPictureSource(input, entry);
-    return value3 === null ? [] : [value3];
+          : replaceClipboardPictureSource(placement, entry);
+    return replaced === null ? [] : [replaced];
   });
   return {
-    landed: value2,
-    failed: items.length - value2.length,
+    landed: landed,
+    failed: placements.length - landed.length,
   };
 }
 function parseClipboardAssets(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = {
+  clipboard?: Dynamic,
+  placements?: Dynamic,
+  usage: Dynamic = {
     count: 0,
     chars: 0,
     has: (): Dynamic => false,
   },
 ): Dynamic {
   let entries: Dynamic = new Map(),
-    value: Dynamic = input?.assets;
-  if (typeof value != "object" || value === null) return entries;
-  let { count: value2, chars: value3 }: Dynamic = context;
-  for (let { asset: value4 } of options as Dynamic) {
-    if (entries.has(value4) || !Object.hasOwn(value, value4)) continue;
-    let value5: Dynamic = value[value4];
+    clipboardAssets: Dynamic = clipboard?.assets;
+  if (typeof clipboardAssets != "object" || clipboardAssets === null) return entries;
+  let { count: assetCount, chars: charCount }: Dynamic = usage;
+  for (let { asset: assetKey } of placements as Dynamic) {
+    if (entries.has(assetKey) || !Object.hasOwn(clipboardAssets, assetKey)) continue;
+    let assetData: Dynamic = clipboardAssets[assetKey];
     if (
       !(
-        typeof value5 != "string" ||
-        value5.length > ClipboardArtboardsResolvedValue_2 ||
-        !ClipboardAnnotationsTest_3(value5)
+        typeof assetData != "string" ||
+        assetData.length > maxAssetBytes ||
+        !isSupportedDataImage(assetData)
       )
     ) {
-      if (!context.has(value4)) {
+      if (!usage.has(assetKey)) {
         if (
-          value2 >= ClipboardArtboardsLimit ||
-          value3 + value5.length > ClipboardArtboardsResolvedValue
+          assetCount >= ClipboardArtboardsLimit ||
+          charCount + assetData.length > ClipboardArtboardsResolvedValue
         )
           continue;
-        value2++;
-        value3 += value5.length;
+        assetCount++;
+        charCount += assetData.length;
       }
-      entries.set(value4, value5);
+      entries.set(assetKey, assetData);
     }
   }
   return entries;
@@ -149,18 +149,18 @@ export {
 export function installEditorClipboardAssets(): () => void {
   return () => {
     ClipboardAssetsConstant = 6e4;
-    ClipboardAssetsHandler = (input?: Dynamic): Dynamic => input * 2560 * 2560;
-    clipboardPayloadUsage = (input?: Dynamic): Dynamic => ({
-      count: Object.keys(input.assets).length,
+    ClipboardAssetsHandler = (count?: Dynamic): Dynamic => count * 2560 * 2560;
+    clipboardPayloadUsage = (clipboard?: Dynamic): Dynamic => ({
+      count: Object.keys(clipboard.assets).length,
       chars: [
-        ...input.artboards.map((input2?: Dynamic): Dynamic => input2.src),
-        ...Object.values(input.files),
-        ...Object.values(input.assets),
+        ...clipboard.artboards.map((artboard?: Dynamic): Dynamic => artboard.src),
+        ...Object.values(clipboard.files),
+        ...Object.values(clipboard.assets),
       ].reduce(
-        (input2?: Dynamic, items?: Dynamic): Dynamic => input2 + items.length,
+        (total?: Dynamic, text?: Dynamic): Dynamic => total + text.length,
         0,
       ),
-      has: (input2?: Dynamic): Dynamic => Object.hasOwn(input.assets, input2),
+      has: (assetKey?: Dynamic): Dynamic => Object.hasOwn(clipboard.assets, assetKey),
     });
   };
 }

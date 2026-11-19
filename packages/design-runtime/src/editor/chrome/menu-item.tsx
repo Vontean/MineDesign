@@ -14,7 +14,7 @@ var ChromeMenuItemTarget: Dynamic;
 function EditorMenuItem({
   onClick: onClick,
   children: children,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   danger: danger,
   checked: checked,
@@ -28,7 +28,7 @@ function EditorMenuItem({
       type={"button"}
       data-kit={"MenuItem"}
       data-testid={dataTestid}
-      disabled={disabled2}
+      disabled={isDisabled}
       title={title}
       aria-pressed={checked}
       onMouseDown={ChromeMenuItemPreventDefault}
@@ -56,7 +56,7 @@ function EditorMenuItem({
               className={joinClassNames(
                 "max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote tabular-nums text-muted",
                 danger &&
-                  !disabled2 &&
+                  !isDisabled &&
                   "group-hover/menu-danger:text-on-danger group-focus-visible/menu-danger:text-on-danger",
               )}
             >
@@ -76,20 +76,20 @@ function EditorMenuItem({
     </button>
   );
 }
-function getFocusableElements(input?: Dynamic): Dynamic {
+function getFocusableElements(container?: Dynamic): Dynamic {
   return Array.from(
-    input.querySelectorAll(
+    container.querySelectorAll(
       'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
     ),
   ).filter(
-    (input2?: Dynamic): Dynamic =>
-      input2.tabIndex >= 0 && input2.closest('[aria-hidden="true"]') === null,
+    (element?: Dynamic): Dynamic =>
+      element.tabIndex >= 0 && element.closest('[aria-hidden="true"]') === null,
   );
 }
-function isBaseUiFocusGuard(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trigger ?? input.event?.target;
+function isBaseUiFocusGuard(openChangeDetails?: Dynamic): Dynamic {
+  let eventTarget: Dynamic = openChangeDetails.trigger ?? openChangeDetails.event?.target;
   return (
-    value instanceof Element && value.hasAttribute("data-base-ui-focus-guard")
+    eventTarget instanceof Element && eventTarget.hasAttribute("data-base-ui-focus-guard")
   );
 }
 export {

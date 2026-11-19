@@ -23,9 +23,9 @@ var CollaborationPeerCursorsItems: Dynamic;
 var CollaborationPeerCursorsPattern: Dynamic;
 var CollaborationPeerCursorsCache: Dynamic;
 var CollaborationPeerCursorsConstant: Dynamic;
-var CollaborationPeerCursorsConstant_2: Dynamic;
-var CollaborationPeerCursorsConstant_3: Dynamic;
-var CollaborationPeerCursorsConstant_4: Dynamic;
+var peerMessageMaxLength: Dynamic;
+var peerChatHoldMs: Dynamic;
+var peerChatFadeMs: Dynamic;
 var CollaborationPeerCursorsDelayMs_2: Dynamic;
 var CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig: Dynamic;
 var PeerCursorLabel: Dynamic;
@@ -52,26 +52,26 @@ function PeerCursorGlyph({ color: color }: Dynamic): Dynamic {
 }
 function peerColor(items?: Dynamic): Dynamic {
   let index: Dynamic = 0;
-  for (let index2: Dynamic = 0; index2 < items.length; index2++)
-    index = (index * 31 + items.charCodeAt(index2)) >>> 0;
+  for (let charIndex: Dynamic = 0; charIndex < items.length; charIndex++)
+    index = (index * 31 + items.charCodeAt(charIndex)) >>> 0;
   return (
     CollaborationPeerCursorsItems[
       index % CollaborationPeerCursorsItems.length
     ] ?? "#788c5d"
   );
 }
-function peerCollaboratorIndex(input?: Dynamic, options?: Dynamic): Dynamic {
+function peerCollaboratorIndex(colorHex?: Dynamic, peerId?: Dynamic): Dynamic {
   return (
-    (typeof input == "string" && CollaborationPeerCursorsPattern.test(input)
-      ? CollaborationPeerCursorsCache.get(input.toLowerCase())
+    (typeof colorHex == "string" && CollaborationPeerCursorsPattern.test(colorHex)
+      ? CollaborationPeerCursorsCache.get(colorHex.toLowerCase())
       : undefined) ??
-    CollaborationPeerCursorsCache.get(peerColor(options)) ??
+    CollaborationPeerCursorsCache.get(peerColor(peerId)) ??
     1
   );
 }
-function peerCollaboratorToken(input?: Dynamic): Dynamic {
+function peerCollaboratorToken(collaboratorIndex?: Dynamic): Dynamic {
   return (
-    tokens.editor.collaborator[input]?.cssVar ??
+    tokens.editor.collaborator[collaboratorIndex]?.cssVar ??
     tokens.editor.collaborator[1].cssVar
   );
 }
@@ -81,36 +81,36 @@ function peerMotionReduced(): Dynamic {
     matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
-function usePeerMessageVisibility(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(null),
-    value2: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(null),
-    current: Dynamic = value.current,
-    value3: Dynamic =
+function usePeerMessageVisibility(messageShape?: Dynamic): Dynamic {
+  let elementRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(null),
+    lastLayoutRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(null),
+    current: Dynamic = elementRef.current,
+    isFaded: Dynamic =
       current != null &&
       typeof getComputedStyle == "function" &&
       parseFloat(getComputedStyle(current).opacity) < 0.2;
   (0, reactCollaborationPeerCursors_3.useLayoutEffect)((): Dynamic => {
-    let current2: Dynamic = value.current;
-    if (!current2) return;
+    let element: Dynamic = elementRef.current;
+    if (!element) return;
     let state: Dynamic = {
-        w: current2.offsetWidth,
-        h: current2.offsetHeight,
-        shape: input,
+        w: element.offsetWidth,
+        h: element.offsetHeight,
+        shape: messageShape,
       },
-      current3: Dynamic = value2.current;
-    value2.current = state;
+      previousLayout: Dynamic = lastLayoutRef.current;
+    lastLayoutRef.current = state;
     if (
-      !current3 ||
-      current3.shape === input ||
+      !previousLayout ||
+      previousLayout.shape === messageShape ||
       !state.w ||
       !state.h ||
-      typeof current2.animate != "function"
+      typeof element.animate != "function"
     )
       return;
-    for (let value6 of (current2.getAnimations?.() ?? []) as Dynamic)
-      value6.animationName || value6.cancel();
-    if (value3 || peerMotionReduced()) {
-      current2.animate(
+    for (let animation of (element.getAnimations?.() ?? []) as Dynamic)
+      animation.animationName || animation.cancel();
+    if (isFaded || peerMotionReduced()) {
+      element.animate(
         [
           {
             opacity: 0,
@@ -126,18 +126,18 @@ function usePeerMessageVisibility(input?: Dynamic): Dynamic {
       );
       return;
     }
-    let value4: Dynamic = Math.min(
+    let startScale: Dynamic = Math.min(
         2,
         Math.max(
           0.5,
-          Math.sqrt((current3.w / state.w) * (current3.h / state.h)),
+          Math.sqrt((previousLayout.w / state.w) * (previousLayout.h / state.h)),
         ),
       ),
-      value5: Dynamic = input === "line";
-    current2.animate(
+      isLineShape: Dynamic = messageShape === "line";
+    element.animate(
       [
         {
-          transform: "scale(" + value4 + ")",
+          transform: "scale(" + startScale + ")",
           transformOrigin: "0 0",
         },
         {
@@ -146,92 +146,92 @@ function usePeerMessageVisibility(input?: Dynamic): Dynamic {
         },
       ],
       {
-        duration: value5 ? 200 : 160,
-        easing: value5 ? "cubic-bezier(.2,.9,.3,1.15)" : "ease-in",
+        duration: isLineShape ? 200 : 160,
+        easing: isLineShape ? "cubic-bezier(.2,.9,.3,1.15)" : "ease-in",
       },
     );
   });
-  return value;
+  return elementRef;
 }
-function normalizePeerMessage(input?: Dynamic): Dynamic {
-  let value: Dynamic = Array.from(
-    input
+function normalizePeerMessage(message?: Dynamic): Dynamic {
+  let normalized: Dynamic = Array.from(
+    message
       .replace(/[\p{Cc}\p{Zl}\p{Zp}\s]+/gu, " ")
       .replace(/[^\P{Cf}\u200C\u200D]+/gu, ""),
   )
-    .slice(0, CollaborationPeerCursorsConstant_2)
+    .slice(0, peerMessageMaxLength)
     .join("");
-  return /^[\s\u200C\u200D\p{Variation_Selector}]*$/u.test(value)
+  return /^[\s\u200C\u200D\p{Variation_Selector}]*$/u.test(normalized)
     ? ""
-    : value;
+    : normalized;
 }
-function createPresenceReporter(input: Dynamic = {}): Dynamic {
-  let value: Dynamic = input.now ?? ((): Dynamic => Date.now()),
-    value2: Dynamic = input.minDelta ?? 0.002,
-    value3: Dynamic =
-      input.idleNullMs ?? CollaborationPeerCursorsResolvedValue,
-    value4: Dynamic = !hasRoomCapability(),
-    value5: Dynamic,
-    value6: Dynamic,
-    value7: Dynamic,
-    value8: Dynamic,
-    value9: Dynamic,
+function createPresenceReporter(reporterOptions: Dynamic = {}): Dynamic {
+  let getNow: Dynamic = reporterOptions.now ?? ((): Dynamic => Date.now()),
+    minDelta: Dynamic = reporterOptions.minDelta ?? 0.002,
+    idleNullMs: Dynamic =
+      reporterOptions.idleNullMs ?? CollaborationPeerCursorsResolvedValue,
+    isDisabled: Dynamic = !hasRoomCapability(),
+    lastSent: Dynamic,
+    lastPosition: Dynamic,
+    pendingTimer: Dynamic,
+    pendingMove: Dynamic,
+    idleTimer: Dynamic,
     flag: Dynamic = false,
     text: Dynamic = "";
-  async function value10(input2?: Dynamic): Promise<Dynamic> {
-    if (value4) return;
-    let value13: Dynamic = await cachedRoomCapability();
-    if (typeof value13?.presence != "function") {
-      value4 = true;
+  async function sendPresence(payload?: Dynamic): Promise<Dynamic> {
+    if (isDisabled) return;
+    let roomCapability: Dynamic = await cachedRoomCapability();
+    if (typeof roomCapability?.presence != "function") {
+      isDisabled = true;
       return;
     }
     try {
-      await value13.presence.call(value13, input2);
-    } catch (value14: Dynamic) {
-      let value15: Dynamic =
-        typeof value14 == "object" && value14 !== null ? value14.code : "";
-      value15 !== "upstream_error" &&
-        value15 !== "invalid_argument" &&
-        (value4 = true);
+      await roomCapability.presence.call(roomCapability, payload);
+    } catch (error: Dynamic) {
+      let errorCode: Dynamic =
+        typeof error == "object" && error !== null ? error.code : "";
+      errorCode !== "upstream_error" &&
+        errorCode !== "invalid_argument" &&
+        (isDisabled = true);
     }
   }
-  function value11(): Dynamic {
-    value9 !== undefined && clearTimeout(value9);
-    value9 = undefined;
-    value8 = undefined;
-    value5 = undefined;
+  function clearPresence(): Dynamic {
+    idleTimer !== undefined && clearTimeout(idleTimer);
+    idleTimer = undefined;
+    pendingMove = undefined;
+    lastSent = undefined;
     flag &&
       ((flag = false),
-      value10({
+      sendPresence({
         cursor: null,
       }));
   }
-  function value12(
-    input2?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
+  function reportCursor(
+    surfaceId?: Dynamic,
+    x?: Dynamic,
+    y?: Dynamic,
   ): Dynamic {
-    let value13: Dynamic = value();
-    value5 = {
-      s: input2,
-      x: options,
-      y: context,
-      at: value13,
+    let timestamp: Dynamic = getNow();
+    lastSent = {
+      s: surfaceId,
+      x: x,
+      y: y,
+      at: timestamp,
     };
-    value6 = {
-      s: input2,
-      x: options,
-      y: context,
+    lastPosition = {
+      s: surfaceId,
+      x: x,
+      y: y,
     };
     flag = true;
-    let callback2: Dynamic = (input3?: Dynamic): Dynamic =>
-      Math.round(input3 * 1e4) / 1e4;
-    value10({
+    let roundCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+      Math.round(coordinate * 1e4) / 1e4;
+    sendPresence({
       cursor: {
-        s: input2.slice(0, CollaborationPeerCursorsConstant),
-        x: callback2(options),
-        y: callback2(context),
-        t: value13,
+        s: surfaceId.slice(0, CollaborationPeerCursorsConstant),
+        x: roundCoordinate(x),
+        y: roundCoordinate(y),
+        t: timestamp,
         ...(text === ""
           ? {}
           : {
@@ -239,76 +239,76 @@ function createPresenceReporter(input: Dynamic = {}): Dynamic {
             }),
       },
     });
-    value9 !== undefined && clearTimeout(value9);
-    value9 = setTimeout(value11, value3);
+    idleTimer !== undefined && clearTimeout(idleTimer);
+    idleTimer = setTimeout(clearPresence, idleNullMs);
   }
   let callback: Dynamic = (): Dynamic => state.clear();
   typeof addEventListener == "function" &&
     addEventListener("pagehide", callback);
   let state: Dynamic = {
-    move(input2: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
+    move(surfaceId: Dynamic, x: Dynamic, y: Dynamic): Dynamic {
       if (
-        value4 ||
-        !Number.isFinite(options) ||
-        !Number.isFinite(context) ||
-        (value5 &&
-          value5.s === input2 &&
-          Math.abs(value5.x - options) < value2 &&
-          Math.abs(value5.y - context) < value2)
+        isDisabled ||
+        !Number.isFinite(x) ||
+        !Number.isFinite(y) ||
+        (lastSent &&
+          lastSent.s === surfaceId &&
+          Math.abs(lastSent.x - x) < minDelta &&
+          Math.abs(lastSent.y - y) < minDelta)
       )
         return;
-      let value13: Dynamic = value();
+      let timestamp: Dynamic = getNow();
       if (
-        value5 &&
-        value5.s === input2 &&
-        value13 - value5.at < CollaborationPeerCursorsDelayMs
+        lastSent &&
+        lastSent.s === surfaceId &&
+        timestamp - lastSent.at < CollaborationPeerCursorsDelayMs
       ) {
-        value8 = {
-          s: input2,
-          x: options,
-          y: context,
+        pendingMove = {
+          s: surfaceId,
+          x: x,
+          y: y,
         };
-        value7 ??= setTimeout((): Dynamic => {
-          value7 = undefined;
-          let value14: Dynamic = value8;
-          value8 = undefined;
-          value14 && value12(value14.s, value14.x, value14.y);
+        pendingTimer ??= setTimeout((): Dynamic => {
+          pendingTimer = undefined;
+          let pendingPosition: Dynamic = pendingMove;
+          pendingMove = undefined;
+          pendingPosition && reportCursor(pendingPosition.s, pendingPosition.x, pendingPosition.y);
         }, CollaborationPeerCursorsDelayMs);
         return;
       }
-      value8 = undefined;
-      value12(input2, options, context);
+      pendingMove = undefined;
+      reportCursor(surfaceId, x, y);
     },
-    say(input2: Dynamic): Dynamic {
-      let value13: Dynamic = normalizePeerMessage(input2);
-      if (value4 || value13 === text || !value6) return false;
-      text = value13;
-      let value14: Dynamic = value8 ?? value6;
-      value8 = undefined;
-      value12(value14.s, value14.x, value14.y);
+    say(message: Dynamic): Dynamic {
+      let normalizedMessage: Dynamic = normalizePeerMessage(message);
+      if (isDisabled || normalizedMessage === text || !lastPosition) return false;
+      text = normalizedMessage;
+      let position: Dynamic = pendingMove ?? lastPosition;
+      pendingMove = undefined;
+      reportCursor(position.s, position.x, position.y);
       return true;
     },
-    live: (): Dynamic => !value4 && value6 !== undefined,
+    live: (): Dynamic => !isDisabled && lastPosition !== undefined,
     clear(): Dynamic {
-      value11();
+      clearPresence();
     },
-    setWho(input2: Dynamic, options: Dynamic): Dynamic {
-      let value13: Dynamic = Array.from(input2).slice(0, 40).join(""),
-        value14: Dynamic = CollaborationPeerCursorsPattern.test(options)
-          ? options
+    setWho(name: Dynamic, color: Dynamic): Dynamic {
+      let displayName: Dynamic = Array.from(name).slice(0, 40).join(""),
+        colorHex: Dynamic = CollaborationPeerCursorsPattern.test(color)
+          ? color
           : "";
-      (value13 === "" && value14 === "") ||
-        value10({
+      (displayName === "" && colorHex === "") ||
+        sendPresence({
           who: {
-            n: value13,
-            c: value14,
+            n: displayName,
+            c: colorHex,
           },
         });
     },
     dispose(): Dynamic {
-      value11();
-      value4 = true;
-      value7 !== undefined && clearTimeout(value7);
+      clearPresence();
+      isDisabled = true;
+      pendingTimer !== undefined && clearTimeout(pendingTimer);
       typeof removeEventListener == "function" &&
         removeEventListener("pagehide", callback);
     },
@@ -316,27 +316,27 @@ function createPresenceReporter(input: Dynamic = {}): Dynamic {
   return state;
 }
 function getPeerCursors(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = CollaborationPeerCursorsCache_2,
+  peers?: Dynamic,
+  surfaceId?: Dynamic,
+  nowMs?: Dynamic,
+  userNames: Dynamic = CollaborationPeerCursorsCache_2,
 ): Dynamic {
   let items: Dynamic = [];
-  for (let value2 of input as Dynamic) {
-    if (value2.sameTab) continue;
-    let cursor: Dynamic = value2.presence.cursor;
+  for (let peer of peers as Dynamic) {
+    if (peer.sameTab) continue;
+    let cursor: Dynamic = peer.presence.cursor;
     if (typeof cursor != "object" || cursor === null) continue;
-    let value3: Dynamic = cursor;
-    if (value3.s !== options) continue;
-    let t: Dynamic = value3.t,
-      value4: Dynamic =
+    let peerCursor: Dynamic = cursor;
+    if (peerCursor.s !== surfaceId) continue;
+    let t: Dynamic = peerCursor.t,
+      reportedAt: Dynamic =
         typeof t == "number" && Number.isFinite(t)
-          ? Math.min(t, context)
-          : value2.updatedAt,
-      value5: Dynamic = context - value4;
-    if (value5 >= CollaborationPeerCursorsResolvedValue) continue;
-    let x: Dynamic = value3.x,
-      y3: Dynamic = value3.y;
+          ? Math.min(t, nowMs)
+          : peer.updatedAt,
+      ageMs: Dynamic = nowMs - reportedAt;
+    if (ageMs >= CollaborationPeerCursorsResolvedValue) continue;
+    let x: Dynamic = peerCursor.x,
+      y3: Dynamic = peerCursor.y;
     if (
       typeof x != "number" ||
       typeof y3 != "number" ||
@@ -344,82 +344,82 @@ function getPeerCursors(
       !Number.isFinite(y3)
     )
       continue;
-    let who: Dynamic = value2.presence.who,
-      value6: Dynamic = typeof who == "object" && who !== null ? who : {},
-      value7: Dynamic = (
-        (value2.by !== null && value.get(value2.by)) ||
-        (typeof value6.n == "string" ? value6.n : "")
+    let who: Dynamic = peer.presence.who,
+      whoInfo: Dynamic = typeof who == "object" && who !== null ? who : {},
+      displayName: Dynamic = (
+        (peer.by !== null && userNames.get(peer.by)) ||
+        (typeof whoInfo.n == "string" ? whoInfo.n : "")
       ).slice(0, 40),
-      value8: Dynamic = peerCollaboratorIndex(value6.c, value2.peer),
-      value9: Dynamic =
-        value2.updatedAt > 0 ? context - value2.updatedAt : value5,
-      value10: Dynamic =
-        typeof value3.m == "string" &&
-        value9 <
-          CollaborationPeerCursorsConstant_3 +
-            CollaborationPeerCursorsConstant_4
-          ? normalizePeerMessage(value3.m).trim()
+      collaboratorIndex: Dynamic = peerCollaboratorIndex(whoInfo.c, peer.peer),
+      messageAgeMs: Dynamic =
+        peer.updatedAt > 0 ? nowMs - peer.updatedAt : ageMs,
+      message: Dynamic =
+        typeof peerCursor.m == "string" &&
+        messageAgeMs <
+          peerChatHoldMs +
+            peerChatFadeMs
+          ? normalizePeerMessage(peerCursor.m).trim()
           : "";
     items.push({
-      peer: value2.peer,
+      peer: peer.peer,
       x: x,
       y: y3,
-      name: value7,
-      collaborator: value8,
-      idleMs: Math.max(0, value5),
-      message: value10,
+      name: displayName,
+      collaborator: collaboratorIndex,
+      idleMs: Math.max(0, ageMs),
+      message: message,
     });
   }
   return items;
 }
-function usePeerProfiles(input?: Dynamic): Dynamic {
-  let value: Dynamic = [
+function usePeerProfiles(peers?: Dynamic): Dynamic {
+  let userIdsKey: Dynamic = [
       ...new Set(
-        input.flatMap(
-          (input2?: Dynamic): Dynamic =>
-            input2.by !== null && !input2.sameTab ? [input2.by] : [],
+        peers.flatMap(
+          (peer?: Dynamic): Dynamic =>
+            peer.by !== null && !peer.sameTab ? [peer.by] : [],
         ),
       ),
     ].sort().join(`
 `),
-    [value2, value3]: Dynamic = (0, reactCollaborationPeerCursors_3.useState)(
+    [userNames, setUserNames]: Dynamic = (0, reactCollaborationPeerCursors_3.useState)(
       CollaborationPeerCursorsCache_2,
     );
   (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
-    if (value === "") return;
+    if (userIdsKey === "") return;
     let flag: Dynamic = true;
     getUserNames(
-      value.split(`
+      userIdsKey.split(`
 `),
-    ).then((input2?: Dynamic): Dynamic => {
-      flag && value3(input2);
+    ).then((names?: Dynamic): Dynamic => {
+      flag && setUserNames(names);
     });
     return (): Dynamic => {
       flag = false;
     };
-  }, [value]);
-  return value2;
+  }, [userIdsKey]);
+  return userNames;
 }
 function usePeerCursors(
-  input?: Dynamic,
-  options: Dynamic = Date.now,
+  surfaceId?: Dynamic,
+  getNow: Dynamic = Date.now,
 ): Dynamic {
-  let value: Dynamic = (0,
+  let peers: Dynamic = (0,
     reactCollaborationPeerCursors_3.useSyncExternalStore)(
       roomPeersStore.subscribe,
       roomPeersStore.getSnapshot,
       roomPeersStore.getSnapshot,
     ),
-    value2: Dynamic = usePeerProfiles(value),
-    [, value3]: Dynamic = (0, reactCollaborationPeerCursors_3.useState)(0);
+    userNames: Dynamic = usePeerProfiles(peers),
+    [, setTick]: Dynamic = (0, reactCollaborationPeerCursors_3.useState)(0);
   (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
-    let value4: Dynamic = setInterval(
-      (): Dynamic => value3((input2?: Dynamic): Dynamic => input2 + 1),
+    let intervalId: Dynamic = setInterval(
+      (): Dynamic => setTick((tick?: Dynamic): Dynamic => tick + 1),
       5e3,
     );
-    return (): Dynamic => clearInterval(value4);
+    return (): Dynamic => clearInterval(intervalId);
   }, []);
-  return getPeerCursors(value, input, options(), value2);
+  return getPeerCursors(peers, surfaceId, getNow(), userNames);
 }
 function PeerCursors({
   surface: surface,
@@ -430,8 +430,8 @@ function PeerCursors({
   working: working,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = usePeerCursors(surface, now),
-    value2: Dynamic =
+  let cursors: Dynamic = usePeerCursors(surface, now),
+    glyphScaleFactor: Dynamic =
       glyphScale !== undefined &&
       Number.isFinite(glyphScale) &&
       glyphScale > 0
@@ -442,38 +442,38 @@ function PeerCursors({
       aria-hidden={"true"}
       className={"mc-peer-cursors " + (className ?? "")}
     >
-      {value.map((input?: Dynamic): Dynamic => {
-        let value3: Dynamic = toLocal(input.x, input.y);
-        if (value3 === null) return null;
-        let value4: Dynamic = input.idleMs >= CollaborationPeerCursorsLimit,
-          value5: Dynamic = peerCollaboratorToken(input.collaborator);
+      {cursors.map((cursor?: Dynamic): Dynamic => {
+        let localPosition: Dynamic = toLocal(cursor.x, cursor.y);
+        if (localPosition === null) return null;
+        let isIdle: Dynamic = cursor.idleMs >= CollaborationPeerCursorsLimit,
+          cursorColor: Dynamic = peerCollaboratorToken(cursor.collaborator);
         return (() => {
           const _Component = "div";
           const _props = {
             className: "mc-peer-cursor",
-            "data-idle": value4 ? "true" : undefined,
+            "data-idle": isIdle ? "true" : undefined,
             style: {
               transform:
                 "translate(" +
-                value3.left +
+                localPosition.left +
                 "px," +
-                value3.top +
+                localPosition.top +
                 "px)" +
-                (value2 === 1 ? "" : " scale(" + value2 + ")"),
+                (glyphScaleFactor === 1 ? "" : " scale(" + glyphScaleFactor + ")"),
               transformOrigin: "0 0",
             },
             children: [
-              <PeerCursorGlyph color={value5} />,
+              <PeerCursorGlyph color={cursorColor} />,
               <PeerCursorLabel
-                name={input.name}
-                color={value5}
-                message={input.message}
-                dim={value4}
-                working={working?.has(input.peer) === true}
+                name={cursor.name}
+                color={cursorColor}
+                message={cursor.message}
+                dim={isIdle}
+                working={working?.has(cursor.peer) === true}
               />,
             ],
           } as const;
-          const _key = input.peer;
+          const _key = cursor.peer;
           return <_Component key={_key} {..._props} />;
         })();
       })}
@@ -484,9 +484,9 @@ export {
   CollaborationPeerCursorsCache,
   CollaborationPeerCursorsCache_2,
   CollaborationPeerCursorsConstant,
-  CollaborationPeerCursorsConstant_2,
-  CollaborationPeerCursorsConstant_3,
-  CollaborationPeerCursorsConstant_4,
+  peerMessageMaxLength as CollaborationPeerCursorsConstant_2,
+  peerChatHoldMs as CollaborationPeerCursorsConstant_3,
+  peerChatFadeMs as CollaborationPeerCursorsConstant_4,
   CollaborationPeerCursorsDelayMs,
   CollaborationPeerCursorsDelayMs_2,
   CollaborationPeerCursorsItems,
@@ -559,13 +559,13 @@ export function installCollaborationPeerCursors(): () => void {
       ["#c7c9d1", 6],
     ]);
     CollaborationPeerCursorsConstant = 128;
-    CollaborationPeerCursorsConstant_2 = 50;
-    CollaborationPeerCursorsConstant_3 = 5e3;
-    CollaborationPeerCursorsConstant_4 = 600;
+    peerMessageMaxLength = 50;
+    peerChatHoldMs = 5e3;
+    peerChatFadeMs = 600;
     CollaborationPeerCursorsDelayMs_2 = 150;
     CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig = {
-      get "--mc-chat-hold"() { return (CollaborationPeerCursorsConstant_3) + ("ms"); },
-      get "--mc-chat-fade"() { return (CollaborationPeerCursorsConstant_4) + ("ms"); },
+      get "--mc-chat-hold"() { return (peerChatHoldMs) + ("ms"); },
+      get "--mc-chat-fade"() { return (peerChatFadeMs) + ("ms"); },
       get "--mc-chat-exit"() { return (CollaborationPeerCursorsDelayMs_2) + ("ms"); },
     };
     PeerCursorLabel = (0, reactCollaborationPeerCursors_3.memo)(function ({
@@ -575,30 +575,30 @@ export function installCollaborationPeerCursors(): () => void {
       dim: dim,
       working: working,
     }: Dynamic): Dynamic {
-      let value: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)({
+      let messageStateRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)({
         m: "",
         n: 0,
       });
-      message !== value.current.m &&
-        (value.current = {
+      message !== messageStateRef.current.m &&
+        (messageStateRef.current = {
           m: message,
-          n: message === "" ? value.current.n : value.current.n + 1,
+          n: message === "" ? messageStateRef.current.n : messageStateRef.current.n + 1,
         });
-      let [value2, value3]: Dynamic = (0,
+      let [seenBeat, setSeenBeat]: Dynamic = (0,
         reactCollaborationPeerCursors_3.useState)(0),
-        value4: Dynamic =
-          message !== "" && value2 !== value.current.n ? "line" : "name",
-        value5: Dynamic = usePeerMessageVisibility(value4);
-      return dim && value4 === "name" && !working ? null : (
+        mode: Dynamic =
+          message !== "" && seenBeat !== messageStateRef.current.n ? "line" : "name",
+        labelRef: Dynamic = usePeerMessageVisibility(mode);
+      return dim && mode === "name" && !working ? null : (
         <span
-          ref={value5}
+          ref={labelRef}
           className={
             "mc-peer-tag " +
-            (value4 === "name" ? "mc-peer-cursor-label" : "mc-cursor-chat")
+            (mode === "name" ? "mc-peer-cursor-label" : "mc-cursor-chat")
           }
-          data-mode={value4}
-          data-working={working && value4 === "name" ? "true" : undefined}
-          data-beat={value4 === "line" ? value.current.n % 2 : undefined}
+          data-mode={mode}
+          data-working={working && mode === "name" ? "true" : undefined}
+          data-beat={mode === "line" ? messageStateRef.current.n % 2 : undefined}
           style={{
             background: color,
             ...CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig,
@@ -606,16 +606,16 @@ export function installCollaborationPeerCursors(): () => void {
           onAnimationEnd={(event?: Dynamic): Dynamic => {
             event.target === event.currentTarget &&
               event.animationName ===
-                "mc-cursor-chat-fade-" + (value.current.n % 2) &&
-              value3(value.current.n);
+                "mc-cursor-chat-fade-" + (messageStateRef.current.n % 2) &&
+              setSeenBeat(messageStateRef.current.n);
           }}
         >
-          {value4 === "name" ? (<span key={"name"} className={"mc-peer-tag-name"}>
+          {mode === "name" ? (<span key={"name"} className={"mc-peer-tag-name"}>
               {(name || "Someone").slice(0, 16)}
             </span>) : (<span key={"line"} className={"mc-peer-tag-line"}>
               {message}
             </span>)}
-          {working && value4 === "name" ? (<span className={"mc-peer-tag-dots"}>
+          {working && mode === "name" ? (<span className={"mc-peer-tag-dots"}>
               <i />
               <i />
               <i />

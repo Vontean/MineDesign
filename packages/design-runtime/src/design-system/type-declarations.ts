@@ -6,8 +6,8 @@ import {
 import { DesignSystemPublishedFilesAlias, DesignSystemPublishedFilesCache, DesignSystemPublishedFilesFromEntriesValue, DesignSystemPublishedFilesSubscribers } from "./published-files";
 import { parseCompleteDesignSystem } from "./token-parsing";
 import { getTypeDeclarationReferences, parseFileReferencesValue, parseFontFileReferences, PlatformExternalFilesItems } from "../platform/external-files";
-import { PlatformFileContentResolvedValue_10, ProjectValue } from "../platform/file-content";
-import { loadReferencedFiles, parseFileReferences, PlatformFileReferencesLimit, PlatformFileReferencesLimit_2 } from "../platform/file-references";
+import { PlatformFileContentResolvedValue_10 as maxDeclarationFileLength, ProjectValue } from "../platform/file-content";
+import { loadReferencedFiles, parseFileReferences, PlatformFileReferencesLimit, PlatformFileReferencesLimit_2 as maxDeclarationFileCount } from "../platform/file-references";
 import { getAssetsCapability, isBlobAssetUrl } from "../platform/image-upload";
 
 import { set_DesignSystemPublishedFilesAlias, set_DesignSystemPublishedFilesFromEntriesValue } from "./published-files";
@@ -16,35 +16,35 @@ var DesignSystemTypeDeclarationsRegistry: Dynamic;
 var DesignSystemTypeDeclarationsAlias: Dynamic;
 var DesignSystemTypeDeclarationsFailedValue: Dynamic;
 var DesignSystemTypeDeclarationsResolvedValue: Dynamic;
-var DesignSystemTypeDeclarationsAlias_2: Dynamic;
+var declarationFetcher: Dynamic;
 var DesignSystemTypeDeclarationsSubscribers: Dynamic;
 var pendingFileOverlay: Dynamic;
 var DesignSystemTypeDeclarationsItems: Dynamic;
-var DesignSystemTypeDeclarationsResolvedValue_2: Dynamic;
-var DesignSystemTypeDeclarationsFailedValue_2: Dynamic;
-var DesignSystemTypeDeclarationsResolvedValue_3: Dynamic;
+var retryCooldownMs: Dynamic;
+var failedOverlayFiles: Dynamic;
+var nextOverlayRetryAt: Dynamic;
 var DesignSystemTypeDeclarationsTextEncoder: Dynamic;
 var DesignSystemTypeDeclarationsReduce: Dynamic;
-var DesignSystemTypeDeclarationsResolvedValue_4: Dynamic;
+var maxHtmlReferenceBytes: Dynamic;
 var ApplicationJsonValue: Dynamic;
 var DesignSystemTypeDeclarationsDelayMs: Dynamic;
 var DesignSystemTypeDeclarationsCache: Dynamic;
 var DesignSystemTypeDeclarationsCache_2: Dynamic;
-var DesignSystemTypeDeclarationsSubscribers_2: Dynamic;
+var pendingHtmlFetches: Dynamic;
 var DesignSystemTypeDeclarationsCache_3: Dynamic;
 var DesignSystemTypeDeclarationsLimit: Dynamic;
 var DesignSystemTypeDeclarationsCache_4: Dynamic;
-var DesignSystemTypeDeclarationsAlias_3: Dynamic;
-var DesignSystemTypeDeclarationsSubscribers_3: Dynamic;
+var htmlReferenceStore: Dynamic;
+var htmlReferenceListeners: Dynamic;
 var htmlReferenceUploadWaiters: Dynamic;
-var DesignSystemTypeDeclarationsSubscribers_4: Dynamic;
+var oversizedHtmlHashes: Dynamic;
 var DesignSystemTypeDeclarationsReplace: Dynamic;
 var DesignSystemTypeDeclarationsGet: Dynamic;
-var DesignSystemTypeDeclarationsResolvedValue_5: Dynamic;
+var isUploadUnavailable: Dynamic;
 var DesignSystemTypeDeclarationsDelayMs_2: Dynamic;
 var DesignSystemTypeDeclarationsCache_5: Dynamic;
 var DesignSystemTypeDeclarationsCache_6: Dynamic;
-var DesignSystemTypeDeclarationsSubscribers_5: Dynamic;
+var uploadingArtboardPaths: Dynamic;
 var DesignSystemTypeDeclarationsGetLength: Dynamic;
 var DesignSystemsKey: Dynamic;
 var DesignSystemTypeDeclarationsAZaZAZaZPattern: Dynamic;
@@ -58,80 +58,80 @@ var DesignSystemTypeDeclarationsElementCache: Dynamic;
 function getDeclarationFiles(): Dynamic {
   return DesignSystemTypeDeclarationsRegistry;
 }
-function subscribeDeclarationFiles(input?: Dynamic): Dynamic {
-  DesignSystemTypeDeclarationsSubscribers.add(input);
+function subscribeDeclarationFiles(listener?: Dynamic): Dynamic {
+  DesignSystemTypeDeclarationsSubscribers.add(listener);
   return (): Dynamic => {
-    DesignSystemTypeDeclarationsSubscribers.delete(input);
+    DesignSystemTypeDeclarationsSubscribers.delete(listener);
   };
 }
 function setDeclarationReferences(
-  items?: Dynamic,
-  options?: Dynamic,
+  references?: Dynamic,
+  fetcher?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = JSON.stringify(items);
-  if (value !== DesignSystemTypeDeclarationsAlias)
+  let referencesKey: Dynamic = JSON.stringify(references);
+  if (referencesKey !== DesignSystemTypeDeclarationsAlias)
     if (
-      ((DesignSystemTypeDeclarationsAlias = value),
+      ((DesignSystemTypeDeclarationsAlias = referencesKey),
       (DesignSystemTypeDeclarationsRegistry = {}),
       (DesignSystemTypeDeclarationsFailedValue = []),
-      (DesignSystemTypeDeclarationsAlias_2 = options),
-      options !== undefined && items.length > 0)
+      (declarationFetcher = fetcher),
+      fetcher !== undefined && references.length > 0)
     )
-      loadTypeDeclarationFiles(value, items, options, 0);
+      loadTypeDeclarationFiles(referencesKey, references, fetcher, 0);
     else
-      for (let value2 of DesignSystemTypeDeclarationsSubscribers as Dynamic)
-        value2();
+      for (let notifyListener of DesignSystemTypeDeclarationsSubscribers as Dynamic)
+        notifyListener();
 }
 function loadTypeDeclarationFiles(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  referencesKey?: Dynamic,
+  references?: Dynamic,
+  fetcher?: Dynamic,
+  attempt?: Dynamic,
 ): Dynamic {
-  loadReferencedFiles(options, context).then(
-    (input2?: Dynamic): Dynamic => {
-      if (DesignSystemTypeDeclarationsAlias !== input) return;
-      let value2: Dynamic = Object.entries(input2.files).filter(
-        ([, items]: Dynamic): Dynamic =>
-          items.length <= PlatformFileContentResolvedValue_10,
+  loadReferencedFiles(references, fetcher).then(
+    (loadResult?: Dynamic): Dynamic => {
+      if (DesignSystemTypeDeclarationsAlias !== referencesKey) return;
+      let loadedFiles: Dynamic = Object.entries(loadResult.files).filter(
+        ([, fileText]: Dynamic): Dynamic =>
+          fileText.length <= maxDeclarationFileLength,
       );
-      if (value2.length > 0) {
+      if (loadedFiles.length > 0) {
         DesignSystemTypeDeclarationsRegistry = {
           ...DesignSystemTypeDeclarationsRegistry,
-          ...Object.fromEntries(value2),
+          ...Object.fromEntries(loadedFiles),
         };
-        for (let value4 of DesignSystemTypeDeclarationsSubscribers as Dynamic)
-          value4();
+        for (let notifyListener of DesignSystemTypeDeclarationsSubscribers as Dynamic)
+          notifyListener();
       }
-      let value3: Dynamic = DesignSystemTypeDeclarationsItems[value];
+      let retryDelay: Dynamic = DesignSystemTypeDeclarationsItems[attempt];
       DesignSystemTypeDeclarationsFailedValue = [];
-      input2.failed.length > 0 && value3 !== undefined
+      loadResult.failed.length > 0 && retryDelay !== undefined
         ? setTimeout((): Dynamic => {
-            DesignSystemTypeDeclarationsAlias === input &&
+            DesignSystemTypeDeclarationsAlias === referencesKey &&
               loadTypeDeclarationFiles(
-                input,
-                input2.failed,
-                context,
-                value + 1,
+                referencesKey,
+                loadResult.failed,
+                fetcher,
+                attempt + 1,
               );
-          }, value3)
-        : input2.failed.length > 0 &&
-          ((DesignSystemTypeDeclarationsFailedValue = input2.failed),
+          }, retryDelay)
+        : loadResult.failed.length > 0 &&
+          ((DesignSystemTypeDeclarationsFailedValue = loadResult.failed),
           (DesignSystemTypeDeclarationsResolvedValue =
-            Date.now() + DesignSystemTypeDeclarationsResolvedValue_2));
+            Date.now() + retryCooldownMs));
     },
   );
 }
 function retryTypeDeclarationFiles(): Dynamic {
   DesignSystemTypeDeclarationsFailedValue.length > 0 &&
-    DesignSystemTypeDeclarationsAlias_2 !== undefined &&
+    declarationFetcher !== undefined &&
     Date.now() >= DesignSystemTypeDeclarationsResolvedValue &&
     ((DesignSystemTypeDeclarationsResolvedValue =
-      Date.now() + DesignSystemTypeDeclarationsResolvedValue_2),
+      Date.now() + retryCooldownMs),
     loadTypeDeclarationFiles(
       DesignSystemTypeDeclarationsAlias,
       DesignSystemTypeDeclarationsFailedValue,
-      DesignSystemTypeDeclarationsAlias_2,
+      declarationFetcher,
       DesignSystemTypeDeclarationsItems.length,
     ));
 }
@@ -142,56 +142,56 @@ function clearPendingFileOverlay(): Dynamic {
   pendingFileOverlay = false;
 }
 function setPublishedFileReferences(
-  input?: Dynamic,
-  options: Dynamic = sameOriginFileFetcher(),
+  publishedFiles?: Dynamic,
+  fetcher: Dynamic = sameOriginFileFetcher(),
 ): Dynamic {
   pendingFileOverlay = true;
-  let value: Dynamic = parseFontFileReferences(input);
-  set_PlatformExternalFilesResolvedValue(typeof input == "object" && input !== null
-      ? Object.keys(input)
+  let fontReferences: Dynamic = parseFontFileReferences(publishedFiles);
+  set_PlatformExternalFilesResolvedValue(typeof publishedFiles == "object" && publishedFiles !== null
+      ? Object.keys(publishedFiles)
           .filter(
-            (input2?: Dynamic): Dynamic =>
-              input2.startsWith(ProjectValue),
+            (path?: Dynamic): Dynamic =>
+              path.startsWith(ProjectValue),
           )
           .map(
-            (input2?: Dynamic): Dynamic =>
-              input2.slice(ProjectValue.length),
+            (path?: Dynamic): Dynamic =>
+              path.slice(ProjectValue.length),
           )
       : []);
-  set_PlatformExternalFilesResolvedValue_2(value.types ?? []);
+  set_PlatformExternalFilesResolvedValue_2(fontReferences.types ?? []);
   setDeclarationReferences(
     getTypeDeclarationReferences(),
-    options,
+    fetcher,
   );
-  value.dropped !== undefined &&
+  fontReferences.dropped !== undefined &&
     console.warn(
       "design (instance files): not serving " +
-        String(value.dropped) +
+        String(fontReferences.dropped) +
         " file(s) published under project/ (not a .css/.js/.mjs/.jsx/.tsx/.json support file, over 20 MiB, or past " +
         String(PlatformFileReferencesLimit) +
         "; or a .d.ts over 2 MiB / past " +
-        String(PlatformFileReferencesLimit_2) +
+        String(maxDeclarationFileCount) +
         ")",
     );
-  set_PlatformExternalFilesItems([...value]);
-  loadInstanceFileReferences(options);
+  set_PlatformExternalFilesItems([...fontReferences]);
+  loadInstanceFileReferences(fetcher);
 }
 function setInstanceFileReferences(
-  input?: Dynamic,
-  options: Dynamic = sameOriginFileFetcher(),
+  fileReferences?: Dynamic,
+  fetcher: Dynamic = sameOriginFileFetcher(),
 ): Dynamic {
-  set_parseFileReferencesValue(parseFileReferences(input));
-  loadInstanceFileReferences(options);
+  set_parseFileReferencesValue(parseFileReferences(fileReferences));
+  loadInstanceFileReferences(fetcher);
   retryTypeDeclarationFiles();
 }
-function loadInstanceFileReferences(input?: Dynamic): Dynamic {
-  let value: Dynamic = Object.assign(
+function loadInstanceFileReferences(fetcher?: Dynamic): Dynamic {
+  let references: Dynamic = Object.assign(
       [
         ...PlatformExternalFilesItems,
         ...parseFileReferencesValue.filter(
-          (input2?: Dynamic): Dynamic =>
+          (reference?: Dynamic): Dynamic =>
             !PlatformExternalFilesItems.some(
-              (input3?: Dynamic): Dynamic => input3.path === input2.path,
+              (existing?: Dynamic): Dynamic => existing.path === reference.path,
             ),
         ),
       ].slice(0, PlatformFileReferencesLimit),
@@ -201,92 +201,92 @@ function loadInstanceFileReferences(input?: Dynamic): Dynamic {
           }
         : {},
     ),
-    value2: Dynamic = JSON.stringify([value, value.dropped ?? 0]);
-  if (value2 === DesignSystemPublishedFilesAlias) {
-    DesignSystemTypeDeclarationsFailedValue_2.length > 0 &&
-      input !== undefined &&
-      Date.now() >= DesignSystemTypeDeclarationsResolvedValue_3 &&
-      ((DesignSystemTypeDeclarationsResolvedValue_3 =
-        Date.now() + DesignSystemTypeDeclarationsResolvedValue_2),
+    referencesKey: Dynamic = JSON.stringify([references, references.dropped ?? 0]);
+  if (referencesKey === DesignSystemPublishedFilesAlias) {
+    failedOverlayFiles.length > 0 &&
+      fetcher !== undefined &&
+      Date.now() >= nextOverlayRetryAt &&
+      ((nextOverlayRetryAt =
+        Date.now() + retryCooldownMs),
       loadDesignSystemFileOverlay(
-        value2,
-        value,
-        DesignSystemTypeDeclarationsFailedValue_2,
+        referencesKey,
+        references,
+        failedOverlayFiles,
         DesignSystemTypeDeclarationsItems.length,
         DesignSystemTypeDeclarationsReduce(),
-        input,
+        fetcher,
       ));
     return;
   }
-  set_DesignSystemPublishedFilesAlias(value2);
-  DesignSystemTypeDeclarationsFailedValue_2 = [];
-  value.dropped !== undefined &&
+  set_DesignSystemPublishedFilesAlias(referencesKey);
+  failedOverlayFiles = [];
+  references.dropped !== undefined &&
     console.warn(
       "design (instance files): ignoring " +
-        String(value.dropped) +
+        String(references.dropped) +
         " listed entr" +
-        (value.dropped === 1 ? "y" : "ies") +
+        (references.dropped === 1 ? "y" : "ies") +
         " (not a files/ kind of store path, a file outside project/, over 20 MiB, duplicate, or past " +
         String(PlatformFileReferencesLimit) +
         ")",
     );
-  if (input === undefined) return;
-  let value3: Dynamic = value.filter(
-    (input2?: Dynamic): Dynamic =>
-      DesignSystemPublishedFilesCache.get(input2.path) ===
-      input2.file,
+  if (fetcher === undefined) return;
+  let loadedReferences: Dynamic = references.filter(
+    (reference?: Dynamic): Dynamic =>
+      DesignSystemPublishedFilesCache.get(reference.path) ===
+      reference.file,
   );
   loadDesignSystemFileOverlay(
-    value2,
-    value,
-    value.filter((input2?: Dynamic): Dynamic => !value3.includes(input2)),
+    referencesKey,
+    references,
+    references.filter((reference?: Dynamic): Dynamic => !loadedReferences.includes(reference)),
     0,
-    value3.reduce(
-      (input2?: Dynamic, options?: Dynamic): Dynamic =>
-        input2 +
+    loadedReferences.reduce(
+      (totalBytes?: Dynamic, reference?: Dynamic): Dynamic =>
+        totalBytes +
         DesignSystemTypeDeclarationsTextEncoder.encode(
-          DesignSystemPublishedFilesFromEntriesValue[options.path] ??
+          DesignSystemPublishedFilesFromEntriesValue[reference.path] ??
             "",
         ).length,
       0,
     ),
-    input,
+    fetcher,
   );
 }
 function loadDesignSystemFileOverlay(
-  input?: Dynamic,
-  items?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  overlayKey?: Dynamic,
+  references?: Dynamic,
+  pendingReferences?: Dynamic,
+  attempt?: Dynamic,
+  loadedBytes?: Dynamic,
+  fetcher?: Dynamic,
 ): Dynamic {
-  loadReferencedFiles(context, detail, extra).then(
-    (input2?: Dynamic): Dynamic => {
-      if (DesignSystemPublishedFilesAlias !== input) return;
-      let values: Dynamic = new Set(
-          items.map((input3?: Dynamic): Dynamic => input3.path),
+  loadReferencedFiles(pendingReferences, fetcher, loadedBytes).then(
+    (loadResult?: Dynamic): Dynamic => {
+      if (DesignSystemPublishedFilesAlias !== overlayKey) return;
+      let listedPaths: Dynamic = new Set(
+          references.map((reference?: Dynamic): Dynamic => reference.path),
         ),
-        length: Dynamic = Object.keys(
+        previousFileCount: Dynamic = Object.keys(
           DesignSystemPublishedFilesFromEntriesValue,
         ).length;
       set_DesignSystemPublishedFilesFromEntriesValue(Object.fromEntries(
         Object.entries({
           ...DesignSystemPublishedFilesFromEntriesValue,
-          ...input2.files,
-        }).filter(([input3]: Dynamic): Dynamic => values.has(input3)),
+          ...loadResult.files,
+        }).filter(([path]: Dynamic): Dynamic => listedPaths.has(path)),
       ));
-      for (let value3 of context as Dynamic)
-        value3.path in input2.files &&
+      for (let pendingReference of pendingReferences as Dynamic)
+        pendingReference.path in loadResult.files &&
           DesignSystemPublishedFilesCache.set(
-            value3.path,
-            value3.file,
+            pendingReference.path,
+            pendingReference.file,
           );
-      for (let value3 of [
+      for (let cachedPath of [
         ...DesignSystemPublishedFilesCache.keys(),
       ] as Dynamic)
-        value3 in DesignSystemPublishedFilesFromEntriesValue ||
-          DesignSystemPublishedFilesCache.delete(value3);
+        cachedPath in DesignSystemPublishedFilesFromEntriesValue ||
+          DesignSystemPublishedFilesCache.delete(cachedPath);
       console.info(
         "design (instance files): " +
           String(
@@ -294,763 +294,763 @@ function loadDesignSystemFileOverlay(
               .length,
           ) +
           " of " +
-          String(items.length) +
+          String(references.length) +
           " listed file(s) loaded" +
-          (input2.skipped > 0
-            ? ", " + String(input2.skipped) + " skipped"
+          (loadResult.skipped > 0
+            ? ", " + String(loadResult.skipped) + " skipped"
             : ""),
       );
       if (
-        Object.keys(input2.files).length > 0 ||
+        Object.keys(loadResult.files).length > 0 ||
         Object.keys(DesignSystemPublishedFilesFromEntriesValue)
-          .length !== length
+          .length !== previousFileCount
       )
-        for (let value3 of DesignSystemPublishedFilesSubscribers as Dynamic)
-          value3();
-      let value2: Dynamic = DesignSystemTypeDeclarationsItems[value];
-      DesignSystemTypeDeclarationsFailedValue_2 = [];
-      input2.failed.length > 0 && value2 !== undefined
+        for (let notifyListener of DesignSystemPublishedFilesSubscribers as Dynamic)
+          notifyListener();
+      let retryDelay: Dynamic = DesignSystemTypeDeclarationsItems[attempt];
+      failedOverlayFiles = [];
+      loadResult.failed.length > 0 && retryDelay !== undefined
         ? setTimeout((): Dynamic => {
-            DesignSystemPublishedFilesAlias === input &&
+            DesignSystemPublishedFilesAlias === overlayKey &&
               loadDesignSystemFileOverlay(
-                input,
-                items,
-                input2.failed,
-                value + 1,
+                overlayKey,
+                references,
+                loadResult.failed,
+                attempt + 1,
                 DesignSystemTypeDeclarationsReduce(),
-                detail,
+                fetcher,
               );
-          }, value2)
-        : input2.failed.length > 0 &&
-          ((DesignSystemTypeDeclarationsFailedValue_2 = input2.failed),
-          (DesignSystemTypeDeclarationsResolvedValue_3 =
-            Date.now() + DesignSystemTypeDeclarationsResolvedValue_2));
+          }, retryDelay)
+        : loadResult.failed.length > 0 &&
+          ((failedOverlayFiles = loadResult.failed),
+          (nextOverlayRetryAt =
+            Date.now() + retryCooldownMs));
     },
   );
 }
 function sameOriginFileFetcher(): Dynamic {
   return typeof location === "undefined" || typeof fetch === "undefined"
     ? undefined
-    : (input?: Dynamic): Dynamic =>
-        fetch(input, {
+    : (url?: Dynamic): Dynamic =>
+        fetch(url, {
           credentials: "same-origin",
         });
 }
-function isKnownHtmlReference(input?: Dynamic): Dynamic {
-  return DesignSystemTypeDeclarationsSubscribers_4.has(
-    hashHtmlReference(input),
+function isKnownHtmlReference(html?: Dynamic): Dynamic {
+  return oversizedHtmlHashes.has(
+    hashHtmlReference(html),
   );
 }
-function subscribeHtmlReferences(input?: Dynamic): Dynamic {
-  DesignSystemTypeDeclarationsSubscribers_3.add(input);
+function subscribeHtmlReferences(listener?: Dynamic): Dynamic {
+  htmlReferenceListeners.add(listener);
   return (): Dynamic => {
-    DesignSystemTypeDeclarationsSubscribers_3.delete(input);
+    htmlReferenceListeners.delete(listener);
   };
 }
-function hashHtmlReference(items?: Dynamic): Dynamic {
-  let value: Dynamic = 3735928559 ^ items.length,
-    value2: Dynamic = 1103547991 ^ items.length;
-  for (let index: Dynamic = 0; index < items.length; index++) {
-    let value3: Dynamic = items.charCodeAt(index);
-    value = Math.imul(value ^ value3, 2654435761);
-    value2 = Math.imul(value2 ^ value3, 1597334677);
+function hashHtmlReference(text?: Dynamic): Dynamic {
+  let hashHigh: Dynamic = 3735928559 ^ text.length,
+    hashLow: Dynamic = 1103547991 ^ text.length;
+  for (let index: Dynamic = 0; index < text.length; index++) {
+    let charCode: Dynamic = text.charCodeAt(index);
+    hashHigh = Math.imul(hashHigh ^ charCode, 2654435761);
+    hashLow = Math.imul(hashLow ^ charCode, 1597334677);
   }
-  value =
-    (Math.imul(value ^ (value >>> 16), 2246822507) ^
-      Math.imul(value2 ^ (value2 >>> 13), 3266489909)) >>>
+  hashHigh =
+    (Math.imul(hashHigh ^ (hashHigh >>> 16), 2246822507) ^
+      Math.imul(hashLow ^ (hashLow >>> 13), 3266489909)) >>>
     0;
-  value2 =
-    (Math.imul(value2 ^ (value2 >>> 16), 2246822507) ^
-      Math.imul(value ^ (value >>> 13), 3266489909)) >>>
+  hashLow =
+    (Math.imul(hashLow ^ (hashLow >>> 16), 2246822507) ^
+      Math.imul(hashHigh ^ (hashHigh >>> 13), 3266489909)) >>>
     0;
   return (
-    value2.toString(16) + value.toString(16) + "." + String(items.length)
+    hashLow.toString(16) + hashHigh.toString(16) + "." + String(text.length)
   );
 }
-function setHtmlReferenceStore(input?: Dynamic): Dynamic {
-  DesignSystemTypeDeclarationsAlias_3 = input;
+function setHtmlReferenceStore(store?: Dynamic): Dynamic {
+  htmlReferenceStore = store;
 }
-function getReferencedHtml(input?: Dynamic): Dynamic {
+function getReferencedHtml(blobUrl?: Dynamic): Dynamic {
   return DesignSystemTypeDeclarationsCache.get(
-    DesignSystemTypeDeclarationsReplace(input),
+    DesignSystemTypeDeclarationsReplace(blobUrl),
   );
 }
-function getArtboardHtmlReference(input?: Dynamic): Dynamic {
-  return DesignSystemTypeDeclarationsCache_4.get(input);
+function getArtboardHtmlReference(artboardPath?: Dynamic): Dynamic {
+  return DesignSystemTypeDeclarationsCache_4.get(artboardPath);
 }
-function htmlReferenceForText(input?: Dynamic): Dynamic {
+function htmlReferenceForText(html?: Dynamic): Dynamic {
   let entry: Dynamic = DesignSystemTypeDeclarationsCache_2.get(
-    hashHtmlReference(input),
+    hashHtmlReference(html),
   );
   return entry !== undefined &&
-    DesignSystemTypeDeclarationsCache.get(entry) === input
+    DesignSystemTypeDeclarationsCache.get(entry) === html
     ? entry
     : undefined;
 }
 function getHtmlReferenceState(): Dynamic {
-  return DesignSystemTypeDeclarationsResolvedValue_5;
+  return isUploadUnavailable;
 }
-function cacheReferencedHtml(input?: Dynamic, options?: Dynamic): Dynamic {
+function cacheReferencedHtml(blobUrl?: Dynamic, html?: Dynamic): Dynamic {
   DesignSystemTypeDeclarationsCache.set(
-    DesignSystemTypeDeclarationsReplace(input),
-    options,
+    DesignSystemTypeDeclarationsReplace(blobUrl),
+    html,
   );
   DesignSystemTypeDeclarationsCache_2.set(
-    hashHtmlReference(options),
-    DesignSystemTypeDeclarationsReplace(input),
+    hashHtmlReference(html),
+    DesignSystemTypeDeclarationsReplace(blobUrl),
   );
 }
 function setArtboardHtmlReferences(
-  input?: Dynamic,
-  options: Dynamic = sameOriginAssetFetcher(),
+  artboardReferences?: Dynamic,
+  fetcher: Dynamic = sameOriginAssetFetcher(),
 ): Dynamic {
-  let entries: Dynamic = new Map();
-  for (let [value, value2] of input as Dynamic)
-    isBlobAssetUrl(value2.ref) &&
-      (DesignSystemTypeDeclarationsCache_4.set(value, {
-        ref: DesignSystemTypeDeclarationsReplace(value2.ref),
-        bytes: value2.bytes,
+  let blobUrlByKey: Dynamic = new Map();
+  for (let [artboardPath, reference] of artboardReferences as Dynamic)
+    isBlobAssetUrl(reference.ref) &&
+      (DesignSystemTypeDeclarationsCache_4.set(artboardPath, {
+        ref: DesignSystemTypeDeclarationsReplace(reference.ref),
+        bytes: reference.bytes,
       }),
-      entries.set(
-        DesignSystemTypeDeclarationsReplace(value2.ref),
-        value2.ref,
+      blobUrlByKey.set(
+        DesignSystemTypeDeclarationsReplace(reference.ref),
+        reference.ref,
       ));
-  if (options !== undefined)
+  if (fetcher !== undefined)
     for (let [
-      value,
-      { ref: value2 },
+      cachedArtboardPath,
+      { ref: referenceKey },
     ] of DesignSystemTypeDeclarationsCache_4 as Dynamic)
-      DesignSystemTypeDeclarationsCache.has(value2) ||
-        DesignSystemTypeDeclarationsSubscribers_2.has(value2) ||
-        DesignSystemTypeDeclarationsGet(value2) ||
-        (DesignSystemTypeDeclarationsSubscribers_2.add(value2),
-        fetchHtmlReference(entries.get(value2) ?? value2, options).then(
-          (input2?: Dynamic): Dynamic => {
-            DesignSystemTypeDeclarationsSubscribers_2.delete(value2);
-            if (input2 === undefined) {
-              DesignSystemTypeDeclarationsCache_3.set(value2, Date.now());
+      DesignSystemTypeDeclarationsCache.has(referenceKey) ||
+        pendingHtmlFetches.has(referenceKey) ||
+        DesignSystemTypeDeclarationsGet(referenceKey) ||
+        (pendingHtmlFetches.add(referenceKey),
+        fetchHtmlReference(blobUrlByKey.get(referenceKey) ?? referenceKey, fetcher).then(
+          (html?: Dynamic): Dynamic => {
+            pendingHtmlFetches.delete(referenceKey);
+            if (html === undefined) {
+              DesignSystemTypeDeclarationsCache_3.set(referenceKey, Date.now());
               clearTimeout(htmlReferenceUploadWaiters);
               htmlReferenceUploadWaiters = setTimeout(
                 (): Dynamic =>
                   setArtboardHtmlReferences(
                     new Map(DesignSystemTypeDeclarationsCache_4),
-                    options,
+                    fetcher,
                   ),
                 DesignSystemTypeDeclarationsLimit + 50,
               );
               return;
             }
-            DesignSystemTypeDeclarationsCache_3.delete(value2);
-            cacheReferencedHtml(value2, input2);
-            let value3: Dynamic = [...DesignSystemTypeDeclarationsCache_4]
-              .filter(([, input3]: Dynamic): Dynamic => input3.ref === value2)
-              .map(([input3]: Dynamic): Dynamic => input3);
-            for (let value4 of value3 as Dynamic)
-              DesignSystemTypeDeclarationsAlias_3?.hydrate(value4, input2);
-            for (let value4 of DesignSystemTypeDeclarationsSubscribers_3 as Dynamic)
-              value4(value3);
+            DesignSystemTypeDeclarationsCache_3.delete(referenceKey);
+            cacheReferencedHtml(referenceKey, html);
+            let artboardPaths: Dynamic = [...DesignSystemTypeDeclarationsCache_4]
+              .filter(([, reference]: Dynamic): Dynamic => reference.ref === referenceKey)
+              .map(([artboardPath]: Dynamic): Dynamic => artboardPath);
+            for (let artboardPath of artboardPaths as Dynamic)
+              htmlReferenceStore?.hydrate(artboardPath, html);
+            for (let notifyListener of htmlReferenceListeners as Dynamic)
+              notifyListener(artboardPaths);
           },
         ));
 }
 async function fetchHtmlReference(
-  input?: Dynamic,
-  options?: Dynamic,
+  url?: Dynamic,
+  fetcher?: Dynamic,
 ): Promise<Dynamic> {
   try {
-    let value: Dynamic,
-      value2: Dynamic = await Promise.race([
-        options(input),
-        new Promise((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-          value = setTimeout(
-            (): Dynamic => options2(new Error("timeout")),
+    let timeoutId: Dynamic,
+      response: Dynamic = await Promise.race([
+        fetcher(url),
+        new Promise((resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+          timeoutId = setTimeout(
+            (): Dynamic => reject(new Error("timeout")),
             DesignSystemTypeDeclarationsDelayMs,
           );
         }),
-      ]).finally((): Dynamic => clearTimeout(value));
-    if (!value2.ok) throw new Error("not found");
-    let value3: Dynamic = await value2.text();
+      ]).finally((): Dynamic => clearTimeout(timeoutId));
+    if (!response.ok) throw new Error("not found");
+    let responseText: Dynamic = await response.text();
     if (
-      DesignSystemTypeDeclarationsGetLength(value3) >
-      DesignSystemTypeDeclarationsResolvedValue_4
+      DesignSystemTypeDeclarationsGetLength(responseText) >
+      maxHtmlReferenceBytes
     )
       throw new Error(
         "over " +
-          String(DesignSystemTypeDeclarationsResolvedValue_4) +
+          String(maxHtmlReferenceBytes) +
           " bytes",
       );
-    let value4: Dynamic = JSON.parse(value3);
+    let blobContent: Dynamic = JSON.parse(responseText);
     if (
-      value4 === null ||
-      typeof value4 != "object" ||
-      typeof value4.html != "string"
+      blobContent === null ||
+      typeof blobContent != "object" ||
+      typeof blobContent.html != "string"
     )
       throw new Error("not a board blob");
-    return value4.html;
-  } catch (value: Dynamic) {
+    return blobContent.html;
+  } catch (error: Dynamic) {
     console.warn(
       "design (board blob): could not read " +
-        input +
+        url +
         ": " +
-        String(value).slice(0, 120),
+        String(error).slice(0, 120),
     );
     return;
   }
 }
-function scheduleHtmlUpload(input?: Dynamic, options?: Dynamic): Dynamic {
-  htmlReferenceForText(options) === undefined &&
-    (DesignSystemTypeDeclarationsCache_5.set(input, options),
-    clearTimeout(DesignSystemTypeDeclarationsCache_6.get(input)),
+function scheduleHtmlUpload(artboardPath?: Dynamic, html?: Dynamic): Dynamic {
+  htmlReferenceForText(html) === undefined &&
+    (DesignSystemTypeDeclarationsCache_5.set(artboardPath, html),
+    clearTimeout(DesignSystemTypeDeclarationsCache_6.get(artboardPath)),
     DesignSystemTypeDeclarationsCache_6.set(
-      input,
+      artboardPath,
       setTimeout((): Dynamic => {
-        publishHtmlReference(input);
+        publishHtmlReference(artboardPath);
       }, DesignSystemTypeDeclarationsDelayMs_2),
     ));
 }
-async function publishHtmlReference(input?: Dynamic): Promise<Dynamic> {
-  DesignSystemTypeDeclarationsCache_6.delete(input);
-  let entry: Dynamic = DesignSystemTypeDeclarationsCache_5.get(input);
+async function publishHtmlReference(artboardPath?: Dynamic): Promise<Dynamic> {
+  DesignSystemTypeDeclarationsCache_6.delete(artboardPath);
+  let entry: Dynamic = DesignSystemTypeDeclarationsCache_5.get(artboardPath);
   if (
     entry === undefined ||
-    DesignSystemTypeDeclarationsSubscribers_5.has(input)
+    uploadingArtboardPaths.has(artboardPath)
   )
     return;
-  let value: Dynamic = hashHtmlReference(entry);
+  let htmlHash: Dynamic = hashHtmlReference(entry);
   if (htmlReferenceForText(entry) !== undefined) {
-    DesignSystemTypeDeclarationsAlias_3?.resync();
+    htmlReferenceStore?.resync();
     return;
   }
-  if (DesignSystemTypeDeclarationsSubscribers_4.has(value)) return;
-  if (DesignSystemTypeDeclarationsGet(value)) {
+  if (oversizedHtmlHashes.has(htmlHash)) return;
+  if (DesignSystemTypeDeclarationsGet(htmlHash)) {
     DesignSystemTypeDeclarationsCache_6.set(
-      input,
+      artboardPath,
       setTimeout(
         (): Dynamic => {
-          publishHtmlReference(input);
+          publishHtmlReference(artboardPath);
         },
         DesignSystemTypeDeclarationsLimit -
           (Date.now() -
-            (DesignSystemTypeDeclarationsCache_3.get(value) ?? 0)) +
+            (DesignSystemTypeDeclarationsCache_3.get(htmlHash) ?? 0)) +
           50,
       ),
     );
     return;
   }
-  let value2: Dynamic = JSON.stringify({
+  let blobJson: Dynamic = JSON.stringify({
     v: 1,
-    path: input,
+    path: artboardPath,
     html: entry,
   });
   if (
-    DesignSystemTypeDeclarationsGetLength(value2) >
-    DesignSystemTypeDeclarationsResolvedValue_4
+    DesignSystemTypeDeclarationsGetLength(blobJson) >
+    maxHtmlReferenceBytes
   ) {
-    DesignSystemTypeDeclarationsSubscribers_4.add(value);
-    DesignSystemTypeDeclarationsAlias_3?.resync();
+    oversizedHtmlHashes.add(htmlHash);
+    htmlReferenceStore?.resync();
     return;
   }
-  DesignSystemTypeDeclarationsSubscribers_5.add(input);
+  uploadingArtboardPaths.add(artboardPath);
   try {
-    let value3: Dynamic = await getAssetsCapability();
-    DesignSystemTypeDeclarationsResolvedValue_5 =
-      value3 === null || typeof value3.upload != "function";
-    if (value3 === null || typeof value3.upload != "function")
+    let assetsCapability: Dynamic = await getAssetsCapability();
+    isUploadUnavailable =
+      assetsCapability === null || typeof assetsCapability.upload != "function";
+    if (assetsCapability === null || typeof assetsCapability.upload != "function")
       throw (
-        DesignSystemTypeDeclarationsAlias_3?.resync(),
+        htmlReferenceStore?.resync(),
         new Error("this view cannot upload")
       );
-    let value4: Dynamic = await value3.upload(
-        new Blob([value2], {
+    let uploadResult: Dynamic = await assetsCapability.upload(
+        new Blob([blobJson], {
           type: ApplicationJsonValue,
         }),
         {
           type: ApplicationJsonValue,
         },
       ),
-      value5: Dynamic =
-        typeof value4?.url == "string" &&
-        isBlobAssetUrl(value4.url)
-          ? value4.url
-          : typeof value4?.id == "string"
-            ? "_blob/" + value4.id
+      blobUrl: Dynamic =
+        typeof uploadResult?.url == "string" &&
+        isBlobAssetUrl(uploadResult.url)
+          ? uploadResult.url
+          : typeof uploadResult?.id == "string"
+            ? "_blob/" + uploadResult.id
             : undefined;
-    if (value5 === undefined || !isBlobAssetUrl(value5))
+    if (blobUrl === undefined || !isBlobAssetUrl(blobUrl))
       throw new Error("upload returned no usable reference");
-    cacheReferencedHtml(value5, entry);
-    DesignSystemTypeDeclarationsAlias_3?.resync();
-  } catch (value3: Dynamic) {
-    DesignSystemTypeDeclarationsCache_3.set(value, Date.now());
+    cacheReferencedHtml(blobUrl, entry);
+    htmlReferenceStore?.resync();
+  } catch (error: Dynamic) {
+    DesignSystemTypeDeclarationsCache_3.set(htmlHash, Date.now());
     console.warn(
       "design (board blob): upload of " +
-        input +
+        artboardPath +
         " failed: " +
-        String(value3).slice(0, 120),
+        String(error).slice(0, 120),
     );
-    !DesignSystemTypeDeclarationsResolvedValue_5 &&
-      !DesignSystemTypeDeclarationsCache_6.has(input) &&
+    !isUploadUnavailable &&
+      !DesignSystemTypeDeclarationsCache_6.has(artboardPath) &&
       DesignSystemTypeDeclarationsCache_6.set(
-        input,
+        artboardPath,
         setTimeout((): Dynamic => {
-          publishHtmlReference(input);
+          publishHtmlReference(artboardPath);
         }, DesignSystemTypeDeclarationsLimit + 50),
       );
   } finally {
-    DesignSystemTypeDeclarationsSubscribers_5.delete(input);
-    DesignSystemTypeDeclarationsCache_5.get(input) !== entry &&
-      !DesignSystemTypeDeclarationsCache_6.has(input) &&
+    uploadingArtboardPaths.delete(artboardPath);
+    DesignSystemTypeDeclarationsCache_5.get(artboardPath) !== entry &&
+      !DesignSystemTypeDeclarationsCache_6.has(artboardPath) &&
       DesignSystemTypeDeclarationsCache_6.set(
-        input,
+        artboardPath,
         setTimeout((): Dynamic => {
-          publishHtmlReference(input);
+          publishHtmlReference(artboardPath);
         }, DesignSystemTypeDeclarationsDelayMs_2),
       );
   }
 }
-function knownHtmlReferenceState(input?: Dynamic): Dynamic {
-  return DesignSystemTypeDeclarationsGet(hashHtmlReference(input));
+function knownHtmlReferenceState(html?: Dynamic): Dynamic {
+  return DesignSystemTypeDeclarationsGet(hashHtmlReference(html));
 }
 function sameOriginAssetFetcher(): Dynamic {
   return typeof location === "undefined" || typeof fetch === "undefined"
     ? undefined
-    : (input?: Dynamic): Dynamic =>
-        fetch(input, {
+    : (url?: Dynamic): Dynamic =>
+        fetch(url, {
           credentials: "same-origin",
         });
 }
-function cssColorNumber(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input === "none") return 0;
-  let value: Dynamic = /^(-?\d*\.?\d+(?:e-?\d+)?)(%?)$/.exec(input);
-  if (value !== null)
-    return value[2] === "%"
-      ? (Number(value[1]) / 100) * options
-      : Number(value[1]);
+function cssColorNumber(valueText?: Dynamic, percentBase?: Dynamic): Dynamic {
+  if (valueText === "none") return 0;
+  let numberMatch: Dynamic = /^(-?\d*\.?\d+(?:e-?\d+)?)(%?)$/.exec(valueText);
+  if (numberMatch !== null)
+    return numberMatch[2] === "%"
+      ? (Number(numberMatch[1]) / 100) * percentBase
+      : Number(numberMatch[1]);
 }
-function cssColorAngle(input?: Dynamic): Dynamic {
-  let value: Dynamic = /^(-?\d*\.?\d+)(deg|rad|grad|turn)?$/.exec(
-    input === "none" ? "0" : input,
+function cssColorAngle(angleText?: Dynamic): Dynamic {
+  let angleMatch: Dynamic = /^(-?\d*\.?\d+)(deg|rad|grad|turn)?$/.exec(
+    angleText === "none" ? "0" : angleText,
   );
-  return value === null
+  return angleMatch === null
     ? undefined
-    : (((Number(value[1]) *
-        (value[2] === "rad"
+    : (((Number(angleMatch[1]) *
+        (angleMatch[2] === "rad"
           ? 180 / Math.PI
-          : value[2] === "grad"
+          : angleMatch[2] === "grad"
             ? 0.9
-            : value[2] === "turn"
+            : angleMatch[2] === "turn"
               ? 360
               : 1)) %
         360) +
         360) %
         360;
 }
-function parseColorFunction(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = new RegExp("^" + options + "\\((.*)\\)$").exec(input);
-  if (value === null) return;
-  let value2: Dynamic = value[1].trim().split(/\s*[,/]\s*|\s+/);
-  return value2.length === 3 || value2.length === 4 ? value2 : undefined;
+function parseColorFunction(colorText?: Dynamic, functionName?: Dynamic): Dynamic {
+  let functionMatch: Dynamic = new RegExp("^" + functionName + "\\((.*)\\)$").exec(colorText);
+  if (functionMatch === null) return;
+  let parts: Dynamic = functionMatch[1].trim().split(/\s*[,/]\s*|\s+/);
+  return parts.length === 3 || parts.length === 4 ? parts : undefined;
 }
 function oklabToCssRgb(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  lightness?: Dynamic,
+  axisA?: Dynamic,
+  axisB?: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
-      (input + 0.3963377774 * options + 0.2158037573 * context) ** 3,
-    value2: Dynamic =
-      (input - 0.1055613458 * options - 0.0638541728 * context) ** 3,
-    value3: Dynamic =
-      (input - 0.0894841775 * options - 1.291485548 * context) ** 3;
+  let lCubed: Dynamic =
+      (lightness + 0.3963377774 * axisA + 0.2158037573 * axisB) ** 3,
+    mCubed: Dynamic =
+      (lightness - 0.1055613458 * axisA - 0.0638541728 * axisB) ** 3,
+    sCubed: Dynamic =
+      (lightness - 0.0894841775 * axisA - 1.291485548 * axisB) ** 3;
   return [
     DesignSystemTypeDeclarationsPow(
-      4.0767416621 * value - 3.3077115913 * value2 + 0.2309699292 * value3,
+      4.0767416621 * lCubed - 3.3077115913 * mCubed + 0.2309699292 * sCubed,
     ),
     DesignSystemTypeDeclarationsPow(
-      -1.2684380046 * value + 2.6097574011 * value2 - 0.3413193965 * value3,
+      -1.2684380046 * lCubed + 2.6097574011 * mCubed - 0.3413193965 * sCubed,
     ),
     DesignSystemTypeDeclarationsPow(
-      -0.0041960863 * value - 0.7034186147 * value2 + 1.707614701 * value3,
+      -0.0041960863 * lCubed - 0.7034186147 * mCubed + 1.707614701 * sCubed,
     ),
   ];
 }
 function labToCssRgb(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  lightness?: Dynamic,
+  axisA?: Dynamic,
+  axisB?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (input + 16) / 116,
-    value2: Dynamic = value + options / 500,
-    value3: Dynamic = value - context / 200,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 ** 3 > 216 / 24389
-        ? input2 ** 3
-        : (116 * input2 - 16) / (24389 / 27),
-    [items, items2, items3]: Dynamic = [
-      callback(value2) * 0.96422,
-      (input > 8 ? value ** 3 : input / (24389 / 27)) * 1,
-      callback(value3) * 0.82521,
+  let fy: Dynamic = (lightness + 16) / 116,
+    fx: Dynamic = fy + axisA / 500,
+    fz: Dynamic = fy - axisB / 200,
+    inverseLabCurve: Dynamic = (curveInput?: Dynamic): Dynamic =>
+      curveInput ** 3 > 216 / 24389
+        ? curveInput ** 3
+        : (116 * curveInput - 16) / (24389 / 27),
+    [xD50, yD50, zD50]: Dynamic = [
+      inverseLabCurve(fx) * 0.96422,
+      (lightness > 8 ? fy ** 3 : lightness / (24389 / 27)) * 1,
+      inverseLabCurve(fz) * 0.82521,
     ],
-    value4: Dynamic =
-      0.9555766 * items - 0.0230393 * items2 + 0.0631636 * items3,
-    value5: Dynamic =
-      -0.0282895 * items + 1.0099416 * items2 + 0.0210077 * items3,
-    value6: Dynamic =
-      0.0122982 * items - 0.020483 * items2 + 1.3299098 * items3;
+    xD65: Dynamic =
+      0.9555766 * xD50 - 0.0230393 * yD50 + 0.0631636 * zD50,
+    yD65: Dynamic =
+      -0.0282895 * xD50 + 1.0099416 * yD50 + 0.0210077 * zD50,
+    zD65: Dynamic =
+      0.0122982 * xD50 - 0.020483 * yD50 + 1.3299098 * zD50;
   return [
     DesignSystemTypeDeclarationsPow(
-      3.2404542 * value4 - 1.5371385 * value5 - 0.4985314 * value6,
+      3.2404542 * xD65 - 1.5371385 * yD65 - 0.4985314 * zD65,
     ),
     DesignSystemTypeDeclarationsPow(
-      -0.969266 * value4 + 1.8760108 * value5 + 0.041556 * value6,
+      -0.969266 * xD65 + 1.8760108 * yD65 + 0.041556 * zD65,
     ),
     DesignSystemTypeDeclarationsPow(
-      0.0556434 * value4 - 0.2040259 * value5 + 1.0572252 * value6,
+      0.0556434 * xD65 - 0.2040259 * yD65 + 1.0572252 * zD65,
     ),
   ];
 }
-function normalizeCssColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trim().toLowerCase();
-  if (value.length > 96) return;
-  let value2: Dynamic = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/.exec(
-    value,
+function normalizeCssColor(colorText?: Dynamic): Dynamic {
+  let lowered: Dynamic = colorText.trim().toLowerCase();
+  if (lowered.length > 96) return;
+  let hexDigits: Dynamic = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/.exec(
+    lowered,
   )?.[1];
-  if (value2 !== undefined) {
-    let value8: Dynamic =
-      value2.length <= 4
-        ? [...value2]
-            .map((input2?: Dynamic): Dynamic => input2 + input2)
+  if (hexDigits !== undefined) {
+    let expandedHex: Dynamic =
+      hexDigits.length <= 4
+        ? [...hexDigits]
+            .map((character?: Dynamic): Dynamic => character + character)
             .join("")
-        : value2;
+        : hexDigits;
     return (
       "#" +
-      (value8.endsWith("ff") && value8.length === 8
-        ? value8.slice(0, 6)
-        : value8)
+      (expandedHex.endsWith("ff") && expandedHex.length === 8
+        ? expandedHex.slice(0, 6)
+        : expandedHex)
     );
   }
-  let value3: Dynamic = /^(rgba?|hsla?|oklch|oklab|lab|lch)\(/.exec(
-      value,
+  let colorFunction: Dynamic = /^(rgba?|hsla?|oklch|oklab|lab|lch)\(/.exec(
+      lowered,
     )?.[1],
-    value4: Dynamic =
-      value3 !== undefined ? parseColorFunction(value, value3) : undefined;
-  if (value3 === undefined || value4 === undefined) return;
-  let value5: Dynamic =
-      value4[3] !== undefined ? cssColorNumber(value4[3], 1) : 1,
-    value6: Dynamic;
-  if (value3 === "rgb" || value3 === "rgba") {
-    let [items, items2, items3]: Dynamic = [
-      cssColorNumber(value4[0], 255),
-      cssColorNumber(value4[1], 255),
-      cssColorNumber(value4[2], 255),
+    components: Dynamic =
+      colorFunction !== undefined ? parseColorFunction(lowered, colorFunction) : undefined;
+  if (colorFunction === undefined || components === undefined) return;
+  let alpha: Dynamic =
+      components[3] !== undefined ? cssColorNumber(components[3], 1) : 1,
+    rgbChannels: Dynamic;
+  if (colorFunction === "rgb" || colorFunction === "rgba") {
+    let [red, green, blue]: Dynamic = [
+      cssColorNumber(components[0], 255),
+      cssColorNumber(components[1], 255),
+      cssColorNumber(components[2], 255),
     ];
-    items !== undefined &&
-      items2 !== undefined &&
-      items3 !== undefined &&
-      (value6 = [items / 255, items2 / 255, items3 / 255]);
-  } else if (value3 === "hsl" || value3 === "hsla") {
-    let [items, items2, items3]: Dynamic = [
-      cssColorAngle(value4[0]),
-      cssColorNumber(value4[1].replace(/%$/, ""), 100),
-      cssColorNumber(value4[2].replace(/%$/, ""), 100),
+    red !== undefined &&
+      green !== undefined &&
+      blue !== undefined &&
+      (rgbChannels = [red / 255, green / 255, blue / 255]);
+  } else if (colorFunction === "hsl" || colorFunction === "hsla") {
+    let [hue, saturation, lightness]: Dynamic = [
+      cssColorAngle(components[0]),
+      cssColorNumber(components[1].replace(/%$/, ""), 100),
+      cssColorNumber(components[2].replace(/%$/, ""), 100),
     ];
-    if (items !== undefined && items2 !== undefined && items3 !== undefined) {
-      let [items4, items5]: Dynamic = [
-          DesignSystemTypeDeclarationsMax(items2 / 100),
-          DesignSystemTypeDeclarationsMax(items3 / 100),
+    if (hue !== undefined && saturation !== undefined && lightness !== undefined) {
+      let [saturationRatio, lightnessRatio]: Dynamic = [
+          DesignSystemTypeDeclarationsMax(saturation / 100),
+          DesignSystemTypeDeclarationsMax(lightness / 100),
         ],
-        callback: Dynamic = (input2?: Dynamic): Dynamic => {
-          let value8: Dynamic = (input2 + items / 30) % 12;
+        channelForOffset: Dynamic = (channelOffset?: Dynamic): Dynamic => {
+          let hueSector: Dynamic = (channelOffset + hue / 30) % 12;
           return (
-            items5 -
-            items4 *
-              Math.min(items5, 1 - items5) *
-              Math.max(-1, Math.min(value8 - 3, 9 - value8, 1))
+            lightnessRatio -
+            saturationRatio *
+              Math.min(lightnessRatio, 1 - lightnessRatio) *
+              Math.max(-1, Math.min(hueSector - 3, 9 - hueSector, 1))
           );
         };
-      value6 = [callback(0), callback(8), callback(4)];
+      rgbChannels = [channelForOffset(0), channelForOffset(8), channelForOffset(4)];
     }
-  } else if (value3 === "oklab" || value3 === "oklch") {
-    let value8: Dynamic = cssColorNumber(value4[0], 1),
-      value9: Dynamic = cssColorNumber(value4[1], 0.4),
-      value10: Dynamic =
-        value3 === "oklab" ? cssColorNumber(value4[2], 0.4) : undefined;
-    if (value3 === "oklch") {
-      let value11: Dynamic = cssColorAngle(value4[2]);
-      value9 !== undefined &&
-        value11 !== undefined &&
-        ([value9, value10] = [
-          Math.max(0, value9) * Math.cos((value11 * Math.PI) / 180),
-          Math.max(0, value9) * Math.sin((value11 * Math.PI) / 180),
+  } else if (colorFunction === "oklab" || colorFunction === "oklch") {
+    let lightness: Dynamic = cssColorNumber(components[0], 1),
+      axisA: Dynamic = cssColorNumber(components[1], 0.4),
+      axisB: Dynamic =
+        colorFunction === "oklab" ? cssColorNumber(components[2], 0.4) : undefined;
+    if (colorFunction === "oklch") {
+      let hueAngle: Dynamic = cssColorAngle(components[2]);
+      axisA !== undefined &&
+        hueAngle !== undefined &&
+        ([axisA, axisB] = [
+          Math.max(0, axisA) * Math.cos((hueAngle * Math.PI) / 180),
+          Math.max(0, axisA) * Math.sin((hueAngle * Math.PI) / 180),
         ]);
     }
-    value8 !== undefined &&
-      value9 !== undefined &&
-      value10 !== undefined &&
-      (value6 = oklabToCssRgb(
-        DesignSystemTypeDeclarationsMax(value8),
-        value9,
-        value10,
+    lightness !== undefined &&
+      axisA !== undefined &&
+      axisB !== undefined &&
+      (rgbChannels = oklabToCssRgb(
+        DesignSystemTypeDeclarationsMax(lightness),
+        axisA,
+        axisB,
       ));
   } else {
-    let value8: Dynamic = cssColorNumber(value4[0], 100),
-      value9: Dynamic = cssColorNumber(
-        value4[1],
-        value3 === "lab" ? 125 : 150,
+    let lightness: Dynamic = cssColorNumber(components[0], 100),
+      axisA: Dynamic = cssColorNumber(
+        components[1],
+        colorFunction === "lab" ? 125 : 150,
       ),
-      value10: Dynamic =
-        value3 === "lab" ? cssColorNumber(value4[2], 125) : undefined;
-    if (value3 === "lch") {
-      let value11: Dynamic = cssColorAngle(value4[2]);
-      value9 !== undefined &&
-        value11 !== undefined &&
-        ([value9, value10] = [
-          Math.max(0, value9) * Math.cos((value11 * Math.PI) / 180),
-          Math.max(0, value9) * Math.sin((value11 * Math.PI) / 180),
+      axisB: Dynamic =
+        colorFunction === "lab" ? cssColorNumber(components[2], 125) : undefined;
+    if (colorFunction === "lch") {
+      let hueAngle: Dynamic = cssColorAngle(components[2]);
+      axisA !== undefined &&
+        hueAngle !== undefined &&
+        ([axisA, axisB] = [
+          Math.max(0, axisA) * Math.cos((hueAngle * Math.PI) / 180),
+          Math.max(0, axisA) * Math.sin((hueAngle * Math.PI) / 180),
         ]);
     }
-    value8 !== undefined &&
-      value9 !== undefined &&
-      value10 !== undefined &&
-      (value6 = labToCssRgb(
-        Math.max(0, Math.min(100, value8)),
-        value9,
-        value10,
+    lightness !== undefined &&
+      axisA !== undefined &&
+      axisB !== undefined &&
+      (rgbChannels = labToCssRgb(
+        Math.max(0, Math.min(100, lightness)),
+        axisA,
+        axisB,
       ));
   }
   if (
-    value6 === undefined ||
-    value5 === undefined ||
-    value6.some((input2?: Dynamic): Dynamic => !Number.isFinite(input2))
+    rgbChannels === undefined ||
+    alpha === undefined ||
+    rgbChannels.some((channel?: Dynamic): Dynamic => !Number.isFinite(channel))
   )
     return;
-  let value7: Dynamic =
+  let hexColor: Dynamic =
     "#" +
-    DesignSystemTypeDeclarationsPadStart(value6[0]) +
-    DesignSystemTypeDeclarationsPadStart(value6[1]) +
-    DesignSystemTypeDeclarationsPadStart(value6[2]);
-  return value5 >= 1
-    ? value7
-    : value7 + DesignSystemTypeDeclarationsPadStart(value5);
+    DesignSystemTypeDeclarationsPadStart(rgbChannels[0]) +
+    DesignSystemTypeDeclarationsPadStart(rgbChannels[1]) +
+    DesignSystemTypeDeclarationsPadStart(rgbChannels[2]);
+  return alpha >= 1
+    ? hexColor
+    : hexColor + DesignSystemTypeDeclarationsPadStart(alpha);
 }
-function sharedColorTokenPrefix(items?: Dynamic): Dynamic {
-  if (items.length < 2) return "";
-  let value: Dynamic = items[0],
+function sharedColorTokenPrefix(tokenNames?: Dynamic): Dynamic {
+  if (tokenNames.length < 2) return "";
+  let firstName: Dynamic = tokenNames[0],
     text: Dynamic = "";
   for (
-    let value2: Dynamic = value.indexOf("-");
-    value2 > 0;
-    value2 = value.indexOf("-", value2 + 1)
+    let dashIndex: Dynamic = firstName.indexOf("-");
+    dashIndex > 0;
+    dashIndex = firstName.indexOf("-", dashIndex + 1)
   ) {
-    let value3: Dynamic = value.slice(0, value2 + 1);
+    let candidatePrefix: Dynamic = firstName.slice(0, dashIndex + 1);
     if (
-      !items.every(
-        (items2?: Dynamic): Dynamic =>
-          items2.startsWith(value3) && items2.length > value3.length,
+      !tokenNames.every(
+        (tokenName?: Dynamic): Dynamic =>
+          tokenName.startsWith(candidatePrefix) && tokenName.length > candidatePrefix.length,
       )
     )
       break;
-    items.some(
-      (input?: Dynamic): Dynamic => hasColorTokenGroup(input, value3),
-    ) && (text = value3);
+    tokenNames.some(
+      (tokenName?: Dynamic): Dynamic => hasColorTokenGroup(tokenName, candidatePrefix),
+    ) && (text = candidatePrefix);
   }
   return text;
 }
-function colorTokenGroup(items?: Dynamic, items2: Dynamic = ""): Dynamic {
-  let value: Dynamic =
-      items2 !== "" &&
-      items.startsWith(items2) &&
-      items.length > items2.length
-        ? items.slice(items2.length)
-        : items,
-    value2: Dynamic = DesignSystemTypeDeclarationsPattern.exec(value);
-  if (value2 !== null && value2[1] !== undefined && value2[1] !== "")
-    return value2[1];
-  let value3: Dynamic = value.indexOf("-");
-  return value3 > 0 ? value.slice(0, value3) : value;
+function colorTokenGroup(tokenName?: Dynamic, prefix: Dynamic = ""): Dynamic {
+  let localName: Dynamic =
+      prefix !== "" &&
+      tokenName.startsWith(prefix) &&
+      tokenName.length > prefix.length
+        ? tokenName.slice(prefix.length)
+        : tokenName,
+    groupMatch: Dynamic = DesignSystemTypeDeclarationsPattern.exec(localName);
+  if (groupMatch !== null && groupMatch[1] !== undefined && groupMatch[1] !== "")
+    return groupMatch[1];
+  let dashIndex: Dynamic = localName.indexOf("-");
+  return dashIndex > 0 ? localName.slice(0, dashIndex) : localName;
 }
-function hasColorTokenGroup(items?: Dynamic, items2: Dynamic = ""): Dynamic {
-  let value: Dynamic =
-    items2 !== "" && items.startsWith(items2) && items.length > items2.length
-      ? items.slice(items2.length)
-      : items;
-  return colorTokenGroup(items, items2) !== value;
+function hasColorTokenGroup(tokenName?: Dynamic, prefix: Dynamic = ""): Dynamic {
+  let localName: Dynamic =
+    prefix !== "" && tokenName.startsWith(prefix) && tokenName.length > prefix.length
+      ? tokenName.slice(prefix.length)
+      : tokenName;
+  return colorTokenGroup(tokenName, prefix) !== localName;
 }
-function groupColorTokens(input?: Dynamic): Dynamic {
-  let value: Dynamic = sharedColorTokenPrefix(input),
+function groupColorTokens(tokenNames?: Dynamic): Dynamic {
+  let sharedPrefix: Dynamic = sharedColorTokenPrefix(tokenNames),
     entries: Dynamic = new Map();
-  for (let value2 of input as Dynamic) {
-    let value3: Dynamic = colorTokenGroup(value2, value),
-      entry: Dynamic = entries.get(value3);
-    entry === undefined && entries.set(value3, (entry = []));
-    entry.push(value2);
+  for (let tokenName of tokenNames as Dynamic) {
+    let groupName: Dynamic = colorTokenGroup(tokenName, sharedPrefix),
+      entry: Dynamic = entries.get(groupName);
+    entry === undefined && entries.set(groupName, (entry = []));
+    entry.push(tokenName);
   }
-  let items: Dynamic = [],
-    items2: Dynamic = [];
-  for (let [value2, value3] of entries as Dynamic)
-    value3.some(
-      (input2?: Dynamic): Dynamic => hasColorTokenGroup(input2, value),
+  let namedGroups: Dynamic = [],
+    ungroupedNames: Dynamic = [];
+  for (let [groupLabel, groupNames] of entries as Dynamic)
+    groupNames.some(
+      (tokenName?: Dynamic): Dynamic => hasColorTokenGroup(tokenName, sharedPrefix),
     )
-      ? items.push({
-          label: value2,
-          names: value3,
+      ? namedGroups.push({
+          label: groupLabel,
+          names: groupNames,
         })
-      : items2.push(...value3);
-  let entries2: Dynamic = new Map(
-    input.map(
-      (input2?: Dynamic, options?: Dynamic): Dynamic => [input2, options],
+      : ungroupedNames.push(...groupNames);
+  let orderByName: Dynamic = new Map(
+    tokenNames.map(
+      (tokenName?: Dynamic, position?: Dynamic): Dynamic => [tokenName, position],
     ),
   );
-  items2.sort(
-    (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      (entries2.get(input2) ?? 0) - (entries2.get(options) ?? 0),
+  ungroupedNames.sort(
+    (firstName?: Dynamic, secondName?: Dynamic): Dynamic =>
+      (orderByName.get(firstName) ?? 0) - (orderByName.get(secondName) ?? 0),
   );
-  return items2.length > 0
+  return ungroupedNames.length > 0
     ? [
         {
           label: PaletteValue,
-          names: items2,
+          names: ungroupedNames,
         },
-        ...items,
+        ...namedGroups,
       ]
-    : items;
+    : namedGroups;
 }
-function normalizeColorTokenName(input?: Dynamic): Dynamic {
-  if (typeof input != "string") return;
-  let value: Dynamic = input.replace(/^(--|\.)/, "");
-  return DesignSystemTypeDeclarationsAZaZAZaZPattern.test(value)
-    ? value
+function normalizeColorTokenName(name?: Dynamic): Dynamic {
+  if (typeof name != "string") return;
+  let bareName: Dynamic = name.replace(/^(--|\.)/, "");
+  return DesignSystemTypeDeclarationsAZaZAZaZPattern.test(bareName)
+    ? bareName
     : undefined;
 }
 function boundedDesignSystemText(
-  input?: Dynamic,
-  options?: Dynamic,
+  text?: Dynamic,
+  maxLength?: Dynamic,
 ): Dynamic {
-  if (typeof input != "string" || input.trim() === "") return;
-  let value: Dynamic = input.trim();
-  return value.length > options
-    ? Array.from(value).slice(0, options).join("")
-    : value;
+  if (typeof text != "string" || text.trim() === "") return;
+  let trimmed: Dynamic = text.trim();
+  return trimmed.length > maxLength
+    ? Array.from(trimmed).slice(0, maxLength).join("")
+    : trimmed;
 }
-function designSystemName(input?: Dynamic): Dynamic {
-  return boundedDesignSystemText(input?.name, 80);
+function designSystemName(designSystem?: Dynamic): Dynamic {
+  return boundedDesignSystemText(designSystem?.name, 80);
 }
 function createDesignSystemModel(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  items?: Dynamic,
-  items2: Dynamic = [],
+  title?: Dynamic,
+  url?: Dynamic,
+  themeName?: Dynamic,
+  colors?: Dynamic,
+  typeStyles: Dynamic = [],
 ): Dynamic {
-  if (items.length === 0 && items2.length === 0) return;
-  let value: Dynamic = boundedDesignSystemText(options, 2e3),
-    value2: Dynamic = boundedDesignSystemText(context, 80);
+  if (colors.length === 0 && typeStyles.length === 0) return;
+  let safeUrl: Dynamic = boundedDesignSystemText(url, 2e3),
+    safeThemeName: Dynamic = boundedDesignSystemText(themeName, 80);
   return {
-    get title() { return boundedDesignSystemText(input, 80) ?? (uiMessage("canvas.typeDeclarations.designSystem")); },
-    ...(value !== undefined && /^https:\/\//.test(value)
+    get title() { return boundedDesignSystemText(title, 80) ?? (uiMessage("canvas.typeDeclarations.designSystem")); },
+    ...(safeUrl !== undefined && /^https:\/\//.test(safeUrl)
       ? {
-          url: value,
+          url: safeUrl,
         }
       : {}),
-    ...(value2 !== undefined
+    ...(safeThemeName !== undefined
       ? {
-          theme: value2,
+          theme: safeThemeName,
         }
       : {}),
-    colors: items,
-    ...(items2.length > 0
+    colors: colors,
+    ...(typeStyles.length > 0
       ? {
-          type: items2,
+          type: typeStyles,
         }
       : {}),
   };
 }
-function colorTokenGroupLabels(input?: Dynamic, options?: Dynamic): Dynamic {
-  return hasSingleColorGroup(input)
+function colorTokenGroupLabels(system?: Dynamic, color?: Dynamic): Dynamic {
+  return hasSingleColorGroup(system)
     ? {
-        group: input.title,
+        group: system.title,
       }
     : {
-        group: input.title,
-        subgroup: options.group,
+        group: system.title,
+        subgroup: color.group,
       };
 }
-function hasSingleColorGroup(input?: Dynamic): Dynamic {
-  let entry: Dynamic = DesignSystemTypeDeclarationsElementCache.get(input);
+function hasSingleColorGroup(system?: Dynamic): Dynamic {
+  let entry: Dynamic = DesignSystemTypeDeclarationsElementCache.get(system);
   entry === undefined &&
     DesignSystemTypeDeclarationsElementCache.set(
-      input,
-      (entry = input.colors.every(
-        (input2?: Dynamic): Dynamic => input2.group === input.colors[0].group,
+      system,
+      (entry = system.colors.every(
+        (color?: Dynamic): Dynamic => color.group === system.colors[0].group,
       )),
     );
   return entry;
 }
-function typographyGroupLabels(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.type ?? [];
-  return value.every(
-    (input2?: Dynamic): Dynamic => input2.group === value[0].group,
+function typographyGroupLabels(system?: Dynamic, typeStyle?: Dynamic): Dynamic {
+  let styles: Dynamic = system.type ?? [];
+  return styles.every(
+    (style?: Dynamic): Dynamic => style.group === styles[0].group,
   )
     ? {
-        group: input.title,
+        group: system.title,
       }
     : {
-        group: input.title,
-        subgroup: options.group,
+        group: system.title,
+        subgroup: typeStyle.group,
       };
 }
-function parseDesignSystemEntry(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null) return;
-  let value: Dynamic = input;
-  return parseCompleteDesignSystem(value.tokens, {
-    title: boundedDesignSystemText(value.title, 80),
-    url: boundedDesignSystemText(value.url, 2e3),
+function parseDesignSystemEntry(entry?: Dynamic): Dynamic {
+  if (typeof entry != "object" || entry === null) return;
+  let entryRecord: Dynamic = entry;
+  return parseCompleteDesignSystem(entryRecord.tokens, {
+    title: boundedDesignSystemText(entryRecord.title, 80),
+    url: boundedDesignSystemText(entryRecord.url, 2e3),
   });
 }
-function parseDesignSystems(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null) return [];
-  let value: Dynamic = input;
+function parseDesignSystems(source?: Dynamic): Dynamic {
+  if (typeof source != "object" || source === null) return [];
+  let sourceRecord: Dynamic = source;
   if (
-    value.systems === undefined &&
-    ((typeof value.color == "object" && value.color !== null) ||
-      (typeof value.type == "object" && value.type !== null))
+    sourceRecord.systems === undefined &&
+    ((typeof sourceRecord.color == "object" && sourceRecord.color !== null) ||
+      (typeof sourceRecord.type == "object" && sourceRecord.type !== null))
   )
     return parseDesignSystems({
       v: 1,
       systems: [
         {
-          tokens: input,
+          tokens: source,
         },
       ],
     });
   if (
-    (value.v !== undefined && value.v !== 1) ||
-    !Array.isArray(value.systems)
+    (sourceRecord.v !== undefined && sourceRecord.v !== 1) ||
+    !Array.isArray(sourceRecord.systems)
   )
     return [];
-  let value2: Dynamic = value.systems
+  let parsedSystems: Dynamic = sourceRecord.systems
       .map(parseDesignSystemEntry)
-      .filter((input2?: Dynamic): Dynamic => input2 !== undefined),
-    items: Dynamic = [];
-  for (let value3 of value2 as Dynamic) {
-    if (items.length >= 4) break;
-    let title: Dynamic = value3.title;
+      .filter((system?: Dynamic): Dynamic => system !== undefined),
+    uniqueSystems: Dynamic = [];
+  for (let system of parsedSystems as Dynamic) {
+    if (uniqueSystems.length >= 4) break;
+    let title: Dynamic = system.title;
     for (
       let count: Dynamic = 2;
-      items.some((input2?: Dynamic): Dynamic => input2.title === title) ||
-      (title !== value3.title &&
-        value2.some((input2?: Dynamic): Dynamic => input2.title === title));
+      uniqueSystems.some((existing?: Dynamic): Dynamic => existing.title === title) ||
+      (title !== system.title &&
+        parsedSystems.some((candidate?: Dynamic): Dynamic => candidate.title === title));
       count++
     )
-      title = value3.title + " " + String(count);
-    items.push(
-      title === value3.title
-        ? value3
+      title = system.title + " " + String(count);
+    uniqueSystems.push(
+      title === system.title
+        ? system
         : {
-            ...value3,
+            ...system,
             title: title,
           },
     );
   }
-  return items;
+  return uniqueSystems;
 }
 export {
   ApplicationJsonValue,
@@ -1065,8 +1065,8 @@ export {
   designSystemName,
   DesignSystemsKey,
   DesignSystemTypeDeclarationsAlias,
-  DesignSystemTypeDeclarationsAlias_2,
-  DesignSystemTypeDeclarationsAlias_3,
+  declarationFetcher as DesignSystemTypeDeclarationsAlias_2,
+  htmlReferenceStore as DesignSystemTypeDeclarationsAlias_3,
   DesignSystemTypeDeclarationsAZaZAZaZPattern,
   DesignSystemTypeDeclarationsCache,
   DesignSystemTypeDeclarationsCache_2,
@@ -1078,7 +1078,7 @@ export {
   DesignSystemTypeDeclarationsDelayMs_2,
   DesignSystemTypeDeclarationsElementCache,
   DesignSystemTypeDeclarationsFailedValue,
-  DesignSystemTypeDeclarationsFailedValue_2,
+  failedOverlayFiles as DesignSystemTypeDeclarationsFailedValue_2,
   DesignSystemTypeDeclarationsGet,
   DesignSystemTypeDeclarationsGetLength,
   DesignSystemTypeDeclarationsItems,
@@ -1091,16 +1091,16 @@ export {
   DesignSystemTypeDeclarationsRegistry,
   DesignSystemTypeDeclarationsReplace,
   DesignSystemTypeDeclarationsResolvedValue,
-  DesignSystemTypeDeclarationsResolvedValue_2,
-  DesignSystemTypeDeclarationsResolvedValue_3,
-  DesignSystemTypeDeclarationsResolvedValue_4,
-  DesignSystemTypeDeclarationsResolvedValue_5,
+  retryCooldownMs as DesignSystemTypeDeclarationsResolvedValue_2,
+  nextOverlayRetryAt as DesignSystemTypeDeclarationsResolvedValue_3,
+  maxHtmlReferenceBytes as DesignSystemTypeDeclarationsResolvedValue_4,
+  isUploadUnavailable as DesignSystemTypeDeclarationsResolvedValue_5,
   DesignSystemTypeDeclarationsRgbaHslaPattern,
   DesignSystemTypeDeclarationsSubscribers,
-  DesignSystemTypeDeclarationsSubscribers_2,
-  DesignSystemTypeDeclarationsSubscribers_3,
-  DesignSystemTypeDeclarationsSubscribers_4,
-  DesignSystemTypeDeclarationsSubscribers_5,
+  pendingHtmlFetches as DesignSystemTypeDeclarationsSubscribers_2,
+  htmlReferenceListeners as DesignSystemTypeDeclarationsSubscribers_3,
+  oversizedHtmlHashes as DesignSystemTypeDeclarationsSubscribers_4,
+  uploadingArtboardPaths as DesignSystemTypeDeclarationsSubscribers_5,
   DesignSystemTypeDeclarationsTextEncoder,
   fetchHtmlReference,
   getArtboardHtmlReference,
@@ -1152,57 +1152,57 @@ export function installDesignSystemTypeDeclarations(): () => void {
     DesignSystemTypeDeclarationsSubscribers = new Set();
     pendingFileOverlay = false;
     DesignSystemTypeDeclarationsItems = [3e3, 15e3, 6e4];
-    DesignSystemTypeDeclarationsResolvedValue_2 = 5 * 6e4;
-    DesignSystemTypeDeclarationsFailedValue_2 = [];
-    DesignSystemTypeDeclarationsResolvedValue_3 = 0;
+    retryCooldownMs = 5 * 6e4;
+    failedOverlayFiles = [];
+    nextOverlayRetryAt = 0;
     DesignSystemTypeDeclarationsTextEncoder = new TextEncoder();
     DesignSystemTypeDeclarationsReduce = (): Dynamic =>
       Object.values(DesignSystemPublishedFilesFromEntriesValue).reduce(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input +
-          DesignSystemTypeDeclarationsTextEncoder.encode(options).length,
+        (totalBytes?: Dynamic, text?: Dynamic): Dynamic =>
+          totalBytes +
+          DesignSystemTypeDeclarationsTextEncoder.encode(text).length,
         0,
       );
-    DesignSystemTypeDeclarationsResolvedValue_4 = 2 * 1024 * 1024;
+    maxHtmlReferenceBytes = 2 * 1024 * 1024;
     ApplicationJsonValue = "application/json";
     DesignSystemTypeDeclarationsDelayMs = 15e3;
     DesignSystemTypeDeclarationsCache = new Map();
     DesignSystemTypeDeclarationsCache_2 = new Map();
-    DesignSystemTypeDeclarationsSubscribers_2 = new Set();
+    pendingHtmlFetches = new Set();
     DesignSystemTypeDeclarationsCache_3 = new Map();
     DesignSystemTypeDeclarationsLimit = 6e4;
     DesignSystemTypeDeclarationsCache_4 = new Map();
-    DesignSystemTypeDeclarationsSubscribers_3 = new Set();
-    DesignSystemTypeDeclarationsSubscribers_4 = new Set();
-    DesignSystemTypeDeclarationsReplace = (input?: Dynamic): Dynamic =>
-      input.replace(/^\//, "");
-    DesignSystemTypeDeclarationsGet = (input?: Dynamic): Dynamic => {
-      let entry: Dynamic = DesignSystemTypeDeclarationsCache_3.get(input);
+    htmlReferenceListeners = new Set();
+    oversizedHtmlHashes = new Set();
+    DesignSystemTypeDeclarationsReplace = (path?: Dynamic): Dynamic =>
+      path.replace(/^\//, "");
+    DesignSystemTypeDeclarationsGet = (htmlHash?: Dynamic): Dynamic => {
+      let entry: Dynamic = DesignSystemTypeDeclarationsCache_3.get(htmlHash);
       return (
         entry !== undefined &&
         Date.now() - entry < DesignSystemTypeDeclarationsLimit
       );
     };
-    DesignSystemTypeDeclarationsResolvedValue_5 = false;
+    isUploadUnavailable = false;
     DesignSystemTypeDeclarationsDelayMs_2 = 800;
     DesignSystemTypeDeclarationsCache_5 = new Map();
     DesignSystemTypeDeclarationsCache_6 = new Map();
-    DesignSystemTypeDeclarationsSubscribers_5 = new Set();
-    DesignSystemTypeDeclarationsGetLength = (input?: Dynamic): Dynamic =>
-      new TextEncoder().encode(input).length;
+    uploadingArtboardPaths = new Set();
+    DesignSystemTypeDeclarationsGetLength = (text?: Dynamic): Dynamic =>
+      new TextEncoder().encode(text).length;
     DesignSystemsKey = "design-systems";
     DesignSystemTypeDeclarationsAZaZAZaZPattern =
       /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
-    DesignSystemTypeDeclarationsMax = (input?: Dynamic): Dynamic =>
-      Math.max(0, Math.min(1, input));
-    DesignSystemTypeDeclarationsPadStart = (input?: Dynamic): Dynamic =>
-      Math.round(DesignSystemTypeDeclarationsMax(input) * 255)
+    DesignSystemTypeDeclarationsMax = (unitValue?: Dynamic): Dynamic =>
+      Math.max(0, Math.min(1, unitValue));
+    DesignSystemTypeDeclarationsPadStart = (unitValue?: Dynamic): Dynamic =>
+      Math.round(DesignSystemTypeDeclarationsMax(unitValue) * 255)
         .toString(16)
         .padStart(2, "0");
-    DesignSystemTypeDeclarationsPow = (input?: Dynamic): Dynamic =>
-      input <= 0.0031308
-        ? 12.92 * input
-        : 1.055 * Math.pow(input, 1 / 2.4) - 0.055;
+    DesignSystemTypeDeclarationsPow = (linearChannel?: Dynamic): Dynamic =>
+      linearChannel <= 0.0031308
+        ? 12.92 * linearChannel
+        : 1.055 * Math.pow(linearChannel, 1 / 2.4) - 0.055;
     PaletteValue = "Palette";
     DesignSystemTypeDeclarationsPattern = /^(.*?)-\d{1,4}$/;
     DesignSystemTypeDeclarationsRgbaHslaPattern =

@@ -11,49 +11,49 @@ var reactChromeScrollbar: Dynamic;
 var jsxChromeScrollbar: Dynamic;
 var ChromeScrollbarLabel: Dynamic;
 var ChromeScrollbarConstant: Dynamic;
-var ChromeScrollbarConstant_2: Dynamic;
-var ChromeScrollbarConstant_3: Dynamic;
+var scrollbarRightInset: Dynamic;
+var scrollbarMinThumbHeight: Dynamic;
 var ChromeScrollbarDelayMs: Dynamic;
 var ChromeScrollbarClassNames: Dynamic;
-function getScrollbarMetrics(input?: Dynamic, options?: Dynamic): Dynamic {
+function getScrollbarMetrics(scroller?: Dynamic, isExplicitTarget?: Dynamic): Dynamic {
   let {
-      scrollHeight: value,
-      clientHeight: value2,
-      scrollTop: value3,
-    }: Dynamic = input,
-    value4: Dynamic = value > value2 + 1,
-    value5: Dynamic = value2,
-    value6: Dynamic = value4
+      scrollHeight: scrollHeight,
+      clientHeight: clientHeight,
+      scrollTop: scrollTop,
+    }: Dynamic = scroller,
+    overflows: Dynamic = scrollHeight > clientHeight + 1,
+    trackHeight: Dynamic = clientHeight,
+    thumbHeight: Dynamic = overflows
       ? Math.max(
-          ChromeScrollbarConstant_3,
-          Math.round((value2 / value) * value5),
+          scrollbarMinThumbHeight,
+          Math.round((clientHeight / scrollHeight) * trackHeight),
         )
       : 0,
-    value7: Dynamic = value5 - value6,
-    value8: Dynamic = value4
-      ? Math.round((value3 / (value - value2)) * value7)
+    maxThumbTop: Dynamic = trackHeight - thumbHeight,
+    thumbTop: Dynamic = overflows
+      ? Math.round((scrollTop / (scrollHeight - clientHeight)) * maxThumbTop)
       : 0,
-    value9: Dynamic = ChromeScrollbarConstant_2,
-    index: Dynamic = 0;
-  if (options) {
-    let offsetParent: Dynamic = input.offsetParent;
-    value9 =
-      (offsetParent ? offsetParent.clientWidth : input.offsetWidth) -
-      (input.offsetLeft + input.offsetWidth) +
-      ChromeScrollbarConstant_2;
-    index = input.offsetTop;
+    thumbRight: Dynamic = scrollbarRightInset,
+    trackTop: Dynamic = 0;
+  if (isExplicitTarget) {
+    let offsetParent: Dynamic = scroller.offsetParent;
+    thumbRight =
+      (offsetParent ? offsetParent.clientWidth : scroller.offsetWidth) -
+      (scroller.offsetLeft + scroller.offsetWidth) +
+      scrollbarRightInset;
+    trackTop = scroller.offsetTop;
   } else {
-    let value10: Dynamic = getComputedStyle(input);
-    value9 =
-      ChromeScrollbarConstant_2 - (parseFloat(value10.paddingRight) || 0);
-    value8 -= value2 - (parseFloat(value10.paddingBottom) || 0);
+    let computedStyle: Dynamic = getComputedStyle(scroller);
+    thumbRight =
+      scrollbarRightInset - (parseFloat(computedStyle.paddingRight) || 0);
+    thumbTop -= clientHeight - (parseFloat(computedStyle.paddingBottom) || 0);
   }
   return {
-    top: value8,
-    height: value6,
-    right: value9,
-    overflows: value4,
-    trackTop: index,
+    top: thumbTop,
+    height: thumbHeight,
+    right: thumbRight,
+    overflows: overflows,
+    trackTop: trackTop,
   };
 }
 function FloatingScrollbar({
@@ -61,204 +61,204 @@ function FloatingScrollbar({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactChromeScrollbar.useRef)(null),
-    value2: Dynamic = (0, reactChromeScrollbar.useRef)(null),
-    [value3, value4]: Dynamic = (0, reactChromeScrollbar.useState)(null),
-    [value5, value6]: Dynamic = (0, reactChromeScrollbar.useState)(false),
-    [value7, value8]: Dynamic = (0, reactChromeScrollbar.useState)(false),
-    value9: Dynamic = (0, reactChromeScrollbar.useRef)(false),
-    value10: Dynamic = (0, reactChromeScrollbar.useRef)(null),
-    value11: Dynamic = (0, reactChromeScrollbar.useRef)(null),
-    value12: Dynamic = (0, reactChromeScrollbar.useCallback)((): Dynamic => {
-      value11.current && clearTimeout(value11.current);
-      value11.current = setTimeout((): Dynamic => {
-        value11.current = null;
-        !value9.current && !value10.current && value6(false);
+  let rootRef: Dynamic = (0, reactChromeScrollbar.useRef)(null),
+    thumbRef: Dynamic = (0, reactChromeScrollbar.useRef)(null),
+    [metrics, setMetrics]: Dynamic = (0, reactChromeScrollbar.useState)(null),
+    [isVisible, setIsVisible]: Dynamic = (0, reactChromeScrollbar.useState)(false),
+    [isDragging, setIsDragging]: Dynamic = (0, reactChromeScrollbar.useState)(false),
+    isHoveringRef: Dynamic = (0, reactChromeScrollbar.useRef)(false),
+    dragStateRef: Dynamic = (0, reactChromeScrollbar.useRef)(null),
+    hideTimerRef: Dynamic = (0, reactChromeScrollbar.useRef)(null),
+    scheduleHide: Dynamic = (0, reactChromeScrollbar.useCallback)((): Dynamic => {
+      hideTimerRef.current && clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = setTimeout((): Dynamic => {
+        hideTimerRef.current = null;
+        !isHoveringRef.current && !dragStateRef.current && setIsVisible(false);
       }, ChromeScrollbarDelayMs);
     }, []);
   (0, reactChromeScrollbar.useEffect)((): Dynamic => {
-    let value16: Dynamic = target !== undefined,
-      value17: Dynamic = value16
+    let isExplicitTarget: Dynamic = target !== undefined,
+      scrollerElement: Dynamic = isExplicitTarget
         ? target.current
-        : (value.current?.parentElement ?? null);
-    if (!value17) return;
-    let index: Dynamic = 0,
-      callback7: Dynamic = (): Dynamic => {
-        index ||
-          (index = requestAnimationFrame((): Dynamic => {
-            index = 0;
-            let value20: Dynamic = getScrollbarMetrics(value17, value16);
-            value4(
-              (input?: Dynamic): Dynamic =>
-                input &&
-                input.top === value20.top &&
-                input.height === value20.height &&
-                input.right === value20.right &&
-                input.overflows === value20.overflows &&
-                input.trackTop === value20.trackTop
-                  ? input
-                  : value20,
+        : (rootRef.current?.parentElement ?? null);
+    if (!scrollerElement) return;
+    let frameId: Dynamic = 0,
+      scheduleMeasure: Dynamic = (): Dynamic => {
+        frameId ||
+          (frameId = requestAnimationFrame((): Dynamic => {
+            frameId = 0;
+            let nextMetrics: Dynamic = getScrollbarMetrics(scrollerElement, isExplicitTarget);
+            setMetrics(
+              (previousMetrics?: Dynamic): Dynamic =>
+                previousMetrics &&
+                previousMetrics.top === nextMetrics.top &&
+                previousMetrics.height === nextMetrics.height &&
+                previousMetrics.right === nextMetrics.right &&
+                previousMetrics.overflows === nextMetrics.overflows &&
+                previousMetrics.trackTop === nextMetrics.trackTop
+                  ? previousMetrics
+                  : nextMetrics,
             );
           }));
       },
-      callback8: Dynamic = (): Dynamic => {
-        callback7();
-        value6(true);
-        value12();
+      handleScroll: Dynamic = (): Dynamic => {
+        scheduleMeasure();
+        setIsVisible(true);
+        scheduleHide();
       },
-      callback9: Dynamic = (event?: Dynamic): Dynamic => {
-        let target2: Dynamic = event.target,
-          value20: Dynamic =
-            target2?.closest?.("[data-kit=overlay-scrollbar]") ?? null,
-          value21: Dynamic =
-            (value20 && value20 !== value.current
+      handlePointerOver: Dynamic = (event?: Dynamic): Dynamic => {
+        let eventTarget: Dynamic = event.target,
+          nearestScrollbar: Dynamic =
+            eventTarget?.closest?.("[data-kit=overlay-scrollbar]") ?? null,
+          isOwnScroller: Dynamic =
+            (nearestScrollbar && nearestScrollbar !== rootRef.current
               ? null
-              : (target2?.closest?.("[data-overlay-scroller]") ?? null)) ===
-            value17;
-        value9.current = value21;
-        value21
-          ? (callback7(), value6(true))
-          : value10.current || value6(false);
+              : (eventTarget?.closest?.("[data-overlay-scroller]") ?? null)) ===
+            scrollerElement;
+        isHoveringRef.current = isOwnScroller;
+        isOwnScroller
+          ? (scheduleMeasure(), setIsVisible(true))
+          : dragStateRef.current || setIsVisible(false);
       },
-      callback10: Dynamic = (): Dynamic => {
-        value9.current = false;
-        value10.current || value12();
+      handlePointerLeave: Dynamic = (): Dynamic => {
+        isHoveringRef.current = false;
+        dragStateRef.current || scheduleHide();
       };
-    value17.setAttribute("data-overlay-scroller", "");
-    value17.addEventListener("scroll", callback8, {
+    scrollerElement.setAttribute("data-overlay-scroller", "");
+    scrollerElement.addEventListener("scroll", handleScroll, {
       passive: true,
     });
-    value17.addEventListener("pointerover", callback9);
-    value17.addEventListener("pointerleave", callback10);
-    let value18: Dynamic =
+    scrollerElement.addEventListener("pointerover", handlePointerOver);
+    scrollerElement.addEventListener("pointerleave", handlePointerLeave);
+    let resizeObserver: Dynamic =
       typeof ResizeObserver == "function"
-        ? new ResizeObserver(callback7)
+        ? new ResizeObserver(scheduleMeasure)
         : null;
-    value18?.observe(value17);
-    let value19: Dynamic =
+    resizeObserver?.observe(scrollerElement);
+    let mutationObserver: Dynamic =
       typeof MutationObserver == "function"
-        ? new MutationObserver(callback7)
+        ? new MutationObserver(scheduleMeasure)
         : null;
-    value19?.observe(value17, {
+    mutationObserver?.observe(scrollerElement, {
       childList: true,
       subtree: true,
       characterData: true,
     });
-    value17.addEventListener("input", callback7);
-    callback7();
+    scrollerElement.addEventListener("input", scheduleMeasure);
+    scheduleMeasure();
     return (): Dynamic => {
-      value17.removeAttribute("data-overlay-scroller");
-      value17.removeEventListener("scroll", callback8);
-      value17.removeEventListener("pointerover", callback9);
-      value17.removeEventListener("pointerleave", callback10);
-      value17.removeEventListener("input", callback7);
-      value18?.disconnect();
-      value19?.disconnect();
-      index && cancelAnimationFrame(index);
-      value11.current && clearTimeout(value11.current);
+      scrollerElement.removeAttribute("data-overlay-scroller");
+      scrollerElement.removeEventListener("scroll", handleScroll);
+      scrollerElement.removeEventListener("pointerover", handlePointerOver);
+      scrollerElement.removeEventListener("pointerleave", handlePointerLeave);
+      scrollerElement.removeEventListener("input", scheduleMeasure);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+      frameId && cancelAnimationFrame(frameId);
+      hideTimerRef.current && clearTimeout(hideTimerRef.current);
     };
-  }, [target, value12]);
-  let callback: Dynamic = (): Dynamic =>
+  }, [target, scheduleHide]);
+  let getScrollTarget: Dynamic = (): Dynamic =>
       target !== undefined
         ? target.current
-        : (value.current?.parentElement ?? null),
-    callback2: Dynamic = (event?: Dynamic): Dynamic => {
+        : (rootRef.current?.parentElement ?? null),
+    handleThumbPointerDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (event.button !== 0) return;
-      let value16: Dynamic = callback();
-      if (value16) {
+      let scrollTarget: Dynamic = getScrollTarget();
+      if (scrollTarget) {
         event.preventDefault();
         event.stopPropagation();
         try {
           event.currentTarget.setPointerCapture(event.pointerId);
         } catch {}
-        value10.current = {
+        dragStateRef.current = {
           startY: event.clientY,
-          startTop: value16.scrollTop,
+          startTop: scrollTarget.scrollTop,
           pointerId: event.pointerId,
         };
-        value8(true);
-        value6(true);
+        setIsDragging(true);
+        setIsVisible(true);
       }
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value10.current,
-        value16: Dynamic = callback();
-      if (!current || !value16 || input.pointerId !== current.pointerId)
+    handleThumbPointerMove: Dynamic = (event?: Dynamic): Dynamic => {
+      let current: Dynamic = dragStateRef.current,
+        activeScrollTarget: Dynamic = getScrollTarget();
+      if (!current || !activeScrollTarget || event.pointerId !== current.pointerId)
         return;
-      let { scrollHeight: value17, clientHeight: value18 }: Dynamic = value16,
-        value19: Dynamic = value3?.height ?? ChromeScrollbarConstant_3,
-        value20: Dynamic = value18 - value19;
-      value20 <= 0 ||
-        (value16.scrollTop =
+      let { scrollHeight: targetScrollHeight, clientHeight: targetClientHeight }: Dynamic = activeScrollTarget,
+        currentThumbHeight: Dynamic = metrics?.height ?? scrollbarMinThumbHeight,
+        maxThumbTravel: Dynamic = targetClientHeight - currentThumbHeight;
+      maxThumbTravel <= 0 ||
+        (activeScrollTarget.scrollTop =
           current.startTop +
-          ((input.clientY - current.startY) * (value17 - value18)) / value20);
+          ((event.clientY - current.startY) * (targetScrollHeight - targetClientHeight)) / maxThumbTravel);
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value10.current;
+    handleThumbPointerUp: Dynamic = (event?: Dynamic): Dynamic => {
+      let current: Dynamic = dragStateRef.current;
       !current ||
-        input.pointerId !== current.pointerId ||
-        ((value10.current = null),
-        value8(false),
-        input.currentTarget.hasPointerCapture(input.pointerId) &&
-          input.currentTarget.releasePointerCapture(input.pointerId),
-        value9.current || value12());
+        event.pointerId !== current.pointerId ||
+        ((dragStateRef.current = null),
+        setIsDragging(false),
+        event.currentTarget.hasPointerCapture(event.pointerId) &&
+          event.currentTarget.releasePointerCapture(event.pointerId),
+        isHoveringRef.current || scheduleHide());
     },
-    callback5: Dynamic = (): Dynamic => {
-      value9.current = true;
-      value6(true);
+    handleThumbPointerEnter: Dynamic = (): Dynamic => {
+      isHoveringRef.current = true;
+      setIsVisible(true);
     },
-    callback6: Dynamic = (): Dynamic => {
-      value9.current = false;
-      value10.current || value12();
+    handleThumbPointerLeave: Dynamic = (): Dynamic => {
+      isHoveringRef.current = false;
+      dragStateRef.current || scheduleHide();
     },
-    value13: Dynamic = value5 && value3?.overflows === true,
-    value14: Dynamic = target !== undefined,
-    value15: Dynamic = value3 ? (
+    isThumbVisible: Dynamic = isVisible && metrics?.overflows === true,
+    hasExplicitTarget: Dynamic = target !== undefined,
+    thumbElement: Dynamic = metrics ? (
       <div
-        ref={value2}
+        ref={thumbRef}
         data-kit={"overlay-scrollbar-thumb"}
-        data-dragging={value7 ? "" : undefined}
+        data-dragging={isDragging ? "" : undefined}
         className={joinClassNames(
           "absolute cursor-default select-none",
           ChromeScrollbarClassNames,
-          !value13 && "pointer-events-none",
+          !isThumbVisible && "pointer-events-none",
         )}
         style={{
           width: ChromeScrollbarConstant,
-          right: value3.right,
-          top: (value14 ? value3.trackTop : 0) + value3.top,
-          height: value3.height,
-          opacity: value13 ? 1 : 0,
+          right: metrics.right,
+          top: (hasExplicitTarget ? metrics.trackTop : 0) + metrics.top,
+          height: metrics.height,
+          opacity: isThumbVisible ? 1 : 0,
         }}
-        onPointerEnter={callback5}
-        onPointerLeave={callback6}
-        onPointerDown={callback2}
-        onPointerMove={callback3}
-        onPointerUp={callback4}
-        onPointerCancel={callback4}
+        onPointerEnter={handleThumbPointerEnter}
+        onPointerLeave={handleThumbPointerLeave}
+        onPointerDown={handleThumbPointerDown}
+        onPointerMove={handleThumbPointerMove}
+        onPointerUp={handleThumbPointerUp}
+        onPointerCancel={handleThumbPointerUp}
       />
     ) : null;
   return (
     <div
-      ref={value}
+      ref={rootRef}
       aria-hidden={"true"}
       data-kit={"overlay-scrollbar"}
       className={joinClassNames(
-        value14
+        hasExplicitTarget
           ? "contents"
           : "sticky bottom-0 z-10 h-0 w-full shrink-0 overflow-visible",
         className,
       )}
     >
-      {value15}
+      {thumbElement}
     </div>
   );
 }
 export {
   ChromeScrollbarClassNames,
   ChromeScrollbarConstant,
-  ChromeScrollbarConstant_2,
-  ChromeScrollbarConstant_3,
+  scrollbarRightInset as ChromeScrollbarConstant_2,
+  scrollbarMinThumbHeight as ChromeScrollbarConstant_3,
   ChromeScrollbarDelayMs,
   ChromeScrollbarLabel,
   FloatingScrollbar,
@@ -279,8 +279,8 @@ export function installEditorChromeScrollbar(): () => void {
     ChromeScrollbarLabel =
       "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
     ChromeScrollbarConstant = 6;
-    ChromeScrollbarConstant_2 = 2;
-    ChromeScrollbarConstant_3 = 24;
+    scrollbarRightInset = 2;
+    scrollbarMinThumbHeight = 24;
     ChromeScrollbarDelayMs = 800;
     ChromeScrollbarClassNames =
       "rounded-full bg-alpha-3 hover:bg-alpha-4 data-[dragging]:bg-alpha-4 transition-opacity duration-150 motion-reduce:transition-none touch-none";

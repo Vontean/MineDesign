@@ -17,20 +17,20 @@ function createPageScrollStore(): Dynamic {
   let entries: Dynamic = new Map(),
     values: Dynamic = new Set();
   return {
-    get: (input?: Dynamic): Dynamic => entries.get(input) ?? zeroPageScroll,
-    set(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-      let value: Dynamic = entries.get(input) ?? zeroPageScroll;
-      if (!(value.x === options && value.y === context)) {
-        entries.set(input, {
-          x: options,
-          y: context,
+    get: (file?: Dynamic): Dynamic => entries.get(file) ?? zeroPageScroll,
+    set(file: Dynamic, x: Dynamic, y: Dynamic): Dynamic {
+      let currentScroll: Dynamic = entries.get(file) ?? zeroPageScroll;
+      if (!(currentScroll.x === x && currentScroll.y === y)) {
+        entries.set(file, {
+          x: x,
+          y: y,
         });
-        for (let value2 of [...values] as Dynamic) value2();
+        for (let listener of [...values] as Dynamic) listener();
       }
     },
-    subscribe(input: Dynamic): Dynamic {
-      values.add(input);
-      return (): Dynamic => values.delete(input);
+    subscribe(listener: Dynamic): Dynamic {
+      values.add(listener);
+      return (): Dynamic => values.delete(listener);
     },
   };
 }
@@ -39,49 +39,49 @@ function observePageScrollAndPointer(
   onPointer?: Dynamic,
   onScroll?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      typeof input == "number" && Number.isFinite(input) ? input : 0,
-    value: Dynamic = null,
-    callback2: Dynamic = (): Dynamic => {
+  let toFiniteNumber: Dynamic = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "number" && Number.isFinite(candidate) ? candidate : 0,
+    lastPointer: Dynamic = null,
+    reportScrollAndPointer: Dynamic = (): Dynamic => {
       try {
-        let value2: Dynamic = callback(targetWindow.scrollX),
-          value3: Dynamic = callback(targetWindow.scrollY);
-        onScroll(value2, value3);
-        value && onPointer(value.x + value2, value.y + value3);
+        let scrollX: Dynamic = toFiniteNumber(targetWindow.scrollX),
+          scrollY: Dynamic = toFiniteNumber(targetWindow.scrollY);
+        onScroll(scrollX, scrollY);
+        lastPointer && onPointer(lastPointer.x + scrollX, lastPointer.y + scrollY);
       } catch {}
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = input;
-      value2.isTrusted &&
-        ((value = {
-          x: value2.clientX,
-          y: value2.clientY,
+    handlePointerMove: Dynamic = (rawEvent?: Dynamic): Dynamic => {
+      let pointerEvent: Dynamic = rawEvent;
+      pointerEvent.isTrusted &&
+        ((lastPointer = {
+          x: pointerEvent.clientX,
+          y: pointerEvent.clientY,
         }),
-        callback2());
+        reportScrollAndPointer());
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = input;
-      value2.isTrusted && value2.relatedTarget == null && (value = null);
+    handlePointerOut: Dynamic = (rawEvent?: Dynamic): Dynamic => {
+      let pointerEvent: Dynamic = rawEvent;
+      pointerEvent.isTrusted && pointerEvent.relatedTarget == null && (lastPointer = null);
     },
     state: Dynamic = {
       capture: true,
       passive: true,
     };
   try {
-    targetWindow.addEventListener("pointermove", callback3, state);
-    targetWindow.addEventListener("pointerout", callback4, state);
-    targetWindow.addEventListener("scroll", callback2, {
+    targetWindow.addEventListener("pointermove", handlePointerMove, state);
+    targetWindow.addEventListener("pointerout", handlePointerOut, state);
+    targetWindow.addEventListener("scroll", reportScrollAndPointer, {
       passive: true,
     });
   } catch {
     return null;
   }
-  callback2();
+  reportScrollAndPointer();
   return (): Dynamic => {
     try {
-      targetWindow.removeEventListener("pointermove", callback3, state);
-      targetWindow.removeEventListener("pointerout", callback4, state);
-      targetWindow.removeEventListener("scroll", callback2);
+      targetWindow.removeEventListener("pointermove", handlePointerMove, state);
+      targetWindow.removeEventListener("pointerout", handlePointerOut, state);
+      targetWindow.removeEventListener("scroll", reportScrollAndPointer);
     } catch {}
   };
 }
@@ -91,13 +91,13 @@ function pagePointerWithinBox(
   scroll?: Dynamic,
   box?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = clientX - scroll.x,
-    value2: Dynamic = clientY - scroll.y;
-  return value < 0 || value2 < 0 || value > box.w || value2 > box.h
+  let left: Dynamic = clientX - scroll.x,
+    top: Dynamic = clientY - scroll.y;
+  return left < 0 || top < 0 || left > box.w || top > box.h
     ? null
     : {
-        left: value,
-        top: value2,
+        left: left,
+        top: top,
       };
 }
 function PageCommentSurface({
@@ -106,20 +106,20 @@ function PageCommentSurface({
   store: store,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, react_YEt.useSyncExternalStore)(
+  let pageScroll: Dynamic = (0, react_YEt.useSyncExternalStore)(
     store.subscribe,
     (): Dynamic => store.get(file),
     (): Dynamic => store.get(file),
   );
   return (
     <ViewportScale>
-      {(input?: Dynamic): Dynamic => (
+      {(scale?: Dynamic): Dynamic => (
         <PeerCursors
           surface={pageCommentSurfaceKey(file)}
-          toLocal={(input2?: Dynamic, options?: Dynamic): Dynamic =>
-            pagePointerWithinBox(input2, options, value, box)
+          toLocal={(clientX?: Dynamic, clientY?: Dynamic): Dynamic =>
+            pagePointerWithinBox(clientX, clientY, pageScroll, box)
           }
-          glyphScale={1 / input}
+          glyphScale={1 / scale}
         />
       )}
     </ViewportScale>
@@ -144,9 +144,9 @@ export function installCommentsPageSurfaces(): () => void {
       x: 0,
       y: 0,
     };
-    pageCommentSurfaceKey = (input?: Dynamic): Dynamic =>
+    pageCommentSurfaceKey = (file?: Dynamic): Dynamic =>
       embedMemoryPrefix() +
       "page:" +
-      stableAnchorHash(input);
+      stableAnchorHash(file);
   };
 }

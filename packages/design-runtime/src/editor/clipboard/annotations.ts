@@ -2,77 +2,77 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardArtboardsBlobBlobPattern, ClipboardArtboardsDataImagePattern, ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, ClipboardArtboardsResolvedValue_2 } from "./artboards";
+import { ClipboardArtboardsBlobBlobPattern, ClipboardArtboardsDataImagePattern, ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, ClipboardArtboardsResolvedValue_2 as maxAssetBytes } from "./artboards";
 import { sanitizePastedHtml } from "./html-sanitization";
 import { ClipboardPastePlanningKind } from "./paste-planning";
 import { parseDcHtmlDocument } from "../html/dc-document";
 import { escapeHtml } from "../html/escaping";
-import { annotationVisibleBounds, blankDcDocument, PlatformFileContentBackgroundBackgroundColorOpacityValues, PlatformFileContentTest_2 } from "../../platform/file-content";
+import { annotationVisibleBounds, blankDcDocument, PlatformFileContentBackgroundBackgroundColorOpacityValues, PlatformFileContentTest_2 as normalizePictureSource } from "../../platform/file-content";
 
 var ClipboardAnnotationsWebpAvifPattern: Dynamic;
 var ClipboardAnnotationsDataImagePattern: Dynamic;
 var ClipboardAnnotationsHelmetScHelmetPattern: Dynamic;
 var ClipboardAnnotationsTest: Dynamic;
 var ClipboardAnnotationsResolvedValue: Dynamic;
-var ClipboardAnnotationsResolvedValue_2: Dynamic;
-var ClipboardAnnotationsResolvedValue_3: Dynamic;
+var maxAnnotationJsonBytes: Dynamic;
+var maxAnnotationClipboardBytes: Dynamic;
 var ClipboardAnnotationsLimit: Dynamic;
 var ClipboardAnnotationsRectOvalLineValues: Dynamic;
 var ClipboardAnnotationsIncludes: Dynamic;
 var ClipboardAnnotationsGetLength: Dynamic;
 var ClipboardAnnotationsIncludes_2: Dynamic;
-var ClipboardAnnotationsTest_2: Dynamic;
-var ClipboardAnnotationsDataImagePattern_2: Dynamic;
-var ClipboardAnnotationsTest_3: Dynamic;
+var normalizeBlobReference: Dynamic;
+var strictDataImagePattern: Dynamic;
+var isSupportedDataImage: Dynamic;
 var ClipboardAnnotationsIdKindXValues: Dynamic;
 var ClipboardAnnotationsSrcAltValues: Dynamic;
-var ClipboardAnnotationsLimit_2: Dynamic;
+var maxCssValueLength: Dynamic;
 var ClipboardAnnotationsCharCodeAt: Dynamic;
-function blankArtboardBody(input?: Dynamic): Dynamic {
-  let value: Dynamic = blankDcDocument(),
-    value2: Dynamic = value.indexOf('<section class="stage"'),
-    value3: Dynamic = value.indexOf("</section>", value2) + 10;
-  if (value2 < 0 || value3 < value2)
+function blankArtboardBody(clipboardPayload?: Dynamic): Dynamic {
+  let blankDocument: Dynamic = blankDcDocument(),
+    stageStart: Dynamic = blankDocument.indexOf('<section class="stage"'),
+    stageEnd: Dynamic = blankDocument.indexOf("</section>", stageStart) + 10;
+  if (stageStart < 0 || stageEnd < stageStart)
     throw new Error("blank artboard source has no empty stage");
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      value.slice(0, value2) + input2 + value.slice(value3),
-    value4: Dynamic = input.artboards.map(
-      (input2?: Dynamic): Dynamic => ({
-        ...input2,
-        src: callback(
+  let insertStageContent: Dynamic = (stageHtml?: Dynamic): Dynamic =>
+      blankDocument.slice(0, stageStart) + stageHtml + blankDocument.slice(stageEnd),
+    artboards: Dynamic = clipboardPayload.artboards.map(
+      (artboard?: Dynamic): Dynamic => ({
+        ...artboard,
+        src: insertStageContent(
           ClipboardAnnotationsTest(
-            parseDcHtmlDocument(input2.src)?.template ??
-              input2.src,
+            parseDcHtmlDocument(artboard.src)?.template ??
+              artboard.src,
           ),
         ),
       }),
     ),
-    value5: Dynamic = Object.fromEntries(
-      Object.entries(input.files).filter(
-        ([input2]: Dynamic): Dynamic =>
-          ClipboardAnnotationsWebpAvifPattern.test(input2),
+    imageFiles: Dynamic = Object.fromEntries(
+      Object.entries(clipboardPayload.files).filter(
+        ([filePath]: Dynamic): Dynamic =>
+          ClipboardAnnotationsWebpAvifPattern.test(filePath),
       ),
     ),
-    value6: Dynamic = Object.fromEntries(
-      Object.entries(input.assets).filter(
-        ([, input2]: Dynamic): Dynamic =>
-          ClipboardAnnotationsDataImagePattern.test(input2),
+    imageAssets: Dynamic = Object.fromEntries(
+      Object.entries(clipboardPayload.assets).filter(
+        ([, assetData]: Dynamic): Dynamic =>
+          ClipboardAnnotationsDataImagePattern.test(assetData),
       ),
     );
   return {
     v: 1,
-    artboards: value4,
-    files: value5,
-    assets: value6,
+    artboards: artboards,
+    files: imageFiles,
+    assets: imageAssets,
   };
 }
-function annotationImageReferences(input?: Dynamic): Dynamic {
-  return input
+function annotationImageReferences(annotations?: Dynamic): Dynamic {
+  return annotations
     .flatMap(
       (source?: Dynamic): Dynamic =>
         source.kind === "image" &&
         source.video === undefined &&
-        ClipboardAnnotationsTest_2(source.src) !== null
+        normalizeBlobReference(source.src) !== null
           ? [source.src]
           : [],
     )
@@ -80,215 +80,215 @@ function annotationImageReferences(input?: Dynamic): Dynamic {
 }
 function annotationClipboardEntries(
   items?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = ClipboardArtboardsResolvedValue,
-  value: Dynamic = false,
-  extra?: Dynamic,
+  pasteOrigin?: Dynamic,
+  maxBytes: Dynamic = ClipboardArtboardsResolvedValue,
+  enforceLimits: Dynamic = false,
+  assetSource?: Dynamic,
 ): Dynamic {
-  let state: Dynamic = {
+  let skipCounts: Dynamic = {
       notRead: 0,
       cannot: 0,
       noRoom: 0,
       overCap: 0,
     },
-    callback: Dynamic = (source?: Dynamic): Dynamic =>
+    isVideoImage: Dynamic = (source?: Dynamic): Dynamic =>
       source.kind === "image" && source.video !== undefined,
-    value2: Dynamic = items
+    copyableAnnotations: Dynamic = items
       .filter(
         (source?: Dynamic): Dynamic =>
           ClipboardAnnotationsIncludes(source.kind) !== null &&
-          !callback(source),
+          !isVideoImage(source),
       )
       .map(({ page: page, ...props }: Dynamic): Dynamic => props),
-    value3: Dynamic = value2.reduce(
-      (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        input + ClipboardAnnotationsGetLength(options2),
+    totalBytes: Dynamic = copyableAnnotations.reduce(
+      (runningTotal?: Dynamic, annotation?: Dynamic): Dynamic =>
+        runningTotal + ClipboardAnnotationsGetLength(annotation),
       0,
     ),
-    value4: Dynamic =
-      value3 > ClipboardAnnotationsResolvedValue_2 || value3 > context
+    tooLargeReason: Dynamic =
+      totalBytes > maxAnnotationJsonBytes || totalBytes > maxBytes
         ? "budget"
-        : value &&
+        : enforceLimits &&
             ClipboardPastePlanningKind(
-              value2.filter(ClipboardAnnotationsIncludes_2),
+              copyableAnnotations.filter(ClipboardAnnotationsIncludes_2),
             )
           ? "bounds"
           : false;
-  if (value4)
+  if (tooLargeReason)
     return {
       fields: {
-        stayed: value2.length,
+        stayed: copyableAnnotations.length,
       },
-      tooLarge: value4,
+      tooLarge: tooLargeReason,
       assets: {},
-      left: state,
+      left: skipCounts,
     };
-  let state2: Dynamic = {},
-    value5: Dynamic = context - value3,
-    length: Dynamic = Object.keys(extra?.assets ?? {}).length,
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    flag: Dynamic = false,
-    value6: Dynamic = value2.flatMap((source?: Dynamic): Dynamic => {
+  let collectedAssets: Dynamic = {},
+    remainingBytes: Dynamic = maxBytes - totalBytes,
+    assetCount: Dynamic = Object.keys(assetSource?.assets ?? {}).length,
+    imageCount: Dynamic = 0,
+    readAttempts: Dynamic = 0,
+    isOutOfRoom: Dynamic = false,
+    keptAnnotations: Dynamic = copyableAnnotations.flatMap((source?: Dynamic): Dynamic => {
       if (source.kind !== "image") return [source];
-      let value11: Dynamic = ClipboardAnnotationsTest_2(source.src);
-      if (value11 === null) state.cannot++;
-      else if (value && ++index > ClipboardAnnotationsLimit) state.overCap++;
+      let blobRef: Dynamic = normalizeBlobReference(source.src);
+      if (blobRef === null) skipCounts.cannot++;
+      else if (enforceLimits && ++imageCount > ClipboardAnnotationsLimit) skipCounts.overCap++;
       else {
-        let value12: Dynamic = extra?.assets[value11] ?? state2[value11],
-          value13: Dynamic =
-            value12 ??
-            (!flag &&
-            index2 < ClipboardAnnotationsLimit &&
-            length + index2 < ClipboardArtboardsLimit
-              ? extra?.read(source.src)
+        let existingAsset: Dynamic = assetSource?.assets[blobRef] ?? collectedAssets[blobRef],
+          assetContent: Dynamic =
+            existingAsset ??
+            (!isOutOfRoom &&
+            readAttempts < ClipboardAnnotationsLimit &&
+            assetCount + readAttempts < ClipboardArtboardsLimit
+              ? assetSource?.read(source.src)
               : "");
-        if (value13 === undefined) {
-          state.notRead++;
-          index2++;
-        } else if (value13 === "") state.noRoom++;
+        if (assetContent === undefined) {
+          skipCounts.notRead++;
+          readAttempts++;
+        } else if (assetContent === "") skipCounts.noRoom++;
         else if (
-          value13.length > ClipboardArtboardsResolvedValue_2 ||
-          !ClipboardAnnotationsTest_3(value13)
+          assetContent.length > maxAssetBytes ||
+          !isSupportedDataImage(assetContent)
         )
-          state.cannot++;
-        else if (value12 === undefined && value13.length > value5) {
-          state.noRoom++;
-          flag = true;
+          skipCounts.cannot++;
+        else if (existingAsset === undefined && assetContent.length > remainingBytes) {
+          skipCounts.noRoom++;
+          isOutOfRoom = true;
         } else {
-          value12 === undefined &&
-            ((state2[value11] = value13),
-            (value5 -= value13.length),
-            length++);
+          existingAsset === undefined &&
+            ((collectedAssets[blobRef] = assetContent),
+            (remainingBytes -= assetContent.length),
+            assetCount++);
           return [
             {
               ...source,
-              src: value11,
+              src: blobRef,
             },
           ];
         }
       }
       return [];
     }),
-    value7: Dynamic = items.length - value6.length,
-    length2: Dynamic = items.filter(callback).length,
-    value8: Dynamic = value6.map(annotationVisibleBounds),
-    value9: Dynamic = options ?? {
-      x: Math.min(...value8.map((input?: Dynamic): Dynamic => input.x)),
-      y: Math.min(...value8.map((input?: Dynamic): Dynamic => input.y)),
+    leftOutCount: Dynamic = items.length - keptAnnotations.length,
+    videoCount: Dynamic = items.filter(isVideoImage).length,
+    visibleBounds: Dynamic = keptAnnotations.map(annotationVisibleBounds),
+    origin: Dynamic = pasteOrigin ?? {
+      x: Math.min(...visibleBounds.map((bounds?: Dynamic): Dynamic => bounds.x)),
+      y: Math.min(...visibleBounds.map((bounds?: Dynamic): Dynamic => bounds.y)),
     },
-    value10: Dynamic = value6.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic => ({
-        spec: input,
-        dx: value8[options2].x - value9.x,
-        dy: value8[options2].y - value9.y,
+    placements: Dynamic = keptAnnotations.map(
+      (spec?: Dynamic, index?: Dynamic): Dynamic => ({
+        spec: spec,
+        dx: visibleBounds[index].x - origin.x,
+        dy: visibleBounds[index].y - origin.y,
       }),
     );
   return {
     fields: {
-      ...(value10.length > 0
+      ...(placements.length > 0
         ? {
-            annotations: value10,
+            annotations: placements,
           }
         : {}),
-      ...(value7 > 0
+      ...(leftOutCount > 0
         ? {
-            leftOut: value7,
+            leftOut: leftOutCount,
           }
         : {}),
-      ...(length2 > 0
+      ...(videoCount > 0
         ? {
-            videos: length2,
+            videos: videoCount,
           }
         : {}),
     },
     tooLarge: false,
-    assets: state2,
-    left: state,
+    assets: collectedAssets,
+    left: skipCounts,
   };
 }
 function normalizeClipboardAnnotation(
-  input?: Dynamic,
-  options: Dynamic = false,
+  annotation?: Dynamic,
+  includeImageFields: Dynamic = false,
 ): Dynamic {
-  let callback: Dynamic = (items?: Dynamic): Dynamic =>
-      typeof items == "boolean" ||
-      (typeof items == "number" && Number.isFinite(items)) ||
-      (typeof items == "string" &&
-        items.length <= ClipboardAnnotationsResolvedValue),
-    state: Dynamic = {},
-    index: Dynamic = 0;
-  for (let value of (options
+  let isAllowedScalar: Dynamic = (fieldValue?: Dynamic): Dynamic =>
+      typeof fieldValue == "boolean" ||
+      (typeof fieldValue == "number" && Number.isFinite(fieldValue)) ||
+      (typeof fieldValue == "string" &&
+        fieldValue.length <= ClipboardAnnotationsResolvedValue),
+    normalized: Dynamic = {},
+    totalStringLength: Dynamic = 0;
+  for (let field of (includeImageFields
     ? [
         ...ClipboardAnnotationsIdKindXValues,
         ...ClipboardAnnotationsSrcAltValues,
       ]
     : ClipboardAnnotationsIdKindXValues) as Dynamic)
-    if (Object.hasOwn(input, value)) {
-      if (!callback(input[value])) return null;
-      state[value] = input[value];
-      typeof input[value] == "string" && (index += input[value].length);
+    if (Object.hasOwn(annotation, field)) {
+      if (!isAllowedScalar(annotation[field])) return null;
+      normalized[field] = annotation[field];
+      typeof annotation[field] == "string" && (totalStringLength += annotation[field].length);
     }
-  if (index > ClipboardAnnotationsResolvedValue) return null;
-  if (options && Object.hasOwn(input, "crop")) {
-    let crop: Dynamic = input.crop;
+  if (totalStringLength > ClipboardAnnotationsResolvedValue) return null;
+  if (includeImageFields && Object.hasOwn(annotation, "crop")) {
+    let crop: Dynamic = annotation.crop;
     if (typeof crop != "object" || crop === null || Array.isArray(crop))
       return null;
-    let [value, value2, value3]: Dynamic = ["zoom", "x", "y"].map(
-      (input2?: Dynamic): Dynamic =>
-        Object.hasOwn(crop, input2) ? crop[input2] : undefined,
+    let [zoom, x, y]: Dynamic = ["zoom", "x", "y"].map(
+      (property?: Dynamic): Dynamic =>
+        Object.hasOwn(crop, property) ? crop[property] : undefined,
     );
     if (
-      ![value, value2, value3].every(
-        (input2?: Dynamic): Dynamic =>
-          typeof input2 == "number" && Number.isFinite(input2),
+      ![zoom, x, y].every(
+        (coordinate?: Dynamic): Dynamic =>
+          typeof coordinate == "number" && Number.isFinite(coordinate),
       )
     )
       return null;
-    state.crop = {
-      zoom: value,
-      x: value2,
-      y: value3,
+    normalized.crop = {
+      zoom: zoom,
+      x: x,
+      y: y,
     };
   }
-  if (!Object.hasOwn(input, "css")) return state;
-  let css: Dynamic = input.css;
+  if (!Object.hasOwn(annotation, "css")) return normalized;
+  let css: Dynamic = annotation.css;
   if (typeof css != "object" || css === null || Array.isArray(css))
     return null;
-  let state2: Dynamic = {};
-  for (let value of PlatformFileContentBackgroundBackgroundColorOpacityValues as Dynamic) {
-    if (!Object.hasOwn(css, value)) continue;
-    let value2: Dynamic = css[value];
+  let normalizedCss: Dynamic = {};
+  for (let cssProperty of PlatformFileContentBackgroundBackgroundColorOpacityValues as Dynamic) {
+    if (!Object.hasOwn(css, cssProperty)) continue;
+    let cssValue: Dynamic = css[cssProperty];
     if (
-      typeof value2 != "string" ||
-      value2.length > ClipboardAnnotationsLimit_2 ||
-      ClipboardAnnotationsCharCodeAt(value2)
+      typeof cssValue != "string" ||
+      cssValue.length > maxCssValueLength ||
+      ClipboardAnnotationsCharCodeAt(cssValue)
     )
       return null;
-    state2[value] = value2;
+    normalizedCss[cssProperty] = cssValue;
   }
   return {
-    ...state,
-    css: state2,
+    ...normalized,
+    css: normalizedCss,
   };
 }
 function replaceClipboardPictureSource(
-  input?: Dynamic,
-  options?: Dynamic,
+  placement?: Dynamic,
+  source?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = PlatformFileContentTest_2(options);
-  return value === null
+  let blobRef: Dynamic = normalizePictureSource(source);
+  return blobRef === null
     ? null
     : {
         spec: {
-          ...input.spec,
-          src: value,
+          ...placement.spec,
+          src: blobRef,
         },
-        dx: input.dx,
-        dy: input.dy,
-        w: input.w,
-        h: input.h,
-        order: input.order,
+        dx: placement.dx,
+        dy: placement.dy,
+        w: placement.w,
+        h: placement.h,
+        order: placement.order,
       };
 }
 export {
@@ -297,22 +297,22 @@ export {
   blankArtboardBody,
   ClipboardAnnotationsCharCodeAt,
   ClipboardAnnotationsDataImagePattern,
-  ClipboardAnnotationsDataImagePattern_2,
+  strictDataImagePattern as ClipboardAnnotationsDataImagePattern_2,
   ClipboardAnnotationsGetLength,
   ClipboardAnnotationsHelmetScHelmetPattern,
   ClipboardAnnotationsIdKindXValues,
   ClipboardAnnotationsIncludes,
   ClipboardAnnotationsIncludes_2,
   ClipboardAnnotationsLimit,
-  ClipboardAnnotationsLimit_2,
+  maxCssValueLength as ClipboardAnnotationsLimit_2,
   ClipboardAnnotationsRectOvalLineValues,
   ClipboardAnnotationsResolvedValue,
-  ClipboardAnnotationsResolvedValue_2,
-  ClipboardAnnotationsResolvedValue_3,
+  maxAnnotationJsonBytes as ClipboardAnnotationsResolvedValue_2,
+  maxAnnotationClipboardBytes as ClipboardAnnotationsResolvedValue_3,
   ClipboardAnnotationsSrcAltValues,
   ClipboardAnnotationsTest,
-  ClipboardAnnotationsTest_2,
-  ClipboardAnnotationsTest_3,
+  normalizeBlobReference as ClipboardAnnotationsTest_2,
+  isSupportedDataImage as ClipboardAnnotationsTest_3,
   ClipboardAnnotationsWebpAvifPattern,
   normalizeClipboardAnnotation,
   replaceClipboardPictureSource,
@@ -324,16 +324,16 @@ export function installEditorClipboardAnnotations(): () => void {
       /^data:image\/(?:png|jpe?g|gif|webp|avif|bmp);/i;
     ClipboardAnnotationsHelmetScHelmetPattern =
       /<\/?(?:helmet|sc-helmet|x-import|dc-import|script)\b/i;
-    ClipboardAnnotationsTest = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = sanitizePastedHtml(input);
-      return ClipboardAnnotationsHelmetScHelmetPattern.test(value)
-        ? escapeHtml(input)
-        : value;
+    ClipboardAnnotationsTest = (html?: Dynamic): Dynamic => {
+      let sanitizedHtml: Dynamic = sanitizePastedHtml(html);
+      return ClipboardAnnotationsHelmetScHelmetPattern.test(sanitizedHtml)
+        ? escapeHtml(html)
+        : sanitizedHtml;
     };
     ClipboardAnnotationsResolvedValue = 64 * 1024;
-    ClipboardAnnotationsResolvedValue_2 = 1024 * 1024;
-    ClipboardAnnotationsResolvedValue_3 =
-      2 * ClipboardAnnotationsResolvedValue_2;
+    maxAnnotationJsonBytes = 1024 * 1024;
+    maxAnnotationClipboardBytes =
+      2 * maxAnnotationJsonBytes;
     ClipboardAnnotationsLimit = 20;
     ClipboardAnnotationsRectOvalLineValues = [
       "rect",
@@ -342,31 +342,31 @@ export function installEditorClipboardAnnotations(): () => void {
       "arrow",
       "pen",
     ];
-    ClipboardAnnotationsIncludes = (input?: Dynamic): Dynamic =>
-      input === undefined || input === "note"
+    ClipboardAnnotationsIncludes = (kind?: Dynamic): Dynamic =>
+      kind === undefined || kind === "note"
         ? "note"
-        : input === "title1" ||
-            input === "image" ||
-            ClipboardAnnotationsRectOvalLineValues.includes(input)
-          ? input
+        : kind === "title1" ||
+            kind === "image" ||
+            ClipboardAnnotationsRectOvalLineValues.includes(kind)
+          ? kind
           : null;
-    ClipboardAnnotationsGetLength = (input?: Dynamic): Dynamic =>
-      JSON.stringify(input).length;
+    ClipboardAnnotationsGetLength = (entry?: Dynamic): Dynamic =>
+      JSON.stringify(entry).length;
     ClipboardAnnotationsIncludes_2 = (source?: Dynamic): Dynamic =>
       ["note", "title1"].includes(
         ClipboardAnnotationsIncludes(source.kind) ?? "",
       );
-    ClipboardAnnotationsTest_2 = (input?: Dynamic): Dynamic =>
-      /^\/?_blob\/[0-9a-f]{32}$/.test(input)
-        ? input.replace(/^\//, "")
-        : ClipboardArtboardsBlobBlobPattern.test(input)
-          ? input
+    normalizeBlobReference = (src?: Dynamic): Dynamic =>
+      /^\/?_blob\/[0-9a-f]{32}$/.test(src)
+        ? src.replace(/^\//, "")
+        : ClipboardArtboardsBlobBlobPattern.test(src)
+          ? src
           : null;
-    ClipboardAnnotationsDataImagePattern_2 =
+    strictDataImagePattern =
       /^data:image\/(?:png|jpeg|gif|webp|avif|bmp);/;
-    ClipboardAnnotationsTest_3 = (input?: Dynamic): Dynamic =>
-      ClipboardArtboardsDataImagePattern.test(input) &&
-      ClipboardAnnotationsDataImagePattern_2.test(input);
+    isSupportedDataImage = (src?: Dynamic): Dynamic =>
+      ClipboardArtboardsDataImagePattern.test(src) &&
+      strictDataImagePattern.test(src);
     ClipboardAnnotationsIdKindXValues = [
       "id",
       "kind",
@@ -392,18 +392,18 @@ export function installEditorClipboardAnnotations(): () => void {
       "maxH",
     ];
     ClipboardAnnotationsSrcAltValues = ["src", "alt"];
-    ClipboardAnnotationsLimit_2 = 1200;
-    ClipboardAnnotationsCharCodeAt = (items?: Dynamic): Dynamic => {
-      let index: Dynamic = 0;
-      for (let index2: Dynamic = 0; index2 < items.length; index2++) {
-        let value: Dynamic = items.charCodeAt(index2);
-        index =
-          (value >= 97 && value <= 122) ||
-          (value >= 65 && value <= 90) ||
-          value === 45
-            ? index + 1
+    maxCssValueLength = 1200;
+    ClipboardAnnotationsCharCodeAt = (text?: Dynamic): Dynamic => {
+      let letterRun: Dynamic = 0;
+      for (let position: Dynamic = 0; position < text.length; position++) {
+        let charCode: Dynamic = text.charCodeAt(position);
+        letterRun =
+          (charCode >= 97 && charCode <= 122) ||
+          (charCode >= 65 && charCode <= 90) ||
+          charCode === 45
+            ? letterRun + 1
             : 0;
-        if (index > 32) return true;
+        if (letterRun > 32) return true;
       }
       return false;
     };

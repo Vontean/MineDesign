@@ -8,199 +8,199 @@ import { initializeOnce } from "../module-helpers";
 var allowedLinkProtocols: Dynamic;
 var mediaSourceTags: Dynamic;
 var initializeEditorAttributeValidation: Dynamic;
-function normalizeExternalUrl(input?: Dynamic, options?: Dynamic): Dynamic {
+function normalizeExternalUrl(url?: Dynamic, allowedProtocols?: Dynamic): Dynamic {
   try {
-    if (options.includes(new URL(input).protocol)) return input;
-    if (!/^[^:/?#]+:\d+(?:[/?#]|$)/.test(input)) return null;
+    if (allowedProtocols.includes(new URL(url).protocol)) return url;
+    if (!/^[^:/?#]+:\d+(?:[/?#]|$)/.test(url)) return null;
   } catch {}
-  let value: Dynamic = input.startsWith("//")
-    ? "https:" + input
-    : "https://" + input;
+  let httpsUrl: Dynamic = url.startsWith("//")
+    ? "https:" + url
+    : "https://" + url;
   try {
-    if (new URL(value).protocol === "https:") return value;
+    if (new URL(httpsUrl).protocol === "https:") return httpsUrl;
   } catch {}
   return null;
 }
-function normalizeLinkInput(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.replace(/[\t\n\r]/g, "").trim();
-  return value
-    ? value.startsWith("#")
-      ? value
-      : normalizeExternalUrl(value, allowedLinkProtocols)
+function normalizeLinkInput(linkText?: Dynamic): Dynamic {
+  let cleanedLink: Dynamic = linkText.replace(/[\t\n\r]/g, "").trim();
+  return cleanedLink
+    ? cleanedLink.startsWith("#")
+      ? cleanedLink
+      : normalizeExternalUrl(cleanedLink, allowedLinkProtocols)
     : null;
 }
-function sanitizeEditableLink(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.replace(/[\t\n\r]/g, "").trim();
-  if (!value) return null;
-  if (value.startsWith("#")) return value;
+function sanitizeEditableLink(linkText?: Dynamic): Dynamic {
+  let cleanedLink: Dynamic = linkText.replace(/[\t\n\r]/g, "").trim();
+  if (!cleanedLink) return null;
+  if (cleanedLink.startsWith("#")) return cleanedLink;
   try {
-    let protocol: Dynamic = new URL(value, "https://dc-editor-base.invalid/")
+    let protocol: Dynamic = new URL(cleanedLink, "https://dc-editor-base.invalid/")
       .protocol;
-    return allowedLinkProtocols.includes(protocol) ? value : null;
+    return allowedLinkProtocols.includes(protocol) ? cleanedLink : null;
   } catch {
     return null;
   }
 }
-function sanitizeMediaSource(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.replace(/[\t\n\r]/g, "").trim();
-  if (!value || value.startsWith("#")) return null;
+function sanitizeMediaSource(sourceText?: Dynamic): Dynamic {
+  let cleanedSource: Dynamic = sourceText.replace(/[\t\n\r]/g, "").trim();
+  if (!cleanedSource || cleanedSource.startsWith("#")) return null;
   try {
-    let value2: Dynamic = new URL(value, "https://dc-editor-base.invalid/");
-    return value2.protocol === "http:" || value2.protocol === "https:"
-      ? value
+    let resolvedUrl: Dynamic = new URL(cleanedSource, "https://dc-editor-base.invalid/");
+    return resolvedUrl.protocol === "http:" || resolvedUrl.protocol === "https:"
+      ? cleanedSource
       : null;
   } catch {
     return null;
   }
 }
 function classifyProtectedAttribute(
-  input?: Dynamic,
-  options?: Dynamic,
+  attributeKey?: Dynamic,
+  tagNames?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.toLowerCase(),
-    value2: Dynamic = options.map(
-      (input2?: Dynamic): Dynamic => (input2 ?? "").toLowerCase(),
+  let lowerKey: Dynamic = attributeKey.toLowerCase(),
+    lowerTags: Dynamic = tagNames.map(
+      (tagName?: Dynamic): Dynamic => (tagName ?? "").toLowerCase(),
     ),
-    value3: Dynamic = /^@data-keyframes-attr-(.+)$/.exec(value);
-  return value3
-    ? classifyProtectedAttribute("@" + value3[1], options) == null
+    keyframeMatch: Dynamic = /^@data-keyframes-attr-(.+)$/.exec(lowerKey);
+  return keyframeMatch
+    ? classifyProtectedAttribute("@" + keyframeMatch[1], tagNames) == null
       ? null
       : "keyframe-track"
-    : /^@on/.test(value)
+    : /^@on/.test(lowerKey)
       ? "handler"
-      : value === "@srcdoc" && value2.includes("iframe")
+      : lowerKey === "@srcdoc" && lowerTags.includes("iframe")
         ? "srcdoc"
-        : (value === "@src" ||
-              value === "@href" ||
-              value.endsWith(":href")) &&
-            value2.includes("script")
+        : (lowerKey === "@src" ||
+              lowerKey === "@href" ||
+              lowerKey.endsWith(":href")) &&
+            lowerTags.includes("script")
           ? "script-src"
-          : value === "@href" || value.endsWith(":href")
+          : lowerKey === "@href" || lowerKey.endsWith(":href")
             ? "href"
-            : (value === "@action" && value2.includes("form")) ||
-                (value === "@formaction" &&
-                  value2.some(
-                    (input2?: Dynamic): Dynamic =>
-                      input2 === "button" || input2 === "input",
+            : (lowerKey === "@action" && lowerTags.includes("form")) ||
+                (lowerKey === "@formaction" &&
+                  lowerTags.some(
+                    (tagName?: Dynamic): Dynamic =>
+                      tagName === "button" || tagName === "input",
                   ))
               ? "action"
-              : (value === "@src" &&
-                    value2.some(
-                      (input2?: Dynamic): Dynamic =>
-                        mediaSourceTags.has(input2),
+              : (lowerKey === "@src" &&
+                    lowerTags.some(
+                      (tagName?: Dynamic): Dynamic =>
+                        mediaSourceTags.has(tagName),
                     )) ||
-                  (value === "@data" &&
-                    value2.some(
-                      (input2?: Dynamic): Dynamic =>
-                        input2 === "object" || input2 === "embed",
+                  (lowerKey === "@data" &&
+                    lowerTags.some(
+                      (tagName?: Dynamic): Dynamic =>
+                        tagName === "object" || tagName === "embed",
                     ))
                 ? "embed-src"
                 : null;
 }
-function isProtectedAttribute(input?: Dynamic, options?: Dynamic): Dynamic {
-  return classifyProtectedAttribute(input, options) != null;
+function isProtectedAttribute(attributeKey?: Dynamic, tagNames?: Dynamic): Dynamic {
+  return classifyProtectedAttribute(attributeKey, tagNames) != null;
 }
 function validateAttributeEdit(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  attributeKey?: Dynamic,
+  newValue?: Dynamic,
+  tagNames?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = classifyProtectedAttribute(input, context);
-  if (value === "handler")
+  let protectionKind: Dynamic = classifyProtectedAttribute(attributeKey, tagNames);
+  if (protectionKind === "handler")
     return {
       ok: false,
       get message() { return uiMessage("inspector.attributeValidation.eventHandlerAttributesAreCodeAndCanTBeEditedHereAskInChatToChangeTheBehaviorInst"); },
     };
-  if (value === "srcdoc")
+  if (protectionKind === "srcdoc")
     return {
       ok: false,
       get message() { return uiMessage("inspector.attributeValidation.srcdocIsAFullHTMLDocumentAndCanTBeEditedHereAskInChatToChangeTheEmbeddedContentI"); },
     };
-  if (value === "script-src")
+  if (protectionKind === "script-src")
     return {
       ok: false,
       get message() { return uiMessage("inspector.attributeValidation.aScriptSSourceIsCodeAndCanTBeEditedHereAskInChatToChangeTheScriptInstead"); },
     };
-  if (value === "keyframe-track") {
-    let value2: Dynamic = /^@data-keyframes-attr-(.+)$/.exec(
-      input.toLowerCase(),
+  if (protectionKind === "keyframe-track") {
+    let keyframeMatch: Dynamic = /^@data-keyframes-attr-(.+)$/.exec(
+      attributeKey.toLowerCase(),
     );
     return validateKeyframeAttributeEdit(
-      classifyProtectedAttribute("@" + (value2?.[1] ?? ""), context),
-      options,
+      classifyProtectedAttribute("@" + (keyframeMatch?.[1] ?? ""), tagNames),
+      newValue,
     );
   }
-  if (value === "href") {
-    let value2: Dynamic = sanitizeEditableLink(options);
-    return value2 == null
+  if (protectionKind === "href") {
+    let sanitizedLink: Dynamic = sanitizeEditableLink(newValue);
+    return sanitizedLink == null
       ? {
           ok: false,
           get message() { return uiMessage("inspector.attributeValidation.thatLinkCanTBeUsedEnterAWebAddressHttpsAProjectPagePathMailtoOrTelLink"); },
         }
       : {
           ok: true,
-          value: value2,
+          value: sanitizedLink,
         };
   }
-  if (value === "action") {
-    let value2: Dynamic = sanitizeEditableLink(options);
-    return value2 == null
+  if (protectionKind === "action") {
+    let sanitizedAction: Dynamic = sanitizeEditableLink(newValue);
+    return sanitizedAction == null
       ? {
           ok: false,
           get message() { return uiMessage("inspector.attributeValidation.thatActionCanTBeUsedEnterAWebAddressHttpsAPathMailtoOrTel"); },
         }
       : {
           ok: true,
-          value: value2,
+          value: sanitizedAction,
         };
   }
-  if (value === "embed-src") {
-    let value2: Dynamic = sanitizeMediaSource(options);
-    return value2 == null
+  if (protectionKind === "embed-src") {
+    let sanitizedSource: Dynamic = sanitizeMediaSource(newValue);
+    return sanitizedSource == null
       ? {
           ok: false,
           get message() { return uiMessage("inspector.attributeValidation.thatSourceCanTBeUsedEnterAWebAddressHttpsOrAProjectFilePath"); },
         }
       : {
           ok: true,
-          value: value2,
+          value: sanitizedSource,
         };
   }
   return {
     ok: true,
-    value: options,
+    value: newValue,
   };
 }
 function validateKeyframeAttributeEdit(
-  input?: Dynamic,
-  options?: Dynamic,
+  protectionKind?: Dynamic,
+  keyframesJson?: Dynamic,
 ): Dynamic {
   if (
-    input === "handler" ||
-    input === "srcdoc" ||
-    input === "script-src" ||
-    input === "keyframe-track"
+    protectionKind === "handler" ||
+    protectionKind === "srcdoc" ||
+    protectionKind === "script-src" ||
+    protectionKind === "keyframe-track"
   )
     return {
       ok: false,
       get message() { return uiMessage("inspector.attributeValidation.thisKeyframeTrackTargetsAnAttributeThatCanTBeEditedHereAskInChatInstead"); },
     };
-  let value: Dynamic;
+  let keyframes: Dynamic;
   try {
-    value = JSON.parse(options);
+    keyframes = JSON.parse(keyframesJson);
   } catch {
     return {
       ok: false,
       get message() { return uiMessage("inspector.attributeValidation.keyframesMustBeAJSONArrayOfObjects"); },
     };
   }
-  for (let value2 of (Array.isArray(value) ? value : []) as Dynamic) {
-    let value3: Dynamic = value2?.v;
-    if (typeof value3 != "string" || value3.includes("{{")) continue;
+  for (let keyframe of (Array.isArray(keyframes) ? keyframes : []) as Dynamic) {
+    let keyframeValue: Dynamic = keyframe?.v;
+    if (typeof keyframeValue != "string" || keyframeValue.includes("{{")) continue;
     if (
-      (input === "embed-src"
-        ? sanitizeMediaSource(value3)
-        : sanitizeEditableLink(value3)) == null
+      (protectionKind === "embed-src"
+        ? sanitizeMediaSource(keyframeValue)
+        : sanitizeEditableLink(keyframeValue)) == null
     )
       return {
         ok: false,
@@ -209,7 +209,7 @@ function validateKeyframeAttributeEdit(
   }
   return {
     ok: true,
-    value: options,
+    value: keyframesJson,
   };
 }
 export {
