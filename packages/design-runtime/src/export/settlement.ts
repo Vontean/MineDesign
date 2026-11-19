@@ -4,13 +4,13 @@ import {
 } from "../runtime-types";
 
 var settlementRuntimeScript: Dynamic;
-function buildSettlementScript(input?: Dynamic): Dynamic {
+function buildSettlementScript(settlementOptions?: Dynamic): Dynamic {
   return settlementRuntimeScript
-    .replace("__CAP__", String(input.capMs))
-    .replace("__EAGER__", input.eagerImages ? "1" : "0")
-    .replace("__SCROLL__", input.scrollThrough ? "1" : "0")
-    .replace("__OPEN__", input.openDetails ? "1" : "0")
-    .replace("__FINISH__", input.finishAnimations ? "1" : "0");
+    .replace("__CAP__", String(settlementOptions.capMs))
+    .replace("__EAGER__", settlementOptions.eagerImages ? "1" : "0")
+    .replace("__SCROLL__", settlementOptions.scrollThrough ? "1" : "0")
+    .replace("__OPEN__", settlementOptions.openDetails ? "1" : "0")
+    .replace("__FINISH__", settlementOptions.finishAnimations ? "1" : "0");
 }
 export {
   buildSettlementScript,

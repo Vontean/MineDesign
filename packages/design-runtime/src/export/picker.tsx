@@ -42,32 +42,32 @@ function initialExportPickedFiles(
   pageId?: Dynamic,
 ): Dynamic {
   if (focusedFile !== null && format === "pdf")
-    return new Set(artboards.map((input?: Dynamic): Dynamic => input.file));
+    return new Set(artboards.map((artboard?: Dynamic): Dynamic => artboard.file));
   let value: Dynamic =
     focusedFile === null
       ? undefined
       : artboards.find(
-          (input?: Dynamic): Dynamic => input.file === focusedFile,
+          (artboard?: Dynamic): Dynamic => artboard.file === focusedFile,
         );
   if (value) return new Set([value.file]);
-  let value2: Dynamic = artboards
-    .filter((input?: Dynamic): Dynamic => selectedFiles.has(input.file))
-    .map((input?: Dynamic): Dynamic => input.file);
+  let initialSelection: Dynamic = artboards
+    .filter((artboard?: Dynamic): Dynamic => selectedFiles.has(artboard.file))
+    .map((artboard?: Dynamic): Dynamic => artboard.file);
   if (format === "pdf")
     return new Set(
-      value2.length > 0
-        ? value2
-        : artboards.map((input?: Dynamic): Dynamic => input.file),
+      initialSelection.length > 0
+        ? initialSelection
+        : artboards.map((artboard?: Dynamic): Dynamic => artboard.file),
     );
-  if (value2.length > 0)
-    return new Set(format === "png" && value2.length > 1 ? [] : value2);
-  let value3: Dynamic =
+  if (initialSelection.length > 0)
+    return new Set(format === "png" && initialSelection.length > 1 ? [] : initialSelection);
+  let defaultArtboard: Dynamic =
     (pageId === null
       ? undefined
       : artboards.find(
-          (input?: Dynamic): Dynamic => input.file === pageId,
+          (artboard?: Dynamic): Dynamic => artboard.file === pageId,
         )) ?? artboards[0];
-  return new Set(value3 ? [value3.file] : []);
+  return new Set(defaultArtboard ? [defaultArtboard.file] : []);
 }
 function toggleExportPickedFile(
   format?: Dynamic,
@@ -84,7 +84,7 @@ function pickedExportArtboards(
   pickedFiles?: Dynamic,
 ): Dynamic {
   return artboards.filter(
-    (input?: Dynamic): Dynamic => pickedFiles.has(input.file),
+    (artboard?: Dynamic): Dynamic => pickedFiles.has(artboard.file),
   );
 }
 function artboardSupportsExportScale(
@@ -95,27 +95,27 @@ function artboardSupportsExportScale(
     scale === 1 ||
     artboard === undefined ||
     imageCaptureScaleOptions(artboard.w, artboard.h).some(
-      (input?: Dynamic): Dynamic => input.scale === scale && input.fits,
+      (scaleOption?: Dynamic): Dynamic => scaleOption.scale === scale && scaleOption.fits,
     )
   );
 }
 function initialExportScale(artboards?: Dynamic, file?: Dynamic): Dynamic {
   return artboards.some(
-    (input?: Dynamic): Dynamic =>
-      input.file === file || !artboardSupportsExportScale(input, 2),
+    (artboard?: Dynamic): Dynamic =>
+      artboard.file === file || !artboardSupportsExportScale(artboard, 2),
   )
     ? 1
     : 2;
 }
 function artboardNeedsScaledDownExport(artboard?: Dynamic): Dynamic {
   return !imageCaptureScaleOptions(artboard.w, artboard.h).some(
-    (input?: Dynamic): Dynamic => input.fits && input.scale <= 2,
+    (scaleOption?: Dynamic): Dynamic => scaleOption.fits && scaleOption.scale <= 2,
   );
 }
 function describeExportScaleOption(
   artboards?: Dynamic,
   scale?: Dynamic,
-  options: Dynamic = {},
+  captureOptions: Dynamic = {},
 ): Dynamic {
   let [value]: Dynamic = artboards;
   if (value === undefined)
@@ -124,36 +124,36 @@ function describeExportScaleOption(
       get title() { return uiMessage("canvas.picker.exportAt", { value1: String(String(scale)) }); },
     };
   if (artboards.length > 1) {
-    let value3: Dynamic = artboards.find(
-      (input?: Dynamic): Dynamic =>
-        !artboardSupportsExportScale(input, scale),
+    let unsupportedArtboard: Dynamic = artboards.find(
+      (artboard?: Dynamic): Dynamic =>
+        !artboardSupportsExportScale(artboard, scale),
     );
-    if (value3)
+    if (unsupportedArtboard)
       return {
         offered: false,
-        get title() { return "\u201C" + exportArtboardTitle(value3) + "\u201D is too large to export at " + String(scale) + "\xD7"; },
+        get title() { return "\u201C" + exportArtboardTitle(unsupportedArtboard) + "\u201D is too large to export at " + String(scale) + "\xD7"; },
       };
-    let value4: Dynamic = artboards.find(artboardNeedsScaledDownExport);
-    return value4
+    let oversizedArtboard: Dynamic = artboards.find(artboardNeedsScaledDownExport);
+    return oversizedArtboard
       ? {
           offered: true,
-          get title() { return "\u201C" + exportArtboardTitle(value4) + "\u201D exports smaller than full size: it is over the capture limit"; },
+          get title() { return "\u201C" + exportArtboardTitle(oversizedArtboard) + "\u201D exports smaller than full size: it is over the capture limit"; },
         }
       : {
           offered: true,
           get title() { return "Export " + String(artboards.length) + " artboards at " + String(scale) + "\xD7"; },
         };
   }
-  let value2: Dynamic = imageCaptureScaleOptions(
+  let singleArtboardScale: Dynamic = imageCaptureScaleOptions(
     value.w,
     value.h,
-  ).find((input?: Dynamic): Dynamic => input.scale === scale);
-  return value2?.fits
+  ).find((scaleOption?: Dynamic): Dynamic => scaleOption.scale === scale);
+  return singleArtboardScale?.fits
     ? {
         offered: true,
-        get title() { return String(value2.outW) + getArtboardCaptureMode(value, options) === "full"
+        get title() { return String(singleArtboardScale.outW) + getArtboardCaptureMode(value, captureOptions) === "full"
             ? " px wide, full length"
-            : " \xD7 " + String(value2.outH) + " px"; },
+            : " \xD7 " + String(singleArtboardScale.outH) + " px"; },
       }
     : scale === 1
       ? {
@@ -219,28 +219,28 @@ function validExportSessionScale(
   artboards?: Dynamic,
 ): Dynamic {
   return pickedExportArtboards(artboards, session.picked).every(
-    (input?: Dynamic): Dynamic =>
-      artboardSupportsExportScale(input, session.scale),
+    (artboard?: Dynamic): Dynamic =>
+      artboardSupportsExportScale(artboard, session.scale),
   )
     ? session.scale
     : 1;
 }
-function useExportPicker(options?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0, react_Su.useState)(null),
-    value3: Dynamic = (0, react_Su.useRef)(null),
-    value4: Dynamic = (0, react_Su.useRef)(null),
-    value5: Dynamic = (0, react_Su.useRef)(options);
-  value5.current = options;
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value3.current = input;
-      value2(input);
+function useExportPicker(pickerOptions?: Dynamic): Dynamic {
+  let [value, setPickerState]: Dynamic = (0, react_Su.useState)(null),
+    pickerStateRef: Dynamic = (0, react_Su.useRef)(null),
+    currentPickerRef: Dynamic = (0, react_Su.useRef)(null),
+    pickerOptionsRef: Dynamic = (0, react_Su.useRef)(pickerOptions);
+  pickerOptionsRef.current = pickerOptions;
+  let callback: Dynamic = (pickerState?: Dynamic): Dynamic => {
+      pickerStateRef.current = pickerState;
+      setPickerState(pickerState);
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let undoEnter: Dynamic = input.undoEnter;
-      input.undoEnter = null;
+    resetPickerState: Dynamic = (pickerState?: Dynamic): Dynamic => {
+      let undoEnter: Dynamic = pickerState.undoEnter;
+      pickerState.undoEnter = null;
       undoEnter?.();
       if (
-        !value3.current ||
+        !pickerStateRef.current ||
         (callback(null), !(document as Dynamic).hasFocus())
       )
         return;
@@ -253,270 +253,270 @@ function useExportPicker(options?: Dynamic): Dynamic {
         )
       )
         return;
-      let focusWas: Dynamic = input.focusWas,
-        value20: Dynamic =
+      let focusWas: Dynamic = pickerState.focusWas,
+        hasFocus: Dynamic =
           focusWas instanceof HTMLElement &&
           focusWas.isConnected &&
           focusWas !== (document as Dynamic).body &&
           focusWas.tagName !== "IFRAME",
-        callback3: Dynamic = (): Dynamic =>
-          (value5.current.homeFocus?.() ?? null)?.focus({
+        restoreFocus: Dynamic = (): Dynamic =>
+          (pickerOptionsRef.current.homeFocus?.() ?? null)?.focus({
             preventScroll: true,
           });
-      if (!value20) return callback3();
-      let callback4: Dynamic = (input2?: Dynamic): Dynamic => {
+      if (!hasFocus) return restoreFocus();
+      let retryFocus: Dynamic = (attempts?: Dynamic): Dynamic => {
         focusWas.isConnected &&
           focusWas.focus({
             preventScroll: true,
           });
         if ((document as Dynamic).activeElement === focusWas) return;
-        let activeElement2: Dynamic = (document as Dynamic).activeElement;
-        (activeElement2 !== null &&
-          activeElement2 !== (document as Dynamic).body &&
-          activeElement2.closest("[data-artboard-pick]") === null) ||
-          (input2 > 0
-            ? requestAnimationFrame((): Dynamic => callback4(input2 - 1))
-            : callback3());
+        let activeElementNode: Dynamic = (document as Dynamic).activeElement;
+        (activeElementNode !== null &&
+          activeElementNode !== (document as Dynamic).body &&
+          activeElementNode.closest("[data-artboard-pick]") === null) ||
+          (attempts > 0
+            ? requestAnimationFrame((): Dynamic => retryFocus(attempts - 1))
+            : restoreFocus());
       };
-      callback4(2);
+      retryFocus(2);
     },
-    value6: Dynamic = (0, react_Su.useCallback)((): Dynamic => {
-      let current: Dynamic = value4.current;
-      value4.current = null;
+    finishExport: Dynamic = (0, react_Su.useCallback)((): Dynamic => {
+      let current: Dynamic = currentPickerRef.current;
+      currentPickerRef.current = null;
       current
         ? (clearTimeout(current.timer),
           current.offSignal(),
-          callback2(current))
-        : value3.current && callback(null);
+          resetPickerState(current))
+        : pickerStateRef.current && callback(null);
     }, []),
-    value7: Dynamic = (0, react_Su.useCallback)(
-      (input?: Dynamic): Dynamic => {
+    handleExportEvent: Dynamic = (0, react_Su.useCallback)(
+      (event?: Dynamic): Dynamic => {
         try {
-          value5.current.onStage?.(input);
+          pickerOptionsRef.current.onStage?.(event);
         } catch {}
       },
       [],
     ),
-    value8: Dynamic = (0, react_Su.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value4.current,
-          current2: Dynamic = value3.current;
-        return !current || !current2
+    cancelExport: Dynamic = (0, react_Su.useCallback)(
+      (reason?: Dynamic): Dynamic => {
+        let current: Dynamic = currentPickerRef.current,
+          currentPicker: Dynamic = pickerStateRef.current;
+        return !current || !currentPicker
           ? false
-          : (current2.busy
+          : (currentPicker.busy
               ? (current.run.abort(new ExportCancelled()),
-                callback2(current),
-                value7("dropped"))
+                resetPickerState(current),
+                handleExportEvent("dropped"))
               : (current.reject(new ExportCancelled()),
-                value6(),
-                value7(
-                  input === "leave"
+                finishExport(),
+                handleExportEvent(
+                  reason === "leave"
                     ? "left"
-                    : input === "lapse"
+                    : reason === "lapse"
                       ? "lapsed"
                       : "cancelled",
                 )),
             true);
       },
-      [value6, value7],
+      [finishExport, handleExportEvent],
     ),
-    value9: Dynamic = (0, react_Su.useCallback)(
-      (): Dynamic => value8("cancel"),
-      [value8],
+    cancelPicker: Dynamic = (0, react_Su.useCallback)(
+      (): Dynamic => cancelExport("cancel"),
+      [cancelExport],
     ),
-    value10: Dynamic = (0, react_Su.useCallback)(
-      (): Dynamic => value8("leave"),
-      [value8],
+    leavePicker: Dynamic = (0, react_Su.useCallback)(
+      (): Dynamic => cancelExport("leave"),
+      [cancelExport],
     ),
-    value11: Dynamic = (0, react_Su.useCallback)(
-      (): Dynamic => value4.current !== null || value3.current !== null,
+    isPointerUp: Dynamic = (0, react_Su.useCallback)(
+      (): Dynamic => currentPickerRef.current !== null || pickerStateRef.current !== null,
       [],
     ),
-    value12: Dynamic = (0, react_Su.useCallback)(
+    chooseArtboard: Dynamic = (0, react_Su.useCallback)(
       (
-        input?: Dynamic,
-        options2?: Dynamic,
-        context?: Dynamic,
-        value20: Dynamic = canvasExportMaxDurationMs,
+        kind?: Dynamic,
+        selection?: Dynamic,
+        abortSignal?: Dynamic,
+        maxDurationMs: Dynamic = canvasExportMaxDurationMs,
       ): Dynamic =>
-        value4.current
+        currentPickerRef.current
           ? Promise.reject(
               new Error("An export is already choosing artboards."),
             )
-          : context.aborted
+          : abortSignal.aborted
             ? Promise.reject(new ExportCancelled())
-            : new Promise((input2?: Dynamic, options3?: Dynamic): Dynamic => {
-                let value21: Dynamic = value5.current.enter(),
-                  callback3: Dynamic = (): Dynamic => {
-                    value8("signal");
+            : new Promise((resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+                let previousFocus: Dynamic = pickerOptionsRef.current.enter(),
+                  onAbort: Dynamic = (): Dynamic => {
+                    cancelExport("signal");
                   };
-                context.addEventListener("abort", callback3);
-                let value22: Dynamic = setTimeout((): Dynamic => {
-                    value3.current?.busy ||
-                      (value5.current.onLapse(), value8("lapse"));
-                  }, value20),
+                abortSignal.addEventListener("abort", onAbort);
+                let abortTimer: Dynamic = setTimeout((): Dynamic => {
+                    pickerStateRef.current?.busy ||
+                      (pickerOptionsRef.current.onLapse(), cancelExport("lapse"));
+                  }, maxDurationMs),
                   activeElement: Dynamic = (document as Dynamic)
                     .activeElement;
-                value4.current = {
-                  resolve: input2,
-                  reject: options3,
+                currentPickerRef.current = {
+                  resolve: resolve,
+                  reject: reject,
                   run: new AbortController(),
-                  undoEnter: value21,
+                  undoEnter: previousFocus,
                   focusWas: activeElement,
-                  timer: value22,
+                  timer: abortTimer,
                   offSignal: (): Dynamic =>
-                    context.removeEventListener("abort", callback3),
+                    abortSignal.removeEventListener("abort", onAbort),
                 };
                 callback({
-                  kind: input,
-                  picked: options2.picked,
-                  scale: options2.scale,
+                  kind: kind,
+                  picked: selection.picked,
+                  scale: selection.scale,
                   busy: false,
                 });
-                value7("opened");
-                let artboards: Dynamic = value5.current.artboards,
-                  { hint: value23 }: Dynamic = exportPickerInstructions(
-                    input,
-                    options2.picked.size,
+                handleExportEvent("opened");
+                let artboards: Dynamic = pickerOptionsRef.current.artboards,
+                  { hint: instructionHint }: Dynamic = exportPickerInstructions(
+                    kind,
+                    selection.picked.size,
                     artboards.length,
                   ),
-                  value24: Dynamic = pickedExportArtboards(
+                  pickedArtboards: Dynamic = pickedExportArtboards(
                     artboards,
-                    options2.picked,
+                    selection.picked,
                   );
                 announce(
-                  value24.length > 0
-                    ? value23 +
+                  pickedArtboards.length > 0
+                    ? instructionHint +
                         ". " +
                         exportPickedArtboardsLabel(
-                          input,
-                          value24,
+                          kind,
+                          pickedArtboards,
                           artboards.length,
                         )
-                    : value23,
+                    : instructionHint,
                 );
               }),
-      [value8, value7],
+      [cancelExport, handleExportEvent],
     ),
-    value13: Dynamic = (0, react_Su.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value3.current;
-        current && !current.busy && callback(input(current));
+    updatePickerSelection: Dynamic = (0, react_Su.useCallback)(
+      (source?: Dynamic): Dynamic => {
+        let current: Dynamic = pickerStateRef.current;
+        current && !current.busy && callback(source(current));
       },
       [],
     ),
-    value14: Dynamic = (0, react_Su.useCallback)(
-      (input?: Dynamic): Dynamic =>
-        value13((source?: Dynamic): Dynamic => {
-          let value20: Dynamic = input(source);
+    updatePickerScale: Dynamic = (0, react_Su.useCallback)(
+      (selectedFiles?: Dynamic): Dynamic =>
+        updatePickerSelection((source?: Dynamic): Dynamic => {
+          let nextSelection: Dynamic = selectedFiles(source);
           if (
-            value20.size === source.picked.size &&
-            [...value20].every(
-              (input2?: Dynamic): Dynamic => source.picked.has(input2),
+            nextSelection.size === source.picked.size &&
+            [...nextSelection].every(
+              (file?: Dynamic): Dynamic => source.picked.has(file),
             )
           )
             return source;
-          let artboards: Dynamic = value5.current.artboards;
+          let artboards: Dynamic = pickerOptionsRef.current.artboards;
           announce(
             exportPickedArtboardsLabel(
               source.kind,
-              pickedExportArtboards(artboards, value20),
+              pickedExportArtboards(artboards, nextSelection),
               artboards.length,
             ),
           );
           return {
             ...source,
-            picked: value20,
+            picked: nextSelection,
           };
         }),
-      [value13],
+      [updatePickerSelection],
     ),
-    value15: Dynamic = (0, react_Su.useCallback)(
-      (input?: Dynamic, options2: Dynamic = false): Dynamic =>
-        value14((source?: Dynamic): Dynamic => {
-          let artboards: Dynamic = value5.current.artboards,
-            value20: Dynamic = [...input].filter(
-              (input2?: Dynamic): Dynamic =>
+    pickFiles: Dynamic = (0, react_Su.useCallback)(
+      (files?: Dynamic, toggleSingle: Dynamic = false): Dynamic =>
+        updatePickerScale((source?: Dynamic): Dynamic => {
+          let artboards: Dynamic = pickerOptionsRef.current.artboards,
+            matchingFiles: Dynamic = [...files].filter(
+              (file?: Dynamic): Dynamic =>
                 artboards.some(
-                  (input3?: Dynamic): Dynamic => input3.file === input2,
+                  (candidate?: Dynamic): Dynamic => candidate.file === file,
                 ),
             );
-          return value20.length === 0
+          return matchingFiles.length === 0
             ? source.picked
             : !exportSupportsMultipleArtboards(source.kind) ||
-                (options2 && value20.length === 1)
-              ? toggleExportPickedFile(source.kind, source.picked, value20[0])
-              : new Set([...source.picked, ...value20]);
+                (toggleSingle && matchingFiles.length === 1)
+              ? toggleExportPickedFile(source.kind, source.picked, matchingFiles[0])
+              : new Set([...source.picked, ...matchingFiles]);
         }),
-      [value14],
+      [updatePickerScale],
     ),
-    value16: Dynamic = (0, react_Su.useCallback)(
-      (input?: Dynamic): Dynamic =>
-        value13(
-          (input2?: Dynamic): Dynamic => ({
-            ...input2,
-            scale: input,
+    setExportScale: Dynamic = (0, react_Su.useCallback)(
+      (scale?: Dynamic): Dynamic =>
+        updatePickerSelection(
+          (previousState?: Dynamic): Dynamic => ({
+            ...previousState,
+            scale: scale,
           }),
         ),
-      [value13],
+      [updatePickerSelection],
     ),
-    value17: Dynamic = (0, react_Su.useCallback)(
+    selectAllArtboards: Dynamic = (0, react_Su.useCallback)(
       (): Dynamic =>
-        value14(
+        updatePickerScale(
           (source?: Dynamic): Dynamic =>
             exportSupportsMultipleArtboards(source.kind)
               ? new Set(
-                  value5.current.artboards.map(
-                    (input?: Dynamic): Dynamic => input.file,
+                  pickerOptionsRef.current.artboards.map(
+                    (artboard?: Dynamic): Dynamic => artboard.file,
                   ),
                 )
               : source.picked,
         ),
-      [value14],
+      [updatePickerScale],
     ),
-    value18: Dynamic = (0, react_Su.useCallback)((): Dynamic => {
-      let current: Dynamic = value4.current,
-        current2: Dynamic = value3.current;
-      if (!current || !current2 || current2.busy) return;
-      let artboards: Dynamic = value5.current.artboards,
-        value20: Dynamic = pickedExportArtboards(
+    confirmExport: Dynamic = (0, react_Su.useCallback)((): Dynamic => {
+      let current: Dynamic = currentPickerRef.current,
+        currentSession: Dynamic = pickerStateRef.current;
+      if (!current || !currentSession || currentSession.busy) return;
+      let artboards: Dynamic = pickerOptionsRef.current.artboards,
+        pickedArtboards: Dynamic = pickedExportArtboards(
           artboards,
-          current2.picked,
-        ).map((input?: Dynamic): Dynamic => input.file);
-      value20.length !== 0 &&
+          currentSession.picked,
+        ).map((file?: Dynamic): Dynamic => file.file);
+      pickedArtboards.length !== 0 &&
         (clearTimeout(current.timer),
         callback({
-          ...current2,
+          ...currentSession,
           busy: true,
         }),
-        value7("chosen"),
+        handleExportEvent("chosen"),
         current.resolve({
-          files: value20,
-          scale: validExportSessionScale(current2, artboards),
+          files: pickedArtboards,
+          scale: validExportSessionScale(currentSession, artboards),
           signal: current.run.signal,
         }));
-    }, [value7]),
-    value19: Dynamic = value !== null;
+    }, [handleExportEvent]),
+    hasSession: Dynamic = value !== null;
   (0, react_Su.useEffect)((): Dynamic => {
-    if (!value19) return;
-    let callback3: Dynamic = (event?: Dynamic): Dynamic => {
+    if (!hasSession) return;
+    let handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       let target: Dynamic = event.target;
       (target instanceof HTMLElement &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
           target.isContentEditable)) ||
-        (event.preventDefault(), value9());
+        (event.preventDefault(), cancelPicker());
     };
-    (window as Dynamic).addEventListener("keydown", callback3);
+    (window as Dynamic).addEventListener("keydown", handleKeyDown);
     return (): Dynamic =>
-      (window as Dynamic).removeEventListener("keydown", callback3);
-  }, [value19, value9]);
+      (window as Dynamic).removeEventListener("keydown", handleKeyDown);
+  }, [hasSession, cancelPicker]);
   (0, react_Su.useEffect)(
     (): Dynamic => (): Dynamic => {
-      let current: Dynamic = value4.current;
+      let current: Dynamic = currentPickerRef.current;
       current &&
-        ((value4.current = null),
+        ((currentPickerRef.current = null),
         clearTimeout(current.timer),
         current.offSignal(),
         current.run.abort(new ExportCancelled()),
@@ -526,15 +526,15 @@ function useExportPicker(options?: Dynamic): Dynamic {
   );
   return {
     session: value,
-    choose: value12,
-    isUp: value11,
-    end: value6,
-    pick: value15,
-    setScale: value16,
-    selectAll: value17,
-    confirm: value18,
-    cancel: value9,
-    leave: value10,
+    choose: chooseArtboard,
+    isUp: isPointerUp,
+    end: finishExport,
+    pick: pickFiles,
+    setScale: setExportScale,
+    selectAll: selectAllArtboards,
+    confirm: confirmExport,
+    cancel: cancelPicker,
+    leave: leavePicker,
   };
 }
 function ExportPickerToolbar({
@@ -546,12 +546,12 @@ function ExportPickerToolbar({
   let session: Dynamic = picker.session;
   if (!session) return null;
   let value: Dynamic = pickedExportArtboards(artboards, session.picked),
-    value2: Dynamic = exportPickerInstructions(
+    instructions: Dynamic = exportPickerInstructions(
       session.kind,
       value.length,
       artboards.length,
     ),
-    value3: Dynamic = validExportSessionScale(session, artboards);
+    selectedScale: Dynamic = validExportSessionScale(session, artboards);
   return (
     <div
       ref={focusExportPickerToolbar}
@@ -573,23 +573,23 @@ function ExportPickerToolbar({
         }}
       >
         <span className={"px-2 text-xs text-fg-secondary"}>
-          {value2.hint}
+          {instructions.hint}
         </span>
         <SessionStripDivider />
         {exportSupportsScale(session.kind) && (<SessionStripGroup role={"group"} aria-label={uiMessage("canvas.picker.scale")}>
-            {[1, 2].map((input?: Dynamic): Dynamic => {
-              let { offered: value4, title: value5 }: Dynamic =
-                describeExportScaleOption(value, input, rules);
+            {[1, 2].map((scale?: Dynamic): Dynamic => {
+              let { offered: isOffered, title: title }: Dynamic =
+                describeExportScaleOption(value, scale, rules);
               return (
                 <SessionStripButton
-                  key={input}
-                  data-testid={"artboard-pick-scale-" + String(input)}
-                  aria-pressed={value3 === input}
-                  disabled={session.busy || !value4}
-                  title={value5}
-                  onClick={(): Dynamic => picker.setScale(input)}
+                  key={scale}
+                  data-testid={"artboard-pick-scale-" + String(scale)}
+                  aria-pressed={selectedScale === scale}
+                  disabled={session.busy || !isOffered}
+                  title={title}
+                  onClick={(): Dynamic => picker.setScale(scale)}
                 >
-                  {(String(input)) + ("\xD7")}
+                  {(String(scale)) + ("\xD7")}
                 </SessionStripButton>
               );
             })}
@@ -625,7 +625,7 @@ function ExportPickerToolbar({
             onMouseDown={(event?: Dynamic): Dynamic => event.preventDefault()}
             onClick={picker.confirm}
           >
-            {value2.action}
+            {instructions.action}
           </Button>
         </SessionStripGroup>
       </SessionStrip>
@@ -640,14 +640,14 @@ function ExportArtboardPickTarget({
   let value: Dynamic = useViewportStore(),
     session: Dynamic = picker.session;
   if (!session) return null;
-  let value2: Dynamic = session.picked.has(artboard.file);
+  let isPicked: Dynamic = session.picked.has(artboard.file);
   return (
     <button
       type={"button"}
       data-mega-chrome={"export-pick"}
       data-artboard-pick={""}
       data-testid={"artboard-pick-" + artboard.file}
-      aria-pressed={value2}
+      aria-pressed={isPicked}
       aria-label={
         (exportSupportsMultipleArtboards(session.kind) ? uiMessage("canvas.picker.include") : uiMessage("canvas.picker.choose")) + exportArtboardTitle(artboard) + '"'
       }
@@ -662,12 +662,12 @@ function ExportArtboardPickTarget({
         session.busy || picker.pick([artboard.file], true);
       }}
     >
-      {!value2 && (<span
+      {!isPicked && (<span
           aria-hidden={"true"}
           className={"absolute inset-0 bg-white/55"}
         />)}
-      {value2 && (<ViewportScale>
-          {(input?: Dynamic): Dynamic => (
+      {isPicked && (<ViewportScale>
+          {(scale?: Dynamic): Dynamic => (
             <SelectionRing
               frame={{
                 x: 0,
@@ -675,7 +675,7 @@ function ExportArtboardPickTarget({
                 w: artboard.w,
                 h: artboard.h,
               }}
-              scale={input}
+              scale={scale}
               grips={"none"}
             />
           )}
@@ -693,7 +693,7 @@ function ExportArtboardPickTarget({
           data-testid={"artboard-pick-tick-" + artboard.file}
           className={
             "absolute left-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border-2 shadow-sm group-focus-visible:outline-hidden group-focus-visible:shadow-focus " +
-            (value2
+            (isPicked
               ? "border-app-accent bg-app-accent text-app-accent-fg"
               : "border-border-strong bg-white text-transparent")
           }
@@ -701,7 +701,7 @@ function ExportArtboardPickTarget({
           <Icon
             name={"Check"}
             size={"sm"}
-            className={value2 ? undefined : "forced-colors:invisible"}
+            className={isPicked ? undefined : "forced-colors:invisible"}
           />
         </span>
       </span>
@@ -735,20 +735,20 @@ export {
 };
 export function installExportPicker(): () => void {
   return () => {
-    exportSupportsMultipleArtboards = (input?: Dynamic): Dynamic =>
-      input !== "png";
-    exportSupportsScale = (input?: Dynamic): Dynamic => input !== "pdf";
+    exportSupportsMultipleArtboards = (format?: Dynamic): Dynamic =>
+      format !== "png";
+    exportSupportsScale = (format?: Dynamic): Dynamic => format !== "pdf";
     canvasExportMaxDurationMs = 2e5;
-    exportChosenCountLabel = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input > 0 && input < options
-        ? String(input) + " of " + String(options)
-        : String(input);
+    exportChosenCountLabel = (count?: Dynamic, total?: Dynamic): Dynamic =>
+      count > 0 && count < total
+        ? String(count) + " of " + String(total)
+        : String(count);
     jsx_gd = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );
-    focusExportPickerToolbar = (input?: Dynamic): Dynamic =>
-      input?.querySelector('[role="toolbar"]')?.focus({
+    focusExportPickerToolbar = (toolbar?: Dynamic): Dynamic =>
+      toolbar?.querySelector('[role="toolbar"]')?.focus({
         preventScroll: true,
       });
     exportPickerAriaLabels = {

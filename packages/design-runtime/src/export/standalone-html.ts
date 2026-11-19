@@ -34,86 +34,86 @@ function sanitizeExportColor(color?: Dynamic, fallback?: Dynamic): Dynamic {
   return safeExportColorPattern.test(value) ? value : fallback;
 }
 function maskJavaScriptCommentsAndStrings(source?: Dynamic): Dynamic {
-  let flag: Dynamic = false,
-    flag2: Dynamic = false,
-    value: Dynamic = source.split(`
+  let isInBlockComment: Dynamic = false,
+    inTemplateLiteral: Dynamic = false,
+    sourceLines: Dynamic = source.split(`
 `);
-  for (let index: Dynamic = 0; index < value.length; index++) {
-    let value2: Dynamic = value[index],
-      value3: Dynamic = new Array(value2.length).fill(" "),
-      entries: Dynamic = new Map(),
-      value4: Dynamic = null,
-      value5: Dynamic = -1,
-      index2: Dynamic = 0;
-    for (; index2 < value2.length; ) {
-      let value9: Dynamic = value2[index2],
-        value10: Dynamic = value2[index2 + 1];
-      if (flag) {
-        if (value9 === "*" && value10 === "/") {
-          flag = false;
-          index2 += 2;
+  for (let lineIndex: Dynamic = 0; lineIndex < sourceLines.length; lineIndex++) {
+    let line: Dynamic = sourceLines[lineIndex],
+      maskedLine: Dynamic = new Array(line.length).fill(" "),
+      quoteEndByStart: Dynamic = new Map(),
+      quote: Dynamic = null,
+      quoteStartIndex: Dynamic = -1,
+      cursor: Dynamic = 0;
+    for (; cursor < line.length; ) {
+      let character: Dynamic = line[cursor],
+        nextCharacter: Dynamic = line[cursor + 1];
+      if (isInBlockComment) {
+        if (character === "*" && nextCharacter === "/") {
+          isInBlockComment = false;
+          cursor += 2;
           continue;
         }
-        index2++;
+        cursor++;
         continue;
       }
-      if (flag2) {
-        if (value9 === "\\") {
-          index2 += 2;
+      if (inTemplateLiteral) {
+        if (character === "\\") {
+          cursor += 2;
           continue;
         }
-        value9 === "`" && (flag2 = false);
-        index2++;
+        character === "`" && (inTemplateLiteral = false);
+        cursor++;
         continue;
       }
-      if (value4 != null) {
-        if (value9 === "\\") {
-          index2 += 2;
+      if (quote != null) {
+        if (character === "\\") {
+          cursor += 2;
           continue;
         }
-        value9 === value4 &&
-          ((value3[index2] = value9),
-          entries.set(value5, index2),
-          (value4 = null));
-        index2++;
+        character === quote &&
+          ((maskedLine[cursor] = character),
+          quoteEndByStart.set(quoteStartIndex, cursor),
+          (quote = null));
+        cursor++;
         continue;
       }
-      if (value9 === "'" || value9 === '"') {
-        value3[index2] = value9;
-        value4 = value9;
-        value5 = index2;
-        index2++;
+      if (character === "'" || character === '"') {
+        maskedLine[cursor] = character;
+        quote = character;
+        quoteStartIndex = cursor;
+        cursor++;
         continue;
       }
-      if (value9 === "`") {
-        flag2 = true;
-        index2++;
+      if (character === "`") {
+        inTemplateLiteral = true;
+        cursor++;
         continue;
       }
-      if (value9 === "/" && value10 === "/") break;
-      if (value9 === "/" && value10 === "*") {
-        flag = true;
-        index2 += 2;
+      if (character === "/" && nextCharacter === "/") break;
+      if (character === "/" && nextCharacter === "*") {
+        isInBlockComment = true;
+        cursor += 2;
         continue;
       }
-      value3[index2] = value9;
-      index2++;
+      maskedLine[cursor] = character;
+      cursor++;
     }
-    let value6: Dynamic = value3.join(""),
-      value7: Dynamic = /const\s+base\s*=\s*(['"])/g,
-      value8: Dynamic;
-    for (; (value8 = value7.exec(value6)) != null; ) {
-      let value9: Dynamic = value6.slice(0, value8.index);
-      if (!(/^\s*$/.test(value9) || /[;{}]\s*$/.test(value9))) continue;
-      let value10: Dynamic = value8.index + value8[0].length - 1,
-        entry: Dynamic = entries.get(value10);
+    let maskedSource: Dynamic = maskedLine.join(""),
+      basePattern: Dynamic = /const\s+base\s*=\s*(['"])/g,
+      baseMatch: Dynamic;
+    for (; (baseMatch = basePattern.exec(maskedSource)) != null; ) {
+      let prefix: Dynamic = maskedSource.slice(0, baseMatch.index);
+      if (!(/^\s*$/.test(prefix) || /[;{}]\s*$/.test(prefix))) continue;
+      let quoteStart: Dynamic = baseMatch.index + baseMatch[0].length - 1,
+        entry: Dynamic = quoteEndByStart.get(quoteStart);
       if (entry != null)
         return {
-          lineIndex: index,
-          value: value2.slice(value10 + 1, entry),
-          quoteStart: value10,
+          lineIndex: lineIndex,
+          value: line.slice(quoteStart + 1, entry),
+          quoteStart: quoteStart,
           quoteEnd: entry,
-          quote: value8[1],
+          quote: baseMatch[1],
         };
     }
   }
@@ -128,28 +128,28 @@ function encodeBinaryBase64(bytes: Uint8Array | ArrayBuffer): string {
 }
 function decodeBinaryBase64(base64: string): OwnedBytes {
   let value = atob(base64),
-    value2 = new Uint8Array(value.length);
+    bytes = new Uint8Array(value.length);
   for (let index = 0; index < value.length; index++)
-    value2[index] = value.charCodeAt(index);
-  return value2;
+    bytes[index] = value.charCodeAt(index);
+  return bytes;
 }
 function formatExportByteSize(
   bytes?: Dynamic,
-  options: Dynamic = {},
+  formatOptions: Dynamic = {},
 ): Dynamic {
   let {
       decimals: value = 1,
-      ceil: value2 = false,
-      binary: value3 = false,
-    }: Dynamic = options,
-    value4: Dynamic = 1024 * 1024;
-  if (bytes >= value4) {
-    let value5: Dynamic = 10 ** value;
-    return `${(value2 ? Math.ceil((bytes / value4) * value5) / value5 : bytes / value4).toFixed(value)} ${value3 ? "MiB" : "MB"}`;
+      ceil: ceil = false,
+      binary: binary = false,
+    }: Dynamic = formatOptions,
+    unit: Dynamic = 1024 * 1024;
+  if (bytes >= unit) {
+    let precisionBase: Dynamic = 10 ** value;
+    return `${(ceil ? Math.ceil((bytes / unit) * precisionBase) / precisionBase : bytes / unit).toFixed(value)} ${binary ? "MiB" : "MB"}`;
   }
   if (bytes >= 1024) {
-    let value5: Dynamic = bytes / 1024;
-    return `${value2 ? Math.ceil(value5) : Math.round(value5)} ${value3 ? "KiB" : "KB"}`;
+    let kibibytes: Dynamic = bytes / 1024;
+    return `${ceil ? Math.ceil(kibibytes) : Math.round(kibibytes)} ${binary ? "KiB" : "KB"}`;
   }
   return `${bytes} B`;
 }
@@ -199,19 +199,19 @@ function parseImageSlotState(bytes?: Dynamic): Dynamic {
   if (value === null || typeof value != "object" || Array.isArray(value))
     return null;
   let entries: Dynamic = new Map();
-  for (let [value2, value3] of Object.entries(value) as Dynamic) {
-    let value4: Dynamic =
-      typeof value3 == "string"
-        ? value3
-        : value3 !== null &&
-            typeof value3 == "object" &&
-            "u" in value3 &&
-            typeof value3.u == "string"
-          ? value3.u
+  for (let [key, slot] of Object.entries(value) as Dynamic) {
+    let imageSource: Dynamic =
+      typeof slot == "string"
+        ? slot
+        : slot !== null &&
+            typeof slot == "object" &&
+            "u" in slot &&
+            typeof slot.u == "string"
+          ? slot.u
           : null;
-    value4 !== null &&
-      /^data:image\//i.test(value4) &&
-      entries.set(value2, value4);
+    imageSource !== null &&
+      /^data:image\//i.test(imageSource) &&
+      entries.set(key, imageSource);
   }
   return entries;
 }
@@ -219,14 +219,14 @@ function parseExportSrcset(srcset?: Dynamic): Dynamic {
   let items: Dynamic = [],
     index: Dynamic = 0,
     length: Dynamic = srcset.length,
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input === " " ||
-      input === "	" ||
-      input ===
+    callback: Dynamic = (character?: Dynamic): Dynamic =>
+      character === " " ||
+      character === "	" ||
+      character ===
         `
 ` ||
-      input === "\r" ||
-      input === "\f";
+      character === "\r" ||
+      character === "\f";
   for (; index < length; ) {
     for (
       ;
@@ -237,17 +237,17 @@ function parseExportSrcset(srcset?: Dynamic): Dynamic {
     if (index >= length) break;
     let value: Dynamic = index;
     for (; index < length && !callback(srcset[index]); ) index++;
-    let value2: Dynamic = srcset.slice(value, index);
-    if (value2.endsWith(",")) {
-      for (; value2.endsWith(","); ) value2 = value2.slice(0, -1);
-      value2 && items.push(value2);
+    let candidate: Dynamic = srcset.slice(value, index);
+    if (candidate.endsWith(",")) {
+      for (; candidate.endsWith(","); ) candidate = candidate.slice(0, -1);
+      candidate && items.push(candidate);
       continue;
     }
     for (; index < length && callback(srcset[index]); ) index++;
-    let value3: Dynamic = index;
+    let itemStart: Dynamic = index;
     for (; index < length && srcset[index] !== ","; ) index++;
-    let value4: Dynamic = srcset.slice(value3, index).trim();
-    items.push(value4 ? `${value2} ${value4}` : value2);
+    let descriptor: Dynamic = srcset.slice(itemStart, index).trim();
+    items.push(descriptor ? `${candidate} ${descriptor}` : candidate);
   }
   return items;
 }
@@ -255,18 +255,18 @@ function normalizeExportHtmlOutsideScripts(html?: Dynamic): Dynamic {
   return html
     .split(/(<script\b[^>]*>[\s\S]*?<\/script\s*>)/i)
     .map(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        options % 2 ? input : encodeCamelCaseAttributes(input),
+      (attribute?: Dynamic, index?: Dynamic): Dynamic =>
+        index % 2 ? attribute : encodeCamelCaseAttributes(attribute),
     )
     .join("");
 }
 function normalizeExportDesignTags(html?: Dynamic): Dynamic {
-  for (let [value, value2] of Object.entries(
+  for (let [value, tagReplacement] of Object.entries(
     HtmlTagNormalizationSelectTableTbodyConfig,
   ) as Dynamic)
     html = html.replace(
       new RegExp("(</?)" + value + "(?=[\\s>])", "gi"),
-      "$1" + value2,
+      "$1" + tagReplacement,
     );
   return html;
 }
@@ -285,60 +285,60 @@ function decodeExportPathEscapes(
       .replace(/&percnt;/gi, "%")
       .replace(
         /&#x([0-9a-f]+);?/gi,
-        (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value2: Dynamic = parseInt(options, 16);
-          return value2 > 0 && value2 < 1114112
-            ? String.fromCodePoint(value2)
-            : input;
+        (match?: Dynamic, hexCode?: Dynamic): Dynamic => {
+          let codePoint: Dynamic = parseInt(hexCode, 16);
+          return codePoint > 0 && codePoint < 1114112
+            ? String.fromCodePoint(codePoint)
+            : match;
         },
       )
       .replace(
         /&#(\d+);?/g,
-        (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value2: Dynamic = Number(options);
-          return value2 > 0 && value2 < 1114112
-            ? String.fromCodePoint(value2)
-            : input;
+        (match?: Dynamic, decimalCode?: Dynamic): Dynamic => {
+          let codePoint: Dynamic = Number(decimalCode);
+          return codePoint > 0 && codePoint < 1114112
+            ? String.fromCodePoint(codePoint)
+            : match;
         },
       )
       .replace(
         percentDecode
           ? /\\([0-9a-f]{1,6})(?:\r\n|[ \t\n\r\f])?/gi
           : /\\u([0-9a-f]{4})/gi,
-        (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value2: Dynamic = parseInt(options, 16);
-          return value2 > 0 && value2 < 1114112
-            ? String.fromCodePoint(value2)
-            : input;
+        (match?: Dynamic, hexCode?: Dynamic): Dynamic => {
+          let codePoint: Dynamic = parseInt(hexCode, 16);
+          return codePoint > 0 && codePoint < 1114112
+            ? String.fromCodePoint(codePoint)
+            : match;
         },
       )
       .replace(
         /\\x([0-9a-f]{2})/gi,
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          String.fromCharCode(parseInt(options, 16)),
+        (match?: Dynamic, hexCode?: Dynamic): Dynamic =>
+          String.fromCharCode(parseInt(hexCode, 16)),
       )
       .replace(
         /\\u\{([0-9a-f]+)\}/gi,
-        (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value2: Dynamic = parseInt(options, 16);
-          return value2 > 0 && value2 < 1114112
-            ? String.fromCodePoint(value2)
-            : input;
+        (match?: Dynamic, hexCode?: Dynamic): Dynamic => {
+          let codePoint: Dynamic = parseInt(hexCode, 16);
+          return codePoint > 0 && codePoint < 1114112
+            ? String.fromCodePoint(codePoint)
+            : match;
         },
       )
       .replace(
         /\\([0-3][0-7]{0,2}|[4-7][0-7]?)/g,
-        (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value2: Dynamic = parseInt(options, 8);
-          return value2 > 0 && value2 < 256
-            ? String.fromCharCode(value2)
-            : input;
+        (match?: Dynamic, octalCode?: Dynamic): Dynamic => {
+          let codePoint: Dynamic = parseInt(octalCode, 8);
+          return codePoint > 0 && codePoint < 256
+            ? String.fromCharCode(codePoint)
+            : match;
         },
       )
       .replace(
         /%([0-9a-f]{2})/gi,
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          String.fromCharCode(parseInt(options, 16)),
+        (match?: Dynamic, hexCode?: Dynamic): Dynamic =>
+          String.fromCharCode(parseInt(hexCode, 16)),
       )
       .replace(/\\(\r\n|[\n\r\f\u2028\u2029])/g, "")
       .replace(/\\(.)/g, "$1");
@@ -358,8 +358,8 @@ function containsProjectServeCredential(path?: Dynamic): Dynamic {
     let flag: Dynamic = false;
     value.replace(
       projectServeUrlPattern,
-      (items?: Dynamic, items2?: Dynamic): Dynamic => (
-        items.length > items2.length && (flag = true),
+      (items?: Dynamic, left?: Dynamic): Dynamic => (
+        items.length > left.length && (flag = true),
         items
       ),
     );
@@ -368,12 +368,12 @@ function containsProjectServeCredential(path?: Dynamic): Dynamic {
   return false;
 }
 function isSuspiciousExportAssetPath(path?: Dynamic): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      /\\|%(?:[0-9a-f]{2}|u[0-9a-f]{4})/i.test(input) ||
-      /\p{C}/u.test(input) ||
-      /\p{Zl}|\p{Zp}|(?!\x20)\p{Zs}/u.test(input) ||
-      /(?=[^\x00-\x7f])\p{S}/u.test(input) ||
-      /(^|[^\p{L}\p{M}])\p{M}/u.test(input),
+  let callback: Dynamic = (text?: Dynamic): Dynamic =>
+      /\\|%(?:[0-9a-f]{2}|u[0-9a-f]{4})/i.test(text) ||
+      /\p{C}/u.test(text) ||
+      /\p{Zl}|\p{Zp}|(?!\x20)\p{Zs}/u.test(text) ||
+      /(?=[^\x00-\x7f])\p{S}/u.test(text) ||
+      /(^|[^\p{L}\p{M}])\p{M}/u.test(text),
     value: Dynamic = path.normalize("NFKC");
   return (
     callback(path) ||
@@ -389,14 +389,14 @@ function matchesNormalizedPathPattern(
 }
 function redactProjectServeAccessToken(path?: Dynamic): Dynamic {
   let value: Dynamic = path,
-    value2: Dynamic = value.indexOf("?");
-  value2 >= 0 &&
-    containsProjectServeAccessToken(value.slice(value2)) &&
-    (value = value.slice(0, value2));
+    queryIndex: Dynamic = value.indexOf("?");
+  queryIndex >= 0 &&
+    containsProjectServeAccessToken(value.slice(queryIndex)) &&
+    (value = value.slice(0, queryIndex));
   value = value.replace(
     /\/_t\/([^/]+)\//i,
-    (input?: Dynamic, options?: Dynamic): Dynamic =>
-      projectServeAccessTokenPattern.test(options) ? "/" : input,
+    (fallbackPath?: Dynamic, candidatePath?: Dynamic): Dynamic =>
+      projectServeAccessTokenPattern.test(candidatePath) ? "/" : fallbackPath,
   );
   return containsProjectServeAccessToken(value)
     ? "(path withheld: it matches a project serve access token)"
@@ -406,7 +406,7 @@ function parseExportRuntimeAssetPaths(source?: Dynamic): Dynamic {
   let value: Dynamic = /for\s*\(\s*const\s+p\s+of\s*\[/.exec(source);
   if (!value) return null;
   let items: Dynamic = [],
-    value2: Dynamic = value.index + value[0].length,
+    cursor: Dynamic = value.index + value[0].length,
     state: Dynamic = {
       n: `
 `,
@@ -417,42 +417,42 @@ function parseExportRuntimeAssetPaths(source?: Dynamic): Dynamic {
       v: "\v",
       0: "\0",
     };
-  for (; value2 < source.length; ) {
-    let value3: Dynamic = source[value2];
-    if (value3 === "]") return items;
-    if (/[\s,]/.test(value3)) {
-      value2++;
+  for (; cursor < source.length; ) {
+    let character: Dynamic = source[cursor];
+    if (character === "]") return items;
+    if (/[\s,]/.test(character)) {
+      cursor++;
       continue;
     }
-    if (value3 !== "'" && value3 !== '"') return null;
-    let value4: Dynamic = value3;
-    value2++;
+    if (character !== "'" && character !== '"') return null;
+    let quote: Dynamic = character;
+    cursor++;
     let text: Dynamic = "";
     for (;;) {
-      if (value2 >= source.length) return null;
-      let value5: Dynamic = source[value2];
-      if (value5 === value4) {
-        value2++;
+      if (cursor >= source.length) return null;
+      let escapedCharacter: Dynamic = source[cursor];
+      if (escapedCharacter === quote) {
+        cursor++;
         break;
       }
-      if (value5 === "\\") {
-        let value6: Dynamic = source[value2 + 1];
-        if (value6 === undefined) return null;
-        if (value6 === "u" || value6 === "x") {
-          let value7: Dynamic = value6 === "u" ? 4 : 2,
-            value8: Dynamic = source.slice(value2 + 2, value2 + 2 + value7);
-          if (!new RegExp("^[0-9a-fA-F]{" + value7 + "}$").test(value8))
+      if (escapedCharacter === "\\") {
+        let escapeType: Dynamic = source[cursor + 1];
+        if (escapeType === undefined) return null;
+        if (escapeType === "u" || escapeType === "x") {
+          let escapeLength: Dynamic = escapeType === "u" ? 4 : 2,
+            escapeDigits: Dynamic = source.slice(cursor + 2, cursor + 2 + escapeLength);
+          if (!new RegExp("^[0-9a-fA-F]{" + escapeLength + "}$").test(escapeDigits))
             return null;
-          text += String.fromCharCode(parseInt(value8, 16));
-          value2 += 2 + value7;
+          text += String.fromCharCode(parseInt(escapeDigits, 16));
+          cursor += 2 + escapeLength;
           continue;
         }
-        text += state[value6] ?? value6;
-        value2 += 2;
+        text += state[escapeType] ?? escapeType;
+        cursor += 2;
         continue;
       }
-      text += value5;
-      value2++;
+      text += escapedCharacter;
+      cursor++;
     }
     text && items.push(text);
   }
@@ -462,574 +462,574 @@ async function bundleStandaloneDesignHtml(
   html?: Dynamic,
   path?: Dynamic,
   resolveAsset?: Dynamic,
-  context: Dynamic = {},
-  options: Dynamic = {},
+  bundleContext: Dynamic = {},
+  bundleOptions: Dynamic = {},
 ): Promise<Dynamic> {
   let state: Dynamic = {
-      ancestors: context.ancestors ?? new Set([path]),
-      depth: context.depth ?? 0,
-      pages: context.pages ?? new Map(),
-      pageOrder: context.pageOrder ?? [],
-      dsProject: context.dsProject ?? false,
+      ancestors: bundleContext.ancestors ?? new Set([path]),
+      depth: bundleContext.depth ?? 0,
+      pages: bundleContext.pages ?? new Map(),
+      pageOrder: bundleContext.pageOrder ?? [],
+      dsProject: bundleContext.dsProject ?? false,
     },
     value: Dynamic = /<x-dc(?:\s[^>]*)?>/.exec(html),
-    value2: Dynamic = html.lastIndexOf("</x-dc>"),
-    value3: Dynamic =
-      value && value2 >= value.index + value[0].length
+    closingTagIndex: Dynamic = html.lastIndexOf("</x-dc>"),
+    documentHtml: Dynamic =
+      value && closingTagIndex >= value.index + value[0].length
         ? html.slice(0, value.index + value[0].length) +
           normalizeExportDesignTags(
             normalizeExportHtmlOutsideScripts(
               expandSelfClosingImports(
-                html.slice(value.index + value[0].length, value2),
+                html.slice(value.index + value[0].length, closingTagIndex),
               ),
             ),
           ) +
-          html.slice(value2)
+          html.slice(closingTagIndex)
         : html,
-    value4: Dynamic = new DOMParser().parseFromString(value3, "text/html"),
+    document: Dynamic = new DOMParser().parseFromString(documentHtml, "text/html"),
     entries: Dynamic = new Map(),
-    entries2: Dynamic = new Map(),
+    pendingAssets: Dynamic = new Map(),
     items: Dynamic = [],
     values: Dynamic = new Set(),
     callback: Dynamic = async (
-      input?: Dynamic,
-      options2?: Dynamic,
+      url?: Dynamic,
+      assetOptions?: Dynamic,
     ): Promise<Dynamic> => {
-      let value19: Dynamic = await resolveAsset(input, options2);
-      !value19 &&
-        !values.has(input) &&
-        (values.add(input),
+      let resolvedAsset: Dynamic = await resolveAsset(url, assetOptions);
+      !resolvedAsset &&
+        !values.has(url) &&
+        (values.add(url),
         items.push(
-          `asset not found: ${redactProjectServeAccessToken(input)}`,
+          `asset not found: ${redactProjectServeAccessToken(url)}`,
         ));
-      return value19;
+      return resolvedAsset;
     };
-  async function value5(input?: Dynamic): Promise<Dynamic> {
-    if (!input || input.startsWith("#")) return null;
-    let value19: Dynamic = input
-      .slice(0, input.indexOf(":") + 1)
+  async function resolveAssetUrl(url?: Dynamic): Promise<Dynamic> {
+    if (!url || url.startsWith("#")) return null;
+    let scheme: Dynamic = url
+      .slice(0, url.indexOf(":") + 1)
       .toLowerCase();
     if (
-      value19 === "data:" ||
-      value19 === "blob:" ||
-      value19 === "javascript:"
+      scheme === "data:" ||
+      scheme === "blob:" ||
+      scheme === "javascript:"
     )
       return null;
-    let value20: Dynamic = resolveExportAssetUrl(input, path);
-    if (entries.has(value20)) return entries.get(value20).uuid;
-    if (entries2.has(value20)) return entries2.get(value20);
-    let value21: Dynamic = (async (): Promise<Dynamic> => {
-      let value23: Dynamic = await callback(value20);
-      if (!value23) return null;
-      let value24: Dynamic = crypto.randomUUID();
-      entries.set(value20, {
-        uuid: value24,
-        data: value23.data,
-        mime: value23.mime,
+    let assetPath: Dynamic = resolveExportAssetUrl(url, path);
+    if (entries.has(assetPath)) return entries.get(assetPath).uuid;
+    if (pendingAssets.has(assetPath)) return pendingAssets.get(assetPath);
+    let pendingResult: Dynamic = (async (): Promise<Dynamic> => {
+      let asset: Dynamic = await callback(assetPath);
+      if (!asset) return null;
+      let assetId: Dynamic = crypto.randomUUID();
+      entries.set(assetPath, {
+        uuid: assetId,
+        data: asset.data,
+        mime: asset.mime,
       });
-      return value24;
+      return assetId;
     })();
-    entries2.set(value20, value21);
-    let value22: Dynamic = await value21;
-    entries2.delete(value20);
-    return value22;
+    pendingAssets.set(assetPath, pendingResult);
+    let resolvedId: Dynamic = await pendingResult;
+    pendingAssets.delete(assetPath);
+    return resolvedId;
   }
-  async function value6(
-    element2?: Dynamic,
-    options2?: Dynamic,
+  async function rewriteAttribute(
+    elementNode?: Dynamic,
+    attributeName?: Dynamic,
   ): Promise<Dynamic> {
-    let attribute: Dynamic = element2.getAttribute(options2);
+    let attribute: Dynamic = elementNode.getAttribute(attributeName);
     if (!attribute) return;
-    let value19: Dynamic = attribute.indexOf("#"),
-      value20: Dynamic = value19 >= 0 ? attribute.slice(value19) : "",
-      value21: Dynamic = await value5(attribute);
-    value21 && element2.setAttribute(options2, value21 + value20);
+    let fragmentIndex: Dynamic = attribute.indexOf("#"),
+      fragment: Dynamic = fragmentIndex >= 0 ? attribute.slice(fragmentIndex) : "",
+      rewrittenUrl: Dynamic = await resolveAssetUrl(attribute);
+    rewrittenUrl && elementNode.setAttribute(attributeName, rewrittenUrl + fragment);
   }
-  async function value7(element2?: Dynamic): Promise<Dynamic> {
-    for (let value19 of ["srcset", "sc-camel-src-set"] as Dynamic) {
-      let attribute: Dynamic = element2.getAttribute(value19);
+  async function rewriteSrcset(elementNode?: Dynamic): Promise<Dynamic> {
+    for (let attributeName of ["srcset", "sc-camel-src-set"] as Dynamic) {
+      let attribute: Dynamic = elementNode.getAttribute(attributeName);
       if (!attribute) continue;
-      let value20: Dynamic = parseExportSrcset(attribute),
-        items3: Dynamic = [];
-      for (let value21 of value20 as Dynamic) {
-        let [value22, ...value23]: Dynamic = value21.split(/\s+/),
-          value24: Dynamic = await value5(value22);
-        items3.push(
-          value24 ? `${value24} ${value23.join(" ")}`.trim() : value21,
+      let srcsetItems: Dynamic = parseExportSrcset(attribute),
+        rewrittenItems: Dynamic = [];
+      for (let item of srcsetItems as Dynamic) {
+        let [url, ...descriptor]: Dynamic = item.split(/\s+/),
+          rewrittenUrl: Dynamic = await resolveAssetUrl(url);
+        rewrittenItems.push(
+          rewrittenUrl ? `${rewrittenUrl} ${descriptor.join(" ")}`.trim() : item,
         );
       }
-      element2.setAttribute(value19, items3.join(", "));
+      elementNode.setAttribute(attributeName, rewrittenItems.join(", "));
     }
   }
   await Promise.all(
-    Array.from(value4.querySelectorAll("img")).map(
-      async (input?: Dynamic): Promise<Dynamic> => {
-        await value6(input, "src");
-        await value7(input);
+    Array.from(document.querySelectorAll("img")).map(
+      async (elementNode?: Dynamic): Promise<Dynamic> => {
+        await rewriteAttribute(elementNode, "src");
+        await rewriteSrcset(elementNode);
       },
     ),
   );
   await Promise.all(
     Array.from(
-      value4.querySelectorAll("source[srcset], source[sc-camel-src-set]"),
-    ).map((input?: Dynamic): Dynamic => value7(input)),
+      document.querySelectorAll("source[srcset], source[sc-camel-src-set]"),
+    ).map((elementNode?: Dynamic): Dynamic => rewriteSrcset(elementNode)),
   );
-  let value8: Dynamic = Array.from(
-    value4.querySelectorAll("image-slot"),
+  let imageSlots: Dynamic = Array.from(
+    document.querySelectorAll("image-slot"),
   ).concat(
     Array.from(
-      value4.querySelectorAll(
+      document.querySelectorAll(
         'x-dc x-import[component-from-global-scope="image-slot"]',
       ),
     ),
   );
-  if (value8.length > 0) {
-    let value19: Dynamic = resolveExportAssetUrl(
+  if (imageSlots.length > 0) {
+    let slotUrl: Dynamic = resolveExportAssetUrl(
         imageSlotsStateFilename,
         path,
       ),
-      value20: Dynamic = await resolveAsset(value19, {
+      slotAsset: Dynamic = await resolveAsset(slotUrl, {
         optional: true,
       }),
-      value21: Dynamic = value20 ? parseImageSlotState(value20.data) : null;
-    value20 &&
-      value21 === null &&
+      slotState: Dynamic = slotAsset ? parseImageSlotState(slotAsset.data) : null;
+    slotAsset &&
+      slotState === null &&
       items.push(
-        `image-slot sidecar ${redactProjectServeAccessToken(value19)} could not be parsed \u2014 user-dropped slot images will not appear in the bundle`,
+        `image-slot sidecar ${redactProjectServeAccessToken(slotUrl)} could not be parsed \u2014 user-dropped slot images will not appear in the bundle`,
       );
     await Promise.all(
-      value8.map(async (element2?: Dynamic): Promise<Dynamic> => {
-        let attribute: Dynamic = element2.getAttribute("id"),
-          value22: Dynamic = attribute ? value21?.get(attribute) : undefined;
-        if (value22 !== undefined) {
-          let entry: Dynamic = entries.get(value22);
+      imageSlots.map(async (slotElement?: Dynamic): Promise<Dynamic> => {
+        let attribute: Dynamic = slotElement.getAttribute("id"),
+          slotId: Dynamic = attribute ? slotState?.get(attribute) : undefined;
+        if (slotId !== undefined) {
+          let entry: Dynamic = entries.get(slotId);
           if (!entry) {
-            let [, value23, value24]: Dynamic =
-              /^data:(image\/[\w.+-]+);base64,([\s\S]*)$/i.exec(value22) ??
+            let [, mimeType, base64Data]: Dynamic =
+              /^data:(image\/[\w.+-]+);base64,([\s\S]*)$/i.exec(slotId) ??
               [];
-            if (value23 !== undefined && value24 !== undefined)
+            if (mimeType !== undefined && base64Data !== undefined)
               try {
                 entry = {
                   uuid: crypto.randomUUID(),
-                  data: decodeBinaryBase64(value24),
-                  mime: value23.toLowerCase(),
+                  data: decodeBinaryBase64(base64Data),
+                  mime: mimeType.toLowerCase(),
                 };
-                entries.set(value22, entry);
+                entries.set(slotId, entry);
               } catch {}
           }
           if (entry) {
-            element2.setAttribute("src", entry.uuid);
-            element2.removeAttribute("credit");
-            element2.removeAttribute("credit-href");
+            slotElement.setAttribute("src", entry.uuid);
+            slotElement.removeAttribute("credit");
+            slotElement.removeAttribute("credit-href");
             return;
           }
           items.push(
             `image-slot "${attribute}": the stored replacement image could not be decoded \u2014 the bundle falls back to the slot's src image`,
           );
         }
-        element2.tagName.toLowerCase() === "image-slot" &&
-          element2.hasAttribute("src") &&
-          (await value6(element2, "src"));
+        slotElement.tagName.toLowerCase() === "image-slot" &&
+          slotElement.hasAttribute("src") &&
+          (await rewriteAttribute(slotElement, "src"));
       }),
     );
   }
   await Promise.all(
-    Array.from(value4.querySelectorAll("svg image, svg use")).map(
-      async (input?: Dynamic): Promise<Dynamic> => {
-        input.hasAttribute("href")
-          ? await value6(input, "href")
-          : input.hasAttribute("xlink:href")
-            ? await value6(input, "xlink:href")
-            : input.hasAttribute("sc-camel-xlink-href") &&
-              (await value6(input, "sc-camel-xlink-href"));
+    Array.from(document.querySelectorAll("svg image, svg use")).map(
+      async (elementNode?: Dynamic): Promise<Dynamic> => {
+        elementNode.hasAttribute("href")
+          ? await rewriteAttribute(elementNode, "href")
+          : elementNode.hasAttribute("xlink:href")
+            ? await rewriteAttribute(elementNode, "xlink:href")
+            : elementNode.hasAttribute("sc-camel-xlink-href") &&
+              (await rewriteAttribute(elementNode, "sc-camel-xlink-href"));
       },
     ),
   );
-  let items2: Dynamic = [],
-    value9: Dynamic = Array.from(
-      value4.querySelectorAll('meta[name="ext-resource-dependency"]'),
+  let resourceEntries: Dynamic = [],
+    resourceElements: Dynamic = Array.from(
+      document.querySelectorAll('meta[name="ext-resource-dependency"]'),
     );
   await Promise.all(
-    value9.map(async (element2?: Dynamic): Promise<Dynamic> => {
-      let attribute: Dynamic = element2.getAttribute("content"),
-        attribute2: Dynamic = element2.getAttribute("data-resource-id");
-      if (attribute && attribute2) {
-        let value19: Dynamic = await value5(attribute);
-        value19 &&
-          items2.push({
-            id: attribute2,
-            uuid: value19,
+    resourceElements.map(async (resourceElement?: Dynamic): Promise<Dynamic> => {
+      let attribute: Dynamic = resourceElement.getAttribute("content"),
+        resourceId: Dynamic = resourceElement.getAttribute("data-resource-id");
+      if (attribute && resourceId) {
+        let resourceUrl: Dynamic = await resolveAssetUrl(attribute);
+        resourceUrl &&
+          resourceEntries.push({
+            id: resourceId,
+            uuid: resourceUrl,
           });
       }
-      element2.remove();
+      resourceElement.remove();
     }),
   );
   await Promise.all(
     Array.from(
-      value4.querySelectorAll(
+      document.querySelectorAll(
         "video[src], audio[src], source[src], track[src]",
       ),
-    ).map((input?: Dynamic): Dynamic => value6(input, "src")),
+    ).map((elementNode?: Dynamic): Dynamic => rewriteAttribute(elementNode, "src")),
   );
   await Promise.all(
-    Array.from(value4.querySelectorAll("video[poster]")).map(
-      (input?: Dynamic): Dynamic => value6(input, "poster"),
+    Array.from(document.querySelectorAll("video[poster]")).map(
+      (elementNode?: Dynamic): Dynamic => rewriteAttribute(elementNode, "poster"),
     ),
   );
   await Promise.all(
     Array.from(
-      value4.querySelectorAll(
+      document.querySelectorAll(
         'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
       ),
-    ).map((input?: Dynamic): Dynamic => value6(input, "href")),
+    ).map((elementNode?: Dynamic): Dynamic => rewriteAttribute(elementNode, "href")),
   );
   {
-    let value19: Dynamic =
+    let scriptPattern: Dynamic =
         /const\s+(\w+)\s*=\s*document\.createElement\(\s*(['"])link\2\s*\)\s*;\s*\1\.rel\s*=\s*(['"])stylesheet\3\s*;\s*\1\.href\s*=\s*base\s*\+\s*(['"])\/\4\s*\+\s*p\s*;\s*document\.head\.appendChild\(\s*\1\s*\)\s*;(?=\s*\})/,
-      value20: Dynamic =
+      modulePattern: Dynamic =
         /(\w+)\.src\s*=\s*base\s*\+\s*(['"])\/_ds_bundle\.js\2\s*;/,
-      values4: Dynamic = new Set(),
-      values5: Dynamic = new Set(),
-      callback3: Dynamic = async (
-        input?: Dynamic,
-        options2?: Dynamic,
-        context2: Dynamic = "",
+      resolvedAssetIds: Dynamic = new Set(),
+      visitedPaths: Dynamic = new Set(),
+      resolveAssetWithContext: Dynamic = async (
+        assetPath?: Dynamic,
+        assetType?: Dynamic,
+        baseUrl: Dynamic = "",
       ): Promise<Dynamic> => {
         if (
-          matchesNormalizedPathPattern(input, /(^|\/)\.\.(\/|$)/) ||
-          isSuspiciousExportAssetPath(input)
+          matchesNormalizedPathPattern(assetPath, /(^|\/)\.\.(\/|$)/) ||
+          isSuspiciousExportAssetPath(assetPath)
         ) {
-          values5.has(input) ||
-            (values5.add(input),
+          visitedPaths.has(assetPath) ||
+            (visitedPaths.add(assetPath),
             items.push(
-              `design-system file not embedded (${redactProjectServeAccessToken(input)}): the resolved path carries dot segments \u2014 point ds-base.js at a plain _ds/<folder> path to publish this page with its design system`,
+              `design-system file not embedded (${redactProjectServeAccessToken(assetPath)}): the resolved path carries dot segments \u2014 point ds-base.js at a plain _ds/<folder> path to publish this page with its design system`,
             ));
           return null;
         }
-        if (/\/v1\/design\/projects\/[^/]+\/serve\//.test(input)) {
-          values5.has(input) ||
-            (values5.add(input),
+        if (/\/v1\/design\/projects\/[^/]+\/serve\//.test(assetPath)) {
+          visitedPaths.has(assetPath) ||
+            (visitedPaths.add(assetPath),
             items.push(
-              `design-system file not embedded (${redactProjectServeAccessToken(input)}): project serve URLs may not be loaded as design-system files \u2014 point ds-base.js at the project's _ds/<folder> tree to publish this page with its design system`,
+              `design-system file not embedded (${redactProjectServeAccessToken(assetPath)}): project serve URLs may not be loaded as design-system files \u2014 point ds-base.js at the project's _ds/<folder> tree to publish this page with its design system`,
             ));
           return null;
         }
-        let callback4: Dynamic = async (
-            input2?: Dynamic,
+        let resolveExternalAsset: Dynamic = async (
+            url?: Dynamic,
           ): Promise<Dynamic> => {
-            let value23: Dynamic = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(
-              input2,
+            let isExternalUrl: Dynamic = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(
+              url,
             );
-            if (/\/v1\/design\/projects\/[^/]+\/serve\//.test(input2)) {
-              values5.has(input2) ||
-                (values5.add(input2),
+            if (/\/v1\/design\/projects\/[^/]+\/serve\//.test(url)) {
+              visitedPaths.has(url) ||
+                (visitedPaths.add(url),
                 items.push(
-                  `design-system file not embedded (${redactProjectServeAccessToken(input2)}): project serve URLs may not be referenced from design-system stylesheets \u2014 the reference ships live and will not load for public viewers`,
+                  `design-system file not embedded (${redactProjectServeAccessToken(url)}): project serve URLs may not be referenced from design-system stylesheets \u2014 the reference ships live and will not load for public viewers`,
                 ));
               return null;
             }
             if (
-              !value23 &&
-              context2 !== "" &&
-              matchesNormalizedPathPattern(input2, /(^|\/)\.\.(\/|$)/)
+              !isExternalUrl &&
+              baseUrl !== "" &&
+              matchesNormalizedPathPattern(url, /(^|\/)\.\.(\/|$)/)
             ) {
-              values5.has(input2) ||
-                (values5.add(input2),
+              visitedPaths.has(url) ||
+                (visitedPaths.add(url),
                 items.push(
-                  `design-system file not embedded (${redactProjectServeAccessToken(input2)}): referenced from a design-system stylesheet with dot segments in the path \u2014 design-system styles may only embed plain relative paths from their own tree`,
+                  `design-system file not embedded (${redactProjectServeAccessToken(url)}): referenced from a design-system stylesheet with dot segments in the path \u2014 design-system styles may only embed plain relative paths from their own tree`,
                 ));
               return null;
             }
             if (
-              !value23 &&
-              context2 !== "" &&
-              isSuspiciousExportAssetPath(input2)
+              !isExternalUrl &&
+              baseUrl !== "" &&
+              isSuspiciousExportAssetPath(url)
             ) {
-              values5.has(input2) ||
-                (values5.add(input2),
+              visitedPaths.has(url) ||
+                (visitedPaths.add(url),
                 items.push(
-                  `design-system file not embedded (${redactProjectServeAccessToken(input2)}): referenced from a design-system stylesheet with unsupported characters in the path \u2014 design-system styles may only embed plain relative paths from their own tree`,
+                  `design-system file not embedded (${redactProjectServeAccessToken(url)}): referenced from a design-system stylesheet with unsupported characters in the path \u2014 design-system styles may only embed plain relative paths from their own tree`,
                 ));
               return null;
             }
             if (
-              !value23 &&
-              context2 !== "" &&
-              input2 !== context2 &&
-              !input2.startsWith(context2 + "/")
+              !isExternalUrl &&
+              baseUrl !== "" &&
+              url !== baseUrl &&
+              !url.startsWith(baseUrl + "/")
             ) {
-              values5.has(input2) ||
-                (values5.add(input2),
+              visitedPaths.has(url) ||
+                (visitedPaths.add(url),
                 items.push(
-                  `design-system file not embedded (${redactProjectServeAccessToken(input2)}): referenced from a design-system stylesheet but resolves outside the design-system tree \u2014 design-system styles may only embed files from their own tree`,
+                  `design-system file not embedded (${redactProjectServeAccessToken(url)}): referenced from a design-system stylesheet but resolves outside the design-system tree \u2014 design-system styles may only embed files from their own tree`,
                 ));
               return null;
             }
-            let value24: Dynamic = await resolveAsset(input2);
-            !value24 &&
-              !values5.has(input2) &&
-              (values5.add(input2),
+            let resolvedAsset: Dynamic = await resolveAsset(url);
+            !resolvedAsset &&
+              !visitedPaths.has(url) &&
+              (visitedPaths.add(url),
               items.push(
-                `design-system file not embedded (${redactProjectServeAccessToken(input2)}): not found \u2014 referenced from a design-system stylesheet, and the published page may not render its design system`,
+                `design-system file not embedded (${redactProjectServeAccessToken(url)}): not found \u2014 referenced from a design-system stylesheet, and the published page may not render its design system`,
               ));
-            return value24;
+            return resolvedAsset;
           },
-          callback5: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
-            let value23: Dynamic = await inlineExportCssImports(
-              input2,
-              input,
-              callback4,
+          inlineCssAsset: Dynamic = async (url?: Dynamic): Promise<Dynamic> => {
+            let inlineCssText: Dynamic = await inlineExportCssImports(
+              url,
+              assetPath,
+              resolveExternalAsset,
               entries,
               0,
               "data",
               items,
             );
-            /\/v1\/design\/projects\/[^/]+\/serve\//.test(value23) &&
-              ((value23 = value23.replace(projectServeUrlPattern, "$1")),
+            /\/v1\/design\/projects\/[^/]+\/serve\//.test(inlineCssText) &&
+              ((inlineCssText = inlineCssText.replace(projectServeUrlPattern, "$1")),
               items.push(
-                `design-system file "${redactProjectServeAccessToken(input)}" references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
+                `design-system file "${redactProjectServeAccessToken(assetPath)}" references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
               ));
-            containsProjectServeCredential(value23) &&
+            containsProjectServeCredential(inlineCssText) &&
               items.push(
-                `serve token not removed: design-system file "${redactProjectServeAccessToken(input)}" ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
+                `serve token not removed: design-system file "${redactProjectServeAccessToken(assetPath)}" ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
               );
             return {
               uuid: crypto.randomUUID(),
-              data: new TextEncoder().encode(value23),
+              data: new TextEncoder().encode(inlineCssText),
               mime: "text/css",
             };
           },
-          entry: Dynamic = entries.get(input);
+          entry: Dynamic = entries.get(assetPath);
         if (entry) {
-          if (options2 === "js") {
+          if (assetType === "js") {
             containsProjectServeAccessToken(
               new TextDecoder().decode(entry.data),
             ) &&
               items.push(
-                `serve token not removed: design-system file "${redactProjectServeAccessToken(input)}" ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
+                `serve token not removed: design-system file "${redactProjectServeAccessToken(assetPath)}" ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
               );
             return entry.uuid;
           }
-          if (values4.has(input)) return entry.uuid;
-          let entry2: Dynamic = entries.get("ds-css:" + input);
-          if (entry2) return entry2.uuid;
-          let value23: Dynamic = await callback5(
+          if (resolvedAssetIds.has(assetPath)) return entry.uuid;
+          let cssEntry: Dynamic = entries.get("ds-css:" + assetPath);
+          if (cssEntry) return cssEntry.uuid;
+          let cssAsset: Dynamic = await inlineCssAsset(
             new TextDecoder().decode(entry.data),
           );
-          entries.set("ds-css:" + input, value23);
-          return value23.uuid;
+          entries.set("ds-css:" + assetPath, cssAsset);
+          return cssAsset.uuid;
         }
-        let value21: Dynamic = await resolveAsset(input);
-        if (!value21) {
+        let loadedAsset: Dynamic = await resolveAsset(assetPath);
+        if (!loadedAsset) {
           items.push(
-            `design-system file not embedded (${redactProjectServeAccessToken(input)}): not found in the project \u2014 the page loads it dynamically via ds-base.js, and the published file will not render its design system`,
+            `design-system file not embedded (${redactProjectServeAccessToken(assetPath)}): not found in the project \u2014 the page loads it dynamically via ds-base.js, and the published file will not render its design system`,
           );
           return null;
         }
-        if (options2 === "css") {
-          let value23: Dynamic = await callback5(
-            new TextDecoder().decode(value21.data),
+        if (assetType === "css") {
+          let asset: Dynamic = await inlineCssAsset(
+            new TextDecoder().decode(loadedAsset.data),
           );
-          entries.set(input, value23);
-          values4.add(input);
-          return value23.uuid;
+          entries.set(assetPath, asset);
+          resolvedAssetIds.add(assetPath);
+          return asset.uuid;
         }
-        let value22: Dynamic = new TextDecoder().decode(value21.data);
-        /\/v1\/design\/projects\/[^/]+\/serve\//.test(value22) &&
-          ((value22 = value22.replace(projectServeUrlPattern, "$1")),
+        let cssText: Dynamic = new TextDecoder().decode(loadedAsset.data);
+        /\/v1\/design\/projects\/[^/]+\/serve\//.test(cssText) &&
+          ((cssText = cssText.replace(projectServeUrlPattern, "$1")),
           items.push(
-            `design-system file "${redactProjectServeAccessToken(input)}" references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
+            `design-system file "${redactProjectServeAccessToken(assetPath)}" references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
           ));
-        containsProjectServeCredential(value22) &&
+        containsProjectServeCredential(cssText) &&
           items.push(
-            `serve token not removed: design-system file "${redactProjectServeAccessToken(input)}" ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
+            `serve token not removed: design-system file "${redactProjectServeAccessToken(assetPath)}" ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
           );
-        let state3: Dynamic = {
+        let assetState: Dynamic = {
           uuid: crypto.randomUUID(),
-          data: new TextEncoder().encode(value22),
-          mime: value21.mime,
+          data: new TextEncoder().encode(cssText),
+          mime: loadedAsset.mime,
         };
-        entries.set(input, state3);
-        return state3.uuid;
+        entries.set(assetPath, assetState);
+        return assetState.uuid;
       },
-      values6: Dynamic = new Set();
-    for (let value21 of Array.from(
-      value4.querySelectorAll("script[src]"),
+      embeddedPaths: Dynamic = new Set();
+    for (let imageElement of Array.from(
+      document.querySelectorAll("script[src]"),
     ) as Dynamic) {
-      let value22: Dynamic = (value21.getAttribute("src") || "").trim(),
-        value23: Dynamic = value22.split("#")[0].split("?")[0];
+      let imageUrl: Dynamic = (imageElement.getAttribute("src") || "").trim(),
+        normalizedUrl: Dynamic = imageUrl.split("#")[0].split("?")[0];
       if (
-        (value23 !== designSystemBaseFilename &&
-          !value23.endsWith("/" + designSystemBaseFilename)) ||
-        /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value23)
+        (normalizedUrl !== designSystemBaseFilename &&
+          !normalizedUrl.endsWith("/" + designSystemBaseFilename)) ||
+        /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedUrl)
       )
         continue;
-      let value24: Dynamic = resolveExportAssetUrl(value22, path);
-      if (values6.has(value24)) continue;
-      values6.add(value24);
+      let resolvedUrl: Dynamic = resolveExportAssetUrl(imageUrl, path);
+      if (embeddedPaths.has(resolvedUrl)) continue;
+      embeddedPaths.add(resolvedUrl);
       if (
         matchesNormalizedPathPattern(
-          value24,
+          resolvedUrl,
           invalidExportAssetPathSegmentsPattern,
         ) ||
-        isSuspiciousExportAssetPath(value24)
+        isSuspiciousExportAssetPath(resolvedUrl)
       ) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): the ds-base.js reference carries dot, empty, or unsupported path segments \u2014 reference the loader by a plain path (if the page's own folder name carries symbols or emoji, renaming that folder to plain characters also resolves this) to publish this page with its design system`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): the ds-base.js reference carries dot, empty, or unsupported path segments \u2014 reference the loader by a plain path (if the page's own folder name carries symbols or emoji, renaming that folder to plain characters also resolves this) to publish this page with its design system`,
         );
         continue;
       }
-      let entry: Dynamic = entries.get(value24),
-        value25: Dynamic = entry ?? (await resolveAsset(value24));
-      if (!value25) continue;
-      let value26: Dynamic = new TextDecoder().decode(value25.data);
-      if (value26.includes("(window.__resources || {})[base + ")) continue;
-      let value27: Dynamic = maskJavaScriptCommentsAndStrings(value26),
-        value28: Dynamic = value19.test(value26),
-        value29: Dynamic = value20.test(value26);
-      if (!value27 && !value28 && !value29) continue;
-      if (!value27) {
+      let entry: Dynamic = entries.get(resolvedUrl),
+        assetEntry: Dynamic = entry ?? (await resolveAsset(resolvedUrl));
+      if (!assetEntry) continue;
+      let scriptText: Dynamic = new TextDecoder().decode(assetEntry.data);
+      if (scriptText.includes("(window.__resources || {})[base + ")) continue;
+      let maskedText: Dynamic = maskJavaScriptCommentsAndStrings(scriptText),
+        hasBaseReference: Dynamic = scriptPattern.test(scriptText),
+        hasRuntimeReference: Dynamic = modulePattern.test(scriptText);
+      if (!maskedText && !hasBaseReference && !hasRuntimeReference) continue;
+      if (!maskedText) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js has no live 'const base = \u2026' statement to follow, so its dynamically loaded files ship un-embedded and will not load on strict hosts (e.g. published artifacts) \u2014 restoring the generated base line re-enables embedding`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js has no live 'const base = \u2026' statement to follow, so its dynamically loaded files ship un-embedded and will not load on strict hosts (e.g. published artifacts) \u2014 restoring the generated base line re-enables embedding`,
         );
         continue;
       }
-      if (!value28 && !value29) {
+      if (!hasBaseReference && !hasRuntimeReference) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js was customized beyond the generated load lines, so its dynamically loaded files ship un-embedded and will not load on strict hosts (e.g. published artifacts) \u2014 restoring the generated lines re-enables embedding`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js was customized beyond the generated load lines, so its dynamically loaded files ship un-embedded and will not load on strict hosts (e.g. published artifacts) \u2014 restoring the generated lines re-enables embedding`,
         );
         continue;
       }
-      let value30: Dynamic = value27.value,
-        value31: Dynamic = resolveExportAssetUrl(value30, path);
-      if (isSuspiciousExportAssetPath(value30)) {
+      let assetPath: Dynamic = maskedText.value,
+        resolvedAssetPath: Dynamic = resolveExportAssetUrl(assetPath, path);
+      if (isSuspiciousExportAssetPath(assetPath)) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js's base line carries unsupported characters \u2014 point base at a plain _ds/<folder> path to publish this page with its design system`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js's base line carries unsupported characters \u2014 point base at a plain _ds/<folder> path to publish this page with its design system`,
         );
         continue;
       }
-      if (/\/v1\/design\/projects\/[^/]+\/serve(\/|$)/.test("/" + value30)) {
+      if (/\/v1\/design\/projects\/[^/]+\/serve(\/|$)/.test("/" + assetPath)) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js points base at a project serve path, which is not a design-system tree \u2014 point base at the project's _ds/<folder> tree to publish this page with its design system`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js points base at a project serve path, which is not a design-system tree \u2014 point base at the project's _ds/<folder> tree to publish this page with its design system`,
         );
         continue;
       }
-      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value30)) {
+      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(assetPath)) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js points base at an absolute URL, which is loaded live and blocked on strict hosts (e.g. published artifacts) \u2014 point base at the project's _ds/<folder> tree to publish this page with its design system`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js points base at an absolute URL, which is loaded live and blocked on strict hosts (e.g. published artifacts) \u2014 point base at the project's _ds/<folder> tree to publish this page with its design system`,
         );
         continue;
       }
       {
-        let value35: Dynamic = /^\/?(_ds\/[^/]+)(\/|$)/,
-          value36: Dynamic = value24.normalize("NFKC"),
-          value37: Dynamic = value31.normalize("NFKC"),
-          callback4: Dynamic = (
-            input?: Dynamic,
-            options2?: Dynamic,
+        let designSystemPattern: Dynamic = /^\/?(_ds\/[^/]+)(\/|$)/,
+          normalizedSourcePath: Dynamic = resolvedUrl.normalize("NFKC"),
+          normalizedResolvedPath: Dynamic = resolvedAssetPath.normalize("NFKC"),
+          isWithinDesignSystemTree: Dynamic = (
+            sourcePath?: Dynamic,
+            resolvedPath?: Dynamic,
           ): Dynamic => {
-            let value38: Dynamic = value35.exec(input);
-            if (!value38) return true;
-            let value39: Dynamic = options2.replace(/^\//, "");
+            let match: Dynamic = designSystemPattern.exec(sourcePath);
+            if (!match) return true;
+            let normalizedPath: Dynamic = resolvedPath.replace(/^\//, "");
             return (
-              value39 === value38[1] || value39.startsWith(value38[1] + "/")
+              normalizedPath === match[1] || normalizedPath.startsWith(match[1] + "/")
             );
           };
         if (
           !(
-            !!value35.exec(value24) == !!value35.exec(value36) &&
-            designSystemAssetPathPattern.test(value31) ===
-              designSystemAssetPathPattern.test(value37) &&
-            callback4(value24, value31) === callback4(value36, value37) &&
-            (value31 === "") == (value37 === "")
+            !!designSystemPattern.exec(resolvedUrl) == !!designSystemPattern.exec(normalizedSourcePath) &&
+            designSystemAssetPathPattern.test(resolvedAssetPath) ===
+              designSystemAssetPathPattern.test(normalizedResolvedPath) &&
+            isWithinDesignSystemTree(resolvedUrl, resolvedAssetPath) === isWithinDesignSystemTree(normalizedSourcePath, normalizedResolvedPath) &&
+            (resolvedAssetPath === "") == (normalizedResolvedPath === "")
           )
         ) {
           items.push(
-            `design-system file not embedded (${redactProjectServeAccessToken(value24)}): the loader path or its base changes meaning under Unicode normalization, so it cannot be safely classified \u2014 reference the loader and point base at a plain _ds/<folder> path`,
+            `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): the loader path or its base changes meaning under Unicode normalization, so it cannot be safely classified \u2014 reference the loader and point base at a plain _ds/<folder> path`,
           );
           continue;
         }
       }
-      let value32: Dynamic = /^\/?(_ds\/[^/]+)(\/|$)/.exec(value24);
-      if (value32) {
-        let value35: Dynamic = value32[1],
-          value36: Dynamic = value31.replace(/^\//, "");
-        if (value36 !== value35 && !value36.startsWith(value35 + "/")) {
+      let designSystemMatch: Dynamic = /^\/?(_ds\/[^/]+)(\/|$)/.exec(resolvedUrl);
+      if (designSystemMatch) {
+        let designSystemRoot: Dynamic = designSystemMatch[1],
+          resolvedRelativePath: Dynamic = resolvedAssetPath.replace(/^\//, "");
+        if (resolvedRelativePath !== designSystemRoot && !resolvedRelativePath.startsWith(designSystemRoot + "/")) {
           items.push(
-            `design-system file not embedded (${redactProjectServeAccessToken(value24)}): a loader inside ${value35}/ may only embed from its own tree, and its base resolves elsewhere \u2014 the page loads these files live, which strict hosts block`,
+            `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): a loader inside ${designSystemRoot}/ may only embed from its own tree, and its base resolves elsewhere \u2014 the page loads these files live, which strict hosts block`,
           );
           continue;
         }
       }
-      if (value31 === "" && !state.dsProject) {
+      if (resolvedAssetPath === "" && !state.dsProject) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js's base resolves to the project root, which a bound design system may not embed from \u2014 place design files under '_ds/<name>/' and point base at that tree`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js's base resolves to the project root, which a bound design system may not embed from \u2014 place design files under '_ds/<name>/' and point base at that tree`,
         );
         continue;
       }
       if (
         !state.dsProject &&
-        value31 !== "" &&
-        !designSystemAssetPathPattern.test(value31)
+        resolvedAssetPath !== "" &&
+        !designSystemAssetPathPattern.test(resolvedAssetPath)
       ) {
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js's base does not point at a bound design-system tree \u2014 place design files under '_ds/<name>/' and point base at that tree`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js's base does not point at a bound design-system tree \u2014 place design files under '_ds/<name>/' and point base at that tree`,
         );
         continue;
       }
-      let value33: Dynamic = parseExportRuntimeAssetPaths(value26),
-        value34: Dynamic = value26,
+      let runtimePaths: Dynamic = parseExportRuntimeAssetPaths(scriptText),
+        assetText: Dynamic = scriptText,
         flag: Dynamic = false;
-      if (value29) {
-        let value35: Dynamic = `${value30}/_ds_bundle.js`,
-          value36: Dynamic = await callback3(
-            resolveExportAssetUrl(value35, path),
+      if (hasRuntimeReference) {
+        let loaderPath: Dynamic = `${assetPath}/_ds_bundle.js`,
+          loaderId: Dynamic = await resolveAssetWithContext(
+            resolveExportAssetUrl(loaderPath, path),
             "js",
           );
-        value36 &&
-          (items2.push({
-            id: value35,
-            uuid: value36,
+        loaderId &&
+          (resourceEntries.push({
+            id: loaderPath,
+            uuid: loaderId,
           }),
-          (value34 = value34.replace(
-            new RegExp(value20.source, "g"),
+          (assetText = assetText.replace(
+            new RegExp(modulePattern.source, "g"),
             "$1.src = (window.__resources || {})[base + $2/_ds_bundle.js$2] || base + $2/_ds_bundle.js$2;",
           )),
           (flag = true));
       } else
         items.push(
-          `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js's _ds_bundle.js load line was customized beyond the generated shape, so the published page loads the design-system bundle live, which strict hosts block \u2014 restoring the generated line re-enables embedding`,
+          `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js's _ds_bundle.js load line was customized beyond the generated shape, so the published page loads the design-system bundle live, which strict hosts block \u2014 restoring the generated line re-enables embedding`,
         );
-      if (value28 && value33 && value33.length > 0) {
-        let flag2: Dynamic = false;
-        for (let value35 of value33 as Dynamic) {
+      if (hasBaseReference && runtimePaths && runtimePaths.length > 0) {
+        let hasUnresolvedAsset: Dynamic = false;
+        for (let runtimePath of runtimePaths as Dynamic) {
           if (
-            isSuspiciousExportAssetPath(value35) ||
-            /[#?]/.test(value35) ||
-            value35.startsWith("/") ||
-            matchesNormalizedPathPattern(value35, /(^|\/)\.\.(\/|$)/)
+            isSuspiciousExportAssetPath(runtimePath) ||
+            /[#?]/.test(runtimePath) ||
+            runtimePath.startsWith("/") ||
+            matchesNormalizedPathPattern(runtimePath, /(^|\/)\.\.(\/|$)/)
           ) {
             items.push(
-              `design-system stylesheet not embedded ("${redactProjectServeAccessToken(value35)}" in ds-base.js): the path is not a plain relative path inside the design-system tree \u2014 the reference ships live and will not load for public viewers`,
+              `design-system stylesheet not embedded ("${redactProjectServeAccessToken(runtimePath)}" in ds-base.js): the path is not a plain relative path inside the design-system tree \u2014 the reference ships live and will not load for public viewers`,
             );
             continue;
           }
-          let value36: Dynamic = `${value30}/${value35}`,
-            value37: Dynamic = await callback3(
-              resolveExportAssetUrl(value36, path),
+          let runtimeAssetPath: Dynamic = `${assetPath}/${runtimePath}`,
+            runtimeAssetId: Dynamic = await resolveAssetWithContext(
+              resolveExportAssetUrl(runtimeAssetPath, path),
               "css",
-              value31,
+              resolvedAssetPath,
             );
-          value37 &&
-            (items2.push({
-              id: value36,
-              uuid: value37,
+          runtimeAssetId &&
+            (resourceEntries.push({
+              id: runtimeAssetPath,
+              uuid: runtimeAssetId,
             }),
-            (flag2 = true));
+            (hasUnresolvedAsset = true));
         }
-        flag2 &&
-          ((value34 = value34.replace(
-            new RegExp(value19.source, "g"),
+        hasUnresolvedAsset &&
+          ((assetText = assetText.replace(
+            new RegExp(scriptPattern.source, "g"),
             `const __dsu = (window.__resources || {})[base + $4/$4 + p];
     const __dsb = __dsu && (window.__resourceBlobs || {})[__dsu];
     if (__dsb) {
@@ -1044,382 +1044,382 @@ async function bundleStandaloneDesignHtml(
           )),
           (flag = true));
       } else
-        value28 && value33 === null
+        hasBaseReference && runtimePaths === null
           ? items.push(
-              `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js's stylesheet list could not be read as a plain string array, so its stylesheets ship un-embedded and will not load on strict hosts \u2014 restoring the generated 'for (const p of [...])' loop head re-enables embedding`,
+              `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js's stylesheet list could not be read as a plain string array, so its stylesheets ship un-embedded and will not load on strict hosts \u2014 restoring the generated 'for (const p of [...])' loop head re-enables embedding`,
             )
-          : value33 &&
-            value33.length > 0 &&
+          : runtimePaths &&
+            runtimePaths.length > 0 &&
             items.push(
-              `design-system file not embedded (${redactProjectServeAccessToken(value24)}): ds-base.js's stylesheet loop was customized beyond the generated shape, so the published page loads its design-system stylesheets live, which strict hosts block \u2014 restoring the generated lines re-enables embedding`,
+              `design-system file not embedded (${redactProjectServeAccessToken(resolvedUrl)}): ds-base.js's stylesheet loop was customized beyond the generated shape, so the published page loads its design-system stylesheets live, which strict hosts block \u2014 restoring the generated lines re-enables embedding`,
             );
       flag &&
         (entry
-          ? (entry.data = new TextEncoder().encode(value34))
-          : entries.set(value24, {
+          ? (entry.data = new TextEncoder().encode(assetText))
+          : entries.set(resolvedUrl, {
               uuid: crypto.randomUUID(),
-              data: new TextEncoder().encode(value34),
-              mime: value25.mime,
+              data: new TextEncoder().encode(assetText),
+              mime: assetEntry.mime,
             }));
     }
   }
   await Promise.all(
-    Array.from(value4.querySelectorAll("script[src]")).map(
-      (input?: Dynamic): Dynamic => value6(input, "src"),
+    Array.from(document.querySelectorAll("script[src]")).map(
+      (sourceElement?: Dynamic): Dynamic => rewriteAttribute(sourceElement, "src"),
     ),
   );
   await Promise.all(
-    Array.from(value4.querySelectorAll("x-dc x-import")).map(
-      async (element2?: Dynamic): Promise<Dynamic> => {
-        let text3: Dynamic = "from";
-        if (!element2.getAttribute(text3)) return;
-        let value19: Dynamic = element2.getAttribute(text3).trim();
-        if (value19.includes("{{")) return;
-        let value20: Dynamic = value19.split(/\s+/),
-          items3: Dynamic = [],
+    Array.from(document.querySelectorAll("x-dc x-import")).map(
+      async (sourceElement?: Dynamic): Promise<Dynamic> => {
+        let sourceAttribute: Dynamic = "from";
+        if (!sourceElement.getAttribute(sourceAttribute)) return;
+        let sourceValue: Dynamic = sourceElement.getAttribute(sourceAttribute).trim();
+        if (sourceValue.includes("{{")) return;
+        let sourceTokens: Dynamic = sourceValue.split(/\s+/),
+          rewrittenTokens: Dynamic = [],
           flag: Dynamic = false;
-        for (let value21 of value20 as Dynamic) {
-          if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value21)) {
-            if (!/\/v1\/design\/projects\/[^/]+\/serve\//.test(value21)) {
-              items3.push(value21);
+        for (let token of sourceTokens as Dynamic) {
+          if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(token)) {
+            if (!/\/v1\/design\/projects\/[^/]+\/serve\//.test(token)) {
+              rewrittenTokens.push(token);
               continue;
             }
-            let value29: Dynamic = resolveExportAssetUrl(value21, path);
-            if (!entries.has(value29)) {
-              let value30: Dynamic = await resolveAsset(value29);
-              if (!value30) {
-                let value31: Dynamic = value21.indexOf("#"),
-                  value32: Dynamic =
-                    value31 >= 0 ? value21.slice(value31) : "",
-                  value33: Dynamic =
-                    (value31 >= 0 ? value21.slice(0, value31) : value21)
+            let resolvedTokenPath: Dynamic = resolveExportAssetUrl(token, path);
+            if (!entries.has(resolvedTokenPath)) {
+              let tokenAsset: Dynamic = await resolveAsset(resolvedTokenPath);
+              if (!tokenAsset) {
+                let sourceFragmentIndex: Dynamic = token.indexOf("#"),
+                  tokenWithoutFragment: Dynamic =
+                    sourceFragmentIndex >= 0 ? token.slice(sourceFragmentIndex) : "",
+                  sanitizedToken: Dynamic =
+                    (sourceFragmentIndex >= 0 ? token.slice(0, sourceFragmentIndex) : token)
                       .split("?")[0]
                       .replace(/\/_t\/[^/]+\//i, "/") +
-                    (containsProjectServeAccessToken(value32) ? "" : value32);
-                items3.push(value33);
-                value33 !== value21 && (flag = true);
+                    (containsProjectServeAccessToken(tokenWithoutFragment) ? "" : tokenWithoutFragment);
+                rewrittenTokens.push(sanitizedToken);
+                sanitizedToken !== token && (flag = true);
                 continue;
               }
-              entries.has(value29) ||
-                entries.set(value29, {
+              entries.has(resolvedTokenPath) ||
+                entries.set(resolvedTokenPath, {
                   uuid: crypto.randomUUID(),
-                  data: value30.data,
-                  mime: value30.mime,
+                  data: tokenAsset.data,
+                  mime: tokenAsset.mime,
                 });
             }
           }
-          let value22: Dynamic = value21.indexOf("#"),
-            value23: Dynamic = value22 >= 0 ? value21.slice(value22) : "",
-            value24: Dynamic = containsProjectServeAccessToken(value23)
+          let fragmentIndex: Dynamic = token.indexOf("#"),
+            fragment: Dynamic = fragmentIndex >= 0 ? token.slice(fragmentIndex) : "",
+            sanitizedFragment: Dynamic = containsProjectServeAccessToken(fragment)
               ? ""
-              : value23,
-            value25: Dynamic =
-              value21.split("#")[0].split("?")[0].split("/").pop() || "",
-            value26: Dynamic = await value5(value21);
-          if (!value26) {
-            value24 !== value23
-              ? (items3.push(value21.slice(0, value22)), (flag = true))
-              : items3.push(value21);
+              : fragment,
+            instanceName: Dynamic =
+              token.split("#")[0].split("?")[0].split("/").pop() || "",
+            resolvedAssetId: Dynamic = await resolveAssetUrl(token);
+          if (!resolvedAssetId) {
+            sanitizedFragment !== fragment
+              ? (rewrittenTokens.push(token.slice(0, fragmentIndex)), (flag = true))
+              : rewrittenTokens.push(token);
             continue;
           }
-          let value27: Dynamic = `${value26}#/${value25}${value24}`,
-            value28: Dynamic = jsxAssetFilenamePattern.exec(value21);
-          value28 &&
-            !jsxAssetFilenamePattern.test(value27) &&
-            (value27 += `#.${value28[1]}`);
-          items3.push(value27);
+          let rewrittenUrl: Dynamic = `${resolvedAssetId}#/${instanceName}${sanitizedFragment}`,
+            jsxMatch: Dynamic = jsxAssetFilenamePattern.exec(token);
+          jsxMatch &&
+            !jsxAssetFilenamePattern.test(rewrittenUrl) &&
+            (rewrittenUrl += `#.${jsxMatch[1]}`);
+          rewrittenTokens.push(rewrittenUrl);
           flag = true;
         }
-        flag && element2.setAttribute(text3, items3.join(" "));
+        flag && sourceElement.setAttribute(sourceAttribute, rewrittenTokens.join(" "));
       },
     ),
   );
   {
-    let entries3: Dynamic = new Map(),
-      callback3: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
-        if (state.ancestors.has(input)) {
+    let embeddedPageEntries: Dynamic = new Map(),
+      bundleEmbeddedPage: Dynamic = async (pagePath?: Dynamic): Promise<Dynamic> => {
+        if (state.ancestors.has(pagePath)) {
           items.push(
-            `embedded page not bundled (${input}): the page embeds itself, directly or through a chain of embedded pages \u2014 the frame will render empty`,
+            `embedded page not bundled (${pagePath}): the page embeds itself, directly or through a chain of embedded pages \u2014 the frame will render empty`,
           );
           return null;
         }
         if (state.depth >= maxEmbeddedExportDepth) {
           items.push(
-            `embedded page not bundled (${input}): embedded pages nest more than ${maxEmbeddedExportDepth} levels deep \u2014 the frame will render empty`,
+            `embedded page not bundled (${pagePath}): embedded pages nest more than ${maxEmbeddedExportDepth} levels deep \u2014 the frame will render empty`,
           );
           return null;
         }
-        let entry: Dynamic = state.pages.get(input);
+        let entry: Dynamic = state.pages.get(pagePath);
         if (entry) return "about:blank#" + entry.uuid;
-        let value19: Dynamic = await callback(input);
-        if (!value19) return null;
-        let value20: Dynamic = value19.mime
+        let pageAsset: Dynamic = await callback(pagePath);
+        if (!pageAsset) return null;
+        let mimeType: Dynamic = pageAsset.mime
           .split(";")[0]
           .trim()
           .toLowerCase();
-        if (value20 !== "text/html") {
-          let entry2: Dynamic = entries.get(input),
-            value24: Dynamic = entry2?.data ?? value19.data;
+        if (mimeType !== "text/html") {
+          let cachedEntry: Dynamic = entries.get(pagePath),
+            pageData: Dynamic = cachedEntry?.data ?? pageAsset.data;
           !(
-            alreadyCompressedExportMimeTypes.has(value20) &&
-            hasCompressedFileSignature(value24)
+            alreadyCompressedExportMimeTypes.has(mimeType) &&
+            hasCompressedFileSignature(pageData)
           ) &&
             containsProjectServeAccessToken(
-              new TextDecoder().decode(value24),
+              new TextDecoder().decode(pageData),
             ) &&
             items.push(
-              `serve token not removed: embedded file "${input}" ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
+              `serve token not removed: embedded file "${pagePath}" ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
             );
-          if (entry2) return entry2.uuid;
-          let state4: Dynamic = {
+          if (cachedEntry) return cachedEntry.uuid;
+          let pageEntry: Dynamic = {
             uuid: crypto.randomUUID(),
-            data: value19.data,
-            mime: value19.mime,
+            data: pageAsset.data,
+            mime: pageAsset.mime,
           };
-          entries.set(input, state4);
-          return state4.uuid;
+          entries.set(pagePath, pageEntry);
+          return pageEntry.uuid;
         }
-        let value21: Dynamic = new TextDecoder().decode(value19.data);
-        /\/v1\/design\/projects\/[^/]+\/serve\//.test(value21) &&
-          ((value21 = value21.replace(projectServeUrlPattern, "$1")),
+        let pageHtml: Dynamic = new TextDecoder().decode(pageAsset.data);
+        /\/v1\/design\/projects\/[^/]+\/serve\//.test(pageHtml) &&
+          ((pageHtml = pageHtml.replace(projectServeUrlPattern, "$1")),
           items.push(
-            `embedded page "${input}" references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
+            `embedded page "${pagePath}" references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
           ));
-        containsProjectServeCredential(value21) &&
+        containsProjectServeCredential(pageHtml) &&
           items.push(
-            `serve token not removed: embedded page "${input}" ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
+            `serve token not removed: embedded page "${pagePath}" ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
           );
-        let value22: Dynamic = await bundleStandaloneDesignHtml(
-          value21,
-          input,
+        let embeddedBundle: Dynamic = await bundleStandaloneDesignHtml(
+          pageHtml,
+          pagePath,
           resolveAsset,
           {
-            ancestors: new Set([...state.ancestors, input]),
+            ancestors: new Set([...state.ancestors, pagePath]),
             depth: state.depth + 1,
             pages: state.pages,
             pageOrder: state.pageOrder,
             dsProject: state.dsProject,
           },
         );
-        for (let value24 of value22.warnings as Dynamic)
-          items.push(`${value24} \u2014 inside embedded page "${input}"`);
-        let state3: Dynamic = {
+        for (let warning of embeddedBundle.warnings as Dynamic)
+          items.push(`${warning} \u2014 inside embedded page "${pagePath}"`);
+        let embeddedPage: Dynamic = {
             uuid: crypto.randomUUID(),
-            data: new TextEncoder().encode(value22.html),
+            data: new TextEncoder().encode(embeddedBundle.html),
             hasSubPages: [...state.pages.values()].some(
-              (input2?: Dynamic): Dynamic =>
-                value22.html.includes("about:blank#" + input2.uuid),
+              (page?: Dynamic): Dynamic =>
+                embeddedBundle.html.includes("about:blank#" + page.uuid),
             ),
           },
-          value23: Dynamic = value22.warnings.some(
-            (input2?: Dynamic): Dynamic =>
-              input2.startsWith("embedded page not bundled ("),
+          hasWarnings: Dynamic = embeddedBundle.warnings.some(
+            (warning?: Dynamic): Dynamic =>
+              warning.startsWith("embedded page not bundled ("),
           );
-        state.pages.set(value23 ? "instance:" + state3.uuid : input, state3);
-        state.pageOrder.push(state3.uuid);
-        return "about:blank#" + state3.uuid;
+        state.pages.set(hasWarnings ? "instance:" + embeddedPage.uuid : pagePath, embeddedPage);
+        state.pageOrder.push(embeddedPage.uuid);
+        return "about:blank#" + embeddedPage.uuid;
       };
-    for (let value19 of Array.from(
-      value4.querySelectorAll("iframe[src]"),
+    for (let iframe of Array.from(
+      document.querySelectorAll("iframe[src]"),
     ) as Dynamic) {
-      let value20: Dynamic = (value19.getAttribute("src") || "").trim();
-      if (!value20 || value20.includes("{{")) continue;
-      let value21: Dynamic = value20.indexOf("#"),
-        value22: Dynamic = value21 >= 0 ? value20.slice(value21) : "",
-        value23: Dynamic = containsProjectServeAccessToken(value22)
+      let src: Dynamic = (iframe.getAttribute("src") || "").trim();
+      if (!src || src.includes("{{")) continue;
+      let fragmentIndex: Dynamic = src.indexOf("#"),
+        fragment: Dynamic = fragmentIndex >= 0 ? src.slice(fragmentIndex) : "",
+        sanitizedFragment: Dynamic = containsProjectServeAccessToken(fragment)
           ? ""
-          : value22,
-        value24: Dynamic = value21 >= 0 ? value20.slice(0, value21) : value20;
-      if (!value24) continue;
-      let value25: Dynamic = value24;
+          : fragment,
+        pageUrl: Dynamic = fragmentIndex >= 0 ? src.slice(0, fragmentIndex) : src;
+      if (!pageUrl) continue;
+      let decodedPageUrl: Dynamic = pageUrl;
       try {
-        value25 = decodeURIComponent(value24);
+        decodedPageUrl = decodeURIComponent(pageUrl);
       } catch {}
-      let value26: Dynamic = /^([a-z][a-z0-9+.-]*):/i
-        .exec(value25)?.[1]
+      let schemeMatch: Dynamic = /^([a-z][a-z0-9+.-]*):/i
+        .exec(decodedPageUrl)?.[1]
         ?.toLowerCase();
-      if (value26 && value26 !== "http" && value26 !== "https") continue;
-      let value27: Dynamic = /\/v1\/design\/projects\/[^/]+\/serve\//.test(
-        value25,
+      if (schemeMatch && schemeMatch !== "http" && schemeMatch !== "https") continue;
+      let isProjectServeUrl: Dynamic = /\/v1\/design\/projects\/[^/]+\/serve\//.test(
+        decodedPageUrl,
       );
-      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value25) && !value27) continue;
-      let value28: Dynamic;
-      if (value27) value28 = resolveExportAssetUrl(value25, path);
+      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(decodedPageUrl) && !isProjectServeUrl) continue;
+      let resolvedPageUrl: Dynamic;
+      if (isProjectServeUrl) resolvedPageUrl = resolveExportAssetUrl(decodedPageUrl, path);
       else {
-        value28 = resolveExportAssetUrl(value24, path);
+        resolvedPageUrl = resolveExportAssetUrl(pageUrl, path);
         try {
-          value28 = decodeURIComponent(value28);
+          resolvedPageUrl = decodeURIComponent(resolvedPageUrl);
         } catch {}
       }
-      let value29: Dynamic = value27 ? value28.split("?")[0] : value28;
-      if (!value27 && /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value29)) continue;
-      let entry: Dynamic = entries3.get(value29);
+      let normalizedPageUrl: Dynamic = isProjectServeUrl ? resolvedPageUrl.split("?")[0] : resolvedPageUrl;
+      if (!isProjectServeUrl && /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedPageUrl)) continue;
+      let entry: Dynamic = embeddedPageEntries.get(normalizedPageUrl);
       if (entry === undefined) {
-        if (value27) {
-          let value30: Dynamic = value29.replace(/\/_t\/[^/]+\//i, "/");
-          containsProjectServeAccessToken(value30)
+        if (isProjectServeUrl) {
+          let pageLookupKey: Dynamic = normalizedPageUrl.replace(/\/_t\/[^/]+\//i, "/");
+          containsProjectServeAccessToken(pageLookupKey)
             ? (items.push(
                 "serve token not removed: an embedded frame references a project serve URL whose access token could not be stripped \u2014 the published file may carry a live access token",
               ),
               (entry = null))
             : (items.push(
-                `embedded page not bundled (${value30}): project serve URLs are not embedded as pages \u2014 the frame ships without its access token and will not load for public viewers`,
+                `embedded page not bundled (${pageLookupKey}): project serve URLs are not embedded as pages \u2014 the frame ships without its access token and will not load for public viewers`,
               ),
-              (entry = value30));
-        } else entry = await callback3(value29);
-        entries3.set(value29, entry);
+              (entry = pageLookupKey));
+        } else entry = await bundleEmbeddedPage(normalizedPageUrl);
+        embeddedPageEntries.set(normalizedPageUrl, entry);
       }
       if (
-        value19.hasAttribute("sandbox") &&
-        !(value19.getAttribute("sandbox") || "")
+        iframe.hasAttribute("sandbox") &&
+        !(iframe.getAttribute("sandbox") || "")
           .toLowerCase()
           .split(/[ \t\n\f\r]+/)
           .includes("allow-same-origin") &&
         entry?.startsWith("about:blank#")
       ) {
-        let value30: Dynamic = entry.slice(12);
+        let pageUuid: Dynamic = entry.slice(12);
         [...state.pages.values()].find(
-          (input?: Dynamic): Dynamic => input.uuid === value30,
+          (pageEntry?: Dynamic): Dynamic => pageEntry.uuid === pageUuid,
         )?.hasSubPages &&
           items.push(
-            `embedded page inside a sandboxed frame (${redactProjectServeAccessToken(value29)}): pages embedded inside this sandboxed frame will not display in the published deck on the web \u2014 remove the sandbox attribute or avoid nesting page embeds inside it`,
+            `embedded page inside a sandboxed frame (${redactProjectServeAccessToken(normalizedPageUrl)}): pages embedded inside this sandboxed frame will not display in the published deck on the web \u2014 remove the sandbox attribute or avoid nesting page embeds inside it`,
           );
       }
       entry
-        ? value19.setAttribute("src", entry + value23)
-        : value23 !== value22 && value19.setAttribute("src", value24);
+        ? iframe.setAttribute("src", entry + sanitizedFragment)
+        : sanitizedFragment !== fragment && iframe.setAttribute("src", pageUrl);
     }
   }
-  let callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      Array.from(input.querySelectorAll("x-dc dc-import")).flatMap(
-        (element2?: Dynamic): Dynamic => {
-          let value19: Dynamic =
-            element2.getAttribute("name") ||
-            element2.getAttribute("component") ||
+  let findImportedComponents: Dynamic = (sourceDocument?: Dynamic): Dynamic =>
+      Array.from(sourceDocument.querySelectorAll("x-dc dc-import")).flatMap(
+        (importElement?: Dynamic): Dynamic => {
+          let componentName: Dynamic =
+            importElement.getAttribute("name") ||
+            importElement.getAttribute("component") ||
             "";
-          return value19 ? [value19] : [];
+          return componentName ? [componentName] : [];
         },
       ),
-    values2: Dynamic = new Set(),
-    values3: Dynamic = new Set(),
-    value10: Dynamic = callback2(value4);
-  for (; value10.length > 0; ) {
-    let value19: Dynamic = value10.shift();
-    if (values2.has(value19)) continue;
-    values2.add(value19);
-    if (/[/\\#?]/.test(value19)) {
+    visitedComponents: Dynamic = new Set(),
+    visitedStylesheets: Dynamic = new Set(),
+    componentQueue: Dynamic = findImportedComponents(document);
+  for (; componentQueue.length > 0; ) {
+    let componentName: Dynamic = componentQueue.shift();
+    if (visitedComponents.has(componentName)) continue;
+    visitedComponents.add(componentName);
+    if (/[/\\#?]/.test(componentName)) {
       items.push(
-        `sibling component not embedded (<${value19}/>): the name is not a plain sibling filename \u2014 the reference renders as an empty placeholder`,
+        `sibling component not embedded (<${componentName}/>): the name is not a plain sibling filename \u2014 the reference renders as an empty placeholder`,
       );
       continue;
     }
-    let value20: Dynamic = "./" + encodeURIComponent(value19) + ".dc.html",
-      value21: Dynamic = resolveExportAssetUrl(
-        "./" + value19 + ".dc.html",
+    let componentPath: Dynamic = "./" + encodeURIComponent(componentName) + ".dc.html",
+      componentUrl: Dynamic = resolveExportAssetUrl(
+        "./" + componentName + ".dc.html",
         path,
       ),
-      entry: Dynamic = entries.get(value21);
+      entry: Dynamic = entries.get(componentUrl);
     entry &&
       containsProjectServeAccessToken(new TextDecoder().decode(entry.data)) &&
       items.push(
-        `serve token not removed: sibling component <${value19}/> ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
+        `serve token not removed: sibling component <${componentName}/> ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
       );
     if (!entry) {
-      let value23: Dynamic = await resolveAsset(value21);
-      if (!value23) {
+      let componentAsset: Dynamic = await resolveAsset(componentUrl);
+      if (!componentAsset) {
         items.push(
-          `sibling component not embedded (<${value19}/>): ${value20} is not in the project \u2014 the reference renders as an empty placeholder`,
+          `sibling component not embedded (<${componentName}/>): ${componentPath} is not in the project \u2014 the reference renders as an empty placeholder`,
         );
         continue;
       }
-      let value24: Dynamic = new TextDecoder().decode(value23.data);
-      /\/v1\/design\/projects\/[^/]+\/serve\//.test(value24) &&
-        ((value24 = value24.replace(projectServeUrlPattern, "$1")),
+      let componentHtml: Dynamic = new TextDecoder().decode(componentAsset.data);
+      /\/v1\/design\/projects\/[^/]+\/serve\//.test(componentHtml) &&
+        ((componentHtml = componentHtml.replace(projectServeUrlPattern, "$1")),
         items.push(
-          `sibling component <${value19}/> references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
+          `sibling component <${componentName}/> references project serve URLs \u2014 detected access tokens were removed, but the URLs (and project id) ship in the published file and will not load for public viewers`,
         ));
-      containsProjectServeCredential(value24) &&
+      containsProjectServeCredential(componentHtml) &&
         items.push(
-          `serve token not removed: sibling component <${value19}/> ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
+          `serve token not removed: sibling component <${componentName}/> ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token`,
         );
       entry = {
         uuid: crypto.randomUUID(),
-        data: new TextEncoder().encode(value24),
-        mime: value23.mime,
+        data: new TextEncoder().encode(componentHtml),
+        mime: componentAsset.mime,
       };
-      entries.set(value21, entry);
+      entries.set(componentUrl, entry);
     }
-    items2.push({
-      id: value20,
+    resourceEntries.push({
+      id: componentPath,
       uuid: entry.uuid,
     });
-    let value22: Dynamic = new DOMParser().parseFromString(
+    let componentDocument: Dynamic = new DOMParser().parseFromString(
       new TextDecoder().decode(entry.data),
       "text/html",
     );
-    value10.push(...callback2(value22));
-    for (let value23 of Array.from(
-      value22.querySelectorAll("x-dc x-import"),
+    componentQueue.push(...findImportedComponents(componentDocument));
+    for (let importElement of Array.from(
+      componentDocument.querySelectorAll("x-dc x-import"),
     ) as Dynamic) {
-      let value24: Dynamic =
-          value23.getAttribute("from") ||
-          (value23.getAttribute("component-from-global-scope")
+      let importSource: Dynamic =
+          importElement.getAttribute("from") ||
+          (importElement.getAttribute("component-from-global-scope")
             ? ""
-            : value23.getAttribute("src") ||
-              value23.getAttribute("import") ||
+            : importElement.getAttribute("src") ||
+              importElement.getAttribute("import") ||
               ""),
-        value25: Dynamic = value24.trim();
-      if (!(!value25 || value24.includes("{{")))
-        for (let value26 of value25.split(/\s+/) as Dynamic)
-          (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value26) &&
-            !/\/v1\/design\/projects\/[^/]+\/serve\//.test(value26)) ||
+        normalizedSource: Dynamic = importSource.trim();
+      if (!(!normalizedSource || importSource.includes("{{")))
+        for (let sourcePart of normalizedSource.split(/\s+/) as Dynamic)
+          (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(sourcePart) &&
+            !/\/v1\/design\/projects\/[^/]+\/serve\//.test(sourcePart)) ||
             items.push(
-              `x-import inside sibling component <${value19}/> (${value26}) is not embedded \u2014 it will fail to load in the published page`,
+              `x-import inside sibling component <${componentName}/> (${sourcePart}) is not embedded \u2014 it will fail to load in the published page`,
             );
     }
-    for (let value23 of Array.from(
-      value22.querySelectorAll(
+    for (let linkElement of Array.from(
+      componentDocument.querySelectorAll(
         'x-dc helmet link[rel~="stylesheet" i], x-dc sc-helmet link[rel~="stylesheet" i]',
       ),
     ) as Dynamic) {
-      let value24: Dynamic = (value23.getAttribute("href") || "").trim();
+      let stylesheetUrl: Dynamic = (linkElement.getAttribute("href") || "").trim();
       if (
-        !value24 ||
-        value24.includes("{{") ||
-        values3.has(value24) ||
-        (value23.getAttribute("rel") || "")
+        !stylesheetUrl ||
+        stylesheetUrl.includes("{{") ||
+        visitedStylesheets.has(stylesheetUrl) ||
+        (linkElement.getAttribute("rel") || "")
           .toLowerCase()
           .split(/\s+/)
           .includes("alternate") ||
-        !/^(?:https?:|\/\/)/i.test(value24)
+        !/^(?:https?:|\/\/)/i.test(stylesheetUrl)
       )
         continue;
-      let value25: Dynamic = resolveExportAssetUrl(value24, path),
-        value26: Dynamic = await callback(value25);
-      if (!value26) continue;
-      let value27: Dynamic = new TextDecoder().decode(value26.data);
-      value27 = await inlineExportCssAssetUrls(
-        value27,
-        value25,
+      let resolvedStylesheetUrl: Dynamic = resolveExportAssetUrl(stylesheetUrl, path),
+        stylesheetAsset: Dynamic = await callback(resolvedStylesheetUrl);
+      if (!stylesheetAsset) continue;
+      let stylesheetText: Dynamic = new TextDecoder().decode(stylesheetAsset.data);
+      stylesheetText = await inlineExportCssAssetUrls(
+        stylesheetText,
+        resolvedStylesheetUrl,
         callback,
         entries,
         items,
       );
-      values3.add(value24);
-      let state3: Dynamic = {
+      visitedStylesheets.add(stylesheetUrl);
+      let stylesheetEntry: Dynamic = {
         uuid: crypto.randomUUID(),
-        data: new TextEncoder().encode(value27),
+        data: new TextEncoder().encode(stylesheetText),
         mime: "text/css",
       };
-      entries.set("helmet-css:" + value24, state3);
-      items2.push({
-        id: value24,
-        uuid: state3.uuid,
+      entries.set("helmet-css:" + stylesheetUrl, stylesheetEntry);
+      resourceEntries.push({
+        id: stylesheetUrl,
+        uuid: stylesheetEntry.uuid,
       });
     }
   }
   if (isDcHtmlDocument(html)) {
-    let items3: Dynamic = [
+    let runtimeEntries: Dynamic = [
       {
         url: exportReactUmdUrl,
         sri: exportReactUmdIntegrity,
@@ -1429,106 +1429,106 @@ async function bundleStandaloneDesignHtml(
         sri: exportReactDomUmdIntegrity,
       },
     ];
-    Array.from(value4.querySelectorAll("x-dc x-import")).some(
-      (element2?: Dynamic): Dynamic => {
-        let value19: Dynamic = element2.getAttribute("from") || "";
-        return value19.includes("{{")
+    Array.from(document.querySelectorAll("x-dc x-import")).some(
+      (linkElement?: Dynamic): Dynamic => {
+        let sourceUrl: Dynamic = linkElement.getAttribute("from") || "";
+        return sourceUrl.includes("{{")
           ? false
-          : value19
+          : sourceUrl
               .trim()
               .split(/\s+/)
               .some(
-                (input?: Dynamic): Dynamic =>
-                  jsxAssetFilenamePattern.test(input),
+                (url?: Dynamic): Dynamic =>
+                  jsxAssetFilenamePattern.test(url),
               );
       },
     ) &&
-      items3.push({
+      runtimeEntries.push({
         url: exportBabelStandaloneUrl,
         sri: exportBabelStandaloneIntegrity,
       });
     await Promise.all(
-      items3.map(
+      runtimeEntries.map(
         async ({ url: url, sri: sri }: Dynamic): Promise<Dynamic> => {
-          let value19: Dynamic = resolveExportAssetUrl(url, path),
-            entry: Dynamic = entries.get(value19),
-            value20: Dynamic = entry ?? (await resolveAsset(value19));
+          let resolvedUrl: Dynamic = resolveExportAssetUrl(url, path),
+            entry: Dynamic = entries.get(resolvedUrl),
+            asset: Dynamic = entry ?? (await resolveAsset(resolvedUrl));
           if (
-            !value20 ||
+            !asset ||
             !(await verifyExportAssetIntegrity(
-              value20.data,
+              asset.data,
               sri,
             ))
           ) {
             items.push(
-              `runtime dependency not embedded (${url}): ${value20 ? "integrity check failed" : "fetch failed"} \u2014 the page will load it from the CDN when opened, which strict hosts (e.g. published artifacts) block`,
+              `runtime dependency not embedded (${url}): ${asset ? "integrity check failed" : "fetch failed"} \u2014 the page will load it from the CDN when opened, which strict hosts (e.g. published artifacts) block`,
             );
             return;
           }
-          let value21: Dynamic = entry ?? {
+          let assetEntry: Dynamic = entry ?? {
             uuid: crypto.randomUUID(),
-            data: value20.data,
-            mime: value20.mime,
+            data: asset.data,
+            mime: asset.mime,
           };
-          entry || entries.set(value19, value21);
-          items2.push({
+          entry || entries.set(resolvedUrl, assetEntry);
+          resourceEntries.push({
             id: url,
-            uuid: value21.uuid,
+            uuid: assetEntry.uuid,
           });
         },
       ),
     );
   }
-  let value11: Dynamic = Array.from(value4.querySelectorAll("style"));
-  for (let value19 of Array.from(
-    value4.querySelectorAll('link[rel~="stylesheet" i]'),
+  let styleElements: Dynamic = Array.from(document.querySelectorAll("style"));
+  for (let styleElement of Array.from(
+    document.querySelectorAll('link[rel~="stylesheet" i]'),
   ) as Dynamic) {
-    let attribute: Dynamic = value19.getAttribute("href");
+    let attribute: Dynamic = styleElement.getAttribute("href");
     if (
       !attribute ||
-      (value19.getAttribute("rel") || "")
+      (styleElement.getAttribute("rel") || "")
         .toLowerCase()
         .split(/\s+/)
         .includes("alternate")
     )
       continue;
-    let value20: Dynamic = attribute
+    let styleUrl: Dynamic = attribute
       .slice(0, attribute.indexOf(":") + 1)
       .toLowerCase();
-    if (value20 === "data:" || value20 === "blob:") continue;
-    let value21: Dynamic = resolveExportAssetUrl(attribute, path),
-      value22: Dynamic = await callback(value21);
-    if (value22) {
-      let value23: Dynamic = new TextDecoder().decode(value22.data);
-      value23 = await inlineExportCssImports(
-        value23,
-        value21,
+    if (styleUrl === "data:" || styleUrl === "blob:") continue;
+    let stylesheetUrl: Dynamic = resolveExportAssetUrl(attribute, path),
+      stylesheetAsset: Dynamic = await callback(stylesheetUrl);
+    if (stylesheetAsset) {
+      let stylesheetText: Dynamic = new TextDecoder().decode(stylesheetAsset.data);
+      stylesheetText = await inlineExportCssImports(
+        stylesheetText,
+        stylesheetUrl,
         callback,
         entries,
         0,
         "uuid",
         items,
       );
-      let value24: Dynamic = value4.createElement("style");
-      value19.hasAttribute("disabled")
-        ? value24.setAttribute("media", "not all")
-        : value19.hasAttribute("media") &&
-          value24.setAttribute("media", value19.getAttribute("media"));
-      value19.hasAttribute("title") &&
-        value24.setAttribute("title", value19.getAttribute("title"));
-      value24.textContent = escapeExportStyleClosingTag(value23);
-      value19.replaceWith(value24);
+      let generatedStyleElement: Dynamic = document.createElement("style");
+      styleElement.hasAttribute("disabled")
+        ? generatedStyleElement.setAttribute("media", "not all")
+        : styleElement.hasAttribute("media") &&
+          generatedStyleElement.setAttribute("media", styleElement.getAttribute("media"));
+      styleElement.hasAttribute("title") &&
+        generatedStyleElement.setAttribute("title", styleElement.getAttribute("title"));
+      generatedStyleElement.textContent = escapeExportStyleClosingTag(stylesheetText);
+      styleElement.replaceWith(generatedStyleElement);
     }
   }
-  for (let value19 of Array.from(
-    value4.querySelectorAll(
+  for (let styleElement of Array.from(
+    document.querySelectorAll(
       'link[rel~="preload" i], link[rel~="prefetch" i], link[rel~="modulepreload" i]',
     ),
   ) as Dynamic)
-    value19.remove();
-  for (let value19 of value11 as Dynamic) {
-    let value20: Dynamic = await inlineExportCssImports(
-      value19.textContent || "",
+    styleElement.remove();
+  for (let styleElement of styleElements as Dynamic) {
+    let inlinedCssText: Dynamic = await inlineExportCssImports(
+      styleElement.textContent || "",
       path,
       callback,
       entries,
@@ -1536,30 +1536,30 @@ async function bundleStandaloneDesignHtml(
       "uuid",
       items,
     );
-    value19.textContent = escapeExportStyleClosingTag(value20);
+    styleElement.textContent = escapeExportStyleClosingTag(inlinedCssText);
   }
-  for (let value19 of Array.from(
-    value4.querySelectorAll("[style]"),
+  for (let styleElement of Array.from(
+    document.querySelectorAll("[style]"),
   ) as Dynamic) {
-    let value20: Dynamic = value19.getAttribute("style") || "";
-    value19.setAttribute(
+    let styleText: Dynamic = styleElement.getAttribute("style") || "";
+    styleElement.setAttribute(
       "style",
       await replaceCssAssetUrlsWithIds(
-        value20,
+        styleText,
         path,
         callback,
         entries,
       ),
     );
   }
-  let element: Dynamic = value4.querySelector("template#__bundler_thumbnail"),
+  let element: Dynamic = document.querySelector("template#__bundler_thumbnail"),
     text: Dynamic = "",
-    text2: Dynamic = "#faf9f5";
+    backgroundColor: Dynamic = "#faf9f5";
   element &&
     ((text = element.innerHTML),
-    (text2 = sanitizeExportColor(
+    (backgroundColor = sanitizeExportColor(
       element.getAttribute("data-bg-color"),
-      text2,
+      backgroundColor,
     )),
     element.remove(),
     /\/v1\/design\/projects\/[^/]+\/serve\//.test(text) &&
@@ -1571,120 +1571,120 @@ async function bundleStandaloneDesignHtml(
       items.push(
         "serve token not removed: the thumbnail splash ships project serve URLs whose query tokens were not stripped \u2014 the published file may carry a live access token",
       ));
-  options.branding;
-  let value12: Dynamic = value4;
-  if (state.depth === 0 && options.finalizeTemplate) {
-    let value19: Dynamic = value4.cloneNode(true),
-      value20: Dynamic = [...entries.values()]
+  bundleOptions.branding;
+  let outputDocument: Dynamic = document;
+  if (state.depth === 0 && bundleOptions.finalizeTemplate) {
+    let templateDocument: Dynamic = document.cloneNode(true),
+      resourceValues: Dynamic = [...entries.values()]
         .filter(
-          (input?: Dynamic): Dynamic =>
-            /^text\/|javascript|json|xml/i.test(input.mime),
+          (resource?: Dynamic): Dynamic =>
+            /^text\/|javascript|json|xml/i.test(resource.mime),
         )
         .map(
-          (input?: Dynamic): Dynamic => ({
-            mime: input.mime,
-            text: new TextDecoder().decode(input.data),
+          (resource?: Dynamic): Dynamic => ({
+            mime: resource.mime,
+            text: new TextDecoder().decode(resource.data),
           }),
         );
     try {
-      options.finalizeTemplate(value19, value20);
-      value12 = value19;
-    } catch (value21: Dynamic) {
+      bundleOptions.finalizeTemplate(templateDocument, resourceValues);
+      outputDocument = templateDocument;
+    } catch (error: Dynamic) {
       items.push(
         "importer-ready pass failed; exported without it: " +
-          (value21 instanceof Error ? value21.message : String(value21)),
+          (error instanceof Error ? error.message : String(error)),
       );
     }
   }
-  let value13: Dynamic =
-      value12.querySelector("title")?.textContent || "Bundled Page",
-    value14: Dynamic =
+  let documentTitle: Dynamic =
+      outputDocument.querySelector("title")?.textContent || "Bundled Page",
+    serializedPageHtml: Dynamic =
       `<!DOCTYPE html>
-` + value12.documentElement.outerHTML;
-  containsProjectServeAccessToken(value14) &&
+` + outputDocument.documentElement.outerHTML;
+  containsProjectServeAccessToken(serializedPageHtml) &&
     items.push(
       "serve token not removed: the bundled page ships bytes matching a project serve access token \u2014 the published file may carry a live access token",
     );
   if (state.depth === 0)
-    for (let [value19, value20] of state.pages as Dynamic)
-      entries.set("bundled-page:" + value19, {
-        uuid: value20.uuid,
-        data: value20.data,
+    for (let [pageKey, page] of state.pages as Dynamic)
+      entries.set("bundled-page:" + pageKey, {
+        uuid: page.uuid,
+        data: page.data,
         mime: "text/html",
       });
-  let state2: Dynamic = {},
-    value15: Dynamic = items.some(
-      (input?: Dynamic): Dynamic =>
-        input.startsWith("serve token not removed:"),
+  let resourceState: Dynamic = {},
+    hasResourceWarning: Dynamic = items.some(
+      (warning?: Dynamic): Dynamic =>
+        warning.startsWith("serve token not removed:"),
     );
-  for (let [value19, value20] of entries as Dynamic) {
-    !value15 &&
+  for (let [entryKey, entry] of entries as Dynamic) {
+    !hasResourceWarning &&
       !(
         alreadyCompressedExportMimeTypes.has(
-          value20.mime.split(";")[0].trim().toLowerCase(),
-        ) && hasCompressedFileSignature(value20.data)
+          entry.mime.split(";")[0].trim().toLowerCase(),
+        ) && hasCompressedFileSignature(entry.data)
       ) &&
-      !value19.startsWith("bundled-page:") &&
+      !entryKey.startsWith("bundled-page:") &&
       containsProjectServeAccessToken(
-        new TextDecoder().decode(value20.data),
+        new TextDecoder().decode(entry.data),
       ) &&
-      ((value15 = true),
+      ((hasResourceWarning = true),
       items.push(
         state.depth > 0
           ? "serve token not removed: an asset referenced by this embedded page ships bytes matching a project serve access token \u2014 the published file may carry a live access token"
           : "serve token not removed: an asset referenced by this page ships bytes matching a project serve access token \u2014 the published file may carry a live access token",
       ));
-    let value21: Dynamic = value20.mime.split(";")[0].trim().toLowerCase(),
-      value22: Dynamic = mimeTypePattern.test(value21)
-        ? value21
+    let mimeType: Dynamic = entry.mime.split(";")[0].trim().toLowerCase(),
+      normalizedMimeType: Dynamic = mimeTypePattern.test(mimeType)
+        ? mimeType
         : "application/octet-stream",
-      value23: Dynamic = !alreadyCompressedExportMimeTypes.has(value22),
-      value24: Dynamic = value23
-        ? await gzipExportAsset(value20.data)
-        : value20.data;
-    state2[value20.uuid] = {
-      mime: value22,
-      compressed: value23,
-      data: encodeBinaryBase64(value24),
+      isUncompressed: Dynamic = !alreadyCompressedExportMimeTypes.has(normalizedMimeType),
+      entryData: Dynamic = isUncompressed
+        ? await gzipExportAsset(entry.data)
+        : entry.data;
+    resourceState[entry.uuid] = {
+      mime: normalizedMimeType,
+      compressed: isUncompressed,
+      data: encodeBinaryBase64(entryData),
     };
   }
-  let value16: Dynamic = escapeExportScriptClosingTags(
-    JSON.stringify(value14),
+  let serializedResources: Dynamic = escapeExportScriptClosingTags(
+    JSON.stringify(serializedPageHtml),
   );
   containsProjectServeAccessToken(
-    items2.map((input?: Dynamic): Dynamic => input.id).join(`
+    resourceEntries.map((resource?: Dynamic): Dynamic => resource.id).join(`
 `),
   ) &&
     items.push(
       "serve token not removed: an ext-resource id ships bytes matching a project serve access token \u2014 the published file may carry a live access token",
     );
-  let value17: Dynamic = escapeExportScriptClosingTags(
-      JSON.stringify(items2),
+  let serializedState: Dynamic = escapeExportScriptClosingTags(
+      JSON.stringify(resourceEntries),
     ),
-    value18: Dynamic = Object.values(state2).reduce(
-      (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        input + options2.data.length,
+    totalBytes: Dynamic = Object.values(resourceState).reduce(
+      (total?: Dynamic, resource?: Dynamic): Dynamic =>
+        total + resource.data.length,
       0,
     );
-  value18 > 200 * 1024 * 1024 &&
+  totalBytes > 200 * 1024 * 1024 &&
     items.push(
-      `total output is ${formatExportByteSize(value18)} \u2014 may cause browser perf issues`,
+      `total output is ${formatExportByteSize(totalBytes)} \u2014 may cause browser perf issues`,
     );
-  value18 > 20 * 1024 * 1024 &&
+  totalBytes > 20 * 1024 * 1024 &&
     items.push(
-      `total output is ${formatExportByteSize(value18)} \u2014 publishing at this size may fail at the upload limit; pages embedded via iframe re-ship their shared dependencies, so consolidating or removing embedded pages reduces size most`,
+      `total output is ${formatExportByteSize(totalBytes)} \u2014 publishing at this size may fail at the upload limit; pages embedded via iframe re-ship their shared dependencies, so consolidating or removing embedded pages reduces size most`,
     );
   return {
     html: `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${escapeHtml(value13)}</title>
+  <title>${escapeHtml(documentTitle)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: ${text2}; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background: ${backgroundColor}; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
     #__bundler_loading { position: fixed; bottom: 20px; right: 20px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: #666; background: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 10000; }
-    #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: ${text2}; z-index: 9999; }
+    #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: ${backgroundColor}; z-index: 9999; }
     #__bundler_thumbnail svg { width: 100%; height: 100%; object-fit: contain; }
     #__bundler_placeholder { color: #999; font-size: 14px; }
   </style>
@@ -1696,7 +1696,7 @@ async function bundleStandaloneDesignHtml(
   </noscript>
 </head>
 <body>
-  ${text ? '<div id="__bundler_thumbnail">' + text + "</div>" : '<div id="__bundler_placeholder">Loading ' + escapeHtml(value13) + "...</div>"}
+  ${text ? '<div id="__bundler_thumbnail">' + text + "</div>" : '<div id="__bundler_placeholder">Loading ' + escapeHtml(documentTitle) + "...</div>"}
   <div id="__bundler_loading">Unpacking...</div>
 
   <script>
@@ -1704,11 +1704,11 @@ async function bundleStandaloneDesignHtml(
   <\/script>
 
   <script type="__bundler/manifest">
-${escapeExportScriptClosingTags(JSON.stringify(state2))}
+${escapeExportScriptClosingTags(JSON.stringify(resourceState))}
   <\/script>
 
   <script type="__bundler/ext_resources">
-${value17}
+${serializedState}
   <\/script>
 
   <script type="__bundler/page_order">
@@ -1716,7 +1716,7 @@ ${escapeExportScriptClosingTags(JSON.stringify(state.depth === 0 ? state.pageOrd
   <\/script>
 
   <script type="__bundler/template">
-${value16}
+${serializedResources}
   <\/script>
 </body>
 </html>`,
@@ -1732,18 +1732,18 @@ function resolveExportAssetUrl(
   if (/^https?:\/\//.test(basePath)) return new URL(value, basePath).href;
   if (basePath.startsWith("//"))
     return new URL(value, "https:" + basePath).href;
-  let value2: Dynamic = value.split("?")[0];
-  if (value2.startsWith("/")) return value2;
-  let value3: Dynamic = basePath.split("?")[0],
-    value4: Dynamic = value3.startsWith("/"),
-    value5: Dynamic = value3.split("/");
-  value5.pop();
+  let relativePath: Dynamic = value.split("?")[0];
+  if (relativePath.startsWith("/")) return relativePath;
+  let baseDirectory: Dynamic = basePath.split("?")[0],
+    isAbsolute: Dynamic = baseDirectory.startsWith("/"),
+    baseSegments: Dynamic = baseDirectory.split("/");
+  baseSegments.pop();
   let items: Dynamic = [];
-  for (let value6 of [...value5, ...value2.split("/")] as Dynamic)
-    value6 === "." ||
-      value6 === "" ||
-      (value6 === ".." ? items.pop() : items.push(value6));
-  return (value4 ? "/" : "") + items.join("/");
+  for (let segment of [...baseSegments, ...relativePath.split("/")] as Dynamic)
+    segment === "." ||
+      segment === "" ||
+      (segment === ".." ? items.pop() : items.push(segment));
+  return (isAbsolute ? "/" : "") + items.join("/");
 }
 export {
   alreadyCompressedExportMimeTypes,

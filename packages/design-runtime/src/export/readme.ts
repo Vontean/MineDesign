@@ -25,8 +25,8 @@ function designExportReadme(
     "  template + a small logic class). The values to replicate live in its",
     '  inline `style="\u2026"` attributes and the `<helmet><style>` block.',
     ...scripts.map(
-      (input?: Dynamic): Dynamic =>
-        "- `" + input + "` \u2014 referenced resource",
+      (reference?: Dynamic): Dynamic =>
+        "- `" + reference + "` \u2014 referenced resource",
     ),
     ...(assets.entries.length > 0
       ? [
@@ -68,15 +68,15 @@ function uploadedAssetsReadmeSection(assets?: Dynamic): Dynamic {
       "them they do not load. Exporting again may pick them up.",
       "",
       ...assets.missing.map(
-        (input?: Dynamic): Dynamic =>
+        (finding?: Dynamic): Dynamic =>
           "- `" +
-          input.ref +
+          finding.ref +
           "` (used in " +
-          input.usedIn
-            .map((input2?: Dynamic): Dynamic => "`" + input2 + "`")
+          finding.usedIn
+            .map((name?: Dynamic): Dynamic => "`" + name + "`")
             .join(", ") +
           ") \u2014 " +
-          input.why,
+          finding.why,
       ),
       "",
     );

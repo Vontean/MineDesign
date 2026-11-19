@@ -38,57 +38,57 @@ var dynamicStaticExportTagPattern: Dynamic;
 function removeUnsafeCssDeclarations(css?: Dynamic): Dynamic {
   let text: Dynamic = "",
     index: Dynamic = 0,
-    index2: Dynamic = 0,
+    bracketDepth: Dynamic = 0,
     flag: Dynamic = true,
     length: Dynamic = css.length;
   for (; index < length; ) {
     if (flag) {
-      let value2: Dynamic = index;
-      for (; value2 < length && cssWhitespacePattern.test(css[value2]); )
-        value2++;
-      if (css[value2] === "/" && css[value2 + 1] === "*") {
-        let value4: Dynamic = css.indexOf("*/", value2 + 2),
-          value5: Dynamic = value4 < 0 ? length : value4 + 2;
-        text += css.slice(index, value5);
-        index = value5;
+      let cursor: Dynamic = index;
+      for (; cursor < length && cssWhitespacePattern.test(css[cursor]); )
+        cursor++;
+      if (css[cursor] === "/" && css[cursor + 1] === "*") {
+        let commentEnd: Dynamic = css.indexOf("*/", cursor + 2),
+          nextIndex: Dynamic = commentEnd < 0 ? length : commentEnd + 2;
+        text += css.slice(index, nextIndex);
+        index = nextIndex;
         continue;
       }
       flag = false;
-      cssIdentifierTokenPattern.lastIndex = value2;
-      let value3: Dynamic = cssIdentifierTokenPattern.exec(css);
-      if (value3) {
-        let value4: Dynamic = value2 + value3[0].length;
+      cssIdentifierTokenPattern.lastIndex = cursor;
+      let identifierMatch: Dynamic = cssIdentifierTokenPattern.exec(css);
+      if (identifierMatch) {
+        let afterIdentifier: Dynamic = cursor + identifierMatch[0].length;
         for (;;) {
-          for (; value4 < length && cssWhitespacePattern.test(css[value4]); )
-            value4++;
-          if (css[value4] !== "/" || css[value4 + 1] !== "*") break;
-          let value5: Dynamic = css.indexOf("*/", value4 + 2);
-          value4 = value5 < 0 ? length : value5 + 2;
+          for (; afterIdentifier < length && cssWhitespacePattern.test(css[afterIdentifier]); )
+            afterIdentifier++;
+          if (css[afterIdentifier] !== "/" || css[afterIdentifier + 1] !== "*") break;
+          let commentEnd: Dynamic = css.indexOf("*/", afterIdentifier + 2);
+          afterIdentifier = commentEnd < 0 ? length : commentEnd + 2;
         }
-        if (css[value4] === ":") {
-          let value5: Dynamic = camelToKebabCss(value3[0]);
+        if (css[afterIdentifier] === ":") {
+          let propertyName: Dynamic = camelToKebabCss(identifierMatch[0]);
           text +=
-            css.slice(index, value2) +
-            (unsafeCssPropertyPattern.test(value5) ? value3[0] : value5);
-          index = value2 + value3[0].length;
+            css.slice(index, cursor) +
+            (unsafeCssPropertyPattern.test(propertyName) ? identifierMatch[0] : propertyName);
+          index = cursor + identifierMatch[0].length;
           continue;
         }
       }
     }
     let value: Dynamic = css[index];
     if (value === '"' || value === "'") {
-      let value2: Dynamic = index + 1;
-      for (; value2 < length && css[value2] !== value; )
-        value2 += css[value2] === "\\" ? 2 : 1;
-      text += css.slice(index, value2 + 1);
-      index = value2 + 1;
+      let valueStart: Dynamic = index + 1;
+      for (; valueStart < length && css[valueStart] !== value; )
+        valueStart += css[valueStart] === "\\" ? 2 : 1;
+      text += css.slice(index, valueStart + 1);
+      index = valueStart + 1;
       continue;
     }
     if (value === "/" && css[index + 1] === "*") {
-      let value2: Dynamic = css.indexOf("*/", index + 2),
-        value3: Dynamic = value2 < 0 ? length : value2 + 2;
-      text += css.slice(index, value3);
-      index = value3;
+      let commentEnd: Dynamic = css.indexOf("*/", index + 2),
+        afterComment: Dynamic = commentEnd < 0 ? length : commentEnd + 2;
+      text += css.slice(index, afterComment);
+      index = afterComment;
       continue;
     }
     if (value === "\\") {
@@ -97,10 +97,10 @@ function removeUnsafeCssDeclarations(css?: Dynamic): Dynamic {
       continue;
     }
     value === "(" || value === "{" || value === "["
-      ? index2++
+      ? bracketDepth++
       : value === ")" || value === "}" || value === "]"
-        ? (index2 = Math.max(0, index2 - 1))
-        : value === ";" && index2 === 0 && (flag = true);
+        ? (bracketDepth = Math.max(0, bracketDepth - 1))
+        : value === ";" && bracketDepth === 0 && (flag = true);
     text += value;
     index++;
   }
@@ -126,24 +126,24 @@ function parseExportTweakMetadata(json?: Dynamic): Dynamic {
       props: null,
       preview: null,
     };
-  let value2: Dynamic = value,
-    value3: Dynamic =
-      value2.$preview && typeof value2.$preview == "object"
-        ? value2.$preview
+  let metadata: Dynamic = value,
+    previewMetadata: Dynamic =
+      metadata.$preview && typeof metadata.$preview == "object"
+        ? metadata.$preview
         : null,
     state: Dynamic = {};
-  for (let value4 of Object.keys(value2) as Dynamic)
-    value4[0] !== "$" && (state[value4] = value2[value4]);
+  for (let key of Object.keys(metadata) as Dynamic)
+    key[0] !== "$" && (state[key] = metadata[key]);
   return {
     props: Object.keys(state).length ? state : null,
-    preview: value3,
+    preview: previewMetadata,
   };
 }
 function scanQuotedStringEnd(source?: Dynamic, start?: Dynamic): Dynamic {
   let value: Dynamic = source[start];
-  for (let value2: Dynamic = start + 1; value2 < source.length; value2++)
-    if (source[value2] === "\\") value2++;
-    else if (source[value2] === value) return value2;
+  for (let cursor: Dynamic = start + 1; cursor < source.length; cursor++)
+    if (source[cursor] === "\\") cursor++;
+    else if (source[cursor] === value) return cursor;
   return source.length;
 }
 function splitCssRuleBlocks(css?: Dynamic): Dynamic {
@@ -151,224 +151,224 @@ function splitCssRuleBlocks(css?: Dynamic): Dynamic {
     index: Dynamic = 0;
   for (; index < css.length; ) {
     let value: Dynamic = -1;
-    for (let value4: Dynamic = index; value4 < css.length; value4++) {
-      let value5: Dynamic = css[value4];
-      if (value5 === '"' || value5 === "'")
-        value4 = scanQuotedStringEnd(css, value4);
-      else if (value5 === "{") {
-        value = value4;
+    for (let characterIndex: Dynamic = index; characterIndex < css.length; characterIndex++) {
+      let character: Dynamic = css[characterIndex];
+      if (character === '"' || character === "'")
+        characterIndex = scanQuotedStringEnd(css, characterIndex);
+      else if (character === "{") {
+        value = characterIndex;
         break;
       }
     }
     if (value < 0) break;
-    let value2: Dynamic = css
+    let selector: Dynamic = css
         .slice(index, value)
         .replace(/^(\s*@[^;{}]*;)+/, ""),
       count: Dynamic = 1,
-      value3: Dynamic = value + 1;
-    for (; value3 < css.length && count > 0; value3++) {
-      let value4: Dynamic = css[value3];
-      value4 === '"' || value4 === "'"
-        ? (value3 = scanQuotedStringEnd(css, value3))
-        : value4 === "{"
+      cursor: Dynamic = value + 1;
+    for (; cursor < css.length && count > 0; cursor++) {
+      let character: Dynamic = css[cursor];
+      character === '"' || character === "'"
+        ? (cursor = scanQuotedStringEnd(css, cursor))
+        : character === "{"
           ? count++
-          : value4 === "}" && count--;
+          : character === "}" && count--;
     }
     items.push({
-      selector: value2.trim(),
-      body: css.slice(value + 1, count === 0 ? value3 - 1 : value3),
-      clean: count === 0 && !value2.includes(";"),
+      selector: selector.trim(),
+      body: css.slice(value + 1, count === 0 ? cursor - 1 : cursor),
+      clean: count === 0 && !selector.includes(";"),
     });
-    index = value3;
+    index = cursor;
   }
   return items;
 }
 function splitCssDeclarations(declarations?: Dynamic): Dynamic {
   let items: Dynamic = [],
     index: Dynamic = 0,
-    index2: Dynamic = 0,
+    bracketDepth: Dynamic = 0,
     text: Dynamic = "",
     flag: Dynamic = false,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = declarations.slice(index, input),
-        value2: Dynamic = value.indexOf(":");
-      value2 > 0 &&
+    callback: Dynamic = (endIndex?: Dynamic): Dynamic => {
+      let value: Dynamic = declarations.slice(index, endIndex),
+        colonIndex: Dynamic = value.indexOf(":");
+      colonIndex > 0 &&
         items.push({
-          name: value.slice(0, value2).trim(),
-          value: value.slice(value2 + 1).trim(),
-          balanced: index2 === 0 && text === "" && !flag,
+          name: value.slice(0, colonIndex).trim(),
+          value: value.slice(colonIndex + 1).trim(),
+          balanced: bracketDepth === 0 && text === "" && !flag,
         });
     };
-  for (let index3: Dynamic = 0; index3 < declarations.length; index3++) {
-    let value: Dynamic = declarations[index3];
+  for (let cursor: Dynamic = 0; cursor < declarations.length; cursor++) {
+    let value: Dynamic = declarations[cursor];
     text !== ""
       ? value === "\\"
-        ? index3++
+        ? cursor++
         : value === text && (text = "")
       : value === '"' || value === "'"
         ? (text = value)
         : value === "(" || value === "["
-          ? index2++
+          ? bracketDepth++
           : value === ")" || value === "]"
-            ? index2 === 0
+            ? bracketDepth === 0
               ? (flag = true)
-              : index2--
+              : bracketDepth--
             : value === ";" &&
-              index2 === 0 &&
-              (callback(index3), (index = index3 + 1), (flag = false));
+              bracketDepth === 0 &&
+              (callback(cursor), (index = cursor + 1), (flag = false));
   }
   callback(declarations.length);
   return items;
 }
 function collectStaticRootCssVariables(
-  document2?: Dynamic,
+  rootDocument?: Dynamic,
   additionalCss?: Dynamic,
 ): Dynamic {
   let entries: Dynamic = new Map(),
     values: Dynamic = new Set(),
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      !cssCustomPropertyNamePattern.test(input) ||
-      options === "" ||
-      unresolvedCssKeywordPattern.test(options) ||
-      /!\s*important\s*$/i.test(options) ||
-      (entries.has(input) && entries.get(input) !== options)
-        ? values.add(input)
-        : entries.set(input, options);
+    callback: Dynamic = (propertyName?: Dynamic, propertyValue?: Dynamic): Dynamic => {
+      !cssCustomPropertyNamePattern.test(propertyName) ||
+      propertyValue === "" ||
+      unresolvedCssKeywordPattern.test(propertyValue) ||
+      /!\s*important\s*$/i.test(propertyValue) ||
+      (entries.has(propertyName) && entries.get(propertyName) !== propertyValue)
+        ? values.add(propertyName)
+        : entries.set(propertyName, propertyValue);
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value2 of input.matchAll(
+    collectReferences: Dynamic = (cssText?: Dynamic): Dynamic => {
+      for (let match of cssText.matchAll(
         cssCustomPropertyDeclarationPattern,
       ) as Dynamic)
-        values.add(value2[1]);
+        values.add(match[1]);
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value2 of input.matchAll(
+    collectAtRules: Dynamic = (cssText?: Dynamic): Dynamic => {
+      for (let match of cssText.matchAll(
         cssCustomPropertyReferencePattern,
       ) as Dynamic)
         for (
-          let value3: Dynamic = value2[0];
-          value3.startsWith("--");
-          value3 = value3.slice(1)
+          let variableName: Dynamic = match[0];
+          variableName.startsWith("--");
+          variableName = variableName.slice(1)
         )
-          values.add(value3);
+          values.add(variableName);
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value2 of input as Dynamic)
-        value2.name.startsWith("--") &&
-          (value2.balanced
-            ? callback(value2.name, value2.value)
-            : values.add(value2.name));
+    collectDeclarations: Dynamic = (declarations?: Dynamic): Dynamic => {
+      for (let declaration of declarations as Dynamic)
+        declaration.name.startsWith("--") &&
+          (declaration.balanced
+            ? callback(declaration.name, declaration.value)
+            : values.add(declaration.name));
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      callback2(input);
-      for (let value2 of (input.match(/@[^{};]*/g) ?? []) as Dynamic)
-        callback3(value2);
+    scanCssText: Dynamic = (cssText?: Dynamic): Dynamic => {
+      collectReferences(cssText);
+      for (let atRule of (cssText.match(/@[^{};]*/g) ?? []) as Dynamic)
+        collectAtRules(atRule);
     },
     value: Dynamic = additionalCss
-      .filter((input?: Dynamic): Dynamic => input.mime === "text/html")
+      .filter((resource?: Dynamic): Dynamic => resource.mime === "text/html")
       .map(
-        (input?: Dynamic): Dynamic =>
-          new DOMParser().parseFromString(input.text, "text/html"),
+        (resource?: Dynamic): Dynamic =>
+          new DOMParser().parseFromString(resource.text, "text/html"),
       );
   if (
-    hasUnresolvedExportDependencies(document2, true) ||
+    hasUnresolvedExportDependencies(rootDocument, true) ||
     value.some(
-      (input?: Dynamic): Dynamic =>
-        hasUnresolvedExportDependencies(input, false),
+      (resource?: Dynamic): Dynamic =>
+        hasUnresolvedExportDependencies(resource, false),
     )
   )
     return new Map();
-  for (let value2 of additionalCss as Dynamic) {
+  for (let resource of additionalCss as Dynamic) {
     if (
-      value2.mime === "text/css" &&
+      resource.mime === "text/css" &&
       hasNonGoogleFontsCssImports(
-        value2.text.replace(/\/\*[\s\S]*?\*\//g, " "),
+        resource.text.replace(/\/\*[\s\S]*?\*\//g, " "),
       )
     )
       return new Map();
     if (
-      value2.mime !== "text/css" &&
-      value2.mime !== "text/html" &&
-      interpolatedCssPropertyPattern.test(value2.text)
+      resource.mime !== "text/css" &&
+      resource.mime !== "text/html" &&
+      interpolatedCssPropertyPattern.test(resource.text)
     )
       return new Map();
   }
-  for (let value2 of Array.from(
-    document2.querySelectorAll("style"),
+  for (let styleElement of Array.from(
+    rootDocument.querySelectorAll("style"),
   ) as Dynamic) {
-    let value3: Dynamic = (value2.textContent ?? "").replace(
+    let cssText: Dynamic = (styleElement.textContent ?? "").replace(
         /\/\*[\s\S]*?\*\//g,
         " ",
       ),
-      value4: Dynamic = (value2.getAttribute("media") ?? "")
+      media: Dynamic = (styleElement.getAttribute("media") ?? "")
         .trim()
         .toLowerCase(),
-      value5: Dynamic = (value2.getAttribute("type") ?? "text/css")
+      styleType: Dynamic = (styleElement.getAttribute("type") ?? "text/css")
         .trim()
         .toLowerCase();
     if (
-      (value4 !== "" && value4 !== "all") ||
-      value5 !== "text/css" ||
-      value2.closest(
+      (media !== "" && media !== "all") ||
+      styleType !== "text/css" ||
+      styleElement.closest(
         "noscript, template, sc-if, sc-for, dc-import, x-import",
       ) !== null
     ) {
-      callback5(value3);
+      scanCssText(cssText);
       continue;
     }
-    for (let value6 of splitCssRuleBlocks(value3) as Dynamic) {
+    for (let rule of splitCssRuleBlocks(cssText) as Dynamic) {
       if (
-        !value6.clean ||
-        value6.selector.startsWith("@") ||
-        !rootCssSelectorPattern.test(value6.selector) ||
-        value6.body.includes("{")
+        !rule.clean ||
+        rule.selector.startsWith("@") ||
+        !rootCssSelectorPattern.test(rule.selector) ||
+        rule.body.includes("{")
       ) {
-        value6.selector.startsWith("@") && callback3(value6.selector);
-        staticCssDeclarationAtRulePattern.test(value6.selector) &&
-          callback3(value6.body);
-        callback5(value6.body);
+        rule.selector.startsWith("@") && collectAtRules(rule.selector);
+        staticCssDeclarationAtRulePattern.test(rule.selector) &&
+          collectAtRules(rule.body);
+        scanCssText(rule.body);
         continue;
       }
-      callback4(splitCssDeclarations(value6.body));
+      collectDeclarations(splitCssDeclarations(rule.body));
     }
   }
-  let callback6: Dynamic = (doc?: Dynamic, options?: Dynamic): Dynamic => {
-    for (let value2 of Array.from(doc.querySelectorAll("*")) as Dynamic)
-      for (let value3 of Array.from(value2.attributes) as Dynamic)
-        value3.name === "style" && options && value2 === doc.documentElement
-          ? callback4(splitCssDeclarations(value3.value))
-          : value3.name === "style"
-            ? callback2(value3.value)
-            : callback3(value3.name + " " + value3.value);
-    for (let value2 of Array.from(doc.querySelectorAll("script")) as Dynamic)
-      callback3(value2.textContent ?? "");
-    for (let value2 of Array.from(
+  let scanDocument: Dynamic = (doc?: Dynamic, isRootDocument?: Dynamic): Dynamic => {
+    for (let element of Array.from(doc.querySelectorAll("*")) as Dynamic)
+      for (let attribute of Array.from(element.attributes) as Dynamic)
+        attribute.name === "style" && isRootDocument && element === doc.documentElement
+          ? collectDeclarations(splitCssDeclarations(attribute.value))
+          : attribute.name === "style"
+            ? collectReferences(attribute.value)
+            : collectAtRules(attribute.name + " " + attribute.value);
+    for (let script of Array.from(doc.querySelectorAll("script")) as Dynamic)
+      collectAtRules(script.textContent ?? "");
+    for (let styleElement of Array.from(
       doc.querySelectorAll("template"),
     ) as Dynamic)
-      callback3(value2.innerHTML);
+      collectAtRules(styleElement.innerHTML);
   };
-  callback6(document2, true);
-  for (let value2 of value as Dynamic) {
-    for (let value3 of Array.from(
-      value2.querySelectorAll("style"),
+  scanDocument(rootDocument, true);
+  for (let document of value as Dynamic) {
+    for (let styleElement of Array.from(
+      document.querySelectorAll("style"),
     ) as Dynamic)
-      callback5((value3.textContent ?? "").replace(/\/\*[\s\S]*?\*\//g, " "));
-    callback6(value2, false);
+      scanCssText((styleElement.textContent ?? "").replace(/\/\*[\s\S]*?\*\//g, " "));
+    scanDocument(document, false);
   }
-  for (let value2 of additionalCss as Dynamic)
-    value2.mime === "text/css"
-      ? callback5(value2.text)
-      : value2.mime !== "text/html" && callback3(value2.text);
-  for (let value2 of values as Dynamic) entries.delete(value2);
+  for (let resource of additionalCss as Dynamic)
+    resource.mime === "text/css"
+      ? scanCssText(resource.text)
+      : resource.mime !== "text/html" && collectAtRules(resource.text);
+  for (let variableName of values as Dynamic) entries.delete(variableName);
   for (let flag: Dynamic = true; flag; ) {
     flag = false;
-    for (let [value2, value3] of entries as Dynamic)
-      for (let value4 of value3.matchAll(/var\(\s*(--[\w-]+)/gi) as Dynamic)
+    for (let [variableName, expression] of entries as Dynamic)
+      for (let reference of expression.matchAll(/var\(\s*(--[\w-]+)/gi) as Dynamic)
         if (
-          !entries.has(value4[1]) ||
-          cssVariableReferencesProperty(entries, value4[1], value2)
+          !entries.has(reference[1]) ||
+          cssVariableReferencesProperty(entries, reference[1], variableName)
         ) {
-          entries.delete(value2);
+          entries.delete(variableName);
           flag = true;
           break;
         }
@@ -381,28 +381,28 @@ function isGoogleFontsCssUrl(url?: Dynamic): Dynamic {
 function hasNonGoogleFontsCssImports(css?: Dynamic): Dynamic {
   return Array.from(
     css.matchAll(/@import\s*(?:url\()?\s*["']?([^"')\s;]+)/gi),
-  ).some((input?: Dynamic): Dynamic => !isGoogleFontsCssUrl(input[1]));
+  ).some((entry?: Dynamic): Dynamic => !isGoogleFontsCssUrl(entry[1]));
 }
 function hasUnresolvedExportDependencies(
-  document2?: Dynamic,
+  document?: Dynamic,
   files?: Dynamic,
 ): Dynamic {
-  if (hasExternalExportStylesheets(document2)) return true;
+  if (hasExternalExportStylesheets(document)) return true;
   for (let value of Array.from(
-    document2.querySelectorAll("x-import"),
+    document.querySelectorAll("x-import"),
   ) as Dynamic)
-    for (let value2 of ["from", "src", "import"] as Dynamic)
+    for (let attributeName of ["from", "src", "import"] as Dynamic)
       if (
-        (value.getAttribute(value2) ?? "")
+        (value.getAttribute(attributeName) ?? "")
           .split(/\s+/)
           .some(
-            (input?: Dynamic): Dynamic =>
-              externalExportAssetPattern.test(input),
+            (url?: Dynamic): Dynamic =>
+              externalExportAssetPattern.test(url),
           )
       )
         return true;
   for (let value of Array.from(
-    document2.querySelectorAll("script"),
+    document.querySelectorAll("script"),
   ) as Dynamic)
     if (value.hasAttribute("src")) {
       if (
@@ -414,19 +414,19 @@ function hasUnresolvedExportDependencies(
       return true;
   return false;
 }
-function hasExternalExportStylesheets(document2?: Dynamic): Dynamic {
+function hasExternalExportStylesheets(document?: Dynamic): Dynamic {
   for (let value of Array.from(
-    document2.querySelectorAll("link[href]"),
+    document.querySelectorAll("link[href]"),
   ) as Dynamic)
     if (
       /\bstylesheet\b/i.test(value.getAttribute("rel") ?? "") &&
       !isGoogleFontsCssUrl(value.getAttribute("href") ?? "")
     )
       return true;
-  return Array.from(document2.querySelectorAll("style")).some(
-    (input?: Dynamic): Dynamic =>
+  return Array.from(document.querySelectorAll("style")).some(
+    (styleElement?: Dynamic): Dynamic =>
       hasNonGoogleFontsCssImports(
-        (input.textContent ?? "").replace(/\/\*[\s\S]*?\*\//g, " "),
+        (styleElement.textContent ?? "").replace(/\/\*[\s\S]*?\*\//g, " "),
       ),
   );
 }
@@ -457,23 +457,23 @@ function substituteStaticCssVariables(
   for (; index < css.length; ) {
     let value: Dynamic = css[index];
     if (value === "/" && css[index + 1] === "*") {
-      let value7: Dynamic = css.indexOf("*/", index + 2),
-        value8: Dynamic = value7 < 0 ? css.length : value7 + 2;
-      text += css.slice(index, value8);
-      index = value8;
+      let commentEnd: Dynamic = css.indexOf("*/", index + 2),
+        nextIndex: Dynamic = commentEnd < 0 ? css.length : commentEnd + 2;
+      text += css.slice(index, nextIndex);
+      index = nextIndex;
       continue;
     }
     if (value === '"' || value === "'") {
-      let value7: Dynamic = scanQuotedStringEnd(css, index);
-      text += css.slice(index, value7 + 1);
-      index = value7 + 1;
+      let quoteEnd: Dynamic = scanQuotedStringEnd(css, index);
+      text += css.slice(index, quoteEnd + 1);
+      index = quoteEnd + 1;
       continue;
     }
     if (/^url\(\s*[^"'\s)]/i.test(css.slice(index, index + 24))) {
-      let value7: Dynamic = css.indexOf(")", index),
-        value8: Dynamic = value7 < 0 ? css.length : value7 + 1;
-      text += css.slice(index, value8);
-      index = value8;
+      let closeParenIndex: Dynamic = css.indexOf(")", index),
+        nextIndex: Dynamic = closeParenIndex < 0 ? css.length : closeParenIndex + 1;
+      text += css.slice(index, nextIndex);
+      index = nextIndex;
       continue;
     }
     if (
@@ -484,67 +484,67 @@ function substituteStaticCssVariables(
       index++;
       continue;
     }
-    let index2: Dynamic = 0,
-      value2: Dynamic = index + 4;
-    for (; value2 < css.length; value2++) {
-      let value7: Dynamic = css[value2];
-      if (value7 === "/" && css[value2 + 1] === "*") {
-        let value8: Dynamic = css.indexOf("*/", value2 + 2);
-        value2 = value8 < 0 ? css.length : value8 + 1;
-      } else if (value7 === '"' || value7 === "'")
-        value2 = scanQuotedStringEnd(css, value2);
-      else if (value7 === "(") index2++;
-      else if (value7 === ")") {
-        if (index2 === 0) break;
-        index2--;
+    let parenDepth: Dynamic = 0,
+      cursor: Dynamic = index + 4;
+    for (; cursor < css.length; cursor++) {
+      let character: Dynamic = css[cursor];
+      if (character === "/" && css[cursor + 1] === "*") {
+        let commentEnd: Dynamic = css.indexOf("*/", cursor + 2);
+        cursor = commentEnd < 0 ? css.length : commentEnd + 1;
+      } else if (character === '"' || character === "'")
+        cursor = scanQuotedStringEnd(css, cursor);
+      else if (character === "(") parenDepth++;
+      else if (character === ")") {
+        if (parenDepth === 0) break;
+        parenDepth--;
       }
     }
-    if (value2 >= css.length) {
+    if (cursor >= css.length) {
       text += css.slice(index);
       break;
     }
-    let value3: Dynamic = css.slice(index + 4, value2),
-      value4: Dynamic = value3.indexOf(","),
-      value5: Dynamic = (
-        value4 < 0 ? value3 : value3.slice(0, value4)
+    let variableExpression: Dynamic = css.slice(index + 4, cursor),
+      fallbackIndex: Dynamic = variableExpression.indexOf(","),
+      variableName: Dynamic = (
+        fallbackIndex < 0 ? variableExpression : variableExpression.slice(0, fallbackIndex)
       ).trim(),
-      entry: Dynamic = variables.get(value5),
-      value6: Dynamic =
+      entry: Dynamic = variables.get(variableName),
+      fallbackValue: Dynamic =
         cssVariablePrefixBoundaryPattern.test(css[index - 1] ?? "") &&
-        cssVariableSuffixBoundaryPattern.test(css[value2 + 1] ?? "");
+        cssVariableSuffixBoundaryPattern.test(css[cursor + 1] ?? "");
     text +=
-      entry === undefined || !value6
-        ? css.slice(index, value2 + 1)
+      entry === undefined || !fallbackValue
+        ? css.slice(index, cursor + 1)
         : substituteStaticCssVariables(entry, variables, depth + 1);
-    index = value2 + 1;
+    index = cursor + 1;
   }
   return text;
 }
 function escapeStaticExportStyleTag(css?: Dynamic): Dynamic {
   return css.replace(/<\/(style)/gi, "<\\/$1");
 }
-function collectStaticExportTweakValues(document2?: Dynamic): Dynamic {
-  let element: Dynamic = document2.querySelector("script[data-dc-script]"),
+function collectStaticExportTweakValues(document?: Dynamic): Dynamic {
+  let element: Dynamic = document.querySelector("script[data-dc-script]"),
     { props: value }: Dynamic = parseExportTweakMetadata(
       element?.getAttribute("data-props") ?? null,
     ),
     state: Dynamic = {};
-  for (let [value2, value3] of Object.entries(value ?? {}) as Dynamic)
-    value3 !== null &&
-      typeof value3 == "object" &&
-      value3.default !== undefined &&
-      (state[value2] = value3.default);
+  for (let [name, entry] of Object.entries(value ?? {}) as Dynamic)
+    entry !== null &&
+      typeof entry == "object" &&
+      entry.default !== undefined &&
+      (state[name] = entry.default);
   let values: Dynamic = new Set(
     Object.keys(state).filter(
-      (input?: Dynamic): Dynamic => state[input] === null,
+      (name?: Dynamic): Dynamic => state[name] === null,
     ),
   );
-  for (let value2 of mutatedRenderValueNames(
+  for (let name of mutatedRenderValueNames(
     element?.textContent ?? "",
     Object.keys(state),
     values,
   ) as Dynamic)
-    delete state[value2];
+    delete state[name];
   return state;
 }
 function mutatedRenderValueNames(
@@ -552,179 +552,179 @@ function mutatedRenderValueNames(
   names?: Dynamic,
   values?: Dynamic,
 ): Dynamic {
-  let values2: Dynamic = new Set();
-  if (!/\brenderVals\b/.test(source)) return values2;
+  let mutatedNames: Dynamic = new Set();
+  if (!/\brenderVals\b/.test(source)) return mutatedNames;
   let value: Dynamic = maskStaticTemplateJavaScript(source);
   if (value === null) return new Set(names);
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      /^(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=(?![=>])/.test(input) ||
-      /^(?:\+\+|--|of\b|in\b)/.test(input),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
+  let callback: Dynamic = (operator?: Dynamic): Dynamic =>
+      /^(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=(?![=>])/.test(operator) ||
+      /^(?:\+\+|--|of\b|in\b)/.test(operator),
+    isMutationExpression: Dynamic = (expression?: Dynamic): Dynamic =>
       /^(?:(?:\.[A-Za-z_$][\w$]*|\[[^\]]*\])+\s*(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=(?![=>])|(?:\.[A-Za-z_$][\w$]*|\[[^\]]*\])*\.(?:push|pop|shift|unshift|splice|sort|reverse|fill|copyWithin)\s*\()/.test(
-        input,
+        expression,
       ),
-    values3: Dynamic = new Set(["this.props"]);
-  for (let value3 of value.matchAll(
+    knownNames: Dynamic = new Set(["this.props"]);
+  for (let match of value.matchAll(
     /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*this\.props\s*(?=[;,\n)]|$)/g,
   ) as Dynamic)
     (
       value.match(
         new RegExp(
           "(?<![\\w$.])" +
-            value3[1].replace(/\$/g, "\\$") +
+            match[1].replace(/\$/g, "\\$") +
             "\\s*(?:[-+*/%&|^]|\\*\\*|<<|>>>?|&&|\\|\\||\\?\\?)?=(?![=>])",
           "g",
         ),
       ) ?? []
-    ).length === 1 && values3.add(value3[1]);
+    ).length === 1 && knownNames.add(match[1]);
   /[{,]\s*props\s*[},][^=]*=\s*this\b/.test(value) &&
     !/(?<![\w$.])props\s*=(?![=>])/.test(value) &&
-    values3.add("props");
+    knownNames.add("props");
   if (
-    Array.from(values3).some(
-      (input?: Dynamic): Dynamic =>
-        value.includes("Object.assign(" + input + ",") ||
-        value.includes("Object.assign(" + input + ")") ||
+    Array.from(knownNames).some(
+      (name?: Dynamic): Dynamic =>
+        value.includes("Object.assign(" + name + ",") ||
+        value.includes("Object.assign(" + name + ")") ||
         new RegExp(
-          "\\bin\\s+" + input.replace(/[$.]/g, "\\$&") + "\\s*\\)",
+          "\\bin\\s+" + name.replace(/[$.]/g, "\\$&") + "\\s*\\)",
         ).test(value),
     )
   )
     return new Set(names);
-  let callback3: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value3: Dynamic =
+  let isMutatedName: Dynamic = (name?: Dynamic, operator?: Dynamic): Dynamic => {
+      let match: Dynamic =
         /^\(?\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.([A-Za-z_$][\w$]*)\s*(\?\?\s*(?:'[\w$]*'|"[\w$]*"|``|\[[^\]A-Za-z_$]*\]|-?\d+(?:\.\d+)?|true|false|null|undefined)\s*)?\)?$/.exec(
-          input.trim(),
+          name.trim(),
         );
       return (
-        value3 !== null &&
-        value3[2] === options &&
-        values3.has(value3[1]) &&
-        !(value3[3] !== undefined && values.has(options))
+        match !== null &&
+        match[2] === operator &&
+        knownNames.has(match[1]) &&
+        !(match[3] !== undefined && values.has(operator))
       );
     },
-    value2: Dynamic = /\b(?:const|let|var)$/,
-    values4: Dynamic = new Set(
+    declarationPattern: Dynamic = /\b(?:const|let|var)$/,
+    mutationNames: Dynamic = new Set(
       Array.from(
         value.matchAll(
           /\b(?:const|let|var)\s*\{([^{}=]*)\}\s*=\s*([\w$.]+)/g,
         ),
       ).flatMap(
-        (input?: Dynamic): Dynamic =>
-          values3.has(input[2])
-            ? input[1]
+        (match?: Dynamic): Dynamic =>
+          knownNames.has(match[2])
+            ? match[1]
                 .split(",")
-                .map((input2?: Dynamic): Dynamic => input2.trim())
+                .map((name?: Dynamic): Dynamic => name.trim())
             : [],
       ),
     );
-  for (let value3 of names as Dynamic) {
-    if (!/^[A-Za-z_$][\w$]*$/.test(value3)) continue;
-    let value4: Dynamic = new RegExp(
-        "(?<![\\w$])" + value3.replace(/\$/g, "\\$") + "(?![\\w$])",
+  for (let name of names as Dynamic) {
+    if (!/^[A-Za-z_$][\w$]*$/.test(name)) continue;
+    let namePattern: Dynamic = new RegExp(
+        "(?<![\\w$])" + name.replace(/\$/g, "\\$") + "(?![\\w$])",
         "g",
       ),
-      value5: Dynamic = values4.has(value3);
-    Array.from(value.matchAll(value4)).some((input?: Dynamic): Dynamic => {
-      let value6: Dynamic = value
-          .slice(Math.max(0, input.index - 240), input.index)
+      isKnownName: Dynamic = mutationNames.has(name);
+    Array.from(value.matchAll(namePattern)).some((match?: Dynamic): Dynamic => {
+      let prefix: Dynamic = value
+          .slice(Math.max(0, match.index - 240), match.index)
           .trimEnd(),
-        value7: Dynamic = value
-          .slice(input.index + value3.length)
+        suffix: Dynamic = value
+          .slice(match.index + name.length)
           .trimStart();
-      if (/['"`]$/.test(value6)) {
-        let value8: Dynamic = value7.slice(1).trimStart();
-        return value8.startsWith(":")
-          ? !callback3(
-              value8.slice(1, scanJavaScriptExpressionEnd(value8, 1)),
-              value3,
+      if (/['"`]$/.test(prefix)) {
+        let expression: Dynamic = suffix.slice(1).trimStart();
+        return expression.startsWith(":")
+          ? !isMutatedName(
+              expression.slice(1, scanJavaScriptExpressionEnd(expression, 1)),
+              name,
             )
-          : value8.startsWith("]")
-            ? callback(value8.slice(1).trimStart())
+          : expression.startsWith("]")
+            ? callback(expression.slice(1).trimStart())
               ? true
-              : !values3.has(
+              : !knownNames.has(
                   /[\w$.]*$/.exec(
-                    value6.slice(0, -1).replace(/\s*\[\s*$/, ""),
+                    prefix.slice(0, -1).replace(/\s*\[\s*$/, ""),
                   )![0],
                 )
             : false;
       }
-      if (callback(value7) || /(?:\+\+|--)$/.test(value6)) {
-        let value8: Dynamic =
-          /^=(?![=>])/.test(value7) && value2.test(value6)
-            ? value7.slice(1)
+      if (callback(suffix) || /(?:\+\+|--)$/.test(prefix)) {
+        let expression: Dynamic =
+          /^=(?![=>])/.test(suffix) && declarationPattern.test(prefix)
+            ? suffix.slice(1)
             : null;
-        return value8 === null ||
-          !callback3(
-            value8.slice(0, scanJavaScriptExpressionEnd(value8, 0)),
-            value3,
+        return expression === null ||
+          !isMutatedName(
+            expression.slice(0, scanJavaScriptExpressionEnd(expression, 0)),
+            name,
           )
           ? true
-          : ((value5 = true), false);
+          : ((isKnownName = true), false);
       }
-      return /^(?:,[^=;{}]*)?[}\]]\s*=(?![=>])/.test(value7) &&
-        !/\b(?:const|let|var)\s*[{[][^{}[\]]*$/.test(value6)
+      return /^(?:,[^=;{}]*)?[}\]]\s*=(?![=>])/.test(suffix) &&
+        !/\b(?:const|let|var)\s*[{[][^{}[\]]*$/.test(prefix)
         ? true
-        : value6.endsWith(".")
-          ? !values3.has(/[\w$.]*$/.exec(value6.slice(0, -1))![0]) ||
-            /\bdelete\s*[\w$.]*$/.test(value6) ||
-            callback2(value7)
-          : value7.startsWith(":")
-            ? !callback3(
-                value7.slice(1, scanJavaScriptExpressionEnd(value7, 1)),
-                value3,
+        : prefix.endsWith(".")
+          ? !knownNames.has(/[\w$.]*$/.exec(prefix.slice(0, -1))![0]) ||
+            /\bdelete\s*[\w$.]*$/.test(prefix) ||
+            isMutationExpression(suffix)
+          : suffix.startsWith(":")
+            ? !isMutatedName(
+                suffix.slice(1, scanJavaScriptExpressionEnd(suffix, 1)),
+                name,
               )
-            : !value5 || callback2(value7);
-    }) && values2.add(value3);
+            : !isKnownName || isMutationExpression(suffix);
+    }) && mutatedNames.add(name);
   }
-  return values2;
+  return mutatedNames;
 }
 function maskStaticTemplateJavaScript(source?: Dynamic): Dynamic {
   let text: Dynamic = "";
   for (let index: Dynamic = 0; index < source.length; index++) {
     let value: Dynamic = source[index];
     if (value === "/" && source[index + 1] === "/") {
-      let value2: Dynamic = source.indexOf(
+      let commentStart: Dynamic = source.indexOf(
         `
 `,
         index,
       );
-      index = value2 < 0 ? source.length : value2 - 1;
+      index = commentStart < 0 ? source.length : commentStart - 1;
       text += " ";
     } else if (value === "/" && source[index + 1] === "*") {
-      let value2: Dynamic = source.indexOf("*/", index + 2);
-      if (value2 < 0) return null;
-      index = value2 + 1;
+      let commentEnd: Dynamic = source.indexOf("*/", index + 2);
+      if (commentEnd < 0) return null;
+      index = commentEnd + 1;
       text += " ";
     } else if (
       value === "/" &&
       /(?:^|[(,=:[!&|?{};+\-*%<>~^]|\breturn|\btypeof|\bcase)\s*$/.test(text)
     ) {
-      let value2: Dynamic = index + 1;
+      let cursor: Dynamic = index + 1;
       for (
         let flag: Dynamic = false;
-        value2 < source.length &&
-        (flag || source[value2] !== "/") &&
-        source[value2] !==
+        cursor < source.length &&
+        (flag || source[cursor] !== "/") &&
+        source[cursor] !==
           `
 `;
-        value2++
+        cursor++
       )
-        source[value2] === "\\"
-          ? value2++
-          : source[value2] === "["
+        source[cursor] === "\\"
+          ? cursor++
+          : source[cursor] === "["
             ? (flag = true)
-            : source[value2] === "]" && (flag = false);
-      if (source[value2] !== "/") return null;
+            : source[cursor] === "]" && (flag = false);
+      if (source[cursor] !== "/") return null;
       text += "/ /";
-      index = value2;
+      index = cursor;
     } else if (value === '"' || value === "'" || value === "`") {
-      let value2: Dynamic = scanQuotedStringEnd(source, index);
-      if (value2 >= source.length) return null;
-      let value3: Dynamic = source.slice(index + 1, value2);
+      let quoteEnd: Dynamic = scanQuotedStringEnd(source, index);
+      if (quoteEnd >= source.length) return null;
+      let identifier: Dynamic = source.slice(index + 1, quoteEnd);
       text +=
-        value + (/^[A-Za-z_$][\w$]*$/.test(value3) ? value3 : "") + value;
-      index = value2;
+        value + (/^[A-Za-z_$][\w$]*$/.test(identifier) ? identifier : "") + value;
+      index = quoteEnd;
     } else
       value === "?" &&
       source[index + 1] === "." &&
@@ -749,14 +749,14 @@ function scanJavaScriptExpressionEnd(
   }
   return start;
 }
-function staticTemplateValueString(value?: Dynamic): Dynamic {
-  return typeof value == "string" || typeof value == "number"
-    ? String(value)
-    : Array.isArray(value)
-      ? value
+function staticTemplateValueString(templateValue?: Dynamic): Dynamic {
+  return typeof templateValue == "string" || typeof templateValue == "number"
+    ? String(templateValue)
+    : Array.isArray(templateValue)
+      ? templateValue
           .filter(
-            (input?: Dynamic): Dynamic =>
-              typeof input == "string" || typeof input == "number",
+            (candidateValue?: Dynamic): Dynamic =>
+              typeof candidateValue == "string" || typeof candidateValue == "number",
           )
           .join("")
       : null;
@@ -764,157 +764,157 @@ function staticTemplateValueString(value?: Dynamic): Dynamic {
 function interpolateStaticExportTemplate(
   template?: Dynamic,
   values?: Dynamic,
-  options?: Dynamic,
+  templateOptions?: Dynamic,
 ): Dynamic {
   let index: Dynamic = 0,
-    callback: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
+    callback: Dynamic = (expression?: Dynamic, scope?: Dynamic): Dynamic => {
       let value: Dynamic = Array.from(
-        input
+        expression
           .replace(/'[^']*'|"[^"]*"/g, "")
           .matchAll(/(?<![\w$.])[A-Za-z_$][\w$]*/g),
-        (input2?: Dynamic): Dynamic => input2[0],
+        (match?: Dynamic): Dynamic => match[0],
       ).filter(
-        (input2?: Dynamic): Dynamic =>
-          !staticTemplateLiteralKeywords.has(input2),
+        (keyword?: Dynamic): Dynamic =>
+          !staticTemplateLiteralKeywords.has(keyword),
       );
       return value.every(
-        (input2?: Dynamic): Dynamic =>
-          Object.prototype.hasOwnProperty.call(options2, input2),
+        (key?: Dynamic): Dynamic =>
+          Object.prototype.hasOwnProperty.call(scope, key),
       )
         ? (value.length > 0 && index++, true)
         : false;
     },
-    callback2: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
+    evaluateExpression: Dynamic = (expression?: Dynamic, scope?: Dynamic): Dynamic => {
       let flag: Dynamic = true;
-      for (let value of input.matchAll(
+      for (let value of expression.matchAll(
         staticTemplateExpressionPattern,
       ) as Dynamic)
-        flag = callback(value[1], options2) && flag;
+        flag = callback(value[1], scope) && flag;
       return {
-        v: compileTemplateExpression(input)(options2),
+        v: compileTemplateExpression(expression)(scope),
         known: flag,
       };
     },
-    callback3: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    renderNode: Dynamic = (
+      text?: Dynamic,
+      scope?: Dynamic,
+      renderContext?: Dynamic,
     ): Dynamic =>
-      input.includes("{{")
-        ? input
+      text.includes("{{")
+        ? text
             .split(staticTemplateExpressionPattern)
-            .flatMap((input2?: Dynamic, options3?: Dynamic): Dynamic => {
-              if (!(options3 & 1))
-                return input2 === "" ? [] : [template.createTextNode(input2)];
-              if (!callback(input2, options2))
-                return [template.createTextNode("{{" + input2 + "}}")];
+            .flatMap((part?: Dynamic, partIndex?: Dynamic): Dynamic => {
+              if (!(partIndex & 1))
+                return part === "" ? [] : [template.createTextNode(part)];
+              if (!callback(part, scope))
+                return [template.createTextNode("{{" + part + "}}")];
               let value: Dynamic = staticTemplateValueString(
-                evaluateTemplateExpression(options2, input2),
+                evaluateTemplateExpression(scope, part),
               );
               if (value === null) return [];
-              if (!context) return [template.createTextNode(value)];
-              let value2: Dynamic = template.createElement("span");
-              value2.setAttribute("class", "sc-interp");
-              value2.textContent = value;
-              return [value2];
+              if (!renderContext) return [template.createTextNode(value)];
+              let interpolationNode: Dynamic = template.createElement("span");
+              interpolationNode.setAttribute("class", "sc-interp");
+              interpolationNode.textContent = value;
+              return [interpolationNode];
             })
-        : [template.createTextNode(input)],
-    callback4: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic =>
-      Array.from(input.childNodes).flatMap(
-        (input2?: Dynamic): Dynamic =>
-          callback5(
-            input2,
-            options2,
-            (input.namespaceURI ?? exportHtmlNamespace) ===
-              exportHtmlNamespace && input.localName !== "textarea",
+        : [template.createTextNode(text)],
+    renderChildren: Dynamic = (element?: Dynamic, scope?: Dynamic): Dynamic =>
+      Array.from(element.childNodes).flatMap(
+        (child?: Dynamic): Dynamic =>
+          renderElement(
+            child,
+            scope,
+            (element.namespaceURI ?? exportHtmlNamespace) ===
+              exportHtmlNamespace && element.localName !== "textarea",
           ),
       ),
-    callback5: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    renderElement: Dynamic = (
+      node?: Dynamic,
+      scope?: Dynamic,
+      renderContext?: Dynamic,
     ): Dynamic => {
-      if (input.nodeType === 3)
-        return callback3(input.nodeValue ?? "", options2, context);
-      if (input.nodeType !== 1) return [];
-      let value: Dynamic = input,
-        value2: Dynamic = value.localName.toLowerCase();
+      if (node.nodeType === 3)
+        return renderNode(node.nodeValue ?? "", scope, renderContext);
+      if (node.nodeType !== 1) return [];
+      let value: Dynamic = node,
+        tagName: Dynamic = value.localName.toLowerCase();
       if (
-        forbiddenStaticExportTagPattern.test(value2) ||
+        forbiddenStaticExportTagPattern.test(tagName) ||
         value.hasAttribute(staticExportAttribute)
       )
         return [];
-      if (value2 === "sc-if") {
-        let { v: value5, known: value6 }: Dynamic = callback2(
+      if (tagName === "sc-if") {
+        let { v: evaluatedValue, known: isKnown }: Dynamic = evaluateExpression(
           value.getAttribute("value") ?? "",
-          options2,
+          scope,
         );
-        return (value6 ? value5 : value.hasAttribute("value"))
-          ? callback4(value, options2)
+        return (isKnown ? evaluatedValue : value.hasAttribute("value"))
+          ? renderChildren(value, scope)
           : [];
       }
-      if (value2 === "sc-for") {
-        let { v: value5, known: value6 }: Dynamic = callback2(
+      if (tagName === "sc-for") {
+        let { v: evaluatedValues, known: isKnown }: Dynamic = evaluateExpression(
             value.getAttribute("list") ?? "",
-            options2,
+            scope,
           ),
-          value7: Dynamic = value.getAttribute("as") || "item";
-        return !value6 || !Array.isArray(value5)
-          ? callback4(value, options2)
-          : value5.flatMap(
-              (input2?: Dynamic, options3?: Dynamic): Dynamic =>
-                callback4(value, {
-                  ...options2,
-                  [value7]: input2,
-                  $index: options3,
+          itemName: Dynamic = value.getAttribute("as") || "item";
+        return !isKnown || !Array.isArray(evaluatedValues)
+          ? renderChildren(value, scope)
+          : evaluatedValues.flatMap(
+              (item?: Dynamic, itemIndex?: Dynamic): Dynamic =>
+                renderChildren(value, {
+                  ...scope,
+                  [itemName]: item,
+                  $index: itemIndex,
                 }),
             );
       }
-      let value3: Dynamic =
-          HtmlTagNormalizationFromEntriesValue[value2],
-        value4: Dynamic =
-          value3 === undefined
+      let outputTag: Dynamic =
+          HtmlTagNormalizationFromEntriesValue[tagName],
+        outputElement: Dynamic =
+          outputTag === undefined
             ? value.cloneNode(false)
-            : template.createElement(value3);
-      for (let value5 of Array.from(value4.attributes) as Dynamic)
-        value4.removeAttribute(value5.name);
-      for (let { name: value5, value: value6 } of Array.from(
+            : template.createElement(outputTag);
+      for (let attribute of Array.from(outputElement.attributes) as Dynamic)
+        outputElement.removeAttribute(attribute.name);
+      for (let { name: attributeName, value: attributeValue } of Array.from(
         value.attributes,
       ) as Dynamic) {
-        let value7: Dynamic = value5.startsWith(ScCamelValue)
+        let normalizedAttributeName: Dynamic = attributeName.startsWith(ScCamelValue)
           ? kebabToCamelCase(
-              value5.slice(ScCamelValue.length),
+              attributeName.slice(ScCamelValue.length),
             )
-          : value5;
+          : attributeName;
         if (
-          dynamicStaticExportAttributePattern.test(value7) ||
-          (value2 === "x-import" && /^(from|src|import)$/.test(value7))
+          dynamicStaticExportAttributePattern.test(normalizedAttributeName) ||
+          (tagName === "x-import" && /^(from|src|import)$/.test(normalizedAttributeName))
         )
           continue;
-        let value8: Dynamic = value6;
-        (value6.includes("{{") &&
-          ((value8 = callback2(value6, options2).v),
-          typeof value8 == "string" && value8.includes("<"))) ||
-          (typeof value8 == "string" || typeof value8 == "number"
-            ? value4.setAttribute(
-                value7,
-                value7 === "style"
-                  ? removeUnsafeCssDeclarations(String(value8))
-                  : String(value8),
+        let normalizedValue: Dynamic = attributeValue;
+        (attributeValue.includes("{{") &&
+          ((normalizedValue = evaluateExpression(attributeValue, scope).v),
+          typeof normalizedValue == "string" && normalizedValue.includes("<"))) ||
+          (typeof normalizedValue == "string" || typeof normalizedValue == "number"
+            ? outputElement.setAttribute(
+                normalizedAttributeName,
+                normalizedAttributeName === "style"
+                  ? removeUnsafeCssDeclarations(String(normalizedValue))
+                  : String(normalizedValue),
               )
-            : typeof value8 == "boolean" && /^(data-|aria-)/.test(value7)
-              ? value4.setAttribute(value7, String(value8))
-              : value8 === true && value4.setAttribute(value7, ""));
+            : typeof normalizedValue == "boolean" && /^(data-|aria-)/.test(normalizedAttributeName)
+              ? outputElement.setAttribute(normalizedAttributeName, String(normalizedValue))
+              : normalizedValue === true && outputElement.setAttribute(normalizedAttributeName, ""));
       }
-      for (let value5 of callback4(value, options2) as Dynamic)
-        value4.appendChild(value5);
-      return [value4];
+      for (let child of renderChildren(value, scope) as Dynamic)
+        outputElement.appendChild(child);
+      return [outputElement];
     },
     items: Dynamic = [];
   for (let value of Array.from(values.childNodes) as Dynamic) {
     if (value.nodeType === 3 && (value.nodeValue ?? "").trim() !== "")
       return null;
-    items.push(...callback5(value, options, true));
+    items.push(...renderElement(value, templateOptions, true));
   }
   return {
     nodes: items,
@@ -928,61 +928,61 @@ function collectReferencedElementIds(element?: Dynamic): Dynamic {
     ],
     values: Dynamic = new Set();
   for (let value of items as Dynamic)
-    for (let { name: value2, value: value3 } of Array.from(
+    for (let { name: attributeName, value: attributeValue } of Array.from(
       value.attributes,
     ) as Dynamic) {
-      for (let value4 of value3.matchAll(
+      for (let referenceMatch of attributeValue.matchAll(
         /url\(\s*['"]?#([^'")\s]+)/g,
       ) as Dynamic)
-        values.add(value4[1]);
-      (value2 === "href" || value2 === "xlink:href") &&
-        value3.startsWith("#") &&
-        values.add(value3.slice(1));
+        values.add(referenceMatch[1]);
+      (attributeName === "href" || attributeName === "xlink:href") &&
+        attributeValue.startsWith("#") &&
+        values.add(attributeValue.slice(1));
     }
-  let values2: Dynamic = new Set(
+  let referencedIds: Dynamic = new Set(
     items
       .filter(
-        (element2?: Dynamic): Dynamic =>
-          element2.namespaceURI === exportSvgNamespace &&
-          values.has(element2.getAttribute("id") ?? ""),
+        (svgElement?: Dynamic): Dynamic =>
+          svgElement.namespaceURI === exportSvgNamespace &&
+          values.has(svgElement.getAttribute("id") ?? ""),
       )
-      .map((element2?: Dynamic): Dynamic => element2.getAttribute("id")),
+      .map((svgNode?: Dynamic): Dynamic => svgNode.getAttribute("id")),
   );
-  if (values2.size !== 0)
+  if (referencedIds.size !== 0)
     for (let value of items as Dynamic)
-      for (let { name: value2, value: value3 } of Array.from(
+      for (let { name: attributeName, value: attributeValue } of Array.from(
         value.attributes,
       ) as Dynamic) {
-        let value4: Dynamic = value3.replace(
+        let normalizedValue: Dynamic = attributeValue.replace(
           /url\(\s*(['"]?)#([^'")\s]+)\1\s*\)/g,
-          (input?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-            values2.has(context)
+          (referenceValue?: Dynamic, prefix?: Dynamic, idPrefix?: Dynamic): Dynamic =>
+            referencedIds.has(idPrefix)
               ? "url(" +
-                options +
+                prefix +
                 "#" +
-                context +
+                idPrefix +
                 staticExportIdSuffix +
-                options +
+                prefix +
                 ")"
-              : input,
+              : referenceValue,
         );
-        (value2 === "href" || value2 === "xlink:href") &&
-          values2.has(value3.slice(1)) &&
-          value3.startsWith("#") &&
-          (value4 = value3 + staticExportIdSuffix);
-        value2 === "id" &&
+        (attributeName === "href" || attributeName === "xlink:href") &&
+          referencedIds.has(attributeValue.slice(1)) &&
+          attributeValue.startsWith("#") &&
+          (normalizedValue = attributeValue + staticExportIdSuffix);
+        attributeName === "id" &&
           value.namespaceURI === exportSvgNamespace &&
-          values2.has(value3) &&
-          (value4 = value3 + staticExportIdSuffix);
-        value4 !== value3 && value.setAttribute(value2, value4);
+          referencedIds.has(attributeValue) &&
+          (normalizedValue = attributeValue + staticExportIdSuffix);
+        normalizedValue !== attributeValue && value.setAttribute(attributeName, normalizedValue);
       }
 }
 function hasImportantStaticVisibilityStyles(
-  document2?: Dynamic,
+  document?: Dynamic,
   stage?: Dynamic,
 ): Dynamic {
   let value: Dynamic = Array.from(stage.children).filter(
-    (input?: Dynamic): Dynamic => !input.hasAttribute(staticExportAttribute),
+    (element?: Dynamic): Dynamic => !element.hasAttribute(staticExportAttribute),
   );
   if (
     value.some(
@@ -991,205 +991,205 @@ function hasImportantStaticVisibilityStyles(
     )
   )
     return true;
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    splitCssRuleBlocks(input).some((input2?: Dynamic): Dynamic => {
+  let callback: Dynamic = (cssText?: Dynamic): Dynamic =>
+    splitCssRuleBlocks(cssText).some((rule?: Dynamic): Dynamic => {
       if (
-        !importantVisibleCssPattern.test(input2.body) ||
-        staticCssDeclarationAtRulePattern.test(input2.selector) ||
-        /^@(-\w+-)?keyframes\b/i.test(input2.selector)
+        !importantVisibleCssPattern.test(rule.body) ||
+        staticCssDeclarationAtRulePattern.test(rule.selector) ||
+        /^@(-\w+-)?keyframes\b/i.test(rule.selector)
       )
         return false;
-      if (input2.selector.startsWith("@")) return callback(input2.body);
-      if (input2.body.includes("{")) return true;
+      if (rule.selector.startsWith("@")) return callback(rule.body);
+      if (rule.body.includes("{")) return true;
       try {
         return value.some(
-          (input3?: Dynamic): Dynamic => input3.matches(input2.selector),
+          (element?: Dynamic): Dynamic => element.matches(rule.selector),
         );
       } catch {
         return true;
       }
     });
-  return Array.from(document2.querySelectorAll("style"))
+  return Array.from(document.querySelectorAll("style"))
     .filter(
-      (input?: Dynamic): Dynamic =>
-        input.closest("[" + staticExportAttribute + "]") === null,
+      (element?: Dynamic): Dynamic =>
+        element.closest("[" + staticExportAttribute + "]") === null,
     )
     .some(
-      (input?: Dynamic): Dynamic =>
-        callback((input.textContent ?? "").replace(/\/\*[\s\S]*?\*\//g, " ")),
+      (styleElement?: Dynamic): Dynamic =>
+        callback((styleElement.textContent ?? "").replace(/\/\*[\s\S]*?\*\//g, " ")),
     );
 }
 function buildStaticArtboardCopy(
-  document2?: Dynamic,
+  document?: Dynamic,
   stage?: Dynamic,
 ): Dynamic {
-  for (let value7 of Array.from(stage.children).filter(
-    (input?: Dynamic): Dynamic => input.hasAttribute(staticExportAttribute),
+  for (let child of Array.from(stage.children).filter(
+    (node?: Dynamic): Dynamic => node.hasAttribute(staticExportAttribute),
   ) as Dynamic)
-    value7.remove();
+    child.remove();
   if (!stage.innerHTML.includes("{{")) return null;
-  let callback: Dynamic = (input?: Dynamic): Dynamic => (
+  let callback: Dynamic = (node?: Dynamic): Dynamic => (
       console.info(
         "[design/export] This export has no static copy of the board (tweak values filled in, for importers that run no script): " +
-          input,
+          node,
       ),
       null
     ),
     value: Dynamic = interpolateStaticExportTemplate(
-      document2,
+      document,
       stage,
-      collectStaticExportTweakValues(document2),
+      collectStaticExportTweakValues(document),
     );
   if (value === null)
     return callback(
       "the board has text directly inside <x-dc>, outside any element; wrap that text in an element to include the copy",
     );
   if (value.resolved === 0) return null;
-  let value2: Dynamic = value.nodes.filter(
-    (input?: Dynamic): Dynamic => input.nodeType === 1,
+  let elements: Dynamic = value.nodes.filter(
+    (node?: Dynamic): Dynamic => node.nodeType === 1,
   );
-  if (value2.length === 0) return null;
-  let value3: Dynamic, value4: Dynamic;
+  if (elements.length === 0) return null;
+  let container: Dynamic, fallbackNodes: Dynamic;
   if (
-    value2.length === 1 &&
+    elements.length === 1 &&
     value.nodes.every(
-      (input?: Dynamic): Dynamic =>
-        input === value2[0] || (input.nodeValue ?? "").trim() === "",
+      (node?: Dynamic): Dynamic =>
+        node === elements[0] || (node.nodeValue ?? "").trim() === "",
     )
   ) {
-    value3 = value2[0];
-    value4 = value.nodes;
+    container = elements[0];
+    fallbackNodes = value.nodes;
   } else {
-    value3 = document2.createElement("div");
-    for (let value7 of value.nodes as Dynamic) value3.appendChild(value7);
-    value4 = [value3];
+    container = document.createElement("div");
+    for (let node of value.nodes as Dynamic) container.appendChild(node);
+    fallbackNodes = [container];
   }
-  collectReferencedElementIds(value3);
-  let value5: Dynamic = document2.createElement("sc-if");
-  value5.setAttribute(staticExportAttribute, "");
-  value5.setAttribute("value", "{{ false }}");
-  let value6: Dynamic = document2.createElement("style");
-  value6.textContent =
+  collectReferencedElementIds(container);
+  let conditionalElement: Dynamic = document.createElement("sc-if");
+  conditionalElement.setAttribute(staticExportAttribute, "");
+  conditionalElement.setAttribute("value", "{{ false }}");
+  let styleElement: Dynamic = document.createElement("style");
+  styleElement.textContent =
     "x-dc>*{display:none!important}x-dc>[" +
     staticExportAttribute +
     "]{display:block!important}";
-  value5.appendChild(value6);
-  for (let value7 of value4 as Dynamic) value5.appendChild(value7);
-  return value5.outerHTML.length > maxStaticExportTemplateLength
+  conditionalElement.appendChild(styleElement);
+  for (let node of fallbackNodes as Dynamic) conditionalElement.appendChild(node);
+  return conditionalElement.outerHTML.length > maxStaticExportTemplateLength
     ? callback("the copy would be over 512K characters, too large to include")
-    : hasExternalExportStylesheets(document2)
+    : hasExternalExportStylesheets(document)
       ? callback(
           "the page links or @imports a stylesheet the export cannot read, so it cannot tell whether the board would stay hidden behind the copy; inline or remove that stylesheet to include the copy",
         )
-      : (stage.appendChild(value5),
-        hasImportantStaticVisibilityStyles(document2, stage)
-          ? (value5.remove(),
+      : (stage.appendChild(conditionalElement),
+        hasImportantStaticVisibilityStyles(document, stage)
+          ? (conditionalElement.remove(),
             callback(
               "one of the board's top-level elements has a display or all declaration marked !important (inline or in a stylesheet), which could show the board beside the copy; drop the !important to include the copy",
             ))
-          : value3);
+          : container);
 }
 function prepareStaticArtboardExport(
-  document2?: Dynamic,
+  document?: Dynamic,
   artboard?: Dynamic,
   additionalCss: Dynamic = [],
 ): Dynamic {
   let value: Dynamic = String(Math.max(1, Math.round(artboard.w))),
-    value2: Dynamic = String(Math.max(1, Math.round(artboard.h))),
-    value3: Dynamic = collectStaticRootCssVariables(document2, additionalCss);
-  if (value3.size > 0) {
-    for (let value10 of Array.from(
-      document2.querySelectorAll("style"),
+    canvasHeight: Dynamic = String(Math.max(1, Math.round(artboard.h))),
+    cssVariables: Dynamic = collectStaticRootCssVariables(document, additionalCss);
+  if (cssVariables.size > 0) {
+    for (let styleElement of Array.from(
+      document.querySelectorAll("style"),
     ) as Dynamic) {
-      let value11: Dynamic = value10.textContent ?? "";
-      value11.includes("var(") &&
-        (value10.textContent = escapeStaticExportStyleTag(
-          substituteStaticCssVariables(value11, value3),
+      let styleText: Dynamic = styleElement.textContent ?? "";
+      styleText.includes("var(") &&
+        (styleElement.textContent = escapeStaticExportStyleTag(
+          substituteStaticCssVariables(styleText, cssVariables),
         ));
     }
-    for (let value10 of Array.from(
-      document2.querySelectorAll('[style*="var("]'),
+    for (let styleElementNode of Array.from(
+      document.querySelectorAll('[style*="var("]'),
     ) as Dynamic)
-      value10.setAttribute(
+      styleElementNode.setAttribute(
         "style",
         substituteStaticCssVariables(
-          value10.getAttribute("style") ?? "",
-          value3,
+          styleElementNode.getAttribute("style") ?? "",
+          cssVariables,
         ),
       );
   }
-  let element: Dynamic = document2.querySelector("x-dc");
-  for (let value10 of Array.from(
-    document2.querySelectorAll(
+  let element: Dynamic = document.querySelector("x-dc");
+  for (let styleElementNode of Array.from(
+    document.querySelectorAll(
       '[data-canvas-width], [data-canvas-height], [data-document-role="page"]',
     ),
   ) as Dynamic)
-    for (let value11 of [
+    for (let attributeName of [
       "data-canvas-width",
       "data-canvas-height",
       "data-document-role",
     ] as Dynamic)
-      value10.removeAttribute(value11);
-  for (let value10 of Array.from(
-    document2.head.querySelectorAll('meta[name^="hz:"]'),
+      styleElementNode.removeAttribute(attributeName);
+  for (let removableElement of Array.from(
+    document.head.querySelectorAll('meta[name^="hz:"]'),
   ) as Dynamic)
-    value10.remove();
-  let value4: Dynamic =
+    removableElement.remove();
+  let contentElements: Dynamic =
       element === null
         ? []
         : Array.from(element.children).filter(
-            (input?: Dynamic): Dynamic =>
-              !exportMetadataTagPattern.test(input.tagName) &&
-              !input.hasAttribute(staticExportAttribute),
+            (candidateElement?: Dynamic): Dynamic =>
+              !exportMetadataTagPattern.test(candidateElement.tagName) &&
+              !candidateElement.hasAttribute(staticExportAttribute),
           ),
-    value5: Dynamic =
-      value4.length === 1 &&
-      !dynamicStaticExportTagPattern.test(value4[0].localName)
-        ? value4[0]
-        : document2.body;
-  value5.setAttribute("data-canvas-width", value);
-  value5.setAttribute("data-canvas-height", value2);
-  let value6: Dynamic = null;
+    canvasElement: Dynamic =
+      contentElements.length === 1 &&
+      !dynamicStaticExportTagPattern.test(contentElements[0].localName)
+        ? contentElements[0]
+        : document.body;
+  canvasElement.setAttribute("data-canvas-width", value);
+  canvasElement.setAttribute("data-canvas-height", canvasHeight);
+  let existingCanvas: Dynamic = null;
   if (
     element !== null &&
     additionalCss.some(
-      (input?: Dynamic): Dynamic =>
-        /javascript/i.test(input.mime) &&
-        isDesignRuntimeSource(input.text),
+      (resource?: Dynamic): Dynamic =>
+        /javascript/i.test(resource.mime) &&
+        isDesignRuntimeSource(resource.text),
     )
   )
     try {
-      value6 = buildStaticArtboardCopy(document2, element);
+      existingCanvas = buildStaticArtboardCopy(document, element);
     } catch {
-      for (let value10 of Array.from(element.children).filter(
-        (input?: Dynamic): Dynamic =>
-          input.hasAttribute(staticExportAttribute),
+      for (let exportChild of Array.from(element.children).filter(
+        (child?: Dynamic): Dynamic =>
+          child.hasAttribute(staticExportAttribute),
       ) as Dynamic)
-        value10.remove();
+        exportChild.remove();
       console.warn(
         "[design/export] Building the static copy of the board for importers that run no script failed; exported without it",
       );
     }
-  let value7: Dynamic =
-      value6 !== null && value6.hasAttribute("data-canvas-width"),
-    value8: Dynamic = value7 ? value6 : value5;
-  value8.setAttribute("data-document-role", "page");
-  let value9: Dynamic = artboard.label?.trim() ?? "";
-  value9 !== "" &&
-    (value8.getAttribute("data-label") ?? "").trim() === "" &&
-    value8.setAttribute("data-label", value9);
-  for (let [value10, value11] of [
+  let hasCanvas: Dynamic =
+      existingCanvas !== null && existingCanvas.hasAttribute("data-canvas-width"),
+    pageElement: Dynamic = hasCanvas ? existingCanvas : canvasElement;
+  pageElement.setAttribute("data-document-role", "page");
+  let pageLabel: Dynamic = artboard.label?.trim() ?? "";
+  pageLabel !== "" &&
+    (pageElement.getAttribute("data-label") ?? "").trim() === "" &&
+    pageElement.setAttribute("data-label", pageLabel);
+  for (let [metaName, metaContent] of [
     [
       "hz:slide-selector",
-      value7 ? ":not(x-dc)>[data-canvas-width]" : "[data-canvas-width]",
+      hasCanvas ? ":not(x-dc)>[data-canvas-width]" : "[data-canvas-width]",
     ],
     ["hz:canvas-width", value],
-    ["hz:canvas-height", value2],
+    ["hz:canvas-height", canvasHeight],
   ] as Dynamic) {
-    let value12: Dynamic = document2.createElement("meta");
-    value12.setAttribute("name", value10);
-    value12.setAttribute("content", value11);
-    document2.head.appendChild(value12);
+    let metaElement: Dynamic = document.createElement("meta");
+    metaElement.setAttribute("name", metaName);
+    metaElement.setAttribute("content", metaContent);
+    document.head.appendChild(metaElement);
   }
 }
 export {

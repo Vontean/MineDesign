@@ -6,234 +6,234 @@ import { formatPdfNumber, pdfStringOperand, truncatePdfText } from "./document";
 import { clipPdfBlockBox, maxFigureAltLength } from "./figure-operators";
 
 function collectPdfStructureRoles(
-  input?: Dynamic,
-  options?: Dynamic,
+  pages?: Dynamic,
+  pageIndices?: Dynamic,
 ): Dynamic {
   let items: Dynamic = [];
-  return options.map((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-    let value: Dynamic = (input[options2].blocks ?? []).map(
-        (input3?: Dynamic): Dynamic => input3.role,
+  return pageIndices.map((pageMarks?: Dynamic, pageIndex?: Dynamic): Dynamic => {
+    let value: Dynamic = (pages[pageIndex].blocks ?? []).map(
+        (mark?: Dynamic): Dynamic => mark.role,
       ),
       values: Dynamic = new Set(
-        input2.map((input3?: Dynamic): Dynamic => input3.block),
+        pageMarks.map((mark?: Dynamic): Dynamic => mark.block),
       );
-    value.forEach((input3?: Dynamic, options3?: Dynamic): Dynamic => {
-      let value2: Dynamic = values.has(options3)
-        ? /^H([1-6])$/.exec(input3)
+    value.forEach((role?: Dynamic, blockIndex?: Dynamic): Dynamic => {
+      let headingMatch: Dynamic = values.has(blockIndex)
+        ? /^H([1-6])$/.exec(role)
         : null;
-      if (value2 === null) return;
-      let value3: Dynamic = Number(value2[1]);
-      for (; items.length > 0 && items[items.length - 1] >= value3; )
+      if (headingMatch === null) return;
+      let headingLevel: Dynamic = Number(headingMatch[1]);
+      for (; items.length > 0 && items[items.length - 1] >= headingLevel; )
         items.pop();
-      items.push(value3);
-      value[options3] = "H" + String(items.length);
+      items.push(headingLevel);
+      value[blockIndex] = "H" + String(items.length);
     });
     return value;
   });
 }
 function buildPdfStructureTree(
-  input?: Dynamic,
+  firstObjectNumber?: Dynamic,
   items?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
-  argument?: Dynamic,
-  argument2?: Dynamic,
-  argument3?: Dynamic,
+  textPages?: Dynamic,
+  structurePages?: Dynamic,
+  blockRoles?: Dynamic,
+  annotationsByPage?: Dynamic,
+  linkTargets?: Dynamic,
+  markLinks?: Dynamic,
+  pageObjectFor?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = input,
-    callback: Dynamic = (): Dynamic => value2++,
-    value3: Dynamic = callback(),
-    value4: Dynamic = callback(),
-    value5: Dynamic = callback(),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      String(input2) + " 0 R",
-    callback3: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context2?: Dynamic,
-      value6?: Dynamic,
-      extra2: Dynamic = "",
+  let nextObjectNumber: Dynamic = firstObjectNumber,
+    callback: Dynamic = (): Dynamic => nextObjectNumber++,
+    rootObject: Dynamic = callback(),
+    parentTreeObject: Dynamic = callback(),
+    catalogObject: Dynamic = callback(),
+    formatObjectReference: Dynamic = (objectNumber?: Dynamic): Dynamic =>
+      String(objectNumber) + " 0 R",
+    formatStructureElement: Dynamic = (
+      structureType?: Dynamic,
+      parentObject?: Dynamic,
+      pageContext?: Dynamic,
+      parentTree?: Dynamic,
+      extraAttributes: Dynamic = "",
     ): Dynamic =>
       "<< /Type /StructElem /S /" +
-      input2 +
+      structureType +
       " /P " +
-      callback2(options) +
+      formatObjectReference(parentObject) +
       " /Pg " +
-      callback2(argument3(context2)) +
-      extra2 +
+      formatObjectReference(pageObjectFor(pageContext)) +
+      extraAttributes +
       " /K " +
-      value6 +
+      parentTree +
       " >>",
-    callback4: Dynamic = (items6?: Dynamic): Dynamic =>
-      items6.length === 1 ? String(items6[0]) : "[" + items6.join(" ") + "]",
+    formatChildren: Dynamic = (children?: Dynamic): Dynamic =>
+      children.length === 1 ? String(children[0]) : "[" + children.join(" ") + "]",
     entries: Dynamic = new Map(),
-    items2: Dynamic = [],
-    items3: Dynamic = [],
-    items4: Dynamic = [];
-  items.forEach((input2?: Dynamic, options?: Dynamic): Dynamic => {
-    let value6: Dynamic = callback();
-    items2.push(value6);
-    let items6: Dynamic = [],
-      items7: Dynamic = [],
-      entries2: Dynamic = new Map(),
-      items8: Dynamic = [],
-      entries3: Dynamic = new Map(),
+    pageParents: Dynamic = [],
+    numberTreeEntries: Dynamic = [],
+    objectReferences: Dynamic = [];
+  items.forEach((page?: Dynamic, pageIndex?: Dynamic): Dynamic => {
+    let pageParentObject: Dynamic = callback();
+    pageParents.push(pageParentObject);
+    let pageChildren: Dynamic = [],
+      mcidObjects: Dynamic = [],
+      blockEntries: Dynamic = new Map(),
+      linkNodes: Dynamic = [],
+      linkEntries: Dynamic = new Map(),
       values: Dynamic = new Set(
-        [...context[options].marks, ...value[options].marks].map(
-          (input3?: Dynamic): Dynamic => input3.block,
+        [...textPages[pageIndex].marks, ...structurePages[pageIndex].marks].map(
+          (mark?: Dynamic): Dynamic => mark.block,
         ),
       ),
-      values2: Dynamic = new Set(
-        argument[options].filter(
-          (input3?: Dynamic): Dynamic => input3 !== undefined,
+      definedMcids: Dynamic = new Set(
+        linkTargets[pageIndex].filter(
+          (definedValue?: Dynamic): Dynamic => definedValue !== undefined,
         ),
       ),
-      entries4: Dynamic = new Map();
-    for (let [value7, value8] of argument2[options] as Dynamic)
-      values2.has(value7) && entries4.set(value8, value7);
-    let entries5: Dynamic = new Map(),
+      linkMcidMap: Dynamic = new Map();
+    for (let [mcid, linkIndex] of markLinks[pageIndex] as Dynamic)
+      definedMcids.has(mcid) && linkMcidMap.set(linkIndex, mcid);
+    let blockParentObjects: Dynamic = new Map(),
       index: Dynamic = 0,
-      callback5: Dynamic = (input3?: Dynamic): Dynamic => {
-        for (; index <= input3; index++) {
+      visitBlocksThrough: Dynamic = (lastBlockIndex?: Dynamic): Dynamic => {
+        for (; index <= lastBlockIndex; index++) {
           if (!values.has(index)) continue;
-          let value7: Dynamic = callback(),
-            value8: Dynamic = input2.blocks[index],
-            value9: Dynamic =
-              value8.role === "Table"
+          let blockObject: Dynamic = callback(),
+            block: Dynamic = page.blocks[index],
+            tableData: Dynamic =
+              block.role === "Table"
                 ? {
                     rows: Array.from(
                       {
-                        length: value8.rows,
+                        length: block.rows,
                       },
                       callback,
                     ),
                     cells: Array.from(
                       {
-                        length: value8.rows * value8.cols,
+                        length: block.rows * block.cols,
                       },
                       callback,
                     ),
                     mcids: Array.from(
                       {
-                        length: value8.rows * value8.cols,
+                        length: block.rows * block.cols,
                       },
                       (): Dynamic => [],
                     ),
                   }
                 : undefined;
-          entries2.set(index, {
-            obj: value7,
+          blockEntries.set(index, {
+            obj: blockObject,
             mcids: [],
             items: new Map(),
-            table: value9,
+            table: tableData,
           });
-          let entry: Dynamic = entries4.get(index);
+          let entry: Dynamic = linkMcidMap.get(index);
           if (entry === undefined) {
-            items6.push(value7);
+            pageChildren.push(blockObject);
             continue;
           }
           let state: Dynamic = {
             obj: callback(),
-            kids: [callback2(value7)],
-            parent: value6,
+            kids: [formatObjectReference(blockObject)],
+            parent: pageParentObject,
           };
-          items8.push(state);
-          entries3.set(entry, state);
-          entries5.set(index, state.obj);
-          items6.push(state.obj);
+          linkNodes.push(state);
+          linkEntries.set(entry, state);
+          blockParentObjects.set(index, state.obj);
+          pageChildren.push(state.obj);
         }
       },
-      callback6: Dynamic = (
-        input3?: Dynamic,
-        options2?: Dynamic,
-        context2?: Dynamic,
+      appendMark: Dynamic = (
+        mark?: Dynamic,
+        parentObject?: Dynamic,
+        mcids?: Dynamic,
       ): Dynamic => {
-        if (input3.link === undefined) {
-          context2.push(input3.mcid);
-          items7[input3.mcid] = options2;
+        if (mark.link === undefined) {
+          mcids.push(mark.mcid);
+          mcidObjects[mark.mcid] = parentObject;
           return;
         }
         let state: Dynamic = {
           obj: callback(),
-          kids: [input3.mcid],
-          parent: options2,
+          kids: [mark.mcid],
+          parent: parentObject,
         };
-        items8.push(state);
-        entries3.has(input3.link) || entries3.set(input3.link, state);
-        context2.push(callback2(state.obj));
-        items7[input3.mcid] = state.obj;
+        linkNodes.push(state);
+        linkEntries.has(mark.link) || linkEntries.set(mark.link, state);
+        mcids.push(formatObjectReference(state.obj));
+        mcidObjects[mark.mcid] = state.obj;
       };
-    for (let value7 of context[options].marks as Dynamic) {
-      if (value7.block === undefined) {
-        let value8: Dynamic = callback();
-        items6.push(value8);
-        let items9: Dynamic = [];
-        callback6(value7, value8, items9);
+    for (let mark of textPages[pageIndex].marks as Dynamic) {
+      if (mark.block === undefined) {
+        let paragraphObject: Dynamic = callback();
+        pageChildren.push(paragraphObject);
+        let paragraphMcids: Dynamic = [];
+        appendMark(mark, paragraphObject, paragraphMcids);
         entries.set(
-          value8,
-          callback3("P", value6, options, callback4(items9)),
+          paragraphObject,
+          formatStructureElement("P", pageParentObject, pageIndex, formatChildren(paragraphMcids)),
         );
         continue;
       }
-      callback5(value7.block);
-      let entry: Dynamic = entries2.get(value7.block);
+      visitBlocksThrough(mark.block);
+      let entry: Dynamic = blockEntries.get(mark.block);
       if (entry.table !== undefined)
-        callback6(
-          value7,
-          entry.table.cells[value7.item],
-          entry.table.mcids[value7.item],
+        appendMark(
+          mark,
+          entry.table.cells[mark.item],
+          entry.table.mcids[mark.item],
         );
-      else if (value7.item === undefined)
-        callback6(value7, entry.obj, entry.mcids);
+      else if (mark.item === undefined)
+        appendMark(mark, entry.obj, entry.mcids);
       else {
-        let entry2: Dynamic = entry.items.get(value7.item);
-        entry2 === undefined &&
-          ((entry2 = {
+        let listItem: Dynamic = entry.items.get(mark.item);
+        listItem === undefined &&
+          ((listItem = {
             li: callback(),
             body: callback(),
             mcids: [],
           }),
-          entry.items.set(value7.item, entry2));
-        callback6(value7, entry2.body, entry2.mcids);
+          entry.items.set(mark.item, listItem));
+        appendMark(mark, listItem.body, listItem.mcids);
       }
     }
-    callback5((input2.blocks?.length ?? 0) - 1);
-    for (let value7 of value[options].marks as Dynamic) {
-      entries2.get(value7.block).mcids.push(value7.mcid);
-      items7[value7.mcid] = entries2.get(value7.block).obj;
+    visitBlocksThrough((page.blocks?.length ?? 0) - 1);
+    for (let mark of structurePages[pageIndex].marks as Dynamic) {
+      blockEntries.get(mark.block).mcids.push(mark.mcid);
+      mcidObjects[mark.mcid] = blockEntries.get(mark.block).obj;
     }
-    for (let [value7, value8] of entries2 as Dynamic) {
-      let value9: Dynamic = extra[options][value7];
-      if (value9 === "Figure") {
-        let value11: Dynamic = input2.blocks[value7],
-          value12: Dynamic = clipPdfBlockBox(
-            value11,
-            input2.widthPt,
-            input2.heightPt,
+    for (let [blockIndex, blockEntry] of blockEntries as Dynamic) {
+      let blockRole: Dynamic = blockRoles[pageIndex][blockIndex];
+      if (blockRole === "Figure") {
+        let block: Dynamic = page.blocks[blockIndex],
+          blockBox: Dynamic = clipPdfBlockBox(
+            block,
+            page.widthPt,
+            page.heightPt,
           ),
-          value13: Dynamic =
-            typeof value11.alt == "string"
+          altText: Dynamic =
+            typeof block.alt == "string"
               ? truncatePdfText(
-                  value11.alt,
+                  block.alt,
                   maxFigureAltLength,
                 ).trim()
               : "",
-          value14: Dynamic =
-            value13 !== ""
-              ? " /Alt " + pdfStringOperand(value13)
+          altAttribute: Dynamic =
+            altText !== ""
+              ? " /Alt " + pdfStringOperand(altText)
               : "";
         entries.set(
-          value8.obj,
-          callback3(
+          blockEntry.obj,
+          formatStructureElement(
             "Figure",
-            entries5.get(value7) ?? value6,
-            options,
-            callback4(value8.mcids),
-            value14 +
+            blockParentObjects.get(blockIndex) ?? pageParentObject,
+            pageIndex,
+            formatChildren(blockEntry.mcids),
+            altAttribute +
               " /A << /O /Layout /BBox [" +
-              [value12.x0, value12.y0, value12.x1, value12.y1]
+              [blockBox.x0, blockBox.y0, blockBox.x1, blockBox.y1]
                 .map(formatPdfNumber)
                 .join(" ") +
               "] /Placement /Block >>",
@@ -241,59 +241,59 @@ function buildPdfStructureTree(
         );
         continue;
       }
-      if (value9 === "Table") {
-        let { cols: value11 }: Dynamic = input2.blocks[value7],
-          value12: Dynamic = input2.blocks[value7].headerRows ?? 0,
-          table: Dynamic = value8.table;
+      if (blockRole === "Table") {
+        let { cols: columnCount }: Dynamic = page.blocks[blockIndex],
+          headerRowCount: Dynamic = page.blocks[blockIndex].headerRows ?? 0,
+          table: Dynamic = blockEntry.table;
         entries.set(
-          value8.obj,
-          callback3(
+          blockEntry.obj,
+          formatStructureElement(
             "Table",
-            value6,
-            options,
-            "[" + table.rows.map(callback2).join(" ") + "]",
+            pageParentObject,
+            pageIndex,
+            "[" + table.rows.map(formatObjectReference).join(" ") + "]",
           ),
         );
         table.rows.forEach(
-          (input3?: Dynamic, options2?: Dynamic): Dynamic => {
+          (row?: Dynamic, rowIndex?: Dynamic): Dynamic => {
             entries.set(
-              input3,
-              callback3(
+              row,
+              formatStructureElement(
                 "TR",
-                value8.obj,
-                options,
+                blockEntry.obj,
+                pageIndex,
                 "[" +
                   table.cells
-                    .slice(options2 * value11, (options2 + 1) * value11)
-                    .map(callback2)
+                    .slice(rowIndex * columnCount, (rowIndex + 1) * columnCount)
+                    .map(formatObjectReference)
                     .join(" ") +
                   "]",
               ),
             );
-            for (let index2: Dynamic = 0; index2 < value11; index2++) {
-              let value13: Dynamic = options2 * value11 + index2,
-                value14: Dynamic =
-                  options2 < value12
+            for (let columnIndex: Dynamic = 0; columnIndex < columnCount; columnIndex++) {
+              let cellIndex: Dynamic = rowIndex * columnCount + columnIndex,
+                cellAttribute: Dynamic =
+                  rowIndex < headerRowCount
                     ? " /A << /O /Table /Scope /Column >>"
                     : "",
-                value15: Dynamic = table.mcids[value13];
+                cellMcids: Dynamic = table.mcids[cellIndex];
               entries.set(
-                table.cells[value13],
-                value15.length === 0
+                table.cells[cellIndex],
+                cellMcids.length === 0
                   ? "<< /Type /StructElem /S /" +
-                      (options2 < value12 ? "TH" : "TD") +
+                      (rowIndex < headerRowCount ? "TH" : "TD") +
                       " /P " +
-                      callback2(input3) +
+                      formatObjectReference(row) +
                       " /Pg " +
-                      callback2(argument3(options)) +
-                      value14 +
+                      formatObjectReference(pageObjectFor(pageIndex)) +
+                      cellAttribute +
                       " >>"
-                  : callback3(
-                      options2 < value12 ? "TH" : "TD",
-                      input3,
-                      options,
-                      callback4(value15),
-                      value14,
+                  : formatStructureElement(
+                      rowIndex < headerRowCount ? "TH" : "TD",
+                      row,
+                      pageIndex,
+                      formatChildren(cellMcids),
+                      cellAttribute,
                     ),
               );
             }
@@ -301,122 +301,122 @@ function buildPdfStructureTree(
         );
         continue;
       }
-      if (value9 !== "L") {
+      if (blockRole !== "L") {
         entries.set(
-          value8.obj,
-          callback3(value9, value6, options, callback4(value8.mcids)),
+          blockEntry.obj,
+          formatStructureElement(blockRole, pageParentObject, pageIndex, formatChildren(blockEntry.mcids)),
         );
         continue;
       }
-      let numbering: Dynamic = input2.blocks[value7].numbering,
-        value10: Dynamic =
+      let numbering: Dynamic = page.blocks[blockIndex].numbering,
+        listNumberingAttribute: Dynamic =
           numbering == null
             ? ""
             : " /A << /O /List /ListNumbering /" + numbering + " >>";
       entries.set(
-        value8.obj,
-        callback3(
+        blockEntry.obj,
+        formatStructureElement(
           "L",
-          value6,
-          options,
+          pageParentObject,
+          pageIndex,
           "[" +
-            [...value8.items.values()]
-              .map((input3?: Dynamic): Dynamic => callback2(input3.li))
+            [...blockEntry.items.values()]
+              .map((listItem?: Dynamic): Dynamic => formatObjectReference(listItem.li))
               .join(" ") +
             "]",
-          value10,
+          listNumberingAttribute,
         ),
       );
-      for (let value11 of value8.items.values() as Dynamic) {
+      for (let listItemEntry of blockEntry.items.values() as Dynamic) {
         entries.set(
-          value11.li,
-          callback3(
+          listItemEntry.li,
+          formatStructureElement(
             "LI",
-            value8.obj,
-            options,
-            "[" + callback2(value11.body) + "]",
+            blockEntry.obj,
+            pageIndex,
+            "[" + formatObjectReference(listItemEntry.body) + "]",
           ),
         );
         entries.set(
-          value11.body,
-          callback3("LBody", value11.li, options, callback4(value11.mcids)),
+          listItemEntry.body,
+          formatStructureElement("LBody", listItemEntry.li, pageIndex, formatChildren(listItemEntry.mcids)),
         );
       }
     }
-    let entries6: Dynamic = new Map();
-    detail[options].forEach(
-      (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value7: Dynamic =
+    let annotationObjects: Dynamic = new Map();
+    annotationsByPage[pageIndex].forEach(
+      (annotation?: Dynamic, annotationIndex?: Dynamic): Dynamic => {
+        let annotationObject: Dynamic =
             "<< /Type /OBJR /Obj " +
-            callback2(input3) +
+            formatObjectReference(annotation) +
             " /Pg " +
-            callback2(argument3(options)) +
+            formatObjectReference(pageObjectFor(pageIndex)) +
             " >>",
-          value8: Dynamic = argument[options][options2],
-          value9: Dynamic =
-            value8 === undefined ? undefined : entries3.get(value8)?.obj;
-        value9 !== undefined
-          ? entries6.set(value9, [...(entries6.get(value9) ?? []), value7])
-          : ((value9 = callback()),
-            items6.push(value9),
-            entries.set(value9, callback3("Link", value6, options, value7)));
-        items4.push(
-          String(items.length + items4.length) + " " + callback2(value9),
+          linkTarget: Dynamic = linkTargets[pageIndex][annotationIndex],
+          linkObject: Dynamic =
+            linkTarget === undefined ? undefined : linkEntries.get(linkTarget)?.obj;
+        linkObject !== undefined
+          ? annotationObjects.set(linkObject, [...(annotationObjects.get(linkObject) ?? []), annotationObject])
+          : ((linkObject = callback()),
+            pageChildren.push(linkObject),
+            entries.set(linkObject, formatStructureElement("Link", pageParentObject, pageIndex, annotationObject)));
+        objectReferences.push(
+          String(items.length + objectReferences.length) + " " + formatObjectReference(linkObject),
         );
       },
     );
-    for (let value7 of items8 as Dynamic)
+    for (let linkNode of linkNodes as Dynamic)
       entries.set(
-        value7.obj,
-        callback3(
+        linkNode.obj,
+        formatStructureElement(
           "Link",
-          value7.parent,
-          options,
-          callback4([...value7.kids, ...(entries6.get(value7.obj) ?? [])]),
+          linkNode.parent,
+          pageIndex,
+          formatChildren([...linkNode.kids, ...(annotationObjects.get(linkNode.obj) ?? [])]),
         ),
       );
     entries.set(
-      value6,
-      items6.length === 0
+      pageParentObject,
+      pageChildren.length === 0
         ? "<< /Type /StructElem /S /Sect /P " +
-            callback2(value5) +
+            formatObjectReference(catalogObject) +
             " /Pg " +
-            callback2(argument3(options)) +
+            formatObjectReference(pageObjectFor(pageIndex)) +
             " >>"
-        : callback3(
+        : formatStructureElement(
             "Sect",
-            value5,
-            options,
-            "[" + items6.map(callback2).join(" ") + "]",
+            catalogObject,
+            pageIndex,
+            "[" + pageChildren.map(formatObjectReference).join(" ") + "]",
           ),
     );
-    items3.push(
-      String(options) + " [" + items7.map(callback2).join(" ") + "]",
+    numberTreeEntries.push(
+      String(pageIndex) + " [" + mcidObjects.map(formatObjectReference).join(" ") + "]",
     );
   });
-  let items5: Dynamic = [];
-  items5[value3 - input] =
+  let objectArray: Dynamic = [];
+  objectArray[rootObject - firstObjectNumber] =
     "<< /Type /StructTreeRoot /K " +
-    callback2(value5) +
+    formatObjectReference(catalogObject) +
     " /ParentTree " +
-    callback2(value4) +
+    formatObjectReference(parentTreeObject) +
     " /ParentTreeNextKey " +
-    String(items.length + items4.length) +
+    String(items.length + objectReferences.length) +
     " >>";
-  items5[value4 - input] =
-    "<< /Nums [" + [...items3, ...items4].join(" ") + "] >>";
-  items5[value5 - input] =
+  objectArray[parentTreeObject - firstObjectNumber] =
+    "<< /Nums [" + [...numberTreeEntries, ...objectReferences].join(" ") + "] >>";
+  objectArray[catalogObject - firstObjectNumber] =
     "<< /Type /StructElem /S /Document /P " +
-    callback2(value3) +
+    formatObjectReference(rootObject) +
     " /K [" +
-    items2.map(callback2).join(" ") +
+    pageParents.map(formatObjectReference).join(" ") +
     "] >>";
-  for (let [value6, value7] of entries as Dynamic)
-    items5[value6 - input] = value7;
+  for (let [objectNumber, objectValue] of entries as Dynamic)
+    objectArray[objectNumber - firstObjectNumber] = objectValue;
   return {
-    rootObj: value3,
-    nextObj: value2,
-    bodies: items5,
+    rootObj: rootObject,
+    nextObj: nextObjectNumber,
+    bodies: objectArray,
   };
 }
 export {

@@ -2,192 +2,192 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { formatPdfNumber, PdfDocumentLimit_2, PdfDocumentResolvedValue } from "./document";
+import { formatPdfNumber, PdfDocumentLimit_2 as maxPdfDimensionPt, PdfDocumentResolvedValue as maxTextExtentPt } from "./document";
 import { needsInterwordSpace } from "./link-annotations";
 
 var PdfTextOperatorsLimit: Dynamic;
 var PdfTextOperatorsFreezeValue: Dynamic;
-var PdfTextOperatorsFreezeValue_2: Dynamic;
-var PdfTextOperatorsFreezeValue_3: Dynamic;
+var allowedStructureRoles: Dynamic;
+var allowedListStyles: Dynamic;
 var PdfTextOperatorsSubscribers: Dynamic;
-var PdfTextOperatorsSubscribers_2: Dynamic;
-var PdfTextOperatorsLimit_2: Dynamic;
+var allowedListStyleSet: Dynamic;
+var maxListItemIndex: Dynamic;
 var getTableCellStructureRole: Dynamic;
 function buildPdfTextRuns(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
-  argument?: Dynamic,
+  textRuns?: Dynamic,
+  pageIndex?: Dynamic,
+  pageWidth?: Dynamic,
+  pageHeight?: Dynamic,
+  encodeText?: Dynamic,
+  blocks?: Dynamic,
+  hasStructure?: Dynamic,
 ): Dynamic {
   let index: Dynamic = 0,
     items: Dynamic = [],
     flag: Dynamic = false;
-  input.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-    let value2: Dynamic =
-        flag && input2.spaceBefore !== undefined
+  textRuns.forEach((textRun?: Dynamic, runIndex?: Dynamic): Dynamic => {
+    let normalizedRun: Dynamic =
+        flag && textRun.spaceBefore !== undefined
           ? {
-              ...input2,
+              ...textRun,
               spaceBefore: undefined,
             }
-          : input2,
-      value3: Dynamic =
-        "page " + String(options + 1) + " text run " + String(options2 + 1);
+          : textRun,
+      runLabel: Dynamic =
+        "page " + String(pageIndex + 1) + " text run " + String(runIndex + 1);
     if (
-      typeof value2.text != "string" ||
-      !Number.isFinite(value2.xPt) ||
-      !Number.isFinite(value2.yPt) ||
-      !Number.isFinite(value2.sizePt) ||
-      !Number.isFinite(value2.widthPt) ||
-      value2.sizePt <= 0 ||
-      value2.widthPt < 0 ||
-      value2.sizePt > PdfDocumentLimit_2 ||
-      value2.widthPt > PdfDocumentResolvedValue ||
-      Math.abs(value2.xPt) > PdfDocumentResolvedValue ||
-      Math.abs(value2.yPt) > PdfDocumentResolvedValue
+      typeof normalizedRun.text != "string" ||
+      !Number.isFinite(normalizedRun.xPt) ||
+      !Number.isFinite(normalizedRun.yPt) ||
+      !Number.isFinite(normalizedRun.sizePt) ||
+      !Number.isFinite(normalizedRun.widthPt) ||
+      normalizedRun.sizePt <= 0 ||
+      normalizedRun.widthPt < 0 ||
+      normalizedRun.sizePt > maxPdfDimensionPt ||
+      normalizedRun.widthPt > maxTextExtentPt ||
+      Math.abs(normalizedRun.xPt) > maxTextExtentPt ||
+      Math.abs(normalizedRun.yPt) > maxTextExtentPt
     )
-      throw new Error(value3 + " is not a valid text run");
+      throw new Error(runLabel + " is not a valid text run");
     if (
-      argument &&
-      value2.block !== undefined &&
+      hasStructure &&
+      normalizedRun.block !== undefined &&
       !(
-        Number.isInteger(value2.block) &&
-        value2.block >= 0 &&
-        value2.block < (detail?.length ?? 0) &&
-        detail?.[value2.block] != null
+        Number.isInteger(normalizedRun.block) &&
+        normalizedRun.block >= 0 &&
+        normalizedRun.block < (blocks?.length ?? 0) &&
+        blocks?.[normalizedRun.block] != null
       )
     )
-      throw new Error(value3 + " names a block the page does not have");
+      throw new Error(runLabel + " names a block the page does not have");
     if (
-      argument &&
-      value2.block !== undefined &&
-      detail?.[value2.block]?.role === "Figure"
+      hasStructure &&
+      normalizedRun.block !== undefined &&
+      blocks?.[normalizedRun.block]?.role === "Figure"
     )
       throw new Error(
-        value3 +
+        runLabel +
           " points at block " +
-          String(value2.block + 1) +
+          String(normalizedRun.block + 1) +
           ", a figure, which can hold no text",
       );
     if (
-      argument &&
-      value2.spaceBefore !== undefined &&
-      typeof value2.spaceBefore != "boolean"
+      hasStructure &&
+      normalizedRun.spaceBefore !== undefined &&
+      typeof normalizedRun.spaceBefore != "boolean"
     )
       throw new Error(
-        value3 +
+        runLabel +
           " has a spaceBefore other than true or false (leave it out when unknown)",
       );
     if (
-      argument &&
-      value2.link !== undefined &&
-      !(Number.isInteger(value2.link) && value2.link >= 0)
+      hasStructure &&
+      normalizedRun.link !== undefined &&
+      !(Number.isInteger(normalizedRun.link) && normalizedRun.link >= 0)
     )
       throw new Error(
-        value3 +
+        runLabel +
           " has link " +
-          (typeof value2.link == "string"
-            ? JSON.stringify(value2.link)
-            : String(value2.link)
+          (typeof normalizedRun.link == "string"
+            ? JSON.stringify(normalizedRun.link)
+            : String(normalizedRun.link)
           ).slice(0, 20) +
           "; it must be a whole number, 0 or more",
       );
     if (
-      argument &&
-      value2.item !== undefined &&
+      hasStructure &&
+      normalizedRun.item !== undefined &&
       !(
-        Number.isInteger(value2.item) &&
-        value2.item >= 0 &&
-        value2.item < PdfTextOperatorsLimit_2
+        Number.isInteger(normalizedRun.item) &&
+        normalizedRun.item >= 0 &&
+        normalizedRun.item < maxListItemIndex
       )
     )
       throw new Error(
-        value3 + " names a list item that is not a whole number from 0",
+        runLabel + " names a list item that is not a whole number from 0",
       );
-    let value4: Dynamic =
-      argument &&
-      value2.block !== undefined &&
-      detail?.[value2.block]?.role === "Table"
-        ? detail[value2.block]
+    let tableBlock: Dynamic =
+      hasStructure &&
+      normalizedRun.block !== undefined &&
+      blocks?.[normalizedRun.block]?.role === "Table"
+        ? blocks[normalizedRun.block]
         : undefined;
     if (
-      value4 !== undefined &&
-      value2.cell !== undefined &&
+      tableBlock !== undefined &&
+      normalizedRun.cell !== undefined &&
       !(
-        Number.isInteger(value2.cell) &&
-        value2.cell >= 0 &&
-        value2.cell < value4.rows * value4.cols
+        Number.isInteger(normalizedRun.cell) &&
+        normalizedRun.cell >= 0 &&
+        normalizedRun.cell < tableBlock.rows * tableBlock.cols
       )
     )
       throw new Error(
-        value3 +
+        runLabel +
           " names table cell " +
-          String(value2.cell).slice(0, 20) +
+          String(normalizedRun.cell).slice(0, 20) +
           ", but block " +
-          String(value2.block + 1) +
+          String(normalizedRun.block + 1) +
           " is a " +
-          String(value4.rows) +
+          String(tableBlock.rows) +
           " \xD7 " +
-          String(value4.cols) +
+          String(tableBlock.cols) +
           " table whose cells are numbered 0 to " +
-          String(value4.rows * value4.cols - 1),
+          String(tableBlock.rows * tableBlock.cols - 1),
       );
-    index += value2.text.length;
+    index += normalizedRun.text.length;
     if (index > PdfTextOperatorsLimit)
       throw new Error(
         "page " +
-          String(options + 1) +
+          String(pageIndex + 1) +
           " has an implausibly large text layer",
       );
     if (
-      value2.xPt > context ||
-      value2.yPt < 0 ||
-      value2.yPt > value ||
-      value2.xPt + value2.widthPt < 0
+      normalizedRun.xPt > pageWidth ||
+      normalizedRun.yPt < 0 ||
+      normalizedRun.yPt > pageHeight ||
+      normalizedRun.xPt + normalizedRun.widthPt < 0
     ) {
       flag = true;
       return;
     }
-    let value5: Dynamic =
-      value2.sizePt < 0.005 ? undefined : extra(value2.text);
-    if (value5 === undefined) {
+    let encodedText: Dynamic =
+      normalizedRun.sizePt < 0.005 ? undefined : encodeText(normalizedRun.text);
+    if (encodedText === undefined) {
       flag = true;
       return;
     }
     flag = false;
-    let value6: Dynamic = detail?.[value2.block ?? -1]?.role;
+    let blockRole: Dynamic = blocks?.[normalizedRun.block ?? -1]?.role;
     items.push({
-      run: value2,
-      encoded: value5,
-      block: value2.block,
+      run: normalizedRun,
+      encoded: encodedText,
+      block: normalizedRun.block,
       item:
-        value6 === "L"
-          ? (value2.item ?? 0)
-          : value6 === "Table"
-            ? (value2.cell ?? 0)
+        blockRole === "L"
+          ? (normalizedRun.item ?? 0)
+          : blockRole === "Table"
+            ? (normalizedRun.cell ?? 0)
             : undefined,
-      link: argument && value6 !== "Artifact" ? value2.link : undefined,
+      link: hasStructure && blockRole !== "Artifact" ? normalizedRun.link : undefined,
     });
   });
   return items;
 }
-function textRunsNeedSpace(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options.spaceBefore !== undefined
-    ? options.spaceBefore &&
-        needsInterwordSpace(input.text, options.text, true)
-    : Math.abs(options.yPt - input.yPt) >=
-        0.5 * Math.max(input.sizePt, options.sizePt) &&
-        needsInterwordSpace(input.text, options.text, false);
+function textRunsNeedSpace(previousRun?: Dynamic, nextRun?: Dynamic): Dynamic {
+  return nextRun.spaceBefore !== undefined
+    ? nextRun.spaceBefore &&
+        needsInterwordSpace(previousRun.text, nextRun.text, true)
+    : Math.abs(nextRun.yPt - previousRun.yPt) >=
+        0.5 * Math.max(previousRun.sizePt, nextRun.sizePt) &&
+        needsInterwordSpace(previousRun.text, nextRun.text, false);
 }
 function buildPdfTextOperators(
   items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  structureParents?: Dynamic,
+  includeMarks?: Dynamic,
+  blockRoles?: Dynamic,
+  tableBlocks?: Dynamic,
+  knownLinks?: Dynamic,
 ): Dynamic {
   if (items.length === 0)
     return {
@@ -195,109 +195,109 @@ function buildPdfTextOperators(
       marks: [],
     };
   items = items.map(
-    (input?: Dynamic): Dynamic =>
-      input.link === undefined || detail.has(input.link)
-        ? input
+    (textRun?: Dynamic): Dynamic =>
+      textRun.link === undefined || knownLinks.has(textRun.link)
+        ? textRun
         : {
-            ...input,
+            ...textRun,
             link: undefined,
           },
   );
-  let items2: Dynamic = [],
-    value2: Dynamic = `BT
+  let markedContent: Dynamic = [],
+    operators: Dynamic = `BT
 3 Tr
 `,
-    callback: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic =>
-      options2 !== undefined &&
-      input.block !== undefined &&
-      options2.block === input.block &&
-      options2.item === input.item,
-    callback2: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic =>
-      callback(input, options2) && options2.link === input.link;
-  items.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
+    callback: Dynamic = (leftRun?: Dynamic, rightRun?: Dynamic): Dynamic =>
+      rightRun !== undefined &&
+      leftRun.block !== undefined &&
+      rightRun.block === leftRun.block &&
+      rightRun.item === leftRun.item,
+    areAdjacentRuns: Dynamic = (leftRun?: Dynamic, rightRun?: Dynamic): Dynamic =>
+      callback(leftRun, rightRun) && rightRun.link === leftRun.link;
+  items.forEach((item?: Dynamic, index?: Dynamic): Dynamic => {
     let {
-        run: value3,
-        encoded: value4,
-        block: value5,
-        item: value6,
-        link: value7,
-      }: Dynamic = input,
-      value8: Dynamic = items[options2 + 1];
-    if (context && !(options2 > 0 && callback2(items[options2 - 1], input))) {
-      options2 > 0 &&
-        (value2 += `EMC
+        run: run,
+        encoded: encoded,
+        block: blockIndex,
+        item: itemIndex,
+        link: linkIndex,
+      }: Dynamic = item,
+      nextItem: Dynamic = items[index + 1];
+    if (includeMarks && !(index > 0 && areAdjacentRuns(items[index - 1], item))) {
+      index > 0 &&
+        (operators += `EMC
 `);
-      let value12: Dynamic = value5 === undefined ? "P" : value[value5],
-        value13: Dynamic =
-          value12 === "L"
+      let structureRole: Dynamic = blockIndex === undefined ? "P" : blockRoles[blockIndex],
+        markedRole: Dynamic =
+          structureRole === "L"
             ? "LBody"
-            : value12 === "Table"
-              ? getTableCellStructureRole(extra[value5], value6 ?? 0)
-              : value12;
-      value13 === "Artifact"
-        ? (value2 += `/Artifact BMC
+            : structureRole === "Table"
+              ? getTableCellStructureRole(tableBlocks[blockIndex], itemIndex ?? 0)
+              : structureRole;
+      markedRole === "Artifact"
+        ? (operators += `/Artifact BMC
 `)
-        : ((value2 +=
+        : ((operators +=
             "/" +
-            (value7 !== undefined ? "Link" : value13) +
+            (linkIndex !== undefined ? "Link" : markedRole) +
             " << /MCID " +
-            String(items2.length) +
+            String(markedContent.length) +
             ` >> BDC
 `),
-          items2.push({
-            mcid: items2.length,
-            block: value5,
-            item: value6,
-            link: value7,
+          markedContent.push({
+            mcid: markedContent.length,
+            block: blockIndex,
+            item: itemIndex,
+            link: linkIndex,
           }));
     }
-    let value9: Dynamic =
-        context &&
-        callback(input, value8) &&
-        value4.reordered !== true &&
-        textRunsNeedSpace(value3, value8.run)
-          ? options
+    let spacingRun: Dynamic =
+        includeMarks &&
+        callback(item, nextItem) &&
+        encoded.reordered !== true &&
+        textRunsNeedSpace(run, nextItem.run)
+          ? structureParents
           : undefined,
-      value10: Dynamic = value4.em * value3.sizePt,
-      value11: Dynamic = value10 > 0 ? (100 * value3.widthPt) / value10 : 100;
-    value11 = Math.max(10, Math.min(1e3, value11));
-    value2 +=
+      textWidth: Dynamic = encoded.em * run.sizePt,
+      horizontalScale: Dynamic = textWidth > 0 ? (100 * run.widthPt) / textWidth : 100;
+    horizontalScale = Math.max(10, Math.min(1e3, horizontalScale));
+    operators +=
       "/F0 " +
-      formatPdfNumber(value3.sizePt) +
+      formatPdfNumber(run.sizePt) +
       ` Tf
 ` +
-      formatPdfNumber(value11) +
+      formatPdfNumber(horizontalScale) +
       ` Tz
 1 0 0 1 ` +
-      formatPdfNumber(value3.xPt) +
+      formatPdfNumber(run.xPt) +
       " " +
-      formatPdfNumber(value3.yPt) +
+      formatPdfNumber(run.yPt) +
       ` Tm
 `;
-    value2 +=
-      value9 === undefined
-        ? value4.operand +
+    operators +=
+      spacingRun === undefined
+        ? encoded.operand +
           ` Tj
 `
         : "[" +
-          value4.operand +
+          encoded.operand +
           " " +
-          formatPdfNumber(value9.em * 1e3) +
+          formatPdfNumber(spacingRun.em * 1e3) +
           " " +
-          value9.operand +
+          spacingRun.operand +
           `] TJ
 `;
   });
   return {
     ops:
-      value2 +
-      (context
+      operators +
+      (includeMarks
         ? `EMC
 `
         : "") +
       `ET
 `,
-    marks: items2,
+    marks: markedContent,
   };
 }
 export {
@@ -305,12 +305,12 @@ export {
   buildPdfTextRuns,
   getTableCellStructureRole,
   PdfTextOperatorsFreezeValue,
-  PdfTextOperatorsFreezeValue_2,
-  PdfTextOperatorsFreezeValue_3,
+  allowedStructureRoles as PdfTextOperatorsFreezeValue_2,
+  allowedListStyles as PdfTextOperatorsFreezeValue_3,
   PdfTextOperatorsLimit,
-  PdfTextOperatorsLimit_2,
+  maxListItemIndex as PdfTextOperatorsLimit_2,
   PdfTextOperatorsSubscribers,
-  PdfTextOperatorsSubscribers_2,
+  allowedListStyleSet as PdfTextOperatorsSubscribers_2,
   textRunsNeedSpace,
 };
 export function installExportPdfTextOperators(): () => void {
@@ -329,7 +329,7 @@ export function installExportPdfTextOperators(): () => void {
       "Figure",
       "Artifact",
     ]);
-    PdfTextOperatorsFreezeValue_2 = Object.freeze([
+    allowedStructureRoles = Object.freeze([
       "P",
       "H1",
       "H2",
@@ -340,7 +340,7 @@ export function installExportPdfTextOperators(): () => void {
       "L",
       "Artifact",
     ]);
-    PdfTextOperatorsFreezeValue_3 = Object.freeze([
+    allowedListStyles = Object.freeze([
       "None",
       "Disc",
       "Circle",
@@ -352,12 +352,12 @@ export function installExportPdfTextOperators(): () => void {
       "LowerAlpha",
     ]);
     PdfTextOperatorsSubscribers = new Set(PdfTextOperatorsFreezeValue);
-    PdfTextOperatorsSubscribers_2 = new Set(PdfTextOperatorsFreezeValue_3);
-    PdfTextOperatorsLimit_2 = 1e4;
+    allowedListStyleSet = new Set(allowedListStyles);
+    maxListItemIndex = 1e4;
     getTableCellStructureRole = (
-      input?: Dynamic,
-      options?: Dynamic,
+      cell?: Dynamic,
+      rowIndex?: Dynamic,
     ): Dynamic =>
-      options < (input.headerRows ?? 0) * input.cols ? "TH" : "TD";
+      rowIndex < (cell.headerRows ?? 0) * cell.cols ? "TH" : "TD";
   };
 }
