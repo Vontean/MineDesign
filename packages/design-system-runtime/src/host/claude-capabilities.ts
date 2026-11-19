@@ -21,14 +21,14 @@ async function loadClaudeCapability(name: string): Promise<unknown> {
   if (typeof value?.use !== "function") {
     return null;
   }
-  let value2 = await value.use.call(value, name);
+  let capabilityResult = await value.use.call(value, name);
   if (
-    (value2 as { available?: unknown } | null | undefined)?.available ===
+    (capabilityResult as { available?: unknown } | null | undefined)?.available ===
     false
   ) {
     return null;
   } else {
-    return value2;
+    return capabilityResult;
   }
 }
 async function getOrLoadClaudeCapability<Capability>(
@@ -50,11 +50,11 @@ async function loadClaudeCapabilityWithTimeout<Capability>(
   let value: ReturnType<typeof setTimeout> | undefined;
   try {
     let promise = new Promise<null>(
-        (input) => (value = setTimeout(input, timeoutMs, null)),
+        (resolveTimeout) => (value = setTimeout(resolveTimeout, timeoutMs, null)),
       ),
-      value2 = await Promise.race([loadClaudeCapability(name), promise]);
-    if (validate(value2)) {
-      return value2;
+      timedResult = await Promise.race([loadClaudeCapability(name), promise]);
+    if (validate(timedResult)) {
+      return timedResult;
     } else {
       return null;
     }
@@ -70,11 +70,11 @@ function capabilityHasMethod<Method extends string>(
   input: unknown,
 ) => input is Record<Method, (...args: unknown[]) => unknown> {
   return (
-    input: unknown,
-  ): input is Record<Method, (...args: unknown[]) => unknown> =>
-    (typeof input === "object" || typeof input === "function") &&
-    input !== null &&
-    typeof (input as Record<string, unknown>)[methodName] === "function";
+    candidate: unknown,
+  ): candidate is Record<Method, (...args: unknown[]) => unknown> =>
+    (typeof candidate === "object" || typeof candidate === "function") &&
+    candidate !== null &&
+    typeof (candidate as Record<string, unknown>)[methodName] === "function";
 }
 export {
   capabilityHasMethod,

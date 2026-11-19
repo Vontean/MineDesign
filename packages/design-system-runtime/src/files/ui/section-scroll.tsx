@@ -31,7 +31,7 @@ function sectionAtScrollPosition(
   let wantedSection =
       wanted === null
         ? undefined
-        : sections.find((input) => input.id === wanted),
+        : sections.find((section) => section.id === wanted),
     wantedVisible =
       wantedSection !== undefined &&
       wantedSection.top >= viewport.top - 1 &&
@@ -91,7 +91,7 @@ function useSectionScroller(
       null,
     ),
     attach = reactSectionScroller.useCallback(
-      (input: HTMLElement | null) => setPort(input),
+      (element: HTMLElement | null) => setPort(element),
       [],
     ),
     [current, setCurrent] = reactSectionScroller.useState(initialSection),
@@ -141,78 +141,78 @@ function useSectionScroller(
             port.clientHeight * SECTION_SCROLL_VIEWPORT_LEAD_RATIO,
           ),
         items: SectionPosition[] = [];
-      for (let value7 of sectionIdsRef.current) {
-        let value8 = sectionRefs.current[value7];
-        if (value8 !== null && value8 !== undefined) {
+      for (let sectionId of sectionIdsRef.current) {
+        let sectionElement = sectionRefs.current[sectionId];
+        if (sectionElement !== null && sectionElement !== undefined) {
           items.push({
-            id: value7,
-            top: value8.getBoundingClientRect().top,
+            id: sectionId,
+            top: sectionElement.getBoundingClientRect().top,
           });
         }
       }
-      let value2: ScrollEdge =
+      let scrollEdge: ScrollEdge =
           port.scrollTop <= 1
             ? "top"
             : port.scrollTop + port.clientHeight >= port.scrollHeight - 2
               ? "bottom"
               : null,
-        value3 = sectionAtScrollPosition(
+        visibleSectionId = sectionAtScrollPosition(
           items,
           value,
-          value2,
+          scrollEdge,
           targetRef.current,
           bounds,
         ),
-        current2 = markedRef.current,
-        value4 =
-          current2 === null || !sectionIdsRef.current.includes(current2)
+        markedSectionId = markedRef.current,
+        sectionBounds =
+          markedSectionId === null || !sectionIdsRef.current.includes(markedSectionId)
             ? undefined
-            : sectionRefs.current[current2]?.getBoundingClientRect(),
-        value5 =
+            : sectionRefs.current[markedSectionId]?.getBoundingClientRect(),
+        outsideViewport =
           Date.now() >= markedUntilRef.current &&
-          value4 !== undefined &&
-          (value4.bottom <= bounds.top ||
-            value4.top >= bounds.bottom ||
-            value3 === current2);
-      if (current2 !== null && (value4 === undefined || value5)) {
+          sectionBounds !== undefined &&
+          (sectionBounds.bottom <= bounds.top ||
+            sectionBounds.top >= bounds.bottom ||
+            visibleSectionId === markedSectionId);
+      if (markedSectionId !== null && (sectionBounds === undefined || outsideViewport)) {
         markedRef.current = null;
       }
-      let value6 =
+      let nextSectionId =
         Date.now() < holdUntilRef.current && targetRef.current !== null
           ? targetRef.current
-          : (markedRef.current ?? value3);
-      if (value6 !== null && value6 !== currentRef.current) {
-        currentRef.current = value6;
+          : (markedRef.current ?? visibleSectionId);
+      if (nextSectionId !== null && nextSectionId !== currentRef.current) {
+        currentRef.current = nextSectionId;
         setMoved(true);
-        setCurrent(value6);
+        setCurrent(nextSectionId);
       }
     }, [port, sectionRefs]),
     scrollToTarget = reactSectionScroller.useCallback(() => {
-      let current2 = targetRef.current,
-        value = current2 === null ? null : sectionRefs.current[current2];
+      let targetSectionId = targetRef.current,
+        value = targetSectionId === null ? null : sectionRefs.current[targetSectionId];
       if (port === null || value === null || value === undefined) {
         return false;
       }
       let bounds = port.getBoundingClientRect(),
-        value2 = headerBottomRef.current(),
-        value3 =
-          value2 !== undefined ? Math.max(0, value2 - bounds.top + 8) : 0,
-        value4 = Math.max(0, port.scrollHeight - port.clientHeight),
-        value5 = Math.min(
-          value4,
+        headerOffset = headerBottomRef.current(),
+        scrollTop =
+          headerOffset !== undefined ? Math.max(0, headerOffset - bounds.top + 8) : 0,
+        maxScrollTop = Math.max(0, port.scrollHeight - port.clientHeight),
+        targetScrollTop = Math.min(
+          maxScrollTop,
           Math.max(
             0,
             port.scrollTop +
               value.getBoundingClientRect().top -
               bounds.top -
-              value3,
+              scrollTop,
           ),
         );
-      if (Math.abs(value5 - port.scrollTop) < 1) {
+      if (Math.abs(targetScrollTop - port.scrollTop) < 1) {
         return false;
       }
       port.scrollTo({
-        top: value5,
+        top: targetScrollTop,
         behavior: "instant",
       });
       return true;
@@ -248,7 +248,7 @@ function useSectionScroller(
     port.addEventListener("scroll", callback, {
       passive: true,
     });
-    let callback2 = () => {
+    let updateScrollState = () => {
       clearTarget();
       if (markedRef.current === null) {
         return;
@@ -256,12 +256,12 @@ function useSectionScroller(
       markedUntilRef.current = 0;
       callback();
     };
-    for (let value3 of ["wheel", "touchstart", "pointerdown"]) {
-      port.addEventListener(value3, callback2, {
+    for (let eventType of ["wheel", "touchstart", "pointerdown"]) {
+      port.addEventListener(eventType, updateScrollState, {
         passive: true,
       });
     }
-    port.addEventListener("keydown", callback2);
+    port.addEventListener("keydown", updateScrollState);
     let value =
       typeof ResizeObserver === "function"
         ? new ResizeObserver(() => {
@@ -272,42 +272,42 @@ function useSectionScroller(
           })
         : null;
     if (value !== null) {
-      for (let value3 of Array.from(port.children)) {
-        value.observe(value3);
+      for (let child of Array.from(port.children)) {
+        value.observe(child);
       }
     }
-    let value2 =
+    let resizeObserver =
       typeof MutationObserver === "function" && value !== null
-        ? new MutationObserver((input) => {
-            for (let value3 of input) {
-              value3.addedNodes.forEach((input2) => {
-                if (input2 instanceof Element) {
-                  value.observe(input2);
+        ? new MutationObserver((mutations) => {
+            for (let mutation of mutations) {
+              mutation.addedNodes.forEach((addedNode) => {
+                if (addedNode instanceof Element) {
+                  value.observe(addedNode);
                 }
               });
-              value3.removedNodes.forEach((input2) => {
-                if (input2 instanceof Element) {
-                  value.unobserve(input2);
+              mutation.removedNodes.forEach((removedNode) => {
+                if (removedNode instanceof Element) {
+                  value.unobserve(removedNode);
                 }
               });
             }
           })
         : null;
-    value2?.observe(port, {
+    resizeObserver?.observe(port, {
       childList: true,
     });
     measureCurrent();
     return () => {
       port.removeEventListener("scroll", callback);
-      for (let value3 of ["wheel", "touchstart", "pointerdown"]) {
-        port.removeEventListener(value3, callback2);
+      for (let eventType of ["wheel", "touchstart", "pointerdown"]) {
+        port.removeEventListener(eventType, updateScrollState);
       }
-      port.removeEventListener("keydown", callback2);
+      port.removeEventListener("keydown", updateScrollState);
       if (index !== 0) {
         cancelAnimationFrame(index);
       }
       value?.disconnect();
-      value2?.disconnect();
+      resizeObserver?.disconnect();
     };
   }, [port, measureCurrent, scrollToTarget, clearTarget]);
   reactSectionScroller.useEffect(measureCurrent, [
@@ -315,31 +315,31 @@ function useSectionScroller(
     sectionIds,
   ]);
   let wantThrough = reactSectionScroller.useCallback(
-      (input: string) =>
-        setWanted((input2) => {
+      (requestedSectionId: string) =>
+        setWanted((wantedSections) => {
           let value = sectionsThroughTarget(
             sectionIdsRef.current,
-            input,
-          ).filter((input3) => !input2.has(input3));
+            requestedSectionId,
+          ).filter((sectionId) => !wantedSections.has(sectionId));
           if (value.length === 0) {
-            return input2;
+            return wantedSections;
           } else {
-            return new Set([...input2, ...value]);
+            return new Set([...wantedSections, ...value]);
           }
         }),
       [],
     ),
     want = reactSectionScroller.useCallback(
-      (input: string) => {
+      (sectionId: string) => {
         markedRef.current = null;
-        wantThrough(input);
+        wantThrough(sectionId);
       },
       [wantThrough],
     ),
     mark = reactSectionScroller.useCallback(
-      (input: string) => {
+      (sectionId: string) => {
         clearTarget();
-        markedRef.current = input;
+        markedRef.current = sectionId;
         markedUntilRef.current = Date.now() + SECTION_SCROLL_ANCHOR_HOLD_MS;
         window.clearTimeout(markedTimerRef.current);
         markedTimerRef.current = window.setTimeout(() => {
@@ -347,23 +347,23 @@ function useSectionScroller(
             measureCurrent();
           }
         }, SECTION_SCROLL_ANCHOR_HOLD_MS + 20);
-        currentRef.current = input;
+        currentRef.current = sectionId;
         setMoved(true);
-        setCurrent(input);
-        wantThrough(input);
+        setCurrent(sectionId);
+        wantThrough(sectionId);
       },
       [clearTarget, wantThrough, measureCurrent],
     ),
     jump = reactSectionScroller.useCallback(
-      (input: string) => {
+      (sectionId: string) => {
         markedRef.current = null;
-        targetRef.current = input;
+        targetRef.current = sectionId;
         holdUntilRef.current = Date.now() + SECTION_SCROLL_ANCHOR_HOLD_MS;
         focusPending.current = true;
-        currentRef.current = input;
+        currentRef.current = sectionId;
         setMoved(true);
-        setCurrent(input);
-        wantThrough(input);
+        setCurrent(sectionId);
+        wantThrough(sectionId);
         scrollToTarget();
         focusTarget();
       },
@@ -401,25 +401,25 @@ function LazySection({
   children: children,
 }: LazySectionProps) {
   useUiLocale();
-  let [value, value2] = reactSectionScroller.useState(false),
-    value3 = eager || value,
+  let [value, isLoaded] = reactSectionScroller.useState(false),
+    shouldRender = eager || value,
     ref = reactSectionScroller.useRef<HTMLDivElement | null>(null);
   reactSectionScroller.useEffect(() => {
-    if (value3) {
+    if (shouldRender) {
       return;
     }
     if (typeof IntersectionObserver !== "function") {
-      value2(true);
+      isLoaded(true);
       return;
     }
     let current = ref.current;
     if (current === null) {
       return;
     }
-    let value4 = new IntersectionObserver(
-      (input) => {
-        if (input.some((input2) => input2.isIntersecting)) {
-          value2(true);
+    let intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          isLoaded(true);
         }
       },
       {
@@ -427,15 +427,15 @@ function LazySection({
         rootMargin: "1500px 0px",
       },
     );
-    value4.observe(current);
-    return () => value4.disconnect();
-  }, [value3, root]);
+    intersectionObserver.observe(current);
+    return () => intersectionObserver.disconnect();
+  }, [shouldRender, root]);
   reactSectionScroller.useEffect(() => {
-    if (value3 && !value) {
-      value2(true);
+    if (shouldRender && !value) {
+      isLoaded(true);
     }
-  }, [value3, value]);
-  if (value3) {
+  }, [shouldRender, value]);
+  if (shouldRender) {
     return <jsxLazySection.Fragment>{children()}</jsxLazySection.Fragment>;
   } else {
     return (

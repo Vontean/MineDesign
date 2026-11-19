@@ -27,11 +27,11 @@ var RECLAIM_RECONNECTING_MESSAGE: string;
 var RECLAIM_WINDOWED_COLLECTION_MESSAGE: string;
 function assetCapabilityRuntime(): Storage.AssetSdk | undefined {
   // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
-  let runtime2 = globalThis as typeof globalThis & {
+  let globalRuntime = globalThis as typeof globalThis & {
     designSystemHost?: Storage.AssetSdk;
     window?: Window & { designSystemHost?: Storage.AssetSdk };
   };
-  return runtime2.designSystemHost ?? runtime2.window?.designSystemHost;
+  return globalRuntime.designSystemHost ?? globalRuntime.window?.designSystemHost;
 }
 function eagerAssetsCapability(): Storage.AssetsCapability | null {
   let assets = assetCapabilityRuntime()?.assets;
@@ -48,10 +48,10 @@ function eagerAssetsCapability(): Storage.AssetsCapability | null {
 function assetCapabilityRequester():
   | ((name: string) => Promise<unknown>)
   | null {
-  let runtime2 = assetCapabilityRuntime(),
-    use = runtime2?.use;
+  let capabilityRuntime = assetCapabilityRuntime(),
+    use = capabilityRuntime?.use;
   if (typeof use === "function") {
-    return (input: string) => Promise.resolve(use.call(runtime2, input));
+    return (methodName: string) => Promise.resolve(use.call(capabilityRuntime, methodName));
   } else {
     return null;
   }
@@ -69,13 +69,13 @@ function resolveAssetsCapability(): Promise<Storage.AssetsCapability | null> {
     return Promise.resolve(null);
   }
   assetsCapabilityPromise = use("assets").then(
-    (input: unknown) => {
+    (record: unknown) => {
       let value =
-        typeof input === "object" &&
-        input !== null &&
-        (input as Storage.DatabaseRecord).available !== false &&
-        typeof (input as Storage.DatabaseRecord).upload === "function"
-          ? (input as Storage.AssetsCapability)
+        typeof record === "object" &&
+        record !== null &&
+        (record as Storage.DatabaseRecord).available !== false &&
+        typeof (record as Storage.DatabaseRecord).upload === "function"
+          ? (record as Storage.AssetsCapability)
           : null;
       if (value === null) {
         setAssetsTierState("off", "absent");
@@ -169,19 +169,19 @@ function assetCatalogUsage(
   };
 }
 function nonnegativeIntegerOrFallback(
-  value: unknown,
+  candidate: unknown,
   fallback: number,
 ): number {
-  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
-    return Math.floor(value);
+  if (typeof candidate === "number" && Number.isFinite(candidate) && candidate >= 0) {
+    return Math.floor(candidate);
   } else {
     return fallback;
   }
 }
 function parseAssetsListResponse(
-  input: unknown,
+  payload: unknown,
 ): Storage.AssetsCatalogueState {
-  let response = input as Storage.DatabaseRecord | null;
+  let response = payload as Storage.DatabaseRecord | null;
   if (
     typeof response !== "object" ||
     response === null ||
@@ -197,20 +197,20 @@ function parseAssetsListResponse(
     if (typeof value !== "object" || value === null) {
       continue;
     }
-    let value2 = value as Storage.DatabaseRecord;
+    let assetRecord = value as Storage.DatabaseRecord;
     if (
-      typeof value2.id !== "string" ||
-      !BLOB_ID_PATTERN.test(value2.id)
+      typeof assetRecord.id !== "string" ||
+      !BLOB_ID_PATTERN.test(assetRecord.id)
     ) {
       continue;
     }
-    byId.set(value2.id, {
-      id: value2.id,
-      url: typeof value2.url === "string" ? value2.url : "_blob/" + value2.id,
+    byId.set(assetRecord.id, {
+      id: assetRecord.id,
+      url: typeof assetRecord.url === "string" ? assetRecord.url : "_blob/" + assetRecord.id,
       contentType:
-        typeof value2.contentType === "string" ? value2.contentType : "",
-      sizeBytes: nonnegativeIntegerOrFallback(value2.sizeBytes, 0),
-      createdAt: typeof value2.createdAt === "string" ? value2.createdAt : "",
+        typeof assetRecord.contentType === "string" ? assetRecord.contentType : "",
+      sizeBytes: nonnegativeIntegerOrFallback(assetRecord.sizeBytes, 0),
+      createdAt: typeof assetRecord.createdAt === "string" ? assetRecord.createdAt : "",
     });
   }
   let usage =
@@ -255,21 +255,21 @@ async function refreshAssetsCatalog(
   try {
     assetsCatalogState = parseAssetsListResponse(await assets.list());
   } catch (value: unknown) {
-    let value2 = assetErrorCode(value);
+    let errorCode = assetErrorCode(value);
     if (
-      value2 === "not_granted" ||
-      value2 === "capability_disabled" ||
-      value2 === "capability_removed"
+      errorCode === "not_granted" ||
+      errorCode === "capability_disabled" ||
+      errorCode === "capability_removed"
     ) {
       assetDeletionUnavailable = true;
     }
     if (
       assetsCatalogState.state !== "listed" ||
-      (value2 !== "rate_limited" && value2 !== "store_unavailable")
+      (errorCode !== "rate_limited" && errorCode !== "store_unavailable")
     ) {
       assetsCatalogState = {
         state: "unavailable",
-        code: value2,
+        code: errorCode,
       };
     }
   }
@@ -307,15 +307,15 @@ function removeCatalogAssets(ids: ReadonlySet<string>): void {
 function blobIdsInFileText(files: Model.FileTable): Set<string> {
   let ids = new Set<string>();
   for (let value of Object.keys(files)) {
-    for (let value2 of files[value].matchAll(
+    for (let match of files[value].matchAll(
       /(?:_blob\\?\/|read(?:_asset)?[\s\u0060]+)([A-Za-z0-9_-]{8,})/g,
     )) {
       for (
-        let count: number = 8, value3 = value2[1];
-        count <= Math.min(value3.length, 64);
+        let count: number = 8, encodedIds = match[1];
+        count <= Math.min(encodedIds.length, 64);
         count++
       ) {
-        ids.add(value3.slice(0, count));
+        ids.add(encodedIds.slice(0, count));
       }
     }
   }
@@ -332,13 +332,13 @@ function assessAssetReclamation(
       files,
       new Set(assetsCatalogState.byId.keys()),
     ),
-    orphanIds = new Set(getRecentOrphanedAssets().map((input) => input.id)),
+    orphanIds = new Set(getRecentOrphanedAssets().map((asset) => asset.id)),
     windowed = isSystemCollectionWindowed(),
     now: number = Date.now(),
-    isRecent = (input: string) => {
+    isRecent = (assetId: string) => {
       let value = Date.parse(
         assetsCatalogState.state === "listed"
-          ? (assetsCatalogState.byId.get(input)?.createdAt ?? "")
+          ? (assetsCatalogState.byId.get(assetId)?.createdAt ?? "")
           : "",
       );
       return (
@@ -348,10 +348,10 @@ function assessAssetReclamation(
     candidates = windowed
       ? []
       : comparison.unreferenced.filter(
-          (input) =>
-            !orphanIds.has(input) &&
-            !preservedIds.has(input) &&
-            !isRecent(input),
+          (assetId) =>
+            !orphanIds.has(assetId) &&
+            !preservedIds.has(assetId) &&
+            !isRecent(assetId),
         ),
     retainedIds =
       candidates.length > 0
@@ -361,29 +361,29 @@ function assessAssetReclamation(
           ])
         : new Set(),
     reclaimable = candidates
-      .filter((input): boolean => !retainedIds.has(input))
-      .map((input) => ({
-        id: input,
+      .filter((assetId): boolean => !retainedIds.has(assetId))
+      .map((assetId) => ({
+        id: assetId,
         bytes:
           assetsCatalogState.state === "listed"
-            ? (assetsCatalogState.byId.get(input)?.sizeBytes ?? 0)
+            ? (assetsCatalogState.byId.get(assetId)?.sizeBytes ?? 0)
             : 0,
       })),
-    missing = comparison.missing.filter((input) => {
-      let value = storagePointerForFile(input, files[input]);
+    missing = comparison.missing.filter((filePath) => {
+      let value = storagePointerForFile(filePath, files[filePath]);
       return (
         value === null || value.store !== "blob" || !orphanIds.has(value.id)
       );
     }),
     missingIds = new Set(
-      comparison.missingIds.filter((input): boolean => !orphanIds.has(input)),
+      comparison.missingIds.filter((assetId): boolean => !orphanIds.has(assetId)),
     );
   return {
     missing: missing,
     missingIds: missingIds,
     reclaimable: reclaimable,
     reclaimableBytes: reclaimable.reduce(
-      (input, options) => input + options.bytes,
+      (totalBytes, asset) => totalBytes + asset.bytes,
       0,
     ),
     windowed: windowed,
@@ -441,9 +441,9 @@ async function uploadAssetWithRetry(
   assets: Pick<Storage.AssetsCapability, "upload">,
   blob: Blob,
   mime: string,
-  options: Storage.AssetRetryOptions = {},
+  retryOptions: Storage.AssetRetryOptions = {},
 ): Promise<Storage.StoredAssetUploadResult> {
-  let sleep = options.sleep ?? waitAssetRetry,
+  let sleep = retryOptions.sleep ?? waitAssetRetry,
     retriedUnavailable: boolean = false,
     retriedRateLimit: boolean = false;
   for (;;) {
@@ -463,64 +463,64 @@ async function uploadAssetWithRetry(
           code: "upstream_error",
         };
       }
-      let value2 =
+      let remoteUrl =
           typeof value.url === "string" && value.url.startsWith("blob:")
             ? value.url
             : undefined,
-        value3 =
+        byteSize =
           typeof value.sizeBytes === "number" &&
           Number.isFinite(value.sizeBytes) &&
           value.sizeBytes > 0
             ? Math.floor(value.sizeBytes)
             : blob.size,
-        value4 =
+        contentType =
           typeof value.contentType === "string" && value.contentType !== ""
             ? value.contentType
             : mime;
       addCatalogAsset({
         id: value.id,
         url: typeof value.url === "string" ? value.url : "_blob/" + value.id,
-        contentType: value4,
-        sizeBytes: value3,
-        createdAt: (options.now ?? (() => new Date().toISOString()))(),
+        contentType: contentType,
+        sizeBytes: byteSize,
+        createdAt: (retryOptions.now ?? (() => new Date().toISOString()))(),
       });
       return {
         ok: true,
         id: value.id,
-        bytes: value3,
-        type: value4,
-        ...(value2 !== undefined
+        bytes: byteSize,
+        type: contentType,
+        ...(remoteUrl !== undefined
           ? {
-              url: value2,
+              url: remoteUrl,
             }
           : {}),
       };
     } catch (value: unknown) {
-      let value2 = assetErrorCode(value),
-        value3 = uploadFailureKind(value2);
-      if (value3 === "retry-once" && !retriedUnavailable) {
+      let failureCode = assetErrorCode(value),
+        failureKind = uploadFailureKind(failureCode);
+      if (failureKind === "retry-once" && !retriedUnavailable) {
         retriedUnavailable = true;
-        options.onWait?.(ASSET_STORE_RETRY_MS, "store_unavailable");
+        retryOptions.onWait?.(ASSET_STORE_RETRY_MS, "store_unavailable");
         await sleep(ASSET_STORE_RETRY_MS);
         continue;
       }
-      if (value3 === "backoff" && !retriedRateLimit) {
+      if (failureKind === "backoff" && !retriedRateLimit) {
         retriedRateLimit = true;
-        options.onWait?.(ASSET_RATE_LIMIT_RETRY_MS, "rate_limited");
+        retryOptions.onWait?.(ASSET_RATE_LIMIT_RETRY_MS, "rate_limited");
         await sleep(ASSET_RATE_LIMIT_RETRY_MS);
         continue;
       }
       return {
         ok: false,
-        kind: value3 === "retry-once" ? "error" : value3,
-        code: value2,
+        kind: failureKind === "retry-once" ? "error" : failureKind,
+        code: failureCode,
       };
     }
   }
 }
 function rememberOrphanedAsset(asset: Storage.OrphanedAsset): void {
   recentOrphanedAssets = [
-    ...recentOrphanedAssets.filter((input): boolean => input.id !== asset.id),
+    ...recentOrphanedAssets.filter((orphanedAsset): boolean => orphanedAsset.id !== asset.id),
     asset,
   ].slice(-2000);
 }
@@ -530,7 +530,7 @@ function getRecentOrphanedAssets(): readonly Storage.OrphanedAsset[] {
 async function deleteStoredAssets(
   assetsToDelete: readonly Storage.OrphanedAsset[],
   providedAssets?: Pick<Storage.AssetsCapability, "delete"> | null,
-  options: Storage.AssetRetryOptions = {},
+  retryOptions: Storage.AssetRetryOptions = {},
 ): Promise<Storage.AssetDeletionResult> {
   let result: Storage.AssetDeletionResult = {
       freed: new Map(),
@@ -550,7 +550,7 @@ async function deleteStoredAssets(
       unavailable: true,
     };
   }
-  let sleep = options.sleep ?? waitAssetRetry;
+  let sleep = retryOptions.sleep ?? waitAssetRetry;
   for (let value of assetsToDelete) {
     let flag: boolean = false;
     for (;;) {
@@ -558,21 +558,21 @@ async function deleteStoredAssets(
         await assets.delete(value.id);
         result.freed.set(value.id, value.bytes);
         break;
-      } catch (value2: unknown) {
-        let value3 = assetErrorCode(value2);
-        if (value3 === "store_unavailable" && !flag) {
+      } catch (error: unknown) {
+        let errorCode = assetErrorCode(error);
+        if (errorCode === "store_unavailable" && !flag) {
           flag = true;
           await sleep(ASSET_STORE_RETRY_MS);
           continue;
         }
         if (
-          value3 === "capability_removed" ||
-          value3 === "capability_disabled" ||
-          value3 === "not_granted"
+          errorCode === "capability_removed" ||
+          errorCode === "capability_disabled" ||
+          errorCode === "not_granted"
         ) {
           assetDeletionUnavailable = true;
           result.unavailable = true;
-        } else if (value3 === "rate_limited") {
+        } else if (errorCode === "rate_limited") {
           result.rateLimited = true;
         } else {
           result.kept.push(value.id);
@@ -588,10 +588,10 @@ async function deleteStoredAssets(
   return result;
 }
 async function publishedPageBlobIds(
-  options: Storage.PublishedAssetProbe = {},
+  probeOptions: Storage.PublishedAssetProbe = {},
 ): Promise<Set<string> | null> {
   let url =
-    options.url ??
+    probeOptions.url ??
     (typeof location !== "undefined" && /^https?:/.test(location.href)
       ? location.href.split("#")[0]
       : undefined);
@@ -599,10 +599,10 @@ async function publishedPageBlobIds(
     return null;
   }
   let html = await (
-    options.fetchText ??
-    (async (input: string): Promise<string | null> => {
+    probeOptions.fetchText ??
+    (async (publishedUrl: string): Promise<string | null> => {
       try {
-        let value = await fetch(input, {
+        let value = await fetch(publishedUrl, {
           cache: "no-store",
           credentials: "same-origin",
         });
@@ -634,12 +634,12 @@ async function publishedPageBlobIds(
       return null;
     }
     let state: Record<string, string> = {};
-    for (let [value2, value3] of Object.entries(value) as [
+    for (let [key, publishedValue] of Object.entries(value) as [
       string,
       unknown,
     ][]) {
-      if (typeof value3 === "string") {
-        state[value2] = value3;
+      if (typeof publishedValue === "string") {
+        state[key] = publishedValue;
       }
     }
     return new Set([
@@ -672,13 +672,13 @@ function excludePublishedAssets(
   if (publishedIds === null) {
     return [...assets];
   } else {
-    return assets.filter((input): boolean => !publishedIds.has(input.id));
+    return assets.filter((asset): boolean => !publishedIds.has(asset.id));
   }
 }
 async function sha256Hex(
-  input: Uint8Array<ArrayBuffer> | ArrayBuffer,
+  data: Uint8Array<ArrayBuffer> | ArrayBuffer,
 ): Promise<string> {
-  let bytes = input instanceof Uint8Array ? input : new Uint8Array(input),
+  let bytes = data instanceof Uint8Array ? data : new Uint8Array(data),
     digest = await crypto.subtle.digest("SHA-256", bytes),
     hex = "";
   for (let value of new Uint8Array(digest)) {
@@ -826,7 +826,7 @@ function reclaimAssetsResultMessage(
   );
 }
 function missingAssetsMessage(paths: readonly string[]): string {
-  let basenames = paths.map((input) => input.replace(/^.*\//, ""));
+  let basenames = paths.map((path) => path.replace(/^.*\//, ""));
   return (
     String(paths.length) +
     (paths.length === 1
@@ -910,8 +910,8 @@ export function installModelAssetStore(): () => void {
     ASSET_RECLAIM_GRACE_PERIOD_MS = 3600000;
     ASSET_RATE_LIMIT_RETRY_MS = 3000;
     ASSET_STORE_RETRY_MS = 1500;
-    waitAssetRetry = (input: number) =>
-      new Promise<void>((input2) => setTimeout(input2, input));
+    waitAssetRetry = (delayMs: number) =>
+      new Promise<void>((resolve) => setTimeout(resolve, delayMs));
     recentOrphanedAssets = [];
     INLINE_STORAGE_UNAVAILABLE_DESCRIPTION =
       BLOB_STORE_UNAVAILABLE_MESSAGE;

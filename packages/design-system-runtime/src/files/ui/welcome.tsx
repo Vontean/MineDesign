@@ -108,89 +108,89 @@ function WelcomeSheet({
 }: Preview.WelcomeSheetProps): React.ReactElement {
   useUiLocale();
   let ref = reactWelcome.useRef(false),
-    ref2 = reactWelcome.useRef<HTMLDivElement | null>(null);
+    optionsRef = reactWelcome.useRef<HTMLDivElement | null>(null);
   reactWelcome.useEffect(() => {
     if (panel === undefined && ref.current) {
-      ref2.current
+      optionsRef.current
         ?.querySelector<HTMLElement>('[data-testid="ds-welcome-upload"]')
         ?.focus();
     }
     ref.current = panel !== undefined;
   }, [panel]);
-  let ref3 = reactWelcome.useRef<HTMLDivElement | null>(null),
-    ref4 = reactWelcome.useRef<
+  let sheetRef = reactWelcome.useRef<HTMLDivElement | null>(null),
+    sheetPositionRef = reactWelcome.useRef<
       | {
           h: number;
           w: number;
         }
       | undefined
     >(undefined),
-    [value, value2] = reactWelcome.useState(false);
+    [value, setOptionsOpen] = reactWelcome.useState(false);
   reactWelcome.useLayoutEffect(() => {
-    if (panel === undefined && ref3.current !== null) {
-      ref4.current = {
-        h: ref3.current.offsetHeight,
-        w: ref3.current.offsetWidth,
+    if (panel === undefined && sheetRef.current !== null) {
+      sheetPositionRef.current = {
+        h: sheetRef.current.offsetHeight,
+        w: sheetRef.current.offsetWidth,
       };
     }
   });
-  let value3 = panel !== undefined;
+  let hasPanel = panel !== undefined;
   reactWelcome.useEffect(() => {
-    value2(false);
-    let current = ref3.current,
-      current2 = ref4.current;
+    setOptionsOpen(false);
+    let current = sheetRef.current,
+      previousPosition = sheetPositionRef.current;
     if (
-      !value3 ||
+      !hasPanel ||
       current === null ||
-      current2 === undefined ||
+      previousPosition === undefined ||
       typeof ResizeObserver === "undefined"
     ) {
       return;
     }
     let observer = new ResizeObserver(() => {
-      if (Math.abs(current.offsetWidth - current2.w) > 1) {
-        value2(true);
+      if (Math.abs(current.offsetWidth - previousPosition.w) > 1) {
+        setOptionsOpen(true);
       }
     });
     observer.observe(current);
     return () => observer.disconnect();
-  }, [value3]);
+  }, [hasPanel]);
   let callback = (
-    input: string,
-    options: string,
-    context: React.ReactNode,
-    value4: string,
-    extra: string,
-    detail: ((trigger: HTMLButtonElement) => void) | undefined,
-    argument: boolean = true,
+    testId: string,
+    tone: string,
+    content: React.ReactNode,
+    label: string,
+    extraLabel: string,
+    onClick: ((trigger: HTMLButtonElement) => void) | undefined,
+    allowWhenBusy: boolean = true,
   ) => {
-    let value5 =
-      detail === undefined
+    let disabledReason =
+      onClick === undefined
         ? uiMessage("design-system.welcome.worksInADesignSystem")
-        : argument && busy === true
+        : allowWhenBusy && busy === true
           ? // MineDesign: user-facing copy calls the agent "the agent", not Claude.
             uiMessage("design-system.welcome.aRequestToTheAgent")
           : undefined;
     return (
-      <DisabledReasonTooltip reason={value5}>
+      <DisabledReasonTooltip reason={disabledReason}>
         <button
           type={"button"}
           className={"ds-welcome-opt"}
-          disabled={value5 !== undefined}
-          onClick={(input2: React.MouseEvent<HTMLButtonElement>) =>
-            detail?.(input2.currentTarget)
+          disabled={disabledReason !== undefined}
+          onClick={(event: React.MouseEvent<HTMLButtonElement>) =>
+            onClick?.(event.currentTarget)
           }
-          data-testid={input}
+          data-testid={testId}
         >
           {[<span
-              className={"ds-welcome-icon ds-tone-" + options}
+              className={"ds-welcome-icon ds-tone-" + tone}
               aria-hidden={"true"}
             >
-              {context}
+              {content}
             </span>, <span className={"flex min-w-0 flex-col gap-0.5 text-left"}>
               {[<span className={"text-body font-medium text-primary"}>
-                  {value4}
-                </span>, <span className={"text-body text-secondary"}>{extra}</span>]}
+                  {label}
+                </span>, <span className={"text-body text-secondary"}>{extraLabel}</span>]}
             </span>]}
         </button>
       </DisabledReasonTooltip>
@@ -199,12 +199,12 @@ function WelcomeSheet({
   return (
     <SectionSheet data-testid={"ds-welcome-sheet"}>
       <div
-        ref={ref3}
+        ref={sheetRef}
         className={"ds-welcome flex flex-col gap-lg"}
         style={
-          value3 && !value && ref4.current !== undefined
+          hasPanel && !value && sheetPositionRef.current !== undefined
             ? {
-                minHeight: ref4.current.h,
+                minHeight: sheetPositionRef.current.h,
               }
             : undefined
         }
@@ -215,7 +215,7 @@ function WelcomeSheet({
             <jsxWelcome.Fragment>
               {[<h2 className={"ds-welcome-title"}>
                   {uiMessage("design-system.welcome.notSureWhereToStart")}
-                </h2>, <div className={"ds-welcome-options"} ref={ref2}>
+                </h2>, <div className={"ds-welcome-options"} ref={optionsRef}>
                   {[callback(
                       "ds-welcome-github",
                       "green",
@@ -343,20 +343,20 @@ function BrandUploadGrid({
   useUiLocale();
   return (
     <ul className={"ds-upload-grid"} data-testid={testid + "-files"}>
-      {files.map((input, options) =>
+      {files.map((file, fileIndex) =>
         (() => {
           const _Element = "li";
           const _elementProps = {
             className: "ds-upload-tile",
-            title: input.name,
+            title: file.name,
             children: [
-              thumb(input),
+              thumb(file),
               <span
                 className={
                   "w-full truncate text-center font-mono text-caption text-secondary"
                 }
               >
-                {input.name}
+                {file.name}
               </span>,
               <span className={"ds-upload-x"}>
                 <DisabledReasonTooltip reason={removeDisabledReason}>
@@ -365,17 +365,17 @@ function BrandUploadGrid({
                     size={"sm"}
                     iconOnly={true}
                     icon={"X"}
-                    aria-label={uiMessage("design-system.welcome.remove2", { value1: String(input.name) })}
+                    aria-label={uiMessage("design-system.welcome.remove2", { value1: String(file.name) })}
                     tooltip={uiMessage("design-system.welcome.remove")}
                     disabled={removeDisabledReason !== undefined}
-                    onClick={() => onRemove(options)}
-                    data-testid={testid + "-remove-" + String(options)}
+                    onClick={() => onRemove(fileIndex)}
+                    data-testid={testid + "-remove-" + String(fileIndex)}
                   />
                 </DisabledReasonTooltip>
               </span>,
             ],
           };
-          const _elementKey = uploadedFileIdentityId(input);
+          const _elementKey = uploadedFileIdentityId(file);
           return <_Element key={_elementKey} {..._elementProps} />;
         })(),
       )}
@@ -396,8 +396,8 @@ function BrandUploadPanel({
 }: Preview.BrandUploadPanelProps): React.ReactElement {
   useUiLocale();
   let value = BRAND_UPLOAD_TEXT,
-    value2 = files.length > 0,
-    value3 = !value2
+    hasFiles = files.length > 0,
+    pendingDrop = !hasFiles
       ? value.noFiles
       : intake.busy
         ? value.adding
@@ -407,71 +407,71 @@ function BrandUploadPanel({
             ? value.waiting
             : undefined,
     ref = reactBrandUpload.useRef<HTMLDivElement | null>(null),
-    ref2 = reactBrandUpload.useRef<HTMLButtonElement | null>(null),
+    dropButtonRef = reactBrandUpload.useRef<HTMLButtonElement | null>(null),
     callback = () =>
-      ref2.current?.focus({
+      dropButtonRef.current?.focus({
         focusVisible: true,
       } as FocusOptions & {
         focusVisible: boolean;
       });
   reactBrandUpload.useEffect(() => {
-    if (value3 === undefined) {
+    if (pendingDrop === undefined) {
       callback();
     } else {
       ref.current?.querySelector("button")?.focus();
     }
   }, []);
-  let ref3 = reactBrandUpload.useRef(false);
+  let dropStateRef = reactBrandUpload.useRef(false);
   reactBrandUpload.useEffect(() => {
-    let callback2 = (event: Event) =>
+    let handleDragEvent = (event: Event) =>
         event.target instanceof Node &&
         (ref.current?.contains(event.target) ?? false),
-      callback3 = (input: Event) => {
-        ref3.current = !callback2(input);
+      handlePointerDown = (event: Event) => {
+        dropStateRef.current = !handleDragEvent(event);
       },
-      callback4 = (input: Event) => {
-        if (!callback2(input)) {
-          ref3.current = true;
+      handleFocusEvent = (event: Event) => {
+        if (!handleDragEvent(event)) {
+          dropStateRef.current = true;
         }
       },
-      callback5 = () => {
-        ref3.current = true;
+      handleScrollEvent = () => {
+        dropStateRef.current = true;
       },
       items: [string, EventListener][] = [
-        ["pointerdown", callback3],
-        ["focusin", callback4],
-        ["keydown", callback4],
-        ["scroll", callback5],
-        ["wheel", callback5],
-        ["touchmove", callback5],
+        ["pointerdown", handlePointerDown],
+        ["focusin", handleFocusEvent],
+        ["keydown", handleFocusEvent],
+        ["scroll", handleScrollEvent],
+        ["wheel", handleScrollEvent],
+        ["touchmove", handleScrollEvent],
       ];
-    for (let [value4, value5] of items) {
-      document.addEventListener(value4, value5, true);
+    for (let [eventType, listener] of items) {
+      document.addEventListener(eventType, listener, true);
     }
     return () => {
-      for (let [value4, value5] of items) {
-        document.removeEventListener(value4, value5, true);
+      for (let [eventType, listener] of items) {
+        document.removeEventListener(eventType, listener, true);
       }
     };
   }, []);
-  let ref4 = reactBrandUpload.useRef(value3 !== undefined);
+  let hadInitialPanel = reactBrandUpload.useRef(pendingDrop !== undefined);
   reactBrandUpload.useEffect(() => {
-    let value4 = ref.current?.getBoundingClientRect(),
-      value5 =
-        value4 !== undefined &&
-        value4.bottom >= 0 &&
-        value4.top < window.innerHeight;
+    let viewportBounds = ref.current?.getBoundingClientRect(),
+      isVisible =
+        viewportBounds !== undefined &&
+        viewportBounds.bottom >= 0 &&
+        viewportBounds.top < window.innerHeight;
     if (
-      ref4.current &&
-      value3 === undefined &&
+      hadInitialPanel.current &&
+      pendingDrop === undefined &&
       document.hasFocus() &&
-      !ref3.current &&
-      value5
+      !dropStateRef.current &&
+      isVisible
     ) {
       callback();
     }
-    ref4.current = value3 !== undefined;
-  }, [value3]);
+    hadInitialPanel.current = pendingDrop !== undefined;
+  }, [pendingDrop]);
   return (
     <div
       ref={ref}
@@ -500,7 +500,7 @@ function BrandUploadPanel({
           onFiles={onFiles}
           onLeftOut={onLeftOut}
           testid={dataTestid}
-        />, value2 ? (
+        />, hasFiles ? (
           <BrandUploadGrid
             files={files}
             thumb={thumb}
@@ -511,7 +511,7 @@ function BrandUploadPanel({
         ) : null, <div
           className={
             "flex flex-wrap items-center justify-between gap-md" +
-            (value2 && !intake.busy ? " ds-upload-foot" : "")
+            (hasFiles && !intake.busy ? " ds-upload-foot" : "")
           }
         >
           {[<p
@@ -522,13 +522,13 @@ function BrandUploadPanel({
               aria-live={"polite"}
               data-testid={dataTestid + "-status"}
             >
-              {[value2 && intake.busy ? <IntakeProgressDot /> : null, value2 ? brandUploadStatusText(intake) : ""]}
-            </p>, <DisabledReasonTooltip reason={value3}>
+              {[hasFiles && intake.busy ? <IntakeProgressDot /> : null, hasFiles ? brandUploadStatusText(intake) : ""]}
+            </p>, <DisabledReasonTooltip reason={pendingDrop}>
               <Button
-                ref={ref2}
+                ref={dropButtonRef}
                 data-initial-focus={""}
                 variant={"primary"}
-                disabled={value3 !== undefined}
+                disabled={pendingDrop !== undefined}
                 onClick={onCreate}
                 data-testid={dataTestid + "-create"}
               >

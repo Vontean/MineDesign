@@ -15,9 +15,9 @@ function isValidCommentImage(source: string): boolean {
     /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(source)
   );
 }
-function objectProperty(value: unknown, key: PropertyKey): unknown {
-  if (typeof value === "object" && value !== null) {
-    return (value as Record<PropertyKey, unknown>)[key];
+function objectProperty(candidate: unknown, key: PropertyKey): unknown {
+  if (typeof candidate === "object" && candidate !== null) {
+    return (candidate as Record<PropertyKey, unknown>)[key];
   } else {
     return undefined;
   }
@@ -29,62 +29,62 @@ function normalizeComments(comments: unknown): Host.ArtifactComment[] {
   let items: Host.ArtifactComment[] = [],
     values = new Set();
   for (let value of comments as unknown[]) {
-    let value2 = objectProperty(value, "id"),
-      value3 = objectProperty(value, "text"),
-      value4 = objectProperty(value, "at");
+    let commentId = objectProperty(value, "id"),
+      commentText = objectProperty(value, "text"),
+      commentTimestamp = objectProperty(value, "at");
     if (
-      typeof value2 !== "string" ||
-      value2.length === 0 ||
-      value2.length > 64 ||
-      values.has(value2) ||
-      typeof value3 !== "string" ||
-      typeof value4 !== "number" ||
-      !Number.isFinite(value4)
+      typeof commentId !== "string" ||
+      commentId.length === 0 ||
+      commentId.length > 64 ||
+      values.has(commentId) ||
+      typeof commentText !== "string" ||
+      typeof commentTimestamp !== "number" ||
+      !Number.isFinite(commentTimestamp)
     ) {
       continue;
     }
-    values.add(value2);
-    let value5 = objectProperty(value, "author"),
-      value6 = objectProperty(value, "userId"),
-      value7 = objectProperty(value, "elementKey"),
-      value8 = objectProperty(value, "elementLabel"),
-      value9 = objectProperty(value, "images"),
-      value10 = Array.isArray(value9)
-        ? (value9 as unknown[])
+    values.add(commentId);
+    let authorName = objectProperty(value, "author"),
+      authorId = objectProperty(value, "userId"),
+      elementKey = objectProperty(value, "elementKey"),
+      elementLabel = objectProperty(value, "elementLabel"),
+      imageValues = objectProperty(value, "images"),
+      validImages = Array.isArray(imageValues)
+        ? (imageValues as unknown[])
             .filter(
-              (input: unknown): input is string =>
-                typeof input === "string" && isValidCommentImage(input),
+              (imageValue: unknown): imageValue is string =>
+                typeof imageValue === "string" && isValidCommentImage(imageValue),
             )
             .slice(0, MAX_COMMENT_IMAGES)
         : [];
     items.push({
-      id: value2,
-      text: truncateUtf16Safely(value3, MAX_COMMENT_TEXT_LENGTH),
-      at: value4,
+      id: commentId,
+      text: truncateUtf16Safely(commentText, MAX_COMMENT_TEXT_LENGTH),
+      at: commentTimestamp,
       author:
-        typeof value5 === "string" && value5.length > 0
-          ? truncateUtf16Safely(value5, 80)
+        typeof authorName === "string" && authorName.length > 0
+          ? truncateUtf16Safely(authorName, 80)
           : "viewer",
       userId:
-        typeof value6 === "string" && value6.length > 0
-          ? truncateUtf16Safely(value6, 128)
+        typeof authorId === "string" && authorId.length > 0
+          ? truncateUtf16Safely(authorId, 128)
           : undefined,
       elementKey:
-        typeof value7 === "string" && value7.length > 0
-          ? truncateUtf16Safely(value7, 400)
+        typeof elementKey === "string" && elementKey.length > 0
+          ? truncateUtf16Safely(elementKey, 400)
           : undefined,
       elementLabel:
-        typeof value8 === "string"
-          ? truncateUtf16Safely(value8, 160)
+        typeof elementLabel === "string"
+          ? truncateUtf16Safely(elementLabel, 160)
           : undefined,
-      ...(value10.length > 0
+      ...(validImages.length > 0
         ? {
-            images: value10,
+            images: validImages,
           }
         : {}),
     });
   }
-  items.sort((input, options) => input.at - options.at);
+  items.sort((leftComment, rightComment) => leftComment.at - rightComment.at);
   return items.slice(-MAX_ARTIFACT_COMMENTS);
 }
 function applyCommentOperations(
@@ -92,19 +92,19 @@ function applyCommentOperations(
   operations: readonly Host.CommentOperation[],
 ): Host.ArtifactComment[] {
   let value = comments;
-  for (let value2 of operations) {
-    if (value2.op === "add") {
-      if (value.some((input): boolean => input.id === value2.comment.id)) {
+  for (let operation of operations) {
+    if (operation.op === "add") {
+      if (value.some((comment): boolean => comment.id === operation.comment.id)) {
         continue;
       }
       if (value.length >= MAX_ARTIFACT_COMMENTS) {
         continue;
       }
-      value = [...value, value2.comment].sort(
-        (input, options) => input.at - options.at,
+      value = [...value, operation.comment].sort(
+        (leftComment, rightComment) => leftComment.at - rightComment.at,
       );
     } else {
-      value = value.filter((input): boolean => input.id !== value2.id);
+      value = value.filter((comment): boolean => comment.id !== operation.id);
     }
   }
   return value;
@@ -113,9 +113,9 @@ function applicableCommentOperations(
   comments: readonly Host.ArtifactComment[],
   operations: readonly Host.CommentOperation[],
 ): Host.CommentOperation[] {
-  let values = new Set(comments.map((input) => input.id));
-  return operations.filter((input) =>
-    input.op === "add" ? !values.has(input.comment.id) : values.has(input.id),
+  let values = new Set(comments.map((comment) => comment.id));
+  return operations.filter((operation) =>
+    operation.op === "add" ? !values.has(operation.comment.id) : values.has(operation.id),
   );
 }
 function normalizeCommentOperations(
@@ -126,25 +126,25 @@ function normalizeCommentOperations(
   }
   let items: Host.CommentOperation[] = [];
   for (let value of operations as unknown[]) {
-    let value2 = objectProperty(value, "op");
-    if (value2 === "add") {
-      let value3 = normalizeComments([objectProperty(value, "comment")])[0];
-      if (value3) {
+    let operationType = objectProperty(value, "op");
+    if (operationType === "add") {
+      let comment = normalizeComments([objectProperty(value, "comment")])[0];
+      if (comment) {
         items.push({
           op: "add",
-          comment: value3,
+          comment: comment,
         });
       }
-    } else if (value2 === "remove") {
-      let value3 = objectProperty(value, "id");
+    } else if (operationType === "remove") {
+      let commentId = objectProperty(value, "id");
       if (
-        typeof value3 === "string" &&
-        value3.length > 0 &&
-        value3.length <= 64
+        typeof commentId === "string" &&
+        commentId.length > 0 &&
+        commentId.length <= 64
       ) {
         items.push({
           op: "remove",
-          id: value3,
+          id: commentId,
         });
       }
     }

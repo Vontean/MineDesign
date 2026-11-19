@@ -36,19 +36,19 @@ var parsedDesignSystemBudgetCache: WeakMap<
 >;
 var MAX_COMPONENT_SUMMARY_LENGTH: number;
 function parseDesignSystemContent(
-  input: unknown,
+  source: unknown,
   report?: ParseReport,
-  options?: {
+  parseOptions?: {
     unbounded?: boolean;
   },
 ): DesignSystemContent {
   let parseReport = report ?? createParseReport();
   parseReport.dropped.length = 0;
   parseReport.warnings.length = 0;
-  let content = isDesignSystemContentObject(input) ? input : {};
+  let content = isDesignSystemContentObject(source) ? source : {};
   return {
     v: 2,
-    files: parseFileTable(content.files, parseReport, options),
+    files: parseFileTable(content.files, parseReport, parseOptions),
   };
 }
 function assetRelativeGroupKey(
@@ -67,19 +67,19 @@ function orderAssetTiles<Asset extends { key: string; wall: boolean }>(
   assets: Asset[],
   order: string[],
 ) {
-  let rank = new Map(order.map((input, options) => [input, options])),
-    rankForAsset = (input: Asset, options: number) =>
-      rank.get(input.key) ?? order.length + options,
+  let rank = new Map(order.map((asset, index) => [asset, index])),
+    rankForAsset = (asset: Asset, fallbackIndex: number) =>
+      rank.get(asset.key) ?? order.length + fallbackIndex,
     sorted: Asset[] = assets
-      .map((input, options): [Asset, number] => [
-        input,
-        rankForAsset(input, options),
+      .map((asset, index): [Asset, number] => [
+        asset,
+        rankForAsset(asset, index),
       ])
-      .sort((input, options) => input[1] - options[1])
-      .map((input) => input[0]);
+      .sort((left, right) => left[1] - right[1])
+      .map((rankedAsset) => rankedAsset[0]);
   return [
-    ...sorted.filter((input) => input.wall),
-    ...sorted.filter((input): boolean => !input.wall),
+    ...sorted.filter((asset) => asset.wall),
+    ...sorted.filter((asset): boolean => !asset.wall),
   ];
 }
 function markdownDocumentTitle(markdown: string) {
@@ -121,11 +121,11 @@ function assetGroupSlug(name: string, usedSlugs?: Set<string>) {
   return slug;
 }
 function isClaudeEmulator() {
-  let runtime2 = globalThis as Core.EmulatorFlags;
+  let runtime = globalThis as Core.EmulatorFlags;
   // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
   return (
-    runtime2.designSystemHost?.__emulator === true ||
-    runtime2.window?.designSystemHost?.__emulator === true
+    runtime.designSystemHost?.__emulator === true ||
+    runtime.window?.designSystemHost?.__emulator === true
   );
 }
 function setHeldFileBaseUrl(baseUrl: string | undefined): void {
@@ -270,9 +270,9 @@ function parseDesignSystemFiles(
     bundleHeader =
       bundleJs !== null ? parseBundleHeader(bundleJs) : null,
     namespace = bundleHeader?.namespace ?? bundleMetadata.namespace ?? null,
-    hasLibraryFile = (input: string) =>
-      classifyDesignSystemFile(input) === "componentLib" &&
-      Object.hasOwn(files, input),
+    hasLibraryFile = (path: string) =>
+      classifyDesignSystemFile(path) === "componentLib" &&
+      Object.hasOwn(files, path),
     declaredLibraries = bundleMetadata.libraries ?? [],
     inferredLibraries =
       bundleJs !== null
@@ -285,34 +285,34 @@ function parseDesignSystemFiles(
       inferredLibraries,
       hasLibraryFile,
     ),
-    loadedLibraryPaths = new Set(libraries.load.map((input) => input.file)),
+    loadedLibraryPaths = new Set(libraries.load.map((library) => library.file)),
     declarations: { path: string; text: string }[] = [],
     componentFiles = new Map<string, Core.ComponentFileSources>(),
     docs: ParsedDesignSystem["docs"] = [],
     docsLeftOut: string[] = [],
     otherFiles: string[] = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = classifyDesignSystemFile(value);
-    if (value2 === "doc") {
-      let value3 = files[value];
+    let fileKind = classifyDesignSystemFile(value);
+    if (fileKind === "doc") {
+      let fileContents = files[value];
       if (
         docs.length < MAX_DISPLAYED_DOCUMENTS &&
         (budgetProvider?.pageBytes?.(value) ??
-          estimateEmbeddedStringBytes(value3)) <=
+          estimateEmbeddedStringBytes(fileContents)) <=
           DESIGN_SYSTEM_INLINE_LIMITS.readme
       ) {
         docs.push({
           path: value,
           title:
-            markdownDocumentTitle(value3) || humanizeDocumentFilename(value),
-          markdown: value3,
+            markdownDocumentTitle(fileContents) || humanizeDocumentFilename(value),
+          markdown: fileContents,
         });
       } else {
         docsLeftOut.push(value);
       }
     }
     if (
-      value2 === "dts" &&
+      fileKind === "dts" &&
       !value.startsWith(DESIGN_SYSTEM_PATHS.archivedDir)
     ) {
       declarations.push({
@@ -321,54 +321,54 @@ function parseDesignSystemFiles(
       });
     }
     if (
-      value2 === "preview" ||
-      value2 === "componentReadme" ||
-      (value2 === "dts" &&
+      fileKind === "preview" ||
+      fileKind === "componentReadme" ||
+      (fileKind === "dts" &&
         value.startsWith(DESIGN_SYSTEM_PATHS.componentsDir))
     ) {
-      let value3 = value
+      let parts = value
           .slice(DESIGN_SYSTEM_PATHS.componentsDir.length)
           .split("/"),
-        value4 = value3[0];
+        componentName = parts[0];
       if (
-        value3.length !== 2 ||
-        !COMPONENT_NAME_PATTERN.test(value4)
+        parts.length !== 2 ||
+        !COMPONENT_NAME_PATTERN.test(componentName)
       ) {
-        if (value2 !== "dts") {
+        if (fileKind !== "dts") {
           otherFiles.push(value);
         }
         continue;
       }
-      if (value2 === "dts" && value3[1] !== value4 + ".d.ts") {
+      if (fileKind === "dts" && parts[1] !== componentName + ".d.ts") {
         continue;
       }
-      let value5 = componentFiles.get(value4) ?? {
+      let componentEntry = componentFiles.get(componentName) ?? {
         preview: null,
         readme: null,
         dts: null,
       };
-      if (value2 === "preview") {
-        value5.preview = files[value];
-      } else if (value2 === "componentReadme") {
-        value5.readme = files[value];
+      if (fileKind === "preview") {
+        componentEntry.preview = files[value];
+      } else if (fileKind === "componentReadme") {
+        componentEntry.readme = files[value];
       } else {
-        value5.dts = value;
+        componentEntry.dts = value;
       }
-      componentFiles.set(value4, value5);
-    } else if (value2 === "componentLib") {
+      componentFiles.set(componentName, componentEntry);
+    } else if (fileKind === "componentLib") {
       if (!loadedLibraryPaths.has(value)) {
         otherFiles.push(value);
       }
-    } else if (value2 === "componentOther" || value2 === "other") {
+    } else if (fileKind === "componentOther" || fileKind === "other") {
       otherFiles.push(value);
     }
   }
-  declarations.sort((input, options): number =>
-    input.path === DESIGN_SYSTEM_PATHS.indexDts
+  declarations.sort((left, right): number =>
+    left.path === DESIGN_SYSTEM_PATHS.indexDts
       ? -1
-      : options.path === DESIGN_SYSTEM_PATHS.indexDts
+      : right.path === DESIGN_SYSTEM_PATHS.indexDts
         ? 1
-        : input.path < options.path
+        : left.path < right.path
           ? -1
           : 1,
   );
@@ -391,47 +391,47 @@ function parseDesignSystemFiles(
         : null,
     components: Model.ParsedComponent[] = [],
     componentNames = new Set<string>(),
-    addComponent = (input: string, options: "header" | "files"): void => {
+    addComponent = (componentName: string, listingKind: "header" | "files"): void => {
       if (
-        componentNames.has(input) ||
-        (input === COVER_COMPONENT_NAME && coverPreview !== null)
+        componentNames.has(componentName) ||
+        (componentName === COVER_COMPONENT_NAME && coverPreview !== null)
       ) {
         return;
       }
-      componentNames.add(input);
-      let entry = componentFiles.get(input),
+      componentNames.add(componentName);
+      let entry = componentFiles.get(componentName),
         value = entry?.preview ?? null,
-        value2 =
+        componentMetadata =
           value !== null ? componentCardMetadata(value) : null,
-        value3: string | null =
+        guidelinesPath: string | null =
           entry?.readme != null
             ? DESIGN_SYSTEM_PATHS.componentsDir +
-              input +
+              componentName +
               "/" +
               COMPONENT_FILENAMES.readme
             : null,
-        value4 = value2?.page === true && options !== "header";
+        isPage = componentMetadata?.page === true && listingKind !== "header";
       components.push({
-        name: input,
+        name: componentName,
         previewHtml: value,
-        guidelinesMd: value3 !== null ? files[value3] : null,
-        guidelinesPath: value3,
+        guidelinesMd: guidelinesPath !== null ? files[guidelinesPath] : null,
+        guidelinesPath: guidelinesPath,
         dts: entry?.dts != null ? files[entry.dts] : null,
         dtsPath: entry?.dts ?? null,
-        group: value2?.group ?? "",
-        subtitle: value2?.subtitle ?? "",
-        floor: value2?.floor === true,
-        page: value4,
+        group: componentMetadata?.group ?? "",
+        subtitle: componentMetadata?.subtitle ?? "",
+        floor: componentMetadata?.floor === true,
+        page: isPage,
         previewHeight:
-          value2?.height ?? DEFAULT_COMPONENT_PREVIEW_HEIGHT,
+          componentMetadata?.height ?? DEFAULT_COMPONENT_PREVIEW_HEIGHT,
         previewWidth:
-          value2?.width ??
-          (value2 !== null &&
-          value4 &&
-          shouldUseDesktopShowcaseWidth(value2, input)
+          componentMetadata?.width ??
+          (componentMetadata !== null &&
+          isPage &&
+          shouldUseDesktopShowcaseWidth(componentMetadata, componentName)
             ? DEFAULT_SHOWCASE_PREVIEW_WIDTH
             : null),
-        listedBy: options,
+        listedBy: listingKind,
       });
     };
   if (bundleHeader !== null) {
@@ -450,36 +450,36 @@ function parseDesignSystemFiles(
   let fonts: Model.ParsedFont[] = [],
     fontPaths = new Set<string>(),
     makeFont = (
-      input: Model.FontFace | null,
-      options: string,
+      fontFace: Model.FontFace | null,
+      fontPath: string,
     ): Model.ParsedFont => {
-      let value = files[options],
-        value2 = pathBasename(options);
+      let value = files[fontPath],
+        fontFileName = pathBasename(fontPath);
       return {
-        path: options,
-        fileName: value2,
+        path: fontPath,
+        fileName: fontFileName,
         family:
-          input !== null ? input.family : inferFontFamilyFromFilename(value2),
-        weight: input !== null ? input.weight : "400",
+          fontFace !== null ? fontFace.family : inferFontFamilyFromFilename(fontFileName),
+        weight: fontFace !== null ? fontFace.weight : "400",
         style:
-          input !== null
-            ? input.style
-            : /italic/i.test(value2)
+          fontFace !== null
+            ? fontFace.style
+            : /italic/i.test(fontFileName)
               ? "italic"
               : "normal",
-        format: fileExtension(options),
+        format: fileExtension(fontPath),
         src:
           value !== undefined &&
           (parseDataUriHeader(value) !== null ||
-            storagePointerForFile(options, value) !== null)
-            ? (filePreviewUrl(files, options, storage) ?? "")
+            storagePointerForFile(fontPath, value) !== null)
+            ? (filePreviewUrl(files, fontPath, storage) ?? "")
             : "",
         store:
           value !== undefined
-            ? storageKindForFile(options, value)
+            ? storageKindForFile(fontPath, value)
             : "inline",
-        bytes: binaryFileBytes(files, options, storage),
-        referenced: input !== null,
+        bytes: binaryFileBytes(files, fontPath, storage),
+        referenced: fontFace !== null,
         missing: value === undefined,
       };
     };
@@ -501,66 +501,66 @@ function parseDesignSystemFiles(
     if (!value.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
       continue;
     }
-    let value2 = value
+    let segments = value
         .slice(DESIGN_SYSTEM_PATHS.assetsDir.length)
         .split("/"),
-      value3 = value2.pop()!,
-      value4 = value2.length > 0 ? value2.shift()! : UNGROUPED_ASSETS_NAME,
-      value5 = value2.join("/"),
-      value6 = files[value],
-      value7 =
+      assetName = segments.pop()!,
+      assetGroup = segments.length > 0 ? segments.shift()! : UNGROUPED_ASSETS_NAME,
+      assetSubpath = segments.join("/"),
+      assetContents = files[value],
+      isTextAsset =
         isTextFilePath(value) &&
-        storagePointerForFile(value, value6) === null,
+        storagePointerForFile(value, assetContents) === null,
       state: Model.ParsedAsset = {
         path: value,
-        name: value3,
-        group: value4,
-        subpath: value5,
+        name: assetName,
+        group: assetGroup,
+        subpath: assetSubpath,
         ext: fileExtension(value),
         mime: mimeTypeForPath(value),
         kind: assetKindForPath(value),
-        isText: value7,
-        store: storageKindForFile(value, value6),
-        bytes: value7
-          ? value6.length
+        isText: isTextAsset,
+        store: storageKindForFile(value, assetContents),
+        bytes: isTextAsset
+          ? assetContents.length
           : binaryFileBytes(files, value, storage),
       },
-      value8 = assetsByGroup.get(value4) ?? [];
-    value8.push(state);
-    assetsByGroup.set(value4, value8);
+      groupAssets = assetsByGroup.get(assetGroup) ?? [];
+    groupAssets.push(state);
+    assetsByGroup.set(assetGroup, groupAssets);
     assetCount++;
   }
   let groupNames = [
-      ...assetsMeta.groups.filter((input) => assetsByGroup.has(input)),
+      ...assetsMeta.groups.filter((groupName) => assetsByGroup.has(groupName)),
       ...[...assetsByGroup.keys()].filter(
-        (input): boolean => !assetsMeta.groups.includes(input),
+        (groupName): boolean => !assetsMeta.groups.includes(groupName),
       ),
     ],
     usedSlugs = new Set<string>(),
-    assetGroups = groupNames.map((input) => {
-      let entry = assetsByGroup.get(input)!,
+    assetGroups = groupNames.map((groupName) => {
+      let entry = assetsByGroup.get(groupName)!,
         values = new Set(
-          entry.map((input2) => assetRelativeGroupKey(input2)),
+          entry.map((asset) => assetRelativeGroupKey(asset)),
         ),
         value = (
-          ownPropertyOrUndefined(assetsMeta.orders, input) ?? []
-        ).filter((input2) => values.has(input2)),
-        value2 = orderAssetTiles(
+          ownPropertyOrUndefined(assetsMeta.orders, groupName) ?? []
+        ).filter((asset) => values.has(asset)),
+        orderedAssets = orderAssetTiles(
           entry.map((source) => ({
             key: assetRelativeGroupKey(source),
             wall: isWallAssetKind(source.kind),
             a: source,
           })),
           value,
-        ).map((input2) => input2.a);
+        ).map((asset) => asset.a);
       return {
-        name: input,
-        slug: assetGroupSlug(input, usedSlugs),
+        name: groupName,
+        slug: assetGroupSlug(groupName, usedSlugs),
         tile:
-          ownPropertyOrUndefined(assetsMeta.tiles, input) ??
+          ownPropertyOrUndefined(assetsMeta.tiles, groupName) ??
           DEFAULT_ASSET_TILE_SIZE,
         order: value,
-        assets: value2,
+        assets: orderedAssets,
       };
     });
   return {
@@ -590,10 +590,10 @@ function parseDesignSystemFiles(
     components: components,
     cover: cover,
     fonts: fonts,
-    assetFonts: assetGroups.flatMap((input) =>
-      input.assets
+    assetFonts: assetGroups.flatMap((assetGroup) =>
+      assetGroup.assets
         .filter((source): boolean => source.kind === "font")
-        .map((input2) => makeFont(null, input2.path)),
+        .map((asset) => makeFont(null, asset.path)),
     ),
     assetGroups: assetGroups,
     assetCount: assetCount,
@@ -602,9 +602,9 @@ function parseDesignSystemFiles(
     blobBytesUsed: uniqueStoredBlobBytes(storage),
     bytes: computeFileBudgetUsage(
       files,
-      (input) =>
-        storageRecordForFile(files, storage, input)?.bytes ?? 0,
-      (input) => budgetProvider?.pageBytes?.(input),
+      (filePath) =>
+        storageRecordForFile(files, storage, filePath)?.bytes ?? 0,
+      (filePath) => budgetProvider?.pageBytes?.(filePath),
     ),
   };
 }
@@ -619,16 +619,16 @@ function firstMarkdownParagraphLines(markdown: string) {
     htmlTerminator: string | null = null,
     lines: string[] = [];
   for (let value of markdown.split(/\r?\n/)) {
-    let value2 = value.trim();
+    let trimmedMarkdown = value.trim();
     if (htmlTerminator !== null) {
-      if (value2.includes(htmlTerminator)) {
+      if (trimmedMarkdown.includes(htmlTerminator)) {
         htmlTerminator = null;
       }
       continue;
     }
     if (
-      /^~~~/.test(value2) ||
-      (/^```/.test(value2) && !value2.replace(/^`+/, "").includes("`"))
+      /^~~~/.test(trimmedMarkdown) ||
+      (/^```/.test(trimmedMarkdown) && !trimmedMarkdown.replace(/^`+/, "").includes("`"))
     ) {
       inFence = !inFence;
       if (lines.length > 0) {
@@ -639,43 +639,43 @@ function firstMarkdownParagraphLines(markdown: string) {
     if (inFence) {
       continue;
     }
-    if (value2 === "") {
+    if (trimmedMarkdown === "") {
       if (lines.length > 0) {
         break;
       }
       continue;
     }
-    if (value2.startsWith("<\!--") && !value2.includes("-->")) {
+    if (trimmedMarkdown.startsWith("<\!--") && !trimmedMarkdown.includes("-->")) {
       htmlTerminator = "-->";
       if (lines.length > 0) {
         break;
       }
       continue;
     }
-    if (/^<\/?[!A-Za-z][^>]*$/.test(value2)) {
+    if (/^<\/?[!A-Za-z][^>]*$/.test(trimmedMarkdown)) {
       htmlTerminator = ">";
       if (lines.length > 0) {
         break;
       }
       continue;
     }
-    if (/^(={3,}|-{3,})$/.test(value2) && lines.length === 1) {
+    if (/^(={3,}|-{3,})$/.test(trimmedMarkdown) && lines.length === 1) {
       lines.length = 0;
       continue;
     }
     if (
-      /^#{1,6}(\s|$)/.test(value2) ||
-      /^(-{3,}|\*{3,}|_{3,}|={3,})$/.test(value2) ||
-      value2.startsWith("|") ||
-      /^<\/?[!A-Za-z][^>]*>?$/.test(value2) ||
-      /^(import|export)\s/.test(value2)
+      /^#{1,6}(\s|$)/.test(trimmedMarkdown) ||
+      /^(-{3,}|\*{3,}|_{3,}|={3,})$/.test(trimmedMarkdown) ||
+      trimmedMarkdown.startsWith("|") ||
+      /^<\/?[!A-Za-z][^>]*>?$/.test(trimmedMarkdown) ||
+      /^(import|export)\s/.test(trimmedMarkdown)
     ) {
       if (lines.length > 0) {
         break;
       }
       continue;
     }
-    lines.push(value2);
+    lines.push(trimmedMarkdown);
   }
   return lines;
 }
@@ -773,14 +773,14 @@ function buildDesignSystemManifest(system: ParsedDesignSystem, name: string): Co
           lastChange: lastChange,
         }
       : {}),
-    assetGroups: system.assetGroups.map((input) => {
-      let value = input.assets.flatMap((input2) => {
-        let value2 = storage.files[input2.path]?.id;
-        if (value2 !== undefined) {
+    assetGroups: system.assetGroups.map((assetGroup) => {
+      let value = assetGroup.assets.flatMap((asset) => {
+        let blobId = storage.files[asset.path]?.id;
+        if (blobId !== undefined) {
           return [
             {
-              path: input2.path,
-              id: value2,
+              path: asset.path,
+              id: blobId,
             },
           ];
         } else {
@@ -788,15 +788,15 @@ function buildDesignSystemManifest(system: ParsedDesignSystem, name: string): Co
         }
       });
       return {
-        name: input.name,
-        ...(input.tile !== DEFAULT_ASSET_TILE_SIZE
+        name: assetGroup.name,
+        ...(assetGroup.tile !== DEFAULT_ASSET_TILE_SIZE
           ? {
-              tile: input.tile,
+              tile: assetGroup.tile,
             }
           : {}),
-        ...(input.order.length > 0
+        ...(assetGroup.order.length > 0
           ? {
-              order: input.order,
+              order: assetGroup.order,
             }
           : {}),
         ...(value.length > 0
@@ -876,8 +876,8 @@ export {
 };
 export function installModelDeriveSystem(): () => void {
   return () => {
-    hasBundleMetadata = (input) =>
-      input.namespace !== null || input.declared.length > 0;
+    hasBundleMetadata = (metadata) =>
+      metadata.namespace !== null || metadata.declared.length > 0;
     DEFAULT_COVER_PREVIEW_HEIGHT = 280;
     DEFAULT_SHOWCASE_PREVIEW_WIDTH = 1280;
     MOBILE_PREVIEW_HEIGHTS = new Set([
@@ -886,24 +886,24 @@ export function installModelDeriveSystem(): () => void {
     ]);
     MOBILE_PREVIEW_LABEL_PATTERN =
       /mobile|android|tablet|iphone|ipad|smartphone|(^|[^a-z])(ios|phone)/;
-    shouldUseDesktopShowcaseWidth = (input, options): boolean => {
-      let value = input.height ?? 0;
+    shouldUseDesktopShowcaseWidth = (asset, label): boolean => {
+      let value = asset.height ?? 0;
       if (
         value < 700 ||
         MOBILE_PREVIEW_HEIGHTS.has(value) ||
-        /^components?$/i.test((input.group ?? "").trim())
+        /^components?$/i.test((asset.group ?? "").trim())
       ) {
         return false;
       }
-      let value2 = [
-        input.group,
-        options,
-        options.replace(/([a-z\d])([A-Z])/g, "$1 $2"),
-        input.subtitle,
+      let labelParts = [
+        asset.group,
+        label,
+        label.replace(/([a-z\d])([A-Z])/g, "$1 $2"),
+        asset.subtitle,
       ]
         .join(" ")
         .toLowerCase();
-      return !MOBILE_PREVIEW_LABEL_PATTERN.test(value2);
+      return !MOBILE_PREVIEW_LABEL_PATTERN.test(labelParts);
     };
     UNGROUPED_ASSETS_NAME = "Other";
     parsedDesignSystemCache = new WeakMap();

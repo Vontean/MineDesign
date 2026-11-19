@@ -59,11 +59,11 @@ function currentHotReloadBridge(
   }
 }
 function createHotReloadBridge(
-  options: Host.HotReloadOptions = {},
+  reloadOptions: Host.HotReloadOptions = {},
 ): Host.HotReloadBridge {
-  let value = options.hot !== undefined ? options.hot : resolveClaudeHotApi();
+  let value = reloadOptions.hot !== undefined ? reloadOptions.hot : resolveClaudeHotApi();
   if (
-    options.embedded === true ||
+    reloadOptions.embedded === true ||
     value === null ||
     typeof value.accept !== "function"
   ) {
@@ -73,294 +73,294 @@ function createHotReloadBridge(
   if (entry !== undefined && entry.live()) {
     return entry;
   }
-  let value2 = options.isCode ?? isAppCodePath,
-    value3 = options.now ?? ((): number => Date.now()),
-    callback = (input: () => void, options2: number) =>
-      options.timers !== undefined
-        ? options.timers.setTimeout(input, options2)
-        : setTimeout(input, options2),
-    callback2 = (input: ReturnType<typeof setTimeout>): void => {
-      if (options.timers !== undefined) {
-        options.timers.clearTimeout?.(input);
+  let isCodePath = reloadOptions.isCode ?? isAppCodePath,
+    now = reloadOptions.now ?? ((): number => Date.now()),
+    callback = (timerCallback: () => void, delayMs: number) =>
+      reloadOptions.timers !== undefined
+        ? reloadOptions.timers.setTimeout(timerCallback, delayMs)
+        : setTimeout(timerCallback, delayMs),
+    clearTimer = (timer: ReturnType<typeof setTimeout>): void => {
+      if (reloadOptions.timers !== undefined) {
+        reloadOptions.timers.clearTimeout?.(timer);
       } else {
-        clearTimeout(input);
+        clearTimeout(timer);
       }
     },
     items: Host.HotQueuedUpdate[] = [],
-    items2: Host.HotEvent[] = [],
-    items3: Host.HotEvent[] = [],
+    pendingEvents: Host.HotEvent[] = [],
+    queuedEvents: Host.HotEvent[] = [],
     state: Host.HotAttachment = {},
-    value4: Host.HotOwedUpdate | undefined,
-    value5: unknown,
+    pendingOwedUpdate: Host.HotOwedUpdate | undefined,
+    restoreValue: unknown,
     flag: boolean = false,
-    flag2: boolean = false,
-    flag3: boolean = false,
-    flag4: boolean = false,
-    value6: ((timedOut: boolean) => void) | undefined;
-  function value7(input: Host.HotEvent): void {
-    items2.push(input);
-    if (items2.length > 50) {
-      items2.shift();
+    hasRestored: boolean = false,
+    isCodeUpdate: boolean = false,
+    isContentUpdate: boolean = false,
+    timeoutHandler: ((timedOut: boolean) => void) | undefined;
+  function handleHotEvent(event: Host.HotEvent): void {
+    pendingEvents.push(event);
+    if (pendingEvents.length > 50) {
+      pendingEvents.shift();
     }
     if (state.onEvent === undefined) {
-      items3.push(input);
-      if (items3.length > 50) {
-        items3.shift();
+      queuedEvents.push(event);
+      if (queuedEvents.length > 50) {
+        queuedEvents.shift();
       }
       return;
     }
     try {
-      state.onEvent(input);
+      state.onEvent(event);
     } catch {}
   }
-  let callback3 = (input: Host.HotVersion) => ({
-    version: input.ver,
-    ...(input.seq !== undefined
+  let formatVersion = (version: Host.HotVersion) => ({
+    version: version.ver,
+    ...(version.seq !== undefined
       ? {
-          seq: input.seq,
+          seq: version.seq,
         }
       : {}),
   });
-  function value8(): void {
-    let value11 = value6;
-    if (value11 === undefined) {
+  function expireTimeout(): void {
+    let onTimeout = timeoutHandler;
+    if (onTimeout === undefined) {
       return;
     }
     if (state.reveal !== undefined) {
       Promise.resolve(state.reveal).then(
-        () => value11(false),
-        () => value11(false),
+        () => onTimeout(false),
+        () => onTimeout(false),
       );
-    } else if (flag3 || flag4) {
-      value11(false);
+    } else if (isCodeUpdate || isContentUpdate) {
+      onTimeout(false);
     }
   }
-  function value9(
-    input: Host.HotUpdate,
-    options2: Host.HotEvent,
-    context: string,
-    value11: { version: string; seq?: number },
-    extra: { version: string; seq?: number },
+  function recordUpdate(
+    update: Host.HotUpdate,
+    event: Host.HotEvent,
+    updateKind: string,
+    fromVersion: { version: string; seq?: number },
+    toVersion: { version: string; seq?: number },
   ): "deferred" | undefined {
-    value4 = {
-      reason: context,
-      from: value4?.from ?? value11,
-      to: extra,
-      at: value3(),
+    pendingOwedUpdate = {
+      reason: updateKind,
+      from: pendingOwedUpdate?.from ?? fromVersion,
+      to: toVersion,
+      at: now(),
     };
-    let value12: string =
-      context === "code"
+    let updateReason: string =
+      updateKind === "code"
         ? "a changed path is the page’s own code"
-        : "required is " + String(input.required);
-    value7({
-      ...options2,
+        : "required is " + String(update.required);
+    handleHotEvent({
+      ...event,
       decision: "defer",
-      get why() { return (value12) + ("; the editor is still booting, so the restart waits until it has attached"); },
+      get why() { return (updateReason) + ("; the editor is still booting, so the restart waits until it has attached"); },
     });
-    value7({
+    handleHotEvent({
       type: "deferred",
-      from: value11.version,
-      to: extra.version,
-      reason: context,
+      from: fromVersion.version,
+      to: toVersion.version,
+      reason: updateKind,
     });
-    if (typeof input.defer === "function") {
+    if (typeof update.defer === "function") {
       try {
-        input.defer();
+        update.defer();
       } catch {}
       return;
     }
     return "deferred";
   }
-  value.accept((input) => {
-    if (flag4) {
-      if (typeof input.restart === "function") {
+  value.accept((update) => {
+    if (isContentUpdate) {
+      if (typeof update.restart === "function") {
         try {
-          input.restart();
+          update.restart();
         } catch {}
         return;
       }
       return "restart";
     }
-    if (flag3) {
+    if (isCodeUpdate) {
       return;
     }
-    let value11 = callback3(input.from),
-      value12 = callback3(input.to),
-      value13: string | string | undefined =
-        input.required !== "none"
+    let fromVersion = formatVersion(update.from),
+      toVersion = formatVersion(update.to),
+      requiredBy: string | string | undefined =
+        update.required !== "none"
           ? "required"
-          : input.changed !== null &&
-              input.changed.some((input2) => value2(input2.path))
+          : update.changed !== null &&
+              update.changed.some((change) => isCodePath(change.path))
             ? "code"
             : undefined,
-      state3 = {
+      eventState = {
         type: "update",
-        from: value11.version,
-        to: value12.version,
-        ...(value11.seq !== undefined
+        from: fromVersion.version,
+        to: toVersion.version,
+        ...(fromVersion.seq !== undefined
           ? {
-              fromSeq: value11.seq,
+              fromSeq: fromVersion.seq,
             }
           : {}),
-        ...(value12.seq !== undefined
+        ...(toVersion.seq !== undefined
           ? {
-              toSeq: value12.seq,
+              toSeq: toVersion.seq,
             }
           : {}),
-        required: String(input.required),
-        shape: typeof input.adopt === "function" ? "calls" : "string",
+        required: String(update.required),
+        shape: typeof update.adopt === "function" ? "calls" : "string",
         changed:
-          input.changed === null
+          update.changed === null
             ? null
-            : input.changed.map((source) => ({
+            : update.changed.map((source) => ({
                 path: source.path,
                 kind: String(source.kind),
-                klass: value2(source.path) ? "code" : "content",
+                klass: isCodePath(source.path) ? "code" : "content",
               })),
         busy: false,
         early: true,
       };
-    if (value13 !== undefined) {
-      return value9(input, state3, value13, value11, value12);
+    if (requiredBy !== undefined) {
+      return recordUpdate(update, eventState, requiredBy, fromVersion, toVersion);
     }
-    if (typeof input.adopt === "function") {
+    if (typeof update.adopt === "function") {
       try {
-        input.adopt();
+        update.adopt();
       } catch {
-        return value9(input, state3, "required", value11, value12);
+        return recordUpdate(update, eventState, "required", fromVersion, toVersion);
       }
     }
     items.push({
-      from: value11,
-      to: value12,
-      changed: input.changed,
-      at: value3(),
+      from: fromVersion,
+      to: toVersion,
+      changed: update.changed,
+      at: now(),
     });
-    value7({
-      ...state3,
+    handleHotEvent({
+      ...eventState,
       decision: "adopt",
       why: "content only; the editor is still booting, so the rows wait for it",
     });
     return "applied";
   });
-  let flag5: boolean = false;
-  function value10(): void {
-    if (flag5 || typeof value?.ready !== "function") {
+  let isReady: boolean = false;
+  function flushPending(): void {
+    if (isReady || typeof value?.ready !== "function") {
       return;
     }
-    flag5 = true;
+    isReady = true;
     try {
-      value.ready((input) => {
-        value5 = input;
+      value.ready((restoreState) => {
+        restoreValue = restoreState;
         flag = true;
-        if (state.restore !== undefined && !flag2) {
-          flag2 = true;
+        if (state.restore !== undefined && !hasRestored) {
+          hasRestored = true;
           try {
-            state.restore(input);
+            state.restore(restoreState);
           } catch {}
         }
-        let value11 = value3();
-        return new Promise<void>((input2): void => {
-          let callback4 = (input3: boolean): void => {
-              if (value6 !== callback4) {
+        let startedAt = now();
+        return new Promise<void>((resolve): void => {
+          let finishWait = (timedOut: boolean): void => {
+              if (timeoutHandler !== finishWait) {
                 return;
               }
-              value6 = undefined;
-              if (!input3) {
-                callback2(value12);
+              timeoutHandler = undefined;
+              if (!timedOut) {
+                clearTimer(timeoutHandle);
               }
-              value7({
+              handleHotEvent({
                 type: "reveal",
-                heldMs: value3() - value11,
-                timedOut: input3,
-                carried: input !== undefined && input !== null,
+                heldMs: now() - startedAt,
+                timedOut: timedOut,
+                carried: restoreState !== undefined && restoreState !== null,
               });
-              input2();
+              resolve();
             },
-            value12 = callback(
-              () => callback4(true),
-              options.revealHoldMs ?? 4500,
+            timeoutHandle = callback(
+              () => finishWait(true),
+              reloadOptions.revealHoldMs ?? 4500,
             );
-          value6 = callback4;
-          value8();
+          timeoutHandler = finishWait;
+          expireTimeout();
         });
       });
     } catch {}
   }
-  if (options.ready === "now") {
-    value10();
+  if (reloadOptions.ready === "now") {
+    flushPending();
   }
   if (typeof value.snapshot === "function") {
     try {
-      value.snapshot((input) =>
-        flag4
+      value.snapshot((snapshot) =>
+        isContentUpdate
           ? null
           : state.snapshot !== undefined
-            ? state.snapshot(input)
-            : (value5 ?? null),
+            ? state.snapshot(snapshot)
+            : (restoreValue ?? null),
       );
     } catch {}
   }
-  let state2: Host.ActiveHotReloadBridge = {
+  let bridgeState: Host.ActiveHotReloadBridge = {
     active: true,
     queued: items,
     get restarted(): boolean {
       return flag;
     },
     get carried() {
-      return value5;
+      return restoreValue;
     },
-    events: items2,
-    owed: () => value4,
+    events: pendingEvents,
+    owed: () => pendingOwedUpdate,
     takeOwed() {
-      let value11 = value4;
-      value4 = undefined;
-      return value11;
+      let owedUpdate = pendingOwedUpdate;
+      pendingOwedUpdate = undefined;
+      return owedUpdate;
     },
-    attach(input): void {
-      value10();
-      if (input.snapshot !== undefined) {
-        state.snapshot = input.snapshot;
+    attach(bridge): void {
+      flushPending();
+      if (bridge.snapshot !== undefined) {
+        state.snapshot = bridge.snapshot;
       }
-      if (input.restore !== undefined) {
-        state.restore = input.restore;
+      if (bridge.restore !== undefined) {
+        state.restore = bridge.restore;
       }
-      if (input.reveal !== undefined) {
-        state.reveal = input.reveal;
+      if (bridge.reveal !== undefined) {
+        state.reveal = bridge.reveal;
       }
-      if (input.onBeforeRestart !== undefined) {
-        state.onBeforeRestart = input.onBeforeRestart;
+      if (bridge.onBeforeRestart !== undefined) {
+        state.onBeforeRestart = bridge.onBeforeRestart;
       }
-      if (input.onEvent !== undefined) {
-        state.onEvent = input.onEvent;
-        for (let value11 of items3.splice(0)) {
+      if (bridge.onEvent !== undefined) {
+        state.onEvent = bridge.onEvent;
+        for (let event of queuedEvents.splice(0)) {
           try {
-            input.onEvent(value11);
+            bridge.onEvent(event);
           } catch {}
         }
       }
-      if (flag && !flag2 && state.restore !== undefined) {
-        flag2 = true;
+      if (flag && !hasRestored && state.restore !== undefined) {
+        hasRestored = true;
         try {
-          state.restore(value5);
+          state.restore(restoreValue);
         } catch {}
       }
-      value8();
+      expireTimeout();
     },
     release(): void {
-      flag3 = true;
-      value8();
+      isCodeUpdate = true;
+      expireTimeout();
     },
     detach(): void {
-      if (flag4) {
+      if (isContentUpdate) {
         return;
       }
-      flag3 = true;
-      flag4 = true;
-      value8();
-      let value11 = value4;
-      value4 = undefined;
-      if (value11 === undefined) {
+      isCodeUpdate = true;
+      isContentUpdate = true;
+      expireTimeout();
+      let owedUpdate = pendingOwedUpdate;
+      pendingOwedUpdate = undefined;
+      if (owedUpdate === undefined) {
         return;
       }
       try {
@@ -373,14 +373,14 @@ function createHotReloadBridge(
       } catch {}
     },
     armReady(): void {
-      if (!flag4) {
-        value10();
+      if (!isContentUpdate) {
+        flushPending();
       }
     },
-    live: () => !flag3 && !flag4,
+    live: () => !isCodeUpdate && !isContentUpdate,
   };
-  hotReloadBridges.set(value, state2);
-  return state2;
+  hotReloadBridges.set(value, bridgeState);
+  return bridgeState;
 }
 export {
   activeHotReloadSession,

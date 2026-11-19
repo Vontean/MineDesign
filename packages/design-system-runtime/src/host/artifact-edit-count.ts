@@ -22,13 +22,13 @@ function artifactEditStorageKey(): null | string {
 function readArtifactEditCount(): number {
   try {
     let value = artifactEditStorageKey(),
-      value2 = EDIT_COUNT_STORAGE_PATTERN.exec(
+      storedCountMatch = EDIT_COUNT_STORAGE_PATTERN.exec(
         value === null ? "" : (sessionStorage.getItem(value) ?? ""),
       );
-    if (value2 === null) {
+    if (storedCountMatch === null) {
       return 0;
     } else {
-      return Number(value2[1]);
+      return Number(storedCountMatch[1]);
     }
   } catch {
     return 0;
@@ -48,19 +48,19 @@ function getArtifactEditCount(): number {
 }
 function recordArtifactEdit(): void {
   let value = artifactEditNow(),
-    value2: boolean = value - lastArtifactEditTime < 500;
+    isRapidEdit: boolean = value - lastArtifactEditTime < 500;
   lastArtifactEditTime = value;
-  if (value2) {
+  if (isRapidEdit) {
     return;
   }
-  let value3: number = Math.min(getArtifactEditCount() + 1, 999999999);
-  if (value3 === artifactEditCount) {
+  let nextEditCount: number = Math.min(getArtifactEditCount() + 1, 999999999);
+  if (nextEditCount === artifactEditCount) {
     return;
   }
-  artifactEditCount = value3;
-  writeArtifactEditCount(value3);
-  for (let value4 of [...artifactEditSubscribers]) {
-    value4(value3);
+  artifactEditCount = nextEditCount;
+  writeArtifactEditCount(nextEditCount);
+  for (let subscriber of [...artifactEditSubscribers]) {
+    subscriber(nextEditCount);
   }
 }
 export {

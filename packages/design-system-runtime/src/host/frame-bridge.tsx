@@ -44,7 +44,7 @@ function hostOrigins(ownWindow: Host.ProtocolGlobal): string[] {
   let value = ownWindow.__FRAME_PREAMBLE?.origins;
   if (Array.isArray(value)) {
     return (value as unknown[]).filter(
-      (input: unknown): input is string => typeof input === "string",
+      (candidate: unknown): candidate is string => typeof candidate === "string",
     );
   }
   return DEFAULT_HOST_ORIGINS;
@@ -56,8 +56,8 @@ function isAllowedHostOrigin(
   for (let value of allowedOrigins) {
     if (value.endsWith(":*")) {
       try {
-        let value2 = new URL(origin);
-        if (`${value2.protocol}//${value2.hostname}:*` === value) {
+        let parsedOrigin = new URL(origin);
+        if (`${parsedOrigin.protocol}//${parsedOrigin.hostname}:*` === value) {
           return true;
         }
       } catch {}
@@ -88,30 +88,30 @@ function normalizeHostExportFormats(
       continue;
     }
     values.add(value.format);
-    let value2: boolean = value.handoff === true,
+    let isHandoff: boolean = value.handoff === true,
       state: Host.HostExport = {
         format: value.format,
         ...(value.disabled === true && {
           disabled: true,
         }),
-        ...(!value2 &&
+        ...(!isHandoff &&
           value.interactive === true && {
             interactive: true,
           }),
-        ...(!value2 &&
+        ...(!isHandoff &&
           value.bundle === true && {
             bundle: true,
           }),
-        ...(value2 && {
-          handoff: value2,
+        ...(isHandoff && {
+          handoff: isHandoff,
         }),
       },
-      value3 =
-        !value2 && Array.isArray(value.variants)
+      variantIds =
+        !isHandoff && Array.isArray(value.variants)
           ? normalizeHostDestinations(value.variants)
           : [];
-    if (value3.length > 0) {
-      state.variants = value3;
+    if (variantIds.length > 0) {
+      state.variants = variantIds;
     }
     items.push(state);
     if (items.length === MAX_HOST_EXPORT_FORMATS) {
@@ -194,7 +194,7 @@ function normalizeHostTips(tips: unknown): string[] {
   if (
     Array.isArray(tips) &&
     tips.length <= 8 &&
-    tips.every((input: unknown): input is string => typeof input === "string")
+    tips.every((tip: unknown): tip is string => typeof tip === "string")
   ) {
     return tips;
   } else {
@@ -202,9 +202,9 @@ function normalizeHostTips(tips: unknown): string[] {
   }
 }
 function createHostFrameBridge(
-  options: Host.HostFrameOptions,
+  bridgeOptions: Host.HostFrameOptions,
 ): Host.HostFrameBridge {
-  let parentWindow = options.parentWindow,
+  let parentWindow = bridgeOptions.parentWindow,
     hostOrigin: string | null = null,
     hostAcknowledgedRows: boolean = false,
     hostChromeWords = new Set<string>(),
@@ -224,24 +224,24 @@ function createHostFrameBridge(
     destinationHandler: ((id: string) => void) | null = null,
     exportHandler: Host.HostExportHandler | null = null,
     hostChromeListeners = new Set<() => void>(),
-    hostDrawsSave2 = () =>
+    hostDrawsSaveCapability = () =>
       hostAcknowledgedRows && currentSnapshot?.saved !== undefined,
-    hostDrawsReadOnly2 = () =>
+    hostDrawsReadOnlyCapability = () =>
       hostAcknowledgedRows &&
       hostChromeWords.has("readonly") &&
       currentSnapshot?.saved === "readonly",
     hostDrawsClaudeTips = () =>
       hostAcknowledgedRows && hostChromeWords.has("claude_tips"),
-    hostTakesRetry2 = () =>
-      hostDrawsSave2() &&
+    hostTakesRetryCapability = () =>
+      hostDrawsSaveCapability() &&
       saveNowHandler !== null &&
       currentSnapshot?.actions?.some(
-        (input): boolean => input.id === SAVE_NOW_COMMAND,
+        (command): boolean => command.id === SAVE_NOW_COMMAND,
       ) === true,
     hostChromeStateKey = (): string =>
-      String(hostDrawsSave2()) +
-      String(hostTakesRetry2()) +
-      String(hostDrawsReadOnly2()) +
+      String(hostDrawsSaveCapability()) +
+      String(hostTakesRetryCapability()) +
+      String(hostDrawsReadOnlyCapability()) +
       String(hostDrawsClaudeTips()),
     previousHostChromeStateKey = hostChromeStateKey(),
     notifyHostChromeChanged = (): void => {
@@ -250,9 +250,9 @@ function createHostFrameBridge(
         return;
       }
       previousHostChromeStateKey = value;
-      for (let value2 of hostChromeListeners) {
+      for (let listener of hostChromeListeners) {
         try {
-          value2();
+          listener();
         } catch {}
       }
     },
@@ -283,17 +283,17 @@ function createHostFrameBridge(
         state.leaveLosesWork = true;
       }
       let value =
-          exportFormats?.filter((input): boolean => input.handoff !== true) ??
+          exportFormats?.filter((format): boolean => format.handoff !== true) ??
           [],
-        value2 =
+        handoffFormats =
           exportFormats
-            ?.filter((input): boolean => input.handoff === true)
+            ?.filter((format): boolean => format.handoff === true)
             .map(({ handoff: handoff, ...props }) => props) ?? [];
       if (value.length > 0) {
         state.exports = value;
       }
-      if (value2.length > 0) {
-        state.handoffs = value2;
+      if (handoffFormats.length > 0) {
+        state.handoffs = handoffFormats;
       }
       if (destinations !== null) {
         state.destinations = destinations;
@@ -308,57 +308,57 @@ function createHostFrameBridge(
     },
     refreshChromeSnapshot = (): void => {
       let value = buildChromeSnapshot(),
-        value2 = value ?? {
+        snapshot = value ?? {
           v: 1,
         },
-        value3 = findEnabled
+        enabledSnapshot = findEnabled
           ? {
-              ...value2,
+              ...snapshot,
               actions: [
-                ...(value2.actions ?? []),
+                ...(snapshot.actions ?? []),
                 {
                   id: OPEN_FIND_COMMAND,
                 },
               ],
             }
           : value,
-        value4 = JSON.stringify(value3);
-      if (value4 === previousSnapshotJson) {
+        snapshotJson = JSON.stringify(enabledSnapshot);
+      if (snapshotJson === previousSnapshotJson) {
         return;
       }
-      currentSnapshot = value3;
-      previousSnapshotJson = value4;
+      currentSnapshot = enabledSnapshot;
+      previousSnapshotJson = snapshotJson;
       if (hostOrigin !== null) {
-        sendChromeSnapshot(value3, hostOrigin);
+        sendChromeSnapshot(enabledSnapshot, hostOrigin);
       }
       notifyHostChromeChanged();
     },
-    exportVariantIsEnabled = (input: string, options2?: string) => {
+    exportVariantIsEnabled = (format: string, destination?: string) => {
       let value = [
         ...(currentSnapshot?.exports ?? []),
         ...(currentSnapshot?.handoffs ?? []),
-      ].find((input2) => input2.format === input && input2.disabled !== true);
+      ].find((variant) => variant.format === format && variant.disabled !== true);
       if (value === undefined) {
         return false;
       }
       return (
-        options2 === undefined ||
+        destination === undefined ||
         value.variants?.some(
-          (input2) => input2.id === options2 && input2.disabled !== true,
+          (variant) => variant.id === destination && variant.disabled !== true,
         ) === true
       );
     },
     sendChromeSnapshot = (
-      input: Host.HostSnapshot | null,
-      options2: string,
+      snapshot: Host.HostSnapshot | null,
+      destination: string,
     ): void => {
       try {
         parentWindow?.postMessage(
           {
             __frame_chrome_report: true,
-            snapshot: input,
+            snapshot: snapshot,
           },
-          options2,
+          destination,
         );
       } catch {}
     },
@@ -366,14 +366,14 @@ function createHostFrameBridge(
       if (
         parentWindow === null ||
         dataset.source !== parentWindow ||
-        !isAllowedHostOrigin(dataset.origin, options.origins)
+        !isAllowedHostOrigin(dataset.origin, bridgeOptions.origins)
       ) {
         return;
       }
       let data = dataset.data as Host.HostIncomingData | null | undefined,
         value: boolean = data?.__frame_chrome_poke === true,
-        value2: boolean = data?.__frame_chrome_cmd === true;
-      if (!value && !value2) {
+        isChromeCommand: boolean = data?.__frame_chrome_cmd === true;
+      if (!value && !isChromeCommand) {
         return;
       }
       hostOrigin = dataset.origin;
@@ -388,102 +388,102 @@ function createHostFrameBridge(
       }
       notifyHostChromeChanged();
       if (
-        value2 &&
+        isChromeCommand &&
         data?.cmd === "action" &&
         data.id === OPEN_FIND_COMMAND &&
         currentSnapshot?.actions?.some(
-          (input): boolean => input.id === OPEN_FIND_COMMAND,
+          (command): boolean => command.id === OPEN_FIND_COMMAND,
         )
       ) {
         try {
           findHandler?.();
-        } catch (value3: unknown) {
+        } catch (error: unknown) {
           if (typeof reportError === "function") {
-            reportError(value3);
+            reportError(error);
           } else {
-            console.error(value3);
+            console.error(error);
           }
         }
       }
       if (
-        value2 &&
+        isChromeCommand &&
         data?.cmd === "action" &&
         data.id === SAVE_NOW_COMMAND &&
         currentSnapshot?.actions?.some(
-          (input): boolean => input.id === SAVE_NOW_COMMAND,
+          (command): boolean => command.id === SAVE_NOW_COMMAND,
         )
       ) {
         try {
           saveNowHandler?.();
-        } catch (value3: unknown) {
+        } catch (error: unknown) {
           if (typeof reportError === "function") {
-            reportError(value3);
+            reportError(error);
           } else {
-            console.error(value3);
+            console.error(error);
           }
         }
       }
-      if (value2 && data?.cmd === "action" && typeof data.id === "string") {
-        let value3 = currentSnapshot?.destinations?.find(
-          (input): boolean => input.id === data.id,
+      if (isChromeCommand && data?.cmd === "action" && typeof data.id === "string") {
+        let matchingDestination = currentSnapshot?.destinations?.find(
+          (destination): boolean => destination.id === data.id,
         );
-        if (value3 !== undefined && value3.disabled !== true) {
+        if (matchingDestination !== undefined && matchingDestination.disabled !== true) {
           try {
             destinationHandler?.(data.id);
-          } catch (value4: unknown) {
+          } catch (error: unknown) {
             if (typeof reportError === "function") {
-              reportError(value4);
+              reportError(error);
             } else {
-              console.error(value4);
+              console.error(error);
             }
           }
         }
       }
-      if (value2 && data?.cmd === "export") {
+      if (isChromeCommand && data?.cmd === "export") {
         let {
-          format: value3,
-          request: value4,
-          interactive: value5,
-          variant: value6,
-          bundle: value7,
-          windowMs: value8,
-          sender: value9,
+          format: format,
+          request: requestId,
+          interactive: interactive,
+          variant: destination,
+          bundle: bundle,
+          windowMs: timeoutMs,
+          sender: sender,
         } = data;
         if (
-          typeof value3 === "string" &&
-          EXPORT_FORMAT_PATTERN.test(value3) &&
-          (value6 === undefined ||
-            (typeof value6 === "string" &&
-              HOST_DESTINATION_PATTERN.test(value6))) &&
-          exportVariantIsEnabled(value3, value6) &&
-          typeof value4 === "string" &&
-          HOST_REQUEST_ID_PATTERN.test(value4)
+          typeof format === "string" &&
+          EXPORT_FORMAT_PATTERN.test(format) &&
+          (destination === undefined ||
+            (typeof destination === "string" &&
+              HOST_DESTINATION_PATTERN.test(destination))) &&
+          exportVariantIsEnabled(format, destination) &&
+          typeof requestId === "string" &&
+          HOST_REQUEST_ID_PATTERN.test(requestId)
         ) {
           try {
             exportHandler?.(
-              value3,
-              value4,
-              value5 === true,
-              value6,
-              value5 === true && value7 === true,
-              validExportTimeout(value8),
-              value5 !== true && (value9 === "viewer" || value9 === "claude")
-                ? value9
+              format,
+              requestId,
+              interactive === true,
+              destination,
+              interactive === true && bundle === true,
+              validExportTimeout(timeoutMs),
+              interactive !== true && (sender === "viewer" || sender === "claude")
+                ? sender
                 : undefined,
             );
-          } catch (value10: unknown) {
+          } catch (error: unknown) {
             if (typeof reportError === "function") {
-              reportError(value10);
+              reportError(error);
             } else {
-              console.error(value10);
+              console.error(error);
             }
           }
         }
       }
     };
   if (parentWindow !== null) {
-    options.ownWindow.addEventListener("message", handleHostChromeMessage);
-    for (let value of options.origins) {
+    bridgeOptions.ownWindow.addEventListener("message", handleHostChromeMessage);
+    for (let value of bridgeOptions.origins) {
       if (value.endsWith(":*")) {
         continue;
       }
@@ -498,51 +498,51 @@ function createHostFrameBridge(
     }
   }
   return {
-    report(input, options2 = false): void {
+    report(message, saveNow = false): void {
       if (parentWindow === null) {
         return;
       }
       saveReport =
-        input === null
+        message === null
           ? null
           : {
-              saved: input,
-              saveNow: options2,
+              saved: message,
+              saveNow: saveNow,
             };
       refreshChromeSnapshot();
     },
-    setSaveNowHandler(input): void {
-      saveNowHandler = input;
+    setSaveNowHandler(handler): void {
+      saveNowHandler = handler;
       notifyHostChromeChanged();
     },
-    setDestinations(input): void {
+    setDestinations(commandDestinations): void {
       if (parentWindow === null) {
         return;
       }
-      let value = input === null ? [] : normalizeHostCommands(input);
+      let value = commandDestinations === null ? [] : normalizeHostCommands(commandDestinations);
       destinations = value.length === 0 ? null : value;
       refreshChromeSnapshot();
     },
-    setDestinationHandler(input): void {
-      destinationHandler = input;
+    setDestinationHandler(handler): void {
+      destinationHandler = handler;
     },
-    setFoot(input): void {
+    setFoot(foot): void {
       if (parentWindow === null) {
         return;
       }
       let state: Host.HostFoot = {};
       if (
-        input !== null &&
-        typeof input.inset === "number" &&
-        Number.isFinite(input.inset)
+        foot !== null &&
+        typeof foot.inset === "number" &&
+        Number.isFinite(foot.inset)
       ) {
         state.footInset = Math.min(
-          Math.max(0, Math.round(input.inset)),
+          Math.max(0, Math.round(foot.inset)),
           MAX_HOST_FOOT_INSET,
         );
       }
       let value =
-        typeof input?.ground === "string" ? input.ground.toLowerCase() : null;
+        typeof foot?.ground === "string" ? foot.ground.toLowerCase() : null;
       if (value !== null && HOST_BACKGROUND_HEX_PATTERN.test(value)) {
         state.ground = value;
       }
@@ -552,30 +552,30 @@ function createHostFrameBridge(
           : state;
       refreshChromeSnapshot();
     },
-    setExports(input): void {
+    setExports(formats): void {
       if (parentWindow === null) {
         return;
       }
-      let value = input === null ? [] : normalizeHostExportFormats(input);
+      let value = formats === null ? [] : normalizeHostExportFormats(formats);
       exportFormats = value.length === 0 ? null : value;
       refreshChromeSnapshot();
     },
-    setExportHandler(input): void {
-      exportHandler = input;
+    setExportHandler(handler): void {
+      exportHandler = handler;
     },
-    setFind(input, options2): void {
-      findHandler = options2;
-      if (parentWindow === null || findEnabled === input) {
+    setFind(enabled, handler): void {
+      findHandler = handler;
+      if (parentWindow === null || findEnabled === enabled) {
         return;
       }
-      findEnabled = input;
+      findEnabled = enabled;
       refreshChromeSnapshot();
     },
-    declineExport(input, options2 = false): void {
+    declineExport(requestId, cancelled = false): void {
       if (
         parentWindow === null ||
         hostOrigin === null ||
-        !HOST_REQUEST_ID_PATTERN.test(input)
+        !HOST_REQUEST_ID_PATTERN.test(requestId)
       ) {
         return;
       }
@@ -583,9 +583,9 @@ function createHostFrameBridge(
         parentWindow.postMessage(
           {
             __frame_chrome_decline: true,
-            request: input,
-            ...(options2 && {
-              cancelled: options2,
+            request: requestId,
+            ...(cancelled && {
+              cancelled: cancelled,
             }),
           },
           hostOrigin,
@@ -611,19 +611,19 @@ function createHostFrameBridge(
       };
     },
     witnessed: (): boolean => hostAcknowledgedRows,
-    hostDrawsSave: hostDrawsSave2,
-    hostDrawsReadOnly: hostDrawsReadOnly2,
+    hostDrawsSave: hostDrawsSaveCapability,
+    hostDrawsReadOnly: hostDrawsReadOnlyCapability,
     hostDrawsClaudeTips: hostDrawsClaudeTips,
-    hostTakesRetry: hostTakesRetry2,
-    subscribeHostDrawsSave(input) {
-      hostChromeListeners.add(input);
+    hostTakesRetry: hostTakesRetryCapability,
+    subscribeHostDrawsSave(listener) {
+      hostChromeListeners.add(listener);
       return (): void => {
-        hostChromeListeners.delete(input);
+        hostChromeListeners.delete(listener);
       };
     },
     dispose(): void {
       if (parentWindow !== null) {
-        options.ownWindow.removeEventListener(
+        bridgeOptions.ownWindow.removeEventListener(
           "message",
           handleHostChromeMessage,
         );
@@ -660,17 +660,17 @@ function useHostSaveState(
   if (status !== "loading") {
     ref.current = status === "error";
   }
-  let value2 =
+  let saveMessage =
       status === null ? null : value ? "saving" : hostSaveStatus(status),
-    value3 =
+    saveNow =
       message !== undefined && (status === "error" || status === "dirty"),
-    ref2 = react_z.useRef(message);
-  ref2.current = message;
+    messageRef = react_z.useRef(message);
+  messageRef.current = message;
   react_z.useEffect((): void => {
-    reportToHost(value2, value3);
-  }, [value2, value3]);
+    reportToHost(saveMessage, saveNow);
+  }, [saveMessage, saveNow]);
   react_z.useEffect(() => {
-    getHostFrameBridge().setSaveNowHandler(() => ref2.current?.());
+    getHostFrameBridge().setSaveNowHandler(() => messageRef.current?.());
     return (): void => {
       getHostFrameBridge().setSaveNowHandler(null);
       reportToHost(null);
@@ -731,12 +731,12 @@ export function installHostFrameBridge(): () => void {
     SAVE_NOW_COMMAND = "save_now";
     OPEN_FIND_COMMAND = "open_find";
     EXPORT_FORMAT_PATTERN = /^[a-z0-9]{1,8}$/;
-    validExportTimeout = (value) =>
-      typeof value === "number" &&
-      Number.isSafeInteger(value) &&
-      value > 5000 &&
-      value <= 900000
-        ? value
+    validExportTimeout = (timeoutMs) =>
+      typeof timeoutMs === "number" &&
+      Number.isSafeInteger(timeoutMs) &&
+      timeoutMs > 5000 &&
+      timeoutMs <= 900000
+        ? timeoutMs
         : undefined;
     MAX_HOST_EXPORT_FORMATS = 8;
     HOST_DESTINATION_PATTERN = /^[a-z][a-z0-9_-]{0,31}$/;

@@ -35,16 +35,16 @@ function updateAssetGroupMetadata(
   }
   let assetKeysByGroup = new Map<string, Set<string>>();
   for (let value of Object.keys(content.files)) {
-    let value2 = parseAssetGroupPath(value);
-    if (value2 === null) {
+    let assetPathParts = parseAssetGroupPath(value);
+    if (assetPathParts === null) {
       continue;
     }
-    let value3 = assetKeysByGroup.get(value2.group) ?? new Set();
-    value3.add(value2.key);
-    assetKeysByGroup.set(value2.group, value3);
+    let groupAssetKeys = assetKeysByGroup.get(assetPathParts.group) ?? new Set();
+    groupAssetKeys.add(assetPathParts.key);
+    assetKeysByGroup.set(assetPathParts.group, groupAssetKeys);
   }
-  metadata.groups = metadata.groups.filter((input) =>
-    assetKeysByGroup.has(input),
+  metadata.groups = metadata.groups.filter((groupName) =>
+    assetKeysByGroup.has(groupName),
   );
   for (let value of Object.keys(metadata.tiles)) {
     if (!assetKeysByGroup.has(value)) {
@@ -52,22 +52,22 @@ function updateAssetGroupMetadata(
     }
   }
   for (let value of Object.keys(metadata.orders)) {
-    let value2 = (
+    let groupOrder = (
       ownPropertyOrUndefined(metadata.orders, value) ?? []
     ).filter(
-      (input): boolean => assetKeysByGroup.get(value)?.has(input) === true,
+      (assetKey): boolean => assetKeysByGroup.get(value)?.has(assetKey) === true,
     );
-    if (value2.length === 0) {
+    if (groupOrder.length === 0) {
       delete metadata.orders[value];
     } else {
-      metadata.orders[value] = value2;
+      metadata.orders[value] = groupOrder;
     }
   }
   let serialized = serializeAssetGroupMetadata(metadata);
   if (
     serialized.length === 0 &&
     Object.keys(manifest).every(
-      (input) => input === "assetGroups" || input === "manifestVersion",
+      (metadataKey) => metadataKey === "assetGroups" || metadataKey === "manifestVersion",
     )
   ) {
     return deleteDesignSystemFiles(content, [
@@ -90,7 +90,7 @@ function assetGroupDirectory(group: string) {
 }
 function assetGroupFilePaths(files: Model.FileTable, group: string) {
   return Object.keys(files).filter(
-    (input): boolean => parseAssetGroupPath(input)?.group === group,
+    (assetPath): boolean => parseAssetGroupPath(assetPath)?.group === group,
   );
 }
 function parseAssetGroupPath(path: string) {
@@ -128,8 +128,8 @@ function addAssetFile(
   }
   let subpathSegments = (asset.subpath ?? "")
       .split("/")
-      .map((input) => input.trim())
-      .filter((input) => input !== "" && input !== "." && input !== "..")
+      .map((segment) => segment.trim())
+      .filter((segment) => segment !== "" && segment !== "." && segment !== "..")
       .map(sanitizeUploadFileName),
     directory = [assetGroupDirectory(group), ...subpathSegments].join("/"),
     filename = unusedFileName(
@@ -185,16 +185,16 @@ function renameAssetFile(
   if (oldGroup === null || newGroup === null) {
     return renamed;
   }
-  return updateAssetGroupMetadata(renamed, (input): boolean => {
+  return updateAssetGroupMetadata(renamed, (metadata): boolean => {
     let value = ownPropertyOrUndefined(
-        input.orders,
+        metadata.orders,
         oldGroup.group,
       ),
-      value2 = value?.indexOf(oldGroup.key) ?? -1;
-    if (value === undefined || value2 < 0) {
+      oldGroupIndex = value?.indexOf(oldGroup.key) ?? -1;
+    if (value === undefined || oldGroupIndex < 0) {
       return false;
     }
-    value[value2] = newGroup.key;
+    value[oldGroupIndex] = newGroup.key;
     return true;
   });
 }
@@ -224,19 +224,19 @@ function moveAssetsToGroup(
     working = content,
     movedPaths: string[] = [];
   for (let value of paths) {
-    let value2 = parseAssetGroupPath(value);
+    let assetPathParts = parseAssetGroupPath(value);
     if (
-      value2 === null ||
+      assetPathParts === null ||
       !Object.hasOwn(working.files, value) ||
       movedPaths.includes(value)
     ) {
       continue;
     }
-    if (value2.group === group) {
+    if (assetPathParts.group === group) {
       movedPaths.push(value);
       continue;
     }
-    let value3: string =
+    let targetPath: string =
         directory +
         "/" +
         unusedFileName(
@@ -244,12 +244,12 @@ function moveAssetsToGroup(
           directory,
           pathBasename(value),
         ),
-      value4 = renameAssetFilePath(working, value, value3);
-    if (value4 === working) {
+      renamedPath = renameAssetFilePath(working, value, targetPath);
+    if (renamedPath === working) {
       continue;
     }
-    working = value4;
-    movedPaths.push(value3);
+    working = renamedPath;
+    movedPaths.push(targetPath);
   }
   if (movedPaths.length === 0) {
     return content;
@@ -262,51 +262,51 @@ function moveAssetsToGroup(
   ) {
     return working;
   }
-  let movedKeys = movedPaths.map((input) => parseAssetGroupPath(input)!.key),
+  let movedKeys = movedPaths.map((assetPath) => parseAssetGroupPath(assetPath)!.key),
     beforeKey =
       beforePath === null ? null : parseAssetGroupPath(beforePath)!.key;
-  return updateAssetGroupMetadata(working, (input): boolean => {
-    let value = Object.keys(working.files).flatMap((input2) => {
-        let value5 = parseAssetGroupPath(input2),
-          value6 = assetKindForPath(input2);
-        if (value5 !== null && value5.group === group && value6 !== "font") {
+  return updateAssetGroupMetadata(working, (metadata): boolean => {
+    let value = Object.keys(working.files).flatMap((filePath) => {
+        let pathParts = parseAssetGroupPath(filePath),
+          assetKind = assetKindForPath(filePath);
+        if (pathParts !== null && pathParts.group === group && assetKind !== "font") {
           return [
             {
-              key: value5.key,
-              wall: isWallAssetKind(value6),
+              key: pathParts.key,
+              wall: isWallAssetKind(assetKind),
             },
           ];
         } else {
           return [];
         }
       }),
-      entries = new Map(value.map((input2) => [input2.key, input2.wall])),
-      value2 = orderAssetTiles(
+      entries = new Map(value.map((asset) => [asset.key, asset.wall])),
+      orderedKeys = orderAssetTiles(
         value,
         (
-          ownPropertyOrUndefined(input.orders, group) ?? []
-        ).filter((input2) => entries.has(input2)),
-      ).map((input2) => input2.key),
-      value3 = value2.filter(
-        (input2): boolean => !movedKeys.includes(input2),
+          ownPropertyOrUndefined(metadata.orders, group) ?? []
+        ).filter((key) => entries.has(key)),
+      ).map((asset) => asset.key),
+      remainingKeys = orderedKeys.filter(
+        (key): boolean => !movedKeys.includes(key),
       ),
-      value4 = beforeKey === null ? -1 : value3.indexOf(beforeKey);
-    value3.splice(
-      value4 < 0 ? value3.length : value4,
+      insertIndex = beforeKey === null ? -1 : remainingKeys.indexOf(beforeKey);
+    remainingKeys.splice(
+      insertIndex < 0 ? remainingKeys.length : insertIndex,
       0,
-      ...movedKeys.filter((input2) => entries.has(input2)),
+      ...movedKeys.filter((key) => entries.has(key)),
     );
     let items = [
-      ...value3.filter((input2): boolean => entries.get(input2) === true),
-      ...value3.filter((input2): boolean => entries.get(input2) !== true),
+      ...remainingKeys.filter((key): boolean => entries.get(key) === true),
+      ...remainingKeys.filter((key): boolean => entries.get(key) !== true),
     ];
     if (
-      items.length === value2.length &&
-      items.every((input2, options): boolean => input2 === value2[options])
+      items.length === orderedKeys.length &&
+      items.every((key, index): boolean => key === orderedKeys[index])
     ) {
       return false;
     }
-    input.orders[group] = items;
+    metadata.orders[group] = items;
     return true;
   });
 }
@@ -328,9 +328,9 @@ function renameAssetGroup(
   let oldPrefix: string = assetGroupDirectory(oldGroup) + "/";
   if (
     Object.keys(content.files).some(
-      (input) =>
-        input.startsWith(oldPrefix) &&
-        protectedFilePathPredicate(input),
+      (path) =>
+        path.startsWith(oldPrefix) &&
+        protectedFilePathPredicate(path),
     )
   ) {
     return content;
@@ -339,13 +339,13 @@ function renameAssetGroup(
     paths = assetGroupFilePaths(content.files, oldGroup);
   if (
     paths.length === 0 ||
-    Object.keys(content.files).some((input) => input.startsWith(newPrefix))
+    Object.keys(content.files).some((path) => path.startsWith(newPrefix))
   ) {
     return content;
   }
   let working = content;
   for (let value of paths) {
-    let value2 = renameDesignSystemFile(
+    let renamedPath = renameDesignSystemFile(
       working,
       value,
       newPrefix +
@@ -355,24 +355,24 @@ function renameAssetGroup(
             : oldPrefix.length,
         ),
     );
-    if (value2 === working) {
+    if (renamedPath === working) {
       return content;
     }
-    working = value2;
+    working = renamedPath;
   }
-  working = updateAssetGroupMetadata(working, (input): boolean => {
-    input.groups = input.groups.map((input2) =>
-      input2 === oldGroup ? newGroup : input2,
+  working = updateAssetGroupMetadata(working, (metadata): boolean => {
+    metadata.groups = metadata.groups.map((groupName) =>
+      groupName === oldGroup ? newGroup : groupName,
     );
-    let value = ownPropertyOrUndefined(input.tiles, oldGroup),
-      value2 = ownPropertyOrUndefined(input.orders, oldGroup);
-    delete input.tiles[oldGroup];
-    delete input.orders[oldGroup];
+    let value = ownPropertyOrUndefined(metadata.tiles, oldGroup),
+      groupOrders = ownPropertyOrUndefined(metadata.orders, oldGroup);
+    delete metadata.tiles[oldGroup];
+    delete metadata.orders[oldGroup];
     if (value !== undefined) {
-      input.tiles[newGroup] = value;
+      metadata.tiles[newGroup] = value;
     }
-    if (value2 !== undefined) {
-      input.orders[newGroup] = value2;
+    if (groupOrders !== undefined) {
+      metadata.orders[newGroup] = groupOrders;
     }
     return true;
   });
@@ -387,7 +387,7 @@ function deleteAssetFiles(
 ) {
   return deleteDesignSystemFiles(
     content,
-    paths.filter((input): boolean => parseAssetGroupPath(input) !== null),
+    paths.filter((path): boolean => parseAssetGroupPath(path) !== null),
   );
 }
 function setFileStorageRecord(
@@ -465,9 +465,9 @@ function removeMissingStorageDigests(
   if (missingIds.size === 0) {
     return content;
   }
-  return updateStorageCatalog(content, (input) => {
-    let value: Model.StorageCatalog = dropMissingBlobDigests(input, missingIds);
-    if (value === input) {
+  return updateStorageCatalog(content, (catalog) => {
+    let value: Model.StorageCatalog = dropMissingBlobDigests(catalog, missingIds);
+    if (value === catalog) {
       return null;
     } else {
       return value;
@@ -580,9 +580,9 @@ function unusedTokenName(
       value < 1e4;
       value++
     ) {
-      let value2 = numericSuffix[1] + String(value).padStart(length, "0");
-      if (!taken.has(value2)) {
-        return value2;
+      let candidateName = numericSuffix[1] + String(value).padStart(length, "0");
+      if (!taken.has(candidateName)) {
+        return candidateName;
       }
     }
   }
@@ -596,22 +596,22 @@ function unusedTokenName(
 function addColorToken(
   content: Model.DesignSystemContent,
   name: string,
-  value: unknown,
+  colorValue: unknown,
   afterName?: string,
 ) {
-  let normalized = normalizeColorOrAlias(value);
+  let normalized = normalizeColorOrAlias(colorValue);
   if (!TOKEN_NAME_PATTERN.test(name) || normalized === undefined) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (colorCatalog): boolean => {
     if (
-      conflictingTokenNames(input, "color").includes(name) ||
-      input.color.tokens.length >= MAX_COLOR_TOKENS
+      conflictingTokenNames(colorCatalog, "color").includes(name) ||
+      colorCatalog.color.tokens.length >= MAX_COLOR_TOKENS
     ) {
       return false;
     }
-    if (input.color.themes.length === 0) {
-      input.color.themes.push({
+    if (colorCatalog.color.themes.length === 0) {
+      colorCatalog.color.themes.push({
         id: "light",
         name: "Light",
       });
@@ -619,20 +619,20 @@ function addColorToken(
     let state = {
         name: name,
         value: {
-          [input.color.themes[0]?.id ?? "light"]: normalized,
+          [colorCatalog.color.themes[0]?.id ?? "light"]: normalized,
         },
         usage: "",
       },
-      value2 =
+      insertIndex =
         afterName !== undefined
-          ? input.color.tokens.findIndex(
-              (input2): boolean => input2.name === afterName,
+          ? colorCatalog.color.tokens.findIndex(
+              (token): boolean => token.name === afterName,
             )
           : -1;
-    if (value2 >= 0) {
-      input.color.tokens.splice(value2 + 1, 0, state);
+    if (insertIndex >= 0) {
+      colorCatalog.color.tokens.splice(insertIndex + 1, 0, state);
     } else {
-      input.color.tokens.push(state);
+      colorCatalog.color.tokens.push(state);
     }
     return true;
   });
@@ -641,24 +641,24 @@ function addScalarToken(
   content: Model.DesignSystemContent,
   family: Core.ScalarKind,
   name: string,
-  value: unknown,
+  scalarValue: unknown,
   afterName?: string,
   extraFamily?: string,
 ) {
-  let normalized = normalizeScalarTokenValue(family, value);
+  let normalized = normalizeScalarTokenValue(family, scalarValue);
   if (!TOKEN_NAME_PATTERN.test(name) || normalized === undefined) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
-    let value2 =
+  return updateTokens(content, (tokenCatalog): boolean => {
+    let tokens =
       family === "extra"
-        ? input.extra.find((input2): boolean => input2.key === extraFamily)
+        ? tokenCatalog.extra.find((token): boolean => token.key === extraFamily)
             ?.tokens
-        : input[family].tokens;
+        : tokenCatalog[family].tokens;
     if (
-      value2 === undefined ||
-      conflictingTokenNames(input, family).includes(name) ||
-      value2.length >= MAX_TOKENS_PER_FAMILY
+      tokens === undefined ||
+      conflictingTokenNames(tokenCatalog, family).includes(name) ||
+      tokens.length >= MAX_TOKENS_PER_FAMILY
     ) {
       return false;
     }
@@ -667,14 +667,14 @@ function addScalarToken(
         value: normalized,
         usage: "",
       },
-      value3 =
+      insertIndex =
         afterName !== undefined
-          ? value2.findIndex((input2): boolean => input2.name === afterName)
+          ? tokens.findIndex((token): boolean => token.name === afterName)
           : -1;
-    if (value3 >= 0) {
-      value2.splice(value3 + 1, 0, state);
+    if (insertIndex >= 0) {
+      tokens.splice(insertIndex + 1, 0, state);
     } else {
-      value2.push(state);
+      tokens.push(state);
     }
     return true;
   });
@@ -682,21 +682,21 @@ function addScalarToken(
 function addShadowToken(
   content: Model.DesignSystemContent,
   name: string,
-  value: unknown,
+  shadowValue: unknown,
 ) {
-  let normalized = normalizeBoxShadow(value);
+  let normalized = normalizeBoxShadow(shadowValue);
   if (!TOKEN_NAME_PATTERN.test(name) || normalized === undefined) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (shadowCatalog): boolean => {
     if (
-      conflictingTokenNames(input, "shadow").includes(name) ||
-      input.shadow.tokens.length >= MAX_TOKENS_PER_FAMILY
+      conflictingTokenNames(shadowCatalog, "shadow").includes(name) ||
+      shadowCatalog.shadow.tokens.length >= MAX_TOKENS_PER_FAMILY
     ) {
       return false;
     }
-    if (input.color.themes.length === 0) {
-      input.color.themes.push({
+    if (shadowCatalog.color.themes.length === 0) {
+      shadowCatalog.color.themes.push({
         id: "light",
         name: "Light",
       });
@@ -704,11 +704,11 @@ function addShadowToken(
     let state = {
       name: name,
       value: {
-        [input.color.themes[0]?.id ?? "light"]: normalized,
+        [shadowCatalog.color.themes[0]?.id ?? "light"]: normalized,
       },
       usage: "",
     };
-    input.shadow.tokens.push(state);
+    shadowCatalog.shadow.tokens.push(state);
     return true;
   });
 }
@@ -721,48 +721,48 @@ function addTypographyStyle(
   if (!TOKEN_NAME_PATTERN.test(name)) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
-    let value = input.type.groups.flatMap((input2) => input2.styles);
+  return updateTokens(content, (typeCatalog): boolean => {
+    let value = typeCatalog.type.groups.flatMap((style) => style.styles);
     if (
-      value.some((input2): boolean => input2.name === name) ||
+      value.some((style): boolean => style.name === name) ||
       value.length >= MAX_TYPOGRAPHY_STYLES
     ) {
       return false;
     }
-    let value2 =
+    let targetGroup =
         groupName !== undefined
-          ? input.type.groups.find(
-              (input2): boolean => input2.name === groupName,
+          ? typeCatalog.type.groups.find(
+              (group): boolean => group.name === groupName,
             )
-          : input.type.groups[0],
-      value3 = -1,
-      value4: Model.TypographyStyle | undefined;
+          : typeCatalog.type.groups[0],
+      styleInsertIndex = -1,
+      existingStyle: Model.TypographyStyle | undefined;
     if (afterName !== undefined) {
-      for (let value6 of input.type.groups) {
-        let value7 = value6.styles.findIndex(
-          (input2): boolean => input2.name === afterName,
+      for (let group of typeCatalog.type.groups) {
+        let styleIndex = group.styles.findIndex(
+          (style): boolean => style.name === afterName,
         );
-        if (value7 >= 0) {
-          value2 = value6;
-          value3 = value7;
-          value4 = value6.styles[value7];
+        if (styleIndex >= 0) {
+          targetGroup = group;
+          styleInsertIndex = styleIndex;
+          existingStyle = group.styles[styleIndex];
           break;
         }
       }
     }
-    if (value2 === undefined) {
-      value2 = {
+    if (targetGroup === undefined) {
+      targetGroup = {
         name: "Styles",
-        family: Object.keys(input.type.families)[0] ?? "",
+        family: Object.keys(typeCatalog.type.families)[0] ?? "",
         note: "",
         styles: [],
       };
-      input.type.groups.push(value2);
+      typeCatalog.type.groups.push(targetGroup);
     }
-    let value5: Model.TypographyStyle =
-      value4 !== undefined
+    let newStyle: Model.TypographyStyle =
+      existingStyle !== undefined
         ? {
-            ...value4,
+            ...existingStyle,
             name: name,
             sample: "",
             usage: "",
@@ -779,10 +779,10 @@ function addTypographyStyle(
             sample: "",
             usage: "",
           };
-    if (value3 >= 0) {
-      value2.styles.splice(value3 + 1, 0, value5);
+    if (styleInsertIndex >= 0) {
+      targetGroup.styles.splice(styleInsertIndex + 1, 0, newStyle);
     } else {
-      value2.styles.push(value5);
+      targetGroup.styles.push(newStyle);
     }
     return true;
   });
@@ -791,18 +791,18 @@ function addTypographyGroup(
   content: Model.DesignSystemContent,
   preferredName: string,
 ) {
-  return updateTokens(content, (input): boolean => {
-    if (input.type.groups.length >= MAX_TYPOGRAPHY_GROUPS) {
+  return updateTokens(content, (typeCatalog): boolean => {
+    if (typeCatalog.type.groups.length >= MAX_TYPOGRAPHY_GROUPS) {
       return false;
     }
-    let values = new Set(input.type.groups.map((input2) => input2.name)),
+    let values = new Set(typeCatalog.type.groups.map((group) => group.name)),
       value = preferredName;
     for (let count: number = 2; values.has(value); count++) {
       value = preferredName + " " + String(count);
     }
-    input.type.groups.push({
+    typeCatalog.type.groups.push({
       name: value,
-      family: Object.keys(input.type.families)[0] ?? "",
+      family: Object.keys(typeCatalog.type.families)[0] ?? "",
       note: "",
       styles: [],
     });
@@ -821,14 +821,14 @@ function renameTypographyGroup(
   if (normalized === "" || normalized === oldName) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (typeCatalog): boolean => {
     if (
-      input.type.groups.some((input2): boolean => input2.name === normalized)
+      typeCatalog.type.groups.some((group): boolean => group.name === normalized)
     ) {
       return false;
     }
-    let value = input.type.groups.find(
-      (input2): boolean => input2.name === oldName,
+    let value = typeCatalog.type.groups.find(
+      (group): boolean => group.name === oldName,
     );
     if (value === undefined) {
       return false;
@@ -841,15 +841,15 @@ function deleteTypographyGroup(
   content: Model.DesignSystemContent,
   name: string,
 ) {
-  return updateTokens(content, (input): boolean => {
-    let length = input.type.groups.length;
-    input.type.groups = input.type.groups.filter(
-      (input2): boolean => input2.name !== name,
+  return updateTokens(content, (typeCatalog): boolean => {
+    let length = typeCatalog.type.groups.length;
+    typeCatalog.type.groups = typeCatalog.type.groups.filter(
+      (group): boolean => group.name !== name,
     );
-    if (input.type.groups.length === length) {
+    if (typeCatalog.type.groups.length === length) {
       return false;
     }
-    pruneUnusedFontFamilies(input);
+    pruneUnusedFontFamilies(typeCatalog);
     return true;
   });
 }

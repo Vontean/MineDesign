@@ -26,9 +26,9 @@ async function callValidatedUserMethod<Value>(
     return null;
   }
   try {
-    let value2 = await value();
-    if (validate(value2)) {
-      return value2;
+    let result = await value();
+    if (validate(result)) {
+      return result;
     } else {
       return null;
     }
@@ -59,11 +59,11 @@ async function currentUserCanEdit(): Promise<null | boolean | undefined> {
     return null;
   }
   try {
-    let value2 = await value();
-    if (value2 === true) {
+    let permissionResult = await value();
+    if (permissionResult === true) {
       return true;
     } else {
-      if (value2 === false) {
+      if (permissionResult === false) {
         return false;
       } else {
         return null;
@@ -79,9 +79,9 @@ async function currentUserCan(capability: string): Promise<boolean | null> {
     return null;
   }
   try {
-    let value2 = await value(capability);
-    if (typeof value2 === "boolean") {
-      return value2;
+    let capabilityResult = await value(capability);
+    if (typeof capabilityResult === "boolean") {
+      return capabilityResult;
     } else {
       return null;
     }
@@ -100,11 +100,11 @@ async function currentUserCanEditAsync(): Promise<
     return null;
   }
   try {
-    let value2 = await value.canEdit.call(value);
-    if (value2 === true) {
+    let permissionResult = await value.canEdit.call(value);
+    if (permissionResult === true) {
       return true;
     } else {
-      if (value2 === false) {
+      if (permissionResult === false) {
         return false;
       } else {
         return null;
@@ -127,7 +127,7 @@ export {
 };
 export function installHostUserApi(): () => void {
   return () => {
-    isNonemptyUserString = (value: unknown): value is string =>
-      typeof value === "string" && value.length > 0;
+    isNonemptyUserString = (candidate: unknown): candidate is string =>
+      typeof candidate === "string" && candidate.length > 0;
   };
 }

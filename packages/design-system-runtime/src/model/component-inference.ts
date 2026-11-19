@@ -50,31 +50,31 @@ function parseComponentCardHeader(
   for (let value of (header[1] ?? "")
     .trimEnd()
     .matchAll(COMPONENT_CARD_ATTRIBUTE_PATTERN)) {
-    let value2 = (value[1] ?? "").toLowerCase(),
-      value3 = value[2] ?? value[3] ?? "";
-    if (value2 === "group") {
-      let value4 = clampSingleLineText(value3, 64);
-      if (value4 !== "" && !/[<>"]/.test(value4)) {
-        metadata.group = value4;
+    let headerKind = (value[1] ?? "").toLowerCase(),
+      headerValue = value[2] ?? value[3] ?? "";
+    if (headerKind === "group") {
+      let groupName = clampSingleLineText(headerValue, 64);
+      if (groupName !== "" && !/[<>"]/.test(groupName)) {
+        metadata.group = groupName;
       }
-    } else if (value2 === "height") {
-      let value4: number = Number(value3);
-      if (value3 !== "" && Number.isFinite(value4)) {
-        metadata.height = Math.round(Math.min(4000, Math.max(40, value4)));
+    } else if (headerKind === "height") {
+      let height: number = Number(headerValue);
+      if (headerValue !== "" && Number.isFinite(height)) {
+        metadata.height = Math.round(Math.min(4000, Math.max(40, height)));
       }
-    } else if (value2 === "width") {
-      let value4: number = Number(value3);
-      if (value3 !== "" && Number.isFinite(value4)) {
-        metadata.width = Math.round(Math.min(4000, Math.max(240, value4)));
+    } else if (headerKind === "width") {
+      let width: number = Number(headerValue);
+      if (headerValue !== "" && Number.isFinite(width)) {
+        metadata.width = Math.round(Math.min(4000, Math.max(240, width)));
       }
-    } else if (value2 === "subtitle") {
-      let value4 = clampSingleLineText(value3, 120);
-      if (value4 !== "") {
-        metadata.subtitle = value4;
+    } else if (headerKind === "subtitle") {
+      let subtitle = clampSingleLineText(headerValue, 120);
+      if (subtitle !== "") {
+        metadata.subtitle = subtitle;
       }
-    } else if (value2 === "floor") {
+    } else if (headerKind === "floor") {
       metadata.floor = true;
-    } else if (value2 === "page") {
+    } else if (headerKind === "page") {
       metadata.page = true;
     }
   }
@@ -121,16 +121,16 @@ function commonTokenNamePrefix(names: readonly string[]): string {
     value > 0;
     value = firstName.indexOf("-", value + 1)
   ) {
-    let value2 = firstName.slice(0, value + 1);
+    let prefixCandidate = firstName.slice(0, value + 1);
     if (
       !names.every(
-        (items) => items.startsWith(value2) && items.length > value2.length,
+        (items) => items.startsWith(prefixCandidate) && items.length > prefixCandidate.length,
       )
     ) {
       break;
     }
-    if (names.some((input) => tokenHasGroupSuffix(input, value2))) {
-      commonPrefix = value2;
+    if (names.some((name) => tokenHasGroupSuffix(name, prefixCandidate))) {
+      commonPrefix = prefixCandidate;
     }
   }
   return commonPrefix;
@@ -165,7 +165,7 @@ function tokenHasGroupSuffix(name: string, prefix = ""): boolean {
 function groupTokensByName<Token extends { name: string }>(
   tokens: readonly Token[],
 ): M.TokenNameGroup<Token>[] {
-  let prefix = commonTokenNamePrefix(tokens.map((input) => input.name)),
+  let prefix = commonTokenNamePrefix(tokens.map((token) => token.name)),
     groups = new Map<string, Token[]>(),
     ungrouped: Token[] = [];
   for (let value of tokens) {
@@ -173,17 +173,17 @@ function groupTokensByName<Token extends { name: string }>(
       ungrouped.push(value);
       continue;
     }
-    let value2 = tokenGroupName(value.name, prefix),
-      entry = groups.get(value2);
+    let groupName = tokenGroupName(value.name, prefix),
+      entry = groups.get(groupName);
     if (entry === undefined) {
-      groups.set(value2, (entry = []));
+      groups.set(groupName, (entry = []));
     }
     entry.push(value);
   }
   let groupEntries = [...groups.entries()].map(
-    ([input, input2]: [string, Token[]]) => ({
-      name: input,
-      tokens: input2,
+    ([groupName, groupTokens]: [string, Token[]]) => ({
+      name: groupName,
+      tokens: groupTokens,
     }),
   );
   if (ungrouped.length > 0) {
@@ -206,39 +206,39 @@ function groupColorPaletteTokens(
       Core.NormalizedTokens["color"]["tokens"][number][]
     >(),
     prefix = commonTokenNamePrefix(
-      tokens.color.tokens.map((input) => input.name),
+      tokens.color.tokens.map((token) => token.name),
     );
   for (let value of tokens.color.tokens) {
-    let value2 = tokenGroupName(value.name, prefix),
-      entry = byGroup.get(value2);
+    let groupName = tokenGroupName(value.name, prefix),
+      entry = byGroup.get(groupName);
     if (entry === undefined) {
-      byGroup.set(value2, (entry = []));
+      byGroup.set(groupName, (entry = []));
     }
     entry.push(value);
   }
   let palettes: M.ColorPaletteGroup[] = [];
-  for (let [value, value2] of byGroup) {
+  for (let [value, groupTokens] of byGroup) {
     if (
-      value2.some((input) => tokenHasGroupSuffix(input.name, prefix)) &&
-      value2.length >= 1
+      groupTokens.some((token) => tokenHasGroupSuffix(token.name, prefix)) &&
+      groupTokens.length >= 1
     ) {
       palettes.push({
         name: value,
-        numeric: value2.every((input) =>
-          NUMERIC_TOKEN_SUFFIX_PATTERN.test(input.name),
+        numeric: groupTokens.every((token) =>
+          NUMERIC_TOKEN_SUFFIX_PATTERN.test(token.name),
         ),
-        tokens: value2,
+        tokens: groupTokens,
       });
     }
   }
-  let paletteNames = new Set(palettes.map((input) => input.name)),
+  let paletteNames = new Set(palettes.map((palette) => palette.name)),
     ungrouped = [...byGroup.entries()]
-      .filter(([input]): boolean => !paletteNames.has(input))
-      .flatMap(([, input]) => input);
+      .filter(([groupName]): boolean => !paletteNames.has(groupName))
+      .flatMap(([, groupTokens]) => groupTokens);
   ungrouped.sort(
-    (input, options) =>
-      tokens.color.tokens.indexOf(input) -
-      tokens.color.tokens.indexOf(options),
+    (leftToken, rightToken) =>
+      tokens.color.tokens.indexOf(leftToken) -
+      tokens.color.tokens.indexOf(rightToken),
   );
   if (ungrouped.length > 0) {
     return [
@@ -277,11 +277,11 @@ function skipBalancedTypeExpression(text: string, start: number): number {
       open === "{" ? "}" : open === "(" ? ")" : open === "[" ? "]" : ">",
     depth: number = 0;
   for (let value = start; value < text.length; value++) {
-    let value2 = text[value];
-    if (value2 === '"' || value2 === "'" || value2 === "`") {
-      let value3 = value2;
+    let currentChar = text[value];
+    if (currentChar === '"' || currentChar === "'" || currentChar === "`") {
+      let quoteChar = currentChar;
       value++;
-      while (value < text.length && text[value] !== value3) {
+      while (value < text.length && text[value] !== quoteChar) {
         if (text[value] === "\\") {
           value++;
         }
@@ -289,29 +289,29 @@ function skipBalancedTypeExpression(text: string, start: number): number {
       }
       continue;
     }
-    if (value2 === "/" && text[value + 1] === "*") {
-      let value3 = text.indexOf("*/", value + 2);
-      if (value3 === -1) {
+    if (currentChar === "/" && text[value + 1] === "*") {
+      let commentEnd = text.indexOf("*/", value + 2);
+      if (commentEnd === -1) {
         return -1;
       }
-      value = value3 + 1;
+      value = commentEnd + 1;
       continue;
     }
-    if (value2 === "/" && text[value + 1] === "/") {
-      let value3 = text.indexOf(
+    if (currentChar === "/" && text[value + 1] === "/") {
+      let expressionEnd = text.indexOf(
         `
 `,
         value,
       );
-      if (value3 === -1) {
+      if (expressionEnd === -1) {
         return -1;
       }
-      value = value3;
+      value = expressionEnd;
       continue;
     }
-    if (value2 === open) {
+    if (currentChar === open) {
       depth++;
-    } else if (value2 === close) {
+    } else if (currentChar === close) {
       depth--;
       if (depth === 0) {
         return value + 1;
@@ -328,17 +328,17 @@ function typeDeclarationEnd(text: string, start: number): number {
       return offset;
     }
     if (value === "{" || value === "(" || value === "[") {
-      let value2 = skipBalancedTypeExpression(text, offset);
-      if (value2 === -1) {
+      let bodyEnd = skipBalancedTypeExpression(text, offset);
+      if (bodyEnd === -1) {
         return text.length;
       }
-      offset = value2;
+      offset = bodyEnd;
       continue;
     }
     if (value === '"' || value === "'" || value === "`") {
-      let value2 = value;
+      let quoteChar = value;
       offset++;
-      while (offset < text.length && text[offset] !== value2) {
+      while (offset < text.length && text[offset] !== quoteChar) {
         if (text[offset] === "\\") {
           offset++;
         }
@@ -348,17 +348,17 @@ function typeDeclarationEnd(text: string, start: number): number {
       continue;
     }
     if (value === "/" && text[offset + 1] === "*") {
-      let value2 = text.indexOf("*/", offset + 2);
-      offset = value2 === -1 ? text.length : value2 + 2;
+      let commentEnd = text.indexOf("*/", offset + 2);
+      offset = commentEnd === -1 ? text.length : commentEnd + 2;
       continue;
     }
     if (value === "/" && text[offset + 1] === "/") {
-      let value2 = text.indexOf(
+      let expressionEnd = text.indexOf(
         `
 `,
         offset,
       );
-      offset = value2 === -1 ? text.length : value2 + 1;
+      offset = expressionEnd === -1 ? text.length : expressionEnd + 1;
       continue;
     }
     offset++;
@@ -370,44 +370,44 @@ function findTypeDeclaration(
   name: string,
 ): M.TypeDeclaration | null {
   for (let value of texts) {
-    for (let value2 of ["interface", "type", "const", "enum"] as const) {
+    for (let declarationKind of ["interface", "type", "const", "enum"] as const) {
       let index = 0,
-        value3: string = value2 + " " + name;
+        declarationPrefix: string = declarationKind + " " + name;
       for (;;) {
-        let value4 = value.indexOf(value3, index);
-        if (value4 === -1) {
+        let declarationIndex = value.indexOf(declarationPrefix, index);
+        if (declarationIndex === -1) {
           break;
         }
-        index = value4 + value3.length;
-        let value5 = value4 === 0 ? " " : (value[value4 - 1] ?? " "),
-          value6 = value[index] ?? " ";
-        if (/[\w$]/.test(value5) || /[\w$]/.test(value6)) {
+        index = declarationIndex + declarationPrefix.length;
+        let previousChar = declarationIndex === 0 ? " " : (value[declarationIndex - 1] ?? " "),
+          nextChar = value[index] ?? " ";
+        if (/[\w$]/.test(previousChar) || /[\w$]/.test(nextChar)) {
           continue;
         }
-        if (value2 === "interface" || value2 === "enum") {
-          let value11 = value.indexOf("{", index);
-          if (value11 === -1) {
+        if (declarationKind === "interface" || declarationKind === "enum") {
+          let bodyStart = value.indexOf("{", index);
+          if (bodyStart === -1) {
             break;
           }
-          let value12 = skipBalancedTypeExpression(value, value11);
-          if (value12 === -1) {
+          let bodyEnd = skipBalancedTypeExpression(value, bodyStart);
+          if (bodyEnd === -1) {
             break;
           }
           return {
-            kind: value2,
-            head: value.slice(index, value11),
-            body: value.slice(value11 + 1, value12 - 1),
+            kind: declarationKind,
+            head: value.slice(index, bodyStart),
+            body: value.slice(bodyStart + 1, bodyEnd - 1),
           };
         }
-        let value7 = value
+        let prefixLength = value
             .slice(index)
             .replace(/^\s*(?:<[^=]*>\s*)?[=:]\s*/, ""),
-          value8 = value.length - index - value7.length,
-          value9 = index + value8,
-          value10 = typeDeclarationEnd(value, value9);
+          nameLength = value.length - index - prefixLength.length,
+          declarationStart = index + nameLength,
+          declarationEnd = typeDeclarationEnd(value, declarationStart);
         return {
-          kind: value2,
-          head: value.slice(value9, value10),
+          kind: declarationKind,
+          head: value.slice(declarationStart, declarationEnd),
           body: "",
         };
       }
@@ -433,34 +433,34 @@ function parseTypeBodyMembers(body: string): M.TypeBodyMember[] {
       continue;
     }
     if (value === "/" && body[offset + 1] === "*") {
-      let value5 = body.indexOf("*/", offset + 2),
-        value6 = body.slice(offset, value5 === -1 ? body.length : value5 + 2);
-      doc = value6.startsWith("/**") ? value6 : "";
-      offset = value5 === -1 ? body.length : value5 + 2;
+      let commentEnd = body.indexOf("*/", offset + 2),
+        commentText = body.slice(offset, commentEnd === -1 ? body.length : commentEnd + 2);
+      doc = commentText.startsWith("/**") ? commentText : "";
+      offset = commentEnd === -1 ? body.length : commentEnd + 2;
       continue;
     }
     if (value === "/" && body[offset + 1] === "/") {
-      let value5 = body.indexOf(
+      let expressionEnd = body.indexOf(
         `
 `,
         offset,
       );
-      offset = value5 === -1 ? body.length : value5 + 1;
+      offset = expressionEnd === -1 ? body.length : expressionEnd + 1;
       continue;
     }
-    let value2 = typeDeclarationEnd(body, offset),
-      value3 = body.slice(offset, value2);
-    offset = value2 + 1;
-    let value4 =
+    let memberEnd = typeDeclarationEnd(body, offset),
+      memberBody = body.slice(offset, memberEnd);
+    offset = memberEnd + 1;
+    let memberMatch =
       /^\s*(?:readonly\s+)?(?:"([^"]+)"|'([^']+)'|([A-Za-z_$][\w$]*))(?:\s*(\?))?\s*:\s*([\s\S]+)$/.exec(
-        value3,
+        memberBody,
       );
-    if (value4 !== null) {
-      let value5 = value4[1] ?? value4[2] ?? value4[3] ?? "";
+    if (memberMatch !== null) {
+      let memberName = memberMatch[1] ?? memberMatch[2] ?? memberMatch[3] ?? "";
       members.push({
-        name: value5,
-        optional: value4[4] !== undefined,
-        type: (value4[5] ?? "").trim(),
+        name: memberName,
+        optional: memberMatch[4] !== undefined,
+        type: (memberMatch[5] ?? "").trim(),
         doc: doc,
       });
     }
@@ -517,12 +517,12 @@ function inlineTypeObjectBodies(head: string): string[] {
   while (offset < head.length) {
     let value = head[offset];
     if (value === "{") {
-      let value2 = skipBalancedTypeExpression(head, offset);
-      if (value2 === -1) {
+      let objectEnd = skipBalancedTypeExpression(head, offset);
+      if (objectEnd === -1) {
         break;
       }
-      bodies.push(head.slice(offset + 1, value2 - 1));
-      offset = value2;
+      bodies.push(head.slice(offset + 1, objectEnd - 1));
+      offset = objectEnd;
       continue;
     }
     if (value === "(" || value === "[") {
@@ -530,8 +530,8 @@ function inlineTypeObjectBodies(head: string): string[] {
       continue;
     }
     if (value === "<") {
-      let value2 = skipBalancedTypeExpression(head, offset);
-      offset = value2 === -1 ? head.length : value2;
+      let objectEnd = skipBalancedTypeExpression(head, offset);
+      offset = objectEnd === -1 ? head.length : objectEnd;
       continue;
     }
     offset++;
@@ -583,8 +583,8 @@ function mergeInferredControl(
     if (control.withBool === true) {
       state.bool = true;
     }
-    for (let value2 of control.withBool === true ? value.slice(2) : value) {
-      appendTypeLiteral(state, value2);
+    for (let controlValue of control.withBool === true ? value.slice(2) : value) {
+      appendTypeLiteral(state, controlValue);
     }
     if (control.numeric !== true) {
       state.numeric = false;
@@ -607,7 +607,7 @@ function enumControlFromLiterals(
   if (
     control.options !== undefined &&
     control.options.length > 0 &&
-    control.options.every((input) => NUMERIC_TYPE_LITERAL_PATTERN.test(input))
+    control.options.every((option) => NUMERIC_TYPE_LITERAL_PATTERN.test(option))
   ) {
     control.numeric = true;
   }
@@ -618,28 +618,28 @@ function inferEnumDeclaration(body: string): M.InferredControl | null {
     numeric: boolean = true,
     nextNumericValue = 0;
   for (let value of splitTypeExpression(stripTypeComments(body), ",")) {
-    let value2 =
+    let enumMatch =
       /^\s*(?:"([^"]+)"|'([^']+)'|([A-Za-z_$][\w$]*))\s*(?:=([\s\S]*))?$/.exec(
         value.trim(),
       );
-    if (value2 === null) {
+    if (enumMatch === null) {
       continue;
     }
-    let value3 =
-      value2[4] === undefined ? undefined : value2[4].trim() || undefined;
-    if (value3 === undefined) {
+    let enumValue =
+      enumMatch[4] === undefined ? undefined : enumMatch[4].trim() || undefined;
+    if (enumValue === undefined) {
       options.push(String(nextNumericValue++));
       continue;
     }
-    let value4 = QUOTED_TYPE_LITERAL_PATTERN.exec(value3);
-    if (value4 !== null) {
-      options.push(value4[1] ?? value4[2] ?? "");
+    let quotedValue = QUOTED_TYPE_LITERAL_PATTERN.exec(enumValue);
+    if (quotedValue !== null) {
+      options.push(quotedValue[1] ?? quotedValue[2] ?? "");
       numeric = false;
       continue;
     }
-    if (NUMERIC_TYPE_LITERAL_PATTERN.test(value3)) {
-      options.push(value3);
-      nextNumericValue = Number(value3) + 1;
+    if (NUMERIC_TYPE_LITERAL_PATTERN.test(enumValue)) {
+      options.push(enumValue);
+      nextNumericValue = Number(enumValue) + 1;
       continue;
     }
     return null;
@@ -689,11 +689,11 @@ function stripTypeComments(text: string): string {
     }
     if (value === "/" && text[offset + 1] === "*") {
       withoutComments += text.slice(copyOffset, offset);
-      let value2 = text.indexOf("*/", offset + 2);
-      if (value2 === -1) {
+      let commentEnd = text.indexOf("*/", offset + 2);
+      if (commentEnd === -1) {
         return withoutComments.trim();
       }
-      offset = copyOffset = value2 + 2;
+      offset = copyOffset = commentEnd + 2;
       continue;
     }
     offset++;
@@ -729,9 +729,9 @@ function splitTypeExpression(text: string, separator: string): string[] {
   while (offset < text.length) {
     let value = text[offset];
     if (value === '"' || value === "'" || value === "`") {
-      let value2 = value;
+      let quoteChar = value;
       offset++;
-      while (offset < text.length && text[offset] !== value2) {
+      while (offset < text.length && text[offset] !== quoteChar) {
         if (text[offset] === "\\") {
           offset++;
         }
@@ -758,7 +758,7 @@ function splitTypeExpression(text: string, separator: string): string[] {
     offset++;
   }
   parts.push(text.slice(partStart).trim());
-  return parts.filter((input): boolean => input !== "");
+  return parts.filter((part): boolean => part !== "");
 }
 function inferVariantPropsType(
   typeText: string,
@@ -777,9 +777,9 @@ function inferVariantPropsType(
   }
   let variantKey = variantMatch[2] ?? "";
   for (let value of resolver.heads(declaration.head)) {
-    for (let value2 of resolver.members(value)) {
-      if (value2.name === variantKey) {
-        return value2.type;
+    for (let member of resolver.members(value)) {
+      if (member.name === variantKey) {
+        return member.type;
       }
     }
   }
@@ -838,7 +838,7 @@ function getTypeDeclarationResolver(
     cachedTypeDeclarationResolver !== null &&
     cachedTypeDeclarationResolver.texts.length === texts.length &&
     cachedTypeDeclarationResolver.texts.every(
-      (input, options): boolean => input === texts[options],
+      (leftText, rightText): boolean => leftText === texts[rightText],
     )
   ) {
     return cachedTypeDeclarationResolver.rs.reuse();
@@ -853,11 +853,11 @@ function getTypeDeclarationResolver(
 function inferComponentPropControls(
   componentName: string,
   texts: readonly (string | undefined)[],
-  options?: { keep?: readonly string[] },
+  controlOptions?: { keep?: readonly string[] },
 ) {
   typeInferenceIncomplete = false;
   let declarationTexts = texts.filter(
-    (input): input is string => typeof input === "string" && input !== "",
+    (candidate): candidate is string => typeof candidate === "string" && candidate !== "",
   );
   if (
     !isValidTypeDeclarationName(componentName) ||
@@ -865,90 +865,90 @@ function inferComponentPropControls(
   ) {
     return [];
   }
-  let keepProps = new Set(options?.keep),
+  let keepProps = new Set(controlOptions?.keep),
     controls = new Map<string, Core.InferredPropControl>(),
     visitedTypes = new Set<string>(),
     resolver = getTypeDeclarationResolver(declarationTexts),
-    visitPropsType = (input: string, options2: number): void => {
+    visitPropsType = (typeName: string, depth: number): void => {
       if (
-        options2 > MAX_PROPS_INHERITANCE_DEPTH ||
-        visitedTypes.has(input) ||
+        depth > MAX_PROPS_INHERITANCE_DEPTH ||
+        visitedTypes.has(typeName) ||
         controls.size >= MAX_INFERRED_COMPONENT_PROPS
       ) {
         return;
       }
-      visitedTypes.add(input);
-      let value = resolver.decl(input);
+      visitedTypes.add(typeName);
+      let value = resolver.decl(typeName);
       if (value === null || value.kind === "const" || value.kind === "enum") {
         return;
       }
-      let value2 =
+      let referencedTypes =
         value.kind === "interface"
           ? [value.body]
           : resolver.heads(value.head);
-      for (let value3 of value2) {
-        for (let value4 of resolver.members(value3)) {
+      for (let referencedType of referencedTypes) {
+        for (let property of resolver.members(referencedType)) {
           resolver.tick();
           if (controls.size >= MAX_INFERRED_COMPONENT_PROPS) {
             break;
           }
           if (
-            (OMITTED_COMPONENT_PROPS.has(value4.name) &&
-              !keepProps.has(value4.name)) ||
-            (value4.name.startsWith("on") && /^on[A-Z]/.test(value4.name))
+            (OMITTED_COMPONENT_PROPS.has(property.name) &&
+              !keepProps.has(property.name)) ||
+            (property.name.startsWith("on") && /^on[A-Z]/.test(property.name))
           ) {
             continue;
           }
-          if (/@deprecated\b/.test(value4.doc)) {
+          if (/@deprecated\b/.test(property.doc)) {
             continue;
           }
-          if (/^\s*never\s*$/.test(value4.type)) {
+          if (/^\s*never\s*$/.test(property.type)) {
             continue;
           }
-          let value5 = resolver.resolve(value4.type, 0);
-          if (value5 === null) {
+          let resolvedType = resolver.resolve(property.type, 0);
+          if (resolvedType === null) {
             continue;
           }
-          let entry = controls.get(value4.name);
+          let entry = controls.get(property.name);
           if (
             entry !== undefined &&
             !(
               entry.kind === "string" &&
               entry.typeName !== undefined &&
-              value5.kind !== "string"
+              resolvedType.kind !== "string"
             )
           ) {
             continue;
           }
           let state: Core.InferredPropControl = {
-            name: value4.name,
-            kind: value5.kind,
+            name: property.name,
+            kind: resolvedType.kind,
           };
-          if (value5.options !== undefined) {
-            state.options = value5.options;
+          if (resolvedType.options !== undefined) {
+            state.options = resolvedType.options;
           }
-          if (value5.numeric === true) {
+          if (resolvedType.numeric === true) {
             state.numeric = true;
           }
-          if (value5.withBool === true) {
+          if (resolvedType.withBool === true) {
             state.withBool = true;
           }
-          if (value5.typeName !== undefined) {
-            state.typeName = value5.typeName;
+          if (resolvedType.typeName !== undefined) {
+            state.typeName = resolvedType.typeName;
           }
-          let value6 = parseJSDocDefault(value4.doc, value5);
-          if (value6 !== undefined) {
-            state.default = value6;
+          let defaultValue = parseJSDocDefault(property.doc, resolvedType);
+          if (defaultValue !== undefined) {
+            state.default = defaultValue;
           }
-          if (!value4.optional) {
+          if (!property.optional) {
             state.required = true;
           }
-          controls.set(value4.name, state);
+          controls.set(property.name, state);
         }
       }
       resolver.charge(value.head.length);
-      for (let value3 of referencedTypeNames(value.head)) {
-        visitPropsType(value3, options2 + 1);
+      for (let referencedType of referencedTypeNames(value.head)) {
+        visitPropsType(referencedType, depth + 1);
       }
     };
   try {
@@ -962,19 +962,19 @@ function inferComponentPropControls(
     return [];
   }
   let result = [...controls.values()];
-  result.sort((input, options2): number =>
-    input.name === "children" ? -1 : options2.name === "children" ? 1 : 0,
+  result.sort((leftProp, rightProp): number =>
+    leftProp.name === "children" ? -1 : rightProp.name === "children" ? 1 : 0,
   );
   return result;
 }
-function jsonForInlineScript(value: M.JsonValue): string {
-  return JSON.stringify(value)!.replaceAll("<", "\\u003c");
+function jsonForInlineScript(jsonValue: M.JsonValue): string {
+  return JSON.stringify(jsonValue)!.replaceAll("<", "\\u003c");
 }
 function generateComponentMountHtml(
   componentName: string,
-  options: M.ComponentMountOptions,
+  mountOptions: M.ComponentMountOptions,
 ): string {
-  let namespace = options.namespace;
+  let namespace = mountOptions.namespace;
   if (
     !isValidTypeDeclarationName(componentName) ||
     !isValidTypeDeclarationName(namespace)
@@ -986,9 +986,9 @@ function generateComponentMountHtml(
     );
   }
   let reactGlobal =
-      options.globals.find((input) => /^react$/i.test(input)) ?? "React",
+      mountOptions.globals.find((globalName) => /^react$/i.test(globalName)) ?? "React",
     domGlobal =
-      options.globals.find((input) => /^reactdom$/i.test(input)) ??
+      mountOptions.globals.find((globalName) => /^reactdom$/i.test(globalName)) ??
       "ReactDOM";
   if (
     !isValidTypeDeclarationName(reactGlobal) ||
@@ -1004,7 +1004,7 @@ function generateComponentMountHtml(
   });
   return (
     '<style>html,body{margin:0}body{padding:16px;font-family:var(--font-sans,system-ui)}#root{display:flex;flex-wrap:wrap;align-items:center;gap:12px}</style><div id="root"></div><script>window.__dsProps = ' +
-    jsonForInlineScript(options.values) +
+    jsonForInlineScript(mountOptions.values) +
     `;<\/script><script>(function () {
   var cfg = ` +
     configurationJson +
@@ -1142,7 +1142,7 @@ export function installModelComponentInference(): () => void {
       constructor(texts: readonly string[]) {
         this.texts = texts;
         this.textBytes = texts.reduce(
-          (input, items) => input + items.length,
+          (count, items) => count + items.length,
           0,
         );
       }
@@ -1257,58 +1257,58 @@ export function installModelComponentInference(): () => void {
         )) {
           this.tick();
           this.charge(value.length);
-          let value2 = unwrapTypeExpression(value);
+          let unwrappedType = unwrapTypeExpression(value);
           if (
-            value2 === "" ||
-            value2 === "undefined" ||
-            value2 === "null" ||
-            value2 === "never"
+            unwrappedType === "" ||
+            unwrappedType === "undefined" ||
+            unwrappedType === "null" ||
+            unwrappedType === "never"
           ) {
             continue;
           }
-          let value3 = QUOTED_TYPE_LITERAL_PATTERN.exec(value2);
-          if (value3 !== null) {
-            appendTypeLiteral(state, value3[1] ?? value3[2] ?? "", true);
+          let quotedMatch = QUOTED_TYPE_LITERAL_PATTERN.exec(unwrappedType);
+          if (quotedMatch !== null) {
+            appendTypeLiteral(state, quotedMatch[1] ?? quotedMatch[2] ?? "", true);
             continue;
           }
-          if (NUMERIC_TYPE_LITERAL_PATTERN.test(value2)) {
-            appendTypeLiteral(state, value2);
+          if (NUMERIC_TYPE_LITERAL_PATTERN.test(unwrappedType)) {
+            appendTypeLiteral(state, unwrappedType);
             continue;
           }
-          if (value2 === "boolean" || value2 === "true" || value2 === "false") {
+          if (unwrappedType === "boolean" || unwrappedType === "true" || unwrappedType === "false") {
             state.bool = true;
             continue;
           }
-          if (value2 === "number") {
+          if (unwrappedType === "number") {
             state.num = true;
             continue;
           }
-          if (value2 === "string") {
+          if (unwrappedType === "string") {
             state.str = true;
             continue;
           }
-          if (value2 === "ReactNode" || value2 === "React.ReactNode") {
+          if (unwrappedType === "ReactNode" || unwrappedType === "React.ReactNode") {
             state.node = true;
             continue;
           }
-          if (value2.startsWith("`") && value2.endsWith("`")) {
-            let value5 = this.template(value2.slice(1, -1), depth);
-            if (value5 === null) {
+          if (unwrappedType.startsWith("`") && unwrappedType.endsWith("`")) {
+            let templateOptions = this.template(unwrappedType.slice(1, -1), depth);
+            if (templateOptions === null) {
               state.str = true;
             } else {
-              for (let value6 of value5) {
-                appendTypeLiteral(state, value6);
+              for (let option of templateOptions) {
+                appendTypeLiteral(state, option);
               }
             }
             continue;
           }
-          let value4 = this.special(value2, depth);
-          if (value4 !== undefined) {
-            mergeInferredControl(state, value4);
+          let specialControl = this.special(unwrappedType, depth);
+          if (specialControl !== undefined) {
+            mergeInferredControl(state, specialControl);
             continue;
           }
-          if (TYPE_IDENTIFIER_PATTERN.test(value2)) {
-            mergeInferredControl(state, this.resolveName(value2, depth));
+          if (TYPE_IDENTIFIER_PATTERN.test(unwrappedType)) {
+            mergeInferredControl(state, this.resolveName(unwrappedType, depth));
             continue;
           }
           state.other = true;
@@ -1324,18 +1324,18 @@ export function installModelComponentInference(): () => void {
             return null;
           }
           let value = generic[1] ?? "",
-            value2 = splitTypeExpression(generic[2] ?? "", ",");
-          if (value === "NonNullable" && value2.length === 1) {
-            return this.resolve(value2[0] ?? "", depth + 1);
+            genericArguments = splitTypeExpression(generic[2] ?? "", ",");
+          if (value === "NonNullable" && genericArguments.length === 1) {
+            return this.resolve(genericArguments[0] ?? "", depth + 1);
           }
           if (
             (value === "Extract" || value === "Exclude") &&
-            value2.length === 2
+            genericArguments.length === 2
           ) {
             return this.extract(
               value === "Extract",
-              value2[0] ?? "",
-              value2[1] ?? "",
+              genericArguments[0] ?? "",
+              genericArguments[1] ?? "",
               depth,
             );
           }
@@ -1421,12 +1421,12 @@ export function installModelComponentInference(): () => void {
             ...createTypeInferenceState(),
             literals: filterState.str
               ? sourceState.literals
-              : sourceState.literals.filter((input) =>
-                  filterState.literals.includes(input),
+              : sourceState.literals.filter((literal) =>
+                  filterState.literals.includes(literal),
                 ),
           };
-          state.numeric = state.literals.every((input) =>
-            NUMERIC_TYPE_LITERAL_PATTERN.test(input),
+          state.numeric = state.literals.every((literal) =>
+            NUMERIC_TYPE_LITERAL_PATTERN.test(literal),
           );
           state.str = sourceState.str && filterState.str;
           state.num = sourceState.num && filterState.num;
@@ -1437,15 +1437,15 @@ export function installModelComponentInference(): () => void {
         let excluded = {
           ...sourceState,
           literals: sourceState.literals.filter(
-            (input): boolean => !filterState.literals.includes(input),
+            (literal): boolean => !filterState.literals.includes(literal),
           ),
           unresolved: [...sourceState.unresolved],
         };
         if (filterState.str) {
           excluded.literals = [];
         }
-        excluded.numeric = excluded.literals.every((input) =>
-          NUMERIC_TYPE_LITERAL_PATTERN.test(input),
+        excluded.numeric = excluded.literals.every((literal) =>
+          NUMERIC_TYPE_LITERAL_PATTERN.test(literal),
         );
         if (filterState.bool) {
           excluded.bool = false;
@@ -1474,11 +1474,11 @@ export function installModelComponentInference(): () => void {
           if (value.length === 0) {
             return null;
           } else {
-            return this.members(value[0] ?? "").map((input) => input.name);
+            return this.members(value[0] ?? "").map((member) => member.name);
           }
         }
         if (declaration.kind === "interface") {
-          return this.members(declaration.body).map((input) => input.name);
+          return this.members(declaration.body).map((member) => member.name);
         }
         if (declaration.kind !== "type") {
           return null;
@@ -1496,7 +1496,7 @@ export function installModelComponentInference(): () => void {
         if (bodies.length === 0) {
           return null;
         } else {
-          return this.members(bodies[0] ?? "").map((input) => input.name);
+          return this.members(bodies[0] ?? "").map((member) => member.name);
         }
       }
       memberType(name: string, property: string, depth: number): string | null {
@@ -1512,9 +1512,9 @@ export function installModelComponentInference(): () => void {
             ? [declaration.body]
             : this.heads(declaration.head);
         for (let value of bodies) {
-          for (let value2 of this.members(value)) {
-            if (value2.name === property) {
-              return value2.type;
+          for (let member of this.members(value)) {
+            if (member.name === property) {
+              return member.type;
             }
           }
         }
@@ -1533,33 +1533,33 @@ export function installModelComponentInference(): () => void {
         while (offset < templateText.length) {
           let value = templateText.indexOf("${", offset);
           if (value === -1) {
-            let value6 = templateText.slice(offset);
-            expansions = expansions.map((input) => input + value6);
+            let suffix = templateText.slice(offset);
+            expansions = expansions.map((prefix) => prefix + suffix);
             break;
           }
-          let value2 = templateText.slice(offset, value),
-            value3 = skipBalancedTypeExpression(templateText, value + 1);
-          if (value3 === -1) {
+          let templatePrefix = templateText.slice(offset, value),
+            expressionEnd = skipBalancedTypeExpression(templateText, value + 1);
+          if (expressionEnd === -1) {
             return null;
           }
-          let value4 = this.resolve(
-            templateText.slice(value + 2, value3 - 1),
+          let resolvedEnum = this.resolve(
+            templateText.slice(value + 2, expressionEnd - 1),
             depth + 1,
           );
-          if (value4 === null || value4.kind !== "enum") {
+          if (resolvedEnum === null || resolvedEnum.kind !== "enum") {
             return null;
           }
-          let value5 = value4.options ?? [];
+          let enumOptions = resolvedEnum.options ?? [];
           if (
-            expansions.length * value5.length >
+            expansions.length * enumOptions.length >
             MAX_TEMPLATE_TYPE_EXPANSIONS
           ) {
             return null;
           }
-          expansions = expansions.flatMap((input) =>
-            value5.map((input2) => input + value2 + input2),
+          expansions = expansions.flatMap((prefix) =>
+            enumOptions.map((option) => prefix + templatePrefix + option),
           );
-          offset = value3;
+          offset = expressionEnd;
         }
         return expansions;
       }
@@ -1582,16 +1582,16 @@ export function installModelComponentInference(): () => void {
               typeName: conciseTypeDescription(typeText),
             };
           }
-          let state2: M.InferredControl = {
+          let inferredState: M.InferredControl = {
             kind: "enum",
             options: state.bool ? ["true", "false", ...literals] : literals,
           };
           if (state.bool) {
-            state2.withBool = true;
+            inferredState.withBool = true;
           } else if (state.numeric) {
-            state2.numeric = true;
+            inferredState.numeric = true;
           }
-          return state2;
+          return inferredState;
         }
         if (hasStringOrNode) {
           if (!state.str && state.other && state.unresolved.length === 0) {

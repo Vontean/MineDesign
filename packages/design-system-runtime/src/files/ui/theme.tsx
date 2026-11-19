@@ -27,22 +27,22 @@ function readHostThemeMode(): Preview.PreviewMode {
   }
 }
 function useHostThemeMode(): Preview.PreviewMode {
-  let [value, value2] = reactHostTheme.useState(readHostThemeMode);
+  let [value, notifyThemeModeChange] = reactHostTheme.useState(readHostThemeMode);
   reactHostTheme.useEffect(() => {
-    let callback = () => value2(readHostThemeMode()),
-      value3 = window.matchMedia("(prefers-color-scheme: dark)");
-    value3.addEventListener("change", callback);
-    let value4 = new (window as Window & typeof globalThis).MutationObserver(
+    let callback = () => notifyThemeModeChange(readHostThemeMode()),
+      mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", callback);
+    let mutationObserver = new (window as Window & typeof globalThis).MutationObserver(
       callback,
     );
-    value4.observe(document.documentElement, {
+    mutationObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"],
     });
     callback();
     return () => {
-      value3.removeEventListener("change", callback);
-      value4.disconnect();
+      mediaQuery.removeEventListener("change", callback);
+      mutationObserver.disconnect();
     };
   }, []);
   return value;
@@ -58,7 +58,7 @@ function previewThemeDisabledReason(
   if (themeCount < 2) {
     return uiMessage("design-system.theme.thisDesignSystemHasNo");
   }
-  if (!components.some((input) => input.previewHtml !== undefined)) {
+  if (!components.some((component) => component.previewHtml !== undefined)) {
     return uiMessage("design-system.theme.noComponentsToPreviewYet");
   }
   if (!runnable) {
@@ -72,19 +72,19 @@ function resolvePreviewTheme(
   selectedId?: string | null,
 ): Preview.PreviewThemeResolution {
   let modeOf = (
-      input: Preview.PreviewTheme | undefined,
+      theme: Preview.PreviewTheme | undefined,
     ): Preview.PreviewMode =>
-      themes.length > 1 && input !== undefined
-        ? isDarkThemeName(input.name)
+      themes.length > 1 && theme !== undefined
+        ? isDarkThemeName(theme.name)
           ? "dark"
           : "light"
         : hostMode,
     hostTheme =
       themes.find(
-        (input) => isDarkThemeName(input.name) === (hostMode === "dark"),
+        (theme) => isDarkThemeName(theme.name) === (hostMode === "dark"),
       ) ?? themes[0],
     previewTheme =
-      themes.find((input) => input.id === selectedId) ?? hostTheme,
+      themes.find((theme) => theme.id === selectedId) ?? hostTheme,
     stageMode = modeOf(previewTheme);
   return {
     hostThemeId: hostTheme?.id,
@@ -96,12 +96,12 @@ function resolvePreviewTheme(
 }
 function PreviewThemeMenu({
   themes: themes,
-  value: value,
+  value: themeId,
   onChange: onChange,
   disabledWhy: disabledWhy,
 }: Preview.PreviewThemeMenuProps): React.ReactElement {
   useUiLocale();
-  let value2 =
+  let availableThemes =
       themes.length > 0
         ? themes
         : [
@@ -110,13 +110,13 @@ function PreviewThemeMenu({
               name: "Light",
             },
           ],
-    value3 = value2.find((input) => input.id === value) ?? value2[0],
-    [value4, value5] = reactPreviewThemeMenu.useState(false);
-  if (value4 && disabledWhy !== undefined) {
-    value5(false);
+    selectedTheme = availableThemes.find((theme) => theme.id === themeId) ?? availableThemes[0],
+    [menuOpen, setMenuOpen] = reactPreviewThemeMenu.useState(false);
+  if (menuOpen && disabledWhy !== undefined) {
+    setMenuOpen(false);
   }
   return (
-    <Menu.Root open={value4} onOpenChange={value5}>
+    <Menu.Root open={menuOpen} onOpenChange={setMenuOpen}>
       {[<DisabledReasonTooltip reason={disabledWhy}>
           <Menu.Trigger
             disabled={disabledWhy !== undefined}
@@ -124,12 +124,12 @@ function PreviewThemeMenu({
               <Button
                 variant={"secondary"}
                 disabled={disabledWhy !== undefined}
-                aria-label={uiMessage("design-system.theme.previewTheme", { value1: String(value3.name) })}
+                aria-label={uiMessage("design-system.theme.previewTheme", { value1: String(selectedTheme.name) })}
                 className={"max-w-56"}
                 data-testid={"ds-theme-menu"}
               >
                 {[<span className={"min-w-0 truncate text-left"}>
-                    {value3.name}
+                    {selectedTheme.name}
                   </span>, <Icon
                     name={"CaretDown"}
                     size={"xs"}
@@ -145,20 +145,20 @@ function PreviewThemeMenu({
         >
           <Menu.Group data-testid={"ds-theme-menu-list"}>
             {[<Menu.GroupLabel>
-                {value2.length > 1 ? (uiMessage("design-system.theme.themesInThisSystem")) : (uiMessage("design-system.theme.theme"))}
-              </Menu.GroupLabel>, value2.map((input) =>
+                {availableThemes.length > 1 ? (uiMessage("design-system.theme.themesInThisSystem")) : (uiMessage("design-system.theme.theme"))}
+              </Menu.GroupLabel>, availableThemes.map((theme) =>
                 (() => {
                   const _Element = Menu.Item;
                   const _elementProps = {
                     checkedRole: "radio" as const,
-                    checked: input.id === value3.id,
-                    "data-testid": "ds-theme-" + input.id,
-                    onClick: () => onChange(input.id),
+                    checked: theme.id === selectedTheme.id,
+                    "data-testid": "ds-theme-" + theme.id,
+                    onClick: () => onChange(theme.id),
                     children: (
-                      <span className={"ds-menu-label"}>{input.name}</span>
+                      <span className={"ds-menu-label"}>{theme.name}</span>
                     ),
                   };
-                  const _elementKey = input.id;
+                  const _elementKey = theme.id;
                   return <_Element key={_elementKey} {..._elementProps} />;
                 })(),
               )]}
