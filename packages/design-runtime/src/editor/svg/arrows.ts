@@ -4,10 +4,10 @@ import {
 } from "../../runtime-types";
 
 var SvgArrowsConstant: Dynamic;
-var SvgArrowsConstant_2: Dynamic;
-var SvgArrowsConstant_3: Dynamic;
+var arrowHeadCenterY: Dynamic;
+var arrowHeadTipInset: Dynamic;
 var SvgArrowsCss: Dynamic;
-var SvgArrowsConstant_4: Dynamic;
+var openArrowHeadHalfHeight: Dynamic;
 var openArrowHeadPath: Dynamic;
 var SvgArrowsFilledOpenConfig: Dynamic;
 var SvgArrowsRefX: Dynamic;
@@ -26,10 +26,10 @@ function inspectSvgArrow(element?: Dynamic): Dynamic {
     },
     value: Dynamic = null;
   for (let index: Dynamic = 0; index < element.children.length; index++) {
-    let value12: Dynamic = element.children[index];
-    if (state[(value12.tagName || "").toLowerCase()] !== 1) {
+    let child: Dynamic = element.children[index];
+    if (state[(child.tagName || "").toLowerCase()] !== 1) {
       if (value) return null;
-      value = value12;
+      value = child;
     }
   }
   if (
@@ -38,156 +38,156 @@ function inspectSvgArrow(element?: Dynamic): Dynamic {
     /transform\s*:/.test(value.getAttribute("style") || "")
   )
     return null;
-  let value2: Dynamic = (value.tagName || "").toLowerCase(),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input == null) return 0;
-      let value12: Dynamic = input.trim();
+  let tagName: Dynamic = (value.tagName || "").toLowerCase(),
+    callback: Dynamic = (attribute?: Dynamic): Dynamic => {
+      if (attribute == null) return 0;
+      let attributeValue: Dynamic = attribute.trim();
       return /^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?(?:px)?$/.test(
-        value12,
+        attributeValue,
       )
-        ? parseFloat(value12)
+        ? parseFloat(attributeValue)
         : null;
     },
-    callback2: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value12?: Dynamic,
-      extra?: Dynamic,
+    setGeometry: Dynamic = (
+      startX?: Dynamic,
+      startY?: Dynamic,
+      endX?: Dynamic,
+      endY?: Dynamic,
+      isLegacy?: Dynamic,
     ): Dynamic => ({
       shaft: value,
-      tag: value2,
-      sx: input,
-      sy: options,
-      ex: context,
-      ey: value12,
-      legacy: extra,
+      tag: tagName,
+      sx: startX,
+      sy: startY,
+      ex: endX,
+      ey: endY,
+      legacy: isLegacy,
     });
-  if (value2 === "line") {
-    let value12: Dynamic = callback(value.getAttribute("x1")),
-      value13: Dynamic = callback(value.getAttribute("y1")),
-      value14: Dynamic = callback(value.getAttribute("x2")),
-      value15: Dynamic = callback(value.getAttribute("y2"));
-    return value12 == null ||
-      value13 == null ||
-      value14 == null ||
-      value15 == null
+  if (tagName === "line") {
+    let startX: Dynamic = callback(value.getAttribute("x1")),
+      startY: Dynamic = callback(value.getAttribute("y1")),
+      endX: Dynamic = callback(value.getAttribute("x2")),
+      endY: Dynamic = callback(value.getAttribute("y2"));
+    return startX == null ||
+      startY == null ||
+      endX == null ||
+      endY == null
       ? null
-      : callback2(value12, value13, value14, value15, false);
+      : setGeometry(startX, startY, endX, endY, false);
   }
-  if (value2 === "polyline") {
-    let value12: Dynamic = (value.getAttribute("points") || "")
+  if (tagName === "polyline") {
+    let points: Dynamic = (value.getAttribute("points") || "")
       .trim()
       .split(/[\s,]+/)
-      .filter((input?: Dynamic): Dynamic => input !== "")
+      .filter((point?: Dynamic): Dynamic => point !== "")
       .map(callback);
-    return value12.length !== 4 ||
-      value12.some((input?: Dynamic): Dynamic => input == null)
+    return points.length !== 4 ||
+      points.some((point?: Dynamic): Dynamic => point == null)
       ? null
-      : callback2(value12[0], value12[1], value12[2], value12[3], false);
+      : setGeometry(points[0], points[1], points[2], points[3], false);
   }
-  if (value2 !== "path") return null;
-  let value3: Dynamic = value.getAttribute("d") || "",
-    value4: Dynamic =
-      value3.match(/[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) ||
+  if (tagName !== "path") return null;
+  let pathData: Dynamic = value.getAttribute("d") || "",
+    commands: Dynamic =
+      pathData.match(/[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) ||
       [];
-  if (value4.join("").length !== value3.replace(/[\s,]/g, "").length)
+  if (commands.join("").length !== pathData.replace(/[\s,]/g, "").length)
     return null;
-  let callback3: Dynamic = (input?: Dynamic): Dynamic =>
-    input != null && /^[-+.\d]/.test(input);
+  let isNumeric: Dynamic = (token?: Dynamic): Dynamic =>
+    token != null && /^[-+.\d]/.test(token);
   if (
-    value4.length === 15 &&
-    value4[0] === "M" &&
-    value4[3] === "L" &&
-    value4[6] === "M" &&
-    value4[9] === "L" &&
-    value4[12] === "L" &&
+    commands.length === 15 &&
+    commands[0] === "M" &&
+    commands[3] === "L" &&
+    commands[6] === "M" &&
+    commands[9] === "L" &&
+    commands[12] === "L" &&
     [1, 2, 4, 5, 7, 8, 10, 11, 13, 14].every(
-      (input?: Dynamic): Dynamic => callback3(value4[input]),
+      (index?: Dynamic): Dynamic => isNumeric(commands[index]),
     )
   )
     return (element.getAttribute("preserveAspectRatio") ||
       element.getAttribute("sc-camel-preserve-aspect-ratio")) === "none" &&
       /(^|;)\s*fill:\s*none/.test(element.getAttribute("style") || "")
-      ? callback2(+value4[1], +value4[2], +value4[4], +value4[5], true)
+      ? setGeometry(+commands[1], +commands[2], +commands[4], +commands[5], true)
       : null;
   if (
-    value4.length < 5 ||
-    (value4[0] !== "M" && value4[0] !== "m") ||
-    !callback3(value4[1]) ||
-    !callback3(value4[2])
+    commands.length < 5 ||
+    (commands[0] !== "M" && commands[0] !== "m") ||
+    !isNumeric(commands[1]) ||
+    !isNumeric(commands[2])
   )
     return null;
-  let value5: Dynamic = +value4[1],
-    value6: Dynamic = +value4[2],
-    value7: Dynamic = value4[3],
-    value8: Dynamic = value7 === value7.toLowerCase(),
-    value9: Dynamic,
-    value10: Dynamic,
-    value11: Dynamic;
-  if (callback3(value7)) {
-    if (!callback3(value4[4])) return null;
-    value9 = +value7;
-    value10 = +value4[4];
-    value11 = 5;
-    value4[0] === "m" && ((value9 += value5), (value10 += value6));
-  } else if (value7 === "L" || value7 === "l") {
-    if (!callback3(value4[4]) || !callback3(value4[5])) return null;
-    value9 = +value4[4];
-    value10 = +value4[5];
-    value11 = 6;
-    value8 && ((value9 += value5), (value10 += value6));
-  } else if (value7 === "H" || value7 === "h") {
-    if (!callback3(value4[4])) return null;
-    value9 = +value4[4] + (value8 ? value5 : 0);
-    value10 = value6;
-    value11 = 5;
-  } else if (value7 === "V" || value7 === "v") {
-    if (!callback3(value4[4])) return null;
-    value9 = value5;
-    value10 = +value4[4] + (value8 ? value6 : 0);
-    value11 = 5;
+  let deltaX: Dynamic = +commands[1],
+    deltaY: Dynamic = +commands[2],
+    command: Dynamic = commands[3],
+    isRelative: Dynamic = command === command.toLowerCase(),
+    currentX: Dynamic,
+    currentY: Dynamic,
+    expectedLength: Dynamic;
+  if (isNumeric(command)) {
+    if (!isNumeric(commands[4])) return null;
+    currentX = +command;
+    currentY = +commands[4];
+    expectedLength = 5;
+    commands[0] === "m" && ((currentX += deltaX), (currentY += deltaY));
+  } else if (command === "L" || command === "l") {
+    if (!isNumeric(commands[4]) || !isNumeric(commands[5])) return null;
+    currentX = +commands[4];
+    currentY = +commands[5];
+    expectedLength = 6;
+    isRelative && ((currentX += deltaX), (currentY += deltaY));
+  } else if (command === "H" || command === "h") {
+    if (!isNumeric(commands[4])) return null;
+    currentX = +commands[4] + (isRelative ? deltaX : 0);
+    currentY = deltaY;
+    expectedLength = 5;
+  } else if (command === "V" || command === "v") {
+    if (!isNumeric(commands[4])) return null;
+    currentX = deltaX;
+    currentY = +commands[4] + (isRelative ? deltaY : 0);
+    expectedLength = 5;
   } else return null;
-  return value4.length === value11
-    ? callback2(value5, value6, value9, value10, false)
+  return commands.length === expectedLength
+    ? setGeometry(deltaX, deltaY, currentX, currentY, false)
     : null;
 }
-function recognizeArrowHeadPath(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.match(/[A-Za-z]|[-+]?(?:\d+\.?\d*|\.\d+)/g) ?? [],
-    value: Dynamic = callback(input),
-    callback2: Dynamic = (items?: Dynamic): Dynamic =>
+function recognizeArrowHeadPath(pathData?: Dynamic): Dynamic {
+  let callback: Dynamic = (tokens?: Dynamic): Dynamic =>
+      tokens.match(/[A-Za-z]|[-+]?(?:\d+\.?\d*|\.\d+)/g) ?? [],
+    value: Dynamic = callback(pathData),
+    matchesPath: Dynamic = (items?: Dynamic): Dynamic =>
       items.length === value.length &&
       items.every(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          /[A-Za-z]/.test(input2)
-            ? input2 === value[options]
-            : Math.abs(parseFloat(input2) - parseFloat(value[options])) <=
+        (actual?: Dynamic, expected?: Dynamic): Dynamic =>
+          /[A-Za-z]/.test(actual)
+            ? actual === value[expected]
+            : Math.abs(parseFloat(actual) - parseFloat(value[expected])) <=
               0.001,
       );
-  return callback2(callback(SvgArrowsCss))
+  return matchesPath(callback(SvgArrowsCss))
     ? "filled"
-    : callback2(callback(openArrowHeadPath))
+    : matchesPath(callback(openArrowHeadPath))
       ? "open"
       : null;
 }
-function arrowHeadKindFromId(input?: Dynamic): Dynamic {
-  return /^dc-arrow-head-(filled|open)(?:-|$)/.exec(input)?.[1] ?? null;
+function arrowHeadKindFromId(markerId?: Dynamic): Dynamic {
+  return /^dc-arrow-head-(filled|open)(?:-|$)/.exec(markerId)?.[1] ?? null;
 }
 function createArrowHeadId(
-  input: Dynamic = "filled",
-  options: Dynamic = Math.random,
+  headKind: Dynamic = "filled",
+  random: Dynamic = Math.random,
 ): Dynamic {
   return (
-    SvgArrowsHandler(input) +
+    SvgArrowsHandler(headKind) +
     "-" +
-    Math.floor(options() * 36 ** 6)
+    Math.floor(random() * 36 ** 6)
       .toString(36)
       .padStart(6, "0")
   );
 }
-function normalizeSvgPaint(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim();
+function normalizeSvgPaint(paint?: Dynamic): Dynamic {
+  let value: Dynamic = (paint ?? "").trim();
   if (/^(none|transparent)$/i.test(value)) return "none";
   if (
     value === "" ||
@@ -198,27 +198,27 @@ function normalizeSvgPaint(input?: Dynamic): Dynamic {
   )
     return null;
   let index: Dynamic = 0;
-  for (let value2 of value as Dynamic)
-    if (value2 === "(") index++;
-    else if (value2 === ")" && --index < 0) return null;
+  for (let character of value as Dynamic)
+    if (character === "(") index++;
+    else if (character === ")" && --index < 0) return null;
   return index === 0 ? value : null;
 }
-function arrowHeadFillStyle(input?: Dynamic, options: Dynamic = ""): Dynamic {
+function arrowHeadFillStyle(paint?: Dynamic, style: Dynamic = ""): Dynamic {
   return [
-    ...options
+    ...style
       .split(";")
-      .map((input2?: Dynamic): Dynamic => input2.trim())
+      .map((declaration?: Dynamic): Dynamic => declaration.trim())
       .filter(
-        (input2?: Dynamic): Dynamic =>
-          input2 !== "" && !/^(fill|stroke)\s*:/i.test(input2),
+        (declaration?: Dynamic): Dynamic =>
+          declaration !== "" && !/^(fill|stroke)\s*:/i.test(declaration),
       ),
     "stroke: none",
-    `fill: ${normalizeSvgPaint(input) ?? "none"}`,
+    `fill: ${normalizeSvgPaint(paint) ?? "none"}`,
     "fill: context-stroke",
   ].join("; ");
 }
-function arrowHeadFillAttribute(input?: Dynamic): Dynamic {
-  let value: Dynamic = normalizeSvgPaint(input);
+function arrowHeadFillAttribute(paint?: Dynamic): Dynamic {
+  let value: Dynamic = normalizeSvgPaint(paint);
   return value != null &&
     /^(#[0-9a-f]{3,8}|[a-z]+|(rgb|hsl)a?\([^()]*\)|var\(--[\w-]+\))$/i.test(
       value,
@@ -227,198 +227,198 @@ function arrowHeadFillAttribute(input?: Dynamic): Dynamic {
     : "";
 }
 function arrowHeadMarkerHtml(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  markerId?: Dynamic,
+  headKind?: Dynamic,
+  end?: Dynamic,
+  paintStyle?: Dynamic,
 ): Dynamic {
-  return `<marker id="${input}" orient="${context === "start" ? "auto-start-reverse" : "auto"}" markerWidth="5" markerHeight="5" refX="${SvgArrowsFilledOpenConfig[options].refX}" refY="${SvgArrowsConstant_2}" overflow="visible"><path d="${SvgArrowsFilledOpenConfig[options].d}"${arrowHeadFillAttribute(value)} stroke="none" style="${arrowHeadFillStyle(value)}"/></marker>`;
+  return `<marker id="${markerId}" orient="${end === "start" ? "auto-start-reverse" : "auto"}" markerWidth="5" markerHeight="5" refX="${SvgArrowsFilledOpenConfig[headKind].refX}" refY="${arrowHeadCenterY}" overflow="visible"><path d="${SvgArrowsFilledOpenConfig[headKind].d}"${arrowHeadFillAttribute(paintStyle)} stroke="none" style="${arrowHeadFillStyle(paintStyle)}"/></marker>`;
 }
-function defaultArrowHeadDefs(input?: Dynamic, options?: Dynamic): Dynamic {
-  return `<defs>${arrowHeadMarkerHtml(input, "filled", "end", options)}</defs>`;
+function defaultArrowHeadDefs(markerId?: Dynamic, paintStyle?: Dynamic): Dynamic {
+  return `<defs>${arrowHeadMarkerHtml(markerId, "filled", "end", paintStyle)}</defs>`;
 }
 function shortenLineEnd(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  startX?: Dynamic,
+  startY?: Dynamic,
+  endX?: Dynamic,
+  endY?: Dynamic,
+  shortenBy?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = Math.hypot(context - input, value - options);
-  if (!(value2 > 0) || !(extra > 0))
+  let length: Dynamic = Math.hypot(endX - startX, endY - startY);
+  if (!(length > 0) || !(shortenBy > 0))
     return {
-      x: context,
-      y: value,
+      x: endX,
+      y: endY,
     };
-  let value3: Dynamic =
-      Math.max(value2 - extra, Math.min(value2, 0.5)) / value2,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      Math.round(input2 * 100) / 100;
+  let ratio: Dynamic =
+      Math.max(length - shortenBy, Math.min(length, 0.5)) / length,
+    callback: Dynamic = (coordinate?: Dynamic): Dynamic =>
+      Math.round(coordinate * 100) / 100;
   return {
-    x: callback(input + (context - input) * value3),
-    y: callback(options + (value - options) * value3),
+    x: callback(startX + (endX - startX) * ratio),
+    y: callback(startY + (endY - startY) * ratio),
   };
 }
 function shortenLineEnds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  lineStartX?: Dynamic,
+  lineStartY?: Dynamic,
+  lineEndX?: Dynamic,
+  lineEndY?: Dynamic,
+  lineStartInset?: Dynamic,
+  lineEndInset?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = Math.hypot(context - input, value - options),
-    value3: Dynamic = Math.max(extra, 0),
-    value4: Dynamic = Math.max(detail, 0),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      Math.round(input2 * 100) / 100;
-  if (!(value2 > 0) || value3 + value4 === 0)
+  let length: Dynamic = Math.hypot(lineEndX - lineStartX, lineEndY - lineStartY),
+    startInset: Dynamic = Math.max(lineStartInset, 0),
+    endInset: Dynamic = Math.max(lineEndInset, 0),
+    callback: Dynamic = (coordinate?: Dynamic): Dynamic =>
+      Math.round(coordinate * 100) / 100;
+  if (!(length > 0) || startInset + endInset === 0)
     return {
-      sx: callback(input),
-      sy: callback(options),
-      ex: callback(context),
-      ey: callback(value),
+      sx: callback(lineStartX),
+      sy: callback(lineStartY),
+      ex: callback(lineEndX),
+      ey: callback(lineEndY),
     };
-  let value5: Dynamic = Math.min(value2, 0.5),
-    value6: Dynamic = value2 - value3 - value4 >= value5,
-    value7: Dynamic = value3 > 0 && value4 > 0 ? 1e4 : 100,
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      Math.round(input2 * value7) / value7,
-    value8: Dynamic = value6
-      ? value3
-      : ((value2 - value5) * value3) / (value3 + value4),
-    value9: Dynamic = value6 ? value2 - value4 : value8 + value5,
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => [
-      callback2(input + ((context - input) * input2) / value2),
-      callback2(options + ((value - options) * input2) / value2),
+  let maxInset: Dynamic = Math.min(length, 0.5),
+    fits: Dynamic = length - startInset - endInset >= maxInset,
+    precision: Dynamic = startInset > 0 && endInset > 0 ? 1e4 : 100,
+    roundCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+      Math.round(coordinate * precision) / precision,
+    startOffset: Dynamic = fits
+      ? startInset
+      : ((length - maxInset) * startInset) / (startInset + endInset),
+    endOffset: Dynamic = fits ? length - endInset : startOffset + maxInset,
+    pointAtOffset: Dynamic = (offset?: Dynamic): Dynamic => [
+      roundCoordinate(lineStartX + ((lineEndX - lineStartX) * offset) / length),
+      roundCoordinate(lineStartY + ((lineEndY - lineStartY) * offset) / length),
     ],
-    [value10, value11]: Dynamic =
-      value3 > 0 ? callback3(value8) : [callback(input), callback(options)],
-    [value12, value13]: Dynamic = callback3(value9);
+    [startX, startY]: Dynamic =
+      startInset > 0 ? pointAtOffset(startOffset) : [callback(lineStartX), callback(lineStartY)],
+    [endX, endY]: Dynamic = pointAtOffset(endOffset);
   return {
-    sx: value10,
-    sy: value11,
-    ex: value12,
-    ey: value13,
+    sx: startX,
+    sy: startY,
+    ex: endX,
+    ey: endY,
   };
 }
 function arrowMarkerLength(
-  input?: Dynamic,
+  svgRoot?: Dynamic,
   element?: Dynamic,
-  context: Dynamic = "end",
+  end: Dynamic = "end",
 ): Dynamic {
   let value: Dynamic = /^\s*url\(\s*["']?#([^"')\s]+)["']?\s*\)\s*$/.exec(
-    element.getAttribute("marker-" + context) || "",
+    element.getAttribute("marker-" + end) || "",
   );
   if (!value) return 0;
-  let value2: Dynamic = input.getElementsByTagName("marker"),
-    value3: Dynamic = null;
-  for (let index: Dynamic = 0; index < value2.length; index++)
-    if (value2[index].getAttribute("id") === value[1]) {
-      value3 = value2[index];
+  let markers: Dynamic = svgRoot.getElementsByTagName("marker"),
+    marker: Dynamic = null;
+  for (let index: Dynamic = 0; index < markers.length; index++)
+    if (markers[index].getAttribute("id") === value[1]) {
+      marker = markers[index];
       break;
     }
-  if (!value3) return 0;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      value3.getAttribute(input2) ??
-      value3.getAttribute(
+  if (!marker) return 0;
+  let callback: Dynamic = (attributeName?: Dynamic): Dynamic =>
+      marker.getAttribute(attributeName) ??
+      marker.getAttribute(
         "sc-camel-" +
-          input2.replace(
+          attributeName.replace(
             /[A-Z]/g,
-            (input3?: Dynamic): Dynamic => "-" + input3.toLowerCase(),
+            (attribute?: Dynamic): Dynamic => "-" + attribute.toLowerCase(),
           ),
       ),
-    value4: Dynamic = value3.getAttribute("orient") || "";
+    orientation: Dynamic = marker.getAttribute("orient") || "";
   if (
     callback("viewBox") != null ||
     (callback("markerUnits") ?? "strokeWidth") !== "strokeWidth" ||
-    !(context === "start"
-      ? value4 === "auto-start-reverse"
-      : /^auto/.test(value4))
+    !(end === "start"
+      ? orientation === "auto-start-reverse"
+      : /^auto/.test(orientation))
   )
     return 0;
-  let value5: Dynamic = value3.getElementsByTagName("path")[0],
-    value6: Dynamic = (value5 && value5.getAttribute("d")) || "";
+  let path: Dynamic = marker.getElementsByTagName("path")[0],
+    pathData: Dynamic = (path && path.getAttribute("d")) || "";
   if (
-    !value5 ||
-    value5.hasAttribute("transform") ||
-    !/^[MLZz\d\s,.+-]+$/.test(value6)
+    !path ||
+    path.hasAttribute("transform") ||
+    !/^[MLZz\d\s,.+-]+$/.test(pathData)
   )
     return 0;
-  let value7: Dynamic = value6.match(/[-+]?(?:\d+\.?\d*|\.\d+)/g) || [],
-    value8: Dynamic = -1 / 0;
-  for (let index: Dynamic = 0; index + 1 < value7.length; index += 2)
-    value8 = Math.max(value8, parseFloat(value7[index]));
-  value3.getAttribute("overflow") !== "visible" &&
+  let coordinates: Dynamic = pathData.match(/[-+]?(?:\d+\.?\d*|\.\d+)/g) || [],
+    maxX: Dynamic = -1 / 0;
+  for (let index: Dynamic = 0; index + 1 < coordinates.length; index += 2)
+    maxX = Math.max(maxX, parseFloat(coordinates[index]));
+  marker.getAttribute("overflow") !== "visible" &&
     !/(^|;)\s*overflow\s*:\s*visible/.test(
-      value3.getAttribute("style") || "",
+      marker.getAttribute("style") || "",
     ) &&
-    (value8 = Math.min(
-      value8,
+    (maxX = Math.min(
+      maxX,
       parseFloat(callback("markerWidth") || "3") || 0,
     ));
-  let value9: Dynamic = value8 - parseFloat(callback("refX") || "0");
-  return value9 > 0 && value9 < 64 ? value9 : 0;
+  let markerLength: Dynamic = maxX - parseFloat(callback("refX") || "0");
+  return markerLength > 0 && markerLength < 64 ? markerLength : 0;
 }
 function regenerateArrowHeadIds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = Math.random,
+  svgRoot?: Dynamic,
+  roots?: Dynamic,
+  random: Dynamic = Math.random,
 ): Dynamic {
   let flag: Dynamic = false,
     value: Dynamic = null;
-  for (let value2 of options as Dynamic) {
+  for (let root of roots as Dynamic) {
     let items: Dynamic = [
-      ...(value2.tagName.toLowerCase() === "marker" ? [value2] : []),
-      ...value2.querySelectorAll("marker"),
+      ...(root.tagName.toLowerCase() === "marker" ? [root] : []),
+      ...root.querySelectorAll("marker"),
     ];
-    for (let value3 of items as Dynamic) {
-      let value4: Dynamic = value3.getAttribute("id") ?? "",
-        value5: Dynamic = arrowHeadKindFromId(value4);
+    for (let marker of items as Dynamic) {
+      let markerId: Dynamic = marker.getAttribute("id") ?? "",
+        headKind: Dynamic = arrowHeadKindFromId(markerId);
       if (
-        !value5 ||
-        ((value ??= [...input.querySelectorAll("marker")]),
+        !headKind ||
+        ((value ??= [...svgRoot.querySelectorAll("marker")]),
         !value.some(
           (element?: Dynamic): Dynamic =>
-            element !== value3 && element.getAttribute("id") === value4,
+            element !== marker && element.getAttribute("id") === markerId,
         ))
       )
         continue;
-      let value6: Dynamic = createArrowHeadId(value5, context);
-      value3.setAttribute("id", value6);
-      let value7: Dynamic = value3.closest("svg") ?? value2;
-      for (let value8 of value7.querySelectorAll(
+      let newId: Dynamic = createArrowHeadId(headKind, random);
+      marker.setAttribute("id", newId);
+      let svgElement: Dynamic = marker.closest("svg") ?? root;
+      for (let attributeName of svgElement.querySelectorAll(
         "[marker-end], [marker-start]",
       ) as Dynamic)
-        for (let value9 of ["marker-end", "marker-start"] as Dynamic)
-          /#([^"')\s]+)/.exec(value8.getAttribute(value9) ?? "")?.[1] ===
-            value4 && value8.setAttribute(value9, `url(#${value6})`);
+        for (let markerAttribute of ["marker-end", "marker-start"] as Dynamic)
+          /#([^"')\s]+)/.exec(attributeName.getAttribute(markerAttribute) ?? "")?.[1] ===
+            markerId && attributeName.setAttribute(markerAttribute, `url(#${newId})`);
       flag = true;
     }
   }
   return flag;
 }
-function inheritedSvgPaint(input?: Dynamic, options?: Dynamic): Dynamic {
+function inheritedSvgPaint(element?: Dynamic, propertyName?: Dynamic): Dynamic {
   for (
-    let value: Dynamic = input;
+    let value: Dynamic = element;
     value;
     value = value.tagName.toLowerCase() === "svg" ? null : value.parentElement
   ) {
-    let value2: Dynamic = (value.getAttribute("style") ?? "")
+    let styleText: Dynamic = (value.getAttribute("style") ?? "")
         .split(";")
-        .map((input2?: Dynamic): Dynamic => input2.split(":"))
+        .map((declaration?: Dynamic): Dynamic => declaration.split(":"))
         .filter(
-          (input2?: Dynamic): Dynamic =>
-            input2[0].trim().toLowerCase() === options,
+          (declaration?: Dynamic): Dynamic =>
+            declaration[0].trim().toLowerCase() === propertyName,
         ),
-      value3: Dynamic = (
-        value2.length > 0
-          ? value2[value2.length - 1].slice(1).join(":")
-          : (value.getAttribute(options) ?? "")
+      paintValue: Dynamic = (
+        styleText.length > 0
+          ? styleText[styleText.length - 1].slice(1).join(":")
+          : (value.getAttribute(propertyName) ?? "")
       ).trim();
-    if (value3 !== "") return !/^(none|transparent)$/i.test(value3);
+    if (paintValue !== "") return !/^(none|transparent)$/i.test(paintValue);
   }
-  return options === "fill";
+  return propertyName === "fill";
 }
 function inspectArrowHeadElement(element?: Dynamic): Dynamic {
   return inheritedSvgPaint(element, "fill")
@@ -431,18 +431,18 @@ function inspectSvgArrowHeads(element?: Dynamic): Dynamic {
   let value: Dynamic =
     element.tagName.toLowerCase() === "svg" ? inspectSvgArrow(element) : null;
   if (!value) return null;
-  let value2: Dynamic = element.getAttribute("style") ?? "",
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+  let styleText: Dynamic = element.getAttribute("style") ?? "",
+    callback: Dynamic = (side?: Dynamic): Dynamic =>
       [value.shaft, element].some(
-        (element2?: Dynamic): Dynamic =>
-          new RegExp("(^|;)\\s*marker(-" + input + ")?\\s*:", "i").test(
-            element2.getAttribute("style") ?? "",
+        (styledElement?: Dynamic): Dynamic =>
+          new RegExp("(^|;)\\s*marker(-" + side + ")?\\s*:", "i").test(
+            styledElement.getAttribute("style") ?? "",
           ),
       ),
-    value3: Dynamic =
+    arrowHeadState: Dynamic =
       value.tag === "path" &&
-      /(^|;)\s*fill\s*:\s*none/.test(value2) &&
-      /(^|;)\s*overflow\s*:\s*visible/.test(value2) &&
+      /(^|;)\s*fill\s*:\s*none/.test(styleText) &&
+      /(^|;)\s*overflow\s*:\s*visible/.test(styleText) &&
       (value.legacy ||
         ((element.getAttribute("preserveAspectRatio") ??
           element.getAttribute("sc-camel-preserve-aspect-ratio")) ===
@@ -450,38 +450,38 @@ function inspectSvgArrowHeads(element?: Dynamic): Dynamic {
           /^\s*M\s*[-\d.e+]+[\s,]+[-\d.e+]+\s+L\s*[-\d.e+]+[\s,]+[-\d.e+]+\s*$/i.test(
             value.shaft.getAttribute("d") ?? "",
           ))),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
+    markerIdForSide: Dynamic = (side?: Dynamic): Dynamic =>
       /^\s*(none)?\s*$/i.test(
-        value.shaft.getAttribute("marker-" + input) ?? "",
+        value.shaft.getAttribute("marker-" + side) ?? "",
       );
   if (
-    !value3 &&
+    !arrowHeadState &&
     ["start", "end"].every(
-      (input?: Dynamic): Dynamic => callback2(input) && !callback(input),
+      (side?: Dynamic): Dynamic => markerIdForSide(side) && !callback(side),
     )
   )
     return null;
-  let callback3: Dynamic = (input?: Dynamic): Dynamic => {
-    if (callback(input)) return "unknown";
-    if (callback2(input)) return "none";
-    let attribute: Dynamic = value.shaft.getAttribute("marker-" + input),
-      value4: Dynamic = SvgArrowsExec(attribute),
-      value5: Dynamic =
-        value4 == null
+  let getHeadState: Dynamic = (side?: Dynamic): Dynamic => {
+    if (callback(side)) return "unknown";
+    if (markerIdForSide(side)) return "none";
+    let attribute: Dynamic = value.shaft.getAttribute("marker-" + side),
+      markerId: Dynamic = SvgArrowsExec(attribute),
+      markerElement: Dynamic =
+        markerId == null
           ? undefined
           : [...element.getElementsByTagName("marker")].find(
-              (element2?: Dynamic): Dynamic =>
-                element2.getAttribute("id") === value4,
+              (markerCandidate?: Dynamic): Dynamic =>
+                markerCandidate.getAttribute("id") === markerId,
             ),
-      value6: Dynamic = value5 ? [...value5.children] : [],
-      value7: Dynamic = value5?.getAttribute("orient") ?? "";
-    return value6.length !== 1 ||
-      value6[0].tagName.toLowerCase() !== "path" ||
-      !(input === "start"
-        ? value7 === "auto-start-reverse"
-        : /^auto/.test(value7))
+      markerChildren: Dynamic = markerElement ? [...markerElement.children] : [],
+      orientation: Dynamic = markerElement?.getAttribute("orient") ?? "";
+    return markerChildren.length !== 1 ||
+      markerChildren[0].tagName.toLowerCase() !== "path" ||
+      !(side === "start"
+        ? orientation === "auto-start-reverse"
+        : /^auto/.test(orientation))
       ? "unknown"
-      : (inspectArrowHeadElement(value6[0]) ?? "unknown");
+      : (inspectArrowHeadElement(markerChildren[0]) ?? "unknown");
   };
   return value.legacy
     ? {
@@ -493,8 +493,8 @@ function inspectSvgArrowHeads(element?: Dynamic): Dynamic {
     : {
         shaft: value.shaft,
         legacy: false,
-        start: callback3("start"),
-        end: callback3("end"),
+        start: getHeadState("start"),
+        end: getHeadState("end"),
       };
 }
 export {
@@ -517,9 +517,9 @@ export {
   shortenLineEnd,
   shortenLineEnds,
   SvgArrowsConstant,
-  SvgArrowsConstant_2,
-  SvgArrowsConstant_3,
-  SvgArrowsConstant_4,
+  arrowHeadCenterY as SvgArrowsConstant_2,
+  arrowHeadTipInset as SvgArrowsConstant_3,
+  openArrowHeadHalfHeight as SvgArrowsConstant_4,
   SvgArrowsCss,
   SvgArrowsDcArrowHeadFilledPattern,
   SvgArrowsExec,
@@ -530,42 +530,42 @@ export {
 export function installEditorSvgArrows(): () => void {
   return () => {
     SvgArrowsConstant = 4;
-    SvgArrowsConstant_2 = 2;
-    SvgArrowsConstant_3 = 2;
-    SvgArrowsCss = `M0 0 L${SvgArrowsConstant} ${SvgArrowsConstant_2} L0 ${2 * SvgArrowsConstant_2} Z`;
-    SvgArrowsConstant_4 = 1.7;
+    arrowHeadCenterY = 2;
+    arrowHeadTipInset = 2;
+    SvgArrowsCss = `M0 0 L${SvgArrowsConstant} ${arrowHeadCenterY} L0 ${2 * arrowHeadCenterY} Z`;
+    openArrowHeadHalfHeight = 1.7;
     openArrowHeadPath = ((): Dynamic => {
-      let value: Dynamic = Math.hypot(SvgArrowsConstant, SvgArrowsConstant_4),
-        value2: Dynamic = (SvgArrowsConstant_4 / value) * 0.5,
-        value3: Dynamic = (SvgArrowsConstant / value) * 0.5,
-        callback: Dynamic = (input?: Dynamic): Dynamic =>
-          String(Math.round(input * 1e3) / 1e3),
-        value4: Dynamic = `A${0.5} ${0.5} 0 0 1 `,
-        value5: Dynamic = callback(SvgArrowsConstant + value2),
-        value6: Dynamic = SvgArrowsConstant_2 - SvgArrowsConstant_4,
-        value7: Dynamic = SvgArrowsConstant_2 + SvgArrowsConstant_4;
-      return `M${callback(value2)} ${callback(value6 - value3)} L${value5} ${callback(SvgArrowsConstant_2 - value3)} ${value4}${value5} ${callback(SvgArrowsConstant_2 + value3)} L${callback(value2)} ${callback(value7 + value3)} ${value4}${callback(-value2)} ${callback(value7 - value3)} L${callback(SvgArrowsConstant - (0.5 * value) / SvgArrowsConstant_4)} ${SvgArrowsConstant_2} L${callback(-value2)} ${callback(value6 + value3)} ${value4}${callback(value2)} ${callback(value6 - value3)} Z`;
+      let value: Dynamic = Math.hypot(SvgArrowsConstant, openArrowHeadHalfHeight),
+        halfHeight: Dynamic = (openArrowHeadHalfHeight / value) * 0.5,
+        halfWidth: Dynamic = (SvgArrowsConstant / value) * 0.5,
+        callback: Dynamic = (coordinate?: Dynamic): Dynamic =>
+          String(Math.round(coordinate * 1e3) / 1e3),
+        arcCommand: Dynamic = `A${0.5} ${0.5} 0 0 1 `,
+        tipX: Dynamic = callback(SvgArrowsConstant + halfHeight),
+        baseY: Dynamic = arrowHeadCenterY - openArrowHeadHalfHeight,
+        baseBottom: Dynamic = arrowHeadCenterY + openArrowHeadHalfHeight;
+      return `M${callback(halfHeight)} ${callback(baseY - halfWidth)} L${tipX} ${callback(arrowHeadCenterY - halfWidth)} ${arcCommand}${tipX} ${callback(arrowHeadCenterY + halfWidth)} L${callback(halfHeight)} ${callback(baseBottom + halfWidth)} ${arcCommand}${callback(-halfHeight)} ${callback(baseBottom - halfWidth)} L${callback(SvgArrowsConstant - (0.5 * value) / openArrowHeadHalfHeight)} ${arrowHeadCenterY} L${callback(-halfHeight)} ${callback(baseY + halfWidth)} ${arcCommand}${callback(halfHeight)} ${callback(baseY - halfWidth)} Z`;
     })();
     SvgArrowsFilledOpenConfig = {
       filled: {
         d: SvgArrowsCss,
-        refX: SvgArrowsConstant - SvgArrowsConstant_3,
+        refX: SvgArrowsConstant - arrowHeadTipInset,
       },
       open: {
         d: openArrowHeadPath,
         refX: SvgArrowsConstant,
       },
     };
-    SvgArrowsRefX = (input?: Dynamic): Dynamic =>
-      input === "none"
+    SvgArrowsRefX = (kind?: Dynamic): Dynamic =>
+      kind === "none"
         ? 0
-        : SvgArrowsConstant - SvgArrowsFilledOpenConfig[input].refX;
+        : SvgArrowsConstant - SvgArrowsFilledOpenConfig[kind].refX;
     OpenValue = "open";
-    SvgArrowsHandler = (input?: Dynamic): Dynamic => "dc-arrow-head-" + input;
+    SvgArrowsHandler = (kind?: Dynamic): Dynamic => "dc-arrow-head-" + kind;
     SvgArrowsDcArrowHeadFilledPattern =
       /dc-arrow-head-(filled|open)(-[0-9a-z]+)?/g;
-    SvgArrowsExec = (input?: Dynamic): Dynamic =>
-      /^\s*url\(\s*["']?#([^"')\s]+)["']?\s*\)\s*$/.exec(input ?? "")?.[1] ??
+    SvgArrowsExec = (url?: Dynamic): Dynamic =>
+      /^\s*url\(\s*["']?#([^"')\s]+)["']?\s*\)\s*$/.exec(url ?? "")?.[1] ??
       null;
   };
 }

@@ -6,40 +6,40 @@ import {
 var EditorTemplateExpressionsAZaZAZaZPattern: Dynamic;
 var EditorTemplateExpressionsPattern: Dynamic;
 function evaluateTemplateExpression(
-  input?: Dynamic,
-  options?: Dynamic,
+  scope?: Dynamic,
+  expression?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = String(options).trim();
+  let value: Dynamic = String(expression).trim();
   if (!value) return;
   if (
     value[0] === "(" &&
     value[value.length - 1] === ")" &&
     hasOuterExpressionParentheses(value)
   )
-    return evaluateTemplateExpression(input, value.slice(1, -1));
-  let value2: Dynamic = findExpressionComparison(value);
-  if (value2) {
-    let value3: Dynamic = evaluateTemplateExpression(
-        input,
-        value.slice(0, value2.index),
+    return evaluateTemplateExpression(scope, value.slice(1, -1));
+  let comparison: Dynamic = findExpressionComparison(value);
+  if (comparison) {
+    let leftValue: Dynamic = evaluateTemplateExpression(
+        scope,
+        value.slice(0, comparison.index),
       ),
-      value4: Dynamic = evaluateTemplateExpression(
-        input,
-        value.slice(value2.index + value2.op.length),
+      rightValue: Dynamic = evaluateTemplateExpression(
+        scope,
+        value.slice(comparison.index + comparison.op.length),
       );
-    switch (value2.op) {
+    switch (comparison.op) {
       case "===":
-        return value3 === value4;
+        return leftValue === rightValue;
       case "!==":
-        return value3 !== value4;
+        return leftValue !== rightValue;
       case "==":
-        return value3 == value4;
+        return leftValue == rightValue;
       default:
-        return value3 != value4;
+        return leftValue != rightValue;
     }
   }
   if (value[0] === "!")
-    return !evaluateTemplateExpression(input, value.slice(1));
+    return !evaluateTemplateExpression(scope, value.slice(1));
   if (value === "true") return true;
   if (value === "false") return false;
   if (value === "null") return null;
@@ -50,74 +50,74 @@ function evaluateTemplateExpression(
           (value[0] === '"' || value[0] === "'") &&
           value[value.length - 1] === value[0]
         ? value.slice(1, -1)
-        : resolveExpressionPath(input, value);
+        : resolveExpressionPath(scope, value);
 }
 function hasOuterExpressionParentheses(items?: Dynamic): Dynamic {
   let index: Dynamic = 0;
-  for (let index2: Dynamic = 0; index2 < items.length - 1; index2++)
-    if (items[index2] === "(") index++;
-    else if (items[index2] === ")" && (index--, index === 0)) return false;
+  for (let position: Dynamic = 0; position < items.length - 1; position++)
+    if (items[position] === "(") index++;
+    else if (items[position] === ")" && (index--, index === 0)) return false;
   return true;
 }
 function findExpressionComparison(items?: Dynamic): Dynamic {
   let index: Dynamic = 0;
-  for (let index2: Dynamic = 0; index2 < items.length; index2++) {
-    let value: Dynamic = items[index2];
+  for (let position: Dynamic = 0; position < items.length; position++) {
+    let value: Dynamic = items[position];
     if (value === "[" || value === "(") index++;
     else if (value === "]" || value === ")") index--;
     else if (
       index === 0 &&
       (value === "=" || value === "!") &&
-      items[index2 + 1] === "="
+      items[position + 1] === "="
     ) {
       if (
-        (index2 > 0 &&
-          (items[index2 - 1] === "=" || items[index2 - 1] === "!")) ||
-        !items.slice(0, index2).trim()
+        (position > 0 &&
+          (items[position - 1] === "=" || items[position - 1] === "!")) ||
+        !items.slice(0, position).trim()
       )
         continue;
-      let value2: Dynamic =
-        items[index2 + 2] === "=" ? value + "==" : value + "=";
+      let operator: Dynamic =
+        items[position + 2] === "=" ? value + "==" : value + "=";
       return {
-        index: index2,
-        op: value2,
+        index: position,
+        op: operator,
       };
     }
   }
   return null;
 }
-function resolveExpressionPath(input?: Dynamic, items?: Dynamic): Dynamic {
+function resolveExpressionPath(scope?: Dynamic, items?: Dynamic): Dynamic {
   let value: Dynamic = items.match(EditorTemplateExpressionsAZaZAZaZPattern);
   if (!value) return;
-  let value2: Dynamic = input?.[value[0]],
+  let resolvedValue: Dynamic = scope?.[value[0]],
     length: Dynamic = value[0].length;
   for (; length < items.length; )
     if (items[length] === ".") {
-      let value3: Dynamic =
+      let pathSegment: Dynamic =
         items
           .slice(length + 1)
           .match(EditorTemplateExpressionsAZaZAZaZPattern) ||
         items.slice(length + 1).match(/^\d+/);
-      if (!value3) return;
-      value2 = value2?.[value3[0]];
-      length += 1 + value3[0].length;
+      if (!pathSegment) return;
+      resolvedValue = resolvedValue?.[pathSegment[0]];
+      length += 1 + pathSegment[0].length;
     } else if (items[length] === "[") {
       let count: Dynamic = 1,
-        value3: Dynamic = length + 1;
-      for (; value3 < items.length && count > 0; ) {
-        if (items[value3] === "[") count++;
-        else if (items[value3] === "]" && (count--, count === 0)) break;
-        value3++;
+        bracketEnd: Dynamic = length + 1;
+      for (; bracketEnd < items.length && count > 0; ) {
+        if (items[bracketEnd] === "[") count++;
+        else if (items[bracketEnd] === "]" && (count--, count === 0)) break;
+        bracketEnd++;
       }
       if (count !== 0) return;
-      let value4: Dynamic = evaluateTemplateExpression(
-        input,
-        items.slice(length + 1, value3),
+      let indexExpression: Dynamic = evaluateTemplateExpression(
+        scope,
+        items.slice(length + 1, bracketEnd),
       );
-      value2 = value2?.[value4];
-      length = value3 + 1;
+      resolvedValue = resolvedValue?.[indexExpression];
+      length = bracketEnd + 1;
     } else return;
-  return value2;
+  return resolvedValue;
 }
 export {
   EditorTemplateExpressionsAZaZAZaZPattern,

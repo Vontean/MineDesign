@@ -16,10 +16,10 @@ var StyleSchemaNodeTypesSlidesTableValues: Dynamic;
 var StyleSchemaNodeTypesSlidesShapeValues: Dynamic;
 var StyleSchemaNodeTypesFlat: Dynamic;
 var StyleSchemaNodeTypesFlatValue: Dynamic;
-var StyleSchemaNodeTypesFlatValue_2: Dynamic;
-var StyleSchemaNodeTypesFlatValue_3: Dynamic;
-var StyleSchemaNodeTypesFlatValue_4: Dynamic;
-var StyleSchemaNodeTypesFlatValue_5: Dynamic;
+var nodesSupportingBorderSidesAndTransform: Dynamic;
+var typographyNodes: Dynamic;
+var effectNodes: Dynamic;
+var richDocumentLayoutNodes: Dynamic;
 var StyleSchemaNodeTypesNormalItalicValues: Dynamic;
 var StyleSchemaNodeTypesLeftCenterRightValues: Dynamic;
 var StyleSchemaNodeTypesNoneUppercaseLowercaseValues: Dynamic;
@@ -48,10 +48,10 @@ export {
   StyleSchemaNodeTypesDefaultPointerTextValues,
   StyleSchemaNodeTypesFlat,
   StyleSchemaNodeTypesFlatValue,
-  StyleSchemaNodeTypesFlatValue_2,
-  StyleSchemaNodeTypesFlatValue_3,
-  StyleSchemaNodeTypesFlatValue_4,
-  StyleSchemaNodeTypesFlatValue_5,
+  nodesSupportingBorderSidesAndTransform as StyleSchemaNodeTypesFlatValue_2,
+  typographyNodes as StyleSchemaNodeTypesFlatValue_3,
+  effectNodes as StyleSchemaNodeTypesFlatValue_4,
+  richDocumentLayoutNodes as StyleSchemaNodeTypesFlatValue_5,
   StyleSchemaNodeTypesItems,
   StyleSchemaNodeTypesLeftCenterRightValues,
   StyleSchemaNodeTypesLinearEaseEaseInValues,
@@ -81,8 +81,8 @@ export {
 };
 export function installEditorStyleSchemaNodeTypes(): () => void {
   return () => {
-    StyleSchemaNodeTypesStartsWith = (input?: Dynamic): Dynamic =>
-      input.startsWith("slides-");
+    StyleSchemaNodeTypesStartsWith = (nodeType?: Dynamic): Dynamic =>
+      nodeType.startsWith("slides-");
     StyleSchemaNodeTypesParagraphHeadingCodeBlockValues = [
       "paragraph",
       "heading",
@@ -107,7 +107,7 @@ export function installEditorStyleSchemaNodeTypes(): () => void {
     StyleSchemaNodeTypesSlidesStackValues = ["slides-stack"];
     StyleSchemaNodeTypesSlidesTableValues = ["slides-table"];
     StyleSchemaNodeTypesSlidesShapeValues = ["slides-shape"];
-    StyleSchemaNodeTypesFlat = (...input: Dynamic[]): Dynamic => input.flat();
+    StyleSchemaNodeTypesFlat = (...nodeTypes: Dynamic[]): Dynamic => nodeTypes.flat();
     StyleSchemaNodeTypesFlatValue = StyleSchemaNodeTypesFlat(
       StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       StyleSchemaNodeTypesTableTableCellTableHeaderValues,
@@ -118,7 +118,7 @@ export function installEditorStyleSchemaNodeTypes(): () => void {
       StyleSchemaNodeTypesSlidesTableValues,
       StyleSchemaNodeTypesSlidesShapeValues,
     );
-    StyleSchemaNodeTypesFlatValue_2 = StyleSchemaNodeTypesFlat(
+    nodesSupportingBorderSidesAndTransform = StyleSchemaNodeTypesFlat(
       StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       StyleSchemaNodeTypesTableTableCellTableHeaderValues,
       StyleSchemaNodeTypesSlidesTextValues,
@@ -127,13 +127,13 @@ export function installEditorStyleSchemaNodeTypes(): () => void {
       StyleSchemaNodeTypesSlidesStackValues,
       StyleSchemaNodeTypesSlidesTableValues,
     );
-    StyleSchemaNodeTypesFlatValue_3 = StyleSchemaNodeTypesFlat(
+    typographyNodes = StyleSchemaNodeTypesFlat(
       StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       StyleSchemaNodeTypesTableTableCellTableHeaderValues,
       StyleSchemaNodeTypesSlidesTextValues,
       StyleSchemaNodeTypesSlidesTableValues,
     );
-    StyleSchemaNodeTypesFlatValue_4 = StyleSchemaNodeTypesFlat(
+    effectNodes = StyleSchemaNodeTypesFlat(
       StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       StyleSchemaNodeTypesTableValues,
       StyleSchemaNodeTypesSlidesTextValues,
@@ -143,7 +143,7 @@ export function installEditorStyleSchemaNodeTypes(): () => void {
       StyleSchemaNodeTypesSlidesTableValues,
       StyleSchemaNodeTypesSlidesShapeValues,
     );
-    StyleSchemaNodeTypesFlatValue_5 = StyleSchemaNodeTypesFlat(
+    richDocumentLayoutNodes = StyleSchemaNodeTypesFlat(
       StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       StyleSchemaNodeTypesTableTableCellTableHeaderValues,
     );

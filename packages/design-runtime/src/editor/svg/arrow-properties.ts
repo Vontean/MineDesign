@@ -7,8 +7,8 @@ import {
 var SvgArrowPropertiesHeadStartHeadEndConfig: Dynamic;
 var SvgArrowPropertiesNoneOpenFilledConfig: Dynamic;
 var SvgArrowPropertiesLabel: Dynamic;
-var SvgArrowPropertiesLabel_2: Dynamic;
-function findSvgShaft(input?: Dynamic, options?: Dynamic): Dynamic {
+var allArrowsNeedThicknessMessage: Dynamic;
+function findSvgShaft(svgRoot?: Dynamic, isShaftNode?: Dynamic): Dynamic {
   let state: Dynamic = {
       defs: 1,
       marker: 1,
@@ -17,41 +17,41 @@ function findSvgShaft(input?: Dynamic, options?: Dynamic): Dynamic {
       desc: 1,
       style: 1,
     },
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      for (let index: Dynamic = 0; index < input2.children.length; index++) {
-        let value: Dynamic = input2.children[index],
-          value2: Dynamic = (value.tagName || "").toLowerCase();
+    callback: Dynamic = (node?: Dynamic): Dynamic => {
+      for (let index: Dynamic = 0; index < node.children.length; index++) {
+        let value: Dynamic = node.children[index],
+          tagName: Dynamic = (value.tagName || "").toLowerCase();
         if (
-          !(state[value2] === 1 || options(value)) &&
-          !(value2 === "g" && callback(value))
+          !(state[tagName] === 1 || isShaftNode(value)) &&
+          !(tagName === "g" && callback(value))
         )
           return false;
       }
       return true;
     };
-  return callback(input);
+  return callback(svgRoot);
 }
-function arrowHeadPropertyRows(input?: Dynamic): Dynamic {
-  let heads: Dynamic = input.heads;
+function arrowHeadPropertyRows(arrowData?: Dynamic): Dynamic {
+  let heads: Dynamic = arrowData.heads;
   return heads
-    ? ["__headStart", "__headEnd"].map((input2?: Dynamic): Dynamic => {
+    ? ["__headStart", "__headEnd"].map((headProperty?: Dynamic): Dynamic => {
         let value: Dynamic =
-            heads[input2 === "__headStart" ? "start" : "end"],
-          value2: Dynamic = SvgArrowPropertiesHeadStartHeadEndConfig[input2];
+            heads[headProperty === "__headStart" ? "start" : "end"],
+          headLabel: Dynamic = SvgArrowPropertiesHeadStartHeadEndConfig[headProperty];
         return {
-          prop: input2,
-          label: value2,
+          prop: headProperty,
+          label: headLabel,
           spec: {
-            prop: input2,
-            label: value2,
+            prop: headProperty,
+            label: headLabel,
             editor: "flexSeg",
             section: "stroke",
             options: Object.keys(SvgArrowPropertiesNoneOpenFilledConfig),
             optionLabels: SvgArrowPropertiesNoneOpenFilledConfig,
           },
           value: value === "unknown" ? null : value,
-          disabled: input.disabled || heads.width == null,
-          ...(heads.width == null && !input.disabled
+          disabled: arrowData.disabled || heads.width == null,
+          ...(heads.width == null && !arrowData.disabled
             ? {
                 whyDisabled: SvgArrowPropertiesLabel,
               }
@@ -65,7 +65,7 @@ export {
   findSvgShaft,
   SvgArrowPropertiesHeadStartHeadEndConfig,
   SvgArrowPropertiesLabel,
-  SvgArrowPropertiesLabel_2,
+  allArrowsNeedThicknessMessage as SvgArrowPropertiesLabel_2,
   SvgArrowPropertiesNoneOpenFilledConfig,
 };
 export function installEditorSvgArrowProperties(): () => void {
@@ -81,7 +81,7 @@ export function installEditorSvgArrowProperties(): () => void {
     };
     SvgArrowPropertiesLabel =
       uiMessage("inspector.arrowProperties.toChooseAnArrowheadFirst");
-    SvgArrowPropertiesLabel_2 =
+    allArrowsNeedThicknessMessage =
       uiMessage("inspector.arrowProperties.toChooseAnArrowheadFirst2");
   };
 }

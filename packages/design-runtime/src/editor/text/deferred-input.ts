@@ -45,25 +45,25 @@ function collectDeferredTypedText(event?: Dynamic): Dynamic {
     value === "CapsLock"
   )
     return;
-  let value2: Dynamic = event.getModifierState?.("AltGraph") === true;
+  let isAltGraph: Dynamic = event.getModifierState?.("AltGraph") === true;
   if (
-    ((event.metaKey || event.ctrlKey) && !value2) ||
+    ((event.metaKey || event.ctrlKey) && !isAltGraph) ||
     value === "Escape" ||
     eventTargetsInput(event)
   ) {
     TextDeferredInputHandler_2();
     return;
   }
-  if (event.altKey && !value2 && /^[a-z0-9]$/i.test(value)) return;
-  let value3: Dynamic = value === "Backspace" ? "" : value;
-  (value3.length > 1 && value3 !== "Enter" && value3 !== "Delete") ||
+  if (event.altKey && !isAltGraph && /^[a-z0-9]$/i.test(value)) return;
+  let typedKey: Dynamic = value === "Backspace" ? "" : value;
+  (typedKey.length > 1 && typedKey !== "Enter" && typedKey !== "Delete") ||
     (event.preventDefault(),
     event.stopImmediatePropagation(),
-    !(value3.length > 1 || event.repeat) &&
-      ((TextDeferredInputTokenTypedSinkConfig.typed = value3
-        ? TextDeferredInputTokenTypedSinkConfig.typed + value3
+    !(typedKey.length > 1 || event.repeat) &&
+      ((TextDeferredInputTokenTypedSinkConfig.typed = typedKey
+        ? TextDeferredInputTokenTypedSinkConfig.typed + typedKey
         : TextDeferredInputTokenTypedSinkConfig.typed.slice(0, -1)),
-      TextDeferredInputTokenTypedSinkConfig.sink?.key(value3)));
+      TextDeferredInputTokenTypedSinkConfig.sink?.key(typedKey)));
 }
 function beginDeferredTextInput(): Dynamic {
   return TextDeferredInputTokenTypedSinkConfig?.keys
@@ -96,11 +96,11 @@ function hasDeferredTextSink(): Dynamic {
 function cancelDeferredTextSink(): Dynamic {
   hasDeferredTextSink() && finishDeferredTextInput("edit");
 }
-function attachDeferredTextSink(input?: Dynamic, options?: Dynamic): Dynamic {
-  return TextDeferredInputTokenTypedSinkConfig?.token !== input
+function attachDeferredTextSink(token?: Dynamic, sink?: Dynamic): Dynamic {
+  return TextDeferredInputTokenTypedSinkConfig?.token !== token
     ? null
     : (clearTimeout(TextDeferredInputTokenTypedSinkConfig.timer),
-      (TextDeferredInputTokenTypedSinkConfig.sink = options),
+      (TextDeferredInputTokenTypedSinkConfig.sink = sink),
       (TextDeferredInputTokenTypedSinkConfig.timer = setTimeout(
         TextDeferredInputHandler_2,
         2100,
@@ -114,21 +114,21 @@ function resetDeferredTextPointer(): Dynamic {
   TextDeferredInputNow();
 }
 function finishDeferredTextInput(
-  input?: Dynamic,
-  options?: Dynamic,
+  reason?: Dynamic,
+  expectedToken?: Dynamic,
 ): Dynamic {
   if (
     !TextDeferredInputTokenTypedSinkConfig ||
-    (options !== undefined &&
-      TextDeferredInputTokenTypedSinkConfig.token !== options) ||
-    (input === "opened" && !TextDeferredInputTokenTypedSinkConfig.sink)
+    (expectedToken !== undefined &&
+      TextDeferredInputTokenTypedSinkConfig.token !== expectedToken) ||
+    (reason === "opened" && !TextDeferredInputTokenTypedSinkConfig.sink)
   )
     return;
-  let { sink: value, keys: value2 }: Dynamic =
+  let { sink: value, keys: hasKeys }: Dynamic =
     TextDeferredInputTokenTypedSinkConfig;
-  value2 && removeDeferredTextListeners();
-  if (input === "keys" && !value) {
-    value2 &&
+  hasKeys && removeDeferredTextListeners();
+  if (reason === "keys" && !value) {
+    hasKeys &&
       (clearTimeout(TextDeferredInputTokenTypedSinkConfig.timer),
       (TextDeferredInputTokenTypedSinkConfig.keys = false),
       (TextDeferredInputTokenTypedSinkConfig.typed = ""));
@@ -136,7 +136,7 @@ function finishDeferredTextInput(
   }
   clearTimeout(TextDeferredInputTokenTypedSinkConfig.timer);
   TextDeferredInputTokenTypedSinkConfig = null;
-  input !== "opened" && value?.drop(input === "keys");
+  reason !== "opened" && value?.drop(reason === "keys");
 }
 export {
   attachDeferredTextSink,
@@ -161,14 +161,14 @@ export function installEditorTextDeferredInput(): () => void {
     TextDeferredInputConstant = 0;
     TextDeferredInputHandler = (): Dynamic => finishDeferredTextInput("keys");
     TextDeferredInputHandler_2 = (): Dynamic => finishDeferredTextInput("edit");
-    TextDeferredInputNow = (input?: Dynamic): Dynamic => {
+    TextDeferredInputNow = (event?: Dynamic): Dynamic => {
       TextDeferredInputTokenTypedSinkConfig?.keys &&
-        (input?.timeStamp ?? performance.now()) -
+        (event?.timeStamp ?? performance.now()) -
           TextDeferredInputTokenTypedSinkConfig.at >
           500 &&
         TextDeferredInputHandler_2();
     };
-    TextDeferredInputHandler_3 = (input?: Dynamic): Dynamic =>
-      input != null && "tagName" in input && "isContentEditable" in input;
+    TextDeferredInputHandler_3 = (node?: Dynamic): Dynamic =>
+      node != null && "tagName" in node && "isContentEditable" in node;
   };
 }

@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { StyleSchemaNodeTypesStartsWith } from "./node-types";
-import { StyleSchemaValuesItems_3, StyleSchemaValuesRegistry, StyleSchemaValuesSubscribers_2, StyleSchemaValuesSubscribers_3, StyleSchemaValuesSubscribers_4 } from "./values";
+import { StyleSchemaValuesItems_3 as supportedStyleProperties, StyleSchemaValuesRegistry, StyleSchemaValuesSubscribers_2 as effectProperties, StyleSchemaValuesSubscribers_3 as animatableProperties, StyleSchemaValuesSubscribers_4 as hoverProperties } from "./values";
 
 var styleSchema: Dynamic;
 var StyleSchemaValidationTableTableCellTableHeaderValues: Dynamic;
@@ -13,84 +13,84 @@ var StyleSchemaValidationPattern: Dynamic;
 var StyleSchemaValidationSubscribers: Dynamic;
 var D16D16D16Value: Dynamic;
 var StyleSchemaValidationLabel: Dynamic;
-var StyleSchemaValidationLabel_2: Dynamic;
+var cssWhitespacePatternSource: Dynamic;
 var rgbStyleColorPattern: Dynamic;
 var hslStyleColorPattern: Dynamic;
 var oklchStyleColorPattern: Dynamic;
 var labStyleColorPattern: Dynamic;
 function buildStyleSchema(): Dynamic {
   let value: Dynamic = Object.create(null);
-  for (let value2 of StyleSchemaValuesItems_3 as Dynamic) {
-    let value3: Dynamic = StyleSchemaValuesRegistry[value2];
-    value[value2] = {
-      value: value3.v,
-      slidesValue: value3.slides,
-      shapeValue: value3.shape,
-      applies: value3.on,
-      routed: value3.routed ?? [],
-      effect: StyleSchemaValuesSubscribers_2.has(value2),
-      hover: StyleSchemaValuesSubscribers_4.has(value2),
-      animatable: StyleSchemaValuesSubscribers_3.has(value2),
+  for (let propertyName of supportedStyleProperties as Dynamic) {
+    let propertyConfig: Dynamic = StyleSchemaValuesRegistry[propertyName];
+    value[propertyName] = {
+      value: propertyConfig.v,
+      slidesValue: propertyConfig.slides,
+      shapeValue: propertyConfig.shape,
+      applies: propertyConfig.on,
+      routed: propertyConfig.routed ?? [],
+      effect: effectProperties.has(propertyName),
+      hover: hoverProperties.has(propertyName),
+      animatable: animatableProperties.has(propertyName),
     };
   }
   return value;
 }
-function propertyAppliesToNode(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "transform" &&
-    StyleSchemaValidationTableTableCellTableHeaderValues.includes(options)
+function propertyAppliesToNode(propertyName?: Dynamic, nodeType?: Dynamic): Dynamic {
+  return propertyName === "transform" &&
+    StyleSchemaValidationTableTableCellTableHeaderValues.includes(nodeType)
     ? false
-    : styleSchema[input].applies.includes(options);
+    : styleSchema[propertyName].applies.includes(nodeType);
 }
 function getPropertyValidationClass(
-  input?: Dynamic,
-  options?: Dynamic,
+  propertyName?: Dynamic,
+  nodeType?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = styleSchema[input];
-  return options === "slides-shape" && value.shapeValue !== undefined
+  let value: Dynamic = styleSchema[propertyName];
+  return nodeType === "slides-shape" && value.shapeValue !== undefined
     ? value.shapeValue
-    : options !== undefined &&
+    : nodeType !== undefined &&
         value.slidesValue !== undefined &&
-        StyleSchemaNodeTypesStartsWith(options)
+        StyleSchemaNodeTypesStartsWith(nodeType)
       ? value.slidesValue
       : value.value;
 }
-function validateSimpleStyleString(input?: Dynamic): Dynamic {
-  if (typeof input != "string") return;
-  let value: Dynamic = input.trim();
+function validateSimpleStyleString(text?: Dynamic): Dynamic {
+  if (typeof text != "string") return;
+  let value: Dynamic = text.trim();
   if (
     !(value.length === 0 || value.length > StyleSchemaValidationLimit) &&
     !StyleSchemaValidationExpressionImageSetPattern.test(value)
   )
     return value;
 }
-function isStyleObject(input?: Dynamic): Dynamic {
-  return typeof input == "object" && input !== null && !Array.isArray(input);
+function isStyleObject(candidate?: Dynamic): Dynamic {
+  return typeof candidate == "object" && candidate !== null && !Array.isArray(candidate);
 }
-function validateStyleNumber(source?: Dynamic, options?: Dynamic): Dynamic {
-  if (typeof options != "number" || !Number.isFinite(options)) return;
+function validateStyleNumber(source?: Dynamic, numberValue?: Dynamic): Dynamic {
+  if (typeof numberValue != "number" || !Number.isFinite(numberValue)) return;
   if (source.kind === "int") {
-    let value2: Dynamic = Math.round(options / source.step) * source.step;
-    return Math.min(source.hi, Math.max(source.lo, value2));
+    let roundedValue: Dynamic = Math.round(numberValue / source.step) * source.step;
+    return Math.min(source.hi, Math.max(source.lo, roundedValue));
   }
-  let value: Dynamic = Math.min(source.hi, Math.max(source.lo, options));
+  let value: Dynamic = Math.min(source.hi, Math.max(source.lo, numberValue));
   return source.kind === "len"
     ? Math.round(value * 10) / 10
     : Math.round(value * 1e4) / 1e4;
 }
 function validateOptionalStyleNumber(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  bounds?: Dynamic,
+  numberValue?: Dynamic,
+  fallback?: Dynamic,
 ): Dynamic {
-  return options === undefined
-    ? context
-    : validateStyleNumber(input, options);
+  return numberValue === undefined
+    ? fallback
+    : validateStyleNumber(bounds, numberValue);
 }
-function validateStyleEnum(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (typeof options != "string") return;
-  let value: Dynamic = options.trim();
+function validateStyleEnum(allowedValues?: Dynamic, enumValue?: Dynamic): Dynamic {
+  if (typeof enumValue != "string") return;
+  let value: Dynamic = enumValue.trim();
   if (!(value.length === 0 || value.length > StyleSchemaValidationLimit))
-    return input.includes(value) ? value : undefined;
+    return allowedValues.includes(value) ? value : undefined;
 }
 export {
   buildStyleSchema,
@@ -105,7 +105,7 @@ export {
   styleSchema,
   StyleSchemaValidationExpressionImageSetPattern,
   StyleSchemaValidationLabel,
-  StyleSchemaValidationLabel_2,
+  cssWhitespacePatternSource as StyleSchemaValidationLabel_2,
   StyleSchemaValidationLimit,
   StyleSchemaValidationPattern,
   StyleSchemaValidationSubscribers,
@@ -282,7 +282,7 @@ export function installEditorStyleSchemaValidation(): () => void {
     ]);
     D16D16D16Value = "(?:\\d{1,6}(?:\\.\\d{1,6})?|\\.\\d{1,6})";
     StyleSchemaValidationLabel = "[ \\t\\n\\r\\f]*";
-    StyleSchemaValidationLabel_2 = "[ \\t\\n\\r\\f]+";
+    cssWhitespacePatternSource = "[ \\t\\n\\r\\f]+";
     rgbStyleColorPattern = new RegExp(
       "^rgba?\\(" +
         StyleSchemaValidationLabel +
@@ -311,10 +311,10 @@ export function installEditorStyleSchemaValidation(): () => void {
         StyleSchemaValidationLabel +
         D16D16D16Value +
         "%?" +
-        StyleSchemaValidationLabel_2 +
+        cssWhitespacePatternSource +
         D16D16D16Value +
         "%?" +
-        StyleSchemaValidationLabel_2 +
+        cssWhitespacePatternSource +
         D16D16D16Value +
         "%?" +
         StyleSchemaValidationLabel +
@@ -355,10 +355,10 @@ export function installEditorStyleSchemaValidation(): () => void {
         "-?" +
         D16D16D16Value +
         "(?:deg)?" +
-        StyleSchemaValidationLabel_2 +
+        cssWhitespacePatternSource +
         D16D16D16Value +
         "%" +
-        StyleSchemaValidationLabel_2 +
+        cssWhitespacePatternSource +
         D16D16D16Value +
         "%" +
         StyleSchemaValidationLabel +

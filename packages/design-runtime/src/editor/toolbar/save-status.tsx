@@ -14,12 +14,12 @@ function ToolbarSaveStatus({ state: state }: Dynamic): Dynamic {
   if (state.status === "error" || state.status === "readonly")
     return <ToolbarSaveFailure state={state} />;
   let value: Dynamic = state.status === "saving",
-    value2: Dynamic = state.status === "dirty";
+    hasUnsavedChanges: Dynamic = state.status === "dirty";
   return (
     <span
       role={"status"}
       title={
-        value ? (uiMessage("inspector.saveStatus.saving")) : (value2 ? (uiMessage("inspector.saveStatus.editsAreHeldInThe")) : (uiMessage("inspector.saveStatus.everyChangeSavesAutomatically")))
+        value ? (uiMessage("inspector.saveStatus.saving")) : (hasUnsavedChanges ? (uiMessage("inspector.saveStatus.editsAreHeldInThe")) : (uiMessage("inspector.saveStatus.everyChangeSavesAutomatically")))
       }
       className={
         "inline-flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap text-fg-muted"
@@ -28,11 +28,11 @@ function ToolbarSaveStatus({ state: state }: Dynamic): Dynamic {
       <span
         className={
           "h-1.5 w-1.5 shrink-0 rounded-full " +
-          (value || value2 ? "bg-fill-warning" : "bg-fill-success")
+          (value || hasUnsavedChanges ? "bg-fill-warning" : "bg-fill-success")
         }
       />
       <span className={"tb-status-text truncate"}>
-        {value ? (uiMessage("inspector.saveStatus.saving")) : (value2 ? (uiMessage("inspector.saveStatus.unsavedEdits")) : (uiMessage("inspector.saveStatus.savedAutomatically")))}
+        {value ? (uiMessage("inspector.saveStatus.saving")) : (hasUnsavedChanges ? (uiMessage("inspector.saveStatus.unsavedEdits")) : (uiMessage("inspector.saveStatus.savedAutomatically")))}
       </span>
     </span>
   );
@@ -49,28 +49,28 @@ function ToolbarSyncStatus({
       hostDrawsSave,
       (): Dynamic => false,
     ),
-    value2: Dynamic = (0,
+    hostRetryAvailable: Dynamic = (0,
     reactCanvasMeasurements.useSyncExternalStore)(
       subscribeHostChrome,
       hostHandlesRetry,
       (): Dynamic => false,
     ),
-    [value3, value4]: Dynamic = (0, reactCanvasMeasurements.useState)(
+    [isFocused, setFocused]: Dynamic = (0, reactCanvasMeasurements.useState)(
       false,
     ),
-    [value5, value6]: Dynamic = (0, reactCanvasMeasurements.useState)(
+    [isHovered, setHovered]: Dynamic = (0, reactCanvasMeasurements.useState)(
       false,
     ),
-    [value7, value8]: Dynamic = (0, reactCanvasMeasurements.useState)(
+    [isRetrying, setRetrying]: Dynamic = (0, reactCanvasMeasurements.useState)(
       false,
     ),
     status: Dynamic = state.status,
-    value9: Dynamic =
+    isTransient: Dynamic =
       status === "saving" || status === "dirty" || status === "loading";
-  value7 && !value9 && status !== "error" && value8(false);
-  let value10: Dynamic = value3 || value5 || (value7 && value9);
-  if (value && (status !== "error" || value2) && !value10) return null;
-  let value11: Dynamic =
+  isRetrying && !isTransient && status !== "error" && setRetrying(false);
+  let isBusy: Dynamic = isFocused || isHovered || (isRetrying && isTransient);
+  if (value && (status !== "error" || hostRetryAvailable) && !isBusy) return null;
+  let syncState: Dynamic =
       status === "loading" || status === "cached"
         ? "loading"
         : status === "error"
@@ -78,18 +78,18 @@ function ToolbarSyncStatus({
           : status === "dirty" || status === "saving"
             ? "pending"
             : "synced",
-    value12: Dynamic = value11 === "synced" && !value10,
-    value13: Dynamic =
+    isQuiet: Dynamic = syncState === "synced" && !isBusy,
+    statusMessage: Dynamic =
       state.message ??
-      (value11 === "pending"
+      (syncState === "pending"
         ? "Syncing\u2026"
-        : value11 === "error"
+        : syncState === "error"
           ? uiMessage("inspector.saveStatus.couldnTSyncClickTo")
           : uiMessage("inspector.saveStatus.allChangesSynced")),
-    value14: Dynamic = status === "error" || status === "dirty";
+    canRetry: Dynamic = status === "error" || status === "dirty";
   return (
     <Tooltip
-      content={value13}
+      content={statusMessage}
       side={tipSide}
       align={"end"}
       multiline={true}
@@ -98,17 +98,17 @@ function ToolbarSyncStatus({
     >
       <button
         type={"button"}
-        aria-disabled={value14 ? undefined : true}
+        aria-disabled={canRetry ? undefined : true}
         onClick={(): Dynamic => {
-          value14 && (status === "error" && value8(true), onRetry());
+          canRetry && (status === "error" && setRetrying(true), onRetry());
         }}
-        onFocus={(): Dynamic => value4(true)}
-        onBlur={(): Dynamic => value4(false)}
-        onPointerEnter={(): Dynamic => value6(true)}
-        onPointerLeave={(): Dynamic => value6(false)}
-        aria-label={value13}
-        data-sync={value11}
-        data-quiet={value12 ? "" : undefined}
+        onFocus={(): Dynamic => setFocused(true)}
+        onBlur={(): Dynamic => setFocused(false)}
+        onPointerEnter={(): Dynamic => setHovered(true)}
+        onPointerLeave={(): Dynamic => setHovered(false)}
+        aria-label={statusMessage}
+        data-sync={syncState}
+        data-quiet={isQuiet ? "" : undefined}
         data-testid={"sync-dot"}
         className={"tb-sync-dot"}
       >
@@ -126,11 +126,11 @@ function ToolbarSaveFailure({ state: state }: Dynamic): Dynamic {
     (): Dynamic => false,
   );
   if (state.status === "error") {
-    let value2: Dynamic = state.message ?? uiMessage("inspector.saveStatus.couldnTSave");
+    let errorMessage: Dynamic = state.message ?? uiMessage("inspector.saveStatus.couldnTSave");
     return (
       <span
         role={"status"}
-        title={value2}
+        title={errorMessage}
         className={
           "inline-flex max-w-80 shrink-0 items-center gap-1.5 truncate rounded-full bg-bad/10 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-bad"
         }
@@ -138,7 +138,7 @@ function ToolbarSaveFailure({ state: state }: Dynamic): Dynamic {
         <span
           className={"h-1.5 w-1.5 shrink-0 rounded-full bg-fill-danger"}
         />
-        <span className={"tb-status-text truncate"}>{value2}</span>
+        <span className={"tb-status-text truncate"}>{errorMessage}</span>
       </span>
     );
   }

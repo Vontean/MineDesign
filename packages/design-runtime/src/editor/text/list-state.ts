@@ -4,50 +4,50 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 
-function getTextListKind(input?: Dynamic): Dynamic {
-  if (!input) return "none";
-  let value: Dynamic = input.tagName.toLowerCase(),
-    value2: Dynamic =
+function getTextListKind(element?: Dynamic): Dynamic {
+  if (!element) return "none";
+  let value: Dynamic = element.tagName.toLowerCase(),
+    listElement: Dynamic =
       value === "ul" || value === "ol"
-        ? input
+        ? element
         : value === "li"
-          ? input.parentElement
-          : input.children.length === 1 &&
-              /^(ul|ol)$/i.test(input.children[0].tagName)
-            ? input.children[0]
+          ? element.parentElement
+          : element.children.length === 1 &&
+              /^(ul|ol)$/i.test(element.children[0].tagName)
+            ? element.children[0]
             : null;
-  return value2 == null
+  return listElement == null
     ? "none"
-    : value2.tagName.toLowerCase() === "ol"
+    : listElement.tagName.toLowerCase() === "ol"
       ? "number"
       : "bullet";
 }
-function listKindToTag(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "number"
+function listKindToTag(listKind?: Dynamic, fallbackKind?: Dynamic): Dynamic {
+  return listKind === "number"
     ? "ol"
-    : input === "bullet"
+    : listKind === "bullet"
       ? "ul"
-      : options === "number"
+      : fallbackKind === "number"
         ? "ol"
-        : options === "bullet"
+        : fallbackKind === "bullet"
           ? "ul"
           : null;
 }
-function normalizeTextEditListState(input?: Dynamic): Dynamic {
-  if (input.active !== true) return null;
-  let value: Dynamic = input.plain === true;
+function normalizeTextEditListState(state?: Dynamic): Dynamic {
+  if (state.active !== true) return null;
+  let value: Dynamic = state.plain === true;
   return {
-    tid: Number.isInteger(input.tid) ? input.tid : null,
+    tid: Number.isInteger(state.tid) ? state.tid : null,
     plain: value,
-    ul: !value && input.formats?.ul === true,
-    ol: !value && input.formats?.ol === true,
+    ul: !value && state.formats?.ul === true,
+    ol: !value && state.formats?.ol === true,
   };
 }
 function createPendingTextListCounter(): Dynamic {
   let index: Dynamic = 0;
   return {
-    begin: (input?: Dynamic): Dynamic => {
-      let value: Dynamic = input ? 1 : 0;
+    begin: (hasPending?: Dynamic): Dynamic => {
+      let value: Dynamic = hasPending ? 1 : 0;
       index += value;
       return (): Dynamic => {
         index -= value;
@@ -56,69 +56,69 @@ function createPendingTextListCounter(): Dynamic {
     pending: (): Dynamic => index > 0,
   };
 }
-function sameTextEditListState(input?: Dynamic, options?: Dynamic): Dynamic {
+function sameTextEditListState(firstState?: Dynamic, secondState?: Dynamic): Dynamic {
   return (
-    input === options ||
-    (input !== null &&
-      options !== null &&
-      input.tid === options.tid &&
-      input.plain === options.plain &&
-      input.ul === options.ul &&
-      input.ol === options.ol)
+    firstState === secondState ||
+    (firstState !== null &&
+      secondState !== null &&
+      firstState.tid === secondState.tid &&
+      firstState.plain === secondState.plain &&
+      firstState.ul === secondState.ul &&
+      firstState.ol === secondState.ol)
   );
 }
 function resolveTextListState(
   items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  candidate?: Dynamic,
+  transactionId?: Dynamic,
+  editingMode?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic =
-      options !== null && context !== undefined && options.tid === context
-        ? options
+  let matchedState: Dynamic =
+      candidate !== null && transactionId !== undefined && candidate.tid === transactionId
+        ? candidate
         : null,
-    value3: Dynamic = value2 !== null && !value2.plain ? value2 : null,
-    value4: Dynamic = value3
-      ? value3.ol
+    activeList: Dynamic = matchedState !== null && !matchedState.plain ? matchedState : null,
+    listKind: Dynamic = activeList
+      ? activeList.ol
         ? "number"
-        : value3.ul
+        : activeList.ul
           ? "bullet"
           : "none"
       : (items[0] ?? "none"),
-    value5: Dynamic =
-      value3 === null &&
-      items.some((input?: Dynamic): Dynamic => input !== items[0]),
-    value6: Dynamic =
+    isMixed: Dynamic =
+      activeList === null &&
+      items.some((item?: Dynamic): Dynamic => item !== items[0]),
+    disabledReason: Dynamic =
       items.length !== 1
         ? uiMessage("inspector.listState.makeListsOneTextAt")
-        : value2?.plain
+        : matchedState?.plain
           ? uiMessage("inspector.listState.thisTextIsBoundTo")
-          : value3 === null && !value
+          : activeList === null && !editingMode
             ? uiMessage("inspector.listState.thisTextIsNotEditable")
             : null;
   return {
-    value: value4,
-    mixed: value5,
-    live: value3 !== null,
-    off: value6,
+    value: listKind,
+    mixed: isMixed,
+    live: activeList !== null,
+    off: disabledReason,
   };
 }
-function classifyTextListEdit(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === null || options === null
+function classifyTextListEdit(beforeState?: Dynamic, afterState?: Dynamic): Dynamic {
+  return beforeState === null || afterState === null
     ? "refused"
-    : input.undoLength !== options.undoLength ||
-        input.template !== options.template ||
-        input.pendingScript !== options.pendingScript ||
-        input.pendingProps !== options.pendingProps ||
-        input.pendingPropsJson !== options.pendingPropsJson
+    : beforeState.undoLength !== afterState.undoLength ||
+        beforeState.template !== afterState.template ||
+        beforeState.pendingScript !== afterState.pendingScript ||
+        beforeState.pendingProps !== afterState.pendingProps ||
+        beforeState.pendingPropsJson !== afterState.pendingPropsJson
       ? "applied"
       : "refused";
 }
 function isSuccessfulTextListEdit(
-  input?: Dynamic,
-  options?: Dynamic,
+  status?: Dynamic,
+  hasOptions?: Dynamic,
 ): Dynamic {
-  return input === "applied" || (input === "none" && !options);
+  return status === "applied" || (status === "none" && !hasOptions);
 }
 export {
   classifyTextListEdit,

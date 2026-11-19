@@ -6,78 +6,78 @@ import { StyleSchemaColorAndFontCall } from "./color-and-font";
 import { radialGradientFunction } from "./gradient";
 import { validateStyleValue } from "./structured-values";
 import { propertyAppliesToNode } from "./validation";
-import { StyleSchemaValuesItems, StyleSchemaValuesItems_3, StyleSchemaValuesSansSerifMonoConfig } from "./values";
+import { StyleSchemaValuesItems, StyleSchemaValuesItems_3 as StyleProperties, StyleSchemaValuesSansSerifMonoConfig } from "./values";
 
 var pixelsCss: Dynamic;
 var StyleSchemaCssTransformOpacityColorConfig: Dynamic;
 var StyleSchemaCssPositionTopRightValues: Dynamic;
 var StyleSchemaCssSupportsValue: Dynamic;
-function serializeStyleShadows(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input
+function serializeStyleShadows(shadows?: Dynamic, includeInset?: Dynamic): Dynamic {
+  return shadows
     .map(
-      (input2?: Dynamic): Dynamic =>
-        options
-          ? `${input2.inset === true ? "inset " : ""}${pixelsCss(input2.x)} ${pixelsCss(input2.y)} ${pixelsCss(input2.blur)} ${pixelsCss(input2.spread ?? 0)} ${input2.color}`
-          : `${pixelsCss(input2.x)} ${pixelsCss(input2.y)} ${pixelsCss(input2.blur)} ${input2.color}`,
+      (shadow?: Dynamic): Dynamic =>
+        includeInset
+          ? `${shadow.inset === true ? "inset " : ""}${pixelsCss(shadow.x)} ${pixelsCss(shadow.y)} ${pixelsCss(shadow.blur)} ${pixelsCss(shadow.spread ?? 0)} ${shadow.color}`
+          : `${pixelsCss(shadow.x)} ${pixelsCss(shadow.y)} ${pixelsCss(shadow.blur)} ${shadow.color}`,
     )
     .join(", ");
 }
-function serializeStyleGradient(input?: Dynamic): Dynamic {
-  if (input.repeat !== undefined && input.radial !== true) {
-    let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        `${Math.round((input2 / 100) * input.repeat * 100) / 100}px`,
-      value2: Dynamic = input.stops
+function serializeStyleGradient(gradient?: Dynamic): Dynamic {
+  if (gradient.repeat !== undefined && gradient.radial !== true) {
+    let callback: Dynamic = (percentage?: Dynamic): Dynamic =>
+        `${Math.round((percentage / 100) * gradient.repeat * 100) / 100}px`,
+      serializedStops: Dynamic = gradient.stops
         .map(
-          (input2?: Dynamic): Dynamic =>
-            `${input2.color} ${callback(input2.pos)}`,
+          (stop?: Dynamic): Dynamic =>
+            `${stop.color} ${callback(stop.pos)}`,
         )
         .join(", ");
-    return `repeating-linear-gradient(${input.angle}deg, ${value2})`;
+    return `repeating-linear-gradient(${gradient.angle}deg, ${serializedStops})`;
   }
-  let value: Dynamic = input.stops
-    .map((input2?: Dynamic): Dynamic => `${input2.color} ${input2.pos}%`)
+  let value: Dynamic = gradient.stops
+    .map((stop?: Dynamic): Dynamic => `${stop.color} ${stop.pos}%`)
     .join(", ");
-  return input.radial === true
-    ? `${radialGradientFunction(input)}${value})`
-    : `linear-gradient(${input.angle}deg, ${value})`;
+  return gradient.radial === true
+    ? `${radialGradientFunction(gradient)}${value})`
+    : `linear-gradient(${gradient.angle}deg, ${value})`;
 }
-function serializeStyleFilter(input?: Dynamic): Dynamic {
+function serializeStyleFilter(filter?: Dynamic): Dynamic {
   let items: Dynamic = [];
   for (let value of StyleSchemaValuesItems as Dynamic) {
-    let value2: Dynamic = input[value.field];
-    value2 !== undefined && items.push(`${value.fn}(${value2}${value.unit})`);
+    let filterValue: Dynamic = filter[value.field];
+    filterValue !== undefined && items.push(`${value.fn}(${filterValue}${value.unit})`);
   }
   return items.length > 0 ? items.join(" ") : "none";
 }
-function serializeStyleTransform(input?: Dynamic): Dynamic {
+function serializeStyleTransform(transform?: Dynamic): Dynamic {
   let items: Dynamic = [];
-  (input.translateX !== undefined || input.translateY !== undefined) &&
+  (transform.translateX !== undefined || transform.translateY !== undefined) &&
     items.push(
-      `translate(${pixelsCss(input.translateX ?? 0)}, ${pixelsCss(input.translateY ?? 0)})`,
+      `translate(${pixelsCss(transform.translateX ?? 0)}, ${pixelsCss(transform.translateY ?? 0)})`,
     );
-  input.rotate !== undefined && items.push(`rotate(${input.rotate}deg)`);
-  input.scale !== undefined && items.push(`scale(${input.scale})`);
-  (input.skewX !== undefined || input.skewY !== undefined) &&
-    items.push(`skew(${input.skewX ?? 0}deg, ${input.skewY ?? 0}deg)`);
+  transform.rotate !== undefined && items.push(`rotate(${transform.rotate}deg)`);
+  transform.scale !== undefined && items.push(`scale(${transform.scale})`);
+  (transform.skewX !== undefined || transform.skewY !== undefined) &&
+    items.push(`skew(${transform.skewX ?? 0}deg, ${transform.skewY ?? 0}deg)`);
   return items.length > 0 ? items.join(" ") : "none";
 }
-function serializeStyleLength(input?: Dynamic): Dynamic {
-  return "px" in input ? pixelsCss(input.px) : `${input.pct}%`;
+function serializeStyleLength(length?: Dynamic): Dynamic {
+  return "px" in length ? pixelsCss(length.px) : `${length.pct}%`;
 }
-function serializeStyleTransition(input?: Dynamic): Dynamic {
-  return input.properties
+function serializeStyleTransition(transition?: Dynamic): Dynamic {
+  return transition.properties
     .map(
-      (input2?: Dynamic): Dynamic =>
-        `${StyleSchemaCssTransformOpacityColorConfig[input2]} ${input.duration}ms ${input.easing} ${input.delay}ms`,
+      (property?: Dynamic): Dynamic =>
+        `${StyleSchemaCssTransformOpacityColorConfig[property]} ${transition.duration}ms ${transition.easing} ${transition.delay}ms`,
     )
     .join(", ");
 }
 function serializeStyleValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  styleObject?: Dynamic,
+  propertyName?: Dynamic,
+  propertyValue?: Dynamic,
 ): Dynamic {
-  switch (options) {
+  switch (propertyName) {
     case "fontSize":
     case "letterSpacing":
     case "marginTop":
@@ -94,17 +94,17 @@ function serializeStyleValue(
     case "right":
     case "bottom":
     case "left":
-      input[options] = pixelsCss(context);
+      styleObject[propertyName] = pixelsCss(propertyValue);
       return;
     case "fontWeight":
     case "lineHeight":
     case "opacity":
     case "zIndex":
-      input[options] = context;
+      styleObject[propertyName] = propertyValue;
       return;
     case "fontFamily": {
-      let value: Dynamic = context;
-      input.fontFamily =
+      let value: Dynamic = propertyValue;
+      styleObject.fontFamily =
         typeof value == "string"
           ? StyleSchemaValuesSansSerifMonoConfig[value]
           : '"' +
@@ -115,37 +115,37 @@ function serializeStyleValue(
       return;
     }
     case "backgroundGradient":
-      input.backgroundImage = serializeStyleGradient(context);
+      styleObject.backgroundImage = serializeStyleGradient(propertyValue);
       return;
     case "boxShadow":
-      input.boxShadow = serializeStyleShadows(context, true);
+      styleObject.boxShadow = serializeStyleShadows(propertyValue, true);
       return;
     case "textShadow":
-      input.textShadow = serializeStyleShadows(context, false);
+      styleObject.textShadow = serializeStyleShadows(propertyValue, false);
       return;
     case "filter":
-      input.filter = serializeStyleFilter(context);
+      styleObject.filter = serializeStyleFilter(propertyValue);
       return;
     case "backdropFilter": {
-      let value: Dynamic = serializeStyleFilter(context);
-      input.backdropFilter = value;
-      input.WebkitBackdropFilter = value;
+      let value: Dynamic = serializeStyleFilter(propertyValue);
+      styleObject.backdropFilter = value;
+      styleObject.WebkitBackdropFilter = value;
       return;
     }
     case "textStrokeWidth":
-      input.WebkitTextStrokeWidth = pixelsCss(context);
-      input.paintOrder = "stroke";
+      styleObject.WebkitTextStrokeWidth = pixelsCss(propertyValue);
+      styleObject.paintOrder = "stroke";
       return;
     case "textStrokeColor":
-      input.WebkitTextStrokeColor = context;
+      styleObject.WebkitTextStrokeColor = propertyValue;
       return;
     case "borderSides": {
-      let value: Dynamic = input.borderWidth ?? "medium",
-        value2: Dynamic = " " + context + " ";
-      input.borderWidth = ["top", "right", "bottom", "left"]
+      let value: Dynamic = styleObject.borderWidth ?? "medium",
+        classNames: Dynamic = " " + propertyValue + " ";
+      styleObject.borderWidth = ["top", "right", "bottom", "left"]
         .map(
-          (input2?: Dynamic): Dynamic =>
-            value2.includes(" " + input2 + " ") ? value : "0",
+          (className?: Dynamic): Dynamic =>
+            classNames.includes(" " + className + " ") ? value : "0",
         )
         .join(" ");
       return;
@@ -155,17 +155,17 @@ function serializeStyleValue(
     case "borderBottomWidth":
     case "borderLeftWidth": {
       let value: Dynamic = (
-          input.borderWidth === undefined
+          styleObject.borderWidth === undefined
             ? ["0"]
-            : String(input.borderWidth).split(" ")
+            : String(styleObject.borderWidth).split(" ")
         ).map(
-          (input2?: Dynamic): Dynamic => (input2 === "medium" ? "0" : input2),
+          (size?: Dynamic): Dynamic => (size === "medium" ? "0" : size),
         ),
-        value2: Dynamic =
+        borderValues: Dynamic =
           value.length === 4
             ? value
             : [value[0], value[0], value[0], value[0]];
-      value2[
+      borderValues[
         (
           {
             borderTopWidth: 0,
@@ -173,9 +173,9 @@ function serializeStyleValue(
             borderBottomWidth: 2,
             borderLeftWidth: 3,
           } as Dynamic
-        )[options]
-      ] = pixelsCss(context);
-      input.borderWidth = value2.join(" ");
+        )[propertyName]
+      ] = pixelsCss(propertyValue);
+      styleObject.borderWidth = borderValues.join(" ");
       return;
     }
     case "borderTopLeftRadius":
@@ -183,14 +183,14 @@ function serializeStyleValue(
     case "borderBottomRightRadius":
     case "borderBottomLeftRadius": {
       let value: Dynamic =
-          input.borderRadius === undefined
+          styleObject.borderRadius === undefined
             ? ["0"]
-            : String(input.borderRadius).split(" "),
-        value2: Dynamic =
+            : String(styleObject.borderRadius).split(" "),
+        radiusValues: Dynamic =
           value.length === 4
             ? value
             : [value[0], value[0], value[0], value[0]];
-      value2[
+      radiusValues[
         (
           {
             borderTopLeftRadius: 0,
@@ -198,13 +198,13 @@ function serializeStyleValue(
             borderBottomRightRadius: 2,
             borderBottomLeftRadius: 3,
           } as Dynamic
-        )[options]
-      ] = pixelsCss(context);
-      input.borderRadius = value2.join(" ");
+        )[propertyName]
+      ] = pixelsCss(propertyValue);
+      styleObject.borderRadius = radiusValues.join(" ");
       return;
     }
     case "transform":
-      input.transform = serializeStyleTransform(context);
+      styleObject.transform = serializeStyleTransform(propertyValue);
       return;
     case "width":
     case "height":
@@ -212,43 +212,43 @@ function serializeStyleValue(
     case "minHeight":
     case "maxWidth":
     case "maxHeight":
-      input[options] = serializeStyleLength(context);
+      styleObject[propertyName] = serializeStyleLength(propertyValue);
       return;
     case "transition":
-      input.transition = serializeStyleTransition(context);
+      styleObject.transition = serializeStyleTransition(propertyValue);
       return;
     case "animation":
       return;
     default:
-      input[options] = context;
+      styleObject[propertyName] = propertyValue;
       return;
   }
 }
 function supportsPaintContainment(): Dynamic {
-  let CSS2: Dynamic = (globalThis as Dynamic).CSS;
-  return CSS2 === undefined || typeof CSS2.supports != "function"
+  let cssApi: Dynamic = (globalThis as Dynamic).CSS;
+  return cssApi === undefined || typeof cssApi.supports != "function"
     ? true
-    : ((StyleSchemaCssSupportsValue ??= CSS2.supports("contain", "paint")),
+    : ((StyleSchemaCssSupportsValue ??= cssApi.supports("contain", "paint")),
       StyleSchemaCssSupportsValue);
 }
-function styleObjectToCss(input?: Dynamic, options?: Dynamic): Dynamic {
+function styleObjectToCss(styleObject?: Dynamic, nodeType?: Dynamic): Dynamic {
   let state: Dynamic = {},
-    value: Dynamic = input;
-  for (let value2 of StyleSchemaValuesItems_3 as Dynamic) {
+    value: Dynamic = styleObject;
+  for (let propertyName of StyleProperties as Dynamic) {
     if (
-      value2 === "animation" ||
-      !StyleSchemaColorAndFontCall(value, value2) ||
-      !propertyAppliesToNode(value2, options) ||
-      (StyleSchemaCssPositionTopRightValues.includes(value2) &&
+      propertyName === "animation" ||
+      !StyleSchemaColorAndFontCall(value, propertyName) ||
+      !propertyAppliesToNode(propertyName, nodeType) ||
+      (StyleSchemaCssPositionTopRightValues.includes(propertyName) &&
         !supportsPaintContainment())
     )
       continue;
-    let value3: Dynamic = validateStyleValue(
-      value2,
-      value[value2],
-      options,
+    let propertyValue: Dynamic = validateStyleValue(
+      propertyName,
+      value[propertyName],
+      nodeType,
     );
-    value3 !== undefined && serializeStyleValue(state, value2, value3);
+    propertyValue !== undefined && serializeStyleValue(state, propertyName, propertyValue);
   }
   return state;
 }
@@ -269,7 +269,7 @@ export {
 };
 export function installEditorStyleSchemaCss(): () => void {
   return () => {
-    pixelsCss = (input?: Dynamic): Dynamic => `${input}px`;
+    pixelsCss = (pixels?: Dynamic): Dynamic => `${pixels}px`;
     StyleSchemaCssTransformOpacityColorConfig = {
       transform: "transform",
       opacity: "opacity",

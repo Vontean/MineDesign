@@ -9,56 +9,56 @@ import { StyleSchemaValuesHandler } from "./values";
 var StyleSchemaColorAndFontTest: Dynamic;
 var StyleSchemaColorAndFontCall: Dynamic;
 var StyleSchemaValuesHandlerValue: Dynamic;
-var StyleSchemaValuesHandlerValue_2: Dynamic;
-var StyleSchemaValuesHandlerValue_3: Dynamic;
-function validateStyleColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = validateSimpleStyleString(input);
+var shadowBlurRange: Dynamic;
+var shadowSpreadRange: Dynamic;
+function validateStyleColor(colorInput?: Dynamic): Dynamic {
+  let value: Dynamic = validateSimpleStyleString(colorInput);
   if (value === undefined) return;
-  let value2: Dynamic = value.toLowerCase();
+  let normalizedColor: Dynamic = value.toLowerCase();
   if (
     !(
-      StyleSchemaValidationSubscribers.has(value2) ||
-      StyleSchemaValidationPattern.test(value2) ||
-      rgbStyleColorPattern.test(value2) ||
-      hslStyleColorPattern.test(value2) ||
-      oklchStyleColorPattern.test(value2) ||
-      labStyleColorPattern.test(value2)
+      StyleSchemaValidationSubscribers.has(normalizedColor) ||
+      StyleSchemaValidationPattern.test(normalizedColor) ||
+      rgbStyleColorPattern.test(normalizedColor) ||
+      hslStyleColorPattern.test(normalizedColor) ||
+      oklchStyleColorPattern.test(normalizedColor) ||
+      labStyleColorPattern.test(normalizedColor)
     )
   )
     return;
-  let CSS2: Dynamic = (globalThis as Dynamic).CSS;
+  let cssApi: Dynamic = (globalThis as Dynamic).CSS;
   if (
     !(
-      CSS2 !== undefined &&
-      typeof CSS2.supports == "function" &&
-      !CSS2.supports("color", value2)
+      cssApi !== undefined &&
+      typeof cssApi.supports == "function" &&
+      !cssApi.supports("color", normalizedColor)
     )
   )
-    return value2;
+    return normalizedColor;
 }
-function validateFontFamily(input?: Dynamic): Dynamic {
+function validateFontFamily(fontInput?: Dynamic): Dynamic {
   let value: Dynamic = validateStyleEnum(
     StyleSchemaNodeTypesSansSerifMonoValues,
-    input,
+    fontInput,
   );
   if (value !== undefined) return value;
-  if (!isStyleObject(input)) return;
-  let { family: value2, webSafe: value3 }: Dynamic = input,
-    value4: Dynamic = validateStyleEnum(
+  if (!isStyleObject(fontInput)) return;
+  let { family: fontFamily, webSafe: webSafeFamily }: Dynamic = fontInput,
+    fallbackFamily: Dynamic = validateStyleEnum(
       StyleSchemaNodeTypesSansSerifMonoValues,
-      input.fallback,
+      fontInput.fallback,
     );
-  if (!(!StyleSchemaColorAndFontTest(value2) || value4 === undefined))
-    return value3 === undefined
+  if (!(!StyleSchemaColorAndFontTest(fontFamily) || fallbackFamily === undefined))
+    return webSafeFamily === undefined
       ? {
-          family: value2,
-          fallback: value4,
+          family: fontFamily,
+          fallback: fallbackFamily,
         }
-      : StyleSchemaColorAndFontTest(value3)
+      : StyleSchemaColorAndFontTest(webSafeFamily)
         ? {
-            family: value2,
-            fallback: value4,
-            webSafe: value3,
+            family: fontFamily,
+            fallback: fallbackFamily,
+            webSafe: webSafeFamily,
           }
         : undefined;
 }
@@ -66,30 +66,30 @@ export {
   StyleSchemaColorAndFontCall,
   StyleSchemaColorAndFontTest,
   StyleSchemaValuesHandlerValue,
-  StyleSchemaValuesHandlerValue_2,
-  StyleSchemaValuesHandlerValue_3,
+  shadowBlurRange as StyleSchemaValuesHandlerValue_2,
+  shadowSpreadRange as StyleSchemaValuesHandlerValue_3,
   validateFontFamily,
   validateStyleColor,
 };
 export function installEditorStyleSchemaColorAndFont(): () => void {
   return () => {
-    StyleSchemaColorAndFontTest = (input?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      StyleSchemaNodeTypesAZaZAZaZPattern.test(input) &&
-      !StyleSchemaNodeTypesSubscribers.has(input.toLowerCase());
+    StyleSchemaColorAndFontTest = (familyValue?: Dynamic): Dynamic =>
+      typeof familyValue == "string" &&
+      StyleSchemaNodeTypesAZaZAZaZPattern.test(familyValue) &&
+      !StyleSchemaNodeTypesSubscribers.has(familyValue.toLowerCase());
     StyleSchemaColorAndFontCall = (
-      input?: Dynamic,
-      options?: Dynamic,
-    ): Dynamic => Object.prototype.hasOwnProperty.call(input, options);
+      objectValue?: Dynamic,
+      propertyName?: Dynamic,
+    ): Dynamic => Object.prototype.hasOwnProperty.call(objectValue, propertyName);
     StyleSchemaValuesHandlerValue = StyleSchemaValuesHandler(
       -64,
       64,
     );
-    StyleSchemaValuesHandlerValue_2 = StyleSchemaValuesHandler(
+    shadowBlurRange = StyleSchemaValuesHandler(
       0,
       64,
     );
-    StyleSchemaValuesHandlerValue_3 = StyleSchemaValuesHandler(
+    shadowSpreadRange = StyleSchemaValuesHandler(
       -32,
       32,
     );

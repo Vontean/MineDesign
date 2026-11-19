@@ -20,16 +20,16 @@ function hasHeldUndoOverlay(element: Dynamic = document): Dynamic {
     ) !== null
   );
 }
-function isCanvasTypingTarget(input?: Dynamic): Dynamic {
-  if (input instanceof HTMLElement) {
-    if (input.closest("[data-tweak-popup],[data-tweaks-surface]") != null)
+function isCanvasTypingTarget(target?: Dynamic): Dynamic {
+  if (target instanceof HTMLElement) {
+    if (target.closest("[data-tweak-popup],[data-tweaks-surface]") != null)
       return false;
     if (
-      input.tagName === "TEXTAREA" ||
-      input.isContentEditable ||
-      (input instanceof HTMLInputElement &&
-        !TextTypingTargetRangeCheckboxPattern.test(input.type)) ||
-      input.closest("[data-note-typing-strip]") != null
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable ||
+      (target instanceof HTMLInputElement &&
+        !TextTypingTargetRangeCheckboxPattern.test(target.type)) ||
+      target.closest("[data-note-typing-strip]") != null
     )
       return true;
   }

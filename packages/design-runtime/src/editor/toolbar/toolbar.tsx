@@ -8,7 +8,7 @@ import { reactCanvasMeasurements } from "../../canvas/measurements";
 import { CdsRoot } from "../../cds/theme/root";
 import { TooltipGroup } from "../../cds/tooltip/tooltip";
 import { joinClassNames } from "../chrome/overlay-state";
-import { jsxToolbarLayout, toolbarDensity, ToolbarLayoutConstant, ToolbarLayoutConstant_2, ToolbarLayoutLimit, updateToolbarEmptySlots, updateToolbarPinnedWords, useTouchToolbar } from "./layout";
+import { jsxToolbarLayout, toolbarDensity, ToolbarLayoutConstant, ToolbarLayoutConstant_2 as touchPinWidthThreshold, ToolbarLayoutLimit, updateToolbarEmptySlots, updateToolbarPinnedWords, useTouchToolbar } from "./layout";
 import { ToolbarPrimitivesComponent, ToolbarPrimitivesContext, ToolbarPrimitivesContext_2 } from "./primitives";
 import { ToolbarPublishControls, ToolbarSurface } from "./publish-controls";
 import { ToolbarSaveFailure, ToolbarSaveStatus } from "./save-status";
@@ -41,47 +41,47 @@ function EditorToolbar({
   (0, reactCanvasMeasurements.useEffect)(
     (): Dynamic =>
       undo?.subscribe(
-        (): Dynamic => value((input?: Dynamic): Dynamic => input + 1),
+        (): Dynamic => value((increment?: Dynamic): Dynamic => increment + 1),
       ),
     [undo],
   );
-  let value2: Dynamic = readOnly === true || saveState.status === "readonly",
-    value3: Dynamic = (0,
+  let isReadOnly: Dynamic = readOnly === true || saveState.status === "readonly",
+    hostReadOnly: Dynamic = (0,
     reactCanvasMeasurements.useSyncExternalStore)(
       subscribeHostChrome,
       hostDrawsReadOnly,
       (): Dynamic => false,
     ),
-    value4: Dynamic = toolbarDensity(density),
-    value5: Dynamic = touchTargets === "square" ? value4 : density,
-    value6: Dynamic = (0, reactCanvasMeasurements.useRef)(null),
-    [value7, value8]: Dynamic = (0, reactCanvasMeasurements.useState)(
+    toolbarSize: Dynamic = toolbarDensity(density),
+    resolvedDensity: Dynamic = touchTargets === "square" ? toolbarSize : density,
+    toolbarRef: Dynamic = (0, reactCanvasMeasurements.useRef)(null),
+    [isCollapsed, setCollapsed]: Dynamic = (0, reactCanvasMeasurements.useState)(
       false,
     ),
-    [value9, value10]: Dynamic = (0,
+    [isPinnedFixed, setPinnedFixed]: Dynamic = (0,
     reactCanvasMeasurements.useState)(false),
-    value11: Dynamic = useTouchToolbar(),
-    value12: Dynamic = variant === "floating";
+    isTouchToolbar: Dynamic = useTouchToolbar(),
+    isFloating: Dynamic = variant === "floating";
   (0, reactCanvasMeasurements.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value6.current;
+    let current: Dynamic = toolbarRef.current;
     if (!current) return;
     let callback: Dynamic = (): Dynamic => {
-        let value14: Dynamic = getComputedStyle(current),
-          value15: Dynamic =
+        let computedStyle: Dynamic = getComputedStyle(current),
+          contentWidth: Dynamic =
             current.clientWidth -
-            parseFloat(value14.paddingLeft || "0") -
-            parseFloat(value14.paddingRight || "0");
-        value8(
-          current.clientWidth > 0 && value15 <= ToolbarLayoutLimit,
+            parseFloat(computedStyle.paddingLeft || "0") -
+            parseFloat(computedStyle.paddingRight || "0");
+        setCollapsed(
+          current.clientWidth > 0 && contentWidth <= ToolbarLayoutLimit,
         );
-        value10(
+        setPinnedFixed(
           current.clientWidth > 0 &&
-            value15 <=
-              (value11
-                ? ToolbarLayoutConstant_2
+            contentWidth <=
+              (isTouchToolbar
+                ? touchPinWidthThreshold
                 : ToolbarLayoutConstant),
         );
-        value12 &&
+        isFloating &&
           (current.parentElement?.style.setProperty(
             "--tb-overlay-h",
             String(current.offsetHeight) + "px",
@@ -92,25 +92,25 @@ function EditorToolbar({
           ));
       },
       ancestor: Dynamic = current.closest("[data-mc-paned]"),
-      value13: Dynamic =
+      resizeObserver: Dynamic =
         typeof ResizeObserver !== "undefined"
           ? new ResizeObserver(callback)
           : null;
-    value13?.observe(current);
+    resizeObserver?.observe(current);
     callback();
     return (): Dynamic => {
-      value13?.disconnect();
+      resizeObserver?.disconnect();
       ancestor?.style.removeProperty("--tb-row-h");
       current.parentElement?.style.removeProperty("--tb-overlay-h");
     };
-  }, [value11, value12]);
+  }, [isTouchToolbar, isFloating]);
   (0, reactCanvasMeasurements.useLayoutEffect)((): Dynamic => {
-    value6.current &&
-      (updateToolbarEmptySlots(value6.current),
-      updateToolbarPinnedWords(value6.current));
+    toolbarRef.current &&
+      (updateToolbarEmptySlots(toolbarRef.current),
+      updateToolbarPinnedWords(toolbarRef.current));
   });
   (0, reactCanvasMeasurements.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value6.current;
+    let current: Dynamic = toolbarRef.current;
     if (!current || typeof MutationObserver === "undefined") return;
     let index: Dynamic = 0,
       observer: Dynamic = new MutationObserver((): Dynamic => {
@@ -139,17 +139,17 @@ function EditorToolbar({
   }, []);
   return (
     <CdsRoot
-      density={value5}
+      density={resolvedDensity}
       render={
         <header
-          ref={value6}
-          data-collapsed={value7 ? "" : undefined}
-          data-pin-fixed={value9 ? "" : undefined}
+          ref={toolbarRef}
+          data-collapsed={isCollapsed ? "" : undefined}
+          data-pin-fixed={isPinnedFixed ? "" : undefined}
           data-touch-targets={touchTargets}
-          data-tb-overlay={value12 ? "" : undefined}
+          data-tb-overlay={isFloating ? "" : undefined}
           className={joinClassNames(
             "tb-root flex shrink-0 items-center",
-            value12
+            isFloating
               ? "absolute inset-x-0 top-0 z-toolbar"
               : "h-10 gap-1 px-1 shadow-[inset_0_-1px_0_0_var(--t-border)] pointer-coarse:h-12 pointer-coarse:gap-1.5 pointer-coarse:px-2",
           )}
@@ -157,15 +157,15 @@ function EditorToolbar({
       }
     >
       <TooltipGroup>
-        <ToolbarPrimitivesContext.Provider value={value7}>
-          <ToolbarPrimitivesContext_2.Provider value={value2}>
+        <ToolbarPrimitivesContext.Provider value={isCollapsed}>
+          <ToolbarPrimitivesContext_2.Provider value={isReadOnly}>
             <ToolbarSurface
-              floating={value12}
+              floating={isFloating}
               className={"tb-card tb-card-start flex min-w-0 items-center"}
             >
               <ToolbarScroller
                 revealLeading={
-                  (saveState.status === "readonly" && !value3) ||
+                  (saveState.status === "readonly" && !hostReadOnly) ||
                   (saveState.status === "error" && !syncDot)
                     ? saveState.status
                     : undefined
@@ -173,7 +173,7 @@ function EditorToolbar({
                 leading={
                   <jsxToolbarLayout.Fragment>
                     {leading}
-                    {undo && !value2 && undoButtons ? (<jsxToolbarLayout.Fragment>
+                    {undo && !isReadOnly && undoButtons ? (<jsxToolbarLayout.Fragment>
                         <ToolbarPrimitivesComponent
                           iconOnly={true}
                           icon={"ArrowCounterClockwise"}
@@ -205,7 +205,7 @@ function EditorToolbar({
               </ToolbarScroller>
             </ToolbarSurface>
             <ToolbarSurface
-              floating={value12}
+              floating={isFloating}
               className={
                 "tb-card tb-card-end ml-auto flex items-center gap-1 pointer-coarse:gap-1.5"
               }
@@ -218,12 +218,12 @@ function EditorToolbar({
                 >
                   {extrasEnd}
                 </span>) : (null)}
-              {(pinned != null && value9) || trailing != null ? (<span
+              {(pinned != null && isPinnedFixed) || trailing != null ? (<span
                   className={
                     "tb-tail flex items-center gap-1 pointer-coarse:gap-1.5"
                   }
                 >
-                  {pinned != null && value9 ? (<span
+                  {pinned != null && isPinnedFixed ? (<span
                       data-tb-cluster={""}
                       className={
                         "tb-pin-fixed flex shrink-0 items-center gap-1 empty:hidden pointer-coarse:gap-1.5"

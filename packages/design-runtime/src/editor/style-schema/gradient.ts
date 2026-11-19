@@ -6,133 +6,133 @@ import { validateStyleColor } from "./color-and-font";
 import { isStyleObject, validateOptionalStyleNumber, validateStyleNumber } from "./validation";
 import { StyleSchemaValuesClosestSideClosestCornerFarthestSideValues, StyleSchemaValuesHandler, StyleSchemaValuesHandler_2 } from "./values";
 
-var StyleSchemaValuesHandlerValue_4: Dynamic;
-var StyleSchemaValuesHandlerValue_5: Dynamic;
-var StyleSchemaValuesHandlerValue_6: Dynamic;
-var StyleSchemaValuesHandlerValue_7: Dynamic;
+var gradientAngleRange: Dynamic;
+var gradientStopPositionRange: Dynamic;
+var radialCenterRange: Dynamic;
+var gradientRepeatRange: Dynamic;
 var StyleSchemaGradientLimit: Dynamic;
-var StyleSchemaGradientLimit_2: Dynamic;
+var maxGradientStops: Dynamic;
 function validateStyleGradient(
-  input?: Dynamic,
-  options: Dynamic = false,
+  gradient?: Dynamic,
+  allowRepeat: Dynamic = false,
 ): Dynamic {
-  if (!isStyleObject(input)) return;
+  if (!isStyleObject(gradient)) return;
   let value: Dynamic = validateOptionalStyleNumber(
-    StyleSchemaValuesHandlerValue_4,
-    input.angle,
+    gradientAngleRange,
+    gradient.angle,
     180,
   );
   if (value === undefined) return;
-  let stops: Dynamic = input.stops;
+  let stops: Dynamic = gradient.stops;
   if (
     !Array.isArray(stops) ||
     stops.length < StyleSchemaGradientLimit ||
-    stops.length > StyleSchemaGradientLimit_2
+    stops.length > maxGradientStops
   )
     return;
   let length: Dynamic = stops.length,
     items: Dynamic = [];
   for (let index: Dynamic = 0; index < length; index += 1) {
-    let value7: Dynamic = stops[index];
-    if (!isStyleObject(value7)) return;
-    let value8: Dynamic = validateStyleColor(value7.color),
-      value9: Dynamic = validateOptionalStyleNumber(
-        StyleSchemaValuesHandlerValue_5,
-        value7.pos,
+    let stop: Dynamic = stops[index];
+    if (!isStyleObject(stop)) return;
+    let stopColor: Dynamic = validateStyleColor(stop.color),
+      stopPosition: Dynamic = validateOptionalStyleNumber(
+        gradientStopPositionRange,
+        stop.pos,
         (index / (length - 1)) * 100,
       );
-    if (value8 === undefined || value9 === undefined) return;
+    if (stopColor === undefined || stopPosition === undefined) return;
     items.push({
-      color: value8,
-      pos: value9,
+      color: stopColor,
+      pos: stopPosition,
     });
   }
   items.sort(
-    (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      input2.pos - options2.pos,
+    (leftStop?: Dynamic, rightStop?: Dynamic): Dynamic =>
+      leftStop.pos - rightStop.pos,
   );
-  let value2: Dynamic = options && input.repeat !== undefined,
-    value3: Dynamic = value2
+  let hasRepeat: Dynamic = allowRepeat && gradient.repeat !== undefined,
+    repeatValue: Dynamic = hasRepeat
       ? validateStyleNumber(
-          StyleSchemaValuesHandlerValue_7,
-          input.repeat,
+          gradientRepeatRange,
+          gradient.repeat,
         )
       : undefined;
-  if (value2 && value3 === undefined) return;
-  let value4: Dynamic = items[length - 1];
-  value3 !== undefined &&
-    input.radial !== true &&
-    value4.pos < 100 &&
-    (length < StyleSchemaGradientLimit_2
+  if (hasRepeat && repeatValue === undefined) return;
+  let lastStop: Dynamic = items[length - 1];
+  repeatValue !== undefined &&
+    gradient.radial !== true &&
+    lastStop.pos < 100 &&
+    (length < maxGradientStops
       ? items.push({
-          color: value4.color,
+          color: lastStop.color,
           pos: 100,
         })
       : (items[length - 1] = {
-          color: value4.color,
+          color: lastStop.color,
           pos: 100,
         }));
-  let value5: Dynamic;
-  if (isStyleObject(input.at)) {
-    let value7: Dynamic = validateStyleNumber(
-        StyleSchemaValuesHandlerValue_6,
-        input.at.x,
+  let radialCenter: Dynamic;
+  if (isStyleObject(gradient.at)) {
+    let centerX: Dynamic = validateStyleNumber(
+        radialCenterRange,
+        gradient.at.x,
       ),
-      value8: Dynamic = validateStyleNumber(
-        StyleSchemaValuesHandlerValue_6,
-        input.at.y,
+      centerY: Dynamic = validateStyleNumber(
+        radialCenterRange,
+        gradient.at.y,
       );
-    value7 !== undefined &&
-      value8 !== undefined &&
-      (value7 !== 50 || value8 !== 50) &&
-      (value5 = {
-        x: value7,
-        y: value8,
+    centerX !== undefined &&
+      centerY !== undefined &&
+      (centerX !== 50 || centerY !== 50) &&
+      (radialCenter = {
+        x: centerX,
+        y: centerY,
       });
   }
-  let value6: Dynamic =
+  let extent: Dynamic =
     StyleSchemaValuesClosestSideClosestCornerFarthestSideValues.includes(
-      input.extent,
+      gradient.extent,
     )
-      ? input.extent
+      ? gradient.extent
       : undefined;
   return {
     angle: value,
-    ...(input.radial === true
+    ...(gradient.radial === true
       ? {
           radial: true,
         }
       : {}),
-    ...(input.shape === "ellipse"
+    ...(gradient.shape === "ellipse"
       ? {
           shape: "ellipse",
         }
       : {}),
-    ...(value6 !== undefined
+    ...(extent !== undefined
       ? {
-          extent: value6,
+          extent: extent,
         }
       : {}),
-    ...(value5 !== undefined
+    ...(radialCenter !== undefined
       ? {
-          at: value5,
+          at: radialCenter,
         }
       : {}),
-    ...(value3 !== undefined
+    ...(repeatValue !== undefined
       ? {
-          repeat: value3,
+          repeat: repeatValue,
         }
       : {}),
     stops: items,
   };
 }
-function radialGradientPrefix(input?: Dynamic): Dynamic {
+function radialGradientPrefix(gradient?: Dynamic): Dynamic {
   let value: Dynamic =
       StyleSchemaValuesClosestSideClosestCornerFarthestSideValues.find(
-        (input2?: Dynamic): Dynamic => input2 === input.extent,
+        (extentValue?: Dynamic): Dynamic => extentValue === gradient.extent,
       ),
-    at: Dynamic = input.at,
-    value2: Dynamic =
+    at: Dynamic = gradient.at,
+    position: Dynamic =
       isStyleObject(at) &&
       typeof at.x == "number" &&
       typeof at.y == "number" &&
@@ -140,12 +140,12 @@ function radialGradientPrefix(input?: Dynamic): Dynamic {
       Number.isFinite(at.y)
         ? `at ${at.x}% ${at.y}%`
         : undefined;
-  return [input.shape === "ellipse" ? "ellipse" : "circle", value, value2]
-    .filter((input2?: Dynamic): Dynamic => input2 !== undefined)
+  return [gradient.shape === "ellipse" ? "ellipse" : "circle", value, position]
+    .filter((filteredValue?: Dynamic): Dynamic => filteredValue !== undefined)
     .join(" ");
 }
-function radialGradientFunction(input?: Dynamic): Dynamic {
-  let value: Dynamic = radialGradientPrefix(input);
+function radialGradientFunction(gradient?: Dynamic): Dynamic {
+  let value: Dynamic = radialGradientPrefix(gradient);
   return value === "ellipse"
     ? "radial-gradient("
     : "radial-gradient(" + value + ", ";
@@ -154,32 +154,32 @@ export {
   radialGradientFunction,
   radialGradientPrefix,
   StyleSchemaGradientLimit,
-  StyleSchemaGradientLimit_2,
-  StyleSchemaValuesHandlerValue_4,
-  StyleSchemaValuesHandlerValue_5,
-  StyleSchemaValuesHandlerValue_6,
-  StyleSchemaValuesHandlerValue_7,
+  maxGradientStops as StyleSchemaGradientLimit_2,
+  gradientAngleRange as StyleSchemaValuesHandlerValue_4,
+  gradientStopPositionRange as StyleSchemaValuesHandlerValue_5,
+  radialCenterRange as StyleSchemaValuesHandlerValue_6,
+  gradientRepeatRange as StyleSchemaValuesHandlerValue_7,
   validateStyleGradient,
 };
 export function installEditorStyleSchemaGradient(): () => void {
   return () => {
-    StyleSchemaValuesHandlerValue_4 = StyleSchemaValuesHandler_2(
+    gradientAngleRange = StyleSchemaValuesHandler_2(
       0,
       360,
     );
-    StyleSchemaValuesHandlerValue_5 = StyleSchemaValuesHandler_2(
+    gradientStopPositionRange = StyleSchemaValuesHandler_2(
       0,
       100,
     );
-    StyleSchemaValuesHandlerValue_6 = StyleSchemaValuesHandler_2(
+    radialCenterRange = StyleSchemaValuesHandler_2(
       -100,
       200,
     );
-    StyleSchemaValuesHandlerValue_7 = StyleSchemaValuesHandler(
+    gradientRepeatRange = StyleSchemaValuesHandler(
       2,
       2048,
     );
     StyleSchemaGradientLimit = 2;
-    StyleSchemaGradientLimit_2 = 8;
+    maxGradientStops = 8;
   };
 }

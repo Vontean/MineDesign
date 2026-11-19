@@ -13,22 +13,22 @@ import { jsxToolbarLayout, updateToolbarPinnedWords, useTouchToolbar } from "./l
 
 var ToolbarScrollerClassNames: Dynamic;
 function toolbarScrollPosition(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  direction?: Dynamic,
+  scrollPosition?: Dynamic,
+  viewportWidth?: Dynamic,
+  contentWidth?: Dynamic,
+  edgePadding?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = Math.max(0, value - context),
-    value3: Dynamic = Math.max(context - 2 * extra, 48),
-    value4: Dynamic = options + input * value3;
-  input === 1 && value2 - value4 <= extra && (value4 = value2);
-  input === -1 && value4 <= extra && (value4 = 0);
-  return Math.min(value2, Math.max(0, value4));
+  let maxScroll: Dynamic = Math.max(0, contentWidth - viewportWidth),
+    step: Dynamic = Math.max(viewportWidth - 2 * edgePadding, 48),
+    nextPosition: Dynamic = scrollPosition + direction * step;
+  direction === 1 && maxScroll - nextPosition <= edgePadding && (nextPosition = maxScroll);
+  direction === -1 && nextPosition <= edgePadding && (nextPosition = 0);
+  return Math.min(maxScroll, Math.max(0, nextPosition));
 }
-function isKeyboardFocused(input?: Dynamic): Dynamic {
+function isKeyboardFocused(element?: Dynamic): Dynamic {
   try {
-    return input.matches(":focus-visible");
+    return element.matches(":focus-visible");
   } catch {
     return false;
   }
@@ -44,7 +44,7 @@ function ToolbarScrollPaddle({
   return (
     <div
       data-tb-paddle={""}
-      onClick={(input?: Dynamic): Dynamic => onPress(input.detail === 0)}
+      onClick={(event?: Dynamic): Dynamic => onPress(event.detail === 0)}
       className={joinClassNames(
         ToolbarScrollerClassNames,
         dir === -1 ? "left-0" : "right-0",
@@ -70,80 +70,80 @@ function ToolbarScroller({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = (0, reactCanvasMeasurements.useRef)(null),
-    value2: Dynamic = (0, reactCanvasMeasurements.useRef)(null),
-    [value3, value4]: Dynamic = (0, reactCanvasMeasurements.useState)(
+    scrollerRef: Dynamic = (0, reactCanvasMeasurements.useRef)(null),
+    [hasLeadingOverflow, setLeadingOverflow]: Dynamic = (0, reactCanvasMeasurements.useState)(
       false,
     ),
-    [value5, value6]: Dynamic = (0, reactCanvasMeasurements.useState)(
+    [hasTrailingOverflow, setTrailingOverflow]: Dynamic = (0, reactCanvasMeasurements.useState)(
       false,
     ),
-    value7: Dynamic = useTouchToolbar(),
-    value8: Dynamic = (0, reactCanvasMeasurements.useRef)(undefined),
-    value9: Dynamic = (0, reactCanvasMeasurements.useRef)(false),
-    value10: Dynamic = (0, reactCanvasMeasurements.useRef)(false);
+    isTouchToolbar: Dynamic = useTouchToolbar(),
+    revealLeadingRef: Dynamic = (0, reactCanvasMeasurements.useRef)(undefined),
+    isKeyboardNavigationRef: Dynamic = (0, reactCanvasMeasurements.useRef)(false),
+    isPointerNavigationRef: Dynamic = (0, reactCanvasMeasurements.useRef)(false);
   (0, reactCanvasMeasurements.useEffect)((): Dynamic => {
     revealLeading != null &&
-      revealLeading !== value8.current &&
+      revealLeading !== revealLeadingRef.current &&
       value.current?.scrollTo({
         left: 0,
         behavior: "smooth",
       });
-    value8.current = revealLeading;
+    revealLeadingRef.current = revealLeading;
   }, [revealLeading]);
-  let value11: Dynamic = (0,
+  let scheduleUpdate: Dynamic = (0,
   reactCanvasMeasurements.useCallback)((): Dynamic => {
     let current: Dynamic = value.current;
     if (!current) return;
-    let value12: Dynamic =
-        (value2.current?.clientWidth ?? current.clientWidth) >=
-        (value7 ? 80 : 48),
-      value13: Dynamic = value12 && current.scrollLeft > 1,
-      value14: Dynamic =
-        value12 &&
+    let hasScrolledLeft: Dynamic =
+        (scrollerRef.current?.clientWidth ?? current.clientWidth) >=
+        (isTouchToolbar ? 80 : 48),
+      hasScrolledRight: Dynamic = hasScrolledLeft && current.scrollLeft > 1,
+      isAtEnd: Dynamic =
+        hasScrolledLeft &&
         current.scrollLeft + current.clientWidth < current.scrollWidth - 1,
-      current2: Dynamic = value2.current,
+      scrollContainer: Dynamic = scrollerRef.current,
       activeElement: Dynamic = current.ownerDocument.activeElement,
-      value15: Dynamic = activeElement?.closest("[data-tb-paddle]");
+      paddle: Dynamic = activeElement?.closest("[data-tb-paddle]");
     if (
-      current2 &&
+      scrollContainer &&
       activeElement &&
-      value15?.parentElement === current2 &&
-      (value9.current || isKeyboardFocused(activeElement))
+      paddle?.parentElement === scrollContainer &&
+      (isKeyboardNavigationRef.current || isKeyboardFocused(activeElement))
     ) {
-      let value16: Dynamic = value15 === current2.lastElementChild;
-      if (!(value16 ? value14 : value13)) {
-        let value17: Dynamic = getFocusableElements(current);
-        value10.current = true;
+      let isLastPaddle: Dynamic = paddle === scrollContainer.lastElementChild;
+      if (!(isLastPaddle ? isAtEnd : hasScrolledRight)) {
+        let focusableElements: Dynamic = getFocusableElements(current);
+        isPointerNavigationRef.current = true;
         try {
-          for (let value18 of (value16
-            ? value17.reverse()
-            : value17) as Dynamic)
+          for (let element of (isLastPaddle
+            ? focusableElements.reverse()
+            : focusableElements) as Dynamic)
             if (
-              !value18.hasAttribute("data-base-ui-focus-guard") &&
-              (value18.focus({
+              !element.hasAttribute("data-base-ui-focus-guard") &&
+              (element.focus({
                 preventScroll: true,
               }),
-              !value15.contains(current.ownerDocument.activeElement))
+              !paddle.contains(current.ownerDocument.activeElement))
             ) {
               clearEscapeReleaseSuppression();
               break;
             }
         } finally {
-          value10.current = false;
+          isPointerNavigationRef.current = false;
         }
       }
     }
-    value4(value13);
-    value6(value14);
-  }, [value7]);
+    setLeadingOverflow(hasScrolledRight);
+    setTrailingOverflow(isAtEnd);
+  }, [isTouchToolbar]);
   (0, reactCanvasMeasurements.useEffect)((): Dynamic => {
     let current: Dynamic = value.current;
     if (!current) return;
-    value11();
+    scheduleUpdate();
     let ancestor: Dynamic = current.closest(".tb-root"),
       index: Dynamic = 0,
       observer: Dynamic = new ResizeObserver((): Dynamic => {
-        value11();
+        scheduleUpdate();
         cancelAnimationFrame(index);
         ancestor &&
           (index = requestAnimationFrame(
@@ -151,33 +151,33 @@ function ToolbarScroller({
           ));
       });
     observer.observe(current);
-    for (let value13 of current.children as Dynamic)
-      observer.observe(value13);
-    let value12: Dynamic = ancestor?.querySelector(".tb-card-end");
+    for (let child of current.children as Dynamic)
+      observer.observe(child);
+    let endCard: Dynamic = ancestor?.querySelector(".tb-card-end");
     ancestor && observer.observe(ancestor);
-    value12 && observer.observe(value12);
-    let callback3: Dynamic = (event?: Dynamic): Dynamic => {
+    endCard && observer.observe(endCard);
+    let handleWheel: Dynamic = (event?: Dynamic): Dynamic => {
       if (
         (event.ctrlKey && current.closest("[data-tb-overlay]")) ||
         current.scrollWidth <= current.clientWidth
       )
         return;
-      let value13: Dynamic =
+      let wheelDelta: Dynamic =
         Math.abs(event.deltaX) > Math.abs(event.deltaY)
           ? event.deltaX
           : event.deltaY;
-      value13 !== 0 &&
-        ((current.scrollLeft += value13), event.preventDefault());
+      wheelDelta !== 0 &&
+        ((current.scrollLeft += wheelDelta), event.preventDefault());
     };
-    current.addEventListener("wheel", callback3, {
+    current.addEventListener("wheel", handleWheel, {
       passive: false,
     });
-    let callback4: Dynamic = (event?: Dynamic): Dynamic => {
+    let handleFocusIn: Dynamic = (event?: Dynamic): Dynamic => {
       let target: Dynamic = event.target,
-        current2: Dynamic = value2.current;
+        scrollContainer: Dynamic = scrollerRef.current;
       if (
-        !current2 ||
-        value10.current ||
+        !scrollContainer ||
+        isPointerNavigationRef.current ||
         !(target instanceof Element) ||
         target.hasAttribute("data-base-ui-focus-guard") ||
         !isKeyboardFocused(target)
@@ -185,78 +185,78 @@ function ToolbarScroller({
         return;
       let bounds: Dynamic = target.getBoundingClientRect();
       if (bounds.width <= 1) return;
-      let bounds2: Dynamic = current2.getBoundingClientRect(),
-        callback5: Dynamic = (input?: Dynamic): Dynamic =>
-          current2.querySelector(":scope > " + input)?.getBoundingClientRect()
+      let containerBounds: Dynamic = scrollContainer.getBoundingClientRect(),
+        getPaddleBounds: Dynamic = (selector?: Dynamic): Dynamic =>
+          scrollContainer.querySelector(":scope > " + selector)?.getBoundingClientRect()
             .width ?? 0,
-        value13: Dynamic = callback5("[data-tb-paddle]"),
-        value14: Dynamic =
-          bounds2.width - 2 * (value13 + callback5("[data-tb-fade]")) >=
+        paddleWidth: Dynamic = getPaddleBounds("[data-tb-paddle]"),
+        edgeOffset: Dynamic =
+          containerBounds.width - 2 * (paddleWidth + getPaddleBounds("[data-tb-fade]")) >=
           bounds.width
-            ? value13 + callback5("[data-tb-fade]")
-            : value13,
-        value15: Dynamic = bounds2.left + value14,
-        value16: Dynamic = bounds2.right - value14,
-        value17: Dynamic =
-          bounds.left < value15 || bounds.width > value16 - value15
-            ? bounds.left - value15
-            : bounds.right > value16
-              ? bounds.right - value16
+            ? paddleWidth + getPaddleBounds("[data-tb-fade]")
+            : paddleWidth,
+        visibleStart: Dynamic = containerBounds.left + edgeOffset,
+        visibleEnd: Dynamic = containerBounds.right - edgeOffset,
+        scrollDelta: Dynamic =
+          bounds.left < visibleStart || bounds.width > visibleEnd - visibleStart
+            ? bounds.left - visibleStart
+            : bounds.right > visibleEnd
+              ? bounds.right - visibleEnd
               : 0;
-      if (Math.round(value17) === 0) return;
-      let value18: Dynamic = current.scrollWidth - current.clientWidth,
-        value19: Dynamic = current.scrollLeft + value17;
-      value19 <= value14 && bounds.right - value17 + value19 <= value16
-        ? (value19 = 0)
-        : value18 - value19 <= value14 &&
-          bounds.left - value17 - (value18 - value19) >= value15 &&
-          (value19 = value18);
-      current.scrollLeft = Math.round(value19);
+      if (Math.round(scrollDelta) === 0) return;
+      let maxScroll: Dynamic = current.scrollWidth - current.clientWidth,
+        targetScroll: Dynamic = current.scrollLeft + scrollDelta;
+      targetScroll <= edgeOffset && bounds.right - scrollDelta + targetScroll <= visibleEnd
+        ? (targetScroll = 0)
+        : maxScroll - targetScroll <= edgeOffset &&
+          bounds.left - scrollDelta - (maxScroll - targetScroll) >= visibleStart &&
+          (targetScroll = maxScroll);
+      current.scrollLeft = Math.round(targetScroll);
     };
-    current.addEventListener("focusin", callback4);
+    current.addEventListener("focusin", handleFocusIn);
     return (): Dynamic => {
       cancelAnimationFrame(index);
       observer.disconnect();
-      current.removeEventListener("wheel", callback3);
-      current.removeEventListener("focusin", callback4);
+      current.removeEventListener("wheel", handleWheel);
+      current.removeEventListener("focusin", handleFocusIn);
     };
-  }, [value11]);
+  }, [scheduleUpdate]);
   let callback: Dynamic = (): Dynamic => {
-      value9.current = false;
+      isKeyboardNavigationRef.current = false;
     },
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
+    scrollBy: Dynamic = (direction?: Dynamic, keyboardNavigation?: Dynamic): Dynamic => {
       let current: Dynamic = value.current;
       if (!current) return;
-      let value12: Dynamic = value2.current?.querySelector(
+      let leadingPaddle: Dynamic = scrollerRef.current?.querySelector(
           ":scope > [data-tb-paddle]",
         ),
-        value13: Dynamic = value2.current?.querySelector(
+        trailingPaddle: Dynamic = scrollerRef.current?.querySelector(
           ":scope > span[aria-hidden]",
         ),
-        value14: Dynamic =
-          (value12?.offsetWidth ?? 24) + (value13?.offsetWidth ?? 24),
-        value15: Dynamic = value2.current?.clientWidth ?? current.clientWidth,
-        value16: Dynamic = current.clientWidth - value15;
-      value9.current = options;
+        scrollStep: Dynamic =
+          (leadingPaddle?.offsetWidth ?? 24) + (trailingPaddle?.offsetWidth ?? 24),
+        viewportWidth: Dynamic = scrollerRef.current?.clientWidth ?? current.clientWidth,
+        availableWidth: Dynamic = current.clientWidth - viewportWidth;
+      isKeyboardNavigationRef.current = keyboardNavigation;
       current.scrollTo({
         left: toolbarScrollPosition(
-          input,
+          direction,
           current.scrollLeft,
-          value15,
-          current.scrollWidth - value16,
-          value14,
+          viewportWidth,
+          current.scrollWidth - availableWidth,
+          scrollStep,
         ),
         behavior: "smooth",
       });
     };
   return (
     <div
-      ref={value2}
+      ref={scrollerRef}
       className={"relative flex min-w-0 flex-1 items-center self-stretch"}
     >
       <div
         ref={value}
-        onScroll={value11}
+        onScroll={scheduleUpdate}
         className={
           "tb-scroll flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-auto pointer-coarse:gap-1.5"
         }
@@ -277,10 +277,10 @@ function ToolbarScroller({
           {children}
         </div>
       </div>
-      {value3 ? (<jsxToolbarLayout.Fragment>
+      {hasLeadingOverflow ? (<jsxToolbarLayout.Fragment>
           <ToolbarScrollPaddle
             dir={-1}
-            onPress={(input?: Dynamic): Dynamic => callback2(-1, input)}
+            onPress={(event?: Dynamic): Dynamic => scrollBy(-1, event)}
             onLetGo={callback}
           />
           <span
@@ -291,7 +291,7 @@ function ToolbarScroller({
             }
           />
         </jsxToolbarLayout.Fragment>) : (null)}
-      {value5 ? (<jsxToolbarLayout.Fragment>
+      {hasTrailingOverflow ? (<jsxToolbarLayout.Fragment>
           <span
             aria-hidden={"true"}
             data-tb-fade={"end"}
@@ -301,7 +301,7 @@ function ToolbarScroller({
           />
           <ToolbarScrollPaddle
             dir={1}
-            onPress={(input?: Dynamic): Dynamic => callback2(1, input)}
+            onPress={(event?: Dynamic): Dynamic => scrollBy(1, event)}
             onLetGo={callback}
           />
         </jsxToolbarLayout.Fragment>) : (null)}

@@ -2,123 +2,123 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { createArrowHeadId, defaultArrowHeadDefs, shortenLineEnd, SvgArrowsConstant_3 } from "./arrows";
+import { createArrowHeadId, defaultArrowHeadDefs, shortenLineEnd, SvgArrowsConstant_3 as arrowHeadTipInset } from "./arrows";
 
 var SvgDrawingConstant: Dynamic;
-var SvgDrawingConstant_2: Dynamic;
+var minSvgBoundingBoxSize: Dynamic;
 function svgStrokeHtml(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail: Dynamic = null,
+  width?: Dynamic,
+  height?: Dynamic,
+  pathData?: Dynamic,
+  style?: Dynamic,
+  markerKind?: Dynamic,
+  markerId: Dynamic = null,
 ): Dynamic {
   return (
-    `<svg width="${input}" height="${options}" viewBox="0 0 ${input} ${options}" preserveAspectRatio="none" style="${value}width: ${input}px; height: ${options}px; overflow: visible; fill: none; stroke: ${extra}; stroke-width: ${SvgDrawingConstant}; stroke-linecap: round; stroke-linejoin: round">` +
-    (detail ? defaultArrowHeadDefs(detail, extra) : "") +
-    `<path d="${context}"${detail ? ` marker-end="url(#${detail})"` : ""}></path></svg>`
+    `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="${style}width: ${width}px; height: ${height}px; overflow: visible; fill: none; stroke: ${markerKind}; stroke-width: ${SvgDrawingConstant}; stroke-linecap: round; stroke-linejoin: round">` +
+    (markerId ? defaultArrowHeadDefs(markerId, markerKind) : "") +
+    `<path d="${pathData}"${markerId ? ` marker-end="url(#${markerId})"` : ""}></path></svg>`
   );
 }
-function lineDrawingInset(input?: Dynamic, options?: Dynamic): Dynamic {
+function lineDrawingInset(width?: Dynamic, height?: Dynamic): Dynamic {
   return {
-    dx: (Math.max(input, SvgDrawingConstant_2) - input) / 2,
-    dy: (Math.max(options, SvgDrawingConstant_2) - options) / 2,
+    dx: (Math.max(width, minSvgBoundingBoxSize) - width) / 2,
+    dy: (Math.max(height, minSvgBoundingBoxSize) - height) / 2,
   };
 }
 function lineDrawingBox(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  width?: Dynamic,
+  height?: Dynamic,
+  horizontalDirection?: Dynamic,
+  verticalDirection?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = Math.max(input, SvgDrawingConstant_2),
-    value3: Dynamic = Math.max(options, SvgDrawingConstant_2),
-    value4: Dynamic = (value2 - input) / 2,
-    value5: Dynamic = (value3 - options) / 2,
-    value6: Dynamic = value4 + (context === 1 ? 0 : input),
-    value7: Dynamic = value5 + (value === 1 ? 0 : options);
+  let boxWidth: Dynamic = Math.max(width, minSvgBoundingBoxSize),
+    boxHeight: Dynamic = Math.max(height, minSvgBoundingBoxSize),
+    insetX: Dynamic = (boxWidth - width) / 2,
+    insetY: Dynamic = (boxHeight - height) / 2,
+    startX: Dynamic = insetX + (horizontalDirection === 1 ? 0 : width),
+    startY: Dynamic = insetY + (verticalDirection === 1 ? 0 : height);
   return {
-    bw: value2,
-    bh: value3,
-    sx: value6,
-    sy: value7,
-    ex: value4 + (context === 1 ? input : 0),
-    ey: value5 + (value === 1 ? options : 0),
+    bw: boxWidth,
+    bh: boxHeight,
+    sx: startX,
+    sy: startY,
+    ex: insetX + (horizontalDirection === 1 ? width : 0),
+    ey: insetY + (verticalDirection === 1 ? height : 0),
   };
 }
 function arrowDrawingHtml(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  width?: Dynamic,
+  height?: Dynamic,
+  horizontalDirection?: Dynamic,
+  verticalDirection?: Dynamic,
+  markerKind?: Dynamic,
+  markerId?: Dynamic,
 ): Dynamic {
   let {
-      bw: value2,
-      bh: value3,
-      sx: value4,
-      sy: value5,
-      ex: value6,
-      ey: value7,
-    }: Dynamic = lineDrawingBox(input, options, context, value),
-    value8: Dynamic = shortenLineEnd(
-      value4,
-      value5,
-      value6,
-      value7,
-      SvgArrowsConstant_3 * SvgDrawingConstant,
+      bw: boxWidth,
+      bh: boxHeight,
+      sx: startX,
+      sy: startY,
+      ex: endX,
+      ey: endY,
+    }: Dynamic = lineDrawingBox(width, height, horizontalDirection, verticalDirection),
+    shortenedEnd: Dynamic = shortenLineEnd(
+      startX,
+      startY,
+      endX,
+      endY,
+      arrowHeadTipInset * SvgDrawingConstant,
     );
   return svgStrokeHtml(
-    value2,
-    value3,
-    `M ${value4} ${value5} L ${value8.x} ${value8.y}`,
-    extra,
-    detail,
+    boxWidth,
+    boxHeight,
+    `M ${startX} ${startY} L ${shortenedEnd.x} ${shortenedEnd.y}`,
+    markerKind,
+    markerId,
     createArrowHeadId(),
   );
 }
 function lineDrawingHtml(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  width?: Dynamic,
+  height?: Dynamic,
+  horizontalDirection?: Dynamic,
+  verticalDirection?: Dynamic,
+  markerKind?: Dynamic,
+  markerId?: Dynamic,
 ): Dynamic {
   let {
-    bw: value2,
-    bh: value3,
-    sx: value4,
-    sy: value5,
-    ex: value6,
-    ey: value7,
-  }: Dynamic = lineDrawingBox(input, options, context, value);
+    bw: boxWidth,
+    bh: boxHeight,
+    sx: startX,
+    sy: startY,
+    ex: endX,
+    ey: endY,
+  }: Dynamic = lineDrawingBox(width, height, horizontalDirection, verticalDirection);
   return svgStrokeHtml(
-    value2,
-    value3,
-    `M ${value4} ${value5} L ${value6} ${value7}`,
-    extra,
-    detail,
+    boxWidth,
+    boxHeight,
+    `M ${startX} ${startY} L ${endX} ${endY}`,
+    markerKind,
+    markerId,
   );
 }
-function constrainLineAngle(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options.x - input.x,
-    value2: Dynamic = options.y - input.y,
-    value3: Dynamic = Math.hypot(value, value2),
-    value4: Dynamic =
-      ((Math.round(Math.atan2(value2, value) / (Math.PI / 4)) % 8) + 8) % 8,
+function constrainLineAngle(startPoint?: Dynamic, endPoint?: Dynamic): Dynamic {
+  let value: Dynamic = endPoint.x - startPoint.x,
+    deltaY: Dynamic = endPoint.y - startPoint.y,
+    distance: Dynamic = Math.hypot(value, deltaY),
+    octant: Dynamic =
+      ((Math.round(Math.atan2(deltaY, value) / (Math.PI / 4)) % 8) + 8) % 8,
     SQRT1_2: Dynamic = Math.SQRT1_2,
-    value5: Dynamic = [1, SQRT1_2, 0, -SQRT1_2, -1, -SQRT1_2, 0, SQRT1_2][
-      value4
+    directionX: Dynamic = [1, SQRT1_2, 0, -SQRT1_2, -1, -SQRT1_2, 0, SQRT1_2][
+      octant
     ],
-    value6: Dynamic = [0, SQRT1_2, 1, SQRT1_2, 0, -SQRT1_2, -1, -SQRT1_2][
-      value4
+    directionY: Dynamic = [0, SQRT1_2, 1, SQRT1_2, 0, -SQRT1_2, -1, -SQRT1_2][
+      octant
     ];
   return {
-    x: input.x + value3 * value5,
-    y: input.y + value3 * value6,
+    x: startPoint.x + distance * directionX,
+    y: startPoint.y + distance * directionY,
   };
 }
 export {
@@ -128,12 +128,12 @@ export {
   lineDrawingHtml,
   lineDrawingInset,
   SvgDrawingConstant,
-  SvgDrawingConstant_2,
+  minSvgBoundingBoxSize as SvgDrawingConstant_2,
   svgStrokeHtml,
 };
 export function installEditorSvgDrawing(): () => void {
   return () => {
     SvgDrawingConstant = 4;
-    SvgDrawingConstant_2 = 8;
+    minSvgBoundingBoxSize = 8;
   };
 }

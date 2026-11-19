@@ -5,9 +5,9 @@ import {
 } from "../../runtime-types";
 
 var TextPlaceholderLabel: Dynamic;
-function placeholderTextElement(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options !== null && input?.text(options) === TextPlaceholderLabel
-    ? options
+function placeholderTextElement(textElement?: Dynamic, textNode?: Dynamic): Dynamic {
+  return textNode !== null && textElement?.text(textNode) === TextPlaceholderLabel
+    ? textNode
     : null;
 }
 export {

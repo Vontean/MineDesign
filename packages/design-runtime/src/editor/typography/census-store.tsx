@@ -10,26 +10,26 @@ var TypographyCensusStoreSizesSizeRolesSizeFamiliesConfig: Dynamic;
 var TypographyCensusStoreResolvedValue: Dynamic;
 var TypographyCensusStoreAlias: Dynamic;
 var TypographyCensusStoreSubscribers: Dynamic;
-function updateTypographyCensus(input?: Dynamic): Dynamic {
-  let value: Dynamic = JSON.stringify(input);
+function updateTypographyCensus(census?: Dynamic): Dynamic {
+  let value: Dynamic = JSON.stringify(census);
   if (value !== TypographyCensusStoreAlias) {
     TypographyCensusStoreAlias = value;
     TypographyCensusStoreResolvedValue =
-      input.sizes.length === 0 &&
-      Object.keys(input.sizeRoles).length === 0 &&
-      Object.keys(input.sizeFamilies).length === 0
+      census.sizes.length === 0 &&
+      Object.keys(census.sizeRoles).length === 0 &&
+      Object.keys(census.sizeFamilies).length === 0
         ? TypographyCensusStoreSizesSizeRolesSizeFamiliesConfig
-        : input;
-    for (let value2 of TypographyCensusStoreSubscribers as Dynamic) value2();
+        : census;
+    for (let subscriber of TypographyCensusStoreSubscribers as Dynamic) subscriber();
   }
 }
 function getTypographyCensus(): Dynamic {
   return TypographyCensusStoreResolvedValue;
 }
-function subscribeTypographyCensus(input?: Dynamic): Dynamic {
-  TypographyCensusStoreSubscribers.add(input);
+function subscribeTypographyCensus(listener?: Dynamic): Dynamic {
+  TypographyCensusStoreSubscribers.add(listener);
   return (): Dynamic => {
-    TypographyCensusStoreSubscribers.delete(input);
+    TypographyCensusStoreSubscribers.delete(listener);
   };
 }
 function useTypographyCensus(): Dynamic {

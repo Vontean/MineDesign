@@ -12,7 +12,7 @@ import { useLatestCallback } from "./hooks/latest-callback";
 import { isPropertyEditorTarget } from "./keyboard/find";
 import { shouldKeepLocalKeyboardEvent } from "./keyboard/paste";
 import { B6b0a7Value, defaultAnnotationStrokeColor } from "./media/video-playback";
-import { SessionTouchAndHistoryJsxValue, SessionTouchAndHistoryJsxValue_2 } from "./session/touch-and-history";
+import { SessionTouchAndHistoryJsxValue, SessionTouchAndHistoryJsxValue_2 as frameHashGlyph } from "./session/touch-and-history";
 import { lineDrawingHtml } from "./svg/drawing";
 import { TextPlaceholderLabel } from "./text/placeholder";
 import { hasBlockingEditorOverlay } from "./text/typing-target";
@@ -39,9 +39,9 @@ var defaultClickPlacementSizes: Dynamic;
 function DesignToolToolbar({ tool: tool, onTool: onTool }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = toolbarDensity(),
-    value2: Dynamic = useLatestCallback(
-      (input?: Dynamic): Dynamic =>
-        onTool(input === tool && input !== "select" ? "select" : input),
+    pickTool: Dynamic = useLatestCallback(
+      (nextTool?: Dynamic): Dynamic =>
+        onTool(nextTool === tool && nextTool !== "select" ? "select" : nextTool),
     );
   npm_useEventListener_bc(
     "keydown",
@@ -54,12 +54,12 @@ function DesignToolToolbar({ tool: tool, onTool: onTool }: Dynamic): Dynamic {
         event.altKey
       )
         return;
-      let value3: Dynamic =
+      let eventTarget: Dynamic =
         event.target instanceof HTMLElement ? event.target : null;
       if (
-        value3 !== null &&
-        (/^(INPUT|TEXTAREA|SELECT)$/.test(value3.tagName) ||
-          value3.isContentEditable)
+        eventTarget !== null &&
+        (/^(INPUT|TEXTAREA|SELECT)$/.test(eventTarget.tagName) ||
+          eventTarget.isContentEditable)
       )
         return;
       if (event.key === "Escape") {
@@ -70,19 +70,19 @@ function DesignToolToolbar({ tool: tool, onTool: onTool }: Dynamic): Dynamic {
         return;
       }
       if (
-        isPropertyEditorTarget(value3) ||
-        value3?.closest("[data-mega-selection-strip]") != null ||
+        isPropertyEditorTarget(eventTarget) ||
+        eventTarget?.closest("[data-mega-selection-strip]") != null ||
         shouldKeepLocalKeyboardEvent(event) ||
         hasBlockingEditorOverlay()
       )
         return;
-      let value4: Dynamic = designToolForShortcut(event.key, event.shiftKey);
-      value4 !== null && (event.preventDefault(), value2(value4));
+      let shortcutTool: Dynamic = designToolForShortcut(event.key, event.shiftKey);
+      shortcutTool !== null && (event.preventDefault(), pickTool(shortcutTool));
     },
   );
   return (
     <CdsIsland density={value} className={"contents"}>
-      <CanvasToolSelector tool={tool} onPick={value2} />
+      <CanvasToolSelector tool={tool} onPick={pickTool} />
     </CdsIsland>
   );
 }
@@ -144,10 +144,10 @@ export {
 };
 export function installEditorTools(): () => void {
   return () => {
-    isHostOnlyDesignTool = (input?: Dynamic): Dynamic =>
-      input === "frame" || input === "note" || input === "hand";
-    runtimeDesignTool = (input?: Dynamic): Dynamic =>
-      input === "note" || input === "hand" ? "select" : input;
+    isHostOnlyDesignTool = (tool?: Dynamic): Dynamic =>
+      tool === "frame" || tool === "note" || tool === "hand";
+    runtimeDesignTool = (tool?: Dynamic): Dynamic =>
+      tool === "note" || tool === "hand" ? "select" : tool;
     shapeDesignTools = ["rect", "oval", "arrow", "line"];
     insertDesignTools = [
       "hand",
@@ -168,8 +168,8 @@ export function installEditorTools(): () => void {
       get arrow() { return uiMessage("inspector.tools.arrow"); },
       get line() { return uiMessage("inspector.tools.line"); },
     };
-    ShapeToolGlyph = (input?: Dynamic): Dynamic => (
-      <Icon customIcon={input} size={"auto"} className={"shrink-0"} />
+    ShapeToolGlyph = (iconName?: Dynamic): Dynamic => (
+      <Icon customIcon={iconName} size={"auto"} className={"shrink-0"} />
     );
     shapesMenuIcon = {
       icon: "Shapes",
@@ -185,7 +185,7 @@ export function installEditorTools(): () => void {
         glyph: SessionTouchAndHistoryJsxValue,
       },
       frame: {
-        glyph: SessionTouchAndHistoryJsxValue_2,
+        glyph: frameHashGlyph,
       },
       note: {
         icon: "Note",

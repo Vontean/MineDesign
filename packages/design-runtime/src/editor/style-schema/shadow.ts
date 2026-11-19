@@ -2,106 +2,106 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { StyleSchemaValuesHandlerValue, StyleSchemaValuesHandlerValue_2, StyleSchemaValuesHandlerValue_3, validateStyleColor } from "./color-and-font";
+import { StyleSchemaValuesHandlerValue, StyleSchemaValuesHandlerValue_2 as shadowBlurRange, StyleSchemaValuesHandlerValue_3 as shadowSpreadRange, validateStyleColor } from "./color-and-font";
 import { isStyleObject, validateOptionalStyleNumber } from "./validation";
-import { StyleSchemaValuesItems, StyleSchemaValuesItems_2, StyleSchemaValuesLimit } from "./values";
+import { StyleSchemaValuesItems, StyleSchemaValuesItems_2 as transformFieldSpecs, StyleSchemaValuesLimit } from "./values";
 
 var StyleSchemaShadowXYBlurConfig: Dynamic;
 var styleFieldBoundsValue: Dynamic;
 var styleFieldBoundsValue_2: Dynamic;
-function numericStyleBounds(input?: Dynamic): Dynamic {
+function numericStyleBounds(bounds?: Dynamic): Dynamic {
   return {
-    min: input.lo,
-    max: input.hi,
+    min: bounds.lo,
+    max: bounds.hi,
   };
 }
-function styleFieldBounds(input?: Dynamic): Dynamic {
+function styleFieldBounds(fields?: Dynamic): Dynamic {
   let state: Dynamic = {};
-  for (let value of input as Dynamic)
+  for (let value of fields as Dynamic)
     state[value.field] = numericStyleBounds(value.cls);
   return state;
 }
-function shadowFieldBounds(input?: Dynamic): Dynamic {
-  return input?.kind === "shadow" && input.blur !== undefined
+function shadowFieldBounds(shadow?: Dynamic): Dynamic {
+  return shadow?.kind === "shadow" && shadow.blur !== undefined
     ? {
         ...StyleSchemaShadowXYBlurConfig,
-        blur: numericStyleBounds(input.blur),
+        blur: numericStyleBounds(shadow.blur),
       }
     : StyleSchemaShadowXYBlurConfig;
 }
 function validateStyleShadows(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  shadows?: Dynamic,
+  includeSpread?: Dynamic,
+  blurBounds?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = Array.isArray(input) ? input : [input];
+  let value: Dynamic = Array.isArray(shadows) ? shadows : [shadows];
   if (value.length === 0 || value.length > StyleSchemaValuesLimit)
     return;
   let items: Dynamic = [];
-  for (let value2 of value as Dynamic) {
-    let value3: Dynamic = validateStyleShadow(value2, options, context);
-    if (value3 === undefined) return;
-    items.push(value3);
+  for (let shadowValue of value as Dynamic) {
+    let validatedShadow: Dynamic = validateStyleShadow(shadowValue, includeSpread, blurBounds);
+    if (validatedShadow === undefined) return;
+    items.push(validatedShadow);
   }
   return items;
 }
 function validateStyleShadow(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = StyleSchemaValuesHandlerValue_2,
+  shadow?: Dynamic,
+  includeSpread?: Dynamic,
+  blurBounds: Dynamic = shadowBlurRange,
 ): Dynamic {
-  if (!isStyleObject(input)) return;
+  if (!isStyleObject(shadow)) return;
   let value: Dynamic = validateOptionalStyleNumber(
       StyleSchemaValuesHandlerValue,
-      input.x,
+      shadow.x,
       0,
     ),
-    value2: Dynamic = validateOptionalStyleNumber(
+    offsetX: Dynamic = validateOptionalStyleNumber(
       StyleSchemaValuesHandlerValue,
-      input.y,
+      shadow.y,
       0,
     ),
-    value3: Dynamic = validateOptionalStyleNumber(
-      context,
-      input.blur,
+    offsetY: Dynamic = validateOptionalStyleNumber(
+      blurBounds,
+      shadow.blur,
       0,
     ),
-    value4: Dynamic = validateStyleColor(input.color);
+    color: Dynamic = validateStyleColor(shadow.color);
   if (
     value === undefined ||
-    value2 === undefined ||
-    value3 === undefined ||
-    value4 === undefined
+    offsetX === undefined ||
+    offsetY === undefined ||
+    color === undefined
   )
     return;
-  if (!options)
+  if (!includeSpread)
     return {
       x: value,
-      y: value2,
-      blur: value3,
-      color: value4,
+      y: offsetX,
+      blur: offsetY,
+      color: color,
     };
-  let value5: Dynamic = validateOptionalStyleNumber(
-    StyleSchemaValuesHandlerValue_3,
-    input.spread,
+  let spread: Dynamic = validateOptionalStyleNumber(
+    shadowSpreadRange,
+    shadow.spread,
     0,
   );
-  if (value5 !== undefined)
-    return input.inset === true
+  if (spread !== undefined)
+    return shadow.inset === true
       ? {
           x: value,
-          y: value2,
-          blur: value3,
-          spread: value5,
+          y: offsetX,
+          blur: offsetY,
+          spread: spread,
           inset: true,
-          color: value4,
+          color: color,
         }
       : {
           x: value,
-          y: value2,
-          blur: value3,
-          spread: value5,
-          color: value4,
+          y: offsetX,
+          blur: offsetY,
+          spread: spread,
+          color: color,
         };
 }
 export {
@@ -119,12 +119,12 @@ export function installEditorStyleSchemaShadow(): () => void {
     StyleSchemaShadowXYBlurConfig = {
       x: numericStyleBounds(StyleSchemaValuesHandlerValue),
       y: numericStyleBounds(StyleSchemaValuesHandlerValue),
-      blur: numericStyleBounds(StyleSchemaValuesHandlerValue_2),
-      spread: numericStyleBounds(StyleSchemaValuesHandlerValue_3),
+      blur: numericStyleBounds(shadowBlurRange),
+      spread: numericStyleBounds(shadowSpreadRange),
     };
     styleFieldBoundsValue = styleFieldBounds(StyleSchemaValuesItems);
     styleFieldBoundsValue_2 = styleFieldBounds(
-      StyleSchemaValuesItems_2,
+      transformFieldSpecs,
     );
   };
 }
