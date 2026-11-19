@@ -15,7 +15,7 @@ import { LineHeightValue } from "../properties/tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var jsxTypographySpacing: Dynamic;
-var PropertiesInheritedFieldMixedAlias_3: Dynamic;
+var INHERITED_SPACING_FIELD_MIXED: Dynamic;
 function PropertyTextSpacing({
   lh: lh,
   ls: ls,
@@ -24,122 +24,122 @@ function PropertyTextSpacing({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = useStyleCommitScrub(
-      (input?: Dynamic): Dynamic => onCommitMany(input),
+      (commitValues?: Dynamic): Dynamic => onCommitMany(commitValues),
     ),
-    value2: Dynamic = inheritedFieldsDisabledReason(lh, ls),
-    value3: Dynamic = inheritedFieldsDescription(lh, ls),
-    value4: Dynamic = inheritedFieldForEdit(lh),
-    value5: Dynamic = inheritedFieldForEdit(ls),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value9: Dynamic = (input.mixed ? "" : (input.value ?? "")).trim();
+    disabledReason: Dynamic = inheritedFieldsDisabledReason(lh, ls),
+    description: Dynamic = inheritedFieldsDescription(lh, ls),
+    lineHeightField: Dynamic = inheritedFieldForEdit(lh),
+    letterSpacingField: Dynamic = inheritedFieldForEdit(ls),
+    callback: Dynamic = (field?: Dynamic): Dynamic => {
+      let trimmedValue: Dynamic = (field.mixed ? "" : (field.value ?? "")).trim();
       return {
-        v: value9,
-        n: parseCssNumber(value9),
-        fb: parseCssNumber(input.fallback ?? ""),
+        v: trimmedValue,
+        n: parseCssNumber(trimmedValue),
+        fb: parseCssNumber(field.fallback ?? ""),
       };
     },
-    value6: Dynamic = callback(value4),
-    value7: Dynamic = callback(value5),
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      options.mixed || !input.v || input.n != null;
-  if (!callback2(value6, value4) || !callback2(value7, value5))
+    lineHeightValue: Dynamic = callback(lineHeightField),
+    letterSpacingValue: Dynamic = callback(letterSpacingField),
+    isValidParsedValue: Dynamic = (parsedValue?: Dynamic, field?: Dynamic): Dynamic =>
+      field.mixed || !parsedValue.v || parsedValue.n != null;
+  if (!isValidParsedValue(lineHeightValue, lineHeightField) || !isValidParsedValue(letterSpacingValue, letterSpacingField))
     return (
       <jsxTypographySpacing.Fragment>
         {renderRows([lh, ls])}
       </jsxTypographySpacing.Fragment>
     );
-  let callback3: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input.n
-        ? input.n.unit || options
-        : options === ""
+  let resolveUnit: Dynamic = (parsedValue?: Dynamic, fallbackUnit?: Dynamic): Dynamic =>
+      parsedValue.n
+        ? parsedValue.n.unit || fallbackUnit
+        : fallbackUnit === ""
           ? ""
-          : input.fb?.unit || options,
-    callback4: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+          : parsedValue.fb?.unit || fallbackUnit,
+    formatFallbackValue: Dynamic = (
+      property?: Dynamic,
+      unit?: Dynamic,
+      field?: Dynamic,
     ): Dynamic =>
-      input.fb
+      property.fb
         ? formatCssNumber(
-            roundCssNumber(input.fb.value, input.fb.unit),
-            input.fb.unit === callback3(input, options) ? "" : input.fb.unit,
+            roundCssNumber(property.fb.value, property.fb.unit),
+            property.fb.unit === resolveUnit(property, unit) ? "" : property.fb.unit,
           )
-        : context.fallback || "",
-    callback5: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+        : field.fallback || "",
+    getEmptyStep: Dynamic = (
+      property?: Dynamic,
+      unit?: Dynamic,
+      field?: Dynamic,
     ): Dynamic =>
-      context.mixed
+      field.mixed
         ? null
-        : input.fb && input.fb.unit === callback3(input, options)
-          ? input.fb.value
-          : (context.spec?.scrubFrom ?? (options === "" ? 1.2 : 0)),
-    callback6: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+        : property.fb && property.fb.unit === resolveUnit(property, unit)
+          ? property.fb.value
+          : (field.spec?.scrubFrom ?? (unit === "" ? 1.2 : 0)),
+    getStepSize: Dynamic = (
+      property?: Dynamic,
+      parsedValue?: Dynamic,
+      unit?: Dynamic,
     ): Dynamic => {
-      let value9: Dynamic = callback3(options, context);
-      return value9 === (input.spec?.unit ?? context)
-        ? (input.spec?.step ?? 1)
-        : /^(em|rem|ch|ex|lh|rlh)$/.test(value9)
+      let resolvedUnit: Dynamic = resolveUnit(parsedValue, unit);
+      return resolvedUnit === (property.spec?.unit ?? unit)
+        ? (property.spec?.step ?? 1)
+        : /^(em|rem|ch|ex|lh|rlh)$/.test(resolvedUnit)
           ? 0.1
           : 1;
     },
-    callback7: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value9?: Dynamic,
-      extra?: Dynamic,
+    renderNumericField: Dynamic = (
+      property?: Dynamic,
+      parsedValue?: Dynamic,
+      prefixIcon?: Dynamic,
+      ariaLabel?: Dynamic,
+      unit?: Dynamic,
     ): Dynamic => (
       <NumericInput
-        aria-label={value9}
-        title={value9}
-        prefix={context}
-        value={options.n ? options.n.value : undefined}
-        min={input.spec?.min}
-        max={input.spec?.max}
-        emptyStepFrom={callback5(options, extra, input)}
+        aria-label={ariaLabel}
+        title={ariaLabel}
+        prefix={prefixIcon}
+        value={parsedValue.n ? parsedValue.n.value : undefined}
+        min={property.spec?.min}
+        max={property.spec?.max}
+        emptyStepFrom={getEmptyStep(parsedValue, unit, property)}
         placeholder={
-          input.mixed ? (undefined) : (callback4(options, extra, input))
+          property.mixed ? (undefined) : (formatFallbackValue(parsedValue, unit, property))
         }
-        mixed={input.mixed}
-        step={callback6(input, options, extra)}
-        smallStep={callback6(input, options, extra)}
+        mixed={property.mixed}
+        step={getStepSize(property, parsedValue, unit)}
+        smallStep={getStepSize(property, parsedValue, unit)}
         clearable={true}
         refuseLetters={true}
-        ownUnit={callback3(options, extra)}
+        ownUnit={resolveUnit(parsedValue, unit)}
         unit={
-          (options.n || options.fb) && callback3(options, extra)
-            ? callback3(options, extra)
+          (parsedValue.n || parsedValue.fb) && resolveUnit(parsedValue, unit)
+            ? resolveUnit(parsedValue, unit)
             : undefined
         }
         unitScrubs={false}
         steppers={false}
-        disabled={input.disabled}
-        onValue={(input2?: Dynamic): Dynamic =>
+        disabled={property.disabled}
+        onValue={(nextValue?: Dynamic): Dynamic =>
           onCommitMany([
             {
-              prop: input.prop,
+              prop: property.prop,
               value:
-                input2 === undefined
+                nextValue === undefined
                   ? null
                   : formatCssNumber(
-                      input2,
-                      callback3(options, extra),
+                      nextValue,
+                      resolveUnit(parsedValue, unit),
                     ),
             },
           ])
         }
-        onScrub={(input2?: Dynamic): Dynamic =>
+        onScrub={(scrubbedValue?: Dynamic): Dynamic =>
           value.onScrub([
             {
-              prop: input.prop,
+              prop: property.prop,
               value: formatCssNumber(
-                input2,
-                callback3(options, extra),
+                scrubbedValue,
+                resolveUnit(parsedValue, unit),
               ),
             },
           ])
@@ -147,28 +147,28 @@ function PropertyTextSpacing({
         onScrubEnd={value.onScrubEnd}
       />
     ),
-    value8: Dynamic =
-      PropertiesInheritedFieldMixedAlias_3(value4) ||
-      PropertiesInheritedFieldMixedAlias_3(value5);
+    hasMixedValue: Dynamic =
+      INHERITED_SPACING_FIELD_MIXED(lineHeightField) ||
+      INHERITED_SPACING_FIELD_MIXED(letterSpacingField);
   return (
     <PropertyRow
       label={uiMessage("inspector.spacing.spacing")}
       data-testid={"dc-text-spacing"}
-      disabled={value4.disabled || value5.disabled}
+      disabled={lineHeightField.disabled || letterSpacingField.disabled}
       title={
-        uiMessage("inspector.spacing.lineHeightLetterSpacing", { value1: String(value2 ? (" \u2014 " + value2) : ("")) })
+        uiMessage("inspector.spacing.lineHeightLetterSpacing", { value1: String(disabledReason ? (" \u2014 " + disabledReason) : ("")) })
       }
-      description={value3}
+      description={description}
       onReset={
-        value8
+        hasMixedValue
           ? (): Dynamic =>
               onCommitMany([
                 {
-                  prop: value4.prop,
+                  prop: lineHeightField.prop,
                   value: null,
                 },
                 {
-                  prop: value5.prop,
+                  prop: letterSpacingField.prop,
                   value: null,
                 },
               ])
@@ -179,16 +179,16 @@ function PropertyTextSpacing({
       }
     >
       <div className={"grid min-w-0 flex-1 grid-cols-2 gap-2"}>
-        {callback7(
-          value4,
-          value6,
+        {renderNumericField(
+          lineHeightField,
+          lineHeightValue,
           <PropertyOptionIcon icon={LineHeightValue} />,
           uiMessage("inspector.spacing.lineHeight"),
           "",
         )}
-        {callback7(
-          value5,
-          value7,
+        {renderNumericField(
+          letterSpacingField,
+          letterSpacingValue,
           <PropertyOptionIcon icon={"LetterSpacing"} />,
           uiMessage("inspector.spacing.letterSpacing"),
           "px",
@@ -199,7 +199,7 @@ function PropertyTextSpacing({
 }
 export {
   jsxTypographySpacing,
-  PropertiesInheritedFieldMixedAlias_3,
+  INHERITED_SPACING_FIELD_MIXED as PropertiesInheritedFieldMixedAlias_3,
   PropertyTextSpacing,
 };
 export function installEditorTypographySpacing(): () => void {
@@ -208,7 +208,7 @@ export function installEditorTypographySpacing(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    PropertiesInheritedFieldMixedAlias_3 =
+    INHERITED_SPACING_FIELD_MIXED =
       PropertiesInheritedFieldMixed;
   };
 }

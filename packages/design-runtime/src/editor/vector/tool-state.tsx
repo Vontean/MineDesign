@@ -9,19 +9,19 @@ var reactVectorToolState: Dynamic;
 var reactVectorToolState_2: Dynamic;
 var reactDomVectorToolState: Dynamic;
 function useVectorToolReset(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  toolKind?: Dynamic,
+  selection?: Dynamic,
+  resetToolState?: Dynamic,
 ): Dynamic {
   let value: Dynamic = (0, reactVectorToolState.useRef)(null);
   (0, reactVectorToolState.useEffect)((): Dynamic => {
-    input !== "vector"
+    toolKind !== "vector"
       ? (value.current = null)
       : value.current == null
-        ? (value.current = options)
-        : value.current !== options &&
-          context((input2?: Dynamic): Dynamic => input2 + 1);
-  }, [input, options, context]);
+        ? (value.current = selection)
+        : value.current !== selection &&
+          resetToolState((resetCount?: Dynamic): Dynamic => resetCount + 1);
+  }, [toolKind, selection, resetToolState]);
 }
 export {
   reactDomVectorToolState,

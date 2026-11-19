@@ -7,120 +7,120 @@ import {
 import { reactHooksLatestCallback_3 } from "../hooks/latest-callback";
 import { VectorPathEditor } from "./path-editor";
 import { parseVectorPath, serializeVectorPathBounds } from "./path-parsing";
-import { PlatformFileContentConstant_19, PlatformFileContentLimit_6, PlatformFileContentLimit_7, PlatformFileContentTrim_2 } from "../../platform/file-content";
+import { PlatformFileContentConstant_19 as MIN_SHAPE_DIMENSION, PlatformFileContentLimit_6 as MAX_CANVAS_ITEM_DIMENSION, PlatformFileContentLimit_7 as MAX_PEN_PATH_CHARS, PlatformFileContentTrim_2 as normalizePenPath } from "../../platform/file-content";
 
 var VectorAnnotationPenEditorOverflowTouchActionConfig: Dynamic;
 var VectorAnnotationPenEditorConstant: Dynamic;
 var annotationVectorKey: Dynamic;
 function simplifyVectorPath(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  pathData?: Dynamic,
+  transform?: Dynamic,
+  maxPathLength?: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
-      Math.max(Math.abs(options.sx), Math.abs(options.sy)) || 1,
-    value2: Dynamic = parseVectorPath(
-      input,
-      options,
-      VectorAnnotationPenEditorConstant * value,
+  let scaleFactor: Dynamic =
+      Math.max(Math.abs(transform.sx), Math.abs(transform.sy)) || 1,
+    simplifiedPath: Dynamic = parseVectorPath(
+      pathData,
+      transform,
+      VectorAnnotationPenEditorConstant * scaleFactor,
     );
   for (
-    let value3: Dynamic = 2 * VectorAnnotationPenEditorConstant;
-    value3 <= 64 * VectorAnnotationPenEditorConstant &&
-    /L/.test(input) &&
-    (serializeVectorPathBounds(value2, 1)?.d.length ?? 0) >
-      context;
-    value3 *= 2
+    let tolerance: Dynamic = 2 * VectorAnnotationPenEditorConstant;
+    tolerance <= 64 * VectorAnnotationPenEditorConstant &&
+    /L/.test(pathData) &&
+    (serializeVectorPathBounds(simplifiedPath, 1)?.d.length ?? 0) >
+      maxPathLength;
+    tolerance *= 2
   )
-    value2 = parseVectorPath(input, options, value3 * value);
-  return value2;
+    simplifiedPath = parseVectorPath(pathData, transform, tolerance * scaleFactor);
+  return simplifiedPath;
 }
 function AnnotationPenEditor({
   spec: spec,
-  ext: ext2,
+  ext: extension,
   scale: scale,
   onChange: onChange,
   onGesture: onGesture,
   armWindowGestureEnd: armWindowGestureEnd,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = annotationVectorKey(spec),
-    [value2, value3]: Dynamic = (0,
+  let sourceKey: Dynamic = annotationVectorKey(spec),
+    [pathState, setPathState]: Dynamic = (0,
     reactHooksLatestCallback_3.useState)(
       (): Dynamic => ({
-        source: value,
-        path: annotationVectorPath(spec, ext2),
+        source: sourceKey,
+        path: annotationVectorPath(spec, extension),
       }),
     );
-  value2.source !== value &&
-    value3({
-      source: value,
-      path: annotationVectorPath(spec, ext2),
+  pathState.source !== sourceKey &&
+    setPathState({
+      source: sourceKey,
+      path: annotationVectorPath(spec, extension),
     });
-  let value4: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    callback: Dynamic = (input?: Dynamic): Dynamic => ({
-      x: input.x,
-      y: input.y,
-      w: Math.max(PlatformFileContentConstant_19, input.w),
-      h: Math.max(PlatformFileContentConstant_19, input.h),
-      d: input.d,
+  let gestureRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+    callback: Dynamic = (bounds?: Dynamic): Dynamic => ({
+      x: bounds.x,
+      y: bounds.y,
+      w: Math.max(MIN_SHAPE_DIMENSION, bounds.w),
+      h: Math.max(MIN_SHAPE_DIMENSION, bounds.h),
+      d: bounds.d,
     }),
-    callback2: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    commitPath: Dynamic = (
+      bounds?: Dynamic,
+      path?: Dynamic,
+      isFinal?: Dynamic,
     ): Dynamic => {
-      value3({
-        source: annotationVectorKey(input),
-        path: options,
+      setPathState({
+        source: annotationVectorKey(bounds),
+        path: path,
       });
-      onChange(input, context);
+      onChange(bounds, isFinal);
     },
-    callback3: Dynamic = (): Dynamic => {
-      let value5: Dynamic = value4.current ?? {
+    restoreOriginal: Dynamic = (): Dynamic => {
+      let currentBounds: Dynamic = gestureRef.current ?? {
         x: spec.x,
         y: spec.y,
         w: spec.w,
         h: spec.h,
         d: spec.d,
       };
-      value3({
-        source: annotationVectorKey(value5),
-        path: annotationVectorPath(value5, annotationPenViewBox(value5)),
+      setPathState({
+        source: annotationVectorKey(currentBounds),
+        path: annotationVectorPath(currentBounds, annotationPenViewBox(currentBounds)),
       });
-      onChange(value5, false);
+      onChange(currentBounds, false);
     },
-    callback4: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = false,
+    serializeCandidate: Dynamic = (
+      path?: Dynamic,
+      includeCommands: Dynamic = false,
     ): Dynamic => {
-      let value5: Dynamic = serializeVectorPathBounds(
-        input,
+      let serializedBounds: Dynamic = serializeVectorPathBounds(
+        path,
         1,
-        !options,
+        !includeCommands,
       );
-      return !value5 ||
-        value5.w > PlatformFileContentLimit_6 ||
-        value5.h > PlatformFileContentLimit_6 ||
-        PlatformFileContentTrim_2(value5.d) === null
+      return !serializedBounds ||
+        serializedBounds.w > MAX_CANVAS_ITEM_DIMENSION ||
+        serializedBounds.h > MAX_CANVAS_ITEM_DIMENSION ||
+        normalizePenPath(serializedBounds.d) === null
         ? null
         : {
-            ...value5,
-            x: Math.round(value5.x * 10) / 10,
-            y: Math.round(value5.y * 10) / 10,
+            ...serializedBounds,
+            x: Math.round(serializedBounds.x * 10) / 10,
+            y: Math.round(serializedBounds.y * 10) / 10,
           };
     };
   return (
     <VectorPathEditor
       testId={"mega-pen-anchors-" + spec.id}
-      path={value2.path}
+      path={pathState.path}
       scale={scale}
       origin={{
         x: spec.x,
         y: spec.y,
       }}
-      onGesture={(input?: Dynamic): Dynamic => {
-        value4.current = input
+      onGesture={(gestureBounds?: Dynamic): Dynamic => {
+        gestureRef.current = gestureBounds
           ? {
               x: spec.x,
               y: spec.y,
@@ -129,54 +129,54 @@ function AnnotationPenEditor({
               d: spec.d,
             }
           : null;
-        onGesture("ann-anchor", input);
-        input && armWindowGestureEnd("ann-anchor");
+        onGesture("ann-anchor", gestureBounds);
+        gestureBounds && armWindowGestureEnd("ann-anchor");
       }}
-      onLive={(input?: Dynamic): Dynamic => {
-        let value5: Dynamic = callback4(input);
-        value5 && callback2(callback(value5), input, false);
+      onLive={(liveBounds?: Dynamic): Dynamic => {
+        let liveSerializedBounds: Dynamic = serializeCandidate(liveBounds);
+        liveSerializedBounds && commitPath(callback(liveSerializedBounds), liveBounds, false);
       }}
       onCommit={(
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        committedBounds?: Dynamic,
+        committedPath?: Dynamic,
+        isFinal?: Dynamic,
       ): Dynamic => {
-        let value5: Dynamic = callback4(options, context);
-        if (!value5) return callback3();
-        let value6: Dynamic = callback(value5);
-        callback2(
-          value6,
-          annotationVectorPath(value6, annotationPenViewBox(value6)),
+        let committedSerializedBounds: Dynamic = serializeCandidate(committedPath, isFinal);
+        if (!committedSerializedBounds) return restoreOriginal();
+        let normalizedBounds: Dynamic = callback(committedSerializedBounds);
+        commitPath(
+          normalizedBounds,
+          annotationVectorPath(normalizedBounds, annotationPenViewBox(normalizedBounds)),
           true,
         );
       }}
-      onCancel={callback3}
+      onCancel={restoreOriginal}
     />
   );
 }
-function annotationPenViewBox(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input.d.match(/\d+(?:\.\d+)?/g) ?? []).map(Number),
-    [items, items2]: Dynamic = [1, 1];
+function annotationPenViewBox(pathBounds?: Dynamic): Dynamic {
+  let value: Dynamic = (pathBounds.d.match(/\d+(?:\.\d+)?/g) ?? []).map(Number),
+    [items, maxHeight]: Dynamic = [1, 1];
   for (let index: Dynamic = 0; index + 1 < value.length; index += 2)
-    [items, items2] = [
+    [items, maxHeight] = [
       Math.max(items, value[index]),
-      Math.max(items2, value[index + 1]),
+      Math.max(maxHeight, value[index + 1]),
     ];
   return {
     w: items,
-    h: items2,
+    h: maxHeight,
   };
 }
-function annotationVectorPath(input?: Dynamic, options?: Dynamic): Dynamic {
+function annotationVectorPath(bounds?: Dynamic, viewBox?: Dynamic): Dynamic {
   return simplifyVectorPath(
-    input.d,
+    bounds.d,
     {
-      ox: input.x,
-      oy: input.y,
-      sx: input.w / options.w,
-      sy: input.h / options.h,
+      ox: bounds.x,
+      oy: bounds.y,
+      sx: bounds.w / viewBox.w,
+      sy: bounds.h / viewBox.h,
     },
-    PlatformFileContentLimit_7,
+    MAX_PEN_PATH_CHARS,
   );
 }
 export {
@@ -195,7 +195,7 @@ export function installEditorVectorAnnotationPenEditor(): () => void {
       get touchAction() { return uiMessage("inspector.annotationPenEditor.none"); },
     };
     VectorAnnotationPenEditorConstant = 1.25;
-    annotationVectorKey = (input?: Dynamic): Dynamic =>
-      [input.x, input.y, input.w, input.h].join(",") + "|" + input.d;
+    annotationVectorKey = (bounds?: Dynamic): Dynamic =>
+      [bounds.x, bounds.y, bounds.w, bounds.h].join(",") + "|" + bounds.d;
   };
 }

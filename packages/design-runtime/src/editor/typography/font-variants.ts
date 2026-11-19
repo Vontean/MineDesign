@@ -6,29 +6,29 @@ import { getKnownWebFont, TypographyFontCatalogItems, TypographyFontCatalogSerif
 
 var TypographyFontVariants100200300Config: Dynamic;
 var TypographyFontVariantsItems: Dynamic;
-var TypographyFontVariantsItems_2: Dynamic;
+var DEFAULT_FONT_VARIANTS: Dynamic;
 var TypographyFontVariantsFlatMapValue: Dynamic;
 var TypographyFontVariantsSubscribers: Dynamic;
 var sortFontVariants: Dynamic;
-function normalizeFontWeightHundreds(input?: Dynamic): Dynamic {
-  return Math.min(900, Math.max(100, Math.round(input / 100) * 100));
+function normalizeFontWeightHundreds(weight?: Dynamic): Dynamic {
+  return Math.min(900, Math.max(100, Math.round(weight / 100) * 100));
 }
-function fontVariantLabel(input?: Dynamic, options?: Dynamic): Dynamic {
+function fontVariantLabel(weight?: Dynamic, italic?: Dynamic): Dynamic {
   let value: Dynamic =
     TypographyFontVariants100200300Config[
-      normalizeFontWeightHundreds(input)
-    ] ?? String(input);
-  return options
-    ? normalizeFontWeightHundreds(input) === 400
+      normalizeFontWeightHundreds(weight)
+    ] ?? String(weight);
+  return italic
+    ? normalizeFontWeightHundreds(weight) === 400
       ? "Italic"
       : value + " italic"
     : value;
 }
-function fontVariantKey(input?: Dynamic, options?: Dynamic): Dynamic {
-  return String(normalizeFontWeightHundreds(input)) + (options ? "i" : "");
+function fontVariantKey(weight?: Dynamic, italic?: Dynamic): Dynamic {
+  return String(normalizeFontWeightHundreds(weight)) + (italic ? "i" : "");
 }
-function parseFontVariantKey(input?: Dynamic): Dynamic {
-  let value: Dynamic = /^([1-9]00)(i?)$/.exec(input);
+function parseFontVariantKey(key?: Dynamic): Dynamic {
+  let value: Dynamic = /^([1-9]00)(i?)$/.exec(key);
   return value
     ? {
         weight: Number(value[1]),
@@ -36,125 +36,125 @@ function parseFontVariantKey(input?: Dynamic): Dynamic {
       }
     : undefined;
 }
-function normalizeFirstFontFamily(input?: Dynamic): Dynamic {
-  return (input.split(",")[0] ?? "")
+function normalizeFirstFontFamily(fontStack?: Dynamic): Dynamic {
+  return (fontStack.split(",")[0] ?? "")
     .trim()
     .replace(/^["']|["']$/g, "")
     .trim();
 }
 function getAvailableFontVariants(
-  input?: Dynamic,
-  options?: Dynamic,
+  fonts?: Dynamic,
+  familyName?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = normalizeFirstFontFamily(options).toLowerCase(),
+  let value: Dynamic = normalizeFirstFontFamily(familyName).toLowerCase(),
     entries: Dynamic = new Map();
-  for (let value2 of input as Dynamic) {
+  for (let font of fonts as Dynamic) {
     if (
-      typeof value2?.family != "string" ||
-      typeof value2.weight != "string" ||
-      typeof value2.style != "string" ||
-      value2.status === "error" ||
-      normalizeFirstFontFamily(value2.family).toLowerCase() !== value
+      typeof font?.family != "string" ||
+      typeof font.weight != "string" ||
+      typeof font.style != "string" ||
+      font.status === "error" ||
+      normalizeFirstFontFamily(font.family).toLowerCase() !== value
     )
       continue;
-    let value3: Dynamic = /^(?:italic|oblique)/.test(value2.style.trim()),
-      value4: Dynamic = value2.weight.trim(),
-      value5: Dynamic = /^(\d+(?:\.\d+)?)(?:\s+(\d+(?:\.\d+)?))?$/.exec(
-        value4,
+    let isItalic: Dynamic = /^(?:italic|oblique)/.test(font.style.trim()),
+      weightText: Dynamic = font.weight.trim(),
+      weightRange: Dynamic = /^(\d+(?:\.\d+)?)(?:\s+(\d+(?:\.\d+)?))?$/.exec(
+        weightText,
       ),
-      value6: Dynamic =
-        value4 === "normal"
+      minWeight: Dynamic =
+        weightText === "normal"
           ? 400
-          : value4 === "bold"
+          : weightText === "bold"
             ? 700
-            : value5
-              ? Number(value5[1])
+            : weightRange
+              ? Number(weightRange[1])
               : NaN;
-    if (!Number.isFinite(value6)) continue;
-    let value7: Dynamic =
-        value5?.[2] !== undefined ? Number(value5[2]) : value6,
-      value8: Dynamic = TypographyFontVariantsItems.filter(
-        (input2?: Dynamic): Dynamic =>
-          input2 >= Math.min(value6, value7) &&
-          input2 <= Math.max(value6, value7),
+    if (!Number.isFinite(minWeight)) continue;
+    let maxWeight: Dynamic =
+        weightRange?.[2] !== undefined ? Number(weightRange[2]) : minWeight,
+      matchingWeights: Dynamic = TypographyFontVariantsItems.filter(
+        (weight?: Dynamic): Dynamic =>
+          weight >= Math.min(minWeight, maxWeight) &&
+          weight <= Math.max(minWeight, maxWeight),
       );
-    for (let value9 of (value8.length > 0
-      ? value8
-      : [normalizeFontWeightHundreds(value6)]) as Dynamic)
-      entries.set(fontVariantKey(value9, value3), {
-        weight: value9,
-        italic: value3,
+    for (let weight of (matchingWeights.length > 0
+      ? matchingWeights
+      : [normalizeFontWeightHundreds(minWeight)]) as Dynamic)
+      entries.set(fontVariantKey(weight, isItalic), {
+        weight: weight,
+        italic: isItalic,
       });
   }
   return entries.size === 0 ? undefined : sortFontVariants(entries.values());
 }
-function knownWebFontVariants(input?: Dynamic): Dynamic {
-  let value: Dynamic = normalizeFirstFontFamily(input),
-    value2: Dynamic = getKnownWebFont(value);
-  if (value2 !== undefined)
+function knownWebFontVariants(fontStack?: Dynamic): Dynamic {
+  let value: Dynamic = normalizeFirstFontFamily(fontStack),
+    fontRecord: Dynamic = getKnownWebFont(value);
+  if (fontRecord !== undefined)
     return (
-      value2.wght !== undefined
+      fontRecord.wght !== undefined
         ? TypographyFontVariantsItems.filter(
-            (input2?: Dynamic): Dynamic =>
-              input2 >= value2.wght[0] && input2 <= value2.wght[1],
+            (weight?: Dynamic): Dynamic =>
+              weight >= fontRecord.wght[0] && weight <= fontRecord.wght[1],
           )
-        : [...(value2.statics ?? [400])]
+        : [...(fontRecord.statics ?? [400])]
     ).flatMap(
-      (input2?: Dynamic): Dynamic =>
-        value2.italic
+      (weight?: Dynamic): Dynamic =>
+        fontRecord.italic
           ? [
               {
-                weight: input2,
+                weight: weight,
                 italic: false,
               },
               {
-                weight: input2,
+                weight: weight,
                 italic: true,
               },
             ]
           : [
               {
-                weight: input2,
+                weight: weight,
                 italic: false,
               },
             ],
     );
-  let value3: Dynamic = value.toLowerCase();
+  let familyName: Dynamic = value.toLowerCase();
   if (
-    TypographyFontVariantsSubscribers.has(value3) ||
-    value3 === "helvetica neue" ||
-    TypographyFontCatalogSerifSansSerifPattern.test(value3) ||
-    /^(?:-apple-system|blinkmacsystemfont)$/.test(value3)
+    TypographyFontVariantsSubscribers.has(familyName) ||
+    familyName === "helvetica neue" ||
+    TypographyFontCatalogSerifSansSerifPattern.test(familyName) ||
+    /^(?:-apple-system|blinkmacsystemfont)$/.test(familyName)
   )
-    return [...TypographyFontVariantsItems_2];
+    return [...DEFAULT_FONT_VARIANTS];
 }
-function resolveFontVariants(input?: Dynamic, items?: Dynamic): Dynamic {
+function resolveFontVariants(fontStack?: Dynamic, items?: Dynamic): Dynamic {
   return (
-    knownWebFontVariants(input) ??
+    knownWebFontVariants(fontStack) ??
     (items !== undefined && items.length > 0
       ? items
       : TypographyFontVariantsFlatMapValue)
   );
 }
 function includeCurrentFontVariant(
-  input?: Dynamic,
-  options?: Dynamic,
+  fontVariants?: Dynamic,
+  currentVariant?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = sortFontVariants(input);
-  options !== undefined &&
+  let value: Dynamic = sortFontVariants(fontVariants);
+  currentVariant !== undefined &&
     !value.some(
-      (input2?: Dynamic): Dynamic =>
-        input2.weight === normalizeFontWeightHundreds(options.weight) &&
-        input2.italic === options.italic,
+      (variant?: Dynamic): Dynamic =>
+        variant.weight === normalizeFontWeightHundreds(currentVariant.weight) &&
+        variant.italic === currentVariant.italic,
     ) &&
     value.unshift({
-      weight: normalizeFontWeightHundreds(options.weight),
-      italic: options.italic,
+      weight: normalizeFontWeightHundreds(currentVariant.weight),
+      italic: currentVariant.italic,
     });
   return value.map(
-    (input2?: Dynamic): Dynamic => ({
-      value: fontVariantKey(input2.weight, input2.italic),
-      label: fontVariantLabel(input2.weight, input2.italic),
+    (variant?: Dynamic): Dynamic => ({
+      value: fontVariantKey(variant.weight, variant.italic),
+      label: fontVariantLabel(variant.weight, variant.italic),
     }),
   );
 }
@@ -172,7 +172,7 @@ export {
   TypographyFontVariants100200300Config,
   TypographyFontVariantsFlatMapValue,
   TypographyFontVariantsItems,
-  TypographyFontVariantsItems_2,
+  DEFAULT_FONT_VARIANTS as TypographyFontVariantsItems_2,
   TypographyFontVariantsSubscribers,
 };
 export function installEditorTypographyFontVariants(): () => void {
@@ -189,7 +189,7 @@ export function installEditorTypographyFontVariants(): () => void {
       900: "Black",
     };
     TypographyFontVariantsItems = [100, 200, 300, 400, 500, 600, 700, 800, 900];
-    TypographyFontVariantsItems_2 = [
+    DEFAULT_FONT_VARIANTS = [
       {
         weight: 400,
         italic: false,
@@ -208,27 +208,27 @@ export function installEditorTypographyFontVariants(): () => void {
       },
     ];
     TypographyFontVariantsFlatMapValue = TypographyFontVariantsItems.flatMap(
-      (input?: Dynamic): Dynamic => [
+      (weight?: Dynamic): Dynamic => [
         {
-          weight: input,
+          weight: weight,
           italic: false,
         },
         {
-          weight: input,
+          weight: weight,
           italic: true,
         },
       ],
     );
     TypographyFontVariantsSubscribers = new Set(
       TypographyFontCatalogItems.map(
-        (input?: Dynamic): Dynamic => input.family.toLowerCase(),
+        (font?: Dynamic): Dynamic => font.family.toLowerCase(),
       ),
     );
-    sortFontVariants = (input?: Dynamic): Dynamic =>
-      [...input].sort(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2.weight - options.weight ||
-          Number(input2.italic) - Number(options.italic),
+    sortFontVariants = (variants?: Dynamic): Dynamic =>
+      [...variants].sort(
+        (left?: Dynamic, right?: Dynamic): Dynamic =>
+          left.weight - right.weight ||
+          Number(left.italic) - Number(right.italic),
       );
   };
 }

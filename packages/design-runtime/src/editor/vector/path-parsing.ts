@@ -7,32 +7,32 @@ import { fitPenCurve, flattenCubicPath } from "../geometry/pen";
 var VectorPathParsingCosValue: Dynamic;
 var quadraticToCubic: Dynamic;
 function parseVectorPath(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  pathData?: Dynamic,
+  transform?: Dynamic,
+  curveTolerance?: Dynamic,
 ): Dynamic {
   let callback: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
+      xCoordinate?: Dynamic,
+      yCoordinate?: Dynamic,
     ): Dynamic => ({
-      x: options.ox + input2 * options.sx,
-      y: options.oy + options2 * options.sy,
+      x: transform.ox + xCoordinate * transform.sx,
+      y: transform.oy + yCoordinate * transform.sy,
     }),
     items: Dynamic = [],
-    items2: Dynamic = [],
-    items3: Dynamic = [],
-    callback2: Dynamic = (): Dynamic => {
-      if (items3.length < 2) return void (items3 = []);
+    contourAnchors: Dynamic = [],
+    pendingCurvePoints: Dynamic = [],
+    flushCurve: Dynamic = (): Dynamic => {
+      if (pendingCurvePoints.length < 2) return void (pendingCurvePoints = []);
       let value: Dynamic =
-        items3.length >= 3
+        pendingCurvePoints.length >= 3
           ? fitPenCurve(
-              items3.map((input2?: Dynamic): Dynamic => [input2.x, input2.y]),
-              context,
+              pendingCurvePoints.map((point?: Dynamic): Dynamic => [point.x, point.y]),
+              curveTolerance,
             )
           : null;
       if (value && value.length > 4)
         for (let count: Dynamic = 2; count + 5 < value.length; count += 6)
-          items2.push({
+          contourAnchors.push({
             x: value[count + 4],
             y: value[count + 5],
             seg: {
@@ -48,201 +48,201 @@ function parseVectorPath(
             },
           });
       else
-        for (let value2 of items3.slice(1) as Dynamic)
-          items2.push({
-            x: value2.x,
-            y: value2.y,
+        for (let anchor of pendingCurvePoints.slice(1) as Dynamic)
+          contourAnchors.push({
+            x: anchor.x,
+            y: anchor.y,
             seg: {
               kind: "line",
             },
           });
-      items3 = [];
+      pendingCurvePoints = [];
     };
-  for (let value of (input.match(/[MLC][^MLC]*/g) ?? []) as Dynamic) {
-    let value2: Dynamic = (
+  for (let value of (pathData.match(/[MLC][^MLC]*/g) ?? []) as Dynamic) {
+    let commandValues: Dynamic = (
       value.slice(1).match(/-?\d+(?:\.\d+)?/g) ?? []
     ).map(Number);
-    if (value[0] === "M" && value2.length >= 2) {
-      callback2();
-      items2.length > 0 &&
+    if (value[0] === "M" && commandValues.length >= 2) {
+      flushCurve();
+      contourAnchors.length > 0 &&
         items.push({
-          anchors: items2,
+          anchors: contourAnchors,
           closed: false,
         });
-      let value3: Dynamic = callback(value2[0], value2[1]);
-      items2 = [
+      let movePoint: Dynamic = callback(commandValues[0], commandValues[1]);
+      contourAnchors = [
         {
-          x: value3.x,
-          y: value3.y,
+          x: movePoint.x,
+          y: movePoint.y,
           seg: {
             kind: "line",
           },
         },
       ];
-      items3 = [value3];
+      pendingCurvePoints = [movePoint];
     } else {
-      if (items2.length === 0) continue;
-      if (value[0] === "L" && value2.length >= 2) {
-        items3.length === 0 &&
-          (items3 = [
+      if (contourAnchors.length === 0) continue;
+      if (value[0] === "L" && commandValues.length >= 2) {
+        pendingCurvePoints.length === 0 &&
+          (pendingCurvePoints = [
             {
-              x: items2[items2.length - 1].x,
-              y: items2[items2.length - 1].y,
+              x: contourAnchors[contourAnchors.length - 1].x,
+              y: contourAnchors[contourAnchors.length - 1].y,
             },
           ]);
-        items3.push(callback(value2[0], value2[1]));
-      } else if (value[0] === "C" && value2.length >= 6) {
-        callback2();
-        let value3: Dynamic = callback(value2[4], value2[5]),
-          value4: Dynamic = items2[items2.length - 1],
-          [items4, items5]: Dynamic = [
-            callback(value2[0], value2[1]),
-            callback(value2[2], value2[3]),
+        pendingCurvePoints.push(callback(commandValues[0], commandValues[1]));
+      } else if (value[0] === "C" && commandValues.length >= 6) {
+        flushCurve();
+        let curveEndPoint: Dynamic = callback(commandValues[4], commandValues[5]),
+          lastAnchor: Dynamic = contourAnchors[contourAnchors.length - 1],
+          [controlPoint1, controlPoint2]: Dynamic = [
+            callback(commandValues[0], commandValues[1]),
+            callback(commandValues[2], commandValues[3]),
           ],
-          callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-            (input2.x - value4.x) ** 2 + (input2.y - value4.y) ** 2 < 0.25;
+          isNearLastAnchor: Dynamic = (point?: Dynamic): Dynamic =>
+            (point.x - lastAnchor.x) ** 2 + (point.y - lastAnchor.y) ** 2 < 0.25;
         if (
-          items2.length > 1 &&
-          callback3(value3) &&
-          callback3(items4) &&
-          callback3(items5)
+          contourAnchors.length > 1 &&
+          isNearLastAnchor(curveEndPoint) &&
+          isNearLastAnchor(controlPoint1) &&
+          isNearLastAnchor(controlPoint2)
         )
           continue;
-        items2.push({
-          x: value3.x,
-          y: value3.y,
+        contourAnchors.push({
+          x: curveEndPoint.x,
+          y: curveEndPoint.y,
           seg: {
             kind: "cubic",
-            c1: items4,
-            c2: items5,
+            c1: controlPoint1,
+            c2: controlPoint2,
           },
         });
       }
     }
   }
-  callback2();
-  items2.length > 0 &&
+  flushCurve();
+  contourAnchors.length > 0 &&
     items.push({
-      anchors: items2,
+      anchors: contourAnchors,
       closed: false,
     });
   for (let value of items as Dynamic)
     value.anchors.forEach(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        (input2.tangent = inferVectorTangentKind(value.anchors, options2)),
+      (anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic =>
+        (anchor.tangent = inferVectorTangentKind(value.anchors, anchorIndex)),
     );
   return {
     contours: items,
   };
 }
-function inferVectorTangentKind(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input[options],
-    value2: Dynamic = input[options + 1];
-  if (value.seg.kind !== "cubic" || !value2 || value2.seg.kind !== "cubic")
+function inferVectorTangentKind(anchors?: Dynamic, anchorIndex?: Dynamic): Dynamic {
+  let value: Dynamic = anchors[anchorIndex],
+    nextAnchor: Dynamic = anchors[anchorIndex + 1];
+  if (value.seg.kind !== "cubic" || !nextAnchor || nextAnchor.seg.kind !== "cubic")
     return "corner";
-  let [items, items2, items3, items4]: Dynamic = [
+  let [items, incomingX, outgoingX, outgoingY]: Dynamic = [
       value.x - value.seg.c2.x,
       value.y - value.seg.c2.y,
-      value2.seg.c1.x - value.x,
-      value2.seg.c1.y - value.y,
+      nextAnchor.seg.c1.x - value.x,
+      nextAnchor.seg.c1.y - value.y,
     ],
-    value3: Dynamic = Math.hypot(items, items2) * Math.hypot(items3, items4);
-  return value3 > 0 &&
-    (items * items3 + items2 * items4) / value3 >= VectorPathParsingCosValue
+    directionMagnitude: Dynamic = Math.hypot(items, incomingX) * Math.hypot(outgoingX, outgoingY);
+  return directionMagnitude > 0 &&
+    (items * outgoingX + incomingX * outgoingY) / directionMagnitude >= VectorPathParsingCosValue
     ? "smooth"
     : "corner";
 }
-function vectorControlBounds(input?: Dynamic): Dynamic {
-  let [items, items2, items3, items4]: Dynamic = [
+function vectorControlBounds(vectorPath?: Dynamic): Dynamic {
+  let [items, minY, maxX, maxY]: Dynamic = [
       1 / 0,
       1 / 0,
       -1 / 0,
       -1 / 0,
     ],
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      [items, items2, items3, items4] = [
-        Math.min(items, input2.x),
-        Math.min(items2, input2.y),
-        Math.max(items3, input2.x),
-        Math.max(items4, input2.y),
+    callback: Dynamic = (controlPoint?: Dynamic): Dynamic => {
+      [items, minY, maxX, maxY] = [
+        Math.min(items, controlPoint.x),
+        Math.min(minY, controlPoint.y),
+        Math.max(maxX, controlPoint.x),
+        Math.max(maxY, controlPoint.y),
       ];
     };
-  for (let value of input.contours as Dynamic)
-    value.anchors.forEach((input2?: Dynamic, options?: Dynamic): Dynamic => {
-      callback(input2);
-      options > 0 &&
-        input2.seg.kind === "cubic" &&
-        (callback(input2.seg.c1), callback(input2.seg.c2));
-      options > 0 && input2.seg.kind === "quad" && callback(input2.seg.c);
+  for (let value of vectorPath.contours as Dynamic)
+    value.anchors.forEach((anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
+      callback(anchor);
+      anchorIndex > 0 &&
+        anchor.seg.kind === "cubic" &&
+        (callback(anchor.seg.c1), callback(anchor.seg.c2));
+      anchorIndex > 0 && anchor.seg.kind === "quad" && callback(anchor.seg.c);
     });
   return items === 1 / 0
     ? null
     : {
         x0: items,
-        y0: items2,
-        x1: items3,
-        y1: items4,
+        y0: minY,
+        x1: maxX,
+        y1: maxY,
       };
 }
 function serializeVectorPathBounds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = true,
+  vectorPath?: Dynamic,
+  precision?: Dynamic,
+  includeBounds: Dynamic = true,
 ): Dynamic {
-  let value: Dynamic = context ? vectorAnchorBounds(input) : null,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      !context ||
+  let value: Dynamic = includeBounds ? vectorAnchorBounds(vectorPath) : null,
+    callback: Dynamic = (point?: Dynamic): Dynamic =>
+      !includeBounds ||
       (value !== null &&
-        input2.x >= value.x0 - 0.5 &&
-        input2.x <= value.x1 + 0.5 &&
-        input2.y >= value.y0 - 0.5 &&
-        input2.y <= value.y1 + 0.5),
+        point.x >= value.x0 - 0.5 &&
+        point.x <= value.x1 + 0.5 &&
+        point.y >= value.y0 - 0.5 &&
+        point.y <= value.y1 + 0.5),
     state: Dynamic = {
-      contours: input.contours.map((input2?: Dynamic): Dynamic => {
+      contours: vectorPath.contours.map((contour?: Dynamic): Dynamic => {
         let items: Dynamic = [];
-        for (let value4 of input2.anchors as Dynamic) {
-          let value5: Dynamic = items[items.length - 1];
+        for (let anchor of contour.anchors as Dynamic) {
+          let previousAnchor: Dynamic = items[items.length - 1];
           if (
-            value4.seg.kind !== "cubic" ||
-            !value5 ||
-            (callback(value4.seg.c1) && callback(value4.seg.c2))
+            anchor.seg.kind !== "cubic" ||
+            !previousAnchor ||
+            (callback(anchor.seg.c1) && callback(anchor.seg.c2))
           ) {
             items.push(
-              value4.seg.kind === "quad" && value5
+              anchor.seg.kind === "quad" && previousAnchor
                 ? {
-                    ...value4,
+                    ...anchor,
                     seg: {
                       kind: "cubic",
-                      ...quadraticToCubic(value5, value4.seg.c, value4),
+                      ...quadraticToCubic(previousAnchor, anchor.seg.c, anchor),
                     },
                   }
-                : value4,
+                : anchor,
             );
             continue;
           }
-          let value6: Dynamic = flattenCubicPath([
-            value5.x,
-            value5.y,
-            value4.seg.c1.x,
-            value4.seg.c1.y,
-            value4.seg.c2.x,
-            value4.seg.c2.y,
-            value4.x,
-            value4.y,
+          let flattenedCurve: Dynamic = flattenCubicPath([
+            previousAnchor.x,
+            previousAnchor.y,
+            anchor.seg.c1.x,
+            anchor.seg.c1.y,
+            anchor.seg.c2.x,
+            anchor.seg.c2.y,
+            anchor.x,
+            anchor.y,
           ]);
-          for (let count: Dynamic = 2; count + 5 < value6.length; count += 6)
+          for (let count: Dynamic = 2; count + 5 < flattenedCurve.length; count += 6)
             items.push({
-              x: value6[count + 4],
-              y: value6[count + 5],
+              x: flattenedCurve[count + 4],
+              y: flattenedCurve[count + 5],
               seg: {
                 kind: "cubic",
                 c1: {
-                  x: value6[count],
-                  y: value6[count + 1],
+                  x: flattenedCurve[count],
+                  y: flattenedCurve[count + 1],
                 },
                 c2: {
-                  x: value6[count + 2],
-                  y: value6[count + 3],
+                  x: flattenedCurve[count + 2],
+                  y: flattenedCurve[count + 3],
                 },
               },
             });
@@ -253,79 +253,79 @@ function serializeVectorPathBounds(
         };
       }),
     },
-    value2: Dynamic = vectorControlBounds(state);
-  if (value2 === null) return null;
-  let value3: Dynamic = 10 ** options,
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      Math.round(input2 * value3) / value3,
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = callback2(input2).toFixed(options);
-      value4.indexOf(".") >= 0 && (value4 = value4.replace(/\.?0+$/, ""));
-      return value4 === "-0" ? "0" : value4;
+    controlBounds: Dynamic = vectorControlBounds(state);
+  if (controlBounds === null) return null;
+  let precisionFactor: Dynamic = 10 ** precision,
+    roundCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+      Math.round(coordinate * precisionFactor) / precisionFactor,
+    formatCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic => {
+      let formattedValue: Dynamic = roundCoordinate(coordinate).toFixed(precision);
+      formattedValue.indexOf(".") >= 0 && (formattedValue = formattedValue.replace(/\.?0+$/, ""));
+      return formattedValue === "-0" ? "0" : formattedValue;
     },
-    callback4: Dynamic = (input2?: Dynamic): Dynamic =>
-      callback3(input2.x - value2.x0) + " " + callback3(input2.y - value2.y0),
+    formatPoint: Dynamic = (point?: Dynamic): Dynamic =>
+      formatCoordinate(point.x - controlBounds.x0) + " " + formatCoordinate(point.y - controlBounds.y0),
     text: Dynamic = "";
-  for (let value4 of state.contours as Dynamic)
-    value4.anchors.forEach(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => {
+  for (let contour of state.contours as Dynamic)
+    contour.anchors.forEach(
+      (anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
         text +=
-          options2 === 0
-            ? (text === "" ? "M" : " M") + callback4(input2)
-            : input2.seg.kind === "cubic"
+          anchorIndex === 0
+            ? (text === "" ? "M" : " M") + formatPoint(anchor)
+            : anchor.seg.kind === "cubic"
               ? " C" +
-                callback4(input2.seg.c1) +
+                formatPoint(anchor.seg.c1) +
                 " " +
-                callback4(input2.seg.c2) +
+                formatPoint(anchor.seg.c2) +
                 " " +
-                callback4(input2)
-              : " L" + callback4(input2);
+                formatPoint(anchor)
+              : " L" + formatPoint(anchor);
       },
     );
   return {
-    x: value2.x0,
-    y: value2.y0,
-    w: callback2(value2.x1 - value2.x0),
-    h: callback2(value2.y1 - value2.y0),
+    x: controlBounds.x0,
+    y: controlBounds.y0,
+    w: roundCoordinate(controlBounds.x1 - controlBounds.x0),
+    h: roundCoordinate(controlBounds.y1 - controlBounds.y0),
     d: text,
   };
 }
-function vectorAnchorBounds(input?: Dynamic): Dynamic {
-  let [items, items2, items3, items4]: Dynamic = [
+function vectorAnchorBounds(vectorPath?: Dynamic): Dynamic {
+  let [items, minY, maxX, maxY]: Dynamic = [
       1 / 0,
       1 / 0,
       -1 / 0,
       -1 / 0,
     ],
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      [items, items2, items3, items4] = [
-        Math.min(items, input2),
-        Math.min(items2, options),
-        Math.max(items3, input2),
-        Math.max(items4, options),
+    callback: Dynamic = (xCoordinate?: Dynamic, yCoordinate?: Dynamic): Dynamic => {
+      [items, minY, maxX, maxY] = [
+        Math.min(items, xCoordinate),
+        Math.min(minY, yCoordinate),
+        Math.max(maxX, xCoordinate),
+        Math.max(maxY, yCoordinate),
       ];
     };
-  for (let value of input.contours as Dynamic)
-    value.anchors.forEach((input2?: Dynamic, options?: Dynamic): Dynamic => {
-      callback(input2.x, input2.y);
-      let value2: Dynamic = value.anchors[options - 1];
-      if (!value2 || input2.seg.kind === "line") return;
-      let { c1: value3, c2: value4 }: Dynamic =
-        input2.seg.kind === "cubic"
-          ? input2.seg
-          : quadraticToCubic(value2, input2.seg.c, input2);
+  for (let value of vectorPath.contours as Dynamic)
+    value.anchors.forEach((anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
+      callback(anchor.x, anchor.y);
+      let previousAnchor: Dynamic = value.anchors[anchorIndex - 1];
+      if (!previousAnchor || anchor.seg.kind === "line") return;
+      let { c1: controlPoint1, c2: controlPoint2 }: Dynamic =
+        anchor.seg.kind === "cubic"
+          ? anchor.seg
+          : quadraticToCubic(previousAnchor, anchor.seg.c, anchor);
       for (let count: Dynamic = 1; count < 16; count++) {
-        let value5: Dynamic = count / 16,
-          value6: Dynamic = 1 - value5;
+        let curveProgress: Dynamic = count / 16,
+          remainingProgress: Dynamic = 1 - curveProgress;
         callback(
-          value6 * value6 * value6 * value2.x +
-            3 * value6 * value6 * value5 * value3.x +
-            3 * value6 * value5 * value5 * value4.x +
-            value5 * value5 * value5 * input2.x,
-          value6 * value6 * value6 * value2.y +
-            3 * value6 * value6 * value5 * value3.y +
-            3 * value6 * value5 * value5 * value4.y +
-            value5 * value5 * value5 * input2.y,
+          remainingProgress * remainingProgress * remainingProgress * previousAnchor.x +
+            3 * remainingProgress * remainingProgress * curveProgress * controlPoint1.x +
+            3 * remainingProgress * curveProgress * curveProgress * controlPoint2.x +
+            curveProgress * curveProgress * curveProgress * anchor.x,
+          remainingProgress * remainingProgress * remainingProgress * previousAnchor.y +
+            3 * remainingProgress * remainingProgress * curveProgress * controlPoint1.y +
+            3 * remainingProgress * curveProgress * curveProgress * controlPoint2.y +
+            curveProgress * curveProgress * curveProgress * anchor.y,
         );
       }
     });
@@ -333,137 +333,137 @@ function vectorAnchorBounds(input?: Dynamic): Dynamic {
     ? null
     : {
         x0: items,
-        y0: items2,
-        x1: items3,
-        y1: items4,
+        y0: minY,
+        x1: maxX,
+        y1: maxY,
       };
 }
 function deleteVectorAnchorKeepingCurve(
-  input?: Dynamic,
-  options?: Dynamic,
+  vectorPath?: Dynamic,
+  anchorSelection?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.contours[options.contour];
-  if (!value || !value.anchors[options.anchor]) return input;
-  let value2: Dynamic = value.anchors.slice(),
-    anchor: Dynamic = options.anchor,
-    value3: Dynamic = value2[anchor],
-    value4: Dynamic = value2[anchor + 1];
-  value2.splice(anchor, 1);
-  if (value2.length < 2) {
-    let value6: Dynamic = input.contours.filter(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        options2 !== options.contour,
+  let value: Dynamic = vectorPath.contours[anchorSelection.contour];
+  if (!value || !value.anchors[anchorSelection.anchor]) return vectorPath;
+  let anchors: Dynamic = value.anchors.slice(),
+    anchor: Dynamic = anchorSelection.anchor,
+    removedAnchor: Dynamic = anchors[anchor],
+    followingAnchor: Dynamic = anchors[anchor + 1];
+  anchors.splice(anchor, 1);
+  if (anchors.length < 2) {
+    let remainingContours: Dynamic = vectorPath.contours.filter(
+      (contour?: Dynamic, contourIndex?: Dynamic): Dynamic =>
+        contourIndex !== anchorSelection.contour,
     );
-    return value6.length === 0
+    return remainingContours.length === 0
       ? null
       : {
-          contours: value6,
+          contours: remainingContours,
         };
   }
   if (anchor === 0)
-    value2[0] = {
-      ...value2[0],
+    anchors[0] = {
+      ...anchors[0],
       seg: {
         kind: "line",
       },
     };
-  else if (value4) {
-    let value6: Dynamic =
-        value3.seg.kind === "cubic"
-          ? value3.seg.c1
+  else if (followingAnchor) {
+    let incomingControl: Dynamic =
+        removedAnchor.seg.kind === "cubic"
+          ? removedAnchor.seg.c1
           : {
-              x: value2[anchor - 1].x,
-              y: value2[anchor - 1].y,
+              x: anchors[anchor - 1].x,
+              y: anchors[anchor - 1].y,
             },
-      value7: Dynamic =
-        value4.seg.kind === "cubic"
-          ? value4.seg.c2
+      outgoingControl: Dynamic =
+        followingAnchor.seg.kind === "cubic"
+          ? followingAnchor.seg.c2
           : {
-              x: value4.x,
-              y: value4.y,
+              x: followingAnchor.x,
+              y: followingAnchor.y,
             };
-    value2[anchor] = {
-      ...value4,
+    anchors[anchor] = {
+      ...followingAnchor,
       seg:
-        value3.seg.kind === "line" && value4.seg.kind === "line"
+        removedAnchor.seg.kind === "line" && followingAnchor.seg.kind === "line"
           ? {
               kind: "line",
             }
           : {
               kind: "cubic",
-              c1: value6,
-              c2: value7,
+              c1: incomingControl,
+              c2: outgoingControl,
             },
     };
   }
-  let value5: Dynamic = input.contours.slice();
-  value5[options.contour] = {
+  let updatedContours: Dynamic = vectorPath.contours.slice();
+  updatedContours[anchorSelection.contour] = {
     ...value,
-    anchors: value2,
+    anchors: anchors,
   };
   return {
-    contours: value5,
+    contours: updatedContours,
   };
 }
-function mapVectorPath(input?: Dynamic, options?: Dynamic): Dynamic {
+function mapVectorPath(vectorPath?: Dynamic, transformPoint?: Dynamic): Dynamic {
   return {
-    contours: input.contours.map(
-      (input2?: Dynamic): Dynamic => ({
-        closed: input2.closed,
-        anchors: input2.anchors.map((input3?: Dynamic): Dynamic => {
-          let value: Dynamic = options(input3),
-            value2: Dynamic =
-              input3.seg.kind === "cubic"
+    contours: vectorPath.contours.map(
+      (contour?: Dynamic): Dynamic => ({
+        closed: contour.closed,
+        anchors: contour.anchors.map((anchor?: Dynamic): Dynamic => {
+          let value: Dynamic = transformPoint(anchor),
+            mappedSegment: Dynamic =
+              anchor.seg.kind === "cubic"
                 ? {
                     kind: "cubic",
-                    c1: options(input3.seg.c1),
-                    c2: options(input3.seg.c2),
+                    c1: transformPoint(anchor.seg.c1),
+                    c2: transformPoint(anchor.seg.c2),
                   }
-                : input3.seg.kind === "quad"
+                : anchor.seg.kind === "quad"
                   ? {
                       kind: "quad",
-                      c: options(input3.seg.c),
+                      c: transformPoint(anchor.seg.c),
                     }
-                  : input3.seg;
+                  : anchor.seg;
           return {
-            ...input3,
+            ...anchor,
             x: value.x,
             y: value.y,
-            seg: value2,
+            seg: mappedSegment,
           };
         }),
       }),
     ),
   };
 }
-function serializeVectorPath(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = 10 ** options,
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value2: Dynamic = (Math.round(input2 * value) / value).toFixed(
-        options,
+function serializeVectorPath(vectorPath?: Dynamic, precision?: Dynamic): Dynamic {
+  let value: Dynamic = 10 ** precision,
+    callback: Dynamic = (coordinate?: Dynamic): Dynamic => {
+      let formattedCoordinate: Dynamic = (Math.round(coordinate * value) / value).toFixed(
+        precision,
       );
-      value2.indexOf(".") >= 0 && (value2 = value2.replace(/\.?0+$/, ""));
-      return value2 === "-0" ? "0" : value2;
+      formattedCoordinate.indexOf(".") >= 0 && (formattedCoordinate = formattedCoordinate.replace(/\.?0+$/, ""));
+      return formattedCoordinate === "-0" ? "0" : formattedCoordinate;
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      callback(input2.x) + " " + callback(input2.y),
+    formatPoint: Dynamic = (point?: Dynamic): Dynamic =>
+      callback(point.x) + " " + callback(point.y),
     text: Dynamic = "";
-  for (let value2 of input.contours as Dynamic)
-    value2.anchors.forEach(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => {
+  for (let contour of vectorPath.contours as Dynamic)
+    contour.anchors.forEach(
+      (anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
         text +=
-          options2 === 0
-            ? (text === "" ? "M" : " M") + callback2(input2)
-            : input2.seg.kind === "cubic"
+          anchorIndex === 0
+            ? (text === "" ? "M" : " M") + formatPoint(anchor)
+            : anchor.seg.kind === "cubic"
               ? " C" +
-                callback2(input2.seg.c1) +
+                formatPoint(anchor.seg.c1) +
                 " " +
-                callback2(input2.seg.c2) +
+                formatPoint(anchor.seg.c2) +
                 " " +
-                callback2(input2)
-              : input2.seg.kind === "quad"
-                ? " Q" + callback2(input2.seg.c) + " " + callback2(input2)
-                : " L" + callback2(input2);
+                formatPoint(anchor)
+              : anchor.seg.kind === "quad"
+                ? " Q" + formatPoint(anchor.seg.c) + " " + formatPoint(anchor)
+                : " L" + formatPoint(anchor);
       },
     );
   return text;
@@ -484,17 +484,17 @@ export function installEditorVectorPathParsing(): () => void {
   return () => {
     VectorPathParsingCosValue = Math.cos((6 * Math.PI) / 180);
     quadraticToCubic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      startPoint?: Dynamic,
+      endPoint?: Dynamic,
+      controlPoint?: Dynamic,
     ): Dynamic => ({
       c1: {
-        x: input.x + (2 / 3) * (options.x - input.x),
-        y: input.y + (2 / 3) * (options.y - input.y),
+        x: startPoint.x + (2 / 3) * (endPoint.x - startPoint.x),
+        y: startPoint.y + (2 / 3) * (endPoint.y - startPoint.y),
       },
       c2: {
-        x: context.x + (2 / 3) * (options.x - context.x),
-        y: context.y + (2 / 3) * (options.y - context.y),
+        x: controlPoint.x + (2 / 3) * (endPoint.x - controlPoint.x),
+        y: controlPoint.y + (2 / 3) * (endPoint.y - controlPoint.y),
       },
     });
   };

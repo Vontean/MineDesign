@@ -7,7 +7,7 @@ import { reactHooksLatestCallback_3 } from "../hooks/latest-callback";
 import { simplifyVectorPath } from "./annotation-pen-editor";
 import { VectorPathEditor } from "./path-editor";
 import { mapVectorPath, serializeVectorPath, serializeVectorPathBounds } from "./path-parsing";
-import { PlatformFileContentLimit_6 } from "../../platform/file-content";
+import { PlatformFileContentLimit_6 as MAX_CANVAS_ITEM_DIMENSION } from "../../platform/file-content";
 
 var VectorElementPenEditorLimit: Dynamic;
 var VectorElementPenEditorXYConfig: Dynamic;
@@ -19,44 +19,44 @@ function ElementPenEditor({
   onGesture: onGesture,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic =
+  let pathSignature: Dynamic =
       pen.d + "|" + [pen.x, pen.y, pen.w, pen.h, pen.vbW, pen.vbH].join(","),
-    [value2, value3]: Dynamic = (0,
+    [pathState, setPathState]: Dynamic = (0,
     reactHooksLatestCallback_3.useState)(
       (): Dynamic => ({
-        source: value,
+        source: pathSignature,
         path: elementVectorPath(pen),
       }),
     );
-  value2.source !== value &&
-    value3({
-      source: value,
+  pathState.source !== pathSignature &&
+    setPathState({
+      source: pathSignature,
       path: elementVectorPath(pen),
     });
-  let value4: Dynamic = (0, reactHooksLatestCallback_3.useRef)(0),
+  let animationFrameRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(0),
     tid: Dynamic = pen.tid,
-    value5: Dynamic = (0, reactHooksLatestCallback_3.useRef)(
+    previewRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(
       onPreview,
     );
-  value5.current = onPreview;
+  previewRef.current = onPreview;
   (0, reactHooksLatestCallback_3.useEffect)(
     (): Dynamic => (): Dynamic => {
-      cancelAnimationFrame(value4.current);
-      value5.current(tid, null);
+      cancelAnimationFrame(animationFrameRef.current);
+      previewRef.current(tid, null);
     },
     [tid],
   );
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      cancelAnimationFrame(value4.current);
-      value4.current = requestAnimationFrame((): Dynamic => {
+  let callback: Dynamic = (path?: Dynamic): Dynamic => {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = requestAnimationFrame((): Dynamic => {
         onPreview(
           pen.tid,
           serializeVectorPath(
             mapVectorPath(
-              input,
-              (input2?: Dynamic): Dynamic => ({
-                x: ((input2.x - pen.x) * pen.vbW) / pen.w,
-                y: ((input2.y - pen.y) * pen.vbH) / pen.h,
+              path,
+              (point?: Dynamic): Dynamic => ({
+                x: ((point.x - pen.x) * pen.vbW) / pen.w,
+                y: ((point.y - pen.y) * pen.vbH) / pen.h,
               }),
             ),
             1,
@@ -64,93 +64,93 @@ function ElementPenEditor({
         );
       });
     },
-    callback2: Dynamic = (): Dynamic => {
-      cancelAnimationFrame(value4.current);
-      value3({
-        source: value,
+    cancelEditing: Dynamic = (): Dynamic => {
+      cancelAnimationFrame(animationFrameRef.current);
+      setPathState({
+        source: pathSignature,
         path: elementVectorPath(pen),
       });
       onPreview(pen.tid, null);
     },
-    callback3: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = false,
+    serializeStroke: Dynamic = (
+      candidatePath?: Dynamic,
+      includeClose: Dynamic = false,
     ): Dynamic => {
-      let value6: Dynamic = serializeVectorPathBounds(
+      let serializedStroke: Dynamic = serializeVectorPathBounds(
         mapVectorPath(
-          input,
-          (input2?: Dynamic): Dynamic => ({
-            x: input2.x * pen.kx,
-            y: input2.y * pen.ky,
+          candidatePath,
+          (point?: Dynamic): Dynamic => ({
+            x: point.x * pen.kx,
+            y: point.y * pen.ky,
           }),
         ),
         1,
-        !options,
+        !includeClose,
       );
-      return value6 &&
-        /[LC]/.test(value6.d) &&
-        value6.d.length <= VectorElementPenEditorLimit &&
-        value6.w <= PlatformFileContentLimit_6 &&
-        value6.h <= PlatformFileContentLimit_6
-        ? value6
+      return serializedStroke &&
+        /[LC]/.test(serializedStroke.d) &&
+        serializedStroke.d.length <= VectorElementPenEditorLimit &&
+        serializedStroke.w <= MAX_CANVAS_ITEM_DIMENSION &&
+        serializedStroke.h <= MAX_CANVAS_ITEM_DIMENSION
+        ? serializedStroke
         : null;
     };
   return (
     <VectorPathEditor
       testId={"mega-pen-anchors-artboard"}
-      path={value2.path}
+      path={pathState.path}
       scale={scale}
       origin={VectorElementPenEditorXYConfig}
       onGesture={onGesture}
-      onLive={(input?: Dynamic): Dynamic => {
-        callback3(input) &&
-          (value3(
-            (input2?: Dynamic): Dynamic => ({
-              ...input2,
-              path: input,
+      onLive={(livePath?: Dynamic): Dynamic => {
+        serializeStroke(livePath) &&
+          (setPathState(
+            (previousState?: Dynamic): Dynamic => ({
+              ...previousState,
+              path: livePath,
             }),
           ),
-          callback(input));
+          callback(livePath));
       }}
       onCommit={(
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        committedPath?: Dynamic,
+        commitOptions?: Dynamic,
+        isFinal?: Dynamic,
       ): Dynamic => {
-        cancelAnimationFrame(value4.current);
-        let value6: Dynamic = callback3(options, context);
-        if (!value6) return callback2();
-        value3(
-          (input2?: Dynamic): Dynamic => ({
-            ...input2,
-            path: options,
+        cancelAnimationFrame(animationFrameRef.current);
+        let committedStroke: Dynamic = serializeStroke(commitOptions, isFinal);
+        if (!committedStroke) return cancelEditing();
+        setPathState(
+          (nextState?: Dynamic): Dynamic => ({
+            ...nextState,
+            path: commitOptions,
           }),
         );
         onCommitStroke(
           pen.tid,
           {
-            x: value6.x / pen.kx,
-            y: value6.y / pen.ky,
-            w: Math.max(2, value6.w),
-            h: Math.max(2, value6.h),
+            x: committedStroke.x / pen.kx,
+            y: committedStroke.y / pen.ky,
+            w: Math.max(2, committedStroke.w),
+            h: Math.max(2, committedStroke.h),
           },
-          value6.d,
+          committedStroke.d,
         );
       }}
-      onCancel={callback2}
+      onCancel={cancelEditing}
     />
   );
 }
-function elementVectorPath(input?: Dynamic): Dynamic {
+function elementVectorPath(bounds?: Dynamic): Dynamic {
   return simplifyVectorPath(
-    input.d,
+    bounds.d,
     {
-      ox: input.x,
-      oy: input.y,
-      sx: input.w / input.vbW,
-      sy: input.h / input.vbH,
+      ox: bounds.x,
+      oy: bounds.y,
+      sx: bounds.w / bounds.vbW,
+      sy: bounds.h / bounds.vbH,
     },
-    VectorElementPenEditorLimit / Math.max(input.kx, input.ky, 1),
+    VectorElementPenEditorLimit / Math.max(bounds.kx, bounds.ky, 1),
   );
 }
 export {

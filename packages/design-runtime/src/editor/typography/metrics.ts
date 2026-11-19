@@ -13,93 +13,93 @@ var TypographyMetricsHandler_2: Dynamic;
 var TypographyMetricsFontSize: Dynamic;
 var TypographyMetricsLineHeight: Dynamic;
 var TypographyMetricsLetterSpacing: Dynamic;
-function typographyStyleEdits(input?: Dynamic): Dynamic {
+function typographyStyleEdits(style?: Dynamic): Dynamic {
   let items: Dynamic = [
-      ["font-size", String(TypographyMetricsFontSize(input)) + "px"],
-      ["line-height", String(TypographyMetricsLineHeight(input))],
-      ["font-weight", String(TypographyMetricsHandler(input.fontWeight))],
+      ["font-size", String(TypographyMetricsFontSize(style)) + "px"],
+      ["line-height", String(TypographyMetricsLineHeight(style))],
+      ["font-weight", String(TypographyMetricsHandler(style.fontWeight))],
       [
         "letter-spacing",
-        String(TypographyMetricsLetterSpacing(input)) + "px",
+        String(TypographyMetricsLetterSpacing(style)) + "px",
       ],
-      ["font-style", input.italic ? "italic" : "normal"],
+      ["font-style", style.italic ? "italic" : "normal"],
     ],
-    value: Dynamic = normalizeTypographyFamily(input.family);
+    value: Dynamic = normalizeTypographyFamily(style.family);
   value !== undefined && items.push(["font-family", value]);
   return items;
 }
-function normalizeTypographyFamily(input?: Dynamic): Dynamic {
-  if (input === undefined) return;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value2: Dynamic = null;
-      for (let value3 of input2 as Dynamic)
-        value2 =
-          value2 === null
-            ? value3 === '"' || value3 === "'"
-              ? value3
+function normalizeTypographyFamily(fontValue?: Dynamic): Dynamic {
+  if (fontValue === undefined) return;
+  let callback: Dynamic = (familyList?: Dynamic): Dynamic => {
+      let quote: Dynamic = null;
+      for (let familyPart of familyList as Dynamic)
+        quote =
+          quote === null
+            ? familyPart === '"' || familyPart === "'"
+              ? familyPart
               : null
-            : value3 === value2
+            : familyPart === quote
               ? null
-              : value2;
-      return value2 === null;
+              : quote;
+      return quote === null;
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      InspectorComputedDataPattern.test(input2) &&
-      callback(input2) &&
+    isUsableFamily: Dynamic = (familyName?: Dynamic): Dynamic =>
+      InspectorComputedDataPattern.test(familyName) &&
+      callback(familyName) &&
       (typeof CSS === "undefined" ||
         typeof CSS.supports != "function" ||
-        CSS.supports("font-family", input2));
-  if (callback2(input.stack)) return input.stack;
+        CSS.supports("font-family", familyName));
+  if (isUsableFamily(fontValue.stack)) return fontValue.stack;
   let value: Dynamic =
     '"' +
-    input.name.replace(/"/g, "") +
+    fontValue.name.replace(/"/g, "") +
     '", ' +
-    TypographyMetricsSansSerifMonoConfig[input.generic];
-  return input.name !== "" && callback2(value)
+    TypographyMetricsSansSerifMonoConfig[fontValue.generic];
+  return fontValue.name !== "" && isUsableFamily(value)
     ? value
-    : TypographyMetricsSansSerifMonoConfig[input.generic];
+    : TypographyMetricsSansSerifMonoConfig[fontValue.generic];
 }
 function matchedDesignSystemTextStyle(
-  input?: Dynamic,
-  options?: Dynamic,
+  styles?: Dynamic,
+  fallback?: Dynamic,
 ): Dynamic {
   let {
     size: value,
-    weight: value2,
-    italic: value3,
-    leading: value4,
-    tracking: value5,
-    face: value6,
-  }: Dynamic = options;
+    weight: weight,
+    italic: italic,
+    leading: leading,
+    tracking: tracking,
+    face: face,
+  }: Dynamic = fallback;
   if (
     value === undefined ||
-    value2 === undefined ||
-    value3 === undefined ||
-    value4 === undefined ||
-    value5 === undefined
+    weight === undefined ||
+    italic === undefined ||
+    leading === undefined ||
+    tracking === undefined
   )
     return;
   let callback: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value9?: Dynamic,
+      candidate?: Dynamic,
+      target?: Dynamic,
+      referenceValue?: Dynamic,
+      tolerance?: Dynamic,
     ): Dynamic =>
-      TypographyMetricsHandler_2(context) === options2
+      TypographyMetricsHandler_2(referenceValue) === target
         ? 0
-        : Math.abs(input2 - context) / value9,
-    value7: Dynamic,
-    value8: Dynamic = 1 / 0;
-  for (let value9 of input as Dynamic) {
-    let style: Dynamic = value9.style;
+        : Math.abs(candidate - referenceValue) / tolerance,
+    bestStyle: Dynamic,
+    bestDistance: Dynamic = 1 / 0;
+  for (let styleCandidate of styles as Dynamic) {
+    let style: Dynamic = styleCandidate.style;
     if (
       TypographyMetricsHandler(style.fontWeight) !==
-        TypographyMetricsHandler(value2) ||
-      style.italic !== value3 ||
+        TypographyMetricsHandler(weight) ||
+      style.italic !== italic ||
       (style.family !== undefined &&
         displayFontFamily(
           normalizeTypographyFamily(style.family) ?? "",
-        ).toLowerCase() !== value6)
+        ).toLowerCase() !== face)
     )
       continue;
     let items: Dynamic = [
@@ -107,94 +107,94 @@ function matchedDesignSystemTextStyle(
       callback(
         style.lineHeight,
         TypographyMetricsLineHeight(style),
-        value4,
+        leading,
         0.02,
       ),
       callback(
         style.letterSpacing,
         TypographyMetricsLetterSpacing(style),
-        value5,
+        tracking,
         0.05,
       ),
     ];
-    if (items.some((input2?: Dynamic): Dynamic => input2 > 1 + 1e-9))
+    if (items.some((distanceValue?: Dynamic): Dynamic => distanceValue > 1 + 1e-9))
       continue;
-    let value10: Dynamic = items[0] + items[1] + items[2];
-    value10 < value8 && ((value7 = value9), (value8 = value10));
+    let distance: Dynamic = items[0] + items[1] + items[2];
+    distance < bestDistance && ((bestStyle = styleCandidate), (bestDistance = distance));
   }
-  return value7;
+  return bestStyle;
 }
-function readTypographyMetrics(input?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value2: Dynamic =
-        input2 == null ? null : /^\s*(-?\d+(?:\.\d+)?)px\s*$/.exec(input2);
-      return value2 ? parseFloat(value2[1]) : undefined;
+function readTypographyMetrics(readStyle?: Dynamic, fallbackMetrics?: Dynamic): Dynamic {
+  let callback: Dynamic = (cssValue?: Dynamic): Dynamic => {
+      let pixels: Dynamic =
+        cssValue == null ? null : /^\s*(-?\d+(?:\.\d+)?)px\s*$/.exec(cssValue);
+      return pixels ? parseFloat(pixels[1]) : undefined;
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value2: Dynamic =
-        input2 == null ? null : /^\s*(\d+(?:\.\d+)?)\s*$/.exec(input2);
-      return value2 ? parseFloat(value2[1]) : undefined;
+    readUnitless: Dynamic = (cssValue?: Dynamic): Dynamic => {
+      let unitless: Dynamic =
+        cssValue == null ? null : /^\s*(\d+(?:\.\d+)?)\s*$/.exec(cssValue);
+      return unitless ? parseFloat(unitless[1]) : undefined;
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (input2 == null) return;
-      if (input2 === "bold") return 700;
-      if (input2 === "normal") return 400;
-      let value2: Dynamic = Number.parseFloat(input2);
-      return Number.isFinite(value2) ? value2 : undefined;
+    readWeight: Dynamic = (weightText?: Dynamic): Dynamic => {
+      if (weightText == null) return;
+      if (weightText === "bold") return 700;
+      if (weightText === "normal") return 400;
+      let numericWeight: Dynamic = Number.parseFloat(weightText);
+      return Number.isFinite(numericWeight) ? numericWeight : undefined;
     },
-    value: Dynamic = input("font-style") ?? options.fontStyle ?? "normal";
+    value: Dynamic = readStyle("font-style") ?? fallbackMetrics.fontStyle ?? "normal";
   return {
-    size: callback(input("font-size")) ?? callback(options.fontSize),
-    weight: callback3(input("font-weight") ?? options.fontWeight),
+    size: callback(readStyle("font-size")) ?? callback(fallbackMetrics.fontSize),
+    weight: readWeight(readStyle("font-weight") ?? fallbackMetrics.fontWeight),
     italic:
       value === "italic" ? true : value === "normal" ? false : undefined,
-    leading: callback2(input("line-height")) ?? callback2(options.lineHeight),
+    leading: readUnitless(readStyle("line-height")) ?? readUnitless(fallbackMetrics.lineHeight),
     tracking:
-      callback(input("letter-spacing")) ?? callback(options.letterSpacing),
+      callback(readStyle("letter-spacing")) ?? callback(fallbackMetrics.letterSpacing),
     face: displayFontFamily(
-      input("font-family") ?? options.fontFamily ?? "",
+      readStyle("font-family") ?? fallbackMetrics.fontFamily ?? "",
     ).toLowerCase(),
   };
 }
 function authoredTypographyMetrics(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  tagName?: Dynamic,
+  styleText?: Dynamic,
+  computedMetrics?: Dynamic,
 ): Dynamic {
   let entries: Dynamic = new Map(
-      parseStyleDeclarations(options).map(
-        (input2?: Dynamic): Dynamic => [input2.prop, input2.value],
+      parseStyleDeclarations(styleText).map(
+        (declaration?: Dynamic): Dynamic => [declaration.prop, declaration.value],
       ),
     ),
     value: Dynamic = normalizeInspectorComputedData("text", {
-      tag: input,
-      computed: context,
+      tag: tagName,
+      computed: computedMetrics,
     });
   return readTypographyMetrics(
-    (input2?: Dynamic): Dynamic => entries.get(input2),
+    (property?: Dynamic): Dynamic => entries.get(property),
     value,
   );
 }
 function resolvedTypographyMetrics(
-  input?: Dynamic,
-  options?: Dynamic,
+  declarations?: Dynamic,
+  fallbackMetrics?: Dynamic,
 ): Dynamic {
   return readTypographyMetrics(
-    (input2?: Dynamic): Dynamic =>
-      input.get(input2) ??
-      (input2 === "font-size"
-        ? options?.fontSize
-        : input2 === "font-family"
-          ? options?.fontFamily
+    (property?: Dynamic): Dynamic =>
+      declarations.get(property) ??
+      (property === "font-size"
+        ? fallbackMetrics?.fontSize
+        : property === "font-family"
+          ? fallbackMetrics?.fontFamily
           : undefined) ??
       undefined,
     {
-      fontSize: options?.rendered?.fontSizePx,
-      fontWeight: options?.rendered?.fontWeight,
-      fontStyle: options?.rendered?.fontStyle,
-      lineHeight: options?.rendered?.lineHeight,
-      letterSpacing: options?.rendered?.letterSpacing,
-      fontFamily: options?.rendered?.fontFamily,
+      fontSize: fallbackMetrics?.rendered?.fontSizePx,
+      fontWeight: fallbackMetrics?.rendered?.fontWeight,
+      fontStyle: fallbackMetrics?.rendered?.fontStyle,
+      lineHeight: fallbackMetrics?.rendered?.lineHeight,
+      letterSpacing: fallbackMetrics?.rendered?.letterSpacing,
+      fontFamily: fallbackMetrics?.rendered?.fontFamily,
     },
   );
 }
@@ -221,23 +221,23 @@ export function installEditorTypographyMetrics(): () => void {
       mono: "monospace",
     };
     TypographyMetricsMin = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => Math.min(context, Math.max(options, input));
-    TypographyMetricsHandler = (input?: Dynamic): Dynamic =>
-      TypographyMetricsMin(Math.round(input / 100) * 100, 100, 900);
-    TypographyMetricsHandler_2 = (input?: Dynamic): Dynamic =>
-      Math.round(input * 100) / 100;
-    TypographyMetricsFontSize = (input?: Dynamic): Dynamic =>
-      TypographyMetricsHandler_2(TypographyMetricsMin(input.fontSize, 1, 9999));
-    TypographyMetricsLineHeight = (input?: Dynamic): Dynamic =>
+      numberValue?: Dynamic,
+      minimum?: Dynamic,
+      maximum?: Dynamic,
+    ): Dynamic => Math.min(maximum, Math.max(minimum, numberValue));
+    TypographyMetricsHandler = (metrics?: Dynamic): Dynamic =>
+      TypographyMetricsMin(Math.round(metrics / 100) * 100, 100, 900);
+    TypographyMetricsHandler_2 = (numberValue?: Dynamic): Dynamic =>
+      Math.round(numberValue * 100) / 100;
+    TypographyMetricsFontSize = (metrics?: Dynamic): Dynamic =>
+      TypographyMetricsHandler_2(TypographyMetricsMin(metrics.fontSize, 1, 9999));
+    TypographyMetricsLineHeight = (metrics?: Dynamic): Dynamic =>
       TypographyMetricsHandler_2(
-        TypographyMetricsMin(input.lineHeight, 0.1, 99),
+        TypographyMetricsMin(metrics.lineHeight, 0.1, 99),
       );
-    TypographyMetricsLetterSpacing = (input?: Dynamic): Dynamic =>
+    TypographyMetricsLetterSpacing = (metrics?: Dynamic): Dynamic =>
       TypographyMetricsHandler_2(
-        TypographyMetricsMin(input.letterSpacing, -999, 999),
+        TypographyMetricsMin(metrics.letterSpacing, -999, 999),
       );
   };
 }

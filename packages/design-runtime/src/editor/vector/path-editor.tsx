@@ -16,7 +16,7 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var jsxVectorPathEditor: Dynamic;
 var VectorPathEditorConstant: Dynamic;
-var VectorPathEditorConstant_2: Dynamic;
+var TOUCH_CONTROL_PADDING_PX: Dynamic;
 var AppifactPenAnchorClaimKey: Dynamic;
 function VectorPathEditor({
   path: path,
@@ -29,147 +29,147 @@ function VectorPathEditor({
   testId: testId,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [value, setSelected]: Dynamic = (0,
     reactHooksLatestCallback_3.useState)(undefined),
-    value3: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    value4: Dynamic = (0, reactHooksLatestCallback_3.useRef)(path);
-  value4.current = path;
-  let value5: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    value6: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    value7: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    value8: Dynamic = value,
-    value9: Dynamic = value8
-      ? path.contours[value8.contour]?.anchors[value8.anchor]
+    editorRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+    pathRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(path);
+  pathRef.current = path;
+  let livePathRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+    committedPathRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+    hoveredPointRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+    selectedPoint: Dynamic = value,
+    selectedAnchor: Dynamic = selectedPoint
+      ? path.contours[selectedPoint.contour]?.anchors[selectedPoint.anchor]
       : undefined;
-  if (value8 && path !== value6.current && path !== value5.current) {
-    let current: Dynamic = value7.current;
+  if (selectedPoint && path !== committedPathRef.current && path !== livePathRef.current) {
+    let current: Dynamic = hoveredPointRef.current;
     if (
       current &&
-      (!value9 ||
-        Math.abs(value9.x - current.x) > 0.25 ||
-        Math.abs(value9.y - current.y) > 0.25)
+      (!selectedAnchor ||
+        Math.abs(selectedAnchor.x - current.x) > 0.25 ||
+        Math.abs(selectedAnchor.y - current.y) > 0.25)
     ) {
-      let part: Dynamic = value8.part;
-      value8 = undefined;
+      let part: Dynamic = selectedPoint.part;
+      selectedPoint = undefined;
       path.contours.forEach(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input.anchors.forEach(
-            (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-              Math.abs(input2.x - current.x) <= 0.25 &&
-                Math.abs(input2.y - current.y) <= 0.25 &&
-                (value8 = {
-                  contour: options,
-                  anchor: options2,
+        (contour?: Dynamic, contourIndex?: Dynamic): Dynamic =>
+          contour.anchors.forEach(
+            (anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
+              Math.abs(anchor.x - current.x) <= 0.25 &&
+                Math.abs(anchor.y - current.y) <= 0.25 &&
+                (selectedPoint = {
+                  contour: contourIndex,
+                  anchor: anchorIndex,
                   part:
-                    part !== "anchor" && input2.seg.kind !== "cubic"
+                    part !== "anchor" && anchor.seg.kind !== "cubic"
                       ? "anchor"
                       : part,
                 });
             },
           ),
       );
-    } else value9 || (value8 = undefined);
-    let value21: Dynamic = value8;
-    value21
-      ? (value21.contour !== value.contour ||
-          value21.anchor !== value.anchor ||
-          value21.part !== value.part) &&
-        value2(value21)
-      : value2(undefined);
+    } else selectedAnchor || (selectedPoint = undefined);
+    let selectedCandidate: Dynamic = selectedPoint;
+    selectedCandidate
+      ? (selectedCandidate.contour !== value.contour ||
+          selectedCandidate.anchor !== value.anchor ||
+          selectedCandidate.part !== value.part) &&
+        setSelected(selectedCandidate)
+      : setSelected(undefined);
   }
-  let value10: Dynamic = value8,
-    value11: Dynamic = value10
-      ? path.contours[value10.contour]?.anchors[value10.anchor]
+  let selectedPointState: Dynamic = selectedPoint,
+    selectedAnchorState: Dynamic = selectedPointState
+      ? path.contours[selectedPointState.contour]?.anchors[selectedPointState.anchor]
       : undefined;
-  value7.current = value11
+  hoveredPointRef.current = selectedAnchorState
     ? {
-        x: value11.x,
-        y: value11.y,
+        x: selectedAnchorState.x,
+        y: selectedAnchorState.y,
       }
     : null;
-  value6.current = path;
-  let value12: Dynamic = (0, reactHooksLatestCallback_3.useRef)({
+  committedPathRef.current = path;
+  let viewportRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)({
       left: 0,
       top: 0,
     }),
-    value13: Dynamic = (0, reactHooksLatestCallback_3.useMemo)(
+    viewTransform: Dynamic = (0, reactHooksLatestCallback_3.useMemo)(
       (): Dynamic => ({
         scale: scale,
-        toScreen: (input?: Dynamic): Dynamic => ({
-          x: (input.x - origin.x) * scale,
-          y: (input.y - origin.y) * scale,
+        toScreen: (point?: Dynamic): Dynamic => ({
+          x: (point.x - origin.x) * scale,
+          y: (point.y - origin.y) * scale,
         }),
-        toModel: (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value21: Dynamic = value3.current?.getBoundingClientRect();
+        toModel: (screenX?: Dynamic, screenY?: Dynamic): Dynamic => {
+          let canvasBounds: Dynamic = editorRef.current?.getBoundingClientRect();
           return {
             x:
               origin.x +
-              (input - (value21?.left ?? 0) + value12.current.left) / scale,
+              (screenX - (canvasBounds?.left ?? 0) + viewportRef.current.left) / scale,
             y:
               origin.y +
-              (options - (value21?.top ?? 0) + value12.current.top) / scale,
+              (screenY - (canvasBounds?.top ?? 0) + viewportRef.current.top) / scale,
           };
         },
       }),
       [scale, origin.x, origin.y],
     ),
-    value14: Dynamic = (0, reactHooksLatestCallback_3.useRef)({});
+    interactionRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)({});
   (0, reactHooksLatestCallback_3.useEffect)((): Dynamic => {
-    let callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      input.detail !== value14.current && value2(undefined);
+    let handleSelectionChange: Dynamic = (selection?: Dynamic): Dynamic => {
+      selection.detail !== interactionRef.current && setSelected(undefined);
     };
     (window as Dynamic).addEventListener(
       AppifactPenAnchorClaimKey,
-      callback4,
+      handleSelectionChange,
     );
     return (): Dynamic =>
       (window as Dynamic).removeEventListener(
         AppifactPenAnchorClaimKey,
-        callback4,
+        handleSelectionChange,
       );
   }, []);
-  let value15: Dynamic = useVectorEditor({
+  let editorSession: Dynamic = useVectorEditor({
       path: path,
-      onLive: (input?: Dynamic): Dynamic => {
-        value5.current = input;
-        onLive(input);
+      onLive: (liveSelection?: Dynamic): Dynamic => {
+        livePathRef.current = liveSelection;
+        onLive(liveSelection);
       },
-      onCommit: (input?: Dynamic, options?: Dynamic): Dynamic => {
-        value5.current = options;
-        onCommit(input, options);
+      onCommit: (committedSelection?: Dynamic, committedPath?: Dynamic): Dynamic => {
+        livePathRef.current = committedPath;
+        onCommit(committedSelection, committedPath);
       },
       tool: "select",
-      selected: value10,
-      onSelect: (input?: Dynamic): Dynamic => {
-        input &&
+      selected: selectedPointState,
+      onSelect: (selection?: Dynamic): Dynamic => {
+        selection &&
           (window as Dynamic).dispatchEvent(
             new CustomEvent(AppifactPenAnchorClaimKey, {
-              detail: value14.current,
+              detail: interactionRef.current,
             }),
           );
-        value2(input);
+        setSelected(selection);
       },
-      view: value13,
+      view: viewTransform,
       controls: "selected",
     }),
-    { handles: value16 }: Dynamic = value15,
-    value17: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    value18: Dynamic = (0, reactHooksLatestCallback_3.useRef)({
+    { handles: pointerHandlers }: Dynamic = editorSession,
+    gestureRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+    interactionHandlers: Dynamic = (0, reactHooksLatestCallback_3.useRef)({
       onCancel: onCancel,
       onGesture: onGesture,
     });
-  value18.current = {
+  interactionHandlers.current = {
     onCancel: onCancel,
     onGesture: onGesture,
   };
   (0, reactHooksLatestCallback_3.useEffect)(
-    (): Dynamic => (): Dynamic => value17.current?.end("cancel"),
+    (): Dynamic => (): Dynamic => gestureRef.current?.end("cancel"),
     [],
   );
   (0, reactHooksLatestCallback_3.useEffect)((): Dynamic => {
-    let value21: Dynamic = value10;
-    if (!value21) return;
-    let callback4: Dynamic = (event?: Dynamic): Dynamic => {
+    let activeSelection: Dynamic = selectedPointState;
+    if (!activeSelection) return;
+    let handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (event.key !== "Delete" && event.key !== "Backspace") return;
       let target: Dynamic = event.target;
       if (
@@ -180,143 +180,143 @@ function VectorPathEditor({
         hasBlockingEditorOverlay()
       )
         return;
-      let value22: Dynamic =
-        value21.part === "anchor"
+      let nextSelection: Dynamic =
+        activeSelection.part === "anchor"
           ? deleteVectorAnchorKeepingCurve(
-              value4.current,
-              value21,
+              pathRef.current,
+              activeSelection,
             )
-          : value4.current;
-      value22 &&
+          : pathRef.current;
+      nextSelection &&
         (event.preventDefault(),
         event.stopImmediatePropagation(),
-        value21.part === "anchor" &&
-          (value17.current?.end("cancel"),
-          value15.cancelSession(),
-          value2(undefined),
-          (value5.current = value22),
-          onCommit(value4.current, value22, true)));
+        activeSelection.part === "anchor" &&
+          (gestureRef.current?.end("cancel"),
+          editorSession.cancelSession(),
+          setSelected(undefined),
+          (livePathRef.current = nextSelection),
+          onCommit(pathRef.current, nextSelection, true)));
     };
-    (window as Dynamic).addEventListener("keydown", callback4, true);
+    (window as Dynamic).addEventListener("keydown", handleKeyDown, true);
     return (): Dynamic =>
-      (window as Dynamic).removeEventListener("keydown", callback4, true);
-  }, [value10?.contour, value10?.anchor, value10?.part, onCommit]);
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input.button !== 0 || value17.current) return;
-      input.stopPropagation();
+      (window as Dynamic).removeEventListener("keydown", handleKeyDown, true);
+  }, [selectedPointState?.contour, selectedPointState?.anchor, selectedPointState?.part, onCommit]);
+  let callback: Dynamic = (pointerDownEvent?: Dynamic): Dynamic => {
+      if (pointerDownEvent.button !== 0 || gestureRef.current) return;
+      pointerDownEvent.stopPropagation();
       let activeElement: Dynamic = (document as Dynamic).activeElement;
       activeElement &&
         activeElement.tagName === "IFRAME" &&
         activeElement.blur();
       focusCanvasDocument();
-      value16.onPointerDown(input);
-      let pointerId: Dynamic = input.pointerId,
-        callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-          input2.pointerId === pointerId && value17.current?.end("cancel");
+      pointerHandlers.onPointerDown(pointerDownEvent);
+      let pointerId: Dynamic = pointerDownEvent.pointerId,
+        handlePointerCancel: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+          pointerEvent.pointerId === pointerId && gestureRef.current?.end("cancel");
         };
-      value17.current = {
-        end: (input2?: Dynamic): Dynamic => {
-          value17.current = null;
-          (window as Dynamic).removeEventListener("pointerup", callback4);
-          (window as Dynamic).removeEventListener("pointercancel", callback4);
-          input2 === "cancel" &&
-            (value15.cancelSession(), value18.current.onCancel());
-          value18.current.onGesture?.(false);
+      gestureRef.current = {
+        end: (endReason?: Dynamic): Dynamic => {
+          gestureRef.current = null;
+          (window as Dynamic).removeEventListener("pointerup", handlePointerCancel);
+          (window as Dynamic).removeEventListener("pointercancel", handlePointerCancel);
+          endReason === "cancel" &&
+            (editorSession.cancelSession(), interactionHandlers.current.onCancel());
+          interactionHandlers.current.onGesture?.(false);
         },
       };
-      (window as Dynamic).addEventListener("pointerup", callback4);
-      (window as Dynamic).addEventListener("pointercancel", callback4);
+      (window as Dynamic).addEventListener("pointerup", handlePointerCancel);
+      (window as Dynamic).addEventListener("pointercancel", handlePointerCancel);
       onGesture?.(true);
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      value16.onPointerUp(input);
-      value17.current?.end("up");
+    handlePointerUp: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+      pointerHandlers.onPointerUp(pointerEvent);
+      gestureRef.current?.end("up");
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      value16.onPointerCancel(input);
-      value17.current?.end("cancel");
+    handlePointerCancelEvent: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+      pointerHandlers.onPointerCancel(pointerEvent);
+      gestureRef.current?.end("cancel");
     },
     state: Dynamic = {
       onPointerDown: callback,
-      onPointerMove: value16.onPointerMove,
-      onPointerUp: callback2,
-      onPointerCancel: callback3,
+      onPointerMove: pointerHandlers.onPointerMove,
+      onPointerUp: handlePointerUp,
+      onPointerCancel: handlePointerCancelEvent,
     },
-    value19: Dynamic =
-      value15.hitRadiusPx === VectorPathEditorConstant_2
-        ? VectorPathEditorConstant_2
+    controlPadding: Dynamic =
+      editorSession.hitRadiusPx === TOUCH_CONTROL_PADDING_PX
+        ? TOUCH_CONTROL_PADDING_PX
         : VectorPathEditorConstant,
     items: Dynamic = [],
-    [items2, items3, items4, items5]: Dynamic = [
+    [minX, minY, maxX, maxY]: Dynamic = [
       1 / 0,
       1 / 0,
       -1 / 0,
       -1 / 0,
     ];
   path.contours.forEach(
-    (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input.anchors.forEach(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-          let callback4: Dynamic = (
-            input3?: Dynamic,
-            options3?: Dynamic,
-            context?: Dynamic,
+    (contour?: Dynamic, contourIndex?: Dynamic): Dynamic =>
+      contour.anchors.forEach(
+        (anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
+          let renderControl: Dynamic = (
+            controlPoint?: Dynamic,
+            hoverPoint?: Dynamic,
+            cursor?: Dynamic,
           ): Dynamic => {
-            let value21: Dynamic = value13.toScreen(options3);
-            [items2, items3, items4, items5] = [
-              Math.min(items2, value21.x),
-              Math.min(items3, value21.y),
-              Math.max(items4, value21.x),
-              Math.max(items5, value21.y),
+            let screenPoint: Dynamic = viewTransform.toScreen(hoverPoint);
+            [minX, minY, maxX, maxY] = [
+              Math.min(minX, screenPoint.x),
+              Math.min(minY, screenPoint.y),
+              Math.max(maxX, screenPoint.x),
+              Math.max(maxY, screenPoint.y),
             ];
             items.push({
-              key: input3,
-              s: value21,
-              cursor: context,
+              key: controlPoint,
+              s: screenPoint,
+              cursor: cursor,
             });
           };
-          options2 > 0 &&
-            input2.seg.kind === "cubic" &&
+          anchorIndex > 0 &&
+            anchor.seg.kind === "cubic" &&
             (showVectorControls(
               "selected",
-              input,
-              options,
-              options2,
+              contour,
+              contourIndex,
+              anchorIndex,
               "c",
-              value10,
+              selectedPointState,
             ) &&
-              callback4(
-                `c1${String(options)}:${String(options2)}`,
-                input2.seg.c1,
+              renderControl(
+                `c1${String(contourIndex)}:${String(anchorIndex)}`,
+                anchor.seg.c1,
                 "crosshair",
               ),
             showVectorControls(
               "selected",
-              input,
-              options,
-              options2,
+              contour,
+              contourIndex,
+              anchorIndex,
               "c2",
-              value10,
+              selectedPointState,
             ) &&
-              callback4(
-                `c2${String(options)}:${String(options2)}`,
-                input2.seg.c2,
+              renderControl(
+                `c2${String(contourIndex)}:${String(anchorIndex)}`,
+                anchor.seg.c2,
                 "crosshair",
               ));
-          callback4(
-            `a${String(options)}:${String(options2)}`,
-            input2,
+          renderControl(
+            `a${String(contourIndex)}:${String(anchorIndex)}`,
+            anchor,
             "move",
           );
         },
       ),
   );
-  let value20: Dynamic = items.length
+  let canvasRect: Dynamic = items.length
     ? {
-        left: items2 - value19 - 2,
-        top: items3 - value19 - 2,
-        w: items4 - items2 + 2 * value19 + 4,
-        h: items5 - items3 + 2 * value19 + 4,
+        left: minX - controlPadding - 2,
+        top: minY - controlPadding - 2,
+        w: maxX - minX + 2 * controlPadding + 4,
+        h: maxY - minY + 2 * controlPadding + 4,
       }
     : {
         left: 0,
@@ -324,31 +324,31 @@ function VectorPathEditor({
         w: 1,
         h: 1,
       };
-  value12.current = value20;
+  viewportRef.current = canvasRect;
   return (
     <svg
-      ref={value3}
+      ref={editorRef}
       data-mega-chrome={"pen-anchors"}
       data-testid={testId}
       className={"pointer-events-none absolute select-none"}
-      width={value20.w}
-      height={value20.h}
+      width={canvasRect.w}
+      height={canvasRect.h}
       style={{
         ...VectorAnnotationPenEditorOverflowTouchActionConfig,
-        left: value20.left,
-        top: value20.top,
+        left: canvasRect.left,
+        top: canvasRect.top,
       }}
     >
       <g
-        transform={`translate(${String(-value20.left)} ${String(-value20.top)})`}
+        transform={`translate(${String(-canvasRect.left)} ${String(-canvasRect.top)})`}
       >
         <VectorPathControls
           path={path}
-          selected={value10}
-          draft={value15.draft}
+          selected={selectedPointState}
+          draft={editorSession.draft}
           hover={undefined}
-          view={value13}
-          hitRadiusPx={value15.hitRadiusPx}
+          view={viewTransform}
+          hitRadiusPx={editorSession.hitRadiusPx}
           controls={"selected"}
         />
         {items.map(
@@ -358,7 +358,7 @@ function VectorPathEditor({
               data-pen-part={key}
               cx={s.x}
               cy={s.y}
-              r={value19}
+              r={controlPadding}
               fill={"transparent"}
               style={{
                 pointerEvents: "auto",
@@ -378,7 +378,7 @@ export {
   jsxVectorPathEditor,
   VectorPathEditor,
   VectorPathEditorConstant,
-  VectorPathEditorConstant_2,
+  TOUCH_CONTROL_PADDING_PX as VectorPathEditorConstant_2,
 };
 export function installEditorVectorPathEditor(): () => void {
   return () => {
@@ -387,7 +387,7 @@ export function installEditorVectorPathEditor(): () => void {
       1,
     );
     VectorPathEditorConstant = 10;
-    VectorPathEditorConstant_2 = 20;
+    TOUCH_CONTROL_PADDING_PX = 20;
     AppifactPenAnchorClaimKey = "appifact-pen-anchor-claim";
   };
 }

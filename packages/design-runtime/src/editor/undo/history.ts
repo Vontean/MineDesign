@@ -292,14 +292,14 @@ export function canContinueUndoEdit(
   key: unknown,
   now: number,
   windowMs: number,
-  value: unknown,
+  editValue: unknown,
 ): boolean {
   return (
     open !== null &&
     open.name === name &&
     open.key === key &&
     now - open.at < windowMs &&
-    typeof value == "string"
+    typeof editValue == "string"
   );
 }
 
@@ -307,11 +307,11 @@ export function canContinueUndoEdit(
 export function combineUndoEntry(
   state: UndoHistoryState,
   entry: PropUndoEntry | ScriptUndoEntry,
-  options: { continues: boolean; limit: number },
+  combineOptions: { continues: boolean; limit: number },
 ): "coalesced" | "pushed" {
   const top = state.undo[state.undo.length - 1];
   if (
-    options.continues &&
+    combineOptions.continues &&
     top !== undefined &&
     typeof top != "string" &&
     top.kind === entry.kind &&
@@ -322,7 +322,7 @@ export function combineUndoEntry(
     return "coalesced";
   }
   state.undo.push(entry);
-  trimUndoHistory(state, state.undo.length - options.limit);
+  trimUndoHistory(state, state.undo.length - combineOptions.limit);
   state.redo = [];
   return "pushed";
 }

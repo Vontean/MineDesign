@@ -4,292 +4,292 @@ import {
 } from "../../runtime-types";
 
 var VectorPathEditingConstant: Dynamic;
-var VectorPathEditingConstant_2: Dynamic;
+var TOUCH_HIT_RADIUS_PX: Dynamic;
 var VectorPathEditingLimit: Dynamic;
 function constrainVectorPointAngle(
-  input?: Dynamic,
-  options?: Dynamic,
+  anchorPoint?: Dynamic,
+  targetPoint?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.x - input.x,
-    value2: Dynamic = options.y - input.y,
-    value3: Dynamic = Math.hypot(value, value2);
-  if (value3 === 0)
+  let value: Dynamic = targetPoint.x - anchorPoint.x,
+    deltaY: Dynamic = targetPoint.y - anchorPoint.y,
+    distance: Dynamic = Math.hypot(value, deltaY);
+  if (distance === 0)
     return {
-      x: input.x,
-      y: input.y,
+      x: anchorPoint.x,
+      y: anchorPoint.y,
     };
-  let value4: Dynamic = Math.PI / 4,
-    value5: Dynamic = Math.round(Math.atan2(value2, value) / value4) * value4;
+  let angleStep: Dynamic = Math.PI / 4,
+    snappedAngle: Dynamic = Math.round(Math.atan2(deltaY, value) / angleStep) * angleStep;
   return {
-    x: input.x + value3 * Math.cos(value5),
-    y: input.y + value3 * Math.sin(value5),
+    x: anchorPoint.x + distance * Math.cos(snappedAngle),
+    y: anchorPoint.y + distance * Math.sin(snappedAngle),
   };
 }
-function previousContourAnchor(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (options > 0) return input.anchors[options - 1];
-  if (input.closed) return input.anchors[input.anchors.length - 1];
+function previousContourAnchor(contour?: Dynamic, anchorIndex?: Dynamic): Dynamic {
+  if (anchorIndex > 0) return contour.anchors[anchorIndex - 1];
+  if (contour.closed) return contour.anchors[contour.anchors.length - 1];
 }
 function moveVectorPart(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  vectorPath?: Dynamic,
+  selection?: Dynamic,
+  position?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.contours[options.contour];
-  if (!value) return input;
-  let value2: Dynamic = value.anchors[options.anchor];
-  if (!value2) return input;
-  let value3: Dynamic = value.anchors.slice(),
-    length: Dynamic = value3.length;
-  if (options.part === "anchor") {
-    let value5: Dynamic = context.x - value2.x,
-      value6: Dynamic = context.y - value2.y,
-      value7: Dynamic =
-        value2.seg.kind === "quad"
+  let value: Dynamic = vectorPath.contours[selection.contour];
+  if (!value) return vectorPath;
+  let anchor: Dynamic = value.anchors[selection.anchor];
+  if (!anchor) return vectorPath;
+  let anchors: Dynamic = value.anchors.slice(),
+    length: Dynamic = anchors.length;
+  if (selection.part === "anchor") {
+    let deltaX: Dynamic = position.x - anchor.x,
+      deltaY: Dynamic = position.y - anchor.y,
+      updatedSegment: Dynamic =
+        anchor.seg.kind === "quad"
           ? {
               kind: "quad",
               c: {
-                x: value2.seg.c.x + value5,
-                y: value2.seg.c.y + value6,
+                x: anchor.seg.c.x + deltaX,
+                y: anchor.seg.c.y + deltaY,
               },
             }
-          : value2.seg.kind === "cubic"
+          : anchor.seg.kind === "cubic"
             ? {
                 kind: "cubic",
-                c1: value2.seg.c1,
+                c1: anchor.seg.c1,
                 c2: {
-                  x: value2.seg.c2.x + value5,
-                  y: value2.seg.c2.y + value6,
+                  x: anchor.seg.c2.x + deltaX,
+                  y: anchor.seg.c2.y + deltaY,
                 },
               }
-            : value2.seg;
-    value3[options.anchor] = {
-      ...value2,
-      x: context.x,
-      y: context.y,
-      seg: value7,
+            : anchor.seg;
+    anchors[selection.anchor] = {
+      ...anchor,
+      x: position.x,
+      y: position.y,
+      seg: updatedSegment,
     };
-    let value8: Dynamic =
-      options.anchor + 1 < length
-        ? options.anchor + 1
+    let nextAnchorIndex: Dynamic =
+      selection.anchor + 1 < length
+        ? selection.anchor + 1
         : value.closed
           ? 0
           : -1;
-    if (value8 >= 0) {
-      let value9: Dynamic = value3[value8];
-      (value9 && value9.seg.kind === "quad") ||
-        (value9 &&
-          value9.seg.kind === "cubic" &&
-          (value3[value8] = {
-            ...value9,
+    if (nextAnchorIndex >= 0) {
+      let nextAnchor: Dynamic = anchors[nextAnchorIndex];
+      (nextAnchor && nextAnchor.seg.kind === "quad") ||
+        (nextAnchor &&
+          nextAnchor.seg.kind === "cubic" &&
+          (anchors[nextAnchorIndex] = {
+            ...nextAnchor,
             seg: {
               kind: "cubic",
               c1: {
-                x: value9.seg.c1.x + value5,
-                y: value9.seg.c1.y + value6,
+                x: nextAnchor.seg.c1.x + deltaX,
+                y: nextAnchor.seg.c1.y + deltaY,
               },
-              c2: value9.seg.c2,
+              c2: nextAnchor.seg.c2,
             },
           }));
     }
   } else {
-    let seg: Dynamic = value2.seg;
-    if (options.part === "c" && seg.kind === "quad")
-      value3[options.anchor] = {
-        ...value2,
+    let seg: Dynamic = anchor.seg;
+    if (selection.part === "c" && seg.kind === "quad")
+      anchors[selection.anchor] = {
+        ...anchor,
         seg: {
           kind: "quad",
-          c: context,
+          c: position,
         },
       };
-    else if (options.part === "c" && seg.kind === "cubic")
-      value3[options.anchor] = {
-        ...value2,
+    else if (selection.part === "c" && seg.kind === "cubic")
+      anchors[selection.anchor] = {
+        ...anchor,
         seg: {
           kind: "cubic",
-          c1: context,
+          c1: position,
           c2: seg.c2,
         },
       };
-    else if (options.part === "c2" && seg.kind === "cubic")
-      value3[options.anchor] = {
-        ...value2,
+    else if (selection.part === "c2" && seg.kind === "cubic")
+      anchors[selection.anchor] = {
+        ...anchor,
         seg: {
           kind: "cubic",
           c1: seg.c1,
-          c2: context,
+          c2: position,
         },
       };
-    else return input;
+    else return vectorPath;
   }
-  let value4: Dynamic = input.contours.slice();
-  value4[options.contour] = {
+  let updatedContours: Dynamic = vectorPath.contours.slice();
+  updatedContours[selection.contour] = {
     ...value,
-    anchors: value3,
+    anchors: anchors,
   };
   let state: Dynamic = {
-    contours: value4,
+    contours: updatedContours,
   };
-  if (options.part !== "anchor") state = insertVectorAnchor(state, options);
+  if (selection.part !== "anchor") state = insertVectorAnchor(state, selection);
   else {
-    let value5: Dynamic = state.contours[options.contour];
-    if (value5 && value5.anchors.length > 1) {
-      let length2: Dynamic = value5.anchors.length,
-        value6: Dynamic =
-          options.anchor + 1 < length2 ? options.anchor + 1 : 0,
-        value7: Dynamic = value5.anchors[value6]?.seg.kind;
+    let contourState: Dynamic = state.contours[selection.contour];
+    if (contourState && contourState.anchors.length > 1) {
+      let anchorCount: Dynamic = contourState.anchors.length,
+        followingAnchorIndex: Dynamic =
+          selection.anchor + 1 < anchorCount ? selection.anchor + 1 : 0,
+        nextSegmentKind: Dynamic = contourState.anchors[followingAnchorIndex]?.seg.kind;
       state = setVectorTangentKind(
         state,
-        options.contour,
-        options.anchor,
+        selection.contour,
+        selection.anchor,
         "arriving",
-        value7 === "quad"
+        nextSegmentKind === "quad"
           ? {
-              x: value2.x,
-              y: value2.y,
+              x: anchor.x,
+              y: anchor.y,
             }
           : undefined,
       );
-      let value8: Dynamic =
-          options.anchor > 0
-            ? options.anchor - 1
-            : value5.closed
-              ? length2 - 1
+      let previousAnchorIndex: Dynamic =
+          selection.anchor > 0
+            ? selection.anchor - 1
+            : contourState.closed
+              ? anchorCount - 1
               : -1,
-        value9: Dynamic =
-          options.anchor + 1 < length2 ? options.anchor + 1 : 0;
-      value8 >= 0 &&
-        value8 !== value9 &&
+        nextAnchorIndex: Dynamic =
+          selection.anchor + 1 < anchorCount ? selection.anchor + 1 : 0;
+      previousAnchorIndex >= 0 &&
+        previousAnchorIndex !== nextAnchorIndex &&
         (state = setVectorTangentKind(
           state,
-          options.contour,
-          value8,
+          selection.contour,
+          previousAnchorIndex,
           "departing",
         ));
     }
   }
   return state;
 }
-function insertVectorAnchor(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.contours[options.contour];
-  if (!value) return input;
-  let value2: Dynamic = value.anchors[options.anchor];
-  if (!value2) return input;
+function insertVectorAnchor(vectorPath?: Dynamic, selection?: Dynamic): Dynamic {
+  let value: Dynamic = vectorPath.contours[selection.contour];
+  if (!value) return vectorPath;
+  let anchor: Dynamic = value.anchors[selection.anchor];
+  if (!anchor) return vectorPath;
   let length: Dynamic = value.anchors.length,
-    value3: Dynamic =
-      options.anchor > 0
-        ? options.anchor - 1
+    previousAnchorIndex: Dynamic =
+      selection.anchor > 0
+        ? selection.anchor - 1
         : value.closed
           ? length - 1
           : -1;
-  if (length === 1) return input;
-  let value4: Dynamic = input,
-    seg: Dynamic = value2.seg;
-  if (options.part === "c" && seg.kind === "quad") {
-    value4 = setVectorTangentKind(
-      value4,
-      options.contour,
-      options.anchor,
+  if (length === 1) return vectorPath;
+  let state: Dynamic = vectorPath,
+    seg: Dynamic = anchor.seg;
+  if (selection.part === "c" && seg.kind === "quad") {
+    state = setVectorTangentKind(
+      state,
+      selection.contour,
+      selection.anchor,
       "arriving",
     );
-    let value5: Dynamic =
-      options.anchor + 1 < length ? options.anchor + 1 : 0;
-    value3 >= 0 &&
-      value3 !== value5 &&
-      (value4 = setVectorTangentKind(
-        value4,
-        options.contour,
-        value3,
+    let nextAnchorIndex: Dynamic =
+      selection.anchor + 1 < length ? selection.anchor + 1 : 0;
+    previousAnchorIndex >= 0 &&
+      previousAnchorIndex !== nextAnchorIndex &&
+      (state = setVectorTangentKind(
+        state,
+        selection.contour,
+        previousAnchorIndex,
         "departing",
       ));
   } else
-    options.part === "c" && seg.kind === "cubic"
-      ? value3 >= 0 &&
-        (value4 = setVectorTangentKind(
-          value4,
-          options.contour,
-          value3,
+    selection.part === "c" && seg.kind === "cubic"
+      ? previousAnchorIndex >= 0 &&
+        (state = setVectorTangentKind(
+          state,
+          selection.contour,
+          previousAnchorIndex,
           "departing",
         ))
-      : options.part === "c2" &&
+      : selection.part === "c2" &&
         seg.kind === "cubic" &&
-        (value4 = setVectorTangentKind(
-          value4,
-          options.contour,
-          options.anchor,
+        (state = setVectorTangentKind(
+          state,
+          selection.contour,
+          selection.anchor,
           "arriving",
         ));
-  return value4;
+  return state;
 }
 function contourTangentDirections(
-  input?: Dynamic,
-  options?: Dynamic,
+  contour?: Dynamic,
+  anchorIndex?: Dynamic,
 ): Dynamic {
-  let length: Dynamic = input.anchors.length,
+  let length: Dynamic = contour.anchors.length,
     value: Dynamic =
-      options + 1 < length ? options + 1 : input.closed ? 0 : -1,
-    value2: Dynamic = input.anchors[options]?.seg,
-    value3: Dynamic = value >= 0 ? input.anchors[value]?.seg : undefined,
-    value4: Dynamic =
-      (options > 0 || input.closed) && value2 && value2.kind !== "line"
-        ? value2.kind === "quad"
-          ? value2.c
-          : value2.c2
+      anchorIndex + 1 < length ? anchorIndex + 1 : contour.closed ? 0 : -1,
+    segment: Dynamic = contour.anchors[anchorIndex]?.seg,
+    previousSegment: Dynamic = value >= 0 ? contour.anchors[value]?.seg : undefined,
+    arrivingControl: Dynamic =
+      (anchorIndex > 0 || contour.closed) && segment && segment.kind !== "line"
+        ? segment.kind === "quad"
+          ? segment.c
+          : segment.c2
         : undefined,
-    value5: Dynamic =
-      value3 && value3.kind !== "line"
-        ? value3.kind === "quad"
-          ? value3.c
-          : value3.c1
+    departingControl: Dynamic =
+      previousSegment && previousSegment.kind !== "line"
+        ? previousSegment.kind === "quad"
+          ? previousSegment.c
+          : previousSegment.c1
         : undefined;
   return {
-    arriving: value4,
-    departing: value5,
+    arriving: arrivingControl,
+    departing: departingControl,
     nextI: value,
   };
 }
 function setVectorTangentKind(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  vectorPath?: Dynamic,
+  anchorIndex?: Dynamic,
+  contourIndex?: Dynamic,
+  tangentSide?: Dynamic,
+  fallbackControl?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = input.contours[options];
-  if (!value2) return input;
-  let value3: Dynamic = value2.anchors[context];
-  if (!value3) return input;
-  let value4: Dynamic = value3.tangent ?? "corner";
-  if (value4 === "corner") return input;
+  let contour: Dynamic = vectorPath.contours[anchorIndex];
+  if (!contour) return vectorPath;
+  let anchor: Dynamic = contour.anchors[contourIndex];
+  if (!anchor) return vectorPath;
+  let tangentKind: Dynamic = anchor.tangent ?? "corner";
+  if (tangentKind === "corner") return vectorPath;
   let {
-    arriving: value5,
-    departing: value6,
-    nextI: value7,
-  }: Dynamic = contourTangentDirections(value2, context);
-  if (!value5 || !value6) return input;
-  let value8: Dynamic = value === "arriving" ? value5 : value6,
-    value9: Dynamic = value === "arriving" ? value6 : value5,
-    value10: Dynamic = value3.x - value8.x,
-    value11: Dynamic = value3.y - value8.y,
-    value12: Dynamic = Math.hypot(value10, value11);
-  if (value12 === 0) return input;
-  let value13: Dynamic = extra ?? value3,
-    value14: Dynamic =
-      value4 === "symmetric"
-        ? value12
-        : Math.hypot(value9.x - value13.x, value9.y - value13.y),
-    value15: Dynamic = value10 / value12,
-    value16: Dynamic = value11 / value12,
+    arriving: arrivingControl,
+    departing: departingControl,
+    nextI: nextAnchorIndex,
+  }: Dynamic = contourTangentDirections(contour, contourIndex);
+  if (!arrivingControl || !departingControl) return vectorPath;
+  let primaryControl: Dynamic = tangentSide === "arriving" ? arrivingControl : departingControl,
+    secondaryControl: Dynamic = tangentSide === "arriving" ? departingControl : arrivingControl,
+    deltaX: Dynamic = anchor.x - primaryControl.x,
+    deltaY: Dynamic = anchor.y - primaryControl.y,
+    distance: Dynamic = Math.hypot(deltaX, deltaY);
+  if (distance === 0) return vectorPath;
+  let referenceControl: Dynamic = fallbackControl ?? anchor,
+    controlDistance: Dynamic =
+      tangentKind === "symmetric"
+        ? distance
+        : Math.hypot(secondaryControl.x - referenceControl.x, secondaryControl.y - referenceControl.y),
+    unitX: Dynamic = deltaX / distance,
+    unitY: Dynamic = deltaY / distance,
     state: Dynamic = {
-      x: value3.x + value15 * value14,
-      y: value3.y + value16 * value14,
+      x: anchor.x + unitX * controlDistance,
+      y: anchor.y + unitY * controlDistance,
     },
-    value17: Dynamic = value2.anchors.slice();
-  if (value === "arriving") {
-    let value19: Dynamic = value17[value7];
-    if (!value19) return input;
-    let seg: Dynamic = value19.seg;
-    value17[value7] = {
-      ...value19,
+    anchors: Dynamic = contour.anchors.slice();
+  if (tangentSide === "arriving") {
+    let targetAnchor: Dynamic = anchors[nextAnchorIndex];
+    if (!targetAnchor) return vectorPath;
+    let seg: Dynamic = targetAnchor.seg;
+    anchors[nextAnchorIndex] = {
+      ...targetAnchor,
       seg:
         seg.kind === "quad"
           ? {
@@ -305,9 +305,9 @@ function setVectorTangentKind(
             : seg,
     };
   } else {
-    let seg: Dynamic = value3.seg;
-    value17[context] = {
-      ...value3,
+    let seg: Dynamic = anchor.seg;
+    anchors[contourIndex] = {
+      ...anchor,
       seg:
         seg.kind === "quad"
           ? {
@@ -323,77 +323,77 @@ function setVectorTangentKind(
             : seg,
     };
   }
-  let value18: Dynamic = input.contours.slice();
-  value18[options] = {
-    ...value2,
-    anchors: value17,
+  let updatedContours: Dynamic = vectorPath.contours.slice();
+  updatedContours[anchorIndex] = {
+    ...contour,
+    anchors: anchors,
   };
   return {
-    contours: value18,
+    contours: updatedContours,
   };
 }
-function resetVectorControl(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (options.part === "anchor") return input;
-  let value: Dynamic = input.contours[options.contour];
-  if (!value) return input;
-  let value2: Dynamic = value.anchors[options.anchor];
-  if (!value2 || value2.seg.kind === "line") return input;
-  let value3: Dynamic = value.anchors.slice();
-  value3[options.anchor] = {
-    ...value2,
+function resetVectorControl(vectorPath?: Dynamic, selection?: Dynamic): Dynamic {
+  if (selection.part === "anchor") return vectorPath;
+  let value: Dynamic = vectorPath.contours[selection.contour];
+  if (!value) return vectorPath;
+  let anchor: Dynamic = value.anchors[selection.anchor];
+  if (!anchor || anchor.seg.kind === "line") return vectorPath;
+  let anchors: Dynamic = value.anchors.slice();
+  anchors[selection.anchor] = {
+    ...anchor,
     seg: {
       kind: "line",
     },
   };
-  let value4: Dynamic = input.contours.slice();
-  value4[options.contour] = {
+  let updatedContours: Dynamic = vectorPath.contours.slice();
+  updatedContours[selection.contour] = {
     ...value,
-    anchors: value3,
+    anchors: anchors,
   };
   return {
-    contours: value4,
+    contours: updatedContours,
   };
 }
-function deleteVectorAnchor(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.contours[options.contour];
-  if (!value || !value.anchors[options.anchor]) return input;
-  let value2: Dynamic = value.closed ? 3 : 2,
-    value3: Dynamic = input.contours.slice();
-  if (value.anchors.length <= value2) {
-    value3.splice(options.contour, 1);
+function deleteVectorAnchor(vectorPath?: Dynamic, selection?: Dynamic): Dynamic {
+  let value: Dynamic = vectorPath.contours[selection.contour];
+  if (!value || !value.anchors[selection.anchor]) return vectorPath;
+  let minimumAnchors: Dynamic = value.closed ? 3 : 2,
+    remainingContours: Dynamic = vectorPath.contours.slice();
+  if (value.anchors.length <= minimumAnchors) {
+    remainingContours.splice(selection.contour, 1);
     return {
-      contours: value3,
+      contours: remainingContours,
     };
   }
-  let value4: Dynamic = value.anchors.slice();
-  value4.splice(options.anchor, 1);
-  if (value.closed || options.anchor < value4.length) {
-    let value5: Dynamic = options.anchor % value4.length,
-      value6: Dynamic = value4[value5];
-    value6 &&
-      (value4[value5] = {
-        ...value6,
+  let remainingAnchors: Dynamic = value.anchors.slice();
+  remainingAnchors.splice(selection.anchor, 1);
+  if (value.closed || selection.anchor < remainingAnchors.length) {
+    let replacementIndex: Dynamic = selection.anchor % remainingAnchors.length,
+      replacementAnchor: Dynamic = remainingAnchors[replacementIndex];
+    replacementAnchor &&
+      (remainingAnchors[replacementIndex] = {
+        ...replacementAnchor,
         seg: {
           kind: "line",
         },
       });
   }
-  value3[options.contour] = {
+  remainingContours[selection.contour] = {
     ...value,
-    anchors: value4,
+    anchors: remainingAnchors,
   };
   return {
-    contours: value3,
+    contours: remainingContours,
   };
 }
-function vectorHitRadius(input?: Dynamic): Dynamic {
-  return input.pointerType === "touch"
-    ? VectorPathEditingConstant_2
+function vectorHitRadius(pointerEvent?: Dynamic): Dynamic {
+  return pointerEvent.pointerType === "touch"
+    ? TOUCH_HIT_RADIUS_PX
     : VectorPathEditingConstant;
 }
-function captureVectorPointer(input?: Dynamic, options?: Dynamic): Dynamic {
+function captureVectorPointer(element?: Dynamic, pointerId?: Dynamic): Dynamic {
   try {
-    input.setPointerCapture(options);
+    element.setPointerCapture(pointerId);
   } catch {}
 }
 function blurVectorInput(): Dynamic {
@@ -410,91 +410,91 @@ function vectorUsesCoarsePointer(): Dynamic {
   );
 }
 function showVectorControls(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  selectionPart?: Dynamic,
+  contour?: Dynamic,
+  contourIndex?: Dynamic,
+  requestedPart?: Dynamic,
+  extraPart?: Dynamic,
+  selection?: Dynamic,
 ): Dynamic {
-  if (input !== "selected") return true;
-  if (!detail || detail.contour !== context) return false;
-  let length: Dynamic = options.anchors.length,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 > 0 ? input2 - 1 : options.closed ? length - 1 : -1,
-    callback2: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value3: Dynamic = options.anchors[input2]?.seg;
-      return options2 === "anchor" || options2 === "c2"
-        ? [input2]
-        : value3?.kind === "quad"
-          ? [input2, callback(input2)]
-          : [callback(input2)];
+  if (selectionPart !== "selected") return true;
+  if (!selection || selection.contour !== contourIndex) return false;
+  let length: Dynamic = contour.anchors.length,
+    callback: Dynamic = (anchorIndex?: Dynamic): Dynamic =>
+      anchorIndex > 0 ? anchorIndex - 1 : contour.closed ? length - 1 : -1,
+    getControlIndices: Dynamic = (anchorIndex?: Dynamic, part?: Dynamic): Dynamic => {
+      let segment: Dynamic = contour.anchors[anchorIndex]?.seg;
+      return part === "anchor" || part === "c2"
+        ? [anchorIndex]
+        : segment?.kind === "quad"
+          ? [anchorIndex, callback(anchorIndex)]
+          : [callback(anchorIndex)];
     },
-    value2: Dynamic = callback2(detail.anchor, detail.part)[0];
+    controlIndex: Dynamic = getControlIndices(selection.anchor, selection.part)[0];
   return (
-    value2 !== undefined &&
-    value2 >= 0 &&
-    callback2(value, extra).includes(value2)
+    controlIndex !== undefined &&
+    controlIndex >= 0 &&
+    getControlIndices(requestedPart, extraPart).includes(controlIndex)
   );
 }
-function sameVectorPath(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input.contours.length !== options.contours.length) return false;
-  for (let index: Dynamic = 0; index < input.contours.length; index += 1) {
-    let value: Dynamic = input.contours[index],
-      value2: Dynamic = options.contours[index];
+function sameVectorPath(leftPath?: Dynamic, rightPath?: Dynamic): Dynamic {
+  if (leftPath.contours.length !== rightPath.contours.length) return false;
+  for (let index: Dynamic = 0; index < leftPath.contours.length; index += 1) {
+    let value: Dynamic = leftPath.contours[index],
+      rightContour: Dynamic = rightPath.contours[index];
     if (
       !value ||
-      !value2 ||
-      value.closed !== value2.closed ||
-      value.anchors.length !== value2.anchors.length
+      !rightContour ||
+      value.closed !== rightContour.closed ||
+      value.anchors.length !== rightContour.anchors.length
     )
       return false;
     for (
-      let index2: Dynamic = 0;
-      index2 < value.anchors.length;
-      index2 += 1
+      let anchorIndex: Dynamic = 0;
+      anchorIndex < value.anchors.length;
+      anchorIndex += 1
     ) {
-      let value3: Dynamic = value.anchors[index2],
-        value4: Dynamic = value2.anchors[index2];
+      let leftAnchor: Dynamic = value.anchors[anchorIndex],
+        rightAnchor: Dynamic = rightContour.anchors[anchorIndex];
       if (
-        !value3 ||
-        !value4 ||
-        value3.x !== value4.x ||
-        value3.y !== value4.y ||
-        (value3.tangent ?? "corner") !== (value4.tangent ?? "corner")
+        !leftAnchor ||
+        !rightAnchor ||
+        leftAnchor.x !== rightAnchor.x ||
+        leftAnchor.y !== rightAnchor.y ||
+        (leftAnchor.tangent ?? "corner") !== (rightAnchor.tangent ?? "corner")
       )
         return false;
-      let seg: Dynamic = value3.seg,
-        seg2: Dynamic = value4.seg;
-      if (seg.kind !== seg2.kind) return false;
-      if (seg.kind === "quad" && seg2.kind === "quad") {
-        if (seg.c.x !== seg2.c.x || seg.c.y !== seg2.c.y) return false;
+      let seg: Dynamic = leftAnchor.seg,
+        rightSegment: Dynamic = rightAnchor.seg;
+      if (seg.kind !== rightSegment.kind) return false;
+      if (seg.kind === "quad" && rightSegment.kind === "quad") {
+        if (seg.c.x !== rightSegment.c.x || seg.c.y !== rightSegment.c.y) return false;
       } else if (
         seg.kind === "cubic" &&
-        seg2.kind === "cubic" &&
-        (seg.c1.x !== seg2.c1.x ||
-          seg.c1.y !== seg2.c1.y ||
-          seg.c2.x !== seg2.c2.x ||
-          seg.c2.y !== seg2.c2.y)
+        rightSegment.kind === "cubic" &&
+        (seg.c1.x !== rightSegment.c1.x ||
+          seg.c1.y !== rightSegment.c1.y ||
+          seg.c2.x !== rightSegment.c2.x ||
+          seg.c2.y !== rightSegment.c2.y)
       )
         return false;
     }
   }
   return true;
 }
-function vectorPartPoint(input?: Dynamic, options?: Dynamic): Dynamic {
+function vectorPartPoint(vectorPath?: Dynamic, selection?: Dynamic): Dynamic {
   let value: Dynamic =
-    input.contours[options.contour]?.anchors[options.anchor];
+    vectorPath.contours[selection.contour]?.anchors[selection.anchor];
   if (!value) return;
-  if (options.part === "anchor")
+  if (selection.part === "anchor")
     return {
       x: value.x,
       y: value.y,
     };
   let seg: Dynamic = value.seg;
-  if (seg.kind === "quad" && options.part === "c") return seg.c;
-  if (seg.kind === "cubic" && options.part === "c") return seg.c1;
-  if (seg.kind === "cubic" && options.part === "c2") return seg.c2;
+  if (seg.kind === "quad" && selection.part === "c") return seg.c;
+  if (seg.kind === "cubic" && selection.part === "c") return seg.c1;
+  if (seg.kind === "cubic" && selection.part === "c2") return seg.c2;
 }
 export {
   blurVectorInput,
@@ -512,14 +512,14 @@ export {
   vectorHitRadius,
   vectorPartPoint,
   VectorPathEditingConstant,
-  VectorPathEditingConstant_2,
+  TOUCH_HIT_RADIUS_PX as VectorPathEditingConstant_2,
   VectorPathEditingLimit,
   vectorUsesCoarsePointer,
 };
 export function installEditorVectorPathEditing(): () => void {
   return () => {
     VectorPathEditingConstant = 10;
-    VectorPathEditingConstant_2 = 20;
+    TOUCH_HIT_RADIUS_PX = 20;
     VectorPathEditingLimit = 4;
   };
 }

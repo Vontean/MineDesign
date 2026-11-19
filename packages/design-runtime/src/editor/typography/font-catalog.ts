@@ -5,43 +5,43 @@ import {
 
 var builtInUtilityCss: Dynamic;
 var TypographyFontCatalogItems: Dynamic;
-var TypographyFontCatalogItems_2: Dynamic;
+var GOOGLE_FONT_CATALOG: Dynamic;
 var TypographyFontCatalogMapValue: Dynamic;
 var TypographyFontCatalogCache: Dynamic;
 var TypographyFontCatalogFromEntriesValue: Dynamic;
 var TypographyFontCatalogAZaZAZaZPattern: Dynamic;
 var TypographyFontCatalogSerifSansSerifPattern: Dynamic;
-function getKnownWebFont(input?: Dynamic): Dynamic {
-  return TypographyFontCatalogCache.get(input.trim().toLowerCase());
+function getKnownWebFont(familyName?: Dynamic): Dynamic {
+  return TypographyFontCatalogCache.get(familyName.trim().toLowerCase());
 }
-function knownWebFontFamily(input?: Dynamic): Dynamic {
-  return getKnownWebFont(input)?.family;
+function knownWebFontFamily(familyName?: Dynamic): Dynamic {
+  return getKnownWebFont(familyName)?.family;
 }
-function buildGoogleFontsUrl(input?: Dynamic): Dynamic {
-  let value: Dynamic = getKnownWebFont(input),
-    value2: Dynamic = value
+function buildGoogleFontsUrl(familyName?: Dynamic): Dynamic {
+  let value: Dynamic = getKnownWebFont(familyName),
+    weightQuery: Dynamic = value
       ? ":wght@" + (value.weights ?? [400, 500, 600, 700]).join(";")
       : "";
   return (
     "https://fonts.googleapis.com/css2?family=" +
-    (value?.family ?? input.trim()).replace(/ +/g, "+") +
-    value2 +
+    (value?.family ?? familyName.trim()).replace(/ +/g, "+") +
+    weightQuery +
     "&display=swap"
   );
 }
-function ensureWebFonts(input?: Dynamic, doc: Dynamic = document): Dynamic {
-  for (let value of input as Dynamic) {
+function ensureWebFonts(fontFamilies?: Dynamic, doc: Dynamic = document): Dynamic {
+  for (let value of fontFamilies as Dynamic) {
     if (
       TypographyFontCatalogSerifSansSerifPattern.test(value) ||
       !TypographyFontCatalogAZaZAZaZPattern.test(value)
     )
       continue;
-    let value2: Dynamic = buildGoogleFontsUrl(value);
-    if (doc.head.querySelector('link[href="' + value2 + '"]')) continue;
-    let value3: Dynamic = doc.createElement("link");
-    value3.rel = "stylesheet";
-    value3.href = value2;
-    doc.head.appendChild(value3);
+    let fontUrl: Dynamic = buildGoogleFontsUrl(value);
+    if (doc.head.querySelector('link[href="' + fontUrl + '"]')) continue;
+    let linkElement: Dynamic = doc.createElement("link");
+    linkElement.rel = "stylesheet";
+    linkElement.href = fontUrl;
+    doc.head.appendChild(linkElement);
   }
 }
 export {
@@ -54,7 +54,7 @@ export {
   TypographyFontCatalogCache,
   TypographyFontCatalogFromEntriesValue,
   TypographyFontCatalogItems,
-  TypographyFontCatalogItems_2,
+  GOOGLE_FONT_CATALOG as TypographyFontCatalogItems_2,
   TypographyFontCatalogMapValue,
   TypographyFontCatalogSerifSansSerifPattern,
 };
@@ -100,7 +100,7 @@ export function installEditorTypographyFontCatalog(): () => void {
         generic: "sans",
       },
     ];
-    TypographyFontCatalogItems_2 = [
+    GOOGLE_FONT_CATALOG = [
       {
         family: "Inter",
         generic: "sans",
@@ -208,27 +208,27 @@ export function installEditorTypographyFontCatalog(): () => void {
         italic: false,
       },
     ];
-    TypographyFontCatalogMapValue = TypographyFontCatalogItems_2.map(
-      (input?: Dynamic): Dynamic => input.family,
+    TypographyFontCatalogMapValue = GOOGLE_FONT_CATALOG.map(
+      (font?: Dynamic): Dynamic => font.family,
     );
     TypographyFontCatalogCache = new Map(
-      TypographyFontCatalogItems_2.map(
-        (input?: Dynamic): Dynamic => [input.family.toLowerCase(), input],
+      GOOGLE_FONT_CATALOG.map(
+        (font?: Dynamic): Dynamic => [font.family.toLowerCase(), font],
       ),
     );
     TypographyFontCatalogFromEntriesValue = Object.fromEntries(
-      TypographyFontCatalogItems_2.map(
-        (input?: Dynamic): Dynamic => [
-          input.family.toLowerCase(),
+      GOOGLE_FONT_CATALOG.map(
+        (font?: Dynamic): Dynamic => [
+          font.family.toLowerCase(),
           {
-            ...(input.wght !== undefined
+            ...(font.wght !== undefined
               ? {
-                  wght: input.wght,
+                  wght: font.wght,
                 }
               : {
-                  statics: input.statics ?? [400],
+                  statics: font.statics ?? [400],
                 }),
-            italic: input.italic,
+            italic: font.italic,
           },
         ],
       ),

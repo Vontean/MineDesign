@@ -6,7 +6,7 @@ import {
 import { previousContourAnchor, showVectorControls, VectorPathEditingConstant } from "./path-editing";
 
 var VectorPathControlsLabel: Dynamic;
-var VectorPathControlsLabel_2: Dynamic;
+var activeControlColor: Dynamic;
 function VectorPathControls({
   path: path,
   selected: selected,
@@ -17,104 +17,104 @@ function VectorPathControls({
   controls: controls,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = Math.max(3.5, hitRadiusPx * 0.45),
+  let controlRadius: Dynamic = Math.max(3.5, hitRadiusPx * 0.45),
     items: Dynamic = [];
-  path.contours.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
-    input.anchors.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value2: Dynamic = view.toScreen(input2),
-        value3: Dynamic =
+  path.contours.forEach((contour?: Dynamic, contourIndex?: Dynamic): Dynamic => {
+    contour.anchors.forEach((anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
+      let screenAnchor: Dynamic = view.toScreen(anchor),
+        isSelectedAnchor: Dynamic =
           selected &&
-          selected.contour === options &&
-          selected.anchor === options2,
-        callback: Dynamic = (
-          input3?: Dynamic,
-          options3?: Dynamic,
-          context?: Dynamic,
+          selected.contour === contourIndex &&
+          selected.anchor === anchorIndex,
+        renderControlHandle: Dynamic = (
+          controlPoint?: Dynamic,
+          previousPoint?: Dynamic,
+          controlKey?: Dynamic,
         ): Dynamic => {
-          let value6: Dynamic = view.toScreen(input3),
-            value7: Dynamic = view.toScreen(options3);
+          let screenControlPoint: Dynamic = view.toScreen(controlPoint),
+            screenPreviousPoint: Dynamic = view.toScreen(previousPoint);
           items.push(
             <line
-              key={context}
-              x1={value7.x}
-              y1={value7.y}
-              x2={value6.x}
-              y2={value6.y}
+              key={controlKey}
+              x1={screenPreviousPoint.x}
+              y1={screenPreviousPoint.y}
+              x2={screenControlPoint.x}
+              y2={screenControlPoint.y}
               stroke={VectorPathControlsLabel}
               strokeDasharray={"3 3"}
               opacity={0.7}
             />,
           );
         },
-        callback2: Dynamic = (
-          input3?: Dynamic,
-          options3?: Dynamic,
-          context?: Dynamic,
+        renderControlPoint: Dynamic = (
+          controlPoint?: Dynamic,
+          controlPart?: Dynamic,
+          controlKey?: Dynamic,
         ): Dynamic => {
-          let value6: Dynamic = view.toScreen(input3),
-            value7: Dynamic = value3 && selected.part === options3;
+          let screenControlPoint: Dynamic = view.toScreen(controlPoint),
+            isSelectedControl: Dynamic = isSelectedAnchor && selected.part === controlPart;
           items.push(
             <circle
-              key={context}
-              cx={value6.x}
-              cy={value6.y}
-              r={value7 ? value + 1 : value - 0.5}
+              key={controlKey}
+              cx={screenControlPoint.x}
+              cy={screenControlPoint.y}
+              r={isSelectedControl ? controlRadius + 1 : controlRadius - 0.5}
               fill={
-                value7 ? VectorPathControlsLabel_2 : "var(--t-panel, #fff)"
+                isSelectedControl ? activeControlColor : "var(--t-panel, #fff)"
               }
               stroke={
-                value7 ? VectorPathControlsLabel_2 : VectorPathControlsLabel
+                isSelectedControl ? activeControlColor : VectorPathControlsLabel
               }
               strokeWidth={1.25}
             />,
           );
         },
-        value4: Dynamic = previousContourAnchor(input, options2),
-        callback3: Dynamic = (input3?: Dynamic): Dynamic =>
+        previousAnchor: Dynamic = previousContourAnchor(contour, anchorIndex),
+        isControlVisible: Dynamic = (controlPart?: Dynamic): Dynamic =>
           showVectorControls(
             controls,
-            input,
-            options,
-            options2,
-            input3,
+            contour,
+            contourIndex,
+            anchorIndex,
+            controlPart,
             selected,
           );
-      input2.seg.kind === "quad" && value4 && callback3("c")
-        ? (callback(input2.seg.c, value4, `t${options}:${options2}a`),
-          callback(input2.seg.c, input2, `t${options}:${options2}b`),
-          callback2(input2.seg.c, "c", `q${options}:${options2}`))
-        : input2.seg.kind === "cubic" &&
-          value4 &&
-          (callback3("c") &&
-            (callback(input2.seg.c1, value4, `t${options}:${options2}a`),
-            callback2(input2.seg.c1, "c", `c1${options}:${options2}`)),
-          callback3("c2") &&
-            (callback(input2.seg.c2, input2, `t${options}:${options2}b`),
-            callback2(input2.seg.c2, "c2", `c2${options}:${options2}`)));
-      let value5: Dynamic = value3 && selected.part === "anchor";
+      anchor.seg.kind === "quad" && previousAnchor && isControlVisible("c")
+        ? (renderControlHandle(anchor.seg.c, previousAnchor, `t${contourIndex}:${anchorIndex}a`),
+          renderControlHandle(anchor.seg.c, anchor, `t${contourIndex}:${anchorIndex}b`),
+          renderControlPoint(anchor.seg.c, "c", `q${contourIndex}:${anchorIndex}`))
+        : anchor.seg.kind === "cubic" &&
+          previousAnchor &&
+          (isControlVisible("c") &&
+            (renderControlHandle(anchor.seg.c1, previousAnchor, `t${contourIndex}:${anchorIndex}a`),
+            renderControlPoint(anchor.seg.c1, "c", `c1${contourIndex}:${anchorIndex}`)),
+          isControlVisible("c2") &&
+            (renderControlHandle(anchor.seg.c2, anchor, `t${contourIndex}:${anchorIndex}b`),
+            renderControlPoint(anchor.seg.c2, "c2", `c2${contourIndex}:${anchorIndex}`)));
+      let isAnchorSelected: Dynamic = isSelectedAnchor && selected.part === "anchor";
       items.push(
         <rect
-          key={`a${options}:${options2}`}
-          x={value2.x - (value5 ? value + 1 : value)}
-          y={value2.y - (value5 ? value + 1 : value)}
-          width={2 * (value5 ? value + 1 : value)}
-          height={2 * (value5 ? value + 1 : value)}
-          fill={value5 ? VectorPathControlsLabel_2 : "var(--t-panel, #fff)"}
-          stroke={value5 ? VectorPathControlsLabel_2 : "var(--t-fg, #141413)"}
+          key={`a${contourIndex}:${anchorIndex}`}
+          x={screenAnchor.x - (isAnchorSelected ? controlRadius + 1 : controlRadius)}
+          y={screenAnchor.y - (isAnchorSelected ? controlRadius + 1 : controlRadius)}
+          width={2 * (isAnchorSelected ? controlRadius + 1 : controlRadius)}
+          height={2 * (isAnchorSelected ? controlRadius + 1 : controlRadius)}
+          fill={isAnchorSelected ? activeControlColor : "var(--t-panel, #fff)"}
+          stroke={isAnchorSelected ? activeControlColor : "var(--t-fg, #141413)"}
           strokeWidth={1.25}
         />,
       );
     });
   });
   if (draft.length > 0) {
-    let value2: Dynamic = draft.map(
-        (input?: Dynamic): Dynamic => view.toScreen(input),
+    let screenDraft: Dynamic = draft.map(
+        (draftPoint?: Dynamic): Dynamic => view.toScreen(draftPoint),
       ),
-      value3: Dynamic = value2[0],
-      value4: Dynamic =
+      draftStart: Dynamic = screenDraft[0],
+      draftPath: Dynamic =
         "M" +
-        value2
-          .map((input?: Dynamic): Dynamic => `${input.x} ${input.y}`)
+        screenDraft
+          .map((draftPoint?: Dynamic): Dynamic => `${draftPoint.x} ${draftPoint.y}`)
           .join(" L") +
         (hover
           ? ` L${view.toScreen(hover).x} ${view.toScreen(hover).y}`
@@ -122,35 +122,35 @@ function VectorPathControls({
     items.push(
       <path
         key={"draft"}
-        d={value4}
+        d={draftPath}
         fill={"none"}
-        stroke={VectorPathControlsLabel_2}
+        stroke={activeControlColor}
         strokeWidth={1.5}
         strokeDasharray={"4 3"}
       />,
     );
-    value3 &&
+    draftStart &&
       draft.length >= 3 &&
       items.push(
         <circle
           key={"draft-close"}
-          cx={value3.x}
-          cy={value3.y}
+          cx={draftStart.x}
+          cy={draftStart.y}
           r={VectorPathEditingConstant}
           fill={"none"}
-          stroke={VectorPathControlsLabel_2}
+          stroke={activeControlColor}
           strokeWidth={1.5}
         />,
       );
-    for (let [value5, value6] of value2.entries() as Dynamic)
+    for (let [draftIndex, draftPoint] of screenDraft.entries() as Dynamic)
       items.push(
         <rect
-          key={`d${value5}`}
-          x={value6.x - value + 1}
-          y={value6.y - value + 1}
-          width={2 * value - 2}
-          height={2 * value - 2}
-          fill={VectorPathControlsLabel_2}
+          key={`d${draftIndex}`}
+          x={draftPoint.x - controlRadius + 1}
+          y={draftPoint.y - controlRadius + 1}
+          width={2 * controlRadius - 2}
+          height={2 * controlRadius - 2}
+          fill={activeControlColor}
         />,
       );
   }
@@ -159,11 +159,11 @@ function VectorPathControls({
 export {
   VectorPathControls,
   VectorPathControlsLabel,
-  VectorPathControlsLabel_2,
+  activeControlColor as VectorPathControlsLabel_2,
 };
 export function installEditorVectorPathControls(): () => void {
   return () => {
     VectorPathControlsLabel = "var(--t-fg-muted, #73726c)";
-    VectorPathControlsLabel_2 = "var(--t-app-accent, #2a78d6)";
+    activeControlColor = "var(--t-app-accent, #2a78d6)";
   };
 }

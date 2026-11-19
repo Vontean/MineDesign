@@ -12,41 +12,41 @@ var TypographyCensusSubscribers: Dynamic;
 var TypographyCensusPattern: Dynamic;
 var TypographyCensusItems: Dynamic;
 var TypographyCensusH1H2H3Config: Dynamic;
-var TypographyCensusItems_2: Dynamic;
+var TEXT_ROLE_DISPLAY_ORDER: Dynamic;
 var TypographyCensusHeadingPattern: Dynamic;
-var TypographyCensusPattern_2: Dynamic;
-var TypographyCensusPattern_3: Dynamic;
+var CSS_VARIABLE_REFERENCE_PATTERN: Dynamic;
+var HEX_COLOR_PATTERN: Dynamic;
 var TypographyCensusRgbaPattern: Dynamic;
-function hasAuthoredAppearance(input?: Dynamic): Dynamic {
-  return parseStyleDeclarations(input).some(
-    (input2?: Dynamic): Dynamic =>
-      TypographyCensusSubscribers.has(input2.prop),
+function hasAuthoredAppearance(styleText?: Dynamic): Dynamic {
+  return parseStyleDeclarations(styleText).some(
+    (declaration?: Dynamic): Dynamic =>
+      TypographyCensusSubscribers.has(declaration.prop),
   );
 }
-function inspectSvgLine(input?: Dynamic): Dynamic {
-  if (!input || input.tagName.toLowerCase() !== "svg") return null;
+function inspectSvgLine(svgElement?: Dynamic): Dynamic {
+  if (!svgElement || svgElement.tagName.toLowerCase() !== "svg") return null;
   let value: Dynamic = null;
-  for (let value9 of Array.from(input.children) as Dynamic)
-    if (value9.tagName.toLowerCase() === "path") {
+  for (let child of Array.from(svgElement.children) as Dynamic)
+    if (child.tagName.toLowerCase() === "path") {
       if (value) return null;
-      value = value9;
+      value = child;
     }
   if (!value) return null;
-  let value2: Dynamic = TypographyCensusPattern.exec(
+  let pathMatch: Dynamic = TypographyCensusPattern.exec(
     value.getAttribute("d") ?? "",
   );
-  if (!value2) return null;
-  let value3: Dynamic = +value2[1],
-    value4: Dynamic = +value2[2],
-    value5: Dynamic = +value2[3],
-    value6: Dynamic = +value2[4];
-  if (![value3, value4, value5, value6].every(Number.isFinite)) return null;
-  let value7: Dynamic = Math.abs(value4 - value6) < 0.01,
-    value8: Dynamic = Math.abs(value3 - value5) < 0.01;
-  return value7 && !value8 ? "height" : value8 && !value7 ? "width" : null;
+  if (!pathMatch) return null;
+  let startX: Dynamic = +pathMatch[1],
+    startY: Dynamic = +pathMatch[2],
+    endX: Dynamic = +pathMatch[3],
+    endY: Dynamic = +pathMatch[4];
+  if (![startX, startY, endX, endY].every(Number.isFinite)) return null;
+  let isHorizontal: Dynamic = Math.abs(startY - endY) < 0.01,
+    isVertical: Dynamic = Math.abs(startX - endX) < 0.01;
+  return isHorizontal && !isVertical ? "height" : isVertical && !isHorizontal ? "width" : null;
 }
-function selectedSvgElements(input?: Dynamic, options?: Dynamic): Dynamic {
-  let values: Dynamic = new Set(options),
+function selectedSvgElements(model?: Dynamic, elementIds?: Dynamic): Dynamic {
+  let values: Dynamic = new Set(elementIds),
     callback: Dynamic = (element?: Dynamic): Dynamic => {
       let value: Dynamic = parseInt(
         element.getAttribute("data-dc-tpl") ?? "-1",
@@ -56,135 +56,135 @@ function selectedSvgElements(input?: Dynamic, options?: Dynamic): Dynamic {
     };
   return [
     ...new Set(
-      options.map((input2?: Dynamic): Dynamic => {
-        let value: Dynamic = input.element(input2);
+      elementIds.map((elementId?: Dynamic): Dynamic => {
+        let value: Dynamic = model.element(elementId);
         if (!value || !svgShapeTags.has(value.tagName.toLowerCase()))
-          return input2;
+          return elementId;
         let ancestor: Dynamic = value.closest("svg");
         if (!ancestor || !findSvgShaft(ancestor, callback))
-          return input2;
-        let value2: Dynamic = parseInt(
+          return elementId;
+        let index: Dynamic = parseInt(
           ancestor.getAttribute("data-dc-tpl") ?? "-1",
           10,
         );
-        return value2 >= 0 ? value2 : input2;
+        return index >= 0 ? index : elementId;
       }),
     ),
   ];
 }
-function collectFontFamilies(input?: Dynamic): Dynamic {
+function collectFontFamilies(html?: Dynamic): Dynamic {
   let values: Dynamic = new Set(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value: Dynamic = input2.split(",")[0].trim().replace(/['"]/g, "");
+    callback: Dynamic = (familyText?: Dynamic): Dynamic => {
+      let value: Dynamic = familyText.split(",")[0].trim().replace(/['"]/g, "");
       value && !value.includes("{{") && values.add(value);
     };
-  for (let value of input.matchAll(
+  for (let value of html.matchAll(
     /<style\b[^>]*>([\s\S]*?)<\/style>/gi,
   ) as Dynamic)
-    for (let value2 of value[1].matchAll(
+    for (let familyMatch of value[1].matchAll(
       /font-family\s*:\s*([^;}]+)/gi,
     ) as Dynamic)
-      callback(value2[1]);
-  for (let value of input.matchAll(/\bstyle="([^"]*)"/gi) as Dynamic)
-    for (let value2 of value[1]
+      callback(familyMatch[1]);
+  for (let value of html.matchAll(/\bstyle="([^"]*)"/gi) as Dynamic)
+    for (let familyMatch of value[1]
       .replace(/&quot;/g, "'")
       .matchAll(/font-family\s*:\s*([^;]+)/gi) as Dynamic)
-      callback(value2[1]);
+      callback(familyMatch[1]);
   return [...values];
 }
-function collectGoogleFontFamilies(input?: Dynamic): Dynamic {
+function collectGoogleFontFamilies(html?: Dynamic): Dynamic {
   let values: Dynamic = new Set();
-  for (let value of input.matchAll(
+  for (let value of html.matchAll(
     /fonts\.googleapis\.com\/css2\?([^"')\s<>]*)/g,
   ) as Dynamic)
-    for (let value2 of value[1]
+    for (let familyMatch of value[1]
       .replace(/&amp;/g, "&")
       .replace(/%20|%2B/gi, "+")
       .matchAll(/(?:^|&)family=([^&:%]+)/g) as Dynamic)
-      values.add(value2[1].replace(/\+/g, " ").slice(0, 60));
+      values.add(familyMatch[1].replace(/\+/g, " ").slice(0, 60));
   return [...values].slice(0, 40);
 }
-function collectFontSizes(input?: Dynamic): Dynamic {
+function collectFontSizes(html?: Dynamic): Dynamic {
   let values: Dynamic = new Set(),
     value: Dynamic = /font-size\s*:\s*([^;">}]+)/gi,
-    value2: Dynamic;
-  for (; (value2 = value.exec(input)); ) {
-    let value3: Dynamic = value2[1].trim();
-    /^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/.test(value3) && values.add(value3);
+    fontSizeMatch: Dynamic;
+  for (; (fontSizeMatch = value.exec(html)); ) {
+    let fontSize: Dynamic = fontSizeMatch[1].trim();
+    /^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/.test(fontSize) && values.add(fontSize);
   }
   return [...values];
 }
-function collectFontSizeFamilyUsage(input?: Dynamic): Dynamic {
+function collectFontSizeFamilyUsage(html?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(),
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      if (!options || !/^\d+(?:\.\d+)?(?:px|pt)$/.test(input2)) return;
-      let value5: Dynamic = entries.get(input2) ?? new Map();
-      value5.set(options, (value5.get(options) ?? 0) + 1);
-      entries.set(input2, value5);
+    callback: Dynamic = (fontSize?: Dynamic, family?: Dynamic): Dynamic => {
+      if (!family || !/^\d+(?:\.\d+)?(?:px|pt)$/.test(fontSize)) return;
+      let familyCounts: Dynamic = entries.get(fontSize) ?? new Map();
+      familyCounts.set(family, (familyCounts.get(family) ?? 0) + 1);
+      entries.set(fontSize, familyCounts);
     },
-    entries2: Dynamic = new Map(),
+    classEntries: Dynamic = new Map(),
     value: Dynamic,
-    value2: Dynamic = /<([a-z][a-z0-9-]*)\b([^<>]*)>/gi;
-  for (; (value = value2.exec(input)); ) {
-    let value5: Dynamic = value[1].toLowerCase(),
-      value6: Dynamic = value[2],
-      value7: Dynamic = /\bclass="([^"]*)"/.exec(value6)?.[1] ?? "";
-    for (let value9 of value7.split(/\s+/).filter(Boolean) as Dynamic) {
-      let value10: Dynamic = entries2.get(value9) ?? new Map();
-      value10.set(value5, (value10.get(value5) ?? 0) + 1);
-      entries2.set(value9, value10);
+    tagPattern: Dynamic = /<([a-z][a-z0-9-]*)\b([^<>]*)>/gi;
+  for (; (value = tagPattern.exec(html)); ) {
+    let tagName: Dynamic = value[1].toLowerCase(),
+      attributes: Dynamic = value[2],
+      classNames: Dynamic = /\bclass="([^"]*)"/.exec(attributes)?.[1] ?? "";
+    for (let className of classNames.split(/\s+/).filter(Boolean) as Dynamic) {
+      let usageCounts: Dynamic = classEntries.get(className) ?? new Map();
+      usageCounts.set(tagName, (usageCounts.get(tagName) ?? 0) + 1);
+      classEntries.set(className, usageCounts);
     }
-    let value8: Dynamic = /font-size\s*:\s*([^;"]+)/i
-      .exec(/\bstyle="([^"]*)"/.exec(value6)?.[1] ?? "")?.[1]
+    let inlineFontSize: Dynamic = /font-size\s*:\s*([^;"]+)/i
+      .exec(/\bstyle="([^"]*)"/.exec(attributes)?.[1] ?? "")?.[1]
       ?.trim();
-    value8 &&
+    inlineFontSize &&
       callback(
-        value8,
-        inferTypographyRole(value5, value7, /\brole="button"/.test(value6)),
+        inlineFontSize,
+        inferTypographyRole(tagName, classNames, /\brole="button"/.test(attributes)),
       );
   }
-  let value3: Dynamic = [
-      ...input.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi),
-    ].map((input2?: Dynamic): Dynamic => input2[1]).join(`
+  let styleBlocks: Dynamic = [
+      ...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi),
+    ].map((declaration?: Dynamic): Dynamic => declaration[1]).join(`
 `),
-    value4: Dynamic = /([^{}]+)\{([^{}]*)\}/g;
-  for (; (value = value4.exec(value3)); ) {
-    let value5: Dynamic = /(?:^|[\s;])font-size\s*:\s*([^;]+)/i
+    rulePattern: Dynamic = /([^{}]+)\{([^{}]*)\}/g;
+  for (; (value = rulePattern.exec(styleBlocks)); ) {
+    let fontSizeRule: Dynamic = /(?:^|[\s;])font-size\s*:\s*([^;]+)/i
       .exec(value[2])?.[1]
       ?.trim();
-    if (value5)
-      for (let value6 of value[1].split(",") as Dynamic) {
-        let value7: Dynamic =
-            value6
+    if (fontSizeRule)
+      for (let selector of value[1].split(",") as Dynamic) {
+        let selectorText: Dynamic =
+            selector
               .trim()
               .split(/[\s>+~]+/)
               .pop() ?? "",
-          value8: Dynamic = [...value7.matchAll(/\.([\w-]+)/g)].map(
-            (input2?: Dynamic): Dynamic => input2[1],
+          classNames: Dynamic = [...selectorText.matchAll(/\.([\w-]+)/g)].map(
+            (match?: Dynamic): Dynamic => match[1],
           ),
-          value9: Dynamic =
-            /^[a-z][a-z0-9-]*/i.exec(value7)?.[0]?.toLowerCase() ?? "";
-        !value9 &&
-          value8.length > 0 &&
-          (value9 =
-            [...(entries2.get(value8[0]) ?? new Map())].sort(
-              (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                options[1] - input2[1],
+          elementName: Dynamic =
+            /^[a-z][a-z0-9-]*/i.exec(selectorText)?.[0]?.toLowerCase() ?? "";
+        !elementName &&
+          classNames.length > 0 &&
+          (elementName =
+            [...(classEntries.get(classNames[0]) ?? new Map())].sort(
+              (left?: Dynamic, right?: Dynamic): Dynamic =>
+                right[1] - left[1],
             )[0]?.[0] ?? "");
-        /^(b|strong)$/.test(value9) &&
-          value8.length === 0 &&
-          (value8 = [...value6.matchAll(/\.([\w-]+)/g)].map(
-            (input2?: Dynamic): Dynamic => input2[1],
+        /^(b|strong)$/.test(elementName) &&
+          classNames.length === 0 &&
+          (classNames = [...selector.matchAll(/\.([\w-]+)/g)].map(
+            (match?: Dynamic): Dynamic => match[1],
           ));
         callback(
-          value5,
-          inferTypographyRole(value9, value8.join(" "), false),
+          fontSizeRule,
+          inferTypographyRole(elementName, classNames.join(" "), false),
         );
       }
   }
   return entries;
 }
-function collectTypographyRoles(input?: Dynamic): Dynamic {
+function collectTypographyRoles(html?: Dynamic): Dynamic {
   let state: Dynamic = {
       serif: "serif",
       "ui-serif": "serif",
@@ -197,262 +197,262 @@ function collectTypographyRoles(input?: Dynamic): Dynamic {
       monospace: "monospace",
       "ui-monospace": "monospace",
     },
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value7: Dynamic = (input2 ?? "")
+    callback: Dynamic = (styleText?: Dynamic): Dynamic => {
+      let normalizedStyle: Dynamic = (styleText ?? "")
         .split(",")
         .map(
-          (input3?: Dynamic): Dynamic =>
-            input3.trim().replace(/^["']|["']$/g, ""),
+          (fontName?: Dynamic): Dynamic =>
+            fontName.trim().replace(/^["']|["']$/g, ""),
         )
         .filter(Boolean);
       return (
-        value7.find(
-          (input3?: Dynamic): Dynamic =>
-            !(input3.toLowerCase() in state) &&
+        normalizedStyle.find(
+          (fontName?: Dynamic): Dynamic =>
+            !(fontName.toLowerCase() in state) &&
             !/^(cursive|fantasy|emoji|math|fangsong|inherit|initial|unset)$/i.test(
-              input3,
+              fontName,
             ),
         ) ??
-        value7
-          .map((input3?: Dynamic): Dynamic => state[input3.toLowerCase()])
-          .find((input3?: Dynamic): Dynamic => input3 !== undefined) ??
+        normalizedStyle
+          .map((fontName?: Dynamic): Dynamic => state[fontName.toLowerCase()])
+          .find((role?: Dynamic): Dynamic => role !== undefined) ??
         null
       );
     },
-    callback2: Dynamic = (
-      input2?: Dynamic,
-      options: Dynamic = false,
+    extractFontSize: Dynamic = (
+      styleText?: Dynamic,
+      isInline: Dynamic = false,
     ): Dynamic =>
       callback(
-        (options
+        (isInline
           ? /(?:^|[\s;])font-family\s*:\s*([^;}]+)/i
           : /(?:^|[\s;"])font-family\s*:\s*([^;"]+)/i
         )
-          .exec(input2)?.[1]
+          .exec(styleText)?.[1]
           ?.trim(),
       ),
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-      /(?:^|[\s;"])font-size\s*:\s*([^;"]+)/i.exec(input2)?.[1]?.trim(),
+    extractFontSizeRule: Dynamic = (styleText?: Dynamic): Dynamic =>
+      /(?:^|[\s;"])font-size\s*:\s*([^;"]+)/i.exec(styleText)?.[1]?.trim(),
     entries: Dynamic = new Map(),
-    callback4: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      if (!input2 || !options || !/^\d+(?:\.\d+)?(?:px|pt)$/.test(input2))
+    recordUsage: Dynamic = (fontSize?: Dynamic, familyName?: Dynamic): Dynamic => {
+      if (!fontSize || !familyName || !/^\d+(?:\.\d+)?(?:px|pt)$/.test(fontSize))
         return;
-      let value7: Dynamic = entries.get(input2) ?? new Map();
-      value7.set(options, (value7.get(options) ?? 0) + 1);
-      entries.set(input2, value7);
+      let familyUsage: Dynamic = entries.get(fontSize) ?? new Map();
+      familyUsage.set(familyName, (familyUsage.get(familyName) ?? 0) + 1);
+      entries.set(fontSize, familyUsage);
     },
     value: Dynamic = null,
-    value2: Dynamic,
-    value3: Dynamic = [
-      ...input.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi),
-    ].map((input2?: Dynamic): Dynamic => input2[1]).join(`
+    rule: Dynamic,
+    styleBlocks: Dynamic = [
+      ...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi),
+    ].map((declaration?: Dynamic): Dynamic => declaration[1]).join(`
 `),
-    value4: Dynamic = /([^{}]+)\{([^{}]*)\}/g;
-  for (; (value2 = value4.exec(value3)); ) {
-    /(^|,)\s*(body|html|:root)\s*(,|$)/i.test(value2[1].trim()) &&
-      (value = callback2(value2[2], true) ?? value);
-    callback4(callback3(value2[2]), callback2(value2[2], true));
+    rulePattern: Dynamic = /([^{}]+)\{([^{}]*)\}/g;
+  for (; (rule = rulePattern.exec(styleBlocks)); ) {
+    /(^|,)\s*(body|html|:root)\s*(,|$)/i.test(rule[1].trim()) &&
+      (value = extractFontSize(rule[2], true) ?? value);
+    recordUsage(extractFontSizeRule(rule[2]), extractFontSize(rule[2], true));
   }
-  let value5: Dynamic = /<[a-z][a-z0-9-]*\b[^<>]*\bstyle="([^"]*)"[^<>]*>/gi;
-  for (; (value2 = value5.exec(input)); ) {
-    let value7: Dynamic = value2[1].replace(/&quot;/g, "'");
-    callback4(callback3(value7), callback2(value7));
+  let inlineStylePattern: Dynamic = /<[a-z][a-z0-9-]*\b[^<>]*\bstyle="([^"]*)"[^<>]*>/gi;
+  for (; (rule = inlineStylePattern.exec(html)); ) {
+    let inlineStyle: Dynamic = rule[1].replace(/&quot;/g, "'");
+    recordUsage(extractFontSizeRule(inlineStyle), extractFontSize(inlineStyle));
   }
-  let entries2: Dynamic = new Map(),
-    value6: Dynamic = /font-size\s*:\s*(\d+(?:\.\d+)?(?:px|pt))/gi;
-  for (; (value2 = value6.exec(input)); )
-    if (!entries2.has(value2[1])) {
-      let value7: Dynamic =
-        [...(entries.get(value2[1]) ?? [])].sort(
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            options[1] - input2[1],
+  let roleEntries: Dynamic = new Map(),
+    fontSizePattern: Dynamic = /font-size\s*:\s*(\d+(?:\.\d+)?(?:px|pt))/gi;
+  for (; (rule = fontSizePattern.exec(html)); )
+    if (!roleEntries.has(rule[1])) {
+      let roleUsage: Dynamic =
+        [...(entries.get(rule[1]) ?? [])].sort(
+          (left?: Dynamic, right?: Dynamic): Dynamic =>
+            right[1] - left[1],
         )[0]?.[0] ?? value;
-      value7 && entries2.set(value2[1], value7);
+      roleUsage && roleEntries.set(rule[1], roleUsage);
     }
-  return entries2;
+  return roleEntries;
 }
 function inferTypographyRole(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  roleInput?: Dynamic,
+  roleOptions?: Dynamic,
+  elementContext?: Dynamic,
 ): Dynamic {
-  if (context) return "Button";
-  if (/^h[1-6]$/.test(input)) return TypographyCensusH1H2H3Config[input];
-  for (let [value, value2] of TypographyCensusItems as Dynamic)
-    if (value.test(options)) return value2;
-  return TypographyCensusH1H2H3Config[input] ?? null;
+  if (elementContext) return "Button";
+  if (/^h[1-6]$/.test(roleInput)) return TypographyCensusH1H2H3Config[roleInput];
+  for (let [value, roleName] of TypographyCensusItems as Dynamic)
+    if (value.test(roleOptions)) return roleName;
+  return TypographyCensusH1H2H3Config[roleInput] ?? null;
 }
-function summarizeFontSizeUsage(items?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      [...(options.get(input)?.values() ?? [])].reduce(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic => input2 + options2,
+function summarizeFontSizeUsage(items?: Dynamic, fontSizeUsage?: Dynamic): Dynamic {
+  let callback: Dynamic = (fontSize?: Dynamic): Dynamic =>
+      [...(fontSizeUsage.get(fontSize)?.values() ?? [])].reduce(
+        (total?: Dynamic, usageCount?: Dynamic): Dynamic => total + usageCount,
         0,
       ),
     entries: Dynamic = new Map();
-  for (let value2 of items as Dynamic)
+  for (let measuredFontSize of items as Dynamic)
     entries.set(
-      value2,
-      [...(options.get(value2) ?? [])]
+      measuredFontSize,
+      [...(fontSizeUsage.get(measuredFontSize) ?? [])]
         .sort(
-          (input?: Dynamic, options2?: Dynamic): Dynamic =>
-            options2[1] - input[1] ||
-            TypographyCensusItems_2.indexOf(input[0]) -
-              TypographyCensusItems_2.indexOf(options2[0]),
+          (leftEntry?: Dynamic, rightEntry?: Dynamic): Dynamic =>
+            rightEntry[1] - leftEntry[1] ||
+            TEXT_ROLE_DISPLAY_ORDER.indexOf(leftEntry[0]) -
+              TEXT_ROLE_DISPLAY_ORDER.indexOf(rightEntry[0]),
         )
-        .map(([input]: Dynamic): Dynamic => input),
+        .map(([fontSize]: Dynamic): Dynamic => fontSize),
     );
   let value: Dynamic =
     items
-      .filter((input?: Dynamic): Dynamic => entries.get(input)[0] === "Body")
+      .filter((fontSize?: Dynamic): Dynamic => entries.get(fontSize)[0] === "Body")
       .sort(
-        (input?: Dynamic, options2?: Dynamic): Dynamic =>
-          callback(options2) - callback(input) || input - options2,
+        (leftSize?: Dynamic, rightSize?: Dynamic): Dynamic =>
+          callback(rightSize) - callback(leftSize) || leftSize - rightSize,
       )[0] ??
     [...items].sort(
-      (input?: Dynamic, options2?: Dynamic): Dynamic => input - options2,
+      (leftSize?: Dynamic, rightSize?: Dynamic): Dynamic => leftSize - rightSize,
     )[Math.floor(items.length / 2)] ??
     16;
-  for (let value2 of items as Dynamic)
+  for (let fontSize of items as Dynamic)
     entries
-      .get(value2)
+      .get(fontSize)
       .push(
-        value2 > value ? "Heading" : value2 === value ? "Body" : "Caption",
+        fontSize > value ? "Heading" : fontSize === value ? "Body" : "Caption",
       );
-  let entries2: Dynamic = new Map(),
-    items2: Dynamic = [],
+  let roleByFontSize: Dynamic = new Map(),
+    headingFontSizes: Dynamic = [],
     values: Dynamic = new Set(items);
-  for (let value2 of items as Dynamic)
-    TypographyCensusHeadingPattern.test(entries.get(value2)[0]) &&
-      (items2.push(value2), values.delete(value2));
-  for (let value2 of TypographyCensusItems_2.filter(
-    (input?: Dynamic): Dynamic => !TypographyCensusHeadingPattern.test(input),
+  for (let fontSize of items as Dynamic)
+    TypographyCensusHeadingPattern.test(entries.get(fontSize)[0]) &&
+      (headingFontSizes.push(fontSize), values.delete(fontSize));
+  for (let roleLabel of TEXT_ROLE_DISPLAY_ORDER.filter(
+    (roleName?: Dynamic): Dynamic => !TypographyCensusHeadingPattern.test(roleName),
   ) as Dynamic) {
-    let value3: Dynamic = [...values]
+    let candidateSizes: Dynamic = [...values]
       .filter(
-        (input?: Dynamic): Dynamic => entries.get(input).includes(value2),
+        (fontSize?: Dynamic): Dynamic => entries.get(fontSize).includes(roleLabel),
       )
       .sort(
-        (input?: Dynamic, options2?: Dynamic): Dynamic =>
-          entries.get(input).indexOf(value2) -
-            entries.get(options2).indexOf(value2) ||
-          callback(options2) - callback(input) ||
-          options2 - input,
+        (leftSize?: Dynamic, rightSize?: Dynamic): Dynamic =>
+          entries.get(leftSize).indexOf(roleLabel) -
+            entries.get(rightSize).indexOf(roleLabel) ||
+          callback(rightSize) - callback(leftSize) ||
+          rightSize - leftSize,
       );
-    value3[0] !== undefined &&
-      (entries2.set(value3[0], value2), values.delete(value3[0]));
+    candidateSizes[0] !== undefined &&
+      (roleByFontSize.set(candidateSizes[0], roleLabel), values.delete(candidateSizes[0]));
   }
-  for (let value2 of values as Dynamic) value2 > value && items2.push(value2);
-  items2
-    .sort((input?: Dynamic, options2?: Dynamic): Dynamic => options2 - input)
+  for (let fontSize of values as Dynamic) fontSize > value && headingFontSizes.push(fontSize);
+  headingFontSizes
+    .sort((leftSize?: Dynamic, rightSize?: Dynamic): Dynamic => rightSize - leftSize)
     .forEach(
-      (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        entries2.set(input, uiMessage("inspector.census.heading") + String(options2 + 1)),
+      (fontSize?: Dynamic, headingIndex?: Dynamic): Dynamic =>
+        roleByFontSize.set(fontSize, uiMessage("inspector.census.heading") + String(headingIndex + 1)),
     );
-  return entries2;
+  return roleByFontSize;
 }
-function collectColorTokens(input?: Dynamic, options?: Dynamic): Dynamic {
+function collectColorTokens(html?: Dynamic, knownTokens?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(),
     value: Dynamic = /(--[\w-]+)\s*:\s*([^;"'>}]+)/g,
-    value2: Dynamic;
-  for (; (value2 = value.exec(input)); )
-    entries.set(value2[1], value2[2].trim());
-  let entries2: Dynamic = new Map(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      entries2.set(input2, (entries2.get(input2) ?? 0) + 1);
+    colorMatch: Dynamic;
+  for (; (colorMatch = value.exec(html)); )
+    entries.set(colorMatch[1], colorMatch[2].trim());
+  let tokenCounts: Dynamic = new Map(),
+    callback: Dynamic = (token?: Dynamic): Dynamic => {
+      tokenCounts.set(token, (tokenCounts.get(token) ?? 0) + 1);
     },
-    value3: Dynamic =
+    colorPattern: Dynamic =
       /(?:^|[\s;"'{])(?:color|background-color|border-color|fill|stroke)\s*:\s*([^;"'>}]+)/gi;
-  for (; (value2 = value3.exec(input)); ) {
-    let value4: Dynamic = value2[1].trim().replace(/\s*!important$/i, ""),
-      value5: Dynamic = TypographyCensusPattern_2.exec(value4)?.[1];
+  for (; (colorMatch = colorPattern.exec(html)); ) {
+    let colorValue: Dynamic = colorMatch[1].trim().replace(/\s*!important$/i, ""),
+      tokenName: Dynamic = CSS_VARIABLE_REFERENCE_PATTERN.exec(colorValue)?.[1];
     for (
       let index: Dynamic = 0;
-      value5 !== undefined &&
-      options?.has(value5) !== true &&
-      entries.has(value5) &&
+      tokenName !== undefined &&
+      knownTokens?.has(tokenName) !== true &&
+      entries.has(tokenName) &&
       index < 8;
       index++
     ) {
-      value4 = entries.get(value5);
-      value5 = TypographyCensusPattern_2.exec(value4)?.[1];
+      colorValue = entries.get(tokenName);
+      tokenName = CSS_VARIABLE_REFERENCE_PATTERN.exec(colorValue)?.[1];
     }
-    if (value5 !== undefined) {
-      let value7: Dynamic = resolveColorToken(entries, value5);
-      options?.has(value5) === true &&
+    if (tokenName !== undefined) {
+      let resolvedValue: Dynamic = resolveColorToken(entries, tokenName);
+      knownTokens?.has(tokenName) === true &&
         callback(
-          "var(" + value5 + (value7 !== null ? ", " + value7 : "") + ")",
+          "var(" + tokenName + (resolvedValue !== null ? ", " + resolvedValue : "") + ")",
         );
       continue;
     }
     if (
-      !value4 ||
-      value4.includes("{{") ||
-      /^(none|inherit|currentcolor|transparent|initial|unset)$/i.test(value4)
+      !colorValue ||
+      colorValue.includes("{{") ||
+      /^(none|inherit|currentcolor|transparent|initial|unset)$/i.test(colorValue)
     )
       continue;
-    let value6: Dynamic = normalizeHexColor(value4);
-    value6 && callback(value6);
+    let normalizedColor: Dynamic = normalizeHexColor(colorValue);
+    normalizedColor && callback(normalizedColor);
   }
-  return entries2;
+  return tokenCounts;
 }
-function resolveColorToken(input?: Dynamic, options?: Dynamic): Dynamic {
-  let entry: Dynamic = input.get(options);
+function resolveColorToken(entries?: Dynamic, tokenName?: Dynamic): Dynamic {
+  let entry: Dynamic = entries.get(tokenName);
   for (let index: Dynamic = 0; entry !== undefined && index < 8; index++) {
-    let value: Dynamic = TypographyCensusPattern_2.exec(entry)?.[1];
+    let value: Dynamic = CSS_VARIABLE_REFERENCE_PATTERN.exec(entry)?.[1];
     if (value === undefined) return normalizeHexColor(entry);
-    entry = input.get(value);
+    entry = entries.get(value);
   }
   return null;
 }
-function normalizeHexColor(input?: Dynamic): Dynamic {
+function normalizeHexColor(color?: Dynamic): Dynamic {
   let value: Dynamic,
-    value2: Dynamic,
-    value3: Dynamic,
+    green: Dynamic,
+    blue: Dynamic,
     count: Dynamic = 1,
-    value4: Dynamic = TypographyCensusPattern_3.exec(input.trim());
-  if (value4) {
-    let value6: Dynamic = value4[1];
-    value6.length <= 4 &&
-      (value6 = [...value6]
-        .map((input2?: Dynamic): Dynamic => input2 + input2)
+    hexMatch: Dynamic = HEX_COLOR_PATTERN.exec(color.trim());
+  if (hexMatch) {
+    let hexValue: Dynamic = hexMatch[1];
+    hexValue.length <= 4 &&
+      (hexValue = [...hexValue]
+        .map((channel?: Dynamic): Dynamic => channel + channel)
         .join(""));
-    value = parseInt(value6.slice(0, 2), 16);
-    value2 = parseInt(value6.slice(2, 4), 16);
-    value3 = parseInt(value6.slice(4, 6), 16);
-    value6.length === 8 && (count = parseInt(value6.slice(6, 8), 16) / 255);
+    value = parseInt(hexValue.slice(0, 2), 16);
+    green = parseInt(hexValue.slice(2, 4), 16);
+    blue = parseInt(hexValue.slice(4, 6), 16);
+    hexValue.length === 8 && (count = parseInt(hexValue.slice(6, 8), 16) / 255);
   } else {
-    let value6: Dynamic = TypographyCensusRgbaPattern.exec(input.trim());
+    let rgbaMatch: Dynamic = TypographyCensusRgbaPattern.exec(color.trim());
     if (
-      !value6 ||
-      ((value = +value6[1]),
-      (value2 = +value6[2]),
-      (value3 = +value6[3]),
-      value6[4] !== undefined &&
-        (count = value6[4].endsWith("%")
-          ? parseFloat(value6[4]) / 100
-          : parseFloat(value6[4])),
-      [value, value2, value3].some(
-        (input2?: Dynamic): Dynamic => input2 > 255,
+      !rgbaMatch ||
+      ((value = +rgbaMatch[1]),
+      (green = +rgbaMatch[2]),
+      (blue = +rgbaMatch[3]),
+      rgbaMatch[4] !== undefined &&
+        (count = rgbaMatch[4].endsWith("%")
+          ? parseFloat(rgbaMatch[4]) / 100
+          : parseFloat(rgbaMatch[4])),
+      [value, green, blue].some(
+        (channel?: Dynamic): Dynamic => channel > 255,
       ) || !(count >= 0 && count <= 1))
     )
       return null;
   }
   if (count < 0.2) return null;
-  let value5: Dynamic =
+  let alpha: Dynamic =
     "#" +
-    [value, value2, value3]
+    [value, green, blue]
       .map(
-        (input2?: Dynamic): Dynamic => input2.toString(16).padStart(2, "0"),
+        (channel?: Dynamic): Dynamic => channel.toString(16).padStart(2, "0"),
       )
       .join("");
   return count >= 0.999
-    ? value5
+    ? alpha
     : "rgba(" +
         value +
         ", " +
-        value2 +
+        green +
         ", " +
-        value3 +
+        blue +
         ", " +
         String(Math.round(count * 100) / 100) +
         ")";
@@ -475,10 +475,10 @@ export {
   TypographyCensusH1H2H3Config,
   TypographyCensusHeadingPattern,
   TypographyCensusItems,
-  TypographyCensusItems_2,
+  TEXT_ROLE_DISPLAY_ORDER as TypographyCensusItems_2,
   TypographyCensusPattern,
-  TypographyCensusPattern_2,
-  TypographyCensusPattern_3,
+  CSS_VARIABLE_REFERENCE_PATTERN as TypographyCensusPattern_2,
+  HEX_COLOR_PATTERN as TypographyCensusPattern_3,
   TypographyCensusRgbaPattern,
   TypographyCensusSubscribers,
 };
@@ -555,7 +555,7 @@ export function installEditorTypographyCensus(): () => void {
       get em() { return uiMessage("inspector.census.body"); },
       get i() { return uiMessage("inspector.census.body"); },
     };
-    TypographyCensusItems_2 = [
+    TEXT_ROLE_DISPLAY_ORDER = [
       "Display",
       "Heading 1",
       "Heading 2",
@@ -577,8 +577,8 @@ export function installEditorTypographyCensus(): () => void {
       "Strong",
     ];
     TypographyCensusHeadingPattern = /^Heading( [1-6])?$/;
-    TypographyCensusPattern_2 = /^var\(\s*(--[\w-]+)\s*(?:,[^)]*)?\)$/;
-    TypographyCensusPattern_3 = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+    CSS_VARIABLE_REFERENCE_PATTERN = /^var\(\s*(--[\w-]+)\s*(?:,[^)]*)?\)$/;
+    HEX_COLOR_PATTERN = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
     TypographyCensusRgbaPattern =
       /^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})(?:[\s,/]+([\d.]+%?))?\s*\)$/i;
   };

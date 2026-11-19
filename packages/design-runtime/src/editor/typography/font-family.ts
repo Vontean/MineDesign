@@ -5,25 +5,25 @@ import {
 
 var TypographyFontFamilySerifSansSerifPattern: Dynamic;
 var TypographyFontFamilyEmojiSymbolPattern: Dynamic;
-function firstFontFamily(input?: Dynamic): Dynamic {
-  return input
+function firstFontFamily(fontStack?: Dynamic): Dynamic {
+  return fontStack
     .split(",")[0]
     .trim()
     .replace(/^['"]|['"]$/g, "");
 }
-function displayFontFamily(input?: Dynamic): Dynamic {
-  let value: Dynamic = input
+function displayFontFamily(fontStack?: Dynamic): Dynamic {
+  let value: Dynamic = fontStack
     .split(",")
     .map(
-      (input2?: Dynamic): Dynamic =>
-        input2.trim().replace(/^["']|["']$/g, ""),
+      (fontName?: Dynamic): Dynamic =>
+        fontName.trim().replace(/^["']|["']$/g, ""),
     )
     .filter(Boolean);
   return (
     value.find(
-      (input2?: Dynamic): Dynamic =>
-        !TypographyFontFamilySerifSansSerifPattern.test(input2) &&
-        !TypographyFontFamilyEmojiSymbolPattern.test(input2),
+      (fontName?: Dynamic): Dynamic =>
+        !TypographyFontFamilySerifSansSerifPattern.test(fontName) &&
+        !TypographyFontFamilyEmojiSymbolPattern.test(fontName),
     ) ??
     value[0] ??
     ""

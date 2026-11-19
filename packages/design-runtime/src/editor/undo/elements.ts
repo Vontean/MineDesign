@@ -33,10 +33,10 @@ export const UndoElementsAZaZAZaZPattern = /^\.\/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,1
 /** 1 到 5 位的整数尺寸。 */
 export const UndoElementsPattern = /^\d{1,5}$/;
 /** src 是否指向画板内的相对资源、上传资源或模拟器 blob。 */
-export const UndoElementsTest = (value: string): boolean =>
-  UndoElementsAZaZAZaZPattern.test(value) ||
-  blobAssetPathPattern.test(value) ||
-  isEmulatorBlobUrl(value) ||
+export const UndoElementsTest = (candidateValue: string): boolean =>
+  UndoElementsAZaZAZaZPattern.test(candidateValue) ||
+  blobAssetPathPattern.test(candidateValue) ||
+  isEmulatorBlobUrl(candidateValue) ||
   false;
 
 /** 从撤销或重做栈弹出一项并应用；栈空返回 null。 */

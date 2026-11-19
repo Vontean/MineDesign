@@ -12,30 +12,30 @@ import { SessionStripTextItems } from "../session-strip/text";
 function TypographyStyleSelect({
   model: model,
   attached: attached,
-  disabled: disabled2,
+  disabled: isDisabled,
   onApply: onApply,
   onDetach: onDetach,
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = model.options.map(
-    (input?: Dynamic): Dynamic => ({
-      value: input.value,
-      label: input.text,
-      hint: input.hint,
-      labelStyle: input.labelStyle,
-      ...(input.group !== undefined
+    (styleOption?: Dynamic): Dynamic => ({
+      value: styleOption.value,
+      label: styleOption.text,
+      hint: styleOption.hint,
+      labelStyle: styleOption.labelStyle,
+      ...(styleOption.group !== undefined
         ? {
-            group: input.group,
+            group: styleOption.group,
           }
         : {}),
-      ...(input.subgroup !== undefined
+      ...(styleOption.subgroup !== undefined
         ? {
-            subgroup: input.subgroup,
+            subgroup: styleOption.subgroup,
           }
         : {}),
-      ...(input.title !== undefined
+      ...(styleOption.title !== undefined
         ? {
-            title: input.title,
+            title: styleOption.title,
           }
         : {}),
     }),
@@ -52,7 +52,7 @@ function TypographyStyleSelect({
       }
       searchable={true}
       searchLabel={"Search styles"}
-      disabled={disabled2 || value.length === 0}
+      disabled={isDisabled || value.length === 0}
       trailing={
         attached ? (
           <Button
@@ -64,19 +64,19 @@ function TypographyStyleSelect({
               uiMessage("inspector.styleSelect.detachEditFontWeightSizeLineHeightAndLetterSpacingOnThisText")
             }
             data-testid={"dc-text-detach"}
-            disabled={disabled2}
+            disabled={isDisabled}
             onClick={onDetach}
           />
         ) : undefined
       }
-      onChange={(input?: Dynamic): Dynamic => onApply(model.editsFor(input))}
+      onChange={(selectedStyle?: Dynamic): Dynamic => onApply(model.editsFor(selectedStyle))}
     />
   );
 }
 function TypographyVariantSelect({
-  value: value,
+  value: selectedVariant,
   mixed: mixed,
-  disabled: disabled2,
+  disabled: isDisabled,
   disabledReason: disabledReason,
   onChange: onChange,
   onReset: onReset,
@@ -91,9 +91,9 @@ function TypographyVariantSelect({
         label={uiMessage("inspector.styleSelect.list")}
         data-testid={"dc-text-list"}
         options={SessionStripTextItems}
-        value={value}
+        value={selectedVariant}
         mixed={mixed}
-        disabled={disabled2 || disabledReason != null}
+        disabled={isDisabled || disabledReason != null}
         title={disabledReason ?? (undefined)}
         onReset={onReset}
         onChange={onChange}

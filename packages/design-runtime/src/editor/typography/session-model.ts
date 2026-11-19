@@ -9,63 +9,63 @@ import { summarizeFontSizeUsage } from "./census";
 import { displayFontFamily } from "./font-family";
 import { authoredTypographyMetrics, matchedDesignSystemTextStyle, TypographyMetricsFontSize, TypographyMetricsHandler, typographyStyleEdits } from "./metrics";
 
-function typographySessionModel(input?: Dynamic): Dynamic {
+function typographySessionModel(selection?: Dynamic): Dynamic {
   let {
       metrics: value,
-      sizeMixed: value2,
-      ownFamily: value3,
-      family: value4,
-      sizes: value5,
-      sizeNames: value6,
-      sizeFamilies: value7,
-      systemRows: value8,
-      hasSystem: value9,
-      single: value10,
-    }: Dynamic = input,
+      sizeMixed: sizeMixed,
+      ownFamily: ownFamily,
+      family: family,
+      sizes: sizes,
+      sizeNames: sizeNames,
+      sizeFamilies: sizeFamilies,
+      systemRows: systemRows,
+      hasSystem: hasSystem,
+      single: isSingle,
+    }: Dynamic = selection,
     size: Dynamic = value.size,
-    value11: Dynamic = value2
+    matchedStyle: Dynamic = sizeMixed
       ? undefined
-      : matchedDesignSystemTextStyle(value8, value),
-    value12: Dynamic = value9 ? [] : value5,
-    value13: Dynamic =
-      size !== undefined && !value2 && value12.includes(size),
-    value14: Dynamic = size !== undefined ? value7.get(size) : undefined,
-    value15: Dynamic =
-      value13 &&
-      (value3 === undefined ||
-        (value14 !== undefined &&
-          displayFontFamily(value3).toLowerCase() ===
-            displayFontFamily(value14).toLowerCase()))
-        ? (value6.get(size) ?? null)
+      : matchedDesignSystemTextStyle(systemRows, value),
+    availableSizes: Dynamic = hasSystem ? [] : sizes,
+    fontStyle: Dynamic =
+      size !== undefined && !sizeMixed && availableSizes.includes(size),
+    sizeFamily: Dynamic = size !== undefined ? sizeFamilies.get(size) : undefined,
+    matchedName: Dynamic =
+      fontStyle &&
+      (ownFamily === undefined ||
+        (sizeFamily !== undefined &&
+          displayFontFamily(ownFamily).toLowerCase() ===
+            displayFontFamily(sizeFamily).toLowerCase()))
+        ? (sizeNames.get(size) ?? null)
         : null,
-    value16: Dynamic = value11?.id ?? (value13 ? String(size) : null),
-    value17: Dynamic = value11?.style.name ?? value15 ?? null,
-    value18: Dynamic =
-      value11?.style.name ??
-      value15 ??
+    matchedId: Dynamic = matchedStyle?.id ?? (fontStyle ? String(size) : null),
+    matchedStyleName: Dynamic = matchedStyle?.style.name ?? matchedName ?? null,
+    chipText: Dynamic =
+      matchedStyle?.style.name ??
+      matchedName ??
       [
-        displayFontFamily(value4),
-        value2 ? "Mixed" : size === undefined ? "" : String(Math.round(size)),
+        displayFontFamily(family),
+        sizeMixed ? "Mixed" : size === undefined ? "" : String(Math.round(size)),
       ]
         .filter(Boolean)
         .join(" \xB7 "),
     items: Dynamic = [
-      ...value12.map((input2?: Dynamic): Dynamic => {
-        let value19: Dynamic =
-          value6.get(input2) ??
-          (displayFontFamily(value7.get(input2) ?? value4) ||
-            String(input2));
+      ...availableSizes.map((sizeValue?: Dynamic): Dynamic => {
+        let sizeLabel: Dynamic =
+          sizeNames.get(sizeValue) ??
+          (displayFontFamily(sizeFamilies.get(sizeValue) ?? family) ||
+            String(sizeValue));
         return {
-          value: String(input2),
-          text: value19,
-          get hint() { return (String(input2)) + ("px"); },
+          value: String(sizeValue),
+          text: sizeLabel,
+          get hint() { return (String(sizeValue)) + ("px"); },
           labelStyle: {
-            fontFamily: value7.get(input2) ?? (value4 || undefined),
-            fontSize: Math.min(20, Math.max(13, input2 / 2.4)),
+            fontFamily: sizeFamilies.get(sizeValue) ?? (family || undefined),
+            fontSize: Math.min(20, Math.max(13, sizeValue / 2.4)),
           },
         };
       }),
-      ...value8.map(
+      ...systemRows.map(
         ({
           id: id,
           style: style,
@@ -99,128 +99,128 @@ function typographySessionModel(input?: Dynamic): Dynamic {
       ),
     ];
   return {
-    value: value16,
-    chipText: value18,
-    matchedName: value17,
-    mixed: value2,
+    value: matchedId,
+    chipText: chipText,
+    matchedName: matchedStyleName,
+    mixed: sizeMixed,
     options: items,
-    editsFor: (input2?: Dynamic): Dynamic => {
-      let value19: Dynamic = value8.find(
-        (input3?: Dynamic): Dynamic => input3.id === input2,
+    editsFor: (fontSize?: Dynamic): Dynamic => {
+      let systemRow: Dynamic = systemRows.find(
+        (style?: Dynamic): Dynamic => style.id === fontSize,
       );
-      if (value19 !== undefined)
-        return typographyStyleEdits(value19.style);
-      let value20: Dynamic =
-        value11 !== undefined && value10
+      if (systemRow !== undefined)
+        return typographyStyleEdits(systemRow.style);
+      let styleEdits: Dynamic =
+        matchedStyle !== undefined && isSingle
           ? [
               "line-height",
               "letter-spacing",
               "font-weight",
               "font-style",
-              ...(value11.style.family !== undefined ? ["font-family"] : []),
-            ].map((input3?: Dynamic): Dynamic => [input3, undefined])
+              ...(matchedStyle.style.family !== undefined ? ["font-family"] : []),
+            ].map((sizeValue?: Dynamic): Dynamic => [sizeValue, undefined])
           : [];
-      return [["font-size", input2 + "px"], ...value20];
+      return [["font-size", fontSize + "px"], ...styleEdits];
     },
   };
 }
-function typographyCensusOptions(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value3: Dynamic = parseFloat(input2);
-      return Number.isFinite(value3) ? value3 : undefined;
+function typographyCensusOptions(census?: Dynamic): Dynamic {
+  let callback: Dynamic = (rawValue?: Dynamic): Dynamic => {
+      let numericValue: Dynamic = parseFloat(rawValue);
+      return Number.isFinite(numericValue) ? numericValue : undefined;
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      /px$/.test(input2)
-        ? callback(input2)
-        : /pt$/.test(input2)
-          ? Math.round(((callback(input2) ?? 0) * 4) / 3)
+    normalizeValue: Dynamic = (rawValue?: Dynamic): Dynamic =>
+      /px$/.test(rawValue)
+        ? callback(rawValue)
+        : /pt$/.test(rawValue)
+          ? Math.round(((callback(rawValue) ?? 0) * 4) / 3)
           : undefined,
     value: Dynamic = [
       ...new Set(
-        [...input.sizes]
-          .map(callback2)
+        [...census.sizes]
+          .map(normalizeValue)
           .filter(
-            (input2?: Dynamic): Dynamic => input2 !== undefined && input2 > 0,
+            (size?: Dynamic): Dynamic => size !== undefined && size > 0,
           ),
       ),
     ].sort(
-      (input2?: Dynamic, options?: Dynamic): Dynamic => options - input2,
+      (size?: Dynamic, otherSize?: Dynamic): Dynamic => otherSize - size,
     ),
     entries: Dynamic = new Map();
-  for (let [value3, value4] of Object.entries(
-    input.sizeRoles ?? {},
+  for (let [sizeKey, sizeUsage] of Object.entries(
+    census.sizeRoles ?? {},
   ) as Dynamic) {
-    let value5: Dynamic = callback2(value3);
-    if (value5 === undefined) continue;
-    let value6: Dynamic = entries.get(value5) ?? new Map();
-    for (let [value7, value8] of Object.entries(value4) as Dynamic)
-      value6.set(value7, (value6.get(value7) ?? 0) + value8);
-    entries.set(value5, value6);
+    let normalizedSize: Dynamic = normalizeValue(sizeKey);
+    if (normalizedSize === undefined) continue;
+    let familyCounts: Dynamic = entries.get(normalizedSize) ?? new Map();
+    for (let [familyName, usageCount] of Object.entries(sizeUsage) as Dynamic)
+      familyCounts.set(familyName, (familyCounts.get(familyName) ?? 0) + usageCount);
+    entries.set(normalizedSize, familyCounts);
   }
-  let value2: Dynamic = summarizeFontSizeUsage(value, entries),
-    entries2: Dynamic = new Map();
-  for (let [value3, value4] of Object.entries(
-    input.sizeFamilies ?? {},
+  let sizeNames: Dynamic = summarizeFontSizeUsage(value, entries),
+    sizeFamilies: Dynamic = new Map();
+  for (let [familyKey, familyUsage] of Object.entries(
+    census.sizeFamilies ?? {},
   ) as Dynamic) {
-    let value5: Dynamic = callback2(value3);
-    value5 !== undefined &&
-      !entries2.has(value5) &&
-      InspectorComputedDataPattern.test(value4) &&
-      entries2.set(value5, value4);
+    let normalizedFamily: Dynamic = normalizeValue(familyKey);
+    normalizedFamily !== undefined &&
+      !sizeFamilies.has(normalizedFamily) &&
+      InspectorComputedDataPattern.test(familyUsage) &&
+      sizeFamilies.set(normalizedFamily, familyUsage);
   }
   return {
     sizes: value,
-    sizeNames: value2,
-    sizeFamilies: entries2,
+    sizeNames: sizeNames,
+    sizeFamilies: sizeFamilies,
   };
 }
-function typographySelectionModel(input?: Dynamic): Dynamic {
+function typographySelectionModel(selection?: Dynamic): Dynamic {
   let {
     items: value,
-    census: value2,
-    systemRows: value3,
-    hasSystem: value4,
-  }: Dynamic = input;
+    census: census,
+    systemRows: systemRows,
+    hasSystem: hasSystem,
+  }: Dynamic = selection;
   if (value.length === 0) return null;
   let {
-    sizes: value5,
-    sizeNames: value6,
-    sizeFamilies: value7,
-  }: Dynamic = typographyCensusOptions(value2);
-  if (value5.length === 0 && value3.length === 0) return null;
-  let value8: Dynamic = value.map(
-      (input2?: Dynamic): Dynamic =>
+    sizes: sizes,
+    sizeNames: sizeNames,
+    sizeFamilies: sizeFamilies,
+  }: Dynamic = typographyCensusOptions(census);
+  if (sizes.length === 0 && systemRows.length === 0) return null;
+  let metrics: Dynamic = value.map(
+      (element?: Dynamic): Dynamic =>
         authoredTypographyMetrics(
-          input2.tag,
-          input2.inlineStyle ?? "",
-          input2.computed,
+          element.tag,
+          element.inlineStyle ?? "",
+          element.computed,
         ),
     )[0],
-    value9: Dynamic =
+    sizeMixed: Dynamic =
       value.length > 1 &&
       new Set(
-        value.map((input2?: Dynamic): Dynamic => input2.inlineSize ?? null),
+        value.map((element?: Dynamic): Dynamic => element.inlineSize ?? null),
       ).size > 1,
     entries: Dynamic = new Map(
       parseStyleDeclarations(value[0].authoredStyle).map(
-        (input2?: Dynamic): Dynamic => [input2.prop, input2.value],
+        (declaration?: Dynamic): Dynamic => [declaration.prop, declaration.value],
       ),
     ),
-    value10: Dynamic = normalizeInspectorComputedData("text", {
+    computed: Dynamic = normalizeInspectorComputedData("text", {
       tag: value[0].tag,
       computed: value[0].computed,
     }),
-    value11: Dynamic = entries.get("font-family") ?? value10.fontFamily ?? "";
+    family: Dynamic = entries.get("font-family") ?? computed.fontFamily ?? "";
   return typographySessionModel({
-    metrics: value8,
-    sizeMixed: value9,
+    metrics: metrics,
+    sizeMixed: sizeMixed,
     ownFamily: value[0].inlineFamily ?? undefined,
-    family: InspectorComputedDataPattern.test(value11) ? value11 : "",
-    sizes: value5,
-    sizeNames: value6,
-    sizeFamilies: value7,
-    systemRows: value3,
-    hasSystem: value4,
+    family: InspectorComputedDataPattern.test(family) ? family : "",
+    sizes: sizes,
+    sizeNames: sizeNames,
+    sizeFamilies: sizeFamilies,
+    systemRows: systemRows,
+    hasSystem: hasSystem,
     single: value.length <= 1,
   });
 }
