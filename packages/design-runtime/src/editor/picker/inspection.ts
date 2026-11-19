@@ -4,7 +4,7 @@ import {
 } from "../../runtime-types";
 
 async function inspectPickerCssVariables(
-  input?: Dynamic,
+  webContents?: Dynamic,
   items?: Dynamic,
 ): Promise<Dynamic> {
   if (items.length === 0)
@@ -13,7 +13,7 @@ async function inspectPickerCssVariables(
       settled: true,
     };
   try {
-    let value: Dynamic = await input.executeJavaScript(
+    let value: Dynamic = await webContents.executeJavaScript(
       `(function(ns){var done=document.readyState==='complete',settled=done;var ls=document.querySelectorAll('link[rel~="stylesheet"][href]:not([disabled]):not([rel~="alternate"])');for(var j=0;j<ls.length;j++){if(!ls[j].sheet){if(!done)return null;settled=false}}var cs=getComputedStyle(document.documentElement);var out=[];for(var i=0;i<ns.length;i++){if(cs.getPropertyValue(ns[i]).trim())out.push(ns[i])}return {vars:out,settled:settled}})(${JSON.stringify(items)})`,
       4e3,
     );
@@ -28,39 +28,39 @@ async function inspectPickerCssVariables(
   }
 }
 function observePickerCssVariables(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  cssVariableNames?: Dynamic,
+  onChange?: Dynamic,
 ): Dynamic {
   let flag: Dynamic = false,
     value: Dynamic = [0, 300, 1e3, 2e3, 5e3, 12e3, 3e4].map(
-      (input2?: Dynamic): Dynamic =>
+      (delayMs?: Dynamic): Dynamic =>
         setTimeout((): Dynamic => {
-          inspectPickerCssVariables(input, options).then(
-            (input3?: Dynamic): Dynamic => {
+          inspectPickerCssVariables(webContents, cssVariableNames).then(
+            (inspection?: Dynamic): Dynamic => {
               flag ||
-                !input3 ||
-                (input3.vars.size === 0 && !input3.settled && input2 < 5e3) ||
-                context(input3.vars);
+                !inspection ||
+                (inspection.vars.size === 0 && !inspection.settled && delayMs < 5e3) ||
+                onChange(inspection.vars);
             },
           );
-        }, input2),
+        }, delayMs),
     );
   return (): Dynamic => {
     flag = true;
     value.forEach(clearTimeout);
   };
 }
-function sameStringSet(input?: Dynamic, options?: Dynamic): Dynamic {
+function sameStringSet(current?: Dynamic, next?: Dynamic): Dynamic {
   return (
-    input !== undefined &&
-    input.size === options.size &&
-    [...options].every((input2?: Dynamic): Dynamic => input.has(input2))
+    current !== undefined &&
+    current.size === next.size &&
+    [...next].every((item?: Dynamic): Dynamic => current.has(item))
   );
 }
-async function getPickerFontFaces(input?: Dynamic): Promise<Dynamic> {
+async function getPickerFontFaces(webContents?: Dynamic): Promise<Dynamic> {
   try {
-    let value: Dynamic = await input.executeJavaScript(
+    let value: Dynamic = await webContents.executeJavaScript(
       "(function(){var o=[],seen={};document.fonts.forEach(function(f){var k=f.family+'|'+f.weight+'|'+f.style;if(f.status!=='error'&&!seen[k]){seen[k]=1;o.push({family:f.family,weight:f.weight,style:f.style})}});return o})()",
       4e3,
     );
@@ -70,87 +70,87 @@ async function getPickerFontFaces(input?: Dynamic): Promise<Dynamic> {
   }
 }
 async function inspectPickerProps(
-  input?: Dynamic,
-  options: Dynamic = {},
+  webContents?: Dynamic,
+  props: Dynamic = {},
 ): Promise<Dynamic> {
   let value: Dynamic = Object.create(null);
   try {
-    let value2: Dynamic = await input.executeJavaScript(
-      `(function(){try{var n=window.__dcRootName&&window.__dcRootName();var r=n&&window.__dcRegistry&&window.__dcRegistry[n];if(!r||!r.Logic)return null;var v=new r.Logic(${JSON.stringify(options)}).renderVals();if(!v||typeof v!=='object')return null;var o={},c=0;for(var k in v){if(c>=200)break;var x=v[k],t=typeof x;if(x===null||t==='boolean'||(t==='number'&&isFinite(x))||(t==='string'&&x.length<=4000)){o[k]=x;c++;}}return JSON.stringify(o)}catch(e){return null}})()`,
+    let propsJson: Dynamic = await webContents.executeJavaScript(
+      `(function(){try{var n=window.__dcRootName&&window.__dcRootName();var r=n&&window.__dcRegistry&&window.__dcRegistry[n];if(!r||!r.Logic)return null;var v=new r.Logic(${JSON.stringify(props)}).renderVals();if(!v||typeof v!=='object')return null;var o={},c=0;for(var k in v){if(c>=200)break;var x=v[k],t=typeof x;if(x===null||t==='boolean'||(t==='number'&&isFinite(x))||(t==='string'&&x.length<=4000)){o[k]=x;c++;}}return JSON.stringify(o)}catch(e){return null}})()`,
       1500,
     );
-    if (typeof value2 != "string" || value2.length > 4e5) return value;
-    let value3: Dynamic = JSON.parse(value2);
-    if (!value3 || typeof value3 != "object" || Array.isArray(value3))
+    if (typeof propsJson != "string" || propsJson.length > 4e5) return value;
+    let parsedProps: Dynamic = JSON.parse(propsJson);
+    if (!parsedProps || typeof parsedProps != "object" || Array.isArray(parsedProps))
       return value;
     let index: Dynamic = 0;
-    for (let [value4, value5] of Object.entries(value3) as Dynamic)
+    for (let [propName, propValue] of Object.entries(parsedProps) as Dynamic)
       index >= 200 ||
-        !/^[A-Za-z_$][\w$]*$/.test(value4) ||
-        value4 === "__proto__" ||
-        value4 === "constructor" ||
-        ((value5 === null ||
-          typeof value5 == "boolean" ||
-          (typeof value5 == "number" && Number.isFinite(value5)) ||
-          (typeof value5 == "string" && value5.length <= 4e3)) &&
-          ((value[value4] = value5), index++));
+        !/^[A-Za-z_$][\w$]*$/.test(propName) ||
+        propName === "__proto__" ||
+        propName === "constructor" ||
+        ((propValue === null ||
+          typeof propValue == "boolean" ||
+          (typeof propValue == "number" && Number.isFinite(propValue)) ||
+          (typeof propValue == "string" && propValue.length <= 4e3)) &&
+          ((value[propName] = propValue), index++));
   } catch {}
   return value;
 }
 async function getPickerComponentScript(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  componentName?: Dynamic,
+  props?: Dynamic,
 ): Promise<Dynamic> {
   try {
-    let value: Dynamic = await input.executeJavaScript(
-      `(function(){try{if(!window.__dcRegistry)return null;var r=window.__dcRegistry[${JSON.stringify(options)}];if(!r)return 'missing';if(!r.Logic)return JSON.stringify({l:false,v:{},h:[]});var v=new r.Logic(${JSON.stringify(context)}).renderVals()||{};if(typeof v!=='object')return null;var o={},h=[],c=0;for(var k in v){if(++c>200)return 'big';var x=v[k],t=typeof x;if(x===null||t==='boolean'||(t==='number'&&isFinite(x))||(t==='string'&&x.length<=4000))o[k]=x;else h.push(k)}return JSON.stringify({l:true,v:o,h:h})}catch(e){return null}})()`,
+    let value: Dynamic = await webContents.executeJavaScript(
+      `(function(){try{if(!window.__dcRegistry)return null;var r=window.__dcRegistry[${JSON.stringify(componentName)}];if(!r)return 'missing';if(!r.Logic)return JSON.stringify({l:false,v:{},h:[]});var v=new r.Logic(${JSON.stringify(props)}).renderVals()||{};if(typeof v!=='object')return null;var o={},h=[],c=0;for(var k in v){if(++c>200)return 'big';var x=v[k],t=typeof x;if(x===null||t==='boolean'||(t==='number'&&isFinite(x))||(t==='string'&&x.length<=4000))o[k]=x;else h.push(k)}return JSON.stringify({l:true,v:o,h:h})}catch(e){return null}})()`,
       1500,
     );
     if (value === "missing" || value === "big") return value;
     if (typeof value != "string") return null;
     if (value.length > 4e5) return "big";
-    let value2: Dynamic = JSON.parse(value);
+    let parsedResult: Dynamic = JSON.parse(value);
     if (
-      !value2 ||
-      typeof value2.l != "boolean" ||
-      !value2.v ||
-      typeof value2.v != "object" ||
-      Array.isArray(value2.v) ||
-      !Array.isArray(value2.h)
+      !parsedResult ||
+      typeof parsedResult.l != "boolean" ||
+      !parsedResult.v ||
+      typeof parsedResult.v != "object" ||
+      Array.isArray(parsedResult.v) ||
+      !Array.isArray(parsedResult.h)
     )
       return null;
-    let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        typeof input2 == "string" &&
-        /^[A-Za-z_$][\w$]*$/.test(input2) &&
-        input2 !== "__proto__" &&
-        input2 !== "constructor",
-      value3: Dynamic = Object.create(null),
-      value4: Dynamic = value2.h.filter(callback);
-    for (let [value5, value6] of Object.entries(value2.v) as Dynamic)
-      callback(value5) &&
-      (value6 === null ||
-        typeof value6 == "boolean" ||
-        (typeof value6 == "number" && Number.isFinite(value6)) ||
-        (typeof value6 == "string" && value6.length <= 4e3))
-        ? (value3[value5] = value6)
-        : value4.push(value5);
+    let callback: Dynamic = (name?: Dynamic): Dynamic =>
+        typeof name == "string" &&
+        /^[A-Za-z_$][\w$]*$/.test(name) &&
+        name !== "__proto__" &&
+        name !== "constructor",
+      vals: Dynamic = Object.create(null),
+      heldNames: Dynamic = parsedResult.h.filter(callback);
+    for (let [entryName, entryValue] of Object.entries(parsedResult.v) as Dynamic)
+      callback(entryName) &&
+      (entryValue === null ||
+        typeof entryValue == "boolean" ||
+        (typeof entryValue == "number" && Number.isFinite(entryValue)) ||
+        (typeof entryValue == "string" && entryValue.length <= 4e3))
+        ? (vals[entryName] = entryValue)
+        : heldNames.push(entryName);
     return {
-      hasLogic: value2.l,
-      vals: value3,
-      held: value4,
+      hasLogic: parsedResult.l,
+      vals: vals,
+      held: heldNames,
     };
   } catch {
     return null;
   }
 }
 async function getPickerPropsMetadata(
-  input?: Dynamic,
-  options?: Dynamic,
+  webContents?: Dynamic,
+  componentName?: Dynamic,
 ): Promise<Dynamic> {
   try {
-    let value: Dynamic = await input.executeJavaScript(
-      `(function(){try{var r=window.__dcRegistry&&window.__dcRegistry[${JSON.stringify(options)}];return r&&r.propsMeta?JSON.stringify(r.propsMeta):null}catch(e){return null}})()`,
+    let value: Dynamic = await webContents.executeJavaScript(
+      `(function(){try{var r=window.__dcRegistry&&window.__dcRegistry[${JSON.stringify(componentName)}];return r&&r.propsMeta?JSON.stringify(r.propsMeta):null}catch(e){return null}})()`,
       4e3,
     );
     return typeof value != "string" ? null : JSON.parse(value);

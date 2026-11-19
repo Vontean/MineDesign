@@ -39,29 +39,29 @@ function useAssetPickerContext(): Dynamic {
     AssetPickerContext,
   );
 }
-function useProjectFiles(input?: Dynamic, options: Dynamic = ""): Dynamic {
-  let [value, value2]: Dynamic = (0, reactPropertiesAssetPicker.useState)([]),
-    [value3, value4]: Dynamic = (0, reactPropertiesAssetPicker.useState)(
+function useProjectFiles(projectPath?: Dynamic, directory: Dynamic = ""): Dynamic {
+  let [value, setFiles]: Dynamic = (0, reactPropertiesAssetPicker.useState)([]),
+    [isLoading, setIsLoading]: Dynamic = (0, reactPropertiesAssetPicker.useState)(
       true,
     );
   (0, reactPropertiesAssetPicker.useEffect)((): Dynamic => {
     let flag: Dynamic = true;
     projectFilesystem
-      .readdir(options)
-      .then((input2?: Dynamic): Dynamic => {
-        flag && value2(input2);
+      .readdir(directory)
+      .then((entries?: Dynamic): Dynamic => {
+        flag && setFiles(entries);
       })
       .catch((): Dynamic => {})
       .finally((): Dynamic => {
-        flag && value4(false);
+        flag && setIsLoading(false);
       });
     return (): Dynamic => {
       flag = false;
     };
-  }, [options]);
+  }, [directory]);
   return {
     files: value,
-    loading: value3,
+    loading: isLoading,
   };
 }
 function PropertyAssetPopup({
@@ -79,18 +79,18 @@ function PropertyAssetPopup({
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
-    value2: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
-    [value3, value4]: Dynamic = (0, reactPropertiesAssetPicker_2.useState)({
+  let contentRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
+    anchorRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
+    [placement, setPlacement]: Dynamic = (0, reactPropertiesAssetPicker_2.useState)({
       side: "bottom",
       maxHeight: undefined,
     });
   (0, reactPropertiesAssetPicker_2.useLayoutEffect)((): Dynamic => {
     open &&
-      value4(
+      setPlacement(
         planHeight !== undefined
           ? choosePopoverPlacement(
-              value2.current?.firstElementChild,
+              anchorRef.current?.firstElementChild,
               planHeight,
             )
           : {
@@ -99,55 +99,55 @@ function PropertyAssetPopup({
             },
       );
   }, [open]);
-  let value5: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
-    value6: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(""),
-    value7: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(false);
+  let activeTextInputRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
+    activeInputValueRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(""),
+    swallowEscapeRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(false);
   return (
     <PopoverPopoverRootTriggerPopupConfig.Root
       open={open}
       modal={true}
-      onOpenChange={(input?: Dynamic, options?: Dynamic): Dynamic => {
-        if (!input && options.reason === "escape-key") {
-          if (options.event.defaultPrevented) {
-            options.cancel();
+      onOpenChange={(nextOpen?: Dynamic, changeDetails?: Dynamic): Dynamic => {
+        if (!nextOpen && changeDetails.reason === "escape-key") {
+          if (changeDetails.event.defaultPrevented) {
+            changeDetails.cancel();
             return;
           }
-          options.event.preventDefault();
+          changeDetails.event.preventDefault();
         }
-        onOpenChange(input);
+        onOpenChange(nextOpen);
       }}
     >
-      <span ref={value2} className={"contents"}>
+      <span ref={anchorRef} className={"contents"}>
         <PopoverPopoverRootTriggerPopupConfig.Trigger
           render={trigger}
         />
       </span>
       <PopoverPopoverRootTriggerPopupConfig.Popup
         padding={"none"}
-        side={value3.side}
+        side={placement.side}
         style={
-          value3.maxHeight !== undefined
+          placement.maxHeight !== undefined
             ? {
-                maxHeight: value3.maxHeight,
+                maxHeight: placement.maxHeight,
               }
             : undefined
         }
         align={"start"}
         sideOffset={4}
         collisionPadding={8}
-        initialFocus={(input?: Dynamic): Dynamic => {
-          if (input === "touch") return true;
-          if (editsAreUndoSteps && input !== "keyboard")
-            return value.current?.closest('[data-cds="Popover"]') ?? true;
-          let value8: Dynamic = value.current?.querySelector(
+        initialFocus={(openReason?: Dynamic): Dynamic => {
+          if (openReason === "touch") return true;
+          if (editsAreUndoSteps && openReason !== "keyboard")
+            return contentRef.current?.closest('[data-cds="Popover"]') ?? true;
+          let firstInput: Dynamic = contentRef.current?.querySelector(
             'input:not([disabled]):not([type="hidden"]):not([aria-hidden="true"])',
           );
-          return value8
+          return firstInput
             ? (setTimeout((): Dynamic => {
-                value8.ownerDocument.activeElement === value8 &&
-                  value8.select();
+                firstInput.ownerDocument.activeElement === firstInput &&
+                  firstInput.select();
               }, 0),
-              value8)
+              firstInput)
             : true;
         }}
         data-testid={dataTestid}
@@ -155,7 +155,7 @@ function PropertyAssetPopup({
         className={header !== undefined ? W64Value : W155remValue}
       >
         <div
-          ref={value}
+          ref={contentRef}
           className={cn(
             "flex flex-col pt-md [--pp-label-w:3rem]",
             header !== undefined
@@ -165,50 +165,50 @@ function PropertyAssetPopup({
           onInputCapture={(event?: Dynamic): Dynamic => {
             (event.target instanceof HTMLInputElement ||
               event.target instanceof HTMLTextAreaElement) &&
-              ((value5.current = event.target),
-              (value6.current = event.target.value));
+              ((activeTextInputRef.current = event.target),
+              (activeInputValueRef.current = event.target.value));
           }}
           onBlurCapture={(event?: Dynamic): Dynamic => {
-            value5.current === event.target && (value5.current = null);
+            activeTextInputRef.current === event.target && (activeTextInputRef.current = null);
           }}
           onKeyDownCapture={(event?: Dynamic): Dynamic => {
-            value7.current = false;
-            let value8: Dynamic =
+            swallowEscapeRef.current = false;
+            let textField: Dynamic =
               (event.target instanceof HTMLInputElement ||
                 event.target instanceof HTMLTextAreaElement) &&
-              value.current?.contains(event.target)
+              contentRef.current?.contains(event.target)
                 ? event.target
                 : null;
-            if (!value8) return;
-            let value9: Dynamic =
-              value5.current === value8 && value8.value === value6.current;
+            if (!textField) return;
+            let isInputUnchanged: Dynamic =
+              activeTextInputRef.current === textField && textField.value === activeInputValueRef.current;
             if (
               event.key === "Escape" &&
-              value8.hasAttribute("data-kit-search") &&
-              value8.value !== ""
+              textField.hasAttribute("data-kit-search") &&
+              textField.value !== ""
             ) {
-              value7.current = true;
+              swallowEscapeRef.current = true;
               return;
             }
             event.key === "Escape"
-              ? ((value7.current = value9),
-                (value5.current = null),
-                value9
+              ? ((swallowEscapeRef.current = isInputUnchanged),
+                (activeTextInputRef.current = null),
+                isInputUnchanged
                   ? setTimeout((): Dynamic => {
-                      value8.isConnected &&
-                        (value8.focus(),
-                        value8 instanceof HTMLInputElement &&
-                          value8.select());
+                      textField.isConnected &&
+                        (textField.focus(),
+                        textField instanceof HTMLInputElement &&
+                          textField.select());
                     }, 0)
                   : (document as Dynamic).querySelector(
                       "[data-mc-popover]",
                     ) === null && onOpenChange(false))
-              : event.key === "Enter" && (value5.current = null);
+              : event.key === "Enter" && (activeTextInputRef.current = null);
           }}
-          onKeyDown={(input?: Dynamic): Dynamic => {
-            input.key === "Escape" &&
-              value7.current &&
-              ((value7.current = false), input.stopPropagation());
+          onKeyDown={(event?: Dynamic): Dynamic => {
+            event.key === "Escape" &&
+              swallowEscapeRef.current &&
+              ((swallowEscapeRef.current = false), event.stopPropagation());
           }}
         >
           <div
@@ -283,31 +283,31 @@ function PropertyPopupField({
     </div>
   );
 }
-function resolveAssetPreviewUrl(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (options ?? "").trim();
+function resolveAssetPreviewUrl(projectPath?: Dynamic, source?: Dynamic): Dynamic {
+  let value: Dynamic = (source ?? "").trim();
   return value
     ? /^(https?:|data:|blob:)/i.test(value) ||
       blobAssetPathPattern.test(value)
       ? value
-      : resolveProjectAssetUrl(input, value.replace(/^\.\//, ""))
+      : resolveProjectAssetUrl(projectPath, value.replace(/^\.\//, ""))
     : null;
 }
-function escapeCssUrl(input?: Dynamic): Dynamic {
-  return input.replace(
+function escapeCssUrl(url?: Dynamic): Dynamic {
+  return url.replace(
     /["'()\\\s]/g,
-    (input2?: Dynamic): Dynamic =>
-      "%" + input2.charCodeAt(0).toString(16).padStart(2, "0"),
+    (character?: Dynamic): Dynamic =>
+      "%" + character.charCodeAt(0).toString(16).padStart(2, "0"),
   );
 }
 function AssetColorWell({ src: src }: Dynamic): Dynamic {
   useUiLocale();
-  let { projectPath: value }: Dynamic = useAssetPickerContext(),
-    value2: Dynamic = resolveAssetPreviewUrl(value, src);
+  let { projectPath: projectPath }: Dynamic = useAssetPickerContext(),
+    previewUrl: Dynamic = resolveAssetPreviewUrl(projectPath, src);
   return (
     <PropertyColorWell
       background={
-        value2
-          ? `url("${escapeCssUrl(value2)}") center / cover no-repeat`
+        previewUrl
+          ? `url("${escapeCssUrl(previewUrl)}") center / cover no-repeat`
           : undefined
       }
     />
@@ -316,48 +316,48 @@ function AssetColorWell({ src: src }: Dynamic): Dynamic {
 function ImageAssetPicker({
   value: value,
   onChange: onChange,
-  disabled: disabled2,
+  disabled: disabled,
   previewSize: previewSize,
   onPickFile: onPickFile,
   uploadOnlyReason: uploadOnlyReason,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { projectPath: value2 }: Dynamic = useAssetPickerContext(),
-    { files: value3 }: Dynamic = useProjectFiles(value2),
-    { showToast: value4 }: Dynamic = useToast(),
-    [value5, value6]: Dynamic = (0,
+  let { projectPath: projectPath }: Dynamic = useAssetPickerContext(),
+    { files: projectFiles }: Dynamic = useProjectFiles(projectPath),
+    { showToast: showToast }: Dynamic = useToast(),
+    [draftSource, setDraftSource]: Dynamic = (0,
     reactPropertiesTokenColorPicker.useState)(value ?? ""),
-    value7: Dynamic = (0, reactPropertiesTokenColorPicker.useRef)(
+    isEditingRef: Dynamic = (0, reactPropertiesTokenColorPicker.useRef)(
       false,
     ),
-    value8: Dynamic = (0, reactPropertiesTokenColorPicker.useRef)(
+    shouldRevertRef: Dynamic = (0, reactPropertiesTokenColorPicker.useRef)(
       false,
     );
-  !value7.current && (value ?? "") !== value5 && value6(value ?? "");
-  let value9: Dynamic = (0, reactPropertiesTokenColorPicker.useRef)(
+  !isEditingRef.current && (value ?? "") !== draftSource && setDraftSource(value ?? "");
+  let fileInputRef: Dynamic = (0, reactPropertiesTokenColorPicker.useRef)(
       null,
     ),
-    value10: Dynamic = (value3 ?? []).filter(
-      (input?: Dynamic): Dynamic =>
-        input.isFile && PropertiesAssetPickerWebpAvifPattern.test(input.name),
+    imageFiles: Dynamic = (projectFiles ?? []).filter(
+      (file?: Dynamic): Dynamic =>
+        file.isFile && PropertiesAssetPickerWebpAvifPattern.test(file.name),
     ),
-    callback: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
+    callback: Dynamic = async (imageFile?: Dynamic): Promise<Dynamic> => {
       try {
-        let { src: value13 }: Dynamic = await uploadDesignFile(
-          value2,
+        let { src: uploadedSrc }: Dynamic = await uploadDesignFile(
+          projectPath,
           null,
-          input,
+          imageFile,
         );
-        onChange(value13);
+        onChange(uploadedSrc);
         return true;
-      } catch (value13: Dynamic) {
-        console.error("[dc-editor] image upload failed:", value13);
-        value4(uiMessage("inspector.assetPicker.couldNotUploadTheImage"), "error");
+      } catch (error: Dynamic) {
+        console.error("[dc-editor] image upload failed:", error);
+        showToast(uiMessage("inspector.assetPicker.couldNotUploadTheImage"), "error");
         return false;
       }
     },
-    value11: Dynamic = resolveAssetPreviewUrl(value2, value),
-    value12: Dynamic = `repeating-conic-gradient(${editorThemeTokens.bg.muted} 0% 25%, ${editorThemeTokens.bg.elevated} 0% 50%) 0 / 8px 8px`;
+    previewUrl: Dynamic = resolveAssetPreviewUrl(projectPath, value),
+    checkerboardBackground: Dynamic = `repeating-conic-gradient(${editorThemeTokens.bg.muted} 0% 25%, ${editorThemeTokens.bg.elevated} 0% 50%) 0 / 8px 8px`;
   return (
     <jsxPropertiesAssetPicker_2.Fragment>
       {previewSize && (<PropertyRow className={"my-[3px]"}>
@@ -365,39 +365,39 @@ function ImageAssetPicker({
             data-testid={"dc-image-preview"}
             className={"h-24 min-w-0 flex-1 rounded-md shadow-card-ring"}
             style={{
-              background: value11
-                ? `url("${escapeCssUrl(value11)}") center / ${previewSize} no-repeat, ${value12}`
-                : value12,
+              background: previewUrl
+                ? `url("${escapeCssUrl(previewUrl)}") center / ${previewSize} no-repeat, ${checkerboardBackground}`
+                : checkerboardBackground,
             }}
           />
         </PropertyRow>)}
       <PropertyRow label={uiMessage("inspector.assetPicker.source")} title={uploadOnlyReason}>
         <TextInput
           fullWidth={true}
-          value={value5}
+          value={draftSource}
           placeholder={uiMessage("inspector.assetPicker.httpsOrFilePng")}
           aria-label={uiMessage("inspector.assetPicker.imageSource")}
           inputMode={"url"}
-          disabled={disabled2 || uploadOnlyReason !== undefined}
-          onFocus={(input?: Dynamic): Dynamic => {
-            value7.current = true;
-            input.currentTarget.select();
+          disabled={disabled || uploadOnlyReason !== undefined}
+          onFocus={(event?: Dynamic): Dynamic => {
+            isEditingRef.current = true;
+            event.currentTarget.select();
           }}
-          onChange={(event?: Dynamic): Dynamic => value6(event.target.value)}
+          onChange={(event?: Dynamic): Dynamic => setDraftSource(event.target.value)}
           onBlur={(): Dynamic => {
-            value7.current = false;
-            if (value8.current) {
-              value8.current = false;
-              value6(value ?? "");
+            isEditingRef.current = false;
+            if (shouldRevertRef.current) {
+              shouldRevertRef.current = false;
+              setDraftSource(value ?? "");
               return;
             }
-            let value13: Dynamic = value5.trim();
-            value13 !== (value ?? "") && onChange(value13 || null);
+            let trimmedSource: Dynamic = draftSource.trim();
+            trimmedSource !== (value ?? "") && onChange(trimmedSource || null);
           }}
           onKeyDown={(event?: Dynamic): Dynamic => {
             (event.key === "Enter" || event.key === "Escape") &&
               (event.key === "Escape" &&
-                ((value8.current = true), value6(value ?? "")),
+                ((shouldRevertRef.current = true), setDraftSource(value ?? "")),
               event.target.blur());
           }}
         />
@@ -407,51 +407,51 @@ function ImageAssetPicker({
           variant={"secondary"}
           icon={"Upload"}
           className={"min-w-0 flex-1"}
-          disabled={disabled2}
-          onClick={(): Dynamic => value9.current?.click()}
+          disabled={disabled}
+          onClick={(): Dynamic => fileInputRef.current?.click()}
         >
           {uiMessage("inspector.assetPicker.uploadImage")}
         </Button>
         <input
-          ref={value9}
+          ref={fileInputRef}
           type={"file"}
           accept={"image/*"}
           style={{
             display: "none",
           }}
           onChange={(event?: Dynamic): Dynamic => {
-            let value13: Dynamic = event.target.files?.[0];
-            value13 &&
+            let pickedFile: Dynamic = event.target.files?.[0];
+            pickedFile &&
               (onPickFile
-                ? onPickFile(value13)
-                : trackEmbeddedWrite(callback(value13)));
+                ? onPickFile(pickedFile)
+                : trackEmbeddedWrite(callback(pickedFile)));
             event.target.value = "";
           }}
         />
       </PropertyRow>
-      {!previewSize && value10.length > 0 && (<PropertyPopupField label={uiMessage("inspector.assetPicker.projectImages")}>
+      {!previewSize && imageFiles.length > 0 && (<PropertyPopupField label={uiMessage("inspector.assetPicker.projectImages")}>
           <div className={"-mx-1 flex max-h-40 flex-col overflow-y-auto"}>
-            {value10.map((input?: Dynamic): Dynamic => {
-              let value13: Dynamic = value === `./${input.name}`;
+            {imageFiles.map((file?: Dynamic): Dynamic => {
+              let isSelected: Dynamic = value === `./${file.name}`;
               return (() => {
                 const _Component = "button";
                 const _props = {
                   type: "button",
-                  "aria-pressed": value13,
+                  "aria-pressed": isSelected,
                   className: cn(
                     "flex min-h-control min-w-0 cursor-default items-center gap-sm overflow-hidden rounded-md px-1 text-left text-body text-primary outline-none focus-visible:outline-hidden focus-visible:shadow-focus forced-colors:focus-visible:-outline-offset-2",
-                    value13
+                    isSelected
                       ? "bg-fill-ghost-hover"
                       : "bg-transparent hover:bg-fill-ghost-hover",
                   ),
-                  disabled: disabled2,
-                  onClick: (): Dynamic => onChange(`./${input.name}`),
+                  disabled: disabled,
+                  onClick: (): Dynamic => onChange(`./${file.name}`),
                   children: [
-                    <AssetColorWell src={input.name} />,
+                    <AssetColorWell src={file.name} />,
                     <span className={"min-w-0 flex-1 truncate"}>
-                      {input.name}
+                      {file.name}
                     </span>,
-                    value13 && (
+                    isSelected && (
                       <Icon
                         name={"Check"}
                         size={"sm"}
@@ -460,13 +460,13 @@ function ImageAssetPicker({
                     ),
                   ],
                 } as const;
-                const _key = input.name;
+                const _key = file.name;
                 return <_Component key={_key} {..._props} />;
               })();
             })}
           </div>
         </PropertyPopupField>)}
-      {!previewSize && value10.length === 0 && (<PropertyPopupField>
+      {!previewSize && imageFiles.length === 0 && (<PropertyPopupField>
           <span className={"text-caption text-muted"}>
             {uploadOnlyReason !== undefined ? (uiMessage("inspector.assetPicker.noImagesInThisProject")) : (uiMessage("inspector.assetPicker.noImagesInThisProject2"))}
           </span>
@@ -478,51 +478,51 @@ function PropertyImageRow({
   label: label,
   value: value,
   mixed: mixed,
-  disabled: disabled2,
+  disabled: disabled,
   onCommit: onCommit,
   onPickFile: onPickFile,
   uploadOnlyReason: uploadOnlyReason,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value2, value3]: Dynamic = (0,
+  let [isOpen, setIsOpen]: Dynamic = (0,
     reactPropertiesTokenColorPicker.useState)(false),
-    value4: Dynamic = mixed
+    triggerText: Dynamic = mixed
       ? "Mixed"
       : value?.startsWith("data:") && value.includes("#drop")
         ? "Uploading\u2026"
         : value || uiMessage("inspector.assetPicker.chooseImage");
   return (
     <PropertyAssetPopup
-      open={value2}
-      onOpenChange={value3}
+      open={isOpen}
+      onOpenChange={setIsOpen}
       title={label}
       removeLabel={"Remove image"}
       removeDisabled={
-        disabled2 || (!value && !mixed) || uploadOnlyReason !== undefined
+        disabled || (!value && !mixed) || uploadOnlyReason !== undefined
       }
       onRemove={(): Dynamic => onCommit(null)}
       data-testid={"dc-image-popover"}
       trigger={
         <PropertyPickerButton
-          aria-label={uiMessage("inspector.assetPicker.undefined", { value1: String(label), value2: String(value4) })}
+          aria-label={uiMessage("inspector.assetPicker.undefined", { value1: String(label), value2: String(triggerText) })}
           className={"w-full"}
-          disabled={disabled2}
+          disabled={disabled}
           chip={<AssetColorWell src={value} />}
           muted={!value}
         >
-          {value4}
+          {triggerText}
         </PropertyPickerButton>
       }
     >
       <ImageAssetPicker
         value={value}
         onChange={onCommit}
-        disabled={disabled2}
+        disabled={disabled}
         onPickFile={
           onPickFile &&
-          ((input?: Dynamic): Dynamic => {
-            value3(false);
-            onPickFile(input);
+          ((file?: Dynamic): Dynamic => {
+            setIsOpen(false);
+            onPickFile(file);
           })
         }
         uploadOnlyReason={uploadOnlyReason}

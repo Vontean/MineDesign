@@ -5,29 +5,29 @@ import {
 
 var PickerHiddenTagsPattern: Dynamic;
 var PickerHiddenTagsSubscribers: Dynamic;
-var PickerHiddenTagsSubscribers_2: Dynamic;
+var PickerHiddenTagsListeners: Dynamic;
 var PickerHiddenTagsItems: Dynamic;
 function notifyHiddenPickerTags(): Dynamic {
   PickerHiddenTagsItems = [...PickerHiddenTagsSubscribers];
-  for (let value of PickerHiddenTagsSubscribers_2 as Dynamic) value();
+  for (let value of PickerHiddenTagsListeners as Dynamic) value();
 }
-function registerHiddenPickerTag(input?: Dynamic): Dynamic {
-  return !PickerHiddenTagsPattern.test(input) ||
-    PickerHiddenTagsSubscribers.has(input)
+function registerHiddenPickerTag(tagName?: Dynamic): Dynamic {
+  return !PickerHiddenTagsPattern.test(tagName) ||
+    PickerHiddenTagsSubscribers.has(tagName)
     ? (): Dynamic => {}
-    : (PickerHiddenTagsSubscribers.add(input),
+    : (PickerHiddenTagsSubscribers.add(tagName),
       notifyHiddenPickerTags(),
       (): Dynamic => {
-        PickerHiddenTagsSubscribers.delete(input) && notifyHiddenPickerTags();
+        PickerHiddenTagsSubscribers.delete(tagName) && notifyHiddenPickerTags();
       });
 }
 function getHiddenPickerTags(): Dynamic {
   return PickerHiddenTagsItems;
 }
-function subscribeHiddenPickerTags(input?: Dynamic): Dynamic {
-  PickerHiddenTagsSubscribers_2.add(input);
+function subscribeHiddenPickerTags(listener?: Dynamic): Dynamic {
+  PickerHiddenTagsListeners.add(listener);
   return (): Dynamic => {
-    PickerHiddenTagsSubscribers_2.delete(input);
+    PickerHiddenTagsListeners.delete(listener);
   };
 }
 export {
@@ -36,7 +36,7 @@ export {
   PickerHiddenTagsItems,
   PickerHiddenTagsPattern,
   PickerHiddenTagsSubscribers,
-  PickerHiddenTagsSubscribers_2,
+  PickerHiddenTagsListeners as PickerHiddenTagsSubscribers_2,
   registerHiddenPickerTag,
   subscribeHiddenPickerTags,
 };
@@ -44,7 +44,7 @@ export function installEditorPickerHiddenTags(): () => void {
   return () => {
     PickerHiddenTagsPattern = /^[a-z0-9-]{1,48}$/;
     PickerHiddenTagsSubscribers = new Set();
-    PickerHiddenTagsSubscribers_2 = new Set();
+    PickerHiddenTagsListeners = new Set();
     PickerHiddenTagsItems = [];
   };
 }

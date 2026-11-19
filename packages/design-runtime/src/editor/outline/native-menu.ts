@@ -3,16 +3,16 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { nativeContextMenuTimeout, OutlineDcOutlineConstant, OutlineDcOutlineConstant_2, OutlineDcOutlineRemoveEventListener, OutlineDcOutlineTarget } from "./dc-outline";
+import { nativeContextMenuTimeout, OutlineDcOutlineConstant, OutlineDcOutlineConstant_2 as OutlineDcOutlineLongSuppressDelay, OutlineDcOutlineRemoveEventListener, OutlineDcOutlineTarget } from "./dc-outline";
 
 import { set_nativeContextMenuTimeout } from "./dc-outline";
 var OutlineNativeMenuTitle1RectOvalConfig: Dynamic;
 var OutlineNativeMenuLabelGlyphConfig: Dynamic;
-var OutlineNativeMenuLabelGlyphConfig_2: Dynamic;
+var OutlineNativeMenuVideoLabelGlyphConfig: Dynamic;
 var OutlineNativeMenuLimit: Dynamic;
 var OutlineNativeMenuReplace: Dynamic;
 var OutlineNativeMenuSlice: Dynamic;
-function suppressNativeContextMenu(input?: Dynamic): Dynamic {
+function suppressNativeContextMenu(isLongSuppress?: Dynamic): Dynamic {
   nativeContextMenuTimeout != null &&
     clearTimeout(nativeContextMenuTimeout);
   (window as Dynamic).addEventListener(
@@ -22,14 +22,14 @@ function suppressNativeContextMenu(input?: Dynamic): Dynamic {
   );
   set_nativeContextMenuTimeout(setTimeout(
     OutlineDcOutlineRemoveEventListener,
-    input
-      ? OutlineDcOutlineConstant_2
+    isLongSuppress
+      ? OutlineDcOutlineLongSuppressDelay
       : OutlineDcOutlineConstant,
   ));
 }
 export {
   OutlineNativeMenuLabelGlyphConfig,
-  OutlineNativeMenuLabelGlyphConfig_2,
+  OutlineNativeMenuVideoLabelGlyphConfig as OutlineNativeMenuLabelGlyphConfig_2,
   OutlineNativeMenuLimit,
   OutlineNativeMenuReplace,
   OutlineNativeMenuSlice,
@@ -72,15 +72,15 @@ export function installEditorOutlineNativeMenu(): () => void {
       get label() { return uiMessage("inspector.nativeMenu.note"); },
       glyph: "note",
     };
-    OutlineNativeMenuLabelGlyphConfig_2 = {
+    OutlineNativeMenuVideoLabelGlyphConfig = {
       get label() { return uiMessage("inspector.nativeMenu.video"); },
       glyph: "image",
     };
     OutlineNativeMenuLimit = 26;
-    OutlineNativeMenuReplace = (input?: Dynamic): Dynamic =>
-      input.trim().replace(/\s+/g, " ");
-    OutlineNativeMenuSlice = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = OutlineNativeMenuReplace(input);
+    OutlineNativeMenuReplace = (text?: Dynamic): Dynamic =>
+      text.trim().replace(/\s+/g, " ");
+    OutlineNativeMenuSlice = (text?: Dynamic): Dynamic => {
+      let value: Dynamic = OutlineNativeMenuReplace(text);
       return value.length > OutlineNativeMenuLimit
         ? `${value.slice(0, OutlineNativeMenuLimit)}\u2026`
         : value;

@@ -8,39 +8,39 @@ var OutlineTreeHandler_2: Dynamic;
 var OutlineTreeHandler_3: Dynamic;
 var OutlineTreeMatches: Dynamic;
 function flattenOutlineRows(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  focusedTree?: Dynamic,
+  outlineState?: Dynamic,
+  getOpenTids?: Dynamic,
 ): Dynamic {
   let items: Dynamic = [],
     callback: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
-      value?: Dynamic,
+      nodes?: Dynamic,
+      level?: Dynamic,
+      parentKey?: Dynamic,
+      fileKey?: Dynamic,
     ): Dynamic => {
-      let value2: Dynamic = context(value);
-      for (let value3 of input2 as Dynamic) {
-        let value4: Dynamic = OutlineTreeHandler_3(value, value3.tid),
-          value5: Dynamic = value3.children.length > 0,
-          value6: Dynamic = value5 && value2.has(value3.tid);
+      let openTids: Dynamic = getOpenTids(fileKey);
+      for (let node of nodes as Dynamic) {
+        let rowKey: Dynamic = OutlineTreeHandler_3(fileKey, node.tid),
+          isExpandable: Dynamic = node.children.length > 0,
+          isOpen: Dynamic = isExpandable && openTids.has(node.tid);
         items.push({
-          key: value4,
-          level: options2,
-          parentKey: context2,
-          file: value,
-          tid: value3.tid,
-          expandable: value5,
-          open: value6,
+          key: rowKey,
+          level: level,
+          parentKey: parentKey,
+          file: fileKey,
+          tid: node.tid,
+          expandable: isExpandable,
+          open: isOpen,
         });
-        value6 && callback(value3.children, options2 + 1, value4, value);
+        isOpen && callback(node.children, level + 1, rowKey, fileKey);
       }
     };
-  if (!options) {
-    callback(input, 1, null, null);
+  if (!outlineState) {
+    callback(focusedTree, 1, null, null);
     return items;
   }
-  for (let value of options.objects as Dynamic)
+  for (let value of outlineState.objects as Dynamic)
     items.push({
       key: OutlineTreeHandler_2(value.id),
       level: 1,
@@ -51,63 +51,63 @@ function flattenOutlineRows(
       expandable: false,
       open: false,
     });
-  for (let value of options.rows as Dynamic) {
-    let value2: Dynamic =
-        value.file === options.focused ? input : options.trees[value.file],
-      value3: Dynamic = value2 != null && value2.length > 0,
-      value4: Dynamic = value3 && options.open.has(value.file),
-      value5: Dynamic = OutlineTreeHandler(value.file);
+  for (let value of outlineState.rows as Dynamic) {
+    let fileTree: Dynamic =
+        value.file === outlineState.focused ? focusedTree : outlineState.trees[value.file],
+      hasChildren: Dynamic = fileTree != null && fileTree.length > 0,
+      isFileOpen: Dynamic = hasChildren && outlineState.open.has(value.file),
+      fileRowKey: Dynamic = OutlineTreeHandler(value.file);
     items.push({
-      key: value5,
+      key: fileRowKey,
       level: 1,
       parentKey: null,
       file: value.file,
       tid: null,
-      expandable: value3,
-      open: value4,
+      expandable: hasChildren,
+      open: isFileOpen,
     });
-    value4 && callback(value2, 2, value5, value.file);
+    isFileOpen && callback(fileTree, 2, fileRowKey, value.file);
   }
   return items;
 }
 function scrollOutlineRowIntoView(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  scroller?: Dynamic,
+  row?: Dynamic,
+  shouldSmoothScroll: Dynamic = false,
 ): Dynamic {
-  if (!input) return false;
-  let bounds: Dynamic = options.getBoundingClientRect(),
-    bounds2: Dynamic = input.getBoundingClientRect(),
+  if (!scroller) return false;
+  let rowBounds: Dynamic = row.getBoundingClientRect(),
+    scrollerBounds: Dynamic = scroller.getBoundingClientRect(),
     value: Dynamic =
-      bounds.top < bounds2.top
-        ? bounds.top - bounds2.top
-        : bounds.bottom > bounds2.bottom
-          ? bounds.bottom - bounds2.bottom
+      rowBounds.top < scrollerBounds.top
+        ? rowBounds.top - scrollerBounds.top
+        : rowBounds.bottom > scrollerBounds.bottom
+          ? rowBounds.bottom - scrollerBounds.bottom
           : 0;
   return value === 0
     ? false
-    : (context && !OutlineTreeMatches() && typeof input.scrollTo == "function"
-        ? input.scrollTo({
-            top: input.scrollTop + value,
+    : (shouldSmoothScroll && !OutlineTreeMatches() && typeof scroller.scrollTo == "function"
+        ? scroller.scrollTo({
+            top: scroller.scrollTop + value,
             behavior: "smooth",
           })
-        : (input.scrollTop += value),
+        : (scroller.scrollTop += value),
       true);
 }
-function outlineAncestorMap(input?: Dynamic): Dynamic {
+function outlineAncestorMap(nodes?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(),
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      entries.set(input2.tid, options);
-      for (let value of input2.children as Dynamic)
-        callback(value, [...options, input2.tid]);
+    callback: Dynamic = (node?: Dynamic, ancestors?: Dynamic): Dynamic => {
+      entries.set(node.tid, ancestors);
+      for (let value of node.children as Dynamic)
+        callback(value, [...ancestors, node.tid]);
     };
-  for (let value of input as Dynamic) callback(value, []);
+  for (let value of nodes as Dynamic) callback(value, []);
   return entries;
 }
-function isOutlineRowTarget(input?: Dynamic): Dynamic {
+function isOutlineRowTarget(element?: Dynamic): Dynamic {
   return (
-    input.closest('[data-testid="dc-outline"] [role="treeitem"]') != null &&
-    input.closest("button, input") == null
+    element.closest('[data-testid="dc-outline"] [role="treeitem"]') != null &&
+    element.closest("button, input") == null
   );
 }
 export {
@@ -122,10 +122,10 @@ export {
 };
 export function installEditorOutlineTree(): () => void {
   return () => {
-    OutlineTreeHandler = (input?: Dynamic): Dynamic => `ab:${input}`;
-    OutlineTreeHandler_2 = (input?: Dynamic): Dynamic => `ob:${input}`;
-    OutlineTreeHandler_3 = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      `el:${input ?? ""}:${options}`;
+    OutlineTreeHandler = (fileKey?: Dynamic): Dynamic => `ab:${fileKey}`;
+    OutlineTreeHandler_2 = (objectId?: Dynamic): Dynamic => `ob:${objectId}`;
+    OutlineTreeHandler_3 = (fileKey?: Dynamic, tid?: Dynamic): Dynamic =>
+      `el:${fileKey ?? ""}:${tid}`;
     OutlineTreeMatches = (): Dynamic =>
       typeof matchMedia == "function" &&
       matchMedia("(prefers-reduced-motion: reduce)").matches;

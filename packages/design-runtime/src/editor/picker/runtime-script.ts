@@ -9,73 +9,73 @@ var DcEditorEvtValue: Dynamic;
 var DcLinkNewAttribute: Dynamic;
 var pickerCursorCss: Dynamic;
 var buildPickerRuntimeScript: Dynamic;
-function parseDirectiveMap(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input == null) return null;
-  let value: Dynamic = Object.entries(input);
+function parseDirectiveMap(rawMap?: Dynamic): Dynamic {
+  if (typeof rawMap != "object" || rawMap == null) return null;
+  let value: Dynamic = Object.entries(rawMap);
   if (value.length > 2048) return null;
   let state: Dynamic = {};
-  for (let [value2, value3] of value as Dynamic) {
-    let value4: Dynamic = Number(value2);
+  for (let [indexKey, entry] of value as Dynamic) {
+    let index: Dynamic = Number(indexKey);
     if (
-      !Number.isInteger(value4) ||
-      value4 < 0 ||
-      typeof value3 != "object" ||
-      value3 == null
+      !Number.isInteger(index) ||
+      index < 0 ||
+      typeof entry != "object" ||
+      entry == null
     )
       continue;
-    let { on: value5, count: value6 }: Dynamic = value3;
-    typeof value5 == "boolean"
-      ? (state[value4] = {
-          on: value5,
+    let { on: isOn, count: count }: Dynamic = entry;
+    typeof isOn == "boolean"
+      ? (state[index] = {
+          on: isOn,
         })
-      : typeof value6 == "number" &&
-        Number.isFinite(value6) &&
-        value6 >= 0 &&
-        (state[value4] = {
-          count: Math.floor(value6),
+      : typeof count == "number" &&
+        Number.isFinite(count) &&
+        count >= 0 &&
+        (state[index] = {
+          count: Math.floor(count),
         });
   }
   return state;
 }
 function pickerElementSignature(
   element?: Dynamic,
-  options?: Dynamic,
+  isReservedTag?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = (
-        input.localName ||
-        input.tagName ||
+  let getTagName: Dynamic = (node?: Dynamic): Dynamic => {
+      let tagName: Dynamic = (
+        node.localName ||
+        node.tagName ||
         ""
       ).toLowerCase();
-      return value2.indexOf("sc-raw-") === 0 ? value2.slice(7) : value2;
+      return tagName.indexOf("sc-raw-") === 0 ? tagName.slice(7) : tagName;
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = callback(input);
+    isOpaqueElement: Dynamic = (node?: Dynamic): Dynamic => {
+      let tagName: Dynamic = getTagName(node);
       return (
         /^(svg|img|video|audio|canvas|picture|iframe|object|embed|input|textarea|select|button|hr|dc-import|x-import)$/.test(
-          value2,
+          tagName,
         ) ||
-        value2.indexOf("-") > 0 ||
-        input.hasAttribute("data-sc-name") ||
-        !!(input.classList && input.classList.contains("sc-host-x"))
+        tagName.indexOf("-") > 0 ||
+        node.hasAttribute("data-sc-name") ||
+        !!(node.classList && node.classList.contains("sc-host-x"))
       );
     };
   if (
-    callback2(element) ||
-    options(callback(element)) ||
+    isOpaqueElement(element) ||
+    isReservedTag(getTagName(element)) ||
     element.querySelector("[data-dc-tpl]")
   )
     return false;
   let value: Dynamic = element.querySelectorAll("*");
   for (let index: Dynamic = 0; index < value.length; index++)
-    if (callback2(value[index])) return false;
+    if (isOpaqueElement(value[index])) return false;
   return !(element.textContent || "").trim();
 }
-function computedWidth(input?: Dynamic): Dynamic {
-  let value: Dynamic = parseFloat(input.width);
+function computedWidth(computedStyle?: Dynamic): Dynamic {
+  let value: Dynamic = parseFloat(computedStyle.width);
   return value > 0 ? Math.ceil(value * 100) / 100 : 0;
 }
-function emptyElementHeight(element?: Dynamic, options?: Dynamic): Dynamic {
+function emptyElementHeight(element?: Dynamic, computedStyle?: Dynamic): Dynamic {
   let text: Dynamic = "img,svg,video,canvas,iframe,picture";
   if (
     (element.textContent || "").trim() !== "" ||
@@ -83,27 +83,27 @@ function emptyElementHeight(element?: Dynamic, options?: Dynamic): Dynamic {
     element.querySelector(text)
   )
     return 0;
-  let value: Dynamic = parseFloat(options.height);
+  let value: Dynamic = parseFloat(computedStyle.height);
   return value > 0 ? Math.ceil(value * 100) / 100 : 0;
 }
 function computedTextMetrics(
-  input?: Dynamic,
-  options?: Dynamic,
+  element?: Dynamic,
+  computedStyle?: Dynamic,
   items?: Dynamic,
 ): Dynamic {
   let value: Dynamic =
-    options.display === "list-item" || input.tagName === "LI";
-  if (!value && (input.textContent || "").trim() === "") return null;
+    computedStyle.display === "list-item" || element.tagName === "LI";
+  if (!value && (element.textContent || "").trim() === "") return null;
   let state: Dynamic = {};
   for (let index: Dynamic = 0; index < items.length; index++) {
-    let value2: Dynamic = items[index];
+    let propertyName: Dynamic = items[index];
     if (
-      (value2 === "list-style-type" && !value) ||
-      (value2 === "text-align" && options.display === "inline")
+      (propertyName === "list-style-type" && !value) ||
+      (propertyName === "text-align" && computedStyle.display === "inline")
     )
       continue;
-    let value3: Dynamic = options.getPropertyValue(value2);
-    value3 && (state[value2] = value3);
+    let propertyValue: Dynamic = computedStyle.getPropertyValue(propertyName);
+    propertyValue && (state[propertyName] = propertyValue);
   }
   return state;
 }

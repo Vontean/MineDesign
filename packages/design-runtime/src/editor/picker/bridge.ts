@@ -10,69 +10,69 @@ var PickerBridgeHandler: Dynamic;
 var PickerBridgeStringify: Dynamic;
 var PickerBridgeJoin: Dynamic;
 var PickerBridgeLimit: Dynamic;
-var PickerBridgePattern_2: Dynamic;
+var PickerBridgeTagPattern: Dynamic;
 var PickerBridgeConstant: Dynamic;
-var PickerBridgePattern_3: Dynamic;
+var PickerBridgeFingerprintPattern: Dynamic;
 var PickerBridgeBoldItalicUnderlineSet: Dynamic;
 var PickerBridgeLabel: Dynamic;
-var PickerBridgeConstant_2: Dynamic;
-function isPickerInstalled(input?: Dynamic): Dynamic {
-  return input.executeJavaScript("!!window.__dcEditorPicker", 5e3).then(
-    (input2?: Dynamic): Dynamic => input2 === true,
+var PickerBridgeInspectTimeoutMs: Dynamic;
+function isPickerInstalled(webContents?: Dynamic): Dynamic {
+  return webContents.executeJavaScript("!!window.__dcEditorPicker", 5e3).then(
+    (result?: Dynamic): Dynamic => result === true,
     (): Dynamic => false,
   );
 }
-function installPicker(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(buildPickerRuntimeScript());
-  options && setPickerTheme(input, options);
+function installPicker(webContents?: Dynamic, theme?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(buildPickerRuntimeScript());
+  theme && setPickerTheme(webContents, theme);
 }
-function setPickerTheme(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setAppTheme && window.__dcEditorPicker.setAppTheme(${JSON.stringify(options)})`,
+function setPickerTheme(webContents?: Dynamic, theme?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setAppTheme && window.__dcEditorPicker.setAppTheme(${JSON.stringify(theme)})`,
   );
 }
-function enablePicker(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function enablePicker(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.enable()",
   );
 }
-function disablePicker(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function disablePicker(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.disable()",
   );
 }
-function enablePickerPanZoom(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function enablePickerPanZoom(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.enablePanZoomOnly()",
   );
 }
-function setPickerInteractive(input?: Dynamic, options?: Dynamic): Dynamic {
+function setPickerInteractive(webContents?: Dynamic, mode?: Dynamic): Dynamic {
   let value: Dynamic =
-    options === "scroll" || options === "play"
-      ? "'" + options + "'"
-      : options
+    mode === "scroll" || mode === "play"
+      ? "'" + mode + "'"
+      : mode
         ? "true"
         : "false";
-  input.executeJavaScriptUnchecked(
+  webContents.executeJavaScriptUnchecked(
     `window.__dcEditorPicker && window.__dcEditorPicker.setHostPanZoom && window.__dcEditorPicker.setHostPanZoom(${value})`,
   );
 }
-function setPickerHostScale(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = Number(options);
+function setPickerHostScale(webContents?: Dynamic, scale?: Dynamic): Dynamic {
+  let value: Dynamic = Number(scale);
   !isFinite(value) ||
     value <= 0 ||
-    input.executeJavaScriptUnchecked(
+    webContents.executeJavaScriptUnchecked(
       `window.__dcEditorPicker && window.__dcEditorPicker.setHostScale && window.__dcEditorPicker.setHostScale(${value})`,
     );
 }
-function resizePickerSelection(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.resizeWith && window.__dcEditorPicker.resizeWith(${JSON.stringify(options)})`,
+function resizePickerSelection(webContents?: Dynamic, resizeOptions?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.resizeWith && window.__dcEditorPicker.resizeWith(${JSON.stringify(resizeOptions)})`,
   );
 }
-function pickerGesturePhase(input?: Dynamic, source?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      String(Number.isFinite(input2) ? input2 : 0),
+function pickerGesturePhase(webContents?: Dynamic, source?: Dynamic): Dynamic {
+  let callback: Dynamic = (numericValue?: Dynamic): Dynamic =>
+      String(Number.isFinite(numericValue) ? numericValue : 0),
     value: Dynamic =
       source.phase === "start"
         ? (source.kind === "endpoint"
@@ -94,131 +94,131 @@ function pickerGesturePhase(input?: Dynamic, source?: Dynamic): Dynamic {
           : source.commit
             ? "true"
             : "false",
-    value2: Dynamic =
+    methodName: Dynamic =
       source.kind + source.phase[0].toUpperCase() + source.phase.slice(1);
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.${value2} && window.__dcEditorPicker.${value2}(${value})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.${methodName} && window.__dcEditorPicker.${methodName}(${value})`,
   );
 }
 function pickerPenPreview(
-  input?: Dynamic,
-  options?: Dynamic,
+  webContents?: Dynamic,
+  token?: Dynamic,
   items?: Dynamic,
 ): Dynamic {
   (items !== null && items.length > 1e5) ||
-    input.executeJavaScriptUnchecked(
-      `window.__dcEditorPicker && window.__dcEditorPicker.penPreview && window.__dcEditorPicker.penPreview(${String(Math.trunc(options))},${items === null ? "null" : JSON.stringify(items)})`,
+    webContents.executeJavaScriptUnchecked(
+      `window.__dcEditorPicker && window.__dcEditorPicker.penPreview && window.__dcEditorPicker.penPreview(${String(Math.trunc(token))},${items === null ? "null" : JSON.stringify(items)})`,
     );
 }
 function pickerVectorPreview(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  token?: Dynamic,
+  bounds?: Dynamic,
   items?: Dynamic,
 ): Dynamic {
   if (items.length > 1e5) return;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    String(Number.isFinite(input2) ? Math.round(input2 * 100) / 100 : 0);
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.penCommit && window.__dcEditorPicker.penCommit(${String(Math.trunc(options))},${callback(context.x)},${callback(context.y)},${callback(context.w)},${callback(context.h)},${JSON.stringify(items)})`,
+  let callback: Dynamic = (numericValue?: Dynamic): Dynamic =>
+    String(Number.isFinite(numericValue) ? Math.round(numericValue * 100) / 100 : 0);
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.penCommit && window.__dcEditorPicker.penCommit(${String(Math.trunc(token))},${callback(bounds.x)},${callback(bounds.y)},${callback(bounds.w)},${callback(bounds.h)},${JSON.stringify(items)})`,
   );
 }
 function pickerContextMenuAt(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    String(Number.isFinite(input2) ? input2 : 0);
-  input.executeJavaScriptUnchecked(
+  let callback: Dynamic = (numericValue?: Dynamic): Dynamic =>
+    String(Number.isFinite(numericValue) ? numericValue : 0);
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.contextMenuAt && window.__dcEditorPicker.contextMenuAt(" +
-      callback(options) +
+      callback(clientX) +
       "," +
-      callback(context) +
+      callback(clientY) +
       ")",
   );
 }
-function pickerContextMenuBySelection(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function pickerContextMenuBySelection(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.contextMenuBySelection && window.__dcEditorPicker.contextMenuBySelection()",
   );
 }
 function pickerDragModifiers(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  webContents?: Dynamic,
+  altKey?: Dynamic,
+  ctrlKey?: Dynamic,
+  metaKey?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.dragModifiers && window.__dcEditorPicker.dragModifiers(" +
-      [options, context, value]
-        .map((input2?: Dynamic): Dynamic => String(input2 === true))
+      [altKey, ctrlKey, metaKey]
+        .map((isHeld?: Dynamic): Dynamic => String(isHeld === true))
         .join(",") +
       ")",
   );
 }
-function cancelPickerDrag(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function cancelPickerDrag(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.cancelDrag && window.__dcEditorPicker.cancelDrag()",
   );
 }
-function cancelPickerBox(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.cancelBox && window.__dcEditorPicker.cancelBox(${JSON.stringify(options)})`,
+function cancelPickerBox(webContents?: Dynamic, gestureToken?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.cancelBox && window.__dcEditorPicker.cancelBox(${JSON.stringify(gestureToken)})`,
   );
 }
 function armPickerByClick(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  armedTool?: Dynamic,
+  armedOptions?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.armedByClick && window.__dcEditorPicker.armedByClick(${JSON.stringify(options)},${JSON.stringify(context)})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.armedByClick && window.__dcEditorPicker.armedByClick(${JSON.stringify(armedTool)},${JSON.stringify(armedOptions)})`,
   );
 }
 function finishExitedPickerDrag(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  webContents?: Dynamic,
+  mode?: Dynamic,
+  dragId?: Dynamic,
+  shouldCommit?: Dynamic,
 ): Dynamic {
-  if (!/^[0-9a-f]{16}$/.test(context)) return;
-  let value2: Dynamic =
-    options === "exit"
+  if (!/^[0-9a-f]{16}$/.test(dragId)) return;
+  let methodName: Dynamic =
+    mode === "exit"
       ? "exitDrag"
-      : options === "finish"
+      : mode === "finish"
         ? "finishExitedDrag"
         : "abortDrag";
-  input.executeJavaScriptUnchecked(
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker." +
-      value2 +
+      methodName +
       " && window.__dcEditorPicker." +
-      value2 +
+      methodName +
       "('" +
-      context +
+      dragId +
       "'," +
-      (value ? "true" : "false") +
+      (shouldCommit ? "true" : "false") +
       ")",
   );
 }
 async function beginPickerMove(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  webContents?: Dynamic,
+  moveId?: Dynamic,
+  tid?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
+  modifiers?: Dynamic,
 ): Promise<Dynamic> {
   if (
-    !PickerBridgePattern.test(options) ||
-    !Number.isInteger(context) ||
-    context < 0
+    !PickerBridgePattern.test(moveId) ||
+    !Number.isInteger(tid) ||
+    tid < 0
   )
     return null;
   try {
-    return await input.executeJavaScript(
+    return await webContents.executeJavaScript(
       "window.__dcEditorPicker && window.__dcEditorPicker.moveStart ? window.__dcEditorPicker.moveStart(" +
-        PickerBridgeJoin(options, context, value, extra, detail) +
+        PickerBridgeJoin(moveId, tid, clientX, clientY, modifiers) +
         ") : null",
       4e3,
     );
@@ -227,31 +227,31 @@ async function beginPickerMove(
   }
 }
 function updatePickerMove(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  moveId?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
+  modifiers?: Dynamic,
 ): Dynamic {
-  PickerBridgePattern.test(options) &&
-    input.executeJavaScriptUnchecked(
+  PickerBridgePattern.test(moveId) &&
+    webContents.executeJavaScriptUnchecked(
       "window.__dcEditorPicker && window.__dcEditorPicker.moveMove && window.__dcEditorPicker.moveMove(" +
-        PickerBridgeJoin(options, null, context, value, extra) +
+        PickerBridgeJoin(moveId, null, clientX, clientY, modifiers) +
         ")",
     );
 }
 async function finishPickerMove(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  moveId?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
+  modifiers?: Dynamic,
 ): Promise<Dynamic> {
-  if (!PickerBridgePattern.test(options)) return null;
+  if (!PickerBridgePattern.test(moveId)) return null;
   try {
-    return await input.executeJavaScript(
+    return await webContents.executeJavaScript(
       "window.__dcEditorPicker && window.__dcEditorPicker.moveEnd ? window.__dcEditorPicker.moveEnd(" +
-        PickerBridgeJoin(options, null, context, value, extra) +
+        PickerBridgeJoin(moveId, null, clientX, clientY, modifiers) +
         ") : null",
       4e3,
     );
@@ -259,104 +259,104 @@ async function finishPickerMove(
     return null;
   }
 }
-function cancelPickerMove(input?: Dynamic, options?: Dynamic): Dynamic {
-  PickerBridgePattern.test(options) &&
-    input.executeJavaScriptUnchecked(
+function cancelPickerMove(webContents?: Dynamic, moveId?: Dynamic): Dynamic {
+  PickerBridgePattern.test(moveId) &&
+    webContents.executeJavaScriptUnchecked(
       "window.__dcEditorPicker && window.__dcEditorPicker.moveCancel && window.__dcEditorPicker.moveCancel('" +
-        options +
+        moveId +
         "')",
     );
 }
 function pickerMoveHold(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  moveId?: Dynamic,
+  action?: Dynamic,
 ): Dynamic {
-  return !PickerBridgePattern.test(options) ||
-    (context !== "open" && context !== "close")
+  return !PickerBridgePattern.test(moveId) ||
+    (action !== "open" && action !== "close")
     ? Promise.resolve(false)
-    : input
+    : webContents
         .executeJavaScript(
           "window.__dcEditorPicker && window.__dcEditorPicker.moveHost ? window.__dcEditorPicker.moveHost('" +
-            options +
+            moveId +
             "', '" +
-            context +
+            action +
             "') : false",
           1e4,
         )
         .then(
-          (input2?: Dynamic): Dynamic => input2 === true,
+          (item?: Dynamic): Dynamic => item === true,
           (): Dynamic => false,
         );
 }
-function exitPickerMove(input?: Dynamic, options?: Dynamic): Dynamic {
-  PickerBridgePattern.test(options) &&
-    input.executeJavaScriptUnchecked(
+function exitPickerMove(webContents?: Dynamic, moveId?: Dynamic): Dynamic {
+  PickerBridgePattern.test(moveId) &&
+    webContents.executeJavaScriptUnchecked(
       "window.__dcEditorPicker && window.__dcEditorPicker.moveExit && window.__dcEditorPicker.moveExit('" +
-        options +
+        moveId +
         "')",
     );
 }
-function returnPickerMove(input?: Dynamic, options?: Dynamic): Dynamic {
-  PickerBridgePattern.test(options) &&
-    input.executeJavaScriptUnchecked(
+function returnPickerMove(webContents?: Dynamic, moveId?: Dynamic): Dynamic {
+  PickerBridgePattern.test(moveId) &&
+    webContents.executeJavaScriptUnchecked(
       "window.__dcEditorPicker && window.__dcEditorPicker.moveReturn && window.__dcEditorPicker.moveReturn('" +
-        options +
+        moveId +
         "')",
     );
 }
-function touchPickerMove(input?: Dynamic, options?: Dynamic): Dynamic {
-  PickerBridgePattern.test(options) &&
-    input.executeJavaScriptUnchecked(
+function touchPickerMove(webContents?: Dynamic, moveId?: Dynamic): Dynamic {
+  PickerBridgePattern.test(moveId) &&
+    webContents.executeJavaScriptUnchecked(
       "window.__dcEditorPicker && window.__dcEditorPicker.moveTouch && window.__dcEditorPicker.moveTouch('" +
-        options +
+        moveId +
         "')",
     );
 }
 async function planPickerDrop(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  webContents?: Dynamic,
+  moveId?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
+  dragItems?: Dynamic,
+  flowMode?: Dynamic,
 ): Promise<Dynamic> {
   if (
-    !PickerBridgePattern.test(options) ||
-    !Number.isFinite(context) ||
-    !Number.isFinite(value)
+    !PickerBridgePattern.test(moveId) ||
+    !Number.isFinite(clientX) ||
+    !Number.isFinite(clientY)
   )
     return null;
-  let value2: Dynamic = extra
+  let sanitizedItems: Dynamic = dragItems
     .filter(
-      (input2?: Dynamic): Dynamic =>
-        Number.isInteger(input2.tid) &&
-        /^[a-z][a-z0-9-]{0,63}$/.test(input2.tag) &&
-        [input2.w, input2.h, input2.dx, input2.dy].every(Number.isFinite),
+      (item?: Dynamic): Dynamic =>
+        Number.isInteger(item.tid) &&
+        /^[a-z][a-z0-9-]{0,63}$/.test(item.tag) &&
+        [item.w, item.h, item.dx, item.dy].every(Number.isFinite),
     )
     .map(
-      (input2?: Dynamic): Dynamic => ({
-        tid: input2.tid,
-        tag: input2.tag,
-        w: input2.w,
-        h: input2.h,
-        dx: input2.dx,
-        dy: input2.dy,
+      (item?: Dynamic): Dynamic => ({
+        tid: item.tid,
+        tag: item.tag,
+        w: item.w,
+        h: item.h,
+        dx: item.dx,
+        dy: item.dy,
       }),
     );
-  if (value2.length === 0) return null;
+  if (sanitizedItems.length === 0) return null;
   try {
-    return await input.executeJavaScript(
+    return await webContents.executeJavaScript(
       "window.__dcEditorPicker && window.__dcEditorPicker.dropPlanAt ? window.__dcEditorPicker.dropPlanAt('" +
-        options +
+        moveId +
         "'," +
-        JSON.stringify(context) +
+        JSON.stringify(clientX) +
         "," +
-        JSON.stringify(value) +
+        JSON.stringify(clientY) +
         "," +
-        JSON.stringify(value2) +
+        JSON.stringify(sanitizedItems) +
         "," +
-        JSON.stringify(detail === "keep" ? "keep" : "flow") +
+        JSON.stringify(flowMode === "keep" ? "keep" : "flow") +
         ") : null",
       1500,
     );
@@ -365,177 +365,177 @@ async function planPickerDrop(
   }
 }
 function clearPickerDropPlan(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  webContents?: Dynamic,
+  moveId?: Dynamic,
+  isFinal: Dynamic = false,
 ): Dynamic {
-  PickerBridgePattern.test(options) &&
-    input.executeJavaScriptUnchecked(
+  PickerBridgePattern.test(moveId) &&
+    webContents.executeJavaScriptUnchecked(
       "window.__dcEditorPicker && window.__dcEditorPicker.dropPlanClear && window.__dcEditorPicker.dropPlanClear('" +
-        options +
+        moveId +
         "'," +
-        (context ? "true" : "false") +
+        (isFinal ? "true" : "false") +
         ")",
     );
 }
-function settlePickerMove(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function settlePickerMove(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.moveSettle && window.__dcEditorPicker.moveSettle()",
   );
 }
-function repostPickerChrome(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function repostPickerChrome(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.repostChrome && window.__dcEditorPicker.repostChrome()",
   );
 }
-function setPickerPanZoomArmed(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setPanZoomArmed(${options ? "true" : "false"})`,
+function setPickerPanZoomArmed(webContents?: Dynamic, isArmed?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setPanZoomArmed(${isArmed ? "true" : "false"})`,
   );
 }
-function setPickerReadOnly(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setReadOnly && window.__dcEditorPicker.setReadOnly(${options ? "true" : "false"})`,
+function setPickerReadOnly(webContents?: Dynamic, isReadOnly?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setReadOnly && window.__dcEditorPicker.setReadOnly(${isReadOnly ? "true" : "false"})`,
   );
 }
-function setPickerMeasure(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setMeasure && window.__dcEditorPicker.setMeasure(${options ? "true" : "false"})`,
+function setPickerMeasure(webContents?: Dynamic, isEnabled?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setMeasure && window.__dcEditorPicker.setMeasure(${isEnabled ? "true" : "false"})`,
   );
 }
-function setPickerDeepSelection(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setDeep && window.__dcEditorPicker.setDeep(${options ? "true" : "false"})`,
+function setPickerDeepSelection(webContents?: Dynamic, isDeep?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setDeep && window.__dcEditorPicker.setDeep(${isDeep ? "true" : "false"})`,
   );
 }
-function setPickerRingsOnly(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.${options ? "enableRingsOnly" : "disableRingsOnly"} && window.__dcEditorPicker.${options ? "enableRingsOnly" : "disableRingsOnly"}()`,
+function setPickerRingsOnly(webContents?: Dynamic, isEnabled?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.${isEnabled ? "enableRingsOnly" : "disableRingsOnly"} && window.__dcEditorPicker.${isEnabled ? "enableRingsOnly" : "disableRingsOnly"}()`,
   );
 }
-function setPickerHiddenTags(input?: Dynamic, options?: Dynamic): Dynamic {
+function setPickerHiddenTags(webContents?: Dynamic, tagNames?: Dynamic): Dynamic {
   let value: Dynamic = JSON.stringify(
-    options
+    tagNames
       .filter(
-        (input2?: Dynamic): Dynamic =>
-          PickerHiddenTagsPattern.test(input2),
+        (tagName?: Dynamic): Dynamic =>
+          PickerHiddenTagsPattern.test(tagName),
       )
       .slice(0, 32),
   );
-  input.executeJavaScriptUnchecked(
+  webContents.executeJavaScriptUnchecked(
     `window.__dcEditorPicker && window.__dcEditorPicker.setBusyDrops && window.__dcEditorPicker.setBusyDrops(${value})`,
   );
 }
 async function pickAtPoint(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = "plain",
-  extra: Dynamic = [],
-  detail: Dynamic = [],
+  webContents?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
+  mode: Dynamic = "plain",
+  templateTids: Dynamic = [],
+  textTids: Dynamic = [],
 ): Promise<Dynamic> {
   try {
-    let value2: Dynamic = await input.executeJavaScript(
-      `window.__dcEditorPicker && window.__dcEditorPicker.pickAt ? window.__dcEditorPicker.pickAt(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)},${JSON.stringify(extra.filter((input2?: Dynamic): Dynamic => Number.isInteger(input2)))},${JSON.stringify(detail.filter((input2?: Dynamic): Dynamic => Number.isInteger(input2)))}) : null`,
+    let rawResult: Dynamic = await webContents.executeJavaScript(
+      `window.__dcEditorPicker && window.__dcEditorPicker.pickAt ? window.__dcEditorPicker.pickAt(${JSON.stringify(clientX)},${JSON.stringify(clientY)},${JSON.stringify(mode)},${JSON.stringify(templateTids.filter((tid?: Dynamic): Dynamic => Number.isInteger(tid)))},${JSON.stringify(textTids.filter((tid?: Dynamic): Dynamic => Number.isInteger(tid)))}) : null`,
       4e3,
     );
-    if (value2 == null || typeof value2 != "object") return null;
-    if (value2.empty === true)
+    if (rawResult == null || typeof rawResult != "object") return null;
+    if (rawResult.empty === true)
       return {
         empty: true,
       };
-    let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        typeof input2 == "number" &&
-        Number.isFinite(input2) &&
-        Math.abs(input2) < 1e6
-          ? input2
+    let callback: Dynamic = (numericValue?: Dynamic): Dynamic =>
+        typeof numericValue == "number" &&
+        Number.isFinite(numericValue) &&
+        Math.abs(numericValue) < 1e6
+          ? numericValue
           : null,
-      callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-        if (input2 == null || typeof input2 != "object") return null;
-        let value6: Dynamic = Number(input2.tid);
+      sanitizePickedElement: Dynamic = (picked?: Dynamic): Dynamic => {
+        if (picked == null || typeof picked != "object") return null;
+        let tid: Dynamic = Number(picked.tid);
         if (
-          !Number.isInteger(value6) ||
-          value6 < 0 ||
-          value6 > 1e6 ||
-          typeof input2.tag != "string" ||
-          !/^[a-z][a-z0-9-]{0,63}$/.test(input2.tag)
+          !Number.isInteger(tid) ||
+          tid < 0 ||
+          tid > 1e6 ||
+          typeof picked.tag != "string" ||
+          !/^[a-z][a-z0-9-]{0,63}$/.test(picked.tag)
         )
           return null;
-        let value7: Dynamic = callback(input2.rect?.x),
-          value8: Dynamic = callback(input2.rect?.y),
-          value9: Dynamic = callback(input2.rect?.w),
-          value10: Dynamic = callback(input2.rect?.h);
+        let x: Dynamic = callback(picked.rect?.x),
+          y: Dynamic = callback(picked.rect?.y),
+          width: Dynamic = callback(picked.rect?.w),
+          height: Dynamic = callback(picked.rect?.h);
         return {
-          tid: value6,
-          tag: input2.tag,
+          tid: tid,
+          tag: picked.tag,
           rect:
-            value7 != null &&
-            value8 != null &&
-            value9 != null &&
-            value10 != null
+            x != null &&
+            y != null &&
+            width != null &&
+            height != null
               ? {
-                  x: value7,
-                  y: value8,
-                  w: value9,
-                  h: value10,
+                  x: x,
+                  y: y,
+                  w: width,
+                  h: height,
                 }
               : null,
         };
       },
-      value3: Dynamic = callback2(value2);
-    if (!value3) return null;
-    let value4: Dynamic = callback2(value2.text),
-      value5: Dynamic =
-        value4 && value4.rect
+      pickedElement: Dynamic = sanitizePickedElement(rawResult);
+    if (!pickedElement) return null;
+    let textElement: Dynamic = sanitizePickedElement(rawResult.text),
+      textTarget: Dynamic =
+        textElement && textElement.rect
           ? {
-              tid: value4.tid,
-              tag: value4.tag,
-              rect: value4.rect,
+              tid: textElement.tid,
+              tag: textElement.tag,
+              rect: textElement.rect,
             }
           : null;
     return {
-      tid: value3.tid,
-      tag: value3.tag,
-      rect: value3.rect ?? {
+      tid: pickedElement.tid,
+      tag: pickedElement.tag,
+      rect: pickedElement.rect ?? {
         x: 0,
         y: 0,
         w: 0,
         h: 0,
       },
-      root: value2.root === true,
-      page: value2.root === true && value2.page === true,
-      text: value5,
+      root: rawResult.root === true,
+      page: rawResult.root === true && rawResult.page === true,
+      text: textTarget,
     };
   } catch {
     return null;
   }
 }
 async function pickInBox(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  box?: Dynamic,
+  rootName?: Dynamic,
 ): Promise<Dynamic> {
   try {
-    let value: Dynamic = [options.x0, options.y0, options.x1, options.y1]
-        .map((input2?: Dynamic): Dynamic => JSON.stringify(Number(input2)))
+    let value: Dynamic = [box.x0, box.y0, box.x1, box.y1]
+        .map((coordinate?: Dynamic): Dynamic => JSON.stringify(Number(coordinate)))
         .join(","),
-      value2: Dynamic = await input.executeJavaScript(
-        `window.__dcEditorPicker && window.__dcEditorPicker.pickIn ? window.__dcEditorPicker.pickIn(${value},${JSON.stringify(context)}) : []`,
+      rawResults: Dynamic = await webContents.executeJavaScript(
+        `window.__dcEditorPicker && window.__dcEditorPicker.pickIn ? window.__dcEditorPicker.pickIn(${value},${JSON.stringify(rootName)}) : []`,
         4e3,
       );
-    if (!Array.isArray(value2)) return null;
+    if (!Array.isArray(rawResults)) return null;
     let items: Dynamic = [];
-    for (let value3 of value2.slice(0, 512) as Dynamic) {
-      if (value3 == null || typeof value3 != "object") continue;
-      let value4: Dynamic = Number(value3.tid),
-        tag: Dynamic = value3.tag;
-      !Number.isInteger(value4) ||
-        value4 < 0 ||
-        value4 > 1e6 ||
+    for (let entry of rawResults.slice(0, 512) as Dynamic) {
+      if (entry == null || typeof entry != "object") continue;
+      let tid: Dynamic = Number(entry.tid),
+        tag: Dynamic = entry.tag;
+      !Number.isInteger(tid) ||
+        tid < 0 ||
+        tid > 1e6 ||
         typeof tag != "string" ||
         !/^[a-z][a-z0-9-]{0,63}$/.test(tag) ||
         items.push({
-          tid: value4,
+          tid: tid,
           tag: tag,
         });
     }
@@ -544,37 +544,37 @@ async function pickInBox(
     return null;
   }
 }
-function normalizePickerRect(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function normalizePickerRect(rect?: Dynamic): Dynamic {
+  let value: Dynamic = rect;
   if (!value || typeof value != "object") return null;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" &&
-      Number.isFinite(input2) &&
-      Math.abs(input2) < 1e6
-        ? input2
+  let callback: Dynamic = (numericValue?: Dynamic): Dynamic =>
+      typeof numericValue == "number" &&
+      Number.isFinite(numericValue) &&
+      Math.abs(numericValue) < 1e6
+        ? numericValue
         : null,
-    value2: Dynamic = callback(value.x),
-    value3: Dynamic = callback(value.y),
-    value4: Dynamic = callback(value.w),
-    value5: Dynamic = callback(value.h);
-  return value2 != null &&
-    value3 != null &&
-    value4 != null &&
-    value5 != null &&
-    value4 >= 0 &&
-    value5 >= 0
+    x: Dynamic = callback(value.x),
+    y: Dynamic = callback(value.y),
+    width: Dynamic = callback(value.w),
+    height: Dynamic = callback(value.h);
+  return x != null &&
+    y != null &&
+    width != null &&
+    height != null &&
+    width >= 0 &&
+    height >= 0
     ? {
-        x: value2,
-        y: value3,
-        w: value4,
-        h: value5,
+        x: x,
+        y: y,
+        w: width,
+        h: height,
       }
     : null;
 }
-function normalizeCommentAnchor(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function normalizeCommentAnchor(anchor?: Dynamic): Dynamic {
+  let value: Dynamic = anchor;
   if (!value || typeof value != "object") return null;
-  let value2: Dynamic =
+  let path: Dynamic =
     typeof value.path == "string" &&
     value.path !== "" &&
     value.path.length <= PickerBridgeLimit
@@ -582,60 +582,60 @@ function normalizeCommentAnchor(input?: Dynamic): Dynamic {
       : value.path == null
         ? null
         : undefined;
-  if (value2 === undefined) return null;
-  let value3: Dynamic = normalizePickerRect(value.rect);
-  if (!value3) return null;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" && Number.isFinite(input2)
-        ? Math.min(1, Math.max(0, input2))
+  if (path === undefined) return null;
+  let rect: Dynamic = normalizePickerRect(value.rect);
+  if (!rect) return null;
+  let callback: Dynamic = (fraction?: Dynamic): Dynamic =>
+      typeof fraction == "number" && Number.isFinite(fraction)
+        ? Math.min(1, Math.max(0, fraction))
         : 0.5,
-    value4: Dynamic =
+    tid: Dynamic =
       typeof value.tid == "number" &&
       Number.isInteger(value.tid) &&
       value.tid >= 0 &&
       value.tid < 1e6
         ? value.tid
         : null,
-    value5: Dynamic =
-      typeof value.tag == "string" && PickerBridgePattern_2.test(value.tag)
+    tag: Dynamic =
+      typeof value.tag == "string" && PickerBridgeTagPattern.test(value.tag)
         ? value.tag
         : null,
-    value6: Dynamic =
+    text: Dynamic =
       (typeof value.text == "string" &&
         value.text
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, PickerBridgeConstant)) ||
       null,
-    value7: Dynamic =
-      value4 != null &&
+    fingerprint: Dynamic =
+      tid != null &&
       typeof value.fp == "string" &&
-      PickerBridgePattern_3.test(value.fp)
+      PickerBridgeFingerprintPattern.test(value.fp)
         ? value.fp
         : null;
   return {
-    path: value2,
-    tid: value4,
-    fp: value7,
-    rect: value3,
+    path: path,
+    tid: tid,
+    fp: fingerprint,
+    rect: rect,
     fx: callback(value.fx),
     fy: callback(value.fy),
-    tag: value5,
-    text: value6,
+    tag: tag,
+    text: text,
     page: normalizePickerRect(value.page),
   };
 }
 async function pickerCommentAt(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = 3e3,
+  webContents?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
+  timeoutMs: Dynamic = 3e3,
 ): Promise<Dynamic> {
   try {
     return normalizeCommentAnchor(
-      await input.executeJavaScript(
-        `window.__dcEditorPicker && window.__dcEditorPicker.commentAt ? window.__dcEditorPicker.commentAt(${JSON.stringify(options)},${JSON.stringify(context)}) : null`,
-        value,
+      await webContents.executeJavaScript(
+        `window.__dcEditorPicker && window.__dcEditorPicker.commentAt ? window.__dcEditorPicker.commentAt(${JSON.stringify(clientX)},${JSON.stringify(clientY)}) : null`,
+        timeoutMs,
       ),
     );
   } catch {
@@ -643,69 +643,69 @@ async function pickerCommentAt(
   }
 }
 async function pickerCommentIn(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail: Dynamic = 3e3,
+  webContents?: Dynamic,
+  left?: Dynamic,
+  top?: Dynamic,
+  right?: Dynamic,
+  bottom?: Dynamic,
+  timeoutMs: Dynamic = 3e3,
 ): Promise<Dynamic> {
   try {
-    let value2: Dynamic = await input.executeJavaScript(
-      `window.__dcEditorPicker && window.__dcEditorPicker.commentIn ? window.__dcEditorPicker.commentIn(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)},${JSON.stringify(extra)}) : null`,
-      detail,
+    let rawResult: Dynamic = await webContents.executeJavaScript(
+      `window.__dcEditorPicker && window.__dcEditorPicker.commentIn ? window.__dcEditorPicker.commentIn(${JSON.stringify(left)},${JSON.stringify(top)},${JSON.stringify(right)},${JSON.stringify(bottom)}) : null`,
+      timeoutMs,
     );
-    if (!value2 || typeof value2 != "object") return null;
+    if (!rawResult || typeof rawResult != "object") return null;
     let items: Dynamic = [];
-    if (Array.isArray(value2.covered))
-      for (let value4 of value2.covered.slice(0, 16) as Dynamic) {
-        let value5: Dynamic = normalizePickerRect(value4?.rect),
-          value6: Dynamic =
-            typeof value4?.tid == "number" &&
-            Number.isInteger(value4.tid) &&
-            value4.tid >= 0 &&
-            value4.tid < 1e6
-              ? value4.tid
+    if (Array.isArray(rawResult.covered))
+      for (let coveredEntry of rawResult.covered.slice(0, 16) as Dynamic) {
+        let rect: Dynamic = normalizePickerRect(coveredEntry?.rect),
+          tid: Dynamic =
+            typeof coveredEntry?.tid == "number" &&
+            Number.isInteger(coveredEntry.tid) &&
+            coveredEntry.tid >= 0 &&
+            coveredEntry.tid < 1e6
+              ? coveredEntry.tid
               : null,
-          value7: Dynamic =
-            typeof value4?.tag == "string" &&
-            PickerBridgePattern_2.test(value4.tag)
-              ? value4.tag
+          tag: Dynamic =
+            typeof coveredEntry?.tag == "string" &&
+            PickerBridgeTagPattern.test(coveredEntry.tag)
+              ? coveredEntry.tag
               : null;
-        value5 &&
-          value6 != null &&
-          value7 != null &&
+        rect &&
+          tid != null &&
+          tag != null &&
           items.push({
-            tid: value6,
-            tag: value7,
-            rect: value5,
+            tid: tid,
+            tag: tag,
+            rect: rect,
           });
       }
-    let value3: Dynamic =
-      typeof value2.total == "number" && Number.isInteger(value2.total)
-        ? Math.max(items.length, Math.min(1e4, value2.total))
+    let total: Dynamic =
+      typeof rawResult.total == "number" && Number.isInteger(rawResult.total)
+        ? Math.max(items.length, Math.min(1e4, rawResult.total))
         : items.length;
     return {
       enclosing:
-        value2.enclosing == null
+        rawResult.enclosing == null
           ? null
-          : normalizeCommentAnchor(value2.enclosing),
+          : normalizeCommentAnchor(rawResult.enclosing),
       covered: items,
-      total: value3,
+      total: total,
     };
   } catch {
     return null;
   }
 }
 async function pickerCommentFor(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  tid?: Dynamic,
+  rootName?: Dynamic,
 ): Promise<Dynamic> {
   try {
     return normalizeCommentAnchor(
-      await input.executeJavaScript(
-        `window.__dcEditorPicker && window.__dcEditorPicker.commentFor ? window.__dcEditorPicker.commentFor(${JSON.stringify(options)},${JSON.stringify(context)}) : null`,
+      await webContents.executeJavaScript(
+        `window.__dcEditorPicker && window.__dcEditorPicker.commentFor ? window.__dcEditorPicker.commentFor(${JSON.stringify(tid)},${JSON.stringify(rootName)}) : null`,
         4e3,
       ),
     );
@@ -714,18 +714,18 @@ async function pickerCommentFor(
   }
 }
 async function pickerCommentRects(
-  input?: Dynamic,
-  options?: Dynamic,
+  webContents?: Dynamic,
+  anchors?: Dynamic,
 ): Promise<Dynamic> {
   try {
-    let value: Dynamic = await input.executeJavaScript(
-      `window.__dcEditorPicker && window.__dcEditorPicker.commentRects ? window.__dcEditorPicker.commentRects(${JSON.stringify(options.slice(0, 256))}) : null`,
+    let value: Dynamic = await webContents.executeJavaScript(
+      `window.__dcEditorPicker && window.__dcEditorPicker.commentRects ? window.__dcEditorPicker.commentRects(${JSON.stringify(anchors.slice(0, 256))}) : null`,
       3e3,
     );
     return Array.isArray(value)
-      ? options.map(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-            normalizePickerRect(value[options2]),
+      ? anchors.map(
+          (anchor?: Dynamic, index?: Dynamic): Dynamic =>
+            normalizePickerRect(value[index]),
         )
       : null;
   } catch {
@@ -733,153 +733,153 @@ async function pickerCommentRects(
   }
 }
 async function pickerPeerRects(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  webContents?: Dynamic,
+  tids?: Dynamic,
+  isActiveFile: Dynamic = false,
 ): Promise<Dynamic> {
-  let value: Dynamic = options.slice(0, 64);
+  let value: Dynamic = tids.slice(0, 64);
   try {
-    let value2: Dynamic = await input.executeJavaScript(
-      `window.__dcEditorPicker && window.__dcEditorPicker.peerRects ? window.__dcEditorPicker.peerRects(${JSON.stringify(value)}, ${context ? "true" : "false"}) : null`,
+    let rawRects: Dynamic = await webContents.executeJavaScript(
+      `window.__dcEditorPicker && window.__dcEditorPicker.peerRects ? window.__dcEditorPicker.peerRects(${JSON.stringify(value)}, ${isActiveFile ? "true" : "false"}) : null`,
       3e3,
     );
-    if (!Array.isArray(value2)) return null;
-    let value3: Dynamic = value.map((): Dynamic => []);
-    for (let value4 of value2.slice(0, 256) as Dynamic) {
-      let value5: Dynamic = typeof value4?.i == "number" ? value4.i : -1,
-        value6: Dynamic = normalizePickerRect(value4);
-      value6 &&
-        Number.isInteger(value5) &&
-        value5 >= 0 &&
-        value5 < value3.length &&
-        value3[value5].push(value6);
+    if (!Array.isArray(rawRects)) return null;
+    let rectsByTid: Dynamic = value.map((): Dynamic => []);
+    for (let entry of rawRects.slice(0, 256) as Dynamic) {
+      let tidIndex: Dynamic = typeof entry?.i == "number" ? entry.i : -1,
+        rect: Dynamic = normalizePickerRect(entry);
+      rect &&
+        Number.isInteger(tidIndex) &&
+        tidIndex >= 0 &&
+        tidIndex < rectsByTid.length &&
+        rectsByTid[tidIndex].push(rect);
     }
-    return value3;
+    return rectsByTid;
   } catch {
     return null;
   }
 }
-function repaintPickerSelection(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function repaintPickerSelection(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.repaintSelected && window.__dcEditorPicker.repaintSelected()",
   );
 }
 function setPickerSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  tids?: Dynamic,
+  rootName?: Dynamic,
+  anchorTid?: Dynamic,
+  sessionEpoch?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.select(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value ?? null)},${Number.isSafeInteger(extra) ? String(extra) : "null"})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.select(${JSON.stringify(tids)},${JSON.stringify(rootName)},${JSON.stringify(anchorTid ?? null)},${Number.isSafeInteger(sessionEpoch) ? String(sessionEpoch) : "null"})`,
   );
 }
 function pickerHoverAt(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = [],
-  value: Dynamic = false,
-  extra: Dynamic = [],
+  webContents?: Dynamic,
+  point?: Dynamic,
+  templateTids: Dynamic = [],
+  isPassthrough: Dynamic = false,
+  textTids: Dynamic = [],
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    options
-      ? `window.__dcEditorPicker && window.__dcEditorPicker.hoverAt && window.__dcEditorPicker.hoverAt(${Number(options.x)},${Number(options.y)},${JSON.stringify(context.filter((input2?: Dynamic): Dynamic => Number.isInteger(input2)))},${value ? "true" : "false"},${JSON.stringify(extra.filter((input2?: Dynamic): Dynamic => Number.isInteger(input2)))})`
+  webContents.executeJavaScriptUnchecked(
+    point
+      ? `window.__dcEditorPicker && window.__dcEditorPicker.hoverAt && window.__dcEditorPicker.hoverAt(${Number(point.x)},${Number(point.y)},${JSON.stringify(templateTids.filter((tid?: Dynamic): Dynamic => Number.isInteger(tid)))},${isPassthrough ? "true" : "false"},${JSON.stringify(textTids.filter((tid?: Dynamic): Dynamic => Number.isInteger(tid)))})`
       : "window.__dcEditorPicker && window.__dcEditorPicker.hover(null,null)",
   );
 }
 function pickerHover(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  tid?: Dynamic,
+  rootName?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.hover(${JSON.stringify(options)},${JSON.stringify(context)})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.hover(${JSON.stringify(tid)},${JSON.stringify(rootName)})`,
   );
 }
 function setPickerDirectiveMap(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  directiveMap?: Dynamic,
+  rootName?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setDirectiveMap && window.__dcEditorPicker.setDirectiveMap(${JSON.stringify(options)},${JSON.stringify(context)})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setDirectiveMap && window.__dcEditorPicker.setDirectiveMap(${JSON.stringify(directiveMap)},${JSON.stringify(rootName)})`,
   );
 }
 function formatPickerText(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  webContents?: Dynamic,
+  format?: Dynamic,
+  textValue?: Dynamic,
 ): Dynamic {
-  PickerBridgeBoldItalicUnderlineSet.has(options) &&
-    ((context !== undefined && !Number.isInteger(context)) ||
-      input.executeJavaScriptUnchecked(
-        `window.__dcEditorPicker && window.__dcEditorPicker.format && window.__dcEditorPicker.format(${JSON.stringify(options)}${context === undefined ? "" : "," + String(context)})`,
+  PickerBridgeBoldItalicUnderlineSet.has(format) &&
+    ((textValue !== undefined && !Number.isInteger(textValue)) ||
+      webContents.executeJavaScriptUnchecked(
+        `window.__dcEditorPicker && window.__dcEditorPicker.format && window.__dcEditorPicker.format(${JSON.stringify(format)}${textValue === undefined ? "" : "," + String(textValue)})`,
       ));
 }
-function setPickerTool(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setTool(${JSON.stringify(options === "vector" ? "select" : options)}, ${options === "vector" ? "true" : "false"})`,
+function setPickerTool(webContents?: Dynamic, tool?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setTool(${JSON.stringify(tool === "vector" ? "select" : tool)}, ${tool === "vector" ? "true" : "false"})`,
   );
 }
-function setPickerOverlayHidden(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setOverlayHidden(${options ? "true" : "false"})`,
+function setPickerOverlayHidden(webContents?: Dynamic, isHidden?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setOverlayHidden(${isHidden ? "true" : "false"})`,
   );
 }
 function patchPickerStyle(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  rootName?: Dynamic,
+  tids?: Dynamic,
+  styles?: Dynamic,
+  styleOptions?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.patchStyle(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)},${JSON.stringify(extra ?? null)})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.patchStyle(${JSON.stringify(rootName)},${JSON.stringify(tids)},${JSON.stringify(styles)},${JSON.stringify(styleOptions ?? null)})`,
   );
 }
 function holdPickerStyle(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  rootName?: Dynamic,
+  tids?: Dynamic,
+  styles?: Dynamic,
+  styleOptions?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.holdStyle && window.__dcEditorPicker.holdStyle(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)},${JSON.stringify(extra)})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.holdStyle && window.__dcEditorPicker.holdStyle(${JSON.stringify(rootName)},${JSON.stringify(tids)},${JSON.stringify(styles)},${JSON.stringify(styleOptions)})`,
   );
 }
 function unpatchPickerStyle(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  webContents?: Dynamic,
+  rootName?: Dynamic,
+  tids?: Dynamic,
+  propNames?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.unpatchStyle && window.__dcEditorPicker.unpatchStyle(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.unpatchStyle && window.__dcEditorPicker.unpatchStyle(${JSON.stringify(rootName)},${JSON.stringify(tids)},${JSON.stringify(propNames)})`,
   );
 }
-function setPickerScrubbing(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setScrubbing && window.__dcEditorPicker.setScrubbing(${options ? "true" : "false"})`,
+function setPickerScrubbing(webContents?: Dynamic, isScrubbing?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setScrubbing && window.__dcEditorPicker.setScrubbing(${isScrubbing ? "true" : "false"})`,
   );
 }
 function setPickerTextEditable(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  webContents?: Dynamic,
+  editables?: Dynamic,
+  rootName?: Dynamic,
+  textValues?: Dynamic,
+  editState?: Dynamic,
+  importTexts?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.setTextEditable(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value ?? [])},${JSON.stringify(extra ?? {})},${JSON.stringify(detail ?? [])})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.setTextEditable(${JSON.stringify(editables)},${JSON.stringify(rootName)},${JSON.stringify(textValues ?? [])},${JSON.stringify(editState ?? {})},${JSON.stringify(importTexts ?? [])})`,
   );
 }
-async function getPickerFirstTextFont(input?: Dynamic): Promise<Dynamic> {
+async function getPickerFirstTextFont(webContents?: Dynamic): Promise<Dynamic> {
   try {
     return (
-      (await input.executeJavaScript(
+      (await webContents.executeJavaScript(
         "window.__dcEditorPicker && window.__dcEditorPicker.firstTextFont ? window.__dcEditorPicker.firstTextFont() : null",
         2e3,
       )) || null
@@ -889,97 +889,97 @@ async function getPickerFirstTextFont(input?: Dynamic): Promise<Dynamic> {
   }
 }
 function startPickerTextEdit(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = "all",
+  webContents?: Dynamic,
+  tid?: Dynamic,
+  rootName?: Dynamic,
+  mode: Dynamic = "all",
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.startTextEdit(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.startTextEdit(${JSON.stringify(tid)},${JSON.stringify(rootName)},${JSON.stringify(mode)})`,
   );
 }
-function beginPickerTextPlacing(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function beginPickerTextPlacing(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.textPlacing && window.__dcEditorPicker.textPlacing()",
   );
 }
-function notePickerTextInsert(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function notePickerTextInsert(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.noteTextInsert && window.__dcEditorPicker.noteTextInsert()",
   );
 }
 function startPickerInsertedTextEdit(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  tid?: Dynamic,
+  rootName?: Dynamic,
+  typedText?: Dynamic,
+  untilTimestamp?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.startInsertedTextEdit && window.__dcEditorPicker.startInsertedTextEdit(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)},${String(Math.round(extra))})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.startInsertedTextEdit && window.__dcEditorPicker.startInsertedTextEdit(${JSON.stringify(tid)},${JSON.stringify(rootName)},${JSON.stringify(typedText)},${String(Math.round(untilTimestamp))})`,
   );
 }
-function pickerHeldTextKey(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.heldTextKey && window.__dcEditorPicker.heldTextKey(${JSON.stringify(options)})`,
+function pickerHeldTextKey(webContents?: Dynamic, key?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.heldTextKey && window.__dcEditorPicker.heldTextKey(${JSON.stringify(key)})`,
   );
 }
 function dropPickerInsertedTextEdit(
-  input?: Dynamic,
-  options?: Dynamic,
+  webContents?: Dynamic,
+  shouldKeep?: Dynamic,
 ): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.dropInsertedTextEdit && window.__dcEditorPicker.dropInsertedTextEdit(${options ? "true" : "false"})`,
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.dropInsertedTextEdit && window.__dcEditorPicker.dropInsertedTextEdit(${shouldKeep ? "true" : "false"})`,
   );
 }
-function repostPickerTextEditState(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function repostPickerTextEditState(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.repostTextEditState && window.__dcEditorPicker.repostTextEditState()",
   );
 }
 function startPickerTextEditAt(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  clientX?: Dynamic,
+  clientY?: Dynamic,
+  tid?: Dynamic,
+  rootName?: Dynamic,
 ): Dynamic {
-  !Number.isFinite(options) ||
-    !Number.isFinite(context) ||
-    input.executeJavaScriptUnchecked(
-      `window.__dcEditorPicker && window.__dcEditorPicker.startTextEditAt && window.__dcEditorPicker.startTextEditAt(${String(options)},${String(context)},${JSON.stringify(value)},${JSON.stringify(extra)})`,
+  !Number.isFinite(clientX) ||
+    !Number.isFinite(clientY) ||
+    webContents.executeJavaScriptUnchecked(
+      `window.__dcEditorPicker && window.__dcEditorPicker.startTextEditAt && window.__dcEditorPicker.startTextEditAt(${String(clientX)},${String(clientY)},${JSON.stringify(tid)},${JSON.stringify(rootName)})`,
     );
 }
-function applyPickerLink(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
-    `window.__dcEditorPicker && window.__dcEditorPicker.applyLink && window.__dcEditorPicker.applyLink(${JSON.stringify(options)})`,
+function applyPickerLink(webContents?: Dynamic, link?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
+    `window.__dcEditorPicker && window.__dcEditorPicker.applyLink && window.__dcEditorPicker.applyLink(${JSON.stringify(link)})`,
   );
 }
-function clearPickerPart(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function clearPickerPart(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.clearPart && window.__dcEditorPicker.clearPart()",
   );
 }
-function dropPickerLeftCopy(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function dropPickerLeftCopy(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.dropLeftCopy && window.__dcEditorPicker.dropLeftCopy()",
   );
 }
-function cancelPickerLinkEdit(input?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked(
+function cancelPickerLinkEdit(webContents?: Dynamic): Dynamic {
+  webContents.executeJavaScriptUnchecked(
     "window.__dcEditorPicker && window.__dcEditorPicker.cancelLinkEdit && window.__dcEditorPicker.cancelLinkEdit()",
   );
 }
 async function verifyPickerSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  webContents?: Dynamic,
+  tids?: Dynamic,
+  rootName?: Dynamic,
+  expectedState?: Dynamic,
 ): Promise<Dynamic> {
   try {
     return (
-      (await input.executeJavaScript(
-        `window.__dcEditorPicker ? window.__dcEditorPicker.verify(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)}) : null`,
+      (await webContents.executeJavaScript(
+        `window.__dcEditorPicker ? window.__dcEditorPicker.verify(${JSON.stringify(tids)},${JSON.stringify(rootName)},${JSON.stringify(expectedState)}) : null`,
         4e3,
       )) ?? null
     );
@@ -987,9 +987,9 @@ async function verifyPickerSelection(
     return null;
   }
 }
-async function finishPickerEdit(input?: Dynamic): Promise<Dynamic> {
+async function finishPickerEdit(webContents?: Dynamic): Promise<Dynamic> {
   try {
-    let value: Dynamic = await input.executeJavaScript(
+    let value: Dynamic = await webContents.executeJavaScript(
       "window.__dcEditorPicker && window.__dcEditorPicker.finishEdit ? window.__dcEditorPicker.finishEdit() : null",
       2e3,
     );
@@ -999,19 +999,19 @@ async function finishPickerEdit(input?: Dynamic): Promise<Dynamic> {
   }
 }
 async function inspectPickerSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  webContents?: Dynamic,
+  tids?: Dynamic,
+  rootName?: Dynamic,
+  properties?: Dynamic,
+  flags?: Dynamic,
 ): Promise<Dynamic> {
-  let value2: Dynamic = `window.__dcEditorPicker ? window.__dcEditorPicker.inspect(${JSON.stringify(options)},${JSON.stringify(context)},${JSON.stringify(value)},${extra?.srgb ? "true" : "false"},${extra?.unpinned ? "true" : "false"},${extra?.ground ? "true" : "false"},${extra?.pose ? "true" : "false"}) : null`,
-    value3: Dynamic = extra?.afterPaint
-      ? `new Promise(function(r){var d=false,go=function(){if(!d){d=true;r(${value2})}};requestAnimationFrame(function(){requestAnimationFrame(go)});setTimeout(go,250)})`
-      : value2;
+  let inspectExpression: Dynamic = `window.__dcEditorPicker ? window.__dcEditorPicker.inspect(${JSON.stringify(tids)},${JSON.stringify(rootName)},${JSON.stringify(properties)},${flags?.srgb ? "true" : "false"},${flags?.unpinned ? "true" : "false"},${flags?.ground ? "true" : "false"},${flags?.pose ? "true" : "false"}) : null`,
+    script: Dynamic = flags?.afterPaint
+      ? `new Promise(function(r){var d=false,go=function(){if(!d){d=true;r(${inspectExpression})}};requestAnimationFrame(function(){requestAnimationFrame(go)});setTimeout(go,250)})`
+      : inspectExpression;
   try {
     return (
-      (await input.executeJavaScript(value3, PickerBridgeConstant_2)) ?? null
+      (await webContents.executeJavaScript(script, PickerBridgeInspectTimeoutMs)) ?? null
     );
   } catch {
     return null;
@@ -1050,14 +1050,14 @@ export {
   pickAtPoint,
   PickerBridgeBoldItalicUnderlineSet,
   PickerBridgeConstant,
-  PickerBridgeConstant_2,
+  PickerBridgeInspectTimeoutMs as PickerBridgeConstant_2,
   PickerBridgeHandler,
   PickerBridgeJoin,
   PickerBridgeLabel,
   PickerBridgeLimit,
   PickerBridgePattern,
-  PickerBridgePattern_2,
-  PickerBridgePattern_3,
+  PickerBridgeTagPattern as PickerBridgePattern_2,
+  PickerBridgeFingerprintPattern as PickerBridgePattern_3,
   PickerBridgeStringify,
   pickerCommentAt,
   pickerCommentFor,
@@ -1108,33 +1108,33 @@ export {
 export function installEditorPickerBridge(): () => void {
   return () => {
     PickerBridgePattern = /^[0-9a-f]{16}$/;
-    PickerBridgeHandler = (input?: Dynamic): Dynamic =>
-      input != null && Number.isFinite(input) ? String(input) : "null";
-    PickerBridgeStringify = (input?: Dynamic): Dynamic =>
+    PickerBridgeHandler = (numericValue?: Dynamic): Dynamic =>
+      numericValue != null && Number.isFinite(numericValue) ? String(numericValue) : "null";
+    PickerBridgeStringify = (modifiers?: Dynamic): Dynamic =>
       JSON.stringify({
-        alt: input.alt === true,
-        ctrl: input.ctrl === true,
-        meta: input.meta === true,
-        shift: input.shift === true,
+        alt: modifiers.alt === true,
+        ctrl: modifiers.ctrl === true,
+        meta: modifiers.meta === true,
+        shift: modifiers.shift === true,
       });
     PickerBridgeJoin = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-      extra?: Dynamic,
+      id?: Dynamic,
+      tid?: Dynamic,
+      clientX?: Dynamic,
+      clientY?: Dynamic,
+      modifiers?: Dynamic,
     ): Dynamic =>
       [
-        "'" + input + "'",
-        ...(options == null ? [] : [String(options)]),
-        PickerBridgeHandler(context),
-        PickerBridgeHandler(value),
-        PickerBridgeStringify(extra),
+        "'" + id + "'",
+        ...(tid == null ? [] : [String(tid)]),
+        PickerBridgeHandler(clientX),
+        PickerBridgeHandler(clientY),
+        PickerBridgeStringify(modifiers),
       ].join(",");
     PickerBridgeLimit = 500;
-    PickerBridgePattern_2 = /^[a-z][a-z0-9-]{0,30}$/;
+    PickerBridgeTagPattern = /^[a-z][a-z0-9-]{0,30}$/;
     PickerBridgeConstant = 120;
-    PickerBridgePattern_3 = /^x[0-9a-z]{7}$/;
+    PickerBridgeFingerprintPattern = /^x[0-9a-z]{7}$/;
     PickerBridgeBoldItalicUnderlineSet = new Set([
       "bold",
       "italic",
@@ -1145,6 +1145,6 @@ export function installEditorPickerBridge(): () => void {
     ]);
     PickerBridgeLabel =
       "window.__dcEditorPicker&&window.__dcEditorPicker.afterPush&&window.__dcEditorPicker.afterPush()";
-    PickerBridgeConstant_2 = 4e3;
+    PickerBridgeInspectTimeoutMs = 4e3;
   };
 }

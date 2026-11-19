@@ -16,20 +16,20 @@ var OutlineGlyphsTest: Dynamic;
 var jsxOutlineGlyphs: Dynamic;
 var OutlineGlyphsResolvedValue: Dynamic;
 var OutlineGlyphsConstant: Dynamic;
-var OutlineGlyphsConstant_2: Dynamic;
-var OutlineGlyphsConstant_3: Dynamic;
+var layersListMaxSize: Dynamic;
+var layersListDefaultSize: Dynamic;
 var OutlineGlyphsClassNames: Dynamic;
 var OutlineGlyphsColorConfig: Dynamic;
 var OutlineGlyphsScForScIfDcImportSet: Dynamic;
 var OutlineGlyphsClassNames_2: Dynamic;
 var outlineTreeRowClasses: Dynamic;
 var OutlineGlyphsClassNames_3: Dynamic;
-var OutlineGlyphsResolvedValue_2: Dynamic;
+var selectedRowClasses: Dynamic;
 var OutlineGlyphsClassNames_4: Dynamic;
-var OutlineGlyphsResolvedValue_3: Dynamic;
-var OutlineGlyphsConstant_4: Dynamic;
-var OutlineGlyphsConstant_5: Dynamic;
-var OutlineGlyphsConstant_6: Dynamic;
+var selectedRowSecondaryClasses: Dynamic;
+var treeRowBaseIndent: Dynamic;
+var treeIndentPerLevel: Dynamic;
+var treeToggleColumnWidth: Dynamic;
 var OutlineGlyphsSubscribers: Dynamic;
 var OutlineGlyphsNativeEvent: Dynamic;
 var OutlineGlyphsLabel: Dynamic;
@@ -63,11 +63,11 @@ function OutlineIconGlyph({
       OutlineGlyphsClassNames,
       dimmed ? "opacity-50" : "opacity-100",
     ),
-    value2: Dynamic = cn(
+    iconClassName: Dynamic = cn(
       ink == null && "text-disabled",
       OutlineGlyphsClassNames_3,
     ),
-    value3: Dynamic =
+    iconStyle: Dynamic =
       ink != null
         ? {
             color: ink,
@@ -78,13 +78,13 @@ function OutlineIconGlyph({
       {icon.custom ? (<Icon
           customIcon={icon.custom}
           size={"xs"}
-          className={value2}
-          style={value3}
+          className={iconClassName}
+          style={iconStyle}
         />) : (<Icon
           name={icon.name}
           size={"xs"}
-          className={value2}
-          style={value3}
+          className={iconClassName}
+          style={iconStyle}
         />)}
     </span>
   );
@@ -99,16 +99,16 @@ export {
   OutlineGlyphsClassNames_4,
   OutlineGlyphsColorConfig,
   OutlineGlyphsConstant,
-  OutlineGlyphsConstant_2,
-  OutlineGlyphsConstant_3,
-  OutlineGlyphsConstant_4,
-  OutlineGlyphsConstant_5,
-  OutlineGlyphsConstant_6,
+  layersListMaxSize as OutlineGlyphsConstant_2,
+  layersListDefaultSize as OutlineGlyphsConstant_3,
+  treeRowBaseIndent as OutlineGlyphsConstant_4,
+  treeIndentPerLevel as OutlineGlyphsConstant_5,
+  treeToggleColumnWidth as OutlineGlyphsConstant_6,
   OutlineGlyphsLabel,
   OutlineGlyphsNativeEvent,
   OutlineGlyphsResolvedValue,
-  OutlineGlyphsResolvedValue_2,
-  OutlineGlyphsResolvedValue_3,
+  selectedRowClasses as OutlineGlyphsResolvedValue_2,
+  selectedRowSecondaryClasses as OutlineGlyphsResolvedValue_3,
   OutlineGlyphsScForScIfDcImportSet,
   OutlineGlyphsSubscribers,
   OutlineGlyphsTest,
@@ -120,8 +120,8 @@ export function installEditorOutlineGlyphs(): () => void {
     CanTReadThisArtboardSFileAskMessage =
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       uiMessage("inspector.glyphs.canTReadThisArtboard");
-    OutlineGlyphsTest = (input?: Dynamic): Dynamic =>
-      /<x-dc[\s/>]/i.test(input);
+    OutlineGlyphsTest = (source?: Dynamic): Dynamic =>
+      /<x-dc[\s/>]/i.test(source);
     jsxOutlineGlyphs = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
@@ -129,8 +129,8 @@ export function installEditorOutlineGlyphs(): () => void {
     OutlineGlyphsResolvedValue =
       blockingOverlaySelector + ',[aria-hidden="true"]';
     OutlineGlyphsConstant = 72;
-    OutlineGlyphsConstant_2 = 480;
-    OutlineGlyphsConstant_3 = 168;
+    layersListMaxSize = 480;
+    layersListDefaultSize = 168;
     OutlineGlyphsClassNames =
       "-ml-1 mr-1.5 inline-flex h-4 w-4 shrink-0 items-center justify-center";
     OutlineGlyphsColorConfig = {
@@ -149,16 +149,16 @@ export function installEditorOutlineGlyphs(): () => void {
       "forced-colors:bg-[color:Highlight] forced-colors:text-[color:HighlightText] forced-colors:focus-visible:outline-[color:HighlightText] forced-colors:[&_button:focus-visible]:outline-[color:HighlightText] forced-colors:[&_input:focus-visible]:outline-[color:HighlightText] forced-colors:[&_input]:bg-[color:Canvas]";
     OutlineGlyphsClassNames_3 =
       "forced-colors:group-aria-selected:forced-color-adjust-none forced-colors:group-aria-selected:text-[color:HighlightText]!";
-    OutlineGlyphsResolvedValue_2 =
+    selectedRowClasses =
       "bg-fill-ghost-selected font-medium text-primary " +
       outlineTreeRowClasses;
     OutlineGlyphsClassNames_4 =
       "bg-transparent text-secondary hover:bg-fill-ghost-hover";
-    OutlineGlyphsResolvedValue_3 =
+    selectedRowSecondaryClasses =
       "bg-fill-ghost-selected text-secondary " + outlineTreeRowClasses;
-    OutlineGlyphsConstant_4 = 6;
-    OutlineGlyphsConstant_5 = 16;
-    OutlineGlyphsConstant_6 = 20;
+    treeRowBaseIndent = 6;
+    treeIndentPerLevel = 16;
+    treeToggleColumnWidth = 20;
     OutlineGlyphsSubscribers = new Set();
     OutlineGlyphsNativeEvent = (event?: Dynamic): Dynamic => {
       let value: Dynamic =
@@ -175,19 +175,19 @@ export function installEditorOutlineGlyphs(): () => void {
         };
       let bounds: Dynamic = event.currentTarget.getBoundingClientRect();
       return {
-        x: bounds.left + OutlineGlyphsConstant_6,
+        x: bounds.left + treeToggleColumnWidth,
         y: bounds.bottom,
         keyboard: true,
       };
     };
-    OutlineGlyphsLabel = (input?: Dynamic): Dynamic => ({
-      get label() { return input.label; },
-      shortcut: input.hotkey,
-      disabled: input.disabled,
-      disabledReason: input.disabledReason,
-      separatorBefore: input.separatorBefore,
-      variant: input.danger === true ? "danger" : undefined,
-      onSelect: input.onClick,
+    OutlineGlyphsLabel = (menuItem?: Dynamic): Dynamic => ({
+      get label() { return menuItem.label; },
+      shortcut: menuItem.hotkey,
+      disabled: menuItem.disabled,
+      disabledReason: menuItem.disabledReason,
+      separatorBefore: menuItem.separatorBefore,
+      variant: menuItem.danger === true ? "danger" : undefined,
+      onSelect: menuItem.onClick,
     });
   };
 }

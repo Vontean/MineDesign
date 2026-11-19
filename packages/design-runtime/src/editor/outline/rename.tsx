@@ -13,14 +13,14 @@ function OutlineRenameInput({
   onDone: onDone,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [value, setValue]: Dynamic = (0,
     reactKeyboardEditActions.useState)(label),
-    value3: Dynamic = (0, reactKeyboardEditActions.useRef)(false),
+    hasFinishedRef: Dynamic = (0, reactKeyboardEditActions.useRef)(false),
     callback: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = false,
+      committedLabel?: Dynamic,
+      shouldRefocus: Dynamic = false,
     ): Dynamic => {
-      value3.current || ((value3.current = true), onDone(input, options));
+      hasFinishedRef.current || ((hasFinishedRef.current = true), onDone(committedLabel, shouldRefocus));
     };
   (0, reactKeyboardEditActions.useEffect)(
     (): Dynamic => (): Dynamic => callback(null),
@@ -34,27 +34,27 @@ function OutlineRenameInput({
       aria-label={uiMessage("inspector.rename.artboardName")}
       autoFocus={true}
       value={value}
-      onChange={(event?: Dynamic): Dynamic => value2(event.target.value)}
-      onClick={(input?: Dynamic): Dynamic => input.stopPropagation()}
-      onDoubleClick={(input?: Dynamic): Dynamic => input.stopPropagation()}
-      onPointerDown={(input?: Dynamic): Dynamic => input.stopPropagation()}
-      onContextMenu={(input?: Dynamic): Dynamic => input.stopPropagation()}
-      onFocus={(input?: Dynamic): Dynamic => input.currentTarget.select()}
+      onChange={(event?: Dynamic): Dynamic => setValue(event.target.value)}
+      onClick={(event?: Dynamic): Dynamic => event.stopPropagation()}
+      onDoubleClick={(event?: Dynamic): Dynamic => event.stopPropagation()}
+      onPointerDown={(event?: Dynamic): Dynamic => event.stopPropagation()}
+      onContextMenu={(event?: Dynamic): Dynamic => event.stopPropagation()}
+      onFocus={(event?: Dynamic): Dynamic => event.currentTarget.select()}
       onBlur={(): Dynamic => callback(value.trim() || null)}
-      onKeyDown={(input?: Dynamic): Dynamic => {
-        input.key === "Enter"
+      onKeyDown={(event?: Dynamic): Dynamic => {
+        event.key === "Enter"
           ? callback(value.trim() || null, true)
-          : input.key === "Escape" && callback(null, true);
-        input.stopPropagation();
+          : event.key === "Escape" && callback(null, true);
+        event.stopPropagation();
       }}
     />
   );
 }
-function consumeOutlineRefocus(input?: Dynamic): Dynamic {
+function consumeOutlineRefocus(refocusState?: Dynamic): Dynamic {
   let value: Dynamic =
-    input.refocusAt !== 0 &&
-    Date.now() - input.refocusAt <= OutlineRenameLimit;
-  input.refocusAt = 0;
+    refocusState.refocusAt !== 0 &&
+    Date.now() - refocusState.refocusAt <= OutlineRenameLimit;
+  refocusState.refocusAt = 0;
   return value;
 }
 export {

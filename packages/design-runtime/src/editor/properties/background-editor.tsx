@@ -49,30 +49,30 @@ function AuthoredColorPicker({
   authoredValue: authoredValue,
   seed: seed,
   onChange: onChange,
-  disabled: disabled2,
+  disabled: disabled,
   plain = false,
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
   let {
-      dsColorTokens: value2,
-      artboardColors: value3,
-      iframeDefinedVars: value4,
+      dsColorTokens: dsColorTokens,
+      artboardColors: artboardColors,
+      iframeDefinedVars: iframeDefinedVars,
     }: Dynamic = useInspectorContext(),
-    [value5]: Dynamic = (0, reactPropertiesAssetPicker_3.useState)(
+    [swatchGroup]: Dynamic = (0, reactPropertiesAssetPicker_3.useState)(
       (): Dynamic =>
-        plain ? undefined : artboardColorSwatchGroup(value3),
+        plain ? undefined : artboardColorSwatchGroup(artboardColors),
     );
-  return disabled2 ? null : (
+  return disabled ? null : (
     <TokenColorPicker
       {...props}
       value={value || seed || "#ffffff"}
       authoredValue={authoredValue}
       unset={!value}
       onChange={onChange}
-      tokens={plain ? PropertiesBackgroundEditorItems : value2}
-      context={value5}
-      iframeDefinedVars={plain ? undefined : value4}
+      tokens={plain ? PropertiesBackgroundEditorItems : dsColorTokens}
+      context={swatchGroup}
+      iframeDefinedVars={plain ? undefined : iframeDefinedVars}
       title={ColorValue}
     />
   );
@@ -84,41 +84,41 @@ function CssNumericPopupInput({
   ownUnit = "px",
   value: value,
   shown: shown,
-  min: min2,
+  min: min,
   max: max,
   steppers = true,
-  disabled: disabled2,
+  disabled: disabled,
   onChange: onChange,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value2, value3]: Dynamic = (0,
+  let [draftValue, setDraftValue]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)(null),
-    value4: Dynamic = useStyleCommitScrub(
-      (input?: Dynamic): Dynamic => {
-        value3(input);
-        onChange(input);
+    scrub: Dynamic = useStyleCommitScrub(
+      (nextValue?: Dynamic): Dynamic => {
+        setDraftValue(nextValue);
+        onChange(nextValue);
       },
     ),
-    value5: Dynamic = Number.isFinite(value) ? value : 0;
+    currentValue: Dynamic = Number.isFinite(value) ? value : 0;
   return (
     <NumericInput
-      value={value2 ?? shown ?? value5}
+      value={draftValue ?? shown ?? currentValue}
       prefix={prefix}
       unit={unit}
       refuseLetters={true}
       ownUnit={ownUnit}
-      min={min2}
+      min={min}
       max={max}
       steppers={steppers}
-      disabled={disabled2}
+      disabled={disabled}
       aria-label={name}
-      onValue={(input?: Dynamic): Dynamic => {
-        input === undefined || input === value5 || onChange(input);
+      onValue={(nextValue?: Dynamic): Dynamic => {
+        nextValue === undefined || nextValue === currentValue || onChange(nextValue);
       }}
-      onScrub={value4.onScrub}
+      onScrub={scrub.onScrub}
       onScrubEnd={(): Dynamic => {
-        value4.onScrubEnd();
-        value3(null);
+        scrub.onScrubEnd();
+        setDraftValue(null);
       }}
     />
   );
@@ -128,28 +128,28 @@ function CssNumericPopupRow({
   value: value,
   unit: unit,
   ownUnit: ownUnit,
-  min: min2,
+  min: min,
   max: max,
   steppers: steppers,
-  disabled: disabled2,
+  disabled: disabled,
   onChange: onChange,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { start: value2, live: value3 }: Dynamic = useLiveStyleScrub({
+  let { start: startScrub, live: liveValue }: Dynamic = useLiveStyleScrub({
     value: Number.isFinite(value) ? value : 0,
-    min: min2,
+    min: min,
     max: max,
-    disabled: disabled2,
-    onScrub: (input?: Dynamic): Dynamic => onChange(Math.round(input)),
+    disabled: disabled,
+    onScrub: (rawValue?: Dynamic): Dynamic => onChange(Math.round(rawValue)),
   });
   return (
     <PropertyRow
       label={label}
       labelProps={
-        disabled2
+        disabled
           ? undefined
           : {
-              onPointerDown: value2,
+              onPointerDown: startScrub,
               className: "cursor-ew-resize touch-none",
             }
       }
@@ -159,11 +159,11 @@ function CssNumericPopupRow({
         unit={unit}
         ownUnit={ownUnit}
         value={value}
-        shown={value3 != null ? Math.round(value3) : null}
-        min={min2}
+        shown={liveValue != null ? Math.round(liveValue) : null}
+        min={min}
         max={max}
         steppers={steppers}
-        disabled={disabled2}
+        disabled={disabled}
         onChange={onChange}
       />
     </PropertyRow>
@@ -177,7 +177,7 @@ function useBackgroundEditor({
   varPartial: varPartial,
   companionVarPartial: companionVarPartial,
   fallback: fallback,
-  disabled: disabled2,
+  disabled: disabled,
   mixed: mixed,
   inherited: inherited,
   noImageReason: noImageReason,
@@ -185,130 +185,130 @@ function useBackgroundEditor({
   varSource: varSource,
   writer: writer,
   open: open,
-  tokens: tokens2,
+  tokens: tokens,
   definedVars: definedVars,
 }: Dynamic): Dynamic {
   let commit: Dynamic = writer.commit,
-    [value2, value3]: Dynamic = (0,
+    [selectedStopIndex, setSelectedStopIndex]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)(0),
-    [value4, value5]: Dynamic = (0,
+    [pendingMode, setPendingMode]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)(null),
-    value6: Dynamic = textFill !== undefined,
-    value7: Dynamic = value6
+    isTextFill: Dynamic = textFill !== undefined,
+    layerCss: Dynamic = isTextFill
       ? textFill.clipped
         ? (textFill.layer ?? textFill.computedLayer ?? "")
         : ""
       : (value ?? ""),
-    value8: Dynamic = value6 ? (value ?? "") : (companionValue ?? ""),
-    value9: Dynamic = parseCssGradient(value7),
-    value10: Dynamic =
+    solidColorValue: Dynamic = isTextFill ? (value ?? "") : (companionValue ?? ""),
+    gradient: Dynamic = parseCssGradient(layerCss),
+    imageUrl: Dynamic =
       /url\("((?:[^"\\]|\\.)*)"\)/
-        .exec(value7)?.[1]
+        .exec(layerCss)?.[1]
         ?.replace(/\\(.)/g, "$1") ??
-      /url\((['"]?)([^'")]+)\1\)/.exec(value7)?.[2] ??
+      /url\((['"]?)([^'")]+)\1\)/.exec(layerCss)?.[2] ??
       null,
-    value11: Dynamic = value7;
+    strippedLayerCss: Dynamic = layerCss;
   for (
     let index: Dynamic = 0;
-    index < 8 && /\([^()]*\)/.test(value11);
+    index < 8 && /\([^()]*\)/.test(strippedLayerCss);
     index++
   )
-    value11 = value11.replace(/[\w-]*\([^()]*\)/g, "");
-  let value12: Dynamic =
+    strippedLayerCss = strippedLayerCss.replace(/[\w-]*\([^()]*\)/g, "");
+  let layerSize: Dynamic =
       /\/\s*([^;,]+?)(?:\s+(?:no-repeat|repeat|repeat-[xy]|space|round)\b)?\s*(?:,|$)/i
-        .exec(value11)?.[1]
+        .exec(strippedLayerCss)?.[1]
         ?.trim(),
-    value13: Dynamic =
-      (value6 ? textFill.size?.trim().toLowerCase() : undefined) ??
-      value12?.toLowerCase() ??
-      (value6 ? "cover" : "auto"),
-    value14: Dynamic = /^(cover|contain|auto)$/i.test(value13)
-      ? value13
+    imageSize: Dynamic =
+      (isTextFill ? textFill.size?.trim().toLowerCase() : undefined) ??
+      layerSize?.toLowerCase() ??
+      (isTextFill ? "cover" : "auto"),
+    presetImageSize: Dynamic = /^(cover|contain|auto)$/i.test(imageSize)
+      ? imageSize
       : null,
-    value15: Dynamic = value10
+    detectedMode: Dynamic = imageUrl
       ? "image"
-      : value9
+      : gradient
         ? "gradient"
-        : value7 || value8
+        : layerCss || solidColorValue
           ? "color"
           : "none",
-    [value16, value17]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(value15);
-  value16 !== value15 &&
-    (value17(value15), value4 !== null && value4 !== "image" && value5(null));
-  let value18: Dynamic = value4 ?? value15,
-    value19: Dynamic = value6
-      ? value8
-      : value8 || (value9 ? "" : value7) || "",
-    value20: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(null);
-  open && value9 && (value20.current = value9);
-  let value21: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)({}),
-    value22: Dynamic = useStyleCommitScrub(
-      (input?: Dynamic): Dynamic => {
-        value9 &&
-          callback4({
-            ...value9,
-            angle: input,
+    [previousDetectedMode, setPreviousDetectedMode]: Dynamic = (0,
+    reactPropertiesAssetPicker_3.useState)(detectedMode);
+  previousDetectedMode !== detectedMode &&
+    (setPreviousDetectedMode(detectedMode), pendingMode !== null && pendingMode !== "image" && setPendingMode(null));
+  let mode: Dynamic = pendingMode ?? detectedMode,
+    solid: Dynamic = isTextFill
+      ? solidColorValue
+      : solidColorValue || (gradient ? "" : layerCss) || "",
+    lastGradientRef: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(null);
+  open && gradient && (lastGradientRef.current = gradient);
+  let radialMemoryRef: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)({}),
+    angleScrub: Dynamic = useStyleCommitScrub(
+      (angle?: Dynamic): Dynamic => {
+        gradient &&
+          commitGradient({
+            ...gradient,
+            angle: angle,
           });
       },
     ),
-    value23: Dynamic =
+    fallbackColor: Dynamic =
       fallback &&
       fallback !== "rgba(0, 0, 0, 0)" &&
       fallback !== "transparent" &&
       classifyStyleValue(fallback).kind === "literal"
         ? fallback
         : undefined,
-    kind: Dynamic = classifyStyleValue(value19).kind,
-    value24: Dynamic =
+    kind: Dynamic = classifyStyleValue(solid).kind,
+    solidCss: Dynamic =
       kind === "literal"
-        ? value19
-        : resolveColorTokenValue(value19, tokens2),
-    value25: Dynamic = mixed
+        ? solid
+        : resolveColorTokenValue(solid, tokens),
+    previewCss: Dynamic = mixed
       ? undefined
-      : value9
-        ? serializeCssGradient(value9)
-        : value10
+      : gradient
+        ? serializeCssGradient(gradient)
+        : imageUrl
           ? undefined
-          : (value24 ??
-            (value18 === "none" || (value18 === "color" && kind !== "literal")
-              ? value23
+          : (solidCss ??
+            (mode === "none" || (mode === "color" && kind !== "literal")
+              ? fallbackColor
               : undefined)),
-    value26: Dynamic = mixed
+    summaryLabel: Dynamic = mixed
       ? "Mixed"
-      : value18 === "none"
-        ? value23
-          ? describeColorValue(value23)
+      : mode === "none"
+        ? fallbackColor
+          ? describeColorValue(fallbackColor)
           : "None"
-        : value18 === "gradient"
-          ? value9?.radial
+        : mode === "gradient"
+          ? gradient?.radial
             ? "Radial"
             : "Linear"
-          : value18 === "image"
+          : mode === "image"
             ? "Image"
-            : describeColorValue(value19),
-    value27: Dynamic = value6
+            : describeColorValue(solid),
+    solidAuthoredSource: Dynamic = isTextFill
       ? (varSource ?? valueAuthored)
-      : value8
+      : solidColorValue
         ? companionAuthored
         : valueAuthored,
-    value28: Dynamic = mixed
+    tokenSourceValue: Dynamic = mixed
       ? undefined
-      : value18 === "color"
-        ? (((value6 || !value8 ? varPartial : companionVarPartial) === true
+      : mode === "color"
+        ? (((isTextFill || !solidColorValue ? varPartial : companionVarPartial) === true
             ? undefined
-            : value27) ?? value19)
-        : value18 === "none"
-          ? ((varPartial === true ? undefined : varSource) ?? value23)
+            : solidAuthoredSource) ?? solid)
+        : mode === "none"
+          ? ((varPartial === true ? undefined : varSource) ?? fallbackColor)
           : undefined,
-    value29: Dynamic = (0, reactPropertiesAssetPicker_3.useMemo)(
+    matchedToken: Dynamic = (0, reactPropertiesAssetPicker_3.useMemo)(
       (): Dynamic =>
-        matchArtboardColorToken(value28, tokens2, definedVars),
-      [value28, tokens2, definedVars],
+        matchArtboardColorToken(tokenSourceValue, tokens, definedVars),
+      [tokenSourceValue, tokens, definedVars],
     ),
-    { main: value30, alphaPct: value31 }: Dynamic = splitColorAlpha(value29 ?? value26),
-    value32: Dynamic =
-      value6 && textFill.transparentInk !== undefined
+    { main: summaryMain, alphaPct: summaryAlpha }: Dynamic = splitColorAlpha(matchedToken ?? summaryLabel),
+    inkResetEdits: Dynamic =
+      isTextFill && textFill.transparentInk !== undefined
         ? [
             {
               prop: "color",
@@ -316,8 +316,8 @@ function useBackgroundEditor({
             },
           ]
         : [],
-    value33: Dynamic =
-      !value6 || !textFill.clipped
+    clearTextFillEdits: Dynamic =
+      !isTextFill || !textFill.clipped
         ? []
         : [
             {
@@ -328,45 +328,45 @@ function useBackgroundEditor({
                   : "none",
             },
             ...InspectorPropertySchemaItems.map(
-              (input?: Dynamic): Dynamic => ({
-                prop: input,
+              (propName?: Dynamic): Dynamic => ({
+                prop: propName,
                 value:
-                  input === "-webkit-text-fill-color" && !textFill.inlineClip
+                  propName === "-webkit-text-fill-color" && !textFill.inlineClip
                     ? "currentcolor"
                     : null,
               }),
             ),
-            ...value32,
+            ...inkResetEdits,
           ],
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      value6
+    buildSolidEdits: Dynamic = (color?: Dynamic): Dynamic =>
+      isTextFill
         ? [
-            ...value33.filter(
-              (input2?: Dynamic): Dynamic => input2.prop !== "color",
+            ...clearTextFillEdits.filter(
+              (edit?: Dynamic): Dynamic => edit.prop !== "color",
             ),
             {
               prop: "color",
-              value: input || null,
+              value: color || null,
             },
           ]
         : [
             {
               prop: "background-color",
-              value: input || null,
+              value: color || null,
             },
             {
               prop: "background",
               value: null,
             },
           ],
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      commit(callback(input)),
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      value6
+    commitSolid: Dynamic = (color?: Dynamic): Dynamic =>
+      commit(buildSolidEdits(color)),
+    buildGradientEdits: Dynamic = (nextGradient?: Dynamic): Dynamic =>
+      isTextFill
         ? [
             {
               prop: "background-image",
-              value: serializeCssGradient(input),
+              value: serializeCssGradient(nextGradient),
             },
             {
               prop: "background-size",
@@ -385,31 +385,31 @@ function useBackgroundEditor({
         : [
             {
               prop: "background",
-              value: serializeCssGradient(input),
+              value: serializeCssGradient(nextGradient),
             },
             {
               prop: "background-color",
               value: null,
             },
           ],
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      commit(callback3(input)),
-    callback5: Dynamic = (input?: Dynamic): Dynamic =>
-      /^https?:/i.test(input)
-        ? `url("${escapeCssUrl(input)}")`
-        : `url("${input.replace(/["\\]/g, "\\$&")}")`,
-    callback6: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    commitGradient: Dynamic = (nextGradient?: Dynamic): Dynamic =>
+      commit(buildGradientEdits(nextGradient)),
+    toCssUrl: Dynamic = (url?: Dynamic): Dynamic =>
+      /^https?:/i.test(url)
+        ? `url("${escapeCssUrl(url)}")`
+        : `url("${url.replace(/["\\]/g, "\\$&")}")`,
+    commitImage: Dynamic = (url?: Dynamic, size?: Dynamic): Dynamic =>
       commit(
-        value6
-          ? input
+        isTextFill
+          ? url
             ? [
                 {
                   prop: "background-image",
-                  value: callback5(input),
+                  value: toCssUrl(url),
                 },
                 {
                   prop: "background-size",
-                  value: options,
+                  value: size,
                 },
                 {
                   prop: "background-position",
@@ -421,12 +421,12 @@ function useBackgroundEditor({
                 },
                 ...CssGradientsItems,
               ]
-            : value33
+            : clearTextFillEdits
           : [
               {
                 prop: "background",
-                value: input
-                  ? `${callback5(input)} center / ${options} no-repeat`
+                value: url
+                  ? `${toCssUrl(url)} center / ${size} no-repeat`
                   : null,
               },
               {
@@ -435,20 +435,20 @@ function useBackgroundEditor({
               },
             ],
       ),
-    callback7: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input === value18) return;
-      value5(input);
-      let callback9: Dynamic = (input2?: Dynamic): Dynamic =>
-        !!input2 &&
-        classifyStyleValue(input2).kind === "literal" &&
-        !/url\(/i.test(input2);
-      if (input === "color" && value6) {
-        textFill.clipped && commit(value33);
+    switchMode: Dynamic = (nextMode?: Dynamic): Dynamic => {
+      if (nextMode === mode) return;
+      setPendingMode(nextMode);
+      let isUsableLiteralColor: Dynamic = (color?: Dynamic): Dynamic =>
+        !!color &&
+        classifyStyleValue(color).kind === "literal" &&
+        !/url\(/i.test(color);
+      if (nextMode === "color" && isTextFill) {
+        textFill.clipped && commit(clearTextFillEdits);
         return;
       }
-      if (input === "color") {
-        if (value8 || (value7 && !value9 && !value10)) {
-          (value9 || value10) &&
+      if (nextMode === "color") {
+        if (solidColorValue || (layerCss && !gradient && !imageUrl)) {
+          (gradient || imageUrl) &&
             commit([
               {
                 prop: "background",
@@ -457,64 +457,64 @@ function useBackgroundEditor({
             ]);
           return;
         }
-        let value37: Dynamic = value9?.stops[0]
+        let firstStopColor: Dynamic = gradient?.stops[0]
             ?.replace(/(\s+-?[\d.]+[a-z%]*)+$/i, "")
             .trim(),
-          value38: Dynamic =
-            value37 &&
-            (!/\s/.test(value37) || /^[a-z-]+\([^)]*\)$/i.test(value37))
-              ? value37
+          seedColor: Dynamic =
+            firstStopColor &&
+            (!/\s/.test(firstStopColor) || /^[a-z-]+\([^)]*\)$/i.test(firstStopColor))
+              ? firstStopColor
               : undefined;
-        callback2(callback9(value38) ? value38 : "#cccccc");
-      } else if (input === "image") value3(0);
+        commitSolid(isUsableLiteralColor(seedColor) ? seedColor : "#cccccc");
+      } else if (nextMode === "image") setSelectedStopIndex(0);
       else {
-        let current: Dynamic = value20.current,
-          callback10: Dynamic = (input2?: Dynamic): Dynamic =>
-            callback9(input2) && parseHsvaColor(input2).a > 0,
-          value37: Dynamic = callback10(value24)
-            ? value24
-            : value6 && callback10(value23)
-              ? describeColorValue(value23).toLowerCase()
+        let current: Dynamic = lastGradientRef.current,
+          isVisibleColor: Dynamic = (color?: Dynamic): Dynamic =>
+            isUsableLiteralColor(color) && parseHsvaColor(color).a > 0,
+          gradientStartColor: Dynamic = isVisibleColor(solidCss)
+            ? solidCss
+            : isTextFill && isVisibleColor(fallbackColor)
+              ? describeColorValue(fallbackColor).toLowerCase()
               : "#c1672a",
-          value38: Dynamic = value6
-            ? contrastingGradientSeed(value37)
+          gradientEndColor: Dynamic = isTextFill
+            ? contrastingGradientSeed(gradientStartColor)
             : "#28211a",
-          value39: Dynamic = current ?? {
+          initialGradient: Dynamic = current ?? {
             angle: 180,
-            stops: [value37, value38],
+            stops: [gradientStartColor, gradientEndColor],
           };
-        value3(0);
+        setSelectedStopIndex(0);
         if (
-          (value6 || !value8) &&
-          value9 &&
-          serializeCssGradient(value9) ===
-            serializeCssGradient(value39)
+          (isTextFill || !solidColorValue) &&
+          gradient &&
+          serializeCssGradient(gradient) ===
+            serializeCssGradient(initialGradient)
         )
           return;
-        callback4(value39);
+        commitGradient(initialGradient);
       }
     },
-    value34: Dynamic = value9 ? Math.min(value2, value9.stops.length - 1) : 0,
-    value35: Dynamic = value18 === "none" ? "color" : value18,
-    callback8: Dynamic = (): Dynamic => {
-      value5(null);
-      value20.current = null;
-      value21.current = {};
+    selectedStop: Dynamic = gradient ? Math.min(selectedStopIndex, gradient.stops.length - 1) : 0,
+    activeTab: Dynamic = mode === "none" ? "color" : mode,
+    endSession: Dynamic = (): Dynamic => {
+      setPendingMode(null);
+      lastGradientRef.current = null;
+      radialMemoryRef.current = {};
     },
-    value36: Dynamic =
-      value35 === "image" ? (
+    face: Dynamic =
+      activeTab === "image" ? (
         <jsxPropertiesAssetPicker_3.Fragment>
           <ImageAssetPicker
-            value={value10}
-            disabled={disabled2}
-            previewSize={value14 ?? "cover"}
-            onChange={(input?: Dynamic): Dynamic =>
-              callback6(input, value10 ? value13 : "cover")
+            value={imageUrl}
+            disabled={disabled}
+            previewSize={presetImageSize ?? "cover"}
+            onChange={(nextImageUrl?: Dynamic): Dynamic =>
+              commitImage(nextImageUrl, imageUrl ? imageSize : "cover")
             }
           />
           <PropertyRow
             label={uiMessage("inspector.backgroundEditor.size")}
-            title={value10 ? (undefined) : (uiMessage("inspector.backgroundEditor.pickAnImageFirst"))}
+            title={imageUrl ? (undefined) : (uiMessage("inspector.backgroundEditor.pickAnImageFirst"))}
           >
             <PropertySelect
               aria-label={uiMessage("inspector.backgroundEditor.imageSize")}
@@ -533,86 +533,86 @@ function useBackgroundEditor({
                   get label() { return uiMessage("inspector.backgroundEditor.original"); },
                 },
               ]}
-              value={value10 ? value14 : null}
-              placeholder={value10 ? (value13) : (uiMessage("inspector.backgroundEditor.cover"))}
-              disabled={disabled2 || !value10}
-              onChange={(input?: Dynamic): Dynamic => {
-                !value10 || input === value14 || callback6(value10, input);
+              value={imageUrl ? presetImageSize : null}
+              placeholder={imageUrl ? (imageSize) : (uiMessage("inspector.backgroundEditor.cover"))}
+              disabled={disabled || !imageUrl}
+              onChange={(nextSize?: Dynamic): Dynamic => {
+                !imageUrl || nextSize === presetImageSize || commitImage(imageUrl, nextSize);
               }}
             />
           </PropertyRow>
         </jsxPropertiesAssetPicker_3.Fragment>
-      ) : value35 === "gradient" && value9 ? (
+      ) : activeTab === "gradient" && gradient ? (
         ((): Dynamic => {
-          let callback9: Dynamic = (input?: Dynamic): Dynamic =>
-              input && /^var\(/i.test(input)
-                ? resolveColorTokenValue(input, tokens2)
-                : input,
-            value37: Dynamic = value9.stops
+          let resolveStopColor: Dynamic = (color?: Dynamic): Dynamic =>
+              color && /^var\(/i.test(color)
+                ? resolveColorTokenValue(color, tokens)
+                : color,
+            stops: Dynamic = gradient.stops
               .map(parseCssGradientStop)
-              .map((input?: Dynamic): Dynamic => {
-                let value38: Dynamic = callback9(input.swatch ?? input.color),
-                  value39: Dynamic =
-                    value38 !== undefined && value38 !== input.color
+              .map((stop?: Dynamic): Dynamic => {
+                let resolvedSwatch: Dynamic = resolveStopColor(stop.swatch ?? stop.color),
+                  displayStop: Dynamic =
+                    resolvedSwatch !== undefined && resolvedSwatch !== stop.color
                       ? {
-                          ...input,
-                          swatch: value38,
+                          ...stop,
+                          swatch: resolvedSwatch,
                         }
-                      : input;
-                return input.opaque
+                      : stop;
+                return stop.opaque
                   ? {
-                      ...value39,
+                      ...displayStop,
                       locked: true,
                       ...(PropertiesAssetPickerPattern.test(
-                        input.raw ?? "",
+                        stop.raw ?? "",
                       )
                         ? {
                             hint: true,
                           }
                         : {}),
                     }
-                  : value39;
+                  : displayStop;
               }),
-            callback10: Dynamic = (input?: Dynamic): Dynamic => ({
-              ...value9,
-              stops: input.map(serializeCssGradientStop),
+            buildGradientFromStops: Dynamic = (stopList?: Dynamic): Dynamic => ({
+              ...gradient,
+              stops: stopList.map(serializeCssGradientStop),
             }),
-            callback11: Dynamic = (input?: Dynamic): Dynamic =>
-              callback4(callback10(input)),
+            commitStops: Dynamic = (stopList?: Dynamic): Dynamic =>
+              commitGradient(buildGradientFromStops(stopList)),
             live: Dynamic = writer.live,
-            callback12: Dynamic = (
-              input?: Dynamic,
-              options?: Dynamic,
+            replaceStopColor: Dynamic = (
+              stopIndex?: Dynamic,
+              color?: Dynamic,
             ): Dynamic =>
-              value37.map(
-                (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                  options2 !== input
-                    ? input2
-                    : input2.opaque
+              stops.map(
+                (stop?: Dynamic, index?: Dynamic): Dynamic =>
+                  index !== stopIndex
+                    ? stop
+                    : stop.opaque
                       ? {
-                          color: options,
+                          color: color,
                           pos:
-                            input2.pos ??
-                            normalizedGradientStops(value37)[
-                              input
+                            stop.pos ??
+                            normalizedGradientStops(stops)[
+                              stopIndex
                             ],
                         }
                       : {
-                          ...input2,
-                          color: options,
+                          ...stop,
+                          color: color,
                           swatch: undefined,
                         },
               );
           return (
             <GradientEditor
               testid={"dc-fill-gradient"}
-              radial={value9.radial === true}
-              onRadial={(input?: Dynamic): Dynamic => {
-                let current: Dynamic = value21.current;
-                if (input) {
-                  current.angle = value9.angle;
-                  callback4({
-                    ...value9,
+              radial={gradient.radial === true}
+              onRadial={(isRadial?: Dynamic): Dynamic => {
+                let current: Dynamic = radialMemoryRef.current;
+                if (isRadial) {
+                  current.angle = gradient.angle;
+                  commitGradient({
+                    ...gradient,
                     radial: true,
                     ...(current.shape !== undefined
                       ? {
@@ -621,67 +621,67 @@ function useBackgroundEditor({
                       : {}),
                   });
                 } else {
-                  value9.shape !== undefined &&
-                    (current.shape = value9.shape);
-                  let { shape: value38, ...value39 }: Dynamic = value9;
-                  callback4({
-                    ...value39,
+                  gradient.shape !== undefined &&
+                    (current.shape = gradient.shape);
+                  let { shape: unusedShape, ...gradientWithoutShape }: Dynamic = gradient;
+                  commitGradient({
+                    ...gradientWithoutShape,
                     radial: false,
-                    angle: current.angle ?? value9.angle,
+                    angle: current.angle ?? gradient.angle,
                   });
                 }
               }}
-              angle={value9.angle}
-              onAngle={(input?: Dynamic): Dynamic =>
-                callback4({
-                  ...value9,
-                  angle: input ?? 180,
+              angle={gradient.angle}
+              onAngle={(nextAngle?: Dynamic): Dynamic =>
+                commitGradient({
+                  ...gradient,
+                  angle: nextAngle ?? 180,
                 })
               }
               onAngleScrub={
                 live
-                  ? (input?: Dynamic): Dynamic =>
+                  ? (nextAngle?: Dynamic): Dynamic =>
                       live(
-                        callback3({
-                          ...value9,
-                          angle: input,
+                        buildGradientEdits({
+                          ...gradient,
+                          angle: nextAngle,
                         }),
                       )
-                  : value22.onScrub
+                  : angleScrub.onScrub
               }
               onAngleScrubEnd={
-                live ? (): Dynamic => writer.settle?.() : value22.onScrubEnd
+                live ? (): Dynamic => writer.settle?.() : angleScrub.onScrubEnd
               }
-              stops={value37}
-              selected={value34}
-              onSelect={value3}
-              onStops={(input?: Dynamic): Dynamic => callback11(input)}
+              stops={stops}
+              selected={selectedStop}
+              onSelect={setSelectedStopIndex}
+              onStops={(stopList?: Dynamic): Dynamic => commitStops(stopList)}
               {...(live
                 ? {
-                    onStopsLive: (input?: Dynamic): Dynamic =>
-                      live(callback3(callback10(input))),
+                    onStopsLive: (stopList?: Dynamic): Dynamic =>
+                      live(buildGradientEdits(buildGradientFromStops(stopList))),
                     onLiveEnd: (): Dynamic => writer.settle?.(),
                   }
                 : {})}
               maxStops={8}
-              disabled={disabled2}
-              renderStopPicker={(input?: Dynamic): Dynamic => (
+              disabled={disabled}
+              renderStopPicker={(stopIndex?: Dynamic): Dynamic => (
                 <AuthoredColorPicker
                   value={
-                    value37[input]?.swatch ?? value37[input]?.color ?? ""
+                    stops[stopIndex]?.swatch ?? stops[stopIndex]?.color ?? ""
                   }
-                  disabled={disabled2}
+                  disabled={disabled}
                   plain={true}
-                  onChange={(input2?: Dynamic): Dynamic =>
+                  onChange={(color?: Dynamic): Dynamic =>
                     live
-                      ? live(callback3(callback10(callback12(input, input2))))
-                      : callback11(callback12(input, input2))
+                      ? live(buildGradientEdits(buildGradientFromStops(replaceStopColor(stopIndex, color))))
+                      : commitStops(replaceStopColor(stopIndex, color))
                   }
                   {...(live
                     ? {
-                        onPickEnd: (input2?: Dynamic): Dynamic => {
+                        onPickEnd: (color?: Dynamic): Dynamic => {
                           writer.settle?.();
-                          callback11(callback12(input, input2));
+                          commitStops(replaceStopColor(stopIndex, color));
                         },
                       }
                     : {})}
@@ -692,10 +692,10 @@ function useBackgroundEditor({
         })()
       ) : null;
   return {
-    mode: value18,
-    tab: value35,
+    mode: mode,
+    tab: activeTab,
     kind: {
-      value: value35,
+      value: activeTab,
       options: [
         {
           value: "color",
@@ -715,26 +715,26 @@ function useBackgroundEditor({
             : {}),
         },
       ],
-      onChange: (input?: Dynamic): Dynamic => callback7(input),
-      disabled: disabled2,
+      onChange: (nextMode?: Dynamic): Dynamic => switchMode(nextMode),
+      disabled: disabled,
     },
-    face: value36,
-    solid: value19,
-    solidCss: value24,
+    face: face,
+    solid: solid,
+    solidCss: solidCss,
     solidAuthored:
-      value27 ?? (value18 === "none" || kind === "var" ? value28 : undefined),
-    fallbackColor: value23,
-    setSolid: (input?: Dynamic, options: Dynamic = false): Dynamic => {
-      options && value5(null);
-      callback2(input);
+      solidAuthoredSource ?? (mode === "none" || kind === "var" ? tokenSourceValue : undefined),
+    fallbackColor: fallbackColor,
+    setSolid: (color?: Dynamic, shouldClearPendingMode: Dynamic = false): Dynamic => {
+      shouldClearPendingMode && setPendingMode(null);
+      commitSolid(color);
     },
-    solidEdits: callback,
-    imageUrl: value10,
-    previewCss: value25,
-    summary: value29 ?? value26,
-    summaryMain: value30,
-    summaryAlpha: value31,
-    endSession: callback8,
+    solidEdits: buildSolidEdits,
+    imageUrl: imageUrl,
+    previewCss: previewCss,
+    summary: matchedToken ?? summaryLabel,
+    summaryMain: summaryMain,
+    summaryAlpha: summaryAlpha,
+    endSession: endSession,
   };
 }
 function PropertyBackgroundRow({
@@ -745,98 +745,98 @@ function PropertyBackgroundRow({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [isOpen, setIsOpen]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)(false),
     {
-      dsColorTokens: value3,
-      iframeDefinedVars: value4,
-      editsAreUndoSteps: value5,
+      dsColorTokens: dsColorTokens,
+      iframeDefinedVars: iframeDefinedVars,
+      editsAreUndoSteps: editsAreUndoSteps,
     }: Dynamic = useInspectorContext(),
-    value6: Dynamic = useBackgroundEditor({
+    editor: Dynamic = useBackgroundEditor({
       ...props,
       writer: {
         commit: onCommitMany,
       },
-      open: value,
-      tokens: value3,
-      definedVars: value4,
+      open: isOpen,
+      tokens: dsColorTokens,
+      definedVars: iframeDefinedVars,
     }),
-    { disabled: value7, mixed: value8 }: Dynamic = props,
-    value9: Dynamic = value3.length > 0,
-    [value10, value11]: Dynamic = (0,
+    { disabled: disabled, mixed: mixed }: Dynamic = props,
+    hasDsTokens: Dynamic = dsColorTokens.length > 0,
+    [activeTab, setActiveTab]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)("system"),
-    value12: Dynamic = value9 && value10 === "system";
+    isSystemTab: Dynamic = hasDsTokens && activeTab === "system";
   return (
     <PropertyAssetPopup
-      open={value}
-      onOpenChange={(input?: Dynamic): Dynamic => {
-        value2(input);
-        input
-          ? value11(
-              value9 && (value6.mode === "color" || value6.mode === "none")
+      open={isOpen}
+      onOpenChange={(nextOpen?: Dynamic): Dynamic => {
+        setIsOpen(nextOpen);
+        nextOpen
+          ? setActiveTab(
+              hasDsTokens && (editor.mode === "color" || editor.mode === "none")
                 ? "system"
                 : "custom",
             )
-          : value6.endSession();
+          : editor.endSession();
       }}
       title={label}
       header={
-        value9 ? (
+        hasDsTokens ? (
           <ColorHexInput
-            value={value10}
-            onChange={value11}
+            value={activeTab}
+            onChange={setActiveTab}
             className={""}
           />
         ) : undefined
       }
       planHeight={ColorPickerConstant}
-      editsAreUndoSteps={value5}
+      editsAreUndoSteps={editsAreUndoSteps}
       data-testid={"dc-fill-popover"}
       trigger={
         <PropertySelectTrigger
-          aria-label={uiMessage("inspector.backgroundEditor.undefined", { value1: String(label), value2: String(value8 ? (uiMessage("inspector.backgroundEditor.mixed")) : (value6.summary)) })}
-          disabled={value7}
+          aria-label={uiMessage("inspector.backgroundEditor.undefined", { value1: String(label), value2: String(mixed ? (uiMessage("inspector.backgroundEditor.mixed")) : (editor.summary)) })}
+          disabled={disabled}
           data-testid={testId}
           chip={
-            value6.imageUrl && !value8 ? (
-              <AssetColorWell src={value6.imageUrl} />
+            editor.imageUrl && !mixed ? (
+              <AssetColorWell src={editor.imageUrl} />
             ) : (
-              <CssColorWell css={value6.previewCss} />
+              <CssColorWell css={editor.previewCss} />
             )
           }
-          muted={value8}
-          caption={value6.summaryAlpha}
+          muted={mixed}
+          caption={editor.summaryAlpha}
         >
-          {value6.summaryMain}
+          {editor.summaryMain}
         </PropertySelectTrigger>
       }
     >
       <div
         className={cn(
-          value9 ? "px-4" : "px-lg",
+          hasDsTokens ? "px-4" : "px-lg",
           "[--pp-edge:0px]",
         )}
       >
         <AuthoredColorPicker
           value={
-            value12 && value6.mode !== "color" ? "" : (value6.solidCss ?? "")
+            isSystemTab && editor.mode !== "color" ? "" : (editor.solidCss ?? "")
           }
           authoredValue={
-            value6.mode === "gradient" || value6.mode === "image"
+            editor.mode === "gradient" || editor.mode === "image"
               ? undefined
-              : value6.solidAuthored
+              : editor.solidAuthored
           }
-          seed={value6.fallbackColor}
-          onChange={(input?: Dynamic): Dynamic =>
-            value6.setSolid(input, value12)
+          seed={editor.fallbackColor}
+          onChange={(color?: Dynamic): Dynamic =>
+            editor.setSolid(color, isSystemTab)
           }
-          disabled={value7}
-          tab={value9 ? value10 : undefined}
+          disabled={disabled}
+          tab={hasDsTokens ? activeTab : undefined}
           headless={true}
-          kind={value6.kind}
-          face={value6.face}
+          kind={editor.kind}
+          face={editor.face}
           contrast={
-            value6.mode === "color" || value6.mode === "none"
+            editor.mode === "color" || editor.mode === "none"
               ? contrast
               : undefined
           }

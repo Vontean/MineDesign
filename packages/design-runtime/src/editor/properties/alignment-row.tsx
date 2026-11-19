@@ -12,15 +12,15 @@ import { PropertyCssEnumRow, PropertyCssTextRow, propertyOptionLabel } from "./c
 import { inspectorFieldDisplay } from "./inherited-field";
 import { PropertyRow } from "./row";
 import { PropertySegments } from "./segments";
-import { PropertiesSizingRowFlexStartStartCenterConfig, PropertiesSizingRowFlexStartStartCenterConfig_2 } from "./sizing-row";
+import { PropertiesSizingRowFlexStartStartCenterConfig, PropertiesSizingRowFlexStartStartCenterConfig_2 as PropertiesSizingRowAlignIcons } from "./sizing-row";
 import { TextAlignCenterValue, TextAlignJustifyValue, TextAlignLeftValue, TextAlignRightValue } from "./tooltip";
 import { PropertiesTransformRowRowColumnRowReverseConfig } from "./transform-row";
-import { TypographyFontCatalogItems, TypographyFontCatalogItems_2 } from "../typography/font-catalog";
+import { TypographyFontCatalogItems, TypographyFontCatalogItems_2 as TypographyFontCatalogWebFonts } from "../typography/font-catalog";
 
 var PropertiesAlignmentRowSansSerifMonoConfig: Dynamic;
 var PropertiesAlignmentRowCache: Dynamic;
-function alignmentOptionIcon(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input === "text-align")
+function alignmentOptionIcon(propertyName?: Dynamic, optionValue?: Dynamic): Dynamic {
+  if (propertyName === "text-align")
     return (
       {
         left: TextAlignLeftValue,
@@ -28,18 +28,18 @@ function alignmentOptionIcon(input?: Dynamic, options?: Dynamic): Dynamic {
         right: TextAlignRightValue,
         justify: TextAlignJustifyValue,
       } as Dynamic
-    )[options];
+    )[optionValue];
   if (
-    input === "justify-content" ||
-    input === "justify-items" ||
-    input === "justify-self"
+    propertyName === "justify-content" ||
+    propertyName === "justify-items" ||
+    propertyName === "justify-self"
   )
     return (
-      PropertiesSizingRowFlexStartStartCenterConfig[options] ??
-      PropertiesSizingRowFlexStartStartCenterConfig_2[options]
+      PropertiesSizingRowFlexStartStartCenterConfig[optionValue] ??
+      PropertiesSizingRowAlignIcons[optionValue]
     );
-  if (input === "align-items" || input === "align-self")
-    return PropertiesSizingRowFlexStartStartCenterConfig_2[options];
+  if (propertyName === "align-items" || propertyName === "align-self")
+    return PropertiesSizingRowAlignIcons[optionValue];
 }
 function PropertyAlignmentRow({
   state: state,
@@ -59,49 +59,49 @@ function PropertyAlignmentRow({
       />
     );
   let value: Dynamic = state.companionMixed ?? false,
-    value2: Dynamic = (state.companionValue ?? "").trim(),
-    value3: Dynamic =
-      value2 && classifyStyleValue(value2).kind === "literal"
-        ? value2
+    companionValueText: Dynamic = (state.companionValue ?? "").trim(),
+    literalCompanionValue: Dynamic =
+      companionValueText && classifyStyleValue(companionValueText).kind === "literal"
+        ? companionValueText
         : "",
-    value4: Dynamic = value
+    decorationLineValue: Dynamic = value
       ? ""
-      : value3 || (state.companionFallback ?? "").trim(),
+      : literalCompanionValue || (state.companionFallback ?? "").trim(),
     values: Dynamic = new Set(
-      value4
+      decorationLineValue
         .split(/\s+/)
-        .filter((input?: Dynamic): Dynamic => input && input !== "none"),
+        .filter((token?: Dynamic): Dynamic => token && token !== "none"),
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let values2: Dynamic = new Set(values);
-      values2.has(input) ? values2.delete(input) : values2.add(input);
+    callback: Dynamic = (line?: Dynamic): Dynamic => {
+      let nextLines: Dynamic = new Set(values);
+      nextLines.has(line) ? nextLines.delete(line) : nextLines.add(line);
       onCommit(
         "text-decoration-line",
-        values2.size ? [...values2].join(" ") : "none",
+        nextLines.size ? [...nextLines].join(" ") : "none",
       );
     },
-    value5: Dynamic = value3 !== "",
-    callback2: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value6?: Dynamic,
-      extra?: Dynamic,
-      detail: Dynamic = true,
+    hasLiteralCompanion: Dynamic = literalCompanionValue !== "",
+    renderDecorationButton: Dynamic = (
+      isPressed?: Dynamic,
+      isMixed?: Dynamic,
+      label?: Dynamic,
+      icon?: Dynamic,
+      handleClick?: Dynamic,
+      isExplicit: Dynamic = true,
     ): Dynamic => (
       <Button
         iconOnly={true}
-        icon={value6}
-        aria-label={context}
-        pressed={input && !options}
+        icon={icon}
+        aria-label={label}
+        pressed={isPressed && !isMixed}
         tooltip={
-          options ? (`${context} \u2014 mixed`) : (input && !detail ? (`${context} (inherited)`) : (context))
+          isMixed ? (`${label} \u2014 mixed`) : (isPressed && !isExplicit ? (`${label} (inherited)`) : (label))
         }
         disabled={state.disabled}
-        data-testid={`dc-typestyle-${context.toLowerCase()}`}
-        data-inherited={input && !options && !detail ? "" : undefined}
-        className={cn(options && "opacity-45")}
-        onClick={extra}
+        data-testid={`dc-typestyle-${label.toLowerCase()}`}
+        data-inherited={isPressed && !isMixed && !isExplicit ? "" : undefined}
+        className={cn(isMixed && "opacity-45")}
+        onClick={handleClick}
       />
     );
   return (
@@ -111,15 +111,15 @@ function PropertyAlignmentRow({
         variant={"joined"}
         buttonVariant={"secondary"}
       >
-        {callback2(
+        {renderDecorationButton(
           values.has("underline"),
           value,
           "Underline",
           "TextUnderline",
           (): Dynamic => callback("underline"),
-          value5,
+          hasLiteralCompanion,
         )}
-        {callback2(
+        {renderDecorationButton(
           values.has("line-through"),
           value,
           "Strikethrough",
@@ -134,7 +134,7 @@ function PropertyAlignmentRow({
             {"S"}
           </span>,
           (): Dynamic => callback("line-through"),
-          value5,
+          hasLiteralCompanion,
         )}
       </ButtonGroup>
     </PropertyRow>
@@ -146,8 +146,8 @@ function PropertyCssSegmentsRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(state);
-  if (!value2 && value)
+  let { text: value, isLiteral: isLiteral }: Dynamic = inspectorFieldDisplay(state);
+  if (!isLiteral && value)
     return (
       <PropertyCssTextRow
         state={state}
@@ -155,22 +155,22 @@ function PropertyCssSegmentsRow({
         shell={shell}
       />
     );
-  let value3: Dynamic = state.spec?.options ?? [],
-    value4: Dynamic = value || "",
-    value5: Dynamic = state.fallback ?? "",
-    value6: Dynamic =
-      value4 ||
+  let specOptions: Dynamic = state.spec?.options ?? [],
+    currentValue: Dynamic = value || "",
+    fallbackValue: Dynamic = state.fallback ?? "",
+    effectiveValue: Dynamic =
+      currentValue ||
       (state.mixed
         ? ""
-        : value5 === "normal" || value5 === "legacy"
+        : fallbackValue === "normal" || fallbackValue === "legacy"
           ? (state.spec?.defaultValue ?? "")
           : state.prop === "text-align" &&
-              (value5 === "start" || value5 === "end")
-            ? value5 === "start"
+              (fallbackValue === "start" || fallbackValue === "end")
+            ? fallbackValue === "start"
               ? "left"
               : "right"
-            : value5),
-    value7: Dynamic = (
+            : fallbackValue),
+    fixedOptions: Dynamic = (
       {
         "justify-content": ["flex-start", "center", "flex-end"],
         "justify-items": ["start", "center", "end"],
@@ -178,87 +178,87 @@ function PropertyCssSegmentsRow({
         "flex-direction": ["row", "column"],
       } as Dynamic
     )[state.prop],
-    value8: Dynamic = value7
+    segmentOptions: Dynamic = fixedOptions
       ? [
-          ...value7,
+          ...fixedOptions,
           ...(state.prop === "align-items" &&
-          (value4 === "baseline" || (!value4 && value6 === "baseline"))
+          (currentValue === "baseline" || (!currentValue && effectiveValue === "baseline"))
             ? ["baseline"]
             : []),
         ]
-      : value3,
-    value9: Dynamic = value8.every(
-      (input?: Dynamic): Dynamic =>
-        alignmentOptionIcon(state.prop, input) != null ||
-        input === "auto" ||
-        PropertiesTransformRowRowColumnRowReverseConfig[input] !=
+      : specOptions,
+    allOptionsHaveIcons: Dynamic = segmentOptions.every(
+      (option?: Dynamic): Dynamic =>
+        alignmentOptionIcon(state.prop, option) != null ||
+        option === "auto" ||
+        PropertiesTransformRowRowColumnRowReverseConfig[option] !=
           null,
     );
-  if (!value9 && value3.length > 4)
+  if (!allOptionsHaveIcons && specOptions.length > 4)
     return (
       <PropertyCssEnumRow
         state={{
           ...state,
-          fallback: value4 ? state.fallback : value6,
+          fallback: currentValue ? state.fallback : effectiveValue,
         }}
         onCommit={onCommit}
         shell={shell}
       />
     );
-  let value10: Dynamic =
+  let isVertical: Dynamic =
       (state.flexDirection ?? "row").startsWith("column") &&
       (state.prop === "justify-content" ||
         state.prop === "align-items" ||
         state.prop === "justify-items"),
-    value11: Dynamic = (state.fallback ?? "").trim().toLowerCase(),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      value7
-        ? input === "" ||
-          input === "normal" ||
-          input === "stretch" ||
-          input === "start" ||
-          input === "self-start" ||
-          input === "left"
-          ? value8[0]
-          : input === "end" || input === "self-end" || input === "right"
-            ? value8[
-                value8.length - 1 - (value8.includes("baseline") ? 1 : 0)
+    normalizedFallback: Dynamic = (state.fallback ?? "").trim().toLowerCase(),
+    callback: Dynamic = (fallbackKeyword?: Dynamic): Dynamic =>
+      fixedOptions
+        ? fallbackKeyword === "" ||
+          fallbackKeyword === "normal" ||
+          fallbackKeyword === "stretch" ||
+          fallbackKeyword === "start" ||
+          fallbackKeyword === "self-start" ||
+          fallbackKeyword === "left"
+          ? segmentOptions[0]
+          : fallbackKeyword === "end" || fallbackKeyword === "self-end" || fallbackKeyword === "right"
+            ? segmentOptions[
+                segmentOptions.length - 1 - (segmentOptions.includes("baseline") ? 1 : 0)
               ]
             : undefined
         : undefined,
-    value12: Dynamic =
-      value7 && !value8.includes(value6) && !value4 && !state.inheritedFrom
-        ? (callback(value11) ?? value6)
-        : value6,
-    value13: Dynamic = !value4 && !state.mixed && value8.includes(value12),
-    value14: Dynamic = value9 && value8.length > 4,
-    value15: Dynamic = (
+    inheritedValue: Dynamic =
+      fixedOptions && !segmentOptions.includes(effectiveValue) && !currentValue && !state.inheritedFrom
+        ? (callback(normalizedFallback) ?? effectiveValue)
+        : effectiveValue,
+    isInherited: Dynamic = !currentValue && !state.mixed && segmentOptions.includes(inheritedValue),
+    shouldSplitLayout: Dynamic = allOptionsHaveIcons && segmentOptions.length > 4,
+    segments: Dynamic = (
       <PropertySegments
         label={state.label}
-        options={value8.map(
-          (input?: Dynamic): Dynamic => ({
-            value: input,
-            label: propertyOptionLabel(state.spec, input),
-            tooltip: `${state.label}: ${propertyOptionLabel(state.spec, input)}`,
+        options={segmentOptions.map(
+          (option?: Dynamic): Dynamic => ({
+            value: option,
+            label: propertyOptionLabel(state.spec, option),
+            tooltip: `${state.label}: ${propertyOptionLabel(state.spec, option)}`,
             icon: PropertiesTransformRowRowColumnRowReverseConfig[
-              input
+              option
             ],
-            glyph: alignmentOptionIcon(state.prop, input),
+            glyph: alignmentOptionIcon(state.prop, option),
           }),
         )}
-        value={value4 || undefined}
-        inherited={value13 ? value12 : undefined}
+        value={currentValue || undefined}
+        inherited={isInherited ? inheritedValue : undefined}
         inheritedHint={
           state.disabled ? "inherited" : "inherited \u2014 click to set"
         }
         mixed={state.mixed}
         disabled={state.disabled}
-        vertical={value10}
-        onChange={(input?: Dynamic): Dynamic => onCommit(state.prop, input)}
-        data-testid={value13 ? `dc-seg-inherited-${state.prop}` : undefined}
+        vertical={isVertical}
+        onChange={(nextValue?: Dynamic): Dynamic => onCommit(state.prop, nextValue)}
+        data-testid={isInherited ? `dc-seg-inherited-${state.prop}` : undefined}
       />
     );
-  return value14 ? (
+  return shouldSplitLayout ? (
     <div className={"contents"} data-testid={shell["data-testid"]}>
       <PropertyRow
         {...shell}
@@ -270,11 +270,11 @@ function PropertyCssSegmentsRow({
         title={shell.title}
         description={shell.description}
       >
-        {value15}
+        {segments}
       </PropertyRow>
     </div>
   ) : (
-    <PropertyRow {...shell}>{value15}</PropertyRow>
+    <PropertyRow {...shell}>{segments}</PropertyRow>
   );
 }
 export {
@@ -294,13 +294,13 @@ export function installEditorPropertiesAlignmentRow(): () => void {
     PropertiesAlignmentRowCache = new Map(
       [
         ...TypographyFontCatalogItems,
-        ...TypographyFontCatalogItems_2,
+        ...TypographyFontCatalogWebFonts,
       ].map(
-        (input?: Dynamic): Dynamic => [
-          input.family.toLowerCase(),
+        (fontEntry?: Dynamic): Dynamic => [
+          fontEntry.family.toLowerCase(),
           {
-            family: input.family,
-            generic: PropertiesAlignmentRowSansSerifMonoConfig[input.generic],
+            family: fontEntry.family,
+            generic: PropertiesAlignmentRowSansSerifMonoConfig[fontEntry.generic],
           },
         ],
       ),

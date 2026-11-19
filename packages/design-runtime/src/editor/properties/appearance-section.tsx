@@ -15,15 +15,15 @@ import { PropertyActions } from "./primitives";
 import { PropertySection } from "./section";
 import { PropertySegmentsRow } from "./segments";
 import { PropertyCornersRow, PropertySidesRow } from "./sides";
-import { PropertiesTooltipNameViewBoxPathsConfig_6, PropertiesTooltipNameViewBoxPathsConfig_7, PropertiesTooltipNameViewBoxPathsConfig_8 } from "./tooltip";
+import { PropertiesTooltipNameViewBoxPathsConfig_6 as PropertiesTooltipSolidBorderGlyph, PropertiesTooltipNameViewBoxPathsConfig_7 as PropertiesTooltipDashedBorderGlyph, PropertiesTooltipNameViewBoxPathsConfig_8 as PropertiesTooltipDottedBorderGlyph } from "./tooltip";
 import { TypographyCensusBorderBorderWidthBorderStyleValues } from "../typography/census";
 import { toModuleNamespace } from "../../module-helpers";
 import { PlatformFileContentBackgroundBackgroundColorOpacityValues } from "../../platform/file-content";
 
 var jsxPropertiesAppearanceSection: Dynamic;
 var PropertiesAppearanceSectionFallback: Dynamic;
-var PropertiesInheritedFieldValueAlias_2: Dynamic;
-var PropertiesInheritedFieldMixedAlias_2: Dynamic;
+var hasInheritedFieldValue: Dynamic;
+var hasInheritedFieldMixed: Dynamic;
 var PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues: Dynamic;
 var PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues: Dynamic;
 var PropertiesAppearanceSectionItems: Dynamic;
@@ -31,47 +31,47 @@ var PropertiesAppearanceSectionMapValue: Dynamic;
 var jsxPropertiesAppearanceSection_2: Dynamic;
 var jsxPropertiesAppearanceSection_3: Dynamic;
 var PropertiesAppearanceSectionSubscribers: Dynamic;
-var PropertiesAppearanceSectionSubscribers_2: Dynamic;
+var PropertiesAppearanceSectionFillProperties: Dynamic;
 var PropertiesAppearanceSectionLabel: Dynamic;
-var PropertiesAppearanceSectionLabel_2: Dynamic;
+var PropertiesAppearanceSectionFixedSizeMessage: Dynamic;
 var ACanvasPictureShowsAnUploadedMessage: Dynamic;
-var PropertiesAppearanceSectionLabel_3: Dynamic;
-var PropertiesAppearanceSectionLabel_4: Dynamic;
-var PropertiesAppearanceSectionLabel_5: Dynamic;
-var PropertiesAppearanceSectionItems_2: Dynamic;
-var PropertiesAppearanceSectionLabel_6: Dynamic;
-var PropertiesAppearanceSectionLabel_7: Dynamic;
+var PropertiesAppearanceSectionNoteHeightMessage: Dynamic;
+var PropertiesAppearanceSectionTitleSizeMessage: Dynamic;
+var PropertiesAppearanceSectionOvalRoundMessage: Dynamic;
+var PropertiesAppearanceSectionFontStyleOptions: Dynamic;
+var PropertiesAppearanceSectionFillOnlyMessage: Dynamic;
+var PropertiesAppearanceSectionReplaceVideoMessage: Dynamic;
 var PropertiesAppearanceSectionImageVideoRectConfig: Dynamic;
 var PropertiesAppearanceSectionWidthHeightPositionSet: Dynamic;
 var PropertiesAppearanceSectionNoteTitle1Config: Dynamic;
-var PropertiesAppearanceSectionSubscribers_3: Dynamic;
+var PropertiesAppearanceSectionImageProperties: Dynamic;
 var PropertiesAppearanceSectionBoxShadowFilterBackdropFilterSet: Dynamic;
 var PropertiesAppearanceSectionFontSizeFontWeightSet: Dynamic;
 var PropertiesAppearanceSectionHandler: Dynamic;
 var PropertiesAppearanceSectionImageRectOvalConfig: Dynamic;
 function isLongTailPropertyVisible(
-  input?: Dynamic,
-  options?: Dynamic,
+  row?: Dynamic,
+  forceShown?: Dynamic,
 ): Dynamic {
   return (
-    !input.spec?.longTail ||
-    (input.value != null &&
-      input.value !== "" &&
-      input.value !== input.spec.defaultValue) ||
-    (input.companionValue != null && input.companionValue !== "") ||
-    !!input.mixed ||
-    !!input.companionMixed ||
-    options.has(input.prop)
+    !row.spec?.longTail ||
+    (row.value != null &&
+      row.value !== "" &&
+      row.value !== row.spec.defaultValue) ||
+    (row.companionValue != null && row.companionValue !== "") ||
+    !!row.mixed ||
+    !!row.companionMixed ||
+    forceShown.has(row.prop)
   );
 }
 function filterLongTailProperties(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  rows?: Dynamic,
+  forceShown?: Dynamic,
+  includeVisible: Dynamic = false,
 ): Dynamic {
-  return input.filter(
-    (input2?: Dynamic): Dynamic =>
-      context || !isLongTailPropertyVisible(input2, options),
+  return rows.filter(
+    (row?: Dynamic): Dynamic =>
+      includeVisible || !isLongTailPropertyVisible(row, forceShown),
   );
 }
 function PropertyCornerRadius({
@@ -81,142 +81,142 @@ function PropertyCornerRadius({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useStyleCommitScrub(
-      (input?: Dynamic): Dynamic => onCommitMany(input),
+  let scrub: Dynamic = useStyleCommitScrub(
+      (edits?: Dynamic): Dynamic => onCommitMany(edits),
     ),
-    value2: Dynamic =
+    cornerRows: Dynamic =
       PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues.map(
-        (input?: Dynamic): Dynamic =>
-          corners.find((input2?: Dynamic): Dynamic => input2.prop === input),
+        (cornerProp?: Dynamic): Dynamic =>
+          corners.find((corner?: Dynamic): Dynamic => corner.prop === cornerProp),
       ),
-    callback: Dynamic = (): Dynamic => (
+    renderFlatRows: Dynamic = (): Dynamic => (
       <jsxPropertiesAppearanceSection.Fragment>
         {renderRows([
           radius,
-          ...value2.filter(
-            (input?: Dynamic): Dynamic =>
-              !!input && PropertiesInheritedFieldValueAlias_2(input),
+          ...cornerRows.filter(
+            (corner?: Dynamic): Dynamic =>
+              !!corner && hasInheritedFieldValue(corner),
           ),
         ])}
       </jsxPropertiesAppearanceSection.Fragment>
     );
-  if (value2.some((input?: Dynamic): Dynamic => !input)) return callback();
-  let value3: Dynamic = null,
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value15: Dynamic = (input ?? "").trim();
-      if (!value15) return;
-      let value16: Dynamic = parseCssNumber(value15);
-      if (!value16) return "bad";
-      let value17: Dynamic = value16.unit || "px";
-      return value3 != null && value3 !== value17
+  if (cornerRows.some((corner?: Dynamic): Dynamic => !corner)) return renderFlatRows();
+  let commonUnit: Dynamic = null,
+    parseRadiusValue: Dynamic = (text?: Dynamic): Dynamic => {
+      let trimmedText: Dynamic = (text ?? "").trim();
+      if (!trimmedText) return;
+      let parsed: Dynamic = parseCssNumber(trimmedText);
+      if (!parsed) return "bad";
+      let parsedUnit: Dynamic = parsed.unit || "px";
+      return commonUnit != null && commonUnit !== parsedUnit
         ? "bad"
-        : ((value3 = value17), value16.value);
+        : ((commonUnit = parsedUnit), parsed.value);
     };
-  for (let value15 of [radius, ...value2] as Dynamic)
-    if (!value15.mixed && callback2(value15.value) === "bad")
-      return callback();
-  let value4: Dynamic = value2.every(
-      (input?: Dynamic): Dynamic =>
-        PropertiesInheritedFieldValueAlias_2(input) && !input.inheritedFrom,
+  for (let field of [radius, ...cornerRows] as Dynamic)
+    if (!field.mixed && parseRadiusValue(field.value) === "bad")
+      return renderFlatRows();
+  let allCornersAuthored: Dynamic = cornerRows.every(
+      (corner?: Dynamic): Dynamic =>
+        hasInheritedFieldValue(corner) && !corner.inheritedFrom,
     ),
-    value5: Dynamic = inheritedFieldsDisabledReason(
-      ...(value4 ? [] : [radius]),
-      ...value2,
+    disabledReason: Dynamic = inheritedFieldsDisabledReason(
+      ...(allCornersAuthored ? [] : [radius]),
+      ...cornerRows,
     ),
-    value6: Dynamic = inheritedFieldsDescription(
-      ...(value4 ? [] : [radius]),
-      ...value2,
+    description: Dynamic = inheritedFieldsDescription(
+      ...(allCornersAuthored ? [] : [radius]),
+      ...cornerRows,
     ),
-    value7: Dynamic = inheritedFieldForEdit(radius),
-    value8: Dynamic = value2.map(
-      (input?: Dynamic): Dynamic => inheritedFieldForEdit(input),
+    radiusField: Dynamic = inheritedFieldForEdit(radius),
+    cornerFields: Dynamic = cornerRows.map(
+      (corner?: Dynamic): Dynamic => inheritedFieldForEdit(corner),
     ),
-    value9: Dynamic = value7.mixed ? undefined : callback2(value7.value);
-  if (value9 === "bad") return callback();
+    radiusValue: Dynamic = radiusField.mixed ? undefined : parseRadiusValue(radiusField.value);
+  if (radiusValue === "bad") return renderFlatRows();
   let items: Dynamic = [undefined, undefined, undefined, undefined];
   for (let index: Dynamic = 0; index < 4; index++) {
-    let value15: Dynamic = value8[index].mixed
+    let cornerValue: Dynamic = cornerFields[index].mixed
       ? undefined
-      : callback2(value8[index].value);
-    if (value15 === "bad") return callback();
-    items[index] = value15 !== undefined ? value15 : value9;
+      : parseRadiusValue(cornerFields[index].value);
+    if (cornerValue === "bad") return renderFlatRows();
+    items[index] = cornerValue !== undefined ? cornerValue : radiusValue;
   }
-  let value10: Dynamic = value3 ?? "px",
-    items2: Dynamic = [
-      PropertiesAppearanceSectionFallback(value8[0], value10),
-      PropertiesAppearanceSectionFallback(value8[1], value10),
-      PropertiesAppearanceSectionFallback(value8[2], value10),
-      PropertiesAppearanceSectionFallback(value8[3], value10),
+  let unit: Dynamic = commonUnit ?? "px",
+    placeholders: Dynamic = [
+      PropertiesAppearanceSectionFallback(cornerFields[0], unit),
+      PropertiesAppearanceSectionFallback(cornerFields[1], unit),
+      PropertiesAppearanceSectionFallback(cornerFields[2], unit),
+      PropertiesAppearanceSectionFallback(cornerFields[3], unit),
     ],
-    value11: Dynamic =
-      !!value7.mixed ||
-      value8.some((input?: Dynamic): Dynamic => input.mixed),
-    value12: Dynamic =
-      PropertiesInheritedFieldMixedAlias_2(value7) ||
-      value8.some(PropertiesInheritedFieldMixedAlias_2),
-    value13: Dynamic =
+    isMixed: Dynamic =
+      !!radiusField.mixed ||
+      cornerFields.some((field?: Dynamic): Dynamic => field.mixed),
+    hasResettableValue: Dynamic =
+      hasInheritedFieldMixed(radiusField) ||
+      cornerFields.some(hasInheritedFieldMixed),
+    resetEdits: Dynamic =
       PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues.map(
-        (input?: Dynamic): Dynamic => ({
-          prop: input,
+        (prop?: Dynamic): Dynamic => ({
+          prop: prop,
           value: null,
         }),
       ),
-    value14: Dynamic =
-      getFineUnitStep(value10, undefined) != null,
-    callback3: Dynamic = (items3?: Dynamic, options?: Dynamic): Dynamic => {
+    supportsFineStep: Dynamic =
+      getFineUnitStep(unit, undefined) != null,
+    commitSides: Dynamic = (sides?: Dynamic, commit?: Dynamic): Dynamic => {
       if (
-        items3.length === 4 &&
-        items3.every(
-          (input?: Dynamic): Dynamic => input.value === items3[0].value,
+        sides.length === 4 &&
+        sides.every(
+          (side?: Dynamic): Dynamic => side.value === sides[0].value,
         )
       ) {
-        let value15: Dynamic = items3[0].value;
-        options([
+        let commonValue: Dynamic = sides[0].value;
+        commit([
           {
             prop: "border-radius",
             value:
-              value15 === undefined
+              commonValue === undefined
                 ? null
-                : formatCssNumber(value15, value10),
+                : formatCssNumber(commonValue, unit),
           },
-          ...value13,
+          ...resetEdits,
         ]);
         return;
       }
       if (
-        value7.mixed ||
-        value2.some((input?: Dynamic): Dynamic => input.mixed)
+        radiusField.mixed ||
+        cornerRows.some((side?: Dynamic): Dynamic => side.mixed)
       ) {
-        options(
-          items3.map(
-            (input?: Dynamic): Dynamic => ({
+        commit(
+          sides.map(
+            (side?: Dynamic): Dynamic => ({
               prop: PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues[
-                input.side
+                side.side
               ],
               value:
-                input.value === undefined
+                side.value === undefined
                   ? null
-                  : formatCssNumber(input.value, value10),
+                  : formatCssNumber(side.value, unit),
             }),
           ),
         );
         return;
       }
-      let items4: Dynamic = [...items];
-      for (let value15 of items3 as Dynamic)
-        items4[value15.side] = value15.value;
-      options([
+      let nextValues: Dynamic = [...items];
+      for (let sideEntry of sides as Dynamic)
+        nextValues[sideEntry.side] = sideEntry.value;
+      commit([
         {
           prop: "border-radius",
           value: null,
         },
         ...PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues.map(
-          (input?: Dynamic, options2?: Dynamic): Dynamic => ({
-            prop: input,
+          (prop?: Dynamic, index?: Dynamic): Dynamic => ({
+            prop: prop,
             value:
-              items4[options2] === undefined
+              nextValues[index] === undefined
                 ? null
-                : formatCssNumber(items4[options2], value10),
+                : formatCssNumber(nextValues[index], unit),
           }),
         ),
       ]);
@@ -225,33 +225,33 @@ function PropertyCornerRadius({
     <PropertyCornersRow
       label={uiMessage("inspector.appearanceSection.radius")}
       data-testid={"dc-radius"}
-      title={value5}
-      description={value6}
+      title={disabledReason}
+      description={description}
       values={items}
-      placeholders={items2}
-      unit={value10}
+      placeholders={placeholders}
+      unit={unit}
       min={0}
-      step={value14 ? 0.1 : undefined}
-      smallStep={value14 ? 0.01 : undefined}
-      mixed={value11}
+      step={supportsFineStep ? 0.1 : undefined}
+      smallStep={supportsFineStep ? 0.01 : undefined}
+      mixed={isMixed}
       disabled={
         radius.disabled ||
-        value8.some((input?: Dynamic): Dynamic => input.disabled)
+        cornerFields.some((field?: Dynamic): Dynamic => field.disabled)
       }
-      onSides={(input?: Dynamic): Dynamic => callback3(input, onCommitMany)}
-      onScrubSides={(input?: Dynamic): Dynamic =>
-        callback3(input, value.onScrub)
+      onSides={(sides?: Dynamic): Dynamic => commitSides(sides, onCommitMany)}
+      onScrubSides={(sides?: Dynamic): Dynamic =>
+        commitSides(sides, scrub.onScrub)
       }
-      onScrubEnd={(): Dynamic => value.onScrubEnd()}
+      onScrubEnd={(): Dynamic => scrub.onScrubEnd()}
       onReset={
-        value12
+        hasResettableValue
           ? (): Dynamic =>
               onCommitMany([
                 {
                   prop: "border-radius",
                   value: null,
                 },
-                ...value13,
+                ...resetEdits,
               ])
           : undefined
       }
@@ -268,119 +268,119 @@ function PropertyBorderSection({
   uaBorder: uaBorder,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useStyleCommitScrub(
-      (input?: Dynamic): Dynamic => onCommitMany(input),
+  let scrub: Dynamic = useStyleCommitScrub(
+      (edits?: Dynamic): Dynamic => onCommitMany(edits),
     ),
-    value2: Dynamic = rows.find(
-      (input?: Dynamic): Dynamic => input.prop === "border-style",
+    styleRow: Dynamic = rows.find(
+      (row?: Dynamic): Dynamic => row.prop === "border-style",
     ),
-    value3: Dynamic = rows.find(
-      (input?: Dynamic): Dynamic => input.prop === "border-width",
+    widthRow: Dynamic = rows.find(
+      (row?: Dynamic): Dynamic => row.prop === "border-width",
     ),
-    value4: Dynamic =
+    sideWidthRows: Dynamic =
       PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues.map(
-        (input?: Dynamic): Dynamic =>
-          rows.find((input2?: Dynamic): Dynamic => input2.prop === input),
+        (prop?: Dynamic): Dynamic =>
+          rows.find((row?: Dynamic): Dynamic => row.prop === prop),
       ),
-    value5: Dynamic = inheritedFieldForEdit(value2),
-    value6: Dynamic = inheritedFieldForEdit(value3),
-    value7: Dynamic = rows.find(
-      (input?: Dynamic): Dynamic => input.prop === "border-color",
+    styleField: Dynamic = inheritedFieldForEdit(styleRow),
+    widthField: Dynamic = inheritedFieldForEdit(widthRow),
+    colorRow: Dynamic = rows.find(
+      (row?: Dynamic): Dynamic => row.prop === "border-color",
     ),
-    value8: Dynamic = value4.map(
-      (input?: Dynamic): Dynamic => inheritedFieldForEdit(input),
+    rawSideFields: Dynamic = sideWidthRows.map(
+      (row?: Dynamic): Dynamic => inheritedFieldForEdit(row),
     );
   if (
-    !value5 ||
-    !value6 ||
-    !value7 ||
-    value8.some((input?: Dynamic): Dynamic => !input)
+    !styleField ||
+    !widthField ||
+    !colorRow ||
+    rawSideFields.some((field?: Dynamic): Dynamic => !field)
   )
     return (
       <jsxPropertiesAppearanceSection.Fragment>
-        {renderRows(rows.filter(PropertiesInheritedFieldValueAlias_2))}
+        {renderRows(rows.filter(hasInheritedFieldValue))}
       </jsxPropertiesAppearanceSection.Fragment>
     );
-  let value9: Dynamic = value8,
-    value10: Dynamic = value2
-      ? inheritedFieldTooltip(value2)
+  let sideWidthFields: Dynamic = rawSideFields,
+    styleTooltip: Dynamic = styleRow
+      ? inheritedFieldTooltip(styleRow)
       : undefined,
-    value11: Dynamic = value2
-      ? inheritedFieldDescription(value2)
+    styleDescription: Dynamic = styleRow
+      ? inheritedFieldDescription(styleRow)
       : undefined,
-    value12: Dynamic = inheritedFieldsDisabledReason(
-      value3,
-      ...value4,
+    widthDisabledReason: Dynamic = inheritedFieldsDisabledReason(
+      widthRow,
+      ...sideWidthRows,
     ),
-    value13: Dynamic = inheritedFieldsDescription(
-      value3,
-      ...value4,
+    widthDescription: Dynamic = inheritedFieldsDescription(
+      widthRow,
+      ...sideWidthRows,
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+    isKnownBorderStyle: Dynamic = (style?: Dynamic): Dynamic =>
       PropertiesAppearanceSectionItems.some(
-        (input2?: Dynamic): Dynamic => input2.value === input,
+        (option?: Dynamic): Dynamic => option.value === style,
       ),
-    value14: Dynamic = (
-      (value5.mixed ? "" : value5.value) ||
-      value5.fallback ||
+    currentStyle: Dynamic = (
+      (styleField.mixed ? "" : styleField.value) ||
+      styleField.fallback ||
       "none"
     )
       .trim()
       .toLowerCase(),
-    value15: Dynamic =
-      value14 === "hidden"
+    displayStyle: Dynamic =
+      currentStyle === "hidden"
         ? "none"
-        : !PropertiesInheritedFieldValueAlias_2(value2) &&
-            value14 !== "none" &&
-            !callback(value14)
+        : !hasInheritedFieldValue(styleRow) &&
+            currentStyle !== "none" &&
+            !isKnownBorderStyle(currentStyle)
           ? "solid"
-          : value14,
-    value16: Dynamic = callback(value15),
-    value17: Dynamic = parseCssNumber(
-      ((value6.value || value6.fallback) ?? "").trim(),
+          : currentStyle,
+    isKnownStyle: Dynamic = isKnownBorderStyle(displayStyle),
+    widthParsed: Dynamic = parseCssNumber(
+      ((widthField.value || widthField.fallback) ?? "").trim(),
     ),
-    value18: Dynamic = value9.map(
-      (input?: Dynamic): Dynamic =>
+    sideWidthParsed: Dynamic = sideWidthFields.map(
+      (field?: Dynamic): Dynamic =>
         parseCssNumber(
-          ((input.value || input.fallback) ?? "").trim(),
+          ((field.value || field.fallback) ?? "").trim(),
         ),
     ),
-    value19: Dynamic = value18.some(
-      (input?: Dynamic): Dynamic => input != null && input.value > 0,
+    hasPositiveSideWidth: Dynamic = sideWidthParsed.some(
+      (parsed?: Dynamic): Dynamic => parsed != null && parsed.value > 0,
     ),
-    value20: Dynamic =
-      value16 &&
-      value15 !== "none" &&
-      ((value17?.value ?? 0) > 0 ||
-        value19 ||
-        (!value17 && !value18.some(Boolean))),
-    value21: Dynamic = value16 ? (value20 ? value15 : "none") : "solid";
-  if (!value16 && PropertiesInheritedFieldValueAlias_2(value2))
+    hasVisibleBorder: Dynamic =
+      isKnownStyle &&
+      displayStyle !== "none" &&
+      ((widthParsed?.value ?? 0) > 0 ||
+        hasPositiveSideWidth ||
+        (!widthParsed && !sideWidthParsed.some(Boolean))),
+    effectiveStyle: Dynamic = isKnownStyle ? (hasVisibleBorder ? displayStyle : "none") : "solid";
+  if (!isKnownStyle && hasInheritedFieldValue(styleRow))
     return (
       <jsxPropertiesAppearanceSection.Fragment>
         {renderRows([
-          value5,
-          value7,
-          value6,
-          ...value9.filter(PropertiesInheritedFieldValueAlias_2),
+          styleField,
+          colorRow,
+          widthField,
+          ...sideWidthFields.filter(hasInheritedFieldValue),
         ])}
       </jsxPropertiesAppearanceSection.Fragment>
     );
-  let value22: Dynamic = PropertiesInheritedFieldValueAlias_2(value5),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input === "none") {
+  let hasStyleValue: Dynamic = hasInheritedFieldValue(styleField),
+    commitStyle: Dynamic = (style?: Dynamic): Dynamic => {
+      if (style === "none") {
         if (
-          !value22 &&
-          !value20 &&
+          !hasStyleValue &&
+          !hasVisibleBorder &&
           !(
             hasInline &&
             TypographyCensusBorderBorderWidthBorderStyleValues.some(
-              (input2?: Dynamic): Dynamic => hasInline(input2),
+              (property?: Dynamic): Dynamic => hasInline(property),
             )
           )
         )
           return;
-        let value32: Dynamic = hasInline
+        let hasInlineBorder: Dynamic = hasInline
             ? [
                 "border",
                 "border-style",
@@ -392,196 +392,196 @@ function PropertyBorderSection({
                 "border-right-style",
                 "border-bottom-style",
                 "border-left-style",
-              ].some((input2?: Dynamic): Dynamic => hasInline(input2))
-            : value22,
-          value33: Dynamic =
+              ].some((property?: Dynamic): Dynamic => hasInline(property))
+            : hasStyleValue,
+          shouldWriteNone: Dynamic =
             !!classHasBorder ||
             !!uaBorder ||
-            !!value2?.inheritedFrom ||
-            (value20 && !value32);
+            !!styleRow?.inheritedFrom ||
+            (hasVisibleBorder && !hasInlineBorder);
         onCommitMany(
-          value33
+          shouldWriteNone
             ? [
                 ...PropertiesAppearanceSectionMapValue,
                 {
                   prop: "border-style",
                   value: "none",
                 },
-                ...(value5.alsoCommit ?? []),
+                ...(styleField.alsoCommit ?? []),
               ]
             : PropertiesAppearanceSectionMapValue,
         );
         return;
       }
-      let items3: Dynamic = [
+      let edits: Dynamic = [
           {
             prop: "border-style",
-            value: input,
+            value: style,
           },
         ],
-        value30: Dynamic = value4.map(
-          (input2?: Dynamic): Dynamic =>
-            PropertiesInheritedFieldValueAlias_2(input2),
+        sideHasValue: Dynamic = sideWidthRows.map(
+          (hasValue?: Dynamic): Dynamic =>
+            hasInheritedFieldValue(hasValue),
         ),
-        value31: Dynamic =
-          !value6.mixed &&
-          !value9.some((input2?: Dynamic): Dynamic => input2.mixed);
-      value20 ||
-        (value31 &&
-          (!value17 || value17.value === 0) &&
-          (value30.some(Boolean)
-            ? value30.forEach(
-                (input2?: Dynamic, options?: Dynamic): Dynamic => {
-                  input2 ||
-                    items3.push({
+        canSeedWidth: Dynamic =
+          !widthField.mixed &&
+          !sideWidthFields.some((field?: Dynamic): Dynamic => field.mixed);
+      hasVisibleBorder ||
+        (canSeedWidth &&
+          (!widthParsed || widthParsed.value === 0) &&
+          (sideHasValue.some(Boolean)
+            ? sideHasValue.forEach(
+                (hasValue?: Dynamic, index?: Dynamic): Dynamic => {
+                  hasValue ||
+                    edits.push({
                       prop: PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues[
-                        options
+                        index
                       ],
                       value: "1px",
                     });
                 },
               )
-            : items3.push({
+            : edits.push({
                 prop: "border-width",
                 value: "1px",
               })),
-        !value7.mixed &&
-          !(value7.value ?? "").trim() &&
-          items3.push({
+        !colorRow.mixed &&
+          !(colorRow.value ?? "").trim() &&
+          edits.push({
             prop: "border-color",
             value: "#141413",
           }));
-      onCommitMany([...items3, ...(value5.alsoCommit ?? [])]);
+      onCommitMany([...edits, ...(styleField.alsoCommit ?? [])]);
     },
-    value23: Dynamic = null,
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let value30: Dynamic = (input ?? "").trim();
-      if (!value30) return;
-      let value31: Dynamic = parseCssNumber(value30);
-      if (!value31) return "bad";
-      let value32: Dynamic = value31.unit || "px";
-      return value23 != null && value23 !== value32
+    widthUnit: Dynamic = null,
+    parseWidthValue: Dynamic = (text?: Dynamic): Dynamic => {
+      let trimmedText: Dynamic = (text ?? "").trim();
+      if (!trimmedText) return;
+      let parsed: Dynamic = parseCssNumber(trimmedText);
+      if (!parsed) return "bad";
+      let parsedUnit: Dynamic = parsed.unit || "px";
+      return widthUnit != null && widthUnit !== parsedUnit
         ? "bad"
-        : ((value23 = value32), value31.value);
+        : ((widthUnit = parsedUnit), parsed.value);
     },
-    value24: Dynamic = value6.mixed ? undefined : callback3(value6.value),
+    uniformWidth: Dynamic = widthField.mixed ? undefined : parseWidthValue(widthField.value),
     items: Dynamic = [undefined, undefined, undefined, undefined],
-    value25: Dynamic = value24 === "bad";
-  for (let index: Dynamic = 0; index < 4 && !value25; index++) {
-    let value30: Dynamic = value9[index].mixed
+    hasInvalidWidth: Dynamic = uniformWidth === "bad";
+  for (let index: Dynamic = 0; index < 4 && !hasInvalidWidth; index++) {
+    let sideWidth: Dynamic = sideWidthFields[index].mixed
       ? undefined
-      : callback3(value9[index].value);
-    value30 === "bad"
-      ? (value25 = true)
+      : parseWidthValue(sideWidthFields[index].value);
+    sideWidth === "bad"
+      ? (hasInvalidWidth = true)
       : (items[index] =
-          value30 !== undefined
-            ? value30
-            : value24 === "bad"
+          sideWidth !== undefined
+            ? sideWidth
+            : uniformWidth === "bad"
               ? undefined
-              : value24);
+              : uniformWidth);
   }
-  let value26: Dynamic = value23 ?? "px",
-    items2: Dynamic = [
-      PropertiesAppearanceSectionFallback(value9[0], value26),
-      PropertiesAppearanceSectionFallback(value9[1], value26),
-      PropertiesAppearanceSectionFallback(value9[2], value26),
-      PropertiesAppearanceSectionFallback(value9[3], value26),
+  let unit: Dynamic = widthUnit ?? "px",
+    placeholders: Dynamic = [
+      PropertiesAppearanceSectionFallback(sideWidthFields[0], unit),
+      PropertiesAppearanceSectionFallback(sideWidthFields[1], unit),
+      PropertiesAppearanceSectionFallback(sideWidthFields[2], unit),
+      PropertiesAppearanceSectionFallback(sideWidthFields[3], unit),
     ],
-    value27: Dynamic =
-      PropertiesInheritedFieldMixedAlias_2(value6) ||
-      value9.some(PropertiesInheritedFieldMixedAlias_2),
-    callback4: Dynamic = (items3?: Dynamic): Dynamic =>
-      items3.length === 4 &&
-      items3.every(
-        (input?: Dynamic): Dynamic => input.value === items3[0].value,
+    hasResettableValue: Dynamic =
+      hasInheritedFieldMixed(widthField) ||
+      sideWidthFields.some(hasInheritedFieldMixed),
+    isUniform: Dynamic = (sides?: Dynamic): Dynamic =>
+      sides.length === 4 &&
+      sides.every(
+        (side?: Dynamic): Dynamic => side.value === sides[0].value,
       ),
-    value28: Dynamic =
-      !!value6.mixed ||
-      value9.some((input?: Dynamic): Dynamic => input.mixed),
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      let value30: Dynamic = items.map(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2 ??
-          (/^-?[\d.]+$/.test(items2[options] ?? "")
-            ? parseCssNumber(items2[options] ?? "")?.value
+    isMixed: Dynamic =
+      !!widthField.mixed ||
+      sideWidthFields.some((field?: Dynamic): Dynamic => field.mixed),
+    resolveSideWidths: Dynamic = (sides?: Dynamic): Dynamic => {
+      let widths: Dynamic = items.map(
+        (width?: Dynamic, index?: Dynamic): Dynamic =>
+          width ??
+          (/^-?[\d.]+$/.test(placeholders[index] ?? "")
+            ? parseCssNumber(placeholders[index] ?? "")?.value
             : undefined),
       );
-      for (let value31 of input as Dynamic)
-        value30[value31.side] = value31.value ?? 0;
-      return value30;
+      for (let sideEntry of sides as Dynamic)
+        widths[sideEntry.side] = sideEntry.value ?? 0;
+      return widths;
     },
-    callback6: Dynamic = (input?: Dynamic): Dynamic =>
-      callback4(input)
-        ? (input[0].value ?? 0) === 0
-        : !value28 &&
-          callback5(input).every((input2?: Dynamic): Dynamic => input2 === 0),
-    value29: Dynamic =
-      getFineUnitStep(value26, undefined) != null ? 0.1 : 1,
-    callback7: Dynamic = (input?: Dynamic): Dynamic => {
-      let value30: Dynamic = callback5([])[input];
-      return value30 !== undefined && value30 > 0 && value30 < value29
-        ? value30
-        : value29;
+    isAllZero: Dynamic = (sides?: Dynamic): Dynamic =>
+      isUniform(sides)
+        ? (sides[0].value ?? 0) === 0
+        : !isMixed &&
+          resolveSideWidths(sides).every((width?: Dynamic): Dynamic => width === 0),
+    defaultStep: Dynamic =
+      getFineUnitStep(unit, undefined) != null ? 0.1 : 1,
+    restoreWidth: Dynamic = (side?: Dynamic): Dynamic => {
+      let current: Dynamic = resolveSideWidths([])[side];
+      return current !== undefined && current > 0 && current < defaultStep
+        ? current
+        : defaultStep;
     },
-    callback8: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = false,
+    commitWidths: Dynamic = (
+      sides?: Dynamic,
+      commit?: Dynamic,
+      isScrubbing: Dynamic = false,
     ): Dynamic => {
-      let value30: Dynamic = callback6(input);
-      if (value30 && !context) return callback2("none");
-      if (callback4(input)) {
-        options([
+      let isZeroWidth: Dynamic = isAllZero(sides);
+      if (isZeroWidth && !isScrubbing) return commitStyle("none");
+      if (isUniform(sides)) {
+        commit([
           {
             prop: "border-width",
             value: formatCssNumber(
-              value30 ? callback7(0) : input[0].value,
-              value26,
+              isZeroWidth ? restoreWidth(0) : sides[0].value,
+              unit,
             ),
           },
           ...PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues.map(
-            (input2?: Dynamic): Dynamic => ({
-              prop: input2,
+            (prop?: Dynamic): Dynamic => ({
+              prop: prop,
               value: null,
             }),
           ),
-          ...(value6.alsoCommit ?? []),
+          ...(widthField.alsoCommit ?? []),
         ]);
         return;
       }
-      if (value28) {
-        options([
-          ...input.map(
-            (input2?: Dynamic): Dynamic => ({
+      if (isMixed) {
+        commit([
+          ...sides.map(
+            (side?: Dynamic): Dynamic => ({
               prop: PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues[
-                input2.side
+                side.side
               ],
-              value: formatCssNumber(input2.value ?? 0, value26),
+              value: formatCssNumber(side.value ?? 0, unit),
             }),
           ),
-          ...(value6.alsoCommit ?? []),
+          ...(widthField.alsoCommit ?? []),
         ]);
         return;
       }
-      let value31: Dynamic = callback5(input);
-      if (value30)
-        for (let value32 of input as Dynamic)
-          value31[value32.side] = callback7(value32.side);
-      options([
+      let nextWidths: Dynamic = resolveSideWidths(sides);
+      if (isZeroWidth)
+        for (let sideEntry of sides as Dynamic)
+          nextWidths[sideEntry.side] = restoreWidth(sideEntry.side);
+      commit([
         {
           prop: "border-width",
           value: null,
         },
         ...PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues.map(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic => ({
-            prop: input2,
+          (prop?: Dynamic, index?: Dynamic): Dynamic => ({
+            prop: prop,
             value:
-              value31[options2] === undefined
+              nextWidths[index] === undefined
                 ? null
-                : formatCssNumber(value31[options2], value26),
+                : formatCssNumber(nextWidths[index], unit),
           }),
         ),
-        ...(value6.alsoCommit ?? []),
+        ...(widthField.alsoCommit ?? []),
       ]);
     };
   return (
@@ -591,64 +591,64 @@ function PropertyBorderSection({
         data-testid={"dc-border-style"}
         options={PropertiesAppearanceSectionItems}
         value={
-          value5.mixed
+          styleField.mixed
             ? undefined
-            : value22 || value21 === "none"
-              ? value21
+            : hasStyleValue || effectiveStyle === "none"
+              ? effectiveStyle
               : undefined
         }
-        inherited={value22 || value21 === "none" ? undefined : value21}
-        mixed={!!value5.mixed}
-        disabled={value5.disabled}
-        title={value10 ?? (value22 || value20 ? (undefined) : (uiMessage("inspector.appearanceSection.noBorder")))}
-        description={value11}
-        onChange={callback2}
+        inherited={hasStyleValue || effectiveStyle === "none" ? undefined : effectiveStyle}
+        mixed={!!styleField.mixed}
+        disabled={styleField.disabled}
+        title={styleTooltip ?? (hasStyleValue || hasVisibleBorder ? (undefined) : (uiMessage("inspector.appearanceSection.noBorder")))}
+        description={styleDescription}
+        onChange={commitStyle}
         onReset={
-          PropertiesInheritedFieldMixedAlias_2(value5)
+          hasInheritedFieldMixed(styleField)
             ? (): Dynamic => onCommitMany(PropertiesAppearanceSectionMapValue)
             : undefined
         }
       />
-      {value21 !== "none" && !value5.mixed ? (<jsxPropertiesAppearanceSection.Fragment>
+      {effectiveStyle !== "none" && !styleField.mixed ? (<jsxPropertiesAppearanceSection.Fragment>
           {renderRow({
-            ...value7,
+            ...colorRow,
             get label() { return uiMessage("inspector.appearanceSection.color"); },
           })}
-          {value25 ? (renderRows([
+          {hasInvalidWidth ? (renderRows([
               {
-                ...value6,
+                ...widthField,
                 get label() { return uiMessage("inspector.appearanceSection.width"); },
               },
-              ...value9.filter(PropertiesInheritedFieldValueAlias_2),
+              ...sideWidthFields.filter(hasInheritedFieldValue),
             ])) : (<PropertySidesRow
               label={uiMessage("inspector.appearanceSection.width")}
               data-testid={"dc-border-width"}
-              title={value12}
-              description={value13}
+              title={widthDisabledReason}
+              description={widthDescription}
               values={items}
-              placeholders={items2}
-              unit={value26}
+              placeholders={placeholders}
+              unit={unit}
               min={0}
-              step={value29 === 1 ? undefined : value29}
-              smallStep={value29 === 1 ? undefined : 0.01}
+              step={defaultStep === 1 ? undefined : defaultStep}
+              smallStep={defaultStep === 1 ? undefined : 0.01}
               mixed={
-                !!value6.mixed ||
-                value9.some((input?: Dynamic): Dynamic => input.mixed)
+                !!widthField.mixed ||
+                sideWidthFields.some((field?: Dynamic): Dynamic => field.mixed)
               }
-              disabled={value6.disabled}
-              onSides={(input?: Dynamic): Dynamic =>
-                callback8(input, onCommitMany)
+              disabled={widthField.disabled}
+              onSides={(sides?: Dynamic): Dynamic =>
+                commitWidths(sides, onCommitMany)
               }
-              onScrubSides={(input?: Dynamic): Dynamic =>
-                callback8(input, value.onScrub, true)
+              onScrubSides={(sides?: Dynamic): Dynamic =>
+                commitWidths(sides, scrub.onScrub, true)
               }
-              onScrubEnd={(items3?: Dynamic): Dynamic =>
-                value.onScrubEnd((): Dynamic => {
-                  items3.length > 0 && callback6(items3) && callback2("none");
+              onScrubEnd={(sides?: Dynamic): Dynamic =>
+                scrub.onScrubEnd((): Dynamic => {
+                  sides.length > 0 && isAllZero(sides) && commitStyle("none");
                 })
               }
               onReset={
-                value27
+                hasResettableValue
                   ? (): Dynamic =>
                       onCommitMany([
                         {
@@ -656,8 +656,8 @@ function PropertyBorderSection({
                           value: null,
                         },
                         ...PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues.map(
-                          (input?: Dynamic): Dynamic => ({
-                            prop: input,
+                          (prop?: Dynamic): Dynamic => ({
+                            prop: prop,
                             value: null,
                           }),
                         ),
@@ -666,32 +666,32 @@ function PropertyBorderSection({
               }
             />)}
         </jsxPropertiesAppearanceSection.Fragment>) : (renderRows(
-          [value7, value6, ...value9]
+          [colorRow, widthField, ...sideWidthFields]
             .filter(
-              (input?: Dynamic): Dynamic =>
-                PropertiesInheritedFieldValueAlias_2(input) &&
-                !input.inheritedFrom,
+              (field?: Dynamic): Dynamic =>
+                hasInheritedFieldValue(field) &&
+                !field.inheritedFrom,
             )
             .map(
-              (input?: Dynamic): Dynamic =>
-                input === value7
+              (field?: Dynamic): Dynamic =>
+                field === colorRow
                   ? {
-                      ...input,
+                      ...field,
                       get label() { return uiMessage("inspector.appearanceSection.borderColor"); },
                     }
-                  : input,
+                  : field,
             ),
         ))}
     </jsxPropertiesAppearanceSection.Fragment>
   );
 }
-function useVisibleInspectorProperties(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      isLongTailPropertyVisible(input2, input.forceShown),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
+function useVisibleInspectorProperties(config?: Dynamic): Dynamic {
+  let isRowShown: Dynamic = (row?: Dynamic): Dynamic =>
+      isLongTailPropertyVisible(row, config.forceShown),
+    focusRow: Dynamic = (prop?: Dynamic): Dynamic => {
       setTimeout((): Dynamic => {
         let element: Dynamic = (document as Dynamic).querySelector(
-            `[data-testid="dc-prop-${input2}"]`,
+            `[data-testid="dc-prop-${prop}"]`,
           ),
           value: Dynamic = element?.querySelector("input");
         value
@@ -699,79 +699,79 @@ function useVisibleInspectorProperties(input?: Dynamic): Dynamic {
           : element?.querySelector("button[aria-haspopup]")?.click();
       }, 60);
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      input.setForceShown(
-        (input3?: Dynamic): Dynamic => new Set(input3).add(input2.prop),
+    revealRow: Dynamic = (row?: Dynamic): Dynamic => {
+      config.setForceShown(
+        (current?: Dynamic): Dynamic => new Set(current).add(row.prop),
       );
-      callback2(input2.prop);
+      focusRow(row.prop);
     },
-    callback4: Dynamic = (
-      input2?: Dynamic,
-      options: Dynamic = false,
+    buildAddItems: Dynamic = (
+      rows?: Dynamic,
+      includeVisible: Dynamic = false,
     ): Dynamic =>
-      filterLongTailProperties(input2, input.forceShown, options).map(
-        (input3?: Dynamic): Dynamic => ({
-          label: input3.label.replace(
+      filterLongTailProperties(rows, config.forceShown, includeVisible).map(
+        (row?: Dynamic): Dynamic => ({
+          label: row.label.replace(
             /^./,
-            (input4?: Dynamic): Dynamic => input4.toUpperCase(),
+            (char?: Dynamic): Dynamic => char.toUpperCase(),
           ),
-          disabled: input3.disabled,
-          disabledReason: input3.whyDisabled,
-          onSelect: (): Dynamic => callback3(input3),
+          disabled: row.disabled,
+          disabledReason: row.whyDisabled,
+          onSelect: (): Dynamic => revealRow(row),
         }),
       ),
-    callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.spec?.longTail
+    buildRemoveHandler: Dynamic = (row?: Dynamic): Dynamic =>
+      row.spec?.longTail
         ? (): Dynamic =>
-            input.setForceShown((input3?: Dynamic): Dynamic => {
-              let values: Dynamic = new Set(input3);
-              values.delete(input2.prop);
+            config.setForceShown((current?: Dynamic): Dynamic => {
+              let values: Dynamic = new Set(current);
+              values.delete(row.prop);
               return values;
             })
         : undefined,
-    callback6: Dynamic = (
-      input2?: Dynamic,
-      options: Dynamic = {},
+    renderRow: Dynamic = (
+      row?: Dynamic,
+      overrides: Dynamic = {},
     ): Dynamic =>
-      callback(input2)
+      isRowShown(row)
         ? (() => {
             const _Component = PropertyInspectorField;
             const _props = {
-              state: input2,
-              onCommit: options.onCommit ?? input.onCommit,
-              onCommitMany: options.onCommitMany ?? input.onCommitMany,
-              onPickImageFile: input.onPickImageFile,
-              pageFonts: input.pageFonts,
-              pageWebfonts: input.pageWebfonts,
-              onFacesOpen: input.onFacesOpen,
-              onRemoveRow: callback5(input2),
-              trailing: options.trailing,
-              extraMenuItems: options.extraMenuItems,
+              state: row,
+              onCommit: overrides.onCommit ?? config.onCommit,
+              onCommitMany: overrides.onCommitMany ?? config.onCommitMany,
+              onPickImageFile: config.onPickImageFile,
+              pageFonts: config.pageFonts,
+              pageWebfonts: config.pageWebfonts,
+              onFacesOpen: config.onFacesOpen,
+              onRemoveRow: buildRemoveHandler(row),
+              trailing: overrides.trailing,
+              extraMenuItems: overrides.extraMenuItems,
             } as const;
-            const _key = `${input.selKey}|${input2.prop}`;
+            const _key = `${config.selKey}|${row.prop}`;
             return <_Component key={_key} {..._props} />;
           })()
         : null;
   return {
-    isShown: callback,
-    revealRow: callback3,
-    addItemsFor: callback4,
-    renderRow: callback6,
+    isShown: isRowShown,
+    revealRow: revealRow,
+    addItemsFor: buildAddItems,
+    renderRow: renderRow,
     renderRows: (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      rowsToRender?: Dynamic,
+      footer?: Dynamic,
+      extraMenuItems?: Dynamic,
     ): Dynamic => {
-      let value: Dynamic = input2.filter(callback);
-      return value.length === 0 && !options ? null : (
+      let visibleRows: Dynamic = rowsToRender.filter(isRowShown);
+      return visibleRows.length === 0 && !footer ? null : (
         <jsxPropertiesAppearanceSection_2.Fragment>
-          {value.map(
-            (input3?: Dynamic): Dynamic =>
-              callback6(input3, {
-                extraMenuItems: context,
+          {visibleRows.map(
+            (row?: Dynamic): Dynamic =>
+              renderRow(row, {
+                extraMenuItems: extraMenuItems,
               }),
           )}
-          {options}
+          {footer}
         </jsxPropertiesAppearanceSection_2.Fragment>
       );
     },
@@ -791,19 +791,19 @@ function InspectorAppearanceSection({
 }: Dynamic): Dynamic {
   useUiLocale();
   let {
-      isShown: value,
-      addItemsFor: value2,
-      renderRow: value3,
-      renderRows: value4,
+      isShown: isRowShown,
+      addItemsFor: getAddItems,
+      renderRow: renderRow,
+      renderRows: renderRows,
     }: Dynamic = rows,
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input.spec?.section === "border" ||
-      input.spec?.section === "borderSides",
-    value5: Dynamic = sec.rows.filter(callback),
-    value6: Dynamic = sec.rows.filter(
-      (input?: Dynamic): Dynamic => !callback(input),
+    isBorderRow: Dynamic = (row?: Dynamic): Dynamic =>
+      row.spec?.section === "border" ||
+      row.spec?.section === "borderSides",
+    borderRows: Dynamic = sec.rows.filter(isBorderRow),
+    otherRows: Dynamic = sec.rows.filter(
+      (row?: Dynamic): Dynamic => !isBorderRow(row),
     ),
-    value7: Dynamic = value2(value6),
+    addItems: Dynamic = getAddItems(otherRows),
     values: Dynamic = new Set([
       "border-radius",
       "border-top-left-radius",
@@ -811,38 +811,38 @@ function InspectorAppearanceSection({
       "border-bottom-right-radius",
       "border-bottom-left-radius",
     ]),
-    value8: Dynamic = value6.find(
-      (input?: Dynamic): Dynamic => input.prop === "border-radius",
+    radiusRow: Dynamic = otherRows.find(
+      (row?: Dynamic): Dynamic => row.prop === "border-radius",
     ),
-    value9: Dynamic = value6.filter(
-      (input?: Dynamic): Dynamic => input.spec?.section === "radius",
+    cornerRows: Dynamic = otherRows.filter(
+      (row?: Dynamic): Dynamic => row.spec?.section === "radius",
     ),
-    items: Dynamic = [],
-    items2: Dynamic = [],
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      items2.length &&
-        items.push(
-          <reactPropertiesLayoutSection.default.Fragment key={input}>
-            {value4(items2)}
+    children: Dynamic = [],
+    pendingRows: Dynamic = [],
+    flushPendingRows: Dynamic = (key?: Dynamic): Dynamic => {
+      pendingRows.length &&
+        children.push(
+          <reactPropertiesLayoutSection.default.Fragment key={key}>
+            {renderRows(pendingRows)}
           </reactPropertiesLayoutSection.default.Fragment>,
         );
-      items2 = [];
+      pendingRows = [];
     };
-  for (let value10 of value6 as Dynamic) {
-    if (value10.prop === "background") {
-      callback2("pre-fill");
-      let value11: Dynamic =
+  for (let row of otherRows as Dynamic) {
+    if (row.prop === "background") {
+      flushPendingRows("pre-fill");
+      let hasFillValue: Dynamic =
         fillInline &&
-        ((value10.value != null && value10.value !== "") ||
-          (value10.companionValue != null && value10.companionValue !== "") ||
-          !!value10.mixed ||
-          !!value10.companionMixed);
-      items.push(
+        ((row.value != null && row.value !== "") ||
+          (row.companionValue != null && row.companionValue !== "") ||
+          !!row.mixed ||
+          !!row.companionMixed);
+      children.push(
         <reactPropertiesLayoutSection.default.Fragment key={"fill"}>
-          {value3(value10, {
+          {renderRow(row, {
             onCommitMany: onCommitMany,
             trailing:
-              value11 && !value10.disabled ? (
+              hasFillValue && !row.disabled ? (
                 <RemovePropertyButton
                   label={uiMessage("inspector.appearanceSection.fill")}
                   onClick={(): Dynamic =>
@@ -864,47 +864,47 @@ function InspectorAppearanceSection({
       );
       continue;
     }
-    if (value10.prop === "border-radius" && value8 && value(value8)) {
-      callback2("pre-radius");
-      items.push(
+    if (row.prop === "border-radius" && radiusRow && isRowShown(radiusRow)) {
+      flushPendingRows("pre-radius");
+      children.push(
         <PropertyCornerRadius
           key={`${selKey}|radius`}
-          radius={value8}
-          corners={value9}
-          renderRows={value4}
+          radius={radiusRow}
+          corners={cornerRows}
+          renderRows={renderRows}
           onCommitMany={onCommitMany}
         />,
       );
       continue;
     }
-    (values.has(value10.prop) &&
-      value10.prop !== "border-radius" &&
-      value8 &&
-      value(value8)) ||
-      items2.push(value10);
+    (values.has(row.prop) &&
+      row.prop !== "border-radius" &&
+      radiusRow &&
+      isRowShown(radiusRow)) ||
+      pendingRows.push(row);
   }
-  callback2("rest");
+  flushPendingRows("rest");
   return (
     <PropertySection
       title={sec.title}
       iconColumn={true}
       actions={
-        isNested || value7.length === 0 ? undefined : (
+        isNested || addItems.length === 0 ? undefined : (
           <PropertyActions
             section={sec.title}
             data-testid={`dc-add-${sec.id}`}
-            items={value7}
+            items={addItems}
             disabled={readOnly}
           />
         )
       }
     >
-      {items}
-      {value5.length > 0 ? (<PropertyBorderSection
+      {children}
+      {borderRows.length > 0 ? (<PropertyBorderSection
           key={`${selKey}|border`}
-          rows={value5}
-          renderRows={value4}
-          renderRow={value3}
+          rows={borderRows}
+          renderRows={renderRows}
+          renderRow={renderRow}
           onCommitMany={onCommitMany}
           hasInline={hasInline}
           uaBorder={uaBorder}
@@ -930,22 +930,22 @@ export {
   PropertiesAppearanceSectionImageRectOvalConfig,
   PropertiesAppearanceSectionImageVideoRectConfig,
   PropertiesAppearanceSectionItems,
-  PropertiesAppearanceSectionItems_2,
+  PropertiesAppearanceSectionFontStyleOptions as PropertiesAppearanceSectionItems_2,
   PropertiesAppearanceSectionLabel,
-  PropertiesAppearanceSectionLabel_2,
-  PropertiesAppearanceSectionLabel_3,
-  PropertiesAppearanceSectionLabel_4,
-  PropertiesAppearanceSectionLabel_5,
-  PropertiesAppearanceSectionLabel_6,
-  PropertiesAppearanceSectionLabel_7,
+  PropertiesAppearanceSectionFixedSizeMessage as PropertiesAppearanceSectionLabel_2,
+  PropertiesAppearanceSectionNoteHeightMessage as PropertiesAppearanceSectionLabel_3,
+  PropertiesAppearanceSectionTitleSizeMessage as PropertiesAppearanceSectionLabel_4,
+  PropertiesAppearanceSectionOvalRoundMessage as PropertiesAppearanceSectionLabel_5,
+  PropertiesAppearanceSectionFillOnlyMessage as PropertiesAppearanceSectionLabel_6,
+  PropertiesAppearanceSectionReplaceVideoMessage as PropertiesAppearanceSectionLabel_7,
   PropertiesAppearanceSectionMapValue,
   PropertiesAppearanceSectionNoteTitle1Config,
   PropertiesAppearanceSectionSubscribers,
-  PropertiesAppearanceSectionSubscribers_2,
-  PropertiesAppearanceSectionSubscribers_3,
+  PropertiesAppearanceSectionFillProperties as PropertiesAppearanceSectionSubscribers_2,
+  PropertiesAppearanceSectionImageProperties as PropertiesAppearanceSectionSubscribers_3,
   PropertiesAppearanceSectionWidthHeightPositionSet,
-  PropertiesInheritedFieldMixedAlias_2,
-  PropertiesInheritedFieldValueAlias_2,
+  hasInheritedFieldMixed as PropertiesInheritedFieldMixedAlias_2,
+  hasInheritedFieldValue as PropertiesInheritedFieldValueAlias_2,
   PropertyBorderSection,
   PropertyCornerRadius,
   useVisibleInspectorProperties,
@@ -957,20 +957,20 @@ export function installEditorPropertiesAppearanceSection(): () => void {
       1,
     );
     PropertiesAppearanceSectionFallback = (
-      input?: Dynamic,
-      options: Dynamic = "px",
+      field?: Dynamic,
+      defaultUnit: Dynamic = "px",
     ): Dynamic => {
-      let value: Dynamic = parseCssNumber(input.fallback ?? "");
-      if (!value) return input.fallback ?? "";
-      let value2: Dynamic = value.unit || "px";
+      let parsed: Dynamic = parseCssNumber(field.fallback ?? "");
+      if (!parsed) return field.fallback ?? "";
+      let unit: Dynamic = parsed.unit || "px";
       return formatCssNumber(
-        roundCssNumber(value.value, value.unit),
-        value2 === options ? "" : value2,
+        roundCssNumber(parsed.value, parsed.unit),
+        unit === defaultUnit ? "" : unit,
       );
     };
-    PropertiesInheritedFieldValueAlias_2 =
+    hasInheritedFieldValue =
       PropertiesInheritedFieldValue;
-    PropertiesInheritedFieldMixedAlias_2 =
+    hasInheritedFieldMixed =
       PropertiesInheritedFieldMixed;
     PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues =
       [
@@ -995,23 +995,23 @@ export function installEditorPropertiesAppearanceSection(): () => void {
       {
         value: "solid",
         get label() { return uiMessage("inspector.appearanceSection.solid"); },
-        glyph: PropertiesTooltipNameViewBoxPathsConfig_6,
+        glyph: PropertiesTooltipSolidBorderGlyph,
       },
       {
         value: "dashed",
         get label() { return uiMessage("inspector.appearanceSection.dashed"); },
-        glyph: PropertiesTooltipNameViewBoxPathsConfig_7,
+        glyph: PropertiesTooltipDashedBorderGlyph,
       },
       {
         value: "dotted",
         get label() { return uiMessage("inspector.appearanceSection.dotted"); },
-        glyph: PropertiesTooltipNameViewBoxPathsConfig_8,
+        glyph: PropertiesTooltipDottedBorderGlyph,
       },
     ];
     PropertiesAppearanceSectionMapValue =
       TypographyCensusBorderBorderWidthBorderStyleValues.map(
-        (input?: Dynamic): Dynamic => ({
-          prop: input,
+        (pixels?: Dynamic): Dynamic => ({
+          prop: pixels,
           value: null,
         }),
       );
@@ -1024,21 +1024,21 @@ export function installEditorPropertiesAppearanceSection(): () => void {
       1,
     );
     PropertiesAppearanceSectionSubscribers = new Set();
-    PropertiesAppearanceSectionSubscribers_2 = new Set(
+    PropertiesAppearanceSectionFillProperties = new Set(
       PlatformFileContentBackgroundBackgroundColorOpacityValues,
     );
     PropertiesAppearanceSectionLabel =
       uiMessage("inspector.appearanceSection.canvasObjectsArePlacedFreely");
-    PropertiesAppearanceSectionLabel_2 =
+    PropertiesAppearanceSectionFixedSizeMessage =
       uiMessage("inspector.appearanceSection.aCanvasObjectHasA");
     ACanvasPictureShowsAnUploadedMessage =
       uiMessage("inspector.appearanceSection.aCanvasPictureShowsAn");
-    PropertiesAppearanceSectionLabel_3 =
+    PropertiesAppearanceSectionNoteHeightMessage =
       uiMessage("inspector.appearanceSection.aNoteIsAsTall");
-    PropertiesAppearanceSectionLabel_4 =
+    PropertiesAppearanceSectionTitleSizeMessage =
       uiMessage("inspector.appearanceSection.aTitleIsAsWide");
-    PropertiesAppearanceSectionLabel_5 = uiMessage("inspector.appearanceSection.anOvalIsAlwaysRound");
-    PropertiesAppearanceSectionItems_2 = [
+    PropertiesAppearanceSectionOvalRoundMessage = uiMessage("inspector.appearanceSection.anOvalIsAlwaysRound");
+    PropertiesAppearanceSectionFontStyleOptions = [
       {
         weight: 400,
         italic: false,
@@ -1056,9 +1056,9 @@ export function installEditorPropertiesAppearanceSection(): () => void {
         italic: true,
       },
     ];
-    PropertiesAppearanceSectionLabel_6 =
+    PropertiesAppearanceSectionFillOnlyMessage =
       uiMessage("inspector.appearanceSection.aCanvasObjectPaintsA");
-    PropertiesAppearanceSectionLabel_7 =
+    PropertiesAppearanceSectionReplaceVideoMessage =
       uiMessage("inspector.appearanceSection.replaceItFromTheStrip");
     PropertiesAppearanceSectionImageVideoRectConfig = {
       image: new Set(["size", "sizing", "image", "appearance", "effects"]),
@@ -1082,7 +1082,7 @@ export function installEditorPropertiesAppearanceSection(): () => void {
       note: new Set(),
       title1: new Set(["max-width", "max-height"]),
     };
-    PropertiesAppearanceSectionSubscribers_3 = new Set([
+    PropertiesAppearanceSectionImageProperties = new Set([
       "@src",
       "object-fit",
       "object-position",
@@ -1096,8 +1096,8 @@ export function installEditorPropertiesAppearanceSection(): () => void {
       "font-size",
       "font-weight",
     ]);
-    PropertiesAppearanceSectionHandler = (input?: Dynamic): Dynamic =>
-      input === undefined ? "none" : String(input) + "px";
+    PropertiesAppearanceSectionHandler = (pixels?: Dynamic): Dynamic =>
+      pixels === undefined ? "none" : String(pixels) + "px";
     PropertiesAppearanceSectionImageRectOvalConfig = {
       image: "img",
       rect: "div",

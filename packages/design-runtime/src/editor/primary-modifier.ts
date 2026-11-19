@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { InspectorColorPickResolvedValue_2 } from "./inspector/color-pick";
+import { InspectorColorPickResolvedValue_2 as InspectorColorPickIsMac } from "./inspector/color-pick";
 
 var primaryModifierKey: Dynamic;
 var primaryModifierHeld: Dynamic;
@@ -19,10 +19,10 @@ function installPrimaryModifierListeners(): Dynamic {
   if (primaryModifierListenersInstalled || typeof window === "undefined")
     return;
   primaryModifierListenersInstalled = true;
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-    input.key === primaryModifierKey &&
-      !input.repeat &&
-      publishPrimaryModifierState(input.type === "keydown");
+  let callback: Dynamic = (event?: Dynamic): Dynamic => {
+    event.key === primaryModifierKey &&
+      !event.repeat &&
+      publishPrimaryModifierState(event.type === "keydown");
   };
   (window as Dynamic).addEventListener("keydown", callback, true);
   (window as Dynamic).addEventListener("keyup", callback, true);
@@ -76,7 +76,7 @@ export {
 };
 export function installEditorPrimaryModifier(): () => void {
   return () => {
-    primaryModifierKey = InspectorColorPickResolvedValue_2
+    primaryModifierKey = InspectorColorPickIsMac
       ? "Meta"
       : "Control";
     primaryModifierHeld = false;
