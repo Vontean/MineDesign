@@ -122,21 +122,21 @@ function restoreDesignSystemView(
   }
   if (Array.isArray(view.flagged)) {
     return view.flagged
-      .filter((input: unknown): boolean => typeof input === "string")
+      .filter((fileInput: unknown): boolean => typeof fileInput === "string")
       .slice(0, 200);
   } else {
     return [];
   }
 }
-function parseCarriedFileEdit(value: unknown) {
+function parseCarriedFileEdit(fileValue: unknown) {
   if (
-    typeof value !== "object" ||
-    value === null ||
-    typeof (value as { text?: unknown }).text !== "string"
+    typeof fileValue !== "object" ||
+    fileValue === null ||
+    typeof (fileValue as { text?: unknown }).text !== "string"
   ) {
     return;
   }
-  let edit: { text: string; base?: unknown; baseText?: unknown } = value as {
+  let edit: { text: string; base?: unknown; baseText?: unknown } = fileValue as {
     text: string;
     base?: unknown;
     baseText?: unknown;
@@ -164,21 +164,21 @@ function readCarriedFileEdits(snapshot: unknown, field: string = "mine") {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return edits;
   }
-  for (let [value, value2] of Object.entries<unknown>(
+  for (let [value, fileValueA] of Object.entries<unknown>(
     raw as Record<string, unknown>,
   )) {
-    let value3 = parseCarriedFileEdit(value2);
-    if (value3 !== undefined) {
-      edits.set(value, value3);
+    let fileResult = parseCarriedFileEdit(fileValueA);
+    if (fileResult !== undefined) {
+      edits.set(value, fileResult);
     }
   }
   return edits;
 }
-function readCarriedIndexEdit(value: unknown) {
-  if (typeof value !== "object" || value === null) {
+function readCarriedIndexEdit(fileValueB: unknown) {
+  if (typeof fileValueB !== "object" || fileValueB === null) {
     return;
   }
-  let edit = value as { base?: unknown; mine?: unknown };
+  let edit = fileValueB as { base?: unknown; mine?: unknown };
   if (isCarriedFileIndex(edit.base) && isCarriedFileIndex(edit.mine)) {
     return {
       base: edit.base,
@@ -208,23 +208,23 @@ function stripEditingOffFromStashedIndex(
   stash: Files.FilesCrashStash,
   indexPath: string,
 ) {
-  let cleanIndex = (input: string) => {
+  let cleanIndex = (fileInputA: string) => {
     try {
       let {
         editing: value,
-        ...value2
-      }: import("../contracts/files-core").JsonRecord = JSON.parse(input);
+        ...fileValueC
+      }: import("../contracts/files-core").JsonRecord = JSON.parse(fileInputA);
       if (
         isSystemEditingDisabled({
           editing: value,
         })
       ) {
-        return serializeIndexDocument(value2);
+        return serializeIndexDocument(fileValueC);
       } else {
-        return input;
+        return fileInputA;
       }
     } catch {
-      return input;
+      return fileInputA;
     }
   };
   return {
@@ -238,13 +238,13 @@ function stripEditingOffFromStashedIndex(
       } else {
         return {
           ...value,
-          edits: value.edits.map((input: Files.StashedFileEdit) =>
-            input.path === indexPath && input.text !== null
+          edits: value.edits.map((fileInputB: Files.StashedFileEdit) =>
+            fileInputB.path === indexPath && fileInputB.text !== null
               ? {
-                  ...input,
-                  text: cleanIndex(input.text),
+                  ...fileInputB,
+                  text: cleanIndex(fileInputB.text),
                 }
-              : input,
+              : fileInputB,
           ),
         };
       }
@@ -254,27 +254,27 @@ function stripEditingOffFromStashedIndex(
 function prioritizeStashedTextEdits(stash: Files.FilesCrashStash) {
   return {
     ...stash,
-    put: (input: Files.StashedFileEdit[], options: string) => {
-      let value = input.filter(
-          (input2: Files.StashedFileEdit): boolean => input2.text !== null,
+    put: (fileInputC: Files.StashedFileEdit[], fileOptions: string) => {
+      let value = fileInputC.filter(
+          (fileInputD: Files.StashedFileEdit): boolean => fileInputD.text !== null,
         ),
-        value2: boolean =
+        fileValueD: boolean =
           value.reduce(
-            (input2: number, options2: Files.StashedFileEdit) =>
-              input2 + options2.path.length + (options2.text?.length ?? 0),
+            (fileInputE: number, fileOptionsA: Files.StashedFileEdit) =>
+              fileInputE + fileOptionsA.path.length + (fileOptionsA.text?.length ?? 0),
             0,
           ) <= CRASH_STASH_MAX_ARTIFACT_CHARS;
       return stash.put(
-        value2
+        fileValueD
           ? [
               ...value,
-              ...input.filter(
-                (input2: Files.StashedFileEdit): boolean =>
-                  input2.text === null,
+              ...fileInputC.filter(
+                (fileInputF: Files.StashedFileEdit): boolean =>
+                  fileInputF.text === null,
               ),
             ]
           : value,
-        options,
+        fileOptions,
       );
     },
   };
@@ -331,35 +331,35 @@ export {
 };
 export function installFilesCarry(): () => void {
   return () => {
-    designSystemFilesCodec = (input: string, options?: LazyReadState) => ({
-      indexPath: input,
+    designSystemFilesCodec = (fileInputG: string, fileOptionsB?: LazyReadState) => ({
+      indexPath: fileInputG,
       type: "design_system",
       schema: FILES_INDEX_MERGE_SCHEMA,
       emptyIndex: createEmptyFilesIndex,
-      wants: (input2: Files.FileListingRow) =>
-        isProjectContentPath(input2.path) &&
+      wants: (fileInputH: Files.FileListingRow) =>
+        isProjectContentPath(fileInputH.path) &&
         !(
-          options !== undefined &&
-          lazyFileReadMode(options, input2.path) === "skipped"
+          fileOptionsB !== undefined &&
+          lazyFileReadMode(fileOptionsB, fileInputH.path) === "skipped"
         ),
       indexOf: (
-        input2: import("../contracts/files-core").FileDocumentState<{
+        fileInputI: import("../contracts/files-core").FileDocumentState<{
           files: Files.FileTable;
         }>,
-        options2?: Files.FilesIndex,
+        fileOptionsC?: Files.FilesIndex,
       ) =>
         buildFilesIndex(
-          input2.title,
-          input2.content.files,
-          options2,
+          fileInputI.title,
+          fileInputI.content.files,
+          fileOptionsC,
         ),
       filesOf: (
-        input2: import("../contracts/files-core").FileDocumentState<{
+        fileInputJ: import("../contracts/files-core").FileDocumentState<{
           files: Files.FileTable;
         }>,
-      ) => projectFilesForSave(input2.content.files),
-      compose: (input2: Files.FilesIndex, options2: Map<string, string>) =>
-        restoreFilesFromIndex(input2, options2),
+      ) => projectFilesForSave(fileInputJ.content.files),
+      compose: (fileInputK: Files.FilesIndex, fileOptionsD: Map<string, string>) =>
+        restoreFilesFromIndex(fileInputK, fileOptionsD),
     });
     DEFAULT_DESIGN_SYSTEM_FILES_CODEC = designSystemFilesCodec(
       FILES_INDEX_PROJECT_PATH,
@@ -375,11 +375,11 @@ export function installFilesCarry(): () => void {
         return;
       },
     };
-    isCarriedFileIndex = (input: unknown): input is Files.FilesIndex =>
-      typeof input === "object" &&
-      input !== null &&
-      !Array.isArray(input) &&
-      typeof (input as { v?: unknown }).v === "number";
+    isCarriedFileIndex = (fileInputL: unknown): fileInputL is Files.FilesIndex =>
+      typeof fileInputL === "object" &&
+      fileInputL !== null &&
+      !Array.isArray(fileInputL) &&
+      typeof (fileInputL as { v?: unknown }).v === "number";
     RECENT_PUBLISH_HEAL_WINDOW_MS = 3000;
     RECENT_PUBLISH_CLASH_NOTICE_MS = 1000;
     safeSessionStorage = () => {
@@ -393,7 +393,7 @@ export function installFilesCarry(): () => void {
         return null;
       }
     };
-    fileBaseName = (input: string) => input.slice(input.lastIndexOf("/") + 1);
+    fileBaseName = (fileInputM: string) => fileInputM.slice(fileInputM.lastIndexOf("/") + 1);
     summarizeFileNames = (items: readonly string[]) =>
       items.length <= 2
         ? items.map(fileBaseName).join(" and ")

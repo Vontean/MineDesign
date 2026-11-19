@@ -20,130 +20,130 @@ var isPermanentFilesBootFailure: (input: unknown) => boolean;
 var FILES_BOOT_RECOVERY_DELAYS_MS: number[];
 var FILES_BOOT_PERMANENT_RETRY_MS: number;
 async function readFilesBootState(
-  options: Boot.BootReaderOptions,
+  bootOptions: Boot.BootReaderOptions,
 ): Promise<Boot.BootReadResult> {
-  let { port: port, indexPath: indexPath } = options,
+  let { port: port, indexPath: indexPath } = bootOptions,
     normalizedPort = filesPortExtensions(port),
-    retryDelays = options.waits ?? BOOT_FILE_READ_RETRY_DELAYS_MS,
-    wantsEarlySlide = options.wants ?? ((): boolean => false),
-    timers = options.timers ?? {
-      setTimeout: (input, options2) => setTimeout(input, options2),
+    retryDelays = bootOptions.waits ?? BOOT_FILE_READ_RETRY_DELAYS_MS,
+    wantsEarlySlide = bootOptions.wants ?? ((): boolean => false),
+    timers = bootOptions.timers ?? {
+      setTimeout: (bootInput, bootOptionsA) => setTimeout(bootInput, bootOptionsA),
     },
-    earlyHotSource = options.early ?? currentHotReloadBridge(),
+    earlyHotSource = bootOptions.early ?? currentHotReloadBridge(),
     value: number = Math.max(
       1,
-      options.maxPasses ?? MAX_BOOT_EARLY_FILE_READ_PASSES,
+      bootOptions.maxPasses ?? MAX_BOOT_EARLY_FILE_READ_PASSES,
     ),
     index = 0,
-    callback = (input: Boot.BootReadEvent): void => {
+    callback = (bootInputA: Boot.BootReadEvent): void => {
       try {
-        options.onEvent?.(input);
+        bootOptions.onEvent?.(bootInputA);
       } catch {}
     },
-    callback2 = (input: number) =>
-      new Promise<void>((input2) => void timers.setTimeout(input2, input));
-  function value2(): void {
-    let value9 = earlyHotSource?.queued;
-    if (value9 === undefined || value9.length === 0) {
+    bootHandler = (bootInputB: number) =>
+      new Promise<void>((bootInputC) => void timers.setTimeout(bootInputC, bootInputB));
+  function bootValue(): void {
+    let bootValueA = earlyHotSource?.queued;
+    if (bootValueA === undefined || bootValueA.length === 0) {
       return;
     }
-    let value10 = value9[value9.length - 1];
-    if (port.version().version === value10.to.version) {
+    let bootValueB = bootValueA[bootValueA.length - 1];
+    if (port.version().version === bootValueB.to.version) {
       return;
     }
     try {
-      normalizedPort.noteAdopted?.(value10.to, value9[0].from);
+      normalizedPort.noteAdopted?.(bootValueB.to, bootValueA[0].from);
     } catch {}
   }
-  function value3(input: unknown, options2: string): Boot.BootReadException {
-    if (input instanceof BootReadError) {
-      return input;
+  function bootState(bootInputD: unknown, bootOptionsB: string): Boot.BootReadException {
+    if (bootInputD instanceof BootReadError) {
+      return bootInputD;
     }
-    let value9 = errorHttpStatus(input);
+    let bootValueC = errorHttpStatus(bootInputD);
     if (
-      (input as { code?: unknown } | null | undefined)?.code === "redirected"
+      (bootInputD as { code?: unknown } | null | undefined)?.code === "redirected"
     ) {
       return new BootReadError(
         "unreadable",
-        options2,
-        options2 + ": " + errorMessage(input),
+        bootOptionsB,
+        bootOptionsB + ": " + errorMessage(bootInputD),
       );
     }
     return new BootReadError(
-      value9 === 401 || value9 === 403 ? "access_revoked" : "unreadable",
-      options2,
-      options2 + ": " + errorMessage(input),
-      value9,
+      bootValueC === 401 || bootValueC === 403 ? "access_revoked" : "unreadable",
+      bootOptionsB,
+      bootOptionsB + ": " + errorMessage(bootInputD),
+      bootValueC,
     );
   }
-  async function value4(
-    input: unknown,
-    options2: string,
+  async function bootResult(
+    bootInputE: unknown,
+    bootOptionsC: string,
   ): Promise<Model.FileTextRead | undefined> {
     if (
-      (input as { code?: unknown } | null | undefined)?.code !==
+      (bootInputE as { code?: unknown } | null | undefined)?.code !==
         "redirected" ||
       normalizedPort.readTextUnchecked === undefined
     ) {
       return;
     }
     try {
-      let value9 = await normalizedPort.readTextUnchecked(options2);
+      let bootValueD = await normalizedPort.readTextUnchecked(bootOptionsC);
       callback({
         type: "boot-took-redirected",
-        path: options2,
+        path: bootOptionsC,
       });
-      return value9;
+      return bootValueD;
     } catch {
       return;
     }
   }
-  async function value5<Value>(
-    input: string,
-    options2: () => Promise<Value>,
-    context?: () => Promise<boolean>,
-    value9?: (error: unknown) => Promise<Value | undefined>,
+  async function bootValueE<Value>(
+    bootInputF: string,
+    bootOptionsD: () => Promise<Value>,
+    bootValueF?: () => Promise<boolean>,
+    bootValueG?: (error: unknown) => Promise<Value | undefined>,
   ): Promise<Value | null> {
-    for (let index3: number = 0; ; index3++) {
+    for (let bootIndex: number = 0; ; bootIndex++) {
       try {
-        return await options2();
-      } catch (value10: unknown) {
-        if (!isRetryableFileReadAccessError(value10)) {
-          throw value3(value10, input);
+        return await bootOptionsD();
+      } catch (bootValueH: unknown) {
+        if (!isRetryableFileReadAccessError(bootValueH)) {
+          throw bootState(bootValueH, bootInputF);
         }
         if (
-          context !== undefined &&
-          errorHttpStatus(value10) === 404 &&
-          (await context())
+          bootValueF !== undefined &&
+          errorHttpStatus(bootValueH) === 404 &&
+          (await bootValueF())
         ) {
           return null;
         }
-        if (index3 >= retryDelays.length) {
-          let value12 = await value9?.(value10);
-          if (value12 !== undefined) {
-            return value12;
+        if (bootIndex >= retryDelays.length) {
+          let bootValueI = await bootValueG?.(bootValueH);
+          if (bootValueI !== undefined) {
+            return bootValueI;
           }
-          throw value3(value10, input);
+          throw bootState(bootValueH, bootInputF);
         }
         index += 1;
-        let value11 = errorHttpStatus(value10);
+        let bootValueJ = errorHttpStatus(bootValueH);
         callback({
           type: "boot-retry",
-          path: input,
-          attempt: index3 + 1,
-          ...(value11 !== undefined
+          path: bootInputF,
+          attempt: bootIndex + 1,
+          ...(bootValueJ !== undefined
             ? {
-                status: value11,
+                status: bootValueJ,
               }
             : {}),
-          waitMs: retryDelays[index3],
+          waitMs: retryDelays[bootIndex],
         });
-        await callback2(retryDelays[index3]);
+        await bootHandler(retryDelays[bootIndex]);
       }
     }
   }
-  async function value6(): Promise<Model.FileTextRead> {
-    let callback4 = () =>
+  async function bootRead(): Promise<Model.FileTextRead> {
+    let bootHandlerA = () =>
         new BootReadError(
           "no_index",
           indexPath,
@@ -151,98 +151,98 @@ async function readFilesBootState(
           undefined,
           true,
         ),
-      value9 =
-        options.mayWrite === true
+      bootValueK =
+        bootOptions.mayWrite === true
           ? retryDelays
           : FILE_FETCH_RETRY_DELAYS_MS;
     try {
       return await retryFileRead(
         () => port.readText(indexPath),
         timers,
-        (input, options2): void => {
+        (bootInputG, bootOptionsE): void => {
           index += 1;
           callback({
             type: "boot-retry",
             path: indexPath,
-            attempt: input,
-            ...(errorHttpStatus(options2) !== undefined
+            attempt: bootInputG,
+            ...(errorHttpStatus(bootOptionsE) !== undefined
               ? {
-                  status: errorHttpStatus(options2),
+                  status: errorHttpStatus(bootOptionsE),
                 }
               : {}),
-            waitMs: value9[input - 1] ?? 0,
+            waitMs: bootValueK[bootInputG - 1] ?? 0,
           });
         },
-        value9,
+        bootValueK,
       );
-    } catch (value10: unknown) {
-      let value11 = await value4(value10, indexPath);
-      if (value11 !== undefined) {
-        return value11;
+    } catch (bootValueL: unknown) {
+      let bootValueM = await bootResult(bootValueL, indexPath);
+      if (bootValueM !== undefined) {
+        return bootValueM;
       }
-      if (options.mayWrite !== true || errorHttpStatus(value10) === 404) {
-        throw callback4();
+      if (bootOptions.mayWrite !== true || errorHttpStatus(bootValueL) === 404) {
+        throw bootHandlerA();
       }
       throw new BootReadError(
         "unreadable",
         indexPath,
-        indexPath + ": " + errorMessage(value10),
-        errorHttpStatus(value10),
+        indexPath + ": " + errorMessage(bootValueL),
+        errorHttpStatus(bootValueL),
       );
     }
   }
-  let index2 = 0;
-  async function value7(): Promise<Model.FileListing> {
+  let bootIndexA = 0;
+  async function bootListing(): Promise<Model.FileListing> {
     for (;;) {
-      let value9 = (await value5("_files.json", () =>
+      let bootValueN = (await bootValueE("_files.json", () =>
         port.list(),
       )) as Model.FileListing;
       if (
-        options.mayWrite !== true ||
-        !fileListingIsNarrowed(value9, port) ||
-        index2 >= retryDelays.length
+        bootOptions.mayWrite !== true ||
+        !fileListingIsNarrowed(bootValueN, port) ||
+        bootIndexA >= retryDelays.length
       ) {
-        return value9;
+        return bootValueN;
       }
-      let value10 = retryDelays[index2];
-      index2 += 1;
+      let bootValueO = retryDelays[bootIndexA];
+      bootIndexA += 1;
       index += 1;
       callback({
         type: "boot-retry",
         path: "_files.json",
-        attempt: index2,
+        attempt: bootIndexA,
         reason: "narrowed",
-        waitMs: value10,
+        waitMs: bootValueO,
       });
-      await callback2(value10);
+      await bootHandler(bootValueO);
       try {
         normalizedPort.forgetBootListing?.();
       } catch {}
     }
   }
-  let callback3 = (input: string) => async () => {
-      value2();
-      let value9 = await port.list().catch((): void => {
+  let bootHandlerB = (bootInputH: string) => async () => {
+      bootValue();
+      let bootValueP = await port.list().catch((): void => {
         return;
       });
       return (
-        value9 !== undefined &&
-        !fileListingIsNarrowed(value9, port) &&
-        !value9.some((input2): boolean => input2.path === input)
+        bootValueP !== undefined &&
+        !fileListingIsNarrowed(bootValueP, port) &&
+        !bootValueP.some((bootInputI): boolean => bootInputI.path === bootInputH)
       );
     },
-    value8: Model.FileTextRead | undefined,
+    bootData: Model.FileTextRead | undefined,
     entries = new Map<string, Model.FileTextRead>(),
-    entries2 = new Map<string, string>();
+    bootEntries = new Map<string, string>();
   for (let count: number = 1; ; count++) {
-    value2();
+    bootValue();
     let version = port.version().version,
-      value9 = await value7(),
-      value10 = fileListingIsNarrowed(value9, port),
-      entries3 = new Map(value9.map((input) => [input.path, input])),
-      entry = entries3.get(indexPath);
+      bootValueQ = await bootListing(),
+      bootValueR = fileListingIsNarrowed(bootValueQ, port),
+      bootEntriesA = new Map(bootValueQ.map((bootInputJ) => [bootInputJ.path, bootInputJ])),
+      entry = bootEntriesA.get(indexPath);
     if (entry === undefined) {
-      if (!value10) {
+      if (!bootValueR) {
         throw new BootReadError(
           "no_index",
           indexPath,
@@ -251,53 +251,53 @@ async function readFilesBootState(
           false,
         );
       }
-      value8 = await value6();
+      bootData = await bootRead();
     }
-    for (let value12 of [...entries.keys()]) {
-      let entry2 = entries3.get(value12);
-      if (entry2 === undefined || !wantsEarlySlide(entry2)) {
-        entries.delete(value12);
-        entries2.delete(value12);
+    for (let bootValueS of [...entries.keys()]) {
+      let bootValueT = bootEntriesA.get(bootValueS);
+      if (bootValueT === undefined || !wantsEarlySlide(bootValueT)) {
+        entries.delete(bootValueS);
+        bootEntries.delete(bootValueS);
       }
     }
-    let value11 = [
+    let bootValueU = [
       ...(entry !== undefined ? [entry] : []),
-      ...value9.filter(
-        (input) => input.path !== indexPath && wantsEarlySlide(input),
+      ...bootValueQ.filter(
+        (bootInputK) => bootInputK.path !== indexPath && wantsEarlySlide(bootInputK),
       ),
-    ].filter((input): boolean => entries2.get(input.path) !== input.sha256);
+    ].filter((bootInputL): boolean => bootEntries.get(bootInputL.path) !== bootInputL.sha256);
     await Promise.all(
-      value11.map(async (input): Promise<void> => {
-        let value12 = await value5(
-          input.path,
-          () => port.readText(input.path),
-          callback3(input.path),
-          (input2) => value4(input2, input.path),
+      bootValueU.map(async (bootInputM): Promise<void> => {
+        let bootValueV = await bootValueE(
+          bootInputM.path,
+          () => port.readText(bootInputM.path),
+          bootHandlerB(bootInputM.path),
+          (bootInputN) => bootResult(bootInputN, bootInputM.path),
         );
-        if (value12 === null) {
+        if (bootValueV === null) {
           callback({
             type: "boot-removed",
-            path: input.path,
+            path: bootInputM.path,
           });
-          entries.delete(input.path);
-          entries2.delete(input.path);
-          if (input.path === indexPath) {
-            value8 = undefined;
+          entries.delete(bootInputM.path);
+          bootEntries.delete(bootInputM.path);
+          if (bootInputM.path === indexPath) {
+            bootData = undefined;
           }
           return;
         }
-        if (input.path === indexPath) {
-          value8 = value12;
+        if (bootInputM.path === indexPath) {
+          bootData = bootValueV;
         } else {
-          entries.set(input.path, value12);
+          entries.set(bootInputM.path, bootValueV);
         }
-        entries2.set(input.path, input.sha256);
+        bootEntries.set(bootInputM.path, bootInputM.sha256);
       }),
     );
-    value2();
-    let version2 = port.version().version;
-    if (version2 === version || count >= value) {
-      if (value8 === undefined) {
+    bootValue();
+    let bootValueW = port.version().version;
+    if (bootValueW === version || count >= value) {
+      if (bootData === undefined) {
         throw new BootReadError(
           "no_index",
           indexPath,
@@ -306,12 +306,12 @@ async function readFilesBootState(
       }
       return {
         version: port.version(),
-        listing: value9,
-        index: value8,
+        listing: bootValueQ,
+        index: bootData,
         files: entries,
         retries: index,
         passes: count,
-        ...(value10
+        ...(bootValueR
           ? {
               narrowed: true,
             }
@@ -321,7 +321,7 @@ async function readFilesBootState(
     callback({
       type: "boot-moved",
       from: version,
-      to: version2,
+      to: bootValueW,
     });
   }
 }
@@ -347,11 +347,11 @@ function classifyFilesBootFailure(error: unknown): Boot.BootFailureClass {
   return "transient";
 }
 function getBootstrapRetryDelay(
-  input: unknown,
-  options: number,
+  bootInputO: unknown,
+  bootOptionsF: number,
 ): number | undefined {
-  let value: number = Number.isFinite(options) ? Math.floor(options) : 0;
-  if (isPermanentFilesBootFailure(input)) {
+  let value: number = Number.isFinite(bootOptionsF) ? Math.floor(bootOptionsF) : 0;
+  if (isPermanentFilesBootFailure(bootInputO)) {
     return undefined;
   } else {
     return FILES_BOOT_RECOVERY_DELAYS_MS[
@@ -371,7 +371,7 @@ function filesBootRetryDelayForHotUpdate(
   }
   if (
     classification !== "access_revoked" &&
-    !change.changed.some((input): boolean => input.path === indexPath)
+    !change.changed.some((bootInputP): boolean => bootInputP.path === indexPath)
   ) {
     return;
   }
@@ -399,38 +399,38 @@ export function installFilesBootReader(): () => void {
       status: number | undefined;
       narrowed: boolean | undefined;
       constructor(
-        input: Boot.BootReadException["code"],
-        options: string,
-        context: string,
-        value?: number,
-        extra?: boolean,
+        bootInputQ: Boot.BootReadException["code"],
+        bootOptionsG: string,
+        bootValueX: string,
+        bootValueY?: number,
+        bootValueZ?: boolean,
       ) {
-        super(context);
+        super(bootValueX);
         this.name = "BootReadError";
-        this.code = input;
-        this.path = options;
-        this.status = value;
-        this.narrowed = extra;
+        this.code = bootInputQ;
+        this.path = bootOptionsG;
+        this.status = bootValueY;
+        this.narrowed = bootValueZ;
       }
     };
     MAX_BOOT_EARLY_FILE_READ_PASSES = 6;
-    errorHttpStatus = (input) => {
-      let value = (input as { status?: unknown } | null | undefined)?.status;
+    errorHttpStatus = (bootInputR) => {
+      let value = (bootInputR as { status?: unknown } | null | undefined)?.status;
       if (typeof value === "number") {
         return value;
       } else {
         return undefined;
       }
     };
-    errorMessage = (input) =>
-      input instanceof Error
-        ? input.message
+    errorMessage = (bootInputS) =>
+      bootInputS instanceof Error
+        ? bootInputS.message
         : String(
-            (input as { message?: unknown } | null | undefined)?.message ??
-              input,
+            (bootInputS as { message?: unknown } | null | undefined)?.message ??
+              bootInputS,
           );
-    isPermanentFilesBootFailure = (input): boolean =>
-      classifyFilesBootFailure(input) !== "transient";
+    isPermanentFilesBootFailure = (bootInputT): boolean =>
+      classifyFilesBootFailure(bootInputT) !== "transient";
     FILES_BOOT_RECOVERY_DELAYS_MS = [
       2000, 4000, 8000, 15000, 30000, 60000, 120000, 300000,
     ];

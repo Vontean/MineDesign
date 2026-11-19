@@ -47,9 +47,9 @@ function sortedSampleQuantile(
   ];
 }
 function filesDebugEventLevel(
-  input: Debug.DebugEvent,
+  debugInput: Debug.DebugEvent,
 ): Debug.DebugEventLevel {
-  let type = input.type;
+  let type = debugInput.type;
   if (
     type === "hot-restart" ||
     type === "save-conflict" ||
@@ -61,7 +61,7 @@ function filesDebugEventLevel(
   }
   if (type === "read") {
     let value =
-      (input.data as Debug.DebugEventData | undefined)?.status ?? 200;
+      (debugInput.data as Debug.DebugEventData | undefined)?.status ?? 200;
     if (value === 0 || value >= 400) {
       return "error";
     } else {
@@ -69,7 +69,7 @@ function filesDebugEventLevel(
     }
   }
   if (type === "reconcile") {
-    if ((input.data as Debug.DebugEventData | undefined)?.ok === false) {
+    if ((debugInput.data as Debug.DebugEventData | undefined)?.ok === false) {
       return "error";
     } else {
       return "hot";
@@ -97,9 +97,9 @@ function filesDebugEventLevel(
   return "other";
 }
 function createFilesDebugPanel(
-  options: Core.FilesDebuggerOptions,
+  panelOptions: Core.FilesDebuggerOptions,
 ): Core.FilesDebugger {
-  let storagePrefix: string = "hotdbg/" + options.product + "/",
+  let storagePrefix: string = "hotdbg/" + panelOptions.product + "/",
     storage = (() => {
       try {
         if (typeof sessionStorage === "undefined") {
@@ -112,37 +112,37 @@ function createFilesDebugPanel(
       }
     })(),
     readStored = <Key extends keyof Debug.DebugStoredValues>(
-      input: Key,
-      options2: Debug.DebugStoredValues[Key],
+      debugInputA: Key,
+      debugOptionsA: Debug.DebugStoredValues[Key],
     ): Debug.DebugStoredValues[Key] => {
       try {
-        let value = storage?.getItem(storagePrefix + input);
+        let value = storage?.getItem(storagePrefix + debugInputA);
         if (value === null || value === undefined) {
-          return options2;
+          return debugOptionsA;
         } else {
           return JSON.parse(value) as unknown as Debug.DebugStoredValues[Key];
         }
       } catch {
-        return options2;
+        return debugOptionsA;
       }
     },
-    writeStored = (input: string, options2: unknown): void => {
+    writeStored = (debugInputB: string, debugOptionsB: unknown): void => {
       try {
-        if (options2 === null) {
-          storage?.removeItem(storagePrefix + input);
+        if (debugOptionsB === null) {
+          storage?.removeItem(storagePrefix + debugInputB);
         } else {
-          storage?.setItem(storagePrefix + input, JSON.stringify(options2));
+          storage?.setItem(storagePrefix + debugInputB, JSON.stringify(debugOptionsB));
         }
       } catch {}
     },
     clockNow = () =>
       typeof performance !== "undefined" ? performance.now() : Date.now(),
-    hot = (options.hot ?? null) as
+    hot = (panelOptions.hot ?? null) as
       | (Host.HotCapability & { from?: unknown })
       | null,
     tabId = readStored("tab", "") || createFilesDebugTabId();
   writeStored("tab", tabId);
-  let bootStartedAt = options.bootStartedAt ?? clockNow(),
+  let bootStartedAt = panelOptions.bootStartedAt ?? clockNow(),
     eventLog = readStored("log", []),
     fields = new Map<string, unknown>(),
     timingSamples = new Map<string, number[]>(),
@@ -219,14 +219,14 @@ function createFilesDebugPanel(
   writeStored("crumb", null);
   writeStored("seen", true);
   let debugOptions = new Map<string, Debug.DebugToggle>();
-  function option(input: string, options2: string): () => boolean {
-    if (!debugOptions.has(input)) {
-      debugOptions.set(input, {
-        label: options2,
-        on: readStored(("opt/" + input) as `opt/${string}`, true),
+  function option(debugInputC: string, debugOptionsC: string): () => boolean {
+    if (!debugOptions.has(debugInputC)) {
+      debugOptions.set(debugInputC, {
+        label: debugOptionsC,
+        on: readStored(("opt/" + debugInputC) as `opt/${string}`, true),
       });
     }
-    return () => debugOptions.get(input)?.on ?? true;
+    return () => debugOptions.get(debugInputC)?.on ?? true;
   }
   let logPersistTimer: ReturnType<typeof setTimeout> | undefined,
     persistLog = false,
@@ -241,13 +241,13 @@ function createFilesDebugPanel(
         }
       }, 250);
     };
-  function recordEvent(input: string, options2?: unknown): void {
+  function recordEvent(debugInputD: string, debugOptionsD?: unknown): void {
     eventLog.push({
       t: Date.now(),
-      type: input,
-      ...(options2 !== undefined
+      type: debugInputD,
+      ...(debugOptionsD !== undefined
         ? {
-            data: options2,
+            data: debugOptionsD,
           }
         : {}),
     });
@@ -257,16 +257,16 @@ function createFilesDebugPanel(
     schedulePersistLog();
     invalidateView("events");
   }
-  function recordTiming(input: string, options2: number): void {
-    if (!Number.isFinite(options2)) {
+  function recordTiming(debugInputE: string, debugOptionsE: number): void {
+    if (!Number.isFinite(debugOptionsE)) {
       return;
     }
-    let value = timingSamples.get(input) ?? [];
-    value.push(Math.round(options2));
+    let value = timingSamples.get(debugInputE) ?? [];
+    value.push(Math.round(debugOptionsE));
     if (value.length > 300) {
       value.shift();
     }
-    timingSamples.set(input, value);
+    timingSamples.set(debugInputE, value);
     invalidateView("timing");
   }
   let documentHidden = () =>
@@ -283,17 +283,17 @@ function createFilesDebugPanel(
       });
     });
   }
-  let roomTopic: string = "hotdbg-" + options.product,
+  let roomTopic: string = "hotdbg-" + panelOptions.product,
     peerPings = readStored("pings", []),
     prunePeerPings = (): void => {
       peerPings = peerPings
-        .filter((input): boolean => Date.now() - input.recvAt < 60000)
+        .filter((debugInputF): boolean => Date.now() - debugInputF.recvAt < 60000)
         .slice(-40);
       writeStored("pings", peerPings);
     };
-  function receivePeerPing(input: unknown): void {
-    let value = ((input as { data?: unknown } | null | undefined)?.data ??
-      input) as Debug.DebugPeerWire | null;
+  function receivePeerPing(debugInputG: unknown): void {
+    let value = ((debugInputG as { data?: unknown } | null | undefined)?.data ??
+      debugInputG) as Debug.DebugPeerWire | null;
     if (
       value === null ||
       typeof value !== "object" ||
@@ -343,10 +343,10 @@ function createFilesDebugPanel(
   }
   let room: Debug.DebugRoom | null = null,
     usePresenceFallback: boolean = false;
-  if (options.room !== false) {
+  if (panelOptions.room !== false) {
     cachedClaudeRoom().then(
-      (input): void => {
-        room = input as Debug.DebugRoom | null;
+      (debugInputH): void => {
+        room = debugInputH as Debug.DebugRoom | null;
         fields.set("room", room === null ? "off" : "connected");
         invalidateView("header");
         if (room === null) {
@@ -359,34 +359,34 @@ function createFilesDebugPanel(
         } catch {}
         let entries = new Map<string, number>();
         try {
-          room.onPeers?.((input2): void => {
-            for (let value of input2.peers) {
-              let value2 = value as Debug.DebugRoomPeer | null,
-                value3 = value2?.presence?.hotdbg;
+          room.onPeers?.((debugInputI): void => {
+            for (let value of debugInputI.peers) {
+              let debugValue = value as Debug.DebugRoomPeer | null,
+                debugState = debugValue?.presence?.hotdbg;
               if (
-                value2 === null ||
-                value2.sameTab === true ||
-                value3 === undefined ||
-                typeof value3.tab !== "string" ||
-                typeof value3.n !== "number"
+                debugValue === null ||
+                debugValue.sameTab === true ||
+                debugState === undefined ||
+                typeof debugState.tab !== "string" ||
+                typeof debugState.n !== "number"
               ) {
                 continue;
               }
-              let value4: string = value3.tab + "/" + String(value3.phase);
-              if ((entries.get(value4) ?? -1) >= value3.n) {
+              let debugResult: string = debugState.tab + "/" + String(debugState.phase);
+              if ((entries.get(debugResult) ?? -1) >= debugState.n) {
                 continue;
               }
-              entries.set(value4, value3.n);
+              entries.set(debugResult, debugState.n);
               if (
                 !peerPings.some(
-                  (input3) =>
-                    input3.tab === value3.tab &&
-                    input3.n === value3.n &&
-                    input3.phase ===
-                      (value3.phase === "saved" ? "saved" : "saving"),
+                  (debugInputJ) =>
+                    debugInputJ.tab === debugState.tab &&
+                    debugInputJ.n === debugState.n &&
+                    debugInputJ.phase ===
+                      (debugState.phase === "saved" ? "saved" : "saving"),
                 )
               ) {
-                receivePeerPing(value3);
+                receivePeerPing(debugState);
               }
             }
           });
@@ -397,11 +397,11 @@ function createFilesDebugPanel(
       },
     );
   }
-  function sendPeerPing(input: Debug.DebugPingInput): void {
+  function sendPeerPing(debugInputK: Debug.DebugPingInput): void {
     let state: Debug.DebugPingSent = {
         tab: tabId,
         at: Date.now(),
-        ...input,
+        ...debugInputK,
       },
       value = room;
     if (value === null) {
@@ -430,73 +430,73 @@ function createFilesDebugPanel(
   }
   let publishCount = readStored("saveN", 0),
     inFlightPublishes = new Map<number, Debug.DebugPublish>(),
-    safeDebugValue = (input: unknown): unknown => {
+    safeDebugValue = (debugInputL: unknown): unknown => {
       try {
         return JSON.parse(
-          JSON.stringify(input, (input2: string, items: unknown) =>
+          JSON.stringify(debugInputL, (debugInputM: string, items: unknown) =>
             typeof items === "string" && items.length > 300
               ? items.slice(0, 300) + "…"
               : items,
           ),
         );
       } catch {
-        return String(input);
+        return String(debugInputL);
       }
     };
-  function saveStart(input: string[], options2: number): number {
+  function saveStart(debugInputN: string[], debugOptionsF: number): number {
     publishCount += 1;
     writeStored("saveN", publishCount);
     inFlightPublishes.set(publishCount, {
       t: clockNow(),
-      paths: [...input],
-      bytes: options2,
+      paths: [...debugInputN],
+      bytes: debugOptionsF,
     });
     writeStored("crumb", {
       phase: "publishing",
-      paths: persistLog ? [...input] : [],
+      paths: persistLog ? [...debugInputN] : [],
       at: Date.now(),
     });
     sendPeerPing({
       n: publishCount,
       phase: "saving",
-      paths: [...input],
+      paths: [...debugInputN],
     });
     recordEvent("save-flush", {
       n: publishCount,
-      paths: input,
-      bytes: options2,
+      paths: debugInputN,
+      bytes: debugOptionsF,
     });
     invalidateView("queue");
     return publishCount;
   }
-  function saveEnd(input: number, options2: Debug.DebugPublishOutcome): void {
-    let entry = inFlightPublishes.get(input);
-    inFlightPublishes.delete(input);
+  function saveEnd(debugInputO: number, debugOptionsG: Debug.DebugPublishOutcome): void {
+    let entry = inFlightPublishes.get(debugInputO);
+    inFlightPublishes.delete(debugInputO);
     if (inFlightPublishes.size === 0) {
       writeStored("crumb", null);
     }
     let value = entry !== undefined ? clockNow() - entry.t : NaN;
-    if (options2.ok) {
+    if (debugOptionsG.ok) {
       recordTiming(uiMessage("design-system.debugPanel.publishCall"), value);
       lastPublish = {
-        n: input,
+        n: debugInputO,
         ms: Math.round(value),
-        ...(options2.version !== undefined
+        ...(debugOptionsG.version !== undefined
           ? {
-              version: options2.version,
+              version: debugOptionsG.version,
             }
           : {}),
         at: Date.now(),
       };
-      if (options2.version !== undefined) {
-        fields.set("on version", options2.version);
-        for (let value2 of entry?.paths ?? []) {
-          lastVersionByPath.set(value2, options2.version);
+      if (debugOptionsG.version !== undefined) {
+        fields.set("on version", debugOptionsG.version);
+        for (let debugValueA of entry?.paths ?? []) {
+          lastVersionByPath.set(debugValueA, debugOptionsG.version);
         }
         sendPeerPing({
-          n: input,
+          n: debugInputO,
           phase: "saved",
-          version: options2.version,
+          version: debugOptionsG.version,
           ...(entry !== undefined
             ? {
                 paths: entry.paths,
@@ -505,29 +505,29 @@ function createFilesDebugPanel(
         });
       }
       recordEvent("save-ok", {
-        n: input,
+        n: debugInputO,
         ms: Math.round(value),
-        version: options2.version,
+        version: debugOptionsG.version,
       });
     } else {
-      if (options2.code === "conflict") {
+      if (debugOptionsG.code === "conflict") {
         errorCounts.conflict += 1;
-      } else if (options2.code === "rate_limited") {
+      } else if (debugOptionsG.code === "rate_limited") {
         errorCounts.rate += 1;
       } else {
         errorCounts.other += 1;
       }
       publishErrors.push({
         t: Date.now(),
-        n: input,
-        ...(options2.code !== undefined
+        n: debugInputO,
+        ...(debugOptionsG.code !== undefined
           ? {
-              code: options2.code,
+              code: debugOptionsG.code,
             }
           : {}),
-        ...(options2.raw !== undefined
+        ...(debugOptionsG.raw !== undefined
           ? {
-              raw: safeDebugValue(options2.raw),
+              raw: safeDebugValue(debugOptionsG.raw),
             }
           : {}),
       });
@@ -535,14 +535,14 @@ function createFilesDebugPanel(
         publishErrors.shift();
       }
       recordEvent(
-        options2.code === "conflict" ? "save-conflict" : "save-error",
+        debugOptionsG.code === "conflict" ? "save-conflict" : "save-error",
         {
-          n: input,
+          n: debugInputO,
           ms: Math.round(value),
-          code: options2.code,
-          ...(options2.raw !== undefined
+          code: debugOptionsG.code,
+          ...(debugOptionsG.raw !== undefined
             ? {
-                raw: safeDebugValue(options2.raw),
+                raw: safeDebugValue(debugOptionsG.raw),
               }
             : {}),
         },
@@ -552,153 +552,153 @@ function createFilesDebugPanel(
     invalidateView("header");
     refreshStatus();
   }
-  function recordVisible(input: string, options2: string): void {
+  function recordVisible(debugInputP: string, debugOptionsH: string): void {
     let value: number = Date.now(),
-      value2: boolean = hiddenSince !== undefined,
-      value3 = peerPings.findIndex(
-        (input2) => input2.phase === "saved" && input2.version === input,
+      debugValueB: boolean = hiddenSince !== undefined,
+      debugStateA = peerPings.findIndex(
+        (debugInputQ) => debugInputQ.phase === "saved" && debugInputQ.version === debugInputP,
       ),
-      value4 =
-        value3 >= 0
-          ? peerPings[value3].recvAt
-          : options2 === "restarted"
+      debugResultA =
+        debugStateA >= 0
+          ? peerPings[debugStateA].recvAt
+          : debugOptionsH === "restarted"
             ? value
             : -1;
-    if (value4 < 0) {
+    if (debugResultA < 0) {
       return;
     }
-    let value5 = peerPings.filter(
-      (input2): boolean => input2.recvAt <= value4,
+    let debugData = peerPings.filter(
+      (debugInputR): boolean => debugInputR.recvAt <= debugResultA,
     );
-    peerPings = peerPings.filter((input2): boolean => input2.recvAt > value4);
+    peerPings = peerPings.filter((debugInputS): boolean => debugInputS.recvAt > debugResultA);
     prunePeerPings();
     let entries = new Map<string, Debug.DebugSavePairs>();
-    for (let value6 of value5) {
-      let value7: string = value6.tab + "#" + String(value6.n),
-        value8 = entries.get(value7) ?? {};
-      value8[value6.phase] = value6;
-      entries.set(value7, value8);
+    for (let debugValueC of debugData) {
+      let debugEntry: string = debugValueC.tab + "#" + String(debugValueC.n),
+        debugValueD = entries.get(debugEntry) ?? {};
+      debugValueD[debugValueC.phase] = debugValueC;
+      entries.set(debugEntry, debugValueD);
     }
-    for (let value6 of entries.values()) {
-      let value7 = value6.saving ?? value6.saved;
-      if (value7 === undefined) {
+    for (let debugValueE of entries.values()) {
+      let debugEntryA = debugValueE.saving ?? debugValueE.saved;
+      if (debugEntryA === undefined) {
         continue;
       }
-      if (value2) {
+      if (debugValueB) {
         hiddenSamplesExcluded += 1;
         continue;
       }
-      let value8: number = value - value7.recvAt;
+      let debugValueF: number = value - debugEntryA.recvAt;
       recordTiming(
-        options2 === "adopted"
+        debugOptionsH === "adopted"
           ? uiMessage("design-system.debugPanel.saveVisibleAdopted")
           : uiMessage("design-system.debugPanel.saveVisibleRestarted"),
-        value8,
+        debugValueF,
       );
       visibilitySeries.push({
-        how: options2,
-        ms: value8,
+        how: debugOptionsH,
+        ms: debugValueF,
       });
       if (visibilitySeries.length > 60) {
         visibilitySeries.shift();
       }
-      if (value6.saved !== undefined) {
-        recordTiming("saved-ping → visible", value - value6.saved.recvAt);
+      if (debugValueE.saved !== undefined) {
+        recordTiming("saved-ping → visible", value - debugValueE.saved.recvAt);
       }
     }
     recordEvent("visible", {
-      version: input,
-      how: options2,
+      version: debugInputP,
+      how: debugOptionsH,
       saves: entries.size,
-      hidden: value2,
+      hidden: debugValueB,
     });
     refreshStatus();
   }
-  function recordHotEvent(input: Debug.DebugHotEvent): void {
-    if (input.type === "update") {
+  function recordHotEvent(debugInputT: Debug.DebugHotEvent): void {
+    if (debugInputT.type === "update") {
       fields.set(
         "hot shape",
-        input.shape === "calls" ? uiMessage("design-system.debugPanel.threeCalls") : uiMessage("design-system.debugPanel.stringVerdicts"),
+        debugInputT.shape === "calls" ? uiMessage("design-system.debugPanel.threeCalls") : uiMessage("design-system.debugPanel.stringVerdicts"),
       );
       fields.set(
         "live seen",
-        input.to +
-          (input.toSeq !== undefined ? " · seq " + String(input.toSeq) : ""),
+        debugInputT.to +
+          (debugInputT.toSeq !== undefined ? " · seq " + String(debugInputT.toSeq) : ""),
       );
-      if (input.decision === "adopt") {
+      if (debugInputT.decision === "adopt") {
         fields.set(
           "on version",
-          input.to +
-            (input.toSeq !== undefined
-              ? " · seq " + String(input.toSeq)
+          debugInputT.to +
+            (debugInputT.toSeq !== undefined
+              ? " · seq " + String(debugInputT.toSeq)
               : ""),
         );
         lastUpdateRestarted = false;
       }
-      if (input.decision === "restart") {
+      if (debugInputT.decision === "restart") {
         lastUpdateRestarted = true;
       }
     }
-    if (input.type === "restart") {
+    if (debugInputT.type === "restart") {
       lastUpdateRestarted = true;
     }
-    if (input.type === "applied") {
+    if (debugInputT.type === "applied") {
       lastUpdateRestarted = false;
-      if (input.grantLagMs !== undefined) {
-        recordTiming(uiMessage("design-system.debugPanel.adoptFirst200GrantLag"), input.grantLagMs);
+      if (debugInputT.grantLagMs !== undefined) {
+        recordTiming(uiMessage("design-system.debugPanel.adoptFirst200GrantLag"), debugInputT.grantLagMs);
       }
-      for (let value of input.paths ?? []) {
-        lastVersionByPath.set(value, input.to);
+      for (let value of debugInputT.paths ?? []) {
+        lastVersionByPath.set(value, debugInputT.to);
       }
       invalidateView("files");
     }
-    recordEvent("hot-" + input.type, input);
+    recordEvent("hot-" + debugInputT.type, debugInputT);
     invalidateView("header");
     refreshStatus();
   }
-  function beforeRestart(input: string): void {
+  function beforeRestart(debugInputU: string): void {
     writeStored("crumb", {
       phase: "hot-restart",
-      reason: input,
+      reason: debugInputU,
       at: Date.now(),
     });
     recordEvent("restart-asked", {
-      reason: input,
+      reason: debugInputU,
     });
     if (persistLog) {
       writeStored("log", eventLog.slice(-FILES_DEBUG_EVENT_STAGGER_MS));
     }
   }
   let bootPhases: Debug.DebugPhase[] = [];
-  function recordPhase(input: string): void {
+  function recordPhase(debugInputV: string): void {
     let value: number = Math.round(clockNow() - bootStartedAt);
     bootPhases.push({
-      name: input,
+      name: debugInputV,
       ms: value,
     });
-    if (input === "first artboard painted" || input === "first paint") {
+    if (debugInputV === "first artboard painted" || debugInputV === "first paint") {
       recordTiming(uiMessage("design-system.debugPanel.bootFirstPaint"), value);
     }
-    if (input === "all painted") {
+    if (debugInputV === "all painted") {
       recordTiming(uiMessage("design-system.debugPanel.bootAllPainted"), value);
     }
     recordEvent("boot-phase", {
-      name: input,
+      name: debugInputV,
       ms: value,
     });
     invalidateView("timing");
   }
   function recordRead(
-    input: string,
-    options2: number,
-    context: number,
-    value?: boolean,
+    debugInputW: string,
+    debugOptionsI: number,
+    debugValueG: number,
+    debugValueH?: boolean,
   ): void {
     recordEvent("read", {
-      path: input,
-      ms: Math.round(options2),
-      status: context,
-      ...(value
+      path: debugInputW,
+      ms: Math.round(debugOptionsI),
+      status: debugValueG,
+      ...(debugValueH
         ? {
             fresh: true,
           }
@@ -748,25 +748,25 @@ function createFilesDebugPanel(
     status = "ok";
   function refreshStatus(): void {
     let value: number = Date.now(),
-      value2 =
+      debugValueI =
         peerPings.some(
-          (input) => input.phase === "saved" && value - input.recvAt < 15000,
-        ) || publishErrors.some((input): boolean => value - input.t < 1e4),
-      value3: string = lastUpdateRestarted ? "bad" : value2 ? "behind" : "ok";
-    if (value3 === status) {
+          (debugInputX) => debugInputX.phase === "saved" && value - debugInputX.recvAt < 15000,
+        ) || publishErrors.some((debugInputY): boolean => value - debugInputY.t < 1e4),
+      debugStateB: string = lastUpdateRestarted ? "bad" : debugValueI ? "behind" : "ok";
+    if (debugStateB === status) {
       return;
     }
-    status = value3;
+    status = debugStateB;
     if (chipElement) {
       chipElement.dataset.status = status;
     }
     invalidateView("header");
   }
-  function invalidateView(input: string): void {
+  function invalidateView(debugInputZ: string): void {
     if (!ui2.open || shadowRoot === null) {
       return;
     }
-    dirtyViews.add(input);
+    dirtyViews.add(debugInputZ);
     if (paintFrame !== 0 || typeof requestAnimationFrame !== "function") {
       return;
     }
@@ -805,8 +805,8 @@ function createFilesDebugPanel(
     dirtyViews.clear();
   }
   let resizePageForPanel = (
-      input: Debug.DebugSide | null,
-      options2: number,
+      side: Debug.DebugSide | null,
+      debugOptionsJ: number,
     ): void => {
       if (typeof document === "undefined") {
         return;
@@ -819,24 +819,24 @@ function createFilesDebugPanel(
         document.head.appendChild(roomStyleElement);
       }
       let documentElement = document.documentElement;
-      if (input === null) {
+      if (side === null) {
         documentElement.removeAttribute("data-hotdbg-open");
       } else {
-        documentElement.setAttribute("data-hotdbg-open", input);
+        documentElement.setAttribute("data-hotdbg-open", side);
       }
       documentElement.style.setProperty(
         "--hotdbg-b",
-        input === "bottom" ? String(options2) + "px" : "0px",
+        side === "bottom" ? String(debugOptionsJ) + "px" : "0px",
       );
       documentElement.style.setProperty(
         "--hotdbg-r",
-        input === "right" ? String(options2) + "px" : "0px",
+        side === "right" ? String(debugOptionsJ) + "px" : "0px",
       );
       try {
         window.dispatchEvent(new Event("resize"));
       } catch {}
     },
-    makeRoom = options.makeRoom ?? resizePageForPanel,
+    makeRoom = panelOptions.makeRoom ?? resizePageForPanel,
     panelCss: string = `
     :host{all:initial}
     *{box-sizing:border-box}
@@ -900,16 +900,16 @@ function createFilesDebugPanel(
     textarea{width:100%;height:120px;background:var(--bg2);color:var(--fg);border:0;font:10px/1.3 ui-monospace,monospace;padding:6px}
   `,
     element = <Tag extends keyof HTMLElementTagNameMap>(
-      input: Tag,
-      options2?: string,
-      context?: string,
+      tagName: Tag,
+      debugOptionsK?: string,
+      debugValueJ?: string,
     ): HTMLElementTagNameMap[Tag] => {
-      let value = document.createElement(input);
-      if (options2 !== undefined) {
-        value.className = options2;
+      let value = document.createElement(tagName);
+      if (debugOptionsK !== undefined) {
+        value.className = debugOptionsK;
       }
-      if (context !== undefined) {
-        value.textContent = context;
+      if (debugValueJ !== undefined) {
+        value.textContent = debugValueJ;
       }
       return value;
     },
@@ -931,29 +931,29 @@ function createFilesDebugPanel(
       }
     };
   function describeEvent(
-    input: Debug.DebugEvent,
+    event: Debug.DebugEvent,
   ): Debug.DebugEventDescription {
-    let value = (input.data ?? {}) as Debug.DebugEventData,
-      callback = (input2: unknown): string | undefined => {
+    let value = (event.data ?? {}) as Debug.DebugEventData,
+      callback = (debugValue: unknown): string | undefined => {
         try {
-          return JSON.stringify(input2);
+          return JSON.stringify(debugValue);
         } catch {
-          return String(input2);
+          return String(debugValue);
         }
       };
-    switch (input.type) {
+    switch (event.type) {
       case "hot-update": {
         let changed = value.changed as NonNullable<
             Debug.DebugEventData["changed"]
           > | null,
-          value2 =
+          debugValueK =
             changed === null
               ? "changed: null"
               : changed
                   .map(
-                    (input2): string =>
-                      input2.path +
-                      (input2.klass === "code" ? " [CODE]" : ""),
+                    (debugInput_): string =>
+                      debugInput_.path +
+                      (debugInput_.klass === "code" ? " [CODE]" : ""),
                   )
                   .join(", ");
         return {
@@ -963,7 +963,7 @@ function createFilesDebugPanel(
               : value.decision === "defer"
                 ? "warn"
                 : "",
-          text: `${String(value.decision).toUpperCase()} · ${shortDebugValue(String(value.from))} → ${shortDebugValue(String(value.to))}${value.toSeq !== undefined ? " seq " + String(value.toSeq) : ""} · required ${String(value.required)} · ${value2} · ${String(value.why ?? "")}${value.early === true ? " (early handler)" : ""}`,
+          text: `${String(value.decision).toUpperCase()} · ${shortDebugValue(String(value.from))} → ${shortDebugValue(String(value.to))}${value.toSeq !== undefined ? " seq " + String(value.toSeq) : ""} · required ${String(value.required)} · ${debugValueK} · ${String(value.why ?? "")}${value.early === true ? " (early handler)" : ""}`,
         };
       }
       case "hot-fetch":
@@ -997,8 +997,8 @@ function createFilesDebugPanel(
           text: `restarted realm shown after holding the reveal ${String(value.heldMs)} ms${value.timedOut === true ? " (the hold ran out before the editor painted)" : ""}${value.carried === true ? " · view carried" : ""}`,
         };
       case "reconcile": {
-        let { regions: value2, guard: value3 } = value,
-          value4 = value.overlapList ?? [];
+        let { regions: debugValueL, guard: debugStateC } = value,
+          debugResultB = value.overlapList ?? [];
         return {
           cls:
             value.ok === true
@@ -1006,7 +1006,7 @@ function createFilesDebugPanel(
                 ? "warn"
                 : ""
               : "error",
-          text: `${String(value.file)} · ${String(value.trigger)} · ${value.ok === true ? "FOLDED" : "NOT merged: " + String(value.why ?? "")}${value2 !== undefined ? ` · template ${value2.template}, script ${value2.script}, outer ${value2.outer}` : ""} · ${String(value.applied)} of mine re-applied · ${String(value.overlaps)} overlaps${value4.length > 0 ? " (" + value4.map((input2): string => `${input2.name}: mine ${String(input2.to)} over theirs ${String(input2.theirs)}`).join("; ") + ")" : ""}${value3 !== undefined ? ` · same tree: theirs ${String(value3.baseTheirs)}, mine ${String(value3.baseMine)}` : ""} · ${String(value.ms)} ms`,
+          text: `${String(value.file)} · ${String(value.trigger)} · ${value.ok === true ? "FOLDED" : "NOT merged: " + String(value.why ?? "")}${debugValueL !== undefined ? ` · template ${debugValueL.template}, script ${debugValueL.script}, outer ${debugValueL.outer}` : ""} · ${String(value.applied)} of mine re-applied · ${String(value.overlaps)} overlaps${debugResultB.length > 0 ? " (" + debugResultB.map((eventValue): string => `${eventValue.name}: mine ${String(eventValue.to)} over theirs ${String(eventValue.theirs)}`).join("; ") + ")" : ""}${debugStateC !== undefined ? ` · same tree: theirs ${String(debugStateC.baseTheirs)}, mine ${String(debugStateC.baseMine)}` : ""} · ${String(value.ms)} ms`,
         };
       }
       case "reconcile-choice":
@@ -1070,10 +1070,10 @@ function createFilesDebugPanel(
       return;
     }
     value.setAttribute("data-status", status);
-    let callback = (input: string, options2: unknown): void => {
-      let element2 = value.querySelector('[data-f="' + input + '"]');
-      if (element2 && element2.textContent !== options2) {
-        element2.textContent = options2 as string;
+    let callback = (debugInputa: string, debugOptionsL: unknown): void => {
+      let debugValueM = value.querySelector('[data-f="' + debugInputa + '"]');
+      if (debugValueM && debugValueM.textContent !== debugOptionsL) {
+        debugValueM.textContent = debugOptionsL as string;
       }
     };
     callback("tab", tabId);
@@ -1095,24 +1095,24 @@ function createFilesDebugPanel(
     let value = ui2.text.trim().toLowerCase(),
       items: Debug.DebugEvent[] = [];
     for (
-      let value2: number = eventLog.length - 1;
-      value2 >= 0 && items.length < FILES_DEBUG_VIEW_REFRESH_MS;
-      value2--
+      let debugValueN: number = eventLog.length - 1;
+      debugValueN >= 0 && items.length < FILES_DEBUG_VIEW_REFRESH_MS;
+      debugValueN--
     ) {
-      let value3 = eventLog[value2];
-      if (!ui2.kinds[filesDebugEventLevel(value3)]) {
+      let debugStateD = eventLog[debugValueN];
+      if (!ui2.kinds[filesDebugEventLevel(debugStateD)]) {
         continue;
       }
       if (value !== "") {
-        let type = value3.type;
+        let type = debugStateD.type;
         try {
-          type += " " + JSON.stringify(value3.data ?? "");
+          type += " " + JSON.stringify(debugStateD.data ?? "");
         } catch {}
         if (!type.toLowerCase().includes(value)) {
           continue;
         }
       }
-      items.push(value3);
+      items.push(debugStateD);
     }
     return items;
   }
@@ -1121,41 +1121,41 @@ function createFilesDebugPanel(
       return;
     }
     let value = filteredEvents(),
-      value2 = document.createDocumentFragment();
-    for (let value3 of value) {
-      let value4 = describeEvent(value3),
-        value5 = filesDebugEventLevel(value3),
-        value6 = element(
+      debugValueO = document.createDocumentFragment();
+    for (let debugStateE of value) {
+      let debugResultC = describeEvent(debugStateE),
+        debugDataA = filesDebugEventLevel(debugStateE),
+        debugValueP = element(
           "div",
-          uiMessage("design-system.debugPanel.row") + (value5 === "error" ? "error" : value4.cls),
+          uiMessage("design-system.debugPanel.row") + (debugDataA === "error" ? "error" : debugResultC.cls),
         );
-      value6.append(
-        element("span", "t", formatFilesDebugTimestamp(value3.t)),
-        element("span", "ty", value3.type),
-        element("span", "s", value4.text),
+      debugValueP.append(
+        element("span", "t", formatFilesDebugTimestamp(debugStateE.t)),
+        element("span", "ty", debugStateE.type),
+        element("span", "s", debugResultC.text),
       );
-      value6.title = uiMessage("design-system.debugPanel.clickForTheRawEvent");
-      value6.addEventListener("click", (): void => {
-        if (expandedEvents.has(value3)) {
-          expandedEvents.delete(value3);
+      debugValueP.title = uiMessage("design-system.debugPanel.clickForTheRawEvent");
+      debugValueP.addEventListener("click", (): void => {
+        if (expandedEvents.has(debugStateE)) {
+          expandedEvents.delete(debugStateE);
         } else {
-          expandedEvents.add(value3);
+          expandedEvents.add(debugStateE);
         }
         paintEvents();
       });
-      value2.append(value6);
-      if (expandedEvents.has(value3)) {
+      debugValueO.append(debugValueP);
+      if (expandedEvents.has(debugStateE)) {
         let text = "";
         try {
-          text = JSON.stringify(value3.data ?? {}, null, 1);
+          text = JSON.stringify(debugStateE.data ?? {}, null, 1);
         } catch {
-          text = String(value3.data);
+          text = String(debugStateE.data);
         }
-        value2.append(element("div", "raw", text));
+        debugValueO.append(element("div", "raw", text));
       }
     }
     if (value.length === 0) {
-      value2.append(
+      debugValueO.append(
         element(
           "div",
           "pad mut",
@@ -1165,27 +1165,27 @@ function createFilesDebugPanel(
         ),
       );
     }
-    eventListElement.replaceChildren(value2);
+    eventListElement.replaceChildren(debugValueO);
   }
   function table(
-    input: readonly string[],
-    options2: readonly (readonly unknown[])[],
-    context?: string,
+    debugInputb: readonly string[],
+    debugOptionsM: readonly (readonly unknown[])[],
+    debugValueQ?: string,
   ): HTMLTableElement {
-    let value = element("table", context);
-    if (input.some((input2): boolean => input2 !== "")) {
-      let value2 = element("tr");
-      for (let value3 of input) {
-        value2.append(element("th", undefined, value3));
+    let value = element("table", debugValueQ);
+    if (debugInputb.some((debugInputc): boolean => debugInputc !== "")) {
+      let debugValueR = element("tr");
+      for (let debugStateF of debugInputb) {
+        debugValueR.append(element("th", undefined, debugStateF));
       }
-      value.append(value2);
+      value.append(debugValueR);
     }
-    for (let value2 of options2) {
-      let value3 = element("tr");
-      for (let value4 of value2) {
-        value3.append(element("td", undefined, String(value4)));
+    for (let debugValueS of debugOptionsM) {
+      let debugStateG = element("tr");
+      for (let debugResultD of debugValueS) {
+        debugStateG.append(element("td", undefined, String(debugResultD)));
       }
-      value.append(value3);
+      value.append(debugStateG);
     }
     return value;
   }
@@ -1197,8 +1197,8 @@ function createFilesDebugPanel(
     eventListElement = null;
     value.replaceChildren();
     if (ui2.tab === "events") {
-      let value3 = element("div", "tools");
-      for (let value6 of [
+      let debugStateH = element("div", "tools");
+      for (let debugValueT of [
         "hot",
         "save",
         "boot",
@@ -1206,39 +1206,39 @@ function createFilesDebugPanel(
         "error",
         "other",
       ] as const) {
-        let value7 = element("button", "fchip", value6);
-        value7.setAttribute("aria-pressed", String(ui2.kinds[value6]));
-        value7.addEventListener("click", (): void => {
-          ui2.kinds[value6] = !ui2.kinds[value6];
-          value7.setAttribute("aria-pressed", String(ui2.kinds[value6]));
+        let debugEntryB = element("button", "fchip", debugValueT);
+        debugEntryB.setAttribute("aria-pressed", String(ui2.kinds[debugValueT]));
+        debugEntryB.addEventListener("click", (): void => {
+          ui2.kinds[debugValueT] = !ui2.kinds[debugValueT];
+          debugEntryB.setAttribute("aria-pressed", String(ui2.kinds[debugValueT]));
           saveUi();
           paintEvents();
         });
-        value3.append(value7);
+        debugStateH.append(debugEntryB);
       }
-      let value4 = element("input");
-      value4.type = "text";
-      value4.placeholder = uiMessage("design-system.debugPanel.filterPathVersionReason");
-      value4.value = ui2.text;
-      value4.addEventListener("input", (): void => {
-        ui2.text = value4.value;
+      let debugResultE = element("input");
+      debugResultE.type = "text";
+      debugResultE.placeholder = uiMessage("design-system.debugPanel.filterPathVersionReason");
+      debugResultE.value = ui2.text;
+      debugResultE.addEventListener("input", (): void => {
+        ui2.text = debugResultE.value;
         saveUi();
         paintEvents();
       });
-      let value5 = element("button", "fchip", ui2.paused ? "paused" : "live");
-      value5.setAttribute("aria-pressed", String(!ui2.paused));
-      value5.title = uiMessage("design-system.debugPanel.pauseTheListEventsKeep");
-      value5.addEventListener("click", (): void => {
+      let debugDataB = element("button", "fchip", ui2.paused ? "paused" : "live");
+      debugDataB.setAttribute("aria-pressed", String(!ui2.paused));
+      debugDataB.title = uiMessage("design-system.debugPanel.pauseTheListEventsKeep");
+      debugDataB.addEventListener("click", (): void => {
         ui2.paused = !ui2.paused;
-        value5.textContent = ui2.paused ? "paused" : "live";
-        value5.setAttribute("aria-pressed", String(!ui2.paused));
+        debugDataB.textContent = ui2.paused ? "paused" : "live";
+        debugDataB.setAttribute("aria-pressed", String(!ui2.paused));
         if (!ui2.paused) {
           paintEvents();
         }
       });
-      value3.append(
-        value4,
-        value5,
+      debugStateH.append(
+        debugResultE,
+        debugDataB,
         element(
           "span",
           "mut",
@@ -1246,29 +1246,29 @@ function createFilesDebugPanel(
         ),
       );
       eventListElement = element("div");
-      value.append(value3, eventListElement);
+      value.append(debugStateH, eventListElement);
       paintEvents();
       return;
     }
-    let value2 = element("div", "pad");
-    value.append(value2);
+    let debugValueU = element("div", "pad");
+    value.append(debugValueU);
     if (ui2.tab === "timing") {
-      value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.timingMs")));
-      let value3 = [...timingSamples.entries()].map(([input, input2]) => {
-        let value7 = [...input2].sort(
-          (input3, options2) => input3 - options2,
+      debugValueU.append(element("h4", undefined, uiMessage("design-system.debugPanel.timingMs")));
+      let debugStateI = [...timingSamples.entries()].map(([debugInputd, debugInpute]) => {
+        let debugEntryC = [...debugInpute].sort(
+          (debugInputf, debugOptionsN) => debugInputf - debugOptionsN,
         );
         return [
-          input,
-          sortedSampleQuantile(value7, 0.5),
-          sortedSampleQuantile(value7, 0.95),
-          value7[value7.length - 1],
-          value7.length,
+          debugInputd,
+          sortedSampleQuantile(debugEntryC, 0.5),
+          sortedSampleQuantile(debugEntryC, 0.95),
+          debugEntryC[debugEntryC.length - 1],
+          debugEntryC.length,
         ];
       });
-      value2.append(
-        value3.length > 0
-          ? table(["", "p50", "p95", "max", "n"], value3)
+      debugValueU.append(
+        debugStateI.length > 0
+          ? table(["", "p50", "p95", "max", "n"], debugStateI)
           : element(
               "div",
               "mut",
@@ -1276,7 +1276,7 @@ function createFilesDebugPanel(
             ),
       );
       if (hiddenSamplesExcluded > 0) {
-        value2.append(
+        debugValueU.append(
           element(
             "div",
             "mut",
@@ -1284,67 +1284,67 @@ function createFilesDebugPanel(
           ),
         );
       }
-      value2.append(
+      debugValueU.append(
         element(
           "h4",
           undefined,
           uiMessage("design-system.debugPanel.saveVisibleNewestOnThe"),
         ),
       );
-      let value4 = element("div", "spark"),
-        value5: number = Math.max(
+      let debugResultF = element("div", "spark"),
+        debugDataC: number = Math.max(
           1,
-          ...visibilitySeries.map((input) => input.ms),
+          ...visibilitySeries.map((debugInputg) => debugInputg.ms),
         );
-      for (let value7 of visibilitySeries) {
-        let value8 = element("i", value7.how === "restarted" ? "r" : "");
-        value8.style.height =
-          String(Math.max(2, Math.round((value7.ms / value5) * 40))) + "px";
-        value8.title = value7.how + " · " + String(value7.ms) + " ms";
-        value4.append(value8);
+      for (let debugEntryD of visibilitySeries) {
+        let debugValueV = element("i", debugEntryD.how === "restarted" ? "r" : "");
+        debugValueV.style.height =
+          String(Math.max(2, Math.round((debugEntryD.ms / debugDataC) * 40))) + "px";
+        debugValueV.title = debugEntryD.how + " · " + String(debugEntryD.ms) + " ms";
+        debugResultF.append(debugValueV);
       }
-      value2.append(
-        visibilitySeries.length > 0 ? value4 : element("div", "mut", "—"),
+      debugValueU.append(
+        visibilitySeries.length > 0 ? debugResultF : element("div", "mut", "—"),
       );
-      value2.append(element("h4", undefined, "boot, from the entry module"));
-      let value6: number = Math.max(
+      debugValueU.append(element("h4", undefined, "boot, from the entry module"));
+      let debugValueW: number = Math.max(
         1,
-        ...bootPhases.map((input) => input.ms),
+        ...bootPhases.map((debugInputh) => debugInputh.ms),
       );
-      for (let value7 of bootPhases) {
-        let value8 = element("div", "wf"),
-          value9 = element("div"),
-          value10 = element("div", "barx");
-        value10.style.width =
-          String(Math.max(1, Math.round((value7.ms / value6) * 100))) + "%";
-        value9.append(value10);
-        value8.append(
-          element("span", undefined, value7.name),
-          value9,
-          element("span", "ms", "+" + String(value7.ms)),
+      for (let debugEntryE of bootPhases) {
+        let debugValueX = element("div", "wf"),
+          debugValueY = element("div"),
+          debugValueZ = element("div", "barx");
+        debugValueZ.style.width =
+          String(Math.max(1, Math.round((debugEntryE.ms / debugValueW) * 100))) + "%";
+        debugValueY.append(debugValueZ);
+        debugValueX.append(
+          element("span", undefined, debugEntryE.name),
+          debugValueY,
+          element("span", "ms", "+" + String(debugEntryE.ms)),
         );
-        value2.append(value8);
+        debugValueU.append(debugValueX);
       }
       if (bootPhases.length === 0) {
-        value2.append(element("div", "mut", "—"));
+        debugValueU.append(element("div", "mut", "—"));
       }
       if (debugOptions.size > 0) {
-        value2.append(element("h4", undefined, "options"));
-        for (let [value7, value8] of debugOptions) {
-          let value9 = element("label"),
-            value10 = element("input");
-          value10.type = "checkbox";
-          value10.checked = value8.on;
-          value10.addEventListener("change", (): void => {
-            value8.on = value10.checked;
-            writeStored("opt/" + value7, value8.on);
+        debugValueU.append(element("h4", undefined, "options"));
+        for (let [debugEntryF, tabOptions] of debugOptions) {
+          let labelElement = element("label"),
+            checkbox = element("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = tabOptions.on;
+          checkbox.addEventListener("change", (): void => {
+            tabOptions.on = checkbox.checked;
+            writeStored("opt/" + debugEntryF, tabOptions.on);
             recordEvent("option", {
-              key: value7,
-              on: value8.on,
+              key: debugEntryF,
+              on: tabOptions.on,
             });
           });
-          value9.append(value10, document.createTextNode(" " + value8.label));
-          value2.append(value9);
+          labelElement.append(checkbox, document.createTextNode(" " + tabOptions.label));
+          debugValueU.append(labelElement);
         }
       }
       return;
@@ -1356,7 +1356,7 @@ function createFilesDebugPanel(
       } catch {
         items = [];
       }
-      value2.append(
+      debugValueU.append(
         element(
           "h4",
           undefined,
@@ -1364,7 +1364,7 @@ function createFilesDebugPanel(
         ),
       );
       if (items.length === 0) {
-        value2.append(
+        debugValueU.append(
           element(
             "div",
             "mut",
@@ -1375,9 +1375,9 @@ function createFilesDebugPanel(
         );
         return;
       }
-      let value3 = element("table", "l"),
-        value4 = element("tr");
-      for (let value5 of [
+      let debugStateJ = element("table", "l"),
+        debugResultG = element("tr");
+      for (let debugDataD of [
         "path",
         "state",
         uiMessage("design-system.debugPanel.onScreen"),
@@ -1385,89 +1385,89 @@ function createFilesDebugPanel(
         "size",
         uiMessage("design-system.debugPanel.lastChangedAt"),
       ]) {
-        value4.append(element("th", undefined, value5));
+        debugResultG.append(element("th", undefined, debugDataD));
       }
-      value3.append(value4);
-      for (let value5 of [...items].sort((input, options2): number =>
-        input.path < options2.path ? -1 : 1,
+      debugStateJ.append(debugResultG);
+      for (let debugDataE of [...items].sort((debugInputi, debugOptionsO): number =>
+        debugInputi.path < debugOptionsO.path ? -1 : 1,
       )) {
-        let value6 = element("tr"),
-          value7 = element("td");
-        for (let value8 of (value5.state ?? "").split(" ").filter(Boolean)) {
-          value7.append(
+        let rowElement = element("tr"),
+          debugEntryG = element("td");
+        for (let debugValue_ of (debugDataE.state ?? "").split(" ").filter(Boolean)) {
+          debugEntryG.append(
             element(
               "span",
               "st" +
-                (value8 === "conflicted"
+                (debugValue_ === "conflicted"
                   ? " b"
-                  : value8 === "behind" || value8 === "held"
+                  : debugValue_ === "behind" || debugValue_ === "held"
                     ? " w"
                     : ""),
-              value8,
+              debugValue_,
             ),
           );
         }
-        value6.append(
-          element("td", undefined, value5.path),
-          value7,
-          element("td", undefined, (value5.sha ?? "—").slice(0, 10)),
+        rowElement.append(
+          element("td", undefined, debugDataE.path),
+          debugEntryG,
+          element("td", undefined, (debugDataE.sha ?? "—").slice(0, 10)),
           element(
             "td",
             undefined,
-            value5.liveSha === undefined
+            debugDataE.liveSha === undefined
               ? ""
-              : (value5.liveSha ?? "removed").slice(0, 10),
+              : (debugDataE.liveSha ?? "removed").slice(0, 10),
           ),
           element(
             "td",
             undefined,
-            value5.size !== undefined ? String(value5.size) : "",
+            debugDataE.size !== undefined ? String(debugDataE.size) : "",
           ),
           element(
             "td",
             undefined,
-            shortDebugValue(lastVersionByPath.get(value5.path)),
+            shortDebugValue(lastVersionByPath.get(debugDataE.path)),
           ),
         );
-        value3.append(value6);
+        debugStateJ.append(rowElement);
       }
-      value2.append(value3);
+      debugValueU.append(debugStateJ);
       return;
     }
     if (ui2.tab === "queue") {
-      let value3: Core.DebugQueueView | undefined;
+      let debugStateK: Core.DebugQueueView | undefined;
       try {
-        value3 = providers.queue?.();
+        debugStateK = providers.queue?.();
       } catch {
-        value3 = undefined;
+        debugStateK = undefined;
       }
-      value2.append(element("h4", undefined, "now"));
-      value2.append(
+      debugValueU.append(element("h4", undefined, "now"));
+      debugValueU.append(
         table(
           ["", ""],
           [
             [
               "dirty",
-              value3 === undefined
+              debugStateK === undefined
                 ? "(not provided)"
-                : value3.dirty.length === 0
+                : debugStateK.dirty.length === 0
                   ? "none"
-                  : value3.dirty.join(", "),
+                  : debugStateK.dirty.join(", "),
             ],
             [
               uiMessage("design-system.debugPanel.inFlight"),
               inFlightPublishes.size > 0
                 ? [...inFlightPublishes.values()]
-                    .map((input) => input.paths.join(", "))
+                    .map((debugInputj) => debugInputj.paths.join(", "))
                     .join(" | ")
-                : value3?.inFlight === true
+                : debugStateK?.inFlight === true
                   ? "yes"
                   : "no",
             ],
             [
               "conflicted",
-              value3?.conflicted !== undefined && value3.conflicted.length > 0
-                ? value3.conflicted.join(", ")
+              debugStateK?.conflicted !== undefined && debugStateK.conflicted.length > 0
+                ? debugStateK.conflicted.join(", ")
                 : "none",
             ],
             [
@@ -1476,7 +1476,7 @@ function createFilesDebugPanel(
                 ? "—"
                 : `#${String(lastPublish.n)} · ${String(lastPublish.ms)} ms → ${shortDebugValue(lastPublish.version)} · ${formatFilesDebugTimestamp(lastPublish.at)}`,
             ],
-            [uiMessage("design-system.debugPanel.queueSays"), value3?.lastError ?? "ok"],
+            [uiMessage("design-system.debugPanel.queueSays"), debugStateK?.lastError ?? "ok"],
             ["publishes", String(publishCount)],
             [
               "errors",
@@ -1484,66 +1484,66 @@ function createFilesDebugPanel(
             ],
             [
               "catch-up waits",
-              value3?.note ??
+              debugStateK?.note ??
                 uiMessage("design-system.debugPanel.thisEditorDoesNotWait"),
             ],
           ],
           "l",
         ),
       );
-      value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.publishErrorsNewestFirst")));
+      debugValueU.append(element("h4", undefined, uiMessage("design-system.debugPanel.publishErrorsNewestFirst")));
       if (publishErrors.length === 0) {
-        value2.append(element("div", "mut", "none"));
+        debugValueU.append(element("div", "mut", "none"));
       }
-      for (let value4 of [...publishErrors].reverse()) {
+      for (let debugResultH of [...publishErrors].reverse()) {
         let text = "";
         try {
-          text = JSON.stringify(value4.raw ?? {}, null, 1);
+          text = JSON.stringify(debugResultH.raw ?? {}, null, 1);
         } catch {
-          text = String(value4.raw);
+          text = String(debugResultH.raw);
         }
-        let value5 = element("div", "raw", text);
-        value5.style.marginLeft = "0";
-        value2.append(
+        let debugDataF = element("div", "raw", text);
+        debugDataF.style.marginLeft = "0";
+        debugValueU.append(
           element(
             "div",
             "mut",
-            `${formatFilesDebugTimestamp(value4.t)} · #${String(value4.n)} · ${String(value4.code)}`,
+            `${formatFilesDebugTimestamp(debugResultH.t)} · #${String(debugResultH.n)} · ${String(debugResultH.code)}`,
           ),
-          value5,
+          debugDataF,
         );
       }
       return;
     }
-    value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.thisTabLastLoadedBecause")));
-    value2.append(element("div", undefined, reloadReason));
-    value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.countsByReason")));
-    value2.append(
+    debugValueU.append(element("h4", undefined, uiMessage("design-system.debugPanel.thisTabLastLoadedBecause")));
+    debugValueU.append(element("div", undefined, reloadReason));
+    debugValueU.append(element("h4", undefined, uiMessage("design-system.debugPanel.countsByReason")));
+    debugValueU.append(
       table(
         ["reason", "times"],
         Object.entries(reasonCounts)
-          .sort((input, options2) => options2[1] - input[1])
-          .map(([input, input2]) => [input, input2]),
+          .sort((debugInputk, debugOptionsP) => debugOptionsP[1] - debugInputk[1])
+          .map(([debugInputl, debugInputm]) => [debugInputl, debugInputm]),
       ),
     );
-    value2.append(element("h4", undefined, "history, newest first"));
-    value2.append(
+    debugValueU.append(element("h4", undefined, "history, newest first"));
+    debugValueU.append(
       table(
         ["when", "reason"],
         [...reloadHistory]
           .reverse()
-          .map((input) => [formatFilesDebugTimestamp(input.t), input.reason]),
+          .map((debugInputn) => [formatFilesDebugTimestamp(debugInputn.t), debugInputn.reason]),
         "l",
       ),
     );
   }
-  function clampPanelSize(input: Debug.DebugSide, options2: number): number {
+  function clampPanelSize(debugInputo: Debug.DebugSide, debugOptionsQ: number): number {
     let value: number = Math.round(
-      (input === "bottom" ? window.innerHeight : window.innerWidth) * 0.8,
+      (debugInputo === "bottom" ? window.innerHeight : window.innerWidth) * 0.8,
     );
     return Math.max(
-      FILES_DEBUG_PANEL_MIN_SIZE[input],
-      Math.min(value, Math.round(options2)),
+      FILES_DEBUG_PANEL_MIN_SIZE[debugInputo],
+      Math.min(value, Math.round(debugOptionsQ)),
     );
   }
   function applyPanelLayout(): void {
@@ -1565,29 +1565,29 @@ function createFilesDebugPanel(
   function paintTabs(): void {
     panelElement
       ?.querySelectorAll(".tab")
-      .forEach((element2) =>
-        element2.setAttribute(
+      .forEach((tabElement) =>
+        tabElement.setAttribute(
           "aria-selected",
-          String(element2.getAttribute("data-tab") === ui2.tab),
+          String(tabElement.getAttribute("data-tab") === ui2.tab),
         ),
       );
   }
-  function setOpen(input: boolean): void {
-    ui2.open = input;
-    persistLog = input;
-    if (input) {
+  function setOpen(debugInputp: boolean): void {
+    ui2.open = debugInputp;
+    persistLog = debugInputp;
+    if (debugInputp) {
       schedulePersistLog();
     } else {
       writeStored("log", null);
     }
     saveUi();
     if (chipElement) {
-      chipElement.dataset.open = input ? "1" : "0";
+      chipElement.dataset.open = debugInputp ? "1" : "0";
     }
     if (panelElement) {
-      panelElement.style.display = input ? "flex" : "none";
+      panelElement.style.display = debugInputp ? "flex" : "none";
     }
-    if (input) {
+    if (debugInputp) {
       applyPanelLayout();
       paintHeader();
       paintTabs();
@@ -1616,68 +1616,68 @@ function createFilesDebugPanel(
     panelElement = element("div", uiMessage("design-system.debugPanel.panel") + ui2.side);
     panelElement.style.display = "none";
     panelElement.tabIndex = -1;
-    let value2 = element("div", "grip");
-    value2.title = uiMessage("design-system.debugPanel.dragToResizeDoubleClick");
-    value2.addEventListener("dblclick", (): void => {
+    let debugValuea = element("div", "grip");
+    debugValuea.title = uiMessage("design-system.debugPanel.dragToResizeDoubleClick");
+    debugValuea.addEventListener("dblclick", (): void => {
       ui2.size[ui2.side] = FILES_DEBUG_PANEL_DEFAULT_SIZE[ui2.side];
       saveUi();
       applyPanelLayout();
     });
-    value2.addEventListener("pointerdown", (event): void => {
+    debugValuea.addEventListener("pointerdown", (event): void => {
       event.preventDefault();
-      value2.classList.add("on");
-      let value9 = element("div", "shield");
-      value9.style.cursor = ui2.side === "bottom" ? "ns-resize" : "ew-resize";
-      value.append(value9);
-      let callback3 = (input: PointerEvent): void => {
+      debugValuea.classList.add("on");
+      let debugValueb = element("div", "shield");
+      debugValueb.style.cursor = ui2.side === "bottom" ? "ns-resize" : "ew-resize";
+      value.append(debugValueb);
+      let debugHandler = (debugInputq: PointerEvent): void => {
           ui2.size[ui2.side] = clampPanelSize(
             ui2.side,
             ui2.side === "bottom"
-              ? window.innerHeight - input.clientY
-              : window.innerWidth - input.clientX,
+              ? window.innerHeight - debugInputq.clientY
+              : window.innerWidth - debugInputq.clientX,
           );
           applyPanelLayout();
         },
-        callback4 = (): void => {
-          value9.remove();
-          value2.classList.remove("on");
-          window.removeEventListener("pointermove", callback3, true);
-          window.removeEventListener("pointerup", callback4, true);
-          window.removeEventListener("pointercancel", callback4, true);
+        debugHandlerA = (): void => {
+          debugValueb.remove();
+          debugValuea.classList.remove("on");
+          window.removeEventListener("pointermove", debugHandler, true);
+          window.removeEventListener("pointerup", debugHandlerA, true);
+          window.removeEventListener("pointercancel", debugHandlerA, true);
           saveUi();
         };
-      window.addEventListener("pointermove", callback3, true);
-      window.addEventListener("pointerup", callback4, true);
-      window.addEventListener("pointercancel", callback4, true);
+      window.addEventListener("pointermove", debugHandler, true);
+      window.addEventListener("pointerup", debugHandlerA, true);
+      window.addEventListener("pointercancel", debugHandlerA, true);
     });
-    let value3 = element("div", "bar");
-    value3.setAttribute("data-status", status);
-    let callback = (input: string, options2: string): void => {
-      value3.append(element("span", "k", input));
-      let value9 = element("span", "v");
-      value9.setAttribute("data-f", options2);
-      value3.append(value9);
+    let debugStateL = element("div", "bar");
+    debugStateL.setAttribute("data-status", status);
+    let callback = (debugInputr: string, debugOptionsR: string): void => {
+      debugStateL.append(element("span", "k", debugInputr));
+      let debugValuec = element("span", "v");
+      debugValuec.setAttribute("data-f", debugOptionsR);
+      debugStateL.append(debugValuec);
     };
-    value3.append(element("span", "dot"));
-    let value4 = element("span");
-    value4.setAttribute("data-f", "status");
-    value3.append(value4);
+    debugStateL.append(element("span", "dot"));
+    let debugResultI = element("span");
+    debugResultI.setAttribute("data-f", "status");
+    debugStateL.append(debugResultI);
     callback("tab", "tab");
     callback("version", "ver");
     // MineDesign: the host global is designSystemHost, not claude.
     callback("designSystemHost.hot", "hot");
-    value3.append(element("span", "sp"));
-    let callback2 = (
-      input: string,
-      options2: string,
-      context: EventListener,
+    debugStateL.append(element("span", "sp"));
+    let debugHandlerB = (
+      debugInputs: string,
+      debugOptionsS: string,
+      debugValued: EventListener,
     ): void => {
-      let value9 = element("button", "ib", input);
-      value9.title = options2;
-      value9.addEventListener("click", context);
-      value3.append(value9);
+      let debugValuee = element("button", "ib", debugInputs);
+      debugValuee.title = debugOptionsS;
+      debugValuee.addEventListener("click", debugValued);
+      debugStateL.append(debugValuee);
     };
-    callback2(
+    debugHandlerB(
       uiMessage("design-system.debugPanel.dock"),
       uiMessage("design-system.debugPanel.dockToTheOtherSide"),
       (): void => {
@@ -1686,17 +1686,17 @@ function createFilesDebugPanel(
         applyPanelLayout();
       },
     );
-    callback2("clear", uiMessage("design-system.debugPanel.clearTheLog"), (): void => {
+    debugHandlerB("clear", uiMessage("design-system.debugPanel.clearTheLog"), (): void => {
       eventLog.length = 0;
       expandedEvents.clear();
       writeStored("log", eventLog);
       paintActiveTab();
     });
-    callback2(uiMessage("design-system.debugPanel.copyLog"), uiMessage("design-system.debugPanel.copyTheWholeLogAs"), (): void => {
-      let value9 = exportJson(),
+    debugHandlerB(uiMessage("design-system.debugPanel.copyLog"), uiMessage("design-system.debugPanel.copyTheWholeLogAs"), (): void => {
+      let debugValuef = exportJson(),
         flag: boolean = false;
       try {
-        navigator.clipboard?.writeText(value9).then(
+        navigator.clipboard?.writeText(debugValuef).then(
           (): void => {
             flag = true;
           },
@@ -1710,49 +1710,49 @@ function createFilesDebugPanel(
           return;
         }
         panelBody.querySelector("textarea")?.remove();
-        let value10 = element("textarea");
-        value10.readOnly = true;
-        value10.value = value9;
-        panelBody.prepend(value10);
+        let debugValueg = element("textarea");
+        debugValueg.readOnly = true;
+        debugValueg.value = debugValuef;
+        panelBody.prepend(debugValueg);
       }, 200);
     });
-    callback2(
+    debugHandlerB(
       "✕",
       uiMessage("design-system.debugPanel.closeEscWhileThePanel") +
         FILES_DEBUG_TOGGLE_SHORTCUT +
         ")",
       () => setOpen(false),
     );
-    let value5 = element("div", "tabs");
-    for (let [value9, value10] of [
+    let debugDataG = element("div", "tabs");
+    for (let [debugValueh, debugValuei] of [
       ["events", "Events"],
       ["timing", "Timing"],
       ["files", "Files"],
       ["queue", uiMessage("design-system.debugPanel.saveQueue")],
       ["reloads", "Reloads"],
     ]) {
-      let value11 = element("button", "tab", value10);
-      value11.setAttribute("data-tab", value9);
-      value11.addEventListener("click", (): void => {
-        ui2.tab = value9;
+      let debugValuej = element("button", "tab", debugValuei);
+      debugValuej.setAttribute("data-tab", debugValueh);
+      debugValuej.addEventListener("click", (): void => {
+        ui2.tab = debugValueh;
         saveUi();
         paintTabs();
         paintActiveTab();
       });
-      value5.append(value11);
+      debugDataG.append(debugValuej);
     }
     panelBody = element("div", "body");
-    panelElement.append(value2, value3, value5, panelBody);
-    panelElement.addEventListener("keydown", (input): void => {
-      if (input.key === "Escape") {
-        input.stopPropagation();
+    panelElement.append(debugValuea, debugStateL, debugDataG, panelBody);
+    panelElement.addEventListener("keydown", (debugInputt): void => {
+      if (debugInputt.key === "Escape") {
+        debugInputt.stopPropagation();
         setOpen(false);
       }
     });
     value.append(chipElement, panelElement);
-    let value6 = element("style");
-    value6.textContent = panelCss;
-    shadowRoot.replaceChildren(value6, value);
+    let debugValuek = element("style");
+    debugValuek.textContent = panelCss;
+    shadowRoot.replaceChildren(debugValuek, value);
     if (ui2.open) {
       setOpen(true);
     }
@@ -1766,38 +1766,38 @@ function createFilesDebugPanel(
         attributeFilter: ["data-theme", "data-mode"],
       });
     } catch {}
-    let { innerWidth: value7, innerHeight: value8 } = window;
+    let { innerWidth: debugEntryH, innerHeight: debugValuel } = window;
     window.addEventListener("resize", (): void => {
       if (
         !ui2.open ||
-        (window.innerWidth === value7 && window.innerHeight === value8)
+        (window.innerWidth === debugEntryH && window.innerHeight === debugValuel)
       ) {
         return;
       }
-      value7 = window.innerWidth;
-      value8 = window.innerHeight;
+      debugEntryH = window.innerWidth;
+      debugValuel = window.innerHeight;
       applyPanelLayout();
     });
     setInterval(refreshStatus, 3000);
   }
   function exportJson(): string {
     let state: Record<string, Debug.DebugQuantiles> = {};
-    for (let [value3, value4] of timingSamples) {
-      let value5 = [...value4].sort((input, options2) => input - options2);
-      state[value3] = {
-        p50: sortedSampleQuantile(value5, 0.5),
-        p95: sortedSampleQuantile(value5, 0.95),
-        max: value5[value5.length - 1],
-        n: value5.length,
+    for (let [debugStateM, debugResultJ] of timingSamples) {
+      let debugDataH = [...debugResultJ].sort((debugInputu, debugOptionsT) => debugInputu - debugOptionsT);
+      state[debugStateM] = {
+        p50: sortedSampleQuantile(debugDataH, 0.5),
+        p95: sortedSampleQuantile(debugDataH, 0.95),
+        max: debugDataH[debugDataH.length - 1],
+        n: debugDataH.length,
       };
     }
     let value: Core.DebugFileRow[] | undefined,
-      value2: Core.DebugQueueView | undefined;
+      debugValuem: Core.DebugQueueView | undefined;
     try {
       value = providers.files?.();
     } catch {}
     try {
-      value2 = providers.queue?.();
+      debugValuem = providers.queue?.();
     } catch {}
     return JSON.stringify(
       {
@@ -1813,7 +1813,7 @@ function createFilesDebugPanel(
         publishErrors: publishErrors,
         series: visibilitySeries,
         files: value,
-        queue: value2,
+        queue: debugValuem,
         log: eventLog,
       },
       null,
@@ -1826,10 +1826,10 @@ function createFilesDebugPanel(
       return;
     }
     eventGuardsInstalled = true;
-    let callback = (input: Event) => {
+    let callback = (debugInputv: Event) => {
       try {
         return (
-          panelElement !== null && input.composedPath().includes(panelElement)
+          panelElement !== null && debugInputv.composedPath().includes(panelElement)
         );
       } catch {
         return false;
@@ -1870,18 +1870,18 @@ function createFilesDebugPanel(
     ]) {
       window.addEventListener(
         value,
-        (input): void => {
-          if (callback(input)) {
-            input.stopImmediatePropagation();
+        (debugInputw): void => {
+          if (callback(debugInputw)) {
+            debugInputw.stopImmediatePropagation();
           }
         },
         true,
       );
     }
   }
-  function mount(input: string): void {
+  function mount(debugInputx: string): void {
     if (
-      input !== "files" ||
+      debugInputx !== "files" ||
       typeof document === "undefined" ||
       hostElement !== null
     ) {
@@ -1927,8 +1927,8 @@ function createFilesDebugPanel(
   return {
     tab: tabId,
     reloadReason: reloadReason,
-    field(input: string, options2: unknown): void {
-      fields.set(input, options2);
+    field(debugInputy: string, debugOptionsU: unknown): void {
+      fields.set(debugInputy, debugOptionsU);
       invalidateView("header");
     },
     event: recordEvent,
@@ -1943,10 +1943,10 @@ function createFilesDebugPanel(
     mount: mount,
     exportJson: exportJson,
     option: option,
-    provide(input: Core.DebugProviders): void {
+    provide(debugInputz: Core.DebugProviders): void {
       providers = {
         ...providers,
-        ...input,
+        ...debugInputz,
       };
       invalidateView("files");
       invalidateView("queue");
@@ -1959,39 +1959,39 @@ function instrumentFilesPort<Port extends Model.BrowserFilesPort>(
 ): Port {
   let value: Port = Object.create(port);
   value.publish = async (
-    input: Model.FilePublishEntries,
-    options?: Model.FilePublishPreconditions,
+    fileEntries: Model.FilePublishEntries,
+    debugOptionsV?: Model.FilePublishPreconditions,
   ): Promise<Model.FilePublishResult> => {
-    let value2: number | undefined;
+    let debugValuen: number | undefined;
     try {
-      value2 = debug.saveStart(
-        Object.keys(input),
-        Object.values(input).reduce(
-          (input2, options2) =>
-            input2 + filePublishEncodedBytes(options2),
+      debugValuen = debug.saveStart(
+        Object.keys(fileEntries),
+        Object.values(fileEntries).reduce(
+          (total, debugOptionsW) =>
+            total + filePublishEncodedBytes(debugOptionsW),
           0,
         ),
       );
     } catch {}
-    let value3 = await port.publish(input, options);
+    let debugStateN = await port.publish(fileEntries, debugOptionsV);
     try {
-      if (value2 !== undefined) {
+      if (debugValuen !== undefined) {
         debug.saveEnd(
-          value2,
-          value3.ok
+          debugValuen,
+          debugStateN.ok
             ? {
                 ok: true,
-                version: value3.version,
+                version: debugStateN.version,
               }
             : {
                 ok: false,
-                code: value3.code,
-                raw: value3,
+                code: debugStateN.code,
+                raw: debugStateN,
               },
         );
       }
     } catch {}
-    return value3;
+    return debugStateN;
   };
   return value;
 }
@@ -2019,10 +2019,10 @@ function createNoopFilesDebugger(): Core.FilesDebugger {
   };
 }
 function createFilesDebugger(
-  options: Core.FilesDebuggerOptions,
+  debugOptionsX: Core.FilesDebuggerOptions,
 ): Core.FilesDebugger {
   if (filesDebugEnabled()) {
-    return createFilesDebugPanel(options);
+    return createFilesDebugPanel(debugOptionsX);
   } else {
     return createNoopFilesDebugger();
   }
@@ -2061,8 +2061,8 @@ export function installFilesDebugPanel(): () => void {
     };
     FILES_DEBUG_TOGGLE_SHORTCUT = "Ctrl+`";
     createFilesDebugTabId = () => Math.random().toString(36).slice(2, 6);
-    formatFilesDebugTimestamp = (input: number) =>
-      new Date(input).toISOString().slice(11, 23);
+    formatFilesDebugTimestamp = (timestamp: number) =>
+      new Date(timestamp).toISOString().slice(11, 23);
     shortDebugValue = (items: string | null | undefined) =>
       items === undefined || items === null || items === ""
         ? "—"

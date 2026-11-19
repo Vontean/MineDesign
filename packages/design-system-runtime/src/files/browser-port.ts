@@ -39,42 +39,42 @@ async function getFilesPublishCapability(): Promise<FilesPublishCapability | nul
     ))
   );
 }
-function parseFileShaListing(value: unknown) {
-  if (!Array.isArray(value)) {
+function parseFileShaListing(portValue: unknown) {
+  if (!Array.isArray(portValue)) {
     return;
   }
   let entries: Files.ChangedFileRow[] = [];
-  for (let value2 of value as (PortRawListingValue | null)[]) {
-    let value3 = normalizeFileSha256(value2?.sha256);
-    if (typeof value2?.path !== "string" || value3 === undefined) {
+  for (let portValueA of portValue as (PortRawListingValue | null)[]) {
+    let portState = normalizeFileSha256(portValueA?.sha256);
+    if (typeof portValueA?.path !== "string" || portState === undefined) {
       return;
     }
     entries.push({
-      path: value2!.path as string,
-      sha256: value3,
+      path: portValueA!.path as string,
+      sha256: portState,
     });
   }
   return entries;
 }
-function parseFilePublishConflicts(value: unknown) {
-  if (!Array.isArray(value)) {
+function parseFilePublishConflicts(portValueB: unknown) {
+  if (!Array.isArray(portValueB)) {
     return;
   }
   let conflicts: NonNullable<Files.FilePublishFailure["paths"]> = [];
-  for (let value2 of value as (PortRawListingValue | null)[]) {
-    let value3 = normalizeFileSha256(
-      "actual" in (value2 ?? {}) ? value2!.actual : value2?.liveSha,
+  for (let portValueC of portValueB as (PortRawListingValue | null)[]) {
+    let portStateA = normalizeFileSha256(
+      "actual" in (portValueC ?? {}) ? portValueC!.actual : portValueC?.liveSha,
     );
-    if (typeof value2?.path !== "string" || value3 === undefined) {
+    if (typeof portValueC?.path !== "string" || portStateA === undefined) {
       return;
     }
-    let value4 = normalizeFileSha256(value2!.expected);
+    let portResult = normalizeFileSha256(portValueC!.expected);
     conflicts.push({
-      path: value2!.path as string,
-      liveSha: value3,
-      ...(value4 !== undefined
+      path: portValueC!.path as string,
+      liveSha: portStateA,
+      ...(portResult !== undefined
         ? {
-            expected: value4,
+            expected: portResult,
           }
         : {}),
     });
@@ -99,7 +99,7 @@ function normalizeFilesPublishError(
           ? record.retry_after_ms
           : undefined,
     value = parseFilePublishConflicts(record.paths),
-    value2 = parseFileShaListing(record.changed);
+    portValueD = parseFileShaListing(record.changed);
   return {
     ok: false,
     code: code,
@@ -118,44 +118,44 @@ function normalizeFilesPublishError(
           paths: value,
         }
       : {}),
-    ...(value2 !== undefined
+    ...(portValueD !== undefined
       ? {
-          changed: value2,
+          changed: portValueD,
         }
       : {}),
   };
 }
-function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
+function createBrowserFilesPort(portOptions: BrowserFilesPortOptions = {}) {
   let fetchFile =
-      options.fetch ?? ((input: string) => globalThis.fetch(input)),
-    fetchFresh = options.fetchFresh ?? fetchFile,
+      portOptions.fetch ?? ((portInput: string) => globalThis.fetch(portInput)),
+    fetchFresh = portOptions.fetchFresh ?? fetchFile,
     freshReads: boolean = false,
     now = () => globalThis.performance?.now() ?? Date.now(),
-    fetchWithReadTelemetry = async (input: string): Promise<Response> => {
+    fetchWithReadTelemetry = async (portInputA: string): Promise<Response> => {
       let value: boolean = freshReads,
-        value2 = now();
+        portValueE = now();
       try {
-        let value3 = await (value ? fetchFresh : fetchFile)(input);
+        let portStateB = await (value ? fetchFresh : fetchFile)(portInputA);
         try {
-          options.onRead?.(input, now() - value2, value3.status, value);
+          portOptions.onRead?.(portInputA, now() - portValueE, portStateB.status, value);
         } catch {}
-        return value3;
-      } catch (value3: unknown) {
+        return portStateB;
+      } catch (portStateC: unknown) {
         try {
-          options.onRead?.(input, now() - value2, 0, value);
+          portOptions.onRead?.(portInputA, now() - portValueE, 0, value);
         } catch {}
-        throw value3;
+        throw portStateC;
       }
     },
-    resolvePublishCapability = options.resolveNs ?? getFilesPublishCapability,
-    pageLocation = options.location ?? globalThis.location,
-    version = options.bootVersion ?? {
+    resolvePublishCapability = portOptions.resolveNs ?? getFilesPublishCapability,
+    pageLocation = portOptions.location ?? globalThis.location,
+    version = portOptions.bootVersion ?? {
       version:
         FILE_SCOPE_PATH_PATTERN.exec(pageLocation?.pathname ?? "")?.[1] ?? "",
     },
-    canWrite = options.canWrite ?? true,
-    bootFiles = options.bootFiles,
-    bootNarrowed: boolean = options.bootNarrowed === true,
+    canWrite = portOptions.canWrite ?? true,
+    bootFiles = portOptions.bootFiles,
+    bootNarrowed: boolean = portOptions.bootNarrowed === true,
     listingNarrowed = false,
     listingCache: PortListingCache | undefined,
     heldFileShas: Map<string, string | null> = new Map(),
@@ -169,26 +169,26 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
     fileReadCache: Map<string, Files.FileBytesRead> = new Map(),
     remoteChangeSubscribers: Set<(change: Files.FileRemoteChange) => void> =
       new Set(),
-    listingEntryDiffers = (input: Files.ChangedFileRow) => {
-      let entry = publishedFileOverrides.get(input.path);
+    listingEntryDiffers = (portInputB: Files.ChangedFileRow) => {
+      let entry = publishedFileOverrides.get(portInputB.path);
       return (
         entry !== undefined &&
-        !provisionalFileShas.has(input.path) &&
-        (entry === null ? null : entry.sha256) !== input.sha256
+        !provisionalFileShas.has(portInputB.path) &&
+        (entry === null ? null : entry.sha256) !== portInputB.sha256
       );
     },
     parseListingEntry = (
-      input: string,
-      options2: PortRawListingValue | null | undefined,
+      portInputC: string,
+      portOptionsA: PortRawListingValue | null | undefined,
     ) =>
-      typeof options2?.sha256 === "string"
+      typeof portOptionsA?.sha256 === "string"
         ? {
-            sha256: options2.sha256,
-            size: typeof options2.size === "number" ? options2.size : 0,
+            sha256: portOptionsA.sha256,
+            size: typeof portOptionsA.size === "number" ? portOptionsA.size : 0,
             contentType:
-              typeof options2.contentType === "string"
-                ? options2.contentType
-                : (fileMimeTypeFromPath(input) ??
+              typeof portOptionsA.contentType === "string"
+                ? portOptionsA.contentType
+                : (fileMimeTypeFromPath(portInputC) ??
                   "application/octet-stream"),
           }
         : undefined;
@@ -198,23 +198,23 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
   }> {
     let entries: PortListingCache = new Map();
     if (bootFiles !== undefined) {
-      let value3: boolean = bootNarrowed,
-        value4 = Array.isArray(bootFiles)
+      let portStateD: boolean = bootNarrowed,
+        portResultA = Array.isArray(bootFiles)
           ? bootFiles.map(
               (
-                input: { path: string } & PortRawListingValue,
-              ): [string, PortRawListingValue] => [input.path, input],
+                portInputD: { path: string } & PortRawListingValue,
+              ): [string, PortRawListingValue] => [portInputD.path, portInputD],
             )
           : Object.entries(bootFiles);
-      for (let [value5, value6] of value4) {
-        let value7 = parseListingEntry(value5, value6);
-        if (value7) {
-          entries.set(value5, value7);
+      for (let [portData, portValueF] of portResultA) {
+        let portEntry = parseListingEntry(portData, portValueF);
+        if (portEntry) {
+          entries.set(portData, portEntry);
         }
       }
       return {
         files: entries,
-        narrowed: value3,
+        narrowed: portStateD,
       };
     }
     let value = await fetchWithReadTelemetry(FILE_LISTING_PATH);
@@ -225,13 +225,13 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         message: FILE_LISTING_PATH + ": HTTP " + String(value.status),
       };
     }
-    let value2: PortRawListing | null = await value.json();
+    let portValueG: PortRawListing | null = await value.json();
     if (
-      value2 === null ||
-      typeof value2 !== "object" ||
-      value2.files === null ||
-      typeof value2.files !== "object" ||
-      Array.isArray(value2.files)
+      portValueG === null ||
+      typeof portValueG !== "object" ||
+      portValueG.files === null ||
+      typeof portValueG.files !== "object" ||
+      Array.isArray(portValueG.files)
     ) {
       throw {
         code: "http",
@@ -240,46 +240,46 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         message: FILE_LISTING_PATH + ": no files object",
       };
     }
-    if (typeof value2.ver === "string" && version.version === "") {
+    if (typeof portValueG.ver === "string" && version.version === "") {
       version = {
-        version: value2.ver,
+        version: portValueG.ver,
       };
     }
-    let files = value2.files;
-    for (let [value3, value4] of Object.entries(files)) {
-      let value5 = parseListingEntry(value3, value4);
-      if (value5) {
-        entries.set(value3, value5);
+    let files = portValueG.files;
+    for (let [portStateE, portResultB] of Object.entries(files)) {
+      let portDataA = parseListingEntry(portStateE, portResultB);
+      if (portDataA) {
+        entries.set(portStateE, portDataA);
       }
     }
     return {
       files: entries,
-      narrowed: value2.narrowed === true,
+      narrowed: portValueG.narrowed === true,
     };
   }
-  function overlayPublishedFiles(input: PortListingCache): void {
-    for (let [value, value2] of publishedFileOverrides) {
-      if (value2 === null) {
-        input.delete(value);
+  function overlayPublishedFiles(portInputE: PortListingCache): void {
+    for (let [value, portValueH] of publishedFileOverrides) {
+      if (portValueH === null) {
+        portInputE.delete(value);
       } else {
-        input.set(value, {
-          sha256: value2.sha256,
-          size: value2.bytes.length,
-          contentType: value2.contentType,
+        portInputE.set(value, {
+          sha256: portValueH.sha256,
+          size: portValueH.bytes.length,
+          contentType: portValueH.contentType,
         });
       }
     }
   }
   async function readListing(
-    input: boolean = false,
+    portInputF: boolean = false,
   ): Promise<PortListingCache> {
     let value = listingGeneration;
-    if (input && canWrite && bootNarrowed) {
+    if (portInputF && canWrite && bootNarrowed) {
       bootFiles = undefined;
       bootNarrowed = false;
     }
-    let value2 = await fetchListing();
-    if (input && canWrite && value2.narrowed) {
+    let portValueI = await fetchListing();
+    if (portInputF && canWrite && portValueI.narrowed) {
       throw {
         code: "http",
         status: 403,
@@ -287,24 +287,24 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         message: FILE_LISTING_PATH + ": marked as narrowed",
       };
     }
-    let value3 = Object.defineProperty(value2.files, "narrowed", {
-      value: value2.narrowed,
+    let portStateF = Object.defineProperty(portValueI.files, "narrowed", {
+      value: portValueI.narrowed,
     });
-    overlayPublishedFiles(value3);
+    overlayPublishedFiles(portStateF);
     if (
       value === listingGeneration &&
       !(
         canWrite &&
-        value2.narrowed &&
+        portValueI.narrowed &&
         listingCache !== undefined &&
         !listingNarrowed
       )
     ) {
-      listingCache = value3;
-      listingNarrowed = value2.narrowed;
+      listingCache = portStateF;
+      listingNarrowed = portValueI.narrowed;
       listingCacheGeneration = listingGeneration;
     }
-    return value3;
+    return portStateF;
   }
   let listingReadPromise:
       | { at: number; p: Promise<PortListingCache | void> }
@@ -321,9 +321,9 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
     let state = {
       at: value,
       p: readListing()
-        .catch((input: unknown): void => {
-          let value2: unknown = (input as FileRetryError | null)?.status;
-          if (!canWrite && (value2 === 401 || value2 === 403)) {
+        .catch((portInputG: unknown): void => {
+          let portValueJ: unknown = (portInputG as FileRetryError | null)?.status;
+          if (!canWrite && (portValueJ === 401 || portValueJ === 403)) {
             lastUnavailableListingGeneration = value;
           }
           return;
@@ -340,55 +340,55 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
   let currentFrameVersion = () =>
     FILE_SCOPE_PATH_PATTERN.exec(pageLocation?.pathname ?? "")?.[1];
   function checkReadRedirect(
-    input: Response,
-    options2: string,
-    context: string | undefined,
+    portInputH: Response,
+    portOptionsB: string,
+    portValueK: string | undefined,
   ): void {
     if (
-      input.redirected !== true ||
+      portInputH.redirected !== true ||
       !freshReads ||
       !canWrite ||
-      context === undefined
+      portValueK === undefined
     ) {
       return;
     }
     let value: string | undefined;
     try {
       value = FILE_SCOPE_PATH_PATTERN.exec(
-        new URL(input.url ?? "", "https://page.invalid").pathname,
+        new URL(portInputH.url ?? "", "https://page.invalid").pathname,
       )?.[1];
     } catch {
       value = undefined;
     }
-    if (value !== undefined && value !== context) {
+    if (value !== undefined && value !== portValueK) {
       throw {
         code: "redirected",
         status: 403,
-        redirectedTo: input.url,
+        redirectedTo: portInputH.url,
         message:
-          options2 +
+          portOptionsB +
           ": answered by a redirect to /_f/" +
           value +
           "/, not the version this page addresses (/_f/" +
-          context +
+          portValueK +
           "/); asked for again",
       };
     }
   }
   async function readFileBytes(
-    input: string,
-    options2: boolean = false,
+    portInputI: string,
+    portOptionsC: boolean = false,
   ): Promise<Files.FileBytesRead & { raw: boolean }> {
-    let entry = publishedFileOverrides.get(input);
+    let entry = publishedFileOverrides.get(portInputI);
     if (entry === null) {
       throw {
         code: "not_found",
         status: 404,
-        message: input + ": deleted by this tab",
+        message: portInputI + ": deleted by this tab",
       };
     }
     if (entry !== undefined) {
-      heldFileShas.set(input, entry.sha256);
+      heldFileShas.set(portInputI, entry.sha256);
       return {
         bytes: entry.bytes,
         sha256: entry.sha256,
@@ -396,45 +396,45 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         raw: false,
       };
     }
-    let entry2 = fileReadCache.get(input);
+    let portValueL = fileReadCache.get(portInputI);
     if (
-      entry2 !== undefined &&
-      (listingCache?.get(input)?.sha256 ?? entry2.sha256) === entry2.sha256
+      portValueL !== undefined &&
+      (listingCache?.get(portInputI)?.sha256 ?? portValueL.sha256) === portValueL.sha256
     ) {
       return {
-        ...entry2,
+        ...portValueL,
         raw: true,
       };
     }
     let value = currentFrameVersion(),
-      [value2, value3] = await Promise.all([
-        fetchWithReadTelemetry(encodeFileUrlPath(input)),
+      [portValueM, portStateG] = await Promise.all([
+        fetchWithReadTelemetry(encodeFileUrlPath(portInputI)),
         listingCache !== undefined
           ? Promise.resolve(listingCache)
           : ensureListing(),
       ]);
-    if (!options2) {
-      checkReadRedirect(value2, input, value);
+    if (!portOptionsC) {
+      checkReadRedirect(portValueM, portInputI, value);
     }
-    if (!value2.ok) {
+    if (!portValueM.ok) {
       throw {
-        code: value2.status === 404 ? "not_found" : "http",
-        status: value2.status,
-        message: input + ": HTTP " + String(value2.status),
+        code: portValueM.status === 404 ? "not_found" : "http",
+        status: portValueM.status,
+        message: portInputI + ": HTTP " + String(portValueM.status),
       };
     }
-    let value4 = new Uint8Array(await value2.arrayBuffer()),
-      value5 = value3?.get(input),
-      value6 = value5?.sha256 ?? "",
-      value7 =
-        value5?.contentType ??
-        value2.headers?.get("content-type")?.split(";")[0]?.trim() ??
-        fileMimeTypeFromPath(input) ??
+    let portResultC = new Uint8Array(await portValueM.arrayBuffer()),
+      portDataB = portStateG?.get(portInputI),
+      portValueN = portDataB?.sha256 ?? "",
+      portEntryA =
+        portDataB?.contentType ??
+        portValueM.headers?.get("content-type")?.split(";")[0]?.trim() ??
+        fileMimeTypeFromPath(portInputI) ??
         "application/octet-stream";
     return {
-      bytes: value4,
-      sha256: value6,
-      contentType: value7,
+      bytes: portResultC,
+      sha256: portValueN,
+      contentType: portEntryA,
       raw: true,
     };
   }
@@ -446,20 +446,20 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
     remoteVersionGeneration = 0,
     hotChangeGeneration = 0;
   function enqueuePublish(
-    input: Files.FilePublishEntries,
-    options2?: Files.FilePublishPreconditions,
+    portInputJ: Files.FilePublishEntries,
+    portOptionsD?: Files.FilePublishPreconditions,
   ) {
     let value = remoteVersionGeneration,
-      value2 = publishChain.then(() => publish(input, options2, value));
-    publishChain = value2.catch((): void => {
+      portValueO = publishChain.then(() => publish(portInputJ, portOptionsD, value));
+    publishChain = portValueO.catch((): void => {
       return;
     });
-    return value2;
+    return portValueO;
   }
   async function publish(
-    input: Files.FilePublishEntries,
-    options2: Files.FilePublishPreconditions | undefined,
-    context: number,
+    portInputK: Files.FilePublishEntries,
+    portOptionsE: Files.FilePublishPreconditions | undefined,
+    portValueP: number,
   ): Promise<Files.FilePublishResult> {
     if (canWrite && (listingCache === undefined || listingNarrowed)) {
       await Promise.race([
@@ -467,8 +467,8 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
           return;
         }),
         new Promise<void>(
-          (input2: () => void) =>
-            void setTimeout(input2, FILE_FETCH_TIMEOUT_MS),
+          (portInputL: () => void) =>
+            void setTimeout(portInputL, FILE_FETCH_TIMEOUT_MS),
         ),
       ]);
     }
@@ -478,13 +478,13 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         code: "not_writer",
       };
     }
-    let value = validateFilePublishBatch(input);
+    let value = validateFilePublishBatch(portInputK);
     if (value) {
       return value;
     }
     if (
-      context !== remoteVersionGeneration &&
-      options2?.ifMatch !== undefined
+      portValueP !== remoteVersionGeneration &&
+      portOptionsE?.ifMatch !== undefined
     ) {
       return {
         ok: false,
@@ -492,130 +492,130 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         live: version.version,
       };
     }
-    let value2 = await resolvePublishCapability();
-    if (value2 === null) {
+    let portValueQ = await resolvePublishCapability();
+    if (portValueQ === null) {
       canWrite = false;
       return {
         ok: false,
         code: "capability_disabled",
       };
     }
-    let value3 = Object.keys(input).flatMap((input2: string) => {
-      let entry = publishedFileOverrides.get(input2),
-        value12 =
-          options2?.ifMatch !== undefined &&
-          Object.hasOwn(options2.ifMatch, input2)
-            ? options2.ifMatch[input2]
+    let portStateH = Object.keys(portInputK).flatMap((portInputM: string) => {
+      let entry = publishedFileOverrides.get(portInputM),
+        portValueR =
+          portOptionsE?.ifMatch !== undefined &&
+          Object.hasOwn(portOptionsE.ifMatch, portInputM)
+            ? portOptionsE.ifMatch[portInputM]
             : undefined,
-        value13 =
+        portValueS =
           entry === undefined
             ? undefined
             : entry === null
               ? null
               : entry.sha256;
       if (
-        value12 === undefined ||
-        value13 === undefined ||
-        provisionalFileShas.has(input2) ||
-        value12 === value13
+        portValueR === undefined ||
+        portValueS === undefined ||
+        provisionalFileShas.has(portInputM) ||
+        portValueR === portValueS
       ) {
         return [];
       } else {
         return [
           {
-            path: input2,
-            liveSha: value13,
-            expected: value12,
+            path: portInputM,
+            liveSha: portValueS,
+            expected: portValueR,
           },
         ];
       }
     });
-    if (value3.length > 0) {
+    if (portStateH.length > 0) {
       return {
         ok: false,
         code: "conflict",
         live: version.version,
-        paths: value3,
+        paths: portStateH,
       };
     }
     let state: Record<string, NormalizedFilePublishInput | null> = {};
-    for (let [value12, value13] of Object.entries(input)) {
-      state[value12] = normalizeFilePublishInput(
-        value12,
-        value13,
+    for (let [portValueT, portValueU] of Object.entries(portInputK)) {
+      state[portValueT] = normalizeFilePublishInput(
+        portValueT,
+        portValueU,
       ) as NormalizedFilePublishInput | null;
     }
-    let state2: Record<string, PublishCapabilityEntry> = {},
+    let portValueV: Record<string, PublishCapabilityEntry> = {},
       items: string[] = [],
-      value4 =
-        options.preconditions === undefined
+      portResultD =
+        portOptions.preconditions === undefined
           ? {
               writes: true,
               deletes: true,
             }
-          : options.preconditions === false
+          : portOptions.preconditions === false
             ? {}
-            : options.preconditions,
-      value5: boolean = value4.writes === true,
-      value6 = value5 && value4.deletes === true;
-    for (let [value12, value13] of Object.entries(state)) {
-      let value14 =
-          options2?.ifMatch !== undefined &&
-          Object.hasOwn(options2.ifMatch, value12)
-            ? options2.ifMatch[value12]
+            : portOptions.preconditions,
+      portDataC: boolean = portResultD.writes === true,
+      portValueW = portDataC && portResultD.deletes === true;
+    for (let [portValueX, portValueY] of Object.entries(state)) {
+      let portValueZ =
+          portOptionsE?.ifMatch !== undefined &&
+          Object.hasOwn(portOptionsE.ifMatch, portValueX)
+            ? portOptionsE.ifMatch[portValueX]
             : undefined,
-        value15 = value14;
+        overrideSha256 = portValueZ;
       if (
-        typeof value15 === "string" &&
-        provisionalFileShas.has(value12) &&
-        publishedFileOverrides.get(value12)?.sha256 === value15
+        typeof overrideSha256 === "string" &&
+        provisionalFileShas.has(portValueX) &&
+        publishedFileOverrides.get(portValueX)?.sha256 === overrideSha256
       ) {
-        value15 = undefined;
+        overrideSha256 = undefined;
       }
-      if (typeof value15 === "string" && !FILE_SHA256_PATTERN.test(value15)) {
-        value15 = undefined;
+      if (typeof overrideSha256 === "string" && !FILE_SHA256_PATTERN.test(overrideSha256)) {
+        overrideSha256 = undefined;
       }
-      if (value13 !== null) {
-        state2[value12] =
-          value5 && value15 !== undefined
+      if (portValueY !== null) {
+        portValueV[portValueX] =
+          portDataC && overrideSha256 !== undefined
             ? {
-                ...value13,
-                ifMatch: value15,
+                ...portValueY,
+                ifMatch: overrideSha256,
               }
-            : value13;
+            : portValueY;
       } else {
-        state2[value12] =
-          value6 && publishSupportsDelete && typeof value15 === "string"
+        portValueV[portValueX] =
+          portValueW && publishSupportsDelete && typeof overrideSha256 === "string"
             ? {
                 delete: true,
-                ifMatch: value15,
+                ifMatch: overrideSha256,
               }
             : null;
       }
-      let value16 = state2[value12];
+      let publishedEntry = portValueV[portValueX];
       if (
-        value14 !== undefined &&
-        (value16 === null || value16 === undefined || !("ifMatch" in value16))
+        portValueZ !== undefined &&
+        (publishedEntry === null || publishedEntry === undefined || !("ifMatch" in publishedEntry))
       ) {
-        items.push(value12);
+        items.push(portValueX);
       }
     }
     let entries: Map<
       string,
       { bytes: Uint8Array<ArrayBufferLike>; hash: string }
     > = new Map();
-    for (let [value12, value13] of Object.entries(state)) {
-      if (value13 !== null) {
-        let value14 = await fileContentBytes(value13.content);
-        entries.set(value12, {
-          bytes: value14,
-          hash: await sha256(value14),
+    for (let [filePath, fileEntry] of Object.entries(state)) {
+      if (fileEntry !== null) {
+        let portValue_ = await fileContentBytes(fileEntry.content);
+        entries.set(filePath, {
+          bytes: portValue_,
+          hash: await sha256(portValue_),
         });
       }
     }
     if (
-      context !== remoteVersionGeneration &&
-      options2?.ifMatch !== undefined
+      portValueP !== remoteVersionGeneration &&
+      portOptionsE?.ifMatch !== undefined
     ) {
       return {
         ok: false,
@@ -623,179 +623,179 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         live: version.version,
       };
     }
-    let version2 = version.version,
-      value7 = hotChangeGeneration,
-      value8: import("../contracts/files-core").FilePublishReply;
+    let currentVersion = version.version,
+      portEntryB = hotChangeGeneration,
+      portValuea: import("../contracts/files-core").FilePublishReply;
     try {
-      value8 = await value2.publish(state2);
-    } catch (value12: unknown) {
+      portValuea = await portValueQ.publish(portValueV);
+    } catch (portValueb: unknown) {
       try {
-        options.onPublishError?.(value12);
+        portOptions.onPublishError?.(portValueb);
       } catch {}
-      let value13 = normalizeFilesPublishError(value12);
-      if (FILE_PUBLISH_WRITE_REVOKED_CODES.has(value13.code)) {
+      let portValuec = normalizeFilesPublishError(portValueb);
+      if (FILE_PUBLISH_WRITE_REVOKED_CODES.has(portValuec.code)) {
         canWrite = false;
       }
-      return value13;
+      return portValuec;
     }
-    let state3: Record<string, string> = {},
-      value9: boolean = hotChangeGeneration !== value7,
-      items2: string[] = [];
-    for (let [value12, value13] of Object.entries(state)) {
-      if (value13 === null) {
-        heldFileShas.set(value12, null);
-        if (!value9) {
-          publishedFileOverrides.set(value12, null);
-          listingCache?.delete(value12);
-          provisionalFileShas.delete(value12);
+    let portValued: Record<string, string> = {},
+      portValuee: boolean = hotChangeGeneration !== portEntryB,
+      portItems: string[] = [];
+    for (let [portValuef, portValueg] of Object.entries(state)) {
+      if (portValueg === null) {
+        heldFileShas.set(portValuef, null);
+        if (!portValuee) {
+          publishedFileOverrides.set(portValuef, null);
+          listingCache?.delete(portValuef);
+          provisionalFileShas.delete(portValuef);
         }
         continue;
       }
-      let { bytes: entry, hash: entry2 } = entries.get(value12)!,
-        value14 = value8.shas?.[value12],
-        value15 = value14 ?? entry2;
-      if (value14 === undefined) {
-        items2.push(value12);
+      let { bytes: entry, hash: portValueh } = entries.get(portValuef)!,
+        portValuei = portValuea.shas?.[portValuef],
+        portValuej = portValuei ?? portValueh;
+      if (portValuei === undefined) {
+        portItems.push(portValuef);
       }
-      state3[value12] = value15;
-      heldFileShas.set(value12, value15);
-      if (value9) {
+      portValued[portValuef] = portValuej;
+      heldFileShas.set(portValuef, portValuej);
+      if (portValuee) {
         continue;
       }
       if (
-        value14 === undefined &&
-        fileContentContainsRuntimeMarkers(value13)
+        portValuei === undefined &&
+        fileContentContainsRuntimeMarkers(portValueg)
       ) {
-        provisionalFileShas.add(value12);
+        provisionalFileShas.add(portValuef);
       } else {
-        provisionalFileShas.delete(value12);
+        provisionalFileShas.delete(portValuef);
       }
-      publishedFileOverrides.set(value12, {
-        sha256: value15,
+      publishedFileOverrides.set(portValuef, {
+        sha256: portValuej,
         bytes: entry,
-        contentType: value13.contentType,
+        contentType: portValueg.contentType,
       });
-      listingCache?.set(value12, {
-        sha256: value15,
+      listingCache?.set(portValuef, {
+        sha256: portValuej,
         size: entry.length,
-        contentType: value13.contentType,
+        contentType: portValueg.contentType,
       });
     }
     bootFiles = undefined;
-    if (!value9) {
+    if (!portValuee) {
       version = {
-        version: value8.version,
-        ...(typeof value8.seq === "number"
+        version: portValuea.version,
+        ...(typeof portValuea.seq === "number"
           ? {
-              seq: value8.seq,
+              seq: portValuea.seq,
             }
           : {}),
       };
     }
-    let value10 =
-      value8.shas !== undefined &&
-      value8.shas !== null &&
-      typeof value8.shas === "object" &&
-      !Array.isArray(value8.shas);
-    if (value10) {
+    let portValuek =
+      portValuea.shas !== undefined &&
+      portValuea.shas !== null &&
+      typeof portValuea.shas === "object" &&
+      !Array.isArray(portValuea.shas);
+    if (portValuek) {
       publishSupportsDelete = true;
     }
-    let value11 = parseFileShaListing(value8.changed);
+    let portValuel = parseFileShaListing(portValuea.changed);
     if (
-      !(value11 !== undefined
-        ? value11.length > 0
-        : value10 && items.length === 0) &&
-      !value9 &&
-      value8.unchanged !== true &&
-      value8.version !== version2
+      !(portValuel !== undefined
+        ? portValuel.length > 0
+        : portValuek && items.length === 0) &&
+      !portValuee &&
+      portValuea.unchanged !== true &&
+      portValuea.version !== currentVersion
     ) {
-      ownPublishedVersions.add(value8.version);
+      ownPublishedVersions.add(portValuea.version);
     }
     publishGeneration += 1;
-    if (value8.unchanged !== true && value8.version !== version2) {
-      publishGenerationByVersion.set(value8.version, publishGeneration);
+    if (portValuea.unchanged !== true && portValuea.version !== currentVersion) {
+      publishGenerationByVersion.set(portValuea.version, publishGeneration);
       if (publishGenerationByVersion.size > maxRetainedVersions) {
         publishGenerationByVersion.delete(
           publishGenerationByVersion.keys().next().value!,
         );
       }
     }
-    for (let value12 of Object.keys(state)) {
-      lastPublishedGenerationByPath.set(value12, publishGeneration);
+    for (let portValuem of Object.keys(state)) {
+      lastPublishedGenerationByPath.set(portValuem, publishGeneration);
     }
     return {
       ok: true,
-      version: value8.version,
-      ...(typeof value8.seq === "number"
+      version: portValuea.version,
+      ...(typeof portValuea.seq === "number"
         ? {
-            seq: value8.seq,
+            seq: portValuea.seq,
           }
         : {}),
-      shas: state3,
-      ...(items2.length > 0
+      shas: portValued,
+      ...(portItems.length > 0
         ? {
-            computed: items2,
+            computed: portItems,
           }
         : {}),
-      ...(value8.unchanged === true
+      ...(portValuea.unchanged === true
         ? {
             unchanged: true,
           }
         : {}),
-      ...(value10 && items.length === 0
+      ...(portValuek && items.length === 0
         ? {
             preconditionsChecked: true,
           }
         : {}),
-      ...(value10 && items.length > 0
+      ...(portValuek && items.length > 0
         ? {
             unguarded: items,
           }
         : {}),
-      ...(value11 !== undefined
+      ...(portValuel !== undefined
         ? {
-            changed: value11,
+            changed: portValuel,
           }
         : {}),
     };
   }
   async function readFileText(
-    input: string,
-    options2?: boolean,
+    portInputN: string,
+    portOptionsF?: boolean,
   ): Promise<Files.FileTextRead> {
-    let value = await readFileBytes(input, options2),
-      value2 = fileTextDecoder.decode(value.bytes);
-    if (value.raw && isHtmlFilePath(input)) {
-      value2 = stripFrameRuntimeBlock(value2);
+    let value = await readFileBytes(portInputN, portOptionsF),
+      portValuen = fileTextDecoder.decode(value.bytes);
+    if (value.raw && isHtmlFilePath(portInputN)) {
+      portValuen = stripFrameRuntimeBlock(portValuen);
     }
-    let value3 =
-      value.sha256 !== "" ? value.sha256 : await sha256(value2);
-    heldFileShas.set(input, value3);
+    let portStateI =
+      value.sha256 !== "" ? value.sha256 : await sha256(portValuen);
+    heldFileShas.set(portInputN, portStateI);
     return {
-      text: value2,
-      sha256: value3,
+      text: portValuen,
+      sha256: portStateI,
     };
   }
-  let listingToFiles = (input: PortListingCache) => {
-    let value = [...input]
+  let listingToFiles = (portInputO: PortListingCache) => {
+    let value = [...portInputO]
       .sort(
         (
-          [input2]: [string, PortListingMetadata],
-          [options2]: [string, PortListingMetadata],
-        ): number => (input2 < options2 ? -1 : 1),
+          [portInputP]: [string, PortListingMetadata],
+          [portOptionsG]: [string, PortListingMetadata],
+        ): number => (portInputP < portOptionsG ? -1 : 1),
       )
-      .map(([input2, input3]: [string, PortListingMetadata]) => ({
-        path: input2,
-        ...input3,
-        ...(provisionalFileShas.has(input2) &&
-        publishedFileOverrides.get(input2)?.sha256 === input3.sha256
+      .map(([portInputQ, portInputR]: [string, PortListingMetadata]) => ({
+        path: portInputQ,
+        ...portInputR,
+        ...(provisionalFileShas.has(portInputQ) &&
+        publishedFileOverrides.get(portInputQ)?.sha256 === portInputR.sha256
           ? {
               provisional: true,
             }
           : {}),
       }));
     return Object.defineProperty(value, "narrowed", {
-      value: input.narrowed === true,
+      value: portInputO.narrowed === true,
     });
   };
   return {
@@ -819,44 +819,44 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
     async list(): Promise<Files.FileListing> {
       return listingToFiles(await readListing());
     },
-    async readBytes(input: string): Promise<Files.FileBytesRead> {
-      let value = await readFileBytes(input),
-        value2 =
+    async readBytes(portInputS: string): Promise<Files.FileBytesRead> {
+      let value = await readFileBytes(portInputS),
+        portValueo =
           value.sha256 !== ""
             ? value.sha256
             : await sha256(value.bytes);
-      heldFileShas.set(input, value2);
+      heldFileShas.set(portInputS, portValueo);
       return {
         bytes: value.bytes,
-        sha256: value2,
+        sha256: portValueo,
         contentType: value.contentType,
       };
     },
-    async peekBytes(input: string): Promise<{
+    async peekBytes(portInputT: string): Promise<{
       bytes: Uint8Array<ArrayBufferLike>;
       sha256?: string;
       contentType: string;
     }> {
       let callback = () => {
-          let entry2 = publishedFileOverrides.get(input);
-          if (entry2 === null) {
+          let portValuep = publishedFileOverrides.get(portInputT);
+          if (portValuep === null) {
             throw {
               code: "not_found",
               status: 404,
-              message: input + ": deleted by this tab",
+              message: portInputT + ": deleted by this tab",
             };
           }
-          if (entry2 === undefined) {
+          if (portValuep === undefined) {
             return undefined;
           } else {
             return {
-              bytes: entry2.bytes.slice(),
-              ...(provisionalFileShas.has(input)
+              bytes: portValuep.bytes.slice(),
+              ...(provisionalFileShas.has(portInputT)
                 ? {}
                 : {
-                    sha256: entry2.sha256,
+                    sha256: portValuep.sha256,
                   }),
-              contentType: entry2.contentType,
+              contentType: portValuep.contentType,
             };
           }
         },
@@ -864,10 +864,10 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
       if (value !== undefined) {
         return value;
       }
-      let entry = fileReadCache.get(input);
+      let entry = fileReadCache.get(portInputT);
       if (
         entry !== undefined &&
-        (listingCache?.get(input)?.sha256 ?? entry.sha256) === entry.sha256
+        (listingCache?.get(portInputT)?.sha256 ?? entry.sha256) === entry.sha256
       ) {
         return {
           bytes: entry.bytes.slice(),
@@ -875,100 +875,100 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
           contentType: entry.contentType,
         };
       }
-      let value2 = listingGeneration,
-        value3 = listingCache?.get(input)?.sha256,
-        value4 = currentFrameVersion(),
-        value5 = await fetchWithReadTelemetry(
-          encodeFileUrlPath(input),
+      let portValueq = listingGeneration,
+        portStateJ = listingCache?.get(portInputT)?.sha256,
+        portResultE = currentFrameVersion(),
+        portDataD = await fetchWithReadTelemetry(
+          encodeFileUrlPath(portInputT),
         );
-      checkReadRedirect(value5, input, value4);
-      if (!value5.ok) {
+      checkReadRedirect(portDataD, portInputT, portResultE);
+      if (!portDataD.ok) {
         throw {
-          code: value5.status === 404 ? "not_found" : "http",
-          status: value5.status,
-          message: input + ": HTTP " + String(value5.status),
+          code: portDataD.status === 404 ? "not_found" : "http",
+          status: portDataD.status,
+          message: portInputT + ": HTTP " + String(portDataD.status),
         };
       }
-      let value6 = new Uint8Array(await value5.arrayBuffer()),
-        value7 = callback();
-      if (value7 !== undefined) {
-        return value7;
+      let portValuer = new Uint8Array(await portDataD.arrayBuffer()),
+        portEntryC = callback();
+      if (portEntryC !== undefined) {
+        return portEntryC;
       }
-      let value8 = listingCache?.get(input),
-        value9 =
-          value2 === listingGeneration &&
+      let portValues = listingCache?.get(portInputT),
+        portValuet =
+          portValueq === listingGeneration &&
           listingCacheGeneration === listingGeneration &&
-          value8?.sha256 === value3 &&
-          value3 !== ""
-            ? value3
+          portValues?.sha256 === portStateJ &&
+          portStateJ !== ""
+            ? portStateJ
             : undefined;
       return {
-        bytes: value6,
-        ...(value9 !== undefined
+        bytes: portValuer,
+        ...(portValuet !== undefined
           ? {
-              sha256: value9,
+              sha256: portValuet,
             }
           : {}),
         contentType:
-          value8?.contentType ??
-          value5.headers?.get("content-type")?.split(";")[0]?.trim() ??
-          fileMimeTypeFromPath(input) ??
+          portValues?.contentType ??
+          portDataD.headers?.get("content-type")?.split(";")[0]?.trim() ??
+          fileMimeTypeFromPath(portInputT) ??
           "application/octet-stream",
       };
     },
     peekRows: () =>
       listingCache === undefined ? undefined : listingToFiles(listingCache),
-    readText: (input: string) => readFileText(input, false),
-    readTextUnchecked: (input: string) => readFileText(input, true),
+    readText: (portInputU: string) => readFileText(portInputU, false),
+    readTextUnchecked: (portInputV: string) => readFileText(portInputV, true),
     publish: enqueuePublish,
-    onRemoteChange(input: (change: Files.FileRemoteChange) => void) {
-      remoteChangeSubscribers.add(input);
-      return () => void remoteChangeSubscribers.delete(input);
+    onRemoteChange(portInputW: (change: Files.FileRemoteChange) => void) {
+      remoteChangeSubscribers.add(portInputW);
+      return () => void remoteChangeSubscribers.delete(portInputW);
     },
-    liveSha: (input: string) => {
+    liveSha: (portInputX: string) => {
       if (listingCache === undefined) {
-        return publishedFileOverrides.get(input)?.sha256;
+        return publishedFileOverrides.get(portInputX)?.sha256;
       }
-      let value = listingCache.get(input)?.sha256;
+      let value = listingCache.get(portInputX)?.sha256;
       if (value === "") {
         return undefined;
       } else {
         return value ?? (listingNarrowed ? undefined : null);
       }
     },
-    heldSha: (input: string) => heldFileShas.get(input),
-    olderThanMyWrite: (input: string, options2: string) => {
-      let entry = publishGenerationByVersion.get(input),
-        entry2 = lastPublishedGenerationByPath.get(options2);
-      return entry !== undefined && entry2 !== undefined && entry2 > entry;
+    heldSha: (portInputY: string) => heldFileShas.get(portInputY),
+    olderThanMyWrite: (portInputZ: string, portOptionsH: string) => {
+      let entry = publishGenerationByVersion.get(portInputZ),
+        portValueu = lastPublishedGenerationByPath.get(portOptionsH);
+      return entry !== undefined && portValueu !== undefined && portValueu > entry;
     },
-    wroteSinceAdopt: (input: string) =>
-      publishedFileOverrides.get(input) !== undefined &&
-      publishedFileOverrides.get(input) !== null,
+    wroteSinceAdopt: (filePath: string) =>
+      publishedFileOverrides.get(filePath) !== undefined &&
+      publishedFileOverrides.get(filePath) !== null,
     knownListing: () =>
       new Map(
         [...(listingCache ?? [])].map(
-          ([input, input2]: [string, PortListingMetadata]) => [
-            input,
-            input2.sha256,
+          ([filePath, metadata]: [string, PortListingMetadata]) => [
+            filePath,
+            metadata.sha256,
           ],
         ),
       ),
-    primeRead(input: string, options2: Files.FileBytesRead): void {
-      if (publishedFileOverrides.has(input)) {
+    primeRead(filePath: string, portOptionsI: Files.FileBytesRead): void {
+      if (publishedFileOverrides.has(filePath)) {
         return;
       }
-      fileReadCache.set(input, options2);
-      if (listingCache !== undefined && options2.sha256 !== "") {
-        listingCache.set(input, {
-          sha256: options2.sha256,
-          size: options2.bytes.length,
-          contentType: options2.contentType,
+      fileReadCache.set(filePath, portOptionsI);
+      if (listingCache !== undefined && portOptionsI.sha256 !== "") {
+        listingCache.set(filePath, {
+          sha256: portOptionsI.sha256,
+          size: portOptionsI.bytes.length,
+          contentType: portOptionsI.contentType,
         });
       }
     },
-    noteIncoming(input: Files.ChangedFileRow[]): void {
-      for (let value of input) {
+    noteIncoming(portInput_: Files.ChangedFileRow[]): void {
+      for (let value of portInput_) {
         if (listingEntryDiffers(value)) {
           continue;
         }
@@ -994,27 +994,27 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
       }
       listingCacheGeneration = listingGeneration;
     },
-    noteAdopted(input: Files.FileVersion): void {
+    noteAdopted(fileVersion: Files.FileVersion): void {
       freshReads = true;
       listingGeneration += 1;
       if (
-        ownPublishedVersions.has(input.version) &&
+        ownPublishedVersions.has(fileVersion.version) &&
         listingCacheGeneration === listingGeneration - 1
       ) {
         listingCacheGeneration = listingGeneration;
       }
       fileReadCache.clear();
       bootFiles = undefined;
-      if (!ownPublishedVersions.has(input.version)) {
-        let entry = publishGenerationByVersion.get(input.version);
-        for (let [value, value2] of [...publishedFileOverrides]) {
+      if (!ownPublishedVersions.has(fileVersion.version)) {
+        let entry = publishGenerationByVersion.get(fileVersion.version);
+        for (let [value, portValuev] of [...publishedFileOverrides]) {
           if (
             entry !== undefined &&
             (lastPublishedGenerationByPath.get(value) ?? 0) > entry
           ) {
             continue;
           }
-          if (listingCache !== undefined && value2 !== null) {
+          if (listingCache !== undefined && portValuev !== null) {
             listingCache.set(value, {
               sha256: "",
               size: listingCache.get(value)?.size ?? 0,
@@ -1028,9 +1028,9 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
           provisionalFileShas.delete(value);
         }
         if (entry !== undefined && listingCache !== undefined) {
-          for (let [value, value2] of lastPublishedGenerationByPath) {
+          for (let [value, portValuew] of lastPublishedGenerationByPath) {
             if (
-              value2 >= entry &&
+              portValuew >= entry &&
               !publishedFileOverrides.has(value) &&
               listingCache.has(value)
             ) {
@@ -1058,40 +1058,40 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
           hotChangeGeneration += 1;
         }
       }
-      version = input;
+      version = fileVersion;
     },
-    noteRemote(input: Files.FileRemoteChange): void {
-      let value = input.changed.filter(
-        (input2: Files.ChangedFileRow): boolean =>
-          listingEntryDiffers(input2) === false,
+    noteRemote(portInputa: Files.FileRemoteChange): void {
+      let value = portInputa.changed.filter(
+        (portInputb: Files.ChangedFileRow): boolean =>
+          listingEntryDiffers(portInputb) === false,
       );
-      for (let value3 of value) {
+      for (let portStateK of value) {
         if (listingCache !== undefined) {
-          if (value3.sha256 === null) {
-            listingCache.delete(value3.path);
+          if (portStateK.sha256 === null) {
+            listingCache.delete(portStateK.path);
           } else {
-            let entry = listingCache.get(value3.path);
-            listingCache.set(value3.path, {
-              sha256: value3.sha256,
-              size: entry?.sha256 === value3.sha256 ? entry.size : 0,
+            let entry = listingCache.get(portStateK.path);
+            listingCache.set(portStateK.path, {
+              sha256: portStateK.sha256,
+              size: entry?.sha256 === portStateK.sha256 ? entry.size : 0,
               contentType:
                 entry?.contentType ??
-                fileMimeTypeFromPath(value3.path) ??
+                fileMimeTypeFromPath(portStateK.path) ??
                 "application/octet-stream",
             });
           }
         }
       }
-      let value2 =
-        value.length === input.changed.length
-          ? input
+      let portValuex =
+        value.length === portInputa.changed.length
+          ? portInputa
           : {
-              ...input,
+              ...portInputa,
               changed: value,
             };
-      for (let value3 of [...remoteChangeSubscribers]) {
+      for (let portStateL of [...remoteChangeSubscribers]) {
         try {
-          value3(value2);
+          portStateL(portValuex);
         } catch {}
       }
     },
@@ -1140,11 +1140,11 @@ export function installFilesBrowserPort(): () => void {
       transform_error: "invalid_content",
     };
     FILE_SHA256_PATTERN = /^[0-9a-f]{64}$/;
-    normalizeFileSha256 = (input: unknown) =>
-      input === null
+    normalizeFileSha256 = (portInputc: unknown) =>
+      portInputc === null
         ? null
-        : typeof input === "string" && FILE_SHA256_PATTERN.test(input)
-          ? input
+        : typeof portInputc === "string" && FILE_SHA256_PATTERN.test(portInputc)
+          ? portInputc
           : undefined;
     FILE_SCOPE_PATH_PATTERN = /\/_f\/([^/]+)\//;
     FILE_FETCH_TIMEOUT_MS = 1e4;

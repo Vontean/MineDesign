@@ -38,195 +38,195 @@ function createCrashStashKit(
   let value = crashStashIdentityKey(artifactId, viewerId, tabId),
     items: CrashStashHead[] = [],
     callback = async <Default, Result>(
-      input: Default,
-      options: () => Result | Promise<Result>,
+      stashInput: Default,
+      stashOptions: () => Result | Promise<Result>,
     ): Promise<Default | Result> => {
       try {
-        return await options();
+        return await stashOptions();
       } catch {
-        return input;
+        return stashInput;
       }
     },
-    callback2 = (input: { artifactId: string }): boolean =>
-      stripArtifactScopeFragment(input.artifactId) ===
+    stashHandler = (stashInputA: { artifactId: string }): boolean =>
+      stripArtifactScopeFragment(stashInputA.artifactId) ===
       stripArtifactScopeFragment(artifactId),
-    callback3 = async (): Promise<Files.CrashStashEntry[]> => {
-      let items2: Files.CrashStashEntry[] = [];
-      for (let value2 of await storage.all()) {
+    stashHandlerA = async (): Promise<Files.CrashStashEntry[]> => {
+      let stashEntries: Files.CrashStashEntry[] = [];
+      for (let stashEntry of await storage.all()) {
         if (
-          !isCrashStashEntry(value2) ||
-          now() - value2.createdAt > CRASH_STASH_MAX_AGE_MS
+          !isCrashStashEntry(stashEntry) ||
+          now() - stashEntry.createdAt > CRASH_STASH_MAX_AGE_MS
         ) {
           if (
-            typeof (value2 as CrashStashWireValue | null)?.key === "string"
+            typeof (stashEntry as CrashStashWireValue | null)?.key === "string"
           ) {
-            await storage.delete((value2 as { key: string }).key);
+            await storage.delete((stashEntry as { key: string }).key);
           }
           continue;
         }
-        items2.push(value2);
+        stashEntries.push(stashEntry);
       }
-      return items2;
+      return stashEntries;
     },
-    callback4 = async (): Promise<Set<string>> => {
+    stashHandlerB = async (): Promise<Set<string>> => {
       let values = new Set(await liveTabs().catch(() => new Set<string>()));
       values.delete(tabId);
       return values;
     };
   return {
-    put: (items2: Files.StashedFileEdit[], options: string) =>
+    put: (stashEntriesA: Files.StashedFileEdit[], stashOptionsA: string) =>
       callback(false, async (): Promise<boolean> => {
         if (viewerId === "") {
           return false;
         }
-        if (items2.length === 0) {
+        if (stashEntriesA.length === 0) {
           await storage.delete(value);
           return true;
         }
-        let items3: Files.StashedFileEdit[] = [],
+        let stashEntriesB: Files.StashedFileEdit[] = [],
           index = 0;
-        for (let value7 of items2) {
+        for (let stashItem of stashEntriesA) {
           if (
-            items3.length >= CRASH_STASH_MAX_ENTRIES ||
-            index + crashStashEntrySize(value7) >
+            stashEntriesB.length >= CRASH_STASH_MAX_ENTRIES ||
+            index + crashStashEntrySize(stashItem) >
               CRASH_STASH_MAX_ARTIFACT_CHARS
           ) {
             continue;
           }
-          items3.push({
-            path: value7.path,
-            text: value7.text,
-            base: value7.base,
+          stashEntriesB.push({
+            path: stashItem.path,
+            text: stashItem.text,
+            base: stashItem.base,
           });
-          index += crashStashEntrySize(value7);
+          index += crashStashEntrySize(stashItem);
         }
-        let value2 = await callback3(),
-          value3 = await callback4(),
-          value4 = value2.filter(
-            (input: Files.CrashStashEntry): boolean => input.key !== value,
+        let stashEntryA = await stashHandlerA(),
+          stashRecords = await stashHandlerB(),
+          stashEdits = stashEntryA.filter(
+            (stashInputB: Files.CrashStashEntry): boolean => stashInputB.key !== value,
           ),
-          value5 =
+          stashCount =
             index +
-            value4.reduce(
-              (input: number, options2: Files.CrashStashEntry) =>
-                input + options2.chars,
+            stashEdits.reduce(
+              (stashInputC: number, stashOptionsB: Files.CrashStashEntry) =>
+                stashInputC + stashOptionsB.chars,
               0,
             );
-        for (let value7 of value4
+        for (let stashItemA of stashEdits
           .filter(
-            (input: Files.CrashStashEntry): boolean =>
-              !value3.has(input.tabId),
+            (stashInputD: Files.CrashStashEntry): boolean =>
+              !stashRecords.has(stashInputD.tabId),
           )
           .sort(
-            (input: Files.CrashStashEntry, options2: Files.CrashStashEntry) =>
-              input.at - options2.at,
+            (stashInputE: Files.CrashStashEntry, stashOptionsC: Files.CrashStashEntry) =>
+              stashInputE.at - stashOptionsC.at,
           )) {
-          if (value5 <= CRASH_STASH_MAX_TOTAL_CHARS) {
+          if (stashCount <= CRASH_STASH_MAX_TOTAL_CHARS) {
             break;
           }
-          await storage.delete(value7.key);
-          value5 -= value7.chars;
+          await storage.delete(stashItemA.key);
+          stashCount -= stashItemA.chars;
         }
-        if (value5 > CRASH_STASH_MAX_TOTAL_CHARS) {
+        if (stashCount > CRASH_STASH_MAX_TOTAL_CHARS) {
           return false;
         }
-        let value6 =
-          value2.find(
-            (input: Files.CrashStashEntry): boolean => input.key === value,
+        let stashEdit =
+          stashEntryA.find(
+            (stashInputF: Files.CrashStashEntry): boolean => stashInputF.key === value,
           )?.createdAt ?? now();
         await storage.put({
           key: value,
           artifactId: artifactId,
           viewerId: viewerId,
           tabId: tabId,
-          createdAt: value6,
+          createdAt: stashEdit,
           at: now(),
-          version: options,
-          edits: items3,
+          version: stashOptionsA,
+          edits: stashEntriesB,
           chars: index,
         });
-        return items3.length === items2.length;
+        return stashEntriesB.length === stashEntriesA.length;
       }),
     read: () =>
       callback(undefined, async (): Promise<CrashStashOffer> => {
         if (viewerId === "") {
           return;
         }
-        let value2 = await callback4(),
-          value3 = (await callback3())
+        let stashEntryB = await stashHandlerB(),
+          stashRecordsA = (await stashHandlerA())
             .filter(
-              (input: Files.CrashStashEntry) =>
-                input.artifactId === artifactId &&
-                input.viewerId === viewerId &&
-                !value2.has(input.tabId),
+              (stashInputG: Files.CrashStashEntry) =>
+                stashInputG.artifactId === artifactId &&
+                stashInputG.viewerId === viewerId &&
+                !stashEntryB.has(stashInputG.tabId),
             )
             .sort(
               (
-                input: Files.CrashStashEntry,
-                options: Files.CrashStashEntry,
-              ) => input.at - options.at,
+                stashInputH: Files.CrashStashEntry,
+                stashOptionsD: Files.CrashStashEntry,
+              ) => stashInputH.at - stashOptionsD.at,
             );
-        items = value3.map((input: Files.CrashStashEntry) => ({
-          key: input.key,
-          at: input.at,
+        items = stashRecordsA.map((stashInputI: Files.CrashStashEntry) => ({
+          key: stashInputI.key,
+          at: stashInputI.at,
         }));
         let entries: Map<string, Files.StashedFileEdit> = new Map();
-        for (let value5 of value3) {
-          for (let value6 of value5.edits) {
-            entries.set(value6.path, value6);
+        for (let stashCountA of stashRecordsA) {
+          for (let stashEditA of stashCountA.edits) {
+            entries.set(stashEditA.path, stashEditA);
           }
         }
         if (entries.size === 0) {
           return;
         }
-        let value4 = value3[value3.length - 1];
+        let stashEditsA = stashRecordsA[stashRecordsA.length - 1];
         return {
           createdAt: Math.min(
-            ...value3.map((input: Files.CrashStashEntry) => input.createdAt),
+            ...stashRecordsA.map((stashInputJ: Files.CrashStashEntry) => stashInputJ.createdAt),
           ),
-          at: value4.at,
-          version: value4.version,
+          at: stashEditsA.at,
+          version: stashEditsA.version,
           edits: [...entries.values()],
         };
       }),
     clear: () => callback(undefined, () => storage.delete(value)),
     clearOffered: () =>
       callback(undefined, async (): Promise<void> => {
-        let value2 = items;
+        let stashEntryC = items;
         items = [];
         let entries = new Map(
-          (await storage.all()).map((input: unknown): [unknown, unknown] => [
-            (input as CrashStashWireValue).key,
-            (input as CrashStashWireValue).at,
+          (await storage.all()).map((stashInputK: unknown): [unknown, unknown] => [
+            (stashInputK as CrashStashWireValue).key,
+            (stashInputK as CrashStashWireValue).at,
           ]),
         );
-        for (let value3 of value2) {
-          if (entries.get(value3.key) === value3.at) {
-            await storage.delete(value3.key);
+        for (let stashRecordsB of stashEntryC) {
+          if (entries.get(stashRecordsB.key) === stashRecordsB.at) {
+            await storage.delete(stashRecordsB.key);
           }
         }
       }),
     clearArtifact: () =>
       callback(undefined, async (): Promise<void> => {
-        for (let value2 of await storage.all()) {
+        for (let stashEntryD of await storage.all()) {
           if (
-            typeof (value2 as CrashStashWireValue | null)?.artifactId ===
+            typeof (stashEntryD as CrashStashWireValue | null)?.artifactId ===
               "string" &&
-            callback2(value2 as { artifactId: string })
+            stashHandler(stashEntryD as { artifactId: string })
           ) {
-            await storage.delete((value2 as { key: string }).key);
+            await storage.delete((stashEntryD as { key: string }).key);
           }
         }
       }),
     purgeOtherViewers: () =>
       callback(undefined, async (): Promise<void> => {
-        for (let value2 of await callback3()) {
+        for (let stashEntryE of await stashHandlerA()) {
           if (
             viewerId !== "" &&
-            callback2(value2) &&
-            value2.viewerId !== viewerId
+            stashHandler(stashEntryE) &&
+            stashEntryE.viewerId !== viewerId
           ) {
-            await storage.delete((value2 as { key: string }).key);
+            await storage.delete((stashEntryE as { key: string }).key);
           }
         }
       }),
@@ -237,12 +237,12 @@ function awaitIndexedDbRequest<Value>(
 ): Promise<Value> {
   return new Promise<Value>(
     (
-      input: (value: Value) => void,
-      options: (reason: unknown) => void,
+      stashInputL: (value: Value) => void,
+      stashOptionsE: (reason: unknown) => void,
     ): void => {
-      request.onsuccess = () => input(request.result);
+      request.onsuccess = () => stashInputL(request.result);
       request.onerror = () =>
-        options(request.error ?? Error("indexedDB request failed"));
+        stashOptionsE(request.error ?? Error("indexedDB request failed"));
     },
   );
 }
@@ -251,19 +251,19 @@ function createIndexedDbCrashStashStorage(indexedDb: IDBFactory) {
     callback = () => {
       value ??= new Promise<IDBDatabase>(
         (
-          input: (value: IDBDatabase) => void,
-          options: (reason: unknown) => void,
+          stashInputM: (value: IDBDatabase) => void,
+          stashOptionsF: (reason: unknown) => void,
         ): void => {
-          let value2 = indexedDb.open(CRASH_STASH_DATABASE_NAME, 1);
-          value2.onupgradeneeded = (): void => {
-            value2.result.createObjectStore(CRASH_STASH_OBJECT_STORE, {
+          let stashEntryF = indexedDb.open(CRASH_STASH_DATABASE_NAME, 1);
+          stashEntryF.onupgradeneeded = (): void => {
+            stashEntryF.result.createObjectStore(CRASH_STASH_OBJECT_STORE, {
               keyPath: "key",
             });
           };
-          value2.onsuccess = () => input(value2.result);
-          value2.onerror = () =>
-            options(value2.error ?? Error("indexedDB open failed"));
-          value2.onblocked = () => options(Error("indexedDB open blocked"));
+          stashEntryF.onsuccess = () => stashInputM(stashEntryF.result);
+          stashEntryF.onerror = () =>
+            stashOptionsF(stashEntryF.error ?? Error("indexedDB open failed"));
+          stashEntryF.onblocked = () => stashOptionsF(Error("indexedDB open blocked"));
         },
       );
       value.catch((): void => {
@@ -271,25 +271,25 @@ function createIndexedDbCrashStashStorage(indexedDb: IDBFactory) {
       });
       return value;
     },
-    callback2 = async <Result>(
-      input: (store: IDBObjectStore) => IDBRequest<Result>,
+    stashHandlerC = async <Result>(
+      stashInputN: (store: IDBObjectStore) => IDBRequest<Result>,
     ): Promise<void> => {
-      let value2 = (await callback()).transaction(
+      let stashEntryG = (await callback()).transaction(
           CRASH_STASH_OBJECT_STORE,
           "readwrite",
         ),
         promise = new Promise<void>(
-          (input2: () => void, options: (reason: unknown) => void): void => {
-            value2.oncomplete = () => input2();
-            value2.onerror = () =>
-              options(value2.error ?? Error("indexedDB transaction failed"));
-            value2.onabort = () =>
-              options(value2.error ?? Error("indexedDB transaction aborted"));
+          (stashInputO: () => void, stashOptionsG: (reason: unknown) => void): void => {
+            stashEntryG.oncomplete = () => stashInputO();
+            stashEntryG.onerror = () =>
+              stashOptionsG(stashEntryG.error ?? Error("indexedDB transaction failed"));
+            stashEntryG.onabort = () =>
+              stashOptionsG(stashEntryG.error ?? Error("indexedDB transaction aborted"));
           },
         );
       await Promise.all([
         awaitIndexedDbRequest(
-          input(value2.objectStore(CRASH_STASH_OBJECT_STORE)),
+          stashInputN(stashEntryG.objectStore(CRASH_STASH_OBJECT_STORE)),
         ),
         promise,
       ]);
@@ -302,16 +302,16 @@ function createIndexedDbCrashStashStorage(indexedDb: IDBFactory) {
           .objectStore(CRASH_STASH_OBJECT_STORE)
           .getAll() as IDBRequest<unknown[]>,
       ),
-    put: (input: Files.CrashStashEntry) =>
-      callback2((input2: IDBObjectStore) => input2.put(input)),
-    delete: (input: string) =>
-      callback2((input2: IDBObjectStore) => input2.delete(input)),
+    put: (stashInputP: Files.CrashStashEntry) =>
+      stashHandlerC((stashInputQ: IDBObjectStore) => stashInputQ.put(stashInputP)),
+    delete: (stashInputR: string) =>
+      stashHandlerC((stashInputS: IDBObjectStore) => stashInputS.delete(stashInputR)),
   };
 }
 function artifactPathWithoutFrameScope(
-  location2: Pick<Location, "pathname"> | undefined = globalThis.location,
+  stashValue: Pick<Location, "pathname"> | undefined = globalThis.location,
 ) {
-  return (location2?.pathname ?? "").replace(FRAME_SCOPE_PATH_PATTERN, "$1");
+  return (stashValue?.pathname ?? "").replace(FRAME_SCOPE_PATH_PATTERN, "$1");
 }
 function claimCrashStashTabLock(tabId: string) {
   let locks = getNavigatorLocks();
@@ -332,66 +332,66 @@ function claimCrashStashTabLock(tabId: string) {
   return async (): Promise<Set<string>> =>
     new Set(
       ((await locks.query()).held ?? [])
-        .map((input: LockInfo) => input.name ?? "")
-        .filter((input: string) =>
-          input.startsWith(CRASH_STASH_TAB_LOCK_PREFIX),
+        .map((stashInputT: LockInfo) => stashInputT.name ?? "")
+        .filter((stashInputU: string) =>
+          stashInputU.startsWith(CRASH_STASH_TAB_LOCK_PREFIX),
         )
-        .map((input: string) =>
-          input.slice(CRASH_STASH_TAB_LOCK_PREFIX.length),
+        .map((stashInputV: string) =>
+          stashInputV.slice(CRASH_STASH_TAB_LOCK_PREFIX.length),
         ),
     );
 }
-function createIndexedDbCrashStashKit(options: IndexedCrashStashOptions) {
+function createIndexedDbCrashStashKit(stashOptionsH: IndexedCrashStashOptions) {
   let indexedDb: IDBFactory | undefined;
   try {
-    indexedDb = options.indexedDB ?? globalThis.indexedDB;
+    indexedDb = stashOptionsH.indexedDB ?? globalThis.indexedDB;
   } catch {
     indexedDb = undefined;
   }
-  if (indexedDb === undefined || typeof options.viewerId !== "string") {
+  if (indexedDb === undefined || typeof stashOptionsH.viewerId !== "string") {
     return null;
   }
-  let tabId = options.tabId ?? crypto.randomUUID();
+  let tabId = stashOptionsH.tabId ?? crypto.randomUUID();
   return createCrashStashKit(
     createIndexedDbCrashStashStorage(indexedDb),
-    options.artifactId ?? artifactPathWithoutFrameScope(),
-    options.viewerId,
+    stashOptionsH.artifactId ?? artifactPathWithoutFrameScope(),
+    stashOptionsH.viewerId,
     tabId,
-    options.now ?? Date.now,
-    options.liveTabs ?? claimCrashStashTabLock(tabId),
+    stashOptionsH.now ?? Date.now,
+    stashOptionsH.liveTabs ?? claimCrashStashTabLock(tabId),
   );
 }
 async function createCurrentArtifactCrashStash(
   scope = "",
 ): Promise<Files.FilesCrashStash | null> {
   let value = (await currentUserId()) ?? "",
-    value2 = createIndexedDbCrashStashKit({
+    stashEntryH = createIndexedDbCrashStashKit({
       viewerId: value,
       artifactId:
         artifactPathWithoutFrameScope() + (scope === "" ? "" : "#" + scope),
     });
-  await value2?.purgeOtherViewers();
-  return value2;
+  await stashEntryH?.purgeOtherViewers();
+  return stashEntryH;
 }
 async function applyCrashStashEdits(
-  input: Files.FilesCrashStash,
-  options: (path: string) => string | null | undefined,
+  stashInputW: Files.FilesCrashStash,
+  stashOptionsI: (path: string) => string | null | undefined,
 ): Promise<CrashStashOffer> {
-  let value = await input.read();
+  let value = await stashInputW.read();
   if (value === undefined) {
     return;
   }
-  let value2 = value.edits.filter((input2: Files.StashedFileEdit) => {
-    let value3 = options(input2.path);
-    return value3 === undefined || value3 !== input2.text;
+  let stashEntryI = value.edits.filter((stashInputX: Files.StashedFileEdit) => {
+    let stashRecordsC = stashOptionsI(stashInputX.path);
+    return stashRecordsC === undefined || stashRecordsC !== stashInputX.text;
   });
-  if (value2.length === 0) {
-    await input.clearOffered();
+  if (stashEntryI.length === 0) {
+    await stashInputW.clearOffered();
     return;
   }
   return {
     ...value,
-    edits: value2,
+    edits: stashEntryI,
   };
 }
 export {
@@ -425,30 +425,30 @@ export function installFilesCrashStash(): () => void {
     CRASH_STASH_MAX_ENTRIES = 64;
     CRASH_STASH_MAX_ARTIFACT_CHARS = 1e6;
     CRASH_STASH_MAX_TOTAL_CHARS = 2000000;
-    crashStashIdentityKey = (input: string, options: string, context: string) =>
-      [input, options, context].join("\x00");
-    crashStashEntrySize = (input: Files.StashedFileEdit) =>
-      input.path.length + (input.text?.length ?? 0);
-    stripArtifactScopeFragment = (input: string) => input.split("#")[0];
-    isCrashStashEntry = (input: unknown): input is Files.CrashStashEntry =>
-      typeof (input as CrashStashWireValue | null)?.key === "string" &&
-      typeof (input as Files.CrashStashEntry).artifactId === "string" &&
-      typeof (input as Files.CrashStashEntry).viewerId === "string" &&
-      Number.isFinite((input as Files.CrashStashEntry).createdAt) &&
-      Number.isFinite((input as Files.CrashStashEntry).at) &&
-      Number.isFinite((input as Files.CrashStashEntry).chars) &&
-      (input as Files.CrashStashEntry).chars >= 0 &&
-      Array.isArray((input as Files.CrashStashEntry).edits) &&
-      (input as Files.CrashStashEntry).edits.every(
-        (input2: unknown) =>
-          typeof (input2 as Partial<Files.StashedFileEdit> | null)?.path ===
+    crashStashIdentityKey = (stashInputY: string, stashOptionsJ: string, stashValueA: string) =>
+      [stashInputY, stashOptionsJ, stashValueA].join("\x00");
+    crashStashEntrySize = (stashInputZ: Files.StashedFileEdit) =>
+      stashInputZ.path.length + (stashInputZ.text?.length ?? 0);
+    stripArtifactScopeFragment = (artifactId: string) => artifactId.split("#")[0];
+    isCrashStashEntry = (entryValue: unknown): entryValue is Files.CrashStashEntry =>
+      typeof (entryValue as CrashStashWireValue | null)?.key === "string" &&
+      typeof (entryValue as Files.CrashStashEntry).artifactId === "string" &&
+      typeof (entryValue as Files.CrashStashEntry).viewerId === "string" &&
+      Number.isFinite((entryValue as Files.CrashStashEntry).createdAt) &&
+      Number.isFinite((entryValue as Files.CrashStashEntry).at) &&
+      Number.isFinite((entryValue as Files.CrashStashEntry).chars) &&
+      (entryValue as Files.CrashStashEntry).chars >= 0 &&
+      Array.isArray((entryValue as Files.CrashStashEntry).edits) &&
+      (entryValue as Files.CrashStashEntry).edits.every(
+        (editValue: unknown) =>
+          typeof (editValue as Partial<Files.StashedFileEdit> | null)?.path ===
             "string" &&
-          (typeof (input2 as Partial<Files.StashedFileEdit>).text ===
+          (typeof (editValue as Partial<Files.StashedFileEdit>).text ===
             "string" ||
-            (input2 as Partial<Files.StashedFileEdit>).text === null) &&
-          (typeof (input2 as Partial<Files.StashedFileEdit>).base ===
+            (editValue as Partial<Files.StashedFileEdit>).text === null) &&
+          (typeof (editValue as Partial<Files.StashedFileEdit>).base ===
             "string" ||
-            (input2 as Partial<Files.StashedFileEdit>).base === null),
+            (editValue as Partial<Files.StashedFileEdit>).base === null),
       );
     CRASH_STASH_DATABASE_NAME = "appifact-crash-stash";
     CRASH_STASH_OBJECT_STORE = "entries";

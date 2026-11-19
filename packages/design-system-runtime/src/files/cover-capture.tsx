@@ -64,37 +64,37 @@ async function readCoverCaptureFonts(
     done: boolean = false,
     reads = [...new Set(paths)]
       .filter(
-        (input) =>
-          assetKindForPath(input) === "font" &&
-          !COVER_CAPTURE_REQUIRED_PATHS.includes(input) &&
-          !/[%?#]/.test(input),
+        (fileInput) =>
+          assetKindForPath(fileInput) === "font" &&
+          !COVER_CAPTURE_REQUIRED_PATHS.includes(fileInput) &&
+          !/[%?#]/.test(fileInput),
       )
       .slice(0, limits.files)
-      .map(async (input): Promise<void> => {
+      .map(async (fileInputA): Promise<void> => {
         try {
           let value = await reader.bytes(
               projectFilePath(
-                encodeRelativeUrlPath(input),
+                encodeRelativeUrlPath(fileInputA),
               ),
             ),
-            value2 =
+            fileValue =
               value === null
                 ? 0
                 : value.length *
-                  paths.filter((input2): boolean => input2 === input).length;
-          if (done || value === null || value2 > remainingBytes) {
+                  paths.filter((fileInputB): boolean => fileInputB === fileInputA).length;
+          if (done || value === null || fileValue > remainingBytes) {
             return;
           }
-          remainingBytes -= value2;
-          fonts[input] = coverFontDataUri(
+          remainingBytes -= fileValue;
+          fonts[fileInputA] = coverFontDataUri(
             value,
-            mimeTypeForPath(input),
+            mimeTypeForPath(fileInputA),
           );
         } catch {}
       });
   await Promise.race([
     Promise.all(reads),
-    new Promise((input) => setTimeout(input, limits.deadlineMs)),
+    new Promise((fileInputC) => setTimeout(fileInputC, limits.deadlineMs)),
   ]);
   done = true;
   return {
@@ -106,15 +106,15 @@ async function readCoverCaptureSystem(
   limits: Boot.CoverFontLimits = COVER_CAPTURE_FONT_LIMITS,
 ): Promise<Boot.CapturedCover | null> {
   let textFiles = await Promise.all(
-      COVER_CAPTURE_REQUIRED_PATHS.map((input) =>
-        reader.text(projectFilePath(input)),
+      COVER_CAPTURE_REQUIRED_PATHS.map((fileInputD) =>
+        reader.text(projectFilePath(fileInputD)),
       ),
     ),
     files: Record<string, string> = {};
-  COVER_CAPTURE_REQUIRED_PATHS.forEach((input, options): void => {
-    let value = textFiles[options];
+  COVER_CAPTURE_REQUIRED_PATHS.forEach((fileInputE, fileOptions): void => {
+    let value = textFiles[fileOptions];
     if (typeof value === "string") {
-      files[input] = value;
+      files[fileInputE] = value;
     }
   });
   let system = parseDesignSystemFiles(files);
@@ -126,7 +126,7 @@ async function readCoverCaptureSystem(
     return null;
   }
   let fontFiles = await readCoverCaptureFonts(
-      system.tokens.type.fonts.map((input) => input.file),
+      system.tokens.type.fonts.map((fileInputF) => fileInputF.file),
       reader,
       limits,
     ),
@@ -155,14 +155,14 @@ function loadCoverCaptureFontFaces({
     return Promise.resolve();
   }
   let loads = system.tokens.type.fonts
-    .filter((input) => fonts.includes(input.file))
-    .map((input) =>
+    .filter((fileInputG) => fonts.includes(fileInputG.file))
+    .map((fileInputH) =>
       new FontFace(
-        input.family,
-        'url("' + (system.files[input.file] ?? "") + '")',
+        fileInputH.family,
+        'url("' + (system.files[fileInputH.file] ?? "") + '")',
         {
-          weight: input.weight,
-          style: input.style,
+          weight: fileInputH.weight,
+          style: fileInputH.style,
         },
       ).load(),
     );
@@ -193,12 +193,12 @@ function CapturedDesignSystemCover({
   useUiLocale();
   let { system: value } = captured,
     ref = reactCoverCapture.useRef<HTMLDivElement | null>(null),
-    value2 = useHostThemeMode(),
-    { hostThemeId: value3, hostThemeMode: value4 } = resolvePreviewTheme(value.tokens.color.themes, value2, null),
+    fileValueA = useHostThemeMode(),
+    { hostThemeId: fileResult, hostThemeMode: fileRecord } = resolvePreviewTheme(value.tokens.color.themes, fileValueA, null),
     head = createPreviewHead(
       value,
-      value4,
-      value3,
+      fileRecord,
+      fileResult,
       false,
       undefined,
       !(
@@ -216,20 +216,20 @@ function CapturedDesignSystemCover({
       }),
       [head],
     ),
-    memo2 = reactCoverCapture.useMemo(
+    fileValueB = reactCoverCapture.useMemo(
       () => loadCoverCaptureFontFaces(captured),
       [captured],
     );
   reactCoverCapture.useLayoutEffect(() => {
-    let value7 = ref.current?.querySelector("iframe");
-    if (value7 == null) {
+    let fileEntry = ref.current?.querySelector("iframe");
+    if (fileEntry == null) {
       return;
     }
     let flag: boolean = true,
-      callback = (input: () => void) =>
-        void requestAnimationFrame(() => requestAnimationFrame(input)),
-      callback2 = () =>
-        void memo2.then((): void => {
+      callback = (fileInputI: () => void) =>
+        void requestAnimationFrame(() => requestAnimationFrame(fileInputI)),
+      fileValueC = () =>
+        void fileValueB.then((): void => {
           if (flag) {
             callback((): void => {
               if (flag) {
@@ -238,22 +238,22 @@ function CapturedDesignSystemCover({
             });
           }
         });
-    value7.addEventListener("load", callback2, {
+    fileEntry.addEventListener("load", fileValueC, {
       once: true,
     });
     return (): void => {
       flag = false;
-      value7.removeEventListener("load", callback2);
+      fileEntry.removeEventListener("load", fileValueC);
     };
-  }, [memo, memo2, onPainted]);
+  }, [memo, fileValueB, onPainted]);
   if (value.cover === null) {
     return null;
   }
-  let value5 = clampComponentStageHeight(value.cover.height),
-    value6 = coverCaptureFitWidth(
+  let fileName = clampComponentStageHeight(value.cover.height),
+    fileBytes = coverCaptureFitWidth(
       document.documentElement.clientWidth,
       document.documentElement.clientHeight,
-      value5,
+      fileName,
     );
   return (
     <div
@@ -270,8 +270,8 @@ function CapturedDesignSystemCover({
           html={value.cover.previewHtml}
           head={memo}
           pageW={COVER_CAPTURE_PAGE_WIDTH}
-          pageH={value5}
-          fitWidth={value6}
+          pageH={fileName}
+          fitWidth={fileBytes}
           title={uiMessage("design-system.coverCapture.cover")}
         />
       </div>
@@ -372,10 +372,10 @@ export function installFilesCoverCapture(): () => void {
       height: 0.76,
     };
     defaultCoverCaptureReader = {
-      text: async (input) =>
-        (await fetchCoverCaptureFile(input))?.text() ?? null,
-      bytes: async (input) => {
-        let value = await fetchCoverCaptureFile(input);
+      text: async (fileInputJ) =>
+        (await fetchCoverCaptureFile(fileInputJ))?.text() ?? null,
+      bytes: async (fileInputK) => {
+        let value = await fetchCoverCaptureFile(fileInputK);
         if (value === null) {
           return null;
         } else {
