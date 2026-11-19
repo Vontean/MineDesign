@@ -13,116 +13,116 @@ var numericInputFormatter: Dynamic;
 var PropertiesNumericScrubberClassNames: Dynamic;
 var PropertiesNumericScrubberResolvedValue: Dynamic;
 var PropertiesNumericScrubberClassNames_2: Dynamic;
-function decimalPlaces(input?: Dynamic): Dynamic {
-  let value: Dynamic = String(input),
-    value2: Dynamic = value.indexOf(".");
-  return value2 === -1 || value.includes("e") ? 0 : value.length - value2 - 1;
+function decimalPlaces(numericValue?: Dynamic): Dynamic {
+  let text: Dynamic = String(numericValue),
+    dotIndex: Dynamic = text.indexOf(".");
+  return dotIndex === -1 || text.includes("e") ? 0 : text.length - dotIndex - 1;
 }
-function roundNumericStep(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = 10 ** numericStepPrecision(options);
-  return Math.round(input * value) / value;
+function roundNumericStep(num?: Dynamic, step?: Dynamic): Dynamic {
+  let factor: Dynamic = 10 ** numericStepPrecision(step);
+  return Math.round(num * factor) / factor;
 }
-function numericStepPrecision(input?: Dynamic): Dynamic {
+function numericStepPrecision(step?: Dynamic): Dynamic {
   return Math.max(
     2,
-    decimalPlaces(input),
-    Math.ceil(-Math.log10(Math.max(input, Number.EPSILON))),
+    decimalPlaces(step),
+    Math.ceil(-Math.log10(Math.max(step, Number.EPSILON))),
   );
 }
 function snapNumericStep(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  rawValue?: Dynamic,
+  step?: Dynamic,
+  origin?: Dynamic,
 ): Dynamic {
-  if (!(options > 0) || !Number.isFinite(options) || !Number.isFinite(input))
-    return input + 0;
-  let value: Dynamic =
-      context == null && Number.isInteger(options) ? 1 : options,
-    value2: Dynamic = context ?? 0,
-    value3: Dynamic = (input - value2) / value,
-    value4: Dynamic = Math.round(Number(value3.toPrecision(12))),
-    value5: Dynamic =
-      10 ** Math.max(numericStepPrecision(value), decimalPlaces(value2)),
-    value6: Dynamic =
-      Math.round((value4 * value + value2) * value5) / value5 + 0;
-  if (Math.abs(value3) < 1e12 && Number.isFinite(value6)) return value6;
-  let value7: Dynamic = roundNumericStep(input, options) + 0;
-  return Number.isFinite(value7) ? value7 : input + 0;
+  if (!(step > 0) || !Number.isFinite(step) || !Number.isFinite(rawValue))
+    return rawValue + 0;
+  let effectiveStep: Dynamic =
+      origin == null && Number.isInteger(step) ? 1 : step,
+    effectiveOrigin: Dynamic = origin ?? 0,
+    stepsFloat: Dynamic = (rawValue - effectiveOrigin) / effectiveStep,
+    stepCount: Dynamic = Math.round(Number(stepsFloat.toPrecision(12))),
+    scale: Dynamic =
+      10 ** Math.max(numericStepPrecision(effectiveStep), decimalPlaces(effectiveOrigin)),
+    snapped: Dynamic =
+      Math.round((stepCount * effectiveStep + effectiveOrigin) * scale) / scale + 0;
+  if (Math.abs(stepsFloat) < 1e12 && Number.isFinite(snapped)) return snapped;
+  let fallback: Dynamic = roundNumericStep(rawValue, step) + 0;
+  return Number.isFinite(fallback) ? fallback : rawValue + 0;
 }
 function stepNumericValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = {},
+  startValue?: Dynamic,
+  direction?: Dynamic,
+  modifiers?: Dynamic,
+  limits: Dynamic = {},
 ): Dynamic {
-  let value2: Dynamic = value.step ?? 1,
-    value3: Dynamic = Math.min(0.1, value2),
-    value4: Dynamic = context.altKey
-      ? value3
-      : value2 * (context.shiftKey ? 10 : 1),
-    value5: Dynamic = roundNumericStep(input + options * value4, value2);
-  value.min != null && (value5 = Math.max(value.min, value5));
-  value.max != null && (value5 = Math.min(value.max, value5));
-  return value5;
+  let stepSize: Dynamic = limits.step ?? 1,
+    fineStep: Dynamic = Math.min(0.1, stepSize),
+    stepAmount: Dynamic = modifiers.altKey
+      ? fineStep
+      : stepSize * (modifiers.shiftKey ? 10 : 1),
+    steppedValue: Dynamic = roundNumericStep(startValue + direction * stepAmount, stepSize);
+  limits.min != null && (steppedValue = Math.max(limits.min, steppedValue));
+  limits.max != null && (steppedValue = Math.min(limits.max, steppedValue));
+  return steppedValue;
 }
-function createNumericScrubber(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options,
-    value2: Dynamic = null,
+function createNumericScrubber(getOptions?: Dynamic, startX?: Dynamic): Dynamic {
+  let lastX: Dynamic = startX,
+    scrubValue: Dynamic = null,
     flag: Dynamic = false;
   return {
-    move(input2: Dynamic, options2: Dynamic): Dynamic {
-      let value3: Dynamic = input(),
-        value4: Dynamic = input2 - value;
-      value = input2;
+    move(clientX: Dynamic, isFast: Dynamic): Dynamic {
+      let scrubOptions: Dynamic = getOptions(),
+        deltaX: Dynamic = clientX - lastX;
+      lastX = clientX;
       if (!flag) {
-        if (value4 === 0) return;
+        if (deltaX === 0) return;
         flag = true;
-        value3.onScrubbing?.(true);
+        scrubOptions.onScrubbing?.(true);
       }
-      value2 == null &&
-        (value2 = Number.isFinite(value3.value) ? value3.value : 0);
-      let value5: Dynamic = value3.step ?? 1,
-        callback: Dynamic = (input3?: Dynamic): Dynamic =>
+      scrubValue == null &&
+        (scrubValue = Number.isFinite(scrubOptions.value) ? scrubOptions.value : 0);
+      let stepSize: Dynamic = scrubOptions.step ?? 1,
+        clampValue: Dynamic = (candidate?: Dynamic): Dynamic =>
           Math.min(
-            value3.max ?? 1 / 0,
-            Math.max(value3.min ?? -1 / 0, input3),
+            scrubOptions.max ?? 1 / 0,
+            Math.max(scrubOptions.min ?? -1 / 0, candidate),
           );
-      value2 = callback(value2 + value4 * value5 * (options2 ? 10 : 1));
-      let value6: Dynamic =
-        value2 === value3.min || value2 === value3.max
-          ? value2
-          : callback(snapNumericStep(value2, value5, value3.origin));
-      value3.onScrub(value6 + 0);
+      scrubValue = clampValue(scrubValue + deltaX * stepSize * (isFast ? 10 : 1));
+      let snappedValue: Dynamic =
+        scrubValue === scrubOptions.min || scrubValue === scrubOptions.max
+          ? scrubValue
+          : clampValue(snapNumericStep(scrubValue, stepSize, scrubOptions.origin));
+      scrubOptions.onScrub(snappedValue + 0);
     },
     up(): Dynamic {
       if (!flag) return;
-      let value3: Dynamic = input();
-      value3.onScrubbing?.(false);
-      value3.onScrubEnd?.();
+      let scrubOptions: Dynamic = getOptions();
+      scrubOptions.onScrubbing?.(false);
+      scrubOptions.onScrubEnd?.();
     },
     get live(): Dynamic {
       return flag;
     },
   };
 }
-function useNumericScrub(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactPropertiesToolOptions_2.useRef)(
-    input,
+function useNumericScrub(latestOptions?: Dynamic): Dynamic {
+  let optionsRef: Dynamic = (0, reactPropertiesToolOptions_2.useRef)(
+    latestOptions,
   );
-  value.current = input;
-  let value2: Dynamic = (0, reactPropertiesToolOptions_2.useRef)(
+  optionsRef.current = latestOptions;
+  let cancelGestureRef: Dynamic = (0, reactPropertiesToolOptions_2.useRef)(
     null,
   );
   (0, reactPropertiesToolOptions_2.useEffect)(
     (): Dynamic => (): Dynamic => {
-      value2.current &&
-        value2.current === PropertiesNumericScrubberAlias &&
-        value2.current();
+      cancelGestureRef.current &&
+        cancelGestureRef.current === PropertiesNumericScrubberAlias &&
+        cancelGestureRef.current();
     },
     [],
   );
   return (event?: Dynamic): Dynamic => {
-    if (value.current.disabled || event.button !== 0) return;
+    if (optionsRef.current.disabled || event.button !== 0) return;
     event.preventDefault();
     let activeElement: Dynamic = (document as Dynamic).activeElement;
     activeElement &&
@@ -130,54 +130,54 @@ function useNumericScrub(input?: Dynamic): Dynamic {
       (activeElement.tagName === "INPUT" ||
         activeElement.tagName === "TEXTAREA") &&
       activeElement.blur?.();
-    value2.current = installNumericScrubGesture(
-      createNumericScrubber((): Dynamic => value.current, event.clientX),
+    cancelGestureRef.current = installNumericScrubGesture(
+      createNumericScrubber((): Dynamic => optionsRef.current, event.clientX),
     );
   };
 }
-function captureNumericPointer(input?: Dynamic): Dynamic {
-  if (!(input.button !== 0 || input.pointerType === "touch"))
+function captureNumericPointer(event?: Dynamic): Dynamic {
+  if (!(event.button !== 0 || event.pointerType === "touch"))
     try {
-      input.currentTarget.setPointerCapture(input.pointerId);
+      event.currentTarget.setPointerCapture(event.pointerId);
     } catch {}
 }
 function installNumericScrubGesture(
-  input?: Dynamic,
-  options: Dynamic = window,
+  scrubber?: Dynamic,
+  eventTarget: Dynamic = window,
 ): Dynamic {
   PropertiesNumericScrubberAlias?.();
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value: Dynamic = input2;
-      if (value.buttons === 0) {
-        callback3();
+  let handleMouseMove: Dynamic = (rawEvent?: Dynamic): Dynamic => {
+      let mouseEvent: Dynamic = rawEvent;
+      if (mouseEvent.buttons === 0) {
+        endGesture();
         return;
       }
-      input.move(value.clientX, value.shiftKey);
+      scrubber.move(mouseEvent.clientX, mouseEvent.shiftKey);
     },
-    callback2: Dynamic = (event?: Dynamic): Dynamic => {
+    handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
       event.key === "Escape" &&
-        (input.live && event.preventDefault(), callback3());
+        (scrubber.live && event.preventDefault(), endGesture());
     },
-    callback3: Dynamic = (): Dynamic => {
-      PropertiesNumericScrubberAlias === callback3 &&
+    endGesture: Dynamic = (): Dynamic => {
+      PropertiesNumericScrubberAlias === endGesture &&
         (PropertiesNumericScrubberAlias = null);
-      options.removeEventListener("mousemove", callback);
-      options.removeEventListener("mouseup", callback3);
-      options.removeEventListener("blur", callback3);
-      options.removeEventListener("keydown", callback2, true);
-      input.up();
+      eventTarget.removeEventListener("mousemove", handleMouseMove);
+      eventTarget.removeEventListener("mouseup", endGesture);
+      eventTarget.removeEventListener("blur", endGesture);
+      eventTarget.removeEventListener("keydown", handleKeyDown, true);
+      scrubber.up();
     };
-  PropertiesNumericScrubberAlias = callback3;
-  options.addEventListener("mousemove", callback);
-  options.addEventListener("mouseup", callback3);
-  options.addEventListener("blur", callback3);
-  options.addEventListener("keydown", callback2, true);
-  return callback3;
+  PropertiesNumericScrubberAlias = endGesture;
+  eventTarget.addEventListener("mousemove", handleMouseMove);
+  eventTarget.addEventListener("mouseup", endGesture);
+  eventTarget.addEventListener("blur", endGesture);
+  eventTarget.addEventListener("keydown", handleKeyDown, true);
+  return endGesture;
 }
-function numericInputDecimalPlaces(input?: Dynamic): Dynamic {
-  let value: Dynamic = String(input),
-    value2: Dynamic = value.indexOf(".");
-  return value2 === -1 || value.includes("e") ? 0 : value.length - value2 - 1;
+function numericInputDecimalPlaces(numericValue?: Dynamic): Dynamic {
+  let text: Dynamic = String(numericValue),
+    dotIndex: Dynamic = text.indexOf(".");
+  return dotIndex === -1 || text.includes("e") ? 0 : text.length - dotIndex - 1;
 }
 export {
   captureNumericPointer,

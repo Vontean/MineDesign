@@ -18,58 +18,58 @@ var reactPropertiesTokenColorPicker: Dynamic;
 var reactPropertiesTokenColorPicker_2: Dynamic;
 var AssetPickerContext: Dynamic;
 function matchArtboardColorToken(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  cssValue?: Dynamic,
+  tokens?: Dynamic,
+  excludedNames?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (input ?? "").trim();
-  if (value === "" || value.length > 128) return;
-  let value2: Dynamic = cssVariableName(value);
-  if (value2 !== null) return value2.replace(/^--/, "");
-  if (context === undefined) return;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic =
-        normalizeCssColor(input2) ??
-        (/^[a-z]+$/i.test(input2.trim()) &&
-        PropertiesDropShadowEditorTest(input2)
-          ? input2
+  let trimmedValue: Dynamic = (cssValue ?? "").trim();
+  if (trimmedValue === "" || trimmedValue.length > 128) return;
+  let variableName: Dynamic = cssVariableName(trimmedValue);
+  if (variableName !== null) return variableName.replace(/^--/, "");
+  if (excludedNames === undefined) return;
+  let toComparableColor: Dynamic = (colorText?: Dynamic): Dynamic => {
+      let validColor: Dynamic =
+        normalizeCssColor(colorText) ??
+        (/^[a-z]+$/i.test(colorText.trim()) &&
+        PropertiesDropShadowEditorTest(colorText)
+          ? colorText
           : undefined);
-      return value4 === undefined
+      return validColor === undefined
         ? undefined
-        : hsvaToRgbaCss(parseHsvaColor(value4));
+        : hsvaToRgbaCss(parseHsvaColor(validColor));
     },
-    value3: Dynamic = callback(value);
-  return value3 === undefined
+    targetColor: Dynamic = toComparableColor(trimmedValue);
+  return targetColor === undefined
     ? undefined
-    : options
+    : tokens
         .find(
-          (input2?: Dynamic): Dynamic =>
-            input2.name.startsWith("--") &&
-            !context.has(input2.name) &&
-            callback(
-              resolveColorTokenValue(input2.value, options) ??
-                input2.value,
-            ) === value3,
+          (token?: Dynamic): Dynamic =>
+            token.name.startsWith("--") &&
+            !excludedNames.has(token.name) &&
+            toComparableColor(
+              resolveColorTokenValue(token.value, tokens) ??
+                token.value,
+            ) === targetColor,
         )
         ?.name.replace(/^--/, "");
 }
-function editorColorSwatches(input?: Dynamic): Dynamic {
-  return input.map((input2?: Dynamic): Dynamic => {
-    let value: Dynamic = input2.name.replace(/^--/, "");
+function editorColorSwatches(tokens?: Dynamic): Dynamic {
+  return tokens.map((token?: Dynamic): Dynamic => {
+    let tokenLabel: Dynamic = token.name.replace(/^--/, "");
     return {
-      name: input2.name,
+      name: token.name,
       color:
-        resolveColorTokenValue(input2.value, input) ??
-        input2.value,
-      label: value.startsWith("#") ? value.toUpperCase() : value,
-      ...(input2.group !== undefined
+        resolveColorTokenValue(token.value, tokens) ??
+        token.value,
+      label: tokenLabel.startsWith("#") ? tokenLabel.toUpperCase() : tokenLabel,
+      ...(token.group !== undefined
         ? {
-            group: input2.group,
+            group: token.group,
           }
         : {}),
-      ...(input2.subgroup !== undefined
+      ...(token.subgroup !== undefined
         ? {
-            subgroup: input2.subgroup,
+            subgroup: token.subgroup,
           }
         : {}),
     };
@@ -84,49 +84,49 @@ function artboardColorSwatchGroup(items?: Dynamic): Dynamic {
     : undefined;
 }
 function matchAuthoredColorToken(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  authoredValue?: Dynamic,
+  swatches?: Dynamic,
+  usedNames?: Dynamic,
 ): Dynamic {
-  if (input === undefined) return null;
-  let value: Dynamic = cssVariableName(input);
-  if (value !== null)
-    return options.some((input2?: Dynamic): Dynamic => input2.name === value)
-      ? value
+  if (authoredValue === undefined) return null;
+  let variableName: Dynamic = cssVariableName(authoredValue);
+  if (variableName !== null)
+    return swatches.some((swatch?: Dynamic): Dynamic => swatch.name === variableName)
+      ? variableName
       : null;
-  if (!PropertiesDropShadowEditorTest(input)) return null;
-  let value2: Dynamic = hsvaToRgbaCss(
-      parseHsvaColor(input),
+  if (!PropertiesDropShadowEditorTest(authoredValue)) return null;
+  let targetColor: Dynamic = hsvaToRgbaCss(
+      parseHsvaColor(authoredValue),
     ),
-    value3: Dynamic = options.find(
-      (input2?: Dynamic): Dynamic =>
-        context?.has(input2.picks ?? input2.name) !== true &&
+    matchingSwatch: Dynamic = swatches.find(
+      (swatch?: Dynamic): Dynamic =>
+        usedNames?.has(swatch.picks ?? swatch.name) !== true &&
         hsvaToRgbaCss(
-          parseHsvaColor(input2.color),
-        ) === value2,
+          parseHsvaColor(swatch.color),
+        ) === targetColor,
     );
-  return value3 === undefined ? null : (value3.picks ?? value3.name);
+  return matchingSwatch === undefined ? null : (matchingSwatch.picks ?? matchingSwatch.name);
 }
 function resolveColorSwatchValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  swatchName?: Dynamic,
+  swatches?: Dynamic,
+  definedVars?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.find(
-    (input2?: Dynamic): Dynamic => input2.name === input,
+  let swatch: Dynamic = swatches.find(
+    (candidate?: Dynamic): Dynamic => candidate.name === swatchName,
   );
-  if (value)
-    return context?.has(input) === true
-      ? cssVariableValue(input)
-      : value.color;
+  if (swatch)
+    return definedVars?.has(swatchName) === true
+      ? cssVariableValue(swatchName)
+      : swatch.color;
 }
 function TokenColorPicker({
-  value: value,
+  value: colorValue,
   authoredValue: authoredValue,
   onChange: onChange,
   onPickEnd: onPickEnd,
-  tokens: tokens2,
-  context: context,
+  tokens: tokenList,
+  context: artboardSwatches,
   iframeDefinedVars: iframeDefinedVars,
   unset: unset,
   title: title,
@@ -134,45 +134,45 @@ function TokenColorPicker({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0,
+  let resolvedColor: Dynamic = (0,
     reactPropertiesDropShadowEditor_3.useMemo)(
       (): Dynamic =>
-        resolveColorTokenValue(value, tokens2) ?? value,
-      [value, tokens2],
+        resolveColorTokenValue(colorValue, tokenList) ?? colorValue,
+      [colorValue, tokenList],
     ),
-    value3: Dynamic = (0, reactPropertiesDropShadowEditor_3.useMemo)(
+    allSwatches: Dynamic = (0, reactPropertiesDropShadowEditor_3.useMemo)(
       (): Dynamic =>
         mergeDesignSystemSwatches(
-          context,
-          editorColorSwatches(tokens2),
+          artboardSwatches,
+          editorColorSwatches(tokenList),
         ),
-      [tokens2, context],
+      [tokenList, artboardSwatches],
     ),
-    value4: Dynamic = authoredValue ?? (unset ? undefined : value),
-    value5: Dynamic = (0, reactPropertiesDropShadowEditor_3.useMemo)(
+    authoredColor: Dynamic = authoredValue ?? (unset ? undefined : colorValue),
+    selectedSwatchName: Dynamic = (0, reactPropertiesDropShadowEditor_3.useMemo)(
       (): Dynamic =>
-        matchAuthoredColorToken(value4, value3, iframeDefinedVars),
-      [value4, value3, iframeDefinedVars],
+        matchAuthoredColorToken(authoredColor, allSwatches, iframeDefinedVars),
+      [authoredColor, allSwatches, iframeDefinedVars],
     );
   return (
     <div data-testid={"dc-color-picker-body"}>
       <ColorSwatchPicker
         {...props}
         title={title}
-        swatches={value3}
-        current={value5}
-        repick={unset === true && value5 !== null}
+        swatches={allSwatches}
+        current={selectedSwatchName}
+        repick={unset === true && selectedSwatchName !== null}
         fold={true}
-        onSwatch={(input?: Dynamic): Dynamic => {
-          let value6: Dynamic = resolveColorSwatchValue(
-            input,
-            value3,
+        onSwatch={(swatchName?: Dynamic): Dynamic => {
+          let swatchColor: Dynamic = resolveColorSwatchValue(
+            swatchName,
+            allSwatches,
             iframeDefinedVars,
           );
-          value6 !== undefined && (onChange(value6), onPickEnd?.(value6));
+          swatchColor !== undefined && (onChange(swatchColor), onPickEnd?.(swatchColor));
         }}
         color={{
-          value: value2 || "#ffffff",
+          value: resolvedColor || "#ffffff",
           unset: unset,
           onChange: onChange,
           onPickEnd: onPickEnd,

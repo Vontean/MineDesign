@@ -6,145 +6,145 @@ import {
 import { load_react } from "../../dependencies";
 import { ColorEffectButton, PropertyEditorPopover, RemovePropertyButton, ShadowEditor } from "./effect-popup";
 import { PropertyNumberRow, PropertyTextRow } from "./rows";
-import { asFiniteStyleNumber, asStyleString, clampStyleRangeField, PropertiesStyleBagItems, PropertiesStyleBagItems_2, propertyDefaultEditorValue, propertyValidatorForNode, reactPropertiesStyleBag, shadowEffectLabel, styleRangeField, styleRangeFieldValue } from "./style-bag";
+import { asFiniteStyleNumber, asStyleString, clampStyleRangeField, PropertiesStyleBagItems, PropertiesStyleBagItems_2 as effectRangeFields, propertyDefaultEditorValue, propertyValidatorForNode, reactPropertiesStyleBag, shadowEffectLabel, styleRangeField, styleRangeFieldValue } from "./style-bag";
 import { validateStyleColor } from "../style-schema/color-and-font";
 import { shadowFieldBounds } from "../style-schema/shadow";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesShadowEffectsFromEntriesValue: Dynamic;
 var reactPropertiesShadowEffects: Dynamic;
-function canonicalStyleColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = validateStyleColor(input);
-  return typeof value == "string"
-    ? value
-    : value === true
-      ? input.trim().toLowerCase()
+function canonicalStyleColor(colorText?: Dynamic): Dynamic {
+  let validation: Dynamic = validateStyleColor(colorText);
+  return typeof validation == "string"
+    ? validation
+    : validation === true
+      ? colorText.trim().toLowerCase()
       : undefined;
 }
 function setOptionalEffectField(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  effect?: Dynamic,
+  fieldName?: Dynamic,
+  fieldValue?: Dynamic,
 ): Dynamic {
-  if (context !== undefined)
+  if (fieldValue !== undefined)
     return {
-      ...input,
-      [options]: context,
+      ...effect,
+      [fieldName]: fieldValue,
     };
-  let { [options]: value, ...value2 }: Dynamic = input ?? {};
-  return Object.keys(value2).length === 0 ? undefined : value2;
+  let { [fieldName]: removedValue, ...remainingFields }: Dynamic = effect ?? {};
+  return Object.keys(remainingFields).length === 0 ? undefined : remainingFields;
 }
 function useEffectPopover(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = 0,
+  propKey?: Dynamic,
+  editor?: Dynamic,
+  index: Dynamic = 0,
 ): Dynamic {
-  let [value, value2]: Dynamic = (0,
+  let [localOpenEditor, setLocalOpenEditor]: Dynamic = (0,
     reactPropertiesStyleBag.useState)(undefined),
-    value3: Dynamic =
-      options.setOpenEditor !== undefined ? options.openEditor : value,
-    value4: Dynamic = options.setOpenEditor ?? value2,
-    value5: Dynamic = value3?.key === input && value3.index === context,
-    [value6, value7]: Dynamic = (0, reactPropertiesStyleBag.useState)(
+    openEditor: Dynamic =
+      editor.setOpenEditor !== undefined ? editor.openEditor : localOpenEditor,
+    setOpenEditor: Dynamic = editor.setOpenEditor ?? setLocalOpenEditor,
+    isOpen: Dynamic = openEditor?.key === propKey && openEditor.index === index,
+    [openedByKeyboard, setOpenedByKeyboard]: Dynamic = (0, reactPropertiesStyleBag.useState)(
       false,
     ),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      value4(
-        (input3?: Dynamic): Dynamic =>
-          input2
+    setOpen: Dynamic = (shouldOpen?: Dynamic): Dynamic =>
+      setOpenEditor(
+        (currentEditor?: Dynamic): Dynamic =>
+          shouldOpen
             ? {
-                key: input,
-                index: context,
+                key: propKey,
+                index: index,
               }
-            : input3?.key === input && input3.index === context
+            : currentEditor?.key === propKey && currentEditor.index === index
               ? undefined
-              : input3,
+              : currentEditor,
       ),
-    callback2: Dynamic = (): Dynamic =>
-      value4(
-        (input2?: Dynamic): Dynamic =>
-          input2?.key !== input
-            ? input2
-            : input2.index === context
+    closeAfterRemove: Dynamic = (): Dynamic =>
+      setOpenEditor(
+        (currentEditor?: Dynamic): Dynamic =>
+          currentEditor?.key !== propKey
+            ? currentEditor
+            : currentEditor.index === index
               ? undefined
-              : input2.index > context
+              : currentEditor.index > index
                 ? {
-                    key: input,
-                    index: input2.index - 1,
+                    key: propKey,
+                    index: currentEditor.index - 1,
                   }
-                : input2,
+                : currentEditor,
       ),
-    value8: Dynamic = (0, reactPropertiesStyleBag.useRef)(null);
+    wrapRef: Dynamic = (0, reactPropertiesStyleBag.useRef)(null);
   return {
-    open: value5,
-    setOpen: callback,
-    removed: callback2,
-    byKeyboard: value6,
-    setByKeyboard: value7,
-    wrapRef: value8,
+    open: isOpen,
+    setOpen: setOpen,
+    removed: closeAfterRemove,
+    byKeyboard: openedByKeyboard,
+    setByKeyboard: setOpenedByKeyboard,
+    wrapRef: wrapRef,
     anchor: (): Dynamic =>
-      value8.current?.closest("[data-property-row]") ?? null,
+      wrapRef.current?.closest("[data-property-row]") ?? null,
   };
 }
-function shadowEditorValue(input?: Dynamic, options?: Dynamic): Dynamic {
+function shadowEditorValue(shadow?: Dynamic, hasSpread?: Dynamic): Dynamic {
   return {
-    x: asFiniteStyleNumber(input.x) ?? 0,
-    y: asFiniteStyleNumber(input.y) ?? 0,
-    blur: asFiniteStyleNumber(input.blur) ?? 0,
-    ...(options
+    x: asFiniteStyleNumber(shadow.x) ?? 0,
+    y: asFiniteStyleNumber(shadow.y) ?? 0,
+    blur: asFiniteStyleNumber(shadow.blur) ?? 0,
+    ...(hasSpread
       ? {
-          spread: asFiniteStyleNumber(input.spread) ?? 0,
+          spread: asFiniteStyleNumber(shadow.spread) ?? 0,
         }
       : {}),
-    color: asStyleString(input.color) ?? "#000000",
+    color: asStyleString(shadow.color) ?? "#000000",
   };
 }
 function normalizeShadowEditorValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  shadow?: Dynamic,
+  previous?: Dynamic,
+  hasSpread?: Dynamic,
+  blurBounds?: Dynamic,
 ): Dynamic {
-  let [value2, value3, value4]: Dynamic = PropertiesStyleBagItems,
-    state: Dynamic = {
-      x: clampStyleRangeField(value2, input.x),
-      y: clampStyleRangeField(value3, input.y),
-      blur: clampStyleRangeField(value ?? value4, input.blur),
-      color: canonicalStyleColor(input.color) ?? options?.color ?? "#000000",
+  let [xBounds, yBounds, defaultBlurBounds]: Dynamic = PropertiesStyleBagItems,
+    normalized: Dynamic = {
+      x: clampStyleRangeField(xBounds, shadow.x),
+      y: clampStyleRangeField(yBounds, shadow.y),
+      blur: clampStyleRangeField(blurBounds ?? defaultBlurBounds, shadow.blur),
+      color: canonicalStyleColor(shadow.color) ?? previous?.color ?? "#000000",
     };
-  context &&
-    (state.spread = clampStyleRangeField(
+  hasSpread &&
+    (normalized.spread = clampStyleRangeField(
       styleRangeFieldValue,
-      input.spread ?? 0,
+      shadow.spread ?? 0,
     ));
-  options?.inset === true && (state.inset = true);
-  return state;
+  previous?.inset === true && (normalized.inset = true);
+  return normalized;
 }
 function ShadowEffectRow({
   propKey: propKey,
   list: list,
   index: index,
   rec: rec,
-  ed: ed2,
+  ed: editor,
   label: label,
 }: Dynamic): Dynamic {
   useUiLocale();
   let {
-      open: value,
-      setOpen: value2,
-      removed: value3,
-      byKeyboard: value4,
-      setByKeyboard: value5,
-      wrapRef: value6,
-      anchor: value7,
-    }: Dynamic = useEffectPopover(propKey, ed2, index),
-    value8: Dynamic = propKey === "boxShadow",
-    value9: Dynamic = label ?? shadowEffectLabel(propKey, rec),
-    value10: Dynamic =
-      rec !== undefined ? shadowEditorValue(rec, value8) : undefined,
-    value11: Dynamic = styleRangeField(
+      open: isOpen,
+      setOpen: setOpen,
+      removed: removeEffect,
+      byKeyboard: openedByKeyboard,
+      setByKeyboard: setOpenedByKeyboard,
+      wrapRef: wrapRef,
+      anchor: getAnchor,
+    }: Dynamic = useEffectPopover(propKey, editor, index),
+    isBoxShadow: Dynamic = propKey === "boxShadow",
+    effectLabel: Dynamic = label ?? shadowEffectLabel(propKey, rec),
+    shadowState: Dynamic =
+      rec !== undefined ? shadowEditorValue(rec, isBoxShadow) : undefined,
+    blurBounds: Dynamic = styleRangeField(
       shadowFieldBounds(
-        propertyValidatorForNode(propKey, ed2.kind),
+        propertyValidatorForNode(propKey, editor.kind),
       ),
       "blur",
       "Blur",
@@ -152,111 +152,111 @@ function ShadowEffectRow({
       1,
       "px",
     ),
-    value12: Dynamic =
-      value11.max === PropertiesShadowEffectsFromEntriesValue.blur?.max
+    editorBounds: Dynamic =
+      blurBounds.max === PropertiesShadowEffectsFromEntriesValue.blur?.max
         ? PropertiesShadowEffectsFromEntriesValue
         : {
             ...PropertiesShadowEffectsFromEntriesValue,
             blur: {
-              min: value11.min,
-              max: value11.max,
-              step: value11.step,
+              min: blurBounds.min,
+              max: blurBounds.max,
+              step: blurBounds.step,
             },
           },
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value13: Dynamic =
-        input === undefined
+    commitList: Dynamic = (updatedEffect?: Dynamic): Dynamic => {
+      let nextList: Dynamic =
+        updatedEffect === undefined
           ? list.filter(
-              (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                options !== index,
+              (item?: Dynamic, itemIndex?: Dynamic): Dynamic =>
+                itemIndex !== index,
             )
           : list.map(
-              (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                options === index ? input : input2,
+              (item?: Dynamic, itemIndex?: Dynamic): Dynamic =>
+                itemIndex === index ? updatedEffect : item,
             );
-      return value13.length === 0 ? undefined : value13;
+      return nextList.length === 0 ? undefined : nextList;
     },
-    live: Dynamic = ed2.live;
+    live: Dynamic = editor.live;
   return (
     <PropertyTextRow
-      label={value9}
-      disabled={ed2.disabled}
-      title={ed2.whyDisabled}
+      label={effectLabel}
+      disabled={editor.disabled}
+      title={editor.whyDisabled}
       trailing={
         <RemovePropertyButton
-          label={value9}
-          disabled={ed2.disabled || rec === undefined}
+          label={effectLabel}
+          disabled={editor.disabled || rec === undefined}
           onClick={(): Dynamic => {
-            value3();
-            ed2.commit(propKey, callback(undefined));
+            removeEffect();
+            editor.commit(propKey, commitList(undefined));
           }}
         />
       }
     >
-      <span ref={value6} className={"relative flex min-w-0 flex-1"}>
+      <span ref={wrapRef} className={"relative flex min-w-0 flex-1"}>
         <PropertyEditorPopover
-          open={value && rec !== undefined}
-          onOpenChange={value2}
+          open={isOpen && rec !== undefined}
+          onOpenChange={setOpen}
           trigger={
             <ColorEffectButton
-              label={value9}
-              color={value10?.color ?? null}
+              label={effectLabel}
+              color={shadowState?.color ?? null}
               text={
-                value10 !== undefined
-                  ? `${value10.x}, ${value10.y} \xB7 ${value10.blur}px`
+                shadowState !== undefined
+                  ? `${shadowState.x}, ${shadowState.y} \xB7 ${shadowState.blur}px`
                   : "None"
               }
-              disabled={ed2.disabled}
-              onClick={(input?: Dynamic): Dynamic => {
+              disabled={editor.disabled}
+              onClick={(event?: Dynamic): Dynamic => {
                 rec === undefined &&
-                  ed2.commit(
+                  editor.commit(
                     propKey,
                     propertyDefaultEditorValue(
                       propKey,
-                      ed2.kind,
+                      editor.kind,
                     ),
                   );
-                value5(input.detail === 0);
+                setOpenedByKeyboard(event.detail === 0);
               }}
             />
           }
-          anchor={value7}
-          focusOnOpen={value4}
+          anchor={getAnchor}
+          focusOnOpen={openedByKeyboard}
         >
           <ShadowEditor
-            title={value9}
-            value={value10 ?? shadowEditorValue({}, value8)}
-            spread={value8}
-            bounds={value12}
-            disabled={ed2.disabled}
-            swatches={ed2.swatches}
-            unifiedPopover={ed2.unifiedColorPopover}
-            onChange={(input?: Dynamic): Dynamic =>
-              ed2.commit(
+            title={effectLabel}
+            value={shadowState ?? shadowEditorValue({}, isBoxShadow)}
+            spread={isBoxShadow}
+            bounds={editorBounds}
+            disabled={editor.disabled}
+            swatches={editor.swatches}
+            unifiedPopover={editor.unifiedColorPopover}
+            onChange={(nextShadow?: Dynamic): Dynamic =>
+              editor.commit(
                 propKey,
-                callback(
-                  normalizeShadowEditorValue(input, rec, value8, value11),
+                commitList(
+                  normalizeShadowEditorValue(nextShadow, rec, isBoxShadow, blurBounds),
                 ),
               )
             }
-            {...(live && ed2.liveEnd
+            {...(live && editor.liveEnd
               ? {
-                  onLive: (input?: Dynamic): Dynamic =>
+                  onLive: (liveShadow?: Dynamic): Dynamic =>
                     live(
                       propKey,
-                      callback(
+                      commitList(
                         normalizeShadowEditorValue(
-                          input,
+                          liveShadow,
                           rec,
-                          value8,
-                          value11,
+                          isBoxShadow,
+                          blurBounds,
                         ),
                       ),
                     ),
-                  onLiveEnd: ed2.liveEnd,
+                  onLiveEnd: editor.liveEnd,
                 }
               : {})}
-            onClose={(): Dynamic => value2(false)}
+            onClose={(): Dynamic => setOpen(false)}
           />
         </PropertyEditorPopover>
       </span>
@@ -267,47 +267,47 @@ function BlurEffectRow({
   label: label,
   propKey: propKey,
   rec: rec,
-  ed: ed2,
+  ed: editor,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = PropertiesStyleBagItems_2.find(
-      (input?: Dynamic): Dynamic => input.field === "blur",
+  let blurField: Dynamic = effectRangeFields.find(
+      (field?: Dynamic): Dynamic => field.field === "blur",
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      setOptionalEffectField(rec, value.field, input),
-    live: Dynamic = ed2.live;
+    commitBlur: Dynamic = (blurValue?: Dynamic): Dynamic =>
+      setOptionalEffectField(rec, blurField.field, blurValue),
+    live: Dynamic = editor.live;
   return (
     <PropertyNumberRow
       label={label}
-      value={asFiniteStyleNumber(rec[value.field])}
+      value={asFiniteStyleNumber(rec[blurField.field])}
       placeholder={"0"}
-      min={value.min}
-      max={value.max}
-      step={value.step}
-      unit={value.unit}
-      disabled={ed2.disabled}
-      onValue={(input?: Dynamic): Dynamic =>
-        input !== undefined &&
-        ed2.commit(
+      min={blurField.min}
+      max={blurField.max}
+      step={blurField.step}
+      unit={blurField.unit}
+      disabled={editor.disabled}
+      onValue={(enteredValue?: Dynamic): Dynamic =>
+        enteredValue !== undefined &&
+        editor.commit(
           propKey,
-          callback(clampStyleRangeField(value, input)),
+          commitBlur(clampStyleRangeField(blurField, enteredValue)),
         )
       }
-      {...(live && ed2.liveEnd
+      {...(live && editor.liveEnd
         ? {
-            onScrub: (input?: Dynamic): Dynamic =>
+            onScrub: (scrubValue?: Dynamic): Dynamic =>
               live(
                 propKey,
-                callback(clampStyleRangeField(value, input)),
+                commitBlur(clampStyleRangeField(blurField, scrubValue)),
               ),
-            onScrubEnd: ed2.liveEnd,
+            onScrubEnd: editor.liveEnd,
           }
         : {})}
       trailing={
         <RemovePropertyButton
           label={label}
-          disabled={ed2.disabled}
-          onClick={(): Dynamic => ed2.commit(propKey, callback(undefined))}
+          disabled={editor.disabled}
+          onClick={(): Dynamic => editor.commit(propKey, commitBlur(undefined))}
         />
       }
     />
@@ -328,12 +328,12 @@ export function installEditorPropertiesShadowEffects(): () => void {
   return () => {
     PropertiesShadowEffectsFromEntriesValue = Object.fromEntries(
       [...PropertiesStyleBagItems, styleRangeFieldValue].map(
-        (input?: Dynamic): Dynamic => [
-          input.field,
+        (field?: Dynamic): Dynamic => [
+          field.field,
           {
-            min: input.min,
-            max: input.max,
-            step: input.step,
+            min: field.min,
+            max: field.max,
+            step: field.step,
           },
         ],
       ),

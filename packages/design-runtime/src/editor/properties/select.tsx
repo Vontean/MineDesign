@@ -27,8 +27,8 @@ function PropertyPickerRow({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = PropertiesPickerSearchMdLgConfig[rowSize],
-    value2: Dynamic =
+  let sizeClassName: Dynamic = PropertiesPickerSearchMdLgConfig[rowSize],
+    rowContent: Dynamic =
       hint !== undefined && hint !== "" ? (
         <span className={"flex min-w-0 flex-1 items-center gap-1.5"}>
           <span className={"min-w-0 truncate"}>{children}</span>
@@ -37,33 +37,33 @@ function PropertyPickerRow({
       ) : (
         children
       ),
-    value3: Dynamic =
+    itemClassName: Dynamic =
       typeof className == "function"
-        ? (input?: Dynamic): Dynamic =>
-            joinClassNames(value, className(input))
-        : joinClassNames(value, className),
-    value4: Dynamic = disabledReason !== undefined && disabledReason !== "";
+        ? (state?: Dynamic): Dynamic =>
+            joinClassNames(sizeClassName, className(state))
+        : joinClassNames(sizeClassName, className),
+    hasDisabledReason: Dynamic = disabledReason !== undefined && disabledReason !== "";
   return (
     <MenuMenuAssignValue.Item
       {...props}
-      className={value3}
-      disabled={props.disabled === true || value4}
-      disabledReason={value4 ? (disabledReason) : (undefined)}
+      className={itemClassName}
+      disabled={props.disabled === true || hasDisabledReason}
+      disabledReason={hasDisabledReason ? (disabledReason) : (undefined)}
     >
-      {value2}
+      {rowContent}
     </MenuMenuAssignValue.Item>
   );
 }
 function PropertySelect({
   items: items,
-  value: value,
+  value: selectedValue,
   onChange: onChange,
   "aria-label": ariaLabel,
   placeholder: placeholder,
   hint: hint,
   icon: icon,
   compact = false,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   align: align,
   popupAttrs: popupAttrs,
@@ -75,63 +75,63 @@ function PropertySelect({
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic =
-      value === null
+  let selectedItem: Dynamic =
+      selectedValue === null
         ? undefined
-        : items.find((input?: Dynamic): Dynamic => input.value === value),
-    value3: Dynamic = value2?.icon ?? icon,
-    value4: Dynamic = items.some(
-      (input?: Dynamic): Dynamic => input.icon != null,
+        : items.find((item?: Dynamic): Dynamic => item.value === selectedValue),
+    displayIcon: Dynamic = selectedItem?.icon ?? icon,
+    hasIcons: Dynamic = items.some(
+      (item?: Dynamic): Dynamic => item.icon != null,
     ),
-    value5: Dynamic =
-      value2?.label ??
+    selectedLabel: Dynamic =
+      selectedItem?.label ??
       placeholder ??
-      (value !== null && value !== "" ? String(value) : undefined),
-    value6: Dynamic = value5 ?? hint ?? "",
-    [value7, value8]: Dynamic = (0,
+      (selectedValue !== null && selectedValue !== "" ? String(selectedValue) : undefined),
+    triggerText: Dynamic = selectedLabel ?? hint ?? "",
+    [searchText, setSearchText]: Dynamic = (0,
     reactPropertiesNumericInput.useState)(""),
-    value9: Dynamic = (0, reactPropertiesNumericInput.useRef)(null),
-    value10: Dynamic = useTouchToolbar(),
-    value11: Dynamic = searchable ? value7.trim().toLowerCase() : "",
-    value12: Dynamic =
-      value11 === ""
+    searchInputRef: Dynamic = (0, reactPropertiesNumericInput.useRef)(null),
+    isTouchToolbar: Dynamic = useTouchToolbar(),
+    normalizedQuery: Dynamic = searchable ? searchText.trim().toLowerCase() : "",
+    visibleItems: Dynamic =
+      normalizedQuery === ""
         ? items
         : items.filter(
-            (input?: Dynamic): Dynamic =>
-              input.label.toLowerCase().includes(value11),
+            (item?: Dynamic): Dynamic =>
+              item.label.toLowerCase().includes(normalizedQuery),
           ),
-    callback: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = false,
+    queryMenuItems: Dynamic = (
+      menuElement?: Dynamic,
+      includeDisabled: Dynamic = false,
     ): Dynamic =>
       Array.from(
-        input
+        menuElement
           .closest('[role="menu"]')
           ?.querySelectorAll(
             '[role^="menuitem"]' +
-              (options ? "" : ':not([aria-disabled="true"])'),
+              (includeDisabled ? "" : ':not([aria-disabled="true"])'),
           ) ?? [],
       ),
-    callback2: Dynamic = (event?: Dynamic): Dynamic => {
-      let current: Dynamic = value9.current,
-        value13: Dynamic = event.getModifierState("AltGraph");
-      !current ||
+    handleTypeToSearch: Dynamic = (event?: Dynamic): Dynamic => {
+      let searchInput: Dynamic = searchInputRef.current,
+        isAltGraph: Dynamic = event.getModifierState("AltGraph");
+      !searchInput ||
         event.target.closest("input") ||
         event.nativeEvent.isComposing ||
         event.keyCode === 229 ||
         event.key.length !== 1 ||
         event.key === " " ||
-        ((event.ctrlKey || event.altKey) && !value13) ||
+        ((event.ctrlKey || event.altKey) && !isAltGraph) ||
         event.metaKey ||
         (event.preventDefault(),
         event.stopPropagation(),
         event.preventBaseUIHandler(),
-        current.focus({
+        searchInput.focus({
           preventScroll: true,
         }),
-        value8(current.value + event.key));
+        setSearchText(searchInput.value + event.key));
     },
-    callback3: Dynamic = (event?: Dynamic): Dynamic => {
+    handleMouseDown: Dynamic = (event?: Dynamic): Dynamic => {
       let target: Dynamic = event.target;
       target instanceof
         (target.ownerDocument.defaultView ?? window).HTMLInputElement ||
@@ -142,21 +142,21 @@ function PropertySelect({
     };
   return (
     <MenuMenuAssignValue.Root
-      disabled={disabled2}
+      disabled={isDisabled}
       defaultOpen={defaultOpen}
-      onOpenChange={(input?: Dynamic): Dynamic => {
-        input || value8("");
-        onOpenChange?.(input);
+      onOpenChange={(isOpen?: Dynamic): Dynamic => {
+        isOpen || setSearchText("");
+        onOpenChange?.(isOpen);
       }}
     >
       <MenuMenuAssignValue.Trigger
-        disabled={disabled2}
+        disabled={isDisabled}
         render={
           <button
             type={"button"}
             data-kit={"PropertySelect"}
             data-testid={dataTestid}
-            aria-label={value6 === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (value6))}
+            aria-label={triggerText === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (triggerText))}
             title={title}
             className={joinClassNames(
               joinClassNamesValue_3,
@@ -164,21 +164,21 @@ function PropertySelect({
               className,
             )}
           >
-            {value3 != null ? (<EditorIcon
-                name={value3}
+            {displayIcon != null ? (<EditorIcon
+                name={displayIcon}
                 size={13}
                 className={
-                  value2?.icon != null ? "text-primary" : "text-muted"
+                  selectedItem?.icon != null ? "text-primary" : "text-muted"
                 }
               />) : (null)}
             <span
               className={joinClassNames(
                 "min-w-0 flex-1 truncate",
-                value5 === undefined && "text-muted",
-                value2 === undefined && value6 === "Mixed" && "text-muted",
+                selectedLabel === undefined && "text-muted",
+                selectedItem === undefined && triggerText === "Mixed" && "text-muted",
               )}
             >
-              {value6}
+              {triggerText}
             </span>
             <EditorIcon
               name={"CaretDown"}
@@ -192,9 +192,9 @@ function PropertySelect({
       />
       <MenuMenuAssignValue.Popup
         {...popupAttrs}
-        align={align ?? (value4 ? "end" : "start")}
+        align={align ?? (hasIcons ? "end" : "start")}
         className={joinClassNames(
-          value4
+          hasIcons
             ? "w-[calc(var(--anchor-width)+1.375rem)]"
             : "w-[var(--anchor-width)]",
           "max-w-none min-w-[12rem] [&_.scroll-fade-y]:[scrollbar-width:none]",
@@ -209,47 +209,47 @@ function PropertySelect({
                 fallbackAxisSide: "none",
               },
               maxVisibleItems: 10.5,
-              onKeyDown: callback2,
-              onMouseDown: callback3,
+              onKeyDown: handleTypeToSearch,
+              onMouseDown: handleMouseDown,
               header: (
                 <div className={"m-1 mb-2"}>
                   <TextInput
-                    ref={value9}
-                    value={value7}
+                    ref={searchInputRef}
+                    value={searchText}
                     onChange={(event?: Dynamic): Dynamic =>
-                      value8(event.target.value)
+                      setSearchText(event.target.value)
                     }
                     onKeyDown={(event?: Dynamic): Dynamic => {
                       if (event.nativeEvent.isComposing) {
                         event.stopPropagation();
                         return;
                       }
-                      let value13: Dynamic = callback(
+                      let itemElements: Dynamic = queryMenuItems(
                           event.currentTarget,
                           true,
                         ),
-                        value14: Dynamic =
+                        edgeItem: Dynamic =
                           event.key === "ArrowDown"
-                            ? value13[0]
+                            ? itemElements[0]
                             : event.key === "ArrowUp"
-                              ? value13[value13.length - 1]
+                              ? itemElements[itemElements.length - 1]
                               : undefined;
-                      if (value14 !== undefined || event.key === "Enter") {
+                      if (edgeItem !== undefined || event.key === "Enter") {
                         event.preventDefault();
                         event.stopPropagation();
-                        value14 !== undefined
-                          ? value14.focus()
-                          : value11 !== "" &&
-                            callback(event.currentTarget)[
+                        edgeItem !== undefined
+                          ? edgeItem.focus()
+                          : normalizedQuery !== "" &&
+                            queryMenuItems(event.currentTarget)[
                               pickerSearchInitialIndex(
-                                value11,
-                                value12
+                                normalizedQuery,
+                                visibleItems
                                   .filter(
-                                    (input?: Dynamic): Dynamic =>
-                                      input.disabled !== true,
+                                    (item?: Dynamic): Dynamic =>
+                                      item.disabled !== true,
                                   )
                                   .map(
-                                    (input?: Dynamic): Dynamic => input.label,
+                                    (item?: Dynamic): Dynamic => item.label,
                                   ),
                               )
                             ]?.click();
@@ -271,9 +271,9 @@ function PropertySelect({
                     autoComplete={"off"}
                     spellCheck={false}
                     clearable={true}
-                    onClear={(): Dynamic => value8("")}
-                    autoFocus={!value10}
-                    tabIndex={value10 ? -1 : undefined}
+                    onClear={(): Dynamic => setSearchText("")}
+                    autoFocus={!isTouchToolbar}
+                    tabIndex={isTouchToolbar ? -1 : undefined}
                     data-kit={"list-search"}
                     className={"w-full"}
                   />
@@ -282,106 +282,106 @@ function PropertySelect({
             }
           : {})}
       >
-        {groupPickerRows(value12).map(
+        {groupPickerRows(visibleItems).map(
           (
-            input?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
+            groupItems?: Dynamic,
+            groupIndex?: Dynamic,
+            groups?: Dynamic,
           ): Dynamic => {
-            let { group: value13, subgroup: value14 }: Dynamic = input[0];
+            let { group: groupName, subgroup: subgroupName }: Dynamic = groupItems[0];
             return (() => {
-              const _Component2 =
+              const GroupFragment =
                 reactPropertiesNumericInput.Fragment;
-              const _props2 = {
+              const groupProps = {
                 children: [
-                  value13 !== undefined &&
-                  value13 !== context[options - 1]?.[0]?.group ? (
+                  groupName !== undefined &&
+                  groupName !== groups[groupIndex - 1]?.[0]?.group ? (
                     <jsxPropertiesPickerSearch.Fragment>
-                      {options > 0 ? (<MenuMenuAssignValue.Separator />) : (null)}
-                      <PickerListHeader text={value13} title={true} />
+                      {groupIndex > 0 ? (<MenuMenuAssignValue.Separator />) : (null)}
+                      <PickerListHeader text={groupName} title={true} />
                     </jsxPropertiesPickerSearch.Fragment>
                   ) : null,
                   <MenuMenuAssignValue.Group
                     aria-label={
-                      value13 !== undefined && value14 !== undefined ? (((value13) + (" \xB7 ")) + (value14)) : (value13)
+                      groupName !== undefined && subgroupName !== undefined ? (((groupName) + (" \xB7 ")) + (subgroupName)) : (groupName)
                     }
                   >
-                    {value14 !== undefined ? (<PickerListHeader text={value14} />) : (null)}
-                    {input.map(
-                      (input2?: Dynamic): Dynamic =>
+                    {subgroupName !== undefined ? (<PickerListHeader text={subgroupName} />) : (null)}
+                    {groupItems.map(
+                      (item?: Dynamic): Dynamic =>
                         (() => {
                           const _Component =
                             reactPropertiesNumericInput.Fragment;
                           const _props = {
                             children: [
-                              input2.separatorBefore === true ? (
+                              item.separatorBefore === true ? (
                                 <MenuMenuAssignValue.Separator />
                               ) : null,
                               <PropertyPickerRow
-                                checked={input2.value === value}
+                                checked={item.value === selectedValue}
                                 checkedRole={"radio"}
-                                label={input2.label}
-                                icon={input2.icon}
-                                disabled={input2.disabled}
-                                title={input2.title}
+                                label={item.label}
+                                icon={item.icon}
+                                disabled={item.disabled}
+                                title={item.title}
                                 disabledReason={
-                                  input2.disabled === true ? (input2.title) : (undefined)
+                                  item.disabled === true ? (item.title) : (undefined)
                                 }
-                                hint={input2.hint}
+                                hint={item.hint}
                                 rowSize={
-                                  input2.labelStyle !== undefined
+                                  item.labelStyle !== undefined
                                     ? "lg"
                                     : "md"
                                 }
                                 onClick={(): Dynamic => {
-                                  input2.value !== value &&
-                                    onChange(input2.value);
+                                  item.value !== selectedValue &&
+                                    onChange(item.value);
                                 }}
                               >
-                                {input2.labelStyle !== undefined ? (<span
+                                {item.labelStyle !== undefined ? (<span
                                     className={
                                       "truncate leading-tight [font-variation-settings:normal]"
                                     }
-                                    style={input2.labelStyle}
+                                    style={item.labelStyle}
                                   >
-                                    {input2.label}
-                                  </span>) : (input2.label)}
+                                    {item.label}
+                                  </span>) : (item.label)}
                               </PropertyPickerRow>,
                             ],
                           } as const;
-                          const _key = input2.value;
+                          const _key = item.value;
                           return <_Component key={_key} {..._props} />;
                         })(),
                     )}
                   </MenuMenuAssignValue.Group>,
                 ],
               } as const;
-              const _key2 =
-                (value13 ?? "") +
+              const groupKey =
+                (groupName ?? "") +
                 ":" +
-                (value14 ?? "") +
+                (subgroupName ?? "") +
                 ":" +
-                input[0].value;
-              return <_Component2 key={_key2} {..._props2} />;
+                groupItems[0].value;
+              return <GroupFragment key={groupKey} {...groupProps} />;
             })();
           },
         )}
-        {searchable && value12.length === 0 ? (<MenuMenuAssignValue.Item disabled={true}>
+        {searchable && visibleItems.length === 0 ? (<MenuMenuAssignValue.Item disabled={true}>
             {uiMessage("inspector.select.noMatches")}
           </MenuMenuAssignValue.Item>) : (null)}
       </MenuMenuAssignValue.Popup>
     </MenuMenuAssignValue.Root>
   );
 }
-function groupPickerRows(input?: Dynamic): Dynamic {
+function groupPickerRows(rows?: Dynamic): Dynamic {
   let items: Dynamic = [];
-  for (let value of input as Dynamic) {
-    let value2: Dynamic = items[items.length - 1];
-    value2 !== undefined &&
-    value2[0].group === value.group &&
-    value2[0].subgroup === value.subgroup
-      ? value2.push(value)
-      : items.push([value]);
+  for (let row of rows as Dynamic) {
+    let previousGroup: Dynamic = items[items.length - 1];
+    previousGroup !== undefined &&
+    previousGroup[0].group === row.group &&
+    previousGroup[0].subgroup === row.subgroup
+      ? previousGroup.push(row)
+      : items.push([row]);
   }
   return items;
 }
@@ -401,11 +401,11 @@ export function installEditorPropertiesSelect(): () => void {
     );
     PropertiesSelectOnKeyDownCaptureConfig = {
       onKeyDownCapture: (event?: Dynamic): Dynamic => {
-        let value: Dynamic =
+        let radioElement: Dynamic =
           event.target instanceof HTMLElement
             ? event.target.closest('[role="radio"]')
             : null;
-        if (value)
+        if (radioElement)
           if (
             event.key === "ArrowRight" ||
             event.key === "ArrowLeft" ||
@@ -415,26 +415,26 @@ export function installEditorPropertiesSelect(): () => void {
             event.preventDefault();
             event.stopPropagation();
             let items: Dynamic = [
-                ...(value
+                ...(radioElement
                   .closest('[role="radiogroup"]')
                   ?.querySelectorAll('[role="radio"]') ?? []),
               ],
-              value2: Dynamic =
+              stepDirection: Dynamic =
                 event.key === "ArrowRight" || event.key === "ArrowDown"
                   ? 1
                   : -1;
             items[
-              (items.indexOf(value) + value2 + items.length) % items.length
+              (items.indexOf(radioElement) + stepDirection + items.length) % items.length
             ]?.focus();
           } else
             event.key === "Enter" &&
-              (event.preventDefault(), event.stopPropagation(), value.click());
+              (event.preventDefault(), event.stopPropagation(), radioElement.click());
       },
     };
     PropertiesSelectMin = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => Math.min(context, Math.max(options, input));
+      valueToClamp?: Dynamic,
+      minimum?: Dynamic,
+      maximum?: Dynamic,
+    ): Dynamic => Math.min(maximum, Math.max(minimum, valueToClamp));
   };
 }

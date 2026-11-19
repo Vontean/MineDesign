@@ -61,7 +61,7 @@ function PropertyTextRow({
   title: title,
   description: description,
   onPress: onPress,
-  disabled: disabled2,
+  disabled: isDisabled,
   trailing: trailing,
   children: children,
 }: Dynamic): Dynamic {
@@ -71,7 +71,7 @@ function PropertyTextRow({
       label={label}
       onReset={onReset}
       onPress={onPress}
-      disabled={disabled2}
+      disabled={isDisabled}
       title={title}
       description={description}
       trailing={trailing}
@@ -82,11 +82,11 @@ function PropertyTextRow({
 }
 function PropertyNumberRow({
   label: label,
-  value: value,
+  value: currentValue,
   onValue: onValue,
   onScrub: onScrub,
   onScrubEnd: onScrubEnd,
-  min: min2,
+  min: minValue,
   max: max,
   step: step,
   smallStep: smallStep,
@@ -102,68 +102,68 @@ function PropertyNumberRow({
   adornment: adornment,
   trailing: trailing,
   onReset: onReset,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   description: description,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0, reactPropertiesSection.useRef)(false),
-    callback: Dynamic = (): Dynamic => {
-      value2.current = true;
+  let justScrubbedRef: Dynamic = (0, reactPropertiesSection.useRef)(false),
+    handleScrubEnd: Dynamic = (): Dynamic => {
+      justScrubbedRef.current = true;
       setTimeout((): Dynamic => {
-        value2.current = false;
+        justScrubbedRef.current = false;
       }, 0);
       onScrubEnd?.();
     },
-    value3: Dynamic =
+    placeholderNumber: Dynamic =
       onScrub &&
       emptyStepFrom !== null &&
       placeholder !== undefined &&
       /^-?\d+(\.\d+)?$/.test(placeholder)
         ? Number(placeholder)
         : undefined,
-    value4: Dynamic =
-      value ??
+    scrubBaseValue: Dynamic =
+      currentValue ??
       (typeof emptyStepFrom == "number" && Number.isFinite(emptyStepFrom)
         ? emptyStepFrom
-        : value3),
-    value5: Dynamic = !disabled2 && !mixed && value4 !== undefined,
-    value6: Dynamic = useNumericScrub({
-      value: value4 ?? NaN,
+        : placeholderNumber),
+    canScrub: Dynamic = !isDisabled && !mixed && scrubBaseValue !== undefined,
+    startScrub: Dynamic = useNumericScrub({
+      value: scrubBaseValue ?? NaN,
       step: step,
-      min: min2,
+      min: minValue,
       max: max,
-      disabled: !value5,
-      onScrub: (input?: Dynamic): Dynamic => (onScrub ?? onValue)(input),
-      onScrubEnd: callback,
+      disabled: !canScrub,
+      onScrub: (scrubbedValue?: Dynamic): Dynamic => (onScrub ?? onValue)(scrubbedValue),
+      onScrubEnd: handleScrubEnd,
     }),
-    value7: Dynamic = units !== undefined && onUnit !== undefined;
+    hasUnitSelect: Dynamic = units !== undefined && onUnit !== undefined;
   return (
     <PropertyRow
       label={label}
       title={title}
       description={description}
-      disabled={disabled2}
+      disabled={isDisabled}
       onReset={onReset}
       trailing={trailing}
       labelProps={{
-        onMouseDown: value5 ? value6 : undefined,
-        onPointerDown: value5 ? captureNumericPointer : undefined,
-        className: value5 ? "cursor-ew-resize" : undefined,
+        onMouseDown: canScrub ? startScrub : undefined,
+        onPointerDown: canScrub ? captureNumericPointer : undefined,
+        className: canScrub ? "cursor-ew-resize" : undefined,
       }}
       onPress={(element?: Dynamic): Dynamic => {
-        value2.current || element.querySelector("input")?.focus();
+        justScrubbedRef.current || element.querySelector("input")?.focus();
       }}
     >
       <NumericInput
         aria-label={label}
         prefix={prefix}
-        unit={value7 ? undefined : unit}
-        value={value}
+        unit={hasUnitSelect ? undefined : unit}
+        value={currentValue}
         onValue={onValue}
         onScrub={onScrub}
-        onScrubEnd={callback}
-        min={min2}
+        onScrubEnd={handleScrubEnd}
+        min={minValue}
         max={max}
         step={step}
         smallStep={smallStep}
@@ -172,21 +172,21 @@ function PropertyNumberRow({
         emptyStepFrom={emptyStepFrom}
         clearable={clearable}
         mixed={mixed}
-        disabled={disabled2}
+        disabled={isDisabled}
       />
-      {value7 ? (<PropertySelect
+      {hasUnitSelect ? (<PropertySelect
           compact={true}
           aria-label={uiMessage("inspector.rows.unit2", { value1: String(label) })}
           title={uiMessage("inspector.rows.unit")}
           items={units.map(
-            (input?: Dynamic): Dynamic => ({
-              value: input,
-              label: input,
+            (unitOption?: Dynamic): Dynamic => ({
+              value: unitOption,
+              label: unitOption,
             }),
           )}
           value={unit ?? units[0] ?? null}
           onChange={onUnit}
-          disabled={disabled2}
+          disabled={isDisabled}
           align={"end"}
         />) : (null)}
       {adornment}
@@ -194,173 +194,173 @@ function PropertyNumberRow({
   );
 }
 function rangeFraction(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  currentValue?: Dynamic,
+  minValue?: Dynamic,
+  maxValue?: Dynamic,
 ): Dynamic {
-  return context <= options
+  return maxValue <= minValue
     ? 0
-    : Math.max(0, Math.min(1, (input - options) / (context - options)));
+    : Math.max(0, Math.min(1, (currentValue - minValue) / (maxValue - minValue)));
 }
 function rangeValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  fraction?: Dynamic,
+  minValue?: Dynamic,
+  maxValue?: Dynamic,
+  step?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic =
-    options + Math.max(0, Math.min(1, input)) * (context - options);
-  if (!value || value <= 0) return value2;
-  let value3: Dynamic =
-      Math.round((value2 - options) / value) * value + options,
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value6: Dynamic = String(input2),
-        value7: Dynamic = value6.indexOf(".");
-      return value7 === -1 ? 0 : value6.length - value7 - 1;
+  let rawValue: Dynamic =
+    minValue + Math.max(0, Math.min(1, fraction)) * (maxValue - minValue);
+  if (!step || step <= 0) return rawValue;
+  let snapped: Dynamic =
+      Math.round((rawValue - minValue) / step) * step + minValue,
+    countDecimals: Dynamic = (numericValue?: Dynamic): Dynamic => {
+      let text: Dynamic = String(numericValue),
+        dotIndex: Dynamic = text.indexOf(".");
+      return dotIndex === -1 ? 0 : text.length - dotIndex - 1;
     },
-    value4: Dynamic = Math.max(callback(value), callback(options)),
-    value5: Dynamic = value4 === 0 ? value3 : Number(value3.toFixed(value4));
-  return Math.max(options, Math.min(context, value5));
+    precision: Dynamic = Math.max(countDecimals(step), countDecimals(minValue)),
+    rounded: Dynamic = precision === 0 ? snapped : Number(snapped.toFixed(precision));
+  return Math.max(minValue, Math.min(maxValue, rounded));
 }
 function PropertyRangeRow({
   label: label,
-  value: value,
+  value: currentValue,
   onValue: onValue,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
-  min: min2 = 0,
+  min: minValue = 0,
   max = 100,
   step = 1,
   unit: unit,
   adornment: adornment,
   mixed = false,
   onReset: onReset,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   description: description,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0, reactPropertiesSection.useRef)(new Set()),
-    value3: Dynamic = (0, reactPropertiesSection.useRef)(onLiveEnd);
-  value3.current = onLiveEnd;
-  let value4: Dynamic = (0, reactPropertiesSection.useRef)(value);
+  let cleanupCallbacksRef: Dynamic = (0, reactPropertiesSection.useRef)(new Set()),
+    latestLiveEndRef: Dynamic = (0, reactPropertiesSection.useRef)(onLiveEnd);
+  latestLiveEndRef.current = onLiveEnd;
+  let latestValueRef: Dynamic = (0, reactPropertiesSection.useRef)(currentValue);
   (0, reactPropertiesSection.useEffect)(
     (): Dynamic => (): Dynamic => {
-      for (let value6 of value2.current as Dynamic) value6();
-      value2.current.clear();
+      for (let cleanup of cleanupCallbacksRef.current as Dynamic) cleanup();
+      cleanupCallbacksRef.current.clear();
     },
     [],
   );
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      if (disabled2 || input.button !== 0) return;
-      let currentTarget: Dynamic = input.currentTarget,
+  let handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
+      if (isDisabled || event.button !== 0) return;
+      let currentTarget: Dynamic = event.currentTarget,
         bounds: Dynamic = currentTarget.getBoundingClientRect(),
-        pointerId: Dynamic = input.pointerId;
+        pointerId: Dynamic = event.pointerId;
       try {
         currentTarget.setPointerCapture(pointerId);
       } catch {}
       currentTarget.focus();
-      let value6: Dynamic = value,
-        flag: Dynamic = false,
-        callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-          let value7: Dynamic = rangeValue(
-            (input2 - bounds.left - 6) / (bounds.width - 12),
-            min2,
+      let lastValue: Dynamic = currentValue,
+        hasChanged: Dynamic = false,
+        applyPosition: Dynamic = (clientX?: Dynamic): Dynamic => {
+          let newValue: Dynamic = rangeValue(
+            (clientX - bounds.left - 6) / (bounds.width - 12),
+            minValue,
             max,
             step,
           );
-          value7 !== value6 &&
-            ((value6 = value7), (flag = true), (onLive ?? onValue)(value7));
+          newValue !== lastValue &&
+            ((lastValue = newValue), (hasChanged = true), (onLive ?? onValue)(newValue));
         };
-      callback3(input.clientX);
-      let callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-          input2.pointerId === pointerId && callback3(input2.clientX);
+      applyPosition(event.clientX);
+      let handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+          moveEvent.pointerId === pointerId && applyPosition(moveEvent.clientX);
         },
-        callback5: Dynamic = (): Dynamic => {
-          (window as Dynamic).removeEventListener("pointermove", callback4);
-          (window as Dynamic).removeEventListener("pointerup", callback7);
-          (window as Dynamic).removeEventListener("pointercancel", callback7);
+        removeWindowListeners: Dynamic = (): Dynamic => {
+          (window as Dynamic).removeEventListener("pointermove", handlePointerMove);
+          (window as Dynamic).removeEventListener("pointerup", handlePointerEnd);
+          (window as Dynamic).removeEventListener("pointercancel", handlePointerEnd);
         },
-        callback6: Dynamic = (): Dynamic => {
-          value2.current.delete(callback6);
-          callback5();
-          flag && ((flag = false), value3.current?.(value6));
+        finishDrag: Dynamic = (): Dynamic => {
+          cleanupCallbacksRef.current.delete(finishDrag);
+          removeWindowListeners();
+          hasChanged && ((hasChanged = false), latestLiveEndRef.current?.(lastValue));
         },
-        callback7: Dynamic = (input2?: Dynamic): Dynamic => {
-          input2.pointerId === pointerId && callback6();
+        handlePointerEnd: Dynamic = (endEvent?: Dynamic): Dynamic => {
+          endEvent.pointerId === pointerId && finishDrag();
         };
-      (window as Dynamic).addEventListener("pointermove", callback4);
-      (window as Dynamic).addEventListener("pointerup", callback7);
-      (window as Dynamic).addEventListener("pointercancel", callback7);
-      value2.current.add(callback6);
+      (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+      (window as Dynamic).addEventListener("pointerup", handlePointerEnd);
+      (window as Dynamic).addEventListener("pointercancel", handlePointerEnd);
+      cleanupCallbacksRef.current.add(finishDrag);
     },
-    callback2: Dynamic = (event?: Dynamic): Dynamic => {
-      if (disabled2) return;
-      let value6: Dynamic;
+    handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
+      if (isDisabled) return;
+      let nextValue: Dynamic;
       if (event.key === "ArrowRight" || event.key === "ArrowUp")
-        value6 = stepNumericValue(value, 1, event, {
+        nextValue = stepNumericValue(currentValue, 1, event, {
           step: step,
-          min: min2,
+          min: minValue,
           max: max,
         });
       else if (event.key === "ArrowLeft" || event.key === "ArrowDown")
-        value6 = stepNumericValue(value, -1, event, {
+        nextValue = stepNumericValue(currentValue, -1, event, {
           step: step,
-          min: min2,
+          min: minValue,
           max: max,
         });
-      else if (event.key === "Home") value6 = min2;
-      else if (event.key === "End") value6 = max;
+      else if (event.key === "Home") nextValue = minValue;
+      else if (event.key === "End") nextValue = max;
       else if (event.key === " ") {
         event.preventDefault();
         return;
       }
-      value6 !== undefined &&
-        (event.preventDefault(), value6 !== value && onValue(value6));
+      nextValue !== undefined &&
+        (event.preventDefault(), nextValue !== currentValue && onValue(nextValue));
     },
-    value5: Dynamic = rangeFraction(value, min2, max);
+    thumbFraction: Dynamic = rangeFraction(currentValue, minValue, max);
   return (
     <PropertyRow
       label={label}
       title={title}
       description={description}
-      disabled={disabled2}
+      disabled={isDisabled}
       onReset={onReset}
     >
       <div className={"w-[68px] shrink-0"}>
         <NumericInput
           aria-label={label}
-          value={mixed ? undefined : value}
+          value={mixed ? undefined : currentValue}
           mixed={mixed}
           emptyStepFrom={mixed ? null : undefined}
-          onValue={(input?: Dynamic): Dynamic => {
-            input !== undefined && onValue(input);
+          onValue={(enteredValue?: Dynamic): Dynamic => {
+            enteredValue !== undefined && onValue(enteredValue);
           }}
-          onScrub={(input?: Dynamic): Dynamic => {
-            value4.current = input;
-            (onLive ?? onValue)(input);
+          onScrub={(scrubbedValue?: Dynamic): Dynamic => {
+            latestValueRef.current = scrubbedValue;
+            (onLive ?? onValue)(scrubbedValue);
           }}
-          onScrubEnd={(): Dynamic => value3.current?.(value4.current)}
-          min={min2}
+          onScrubEnd={(): Dynamic => latestLiveEndRef.current?.(latestValueRef.current)}
+          min={minValue}
           max={max}
           step={step}
-          scrubOrigin={min2}
+          scrubOrigin={minValue}
           unit={unit}
           steppers={false}
-          disabled={disabled2}
+          disabled={isDisabled}
         />
       </div>
       <div
         role={"slider"}
         aria-label={label}
-        aria-valuemin={min2}
+        aria-valuemin={minValue}
         aria-valuemax={max}
-        aria-valuenow={mixed ? undefined : value}
+        aria-valuenow={mixed ? undefined : currentValue}
         aria-valuetext={mixed ? MixedValue : undefined}
-        aria-disabled={disabled2 || undefined}
-        tabIndex={disabled2 ? -1 : 0}
-        onPointerDown={callback}
-        onKeyDown={callback2}
+        aria-disabled={isDisabled || undefined}
+        tabIndex={isDisabled ? -1 : 0}
+        onPointerDown={handlePointerDown}
+        onKeyDown={handleKeyDown}
         className={
           "group/track relative ml-1 flex h-control min-w-8 flex-1 touch-none select-none items-center px-1.5 outline-none focus-visible:outline-hidden aria-disabled:opacity-50 pointer-coarse:h-10"
         }
@@ -369,7 +369,7 @@ function PropertyRangeRow({
           {mixed ? (null) : (<div
               className={"h-full rounded-full bg-fill-accent"}
               style={{
-                width: String(value5 * 100) + "%",
+                width: String(thumbFraction * 100) + "%",
               }}
             />)}
         </div>
@@ -380,7 +380,7 @@ function PropertyRangeRow({
               "bg-surface-3 shadow-panel-sm group-focus-visible/track:shadow-focus",
             )}
             style={{
-              left: "calc(" + String(value5) + " * (100% - 12px) + 6px)",
+              left: "calc(" + String(thumbFraction) + " * (100% - 12px) + 6px)",
             }}
           />)}
       </div>
@@ -393,7 +393,7 @@ function PropertyBooleanRow({
   checked: checked,
   onChange: onChange,
   onReset: onReset,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   description: description,
 }: Dynamic): Dynamic {
@@ -403,86 +403,86 @@ function PropertyBooleanRow({
       label={label}
       title={title}
       description={description}
-      disabled={disabled2}
+      disabled={isDisabled}
       onReset={onReset}
       onPress={(): Dynamic => onChange(!checked)}
     >
       <Switch
         checked={checked}
-        onCheckedChange={(input?: Dynamic): Dynamic => onChange(input)}
+        onCheckedChange={(isChecked?: Dynamic): Dynamic => onChange(isChecked)}
         aria-label={label}
-        disabled={disabled2}
+        disabled={isDisabled}
       />
     </PropertyRow>
   );
 }
 function PropertyEnumRow({
   label: label,
-  options: options,
-  value: value,
+  options: choices,
+  value: selectedValue,
   onChange: onChange,
   popupAttrs: popupAttrs,
   onReset: onReset,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   description: description,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = options.length > PropertiesRowsLimit;
+  let usesDropdown: Dynamic = choices.length > PropertiesRowsLimit;
   return (
     <PropertyRow
       label={label}
       title={title}
       description={description}
-      disabled={disabled2}
+      disabled={isDisabled}
       onReset={onReset}
       onPress={
-        value2
+        usesDropdown
           ? (element?: Dynamic): Dynamic =>
               element.querySelector('[data-kit="PropertySelect"]')?.click()
           : undefined
       }
     >
-      {value2 ? (<PropertySelect
+      {usesDropdown ? (<PropertySelect
           aria-label={label}
-          items={options.map(
-            (input?: Dynamic): Dynamic => ({
-              value: input.value,
-              label: input.label,
+          items={choices.map(
+            (option?: Dynamic): Dynamic => ({
+              value: option.value,
+              label: option.label,
             }),
           )}
-          value={value}
+          value={selectedValue}
           onChange={onChange}
-          disabled={disabled2}
+          disabled={isDisabled}
           popupAttrs={popupAttrs}
         />) : (<SegmentedControl
           aria-label={label}
           fullWidth={
-            !options.every(
-              (input?: Dynamic): Dynamic => input.icon !== undefined,
+            !choices.every(
+              (option?: Dynamic): Dynamic => option.icon !== undefined,
             )
           }
-          segments={options.map((input?: Dynamic): Dynamic => {
-            let state: Dynamic = {
-              disabled: disabled2 || input.whyDisabled !== undefined,
-              disabledReason: input.whyDisabled,
+          segments={choices.map((option?: Dynamic): Dynamic => {
+            let disabledState: Dynamic = {
+              disabled: isDisabled || option.whyDisabled !== undefined,
+              disabledReason: option.whyDisabled,
             };
-            return input.icon !== undefined
+            return option.icon !== undefined
               ? {
-                  value: input.value,
-                  icon: input.icon,
-                  tooltip: input.title ?? input.label,
-                  ...state,
+                  value: option.value,
+                  icon: option.icon,
+                  tooltip: option.title ?? option.label,
+                  ...disabledState,
                 }
               : {
-                  value: input.value,
-                  label: input.label,
-                  tooltip: input.title,
-                  ...state,
+                  value: option.value,
+                  label: option.label,
+                  tooltip: option.title,
+                  ...disabledState,
                 };
           })}
-          value={value}
-          onChange={disabled2 ? (): Dynamic => {} : onChange}
+          value={selectedValue}
+          onChange={isDisabled ? (): Dynamic => {} : onChange}
         />)}
     </PropertyRow>
   );
@@ -491,8 +491,8 @@ function PropertySelectRow({
   label: label,
   icon: icon,
   hint: hint,
-  options: options,
-  value: value,
+  options: choices,
+  value: selectedValue,
   onChange: onChange,
   placeholder: placeholder,
   popupAttrs: popupAttrs,
@@ -501,7 +501,7 @@ function PropertySelectRow({
   onOpenChange: onOpenChange,
   trailing: trailing,
   onReset: onReset,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   description: description,
 }: Dynamic): Dynamic {
@@ -511,7 +511,7 @@ function PropertySelectRow({
       label={label}
       title={title}
       description={description}
-      disabled={disabled2}
+      disabled={isDisabled}
       onReset={onReset}
       trailing={trailing}
       onPress={(element?: Dynamic): Dynamic =>
@@ -522,11 +522,11 @@ function PropertySelectRow({
         aria-label={label}
         icon={icon}
         hint={hint}
-        items={options}
-        value={value}
+        items={choices}
+        value={selectedValue}
         onChange={onChange}
         placeholder={placeholder}
-        disabled={disabled2}
+        disabled={isDisabled}
         popupAttrs={popupAttrs}
         searchable={searchable}
         searchLabel={searchLabel}
@@ -567,20 +567,20 @@ function ColorWellFace({
     </span>
   );
 }
-function useColorContrast(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic =
-    input === undefined ? undefined : JSON.stringify(input);
+function useColorContrast(contrast?: Dynamic, colorText?: Dynamic): Dynamic {
+  let contrastKey: Dynamic =
+    contrast === undefined ? undefined : JSON.stringify(contrast);
   return (0, reactPropertiesSection.useMemo)(
     (): Dynamic =>
-      input === undefined || options === undefined
+      contrast === undefined || colorText === undefined
         ? undefined
-        : evaluateColorContrast(options, input),
-    [value, options],
+        : evaluateColorContrast(colorText, contrast),
+    [contrastKey, colorText],
   );
 }
 function PropertyColorRow({
   label: label,
-  value: value,
+  value: colorValue,
   onChange: onChange,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
@@ -607,7 +607,7 @@ function PropertyColorRow({
   onNone: onNone,
   isNone: isNone,
   noneDisabledReason: noneDisabledReason,
-  disabled: disabled2,
+  disabled: isDisabled,
   disabledReason: disabledReason,
   keepFocus = false,
   editsAreUndoSteps: editsAreUndoSteps,
@@ -618,121 +618,121 @@ function PropertyColorRow({
   testid: testid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value2, value3]: Dynamic = (0,
+  let [isOpenInternal, setIsOpenInternal]: Dynamic = (0,
     reactPropertiesSection.useState)(false),
-    value4: Dynamic = open ?? value2,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value3(input);
-      onOpenChange?.(input);
+    isOpen: Dynamic = open ?? isOpenInternal,
+    setOpen: Dynamic = (nextOpen?: Dynamic): Dynamic => {
+      setIsOpenInternal(nextOpen);
+      onOpenChange?.(nextOpen);
     },
-    [value5, value6]: Dynamic = (0, reactPropertiesSection.useState)(
+    [shouldFocusOnOpen, setShouldFocusOnOpen]: Dynamic = (0, reactPropertiesSection.useState)(
       false,
     ),
-    value7: Dynamic = (0, reactPropertiesSection.useRef)(false),
-    value8: Dynamic = (0, reactPropertiesSection.useRef)(null),
-    value9: Dynamic = popover?.anchor,
-    value10: Dynamic =
-      value9 === undefined
+    openedByKeyboardRef: Dynamic = (0, reactPropertiesSection.useRef)(false),
+    triggerRef: Dynamic = (0, reactPropertiesSection.useRef)(null),
+    anchorOf: Dynamic = popover?.anchor,
+    getAnchor: Dynamic =
+      anchorOf === undefined
         ? undefined
         : (): Dynamic =>
-            value8.current === null ? null : value9(value8.current),
-    value11: Dynamic = (0,
+            triggerRef.current === null ? null : anchorOf(triggerRef.current),
+    parsedColor: Dynamic = (0,
     reactPropertiesSection.useMemo)((): Dynamic => {
-      let value28: Dynamic = value ?? placeholder;
-      if (value28 === undefined) return;
-      let value29: Dynamic = parseHsvaColor(value28);
+      let sourceColor: Dynamic = colorValue ?? placeholder;
+      if (sourceColor === undefined) return;
+      let parsedHsva: Dynamic = parseHsvaColor(sourceColor);
       return {
-        solid: hsvaToRgbHex(value29),
-        alpha: value29.a,
+        solid: hsvaToRgbHex(parsedHsva),
+        alpha: parsedHsva.a,
       };
-    }, [value, placeholder]),
-    value12: Dynamic =
-      value !== undefined && PropertiesRowsRgbaPattern.test(value),
-    value13: Dynamic = (0,
+    }, [colorValue, placeholder]),
+    isHexColor: Dynamic =
+      colorValue !== undefined && PropertiesRowsRgbaPattern.test(colorValue),
+    swatchLabel: Dynamic = (0,
     reactPropertiesSection.useMemo)((): Dynamic => {
-      if (!value12 || value11 === undefined) return;
+      if (!isHexColor || parsedColor === undefined) return;
       if (valueName !== undefined) return valueName ?? undefined;
       if (swatches === undefined) return;
       if (current !== undefined) {
         if (current === null) return;
-        let value29: Dynamic = swatches.find(
-          (input?: Dynamic): Dynamic =>
-            typeof input != "string" &&
-            (input.name === current ||
-              ("picks" in input && input.picks === current)),
+        let matchedSwatch: Dynamic = swatches.find(
+          (swatch?: Dynamic): Dynamic =>
+            typeof swatch != "string" &&
+            (swatch.name === current ||
+              ("picks" in swatch && swatch.picks === current)),
         );
-        return value29 !== undefined &&
-          typeof value29 != "string" &&
-          value29.label !== undefined &&
-          value29.label.trim() !== ""
-          ? value29.label
+        return matchedSwatch !== undefined &&
+          typeof matchedSwatch != "string" &&
+          matchedSwatch.label !== undefined &&
+          matchedSwatch.label.trim() !== ""
+          ? matchedSwatch.label
           : undefined;
       }
-      let value28: Dynamic = value11.solid.toLowerCase();
-      for (let value29 of swatches as Dynamic) {
-        let value30: Dynamic =
-          typeof value29 == "string"
-            ? value29
-            : "value" in value29
-              ? value29.value
-              : value29.color;
-        if (!PropertiesRowsRgbaPattern.test(value30)) continue;
-        let value31: Dynamic = parseHsvaColor(value30);
+      let solidHex: Dynamic = parsedColor.solid.toLowerCase();
+      for (let swatch of swatches as Dynamic) {
+        let swatchValue: Dynamic =
+          typeof swatch == "string"
+            ? swatch
+            : "value" in swatch
+              ? swatch.value
+              : swatch.color;
+        if (!PropertiesRowsRgbaPattern.test(swatchValue)) continue;
+        let swatchHsva: Dynamic = parseHsvaColor(swatchValue);
         if (
-          !(value31.a < 1) &&
-          hsvaToRgbHex(value31).toLowerCase() === value28
+          !(swatchHsva.a < 1) &&
+          hsvaToRgbHex(swatchHsva).toLowerCase() === solidHex
         )
-          return typeof value29 != "string" &&
-            value29.label !== undefined &&
-            value29.label.trim() !== ""
-            ? value29.label
+          return typeof swatch != "string" &&
+            swatch.label !== undefined &&
+            swatch.label.trim() !== ""
+            ? swatch.label
             : undefined;
       }
-    }, [value12, value11, swatches, current, valueName]),
-    value14: Dynamic =
-      value !== undefined
+    }, [isHexColor, parsedColor, swatches, current, valueName]),
+    displayText: Dynamic =
+      colorValue !== undefined
         ? typeof valueName == "string"
           ? valueName
-          : value12 && value11 !== undefined
-            ? (value13 ?? value11.solid.toUpperCase())
-            : value
+          : isHexColor && parsedColor !== undefined
+            ? (swatchLabel ?? parsedColor.solid.toUpperCase())
+            : colorValue
         : (clearLabel ?? placeholder ?? "None"),
-    value15: Dynamic =
-      value12 && value11 !== undefined && value11.alpha < 1
-        ? Math.round(value11.alpha * 100) + "%"
+    alphaText: Dynamic =
+      isHexColor && parsedColor !== undefined && parsedColor.alpha < 1
+        ? Math.round(parsedColor.alpha * 100) + "%"
         : undefined,
-    value16: Dynamic =
-      mixed || chip !== undefined ? undefined : (value ?? placeholder),
-    value17: Dynamic = useColorContrast(contrast, value16),
-    value18: Dynamic = (0, reactPropertiesSection.useMemo)(
+    contrastColor: Dynamic =
+      mixed || chip !== undefined ? undefined : (colorValue ?? placeholder),
+    contrastResults: Dynamic = useColorContrast(contrast, contrastColor),
+    contrastSentence: Dynamic = (0, reactPropertiesSection.useMemo)(
       (): Dynamic =>
-        value17 === undefined
+        contrastResults === undefined
           ? undefined
-          : summarizeContrastResults(value17).sentence,
-      [value17],
+          : summarizeContrastResults(contrastResults).sentence,
+      [contrastResults],
     ),
-    value19: Dynamic =
+    fullDescription: Dynamic =
       description !== undefined && description !== ""
-        ? value18 !== undefined
-          ? description.replace(/\.?\s*$/, ". ") + value18
+        ? contrastSentence !== undefined
+          ? description.replace(/\.?\s*$/, ". ") + contrastSentence
           : description
-        : value18,
-    value20: Dynamic = (0, reactPropertiesSection.useId)(),
-    value21: Dynamic = swatches !== undefined && swatches.length > 0,
-    value22: Dynamic =
+        : contrastSentence,
+    descriptionId: Dynamic = (0, reactPropertiesSection.useId)(),
+    hasSwatches: Dynamic = swatches !== undefined && swatches.length > 0,
+    isColorTab: Dynamic =
       headerTabs === undefined ||
       headerTabs.value === (headerTabs.colorTab ?? "color"),
-    [value23, value24]: Dynamic = (0,
+    [swatchTab, setSwatchTab]: Dynamic = (0,
     reactPropertiesSection.useState)("system"),
-    [value25, value26]: Dynamic = (0,
-    reactPropertiesSection.useState)(value4);
-  value4 !== value25 &&
-    (value26(value4),
-    value4 &&
-      (value24(value21 && value22 ? "system" : "custom"),
-      value6(value7.current),
-      (value7.current = false)));
-  let value27: Dynamic = (
+    [wasOpen, setWasOpen]: Dynamic = (0,
+    reactPropertiesSection.useState)(isOpen);
+  isOpen !== wasOpen &&
+    (setWasOpen(isOpen),
+    isOpen &&
+      (setSwatchTab(hasSwatches && isColorTab ? "system" : "custom"),
+      setShouldFocusOnOpen(openedByKeyboardRef.current),
+      (openedByKeyboardRef.current = false)));
+  let pickerContent: Dynamic = (
     <ColorPickerWithSwatches
       testid={testid !== undefined ? testid + "-menu" : undefined}
       title={popoverTitle ?? (label)}
@@ -740,11 +740,11 @@ function PropertyColorRow({
       current={current}
       onSwatch={onSwatch}
       fold={fold}
-      value={value ?? placeholder ?? "#000000"}
-      unset={value === undefined || mixed || !value22 || unset}
+      value={colorValue ?? placeholder ?? "#000000"}
+      unset={colorValue === undefined || mixed || !isColorTab || unset}
       repick={unset && current != null}
       opaque={opaque}
-      contrast={value16 !== undefined ? contrast : undefined}
+      contrast={contrastColor !== undefined ? contrast : undefined}
       onChange={onLive ?? onChange}
       onPickEnd={onLive ? onLiveEnd : undefined}
       none={
@@ -752,13 +752,13 @@ function PropertyColorRow({
           ? {
               current:
                 isNone ??
-                (value === undefined &&
+                (colorValue === undefined &&
                   placeholder === undefined &&
                   chip === undefined &&
                   !mixed),
               onPick: (): Dynamic => {
                 onNone ? onNone() : onChange(undefined);
-                callback(false);
+                setOpen(false);
               },
               ...(noneDisabledReason !== undefined
                 ? {
@@ -780,11 +780,11 @@ function PropertyColorRow({
           : undefined
       }
       face={panel}
-      tab={value21 ? value23 : undefined}
-      onTab={value24}
+      tab={hasSwatches ? swatchTab : undefined}
+      onTab={setSwatchTab}
       heading={popoverTitle ?? label}
       headerEnd={
-        value21 || headerTabs !== undefined || popoverTitle !== undefined ? (
+        hasSwatches || headerTabs !== undefined || popoverTitle !== undefined ? (
           <Button
             variant={"ghost"}
             size={"sm"}
@@ -797,7 +797,7 @@ function PropertyColorRow({
               />
             }
             aria-label={closeLabel}
-            onClick={(): Dynamic => callback(false)}
+            onClick={(): Dynamic => setOpen(false)}
             className={"relative shrink-0"}
           />
         ) : undefined
@@ -806,25 +806,25 @@ function PropertyColorRow({
   );
   return (
     <span
-      ref={value8}
+      ref={triggerRef}
       className={"relative flex min-w-0 flex-1"}
-      title={disabled2 ? (disabledReason) : (undefined)}
+      title={isDisabled ? (disabledReason) : (undefined)}
     >
       <EditorPopover
-        open={value4}
-        onOpen={(): Dynamic => callback(true)}
-        onClose={(): Dynamic => callback(false)}
+        open={isOpen}
+        onOpen={(): Dynamic => setOpen(true)}
+        onClose={(): Dynamic => setOpen(false)}
         trigger={
           <PropertyPickerButton
             data-testid={testid}
-            title={disabled2 ? (disabledReason ?? (title)) : (title)}
+            title={isDisabled ? (disabledReason ?? (title)) : (title)}
             aria-label={
-              label + ": " + (mixed ? MixedValue : chip !== undefined ? chip.text : value !== undefined ? value14 + (value15 !== undefined ? " " + value15 : "") : clearLabel !== undefined && /[\p{L}\p{N}]/u.test(clearLabel) ? clearLabel : clearLabel !== undefined ? uiMessage("inspector.rows.none") : uiMessage("inspector.rows.unset"))
+              label + ": " + (mixed ? MixedValue : chip !== undefined ? chip.text : colorValue !== undefined ? displayText + (alphaText !== undefined ? " " + alphaText : "") : clearLabel !== undefined && /[\p{L}\p{N}]/u.test(clearLabel) ? clearLabel : clearLabel !== undefined ? uiMessage("inspector.rows.none") : uiMessage("inspector.rows.unset"))
             }
-            aria-describedby={value19 !== undefined ? value20 : undefined}
-            disabled={disabled2}
-            onClick={(input?: Dynamic): Dynamic => {
-              value4 || (value7.current = input.detail === 0);
+            aria-describedby={fullDescription !== undefined ? descriptionId : undefined}
+            disabled={isDisabled}
+            onClick={(event?: Dynamic): Dynamic => {
+              isOpen || (openedByKeyboardRef.current = event.detail === 0);
             }}
             onMouseDown={keepFocus ? PropertiesRowsPreventDefault : undefined}
             muted={mixed}
@@ -851,37 +851,37 @@ function PropertyColorRow({
                 />
               ) : (
                 <ColorWellFace
-                  hex={value11?.solid ?? null}
-                  alpha={(value11?.alpha ?? 1) * 100}
+                  hex={parsedColor?.solid ?? null}
+                  alpha={(parsedColor?.alpha ?? 1) * 100}
                 />
               )
             }
-            caption={!mixed && chip === undefined ? value15 : undefined}
+            caption={!mixed && chip === undefined ? alphaText : undefined}
             trailing={
-              contrastMark && value17 !== undefined ? (
+              contrastMark && contrastResults !== undefined ? (
                 <ContrastMark
-                  results={value17}
+                  results={contrastResults}
                   sentence={false}
                   className={"ml-auto pl-1"}
                 />
               ) : undefined
             }
           >
-            {mixed ? (MixedValue) : (chip !== undefined ? (chip.text) : (value14))}
+            {mixed ? (MixedValue) : (chip !== undefined ? (chip.text) : (displayText))}
           </PropertyPickerButton>
         }
         align={"left"}
         side={popover?.side}
-        positionAnchor={value10}
+        positionAnchor={getAnchor}
         padding={"none"}
         aria-label={popoverTitle ?? (label)}
         className={ColorPickerLabel}
         popupAttrs={popupAttrs}
         editsAreUndoSteps={editsAreUndoSteps}
-        focusOnOpen={value5}
+        focusOnOpen={shouldFocusOnOpen}
         keepFocus={keepFocus}
         planHeight={
-          value21 || headerTabs !== undefined
+          hasSwatches || headerTabs !== undefined
             ? ColorPickerConstant
             : undefined
         }
@@ -890,18 +890,18 @@ function PropertyColorRow({
             data-session-strip={""}
             onKeyDownCapture={preventInputEnterSubmit}
           >
-            {value27}
-          </div>) : (value27)}
+            {pickerContent}
+          </div>) : (pickerContent)}
       </EditorPopover>
-      {value19 !== undefined ? (<span id={value20} hidden={true} data-kit={"field-description"}>
-          {value19}
+      {fullDescription !== undefined ? (<span id={descriptionId} hidden={true} data-kit={"field-description"}>
+          {fullDescription}
         </span>) : (null)}
     </span>
   );
 }
 function PropertyHexRow({
   label: label,
-  value: value,
+  value: hexValue,
   onChange: onChange,
   contrast: contrast,
   placeholder: placeholder,
@@ -911,31 +911,31 @@ function PropertyHexRow({
   mixed = false,
   chip: chip,
   onReset: onReset,
-  disabled: disabled2,
+  disabled: isDisabled,
   title: title,
   description: description,
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value2, value3]: Dynamic = (0,
+  let [isOpen, setIsOpen]: Dynamic = (0,
   reactPropertiesSection.useState)(false);
   return (
     <PropertyRow
       label={label}
       title={title}
-      disabled={disabled2}
+      disabled={isDisabled}
       onReset={
         onReset ??
-        (clearLabel !== undefined && value !== undefined
+        (clearLabel !== undefined && hexValue !== undefined
           ? (): Dynamic => onChange(undefined)
           : undefined)
       }
       trailing={trailing}
       onPress={(): Dynamic => {
-        disabled2 || value3(!value2);
+        isDisabled || setIsOpen(!isOpen);
       }}
       onPointerDown={(event?: Dynamic): Dynamic => {
-        value2 &&
+        isOpen &&
           !isNestedPropertyControl(
             event.currentTarget,
             event.target,
@@ -946,7 +946,7 @@ function PropertyHexRow({
       <PropertyColorRow
         {...props}
         label={label}
-        value={value}
+        value={hexValue}
         onChange={onChange}
         description={description}
         contrast={contrast}
@@ -954,9 +954,9 @@ function PropertyHexRow({
         clearLabel={clearLabel}
         mixed={mixed}
         chip={chip}
-        disabled={disabled2}
-        open={value2}
-        onOpenChange={value3}
+        disabled={isDisabled}
+        open={isOpen}
+        onOpenChange={setIsOpen}
       />
       {adornment}
     </PropertyRow>

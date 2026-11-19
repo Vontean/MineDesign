@@ -8,13 +8,13 @@ import { Button } from "../../cds/button/button";
 import { initializeCdsIndex } from "../../cds/index";
 import { DisabledReasonTooltip } from "../../cds/tooltip/tooltip";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
-import { ColorContrastCopyItems, ColorContrastCopyLabel_6, ColorContrastCopyLabel_7, ColorContrastCopyLabel_8, ColorContrastCopyTopRightBottomValues, EditValue, HideValue } from "../color/contrast-copy";
+import { ColorContrastCopyItems, ColorContrastCopyLabel_6 as perSideLabel, ColorContrastCopyLabel_7 as perCornerLabel, ColorContrastCopyLabel_8 as valuesDifferLabel, ColorContrastCopyTopRightBottomValues, EditValue, HideValue } from "../color/contrast-copy";
 import { NumericInput } from "./numeric-input";
 import { EditorIcon } from "./primitives";
 import { PropertyRow } from "./row";
 import { jsxPropertiesSegments, PropertiesSegmentsItems, PropertiesSegmentsSideCornerConfig, reactPropertiesSegments } from "./segments";
 import { PropertyOptionIcon } from "./tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig_2, PropertiesTooltipNameViewBoxPathsConfig_4 } from "./tooltip";
+import { PropertiesTooltipNameViewBoxPathsConfig_2 as borderSidesIcon, PropertiesTooltipNameViewBoxPathsConfig_4 as cornerEachIcon } from "./tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesSidesSideTopSideRightSideBottomValues: Dynamic;
@@ -31,8 +31,8 @@ var RESIZE_HANDLE_HIT_SIZE_PX: Dynamic;
 var RESIZE_HANDLE_LENGTH_PX: Dynamic;
 var RESIZE_HANDLE_THICKNESS_PX: Dynamic;
 var RESIZE_EDGE_MIN_LENGTH_PX: Dynamic;
-var PropertiesSidesConstant_2: Dynamic;
-var PropertiesSidesConstant_3: Dynamic;
+var dimmedMediaOpacity: Dynamic;
+var keyboardZoomFactor: Dynamic;
 var PropertiesSidesArrowLeftArrowRightArrowUpConfig: Dynamic;
 function PropertySidesRow({
   label: label,
@@ -40,12 +40,12 @@ function PropertySidesRow({
   values: values,
   placeholders: placeholders,
   unit = "px",
-  min: min2,
+  min: minValue,
   max: max,
   step: step,
   smallStep: smallStep,
   mixed: mixed,
-  disabled: disabled2,
+  disabled: isDisabled,
   toggleDisabledReason: toggleDisabledReason,
   onSides: onSides,
   onScrubSides: onScrubSides,
@@ -59,66 +59,66 @@ function PropertySidesRow({
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic =
+  let kindLabel: Dynamic =
       expandLabel ??
       (kind === "corner"
-        ? ColorContrastCopyLabel_7
-        : ColorContrastCopyLabel_6),
-    value2: Dynamic =
+        ? perCornerLabel
+        : perSideLabel),
+    partNames: Dynamic =
       partLabels ??
       (kind === "corner"
         ? ColorContrastCopyItems
         : ColorContrastCopyTopRightBottomValues),
-    value3: Dynamic =
+    toggleIcon: Dynamic =
       icon ??
       (kind === "corner"
-        ? PropertiesTooltipNameViewBoxPathsConfig_4
-        : PropertiesTooltipNameViewBoxPathsConfig_2),
-    value4: Dynamic = values.map(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input !== undefined ? String(input) : (placeholders?.[options] ?? ""),
+        ? cornerEachIcon
+        : borderSidesIcon),
+    sideTexts: Dynamic = values.map(
+      (sideValue?: Dynamic, sideIndex?: Dynamic): Dynamic =>
+        sideValue !== undefined ? String(sideValue) : (placeholders?.[sideIndex] ?? ""),
     ),
-    value5: Dynamic =
-      values.some((input?: Dynamic): Dynamic => input !== undefined) &&
+    allSidesEqual: Dynamic =
+      values.some((sideValue?: Dynamic): Dynamic => sideValue !== undefined) &&
       values.every(
-        (input?: Dynamic): Dynamic =>
-          input !== undefined && input === values[0],
+        (sideValue?: Dynamic): Dynamic =>
+          sideValue !== undefined && sideValue === values[0],
       ),
-    value6: Dynamic = value4.every(
-      (input?: Dynamic): Dynamic => input === value4[0],
+    allTextsEqual: Dynamic = sideTexts.every(
+      (text?: Dynamic): Dynamic => text === sideTexts[0],
     ),
-    value7: Dynamic = !mixed && !value6 && !value5,
-    [value8, value9]: Dynamic = (0, reactPropertiesSegments.useState)(
-      value7,
+    hasDifferentSides: Dynamic = !mixed && !allTextsEqual && !allSidesEqual,
+    [isExpanded, setIsExpanded]: Dynamic = (0, reactPropertiesSegments.useState)(
+      hasDifferentSides,
     );
-  value7 && !value8 && value9(true);
-  let value10: Dynamic = mixed || !value5 ? undefined : values[0],
-    value11: Dynamic = mixed || value7 ? undefined : value4[0],
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
+  hasDifferentSides && !isExpanded && setIsExpanded(true);
+  let sharedValue: Dynamic = mixed || !allSidesEqual ? undefined : values[0],
+    sharedPlaceholder: Dynamic = mixed || hasDifferentSides ? undefined : sideTexts[0],
+    parsePlaceholder: Dynamic = (text?: Dynamic): Dynamic => {
       if (mixed) return null;
-      let value16: Dynamic =
-        input === undefined || input.trim() === "" ? NaN : Number(input);
-      return Number.isFinite(value16) ? value16 : undefined;
+      let parsed: Dynamic =
+        text === undefined || text.trim() === "" ? NaN : Number(text);
+      return Number.isFinite(parsed) ? parsed : undefined;
     },
-    value12: Dynamic = label.toLowerCase(),
-    value13: Dynamic = (0, reactPropertiesSegments.useRef)([]),
-    value14: Dynamic =
+    lowerLabel: Dynamic = label.toLowerCase(),
+    scrubbedSidesRef: Dynamic = (0, reactPropertiesSegments.useRef)([]),
+    handleScrubSides: Dynamic =
       onScrubSides &&
-      ((input?: Dynamic): Dynamic => {
-        value13.current = input;
-        onScrubSides(input);
+      ((sides?: Dynamic): Dynamic => {
+        scrubbedSidesRef.current = sides;
+        onScrubSides(sides);
       }),
-    callback2: Dynamic = (): Dynamic => {
-      let current: Dynamic = value13.current;
-      value13.current = [];
-      onScrubEnd?.(current);
+    handleScrubEnd: Dynamic = (): Dynamic => {
+      let scrubbedSides: Dynamic = scrubbedSidesRef.current;
+      scrubbedSidesRef.current = [];
+      onScrubEnd?.(scrubbedSides);
     },
-    value15: Dynamic = (
+    toggleButton: Dynamic = (
       <DisabledReasonTooltip
         reason={
           toggleDisabledReason ??
-          (!disabled2 && value7 && value8
-            ? ColorContrastCopyLabel_8
+          (!isDisabled && hasDifferentSides && isExpanded
+            ? valuesDifferLabel
             : undefined)
         }
         wrapperClassName={"shrink-0"}
@@ -126,19 +126,19 @@ function PropertySidesRow({
         <Button
           variant={"ghost"}
           iconOnly={true}
-          icon={<PropertyOptionIcon icon={value3} />}
+          icon={<PropertyOptionIcon icon={toggleIcon} />}
           aria-label={
-            (value8 ? HideValue : EditValue) + " " + value12 + " " + value.toLowerCase()
+            (isExpanded ? HideValue : EditValue) + " " + lowerLabel + " " + kindLabel.toLowerCase()
           }
-          pressed={value8}
+          pressed={isExpanded}
           disabled={
-            disabled2 ||
-            (value7 && value8) ||
+            isDisabled ||
+            (hasDifferentSides && isExpanded) ||
             toggleDisabledReason !== undefined
           }
           data-testid={dataTestid ? dataTestid + "-toggle" : undefined}
           onClick={(): Dynamic =>
-            value9((input?: Dynamic): Dynamic => !input)
+            setIsExpanded((wasExpanded?: Dynamic): Dynamic => !wasExpanded)
           }
           className={"shrink-0"}
         />
@@ -151,74 +151,74 @@ function PropertySidesRow({
         title={title}
         description={description}
         onReset={onReset}
-        disabled={disabled2}
+        disabled={isDisabled}
         data-testid={dataTestid}
         onPress={(element?: Dynamic): Dynamic =>
           element.querySelector("input")?.focus()
         }
-        trailing={value15}
+        trailing={toggleButton}
       >
         <NumericInput
           aria-label={label}
-          value={value10}
-          placeholder={value11}
-          hint={value7 ? value : undefined}
+          value={sharedValue}
+          placeholder={sharedPlaceholder}
+          hint={hasDifferentSides ? kindLabel : undefined}
           unit={unit}
-          min={min2}
+          min={minValue}
           max={max}
           step={step}
           smallStep={smallStep}
           mixed={mixed}
           clearable={true}
           refuseLetters={true}
-          disabled={disabled2}
-          emptyStepFrom={value7 ? null : callback(value4[0])}
-          onValue={(input?: Dynamic): Dynamic =>
+          disabled={isDisabled}
+          emptyStepFrom={hasDifferentSides ? null : parsePlaceholder(sideTexts[0])}
+          onValue={(enteredValue?: Dynamic): Dynamic =>
             onSides(
               PropertiesSegmentsItems.map(
-                (input2?: Dynamic): Dynamic => ({
-                  side: input2,
-                  value: input,
+                (side?: Dynamic): Dynamic => ({
+                  side: side,
+                  value: enteredValue,
                 }),
               ),
             )
           }
           onScrub={
-            value14 &&
-            ((input?: Dynamic): Dynamic =>
-              value14(
+            handleScrubSides &&
+            ((scrubbedValue?: Dynamic): Dynamic =>
+              handleScrubSides(
                 PropertiesSegmentsItems.map(
-                  (input2?: Dynamic): Dynamic => ({
-                    side: input2,
-                    value: input,
+                  (side?: Dynamic): Dynamic => ({
+                    side: side,
+                    value: scrubbedValue,
                   }),
                 ),
               ))
           }
-          onScrubEnd={callback2}
+          onScrubEnd={handleScrubEnd}
         />
       </PropertyRow>
-      {value8 ? (<PropertyRow
+      {isExpanded ? (<PropertyRow
           label={""}
           title={title}
-          disabled={disabled2}
+          disabled={isDisabled}
           data-testid={dataTestid ? dataTestid + "-parts" : undefined}
         >
           <div className={"grid min-w-0 flex-1 grid-cols-2 gap-2"}>
             {PropertiesSegmentsSideCornerConfig[kind].map(
-              (input?: Dynamic): Dynamic => (
+              (part?: Dynamic): Dynamic => (
                 <NumericInput
-                  key={input}
-                  aria-label={((label) + (" ")) + (value2[input].toLowerCase())}
-                  title={value2[input]}
-                  prefix={<PropertySideGlyph kind={kind} index={input} />}
-                  value={mixed ? undefined : values[input]}
+                  key={part}
+                  aria-label={((label) + (" ")) + (partNames[part].toLowerCase())}
+                  title={partNames[part]}
+                  prefix={<PropertySideGlyph kind={kind} index={part} />}
+                  value={mixed ? undefined : values[part]}
                   placeholder={
-                    mixed ? (undefined) : (placeholders?.[input] ?? (""))
+                    mixed ? (undefined) : (placeholders?.[part] ?? (""))
                   }
-                  emptyStepFrom={callback(placeholders?.[input])}
+                  emptyStepFrom={parsePlaceholder(placeholders?.[part])}
                   mixed={mixed}
-                  min={min2}
+                  min={minValue}
                   max={max}
                   step={step}
                   smallStep={smallStep}
@@ -226,26 +226,26 @@ function PropertySidesRow({
                   refuseLetters={true}
                   ownUnit={unit}
                   steppers={false}
-                  disabled={disabled2}
-                  onValue={(input2?: Dynamic): Dynamic =>
+                  disabled={isDisabled}
+                  onValue={(partValue?: Dynamic): Dynamic =>
                     onSides([
                       {
-                        side: input,
-                        value: input2,
+                        side: part,
+                        value: partValue,
                       },
                     ])
                   }
                   onScrub={
-                    value14 &&
-                    ((input2?: Dynamic): Dynamic =>
-                      value14([
+                    handleScrubSides &&
+                    ((scrubbedPartValue?: Dynamic): Dynamic =>
+                      handleScrubSides([
                         {
-                          side: input,
-                          value: input2,
+                          side: part,
+                          value: scrubbedPartValue,
                         },
                       ]))
                   }
-                  onScrubEnd={callback2}
+                  onScrubEnd={handleScrubEnd}
                 />
               ),
             )}
@@ -254,9 +254,9 @@ function PropertySidesRow({
     </jsxPropertiesSegments.Fragment>
   );
 }
-function PropertyCornersRow(input?: Dynamic): Dynamic {
+function PropertyCornersRow(rowProps?: Dynamic): Dynamic {
   useUiLocale();
-  return <PropertySidesRow {...input} kind={"corner"} />;
+  return <PropertySidesRow {...rowProps} kind={"corner"} />;
 }
 function PropertySideGlyph({ kind: kind, index: index }: Dynamic): Dynamic {
   useUiLocale();
@@ -275,8 +275,8 @@ export {
   jsxPropertiesSides,
   PropertiesSidesArrowLeftArrowRightArrowUpConfig,
   PropertiesSidesConstant,
-  PropertiesSidesConstant_2,
-  PropertiesSidesConstant_3,
+  dimmedMediaOpacity as PropertiesSidesConstant_2,
+  keyboardZoomFactor as PropertiesSidesConstant_3,
   PropertiesSidesCornerTopLeftCornerTopRightCornerBottomRightValues,
   PropertiesSidesNESConfig,
   PropertiesSidesNESValues,
@@ -351,8 +351,8 @@ export function installEditorPropertiesSides(): () => void {
       RESIZE_HANDLE_THICKNESS_PX,
       RESIZE_EDGE_MIN_LENGTH_PX,
     ] = [16, 12, 3, 44];
-    PropertiesSidesConstant_2 = 0.35;
-    PropertiesSidesConstant_3 = 1.1;
+    dimmedMediaOpacity = 0.35;
+    keyboardZoomFactor = 1.1;
     PropertiesSidesArrowLeftArrowRightArrowUpConfig = {
       ArrowLeft: [-1, 0],
       ArrowRight: [1, 0],

@@ -14,8 +14,8 @@ var jsxPropertiesStyleBag: Dynamic;
 var PropertiesStyleBagBorderWidthBorderRadiusConfig: Dynamic;
 var PropertiesStyleBagItems: Dynamic;
 var styleRangeFieldValue: Dynamic;
-var PropertiesStyleBagItems_2: Dynamic;
-var PropertiesStyleBagItems_3: Dynamic;
+var filterRangeFields: Dynamic;
+var transformRangeFields: Dynamic;
 var PropertiesStyleBagTextAlignTextDecorationLineTextDecorationStyleConfig: Dynamic;
 var PropertiesStyleBagFilterBackdropFilterConfig: Dynamic;
 var PropertiesStyleBagConstant: Dynamic;
@@ -26,147 +26,147 @@ function styleValidatorKind(source?: Dynamic): Dynamic {
   return typeof kind == "string" ? kind : "";
 }
 function styleFiniteField(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  bag?: Dynamic,
+  field?: Dynamic,
+  fallback?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input[options];
-  return typeof value == "number" && Number.isFinite(value) ? value : context;
+  let fieldValue: Dynamic = bag[field];
+  return typeof fieldValue == "number" && Number.isFinite(fieldValue) ? fieldValue : fallback;
 }
-function styleStringListField(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input[options];
-  return Array.isArray(value)
-    ? value.filter((input2?: Dynamic): Dynamic => typeof input2 == "string")
+function styleStringListField(bag?: Dynamic, field?: Dynamic): Dynamic {
+  let fieldValue: Dynamic = bag[field];
+  return Array.isArray(fieldValue)
+    ? fieldValue.filter((entry?: Dynamic): Dynamic => typeof entry == "string")
     : [];
 }
 function propertyValidatorForNode(
-  input?: Dynamic,
-  options?: Dynamic,
+  propKey?: Dynamic,
+  nodeKind?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = styleSchema[input];
-  return options === "slides-shape" && value.shapeValue !== undefined
-    ? value.shapeValue
-    : options.startsWith("slides-") && value.slidesValue !== undefined
-      ? value.slidesValue
-      : value.value;
+  let schemaEntry: Dynamic = styleSchema[propKey];
+  return nodeKind === "slides-shape" && schemaEntry.shapeValue !== undefined
+    ? schemaEntry.shapeValue
+    : nodeKind.startsWith("slides-") && schemaEntry.slidesValue !== undefined
+      ? schemaEntry.slidesValue
+      : schemaEntry.value;
 }
 function setStyleBagValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  bag?: Dynamic,
+  key?: Dynamic,
+  newValue?: Dynamic,
 ): Dynamic {
   return {
-    ...input,
-    [options]: context,
+    ...bag,
+    [key]: newValue,
   };
 }
-function removeStyleBagValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input === undefined) return;
-  let { [options]: value, ...value2 }: Dynamic = input;
-  return Object.keys(value2).length === 0 ? undefined : value2;
+function removeStyleBagValue(bag?: Dynamic, key?: Dynamic): Dynamic {
+  if (bag === undefined) return;
+  let { [key]: removedValue, ...remainingBag }: Dynamic = bag;
+  return Object.keys(remainingBag).length === 0 ? undefined : remainingBag;
 }
 function replaceStyleBagValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  bag?: Dynamic,
+  key?: Dynamic,
+  newValue?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input;
-  for (let value2 of (PropertiesStyleBagBorderWidthBorderRadiusConfig[
-    options
+  let updatedBag: Dynamic = bag;
+  for (let relatedKey of (PropertiesStyleBagBorderWidthBorderRadiusConfig[
+    key
   ] ?? []) as Dynamic)
-    value = removeStyleBagValue(value, value2);
-  return context === undefined
-    ? removeStyleBagValue(value, options)
-    : setStyleBagValue(value, options, context);
+    updatedBag = removeStyleBagValue(updatedBag, relatedKey);
+  return newValue === undefined
+    ? removeStyleBagValue(updatedBag, key)
+    : setStyleBagValue(updatedBag, key, newValue);
 }
-function propertyResetPatch(input?: Dynamic, options?: Dynamic): Dynamic {
-  let state: Dynamic = {};
-  for (let value of (PropertiesStyleBagBorderWidthBorderRadiusConfig[input] ??
+function propertyResetPatch(propKey?: Dynamic, newValue?: Dynamic): Dynamic {
+  let patch: Dynamic = {};
+  for (let relatedKey of (PropertiesStyleBagBorderWidthBorderRadiusConfig[propKey] ??
     []) as Dynamic)
-    state[value] = undefined;
-  state[input] = options;
-  return state;
+    patch[relatedKey] = undefined;
+  patch[propKey] = newValue;
+  return patch;
 }
-function normalizeNegativeZero(input?: Dynamic): Dynamic {
-  return input === 0 ? 0 : input;
+function normalizeNegativeZero(numericValue?: Dynamic): Dynamic {
+  return numericValue === 0 ? 0 : numericValue;
 }
-function clampStyleField(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = styleValidatorKind(input),
-    value2: Dynamic = styleFiniteField(input, "lo", -1e9),
-    value3: Dynamic = styleFiniteField(input, "hi", 1e9),
-    value4: Dynamic = Number.isFinite(options) ? options : value2;
-  if (value === "int") {
-    let value5: Dynamic = Math.max(1e-9, styleFiniteField(input, "step", 1));
-    value4 = Math.round(value4 / value5) * value5;
+function clampStyleField(validator?: Dynamic, rawValue?: Dynamic): Dynamic {
+  let validatorKind: Dynamic = styleValidatorKind(validator),
+    lowest: Dynamic = styleFiniteField(validator, "lo", -1e9),
+    highest: Dynamic = styleFiniteField(validator, "hi", 1e9),
+    clamped: Dynamic = Number.isFinite(rawValue) ? rawValue : lowest;
+  if (validatorKind === "int") {
+    let step: Dynamic = Math.max(1e-9, styleFiniteField(validator, "step", 1));
+    clamped = Math.round(clamped / step) * step;
   }
-  value4 = Math.min(value3, Math.max(value2, value4));
-  value === "len"
-    ? (value4 = Math.round(value4 * 10) / 10)
-    : value === "num" && (value4 = Math.round(value4 * 1e4) / 1e4);
-  return normalizeNegativeZero(value4);
+  clamped = Math.min(highest, Math.max(lowest, clamped));
+  validatorKind === "len"
+    ? (clamped = Math.round(clamped * 10) / 10)
+    : validatorKind === "num" && (clamped = Math.round(clamped * 1e4) / 1e4);
+  return normalizeNegativeZero(clamped);
 }
 function numericStyleValidator(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  kind?: Dynamic,
+  lo?: Dynamic,
+  hi?: Dynamic,
 ): Dynamic {
   return {
-    kind: input,
-    lo: options,
-    hi: context,
+    kind: kind,
+    lo: lo,
+    hi: hi,
   };
 }
 function styleRangeField(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  validators?: Dynamic,
+  field?: Dynamic,
+  label?: Dynamic,
+  kind?: Dynamic,
+  step?: Dynamic,
+  unit?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = input[options];
-  if (value2 === undefined)
-    throw new Error(`style panel: no validator range for field ${options}`);
-  return detail === undefined
+  let range: Dynamic = validators[field];
+  if (range === undefined)
+    throw new Error(`style panel: no validator range for field ${field}`);
+  return unit === undefined
     ? {
-        field: options,
-        label: context,
-        min: value2.min,
-        max: value2.max,
-        step: extra,
-        kind: value,
+        field: field,
+        label: label,
+        min: range.min,
+        max: range.max,
+        step: step,
+        kind: kind,
       }
     : {
-        field: options,
-        label: context,
-        min: value2.min,
-        max: value2.max,
-        step: extra,
-        unit: detail,
-        kind: value,
+        field: field,
+        label: label,
+        min: range.min,
+        max: range.max,
+        step: step,
+        unit: unit,
+        kind: kind,
       };
 }
-function clampStyleRangeField(source?: Dynamic, options?: Dynamic): Dynamic {
+function clampStyleRangeField(source?: Dynamic, rawValue?: Dynamic): Dynamic {
   return clampStyleField(
     numericStyleValidator(source.kind, source.min, source.max),
-    options,
+    rawValue,
   );
 }
 function propertyDefaultEditorValue(
-  input?: Dynamic,
-  options?: Dynamic,
+  propKey?: Dynamic,
+  nodeKind?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = propertyValidatorForNode(input, options);
-  switch (styleValidatorKind(value)) {
+  let validator: Dynamic = propertyValidatorForNode(propKey, nodeKind);
+  switch (styleValidatorKind(validator)) {
     case "len":
     case "num":
     case "int": {
-      let value2: Dynamic = styleFiniteField(value, "lo", 0),
-        value3: Dynamic = styleFiniteField(value, "hi", 100);
-      return clampStyleField(value, value2 + (value3 - value2) / 2);
+      let lowest: Dynamic = styleFiniteField(validator, "lo", 0),
+        highest: Dynamic = styleFiniteField(validator, "hi", 100);
+      return clampStyleField(validator, lowest + (highest - lowest) / 2);
     }
     case "enum":
-      return styleStringListField(value, "values")[0];
+      return styleStringListField(validator, "values")[0];
     case "color":
       return "#445566";
     case "fontFamily":
@@ -178,7 +178,7 @@ function propertyDefaultEditorValue(
         px: 240,
       };
     case "shadow":
-      return [defaultShadowValue(input, false)];
+      return [defaultShadowValue(propKey, false)];
     case "gradient":
       return {
         angle: 180,
@@ -205,15 +205,15 @@ function propertyDefaultEditorValue(
       return;
   }
 }
-function defaultShadowValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input !== "boxShadow"
+function defaultShadowValue(propKey?: Dynamic, isInset?: Dynamic): Dynamic {
+  return propKey !== "boxShadow"
     ? {
         x: 0,
         y: 1,
         blur: 3,
         color: "#00000033",
       }
-    : options
+    : isInset
       ? {
           x: 0,
           y: 1,
@@ -230,96 +230,96 @@ function defaultShadowValue(input?: Dynamic, options?: Dynamic): Dynamic {
           color: "#00000033",
         };
 }
-function ownStyleBagValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input !== undefined && Object.hasOwn(input, options)
-    ? input[options]
+function ownStyleBagValue(bag?: Dynamic, key?: Dynamic): Dynamic {
+  return bag !== undefined && Object.hasOwn(bag, key)
+    ? bag[key]
     : undefined;
 }
-function asFiniteStyleNumber(input?: Dynamic): Dynamic {
-  return typeof input == "number" && Number.isFinite(input)
-    ? input
+function asFiniteStyleNumber(candidate?: Dynamic): Dynamic {
+  return typeof candidate == "number" && Number.isFinite(candidate)
+    ? candidate
     : undefined;
 }
-function asStyleString(input?: Dynamic): Dynamic {
-  return typeof input == "string" ? input : undefined;
+function asStyleString(candidate?: Dynamic): Dynamic {
+  return typeof candidate == "string" ? candidate : undefined;
 }
-function asStyleRecord(input?: Dynamic): Dynamic {
-  return input !== null && typeof input == "object" && !Array.isArray(input)
-    ? input
+function asStyleRecord(candidate?: Dynamic): Dynamic {
+  return candidate !== null && typeof candidate == "object" && !Array.isArray(candidate)
+    ? candidate
     : undefined;
 }
-function styleRecordList(input?: Dynamic): Dynamic {
+function styleRecordList(items?: Dynamic): Dynamic {
   return (
-    Array.isArray(input) ? input : input === undefined ? [] : [input]
+    Array.isArray(items) ? items : items === undefined ? [] : [items]
   ).flatMap(
-    (input2?: Dynamic): Dynamic =>
-      asStyleRecord(input2) !== undefined ? [input2] : [],
+    (item?: Dynamic): Dynamic =>
+      asStyleRecord(item) !== undefined ? [item] : [],
   );
 }
-function shadowEffectLabel(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "boxShadow" && asStyleRecord(options)?.inset === true
+function shadowEffectLabel(propKey?: Dynamic, effect?: Dynamic): Dynamic {
+  return propKey === "boxShadow" && asStyleRecord(effect)?.inset === true
     ? uiMessage("inspector.styleBag.innerShadow")
-    : propertyEffectLabel(input);
+    : propertyEffectLabel(propKey);
 }
-function propertyEffectLabel(input?: Dynamic): Dynamic {
-  let value: Dynamic = Object.hasOwn(
+function propertyEffectLabel(propKey?: Dynamic): Dynamic {
+  let knownLabel: Dynamic = Object.hasOwn(
     PropertiesStyleBagTextAlignTextDecorationLineTextDecorationStyleConfig,
-    input,
+    propKey,
   )
     ? PropertiesStyleBagTextAlignTextDecorationLineTextDecorationStyleConfig[
-        input
+        propKey
       ]
     : undefined;
-  if (value !== undefined) return value;
-  let value2: Dynamic = input
+  if (knownLabel !== undefined) return knownLabel;
+  let spacedName: Dynamic = propKey
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .toLowerCase();
-  return value2.charAt(0).toUpperCase() + value2.slice(1);
+  return spacedName.charAt(0).toUpperCase() + spacedName.slice(1);
 }
-function equalStyleBags(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input === options) return true;
+function equalStyleBags(left?: Dynamic, right?: Dynamic): Dynamic {
+  if (left === right) return true;
   if (
-    input === null ||
-    options === null ||
-    typeof input != "object" ||
-    typeof options != "object"
+    left === null ||
+    right === null ||
+    typeof left != "object" ||
+    typeof right != "object"
   )
     return false;
-  let value: Dynamic = Array.isArray(input);
-  if (value !== Array.isArray(options)) return false;
-  if (value) {
-    let value5: Dynamic = input,
-      value6: Dynamic = options;
+  let isArray: Dynamic = Array.isArray(left);
+  if (isArray !== Array.isArray(right)) return false;
+  if (isArray) {
+    let leftList: Dynamic = left,
+      rightList: Dynamic = right;
     return (
-      value5.length === value6.length &&
-      value5.every(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          equalStyleBags(input2, value6[options2]),
+      leftList.length === rightList.length &&
+      leftList.every(
+        (leftItem?: Dynamic, index?: Dynamic): Dynamic =>
+          equalStyleBags(leftItem, rightList[index]),
       )
     );
   }
-  let value2: Dynamic = input,
-    value3: Dynamic = options,
-    value4: Dynamic = Object.keys(value2);
+  let leftRecord: Dynamic = left,
+    rightRecord: Dynamic = right,
+    leftKeys: Dynamic = Object.keys(leftRecord);
   return (
-    value4.length === Object.keys(value3).length &&
-    value4.every(
-      (input2?: Dynamic): Dynamic =>
-        Object.hasOwn(value3, input2) &&
-        equalStyleBags(value2[input2], value3[input2]),
+    leftKeys.length === Object.keys(rightRecord).length &&
+    leftKeys.every(
+      (key?: Dynamic): Dynamic =>
+        Object.hasOwn(rightRecord, key) &&
+        equalStyleBags(leftRecord[key], rightRecord[key]),
     )
   );
 }
 function changedStyleBag(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  bag?: Dynamic,
+  key?: Dynamic,
+  newValue?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = replaceStyleBagValue(input, options, context);
-  return equalStyleBags(value, input)
+  let updatedBag: Dynamic = replaceStyleBagValue(bag, key, newValue);
+  return equalStyleBags(updatedBag, bag)
     ? undefined
     : {
-        next: value,
+        next: updatedBag,
       };
 }
 function createStyleBagEditor({
@@ -328,7 +328,7 @@ function createStyleBagEditor({
   onCommit: onCommit,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
-  disabled: disabled2 = false,
+  disabled: isDisabled = false,
   disabledKeys: disabledKeys,
   swatches: swatches,
   clearKeys: clearKeys,
@@ -338,38 +338,38 @@ function createStyleBagEditor({
   return {
     kind: kind,
     bag: bag,
-    disabled: disabled2,
+    disabled: isDisabled,
     disabledKeys: disabledKeys,
     swatches: swatches,
     clearKeys: clearKeys,
     mixedKeys: mixedKeys,
     unifiedColorPopover: unifiedColorPopover,
-    clear: (input?: Dynamic): Dynamic => {
-      let value: Dynamic = bag,
-        state: Dynamic = {};
-      for (let value2 of input as Dynamic) {
-        value = replaceStyleBagValue(value, value2, undefined);
-        state = {
-          ...state,
-          ...propertyResetPatch(value2, undefined),
+    clear: (keys?: Dynamic): Dynamic => {
+      let updatedBag: Dynamic = bag,
+        resetPatch: Dynamic = {};
+      for (let key of keys as Dynamic) {
+        updatedBag = replaceStyleBagValue(updatedBag, key, undefined);
+        resetPatch = {
+          ...resetPatch,
+          ...propertyResetPatch(key, undefined),
         };
       }
-      (!equalStyleBags(value, bag) ||
-        input.some((input2?: Dynamic): Dynamic => mixedKeys?.has(input2))) &&
-        onCommit(value, state);
+      (!equalStyleBags(updatedBag, bag) ||
+        keys.some((key?: Dynamic): Dynamic => mixedKeys?.has(key))) &&
+        onCommit(updatedBag, resetPatch);
     },
-    commit: (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value: Dynamic = changedStyleBag(bag, input, options);
-      value
-        ? onCommit(value.next, propertyResetPatch(input, options))
-        : mixedKeys?.has(input) &&
-          onCommit(bag, propertyResetPatch(input, options));
+    commit: (key?: Dynamic, newValue?: Dynamic): Dynamic => {
+      let change: Dynamic = changedStyleBag(bag, key, newValue);
+      change
+        ? onCommit(change.next, propertyResetPatch(key, newValue))
+        : mixedKeys?.has(key) &&
+          onCommit(bag, propertyResetPatch(key, newValue));
     },
     live: onLive
-      ? (input?: Dynamic, options?: Dynamic): Dynamic =>
+      ? (key?: Dynamic, newValue?: Dynamic): Dynamic =>
           onLive(
-            replaceStyleBagValue(bag, input, options),
-            propertyResetPatch(input, options),
+            replaceStyleBagValue(bag, key, newValue),
+            propertyResetPatch(key, newValue),
           )
       : undefined,
     liveEnd: onLiveEnd,
@@ -395,8 +395,8 @@ export {
   PropertiesStyleBagConstant,
   PropertiesStyleBagFilterBackdropFilterConfig,
   PropertiesStyleBagItems,
-  PropertiesStyleBagItems_2,
-  PropertiesStyleBagItems_3,
+  filterRangeFields as PropertiesStyleBagItems_2,
+  transformRangeFields as PropertiesStyleBagItems_3,
   PropertiesStyleBagTextAlignTextDecorationLineTextDecorationStyleConfig,
   propertyDefaultEditorValue,
   propertyEffectLabel,
@@ -468,7 +468,7 @@ export function installEditorPropertiesStyleBag(): () => void {
       1,
       "px",
     );
-    PropertiesStyleBagItems_2 = [
+    filterRangeFields = [
       styleRangeField(
         styleFieldBoundsValue,
         "blur",
@@ -528,7 +528,7 @@ export function installEditorPropertiesStyleBag(): () => void {
         "\xB0",
       ),
     ];
-    PropertiesStyleBagItems_3 = [
+    transformRangeFields = [
       styleRangeField(
         styleFieldBoundsValue_2,
         "translateX",

@@ -19,7 +19,7 @@ import { PropertyRow } from "./row";
 import { PropertySection } from "./section";
 import { PropertiesSizingRowLeftHcenterRightConfig } from "./sizing-row";
 import { PropertyOptionIcon } from "./tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig_10, PropertiesTooltipNameViewBoxPathsConfig_9 } from "./tooltip";
+import { PropertiesTooltipNameViewBoxPathsConfig_10 as tableColumnsIcon, PropertiesTooltipNameViewBoxPathsConfig_9 as tableRowsIcon } from "./tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactPropertiesLayoutSection: Dynamic;
@@ -36,93 +36,93 @@ function LayoutSection({
 }: Dynamic): Dynamic {
   useUiLocale();
   let entries: Dynamic = new Map(
-      rows.map((input?: Dynamic): Dynamic => [input.prop, input]),
+      rows.map((row?: Dynamic): Dynamic => [row.prop, row]),
     ),
-    callback: Dynamic = (input?: Dynamic, options: Dynamic = ""): Dynamic => {
-      let entry2: Dynamic = entries.get(input);
+    readRowValue: Dynamic = (prop?: Dynamic, defaultValue: Dynamic = ""): Dynamic => {
+      let rowEntry: Dynamic = entries.get(prop);
       return (
-        (entry2 && !entry2.mixed ? (entry2.value ?? "") : "") ||
-        entry2?.fallback ||
-        options
+        (rowEntry && !rowEntry.mixed ? (rowEntry.value ?? "") : "") ||
+        rowEntry?.fallback ||
+        defaultValue
       )
         .trim()
         .toLowerCase();
     },
-    entry: Dynamic = entries.get("position"),
-    value: Dynamic =
+    positionEntry: Dynamic = entries.get("position"),
+    positionValue: Dynamic =
       (multi
-        ? (entry && !entry.mixed ? (entry.value ?? "") : "")
+        ? (positionEntry && !positionEntry.mixed ? (positionEntry.value ?? "") : "")
             .trim()
             .toLowerCase()
-        : callback("position")) || "static",
-    value2: Dynamic = value === "absolute" || value === "fixed",
-    value3: Dynamic = (parentDisplay ?? "").toLowerCase(),
-    value4: Dynamic =
+        : readRowValue("position")) || "static",
+    isAbsolute: Dynamic = positionValue === "absolute" || positionValue === "fixed",
+    parentDisplayText: Dynamic = (parentDisplay ?? "").toLowerCase(),
+    isPlacedByParent: Dynamic =
       parentDisplay === undefined ||
-      value3.includes("flex") ||
-      value3.includes("grid"),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      if (!input || !PropertiesInheritedFieldValueAlias(input))
+      parentDisplayText.includes("flex") ||
+      parentDisplayText.includes("grid"),
+    hasPartialSize: Dynamic = (sizeEntry?: Dynamic): Dynamic => {
+      if (!sizeEntry || !PropertiesInheritedFieldValueAlias(sizeEntry))
         return false;
-      let value22: Dynamic = parseCssNumber(
-        (input.value ?? "").trim(),
+      let parsedSize: Dynamic = parseCssNumber(
+        (sizeEntry.value ?? "").trim(),
       );
       return (
-        value22 != null && !(value22.unit === "%" && value22.value >= 100)
+        parsedSize != null && !(parsedSize.unit === "%" && parsedSize.value >= 100)
       );
     },
-    value5: Dynamic = callback2(entries.get("width")),
-    value6: Dynamic = callback2(entries.get("height")),
-    value7: Dynamic = !!entries.get("position")?.mixed,
-    value8: Dynamic = !!entries.get("transform")?.mixed,
-    value9: Dynamic = (
-      callback("display", "") ||
+    hasFixedWidth: Dynamic = hasPartialSize(entries.get("width")),
+    hasFixedHeight: Dynamic = hasPartialSize(entries.get("height")),
+    isPositionMixed: Dynamic = !!entries.get("position")?.mixed,
+    isTransformMixed: Dynamic = !!entries.get("transform")?.mixed,
+    displayText: Dynamic = (
+      readRowValue("display", "") ||
       (display ?? "")
     ).toLowerCase(),
-    value10: Dynamic =
-      /^(block|flex|grid|flow-root|table|list-item)(\s|$)/.test(value9),
-    value11: Dynamic = !multi && !value4 && value5 && value10,
-    value12: Dynamic =
-      disabledAll || value7 || value8 || !!standaloneTranslate,
-    value13: Dynamic = !value12 && (value2 || (value11 && !noMargins)),
-    value14: Dynamic = !value12 && value2,
-    value15: Dynamic = value13 && value5 && !noMargins,
-    value16: Dynamic = value14 && value6 && !noMargins,
-    value17: Dynamic = disabledAll
+    isBlockLevel: Dynamic =
+      /^(block|flex|grid|flow-root|table|list-item)(\s|$)/.test(displayText),
+    canAlignWithMargins: Dynamic = !multi && !isPlacedByParent && hasFixedWidth && isBlockLevel,
+    isAlignBlocked: Dynamic =
+      disabledAll || isPositionMixed || isTransformMixed || !!standaloneTranslate,
+    canAlignHorizontally: Dynamic = !isAlignBlocked && (isAbsolute || (canAlignWithMargins && !noMargins)),
+    canAlignVertically: Dynamic = !isAlignBlocked && isAbsolute,
+    canCenterHorizontally: Dynamic = canAlignHorizontally && hasFixedWidth && !noMargins,
+    canCenterVertically: Dynamic = canAlignVertically && hasFixedHeight && !noMargins,
+    disabledReason: Dynamic = disabledAll
       ? (disabledWhy ?? "Read-only selection")
-      : noMargins && !value2
+      : noMargins && !isAbsolute
         ? noMargins
-        : value7
+        : isPositionMixed
           ? uiMessage("inspector.layoutSection.theSelectionMixesPositionedAnd")
-          : value8
+          : isTransformMixed
             ? uiMessage("inspector.layoutSection.theSelectedElementsCarryDifferent")
             : standaloneTranslate
               ? uiMessage("inspector.layoutSection.thisElementIsShiftedWith")
-              : value4 && !value2
+              : isPlacedByParent && !isAbsolute
                 ? uiMessage("inspector.layoutSection.placedByItsParentSelect")
-                : multi && !value2
+                : multi && !isAbsolute
                   ? "In-flow elements align one at a time \u2014 select one"
-                  : !value2 && !value10
+                  : !isAbsolute && !isBlockLevel
                     ? uiMessage("inspector.layoutSection.anInlineElementIgnoresAuto")
-                    : !value2 && !value5
+                    : !isAbsolute && !hasFixedWidth
                       ? uiMessage("inspector.layoutSection.giveItAFixedWidth")
                       : undefined,
-    callback3: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = false,
+    resetTranslateEdits: Dynamic = (
+      axis?: Dynamic,
+      force: Dynamic = false,
     ): Dynamic => {
-      if (!value2 && !options) return [];
-      let entry2: Dynamic = entries.get("transform");
+      if (!isAbsolute && !force) return [];
+      let transformEntry: Dynamic = entries.get("transform");
       if (
-        !PropertiesInheritedFieldValueAlias(entry2) ||
-        entry2.mixed
+        !PropertiesInheritedFieldValueAlias(transformEntry) ||
+        transformEntry.mixed
       )
         return [];
-      let value22: Dynamic = parseCssTransform(entry2.value);
-      if (!value22 || value22[input].value === 0) return [];
-      let value23: Dynamic = serializeCssTransform({
-        ...value22,
-        [input]: {
+      let parsedTransform: Dynamic = parseCssTransform(transformEntry.value);
+      if (!parsedTransform || parsedTransform[axis].value === 0) return [];
+      let serializedTransform: Dynamic = serializeCssTransform({
+        ...parsedTransform,
+        [axis]: {
           value: 0,
           unit: "px",
         },
@@ -130,45 +130,45 @@ function LayoutSection({
       return [
         {
           prop: "transform",
-          value: value23 === "none" || value23 === "" ? "none" : value23,
+          value: serializedTransform === "none" || serializedTransform === "" ? "none" : serializedTransform,
         },
       ];
     },
-    value18: Dynamic = callback3("x"),
-    value19: Dynamic = callback3("y"),
-    value20: Dynamic = value === "relative",
-    callback4: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      noMargins && input.startsWith("margin-")
+    resetTranslateX: Dynamic = resetTranslateEdits("x"),
+    resetTranslateY: Dynamic = resetTranslateEdits("y"),
+    isRelative: Dynamic = positionValue === "relative",
+    setOffsetEdit: Dynamic = (prop?: Dynamic, newValue?: Dynamic): Dynamic =>
+      noMargins && prop.startsWith("margin-")
         ? []
-        : value2 ||
-            value20 ||
+        : isAbsolute ||
+            isRelative ||
             PropertiesInheritedFieldValueAlias(
-              entries.get(input),
+              entries.get(prop),
             )
           ? [
               {
-                prop: input,
-                value: options,
+                prop: prop,
+                value: newValue,
               },
             ]
           : [],
-    items: Dynamic = [
-      ...(value20
-        ? [...callback4("left", "0px"), ...callback4("right", "auto")]
+    inFlowResetEdits: Dynamic = [
+      ...(isRelative
+        ? [...setOffsetEdit("left", "0px"), ...setOffsetEdit("right", "auto")]
         : []),
-      ...callback3("x", true),
+      ...resetTranslateEdits("x", true),
     ],
-    value21: Dynamic = value2
+    horizontalEdits: Dynamic = isAbsolute
       ? {
           left: [
             {
               prop: "left",
               value: "0px",
             },
-            ...callback4("right", "auto"),
-            ...callback4("margin-left", "0px"),
-            ...callback4("margin-right", "0px"),
-            ...value18,
+            ...setOffsetEdit("right", "auto"),
+            ...setOffsetEdit("margin-left", "0px"),
+            ...setOffsetEdit("margin-right", "0px"),
+            ...resetTranslateX,
           ],
           hcenter: [
             {
@@ -187,17 +187,17 @@ function LayoutSection({
               prop: "margin-right",
               value: "auto",
             },
-            ...value18,
+            ...resetTranslateX,
           ],
           right: [
             {
               prop: "right",
               value: "0px",
             },
-            ...callback4("left", "auto"),
-            ...callback4("margin-left", "0px"),
-            ...callback4("margin-right", "0px"),
-            ...value18,
+            ...setOffsetEdit("left", "auto"),
+            ...setOffsetEdit("margin-left", "0px"),
+            ...setOffsetEdit("margin-right", "0px"),
+            ...resetTranslateX,
           ],
         }
       : {
@@ -210,7 +210,7 @@ function LayoutSection({
               prop: "margin-right",
               value: "auto",
             },
-            ...items,
+            ...inFlowResetEdits,
           ],
           hcenter: [
             {
@@ -221,7 +221,7 @@ function LayoutSection({
               prop: "margin-right",
               value: "auto",
             },
-            ...items,
+            ...inFlowResetEdits,
           ],
           right: [
             {
@@ -232,19 +232,19 @@ function LayoutSection({
               prop: "margin-right",
               value: "0px",
             },
-            ...items,
+            ...inFlowResetEdits,
           ],
         },
-    state: Dynamic = {
+    verticalEdits: Dynamic = {
       top: [
         {
           prop: "top",
           value: "0px",
         },
-        ...callback4("bottom", "auto"),
-        ...callback4("margin-top", "0px"),
-        ...callback4("margin-bottom", "0px"),
-        ...value19,
+        ...setOffsetEdit("bottom", "auto"),
+        ...setOffsetEdit("margin-top", "0px"),
+        ...setOffsetEdit("margin-bottom", "0px"),
+        ...resetTranslateY,
       ],
       vcenter: [
         {
@@ -263,110 +263,110 @@ function LayoutSection({
           prop: "margin-bottom",
           value: "auto",
         },
-        ...value19,
+        ...resetTranslateY,
       ],
       bottom: [
         {
           prop: "bottom",
           value: "0px",
         },
-        ...callback4("top", "auto"),
-        ...callback4("margin-top", "0px"),
-        ...callback4("margin-bottom", "0px"),
-        ...value19,
+        ...setOffsetEdit("top", "auto"),
+        ...setOffsetEdit("margin-top", "0px"),
+        ...setOffsetEdit("margin-bottom", "0px"),
+        ...resetTranslateY,
       ],
     },
-    callback5: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (input === options) return true;
-      let value22: Dynamic = parseCssNumber(input),
-        value23: Dynamic = parseCssNumber(options);
+    isSameLength: Dynamic = (first?: Dynamic, second?: Dynamic): Dynamic => {
+      if (first === second) return true;
+      let parsedFirst: Dynamic = parseCssNumber(first),
+        parsedSecond: Dynamic = parseCssNumber(second);
       return (
-        !!value22 &&
-        !!value23 &&
-        value22.value === value23.value &&
-        (value22.value === 0 ||
-          (value22.unit || "px") === (value23.unit || "px"))
+        !!parsedFirst &&
+        !!parsedSecond &&
+        parsedFirst.value === parsedSecond.value &&
+        (parsedFirst.value === 0 ||
+          (parsedFirst.unit || "px") === (parsedSecond.unit || "px"))
       );
     },
-    callback6: Dynamic = (input?: Dynamic): Dynamic =>
-      input.filter((input2?: Dynamic): Dynamic => {
-        let entry2: Dynamic = entries.get(input2.prop);
-        if (entry2?.mixed) return true;
-        let value22: Dynamic = (entry2?.value ?? "").trim();
-        if (input2.value == null) return value22 !== "";
-        let value23: Dynamic =
-          value22 ||
-          (!multi && !value2 && !value20
-            ? (entry2?.fallback ?? "").trim()
+    filterChangedEdits: Dynamic = (edits?: Dynamic): Dynamic =>
+      edits.filter((edit?: Dynamic): Dynamic => {
+        let rowEntry: Dynamic = entries.get(edit.prop);
+        if (rowEntry?.mixed) return true;
+        let currentValue: Dynamic = (rowEntry?.value ?? "").trim();
+        if (edit.value == null) return currentValue !== "";
+        let effectiveValue: Dynamic =
+          currentValue ||
+          (!multi && !isAbsolute && !isRelative
+            ? (rowEntry?.fallback ?? "").trim()
             : "");
-        return !callback5(value23, input2.value);
+        return !isSameLength(effectiveValue, edit.value);
       }),
-    callback7: Dynamic = (input?: Dynamic): Dynamic =>
-      value17 ??
-      ((input === "hcenter" || input === "vcenter") && noMargins
+    alignDisabledReason: Dynamic = (alignKey?: Dynamic): Dynamic =>
+      disabledReason ??
+      ((alignKey === "hcenter" || alignKey === "vcenter") && noMargins
         ? noMargins
-        : input === "hcenter" && value13 && !value5
+        : alignKey === "hcenter" && canAlignHorizontally && !hasFixedWidth
           ? entries.get("width")?.mixed
             ? uiMessage("inspector.layoutSection.theSelectedElementsNeedOne")
             : uiMessage("inspector.layoutSection.giveItAFixedWidth2")
-          : input === "vcenter" && value14 && !value6
+          : alignKey === "vcenter" && canAlignVertically && !hasFixedHeight
             ? entries.get("height")?.mixed
               ? uiMessage("inspector.layoutSection.theSelectedElementsNeedOne2")
               : uiMessage("inspector.layoutSection.giveItAFixedHeight")
-            : (input === "top" ||
-                  input === "vcenter" ||
-                  input === "bottom") &&
-                !value2
+            : (alignKey === "top" ||
+                  alignKey === "vcenter" ||
+                  alignKey === "bottom") &&
+                !isAbsolute
               ? uiMessage("inspector.layoutSection.positionItFirstAbsoluteOr")
               : ""),
-    items2: Dynamic = [
+    alignActions: Dynamic = [
       {
         key: "left",
         get label() { return uiMessage("inspector.layoutSection.alignLeft"); },
         glyph: PropertiesSizingRowLeftHcenterRightConfig.left,
-        on: value13,
-        edits: value21.left,
+        on: canAlignHorizontally,
+        edits: horizontalEdits.left,
       },
       {
         key: "hcenter",
         get label() { return uiMessage("inspector.layoutSection.alignHorizontalCenters"); },
         glyph: PropertiesSizingRowLeftHcenterRightConfig.hcenter,
-        on: value15,
-        edits: value21.hcenter,
+        on: canCenterHorizontally,
+        edits: horizontalEdits.hcenter,
       },
       {
         key: "right",
         get label() { return uiMessage("inspector.layoutSection.alignRight"); },
         glyph: PropertiesSizingRowLeftHcenterRightConfig.right,
-        on: value13,
-        edits: value21.right,
+        on: canAlignHorizontally,
+        edits: horizontalEdits.right,
       },
       {
         key: "top",
         get label() { return uiMessage("inspector.layoutSection.alignTop"); },
         glyph: PropertiesSizingRowLeftHcenterRightConfig.top,
-        on: value14,
-        edits: state.top,
+        on: canAlignVertically,
+        edits: verticalEdits.top,
       },
       {
         key: "vcenter",
         get label() { return uiMessage("inspector.layoutSection.alignVerticalCenters"); },
         glyph: PropertiesSizingRowLeftHcenterRightConfig.vcenter,
-        on: value16,
-        edits: state.vcenter,
+        on: canCenterVertically,
+        edits: verticalEdits.vcenter,
       },
       {
         key: "bottom",
         get label() { return uiMessage("inspector.layoutSection.alignBottom"); },
         glyph: PropertiesSizingRowLeftHcenterRightConfig.bottom,
-        on: value14,
-        edits: state.bottom,
+        on: canAlignVertically,
+        edits: verticalEdits.bottom,
       },
     ];
   return (
     <PropertyRow
       data-testid={"dc-align-actions"}
-      title={value17}
+      title={disabledReason}
       className={"[--prop-row-h:28px] pointer-coarse:[--prop-row-h:40px]"}
     >
       <div
@@ -375,25 +375,25 @@ function LayoutSection({
           PropertiesPrimitivesClassNames_4,
         )}
       >
-        {items2.map(
-          (input?: Dynamic): Dynamic =>
+        {alignActions.map(
+          (action?: Dynamic): Dynamic =>
             (() => {
               const _Component = Button;
               const _props = {
                 variant: "ghost",
                 iconOnly: true,
-                icon: <PropertyOptionIcon icon={input.glyph} />,
-                "aria-label": input.label,
-                tooltip: input.label,
-                get disabledReason() { return ((input.label) + (" \u2014 ")) + (callback7(input.key)); },
-                disabled: !input.on,
-                "data-testid": `dc-align-${input.key}`,
+                icon: <PropertyOptionIcon icon={action.glyph} />,
+                "aria-label": action.label,
+                tooltip: action.label,
+                get disabledReason() { return ((action.label) + (" \u2014 ")) + (alignDisabledReason(action.key)); },
+                disabled: !action.on,
+                "data-testid": `dc-align-${action.key}`,
                 onClick: (): Dynamic => {
-                  let value22: Dynamic = callback6(input.edits);
-                  value22.length > 0 && onCommitMany(value22);
+                  let pendingEdits: Dynamic = filterChangedEdits(action.edits);
+                  pendingEdits.length > 0 && onCommitMany(pendingEdits);
                 },
               } as const;
-              const _key = input.key;
+              const _key = action.key;
               return <_Component key={_key} {..._props} />;
             })(),
         )}
@@ -406,16 +406,16 @@ function PropertyFlexWrap({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = inheritedFieldForEdit(wrap),
-    value2: Dynamic = (
-      (value.mixed ? "" : (value.value ?? "")) ||
-      value.fallback ||
+  let wrapField: Dynamic = inheritedFieldForEdit(wrap),
+    isWrapping: Dynamic = (
+      (wrapField.mixed ? "" : (wrapField.value ?? "")) ||
+      wrapField.fallback ||
       "nowrap"
     )
       .trim()
       .toLowerCase()
       .startsWith("wrap"),
-    value3: Dynamic = PropertiesInheritedFieldValueAlias(value);
+    hasOwnWrapValue: Dynamic = PropertiesInheritedFieldValueAlias(wrapField);
   return (
     <Button_r
       variant={"ghost"}
@@ -423,18 +423,18 @@ function PropertyFlexWrap({
       icon={"ArrowReturn"}
       aria-label={uiMessage("inspector.layoutSection.wrap")}
       tooltip={
-        (value2 ? uiMessage("inspector.layoutSection.wrapsOntoNewLines") : uiMessage("inspector.layoutSection.noWrap")) + (value3 ? "" : wrap.inheritedFrom && !wrap.mixed ? ` (from ${wrap.inheritedFrom})` : uiMessage("inspector.layoutSection.inherited"))
+        (isWrapping ? uiMessage("inspector.layoutSection.wrapsOntoNewLines") : uiMessage("inspector.layoutSection.noWrap")) + (hasOwnWrapValue ? "" : wrap.inheritedFrom && !wrap.mixed ? ` (from ${wrap.inheritedFrom})` : uiMessage("inspector.layoutSection.inherited"))
       }
-      pressed={value2}
-      data-inherited={value2 && !value3 ? "" : undefined}
+      pressed={isWrapping}
+      data-inherited={isWrapping && !hasOwnWrapValue ? "" : undefined}
       className={"shrink-0"}
-      disabled={value.disabled}
+      disabled={wrapField.disabled}
       data-testid={"dc-wrap-toggle"}
       onClick={(): Dynamic =>
         onCommitMany([
           {
             prop: "flex-wrap",
-            value: value2 ? (value3 ? null : "nowrap") : "wrap",
+            value: isWrapping ? (hasOwnWrapValue ? null : "nowrap") : "wrap",
           },
         ])
       }
@@ -448,59 +448,59 @@ function PropertyGridTracks({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    !input.mixed &&
-    (!(input.value ?? "").trim() ||
-      parseEqualGridColumns(input.value) != null);
-  if (!callback(cols) || !callback(rows))
+  let isEqualGridField: Dynamic = (field?: Dynamic): Dynamic =>
+    !field.mixed &&
+    (!(field.value ?? "").trim() ||
+      parseEqualGridColumns(field.value) != null);
+  if (!isEqualGridField(cols) || !isEqualGridField(rows))
     return (
       <jsxMediaPlaybackControls.Fragment>
         {renderRows([cols, rows])}
       </jsxMediaPlaybackControls.Fragment>
     );
-  let value: Dynamic = inheritedFieldsDisabledReason(cols, rows),
-    value2: Dynamic = inheritedFieldsDescription(cols, rows);
+  let disabledReason: Dynamic = inheritedFieldsDisabledReason(cols, rows),
+    description: Dynamic = inheritedFieldsDescription(cols, rows);
   cols = inheritedFieldForEdit(cols);
   rows = inheritedFieldForEdit(rows);
-  let callback2: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value4?: Dynamic,
+  let renderCountInput: Dynamic = (
+      trackField?: Dynamic,
+      icon?: Dynamic,
+      ariaLabel?: Dynamic,
+      autoPlaceholder?: Dynamic,
     ): Dynamic => (
       <NumericInput
-        aria-label={context}
-        prefix={<PropertyOptionIcon icon={options} />}
-        value={parseEqualGridColumns(input.value) ?? undefined}
+        aria-label={ariaLabel}
+        prefix={<PropertyOptionIcon icon={icon} />}
+        value={parseEqualGridColumns(trackField.value) ?? undefined}
         placeholder={
-          input.mixed ? (undefined) : (parseEqualGridColumns(input.fallback ?? "") != null ? (String(
-                  parseEqualGridColumns(input.fallback ?? ""),
-                )) : (value4))
+          trackField.mixed ? (undefined) : (parseEqualGridColumns(trackField.fallback ?? "") != null ? (String(
+                  parseEqualGridColumns(trackField.fallback ?? ""),
+                )) : (autoPlaceholder))
         }
-        mixed={input.mixed}
+        mixed={trackField.mixed}
         min={1}
         max={12}
         step={1}
         smallStep={1}
         clearable={true}
         steppers={false}
-        disabled={input.disabled}
-        onValue={(input2?: Dynamic): Dynamic =>
+        disabled={trackField.disabled}
+        onValue={(count?: Dynamic): Dynamic =>
           onCommitMany([
             {
-              prop: input.prop,
+              prop: trackField.prop,
               value:
-                input2 === undefined
+                count === undefined
                   ? null
                   : serializeEqualGridColumns(
-                      Math.round(input2),
+                      Math.round(count),
                     ),
             },
           ])
         }
       />
     ),
-    value3: Dynamic =
+    hasMixedTrack: Dynamic =
       PropertiesInheritedFieldMixedAlias(cols) ||
       PropertiesInheritedFieldMixedAlias(rows);
   return (
@@ -508,11 +508,11 @@ function PropertyGridTracks({
       label={uiMessage("inspector.layoutSection.grid")}
       data-testid={"dc-grid-row"}
       title={
-        uiMessage("inspector.layoutSection.columnsRowsAsCountsOf", { value1: String(value ? (value + ". ") : ("")) })
+        uiMessage("inspector.layoutSection.columnsRowsAsCountsOf", { value1: String(disabledReason ? (disabledReason + ". ") : ("")) })
       }
-      description={value2}
+      description={description}
       onReset={
-        value3
+        hasMixedTrack
           ? (): Dynamic =>
               onCommitMany([
                 {
@@ -531,15 +531,15 @@ function PropertyGridTracks({
       }
     >
       <div className={"grid min-w-0 flex-1 grid-cols-2 gap-2"}>
-        {callback2(
+        {renderCountInput(
           cols,
-          PropertiesTooltipNameViewBoxPathsConfig_10,
+          tableColumnsIcon,
           "Columns",
           "auto",
         )}
-        {callback2(
+        {renderCountInput(
           rows,
-          PropertiesTooltipNameViewBoxPathsConfig_9,
+          tableRowsIcon,
           "Rows",
           "auto",
         )}
@@ -559,85 +559,85 @@ function InspectorLayoutSection({
 }: Dynamic): Dynamic {
   useUiLocale();
   let entries: Dynamic = new Map(
-      sec.rows.map((input?: Dynamic): Dynamic => [input.prop, input]),
+      sec.rows.map((row?: Dynamic): Dynamic => [row.prop, row]),
     ),
-    value: Dynamic = sec.rows.filter(
-      (input?: Dynamic): Dynamic =>
-        input.prop === "width" || input.prop === "height",
+    sizeRows: Dynamic = sec.rows.filter(
+      (row?: Dynamic): Dynamic =>
+        row.prop === "width" || row.prop === "height",
     ),
-    value2: Dynamic = sec.rows.filter(
-      (input?: Dynamic): Dynamic => /^(min|max)-/.test(input.prop),
+    limitRows: Dynamic = sec.rows.filter(
+      (row?: Dynamic): Dynamic => /^(min|max)-/.test(row.prop),
     ),
-    entry: Dynamic = entries.get("position"),
-    entry2: Dynamic = entries.get("top"),
-    entry3: Dynamic = entries.get("left"),
-    value3: Dynamic = ["bottom", "right"]
-      .map((input?: Dynamic): Dynamic => entries.get(input))
-      .filter((input?: Dynamic): Dynamic => !!input),
+    positionEntry: Dynamic = entries.get("position"),
+    topEntry: Dynamic = entries.get("top"),
+    leftEntry: Dynamic = entries.get("left"),
+    farEdgeEntries: Dynamic = ["bottom", "right"]
+      .map((edgeName?: Dynamic): Dynamic => entries.get(edgeName))
+      .filter((edgeEntry?: Dynamic): Dynamic => !!edgeEntry),
     items: Dynamic = ["grid-column", "grid-row", "flex-grow"],
-    value4: Dynamic = sec.rows.filter(
-      (input?: Dynamic): Dynamic => items.includes(input.prop),
+    itemRows: Dynamic = sec.rows.filter(
+      (row?: Dynamic): Dynamic => items.includes(row.prop),
     ),
-    value5: Dynamic = sec.rows.some(
-      (input?: Dynamic): Dynamic => input.prop === "padding-top",
+    hasPaddingRows: Dynamic = sec.rows.some(
+      (row?: Dynamic): Dynamic => row.prop === "padding-top",
     ),
-    value6: Dynamic = sec.rows.some(
-      (input?: Dynamic): Dynamic => input.prop === "margin-top",
+    hasMarginRows: Dynamic = sec.rows.some(
+      (row?: Dynamic): Dynamic => row.prop === "margin-top",
     ),
-    entry4: Dynamic = entries.get("display"),
-    entry5: Dynamic = entries.get("flex-direction"),
-    entry6: Dynamic = entries.get("flex-wrap"),
-    value7: Dynamic = (entry6 && !entry6.mixed ? (entry6.value ?? "") : "")
+    displayEntry: Dynamic = entries.get("display"),
+    directionEntry: Dynamic = entries.get("flex-direction"),
+    wrapEntry: Dynamic = entries.get("flex-wrap"),
+    wrapValue: Dynamic = (wrapEntry && !wrapEntry.mixed ? (wrapEntry.value ?? "") : "")
       .trim()
       .toLowerCase(),
-    value8: Dynamic =
-      value7 === "" || value7 === "wrap" || value7 === "nowrap",
-    entry7: Dynamic = entries.get("grid-template-columns"),
-    entry8: Dynamic = entries.get("grid-template-rows"),
-    value9: Dynamic =
+    isSimpleWrap: Dynamic =
+      wrapValue === "" || wrapValue === "wrap" || wrapValue === "nowrap",
+    gridColumnsEntry: Dynamic = entries.get("grid-template-columns"),
+    gridRowsEntry: Dynamic = entries.get("grid-template-rows"),
+    justifyEntry: Dynamic =
       entries.get("justify-content") ?? entries.get("justify-items"),
-    entry9: Dynamic = entries.get("align-items"),
-    entry10: Dynamic = entries.get("gap"),
-    value10: Dynamic = (
-      (entry5?.mixed ? "" : (entry5?.value ?? "")) ||
-      entry5?.fallback ||
+    alignEntry: Dynamic = entries.get("align-items"),
+    gapEntry: Dynamic = entries.get("gap"),
+    isColumnDirection: Dynamic = (
+      (directionEntry?.mixed ? "" : (directionEntry?.value ?? "")) ||
+      directionEntry?.fallback ||
       "row"
     ).startsWith("column"),
-    value11: Dynamic = sec.rows.some(
-      (input?: Dynamic): Dynamic =>
-        input.prop.startsWith("margin-") &&
-        PropertiesInheritedFieldValueAlias(input),
+    hasMarginValue: Dynamic = sec.rows.some(
+      (row?: Dynamic): Dynamic =>
+        row.prop.startsWith("margin-") &&
+        PropertiesInheritedFieldValueAlias(row),
     ),
-    [value12, value13]: Dynamic =
+    [marginEditorKey, setMarginEditorKey]: Dynamic =
       reactMediaPlaybackControls_2.default.useState(""),
-    value14: Dynamic = value6 && (value11 || value12 === selKey),
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      PropertiesInheritedFieldValueAlias(input) &&
-      !input.mixed &&
-      !options.includes((input.value ?? "").trim().toLowerCase()),
-    value15: Dynamic = (
-      (entry?.mixed ? "" : (entry?.value ?? "")) ||
-      entry?.fallback ||
+    showMarginBox: Dynamic = hasMarginRows && (hasMarginValue || marginEditorKey === selKey),
+    isUnexpectedValue: Dynamic = (entry?: Dynamic, expectedValues?: Dynamic): Dynamic =>
+      PropertiesInheritedFieldValueAlias(entry) &&
+      !entry.mixed &&
+      !expectedValues.includes((entry.value ?? "").trim().toLowerCase()),
+    positionValue: Dynamic = (
+      (positionEntry?.mixed ? "" : (positionEntry?.value ?? "")) ||
+      positionEntry?.fallback ||
       "static"
     )
       .trim()
       .toLowerCase(),
-    value16: Dynamic = !!entry && !entry.mixed && value15 !== "static",
-    value17: Dynamic = entry && {
-      ...entry,
+    isPositioned: Dynamic = !!positionEntry && !positionEntry.mixed && positionValue !== "static",
+    positionRow: Dynamic = positionEntry && {
+      ...positionEntry,
       get label() { return uiMessage("inspector.layoutSection.position"); },
       spec: {
-        ...entry.spec,
+        ...positionEntry.spec,
         get label() { return uiMessage("inspector.layoutSection.position"); },
         editor: "select",
         optionLabels: PropertiesBoxLayoutStaticRelativeAbsoluteConfig,
       },
     },
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (options === "static") {
-        let items2: Dynamic = [
-          ...(value15 !== "static" ||
-          PropertiesInheritedFieldValueAlias(entry)
+    commitPosition: Dynamic = (prop?: Dynamic, newValue?: Dynamic): Dynamic => {
+      if (newValue === "static") {
+        let resetEdits: Dynamic = [
+          ...(positionValue !== "static" ||
+          PropertiesInheritedFieldValueAlias(positionEntry)
             ? [
                 {
                   prop: "position",
@@ -647,42 +647,42 @@ function InspectorLayoutSection({
             : []),
           ...["top", "left", "bottom", "right"]
             .filter(
-              (input2?: Dynamic): Dynamic =>
+              (edge?: Dynamic): Dynamic =>
                 PropertiesInheritedFieldValueAlias(
-                  entries.get(input2),
+                  entries.get(edge),
                 ),
             )
             .map(
-              (input2?: Dynamic): Dynamic => ({
-                prop: input2,
+              (edge?: Dynamic): Dynamic => ({
+                prop: edge,
                 value: null,
               }),
             ),
         ];
-        items2.length > 0 && onCommitMany(items2);
+        resetEdits.length > 0 && onCommitMany(resetEdits);
       } else
         onCommitMany([
           {
-            prop: input,
-            value: options,
+            prop: prop,
+            value: newValue,
           },
         ]);
     },
-    value18: Dynamic =
+    gridAlignRows: Dynamic =
       sec.mode === "grid"
-        ? [value9, entry9].filter((input?: Dynamic): Dynamic => !!input)
+        ? [justifyEntry, alignEntry].filter((row?: Dynamic): Dynamic => !!row)
         : [],
-    value19: Dynamic = isNested
+    addMenuItems: Dynamic = isNested
       ? []
       : [
-          ...addItemsFor(value2),
-          ...(value16 ? addItemsFor(value3) : []),
-          ...addItemsFor(value18),
-          ...(value6 && !value14
+          ...addItemsFor(limitRows),
+          ...(isPositioned ? addItemsFor(farEdgeEntries) : []),
+          ...addItemsFor(gridAlignRows),
+          ...(hasMarginRows && !showMarginBox
             ? [
                 {
                   get label() { return uiMessage("inspector.layoutSection.margin"); },
-                  onSelect: (): Dynamic => value13(selKey),
+                  onSelect: (): Dynamic => setMarginEditorKey(selKey),
                 },
               ]
             : []),
@@ -696,79 +696,79 @@ function InspectorLayoutSection({
           <PropertyActions
             section={sec.title}
             data-testid={`dc-add-${sec.id}`}
-            items={value19}
+            items={addMenuItems}
             disabled={readOnly}
           />
         )
       }
     >
-      {renderRows(value)}
-      {renderRows(value2)}
-      {value17 && (renderRow(value17, {
-          onCommit: callback2,
+      {renderRows(sizeRows)}
+      {renderRows(limitRows)}
+      {positionRow && (renderRow(positionRow, {
+          onCommit: commitPosition,
         }))}
-      {entry &&
-        entry2 &&
-        entry3 &&
-        (value16 ||
-          PropertiesInheritedFieldValueAlias(entry2) ||
-          PropertiesInheritedFieldValueAlias(entry3)) && (<PropertyPositionXY
+      {positionEntry &&
+        topEntry &&
+        leftEntry &&
+        (isPositioned ||
+          PropertiesInheritedFieldValueAlias(topEntry) ||
+          PropertiesInheritedFieldValueAlias(leftEntry)) && (<PropertyPositionXY
             key={`${selKey}|offset`}
-            left={entry3}
-            top={entry2}
+            left={leftEntry}
+            top={topEntry}
             renderRows={renderRows}
             onCommitMany={onCommitMany}
           />)}
-      {!entry && (renderRows(
-          [entry2, entry3].filter(
-            (input?: Dynamic): Dynamic =>
-              !!input &&
-              PropertiesInheritedFieldValueAlias(input),
+      {!positionEntry && (renderRows(
+          [topEntry, leftEntry].filter(
+            (row?: Dynamic): Dynamic =>
+              !!row &&
+              PropertiesInheritedFieldValueAlias(row),
           ),
         ))}
       {renderRows(
-        value16
-          ? value3
-          : value3.filter(PropertiesInheritedFieldValueAlias),
+        isPositioned
+          ? farEdgeEntries
+          : farEdgeEntries.filter(PropertiesInheritedFieldValueAlias),
       )}
-      {renderRows(value4)}
-      {entry4 && (renderRow(entry4))}
-      {entry5 && (renderRow(entry5, {
+      {renderRows(itemRows)}
+      {displayEntry && (renderRow(displayEntry))}
+      {directionEntry && (renderRow(directionEntry, {
           trailing:
-            entry6 && value8 ? (
-              <PropertyFlexWrap wrap={entry6} onCommitMany={onCommitMany} />
+            wrapEntry && isSimpleWrap ? (
+              <PropertyFlexWrap wrap={wrapEntry} onCommitMany={onCommitMany} />
             ) : undefined,
         }))}
-      {entry6 &&
-        !value8 && (renderRows([
+      {wrapEntry &&
+        !isSimpleWrap && (renderRows([
           {
-            ...entry6,
+            ...wrapEntry,
             spec: {
-              ...entry6.spec,
+              ...wrapEntry.spec,
               editor: "string",
             },
           },
         ]))}
-      {entry7 && entry8 ? (<PropertyGridTracks
+      {gridColumnsEntry && gridRowsEntry ? (<PropertyGridTracks
           key={`${selKey}|grid`}
-          cols={entry7}
-          rows={entry8}
+          cols={gridColumnsEntry}
+          rows={gridRowsEntry}
           renderRows={renderRows}
           onCommitMany={onCommitMany}
         />) : (renderRows(
-          [entry7, entry8].filter((input?: Dynamic): Dynamic => !!input),
+          [gridColumnsEntry, gridRowsEntry].filter((row?: Dynamic): Dynamic => !!row),
         ))}
-      {sec.mode === "flex" && value9 && entry9 && (<PropertyFlexAlignment
+      {sec.mode === "flex" && justifyEntry && alignEntry && (<PropertyFlexAlignment
           key={`${selKey}|align`}
-          justify={value9}
-          align={entry9}
+          justify={justifyEntry}
+          align={alignEntry}
           stack={true}
-          vertical={value10}
+          vertical={isColumnDirection}
           onCommitMany={onCommitMany}
         />)}
       {sec.mode === "flex" &&
-        value9 &&
-        callback(value9, [
+        justifyEntry &&
+        isUnexpectedValue(justifyEntry, [
           "flex-start",
           "center",
           "flex-end",
@@ -781,17 +781,17 @@ function InspectorLayoutSection({
           "legacy",
         ]) && (renderRows([
           {
-            ...value9,
+            ...justifyEntry,
             get label() { return uiMessage("inspector.layoutSection.justify"); },
             spec: {
-              ...value9.spec,
+              ...justifyEntry.spec,
               editor: "string",
             },
           },
         ]))}
       {sec.mode === "flex" &&
-        entry9 &&
-        callback(entry9, [
+        alignEntry &&
+        isUnexpectedValue(alignEntry, [
           "flex-start",
           "center",
           "flex-end",
@@ -801,28 +801,28 @@ function InspectorLayoutSection({
           "self-end",
         ]) && (renderRows([
           {
-            ...entry9,
+            ...alignEntry,
             get label() { return uiMessage("inspector.layoutSection.align"); },
             spec: {
-              ...entry9.spec,
+              ...alignEntry.spec,
               editor: "string",
             },
           },
         ]))}
       {sec.mode === undefined &&
-        !value9 &&
-        entry9 && (renderRows([
+        !justifyEntry &&
+        alignEntry && (renderRows([
           {
-            ...entry9,
+            ...alignEntry,
             spec: {
-              ...entry9.spec,
+              ...alignEntry.spec,
               longTail: false,
             },
           },
         ]))}
-      {entry10 && (renderRows([entry10]))}
-      {renderRows(value18)}
-      {value5 && (<PropertyBoxSides
+      {gapEntry && (renderRows([gapEntry]))}
+      {renderRows(gridAlignRows)}
+      {hasPaddingRows && (<PropertyBoxSides
           key={`${selKey}|padding`}
           label={uiMessage("inspector.layoutSection.padding")}
           base={"padding"}
@@ -830,7 +830,7 @@ function InspectorLayoutSection({
           renderRows={renderRows}
           onCommitMany={onCommitMany}
         />)}
-      {value14 && (<PropertyBoxSides
+      {showMarginBox && (<PropertyBoxSides
           key={`${selKey}|margin`}
           label={uiMessage("inspector.layoutSection.margin")}
           base={"margin"}

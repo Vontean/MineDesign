@@ -16,7 +16,7 @@ import { useElementById } from "./hooks/element-and-dismissal";
 import { AnnotationInspector } from "./inspector/annotation";
 import { InspectorContext } from "./inspector/context-part-2";
 import { inspectorPanelId, useInspectorOpen } from "./inspector/context";
-import { InspectorEditorItems, InspectorEditorItems_2 } from "./inspector/editor";
+import { InspectorEditorItems, InspectorEditorItems_2 as emptyArtboardColors } from "./inspector/editor";
 import { CdsIsland } from "../platform/cds-island";
 
 function DesignPropertiesSidebar({ children: children }: Dynamic): Dynamic {
@@ -54,7 +54,7 @@ function AnchoredDesignProperties({
           colorTokenSet.themes,
           undefined,
         ),
-        artboardColors: InspectorEditorItems_2,
+        artboardColors: emptyArtboardColors,
         designColorTokens: InspectorEditorItems,
         setOverlayHidden: (): Dynamic => {},
         setScrubbing: (): Dynamic => {},
