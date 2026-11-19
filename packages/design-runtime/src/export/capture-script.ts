@@ -19,67 +19,67 @@ function getBrowserZoomMetrics(): Dynamic {
     Date.now() < ExportCaptureScriptZoomDprUntilConfig.until
   )
     return ExportCaptureScriptZoomDprUntilConfig;
-  let value2: Dynamic = adjustCaptureTextMetrics(
+  let measuredZoom: Dynamic = adjustCaptureTextMetrics(
     document,
     value,
   );
   ExportCaptureScriptZoomDprUntilConfig = {
-    zoom: value2,
+    zoom: measuredZoom,
     dpr: value,
-    until: value2 === value ? 1 / 0 : Date.now() + 5e3,
+    until: measuredZoom === value ? 1 / 0 : Date.now() + 5e3,
   };
   return ExportCaptureScriptZoomDprUntilConfig;
 }
 function buildCaptureScript(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = 0,
-  extra: Dynamic = false,
-  detail: Dynamic = false,
-  argument: Dynamic = 0,
-  argument2: Dynamic = "",
-  argument3: Dynamic = false,
-  argument4: Dynamic = false,
-  argument5: Dynamic = false,
-  argument6: Dynamic = "",
-  argument7: Dynamic = "",
-  argument8: Dynamic = "",
-  argument9: Dynamic = false,
-  argument10: Dynamic = false,
-  argument11: Dynamic = null,
-  argument12: Dynamic = null,
-  argument13: Dynamic = getBrowserZoomMetrics(),
+  capturePayload?: Dynamic,
+  quality?: Dynamic,
+  maxDimension?: Dynamic,
+  scale: Dynamic = 0,
+  includeViewport: Dynamic = false,
+  cropToSelection: Dynamic = false,
+  captureLimit: Dynamic = 0,
+  matteColor: Dynamic = "",
+  settleAnimations: Dynamic = false,
+  includeSelection: Dynamic = false,
+  freezeAnimations: Dynamic = false,
+  selectionBackground: Dynamic = "",
+  selectionRoot: Dynamic = "",
+  overlay: Dynamic = "",
+  selectionVisible: Dynamic = false,
+  includeText: Dynamic = false,
+  frameBounds: Dynamic = null,
+  pagination: Dynamic = null,
+  zoomMetrics: Dynamic = getBrowserZoomMetrics(),
 ): Dynamic {
   let state: Dynamic = {
-    __FMT__: JSON.stringify(input),
-    __Q__: String(options),
-    __MAX__: String(context),
-    __SCALE__: String(value),
-    __VP__: extra ? "1" : "0",
-    __CROP__: detail ? "1" : "0",
-    __CAP__: String(argument),
-    __MATTE__: JSON.stringify(argument2),
-    __SETTLE__: argument3 ? "1" : "0",
-    __SEL__: argument4 ? "1" : "0",
-    __FREEZE__: argument5 ? "1" : "0",
-    __SELBG__: JSON.stringify(argument6),
-    __SELROOT__: JSON.stringify(argument7),
-    __OVERLAY__: JSON.stringify(argument8),
-    __SELVIS__: argument9 ? "1" : "0",
-    __TEXT__: argument10 ? "1" : "0",
+    __FMT__: JSON.stringify(capturePayload),
+    __Q__: String(quality),
+    __MAX__: String(maxDimension),
+    __SCALE__: String(scale),
+    __VP__: includeViewport ? "1" : "0",
+    __CROP__: cropToSelection ? "1" : "0",
+    __CAP__: String(captureLimit),
+    __MATTE__: JSON.stringify(matteColor),
+    __SETTLE__: settleAnimations ? "1" : "0",
+    __SEL__: includeSelection ? "1" : "0",
+    __FREEZE__: freezeAnimations ? "1" : "0",
+    __SELBG__: JSON.stringify(selectionBackground),
+    __SELROOT__: JSON.stringify(selectionRoot),
+    __OVERLAY__: JSON.stringify(overlay),
+    __SELVIS__: selectionVisible ? "1" : "0",
+    __TEXT__: includeText ? "1" : "0",
     __FRAME__:
-      argument11 &&
-      typeof argument11.w == "number" &&
-      typeof argument11.h == "number" &&
-      Number.isFinite(argument11.w) &&
-      Number.isFinite(argument11.h) &&
-      argument11.w > 0 &&
-      argument11.h > 0
+      frameBounds &&
+      typeof frameBounds.w == "number" &&
+      typeof frameBounds.h == "number" &&
+      Number.isFinite(frameBounds.w) &&
+      Number.isFinite(frameBounds.h) &&
+      frameBounds.w > 0 &&
+      frameBounds.h > 0
         ? JSON.stringify({
-            w: argument11.w,
-            h: argument11.h,
-            ...(argument11.full === true
+            w: frameBounds.w,
+            h: frameBounds.h,
+            ...(frameBounds.full === true
               ? {
                   full: true,
                 }
@@ -87,34 +87,34 @@ function buildCaptureScript(
           })
         : "null",
     __PAGES__:
-      argument12 &&
-      Number.isFinite(argument12.h) &&
-      argument12.h > 0 &&
-      Number.isInteger(argument12.max) &&
-      argument12.max > 0
+      pagination &&
+      Number.isFinite(pagination.h) &&
+      pagination.h > 0 &&
+      Number.isInteger(pagination.max) &&
+      pagination.max > 0
         ? JSON.stringify({
-            h: argument12.h,
-            max: argument12.max,
-            m: Math.max(0, Number(argument12.margin) || 0),
-            from: Math.max(0, Math.floor(Number(argument12.from) || 0)),
-            n: Math.max(0, Math.floor(Number(argument12.count) || 0)),
-            tops: (argument12.tops ?? []).filter(
-              (input2?: Dynamic): Dynamic => Number.isFinite(input2),
+            h: pagination.h,
+            max: pagination.max,
+            m: Math.max(0, Number(pagination.margin) || 0),
+            from: Math.max(0, Math.floor(Number(pagination.from) || 0)),
+            n: Math.max(0, Math.floor(Number(pagination.count) || 0)),
+            tops: (pagination.tops ?? []).filter(
+              (isFiniteValue?: Dynamic): Dynamic => Number.isFinite(isFiniteValue),
             ),
           })
         : "null",
     __LAYOUT__: JSON.stringify(
-      [argument13.zoom, argument13.dpr].every(
-        (input2?: Dynamic): Dynamic =>
-          typeof input2 == "number" &&
-          Number.isFinite(input2) &&
-          input2 > 0 &&
-          input2 <= 8,
+      [zoomMetrics.zoom, zoomMetrics.dpr].every(
+        (isValidDimension?: Dynamic): Dynamic =>
+          typeof isValidDimension == "number" &&
+          Number.isFinite(isValidDimension) &&
+          isValidDimension > 0 &&
+          isValidDimension <= 8,
       ) &&
-        (argument13.zoom === 1 || argument13.zoom === argument13.dpr)
+        (zoomMetrics.zoom === 1 || zoomMetrics.zoom === zoomMetrics.dpr)
         ? {
-            zoom: argument13.zoom,
-            dpr: argument13.dpr,
+            zoom: zoomMetrics.zoom,
+            dpr: zoomMetrics.dpr,
           }
         : {
             zoom: 0,
@@ -124,7 +124,7 @@ function buildCaptureScript(
   };
   return imageCaptureRuntimeScript.replace(
     /__[A-Z]+__/g,
-    (input2?: Dynamic): Dynamic => state[input2] ?? input2,
+    (placeholder?: Dynamic): Dynamic => state[placeholder] ?? placeholder,
   );
 }
 export {

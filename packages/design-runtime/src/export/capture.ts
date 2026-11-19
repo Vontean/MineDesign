@@ -12,15 +12,15 @@ function selectExportCaptureArtboard(
   selectedFiles?: Dynamic,
   pageId?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    input === null
+  let callback: Dynamic = (fileId?: Dynamic): Dynamic =>
+    fileId === null
       ? undefined
-      : artboards.find((input2?: Dynamic): Dynamic => input2.file === input);
+      : artboards.find((artboard?: Dynamic): Dynamic => artboard.file === fileId);
   if (focusedFile !== null) {
-    let value3: Dynamic = callback(focusedFile);
-    return value3
+    let focusedArtboard: Dynamic = callback(focusedFile);
+    return focusedArtboard
       ? {
-          artboard: value3,
+          artboard: focusedArtboard,
           chosen: true,
         }
       : {
@@ -29,17 +29,17 @@ function selectExportCaptureArtboard(
         };
   }
   let value: Dynamic = artboards.filter(
-    (input?: Dynamic): Dynamic => selectedFiles.has(input.file),
+    (artboard?: Dynamic): Dynamic => selectedFiles.has(artboard.file),
   );
   if (value.length === 1)
     return {
       artboard: value[0],
       chosen: true,
     };
-  let value2: Dynamic = callback(pageId) ?? artboards[0];
-  return value2
+  let fallbackArtboard: Dynamic = callback(pageId) ?? artboards[0];
+  return fallbackArtboard
     ? {
-        artboard: value2,
+        artboard: fallbackArtboard,
         chosen: artboards.length === 1,
       }
     : {
@@ -51,38 +51,38 @@ async function drainArtboardExportCaptures(
   capture?: Dynamic,
   artboards?: Dynamic,
   deadline?: Dynamic,
-  options?: Dynamic,
-  { reserveMs: extra = 25e3, now: extra2 = Date.now }: Dynamic = {},
+  timeLimit?: Dynamic,
+  { reserveMs: reserveMs = 25e3, now: now = Date.now }: Dynamic = {},
 ): Promise<Dynamic> {
   let value: Dynamic = null;
-  for (let [value2, value3] of artboards.entries() as Dynamic) {
-    if (value !== null && extra2() + extra > options)
+  for (let [artboardIndex, artboard] of artboards.entries() as Dynamic) {
+    if (value !== null && now() + reserveMs > timeLimit)
       return {
         ok: false,
         reason: "no_time",
         after: value,
       };
-    let value4: Dynamic;
+    let captureResult: Dynamic;
     try {
-      value4 = await capture(value3);
-    } catch (value5: Dynamic) {
-      if (value2 === artboards.length - 1) throw value5;
+      captureResult = await capture(artboard);
+    } catch (error: Dynamic) {
+      if (artboardIndex === artboards.length - 1) throw error;
       value = "failed";
       continue;
     }
-    if (value4 === null)
+    if (captureResult === null)
       return {
         ok: false,
         reason: "nothing",
       };
-    if (value4.bytes.length === 0)
+    if (captureResult.bytes.length === 0)
       throw new Error("the image came back empty");
-    if (value4.bytes.length <= deadline)
+    if (captureResult.bytes.length <= deadline)
       return {
         ok: true,
-        scale: value3,
+        scale: artboard,
         steppedDown: value,
-        ...value4,
+        ...captureResult,
       };
     value = "too_large";
   }
@@ -94,48 +94,48 @@ async function drainArtboardExportCaptures(
 async function captureExportArtboards(
   artboards?: Dynamic,
   scale?: Dynamic,
-  { signal: context }: Dynamic = {},
+  { signal: abortSignal }: Dynamic = {},
 ): Promise<Dynamic> {
   let value: Dynamic = uniqueExportFileNames(),
     items: Dynamic = [],
-    items2: Dynamic = [],
+    clippedNames: Dynamic = [],
     index: Dynamic = 0,
-    index2: Dynamic = 0,
+    fontFallbackCount: Dynamic = 0,
     state: Dynamic = {
       innerClipped: 0,
       scrollRegion: 0,
       collapsed: 0,
       unrevealed: 0,
     };
-  for (let value2 of artboardsInReadingOrder(
+  for (let artboard of artboardsInReadingOrder(
     artboards,
   ) as Dynamic) {
-    context?.throwIfAborted();
-    let value3: Dynamic = value(value2.file, value2.title),
-      value4: Dynamic = await scale(value2);
-    if (value4.bytes.length === 0)
-      throw new Error('"' + value3 + '" came back empty');
+    abortSignal?.throwIfAborted();
+    let fileName: Dynamic = value(artboard.file, artboard.title),
+      captureResult: Dynamic = await scale(artboard);
+    if (captureResult.bytes.length === 0)
+      throw new Error('"' + fileName + '" came back empty');
     items.push({
-      name: value3 + ".png",
-      data: value4.bytes,
+      name: fileName + ".png",
+      data: captureResult.bytes,
     });
-    value4.clipped && items2.push(value3);
-    index += value4.blank;
-    index2 += value4.fontFallback ?? 0;
-    for (let value5 of [
+    captureResult.clipped && clippedNames.push(fileName);
+    index += captureResult.blank;
+    fontFallbackCount += captureResult.fontFallback ?? 0;
+    for (let warningType of [
       "innerClipped",
       "scrollRegion",
       "collapsed",
       "unrevealed",
     ] as Dynamic)
-      (value4.hiddenContent?.[value5] ?? 0) > 0 && (state[value5] += 1);
+      (captureResult.hiddenContent?.[warningType] ?? 0) > 0 && (state[warningType] += 1);
   }
   if (items.length === 0) throw new Error("no artboards to export");
   return {
     blob: createStoredZip(items),
-    clipped: items2,
+    clipped: clippedNames,
     blank: index,
-    fontFallback: index2,
+    fontFallback: fontFallbackCount,
     hiddenContent: state,
   };
 }

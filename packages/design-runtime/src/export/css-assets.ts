@@ -19,33 +19,33 @@ function wrapImportedCssConditions(
   conditions = conditions.trim();
   if (!conditions) return css;
   let value: Dynamic = null,
-    value2: Dynamic = null,
-    value3: Dynamic = /^layer(?=\s|$|\()(?:\(([^)]*)\))?\s*/i.exec(
+    supportsCondition: Dynamic = null,
+    layerMatch: Dynamic = /^layer(?=\s|$|\()(?:\(([^)]*)\))?\s*/i.exec(
       conditions,
     );
-  value3 &&
-    ((value = (value3[1] ?? "").trim()),
-    (conditions = conditions.slice(value3[0].length)));
-  let value4: Dynamic = /^supports\(/i.exec(conditions);
-  if (value4) {
+  layerMatch &&
+    ((value = (layerMatch[1] ?? "").trim()),
+    (conditions = conditions.slice(layerMatch[0].length)));
+  let supportsMatch: Dynamic = /^supports\(/i.exec(conditions);
+  if (supportsMatch) {
     let index: Dynamic = 0,
-      value6: Dynamic = value4[0].length - 1;
-    for (; value6 < conditions.length; value6++)
-      if (conditions[value6] === "(") index++;
-      else if (conditions[value6] === ")" && --index === 0) {
-        value6++;
+      conditionEnd: Dynamic = supportsMatch[0].length - 1;
+    for (; conditionEnd < conditions.length; conditionEnd++)
+      if (conditions[conditionEnd] === "(") index++;
+      else if (conditions[conditionEnd] === ")" && --index === 0) {
+        conditionEnd++;
         break;
       }
-    value2 = conditions.slice(value4[0].length - 1, value6);
-    conditions = conditions.slice(value6);
+    supportsCondition = conditions.slice(supportsMatch[0].length - 1, conditionEnd);
+    conditions = conditions.slice(conditionEnd);
   }
-  let value5: Dynamic = conditions.trim();
-  value5 &&
-    (css = `@media ${value5} {
+  let mediaCondition: Dynamic = conditions.trim();
+  mediaCondition &&
+    (css = `@media ${mediaCondition} {
 ${css}
 }`);
-  value2 &&
-    (css = `@supports ${value2} {
+  supportsCondition &&
+    (css = `@supports ${supportsCondition} {
 ${css}
 }`);
   value !== null &&
@@ -64,41 +64,41 @@ async function inlineExportCssImports(
   resolveAsset?: Dynamic,
   assets?: Dynamic,
   depth?: Dynamic,
-  options?: Dynamic,
+  inlineMode?: Dynamic,
   warnings?: Dynamic,
 ): Promise<Dynamic> {
   if (depth >= maxCssImportDepth) return css;
   let items: Dynamic = [];
   for (let value of css.matchAll(cssImportRulePattern) as Dynamic) {
-    let value2: Dynamic =
+    let importUrl: Dynamic =
         value[1] ?? value[2] ?? value[3] ?? value[4] ?? value[5],
-      value3: Dynamic = value2
-        .slice(0, value2.indexOf(":") + 1)
+      scheme: Dynamic = importUrl
+        .slice(0, importUrl.indexOf(":") + 1)
         .toLowerCase();
-    if (value3 === "data:" || value3 === "blob:") continue;
-    let value4: Dynamic = resolveExportAssetUrl(value2, path),
-      value5: Dynamic = await resolveAsset(value4);
-    if (value5) {
-      let value6: Dynamic = new TextDecoder().decode(value5.data);
-      value6 = await inlineExportCssImports(
-        value6,
-        value4,
+    if (scheme === "data:" || scheme === "blob:") continue;
+    let assetUrl: Dynamic = resolveExportAssetUrl(importUrl, path),
+      asset: Dynamic = await resolveAsset(assetUrl);
+    if (asset) {
+      let importedCss: Dynamic = new TextDecoder().decode(asset.data);
+      importedCss = await inlineExportCssImports(
+        importedCss,
+        assetUrl,
         resolveAsset,
         assets,
         depth + 1,
-        options,
+        inlineMode,
         warnings,
       );
-      value6 = wrapImportedCssConditions(value6, value[6] || "");
+      importedCss = wrapImportedCssConditions(importedCss, value[6] || "");
       items.push({
         full: value[0],
-        content: value6,
+        content: importedCss,
       });
     }
   }
   for (let value of items as Dynamic)
     css = css.split(value.full).join(value.content);
-  return options === "data"
+  return inlineMode === "data"
     ? inlineExportCssAssetUrls(css, path, resolveAsset, assets, warnings)
     : replaceCssAssetUrlsWithIds(css, path, resolveAsset, assets);
 }
@@ -115,30 +115,30 @@ async function replaceCssAssetUrlsWithIds(
     (value = cssAssetUrlPattern.exec(css)) !== null;
 
   ) {
-    let value2: Dynamic = value[1] ?? value[2] ?? value[3];
-    if (exportAssetUuidPattern.test(value2.split("#")[0])) continue;
-    let value3: Dynamic = value2.indexOf("#"),
-      value4: Dynamic = value3 >= 0 ? value2.slice(value3) : "",
-      value5: Dynamic = resolveExportAssetUrl(value2, path),
-      value6: Dynamic;
-    if (assets.has(value5)) value6 = assets.get(value5).uuid;
+    let assetUrl: Dynamic = value[1] ?? value[2] ?? value[3];
+    if (exportAssetUuidPattern.test(assetUrl.split("#")[0])) continue;
+    let fragmentIndex: Dynamic = assetUrl.indexOf("#"),
+      fragment: Dynamic = fragmentIndex >= 0 ? assetUrl.slice(fragmentIndex) : "",
+      resolvedUrl: Dynamic = resolveExportAssetUrl(assetUrl, path),
+      assetId: Dynamic;
+    if (assets.has(resolvedUrl)) assetId = assets.get(resolvedUrl).uuid;
     else {
-      let value7: Dynamic = await resolveAsset(value5);
-      if (!value7) continue;
-      value6 = crypto.randomUUID();
-      assets.set(value5, {
-        uuid: value6,
-        data: value7.data,
-        mime: value7.mime,
+      let asset: Dynamic = await resolveAsset(resolvedUrl);
+      if (!asset) continue;
+      assetId = crypto.randomUUID();
+      assets.set(resolvedUrl, {
+        uuid: assetId,
+        data: asset.data,
+        mime: asset.mime,
       });
     }
     items.push({
       original: value[0],
-      replacement: `url("${value6}${value4}")`,
+      replacement: `url("${assetId}${fragment}")`,
     });
   }
-  for (let value2 of items as Dynamic)
-    css = css.split(value2.original).join(value2.replacement);
+  for (let replacement of items as Dynamic)
+    css = css.split(replacement.original).join(replacement.replacement);
   return css;
 }
 async function inlineExportCssAssetUrls(
@@ -156,24 +156,24 @@ async function inlineExportCssAssetUrls(
     (value = cssAssetUrlPattern.exec(css)) !== null;
 
   ) {
-    let value2: Dynamic = value[1] ?? value[2] ?? value[3],
-      value3: Dynamic = value2.indexOf("#"),
-      value4: Dynamic = value3 >= 0 ? value2.slice(value3) : "",
-      value5: Dynamic = resolveExportAssetUrl(
-        value2.split("#")[0],
+    let assetUrl: Dynamic = value[1] ?? value[2] ?? value[3],
+      fragmentIndex: Dynamic = assetUrl.indexOf("#"),
+      fragment: Dynamic = fragmentIndex >= 0 ? assetUrl.slice(fragmentIndex) : "",
+      resolvedUrl: Dynamic = resolveExportAssetUrl(
+        assetUrl.split("#")[0],
         path,
       );
-    if (values.has(value5)) continue;
-    let entry: Dynamic = assets.get(value5);
-    entry || (entry = await resolveAsset(value5));
+    if (values.has(resolvedUrl)) continue;
+    let entry: Dynamic = assets.get(resolvedUrl);
+    entry || (entry = await resolveAsset(resolvedUrl));
     if (!entry) {
-      values.add(value5);
+      values.add(resolvedUrl);
       continue;
     }
-    let value6: Dynamic = entry.mime.split(";")[0].trim().toLowerCase();
+    let mimeType: Dynamic = entry.mime.split(";")[0].trim().toLowerCase();
     if (
       !(
-        alreadyCompressedExportMimeTypes.has(value6) &&
+        alreadyCompressedExportMimeTypes.has(mimeType) &&
         hasCompressedFileSignature(entry.data)
       ) &&
       containsProjectServeAccessToken(
@@ -181,21 +181,21 @@ async function inlineExportCssAssetUrls(
       )
     ) {
       warnings.push(
-        `serve token not removed: asset "${redactProjectServeAccessToken(value5)}" referenced from a stylesheet ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
+        `serve token not removed: asset "${redactProjectServeAccessToken(resolvedUrl)}" referenced from a stylesheet ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
       );
-      values.add(value5);
+      values.add(resolvedUrl);
       continue;
     }
-    let value7: Dynamic = mimeTypePattern.test(value6)
-      ? value6
+    let dataMimeType: Dynamic = mimeTypePattern.test(mimeType)
+      ? mimeType
       : "application/octet-stream";
     items.push({
       original: value[0],
-      replacement: `url("data:${value7};base64,${encodeBinaryBase64(entry.data)}${value4}")`,
+      replacement: `url("data:${dataMimeType};base64,${encodeBinaryBase64(entry.data)}${fragment}")`,
     });
   }
-  for (let value2 of items as Dynamic)
-    css = css.split(value2.original).join(value2.replacement);
+  for (let replacement of items as Dynamic)
+    css = css.split(replacement.original).join(replacement.replacement);
   return css;
 }
 export {

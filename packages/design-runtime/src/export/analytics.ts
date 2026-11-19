@@ -7,84 +7,84 @@ import { frameAnalyticsReporter } from "../platform/health-and-analytics";
 var exportAnalyticsEvents: Dynamic;
 var exportDeliveryAnalyticsEvents: Dynamic;
 function sendStaggeredAnalytics(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = globalThis,
+  analyticsEvents?: Dynamic,
+  reportEvent?: Dynamic,
+  scheduler: Dynamic = globalThis,
 ): Dynamic {
-  input.forEach(
-    (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      context.setTimeout((): Dynamic => {
+  analyticsEvents.forEach(
+    (eventName?: Dynamic, eventIndex?: Dynamic): Dynamic =>
+      scheduler.setTimeout((): Dynamic => {
         try {
-          options(input2);
+          reportEvent(eventName);
         } catch {}
-      }, options2 * 300),
+      }, eventIndex * 300),
   );
 }
 function describeExportScope(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  pageNumber?: Dynamic,
+  scope?: Dynamic,
+  pageSummary?: Dynamic,
 ): Dynamic {
   return {
-    partial: options === "whole" && input < context.printable,
-    singleOfMany: options === "one" && context.printable > 1,
-    otherPages: context.otherPages > 0,
+    partial: scope === "whole" && pageNumber < pageSummary.printable,
+    singleOfMany: scope === "one" && pageSummary.printable > 1,
+    otherPages: pageSummary.otherPages > 0,
   };
 }
-function exportBuildAnalyticsEvents(input?: Dynamic): Dynamic {
+function exportBuildAnalyticsEvents(exportSummary?: Dynamic): Dynamic {
   let value: Dynamic =
-    input.picked === true
+    exportSummary.picked === true
       ? [exportAnalyticsEvents.built, exportAnalyticsEvents.pickBuilt]
       : [exportAnalyticsEvents.built];
-  input.partial === true && value.push(exportAnalyticsEvents.partial);
-  input.singleOfMany === true &&
+  exportSummary.partial === true && value.push(exportAnalyticsEvents.partial);
+  exportSummary.singleOfMany === true &&
     value.push(exportAnalyticsEvents.singleOfMany);
-  input.otherPages === true && value.push(exportAnalyticsEvents.otherPages);
-  (input.blankImages ?? 0) > 0 &&
+  exportSummary.otherPages === true && value.push(exportAnalyticsEvents.otherPages);
+  (exportSummary.blankImages ?? 0) > 0 &&
     value.push(exportAnalyticsEvents.blankImages);
-  input.clipped === true && value.push(exportAnalyticsEvents.clipped);
-  input.flowOverflow === true &&
+  exportSummary.clipped === true && value.push(exportAnalyticsEvents.clipped);
+  exportSummary.flowOverflow === true &&
     value.push(exportAnalyticsEvents.flowOverflow);
-  (input.hiddenSkipped ?? 0) > 0 &&
+  (exportSummary.hiddenSkipped ?? 0) > 0 &&
     value.push(exportAnalyticsEvents.hiddenSkipped);
-  (input.fontFallback ?? 0) > 0 &&
+  (exportSummary.fontFallback ?? 0) > 0 &&
     value.push(exportAnalyticsEvents.fontFallback);
-  input.scaledDown === true && value.push(exportAnalyticsEvents.scaledDown);
-  (input.innerClipped ?? 0) > 0 &&
+  exportSummary.scaledDown === true && value.push(exportAnalyticsEvents.scaledDown);
+  (exportSummary.innerClipped ?? 0) > 0 &&
     value.push(exportAnalyticsEvents.innerClipped);
-  (input.scrollRegion ?? 0) > 0 &&
+  (exportSummary.scrollRegion ?? 0) > 0 &&
     value.push(exportAnalyticsEvents.scrollRegion);
-  (input.collapsed ?? 0) > 0 && value.push(exportAnalyticsEvents.collapsed);
-  (input.unrevealed ?? 0) > 0 && value.push(exportAnalyticsEvents.unrevealed);
+  (exportSummary.collapsed ?? 0) > 0 && value.push(exportAnalyticsEvents.collapsed);
+  (exportSummary.unrevealed ?? 0) > 0 && value.push(exportAnalyticsEvents.unrevealed);
   return value;
 }
 function reportExportBuilt(
-  input?: Dynamic,
-  options: Dynamic = frameAnalyticsReporter,
-  context: Dynamic = globalThis,
+  exportSummary?: Dynamic,
+  reporter: Dynamic = frameAnalyticsReporter,
+  scheduler: Dynamic = globalThis,
 ): Dynamic {
   try {
     sendStaggeredAnalytics(
-      exportBuildAnalyticsEvents(input),
-      options,
-      context,
+      exportBuildAnalyticsEvents(exportSummary),
+      reporter,
+      scheduler,
     );
   } catch {}
 }
 function reportExportEvent(
-  input?: Dynamic,
-  options: Dynamic = frameAnalyticsReporter,
+  eventName?: Dynamic,
+  reporter: Dynamic = frameAnalyticsReporter,
 ): Dynamic {
   try {
-    options(exportAnalyticsEvents[input]);
+    reporter(exportAnalyticsEvents[eventName]);
   } catch {}
 }
 function reportExportDeliveryEvent(
-  input?: Dynamic,
-  options: Dynamic = frameAnalyticsReporter,
+  eventName?: Dynamic,
+  reporter: Dynamic = frameAnalyticsReporter,
 ): Dynamic {
   try {
-    options(exportDeliveryAnalyticsEvents[input]);
+    reporter(exportDeliveryAnalyticsEvents[eventName]);
   } catch {}
 }
 export {

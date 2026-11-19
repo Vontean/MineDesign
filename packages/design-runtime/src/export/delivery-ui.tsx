@@ -20,52 +20,52 @@ var reactExportDeliveryUi: Dynamic;
 var jsxExportDeliveryUi: Dynamic;
 var ChromeOrEdgeMayNotWorkMessage: Dynamic;
 var ExportDeliveryUiResolvedValue: Dynamic;
-var ExportDeliveryUiResolvedValue_2: Dynamic;
+var DRAG_DOWNLOAD_PROMPT: Dynamic;
 var ExportDeliveryUiRejectedExtensionExtensionNotEnabledTooLargeSet: Dynamic;
-function decodeExportDeliveryBlob(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.indexOf(","),
-    value2: Dynamic = input.slice(0, value),
-    value3: Dynamic = value2.slice(
+function decodeExportDeliveryBlob(dataUrl?: Dynamic): Dynamic {
+  let value: Dynamic = dataUrl.indexOf(","),
+    header: Dynamic = dataUrl.slice(0, value),
+    mimeType: Dynamic = header.slice(
       5,
-      value2.indexOf(";") >= 0 ? value2.indexOf(";") : value2.length,
+      header.indexOf(";") >= 0 ? header.indexOf(";") : header.length,
     ),
-    value4: Dynamic = atob(input.slice(value + 1)),
-    value5: Dynamic = new Uint8Array(value4.length);
-  for (let index: Dynamic = 0; index < value4.length; index++)
-    value5[index] = value4.charCodeAt(index);
-  return new Blob([value5], {
-    type: value3,
+    binaryData: Dynamic = atob(dataUrl.slice(value + 1)),
+    bytes: Dynamic = new Uint8Array(binaryData.length);
+  for (let index: Dynamic = 0; index < binaryData.length; index++)
+    bytes[index] = binaryData.charCodeAt(index);
+  return new Blob([bytes], {
+    type: mimeType,
   });
 }
 function exportDeliveryFailureMessage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  reason?: Dynamic,
+  fileName?: Dynamic,
+  byteSize?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.lastIndexOf("."),
-    value2: Dynamic =
-      value === -1 ? "this kind of file" : options.slice(value) + " files";
-  switch (input) {
+  let value: Dynamic = fileName.lastIndexOf("."),
+    fileTypeLabel: Dynamic =
+      value === -1 ? "this kind of file" : fileName.slice(value) + " files";
+  switch (reason) {
     case "rejected_extension":
       return (
         "This host can\u2019t save " +
-        value2 +
+        fileTypeLabel +
         ". " +
         ExportDeliveryUiResolvedValue
       );
     case "extension_not_enabled":
       return (
         "This host can\u2019t save " +
-        value2 +
+        fileTypeLabel +
         " yet. " +
         ExportDeliveryUiResolvedValue
       );
     case "too_large":
       return (
         "This host wouldn\u2019t save " +
-        options +
+        fileName +
         " at " +
-        (Math.ceil((context / (1024 * 1024)) * 10) / 10).toFixed(1) +
+        (Math.ceil((byteSize / (1024 * 1024)) * 10) / 10).toFixed(1) +
         " MB. " +
         ExportDeliveryUiResolvedValue
       );
@@ -82,33 +82,33 @@ function exportDeliveryFailureMessage(
   }
 }
 function useExportDeliveries(): Dynamic {
-  let [value, value2]: Dynamic = (0, reactExportDeliveryUi.useState)([]),
-    [value3, value4]: Dynamic = (0, reactExportDeliveryUi.useState)(false);
+  let [value, deliveries]: Dynamic = (0, reactExportDeliveryUi.useState)([]),
+    [isOpen, setIsOpen]: Dynamic = (0, reactExportDeliveryUi.useState)(false);
   npm_useEventListener_bc(
     exportDeliveryEventName,
-    (input?: Dynamic): Dynamic => {
-      let detail: Dynamic = input.detail;
-      value2(
-        (input2?: Dynamic): Dynamic => [
-          ...(value3
-            ? input2.filter(
-                (input3?: Dynamic): Dynamic =>
-                  input3.filename !== detail.filename,
+    (event?: Dynamic): Dynamic => {
+      let detail: Dynamic = event.detail;
+      deliveries(
+        (previousDeliveries?: Dynamic): Dynamic => [
+          ...(isOpen
+            ? previousDeliveries.filter(
+                (delivery?: Dynamic): Dynamic =>
+                  delivery.filename !== detail.filename,
               )
             : []),
           detail,
         ],
       );
-      value4(true);
+      setIsOpen(true);
     },
   );
   return (
     <CdsIsland density={"compact"} className={"contents"}>
       <DialogDialogRootTriggerPopupConfig.Root
-        open={value3}
-        onOpenChange={value4}
-        onOpenChangeComplete={(input?: Dynamic): Dynamic => {
-          input || value2([]);
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        onOpenChangeComplete={(open?: Dynamic): Dynamic => {
+          open || deliveries([]);
         }}
       >
         <DialogDialogRootTriggerPopupConfig.Popup
@@ -119,13 +119,13 @@ function useExportDeliveries(): Dynamic {
           </DialogDialogRootTriggerPopupConfig.Header>
           <div className={"flex max-h-[60vh] flex-col gap-2 overflow-auto"}>
             {value.map(
-              (input?: Dynamic): Dynamic =>
+              (delivery?: Dynamic): Dynamic =>
                 (() => {
                   const _Component = ExportDeliveryNotice;
                   const _props = {
-                    delivery: input,
+                    delivery: delivery,
                   } as const;
-                  const _key = input.filename;
+                  const _key = delivery.filename;
                   return <_Component key={_key} {..._props} />;
                 })(),
             )}
@@ -138,8 +138,8 @@ function useExportDeliveries(): Dynamic {
 function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
   useUiLocale();
   let { showToast: value }: Dynamic = useToast(),
-    value2: Dynamic = delivery.file == null,
-    value3: Dynamic = (0, reactExportDeliveryUi.useMemo)((): Dynamic => {
+    isDataUrl: Dynamic = delivery.file == null,
+    blob: Dynamic = (0, reactExportDeliveryUi.useMemo)((): Dynamic => {
       if (delivery.file) return delivery.file.blob;
       try {
         return decodeExportDeliveryBlob(delivery.url);
@@ -149,84 +149,84 @@ function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
         });
       }
     }, [delivery]),
-    value4: Dynamic = delivery.file?.mime ?? delivery.mime ?? value3.type,
-    value5: Dynamic = (0, reactExportDeliveryUi.useMemo)(
+    mimeType: Dynamic = delivery.file?.mime ?? delivery.mime ?? blob.type,
+    downloadUrl: Dynamic = (0, reactExportDeliveryUi.useMemo)(
       (): Dynamic =>
         URL.createObjectURL(
-          new Blob([value3], {
+          new Blob([blob], {
             type: "application/octet-stream",
           }),
         ),
-      [value3],
+      [blob],
     );
   (0, reactExportDeliveryUi.useEffect)(
-    (): Dynamic => (): Dynamic => URL.revokeObjectURL(value5),
-    [value5],
+    (): Dynamic => (): Dynamic => URL.revokeObjectURL(downloadUrl),
+    [downloadUrl],
   );
-  let value6: Dynamic = Math.max(1, Math.round(value3.size / 1024)),
-    [value7, value8]: Dynamic = (0, reactExportDeliveryUi.useState)(false),
-    [value9, value10]: Dynamic = (0, reactExportDeliveryUi.useState)(
+  let sizeKb: Dynamic = Math.max(1, Math.round(blob.size / 1024)),
+    [isBusy, setIsBusy]: Dynamic = (0, reactExportDeliveryUi.useState)(false),
+    [refusal, setRefusal]: Dynamic = (0, reactExportDeliveryUi.useState)(
       undefined,
     ),
-    value11: Dynamic = hasDownloadCapability(),
-    value12: Dynamic =
+    canSaveThroughHost: Dynamic = hasDownloadCapability(),
+    downloadName: Dynamic =
       delivery.filename
         .replace(/[\\/:*?"<>|\u0000-\u001f]/g, " ")
         .replace(/\s+/g, " ")
         .trim() || "export",
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      input.dataTransfer.effectAllowed = "copy";
-      input.dataTransfer.setData(
+    callback: Dynamic = (dragEvent?: Dynamic): Dynamic => {
+      dragEvent.dataTransfer.effectAllowed = "copy";
+      dragEvent.dataTransfer.setData(
         "DownloadURL",
-        value4 + ":" + value12 + ":" + value5,
+        mimeType + ":" + downloadName + ":" + downloadUrl,
       );
     },
-    value13: Dynamic = value9 ?? delivery.refusal,
-    value14: Dynamic =
-      !value11 || value13 === "rate_limited"
+    deliveryReason: Dynamic = refusal ?? delivery.refusal,
+    disabledReason: Dynamic =
+      !canSaveThroughHost || deliveryReason === "rate_limited"
         ? undefined
-        : normalizeDownloadName(value12)
-          ? value13 !== undefined &&
+        : normalizeDownloadName(downloadName)
+          ? deliveryReason !== undefined &&
             ExportDeliveryUiRejectedExtensionExtensionNotEnabledTooLargeSet.has(
-              value13,
+              deliveryReason,
             )
-            ? exportDeliveryFailureMessage(value13, value12, value3.size)
+            ? exportDeliveryFailureMessage(deliveryReason, downloadName, blob.size)
             : undefined
           : exportDeliveryFailureMessage(
               "rejected_extension",
-              value12,
-              value3.size,
+              downloadName,
+              blob.size,
             ),
-    callback2: Dynamic = (): Dynamic => {
+    handleDownload: Dynamic = (): Dynamic => {
       (async (): Promise<Dynamic> => {
-        value8(true);
+        setIsBusy(true);
         try {
-          let { outcome: value15, code: value16 }: Dynamic = await saveThroughHost(value3, value12);
-          if (value15 === "saved") {
-            value("Saved " + value12 + ".", "success");
+          let { outcome: outcome, code: saveCode }: Dynamic = await saveThroughHost(blob, downloadName);
+          if (outcome === "saved") {
+            value("Saved " + downloadName + ".", "success");
             return;
           }
-          if (value15 === "declined" || value15 === "withheld") return;
-          if (value11 && value16 !== "no_shell_save") {
+          if (outcome === "declined" || outcome === "withheld") return;
+          if (canSaveThroughHost && saveCode !== "no_shell_save") {
             ExportDeliveryUiRejectedExtensionExtensionNotEnabledTooLargeSet.has(
-              value16,
-            ) && value10(value16);
+              saveCode,
+            ) && setRefusal(saveCode);
             value(
-              exportDeliveryFailureMessage(value16, value12, value3.size),
+              exportDeliveryFailureMessage(saveCode, downloadName, blob.size),
             );
             return;
           }
-          let value17: Dynamic = (document as Dynamic).createElement("a");
-          value17.href = value5;
-          value17.download = value12;
-          value17.rel = "noopener";
-          value17.style.display = "none";
-          (document as Dynamic).body.appendChild(value17);
-          value17.click();
-          value17.remove();
+          let downloadAnchor: Dynamic = (document as Dynamic).createElement("a");
+          downloadAnchor.href = downloadUrl;
+          downloadAnchor.download = downloadName;
+          downloadAnchor.rel = "noopener";
+          downloadAnchor.style.display = "none";
+          (document as Dynamic).body.appendChild(downloadAnchor);
+          downloadAnchor.click();
+          downloadAnchor.remove();
           value("If no download started: " + ExportDeliveryUiResolvedValue);
         } finally {
-          value8(false);
+          setIsBusy(false);
         }
       })();
     };
@@ -241,12 +241,12 @@ function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
         <div
           draggable={true}
           onDragStart={callback}
-          title={ExportDeliveryUiResolvedValue_2}
+          title={DRAG_DOWNLOAD_PROMPT}
           className={
             "flex min-w-0 flex-1 cursor-grab items-center gap-2.5 select-none active:cursor-grabbing"
           }
         >
-          {value2 ? (<img
+          {isDataUrl ? (<img
               src={delivery.url}
               alt={""}
               draggable={true}
@@ -266,18 +266,18 @@ function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
               {delivery.filename}
             </div>
             <div className={"text-caption text-muted"}>
-              {value6}
+              {sizeKb}
               {" KB"}
             </div>
           </div>
         </div>
-        <DisabledReasonTooltip reason={value14}>
+        <DisabledReasonTooltip reason={disabledReason}>
           <Button
             variant={"primary"}
-            busy={value7}
+            busy={isBusy}
             busyLabel={"Downloading\u2026"}
-            disabled={value14 !== undefined}
-            onClick={callback2}
+            disabled={disabledReason !== undefined}
+            onClick={handleDownload}
             data-testid={"export-delivery-download"}
           >
             {uiMessage("canvas.deliveryUi.download")}
@@ -286,7 +286,7 @@ function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
         <span
           draggable={true}
           onDragStart={callback}
-          title={ExportDeliveryUiResolvedValue_2}
+          title={DRAG_DOWNLOAD_PROMPT}
           className={
             "inline-flex h-control pointer-coarse:min-h-10 shrink-0 cursor-grab items-center rounded border border-strong px-2 text-footnote font-medium text-primary select-none hover:bg-fill-ghost-hover active:cursor-grabbing"
           }
@@ -307,7 +307,7 @@ export {
   ExportDeliveryNotice,
   ExportDeliveryUiRejectedExtensionExtensionNotEnabledTooLargeSet,
   ExportDeliveryUiResolvedValue,
-  ExportDeliveryUiResolvedValue_2,
+  DRAG_DOWNLOAD_PROMPT as ExportDeliveryUiResolvedValue_2,
   jsxExportDeliveryUi,
   reactExportDeliveryUi,
   useExportDeliveries,
@@ -331,7 +331,7 @@ export function installExportDeliveryUi(): () => void {
       "Drag the file out of this window onto your desktop or a folder instead (" +
       ChromeOrEdgeMayNotWorkMessage +
       ").";
-    ExportDeliveryUiResolvedValue_2 =
+    DRAG_DOWNLOAD_PROMPT =
       "Drag this out of the window onto your desktop or a folder (" +
       ChromeOrEdgeMayNotWorkMessage +
       ").";

@@ -4,28 +4,28 @@ import {
 } from "../runtime-types";
 
 async function resolveCaptureFonts(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  document?: Dynamic,
+  platform?: Dynamic,
+  warnings?: Dynamic,
 ): Promise<Dynamic> {
   let items: Dynamic = [],
     values: Dynamic = new Set();
-  function value(input2?: Dynamic): Dynamic {
-    let value6: Dynamic =
-        /[?&]family=([^:&]+):ital,wght@([01]),([\d.]+)&/.exec(input2),
-      fonts: Dynamic = input.fonts;
-    if (!value6 || !fonts) return true;
-    let value7: Dynamic = value6[1].replace(/\+/g, " ").toLowerCase(),
-      value8: Dynamic = value6[2] === "1" ? "italic" : "normal",
-      value9: Dynamic = value6[3].replace("..", " ");
+  function value(stylesheetUrl?: Dynamic): Dynamic {
+    let fontMatch: Dynamic =
+        /[?&]family=([^:&]+):ital,wght@([01]),([\d.]+)&/.exec(stylesheetUrl),
+      fonts: Dynamic = document.fonts;
+    if (!fontMatch || !fonts) return true;
+    let fontFamily: Dynamic = fontMatch[1].replace(/\+/g, " ").toLowerCase(),
+      fontStyle: Dynamic = fontMatch[2] === "1" ? "italic" : "normal",
+      fontWeight: Dynamic = fontMatch[3].replace("..", " ");
     try {
-      for (let value10 of fonts as Dynamic)
+      for (let font of fonts as Dynamic)
         if (
-          value10.status !== "unloaded" &&
-          value10.status !== "error" &&
-          value10.style === value8 &&
-          value10.weight === value9 &&
-          value10.family.replace(/["']/g, "").toLowerCase() === value7
+          font.status !== "unloaded" &&
+          font.status !== "error" &&
+          font.style === fontStyle &&
+          font.weight === fontWeight &&
+          font.family.replace(/["']/g, "").toLowerCase() === fontFamily
         )
           return true;
     } catch {
@@ -33,114 +33,114 @@ async function resolveCaptureFonts(
     }
     return false;
   }
-  async function value2(input2?: Dynamic): Promise<Dynamic> {
+  async function fetchStylesheet(stylesheetUrl?: Dynamic): Promise<Dynamic> {
     try {
-      let value6: Dynamic = await fetch(input2);
-      if (!value6.ok) throw new Error("http " + value6.status);
-      let value7: Dynamic =
-        (await value6.text()).match(/@font-face\s*{[^}]*}/g) || [];
-      for (let index: Dynamic = 0; index < value7.length; index++)
+      let response: Dynamic = await fetch(stylesheetUrl);
+      if (!response.ok) throw new Error("http " + response.status);
+      let fontFaceRules: Dynamic =
+        (await response.text()).match(/@font-face\s*{[^}]*}/g) || [];
+      for (let index: Dynamic = 0; index < fontFaceRules.length; index++)
         items.push({
-          css: value7[index],
-          base: input2,
+          css: fontFaceRules[index],
+          base: stylesheetUrl,
         });
     } catch {
-      context.push(
+      warnings.push(
         "cross-origin stylesheet " +
-          input2 +
+          stylesheetUrl +
           " could not be read; its @font-face rules are not inlined and those fonts may fall back",
       );
     }
   }
-  function value3(input2?: Dynamic): Dynamic {
+  function supportsMedia(rule?: Dynamic): Dynamic {
     try {
-      let value6: Dynamic = input2.media && input2.media.mediaText;
-      if (value6)
-        return options.matchMedia ? options.matchMedia(value6).matches : true;
+      let mediaQuery: Dynamic = rule.media && rule.media.mediaText;
+      if (mediaQuery)
+        return platform.matchMedia ? platform.matchMedia(mediaQuery).matches : true;
       if (
-        input2.conditionText !== undefined &&
-        options.CSS &&
-        options.CSS.supports
+        rule.conditionText !== undefined &&
+        platform.CSS &&
+        platform.CSS.supports
       )
-        return options.CSS.supports(input2.conditionText);
+        return platform.CSS.supports(rule.conditionText);
     } catch {}
     return true;
   }
-  async function value4(
-    input2?: Dynamic,
-    options2?: Dynamic,
+  async function visitStylesheet(
+    stylesheet?: Dynamic,
+    baseUrl?: Dynamic,
   ): Promise<Dynamic> {
     if (
-      !input2 ||
-      values.has(input2) ||
-      (input2.href && values.has(input2.href))
+      !stylesheet ||
+      values.has(stylesheet) ||
+      (stylesheet.href && values.has(stylesheet.href))
     )
       return;
-    values.add(input2);
-    input2.href && values.add(input2.href);
-    let ownerNode: Dynamic = input2.ownerNode;
+    values.add(stylesheet);
+    stylesheet.href && values.add(stylesheet.href);
+    let ownerNode: Dynamic = stylesheet.ownerNode;
     if (
-      input2.href &&
+      stylesheet.href &&
       ownerNode &&
       ownerNode.nodeType === 1 &&
       ownerNode.hasAttribute("data-font-variant") &&
-      !value(input2.href)
+      !value(stylesheet.href)
     )
       return;
-    let value6: Dynamic;
+    let rules: Dynamic;
     try {
-      value6 = input2.cssRules;
+      rules = stylesheet.cssRules;
     } catch {
-      input2.href && (await value2(input2.href));
+      stylesheet.href && (await fetchStylesheet(stylesheet.href));
       return;
     }
-    await value5(value6, input2.href || options2);
+    await visitRules(rules, stylesheet.href || baseUrl);
   }
-  async function value5(
-    items2?: Dynamic,
-    options2?: Dynamic,
+  async function visitRules(
+    rules?: Dynamic,
+    baseUrl?: Dynamic,
   ): Promise<Dynamic> {
-    for (let index: Dynamic = 0; index < items2.length; index++) {
-      let value6: Dynamic = items2[index];
-      if (value6.type === CSSRule.FONT_FACE_RULE)
+    for (let index: Dynamic = 0; index < rules.length; index++) {
+      let rule: Dynamic = rules[index];
+      if (rule.type === CSSRule.FONT_FACE_RULE)
         items.push({
-          css: value6.cssText,
-          base: options2,
+          css: rule.cssText,
+          base: baseUrl,
         });
-      else if ("styleSheet" in value6) {
-        if (!value3(value6)) continue;
-        if (value6.styleSheet) await value4(value6.styleSheet, options2);
-        else if (value6.href) {
-          let href: Dynamic = value6.href;
+      else if ("styleSheet" in rule) {
+        if (!supportsMedia(rule)) continue;
+        if (rule.styleSheet) await visitStylesheet(rule.styleSheet, baseUrl);
+        else if (rule.href) {
+          let href: Dynamic = rule.href;
           try {
-            href = new URL(value6.href, options2).href;
+            href = new URL(rule.href, baseUrl).href;
           } catch {}
-          values.has(href) || (values.add(href), await value2(href));
+          values.has(href) || (values.add(href), await fetchStylesheet(href));
         }
       } else
-        value6.cssRules &&
-          value3(value6) &&
-          (await value5(value6.cssRules, options2));
+        rule.cssRules &&
+          supportsMedia(rule) &&
+          (await visitRules(rule.cssRules, baseUrl));
     }
   }
   try {
-    for (let index: Dynamic = 0; index < input.styleSheets.length; index++)
-      await value4(input.styleSheets[index], input.baseURI);
-    let value6: Dynamic = input.adoptedStyleSheets || [];
-    for (let index: Dynamic = 0; index < value6.length; index++)
-      await value4(value6[index], input.baseURI);
+    for (let index: Dynamic = 0; index < document.styleSheets.length; index++)
+      await visitStylesheet(document.styleSheets[index], document.baseURI);
+    let adoptedSheets: Dynamic = document.adoptedStyleSheets || [];
+    for (let index: Dynamic = 0; index < adoptedSheets.length; index++)
+      await visitStylesheet(adoptedSheets[index], document.baseURI);
   } catch {}
   return items;
 }
 function collectUsedFontFaces(
-  input?: Dynamic,
+  document?: Dynamic,
   items?: Dynamic,
-  context?: Dynamic,
+  warnings?: Dynamic,
 ): Dynamic {
   try {
-    if (!input.fonts || !input.fonts.forEach) return;
-    let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        input2.replace(/^\s*["']?|["']?\s*$/g, "").toLowerCase(),
+    if (!document.fonts || !document.fonts.forEach) return;
+    let callback: Dynamic = (familyName?: Dynamic): Dynamic =>
+        familyName.replace(/^\s*["']?|["']?\s*$/g, "").toLowerCase(),
       state: Dynamic = {};
     for (let index: Dynamic = 0; index < items.length; index++) {
       let value: Dynamic = items[index].css.match(
@@ -148,15 +148,15 @@ function collectUsedFontFaces(
       );
       value && (state[callback(value[1])] = 1);
     }
-    let state2: Dynamic = {};
-    input.fonts.forEach((state3?: Dynamic): Dynamic => {
-      let value: Dynamic = callback(state3.family);
-      state3.status === "loaded" &&
+    let reportedFallbacks: Dynamic = {};
+    document.fonts.forEach((fontFace?: Dynamic): Dynamic => {
+      let value: Dynamic = callback(fontFace.family);
+      fontFace.status === "loaded" &&
         !state[value] &&
-        !state2[value] &&
-        ((state2[value] = 1),
-        context.push(
-          "font not inlined (a fallback face is used): " + state3.family,
+        !reportedFallbacks[value] &&
+        ((reportedFallbacks[value] = 1),
+        warnings.push(
+          "font not inlined (a fallback face is used): " + fontFace.family,
         ));
     });
   } catch {}

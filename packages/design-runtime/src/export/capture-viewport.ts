@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { ExportDeliveryCapMsFinishAnimationsEagerImagesConfig } from "./delivery";
 import { exportHeightTolerance } from "./paper-and-scale";
-import { PlatformFileContentLimit_6 } from "../platform/file-content";
+import { PlatformFileContentLimit_6 as MAX_CANVAS_ITEM_DIMENSION } from "../platform/file-content";
 
 var ExportCaptureViewportLimit: Dynamic;
 var ExportCaptureViewportLabel: Dynamic;
@@ -13,26 +13,26 @@ var ExportCaptureViewportConstant: Dynamic;
 var ExportCaptureViewportItems: Dynamic;
 var measureExportTailScript: Dynamic;
 async function lockCaptureViewport(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = null,
+  captureClient?: Dynamic,
+  viewportSize?: Dynamic,
+  settleContext: Dynamic = null,
 ): Promise<Dynamic> {
-  let value: Dynamic = await input
+  let value: Dynamic = await captureClient
       .executeJavaScript("[window.scrollX,window.scrollY]", 2e3)
       .catch((): Dynamic => null),
-    { unlock: value2, resized: value3 }: Dynamic = input.lockViewportSize(
-      options.w,
-      options.h,
+    { unlock: releaseViewport, resized: wasResized }: Dynamic = captureClient.lockViewportSize(
+      viewportSize.w,
+      viewportSize.h,
     ),
     callback: Dynamic = (): Dynamic => {
-      value2();
-      (value3 || context) &&
+      releaseViewport();
+      (wasResized || settleContext) &&
         Array.isArray(value) &&
         value.every(
-          (input2?: Dynamic): Dynamic =>
-            typeof input2 == "number" && Number.isFinite(input2),
+          (coordinate?: Dynamic): Dynamic =>
+            typeof coordinate == "number" && Number.isFinite(coordinate),
         ) &&
-        input.executeJavaScriptUnchecked(
+        captureClient.executeJavaScriptUnchecked(
           "window.scrollTo(" +
             String(value[0]) +
             "," +
@@ -40,32 +40,32 @@ async function lockCaptureViewport(
             ")",
         );
     };
-  if (!value3 && !context)
+  if (!wasResized && !settleContext)
     return {
       release: callback,
       settleMs: 0,
     };
   let index: Dynamic = 0;
   try {
-    if (value3) {
-      let value5: Dynamic = String(Number(options.w) || 0),
-        value6: Dynamic = String(Number(options.h) || 0);
-      await input
+    if (wasResized) {
+      let width: Dynamic = String(Number(viewportSize.w) || 0),
+        height: Dynamic = String(Number(viewportSize.h) || 0);
+      await captureClient
         .executeJavaScript(
           "new Promise(function(r){var n=0;(function t(){(Math.abs(window.innerWidth-" +
-            value5 +
+            width +
             ")<1&&Math.abs(window.innerHeight-" +
-            value6 +
+            height +
             ")<1)||++n>30?r(null):setTimeout(t,16)})()})",
           2e3,
         )
         .catch((): Dynamic => {});
     }
-    let value4: Dynamic = Date.now();
-    await input.awaitSettled(context ?? 1500);
-    context && (index = Date.now() - value4);
-  } catch (value4: Dynamic) {
-    throw (callback(), value4);
+    let settledAt: Dynamic = Date.now();
+    await captureClient.awaitSettled(settleContext ?? 1500);
+    settleContext && (index = Date.now() - settledAt);
+  } catch (error: Dynamic) {
+    throw (callback(), error);
   }
   return {
     release: callback,
@@ -73,12 +73,12 @@ async function lockCaptureViewport(
   };
 }
 async function measureArtboardContentHeight(
-  input?: Dynamic,
-  options?: Dynamic,
+  captureClient?: Dynamic,
+  viewportSize?: Dynamic,
 ): Promise<Dynamic> {
-  return withCaptureViewport(input, options, async (): Promise<Dynamic> => {
-    await input.awaitSettled(1500).catch((): Dynamic => {});
-    let value: Dynamic = await input
+  return withCaptureViewport(captureClient, viewportSize, async (): Promise<Dynamic> => {
+    await captureClient.awaitSettled(1500).catch((): Dynamic => {});
+    let value: Dynamic = await captureClient
       .executeJavaScript(measureContentHeightScript, 2e3)
       .catch((): Dynamic => null);
     return typeof value == "number" &&
@@ -90,140 +90,140 @@ async function measureArtboardContentHeight(
   });
 }
 async function measureExpandedContentHeight(
-  input?: Dynamic,
-  options?: Dynamic,
+  captureClient?: Dynamic,
+  viewportSize?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic = await measureArtboardContentHeight(input, options);
-  if (value === null || value <= options.h + exportHeightTolerance)
+  let value: Dynamic = await measureArtboardContentHeight(captureClient, viewportSize);
+  if (value === null || value <= viewportSize.h + exportHeightTolerance)
     return value;
-  let value2: Dynamic = await measureArtboardContentHeight(input, {
-    w: options.w,
+  let expandedHeight: Dynamic = await measureArtboardContentHeight(captureClient, {
+    w: viewportSize.w,
     h: Math.min(
-      PlatformFileContentLimit_6,
+      MAX_CANVAS_ITEM_DIMENSION,
       Math.ceil(value),
-      options.h + ExportCaptureViewportConstant,
+      viewportSize.h + ExportCaptureViewportConstant,
     ),
   });
-  return value2 !== null && value2 > value + exportHeightTolerance
+  return expandedHeight !== null && expandedHeight > value + exportHeightTolerance
     ? "unsettled"
     : value;
 }
-function normalizeExportTailMetrics(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null) return null;
-  let { h: value, g: value2, c: value3 }: Dynamic = input,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" &&
-      Number.isFinite(input2) &&
-      input2 >= 0 &&
-      input2 <= 1e6;
+function normalizeExportTailMetrics(metrics?: Dynamic): Dynamic {
+  if (typeof metrics != "object" || metrics === null) return null;
+  let { h: value, g: geometryHeight, c: contentState }: Dynamic = metrics,
+    callback: Dynamic = (metric?: Dynamic): Dynamic =>
+      typeof metric == "number" &&
+      Number.isFinite(metric) &&
+      metric >= 0 &&
+      metric <= 1e6;
   return callback(value) &&
     value >= 1 &&
-    callback(value2) &&
-    (value3 === 0 || value3 === 1)
+    callback(geometryHeight) &&
+    (contentState === 0 || contentState === 1)
     ? {
         h: value,
-        g: value2,
-        c: value3,
+        g: geometryHeight,
+        c: contentState,
       }
     : null;
 }
 async function measureFlowExportHeight(
-  input?: Dynamic,
-  options?: Dynamic,
+  captureClient?: Dynamic,
+  viewportSize?: Dynamic,
 ): Promise<Dynamic> {
-  let [value, value2]: Dynamic = ExportCaptureViewportItems,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
+  let [value, initialHeights]: Dynamic = ExportCaptureViewportItems,
+    callback: Dynamic = (height?: Dynamic): Dynamic =>
       withCaptureViewport(
-        input,
+        captureClient,
         {
-          w: options.w,
-          h: input2,
+          w: viewportSize.w,
+          h: height,
         },
         async (): Promise<Dynamic> =>
           normalizeExportTailMetrics(
-            await input
+            await captureClient
               .executeJavaScript(measureExportTailScript, 2e3)
               .catch((): Dynamic => null),
           ),
       ),
-    value3: Dynamic = await callback(value);
-  if (value3 === null) return null;
-  if (value3.c === 1) return "unsettled";
-  let value4: Dynamic = await callback(value2);
-  if (value4 === null) return null;
-  if (value4.c === 1) return "unsettled";
-  let value5: Dynamic = value3.h > value + exportHeightTolerance,
-    value6: Dynamic = value4.h > value2 + exportHeightTolerance,
-    value7: Dynamic = Math.min(value3.g, value3.h),
-    value8: Dynamic = Math.min(value4.g, value4.h),
-    value9: Dynamic;
-  if (value5) {
+    firstMetrics: Dynamic = await callback(value);
+  if (firstMetrics === null) return null;
+  if (firstMetrics.c === 1) return "unsettled";
+  let secondMetrics: Dynamic = await callback(initialHeights);
+  if (secondMetrics === null) return null;
+  if (secondMetrics.c === 1) return "unsettled";
+  let firstExceedsViewport: Dynamic = firstMetrics.h > value + exportHeightTolerance,
+    secondExceedsViewport: Dynamic = secondMetrics.h > initialHeights + exportHeightTolerance,
+    firstContentHeight: Dynamic = Math.min(firstMetrics.g, firstMetrics.h),
+    secondContentHeight: Dynamic = Math.min(secondMetrics.g, secondMetrics.h),
+    resolvedHeight: Dynamic;
+  if (firstExceedsViewport) {
     if (
-      value6 &&
-      Math.abs(value4.h - value3.h) > exportHeightTolerance
+      secondExceedsViewport &&
+      Math.abs(secondMetrics.h - firstMetrics.h) > exportHeightTolerance
     )
       return "unsettled";
-    value9 = Math.max(value3.h, value7);
+    resolvedHeight = Math.max(firstMetrics.h, firstContentHeight);
   } else {
-    if (value6 || Math.abs(value8 - value7) > exportHeightTolerance)
+    if (secondExceedsViewport || Math.abs(secondContentHeight - firstContentHeight) > exportHeightTolerance)
       return "unsettled";
-    if (value7 < 1) return "empty";
-    value9 = Math.max(value7, value8);
+    if (firstContentHeight < 1) return "empty";
+    resolvedHeight = Math.max(firstContentHeight, secondContentHeight);
   }
   for (
     let index: Dynamic = 0;
-    value9 + exportHeightTolerance < options.h;
+    resolvedHeight + exportHeightTolerance < viewportSize.h;
     index++
   ) {
-    let value10: Dynamic = await measureArtboardContentHeight(input, {
-      w: options.w,
-      h: Math.ceil(value9),
+    let measuredHeight: Dynamic = await measureArtboardContentHeight(captureClient, {
+      w: viewportSize.w,
+      h: Math.ceil(resolvedHeight),
     });
-    if (value10 === null) return null;
-    if (value10 <= Math.ceil(value9) + exportHeightTolerance) break;
+    if (measuredHeight === null) return null;
+    if (measuredHeight <= Math.ceil(resolvedHeight) + exportHeightTolerance) break;
     if (index === 1) return "unsettled";
-    value9 = value10;
+    resolvedHeight = measuredHeight;
   }
-  return Math.min(value9, options.h);
+  return Math.min(resolvedHeight, viewportSize.h);
 }
 async function measureEmptyExportTail(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = 2500,
+  captureClient?: Dynamic,
+  viewportSize?: Dynamic,
+  timeoutMs: Dynamic = 2500,
 ): Promise<Dynamic> {
-  return withCaptureViewport(input, options, async (): Promise<Dynamic> => {
+  return withCaptureViewport(captureClient, viewportSize, async (): Promise<Dynamic> => {
     let value: Dynamic = normalizeExportTailMetrics(
-      await input
-        .executeJavaScript(measureExportTailScript, context)
+      await captureClient
+        .executeJavaScript(measureExportTailScript, timeoutMs)
         .catch((): Dynamic => null),
     );
     return value === null ||
       value.c === 1 ||
       value.g < 1 ||
-      value.h > options.h + exportHeightTolerance
+      value.h > viewportSize.h + exportHeightTolerance
       ? null
-      : Math.max(0, Math.round(options.h - value.g));
+      : Math.max(0, Math.round(viewportSize.h - value.g));
   });
 }
 async function withCaptureViewport(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = false,
+  captureClient?: Dynamic,
+  viewportSize?: Dynamic,
+  captureOperation?: Dynamic,
+  finishAnimations: Dynamic = false,
 ): Promise<Dynamic> {
-  if (!options) return context(0);
-  let { release: value2, settleMs: value3 }: Dynamic =
+  if (!viewportSize) return captureOperation(0);
+  let { release: releaseViewport, settleMs: settleMs }: Dynamic =
     await lockCaptureViewport(
-      input,
-      options,
-      value
+      captureClient,
+      viewportSize,
+      finishAnimations
         ? ExportDeliveryCapMsFinishAnimationsEagerImagesConfig
         : null,
     );
   try {
-    return await context(value3);
+    return await captureOperation(settleMs);
   } finally {
-    value2();
+    releaseViewport();
   }
 }
 export {

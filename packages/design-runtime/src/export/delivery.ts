@@ -6,11 +6,11 @@ import {
 var exportDeliveryEventName: Dynamic;
 var ExportDeliveryCapMsFinishAnimationsEagerImagesConfig: Dynamic;
 var ExportDeliveryCapMsFinishAnimationsConfig: Dynamic;
-function triggerBrowserDownload(input?: Dynamic, options?: Dynamic): Dynamic {
+function triggerBrowserDownload(downloadUrl?: Dynamic, fileName?: Dynamic): Dynamic {
   try {
     let value: Dynamic = (document as Dynamic).createElement("a");
-    value.href = input;
-    value.download = options;
+    value.href = downloadUrl;
+    value.download = fileName;
     value.rel = "noopener";
     value.style.display = "none";
     (document as Dynamic).body.appendChild(value);

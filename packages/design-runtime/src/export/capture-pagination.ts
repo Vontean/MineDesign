@@ -8,36 +8,36 @@ function computePaginationCuts(
   maxPages: number,
   overlap: number = 0,
 ): number[] {
-  let items2 = [0],
-    value2 = overlap > 0 && pageHeight - 2 * overlap > 40 ? overlap : 0;
-  if (!(pageHeight > 0)) return items2;
+  let pageCuts = [0],
+    effectiveOverlap = overlap > 0 && pageHeight - 2 * overlap > 40 ? overlap : 0;
+  if (!(pageHeight > 0)) return pageCuts;
   let index = 0;
-  for (; items2.length < maxPages; ) {
-    let value3 = pageHeight - (items2.length > 1 ? value2 : 0);
-    if (!(index + value3 < contentHeight - 4)) break;
-    let value4 = index + value3 - value2,
-      value5 = value4;
-    for (let index2 = 0; index2 < 64; index2++) {
-      let value6 = value5;
-      for (let index3 = 0; index3 < intervals.length; index3++) {
-        let value7 = intervals[index3]!;
-        value7[1] - value7[0] > pageHeight - 2 * value2 ||
-          (value7[0] < value5 &&
-            value5 < value7[1] &&
-            value7[0] < value6 &&
-            (value6 = value7[0]));
+  for (; pageCuts.length < maxPages; ) {
+    let availablePageHeight = pageHeight - (pageCuts.length > 1 ? effectiveOverlap : 0);
+    if (!(index + availablePageHeight < contentHeight - 4)) break;
+    let candidateCut = index + availablePageHeight - effectiveOverlap,
+      cutPosition = candidateCut;
+    for (let adjustmentPass = 0; adjustmentPass < 64; adjustmentPass++) {
+      let adjustedCut = cutPosition;
+      for (let intervalIndex = 0; intervalIndex < intervals.length; intervalIndex++) {
+        let blockedInterval = intervals[intervalIndex]!;
+        blockedInterval[1] - blockedInterval[0] > pageHeight - 2 * effectiveOverlap ||
+          (blockedInterval[0] < cutPosition &&
+            cutPosition < blockedInterval[1] &&
+            blockedInterval[0] < adjustedCut &&
+            (adjustedCut = blockedInterval[0]));
       }
-      if (value6 === value5) break;
-      if (value6 <= index + 40) {
-        value5 = value4;
+      if (adjustedCut === cutPosition) break;
+      if (adjustedCut <= index + 40) {
+        cutPosition = candidateCut;
         break;
       }
-      value5 = value6;
+      cutPosition = adjustedCut;
     }
-    items2.push(value5);
-    index = value5;
+    pageCuts.push(cutPosition);
+    index = cutPosition;
   }
-  return items2;
+  return pageCuts;
 }
 export {
   computePaginationCuts,

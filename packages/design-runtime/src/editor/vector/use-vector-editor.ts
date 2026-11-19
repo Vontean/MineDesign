@@ -3,152 +3,152 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { reactHooksLatestCallback_4 } from "../hooks/latest-callback";
-import { blurVectorInput, captureVectorPointer, constrainVectorPointAngle, deleteVectorAnchor, moveVectorPart, previousContourAnchor, resetVectorControl, sameVectorPath, showVectorControls, vectorHitRadius, vectorPartPoint, VectorPathEditingConstant, VectorPathEditingConstant_2, VectorPathEditingLimit, vectorUsesCoarsePointer } from "./path-editing";
+import { blurVectorInput, captureVectorPointer, constrainVectorPointAngle, deleteVectorAnchor, moveVectorPart, previousContourAnchor, resetVectorControl, sameVectorPath, showVectorControls, vectorHitRadius, vectorPartPoint, VectorPathEditingConstant, VectorPathEditingConstant_2 as TOUCH_HIT_RADIUS_PX, VectorPathEditingLimit, vectorUsesCoarsePointer } from "./path-editing";
 
 function useVectorEditor(request?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0,
+  let [value, setRequest]: Dynamic = (0,
     reactHooksLatestCallback_4.useState)([]),
-    value3: Dynamic = (0, reactHooksLatestCallback_4.useRef)([]),
-    value4: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value3.current = input;
-        value2(input);
+    draftRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)([]),
+    setDraft: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+      (nextRequest?: Dynamic): Dynamic => {
+        draftRef.current = nextRequest;
+        setRequest(nextRequest);
       },
       [],
     ),
-    [value5, value6]: Dynamic = (0,
+    [hoveredPoint, setHoveredPoint]: Dynamic = (0,
     reactHooksLatestCallback_4.useState)(undefined),
-    value7: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    activePointerRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
       undefined,
     ),
-    value8: Dynamic = (0, reactHooksLatestCallback_4.useRef)("mouse"),
-    value9: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    pointerTypeRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)("mouse"),
+    pointerIdRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
       undefined,
     ),
-    value10: Dynamic = (0, reactHooksLatestCallback_4.useRef)(false),
-    value11: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    shiftKeyRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(false),
+    pathRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
       request.path,
     );
-  value11.current = request.path;
-  let value12: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+  pathRef.current = request.path;
+  let viewRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
     request.view,
   );
-  value12.current = request.view;
-  let value13: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+  viewRef.current = request.view;
+  let interactionModeRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
       undefined,
     ),
-    value14: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    gestureRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
       undefined,
     ),
-    value15: Dynamic = (0, reactHooksLatestCallback_4.useRef)(null),
-    value16: Dynamic = vectorUsesCoarsePointer()
-      ? VectorPathEditingConstant_2
+    livePathRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(null),
+    hitRadius: Dynamic = vectorUsesCoarsePointer()
+      ? TOUCH_HIT_RADIUS_PX
       : VectorPathEditingConstant,
-    value17: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
-      (input?: Dynamic, options?: Dynamic): Dynamic => {
-        let value28: Dynamic = options / request.view.scale,
-          value29: Dynamic = value28 * value28,
-          value30: Dynamic,
-          value31: Dynamic = value29,
+    getPointAtEvent: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+      (point?: Dynamic, radius?: Dynamic): Dynamic => {
+        let modelRadius: Dynamic = radius / request.view.scale,
+          radiusSquared: Dynamic = modelRadius * modelRadius,
+          nearestDistance: Dynamic,
+          nearestPoint: Dynamic = radiusSquared,
           callback: Dynamic = (
-            input2?: Dynamic,
-            options2?: Dynamic,
+            candidate?: Dynamic,
+            candidateIndex?: Dynamic,
           ): Dynamic => {
-            let value32: Dynamic = input2.x - input.x,
-              value33: Dynamic = input2.y - input.y,
-              value34: Dynamic = value32 * value32 + value33 * value33;
-            value34 <= value31 && ((value31 = value34), (value30 = options2));
+            let deltaX: Dynamic = candidate.x - point.x,
+              deltaY: Dynamic = candidate.y - point.y,
+              distanceSquared: Dynamic = deltaX * deltaX + deltaY * deltaY;
+            distanceSquared <= nearestPoint && ((nearestPoint = distanceSquared), (nearestDistance = candidateIndex));
           };
         request.path.contours.forEach(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-            input2.anchors.forEach(
-              (input3?: Dynamic, options3?: Dynamic): Dynamic => {
-                callback(input3, {
-                  contour: options2,
-                  anchor: options3,
+          (contour?: Dynamic, contourIndex?: Dynamic): Dynamic => {
+            contour.anchors.forEach(
+              (anchor?: Dynamic, anchorIndex?: Dynamic): Dynamic => {
+                callback(anchor, {
+                  contour: contourIndex,
+                  anchor: anchorIndex,
                   part: "anchor",
                 });
-                if (!(options3 > 0 || input2.closed)) return;
-                let callback2: Dynamic = (input4?: Dynamic): Dynamic =>
+                if (!(anchorIndex > 0 || contour.closed)) return;
+                let getControlPoint: Dynamic = (controlPart?: Dynamic): Dynamic =>
                   showVectorControls(
                     request.controls,
-                    input2,
-                    options2,
-                    options3,
-                    input4,
+                    contour,
+                    contourIndex,
+                    anchorIndex,
+                    controlPart,
                     request.selected,
                   );
-                input3.seg.kind === "quad"
-                  ? callback2("c") &&
-                    callback(input3.seg.c, {
-                      contour: options2,
-                      anchor: options3,
+                anchor.seg.kind === "quad"
+                  ? getControlPoint("c") &&
+                    callback(anchor.seg.c, {
+                      contour: contourIndex,
+                      anchor: anchorIndex,
                       part: "c",
                     })
-                  : input3.seg.kind === "cubic" &&
-                    (callback2("c") &&
-                      callback(input3.seg.c1, {
-                        contour: options2,
-                        anchor: options3,
+                  : anchor.seg.kind === "cubic" &&
+                    (getControlPoint("c") &&
+                      callback(anchor.seg.c1, {
+                        contour: contourIndex,
+                        anchor: anchorIndex,
                         part: "c",
                       }),
-                    callback2("c2") &&
-                      callback(input3.seg.c2, {
-                        contour: options2,
-                        anchor: options3,
+                    getControlPoint("c2") &&
+                      callback(anchor.seg.c2, {
+                        contour: contourIndex,
+                        anchor: anchorIndex,
                         part: "c2",
                       }));
               },
             );
           },
         );
-        return value30;
+        return nearestDistance;
       },
       [request.path, request.view.scale, request.controls, request.selected],
     ),
-    value18: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let value28: Dynamic = request.path.contours[input.contour];
-        if (!value28) return;
-        let value29: Dynamic = value28.anchors[input.anchor];
-        if (!value29) return;
-        if (input.part === "c" && value29.seg.kind === "cubic") {
-          let value31: Dynamic = previousContourAnchor(
-            value28,
-            input.anchor,
+    getChordOrigin: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+      (selection?: Dynamic): Dynamic => {
+        let contour: Dynamic = request.path.contours[selection.contour];
+        if (!contour) return;
+        let anchor: Dynamic = contour.anchors[selection.anchor];
+        if (!anchor) return;
+        if (selection.part === "c" && anchor.seg.kind === "cubic") {
+          let previousAnchor: Dynamic = previousContourAnchor(
+            contour,
+            selection.anchor,
           );
-          return value31
+          return previousAnchor
             ? {
-                x: value31.x,
-                y: value31.y,
+                x: previousAnchor.x,
+                y: previousAnchor.y,
               }
             : {
-                x: value29.x,
-                y: value29.y,
+                x: anchor.x,
+                y: anchor.y,
               };
         }
-        if (input.part !== "anchor")
+        if (selection.part !== "anchor")
           return {
-            x: value29.x,
-            y: value29.y,
+            x: anchor.x,
+            y: anchor.y,
           };
-        let value30: Dynamic = previousContourAnchor(
-          value28,
-          input.anchor,
+        let nextAnchor: Dynamic = previousContourAnchor(
+          contour,
+          selection.anchor,
         );
-        return value30
+        return nextAnchor
           ? {
-              x: value30.x,
-              y: value30.y,
+              x: nextAnchor.x,
+              y: nextAnchor.y,
             }
           : undefined;
       },
       [request.path],
     ),
-    value19: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+    handlePointerDown: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
       (event?: Dynamic): Dynamic => {
         if (event.button !== 0) return;
-        let value28: Dynamic = request.view.toModel(
+        let modelPoint: Dynamic = request.view.toModel(
           event.clientX,
           event.clientY,
         );
@@ -163,26 +163,26 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         }
         if (request.tool === "pen") {
           event.preventDefault();
-          if (value9.current !== undefined) return;
+          if (pointerIdRef.current !== undefined) return;
           blurVectorInput();
-          let current: Dynamic = value3.current,
-            value31: Dynamic =
+          let current: Dynamic = draftRef.current,
+            firstDraftPoint: Dynamic =
               event.shiftKey && current.length > 0
                 ? constrainVectorPointAngle(
                     current[current.length - 1],
-                    value28,
+                    modelPoint,
                   )
-                : value28;
+                : modelPoint;
           if (current.length >= 3) {
-            let value32: Dynamic = current[0],
-              value33: Dynamic =
+            let draftStart: Dynamic = current[0],
+              draftEnd: Dynamic =
                 vectorHitRadius(event) / request.view.scale;
             if (
-              Math.hypot(value32.x - value31.x, value32.y - value31.y) <=
-              value33
+              Math.hypot(draftStart.x - firstDraftPoint.x, draftStart.y - firstDraftPoint.y) <=
+              draftEnd
             ) {
-              value9.current = event.pointerId;
-              value13.current = "close";
+              pointerIdRef.current = event.pointerId;
+              interactionModeRef.current = "close";
               captureVectorPointer(
                 event.currentTarget,
                 event.pointerId,
@@ -190,22 +190,22 @@ function useVectorEditor(request?: Dynamic): Dynamic {
               return;
             }
           }
-          value4([...current, value31]);
-          value13.current = "append";
-          value6(value31);
+          setDraft([...current, firstDraftPoint]);
+          interactionModeRef.current = "append";
+          setHoveredPoint(firstDraftPoint);
           captureVectorPointer(
             event.currentTarget,
             event.pointerId,
           );
           return;
         }
-        if (value14.current) return;
-        let value29: Dynamic = value17(
-          value28,
-          Math.max(vectorHitRadius(event), value16),
+        if (gestureRef.current) return;
+        let selectedPoint: Dynamic = getPointAtEvent(
+          modelPoint,
+          Math.max(vectorHitRadius(event), hitRadius),
         );
-        request.onSelect(value29);
-        if (!value29) {
+        request.onSelect(selectedPoint);
+        if (!selectedPoint) {
           request.onPanStart?.(event);
           return;
         }
@@ -215,19 +215,19 @@ function useVectorEditor(request?: Dynamic): Dynamic {
           event.currentTarget,
           event.pointerId,
         );
-        let value30: Dynamic = vectorPartPoint(
+        let selectedPartPoint: Dynamic = vectorPartPoint(
           request.path,
-          value29,
+          selectedPoint,
         );
-        value14.current = {
-          sel: value29,
+        gestureRef.current = {
+          sel: selectedPoint,
           before: request.path,
-          chordOrigin: value18(value29),
-          startModel: value28,
-          grabOffset: value30
+          chordOrigin: getChordOrigin(selectedPoint),
+          startModel: modelPoint,
+          grabOffset: selectedPartPoint
             ? {
-                x: value30.x - value28.x,
-                y: value30.y - value28.y,
+                x: selectedPartPoint.x - modelPoint.x,
+                y: selectedPartPoint.y - modelPoint.y,
               }
             : {
                 x: 0,
@@ -240,7 +240,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
           pointerId: event.pointerId,
           moved: false,
         };
-        value15.current = null;
+        livePathRef.current = null;
       },
       [
         request.readOnly,
@@ -248,55 +248,55 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         request.view,
         request.path,
         value,
-        value17,
-        value18,
+        getPointAtEvent,
+        getChordOrigin,
       ],
     ),
-    value20: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let value28: Dynamic = request.view.toModel(
-          input.clientX,
-          input.clientY,
+    handlePointerMove: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+      (pointerEvent?: Dynamic): Dynamic => {
+        let modelPoint: Dynamic = request.view.toModel(
+          pointerEvent.clientX,
+          pointerEvent.clientY,
         );
         if (request.tool === "pen") {
-          let current2: Dynamic = value3.current;
-          value8.current = input.pointerType;
-          input.buttons === 0 && (value7.current = value28);
-          value6(
-            input.shiftKey && current2.length > 0
+          let draftPoints: Dynamic = draftRef.current;
+          pointerTypeRef.current = pointerEvent.pointerType;
+          pointerEvent.buttons === 0 && (activePointerRef.current = modelPoint);
+          setHoveredPoint(
+            pointerEvent.shiftKey && draftPoints.length > 0
               ? constrainVectorPointAngle(
-                  current2[current2.length - 1],
-                  value28,
+                  draftPoints[draftPoints.length - 1],
+                  modelPoint,
                 )
-              : value28,
+              : modelPoint,
           );
           return;
         }
-        let current: Dynamic = value14.current;
-        if (!current || input.pointerId !== current.pointerId) return;
+        let current: Dynamic = gestureRef.current;
+        if (!current || pointerEvent.pointerId !== current.pointerId) return;
         if (!current.moved) {
-          let value31: Dynamic = input.clientX - current.startScreen.x,
-            value32: Dynamic = input.clientY - current.startScreen.y;
-          if (Math.hypot(value31, value32) < VectorPathEditingLimit)
+          let screenDeltaX: Dynamic = pointerEvent.clientX - current.startScreen.x,
+            screenDeltaY: Dynamic = pointerEvent.clientY - current.startScreen.y;
+          if (Math.hypot(screenDeltaX, screenDeltaY) < VectorPathEditingLimit)
             return;
           current.moved = true;
-          current.before = value11.current;
-          let value33: Dynamic = vectorPartPoint(
+          current.before = pathRef.current;
+          let selectedPartPoint: Dynamic = vectorPartPoint(
             current.before,
             current.sel,
           );
-          value33 &&
+          selectedPartPoint &&
             (current.grabOffset = {
-              x: value33.x - current.startModel.x,
-              y: value33.y - current.startModel.y,
+              x: selectedPartPoint.x - current.startModel.x,
+              y: selectedPartPoint.y - current.startModel.y,
             });
-          current.chordOrigin = value18(current.sel);
+          current.chordOrigin = getChordOrigin(current.sel);
         }
         let state: Dynamic = {
-            x: value28.x + current.grabOffset.x,
-            y: value28.y + current.grabOffset.y,
+            x: modelPoint.x + current.grabOffset.x,
+            y: modelPoint.y + current.grabOffset.y,
           },
-          value29: Dynamic = input.shiftKey
+          shouldConstrain: Dynamic = pointerEvent.shiftKey
             ? constrainVectorPointAngle(
                 current.chordOrigin ?? {
                   x: current.startModel.x + current.grabOffset.x,
@@ -306,73 +306,73 @@ function useVectorEditor(request?: Dynamic): Dynamic {
               )
             : state;
         current.lastRaw = state;
-        let value30: Dynamic = moveVectorPart(
+        let updatedPath: Dynamic = moveVectorPart(
           current.before,
           current.sel,
-          value29,
+          shouldConstrain,
         );
-        value15.current = value30;
-        request.onLive(value30);
+        livePathRef.current = updatedPath;
+        request.onLive(updatedPath);
       },
-      [request.tool, request.view, request.onLive, value, value18],
+      [request.tool, request.view, request.onLive, value, getChordOrigin],
     ),
-    value21: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        if (value9.current === input.pointerId) {
-          value9.current = undefined;
-          value13.current = undefined;
-          let current3: Dynamic = value3.current,
-            value28: Dynamic = current3[0];
-          if (value28) {
-            let current4: Dynamic = value12.current,
-              value29: Dynamic = current4.toModel(
-                input.clientX,
-                input.clientY,
+    handlePointerUp: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+      (pointerEvent?: Dynamic): Dynamic => {
+        if (pointerIdRef.current === pointerEvent.pointerId) {
+          pointerIdRef.current = undefined;
+          interactionModeRef.current = undefined;
+          let draftPoints: Dynamic = draftRef.current,
+            firstPoint: Dynamic = draftPoints[0];
+          if (firstPoint) {
+            let viewTransform: Dynamic = viewRef.current,
+              modelPoint: Dynamic = viewTransform.toModel(
+                pointerEvent.clientX,
+                pointerEvent.clientY,
               ),
-              value30: Dynamic = current3[current3.length - 1],
-              value31: Dynamic =
-                input.shiftKey && current3.length > 0 && value30
-                  ? constrainVectorPointAngle(value30, value29)
-                  : value29,
-              value32: Dynamic =
-                vectorHitRadius(input) / current4.scale;
-            Math.hypot(value28.x - value31.x, value28.y - value31.y) <=
-              value32 && value26.current();
+              lastPoint: Dynamic = draftPoints[draftPoints.length - 1],
+              distanceToStart: Dynamic =
+                pointerEvent.shiftKey && draftPoints.length > 0 && lastPoint
+                  ? constrainVectorPointAngle(lastPoint, modelPoint)
+                  : modelPoint,
+              pointToStart: Dynamic =
+                vectorHitRadius(pointerEvent) / viewTransform.scale;
+            Math.hypot(firstPoint.x - distanceToStart.x, firstPoint.y - distanceToStart.y) <=
+              pointToStart && cancelGesture.current();
           }
           return;
         }
-        let current: Dynamic = value14.current;
+        let current: Dynamic = gestureRef.current;
         if (
           !current ||
-          input.pointerId !== current.pointerId ||
-          ((value14.current = undefined), !current.moved)
+          pointerEvent.pointerId !== current.pointerId ||
+          ((gestureRef.current = undefined), !current.moved)
         )
           return;
-        let current2: Dynamic = value15.current;
-        value15.current = null;
-        current2 &&
-          !sameVectorPath(current2, current.before) &&
-          request.onCommit(current.before, current2);
+        let livePath: Dynamic = livePathRef.current;
+        livePathRef.current = null;
+        livePath &&
+          !sameVectorPath(livePath, current.before) &&
+          request.onCommit(current.before, livePath);
       },
       [request.onCommit],
     ),
-    value22: Dynamic = (0,
+    cancelSession: Dynamic = (0,
     reactHooksLatestCallback_4.useCallback)((): Dynamic => {
-      value9.current = undefined;
-      let current: Dynamic = value14.current;
-      value14.current = undefined;
+      pointerIdRef.current = undefined;
+      let current: Dynamic = gestureRef.current;
+      gestureRef.current = undefined;
       current &&
-        ((value15.current = null),
+        ((livePathRef.current = null),
         current.moved && request.onLive(current.before));
     }, [request.onLive]);
   (0, reactHooksLatestCallback_4.useEffect)((): Dynamic => {
-    let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input.key !== "Shift") return;
-      let value28: Dynamic = input.type === "keydown";
-      value10.current = value28;
-      let current: Dynamic = value14.current;
+    let callback: Dynamic = (keyboardEvent?: Dynamic): Dynamic => {
+      if (keyboardEvent.key !== "Shift") return;
+      let isShiftKeyDown: Dynamic = keyboardEvent.type === "keydown";
+      shiftKeyRef.current = isShiftKeyDown;
+      let current: Dynamic = gestureRef.current;
       if (current && current.moved && current.lastRaw) {
-        let value29: Dynamic = value28
+        let shiftSelection: Dynamic = isShiftKeyDown
             ? constrainVectorPointAngle(
                 current.chordOrigin ?? {
                   x: current.startModel.x + current.grabOffset.x,
@@ -381,23 +381,23 @@ function useVectorEditor(request?: Dynamic): Dynamic {
                 current.lastRaw,
               )
             : current.lastRaw,
-          value30: Dynamic = moveVectorPart(
+          updatedPath: Dynamic = moveVectorPart(
             current.before,
             current.sel,
-            value29,
+            shiftSelection,
           );
-        value15.current = value30;
-        request.onLive(value30);
+        livePathRef.current = updatedPath;
+        request.onLive(updatedPath);
       }
-      if (request.tool === "pen" && value7.current) {
-        let current2: Dynamic = value3.current;
-        value6(
-          value28 && current2.length > 0
+      if (request.tool === "pen" && activePointerRef.current) {
+        let draftPoints: Dynamic = draftRef.current;
+        setHoveredPoint(
+          isShiftKeyDown && draftPoints.length > 0
             ? constrainVectorPointAngle(
-                current2[current2.length - 1],
-                value7.current,
+                draftPoints[draftPoints.length - 1],
+                activePointerRef.current,
               )
-            : value7.current,
+            : activePointerRef.current,
         );
       }
     };
@@ -410,35 +410,35 @@ function useVectorEditor(request?: Dynamic): Dynamic {
   }, [request.tool, request.onLive]);
   (0, reactHooksLatestCallback_4.useEffect)((): Dynamic => {
     request.tool !== "pen" &&
-      ((value9.current = undefined),
-      value3.current.length > 0 && value4([]),
-      value23());
+      ((pointerIdRef.current = undefined),
+      draftRef.current.length > 0 && setDraft([]),
+      resetInteraction());
   }, [request.tool]);
-  function value23(): Dynamic {
-    value6(undefined);
-    value7.current = undefined;
+  function resetInteraction(): Dynamic {
+    setHoveredPoint(undefined);
+    activePointerRef.current = undefined;
   }
-  function value24(items?: Dynamic, options?: Dynamic): Dynamic {
-    let current: Dynamic = value7.current;
+  function commitPath(items?: Dynamic, constrain?: Dynamic): Dynamic {
+    let current: Dynamic = activePointerRef.current;
     if (!current || items.length === 0) {
-      value23();
+      resetInteraction();
       return;
     }
-    let value28: Dynamic = items[items.length - 1];
-    value6(
-      options && value28
-        ? constrainVectorPointAngle(value28, current)
+    let lastPoint: Dynamic = items[items.length - 1];
+    setHoveredPoint(
+      constrain && lastPoint
+        ? constrainVectorPointAngle(lastPoint, current)
         : current,
     );
   }
-  function value25(): Dynamic {
-    let current: Dynamic = value3.current;
+  function buildPath(): Dynamic {
+    let current: Dynamic = draftRef.current;
     if (current.length < 3) return;
-    value9.current = undefined;
-    let value28: Dynamic = current.map(
-        (input?: Dynamic): Dynamic => ({
-          x: input.x,
-          y: input.y,
+    pointerIdRef.current = undefined;
+    let anchors: Dynamic = current.map(
+        (point?: Dynamic): Dynamic => ({
+          x: point.x,
+          y: point.y,
           seg: {
             kind: "line",
           },
@@ -449,45 +449,45 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       contours: [
         ...path.contours,
         {
-          anchors: value28,
+          anchors: anchors,
           closed: true,
         },
       ],
     });
-    value4([]);
-    value23();
+    setDraft([]);
+    resetInteraction();
     request.onToolDone?.();
   }
-  let value26: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
-    value25,
+  let cancelGesture: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    buildPath,
   );
-  value26.current = value25;
-  let value27: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+  cancelGesture.current = buildPath;
+  let handleKeyboard: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
     (event?: Dynamic): Dynamic => {
       if (request.tool === "pen") {
         if (
           event.key === "Enter" &&
           !request.readOnly &&
-          value3.current.length >= 3
+          draftRef.current.length >= 3
         ) {
           event.preventDefault();
-          value25();
+          buildPath();
           return true;
         }
         if (event.key === "Escape") {
           event.preventDefault();
-          value9.current = undefined;
-          value4([]);
-          value23();
+          pointerIdRef.current = undefined;
+          setDraft([]);
+          resetInteraction();
           request.onToolDone?.();
           return true;
         }
-        if (event.key === "Backspace" && value3.current.length > 0) {
+        if (event.key === "Backspace" && draftRef.current.length > 0) {
           event.preventDefault();
-          let value28: Dynamic = value3.current.slice(0, -1);
-          value4(value28);
-          value13.current = undefined;
-          value24(value28, event.shiftKey === true);
+          let remainingDraft: Dynamic = draftRef.current.slice(0, -1);
+          setDraft(remainingDraft);
+          interactionModeRef.current = undefined;
+          commitPath(remainingDraft, event.shiftKey === true);
           return true;
         }
         if (event.key !== "Delete" && event.key !== "Backspace") return false;
@@ -498,15 +498,15 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         !request.readOnly
       ) {
         event.preventDefault();
-        let current: Dynamic = value14.current;
-        value22();
-        let value28: Dynamic = current?.moved ? current.before : request.path,
-          value29: Dynamic =
+        let current: Dynamic = gestureRef.current;
+        cancelSession();
+        let basePath: Dynamic = current?.moved ? current.before : request.path,
+          nextPath: Dynamic =
             request.selected.part === "anchor"
-              ? deleteVectorAnchor(value28, request.selected)
-              : resetVectorControl(value28, request.selected);
-        value29 !== value28 &&
-          (request.onCommit(value28, value29), request.onSelect(undefined));
+              ? deleteVectorAnchor(basePath, request.selected)
+              : resetVectorControl(basePath, request.selected);
+        nextPath !== basePath &&
+          (request.onCommit(basePath, nextPath), request.onSelect(undefined));
         return true;
       }
       return false;
@@ -515,46 +515,46 @@ function useVectorEditor(request?: Dynamic): Dynamic {
   );
   return {
     handles: {
-      onPointerDown: value19,
-      onPointerMove: value20,
-      onPointerLeave: (input?: Dynamic): Dynamic => {
-        input.pointerType === "touch"
-          ? value8.current === "touch" && value6(undefined)
-          : value23();
+      onPointerDown: handlePointerDown,
+      onPointerMove: handlePointerMove,
+      onPointerLeave: (pointerEvent?: Dynamic): Dynamic => {
+        pointerEvent.pointerType === "touch"
+          ? pointerTypeRef.current === "touch" && setHoveredPoint(undefined)
+          : resetInteraction();
       },
-      onPointerUp: value21,
-      onPointerCancel: (input?: Dynamic): Dynamic => {
-        if (value9.current === input.pointerId) {
-          value9.current = undefined;
-          value13.current = undefined;
+      onPointerUp: handlePointerUp,
+      onPointerCancel: (pointerEvent?: Dynamic): Dynamic => {
+        if (pointerIdRef.current === pointerEvent.pointerId) {
+          pointerIdRef.current = undefined;
+          interactionModeRef.current = undefined;
           return;
         }
-        let current: Dynamic = value14.current;
-        if (current && input.pointerId === current.pointerId) {
-          value22();
+        let current: Dynamic = gestureRef.current;
+        if (current && pointerEvent.pointerId === current.pointerId) {
+          cancelSession();
           return;
         }
       },
-      handleKey: value27,
+      handleKey: handleKeyboard,
     },
     draft: value,
-    hover: value5,
-    hitRadiusPx: value16,
-    cancelSession: value22,
-    closeDraft: value25,
+    hover: hoveredPoint,
+    hitRadiusPx: hitRadius,
+    cancelSession: cancelSession,
+    closeDraft: buildPath,
     discardDraft: (): Dynamic => {
-      value9.current = undefined;
-      value4([]);
-      value23();
+      pointerIdRef.current = undefined;
+      setDraft([]);
+      resetInteraction();
       request.onToolDone?.();
     },
     cancelPenDown: (): Dynamic => {
-      if (value13.current === "append") {
-        let value28: Dynamic = value3.current.slice(0, -1);
-        value4(value28);
-        value24(value28, value10.current);
-      } else value13.current === "close" && (value9.current = undefined);
-      value13.current = undefined;
+      if (interactionModeRef.current === "append") {
+        let remainingDraft: Dynamic = draftRef.current.slice(0, -1);
+        setDraft(remainingDraft);
+        commitPath(remainingDraft, shiftKeyRef.current);
+      } else interactionModeRef.current === "close" && (pointerIdRef.current = undefined);
+      interactionModeRef.current = undefined;
     },
   };
 }

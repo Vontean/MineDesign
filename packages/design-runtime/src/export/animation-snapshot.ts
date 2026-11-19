@@ -3,126 +3,126 @@ import {
   type Dynamic,
 } from "../runtime-types";
 
-function captureAnimationStates(input?: Dynamic): Dynamic {
+function captureAnimationStates(documentRoot?: Dynamic): Dynamic {
   let items: Dynamic = [];
-  if (input)
+  if (documentRoot)
     try {
-      let value: Dynamic = input.getAnimations ? input.getAnimations() : [];
-      for (let value2 of value as Dynamic)
+      let value: Dynamic = documentRoot.getAnimations ? documentRoot.getAnimations() : [];
+      for (let animation of value as Dynamic)
         try {
-          let value3: Dynamic = value2.effect?.getComputedTiming
-            ? value2.effect.getComputedTiming()
+          let timing: Dynamic = animation.effect?.getComputedTiming
+            ? animation.effect.getComputedTiming()
             : null;
           if (
-            !value3 ||
-            !isFinite(value3.endTime) ||
-            (value2.timeline &&
-              !(value2.timeline instanceof DocumentTimeline))
+            !timing ||
+            !isFinite(timing.endTime) ||
+            (animation.timeline &&
+              !(animation.timeline instanceof DocumentTimeline))
           )
             continue;
-          let value4: Dynamic = value2.pending && value2.startTime === null,
-            value5: Dynamic = input.hidden && value2.playState === "running";
-          if (!value4 && !value5) continue;
+          let isPending: Dynamic = animation.pending && animation.startTime === null,
+            isHiddenRunning: Dynamic = documentRoot.hidden && animation.playState === "running";
+          if (!isPending && !isHiddenRunning) continue;
           let state: Dynamic = {
-            a: value2,
-            ct: value2.currentTime,
+            a: animation,
+            ct: animation.currentTime,
             paused: false,
           };
           items.push(state);
-          value4 || (value2.pause(), (state.paused = true));
-          value2.currentTime = value3.endTime;
+          isPending || (animation.pause(), (state.paused = true));
+          animation.currentTime = timing.endTime;
         } catch {}
     } catch {}
   return function (): Dynamic {
     for (let value: Dynamic = items.length - 1; value >= 0; value--) {
-      let value2: Dynamic = items[value];
+      let animationState: Dynamic = items[value];
       try {
-        value2.a.currentTime = value2.ct;
+        animationState.a.currentTime = animationState.ct;
       } catch {}
       try {
-        value2.paused && value2.a.play();
+        animationState.paused && animationState.a.play();
       } catch {}
     }
   };
 }
-function captureAnimationStyles(input?: Dynamic): Dynamic {
+function captureAnimationStyles(documentRoot?: Dynamic): Dynamic {
   let items: Dynamic = [];
-  if (input)
+  if (documentRoot)
     try {
       let value: Dynamic =
-          input.defaultView && input.defaultView.getComputedStyle,
-        items2: Dynamic = [],
-        value2: Dynamic = input.getAnimations ? input.getAnimations() : [];
-      for (let value3 of value2 as Dynamic)
+          documentRoot.defaultView && documentRoot.defaultView.getComputedStyle,
+        animatedElements: Dynamic = [],
+        animations: Dynamic = documentRoot.getAnimations ? documentRoot.getAnimations() : [];
+      for (let animation of animations as Dynamic)
         try {
-          let value4: Dynamic = value3.effect?.getComputedTiming
-            ? value3.effect.getComputedTiming()
+          let timing: Dynamic = animation.effect?.getComputedTiming
+            ? animation.effect.getComputedTiming()
             : null;
           if (
-            !value4 ||
-            isFinite(value4.endTime) ||
-            (value3.timeline &&
-              !(value3.timeline instanceof DocumentTimeline)) ||
-            value3.playState !== "running"
+            !timing ||
+            isFinite(timing.endTime) ||
+            (animation.timeline &&
+              !(animation.timeline instanceof DocumentTimeline)) ||
+            animation.playState !== "running"
           )
             continue;
           let state: Dynamic = {
-            a: value3,
-            ct: value3.currentTime,
+            a: animation,
+            ct: animation.currentTime,
           };
           items.push(state);
-          let value5: Dynamic = value4.delay || 0,
-            value6: Dynamic = value4.duration || 0,
-            value7: Dynamic =
-              value5 >= 0 || !value6
-                ? value5
-                : value5 + Math.ceil(-value5 / value6) * value6;
-          value3.currentTime = value7;
-          let effect: Dynamic = value3.effect,
-            value8: Dynamic = effect && effect.target;
+          let delay: Dynamic = timing.delay || 0,
+            duration: Dynamic = timing.duration || 0,
+            startTime: Dynamic =
+              delay >= 0 || !duration
+                ? delay
+                : delay + Math.ceil(-delay / duration) * duration;
+          animation.currentTime = startTime;
+          let effect: Dynamic = animation.effect,
+            targetElement: Dynamic = effect && effect.target;
           value &&
-            value8 &&
-            value8.nodeType === 1 &&
-            value6 &&
-            items2.push({
-              a: value3,
+            targetElement &&
+            targetElement.nodeType === 1 &&
+            duration &&
+            animatedElements.push({
+              a: animation,
               ct: state.ct,
-              start: value7,
-              dur: value6,
-              el: value8,
+              start: startTime,
+              dur: duration,
+              el: targetElement,
               pseudo: (effect && effect.pseudoElement) || null,
             });
         } catch {}
-      for (let index: Dynamic = 0; index < items2.length; index++)
+      for (let index: Dynamic = 0; index < animatedElements.length; index++)
         try {
-          let value3: Dynamic = items2[index],
+          let animatedElement: Dynamic = animatedElements[index],
             callback: Dynamic = (): Dynamic => {
-              let value4: Dynamic = value(value3.el, value3.pseudo);
+              let computedStyle: Dynamic = value(animatedElement.el, animatedElement.pseudo);
               if (
-                value4.opacity === "0" ||
-                value4.visibility === "hidden" ||
-                value4.display === "none"
+                computedStyle.opacity === "0" ||
+                computedStyle.visibility === "hidden" ||
+                computedStyle.display === "none"
               )
                 return true;
-              let value5: Dynamic = value4.transform || "";
-              if (value5.indexOf("matrix(") === 0) {
-                let value6: Dynamic = value5.slice(7, -1).split(",");
+              let transform: Dynamic = computedStyle.transform || "";
+              if (transform.indexOf("matrix(") === 0) {
+                let matrixValues: Dynamic = transform.slice(7, -1).split(",");
                 return (
                   Math.abs(
-                    Number(value6[0]) * Number(value6[3]) -
-                      Number(value6[1]) * Number(value6[2]),
+                    Number(matrixValues[0]) * Number(matrixValues[3]) -
+                      Number(matrixValues[1]) * Number(matrixValues[2]),
                   ) < 1e-6
                 );
               }
-              if (value5.indexOf("matrix3d(") === 0) {
-                let value6: Dynamic = value5.slice(9, -1).split(",");
-                return Number(value6[0]) === 0 || Number(value6[5]) === 0;
+              if (transform.indexOf("matrix3d(") === 0) {
+                let matrixValues: Dynamic = transform.slice(9, -1).split(",");
+                return Number(matrixValues[0]) === 0 || Number(matrixValues[5]) === 0;
               }
               return false;
             };
           callback() &&
-            ((value3.a.currentTime = value3.start + value3.dur / 2),
-            callback() && (value3.a.currentTime = value3.ct));
+            ((animatedElement.a.currentTime = animatedElement.start + animatedElement.dur / 2),
+            callback() && (animatedElement.a.currentTime = animatedElement.ct));
         } catch {}
     } catch {}
   return function (): Dynamic {

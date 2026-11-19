@@ -5,56 +5,56 @@ import {
 
 function captureSelectionSvg(
   element?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  selector?: Dynamic,
+  selectionSize?: Dynamic,
+  scrollContainer?: Dynamic,
 ): Dynamic {
-  let element2: Dynamic = element.querySelector(
-    options || "[data-dc-editor-selected]",
+  let selectedElement: Dynamic = element.querySelector(
+    selector || "[data-dc-editor-selected]",
   );
-  if (!element2)
+  if (!selectedElement)
     return {
       e: "no-selection",
     };
-  let value2: Dynamic =
-      (element2.ownerSVGElement != null && element2.closest("svg")) ||
-      element2,
-    value3: Dynamic = value2.offsetWidth || 0,
-    value4: Dynamic = value2.offsetHeight || 0;
-  if (!value3 || !value4) {
-    let bounds: Dynamic = value2.getBoundingClientRect(),
+  let svgRoot: Dynamic =
+      (selectedElement.ownerSVGElement != null && selectedElement.closest("svg")) ||
+      selectedElement,
+    width: Dynamic = svgRoot.offsetWidth || 0,
+    height: Dynamic = svgRoot.offsetHeight || 0;
+  if (!width || !height) {
+    let bounds: Dynamic = svgRoot.getBoundingClientRect(),
       count: Dynamic = 1;
     for (
-      let parentElement: Dynamic = value2.parentElement;
+      let parentElement: Dynamic = svgRoot.parentElement;
       parentElement;
       parentElement = parentElement.parentElement
     )
       if (parentElement.offsetWidth > 0) {
-        let bounds2: Dynamic = parentElement.getBoundingClientRect();
-        if (bounds2.width > 0) {
-          count = bounds2.width / parentElement.offsetWidth;
+        let parentBounds: Dynamic = parentElement.getBoundingClientRect();
+        if (parentBounds.width > 0) {
+          count = parentBounds.width / parentElement.offsetWidth;
           break;
         }
       }
-    value3 = Math.round(bounds.width / count) || value3;
-    value4 = Math.round(bounds.height / count) || value4;
+    width = Math.round(bounds.width / count) || width;
+    height = Math.round(bounds.height / count) || height;
   }
-  context &&
-    value3 > 0 &&
-    ((value3 = context.w),
-    (value4 = Math.max(
-      context.h,
-      value4,
-      (value && value2.scrollHeight) || 0,
+  selectionSize &&
+    width > 0 &&
+    ((width = selectionSize.w),
+    (height = Math.max(
+      selectionSize.h,
+      height,
+      (scrollContainer && svgRoot.scrollHeight) || 0,
     )));
-  return !value3 || !value4
+  return !width || !height
     ? {
         e: "zero-size",
       }
     : {
-        root: value2,
-        w: value3,
-        h: value4,
+        root: svgRoot,
+        w: width,
+        h: height,
       };
 }
 export {

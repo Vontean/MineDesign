@@ -4,63 +4,63 @@ import {
 } from "../runtime-types";
 
 var ExportCaptureWarningsItems: Dynamic;
-var ExportCaptureWarningsItems_2: Dynamic;
+var FONT_FALLBACK_WARNING_PHRASES: Dynamic;
 function dataUrlToBytes(dataUrl?: Dynamic): Dynamic {
   let separator: Dynamic = dataUrl.indexOf(",");
   if (separator < 0 || !dataUrl.slice(0, separator).endsWith(";base64"))
     return new Uint8Array(0);
   try {
     let value: Dynamic = atob(dataUrl.slice(separator + 1)),
-      value2: Dynamic = new Uint8Array(value.length);
+      decodedBytes: Dynamic = new Uint8Array(value.length);
     for (let index: Dynamic = 0; index < value.length; index++)
-      value2[index] = value.charCodeAt(index);
-    return value2;
+      decodedBytes[index] = value.charCodeAt(index);
+    return decodedBytes;
   } catch {
     return new Uint8Array(0);
   }
 }
 function countMatchingExportWarnings(
-  input?: Dynamic,
-  options?: Dynamic,
+  warnings?: Dynamic,
+  phrases?: Dynamic,
 ): Dynamic {
-  return matchingExportWarnings(input, options).length;
+  return matchingExportWarnings(warnings, phrases).length;
 }
-function matchingExportWarnings(input?: Dynamic, options?: Dynamic): Dynamic {
-  return Array.isArray(input)
-    ? input.filter(
-        (input2?: Dynamic): Dynamic =>
-          typeof input2 == "string" &&
-          options.some(
-            (input3?: Dynamic): Dynamic => input2.includes(input3),
+function matchingExportWarnings(warnings?: Dynamic, phrases?: Dynamic): Dynamic {
+  return Array.isArray(warnings)
+    ? warnings.filter(
+        (warning?: Dynamic): Dynamic =>
+          typeof warning == "string" &&
+          phrases.some(
+            (phrase?: Dynamic): Dynamic => warning.includes(phrase),
           ),
       )
     : [];
 }
-function mergeExportWarnings(input?: Dynamic, options?: Dynamic): Dynamic {
-  let items: Dynamic = [...input];
-  for (let value of new Set(options) as Dynamic) {
-    let value2: Dynamic =
-      options.filter((input2?: Dynamic): Dynamic => input2 === value).length -
-      input.filter((input2?: Dynamic): Dynamic => input2 === value).length;
-    for (let index: Dynamic = 0; index < value2; index++) items.push(value);
+function mergeExportWarnings(existingWarnings?: Dynamic, newWarnings?: Dynamic): Dynamic {
+  let items: Dynamic = [...existingWarnings];
+  for (let value of new Set(newWarnings) as Dynamic) {
+    let additionalCount: Dynamic =
+      newWarnings.filter((warning?: Dynamic): Dynamic => warning === value).length -
+      existingWarnings.filter((warning?: Dynamic): Dynamic => warning === value).length;
+    for (let index: Dynamic = 0; index < additionalCount; index++) items.push(value);
   }
   return items;
 }
 function collectCaptureWarnings(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  warnings?: Dynamic,
+  captureResult?: Dynamic,
+  warningPhrases?: Dynamic,
 ): Dynamic {
   return mergeExportWarnings(
-    input,
+    warnings,
     matchingExportWarnings(
-      options !== null && "w" in options ? options.w : undefined,
-      context,
+      captureResult !== null && "w" in captureResult ? captureResult.w : undefined,
+      warningPhrases,
     ),
   );
 }
-function describeCaptureFailure(input?: Dynamic): Dynamic {
-  let value: Dynamic = input instanceof Error ? input.message : "";
+function describeCaptureFailure(error?: Dynamic): Dynamic {
+  let value: Dynamic = error instanceof Error ? error.message : "";
   return /^executeJavaScript timed out/.test(value)
     ? "it took too long to draw; try again once it has finished loading"
     : /^preview is blocked/.test(value)
@@ -75,14 +75,14 @@ export {
   dataUrlToBytes,
   describeCaptureFailure,
   ExportCaptureWarningsItems,
-  ExportCaptureWarningsItems_2,
+  FONT_FALLBACK_WARNING_PHRASES as ExportCaptureWarningsItems_2,
   matchingExportWarnings,
   mergeExportWarnings,
 };
 export function installExportCaptureWarnings(): () => void {
   return () => {
     ExportCaptureWarningsItems = ["image could not be embedded"];
-    ExportCaptureWarningsItems_2 = [
+    FONT_FALLBACK_WARNING_PHRASES = [
       "a fallback face is used",
       "fonts may fall back",
     ];

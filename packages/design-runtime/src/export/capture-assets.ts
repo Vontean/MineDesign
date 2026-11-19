@@ -3,8 +3,8 @@ import {
   type Dynamic,
 } from "../runtime-types";
 
-function sanitizeXmlCharacters(input?: Dynamic): Dynamic {
-  return input.replace(
+function sanitizeXmlCharacters(xmlText?: Dynamic): Dynamic {
+  return xmlText.replace(
     /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDFFF]/g,
     (items?: Dynamic): Dynamic =>
       items.length === 2
@@ -14,24 +14,24 @@ function sanitizeXmlCharacters(input?: Dynamic): Dynamic {
           : "\uFFFD",
   );
 }
-function collectCssImageUrls(input?: Dynamic): Dynamic {
-  if (!input || input.indexOf("url(") === -1) return [];
+function collectCssImageUrls(cssText?: Dynamic): Dynamic {
+  if (!cssText || cssText.indexOf("url(") === -1) return [];
   let value: Dynamic = /url\((['"]?)([^'")]+)\1\)/g,
     items: Dynamic = [],
     state: Dynamic = {},
-    value2: Dynamic;
-  for (; (value2 = value.exec(input)); )
-    value2[2].indexOf("data:") === 0 ||
-      state[value2[0]] ||
-      ((state[value2[0]] = 1),
+    urlMatch: Dynamic;
+  for (; (urlMatch = value.exec(cssText)); )
+    urlMatch[2].indexOf("data:") === 0 ||
+      state[urlMatch[0]] ||
+      ((state[urlMatch[0]] = 1),
       items.push({
-        full: value2[0],
-        url: value2[2],
+        full: urlMatch[0],
+        url: urlMatch[2],
       }));
   return items;
 }
-function replaceCssImageUrls(input?: Dynamic, items?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function replaceCssImageUrls(cssText?: Dynamic, items?: Dynamic): Dynamic {
+  let value: Dynamic = cssText;
   for (let index: Dynamic = 0; index < items.length; index++)
     value = value
       .split(items[index].full)
@@ -40,7 +40,7 @@ function replaceCssImageUrls(input?: Dynamic, items?: Dynamic): Dynamic {
 }
 function prepareWebGlCanvasCapture(
   doc?: Dynamic,
-  options?: Dynamic,
+  scheduler?: Dynamic,
 ): Dynamic {
   let items: Dynamic = [],
     callback: Dynamic = (): Dynamic => {
@@ -50,50 +50,50 @@ function prepareWebGlCanvasCapture(
         } catch {}
     };
   try {
-    let callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = input.querySelectorAll("*");
+    let scanShadowRoot: Dynamic = (root?: Dynamic): Dynamic => {
+      let value: Dynamic = root.querySelectorAll("*");
       for (let index: Dynamic = 0; index < value.length; index++) {
-        let value2: Dynamic = value[index];
-        if (value2.tagName.toUpperCase() === "CANVAS") {
-          let value3: Dynamic = value2;
-          if (value3.width && value3.height) {
+        let canvasElement: Dynamic = value[index];
+        if (canvasElement.tagName.toUpperCase() === "CANVAS") {
+          let canvas: Dynamic = canvasElement;
+          if (canvas.width && canvas.height) {
             let state: Dynamic = {
               url: null,
             };
-            value3.__omCapGl = state;
+            canvas.__omCapGl = state;
             items.push({
-              c: value3,
+              c: canvas,
               m: state,
             });
           }
         }
-        value2.shadowRoot && callback2(value2.shadowRoot);
+        canvasElement.shadowRoot && scanShadowRoot(canvasElement.shadowRoot);
       }
     };
-    callback2(doc);
+    scanShadowRoot(doc);
   } catch {}
   return !items.length || doc.hidden
     ? Promise.resolve(callback)
-    : new Promise((input?: Dynamic): Dynamic => {
+    : new Promise((resolve?: Dynamic): Dynamic => {
         let flag: Dynamic = false,
-          callback2: Dynamic = (input2?: Dynamic): Dynamic => {
+          finishCapture: Dynamic = (succeeded?: Dynamic): Dynamic => {
             if (!flag) {
               flag = true;
-              if (input2)
+              if (succeeded)
                 for (let index: Dynamic = 0; index < items.length; index++)
                   try {
-                    let { c: value, m: value2 }: Dynamic = items[index],
-                      value3: Dynamic = doc.createElement("canvas");
-                    value3.width = value.width;
-                    value3.height = value.height;
-                    let value4: Dynamic = value3.getContext("2d");
-                    if (!value4) continue;
-                    value4.drawImage(value, 0, 0);
-                    let data: Dynamic = value4.getImageData(
+                    let { c: value, m: canvasState }: Dynamic = items[index],
+                      snapshotCanvas: Dynamic = doc.createElement("canvas");
+                    snapshotCanvas.width = value.width;
+                    snapshotCanvas.height = value.height;
+                    let context2d: Dynamic = snapshotCanvas.getContext("2d");
+                    if (!context2d) continue;
+                    context2d.drawImage(value, 0, 0);
+                    let data: Dynamic = context2d.getImageData(
                       0,
                       0,
-                      value3.width,
-                      value3.height,
+                      snapshotCanvas.width,
+                      snapshotCanvas.height,
                     ).data;
                     for (
                       let count: Dynamic = 3;
@@ -101,15 +101,15 @@ function prepareWebGlCanvasCapture(
                       count += 4
                     )
                       if (data[count]) {
-                        value2.url = value3.toDataURL();
+                        canvasState.url = snapshotCanvas.toDataURL();
                         break;
                       }
                   } catch {}
-              input(callback);
+              resolve(callback);
             }
           };
-        options.requestAnimationFrame((): Dynamic => callback2(true));
-        options.setTimeout((): Dynamic => callback2(false), 200);
+        scheduler.requestAnimationFrame((): Dynamic => finishCapture(true));
+        scheduler.setTimeout((): Dynamic => finishCapture(false), 200);
       });
 }
 export {

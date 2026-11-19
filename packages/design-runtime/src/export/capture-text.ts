@@ -4,15 +4,15 @@ import {
 } from "../runtime-types";
 
 function captureReadableText(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
-  argument?: Dynamic,
-  argument2?: Dynamic,
-  argument3?: Dynamic,
+  document?: Dynamic,
+  getComputedStyle?: Dynamic,
+  root?: Dynamic,
+  maxTextHeight?: Dynamic,
+  maxTextWidth?: Dynamic,
+  maxLineHeight?: Dynamic,
+  textRuns?: Dynamic,
+  baselineOffset?: Dynamic,
+  textCache?: Dynamic,
 ): Dynamic {
   let state: Dynamic = {
       SCRIPT: 1,
@@ -23,22 +23,22 @@ function captureReadableText(
       HEAD: 1,
       TITLE: 1,
     },
-    value2: Dynamic = 511 / 2 / 1e3,
+    lineHeightFactor: Dynamic = 511 / 2 / 1e3,
     count: Dynamic = 2e3,
-    bounds: Dynamic = context.getBoundingClientRect(),
-    value3: Dynamic = context.offsetWidth || 0,
-    value4: Dynamic = context.offsetHeight || 0,
-    value5: Dynamic =
-      value3 > 0 && bounds.width > 0 ? bounds.width / value3 : 1,
-    value6: Dynamic = extra || value3 || bounds.width / value5,
-    value7: Dynamic = detail || value4 || bounds.height / value5,
-    value8: Dynamic = input.createRange(),
+    bounds: Dynamic = root.getBoundingClientRect(),
+    layoutWidth: Dynamic = root.offsetWidth || 0,
+    layoutHeight: Dynamic = root.offsetHeight || 0,
+    scale: Dynamic =
+      layoutWidth > 0 && bounds.width > 0 ? bounds.width / layoutWidth : 1,
+    textWidthLimit: Dynamic = maxTextWidth || layoutWidth || bounds.width / scale,
+    textHeightLimit: Dynamic = maxLineHeight || layoutHeight || bounds.height / scale,
+    range: Dynamic = document.createRange(),
     items: Dynamic = [],
     index: Dynamic = 0,
     flag: Dynamic = false,
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (input2.parentElement) return input2.parentElement;
-      let parentNode: Dynamic = input2.parentNode;
+    callback: Dynamic = (node?: Dynamic): Dynamic => {
+      if (node.parentElement) return node.parentElement;
+      let parentNode: Dynamic = node.parentNode;
       return (
         (parentNode !== null &&
           parentNode.nodeType === 11 &&
@@ -47,68 +47,68 @@ function captureReadableText(
       );
     },
     entries: Dynamic = new Map(),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries.get(input2);
+    inspectAncestor: Dynamic = (node?: Dynamic): Dynamic => {
+      let entry: Dynamic = entries.get(node);
       if (entry !== undefined) return entry;
-      let value12: Dynamic = input2 === context ? null : callback(input2),
-        value13: Dynamic =
-          parseFloat(options(input2).opacity) <= 0 ||
-          (value12 !== null && callback2(value12));
-      entries.set(input2, value13);
-      return value13;
+      let parent: Dynamic = node === root ? null : callback(node),
+        ancestorEntry: Dynamic =
+          parseFloat(getComputedStyle(node).opacity) <= 0 ||
+          (parent !== null && inspectAncestor(parent));
+      entries.set(node, ancestorEntry);
+      return ancestorEntry;
     },
-    entries2: Dynamic = new Map(),
-    callback3: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries2.get(input2);
+    layoutEntries: Dynamic = new Map(),
+    getScrollOffset: Dynamic = (node?: Dynamic, maxScroll?: Dynamic): Dynamic => {
+      let entry: Dynamic = layoutEntries.get(node);
       if (entry === undefined) {
-        let value12: Dynamic = input2;
+        let element: Dynamic = node;
         entry =
-          value12.scrollHeight - value12.clientHeight > options2
+          element.scrollHeight - element.clientHeight > maxScroll
             ? 1 / 0
-            : (input2.getBoundingClientRect().bottom - bounds.top) / value5;
-        entries2.set(input2, entry);
+            : (node.getBoundingClientRect().bottom - bounds.top) / scale;
+        layoutEntries.set(node, entry);
       }
       return entry;
     },
-    entries3: Dynamic = new Map(),
-    callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries3.get(input2);
+    styleEntries: Dynamic = new Map(),
+    getElementMetrics: Dynamic = (element?: Dynamic): Dynamic => {
+      let entry: Dynamic = styleEntries.get(element);
       if (entry === undefined) {
-        let value12: Dynamic = options(input2),
-          whiteSpace: Dynamic = value12.whiteSpace,
-          display: Dynamic = value12.display,
-          value13: Dynamic = display === "none",
-          value14: Dynamic = parseFloat(value12.fontSize),
-          value15: Dynamic =
-            input2 instanceof SVGGraphicsElement &&
-            !(input2 instanceof SVGSVGElement)
-              ? input2.getScreenCTM()
+        let styles: Dynamic = getComputedStyle(element),
+          whiteSpace: Dynamic = styles.whiteSpace,
+          display: Dynamic = styles.display,
+          isDisplayNone: Dynamic = display === "none",
+          fontSize: Dynamic = parseFloat(styles.fontSize),
+          transform: Dynamic =
+            element instanceof SVGGraphicsElement &&
+            !(element instanceof SVGSVGElement)
+              ? element.getScreenCTM()
               : null;
-        value15 && (value14 = (value14 * Math.abs(value15.d)) / value5);
+        transform && (fontSize = (fontSize * Math.abs(transform.d)) / scale);
         entry = {
-          none: value13,
+          none: isDisplayNone,
           inline:
             display.indexOf("inline") >= 0 ||
             display === "contents" ||
             display.indexOf("ruby") === 0,
           atomic: display.indexOf("inline-") === 0,
           ok:
-            !value13 &&
-            value12.visibility === "visible" &&
-            !callback2(input2),
-          size: value14,
+            !isDisplayNone &&
+            styles.visibility === "visible" &&
+            !inspectAncestor(element),
+          size: fontSize,
           collapse:
             whiteSpace !== "pre" &&
             whiteSpace !== "pre-wrap" &&
             whiteSpace !== "break-spaces",
-          tt: value12.textTransform,
+          tt: styles.textTransform,
         };
-        entries3.set(input2, entry);
+        styleEntries.set(element, entry);
       }
       return entry;
     },
-    items2: Dynamic = [],
-    state2: Dynamic = {
+    textSegments: Dynamic = [],
+    headingRoles: Dynamic = {
       H1: 1,
       H2: 2,
       H3: 3,
@@ -116,184 +116,184 @@ function captureReadableText(
       H5: 5,
       H6: 6,
     },
-    items3: Dynamic = ["H1", "H2", "H3", "H4", "H5", "H6"],
-    state3: Dynamic = {
+    headingNames: Dynamic = ["H1", "H2", "H3", "H4", "H5", "H6"],
+    listRoles: Dynamic = {
       UL: 1,
       OL: 1,
       MENU: 1,
     },
-    callback5: Dynamic = (element?: Dynamic): Dynamic => {
-      let value12: Dynamic = element.getAttribute("role") || null,
-        value13: Dynamic = state2[element.tagName.toUpperCase()];
-      if (value13 !== undefined && value12 === null) return value13;
-      if (value12 !== "heading") return 0;
-      let value14: Dynamic = Math.floor(
+    getHeadingLevel: Dynamic = (element?: Dynamic): Dynamic => {
+      let ariaRole: Dynamic = element.getAttribute("role") || null,
+        headingLevel: Dynamic = headingRoles[element.tagName.toUpperCase()];
+      if (headingLevel !== undefined && ariaRole === null) return headingLevel;
+      if (ariaRole !== "heading") return 0;
+      let numericLevel: Dynamic = Math.floor(
         Number(element.getAttribute("aria-level")),
       );
-      return value14 >= 1
-        ? Math.min(value14, 6)
-        : value13 !== undefined
-          ? value13
+      return numericLevel >= 1
+        ? Math.min(numericLevel, 6)
+        : headingLevel !== undefined
+          ? headingLevel
           : 2;
     },
-    entries4: Dynamic = new Map(),
-    callback6: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries4.get(input2);
+    headingEntries: Dynamic = new Map(),
+    getHeadingInfo: Dynamic = (node?: Dynamic): Dynamic => {
+      let entry: Dynamic = headingEntries.get(node);
       if (entry === undefined) {
-        let value12: Dynamic = input2 === context ? null : callback(input2);
+        let parent: Dynamic = node === root ? null : callback(node);
         entry =
-          callback5(input2) > 0
-            ? input2
-            : value12 === null
+          getHeadingLevel(node) > 0
+            ? node
+            : parent === null
               ? null
-              : callback6(value12);
-        entries4.set(input2, entry);
+              : getHeadingInfo(parent);
+        headingEntries.set(node, entry);
       }
       return entry;
     },
-    callback7: Dynamic = (element?: Dynamic): Dynamic => {
-      let value12: Dynamic = element.getAttribute("role") || null;
+    isListElement: Dynamic = (element?: Dynamic): Dynamic => {
+      let ariaRole: Dynamic = element.getAttribute("role") || null;
       return (
-        value12 === "list" ||
-        (value12 === null && state3[element.tagName.toUpperCase()] === 1)
+        ariaRole === "list" ||
+        (ariaRole === null && listRoles[element.tagName.toUpperCase()] === 1)
       );
     },
-    callback8: Dynamic = (element?: Dynamic): Dynamic => {
-      let value12: Dynamic = element.getAttribute("role") || null;
+    isListItem: Dynamic = (element?: Dynamic): Dynamic => {
+      let ariaRole: Dynamic = element.getAttribute("role") || null;
       return (
-        value12 === "listitem" ||
-        (value12 === null && element.tagName.toUpperCase() === "LI")
+        ariaRole === "listitem" ||
+        (ariaRole === null && element.tagName.toUpperCase() === "LI")
       );
     },
-    entries5: Dynamic = new Map(),
-    callback9: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries5.get(input2);
+    listEntries: Dynamic = new Map(),
+    getListParent: Dynamic = (node?: Dynamic): Dynamic => {
+      let entry: Dynamic = listEntries.get(node);
       if (entry === undefined) {
-        let value12: Dynamic = input2 === context ? null : callback(input2),
-          value13: Dynamic = value12 === null ? null : callback9(value12);
+        let parent: Dynamic = node === root ? null : callback(node),
+          listParent: Dynamic = parent === null ? null : getListParent(parent);
         entry =
-          value13 !== null ? value13 : callback7(input2) ? input2 : null;
-        entries5.set(input2, entry);
+          listParent !== null ? listParent : isListElement(node) ? node : null;
+        listEntries.set(node, entry);
       }
       return entry;
     },
-    entries6: Dynamic = new Map(),
-    entries7: Dynamic = new Map(),
-    callback10: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries6.get(input2);
+    tableEntries: Dynamic = new Map(),
+    tableCounts: Dynamic = new Map(),
+    getTableCellInfo: Dynamic = (node?: Dynamic): Dynamic => {
+      let entry: Dynamic = tableEntries.get(node);
       if (entry === undefined) {
-        let value12: Dynamic = input2 === context ? null : callback(input2),
-          value13: Dynamic = callback8(input2)
-            ? value12 && callback9(value12)
+        let parent: Dynamic = node === root ? null : callback(node),
+          cellInfo: Dynamic = isListItem(node)
+            ? parent && getListParent(parent)
             : null;
-        if (value13) {
-          let value14: Dynamic = entries7.get(value13) || 0;
-          entries7.set(value13, value14 + 1);
+        if (cellInfo) {
+          let cellIndex: Dynamic = tableCounts.get(cellInfo) || 0;
+          tableCounts.set(cellInfo, cellIndex + 1);
           entry = {
-            list: value13,
-            index: value14,
+            list: cellInfo,
+            index: cellIndex,
           };
-        } else entry = value12 === null ? null : callback10(value12);
-        entries6.set(input2, entry);
+        } else entry = parent === null ? null : getTableCellInfo(parent);
+        tableEntries.set(node, entry);
       }
       return entry;
     },
-    entries8: Dynamic = new Map(),
-    callback11: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries8.get(input2);
+    inlineEntries: Dynamic = new Map(),
+    getInlineAncestor: Dynamic = (node?: Dynamic): Dynamic => {
+      let entry: Dynamic = inlineEntries.get(node);
       if (entry === undefined) {
-        let value12: Dynamic = input2 === context ? null : callback(input2),
-          value13: Dynamic =
-            input2.namespaceURI === "http://www.w3.org/2000/svg"
-              ? input2.tagName !== "text"
-              : callback4(input2).inline;
-        entry = value12 === null || !value13 ? input2 : callback11(value12);
-        entries8.set(input2, entry);
+        let parent: Dynamic = node === root ? null : callback(node),
+          isSvgElement: Dynamic =
+            node.namespaceURI === "http://www.w3.org/2000/svg"
+              ? node.tagName !== "text"
+              : getElementMetrics(node).inline;
+        entry = parent === null || !isSvgElement ? node : getInlineAncestor(parent);
+        inlineEntries.set(node, entry);
       }
       return entry;
     },
-    entries9: Dynamic = new Map(),
-    callback12: Dynamic = (element?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries9.get(element);
+    visibilityEntries: Dynamic = new Map(),
+    getVisibleAncestor: Dynamic = (element?: Dynamic): Dynamic => {
+      let entry: Dynamic = visibilityEntries.get(element);
       if (entry === undefined) {
-        let value12: Dynamic = element === context ? null : callback(element),
-          value13: Dynamic = value12 === null ? null : callback12(value12);
+        let parent: Dynamic = element === root ? null : callback(element),
+          visibleAncestor: Dynamic = parent === null ? null : getVisibleAncestor(parent);
         entry =
-          value13 !== null
-            ? value13
+          visibleAncestor !== null
+            ? visibleAncestor
             : element.getAttribute("aria-hidden") === "true" ||
                 element.getAttribute("role") === "img"
               ? element
               : null;
-        entries9.set(element, entry);
+        visibilityEntries.set(element, entry);
       }
       return entry;
     },
-    entries10: Dynamic = new Map(),
-    callback13: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries10.get(input2);
+    inlineMetricEntries: Dynamic = new Map(),
+    getInlineMetrics: Dynamic = (node?: Dynamic): Dynamic => {
+      let entry: Dynamic = inlineMetricEntries.get(node);
       if (entry === undefined) {
-        let value12: Dynamic = callback4(input2),
-          value13: Dynamic =
-            input2 === context || !value12.inline ? null : callback(input2);
+        let metrics: Dynamic = getElementMetrics(node),
+          inlineAncestor: Dynamic =
+            node === root || !metrics.inline ? null : callback(node);
         entry =
-          value12.inline && value12.atomic
-            ? input2
-            : value13 === null
+          metrics.inline && metrics.atomic
+            ? node
+            : inlineAncestor === null
               ? null
-              : callback13(value13);
-        entries10.set(input2, entry);
+              : getInlineMetrics(inlineAncestor);
+        inlineMetricEntries.set(node, entry);
       }
       return entry;
     },
-    entries11: Dynamic = new Map(),
-    callback14: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (argument3 === undefined) return;
-      let entry: Dynamic = entries11.get(input2);
+    textEntries: Dynamic = new Map(),
+    getTextContent: Dynamic = (node?: Dynamic): Dynamic => {
+      if (textCache === undefined) return;
+      let entry: Dynamic = textEntries.get(node);
       if (entry === undefined) {
-        let entry2: Dynamic = argument3.get(input2),
-          value12: Dynamic = input2 === context ? null : callback(input2),
-          value13: Dynamic =
-            entry2 !== undefined || value12 === null
+        let cachedText: Dynamic = textCache.get(node),
+          parent: Dynamic = node === root ? null : callback(node),
+          textValue: Dynamic =
+            cachedText !== undefined || parent === null
               ? undefined
-              : callback14(value12);
+              : getTextContent(parent);
         entry =
-          entry2 !== undefined
-            ? entry2
-            : value13 === undefined
+          cachedText !== undefined
+            ? cachedText
+            : textValue === undefined
               ? null
-              : value13;
-        entries11.set(input2, entry);
+              : textValue;
+        textEntries.set(node, entry);
       }
       return entry === null ? undefined : entry;
     },
-    callback15: Dynamic = (
+    getAccessibleLabel: Dynamic = (
       element?: Dynamic,
-      options2?: Dynamic,
+      tagName?: Dynamic,
     ): Dynamic => {
       let attribute: Dynamic = element.getAttribute("aria-labelledby");
       if (attribute !== null) {
-        let value12: Dynamic = attribute
+        let attributeValue: Dynamic = attribute
           .split(/\s+/)
           .map(
-            (input2?: Dynamic): Dynamic =>
-              input2 === "" ? null : input.getElementById(input2),
+            (id?: Dynamic): Dynamic =>
+              id === "" ? null : document.getElementById(id),
           )
           .map(
-            (input2?: Dynamic): Dynamic =>
-              input2 === null ? "" : (input2.textContent || "").trim(),
+            (textId?: Dynamic): Dynamic =>
+              textId === null ? "" : (textId.textContent || "").trim(),
           )
-          .filter((input2?: Dynamic): Dynamic => input2 !== "")
+          .filter((part?: Dynamic): Dynamic => part !== "")
           .join(" ")
           .slice(0, 2e3);
-        if (value12 !== "") return value12;
+        if (attributeValue !== "") return attributeValue;
       }
-      let attribute2: Dynamic = element.getAttribute("aria-label");
-      if (attribute2 !== null && attribute2.trim() !== "")
-        return attribute2.trim();
-      if (options2 === "IMG") {
-        let attribute4: Dynamic = element.getAttribute("alt");
-        if (attribute4 !== null) return attribute4.trim();
+      let ariaLabel: Dynamic = element.getAttribute("aria-label");
+      if (ariaLabel !== null && ariaLabel.trim() !== "")
+        return ariaLabel.trim();
+      if (tagName === "IMG") {
+        let altText: Dynamic = element.getAttribute("alt");
+        if (altText !== null) return altText.trim();
       } else
         for (
           let firstElementChild: Dynamic = element.firstElementChild;
@@ -302,69 +302,69 @@ function captureReadableText(
         )
           if (firstElementChild.tagName.toLowerCase() === "title")
             return (firstElementChild.textContent || "").trim();
-      let attribute3: Dynamic = element.getAttribute("title");
-      return attribute3 !== null && attribute3.trim() !== ""
-        ? attribute3.trim()
+      let titleText: Dynamic = element.getAttribute("title");
+      return titleText !== null && titleText.trim() !== ""
+        ? titleText.trim()
         : undefined;
     },
-    items4: Dynamic = [new Map(), new Map(), new Map()],
-    entries12: Dynamic = new Map(),
-    index2: Dynamic = 0,
-    value9: Dynamic = -1,
-    callback16: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value12: Dynamic = callback12(input2);
-      if (value12 !== null) {
-        let entry2: Dynamic = entries12.get(value12);
-        entry2 === undefined &&
-          ((entry2 = items2.length),
-          items2.push("Artifact"),
-          entries12.set(value12, entry2));
+    classificationEntries: Dynamic = [new Map(), new Map(), new Map()],
+    labelEntries: Dynamic = new Map(),
+    bestIndex: Dynamic = 0,
+    bestPriority: Dynamic = -1,
+    classifyTextNode: Dynamic = (node?: Dynamic, isFallback?: Dynamic): Dynamic => {
+      let visibleAncestor: Dynamic = getVisibleAncestor(node);
+      if (visibleAncestor !== null) {
+        let classEntry: Dynamic = labelEntries.get(visibleAncestor);
+        classEntry === undefined &&
+          ((classEntry = textSegments.length),
+          textSegments.push("Artifact"),
+          labelEntries.set(visibleAncestor, classEntry));
         return {
-          b: entry2,
+          b: classEntry,
         };
       }
-      let value13: Dynamic = callback6(input2),
-        value14: Dynamic = value13 === null ? callback10(input2) : null,
-        value15: Dynamic = value13 !== null ? 0 : value14 !== null ? 1 : 2,
-        value16: Dynamic =
-          value13 !== null
-            ? value13
-            : value14 !== null
-              ? value14.list
-              : callback11(input2),
-        entry: Dynamic = items4[value15].get(value16);
+      let headingInfo: Dynamic = getHeadingInfo(node),
+        tableCellInfo: Dynamic = headingInfo === null ? getTableCellInfo(node) : null,
+        classification: Dynamic = headingInfo !== null ? 0 : tableCellInfo !== null ? 1 : 2,
+        label: Dynamic =
+          headingInfo !== null
+            ? headingInfo
+            : tableCellInfo !== null
+              ? tableCellInfo.list
+              : getInlineAncestor(node),
+        entry: Dynamic = classificationEntries[classification].get(label);
       entry === undefined ||
-      (!options2 &&
-        (entry !== value9 || (value14 !== null && value14.index < index2)))
-        ? ((entry = items2.length),
-          items2.push(
-            value13 !== null
-              ? items3[callback5(value13) - 1]
-              : value14 !== null
+      (!isFallback &&
+        (entry !== bestPriority || (tableCellInfo !== null && tableCellInfo.index < bestIndex)))
+        ? ((entry = textSegments.length),
+          textSegments.push(
+            headingInfo !== null
+              ? headingNames[getHeadingLevel(headingInfo) - 1]
+              : tableCellInfo !== null
                 ? "L"
                 : "P",
           ),
-          items4[value15].set(value16, entry),
-          (value9 = entry))
-        : options2 || (value9 = entry);
-      value14 !== null && !options2 && (index2 = value14.index);
-      return value14 !== null
+          classificationEntries[classification].set(label, entry),
+          (bestPriority = entry))
+        : isFallback || (bestPriority = entry);
+      tableCellInfo !== null && !isFallback && (bestIndex = tableCellInfo.index);
+      return tableCellInfo !== null
         ? {
             b: entry,
-            i: value14.index,
+            i: tableCellInfo.index,
           }
         : {
             b: entry,
           };
     },
-    flag2: Dynamic = false,
-    value10: Dynamic = -1,
-    value11: Dynamic = null,
+    hasWhitespace: Dynamic = false,
+    lastBlockIndex: Dynamic = -1,
+    lastBlockType: Dynamic = null,
     text: Dynamic = "",
-    callback17: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      /[\p{Ps}\p{Pi}]/u.test(input2) ||
-      /[\p{Pe}\p{Pf}\p{Po}]/u.test(options2),
-    state4: Dynamic = {
+    isPunctuationBoundary: Dynamic = (leftChar?: Dynamic, rightChar?: Dynamic): Dynamic =>
+      /[\p{Ps}\p{Pi}]/u.test(leftChar) ||
+      /[\p{Pe}\p{Pf}\p{Po}]/u.test(rightChar),
+    formControlState: Dynamic = {
       SVG: 1,
       CANVAS: 1,
       VIDEO: 1,
@@ -379,286 +379,286 @@ function captureReadableText(
       METER: 1,
       PROGRESS: 1,
     },
-    callback18: Dynamic = (): Dynamic => {
-      let index3: Dynamic = 0,
-        value12: Dynamic = value8.getClientRects();
-      for (let index4: Dynamic = 0; index4 < value12.length; index4++) {
-        let value13: Dynamic = value12[index4];
-        value13.width > 0.01 && value13.height > 0.01 && index3++;
+    countVisibleRects: Dynamic = (): Dynamic => {
+      let rectCount: Dynamic = 0,
+        rects: Dynamic = range.getClientRects();
+      for (let rectIndex: Dynamic = 0; rectIndex < rects.length; rectIndex++) {
+        let rect: Dynamic = rects[rectIndex];
+        rect.width > 0.01 && rect.height > 0.01 && rectCount++;
       }
-      return index3;
+      return rectCount;
     },
-    callback19: Dynamic = (input2?: Dynamic): Dynamic => {
-      let length: Dynamic = input2.data.length;
-      value8.setStart(input2, 0);
-      value8.setEnd(input2, length);
-      if (callback18() <= 1) return [[0, length]];
-      let items5: Dynamic = [],
-        index3: Dynamic = 0;
-      for (let count2: Dynamic = 1; count2 <= length; count2++) {
-        value8.setStart(input2, index3);
-        value8.setEnd(input2, count2);
-        callback18() > 1 && count2 - 1 > index3
-          ? (items5.push([index3, count2 - 1]), (index3 = count2 - 1))
-          : count2 - index3 >= count &&
-            (items5.push([index3, count2]), (index3 = count2));
+    getTextRanges: Dynamic = (textNode?: Dynamic): Dynamic => {
+      let length: Dynamic = textNode.data.length;
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, length);
+      if (countVisibleRects() <= 1) return [[0, length]];
+      let ranges: Dynamic = [],
+        rangeStart: Dynamic = 0;
+      for (let rangeEnd: Dynamic = 1; rangeEnd <= length; rangeEnd++) {
+        range.setStart(textNode, rangeStart);
+        range.setEnd(textNode, rangeEnd);
+        countVisibleRects() > 1 && rangeEnd - 1 > rangeStart
+          ? (ranges.push([rangeStart, rangeEnd - 1]), (rangeStart = rangeEnd - 1))
+          : rangeEnd - rangeStart >= count &&
+            (ranges.push([rangeStart, rangeEnd]), (rangeStart = rangeEnd));
       }
-      length > index3 && items5.push([index3, length]);
-      return items5;
+      length > rangeStart && ranges.push([rangeStart, length]);
+      return ranges;
     },
-    callback20: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 === " " ||
-      input2 ===
+    isWhitespace: Dynamic = (character?: Dynamic): Dynamic =>
+      character === " " ||
+      character ===
         `
 ` ||
-      input2 === "	" ||
-      input2 === "\r" ||
-      input2 === "\f",
-    callback21: Dynamic = (input2?: Dynamic): Dynamic => {
-      let data: Dynamic = input2.data;
+      character === "	" ||
+      character === "\r" ||
+      character === "\f",
+    captureTextNode: Dynamic = (textNode?: Dynamic): Dynamic => {
+      let data: Dynamic = textNode.data;
       if (data.trim() === "") {
-        data !== "" && (flag2 = true);
+        data !== "" && (hasWhitespace = true);
         return;
       }
-      let value12: Dynamic = callback(input2);
-      if (value12 === null) return;
-      let value13: Dynamic = callback4(value12),
-        value14: Dynamic = callback14(value12);
-      if (!value13.ok || !(value13.size > 0)) {
-        flag2 = true;
+      let element: Dynamic = callback(textNode);
+      if (element === null) return;
+      let metrics: Dynamic = getElementMetrics(element),
+        textLabel: Dynamic = getTextContent(element);
+      if (!metrics.ok || !(metrics.size > 0)) {
+        hasWhitespace = true;
         return;
       }
       index += data.length;
-      if (index > value) {
+      if (index > maxTextHeight) {
         flag = true;
-        if (argument) {
-          value8.setStart(input2, 0);
-          value8.setEnd(input2, data.length);
-          let value16: Dynamic = value8.getClientRects();
-          for (let index4: Dynamic = 0; index4 < value16.length; index4++) {
-            let value17: Dynamic = value16[index4];
-            value17.height > 0.01 &&
-              argument.push([
-                (value17.top - bounds.top) / value5,
+        if (textRuns) {
+          range.setStart(textNode, 0);
+          range.setEnd(textNode, data.length);
+          let rects: Dynamic = range.getClientRects();
+          for (let rectIndex: Dynamic = 0; rectIndex < rects.length; rectIndex++) {
+            let rect: Dynamic = rects[rectIndex];
+            rect.height > 0.01 &&
+              textRuns.push([
+                (rect.top - bounds.top) / scale,
                 Math.min(
-                  (value17.bottom - bounds.top) / value5,
-                  callback3(value12, value13.size),
+                  (rect.bottom - bounds.top) / scale,
+                  getScrollOffset(element, metrics.size),
                 ),
               ]);
           }
         }
         return;
       }
-      let value15: Dynamic,
-        index3: Dynamic = 0;
-      for (let value16 of callback19(input2) as Dynamic) {
-        let value17: Dynamic = value16[0],
-          value18: Dynamic = value16[1];
-        for (; value17 < value18 && callback20(data.charAt(value17)); )
-          value17++;
-        for (; value18 > value17 && callback20(data.charAt(value18 - 1)); )
-          value18--;
-        if (value17 >= value18) {
-          value16[1] > value16[0] && (flag2 = true);
+      let classification: Dynamic,
+        textStart: Dynamic = 0;
+      for (let textRange of getTextRanges(textNode) as Dynamic) {
+        let rangeStart: Dynamic = textRange[0],
+          rangeEnd: Dynamic = textRange[1];
+        for (; rangeStart < rangeEnd && isWhitespace(data.charAt(rangeStart)); )
+          rangeStart++;
+        for (; rangeEnd > rangeStart && isWhitespace(data.charAt(rangeEnd - 1)); )
+          rangeEnd--;
+        if (rangeStart >= rangeEnd) {
+          textRange[1] > textRange[0] && (hasWhitespace = true);
           continue;
         }
-        value17 > index3 &&
-          (flag2 = flag2 || /[ \n\t\r\f]/.test(data.slice(index3, value17)));
-        let value19: Dynamic = data.slice(value17, value18);
-        value13.collapse && (value19 = value19.replace(/[ \n\t\r\f]+/g, " "));
-        value13.tt === "uppercase"
-          ? (value19 = value19.toUpperCase())
-          : value13.tt === "lowercase"
-            ? (value19 = value19.toLowerCase())
-            : value13.tt === "capitalize" &&
-              (value19 = value19.replace(
+        rangeStart > textStart &&
+          (hasWhitespace = hasWhitespace || /[ \n\t\r\f]/.test(data.slice(textStart, rangeStart)));
+        let textContent: Dynamic = data.slice(rangeStart, rangeEnd);
+        metrics.collapse && (textContent = textContent.replace(/[ \n\t\r\f]+/g, " "));
+        metrics.tt === "uppercase"
+          ? (textContent = textContent.toUpperCase())
+          : metrics.tt === "lowercase"
+            ? (textContent = textContent.toLowerCase())
+            : metrics.tt === "capitalize" &&
+              (textContent = textContent.replace(
                 /(^|[^A-Za-z0-9\u00C0-\u024F'])([a-z\u00DF-\u00FF])/g,
                 (
-                  input3?: Dynamic,
-                  options2?: Dynamic,
-                  context2?: Dynamic,
-                ): Dynamic => options2 + context2.toUpperCase(),
+                  suffixCharacter?: Dynamic,
+                  prefix?: Dynamic,
+                  character?: Dynamic,
+                ): Dynamic => prefix + character.toUpperCase(),
               ));
-        value8.setStart(input2, value17);
-        value8.setEnd(input2, value18);
-        let bounds2: Dynamic = value8.getBoundingClientRect(),
-          value20: Dynamic = (bounds2.left - bounds.left) / value5,
-          value21: Dynamic = (bounds2.top - bounds.top) / value5,
-          value22: Dynamic = bounds2.height / value5,
-          value23: Dynamic = bounds2.width / value5;
+        range.setStart(textNode, rangeStart);
+        range.setEnd(textNode, rangeEnd);
+        let textBounds: Dynamic = range.getBoundingClientRect(),
+          textX: Dynamic = (textBounds.left - bounds.left) / scale,
+          textY: Dynamic = (textBounds.top - bounds.top) / scale,
+          textHeight: Dynamic = textBounds.height / scale,
+          textWidth: Dynamic = textBounds.width / scale;
         if (
-          bounds2.width <= 0.01 ||
-          bounds2.height <= 0.01 ||
-          value20 >= value6 ||
-          value20 + value23 <= 0
+          textBounds.width <= 0.01 ||
+          textBounds.height <= 0.01 ||
+          textX >= textWidthLimit ||
+          textX + textWidth <= 0
         ) {
-          flag2 = true;
+          hasWhitespace = true;
           continue;
         }
-        let value24: Dynamic = value21 + (argument2 || 0);
-        if (value24 < value7 && value24 + value22 > 0) {
-          let value25: Dynamic = Math.min(value23, value6 - value20),
-            value26: Dynamic = Math.min(value13.size, value22),
-            value27: Dynamic = Math.min(
-              value7,
-              Math.max(0, value24 + value22 / 2 + value26 * value2),
+        let baselineY: Dynamic = textY + (baselineOffset || 0);
+        if (baselineY < textHeightLimit && baselineY + textHeight > 0) {
+          let visibleWidth: Dynamic = Math.min(textWidth, textWidthLimit - textX),
+            visibleHeight: Dynamic = Math.min(metrics.size, textHeight),
+            lineY: Dynamic = Math.min(
+              textHeightLimit,
+              Math.max(0, baselineY + textHeight / 2 + visibleHeight * lineHeightFactor),
             );
-          value15 === undefined && (value15 = callback16(value12));
-          let value28: Dynamic = callback13(value12) || callback11(value12),
-            value29: Dynamic =
-              value15.i === undefined
+          classification === undefined && (classification = classifyTextNode(element));
+          let blockType: Dynamic = getInlineMetrics(element) || getInlineAncestor(element),
+            segment: Dynamic =
+              classification.i === undefined
                 ? {
-                    t: value19,
-                    x: value20,
-                    y: value27,
-                    s: value26,
-                    w: value25,
-                    b: value15.b,
+                    t: textContent,
+                    x: textX,
+                    y: lineY,
+                    s: visibleHeight,
+                    w: visibleWidth,
+                    b: classification.b,
                   }
                 : {
-                    t: value19,
-                    x: value20,
-                    y: value27,
-                    s: value26,
-                    w: value25,
-                    b: value15.b,
-                    i: value15.i,
+                    t: textContent,
+                    x: textX,
+                    y: lineY,
+                    s: visibleHeight,
+                    w: visibleWidth,
+                    b: classification.b,
+                    i: classification.i,
                   };
-          value15.b === value10 &&
-            (value29.sp =
-              flag2 ||
-              (value28 !== value11 && !callback17(text, value19.charAt(0))));
-          value14 !== undefined && (value29.a = value14);
-          items.push(value29);
-          items2[value15.b] === "Artifact"
-            ? (flag2 = true)
-            : ((flag2 = false),
-              (value10 = value15.b),
-              (value11 = value28),
-              (text = value19.charAt(value19.length - 1)));
-        } else flag2 = true;
-        index3 = value18;
-        argument &&
-          value21 < value7 &&
-          value21 + value22 > 0 &&
-          argument.push([
-            value21,
-            Math.min(value21 + value22, callback3(value12, value13.size)),
+          classification.b === lastBlockIndex &&
+            (segment.sp =
+              hasWhitespace ||
+              (blockType !== lastBlockType && !isPunctuationBoundary(text, textContent.charAt(0))));
+          textLabel !== undefined && (segment.a = textLabel);
+          items.push(segment);
+          textSegments[classification.b] === "Artifact"
+            ? (hasWhitespace = true)
+            : ((hasWhitespace = false),
+              (lastBlockIndex = classification.b),
+              (lastBlockType = blockType),
+              (text = textContent.charAt(textContent.length - 1)));
+        } else hasWhitespace = true;
+        textStart = rangeEnd;
+        textRuns &&
+          textY < textHeightLimit &&
+          textY + textHeight > 0 &&
+          textRuns.push([
+            textY,
+            Math.min(textY + textHeight, getScrollOffset(element, metrics.size)),
           ]);
       }
-      index3 > 0 && index3 < data.length && (flag2 = true);
+      textStart > 0 && textStart < data.length && (hasWhitespace = true);
     },
-    callback22: Dynamic = (
+    captureElementText: Dynamic = (
       element?: Dynamic,
-      options2?: Dynamic,
+      tagName?: Dynamic,
     ): Dynamic => {
       let attribute: Dynamic = element.getAttribute("role"),
-        value12: Dynamic = element === context ? null : callback(element);
+        parent: Dynamic = element === root ? null : callback(element);
       if (
         attribute === "presentation" ||
         attribute === "none" ||
         element.getAttribute("aria-hidden") === "true" ||
-        (value12 !== null && callback12(value12) !== null) ||
-        !callback4(element).ok
+        (parent !== null && getVisibleAncestor(parent) !== null) ||
+        !getElementMetrics(element).ok
       )
         return;
-      let value13: Dynamic = callback15(element, options2);
-      if (value13 === "") return;
-      let bounds2: Dynamic = element.getBoundingClientRect(),
-        value14: Dynamic = (bounds2.left - bounds.left) / value5,
-        value15: Dynamic =
-          (bounds2.top - bounds.top) / value5 + (argument2 || 0),
-        value16: Dynamic = bounds2.width / value5,
-        value17: Dynamic = bounds2.height / value5;
+      let accessibleLabel: Dynamic = getAccessibleLabel(element, tagName);
+      if (accessibleLabel === "") return;
+      let elementBounds: Dynamic = element.getBoundingClientRect(),
+        elementX: Dynamic = (elementBounds.left - bounds.left) / scale,
+        elementY: Dynamic =
+          (elementBounds.top - bounds.top) / scale + (baselineOffset || 0),
+        elementWidth: Dynamic = elementBounds.width / scale,
+        elementHeight: Dynamic = elementBounds.height / scale;
       if (
-        value16 <= 0.01 ||
-        value17 <= 0.01 ||
-        value14 >= value6 ||
-        value14 + value16 <= 0 ||
-        value15 >= value7 ||
-        value15 + value17 <= 0
+        elementWidth <= 0.01 ||
+        elementHeight <= 0.01 ||
+        elementX >= textWidthLimit ||
+        elementX + elementWidth <= 0 ||
+        elementY >= textHeightLimit ||
+        elementY + elementHeight <= 0
       )
         return;
-      value12 !== null &&
-        (callback6(value12) !== null || callback10(value12) !== null) &&
-        callback16(value12, true);
-      let value18: Dynamic =
-          value13 === undefined
+      parent !== null &&
+        (getHeadingInfo(parent) !== null || getTableCellInfo(parent) !== null) &&
+        classifyTextNode(parent, true);
+      let textSegment: Dynamic =
+          accessibleLabel === undefined
             ? {
                 r: "Figure",
-                x: value14,
-                y: value15,
-                w: value16,
-                h: value17,
+                x: elementX,
+                y: elementY,
+                w: elementWidth,
+                h: elementHeight,
               }
             : {
                 r: "Figure",
-                a: value13,
-                x: value14,
-                y: value15,
-                w: value16,
-                h: value17,
+                a: accessibleLabel,
+                x: elementX,
+                y: elementY,
+                w: elementWidth,
+                h: elementHeight,
               },
-        value19: Dynamic = callback14(element);
-      value19 !== undefined && (value18.l = value19);
-      items2.push(value18);
+        elementText: Dynamic = getTextContent(element);
+      elementText !== undefined && (textSegment.l = elementText);
+      textSegments.push(textSegment);
     },
-    callback23: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (flag && !argument) return;
-      if (input2.nodeType === 3) {
-        callback21(input2);
+    cloneAndCapture: Dynamic = (node?: Dynamic): Dynamic => {
+      if (flag && !textRuns) return;
+      if (node.nodeType === 3) {
+        captureTextNode(node);
         return;
       }
-      if (input2.nodeType !== 1) return;
-      let value12: Dynamic = input2,
-        value13: Dynamic = value12.tagName.toUpperCase();
+      if (node.nodeType !== 1) return;
+      let element: Dynamic = node,
+        tagName: Dynamic = element.tagName.toUpperCase();
       if (
-        state[value13] === 1 ||
-        value12.hasAttribute("data-omelette-chrome") ||
-        value12.hasAttribute("data-noncommentable") ||
-        value12.hasAttribute("data-dc-editor-overlay") ||
-        (value12 !== context && callback4(value12).none)
+        state[tagName] === 1 ||
+        element.hasAttribute("data-omelette-chrome") ||
+        element.hasAttribute("data-noncommentable") ||
+        element.hasAttribute("data-dc-editor-overlay") ||
+        (element !== root && getElementMetrics(element).none)
       )
         return;
-      if (value13 === "BR") {
-        flag2 = true;
+      if (tagName === "BR") {
+        hasWhitespace = true;
         return;
       }
-      let value14: Dynamic =
-        value12 !== context &&
-        (!callback4(value12).inline || state4[value13] === 1);
-      value14 && (flag2 = true);
-      callback6(value12);
-      callback9(value12);
-      callback10(value12);
-      callback11(value12);
-      callback13(value12);
-      callback14(value12);
+      let childText: Dynamic =
+        element !== root &&
+        (!getElementMetrics(element).inline || formControlState[tagName] === 1);
+      childText && (hasWhitespace = true);
+      getHeadingInfo(element);
+      getListParent(element);
+      getTableCellInfo(element);
+      getInlineAncestor(element);
+      getInlineMetrics(element);
+      getTextContent(element);
       if (
-        (value13 === "IMG" || value12.getAttribute("role") === "img") &&
-        (callback22(value12, value13), (flag2 = true), value13 === "IMG")
+        (tagName === "IMG" || element.getAttribute("role") === "img") &&
+        (captureElementText(element, tagName), (hasWhitespace = true), tagName === "IMG")
       )
         return;
-      callback12(value12);
-      let value15: Dynamic;
-      if (value12.shadowRoot) value15 = value12.shadowRoot.childNodes;
-      else if (value13 === "SLOT") {
-        let value16: Dynamic = value12.assignedNodes({
+      getVisibleAncestor(element);
+      let assignedNodes: Dynamic;
+      if (element.shadowRoot) assignedNodes = element.shadowRoot.childNodes;
+      else if (tagName === "SLOT") {
+        let assignedContent: Dynamic = element.assignedNodes({
           flatten: true,
         });
-        value15 = value16.length ? value16 : value12.childNodes;
-      } else value15 = value12.childNodes;
-      for (let index3: Dynamic = 0; index3 < value15.length; index3++) {
-        let value16: Dynamic = value15[index3];
-        value16 && callback23(value16);
+        assignedNodes = assignedContent.length ? assignedContent : element.childNodes;
+      } else assignedNodes = element.childNodes;
+      for (let nodeIndex: Dynamic = 0; nodeIndex < assignedNodes.length; nodeIndex++) {
+        let assignedNode: Dynamic = assignedNodes[nodeIndex];
+        assignedNode && cloneAndCapture(assignedNode);
       }
-      value14 && (flag2 = true);
+      childText && (hasWhitespace = true);
     };
-  callback23(context);
+  cloneAndCapture(root);
   return {
     runs: items,
     truncated: flag,
-    blocks: items2,
+    blocks: textSegments,
   };
 }
 export {

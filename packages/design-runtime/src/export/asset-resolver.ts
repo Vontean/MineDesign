@@ -18,46 +18,46 @@ function isDesignRuntimeSource(source?: Dynamic): Dynamic {
 }
 function exportMimeForPath(path?: Dynamic): Dynamic {
   let value: Dynamic = path.split("/").pop() ?? path,
-    value2: Dynamic = value.lastIndexOf("."),
-    value3: Dynamic = value2 < 0 ? "" : value.slice(value2 + 1).toLowerCase();
-  return exportMimeByExtension[value3] ?? "application/octet-stream";
+    extensionIndex: Dynamic = value.lastIndexOf("."),
+    extension: Dynamic = extensionIndex < 0 ? "" : value.slice(extensionIndex + 1).toLowerCase();
+  return exportMimeByExtension[extension] ?? "application/octet-stream";
 }
 function normalizeLocalExportPath(path?: Dynamic): Dynamic {
   if (path.startsWith("//") || exportUrlSchemePattern.test(path)) return null;
   let value: Dynamic = path.split("#")[0].split("?")[0];
   value.startsWith("/appifact/") && (value = value.slice(10));
   let items: Dynamic = [];
-  for (let value3 of value.split("/") as Dynamic) {
-    let value4: Dynamic = value3;
+  for (let pathSegment of value.split("/") as Dynamic) {
+    let decodedSegment: Dynamic = pathSegment;
     try {
-      value4 = decodeURIComponent(value3);
+      decodedSegment = decodeURIComponent(pathSegment);
     } catch {}
-    if (value4.includes("/") || value4.includes("\\")) return null;
-    value4 === "" ||
-      value4 === "." ||
-      (value4 === ".." ? items.pop() : items.push(value4));
+    if (decodedSegment.includes("/") || decodedSegment.includes("\\")) return null;
+    decodedSegment === "" ||
+      decodedSegment === "." ||
+      (decodedSegment === ".." ? items.pop() : items.push(decodedSegment));
   }
   if (items.length === 0) return null;
-  let value2: Dynamic = items.join("/");
-  return exportUrlSchemePattern.test(value2) ? null : value2;
+  let normalizedPath: Dynamic = items.join("/");
+  return exportUrlSchemePattern.test(normalizedPath) ? null : normalizedPath;
 }
 function createExportAssetResolver(
   files?: Dynamic,
   libraries?: Dynamic,
-  options: Dynamic = {},
+  resolverOptions: Dynamic = {},
 ): Dynamic {
   let entries: Dynamic = new Map([
       [exportReactUmdUrl, libraries.reactUmd],
       [exportReactDomUmdUrl, libraries.reactDomUmd],
     ]),
     value: Dynamic =
-      options.fetchExternal ??
-      ((input?: Dynamic, options2?: Dynamic): Dynamic =>
-        fetch(input, options2)),
-    value2: Dynamic = options.externalTimeoutMs ?? 15e3;
-  return async (input?: Dynamic, options2?: Dynamic): Promise<Dynamic> => {
-    if (exportUuidPattern.test(input)) return null;
-    let entry: Dynamic = entries.get(input);
+      resolverOptions.fetchExternal ??
+      ((url?: Dynamic, requestOptions?: Dynamic): Dynamic =>
+        fetch(url, requestOptions)),
+    externalTimeoutMs: Dynamic = resolverOptions.externalTimeoutMs ?? 15e3;
+  return async (assetUrl?: Dynamic, requestOptions?: Dynamic): Promise<Dynamic> => {
+    if (exportUuidPattern.test(assetUrl)) return null;
+    let entry: Dynamic = entries.get(assetUrl);
     if (entry !== undefined)
       return {
         data: exportAssetTextEncoder.encode(entry),
@@ -66,12 +66,12 @@ function createExportAssetResolver(
     // MineDesign: Babel (embedded only for a JSX x-import) comes from the editor's own copy, the same bytes as the CDN
     // file; the CSP blocks the CDN (getBabelFileUrl, docs/design/canvas §8.3).
     let babelFile: Dynamic =
-      input === exportBabelStandaloneUrl
+      assetUrl === exportBabelStandaloneUrl
         ? getBabelFileUrl()
         : undefined;
     if (babelFile)
       try {
-        let response: Dynamic = await fetch(babelFile, { signal: options.signal });
+        let response: Dynamic = await fetch(babelFile, { signal: resolverOptions.signal });
         return response.ok
           ? {
               data: new Uint8Array(await response.arrayBuffer()),
@@ -81,65 +81,65 @@ function createExportAssetResolver(
       } catch {
         return null;
       }
-    if (/^(https?:)?\/\//i.test(input)) {
-      let value5: Dynamic = input.startsWith("//") ? "https:" + input : input;
-      if (!/^https:/i.test(value5)) {
+    if (/^(https?:)?\/\//i.test(assetUrl)) {
+      let secureUrl: Dynamic = assetUrl.startsWith("//") ? "https:" + assetUrl : assetUrl;
+      if (!/^https:/i.test(secureUrl)) {
         console.warn(
           "[design/export] not fetching insecure URL: " +
-            redactProjectServeAccessToken(input),
+            redactProjectServeAccessToken(assetUrl),
         );
         return null;
       }
-      if (options.signal?.aborted) return null;
+      if (resolverOptions.signal?.aborted) return null;
       let controller: Dynamic = new AbortController(),
-        value6: Dynamic = setTimeout(
+        timeoutId: Dynamic = setTimeout(
           (): Dynamic => controller.abort(),
-          value2,
+          externalTimeoutMs,
         ),
         callback: Dynamic = (): Dynamic => controller.abort();
-      options.signal?.addEventListener("abort", callback);
+      resolverOptions.signal?.addEventListener("abort", callback);
       try {
-        let value7: Dynamic = await value(value5, {
+        let response: Dynamic = await value(secureUrl, {
           signal: controller.signal,
           credentials: "omit",
           referrerPolicy: "no-referrer",
           redirect: "follow",
         });
-        if (!value7.ok) return null;
-        let value8: Dynamic =
-          value7.headers
+        if (!response.ok) return null;
+        let mimeType: Dynamic =
+          response.headers
             .get("content-type")
             ?.split(";")[0]
             .trim()
             .toLowerCase() || "application/octet-stream";
         return {
-          data: new Uint8Array(await value7.arrayBuffer()),
-          mime: value8,
+          data: new Uint8Array(await response.arrayBuffer()),
+          mime: mimeType,
         };
       } catch {
         return null;
       } finally {
-        clearTimeout(value6);
-        options.signal?.removeEventListener("abort", callback);
+        clearTimeout(timeoutId);
+        resolverOptions.signal?.removeEventListener("abort", callback);
       }
     }
-    let value3: Dynamic = normalizeLocalExportPath(input);
-    if (value3 === null) return null;
-    let value4: Dynamic = await files(value3);
-    return value3.split("/").pop() === SupportJsValue &&
-      (value4 === null ||
-        isDesignRuntimeSource(new TextDecoder().decode(value4.data)))
+    let localPath: Dynamic = normalizeLocalExportPath(assetUrl);
+    if (localPath === null) return null;
+    let asset: Dynamic = await files(localPath);
+    return localPath.split("/").pop() === SupportJsValue &&
+      (asset === null ||
+        isDesignRuntimeSource(new TextDecoder().decode(asset.data)))
       ? {
           data: exportAssetTextEncoder.encode(libraries.supportJs),
           mime: "text/javascript",
         }
-      : (value4 === null &&
-          !options2?.optional &&
+      : (asset === null &&
+          !requestOptions?.optional &&
           console.warn(
             "[design/export] unresolved: " +
-              redactProjectServeAccessToken(input),
+              redactProjectServeAccessToken(assetUrl),
           ),
-        value4);
+        asset);
   };
 }
 export {
