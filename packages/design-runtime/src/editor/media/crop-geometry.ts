@@ -4,35 +4,35 @@ import {
 } from "../../runtime-types";
 
 var defaultImageCrop: Dynamic;
-var MediaCropGeometryConstant: Dynamic;
-var MediaCropGeometryMin: Dynamic;
-var MediaCropGeometryHandler: Dynamic;
-var MediaCropGeometryLimit: Dynamic;
+var maxCropZoom: Dynamic;
+var clamp: Dynamic;
+var roundToDecimals: Dynamic;
+var overflowEpsilon: Dynamic;
 var sameImageCrop: Dynamic;
 var cropCoverScale: Dynamic;
 var imageCropZoomLimit: Dynamic;
-function normalizeImageCrop(input?: Dynamic): Dynamic {
-  if (input === null || typeof input != "object") return;
-  let value: Dynamic = input,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof value[input2] == "number" && Number.isFinite(value[input2])
-        ? value[input2]
+function normalizeImageCrop(rawCrop?: Dynamic): Dynamic {
+  if (rawCrop === null || typeof rawCrop != "object") return;
+  let source: Dynamic = rawCrop,
+    readNumber: Dynamic = (key?: Dynamic): Dynamic =>
+      typeof source[key] == "number" && Number.isFinite(source[key])
+        ? source[key]
         : null,
-    [items, items2, items3]: Dynamic = [
-      callback("zoom"),
-      callback("x"),
-      callback("y"),
+    [zoom, x, y]: Dynamic = [
+      readNumber("zoom"),
+      readNumber("x"),
+      readNumber("y"),
     ];
-  if (items === null || items2 === null || items3 === null) return;
-  let state: Dynamic = {
-    zoom: MediaCropGeometryHandler(
-      MediaCropGeometryMin(items, 1, MediaCropGeometryConstant),
+  if (zoom === null || x === null || y === null) return;
+  let normalized: Dynamic = {
+    zoom: roundToDecimals(
+      clamp(zoom, 1, maxCropZoom),
       4,
     ),
-    x: MediaCropGeometryHandler(MediaCropGeometryMin(items2, 0, 1), 5),
-    y: MediaCropGeometryHandler(MediaCropGeometryMin(items3, 0, 1), 5),
+    x: roundToDecimals(clamp(x, 0, 1), 5),
+    y: roundToDecimals(clamp(y, 0, 1), 5),
   };
-  return sameImageCrop(state, defaultImageCrop) ? undefined : state;
+  return sameImageCrop(normalized, defaultImageCrop) ? undefined : normalized;
 }
 function imageCropRect(
   frame?: Dynamic,
@@ -40,278 +40,278 @@ function imageCropRect(
   crop?: Dynamic,
 ): Dynamic {
   let scale: Dynamic = cropCoverScale(frame, natural) * crop.zoom,
-    [items, items2]: Dynamic = [natural.w * scale, natural.h * scale];
+    [width, height]: Dynamic = [natural.w * scale, natural.h * scale];
   return {
-    x: (frame.w - items) * crop.x + 0,
-    y: (frame.h - items2) * crop.y + 0,
-    w: items,
-    h: items2,
+    x: (frame.w - width) * crop.x + 0,
+    y: (frame.h - height) * crop.y + 0,
+    w: width,
+    h: height,
   };
 }
 function cropFromImageRect(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = imageCropZoomLimit(value),
+  frame?: Dynamic,
+  natural?: Dynamic,
+  rect?: Dynamic,
+  previousCrop?: Dynamic,
+  maxZoom: Dynamic = imageCropZoomLimit(previousCrop),
 ): Dynamic {
-  let value2: Dynamic = MediaCropGeometryMin(
-      context.w / (options.w * cropCoverScale(input, options)),
+  let zoom: Dynamic = clamp(
+      rect.w / (natural.w * cropCoverScale(frame, natural)),
       1,
-      extra,
+      maxZoom,
     ),
-    value3: Dynamic = cropCoverScale(input, options) * value2,
-    [items, items2]: Dynamic = [
-      options.w * value3 - input.w,
-      options.h * value3 - input.h,
+    scale: Dynamic = cropCoverScale(frame, natural) * zoom,
+    [overflowX, overflowY]: Dynamic = [
+      natural.w * scale - frame.w,
+      natural.h * scale - frame.h,
     ];
   return {
-    zoom: value2,
+    zoom: zoom,
     x:
-      items > MediaCropGeometryLimit
-        ? MediaCropGeometryMin(-context.x / items, 0, 1)
-        : value.x,
+      overflowX > overflowEpsilon
+        ? clamp(-rect.x / overflowX, 0, 1)
+        : previousCrop.x,
     y:
-      items2 > MediaCropGeometryLimit
-        ? MediaCropGeometryMin(-context.y / items2, 0, 1)
-        : value.y,
+      overflowY > overflowEpsilon
+        ? clamp(-rect.y / overflowY, 0, 1)
+        : previousCrop.y,
   };
 }
 function translateImageCrop(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  frame?: Dynamic,
+  natural?: Dynamic,
+  crop?: Dynamic,
+  deltaX?: Dynamic,
+  deltaY?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = imageCropRect(input, options, context);
+  let rect: Dynamic = imageCropRect(frame, natural, crop);
   return cropFromImageRect(
-    input,
-    options,
+    frame,
+    natural,
     {
-      ...value2,
-      x: value2.x + value,
-      y: value2.y + extra,
+      ...rect,
+      x: rect.x + deltaX,
+      y: rect.y + deltaY,
     },
-    context,
+    crop,
   );
 }
 function resizeImageCropCorner(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  frame?: Dynamic,
+  natural?: Dynamic,
+  crop?: Dynamic,
+  corner?: Dynamic,
+  deltaX?: Dynamic,
+  deltaY?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = imageCropRect(input, options, context),
-    [items, items2]: Dynamic = [
-      value === "ne" || value === "se" ? 1 : -1,
-      value === "sw" || value === "se" ? 1 : -1,
+  let rect: Dynamic = imageCropRect(frame, natural, crop),
+    [signX, signY]: Dynamic = [
+      corner === "ne" || corner === "se" ? 1 : -1,
+      corner === "sw" || corner === "se" ? 1 : -1,
     ],
-    state: Dynamic = {
-      x: items > 0 ? value2.x : value2.x + value2.w,
-      y: items2 > 0 ? value2.y : value2.y + value2.h,
+    anchor: Dynamic = {
+      x: signX > 0 ? rect.x : rect.x + rect.w,
+      y: signY > 0 ? rect.y : rect.y + rect.h,
     },
-    value3: Dynamic = Math.hypot(value2.w, value2.h),
-    value4: Dynamic =
-      ((items * value2.w + extra) * items * value2.w +
-        (items2 * value2.h + detail) * items2 * value2.h) /
-      value3,
-    value5: Dynamic = options.w * cropCoverScale(input, options),
-    value6: Dynamic = items > 0 ? input.w - state.x : state.x,
-    value7: Dynamic = items2 > 0 ? input.h - state.y : state.y,
-    value8: Dynamic = Math.max(
-      value5,
-      value6,
-      (value7 * value2.w) / value2.h,
+    diagonal: Dynamic = Math.hypot(rect.w, rect.h),
+    projectedDelta: Dynamic =
+      ((signX * rect.w + deltaX) * signX * rect.w +
+        (signY * rect.h + deltaY) * signY * rect.h) /
+      diagonal,
+    baseWidth: Dynamic = natural.w * cropCoverScale(frame, natural),
+    availableWidth: Dynamic = signX > 0 ? frame.w - anchor.x : anchor.x,
+    availableHeight: Dynamic = signY > 0 ? frame.h - anchor.y : anchor.y,
+    minWidth: Dynamic = Math.max(
+      baseWidth,
+      availableWidth,
+      (availableHeight * rect.w) / rect.h,
     ),
-    value9: Dynamic = MediaCropGeometryMin(
-      (value2.w * value4) / value3,
-      value8,
-      Math.max(value8, value5 * imageCropZoomLimit(context)),
+    newWidth: Dynamic = clamp(
+      (rect.w * projectedDelta) / diagonal,
+      minWidth,
+      Math.max(minWidth, baseWidth * imageCropZoomLimit(crop)),
     ),
-    value10: Dynamic = (value9 * value2.h) / value2.w;
+    newHeight: Dynamic = (newWidth * rect.h) / rect.w;
   return cropFromImageRect(
-    input,
-    options,
+    frame,
+    natural,
     {
-      x: items > 0 ? state.x : state.x - value9,
-      y: items2 > 0 ? state.y : state.y - value10,
-      w: value9,
-      h: value10,
+      x: signX > 0 ? anchor.x : anchor.x - newWidth,
+      y: signY > 0 ? anchor.y : anchor.y - newHeight,
+      w: newWidth,
+      h: newHeight,
     },
-    context,
+    crop,
   );
 }
 function resizeImageCropFrame(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
-  argument: Dynamic = 1,
+  frame?: Dynamic,
+  natural?: Dynamic,
+  crop?: Dynamic,
+  handle?: Dynamic,
+  deltaX?: Dynamic,
+  deltaY?: Dynamic,
+  minSize: Dynamic = 1,
 ): Dynamic {
-  let value2: Dynamic = imageCropRect(input, options, context),
-    value3: Dynamic = Math.max(MediaCropGeometryConstant, context.zoom),
-    [items, items2]: Dynamic = [
-      Math.min(input.w, Math.max(argument, value2.w / value3)),
-      Math.min(input.h, Math.max(argument, value2.h / value3)),
+  let rect: Dynamic = imageCropRect(frame, natural, crop),
+    zoom: Dynamic = Math.max(maxCropZoom, crop.zoom),
+    [minWidth, minHeight]: Dynamic = [
+      Math.min(frame.w, Math.max(minSize, rect.w / zoom)),
+      Math.min(frame.h, Math.max(minSize, rect.h / zoom)),
     ],
-    [items3, items4, items5, items6]: Dynamic = [0, 0, input.w, input.h];
-  value.includes("w") &&
-    (items3 = MediaCropGeometryMin(extra, value2.x, items5 - items));
-  value.includes("e") &&
-    (items5 = MediaCropGeometryMin(
-      input.w + extra,
-      items3 + items,
-      value2.x + value2.w,
+    [left, top, right, bottom]: Dynamic = [0, 0, frame.w, frame.h];
+  handle.includes("w") &&
+    (left = clamp(deltaX, rect.x, right - minWidth));
+  handle.includes("e") &&
+    (right = clamp(
+      frame.w + deltaX,
+      left + minWidth,
+      rect.x + rect.w,
     ));
-  value.includes("n") &&
-    (items4 = MediaCropGeometryMin(detail, value2.y, items6 - items2));
-  value.includes("s") &&
-    (items6 = MediaCropGeometryMin(
-      input.h + detail,
-      items4 + items2,
-      value2.y + value2.h,
+  handle.includes("n") &&
+    (top = clamp(deltaY, rect.y, bottom - minHeight));
+  handle.includes("s") &&
+    (bottom = clamp(
+      frame.h + deltaY,
+      top + minHeight,
+      rect.y + rect.h,
     ));
-  let state: Dynamic = {
-    x: items3 + 0,
-    y: items4 + 0,
-    w: items5 - items3,
-    h: items6 - items4,
+  let newFrame: Dynamic = {
+    x: left + 0,
+    y: top + 0,
+    w: right - left,
+    h: bottom - top,
   };
   return {
-    frame: state,
-    crop: cropIntoFrame(input, options, context, state),
+    frame: newFrame,
+    crop: cropIntoFrame(frame, natural, crop, newFrame),
   };
 }
 function cropIntoFrame(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  oldFrame?: Dynamic,
+  natural?: Dynamic,
+  crop?: Dynamic,
+  newFrame?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = imageCropRect(input, options, context);
+  let rect: Dynamic = imageCropRect(oldFrame, natural, crop);
   return cropFromImageRect(
-    value,
-    options,
+    newFrame,
+    natural,
     {
-      x: value2.x - value.x,
-      y: value2.y - value.y,
-      w: value2.w,
-      h: value2.h,
+      x: rect.x - newFrame.x,
+      y: rect.y - newFrame.y,
+      w: rect.w,
+      h: rect.h,
     },
-    context,
-    Math.max(MediaCropGeometryConstant, context.zoom),
+    crop,
+    Math.max(maxCropZoom, crop.zoom),
   );
 }
 function rotatedCropFrame(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  frame?: Dynamic,
+  angle?: Dynamic,
+  box?: Dynamic,
 ): Dynamic {
-  let [items, items2]: Dynamic = [
-      context.x + context.w / 2 - input.w / 2,
-      context.y + context.h / 2 - input.h / 2,
+  let [offsetX, offsetY]: Dynamic = [
+      box.x + box.w / 2 - frame.w / 2,
+      box.y + box.h / 2 - frame.h / 2,
     ],
-    [items3, items4]: Dynamic = [Math.cos(options), Math.sin(options)],
-    [items5, items6]: Dynamic = [
-      input.x + input.w / 2 + items * items3 - items2 * items4,
-      input.y + input.h / 2 + items * items4 + items2 * items3,
+    [cosAngle, sinAngle]: Dynamic = [Math.cos(angle), Math.sin(angle)],
+    [centerX, centerY]: Dynamic = [
+      frame.x + frame.w / 2 + offsetX * cosAngle - offsetY * sinAngle,
+      frame.y + frame.h / 2 + offsetX * sinAngle + offsetY * cosAngle,
     ];
   return {
-    x: items5 - context.w / 2,
-    y: items6 - context.h / 2,
-    w: context.w,
-    h: context.h,
+    x: centerX - box.w / 2,
+    y: centerY - box.h / 2,
+    w: box.w,
+    h: box.h,
   };
 }
 function zoomImageCrop(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  frame?: Dynamic,
+  natural?: Dynamic,
+  crop?: Dynamic,
+  factor?: Dynamic,
+  origin?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = imageCropRect(input, options, context),
-    value3: Dynamic = options.w * cropCoverScale(input, options),
-    value4: Dynamic =
-      MediaCropGeometryMin(
-        value2.w * value,
-        value3,
-        value3 * imageCropZoomLimit(context),
-      ) / value2.w,
-    [items, items2]: Dynamic = [
-      extra?.x ?? input.w / 2,
-      extra?.y ?? input.h / 2,
+  let rect: Dynamic = imageCropRect(frame, natural, crop),
+    baseWidth: Dynamic = natural.w * cropCoverScale(frame, natural),
+    scale: Dynamic =
+      clamp(
+        rect.w * factor,
+        baseWidth,
+        baseWidth * imageCropZoomLimit(crop),
+      ) / rect.w,
+    [originX, originY]: Dynamic = [
+      origin?.x ?? frame.w / 2,
+      origin?.y ?? frame.h / 2,
     ];
   return cropFromImageRect(
-    input,
-    options,
+    frame,
+    natural,
     {
-      x: items + (value2.x - items) * value4,
-      y: items2 + (value2.y - items2) * value4,
-      w: value2.w * value4,
-      h: value2.h * value4,
+      x: originX + (rect.x - originX) * scale,
+      y: originY + (rect.y - originY) * scale,
+      w: rect.w * scale,
+      h: rect.h * scale,
     },
-    context,
+    crop,
   );
 }
 function normalizeCenteredImageCrop(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  frame?: Dynamic,
+  natural?: Dynamic,
+  crop?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = imageCropRect(input, options, context);
+  let rect: Dynamic = imageCropRect(frame, natural, crop);
   return normalizeImageCrop({
-    zoom: context.zoom,
-    x: value.w - input.w < 0.5 ? 0.5 : context.x,
-    y: value.h - input.h < 0.5 ? 0.5 : context.y,
+    zoom: crop.zoom,
+    x: rect.w - frame.w < 0.5 ? 0.5 : crop.x,
+    y: rect.h - frame.h < 0.5 ? 0.5 : crop.y,
   });
 }
 function imageCropVisibleRect(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  frame?: Dynamic,
+  natural?: Dynamic,
+  crop?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = imageCropRect(input, options, context);
+  let rect: Dynamic = imageCropRect(frame, natural, crop);
   return {
-    x: -value.x / value.w,
-    y: -value.y / value.h,
-    w: input.w / value.w,
-    h: input.h / value.h,
+    x: -rect.x / rect.w,
+    y: -rect.y / rect.h,
+    w: frame.w / rect.w,
+    h: frame.h / rect.h,
   };
 }
-function imageCropCss(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    String(MediaCropGeometryHandler(input2 * 100, 4)) + "%";
+function imageCropCss(crop?: Dynamic): Dynamic {
+  let toPercent: Dynamic = (fraction?: Dynamic): Dynamic =>
+    String(roundToDecimals(fraction * 100, 4)) + "%";
   return {
     position: "absolute",
-    width: callback(input.zoom),
-    height: callback(input.zoom),
-    left: callback(-(input.zoom - 1) * input.x),
-    top: callback(-(input.zoom - 1) * input.y),
+    width: toPercent(crop.zoom),
+    height: toPercent(crop.zoom),
+    left: toPercent(-(crop.zoom - 1) * crop.x),
+    top: toPercent(-(crop.zoom - 1) * crop.y),
     maxWidth: "none",
     maxHeight: "none",
     objectFit: "cover",
-    objectPosition: callback(input.x) + " " + callback(input.y),
+    objectPosition: toPercent(crop.x) + " " + toPercent(crop.y),
   };
 }
-function mediaNaturalDimensions(input?: Dynamic): Dynamic {
-  let value: Dynamic = input,
-    value2: Dynamic = value?.tagName?.toLowerCase(),
-    [value3, value4]: Dynamic =
-      value2 === "video"
-        ? [value?.videoWidth ?? 0, value?.videoHeight ?? 0]
-        : value2 === "img"
-          ? [value?.naturalWidth ?? 0, value?.naturalHeight ?? 0]
+function mediaNaturalDimensions(media?: Dynamic): Dynamic {
+  let mediaElement: Dynamic = media,
+    tagName: Dynamic = mediaElement?.tagName?.toLowerCase(),
+    [width, height]: Dynamic =
+      tagName === "video"
+        ? [mediaElement?.videoWidth ?? 0, mediaElement?.videoHeight ?? 0]
+        : tagName === "img"
+          ? [mediaElement?.naturalWidth ?? 0, mediaElement?.naturalHeight ?? 0]
           : [0, 0];
-  return value3 > 0 && value4 > 0
+  return width > 0 && height > 0
     ? {
-        w: value3,
-        h: value4,
+        w: width,
+        h: height,
       }
     : null;
 }
@@ -324,10 +324,10 @@ export {
   imageCropRect,
   imageCropVisibleRect,
   imageCropZoomLimit,
-  MediaCropGeometryConstant,
-  MediaCropGeometryHandler,
-  MediaCropGeometryLimit,
-  MediaCropGeometryMin,
+  maxCropZoom as MediaCropGeometryConstant,
+  roundToDecimals as MediaCropGeometryHandler,
+  overflowEpsilon as MediaCropGeometryLimit,
+  clamp as MediaCropGeometryMin,
   mediaNaturalDimensions,
   normalizeCenteredImageCrop,
   normalizeImageCrop,
@@ -345,29 +345,29 @@ export function installEditorMediaCropGeometry(): () => void {
       x: 0.5,
       y: 0.5,
     };
-    MediaCropGeometryConstant = 50;
-    MediaCropGeometryMin = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => Math.min(context, Math.max(options, input));
-    MediaCropGeometryHandler = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      Math.round(input * 10 ** options) / 10 ** options;
-    MediaCropGeometryLimit = 1e-6;
-    sameImageCrop = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let [items, items2]: Dynamic = [
-        input ?? defaultImageCrop,
-        options ?? defaultImageCrop,
+    maxCropZoom = 50;
+    clamp = (
+      unclamped?: Dynamic,
+      lower?: Dynamic,
+      upper?: Dynamic,
+    ): Dynamic => Math.min(upper, Math.max(lower, unclamped));
+    roundToDecimals = (unrounded?: Dynamic, digits?: Dynamic): Dynamic =>
+      Math.round(unrounded * 10 ** digits) / 10 ** digits;
+    overflowEpsilon = 1e-6;
+    sameImageCrop = (cropA?: Dynamic, cropB?: Dynamic): Dynamic => {
+      let [a, b]: Dynamic = [
+        cropA ?? defaultImageCrop,
+        cropB ?? defaultImageCrop,
       ];
       return (
-        items.zoom === items2.zoom &&
-        items.x === items2.x &&
-        items.y === items2.y
+        a.zoom === b.zoom &&
+        a.x === b.x &&
+        a.y === b.y
       );
     };
-    cropCoverScale = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      Math.max(input.w / options.w, input.h / options.h);
-    imageCropZoomLimit = (input?: Dynamic): Dynamic =>
-      Math.max(MediaCropGeometryConstant, input.zoom);
+    cropCoverScale = (frame?: Dynamic, natural?: Dynamic): Dynamic =>
+      Math.max(frame.w / natural.w, frame.h / natural.h);
+    imageCropZoomLimit = (crop?: Dynamic): Dynamic =>
+      Math.max(maxCropZoom, crop.zoom);
   };
 }

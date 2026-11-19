@@ -10,65 +10,65 @@ var defaultAnnotationStrokeColor: Dynamic;
 var MediaVideoPlaybackPlayPauseSeekConfig: Dynamic;
 var MediaVideoPlaybackPlayPauseConfig: Dynamic;
 var MediaVideoPlaybackPlayPauseTimeupdateValues: Dynamic;
-function formatVideoTime(input?: Dynamic): Dynamic {
-  let value: Dynamic =
-      Number.isFinite(input) && input > 0 ? Math.floor(input) : 0,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      String(input2).padStart(2, "0"),
-    value2: Dynamic = Math.floor(value / 3600),
-    value3: Dynamic = Math.floor((value % 3600) / 60);
-  return value2 > 0
-    ? String(value2) + ":" + callback(value3) + ":" + callback(value % 60)
-    : String(value3) + ":" + callback(value % 60);
+function formatVideoTime(seconds?: Dynamic): Dynamic {
+  let wholeSeconds: Dynamic =
+      Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0,
+    padTwoDigits: Dynamic = (part?: Dynamic): Dynamic =>
+      String(part).padStart(2, "0"),
+    hours: Dynamic = Math.floor(wholeSeconds / 3600),
+    minutes: Dynamic = Math.floor((wholeSeconds % 3600) / 60);
+  return hours > 0
+    ? String(hours) + ":" + padTwoDigits(minutes) + ":" + padTwoDigits(wholeSeconds % 60)
+    : String(minutes) + ":" + padTwoDigits(wholeSeconds % 60);
 }
-function createVideoPlaybackStore(input?: Dynamic): Dynamic {
-  let values: Dynamic = new Set(),
-    callback: Dynamic = (): Dynamic => {
-      let value: Dynamic =
-        Number.isFinite(input.duration) && input.duration > 0;
+function createVideoPlaybackStore(video?: Dynamic): Dynamic {
+  let listeners: Dynamic = new Set(),
+    readSnapshot: Dynamic = (): Dynamic => {
+      let hasDuration: Dynamic =
+        Number.isFinite(video.duration) && video.duration > 0;
       return {
-        paused: input.paused,
-        currentTime: Number.isFinite(input.currentTime)
-          ? input.currentTime
+        paused: video.paused,
+        currentTime: Number.isFinite(video.currentTime)
+          ? video.currentTime
           : 0,
-        duration: value ? input.duration : 0,
-        ready: input.readyState >= 1,
-        seekable: value,
-        failed: input.error != null,
+        duration: hasDuration ? video.duration : 0,
+        ready: video.readyState >= 1,
+        seekable: hasDuration,
+        failed: video.error != null,
       };
     },
-    callback2: Dynamic = (): Dynamic => {
-      let value: Dynamic = callback();
-      for (let value2 of [...values] as Dynamic) value2(value);
+    notifyListeners: Dynamic = (): Dynamic => {
+      let snapshot: Dynamic = readSnapshot();
+      for (let listener of [...listeners] as Dynamic) listener(snapshot);
     };
-  for (let value of MediaVideoPlaybackPlayPauseTimeupdateValues as Dynamic)
-    input.addEventListener(value, callback2);
-  let callback3: Dynamic = (): Dynamic => {
-    Promise.resolve(input.play()).catch((): Dynamic => callback2());
+  for (let eventName of MediaVideoPlaybackPlayPauseTimeupdateValues as Dynamic)
+    video.addEventListener(eventName, notifyListeners);
+  let playVideo: Dynamic = (): Dynamic => {
+    Promise.resolve(video.play()).catch((): Dynamic => notifyListeners());
   };
   return {
-    play: callback3,
-    pause: (): Dynamic => input.pause(),
-    toggle: (): Dynamic => (input.paused ? callback3() : input.pause()),
-    seek: (input2?: Dynamic): Dynamic => {
-      let duration: Dynamic = callback().duration;
-      Number.isFinite(input2) &&
-        (input.currentTime = Math.max(
+    play: playVideo,
+    pause: (): Dynamic => video.pause(),
+    toggle: (): Dynamic => (video.paused ? playVideo() : video.pause()),
+    seek: (time?: Dynamic): Dynamic => {
+      let duration: Dynamic = readSnapshot().duration;
+      Number.isFinite(time) &&
+        (video.currentTime = Math.max(
           0,
-          duration > 0 ? Math.min(input2, duration) : input2,
+          duration > 0 ? Math.min(time, duration) : time,
         ));
     },
-    subscribe: (input2?: Dynamic): Dynamic => (
-      values.add(input2),
-      input2(callback()),
+    subscribe: (listener?: Dynamic): Dynamic => (
+      listeners.add(listener),
+      listener(readSnapshot()),
       (): Dynamic => {
-        values.delete(input2);
+        listeners.delete(listener);
       }
     ),
     detach: (): Dynamic => {
-      for (let value of MediaVideoPlaybackPlayPauseTimeupdateValues as Dynamic)
-        input.removeEventListener(value, callback2);
-      values.clear();
+      for (let eventName of MediaVideoPlaybackPlayPauseTimeupdateValues as Dynamic)
+        video.removeEventListener(eventName, notifyListeners);
+      listeners.clear();
     },
   };
 }

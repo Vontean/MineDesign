@@ -5,262 +5,262 @@ import {
 } from "../../runtime-types";
 import { getAssetsCapability, isBlobAssetUrl, normalizeUploadedAsset } from "../../platform/image-upload";
 
-var MediaVideoUploadItems: Dynamic;
-var MediaVideoUploadResolvedValue: Dynamic;
-var VideoQuicktimeValue: Dynamic;
-var VideoMp4VideoWebmVideoQuicktimeMovValue: Dynamic;
-var MediaVideoUploadLimit: Dynamic;
-var MediaVideoUploadAutoPlayLoopMutedConfig: Dynamic;
-var MediaVideoUploadAutoplayLoopMutedConfig: Dynamic;
-var MediaVideoUploadReplace: Dynamic;
-function videoMimeType(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input.type.split(";")[0] ?? "").trim().toLowerCase();
-  return value === "" && /\.mov$/i.test(input.name ?? "")
-    ? VideoQuicktimeValue
-    : value;
+var allowedVideoMimeTypes: Dynamic;
+var maxVideoBytes: Dynamic;
+var quicktimeMimeType: Dynamic;
+var acceptedVideoTypes: Dynamic;
+var darkFrameLuminanceThreshold: Dynamic;
+var videoReactProps: Dynamic;
+var videoHtmlAttributes: Dynamic;
+var escapeHtmlAttribute: Dynamic;
+function videoMimeType(file?: Dynamic): Dynamic {
+  let declaredType: Dynamic = (file.type.split(";")[0] ?? "").trim().toLowerCase();
+  return declaredType === "" && /\.mov$/i.test(file.name ?? "")
+    ? quicktimeMimeType
+    : declaredType;
 }
-function isVideoFile(input?: Dynamic): Dynamic {
-  return videoMimeType(input).startsWith("video/");
+function isVideoFile(file?: Dynamic): Dynamic {
+  return videoMimeType(file).startsWith("video/");
 }
-function videoUploadRefusal(input?: Dynamic): Dynamic {
-  let value: Dynamic = videoMimeType(input);
-  return value !== VideoQuicktimeValue &&
-    !MediaVideoUploadItems.includes(value)
+function videoUploadRefusal(file?: Dynamic): Dynamic {
+  let mimeType: Dynamic = videoMimeType(file);
+  return mimeType !== quicktimeMimeType &&
+    !allowedVideoMimeTypes.includes(mimeType)
     ? "unsupported_type"
-    : input.size > MediaVideoUploadResolvedValue
+    : file.size > maxVideoBytes
       ? "too_large"
       : null;
 }
-async function sniffQuicktimeFormat(input?: Dynamic): Promise<Dynamic> {
-  let value: Dynamic = videoMimeType(input);
-  if (value !== VideoQuicktimeValue) return value;
-  let value2: Dynamic = new Uint8Array(
-    await input.slice(0, 12).arrayBuffer(),
+async function sniffQuicktimeFormat(file?: Dynamic): Promise<Dynamic> {
+  let mimeType: Dynamic = videoMimeType(file);
+  if (mimeType !== quicktimeMimeType) return mimeType;
+  let header: Dynamic = new Uint8Array(
+    await file.slice(0, 12).arrayBuffer(),
   );
-  return value2.length === 12 &&
-    String.fromCharCode(...value2.subarray(4, 8)) === "ftyp"
+  return header.length === 12 &&
+    String.fromCharCode(...header.subarray(4, 8)) === "ftyp"
     ? "video/mp4"
     : null;
 }
 async function normalizeQuicktimeUpload(
-  input?: Dynamic,
-  options: Dynamic = 8e3,
+  file?: Dynamic,
+  timeoutMs: Dynamic = 8e3,
 ): Promise<Dynamic> {
-  if (videoMimeType(input) !== VideoQuicktimeValue)
+  if (videoMimeType(file) !== quicktimeMimeType)
     return {
-      type: videoMimeType(input),
+      type: videoMimeType(file),
     };
-  let callback: Dynamic = (): Dynamic => {},
-    promise: Dynamic = new Promise((input2?: Dynamic): Dynamic => {
-      let value: Dynamic = setTimeout(input2, options);
-      callback = (): Dynamic => clearTimeout(value);
+  let clearProbeTimer: Dynamic = (): Dynamic => {},
+    timeoutPromise: Dynamic = new Promise((resolveTimeout?: Dynamic): Dynamic => {
+      let timerId: Dynamic = setTimeout(resolveTimeout, timeoutMs);
+      clearProbeTimer = (): Dynamic => clearTimeout(timerId);
     });
   try {
-    let value: Dynamic = await Promise.race([
-      sniffQuicktimeFormat(input),
-      promise,
+    let format: Dynamic = await Promise.race([
+      sniffQuicktimeFormat(file),
+      timeoutPromise,
     ]);
-    return value === undefined
+    return format === undefined
       ? "probe_timeout"
-      : value === null
+      : format === null
         ? "old_quicktime"
         : {
-            type: value,
+            type: format,
           };
   } catch {
     return "probe_timeout";
   } finally {
-    callback();
+    clearProbeTimer();
   }
 }
 function withVideoProbe(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  file?: Dynamic,
+  timeoutMs?: Dynamic,
+  inspect?: Dynamic,
+  seekTime?: Dynamic,
 ): Dynamic {
-  return videoMimeType(input) !== VideoQuicktimeValue
-    ? probeVideoElement(input, options, context, value)
-    : normalizeQuicktimeUpload(input, options).then(
-        (input2?: Dynamic): Dynamic =>
-          typeof input2 == "string"
-            ? input2
-            : probeVideoElement(input, options, context, value),
+  return videoMimeType(file) !== quicktimeMimeType
+    ? probeVideoElement(file, timeoutMs, inspect, seekTime)
+    : normalizeQuicktimeUpload(file, timeoutMs).then(
+        (normalized?: Dynamic): Dynamic =>
+          typeof normalized == "string"
+            ? normalized
+            : probeVideoElement(file, timeoutMs, inspect, seekTime),
       );
 }
 function probeVideoElement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  file?: Dynamic,
+  timeoutMs?: Dynamic,
+  inspect?: Dynamic,
+  seekTime?: Dynamic,
 ): Dynamic {
-  return new Promise((input2?: Dynamic): Dynamic => {
-    let value2: Dynamic = URL.createObjectURL(input),
-      value3: Dynamic = (document as Dynamic).createElement("video"),
-      flag: Dynamic = false,
-      callback: Dynamic = (input3?: Dynamic): Dynamic => {
-        flag ||
-          ((flag = true),
-          clearTimeout(value4),
-          value3.removeAttribute("src"),
-          value3.load(),
-          URL.revokeObjectURL(value2),
-          input2(input3));
+  return new Promise((resolve?: Dynamic): Dynamic => {
+    let objectUrl: Dynamic = URL.createObjectURL(file),
+      video: Dynamic = (document as Dynamic).createElement("video"),
+      isSettled: Dynamic = false,
+      settle: Dynamic = (outcome?: Dynamic): Dynamic => {
+        isSettled ||
+          ((isSettled = true),
+          clearTimeout(timeoutId),
+          video.removeAttribute("src"),
+          video.load(),
+          URL.revokeObjectURL(objectUrl),
+          resolve(outcome));
       },
-      value4: Dynamic = setTimeout(
-        (): Dynamic => callback("probe_timeout"),
-        options,
+      timeoutId: Dynamic = setTimeout(
+        (): Dynamic => settle("probe_timeout"),
+        timeoutMs,
       ),
-      flag2: Dynamic = false,
-      callback2: Dynamic = (): Dynamic => {
-        flag2 ||
-          flag ||
-          ((flag2 = true),
+      isInspecting: Dynamic = false,
+      inspectVideo: Dynamic = (): Dynamic => {
+        isInspecting ||
+          isSettled ||
+          ((isInspecting = true),
           Promise.resolve()
-            .then((): Dynamic => context(value3))
-            .then(callback, (): Dynamic => callback("probe_timeout")));
+            .then((): Dynamic => inspect(video))
+            .then(settle, (): Dynamic => settle("probe_timeout")));
       };
-    value3.muted = true;
-    value3.playsInline = true;
-    value3.preload = "auto";
-    value3.onerror = (): Dynamic => callback("unplayable");
-    value
-      ? ((value3.onloadeddata = (): Dynamic => {
-          let value5: Dynamic = value(value3);
-          Number.isFinite(value5) && value5 > 0
-            ? (value3.currentTime = value5)
-            : callback2();
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.onerror = (): Dynamic => settle("unplayable");
+    seekTime
+      ? ((video.onloadeddata = (): Dynamic => {
+          let seekTarget: Dynamic = seekTime(video);
+          Number.isFinite(seekTarget) && seekTarget > 0
+            ? (video.currentTime = seekTarget)
+            : inspectVideo();
         }),
-        (value3.onseeked = callback2))
-      : (value3.onloadedmetadata = callback2);
-    value3.src = value2;
+        (video.onseeked = inspectVideo))
+      : (video.onloadedmetadata = inspectVideo);
+    video.src = objectUrl;
   });
 }
-function videoMetadata(input?: Dynamic): Dynamic {
-  return input.videoWidth > 0 && input.videoHeight > 0
+function videoMetadata(video?: Dynamic): Dynamic {
+  return video.videoWidth > 0 && video.videoHeight > 0
     ? {
-        width: input.videoWidth,
-        height: input.videoHeight,
-        duration: Number.isFinite(input.duration) ? input.duration : 0,
+        width: video.videoWidth,
+        height: video.videoHeight,
+        duration: Number.isFinite(video.duration) ? video.duration : 0,
       }
     : "unplayable";
 }
-function probeVideoFile(input?: Dynamic, options: Dynamic = 6e3): Dynamic {
-  return withVideoProbe(input, options, videoMetadata);
+function probeVideoFile(file?: Dynamic, timeoutMs: Dynamic = 6e3): Dynamic {
+  return withVideoProbe(file, timeoutMs, videoMetadata);
 }
-function videoFrameLuminance(input?: Dynamic): Dynamic {
+function videoFrameLuminance(video?: Dynamic): Dynamic {
   try {
-    let value: Dynamic = (document as Dynamic).createElement("canvas");
-    value.width = 32;
-    value.height = 18;
-    let value2: Dynamic = value.getContext("2d");
-    if (value2 === null) return 255;
-    value2.drawImage(input, 0, 0, 32, 18);
-    let data: Dynamic = value2.getImageData(0, 0, 32, 18).data,
-      index: Dynamic = 0;
-    for (let index2: Dynamic = 0; index2 < data.length; index2 += 4)
-      index +=
-        0.2126 * (data[index2] ?? 0) +
-        0.7152 * (data[index2 + 1] ?? 0) +
-        0.0722 * (data[index2 + 2] ?? 0);
-    return index / (data.length / 4);
+    let canvas: Dynamic = (document as Dynamic).createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 18;
+    let context2d: Dynamic = canvas.getContext("2d");
+    if (context2d === null) return 255;
+    context2d.drawImage(video, 0, 0, 32, 18);
+    let data: Dynamic = context2d.getImageData(0, 0, 32, 18).data,
+      luminanceSum: Dynamic = 0;
+    for (let offset: Dynamic = 0; offset < data.length; offset += 4)
+      luminanceSum +=
+        0.2126 * (data[offset] ?? 0) +
+        0.7152 * (data[offset + 1] ?? 0) +
+        0.0722 * (data[offset + 2] ?? 0);
+    return luminanceSum / (data.length / 4);
   } catch {
     return 255;
   }
 }
-function captureVideoPoster(input?: Dynamic, options: Dynamic = {}): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    options.at ??
-    (Number.isFinite(input2.duration) && input2.duration > 0
-      ? Math.min(0.1, input2.duration / 2)
+function captureVideoPoster(file?: Dynamic, posterOptions: Dynamic = {}): Dynamic {
+  let getSeekTime: Dynamic = (video?: Dynamic): Dynamic =>
+    posterOptions.at ??
+    (Number.isFinite(video.duration) && video.duration > 0
+      ? Math.min(0.1, video.duration / 2)
       : 0);
   return withVideoProbe(
-    input,
-    options.timeoutMs ?? 8e3,
-    async (input2?: Dynamic): Promise<Dynamic> => {
-      let value: Dynamic = videoMetadata(input2);
-      if (typeof value == "string") return value;
-      let value2: Dynamic = Math.min(1, value.duration / 2);
-      options.at === undefined &&
-        value2 > input2.currentTime &&
-        videoFrameLuminance(input2) < MediaVideoUploadLimit &&
-        (await new Promise((input3?: Dynamic): Dynamic => {
-          input2.onseeked = (): Dynamic => input3();
-          input2.currentTime = value2;
+    file,
+    posterOptions.timeoutMs ?? 8e3,
+    async (video?: Dynamic): Promise<Dynamic> => {
+      let metadata: Dynamic = videoMetadata(video);
+      if (typeof metadata == "string") return metadata;
+      let targetTime: Dynamic = Math.min(1, metadata.duration / 2);
+      posterOptions.at === undefined &&
+        targetTime > video.currentTime &&
+        videoFrameLuminance(video) < darkFrameLuminanceThreshold &&
+        (await new Promise((resolve?: Dynamic): Dynamic => {
+          video.onseeked = (): Dynamic => resolve();
+          video.currentTime = targetTime;
         }));
-      let value3: Dynamic = Math.min(
+      let scale: Dynamic = Math.min(
           1,
-          (options.maxEdge ?? 1920) / Math.max(value.width, value.height),
+          (posterOptions.maxEdge ?? 1920) / Math.max(metadata.width, metadata.height),
         ),
-        value4: Dynamic = (document as Dynamic).createElement("canvas");
-      value4.width = Math.max(1, Math.round(value.width * value3));
-      value4.height = Math.max(1, Math.round(value.height * value3));
-      let value5: Dynamic = value4.getContext("2d");
-      if (value5 === null) return "probe_timeout";
-      value5.drawImage(input2, 0, 0, value4.width, value4.height);
-      let value6: Dynamic = await new Promise(
-        (input3?: Dynamic): Dynamic =>
-          value4.toBlob(input3, "image/jpeg", 0.85),
+        canvas: Dynamic = (document as Dynamic).createElement("canvas");
+      canvas.width = Math.max(1, Math.round(metadata.width * scale));
+      canvas.height = Math.max(1, Math.round(metadata.height * scale));
+      let context2d: Dynamic = canvas.getContext("2d");
+      if (context2d === null) return "probe_timeout";
+      context2d.drawImage(video, 0, 0, canvas.width, canvas.height);
+      let blob: Dynamic = await new Promise(
+        (resolve?: Dynamic): Dynamic =>
+          canvas.toBlob(resolve, "image/jpeg", 0.85),
       );
-      return value6 === null
+      return blob === null
         ? "probe_timeout"
         : {
-            blob: value6,
-            ...value,
+            blob: blob,
+            ...metadata,
           };
     },
-    callback,
+    getSeekTime,
   );
 }
 async function uploadVideo(
-  input?: Dynamic,
-  options: Dynamic = {},
+  file?: Dynamic,
+  uploadOptions: Dynamic = {},
 ): Promise<Dynamic> {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => ({
+  let refused: Dynamic = (reason?: Dynamic): Dynamic => ({
       kind: "refused",
-      reason: input2,
+      reason: reason,
     }),
-    value: Dynamic = videoUploadRefusal(input);
-  if (value !== null) return callback(value);
-  let value2: Dynamic = await normalizeQuicktimeUpload(input);
-  if (typeof value2 == "string") return callback(value2);
-  let value3: Dynamic =
-    options.probed ??
-    (await (options.probe ?? probeVideoFile)(input).catch(
+    refusal: Dynamic = videoUploadRefusal(file);
+  if (refusal !== null) return refused(refusal);
+  let normalized: Dynamic = await normalizeQuicktimeUpload(file);
+  if (typeof normalized == "string") return refused(normalized);
+  let probed: Dynamic =
+    uploadOptions.probed ??
+    (await (uploadOptions.probe ?? probeVideoFile)(file).catch(
       (): Dynamic => "probe_timeout",
     ));
-  if (typeof value3 == "string") return callback(value3);
-  let state: Dynamic = {
-      width: value3.width,
-      height: value3.height,
-      duration: value3.duration,
+  if (typeof probed == "string") return refused(probed);
+  let dimensions: Dynamic = {
+      width: probed.width,
+      height: probed.height,
+      duration: probed.duration,
     },
-    value4: Dynamic = await getAssetsCapability();
-  if (value4 === null || typeof value4.upload != "function")
-    return callback("unavailable");
+    assets: Dynamic = await getAssetsCapability();
+  if (assets === null || typeof assets.upload != "function")
+    return refused("unavailable");
   try {
-    let value5: Dynamic = normalizeUploadedAsset(
-      await value4.upload.call(value4, input, {
-        type: value2.type,
+    let uploaded: Dynamic = normalizeUploadedAsset(
+      await assets.upload.call(assets, file, {
+        type: normalized.type,
       }),
     );
-    return value5 === undefined
-      ? callback("bad_result")
+    return uploaded === undefined
+      ? refused("bad_result")
       : {
           kind: "blob",
-          ...value5,
-          ...state,
+          ...uploaded,
+          ...dimensions,
         };
-  } catch (value5: Dynamic) {
-    let value6: Dynamic =
-      typeof value5 == "object" && value5 !== null
-        ? String(value5.code ?? "")
+  } catch (uploadError: Dynamic) {
+    let errorCode: Dynamic =
+      typeof uploadError == "object" && uploadError !== null
+        ? String(uploadError.code ?? "")
         : "";
-    return callback(value6 || "upload_failed");
+    return refused(errorCode || "upload_failed");
   }
 }
-function videoUploadFailureMessage(input?: Dynamic): Dynamic {
-  switch (input) {
+function videoUploadFailureMessage(reason?: Dynamic): Dynamic {
+  switch (reason) {
     case "unsupported_type":
       return uiMessage("inspector.videoUpload.onlyMp4MovAndWebm");
     case "old_quicktime":
@@ -282,28 +282,28 @@ function videoUploadFailureMessage(input?: Dynamic): Dynamic {
       return uiMessage("inspector.videoUpload.theVideoCouldnTBe");
   }
 }
-function uploadedVideoHtml(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (!isBlobAssetUrl(input)) return "";
-  let value: Dynamic = Object.entries(MediaVideoUploadAutoplayLoopMutedConfig)
-      .map(([input2, input3]: Dynamic): Dynamic => `${input2}="${input3}"`)
+function uploadedVideoHtml(src?: Dynamic, videoProps?: Dynamic): Dynamic {
+  if (!isBlobAssetUrl(src)) return "";
+  let mediaAttributes: Dynamic = Object.entries(videoHtmlAttributes)
+      .map(([name, attributeValue]: Dynamic): Dynamic => `${name}="${attributeValue}"`)
       .join(" "),
-    value2: Dynamic = options.style
-      ? ` style="${MediaVideoUploadReplace(options.style)}"`
+    styleAttribute: Dynamic = videoProps.style
+      ? ` style="${escapeHtmlAttribute(videoProps.style)}"`
       : "",
-    value3: Dynamic = options.label
-      ? ` aria-label="${MediaVideoUploadReplace(options.label)}"`
+    labelAttribute: Dynamic = videoProps.label
+      ? ` aria-label="${escapeHtmlAttribute(videoProps.label)}"`
       : "";
-  return `<video src="${MediaVideoUploadReplace(input)}"${value3} ${value} width="${String(Math.round(options.width))}" height="${String(Math.round(options.height))}"${value2}></video>`;
+  return `<video src="${escapeHtmlAttribute(src)}"${labelAttribute} ${mediaAttributes} width="${String(Math.round(videoProps.width))}" height="${String(Math.round(videoProps.height))}"${styleAttribute}></video>`;
 }
 export {
   captureVideoPoster,
   isVideoFile,
-  MediaVideoUploadAutoplayLoopMutedConfig,
-  MediaVideoUploadAutoPlayLoopMutedConfig,
-  MediaVideoUploadItems,
-  MediaVideoUploadLimit,
-  MediaVideoUploadReplace,
-  MediaVideoUploadResolvedValue,
+  videoHtmlAttributes as MediaVideoUploadAutoplayLoopMutedConfig,
+  videoReactProps as MediaVideoUploadAutoPlayLoopMutedConfig,
+  allowedVideoMimeTypes as MediaVideoUploadItems,
+  darkFrameLuminanceThreshold as MediaVideoUploadLimit,
+  escapeHtmlAttribute as MediaVideoUploadReplace,
+  maxVideoBytes as MediaVideoUploadResolvedValue,
   normalizeQuicktimeUpload,
   probeVideoElement,
   probeVideoFile,
@@ -313,34 +313,34 @@ export {
   videoFrameLuminance,
   videoMetadata,
   videoMimeType,
-  VideoMp4VideoWebmVideoQuicktimeMovValue,
-  VideoQuicktimeValue,
+  acceptedVideoTypes as VideoMp4VideoWebmVideoQuicktimeMovValue,
+  quicktimeMimeType as VideoQuicktimeValue,
   videoUploadFailureMessage,
   videoUploadRefusal,
   withVideoProbe,
 };
 export function installEditorMediaVideoUpload(): () => void {
   return () => {
-    MediaVideoUploadItems = ["video/mp4", "video/webm"];
-    MediaVideoUploadResolvedValue = 20 * 1024 * 1024;
-    VideoQuicktimeValue = "video/quicktime";
-    VideoMp4VideoWebmVideoQuicktimeMovValue =
+    allowedVideoMimeTypes = ["video/mp4", "video/webm"];
+    maxVideoBytes = 20 * 1024 * 1024;
+    quicktimeMimeType = "video/quicktime";
+    acceptedVideoTypes =
       "video/mp4,video/webm,video/quicktime,.mov";
-    MediaVideoUploadLimit = 8;
-    MediaVideoUploadAutoPlayLoopMutedConfig = {
+    darkFrameLuminanceThreshold = 8;
+    videoReactProps = {
       autoPlay: true,
       loop: true,
       muted: true,
       playsInline: true,
     };
-    MediaVideoUploadAutoplayLoopMutedConfig = {
+    videoHtmlAttributes = {
       autoplay: "autoplay",
       loop: "loop",
       muted: "muted",
       playsinline: "playsinline",
     };
-    MediaVideoUploadReplace = (input?: Dynamic): Dynamic =>
-      input
+    escapeHtmlAttribute = (text?: Dynamic): Dynamic =>
+      text
         .replace(/&/g, "&amp;")
         .replace(/"/g, "&quot;")
         .replace(/</g, "&lt;");

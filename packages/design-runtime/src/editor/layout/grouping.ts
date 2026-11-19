@@ -6,14 +6,14 @@ import { CssEditValidationFontSizeFontFamilyFontWeightValues, normalizeStyleEdit
 import { captureGroupLayout, LayoutGroupCaptureBackgroundColorBorderStyleBorderColorValues } from "./group-capture";
 import { computedTextMetrics, computedWidth, emptyElementHeight } from "../picker/runtime-script";
 
-var LayoutGroupingAbs: Dynamic;
-var LayoutGroupingHandler: Dynamic;
-var LayoutGroupingMarginTopMarginRightMarginBottomValues: Dynamic;
-var LayoutGroupingInsetInlineInsetBlockInsetInlineStartValues: Dynamic;
-function normalizeGroupedLayoutConstraints(input?: Dynamic): Dynamic {
-  if (input === null || typeof input != "object") return null;
-  let value: Dynamic = input,
-    items: Dynamic = [
+var finiteOrNull: Dynamic;
+var toPx: Dynamic;
+var marginProperties: Dynamic;
+var insetShorthandProperties: Dynamic;
+function normalizeGroupedLayoutConstraints(rawConstraints?: Dynamic): Dynamic {
+  if (rawConstraints === null || typeof rawConstraints != "object") return null;
+  let source: Dynamic = rawConstraints,
+    keys: Dynamic = [
       "widthAuto",
       "heightAuto",
       "widthPercent",
@@ -24,134 +24,134 @@ function normalizeGroupedLayoutConstraints(input?: Dynamic): Dynamic {
       "bottom",
       "marginAuto",
     ];
-  return items.every(
-    (input2?: Dynamic): Dynamic => typeof value[input2] == "boolean",
+  return keys.every(
+    (key?: Dynamic): Dynamic => typeof source[key] == "boolean",
   )
     ? Object.fromEntries(
-        items.map(
-          (input2?: Dynamic): Dynamic => [input2, value[input2] === true],
+        keys.map(
+          (key?: Dynamic): Dynamic => [key, source[key] === true],
         ),
       )
     : null;
 }
 function normalizeGroupLayoutCapture(
-  items?: Dynamic,
-  options?: Dynamic,
+  captures?: Dynamic,
+  expectedCount?: Dynamic,
 ): Dynamic {
-  return !Array.isArray(items) || items.length !== options
+  return !Array.isArray(captures) || captures.length !== expectedCount
     ? null
-    : items.map((input?: Dynamic): Dynamic => {
-        if (input === null || typeof input != "object") return null;
-        let value: Dynamic = input,
-          [items2, items3, items4, items5]: Dynamic = [
-            LayoutGroupingAbs(value.left),
-            LayoutGroupingAbs(value.top),
-            LayoutGroupingAbs(value.width),
-            LayoutGroupingAbs(value.height),
+    : captures.map((entry?: Dynamic): Dynamic => {
+        if (entry === null || typeof entry != "object") return null;
+        let source: Dynamic = entry,
+          [left, top, width, height]: Dynamic = [
+            finiteOrNull(source.left),
+            finiteOrNull(source.top),
+            finiteOrNull(source.width),
+            finiteOrNull(source.height),
           ];
         if (
-          items2 === null ||
-          items3 === null ||
-          items4 === null ||
-          items5 === null ||
-          items4 < 0 ||
-          items5 < 0
+          left === null ||
+          top === null ||
+          width === null ||
+          height === null ||
+          width < 0 ||
+          height < 0
         )
           return null;
-        let value2: Dynamic =
-            value.position === "absolute" || value.position === "fixed"
-              ? value.position
+        let position: Dynamic =
+            source.position === "absolute" || source.position === "fixed"
+              ? source.position
               : "flow",
-          value3: Dynamic =
-            value.freeze !== null &&
-            typeof value.freeze == "object" &&
-            !Array.isArray(value.freeze)
-              ? value.freeze
+          freeze: Dynamic =
+            source.freeze !== null &&
+            typeof source.freeze == "object" &&
+            !Array.isArray(source.freeze)
+              ? source.freeze
               : null,
-          value4: Dynamic = Array.isArray(value.changed)
-            ? value.changed.filter(
-                (input2?: Dynamic): Dynamic =>
-                  typeof input2 == "string" &&
+          changed: Dynamic = Array.isArray(source.changed)
+            ? source.changed.filter(
+                (property?: Dynamic): Dynamic =>
+                  typeof property == "string" &&
                   CssEditValidationFontSizeFontFamilyFontWeightValues.includes(
-                    input2,
+                    property,
                   ),
               )
             : [],
-          state: Dynamic = {};
+          carry: Dynamic = {};
         if (
-          value.carry !== null &&
-          typeof value.carry == "object" &&
-          !Array.isArray(value.carry)
+          source.carry !== null &&
+          typeof source.carry == "object" &&
+          !Array.isArray(source.carry)
         )
-          for (let value6 of LayoutGroupCaptureBackgroundColorBorderStyleBorderColorValues as Dynamic) {
-            let value7: Dynamic = value.carry[value6];
-            typeof value7 == "string" && (state[value6] = value7);
+          for (let carryProperty of LayoutGroupCaptureBackgroundColorBorderStyleBorderColorValues as Dynamic) {
+            let carryValue: Dynamic = source.carry[carryProperty];
+            typeof carryValue == "string" && (carry[carryProperty] = carryValue);
           }
-        let value5: Dynamic =
-          typeof value.zIndex == "number" &&
-          Number.isInteger(value.zIndex) &&
-          value.zIndex > 0 &&
-          value.zIndex <= 2147483647
-            ? value.zIndex
+        let zIndex: Dynamic =
+          typeof source.zIndex == "number" &&
+          Number.isInteger(source.zIndex) &&
+          source.zIndex > 0 &&
+          source.zIndex <= 2147483647
+            ? source.zIndex
             : 0;
         return {
-          left: items2,
-          top: items3,
-          width: items4,
-          height: items5,
-          marginLeft: LayoutGroupingAbs(value.marginLeft) ?? 0,
-          marginTop: LayoutGroupingAbs(value.marginTop) ?? 0,
-          marginRight: LayoutGroupingAbs(value.marginRight) ?? 0,
-          marginBottom: LayoutGroupingAbs(value.marginBottom) ?? 0,
-          cssWidth: Math.max(0, LayoutGroupingAbs(value.cssWidth) ?? 0),
-          cssHeight: Math.max(0, LayoutGroupingAbs(value.cssHeight) ?? 0),
-          position: value2,
-          pinWidth: Math.max(0, LayoutGroupingAbs(value.pinWidth) ?? 0),
-          pinHeight: Math.max(0, LayoutGroupingAbs(value.pinHeight) ?? 0),
-          freeze: value3,
-          changed: value4,
-          carry: state,
-          lostPosition: value.lostPosition === true,
-          lostWidth: value.lostWidth === true,
-          lostHeight: value.lostHeight === true,
+          left: left,
+          top: top,
+          width: width,
+          height: height,
+          marginLeft: finiteOrNull(source.marginLeft) ?? 0,
+          marginTop: finiteOrNull(source.marginTop) ?? 0,
+          marginRight: finiteOrNull(source.marginRight) ?? 0,
+          marginBottom: finiteOrNull(source.marginBottom) ?? 0,
+          cssWidth: Math.max(0, finiteOrNull(source.cssWidth) ?? 0),
+          cssHeight: Math.max(0, finiteOrNull(source.cssHeight) ?? 0),
+          position: position,
+          pinWidth: Math.max(0, finiteOrNull(source.pinWidth) ?? 0),
+          pinHeight: Math.max(0, finiteOrNull(source.pinHeight) ?? 0),
+          freeze: freeze,
+          changed: changed,
+          carry: carry,
+          lostPosition: source.lostPosition === true,
+          lostWidth: source.lostWidth === true,
+          lostHeight: source.lostHeight === true,
           lostBoxSizing:
-            value.lostBoxSizing === "border-box" ||
-            value.lostBoxSizing === "content-box"
-              ? value.lostBoxSizing
+            source.lostBoxSizing === "border-box" ||
+            source.lostBoxSizing === "content-box"
+              ? source.lostBoxSizing
               : "",
-          rendered: normalizeGroupedLayoutConstraints(value.rendered),
-          transformed: value.transformed === true,
-          sameSpace: value.sameSpace === true,
-          zIndex: value5,
-          localZ: value.localZ === true,
-          liftable: value.liftable !== false,
-          positioned: value.positioned === true || value2 !== "flow",
-          wraps: value.wraps === true,
-          opaque: value.opaque === true,
+          rendered: normalizeGroupedLayoutConstraints(source.rendered),
+          transformed: source.transformed === true,
+          sameSpace: source.sameSpace === true,
+          zIndex: zIndex,
+          localZ: source.localZ === true,
+          liftable: source.liftable !== false,
+          positioned: source.positioned === true || position !== "flow",
+          wraps: source.wraps === true,
+          opaque: source.opaque === true,
         };
       });
 }
 async function inspectGroupLayout(
-  input?: Dynamic,
-  options?: Dynamic,
-  items?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = true,
+  webview?: Dynamic,
+  rootName?: Dynamic,
+  tids?: Dynamic,
+  ancestorTids?: Dynamic,
+  shouldCaptureTextStyles: Dynamic = true,
 ): Promise<Dynamic> {
-  let value2: Dynamic =
+  let script: Dynamic =
     "(" +
     captureGroupLayout.toString() +
     ")(" +
     [
-      options,
-      items,
-      value,
-      extra
+      rootName,
+      tids,
+      ancestorTids,
+      shouldCaptureTextStyles
         ? CssEditValidationFontSizeFontFamilyFontWeightValues
         : null,
       LayoutGroupCaptureBackgroundColorBorderStyleBorderColorValues,
     ]
-      .map((input2?: Dynamic): Dynamic => JSON.stringify(input2))
+      .map((captureArgument?: Dynamic): Dynamic => JSON.stringify(captureArgument))
       .join(",") +
     ",{capture:" +
     computedTextMetrics.toString() +
@@ -162,316 +162,316 @@ async function inspectGroupLayout(
     "})";
   try {
     return normalizeGroupLayoutCapture(
-      await input.executeJavaScript(value2, 4e3),
-      items.length,
+      await webview.executeJavaScript(script, 4e3),
+      tids.length,
     );
   } catch {
     return;
   }
 }
-function commonSelectedAncestor(input?: Dynamic, items?: Dynamic): Dynamic {
-  let value: Dynamic = items.length > 0 ? input.parentTid(items[0]) : null;
+function commonSelectedAncestor(model?: Dynamic, tids?: Dynamic): Dynamic {
+  let ancestorTid: Dynamic = tids.length > 0 ? model.parentTid(tids[0]) : null;
   for (
     ;
-    value !== null &&
-    !items.every(
-      (input2?: Dynamic): Dynamic => input.isWithin(value, input2),
+    ancestorTid !== null &&
+    !tids.every(
+      (tid?: Dynamic): Dynamic => model.isWithin(ancestorTid, tid),
     );
 
   )
-    value = input.parentTid(value);
-  let items2: Dynamic = [];
+    ancestorTid = model.parentTid(ancestorTid);
+  let chain: Dynamic = [];
   for (
-    let value2: Dynamic = value;
-    value2 !== null;
-    value2 = input.parentTid(value2)
+    let cursor: Dynamic = ancestorTid;
+    cursor !== null;
+    cursor = model.parentTid(cursor)
   )
-    items2.push(value2);
-  return items2;
+    chain.push(cursor);
+  return chain;
 }
 function freezeTextStyleForLayout(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  layout?: Dynamic,
 ): Dynamic {
-  if (!(!context.freeze || context.changed.length === 0))
-    for (let [value, value2] of normalizeTextStyleSnapshot(
-      context.freeze,
+  if (!(!layout.freeze || layout.changed.length === 0))
+    for (let [property, propertyValue] of normalizeTextStyleSnapshot(
+      layout.freeze,
     ) as Dynamic)
-      context.changed.includes(value) &&
-        !input.hasAuthoredStyle(options, value) &&
-        input.setStyleProperty(options, value, value2);
+      layout.changed.includes(property) &&
+        !model.hasAuthoredStyle(tid, property) &&
+        model.setStyleProperty(tid, property, propertyValue);
 }
 function resetPositioningProperty(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  property?: Dynamic,
+  renderedValue?: Dynamic,
+  hadInlineInset?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic =
-    extra || input.inlineStyleValue(options, context) !== "";
-  input.setStyleProperty(options, context, null);
-  (input.hasAuthoredStyle(options, context) || (value === true && !value2)) &&
-    input.setStyleProperty(options, context, "auto");
+  let hadAuthoredValue: Dynamic =
+    hadInlineInset || model.inlineStyleValue(tid, property) !== "";
+  model.setStyleProperty(tid, property, null);
+  (model.hasAuthoredStyle(tid, property) || (renderedValue === true && !hadAuthoredValue)) &&
+    model.setStyleProperty(tid, property, "auto");
 }
-function layoutCarryStyle(input?: Dynamic): Dynamic {
+function layoutCarryStyle(layout?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(
-    normalizeStyleEdits(Object.entries(input.carry)).flatMap(
-      ([input2, input3]: Dynamic): Dynamic =>
-        input3 === null ? [] : [[input2, input3]],
+    normalizeStyleEdits(Object.entries(layout.carry)).flatMap(
+      ([property, propertyValue]: Dynamic): Dynamic =>
+        propertyValue === null ? [] : [[property, propertyValue]],
     ),
   );
-  for (let value of ["border-", "radius"] as Dynamic) {
-    let value2: Dynamic = Object.keys(input.carry).filter(
-      (input2?: Dynamic): Dynamic =>
-        value === "radius"
-          ? input2.endsWith("-radius")
-          : input2.startsWith(value) && !input2.endsWith("-radius"),
+  for (let group of ["border-", "radius"] as Dynamic) {
+    let groupProperties: Dynamic = Object.keys(layout.carry).filter(
+      (property?: Dynamic): Dynamic =>
+        group === "radius"
+          ? property.endsWith("-radius")
+          : property.startsWith(group) && !property.endsWith("-radius"),
     );
-    if (value2.some((input2?: Dynamic): Dynamic => !entries.has(input2)))
-      for (let value3 of value2 as Dynamic) entries.delete(value3);
+    if (groupProperties.some((property?: Dynamic): Dynamic => !entries.has(property)))
+      for (let property of groupProperties as Dynamic) entries.delete(property);
   }
   return [...entries];
 }
 function ungroupedElementRect(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  layout?: Dynamic,
 ): Dynamic {
-  if (context.position === "flow")
+  if (layout.position === "flow")
     return {
-      left: context.left,
-      top: context.top,
+      left: layout.left,
+      top: layout.top,
       zeroMargins: true,
-      width: context.pinWidth > 0 ? context.pinWidth : null,
-      height: context.pinHeight > 0 ? context.pinHeight : null,
+      width: layout.pinWidth > 0 ? layout.pinWidth : null,
+      height: layout.pinHeight > 0 ? layout.pinHeight : null,
       autoWidth: false,
     };
-  let rendered: Dynamic = context.rendered,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input.effectiveStyleValue(options, input2),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input.hasAuthoredStyle(options, input2),
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-      callback("inset-" + input2) !== "" ||
-      (callback("inset-" + input2 + "-start") !== "" &&
-        callback("inset-" + input2 + "-end") !== ""),
-    value: Dynamic = rendered ? rendered.widthAuto : !callback2("width"),
-    value2: Dynamic = rendered ? rendered.heightAuto : !callback2("height"),
-    value3: Dynamic = rendered
+  let rendered: Dynamic = layout.rendered,
+    effectiveStyle: Dynamic = (property?: Dynamic): Dynamic =>
+      model.effectiveStyleValue(tid, property),
+    hasAuthoredStyle: Dynamic = (property?: Dynamic): Dynamic =>
+      model.hasAuthoredStyle(tid, property),
+    hasInsetOnAxis: Dynamic = (axis?: Dynamic): Dynamic =>
+      effectiveStyle("inset-" + axis) !== "" ||
+      (effectiveStyle("inset-" + axis + "-start") !== "" &&
+        effectiveStyle("inset-" + axis + "-end") !== ""),
+    isWidthAuto: Dynamic = rendered ? rendered.widthAuto : !hasAuthoredStyle("width"),
+    isHeightAuto: Dynamic = rendered ? rendered.heightAuto : !hasAuthoredStyle("height"),
+    isHorizontallyPinned: Dynamic = rendered
       ? rendered.left && rendered.right
-      : (callback2("left") && callback2("right")) || callback3("inline"),
-    value4: Dynamic = rendered
+      : (hasAuthoredStyle("left") && hasAuthoredStyle("right")) || hasInsetOnAxis("inline"),
+    isVerticallyPinned: Dynamic = rendered
       ? rendered.top && rendered.bottom
-      : (callback2("top") && callback2("bottom")) || callback3("block"),
-    value5: Dynamic =
-      context.lostWidth ||
-      (value
-        ? value3 || context.wraps
+      : (hasAuthoredStyle("top") && hasAuthoredStyle("bottom")) || hasInsetOnAxis("block"),
+    hasRelativeWidth: Dynamic =
+      layout.lostWidth ||
+      (isWidthAuto
+        ? isHorizontallyPinned || layout.wraps
         : rendered
           ? rendered.widthPercent
-          : callback("width").includes("%")),
-    value6: Dynamic =
-      context.lostHeight ||
-      (value2
-        ? value4
+          : effectiveStyle("width").includes("%")),
+    hasRelativeHeight: Dynamic =
+      layout.lostHeight ||
+      (isHeightAuto
+        ? isVerticallyPinned
         : rendered
           ? rendered.heightPercent
-          : callback("height").includes("%")),
-    value7: Dynamic = rendered
+          : effectiveStyle("height").includes("%")),
+    hasAutoMargin: Dynamic = rendered
       ? rendered.marginAuto
       : [
           "margin",
-          ...LayoutGroupingMarginTopMarginRightMarginBottomValues,
+          ...marginProperties,
         ].some(
-          (input2?: Dynamic): Dynamic => callback(input2).includes("auto"),
+          (property?: Dynamic): Dynamic => effectiveStyle(property).includes("auto"),
         );
   return {
-    left: value7 ? context.left : context.left - context.marginLeft,
-    top: value7 ? context.top : context.top - context.marginTop,
-    zeroMargins: value7,
-    width: value5 && context.cssWidth > 0 ? context.cssWidth : null,
-    height: value6 && context.cssHeight > 0 ? context.cssHeight : null,
-    autoWidth: value && !value5,
+    left: hasAutoMargin ? layout.left : layout.left - layout.marginLeft,
+    top: hasAutoMargin ? layout.top : layout.top - layout.marginTop,
+    zeroMargins: hasAutoMargin,
+    width: hasRelativeWidth && layout.cssWidth > 0 ? layout.cssWidth : null,
+    height: hasRelativeHeight && layout.cssHeight > 0 ? layout.cssHeight : null,
+    autoWidth: isWidthAuto && !hasRelativeWidth,
   };
 }
 function restoreUngroupedLayout(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  layout?: Dynamic,
+  rect?: Dynamic,
+  offsetX?: Dynamic,
+  offsetY?: Dynamic,
 ): Dynamic {
-  context.position === "flow"
-    ? input.setStyleProperty(options, "position", "absolute")
-    : (context.lostPosition ||
-        !input.hasAuthoredStyle(options, "position")) &&
-      input.setStyleProperty(options, "position", context.position);
-  context.opaque &&
-    !input.hasAuthoredStyle(options, "width") &&
-    !input.hasAuthoredStyle(options, "height") &&
-    (value.width === null &&
-      context.cssWidth > 0 &&
-      input.setStyleProperty(
-        options,
+  layout.position === "flow"
+    ? model.setStyleProperty(tid, "position", "absolute")
+    : (layout.lostPosition ||
+        !model.hasAuthoredStyle(tid, "position")) &&
+      model.setStyleProperty(tid, "position", layout.position);
+  layout.opaque &&
+    !model.hasAuthoredStyle(tid, "width") &&
+    !model.hasAuthoredStyle(tid, "height") &&
+    (rect.width === null &&
+      layout.cssWidth > 0 &&
+      model.setStyleProperty(
+        tid,
         "width",
-        String(context.cssWidth) + "px",
+        String(layout.cssWidth) + "px",
       ),
-    value.height === null &&
-      context.cssHeight > 0 &&
-      input.setStyleProperty(
-        options,
+    rect.height === null &&
+      layout.cssHeight > 0 &&
+      model.setStyleProperty(
+        tid,
         "height",
-        String(context.cssHeight) + "px",
+        String(layout.cssHeight) + "px",
       ));
-  context.lostBoxSizing !== "" &&
-    input.setStyleProperty(options, "box-sizing", context.lostBoxSizing);
-  for (let [value2, value3] of layoutCarryStyle(context) as Dynamic)
-    input.inlineStyleValue(options, value2) === "" &&
-      input.setStyleProperty(options, value2, value3);
-  if (value.zeroMargins) {
-    for (let value2 of LayoutGroupingMarginTopMarginRightMarginBottomValues as Dynamic)
-      input.setStyleProperty(options, value2, null);
-    input.setStyleProperty(options, "margin", "0px");
+  layout.lostBoxSizing !== "" &&
+    model.setStyleProperty(tid, "box-sizing", layout.lostBoxSizing);
+  for (let [property, propertyValue] of layoutCarryStyle(layout) as Dynamic)
+    model.inlineStyleValue(tid, property) === "" &&
+      model.setStyleProperty(tid, property, propertyValue);
+  if (rect.zeroMargins) {
+    for (let property of marginProperties as Dynamic)
+      model.setStyleProperty(tid, property, null);
+    model.setStyleProperty(tid, "margin", "0px");
   }
-  value.width !== null &&
-    input.setStyleProperty(options, "width", String(value.width) + "px");
-  value.height !== null &&
-    input.setStyleProperty(options, "height", String(value.height) + "px");
-  let flag: Dynamic = false;
-  for (let value2 of LayoutGroupingInsetInlineInsetBlockInsetInlineStartValues as Dynamic)
-    input.inlineStyleValue(options, value2) &&
-      (input.setStyleProperty(options, value2, null), (flag = true));
-  input.setStyleProperty(
-    options,
+  rect.width !== null &&
+    model.setStyleProperty(tid, "width", String(rect.width) + "px");
+  rect.height !== null &&
+    model.setStyleProperty(tid, "height", String(rect.height) + "px");
+  let hadInsetShorthand: Dynamic = false;
+  for (let property of insetShorthandProperties as Dynamic)
+    model.inlineStyleValue(tid, property) &&
+      (model.setStyleProperty(tid, property, null), (hadInsetShorthand = true));
+  model.setStyleProperty(
+    tid,
     "left",
-    LayoutGroupingHandler(value.left - extra),
+    toPx(rect.left - offsetX),
   );
-  input.setStyleProperty(
-    options,
+  model.setStyleProperty(
+    tid,
     "top",
-    LayoutGroupingHandler(value.top - detail),
+    toPx(rect.top - offsetY),
   );
   resetPositioningProperty(
-    input,
-    options,
+    model,
+    tid,
     "right",
-    context.rendered ? context.rendered.right : null,
-    flag,
+    layout.rendered ? layout.rendered.right : null,
+    hadInsetShorthand,
   );
   resetPositioningProperty(
-    input,
-    options,
+    model,
+    tid,
     "bottom",
-    context.rendered ? context.rendered.bottom : null,
-    flag,
+    layout.rendered ? layout.rendered.bottom : null,
+    hadInsetShorthand,
   );
 }
 function groupModelElements(
-  input?: Dynamic,
-  options?: Dynamic,
-  items?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
+  layouts?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options
-    .map((input2?: Dynamic): Dynamic => input.element(input2))
-    .filter((input2?: Dynamic): Dynamic => input2 !== null);
+  let elements: Dynamic = tids
+    .map((tid?: Dynamic): Dynamic => model.element(tid))
+    .filter((element?: Dynamic): Dynamic => element !== null);
   if (
-    value.length === 0 ||
-    value.length !== items.length ||
-    items.some((input2?: Dynamic): Dynamic => input2.position === "fixed")
+    elements.length === 0 ||
+    elements.length !== layouts.length ||
+    layouts.some((layout?: Dynamic): Dynamic => layout.position === "fixed")
   )
     return null;
-  let parentNode: Dynamic = value[0].parentNode;
+  let parentNode: Dynamic = elements[0].parentNode;
   for (
     ;
     parentNode &&
-    !value.every((input2?: Dynamic): Dynamic => parentNode.contains(input2));
+    !elements.every((element?: Dynamic): Dynamic => parentNode.contains(element));
 
   )
     parentNode = parentNode.parentNode;
-  let value2: Dynamic = value[value.length - 1];
+  let lastElement: Dynamic = elements[elements.length - 1];
   for (
     ;
-    parentNode && value2.parentNode && value2.parentNode !== parentNode;
+    parentNode && lastElement.parentNode && lastElement.parentNode !== parentNode;
 
   )
-    value2 = value2.parentNode;
-  let nextSibling: Dynamic = value2.nextSibling,
-    value3: Dynamic = items.map(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => ({
-        b: input2,
-        p: ungroupedElementRect(input, options[options2], input2),
+    lastElement = lastElement.parentNode;
+  let nextSibling: Dynamic = lastElement.nextSibling,
+    placed: Dynamic = layouts.map(
+      (layout?: Dynamic, index?: Dynamic): Dynamic => ({
+        b: layout,
+        p: ungroupedElementRect(model, tids[index], layout),
       }),
     ),
-    value4: Dynamic = Math.floor(
-      Math.min(...value3.map((input2?: Dynamic): Dynamic => input2.b.left)),
+    groupLeft: Dynamic = Math.floor(
+      Math.min(...placed.map((entry?: Dynamic): Dynamic => entry.b.left)),
     ),
-    value5: Dynamic = Math.floor(
-      Math.min(...value3.map((input2?: Dynamic): Dynamic => input2.b.top)),
+    groupTop: Dynamic = Math.floor(
+      Math.min(...placed.map((entry?: Dynamic): Dynamic => entry.b.top)),
     ),
-    callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      options2 === "x"
-        ? Math.round(input2.p.left - value4) +
-          input2.b.width +
-          (input2.p.zeroMargins
+    farEdge: Dynamic = (entry?: Dynamic, axis?: Dynamic): Dynamic =>
+      axis === "x"
+        ? Math.round(entry.p.left - groupLeft) +
+          entry.b.width +
+          (entry.p.zeroMargins
             ? 0
-            : input2.b.marginLeft +
-              (input2.p.autoWidth ? Math.max(0, input2.b.marginRight) : 0))
-        : Math.round(input2.p.top - value5) +
-          input2.b.height +
-          (input2.p.zeroMargins ? 0 : input2.b.marginTop),
-    value6: Dynamic = Math.ceil(
+            : entry.b.marginLeft +
+              (entry.p.autoWidth ? Math.max(0, entry.b.marginRight) : 0))
+        : Math.round(entry.p.top - groupTop) +
+          entry.b.height +
+          (entry.p.zeroMargins ? 0 : entry.b.marginTop),
+    groupWidth: Dynamic = Math.ceil(
       Math.max(
-        ...value3.map((input2?: Dynamic): Dynamic => callback(input2, "x")),
+        ...placed.map((entry?: Dynamic): Dynamic => farEdge(entry, "x")),
       ),
     ),
-    value7: Dynamic = Math.ceil(
+    groupHeight: Dynamic = Math.ceil(
       Math.max(
-        ...value3.map((input2?: Dynamic): Dynamic => callback(input2, "y")),
+        ...placed.map((entry?: Dynamic): Dynamic => farEdge(entry, "y")),
       ),
     ),
-    value8: Dynamic = Math.max(
+    maxZIndex: Dynamic = Math.max(
       0,
-      ...items.map((input2?: Dynamic): Dynamic => input2.zIndex),
+      ...layouts.map((layout?: Dynamic): Dynamic => layout.zIndex),
     ),
-    value9: Dynamic =
-      value8 > 0
-        ? "; z-index: " + String(value8)
-        : items.some((input2?: Dynamic): Dynamic => input2.localZ)
+    zIndexStyle: Dynamic =
+      maxZIndex > 0
+        ? "; z-index: " + String(maxZIndex)
+        : layouts.some((layout?: Dynamic): Dynamic => layout.localZ)
           ? "; z-index: 0"
           : "",
-    value10: Dynamic = input.wrapElements(
-      [...options],
+    groupElement: Dynamic = model.wrapElements(
+      [...tids],
       '<div data-dc-group style="box-sizing: border-box; position: absolute; margin: 0px; left: ' +
-        LayoutGroupingHandler(value4) +
+        toPx(groupLeft) +
         "; top: " +
-        LayoutGroupingHandler(value5) +
+        toPx(groupTop) +
         "; width: " +
-        LayoutGroupingHandler(value6) +
+        toPx(groupWidth) +
         "; height: " +
-        LayoutGroupingHandler(value7) +
-        value9 +
+        toPx(groupHeight) +
+        zIndexStyle +
         '"></div>',
     );
-  return value10
+  return groupElement
     ? (parentNode &&
-        value10.parentNode === parentNode &&
-        nextSibling !== value10 &&
-        parentNode.insertBefore(value10, nextSibling),
-      options.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
+        groupElement.parentNode === parentNode &&
+        nextSibling !== groupElement &&
+        parentNode.insertBefore(groupElement, nextSibling),
+      tids.forEach((tid?: Dynamic, index?: Dynamic): Dynamic => {
         restoreUngroupedLayout(
-          input,
-          input2,
-          value3[options2].b,
-          value3[options2].p,
-          value4,
-          value5,
+          model,
+          tid,
+          placed[index].b,
+          placed[index].p,
+          groupLeft,
+          groupTop,
         );
-        freezeTextStyleForLayout(input, input2, value3[options2].b);
+        freezeTextStyleForLayout(model, tid, placed[index].b);
       }),
-      value10)
+      groupElement)
     : null;
 }
 export {
@@ -480,10 +480,10 @@ export {
   groupModelElements,
   inspectGroupLayout,
   layoutCarryStyle,
-  LayoutGroupingAbs,
-  LayoutGroupingHandler,
-  LayoutGroupingInsetInlineInsetBlockInsetInlineStartValues,
-  LayoutGroupingMarginTopMarginRightMarginBottomValues,
+  finiteOrNull as LayoutGroupingAbs,
+  toPx as LayoutGroupingHandler,
+  insetShorthandProperties as LayoutGroupingInsetInlineInsetBlockInsetInlineStartValues,
+  marginProperties as LayoutGroupingMarginTopMarginRightMarginBottomValues,
   normalizeGroupedLayoutConstraints,
   normalizeGroupLayoutCapture,
   resetPositioningProperty,
@@ -492,15 +492,15 @@ export {
 };
 export function installEditorLayoutGrouping(): () => void {
   return () => {
-    LayoutGroupingAbs = (input?: Dynamic): Dynamic =>
-      typeof input == "number" &&
-      Number.isFinite(input) &&
-      Math.abs(input) < 1e6
-        ? input
+    finiteOrNull = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "number" &&
+      Number.isFinite(candidate) &&
+      Math.abs(candidate) < 1e6
+        ? candidate
         : null;
-    LayoutGroupingHandler = (input?: Dynamic): Dynamic =>
-      String(Math.round(input)) + "px";
-    LayoutGroupingMarginTopMarginRightMarginBottomValues = [
+    toPx = (pixels?: Dynamic): Dynamic =>
+      String(Math.round(pixels)) + "px";
+    marginProperties = [
       "margin-top",
       "margin-right",
       "margin-bottom",
@@ -512,7 +512,7 @@ export function installEditorLayoutGrouping(): () => void {
       "margin-block-start",
       "margin-block-end",
     ];
-    LayoutGroupingInsetInlineInsetBlockInsetInlineStartValues = [
+    insetShorthandProperties = [
       "inset-inline",
       "inset-block",
       "inset-inline-start",

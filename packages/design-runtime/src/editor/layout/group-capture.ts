@@ -5,714 +5,714 @@ import {
 
 var LayoutGroupCaptureBackgroundColorBorderStyleBorderColorValues: Dynamic;
 function captureGroupLayout(
-  input?: Dynamic,
-  items?: Dynamic,
-  items2?: Dynamic,
-  value?: Dynamic,
-  items3?: Dynamic,
-  detail?: Dynamic,
+  scopeName?: Dynamic,
+  tids?: Dynamic,
+  ancestorTids?: Dynamic,
+  textStyleProps?: Dynamic,
+  carryProps?: Dynamic,
+  metrics?: Dynamic,
 ): Dynamic {
-  let items4: Dynamic = ["transform", "translate", "rotate", "scale"];
-  function value2(input2?: Dynamic): Dynamic {
-    let value17: Dynamic = input2.hasAttribute("data-sc-name")
-        ? input2.parentElement
-        : input2,
-      value18: Dynamic = value17 ? value17.closest("[data-sc-name]") : null;
-    return value18 ? value18.getAttribute("data-sc-name") : null;
+  let transformProps: Dynamic = ["transform", "translate", "rotate", "scale"];
+  function scopeNameOf(element?: Dynamic): Dynamic {
+    let host: Dynamic = element.hasAttribute("data-sc-name")
+        ? element.parentElement
+        : element,
+      scopeElement: Dynamic = host ? host.closest("[data-sc-name]") : null;
+    return scopeElement ? scopeElement.getAttribute("data-sc-name") : null;
   }
-  function value3(input2?: Dynamic): Dynamic {
-    let value17: Dynamic = (document as Dynamic).querySelectorAll(
-      '[data-dc-tpl="' + String(input2) + '"]',
+  function findElementByTid(tid?: Dynamic): Dynamic {
+    let matches: Dynamic = (document as Dynamic).querySelectorAll(
+      '[data-dc-tpl="' + String(tid) + '"]',
     );
-    for (let index2: Dynamic = 0; index2 < value17.length; index2++) {
-      let value18: Dynamic = value17[index2];
+    for (let i: Dynamic = 0; i < matches.length; i++) {
+      let candidate: Dynamic = matches[i];
       if (
-        value2(value18) === input &&
-        !value18.closest("[data-dc-editor-overlay]")
+        scopeNameOf(candidate) === scopeName &&
+        !candidate.closest("[data-dc-editor-overlay]")
       )
-        return value18;
+        return candidate;
     }
     return null;
   }
-  let callback: Dynamic = function (input2?: Dynamic): Dynamic {
-      let value17: Dynamic = parseFloat(input2);
-      return isFinite(value17) ? value17 : 0;
+  let toNumber: Dynamic = function (text?: Dynamic): Dynamic {
+      let parsed: Dynamic = parseFloat(text);
+      return isFinite(parsed) ? parsed : 0;
     },
-    items5: Dynamic = [];
-  function value4(element?: Dynamic, options?: Dynamic): Dynamic {
+    restoreActions: Dynamic = [];
+  function pinStyle(element?: Dynamic, extraStyle?: Dynamic): Dynamic {
     let attribute: Dynamic = element.getAttribute("style"),
-      value17: Dynamic = (attribute || "") + ";transition:none!important";
-    element.setAttribute("style", value17 + options);
-    items5.push(function (): Dynamic {
-      element.setAttribute("style", value17);
+      baseStyle: Dynamic = (attribute || "") + ";transition:none!important";
+    element.setAttribute("style", baseStyle + extraStyle);
+    restoreActions.push(function (): Dynamic {
+      element.setAttribute("style", baseStyle);
       element.getBoundingClientRect();
       attribute === null
         ? element.removeAttribute("style")
         : element.setAttribute("style", attribute);
     });
   }
-  function value5(input2?: Dynamic): Dynamic {
+  function transformSignature(computedStyle?: Dynamic): Dynamic {
     let text: Dynamic = "";
-    for (let index2: Dynamic = 0; index2 < items4.length; index2++)
+    for (let i: Dynamic = 0; i < transformProps.length; i++)
       text +=
         ";" +
-        items4[index2] +
+        transformProps[i] +
         ":" +
-        (input2.getPropertyValue(items4[index2]) || "none");
+        (computedStyle.getPropertyValue(transformProps[i]) || "none");
     return text;
   }
-  function value6(input2?: Dynamic): Dynamic {
-    let items13: Dynamic = [];
-    for (let index2: Dynamic = 0; index2 < items4.length; index2++) {
-      let value17: Dynamic = value12(input2, items4[index2]);
-      if (value17 === null) return null;
-      items13.push(value17 || "none");
+  function readTransformValues(element?: Dynamic): Dynamic {
+    let values: Dynamic = [];
+    for (let i: Dynamic = 0; i < transformProps.length; i++) {
+      let entry: Dynamic = readStyleMapValue(element, transformProps[i]);
+      if (entry === null) return null;
+      values.push(entry || "none");
     }
-    return items13;
+    return values;
   }
-  function value7(
-    input2?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value17?: Dynamic,
-    extra?: Dynamic,
+  function measureInSandbox(
+    element?: Dynamic,
+    parent?: Dynamic,
+    beforeNode?: Dynamic,
+    shouldWrap?: Dynamic,
+    measure?: Dynamic,
   ): Dynamic {
-    let value18: Dynamic = input2.cloneNode(false);
-    input2.firstChild &&
-      value18.appendChild((document as Dynamic).createTextNode("x"));
-    value18.style.setProperty("transition", "none", "important");
-    value18.style.setProperty("animation", "none", "important");
-    let value19: Dynamic = value18;
-    value17 &&
-      ((value19 = (document as Dynamic).createElement("div")),
-      value19.appendChild(value18));
+    let clone: Dynamic = element.cloneNode(false);
+    element.firstChild &&
+      clone.appendChild((document as Dynamic).createTextNode("x"));
+    clone.style.setProperty("transition", "none", "important");
+    clone.style.setProperty("animation", "none", "important");
+    let container: Dynamic = clone;
+    shouldWrap &&
+      ((container = (document as Dynamic).createElement("div")),
+      container.appendChild(clone));
     try {
-      options.insertBefore(value19, context);
-      extra(value18);
+      parent.insertBefore(container, beforeNode);
+      measure(clone);
     } finally {
-      value19.parentNode && value19.parentNode.removeChild(value19);
+      container.parentNode && container.parentNode.removeChild(container);
     }
   }
-  let items6: Dynamic = [];
-  function value8(input2?: Dynamic, options?: Dynamic): Dynamic {
-    for (let index2: Dynamic = 0; index2 < items6.length; index2++)
+  let anchorSets: Dynamic = [];
+  function findAnchorSet(container?: Dynamic, fixed?: Dynamic): Dynamic {
+    for (let i: Dynamic = 0; i < anchorSets.length; i++)
       if (
-        items6[index2].container === input2 &&
-        items6[index2].fixed === options
+        anchorSets[i].container === container &&
+        anchorSets[i].fixed === fixed
       )
-        return items6[index2];
+        return anchorSets[i];
     return null;
   }
-  function value9(
-    input2?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
+  function createAnchors(
+    container?: Dynamic,
+    fixed?: Dynamic,
+    beforeNode?: Dynamic,
   ): Dynamic {
-    if (value8(input2, options)) return;
-    let state: Dynamic = {
-      container: input2,
-      fixed: options,
+    if (findAnchorSet(container, fixed)) return;
+    let anchorSet: Dynamic = {
+      container: container,
+      fixed: fixed,
       made: [],
       a: null,
       b: null,
     };
-    items6.push(state);
-    items5.push(function (): Dynamic {
-      for (let index2: Dynamic = 0; index2 < state.made.length; index2++)
-        state.made[index2].parentNode &&
-          state.made[index2].parentNode.removeChild(state.made[index2]);
+    anchorSets.push(anchorSet);
+    restoreActions.push(function (): Dynamic {
+      for (let i: Dynamic = 0; i < anchorSet.made.length; i++)
+        anchorSet.made[i].parentNode &&
+          anchorSet.made[i].parentNode.removeChild(anchorSet.made[i]);
     });
-    let items13: Dynamic = [
+    let corners: Dynamic = [
       [0, 0],
       [100, 0],
       [0, 100],
     ];
-    for (let index2: Dynamic = 0; index2 < 3; index2++) {
-      let value17: Dynamic = (document as Dynamic).createElement("div");
-      value17.style.cssText =
+    for (let i: Dynamic = 0; i < 3; i++) {
+      let marker: Dynamic = (document as Dynamic).createElement("div");
+      marker.style.cssText =
         "all:initial!important;display:block!important;position:" +
-        (options ? "fixed" : "absolute") +
+        (fixed ? "fixed" : "absolute") +
         "!important;left:" +
-        String(items13[index2][0]) +
+        String(corners[i][0]) +
         "px!important;top:" +
-        String(items13[index2][1]) +
+        String(corners[i][1]) +
         "px!important;width:0!important;height:0!important;visibility:hidden!important;pointer-events:none!important";
-      state.made.push(value17);
-      input2.insertBefore(
-        value17,
-        context && context.parentNode === input2 ? context : null,
+      anchorSet.made.push(marker);
+      container.insertBefore(
+        marker,
+        beforeNode && beforeNode.parentNode === container ? beforeNode : null,
       );
     }
   }
-  function value10(input2?: Dynamic): Dynamic {
-    for (let index2: Dynamic = 0; index2 < items6.length; index2++) {
-      let value17: Dynamic = items6[index2].made.map(function (
-        input3?: Dynamic,
+  function measureAnchors(slot?: Dynamic): Dynamic {
+    for (let i: Dynamic = 0; i < anchorSets.length; i++) {
+      let points: Dynamic = anchorSets[i].made.map(function (
+        marker?: Dynamic,
       ): Dynamic {
-        let bounds: Dynamic = input3.getBoundingClientRect();
+        let bounds: Dynamic = marker.getBoundingClientRect();
         return [bounds.left, bounds.top];
       });
-      value17.length < 3 ||
-        (items6[index2][input2] = {
-          ox: value17[0][0],
-          oy: value17[0][1],
-          ux: (value17[1][0] - value17[0][0]) / 100,
-          uy: (value17[1][1] - value17[0][1]) / 100,
-          vx: (value17[2][0] - value17[0][0]) / 100,
-          vy: (value17[2][1] - value17[0][1]) / 100,
+      points.length < 3 ||
+        (anchorSets[i][slot] = {
+          ox: points[0][0],
+          oy: points[0][1],
+          ux: (points[1][0] - points[0][0]) / 100,
+          uy: (points[1][1] - points[0][1]) / 100,
+          vx: (points[2][0] - points[0][0]) / 100,
+          vy: (points[2][1] - points[0][1]) / 100,
         });
     }
   }
-  function value11(input2?: Dynamic, options?: Dynamic): Dynamic {
+  function isSameBasis(basisA?: Dynamic, basisB?: Dynamic): Dynamic {
     return (
-      Math.abs(input2.ux - options.ux) < 0.002 &&
-      Math.abs(input2.uy - options.uy) < 0.002 &&
-      Math.abs(input2.vx - options.vx) < 0.002 &&
-      Math.abs(input2.vy - options.vy) < 0.002
+      Math.abs(basisA.ux - basisB.ux) < 0.002 &&
+      Math.abs(basisA.uy - basisB.uy) < 0.002 &&
+      Math.abs(basisA.vx - basisB.vx) < 0.002 &&
+      Math.abs(basisA.vy - basisB.vy) < 0.002
     );
   }
-  function value12(input2?: Dynamic, options?: Dynamic): Dynamic {
-    let computedStyleMap: Dynamic = input2.computedStyleMap;
+  function readStyleMapValue(element?: Dynamic, property?: Dynamic): Dynamic {
+    let computedStyleMap: Dynamic = element.computedStyleMap;
     if (typeof computedStyleMap != "function") return null;
     try {
-      let entry: Dynamic = computedStyleMap.call(input2).get(options);
+      let entry: Dynamic = computedStyleMap.call(element).get(property);
       return entry == null ? "" : String(entry);
     } catch {
       return null;
     }
   }
-  let value13: Dynamic =
+  let opaqueTagPattern: Dynamic =
       /^(INPUT|SELECT|TEXTAREA|OPTION|IMG|IFRAME|VIDEO|AUDIO|CANVAS|OBJECT|EMBED|SCRIPT|LINK|STYLE)$/,
-    items7: Dynamic = [],
-    value14: Dynamic = null;
-  for (let index2: Dynamic = 0; index2 < items.length; index2++) {
-    let value17: Dynamic = value3(items[index2]);
-    items7.push(value17);
-    value17 && !value14 && (value14 = value17);
+    elements: Dynamic = [],
+    firstElement: Dynamic = null;
+  for (let i: Dynamic = 0; i < tids.length; i++) {
+    let element: Dynamic = findElementByTid(tids[i]);
+    elements.push(element);
+    element && !firstElement && (firstElement = element);
   }
-  if (!value14) return null;
-  let value15: Dynamic = null;
-  for (let index2: Dynamic = 0; index2 < items2.length && !value15; index2++)
-    value15 = value3(items2[index2]);
-  if (!value15) {
-    let value17: Dynamic = value14.hasAttribute("data-sc-name")
-      ? value14.parentElement
-      : value14;
-    value15 = value17 ? value17.closest("[data-sc-name]") : null;
+  if (!firstElement) return null;
+  let scopeRoot: Dynamic = null;
+  for (let i: Dynamic = 0; i < ancestorTids.length && !scopeRoot; i++)
+    scopeRoot = findElementByTid(ancestorTids[i]);
+  if (!scopeRoot) {
+    let ancestorElement: Dynamic = firstElement.hasAttribute("data-sc-name")
+      ? firstElement.parentElement
+      : firstElement;
+    scopeRoot = ancestorElement ? ancestorElement.closest("[data-sc-name]") : null;
   }
-  if (!value15) return null;
-  let value16: Dynamic = value15,
-    items8: Dynamic = [],
-    items9: Dynamic = [],
-    items10: Dynamic = [],
-    items11: Dynamic = [],
-    items12: Dynamic = [];
+  if (!scopeRoot) return null;
+  let groupRoot: Dynamic = scopeRoot,
+    records: Dynamic = [],
+    hoverAncestors: Dynamic = [],
+    hoverTransformStates: Dynamic = [],
+    layouts: Dynamic = [],
+    rects: Dynamic = [];
   try {
-    for (let index2: Dynamic = 0; index2 < items7.length; index2++) {
-      let value19: Dynamic = items7[index2];
+    for (let i: Dynamic = 0; i < elements.length; i++) {
+      let element: Dynamic = elements[i];
       if (
-        !value19 ||
-        !value19.parentElement ||
-        !value16.contains(value19) ||
-        value19 === value16
+        !element ||
+        !element.parentElement ||
+        !groupRoot.contains(element) ||
+        element === groupRoot
       )
         continue;
-      let value20: Dynamic = getComputedStyle(value19),
-        value21: Dynamic = value12(value19, "width"),
-        value22: Dynamic = null;
-      if (value21 !== null) {
-        let value23: Dynamic = value12(value19, "height") || "",
-          value24: Dynamic = ["left", "right", "top", "bottom"].map(function (
-            input2?: Dynamic,
+      let computed: Dynamic = getComputedStyle(element),
+        widthValue: Dynamic = readStyleMapValue(element, "width"),
+        rendered: Dynamic = null;
+      if (widthValue !== null) {
+        let heightValue: Dynamic = readStyleMapValue(element, "height") || "",
+          sidesPinned: Dynamic = ["left", "right", "top", "bottom"].map(function (
+            side?: Dynamic,
           ): Dynamic {
-            return (value12(value19, input2) || "auto") !== "auto";
+            return (readStyleMapValue(element, side) || "auto") !== "auto";
           }),
-          value25: Dynamic = [
+          hasAutoMargin: Dynamic = [
             "margin-left",
             "margin-right",
             "margin-top",
             "margin-bottom",
-          ].some(function (input2?: Dynamic): Dynamic {
-            return value12(value19, input2) === "auto";
+          ].some(function (property?: Dynamic): Dynamic {
+            return readStyleMapValue(element, property) === "auto";
           });
-        value22 = {
-          widthAuto: value21 === "auto",
-          heightAuto: value23 === "auto",
-          widthPercent: value21.indexOf("%") >= 0,
-          heightPercent: value23.indexOf("%") >= 0,
-          left: value24[0],
-          right: value24[1],
-          top: value24[2],
-          bottom: value24[3],
-          marginAuto: value25,
+        rendered = {
+          widthAuto: widthValue === "auto",
+          heightAuto: heightValue === "auto",
+          widthPercent: widthValue.indexOf("%") >= 0,
+          heightPercent: heightValue.indexOf("%") >= 0,
+          left: sidesPinned[0],
+          right: sidesPinned[1],
+          top: sidesPinned[2],
+          bottom: sidesPinned[3],
+          marginAuto: hasAutoMargin,
         };
       }
-      items8.push({
-        el: value19,
-        cs: value20,
-        fixed: value20.position === "fixed",
-        abs: value20.position === "absolute",
-        rendered: value22,
+      records.push({
+        el: element,
+        cs: computed,
+        fixed: computed.position === "fixed",
+        abs: computed.position === "absolute",
+        rendered: rendered,
       });
       for (
-        let parentElement: Dynamic = value19.parentElement;
-        parentElement && parentElement !== value16;
+        let parentElement: Dynamic = element.parentElement;
+        parentElement && parentElement !== groupRoot;
         parentElement = parentElement.parentElement
       ) {
         if (
-          items9.indexOf(parentElement) >= 0 ||
+          hoverAncestors.indexOf(parentElement) >= 0 ||
           !parentElement.matches(":hover") ||
           !parentElement.parentNode ||
-          value13.test(parentElement.tagName) ||
+          opaqueTagPattern.test(parentElement.tagName) ||
           parentElement.tagName.indexOf("-") >= 0
         )
           continue;
-        items9.push(parentElement);
-        let value23: Dynamic = value6(parentElement);
-        if (!value23) continue;
-        let value24: Dynamic = null;
-        value7(
+        hoverAncestors.push(parentElement);
+        let baselineTransforms: Dynamic = readTransformValues(parentElement);
+        if (!baselineTransforms) continue;
+        let hoverTransforms: Dynamic = null;
+        measureInSandbox(
           parentElement,
           parentElement.parentNode,
           parentElement,
           false,
-          function (input2?: Dynamic): Dynamic {
-            value24 = value6(input2);
+          function (sandboxElement?: Dynamic): Dynamic {
+            hoverTransforms = readTransformValues(sandboxElement);
           },
         );
-        let value25: Dynamic = value24;
-        !value25 ||
-          value25.join("|") === value23.join("|") ||
-          (items10.push([parentElement, value25]),
-          value4(
+        let hoverResult: Dynamic = hoverTransforms;
+        !hoverResult ||
+          hoverResult.join("|") === baselineTransforms.join("|") ||
+          (hoverTransformStates.push([parentElement, hoverResult]),
+          pinStyle(
             parentElement,
-            value25
-              .map(function (input2?: Dynamic, options?: Dynamic): Dynamic {
-                return ";" + items4[options] + ":" + input2 + "!important";
+            hoverResult
+              .map(function (transformValue?: Dynamic, index?: Dynamic): Dynamic {
+                return ";" + transformProps[index] + ":" + transformValue + "!important";
               })
               .join(""),
           ));
       }
     }
-    for (let index2: Dynamic = 0; index2 < items8.length; index2++)
-      value5(items8[index2].cs) !==
+    for (let i: Dynamic = 0; i < records.length; i++)
+      transformSignature(records[i].cs) !==
         ";transform:none;translate:none;rotate:none;scale:none" &&
-        value4(
-          items8[index2].el,
+        pinStyle(
+          records[i].el,
           ";transform:none!important;translate:none!important;rotate:none!important;scale:none!important",
         );
-    let value17: Dynamic = items8.some(function (input2?: Dynamic): Dynamic {
-        return input2.fixed;
+    let hasFixed: Dynamic = records.some(function (record?: Dynamic): Dynamic {
+        return record.fixed;
       }),
-      value18: Dynamic = null;
-    if (items8.length > 0) {
-      let el: Dynamic = items8[items8.length - 1].el;
-      for (; el.parentElement && el.parentElement !== value16; )
+      insertBefore: Dynamic = null;
+    if (records.length > 0) {
+      let el: Dynamic = records[records.length - 1].el;
+      for (; el.parentElement && el.parentElement !== groupRoot; )
         el = el.parentElement;
-      el.parentElement === value16 && (value18 = value ? el.nextSibling : el);
+      el.parentElement === groupRoot && (insertBefore = textStyleProps ? el.nextSibling : el);
     }
-    value9(value16, false, value18);
-    value17 && value9(value16, true, value18);
-    value10("a");
-    for (let index2: Dynamic = 0; index2 < items8.length; index2++)
-      items12.push(items8[index2].el.getBoundingClientRect());
-    for (let index2: Dynamic = 0; index2 < items8.length; index2++)
-      value9(items8[index2].el.parentElement, items8[index2].fixed, null);
-    value10("b");
+    createAnchors(groupRoot, false, insertBefore);
+    hasFixed && createAnchors(groupRoot, true, insertBefore);
+    measureAnchors("a");
+    for (let i: Dynamic = 0; i < records.length; i++)
+      rects.push(records[i].el.getBoundingClientRect());
+    for (let i: Dynamic = 0; i < records.length; i++)
+      createAnchors(records[i].el.parentElement, records[i].fixed, null);
+    measureAnchors("b");
   } finally {
-    for (let value17: Dynamic = items5.length - 1; value17 >= 0; value17--)
+    for (let actionIndex: Dynamic = restoreActions.length - 1; actionIndex >= 0; actionIndex--)
       try {
-        items5[value17]();
+        restoreActions[actionIndex]();
       } catch {}
-    items5 = [];
+    restoreActions = [];
   }
-  let index: Dynamic = 0;
-  for (let index2: Dynamic = 0; index2 < items7.length; index2++) {
-    let value17: Dynamic = items7[index2];
+  let recordIndex: Dynamic = 0;
+  for (let i: Dynamic = 0; i < elements.length; i++) {
+    let element: Dynamic = elements[i];
     if (
-      !value17 ||
-      !value17.parentElement ||
-      !value16.contains(value17) ||
-      value17 === value16
+      !element ||
+      !element.parentElement ||
+      !groupRoot.contains(element) ||
+      element === groupRoot
     ) {
-      items11.push(null);
+      layouts.push(null);
       continue;
     }
-    let value18: Dynamic = items8[index],
-      value19: Dynamic = items12[index];
-    index++;
-    let cs2: Dynamic = value18.cs,
-      value20: Dynamic = value8(value16, value18.fixed),
-      value21: Dynamic = value8(value17.parentElement, value18.fixed),
-      value22: Dynamic = value20 ? value20.a : null,
-      value23: Dynamic = value20 ? value20.b : null,
-      value24: Dynamic = value21 ? value21.b : null,
-      value25: Dynamic = value22
-        ? value22.ux * value22.vy - value22.uy * value22.vx
+    let record: Dynamic = records[recordIndex],
+      rect: Dynamic = rects[recordIndex];
+    recordIndex++;
+    let elementStyle: Dynamic = record.cs,
+      groupAnchors: Dynamic = findAnchorSet(groupRoot, record.fixed),
+      parentAnchors: Dynamic = findAnchorSet(element.parentElement, record.fixed),
+      groupBasisA: Dynamic = groupAnchors ? groupAnchors.a : null,
+      groupBasisB: Dynamic = groupAnchors ? groupAnchors.b : null,
+      parentBasisB: Dynamic = parentAnchors ? parentAnchors.b : null,
+      determinant: Dynamic = groupBasisA
+        ? groupBasisA.ux * groupBasisA.vy - groupBasisA.uy * groupBasisA.vx
         : 0,
-      value26: Dynamic = cs2.zoom || "1";
+      zoomValue: Dynamic = elementStyle.zoom || "1";
     if (
-      !value22 ||
-      !value23 ||
-      !value24 ||
-      !value19 ||
-      Math.abs(value25) < 1e-6 ||
-      cs2.display === "none" ||
-      !/^(1|normal)$/.test(value26) ||
-      (value19.width === 0 &&
-        value19.height === 0 &&
-        value17.getClientRects().length === 0)
+      !groupBasisA ||
+      !groupBasisB ||
+      !parentBasisB ||
+      !rect ||
+      Math.abs(determinant) < 1e-6 ||
+      elementStyle.display === "none" ||
+      !/^(1|normal)$/.test(zoomValue) ||
+      (rect.width === 0 &&
+        rect.height === 0 &&
+        element.getClientRects().length === 0)
     ) {
-      items11.push(null);
+      layouts.push(null);
       continue;
     }
-    let value27: Dynamic = callback(cs2.width),
-      value28: Dynamic = callback(cs2.height);
-    cs2.boxSizing !== "border-box" &&
-      ((value27 +=
-        callback(cs2.paddingLeft) +
-        callback(cs2.paddingRight) +
-        callback(cs2.borderLeftWidth) +
-        callback(cs2.borderRightWidth)),
-      (value28 +=
-        callback(cs2.paddingTop) +
-        callback(cs2.paddingBottom) +
-        callback(cs2.borderTopWidth) +
-        callback(cs2.borderBottomWidth)));
-    let value29: Dynamic = value17,
-      value30: Dynamic =
-        Math.abs(value22.uy) < 0.001 && Math.abs(value22.vx) < 0.001;
-    callback(cs2.width) > 0 ||
-      (value27 = value30
-        ? value19.width / Math.abs(value22.ux)
-        : value29.offsetWidth || 0);
-    callback(cs2.height) > 0 ||
-      (value28 = value30
-        ? value19.height / Math.abs(value22.vy)
-        : value29.offsetHeight || 0);
-    let value31: Dynamic = value19.left + value19.width / 2 - value22.ox,
-      value32: Dynamic = value19.top + value19.height / 2 - value22.oy,
-      value33: Dynamic =
-        (value22.vy * value31 - value22.vx * value32) / value25,
-      value34: Dynamic =
-        (value22.ux * value32 - value22.uy * value31) / value25,
-      index3: Dynamic = 0,
-      flag: Dynamic = false;
+    let boxWidth: Dynamic = toNumber(elementStyle.width),
+      boxHeight: Dynamic = toNumber(elementStyle.height);
+    elementStyle.boxSizing !== "border-box" &&
+      ((boxWidth +=
+        toNumber(elementStyle.paddingLeft) +
+        toNumber(elementStyle.paddingRight) +
+        toNumber(elementStyle.borderLeftWidth) +
+        toNumber(elementStyle.borderRightWidth)),
+      (boxHeight +=
+        toNumber(elementStyle.paddingTop) +
+        toNumber(elementStyle.paddingBottom) +
+        toNumber(elementStyle.borderTopWidth) +
+        toNumber(elementStyle.borderBottomWidth)));
+    let measuredElement: Dynamic = element,
+      isAxisAligned: Dynamic =
+        Math.abs(groupBasisA.uy) < 0.001 && Math.abs(groupBasisA.vx) < 0.001;
+    toNumber(elementStyle.width) > 0 ||
+      (boxWidth = isAxisAligned
+        ? rect.width / Math.abs(groupBasisA.ux)
+        : measuredElement.offsetWidth || 0);
+    toNumber(elementStyle.height) > 0 ||
+      (boxHeight = isAxisAligned
+        ? rect.height / Math.abs(groupBasisA.vy)
+        : measuredElement.offsetHeight || 0);
+    let offsetX: Dynamic = rect.left + rect.width / 2 - groupBasisA.ox,
+      offsetY: Dynamic = rect.top + rect.height / 2 - groupBasisA.oy,
+      centerU: Dynamic =
+        (groupBasisA.vy * offsetX - groupBasisA.vx * offsetY) / determinant,
+      centerV: Dynamic =
+        (groupBasisA.ux * offsetY - groupBasisA.uy * offsetX) / determinant,
+      zIndex: Dynamic = 0,
+      hasStackingContext: Dynamic = false;
     for (
-      let parentElement: Dynamic = value17.parentElement;
-      parentElement && parentElement !== value16;
+      let parentElement: Dynamic = element.parentElement;
+      parentElement && parentElement !== groupRoot;
       parentElement = parentElement.parentElement
     ) {
-      let value40: Dynamic = getComputedStyle(parentElement),
-        value41: Dynamic = parseInt(value40.zIndex, 10),
-        value42: Dynamic =
-          value40.zIndex !== "auto" &&
-          (/^(relative|absolute|fixed|sticky)$/.test(value40.position) ||
+      let ancestorStyle: Dynamic = getComputedStyle(parentElement),
+        ancestorZ: Dynamic = parseInt(ancestorStyle.zIndex, 10),
+        ancestorZApplies: Dynamic =
+          ancestorStyle.zIndex !== "auto" &&
+          (/^(relative|absolute|fixed|sticky)$/.test(ancestorStyle.position) ||
             /flex|grid/.test(
               parentElement.parentElement
                 ? getComputedStyle(parentElement.parentElement).display
                 : "",
             )),
-        value43: Dynamic = null;
-      for (let index4: Dynamic = 0; index4 < items10.length; index4++)
-        items10[index4][0] === parentElement &&
-          (value43 = items10[index4][1]);
-      let value44: Dynamic = value43
-        ? value43.some(function (input2?: Dynamic): Dynamic {
-            return input2 !== "none";
+        ancestorHoverState: Dynamic = null;
+      for (let j: Dynamic = 0; j < hoverTransformStates.length; j++)
+        hoverTransformStates[j][0] === parentElement &&
+          (ancestorHoverState = hoverTransformStates[j][1]);
+      let ancestorHasTransform: Dynamic = ancestorHoverState
+        ? ancestorHoverState.some(function (transformValue?: Dynamic): Dynamic {
+            return transformValue !== "none";
           })
-        : (!!value40.transform && value40.transform !== "none") ||
+        : (!!ancestorStyle.transform && ancestorStyle.transform !== "none") ||
           ["translate", "rotate", "scale"].some(function (
-            input2?: Dynamic,
+            property?: Dynamic,
           ): Dynamic {
-            let value45: Dynamic = value40.getPropertyValue(input2);
-            return !!value45 && value45 !== "none";
+            let propertyValue: Dynamic = ancestorStyle.getPropertyValue(property);
+            return !!propertyValue && propertyValue !== "none";
           });
-      (value42 ||
-        parseFloat(value40.opacity) < 1 ||
-        value44 ||
-        (value40.filter && value40.filter !== "none") ||
-        value40.isolation === "isolate" ||
-        (value40.mixBlendMode && value40.mixBlendMode !== "normal") ||
+      (ancestorZApplies ||
+        parseFloat(ancestorStyle.opacity) < 1 ||
+        ancestorHasTransform ||
+        (ancestorStyle.filter && ancestorStyle.filter !== "none") ||
+        ancestorStyle.isolation === "isolate" ||
+        (ancestorStyle.mixBlendMode && ancestorStyle.mixBlendMode !== "normal") ||
         /transform|opacity|filter|translate|rotate|scale|perspective|clip-path|mask/.test(
-          value40.willChange || "",
+          ancestorStyle.willChange || "",
         ) ||
-        /paint|layout|strict|content/.test(value40.contain || "") ||
-        value40.position === "fixed" ||
-        value40.position === "sticky" ||
+        /paint|layout|strict|content/.test(ancestorStyle.contain || "") ||
+        ancestorStyle.position === "fixed" ||
+        ancestorStyle.position === "sticky" ||
         [
           "perspective",
           "clip-path",
           "mask-image",
           "-webkit-mask-image",
           "backdrop-filter",
-        ].some(function (input2?: Dynamic): Dynamic {
-          let value45: Dynamic = value40.getPropertyValue(input2);
-          return !!value45 && value45 !== "none";
+        ].some(function (property?: Dynamic): Dynamic {
+          let propertyValue: Dynamic = ancestorStyle.getPropertyValue(property);
+          return !!propertyValue && propertyValue !== "none";
         })) &&
-        ((index3 =
-          value42 && isFinite(value41) && value41 > 0
-            ? Math.min(value41, 2147483647)
+        ((zIndex =
+          ancestorZApplies && isFinite(ancestorZ) && ancestorZ > 0
+            ? Math.min(ancestorZ, 2147483647)
             : 0),
-        (flag = true));
+        (hasStackingContext = true));
     }
-    let value35: Dynamic = /^(relative|absolute|fixed|sticky)$/.test(
-      cs2.position,
+    let ownZIndex: Dynamic = /^(relative|absolute|fixed|sticky)$/.test(
+      elementStyle.position,
     )
-      ? parseInt(cs2.zIndex, 10)
+      ? parseInt(elementStyle.zIndex, 10)
       : NaN;
-    !flag &&
-      isFinite(value35) &&
-      value35 > index3 &&
-      (index3 = Math.min(value35, 2147483647));
-    let flag2: Dynamic = false;
+    !hasStackingContext &&
+      isFinite(ownZIndex) &&
+      ownZIndex > zIndex &&
+      (zIndex = Math.min(ownZIndex, 2147483647));
+    let wraps: Dynamic = false;
     if (
-      (value17.textContent || "").trim() !== "" &&
+      (element.textContent || "").trim() !== "" &&
       (document as Dynamic).createRange
     ) {
-      let value40: Dynamic = (document as Dynamic).createRange();
-      value40.selectNodeContents(value17);
-      let value41: Dynamic = value40.getClientRects();
-      for (let count: Dynamic = 1; count < value41.length && !flag2; count++)
-        Math.abs(value41[count].top - value41[0].top) >
-          value41[0].height / 2 && (flag2 = true);
+      let range: Dynamic = (document as Dynamic).createRange();
+      range.selectNodeContents(element);
+      let lineRects: Dynamic = range.getClientRects();
+      for (let count: Dynamic = 1; count < lineRects.length && !wraps; count++)
+        Math.abs(lineRects[count].top - lineRects[0].top) >
+          lineRects[0].height / 2 && (wraps = true);
     }
-    let display: Dynamic = getComputedStyle(value17.parentElement).display,
-      value36: Dynamic =
-        cs2.boxSizing === "border-box"
+    let display: Dynamic = getComputedStyle(element.parentElement).display,
+      paddingBorderWidth: Dynamic =
+        elementStyle.boxSizing === "border-box"
           ? 0
-          : callback(cs2.paddingLeft) +
-            callback(cs2.paddingRight) +
-            callback(cs2.borderLeftWidth) +
-            callback(cs2.borderRightWidth),
-      value37: Dynamic =
-        value18.abs || value18.fixed
+          : toNumber(elementStyle.paddingLeft) +
+            toNumber(elementStyle.paddingRight) +
+            toNumber(elementStyle.borderLeftWidth) +
+            toNumber(elementStyle.borderRightWidth),
+      pinWidth: Dynamic =
+        record.abs || record.fixed
           ? 0
-          : detail.width(cs2) ||
-            Math.ceil(Math.max(0, value27 - value36) * 100) / 100,
-      value38: Dynamic =
-        value18.abs || value18.fixed
+          : metrics.width(elementStyle) ||
+            Math.ceil(Math.max(0, boxWidth - paddingBorderWidth) * 100) / 100,
+      pinHeight: Dynamic =
+        record.abs || record.fixed
           ? 0
           : /flex|grid/.test(display)
-            ? Math.ceil(callback(cs2.height) * 100) / 100
-            : detail.height(value17, cs2),
-      value39: Dynamic = null,
-      items13: Dynamic = [],
-      state: Dynamic = {},
-      flag3: Dynamic = false,
-      flag4: Dynamic = false,
-      flag5: Dynamic = false,
-      text: Dynamic = "";
-    if (value)
+            ? Math.ceil(toNumber(elementStyle.height) * 100) / 100
+            : metrics.height(element, elementStyle),
+      freeze: Dynamic = null,
+      changed: Dynamic = [],
+      carry: Dynamic = {},
+      lostPosition: Dynamic = false,
+      lostWidth: Dynamic = false,
+      lostHeight: Dynamic = false,
+      lostBoxSizing: Dynamic = "";
+    if (textStyleProps)
       if (
-        value13.test(value17.tagName) ||
-        value17.tagName.indexOf("-") >= 0 ||
-        !(value17 instanceof HTMLElement)
+        opaqueTagPattern.test(element.tagName) ||
+        element.tagName.indexOf("-") >= 0 ||
+        !(element instanceof HTMLElement)
       ) {
-        value39 = detail.capture(value17, cs2, value);
-        let value40: Dynamic = getComputedStyle(value17.parentElement),
-          value41: Dynamic = getComputedStyle(value16);
-        if (value39)
-          for (let value42 in value39)
-            value40.getPropertyValue(value42) !==
-              value41.getPropertyValue(value42) && items13.push(value42);
+        freeze = metrics.capture(element, elementStyle, textStyleProps);
+        let parentStyle: Dynamic = getComputedStyle(element.parentElement),
+          groupStyle: Dynamic = getComputedStyle(groupRoot);
+        if (freeze)
+          for (let property in freeze)
+            parentStyle.getPropertyValue(property) !==
+              groupStyle.getPropertyValue(property) && changed.push(property);
       } else {
-        let value40: Dynamic = null,
-          state2: Dynamic = {},
-          state3: Dynamic = {},
-          callback2: Dynamic = function (
-            input2?: Dynamic,
-            options?: Dynamic,
+        let rootCapture: Dynamic = null,
+          rootStyles: Dynamic = {},
+          hostStyles: Dynamic = {},
+          snapshotStyles: Dynamic = function (
+            sandboxElement?: Dynamic,
+            target?: Dynamic,
           ): Dynamic {
-            let value42: Dynamic = getComputedStyle(input2);
-            for (let index4: Dynamic = 0; index4 < items3.length; index4++)
-              options[items3[index4]] = value42.getPropertyValue(
-                items3[index4],
+            let computedSnapshot: Dynamic = getComputedStyle(sandboxElement);
+            for (let k: Dynamic = 0; k < carryProps.length; k++)
+              target[carryProps[k]] = computedSnapshot.getPropertyValue(
+                carryProps[k],
               );
-            options.position = value42.position;
-            options["box-sizing"] = value42.boxSizing;
-            options.width = value12(input2, "width") || "";
-            options.height = value12(input2, "height") || "";
+            target.position = computedSnapshot.position;
+            target["box-sizing"] = computedSnapshot.boxSizing;
+            target.width = readStyleMapValue(sandboxElement, "width") || "";
+            target.height = readStyleMapValue(sandboxElement, "height") || "";
           };
-        if (value17.matches(":hover")) {
-          let value42: Dynamic = null,
-            value43: Dynamic = null,
-            state4: Dynamic = {},
-            state5: Dynamic = {};
-          value7(
-            value17,
-            value17.parentElement,
-            value17,
+        if (element.matches(":hover")) {
+          let captureHere: Dynamic = null,
+            captureNext: Dynamic = null,
+            nextStyles: Dynamic = {},
+            liveStyles: Dynamic = {};
+          measureInSandbox(
+            element,
+            element.parentElement,
+            element,
             false,
-            function (input2?: Dynamic): Dynamic {
-              value42 = detail.capture(
-                value17,
-                getComputedStyle(input2),
-                value,
+            function (sandboxClone?: Dynamic): Dynamic {
+              captureHere = metrics.capture(
+                element,
+                getComputedStyle(sandboxClone),
+                textStyleProps,
               );
-              callback2(input2, state3);
+              snapshotStyles(sandboxClone, hostStyles);
             },
           );
-          value7(
-            value17,
-            value17.parentElement,
-            value17.nextSibling,
+          measureInSandbox(
+            element,
+            element.parentElement,
+            element.nextSibling,
             false,
-            function (input2?: Dynamic): Dynamic {
-              value43 = detail.capture(
-                value17,
-                getComputedStyle(input2),
-                value,
+            function (sandboxClone?: Dynamic): Dynamic {
+              captureNext = metrics.capture(
+                element,
+                getComputedStyle(sandboxClone),
+                textStyleProps,
               );
-              callback2(input2, state4);
+              snapshotStyles(sandboxClone, nextStyles);
             },
           );
-          let value44: Dynamic = detail.capture(value17, cs2, value);
-          callback2(value17, state5);
-          value39 = value42;
-          let value45: Dynamic = value42,
-            value46: Dynamic = value43;
-          if (value45 && value46 && value44)
-            for (let value47 in value45)
-              value45[value47] !== value46[value47] &&
-                value44[value47] !== undefined &&
-                (value45[value47] = value44[value47]);
-          for (let value47 in state3)
-            state3[value47] !== state4[value47] &&
-              (state3[value47] = state5[value47] || "");
+          let liveCapture: Dynamic = metrics.capture(element, elementStyle, textStyleProps);
+          snapshotStyles(element, liveStyles);
+          freeze = captureHere;
+          let hoverCapture: Dynamic = captureHere,
+            nextCapture: Dynamic = captureNext;
+          if (hoverCapture && nextCapture && liveCapture)
+            for (let property in hoverCapture)
+              hoverCapture[property] !== nextCapture[property] &&
+                liveCapture[property] !== undefined &&
+                (hoverCapture[property] = liveCapture[property]);
+          for (let property in hostStyles)
+            hostStyles[property] !== nextStyles[property] &&
+              (hostStyles[property] = liveStyles[property] || "");
         } else
           try {
-            value4(value17, ";animation:none!important");
-            value39 = detail.capture(
-              value17,
-              getComputedStyle(value17),
-              value,
+            pinStyle(element, ";animation:none!important");
+            freeze = metrics.capture(
+              element,
+              getComputedStyle(element),
+              textStyleProps,
             );
-            callback2(value17, state3);
+            snapshotStyles(element, hostStyles);
           } finally {
-            for (; items5.length > 0; ) items5.pop()();
+            for (; restoreActions.length > 0; ) restoreActions.pop()();
           }
-        value7(
-          value17,
-          value16,
+        measureInSandbox(
+          element,
+          groupRoot,
           null,
           true,
-          function (input2?: Dynamic): Dynamic {
-            value40 = detail.capture(
-              value17,
-              getComputedStyle(input2),
-              value,
+          function (sandboxClone?: Dynamic): Dynamic {
+            rootCapture = metrics.capture(
+              element,
+              getComputedStyle(sandboxClone),
+              textStyleProps,
             );
-            callback2(input2, state2);
+            snapshotStyles(sandboxClone, rootStyles);
           },
         );
-        if (value39)
-          for (let value42 in value39)
-            (!value40 || value40[value42] !== value39[value42]) &&
-              items13.push(value42);
-        let value41: Dynamic = [
+        if (freeze)
+          for (let property in freeze)
+            (!rootCapture || rootCapture[property] !== freeze[property]) &&
+              changed.push(property);
+        let hasBorder: Dynamic = [
           "border-top-width",
           "border-right-width",
           "border-bottom-width",
           "border-left-width",
-        ].some(function (input2?: Dynamic): Dynamic {
-          return callback(state3[input2] || "") > 0;
+        ].some(function (property?: Dynamic): Dynamic {
+          return toNumber(hostStyles[property] || "") > 0;
         });
-        for (let index4: Dynamic = 0; index4 < items3.length; index4++) {
-          let value42: Dynamic = items3[index4];
-          (!value41 &&
-            (value42 === "border-style" || value42 === "border-color")) ||
-            (state3[value42] !== state2[value42] &&
-              (state[value42] = state3[value42] || ""));
+        for (let k: Dynamic = 0; k < carryProps.length; k++) {
+          let property: Dynamic = carryProps[k];
+          (!hasBorder &&
+            (property === "border-style" || property === "border-color")) ||
+            (hostStyles[property] !== rootStyles[property] &&
+              (carry[property] = hostStyles[property] || ""));
         }
-        flag3 = state3.position !== state2.position;
-        flag4 =
-          state3.width !== state2.width &&
-          state3.width !== "auto" &&
-          state3.width !== "";
-        flag5 =
-          state3.height !== state2.height &&
-          state3.height !== "auto" &&
-          state3.height !== "";
-        state3["box-sizing"] !== state2["box-sizing"] &&
-          (text =
-            state3["box-sizing"] === "border-box"
+        lostPosition = hostStyles.position !== rootStyles.position;
+        lostWidth =
+          hostStyles.width !== rootStyles.width &&
+          hostStyles.width !== "auto" &&
+          hostStyles.width !== "";
+        lostHeight =
+          hostStyles.height !== rootStyles.height &&
+          hostStyles.height !== "auto" &&
+          hostStyles.height !== "";
+        hostStyles["box-sizing"] !== rootStyles["box-sizing"] &&
+          (lostBoxSizing =
+            hostStyles["box-sizing"] === "border-box"
               ? "border-box"
               : "content-box");
-        if (value12(value17, "width") === null) {
-          let items14: Dynamic = ["", ""],
-            items15: Dynamic = ["", ""];
-          value7(
-            value17,
-            value17.parentElement,
-            value17,
+        if (readStyleMapValue(element, "width") === null) {
+          let inPlaceSize: Dynamic = ["", ""],
+            rootSize: Dynamic = ["", ""];
+          measureInSandbox(
+            element,
+            element.parentElement,
+            element,
             false,
-            function (input2?: Dynamic): Dynamic {
-              let value42: Dynamic = getComputedStyle(input2);
-              items14 = [value42.width, value42.height];
+            function (sandboxClone?: Dynamic): Dynamic {
+              let computedSnapshot: Dynamic = getComputedStyle(sandboxClone);
+              inPlaceSize = [computedSnapshot.width, computedSnapshot.height];
             },
           );
-          value7(
-            value17,
-            value16,
+          measureInSandbox(
+            element,
+            groupRoot,
             null,
             true,
-            function (input2?: Dynamic): Dynamic {
-              let value42: Dynamic = getComputedStyle(input2);
-              items15 = [value42.width, value42.height];
+            function (sandboxClone?: Dynamic): Dynamic {
+              let computedSnapshot: Dynamic = getComputedStyle(sandboxClone);
+              rootSize = [computedSnapshot.width, computedSnapshot.height];
             },
           );
-          flag4 = items14[0] !== items15[0];
-          flag5 = items14[1] !== items15[1];
+          lostWidth = inPlaceSize[0] !== rootSize[0];
+          lostHeight = inPlaceSize[1] !== rootSize[1];
         }
       }
-    items11.push({
-      left: value33 - value27 / 2,
-      top: value34 - value28 / 2,
-      width: value27,
-      height: value28,
-      marginLeft: callback(cs2.marginLeft),
-      marginTop: callback(cs2.marginTop),
-      marginRight: callback(cs2.marginRight),
-      marginBottom: callback(cs2.marginBottom),
-      cssWidth: Math.ceil(callback(cs2.width) * 100) / 100,
-      cssHeight: Math.ceil(callback(cs2.height) * 100) / 100,
-      position: value18.fixed ? "fixed" : value18.abs ? "absolute" : "flow",
-      pinWidth: value37,
-      pinHeight: value38,
-      freeze: value39,
-      changed: items13,
-      carry: state,
-      lostPosition: flag3,
-      lostWidth: flag4,
-      lostHeight: flag5,
-      lostBoxSizing: text,
-      rendered: value18.rendered,
-      transformed: !value11(value24, value23),
+    layouts.push({
+      left: centerU - boxWidth / 2,
+      top: centerV - boxHeight / 2,
+      width: boxWidth,
+      height: boxHeight,
+      marginLeft: toNumber(elementStyle.marginLeft),
+      marginTop: toNumber(elementStyle.marginTop),
+      marginRight: toNumber(elementStyle.marginRight),
+      marginBottom: toNumber(elementStyle.marginBottom),
+      cssWidth: Math.ceil(toNumber(elementStyle.width) * 100) / 100,
+      cssHeight: Math.ceil(toNumber(elementStyle.height) * 100) / 100,
+      position: record.fixed ? "fixed" : record.abs ? "absolute" : "flow",
+      pinWidth: pinWidth,
+      pinHeight: pinHeight,
+      freeze: freeze,
+      changed: changed,
+      carry: carry,
+      lostPosition: lostPosition,
+      lostWidth: lostWidth,
+      lostHeight: lostHeight,
+      lostBoxSizing: lostBoxSizing,
+      rendered: record.rendered,
+      transformed: !isSameBasis(parentBasisB, groupBasisB),
       sameSpace:
-        value11(value24, value23) &&
-        Math.abs(value24.ox - value23.ox) < 0.01 &&
-        Math.abs(value24.oy - value23.oy) < 0.01,
-      zIndex: index3,
-      localZ: flag && isFinite(value35) && value35 > 0,
+        isSameBasis(parentBasisB, groupBasisB) &&
+        Math.abs(parentBasisB.ox - groupBasisB.ox) < 0.01 &&
+        Math.abs(parentBasisB.oy - groupBasisB.oy) < 0.01,
+      zIndex: zIndex,
+      localZ: hasStackingContext && isFinite(ownZIndex) && ownZIndex > 0,
       liftable:
         !/^(LI|TR|TD|TH|THEAD|TBODY|TFOOT|CAPTION|COL|COLGROUP)$/.test(
-          value17.tagName,
+          element.tagName,
         ) &&
         !(
-          !value18.abs &&
-          !value18.fixed &&
-          (/^table-/.test(cs2.display) || cs2.display === "list-item")
+          !record.abs &&
+          !record.fixed &&
+          (/^table-/.test(elementStyle.display) || elementStyle.display === "list-item")
         ),
-      positioned: /^(relative|absolute|fixed|sticky)$/.test(cs2.position),
-      wraps: flag2,
+      positioned: /^(relative|absolute|fixed|sticky)$/.test(elementStyle.position),
+      wraps: wraps,
       opaque:
-        value13.test(value17.tagName) ||
-        value17.tagName.indexOf("-") >= 0 ||
-        !(value17 instanceof HTMLElement),
+        opaqueTagPattern.test(element.tagName) ||
+        element.tagName.indexOf("-") >= 0 ||
+        !(element instanceof HTMLElement),
     });
   }
-  return items11;
+  return layouts;
 }
 export {
   captureGroupLayout,

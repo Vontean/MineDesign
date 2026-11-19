@@ -6,120 +6,120 @@ import {
 import { imageCropVisibleRect } from "./crop-geometry";
 import { isSafeProjectPath } from "../../platform/file-content";
 
-var MediaObjectCropSupports: Dynamic;
+var supportsObjectViewBox: Dynamic;
 var ThisBrowserCanTZoomAPictureMessage: Dynamic;
 var YouCanTCropAnyFurtherAtMessage: Dynamic;
 var ThePageLayoutPlacesTheTopMessage: Dynamic;
-var MediaObjectCropPattern: Dynamic;
-var MediaObjectCropInsetPattern: Dynamic;
-var MediaObjectCropMin: Dynamic;
-var MediaObjectCropAbs: Dynamic;
-var MediaObjectCropTest: Dynamic;
-var MediaObjectCropConstant: Dynamic;
-var MediaObjectCropMax: Dynamic;
-var MediaObjectCropZoom: Dynamic;
-var MediaObjectCropEvery: Dynamic;
-var MediaObjectCropHandler: Dynamic;
-function isEditableComponentName(items?: Dynamic): Dynamic {
+var objectPositionPattern: Dynamic;
+var insetClipPathPattern: Dynamic;
+var clampUnit: Dynamic;
+var positionToFraction: Dynamic;
+var isObjectCropStyle: Dynamic;
+var minVisibleFraction: Dynamic;
+var maxCropZoom: Dynamic;
+var exceedsMaxZoom: Dynamic;
+var clampCropToBounds: Dynamic;
+var formatPercent: Dynamic;
+function isEditableComponentName(name?: Dynamic): Dynamic {
   return (
-    typeof items == "string" &&
-    items.length > 0 &&
-    items.length <= 128 &&
-    !items.includes("/") &&
-    isSafeProjectPath(items + ".dc.html")
+    typeof name == "string" &&
+    name.length > 0 &&
+    name.length <= 128 &&
+    !name.includes("/") &&
+    isSafeProjectPath(name + ".dc.html")
   );
 }
-function parseObjectPosition(input?: Dynamic): Dynamic {
-  let value: Dynamic = input
+function parseObjectPosition(text?: Dynamic): Dynamic {
+  let matches: Dynamic = text
     .trim()
     .split(/\s+/)
-    .map((input2?: Dynamic): Dynamic => MediaObjectCropPattern.exec(input2));
-  if (value.length !== 2 || !value[0] || !value[1]) return null;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => ({
-    v: parseFloat(input2[1]),
-    unit: input2[2],
+    .map((token?: Dynamic): Dynamic => objectPositionPattern.exec(token));
+  if (matches.length !== 2 || !matches[0] || !matches[1]) return null;
+  let toCoordinate: Dynamic = (match?: Dynamic): Dynamic => ({
+    v: parseFloat(match[1]),
+    unit: match[2],
   });
-  return [callback(value[0]), callback(value[1])];
+  return [toCoordinate(matches[0]), toCoordinate(matches[1])];
 }
-function parseObjectClipPath(input?: Dynamic): Dynamic {
-  if (input === "" || input === "none") return null;
-  let value: Dynamic = MediaObjectCropInsetPattern.exec(input.trim());
-  if (!value) return;
-  let value2: Dynamic = value[1]
+function parseObjectClipPath(text?: Dynamic): Dynamic {
+  if (text === "" || text === "none") return null;
+  let insetMatch: Dynamic = insetClipPathPattern.exec(text.trim());
+  if (!insetMatch) return;
+  let fractions: Dynamic = insetMatch[1]
       .trim()
       .split(" ")
-      .map((input2?: Dynamic): Dynamic => parseFloat(input2) / 100),
-    [items, items2, items3, items4]: Dynamic = [
-      value2[0],
-      value2[1] ?? value2[0],
-      value2[2] ?? value2[0],
-      value2[3] ?? value2[1] ?? value2[0],
+      .map((token?: Dynamic): Dynamic => parseFloat(token) / 100),
+    [top, right, bottom, left]: Dynamic = [
+      fractions[0],
+      fractions[1] ?? fractions[0],
+      fractions[2] ?? fractions[0],
+      fractions[3] ?? fractions[1] ?? fractions[0],
     ];
-  return items + items3 < 1 && items4 + items2 < 1
-    ? [items, items2, items3, items4]
+  return top + bottom < 1 && left + right < 1
+    ? [top, right, bottom, left]
     : undefined;
 }
 function cropFromObjectStyles(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  frame?: Dynamic,
+  naturalSize?: Dynamic,
+  styles?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = Math.max(input.w / options.w, input.h / options.h),
-    [value2, value3, value4, value5]: Dynamic = context.box
+  let coverScale: Dynamic = Math.max(frame.w / naturalSize.w, frame.h / naturalSize.h),
+    [boxX, boxY, boxWidth, boxHeight]: Dynamic = styles.box
       ? [
-          context.box[3] * options.w,
-          context.box[0] * options.h,
-          options.w * (1 - context.box[3] - context.box[1]),
-          options.h * (1 - context.box[0] - context.box[2]),
+          styles.box[3] * naturalSize.w,
+          styles.box[0] * naturalSize.h,
+          naturalSize.w * (1 - styles.box[3] - styles.box[1]),
+          naturalSize.h * (1 - styles.box[0] - styles.box[2]),
         ]
-      : [0, 0, options.w, options.h],
-    value6: Dynamic = Math.max(input.w / value4, input.h / value5),
-    value7: Dynamic =
-      value2 +
-      (value4 - input.w / value6) *
-        MediaObjectCropAbs(context.pos?.[0], input.w - value4 * value6),
-    value8: Dynamic =
-      value3 +
-      (value5 - input.h / value6) *
-        MediaObjectCropAbs(context.pos?.[1], input.h - value5 * value6),
-    value9: Dynamic = Math.max(1, value6 / value),
-    [items, items2]: Dynamic = [
-      options.w * value * value9 - input.w,
-      options.h * value * value9 - input.h,
+      : [0, 0, naturalSize.w, naturalSize.h],
+    boxScale: Dynamic = Math.max(frame.w / boxWidth, frame.h / boxHeight),
+    visibleX: Dynamic =
+      boxX +
+      (boxWidth - frame.w / boxScale) *
+        positionToFraction(styles.pos?.[0], frame.w - boxWidth * boxScale),
+    visibleY: Dynamic =
+      boxY +
+      (boxHeight - frame.h / boxScale) *
+        positionToFraction(styles.pos?.[1], frame.h - boxHeight * boxScale),
+    zoom: Dynamic = Math.max(1, boxScale / coverScale),
+    [overflowX, overflowY]: Dynamic = [
+      naturalSize.w * coverScale * zoom - frame.w,
+      naturalSize.h * coverScale * zoom - frame.h,
     ];
   return {
-    zoom: value9,
+    zoom: zoom,
     x:
-      items > 1e-6
-        ? MediaObjectCropMin((value7 * value * value9) / items)
+      overflowX > 1e-6
+        ? clampUnit((visibleX * coverScale * zoom) / overflowX)
         : 0.5,
     y:
-      items2 > 1e-6
-        ? MediaObjectCropMin((value8 * value * value9) / items2)
+      overflowY > 1e-6
+        ? clampUnit((visibleY * coverScale * zoom) / overflowY)
         : 0.5,
   };
 }
 function imageCropStyleEdits(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = MediaObjectCropSupports(),
+  frame?: Dynamic,
+  naturalSize?: Dynamic,
+  crop?: Dynamic,
+  supportsViewBox: Dynamic = supportsObjectViewBox(),
 ): Dynamic {
-  let value2: Dynamic = imageCropVisibleRect(
-      input,
-      options,
-      context,
+  let visibleRect: Dynamic = imageCropVisibleRect(
+      frame,
+      naturalSize,
+      crop,
     ),
-    value3: Dynamic =
-      context.zoom > 1
+    clipPath: Dynamic =
+      crop.zoom > 1
         ? "inset(" +
           [
-            value2.y,
-            1 - value2.x - value2.w,
-            1 - value2.y - value2.h,
-            value2.x,
+            visibleRect.y,
+            1 - visibleRect.x - visibleRect.w,
+            1 - visibleRect.y - visibleRect.h,
+            visibleRect.x,
           ]
-            .map(MediaObjectCropHandler)
+            .map(formatPercent)
             .join(" ") +
           ")"
         : null;
@@ -127,28 +127,28 @@ function imageCropStyleEdits(
     ["object-fit", "cover"],
     [
       "object-position",
-      MediaObjectCropHandler(context.x) +
+      formatPercent(crop.x) +
         " " +
-        MediaObjectCropHandler(context.y),
+        formatPercent(crop.y),
     ],
-    ...(value ? [["object-view-box", value3]] : []),
+    ...(supportsViewBox ? [["object-view-box", clipPath]] : []),
   ];
 }
 export {
   cropFromObjectStyles,
   imageCropStyleEdits,
   isEditableComponentName,
-  MediaObjectCropAbs,
-  MediaObjectCropConstant,
-  MediaObjectCropEvery,
-  MediaObjectCropHandler,
-  MediaObjectCropInsetPattern,
-  MediaObjectCropMax,
-  MediaObjectCropMin,
-  MediaObjectCropPattern,
-  MediaObjectCropSupports,
-  MediaObjectCropTest,
-  MediaObjectCropZoom,
+  positionToFraction as MediaObjectCropAbs,
+  minVisibleFraction as MediaObjectCropConstant,
+  clampCropToBounds as MediaObjectCropEvery,
+  formatPercent as MediaObjectCropHandler,
+  insetClipPathPattern as MediaObjectCropInsetPattern,
+  maxCropZoom as MediaObjectCropMax,
+  clampUnit as MediaObjectCropMin,
+  objectPositionPattern as MediaObjectCropPattern,
+  supportsObjectViewBox as MediaObjectCropSupports,
+  isObjectCropStyle as MediaObjectCropTest,
+  exceedsMaxZoom as MediaObjectCropZoom,
   parseObjectClipPath,
   parseObjectPosition,
   ThePageLayoutPlacesTheTopMessage,
@@ -157,7 +157,7 @@ export {
 };
 export function installEditorMediaObjectCrop(): () => void {
   return () => {
-    MediaObjectCropSupports = (): Dynamic =>
+    supportsObjectViewBox = (): Dynamic =>
       typeof CSS !== "undefined" &&
       typeof CSS.supports == "function" &&
       CSS.supports("object-view-box", "inset(0%)");
@@ -167,55 +167,55 @@ export function installEditorMediaObjectCrop(): () => void {
       uiMessage("inspector.objectCrop.youCanTCropAny");
     ThePageLayoutPlacesTheTopMessage =
       uiMessage("inspector.objectCrop.thePageLayoutPlacesThe");
-    MediaObjectCropPattern = /^(-?\d+(?:\.\d+)?)(%|px)$/;
-    MediaObjectCropInsetPattern = /^inset\(((?:\d+(?:\.\d+)?% ?){1,4})\)$/;
-    MediaObjectCropMin = (input?: Dynamic): Dynamic =>
-      Math.min(1, Math.max(0, input));
-    MediaObjectCropAbs = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input === undefined || Math.abs(options) < 1e-6
+    objectPositionPattern = /^(-?\d+(?:\.\d+)?)(%|px)$/;
+    insetClipPathPattern = /^inset\(((?:\d+(?:\.\d+)?% ?){1,4})\)$/;
+    clampUnit = (rawFraction?: Dynamic): Dynamic =>
+      Math.min(1, Math.max(0, rawFraction));
+    positionToFraction = (position?: Dynamic, overflow?: Dynamic): Dynamic =>
+      position === undefined || Math.abs(overflow) < 1e-6
         ? 0.5
-        : MediaObjectCropMin(
-            input.unit === "%" ? input.v / 100 : input.v / options,
+        : clampUnit(
+            position.unit === "%" ? position.v / 100 : position.v / overflow,
           );
-    MediaObjectCropTest = (input?: Dynamic): Dynamic =>
-      input("object-fit") === "cover" &&
-      (!!input("object-view-box") ||
+    isObjectCropStyle = (readStyle?: Dynamic): Dynamic =>
+      readStyle("object-fit") === "cover" &&
+      (!!readStyle("object-view-box") ||
         /^\d{1,3}(\.\d{1,4})?% \d{1,3}(\.\d{1,4})?%$/.test(
-          (input("object-position") ?? "").trim(),
+          (readStyle("object-position") ?? "").trim(),
         ));
-    MediaObjectCropConstant = 0.01;
-    MediaObjectCropMax = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value: Dynamic = Math.max(input.w / options.w, input.h / options.h);
+    minVisibleFraction = 0.01;
+    maxCropZoom = (frame?: Dynamic, naturalSize?: Dynamic): Dynamic => {
+      let coverScale: Dynamic = Math.max(frame.w / naturalSize.w, frame.h / naturalSize.h);
       return Math.max(
         1,
-        Math.min(input.w / (options.w * value), input.h / (options.h * value)) /
-          MediaObjectCropConstant,
+        Math.min(frame.w / (naturalSize.w * coverScale), frame.h / (naturalSize.h * coverScale)) /
+          minVisibleFraction,
       );
     };
-    MediaObjectCropZoom = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    exceedsMaxZoom = (
+      frame?: Dynamic,
+      naturalSize?: Dynamic,
+      crop?: Dynamic,
     ): Dynamic =>
-      context.zoom > MediaObjectCropMax(input, options) * (1 + 1e-9);
-    MediaObjectCropEvery = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      crop.zoom > maxCropZoom(frame, naturalSize) * (1 + 1e-9);
+    clampCropToBounds = (
+      frame?: Dynamic,
+      naturalSize?: Dynamic,
+      crop?: Dynamic,
     ): Dynamic =>
-      [context.zoom, context.x, context.y].every(Number.isFinite)
-        ? MediaObjectCropZoom(input, options, context)
+      [crop.zoom, crop.x, crop.y].every(Number.isFinite)
+        ? exceedsMaxZoom(frame, naturalSize, crop)
           ? {
-              ...context,
-              zoom: MediaObjectCropMax(input, options),
+              ...crop,
+              zoom: maxCropZoom(frame, naturalSize),
             }
-          : context
+          : crop
         : {
             zoom: 1,
             x: 0.5,
             y: 0.5,
           };
-    MediaObjectCropHandler = (input?: Dynamic): Dynamic =>
-      String(Math.round(MediaObjectCropMin(input) * 1e6) / 1e4) + "%";
+    formatPercent = (fraction?: Dynamic): Dynamic =>
+      String(Math.round(clampUnit(fraction) * 1e6) / 1e4) + "%";
   };
 }

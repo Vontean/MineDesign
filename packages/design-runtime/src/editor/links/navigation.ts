@@ -4,94 +4,94 @@ import {
 } from "../../runtime-types";
 import { isApplePlatform } from "../keyboard/shortcuts";
 
-var LinksNavigationHttpsPattern: Dynamic;
-var LinksNavigationHttpsPattern_2: Dynamic;
-var LinksNavigationResolvedValue: Dynamic;
-var LinksNavigationResolvedValue_2: Dynamic;
-var LinksNavigationKey: Dynamic;
-var LinksNavigationKeyValue: Dynamic;
-var LinksNavigationKeyValue_2: Dynamic;
-function validateNavigableUrl(input?: Dynamic, options?: Dynamic): Dynamic {
+var linkUrlPattern: Dynamic;
+var storedLinkUrlPattern: Dynamic;
+var modifierKeyLabel: Dynamic;
+var openLinkHint: Dynamic;
+var createOpenLinkKeyHandler: Dynamic;
+var openLinkWithModifierKeyHandler: Dynamic;
+var openLinkKeyHandler: Dynamic;
+function validateNavigableUrl(url?: Dynamic, validationOptions?: Dynamic): Dynamic {
   if (
     !(
-      options?.storedUrl === true
-        ? LinksNavigationHttpsPattern_2
-        : LinksNavigationHttpsPattern
-    ).test(input)
+      validationOptions?.storedUrl === true
+        ? storedLinkUrlPattern
+        : linkUrlPattern
+    ).test(url)
   )
     return null;
-  let value: Dynamic;
+  let parsedUrl: Dynamic;
   try {
-    value = new URL(input);
+    parsedUrl = new URL(url);
   } catch {
     return null;
   }
-  let value2: Dynamic =
+  let currentHostname: Dynamic =
       typeof location === "undefined" ? "" : location.hostname,
-    value3: Dynamic = value2.replace(/^[^.]+\./, ""),
-    hostname: Dynamic = value.hostname;
+    currentParentDomain: Dynamic = currentHostname.replace(/^[^.]+\./, ""),
+    hostname: Dynamic = parsedUrl.hostname;
   return hostname === "" ||
     hostname.endsWith(".") ||
-    hostname === value2 ||
-    value.username !== "" ||
-    value.password !== "" ||
+    hostname === currentHostname ||
+    parsedUrl.username !== "" ||
+    parsedUrl.password !== "" ||
     hostname === "claudeusercontent.com" ||
     hostname.endsWith(".claudeusercontent.com") ||
-    (value3.includes(".") &&
-      (hostname === value3 || hostname.endsWith("." + value3)))
+    (currentParentDomain.includes(".") &&
+      (hostname === currentParentDomain || hostname.endsWith("." + currentParentDomain)))
     ? null
-    : input;
+    : url;
 }
 function getElementLinkHref(element?: Dynamic): Dynamic {
-  let value: Dynamic =
+  let href: Dynamic =
     element.getAttribute("href") || element.getAttribute("data-href") || "";
-  return LinksNavigationHttpsPattern.test(value) ? value : "";
+  return linkUrlPattern.test(href) ? href : "";
 }
-function openValidatedLink(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (validateNavigableUrl(input, options) === null) return;
-  let value: Dynamic = (document as Dynamic).createElement("a");
-  value.href = input;
-  value.target = "_blank";
-  value.rel = "noopener noreferrer";
-  (document as Dynamic).body.append(value);
-  value.click();
-  value.remove();
+function openValidatedLink(url?: Dynamic, validationOptions?: Dynamic): Dynamic {
+  if (validateNavigableUrl(url, validationOptions) === null) return;
+  let anchor: Dynamic = (document as Dynamic).createElement("a");
+  anchor.href = url;
+  anchor.target = "_blank";
+  anchor.rel = "noopener noreferrer";
+  (document as Dynamic).body.append(anchor);
+  anchor.click();
+  anchor.remove();
 }
 export {
   getElementLinkHref,
-  LinksNavigationHttpsPattern,
-  LinksNavigationHttpsPattern_2,
-  LinksNavigationKey,
-  LinksNavigationKeyValue,
-  LinksNavigationKeyValue_2,
-  LinksNavigationResolvedValue,
-  LinksNavigationResolvedValue_2,
+  linkUrlPattern as LinksNavigationHttpsPattern,
+  storedLinkUrlPattern as LinksNavigationHttpsPattern_2,
+  createOpenLinkKeyHandler as LinksNavigationKey,
+  openLinkWithModifierKeyHandler as LinksNavigationKeyValue,
+  openLinkKeyHandler as LinksNavigationKeyValue_2,
+  modifierKeyLabel as LinksNavigationResolvedValue,
+  openLinkHint as LinksNavigationResolvedValue_2,
   openValidatedLink,
   validateNavigableUrl,
 };
 export function installEditorLinksNavigation(): () => void {
   return () => {
-    LinksNavigationHttpsPattern = /^https?:\/\/[^\s)\[]*$/;
-    LinksNavigationHttpsPattern_2 = /^https?:\/\/\S*$/;
-    LinksNavigationResolvedValue = isApplePlatform()
+    linkUrlPattern = /^https?:\/\/[^\s)\[]*$/;
+    storedLinkUrlPattern = /^https?:\/\/\S*$/;
+    modifierKeyLabel = isApplePlatform()
       ? "\u2318"
       : "Ctrl";
-    LinksNavigationResolvedValue_2 =
+    openLinkHint =
       " (" +
-      LinksNavigationResolvedValue +
+      modifierKeyLabel +
       "-click or " +
-      LinksNavigationResolvedValue +
+      modifierKeyLabel +
       "+Enter to open)";
-    LinksNavigationKey =
-      (input?: Dynamic): Dynamic =>
+    createOpenLinkKeyHandler =
+      (requiresModifier?: Dynamic): Dynamic =>
       (event?: Dynamic): Dynamic => {
         event.key !== "Enter" ||
           event.nativeEvent?.isComposing ||
-          (input && !(event.metaKey || event.ctrlKey)) ||
+          (requiresModifier && !(event.metaKey || event.ctrlKey)) ||
           (event.preventDefault(),
           openValidatedLink(getElementLinkHref(event.currentTarget)));
       };
-    LinksNavigationKeyValue = LinksNavigationKey(true);
-    LinksNavigationKeyValue_2 = LinksNavigationKey(false);
+    openLinkWithModifierKeyHandler = createOpenLinkKeyHandler(true);
+    openLinkKeyHandler = createOpenLinkKeyHandler(false);
   };
 }

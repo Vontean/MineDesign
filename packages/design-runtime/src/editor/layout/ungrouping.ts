@@ -7,100 +7,100 @@ import { restoreUngroupedLayout, ungroupedElementRect } from "./grouping";
 import { selectedRootElementIds } from "../selection/element-order";
 
 var NothingToUngroupSelectAGroupMessage: Dynamic;
-var ThisComponentManagesItselfSoItMessage_2: Dynamic;
-var LayoutUngroupingLabel: Dynamic;
-var LayoutUngroupingLabel_2: Dynamic;
-var LayoutUngroupingLabel_3: Dynamic;
-var LayoutUngroupingLabel_4: Dynamic;
-function ungroupElementRefusal(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.element(options),
-    value2: Dynamic = input.tagName(options) ?? "",
-    value3: Dynamic = value?.hasAttribute("data-dc-group") === true;
-  if (input.isUneditable(options))
-    return ThisComponentManagesItselfSoItMessage_2;
-  if (value2 === "dc-import" || value2 === "x-import")
-    return LayoutUngroupingLabel;
+var selfManagedComponentMessage: Dynamic;
+var componentInstanceMessage: Dynamic;
+var slideMessage: Dynamic;
+var repeatedLayerMessage: Dynamic;
+var drawingPartMessage: Dynamic;
+function ungroupElementRefusal(model?: Dynamic, tid?: Dynamic): Dynamic {
+  let element: Dynamic = model.element(tid),
+    tagName: Dynamic = model.tagName(tid) ?? "",
+    isGroup: Dynamic = element?.hasAttribute("data-dc-group") === true;
+  if (model.isUneditable(tid))
+    return selfManagedComponentMessage;
+  if (tagName === "dc-import" || tagName === "x-import")
+    return componentInstanceMessage;
   if (
-    value2 === "sc-if" ||
-    value2 === "sc-for" ||
-    (input.isLoopDriven(options) && !value3)
+    tagName === "sc-if" ||
+    tagName === "sc-for" ||
+    (model.isLoopDriven(tid) && !isGroup)
   )
-    return LayoutUngroupingLabel_3;
-  let value4: Dynamic =
-    value3 ||
-    (!!value &&
-      value.children.length > 0 &&
-      [...value.children].every(
-        (input2?: Dynamic): Dynamic => input2.localName === "section",
+    return repeatedLayerMessage;
+  let isSectionContainer: Dynamic =
+    isGroup ||
+    (!!element &&
+      element.children.length > 0 &&
+      [...element.children].every(
+        (child?: Dynamic): Dynamic => child.localName === "section",
       ));
   if (
-    input.targetParentLocked(options, "before") &&
-    (value2 === "section" || !value4)
+    model.targetParentLocked(tid, "before") &&
+    (tagName === "section" || !isSectionContainer)
   )
-    return LayoutUngroupingLabel_2;
-  if (value?.closest("svg")) return LayoutUngroupingLabel_4;
-  let value5: Dynamic = [...(value?.childNodes ?? [])].some(
-    (input2?: Dynamic): Dynamic =>
-      input2.nodeType === Node.TEXT_NODE &&
-      (input2.nodeValue ?? "").trim() !== "",
+    return slideMessage;
+  if (element?.closest("svg")) return drawingPartMessage;
+  let hasTextNode: Dynamic = [...(element?.childNodes ?? [])].some(
+    (node?: Dynamic): Dynamic =>
+      node.nodeType === Node.TEXT_NODE &&
+      (node.nodeValue ?? "").trim() !== "",
   );
-  if (!value || value5 || input.childTids(options).length === 0)
+  if (!element || hasTextNode || model.childTids(tid).length === 0)
     return NothingToUngroupSelectAGroupMessage;
 }
 function selectionUngroupRefusal(
-  input?: Dynamic,
-  options?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
 ): Dynamic {
-  let value: Dynamic;
-  for (let value2 of selectedRootElementIds(input, [
-    ...options,
+  let firstRefusal: Dynamic;
+  for (let tid of selectedRootElementIds(model, [
+    ...tids,
   ]) as Dynamic) {
-    let value3: Dynamic = ungroupElementRefusal(input, value2);
-    if (value3 === undefined) return;
-    value ??= value3;
+    let refusal: Dynamic = ungroupElementRefusal(model, tid);
+    if (refusal === undefined) return;
+    firstRefusal ??= refusal;
   }
-  return value;
+  return firstRefusal;
 }
 function ungroupModelElement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  layoutByTid?: Dynamic,
 ): Dynamic {
-  if (!input.element(options)?.parentNode) return null;
-  let value: Dynamic = /^(absolute|relative|fixed|sticky)$/.test(
-    input.effectiveStyleValue(options, "position").trim(),
+  if (!model.element(tid)?.parentNode) return null;
+  let zIndexValue: Dynamic = /^(absolute|relative|fixed|sticky)$/.test(
+    model.effectiveStyleValue(tid, "position").trim(),
   )
-    ? input.effectiveStyleValue(options, "z-index").trim()
+    ? model.effectiveStyleValue(tid, "z-index").trim()
     : "";
-  for (let value2 of input.childTids(options) as Dynamic) {
-    let value3: Dynamic = context?.get(value2);
-    value3 &&
-      (value3.position !== "flow" &&
-        !value3.sameSpace &&
-        !value3.transformed &&
+  for (let childTid of model.childTids(tid) as Dynamic) {
+    let childLayout: Dynamic = layoutByTid?.get(childTid);
+    childLayout &&
+      (childLayout.position !== "flow" &&
+        !childLayout.sameSpace &&
+        !childLayout.transformed &&
         restoreUngroupedLayout(
-          input,
-          value2,
-          value3,
-          ungroupedElementRect(input, value2, value3),
+          model,
+          childTid,
+          childLayout,
+          ungroupedElementRect(model, childTid, childLayout),
           0,
           0,
         ),
-      /^-?\d+$/.test(value) &&
-        value3.positioned &&
-        !input.hasAuthoredStyle(value2, "z-index") &&
-        input.setStyleProperty(value2, "z-index", value));
+      /^-?\d+$/.test(zIndexValue) &&
+        childLayout.positioned &&
+        !model.hasAuthoredStyle(childTid, "z-index") &&
+        model.setStyleProperty(childTid, "z-index", zIndexValue));
   }
-  return input.unwrapElement(options);
+  return model.unwrapElement(tid);
 }
 export {
-  LayoutUngroupingLabel,
-  LayoutUngroupingLabel_2,
-  LayoutUngroupingLabel_3,
-  LayoutUngroupingLabel_4,
+  componentInstanceMessage as LayoutUngroupingLabel,
+  slideMessage as LayoutUngroupingLabel_2,
+  repeatedLayerMessage as LayoutUngroupingLabel_3,
+  drawingPartMessage as LayoutUngroupingLabel_4,
   NothingToUngroupSelectAGroupMessage,
   selectionUngroupRefusal,
-  ThisComponentManagesItselfSoItMessage_2,
+  selfManagedComponentMessage as ThisComponentManagesItselfSoItMessage_2,
   ungroupElementRefusal,
   ungroupModelElement,
 };
@@ -108,13 +108,13 @@ export function installEditorLayoutUngrouping(): () => void {
   return () => {
     NothingToUngroupSelectAGroupMessage =
       uiMessage("inspector.ungrouping.nothingToUngroupSelectA");
-    ThisComponentManagesItselfSoItMessage_2 =
+    selfManagedComponentMessage =
       uiMessage("inspector.ungrouping.thisComponentManagesItselfSo");
-    LayoutUngroupingLabel = uiMessage("inspector.ungrouping.aComponentInstanceCanT");
-    LayoutUngroupingLabel_2 =
+    componentInstanceMessage = uiMessage("inspector.ungrouping.aComponentInstanceCanT");
+    slideMessage =
       uiMessage("inspector.ungrouping.aSlideCanTBe");
-    LayoutUngroupingLabel_3 =
+    repeatedLayerMessage =
       uiMessage("inspector.ungrouping.aRepeatedOrConditionalLayer");
-    LayoutUngroupingLabel_4 = uiMessage("inspector.ungrouping.partsOfADrawingCan");
+    drawingPartMessage = uiMessage("inspector.ungrouping.partsOfADrawingCan");
   };
 }

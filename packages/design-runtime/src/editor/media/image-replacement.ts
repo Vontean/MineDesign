@@ -8,174 +8,174 @@ import { insertUploadedFiles, StyleValue } from "../insert/file-drops";
 import { MediaObjectCropTest } from "./object-crop";
 
 function imageElementSizing(
-  input?: Dynamic,
-  options?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
   element?: Dynamic,
 ): Dynamic {
-  let attribute: Dynamic = element.getAttribute("width"),
-    attribute2: Dynamic = element.getAttribute("height"),
-    value: Dynamic = input.inlineStyleValue(options, "width") || null,
-    value2: Dynamic = input.inlineStyleValue(options, "height") || null,
-    value3: Dynamic = input.inlineStyleValue(options, "aspect-ratio") || null,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 != null && input2 !== "auto";
+  let widthAttribute: Dynamic = element.getAttribute("width"),
+    heightAttribute: Dynamic = element.getAttribute("height"),
+    styleWidth: Dynamic = model.inlineStyleValue(tid, "width") || null,
+    styleHeight: Dynamic = model.inlineStyleValue(tid, "height") || null,
+    styleAspectRatio: Dynamic = model.inlineStyleValue(tid, "aspect-ratio") || null,
+    isExplicit: Dynamic = (cssValue?: Dynamic): Dynamic =>
+      cssValue != null && cssValue !== "auto";
   return {
     pin:
-      (!!attribute &&
-        !!attribute2 &&
-        value === `${attribute}px` &&
-        value3 === `${attribute} / ${attribute2}` &&
-        !callback(value2)) ||
-      (!attribute &&
-        !attribute2 &&
-        !callback(value) &&
-        !callback(value2) &&
-        !callback(value3)),
+      (!!widthAttribute &&
+        !!heightAttribute &&
+        styleWidth === `${widthAttribute}px` &&
+        styleAspectRatio === `${widthAttribute} / ${heightAttribute}` &&
+        !isExplicit(styleHeight)) ||
+      (!widthAttribute &&
+        !heightAttribute &&
+        !isExplicit(styleWidth) &&
+        !isExplicit(styleHeight) &&
+        !isExplicit(styleAspectRatio)),
     old: {
-      width: attribute,
-      height: attribute2,
-      styleWidth: value,
-      styleHeight: value2,
-      styleAspectRatio: value3,
+      width: widthAttribute,
+      height: heightAttribute,
+      styleWidth: styleWidth,
+      styleHeight: styleHeight,
+      styleAspectRatio: styleAspectRatio,
     },
   };
 }
-async function replaceSelectedImage(input?: Dynamic): Promise<Dynamic> {
+async function replaceSelectedImage(params?: Dynamic): Promise<Dynamic> {
   let {
-      file: value,
-      el: value2,
-      getModel: value3,
-      upload: value4,
-      pushUndo: value5,
-      afterPatch: value6,
-      recordSettled: value7,
-    }: Dynamic = input,
-    value8: Dynamic = input.isCurrent ?? ((): Dynamic => true),
-    value9: Dynamic = input.preview ?? previewImageFile,
-    value10: Dynamic = parseInt(
-      value2.getAttribute(DcTplAttribute) ?? "-1",
+      file: file,
+      el: targetEl,
+      getModel: getModel,
+      upload: upload,
+      pushUndo: pushUndo,
+      afterPatch: afterPatch,
+      recordSettled: recordSettled,
+    }: Dynamic = params,
+    isCurrent: Dynamic = params.isCurrent ?? ((): Dynamic => true),
+    previewFile: Dynamic = params.preview ?? previewImageFile,
+    tid: Dynamic = parseInt(
+      targetEl.getAttribute(DcTplAttribute) ?? "-1",
       10,
     ),
-    attribute: Dynamic = value2.getAttribute("src"),
-    attribute2: Dynamic = value2.getAttribute("alt"),
-    value11: Dynamic = imageElementSizing(value3(), value10, value2),
-    state: Dynamic = {
-      width: value11.old.width,
-      height: value11.old.height,
-      ...(value11.pin
+    srcAttribute: Dynamic = targetEl.getAttribute("src"),
+    altAttribute: Dynamic = targetEl.getAttribute("alt"),
+    sizing: Dynamic = imageElementSizing(getModel(), tid, targetEl),
+    revertAttributes: Dynamic = {
+      width: sizing.old.width,
+      height: sizing.old.height,
+      ...(sizing.pin
         ? {
-            [`${StyleValue}width`]: value11.old.styleWidth,
-            [`${StyleValue}height`]: value11.old.styleHeight,
+            [`${StyleValue}width`]: sizing.old.styleWidth,
+            [`${StyleValue}height`]: sizing.old.styleHeight,
             [`${StyleValue}aspect-ratio`]:
-              value11.old.styleAspectRatio,
+              sizing.old.styleAspectRatio,
           }
         : {}),
     },
-    flag: Dynamic = false,
-    value12: Dynamic = null,
-    value13: Dynamic = null,
-    value14: Dynamic = null,
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (!("alt" in input2) || attribute2 == null) return input2;
-      let { alt: value15, ...value16 }: Dynamic = input2;
-      return value16;
+    hasPushedUndo: Dynamic = false,
+    savedObjectStyles: Dynamic = null,
+    relName: Dynamic = null,
+    uploadedSrc: Dynamic = null,
+    withoutGeneratedAlt: Dynamic = (attrs?: Dynamic): Dynamic => {
+      if (!("alt" in attrs) || altAttribute == null) return attrs;
+      let { alt: omittedAlt, ...restAttrs }: Dynamic = attrs;
+      return restAttrs;
     },
-    flag2: Dynamic = false;
+    isApplied: Dynamic = false;
   return {
     failed:
       (await insertUploadedFiles({
-        files: [value],
-        targets: [value2],
-        upload: async (input2?: Dynamic): Promise<Dynamic> => {
-          let value15: Dynamic = await value4(input2);
-          value13 = value15.relName;
-          value14 = value15.src;
-          return value15;
+        files: [file],
+        targets: [targetEl],
+        upload: async (uploadFile?: Dynamic): Promise<Dynamic> => {
+          let uploaded: Dynamic = await upload(uploadFile);
+          relName = uploaded.relName;
+          uploadedSrc = uploaded.src;
+          return uploaded;
         },
-        preview: value9,
-        patch: (element?: Dynamic, options?: Dynamic): Dynamic => {
-          if (!value8()) return true;
-          let value15: Dynamic = value3(),
-            value16: Dynamic = parseInt(
+        preview: previewFile,
+        patch: (element?: Dynamic, attrs?: Dynamic): Dynamic => {
+          if (!isCurrent()) return true;
+          let model: Dynamic = getModel(),
+            elementTid: Dynamic = parseInt(
               element.getAttribute(DcTplAttribute) ?? "-1",
               10,
             );
-          if (value16 < 0 || value15.element(value16) !== element)
+          if (elementTid < 0 || model.element(elementTid) !== element)
             return false;
-          let value17: Dynamic = callback(options),
-            value18: Dynamic = Object.entries(value17).filter(
-              ([input2, input3]: Dynamic): Dynamic =>
-                input2.startsWith(StyleValue)
-                  ? (value15.inlineStyleValue(
-                      value16,
-                      input2.slice(StyleValue.length),
-                    ) || null) !== input3
-                  : element.getAttribute(input2) !== input3,
+          let attrsToApply: Dynamic = withoutGeneratedAlt(attrs),
+            changes: Dynamic = Object.entries(attrsToApply).filter(
+              ([key, expected]: Dynamic): Dynamic =>
+                key.startsWith(StyleValue)
+                  ? (model.inlineStyleValue(
+                      elementTid,
+                      key.slice(StyleValue.length),
+                    ) || null) !== expected
+                  : element.getAttribute(key) !== expected,
             );
-          if (value18.length === 0) return true;
-          flag || (value5(), (flag = true));
-          for (let [value20, value21] of value18 as Dynamic)
-            value20.startsWith(StyleValue)
-              ? value15.setStyleProperty(
-                  value16,
-                  value20.slice(StyleValue.length),
-                  value21,
+          if (changes.length === 0) return true;
+          hasPushedUndo || (pushUndo(), (hasPushedUndo = true));
+          for (let [key, newValue] of changes as Dynamic)
+            key.startsWith(StyleValue)
+              ? model.setStyleProperty(
+                  elementTid,
+                  key.slice(StyleValue.length),
+                  newValue,
                 )
-              : value15.setAttribute(value16, value20, value21);
-          let value19: Dynamic = value18.find(
-            ([input2]: Dynamic): Dynamic => input2 === "src",
+              : model.setAttribute(elementTid, key, newValue);
+          let srcChange: Dynamic = changes.find(
+            ([key]: Dynamic): Dynamic => key === "src",
           );
-          if (value19 && (value19[1] ?? "") === (attribute ?? "")) {
-            for (let [value20, value21] of (value12 ?? []) as Dynamic)
-              value15.setStyleProperty(value16, value20, value21);
-            value12 = null;
+          if (srcChange && (srcChange[1] ?? "") === (srcAttribute ?? "")) {
+            for (let [property, propertyValue] of (savedObjectStyles ?? []) as Dynamic)
+              model.setStyleProperty(elementTid, property, propertyValue);
+            savedObjectStyles = null;
           } else if (
-            value19 &&
-            value12 === null &&
-            ((value12 = [
+            srcChange &&
+            savedObjectStyles === null &&
+            ((savedObjectStyles = [
               "object-fit",
               "object-view-box",
               "object-position",
             ].map(
-              (input2?: Dynamic): Dynamic => [
-                input2,
-                value15.inlineStyleValue(value16, input2) || null,
+              (property?: Dynamic): Dynamic => [
+                property,
+                model.inlineStyleValue(elementTid, property) || null,
               ],
             )),
             MediaObjectCropTest(
-              (input2?: Dynamic): Dynamic =>
-                value15.inlineStyleValue(value16, input2),
+              (property?: Dynamic): Dynamic =>
+                model.inlineStyleValue(elementTid, property),
             ))
           )
-            for (let value20 of [
+            for (let property of [
               "object-view-box",
               "object-position",
             ] as Dynamic)
-              value15.setStyleProperty(value16, value20, null);
-          value14 != null && options.src === value14 && (flag2 = true);
-          value6();
+              model.setStyleProperty(elementTid, property, null);
+          uploadedSrc != null && attrs.src === uploadedSrc && (isApplied = true);
+          afterPatch();
           return true;
         },
-        relocate: (input2?: Dynamic): Dynamic =>
-          value3().elementsByAttr("src", input2)[0] ?? null,
+        relocate: (src?: Dynamic): Dynamic =>
+          getModel().elementsByAttr("src", src)[0] ?? null,
         readSrc: (element?: Dynamic): Dynamic => element.getAttribute("src"),
-        onSettled: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          value7({
-            src: input2,
-            attrs: callback(options),
+        onSettled: (src?: Dynamic, attrs?: Dynamic): Dynamic =>
+          recordSettled({
+            src: src,
+            attrs: withoutGeneratedAlt(attrs),
           }),
-        previewAttrs: (input2?: Dynamic): Dynamic =>
-          value11.pin
+        previewAttrs: (size?: Dynamic): Dynamic =>
+          sizing.pin
             ? {
-                width: String(input2.width),
-                height: String(input2.height),
-                [`${StyleValue}width`]: `${input2.width}px`,
+                width: String(size.width),
+                height: String(size.height),
+                [`${StyleValue}width`]: `${size.width}px`,
                 [`${StyleValue}height`]: "auto",
-                [`${StyleValue}aspect-ratio`]: `${input2.width} / ${input2.height}`,
+                [`${StyleValue}aspect-ratio`]: `${size.width} / ${size.height}`,
               }
             : {},
-        revertAttrs: state,
-        yieldCleanupAttrs: value11.pin
+        revertAttrs: revertAttributes,
+        yieldCleanupAttrs: sizing.pin
           ? {
               width: null,
               height: null,
@@ -184,12 +184,12 @@ async function replaceSelectedImage(input?: Dynamic): Promise<Dynamic> {
               [`${StyleValue}aspect-ratio`]: null,
             }
           : {},
-        placeholderSrc: attribute ?? "",
+        placeholderSrc: srcAttribute ?? "",
         swapOverPlaceholder: false,
       })) > 0,
-    relName: value13,
-    src: value14,
-    applied: flag2,
+    relName: relName,
+    src: uploadedSrc,
+    applied: isApplied,
   };
 }
 export {

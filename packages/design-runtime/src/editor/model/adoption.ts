@@ -4,36 +4,36 @@ import {
 } from "../../runtime-types";
 import { modelSelectionIdentityGuard, relocateModelElementIds } from "./selection-relocation";
 
-function adoptModelAndRelocateSelection(input?: Dynamic): Dynamic {
-  let value: Dynamic = null,
-    value2: Dynamic;
+function adoptModelAndRelocateSelection(adoption?: Dynamic): Dynamic {
+  let relocateSelection: Dynamic = null,
+    ownedModel: Dynamic;
   try {
-    input.adopt();
-    value2 = input.own();
-    if (value2 === undefined || value2 === input.prev) return;
-    let prev: Dynamic = input.prev,
-      value3: Dynamic = value2;
+    adoption.adopt();
+    ownedModel = adoption.own();
+    if (ownedModel === undefined || ownedModel === adoption.prev) return;
+    let prev: Dynamic = adoption.prev,
+      ownedModelSnapshot: Dynamic = ownedModel;
     prev &&
-      (value = (input2?: Dynamic): Dynamic =>
-        relocateModelElementIds(prev, value3, input2));
-  } catch (value3: Dynamic) {
-    input.log("the selection could not be followed and is dropped", value3);
+      (relocateSelection = (ids?: Dynamic): Dynamic =>
+        relocateModelElementIds(prev, ownedModelSnapshot, ids));
+  } catch (relocationError: Dynamic) {
+    adoption.log("the selection could not be followed and is dropped", relocationError);
   }
   try {
-    input.pending.drop();
-    let value3: Dynamic = value2;
-    input.tellHost(
-      value,
-      !value3 || input.heldElsewhere()
+    adoption.pending.drop();
+    let ownedModelSnapshot: Dynamic = ownedModel;
+    adoption.tellHost(
+      relocateSelection,
+      !ownedModelSnapshot || adoption.heldElsewhere()
         ? null
-        : (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            input.pending.arm(
-              options,
-              modelSelectionIdentityGuard(value3, input2),
+        : (ids?: Dynamic, armOptions?: Dynamic): Dynamic =>
+            adoption.pending.arm(
+              armOptions,
+              modelSelectionIdentityGuard(ownedModelSnapshot, ids),
             ),
     );
-  } catch (value3: Dynamic) {
-    input.log("the host could not correct its selection", value3);
+  } catch (hostError: Dynamic) {
+    adoption.log("the host could not correct its selection", hostError);
   }
 }
 export {

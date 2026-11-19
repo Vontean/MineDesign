@@ -6,357 +6,357 @@ import { normalizeTextStyleSnapshot } from "../css/edit-validation";
 import { restoreGroupPosition } from "../insert/targets";
 import { containsUneditableSelection } from "../selection/element-order";
 
-var LayoutMoveElementsLeftRightTopConfig: Dynamic;
-var LayoutMoveElementsGetAttribute: Dynamic;
+var overriddenPositionProps: Dynamic;
+var readTemplateId: Dynamic;
 function freezeInheritedTextStyle(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  sourceStyles?: Dynamic,
 ): Dynamic {
   let entries: Dynamic = new Map();
-  for (let [value, value2] of normalizeTextStyleSnapshot(
-    context,
+  for (let [property, propertyValue] of normalizeTextStyleSnapshot(
+    sourceStyles,
   ) as Dynamic)
-    input.hasAuthoredStyle(options, value) ||
-      (input.setStyleProperty(options, value, value2),
-      entries.set(value, value2));
+    model.hasAuthoredStyle(tid, property) ||
+      (model.setStyleProperty(tid, property, propertyValue),
+      entries.set(property, propertyValue));
   return entries;
 }
 function displacedDropFollowers(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  model?: Dynamic,
+  followers?: Dynamic,
+  draggedTid?: Dynamic,
+  newParentTid?: Dynamic,
+  shouldMarkFollowers?: Dynamic,
 ): Dynamic {
-  let items: Dynamic = [];
-  for (let value2 of options as Dynamic) {
-    let value3: Dynamic = input.element(value2.tid);
+  let displacedItems: Dynamic = [];
+  for (let follower of followers as Dynamic) {
+    let followerEl: Dynamic = model.element(follower.tid);
     if (
-      !value3 ||
-      value2.tid === context ||
-      containsUneditableSelection(input, [value2.tid]) ||
-      input.isWithin(context, value2.tid)
+      !followerEl ||
+      follower.tid === draggedTid ||
+      containsUneditableSelection(model, [follower.tid]) ||
+      model.isWithin(draggedTid, follower.tid)
     )
       continue;
-    let value4: Dynamic = input.parentTid(value2.tid);
-    if (value == null) {
-      if (value4 != null && !input.moveRelative(value2.tid, null, "root-end"))
+    let oldParentTid: Dynamic = model.parentTid(follower.tid);
+    if (newParentTid == null) {
+      if (oldParentTid != null && !model.moveRelative(follower.tid, null, "root-end"))
         continue;
     } else if (
-      value4 !== value &&
-      (input.isWithin(value2.tid, value) ||
-        !input.moveRelative(value2.tid, value, "into"))
+      oldParentTid !== newParentTid &&
+      (model.isWithin(follower.tid, newParentTid) ||
+        !model.moveRelative(follower.tid, newParentTid, "into"))
     )
       continue;
-    let value5: Dynamic = input.inlineStyleValue(value2.tid, "position");
-    value5 !== "absolute" &&
-      value5 !== "fixed" &&
-      input.setStyleProperty(value2.tid, "position", "absolute");
-    for (let [value7, value8] of Object.entries(value2.absStyles) as Dynamic)
-      if (value7 !== "position") {
-        input.setStyleProperty(value2.tid, value7, value8);
-        for (let value9 of (LayoutMoveElementsLeftRightTopConfig[value7] ??
+    let positionValue: Dynamic = model.inlineStyleValue(follower.tid, "position");
+    positionValue !== "absolute" &&
+      positionValue !== "fixed" &&
+      model.setStyleProperty(follower.tid, "position", "absolute");
+    for (let [property, propertyValue] of Object.entries(follower.absStyles) as Dynamic)
+      if (property !== "position") {
+        model.setStyleProperty(follower.tid, property, propertyValue);
+        for (let resetProperty of (overriddenPositionProps[property] ??
           []) as Dynamic)
-          input.setStyleProperty(value2.tid, value9, null);
+          model.setStyleProperty(follower.tid, resetProperty, null);
       }
-    let value6: Dynamic =
-      input.parentTid(value2.tid) !== value4
-        ? freezeInheritedTextStyle(input, value2.tid, value2.freezeStyle)
+    let pinnedStyles: Dynamic =
+      model.parentTid(follower.tid) !== oldParentTid
+        ? freezeInheritedTextStyle(model, follower.tid, follower.freezeStyle)
         : new Map();
-    extra &&
-      input.setAttribute(
-        value2.tid,
+    shouldMarkFollowers &&
+      model.setAttribute(
+        follower.tid,
         "data-dc-drag-follower",
-        String(value2.tid),
+        String(follower.tid),
       );
-    items.push({
-      el: value3,
-      pinned: value6,
-      freezeStyle: value2.freezeStyle,
+    displacedItems.push({
+      el: followerEl,
+      pinned: pinnedStyles,
+      freezeStyle: follower.freezeStyle,
     });
   }
-  return items;
+  return displacedItems;
 }
 function sameParentDropGroup(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  group?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.parentTid(options);
-  if (!context?.length || value == null) return null;
-  let value2: Dynamic = context
-    .map((input2?: Dynamic): Dynamic => input2.tid)
+  let parentTid: Dynamic = model.parentTid(tid);
+  if (!group?.length || parentTid == null) return null;
+  let siblingTids: Dynamic = group
+    .map((member?: Dynamic): Dynamic => member.tid)
     .filter(
-      (input2?: Dynamic): Dynamic =>
-        input2 !== options &&
-        input.parentTid(input2) === value &&
-        !input.isUneditable(input2) &&
-        !containsUneditableSelection(input, [input2]),
+      (siblingTid?: Dynamic): Dynamic =>
+        siblingTid !== tid &&
+        model.parentTid(siblingTid) === parentTid &&
+        !model.isUneditable(siblingTid) &&
+        !containsUneditableSelection(model, [siblingTid]),
     );
-  return value2.length > 0 ? [options, ...value2] : null;
+  return siblingTids.length > 0 ? [tid, ...siblingTids] : null;
 }
-function elementMoveRefusal(input?: Dynamic, options?: Dynamic): Dynamic {
+function elementMoveRefusal(model?: Dynamic, move?: Dynamic): Dynamic {
   if (
-    options.absolute &&
-    options.breakout !== true &&
-    !options.alt &&
-    options.previewBlock === true
+    move.absolute &&
+    move.breakout !== true &&
+    !move.alt &&
+    move.previewBlock === true
   )
     return "preview-block";
-  let value: Dynamic = input.element(options.tid);
-  if (!value) return "missing";
-  if (options.targetTid != null && !input.element(options.targetTid))
+  let element: Dynamic = model.element(move.tid);
+  if (!element) return "missing";
+  if (move.targetTid != null && !model.element(move.targetTid))
     return "target-missing";
   if (
-    containsUneditableSelection(input, [options.tid]) ||
-    (options.targetTid != null &&
-      containsUneditableSelection(input, [options.targetTid]))
+    containsUneditableSelection(model, [move.tid]) ||
+    (move.targetTid != null &&
+      containsUneditableSelection(model, [move.targetTid]))
   )
     return "loop-driven";
-  if (input.targetParentLocked(options.targetTid, options.position))
+  if (model.targetParentLocked(move.targetTid, move.position))
     return "locked-parent";
   if (
-    options.targetTid != null &&
-    !options.alt &&
-    input.isWithin(options.tid, options.targetTid) &&
-    options.position === "into"
+    move.targetTid != null &&
+    !move.alt &&
+    model.isWithin(move.tid, move.targetTid) &&
+    move.position === "into"
   )
     return "no-op";
-  if (options.alt && !value.parentNode) return "no-parent";
-  if (!options.absolute && !options.alt) {
+  if (move.alt && !element.parentNode) return "no-parent";
+  if (!move.absolute && !move.alt) {
     if (
-      options.block
-        ? input.isBlockInPlace(
-            options.block,
-            options.targetTid,
-            options.position,
+      move.block
+        ? model.isBlockInPlace(
+            move.block,
+            move.targetTid,
+            move.position,
           )
-        : input.isInPlace(options.tid, options.targetTid, options.position)
+        : model.isInPlace(move.tid, move.targetTid, move.position)
     )
       return "in-place";
     if (
-      !(options.block
-        ? input.canMoveBlockRelative(
-            options.block,
-            options.targetTid,
-            options.position,
+      !(move.block
+        ? model.canMoveBlockRelative(
+            move.block,
+            move.targetTid,
+            move.position,
           )
-        : input.canMoveRelative(
-            options.tid,
-            options.targetTid,
-            options.position,
+        : model.canMoveRelative(
+            move.tid,
+            move.targetTid,
+            move.position,
           ))
     )
       return "model-refused";
   }
   return null;
 }
-function moveModelElement(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (elementMoveRefusal(input.model, options) !== null) return null;
-  let value: Dynamic =
-      options.targetTid != null
-        ? input.model.element(options.targetTid)
+function moveModelElement(host?: Dynamic, move?: Dynamic): Dynamic {
+  if (elementMoveRefusal(host.model, move) !== null) return null;
+  let targetEl: Dynamic =
+      move.targetTid != null
+        ? host.model.element(move.targetTid)
         : null,
-    tid: Dynamic = options.tid;
-  if (options.alt) {
-    let value9: Dynamic = input.model.duplicateElement(options.tid);
-    input.model.restamp();
-    tid = LayoutMoveElementsGetAttribute(value9);
+    tid: Dynamic = move.tid;
+  if (move.alt) {
+    let duplicate: Dynamic = host.model.duplicateElement(move.tid);
+    host.model.restamp();
+    tid = readTemplateId(duplicate);
   }
-  let value2: Dynamic = value ? LayoutMoveElementsGetAttribute(value) : null,
-    value3: Dynamic = input.model.element(tid),
-    value4: Dynamic = input.model.parentTid(tid),
-    items: Dynamic = [],
-    items2: Dynamic = [],
-    items3: Dynamic = [];
-  if (options.absolute) {
-    value2 != null && input.model.parentTid(tid) !== value2
-      ? input.model.moveRelative(tid, value2, "into")
-      : value2 == null &&
-        options.position === "root-end" &&
-        input.model.parentTid(tid) != null &&
-        input.model.moveRelative(tid, null, "root-end");
-    let value9: Dynamic = input.model.inlineStyleValue(tid, "position");
-    if (value9 !== "absolute" && value9 !== "fixed") {
-      let value10: Dynamic =
-        options.fixed === true &&
-        value2 == null &&
-        options.position === "into";
-      input.model.setStyleProperty(
+  let targetTid: Dynamic = targetEl ? readTemplateId(targetEl) : null,
+    movingEl: Dynamic = host.model.element(tid),
+    originalParentTid: Dynamic = host.model.parentTid(tid),
+    groupTids: Dynamic = [],
+    displacedFollowers: Dynamic = [],
+    blockMembers: Dynamic = [];
+  if (move.absolute) {
+    targetTid != null && host.model.parentTid(tid) !== targetTid
+      ? host.model.moveRelative(tid, targetTid, "into")
+      : targetTid == null &&
+        move.position === "root-end" &&
+        host.model.parentTid(tid) != null &&
+        host.model.moveRelative(tid, null, "root-end");
+    let positionValue: Dynamic = host.model.inlineStyleValue(tid, "position");
+    if (positionValue !== "absolute" && positionValue !== "fixed") {
+      let shouldUseFixed: Dynamic =
+        move.fixed === true &&
+        targetTid == null &&
+        move.position === "into";
+      host.model.setStyleProperty(
         tid,
         "position",
-        value10 ? "fixed" : "absolute",
+        shouldUseFixed ? "fixed" : "absolute",
       );
     }
-    for (let [value10, value11] of Object.entries(
-      options.absStyles ?? {},
+    for (let [property, propertyValue] of Object.entries(
+      move.absStyles ?? {},
     ) as Dynamic)
-      if (value10 !== "position") {
-        input.model.setStyleProperty(tid, value10, value11);
-        for (let value12 of (LayoutMoveElementsLeftRightTopConfig[value10] ??
+      if (property !== "position") {
+        host.model.setStyleProperty(tid, property, propertyValue);
+        for (let resetProperty of (overriddenPositionProps[property] ??
           []) as Dynamic)
-          input.model.setStyleProperty(tid, value12, null);
+          host.model.setStyleProperty(tid, resetProperty, null);
       }
-    (options.parentNeedsPositioning === true ||
-      (options.targetTid != null &&
-        options.previewPositioned?.has(options.targetTid) === true)) &&
-      value2 != null &&
-      !input.model.inlineStyleValue(value2, "position") &&
-      input.model.setStyleProperty(value2, "position", "relative");
-    options.flatten &&
-      !options.alt &&
+    (move.parentNeedsPositioning === true ||
+      (move.targetTid != null &&
+        move.previewPositioned?.has(move.targetTid) === true)) &&
+      targetTid != null &&
+      !host.model.inlineStyleValue(targetTid, "position") &&
+      host.model.setStyleProperty(targetTid, "position", "relative");
+    move.flatten &&
+      !move.alt &&
       restoreGroupPosition(
-        input.model,
-        options.flatten,
+        host.model,
+        move.flatten,
         tid,
-        value4,
+        originalParentTid,
       );
     if (
-      options.followers &&
-      value2 == null &&
-      options.position === "into" &&
-      !options.alt
+      move.followers &&
+      targetTid == null &&
+      move.position === "into" &&
+      !move.alt
     ) {
-      let value10: Dynamic = input.model.parentTid(tid);
-      for (let value11 of options.followers as Dynamic) {
+      let sharedParentTid: Dynamic = host.model.parentTid(tid);
+      for (let follower of move.followers as Dynamic) {
         if (
-          value11.tid === tid ||
-          !input.model.element(value11.tid) ||
-          input.model.parentTid(value11.tid) !== value10 ||
-          containsUneditableSelection(input.model, [value11.tid])
+          follower.tid === tid ||
+          !host.model.element(follower.tid) ||
+          host.model.parentTid(follower.tid) !== sharedParentTid ||
+          containsUneditableSelection(host.model, [follower.tid])
         )
           continue;
-        let value12: Dynamic = input.model.inlineStyleValue(
-          value11.tid,
+        let followerPosition: Dynamic = host.model.inlineStyleValue(
+          follower.tid,
           "position",
         );
-        value12 !== "absolute" &&
-          value12 !== "fixed" &&
-          input.model.setStyleProperty(
-            value11.tid,
+        followerPosition !== "absolute" &&
+          followerPosition !== "fixed" &&
+          host.model.setStyleProperty(
+            follower.tid,
             "position",
-            value11.fixed ? "fixed" : "absolute",
+            follower.fixed ? "fixed" : "absolute",
           );
-        for (let [value13, value14] of Object.entries(
-          value11.absStyles,
+        for (let [property, propertyValue] of Object.entries(
+          follower.absStyles,
         ) as Dynamic)
-          if (value13 !== "position") {
-            input.model.setStyleProperty(value11.tid, value13, value14);
-            for (let value15 of (LayoutMoveElementsLeftRightTopConfig[
-              value13
+          if (property !== "position") {
+            host.model.setStyleProperty(follower.tid, property, propertyValue);
+            for (let resetProperty of (overriddenPositionProps[
+              property
             ] ?? []) as Dynamic)
-              input.model.setStyleProperty(value11.tid, value15, null);
+              host.model.setStyleProperty(follower.tid, resetProperty, null);
           }
-        items.push(value11.tid);
+        groupTids.push(follower.tid);
       }
     } else
-      options.followers &&
-        options.breakout === true &&
-        !options.alt &&
-        (items2 = displacedDropFollowers(
-          input.model,
-          options.followers,
+      move.followers &&
+        move.breakout === true &&
+        !move.alt &&
+        (displacedFollowers = displacedDropFollowers(
+          host.model,
+          move.followers,
           tid,
-          value2,
+          targetTid,
           false,
         ));
   } else {
-    let value9: Dynamic = (options.block ?? []).filter(
-        (input2?: Dynamic): Dynamic => input2 !== tid,
+    let otherBlockTids: Dynamic = (move.block ?? []).filter(
+        (blockTid?: Dynamic): Dynamic => blockTid !== tid,
       ),
-      value10: Dynamic = value9.map(
-        (input2?: Dynamic): Dynamic => input.model.element(input2),
+      blockEls: Dynamic = otherBlockTids.map(
+        (blockTid?: Dynamic): Dynamic => host.model.element(blockTid),
       );
-    (options.block
-      ? input.model.moveBlockRelative(options.block, value2, options.position)
-      : input.model.moveRelative(tid, value2, options.position)) &&
-      value9.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value11: Dynamic = value10[options2];
-        value11 &&
-          items3.push({
-            el: value11,
-            tid: input2,
-            frozen: options.group?.find(
-              (input3?: Dynamic): Dynamic => input3.tid === input2,
+    (move.block
+      ? host.model.moveBlockRelative(move.block, targetTid, move.position)
+      : host.model.moveRelative(tid, targetTid, move.position)) &&
+      otherBlockTids.forEach((blockTid?: Dynamic, blockIndex?: Dynamic): Dynamic => {
+        let blockEl: Dynamic = blockEls[blockIndex];
+        blockEl &&
+          blockMembers.push({
+            el: blockEl,
+            tid: blockTid,
+            frozen: move.group?.find(
+              (member?: Dynamic): Dynamic => member.tid === blockTid,
             )?.freezeStyle,
           });
       });
-    if (options.clearPositioning === true)
-      for (let value11 of [
+    if (move.clearPositioning === true)
+      for (let property of [
         "position",
         "left",
         "top",
         "right",
         "bottom",
       ] as Dynamic)
-        input.model.setStyleProperty(tid, value11, null);
+        host.model.setStyleProperty(tid, property, null);
   }
-  let value5: Dynamic = input.model.parentTid(tid) !== value4,
-    value6: Dynamic = value5
-      ? freezeInheritedTextStyle(input.model, tid, options.freezeStyle)
+  let reparented: Dynamic = host.model.parentTid(tid) !== originalParentTid,
+    pinnedStyles: Dynamic = reparented
+      ? freezeInheritedTextStyle(host.model, tid, move.freezeStyle)
       : new Map(),
-    value7: Dynamic = value5
-      ? items3.map(
-          (input2?: Dynamic): Dynamic => ({
-            el: input2.el,
+    blockPins: Dynamic = reparented
+      ? blockMembers.map(
+          (member?: Dynamic): Dynamic => ({
+            el: member.el,
             pinned: freezeInheritedTextStyle(
-              input.model,
-              input2.tid,
-              input2.frozen,
+              host.model,
+              member.tid,
+              member.frozen,
             ),
-            frozen: input2.frozen,
+            frozen: member.frozen,
           }),
         )
       : [];
-  input.model.restamp();
-  let value8: Dynamic = LayoutMoveElementsGetAttribute(value3);
-  for (let value9 of items2 as Dynamic) {
-    let value10: Dynamic = LayoutMoveElementsGetAttribute(value9.el);
-    value10 >= 0 && items.push(value10);
+  host.model.restamp();
+  let newTid: Dynamic = readTemplateId(movingEl);
+  for (let displaced of displacedFollowers as Dynamic) {
+    let displacedTid: Dynamic = readTemplateId(displaced.el);
+    displacedTid >= 0 && groupTids.push(displacedTid);
   }
-  for (let value9 of items3 as Dynamic)
-    items.push(LayoutMoveElementsGetAttribute(value9.el));
-  let items4: Dynamic = [];
-  value6.size > 0 &&
-    value8 >= 0 &&
-    items4.push({
-      tid: value8,
-      el: value3,
-      pinned: value6,
-      freeze: options.freezeStyle,
+  for (let member of blockMembers as Dynamic)
+    groupTids.push(readTemplateId(member.el));
+  let pins: Dynamic = [];
+  pinnedStyles.size > 0 &&
+    newTid >= 0 &&
+    pins.push({
+      tid: newTid,
+      el: movingEl,
+      pinned: pinnedStyles,
+      freeze: move.freezeStyle,
     });
-  for (let value9 of items2 as Dynamic) {
-    let value10: Dynamic = LayoutMoveElementsGetAttribute(value9.el);
-    value9.pinned.size > 0 &&
-      value10 >= 0 &&
-      items4.push({
-        tid: value10,
-        el: value9.el,
-        pinned: value9.pinned,
-        freeze: value9.freezeStyle,
+  for (let displaced of displacedFollowers as Dynamic) {
+    let displacedTid: Dynamic = readTemplateId(displaced.el);
+    displaced.pinned.size > 0 &&
+      displacedTid >= 0 &&
+      pins.push({
+        tid: displacedTid,
+        el: displaced.el,
+        pinned: displaced.pinned,
+        freeze: displaced.freezeStyle,
       });
   }
-  for (let value9 of value7 as Dynamic) {
-    let value10: Dynamic = LayoutMoveElementsGetAttribute(value9.el);
-    value9.pinned.size > 0 &&
-      value10 >= 0 &&
-      items4.push({
-        tid: value10,
-        el: value9.el,
-        pinned: value9.pinned,
-        freeze: value9.frozen,
+  for (let blockPin of blockPins as Dynamic) {
+    let pinTid: Dynamic = readTemplateId(blockPin.el);
+    blockPin.pinned.size > 0 &&
+      pinTid >= 0 &&
+      pins.push({
+        tid: pinTid,
+        el: blockPin.el,
+        pinned: blockPin.pinned,
+        freeze: blockPin.frozen,
       });
   }
   return {
-    newTid: value8,
-    movingEl: value3,
-    groupTids: items,
-    reparented: value5,
-    pins: items4,
-    kind: options.alt
+    newTid: newTid,
+    movingEl: movingEl,
+    groupTids: groupTids,
+    reparented: reparented,
+    pins: pins,
+    kind: move.alt
       ? "duplicate-drag"
-      : options.breakout === true
+      : move.breakout === true
         ? "breakout-drag"
         : "move-drag",
   };
@@ -365,14 +365,14 @@ export {
   displacedDropFollowers,
   elementMoveRefusal,
   freezeInheritedTextStyle,
-  LayoutMoveElementsGetAttribute,
-  LayoutMoveElementsLeftRightTopConfig,
+  readTemplateId as LayoutMoveElementsGetAttribute,
+  overriddenPositionProps as LayoutMoveElementsLeftRightTopConfig,
   moveModelElement,
   sameParentDropGroup,
 };
 export function installEditorLayoutMoveElements(): () => void {
   return () => {
-    LayoutMoveElementsLeftRightTopConfig = {
+    overriddenPositionProps = {
       left: ["right"],
       right: ["left"],
       top: ["bottom"],
@@ -387,7 +387,7 @@ export function installEditorLayoutMoveElements(): () => void {
         "grid-column-end",
       ],
     };
-    LayoutMoveElementsGetAttribute = (element?: Dynamic): Dynamic =>
+    readTemplateId = (element?: Dynamic): Dynamic =>
       parseInt(element.getAttribute("data-dc-tpl") ?? "-1", 10);
   };
 }

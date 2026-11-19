@@ -7,7 +7,7 @@ import {
 import { ComponentsSelectionRingPointPointStrokeGripHitConfig } from "../../cds/components/selection-ring";
 import { announce } from "../accessibility/announcer";
 import { cropIntoFrame, imageCropRect, resizeImageCropCorner, resizeImageCropFrame, sameImageCrop, translateImageCrop, zoomImageCrop } from "./crop-geometry";
-import { PropertiesSidesArrowLeftArrowRightArrowUpConfig, PropertiesSidesConstant, PropertiesSidesConstant_2, PropertiesSidesConstant_3, PropertiesSidesNESConfig, PropertiesSidesNESValues, PropertiesSidesNSEConfig, PropertiesSidesNwNeSeConfig, PropertiesSidesNwNeSeValues, reactPropertiesSides, RESIZE_EDGE_MIN_LENGTH_PX, RESIZE_HANDLE_HIT_SIZE_PX, RESIZE_HANDLE_LENGTH_PX, RESIZE_HANDLE_THICKNESS_PX } from "../properties/sides";
+import { PropertiesSidesArrowLeftArrowRightArrowUpConfig, PropertiesSidesConstant as wheelZoomSensitivity, PropertiesSidesConstant_2 as dimmedMediaOpacity, PropertiesSidesConstant_3 as keyboardZoomFactor, PropertiesSidesNESConfig, PropertiesSidesNESValues, PropertiesSidesNSEConfig, PropertiesSidesNwNeSeConfig, PropertiesSidesNwNeSeValues, reactPropertiesSides, RESIZE_EDGE_MIN_LENGTH_PX, RESIZE_HANDLE_HIT_SIZE_PX, RESIZE_HANDLE_LENGTH_PX, RESIZE_HANDLE_THICKNESS_PX } from "../properties/sides";
 
 function blurBeforeCrop(): Dynamic {
   let activeElement: Dynamic = (document as Dynamic).activeElement;
@@ -37,7 +37,7 @@ function MediaCropEditor({
   onSideStart: onSideStart,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactPropertiesSides.useRef)({
+  let latestPropsRef: Dynamic = (0, reactPropertiesSides.useRef)({
     frame: frame,
     natural: natural,
     crop: crop,
@@ -49,7 +49,7 @@ function MediaCropEditor({
     onGesture: onGesture,
     onFrame: onFrame,
   });
-  value.current = {
+  latestPropsRef.current = {
     frame: frame,
     natural: natural,
     crop: crop,
@@ -61,41 +61,41 @@ function MediaCropEditor({
     onGesture: onGesture,
     onFrame: onFrame,
   };
-  let value2: Dynamic = (0, reactPropertiesSides.useRef)(null),
-    value3: Dynamic = (0, reactPropertiesSides.useRef)(null),
-    value4: Dynamic = (0, reactPropertiesSides.useRef)({
+  let containerRef: Dynamic = (0, reactPropertiesSides.useRef)(null),
+    gestureRef: Dynamic = (0, reactPropertiesSides.useRef)(null),
+    frameOriginRef: Dynamic = (0, reactPropertiesSides.useRef)({
       x: 0,
       y: 0,
     }),
-    value5: Dynamic = (0, reactPropertiesSides.useRef)(false),
-    [value6, value7]: Dynamic = (0, reactPropertiesSides.useState)(
+    externalDragActiveRef: Dynamic = (0, reactPropertiesSides.useRef)(false),
+    [isDragging, setIsDragging]: Dynamic = (0, reactPropertiesSides.useState)(
       false,
     ),
-    [value8, value9]: Dynamic = (0, reactPropertiesSides.useState)(
+    [isShowingImageBounds, setIsShowingImageBounds]: Dynamic = (0, reactPropertiesSides.useState)(
       false,
     ),
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let current: Dynamic = value.current;
-      options && current.onFrame
-        ? ((value4.current = {
-            x: options.x,
-            y: options.y,
+    applyCrop: Dynamic = (nextCrop?: Dynamic, nextFrame?: Dynamic): Dynamic => {
+      let current: Dynamic = latestPropsRef.current;
+      nextFrame && current.onFrame
+        ? ((frameOriginRef.current = {
+            x: nextFrame.x,
+            y: nextFrame.y,
           }),
           current.onFrame({
-            crop: input,
-            frame: options,
+            crop: nextCrop,
+            frame: nextFrame,
           }))
-        : sameImageCrop(input, current.crop) ||
-          current.onLive(input);
+        : sameImageCrop(nextCrop, current.crop) ||
+          current.onLive(nextCrop);
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value3.current;
+    endGesture: Dynamic = (shouldRevert?: Dynamic): Dynamic => {
+      let current: Dynamic = gestureRef.current;
       current &&
-        ((value3.current = null),
+        ((gestureRef.current = null),
         current.el.hasPointerCapture(current.pid) &&
           current.el.releasePointerCapture(current.pid),
-        input &&
-          callback(
+        shouldRevert &&
+          applyCrop(
             current.start,
             current.drag.of === "side"
               ? {
@@ -104,11 +104,11 @@ function MediaCropEditor({
                 }
               : undefined,
           ),
-        value7(false),
-        value.current.onGesture?.(false));
+        setIsDragging(false),
+        latestPropsRef.current.onGesture?.(false));
     };
   (0, reactPropertiesSides.useEffect)((): Dynamic => {
-    let current: Dynamic = value.current;
+    let current: Dynamic = latestPropsRef.current;
     announce(
       "Cropping. Press Enter when done. " +
         (current.onFrame ? uiMessage("inspector.cropEditor.dragAnEdgeToCrop") : "") +
@@ -117,11 +117,11 @@ function MediaCropEditor({
           ? " Plus and minus zoom it."
           : ""),
     );
-    let callback8: Dynamic = (event?: Dynamic): Dynamic => {
-        let current3: Dynamic = value.current,
+    let handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
+        let latest: Dynamic = latestPropsRef.current,
           target: Dynamic = event.target;
         if (
-          value5.current ||
+          externalDragActiveRef.current ||
           (target instanceof HTMLElement &&
             (target.isContentEditable ||
               /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) ||
@@ -130,19 +130,19 @@ function MediaCropEditor({
             target.closest('button, a[href], [role="button"]'))
         )
           return;
-        let value22: Dynamic =
+        let isUndoRedoKey: Dynamic =
             (event.metaKey || event.ctrlKey) &&
             (event.key.toLowerCase() === "z" ||
               event.key.toLowerCase() === "y"),
-          value23: Dynamic =
+          zoomFactor: Dynamic =
             !event.metaKey && !event.ctrlKey && !event.altKey
               ? event.key === "+" || event.key === "="
-                ? PropertiesSidesConstant_3
+                ? keyboardZoomFactor
                 : event.key === "-" || event.key === "_"
-                  ? 1 / PropertiesSidesConstant_3
+                  ? 1 / keyboardZoomFactor
                   : 0
               : 0,
-          value24: Dynamic =
+          arrowDirection: Dynamic =
             !event.metaKey && !event.ctrlKey && !event.altKey
               ? PropertiesSidesArrowLeftArrowRightArrowUpConfig[
                   event.key
@@ -151,9 +151,9 @@ function MediaCropEditor({
         if (
           event.key !== "Escape" &&
           event.key !== "Enter" &&
-          !value22 &&
-          value23 === 0 &&
-          value24 === undefined
+          !isUndoRedoKey &&
+          zoomFactor === 0 &&
+          arrowDirection === undefined
         ) {
           !(
             event.key === " " ||
@@ -163,369 +163,369 @@ function MediaCropEditor({
             !/^(Shift|Control|Alt|AltGraph|Meta|OS|Hyper|Super|Fn|FnLock|Symbol|SymbolLock|CapsLock|NumLock|ScrollLock|Dead|Process|Unidentified)$/.test(
               event.key,
             ) &&
-            !value3.current &&
-            current3.onDone(true);
+            !gestureRef.current &&
+            latest.onDone(true);
           return;
         }
         event.preventDefault();
         event.stopImmediatePropagation();
-        if (value3.current)
-          return event.key === "Escape" ? callback2(true) : undefined;
-        if (value24) {
-          let value25: Dynamic = (event.shiftKey ? 10 : 1) / current3.scale;
-          callback(
+        if (gestureRef.current)
+          return event.key === "Escape" ? endGesture(true) : undefined;
+        if (arrowDirection) {
+          let step: Dynamic = (event.shiftKey ? 10 : 1) / latest.scale;
+          applyCrop(
             translateImageCrop(
-              current3.frame,
-              current3.natural,
-              current3.crop,
-              value24[0] * value25,
-              value24[1] * value25,
+              latest.frame,
+              latest.natural,
+              latest.crop,
+              arrowDirection[0] * step,
+              arrowDirection[1] * step,
             ),
           );
         } else
-          value23 !== 0
-            ? current3.zoomDisabledReason === undefined
-              ? callback(
+          zoomFactor !== 0
+            ? latest.zoomDisabledReason === undefined
+              ? applyCrop(
                   zoomImageCrop(
-                    current3.frame,
-                    current3.natural,
-                    current3.crop,
-                    value23,
+                    latest.frame,
+                    latest.natural,
+                    latest.crop,
+                    zoomFactor,
                   ),
                 )
-              : announce(current3.zoomDisabledReason)
-            : value22
+              : announce(latest.zoomDisabledReason)
+            : isUndoRedoKey
               ? event.key.toLowerCase() === "z" &&
                 !event.shiftKey &&
-                current3.onDone(false)
-              : current3.onDone(true);
+                latest.onDone(false)
+              : latest.onDone(true);
       },
-      callback9: Dynamic = (event?: Dynamic): Dynamic => {
-        let value22: Dynamic =
+      handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
+        let targetElement: Dynamic =
           event.target instanceof Element ? event.target : null;
-        value5.current ||
+        externalDragActiveRef.current ||
           (event.button === 0 &&
-            !value2.current?.contains(value22) &&
-            !value22?.closest("[data-media-crop-keep]") &&
-            value.current.onDone(true));
+            !containerRef.current?.contains(targetElement) &&
+            !targetElement?.closest("[data-media-crop-keep]") &&
+            latestPropsRef.current.onDone(true));
       },
-      callback10: Dynamic = (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+      zoomAtPoint: Dynamic = (
+        clientX?: Dynamic,
+        clientY?: Dynamic,
+        factor?: Dynamic,
       ): Dynamic => {
-        let current3: Dynamic = value.current,
-          current4: Dynamic = value2.current;
-        if (!current4 || value3.current || value5.current) return;
-        let bounds: Dynamic = current4.getBoundingClientRect(),
-          [items5, items6]: Dynamic = [
-            (input - (bounds.left + bounds.width / 2)) / current3.scale,
-            (options - (bounds.top + bounds.height / 2)) / current3.scale,
+        let latest: Dynamic = latestPropsRef.current,
+          container: Dynamic = containerRef.current;
+        if (!container || gestureRef.current || externalDragActiveRef.current) return;
+        let bounds: Dynamic = container.getBoundingClientRect(),
+          [offsetX, offsetY]: Dynamic = [
+            (clientX - (bounds.left + bounds.width / 2)) / latest.scale,
+            (clientY - (bounds.top + bounds.height / 2)) / latest.scale,
           ],
-          [items7, items8]: Dynamic = [
-            Math.cos(-current3.rotation),
-            Math.sin(-current3.rotation),
+          [cosRotation, sinRotation]: Dynamic = [
+            Math.cos(-latest.rotation),
+            Math.sin(-latest.rotation),
           ],
-          state6: Dynamic = {
-            x: current3.frame.w / 2 + items5 * items7 - items6 * items8,
-            y: current3.frame.h / 2 + items5 * items8 + items6 * items7,
+          origin: Dynamic = {
+            x: latest.frame.w / 2 + offsetX * cosRotation - offsetY * sinRotation,
+            y: latest.frame.h / 2 + offsetX * sinRotation + offsetY * cosRotation,
           },
-          value22: Dynamic = zoomImageCrop(
-            current3.frame,
-            current3.natural,
-            current3.crop,
-            Math.min(2, Math.max(0.5, context)),
-            state6,
+          nextCrop: Dynamic = zoomImageCrop(
+            latest.frame,
+            latest.natural,
+            latest.crop,
+            Math.min(2, Math.max(0.5, factor)),
+            origin,
           );
-        sameImageCrop(value22, current3.crop) ||
-          current3.onLive(value22);
+        sameImageCrop(nextCrop, latest.crop) ||
+          latest.onLive(nextCrop);
       },
-      [items3, items4]: Dynamic = [0, 0],
-      callback11: Dynamic = (event?: Dynamic): Dynamic => (
+      [pinchScale, pinchStartedAt]: Dynamic = [0, 0],
+      cancelEvent: Dynamic = (event?: Dynamic): Dynamic => (
         event.preventDefault(),
         event.stopPropagation()
       ),
-      callback12: Dynamic = (input?: Dynamic): Dynamic => {
-        !(input.ctrlKey || input.metaKey) ||
-          value.current.zoomDisabledReason !== undefined ||
-          (callback11(input),
-          items3 !== 0 && Date.now() - items4 > 1e3 && (items3 = 0),
-          items3 === 0 &&
-            callback10(
-              input.clientX,
-              input.clientY,
-              Math.exp(-input.deltaY * PropertiesSidesConstant),
+      handleWheel: Dynamic = (event?: Dynamic): Dynamic => {
+        !(event.ctrlKey || event.metaKey) ||
+          latestPropsRef.current.zoomDisabledReason !== undefined ||
+          (cancelEvent(event),
+          pinchScale !== 0 && Date.now() - pinchStartedAt > 1e3 && (pinchScale = 0),
+          pinchScale === 0 &&
+            zoomAtPoint(
+              event.clientX,
+              event.clientY,
+              Math.exp(-event.deltaY * wheelZoomSensitivity),
             ));
       },
-      callback13: Dynamic = (): Dynamic =>
-        value.current.zoomDisabledReason !== undefined,
-      callback14: Dynamic = (input?: Dynamic): Dynamic => {
-        callback13() ||
-          (callback11(input), ([items3, items4] = [1, Date.now()]));
+      hasZoomDisabledReason: Dynamic = (): Dynamic =>
+        latestPropsRef.current.zoomDisabledReason !== undefined,
+      handleGestureStart: Dynamic = (event?: Dynamic): Dynamic => {
+        hasZoomDisabledReason() ||
+          (cancelEvent(event), ([pinchScale, pinchStartedAt] = [1, Date.now()]));
       },
-      callback15: Dynamic = (input?: Dynamic): Dynamic => {
-        if (callback13()) return;
-        callback11(input);
-        let value22: Dynamic = input;
-        items3 === 0 ||
-          !(typeof value22.scale == "number" && value22.scale > 0) ||
-          (callback10(
-            value22.clientX ?? 0,
-            value22.clientY ?? 0,
-            value22.scale / items3,
+      handleGestureChange: Dynamic = (event?: Dynamic): Dynamic => {
+        if (hasZoomDisabledReason()) return;
+        cancelEvent(event);
+        let gestureEvent: Dynamic = event;
+        pinchScale === 0 ||
+          !(typeof gestureEvent.scale == "number" && gestureEvent.scale > 0) ||
+          (zoomAtPoint(
+            gestureEvent.clientX ?? 0,
+            gestureEvent.clientY ?? 0,
+            gestureEvent.scale / pinchScale,
           ),
-          ([items3, items4] = [value22.scale, Date.now()]));
+          ([pinchScale, pinchStartedAt] = [gestureEvent.scale, Date.now()]));
       },
-      callback16: Dynamic = (input?: Dynamic): Dynamic => {
-        callback13() || (callback11(input), (items3 = 0));
+      handleGestureEnd: Dynamic = (event?: Dynamic): Dynamic => {
+        hasZoomDisabledReason() || (cancelEvent(event), (pinchScale = 0));
       },
-      current2: Dynamic = value2.current;
-    (window as Dynamic).addEventListener("keydown", callback8, true);
-    (window as Dynamic).addEventListener("pointerdown", callback9, true);
-    current2?.addEventListener("wheel", callback12, {
+      containerElement: Dynamic = containerRef.current;
+    (window as Dynamic).addEventListener("keydown", handleKeyDown, true);
+    (window as Dynamic).addEventListener("pointerdown", handlePointerDown, true);
+    containerElement?.addEventListener("wheel", handleWheel, {
       passive: false,
     });
-    current2?.addEventListener("gesturestart", callback14);
-    current2?.addEventListener("gesturechange", callback15);
-    current2?.addEventListener("gestureend", callback16);
+    containerElement?.addEventListener("gesturestart", handleGestureStart);
+    containerElement?.addEventListener("gesturechange", handleGestureChange);
+    containerElement?.addEventListener("gestureend", handleGestureEnd);
     return (): Dynamic => {
-      (window as Dynamic).removeEventListener("keydown", callback8, true);
-      (window as Dynamic).removeEventListener("pointerdown", callback9, true);
-      current2?.removeEventListener("wheel", callback12);
-      current2?.removeEventListener("gesturestart", callback14);
-      current2?.removeEventListener("gesturechange", callback15);
-      current2?.removeEventListener("gestureend", callback16);
-      callback2(false);
+      (window as Dynamic).removeEventListener("keydown", handleKeyDown, true);
+      (window as Dynamic).removeEventListener("pointerdown", handlePointerDown, true);
+      containerElement?.removeEventListener("wheel", handleWheel);
+      containerElement?.removeEventListener("gesturestart", handleGestureStart);
+      containerElement?.removeEventListener("gesturechange", handleGestureChange);
+      containerElement?.removeEventListener("gestureend", handleGestureEnd);
+      endGesture(false);
     };
   }, []);
-  let callback3: Dynamic = (event?: Dynamic, options?: Dynamic): Dynamic => {
-      if (!(event.button !== 0 || value3.current)) {
+  let startGesture: Dynamic = (event?: Dynamic, drag?: Dynamic): Dynamic => {
+      if (!(event.button !== 0 || gestureRef.current)) {
         event.preventDefault();
         event.stopPropagation();
         try {
           event.currentTarget.setPointerCapture(event.pointerId);
         } catch {}
-        value3.current = {
+        gestureRef.current = {
           pid: event.pointerId,
           el: event.currentTarget,
           sx: event.clientX,
           sy: event.clientY,
-          start: value.current.crop,
+          start: latestPropsRef.current.crop,
           frame: {
             w: frame.w,
             h: frame.h,
           },
           base: {
-            ...value4.current,
+            ...frameOriginRef.current,
           },
-          drag: options,
+          drag: drag,
         };
-        value7(true);
+        setIsDragging(true);
         onGesture?.(true);
       }
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value3.current;
-      if (!current || input.pointerId !== current.pid) return;
-      let [items3, items4]: Dynamic = [
-          (input.clientX - current.sx) / scale,
-          (input.clientY - current.sy) / scale,
+    moveGesture: Dynamic = (event?: Dynamic): Dynamic => {
+      let current: Dynamic = gestureRef.current;
+      if (!current || event.pointerId !== current.pid) return;
+      let [deltaX, deltaY]: Dynamic = [
+          (event.clientX - current.sx) / scale,
+          (event.clientY - current.sy) / scale,
         ],
-        [items5, items6]: Dynamic = [
+        [cosRotation, sinRotation]: Dynamic = [
           Math.cos(-rotation),
           Math.sin(-rotation),
         ],
-        [items7, items8]: Dynamic = [
-          items3 * items5 - items4 * items6,
-          items3 * items6 + items4 * items5,
+        [rotatedDeltaX, rotatedDeltaY]: Dynamic = [
+          deltaX * cosRotation - deltaY * sinRotation,
+          deltaX * sinRotation + deltaY * cosRotation,
         ];
       if (current.drag.of === "side") {
-        let value22: Dynamic = resizeImageCropFrame(
+        let resized: Dynamic = resizeImageCropFrame(
             current.frame,
             natural,
             current.start,
             current.drag.side,
-            items7,
-            items8,
+            rotatedDeltaX,
+            rotatedDeltaY,
             Math.max(RESIZE_HANDLE_HIT_SIZE_PX / scale, minFrame),
           ),
-          state6: Dynamic = {
-            x: current.base.x + value22.frame.x,
-            y: current.base.y + value22.frame.y,
-            w: value22.frame.w,
-            h: value22.frame.h,
+          rawFrame: Dynamic = {
+            x: current.base.x + resized.frame.x,
+            y: current.base.y + resized.frame.y,
+            w: resized.frame.w,
+            h: resized.frame.h,
           },
-          value23: Dynamic = snapFrame ? snapFrame(state6) : state6,
-          value24: Dynamic = snapFrame
+          finalFrame: Dynamic = snapFrame ? snapFrame(rawFrame) : rawFrame,
+          finalCrop: Dynamic = snapFrame
             ? cropIntoFrame(
                 current.frame,
                 natural,
                 current.start,
                 {
-                  x: value23.x - current.base.x,
-                  y: value23.y - current.base.y,
-                  w: value23.w,
-                  h: value23.h,
+                  x: finalFrame.x - current.base.x,
+                  y: finalFrame.y - current.base.y,
+                  w: finalFrame.w,
+                  h: finalFrame.h,
                 },
               )
-            : value22.crop;
+            : resized.crop;
         (zoomDisabledReason === undefined ||
-          value24.zoom <= Math.max(1, current.start.zoom) + 0.001) &&
-          callback(value24, value23);
+          finalCrop.zoom <= Math.max(1, current.start.zoom) + 0.001) &&
+          applyCrop(finalCrop, finalFrame);
       } else
-        callback(
+        applyCrop(
           current.drag.of === "media"
             ? translateImageCrop(
                 current.frame,
                 natural,
                 current.start,
-                items7,
-                items8,
+                rotatedDeltaX,
+                rotatedDeltaY,
               )
             : resizeImageCropCorner(
                 current.frame,
                 natural,
                 current.start,
                 current.drag.corner,
-                items7,
-                items8,
+                rotatedDeltaX,
+                rotatedDeltaY,
               ),
         );
     },
-    callback5: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => ({
-      onPointerDown: (input2?: Dynamic): Dynamic => {
-        input2.button === 0 && (options?.(), callback3(input2, input));
+    createDragHandlers: Dynamic = (drag?: Dynamic, onStart?: Dynamic): Dynamic => ({
+      onPointerDown: (event?: Dynamic): Dynamic => {
+        event.button === 0 && (onStart?.(), startGesture(event, drag));
       },
-      onPointerMove: callback4,
-      onPointerUp: (input2?: Dynamic): Dynamic =>
-        value3.current?.pid === input2.pointerId && callback2(false),
-      onPointerCancel: (input2?: Dynamic): Dynamic =>
-        value3.current?.pid === input2.pointerId && callback2(true),
-      onLostPointerCapture: (input2?: Dynamic): Dynamic => {
-        if (value3.current?.pid === input2.pointerId) {
-          if (input2.buttons === 0) return callback2(false);
+      onPointerMove: moveGesture,
+      onPointerUp: (event?: Dynamic): Dynamic =>
+        gestureRef.current?.pid === event.pointerId && endGesture(false),
+      onPointerCancel: (event?: Dynamic): Dynamic =>
+        gestureRef.current?.pid === event.pointerId && endGesture(true),
+      onLostPointerCapture: (event?: Dynamic): Dynamic => {
+        if (gestureRef.current?.pid === event.pointerId) {
+          if (event.buttons === 0) return endGesture(false);
           try {
-            input2.currentTarget.setPointerCapture(input2.pointerId);
+            event.currentTarget.setPointerCapture(event.pointerId);
           } catch {
-            callback2(false);
+            endGesture(false);
           }
         }
       },
     }),
-    callback6: Dynamic = (input?: Dynamic): Dynamic => {
-      let value22: Dynamic = callback5(
+    createSideHandlers: Dynamic = (side?: Dynamic): Dynamic => {
+      let baseHandlers: Dynamic = createDragHandlers(
         {
           of: "side",
-          side: input,
+          side: side,
         },
-        (): Dynamic => value9(false),
+        (): Dynamic => setIsShowingImageBounds(false),
       );
       return {
-        ...value22,
-        onPointerDown: (input2?: Dynamic): Dynamic => {
-          if (input2.button !== 0 || !onSideStart?.(input, input2))
-            return value22.onPointerDown(input2);
-          value9(false);
-          value5.current = true;
-          let pointerId: Dynamic = input2.pointerId,
-            callback8: Dynamic = (): Dynamic => {
-              value5.current = false;
+        ...baseHandlers,
+        onPointerDown: (downEvent?: Dynamic): Dynamic => {
+          if (downEvent.button !== 0 || !onSideStart?.(side, downEvent))
+            return baseHandlers.onPointerDown(downEvent);
+          setIsShowingImageBounds(false);
+          externalDragActiveRef.current = true;
+          let pointerId: Dynamic = downEvent.pointerId,
+            endExternalDrag: Dynamic = (): Dynamic => {
+              externalDragActiveRef.current = false;
               (window as Dynamic).removeEventListener(
                 "pointerup",
-                callback9,
+                handleExternalPointerEnd,
                 true,
               );
               (window as Dynamic).removeEventListener(
                 "pointercancel",
-                callback9,
+                handleExternalPointerEnd,
                 true,
               );
-              (window as Dynamic).removeEventListener("blur", callback8);
+              (window as Dynamic).removeEventListener("blur", endExternalDrag);
             },
-            callback9: Dynamic = (input3?: Dynamic): Dynamic => {
-              input3.pointerId === pointerId && callback8();
+            handleExternalPointerEnd: Dynamic = (event?: Dynamic): Dynamic => {
+              event.pointerId === pointerId && endExternalDrag();
             };
-          (window as Dynamic).addEventListener("pointerup", callback9, true);
+          (window as Dynamic).addEventListener("pointerup", handleExternalPointerEnd, true);
           (window as Dynamic).addEventListener(
             "pointercancel",
-            callback9,
+            handleExternalPointerEnd,
             true,
           );
-          (window as Dynamic).addEventListener("blur", callback8);
+          (window as Dynamic).addEventListener("blur", endExternalDrag);
         },
       };
     },
-    callback7: Dynamic = (input?: Dynamic): Dynamic => ({
+    createDisabledHandlers: Dynamic = (message?: Dynamic): Dynamic => ({
       onPointerDown: (event?: Dynamic): Dynamic => (
         event.preventDefault(),
         event.stopPropagation(),
-        announce(input)
+        announce(message)
       ),
     }),
-    value10: Dynamic = imageCropRect(frame, natural, crop),
-    value11: Dynamic =
+    imageRect: Dynamic = imageCropRect(frame, natural, crop),
+    isCoarsePointer: Dynamic =
       typeof matchMedia == "function" &&
       matchMedia("(pointer: coarse)").matches,
-    value12: Dynamic =
-      (value11
+    cornerHitSize: Dynamic =
+      (isCoarsePointer
         ? ComponentsSelectionRingPointPointStrokeGripHitConfig
             .gripHitTouch
         : ComponentsSelectionRingPointPointStrokeGripHitConfig.grip +
           4) / scale,
-    value13: Dynamic =
+    cornerDotSize: Dynamic =
       ComponentsSelectionRingPointPointStrokeGripHitConfig.grip /
       scale,
-    value14: Dynamic =
-      (value11
+    sideHitSize: Dynamic =
+      (isCoarsePointer
         ? ComponentsSelectionRingPointPointStrokeGripHitConfig
             .gripHitTouch
         : 20) / scale,
-    value15: Dynamic = zoomDisabledReason !== undefined,
-    value16: Dynamic = onFrame !== undefined,
-    [items, items2]: Dynamic = [
+    isZoomLocked: Dynamic = zoomDisabledReason !== undefined,
+    canResizeFrame: Dynamic = onFrame !== undefined,
+    [handleLength, handleThickness]: Dynamic = [
       RESIZE_HANDLE_LENGTH_PX / scale,
       RESIZE_HANDLE_THICKNESS_PX / scale,
     ],
-    state: Dynamic = {
+    handleStyle: Dynamic = {
       position: "absolute",
       background: "var(--t-app-accent)",
       boxShadow: "0 0 0 " + String(1 / scale) + "px #fff",
-      borderRadius: items2 / 2,
+      borderRadius: handleThickness / 2,
     },
-    state2: Dynamic = {
-      ...state,
+    accentHandleStyle: Dynamic = {
+      ...handleStyle,
       boxShadow: undefined,
     },
-    state3: Dynamic = {
-      ...state,
+    whiteHandleStyle: Dynamic = {
+      ...handleStyle,
       background: "#fff",
     },
-    [value17, value18, value19, value20]: Dynamic = [
-      -value10.x,
-      -value10.y,
-      -value10.x + frame.w,
-      -value10.y + frame.h,
-    ].map((input?: Dynamic): Dynamic => String(input) + "px"),
-    value21: Dynamic = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${value17} ${value18}, ${value17} ${value20}, ${value19} ${value20}, ${value19} ${value18}, ${value17} ${value18})`,
-    state4: Dynamic = {
+    [clipLeft, clipTop, clipRight, clipBottom]: Dynamic = [
+      -imageRect.x,
+      -imageRect.y,
+      -imageRect.x + frame.w,
+      -imageRect.y + frame.h,
+    ].map((coordinate?: Dynamic): Dynamic => String(coordinate) + "px"),
+    clipPath: Dynamic = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${clipLeft} ${clipTop}, ${clipLeft} ${clipBottom}, ${clipRight} ${clipBottom}, ${clipRight} ${clipTop}, ${clipLeft} ${clipTop})`,
+    mediaStyle: Dynamic = {
       position: "absolute",
       inset: 0,
       width: "100%",
       height: "100%",
-      opacity: PropertiesSidesConstant_2,
+      opacity: dimmedMediaOpacity,
       pointerEvents: "none",
       userSelect: "none",
-      clipPath: value21,
+      clipPath: clipPath,
     },
-    state5: Dynamic = {
+    panStyle: Dynamic = {
       position: "absolute",
-      cursor: value6 ? "grabbing" : "grab",
+      cursor: isDragging ? "grabbing" : "grab",
       touchAction: "none",
       pointerEvents: "auto",
     };
   return (
     <div
-      ref={value2}
+      ref={containerRef}
       data-media-crop={""}
       role={"group"}
       aria-label={uiMessage("inspector.cropEditor.crop")}
@@ -537,17 +537,17 @@ function MediaCropEditor({
       <div
         data-media-crop-pan={""}
         style={{
-          ...state5,
-          left: value10.x,
-          top: value10.y,
-          width: value10.w,
-          height: value10.h,
+          ...panStyle,
+          left: imageRect.x,
+          top: imageRect.y,
+          width: imageRect.w,
+          height: imageRect.h,
         }}
-        {...callback5(
+        {...createDragHandlers(
           {
             of: "media",
           },
-          (): Dynamic => value9(true),
+          (): Dynamic => setIsShowingImageBounds(true),
         )}
       >
         {src !== null && (video ? (<video
@@ -555,20 +555,20 @@ function MediaCropEditor({
               muted={true}
               playsInline={true}
               preload={"metadata"}
-              style={state4}
-            />) : (<img src={src} alt={""} draggable={false} style={state4} />))}
+              style={mediaStyle}
+            />) : (<img src={src} alt={""} draggable={false} style={mediaStyle} />))}
       </div>
-      {value16 && (<div
+      {canResizeFrame && (<div
           data-media-crop-inside={""}
           style={{
-            ...state5,
+            ...panStyle,
             inset: 0,
           }}
-          {...callback5(
+          {...createDragHandlers(
             {
               of: "media",
             },
-            (): Dynamic => value9(false),
+            (): Dynamic => setIsShowingImageBounds(false),
           )}
         />)}
       <div
@@ -583,174 +583,174 @@ function MediaCropEditor({
           outlineColor: "var(--t-app-accent)",
         }}
       />
-      {value16 && value8 && (<div
+      {canResizeFrame && isShowingImageBounds && (<div
           style={{
             position: "absolute",
-            left: value10.x,
-            top: value10.y,
-            width: value10.w,
-            height: value10.h,
+            left: imageRect.x,
+            top: imageRect.y,
+            width: imageRect.w,
+            height: imageRect.h,
             pointerEvents: "none",
             outlineWidth: 1 / scale,
             outlineStyle: "solid",
             outlineColor: "var(--t-app-accent)",
           }}
         />)}
-      {value16 && (PropertiesSidesNESValues.map((items3?: Dynamic): Dynamic => {
-          let value22: Dynamic = frameHandleOff?.[items3],
-            value23: Dynamic = items3.length === 2;
+      {canResizeFrame && (PropertiesSidesNESValues.map((side?: Dynamic): Dynamic => {
+          let disabledReason: Dynamic = frameHandleOff?.[side],
+            isCorner: Dynamic = side.length === 2;
           if (
-            !value23 &&
-            (items3 === "n" || items3 === "s" ? frame.w : frame.h) * scale <
+            !isCorner &&
+            (side === "n" || side === "s" ? frame.w : frame.h) * scale <
               RESIZE_EDGE_MIN_LENGTH_PX
           )
             return null;
-          let [items4, items5]: Dynamic = [
-              items3.includes("w")
+          let [anchorX, anchorY]: Dynamic = [
+              side.includes("w")
                 ? 0
-                : items3.includes("e")
+                : side.includes("e")
                   ? frame.w
                   : frame.w / 2,
-              items3.includes("n")
+              side.includes("n")
                 ? 0
-                : items3.includes("s")
+                : side.includes("s")
                   ? frame.h
                   : frame.h / 2,
             ],
-            value24: Dynamic = items3.includes("e") ? -1 : 1,
-            value25: Dynamic = items3.includes("s") ? -1 : 1,
-            [items6, items7]: Dynamic = [
-              value24 > 0
-                ? value14 / 2 - items2 / 2
-                : value14 / 2 + items2 / 2 - items,
-              value25 > 0
-                ? value14 / 2 - items2 / 2
-                : value14 / 2 + items2 / 2 - items,
+            directionX: Dynamic = side.includes("e") ? -1 : 1,
+            directionY: Dynamic = side.includes("s") ? -1 : 1,
+            [barOffsetX, barOffsetY]: Dynamic = [
+              directionX > 0
+                ? sideHitSize / 2 - handleThickness / 2
+                : sideHitSize / 2 + handleThickness / 2 - handleLength,
+              directionY > 0
+                ? sideHitSize / 2 - handleThickness / 2
+                : sideHitSize / 2 + handleThickness / 2 - handleLength,
             ];
           return (
             <div
-              key={items3}
-              data-media-crop-side={items3}
+              key={side}
+              data-media-crop-side={side}
               role={"img"}
               aria-label={
-                uiMessage("inspector.cropEditor.cropHandle", { value1: String(PropertiesSidesNESConfig[items3]) })
+                uiMessage("inspector.cropEditor.cropHandle", { value1: String(PropertiesSidesNESConfig[side]) })
               }
-              title={value22 ?? (uiMessage("inspector.cropEditor.dragToCrop"))}
-              aria-disabled={value22 !== undefined || undefined}
+              title={disabledReason ?? (uiMessage("inspector.cropEditor.dragToCrop"))}
+              aria-disabled={disabledReason !== undefined || undefined}
               style={{
                 position: "absolute",
-                left: items4 - value14 / 2,
-                top: items5 - value14 / 2,
-                width: value14,
-                height: value14,
+                left: anchorX - sideHitSize / 2,
+                top: anchorY - sideHitSize / 2,
+                width: sideHitSize,
+                height: sideHitSize,
                 cursor:
-                  value22 !== undefined
+                  disabledReason !== undefined
                     ? "not-allowed"
-                    : PropertiesSidesNSEConfig[items3],
+                    : PropertiesSidesNSEConfig[side],
                 touchAction: "none",
                 pointerEvents: "auto",
-                opacity: value22 !== undefined ? 0.45 : undefined,
+                opacity: disabledReason !== undefined ? 0.45 : undefined,
               }}
-              {...(value22 !== undefined
-                ? callback7(value22)
-                : callback6(items3))}
+              {...(disabledReason !== undefined
+                ? createDisabledHandlers(disabledReason)
+                : createSideHandlers(side))}
             >
-              {value23 ? ([state3, state2].map(
-                  (input?: Dynamic, options?: Dynamic): Dynamic => (
-                    <reactPropertiesSides.Fragment key={options}>
+              {isCorner ? ([whiteHandleStyle, accentHandleStyle].map(
+                  (style?: Dynamic, index?: Dynamic): Dynamic => (
+                    <reactPropertiesSides.Fragment key={index}>
                       <div
                         style={{
-                          ...input,
-                          left: items6,
-                          top: value14 / 2 - items2 / 2,
-                          width: items,
-                          height: items2,
+                          ...style,
+                          left: barOffsetX,
+                          top: sideHitSize / 2 - handleThickness / 2,
+                          width: handleLength,
+                          height: handleThickness,
                         }}
                       />
                       <div
                         style={{
-                          ...input,
-                          left: value14 / 2 - items2 / 2,
-                          top: items7,
-                          width: items2,
-                          height: items,
+                          ...style,
+                          left: sideHitSize / 2 - handleThickness / 2,
+                          top: barOffsetY,
+                          width: handleThickness,
+                          height: handleLength,
                         }}
                       />
                     </reactPropertiesSides.Fragment>
                   ),
-                )) : (items3 === "n" || items3 === "s" ? (<div
+                )) : (side === "n" || side === "s" ? (<div
                   style={{
-                    ...state,
-                    width: items * 1.5,
-                    height: items2,
-                    left: value14 / 2 - (items * 1.5) / 2,
-                    top: value14 / 2 - items2 / 2,
+                    ...handleStyle,
+                    width: handleLength * 1.5,
+                    height: handleThickness,
+                    left: sideHitSize / 2 - (handleLength * 1.5) / 2,
+                    top: sideHitSize / 2 - handleThickness / 2,
                   }}
                 />) : (<div
                   style={{
-                    ...state,
-                    width: items2,
-                    height: items * 1.5,
-                    left: value14 / 2 - items2 / 2,
-                    top: value14 / 2 - (items * 1.5) / 2,
+                    ...handleStyle,
+                    width: handleThickness,
+                    height: handleLength * 1.5,
+                    left: sideHitSize / 2 - handleThickness / 2,
+                    top: sideHitSize / 2 - (handleLength * 1.5) / 2,
                   }}
                 />))}
             </div>
           );
         }))}
-      {!value16 || value8 && (PropertiesSidesNwNeSeValues.map(
-          (input?: Dynamic): Dynamic => (
+      {!canResizeFrame || isShowingImageBounds && (PropertiesSidesNwNeSeValues.map(
+          (corner?: Dynamic): Dynamic => (
             <div
-              key={input}
-              data-media-crop-handle={input}
+              key={corner}
+              data-media-crop-handle={corner}
               role={"img"}
               aria-label={
-                uiMessage("inspector.cropEditor.zoomHandle", { value1: String(PropertiesSidesNwNeSeConfig[input]) })
+                uiMessage("inspector.cropEditor.zoomHandle", { value1: String(PropertiesSidesNwNeSeConfig[corner]) })
               }
               title={zoomDisabledReason ?? (uiMessage("inspector.cropEditor.dragToZoom"))}
-              aria-disabled={value15 || undefined}
+              aria-disabled={isZoomLocked || undefined}
               style={{
                 position: "absolute",
                 left:
-                  (input === "nw" || input === "sw"
-                    ? value10.x
-                    : value10.x + value10.w) -
-                  value12 / 2,
+                  (corner === "nw" || corner === "sw"
+                    ? imageRect.x
+                    : imageRect.x + imageRect.w) -
+                  cornerHitSize / 2,
                 top:
-                  (input === "nw" || input === "ne"
-                    ? value10.y
-                    : value10.y + value10.h) -
-                  value12 / 2,
-                width: value12,
-                height: value12,
+                  (corner === "nw" || corner === "ne"
+                    ? imageRect.y
+                    : imageRect.y + imageRect.h) -
+                  cornerHitSize / 2,
+                width: cornerHitSize,
+                height: cornerHitSize,
                 display: "grid",
                 placeItems: "center",
-                cursor: value15
+                cursor: isZoomLocked
                   ? "not-allowed"
-                  : input === "nw" || input === "se"
+                  : corner === "nw" || corner === "se"
                     ? "nwse-resize"
                     : "nesw-resize",
                 touchAction: "none",
                 pointerEvents: "auto",
               }}
-              {...(value15
-                ? callback7(zoomDisabledReason)
-                : callback5({
+              {...(isZoomLocked
+                ? createDisabledHandlers(zoomDisabledReason)
+                : createDragHandlers({
                     of: "corner",
-                    corner: input,
+                    corner: corner,
                   }))}
             >
               <div
                 style={{
-                  width: value13,
-                  height: value13,
+                  width: cornerDotSize,
+                  height: cornerDotSize,
                   boxSizing: "border-box",
                   borderRadius: "50%",
                   background: "#fff",
                   borderWidth: 1.5 / scale,
                   borderStyle: "solid",
                   borderColor: "var(--t-app-accent)",
-                  opacity: value15 ? 0.45 : undefined,
+                  opacity: isZoomLocked ? 0.45 : undefined,
                 }}
               />
             </div>

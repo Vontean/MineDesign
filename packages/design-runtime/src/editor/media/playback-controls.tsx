@@ -17,106 +17,106 @@ import { reactSessionArtboardState, SessionArtboardStateHandler, SessionArtboard
 import { toModuleNamespace } from "../../module-helpers";
 
 var ThisVideoIsnTPlayingHereRightMessage: Dynamic;
-var MediaPlaybackControlsLabel: Dynamic;
+var notLoadedMessage: Dynamic;
 var ThisVideoCouldnTBeLoadedMessage: Dynamic;
 var ThisVideoCouldnTBeLoadedSoMessage: Dynamic;
-var MediaPlaybackControlsQuerySelector: Dynamic;
+var unavailableVideoReason: Dynamic;
 var ThisVideoDoesnTSayHowLongMessage: Dynamic;
-var MediaPlaybackControlsFound: Dynamic;
-var MediaPlaybackControlsFound_2: Dynamic;
+var seekDisabledReason: Dynamic;
+var playDisabledReason: Dynamic;
 var reactMediaPlaybackControls: Dynamic;
 var reactMediaPlaybackControls_2: Dynamic;
 var jsxMediaPlaybackControls: Dynamic;
 var PropertiesInheritedFieldValueAlias: Dynamic;
 var PropertiesInheritedFieldMixedAlias: Dynamic;
 function findPreviewMediaElement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  root?: Dynamic,
+  selectorKind?: Dynamic,
+  selectorContext?: Dynamic,
+  scopeName?: Dynamic,
 ): Dynamic {
-  if (!input) return null;
-  let value2: Dynamic = [
-    ...input.querySelectorAll(
-      SessionArtboardStateHandler(options, context),
+  if (!root) return null;
+  let candidates: Dynamic = [
+    ...root.querySelectorAll(
+      SessionArtboardStateHandler(selectorKind, selectorContext),
     ),
   ].filter(
-    (input2?: Dynamic): Dynamic =>
-      (input2.closest("[data-sc-name]")?.getAttribute("data-sc-name") ??
-        value) === value,
+    (candidate?: Dynamic): Dynamic =>
+      (candidate.closest("[data-sc-name]")?.getAttribute("data-sc-name") ??
+        scopeName) === scopeName,
   );
   return (
-    value2.find(
-      (input2?: Dynamic): Dynamic =>
-        typeof input2.checkVisibility == "function"
-          ? input2.checkVisibility()
+    candidates.find(
+      (candidate?: Dynamic): Dynamic =>
+        typeof candidate.checkVisibility == "function"
+          ? candidate.checkVisibility()
           : true,
     ) ??
-    value2[0] ??
+    candidates[0] ??
     null
   );
 }
-function useVideoPlayback(input?: Dynamic, options: Dynamic = 0): Dynamic {
-  let [value, value2]: Dynamic = (0,
+function useVideoPlayback(getVideoElement?: Dynamic, generation: Dynamic = 0): Dynamic {
+  let [playback, setPlayback]: Dynamic = (0,
     reactSessionArtboardState.useState)(
       SessionArtboardStatePausedCurrentTimeDurationConfig,
     ),
-    [value3, value4]: Dynamic = (0,
+    [hasVideo, setHasVideo]: Dynamic = (0,
     reactSessionArtboardState.useState)(false),
-    [, value5]: Dynamic = (0, reactSessionArtboardState.useState)(0),
-    value6: Dynamic = (0, reactSessionArtboardState.useRef)(null),
-    value7: Dynamic = (0, reactSessionArtboardState.useRef)(null),
-    value8: Dynamic = (0, reactSessionArtboardState.useRef)(input);
-  value8.current = input;
+    [, setRenderTick]: Dynamic = (0, reactSessionArtboardState.useState)(0),
+    storeRef: Dynamic = (0, reactSessionArtboardState.useRef)(null),
+    videoRef: Dynamic = (0, reactSessionArtboardState.useRef)(null),
+    getVideoElementRef: Dynamic = (0, reactSessionArtboardState.useRef)(getVideoElement);
+  getVideoElementRef.current = getVideoElement;
   (0, reactSessionArtboardState.useEffect)((): Dynamic => {
-    let callback: Dynamic = (): Dynamic => {},
-      value9: Dynamic,
-      callback2: Dynamic = (): Dynamic => {
-        let value10: Dynamic = value8.current();
+    let unsubscribe: Dynamic = (): Dynamic => {},
+      timerId: Dynamic,
+      syncVideo: Dynamic = (): Dynamic => {
+        let video: Dynamic = getVideoElementRef.current();
         if (
-          value10 !== null &&
-          value10 === value7.current &&
-          value10.isConnected
+          video !== null &&
+          video === videoRef.current &&
+          video.isConnected
         ) {
-          value9 = setTimeout(callback2, 1e3);
+          timerId = setTimeout(syncVideo, 1e3);
           return;
         }
-        callback();
-        value6.current?.detach();
-        value6.current = null;
-        value7.current = value10;
-        value4(value10 !== null);
-        if (value10) {
-          let value11: Dynamic = createVideoPlaybackStore(
-            value10,
+        unsubscribe();
+        storeRef.current?.detach();
+        storeRef.current = null;
+        videoRef.current = video;
+        setHasVideo(video !== null);
+        if (video) {
+          let store: Dynamic = createVideoPlaybackStore(
+            video,
           );
-          value6.current = value11;
-          callback = value11.subscribe(value2);
+          storeRef.current = store;
+          unsubscribe = store.subscribe(setPlayback);
         } else {
-          value2(SessionArtboardStatePausedCurrentTimeDurationConfig);
-          value5((input2?: Dynamic): Dynamic => input2 + 1);
+          setPlayback(SessionArtboardStatePausedCurrentTimeDurationConfig);
+          setRenderTick((tick?: Dynamic): Dynamic => tick + 1);
         }
-        value9 = setTimeout(callback2, value10 ? 1e3 : 300);
+        timerId = setTimeout(syncVideo, video ? 1e3 : 300);
       };
-    callback2();
+    syncVideo();
     return (): Dynamic => {
-      clearTimeout(value9);
-      callback();
-      value6.current?.detach();
-      value6.current = null;
-      value7.current = null;
+      clearTimeout(timerId);
+      unsubscribe();
+      storeRef.current?.detach();
+      storeRef.current = null;
+      videoRef.current = null;
     };
-  }, [options]);
+  }, [generation]);
   return {
-    at: value,
-    found: value3,
-    toggle: (): Dynamic => value6.current?.toggle(),
-    seek: (input2?: Dynamic): Dynamic => {
-      value6.current?.seek(input2);
-      value2(
-        (input3?: Dynamic): Dynamic => ({
-          ...input3,
-          currentTime: Math.max(0, Math.min(input2, input3.duration)),
+    at: playback,
+    found: hasVideo,
+    toggle: (): Dynamic => storeRef.current?.toggle(),
+    seek: (time?: Dynamic): Dynamic => {
+      storeRef.current?.seek(time);
+      setPlayback(
+        (current?: Dynamic): Dynamic => ({
+          ...current,
+          currentTime: Math.max(0, Math.min(time, current.duration)),
         }),
       );
     },
@@ -129,19 +129,19 @@ function VideoPlayControl({
 }: Dynamic): Dynamic {
   useUiLocale();
   let {
-      at: value,
-      found: value2,
-      toggle: value3,
+      at: playback,
+      found: isFound,
+      toggle: togglePlayback,
     }: Dynamic = useVideoPlayback(find, gen),
-    value4: Dynamic = MediaPlaybackControlsFound_2(
+    disabledReason: Dynamic = playDisabledReason(
       {
-        found: value2,
-        ready: value.ready,
-        failed: value.failed,
+        found: isFound,
+        ready: playback.ready,
+        failed: playback.failed,
       },
-      value2 ? undefined : whyAbsent?.(),
+      isFound ? undefined : whyAbsent?.(),
     ),
-    value5: Dynamic = value.paused
+    label: Dynamic = playback.paused
       ? MediaVideoPlaybackPlayPauseSeekConfig.play
       : MediaVideoPlaybackPlayPauseSeekConfig.pause;
   return (
@@ -150,17 +150,17 @@ function VideoPlayControl({
       icon={
         <Icon
           name={
-            value.paused
+            playback.paused
               ? MediaVideoPlaybackPlayPauseConfig.play
               : MediaVideoPlaybackPlayPauseConfig.pause
           }
           size={"sm"}
         />
       }
-      aria-label={value5}
-      title={value4 ?? (uiMessage("inspector.playbackControls.video", { value1: String(value5) }))}
-      disabled={value4 !== undefined}
-      onClick={value3}
+      aria-label={label}
+      title={disabledReason ?? (uiMessage("inspector.playbackControls.video", { value1: String(label) }))}
+      disabled={disabledReason !== undefined}
+      onClick={togglePlayback}
     />
   );
 }
@@ -171,50 +171,50 @@ function VideoSeekControl({
 }: Dynamic): Dynamic {
   useUiLocale();
   let {
-      at: value,
-      found: value2,
-      toggle: value3,
-      seek: value4,
+      at: playback,
+      found: isFound,
+      toggle: togglePlayback,
+      seek: seekTo,
     }: Dynamic = useVideoPlayback(find, gen),
-    value5: Dynamic = MediaPlaybackControlsFound(
+    disabledReason: Dynamic = seekDisabledReason(
       {
-        found: value2,
-        ready: value.ready,
-        seekable: value.seekable,
-        failed: value.failed,
+        found: isFound,
+        ready: playback.ready,
+        seekable: playback.seekable,
+        failed: playback.failed,
       },
-      value2 ? undefined : whyAbsent?.(),
+      isFound ? undefined : whyAbsent?.(),
     ),
-    value6: Dynamic = value2 && value.ready;
+    canToggle: Dynamic = isFound && playback.ready;
   return (
     <PropertyRangeRow
       label={uiMessage("inspector.playbackControls.time")}
-      value={Math.round(value.currentTime * 10) / 10}
+      value={Math.round(playback.currentTime * 10) / 10}
       min={0}
-      max={Math.max(0.1, Math.round(value.duration * 10) / 10)}
+      max={Math.max(0.1, Math.round(playback.duration * 10) / 10)}
       step={0.1}
       unit={"s"}
-      disabled={value5 !== undefined}
+      disabled={disabledReason !== undefined}
       title={
-        (value5) ?? (((((MediaVideoPlaybackPlayPauseSeekConfig.seek) + (": ")) + (formatVideoTime(value.currentTime))) + (" / ")) + (formatVideoTime(value.duration)))
+        (disabledReason) ?? (((((MediaVideoPlaybackPlayPauseSeekConfig.seek) + (": ")) + (formatVideoTime(playback.currentTime))) + (" / ")) + (formatVideoTime(playback.duration)))
       }
-      onLive={value4}
-      onValue={value4}
+      onLive={seekTo}
+      onValue={seekTo}
       adornment={
         <Button
           variant={"ghost"}
           size={"xxs"}
           data-testid={"dc-video-playpause"}
           aria-label={
-            value.paused ? (MediaVideoPlaybackPlayPauseSeekConfig.play) : (MediaVideoPlaybackPlayPauseSeekConfig.pause)
+            playback.paused ? (MediaVideoPlaybackPlayPauseSeekConfig.play) : (MediaVideoPlaybackPlayPauseSeekConfig.pause)
           }
-          title={value6 ? (undefined) : (value5)}
-          disabled={!value6}
-          onClick={value3}
+          title={canToggle ? (undefined) : (disabledReason)}
+          disabled={!canToggle}
+          onClick={togglePlayback}
         >
           <Icon
             name={
-              value.paused
+              playback.paused
                 ? MediaVideoPlaybackPlayPauseConfig.play
                 : MediaVideoPlaybackPlayPauseConfig.pause
             }
@@ -228,10 +228,10 @@ function VideoSeekControl({
 export {
   findPreviewMediaElement,
   jsxMediaPlaybackControls,
-  MediaPlaybackControlsFound,
-  MediaPlaybackControlsFound_2,
-  MediaPlaybackControlsLabel,
-  MediaPlaybackControlsQuerySelector,
+  seekDisabledReason as MediaPlaybackControlsFound,
+  playDisabledReason as MediaPlaybackControlsFound_2,
+  notLoadedMessage as MediaPlaybackControlsLabel,
+  unavailableVideoReason as MediaPlaybackControlsQuerySelector,
   PropertiesInheritedFieldMixedAlias,
   PropertiesInheritedFieldValueAlias,
   reactMediaPlaybackControls,
@@ -248,48 +248,48 @@ export function installEditorMediaPlaybackControls(): () => void {
   return () => {
     ThisVideoIsnTPlayingHereRightMessage =
       uiMessage("inspector.playbackControls.thisVideoIsnTPlaying");
-    MediaPlaybackControlsLabel = uiMessage("inspector.playbackControls.theVideoHasnTLoaded");
+    notLoadedMessage = uiMessage("inspector.playbackControls.theVideoHasnTLoaded");
     ThisVideoCouldnTBeLoadedMessage = uiMessage("inspector.playbackControls.thisVideoCouldnTBe");
     ThisVideoCouldnTBeLoadedSoMessage =
       uiMessage("inspector.playbackControls.thisVideoCouldnTBe2");
-    MediaPlaybackControlsQuerySelector = (input?: Dynamic): Dynamic =>
-      isImageDecodeQueued(input)
+    unavailableVideoReason = (annotationId?: Dynamic): Dynamic =>
+      isImageDecodeQueued(annotationId)
         ? uiMessage("inspector.playbackControls.only") +
           String(4) +
           " videos play at once on a page. This one starts when another is deleted or leaves view."
         : (document as Dynamic).querySelector(
               '[data-mega-annotation="' +
-                CSS.escape(input) +
+                CSS.escape(annotationId) +
                 '"][data-clip-failed]',
             ) != null
           ? ThisVideoCouldnTBeLoadedSoMessage
           : undefined;
     ThisVideoDoesnTSayHowLongMessage =
       uiMessage("inspector.playbackControls.thisVideoDoesnTSay");
-    MediaPlaybackControlsFound = (
-      input?: Dynamic,
-      options?: Dynamic,
+    seekDisabledReason = (
+      state?: Dynamic,
+      absentReason?: Dynamic,
     ): Dynamic =>
-      input.found
-        ? input.failed
+      state.found
+        ? state.failed
           ? ThisVideoCouldnTBeLoadedMessage
-          : input.ready
-            ? input.seekable
+          : state.ready
+            ? state.seekable
               ? undefined
               : ThisVideoDoesnTSayHowLongMessage
-            : MediaPlaybackControlsLabel
-        : (options ?? ThisVideoIsnTPlayingHereRightMessage);
-    MediaPlaybackControlsFound_2 = (
-      input?: Dynamic,
-      options?: Dynamic,
+            : notLoadedMessage
+        : (absentReason ?? ThisVideoIsnTPlayingHereRightMessage);
+    playDisabledReason = (
+      state?: Dynamic,
+      absentReason?: Dynamic,
     ): Dynamic =>
-      input.found
-        ? input.failed
+      state.found
+        ? state.failed
           ? ThisVideoCouldnTBeLoadedMessage
-          : input.ready
+          : state.ready
             ? undefined
-            : MediaPlaybackControlsLabel
-        : (options ?? ThisVideoIsnTPlayingHereRightMessage);
+            : notLoadedMessage
+        : (absentReason ?? ThisVideoIsnTPlayingHereRightMessage);
     initializeCdsIndex();
     reactMediaPlaybackControls = toModuleNamespace(
       load_react(),

@@ -6,7 +6,7 @@ import { getStyleProperty } from "../css/declarations";
 import { HtmlTagNormalizationSubscribers } from "../html/tag-normalization";
 import { SelectionActionsHelmetScHelmetPattern } from "../selection/actions";
 
-function parseAuthoredInsets(input?: Dynamic): Dynamic {
+function parseAuthoredInsets(styleText?: Dynamic): Dynamic {
   let state: Dynamic = {
     inset: {
       top: "auto",
@@ -21,83 +21,83 @@ function parseAuthoredInsets(input?: Dynamic): Dynamic {
       left: "0",
     },
   };
-  for (let value of input.split(";") as Dynamic) {
-    let value2: Dynamic = value.indexOf(":"),
-      value3: Dynamic =
-        value2 < 0 ? "" : value.slice(0, value2).trim().toLowerCase(),
-      value4: Dynamic =
-        value2 < 0
+  for (let declaration of styleText.split(";") as Dynamic) {
+    let colonIndex: Dynamic = declaration.indexOf(":"),
+      propertyName: Dynamic =
+        colonIndex < 0 ? "" : declaration.slice(0, colonIndex).trim().toLowerCase(),
+      valueTokens: Dynamic =
+        colonIndex < 0
           ? []
-          : value
-              .slice(value2 + 1)
+          : declaration
+              .slice(colonIndex + 1)
               .replace(/!important/i, "")
               .trim()
               .toLowerCase()
               .split(/\s+/),
-      value5: Dynamic = /^(?:margin-)?(top|right|bottom|left)$/.exec(
-        value3,
+      sideName: Dynamic = /^(?:margin-)?(top|right|bottom|left)$/.exec(
+        propertyName,
       )?.[1],
-      value6: Dynamic = /^(?:inset|margin)-(inline|block)$/.exec(value3)?.[1],
-      value7: Dynamic =
-        /^(inset|margin)(-inline|-block)?$/.exec(value3)?.[1] ??
-        (value5 == null
+      axisName: Dynamic = /^(?:inset|margin)-(inline|block)$/.exec(propertyName)?.[1],
+      boxKind: Dynamic =
+        /^(inset|margin)(-inline|-block)?$/.exec(propertyName)?.[1] ??
+        (sideName == null
           ? null
-          : value3.startsWith("margin-")
+          : propertyName.startsWith("margin-")
             ? "margin"
             : "inset");
-    (value7 !== "inset" && value7 !== "margin") ||
-      value4[0] == null ||
-      (value5
-        ? (state[value7][value5] = value4[0])
-        : value6 === "inline"
-          ? Object.assign(state[value7], {
-              left: value4[0],
-              right: value4[1] ?? value4[0],
+    (boxKind !== "inset" && boxKind !== "margin") ||
+      valueTokens[0] == null ||
+      (sideName
+        ? (state[boxKind][sideName] = valueTokens[0])
+        : axisName === "inline"
+          ? Object.assign(state[boxKind], {
+              left: valueTokens[0],
+              right: valueTokens[1] ?? valueTokens[0],
             })
-          : value6 === "block"
-            ? Object.assign(state[value7], {
-                top: value4[0],
-                bottom: value4[1] ?? value4[0],
+          : axisName === "block"
+            ? Object.assign(state[boxKind], {
+                top: valueTokens[0],
+                bottom: valueTokens[1] ?? valueTokens[0],
               })
-            : Object.assign(state[value7], {
-                top: value4[0],
-                right: value4[1] ?? value4[0],
-                bottom: value4[2] ?? value4[0],
-                left: value4[3] ?? value4[1] ?? value4[0],
+            : Object.assign(state[boxKind], {
+                top: valueTokens[0],
+                right: valueTokens[1] ?? valueTokens[0],
+                bottom: valueTokens[2] ?? valueTokens[0],
+                left: valueTokens[3] ?? valueTokens[1] ?? valueTokens[0],
               }));
   }
   return state;
 }
 function isUnconstrainedAbsoluteElement(
   element?: Dynamic,
-  options?: Dynamic,
+  allowConstrainedChildren?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = element.getAttribute("style") ?? "",
-    value2: Dynamic = getStyleProperty(value, "position").trim();
-  if (value2 !== "absolute" && value2 !== "fixed") return false;
-  let { inset: value3, margin: value4 }: Dynamic = parseAuthoredInsets(value),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      /^0(px)?$/.test(value3[input]) &&
+  let styleText: Dynamic = element.getAttribute("style") ?? "",
+    positionValue: Dynamic = getStyleProperty(styleText, "position").trim();
+  if (positionValue !== "absolute" && positionValue !== "fixed") return false;
+  let { inset: insets, margin: margins }: Dynamic = parseAuthoredInsets(styleText),
+    isFullSpanOnSide: Dynamic = (side?: Dynamic): Dynamic =>
+      /^0(px)?$/.test(insets[side]) &&
       /^100(%|vw|vh)$/.test(
         getStyleProperty(
-          value,
-          input === "left" ? "width" : "height",
+          styleText,
+          side === "left" ? "width" : "height",
         ).trim(),
       ),
-    value5: Dynamic = callback("left") && callback("top"),
-    callback2: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic =>
-      ((value3[input] !== "auto" && value3[options2] !== "auto") || value5) &&
-      !(value4[input] === "auto" && value4[options2] === "auto"),
-    value6: Dynamic = [...element.children].some(
-      (input?: Dynamic): Dynamic =>
-        !SelectionActionsHelmetScHelmetPattern.test(input.tagName) &&
+    isFullBleed: Dynamic = isFullSpanOnSide("left") && isFullSpanOnSide("top"),
+    isConstrainedOnAxis: Dynamic = (startSide?: Dynamic, endSide?: Dynamic): Dynamic =>
+      ((insets[startSide] !== "auto" && insets[endSide] !== "auto") || isFullBleed) &&
+      !(margins[startSide] === "auto" && margins[endSide] === "auto"),
+    hasContentChildren: Dynamic = [...element.children].some(
+      (child?: Dynamic): Dynamic =>
+        !SelectionActionsHelmetScHelmetPattern.test(child.tagName) &&
         !HtmlTagNormalizationSubscribers.has(
-          input.tagName.toLowerCase(),
+          child.tagName.toLowerCase(),
         ),
     );
   return !(
-    (callback2("left", "right") || callback2("top", "bottom")) &&
-    (value6 || options)
+    (isConstrainedOnAxis("left", "right") || isConstrainedOnAxis("top", "bottom")) &&
+    (hasContentChildren || allowConstrainedChildren)
   );
 }
 export {
