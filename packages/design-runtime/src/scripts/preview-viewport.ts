@@ -1,211 +1,211 @@
 /** Restored injected script; compiled as an isolated IIFE before insertion into a preview. */
 import type { Dynamic } from "../runtime-types";
-(function (this: Dynamic, ..._extraArguments: Dynamic[]): Dynamic {
+(function (this: Dynamic, ..._scriptArgs: Dynamic[]): Dynamic {
   /* Viewport guard */
-  var value_doc: Dynamic = document;
-  var value_align: Dynamic = function (
+  var previewDocument: Dynamic = document;
+  var scrollDelta: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    detail?: Dynamic,
-    ..._extraArguments2: Dynamic[]
+    targetStart?: Dynamic,
+    targetEnd?: Dynamic,
+    viewportStart?: Dynamic,
+    viewportEnd?: Dynamic,
+    alignment?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    if (detail === "start") return input - context;
-    if (detail === "end") return options - value;
-    if (detail === "center")
-      return (input + options) / 2 - (context + value) / 2;
+    if (alignment === "start") return targetStart - viewportStart;
+    if (alignment === "end") return targetEnd - viewportEnd;
+    if (alignment === "center")
+      return (targetStart + targetEnd) / 2 - (viewportStart + viewportEnd) / 2;
     if (
-      (input >= context && options <= value) ||
-      (input < context && options > value)
+      (targetStart >= viewportStart && targetEnd <= viewportEnd) ||
+      (targetStart < viewportStart && targetEnd > viewportEnd)
     )
       return 0; /* fully visible, or covering */
     /* center-if-needed centres only a fully hidden target; a partly visible one moves to the nearest edge */
-    if (detail === "center-if-needed" && (options <= context || input >= value))
-      return (input + options) / 2 - (context + value) / 2;
-    var value_fits: Dynamic = options - input <= value - context;
-    if (input < context) return value_fits ? input - context : options - value;
-    return value_fits ? options - value : input - context;
+    if (alignment === "center-if-needed" && (targetEnd <= viewportStart || targetStart >= viewportEnd))
+      return (targetStart + targetEnd) / 2 - (viewportStart + viewportEnd) / 2;
+    var targetFits: Dynamic = targetEnd - targetStart <= viewportEnd - viewportStart;
+    if (targetStart < viewportStart) return targetFits ? targetStart - viewportStart : targetEnd - viewportEnd;
+    return targetFits ? targetEnd - viewportEnd : targetStart - viewportStart;
   };
-  var value_styleOf: Dynamic = function (
+  var tryComputedStyle: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments3: Dynamic[]
+    element?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     try {
-      return getComputedStyle(input);
-    } catch (value_e: Dynamic) {
+      return getComputedStyle(element);
+    } catch (_error: Dynamic) {
       return null;
     }
   };
-  var value_set: Dynamic = function (
+  var isActiveCssValue: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments4: Dynamic[]
+    cssValue?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    return !!input && input !== "none" && input !== "auto";
+    return !!cssValue && cssValue !== "none" && cssValue !== "auto";
   };
   /* transform-like properties make a box the containing block of its absolute AND fixed descendants */
-  var value_containsFixed: Dynamic = function (
+  var createsFixedContainingBlock: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments5: Dynamic[]
+    style?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     return (
-      value_set(input.transform) ||
-      value_set(input.translate) ||
-      value_set(input.rotate) ||
-      value_set(input.scale) ||
-      value_set(input.perspective) ||
-      value_set(input.filter) ||
-      value_set(input.backdropFilter) ||
-      input.transformStyle === "preserve-3d" ||
-      /layout|paint|strict|content/.test(input.contain || "") ||
+      isActiveCssValue(style.transform) ||
+      isActiveCssValue(style.translate) ||
+      isActiveCssValue(style.rotate) ||
+      isActiveCssValue(style.scale) ||
+      isActiveCssValue(style.perspective) ||
+      isActiveCssValue(style.filter) ||
+      isActiveCssValue(style.backdropFilter) ||
+      style.transformStyle === "preserve-3d" ||
+      /layout|paint|strict|content/.test(style.contain || "") ||
       /(^|,)\s*(transform|translate|rotate|scale|perspective|filter|backdrop-filter)\s*(,|$)/.test(
-        input.willChange || "",
+        style.willChange || "",
       )
     );
   };
-  var value_scrolls: Dynamic = function (
+  var canScroll: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments6: Dynamic[]
+    element?: Dynamic,
+    style?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    var value_v: Dynamic =
-      options.overflow + " " + options.overflowX + " " + options.overflowY;
+    var overflow: Dynamic =
+      style.overflow + " " + style.overflowX + " " + style.overflowY;
     return (
-      /auto|scroll|hidden/.test(value_v) &&
-      (input.scrollHeight > input.clientHeight ||
-        input.scrollWidth > input.clientWidth)
+      /auto|scroll|hidden/.test(overflow) &&
+      (element.scrollHeight > element.clientHeight ||
+        element.scrollWidth > element.clientWidth)
     );
   };
-  var value_up: Dynamic = function (
+  var composedParent: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments7: Dynamic[]
+    node?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    if (input.assignedSlot) return input.assignedSlot;
-    var parentNode: Dynamic = input.parentNode;
+    if (node.assignedSlot) return node.assignedSlot;
+    var parentNode: Dynamic = node.parentNode;
     return parentNode && parentNode.nodeType === 11 && parentNode.host
       ? parentNode.host
       : parentNode;
   };
   /* Reveal el inside this document only: each scrolling ancestor, then the frame's own viewport. Never the parent's. */
-  var value_reveal: Dynamic = function (
+  var revealInPreview: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    ..._extraArguments8: Dynamic[]
+    element?: Dynamic,
+    blockAlignment?: Dynamic,
+    inlineAlignment?: Dynamic,
+    smoothViewport?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     if (
-      !input ||
-      typeof input.getClientRects !== "function" ||
-      input.getClientRects().length === 0
+      !element ||
+      typeof element.getClientRects !== "function" ||
+      element.getClientRects().length === 0
     )
       return; /* no box: nothing to reveal */
-    var value_d: Dynamic = input.ownerDocument || value_doc;
-    var value_root: Dynamic =
-      value_d.scrollingElement || value_d.documentElement;
+    var ownerDocument: Dynamic = element.ownerDocument || previewDocument;
+    var scrollingRoot: Dynamic =
+      ownerDocument.scrollingElement || ownerDocument.documentElement;
     /* Only boxes in el's containing-block chain can move it: an absolute box skips static ancestors up to a positioned or
      * transform-like one; a fixed box skips everything up to a transform-like one (none: not even the viewport moves it). */
-    var value_es: Dynamic = value_styleOf(input);
-    var value_pos: Dynamic = (value_es && value_es.position) || "static";
-    var value_seekAbs: Dynamic = value_pos === "absolute",
-      value_seekFixed: Dynamic = value_pos === "fixed";
+    var elementStyle: Dynamic = tryComputedStyle(element);
+    var position: Dynamic = (elementStyle && elementStyle.position) || "static";
+    var seekingAbsoluteContainer: Dynamic = position === "absolute",
+      seekingFixedContainer: Dynamic = position === "fixed";
     for (
-      var value_n: Dynamic = value_up(input);
-      value_n && value_n !== value_root && value_n.nodeType === 1;
-      value_n = value_up(value_n)
+      var ancestor: Dynamic = composedParent(element);
+      ancestor && ancestor !== scrollingRoot && ancestor.nodeType === 1;
+      ancestor = composedParent(ancestor)
     ) {
-      var value_cs: Dynamic = value_styleOf(value_n);
-      if (!value_cs) continue;
-      value_pos = value_cs.position || "static";
+      var ancestorStyle: Dynamic = tryComputedStyle(ancestor);
+      if (!ancestorStyle) continue;
+      position = ancestorStyle.position || "static";
       if (
-        value_seekFixed
-          ? !value_containsFixed(value_cs)
-          : value_seekAbs &&
-            value_pos === "static" &&
-            !value_containsFixed(value_cs)
+        seekingFixedContainer
+          ? !createsFixedContainingBlock(ancestorStyle)
+          : seekingAbsoluteContainer &&
+            position === "static" &&
+            !createsFixedContainingBlock(ancestorStyle)
       )
         continue;
-      value_seekAbs = value_pos === "absolute";
-      value_seekFixed = value_pos === "fixed";
-      if (!value_scrolls(value_n, value_cs)) continue;
-      var bounds: Dynamic = input.getBoundingClientRect();
-      var bounds2: Dynamic = value_n.getBoundingClientRect();
-      var value_cTop: Dynamic = bounds2.top + value_n.clientTop,
-        value_cLeft: Dynamic = bounds2.left + value_n.clientLeft;
-      var scrollTop: Dynamic = value_align(
+      seekingAbsoluteContainer = position === "absolute";
+      seekingFixedContainer = position === "fixed";
+      if (!canScroll(ancestor, ancestorStyle)) continue;
+      var bounds: Dynamic = element.getBoundingClientRect();
+      var ancestorBounds: Dynamic = ancestor.getBoundingClientRect();
+      var scrollportTop: Dynamic = ancestorBounds.top + ancestor.clientTop,
+        scrollportLeft: Dynamic = ancestorBounds.left + ancestor.clientLeft;
+      var scrollTop: Dynamic = scrollDelta(
         bounds.top,
         bounds.bottom,
-        value_cTop,
-        value_cTop + value_n.clientHeight,
-        options,
+        scrollportTop,
+        scrollportTop + ancestor.clientHeight,
+        blockAlignment,
       );
-      var scrollLeft: Dynamic = value_align(
+      var scrollLeft: Dynamic = scrollDelta(
         bounds.left,
         bounds.right,
-        value_cLeft,
-        value_cLeft + value_n.clientWidth,
-        context,
+        scrollportLeft,
+        scrollportLeft + ancestor.clientWidth,
+        inlineAlignment,
       );
       if (!scrollLeft && !scrollTop) continue;
       /* instant even under CSS scroll-behavior:smooth: the next step must read the settled position ('smooth' applies to the viewport step) */
-      if (typeof value_n.scrollTo === "function")
-        value_n.scrollTo({
-          left: value_n.scrollLeft + scrollLeft,
-          top: value_n.scrollTop + scrollTop,
+      if (typeof ancestor.scrollTo === "function")
+        ancestor.scrollTo({
+          left: ancestor.scrollLeft + scrollLeft,
+          top: ancestor.scrollTop + scrollTop,
           behavior: "instant",
         });
       else {
-        value_n.scrollTop += scrollTop;
-        value_n.scrollLeft += scrollLeft;
+        ancestor.scrollTop += scrollTop;
+        ancestor.scrollLeft += scrollLeft;
       }
     }
-    if (value_seekFixed) return;
-    var bounds3: Dynamic = input.getBoundingClientRect();
-    var value_vw: Dynamic =
-        (value_root && value_root.clientWidth) ||
+    if (seekingFixedContainer) return;
+    var viewportTargetBounds: Dynamic = element.getBoundingClientRect();
+    var viewportWidth: Dynamic =
+        (scrollingRoot && scrollingRoot.clientWidth) ||
         (window as Dynamic).innerWidth,
-      value_vh: Dynamic =
-        (value_root && value_root.clientHeight) ||
+      viewportHeight: Dynamic =
+        (scrollingRoot && scrollingRoot.clientHeight) ||
         (window as Dynamic).innerHeight;
-    var top: Dynamic = value_align(
-      bounds3.top,
-      bounds3.bottom,
+    var top: Dynamic = scrollDelta(
+      viewportTargetBounds.top,
+      viewportTargetBounds.bottom,
       0,
-      value_vh,
-      options,
+      viewportHeight,
+      blockAlignment,
     );
-    var left: Dynamic = value_align(
-      bounds3.left,
-      bounds3.right,
+    var left: Dynamic = scrollDelta(
+      viewportTargetBounds.left,
+      viewportTargetBounds.right,
       0,
-      value_vw,
-      context,
+      viewportWidth,
+      inlineAlignment,
     );
     if (left || top)
       (window as Dynamic).scrollBy({
         left: left,
         top: top,
-        behavior: value ? "smooth" : "auto",
+        behavior: smoothViewport ? "smooth" : "auto",
       });
   };
-  var value_deepActive: Dynamic = function (
+  var findDeepActiveElement: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments9: Dynamic[]
+    element?: Dynamic,
+    fallbackDocument?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    var value_r: Dynamic = input.getRootNode
-      ? input.getRootNode()
-      : options; /* el's own (possibly closed) shadow root sees its activeElement */
+    var root: Dynamic = element.getRootNode
+      ? element.getRootNode()
+      : fallbackDocument; /* el's own (possibly closed) shadow root sees its activeElement */
     var activeElement: Dynamic = (
-      value_r && "activeElement" in value_r ? value_r : options
+      root && "activeElement" in root ? root : fallbackDocument
     ).activeElement;
     while (
       activeElement &&
@@ -215,60 +215,60 @@ import type { Dynamic } from "../runtime-types";
       activeElement = activeElement.shadowRoot.activeElement;
     return activeElement;
   };
-  var value_within: Dynamic = function (
+  var isWithinComposedTree: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments0: Dynamic[]
+    element?: Dynamic,
+    ancestor?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    for (var value_n: Dynamic = input; value_n; value_n = value_up(value_n))
-      if (value_n === options) return true;
+    for (var currentNode: Dynamic = element; currentNode; currentNode = composedParent(currentNode))
+      if (currentNode === ancestor) return true;
     return false;
   };
-  var value_guardFocus: Dynamic = function (
+  var guardFocusScroll: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments1: Dynamic[]
+    prototype?: Dynamic,
+    ..._setupArgs: Dynamic[]
   ): Dynamic {
-    if (!input || typeof input.focus !== "function") return;
-    var focus: Dynamic = input.focus;
+    if (!prototype || typeof prototype.focus !== "function") return;
+    var focus: Dynamic = prototype.focus;
     /* reveal only what actually took focus (el, or its delegate inside it), and only if focus moved - as the native does */
-    input.focus = function value_focus(
+    prototype.focus = function value_focus(
       this: Dynamic,
-      input2?: Dynamic,
-      ..._extraArguments10: Dynamic[]
+      focusOptions?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic {
-      var value_d: Dynamic = this.ownerDocument || value_doc;
-      var value_before: Dynamic = value_deepActive(this, value_d);
+      var ownerDocument: Dynamic = this.ownerDocument || previewDocument;
+      var previousActiveElement: Dynamic = findDeepActiveElement(this, ownerDocument);
       // MineDesign: restorer fix — call the saved native focus, as the original script does (`native.call`); the restored
       // code called the wrapper itself and recursed until the stack overflowed whenever an artboard element was focused.
       focus.call(
         this,
-        input2 && input2.focusVisible !== undefined
+        focusOptions && focusOptions.focusVisible !== undefined
           ? {
               preventScroll: true,
-              focusVisible: input2.focusVisible,
+              focusVisible: focusOptions.focusVisible,
             }
           : {
               preventScroll: true,
             },
       );
-      if (input2 && input2.preventScroll) return;
+      if (focusOptions && focusOptions.preventScroll) return;
       try {
-        var value_a: Dynamic = value_deepActive(this, value_d);
-        if (value_a && value_a !== value_before && value_within(value_a, this))
-          value_reveal(value_a, "center-if-needed", "center-if-needed", false);
-      } catch (value_e: Dynamic) {}
+        var activeElement: Dynamic = findDeepActiveElement(this, ownerDocument);
+        if (activeElement && activeElement !== previousActiveElement && isWithinComposedTree(activeElement, this))
+          revealInPreview(activeElement, "center-if-needed", "center-if-needed", false);
+      } catch (_error: Dynamic) {}
     };
   };
-  value_guardFocus(
+  guardFocusScroll(
     (window as Dynamic).HTMLElement &&
       (window as Dynamic).HTMLElement.prototype,
   );
-  value_guardFocus(
+  guardFocusScroll(
     (window as Dynamic).SVGElement && (window as Dynamic).SVGElement.prototype,
   );
-  value_guardFocus(
+  guardFocusScroll(
     (window as Dynamic).MathMLElement &&
       (window as Dynamic).MathMLElement.prototype,
   );
@@ -276,36 +276,36 @@ import type { Dynamic } from "../runtime-types";
   if (Element) {
     Element.prototype.scrollIntoView = function value_scrollIntoView(
       this: Dynamic,
-      input?: Dynamic,
-      ..._extraArguments11: Dynamic[]
+      scrollOptions?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic {
-      var value_dict: Dynamic = input == null || typeof input === "object";
-      var value_o: Dynamic = (value_dict && input) || {};
-      var value_block: Dynamic = value_dict
-        ? value_o.block || "start"
-        : input
+      var usesOptionsObject: Dynamic = scrollOptions == null || typeof scrollOptions === "object";
+      var normalizedOptions: Dynamic = (usesOptionsObject && scrollOptions) || {};
+      var blockAlignment: Dynamic = usesOptionsObject
+        ? normalizedOptions.block || "start"
+        : scrollOptions
           ? "start"
           : "end";
       try {
-        value_reveal(
+        revealInPreview(
           this,
-          value_block,
-          value_o.inline || "nearest",
-          value_o.behavior === "smooth",
+          blockAlignment,
+          normalizedOptions.inline || "nearest",
+          normalizedOptions.behavior === "smooth",
         );
-      } catch (value_e: Dynamic) {}
+      } catch (_error: Dynamic) {}
     };
     Element.prototype.scrollIntoViewIfNeeded =
       function value_scrollIntoViewIfNeeded(
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments12: Dynamic[]
+        centerIfNeeded?: Dynamic,
+        ..._unusedArgs: Dynamic[]
       ): Dynamic {
-        var value_mode: Dynamic =
-          input === undefined || input ? "center-if-needed" : "nearest";
+        var alignment: Dynamic =
+          centerIfNeeded === undefined || centerIfNeeded ? "center-if-needed" : "nearest";
         try {
-          value_reveal(this, value_mode, value_mode, false);
-        } catch (value_e: Dynamic) {}
+          revealInPreview(this, alignment, alignment, false);
+        } catch (_error: Dynamic) {}
       };
   }
 })();

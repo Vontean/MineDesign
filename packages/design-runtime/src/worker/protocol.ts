@@ -113,6 +113,6 @@ export type FileOperation =
   | { op: "undo" }
   | { op: "askClaude"; prompt?: string };
 /** A compiler-enforced exhaustive branch for consumers of the protocol. */
-export function assertNever(value: never): never {
-  throw new Error("Unhandled worker message: " + String(value));
+export function assertNever(unhandledMessage: never): never {
+  throw new Error("Unhandled worker message: " + String(unhandledMessage));
 }

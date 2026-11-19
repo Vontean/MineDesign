@@ -6,15 +6,15 @@
 import type { Dynamic } from './types';
 const host = globalThis as Dynamic;
 if (!host.setImmediate) {
-  host.setImmediate = (callback: Dynamic, ...args: Dynamic[]) => setTimeout(callback, 0, ...args);
+  host.setImmediate = (run: Dynamic, ...args: Dynamic[]) => setTimeout(run, 0, ...args);
   host.clearImmediate = (id: Dynamic) => clearTimeout(id);
 }
 if (!host.process) {
   host.process = {platform: 'browser', arch: '', argv: [], env: {}, versions: {}, on() {}, off() {}, cwd: () => '/'};
 }
 export class Buffer extends Uint8Array {
-  static from(input: Dynamic, ..._options: Dynamic[]): Dynamic {
-    return typeof input === 'string' ? new TextEncoder().encode(input) : new Uint8Array(input);
+  static from(source: Dynamic, ..._options: Dynamic[]): Dynamic {
+    return typeof source === 'string' ? new TextEncoder().encode(source) : new Uint8Array(source);
   }
   static isBuffer(_input?: Dynamic): boolean { return false; }
   static concat(items: Uint8Array[]): Uint8Array {

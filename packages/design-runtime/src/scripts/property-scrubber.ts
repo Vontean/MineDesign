@@ -744,7 +744,7 @@ const workerScope = self as unknown as PropertyScrubberWorkerScope;
         const values = control.options ?? [];
         if (options.length * values.length > MAX_TEMPLATE_OPTIONS) return null;
         options = options.flatMap((prefixOption) =>
-          values.map((value) => prefixOption + prefix + value),
+          values.map((suffix) => prefixOption + prefix + suffix),
         );
         index = placeholderEnd;
       }
@@ -815,10 +815,10 @@ const workerScope = self as unknown as PropertyScrubberWorkerScope;
                 : null;
     }
   }
-  function createEnumControl(options: string[]): ResolvedControl {
+  function createEnumControl(enumOptions: string[]): ResolvedControl {
     const control: ResolvedControl = {
       kind: "enum",
-      options: [...new Set(options)].slice(0, MAX_ENUM_OPTIONS + 1),
+      options: [...new Set(enumOptions)].slice(0, MAX_ENUM_OPTIONS + 1),
     };
     control.options !== void 0 &&
       control.options.length > 0 &&
@@ -1034,7 +1034,7 @@ const workerScope = self as unknown as PropertyScrubberWorkerScope;
   function extractComponentProperties(
     componentName: string,
     texts: string[],
-    options?: ExtractOptions,
+    extractOptions?: ExtractOptions,
   ): PropertySpec[] {
     budgetExceeded = false;
     const validTexts = texts.filter(
@@ -1042,7 +1042,7 @@ const workerScope = self as unknown as PropertyScrubberWorkerScope;
     );
     if (!isValidComponentName(componentName) || validTexts.length === 0)
       return [];
-    let keep = new Set(options?.keep),
+    let keep = new Set(extractOptions?.keep),
       properties: Map<string, PropertySpec> = new Map(),
       visited: Set<string> = new Set(),
       resolver = getResolver(validTexts),
