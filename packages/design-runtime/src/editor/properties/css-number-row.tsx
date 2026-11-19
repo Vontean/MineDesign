@@ -14,15 +14,15 @@ import { useLiveStyleScrub } from "./live-scrub";
 import { NumericInput } from "./numeric-input";
 import { PropertyRow } from "./row";
 
-function fieldUnitBounds(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input === (options?.unit ?? "");
+function fieldUnitBounds(currentUnit?: Dynamic, spec?: Dynamic): Dynamic {
+  let isDefaultUnit: Dynamic = currentUnit === (spec?.unit ?? "");
   return {
-    min: value
-      ? options?.min
-      : options?.min != null && options.min >= 0
+    min: isDefaultUnit
+      ? spec?.min
+      : spec?.min != null && spec.min >= 0
         ? 0
         : undefined,
-    max: value ? options?.max : options?.max === 0 ? 0 : undefined,
+    max: isDefaultUnit ? spec?.max : spec?.max === 0 ? 0 : undefined,
   };
 }
 function PropertyTextInput({
@@ -30,7 +30,7 @@ function PropertyTextInput({
   placeholder: placeholder,
   hint: hint,
   title: title,
-  disabled: disabled2,
+  disabled: isDisabled,
   fullWidth: fullWidth,
   className: className,
   "aria-label": ariaLabel,
@@ -38,68 +38,68 @@ function PropertyTextInput({
   onArrowStep: onArrowStep,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [text, setText]: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useState)(display),
-    value3: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    isFocusedRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       false,
     ),
-    value4: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    isCancelledRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       false,
     ),
-    value5: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    arrowCommittedTextRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       null,
     ),
-    value6: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    isEditedRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       false,
     );
   (0, reactPropertiesDropShadowEditor_2.useEffect)((): Dynamic => {
-    (!value3.current || !value6.current) && value2(display);
+    (!isFocusedRef.current || !isEditedRef.current) && setText(display);
   }, [display]);
-  let value7: Dynamic = placeholder === Value_6 || placeholder === "";
+  let hasEmptyPlaceholder: Dynamic = placeholder === Value_6 || placeholder === "";
   return (
     <TextInput
       type={"text"}
-      value={value}
-      placeholder={value7 && hint !== undefined ? (hint) : (placeholder)}
+      value={text}
+      placeholder={hasEmptyPlaceholder && hint !== undefined ? (hint) : (placeholder)}
       title={title}
-      disabled={disabled2}
+      disabled={isDisabled}
       aria-label={ariaLabel}
       fullWidth={fullWidth}
       className={cn(
         placeholder !== "Mixed" &&
-          !value7 &&
+          !hasEmptyPlaceholder &&
           "placeholder:text-primary [&_input]:placeholder:text-primary",
         className,
       )}
       onFocus={(event?: Dynamic): Dynamic => {
-        value3.current = true;
-        value6.current = false;
+        isFocusedRef.current = true;
+        isEditedRef.current = false;
         event.target.select();
       }}
       onChange={(event?: Dynamic): Dynamic => {
-        value5.current = null;
-        value6.current = true;
-        value2(event.target.value);
+        arrowCommittedTextRef.current = null;
+        isEditedRef.current = true;
+        setText(event.target.value);
       }}
       onBlur={(): Dynamic => {
-        value3.current = false;
-        let current: Dynamic = value4.current;
-        value4.current = false;
-        let current2: Dynamic = value6.current;
-        value6.current = false;
-        let value8: Dynamic = value5.current === value;
-        value5.current = null;
-        current2 &&
-          !current &&
-          !value8 &&
-          value !== display &&
-          onCommitText(value);
-        value2(display);
+        isFocusedRef.current = false;
+        let wasCancelled: Dynamic = isCancelledRef.current;
+        isCancelledRef.current = false;
+        let wasEdited: Dynamic = isEditedRef.current;
+        isEditedRef.current = false;
+        let wasArrowCommitted: Dynamic = arrowCommittedTextRef.current === text;
+        arrowCommittedTextRef.current = null;
+        wasEdited &&
+          !wasCancelled &&
+          !wasArrowCommitted &&
+          text !== display &&
+          onCommitText(text);
+        setText(display);
       }}
       onKeyDown={(event?: Dynamic): Dynamic => {
         if (event.key === "Enter" || event.key === "Escape") {
           event.key === "Escape" &&
-            ((value4.current = true), value2(display));
+            ((isCancelledRef.current = true), setText(display));
           event.target.blur();
           return;
         }
@@ -109,17 +109,17 @@ function PropertyTextInput({
         ) {
           if (event.metaKey || event.ctrlKey || event.nativeEvent.isComposing)
             return;
-          let value8: Dynamic = onArrowStep(
-            value,
+          let steppedText: Dynamic = onArrowStep(
+            text,
             event.key === "ArrowUp" ? 1 : -1,
             event,
           );
-          if (value8 == null) return;
+          if (steppedText == null) return;
           event.preventDefault();
-          value5.current = value8;
-          value6.current = true;
-          value2(value8);
-          onCommitText(value8);
+          arrowCommittedTextRef.current = steppedText;
+          isEditedRef.current = true;
+          setText(steppedText);
+          onCommitText(steppedText);
           let target: Dynamic = event.target;
           requestAnimationFrame((): Dynamic => target.select());
         }
@@ -127,46 +127,46 @@ function PropertyTextInput({
     />
   );
 }
-function useFieldNumericArrowStep(input?: Dynamic): Dynamic {
-  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(input.state),
-    value3: Dynamic =
-      !value ||
-      (value2 && parseCssNumber(value) != null) ||
-      (classifyStyleValue(value).kind === "var" &&
-        parseCssNumber(input.state.fallback) != null),
-    value4: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+function useFieldNumericArrowStep(props?: Dynamic): Dynamic {
+  let { text: text, isLiteral: isLiteral }: Dynamic = inspectorFieldDisplay(props.state),
+    isNumeric: Dynamic =
+      !text ||
+      (isLiteral && parseCssNumber(text) != null) ||
+      (classifyStyleValue(text).kind === "var" &&
+        parseCssNumber(props.state.fallback) != null),
+    containerRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       null,
     ),
-    value5: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    hasFocusRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       false,
     ),
-    value6: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
-      value3,
+    wasNumericRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+      isNumeric,
     );
   (0,
   reactPropertiesDropShadowEditor_2.useLayoutEffect)((): Dynamic => {
     if (
-      value6.current === value3 ||
-      ((value6.current = value3), !value5.current)
+      wasNumericRef.current === isNumeric ||
+      ((wasNumericRef.current = isNumeric), !hasFocusRef.current)
     )
       return;
-    let value7: Dynamic = value4.current?.querySelector(
+    let inputElement: Dynamic = containerRef.current?.querySelector(
       'input:not([aria-hidden="true"])',
     );
-    value7?.focus();
-    value7?.select();
-  }, [value3]);
+    inputElement?.focus();
+    inputElement?.select();
+  }, [isNumeric]);
   return (
     <div
-      ref={value4}
+      ref={containerRef}
       className={"contents"}
-      onFocusCapture={(): Dynamic => (value5.current = true)}
-      onBlurCapture={(input2?: Dynamic): Dynamic => {
-        value4.current?.contains(input2.relatedTarget) ||
-          (value5.current = false);
+      onFocusCapture={(): Dynamic => (hasFocusRef.current = true)}
+      onBlurCapture={(blurEvent?: Dynamic): Dynamic => {
+        containerRef.current?.contains(blurEvent.relatedTarget) ||
+          (hasFocusRef.current = false);
       }}
     >
-      {value3 ? (<PropertyCssNumberRow {...input} />) : (<PropertyCssTextRow {...input} />)}
+      {isNumeric ? (<PropertyCssNumberRow {...props} />) : (<PropertyCssTextRow {...props} />)}
     </div>
   );
 }
@@ -176,119 +176,119 @@ function PropertyCssNumberRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, placeholder: value2 }: Dynamic = inspectorFieldDisplay(state),
+  let { text: text, placeholder: placeholderText }: Dynamic = inspectorFieldDisplay(state),
     spec: Dynamic = state.spec,
-    value3: Dynamic =
-      !!value && classifyStyleValue(value).kind === "var",
-    value4: Dynamic =
-      value && !value3 ? parseCssNumber(value) : null,
-    value5: Dynamic = parseCssNumber(
-      value3 ? (state.fallback ?? "") : value2,
+    isVar: Dynamic =
+      !!text && classifyStyleValue(text).kind === "var",
+    parsedValue: Dynamic =
+      text && !isVar ? parseCssNumber(text) : null,
+    displayNumber: Dynamic = parseCssNumber(
+      isVar ? (state.fallback ?? "") : placeholderText,
     );
-  if (!value5 && value2 && !state.mixed) {
-    let value19: Dynamic =
+  if (!displayNumber && placeholderText && !state.mixed) {
+    let scrubStart: Dynamic =
       spec?.scrubFrom ??
       parseCssNumber(spec?.defaultValue)?.value;
-    value19 != null &&
-      (value5 = {
-        value: value19,
+    scrubStart != null &&
+      (displayNumber = {
+        value: scrubStart,
         unit: spec?.unit ?? "",
       });
   }
-  let value6: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+  let isPointerDownRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       false,
     ),
-    value7: Dynamic =
-      value4 != null
-        ? value4.unit || spec?.unit || ""
+    unit: Dynamic =
+      parsedValue != null
+        ? parsedValue.unit || spec?.unit || ""
         : spec?.unit === ""
           ? ""
-          : value5?.unit || spec?.unit || "",
-    value8: Dynamic = value5 != null && value5.unit === value7,
-    value9: Dynamic = value7 === (spec?.unit ?? ""),
-    value10: Dynamic =
-      getFineUnitStep(value7, undefined) != null,
-    value11: Dynamic = value9 ? (spec?.step ?? 1) : value10 ? 0.1 : 1,
-    value12: Dynamic =
-      value7 === "" && Number.isInteger(value11) && value11 >= 1
-        ? value11
-        : value10
+          : displayNumber?.unit || spec?.unit || "",
+    isFallbackUnit: Dynamic = displayNumber != null && displayNumber.unit === unit,
+    isDefaultUnit: Dynamic = unit === (spec?.unit ?? ""),
+    hasFineUnitStep: Dynamic =
+      getFineUnitStep(unit, undefined) != null,
+    step: Dynamic = isDefaultUnit ? (spec?.step ?? 1) : hasFineUnitStep ? 0.1 : 1,
+    smallStep: Dynamic =
+      unit === "" && Number.isInteger(step) && step >= 1
+        ? step
+        : hasFineUnitStep
           ? 0.01
           : undefined,
-    value13: Dynamic = fieldUnitBounds(value7, spec),
-    value14: Dynamic =
-      state.mixed || value4 == null
+    bounds: Dynamic = fieldUnitBounds(unit, spec),
+    currentNumber: Dynamic =
+      state.mixed || parsedValue == null
         ? undefined
         : state.varSource
-          ? roundCssNumber(value4.value, value7)
-          : value4.value,
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      onCommit(state.prop, formatCssNumber(input, value7)),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value19: Dynamic = formatCssNumber(input, value7);
-      value19 !== (state.varSource ?? state.value ?? "") &&
-        onCommit(state.prop, value19);
+          ? roundCssNumber(parsedValue.value, unit)
+          : parsedValue.value,
+    commitScrubbed: Dynamic = (scrubbedNumber?: Dynamic): Dynamic =>
+      onCommit(state.prop, formatCssNumber(scrubbedNumber, unit)),
+    commitNumber: Dynamic = (nextNumber?: Dynamic): Dynamic => {
+      let formattedValue: Dynamic = formatCssNumber(nextNumber, unit);
+      formattedValue !== (state.varSource ?? state.value ?? "") &&
+        onCommit(state.prop, formattedValue);
     },
-    value15: Dynamic = value8
-      ? roundCssNumber(value5.value, value5.unit)
+    fallbackNumber: Dynamic = isFallbackUnit
+      ? roundCssNumber(displayNumber.value, displayNumber.unit)
       : (spec?.scrubFrom ?? 0),
-    { start: value16, live: value17 }: Dynamic = useLiveStyleScrub({
-      value: value14 ?? value15 ?? 0,
-      step: value9
-        ? getFineUnitStep(value7, spec?.scrub)
-        : value10
+    { start: startScrub, live: liveValue }: Dynamic = useLiveStyleScrub({
+      value: currentNumber ?? fallbackNumber ?? 0,
+      step: isDefaultUnit
+        ? getFineUnitStep(unit, spec?.scrub)
+        : hasFineUnitStep
           ? 0.01
           : 1,
-      min: value13.min,
-      max: value13.max,
+      min: bounds.min,
+      max: bounds.max,
       disabled: state.disabled || state.mixed,
-      onScrub: callback,
+      onScrub: commitScrubbed,
     }),
-    value18: Dynamic =
+    scrubLabelProps: Dynamic =
       state.disabled || state.mixed
         ? undefined
         : {
-            onPointerDown: (input?: Dynamic): Dynamic => {
-              value6.current = true;
+            onPointerDown: (pointerEvent?: Dynamic): Dynamic => {
+              isPointerDownRef.current = true;
               try {
-                value16(input);
+                startScrub(pointerEvent);
               } finally {
-                value6.current = false;
+                isPointerDownRef.current = false;
               }
             },
             className: "cursor-ew-resize touch-none",
           };
   return (
-    <PropertyRow {...shell} labelProps={value18}>
+    <PropertyRow {...shell} labelProps={scrubLabelProps}>
       <NumericInput
-        value={value17 ?? value14}
-        mixed={state.mixed && value17 == null}
+        value={liveValue ?? currentNumber}
+        mixed={state.mixed && liveValue == null}
         placeholder={
-          value5 ? (String(roundCssNumber(value5.value, value5.unit)) + value8 ? "" : value5.unit) : (value2 === Value_6 ? (undefined) : (value2))
+          displayNumber ? (String(roundCssNumber(displayNumber.value, displayNumber.unit)) + isFallbackUnit ? "" : displayNumber.unit) : (placeholderText === Value_6 ? (undefined) : (placeholderText))
         }
         hint={Value_6}
         unit={
-          value7 && !state.mixed && (value4 != null || value5 != null)
-            ? value7
+          unit && !state.mixed && (parsedValue != null || displayNumber != null)
+            ? unit
             : undefined
         }
         unitScrubs={false}
         refuseLetters={true}
-        ownUnit={value7}
-        step={value11}
-        smallStep={value12}
-        min={value13.min}
-        max={value13.max}
-        emptyStepFrom={state.mixed ? null : (value14 ?? value15)}
+        ownUnit={unit}
+        step={step}
+        smallStep={smallStep}
+        min={bounds.min}
+        max={bounds.max}
+        emptyStepFrom={state.mixed ? null : (currentNumber ?? fallbackNumber)}
         clearable={true}
         title={spec?.hint}
         aria-label={state.label}
         disabled={state.disabled}
-        onValue={(input?: Dynamic): Dynamic => {
-          if (input === undefined) {
-            if (value6.current) return;
+        onValue={(nextNumber?: Dynamic): Dynamic => {
+          if (nextNumber === undefined) {
+            if (isPointerDownRef.current) return;
             onCommit(state.prop, null);
-          } else callback2(input);
+          } else commitNumber(nextNumber);
         }}
       />
     </PropertyRow>

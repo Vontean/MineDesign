@@ -17,20 +17,20 @@ function PropertyCssTextRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, placeholder: value2 }: Dynamic = inspectorFieldDisplay(state);
+  let { text: value, placeholder: placeholder }: Dynamic = inspectorFieldDisplay(state);
   return (
     <PropertyRow {...shell}>
       <PropertyTextInput
         display={value}
-        placeholder={value2}
+        placeholder={placeholder}
         hint={state.hint}
         aria-label={state.label}
         disabled={state.disabled}
-        onCommitText={(input?: Dynamic): Dynamic =>
+        onCommitText={(text?: Dynamic): Dynamic =>
           onCommit(
             state.prop,
-            input.trim()
-              ? normalizePropertyNumber(state.prop, input.trim())
+            text.trim()
+              ? normalizePropertyNumber(state.prop, text.trim())
               : null,
           )
         }
@@ -38,11 +38,11 @@ function PropertyCssTextRow({
     </PropertyRow>
   );
 }
-function propertyOptionLabel(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input?.optionLabels?.[options];
-  if (value) return uiCssLabel(options, value);
-  let value2: Dynamic = options.replace(/-/g, " ");
-  return uiCssLabel(options, value2.charAt(0).toUpperCase() + value2.slice(1));
+function propertyOptionLabel(spec?: Dynamic, optionName?: Dynamic): Dynamic {
+  let value: Dynamic = spec?.optionLabels?.[optionName];
+  if (value) return uiCssLabel(optionName, value);
+  let spacedName: Dynamic = optionName.replace(/-/g, " ");
+  return uiCssLabel(optionName, spacedName.charAt(0).toUpperCase() + spacedName.slice(1));
 }
 function PropertyCssEnumRow({
   state: state,
@@ -50,44 +50,44 @@ function PropertyCssEnumRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(state);
-  if (!value2 && value)
+  let { text: value, isLiteral: isLiteral }: Dynamic = inspectorFieldDisplay(state);
+  if (!isLiteral && value)
     return (
       <PropertyCssTextRow state={state} onCommit={onCommit} shell={shell} />
     );
-  let value3: Dynamic = state.spec?.options ?? [],
-    value4: Dynamic = value || "",
-    value5: Dynamic = (state.fallback ?? "").trim(),
-    value6: Dynamic = value4 === "" && !state.mixed,
-    value7: Dynamic = value4 !== "" && !value3.includes(value4),
-    items: Dynamic = [...(value7 ? [value4] : []), ...value3],
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      value7 && input === value4
-        ? input
-        : propertyOptionLabel(state.spec, input),
-    value8: Dynamic = value3.includes(value5)
-      ? propertyOptionLabel(state.spec, value5)
-      : value5;
+  let specOptions: Dynamic = state.spec?.options ?? [],
+    currentValue: Dynamic = value || "",
+    fallbackValue: Dynamic = (state.fallback ?? "").trim(),
+    isInherited: Dynamic = currentValue === "" && !state.mixed,
+    isCustomValue: Dynamic = currentValue !== "" && !specOptions.includes(currentValue),
+    items: Dynamic = [...(isCustomValue ? [currentValue] : []), ...specOptions],
+    toItemLabel: Dynamic = (optionValue?: Dynamic): Dynamic =>
+      isCustomValue && optionValue === currentValue
+        ? optionValue
+        : propertyOptionLabel(state.spec, optionValue),
+    fallbackLabel: Dynamic = specOptions.includes(fallbackValue)
+      ? propertyOptionLabel(state.spec, fallbackValue)
+      : fallbackValue;
   return (
     <PropertyRow {...shell}>
       <PropertySelect
         aria-label={state.label}
         items={items.map(
-          (input?: Dynamic): Dynamic => ({
-            value: input,
-            label: callback(input),
+          (optionValue?: Dynamic): Dynamic => ({
+            value: optionValue,
+            label: toItemLabel(optionValue),
           }),
         )}
-        value={state.mixed ? null : value4 || null}
-        placeholder={state.mixed ? (uiMessage("inspector.cssValueRow.mixed")) : (value5 ? (value8) : (undefined))}
+        value={state.mixed ? null : currentValue || null}
+        placeholder={state.mixed ? (uiMessage("inspector.cssValueRow.mixed")) : (fallbackValue ? (fallbackLabel) : (undefined))}
         hint={Value_6}
         title={
-          value6 && !state.inheritedFrom ? (uiMessage("inspector.cssValueRow.inheritedRightClickToKeep")) : (undefined)
+          isInherited && !state.inheritedFrom ? (uiMessage("inspector.cssValueRow.inheritedRightClickToKeep")) : (undefined)
         }
         disabled={state.disabled}
-        onChange={(input?: Dynamic): Dynamic => {
-          (input || null) !== (value4 || null) &&
-            onCommit(state.prop, input || null);
+        onChange={(nextValue?: Dynamic): Dynamic => {
+          (nextValue || null) !== (currentValue || null) &&
+            onCommit(state.prop, nextValue || null);
         }}
       />
     </PropertyRow>

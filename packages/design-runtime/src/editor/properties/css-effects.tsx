@@ -27,210 +27,210 @@ var WebkitBackdropFilterValue: Dynamic;
 var PropertiesCssEffectsXYBlurConfig: Dynamic;
 var PropertiesCssEffectsXYBlurConfig_2: Dynamic;
 function useEditorColorSwatches(): Dynamic {
-  let { designColorTokens: value }: Dynamic = useInspectorContext();
+  let { designColorTokens: designColorTokens }: Dynamic = useInspectorContext();
   return (0, reactComponentsPropsPanel.useMemo)(
     (): Dynamic =>
-      value.map(
-        (input?: Dynamic): Dynamic => ({
-          name: input.name,
-          value: input.value,
-          label: input.name.startsWith("#")
-            ? input.name.toUpperCase()
-            : input.name,
+      designColorTokens.map(
+        (token?: Dynamic): Dynamic => ({
+          name: token.name,
+          value: token.value,
+          label: token.name.startsWith("#")
+            ? token.name.toUpperCase()
+            : token.name,
         }),
       ),
-    [value],
+    [designColorTokens],
   );
 }
 function splitEffectTokens(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  source?: Dynamic,
+  separatorPattern?: Dynamic,
+  keepEmpty: Dynamic = false,
 ): Dynamic {
   let items: Dynamic = [],
     index: Dynamic = 0,
     text: Dynamic = "";
-  for (let value of input as Dynamic) {
-    value === "("
+  for (let char of source as Dynamic) {
+    char === "("
       ? index++
-      : value === ")" && (index = Math.max(0, index - 1));
-    if (index === 0 && options.test(value)) {
-      (text.trim() || context) && items.push(text.trim());
+      : char === ")" && (index = Math.max(0, index - 1));
+    if (index === 0 && separatorPattern.test(char)) {
+      (text.trim() || keepEmpty) && items.push(text.trim());
       text = "";
       continue;
     }
-    text += value;
+    text += char;
   }
-  (text.trim() || context) && items.push(text.trim());
+  (text.trim() || keepEmpty) && items.push(text.trim());
   return items;
 }
-function parseCssShadow(input?: Dynamic, options?: Dynamic): Dynamic {
-  let flag: Dynamic = false,
-    flag2: Dynamic = false,
-    items: Dynamic = [],
-    items2: Dynamic = [],
-    items3: Dynamic = [];
-  for (let value7 of splitEffectTokens(input, /\s/) as Dynamic) {
-    let value8: Dynamic = parseCssNumber(value7);
+function parseCssShadow(shadowText?: Dynamic, allowSpreadAndInset?: Dynamic): Dynamic {
+  let hasInset: Dynamic = false,
+    lengthsEnded: Dynamic = false,
+    lengths: Dynamic = [],
+    colorTokensBefore: Dynamic = [],
+    colorTokensAfter: Dynamic = [];
+  for (let token of splitEffectTokens(shadowText, /\s/) as Dynamic) {
+    let parsedLength: Dynamic = parseCssNumber(token);
     if (
-      !!value8 &&
-      (value8.unit === "px" || (value8.unit === "" && value8.value === 0))
+      !!parsedLength &&
+      (parsedLength.unit === "px" || (parsedLength.unit === "" && parsedLength.value === 0))
     ) {
-      if (flag2 || items.length >= 4) return null;
-      items.push(value8.value);
+      if (lengthsEnded || lengths.length >= 4) return null;
+      lengths.push(parsedLength.value);
       continue;
     }
-    if (value8) return null;
-    items.length > 0 && (flag2 = true);
-    if (value7.toLowerCase() === "inset") {
-      if (flag) return null;
-      flag = true;
+    if (parsedLength) return null;
+    lengths.length > 0 && (lengthsEnded = true);
+    if (token.toLowerCase() === "inset") {
+      if (hasInset) return null;
+      hasInset = true;
       continue;
     }
-    (items.length === 0 ? items2 : items3).push(value7);
+    (lengths.length === 0 ? colorTokensBefore : colorTokensAfter).push(token);
   }
   if (
-    items.length < 2 ||
-    (items2.length > 0 && items3.length > 0) ||
-    (!options && (flag || items.length > 3))
+    lengths.length < 2 ||
+    (colorTokensBefore.length > 0 && colorTokensAfter.length > 0) ||
+    (!allowSpreadAndInset && (hasInset || lengths.length > 3))
   )
     return null;
-  let value: Dynamic = [...items2, ...items3].join(" "),
-    value2: Dynamic = validateStyleColor(
-      value || "currentcolor",
+  let colorText: Dynamic = [...colorTokensBefore, ...colorTokensAfter].join(" "),
+    color: Dynamic = validateStyleColor(
+      colorText || "currentcolor",
     );
-  if (value2 === undefined) return null;
-  let [value3, value4, value5 = 0, value6 = 0]: Dynamic = items;
+  if (color === undefined) return null;
+  let [offsetX, offsetY, blurRadius = 0, spreadRadius = 0]: Dynamic = lengths;
   return !PropertiesCssEffectsMin(
-    value3,
+    offsetX,
     StyleSchemaShadowXYBlurConfig.x,
   ) ||
     !PropertiesCssEffectsMin(
-      value4,
+      offsetY,
       StyleSchemaShadowXYBlurConfig.y,
     ) ||
     !PropertiesCssEffectsMin(
-      value5,
+      blurRadius,
       StyleSchemaShadowXYBlurConfig.blur,
     ) ||
     !PropertiesCssEffectsMin(
-      value6,
+      spreadRadius,
       StyleSchemaShadowXYBlurConfig.spread,
     )
     ? null
-    : options
-      ? flag
+    : allowSpreadAndInset
+      ? hasInset
         ? {
-            x: value3,
-            y: value4,
-            blur: value5,
-            spread: value6,
+            x: offsetX,
+            y: offsetY,
+            blur: blurRadius,
+            spread: spreadRadius,
             inset: true,
-            color: value2,
+            color: color,
           }
         : {
-            x: value3,
-            y: value4,
-            blur: value5,
-            spread: value6,
-            color: value2,
+            x: offsetX,
+            y: offsetY,
+            blur: blurRadius,
+            spread: spreadRadius,
+            color: color,
           }
       : {
-          x: value3,
-          y: value4,
-          blur: value5,
-          color: value2,
+          x: offsetX,
+          y: offsetY,
+          blur: blurRadius,
+          color: color,
         };
 }
-function parseCssShadows(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim();
-  if (!value || value === "none") return [];
-  if (classifyStyleValue(value).kind !== "literal") return null;
-  let value2: Dynamic = splitEffectTokens(value, /,/, true);
-  if (value2.length === 0 || value2.length > StyleSchemaValuesLimit)
+function parseCssShadows(shadowText?: Dynamic, allowSpreadAndInset?: Dynamic): Dynamic {
+  let trimmedText: Dynamic = (shadowText ?? "").trim();
+  if (!trimmedText || trimmedText === "none") return [];
+  if (classifyStyleValue(trimmedText).kind !== "literal") return null;
+  let shadowTokens: Dynamic = splitEffectTokens(trimmedText, /,/, true);
+  if (shadowTokens.length === 0 || shadowTokens.length > StyleSchemaValuesLimit)
     return null;
   let items: Dynamic = [];
-  for (let value3 of value2 as Dynamic) {
-    let value4: Dynamic =
-      value3 === "" ? null : parseCssShadow(value3, options);
-    if (!value4) return null;
-    items.push(value4);
+  for (let shadowToken of shadowTokens as Dynamic) {
+    let parsedShadow: Dynamic =
+      shadowToken === "" ? null : parseCssShadow(shadowToken, allowSpreadAndInset);
+    if (!parsedShadow) return null;
+    items.push(parsedShadow);
   }
   return items;
 }
-function parseCssBlur(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim();
-  if (!value || value === "none") return {};
-  if (classifyStyleValue(value).kind !== "literal") return null;
-  let value2: Dynamic = /^blur\(\s*([^)]+)\)$/i.exec(value);
-  if (!value2) return null;
-  let value3: Dynamic = parseCssNumber(value2[1].trim());
-  return !value3 ||
-    !(value3.unit === "px" || (value3.unit === "" && value3.value === 0)) ||
-    !PropertiesCssEffectsMin(value3.value, styleFieldBoundsValue.blur)
+function parseCssBlur(blurText?: Dynamic): Dynamic {
+  let trimmedText: Dynamic = (blurText ?? "").trim();
+  if (!trimmedText || trimmedText === "none") return {};
+  if (classifyStyleValue(trimmedText).kind !== "literal") return null;
+  let blurMatch: Dynamic = /^blur\(\s*([^)]+)\)$/i.exec(trimmedText);
+  if (!blurMatch) return null;
+  let blurValue: Dynamic = parseCssNumber(blurMatch[1].trim());
+  return !blurValue ||
+    !(blurValue.unit === "px" || (blurValue.unit === "" && blurValue.value === 0)) ||
+    !PropertiesCssEffectsMin(blurValue.value, styleFieldBoundsValue.blur)
     ? null
     : {
-        blur: value3.value,
+        blur: blurValue.value,
       };
 }
-function parseCssFilters(input?: Dynamic): Dynamic {
-  if (/[^\S \t\n\r\f]/.test(input ?? "")) return null;
-  let value: Dynamic = (input ?? "").trim();
-  if (!value || value === "none")
+function parseCssFilters(filterText?: Dynamic): Dynamic {
+  if (/[^\S \t\n\r\f]/.test(filterText ?? "")) return null;
+  let trimmedText: Dynamic = (filterText ?? "").trim();
+  if (!trimmedText || trimmedText === "none")
     return {
       shadows: [],
       filter: {},
     };
-  if (classifyStyleValue(value).kind !== "literal") return null;
+  if (classifyStyleValue(trimmedText).kind !== "literal") return null;
   let items: Dynamic = [],
-    value2: Dynamic = splitEffectTokens(value, /\s/);
-  for (let [value3, value4] of value2.entries() as Dynamic) {
-    let value5: Dynamic = /^drop-shadow\(([\s\S]*)\)$/i.exec(value4);
-    if (!value5) {
-      let value7: Dynamic =
-        value3 === value2.length - 1 ? parseCssBlur(value4) : null;
-      return value7?.blur === undefined
+    filterTokens: Dynamic = splitEffectTokens(trimmedText, /\s/);
+  for (let [tokenIndex, token] of filterTokens.entries() as Dynamic) {
+    let dropShadowMatch: Dynamic = /^drop-shadow\(([\s\S]*)\)$/i.exec(token);
+    if (!dropShadowMatch) {
+      let trailingBlur: Dynamic =
+        tokenIndex === filterTokens.length - 1 ? parseCssBlur(token) : null;
+      return trailingBlur?.blur === undefined
         ? null
         : {
             shadows: items,
-            filter: value7,
+            filter: trailingBlur,
           };
     }
-    let value6: Dynamic =
+    let parsedShadow: Dynamic =
       items.length < StyleSchemaValuesLimit
-        ? parseCssShadow(value5[1], false)
+        ? parseCssShadow(dropShadowMatch[1], false)
         : null;
-    if (!value6) return null;
-    items.push(value6);
+    if (!parsedShadow) return null;
+    items.push(parsedShadow);
   }
   return {
     shadows: items,
     filter: {},
   };
 }
-function serializeEffectValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (options === undefined) return null;
-  let value: Dynamic = styleObjectToCss(
+function serializeEffectValue(propName?: Dynamic, effectValue?: Dynamic): Dynamic {
+  if (effectValue === undefined) return null;
+  let cssValue: Dynamic = styleObjectToCss(
     {
-      [input]: options,
+      [propName]: effectValue,
     },
     ParagraphValue,
-  )[input];
-  return value === undefined || value === "none" ? null : String(value);
+  )[propName];
+  return cssValue === undefined || cssValue === "none" ? null : String(cssValue);
 }
 function serializeDropShadowFilters(
-  input?: Dynamic,
-  options?: Dynamic,
+  shadows?: Dynamic,
+  blurFilter?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (Array.isArray(input) ? input : []).map(
-    (input2?: Dynamic): Dynamic =>
-      serializeEffectValue("textShadow", [input2]),
+  let serializedShadows: Dynamic = (Array.isArray(shadows) ? shadows : []).map(
+    (shadow?: Dynamic): Dynamic =>
+      serializeEffectValue("textShadow", [shadow]),
   );
-  if (value.some((input2?: Dynamic): Dynamic => input2 === null)) return [];
-  let value2: Dynamic = serializeEffectValue("filter", options),
+  if (serializedShadows.some((serialized?: Dynamic): Dynamic => serialized === null)) return [];
+  let serializedBlur: Dynamic = serializeEffectValue("filter", blurFilter),
     items: Dynamic = [
-      ...value.map((input2?: Dynamic): Dynamic => `drop-shadow(${input2})`),
-      ...(value2 !== null ? [value2] : []),
+      ...serializedShadows.map((serialized?: Dynamic): Dynamic => `drop-shadow(${serialized})`),
+      ...(serializedBlur !== null ? [serializedBlur] : []),
     ];
   return [
     {
@@ -249,246 +249,246 @@ function CssEffectsSection({
   fallback: fallback,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useEditorColorSwatches(),
-    entries: Dynamic = new Map(
-      rows.map((input?: Dynamic): Dynamic => [input.prop, input]),
+  let colorSwatches: Dynamic = useEditorColorSwatches(),
+    rowsByProp: Dynamic = new Map(
+      rows.map((row?: Dynamic): Dynamic => [row.prop, row]),
     ),
-    value2: Dynamic = shadowTarget === "text",
-    value3: Dynamic = shadowTarget === "shape",
-    entry: Dynamic = entries.get("box-shadow"),
-    entry2: Dynamic = entries.get("text-shadow"),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      !!input && (input.mixed === true || input.varSource !== undefined),
-    value4: Dynamic =
-      value3 && !callback(entries.get("filter"))
-        ? parseCssFilters(entries.get("filter")?.value)
+    isTextTarget: Dynamic = shadowTarget === "text",
+    isShapeTarget: Dynamic = shadowTarget === "shape",
+    boxShadowRow: Dynamic = rowsByProp.get("box-shadow"),
+    textShadowRow: Dynamic = rowsByProp.get("text-shadow"),
+    isUnparsableRow: Dynamic = (row?: Dynamic): Dynamic =>
+      !!row && (row.mixed === true || row.varSource !== undefined),
+    shapeFilters: Dynamic =
+      isShapeTarget && !isUnparsableRow(rowsByProp.get("filter"))
+        ? parseCssFilters(rowsByProp.get("filter")?.value)
         : null,
-    state: Dynamic = {
-      boxShadow: value3
+    parsedEffects: Dynamic = {
+      boxShadow: isShapeTarget
         ? []
-        : callback(entry)
+        : isUnparsableRow(boxShadowRow)
           ? null
-          : parseCssShadows(entry?.value, true),
-      filter: value3
-        ? (value4?.filter ?? null)
-        : callback(entries.get("filter"))
+          : parseCssShadows(boxShadowRow?.value, true),
+      filter: isShapeTarget
+        ? (shapeFilters?.filter ?? null)
+        : isUnparsableRow(rowsByProp.get("filter"))
           ? null
-          : parseCssBlur(entries.get("filter")?.value),
-      backdropFilter: value3
+          : parseCssBlur(rowsByProp.get("filter")?.value),
+      backdropFilter: isShapeTarget
         ? {}
-        : callback(entries.get("backdrop-filter"))
+        : isUnparsableRow(rowsByProp.get("backdrop-filter"))
           ? null
-          : parseCssBlur(entries.get("backdrop-filter")?.value),
-      textShadow: value3
-        ? (value4?.shadows ?? null)
-        : callback(entry2)
+          : parseCssBlur(rowsByProp.get("backdrop-filter")?.value),
+      textShadow: isShapeTarget
+        ? (shapeFilters?.shadows ?? null)
+        : isUnparsableRow(textShadowRow)
           ? null
-          : parseCssShadows(entry2?.value, false),
+          : parseCssShadows(textShadowRow?.value, false),
     },
-    value5: Dynamic = state.textShadow === null,
-    value6: Dynamic = (value2 || value3) && !value5,
-    value7: Dynamic = value6
+    isTextShadowUnparsable: Dynamic = parsedEffects.textShadow === null,
+    usesTextShadowProp: Dynamic = (isTextTarget || isShapeTarget) && !isTextShadowUnparsable,
+    effectKeys: Dynamic = usesTextShadowProp
       ? PropertiesCssEffectsBoxShadowTextShadowFilterValues
       : PropertiesCssEffectsBoxShadowFilterBackdropFilterValues,
-    value8: Dynamic = useStyleCommitScrub(
-      (input?: Dynamic): Dynamic => onCommitMany(input),
+    scrub: Dynamic = useStyleCommitScrub(
+      (commits?: Dynamic): Dynamic => onCommitMany(commits),
     ),
-    value9: Dynamic = (0, reactComponentsPropsPanel.useRef)({}),
-    [value10, value11]: Dynamic = (0,
+    liveValuesRef: Dynamic = (0, reactComponentsPropsPanel.useRef)({}),
+    [openEditor, setOpenEditor]: Dynamic = (0,
     reactComponentsPropsPanel.useState)(undefined),
-    value12: Dynamic = value10?.key === "textShadow",
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      value11(
-        (input2?: Dynamic): Dynamic =>
-          input
+    isTextEditorOpen: Dynamic = openEditor?.key === "textShadow",
+    setTextEditorOpen: Dynamic = (isOpen?: Dynamic): Dynamic =>
+      setOpenEditor(
+        (current?: Dynamic): Dynamic =>
+          isOpen
             ? {
                 key: "textShadow",
                 index: 0,
               }
-            : input2?.key === "textShadow"
+            : current?.key === "textShadow"
               ? undefined
-              : input2,
+              : current,
       );
   if (
-    state.boxShadow === null ||
-    state.filter === null ||
-    state.backdropFilter === null
+    parsedEffects.boxShadow === null ||
+    parsedEffects.filter === null ||
+    parsedEffects.backdropFilter === null
   )
     return (
       <jsxPropertiesLiveScrub.Fragment>
         {fallback}
       </jsxPropertiesLiveScrub.Fragment>
     );
-  let value13: Dynamic =
-      !value6 && (state.textShadow === null || state.textShadow.length > 1),
-    state2: Dynamic = {
-      ...(state.boxShadow.length > 0
+  let cannotEditTextShadow: Dynamic =
+      !usesTextShadowProp && (parsedEffects.textShadow === null || parsedEffects.textShadow.length > 1),
+    effectBag: Dynamic = {
+      ...(parsedEffects.boxShadow.length > 0
         ? {
-            boxShadow: state.boxShadow,
+            boxShadow: parsedEffects.boxShadow,
           }
         : {}),
-      ...(value6 && state.textShadow && state.textShadow.length > 0
+      ...(usesTextShadowProp && parsedEffects.textShadow && parsedEffects.textShadow.length > 0
         ? {
-            textShadow: state.textShadow,
+            textShadow: parsedEffects.textShadow,
           }
         : {}),
-      ...(state.filter.blur !== undefined
+      ...(parsedEffects.filter.blur !== undefined
         ? {
-            filter: state.filter,
+            filter: parsedEffects.filter,
           }
         : {}),
-      ...(state.backdropFilter.blur !== undefined
+      ...(parsedEffects.backdropFilter.blur !== undefined
         ? {
-            backdropFilter: state.backdropFilter,
+            backdropFilter: parsedEffects.backdropFilter,
           }
         : {}),
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let items2: Dynamic = [],
-        value16: Dynamic = state2,
-        value17: Dynamic = input ?? {},
-        callback7: Dynamic = (input2?: Dynamic): Dynamic =>
+    toCommits: Dynamic = (nextBagInput?: Dynamic): Dynamic => {
+      let commits: Dynamic = [],
+        currentBag: Dynamic = effectBag,
+        nextBag: Dynamic = nextBagInput ?? {},
+        hasChanged: Dynamic = (effectKey?: Dynamic): Dynamic =>
           !equalStyleBags(
-            value17[input2],
-            input2 in value9.current
-              ? value9.current[input2]
-              : value16[input2],
+            nextBag[effectKey],
+            effectKey in liveValuesRef.current
+              ? liveValuesRef.current[effectKey]
+              : currentBag[effectKey],
           );
-      for (let value18 of value7 as Dynamic) {
+      for (let effectKey of effectKeys as Dynamic) {
         if (
-          !callback7(value18) ||
-          (value3 && (value18 === "textShadow" || value18 === "filter"))
+          !hasChanged(effectKey) ||
+          (isShapeTarget && (effectKey === "textShadow" || effectKey === "filter"))
         )
           continue;
-        let value19: Dynamic = serializeEffectValue(
-          value18,
-          value17[value18],
+        let serialized: Dynamic = serializeEffectValue(
+          effectKey,
+          nextBag[effectKey],
         );
-        items2.push({
-          prop: PropertiesCssEffectsBoxShadowTextShadowFilterConfig[value18],
-          value: value19,
+        commits.push({
+          prop: PropertiesCssEffectsBoxShadowTextShadowFilterConfig[effectKey],
+          value: serialized,
         });
-        value18 === "backdropFilter" &&
-          items2.push({
+        effectKey === "backdropFilter" &&
+          commits.push({
             prop: WebkitBackdropFilterValue,
-            value: value19,
+            value: serialized,
           });
       }
-      value3 &&
-        (callback7("textShadow") || callback7("filter")) &&
-        items2.push(
-          ...serializeDropShadowFilters(value17.textShadow, value17.filter),
+      isShapeTarget &&
+        (hasChanged("textShadow") || hasChanged("filter")) &&
+        commits.push(
+          ...serializeDropShadowFilters(nextBag.textShadow, nextBag.filter),
         );
-      return items2;
+      return commits;
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      (input.value ?? "").trim().toLowerCase() === "none",
-    callback5: Dynamic = (input?: Dynamic): Dynamic =>
-      value3 &&
-      ["box-shadow", "backdrop-filter", "text-shadow"].includes(input.prop),
-    value14: Dynamic = rows.filter(
-      (input?: Dynamic): Dynamic =>
-        callback5(input)
-          ? !!input.value || input.mixed === true
-          : ["box-shadow", "filter", "backdrop-filter"].includes(input.prop)
-            ? callback4(input)
-            : input.prop === "text-shadow"
-              ? value13 || callback4(input)
+    isNoneRow: Dynamic = (row?: Dynamic): Dynamic =>
+      (row.value ?? "").trim().toLowerCase() === "none",
+    isShapeOwnedRow: Dynamic = (row?: Dynamic): Dynamic =>
+      isShapeTarget &&
+      ["box-shadow", "backdrop-filter", "text-shadow"].includes(row.prop),
+    visibleRows: Dynamic = rows.filter(
+      (row?: Dynamic): Dynamic =>
+        isShapeOwnedRow(row)
+          ? !!row.value || row.mixed === true
+          : ["box-shadow", "filter", "backdrop-filter"].includes(row.prop)
+            ? isNoneRow(row)
+            : row.prop === "text-shadow"
+              ? cannotEditTextShadow || isNoneRow(row)
               : true,
     ),
-    value15: Dynamic = value6 || value13 ? undefined : state.textShadow?.[0],
-    callback6: Dynamic = (input?: Dynamic): Dynamic => {
-      let value16: Dynamic = input
-        ? serializeEffectValue("textShadow", [input])
+    singleTextShadow: Dynamic = usesTextShadowProp || cannotEditTextShadow ? undefined : parsedEffects.textShadow?.[0],
+    commitTextShadow: Dynamic = (shadow?: Dynamic): Dynamic => {
+      let serialized: Dynamic = shadow
+        ? serializeEffectValue("textShadow", [shadow])
         : null;
-      (input && value16 === null) ||
+      (shadow && serialized === null) ||
         onCommitMany([
           {
             prop: "text-shadow",
-            value: value16,
+            value: serialized,
           },
         ]);
     },
     items: Dynamic = [
-      ...(entry2 && !value2 && !value3 && !value13 && !value15
+      ...(textShadowRow && !isTextTarget && !isShapeTarget && !cannotEditTextShadow && !singleTextShadow
         ? [
             {
               get label() { return uiMessage("inspector.cssEffects.textShadow"); },
-              disabled: entry2.disabled,
-              disabledReason: entry2.disabled
-                ? entry2.whyDisabled
+              disabled: textShadowRow.disabled,
+              disabledReason: textShadowRow.disabled
+                ? textShadowRow.whyDisabled
                 : undefined,
               onSelect: (): Dynamic => {
-                callback2(true);
-                callback6(PropertiesCssEffectsXYBlurConfig);
+                setTextEditorOpen(true);
+                commitTextShadow(PropertiesCssEffectsXYBlurConfig);
               },
             },
           ]
         : []),
-      ...addItemsFor(value14),
+      ...addItemsFor(visibleRows),
     ];
   return (
     <EffectsSection
       kind={ParagraphValue}
-      bag={state2}
-      shadowTarget={value3 ? "text" : shadowTarget}
-      silhouette={value3}
-      silhouetteReason={value3 ? NotOnShapesInsideAGraphicMessage : undefined}
+      bag={effectBag}
+      shadowTarget={isShapeTarget ? "text" : shadowTarget}
+      silhouette={isShapeTarget}
+      silhouetteReason={isShapeTarget ? NotOnShapesInsideAGraphicMessage : undefined}
       dropShadowDisabledReason={
         dropShadowReason ??
-        (value2 && value5 ? ThisTextAlreadyHasAShadowMessage : undefined)
+        (isTextTarget && isTextShadowUnparsable ? ThisTextAlreadyHasAShadowMessage : undefined)
       }
-      openEditor={value10}
-      setOpenEditor={value11}
+      openEditor={openEditor}
+      setOpenEditor={setOpenEditor}
       unifiedColorPopover={true}
-      swatches={value}
-      onCommit={(input?: Dynamic): Dynamic => {
-        let value16: Dynamic = callback3(input);
-        value9.current = {};
-        value16.length > 0 && onCommitMany(value16);
+      swatches={colorSwatches}
+      onCommit={(nextBag?: Dynamic): Dynamic => {
+        let commits: Dynamic = toCommits(nextBag);
+        liveValuesRef.current = {};
+        commits.length > 0 && onCommitMany(commits);
       }}
-      onLive={(input?: Dynamic): Dynamic => {
-        let value16: Dynamic = callback3(input);
-        for (let value17 of value7 as Dynamic)
-          value9.current[value17] = input?.[value17];
-        value16.length > 0 && value8.onScrub(value16);
+      onLive={(liveBag?: Dynamic): Dynamic => {
+        let commits: Dynamic = toCommits(liveBag);
+        for (let effectKey of effectKeys as Dynamic)
+          liveValuesRef.current[effectKey] = liveBag?.[effectKey];
+        commits.length > 0 && scrub.onScrub(commits);
       }}
       onLiveEnd={(): Dynamic => {
-        value9.current = {};
-        value8.onScrubEnd();
+        liveValuesRef.current = {};
+        scrub.onScrubEnd();
       }}
       addItems={items}
     >
-      {entry2 && value15 !== undefined && (<DropShadowEditor
-          value={value15}
-          open={value12}
-          onOpenChange={callback2}
-          disabled={entry2.disabled}
-          onChange={callback6}
-          onLive={(input?: Dynamic): Dynamic => {
-            let value16: Dynamic = serializeEffectValue("textShadow", [
-                input,
+      {textShadowRow && singleTextShadow !== undefined && (<DropShadowEditor
+          value={singleTextShadow}
+          open={isTextEditorOpen}
+          onOpenChange={setTextEditorOpen}
+          disabled={textShadowRow.disabled}
+          onChange={commitTextShadow}
+          onLive={(liveShadow?: Dynamic): Dynamic => {
+            let serialized: Dynamic = serializeEffectValue("textShadow", [
+                liveShadow,
               ]),
-              value17: Dynamic =
-                "textShadow" in value9.current
-                  ? value9.current.textShadow
-                  : (entry2.value ?? null);
-            value9.current.textShadow = value16;
-            value16 !== null &&
-              value16 !== value17 &&
-              value8.onScrub([
+              previousSerialized: Dynamic =
+                "textShadow" in liveValuesRef.current
+                  ? liveValuesRef.current.textShadow
+                  : (textShadowRow.value ?? null);
+            liveValuesRef.current.textShadow = serialized;
+            serialized !== null &&
+              serialized !== previousSerialized &&
+              scrub.onScrub([
                 {
                   prop: "text-shadow",
-                  value: value16,
+                  value: serialized,
                 },
               ]);
           }}
           onLiveEnd={(): Dynamic => {
-            value9.current = {};
-            value8.onScrubEnd();
+            liveValuesRef.current = {};
+            scrub.onScrubEnd();
           }}
         />)}
-      {renderRows(value14)}
+      {renderRows(visibleRows)}
     </EffectsSection>
   );
 }
@@ -516,10 +516,10 @@ export {
 export function installEditorPropertiesCssEffects(): () => void {
   return () => {
     ParagraphValue = "paragraph";
-    PropertiesCssEffectsMin = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input >= options.min &&
-      input <= options.max &&
-      Math.round(input * 10) / 10 === input;
+    PropertiesCssEffectsMin = (candidate?: Dynamic, bounds?: Dynamic): Dynamic =>
+      candidate >= bounds.min &&
+      candidate <= bounds.max &&
+      Math.round(candidate * 10) / 10 === candidate;
     PropertiesCssEffectsBoxShadowTextShadowFilterConfig = {
       boxShadow: "box-shadow",
       textShadow: "text-shadow",

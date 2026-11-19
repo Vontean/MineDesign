@@ -16,13 +16,13 @@ import { PropertyColorRow } from "./rows";
 import { artboardColorSwatchGroup, editorColorSwatches, matchArtboardColorToken, matchAuthoredColorToken, resolveColorSwatchValue } from "./token-color-picker";
 
 var PropertiesColorRowSizeFillShadowSet: Dynamic;
-function backgroundWellValue(input?: Dynamic): Dynamic {
-  if (input.mixed)
+function backgroundWellValue(state?: Dynamic): Dynamic {
+  if (state.mixed)
     return {
       empty: true,
     };
-  let value: Dynamic = (input.fallback ?? "").trim(),
-    value2: Dynamic =
+  let value: Dynamic = (state.fallback ?? "").trim(),
+    fallbackWell: Dynamic =
       value && classifyStyleValue(value).kind === "literal"
         ? {
             css: value,
@@ -31,17 +31,17 @@ function backgroundWellValue(input?: Dynamic): Dynamic {
         : {
             empty: true,
           },
-    value3: Dynamic = (input.value ?? "").trim();
-  if (!value3) return value2;
-  let kind: Dynamic = classifyStyleValue(value3).kind;
+    currentValue: Dynamic = (state.value ?? "").trim();
+  if (!currentValue) return fallbackWell;
+  let kind: Dynamic = classifyStyleValue(currentValue).kind;
   return kind === "var"
-    ? value2
+    ? fallbackWell
     : kind !== "literal"
       ? {
           empty: true,
         }
       : {
-          css: value3,
+          css: currentValue,
           empty: false,
         };
 }
@@ -52,86 +52,86 @@ function PropertyCssColorRow({
 }: Dynamic): Dynamic {
   useUiLocale();
   let {
-      dsColorTokens: value,
-      artboardColors: value2,
-      iframeDefinedVars: value3,
-      editsAreUndoSteps: value4,
+      dsColorTokens: dsColorTokens,
+      artboardColors: artboardColors,
+      iframeDefinedVars: iframeDefinedVars,
+      editsAreUndoSteps: editsAreUndoSteps,
     }: Dynamic = useInspectorContext(),
-    { text: value5, placeholder: value6 }: Dynamic = inspectorFieldDisplay(state),
-    { css: value7, empty: value8 }: Dynamic = backgroundWellValue(state),
-    value9: Dynamic = resolveColorTokenValue(
+    { text: displayText, placeholder: displayPlaceholder }: Dynamic = inspectorFieldDisplay(state),
+    { css: cssColor, empty: isEmptyWell }: Dynamic = backgroundWellValue(state),
+    tokenColor: Dynamic = resolveColorTokenValue(
       state.varSource ?? state.value,
-      value,
+      dsColorTokens,
     );
-  value9 && ((value7 = value9), (value8 = false));
-  let value10: Dynamic = state.mixed
+  tokenColor && ((cssColor = tokenColor), (isEmptyWell = false));
+  let authoredValue: Dynamic = state.mixed
       ? undefined
-      : (state.varSource ?? (value5 || value6)) || undefined,
-    value11: Dynamic = state.varPartial ? value5 || value6 : value10,
-    value12: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
+      : (state.varSource ?? (displayText || displayPlaceholder)) || undefined,
+    tokenLookupValue: Dynamic = state.varPartial ? displayText || displayPlaceholder : authoredValue,
+    artboardTokenName: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
       (): Dynamic =>
-        matchArtboardColorToken(value11, value, value3),
-      [value11, value, value3],
+        matchArtboardColorToken(tokenLookupValue, dsColorTokens, iframeDefinedVars),
+      [tokenLookupValue, dsColorTokens, iframeDefinedVars],
     ),
-    value13: Dynamic =
+    isUnset: Dynamic =
       !!state.inheritedFrom || !(state.varSource ?? state.value ?? "").trim(),
-    [value14, value15]: Dynamic = (0,
+    [designSystemSwatches, setDesignSystemSwatches]: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useState)(undefined),
-    value16: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
+    mergedSwatches: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
       (): Dynamic =>
         mergeDesignSystemSwatches(
-          value14,
-          editorColorSwatches(value),
+          designSystemSwatches,
+          editorColorSwatches(dsColorTokens),
         ),
-      [value14, value],
+      [designSystemSwatches, dsColorTokens],
     ),
-    value17: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
+    currentSwatch: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
       (): Dynamic =>
-        matchAuthoredColorToken(value10, value16, value3),
-      [value10, value16, value3],
+        matchAuthoredColorToken(authoredValue, mergedSwatches, iframeDefinedVars),
+      [authoredValue, mergedSwatches, iframeDefinedVars],
     ),
-    value18: Dynamic =
-      value7 !== undefined &&
-      PropertiesDropShadowEditorTest(value7)
-        ? (normalizeCssColor(value7) ??
+    normalizedColor: Dynamic =
+      cssColor !== undefined &&
+      PropertiesDropShadowEditorTest(cssColor)
+        ? (normalizeCssColor(cssColor) ??
           normalizeCssColor(
-            describeColorValue(value7),
+            describeColorValue(cssColor),
           ) ??
-          value7)
+          cssColor)
         : undefined;
   return (
     <PropertyRow {...shell}>
       <PropertyColorRow
         testid={`dc-color-${state.prop}`}
         label={state.label}
-        value={value8 ? undefined : value18}
+        value={isEmptyWell ? undefined : normalizedColor}
         clearLabel={
-          describeColorValue(value5) ||
-          describeColorValue(value6) ||
+          describeColorValue(displayText) ||
+          describeColorValue(displayPlaceholder) ||
           Value_6
         }
-        unset={value13}
-        valueName={value12 ?? null}
+        unset={isUnset}
+        valueName={artboardTokenName ?? null}
         mixed={state.mixed}
         disabled={state.disabled}
-        swatches={value16}
-        current={value17}
+        swatches={mergedSwatches}
+        current={currentSwatch}
         fold={true}
         popoverTitle={ColorValue}
-        editsAreUndoSteps={value4}
-        onOpenChange={(input?: Dynamic): Dynamic => {
-          input && value15(artboardColorSwatchGroup(value2));
+        editsAreUndoSteps={editsAreUndoSteps}
+        onOpenChange={(isOpen?: Dynamic): Dynamic => {
+          isOpen && setDesignSystemSwatches(artboardColorSwatchGroup(artboardColors));
         }}
-        onSwatch={(input?: Dynamic): Dynamic => {
-          let value19: Dynamic = resolveColorSwatchValue(
-            input,
-            value16,
-            value3,
+        onSwatch={(swatchName?: Dynamic): Dynamic => {
+          let swatchValue: Dynamic = resolveColorSwatchValue(
+            swatchName,
+            mergedSwatches,
+            iframeDefinedVars,
           );
-          value19 !== undefined && onCommit(state.prop, value19);
+          swatchValue !== undefined && onCommit(state.prop, swatchValue);
         }}
-        onChange={(input?: Dynamic): Dynamic => {
-          input !== undefined && onCommit(state.prop, input);
+        onChange={(nextColor?: Dynamic): Dynamic => {
+          nextColor !== undefined && onCommit(state.prop, nextColor);
         }}
       />
     </PropertyRow>

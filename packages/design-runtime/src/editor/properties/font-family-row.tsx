@@ -14,34 +14,34 @@ import { ensureWebFonts, TypographyFontCatalogMapValue, TypographyFontCatalogSer
 import { displayFontFamily } from "../typography/font-family";
 
 var PropertiesFontFamilyRowTest: Dynamic;
-function normalizedFontFamilyOption(input?: Dynamic): Dynamic {
+function normalizedFontFamilyOption(familyName?: Dynamic): Dynamic {
   let entry: Dynamic = PropertiesAlignmentRowCache.get(
-    input.toLowerCase(),
+    familyName.toLowerCase(),
   );
-  return entry ? entry.family + ", " + entry.generic : input;
+  return entry ? entry.family + ", " + entry.generic : familyName;
 }
-function fontFamilyPickerOptions(input?: Dynamic): Dynamic {
-  let values: Dynamic = new Set(),
-    value: Dynamic = [...PropertiesAlignmentRowCache.values()]
-      .map((input2?: Dynamic): Dynamic => input2.family)
+function fontFamilyPickerOptions(pageFontFamilies?: Dynamic): Dynamic {
+  let seenFamilies: Dynamic = new Set(),
+    catalogFamilies: Dynamic = [...PropertiesAlignmentRowCache.values()]
+      .map((entry?: Dynamic): Dynamic => entry.family)
       .sort();
   return [
-    ...input.map(
-      (input2?: Dynamic): Dynamic =>
-        PropertiesAlignmentRowCache.get(input2.toLowerCase())
-          ?.family ?? input2,
+    ...pageFontFamilies.map(
+      (family?: Dynamic): Dynamic =>
+        PropertiesAlignmentRowCache.get(family.toLowerCase())
+          ?.family ?? family,
     ),
-    ...value,
+    ...catalogFamilies,
   ].flatMap(
-    (input2?: Dynamic): Dynamic =>
-      values.has(input2.toLowerCase())
+    (family?: Dynamic): Dynamic =>
+      seenFamilies.has(family.toLowerCase())
         ? []
-        : (values.add(input2.toLowerCase()),
+        : (seenFamilies.add(family.toLowerCase()),
           [
             {
-              value: input2,
-              label: input2,
-              labelStyle: PropertiesFontFamilyRowTest(input2),
+              value: family,
+              label: family,
+              labelStyle: PropertiesFontFamilyRowTest(family),
             },
           ]),
   );
@@ -54,8 +54,8 @@ function PropertyFontFamilyRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = inspectorFieldDisplay(state);
-  if (!value.isLiteral && value.text)
+  let display: Dynamic = inspectorFieldDisplay(state);
+  if (!display.isLiteral && display.text)
     return (
       <PropertyCssTextRow
         state={state}
@@ -63,56 +63,56 @@ function PropertyFontFamilyRow({
         shell={shell}
       />
     );
-  let value2: Dynamic = normalizeFontFamilyList(value.text),
-    value3: Dynamic = displayFontFamily(value.placeholder),
-    value4: Dynamic = fontFamilyPickerOptions(pageFonts),
-    value5: Dynamic = displayFontFamily(value2),
-    value6: Dynamic =
-      value2 === ""
+  let normalizedFamily: Dynamic = normalizeFontFamilyList(display.text),
+    placeholderFamily: Dynamic = displayFontFamily(display.placeholder),
+    pickerOptions: Dynamic = fontFamilyPickerOptions(pageFonts),
+    displayedFamily: Dynamic = displayFontFamily(normalizedFamily),
+    matchedOption: Dynamic =
+      normalizedFamily === ""
         ? undefined
-        : value4.find(
-            (input?: Dynamic): Dynamic =>
-              input.value.toLowerCase() === value5.toLowerCase(),
+        : pickerOptions.find(
+            (option?: Dynamic): Dynamic =>
+              option.value.toLowerCase() === displayedFamily.toLowerCase(),
           ),
-    value7: Dynamic =
-      value2 !== "" && !value6
+    selectItems: Dynamic =
+      normalizedFamily !== "" && !matchedOption
         ? [
             {
-              value: value2,
-              label: value5,
+              value: normalizedFamily,
+              label: displayedFamily,
               labelStyle: {
-                fontFamily: value.text,
+                fontFamily: display.text,
               },
             },
-            ...value4,
+            ...pickerOptions,
           ]
-        : value4,
-    value8: Dynamic = value2 === "" ? null : (value6?.value ?? value2);
+        : pickerOptions,
+    selectedValue: Dynamic = normalizedFamily === "" ? null : (matchedOption?.value ?? normalizedFamily);
   return (
     <PropertyRow {...shell}>
       <PropertySelect
         aria-label={state.label}
-        items={value7}
-        value={state.mixed ? null : value8}
-        placeholder={state.mixed ? (uiMessage("inspector.fontFamilyRow.mixed")) : (value3 || ("\u2014"))}
+        items={selectItems}
+        value={state.mixed ? null : selectedValue}
+        placeholder={state.mixed ? (uiMessage("inspector.fontFamilyRow.mixed")) : (placeholderFamily || ("\u2014"))}
         title={
-          value8 === null && !state.mixed && !state.inheritedFrom ? (uiMessage("inspector.fontFamilyRow.inheritedRightClickToKeep")) : (undefined)
+          selectedValue === null && !state.mixed && !state.inheritedFrom ? (uiMessage("inspector.fontFamilyRow.inheritedRightClickToKeep")) : (undefined)
         }
         disabled={state.disabled}
         searchable={true}
         searchLabel={"Search fonts"}
-        onOpenChange={(input?: Dynamic): Dynamic => {
-          input &&
+        onOpenChange={(isOpen?: Dynamic): Dynamic => {
+          isOpen &&
             ensureWebFonts([
               ...TypographyFontCatalogMapValue,
               ...pageWebfonts,
             ]);
         }}
-        onChange={(input?: Dynamic): Dynamic => {
-          input !== value8 &&
+        onChange={(nextFamily?: Dynamic): Dynamic => {
+          nextFamily !== selectedValue &&
             onCommit(
               state.prop,
-              input === value2 ? input : normalizedFontFamilyOption(input),
+              nextFamily === normalizedFamily ? nextFamily : normalizedFontFamilyOption(nextFamily),
             );
         }}
       />
@@ -127,14 +127,14 @@ export {
 };
 export function installEditorPropertiesFontFamilyRow(): () => void {
   return () => {
-    PropertiesFontFamilyRowTest = (input?: Dynamic): Dynamic =>
-      TypographyFontCatalogSerifSansSerifPattern.test(input)
+    PropertiesFontFamilyRowTest = (familyName?: Dynamic): Dynamic =>
+      TypographyFontCatalogSerifSansSerifPattern.test(familyName)
         ? {
-            fontFamily: input,
+            fontFamily: familyName,
           }
-        : /^[\w .-]+$/.test(input)
+        : /^[\w .-]+$/.test(familyName)
           ? {
-              fontFamily: `'${input}', sans-serif`,
+              fontFamily: `'${familyName}', sans-serif`,
             }
           : undefined;
   };

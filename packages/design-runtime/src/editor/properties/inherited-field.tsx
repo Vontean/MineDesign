@@ -15,7 +15,7 @@ function PropertyToggleRow({
   shell: shell,
   label: label,
   on: on,
-  disabled: disabled2,
+  disabled: isDisabled,
   onToggle: onToggle,
 }: Dynamic): Dynamic {
   useUiLocale();
@@ -23,7 +23,7 @@ function PropertyToggleRow({
     <PropertyRow
       label={label}
       {...shell}
-      onPress={disabled2 ? undefined : (): Dynamic => onToggle(!on)}
+      onPress={isDisabled ? undefined : (): Dynamic => onToggle(!on)}
     >
       <span
         data-testid={`dc-bool-${label.toLowerCase()}`}
@@ -33,103 +33,103 @@ function PropertyToggleRow({
           checked={on}
           onCheckedChange={onToggle}
           aria-label={label}
-          disabled={disabled2}
+          disabled={isDisabled}
         />
       </span>
     </PropertyRow>
   );
 }
-function inspectorFieldDisplay(input?: Dynamic): Dynamic {
-  if (input.mixed)
+function inspectorFieldDisplay(field?: Dynamic): Dynamic {
+  if (field.mixed)
     return {
       text: "",
       get placeholder() { return uiMessage("inspector.inheritedField.mixed"); },
       isLiteral: false,
     };
-  let value: Dynamic = input.value ?? "",
-    value2: Dynamic = classifyStyleValue(value);
-  return value2.kind === "unset"
+  let fieldValue: Dynamic = field.value ?? "",
+    valueKind: Dynamic = classifyStyleValue(fieldValue);
+  return valueKind.kind === "unset"
     ? {
         text: "",
-        placeholder: input.fallback || Value_6,
+        placeholder: field.fallback || Value_6,
         isLiteral: true,
       }
     : {
-        text: value,
+        text: fieldValue,
         placeholder: "",
-        isLiteral: value2.kind === "literal",
+        isLiteral: valueKind.kind === "literal",
       };
 }
-function isInheritedInspectorField(input?: Dynamic): Dynamic {
-  return !!input.inheritedFrom && !input.mixed;
+function isInheritedInspectorField(field?: Dynamic): Dynamic {
+  return !!field.inheritedFrom && !field.mixed;
 }
-function inheritedFieldForEdit(input?: Dynamic): Dynamic {
-  if (!input || !isInheritedInspectorField(input)) return input;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    input2 != null &&
-    input2 !== "" &&
-    classifyStyleValue(input2).kind === "literal"
-      ? input2
+function inheritedFieldForEdit(field?: Dynamic): Dynamic {
+  if (!field || !isInheritedInspectorField(field)) return field;
+  let literalOrUndefined: Dynamic = (candidate?: Dynamic): Dynamic =>
+    candidate != null &&
+    candidate !== "" &&
+    classifyStyleValue(candidate).kind === "literal"
+      ? candidate
       : undefined;
   return {
-    ...input,
+    ...field,
     value: null,
-    fallback: callback(input.value) ?? (input.fallback || input.value || ""),
+    fallback: literalOrUndefined(field.value) ?? (field.fallback || field.value || ""),
     companionValue: null,
     companionFallback:
-      callback(input.companionValue) ?? input.companionFallback,
+      literalOrUndefined(field.companionValue) ?? field.companionFallback,
   };
 }
-function inheritedFieldTooltip(input?: Dynamic): Dynamic {
-  if (!isInheritedInspectorField(input)) return;
-  let value: Dynamic = input.varSource ? ` (${input.varSource})` : "";
-  return uiMessage("inspector.inheritedField.fromValue1Value2EditTo", { value1: String(input.inheritedFrom), value2: String(value) });
+function inheritedFieldTooltip(field?: Dynamic): Dynamic {
+  if (!isInheritedInspectorField(field)) return;
+  let varSuffix: Dynamic = field.varSource ? ` (${field.varSource})` : "";
+  return uiMessage("inspector.inheritedField.fromValue1Value2EditTo", { value1: String(field.inheritedFrom), value2: String(varSuffix) });
 }
-function inheritedFieldDescription(input?: Dynamic): Dynamic {
-  if (isInheritedInspectorField(input))
-    return uiMessage("inspector.inheritedField.inheritedFromValue1EditTo", { value1: String(input.inheritedFrom) });
+function inheritedFieldDescription(field?: Dynamic): Dynamic {
+  if (isInheritedInspectorField(field))
+    return uiMessage("inspector.inheritedField.inheritedFromValue1EditTo", { value1: String(field.inheritedFrom) });
 }
-function inheritedFieldsDisabledReason(...input: Dynamic[]): Dynamic {
-  let value: Dynamic = input.find(
-    (input2?: Dynamic): Dynamic => input2?.disabled && input2.whyDisabled,
+function inheritedFieldsDisabledReason(...fields: Dynamic[]): Dynamic {
+  let explicitReason: Dynamic = fields.find(
+    (field?: Dynamic): Dynamic => field?.disabled && field.whyDisabled,
   )?.whyDisabled;
-  if (value !== undefined) return value;
-  let { names: value2, partly: value3 }: Dynamic =
-    summarizeInheritedFields(input);
-  return value2.length > 0
-    ? `${value3 ? uiMessage("inspector.inheritedField.partlyFrom") : "From"} ${value2.join(", ")} \u2014 edit to override it here`
+  if (explicitReason !== undefined) return explicitReason;
+  let { names: inheritedNames, partly: isPartly }: Dynamic =
+    summarizeInheritedFields(fields);
+  return inheritedNames.length > 0
+    ? `${isPartly ? uiMessage("inspector.inheritedField.partlyFrom") : "From"} ${inheritedNames.join(", ")} \u2014 edit to override it here`
     : undefined;
 }
-function inheritedFieldsDescription(...input: Dynamic[]): Dynamic {
-  let { names: value, partly: value2 }: Dynamic =
-    summarizeInheritedFields(input);
-  return value.length > 0
-    ? `${value2 ? uiMessage("inspector.inheritedField.partlyInherited") : "Inherited"} from ${value.join(", ")} \u2014 edit to override`
+function inheritedFieldsDescription(...fields: Dynamic[]): Dynamic {
+  let { names: inheritedNames, partly: isPartly }: Dynamic =
+    summarizeInheritedFields(fields);
+  return inheritedNames.length > 0
+    ? `${isPartly ? uiMessage("inspector.inheritedField.partlyInherited") : "Inherited"} from ${inheritedNames.join(", ")} \u2014 edit to override`
     : undefined;
 }
-function summarizeInheritedFields(input?: Dynamic): Dynamic {
+function summarizeInheritedFields(fields?: Dynamic): Dynamic {
   let items: Dynamic = [
       ...new Set(
-        input
+        fields
           .map(
-            (input2?: Dynamic): Dynamic =>
-              input2 && !input2.mixed ? input2.inheritedFrom : undefined,
+            (field?: Dynamic): Dynamic =>
+              field && !field.mixed ? field.inheritedFrom : undefined,
           )
-          .filter((input2?: Dynamic): Dynamic => !!input2)
-          .flatMap((input2?: Dynamic): Dynamic => input2.split(", ")),
+          .filter((source?: Dynamic): Dynamic => !!source)
+          .flatMap((sources?: Dynamic): Dynamic => sources.split(", ")),
       ),
     ],
-    value: Dynamic = input.some(
-      (input2?: Dynamic): Dynamic =>
-        input2 &&
-        !input2.mixed &&
-        !input2.inheritedFrom &&
-        input2.value != null &&
-        input2.value !== "",
+    hasOwnValue: Dynamic = fields.some(
+      (field?: Dynamic): Dynamic =>
+        field &&
+        !field.mixed &&
+        !field.inheritedFrom &&
+        field.value != null &&
+        field.value !== "",
     );
   return {
     names: items,
-    partly: value,
+    partly: hasOwnValue,
   };
 }
 export {
@@ -149,10 +149,10 @@ export {
 export function installEditorPropertiesInheritedField(): () => void {
   return () => {
     Value_6 = "\u2014";
-    PropertiesInheritedFieldValue = (input?: Dynamic): Dynamic =>
-      !!input && ((input.value != null && input.value !== "") || !!input.mixed);
-    PropertiesInheritedFieldMixed = (input?: Dynamic): Dynamic =>
-      PropertiesInheritedFieldValue(input) &&
-      !(input.mixed && input.inheritedFrom);
+    PropertiesInheritedFieldValue = (field?: Dynamic): Dynamic =>
+      !!field && ((field.value != null && field.value !== "") || !!field.mixed);
+    PropertiesInheritedFieldMixed = (field?: Dynamic): Dynamic =>
+      PropertiesInheritedFieldValue(field) &&
+      !(field.mixed && field.inheritedFrom);
   };
 }

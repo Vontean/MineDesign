@@ -18,16 +18,16 @@ function PropertyFontWeightRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(state),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input === "bold"
+  let { text: value, isLiteral: isLiteral }: Dynamic = inspectorFieldDisplay(state),
+    parseWeight: Dynamic = (weightText?: Dynamic): Dynamic =>
+      weightText === "bold"
         ? 700
-        : input === "normal"
+        : weightText === "normal"
           ? 400
-          : /^\d+(\.\d+)?$/.test(input)
-            ? Number(input)
+          : /^\d+(\.\d+)?$/.test(weightText)
+            ? Number(weightText)
             : undefined;
-  if (value && (!value2 || callback(value.trim()) === undefined))
+  if (value && (!isLiteral || parseWeight(value.trim()) === undefined))
     return (
       <PropertyCssTextRow
         state={state}
@@ -35,70 +35,70 @@ function PropertyFontWeightRow({
         shell={shell}
       />
     );
-  let value3: Dynamic = (state.companionValue ?? "").trim(),
-    value4: Dynamic = /^(italic|oblique)/.test(
-      value3 || (state.companionFallback ?? "").trim(),
+  let companionStyle: Dynamic = (state.companionValue ?? "").trim(),
+    isItalic: Dynamic = /^(italic|oblique)/.test(
+      companionStyle || (state.companionFallback ?? "").trim(),
     ),
-    state2: Dynamic = {
+    variant: Dynamic = {
       weight:
-        callback(value.trim()) ??
-        callback((state.fallback ?? "").trim()) ??
+        parseWeight(value.trim()) ??
+        parseWeight((state.fallback ?? "").trim()) ??
         400,
-      italic: value4,
+      italic: isItalic,
     },
-    value5: Dynamic = value !== "" || value3 !== "",
-    value6: Dynamic = state.mixed || state.companionMixed;
+    hasExplicitValue: Dynamic = value !== "" || companionStyle !== "",
+    isMixed: Dynamic = state.mixed || state.companionMixed;
   return (
     <PropertyRow {...shell}>
       <PropertySelect
         aria-label={state.label}
         items={includeCurrentFontVariant(
           state.faces ?? TypographyFontVariantsFlatMapValue,
-          state2,
+          variant,
         )}
         value={
-          value6 || !value5
+          isMixed || !hasExplicitValue
             ? null
-            : fontVariantKey(state2.weight, state2.italic)
+            : fontVariantKey(variant.weight, variant.italic)
         }
         placeholder={
-          value6 ? (uiMessage("inspector.fontWeightRow.mixed")) : (fontVariantLabel(state2.weight, state2.italic))
+          isMixed ? (uiMessage("inspector.fontWeightRow.mixed")) : (fontVariantLabel(variant.weight, variant.italic))
         }
         hint={Value_6}
         title={
-          !value5 && !value6 && !state.inheritedFrom ? (uiMessage("inspector.fontWeightRow.inheritedRightClickToKeep")) : (undefined)
+          !hasExplicitValue && !isMixed && !state.inheritedFrom ? (uiMessage("inspector.fontWeightRow.inheritedRightClickToKeep")) : (undefined)
         }
         disabled={state.disabled}
-        onOpenChange={(input?: Dynamic): Dynamic => input && onFacesOpen?.()}
-        onChange={(input?: Dynamic): Dynamic => {
-          let value7: Dynamic = parseFontVariantKey(input);
+        onOpenChange={(isOpen?: Dynamic): Dynamic => isOpen && onFacesOpen?.()}
+        onChange={(variantKey?: Dynamic): Dynamic => {
+          let pickedVariant: Dynamic = parseFontVariantKey(variantKey);
           if (
-            value7 === undefined ||
-            (value5 &&
-              !value6 &&
-              value7.weight === state2.weight &&
-              value7.italic === state2.italic)
+            pickedVariant === undefined ||
+            (hasExplicitValue &&
+              !isMixed &&
+              pickedVariant.weight === variant.weight &&
+              pickedVariant.italic === variant.italic)
           )
             return;
-          let value8: Dynamic = value7.italic
+          let fontStyleValue: Dynamic = pickedVariant.italic
               ? "italic"
-              : value4
+              : isItalic
                 ? "normal"
-                : value3 || null,
+                : companionStyle || null,
             items: Dynamic = [
               {
                 prop: state.prop,
-                value: String(value7.weight),
+                value: String(pickedVariant.weight),
               },
               {
                 prop: "font-style",
-                value: value8,
+                value: fontStyleValue,
               },
             ];
           if (onCommitMany) onCommitMany(items);
           else
-            for (let value9 of items as Dynamic)
-              onCommit(value9.prop, value9.value);
+            for (let commit of items as Dynamic)
+              onCommit(commit.prop, commit.value);
         }}
       />
     </PropertyRow>

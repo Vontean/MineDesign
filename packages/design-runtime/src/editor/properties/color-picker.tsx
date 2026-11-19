@@ -14,87 +14,87 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var jsxPropertiesColorPicker: Dynamic;
 function ColorPickerWithSwatches({
-  value: value,
+  value: colorValue,
   unset: unset,
   opaque: opaque,
   onChange: onChange,
   onPickEnd: onPickEnd,
   contrast: contrast,
   swatches: swatches,
-  none: none2,
+  none: noneOption,
   current: current,
   onSwatch: onSwatch,
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0, reactPropertiesTooltip.useMemo)(
+  let normalizedSwatches: Dynamic = (0, reactPropertiesTooltip.useMemo)(
       (): Dynamic =>
         normalizeColorSwatches(
           swatches,
-          none2 !== undefined,
-          none2?.disabledReason,
+          noneOption !== undefined,
+          noneOption?.disabledReason,
         ),
-      [swatches, none2 !== undefined, none2?.disabledReason],
+      [swatches, noneOption !== undefined, noneOption?.disabledReason],
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+    toHex: Dynamic = (hsvaInput?: Dynamic): Dynamic =>
       hsvaToRgbaHex({
-        ...parseHsvaColor(input),
+        ...parseHsvaColor(hsvaInput),
         ...(opaque
           ? {
               a: 1,
             }
           : {}),
       }),
-    value3: Dynamic = JSON.stringify(
-      value2.map((input?: Dynamic): Dynamic => [input.name, input.color]),
+    swatchSignature: Dynamic = JSON.stringify(
+      normalizedSwatches.map((swatch?: Dynamic): Dynamic => [swatch.name, swatch.color]),
     ),
-    value4: Dynamic = (0, reactPropertiesTooltip.useMemo)(
+    swatchHexes: Dynamic = (0, reactPropertiesTooltip.useMemo)(
       (): Dynamic =>
-        value2.map(
-          (input?: Dynamic): Dynamic =>
-            input.empty === true ? null : callback(input.color),
+        normalizedSwatches.map(
+          (swatch?: Dynamic): Dynamic =>
+            swatch.empty === true ? null : toHex(swatch.color),
         ),
-      [value3, opaque],
+      [swatchSignature, opaque],
     ),
-    value5: Dynamic = (0,
+    currentSwatchName: Dynamic = (0,
     reactPropertiesTooltip.useMemo)((): Dynamic => {
-      if (none2?.current) return NoneValue;
+      if (noneOption?.current) return NoneValue;
       if (current !== undefined) return current;
       if (unset) return null;
-      let value6: Dynamic = callback(value),
-        value7: Dynamic = value4.indexOf(value6);
-      return value7 < 0
+      let currentHex: Dynamic = toHex(colorValue),
+        swatchIndex: Dynamic = swatchHexes.indexOf(currentHex);
+      return swatchIndex < 0
         ? null
-        : (value2[value7].picks ?? value2[value7].name);
-    }, [value2, value4, value, unset, opaque, none2?.current, current]);
+        : (normalizedSwatches[swatchIndex].picks ?? normalizedSwatches[swatchIndex].name);
+    }, [normalizedSwatches, swatchHexes, colorValue, unset, opaque, noneOption?.current, current]);
   return (
     <ColorSwatchPicker
       {...props}
-      swatches={value2}
-      current={value5}
-      onSwatch={(input?: Dynamic): Dynamic => {
-        if (input === NoneValue) return none2?.onPick();
-        if (onSwatch !== undefined) return onSwatch(input);
-        let value6: Dynamic = value2.find(
-          (input2?: Dynamic): Dynamic => input2.name === input,
+      swatches={normalizedSwatches}
+      current={currentSwatchName}
+      onSwatch={(swatchName?: Dynamic): Dynamic => {
+        if (swatchName === NoneValue) return noneOption?.onPick();
+        if (onSwatch !== undefined) return onSwatch(swatchName);
+        let pickedSwatch: Dynamic = normalizedSwatches.find(
+          (swatch?: Dynamic): Dynamic => swatch.name === swatchName,
         );
-        if (value6 === undefined) return;
-        let value7: Dynamic = callback(value6.color);
-        onChange(value7);
-        onPickEnd?.(value7);
+        if (pickedSwatch === undefined) return;
+        let pickedHex: Dynamic = toHex(pickedSwatch.color);
+        onChange(pickedHex);
+        onPickEnd?.(pickedHex);
         contrast !== undefined &&
           announce((): Dynamic => {
-            let value8: Dynamic = evaluateColorContrast(
-              value7,
+            let contrastResults: Dynamic = evaluateColorContrast(
+              pickedHex,
               contrast,
             );
-            return value8 === undefined
+            return contrastResults === undefined
               ? null
-              : summarizeContrastResults(value8).spoken;
+              : summarizeContrastResults(contrastResults).spoken;
           });
       }}
       color={{
-        value: value,
+        value: colorValue,
         unset: unset,
         opaque: opaque,
         onChange: onChange,

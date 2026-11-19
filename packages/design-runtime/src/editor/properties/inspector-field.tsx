@@ -37,327 +37,327 @@ var PropertiesInspectorFieldPattern_3: Dynamic;
 var PropertiesInspectorFieldReplace: Dynamic;
 var PropertiesInspectorFieldTest: Dynamic;
 var PropertiesInspectorFieldNameComponentFromSet: Dynamic;
-function PropertyInspectorField(input?: Dynamic): Dynamic {
+function PropertyInspectorField(props?: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [menuPosition, setMenuPosition]: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useState)(null),
-    { textContrast: value3 = null }: Dynamic = useInspectorContext(),
-    [value4, value5]: Dynamic = (0,
+    { textContrast: textContrast = null }: Dynamic = useInspectorContext(),
+    [isEditingAsText, setIsEditingAsText]: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useState)(false),
-    value6: Dynamic = isInheritedInspectorField(input.state),
-    value7: Dynamic =
-      value6 &&
-      !input.state.stale &&
-      (value4 ||
+    isInherited: Dynamic = isInheritedInspectorField(props.state),
+    effectiveProps: Dynamic =
+      isInherited &&
+      !props.state.stale &&
+      (isEditingAsText ||
         !PropertiesColorRowSizeFillShadowSet.has(
-          input.state.spec?.editor ?? "string",
+          props.state.spec?.editor ?? "string",
         ))
         ? {
-            ...input,
-            state: inheritedFieldForEdit(input.state),
+            ...props,
+            state: inheritedFieldForEdit(props.state),
           }
-        : input,
-    { state: value8 }: Dynamic = value7,
-    value9: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+        : props,
+    { state: fieldState }: Dynamic = effectiveProps,
+    shouldRefocusRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       false,
     );
   (0, reactPropertiesDropShadowEditor_2.useEffect)((): Dynamic => {
-    if (!value4 && !value9.current) return;
-    let current: Dynamic = value9.current;
-    value9.current = false;
-    let callback2: Dynamic = (): Dynamic => {
-      let element: Dynamic = (document as Dynamic).querySelector(
-          `[data-testid="dc-prop-${value8.prop.replace(/["\\]/g, "\\$&")}"]`,
+    if (!isEditingAsText && !shouldRefocusRef.current) return;
+    let shouldRefocus: Dynamic = shouldRefocusRef.current;
+    shouldRefocusRef.current = false;
+    let focusInput: Dynamic = (): Dynamic => {
+      let fieldElement: Dynamic = (document as Dynamic).querySelector(
+          `[data-testid="dc-prop-${fieldState.prop.replace(/["\\]/g, "\\$&")}"]`,
         ),
         activeElement: Dynamic = (document as Dynamic).activeElement;
       if (
-        current &&
+        shouldRefocus &&
         activeElement &&
         activeElement !== (document as Dynamic).body &&
-        !element?.contains(activeElement)
+        !fieldElement?.contains(activeElement)
       )
         return;
-      let value27: Dynamic = element?.querySelector(
+      let inputElement: Dynamic = fieldElement?.querySelector(
         'input:not([aria-hidden="true"])',
       );
-      value27?.focus();
-      value27?.select();
+      inputElement?.focus();
+      inputElement?.select();
     };
-    if (!current) return callback2();
-    let value26: Dynamic = setTimeout(callback2, 0);
-    return (): Dynamic => clearTimeout(value26);
-  }, [value4, value8.prop]);
-  let { alsoCommit: value10, alsoCommitOnClear: value11 }: Dynamic = value8,
-    { onCommit: value12, onCommitMany: value13 }: Dynamic = value7,
-    value14: Dynamic = (0,
+    if (!shouldRefocus) return focusInput();
+    let focusTimer: Dynamic = setTimeout(focusInput, 0);
+    return (): Dynamic => clearTimeout(focusTimer);
+  }, [isEditingAsText, fieldState.prop]);
+  let { alsoCommit: alsoCommit, alsoCommitOnClear: alsoCommitOnClear }: Dynamic = fieldState,
+    { onCommit: onCommit, onCommitMany: onCommitMany }: Dynamic = effectiveProps,
+    commitProp: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useCallback)(
-      (input2?: Dynamic, options?: Dynamic): Dynamic => {
-        let value26: Dynamic =
-            input2 === value8.prop &&
+      (prop?: Dynamic, nextValue?: Dynamic): Dynamic => {
+        let prefixedProp: Dynamic =
+            prop === fieldState.prop &&
             Object.hasOwn(
               InspectorPropertySchemaBackdropFilterConfig,
-              input2,
+              prop,
             )
-              ? InspectorPropertySchemaBackdropFilterConfig[input2]
+              ? InspectorPropertySchemaBackdropFilterConfig[prop]
               : undefined,
-          items: Dynamic = [
-            ...(value26
+          extraCommits: Dynamic = [
+            ...(prefixedProp
               ? [
                   {
-                    prop: value26,
-                    value: options,
+                    prop: prefixedProp,
+                    value: nextValue,
                   },
                 ]
               : []),
-            ...((options != null ? value10 : value11) ?? []),
+            ...((nextValue != null ? alsoCommit : alsoCommitOnClear) ?? []),
           ];
-        if (items.length > 0) {
-          if (value13)
-            value13([
+        if (extraCommits.length > 0) {
+          if (onCommitMany)
+            onCommitMany([
               {
-                prop: input2,
-                value: options,
+                prop: prop,
+                value: nextValue,
               },
-              ...items,
+              ...extraCommits,
             ]);
           else
-            for (let value27 of [
+            for (let commit of [
               {
-                prop: input2,
-                value: options,
+                prop: prop,
+                value: nextValue,
               },
-              ...items,
+              ...extraCommits,
             ] as Dynamic)
-              value12(value27.prop, value27.value);
-        } else value12(input2, options);
+              onCommit(commit.prop, commit.value);
+        } else onCommit(prop, nextValue);
       },
-      [value10, value11, value12, value13, value8.prop],
+      [alsoCommit, alsoCommitOnClear, onCommit, onCommitMany, fieldState.prop],
     ),
-    value15: Dynamic = (0,
+    copyDeclaration: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useCallback)((): Dynamic => {
-      let value26: Dynamic = value8.mixed
+      let declarationValue: Dynamic = fieldState.mixed
         ? ""
-        : (value8.varSource ?? value8.value ?? value8.fallback ?? "");
+        : (fieldState.varSource ?? fieldState.value ?? fieldState.fallback ?? "");
       navigator.clipboard
-        ?.writeText(`${value8.prop}: ${value26};`)
+        ?.writeText(`${fieldState.prop}: ${declarationValue};`)
         .catch((): Dynamic => {});
-    }, [value8]),
-    value16: Dynamic = Object.hasOwn(
+    }, [fieldState]),
+    companionProp: Dynamic = Object.hasOwn(
       InspectorPropertySchemaBackgroundFontWeightFontStyleConfig,
-      value8.prop,
+      fieldState.prop,
     )
       ? InspectorPropertySchemaBackgroundFontWeightFontStyleConfig[
-          value8.prop
+          fieldState.prop
         ]
       : null,
-    callback: Dynamic = (): Dynamic => {
-      value5(false);
-      value16
-        ? value20([
+    unsetProperty: Dynamic = (): Dynamic => {
+      setIsEditingAsText(false);
+      companionProp
+        ? commitMany([
             {
-              prop: value8.prop,
+              prop: fieldState.prop,
               value: null,
             },
             {
-              prop: value16,
+              prop: companionProp,
               value: null,
             },
           ])
-        : value14(value8.prop, null);
+        : commitProp(fieldState.prop, null);
     },
-    value17: Dynamic =
-      (((value8.value != null && value8.value !== "") ||
-        (value16 != null &&
-          value8.companionValue != null &&
-          value8.companionValue !== "")) &&
-        !value6) ||
-      (!!value8.mixed && !value8.inheritedFrom) ||
-      !!value8.companionMixed,
-    value18: Dynamic =
-      value8.prop === "__headStart" || value8.prop === "__headEnd",
-    value19: Dynamic = value18
+    hasValue: Dynamic =
+      (((fieldState.value != null && fieldState.value !== "") ||
+        (companionProp != null &&
+          fieldState.companionValue != null &&
+          fieldState.companionValue !== "")) &&
+        !isInherited) ||
+      (!!fieldState.mixed && !fieldState.inheritedFrom) ||
+      !!fieldState.companionMixed,
+    isHeadProp: Dynamic =
+      fieldState.prop === "__headStart" || fieldState.prop === "__headEnd",
+    menuItems: Dynamic = isHeadProp
       ? []
       : [
           {
             get label() { return uiMessage("inspector.inspectorField.unsetProperty"); },
-            onSelect: callback,
-            disabled: !value17 || !!value8.disabled,
+            onSelect: unsetProperty,
+            disabled: !hasValue || !!fieldState.disabled,
           },
           {
             get label() { return uiMessage("inspector.inspectorField.editAsText"); },
-            onSelect: (): Dynamic => value5(true),
-            disabled: !!value8.disabled,
+            onSelect: (): Dynamic => setIsEditingAsText(true),
+            disabled: !!fieldState.disabled,
           },
           {
             get label() { return uiMessage("inspector.inspectorField.copyDeclaration"); },
-            onSelect: value15,
+            onSelect: copyDeclaration,
           },
-          ...((value7.onRemoveRow && !value6 && !value8.disabled) ||
-          value7.extraMenuItems?.length
+          ...((effectiveProps.onRemoveRow && !isInherited && !fieldState.disabled) ||
+          effectiveProps.extraMenuItems?.length
             ? ["separator"]
             : []),
-          ...(value7.onRemoveRow && !value6 && !value8.disabled
+          ...(effectiveProps.onRemoveRow && !isInherited && !fieldState.disabled
             ? [
                 {
                   get label() { return uiMessage("inspector.inspectorField.removeRow"); },
                   variant: "danger",
                   onSelect: (): Dynamic => {
-                    value17 && callback();
-                    value7.onRemoveRow?.();
+                    hasValue && unsetProperty();
+                    effectiveProps.onRemoveRow?.();
                   },
                 },
               ]
             : []),
-          ...(value7.extraMenuItems ?? []),
+          ...(effectiveProps.extraMenuItems ?? []),
         ],
-    value20: Dynamic = (0,
+    commitMany: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        let value26: Dynamic = (
-            input2.some((input3?: Dynamic): Dynamic => input3.value != null)
-              ? (value10 ?? [])
+      (commits?: Dynamic): Dynamic => {
+        let leftoverCommits: Dynamic = (
+            commits.some((commit?: Dynamic): Dynamic => commit.value != null)
+              ? (alsoCommit ?? [])
               : []
           ).filter(
-            (input3?: Dynamic): Dynamic =>
-              !input2.some(
-                (input4?: Dynamic): Dynamic => input4.prop === input3.prop,
+            (leftover?: Dynamic): Dynamic =>
+              !commits.some(
+                (commit?: Dynamic): Dynamic => commit.prop === leftover.prop,
               ),
           ),
-          items: Dynamic = [...input2, ...value26];
-        if (value13) value13(items);
+          allCommits: Dynamic = [...commits, ...leftoverCommits];
+        if (onCommitMany) onCommitMany(allCommits);
         else
-          for (let value27 of items as Dynamic)
-            value12(value27.prop, value27.value);
+          for (let commit of allCommits as Dynamic)
+            onCommit(commit.prop, commit.value);
       },
-      [value10, value13, value12],
+      [alsoCommit, onCommitMany, onCommit],
     ),
-    value21: Dynamic =
-      (value17 && !value8.disabled && value8.prop !== "__text" && !value18) ||
-      (value7.onRemoveRow && !value8.disabled && !value6)
+    resetHandler: Dynamic =
+      (hasValue && !fieldState.disabled && fieldState.prop !== "__text" && !isHeadProp) ||
+      (effectiveProps.onRemoveRow && !fieldState.disabled && !isInherited)
         ? (): Dynamic => {
-            value17 && callback();
-            value7.onRemoveRow?.();
+            hasValue && unsetProperty();
+            effectiveProps.onRemoveRow?.();
           }
         : undefined,
-    state: Dynamic = {
-      label: value8.label || undefined,
-      "data-testid": `dc-prop-${value8.prop}`,
+    rowShell: Dynamic = {
+      label: fieldState.label || undefined,
+      "data-testid": `dc-prop-${fieldState.prop}`,
       title:
-        value8.whyDisabled ??
-        inheritedFieldTooltip(input.state) ??
-        (value8.varSource
-          ? uiMessage("inspector.inspectorField.authoredAsValue1EditingWrites", { value1: String(value8.varSource) })
+        fieldState.whyDisabled ??
+        inheritedFieldTooltip(props.state) ??
+        (fieldState.varSource
+          ? uiMessage("inspector.inspectorField.authoredAsValue1EditingWrites", { value1: String(fieldState.varSource) })
           : undefined),
-      description: inheritedFieldDescription(input.state),
-      onReset: value21,
-      trailing: value7.trailing,
-      resetLabel: value7.onRemoveRow
-        ? value17
-          ? uiMessage("inspector.inspectorField.unsetValue1AndRemoveRow", { value1: String(value8.label) })
-          : uiMessage("inspector.inspectorField.removeValue1Row", { value1: String(value8.label) })
-        : uiMessage("inspector.inspectorField.unsetValue1UseInherited", { value1: String(value8.label) }),
-      onContextMenu: value18
+      description: inheritedFieldDescription(props.state),
+      onReset: resetHandler,
+      trailing: effectiveProps.trailing,
+      resetLabel: effectiveProps.onRemoveRow
+        ? hasValue
+          ? uiMessage("inspector.inspectorField.unsetValue1AndRemoveRow", { value1: String(fieldState.label) })
+          : uiMessage("inspector.inspectorField.removeValue1Row", { value1: String(fieldState.label) })
+        : uiMessage("inspector.inspectorField.unsetValue1UseInherited", { value1: String(fieldState.label) }),
+      onContextMenu: isHeadProp
         ? undefined
         : (event?: Dynamic): Dynamic => {
             event.preventDefault();
-            value2({
+            setMenuPosition({
               x: event.clientX,
               y: event.clientY,
             });
           },
     },
-    state2: Dynamic = {
-      ...value7,
+    rowProps: Dynamic = {
+      ...effectiveProps,
       onCommit:
-        value4 && value8.spec?.editor === "number"
-          ? (input2?: Dynamic, options?: Dynamic): Dynamic => {
-              value14(input2, options);
-              input2 === value8.prop &&
-                (options == null ||
-                  parseCssNumber(options) != null) &&
+        isEditingAsText && fieldState.spec?.editor === "number"
+          ? (prop?: Dynamic, nextValue?: Dynamic): Dynamic => {
+              commitProp(prop, nextValue);
+              prop === fieldState.prop &&
+                (nextValue == null ||
+                  parseCssNumber(nextValue) != null) &&
                 setTimeout((): Dynamic => {
-                  value9.current = true;
-                  value5(false);
+                  shouldRefocusRef.current = true;
+                  setIsEditingAsText(false);
                 }, 0);
             }
-          : value14,
-      onCommitMany: value20,
-      shell: state,
+          : commitProp,
+      onCommitMany: commitMany,
+      shell: rowShell,
     },
-    { isLiteral: value22 }: Dynamic = inspectorFieldDisplay(
-      input.state,
+    { isLiteral: isLiteral }: Dynamic = inspectorFieldDisplay(
+      props.state,
     ),
-    value23: Dynamic = input.state.value,
-    value24: Dynamic = value4 ? "string" : (value8.spec?.editor ?? "string"),
-    value25: Dynamic;
-  if (value8.stale && !value4) {
-    let value26: Dynamic =
-        value8.varSource ?? (value8.value || value8.companionValue || ""),
-      value27: Dynamic =
-        !!value8.spec?.options?.includes(value26) ||
-        (value8.spec?.optionLabels != null &&
-          Object.hasOwn(value8.spec.optionLabels, value26)),
-      value28: Dynamic = value8.mixed
+    currentValue: Dynamic = props.state.value,
+    editorKind: Dynamic = isEditingAsText ? "string" : (fieldState.spec?.editor ?? "string"),
+    row: Dynamic;
+  if (fieldState.stale && !isEditingAsText) {
+    let displayValue: Dynamic =
+        fieldState.varSource ?? (fieldState.value || fieldState.companionValue || ""),
+      isKnownOption: Dynamic =
+        !!fieldState.spec?.options?.includes(displayValue) ||
+        (fieldState.spec?.optionLabels != null &&
+          Object.hasOwn(fieldState.spec.optionLabels, displayValue)),
+      staleLabel: Dynamic = fieldState.mixed
         ? "Mixed"
-        : value27
-          ? propertyOptionLabel(value8.spec, value26)
-          : value26;
+        : isKnownOption
+          ? propertyOptionLabel(fieldState.spec, displayValue)
+          : displayValue;
     return (
       <jsxPropertiesSizingRow.Fragment>
         <PropertyRow
-          {...state}
+          {...rowShell}
           title={
-            value6 ? (uiMessage("inspector.inspectorField.fromValue1ItHasNo", { value1: String(value8.inheritedFrom) })) : (state.title ?? (uiMessage("inspector.inspectorField.setOnThisElementIt")))
+            isInherited ? (uiMessage("inspector.inspectorField.fromValue1ItHasNo", { value1: String(fieldState.inheritedFrom) })) : (rowShell.title ?? (uiMessage("inspector.inspectorField.setOnThisElementIt")))
           }
         >
           <span
-            data-testid={`dc-stale-${value8.prop}`}
+            data-testid={`dc-stale-${fieldState.prop}`}
             className={cn(
               "min-w-0 truncate px-1 text-footnote",
-              value8.mixed && "text-muted",
+              fieldState.mixed && "text-muted",
             )}
           >
-            {value28}
+            {staleLabel}
           </span>
         </PropertyRow>
         <EditorMenu
-          at={value}
-          onClose={(): Dynamic => value2(null)}
-          items={value19}
+          at={menuPosition}
+          onClose={(): Dynamic => setMenuPosition(null)}
+          items={menuItems}
           minWidth={170}
-          label={uiMessage("inspector.inspectorField.actions", { value1: String(value8.label || (value8.prop)) })}
+          label={uiMessage("inspector.inspectorField.actions", { value1: String(fieldState.label || (fieldState.prop)) })}
         />
       </jsxPropertiesSizingRow.Fragment>
     );
   }
-  switch (value24) {
+  switch (editorKind) {
     case "bool": {
-      let value26: Dynamic = value8.mixed ? "" : (value8.value ?? "").trim(),
-        value27: Dynamic = value8.spec?.boolOnValue;
-      if (value27) {
-        let value28: Dynamic =
-          value26 || (value8.mixed ? "" : (value8.fallback ?? "").trim());
-        value25 = (
+      let boolText: Dynamic = fieldState.mixed ? "" : (fieldState.value ?? "").trim(),
+        boolOnValue: Dynamic = fieldState.spec?.boolOnValue;
+      if (boolOnValue) {
+        let effectiveText: Dynamic =
+          boolText || (fieldState.mixed ? "" : (fieldState.fallback ?? "").trim());
+        row = (
           <PropertyToggleRow
-            shell={state}
-            label={value8.label}
-            on={value28.toLowerCase() === value27.toLowerCase()}
-            disabled={value8.disabled}
-            onToggle={(input2?: Dynamic): Dynamic =>
-              value14(value8.prop, input2 ? value27 : null)
+            shell={rowShell}
+            label={fieldState.label}
+            on={effectiveText.toLowerCase() === boolOnValue.toLowerCase()}
+            disabled={fieldState.disabled}
+            onToggle={(isOn?: Dynamic): Dynamic =>
+              commitProp(fieldState.prop, isOn ? boolOnValue : null)
             }
           />
         );
       } else {
-        let value28: Dynamic = value8.spec?.options?.[0] ?? "none";
-        value25 = (
+        let offValue: Dynamic = fieldState.spec?.options?.[0] ?? "none";
+        row = (
           <PropertyToggleRow
-            shell={state}
-            label={value8.label}
-            on={value26 !== value28}
-            disabled={value8.disabled}
-            onToggle={(input2?: Dynamic): Dynamic =>
-              value14(value8.prop, input2 ? null : value28)
+            shell={rowShell}
+            label={fieldState.label}
+            on={boolText !== offValue}
+            disabled={fieldState.disabled}
+            onToggle={(isOn?: Dynamic): Dynamic =>
+              commitProp(fieldState.prop, isOn ? null : offValue)
             }
           />
         );
@@ -365,216 +365,216 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
       break;
     }
     case "number":
-      value25 =
-        value6 &&
-        value23 &&
-        value22 &&
-        parseCssNumber(value23) == null ? (
-          <PropertyCssTextRow {...state2} />
+      row =
+        isInherited &&
+        currentValue &&
+        isLiteral &&
+        parseCssNumber(currentValue) == null ? (
+          <PropertyCssTextRow {...rowProps} />
         ) : (
-          <R_useFieldNumericArrowStep {...state2} />
+          <R_useFieldNumericArrowStep {...rowProps} />
         );
       break;
     case "color": {
-      if (value8.textFill === undefined) {
-        value25 = <PropertyCssColorRow {...state2} />;
+      if (fieldState.textFill === undefined) {
+        row = <PropertyCssColorRow {...rowProps} />;
         break;
       }
-      let value26: Dynamic =
-          value3 &&
-          !value8.mixed &&
-          !value8.disabled &&
-          !value8.textFill.clipped &&
-          value8.textFill.transparentInk === undefined
+      let contrastSpec: Dynamic =
+          textContrast &&
+          !fieldState.mixed &&
+          !fieldState.disabled &&
+          !fieldState.textFill.clipped &&
+          fieldState.textFill.transparentInk === undefined
             ? {
-                against: value3.against,
-                role: value3.role,
+                against: textContrast.against,
+                role: textContrast.role,
               }
             : undefined,
-        value27: Dynamic =
-          value3 && value26 !== undefined
-            ? evaluateColorContrast(value3.ink, value26)
+        contrastResults: Dynamic =
+          textContrast && contrastSpec !== undefined
+            ? evaluateColorContrast(textContrast.ink, contrastSpec)
             : undefined,
-        value28: Dynamic =
-          value27 === undefined
+        contrastSentence: Dynamic =
+          contrastResults === undefined
             ? undefined
-            : summarizeContrastResults(value27).sentence,
-        value29: Dynamic = (
+            : summarizeContrastResults(contrastResults).sentence,
+        colorRow: Dynamic = (
           <PropertyRow
-            {...state}
+            {...rowShell}
             description={
-              value28 === undefined ? (state.description) : (state.description ? (state.description.replace(/\.?\s*$/, ". ") + value28) : (value28))
+              contrastSentence === undefined ? (rowShell.description) : (rowShell.description ? (rowShell.description.replace(/\.?\s*$/, ". ") + contrastSentence) : (contrastSentence))
             }
           >
             <PropertyBackgroundRow
-              label={value8.label}
-              value={value8.value}
-              varSource={value8.varSource}
-              varPartial={value8.varPartial}
-              fallback={value8.fallback}
-              disabled={value8.disabled}
-              mixed={value8.mixed}
-              inherited={!!value8.inheritedFrom}
-              textFill={value8.textFill}
-              contrast={value26}
-              testId={`dc-color-${value8.prop}`}
-              onCommitMany={value20}
+              label={fieldState.label}
+              value={fieldState.value}
+              varSource={fieldState.varSource}
+              varPartial={fieldState.varPartial}
+              fallback={fieldState.fallback}
+              disabled={fieldState.disabled}
+              mixed={fieldState.mixed}
+              inherited={!!fieldState.inheritedFrom}
+              textFill={fieldState.textFill}
+              contrast={contrastSpec}
+              testId={`dc-color-${fieldState.prop}`}
+              onCommitMany={commitMany}
             />
           </PropertyRow>
         );
-      value25 = (
+      row = (
         <div data-dc={"contrast-row"}>
-          {value29}
-          {value27 !== undefined && value3 ? (<PropertyRow
+          {colorRow}
+          {contrastResults !== undefined && textContrast ? (<PropertyRow
               label={""}
               className={"-mt-0.5 pb-1 [--prop-row-h:0px]"}
             >
-              <ContrastLockup fg={value3.ink} results={value27} />
+              <ContrastLockup fg={textContrast.ink} results={contrastResults} />
             </PropertyRow>) : (null)}
         </div>
       );
       break;
     }
     case "select":
-      value25 = <PropertyCssEnumRow {...state2} />;
+      row = <PropertyCssEnumRow {...rowProps} />;
       break;
     case "flexSeg":
-      value25 = <PropertyCssSegmentsRow {...state2} />;
+      row = <PropertyCssSegmentsRow {...rowProps} />;
       break;
     case "typeStyle":
-      value25 = <PropertyAlignmentRow {...state2} />;
+      row = <PropertyAlignmentRow {...rowProps} />;
       break;
     case "fontFace":
-      value25 = <PropertyFontWeightRow {...state2} />;
+      row = <PropertyFontWeightRow {...rowProps} />;
       break;
     case "gridTracks":
-      value25 =
-        value23 &&
-        (!value22 || parseEqualGridColumns(value23) == null) ? (
-          <PropertyCssTextRow {...state2} />
+      row =
+        currentValue &&
+        (!isLiteral || parseEqualGridColumns(currentValue) == null) ? (
+          <PropertyCssTextRow {...rowProps} />
         ) : (
-          <PropertyGridColumnsRow {...state2} />
+          <PropertyGridColumnsRow {...rowProps} />
         );
       break;
     case "gridSpan":
-      value25 =
-        value23 &&
-        (!value22 || parseGridSpan(value23) == null) ? (
-          <PropertyCssTextRow {...state2} />
+      row =
+        currentValue &&
+        (!isLiteral || parseGridSpan(currentValue) == null) ? (
+          <PropertyCssTextRow {...rowProps} />
         ) : (
-          <PropertyGridSpanRow {...state2} />
+          <PropertyGridSpanRow {...rowProps} />
         );
       break;
     case "transform":
-      value25 = <PropertyTransformRow {...state2} />;
+      row = <PropertyTransformRow {...rowProps} />;
       break;
     case "font":
-      value25 = <PropertyFontFamilyRow {...state2} />;
+      row = <PropertyFontFamilyRow {...rowProps} />;
       break;
     case "fill":
-      value25 =
-        !value22 && value23 ? (
-          <PropertyCssTextRow {...state2} />
+      row =
+        !isLiteral && currentValue ? (
+          <PropertyCssTextRow {...rowProps} />
         ) : (
-          <PropertyRow {...state}>
+          <PropertyRow {...rowShell}>
             <PropertyBackgroundRow
-              label={value8.label}
-              value={value8.value}
-              companionValue={value8.companionValue}
-              companionAuthored={value8.companionVarSource}
-              valueAuthored={value8.varSource}
-              varPartial={value8.varPartial}
-              companionVarPartial={value8.companionVarPartial}
-              fallback={value8.fallback}
-              disabled={value8.disabled}
-              mixed={value8.mixed || value8.companionMixed}
-              inherited={!!value8.inheritedFrom}
-              noImageReason={value8.fillNoImageReason}
-              onCommitMany={value20}
+              label={fieldState.label}
+              value={fieldState.value}
+              companionValue={fieldState.companionValue}
+              companionAuthored={fieldState.companionVarSource}
+              valueAuthored={fieldState.varSource}
+              varPartial={fieldState.varPartial}
+              companionVarPartial={fieldState.companionVarPartial}
+              fallback={fieldState.fallback}
+              disabled={fieldState.disabled}
+              mixed={fieldState.mixed || fieldState.companionMixed}
+              inherited={!!fieldState.inheritedFrom}
+              noImageReason={fieldState.fillNoImageReason}
+              onCommitMany={commitMany}
             />
           </PropertyRow>
         );
       break;
     case "shadow":
-      value25 =
-        !value22 && value23 ? (
-          <PropertyCssTextRow {...state2} />
+      row =
+        !isLiteral && currentValue ? (
+          <PropertyCssTextRow {...rowProps} />
         ) : (
-          <PropertyRow {...state}>
+          <PropertyRow {...rowShell}>
             <PropertyShadowRow
-              label={value8.label}
-              prop={value8.prop}
-              value={value8.value}
-              fallback={value8.fallback}
-              disabled={value8.disabled}
-              mixed={value8.mixed}
-              inherited={!!value8.inheritedFrom}
-              onCommitMany={value20}
+              label={fieldState.label}
+              prop={fieldState.prop}
+              value={fieldState.value}
+              fallback={fieldState.fallback}
+              disabled={fieldState.disabled}
+              mixed={fieldState.mixed}
+              inherited={!!fieldState.inheritedFrom}
+              onCommitMany={commitMany}
             />
           </PropertyRow>
         );
       break;
     case "image":
-      value25 = (
-        <PropertyRow {...state}>
+      row = (
+        <PropertyRow {...rowShell}>
           <PropertyImageRow
-            label={value8.label}
-            value={value8.mixed ? null : value8.value}
-            mixed={value8.mixed}
-            disabled={value8.disabled}
-            onCommit={(input2?: Dynamic): Dynamic =>
-              value14(value8.prop, input2)
+            label={fieldState.label}
+            value={fieldState.mixed ? null : fieldState.value}
+            mixed={fieldState.mixed}
+            disabled={fieldState.disabled}
+            onCommit={(nextValue?: Dynamic): Dynamic =>
+              commitProp(fieldState.prop, nextValue)
             }
-            onPickFile={value7.onPickImageFile}
-            uploadOnlyReason={value8.imageUploadOnlyReason}
+            onPickFile={effectiveProps.onPickImageFile}
+            uploadOnlyReason={fieldState.imageUploadOnlyReason}
           />
         </PropertyRow>
       );
       break;
     case "size":
-      value25 = (
+      row = (
         <PropertySizingRow
-          shell={state}
-          label={value8.label}
-          prop={value8.prop}
-          value={value8.value}
-          fallback={value8.fallback}
-          disabled={value8.disabled}
-          mixed={value8.mixed}
-          noHug={value8.noHug}
-          fixedOnlyReason={value8.fixedSizeReason}
+          shell={rowShell}
+          label={fieldState.label}
+          prop={fieldState.prop}
+          value={fieldState.value}
+          fallback={fieldState.fallback}
+          disabled={fieldState.disabled}
+          mixed={fieldState.mixed}
+          noHug={fieldState.noHug}
+          fixedOnlyReason={fieldState.fixedSizeReason}
           onCommitMany={
-            value8.inheritedFrom
-              ? (input2?: Dynamic): Dynamic =>
-                  value20(
-                    input2.map(
-                      (input3?: Dynamic): Dynamic =>
-                        input3.prop === value8.prop && input3.value == null
+            fieldState.inheritedFrom
+              ? (commits?: Dynamic): Dynamic =>
+                  commitMany(
+                    commits.map(
+                      (commit?: Dynamic): Dynamic =>
+                        commit.prop === fieldState.prop && commit.value == null
                           ? {
-                              ...input3,
+                              ...commit,
                               value: "auto",
                             }
-                          : input3,
+                          : commit,
                     ),
                   )
-              : value20
+              : commitMany
           }
         />
       );
       break;
     default:
-      value25 = <PropertyCssTextRow {...state2} />;
+      row = <PropertyCssTextRow {...rowProps} />;
       break;
   }
   return (
     <jsxPropertiesSizingRow.Fragment>
-      {value25}
+      {row}
       <EditorMenu
-        at={value}
-        onClose={(): Dynamic => value2(null)}
-        items={value19}
+        at={menuPosition}
+        onClose={(): Dynamic => setMenuPosition(null)}
+        items={menuItems}
         minWidth={170}
-        label={uiMessage("inspector.inspectorField.actions", { value1: String(value8.label || (value8.prop)) })}
+        label={uiMessage("inspector.inspectorField.actions", { value1: String(fieldState.label || (fieldState.prop)) })}
       />
     </jsxPropertiesSizingRow.Fragment>
   );
@@ -598,15 +598,15 @@ export function installEditorPropertiesInspectorField(): () => void {
     PropertiesInspectorFieldPattern = /^\s*\{\{([\s\S]+?)\}\}\s*$/;
     PropertiesInspectorFieldPattern_2 = /^-?\d+(\.\d+)?$/;
     PropertiesInspectorFieldPattern_3 = /^on(-|[A-Z])/;
-    PropertiesInspectorFieldReplace = (input?: Dynamic): Dynamic =>
-      input.replace(
+    PropertiesInspectorFieldReplace = (cssName?: Dynamic): Dynamic =>
+      cssName.replace(
         /-([a-z])/g,
-        (input2?: Dynamic, options?: Dynamic): Dynamic => options.toUpperCase(),
+        (match?: Dynamic, letter?: Dynamic): Dynamic => letter.toUpperCase(),
       );
-    PropertiesInspectorFieldTest = (input?: Dynamic): Dynamic =>
-      /^(aria|data)-/.test(input)
-        ? input
-        : PropertiesInspectorFieldReplace(input);
+    PropertiesInspectorFieldTest = (name?: Dynamic): Dynamic =>
+      /^(aria|data)-/.test(name)
+        ? name
+        : PropertiesInspectorFieldReplace(name);
     PropertiesInspectorFieldNameComponentFromSet = new Set([
       "name",
       "component",

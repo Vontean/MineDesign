@@ -15,7 +15,7 @@ import { PropertiesPrimitivesClassNames_3, PropertyColorWell, PropertyPickerButt
 import { PropertyRow } from "./row";
 import { PropertiesSelectMin, PropertySelect } from "./select";
 import { PropertyOptionIcon } from "./tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig_13, reactPropertiesTooltip_2 } from "./tooltip";
+import { PropertiesTooltipNameViewBoxPathsConfig_13 as angleIcon, reactPropertiesTooltip_2 } from "./tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesGradientEditorHandler: Dynamic;
@@ -28,34 +28,34 @@ var jsxPropertiesGradientEditor: Dynamic;
 var PropertiesGradientEditorColorMixPattern: Dynamic;
 var PropertiesGradientEditorImageCrossFadePattern: Dynamic;
 var PropertiesGradientEditorLabel: Dynamic;
-function normalizedGradientStops(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.map(
-    (input2?: Dynamic): Dynamic =>
-      input2.pos === undefined
+function normalizedGradientStops(stops?: Dynamic): Dynamic {
+  let positions: Dynamic = stops.map(
+    (stop?: Dynamic): Dynamic =>
+      stop.pos === undefined
         ? undefined
-        : PropertiesSelectMin(input2.pos, 0, 100),
+        : PropertiesSelectMin(stop.pos, 0, 100),
   );
-  if (value.length === 0) return [];
-  value[0] === undefined && (value[0] = 0);
-  value[value.length - 1] === undefined && (value[value.length - 1] = 100);
-  let value2: Dynamic = -1 / 0;
-  for (let index: Dynamic = 0; index < value.length; index++)
-    value[index] !== undefined &&
-      (value[index] < value2 && (value[index] = value2),
-      (value2 = value[index]));
-  for (let count: Dynamic = 1; count < value.length - 1; count++) {
-    if (value[count] !== undefined) continue;
-    let value3: Dynamic = count;
-    for (; value[value3] === undefined; ) value3++;
-    let value4: Dynamic = value[count - 1],
-      value5: Dynamic = value[value3];
-    for (let value6: Dynamic = count; value6 < value3; value6++)
-      value[value6] =
-        value4 +
-        ((value5 - value4) * (value6 - count + 1)) / (value3 - count + 1);
-    count = value3;
+  if (positions.length === 0) return [];
+  positions[0] === undefined && (positions[0] = 0);
+  positions[positions.length - 1] === undefined && (positions[positions.length - 1] = 100);
+  let previousPosition: Dynamic = -1 / 0;
+  for (let index: Dynamic = 0; index < positions.length; index++)
+    positions[index] !== undefined &&
+      (positions[index] < previousPosition && (positions[index] = previousPosition),
+      (previousPosition = positions[index]));
+  for (let count: Dynamic = 1; count < positions.length - 1; count++) {
+    if (positions[count] !== undefined) continue;
+    let nextDefinedIndex: Dynamic = count;
+    for (; positions[nextDefinedIndex] === undefined; ) nextDefinedIndex++;
+    let startPosition: Dynamic = positions[count - 1],
+      endPosition: Dynamic = positions[nextDefinedIndex];
+    for (let fillIndex: Dynamic = count; fillIndex < nextDefinedIndex; fillIndex++)
+      positions[fillIndex] =
+        startPosition +
+        ((endPosition - startPosition) * (fillIndex - count + 1)) / (nextDefinedIndex - count + 1);
+    count = nextDefinedIndex;
   }
-  return value;
+  return positions;
 }
 function GradientEditor({
   radial: radial,
@@ -72,409 +72,409 @@ function GradientEditor({
   onLiveEnd: onLiveEnd,
   minStops = 2,
   maxStops = 8,
-  disabled: disabled2 = false,
+  disabled: isDisabled = false,
   renderStopPicker: renderStopPicker,
   testid: testid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [liveStops, setLiveStops]: Dynamic = (0,
     reactPropertiesTooltip_2.useState)(null),
-    value3: Dynamic = value ?? stops,
-    value4: Dynamic = (0, reactPropertiesTooltip_2.useRef)(false),
-    value5: Dynamic = normalizedGradientStops(value3),
-    value6: Dynamic =
-      value4.current || value !== null
-        ? value3.map(
-            (input?: Dynamic, options?: Dynamic): Dynamic =>
-              input.pos === undefined
-                ? value5[options]
-                : PropertiesSelectMin(input.pos, 0, 100),
+    currentStops: Dynamic = liveStops ?? stops,
+    hasLiveEditRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(false),
+    sortedPositions: Dynamic = normalizedGradientStops(currentStops),
+    positions: Dynamic =
+      hasLiveEditRef.current || liveStops !== null
+        ? currentStops.map(
+            (stop?: Dynamic, index?: Dynamic): Dynamic =>
+              stop.pos === undefined
+                ? sortedPositions[index]
+                : PropertiesSelectMin(stop.pos, 0, 100),
           )
-        : value5,
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input.swatch ?? input.color,
-    value7: Dynamic = value3.map(callback).join("\0"),
-    value8: Dynamic = (0,
+        : sortedPositions,
+    stopColor: Dynamic = (stop?: Dynamic): Dynamic =>
+      stop.swatch ?? stop.color,
+    colorSignature: Dynamic = currentStops.map(stopColor).join("\0"),
+    resolveColor: Dynamic = (0,
     reactPropertiesTooltip_2.useMemo)((): Dynamic => {
       let entries: Dynamic = new Map();
-      for (let value28 of value7.split("\0") as Dynamic)
-        entries.has(value28) ||
+      for (let color of colorSignature.split("\0") as Dynamic)
+        entries.has(color) ||
           entries.set(
-            value28,
-            PropertiesGradientEditorAttrCalcPattern.test(value28) ||
-              PropertiesGradientEditorPattern.test(value28)
+            color,
+            PropertiesGradientEditorAttrCalcPattern.test(color) ||
+              PropertiesGradientEditorPattern.test(color)
               ? "transparent"
-              : PropertiesGradientEditorHandler(value28),
+              : PropertiesGradientEditorHandler(color),
           );
-      return (input?: Dynamic): Dynamic =>
-        entries.get(input) ?? "transparent";
-    }, [value7]),
-    value9: Dynamic = PropertiesSelectMin(
+      return (color?: Dynamic): Dynamic =>
+        entries.get(color) ?? "transparent";
+    }, [colorSignature]),
+    selectedIndex: Dynamic = PropertiesSelectMin(
       selected,
       0,
-      Math.max(0, value3.length - 1),
+      Math.max(0, currentStops.length - 1),
     ),
-    value10: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
-    value11: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
-    value12: Dynamic = (0, reactPropertiesTooltip_2.useRef)([]),
-    value13: Dynamic = (0, reactPropertiesTooltip_2.useRef)(0);
-  value12.current.length !== value3.length &&
-    (value12.current = value3.map((): Dynamic => value13.current++));
-  let current: Dynamic = value12.current,
-    callback2: Dynamic = (): Dynamic =>
-      value11.current?.closest('[data-mc-popover], [role="dialog"]') ??
-      value11.current,
-    [value14, value15]: Dynamic = (0,
+    barRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
+    containerRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
+    stopIdsRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)([]),
+    nextStopIdRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(0);
+  stopIdsRef.current.length !== currentStops.length &&
+    (stopIdsRef.current = currentStops.map((): Dynamic => nextStopIdRef.current++));
+  let stopIds: Dynamic = stopIdsRef.current,
+    getPopoverAnchor: Dynamic = (): Dynamic =>
+      containerRef.current?.closest('[data-mc-popover], [role="dialog"]') ??
+      containerRef.current,
+    [openPickerId, setOpenPickerId]: Dynamic = (0,
     reactPropertiesTooltip_2.useState)(null),
-    [value16, value17]: Dynamic = (0,
+    [shouldFocusPicker, setShouldFocusPicker]: Dynamic = (0,
     reactPropertiesTooltip_2.useState)(false),
-    value18: Dynamic =
-      value14 !== null && current.includes(value14)
-        ? current.indexOf(value14)
+    openPickerIndex: Dynamic =
+      openPickerId !== null && stopIds.includes(openPickerId)
+        ? stopIds.indexOf(openPickerId)
         : null,
-    value19: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
-    value20: Dynamic = (0, reactPropertiesTooltip_2.useRef)({
+    dragRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
+    latestPropsRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)({
       stops: stops,
       onStopsLive: onStopsLive,
       onLiveEnd: onLiveEnd,
     });
-  value20.current = {
+  latestPropsRef.current = {
     stops: stops,
     onStopsLive: onStopsLive,
     onLiveEnd: onLiveEnd,
   };
-  let callback3: Dynamic = (input?: Dynamic): Dynamic => {
+  let revertDrag: Dynamic = (drag?: Dynamic): Dynamic => {
     let {
-        stops: current2,
-        onStopsLive: current3,
-        onLiveEnd: current4,
-      }: Dynamic = value20.current,
-      value28: Dynamic = value12.current.indexOf(input.id);
-    current3 &&
-      value28 >= 0 &&
-      value28 < current2.length &&
-      current3(
-        current2.map(
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            options === value28
+        stops: latestStops,
+        onStopsLive: latestOnStopsLive,
+        onLiveEnd: latestOnLiveEnd,
+      }: Dynamic = latestPropsRef.current,
+      stopIndex: Dynamic = stopIdsRef.current.indexOf(drag.id);
+    latestOnStopsLive &&
+      stopIndex >= 0 &&
+      stopIndex < latestStops.length &&
+      latestOnStopsLive(
+        latestStops.map(
+          (stop?: Dynamic, index?: Dynamic): Dynamic =>
+            index === stopIndex
               ? {
-                  ...input2,
-                  pos: input.posBefore,
+                  ...stop,
+                  pos: drag.posBefore,
                 }
-              : input2,
+              : stop,
         ),
       );
-    current4?.();
+    latestOnLiveEnd?.();
   };
   (0, reactPropertiesTooltip_2.useEffect)(
     (): Dynamic => (): Dynamic => {
-      let current2: Dynamic = value19.current;
-      current2?.moved && callback3(current2);
+      let drag: Dynamic = dragRef.current;
+      drag?.moved && revertDrag(drag);
     },
     [],
   );
-  let value21: Dynamic = (0, reactPropertiesTooltip_2.useRef)(false),
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      input.map(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2.locked === true
-            ? input2
+  let suppressClickRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(false),
+    withNormalizedPositions: Dynamic = (stopList?: Dynamic): Dynamic =>
+      stopList.map(
+        (stop?: Dynamic, index?: Dynamic): Dynamic =>
+          stop.locked === true
+            ? stop
             : {
-                ...input2,
+                ...stop,
                 pos:
                   Math.round(
-                    (input === value3
-                      ? value6[options]
-                      : normalizedGradientStops(input)[options]) * 100,
+                    (stopList === currentStops
+                      ? positions[index]
+                      : normalizedGradientStops(stopList)[index]) * 100,
                   ) / 100,
               },
       ),
-    value22: Dynamic = value3.some(
-      (input?: Dynamic): Dynamic => input.locked === true,
+    hasLockedStop: Dynamic = currentStops.some(
+      (stop?: Dynamic): Dynamic => stop.locked === true,
     ),
-    callback5: Dynamic = (
-      items?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    moveStop: Dynamic = (
+      stopList?: Dynamic,
+      stopIndex?: Dynamic,
+      newPosition?: Dynamic,
     ): Dynamic => {
-      let value28: Dynamic = value22 && options > 0 ? value6[options - 1] : 0,
-        value29: Dynamic =
-          value22 && options < items.length - 1 ? value6[options + 1] : 100;
-      return callback4(items).map(
-        (input?: Dynamic, options2?: Dynamic): Dynamic =>
-          options2 === options
+      let minPosition: Dynamic = hasLockedStop && stopIndex > 0 ? positions[stopIndex - 1] : 0,
+        maxPosition: Dynamic =
+          hasLockedStop && stopIndex < stopList.length - 1 ? positions[stopIndex + 1] : 100;
+      return withNormalizedPositions(stopList).map(
+        (stop?: Dynamic, index?: Dynamic): Dynamic =>
+          index === stopIndex
             ? {
-                ...input,
+                ...stop,
                 pos: Math.round(
-                  PropertiesSelectMin(context, value28, value29),
+                  PropertiesSelectMin(newPosition, minPosition, maxPosition),
                 ),
               }
-            : input,
+            : stop,
       );
     },
-    callback6: Dynamic = (input?: Dynamic): Dynamic => {
-      value4.current = true;
-      onStopsLive ? onStopsLive(input) : value2(input);
+    previewStops: Dynamic = (nextStops?: Dynamic): Dynamic => {
+      hasLiveEditRef.current = true;
+      onStopsLive ? onStopsLive(nextStops) : setLiveStops(nextStops);
     },
-    callback7: Dynamic = (input?: Dynamic): Dynamic => {
+    restoreFocus: Dynamic = (index?: Dynamic): Dynamic => {
       let activeElement: Dynamic = (document as Dynamic).activeElement,
-        current2: Dynamic = value11.current;
+        container: Dynamic = containerRef.current;
       if (
-        !current2 ||
+        !container ||
         !(activeElement instanceof HTMLElement) ||
-        !current2.contains(activeElement)
+        !container.contains(activeElement)
       )
         return;
-      let value28: Dynamic = activeElement.matches('button[role="slider"]')
+      let focusSelector: Dynamic = activeElement.matches('button[role="slider"]')
         ? 'button[role="slider"]'
         : activeElement.matches("input") &&
             activeElement.closest('[role="listitem"]') !== null
           ? '[role="listitem"] input'
           : null;
-      value28 !== null &&
+      focusSelector !== null &&
         requestAnimationFrame(
-          (): Dynamic => current2.querySelectorAll(value28)[input]?.focus(),
+          (): Dynamic => container.querySelectorAll(focusSelector)[index]?.focus(),
         );
     },
-    value23: Dynamic = (0, reactPropertiesTooltip_2.useRef)(0),
-    callback8: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value28: Dynamic = input.some(
-          (input2?: Dynamic): Dynamic => input2.locked === true,
+    reorderCountRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(0),
+    commitStops: Dynamic = (nextStops?: Dynamic, movedIndex?: Dynamic): Dynamic => {
+      let hasLocked: Dynamic = nextStops.some(
+          (stop?: Dynamic): Dynamic => stop.locked === true,
         ),
-        value29: Dynamic = input.map(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic => options2,
+        order: Dynamic = nextStops.map(
+          (stop?: Dynamic, index?: Dynamic): Dynamic => index,
         );
-      value28 ||
-        value29.sort(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-            input[input2].pos - input[options2].pos || input2 - options2,
+      hasLocked ||
+        order.sort(
+          (indexA?: Dynamic, indexB?: Dynamic): Dynamic =>
+            nextStops[indexA].pos - nextStops[indexB].pos || indexA - indexB,
         );
-      let value30: Dynamic = Math.max(0, value29.indexOf(options)),
-        value31: Dynamic = value29.map(
-          (input2?: Dynamic): Dynamic => input[input2],
+      let newIndex: Dynamic = Math.max(0, order.indexOf(movedIndex)),
+        sortedStops: Dynamic = order.map(
+          (orderIndex?: Dynamic): Dynamic => nextStops[orderIndex],
         );
-      value12.current = value29.map(
-        (input2?: Dynamic): Dynamic => value12.current[input2],
+      stopIdsRef.current = order.map(
+        (orderIndex?: Dynamic): Dynamic => stopIdsRef.current[orderIndex],
       );
-      value4.current = false;
-      value30 !== options &&
-        ((value23.current += 1), onStopsLive?.(value31), callback7(value30));
-      value2(null);
+      hasLiveEditRef.current = false;
+      newIndex !== movedIndex &&
+        ((reorderCountRef.current += 1), onStopsLive?.(sortedStops), restoreFocus(newIndex));
+      setLiveStops(null);
       onLiveEnd?.();
-      onStops(value31);
-      onSelect(value30);
-      return value30;
+      onStops(sortedStops);
+      onSelect(newIndex);
+      return newIndex;
     },
-    length: Dynamic = value3.filter(
-      (input?: Dynamic): Dynamic => input.hint !== true,
+    visibleStopCount: Dynamic = currentStops.filter(
+      (stop?: Dynamic): Dynamic => stop.hint !== true,
     ).length,
-    value24: Dynamic = length > minStops || length < value3.length,
-    callback9: Dynamic = (input?: Dynamic): Dynamic =>
-      !disabled2 &&
-      value3.length > 0 &&
-      (value3[input]?.hint === true ? true : length > minStops),
-    callback10: Dynamic = (input?: Dynamic): Dynamic => {
-      if (!callback9(input)) return value3.length;
-      let value28: Dynamic = value3.map(
-        (input2?: Dynamic, options?: Dynamic): Dynamic => options !== input,
+    canRemove: Dynamic = visibleStopCount > minStops || visibleStopCount < currentStops.length,
+    canRemoveStop: Dynamic = (index?: Dynamic): Dynamic =>
+      !isDisabled &&
+      currentStops.length > 0 &&
+      (currentStops[index]?.hint === true ? true : visibleStopCount > minStops),
+    removeStop: Dynamic = (removeIndex?: Dynamic): Dynamic => {
+      if (!canRemoveStop(removeIndex)) return currentStops.length;
+      let keepMask: Dynamic = currentStops.map(
+        (stop?: Dynamic, index?: Dynamic): Dynamic => index !== removeIndex,
       );
-      for (let flag: Dynamic = true; flag; ) {
-        flag = false;
-        let value30: Dynamic = value3
-          .map((input2?: Dynamic, options?: Dynamic): Dynamic => options)
-          .filter((input2?: Dynamic): Dynamic => value28[input2]);
-        value30.forEach((input2?: Dynamic, options?: Dynamic): Dynamic => {
-          if (value3[input2].hint !== true || !value28[input2]) return;
-          let value31: Dynamic = options === 0,
-            value32: Dynamic = options === value30.length - 1,
-            value33: Dynamic =
-              options > 0 && value3[value30[options - 1]].hint === true;
-          (value31 || value32 || value33) &&
-            ((value28[input2] = false), (flag = true));
+      for (let changed: Dynamic = true; changed; ) {
+        changed = false;
+        let keptIndices: Dynamic = currentStops
+          .map((stop?: Dynamic, index?: Dynamic): Dynamic => index)
+          .filter((index?: Dynamic): Dynamic => keepMask[index]);
+        keptIndices.forEach((stopIndex?: Dynamic, position?: Dynamic): Dynamic => {
+          if (currentStops[stopIndex].hint !== true || !keepMask[stopIndex]) return;
+          let isFirst: Dynamic = position === 0,
+            isLast: Dynamic = position === keptIndices.length - 1,
+            followsHint: Dynamic =
+              position > 0 && currentStops[keptIndices[position - 1]].hint === true;
+          (isFirst || isLast || followsHint) &&
+            ((keepMask[stopIndex] = false), (changed = true));
         });
       }
-      let value29: Dynamic = callback4(value3).filter(
-        (input2?: Dynamic, options?: Dynamic): Dynamic => value28[options],
+      let remainingStops: Dynamic = withNormalizedPositions(currentStops).filter(
+        (stop?: Dynamic, index?: Dynamic): Dynamic => keepMask[index],
       );
-      value12.current = value12.current.filter(
-        (input2?: Dynamic, options?: Dynamic): Dynamic => value28[options],
+      stopIdsRef.current = stopIdsRef.current.filter(
+        (stop?: Dynamic, index?: Dynamic): Dynamic => keepMask[index],
       );
-      value15(null);
-      onStops(value29);
-      let length2: Dynamic = value28
-        .slice(0, value9 + 1)
-        .filter((input2?: Dynamic): Dynamic => !input2).length;
+      setOpenPickerId(null);
+      onStops(remainingStops);
+      let removedBeforeCount: Dynamic = keepMask
+        .slice(0, selectedIndex + 1)
+        .filter((isKept?: Dynamic): Dynamic => !isKept).length;
       onSelect(
         PropertiesSelectMin(
-          value28[value9]
-            ? value9 - length2
-            : value9 -
-                length2 +
-                (value9 - length2 + 1 < value29.length ? 1 : 0),
+          keepMask[selectedIndex]
+            ? selectedIndex - removedBeforeCount
+            : selectedIndex -
+                removedBeforeCount +
+                (selectedIndex - removedBeforeCount + 1 < remainingStops.length ? 1 : 0),
           0,
-          Math.max(0, value29.length - 1),
+          Math.max(0, remainingStops.length - 1),
         ),
       );
-      return value29.length;
+      return remainingStops.length;
     },
-    callback11: Dynamic = (): Dynamic => {
-      if (disabled2 || value3.length >= maxStops || value3.length === 0)
+    addStop: Dynamic = (): Dynamic => {
+      if (isDisabled || currentStops.length >= maxStops || currentStops.length === 0)
         return;
-      let value28: Dynamic = value9,
-        value29: Dynamic = value28 < value3.length - 1,
-        value30: Dynamic = value6[value28],
-        value31: Dynamic = value29
-          ? value6[value28 + 1]
-          : (value6[value28 - 1] ?? 0),
-        state: Dynamic = {
+      let baseIndex: Dynamic = selectedIndex,
+        hasNext: Dynamic = baseIndex < currentStops.length - 1,
+        basePosition: Dynamic = positions[baseIndex],
+        neighborPosition: Dynamic = hasNext
+          ? positions[baseIndex + 1]
+          : (positions[baseIndex - 1] ?? 0),
+        newStop: Dynamic = {
           color:
-            (value3[value28].locked === true
-              ? value3.find(
-                  (input?: Dynamic): Dynamic => input.locked !== true,
+            (currentStops[baseIndex].locked === true
+              ? currentStops.find(
+                  (stop?: Dynamic): Dynamic => stop.locked !== true,
                 )
-              : value3[value28]
+              : currentStops[baseIndex]
             )?.color ?? "#808080",
-          pos: Math.round((value30 + value31) / 2),
+          pos: Math.round((basePosition + neighborPosition) / 2),
         },
-        value32: Dynamic = value29 ? value28 + 1 : value28,
-        value33: Dynamic = callback4(value3);
-      value12.current = [
-        ...value12.current.slice(0, value32),
-        value13.current++,
-        ...value12.current.slice(value32),
+        insertIndex: Dynamic = hasNext ? baseIndex + 1 : baseIndex,
+        normalizedStops: Dynamic = withNormalizedPositions(currentStops);
+      stopIdsRef.current = [
+        ...stopIdsRef.current.slice(0, insertIndex),
+        nextStopIdRef.current++,
+        ...stopIdsRef.current.slice(insertIndex),
       ];
       onStops([
-        ...value33.slice(0, value32),
-        state,
-        ...value33.slice(value32),
+        ...normalizedStops.slice(0, insertIndex),
+        newStop,
+        ...normalizedStops.slice(insertIndex),
       ]);
-      onSelect(value32);
+      onSelect(insertIndex);
     },
-    value25: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
-    callback12: Dynamic = (input?: Dynamic): Dynamic => {
+    trackRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
+    pointerToPercent: Dynamic = (event?: Dynamic): Dynamic => {
       let bounds: Dynamic = (
-        value25.current ?? value10.current
+        trackRef.current ?? barRef.current
       ).getBoundingClientRect();
       return (
-        ((input.clientX - bounds.left) / Math.max(1, bounds.width)) * 100
+        ((event.clientX - bounds.left) / Math.max(1, bounds.width)) * 100
       );
     },
-    callback13: Dynamic =
-      (input?: Dynamic): Dynamic =>
+    createPointerDownHandler: Dynamic =
+      (index?: Dynamic): Dynamic =>
       (event?: Dynamic): Dynamic => {
         if (
-          disabled2 ||
+          isDisabled ||
           event.button !== 0 ||
-          value19.current !== null ||
-          value3[input]?.locked === true
+          dragRef.current !== null ||
+          currentStops[index]?.locked === true
         )
           return;
         event.preventDefault();
-        let current2: Dynamic = value23.current,
+        let reorderCountAtDown: Dynamic = reorderCountRef.current,
           activeElement: Dynamic = (document as Dynamic).activeElement;
         activeElement instanceof HTMLElement &&
           activeElement !== event.currentTarget &&
-          value11.current?.contains(activeElement) &&
+          containerRef.current?.contains(activeElement) &&
           activeElement.blur();
-        value23.current === current2 &&
+        reorderCountRef.current === reorderCountAtDown &&
           (event.currentTarget.setPointerCapture(event.pointerId),
           event.currentTarget.focus(),
-          (value19.current = {
-            index: input,
-            id: current[input],
+          (dragRef.current = {
+            index: index,
+            id: stopIds[index],
             pointer: event.pointerId,
             x0: event.clientX,
             moved: false,
-            last: value6[input],
-            posBefore: value6[input],
+            last: positions[index],
+            posBefore: positions[index],
           }),
-          (value21.current = false),
-          onSelect(input));
+          (suppressClickRef.current = false),
+          onSelect(index));
       },
-    callback14: Dynamic = (input?: Dynamic): Dynamic => {
-      let current2: Dynamic = value19.current;
-      !current2 ||
-        current2.pointer !== input.pointerId ||
-        !input.currentTarget.hasPointerCapture(input.pointerId) ||
-        (!current2.moved && Math.abs(input.clientX - current2.x0) < 3) ||
-        ((current2.moved = true),
-        (current2.last = callback12(input)),
-        callback6(callback5(value3, current2.index, current2.last)));
+    handlePointerMove: Dynamic = (event?: Dynamic): Dynamic => {
+      let drag: Dynamic = dragRef.current;
+      !drag ||
+        drag.pointer !== event.pointerId ||
+        !event.currentTarget.hasPointerCapture(event.pointerId) ||
+        (!drag.moved && Math.abs(event.clientX - drag.x0) < 3) ||
+        ((drag.moved = true),
+        (drag.last = pointerToPercent(event)),
+        previewStops(moveStop(currentStops, drag.index, drag.last)));
     },
-    callback15: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let current2: Dynamic = value19.current;
-      !current2 ||
-        current2.pointer !== input.pointerId ||
-        ((value19.current = null),
-        input.currentTarget.hasPointerCapture(input.pointerId) &&
-          input.currentTarget.releasePointerCapture(input.pointerId),
-        current2.moved &&
-          (options
-            ? ((value21.current = true),
-              callback8(
-                callback5(value3, current2.index, current2.last),
-                current2.index,
+    endDrag: Dynamic = (event?: Dynamic, shouldCommit?: Dynamic): Dynamic => {
+      let drag: Dynamic = dragRef.current;
+      !drag ||
+        drag.pointer !== event.pointerId ||
+        ((dragRef.current = null),
+        event.currentTarget.hasPointerCapture(event.pointerId) &&
+          event.currentTarget.releasePointerCapture(event.pointerId),
+        drag.moved &&
+          (shouldCommit
+            ? ((suppressClickRef.current = true),
+              commitStops(
+                moveStop(currentStops, drag.index, drag.last),
+                drag.index,
               ))
-            : ((value4.current = false),
-              value2(null),
-              onStopsLive ? callback3(current2) : onLiveEnd?.())));
+            : ((hasLiveEditRef.current = false),
+              setLiveStops(null),
+              onStopsLive ? revertDrag(drag) : onLiveEnd?.())));
     },
-    callback16: Dynamic =
-      (input?: Dynamic): Dynamic =>
+    createKeyDownHandler: Dynamic =
+      (index?: Dynamic): Dynamic =>
       (event?: Dynamic): Dynamic => {
         if (
-          disabled2 ||
-          (value3[input]?.locked === true &&
+          isDisabled ||
+          (currentStops[index]?.locked === true &&
             event.key !== "Delete" &&
             event.key !== "Backspace")
         )
           return;
-        let value28: Dynamic = event.shiftKey ? 10 : 1,
-          value29: Dynamic = value6[input],
-          value30: Dynamic = null;
+        let stepSize: Dynamic = event.shiftKey ? 10 : 1,
+          currentPosition: Dynamic = positions[index],
+          nextPosition: Dynamic = null;
         if (event.key === "ArrowLeft" || event.key === "ArrowDown")
-          value30 = value29 - value28;
+          nextPosition = currentPosition - stepSize;
         else if (event.key === "ArrowRight" || event.key === "ArrowUp")
-          value30 = value29 + value28;
-        else if (event.key === "Home") value30 = 0;
-        else if (event.key === "End") value30 = 100;
+          nextPosition = currentPosition + stepSize;
+        else if (event.key === "Home") nextPosition = 0;
+        else if (event.key === "End") nextPosition = 100;
         else if (event.key === "Delete" || event.key === "Backspace") {
           event.preventDefault();
-          if (callback9(input)) {
-            let value31: Dynamic = callback10(input),
-              value32: Dynamic = Math.min(input, value31 - 1);
+          if (canRemoveStop(index)) {
+            let remainingCount: Dynamic = removeStop(index),
+              focusIndex: Dynamic = Math.min(index, remainingCount - 1);
             requestAnimationFrame(
               (): Dynamic =>
-                value25.current
+                trackRef.current
                   ?.querySelectorAll('button[role="slider"]')
-                  [value32]?.focus(),
+                  [focusIndex]?.focus(),
             );
           }
           return;
         }
-        value30 !== null &&
+        nextPosition !== null &&
           (event.preventDefault(),
           event.stopPropagation(),
-          callback8(callback5(value3, input, value30), input));
+          commitStops(moveStop(currentStops, index, nextPosition), index));
       },
-    callback17: Dynamic = (input?: Dynamic): Dynamic =>
-      "calc(0.75rem + (100% - 1.5rem) * " + String(input / 100) + ")",
-    value26: Dynamic = value3.flatMap(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input.hint === true
+    toTrackOffset: Dynamic = (percent?: Dynamic): Dynamic =>
+      "calc(0.75rem + (100% - 1.5rem) * " + String(percent / 100) + ")",
+    colorStops: Dynamic = currentStops.flatMap(
+      (stop?: Dynamic, index?: Dynamic): Dynamic =>
+        stop.hint === true
           ? []
-          : [value8(callback(input)) + " " + callback17(value6[options])],
+          : [resolveColor(stopColor(stop)) + " " + toTrackOffset(positions[index])],
     ),
-    value27: Dynamic =
+    barGradient: Dynamic =
       "linear-gradient(90deg, " +
-      (value26.length >= 2
-        ? value26
+      (colorStops.length >= 2
+        ? colorStops
         : ["transparent 0%", "transparent 100%"]
       ).join(", ") +
       ")";
   return (
     <div
-      ref={value11}
+      ref={containerRef}
       data-testid={testid}
       data-kit={"gradient-editor"}
       className={"flex flex-col"}
@@ -488,10 +488,10 @@ function GradientEditor({
                 onRadial !== undefined,
               )}
               value={radial ? "radial" : "linear"}
-              disabled={disabled2}
-              onChange={(input?: Dynamic): Dynamic => {
-                (input === "radial") !== radial &&
-                  onRadial?.(input === "radial");
+              disabled={isDisabled}
+              onChange={(nextStyle?: Dynamic): Dynamic => {
+                (nextStyle === "radial") !== radial &&
+                  onRadial?.(nextStyle === "radial");
               }}
             />
           </div>
@@ -503,7 +503,7 @@ function GradientEditor({
               aria-label={uiMessage("inspector.gradientEditor.angle")}
               prefix={
                 <PropertyOptionIcon
-                  icon={PropertiesTooltipNameViewBoxPathsConfig_13}
+                  icon={angleIcon}
                 />
               }
               value={radial ? undefined : angle}
@@ -513,19 +513,19 @@ function GradientEditor({
               max={360}
               step={1}
               steppers={false}
-              disabled={disabled2 || radial}
-              onValue={(input?: Dynamic): Dynamic =>
+              disabled={isDisabled || radial}
+              onValue={(nextAngle?: Dynamic): Dynamic =>
                 onAngle(
-                  input === undefined
+                  nextAngle === undefined
                     ? undefined
-                    : PropertiesSelectMin(input, 0, 360),
+                    : PropertiesSelectMin(nextAngle, 0, 360),
                 )
               }
               {...(onAngleScrub
                 ? {
-                    onScrub: (input?: Dynamic): Dynamic =>
+                    onScrub: (angleValue?: Dynamic): Dynamic =>
                       onAngleScrub(
-                        PropertiesSelectMin(input, 0, 360),
+                        PropertiesSelectMin(angleValue, 0, 360),
                       ),
                     onScrubEnd: onAngleScrubEnd,
                   }
@@ -541,7 +541,7 @@ function GradientEditor({
         )}
       >
         <div
-          ref={value10}
+          ref={barRef}
           data-kit={"gradient-bar"}
           className={
             "relative h-8 rounded shadow-card-ring bg-[repeating-conic-gradient(var(--cds-alpha-2)_0_25%,transparent_0_50%)] bg-[length:8px_8px]"
@@ -550,57 +550,57 @@ function GradientEditor({
           <div
             className={"absolute inset-0 rounded"}
             style={{
-              background: value27,
+              background: barGradient,
             }}
           />
-          <div ref={value25} className={"absolute inset-y-0 left-3 right-3"}>
-            {value3.map(
-              (input?: Dynamic, options?: Dynamic): Dynamic =>
+          <div ref={trackRef} className={"absolute inset-y-0 left-3 right-3"}>
+            {currentStops.map(
+              (stop?: Dynamic, index?: Dynamic): Dynamic =>
                 (() => {
                   const _Component = "button";
                   const _props = {
                     type: "button",
                     role: "slider",
-                    get "aria-label"() { return uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(options + 1)) }); },
+                    get "aria-label"() { return uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(index + 1)) }); },
                     "aria-valuemin": 0,
                     "aria-valuemax": 100,
-                    "aria-valuenow": Math.round(value6[options]),
+                    "aria-valuenow": Math.round(positions[index]),
                     "aria-valuetext":
-                      String(Math.round(value6[options])) + "%",
-                    "data-selected": options === value9 ? "" : undefined,
-                    disabled: disabled2,
-                    "aria-disabled": input.locked === true ? true : undefined,
+                      String(Math.round(positions[index])) + "%",
+                    "data-selected": index === selectedIndex ? "" : undefined,
+                    disabled: isDisabled,
+                    "aria-disabled": stop.locked === true ? true : undefined,
                     title:
-                      input.locked === true
+                      stop.locked === true
                         ? WrittenByHandInAFormMessage
                         : undefined,
                     className: joinClassNames(
                       "absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-default touch-none rounded-full border-2 border-white p-0 shadow-card-ring",
                       "focus-visible:shadow-focus pointer-coarse:h-6 pointer-coarse:w-6",
-                      options === value9
+                      index === selectedIndex
                         ? "z-[1] outline outline-2 outline-offset-1 outline-border-strong"
                         : "outline-none focus-visible:outline-hidden",
                     ),
                     style: {
-                      left: String(value6[options]) + "%",
-                      background: value8(callback(input)),
+                      left: String(positions[index]) + "%",
+                      background: resolveColor(stopColor(stop)),
                     },
-                    onPointerDown: callback13(options),
-                    onPointerMove: callback14,
-                    onPointerUp: (input2?: Dynamic): Dynamic =>
-                      callback15(input2, true),
-                    onPointerCancel: (input2?: Dynamic): Dynamic =>
-                      callback15(input2, false),
-                    onLostPointerCapture: (input2?: Dynamic): Dynamic =>
-                      callback15(input2, false),
-                    onKeyDown: callback16(options),
+                    onPointerDown: createPointerDownHandler(index),
+                    onPointerMove: handlePointerMove,
+                    onPointerUp: (event?: Dynamic): Dynamic =>
+                      endDrag(event, true),
+                    onPointerCancel: (event?: Dynamic): Dynamic =>
+                      endDrag(event, false),
+                    onLostPointerCapture: (event?: Dynamic): Dynamic =>
+                      endDrag(event, false),
+                    onKeyDown: createKeyDownHandler(index),
                     onClick: (): Dynamic => {
-                      value21.current
-                        ? (value21.current = false)
-                        : onSelect(options);
+                      suppressClickRef.current
+                        ? (suppressClickRef.current = false)
+                        : onSelect(index);
                     },
                   } as const;
-                  const _key = current[options];
+                  const _key = stopIds[index];
                   return <_Component key={_key} {..._props} />;
                 })(),
             )}
@@ -615,9 +615,9 @@ function GradientEditor({
             iconOnly={true}
             icon={"Add"}
             aria-label={uiMessage("inspector.gradientEditor.addStop")}
-            disabled={disabled2 || value3.length >= maxStops}
+            disabled={isDisabled || currentStops.length >= maxStops}
             disabledReason={uiMessage("inspector.gradientEditor.stopsAtMost", { value1: String(String(maxStops)) })}
-            onClick={callback11}
+            onClick={addStop}
           />
         </div>
       </PropertyRow>
@@ -629,108 +629,108 @@ function GradientEditor({
           "mt-1 flex flex-col gap-2",
         )}
       >
-        {value3.map((input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value28: Dynamic =
-            !PropertiesGradientEditorAttrCalcPattern.test(callback(input)) &&
-            !PropertiesGradientEditorPattern.test(callback(input));
+        {currentStops.map((stop?: Dynamic, index?: Dynamic): Dynamic => {
+          let isEditableColor: Dynamic =
+            !PropertiesGradientEditorAttrCalcPattern.test(stopColor(stop)) &&
+            !PropertiesGradientEditorPattern.test(stopColor(stop));
           return (() => {
-            const _Component2 = "div";
-            const _props2 = {
+            const StopRowTag = "div";
+            const stopRowProps = {
               role: "listitem",
               className: "flex min-w-0 items-center gap-2",
               children: [
                 <div className={"w-[3.75rem] shrink-0"}>
                   <NumericInput
-                    aria-label={uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(options + 1)) })}
-                    value={Math.round(value6[options])}
+                    aria-label={uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(index + 1)) })}
+                    value={Math.round(positions[index])}
                     unit={"%"}
                     min={0}
                     max={100}
                     step={1}
                     smallStep={1}
                     steppers={false}
-                    disabled={disabled2 || input.locked === true}
+                    disabled={isDisabled || stop.locked === true}
                     title={
-                      input.locked === true ? (WrittenByHandInAFormMessage) : (undefined)
+                      stop.locked === true ? (WrittenByHandInAFormMessage) : (undefined)
                     }
-                    onValue={(input2?: Dynamic): Dynamic =>
-                      callback8(
-                        callback5(value3, options, input2 ?? value6[options]),
-                        options,
+                    onValue={(nextPosition?: Dynamic): Dynamic =>
+                      commitStops(
+                        moveStop(currentStops, index, nextPosition ?? positions[index]),
+                        index,
                       )
                     }
-                    onScrub={(input2?: Dynamic): Dynamic =>
-                      callback6(callback5(value3, options, input2))
+                    onScrub={(scrubPosition?: Dynamic): Dynamic =>
+                      previewStops(moveStop(currentStops, index, scrubPosition))
                     }
                     onScrubEnd={(): Dynamic =>
-                      callback8(
-                        callback5(value3, options, value6[options]),
-                        options,
+                      commitStops(
+                        moveStop(currentStops, index, positions[index]),
+                        index,
                       )
                     }
                   />
                 </div>,
                 <span className={"relative flex min-w-0 flex-1"}>
                   <EditorPopover
-                    open={value18 === options}
-                    onOpen={(): Dynamic => value15(current[options])}
-                    onClose={(): Dynamic => value15(null)}
+                    open={openPickerIndex === index}
+                    onOpen={(): Dynamic => setOpenPickerId(stopIds[index])}
+                    onClose={(): Dynamic => setOpenPickerId(null)}
                     trigger={
                       <PropertyPickerButton
                         aria-label={
-                          uiMessage("inspector.gradientEditor.stopColor", { value1: String(String(options + 1)), value2: String(PropertiesGradientEditorTest(input.color)) })
+                          uiMessage("inspector.gradientEditor.stopColor", { value1: String(String(index + 1)), value2: String(PropertiesGradientEditorTest(stop.color)) })
                         }
-                        data-selected={options === value9 ? "" : undefined}
-                        disabled={disabled2}
-                        onClick={(input2?: Dynamic): Dynamic => {
-                          onSelect(options);
-                          value17(input2.detail === 0);
+                        data-selected={index === selectedIndex ? "" : undefined}
+                        disabled={isDisabled}
+                        onClick={(clickEvent?: Dynamic): Dynamic => {
+                          onSelect(index);
+                          setShouldFocusPicker(clickEvent.detail === 0);
                         }}
                         className={joinClassNames(
                           "min-w-0 cursor-default",
-                          options === value9 && "bg-fill-ghost-hover",
+                          index === selectedIndex && "bg-fill-ghost-hover",
                         )}
                         chip={
                           <PropertyColorWell
                             background={
-                              value28 ? value8(callback(input)) : undefined
+                              isEditableColor ? resolveColor(stopColor(stop)) : undefined
                             }
                           />
                         }
                       >
-                        {PropertiesGradientEditorTest(input.color)}
+                        {PropertiesGradientEditorTest(stop.color)}
                       </PropertyPickerButton>
                     }
                     side={"left"}
-                    positionAnchor={callback2}
+                    positionAnchor={getPopoverAnchor}
                     padding={"none"}
                     className={ColorPickerLabel}
-                    focusOnOpen={value16}
+                    focusOnOpen={shouldFocusPicker}
                     popupAttrs={{
-                      "data-kit-stop-picker": String(options),
+                      "data-kit-stop-picker": String(index),
                     }}
                   >
-                    {value18 === options ? (renderStopPicker(options)) : (null)}
+                    {openPickerIndex === index ? (renderStopPicker(index)) : (null)}
                   </EditorPopover>
                 </span>,
-                value24 ? (
+                canRemove ? (
                   <Button
                     variant={"ghost"}
                     size={"sm"}
                     iconOnly={true}
                     icon={"Minus"}
-                    aria-label={uiMessage("inspector.gradientEditor.removeStop", { value1: String(String(options + 1)) })}
-                    disabled={!callback9(options)}
+                    aria-label={uiMessage("inspector.gradientEditor.removeStop", { value1: String(String(index + 1)) })}
+                    disabled={!canRemoveStop(index)}
                     disabledReason={
                       (("A gradient needs ") + (String(minStops))) + (" color stops.")
                     }
-                    onClick={(): Dynamic => callback10(options)}
+                    onClick={(): Dynamic => removeStop(index)}
                   />
                 ) : null,
               ],
             } as const;
-            const _key2 = current[options];
-            return <_Component2 key={_key2} {..._props2} />;
+            const stopRowKey = stopIds[index];
+            return <StopRowTag key={stopRowKey} {...stopRowProps} />;
           })();
         })}
       </div>
@@ -753,18 +753,18 @@ export {
 };
 export function installEditorPropertiesGradientEditor(): () => void {
   return () => {
-    PropertiesGradientEditorHandler = (input?: Dynamic): Dynamic =>
-      hsvaToRgbaCss(parseHsvaColor(input));
-    PropertiesGradientEditorTest = (input?: Dynamic): Dynamic =>
-      /^#[0-9a-f]{3,8}$/i.test(input.trim())
-        ? input.trim().toUpperCase()
-        : input.trim();
+    PropertiesGradientEditorHandler = (color?: Dynamic): Dynamic =>
+      hsvaToRgbaCss(parseHsvaColor(color));
+    PropertiesGradientEditorTest = (color?: Dynamic): Dynamic =>
+      /^#[0-9a-f]{3,8}$/i.test(color.trim())
+        ? color.trim().toUpperCase()
+        : color.trim();
     PropertiesGradientEditorAttrCalcPattern =
       /\b(var|env|attr|calc|color-mix)\(|^\s*(currentcolor|inherit|initial|unset)\s*$/i;
     PropertiesGradientEditorPattern = /^\s*-?[\d.]+[a-z%]*\s*$/i;
     WrittenByHandInAFormMessage =
       uiMessage("inspector.gradientEditor.writtenByHandInA");
-    PropertiesGradientEditorHandler_2 = (input?: Dynamic): Dynamic => [
+    PropertiesGradientEditorHandler_2 = (canChooseRadial?: Dynamic): Dynamic => [
       {
         value: "linear",
         get label() { return uiMessage("inspector.gradientEditor.linear"); },
@@ -772,8 +772,8 @@ export function installEditorPropertiesGradientEditor(): () => void {
       {
         value: "radial",
         get label() { return uiMessage("inspector.gradientEditor.radial"); },
-        disabled: !input,
-        get title() { return input ? (undefined) : (uiMessage("inspector.gradientEditor.linearGradientsOnlyHere")); },
+        disabled: !canChooseRadial,
+        get title() { return canChooseRadial ? (undefined) : (uiMessage("inspector.gradientEditor.linearGradientsOnlyHere")); },
       },
     ];
     jsxPropertiesGradientEditor = toModuleNamespace(
@@ -783,7 +783,7 @@ export function installEditorPropertiesGradientEditor(): () => void {
     PropertiesGradientEditorColorMixPattern = /^\s*(var|color-mix)\(/i;
     PropertiesGradientEditorImageCrossFadePattern =
       /url\s*\(|image(-set)?\s*\(|src\s*\(|cross-fade\s*\(|element\s*\(|\\/i;
-    PropertiesGradientEditorLabel = (input?: Dynamic): Dynamic =>
-      input.label ?? input.name[0].toUpperCase() + input.name.slice(1);
+    PropertiesGradientEditorLabel = (stopEntry?: Dynamic): Dynamic =>
+      stopEntry.label ?? stopEntry.name[0].toUpperCase() + stopEntry.name.slice(1);
   };
 }

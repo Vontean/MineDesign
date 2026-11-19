@@ -7,7 +7,7 @@ import {
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { reactComponentsPropsPanel } from "../components/props-panel";
-import { PropertiesCssEffectsXYBlurConfig_2, useEditorColorSwatches } from "./css-effects";
+import { PropertiesCssEffectsXYBlurConfig_2 as shadowBounds, useEditorColorSwatches } from "./css-effects";
 import { ColorEffectButton, PropertyEditorPopover, RemovePropertyButton, ShadowEditor } from "./effect-popup";
 import { PropertyRow } from "./row";
 import { toModuleNamespace } from "../../module-helpers";
@@ -18,40 +18,40 @@ var reactPropertiesDropShadowEditor_3: Dynamic;
 var jsxPropertiesDropShadowEditor: Dynamic;
 var PropertiesDropShadowEditorTest: Dynamic;
 function DropShadowEditor({
-  value: value,
+  value: shadow,
   open: open,
   onOpenChange: onOpenChange,
-  disabled: disabled2,
+  disabled: isDisabled,
   onChange: onChange,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = useEditorColorSwatches(),
-    [value3, value4]: Dynamic = (0,
+  let colorSwatches: Dynamic = useEditorColorSwatches(),
+    [shouldFocusOnOpen, setShouldFocusOnOpen]: Dynamic = (0,
     reactComponentsPropsPanel.useState)(false),
-    value5: Dynamic = (0, reactComponentsPropsPanel.useRef)(null),
-    state: Dynamic = {
-      x: value.x,
-      y: value.y,
-      blur: value.blur,
-      color: value.color,
+    rowRef: Dynamic = (0, reactComponentsPropsPanel.useRef)(null),
+    shadowState: Dynamic = {
+      x: shadow.x,
+      y: shadow.y,
+      blur: shadow.blur,
+      color: shadow.color,
     },
-    callback: Dynamic = (input?: Dynamic): Dynamic => ({
-      x: input.x,
-      y: input.y,
-      blur: input.blur,
-      color: input.color,
+    toShadowFields: Dynamic = (shadowFields?: Dynamic): Dynamic => ({
+      x: shadowFields.x,
+      y: shadowFields.y,
+      blur: shadowFields.blur,
+      color: shadowFields.color,
     });
   return (
     <PropertyRow
       label={uiMessage("inspector.dropShadowEditor.textShadow")}
-      disabled={disabled2}
+      disabled={isDisabled}
       data-testid={"dc-prop-text-shadow"}
       trailing={
         <RemovePropertyButton
           label={uiMessage("inspector.dropShadowEditor.textShadow")}
-          disabled={disabled2}
+          disabled={isDisabled}
           onClick={(): Dynamic => {
             onOpenChange(false);
             onChange(null);
@@ -59,36 +59,36 @@ function DropShadowEditor({
         />
       }
     >
-      <span ref={value5} className={"relative flex min-w-0 flex-1"}>
+      <span ref={rowRef} className={"relative flex min-w-0 flex-1"}>
         <PropertyEditorPopover
           open={open}
           onOpenChange={onOpenChange}
           trigger={
             <ColorEffectButton
               label={uiMessage("inspector.dropShadowEditor.textShadow")}
-              color={value.color}
-              text={`${value.x}, ${value.y} \xB7 ${value.blur}px`}
-              disabled={disabled2}
-              onClick={(input?: Dynamic): Dynamic =>
-                value4(input.detail === 0)
+              color={shadow.color}
+              text={`${shadow.x}, ${shadow.y} \xB7 ${shadow.blur}px`}
+              disabled={isDisabled}
+              onClick={(clickEvent?: Dynamic): Dynamic =>
+                setShouldFocusOnOpen(clickEvent.detail === 0)
               }
             />
           }
           anchor={(): Dynamic =>
-            value5.current?.closest("[data-property-row]") ?? null
+            rowRef.current?.closest("[data-property-row]") ?? null
           }
-          focusOnOpen={value3}
+          focusOnOpen={shouldFocusOnOpen}
         >
           <ShadowEditor
             title={uiMessage("inspector.dropShadowEditor.textShadow")}
-            value={state}
+            value={shadowState}
             spread={false}
-            bounds={PropertiesCssEffectsXYBlurConfig_2}
-            disabled={disabled2}
+            bounds={shadowBounds}
+            disabled={isDisabled}
             unifiedPopover={true}
-            swatches={value2}
-            onChange={(input?: Dynamic): Dynamic => onChange(callback(input))}
-            onLive={(input?: Dynamic): Dynamic => onLive(callback(input))}
+            swatches={colorSwatches}
+            onChange={(nextShadow?: Dynamic): Dynamic => onChange(toShadowFields(nextShadow))}
+            onLive={(liveShadow?: Dynamic): Dynamic => onLive(toShadowFields(liveShadow))}
             onLiveEnd={onLiveEnd}
             onClose={(): Dynamic => onOpenChange(false)}
           />
@@ -124,12 +124,12 @@ export function installEditorPropertiesDropShadowEditor(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    PropertiesDropShadowEditorTest = (input?: Dynamic): Dynamic =>
+    PropertiesDropShadowEditorTest = (colorValue?: Dynamic): Dynamic =>
       !/\b(var|env|attr|calc|color-mix)\(|^\s*(currentcolor|inherit|initial|unset|revert|revert-layer)\s*$/i.test(
-        input,
+        colorValue,
       ) &&
       (typeof CSS === "undefined" ||
         typeof CSS.supports != "function" ||
-        CSS.supports("color", input));
+        CSS.supports("color", colorValue));
   };
 }

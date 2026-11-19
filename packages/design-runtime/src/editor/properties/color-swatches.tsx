@@ -7,7 +7,7 @@ import {
 import { SegmentedControl } from "../../cds/components/selection-points";
 import { DisabledReasonTooltip } from "../../cds/tooltip/tooltip";
 import { joinClassNames } from "../chrome/overlay-state";
-import { ColorContrastCopyLabel_2, ColorContrastCopyLabel_3, TypeValue } from "../color/contrast-copy";
+import { ColorContrastCopyLabel_2 as searchLabel, ColorContrastCopyLabel_3 as noMatchesMessage, TypeValue } from "../color/contrast-copy";
 import { alphaCheckerboardBackground, ColorSwatchRow, hsvaToRgbaCss, parseHsvaColor, PickerListGroup, PickerListHeader } from "../color/picker-primitives";
 import { ColorHexInput, ColorPicker } from "../color/picker";
 import { jsxPropertiesGradientEditor, PropertiesGradientEditorColorMixPattern, PropertiesGradientEditorImageCrossFadePattern, PropertiesGradientEditorLabel } from "./gradient-editor";
@@ -22,113 +22,113 @@ var PropertiesColorSwatchesEmpty: Dynamic;
 var PropertiesColorSwatchesTest: Dynamic;
 var PropertiesColorSwatchesLimit: Dynamic;
 var NoneValue: Dynamic;
-function colorWellStyle(input?: Dynamic): Dynamic {
-  if (input === undefined) return;
+function colorWellStyle(paint?: Dynamic): Dynamic {
+  if (paint === undefined) return;
   if (
-    /gradient\(/.test(input) &&
-    !PropertiesGradientEditorImageCrossFadePattern.test(input)
+    /gradient\(/.test(paint) &&
+    !PropertiesGradientEditorImageCrossFadePattern.test(paint)
   )
     return {
-      background: input,
+      background: paint,
     };
   if (
-    PropertiesGradientEditorColorMixPattern.test(input) &&
-    !PropertiesGradientEditorImageCrossFadePattern.test(input)
+    PropertiesGradientEditorColorMixPattern.test(paint) &&
+    !PropertiesGradientEditorImageCrossFadePattern.test(paint)
   )
     return {
-      backgroundColor: input,
+      backgroundColor: paint,
     };
-  let value: Dynamic = parseHsvaColor(input),
-    value2: Dynamic = hsvaToRgbaCss(value);
-  return value.a < 1
+  let hsva: Dynamic = parseHsvaColor(paint),
+    rgbaCss: Dynamic = hsvaToRgbaCss(hsva);
+  return hsva.a < 1
     ? {
-        background: `linear-gradient(${value2}, ${value2}), ${alphaCheckerboardBackground}`,
+        background: `linear-gradient(${rgbaCss}, ${rgbaCss}), ${alphaCheckerboardBackground}`,
       }
     : {
-        backgroundColor: value2,
+        backgroundColor: rgbaCss,
       };
 }
-function normalizedPaintKey(input?: Dynamic): Dynamic {
-  return PropertiesGradientEditorColorMixPattern.test(input)
-    ? "sym:" + input.trim()
-    : hsvaToRgbaCss(parseHsvaColor(input));
+function normalizedPaintKey(paint?: Dynamic): Dynamic {
+  return PropertiesGradientEditorColorMixPattern.test(paint)
+    ? "sym:" + paint.trim()
+    : hsvaToRgbaCss(parseHsvaColor(paint));
 }
-function samePaint(input?: Dynamic, options?: Dynamic): Dynamic {
-  return normalizedPaintKey(input) === normalizedPaintKey(options);
+function samePaint(paintA?: Dynamic, paintB?: Dynamic): Dynamic {
+  return normalizedPaintKey(paintA) === normalizedPaintKey(paintB);
 }
 function mergeDesignSystemSwatches(
-  input?: Dynamic,
-  options?: Dynamic,
+  designSystemColors?: Dynamic,
+  swatches?: Dynamic,
 ): Dynamic {
-  if (input === undefined || input.colors.length === 0) return [...options];
-  let value: Dynamic = options.findIndex(
-      (input2?: Dynamic): Dynamic => !PropertiesColorSwatchesEmpty(input2),
+  if (designSystemColors === undefined || designSystemColors.colors.length === 0) return [...swatches];
+  let firstSwatchIndex: Dynamic = swatches.findIndex(
+      (swatch?: Dynamic): Dynamic => !PropertiesColorSwatchesEmpty(swatch),
     ),
-    value2: Dynamic = (value < 0 ? options : options.slice(0, value)).map(
-      (input2?: Dynamic): Dynamic =>
-        input2.group === undefined
-          ? input2
+    leadingSwatches: Dynamic = (firstSwatchIndex < 0 ? swatches : swatches.slice(0, firstSwatchIndex)).map(
+      (swatch?: Dynamic): Dynamic =>
+        swatch.group === undefined
+          ? swatch
           : {
-              ...input2,
-              group: input.label,
+              ...swatch,
+              group: designSystemColors.label,
               subgroup: undefined,
             },
     ),
-    value3: Dynamic = value < 0 ? [] : options.slice(value),
-    entries: Dynamic = new Map(),
-    entries2: Dynamic = new Map();
-  for (let value4 of value3 as Dynamic) {
+    trailingSwatches: Dynamic = firstSwatchIndex < 0 ? [] : swatches.slice(firstSwatchIndex),
+    swatchByPaint: Dynamic = new Map(),
+    swatchesByLabel: Dynamic = new Map();
+  for (let swatch of trailingSwatches as Dynamic) {
     if (
-      PropertiesColorSwatchesEmpty(value4) ||
-      PropertiesColorSwatchesTest(value4) ||
-      value4.picks !== undefined
+      PropertiesColorSwatchesEmpty(swatch) ||
+      PropertiesColorSwatchesTest(swatch) ||
+      swatch.picks !== undefined
     )
       continue;
-    let value5: Dynamic = normalizedPaintKey(value4.color);
-    entries.has(value5) || entries.set(value5, value4);
-    let value6: Dynamic = (value4.label ?? value4.name).replace(/^--/, "");
-    entries2.set(value6, [...(entries2.get(value6) ?? []), value4]);
+    let paintKey: Dynamic = normalizedPaintKey(swatch.color);
+    swatchByPaint.has(paintKey) || swatchByPaint.set(paintKey, swatch);
+    let labelKey: Dynamic = (swatch.label ?? swatch.name).replace(/^--/, "");
+    swatchesByLabel.set(labelKey, [...(swatchesByLabel.get(labelKey) ?? []), swatch]);
   }
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value4: Dynamic = entries2.get(input2) ?? [];
-      return value4.length <= 1 ||
-        value4.every(
-          (input3?: Dynamic): Dynamic =>
-            normalizedPaintKey(input3.color) ===
-            normalizedPaintKey(value4[0].color),
+  let findByLabel: Dynamic = (labelKey?: Dynamic, paint?: Dynamic): Dynamic => {
+      let candidates: Dynamic = swatchesByLabel.get(labelKey) ?? [];
+      return candidates.length <= 1 ||
+        candidates.every(
+          (candidate?: Dynamic): Dynamic =>
+            normalizedPaintKey(candidate.color) ===
+            normalizedPaintKey(candidates[0].color),
         )
-        ? value4[0]
-        : options2 === undefined
+        ? candidates[0]
+        : paint === undefined
           ? undefined
-          : value4.find(
-              (input3?: Dynamic): Dynamic =>
-                normalizedPaintKey(input3.color) ===
-                normalizedPaintKey(options2),
+          : candidates.find(
+              (candidate?: Dynamic): Dynamic =>
+                normalizedPaintKey(candidate.color) ===
+                normalizedPaintKey(paint),
             );
     },
-    values: Dynamic = new Set(),
+    seenNames: Dynamic = new Set(),
     items: Dynamic = [];
-  for (let value4 of input.colors as Dynamic) {
+  for (let usedColor of designSystemColors.colors as Dynamic) {
     if (items.length >= PropertiesColorSwatchesLimit) break;
-    let value5: Dynamic = /^var\(\s*--([\w-]+)\s*(?:,\s*(.+?)\s*)?\)$/.exec(
-        value4,
+    let varMatch: Dynamic = /^var\(\s*--([\w-]+)\s*(?:,\s*(.+?)\s*)?\)$/.exec(
+        usedColor,
       ),
-      value6: Dynamic =
-        value5 !== null
-          ? callback(value5[1], value5[2])
-          : entries.get(normalizedPaintKey(value4));
-    value6 === undefined ||
-      values.has(value6.name) ||
-      (values.add(value6.name),
+      matchedSwatch: Dynamic =
+        varMatch !== null
+          ? findByLabel(varMatch[1], varMatch[2])
+          : swatchByPaint.get(normalizedPaintKey(usedColor));
+    matchedSwatch === undefined ||
+      seenNames.has(matchedSwatch.name) ||
+      (seenNames.add(matchedSwatch.name),
       items.push({
-        name: "used:" + value6.name,
-        color: value6.color,
-        label: value6.label ?? value6.name,
-        group: input.label,
-        picks: value6.name,
+        name: "used:" + matchedSwatch.name,
+        color: matchedSwatch.color,
+        label: matchedSwatch.label ?? matchedSwatch.name,
+        group: designSystemColors.label,
+        picks: matchedSwatch.name,
       }));
   }
-  return items.length === 0 ? [...options] : [...value2, ...items, ...value3];
+  return items.length === 0 ? [...swatches] : [...leadingSwatches, ...items, ...trailingSwatches];
 }
 function ColorSwatchPicker({
   title: title,
@@ -150,193 +150,193 @@ function ColorSwatchPicker({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = swatches.some(
-      (input?: Dynamic): Dynamic => !PropertiesColorSwatchesEmpty(input),
+  let hasSwatches: Dynamic = swatches.some(
+      (swatch?: Dynamic): Dynamic => !PropertiesColorSwatchesEmpty(swatch),
     ),
-    value2: Dynamic = value && color !== undefined,
-    value3: Dynamic =
+    hasColorPicker: Dynamic = hasSwatches && color !== undefined,
+    kindOptions: Dynamic =
       kind !== undefined && kind.options.length > 1 ? kind : undefined,
-    value4: Dynamic =
-      value3 === undefined || value3.value === (value3.colorValue ?? "color"),
-    [value5, value6]: Dynamic = (0, reactPropertiesTooltip.useState)(
-      (): Dynamic => (value && value4 ? "system" : "custom"),
+    isColorKind: Dynamic =
+      kindOptions === undefined || kindOptions.value === (kindOptions.colorValue ?? "color"),
+    [activeTab, setActiveTab]: Dynamic = (0, reactPropertiesTooltip.useState)(
+      (): Dynamic => (hasSwatches && isColorKind ? "system" : "custom"),
     ),
-    value7: Dynamic = value2
-      ? (tab ?? value5)
+    currentTab: Dynamic = hasColorPicker
+      ? (tab ?? activeTab)
       : color === undefined
         ? "system"
         : "custom",
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value6(input);
-      onTab?.(input);
+    changeTab: Dynamic = (nextTab?: Dynamic): Dynamic => {
+      setActiveTab(nextTab);
+      onTab?.(nextTab);
     },
-    value8: Dynamic =
-      value2 &&
+    isSearchable: Dynamic =
+      hasColorPicker &&
       (swatches.some(
-        (input?: Dynamic): Dynamic => input.subgroup !== undefined,
+        (swatch?: Dynamic): Dynamic => swatch.subgroup !== undefined,
       ) ||
         swatches.length > PropertiesNumericInputLimit),
-    [value9, value10]: Dynamic = (0, reactPropertiesTooltip.useState)(
+    [searchText, setSearchText]: Dynamic = (0, reactPropertiesTooltip.useState)(
       "",
     ),
-    value11: Dynamic = value8 ? value9.trim().toLowerCase() : "",
-    value12: Dynamic = JSON.stringify(
+    searchQuery: Dynamic = isSearchable ? searchText.trim().toLowerCase() : "",
+    swatchSignature: Dynamic = JSON.stringify(
       swatches.map(
-        (input?: Dynamic): Dynamic => [
-          input.name,
-          input.color,
-          input.label,
-          input.group,
-          input.subgroup,
-          input.empty === true,
-          input.disabledReason ?? null,
-          input.picks ?? null,
+        (swatch?: Dynamic): Dynamic => [
+          swatch.name,
+          swatch.color,
+          swatch.label,
+          swatch.group,
+          swatch.subgroup,
+          swatch.empty === true,
+          swatch.disabledReason ?? null,
+          swatch.picks ?? null,
         ],
       ),
     ),
-    { shown: value13, foldedInto: value14 }: Dynamic = (0,
+    { shown: shownSwatches, foldedInto: foldedInto }: Dynamic = (0,
     reactPropertiesTooltip.useMemo)((): Dynamic => {
-      let entries: Dynamic = new Map(),
-        entries2: Dynamic = new Map(),
+      let nameByPaint: Dynamic = new Map(),
+        foldedNames: Dynamic = new Map(),
         items: Dynamic = [];
-      for (let value21 of swatches as Dynamic) {
-        if (PropertiesColorSwatchesEmpty(value21) || !fold) {
-          items.push(value21);
+      for (let swatch of swatches as Dynamic) {
+        if (PropertiesColorSwatchesEmpty(swatch) || !fold) {
+          items.push(swatch);
           continue;
         }
-        let value22: Dynamic = normalizedPaintKey(value21.color),
-          entry: Dynamic = entries.get(value22);
-        if (entry !== undefined && PropertiesColorSwatchesTest(value21)) {
-          entries2.set(value21.name, entry);
+        let paintKey: Dynamic = normalizedPaintKey(swatch.color),
+          entry: Dynamic = nameByPaint.get(paintKey);
+        if (entry !== undefined && PropertiesColorSwatchesTest(swatch)) {
+          foldedNames.set(swatch.name, entry);
           continue;
         }
-        entry === undefined && entries.set(value22, value21.name);
-        items.push(value21);
+        entry === undefined && nameByPaint.set(paintKey, swatch.name);
+        items.push(swatch);
       }
       return {
         shown: items,
-        foldedInto: entries2,
+        foldedInto: foldedNames,
       };
-    }, [value12, fold]),
-    value15: Dynamic =
-      current !== null ? (value14.get(current) ?? current) : null,
-    value16: Dynamic = value13.filter(
-      (input?: Dynamic): Dynamic =>
+    }, [swatchSignature, fold]),
+    currentName: Dynamic =
+      current !== null ? (foldedInto.get(current) ?? current) : null,
+    visibleSwatches: Dynamic = shownSwatches.filter(
+      (swatch?: Dynamic): Dynamic =>
         pickerSearchMatches(
-          value11,
-          PropertiesGradientEditorLabel(input),
-          input.color,
-          input.subgroup,
-          input.group,
+          searchQuery,
+          PropertiesGradientEditorLabel(swatch),
+          swatch.color,
+          swatch.subgroup,
+          swatch.group,
         ),
     ),
-    value17: Dynamic = value8 ? (
+    searchInput: Dynamic = isSearchable ? (
       <PickerSearchInput
-        value={value9}
-        onChange={value10}
-        label={ColorContrastCopyLabel_2}
+        value={searchText}
+        onChange={setSearchText}
+        label={searchLabel}
         className={"mt-1 mb-2 w-0 min-w-full"}
         rowSelector={"[data-swatch]"}
         onEnterIndex={(): Dynamic =>
           pickerSearchInitialIndex(
-            value11,
-            value16
+            searchQuery,
+            visibleSwatches
               .filter(
-                (input?: Dynamic): Dynamic =>
-                  input.disabledReason === undefined,
+                (swatch?: Dynamic): Dynamic =>
+                  swatch.disabledReason === undefined,
               )
               .map(
-                (input?: Dynamic): Dynamic =>
-                  PropertiesGradientEditorLabel(input),
+                (swatch?: Dynamic): Dynamic =>
+                  PropertiesGradientEditorLabel(swatch),
               ),
           )
         }
         data-testid={testid !== undefined ? testid + "-search" : undefined}
       />
     ) : null,
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value21: Dynamic = (
+    renderSwatchRow: Dynamic = (swatch?: Dynamic): Dynamic => {
+      let swatchRow: Dynamic = (
         <ColorSwatchRow
-          label={PropertiesGradientEditorLabel(input)}
+          label={PropertiesGradientEditorLabel(swatch)}
           data-testid={
-            testid !== undefined ? testid + "-" + input.name : undefined
+            testid !== undefined ? testid + "-" + swatch.name : undefined
           }
-          data-swatch={input.name}
+          data-swatch={swatch.name}
           paint={
-            input.empty === true ? undefined : colorWellStyle(input.color)
+            swatch.empty === true ? undefined : colorWellStyle(swatch.color)
           }
           current={
-            input.name === value15 ||
-            (input.picks !== undefined && input.picks === value15)
+            swatch.name === currentName ||
+            (swatch.picks !== undefined && swatch.picks === currentName)
           }
-          disabled={input.disabledReason !== undefined}
+          disabled={swatch.disabledReason !== undefined}
           onMouseDown={(event?: Dynamic): Dynamic => event.preventDefault()}
           onClick={(): Dynamic => {
             onPicked?.();
             (repick ||
-              (input.picks ?? input.name) !== current ||
-              PropertiesColorSwatchesEmpty(input)) &&
-              onSwatch(input.picks ?? input.name);
+              (swatch.picks ?? swatch.name) !== current ||
+              PropertiesColorSwatchesEmpty(swatch)) &&
+              onSwatch(swatch.picks ?? swatch.name);
           }}
         />
       );
-      return input.disabledReason === undefined ? (
-        value21
+      return swatch.disabledReason === undefined ? (
+        swatchRow
       ) : (
         <DisabledReasonTooltip
-          reason={input.disabledReason}
+          reason={swatch.disabledReason}
           wrapperClassName={"flex w-full shrink-0 cursor-not-allowed"}
         >
-          {value21}
+          {swatchRow}
         </DisabledReasonTooltip>
       );
     },
-    callback3: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => (
+    renderSwatchGroup: Dynamic = (groupSwatches?: Dynamic, groupClassName?: Dynamic): Dynamic => (
       <PickerListGroup
         label={title}
-        className={joinClassNames("w-0 min-w-full", options)}
+        className={joinClassNames("w-0 min-w-full", groupClassName)}
       >
-        {input.map((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-          let value21: Dynamic =
-              input2.group !== undefined &&
-              input2.group !== input[options2 - 1]?.group,
-            value22: Dynamic =
-              input2.subgroup !== undefined &&
-              (value21 || input2.subgroup !== input[options2 - 1]?.subgroup);
+        {groupSwatches.map((swatch?: Dynamic, swatchIndex?: Dynamic): Dynamic => {
+          let startsGroup: Dynamic =
+              swatch.group !== undefined &&
+              swatch.group !== groupSwatches[swatchIndex - 1]?.group,
+            startsSubgroup: Dynamic =
+              swatch.subgroup !== undefined &&
+              (startsGroup || swatch.subgroup !== groupSwatches[swatchIndex - 1]?.subgroup);
           return (() => {
             const _Component = reactPropertiesTooltip.Fragment;
             const _props = {
               children: [
-                value21 ? (
+                startsGroup ? (
                   <PickerListHeader
-                    text={input2.group}
+                    text={swatch.group}
                     title={true}
                   />
                 ) : null,
-                value22 ? (
-                  <PickerListHeader text={input2.subgroup} />
+                startsSubgroup ? (
+                  <PickerListHeader text={swatch.subgroup} />
                 ) : null,
-                callback2(input2),
+                renderSwatchRow(swatch),
               ],
             } as const;
-            const _key = input2.name + ":" + String(options2);
+            const _key = swatch.name + ":" + String(swatchIndex);
             return <_Component key={_key} {..._props} />;
           })();
         })}
       </PickerListGroup>
     ),
-    value18: Dynamic =
-      !headless && (value2 || headerEnd !== undefined) ? (
+    header: Dynamic =
+      !headless && (hasColorPicker || headerEnd !== undefined) ? (
         <div
           className={joinClassNames(
             "-mx-2 -mt-2 mb-1 flex items-center justify-between gap-2",
-            !value2 && "order-first",
+            !hasColorPicker && "order-first",
           )}
           data-kit={"color-popover-header"}
         >
-          {value2 ? (<ColorHexInput
-              value={value7}
-              onChange={callback}
+          {hasColorPicker ? (<ColorHexInput
+              value={currentTab}
+              onChange={changeTab}
               className={""}
             />) : (<span
               className={
@@ -345,50 +345,50 @@ function ColorSwatchPicker({
             >
               {heading}
             </span>)}
-          {title !== undefined && value2 ? (<span className={"sr-only"}>{title}</span>) : (null)}
+          {title !== undefined && hasColorPicker ? (<span className={"sr-only"}>{title}</span>) : (null)}
           {headerEnd}
         </div>
       ) : null,
-    value19: Dynamic = !value2 && color !== undefined ? value13 : [],
-    value20: Dynamic = (
+    inlineSwatches: Dynamic = !hasColorPicker && color !== undefined ? shownSwatches : [],
+    customBody: Dynamic = (
       <jsxPropertiesGradientEditor.Fragment>
-        {value19.length > 0 ? (<div className={"-mx-2 mb-1 flex flex-col"}>
-            {callback3(value19)}
+        {inlineSwatches.length > 0 ? (<div className={"-mx-2 mb-1 flex flex-col"}>
+            {renderSwatchGroup(inlineSwatches)}
           </div>) : (null)}
-        {value3 !== undefined ? (<PropertyRow
+        {kindOptions !== undefined ? (<PropertyRow
             label={TypeValue}
-            className={value4 ? "mb-1" : undefined}
+            className={isColorKind ? "mb-1" : undefined}
             {...PropertiesSelectOnKeyDownCaptureConfig}
           >
             <SegmentedControl
-              aria-label={value3.label ?? (uiMessage("inspector.colorSwatches.fillType"))}
+              aria-label={kindOptions.label ?? (uiMessage("inspector.colorSwatches.fillType"))}
               fullWidth={true}
-              segments={value3.options.map(
-                (input?: Dynamic): Dynamic => ({
+              segments={kindOptions.options.map(
+                (kindOption?: Dynamic): Dynamic => ({
                   ...toolSegmentOption(
-                    input.value,
-                    input.label,
-                    value3.disabled === true ||
-                      input.disabledReason !== undefined
+                    kindOption.value,
+                    kindOption.label,
+                    kindOptions.disabled === true ||
+                      kindOption.disabledReason !== undefined
                       ? true
                       : undefined,
                   ),
-                  ...(input.disabledReason !== undefined
+                  ...(kindOption.disabledReason !== undefined
                     ? {
-                        disabledReason: input.disabledReason,
+                        disabledReason: kindOption.disabledReason,
                       }
                     : {}),
                 }),
               )}
-              value={value3.value}
-              onChange={(input?: Dynamic): Dynamic =>
-                input !== value3.value &&
-                !value3.disabled &&
-                value3.onChange(input)
+              value={kindOptions.value}
+              onChange={(nextKind?: Dynamic): Dynamic =>
+                nextKind !== kindOptions.value &&
+                !kindOptions.disabled &&
+                kindOptions.onChange(nextKind)
               }
             />
           </PropertyRow>) : (null)}
-        {value4 && color !== undefined ? (<ColorPicker {...color} />) : (face)}
+        {isColorKind && color !== undefined ? (<ColorPicker {...color} />) : (face)}
       </jsxPropertiesGradientEditor.Fragment>
     );
   return (
@@ -401,68 +401,68 @@ function ColorSwatchPicker({
         className,
       )}
     >
-      {value2 ? (value18) : (null)}
-      {value7 === "system" ? (<div
+      {hasColorPicker ? (header) : (null)}
+      {currentTab === "system" ? (<div
           className={joinClassNames(
             "flex min-h-0 flex-col",
-            value2 ? "-mx-2" : "-m-2",
+            hasColorPicker ? "-mx-2" : "-m-2",
           )}
         >
-          {value17}
-          {value16.length > 0 ? (callback3(
-              value16,
-              value2
+          {searchInput}
+          {visibleSwatches.length > 0 ? (renderSwatchGroup(
+              visibleSwatches,
+              hasColorPicker
                 ? "mb-[calc(-1*var(--cs-bottom,16px))] pb-[var(--cs-bottom,16px)]"
                 : undefined,
             )) : (<p
               role={"status"}
               className={"px-2 py-1 text-footnote text-muted"}
             >
-              {ColorContrastCopyLabel_3}
+              {noMatchesMessage}
             </p>)}
-        </div>) : (value20)}
-      {value2 ? (null) : (value18)}
+        </div>) : (customBody)}
+      {hasColorPicker ? (null) : (header)}
     </div>
   );
 }
 function normalizeColorSwatches(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  swatches?: Dynamic,
+  hasNone?: Dynamic,
+  noneDisabledReason?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (input ?? []).map(
-    (input2?: Dynamic): Dynamic =>
-      typeof input2 == "string"
+  let normalizedSwatches: Dynamic = (swatches ?? []).map(
+    (swatch?: Dynamic): Dynamic =>
+      typeof swatch == "string"
         ? {
-            name: input2,
-            color: input2,
+            name: swatch,
+            color: swatch,
           }
-        : "value" in input2
+        : "value" in swatch
           ? {
-              name: input2.name,
-              color: input2.value,
-              label: input2.label,
-              group: input2.group,
-              subgroup: input2.subgroup,
-              ...(input2.picks !== undefined
+              name: swatch.name,
+              color: swatch.value,
+              label: swatch.label,
+              group: swatch.group,
+              subgroup: swatch.subgroup,
+              ...(swatch.picks !== undefined
                 ? {
-                    picks: input2.picks,
+                    picks: swatch.picks,
                   }
                 : {}),
             }
-          : input2,
+          : swatch,
   );
-  if (!options) return value;
-  let state: Dynamic = {
+  if (!hasNone) return normalizedSwatches;
+  let noneSwatch: Dynamic = {
     name: NoneValue,
     get label() { return uiMessage("inspector.colorSwatches.none"); },
     color: "transparent",
     empty: true,
-    group: value[0]?.group,
-    subgroup: value[0]?.subgroup,
+    group: normalizedSwatches[0]?.group,
+    subgroup: normalizedSwatches[0]?.subgroup,
   };
-  context !== undefined && (state.disabledReason = context);
-  return [state, ...value];
+  noneDisabledReason !== undefined && (noneSwatch.disabledReason = noneDisabledReason);
+  return [noneSwatch, ...normalizedSwatches];
 }
 export {
   ColorSwatchPicker,
@@ -478,10 +478,10 @@ export {
 };
 export function installEditorPropertiesColorSwatches(): () => void {
   return () => {
-    PropertiesColorSwatchesEmpty = (input?: Dynamic): Dynamic =>
-      input.empty === true || input.name === "default";
-    PropertiesColorSwatchesTest = (input?: Dynamic): Dynamic =>
-      /^(#|rgba?\(|hsla?\()/i.test((input.label ?? input.name).trim());
+    PropertiesColorSwatchesEmpty = (swatch?: Dynamic): Dynamic =>
+      swatch.empty === true || swatch.name === "default";
+    PropertiesColorSwatchesTest = (swatch?: Dynamic): Dynamic =>
+      /^(#|rgba?\(|hsla?\()/i.test((swatch.label ?? swatch.name).trim());
     PropertiesColorSwatchesLimit = 12;
     NoneValue = ":none";
   };

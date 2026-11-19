@@ -14,58 +14,58 @@ function PropertyGridColumnsRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = parseEqualGridColumns(
+  let columnCount: Dynamic = parseEqualGridColumns(
       state.mixed ? null : state.value,
     ),
-    value2: Dynamic = parseEqualGridColumns(state.fallback),
-    value3: Dynamic = state.spec?.min ?? 1,
-    value4: Dynamic = state.spec?.max ?? 12,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value5: Dynamic = input.trim();
-      if (!value5) {
+    fallbackColumnCount: Dynamic = parseEqualGridColumns(state.fallback),
+    minColumns: Dynamic = state.spec?.min ?? 1,
+    maxColumns: Dynamic = state.spec?.max ?? 12,
+    commitColumnsText: Dynamic = (text?: Dynamic): Dynamic => {
+      let trimmedText: Dynamic = text.trim();
+      if (!trimmedText) {
         onCommit(state.prop, null);
         return;
       }
-      let value6: Dynamic = /^\d{1,3}$/.test(value5)
-        ? parseInt(value5, 10)
+      let parsedCount: Dynamic = /^\d{1,3}$/.test(trimmedText)
+        ? parseInt(trimmedText, 10)
         : null;
       onCommit(
         state.prop,
-        value6 != null && value6 >= 1
+        parsedCount != null && parsedCount >= 1
           ? serializeEqualGridColumns(
-              Math.min(value4, Math.max(value3, value6)),
+              Math.min(maxColumns, Math.max(minColumns, parsedCount)),
             )
-          : value5,
+          : trimmedText,
       );
     };
   return (
     <PropertyRow {...shell}>
       <PropertyTextInput
-        display={state.mixed || value == null ? "" : String(value)}
+        display={state.mixed || columnCount == null ? "" : String(columnCount)}
         placeholder={
-          state.mixed ? (uiMessage("inspector.gridRow.mixed")) : (value2 != null ? (String(value2)) : (uiMessage("inspector.gridRow.auto")))
+          state.mixed ? (uiMessage("inspector.gridRow.mixed")) : (fallbackColumnCount != null ? (String(fallbackColumnCount)) : (uiMessage("inspector.gridRow.auto")))
         }
         title={state.spec?.hint}
         aria-label={state.label}
         disabled={state.disabled}
-        onCommitText={callback}
-        onArrowStep={(input?: Dynamic, options?: Dynamic): Dynamic => {
+        onCommitText={commitColumnsText}
+        onArrowStep={(text?: Dynamic, step?: Dynamic): Dynamic => {
           if (state.mixed) return null;
-          let value5: Dynamic = /^\d{1,3}$/.test(input.trim())
-            ? parseInt(input.trim(), 10)
-            : (value ?? value2 ?? 1);
-          return String(Math.min(value4, Math.max(value3, value5 + options)));
+          let baseCount: Dynamic = /^\d{1,3}$/.test(text.trim())
+            ? parseInt(text.trim(), 10)
+            : (columnCount ?? fallbackColumnCount ?? 1);
+          return String(Math.min(maxColumns, Math.max(minColumns, baseCount + step)));
         }}
       />
     </PropertyRow>
   );
 }
-function parseGridSpan(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim().toLowerCase(),
-    value2: Dynamic = /^span\s+(\d{1,2})$/.exec(value);
-  if (!value2) return null;
-  let value3: Dynamic = parseInt(value2[1], 10);
-  return value3 >= 1 ? value3 : null;
+function parseGridSpan(spanText?: Dynamic): Dynamic {
+  let normalizedText: Dynamic = (spanText ?? "").trim().toLowerCase(),
+    spanMatch: Dynamic = /^span\s+(\d{1,2})$/.exec(normalizedText);
+  if (!spanMatch) return null;
+  let spanCount: Dynamic = parseInt(spanMatch[1], 10);
+  return spanCount >= 1 ? spanCount : null;
 }
 function PropertyGridSpanRow({
   state: state,
@@ -73,42 +73,42 @@ function PropertyGridSpanRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = parseGridSpan(state.mixed ? null : state.value),
-    value2: Dynamic = state.inheritedFrom
+  let span: Dynamic = parseGridSpan(state.mixed ? null : state.value),
+    fallbackSpan: Dynamic = state.inheritedFrom
       ? parseGridSpan(state.fallback ?? null)
       : null,
-    value3: Dynamic = state.spec?.min ?? 1,
-    value4: Dynamic = state.spec?.max ?? 12,
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+    minSpan: Dynamic = state.spec?.min ?? 1,
+    maxSpan: Dynamic = state.spec?.max ?? 12,
+    commitSpan: Dynamic = (spanCount?: Dynamic): Dynamic =>
       onCommit(
         state.prop,
-        input <= 1 ? (state.inheritedFrom ? "auto" : null) : `span ${input}`,
+        spanCount <= 1 ? (state.inheritedFrom ? "auto" : null) : `span ${spanCount}`,
       );
   return (
     <PropertyRow {...shell}>
       <PropertyTextInput
-        display={state.mixed || value == null ? "" : String(value)}
+        display={state.mixed || span == null ? "" : String(span)}
         placeholder={
           state.mixed ? (uiMessage("inspector.gridRow.mixed")) : (String(parseGridSpan(state.fallback ?? null) ?? 1))
         }
         aria-label={state.label}
         disabled={state.disabled}
-        onCommitText={(input?: Dynamic): Dynamic => {
-          let value5: Dynamic = input.trim();
-          if (!value5) return callback(1);
-          let value6: Dynamic = /^\d{1,2}$/.test(value5)
-            ? parseInt(value5, 10)
+        onCommitText={(text?: Dynamic): Dynamic => {
+          let trimmedText: Dynamic = text.trim();
+          if (!trimmedText) return commitSpan(1);
+          let parsedSpan: Dynamic = /^\d{1,2}$/.test(trimmedText)
+            ? parseInt(trimmedText, 10)
             : null;
-          value6 != null
-            ? callback(Math.min(value4, Math.max(value3, value6)))
-            : onCommit(state.prop, value5);
+          parsedSpan != null
+            ? commitSpan(Math.min(maxSpan, Math.max(minSpan, parsedSpan)))
+            : onCommit(state.prop, trimmedText);
         }}
-        onArrowStep={(input?: Dynamic, options?: Dynamic): Dynamic => {
+        onArrowStep={(text?: Dynamic, step?: Dynamic): Dynamic => {
           if (state.mixed) return null;
-          let value5: Dynamic = /^\d{1,2}$/.test(input.trim())
-            ? parseInt(input.trim(), 10)
-            : (value ?? value2 ?? 1);
-          return String(Math.min(value4, Math.max(value3, value5 + options)));
+          let baseSpan: Dynamic = /^\d{1,2}$/.test(text.trim())
+            ? parseInt(text.trim(), 10)
+            : (span ?? fallbackSpan ?? 1);
+          return String(Math.min(maxSpan, Math.max(minSpan, baseSpan + step)));
         }}
       />
     </PropertyRow>

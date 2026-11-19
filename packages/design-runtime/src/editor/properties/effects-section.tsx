@@ -13,175 +13,175 @@ import { StyleSchemaValuesLimit } from "../style-schema/values";
 
 var PropertiesEffectsSectionBoxShadowFilterBackdropFilterValues: Dynamic;
 function propertyEffectAddItems(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = "box",
-  extra?: Dynamic,
-  detail: Dynamic = false,
-  argument: Dynamic = NotOnDiamondOrArrowShapesMessage,
+  nodeKind?: Dynamic,
+  styleBag?: Dynamic,
+  commitProperty?: Dynamic,
+  shadowTarget: Dynamic = "box",
+  dropShadowDisabledReason?: Dynamic,
+  hasSilhouette: Dynamic = false,
+  silhouetteReason: Dynamic = NotOnDiamondOrArrowShapesMessage,
 ): Dynamic {
   let items: Dynamic = [],
-    value2: Dynamic = getShadowProperty(input, value);
-  if (propertyAppliesToNode(value2, input)) {
-    let value3: Dynamic = styleRecordList(
-        ownStyleBagValue(options, value2),
+    shadowProperty: Dynamic = getShadowProperty(nodeKind, shadowTarget);
+  if (propertyAppliesToNode(shadowProperty, nodeKind)) {
+    let shadowList: Dynamic = styleRecordList(
+        ownStyleBagValue(styleBag, shadowProperty),
       ),
-      value4: Dynamic =
-        value3.length >= StyleSchemaValuesLimit
+      limitDisabled: Dynamic =
+        shadowList.length >= StyleSchemaValuesLimit
           ? {
               disabledReason: uiMessage("inspector.effectsSection.atMostValue1PerElement", { value1: String(StyleSchemaValuesLimit) }),
             }
           : {},
-      callback: Dynamic =
-        (input2?: Dynamic): Dynamic =>
+      createAddShadow: Dynamic =
+        (isInset?: Dynamic): Dynamic =>
         (): Dynamic =>
-          context(value2, [
-            ...value3,
-            defaultShadowValue(value2, input2),
+          commitProperty(shadowProperty, [
+            ...shadowList,
+            defaultShadowValue(shadowProperty, isInset),
           ]),
-      value5: Dynamic =
-        extra ??
-        (value3.length >= StyleSchemaValuesLimit
+      dropShadowReason: Dynamic =
+        dropShadowDisabledReason ??
+        (shadowList.length >= StyleSchemaValuesLimit
           ? uiMessage("inspector.effectsSection.atMostValue1PerElement", { value1: String(StyleSchemaValuesLimit) })
           : undefined);
     items.push(
-      value5 !== undefined
+      dropShadowReason !== undefined
         ? {
             get label() { return uiMessage("inspector.effectsSection.dropShadow"); },
             onSelect: (): Dynamic => {},
-            disabledReason: value5,
+            disabledReason: dropShadowReason,
           }
         : {
             get label() { return uiMessage("inspector.effectsSection.dropShadow"); },
-            onSelect: callback(false),
+            onSelect: createAddShadow(false),
           },
     );
     items.push(
-      value2 === "textShadow"
+      shadowProperty === "textShadow"
         ? {
             get label() { return uiMessage("inspector.effectsSection.innerShadow"); },
             onSelect: (): Dynamic => {},
-            disabledReason: detail
-              ? argument
+            disabledReason: hasSilhouette
+              ? silhouetteReason
               : InnerShadowNeedsAFillOrMessage,
           }
         : {
             get label() { return uiMessage("inspector.effectsSection.innerShadow"); },
-            onSelect: callback(true),
-            ...value4,
-            ...(detail
+            onSelect: createAddShadow(true),
+            ...limitDisabled,
+            ...(hasSilhouette
               ? {
-                  disabledReason: argument,
+                  disabledReason: silhouetteReason,
                 }
               : {}),
           },
     );
   }
-  for (let value3 of ["filter", "backdropFilter"] as Dynamic) {
-    let value4: Dynamic = asStyleRecord(
-      ownStyleBagValue(options, value3),
+  for (let filterKey of ["filter", "backdropFilter"] as Dynamic) {
+    let filterRecord: Dynamic = asStyleRecord(
+      ownStyleBagValue(styleBag, filterKey),
     );
-    !propertyAppliesToNode(value3, input) ||
-      value4?.blur !== undefined ||
+    !propertyAppliesToNode(filterKey, nodeKind) ||
+      filterRecord?.blur !== undefined ||
       items.push({
         label:
-          PropertiesStyleBagFilterBackdropFilterConfig[value3] ??
-          propertyEffectLabel(value3),
+          PropertiesStyleBagFilterBackdropFilterConfig[filterKey] ??
+          propertyEffectLabel(filterKey),
         onSelect: (): Dynamic =>
-          context(
-            value3,
+          commitProperty(
+            filterKey,
             setOptionalEffectField(
-              value4,
+              filterRecord,
               "blur",
               PropertiesStyleBagConstant,
             ),
           ),
-        ...(detail && value3 === "backdropFilter"
+        ...(hasSilhouette && filterKey === "backdropFilter"
           ? {
-              disabledReason: argument,
+              disabledReason: silhouetteReason,
             }
           : {}),
       });
   }
   return items;
 }
-function getShadowProperty(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options === "text" &&
-    propertyAppliesToNode("textShadow", input)
+function getShadowProperty(nodeKind?: Dynamic, shadowTarget?: Dynamic): Dynamic {
+  return shadowTarget === "text" &&
+    propertyAppliesToNode("textShadow", nodeKind)
     ? "textShadow"
     : "boxShadow";
 }
-function EffectsSection(input?: Dynamic): Dynamic {
+function EffectsSection(props?: Dynamic): Dynamic {
   useUiLocale();
   let {
-      kind: value,
-      bag: value2,
-      subsection: value3,
-      blurRows: value6 = true,
-      children: value4,
-      shadowTarget: value7 = "box",
-      dropShadowDisabledReason: value5,
-    }: Dynamic = input,
-    value8: Dynamic = (0, reactPropertiesStyleBag.useState)(
+      kind: nodeKind,
+      bag: styleBag,
+      subsection: subsection,
+      blurRows: showBlurRows = true,
+      children: extraChildren,
+      shadowTarget: shadowTarget = "box",
+      dropShadowDisabledReason: dropShadowDisabledReason,
+    }: Dynamic = props,
+    localOpenEditor: Dynamic = (0, reactPropertiesStyleBag.useState)(
       undefined,
     ),
-    [value9, value10]: Dynamic =
-      input.setOpenEditor !== undefined
-        ? [input.openEditor, input.setOpenEditor]
-        : value8,
+    [openEditor, setOpenEditor]: Dynamic =
+      props.setOpenEditor !== undefined
+        ? [props.openEditor, props.setOpenEditor]
+        : localOpenEditor,
     state: Dynamic = {
-      ...createStyleBagEditor(input),
-      openEditor: value9,
-      setOpenEditor: value10,
+      ...createStyleBagEditor(props),
+      openEditor: openEditor,
+      setOpenEditor: setOpenEditor,
     },
     items: Dynamic = [
       ...propertyEffectAddItems(
-        value,
-        value2,
-        (input2?: Dynamic, items2?: Dynamic): Dynamic => {
-          Array.isArray(items2) &&
-            value10({
-              key: input2,
-              index: items2.length - 1,
+        nodeKind,
+        styleBag,
+        (propKey?: Dynamic, records?: Dynamic): Dynamic => {
+          Array.isArray(records) &&
+            setOpenEditor({
+              key: propKey,
+              index: records.length - 1,
             });
-          state.commit(input2, items2);
+          state.commit(propKey, records);
         },
-        value7,
-        value5,
-        input.silhouette,
-        input.silhouetteReason,
+        shadowTarget,
+        dropShadowDisabledReason,
+        props.silhouette,
+        props.silhouetteReason,
       ),
-      ...(input.addItems ?? []),
+      ...(props.addItems ?? []),
     ];
   if (
     items.length === 0 &&
-    value2 === undefined &&
-    value4 === undefined &&
+    styleBag === undefined &&
+    extraChildren === undefined &&
     !PropertiesEffectsSectionBoxShadowFilterBackdropFilterValues.some(
-      (input2?: Dynamic): Dynamic =>
-        propertyAppliesToNode(input2, value),
+      (propKey?: Dynamic): Dynamic =>
+        propertyAppliesToNode(propKey, nodeKind),
     )
   )
     return null;
-  let value11: Dynamic =
-      getShadowProperty(value, value7) === "textShadow"
+  let shadowPropKeys: Dynamic =
+      getShadowProperty(nodeKind, shadowTarget) === "textShadow"
         ? ["boxShadow", "textShadow"]
         : ["boxShadow"],
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      value7 !== "text"
-        ? shadowEffectLabel(input2, options)
-        : input2 === "textShadow"
+    shadowLabel: Dynamic = (propKey?: Dynamic, record?: Dynamic): Dynamic =>
+      shadowTarget !== "text"
+        ? shadowEffectLabel(propKey, record)
+        : propKey === "textShadow"
           ? uiMessage("inspector.effectsSection.dropShadow")
-          : input2 === "boxShadow"
-            ? asStyleRecord(options)?.inset === true
+          : propKey === "boxShadow"
+            ? asStyleRecord(record)?.inset === true
               ? uiMessage("inspector.effectsSection.innerShadow")
               : uiMessage("inspector.effectsSection.boxShadow")
-            : shadowEffectLabel(input2, options);
+            : shadowEffectLabel(propKey, record);
   return (
     <PropertySection
       title={uiMessage("inspector.effectsSection.effects")}
-      subsection={value3}
+      subsection={subsection}
       iconColumn={true}
       actions={
         <PropertyActions
@@ -191,47 +191,47 @@ function EffectsSection(input?: Dynamic): Dynamic {
         />
       }
     >
-      {value11.flatMap((input2?: Dynamic): Dynamic => {
-        let value12: Dynamic = styleRecordList(
-          ownStyleBagValue(value2, input2),
+      {shadowPropKeys.flatMap((propKey?: Dynamic): Dynamic => {
+        let records: Dynamic = styleRecordList(
+          ownStyleBagValue(styleBag, propKey),
         );
-        return value12.map(
-          (input3?: Dynamic, options?: Dynamic): Dynamic =>
+        return records.map(
+          (record?: Dynamic, index?: Dynamic): Dynamic =>
             (() => {
               const _Component = ShadowEffectRow;
               const _props = {
-                propKey: input2,
-                list: value12,
-                index: options,
-                rec: input3,
+                propKey: propKey,
+                list: records,
+                index: index,
+                rec: record,
                 ed: state,
-                label: callback(input2, input3),
+                label: shadowLabel(propKey, record),
               } as const;
-              const _key = input2 + String(options);
+              const _key = propKey + String(index);
               return <_Component key={_key} {..._props} />;
             })(),
         );
       })}
-      {value6 && (["filter", "backdropFilter"].map((input2?: Dynamic): Dynamic => {
-          let value12: Dynamic = asStyleRecord(
-            ownStyleBagValue(value2, input2),
+      {showBlurRows && (["filter", "backdropFilter"].map((propKey?: Dynamic): Dynamic => {
+          let record: Dynamic = asStyleRecord(
+            ownStyleBagValue(styleBag, propKey),
           );
-          return value12?.blur !== undefined &&
-            propertyAppliesToNode(input2, value) ? (
+          return record?.blur !== undefined &&
+            propertyAppliesToNode(propKey, nodeKind) ? (
             <BlurEffectRow
-              key={input2}
+              key={propKey}
               label={
                 PropertiesStyleBagFilterBackdropFilterConfig[
-                  input2
-                ] ?? (propertyEffectLabel(input2))
+                  propKey
+                ] ?? (propertyEffectLabel(propKey))
               }
-              propKey={input2}
-              rec={value12}
+              propKey={propKey}
+              rec={record}
               ed={state}
             />
           ) : null;
         }))}
-      {value4}
+      {extraChildren}
     </PropertySection>
   );
 }

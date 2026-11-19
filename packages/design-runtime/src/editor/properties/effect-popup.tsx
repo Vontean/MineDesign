@@ -61,31 +61,31 @@ function PropertyPopupBody({
 }
 function ShadowEditor({
   title: title,
-  value: value,
+  value: shadow,
   onChange: onChange,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
   onClose: onClose,
   spread = true,
   bounds = {},
-  disabled: disabled2,
+  disabled: isDisabled,
   swatches: swatches,
   unifiedPopover: unifiedPopover,
   editsAreUndoSteps: editsAreUndoSteps,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
+  let commitShadowPatch: Dynamic = (patch?: Dynamic): Dynamic =>
       onChange({
-        ...value,
-        ...input,
+        ...shadow,
+        ...patch,
       }),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
+    scrubHandlers: Dynamic = (field?: Dynamic): Dynamic =>
       onLive && onLiveEnd
         ? {
-            onScrub: (input2?: Dynamic): Dynamic =>
+            onScrub: (fieldValue?: Dynamic): Dynamic =>
               onLive({
-                ...value,
-                [input]: input2,
+                ...shadow,
+                [field]: fieldValue,
               }),
             onScrubEnd: onLiveEnd,
           }
@@ -94,7 +94,7 @@ function ShadowEditor({
     <PropertyPopupBody title={title} onClose={onClose}>
       <PropertyRow
         label={uiMessage("inspector.effectPopup.offset")}
-        disabled={disabled2}
+        disabled={isDisabled}
         onPress={(element?: Dynamic): Dynamic =>
           element.querySelector("input")?.focus()
         }
@@ -104,82 +104,82 @@ function ShadowEditor({
             aria-label={uiMessage("inspector.effectPopup.horizontalOffset")}
             prefix={"X"}
             steppers={false}
-            value={value.x}
-            onValue={(input?: Dynamic): Dynamic =>
-              input !== undefined &&
-              callback({
-                x: input,
+            value={shadow.x}
+            onValue={(offsetX?: Dynamic): Dynamic =>
+              offsetX !== undefined &&
+              commitShadowPatch({
+                x: offsetX,
               })
             }
-            disabled={disabled2}
+            disabled={isDisabled}
             {...bounds.x}
-            {...callback2("x")}
+            {...scrubHandlers("x")}
           />
           <NumericInput
             aria-label={uiMessage("inspector.effectPopup.verticalOffset")}
             prefix={"Y"}
             steppers={false}
-            value={value.y}
-            onValue={(input?: Dynamic): Dynamic =>
-              input !== undefined &&
-              callback({
-                y: input,
+            value={shadow.y}
+            onValue={(offsetY?: Dynamic): Dynamic =>
+              offsetY !== undefined &&
+              commitShadowPatch({
+                y: offsetY,
               })
             }
-            disabled={disabled2}
+            disabled={isDisabled}
             {...bounds.y}
-            {...callback2("y")}
+            {...scrubHandlers("y")}
           />
         </div>
       </PropertyRow>
       <PropertyNumberRow
         label={uiMessage("inspector.effectPopup.blur")}
         unit={"px"}
-        value={value.blur}
-        onValue={(input?: Dynamic): Dynamic =>
-          input !== undefined &&
-          callback({
-            blur: input,
+        value={shadow.blur}
+        onValue={(blurRadius?: Dynamic): Dynamic =>
+          blurRadius !== undefined &&
+          commitShadowPatch({
+            blur: blurRadius,
           })
         }
-        disabled={disabled2}
+        disabled={isDisabled}
         min={0}
         {...bounds.blur}
-        {...callback2("blur")}
+        {...scrubHandlers("blur")}
       />
       {spread && (<PropertyNumberRow
           label={uiMessage("inspector.effectPopup.spread")}
           unit={"px"}
-          value={value.spread ?? 0}
-          onValue={(input?: Dynamic): Dynamic =>
-            input !== undefined &&
-            callback({
-              spread: input,
+          value={shadow.spread ?? 0}
+          onValue={(spreadRadius?: Dynamic): Dynamic =>
+            spreadRadius !== undefined &&
+            commitShadowPatch({
+              spread: spreadRadius,
             })
           }
-          disabled={disabled2}
+          disabled={isDisabled}
           {...bounds.spread}
-          {...callback2("spread")}
+          {...scrubHandlers("spread")}
         />)}
       <PropertyHexRow
         label={uiMessage("inspector.effectPopup.color")}
-        value={value.color}
-        disabled={disabled2}
+        value={shadow.color}
+        disabled={isDisabled}
         swatches={swatches}
         popoverTitle={unifiedPopover ? ColorValue : undefined}
         editsAreUndoSteps={editsAreUndoSteps}
-        onChange={(input?: Dynamic): Dynamic =>
-          input !== undefined &&
-          callback({
-            color: input,
+        onChange={(colorHex?: Dynamic): Dynamic =>
+          colorHex !== undefined &&
+          commitShadowPatch({
+            color: colorHex,
           })
         }
         {...(onLive && onLiveEnd
           ? {
-              onLive: (input?: Dynamic): Dynamic =>
+              onLive: (liveColor?: Dynamic): Dynamic =>
                 onLive({
-                  ...value,
-                  color: input,
+                  ...shadow,
+                  color: liveColor,
                 }),
               onLiveEnd: (): Dynamic => onLiveEnd(),
             }
@@ -223,19 +223,19 @@ function PropertyEditorPopover({
 function RemovePropertyButton({
   label: label,
   onClick: onClick,
-  disabled: disabled2,
+  disabled: isDisabled,
   disabledReason: disabledReason,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = uiMessage("inspector.effectPopup.remove") + label.toLowerCase();
+  let removeLabel: Dynamic = uiMessage("inspector.effectPopup.remove") + label.toLowerCase();
   return (
     <Button
       variant={"ghost"}
       iconOnly={true}
       icon={"Minus"}
-      aria-label={value}
-      tooltip={value}
-      disabled={disabled2}
+      aria-label={removeLabel}
+      tooltip={removeLabel}
+      disabled={isDisabled}
       disabledReason={disabledReason}
       onClick={onClick}
       className={"shrink-0"}
@@ -259,12 +259,12 @@ export function installEditorPropertiesEffectPopup(): () => void {
           text: text,
           open: open,
           onClick: onClick,
-          disabled: disabled2,
+          disabled: isDisabled,
           ...props
         }: Dynamic,
-        options?: Dynamic,
+        forwardedRef?: Dynamic,
       ): Dynamic {
-        let value: Dynamic = (0, reactSessionStripPopover.useMemo)(
+        let parsedColor: Dynamic = (0, reactSessionStripPopover.useMemo)(
           (): Dynamic =>
             typeof color == "string"
               ? parseHsvaColor(color)
@@ -280,20 +280,20 @@ export function installEditorPropertiesEffectPopup(): () => void {
                 }
               : undefined)}
             {...props}
-            ref={options}
+            ref={forwardedRef}
             aria-label={((label) + (": ")) + (text)}
-            disabled={disabled2}
+            disabled={isDisabled}
             onClick={onClick}
             chip={
               color !== undefined ? (
                 <ColorWellFace
-                  hex={value ? hsvaToRgbHex(value) : null}
-                  alpha={(value?.a ?? 1) * 100}
+                  hex={parsedColor ? hsvaToRgbHex(parsedColor) : null}
+                  alpha={(parsedColor?.a ?? 1) * 100}
                 />
               ) : undefined
             }
             caption={
-              value !== undefined ? Math.round(value.a * 100) + "%" : undefined
+              parsedColor !== undefined ? Math.round(parsedColor.a * 100) + "%" : undefined
             }
           >
             {text}
