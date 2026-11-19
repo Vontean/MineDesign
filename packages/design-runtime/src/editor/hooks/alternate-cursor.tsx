@@ -14,40 +14,40 @@ var HooksAlternateCursorCrosshairProgressValues: Dynamic;
 var HooksAlternateCursorHandler: Dynamic;
 var HooksAlternateCursorSubscribers: Dynamic;
 var HooksAlternateCursorTest: Dynamic;
-function reservedShapeRenderHook(input?: Dynamic): Dynamic {
+function reservedShapeRenderHook(shape?: Dynamic): Dynamic {
   return null;
 }
-function getAlternateCursorStyle(input?: Dynamic): Dynamic {
-  let value: Dynamic = HooksAlternateCursorRegistry[input];
-  value ||
-    ((value = (document as Dynamic).createElement("style")),
-    value.setAttribute("data-alt-cursor", input),
-    (value.textContent =
-      HooksAlternateCursorProgressCrosshairConfig_2[input]),
-    (HooksAlternateCursorRegistry[input] = value));
-  return value;
+function getAlternateCursorStyle(cursorKind?: Dynamic): Dynamic {
+  let styleElement: Dynamic = HooksAlternateCursorRegistry[cursorKind];
+  styleElement ||
+    ((styleElement = (document as Dynamic).createElement("style")),
+    styleElement.setAttribute("data-alt-cursor", cursorKind),
+    (styleElement.textContent =
+      HooksAlternateCursorProgressCrosshairConfig_2[cursorKind]),
+    (HooksAlternateCursorRegistry[cursorKind] = styleElement));
+  return styleElement;
 }
 function refreshAlternateCursors(): Dynamic {
-  for (let value of HooksAlternateCursorCrosshairProgressValues as Dynamic)
-    HooksAlternateCursorRegistry[value]?.remove();
-  for (let value of HooksAlternateCursorCrosshairProgressValues as Dynamic)
-    HooksAlternateCursorProgressCrosshairConfig[value] > 0 &&
-      (document as Dynamic).head.appendChild(getAlternateCursorStyle(value));
+  for (let cursorKind of HooksAlternateCursorCrosshairProgressValues as Dynamic)
+    HooksAlternateCursorRegistry[cursorKind]?.remove();
+  for (let cursorKind of HooksAlternateCursorCrosshairProgressValues as Dynamic)
+    HooksAlternateCursorProgressCrosshairConfig[cursorKind] > 0 &&
+      (document as Dynamic).head.appendChild(getAlternateCursorStyle(cursorKind));
 }
-function useAlternateCursor(input?: Dynamic, options?: Dynamic): Dynamic {
+function useAlternateCursor(cursorKind?: Dynamic, isActive?: Dynamic): Dynamic {
   (0, reactHooksAlternateCursor.useEffect)((): Dynamic => {
-    if (options) {
-      HooksAlternateCursorProgressCrosshairConfig[input]++;
+    if (isActive) {
+      HooksAlternateCursorProgressCrosshairConfig[cursorKind]++;
       refreshAlternateCursors();
       return (): Dynamic => {
-        HooksAlternateCursorProgressCrosshairConfig[input]--;
+        HooksAlternateCursorProgressCrosshairConfig[cursorKind]--;
         refreshAlternateCursors();
       };
     }
-  }, [input, options]);
+  }, [cursorKind, isActive]);
 }
-function useProgressCursor(input?: Dynamic): Dynamic {
-  useAlternateCursor("progress", input);
+function useProgressCursor(isActive?: Dynamic): Dynamic {
+  useAlternateCursor("progress", isActive);
 }
 export {
   getAlternateCursorStyle,
@@ -80,15 +80,15 @@ export function installEditorHooksAlternateCursor(): () => void {
       crosshair: "* { cursor: crosshair !important; }",
     };
     HooksAlternateCursorCrosshairProgressValues = ["crosshair", "progress"];
-    HooksAlternateCursorHandler = (input?: Dynamic): Dynamic =>
-      parseInt(input?.getAttribute(DcTplAttribute) ?? "-1", 10);
+    HooksAlternateCursorHandler = (element?: Dynamic): Dynamic =>
+      parseInt(element?.getAttribute(DcTplAttribute) ?? "-1", 10);
     HooksAlternateCursorSubscribers = new Set([
       "stroke",
       "stroke-width",
       "@stroke",
       "@stroke-width",
     ]);
-    HooksAlternateCursorTest = (input?: Dynamic): Dynamic =>
-      /^\d*\.?\d+(px)?$/.test((input ?? "").trim()) ? parseFloat(input) : null;
+    HooksAlternateCursorTest = (lengthText?: Dynamic): Dynamic =>
+      /^\d*\.?\d+(px)?$/.test((lengthText ?? "").trim()) ? parseFloat(lengthText) : null;
   };
 }

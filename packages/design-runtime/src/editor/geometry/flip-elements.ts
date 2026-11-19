@@ -33,73 +33,73 @@ var GeometryFlipElementsTranslateTranslatexTranslateyConfig: Dynamic;
 var GeometryFlipElementsDegRadTurnConfig: Dynamic;
 var GeometryFlipElementsHandler: Dynamic;
 var GeometryFlipElementsScIfScForPattern: Dynamic;
-function parseFlipInspection(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null) return null;
-  let value: Dynamic = input;
+function parseFlipInspection(rawInspection?: Dynamic): Dynamic {
+  if (typeof rawInspection != "object" || rawInspection === null) return null;
+  let inspection: Dynamic = rawInspection;
   if (
-    typeof value.pose == "object" &&
-    value.pose !== null &&
-    value.pose.boxless === true
+    typeof inspection.pose == "object" &&
+    inspection.pose !== null &&
+    inspection.pose.boxless === true
   )
     return {
       boxless: true,
     };
-  if (value.missing === true || value.rendered === false)
+  if (inspection.missing === true || inspection.rendered === false)
     return {
       unrendered: true,
     };
   if (
-    typeof value.computed != "object" ||
-    value.computed === null ||
-    typeof value.pose != "object" ||
-    value.pose === null
+    typeof inspection.computed != "object" ||
+    inspection.computed === null ||
+    typeof inspection.pose != "object" ||
+    inspection.pose === null
   )
     return null;
-  let computed: Dynamic = value.computed,
-    pose: Dynamic = value.pose,
-    value2: Dynamic =
+  let computed: Dynamic = inspection.computed,
+    pose: Dynamic = inspection.pose,
+    flatAxes: Dynamic =
       typeof pose.flat == "object" && pose.flat !== null ? pose.flat : {},
-    value3: Dynamic =
+    centrePoint: Dynamic =
       typeof pose.centre == "object" && pose.centre !== null
         ? pose.centre
         : {},
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" &&
-      Number.isFinite(input2) &&
-      Math.abs(input2) <= GeometryFlipElementsLimit;
+    isValidCoordinate: Dynamic = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "number" &&
+      Number.isFinite(candidate) &&
+      Math.abs(candidate) <= GeometryFlipElementsLimit;
   if (
-    !callback(value3.x) ||
-    !callback(value3.y) ||
+    !isValidCoordinate(centrePoint.x) ||
+    !isValidCoordinate(centrePoint.y) ||
     typeof pose.inline != "boolean"
   )
     return null;
-  let callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-    typeof computed[input2] == "string" &&
-    !["", "none"].includes(computed[input2].trim());
+  let hasComputedValue: Dynamic = (property?: Dynamic): Dynamic =>
+    typeof computed[property] == "string" &&
+    !["", "none"].includes(computed[property].trim());
   return {
     centre: {
-      x: value3.x,
-      y: value3.y,
+      x: centrePoint.x,
+      y: centrePoint.y,
     },
     ...(pose.inline
       ? {
           inline: true,
         }
       : {}),
-    ...(value2.x === true || value2.y === true
+    ...(flatAxes.x === true || flatAxes.y === true
       ? {
           flat: {
-            x: value2.x === true,
-            y: value2.y === true,
+            x: flatAxes.x === true,
+            y: flatAxes.y === true,
           },
         }
       : {}),
-    ...(callback2("transform")
+    ...(hasComputedValue("transform")
       ? {
           transformed: true,
         }
       : {}),
-    ...(callback2("rotate") || callback2("scale") || callback2("translate")
+    ...(hasComputedValue("rotate") || hasComputedValue("scale") || hasComputedValue("translate")
       ? {
           axisProps: true,
         }
@@ -107,281 +107,281 @@ function parseFlipInspection(input?: Dynamic): Dynamic {
   };
 }
 async function inspectFlipSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  selection?: Dynamic,
+  measure?: Dynamic,
 ): Promise<Dynamic> {
-  let callback: Dynamic = async (
-      input2?: Dynamic,
-      options2?: Dynamic,
+  let inspectTarget: Dynamic = async (
+      tid?: Dynamic,
+      isTransformSuppressed?: Dynamic,
     ): Promise<Dynamic> =>
       parseFlipInspection(
-        await context(
-          input2,
+        await measure(
+          tid,
           GeometryFlipElementsTransformRotateScaleValues,
-          options2,
+          isTransformSuppressed,
         ).catch((): Dynamic => null),
       ),
-    callback2: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      options2 != null &&
-      options2.unrendered !== true &&
-      (options2.transformed === true) ===
+    needsReinspection: Dynamic = (tid?: Dynamic, inspection?: Dynamic): Dynamic =>
+      inspection != null &&
+      inspection.unrendered !== true &&
+      (inspection.transformed === true) ===
         ["", "none"].includes(
-          input.effectiveStyleValue(input2, "transform").trim(),
+          model.effectiveStyleValue(tid, "transform").trim(),
         ),
-    value: Dynamic = flipSelectionTargets(input, options),
-    value2: Dynamic = await Promise.all(
-      value.map(async (input2?: Dynamic): Promise<Dynamic> => {
-        let value3: Dynamic = await callback(input2, false);
-        return callback2(input2, value3) ? callback(input2, true) : value3;
+    targets: Dynamic = flipSelectionTargets(model, selection),
+    inspections: Dynamic = await Promise.all(
+      targets.map(async (tid?: Dynamic): Promise<Dynamic> => {
+        let firstInspection: Dynamic = await inspectTarget(tid, false);
+        return needsReinspection(tid, firstInspection) ? inspectTarget(tid, true) : firstInspection;
       }),
     );
   return new Map(
-    value.flatMap(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        value2[options2] ? [[input2, value2[options2]]] : [],
+    targets.flatMap(
+      (tid?: Dynamic, targetIndex?: Dynamic): Dynamic =>
+        inspections[targetIndex] ? [[tid, inspections[targetIndex]]] : [],
     ),
   );
 }
-function isOrderedSimpleTransform(input?: Dynamic): Dynamic {
+function isOrderedSimpleTransform(transformText?: Dynamic): Dynamic {
   let index: Dynamic = 0;
-  for (let [, value] of input.matchAll(/([a-zA-Z]+)\(/g) as Dynamic) {
-    let value2: Dynamic = value.toLowerCase();
+  for (let [, functionName] of transformText.matchAll(/([a-zA-Z]+)\(/g) as Dynamic) {
+    let lowerFunctionName: Dynamic = functionName.toLowerCase();
     if (
       !Object.hasOwn(
         GeometryFlipElementsTranslateTranslatexTranslateyConfig,
-        value2,
+        lowerFunctionName,
       ) ||
-      GeometryFlipElementsTranslateTranslatexTranslateyConfig[value2] < index
+      GeometryFlipElementsTranslateTranslatexTranslateyConfig[lowerFunctionName] < index
     )
       return false;
-    index = GeometryFlipElementsTranslateTranslatexTranslateyConfig[value2];
+    index = GeometryFlipElementsTranslateTranslatexTranslateyConfig[lowerFunctionName];
   }
   return true;
 }
-function serializeFlipTransform(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      (/e/i.test(String(input2))
-        ? input2.toFixed(12).replace(/\.?0+$/, "")
-        : String(input2 || 0)) + options,
-    items: Dynamic = [];
-  (input.x.value !== 0 || input.y.value !== 0) &&
-    items.push(
+function serializeFlipTransform(transform?: Dynamic): Dynamic {
+  let formatNumber: Dynamic = (amount?: Dynamic, unit?: Dynamic): Dynamic =>
+      (/e/i.test(String(amount))
+        ? amount.toFixed(12).replace(/\.?0+$/, "")
+        : String(amount || 0)) + unit,
+    parts: Dynamic = [];
+  (transform.x.value !== 0 || transform.y.value !== 0) &&
+    parts.push(
       "translate(" +
-        callback(input.x.value, input.x.unit || "px") +
+        formatNumber(transform.x.value, transform.x.unit || "px") +
         ", " +
-        callback(input.y.value, input.y.unit || "px") +
+        formatNumber(transform.y.value, transform.y.unit || "px") +
         ")",
     );
-  input.rotate.value !== 0 &&
-    items.push(
+  transform.rotate.value !== 0 &&
+    parts.push(
       "rotate(" +
-        callback(input.rotate.value, input.rotate.unit || "deg") +
+        formatNumber(transform.rotate.value, transform.rotate.unit || "deg") +
         ")",
     );
-  (input.scaleX !== 1 || input.scaleY !== 1) &&
-    items.push(
-      input.scaleX === input.scaleY
-        ? "scale(" + callback(input.scaleX, "") + ")"
-        : input.scaleY === 1
-          ? "scaleX(" + callback(input.scaleX, "") + ")"
-          : input.scaleX === 1
-            ? "scaleY(" + callback(input.scaleY, "") + ")"
+  (transform.scaleX !== 1 || transform.scaleY !== 1) &&
+    parts.push(
+      transform.scaleX === transform.scaleY
+        ? "scale(" + formatNumber(transform.scaleX, "") + ")"
+        : transform.scaleY === 1
+          ? "scaleX(" + formatNumber(transform.scaleX, "") + ")"
+          : transform.scaleX === 1
+            ? "scaleY(" + formatNumber(transform.scaleY, "") + ")"
             : "scale(" +
-              callback(input.scaleX, "") +
+              formatNumber(transform.scaleX, "") +
               ", " +
-              callback(input.scaleY, "") +
+              formatNumber(transform.scaleY, "") +
               ")",
     );
-  return items.join(" ");
+  return parts.join(" ");
 }
 function flipElementTransform(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  transformText?: Dynamic,
+  axis?: Dynamic,
+  centre?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = parseCssTransform(input);
-  if (!value || !isOrderedSimpleTransform(input ?? "")) return null;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" &&
-      Number.isFinite(input2) &&
-      Math.abs(input2) <= GeometryFlipElementsLimit
-        ? input2
+  let parsed: Dynamic = parseCssTransform(transformText);
+  if (!parsed || !isOrderedSimpleTransform(transformText ?? "")) return null;
+  let finiteOrZero: Dynamic = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "number" &&
+      Number.isFinite(candidate) &&
+      Math.abs(candidate) <= GeometryFlipElementsLimit
+        ? candidate
         : 0,
-    value2: Dynamic =
-      value.rotate.value *
+    radians: Dynamic =
+      parsed.rotate.value *
       (GeometryFlipElementsDegRadTurnConfig[
-        value.rotate.unit.toLowerCase() || "deg"
+        parsed.rotate.unit.toLowerCase() || "deg"
       ] ?? Math.PI / 180),
-    [items, items2]: Dynamic = [
-      callback(context?.x) * value.scaleX,
-      callback(context?.y) * value.scaleY,
+    [centreX, centreY]: Dynamic = [
+      finiteOrZero(centre?.x) * parsed.scaleX,
+      finiteOrZero(centre?.y) * parsed.scaleY,
     ],
-    value3: Dynamic =
-      options === "horizontal"
-        ? 2 * (Math.cos(value2) * items - Math.sin(value2) * items2)
-        : 2 * (Math.sin(value2) * items + Math.cos(value2) * items2),
-    value4: Dynamic = Math.abs(value3) >= GeometryFlipElementsLimit_2,
-    value5: Dynamic = options === "horizontal" ? value.x : value.y;
-  if (value4 && value5.value !== 0 && value5.unit.toLowerCase() !== "px")
+    offsetShift: Dynamic =
+      axis === "horizontal"
+        ? 2 * (Math.cos(radians) * centreX - Math.sin(radians) * centreY)
+        : 2 * (Math.sin(radians) * centreX + Math.cos(radians) * centreY),
+    needsOffset: Dynamic = Math.abs(offsetShift) >= GeometryFlipElementsLimit_2,
+    offsetAxis: Dynamic = axis === "horizontal" ? parsed.x : parsed.y;
+  if (needsOffset && offsetAxis.value !== 0 && offsetAxis.unit.toLowerCase() !== "px")
     return "offset";
-  let state: Dynamic = {
-    value: GeometryFlipElementsHandler(value5.value + value3),
+  let offsetState: Dynamic = {
+    value: GeometryFlipElementsHandler(offsetAxis.value + offsetShift),
     unit: "px",
   };
   return serializeFlipTransform({
-    x: value4 && options === "horizontal" ? state : value.x,
-    y: value4 && options === "vertical" ? state : value.y,
+    x: needsOffset && axis === "horizontal" ? offsetState : parsed.x,
+    y: needsOffset && axis === "vertical" ? offsetState : parsed.y,
     rotate: {
-      value: -value.rotate.value || 0,
-      unit: value.rotate.unit,
+      value: -parsed.rotate.value || 0,
+      unit: parsed.rotate.unit,
     },
-    scaleX: options === "horizontal" ? -value.scaleX || 0 : value.scaleX,
-    scaleY: options === "vertical" ? -value.scaleY || 0 : value.scaleY,
+    scaleX: axis === "horizontal" ? -parsed.scaleX || 0 : parsed.scaleX,
+    scaleY: axis === "vertical" ? -parsed.scaleY || 0 : parsed.scaleY,
   });
 }
-function flipSelectionTargets(input?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-    let value: Dynamic = input.element(input2),
-      value2: Dynamic =
-        value?.tagName.toLowerCase() === "picture"
-          ? value.querySelector("img[" + DcTplAttribute + "]")
+function flipSelectionTargets(model?: Dynamic, selection?: Dynamic): Dynamic {
+  let resolveTarget: Dynamic = (tid?: Dynamic): Dynamic => {
+    let element: Dynamic = model.element(tid),
+      flipTarget: Dynamic =
+        element?.tagName.toLowerCase() === "picture"
+          ? element.querySelector("img[" + DcTplAttribute + "]")
           : null;
     for (
-      let value4: Dynamic = value?.parentElement ?? null;
-      value4;
-      value4 = value4.parentElement
+      let ancestor: Dynamic = element?.parentElement ?? null;
+      ancestor;
+      ancestor = ancestor.parentElement
     )
-      value4.tagName.toLowerCase() === "svg" && (value2 = value4);
-    let value3: Dynamic = value2
-      ? parseInt(value2.getAttribute(DcTplAttribute) ?? "", 10)
+      ancestor.tagName.toLowerCase() === "svg" && (flipTarget = ancestor);
+    let resolvedTid: Dynamic = flipTarget
+      ? parseInt(flipTarget.getAttribute(DcTplAttribute) ?? "", 10)
       : NaN;
-    return Number.isFinite(value3) ? value3 : input2;
+    return Number.isFinite(resolvedTid) ? resolvedTid : tid;
   };
-  return selectedRootElementIds(input, [
+  return selectedRootElementIds(model, [
     ...new Set(
-      options
-        .filter((input2?: Dynamic): Dynamic => input.element(input2) != null)
-        .map(callback),
+      selection
+        .filter((tid?: Dynamic): Dynamic => model.element(tid) != null)
+        .map(resolveTarget),
     ),
   ]);
 }
-function getSvgFlipEndpoints(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic =
-      input.tagName(options) === "svg" ? input.element(options) : null,
-    value2: Dynamic = value ? inspectSvgArrow(value) : null,
-    value3: Dynamic = parseCssTransform(
-      input.effectiveStyleValue(options, "transform"),
+function getSvgFlipEndpoints(model?: Dynamic, tid?: Dynamic): Dynamic {
+  let svgElement: Dynamic =
+      model.tagName(tid) === "svg" ? model.element(tid) : null,
+    arrow: Dynamic = svgElement ? inspectSvgArrow(svgElement) : null,
+    transform: Dynamic = parseCssTransform(
+      model.effectiveStyleValue(tid, "transform"),
     );
-  if (!value2 || !value3 || serializeCssTransform(value3) !== "")
+  if (!arrow || !transform || serializeCssTransform(transform) !== "")
     return null;
-  let value4: Dynamic = parseInt(
-      value2.shaft.getAttribute(DcTplAttribute) ?? "",
+  let shaftTid: Dynamic = parseInt(
+      arrow.shaft.getAttribute(DcTplAttribute) ?? "",
       10,
     ),
-    value5: Dynamic = input.attributes(options),
-    value6: Dynamic = (value5.viewBox ?? "")
+    attributes: Dynamic = model.attributes(tid),
+    viewBox: Dynamic = (attributes.viewBox ?? "")
       .trim()
       .split(/[\s,]+/)
       .map(Number);
-  return !Number.isFinite(value4) ||
-    value6.length !== 4 ||
-    value6.some((input2?: Dynamic): Dynamic => !Number.isFinite(input2)) ||
-    !(value6[2] > 0) ||
-    !(value6[3] > 0) ||
+  return !Number.isFinite(shaftTid) ||
+    viewBox.length !== 4 ||
+    viewBox.some((coordinate?: Dynamic): Dynamic => !Number.isFinite(coordinate)) ||
+    !(viewBox[2] > 0) ||
+    !(viewBox[3] > 0) ||
     !/^(none|xMidYMid)\b/.test(
-      (value5.preserveAspectRatio ?? "xMidYMid").trim(),
+      (attributes.preserveAspectRatio ?? "xMidYMid").trim(),
     )
     ? null
     : {
-        shaft: value2,
-        shaftTid: value4,
-        x: value6[0],
-        y: value6[1],
-        w: value6[2],
-        h: value6[3],
+        shaft: arrow,
+        shaftTid: shaftTid,
+        x: viewBox[0],
+        y: viewBox[1],
+        w: viewBox[2],
+        h: viewBox[3],
       };
 }
 function elementFlipRefusal(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  model?: Dynamic,
+  tid?: Dynamic,
+  inspection?: Dynamic,
+  axis?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = input.tagName(options) ?? "";
-  if (value2 === "dc-import" || value2 === "x-import")
+  let tagName: Dynamic = model.tagName(tid) ?? "";
+  if (tagName === "dc-import" || tagName === "x-import")
     return GeometryFlipElementsLabel;
-  if (GeometryFlipElementsScIfScForPattern.test(value2))
+  if (GeometryFlipElementsScIfScForPattern.test(tagName))
     return GeometryFlipElementsLabel_2;
-  if (input.isUneditable(options))
+  if (model.isUneditable(tid))
     return ThisComponentManagesItselfSoItMessage;
-  if (!context) return CouldnTFlipRightNowTryAgainMessage;
-  if (context.boxless) return ThisOnlyWrapsOtherLayersSoMessage;
-  if (context.unrendered) return ThisIsnTShownOnThePageMessage;
-  let value3: Dynamic = input.effectiveStyleValue(options, "transform");
+  if (!inspection) return CouldnTFlipRightNowTryAgainMessage;
+  if (inspection.boxless) return ThisOnlyWrapsOtherLayersSoMessage;
+  if (inspection.unrendered) return ThisIsnTShownOnThePageMessage;
+  let transformText: Dynamic = model.effectiveStyleValue(tid, "transform");
   if (
-    context.axisProps ||
-    (context.transformed && ["", "none"].includes(value3.trim()))
+    inspection.axisProps ||
+    (inspection.transformed && ["", "none"].includes(transformText.trim()))
   )
     return GeometryFlipElementsLabel_3;
-  let value4: Dynamic = getSvgFlipEndpoints(input, options);
-  if (value4)
+  let endpoints: Dynamic = getSvgFlipEndpoints(model, tid);
+  if (endpoints)
     return (
-      value === "horizontal"
-        ? value4.shaft.sx === value4.shaft.ex &&
-          2 * value4.x + value4.w === 2 * value4.shaft.sx
-        : value4.shaft.sy === value4.shaft.ey &&
-          2 * value4.y + value4.h === 2 * value4.shaft.sy
+      axis === "horizontal"
+        ? endpoints.shaft.sx === endpoints.shaft.ex &&
+          2 * endpoints.x + endpoints.w === 2 * endpoints.shaft.sx
+        : endpoints.shaft.sy === endpoints.shaft.ey &&
+          2 * endpoints.y + endpoints.h === 2 * endpoints.shaft.sy
     )
       ? FlippingThisWayWouldnTChangeItMessage
       : undefined;
-  if (context.inline) return GeometryFlipElementsLabel_4;
-  if (value === "horizontal" ? context.flat?.x : context.flat?.y)
-    return value === "horizontal"
+  if (inspection.inline) return GeometryFlipElementsLabel_4;
+  if (axis === "horizontal" ? inspection.flat?.x : inspection.flat?.y)
+    return axis === "horizontal"
       ? ThisHasNoWidthOfItsMessage
       : ThisHasNoHeightOfItsMessage;
-  let value5: Dynamic = flipElementTransform(value3, value, context.centre);
-  return value5 === null
+  let flippedTransform: Dynamic = flipElementTransform(transformText, axis, inspection.centre);
+  return flippedTransform === null
     ? GeometryFlipElementsLabel_3
-    : value5 === "offset"
+    : flippedTransform === "offset"
       ? GeometryFlipElementsLabel_5
-      : input.isLoopDriven(options) &&
-          value5 !== flipElementTransform(value3, value)
+      : model.isLoopDriven(tid) &&
+          flippedTransform !== flipElementTransform(transformText, axis)
         ? ThisRepeatedElementCanTBeFlippedMessage
         : undefined;
 }
 function selectionFlipRefusal(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  model?: Dynamic,
+  selection?: Dynamic,
+  axis?: Dynamic,
+  inspections?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic;
-  for (let value3 of flipSelectionTargets(input, options) as Dynamic) {
-    let value4: Dynamic = elementFlipRefusal(
-      input,
-      value3,
-      value.get(value3),
-      context,
+  let firstRefusal: Dynamic;
+  for (let tid of flipSelectionTargets(model, selection) as Dynamic) {
+    let refusal: Dynamic = elementFlipRefusal(
+      model,
+      tid,
+      inspections.get(tid),
+      axis,
     );
-    if (value4 === undefined) return;
-    value2 ??= value4;
+    if (refusal === undefined) return;
+    firstRefusal ??= refusal;
   }
-  return value2;
+  return firstRefusal;
 }
 function canFlipSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  selection?: Dynamic,
+  axis?: Dynamic,
 ): Dynamic {
   return selectionFlipRefusal(
-    input,
-    options,
-    context,
+    model,
+    selection,
+    axis,
     new Map(
-      flipSelectionTargets(input, options).map(
-        (input2?: Dynamic): Dynamic => [
-          input2,
+      flipSelectionTargets(model, selection).map(
+        (tid?: Dynamic): Dynamic => [
+          tid,
           {
             centre: {
               x: 0,
@@ -394,137 +394,137 @@ function canFlipSelection(
   );
 }
 function selectionNeedsFlipInspection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  selection?: Dynamic,
+  inspections?: Dynamic,
 ): Dynamic {
-  return flipSelectionTargets(input, options).some(
-    (input2?: Dynamic): Dynamic =>
-      elementFlipRefusal(input, input2, context.get(input2), "horizontal") ===
+  return flipSelectionTargets(model, selection).some(
+    (tid?: Dynamic): Dynamic =>
+      elementFlipRefusal(model, tid, inspections.get(tid), "horizontal") ===
       CouldnTFlipRightNowTryAgainMessage,
   );
 }
 function flipModelSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  model?: Dynamic,
+  selection?: Dynamic,
+  axis?: Dynamic,
+  inspections?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = flipSelectionTargets(input, options),
-    value3: Dynamic = value2.map(
-      (input2?: Dynamic): Dynamic =>
-        elementFlipRefusal(input, input2, value.get(input2), context),
+  let targets: Dynamic = flipSelectionTargets(model, selection),
+    refusals: Dynamic = targets.map(
+      (tid?: Dynamic): Dynamic =>
+        elementFlipRefusal(model, tid, inspections.get(tid), axis),
     );
-  if (value3.includes(CouldnTFlipRightNowTryAgainMessage))
+  if (refusals.includes(CouldnTFlipRightNowTryAgainMessage))
     return {
       flipped: [],
       refused: CouldnTFlipRightNowTryAgainMessage,
     };
-  let items: Dynamic = [],
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      Math.round(input2 * 1e4) / 1e4 || 0,
-    callback2: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      context === "horizontal"
-        ? callback(2 * input2.x + input2.w - options2)
-        : options2,
-    callback3: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      context === "vertical"
-        ? callback(2 * input2.y + input2.h - options2)
-        : options2;
-  value2.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-    if (value3[options2] !== undefined) return;
-    let value5: Dynamic = getSvgFlipEndpoints(input, input2);
-    if (value5) {
+  let flippedTids: Dynamic = [],
+    roundCoordinate: Dynamic = (amount?: Dynamic): Dynamic =>
+      Math.round(amount * 1e4) / 1e4 || 0,
+    flipXCoordinate: Dynamic = (endpoints?: Dynamic, x?: Dynamic): Dynamic =>
+      axis === "horizontal"
+        ? roundCoordinate(2 * endpoints.x + endpoints.w - x)
+        : x,
+    flipYCoordinate: Dynamic = (endpoints?: Dynamic, y?: Dynamic): Dynamic =>
+      axis === "vertical"
+        ? roundCoordinate(2 * endpoints.y + endpoints.h - y)
+        : y;
+  targets.forEach((tid?: Dynamic, targetIndex?: Dynamic): Dynamic => {
+    if (refusals[targetIndex] !== undefined) return;
+    let endpoints: Dynamic = getSvgFlipEndpoints(model, tid);
+    if (endpoints) {
       let {
         shaft: shaft,
-        sx: shaft2,
-        sy: shaft3,
-        ex: shaft4,
-        ey: shaft5,
-        legacy: shaft6,
-      }: Dynamic = value5.shaft;
-      if (shaft6) {
-        let value6: Dynamic = (shaft.getAttribute("d") ?? "")
+        sx: startX,
+        sy: startY,
+        ex: endX,
+        ey: endY,
+        legacy: isLegacy,
+      }: Dynamic = endpoints.shaft;
+      if (isLegacy) {
+        let pathNumbers: Dynamic = (shaft.getAttribute("d") ?? "")
             .match(/[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g)
             .map(Number),
-          callback4: Dynamic = (input3?: Dynamic): Dynamic =>
-            String(callback2(value5, value6[2 * input3])) +
+          pathPoint: Dynamic = (pointIndex?: Dynamic): Dynamic =>
+            String(flipXCoordinate(endpoints, pathNumbers[2 * pointIndex])) +
             " " +
-            String(callback3(value5, value6[2 * input3 + 1]));
-        input.setAttribute(
-          value5.shaftTid,
+            String(flipYCoordinate(endpoints, pathNumbers[2 * pointIndex + 1]));
+        model.setAttribute(
+          endpoints.shaftTid,
           "d",
           "M " +
-            callback4(0) +
+            pathPoint(0) +
             " L " +
-            callback4(1) +
+            pathPoint(1) +
             " M " +
-            callback4(2) +
+            pathPoint(2) +
             " L " +
-            callback4(3) +
+            pathPoint(3) +
             " L " +
-            callback4(4),
+            pathPoint(4),
         );
       } else
         setSvgLineEndpoints(
-          input,
-          value5.shaftTid,
-          callback2(value5, shaft2),
-          callback3(value5, shaft3),
-          callback2(value5, shaft4),
-          callback3(value5, shaft5),
+          model,
+          endpoints.shaftTid,
+          flipXCoordinate(endpoints, startX),
+          flipYCoordinate(endpoints, startY),
+          flipXCoordinate(endpoints, endX),
+          flipYCoordinate(endpoints, endY),
         );
     } else {
-      let value6: Dynamic = flipElementTransform(
-          input.effectiveStyleValue(input2, "transform"),
-          context,
-          value.get(input2)?.centre,
+      let flippedTransform: Dynamic = flipElementTransform(
+          model.effectiveStyleValue(tid, "transform"),
+          axis,
+          inspections.get(tid)?.centre,
         ),
-        value7: Dynamic =
+        hadAuthoredTransform: Dynamic =
           getStyleProperty(
-            input.classOnlyStyleAttr(input2),
+            model.classOnlyStyleAttr(tid),
             "transform",
           ) !== "";
-      input.setStyleProperty(
-        input2,
+      model.setStyleProperty(
+        tid,
         "transform",
-        value6 || (value7 ? "none" : null),
+        flippedTransform || (hadAuthoredTransform ? "none" : null),
       );
     }
-    items.push(input2);
+    flippedTids.push(tid);
   });
-  let value4: Dynamic =
-    value3.find(
-      (input2?: Dynamic): Dynamic =>
-        input2 !== undefined &&
-        input2 !== FlippingThisWayWouldnTChangeItMessage,
+  let refusal: Dynamic =
+    refusals.find(
+      (candidate?: Dynamic): Dynamic =>
+        candidate !== undefined &&
+        candidate !== FlippingThisWayWouldnTChangeItMessage,
     ) ??
-    (items.length === 0
-      ? value3.find((input2?: Dynamic): Dynamic => input2 !== undefined)
+    (flippedTids.length === 0
+      ? refusals.find((candidate?: Dynamic): Dynamic => candidate !== undefined)
       : undefined);
-  return value4 === undefined
+  return refusal === undefined
     ? {
-        flipped: items,
+        flipped: flippedTids,
       }
     : {
-        flipped: items,
-        refused: value4,
+        flipped: flippedTids,
+        refused: refusal,
       };
 }
 function partialFlipMessage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = {},
+  reason?: Dynamic,
+  hasFlipped?: Dynamic,
+  reasons: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic =
-    GeometryFlipElementsYtMytOytConfig[input] ?? context[input];
-  return options
-    ? value !== undefined
-      ? uiMessage("inspector.flipElements.couldnTFlip") + value + ". The rest flipped."
+  let description: Dynamic =
+    GeometryFlipElementsYtMytOytConfig[reason] ?? reasons[reason];
+  return hasFlipped
+    ? description !== undefined
+      ? uiMessage("inspector.flipElements.couldnTFlip") + description + ". The rest flipped."
       : uiMessage("inspector.flipElements.partOfTheSelectionCouldn")
-    : input.endsWith(".")
-      ? input
-      : input + ".";
+    : reason.endsWith(".")
+      ? reason
+      : reason + ".";
 }
 export {
   canFlipSelection,
@@ -632,8 +632,8 @@ export function installEditorGeometryFlipElements(): () => void {
       turn: 2 * Math.PI,
       grad: Math.PI / 200,
     };
-    GeometryFlipElementsHandler = (input?: Dynamic): Dynamic =>
-      Math.round(input * 100) / 100 || 0;
+    GeometryFlipElementsHandler = (amount?: Dynamic): Dynamic =>
+      Math.round(amount * 100) / 100 || 0;
     GeometryFlipElementsScIfScForPattern = /^(sc-if|sc-for|helmet|sc-helmet)$/i;
   };
 }

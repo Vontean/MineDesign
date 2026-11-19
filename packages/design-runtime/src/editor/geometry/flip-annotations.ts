@@ -17,117 +17,117 @@ var CropDoesNotWorkWhileThisMessage: Dynamic;
 var GeometryFlipAnnotationsPattern: Dynamic;
 var GeometryFlipAnnotationsHandler: Dynamic;
 var GeometryFlipAnnotationsConstant: Dynamic;
-function flipAnnotationPen(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options === "horizontal" ? 0 : 1,
-    value2: Dynamic = input.d.match(GeometryFlipAnnotationsPattern) ?? [],
-    value3: Dynamic = value2
+function flipAnnotationPen(penAnnotation?: Dynamic, axis?: Dynamic): Dynamic {
+  let coordParity: Dynamic = axis === "horizontal" ? 0 : 1,
+    numberTexts: Dynamic = penAnnotation.d.match(GeometryFlipAnnotationsPattern) ?? [],
+    axisCoords: Dynamic = numberTexts
       .map(Number)
       .filter(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          options2 % 2 === value,
+        (coord?: Dynamic, coordIndex?: Dynamic): Dynamic =>
+          coordIndex % 2 === coordParity,
       ),
-    [items, items2]: Dynamic = [Math.min(...value3), Math.max(...value3)],
-    value4: Dynamic = Math.min(
+    [minCoord, maxCoord]: Dynamic = [Math.min(...axisCoords), Math.max(...axisCoords)],
+    decimals: Dynamic = Math.min(
       GeometryFlipAnnotationsConstant,
       Math.max(
         0,
-        ...value2.map(
-          (input2?: Dynamic): Dynamic => (input2.split(".")[1] ?? "").length,
+        ...numberTexts.map(
+          (numberText?: Dynamic): Dynamic => (numberText.split(".")[1] ?? "").length,
         ),
       ),
     ),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      value4 > 0
-        ? input2.toFixed(value4).replace(/\.?0+$/, "")
-        : input2.toFixed(0),
+    formatNumber: Dynamic = (value?: Dynamic): Dynamic =>
+      decimals > 0
+        ? value.toFixed(decimals).replace(/\.?0+$/, "")
+        : value.toFixed(0),
     index: Dynamic = 0,
-    value5: Dynamic = input.d.replace(
+    flippedPath: Dynamic = penAnnotation.d.replace(
       GeometryFlipAnnotationsPattern,
-      (input2?: Dynamic): Dynamic =>
-        index++ % 2 === value
-          ? callback(items + items2 - Number(input2))
-          : input2,
+      (matchedNumber?: Dynamic): Dynamic =>
+        index++ % 2 === coordParity
+          ? formatNumber(minCoord + maxCoord - Number(matchedNumber))
+          : matchedNumber,
     ),
-    [items3, items4]: Dynamic = [
-      annotationRotation(input),
+    [rotation, flippedRotation]: Dynamic = [
+      annotationRotation(penAnnotation),
       normalizeRotationDegrees(
-        -annotationRotation(input),
+        -annotationRotation(penAnnotation),
       ),
     ];
-  if (value5 === input.d && items4 === items3) return "same";
-  if (PlatformFileContentTrim_2(value5) !== value5) return null;
-  let state: Dynamic = {
-      d: input.d,
-      ...(items4 !== items3
+  if (flippedPath === penAnnotation.d && flippedRotation === rotation) return "same";
+  if (PlatformFileContentTrim_2(flippedPath) !== flippedPath) return null;
+  let fromState: Dynamic = {
+      d: penAnnotation.d,
+      ...(flippedRotation !== rotation
         ? {
-            rotate: items3,
+            rotate: rotation,
           }
         : {}),
     },
-    state2: Dynamic = {
-      d: value5,
-      ...(items4 !== items3
+    toState: Dynamic = {
+      d: flippedPath,
+      ...(flippedRotation !== rotation
         ? {
-            rotate: items4,
+            rotate: flippedRotation,
           }
         : {}),
     },
-    value6: Dynamic = value2.map(Number),
-    value7: Dynamic = value6.filter(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => options2 % 2 === 0,
+    allCoords: Dynamic = numberTexts.map(Number),
+    xCoords: Dynamic = allCoords.filter(
+      (coord?: Dynamic, coordIndex?: Dynamic): Dynamic => coordIndex % 2 === 0,
     ),
-    value8: Dynamic = value6.filter(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic => options2 % 2 === 1,
+    yCoords: Dynamic = allCoords.filter(
+      (coord?: Dynamic, coordIndex?: Dynamic): Dynamic => coordIndex % 2 === 1,
     ),
-    callback2: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      ((Math.min(...input2) + Math.max(...input2)) /
+    centerOffset: Dynamic = (coords?: Dynamic, size?: Dynamic): Dynamic =>
+      ((Math.min(...coords) + Math.max(...coords)) /
         2 /
-        Math.max(1, ...input2) -
+        Math.max(1, ...coords) -
         0.5) *
-      options2,
-    value9: Dynamic = Math.sin((items3 * Math.PI) / 180),
-    [items5, items6]: Dynamic = [
+      size,
+    sinRotation: Dynamic = Math.sin((rotation * Math.PI) / 180),
+    [shiftX, shiftY]: Dynamic = [
       GeometryFlipAnnotationsHandler(
-        -2 * callback2(value8, input.h) * value9,
+        -2 * centerOffset(yCoords, penAnnotation.h) * sinRotation,
       ),
-      GeometryFlipAnnotationsHandler(2 * callback2(value7, input.w) * value9),
+      GeometryFlipAnnotationsHandler(2 * centerOffset(xCoords, penAnnotation.w) * sinRotation),
     ];
-  items5 !== 0 &&
-    ([state.x, state2.x] = [
-      input.x,
-      GeometryFlipAnnotationsHandler(input.x + items5),
+  shiftX !== 0 &&
+    ([fromState.x, toState.x] = [
+      penAnnotation.x,
+      GeometryFlipAnnotationsHandler(penAnnotation.x + shiftX),
     ]);
-  items6 !== 0 &&
-    ([state.y, state2.y] = [
-      input.y,
-      GeometryFlipAnnotationsHandler(input.y + items6),
+  shiftY !== 0 &&
+    ([fromState.y, toState.y] = [
+      penAnnotation.y,
+      GeometryFlipAnnotationsHandler(penAnnotation.y + shiftY),
     ]);
   return {
-    id: input.id,
-    from: state,
-    to: state2,
+    id: penAnnotation.id,
+    from: fromState,
+    to: toState,
   };
 }
-function flipAnnotation(source?: Dynamic, options?: Dynamic): Dynamic {
+function flipAnnotation(source?: Dynamic, axis?: Dynamic): Dynamic {
   if (!isShapeAnnotation(source))
     return GeometryFlipAnnotationsLabel;
   if (source.kind === "pen")
     try {
-      let value2: Dynamic = flipAnnotationPen(source, options);
-      return value2 === "same"
+      let penFlip: Dynamic = flipAnnotationPen(source, axis);
+      return penFlip === "same"
         ? null
-        : (value2 ?? ThisDrawingHasTooManyPointsMessage);
+        : (penFlip ?? ThisDrawingHasTooManyPointsMessage);
     } catch {
       return ThisDrawingSSavedPathCouldnTBeMessage;
     }
   if (source.kind === "line" || source.kind === "arrow")
     return (
-      options === "horizontal"
+      axis === "horizontal"
         ? source.x === source.x2
         : source.y === source.y2
     )
       ? null
-      : options === "horizontal"
+      : axis === "horizontal"
         ? {
             id: source.id,
             from: {
@@ -150,8 +150,8 @@ function flipAnnotation(source?: Dynamic, options?: Dynamic): Dynamic {
               y2: source.y,
             },
           };
-  let value: Dynamic = options === "horizontal" ? "flipX" : "flipY",
-    [items, items2]: Dynamic = [
+  let flipKey: Dynamic = axis === "horizontal" ? "flipX" : "flipY",
+    [rotation, flippedRotation]: Dynamic = [
       annotationRotation(source),
       normalizeRotationDegrees(
         -annotationRotation(source),
@@ -160,54 +160,54 @@ function flipAnnotation(source?: Dynamic, options?: Dynamic): Dynamic {
   return {
     id: source.id,
     from: {
-      [value]: source[value],
-      ...(items2 !== items
+      [flipKey]: source[flipKey],
+      ...(flippedRotation !== rotation
         ? {
-            rotate: items,
+            rotate: rotation,
           }
         : {}),
     },
     to: {
-      [value]: source[value] === true ? undefined : true,
-      ...(items2 !== items
+      [flipKey]: source[flipKey] === true ? undefined : true,
+      ...(flippedRotation !== rotation
         ? {
-            rotate: items2,
+            rotate: flippedRotation,
           }
         : {}),
     },
   };
 }
-function flipAnnotations(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.map(
-      (input2?: Dynamic): Dynamic => flipAnnotation(input2, options),
+function flipAnnotations(annotations?: Dynamic, axis?: Dynamic): Dynamic {
+  let flipResults: Dynamic = annotations.map(
+      (annotation?: Dynamic): Dynamic => flipAnnotation(annotation, axis),
     ),
-    value2: Dynamic =
-      value.find((input2?: Dynamic): Dynamic => typeof input2 == "string") ??
-      (value.length > 0 &&
-      value.every((input2?: Dynamic): Dynamic => input2 === null)
+    refusal: Dynamic =
+      flipResults.find((flipResult?: Dynamic): Dynamic => typeof flipResult == "string") ??
+      (flipResults.length > 0 &&
+      flipResults.every((flipResult?: Dynamic): Dynamic => flipResult === null)
         ? FlippingThisWayWouldnTChangeItMessage
         : undefined),
-    value3: Dynamic = value.filter(
-      (input2?: Dynamic): Dynamic =>
-        input2 !== null && typeof input2 != "string",
+    flips: Dynamic = flipResults.filter(
+      (flipResult?: Dynamic): Dynamic =>
+        flipResult !== null && typeof flipResult != "string",
     );
-  return value2 === undefined
+  return refusal === undefined
     ? {
-        flips: value3,
+        flips: flips,
       }
     : {
-        flips: value3,
-        refused: value2,
+        flips: flips,
+        refused: refusal,
       };
 }
-function imageFlipCss(input?: Dynamic): Dynamic {
-  return input.flipX === true || input.flipY === true
+function imageFlipCss(image?: Dynamic): Dynamic {
+  return image.flipX === true || image.flipY === true
     ? {
         transform:
           "scale(" +
-          (input.flipX === true ? "-1" : "1") +
+          (image.flipX === true ? "-1" : "1") +
           ", " +
-          (input.flipY === true ? "-1" : "1") +
+          (image.flipY === true ? "-1" : "1") +
           ")",
       }
     : undefined;
@@ -250,8 +250,8 @@ export function installEditorGeometryFlipAnnotations(): () => void {
     CropDoesNotWorkWhileThisMessage =
       uiMessage("inspector.flipAnnotations.cropDoesNotWorkWhile");
     GeometryFlipAnnotationsPattern = /\d+(?:\.\d+)?/g;
-    GeometryFlipAnnotationsHandler = (input?: Dynamic): Dynamic =>
-      Math.round(input * 100) / 100 || 0;
+    GeometryFlipAnnotationsHandler = (value?: Dynamic): Dynamic =>
+      Math.round(value * 100) / 100 || 0;
     GeometryFlipAnnotationsConstant = 6;
   };
 }

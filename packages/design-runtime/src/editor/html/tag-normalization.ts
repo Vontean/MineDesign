@@ -14,97 +14,97 @@ var selfClosingImportPattern: Dynamic;
 var HtmlTagNormalizationCss_2: Dynamic;
 var htmlAttributeTagPattern: Dynamic;
 var HtmlTagNormalizationAZaZPattern: Dynamic;
-function encodeCamelCaseAttributes(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    input2.replace(
+function encodeCamelCaseAttributes(html?: Dynamic): Dynamic {
+  let encodeTag: Dynamic = (tagText?: Dynamic): Dynamic =>
+    tagText.replace(
       HtmlTagNormalizationAZaZPattern,
-      (input3?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-        context === undefined
-          ? input3
-          : options +
+      (matchedText?: Dynamic, leadingSpace?: Dynamic, attributeName?: Dynamic): Dynamic =>
+        attributeName === undefined
+          ? matchedText
+          : leadingSpace +
             ScCamelValue +
-            context.replace(
+            attributeName.replace(
               /[A-Z]/g,
-              (input4?: Dynamic): Dynamic => "-" + input4.toLowerCase(),
+              (letter?: Dynamic): Dynamic => "-" + letter.toLowerCase(),
             ),
     );
-  return input.replace(
+  return html.replace(
     htmlAttributeTagPattern,
     (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-      extra?: Dynamic,
+      matchedText?: Dynamic,
+      commentText?: Dynamic,
+      rawTextOpenTag?: Dynamic,
+      rawTextTagName?: Dynamic,
+      rawTextRest?: Dynamic,
     ): Dynamic =>
-      options !== undefined
-        ? input2
-        : context
-          ? callback(context) + extra
-          : callback(input2),
+      commentText !== undefined
+        ? matchedText
+        : rawTextOpenTag
+          ? encodeTag(rawTextOpenTag) + rawTextRest
+          : encodeTag(matchedText),
   );
 }
-function toParserHtml(input?: Dynamic): Dynamic {
-  input = input.replace(
+function toParserHtml(html?: Dynamic): Dynamic {
+  html = html.replace(
     selfClosingImportPattern,
-    (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-      "<" + options + context + "></" + options + ">",
+    (matchedText?: Dynamic, tagName?: Dynamic, attributes?: Dynamic): Dynamic =>
+      "<" + tagName + attributes + "></" + tagName + ">",
   );
-  input = input.replace(/<helmet(\s|>)/gi, "<sc-helmet$1");
-  input = input.replace(/<\/helmet\s*>/gi, "</sc-helmet>");
-  input = encodeCamelCaseAttributes(input);
-  for (let [value, value2] of Object.entries(
+  html = html.replace(/<helmet(\s|>)/gi, "<sc-helmet$1");
+  html = html.replace(/<\/helmet\s*>/gi, "</sc-helmet>");
+  html = encodeCamelCaseAttributes(html);
+  for (let [authoredTag, parserTag] of Object.entries(
     HtmlTagNormalizationSelectTableTbodyConfig,
   ) as Dynamic)
-    input = input.replace(
-      new RegExp("(</?)" + value + "(?=[\\s>])", "gi"),
-      "$1" + value2,
+    html = html.replace(
+      new RegExp("(</?)" + authoredTag + "(?=[\\s>])", "gi"),
+      "$1" + parserTag,
     );
-  return input;
+  return html;
 }
-function kebabToCamelCase(input?: Dynamic): Dynamic {
-  return input.replace(
+function kebabToCamelCase(kebabText?: Dynamic): Dynamic {
+  return kebabText.replace(
     /-([a-z])/g,
-    (input2?: Dynamic, options?: Dynamic): Dynamic => options.toUpperCase(),
+    (matchedText?: Dynamic, letter?: Dynamic): Dynamic => letter.toUpperCase(),
   );
 }
-function camelToKebabCss(input?: Dynamic): Dynamic {
-  if (input.startsWith("--") || !/[a-z][A-Z]/.test(input)) return input;
-  if (input === "cssFloat") return "float";
-  let value: Dynamic = input.replace(
+function camelToKebabCss(propertyName?: Dynamic): Dynamic {
+  if (propertyName.startsWith("--") || !/[a-z][A-Z]/.test(propertyName)) return propertyName;
+  if (propertyName === "cssFloat") return "float";
+  let kebabName: Dynamic = propertyName.replace(
     /[A-Z]/g,
-    (input2?: Dynamic): Dynamic => "-" + input2.toLowerCase(),
+    (letter?: Dynamic): Dynamic => "-" + letter.toLowerCase(),
   );
-  return /^(webkit|moz|ms|o)-/.test(value) ? "-" + value : value;
+  return /^(webkit|moz|ms|o)-/.test(kebabName) ? "-" + kebabName : kebabName;
 }
-function compileTemplateExpression(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.match(/^\s*\{\{([\s\S]+?)\}\}\s*$/);
-  if (value) {
-    let value2: Dynamic = value[1];
-    return (input2?: Dynamic): Dynamic =>
-      evaluateTemplateExpression(input2, value2);
+function compileTemplateExpression(attributeValue?: Dynamic): Dynamic {
+  let singleExpressionMatch: Dynamic = attributeValue.match(/^\s*\{\{([\s\S]+?)\}\}\s*$/);
+  if (singleExpressionMatch) {
+    let expression: Dynamic = singleExpressionMatch[1];
+    return (scope?: Dynamic): Dynamic =>
+      evaluateTemplateExpression(scope, expression);
   }
-  if (input.includes("{{")) {
-    let value2: Dynamic = input.split(/\{\{([\s\S]+?)\}\}/g);
-    return (input2?: Dynamic): Dynamic =>
-      value2
+  if (attributeValue.includes("{{")) {
+    let textParts: Dynamic = attributeValue.split(/\{\{([\s\S]+?)\}\}/g);
+    return (scope?: Dynamic): Dynamic =>
+      textParts
         .map(
-          (input3?: Dynamic, options?: Dynamic): Dynamic =>
-            options & 1
-              ? (evaluateTemplateExpression(input2, input3) ??
+          (part?: Dynamic, partIndex?: Dynamic): Dynamic =>
+            partIndex & 1
+              ? (evaluateTemplateExpression(scope, part) ??
                 "")
-              : input3,
+              : part,
         )
         .join("");
   }
-  return (): Dynamic => input;
+  return (): Dynamic => attributeValue;
 }
-function safeJsonStringify(input?: Dynamic, options: Dynamic = {}): Dynamic {
-  let value: Dynamic = JSON.stringify(input, null, options.space).replace(
+function safeJsonStringify(value?: Dynamic, stringifyOptions: Dynamic = {}): Dynamic {
+  let json: Dynamic = JSON.stringify(value, null, stringifyOptions.space).replace(
     /</g,
     "\\u003c",
   );
-  return options.escapeSlashes ? value.replace(/\//g, "\\/") : value;
+  return stringifyOptions.escapeSlashes ? json.replace(/\//g, "\\/") : json;
 }
 export {
   camelToKebabCss,
@@ -145,7 +145,7 @@ export function installEditorHtmlTagNormalization(): () => void {
     };
     HtmlTagNormalizationFromEntriesValue = Object.fromEntries(
       Object.entries(HtmlTagNormalizationSelectTableTbodyConfig).map(
-        ([input, input2]: Dynamic): Dynamic => [input2, input],
+        ([authoredTag, parserTag]: Dynamic): Dynamic => [parserTag, authoredTag],
       ),
     );
     HtmlTagNormalizationSubscribers_2 = new Set(

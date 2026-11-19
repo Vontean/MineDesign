@@ -7,112 +7,112 @@ import { isUnsafeCssProperty, normalizeCssProperty, parseStyleDeclarations, seri
 var CssValuesSubscribers: Dynamic;
 var CssValuesWhiteBlackRedConfig: Dynamic;
 function setStyleProperty(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  styleText?: Dynamic,
+  propertyName?: Dynamic,
+  newValue?: Dynamic,
 ): Dynamic {
-  if (isUnsafeCssProperty(options)) return input ?? "";
-  let value: Dynamic = parseStyleDeclarations(input),
-    value2: Dynamic = normalizeCssProperty(options);
-  if (context == null || context === "")
+  if (isUnsafeCssProperty(propertyName)) return styleText ?? "";
+  let declarations: Dynamic = parseStyleDeclarations(styleText),
+    normalizedProperty: Dynamic = normalizeCssProperty(propertyName);
+  if (newValue == null || newValue === "")
     return serializeStyleDeclarations(
-      value.filter((input2?: Dynamic): Dynamic => input2.prop !== value2),
+      declarations.filter((declaration?: Dynamic): Dynamic => declaration.prop !== normalizedProperty),
     );
   let flag: Dynamic = false,
-    items: Dynamic = [];
-  for (let value3 of value as Dynamic)
-    value3.prop !== value2
-      ? items.push(value3)
+    updatedDeclarations: Dynamic = [];
+  for (let declaration of declarations as Dynamic)
+    declaration.prop !== normalizedProperty
+      ? updatedDeclarations.push(declaration)
       : flag ||
-        (items.push({
-          prop: value2,
-          value: context,
+        (updatedDeclarations.push({
+          prop: normalizedProperty,
+          value: newValue,
         }),
         (flag = true));
   flag ||
-    items.push({
-      prop: value2,
-      value: context,
+    updatedDeclarations.push({
+      prop: normalizedProperty,
+      value: newValue,
     });
-  return serializeStyleDeclarations(items);
+  return serializeStyleDeclarations(updatedDeclarations);
 }
-function classifyStyleValue(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim();
-  return value
-    ? value.includes("{{")
+function classifyStyleValue(styleValue?: Dynamic): Dynamic {
+  let trimmedValue: Dynamic = (styleValue ?? "").trim();
+  return trimmedValue
+    ? trimmedValue.includes("{{")
       ? {
           kind: "template",
-          raw: value,
+          raw: trimmedValue,
         }
-      : /(^|[\s(])var\(/.test(value)
+      : /(^|[\s(])var\(/.test(trimmedValue)
         ? {
             kind: "var",
-            raw: value,
+            raw: trimmedValue,
           }
         : {
             kind: "literal",
-            raw: value,
+            raw: trimmedValue,
           }
     : {
         kind: "unset",
         raw: "",
       };
 }
-function getCssVariableNames(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    value: Dynamic = /var\(\s*(--[\w-]+)/g,
-    value2: Dynamic;
-  for (; (value2 = value.exec(input ?? "")); )
-    items.includes(value2[1]) || items.push(value2[1]);
-  return items;
+function getCssVariableNames(cssText?: Dynamic): Dynamic {
+  let variableNames: Dynamic = [],
+    variablePattern: Dynamic = /var\(\s*(--[\w-]+)/g,
+    match: Dynamic;
+  for (; (match = variablePattern.exec(cssText ?? "")); )
+    variableNames.includes(match[1]) || variableNames.push(match[1]);
+  return variableNames;
 }
-function replaceCssVariables(items?: Dynamic, options?: Dynamic): Dynamic {
+function replaceCssVariables(source?: Dynamic, variableValues?: Dynamic): Dynamic {
   let text: Dynamic = "",
     index: Dynamic = 0;
-  for (; index < items.length; ) {
-    let value: Dynamic = items.indexOf("var(", index);
-    if (value === -1) {
-      text += items.slice(index);
+  for (; index < source.length; ) {
+    let varStart: Dynamic = source.indexOf("var(", index);
+    if (varStart === -1) {
+      text += source.slice(index);
       break;
     }
-    text += items.slice(index, value);
-    let index2: Dynamic = 0,
-      value2: Dynamic = -1,
-      value3: Dynamic = -1;
-    for (let value7: Dynamic = value + 3; value7 < items.length; value7++) {
-      let value8: Dynamic = items[value7];
-      if (value8 === "(") index2++;
-      else if (value8 === ")") {
-        index2--;
-        if (index2 === 0) {
-          value2 = value7;
+    text += source.slice(index, varStart);
+    let depth: Dynamic = 0,
+      closeIndex: Dynamic = -1,
+      commaIndex: Dynamic = -1;
+    for (let position: Dynamic = varStart + 3; position < source.length; position++) {
+      let character: Dynamic = source[position];
+      if (character === "(") depth++;
+      else if (character === ")") {
+        depth--;
+        if (depth === 0) {
+          closeIndex = position;
           break;
         }
       } else
-        value8 === "," && index2 === 1 && value3 === -1 && (value3 = value7);
+        character === "," && depth === 1 && commaIndex === -1 && (commaIndex = position);
     }
-    if (value2 === -1) return null;
-    let value4: Dynamic = items
-        .slice(value + 4, value3 === -1 ? value2 : value3)
+    if (closeIndex === -1) return null;
+    let variableName: Dynamic = source
+        .slice(varStart + 4, commaIndex === -1 ? closeIndex : commaIndex)
         .trim(),
-      value5: Dynamic =
-        value3 === -1 ? "" : items.slice(value3 + 1, value2).trim(),
-      value6: Dynamic = (options[value4] ?? "").trim();
-    if (value6) text += value6;
-    else if (value5) {
-      let value7: Dynamic = value5.includes("var(")
-        ? replaceCssVariables(value5, options)
-        : value5;
-      if (value7 == null) return null;
-      text += value7;
+      fallback: Dynamic =
+        commaIndex === -1 ? "" : source.slice(commaIndex + 1, closeIndex).trim(),
+      resolvedValue: Dynamic = (variableValues[variableName] ?? "").trim();
+    if (resolvedValue) text += resolvedValue;
+    else if (fallback) {
+      let resolvedFallback: Dynamic = fallback.includes("var(")
+        ? replaceCssVariables(fallback, variableValues)
+        : fallback;
+      if (resolvedFallback == null) return null;
+      text += resolvedFallback;
     } else return null;
-    index = value2 + 1;
+    index = closeIndex + 1;
   }
   return text;
 }
-function parseCssNumber(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim(),
-    match: Dynamic = /^(-?\d*\.?\d+)([a-z%]*)$/i.exec(value);
+function parseCssNumber(cssText?: Dynamic): Dynamic {
+  let trimmedText: Dynamic = (cssText ?? "").trim(),
+    match: Dynamic = /^(-?\d*\.?\d+)([a-z%]*)$/i.exec(trimmedText);
   if (!match) return null;
   let number: Dynamic = parseFloat(match[1]);
   return Number.isNaN(number)
@@ -122,106 +122,106 @@ function parseCssNumber(input?: Dynamic): Dynamic {
         unit: match[2] ?? "",
       };
 }
-function getFineUnitStep(input?: Dynamic, options?: Dynamic): Dynamic {
-  return /^(em|rem|ch|ex|lh|cap|ic|s|turn)$/i.test(input) ? 0.01 : options;
+function getFineUnitStep(unit?: Dynamic, defaultStep?: Dynamic): Dynamic {
+  return /^(em|rem|ch|ex|lh|cap|ic|s|turn)$/i.test(unit) ? 0.01 : defaultStep;
 }
 function stepCssNumber(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = {},
+  current?: Dynamic,
+  direction?: Dynamic,
+  keyEvent?: Dynamic,
+  stepOptions: Dynamic = {},
 ): Dynamic {
-  let value2: Dynamic = value.step ?? 1,
-    value3: Dynamic = Math.min(
-      getFineUnitStep(value.unit ?? "", undefined) ?? 0.1,
-      value2,
+  let baseStep: Dynamic = stepOptions.step ?? 1,
+    fineStep: Dynamic = Math.min(
+      getFineUnitStep(stepOptions.unit ?? "", undefined) ?? 0.1,
+      baseStep,
     ),
-    value4: Dynamic = context.altKey
-      ? value3
-      : value2 * (context.shiftKey ? 10 : 1),
-    value5: Dynamic = Math.round((input + options * value4) * 100) / 100;
-  value.min != null && (value5 = Math.max(value.min, value5));
-  value.max != null && (value5 = Math.min(value.max, value5));
-  return value5;
+    stepSize: Dynamic = keyEvent.altKey
+      ? fineStep
+      : baseStep * (keyEvent.shiftKey ? 10 : 1),
+    nextValue: Dynamic = Math.round((current + direction * stepSize) * 100) / 100;
+  stepOptions.min != null && (nextValue = Math.max(stepOptions.min, nextValue));
+  stepOptions.max != null && (nextValue = Math.min(stepOptions.max, nextValue));
+  return nextValue;
 }
-function formatCssNumber(value?: Dynamic, unit?: Dynamic): Dynamic {
-  return `${Math.round(value * 100) / 100}${unit}`;
+function formatCssNumber(amount?: Dynamic, unit?: Dynamic): Dynamic {
+  return `${Math.round(amount * 100) / 100}${unit}`;
 }
-function normalizeCssUnit(input?: Dynamic): Dynamic {
-  return input && CssValuesSubscribers.has(input.toLowerCase())
-    ? input.toLowerCase()
+function normalizeCssUnit(unit?: Dynamic): Dynamic {
+  return unit && CssValuesSubscribers.has(unit.toLowerCase())
+    ? unit.toLowerCase()
     : "";
 }
-function roundCssNumber(input?: Dynamic, options?: Dynamic): Dynamic {
-  return (options === "px" || options === "") && Math.abs(input) > 20
-    ? Math.round(input)
-    : Math.round(input * 100) / 100;
+function roundCssNumber(amount?: Dynamic, unit?: Dynamic): Dynamic {
+  return (unit === "px" || unit === "") && Math.abs(amount) > 20
+    ? Math.round(amount)
+    : Math.round(amount * 100) / 100;
 }
-function describeColorValue(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trim(),
-    value2: Dynamic = CssValuesWhiteBlackRedConfig[value.toLowerCase()];
-  if (value2) return value2;
-  let value3: Dynamic = /^var\(\s*--([\w-]+)\s*\)$/i.exec(value);
-  if (value3) return value3[1];
-  let value4: Dynamic = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(
-    value,
+function describeColorValue(colorValue?: Dynamic): Dynamic {
+  let trimmedColor: Dynamic = colorValue.trim(),
+    namedColor: Dynamic = CssValuesWhiteBlackRedConfig[trimmedColor.toLowerCase()];
+  if (namedColor) return namedColor;
+  let variableMatch: Dynamic = /^var\(\s*--([\w-]+)\s*\)$/i.exec(trimmedColor);
+  if (variableMatch) return variableMatch[1];
+  let hexMatch: Dynamic = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(
+    trimmedColor,
   );
-  if (value4) {
-    let value8: Dynamic = value4[1];
+  if (hexMatch) {
+    let hexDigits: Dynamic = hexMatch[1];
     return (
       "#" +
-      (value8.length <= 4
-        ? [...value8]
-            .map((input2?: Dynamic): Dynamic => input2 + input2)
+      (hexDigits.length <= 4
+        ? [...hexDigits]
+            .map((digit?: Dynamic): Dynamic => digit + digit)
             .join("")
-        : value8)
+        : hexDigits)
     ).toUpperCase();
   }
-  let value5: Dynamic =
+  let rgbMatch: Dynamic =
     /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i.exec(
-      value,
+      trimmedColor,
     );
-  if (!value5) return input;
-  let value6: Dynamic = [value5[1], value5[2], value5[3]].map(
-    (input2?: Dynamic): Dynamic => parseInt(input2, 10),
+  if (!rgbMatch) return colorValue;
+  let channels: Dynamic = [rgbMatch[1], rgbMatch[2], rgbMatch[3]].map(
+    (channelText?: Dynamic): Dynamic => parseInt(channelText, 10),
   );
-  if (value6.some((input2?: Dynamic): Dynamic => input2 > 255)) return input;
-  let value7: Dynamic = `#${value6.map((input2?: Dynamic): Dynamic => input2.toString(16).padStart(2, "0")).join("")}`;
-  if (value5[4] != null) {
-    let value8: Dynamic = value5[4].endsWith("%")
-      ? parseFloat(value5[4]) / 100
-      : parseFloat(value5[4]);
-    if (!Number.isFinite(value8) || value8 < 0 || value8 > 1) return input;
-    value8 < 1 &&
-      (value7 += Math.round(value8 * 255)
+  if (channels.some((channel?: Dynamic): Dynamic => channel > 255)) return colorValue;
+  let hexColor: Dynamic = `#${channels.map((channel?: Dynamic): Dynamic => channel.toString(16).padStart(2, "0")).join("")}`;
+  if (rgbMatch[4] != null) {
+    let alpha: Dynamic = rgbMatch[4].endsWith("%")
+      ? parseFloat(rgbMatch[4]) / 100
+      : parseFloat(rgbMatch[4]);
+    if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) return colorValue;
+    alpha < 1 &&
+      (hexColor += Math.round(alpha * 255)
         .toString(16)
         .padStart(2, "0"));
   }
-  return value7.toUpperCase();
+  return hexColor.toUpperCase();
 }
-function splitColorAlpha(input?: Dynamic): Dynamic {
-  let value: Dynamic = /^#([0-9a-f]{6})([0-9a-f]{2})$/i.exec(input.trim());
-  if (!value)
+function splitColorAlpha(colorValue?: Dynamic): Dynamic {
+  let hexAlphaMatch: Dynamic = /^#([0-9a-f]{6})([0-9a-f]{2})$/i.exec(colorValue.trim());
+  if (!hexAlphaMatch)
     return {
-      main: input,
+      main: colorValue,
     };
-  let value2: Dynamic = parseInt(value[2], 16) / 255,
-    value3: Dynamic = ("#" + value[1]).toUpperCase();
-  return value2 >= 1
+  let alpha: Dynamic = parseInt(hexAlphaMatch[2], 16) / 255,
+    mainColor: Dynamic = ("#" + hexAlphaMatch[1]).toUpperCase();
+  return alpha >= 1
     ? {
-        main: value3,
+        main: mainColor,
       }
     : {
-        main: value3,
-        alphaPct: Math.round(value2 * 100) + "%",
+        main: mainColor,
+        alphaPct: Math.round(alpha * 100) + "%",
       };
 }
-function normalizeFontFamilyList(input?: Dynamic): Dynamic {
-  return input
+function normalizeFontFamilyList(fontFamilies?: Dynamic): Dynamic {
+  return fontFamilies
     .split(",")
     .map(
-      (input2?: Dynamic): Dynamic =>
-        input2.trim().replace(/^['"]|['"]$/g, ""),
+      (fontFamily?: Dynamic): Dynamic =>
+        fontFamily.trim().replace(/^['"]|['"]$/g, ""),
     )
     .filter(Boolean)
     .join(", ");

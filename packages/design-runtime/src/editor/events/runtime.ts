@@ -7,8 +7,8 @@ import { OutlineAnnotationsResolvedValue } from "../outline/annotations";
 function getEditorEventRuntime(): Dynamic {
   return OutlineAnnotationsResolvedValue;
 }
-function emitEditorEvent(input?: Dynamic, options?: Dynamic): Dynamic {
-  getEditorEventRuntime().emitOmEvent(input, options);
+function emitEditorEvent(eventName?: Dynamic, eventDetail?: Dynamic): Dynamic {
+  getEditorEventRuntime().emitOmEvent(eventName, eventDetail);
   return true;
 }
 export {

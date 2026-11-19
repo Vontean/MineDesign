@@ -22,24 +22,24 @@ function resizeRect(
   min: Size,
   max: Size,
 ): Rectangle {
-  let { x: value2, y: value3, w: value4, h: value5 } = rect;
+  let { x: newX, y: newY, w: newWidth, h: newHeight } = rect;
   handle.x !== null &&
-    ((value4 = Math.max(
+    ((newWidth = Math.max(
       min.w,
       Math.min(rect.w + (handle.x === "right" ? dx : -dx), max.w),
     )),
-    handle.x === "left" && (value2 = rect.x + (rect.w - value4)));
+    handle.x === "left" && (newX = rect.x + (rect.w - newWidth)));
   handle.y !== null &&
-    ((value5 = Math.max(
+    ((newHeight = Math.max(
       min.h,
       Math.min(rect.h + (handle.y === "bottom" ? dy : -dy), max.h),
     )),
-    handle.y === "top" && (value3 = rect.y + (rect.h - value5)));
+    handle.y === "top" && (newY = rect.y + (rect.h - newHeight)));
   return {
-    x: value2,
-    y: value3,
-    w: value4,
-    h: value5,
+    x: newX,
+    y: newY,
+    w: newWidth,
+    h: newHeight,
   };
 }
 function resizeRectKeepingAspect(
@@ -50,7 +50,7 @@ function resizeRectKeepingAspect(
   min: Size,
   max: Size,
 ): Rectangle {
-  let value2 = resizeRect(
+  let freeResized = resizeRect(
       rect,
       handle,
       dx,
@@ -64,26 +64,26 @@ function resizeRectKeepingAspect(
         h: 1 / 0,
       },
     ),
-    [items, items2] = [value2.w / rect.w, value2.h / rect.h],
-    value3 = Math.abs(items - 1) >= Math.abs(items2 - 1) ? items : items2;
-  value3 = Math.min(value3, max.w / rect.w, max.h / rect.h);
-  value3 = Math.max(value3, min.w / rect.w, min.h / rect.h);
-  let [items3, items4] = [rect.w * value3, rect.h * value3];
+    [scaleX, scaleY] = [freeResized.w / rect.w, freeResized.h / rect.h],
+    scale = Math.abs(scaleX - 1) >= Math.abs(scaleY - 1) ? scaleX : scaleY;
+  scale = Math.min(scale, max.w / rect.w, max.h / rect.h);
+  scale = Math.max(scale, min.w / rect.w, min.h / rect.h);
+  let [scaledWidth, scaledHeight] = [rect.w * scale, rect.h * scale];
   return {
-    x: handle.x === "left" ? rect.x + rect.w - items3 : rect.x,
-    y: handle.y === "top" ? rect.y + rect.h - items4 : rect.y,
-    w: items3,
-    h: items4,
+    x: handle.x === "left" ? rect.x + rect.w - scaledWidth : rect.x,
+    y: handle.y === "top" ? rect.y + rect.h - scaledHeight : rect.y,
+    w: scaledWidth,
+    h: scaledHeight,
   };
 }
 function canStartCanvasDrag(event?: Dynamic): Dynamic {
   if (event.button !== 0) return false;
   let target: Dynamic = event.target,
-    value: Dynamic =
+    blockingControl: Dynamic =
       target && typeof target.closest == "function"
         ? target.closest("button, a, input, select, textarea")
         : null;
-  if (value !== null && !value.hasAttribute("data-drag-surface"))
+  if (blockingControl !== null && !blockingControl.hasAttribute("data-drag-surface"))
     return false;
   event.preventDefault();
   let activeElement: Dynamic = (document as Dynamic).activeElement;
@@ -94,19 +94,19 @@ function canStartCanvasDrag(event?: Dynamic): Dynamic {
 }
 function unionRects(rects: readonly Rectangle[]): Rectangle | null {
   if (rects.length === 0) return null;
-  let [items2, items3, items4, items5] = [1 / 0, 1 / 0, -1 / 0, -1 / 0];
-  for (let value of rects)
-    [items2, items3, items4, items5] = [
-      Math.min(items2, value.x),
-      Math.min(items3, value.y),
-      Math.max(items4, value.x + value.w),
-      Math.max(items5, value.y + value.h),
+  let [minX, minY, maxX, maxY] = [1 / 0, 1 / 0, -1 / 0, -1 / 0];
+  for (let rect of rects)
+    [minX, minY, maxX, maxY] = [
+      Math.min(minX, rect.x),
+      Math.min(minY, rect.y),
+      Math.max(maxX, rect.x + rect.w),
+      Math.max(maxY, rect.y + rect.h),
     ];
   return {
-    x: items2,
-    y: items3,
-    w: items4 - items2,
-    h: items5 - items3,
+    x: minX,
+    y: minY,
+    w: maxX - minX,
+    h: maxY - minY,
   };
 }
 function transformPointBetweenRects(
@@ -114,13 +114,13 @@ function transformPointBetweenRects(
   from: Rectangle,
   to: Rectangle,
 ): Point {
-  let [items, items2] = [
+  let [scaleX, scaleY] = [
     from.w > 0 ? to.w / from.w : 1,
     from.h > 0 ? to.h / from.h : 1,
   ];
   return {
-    x: to.x + (point.x - from.x) * items,
-    y: to.y + (point.y - from.y) * items2,
+    x: to.x + (point.x - from.x) * scaleX,
+    y: to.y + (point.y - from.y) * scaleY,
   };
 }
 function transformRectBetweenRects(
@@ -128,52 +128,52 @@ function transformRectBetweenRects(
   from: Rectangle,
   to: Rectangle,
 ): Rectangle {
-  let [items, items2] = [
+  let [scaleX, scaleY] = [
     from.w > 0 ? to.w / from.w : 1,
     from.h > 0 ? to.h / from.h : 1,
   ];
   return {
-    x: to.x + (rect.x - from.x) * items,
-    y: to.y + (rect.y - from.y) * items2,
-    w: rect.w * items,
-    h: rect.h * items2,
+    x: to.x + (rect.x - from.x) * scaleX,
+    y: to.y + (rect.y - from.y) * scaleY,
+    w: rect.w * scaleX,
+    h: rect.h * scaleY,
   };
 }
 function selectionResizeLimits(
   size: Size,
   members: readonly ResizeMember[],
 ): SizeLimits {
-  let [items, items2, items3, items4] = [0, 0, 1 / 0, 1 / 0];
-  for (let value of members) {
-    value.w > 0 &&
-      value.min?.w !== undefined &&
-      value.w >= value.min.w &&
-      (items = Math.max(items, value.min.w / value.w));
-    value.h > 0 &&
-      value.min?.h !== undefined &&
-      value.h >= value.min.h &&
-      (items2 = Math.max(items2, value.min.h / value.h));
-    value.w > 0 &&
-      value.max?.w !== undefined &&
-      value.w <= value.max.w &&
-      (items3 = Math.min(items3, value.max.w / value.w));
-    value.h > 0 &&
-      value.max?.h !== undefined &&
-      value.h <= value.max.h &&
-      (items4 = Math.min(items4, value.max.h / value.h));
+  let [minScaleW, minScaleH, maxScaleW, maxScaleH] = [0, 0, 1 / 0, 1 / 0];
+  for (let member of members) {
+    member.w > 0 &&
+      member.min?.w !== undefined &&
+      member.w >= member.min.w &&
+      (minScaleW = Math.max(minScaleW, member.min.w / member.w));
+    member.h > 0 &&
+      member.min?.h !== undefined &&
+      member.h >= member.min.h &&
+      (minScaleH = Math.max(minScaleH, member.min.h / member.h));
+    member.w > 0 &&
+      member.max?.w !== undefined &&
+      member.w <= member.max.w &&
+      (maxScaleW = Math.min(maxScaleW, member.max.w / member.w));
+    member.h > 0 &&
+      member.max?.h !== undefined &&
+      member.h <= member.max.h &&
+      (maxScaleH = Math.min(maxScaleH, member.max.h / member.h));
   }
-  let callback: (dimension: number, scale: number) => number = (
-    input2,
-    options2,
-  ) => (options2 === 1 / 0 ? 1 / 0 : input2 * options2);
+  let scaleLimit: (dimension: number, scale: number) => number = (
+    dimension,
+    scale,
+  ) => (scale === 1 / 0 ? 1 / 0 : dimension * scale);
   return {
     min: {
-      w: size.w * items,
-      h: size.h * items2,
+      w: size.w * minScaleW,
+      h: size.h * minScaleH,
     },
     max: {
-      w: callback(size.w, items3),
-      h: callback(size.h, items4),
+      w: scaleLimit(size.w, maxScaleW),
+      h: scaleLimit(size.h, maxScaleH),
     },
   };
 }

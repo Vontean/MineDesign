@@ -8,24 +8,24 @@ import { toModuleNamespace } from "../../module-helpers";
 var reactHooksElementAndDismissal: Dynamic;
 var reactHooksElementAndDismissal_2: Dynamic;
 var HooksElementAndDismissalSubscribers: Dynamic;
-function useElementById(input?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0, reactHooksElementAndDismissal.useState)(
-    (): Dynamic => (document as Dynamic).getElementById(input),
+function useElementById(elementId?: Dynamic): Dynamic {
+  let [element, setElement]: Dynamic = (0, reactHooksElementAndDismissal.useState)(
+    (): Dynamic => (document as Dynamic).getElementById(elementId),
   );
   (0, reactHooksElementAndDismissal.useLayoutEffect)((): Dynamic => {
-    let value3: Dynamic = (document as Dynamic).getElementById(input);
-    value2(
-      (input2?: Dynamic): Dynamic => (input2 === value3 ? input2 : value3),
+    let foundElement: Dynamic = (document as Dynamic).getElementById(elementId);
+    setElement(
+      (previousElement?: Dynamic): Dynamic => (previousElement === foundElement ? previousElement : foundElement),
     );
   });
-  return value;
+  return element;
 }
-function useLiveDismissalGuard(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactHooksElementAndDismissal_2.useRef)(input);
-  value.current = input;
+function useLiveDismissalGuard(dismissalGuard?: Dynamic): Dynamic {
+  let guardRef: Dynamic = (0, reactHooksElementAndDismissal_2.useRef)(dismissalGuard);
+  guardRef.current = dismissalGuard;
   (0, reactHooksElementAndDismissal_2.useEffect)((): Dynamic => {
     let callback: Dynamic = (): Dynamic =>
-      typeof value.current == "function" ? value.current() : value.current;
+      typeof guardRef.current == "function" ? guardRef.current() : guardRef.current;
     HooksElementAndDismissalSubscribers.add(callback);
     return (): Dynamic => {
       HooksElementAndDismissalSubscribers.delete(callback);
@@ -34,7 +34,7 @@ function useLiveDismissalGuard(input?: Dynamic): Dynamic {
   npm_useEventListener_bc(
     "beforeunload",
     (event?: Dynamic): Dynamic => {
-      (typeof input == "function" ? input() : input) &&
+      (typeof dismissalGuard == "function" ? dismissalGuard() : dismissalGuard) &&
         (event.preventDefault(), (event.returnValue = ""));
     },
   );

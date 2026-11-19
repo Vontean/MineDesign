@@ -10,13 +10,13 @@ var reactHooksLatestCallback_2: Dynamic;
 var reactHooksLatestCallback_3: Dynamic;
 var reactHooksLatestCallback_4: Dynamic;
 var jsxHooksLatestCallback: Dynamic;
-function useLatestCallback(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactHooksLatestCallback.useRef)(input);
+function useLatestCallback(callback?: Dynamic): Dynamic {
+  let callbackRef: Dynamic = (0, reactHooksLatestCallback.useRef)(callback);
   (0, reactHooksLatestCallback.useInsertionEffect)((): Dynamic => {
-    value.current = input;
+    callbackRef.current = callback;
   });
   return (0, reactHooksLatestCallback.useCallback)(
-    (...input2: Dynamic[]): Dynamic => value.current(...input2),
+    (...callbackArgs: Dynamic[]): Dynamic => callbackRef.current(...callbackArgs),
     [],
   );
 }

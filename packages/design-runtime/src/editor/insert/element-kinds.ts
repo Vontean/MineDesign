@@ -10,36 +10,36 @@ var InsertElementKindsSvgRectCircleSet: Dynamic;
 var InsertElementKindsSubscribers_2: Dynamic;
 var InsertElementKindsPathLinePolylineSet: Dynamic;
 var InsertElementKindsEvery: Dynamic;
-function classifyElementStyleKind(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.toLowerCase();
-  return InsertElementKindsSubscribers.has(value)
+function classifyElementStyleKind(tagName?: Dynamic): Dynamic {
+  let lowerTagName: Dynamic = tagName.toLowerCase();
+  return InsertElementKindsSubscribers.has(lowerTagName)
     ? "text"
-    : value === "img"
+    : lowerTagName === "img"
       ? "image"
-      : InsertElementKindsPathLinePolylineSet.has(value)
+      : InsertElementKindsPathLinePolylineSet.has(lowerTagName)
         ? "line"
-        : InsertElementKindsSvgRectCircleSet.has(value)
+        : InsertElementKindsSvgRectCircleSet.has(lowerTagName)
           ? "shape"
-          : InsertElementKindsSubscribers_2.has(value)
+          : InsertElementKindsSubscribers_2.has(lowerTagName)
             ? "box"
             : "other";
 }
-function isTextCapableElement(element?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = element.tagName.toLowerCase();
-  return InsertElementKindsSubscribers.has(value) ||
-    (InsertElementKindsSubscribers_2.has(value) && options) ||
-    (value === "div" &&
+function isTextCapableElement(element?: Dynamic, allowContainerText?: Dynamic): Dynamic {
+  let lowerTagName: Dynamic = element.tagName.toLowerCase();
+  return InsertElementKindsSubscribers.has(lowerTagName) ||
+    (InsertElementKindsSubscribers_2.has(lowerTagName) && allowContainerText) ||
+    (lowerTagName === "div" &&
       element.children.length === 1 &&
       /^(ul|ol)$/i.test(element.children[0].tagName) &&
       [...element.children[0].children].every(
-        (input?: Dynamic): Dynamic =>
-          /^li$/i.test(input.tagName) && InsertElementKindsEvery(input),
+        (listItem?: Dynamic): Dynamic =>
+          /^li$/i.test(listItem.tagName) && InsertElementKindsEvery(listItem),
       ))
     ? "text"
-    : value === "img"
+    : lowerTagName === "img"
       ? "image"
-      : InsertElementKindsPathLinePolylineSet.has(value) ||
-          (value === "svg" &&
+      : InsertElementKindsPathLinePolylineSet.has(lowerTagName) ||
+          (lowerTagName === "svg" &&
             ((/(^|;)\s*fill:\s*none/.test(
               element.getAttribute("style") ?? "",
             ) &&
@@ -47,9 +47,9 @@ function isTextCapableElement(element?: Dynamic, options?: Dynamic): Dynamic {
                 null) ||
               inspectSvgArrow(element) !== null))
         ? "line"
-        : InsertElementKindsSvgRectCircleSet.has(value)
+        : InsertElementKindsSvgRectCircleSet.has(lowerTagName)
           ? "shape"
-          : InsertElementKindsSubscribers_2.has(value)
+          : InsertElementKindsSubscribers_2.has(lowerTagName)
             ? "box"
             : "other";
 }
@@ -121,11 +121,11 @@ export function installEditorInsertElementKinds(): () => void {
       "polyline",
       "hr",
     ]);
-    InsertElementKindsEvery = (input?: Dynamic): Dynamic =>
-      [...input.querySelectorAll("*")].every(
-        (input2?: Dynamic): Dynamic =>
+    InsertElementKindsEvery = (element?: Dynamic): Dynamic =>
+      [...element.querySelectorAll("*")].every(
+        (descendant?: Dynamic): Dynamic =>
           HtmlTagNormalizationSubscribers.has(
-            input2.tagName.toLowerCase(),
+            descendant.tagName.toLowerCase(),
           ),
       );
   };

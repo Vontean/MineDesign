@@ -11,185 +11,185 @@ import { pickerElementSignature } from "../picker/runtime-script";
 import { SelectionActionsHelmetScHelmetPattern } from "../selection/actions";
 
 function fileDropPosition(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  viewport?: Dynamic,
+  cascadeIndex?: Dynamic,
+  itemWidth?: Dynamic,
+  itemHeight?: Dynamic,
 ): Dynamic {
   return {
     left:
       Math.max(
         0,
         Math.min(
-          Math.round(input.x - context / 2) + options * 24,
-          input.w - context,
+          Math.round(viewport.x - itemWidth / 2) + cascadeIndex * 24,
+          viewport.w - itemWidth,
         ),
-      ) + input.sx,
+      ) + viewport.sx,
     top:
       Math.max(
         0,
         Math.min(
-          Math.round(input.y - value / 2) + options * 24,
-          input.h - value,
+          Math.round(viewport.y - itemHeight / 2) + cascadeIndex * 24,
+          viewport.h - itemHeight,
         ),
-      ) + input.sy,
+      ) + viewport.sy,
   };
 }
 function isAbsolutelyPositionedModelElement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  model?: Dynamic,
+  tid?: Dynamic,
+  isStrict: Dynamic = false,
 ): Dynamic {
-  let value: Dynamic = input.element(options);
+  let element: Dynamic = model.element(tid);
   return (
-    value != null &&
-    isUnconstrainedAbsoluteElement(value, context)
+    element != null &&
+    isUnconstrainedAbsoluteElement(element, isStrict)
   );
 }
 function isAbsolutelyPositionedHtml(
-  input?: Dynamic,
-  options: Dynamic = document,
+  html?: Dynamic,
+  doc: Dynamic = document,
 ): Dynamic {
-  let value: Dynamic = singlePastedRootElement(input, options);
+  let rootElement: Dynamic = singlePastedRootElement(html, doc);
   return (
-    value != null && isUnconstrainedAbsoluteElement(value, true)
+    rootElement != null && isUnconstrainedAbsoluteElement(rootElement, true)
   );
 }
-function parseHtmlFragment(input?: Dynamic, doc?: Dynamic): Dynamic {
-  let value: Dynamic = doc.createElement("template");
-  value.innerHTML = toParserHtml(input);
-  return value.content;
+function parseHtmlFragment(html?: Dynamic, doc?: Dynamic): Dynamic {
+  let template: Dynamic = doc.createElement("template");
+  template.innerHTML = toParserHtml(html);
+  return template.content;
 }
 function fragmentContentElements(
-  input?: Dynamic,
-  options?: Dynamic,
+  html?: Dynamic,
+  doc?: Dynamic,
 ): Dynamic {
-  return [...parseHtmlFragment(input, options).children].filter(
-    (input2?: Dynamic): Dynamic =>
-      !SelectionActionsHelmetScHelmetPattern.test(input2.tagName),
+  return [...parseHtmlFragment(html, doc).children].filter(
+    (element?: Dynamic): Dynamic =>
+      !SelectionActionsHelmetScHelmetPattern.test(element.tagName),
   );
 }
 function wrapInlinePastedHtml(
-  input?: Dynamic,
-  options: Dynamic = document,
+  html?: Dynamic,
+  doc: Dynamic = document,
 ): Dynamic {
-  let value: Dynamic = parseHtmlFragment(input, options);
-  return value.children.length > 0 &&
-    isInlineTextContainer(value) &&
-    ![...value.children].some(
-      (input2?: Dynamic): Dynamic =>
-        isUnconstrainedAbsoluteElement(input2, false),
+  let fragment: Dynamic = parseHtmlFragment(html, doc);
+  return fragment.children.length > 0 &&
+    isInlineTextContainer(fragment) &&
+    ![...fragment.children].some(
+      (child?: Dynamic): Dynamic =>
+        isUnconstrainedAbsoluteElement(child, false),
     )
-    ? `<p style="margin: 0">${input}</p>`
-    : input;
+    ? `<p style="margin: 0">${html}</p>`
+    : html;
 }
 function pastedRootElementCount(
-  input?: Dynamic,
-  options: Dynamic = document,
+  html?: Dynamic,
+  doc: Dynamic = document,
 ): Dynamic {
-  return fragmentContentElements(input, options).length;
+  return fragmentContentElements(html, doc).length;
 }
 function singlePastedRootElement(
-  input?: Dynamic,
-  options?: Dynamic,
+  html?: Dynamic,
+  doc?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = fragmentContentElements(input, options);
-  return value.length === 1 ? value[0] : null;
+  let elements: Dynamic = fragmentContentElements(html, doc);
+  return elements.length === 1 ? elements[0] : null;
 }
 function containsFlowPastedElements(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = document,
+  hasBlocker?: Dynamic,
+  html?: Dynamic,
+  doc: Dynamic = document,
 ): Dynamic {
   return (
-    !input &&
-    fragmentContentElements(options, context).some(
-      (input2?: Dynamic): Dynamic =>
-        !isUnconstrainedAbsoluteElement(input2, true),
+    !hasBlocker &&
+    fragmentContentElements(html, doc).some(
+      (element?: Dynamic): Dynamic =>
+        !isUnconstrainedAbsoluteElement(element, true),
     )
   );
 }
 function pastedElementGeometry(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = document,
+  html?: Dynamic,
+  geometry?: Dynamic,
+  doc: Dynamic = document,
 ): Dynamic {
-  let value: Dynamic = singlePastedRootElement(input, context);
-  return value
+  let rootElement: Dynamic = singlePastedRootElement(html, doc);
+  return rootElement
     ? {
         tid: 0,
-        tag: readableTagName(value.tagName.toLowerCase()),
-        w: options.ew,
-        h: options.eh,
-        dx: options.ox - options.gx,
-        dy: options.oy - options.gy,
+        tag: readableTagName(rootElement.tagName.toLowerCase()),
+        w: geometry.ew,
+        h: geometry.eh,
+        dx: geometry.ox - geometry.gx,
+        dy: geometry.oy - geometry.gy,
       }
     : null;
 }
 function canFreezeSinglePaste(
-  input?: Dynamic,
-  items?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = document,
+  hasBlocker?: Dynamic,
+  pastedItems?: Dynamic,
+  html?: Dynamic,
+  hasOtherBlocker?: Dynamic,
+  doc: Dynamic = document,
 ): Dynamic {
   return (
-    !input &&
-    items.length === 1 &&
-    !value &&
-    singlePastedRootElement(context, extra) != null &&
-    !isAbsolutelyPositionedHtml(context, extra)
+    !hasBlocker &&
+    pastedItems.length === 1 &&
+    !hasOtherBlocker &&
+    singlePastedRootElement(html, doc) != null &&
+    !isAbsolutelyPositionedHtml(html, doc)
   );
 }
 function pasteParentTarget(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = document,
+  position?: Dynamic,
+  parentTarget?: Dynamic,
+  explicitTarget?: Dynamic,
+  html?: Dynamic,
+  doc: Dynamic = document,
 ): Dynamic {
-  return options == null
+  return parentTarget == null
     ? null
-    : context != null ||
-        (input === "root-end" && isAbsolutelyPositionedHtml(value, extra))
-      ? options
+    : explicitTarget != null ||
+        (position === "root-end" && isAbsolutelyPositionedHtml(html, doc))
+      ? parentTarget
       : null;
 }
 function rootDropContainer(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  artboard?: Dynamic,
+  startTid?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = context;
+  let topTid: Dynamic = startTid;
   for (
-    let value3: Dynamic = input.parentTid(value);
-    value3 != null && value3 !== options.page;
-    value3 = input.parentTid(value)
+    let parentTid: Dynamic = model.parentTid(topTid);
+    parentTid != null && parentTid !== artboard.page;
+    parentTid = model.parentTid(topTid)
   )
-    value = value3;
-  let value2: Dynamic = input.tagName(value) ?? "";
+    topTid = parentTid;
+  let topTagName: Dynamic = model.tagName(topTid) ?? "";
   return {
-    top: value,
+    top: topTid,
     takesFiles:
-      value2 !== "svg" &&
-      canContainHtmlTag(value2, "img") &&
-      !input.isTextEditable(value),
+      topTagName !== "svg" &&
+      canContainHtmlTag(topTagName, "img") &&
+      !model.isTextEditable(topTid),
   };
 }
 function emptyArtboardDropTarget(
-  input?: Dynamic,
-  options?: Dynamic,
+  model?: Dynamic,
+  droppedTags?: Dynamic,
 ): Dynamic {
-  if (input.rootText().trim() !== "") return null;
-  let value: Dynamic = input
+  if (model.rootText().trim() !== "") return null;
+  let flowChildren: Dynamic = model
     .childTids(null)
     .filter(
-      (input2?: Dynamic): Dynamic =>
+      (childTid?: Dynamic): Dynamic =>
         !SelectionActionsHelmetScHelmetPattern.test(
-          input.tagName(input2) ?? "",
-        ) && !isAbsolutelyPositionedModelElement(input, input2, true),
+          model.tagName(childTid) ?? "",
+        ) && !isAbsolutelyPositionedModelElement(model, childTid, true),
     );
-  if (value.length === 0)
+  if (flowChildren.length === 0)
     return {
       page: null,
       placement: {
@@ -197,54 +197,54 @@ function emptyArtboardDropTarget(
         position: "root-end",
       },
     };
-  let value2: Dynamic = value[0],
-    value3: Dynamic = value.length === 1 ? input.element(value2) : null;
+  let candidateTid: Dynamic = flowChildren[0],
+    candidateElement: Dynamic = flowChildren.length === 1 ? model.element(candidateTid) : null;
   if (
-    !value3 ||
-    !/^(div|section|main|article)$/.test(input.tagName(value2) ?? "") ||
-    input.isUneditable(value2)
+    !candidateElement ||
+    !/^(div|section|main|article)$/.test(model.tagName(candidateTid) ?? "") ||
+    model.isUneditable(candidateTid)
   )
     return null;
-  let value4: Dynamic = value3.cloneNode(true);
-  for (let value6 of [...value4.children] as Dynamic) {
-    let attribute: Dynamic = value6.getAttribute(DcTplAttribute);
+  let clonedElement: Dynamic = candidateElement.cloneNode(true);
+  for (let clonedChild of [...clonedElement.children] as Dynamic) {
+    let attribute: Dynamic = clonedChild.getAttribute(DcTplAttribute);
     attribute != null &&
-      isAbsolutelyPositionedModelElement(input, parseInt(attribute, 10)) &&
-      value6.remove();
+      isAbsolutelyPositionedModelElement(model, parseInt(attribute, 10)) &&
+      clonedChild.remove();
   }
   if (
     !pickerElementSignature(
-      value4,
-      (input2?: Dynamic): Dynamic =>
-        classifyElementStyleKind(input2) === "text",
+      clonedElement,
+      (element?: Dynamic): Dynamic =>
+        classifyElementStyleKind(element) === "text",
     )
   )
     return null;
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      [options2, ""].includes(
-        input.effectiveStyleValue(value2, input2).trim(),
+  let hasStyleValue: Dynamic = (property?: Dynamic, expectedValue?: Dynamic): Dynamic =>
+      [expectedValue, ""].includes(
+        model.effectiveStyleValue(candidateTid, property).trim(),
       ),
-    value5: Dynamic =
-      callback("position", "static") &&
+    canDropInto: Dynamic =
+      hasStyleValue("position", "static") &&
       ["transform", "filter", "contain"].every(
-        (input2?: Dynamic): Dynamic => callback(input2, "none"),
+        (property?: Dynamic): Dynamic => hasStyleValue(property, "none"),
       ) &&
-      callback("will-change", "auto") &&
-      (options == null ||
-        input
-          .topLevelTags(options)
+      hasStyleValue("will-change", "auto") &&
+      (droppedTags == null ||
+        model
+          .topLevelTags(droppedTags)
           .every(
-            (input2?: Dynamic): Dynamic =>
+            (droppedTag?: Dynamic): Dynamic =>
               canContainHtmlTag(
-                input.tagName(value2) ?? "",
-                input2,
+                model.tagName(candidateTid) ?? "",
+                droppedTag,
               ),
           ));
   return {
-    page: value2,
-    placement: value5
+    page: candidateTid,
+    placement: canDropInto
       ? {
-          targetTid: value2,
+          targetTid: candidateTid,
           position: "into",
         }
       : {

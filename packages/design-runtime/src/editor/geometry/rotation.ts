@@ -27,16 +27,16 @@ function angleBetweenPoints(
   return (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
 }
 function rotatePoint(point: Point, center: Point, degrees: number): Point {
-  let value = (degrees * Math.PI) / 180,
-    [items, items2, items3, items4] = [
-      Math.cos(value),
-      Math.sin(value),
+  let radians = (degrees * Math.PI) / 180,
+    [cosAngle, sinAngle, offsetX, offsetY] = [
+      Math.cos(radians),
+      Math.sin(radians),
       point.x - center.x,
       point.y - center.y,
     ];
   return {
-    x: center.x + items3 * items - items4 * items2,
-    y: center.y + items3 * items2 + items4 * items,
+    x: center.x + offsetX * cosAngle - offsetY * sinAngle,
+    y: center.y + offsetX * sinAngle + offsetY * cosAngle,
   };
 }
 function rotatedRectCorner(
@@ -44,23 +44,23 @@ function rotatedRectCorner(
   degrees: number,
   area: Rectangle,
 ): boolean {
-  let value = (degrees * Math.PI) / 180,
-    [items, items2, items3, items4] = [
-      Math.cos(value),
-      Math.sin(value),
+  let radians = (degrees * Math.PI) / 180,
+    [cosAngle, sinAngle, centerX, centerY] = [
+      Math.cos(radians),
+      Math.sin(radians),
       rect.x + rect.w / 2,
       rect.y + rect.h / 2,
     ],
-    value2 = [
+    rectCorners = [
       [-rect.w / 2, -rect.h / 2],
       [rect.w / 2, -rect.h / 2],
       [rect.w / 2, rect.h / 2],
       [-rect.w / 2, rect.h / 2],
-    ].map(([input2, input3]) => ({
-      x: items3 + input2! * items - input3! * items2,
-      y: items4 + input2! * items2 + input3! * items,
+    ].map(([cornerX, cornerY]) => ({
+      x: centerX + cornerX! * cosAngle - cornerY! * sinAngle,
+      y: centerY + cornerX! * sinAngle + cornerY! * cosAngle,
     })),
-    items5 = [
+    areaCorners = [
       {
         x: area.x,
         y: area.y,
@@ -78,7 +78,7 @@ function rotatedRectCorner(
         y: area.y + area.h,
       },
     ];
-  for (let value3 of [
+  for (let axis of [
     {
       x: 1,
       y: 0,
@@ -88,30 +88,30 @@ function rotatedRectCorner(
       y: 1,
     },
     {
-      x: items,
-      y: items2,
+      x: cosAngle,
+      y: sinAngle,
     },
     {
-      x: -items2,
-      y: items,
+      x: -sinAngle,
+      y: cosAngle,
     },
   ]) {
-    let callback: (points: readonly Point[]) => [number, number] = (
-        input2,
+    let projectRange: (points: readonly Point[]) => [number, number] = (
+        points,
       ) => {
-        let [items6, items7] = [1 / 0, -1 / 0];
-        for (let value8 of input2) {
-          let value9 = value8.x * value3.x + value8.y * value3.y;
-          [items6, items7] = [
-            Math.min(items6, value9),
-            Math.max(items7, value9),
+        let [minProjection, maxProjection] = [1 / 0, -1 / 0];
+        for (let point of points) {
+          let projection = point.x * axis.x + point.y * axis.y;
+          [minProjection, maxProjection] = [
+            Math.min(minProjection, projection),
+            Math.max(maxProjection, projection),
           ];
         }
-        return [items6, items7];
+        return [minProjection, maxProjection];
       },
-      [value4, value5] = callback(value2),
-      [value6, value7] = callback(items5);
-    if (value5 < value6 || value7 < value4) return false;
+      [rectMin, rectMax] = projectRange(rectCorners),
+      [areaMin, areaMax] = projectRange(areaCorners);
+    if (rectMax < areaMin || areaMax < rectMin) return false;
   }
   return true;
 }
@@ -125,36 +125,36 @@ function resizeRotatedRect(
   max: Size,
   keepAspect: boolean = false,
 ): Rectangle {
-  let value2 = (degrees * Math.PI) / 180,
-    [items, items2] = [Math.cos(value2), Math.sin(value2)],
-    [items3, items4] = [dx * items + dy * items2, -dx * items2 + dy * items],
-    value3 = keepAspect
+  let radians = (degrees * Math.PI) / 180,
+    [cosAngle, sinAngle] = [Math.cos(radians), Math.sin(radians)],
+    [localDx, localDy] = [dx * cosAngle + dy * sinAngle, -dx * sinAngle + dy * cosAngle],
+    resized = keepAspect
       ? resizeRectKeepingAspect(
           rect,
           handle,
-          items3,
-          items4,
+          localDx,
+          localDy,
           min,
           max,
         )
-      : resizeRect(rect, handle, items3, items4, min, max);
-  if (!degrees) return value3;
-  let [items5, items6] = [
+      : resizeRect(rect, handle, localDx, localDy, min, max);
+  if (!degrees) return resized;
+  let [signX, signY] = [
       handle.x === "left" ? 1 : handle.x === "right" ? -1 : 0,
       handle.y === "top" ? 1 : handle.y === "bottom" ? -1 : 0,
     ],
-    [items7, items8] = [(items5 * rect.w) / 2, (items6 * rect.h) / 2],
-    [items9, items10] = [(items5 * value3.w) / 2, (items6 * value3.h) / 2],
-    [items11, items12] = [rect.x + rect.w / 2, rect.y + rect.h / 2],
-    [items13, items14] = [
-      items11 + (items7 - items9) * items - (items8 - items10) * items2,
-      items12 + (items7 - items9) * items2 + (items8 - items10) * items,
+    [oldOffsetX, oldOffsetY] = [(signX * rect.w) / 2, (signY * rect.h) / 2],
+    [newOffsetX, newOffsetY] = [(signX * resized.w) / 2, (signY * resized.h) / 2],
+    [centerX, centerY] = [rect.x + rect.w / 2, rect.y + rect.h / 2],
+    [newCenterX, newCenterY] = [
+      centerX + (oldOffsetX - newOffsetX) * cosAngle - (oldOffsetY - newOffsetY) * sinAngle,
+      centerY + (oldOffsetX - newOffsetX) * sinAngle + (oldOffsetY - newOffsetY) * cosAngle,
     ];
   return {
-    x: items13 - value3.w / 2,
-    y: items14 - value3.h / 2,
-    w: value3.w,
-    h: value3.h,
+    x: newCenterX - resized.w / 2,
+    y: newCenterY - resized.h / 2,
+    w: resized.w,
+    h: resized.h,
   };
 }
 export {

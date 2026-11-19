@@ -3,182 +3,182 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 
-function createElementEditId(input?: Dynamic): Dynamic {
+function createElementEditId(editIndex?: Dynamic): Dynamic {
   return (
     "d" +
     Date.now().toString(36) +
     Math.random().toString(36).slice(2, 8) +
     "-" +
-    String(input)
+    String(editIndex)
   );
 }
 function snapTranslation(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  rect?: Dynamic,
+  guides?: Dynamic,
+  threshold?: Dynamic,
+  enabledAxes?: Dynamic,
 ): Dynamic {
   let state: Dynamic = {
     dx: 0,
     dy: 0,
     guides: [],
   };
-  for (let value2 of ["x", "y"] as Dynamic) {
-    if (value && !value[value2]) continue;
-    let value3: Dynamic = value2 === "x" ? input.x : input.y,
-      value4: Dynamic = value2 === "x" ? input.w : input.h,
-      items: Dynamic = [
+  for (let axis of ["x", "y"] as Dynamic) {
+    if (enabledAxes && !enabledAxes[axis]) continue;
+    let start: Dynamic = axis === "x" ? rect.x : rect.y,
+      size: Dynamic = axis === "x" ? rect.w : rect.h,
+      movingLines: Dynamic = [
         {
           kind: "edge",
-          at: value3,
+          at: start,
         },
         {
           kind: "center",
-          at: value3 + value4 / 2,
+          at: start + size / 2,
         },
         {
           kind: "edge",
-          at: value3 + value4,
+          at: start + size,
         },
       ],
-      value5: Dynamic = null;
-    for (let value6 of options as Dynamic)
+      bestSnap: Dynamic = null;
+    for (let guide of guides as Dynamic)
       if (
         !(
-          value6.axis !== value2 ||
-          !(typeof value6.pos == "number" && isFinite(value6.pos))
+          guide.axis !== axis ||
+          !(typeof guide.pos == "number" && isFinite(guide.pos))
         )
       )
-        for (let value7 of items as Dynamic) {
-          if (value7.kind !== value6.kind) continue;
-          let value8: Dynamic = value6.pos - value7.at,
-            value9: Dynamic = Math.abs(value8);
-          value9 <= context &&
-            (!value5 ||
-              value9 < value5.dist ||
-              (value9 === value5.dist &&
-                value6.kind === "center" &&
-                value5.line.kind !== "center")) &&
-            (value5 = {
-              adjust: value8,
-              dist: value9,
-              line: value6,
+        for (let movingLine of movingLines as Dynamic) {
+          if (movingLine.kind !== guide.kind) continue;
+          let adjustment: Dynamic = guide.pos - movingLine.at,
+            distance: Dynamic = Math.abs(adjustment);
+          distance <= threshold &&
+            (!bestSnap ||
+              distance < bestSnap.dist ||
+              (distance === bestSnap.dist &&
+                guide.kind === "center" &&
+                bestSnap.line.kind !== "center")) &&
+            (bestSnap = {
+              adjust: adjustment,
+              dist: distance,
+              line: guide,
             });
         }
-    value5 &&
-      (value2 === "x"
-        ? (state.dx = value5.adjust)
-        : (state.dy = value5.adjust),
-      state.guides.push(value5.line));
+    bestSnap &&
+      (axis === "x"
+        ? (state.dx = bestSnap.adjust)
+        : (state.dy = bestSnap.adjust),
+      state.guides.push(bestSnap.line));
   }
   return state;
 }
 function snapResize(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  rect?: Dynamic,
+  handle?: Dynamic,
+  dx?: Dynamic,
+  dy?: Dynamic,
+  guides?: Dynamic,
+  threshold?: Dynamic,
 ): Dynamic {
   let state: Dynamic = {
-    dx: context,
-    dy: value,
+    dx: dx,
+    dy: dy,
     guides: [],
   };
-  for (let value2 of ["x", "y"] as Dynamic) {
-    let value3: Dynamic = value2 === "x" ? options.x : options.y;
-    if (value3 === null) continue;
-    let value4: Dynamic = value2 === "x" ? context : value,
-      value5: Dynamic =
-        (value2 === "x"
-          ? value3 === "left"
-            ? input.x
-            : input.x + input.w
-          : value3 === "top"
-            ? input.y
-            : input.y + input.h) + value4,
-      value6: Dynamic = null;
-    for (let value7 of extra as Dynamic) {
+  for (let axis of ["x", "y"] as Dynamic) {
+    let handleSide: Dynamic = axis === "x" ? handle.x : handle.y;
+    if (handleSide === null) continue;
+    let delta: Dynamic = axis === "x" ? dx : dy,
+      movingEdge: Dynamic =
+        (axis === "x"
+          ? handleSide === "left"
+            ? rect.x
+            : rect.x + rect.w
+          : handleSide === "top"
+            ? rect.y
+            : rect.y + rect.h) + delta,
+      bestSnap: Dynamic = null;
+    for (let guide of guides as Dynamic) {
       if (
-        value7.axis !== value2 ||
-        value7.kind !== "edge" ||
-        !(typeof value7.pos == "number" && isFinite(value7.pos))
+        guide.axis !== axis ||
+        guide.kind !== "edge" ||
+        !(typeof guide.pos == "number" && isFinite(guide.pos))
       )
         continue;
-      let value8: Dynamic = value7.pos - value5,
-        value9: Dynamic = Math.abs(value8);
-      value9 <= detail &&
-        (!value6 || value9 < value6.dist) &&
-        (value6 = {
-          adjust: value8,
-          dist: value9,
-          line: value7,
+      let adjustment: Dynamic = guide.pos - movingEdge,
+        distance: Dynamic = Math.abs(adjustment);
+      distance <= threshold &&
+        (!bestSnap || distance < bestSnap.dist) &&
+        (bestSnap = {
+          adjust: adjustment,
+          dist: distance,
+          line: guide,
         });
     }
-    value6 &&
-      (value2 === "x"
-        ? (state.dx = value4 + value6.adjust)
-        : (state.dy = value4 + value6.adjust),
-      state.guides.push(value6.line));
+    bestSnap &&
+      (axis === "x"
+        ? (state.dx = delta + bestSnap.adjust)
+        : (state.dy = delta + bestSnap.adjust),
+      state.guides.push(bestSnap.line));
   }
   return state;
 }
 function activeResizeGuides(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  rect?: Dynamic,
+  handle?: Dynamic,
+  guides?: Dynamic,
 ): Dynamic {
-  return context.filter((input2?: Dynamic): Dynamic => {
-    let value: Dynamic = input2.axis === "x" ? options.x : options.y;
-    if (value === null) return false;
-    let value2: Dynamic =
-      input2.axis === "x"
-        ? value === "left"
-          ? input.x
-          : input.x + input.w
-        : value === "top"
-          ? input.y
-          : input.y + input.h;
-    return Math.abs(value2 - input2.pos) <= 0.5;
+  return guides.filter((guide?: Dynamic): Dynamic => {
+    let handleSide: Dynamic = guide.axis === "x" ? handle.x : handle.y;
+    if (handleSide === null) return false;
+    let edgePosition: Dynamic =
+      guide.axis === "x"
+        ? handleSide === "left"
+          ? rect.x
+          : rect.x + rect.w
+        : handleSide === "top"
+          ? rect.y
+          : rect.y + rect.h;
+    return Math.abs(edgePosition - guide.pos) <= 0.5;
   });
 }
-function rectangleSnapGuides(input?: Dynamic): Dynamic {
-  let items: Dynamic = [];
-  for (let value of input as Dynamic)
-    items.push(
+function rectangleSnapGuides(rects?: Dynamic): Dynamic {
+  let guides: Dynamic = [];
+  for (let rect of rects as Dynamic)
+    guides.push(
       {
         axis: "x",
-        pos: value.x,
+        pos: rect.x,
         kind: "edge",
       },
       {
         axis: "x",
-        pos: value.x + value.w / 2,
+        pos: rect.x + rect.w / 2,
         kind: "center",
       },
       {
         axis: "x",
-        pos: value.x + value.w,
+        pos: rect.x + rect.w,
         kind: "edge",
       },
       {
         axis: "y",
-        pos: value.y,
+        pos: rect.y,
         kind: "edge",
       },
       {
         axis: "y",
-        pos: value.y + value.h / 2,
+        pos: rect.y + rect.h / 2,
         kind: "center",
       },
       {
         axis: "y",
-        pos: value.y + value.h,
+        pos: rect.y + rect.h,
         kind: "edge",
       },
     );
-  return items;
+  return guides;
 }
 export {
   activeResizeGuides,

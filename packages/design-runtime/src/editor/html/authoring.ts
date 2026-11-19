@@ -19,98 +19,98 @@ var HtmlAuthoringTrTdThConfig: Dynamic;
 var HtmlAuthoringTableTheadTbodyConfig: Dynamic;
 var HtmlAuthoringSubscribers_4: Dynamic;
 var HtmlAuthoringLiDtDdSet: Dynamic;
-function stripLeadingCssAtRules(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.replace(/\/\*[\s\S]*?\*\//g, "").trim(),
-    value2: Dynamic =
+function stripLeadingCssAtRules(css?: Dynamic): Dynamic {
+  let strippedCss: Dynamic = css.replace(/\/\*[\s\S]*?\*\//g, "").trim(),
+    atRulePattern: Dynamic =
       /^@(import|charset)\b(?:[^;{}"'(]|"[^"]*"|'[^']*'|\([^)]*\))*;\s*/i;
   for (
-    let value3: Dynamic = value2.exec(value);
-    value3;
-    value3 = value2.exec(value)
+    let atRuleMatch: Dynamic = atRulePattern.exec(strippedCss);
+    atRuleMatch;
+    atRuleMatch = atRulePattern.exec(strippedCss)
   )
-    value = value.slice(value3[0].length);
-  return !/@(import|charset|namespace)\b/i.test(value);
+    strippedCss = strippedCss.slice(atRuleMatch[0].length);
+  return !/@(import|charset|namespace)\b/i.test(strippedCss);
 }
-function fromParserHtml(input?: Dynamic): Dynamic {
-  input = input.replace(
+function fromParserHtml(html?: Dynamic): Dynamic {
+  html = html.replace(
     new RegExp("(\\s)" + ScCamelValue + "([a-z0-9-]+)(\\s*=)", "g"),
     (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-    ): Dynamic => options + kebabToCamelCase(context) + value,
+      matchedText?: Dynamic,
+      leadingSpace?: Dynamic,
+      attributeName?: Dynamic,
+      equalsPart?: Dynamic,
+    ): Dynamic => leadingSpace + kebabToCamelCase(attributeName) + equalsPart,
   );
-  input = input.replace(/<sc-helmet(\s|>)/gi, "<helmet$1");
-  input = input.replace(/<\/sc-helmet\s*>/gi, "</helmet>");
-  for (let [value, value2] of Object.entries(
+  html = html.replace(/<sc-helmet(\s|>)/gi, "<helmet$1");
+  html = html.replace(/<\/sc-helmet\s*>/gi, "</helmet>");
+  for (let [parserTag, authoredTag] of Object.entries(
     HtmlTagNormalizationFromEntriesValue,
   ) as Dynamic)
-    input = input.replace(
-      new RegExp("(</?)" + value + "(?=[\\s>])", "gi"),
-      "$1" + value2,
+    html = html.replace(
+      new RegExp("(</?)" + parserTag + "(?=[\\s>])", "gi"),
+      "$1" + authoredTag,
     );
-  return input;
+  return html;
 }
-function normalizeAuthoredHtml(input?: Dynamic): Dynamic {
-  let value: Dynamic = (document as Dynamic).createElement("template");
-  value.innerHTML = toParserHtml(input);
-  return fromParserHtml(value.innerHTML);
+function normalizeAuthoredHtml(html?: Dynamic): Dynamic {
+  let template: Dynamic = (document as Dynamic).createElement("template");
+  template.innerHTML = toParserHtml(html);
+  return fromParserHtml(template.innerHTML);
 }
-function isInlineTextContainer(input?: Dynamic): Dynamic {
-  if ((input.textContent ?? "").trim() === "") return false;
-  for (let value of input.querySelectorAll("*") as Dynamic)
+function isInlineTextContainer(element?: Dynamic): Dynamic {
+  if ((element.textContent ?? "").trim() === "") return false;
+  for (let descendant of element.querySelectorAll("*") as Dynamic)
     if (
       !HtmlTagNormalizationSubscribers.has(
-        value.tagName.toLowerCase(),
+        descendant.tagName.toLowerCase(),
       )
     )
       return false;
   return true;
 }
-function isIconOnlyElement(input?: Dynamic): Dynamic {
+function isIconOnlyElement(element?: Dynamic): Dynamic {
   if (
-    input.closest("pre, code") ||
-    [...input.childNodes].some(
-      (input2?: Dynamic): Dynamic =>
-        input2.nodeType === 3 && (input2.nodeValue ?? "").trim() !== "",
+    element.closest("pre, code") ||
+    [...element.childNodes].some(
+      (childNode?: Dynamic): Dynamic =>
+        childNode.nodeType === 3 && (childNode.nodeValue ?? "").trim() !== "",
     )
   )
     return false;
-  let value: Dynamic = [...input.children].filter(
-      (input2?: Dynamic): Dynamic => !/^w?br$/i.test(input2.tagName),
+  let visibleChildren: Dynamic = [...element.children].filter(
+      (child?: Dynamic): Dynamic => !/^w?br$/i.test(child.tagName),
     ),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      (input2.textContent ?? "")
+    hasVisibleText: Dynamic = (child?: Dynamic): Dynamic =>
+      (child.textContent ?? "")
         .replace(HtmlAuthoringFFFFDFFFDPattern, "")
         .trim() !== "";
   return (
-    (value.length > 1 && value.filter(callback).length <= 1) ||
-    value.some(isIconOnlyElement)
+    (visibleChildren.length > 1 && visibleChildren.filter(hasVisibleText).length <= 1) ||
+    visibleChildren.some(isIconOnlyElement)
   );
 }
-function canContainHtmlChildren(input?: Dynamic): Dynamic {
-  return !HtmlAuthoringSubscribers_2.has(input.toLowerCase());
+function canContainHtmlChildren(tagName?: Dynamic): Dynamic {
+  return !HtmlAuthoringSubscribers_2.has(tagName.toLowerCase());
 }
-function canContainHtmlTag(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.toLowerCase(),
-    value2: Dynamic = options.toLowerCase();
+function canContainHtmlTag(parentTag?: Dynamic, childTag?: Dynamic): Dynamic {
+  let lowerParentTag: Dynamic = parentTag.toLowerCase(),
+    lowerChildTag: Dynamic = childTag.toLowerCase();
   return !(
-    !canContainHtmlChildren(value) ||
-    (value === "p" && HtmlAuthoringSubscribers_3.has(value2)) ||
-    (HtmlAuthoringSubscribers_4.has(value) &&
-      HtmlAuthoringLiDtDdSet.has(value2)) ||
-    (HtmlAuthoringH1H2H3Set.has(value) &&
-      HtmlAuthoringH1H2H3Set.has(value2)) ||
-    (value === value2 &&
-      (value === "a" ||
-        value === "form" ||
-        value === "button" ||
-        value === "label")) ||
-    (HtmlAuthoringTrTdThConfig[value2] &&
-      !HtmlAuthoringTrTdThConfig[value2].has(value)) ||
-    (HtmlAuthoringTableTheadTbodyConfig[value] &&
-      !HtmlAuthoringTableTheadTbodyConfig[value].has(value2))
+    !canContainHtmlChildren(lowerParentTag) ||
+    (lowerParentTag === "p" && HtmlAuthoringSubscribers_3.has(lowerChildTag)) ||
+    (HtmlAuthoringSubscribers_4.has(lowerParentTag) &&
+      HtmlAuthoringLiDtDdSet.has(lowerChildTag)) ||
+    (HtmlAuthoringH1H2H3Set.has(lowerParentTag) &&
+      HtmlAuthoringH1H2H3Set.has(lowerChildTag)) ||
+    (lowerParentTag === lowerChildTag &&
+      (lowerParentTag === "a" ||
+        lowerParentTag === "form" ||
+        lowerParentTag === "button" ||
+        lowerParentTag === "label")) ||
+    (HtmlAuthoringTrTdThConfig[lowerChildTag] &&
+      !HtmlAuthoringTrTdThConfig[lowerChildTag].has(lowerParentTag)) ||
+    (HtmlAuthoringTableTheadTbodyConfig[lowerParentTag] &&
+      !HtmlAuthoringTableTheadTbodyConfig[lowerParentTag].has(lowerChildTag))
   );
 }
 export {
@@ -142,7 +142,7 @@ export function installEditorHtmlAuthoring(): () => void {
     );
     HtmlAuthoringSubscribers = new Set(
       parseUtilityClassesValue.map(
-        (input?: Dynamic): Dynamic => input.className,
+        (utilityRule?: Dynamic): Dynamic => utilityRule.className,
       ),
     );
     DcTplAttribute = "data-dc-tpl";

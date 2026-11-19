@@ -7,11 +7,11 @@ var HtmlEscapingConfig: Dynamic;
 function escapeHtml(text?: Dynamic): Dynamic {
   return text.replace(
     /[&<>"']/g,
-    (input?: Dynamic): Dynamic => HtmlEscapingConfig[input],
+    (character?: Dynamic): Dynamic => HtmlEscapingConfig[character],
   );
 }
-function escapeHtmlAttributeValue(value?: Dynamic): Dynamic {
-  return value
+function escapeHtmlAttributeValue(attributeValue?: Dynamic): Dynamic {
+  return attributeValue
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")

@@ -8,88 +8,88 @@ import { escapeHtmlAttributeValue } from "./escaping";
 var HtmlDcPropsAmpLtGtConfig: Dynamic;
 var Value_3: Dynamic;
 var HtmlDcPropsItems: Dynamic;
-function decodeHtmlEntities(input?: Dynamic): Dynamic {
-  return input.replace(
+function decodeHtmlEntities(text?: Dynamic): Dynamic {
+  return text.replace(
     /&(amp|lt|gt|quot|apos|#[0-9]+|#[xX][0-9a-fA-F]+);/g,
-    (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      if (options[0] !== "#") return HtmlDcPropsAmpLtGtConfig[options];
-      let value: Dynamic =
-        options[1] === "x" || options[1] === "X"
-          ? parseInt(options.slice(2), 16)
-          : parseInt(options.slice(1), 10);
-      return value >= 128 && value <= 159
-        ? Value_3[value - 128]
-        : value === 0 || value > 1114111 || (value >= 55296 && value <= 57343)
+    (entity?: Dynamic, entityBody?: Dynamic): Dynamic => {
+      if (entityBody[0] !== "#") return HtmlDcPropsAmpLtGtConfig[entityBody];
+      let codePoint: Dynamic =
+        entityBody[1] === "x" || entityBody[1] === "X"
+          ? parseInt(entityBody.slice(2), 16)
+          : parseInt(entityBody.slice(1), 10);
+      return codePoint >= 128 && codePoint <= 159
+        ? Value_3[codePoint - 128]
+        : codePoint === 0 || codePoint > 1114111 || (codePoint >= 55296 && codePoint <= 57343)
           ? "\uFFFD"
-          : String.fromCodePoint(value);
+          : String.fromCodePoint(codePoint);
     },
   );
 }
-function getDcPropsJson(input?: Dynamic): Dynamic {
-  let value: Dynamic = parseDcHtmlDocument(input);
-  if (!value?.jsMatch) return null;
-  let value2: Dynamic = findHtmlTagEnd(
-    input,
-    value.jsMatch.index,
+function getDcPropsJson(source?: Dynamic): Dynamic {
+  let document: Dynamic = parseDcHtmlDocument(source);
+  if (!document?.jsMatch) return null;
+  let scriptTagEnd: Dynamic = findHtmlTagEnd(
+    source,
+    document.jsMatch.index,
   );
-  if (value2 === -1) return null;
-  let value3: Dynamic = input.slice(value.jsMatch.index, value2),
-    value4: Dynamic =
-      /\bdata-props\s*=\s*"((?:[^"\\]|\\.)*)"/i.exec(value3) ??
-      /\bdata-props\s*=\s*'((?:[^'\\]|\\.)*)'/i.exec(value3);
-  return value4 ? decodeHtmlEntities(value4[1]) : null;
+  if (scriptTagEnd === -1) return null;
+  let scriptTag: Dynamic = source.slice(document.jsMatch.index, scriptTagEnd),
+    propsMatch: Dynamic =
+      /\bdata-props\s*=\s*"((?:[^"\\]|\\.)*)"/i.exec(scriptTag) ??
+      /\bdata-props\s*=\s*'((?:[^'\\]|\\.)*)'/i.exec(scriptTag);
+  return propsMatch ? decodeHtmlEntities(propsMatch[1]) : null;
 }
-function setDcPropsJson(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = parseDcHtmlDocument(input);
-  if (!value) return null;
-  let value2: Dynamic = options.trim()
-    ? ` data-props="${escapeHtmlAttributeValue(options.trim())}"`
+function setDcPropsJson(source?: Dynamic, propsJson?: Dynamic): Dynamic {
+  let document: Dynamic = parseDcHtmlDocument(source);
+  if (!document) return null;
+  let propsAttribute: Dynamic = propsJson.trim()
+    ? ` data-props="${escapeHtmlAttributeValue(propsJson.trim())}"`
     : "";
-  if (!value.jsMatch) {
-    let value5: Dynamic = `<script type="${TextXDcValue}" data-dc-script${value2}><\/script>
+  if (!document.jsMatch) {
+    let scriptElement: Dynamic = `<script type="${TextXDcValue}" data-dc-script${propsAttribute}><\/script>
 `,
-      value6: Dynamic = input.lastIndexOf("</body>");
-    return value6 === -1
-      ? input + value5
-      : input.slice(0, value6) + value5 + input.slice(value6);
+      bodyCloseIndex: Dynamic = source.lastIndexOf("</body>");
+    return bodyCloseIndex === -1
+      ? source + scriptElement
+      : source.slice(0, bodyCloseIndex) + scriptElement + source.slice(bodyCloseIndex);
   }
-  let index: Dynamic = value.jsMatch.index,
-    value3: Dynamic = findHtmlTagEnd(input, index);
-  if (value3 === -1) return null;
-  let value4: Dynamic = input
-    .slice(index, value3)
+  let index: Dynamic = document.jsMatch.index,
+    scriptTagEnd: Dynamic = findHtmlTagEnd(source, index);
+  if (scriptTagEnd === -1) return null;
+  let strippedScriptTag: Dynamic = source
+    .slice(index, scriptTagEnd)
     .replace(/\s+data-props\s*=\s*"(?:[^"\\]|\\.)*"/i, "")
     .replace(/\s+data-props\s*=\s*'(?:[^'\\]|\\.)*'/i, "");
-  return input.slice(0, index) + value4 + value2 + input.slice(value3);
+  return source.slice(0, index) + strippedScriptTag + propsAttribute + source.slice(scriptTagEnd);
 }
 function setDcScript(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  source?: Dynamic,
+  document?: Dynamic,
+  script?: Dynamic,
 ): Dynamic {
-  if (!options.jsMatch) {
-    let value2: Dynamic = `<script type="${TextXDcValue}" data-dc-script>
-${context}
+  if (!document.jsMatch) {
+    let scriptElement: Dynamic = `<script type="${TextXDcValue}" data-dc-script>
+${script}
 <\/script>
 `,
-      value3: Dynamic = input.lastIndexOf("</body>");
-    return value3 === -1
-      ? input + value2
-      : input.slice(0, value3) + value2 + input.slice(value3);
+      bodyCloseIndex: Dynamic = source.lastIndexOf("</body>");
+    return bodyCloseIndex === -1
+      ? source + scriptElement
+      : source.slice(0, bodyCloseIndex) + scriptElement + source.slice(bodyCloseIndex);
   }
-  let jsMatch: Dynamic = options.jsMatch,
-    value: Dynamic = jsMatch[0].slice(0, jsMatch[0].indexOf(">") + 1);
+  let jsMatch: Dynamic = document.jsMatch,
+    openingTag: Dynamic = jsMatch[0].slice(0, jsMatch[0].indexOf(">") + 1);
   return (
-    input.slice(0, jsMatch.index) +
-    value +
-    context +
+    source.slice(0, jsMatch.index) +
+    openingTag +
+    script +
     "<\/script>" +
-    input.slice(jsMatch.index + jsMatch[0].length)
+    source.slice(jsMatch.index + jsMatch[0].length)
   );
 }
-function findForbiddenTemplateTag(input?: Dynamic): Dynamic {
-  for (let { re: value, label: value2 } of HtmlDcPropsItems as Dynamic)
-    if (value.test(input)) return value2;
+function findForbiddenTemplateTag(template?: Dynamic): Dynamic {
+  for (let { re: pattern, label: label } of HtmlDcPropsItems as Dynamic)
+    if (pattern.test(template)) return label;
   return null;
 }
 export {

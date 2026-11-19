@@ -14,341 +14,341 @@ var HtmlDcDocumentLocalName: Dynamic;
 var HtmlDcDocumentNextSibling: Dynamic;
 var HtmlDcDocumentClosest: Dynamic;
 var HtmlDcDocumentItems: Dynamic;
-function isDcHtmlDocument(input?: Dynamic): Dynamic {
+function isDcHtmlDocument(source?: Dynamic): Dynamic {
   return (
-    /<script[^>]*\bsrc\s*=\s*["'](?:\.\/)?support\.js["']/i.test(input) &&
-    /<x-dc[\s>]/i.test(input)
+    /<script[^>]*\bsrc\s*=\s*["'](?:\.\/)?support\.js["']/i.test(source) &&
+    /<x-dc[\s>]/i.test(source)
   );
 }
-function expandSelfClosingImports(input?: Dynamic): Dynamic {
-  return input.replace(
+function expandSelfClosingImports(html?: Dynamic): Dynamic {
+  return html.replace(
     HtmlDcDocumentXImportDcImportPattern,
-    (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-      `<${options}${context}></${options}>`,
+    (matchedText?: Dynamic, tagName?: Dynamic, attributes?: Dynamic): Dynamic =>
+      `<${tagName}${attributes}></${tagName}>`,
   );
 }
-function normalizeDcScriptType(input?: Dynamic): Dynamic {
-  let value: Dynamic = parseDcHtmlDocument(input);
-  if (!value?.jsMatch) return input;
-  let index: Dynamic = value.jsMatch.index,
-    value2: Dynamic = index + 7,
-    value3: Dynamic = findHtmlTagEnd(input, index);
+function normalizeDcScriptType(source?: Dynamic): Dynamic {
+  let document: Dynamic = parseDcHtmlDocument(source);
+  if (!document?.jsMatch) return source;
+  let index: Dynamic = document.jsMatch.index,
+    insertAt: Dynamic = index + 7,
+    tagEnd: Dynamic = findHtmlTagEnd(source, index);
   if (
-    index < value.templateEnd ||
-    value3 === -1 ||
-    !/[\s/]/.test(input[value2] ?? "")
+    index < document.templateEnd ||
+    tagEnd === -1 ||
+    !/[\s/]/.test(source[insertAt] ?? "")
   )
-    return input;
-  let value4: Dynamic = input
-    .slice(value2, value3)
+    return source;
+  let tagWithoutQuotedValues: Dynamic = source
+    .slice(insertAt, tagEnd)
     .replace(/"[^"]*"|'[^']*'/g, '""');
-  return /\stype\s*=/i.test(value4)
-    ? input
-    : input.slice(0, value2) +
+  return /\stype\s*=/i.test(tagWithoutQuotedValues)
+    ? source
+    : source.slice(0, insertAt) +
         ` type="${TextXDcValue}"` +
-        input.slice(value2);
+        source.slice(insertAt);
 }
-function artboardComponentName(input?: Dynamic): Dynamic {
-  return (input.split("/").pop() || input).replace(/\.dc\.html$/, "");
+function artboardComponentName(path?: Dynamic): Dynamic {
+  return (path.split("/").pop() || path).replace(/\.dc\.html$/, "");
 }
-function findHtmlTagEnd(items?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = null;
-  for (let value2: Dynamic = options; value2 < items.length; value2++) {
-    let value3: Dynamic = items[value2];
-    if (value) value3 === value && (value = null);
-    else if (value3 === '"' || value3 === "'") value = value3;
-    else if (value3 === ">") return value2;
+function findHtmlTagEnd(source?: Dynamic, startIndex?: Dynamic): Dynamic {
+  let openQuote: Dynamic = null;
+  for (let position: Dynamic = startIndex; position < source.length; position++) {
+    let character: Dynamic = source[position];
+    if (openQuote) character === openQuote && (openQuote = null);
+    else if (character === '"' || character === "'") openQuote = character;
+    else if (character === ">") return position;
   }
   return -1;
 }
-function findDcScriptStart(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = -1;
-  for (let value7 of input.matchAll(/<script/gi) as Dynamic)
-    value = value7.index;
-  let value2: Dynamic = value < options ? -1 : findHtmlTagEnd(input, value),
-    value3: Dynamic = input.search(/data-dc-script/i);
+function findDcScriptStart(source?: Dynamic, minIndex?: Dynamic): Dynamic {
+  let lastScriptIndex: Dynamic = -1;
+  for (let scriptTag of source.matchAll(/<script/gi) as Dynamic)
+    lastScriptIndex = scriptTag.index;
+  let tagEnd: Dynamic = lastScriptIndex < minIndex ? -1 : findHtmlTagEnd(source, lastScriptIndex),
+    markerIndex: Dynamic = source.search(/data-dc-script/i);
   if (
-    value2 === -1 ||
-    input.indexOf(">", value) !== value2 ||
-    value3 < value ||
-    value3 > value2 ||
-    !/\sdata-dc-script[\s=/>]/i.test(input.slice(value, value2 + 1)) ||
-    !/<\/script>/i.test(input.slice(value2)) ||
-    input.lastIndexOf("<\!--", value) > input.lastIndexOf("-->", value)
+    tagEnd === -1 ||
+    source.indexOf(">", lastScriptIndex) !== tagEnd ||
+    markerIndex < lastScriptIndex ||
+    markerIndex > tagEnd ||
+    !/\sdata-dc-script[\s=/>]/i.test(source.slice(lastScriptIndex, tagEnd + 1)) ||
+    !/<\/script>/i.test(source.slice(tagEnd)) ||
+    source.lastIndexOf("<\!--", lastScriptIndex) > source.lastIndexOf("-->", lastScriptIndex)
   )
     return null;
-  let value4: Dynamic = new RegExp(
+  let scriptPattern: Dynamic = new RegExp(
     HtmlDcDocumentScriptBdataDcScriptPattern.source,
     "iy",
   );
-  value4.lastIndex = value;
-  let value5: Dynamic = value4.exec(input),
-    value6: Dynamic = input.slice(value + (value5?.[0].length ?? 0));
-  return value5 && /^\s*(<\/body\s*>\s*)?(<\/html\s*>\s*)?$/i.test(value6)
-    ? value5
+  scriptPattern.lastIndex = lastScriptIndex;
+  let scriptMatch: Dynamic = scriptPattern.exec(source),
+    textAfterScript: Dynamic = source.slice(lastScriptIndex + (scriptMatch?.[0].length ?? 0));
+  return scriptMatch && /^\s*(<\/body\s*>\s*)?(<\/html\s*>\s*)?$/i.test(textAfterScript)
+    ? scriptMatch
     : null;
 }
-function isSourceOffsetCompatible(input?: Dynamic): Dynamic {
+function isSourceOffsetCompatible(html?: Dynamic): Dynamic {
   if (
-    /<plaintext[\s/>]/i.test(input) ||
+    /<plaintext[\s/>]/i.test(html) ||
     Object.keys(HtmlTagNormalizationSelectTableTbodyConfig).some(
-      (input2?: Dynamic): Dynamic =>
-        new RegExp("<" + input2 + "[\\s/>]", "i").test(input),
+      (tagName?: Dynamic): Dynamic =>
+        new RegExp("<" + tagName + "[\\s/>]", "i").test(html),
     )
   )
     return false;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    input.match(new RegExp(input2 + "[\\s/>]", "gi"))?.length ?? 0;
+  let countOccurrences: Dynamic = (name?: Dynamic): Dynamic =>
+    html.match(new RegExp(name + "[\\s/>]", "gi"))?.length ?? 0;
   return HtmlDcDocumentScriptStyleTextareaValues.every(
-    (input2?: Dynamic): Dynamic =>
-      callback("<" + input2) === callback("</" + input2),
+    (tagName?: Dynamic): Dynamic =>
+      countOccurrences("<" + tagName) === countOccurrences("</" + tagName),
   );
 }
-function sameDcScriptContent(input?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.replace(
+function sameDcScriptContent(xDcElement?: Dynamic, scriptMatch?: Dynamic): Dynamic {
+  let normalizeNewlines: Dynamic = (text?: Dynamic): Dynamic =>
+      text.replace(
         /\r\n?/g,
         `
 `,
       ),
-    nextElementSibling: Dynamic = input.nextElementSibling;
+    nextElementSibling: Dynamic = xDcElement.nextElementSibling;
   return (
     HtmlDcDocumentLocalName(nextElementSibling) &&
-    callback(nextElementSibling.textContent ?? "") === callback(options[1])
+    normalizeNewlines(nextElementSibling.textContent ?? "") === normalizeNewlines(scriptMatch[1])
   );
 }
 function verifyTemplateOffset(
-  input?: Dynamic,
+  source?: Dynamic,
   doc?: Dynamic,
-  context?: Dynamic,
+  marks?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.toLowerCase(),
-    value2: Dynamic = [
+  let lowerSource: Dynamic = source.toLowerCase(),
+    markerTag: Dynamic = [
       "x-dc-offset-mark",
       "x-dc-offset-mark-a",
       "x-dc-offset-mark-b",
-    ].find((input2?: Dynamic): Dynamic => !value.includes(input2));
-  if (value2 === undefined) return false;
-  let value3: Dynamic = input,
-    value4: Dynamic = context
+    ].find((candidate?: Dynamic): Dynamic => !lowerSource.includes(candidate));
+  if (markerTag === undefined) return false;
+  let markedSource: Dynamic = source,
+    insertions: Dynamic = marks
       .map(
-        (input2?: Dynamic, options?: Dynamic): Dynamic => ({
-          at: input2.at,
-          i: options,
+        (mark?: Dynamic, markIndex?: Dynamic): Dynamic => ({
+          at: mark.at,
+          i: markIndex,
         }),
       )
       .sort(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          options.at - input2.at,
+        (left?: Dynamic, right?: Dynamic): Dynamic =>
+          right.at - left.at,
       );
-  for (let value6 of value4 as Dynamic)
-    value3 =
-      value3.slice(0, value6.at) +
+  for (let insertion of insertions as Dynamic)
+    markedSource =
+      markedSource.slice(0, insertion.at) +
       "<" +
-      value2 +
+      markerTag +
       ' data-n="' +
-      value6.i +
+      insertion.i +
       '"></' +
-      value2 +
+      markerTag +
       ">" +
-      value3.slice(value6.at);
-  let value5: Dynamic = new DOMParser().parseFromString(value3, "text/html");
+      markedSource.slice(insertion.at);
+  let markedDocument: Dynamic = new DOMParser().parseFromString(markedSource, "text/html");
   if (
-    !context.every((input2?: Dynamic, options?: Dynamic): Dynamic => {
-      let value6: Dynamic = value5.querySelectorAll(
-        value2 + '[data-n="' + options + '"]',
+    !marks.every((mark?: Dynamic, markIndex?: Dynamic): Dynamic => {
+      let foundMarkers: Dynamic = markedDocument.querySelectorAll(
+        markerTag + '[data-n="' + markIndex + '"]',
       );
-      return value6.length === 1 && input2.holds(value6[0]);
+      return foundMarkers.length === 1 && mark.holds(foundMarkers[0]);
     })
   )
     return false;
-  for (let value6 of value5.querySelectorAll(value2) as Dynamic)
-    value6.remove();
-  value5.normalize();
+  for (let marker of markedDocument.querySelectorAll(markerTag) as Dynamic)
+    marker.remove();
+  markedDocument.normalize();
   doc.normalize();
-  return value5.documentElement.outerHTML === doc.documentElement.outerHTML;
+  return markedDocument.documentElement.outerHTML === doc.documentElement.outerHTML;
 }
 function validateSourceOffset(
-  input?: Dynamic,
-  options?: Dynamic,
-  items?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  source?: Dynamic,
+  templateStart?: Dynamic,
+  template?: Dynamic,
+  scriptMatch?: Dynamic,
+  isUnclosed?: Dynamic,
 ): Dynamic {
   if (typeof DOMParser === "undefined" || typeof document === "undefined")
     return false;
-  let value2: Dynamic = HtmlDcDocumentItems.findIndex(
-      (input2?: Dynamic): Dynamic => input2.src === input,
+  let cachedIndex: Dynamic = HtmlDcDocumentItems.findIndex(
+      (entry?: Dynamic): Dynamic => entry.src === source,
     ),
-    value3: Dynamic =
-      value2 === -1
+    cacheEntry: Dynamic =
+      cachedIndex === -1
         ? {
-            src: input,
-            ok: value4(),
+            src: source,
+            ok: checkOffsets(),
           }
-        : HtmlDcDocumentItems.splice(value2, 1)[0];
-  HtmlDcDocumentItems.unshift(value3);
+        : HtmlDcDocumentItems.splice(cachedIndex, 1)[0];
+  HtmlDcDocumentItems.unshift(cacheEntry);
   HtmlDcDocumentItems.length = Math.min(HtmlDcDocumentItems.length, 8);
-  return value3.ok;
-  function value4(): Dynamic {
-    let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        new DOMParser().parseFromString(input2, "text/html"),
-      value5: Dynamic = callback(input),
-      items2: Dynamic = [...value5.querySelectorAll("x-dc")],
-      value6: Dynamic = extra
+  return cacheEntry.ok;
+  function checkOffsets(): Dynamic {
+    let parseHtml: Dynamic = (html?: Dynamic): Dynamic =>
+        new DOMParser().parseFromString(html, "text/html"),
+      sourceDocument: Dynamic = parseHtml(source),
+      sourceXDcElements: Dynamic = [...sourceDocument.querySelectorAll("x-dc")],
+      xDcElements: Dynamic = isUnclosed
         ? [
-            ...callback(
-              input.slice(0, value.index) +
+            ...parseHtml(
+              source.slice(0, scriptMatch.index) +
                 `</x-dc>
 ` +
-                input.slice(value.index),
+                source.slice(scriptMatch.index),
             ).querySelectorAll("x-dc"),
           ]
-        : items2;
+        : sourceXDcElements;
     if (
-      items2.length !== 1 ||
-      value6.length !== 1 ||
-      !sameDcScriptContent(value6[0], value)
+      sourceXDcElements.length !== 1 ||
+      xDcElements.length !== 1 ||
+      !sameDcScriptContent(xDcElements[0], scriptMatch)
     )
       return false;
-    let value7: Dynamic = (document as Dynamic).createElement("template");
-    value7.innerHTML = toParserHtml(items);
-    let items3: Dynamic = [...value6[0].querySelectorAll("*")];
+    let templateElement: Dynamic = (document as Dynamic).createElement("template");
+    templateElement.innerHTML = toParserHtml(template);
+    let parsedElements: Dynamic = [...xDcElements[0].querySelectorAll("*")];
     if (
-      HtmlDcDocumentJoin(value7.content.querySelectorAll("*")) !==
-      HtmlDcDocumentJoin(items3)
+      HtmlDcDocumentJoin(templateElement.content.querySelectorAll("*")) !==
+      HtmlDcDocumentJoin(parsedElements)
     )
       return false;
-    if (extra) {
-      let items4: Dynamic = [...items2[0].querySelectorAll("*")];
+    if (isUnclosed) {
+      let sourceElements: Dynamic = [...sourceXDcElements[0].querySelectorAll("*")];
       if (
-        !HtmlDcDocumentLocalName(items4.at(-1)) ||
-        HtmlDcDocumentJoin(items4.slice(0, -1)) !== HtmlDcDocumentJoin(items3)
+        !HtmlDcDocumentLocalName(sourceElements.at(-1)) ||
+        HtmlDcDocumentJoin(sourceElements.slice(0, -1)) !== HtmlDcDocumentJoin(parsedElements)
       )
         return false;
     }
     let state: Dynamic = {
-        at: options,
-        holds: (input2?: Dynamic): Dynamic =>
-          input2.parentElement?.localName === "x-dc" &&
-          input2.previousSibling === null,
+        at: templateStart,
+        holds: (node?: Dynamic): Dynamic =>
+          node.parentElement?.localName === "x-dc" &&
+          node.previousSibling === null,
       },
-      value8: Dynamic = extra
+      otherMarks: Dynamic = isUnclosed
         ? [
             {
-              at: value.index,
-              holds: (input2?: Dynamic): Dynamic =>
-                !!input2.closest("x-dc") && HtmlDcDocumentNextSibling(input2),
+              at: scriptMatch.index,
+              holds: (node?: Dynamic): Dynamic =>
+                !!node.closest("x-dc") && HtmlDcDocumentNextSibling(node),
             },
           ]
         : [
             {
-              at: options + items.length,
+              at: templateStart + template.length,
               holds: HtmlDcDocumentClosest,
             },
             {
-              at: value.index,
-              holds: (input2?: Dynamic): Dynamic =>
-                HtmlDcDocumentNextSibling(input2) &&
-                input2.previousElementSibling?.localName === "x-dc",
+              at: scriptMatch.index,
+              holds: (node?: Dynamic): Dynamic =>
+                HtmlDcDocumentNextSibling(node) &&
+                node.previousElementSibling?.localName === "x-dc",
             },
           ];
-    return verifyTemplateOffset(input, value5, [state, ...value8]);
+    return verifyTemplateOffset(source, sourceDocument, [state, ...otherMarks]);
   }
 }
-function parseDcHtmlDocument(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.search(/<x-dc[\s>]/i);
-  if (value === -1) return null;
-  let value2: Dynamic = findHtmlTagEnd(input, value);
-  if (value2 === -1) return null;
-  let value3: Dynamic = value2 + 1,
-    value4: Dynamic = input.lastIndexOf("</x-dc>"),
-    callback: Dynamic = (): Dynamic => {
-      if (value4 < value2) return null;
-      let value13: Dynamic = new RegExp(
+function parseDcHtmlDocument(source?: Dynamic): Dynamic {
+  let xDcStart: Dynamic = source.search(/<x-dc[\s>]/i);
+  if (xDcStart === -1) return null;
+  let xDcTagEnd: Dynamic = findHtmlTagEnd(source, xDcStart);
+  if (xDcTagEnd === -1) return null;
+  let templateStart: Dynamic = xDcTagEnd + 1,
+    xDcCloseIndex: Dynamic = source.lastIndexOf("</x-dc>"),
+    parseClosedTemplate: Dynamic = (): Dynamic => {
+      if (xDcCloseIndex < xDcTagEnd) return null;
+      let closedScriptMatch: Dynamic = new RegExp(
         HtmlDcDocumentScriptBdataDcScriptPattern.source,
         "i",
-      ).exec(input);
+      ).exec(source);
       return {
-        template: input.slice(value3, value4),
-        templateStart: value3,
-        templateEnd: value4,
+        template: source.slice(templateStart, xDcCloseIndex),
+        templateStart: templateStart,
+        templateEnd: xDcCloseIndex,
         unclosed: false,
-        js: value13 ? value13[1] : "",
-        jsMatch: value13,
+        js: closedScriptMatch ? closedScriptMatch[1] : "",
+        jsMatch: closedScriptMatch,
       };
     },
-    value5: Dynamic =
-      value4 < value2 || /<script/i.test(input.slice(value2, value4))
-        ? findDcScriptStart(input, value2)
+    scriptMatch: Dynamic =
+      xDcCloseIndex < xDcTagEnd || /<script/i.test(source.slice(xDcTagEnd, xDcCloseIndex))
+        ? findDcScriptStart(source, xDcTagEnd)
         : null;
-  if (!value5 || (value4 >= value2 && value4 < value5.index))
-    return callback();
-  let value6: Dynamic = input.slice(value2, value5.index),
-    value7: Dynamic = value6.lastIndexOf("</x-dc>");
-  if (value7 !== -1) {
-    let value13: Dynamic = input.slice(value3, value2 + value7);
-    return !(value6.match(/<\/x-dc[\s/>]/gi)?.length === 1) ||
-      !validateSourceOffset(input, value3, value13, value5, false)
-      ? callback()
+  if (!scriptMatch || (xDcCloseIndex >= xDcTagEnd && xDcCloseIndex < scriptMatch.index))
+    return parseClosedTemplate();
+  let textAfterTag: Dynamic = source.slice(xDcTagEnd, scriptMatch.index),
+    closeIndexInText: Dynamic = textAfterTag.lastIndexOf("</x-dc>");
+  if (closeIndexInText !== -1) {
+    let closedTemplate: Dynamic = source.slice(templateStart, xDcTagEnd + closeIndexInText);
+    return !(textAfterTag.match(/<\/x-dc[\s/>]/gi)?.length === 1) ||
+      !validateSourceOffset(source, templateStart, closedTemplate, scriptMatch, false)
+      ? parseClosedTemplate()
       : {
-          template: value13,
-          templateStart: value3,
-          templateEnd: value2 + value7,
+          template: closedTemplate,
+          templateStart: templateStart,
+          templateEnd: xDcTagEnd + closeIndexInText,
           unclosed: false,
-          js: value5[1],
-          jsMatch: value5,
+          js: scriptMatch[1],
+          jsMatch: scriptMatch,
         };
   }
-  let value8: Dynamic = input
-      .slice(0, value5.index)
+  let xDcOpenCount: Dynamic = source
+      .slice(0, scriptMatch.index)
       .match(/<x-dc[\s/>]/gi)?.length,
-    value9: Dynamic =
-      input.lastIndexOf("<\!--", value) > input.lastIndexOf("-->", value),
-    value10: Dynamic = /<\/head[\s/>]|<body[\s/>]|<\/x-dc[\s/>]/i.test(
-      value6,
+    isInComment: Dynamic =
+      source.lastIndexOf("<\!--", xDcStart) > source.lastIndexOf("-->", xDcStart),
+    hasStructuralTag: Dynamic = /<\/head[\s/>]|<body[\s/>]|<\/x-dc[\s/>]/i.test(
+      textAfterTag,
     ),
-    value11: Dynamic =
-      value8 !== 1 || value9 || value10 || !isSourceOffsetCompatible(value6),
-    value12: Dynamic = input.slice(value3, value5.index);
-  return value11 ||
-    !validateSourceOffset(input, value3, value12, value5, true)
-    ? callback()
+    shouldFallBack: Dynamic =
+      xDcOpenCount !== 1 || isInComment || hasStructuralTag || !isSourceOffsetCompatible(textAfterTag),
+    unclosedTemplate: Dynamic = source.slice(templateStart, scriptMatch.index);
+  return shouldFallBack ||
+    !validateSourceOffset(source, templateStart, unclosedTemplate, scriptMatch, true)
+    ? parseClosedTemplate()
     : {
-        template: value12,
-        templateStart: value3,
-        templateEnd: value5.index,
+        template: unclosedTemplate,
+        templateStart: templateStart,
+        templateEnd: scriptMatch.index,
         unclosed: true,
-        js: value5[1],
-        jsMatch: value5,
+        js: scriptMatch[1],
+        jsMatch: scriptMatch,
       };
 }
-function sameDcTemplate(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input === options) return true;
-  if (options === undefined) return false;
-  let value: Dynamic = parseDcHtmlDocument(input),
-    value2: Dynamic = parseDcHtmlDocument(options);
+function sameDcTemplate(current?: Dynamic, previous?: Dynamic): Dynamic {
+  if (current === previous) return true;
+  if (previous === undefined) return false;
+  let currentDocument: Dynamic = parseDcHtmlDocument(current),
+    previousDocument: Dynamic = parseDcHtmlDocument(previous);
   return (
-    value != null &&
-    value2 != null &&
-    value.template === value2.template &&
-    value.js === value2.js
+    currentDocument != null &&
+    previousDocument != null &&
+    currentDocument.template === previousDocument.template &&
+    currentDocument.js === previousDocument.js
   );
 }
 function replaceDcTemplate(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  source?: Dynamic,
+  document?: Dynamic,
+  template?: Dynamic,
 ): Dynamic {
-  return options.unclosed && context === options.template
-    ? input
-    : input.slice(0, options.templateStart) +
-        context +
-        (options.unclosed
+  return document.unclosed && template === document.template
+    ? source
+    : source.slice(0, document.templateStart) +
+        template +
+        (document.unclosed
           ? `</x-dc>
 `
           : "") +
-        input.slice(options.templateEnd);
+        source.slice(document.templateEnd);
 }
 export {
   artboardComponentName,
@@ -394,29 +394,29 @@ export function installEditorHtmlDcDocument(): () => void {
       "noframes",
       "noscript",
     ];
-    HtmlDcDocumentJoin = (input?: Dynamic): Dynamic =>
-      [...input]
+    HtmlDcDocumentJoin = (elements?: Dynamic): Dynamic =>
+      [...elements]
         .map(
-          (input2?: Dynamic): Dynamic =>
-            HtmlTagNormalizationFromEntriesValue[input2.localName] ??
-            (input2.localName === "sc-helmet" ? "helmet" : input2.localName),
+          (element?: Dynamic): Dynamic =>
+            HtmlTagNormalizationFromEntriesValue[element.localName] ??
+            (element.localName === "sc-helmet" ? "helmet" : element.localName),
         )
         .join(" ");
-    HtmlDcDocumentLocalName = (input?: Dynamic): Dynamic =>
-      input?.nodeType === 1 &&
-      input.localName === "script" &&
-      input.hasAttribute("data-dc-script");
-    HtmlDcDocumentNextSibling = (input?: Dynamic): Dynamic =>
-      HtmlDcDocumentLocalName(input.nextSibling);
-    HtmlDcDocumentClosest = (input?: Dynamic): Dynamic => {
-      let ancestor: Dynamic = input.closest("x-dc");
+    HtmlDcDocumentLocalName = (node?: Dynamic): Dynamic =>
+      node?.nodeType === 1 &&
+      node.localName === "script" &&
+      node.hasAttribute("data-dc-script");
+    HtmlDcDocumentNextSibling = (node?: Dynamic): Dynamic =>
+      HtmlDcDocumentLocalName(node.nextSibling);
+    HtmlDcDocumentClosest = (node?: Dynamic): Dynamic => {
+      let ancestor: Dynamic = node.closest("x-dc");
       for (
-        let value: Dynamic = input;
-        value && value !== ancestor;
-        value = value.parentNode
+        let currentNode: Dynamic = node;
+        currentNode && currentNode !== ancestor;
+        currentNode = currentNode.parentNode
       )
         for (
-          let nextSibling: Dynamic = value.nextSibling;
+          let nextSibling: Dynamic = currentNode.nextSibling;
           nextSibling;
           nextSibling = nextSibling.nextSibling
         )

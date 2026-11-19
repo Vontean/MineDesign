@@ -25,22 +25,22 @@ function compareDesignSourceScripts(
       ok: false,
       why: "no earlier source to compare with",
     };
-  let value: Dynamic = parseDcHtmlDocument(currentSource),
-    value2: Dynamic = parseDcHtmlDocument(previousSource);
-  return !value || !value2
+  let currentDocument: Dynamic = parseDcHtmlDocument(currentSource),
+    previousDocument: Dynamic = parseDcHtmlDocument(previousSource);
+  return !currentDocument || !previousDocument
     ? {
         ok: false,
         why: "not a parseable .dc.html",
       }
-    : value.js !== value2.js
+    : currentDocument.js !== previousDocument.js
       ? {
           ok: false,
           why: "the logic script changed",
         }
       : replaceDcTemplate(
             currentSource,
-            value,
-            value2.template,
+            currentDocument,
+            previousDocument.template,
           ) !== previousSource
         ? {
             ok: false,
@@ -48,7 +48,7 @@ function compareDesignSourceScripts(
           }
         : {
             ok: true,
-            template: value2.template,
+            template: previousDocument.template,
           };
 }
 function setUndoGestureObserver(observer?: Dynamic): Dynamic {
