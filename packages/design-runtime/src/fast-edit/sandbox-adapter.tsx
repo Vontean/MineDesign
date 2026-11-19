@@ -32,7 +32,7 @@ function createSamplingClient(
               }
             : {}),
           signal: controller.signal,
-          onText: (input?: Dynamic): Dynamic => onText(input.text),
+          onText: (textEvent?: Dynamic): Dynamic => onText(textEvent.text),
         }),
         cancel: (): Dynamic => controller.abort(),
       };
@@ -50,80 +50,80 @@ export {
 export function installFastEditSandboxAdapter(): () => void {
   return () => {
     fastEditSandboxAdapter = {
-      create(input: Dynamic): Dynamic {
+      create(sandboxInput: Dynamic): Dynamic {
         let value: Dynamic = createFastEditSandbox({
             sdk: 3,
-            files: input.files.map(
-              (input2?: Dynamic): Dynamic => ({
-                ...input2,
+            files: sandboxInput.files.map(
+              (file?: Dynamic): Dynamic => ({
+                ...file,
               }),
             ),
             index: {
-              title: input.title,
+              title: sandboxInput.title,
             },
-            ...(input.current !== undefined
+            ...(sandboxInput.current !== undefined
               ? {
-                  current: input.current,
+                  current: sandboxInput.current,
                 }
               : {}),
             limits: FAST_EDIT_CANVAS_SANDBOX_LIMITS,
-            onHtml: (input2?: Dynamic): Dynamic =>
-              input.onHtml({
-                id: input2.slideId ?? null,
-                html: input2.html,
-                ...(input2.final === true
+            onHtml: (htmlEvent?: Dynamic): Dynamic =>
+              sandboxInput.onHtml({
+                id: htmlEvent.slideId ?? null,
+                html: htmlEvent.html,
+                ...(htmlEvent.final === true
                   ? {
                       final: true,
                     }
                   : {}),
               }),
-            onOp: (input2?: Dynamic): Dynamic => input.onOp(input2.op),
-            onDone: (input2?: Dynamic): Dynamic =>
-              input.onDone({
-                changed: Array.isArray(input2.changed) ? input2.changed : [],
-                ...(typeof input2.stmt == "string"
+            onOp: (operation?: Dynamic): Dynamic => sandboxInput.onOp(operation.op),
+            onDone: (doneEvent?: Dynamic): Dynamic =>
+              sandboxInput.onDone({
+                changed: Array.isArray(doneEvent.changed) ? doneEvent.changed : [],
+                ...(typeof doneEvent.stmt == "string"
                   ? {
-                      stmt: input2.stmt,
+                      stmt: doneEvent.stmt,
                     }
                   : {}),
-                ...(input2.threw !== undefined || input2.skipped === true
+                ...(doneEvent.threw !== undefined || doneEvent.skipped === true
                   ? {
                       failed: true,
                     }
                   : {}),
               }),
-            onError: (input2?: Dynamic): Dynamic => input.onError(input2),
-            onLog: (input2?: Dynamic): Dynamic =>
-              input.onLog(
-                typeof input2.n == "number"
+            onError: (errorEvent?: Dynamic): Dynamic => sandboxInput.onError(errorEvent),
+            onLog: (logEvent?: Dynamic): Dynamic =>
+              sandboxInput.onLog(
+                typeof logEvent.n == "number"
                   ? {
-                      n: input2.n,
+                      n: logEvent.n,
                       message:
-                        String(input2.message) +
-                        (input2.cut === true
+                        String(logEvent.message) +
+                        (logEvent.cut === true
                           ? `
 (cut here)`
                           : ""),
                     }
                   : {},
               ),
-            onTouch: (input2?: Dynamic): Dynamic =>
-              input.onTouch(input2.slideId),
+            onTouch: (touchEvent?: Dynamic): Dynamic =>
+              sandboxInput.onTouch(touchEvent.slideId),
             onPreview: (event?: Dynamic): Dynamic =>
-              input.onPreview?.({
+              sandboxInput.onPreview?.({
                 method: event.method,
                 target: event.target,
                 html: event.html,
               }),
           }),
           flag: Dynamic = false,
-          callback: Dynamic = (input2?: Dynamic): Dynamic => {
+          callback: Dynamic = (runCallback?: Dynamic): Dynamic => {
             if (!flag)
               try {
-                input2();
+                runCallback();
               } catch {
                 flag = true;
-                input.onError({
+                sandboxInput.onError({
                   get message() { return uiMessage("canvas.sandboxAdapter.theSandboxFrameIsGone"); },
                   fatal: true,
                 });
@@ -131,56 +131,56 @@ export function installFastEditSandboxAdapter(): () => void {
           };
         return {
           ready: Promise.resolve(value.ready).then(
-            (input2?: Dynamic): Dynamic =>
-              input2 === undefined
+            (readyResult?: Dynamic): Dynamic =>
+              readyResult === undefined
                 ? {
                     ok: true,
                   }
-                : input2,
+                : readyResult,
           ),
-          feed: (input2?: Dynamic): Dynamic =>
-            callback((): Dynamic => value.feed(input2)),
+          feed: (chunk?: Dynamic): Dynamic =>
+            callback((): Dynamic => value.feed(chunk)),
           flush: (): Dynamic => callback((): Dynamic => value.flush?.()),
           end: (): Dynamic => callback((): Dynamic => value.end()),
           stop: (): Dynamic => value.stop(),
           destroy: (): Dynamic => value.destroy(),
-          view: async (input2?: Dynamic): Promise<Dynamic> => {
-            let value2: Dynamic = await value.view?.(input2);
-            return value2 == null
+          view: async (viewOptions?: Dynamic): Promise<Dynamic> => {
+            let viewResult: Dynamic = await value.view?.(viewOptions);
+            return viewResult == null
               ? null
               : {
-                  html: value2.html,
-                  prefix: value2.prefix,
+                  html: viewResult.html,
+                  prefix: viewResult.prefix,
                 };
           },
         };
       },
-      roundTrip(input: Dynamic): Dynamic {
-        return new Promise((input2?: Dynamic): Dynamic => {
+      roundTrip(html: Dynamic): Dynamic {
+        return new Promise((resolve?: Dynamic): Dynamic => {
           let value: Dynamic,
-            callback: Dynamic = (input3?: Dynamic): Dynamic => {
+            callback: Dynamic = (sandboxResult?: Dynamic): Dynamic => {
               try {
                 value?.destroy();
               } catch {}
-              input2(input3);
+              resolve(sandboxResult);
             };
           try {
             value = createFastEditSandbox({
-              html: input,
-              onHtml: (input3?: Dynamic): Dynamic => {
-                input3.final === true && callback(input3.html);
+              html: html,
+              onHtml: (htmlEvent?: Dynamic): Dynamic => {
+                htmlEvent.final === true && callback(htmlEvent.html);
               },
-              onError: (input3?: Dynamic): Dynamic => {
-                input3.fatal === true && callback(null);
+              onError: (errorEvent?: Dynamic): Dynamic => {
+                errorEvent.fatal === true && callback(null);
               },
             });
           } catch {
-            input2(null);
+            resolve(null);
             return;
           }
           Promise.resolve(value.ready)
-            .then((input3?: Dynamic): Dynamic => {
-              input3 !== undefined && input3.ok === false
+            .then((readyResult?: Dynamic): Dynamic => {
+              readyResult !== undefined && readyResult.ok === false
                 ? callback(null)
                 : value.end();
             })

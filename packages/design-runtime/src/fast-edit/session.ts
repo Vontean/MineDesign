@@ -54,11 +54,11 @@ function readTemplateInputDefaults(html?: Dynamic): Dynamic {
       getDcPropsJson(html) ?? "{}",
     );
     if (value !== null && typeof value == "object")
-      for (let [value2, value3] of Object.entries(value) as Dynamic)
-        !value2.startsWith("$") &&
-          value3 !== null &&
-          typeof value3 == "object" &&
-          (defaults[value2] = value3.default);
+      for (let [defaultValue, defaultSource] of Object.entries(value) as Dynamic)
+        !defaultValue.startsWith("$") &&
+          defaultSource !== null &&
+          typeof defaultSource == "object" &&
+          (defaults[defaultValue] = defaultSource.default);
   } catch {}
   return defaults;
 }
@@ -100,14 +100,14 @@ function removeHelmetHandleIds(html?: Dynamic, prefix?: Dynamic): Dynamic {
   for (let value of Array.from(
     template.content.querySelectorAll("helmet, sc-helmet"),
   ) as Dynamic)
-    for (let value2 of [
+    for (let helmetHandleIds of [
       value,
       ...Array.from(value.querySelectorAll("*")),
     ] as Dynamic) {
-      let attribute: Dynamic = value2.getAttribute("id");
+      let attribute: Dynamic = helmetHandleIds.getAttribute("id");
       attribute !== null &&
         handlePattern.test(attribute) &&
-        (value2.removeAttribute("id"), (changed = true));
+        (helmetHandleIds.removeAttribute("id"), (changed = true));
     }
   return changed ? template.innerHTML : html;
 }
@@ -136,25 +136,25 @@ function resolveRenderedElementPath(
     rootSelector === "#dc-root"
       ? template.content.firstElementChild
       : (Array.from(template.content.querySelectorAll("*")).find(
-          (element2?: Dynamic): Dynamic =>
-            element2.getAttribute("id") === rootSelector.slice(1),
+          (candidateElement?: Dynamic): Dynamic =>
+            candidateElement.getAttribute("id") === rootSelector.slice(1),
         ) ?? null);
   for (let value of relativeSegments as Dynamic) {
-    let value2: Dynamic =
+    let pathSegment: Dynamic =
         /^([a-z][a-z0-9-]{0,23}):nth-of-type\(([1-9][0-9]{0,3})\)$/.exec(
           value,
         ),
-      value3: Dynamic = element === null ? [] : Array.from(element.children);
+      resolvedPath: Dynamic = element === null ? [] : Array.from(element.children);
     if (
-      value2 === null ||
-      value3.some(
-        (input?: Dynamic): Dynamic =>
-          /^sc-|^(?:dc|x)-import$/.test(input.localName),
+      pathSegment === null ||
+      resolvedPath.some(
+        (child?: Dynamic): Dynamic =>
+          /^sc-|^(?:dc|x)-import$/.test(child.localName),
       ) ||
       ((element =
-        value3.filter(
-          (input?: Dynamic): Dynamic => input.localName === value2[1],
-        )[Number(value2[2]) - 1] ?? null),
+        resolvedPath.filter(
+          (child?: Dynamic): Dynamic => child.localName === pathSegment[1],
+        )[Number(pathSegment[2]) - 1] ?? null),
       element === null)
     )
       return null;
@@ -165,56 +165,56 @@ function resolveRenderedElementPath(
 }
 function resolveTemplateHandleIds(
   ids?: Dynamic,
-  options?: Dynamic,
+  templateHandles?: Dynamic,
   html?: Dynamic,
   prefix?: Dynamic,
 ): Dynamic {
   if (ids.length === 0 || !/^[a-z]{1,8}$/.test(prefix))
     return ids.map((): Dynamic => null);
-  let parse: Dynamic = (input?: Dynamic): Dynamic => {
-      let value6: Dynamic = (document as Dynamic).createElement("template");
-      value6.innerHTML = toParserHtml(input);
-      return Array.from(value6.content.querySelectorAll("*"));
+  let parse: Dynamic = (handleInput?: Dynamic): Dynamic => {
+      let templateElement: Dynamic = (document as Dynamic).createElement("template");
+      templateElement.innerHTML = toParserHtml(handleInput);
+      return Array.from(templateElement.content.querySelectorAll("*"));
     },
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input.filter(
-        (input2?: Dynamic): Dynamic =>
-          input2.closest("helmet, sc-helmet") === null,
+    callback: Dynamic = (filterValues?: Dynamic): Dynamic =>
+      filterValues.filter(
+        (item?: Dynamic): Dynamic =>
+          item.closest("helmet, sc-helmet") === null,
       ),
-    value: Dynamic = parse(options),
-    value2: Dynamic = callback(value),
-    value3: Dynamic = callback(parse(html)).slice(1),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
+    value: Dynamic = parse(templateHandles),
+    resolvedHandles: Dynamic = callback(value),
+    handleIndex: Dynamic = callback(parse(html)).slice(1),
+    resolveHandle: Dynamic = (handle?: Dynamic): Dynamic =>
       new Map(
-        input.map(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic => [
-            input2,
-            options2,
+        handle.map(
+          (item?: Dynamic, itemIndex?: Dynamic): Dynamic => [
+            item,
+            itemIndex,
           ],
         ),
       ),
-    value4: Dynamic = callback2(value2),
-    value5: Dynamic = callback2(
+    resolvedValue: Dynamic = resolveHandle(resolvedHandles),
+    resolvedElement: Dynamic = resolveHandle(
       value.filter(
-        (input?: Dynamic): Dynamic => input.localName === "sc-for",
+        (candidate?: Dynamic): Dynamic => candidate.localName === "sc-for",
       ),
     );
-  return ids.map((input?: Dynamic): Dynamic => {
-    let value6: Dynamic = value[input],
-      value7: Dynamic =
-        value6 === undefined || value2.length !== value3.length
+  return ids.map((rawId?: Dynamic): Dynamic => {
+    let handleId: Dynamic = value[rawId],
+      elementId: Dynamic =
+        handleId === undefined || resolvedHandles.length !== handleIndex.length
           ? undefined
-          : value3[value4.get(value6) ?? -1];
-    return value6 === undefined ||
-      value7 === undefined ||
-      value7.localName !== value6.localName ||
-      directTargetText(value7) !==
-        directTargetText(value6)
+          : handleIndex[resolvedValue.get(handleId) ?? -1];
+    return handleId === undefined ||
+      elementId === undefined ||
+      elementId.localName !== handleId.localName ||
+      directTargetText(elementId) !==
+        directTargetText(handleId)
       ? null
       : describeTemplateElementTarget(
-          value7,
+          elementId,
           prefix,
-          value5.get(value6.parentElement?.closest("sc-for") ?? value6) ?? -1,
+          resolvedElement.get(handleId.parentElement?.closest("sc-for") ?? handleId) ?? -1,
         );
   });
 }
@@ -395,81 +395,81 @@ export function installFastEditSession(): () => void {
       beyond_target:
         "That reply wrote to an artboard this comment is not about. An id like {{PREFIX}}28 on a new element is not kept: a new element has no handle; reach it from one that is there: $('#{{PREFIX}}1 > div').last().",
     };
-    describeFastEditRefusal = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      (input === "no_change"
+    describeFastEditRefusal = (refusalCode?: Dynamic, index?: Dynamic): Dynamic =>
+      (refusalCode === "no_change"
         ? ""
-        : "The page refused your last reply (" + input + "). ") +
-      (FAST_EDIT_REPAIR_MESSAGES[options] ??
+        : "The page refused your last reply (" + refusalCode + "). ") +
+      (FAST_EDIT_REPAIR_MESSAGES[index] ??
         FAST_EDIT_REPAIR_MESSAGES.no_change) +
       " Nothing of that reply was applied: write the whole reply again.";
-    createFastEditSessionState = (input?: Dynamic): Dynamic => ({
+    createFastEditSessionState = (sessionValue?: Dynamic): Dynamic => ({
       named: null,
       lastTouched: "",
       othersChanged: new Set(),
       busy: null,
-      ...createFastEditJournalState(undefined, input),
+      ...createFastEditJournalState(undefined, sessionValue),
     });
     FAST_EDIT_ROUNDTRIP_TIMEOUT_MS = 4e3;
     FAST_EDIT_SANDBOX_START_TIMEOUT_MS = 1500;
     FAST_EDIT_TIMEOUT_SENTINEL = Symbol("late");
-    withFastEditTimeout = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    withFastEditTimeout = (promiseValue?: Dynamic, index?: Dynamic): Dynamic =>
       Promise.race([
-        input,
+        promiseValue,
         new Promise(
-          (input2?: Dynamic): Dynamic =>
-            setTimeout(input2, options, FAST_EDIT_TIMEOUT_SENTINEL),
+          (item?: Dynamic): Dynamic =>
+            setTimeout(item, index, FAST_EDIT_TIMEOUT_SENTINEL),
         ),
       ]);
-    waitForFastEditAbort = (input?: Dynamic): Dynamic =>
-      new Promise((input2?: Dynamic): Dynamic => {
-        input.aborted
-          ? input2("stopped")
-          : input.addEventListener("abort", (): Dynamic => input2("stopped"), {
+    waitForFastEditAbort = (abortSignal?: Dynamic): Dynamic =>
+      new Promise((item?: Dynamic): Dynamic => {
+        abortSignal.aborted
+          ? item("stopped")
+          : abortSignal.addEventListener("abort", (): Dynamic => item("stopped"), {
               once: true,
             });
       });
-    artboardRectangle = (input?: Dynamic): Dynamic => ({
-      x: input.x,
-      y: input.y,
-      w: input.w,
-      h: input.h,
+    artboardRectangle = (rectangle?: Dynamic): Dynamic => ({
+      x: rectangle.x,
+      y: rectangle.y,
+      w: rectangle.w,
+      h: rectangle.h,
     });
-    distanceBetweenArtboards = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    distanceBetweenArtboards = (firstRectangle?: Dynamic, index?: Dynamic): Dynamic =>
       Math.hypot(
         Math.max(
           0,
-          options.x - (input.x + input.w),
-          input.x - (options.x + options.w),
+          index.x - (firstRectangle.x + firstRectangle.w),
+          firstRectangle.x - (index.x + index.w),
         ),
         Math.max(
           0,
-          options.y - (input.y + input.h),
-          input.y - (options.y + options.h),
+          index.y - (firstRectangle.y + firstRectangle.h),
+          firstRectangle.y - (index.y + index.h),
         ),
       );
-    normalizeFastEditThrownError = (input?: Dynamic): Dynamic =>
-      input !== null &&
-      typeof input == "object" &&
-      typeof input.code == "string"
-        ? input
+    normalizeFastEditThrownError = (thrownValue?: Dynamic): Dynamic =>
+      thrownValue !== null &&
+      typeof thrownValue == "object" &&
+      typeof thrownValue.code == "string"
+        ? thrownValue
         : {
             code: "page_error",
           };
     rehydrateFastEditHtml = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      htmlInput?: Dynamic,
+      sectionOptions?: Dynamic,
+      ownerContext?: Dynamic,
     ): Dynamic => {
-      let value: Dynamic = unwrapFastEditSection(options);
+      let value: Dynamic = unwrapFastEditSection(sectionOptions);
       return value === null
         ? null
-        : resolveOwnedElementIdCollisions(input, value, context);
+        : resolveOwnedElementIdCollisions(htmlInput, value, ownerContext);
     };
     resolveTemplateHandleId = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-    ): Dynamic => resolveTemplateHandleIds([input], options, context, value)[0];
+      handleValue?: Dynamic,
+      templateOptions?: Dynamic,
+      templateContext?: Dynamic,
+      defaultValue?: Dynamic,
+    ): Dynamic => resolveTemplateHandleIds([handleValue], templateOptions, templateContext, defaultValue)[0];
   };
 }

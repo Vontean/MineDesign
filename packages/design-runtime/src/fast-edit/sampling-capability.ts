@@ -20,8 +20,8 @@ function interceptSamplingCapability(
       let value: Dynamic = claude.use.bind(claude);
       originalClaudeUse = value;
       Object.defineProperty(claude, "use", {
-        value: (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input === "sample" ? Promise.resolve(null) : value(input, options),
+        value: (capabilityName?: Dynamic, capabilityOptions?: Dynamic): Dynamic =>
+          capabilityName === "sample" ? Promise.resolve(null) : value(capabilityName, capabilityOptions),
         writable: true,
         configurable: true,
         enumerable: false,
@@ -38,8 +38,8 @@ async function resolveSamplingCapability(
   let timeout: Dynamic;
   try {
     let promise: Dynamic = new Promise(
-        (input?: Dynamic): Dynamic =>
-          (timeout = setTimeout(input, timeoutMs, null)),
+        (resolveTimeout?: Dynamic): Dynamic =>
+          (timeout = setTimeout(resolveTimeout, timeoutMs, null)),
       ),
       value: Dynamic = await Promise.race([
         originalClaudeUse("sample"),

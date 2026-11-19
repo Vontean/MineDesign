@@ -47,15 +47,15 @@ function resolveFastEditFileTarget(
       by: "selected",
     };
   if (files.length === 0) return null;
-  let value2: Dynamic = request.inView(files);
-  return value2.length > 0
-    ? value2.includes(request.session.lastTouched)
+  let visibleFileCandidates: Dynamic = request.inView(files);
+  return visibleFileCandidates.length > 0
+    ? visibleFileCandidates.includes(request.session.lastTouched)
       ? {
           file: request.session.lastTouched,
           by: "last",
         }
       : {
-          file: value2[0],
+          file: visibleFileCandidates[0],
           by: "none",
         }
     : request.session.lastTouched !== "" &&
@@ -70,21 +70,21 @@ function resolveFastEditFileTarget(
         };
 }
 async function updateFastEditHistoryFromCanvas(
-  context?: Dynamic,
+  editContext?: Dynamic,
 ): Promise<Dynamic> {
-  let turn: Dynamic = context.session.turn,
-    host: Dynamic = context.host(),
+  let turn: Dynamic = editContext.session.turn,
+    host: Dynamic = editContext.host(),
     handles: Dynamic = host.handlesRef.current ?? new Map(),
     boards: Dynamic = host.canvas.boards(),
     files: Dynamic = boards
-      .map((input?: Dynamic): Dynamic => input.file)
+      .map((board?: Dynamic): Dynamic => board.file)
       .slice(0, MAX_FAST_EDIT_FILES),
     idOf: Dynamic = createFastEditFileIds(files).idOf,
     values: Dynamic = new Set(),
-    values2: Dynamic = new Set(
-      files.flatMap((input?: Dynamic): Dynamic => {
+    pageFonts: Dynamic = new Set(
+      files.flatMap((file?: Dynamic): Dynamic => {
         try {
-          return handles.get(input)?.pageFonts() ?? [];
+          return handles.get(file)?.pageFonts() ?? [];
         } catch {
           return [];
         }
@@ -93,19 +93,19 @@ async function updateFastEditHistoryFromCanvas(
   for (let value of (turn === null
     ? []
     : [turn, ...(turn.also ?? [])]) as Dynamic) {
-    let value2: Dynamic = boards.find(
-        (input?: Dynamic): Dynamic => input.file === value.file,
+    let boardEntry: Dynamic = boards.find(
+        (board?: Dynamic): Dynamic => board.file === value.file,
       ),
       entry: Dynamic = idOf.get(value.file);
     if (value.how !== undefined) {
       values.add(
-        (value2 !== undefined) == (value.how === "new") ? "stands" : "gone",
+        (boardEntry !== undefined) == (value.how === "new") ? "stands" : "gone",
       );
       continue;
     }
     if (value.after === value.before) continue;
-    let value3: Dynamic =
-        value2 === undefined || entry === undefined
+    let templateHtml: Dynamic =
+        boardEntry === undefined || entry === undefined
           ? null
           : await withFastEditTimeout(
               handles
@@ -114,20 +114,20 @@ async function updateFastEditHistoryFromCanvas(
                 .catch((): Dynamic => null) ?? Promise.resolve(null),
               2500,
             ),
-      value4: Dynamic =
-        typeof value3 == "string" &&
-        value3.length <= MAX_FAST_EDIT_SECTION_CHARS
+      serializedBoard: Dynamic =
+        typeof templateHtml == "string" &&
+        templateHtml.length <= MAX_FAST_EDIT_SECTION_CHARS
           ? serializePromptArtboardWithPageStyle(
               entry,
-              value2,
-              value3,
-              values2,
+              boardEntry,
+              templateHtml,
+              pageFonts,
             )
           : undefined;
     values.add(
-      value4 !== undefined && value4 === value.after
+      serializedBoard !== undefined && serializedBoard === value.after
         ? "stands"
-        : value4 !== undefined && value4 === value.before
+        : serializedBoard !== undefined && serializedBoard === value.before
           ? "gone"
           : "neither",
     );
@@ -135,85 +135,85 @@ async function updateFastEditHistoryFromCanvas(
   return values.size === 1 ? [...values][0] : "neither";
 }
 async function captureFastEditCanvasState(
-  context?: Dynamic,
+  editContext?: Dynamic,
 ): Promise<Dynamic> {
-  let host: Dynamic = context.host(),
+  let host: Dynamic = editContext.host(),
     handles: Dynamic = host.handlesRef.current ?? new Map(),
     boards: Dynamic = host.canvas.boards(),
-    session: Dynamic = context.session,
+    session: Dynamic = editContext.session,
     ids: Dynamic = createFastEditFileIds(
       boards
-        .map((input?: Dynamic): Dynamic => input.file)
+        .map((file?: Dynamic): Dynamic => file.file)
         .slice(0, MAX_FAST_EDIT_FILES),
     ),
-    value: Dynamic = [...ids.idOf.keys()].filter(
-      (input?: Dynamic): Dynamic => handles.has(input),
+    filesWithHandles: Dynamic = [...ids.idOf.keys()].filter(
+      (file?: Dynamic): Dynamic => handles.has(file),
     ),
-    value2: Dynamic = null,
-    index: Dynamic = 0,
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      session.unrecorded.has(input) || (index += 1);
-      session.unrecorded.set(input, options);
+    pageFontFamilies: Dynamic = null,
+    skippedCount: Dynamic = 0,
+    recordUncapturedFile: Dynamic = (file?: Dynamic, status?: Dynamic): Dynamic => {
+      session.unrecorded.has(file) || (skippedCount += 1);
+      session.unrecorded.set(file, status);
     };
   session.first ??= new Set(
-    boards.map((input?: Dynamic): Dynamic => input.file),
+    boards.map((board?: Dynamic): Dynamic => board.file),
   );
-  for (let value3 of boards as Dynamic)
-    !handles.has(value3.file) &&
-      !session.seen.has(value3.file) &&
-      callback(value3.file, "late");
-  for (let value3 of value as Dynamic) {
+  for (let board of boards as Dynamic)
+    !handles.has(board.file) &&
+      !session.seen.has(board.file) &&
+      recordUncapturedFile(board.file, "late");
+  for (let filePath of filesWithHandles as Dynamic) {
     if (
-      session.seen.has(value3) ||
-      session.unrecorded.get(value3) === "unfit"
+      session.seen.has(filePath) ||
+      session.unrecorded.get(filePath) === "unfit"
     )
       continue;
-    let entry: Dynamic = handles.get(value3);
+    let entry: Dynamic = handles.get(filePath);
     if (session.busy !== null) {
-      index += 1;
+      skippedCount += 1;
       continue;
     }
     if (!entry.isReady()) {
-      callback(value3, "late");
+      recordUncapturedFile(filePath, "late");
       continue;
     }
-    let value4: Dynamic = await withFastEditTimeout(
+    let serializedTemplate: Dynamic = await withFastEditTimeout(
       entry.askTemplate().catch((): Dynamic => null),
       2500,
     );
-    if (!session.seen.has(value3)) {
+    if (!session.seen.has(filePath)) {
       if (session.busy !== null) {
-        index += 1;
+        skippedCount += 1;
         continue;
       }
-      if (typeof value4 != "string" || value4.length > 2e5) {
-        callback(value3, typeof value4 == "string" ? "unfit" : "late");
+      if (typeof serializedTemplate != "string" || serializedTemplate.length > 2e5) {
+        recordUncapturedFile(filePath, typeof serializedTemplate == "string" ? "unfit" : "late");
         continue;
       }
-      value2 ??= new Set(
-        value.flatMap((input?: Dynamic): Dynamic => {
+      pageFontFamilies ??= new Set(
+        filesWithHandles.flatMap((file?: Dynamic): Dynamic => {
           try {
-            return handles.get(input)?.pageFonts() ?? [];
+            return handles.get(file)?.pageFonts() ?? [];
           } catch {
             return [];
           }
         }),
       );
-      session.unrecorded.delete(value3);
+      session.unrecorded.delete(filePath);
       session.seen.set(
-        value3,
+        filePath,
         serializePromptArtboardWithPageStyle(
-          ids.idOf.get(value3),
-          boards.find((input?: Dynamic): Dynamic => input.file === value3),
-          value4,
-          value2,
+          ids.idOf.get(filePath),
+          boards.find((file?: Dynamic): Dynamic => file.file === filePath),
+          serializedTemplate,
+          pageFontFamilies,
         ),
       );
-      session.first.has(value3) && session.opened.add(value3);
-      await new Promise((input?: Dynamic): Dynamic => setTimeout(input, 0));
+      session.first.has(filePath) && session.opened.add(filePath);
+      await new Promise((file?: Dynamic): Dynamic => setTimeout(file, 0));
     }
   }
-  return index;
+  return skippedCount;
 }
 function extractFastEditReplyStatements(
   reply?: Dynamic,
@@ -243,23 +243,23 @@ function extractFastEditReplyStatements(
       value;
     inCode = false;
     for (let index: Dynamic = 0; index < value.length; index++) {
-      let value2: Dynamic = value[index],
-        value3: Dynamic = value2 + (value[index + 1] ?? "");
+      let replyLine: Dynamic = value[index],
+        nextCharacter: Dynamic = replyLine + (value[index + 1] ?? "");
       if (lastLine === "*")
-        value3 === "*/" && ((lastLine = ""), (index += 1));
+        nextCharacter === "*/" && ((lastLine = ""), (index += 1));
       else if (lastLine !== "")
-        value2 === "\\"
+        replyLine === "\\"
           ? (index += 1)
-          : value2 === lastLine && (lastLine = "");
+          : replyLine === lastLine && (lastLine = "");
       else {
-        if (value3 === "//") break;
-        value3 === "/*"
+        if (nextCharacter === "//") break;
+        nextCharacter === "/*"
           ? ((lastLine = "*"), (index += 1))
-          : value2 === "`" || value2 === '"' || value2 === "'"
-            ? (lastLine = value2)
-            : "([{".includes(value2)
+          : replyLine === "`" || replyLine === '"' || replyLine === "'"
+            ? (lastLine = replyLine)
+            : "([{".includes(replyLine)
               ? (depth += 1)
-              : ")]}".includes(value2) && (depth = Math.max(0, depth - 1));
+              : ")]}".includes(replyLine) && (depth = Math.max(0, depth - 1));
       }
     }
     (lastLine === '"' || lastLine === "'") && (lastLine = "");
@@ -294,7 +294,7 @@ function parseFastEditReplyChunk(
   );
 }
 async function applyFastEditRequest(
-  context?: Dynamic,
+  editContext?: Dynamic,
   request?: Dynamic,
 ): Promise<Dynamic> {
   let result: Dynamic = {
@@ -313,31 +313,31 @@ async function applyFastEditRequest(
       named: null,
     },
     finish: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = "",
-      context2: Dynamic = "",
+      outcome?: Dynamic,
+      errorCode: Dynamic = "",
+      errorMessage: Dynamic = "",
     ): Dynamic => ({
-      outcome: input,
-      code: options,
-      message: context2,
+      outcome: outcome,
+      code: errorCode,
+      message: errorMessage,
       calls: result.calls,
       made: summarizeFastEditAppliedChanges(result),
     });
-  if (context.host().readOnly)
+  if (editContext.host().readOnly)
     return finish(
       "failed",
       "read_only",
       FAST_EDIT_ERROR_MESSAGES.read_only,
     );
-  let previousBusyFile: Dynamic = context.session.busy;
-  if (previousBusyFile !== null && context.held !== true)
+  let previousBusyFile: Dynamic = editContext.session.busy;
+  if (previousBusyFile !== null && editContext.held !== true)
     return finish("failed", "busy", FAST_EDIT_ERROR_MESSAGES.busy);
   let target: Dynamic = resolveFastEditFileTarget(
-    context,
-    context
+    editContext,
+    editContext
       .host()
       .canvas.boards()
-      .map((input?: Dynamic): Dynamic => input.file),
+      .map((board?: Dynamic): Dynamic => board.file),
   );
   if (target === null)
     return finish(
@@ -346,17 +346,17 @@ async function applyFastEditRequest(
       FAST_EDIT_ERROR_MESSAGES.no_artboards,
     );
   let draftEmitters: Dynamic = new Map();
-  context.session.busy = target.file;
-  result.named = context.session.named;
-  context.session.named = null;
+  editContext.session.busy = target.file;
+  result.named = editContext.session.named;
+  editContext.session.named = null;
   try {
-    if (context.sandbox.available !== undefined) {
-      let value2: Dynamic = await Promise.race([
-        context.sandbox.available,
+    if (editContext.sandbox.available !== undefined) {
+      let waitResult: Dynamic = await Promise.race([
+        editContext.sandbox.available,
         waitForFastEditAbort(request.signal),
       ]);
-      if (value2 === "stopped") return finish("stopped", "cancelled");
-      if (!value2)
+      if (waitResult === "stopped") return finish("stopped", "cancelled");
+      if (!waitResult)
         return finish(
           "failed",
           "not_loaded",
@@ -365,93 +365,93 @@ async function applyFastEditRequest(
     }
     let value: Dynamic = target;
     for (;;) {
-      let value2: Dynamic = await runFastEditSamplingRound(
-        context,
+      let roundResult: Dynamic = await runFastEditSamplingRound(
+        editContext,
         request,
         value,
         result,
         draftEmitters,
       );
-      "done" in value2 &&
-        context.comment === undefined &&
+      "done" in roundResult &&
+        editContext.comment === undefined &&
         finishFastEditJournalTurn(
-          context.session,
+          editContext.session,
           result.applied
-            ? value2.done.unsaved !== undefined
+            ? roundResult.done.unsaved !== undefined
               ? "unconfirmed"
               : "done"
-            : value2.done.outcome === "stopped"
+            : roundResult.done.outcome === "stopped"
               ? null
               : "nothing",
         );
-      if ("done" in value2)
+      if ("done" in roundResult)
         return {
-          ...value2.done,
+          ...roundResult.done,
           file: value.file,
         };
-      value = value2.again;
+      value = roundResult.again;
     }
   } finally {
     for (let value of draftEmitters.values() as Dynamic) value.end();
     draftHtmlPreviewStore.clear();
     draftDocumentPreviewStore.clear();
-    context.session.othersChanged.clear();
-    context.session.busy = previousBusyFile;
+    editContext.session.othersChanged.clear();
+    editContext.session.busy = previousBusyFile;
   }
 }
 async function runFastEditSamplingRound(
-  context?: Dynamic,
+  editContext?: Dynamic,
   request?: Dynamic,
   target?: Dynamic,
   result?: Dynamic,
   draftEmitters?: Dynamic,
 ): Promise<Dynamic> {
   let sleep: Dynamic =
-      context.sleep ??
-      ((input?: Dynamic): Dynamic =>
+      editContext.sleep ??
+      ((delayMs?: Dynamic): Dynamic =>
         new Promise(
-          (input2?: Dynamic): Dynamic => setTimeout(input2, input),
+          (resolveDelay?: Dynamic): Dynamic => setTimeout(resolveDelay, delayMs),
         )),
     targetFile: Dynamic = target.file,
     firstCall: Dynamic = result.calls === 0,
     finish: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = "",
-      context2: Dynamic = "",
+      outcome?: Dynamic,
+      errorCode: Dynamic = "",
+      errorMessage: Dynamic = "",
     ): Dynamic => ({
       done: {
-        outcome: input,
-        code: options,
-        message: context2,
+        outcome: outcome,
+        code: errorCode,
+        message: errorMessage,
         calls: result.calls,
         skipped: result.skipped,
         made: summarizeFastEditAppliedChanges(result),
       },
     }),
-    fail: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
+    fail: Dynamic = (failureCode?: Dynamic, failureDetail?: Dynamic): Dynamic => {
       throw {
-        code: input,
+        code: failureCode,
         message:
-          FAST_EDIT_ERROR_MESSAGES[input] ??
+          FAST_EDIT_ERROR_MESSAGES[failureCode] ??
           FAST_EDIT_ERROR_MESSAGES.upstream_error,
-        ...(options !== undefined
+        ...(failureDetail !== undefined
           ? {
-              why: options,
+              why: failureDetail,
             }
           : {}),
       };
     },
-    host: Dynamic = context.host(),
+    host: Dynamic = editContext.host(),
     canvas: Dynamic = host.canvas,
     handles: Dynamic = host.handlesRef.current ?? new Map(),
     sandbox: Dynamic,
     timeout: Dynamic,
     writeScheduler: Dynamic = createFastEditWriteScheduler({
       now: (): Dynamic => performance.now(),
-      schedule: (input?: Dynamic, options?: Dynamic): Dynamic => {
-        let value5: Dynamic = setTimeout(input, options);
+      schedule: (scheduledCallback?: Dynamic, delayMs?: Dynamic): Dynamic => {
+        let timerId: Dynamic = setTimeout(scheduledCallback, delayMs);
         return (): Dynamic => {
-          clearTimeout(value5);
+          clearTimeout(timerId);
         };
       },
     }),
@@ -469,691 +469,691 @@ async function runFastEditSamplingRound(
       draftDocumentPreviewStore.clear();
     },
     gateReason: Dynamic = "",
-    refuseGate: Dynamic = (input?: Dynamic): Dynamic => {
+    refuseGate: Dynamic = (gateReasonInput?: Dynamic): Dynamic => {
       throw (
-        (gateReason = input),
+        (gateReason = gateReasonInput),
         {
           code: "gate",
         }
       );
     },
     flag: Dynamic = false,
-    flag2: Dynamic = false,
+    sandboxFailed: Dynamic = false,
     value: Dynamic = null,
     index: Dynamic = 0,
-    value2: Dynamic = null,
-    flag3: Dynamic = true,
+    partialMark: Dynamic = null,
+    wholeReply: Dynamic = true,
     text: Dynamic = "",
-    flag4: Dynamic = false,
-    index2: Dynamic = 0,
+    cancelled: Dynamic = false,
+    attemptIndex: Dynamic = 0,
     templates: Dynamic = new Map(),
     pendingHtml: Dynamic = [],
     errors: Dynamic = [],
     allowedFiles: Dynamic = new Set([targetFile]),
-    artboardsById: Dynamic = new Map(),
+    originalTemplatesByPath: Dynamic = new Map(),
     fileIds: Dynamic = createFastEditFileIds([]),
-    text2: Dynamic = "",
-    value3: Dynamic = null,
+    replyText: Dynamic = "",
+    lastError: Dynamic = null,
     items: Dynamic = [],
-    value4: Dynamic = -1,
-    callback: Dynamic = (input?: Dynamic): Dynamic => input;
+    lastVisibleIndex: Dynamic = -1,
+    callback: Dynamic = (identity?: Dynamic): Dynamic => identity;
   try {
     host.readOnly && fail("read_only");
-    let value5: Dynamic = targetFile === "",
+    let isCanvasTarget: Dynamic = targetFile === "",
       entry: Dynamic = handles.get(targetFile);
-    if (entry === undefined && !value5) return fail("gone");
+    if (entry === undefined && !isCanvasTarget) return fail("gone");
     (firstCall || target.retargeted === true) &&
-      context.holds(targetFile) &&
+      editContext.holds(targetFile) &&
       fail("busy_other");
-    let callback2: Dynamic = (): Dynamic =>
+    let waitForReady: Dynamic = (): Dynamic =>
       entry !== undefined &&
-      context.comment?.pin === undefined &&
+      editContext.comment?.pin === undefined &&
       entry.webviewRef.current !== null &&
       !entry.isReady();
     for (
-      let index12: Dynamic = 0;
-      index12 < 50 && callback2() && !request.signal.aborted;
-      index12++
+      let readyAttempts: Dynamic = 0;
+      readyAttempts < 50 && waitForReady() && !request.signal.aborted;
+      readyAttempts++
     )
       await sleep(120);
-    callback2() && fail("not_ready");
-    let value6: Dynamic = canvas.boards(),
-      value7: Dynamic =
-        context.comment?.pin === undefined
+    waitForReady() && fail("not_ready");
+    let boards: Dynamic = canvas.boards(),
+      targetRectangle: Dynamic =
+        editContext.comment?.pin === undefined
           ? undefined
           : {
-              x: Math.round(context.comment.pin.x),
-              y: Math.round(context.comment.pin.y),
+              x: Math.round(editContext.comment.pin.x),
+              y: Math.round(editContext.comment.pin.y),
               w: 0,
               h: 0,
             },
-      value8: Dynamic =
-        context.comment?.pin === undefined
+      selectedRectangle: Dynamic =
+        editContext.comment?.pin === undefined
           ? undefined
-          : value6.some(
-                (input?: Dynamic): Dynamic => input.file === targetFile,
+          : boards.some(
+                (board?: Dynamic): Dynamic => board.file === targetFile,
               )
             ? resolveCommentPinPosition(
-                context.comment.pin,
-                value6,
+                editContext.comment.pin,
+                boards,
                 targetFile,
               )
-            : value5
+            : isCanvasTarget
               ? {
-                  x: value7.x,
-                  y: value7.y,
+                  x: targetRectangle.x,
+                  y: targetRectangle.y,
                   atPin: true,
                 }
               : undefined,
-      callback3: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-        let value69: Dynamic = (context.comment?.between ?? [])
+      isSameRectangle: Dynamic = (width?: Dynamic, height?: Dynamic): Dynamic => {
+        let commentTarget: Dynamic = (editContext.comment?.between ?? [])
             .flatMap(
-              (input2?: Dynamic): Dynamic =>
-                value6.find(
-                  (input3?: Dynamic): Dynamic => input3.file === input2.file,
+              (candidateA?: Dynamic): Dynamic =>
+                boards.find(
+                  (candidateB?: Dynamic): Dynamic => candidateB.file === candidateA.file,
                 ) ?? [],
             )
             .find(
-              (input2?: Dynamic): Dynamic =>
-                input2.w === input && input2.h === options,
+              (rectangle?: Dynamic): Dynamic =>
+                rectangle.w === width && rectangle.h === height,
             ),
-          value70: Dynamic =
-            value8 === undefined || value69 === undefined
+          nearestRectangle: Dynamic =
+            selectedRectangle === undefined || commentTarget === undefined
               ? null
               : findFreeSpotAfterRow(
                   groupArtboardsIntoRows(
-                    value6.map(
-                      (input2?: Dynamic): Dynamic => ({
-                        id: input2.file,
-                        ...artboardRectangle(input2),
+                    boards.map(
+                      (boardEntry?: Dynamic): Dynamic => ({
+                        id: boardEntry.file,
+                        ...artboardRectangle(boardEntry),
                       }),
                     ),
                   ).find(
-                    (input2?: Dynamic): Dynamic =>
-                      input2.some(
-                        (input3?: Dynamic): Dynamic =>
-                          input3.id === value69.file,
+                    (candidateBoards?: Dynamic): Dynamic =>
+                      candidateBoards.some(
+                        (board?: Dynamic): Dynamic =>
+                          board.id === commentTarget.file,
                       ),
                   ),
-                  value6.map(artboardRectangle),
+                  boards.map(artboardRectangle),
                 );
-        return value70 !== null
+        return nearestRectangle !== null
           ? {
-              x: Math.round(value70.x),
-              y: Math.round(value70.y),
+              x: Math.round(nearestRectangle.x),
+              y: Math.round(nearestRectangle.y),
             }
-          : value8 === undefined
+          : selectedRectangle === undefined
             ? undefined
             : {
-                x: value8.x,
-                y: value8.y,
+                x: selectedRectangle.x,
+                y: selectedRectangle.y,
               };
       };
-    !value5 &&
-      !value6.some((input?: Dynamic): Dynamic => input.file === targetFile) &&
+    !isCanvasTarget &&
+      !boards.some((board?: Dynamic): Dynamic => board.file === targetFile) &&
       fail("gone");
-    let value9: Dynamic = value6.map(
-        (input?: Dynamic): Dynamic => input.file,
+    let orderedFiles: Dynamic = boards.map(
+        (board?: Dynamic): Dynamic => board.file,
       ),
-      value10: Dynamic =
-        value9.length <= MAX_FAST_EDIT_FILES
-          ? value9
+      candidateFiles: Dynamic =
+        orderedFiles.length <= MAX_FAST_EDIT_FILES
+          ? orderedFiles
           : [
-              ...value9
-                .filter((input?: Dynamic): Dynamic => input !== targetFile)
+              ...orderedFiles
+                .filter((file?: Dynamic): Dynamic => file !== targetFile)
                 .slice(0, MAX_FAST_EDIT_FILES - 1),
               targetFile,
             ].sort(
-              (input?: Dynamic, options?: Dynamic): Dynamic =>
-                value9.indexOf(input) - value9.indexOf(options),
+              (fileA?: Dynamic, fileB?: Dynamic): Dynamic =>
+                orderedFiles.indexOf(fileA) - orderedFiles.indexOf(fileB),
             );
-    fileIds = createFastEditFileIds(value10);
-    artboardsById = new Map();
+    fileIds = createFastEditFileIds(candidateFiles);
+    originalTemplatesByPath = new Map();
     let entries: Dynamic = new Map(
-        value6.map((input?: Dynamic): Dynamic => [input.file, input]),
+        boards.map((board?: Dynamic): Dynamic => [board.file, board]),
       ),
-      callback4: Dynamic = (input?: Dynamic): Dynamic =>
+      getBoardEntry: Dynamic = (file?: Dynamic): Dynamic =>
         distanceBetweenArtboards(
-          entries.get(input),
-          entries.get(targetFile) ?? value7 ?? entries.get(input),
+          entries.get(file),
+          entries.get(targetFile) ?? targetRectangle ?? entries.get(file),
         ),
-      index3: Dynamic = 0;
-    for (let value69 of value10
-      .filter((input?: Dynamic): Dynamic => handles.has(input))
+      promptChars: Dynamic = 0;
+    for (let pendingFile of candidateFiles
+      .filter((file?: Dynamic): Dynamic => handles.has(file))
       .sort(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          callback4(input) - callback4(options),
+        (fileA?: Dynamic, fileB?: Dynamic): Dynamic =>
+          getBoardEntry(fileA) - getBoardEntry(fileB),
       ) as Dynamic) {
-      if (index3 > MAX_FAST_EDIT_BOX_CHARS) break;
-      handles.get(value69).hasPendingEdits() &&
+      if (promptChars > MAX_FAST_EDIT_BOX_CHARS) break;
+      handles.get(pendingFile).hasPendingEdits() &&
         (await withFastEditTimeout(
           handles
-            .get(value69)
+            .get(pendingFile)
             .flushPending()
             .catch((): Dynamic => {}),
           FAST_EDIT_SANDBOX_START_TIMEOUT_MS,
         ));
-      let value70: Dynamic = await withFastEditTimeout(
+      let template: Dynamic = await withFastEditTimeout(
         handles
-          .get(value69)
+          .get(pendingFile)
           .askTemplate()
           .catch((): Dynamic => null),
         2500,
       );
       if (
-        typeof value70 == "string" &&
-        value70.length <= MAX_FAST_EDIT_SECTION_CHARS
+        typeof template == "string" &&
+        template.length <= MAX_FAST_EDIT_SECTION_CHARS
       ) {
-        artboardsById.set(value69, value70);
-        index3 += value70.length;
-      } else if (typeof value70 == "string" && value69 === targetFile)
+        originalTemplatesByPath.set(pendingFile, template);
+        promptChars += template.length;
+      } else if (typeof template == "string" && pendingFile === targetFile)
         return fail("prompt_too_large");
     }
-    artboardsById = new Map(
-      value10.flatMap(
-        (input?: Dynamic): Dynamic =>
-          artboardsById.has(input) ? [[input, artboardsById.get(input)]] : [],
+    originalTemplatesByPath = new Map(
+      candidateFiles.flatMap(
+        (file?: Dynamic): Dynamic =>
+          originalTemplatesByPath.has(file) ? [[file, originalTemplatesByPath.get(file)]] : [],
       ),
     );
-    let value11: Dynamic = value5 ? "" : artboardsById.get(targetFile);
-    if (value11 === undefined) return fail("not_ready");
-    let items2: Dynamic = [...artboardsById.keys()],
+    let targetTemplate: Dynamic = isCanvasTarget ? "" : originalTemplatesByPath.get(targetFile);
+    if (targetTemplate === undefined) return fail("not_ready");
+    let fileCandidates: Dynamic = [...originalTemplatesByPath.keys()],
       values: Dynamic = new Set(
-        value10.flatMap((input?: Dynamic): Dynamic => {
+        candidateFiles.flatMap((file?: Dynamic): Dynamic => {
           try {
-            return handles.get(input)?.pageFonts() ?? [];
+            return handles.get(file)?.pageFonts() ?? [];
           } catch {
             return [];
           }
         }),
       ),
-      entries2: Dynamic = new Map(
-        items2.map(
-          (input?: Dynamic): Dynamic => [
-            input,
+      pageStylesByFile: Dynamic = new Map(
+        fileCandidates.map(
+          (file?: Dynamic): Dynamic => [
+            file,
             readPageStylesFromSheet(
-              artboardsById.get(input),
+              originalTemplatesByPath.get(file),
               values,
             ),
           ],
         ),
       ),
-      callback5: Dynamic = (input?: Dynamic): Dynamic =>
+      getPromptTemplate: Dynamic = (file?: Dynamic): Dynamic =>
         serializeFastEditArtboard(
-          fileIds.idOf.get(input),
-          entries.get(input),
-          hasPageStylesheet(artboardsById.get(input))
+          fileIds.idOf.get(file),
+          entries.get(file),
+          hasPageStylesheet(originalTemplatesByPath.get(file))
             ? serializePageStyleAttributes(
-                entries2.get(input) ?? {},
+                pageStylesByFile.get(file) ?? {},
               )
             : "",
         ) +
         encodeCamelCaseAttributes(
-          stripHelmetMarkup(artboardsById.get(input)),
+          stripHelmetMarkup(originalTemplatesByPath.get(file)),
         ) +
         "</section>",
-      entries3: Dynamic = new Map(
-        items2.map(
-          (input?: Dynamic): Dynamic => [input, callback5(input).length],
+      templateSizes: Dynamic = new Map(
+        fileCandidates.map(
+          (file?: Dynamic): Dynamic => [file, getPromptTemplate(file).length],
         ),
       );
-    if ((entries3.get(targetFile) ?? 0) > MAX_FAST_EDIT_SECTION_CHARS)
+    if ((templateSizes.get(targetFile) ?? 0) > MAX_FAST_EDIT_SECTION_CHARS)
       return fail("prompt_too_large");
-    let value12: Dynamic = entries3.get(targetFile) ?? 0;
-    for (let value69 of items2
-      .filter((input?: Dynamic): Dynamic => input !== targetFile)
+    let totalTemplateChars: Dynamic = templateSizes.get(targetFile) ?? 0;
+    for (let candidateFile of fileCandidates
+      .filter((file?: Dynamic): Dynamic => file !== targetFile)
       .sort(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          callback4(input) - callback4(options),
+        (fileA?: Dynamic, fileB?: Dynamic): Dynamic =>
+          getBoardEntry(fileA) - getBoardEntry(fileB),
       ) as Dynamic) {
-      let entry4: Dynamic = entries3.get(value69);
-      entry4 <= MAX_FAST_EDIT_SECTION_CHARS &&
-      value12 + entry4 <= MAX_FAST_EDIT_BOX_CHARS
-        ? (value12 += entry4)
-        : artboardsById.delete(value69);
+      let templateSize: Dynamic = templateSizes.get(candidateFile);
+      templateSize <= MAX_FAST_EDIT_SECTION_CHARS &&
+      totalTemplateChars + templateSize <= MAX_FAST_EDIT_BOX_CHARS
+        ? (totalTemplateChars += templateSize)
+        : originalTemplatesByPath.delete(candidateFile);
     }
-    let items3: Dynamic = [...artboardsById.keys()],
-      value13: Dynamic = collectOwnedElementIds([
-        ...artboardsById.values(),
+    let availableFiles: Dynamic = [...originalTemplatesByPath.keys()],
+      ownedElementIds: Dynamic = collectOwnedElementIds([
+        ...originalTemplatesByPath.values(),
       ]),
-      value14: Dynamic =
-        context.comment === undefined
+      targetFileId: Dynamic =
+        editContext.comment === undefined
           ? target.by === "selected"
             ? undefined
-            : [context.session.lastTouched, ...context.inView(items3)].find(
-                (input?: Dynamic): Dynamic =>
-                  input !== targetFile && artboardsById.has(input),
+            : [editContext.session.lastTouched, ...editContext.inView(availableFiles)].find(
+                (file?: Dynamic): Dynamic =>
+                  file !== targetFile && originalTemplatesByPath.has(file),
               )
-          : context.second !== undefined &&
-              context.second !== targetFile &&
-              artboardsById.has(context.second)
-            ? context.second
+          : editContext.second !== undefined &&
+              editContext.second !== targetFile &&
+              originalTemplatesByPath.has(editContext.second)
+            ? editContext.second
             : undefined;
     collectJournalChanges(
-      context.session,
-      items3.map(
-        (input?: Dynamic): Dynamic => ({
-          file: input,
-          now: callback5(input),
-          other: context.session.othersChanged.has(input),
+      editContext.session,
+      availableFiles.map(
+        (file?: Dynamic): Dynamic => ({
+          file: file,
+          now: getPromptTemplate(file),
+          other: editContext.session.othersChanged.has(file),
         }),
       ),
-      (input?: Dynamic): Dynamic =>
-        context.host().fileText(input) !== undefined,
+      (file?: Dynamic): Dynamic =>
+        editContext.host().fileText(file) !== undefined,
     );
-    let index4: Dynamic = 0,
-      index5: Dynamic = 0,
-      index6: Dynamic = 0,
-      index7: Dynamic = 0,
-      items4: Dynamic = [],
-      flag5: Dynamic = false,
-      value15: Dynamic = null,
-      value16: Dynamic,
-      value17: Dynamic,
-      promise: Dynamic = new Promise((input?: Dynamic): Dynamic => {
-        value16 = input;
+    let noOpCount: Dynamic = 0,
+      failureCount: Dynamic = 0,
+      successCount: Dynamic = 0,
+      readCount: Dynamic = 0,
+      neighborFiles: Dynamic = [],
+      didRefuse: Dynamic = false,
+      refusalReason: Dynamic = null,
+      resolveWait: Dynamic,
+      resolvePreview: Dynamic,
+      promise: Dynamic = new Promise((resolveValue?: Dynamic): Dynamic => {
+        resolveWait = resolveValue;
       }),
-      entries4: Dynamic = new Map(),
-      entries5: Dynamic = new Map(),
-      index8: Dynamic = 0,
-      index9: Dynamic = 0,
-      callback6: Dynamic = (
-        input?: Dynamic,
-        options?: Dynamic,
-        items8?: Dynamic,
+      templateEntries: Dynamic = new Map(),
+      pendingEntries: Dynamic = new Map(),
+      frameChars: Dynamic = 0,
+      pendingChars: Dynamic = 0,
+      rememberTemplate: Dynamic = (
+        templateCache?: Dynamic,
+        file?: Dynamic,
+        templateHtml?: Dynamic,
       ): Dynamic => {
-        index8 += items8.length - (input.get(options)?.length ?? 0);
-        input.set(options, items8);
-        index8 > MAX_FAST_EDIT_FRAME_OUTPUT_CHARS &&
+        frameChars += templateHtml.length - (templateCache.get(file)?.length ?? 0);
+        templateCache.set(file, templateHtml);
+        frameChars > MAX_FAST_EDIT_FRAME_OUTPUT_CHARS &&
           gateReason === "" &&
           ((gateReason = "too_big"),
-          value17?.(),
-          callback12((input2?: Dynamic): Dynamic => input2.stop()),
-          value16?.());
+          resolvePreview?.(),
+          feedSamplingInput((signal?: Dynamic): Dynamic => signal.stop()),
+          resolveWait?.());
       },
-      values2: Dynamic = new Set(),
-      values3: Dynamic = new Set(),
-      entries6: Dynamic = new Map(),
-      entries7: Dynamic = new Map(),
-      entries8: Dynamic = new Map(),
-      callback7: Dynamic = (input?: Dynamic): Dynamic => {
-        let entry4: Dynamic = draftEmitters.get(input);
-        entry4 === undefined &&
-          ((entry4 = createDraftEmitter(input)),
-          draftEmitters.set(input, entry4));
-        return entry4;
+      changedFiles: Dynamic = new Set(),
+      createdIds: Dynamic = new Set(),
+      fileEmitters: Dynamic = new Map(),
+      fileWrites: Dynamic = new Map(),
+      templateRequests: Dynamic = new Map(),
+      getDraftEmitter: Dynamic = (file?: Dynamic): Dynamic => {
+        let draftEmitter: Dynamic = draftEmitters.get(file);
+        draftEmitter === undefined &&
+          ((draftEmitter = createDraftEmitter(file)),
+          draftEmitters.set(file, draftEmitter));
+        return draftEmitter;
       };
-    value5 || callback7(targetFile).frame("");
-    let callback8: Dynamic = (input?: Dynamic): Dynamic => {
-        if (disposed || request.signal.aborted || flag4 || value !== null)
+    isCanvasTarget || getDraftEmitter(targetFile).frame("");
+    let readTemplate: Dynamic = (templateKey?: Dynamic): Dynamic => {
+        if (disposed || request.signal.aborted || cancelled || value !== null)
           return 0;
-        let entry4: Dynamic = entries4.get(input);
-        if (entry4 === undefined) return 0;
-        let value69: Dynamic = rehydrateFastEditHtml(
+        let templateSource: Dynamic = templateEntries.get(templateKey);
+        if (templateSource === undefined) return 0;
+        let rehydratedHtml: Dynamic = rehydrateFastEditHtml(
             "",
-            entry4,
-            value13,
+            templateSource,
+            ownedElementIds,
           ),
-          value70: Dynamic = parseFastEditArtboardSection(
-            entry4,
+          parsedSection: Dynamic = parseFastEditArtboardSection(
+            templateSource,
           ),
-          value71: Dynamic =
-            value69 === null || value70 === null
+          validatedTemplate: Dynamic =
+            rehydratedHtml === null || parsedSection === null
               ? null
-              : validateFastEditTemplate("", value69);
-        if (value70 === null || value71 === null || !value71.ok) {
-          draftDocumentPreviewStore.drop(input);
-          return entry4.length;
+              : validateFastEditTemplate("", rehydratedHtml);
+        if (parsedSection === null || validatedTemplate === null || !validatedTemplate.ok) {
+          draftDocumentPreviewStore.drop(templateKey);
+          return templateSource.length;
         }
-        let value72: Dynamic = value70.w ?? 480,
-          value73: Dynamic = value70.h ?? 560,
-          entry5: Dynamic = entries6.get(input);
+        let width: Dynamic = parsedSection.w ?? 480,
+          height: Dynamic = parsedSection.h ?? 560,
+          cachedEntry: Dynamic = fileEmitters.get(templateKey);
         if (
-          entry5 === undefined ||
-          entry5.w !== value72 ||
-          entry5.h !== value73
+          cachedEntry === undefined ||
+          cachedEntry.w !== width ||
+          cachedEntry.h !== height
         ) {
-          let value74: Dynamic = canvas.boards(),
-            value75: Dynamic = value74.find(
-              (input2?: Dynamic): Dynamic => input2.file === targetFile,
+          let canvasBoards: Dynamic = canvas.boards(),
+            targetBoard: Dynamic = canvasBoards.find(
+              (board?: Dynamic): Dynamic => board.file === targetFile,
             );
-          if (value75 === undefined && !value5) return entry4.length;
-          let value76: Dynamic =
-              value75 !== undefined
-                ? artboardRectangle(value75)
-                : value7,
-            items8: Dynamic = [
-              ...value74.map(
-                (input2?: Dynamic): Dynamic =>
-                  input2.file === targetFile
-                    ? value76
-                    : artboardRectangle(input2),
+          if (targetBoard === undefined && !isCanvasTarget) return templateSource.length;
+          let existingTargetRect: Dynamic =
+              targetBoard !== undefined
+                ? artboardRectangle(targetBoard)
+                : targetRectangle,
+            neighborBoards: Dynamic = [
+              ...canvasBoards.map(
+                (board?: Dynamic): Dynamic =>
+                  board.file === targetFile
+                    ? existingTargetRect
+                    : artboardRectangle(board),
               ),
-              ...[...entries6]
-                .filter(([input2]: Dynamic): Dynamic => input2 !== input)
-                .map(([, input2]: Dynamic): Dynamic => input2),
+              ...[...fileEmitters]
+                .filter(([boardEntry]: Dynamic): Dynamic => boardEntry !== templateKey)
+                .map(([, board]: Dynamic): Dynamic => board),
             ],
-            value77: Dynamic =
-              value70.x !== undefined &&
-              value70.y !== undefined &&
+            availablePosition: Dynamic =
+              parsedSection.x !== undefined &&
+              parsedSection.y !== undefined &&
               Math.min(
-                ...items8.map(
-                  (input2?: Dynamic): Dynamic =>
+                ...neighborBoards.map(
+                  (file?: Dynamic): Dynamic =>
                     distanceBetweenArtboards(
                       {
-                        x: value70.x,
-                        y: value70.y,
-                        w: value72,
-                        h: value73,
+                        x: parsedSection.x,
+                        y: parsedSection.y,
+                        w: width,
+                        h: height,
                       },
-                      input2,
+                      file,
                     ),
                 ),
               ) > 480,
-            value78: Dynamic = findAvailableArtboardPosition(
+            newPosition: Dynamic = findAvailableArtboardPosition(
               {
-                ...(value8 !== undefined
-                  ? callback3(value72, value73)
-                  : value70.x !== undefined &&
-                      value70.y !== undefined &&
-                      !value77
+                ...(selectedRectangle !== undefined
+                  ? isSameRectangle(width, height)
+                  : parsedSection.x !== undefined &&
+                      parsedSection.y !== undefined &&
+                      !availablePosition
                     ? {
-                        x: value70.x,
-                        y: value70.y,
+                        x: parsedSection.x,
+                        y: parsedSection.y,
                       }
                     : {}),
-                w: value72,
-                h: value73,
+                w: width,
+                h: height,
               },
-              items8,
-              value76,
+              neighborBoards,
+              existingTargetRect,
             );
-          entry5 = {
-            x: value78.x,
-            y: value78.y,
-            w: value72,
-            h: value73,
+          cachedEntry = {
+            x: newPosition.x,
+            y: newPosition.y,
+            w: width,
+            h: height,
           };
-          let value79: Dynamic = !entries6.has(input);
-          entries6.set(input, entry5);
-          if (value79 && !context.pointerDown())
+          let isNewFile: Dynamic = !fileEmitters.has(templateKey);
+          fileEmitters.set(templateKey, cachedEntry);
+          if (isNewFile && !editContext.pointerDown())
             try {
-              canvas.revealRect(entry5);
+              canvas.revealRect(cachedEntry);
             } catch {}
         }
         try {
-          draftDocumentPreviewStore.set(input, {
-            ...entry5,
+          draftDocumentPreviewStore.set(templateKey, {
+            ...cachedEntry,
             doc: buildStaticFastEditPreview(
-              value71.template,
+              validatedTemplate.template,
               {},
             ),
             title: sanitizeArtboardTitle(
-              value70.title ?? "",
+              parsedSection.title ?? "",
               40,
             ),
           });
         } catch {}
-        return entry4.length;
+        return templateSource.length;
       },
-      callback9: Dynamic = (input?: Dynamic): Dynamic => {
-        !flag5 &&
+      scheduleRead: Dynamic = (file?: Dynamic): Dynamic => {
+        !didRefuse &&
           !disposed &&
-          writeScheduler.ask("n:" + input, (): Dynamic => callback8(input));
+          writeScheduler.ask("n:" + file, (): Dynamic => readTemplate(file));
       },
-      entries9: Dynamic = new Map(),
-      callback10: Dynamic = (input?: Dynamic): Dynamic => {
+      filePreviews: Dynamic = new Map(),
+      scheduleFileRead: Dynamic = (file?: Dynamic): Dynamic => {
         if (
           disposed ||
           request.signal.aborted ||
           gateReason !== "" ||
-          flag4 ||
+          cancelled ||
           value !== null
         )
           return 0;
-        let entry4: Dynamic = templates.get(input),
-          entry5: Dynamic = artboardsById.get(input);
-        if (entry4 === undefined || entry5 === undefined) return 0;
-        let entry6: Dynamic = entries9.get(input);
-        if (entry6 === undefined) {
-          if (!entries8.has(input)) {
-            let value73: Dynamic = readTemplateInputDefaults(
-                context.host().fileText(input) ?? "",
+        let template: Dynamic = templates.get(file),
+          originalTemplate: Dynamic = originalTemplatesByPath.get(file);
+        if (template === undefined || originalTemplate === undefined) return 0;
+        let previewEntry: Dynamic = filePreviews.get(file);
+        if (previewEntry === undefined) {
+          if (!templateRequests.has(file)) {
+            let templateDefaults: Dynamic = readTemplateInputDefaults(
+                editContext.host().fileText(file) ?? "",
               ),
-              value74: Dynamic = (
-                handles.get(input)?.renderDefaults() ?? Promise.resolve({})
+              renderDefaultsPromise: Dynamic = (
+                handles.get(file)?.renderDefaults() ?? Promise.resolve({})
               ).catch((): Dynamic => ({})),
-              value75: Dynamic = Promise.race([
-                value74,
+              previewPromise: Dynamic = Promise.race([
+                renderDefaultsPromise,
                 new Promise(
-                  (input2?: Dynamic): Dynamic => setTimeout(input2, 400, {}),
+                  (resolvePreviewTimeout?: Dynamic): Dynamic => setTimeout(resolvePreviewTimeout, 400, {}),
                 ),
               ]).then(
-                (input2?: Dynamic): Dynamic => ({
-                  ...value73,
-                  ...input2,
+                (previewInput?: Dynamic): Dynamic => ({
+                  ...templateDefaults,
+                  ...previewInput,
                 }),
               );
-            entries8.set(input, value75);
-            value75.then((input2?: Dynamic): Dynamic => {
-              entries9.set(input, input2);
-              callback11(input);
+            templateRequests.set(file, previewPromise);
+            previewPromise.then((previewDefaults?: Dynamic): Dynamic => {
+              filePreviews.set(file, previewDefaults);
+              queueFileRead(file);
             });
           }
           return 0;
         }
-        let value69: Dynamic = entry4.length + entry5.length,
-          value70: Dynamic = rehydrateFastEditHtml(
-            entry5,
-            entry4,
-            value13,
+        let templateBoardSize: Dynamic = template.length + originalTemplate.length,
+          rehydratedTemplate: Dynamic = rehydrateFastEditHtml(
+            originalTemplate,
+            template,
+            ownedElementIds,
           ),
-          value71: Dynamic =
-            value70 === null
+          validatedPreview: Dynamic =
+            rehydratedTemplate === null
               ? null
               : validateFastEditTemplate(
-                  entry5,
-                  preserveHelmetMarkup(entry5, value70),
+                  originalTemplate,
+                  preserveHelmetMarkup(originalTemplate, rehydratedTemplate),
                 );
-        if (value71 === null || !value71.ok) {
-          draftHtmlPreviewStore.set(input, null);
-          return value69;
+        if (validatedPreview === null || !validatedPreview.ok) {
+          draftHtmlPreviewStore.set(file, null);
+          return templateBoardSize;
         }
-        let entry7: Dynamic = entries7.get(input);
-        if (entry7 === undefined) {
-          let value73: Dynamic = validateFastEditTemplate(
-            entry5,
-            entry5,
+        let writtenTemplate: Dynamic = fileWrites.get(file);
+        if (writtenTemplate === undefined) {
+          let validatedWrittenTemplate: Dynamic = validateFastEditTemplate(
+            originalTemplate,
+            originalTemplate,
           );
-          entry7 = value73.ok ? value73.template : "";
-          entries7.set(input, entry7);
+          writtenTemplate = validatedWrittenTemplate.ok ? validatedWrittenTemplate.template : "";
+          fileWrites.set(file, writtenTemplate);
         }
-        if (value71.template === entry7) {
-          draftHtmlPreviewStore.set(input, null);
-          return value69;
+        if (validatedPreview.template === writtenTemplate) {
+          draftHtmlPreviewStore.set(file, null);
+          return templateBoardSize;
         }
-        let value72: Dynamic = stripHelmetMarkup(
-          value71.template,
+        let plainPreviewText: Dynamic = stripHelmetMarkup(
+          validatedPreview.template,
         );
         if (
-          value72.replace(/<[^>]*>/g, "").trim() === "" &&
-          !/<(?:img|svg|hr|table|button|input)\b/i.test(value72) &&
-          stripHelmetMarkup(entry7)
+          plainPreviewText.replace(/<[^>]*>/g, "").trim() === "" &&
+          !/<(?:img|svg|hr|table|button|input)\b/i.test(plainPreviewText) &&
+          stripHelmetMarkup(writtenTemplate)
             .replace(/<[^>]*>/g, "")
             .trim() !== ""
         )
-          return value69;
+          return templateBoardSize;
         try {
           draftHtmlPreviewStore.set(
-            input,
-            buildStaticFastEditPreview(value71.template, entry6),
+            file,
+            buildStaticFastEditPreview(validatedPreview.template, previewEntry),
           );
         } catch {
-          return value69;
+          return templateBoardSize;
         }
-        callback7(input).frame(value71.template);
-        return value69;
+        getDraftEmitter(file).frame(validatedPreview.template);
+        return templateBoardSize;
       },
-      callback11: Dynamic = (input?: Dynamic): Dynamic => {
-        !flag5 &&
+      queueFileRead: Dynamic = (fileKey?: Dynamic): Dynamic => {
+        !didRefuse &&
           !disposed &&
-          writeScheduler.ask("f:" + input, (): Dynamic => callback10(input));
+          writeScheduler.ask("f:" + fileKey, (): Dynamic => scheduleFileRead(fileKey));
       },
-      callback12: Dynamic = (input?: Dynamic): Dynamic => {
+      feedSamplingInput: Dynamic = (streamChunk?: Dynamic): Dynamic => {
         try {
-          sandbox !== undefined && input(sandbox);
+          sandbox !== undefined && streamChunk(sandbox);
         } catch {
-          flag2 = true;
-          value17?.();
+          sandboxFailed = true;
+          resolvePreview?.();
         }
       },
-      callback13: Dynamic = (input?: Dynamic): Dynamic =>
-        callback12((input2?: Dynamic): Dynamic => input2.feed(input));
+      emitOutputChunk: Dynamic = (outputChunk?: Dynamic): Dynamic =>
+        feedSamplingInput((streamWriter?: Dynamic): Dynamic => streamWriter.feed(outputChunk));
     try {
-      sandbox = context.sandbox.create({
-        files: value10.map(
-          (input?: Dynamic): Dynamic => ({
-            id: fileIds.idOf.get(input),
-            path: input,
-            title: safeArtboardTitle(entries.get(input).title),
-            html: artboardsById.has(input)
-              ? callback5(input)
+      sandbox = editContext.sandbox.create({
+        files: candidateFiles.map(
+          (fileKey?: Dynamic): Dynamic => ({
+            id: fileIds.idOf.get(fileKey),
+            path: fileKey,
+            title: safeArtboardTitle(entries.get(fileKey).title),
+            html: originalTemplatesByPath.has(fileKey)
+              ? getPromptTemplate(fileKey)
               : serializeFastEditArtboard(
-                  fileIds.idOf.get(input),
-                  entries.get(input),
+                  fileIds.idOf.get(fileKey),
+                  entries.get(fileKey),
                   "",
                 ) + "</section>",
           }),
         ),
         get title() { return sanitizeArtboardTitle(host.canvasTitle, 300) || (uiMessage("canvas.request.canvas")); },
-        ...(value5
+        ...(isCanvasTarget
           ? {}
           : {
               current: fileIds.idOf.get(targetFile),
             }),
-        onHtml: (input?: Dynamic): Dynamic => {
-          if (input.final === true) {
-            flag5 && value16?.();
+        onHtml: (operationResult?: Dynamic): Dynamic => {
+          if (operationResult.final === true) {
+            didRefuse && resolveWait?.();
             return;
           }
-          let value69: Dynamic =
-            input.id === null ? undefined : fileIds.pathOf.get(input.id);
-          if (!(index8 > MAX_FAST_EDIT_FRAME_OUTPUT_CHARS)) {
+          let changedFileKey: Dynamic =
+            operationResult.id === null ? undefined : fileIds.pathOf.get(operationResult.id);
+          if (!(frameChars > MAX_FAST_EDIT_FRAME_OUTPUT_CHARS)) {
             if (
-              value69 !== undefined &&
-              !artboardsById.has(value69) &&
-              input.html.length > MAX_FAST_EDIT_INPUT_LOG_CHARS
+              changedFileKey !== undefined &&
+              !originalTemplatesByPath.has(changedFileKey) &&
+              operationResult.html.length > MAX_FAST_EDIT_INPUT_LOG_CHARS
             ) {
-              values2.add(value69);
+              changedFiles.add(changedFileKey);
               return;
             }
-            value69 !== undefined
-              ? (callback6(templates, value69, input.html),
-                callback11(value69))
-              : input.id !== null && entries4.has(input.id)
-                ? (callback6(entries4, input.id, input.html),
-                  callback9(input.id))
-                : input.id !== null &&
-                  entries5.has(input.id) &&
-                  callback6(entries5, input.id, input.html);
+            changedFileKey !== undefined
+              ? (rememberTemplate(templates, changedFileKey, operationResult.html),
+                queueFileRead(changedFileKey))
+              : operationResult.id !== null && templateEntries.has(operationResult.id)
+                ? (rememberTemplate(templateEntries, operationResult.id, operationResult.html),
+                  scheduleRead(operationResult.id))
+                : operationResult.id !== null &&
+                  pendingEntries.has(operationResult.id) &&
+                  rememberTemplate(pendingEntries, operationResult.id, operationResult.html);
           }
         },
-        onOp: (input?: Dynamic): Dynamic => {
-          let value69: Dynamic = input;
+        onOp: (operationInput?: Dynamic): Dynamic => {
+          let parsedOperation: Dynamic = operationInput;
           if (
-            value69 !== null &&
-            typeof value69 == "object" &&
-            value69.op === "askClaude"
+            parsedOperation !== null &&
+            typeof parsedOperation == "object" &&
+            parsedOperation.op === "askClaude"
           ) {
             value === null &&
               ((value =
-                typeof value69.prompt == "string"
-                  ? sanitizeArtboardTitle(value69.prompt, 1e3)
+                typeof parsedOperation.prompt == "string"
+                  ? sanitizeArtboardTitle(parsedOperation.prompt, 1e3)
                   : ""),
-              context.onStatement?.(),
+              editContext.onStatement?.(),
               draftHtmlPreviewStore.clear(),
               draftDocumentPreviewStore.clear(),
-              value17?.(),
-              callback12((input2?: Dynamic): Dynamic => input2.stop()),
-              value16?.());
+              resolvePreview?.(),
+              feedSamplingInput((streamWriter?: Dynamic): Dynamic => streamWriter.stop()),
+              resolveWait?.());
             return;
           }
           if (value !== null) return;
-          index7 += 1;
-          let value70: Dynamic = parseFastEditArtboardOperation(
-              input,
+          readCount += 1;
+          let operation: Dynamic = parseFastEditArtboardOperation(
+              operationInput,
               fileIds.pathOf,
             ),
-            value71: Dynamic =
-              value70 !== null &&
-              (value70.op === "add" || value70.op === "duplicate");
-          value70 !== null &&
-            (value71
-              ? index9 <= FAST_EDIT_OPERATION_LIMITS.news
-              : pendingHtml.length - index9 < MAX_FAST_EDIT_FILES) &&
-            (pendingHtml.push(value70),
-            value71 && (index9 += 1),
-            value70.op === "duplicate" &&
-              value70.newId !== undefined &&
-              callback6(entries5, value70.newId, value70.html ?? ""));
+            operationFileId: Dynamic =
+              operation !== null &&
+              (operation.op === "add" || operation.op === "duplicate");
+          operation !== null &&
+            (operationFileId
+              ? pendingChars <= FAST_EDIT_OPERATION_LIMITS.news
+              : pendingHtml.length - pendingChars < MAX_FAST_EDIT_FILES) &&
+            (pendingHtml.push(operation),
+            operationFileId && (pendingChars += 1),
+            operation.op === "duplicate" &&
+              operation.newId !== undefined &&
+              rememberTemplate(pendingEntries, operation.newId, operation.html ?? ""));
           if (
-            value70 !== null &&
-            value70.op === "add" &&
-            value70.id !== undefined &&
-            !fileIds.pathOf.has(value70.id) &&
-            entries4.size -
-              (entries4.has(OPEN_ARTBOARD_PLACEHOLDER_ID) ? 1 : 0) <
+            operation !== null &&
+            operation.op === "add" &&
+            operation.id !== undefined &&
+            !fileIds.pathOf.has(operation.id) &&
+            templateEntries.size -
+              (templateEntries.has(OPEN_ARTBOARD_PLACEHOLDER_ID) ? 1 : 0) <
               FAST_EDIT_OPERATION_LIMITS.news
           ) {
-            let entry4: Dynamic = entries6.get(
+            let existingEmitter: Dynamic = fileEmitters.get(
               OPEN_ARTBOARD_PLACEHOLDER_ID,
             );
-            entries4.delete(OPEN_ARTBOARD_PLACEHOLDER_ID);
-            entries6.delete(OPEN_ARTBOARD_PLACEHOLDER_ID);
+            templateEntries.delete(OPEN_ARTBOARD_PLACEHOLDER_ID);
+            fileEmitters.delete(OPEN_ARTBOARD_PLACEHOLDER_ID);
             draftDocumentPreviewStore.drop(
               OPEN_ARTBOARD_PLACEHOLDER_ID,
             );
-            entry4 !== undefined && entries6.set(value70.id, entry4);
-            callback6(entries4, value70.id, value70.html);
-            callback9(value70.id);
+            existingEmitter !== undefined && fileEmitters.set(operation.id, existingEmitter);
+            rememberTemplate(templateEntries, operation.id, operation.html);
+            scheduleRead(operation.id);
           }
-          let value72: Dynamic = input;
-          value72 !== null &&
-            typeof value72 == "object" &&
-            value72.op === "remove" &&
-            typeof value72.id == "string" &&
-            entries4.has(value72.id) &&
-            (entries4.delete(value72.id),
-            values3.add(value72.id),
-            draftDocumentPreviewStore.drop(value72.id));
+          let removeInput: Dynamic = operationInput;
+          removeInput !== null &&
+            typeof removeInput == "object" &&
+            removeInput.op === "remove" &&
+            typeof removeInput.id == "string" &&
+            templateEntries.has(removeInput.id) &&
+            (templateEntries.delete(removeInput.id),
+            createdIds.add(removeInput.id),
+            draftDocumentPreviewStore.drop(removeInput.id));
         },
-        onDone: (input?: Dynamic): Dynamic => {
-          index2 += 1;
-          items.push(input.stmt ?? "");
-          input.changed.length > 0
-            ? (index4 += 1)
-            : value3 === null &&
-              index7 === 0 &&
-              input.failed !== true &&
-              input.stmt !== undefined &&
-              !FAST_EDIT_CONTROL_CALL_PATTERN.test(input.stmt) &&
-              (((context.noMatch?.inserts ??
+        onDone: (completionResult?: Dynamic): Dynamic => {
+          attemptIndex += 1;
+          items.push(completionResult.stmt ?? "");
+          completionResult.changed.length > 0
+            ? (noOpCount += 1)
+            : lastError === null &&
+              readCount === 0 &&
+              completionResult.failed !== true &&
+              completionResult.stmt !== undefined &&
+              !FAST_EDIT_CONTROL_CALL_PATTERN.test(completionResult.stmt) &&
+              (((editContext.noMatch?.inserts ??
                 FAST_EDIT_COLLECT_READS) &&
-                FAST_EDIT_HTML_INSERTION_PATTERN.test(input.stmt) &&
-                input.stmt.includes("<")) ||
-                ((context.noMatch?.writes ??
+                FAST_EDIT_HTML_INSERTION_PATTERN.test(completionResult.stmt) &&
+                completionResult.stmt.includes("<")) ||
+                ((editContext.noMatch?.writes ??
                   FAST_EDIT_ALLOW_EMPTY_SELECTION) &&
                   FAST_EDIT_MUTATION_CALL_PATTERN.test(
-                    input.stmt,
+                    completionResult.stmt,
                   ))) &&
-              ((value3 = input.stmt), (value4 = items.length - 1));
-          index7 = 0;
-          value === null && context.onStatement?.();
+              ((lastError = completionResult.stmt), (lastVisibleIndex = items.length - 1));
+          readCount = 0;
+          value === null && editContext.onStatement?.();
         },
         onPreview: (event?: Dynamic): Dynamic => {
           if (
             request.signal.aborted ||
-            flag4 ||
+            cancelled ||
             typeof event.html != "string" ||
             event.html.length > 2e5
           )
@@ -1163,8 +1163,8 @@ async function runFastEditSamplingRound(
             event.target === null &&
             /^<section\b/i.test(event.html)
           ) {
-            entries4.set(OPEN_ARTBOARD_PLACEHOLDER_ID, event.html);
-            callback9(OPEN_ARTBOARD_PLACEHOLDER_ID);
+            templateEntries.set(OPEN_ARTBOARD_PLACEHOLDER_ID, event.html);
+            scheduleRead(OPEN_ARTBOARD_PLACEHOLDER_ID);
             return;
           }
           if (
@@ -1174,79 +1174,79 @@ async function runFastEditSamplingRound(
             event.target.id !== event.target.file
           )
             return;
-          let entry4: Dynamic = fileIds.pathOf.get(event.target.file),
-            value69: Dynamic =
-              entry4 === undefined ? undefined : artboardsById.get(entry4);
+          let eventFileKey: Dynamic = fileIds.pathOf.get(event.target.file),
+            eventHtml: Dynamic =
+              eventFileKey === undefined ? undefined : originalTemplatesByPath.get(eventFileKey);
           if (
-            entry4 === undefined ||
-            value69 === undefined ||
-            flag5 ||
+            eventFileKey === undefined ||
+            eventHtml === undefined ||
+            didRefuse ||
             disposed
           )
             return;
           let html: Dynamic = event.html;
-          writeScheduler.ask("f:" + entry4, (): Dynamic => {
-            if (disposed || request.signal.aborted || flag4 || value !== null)
+          writeScheduler.ask("f:" + eventFileKey, (): Dynamic => {
+            if (disposed || request.signal.aborted || cancelled || value !== null)
               return 0;
-            let value70: Dynamic = validateFastEditTemplate(
-              value69,
-              preserveHelmetMarkup(value69, html),
+            let validatedEventHtml: Dynamic = validateFastEditTemplate(
+              eventHtml,
+              preserveHelmetMarkup(eventHtml, html),
             );
-            if (value70.ok)
+            if (validatedEventHtml.ok)
               try {
                 draftHtmlPreviewStore.set(
-                  entry4,
+                  eventFileKey,
                   buildStaticFastEditPreview(
-                    value70.template,
+                    validatedEventHtml.template,
                     readTemplateInputDefaults(
-                      context.host().fileText(entry4) ?? "",
+                      editContext.host().fileText(eventFileKey) ?? "",
                     ),
                   ),
                 );
               } catch {}
-            return html.length + value69.length;
+            return html.length + eventHtml.length;
           });
         },
-        onError: (input?: Dynamic): Dynamic => {
-          let refused: Dynamic = input.refused;
-          value15 === null &&
-            (refused === "exists" ||
-              refused === "removed" ||
-              refused === "own" ||
-              refused === "not_plain") &&
-            (value15 = {
-              code: refused,
+        onError: (errorResult?: Dynamic): Dynamic => {
+          let refusalCode: Dynamic = errorResult.refused;
+          refusalReason === null &&
+            (refusalCode === "exists" ||
+              refusalCode === "removed" ||
+              refusalCode === "own" ||
+              refusalCode === "not_plain") &&
+            (refusalReason = {
+              code: refusalCode,
               id:
-                typeof input.id == "string" &&
-                /^[A-Za-z][A-Za-z0-9_-]{0,23}$/.test(input.id)
-                  ? input.id
+                typeof errorResult.id == "string" &&
+                /^[A-Za-z][A-Za-z0-9_-]{0,23}$/.test(errorResult.id)
+                  ? errorResult.id
                   : "",
             });
-          index5 += 1;
-          input.fatal === true &&
-            ((flag2 = true), (text = String(input.message)), value17?.());
+          failureCount += 1;
+          errorResult.fatal === true &&
+            ((sandboxFailed = true), (text = String(errorResult.message)), resolvePreview?.());
         },
-        onLog: (input?: Dynamic): Dynamic => {
-          typeof input.n == "number" &&
-            items4.length < MAX_PROMPT_ARTBOARD_NEIGHBORS &&
-            items4.push(
-              typeof input.message == "string" ? input.message : "",
+        onLog: (logEntry?: Dynamic): Dynamic => {
+          typeof logEntry.n == "number" &&
+            neighborFiles.length < MAX_PROMPT_ARTBOARD_NEIGHBORS &&
+            neighborFiles.push(
+              typeof logEntry.message == "string" ? logEntry.message : "",
             );
         },
         onTouch: (): Dynamic => {
-          index6 += 1;
+          successCount += 1;
         },
       });
     } catch {
       sandbox = undefined;
     }
-    let value18: Dynamic = value5
+    let samplingPromise: Dynamic = isCanvasTarget
         ? Promise.resolve("held")
         : verifySandboxTemplateRoundTrip(
-            context.sandbox,
-            stripHelmetMarkup(value11),
+            editContext.sandbox,
+            stripHelmetMarkup(targetTemplate),
           ),
-      value19: Dynamic =
+      samplingResult: Dynamic =
         sandbox === undefined
           ? {
               ok: false,
@@ -1259,560 +1259,560 @@ async function runFastEditSamplingRound(
               ),
               2500,
             ),
-      callback14: Dynamic = (): Dynamic =>
+      handleLateSampling: Dynamic = (): Dynamic =>
         fail(
-          context.starts !== undefined &&
-            ++context.starts.lateInARow >=
+          editContext.starts !== undefined &&
+            ++editContext.starts.lateInARow >=
               MAX_FAST_EDIT_REPAIR_ATTEMPTS
             ? "start_stuck"
             : "slow_start",
         );
     if (
       sandbox !== undefined &&
-      (value19 === FAST_EDIT_TIMEOUT_SENTINEL ||
-        (value19.ok === false &&
+      (samplingResult === FAST_EDIT_TIMEOUT_SENTINEL ||
+        (samplingResult.ok === false &&
           SANDBOX_NOT_READY_MESSAGE_PATTERN.test(text)))
     )
-      return callback14();
+      return handleLateSampling();
     if (
       sandbox === undefined ||
-      value19 === FAST_EDIT_TIMEOUT_SENTINEL ||
-      value19.ok === false
+      samplingResult === FAST_EDIT_TIMEOUT_SENTINEL ||
+      samplingResult.ok === false
     )
       return fail("no_box");
-    let value20: Dynamic = await value18;
-    if (value20 === "late") return callback14();
-    context.starts !== undefined && (context.starts.lateInARow = 0);
-    (value20 === "reshaped" ||
-      !validateFastEditTemplate(value11, value11).ok) &&
+    let samplingStatus: Dynamic = await samplingPromise;
+    if (samplingStatus === "late") return handleLateSampling();
+    editContext.starts !== undefined && (editContext.starts.lateInARow = 0);
+    (samplingStatus === "reshaped" ||
+      !validateFastEditTemplate(targetTemplate, targetTemplate).ok) &&
       fail("box_cannot_hold");
     request.signal.aborted && fail("cancelled");
-    let value21: Dynamic = fileIds.idOf.get(targetFile) ?? "",
-      entry2: Dynamic = fileIds.idOf.get(
-        value5 ? (items3[0] ?? value10[0] ?? "") : targetFile,
+    let sampleTargetFileId: Dynamic = fileIds.idOf.get(targetFile) ?? "",
+      targetEntryId: Dynamic = fileIds.idOf.get(
+        isCanvasTarget ? (availableFiles[0] ?? candidateFiles[0] ?? "") : targetFile,
       ),
-      value22: Dynamic =
-        entry2 === undefined
+      targetSnapshot: Dynamic =
+        targetEntryId === undefined
           ? {
               html: "",
               prefix: "k",
             }
           : await withFastEditTimeout(
-              sandbox.view(entry2).catch((): Dynamic => null),
+              sandbox.view(targetEntryId).catch((): Dynamic => null),
               2e3,
             ),
-      value23: Dynamic =
-        value5 &&
-        value22 !== FAST_EDIT_TIMEOUT_SENTINEL &&
-        value22 !== null
+      targetReadResult: Dynamic =
+        isCanvasTarget &&
+        targetSnapshot !== FAST_EDIT_TIMEOUT_SENTINEL &&
+        targetSnapshot !== null
           ? {
-              ...value22,
+              ...targetSnapshot,
               html: "",
             }
-          : value22;
+          : targetSnapshot;
     if (
-      value23 === FAST_EDIT_TIMEOUT_SENTINEL ||
-      value23 === null ||
-      typeof value23.html != "string" ||
-      !/^[a-z]{1,8}$/.test(value23.prefix)
+      targetReadResult === FAST_EDIT_TIMEOUT_SENTINEL ||
+      targetReadResult === null ||
+      typeof targetReadResult.html != "string" ||
+      !/^[a-z]{1,8}$/.test(targetReadResult.prefix)
     )
       return fail("no_box");
-    let value24: Dynamic =
-        value14 === undefined
+    let inlineReadResult: Dynamic =
+        targetFileId === undefined
           ? null
           : await withFastEditTimeout(
               sandbox
-                .view(fileIds.idOf.get(value14))
+                .view(fileIds.idOf.get(targetFileId))
                 .catch((): Dynamic => null),
               2e3,
             ),
-      value25: Dynamic =
-        value24 !== FAST_EDIT_TIMEOUT_SENTINEL &&
-        value24 !== null &&
-        typeof value24.html == "string"
+      inlineHtmlResult: Dynamic =
+        inlineReadResult !== FAST_EDIT_TIMEOUT_SENTINEL &&
+        inlineReadResult !== null &&
+        typeof inlineReadResult.html == "string"
           ? {
-              id: fileIds.idOf.get(value14),
+              id: fileIds.idOf.get(targetFileId),
               html: truncateLargeDataUris(
                 removeHelmetHandleIds(
-                  value24.html,
-                  value23.prefix,
+                  inlineReadResult.html,
+                  targetReadResult.prefix,
                 ),
               ),
             }
           : undefined,
-      value26: Dynamic =
-        value25 !== undefined &&
-        value25.html.length <= MAX_INLINE_DATA_URI_CHARS &&
-        context.contextOnly !== true
-          ? value14
+      targetHtmlSnapshot: Dynamic =
+        inlineHtmlResult !== undefined &&
+        inlineHtmlResult.html.length <= MAX_INLINE_DATA_URI_CHARS &&
+        editContext.contextOnly !== true
+          ? targetFileId
           : undefined,
-      entries10: Dynamic = new Map(
-        items3.map((input?: Dynamic): Dynamic => {
-          let value69: Dynamic = truncateLargeDataUris(
-            callback5(input),
+      inlineDataCosts: Dynamic = new Map(
+        availableFiles.map((availableFile?: Dynamic): Dynamic => {
+          let promptHtml: Dynamic = truncateLargeDataUris(
+            getPromptTemplate(availableFile),
           );
           return [
-            input,
-            value69.length + 12 * (value69.match(/<[a-z]/gi)?.length ?? 0),
+            availableFile,
+            promptHtml.length + 12 * (promptHtml.match(/<[a-z]/gi)?.length ?? 0),
           ];
         }),
       ),
-      callback15: Dynamic = (input?: Dynamic): Dynamic =>
-        entries10.get(input),
-      value27: Dynamic =
+      inlineCostFor: Dynamic = (fileKey?: Dynamic): Dynamic =>
+        inlineDataCosts.get(fileKey),
+      remainingInlineBudget: Dynamic =
         MAX_DATA_URI_SCAN_CHARS -
         Math.min(
-          entries10.get(targetFile) ?? 0,
-          context.comment !== undefined
+          inlineDataCosts.get(targetFile) ?? 0,
+          editContext.comment !== undefined
             ? 24e3
             : MAX_DATA_URI_SCAN_CHARS,
         ) -
-        (value25 === undefined
+        (inlineHtmlResult === undefined
           ? 0
-          : Math.min(value25.html.length, MAX_INLINE_DATA_URI_CHARS)),
-      value28: Dynamic = (
-        context.comment !== undefined && context.comment.pin === undefined
+          : Math.min(inlineHtmlResult.html.length, MAX_INLINE_DATA_URI_CHARS)),
+      candidateFileKeys: Dynamic = (
+        editContext.comment !== undefined && editContext.comment.pin === undefined
           ? []
           : [
               ...new Set([
-                context.session.lastTouched,
-                ...context.inView(items3),
-                ...items3,
+                editContext.session.lastTouched,
+                ...editContext.inView(availableFiles),
+                ...availableFiles,
               ]),
             ]
       ).filter(
-        (input?: Dynamic): Dynamic =>
-          entries10.has(input) &&
-          input !== targetFile &&
-          input !== value14 &&
-          callback15(input) <= value27 &&
-          (value27 -= callback15(input)) >= 0,
+        (fileKey?: Dynamic): Dynamic =>
+          inlineDataCosts.has(fileKey) &&
+          fileKey !== targetFile &&
+          fileKey !== targetFileId &&
+          inlineCostFor(fileKey) <= remainingInlineBudget &&
+          (remainingInlineBudget -= inlineCostFor(fileKey)) >= 0,
       ),
-      value29: Dynamic = (
+      orderedCandidateFiles: Dynamic = (
         await Promise.all(
-          value28.map(
-            (input?: Dynamic): Dynamic =>
+          candidateFileKeys.map(
+            (fileKey?: Dynamic): Dynamic =>
               withFastEditTimeout(
                 sandbox
-                  .view(fileIds.idOf.get(input))
+                  .view(fileIds.idOf.get(fileKey))
                   .catch((): Dynamic => null),
                 2e3,
               ),
           ),
         )
       ).flatMap(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input !== FAST_EDIT_TIMEOUT_SENTINEL &&
-          input !== null &&
-          typeof input.html == "string"
+        (readResult?: Dynamic, candidateIndex?: Dynamic): Dynamic =>
+          readResult !== FAST_EDIT_TIMEOUT_SENTINEL &&
+          readResult !== null &&
+          typeof readResult.html == "string"
             ? [
                 {
-                  id: fileIds.idOf.get(value28[options]),
+                  id: fileIds.idOf.get(candidateFileKeys[candidateIndex]),
                   html: removeHelmetHandleIds(
-                    input.html,
-                    value23.prefix,
+                    readResult.html,
+                    targetReadResult.prefix,
                   ),
                 },
               ]
             : [],
       ),
-      entries11: Dynamic = new Map([
-        ...(value5 ? [] : [[targetFile, value23.html]]),
-        ...(value24 !== FAST_EDIT_TIMEOUT_SENTINEL &&
-        value24 !== null &&
-        typeof value24.html == "string"
-          ? [[value14, value24.html]]
+      fileSnapshots: Dynamic = new Map([
+        ...(isCanvasTarget ? [] : [[targetFile, targetReadResult.html]]),
+        ...(inlineReadResult !== FAST_EDIT_TIMEOUT_SENTINEL &&
+        inlineReadResult !== null &&
+        typeof inlineReadResult.html == "string"
+          ? [[targetFileId, inlineReadResult.html]]
           : []),
-        ...value29.map(
-          (input?: Dynamic): Dynamic => [
-            fileIds.pathOf.get(input.id) ?? "",
-            input.html,
+        ...orderedCandidateFiles.map(
+          (snapshot?: Dynamic): Dynamic => [
+            fileIds.pathOf.get(snapshot.id) ?? "",
+            snapshot.html,
           ],
         ),
       ]),
-      entries12: Dynamic = new Map(),
-      callback16: Dynamic = (input?: Dynamic): Dynamic => {
-        let value69: Dynamic = Array.from(
-          parseTargetTemplate(input).querySelectorAll("*"),
+      pendingHtmlByFile: Dynamic = new Map(),
+      describeTemplateShape: Dynamic = (templateHtml?: Dynamic): Dynamic => {
+        let shapeNodes: Dynamic = Array.from(
+          parseTargetTemplate(templateHtml).querySelectorAll("*"),
         );
         return {
-          ids: value69.map(
+          ids: shapeNodes.map(
             (element?: Dynamic): Dynamic => element.getAttribute("id") ?? "",
           ),
-          shape: value69
+          shape: shapeNodes
             .map(
-              (input2?: Dynamic): Dynamic =>
-                input2.localName + String(input2.children.length),
+              (node?: Dynamic): Dynamic =>
+                node.localName + String(node.children.length),
             )
             .join(" "),
         };
       },
-      entries13: Dynamic = new Map(),
-      callback17: Dynamic = (input?: Dynamic): Dynamic => {
-        let entry4: Dynamic = entries13.get(input);
-        if (entry4 === undefined) {
-          let entry5: Dynamic = entries11.get(input),
-            entry6: Dynamic = result.named.states.get(input),
-            value69: Dynamic =
-              entry5 === undefined ||
-              entry6 === undefined ||
-              entry6.text !== callback5(input)
+      templateShapeCache: Dynamic = new Map(),
+      getTemplateShape: Dynamic = (fileKey?: Dynamic): Dynamic => {
+        let cachedShape: Dynamic = templateShapeCache.get(fileKey);
+        if (cachedShape === undefined) {
+          let fileSnapshot: Dynamic = fileSnapshots.get(fileKey),
+            namedState: Dynamic = result.named.states.get(fileKey),
+            templateShape: Dynamic =
+              fileSnapshot === undefined ||
+              namedState === undefined ||
+              namedState.text !== getPromptTemplate(fileKey)
                 ? null
-                : callback16(entry5);
-          entries13.set(
-            input,
-            (entry4 =
-              value69 === null || value69.shape !== entry6.shape
+                : describeTemplateShape(fileSnapshot);
+          templateShapeCache.set(
+            fileKey,
+            (cachedShape =
+              templateShape === null || templateShape.shape !== namedState.shape
                 ? null
-                : value69.ids),
+                : templateShape.ids),
           );
         }
-        return entry4;
+        return cachedShape;
       },
-      value30: Dynamic = (result.named?.at ?? []).flatMap(
-        (input?: Dynamic): Dynamic => {
-          let value69: Dynamic = callback17(input.file);
-          if (value69 === null) return [];
-          let value70: Dynamic =
-            input.at < 0 ? null : (value69[input.at] ?? "");
-          return value70 === input.was
+      renameHints: Dynamic = (result.named?.at ?? []).flatMap(
+        (renameHint?: Dynamic): Dynamic => {
+          let knownNames: Dynamic = getTemplateShape(renameHint.file);
+          if (knownNames === null) return [];
+          let currentName: Dynamic =
+            renameHint.at < 0 ? null : (knownNames[renameHint.at] ?? "");
+          return currentName === renameHint.was
             ? []
             : [
                 {
-                  was: input.was,
-                  now: value70,
-                  on: fileIds.idOf.get(input.file) ?? "",
+                  was: renameHint.was,
+                  now: currentName,
+                  on: fileIds.idOf.get(renameHint.file) ?? "",
                 },
               ];
         },
       ),
-      entry3: Dynamic = entries.get(targetFile),
-      value31: Dynamic =
-        context.comment?.path === undefined || context.drawnAt === undefined
+      targetBoardEntry: Dynamic = entries.get(targetFile),
+      targetReadValue: Dynamic =
+        editContext.comment?.path === undefined || editContext.drawnAt === undefined
           ? null
           : await withFastEditTimeout(
-              context
+              editContext
                 .drawnAt(
                   targetFile,
-                  context.comment.path,
-                  context.comment.tid ?? null,
+                  editContext.comment.path,
+                  editContext.comment.tid ?? null,
                 )
                 .catch((): Dynamic => null),
               2e3,
             ),
-      value32: Dynamic =
-        value31 === FAST_EDIT_TIMEOUT_SENTINEL ? null : value31;
-    value32?.imported === true && fail("in_import");
+      targetPageState: Dynamic =
+        targetReadValue === FAST_EDIT_TIMEOUT_SENTINEL ? null : targetReadValue;
+    targetPageState?.imported === true && fail("in_import");
     if (
-      context.comment?.fp === true &&
-      context.comment.path !== undefined &&
-      value32 !== null &&
-      !value32.atPath
+      editContext.comment?.fp === true &&
+      editContext.comment.path !== undefined &&
+      targetPageState !== null &&
+      !targetPageState.atPath
     ) {
-      let value69: Dynamic =
-        context.rectsOf === undefined
+      let emptyListState: Dynamic =
+        editContext.rectsOf === undefined
           ? null
           : await withFastEditTimeout(
-              context
+              editContext
                 .rectsOf(targetFile, [
                   {
-                    path: context.comment.path,
+                    path: editContext.comment.path,
                     tid: null,
                   },
                 ])
                 .catch((): Dynamic => null),
               2e3,
             );
-      (Array.isArray(value69) &&
-        value69.length === 1 &&
-        value69[0] === null) ||
+      (Array.isArray(emptyListState) &&
+        emptyListState.length === 1 &&
+        emptyListState[0] === null) ||
         fail("not_named");
     }
-    let value33: Dynamic =
-      context.comment?.path === undefined
+    let targetPageEntry: Dynamic =
+      editContext.comment?.path === undefined
         ? null
         : resolveClickedElementTarget(
-            context.comment.path,
-            value32,
-            value11,
-            value23.html,
-            value23.prefix,
+            editContext.comment.path,
+            targetPageState,
+            targetTemplate,
+            targetReadResult.html,
+            targetReadResult.prefix,
           );
-    context.comment?.path !== undefined &&
-      value33 === null &&
-      value32?.hollow !== true &&
+    editContext.comment?.path !== undefined &&
+      targetPageEntry === null &&
+      targetPageState?.hollow !== true &&
       fail("not_named");
-    let value34: Dynamic =
-        value33 === null ||
-        value33.hollow ||
-        value32 === null ||
-        (!value32.atPath && value32.all === "") ||
-        context.comment?.click.x === undefined ||
-        context.comment.click.y === undefined ||
-        STRUCTURAL_LEAF_ELEMENT_TAGS.has(value33.tag)
+    let blankTarget: Dynamic =
+        targetPageEntry === null ||
+        targetPageEntry.hollow ||
+        targetPageState === null ||
+        (!targetPageState.atPath && targetPageState.all === "") ||
+        editContext.comment?.click.x === undefined ||
+        editContext.comment.click.y === undefined ||
+        STRUCTURAL_LEAF_ELEMENT_TAGS.has(targetPageEntry.tag)
           ? null
           : findNearestProbeRectangle(
-              value32.words,
-              context.comment.click.x,
-              context.comment.click.y,
+              targetPageState.words,
+              editContext.comment.click.x,
+              editContext.comment.click.y,
             ),
-      value35: Dynamic = value33 !== null && value33.inList,
-      value36: Dynamic =
-        context.comment !== undefined || target.by !== "selected"
+      targetIsListed: Dynamic = targetPageEntry !== null && targetPageEntry.inList,
+      targetHandles: Dynamic =
+        editContext.comment !== undefined || target.by !== "selected"
           ? []
           : (host.selectedElements?.find(
-              (input?: Dynamic): Dynamic => input.file === targetFile,
+              (fileEntry?: Dynamic): Dynamic => fileEntry.file === targetFile,
             )?.tids ?? []),
-      value37: Dynamic = resolveTemplateHandleIds(
-        [...new Set(value36)],
-        value11,
-        value23.html,
-        value23.prefix,
-      ).flatMap((input?: Dynamic): Dynamic => input ?? []),
-      value38: Dynamic = value37.slice(0, MAX_PROMPT_LIST_ITEMS),
-      value39: Dynamic =
-        value33 === null ||
-        value33.hollow ||
-        context.layoutOf === undefined ||
-        value32?.atPath === false
+      resolvedHandleIds: Dynamic = resolveTemplateHandleIds(
+        [...new Set(targetHandles)],
+        targetTemplate,
+        targetReadResult.html,
+        targetReadResult.prefix,
+      ).flatMap((handleId?: Dynamic): Dynamic => handleId ?? []),
+      visibleHandles: Dynamic = resolvedHandleIds.slice(0, MAX_PROMPT_LIST_ITEMS),
+      canvasLayout: Dynamic =
+        targetPageEntry === null ||
+        targetPageEntry.hollow ||
+        editContext.layoutOf === undefined ||
+        targetPageState?.atPath === false
           ? null
           : await withFastEditTimeout(
-              context
-                .layoutOf(targetFile, context.comment.path)
+              editContext
+                .layoutOf(targetFile, editContext.comment.path)
                 .catch((): Dynamic => null),
               2e3,
             );
     result.applied ||
-      (context.session.turn = {
+      (editContext.session.turn = {
         file: targetFile,
-        before: value5 ? "" : callback5(targetFile),
+        before: isCanvasTarget ? "" : getPromptTemplate(targetFile),
       });
-    let callback18: Dynamic = (input?: Dynamic): Dynamic =>
-        fileIds.idOf.get(input) ?? input.replace(/\.dc\.html$/, ""),
-      value40: Dynamic = recordFastEditReadResult(
-        context.session.journal,
+    let fileLabelFor: Dynamic = (fileKey?: Dynamic): Dynamic =>
+        fileIds.idOf.get(fileKey) ?? fileKey.replace(/\.dc\.html$/, ""),
+      lastReadResult: Dynamic = recordFastEditReadResult(
+        editContext.session.journal,
         {
           file: targetFile,
-          html: value23.html,
-          prefix: value23.prefix,
+          html: targetReadResult.html,
+          prefix: targetReadResult.prefix,
         },
-        callback18,
+        fileLabelFor,
       ),
-      value41: Dynamic =
-        value14 === context.session.lastTouched
-          ? value25
-          : value29.find(
-              (input?: Dynamic): Dynamic =>
-                input.id === fileIds.idOf.get(context.session.lastTouched),
+      lastTouchedSnapshot: Dynamic =
+        targetFileId === editContext.session.lastTouched
+          ? inlineHtmlResult
+          : orderedCandidateFiles.find(
+              (historyEntry?: Dynamic): Dynamic =>
+                historyEntry.id === fileIds.idOf.get(editContext.session.lastTouched),
             ),
-      value42: Dynamic =
-        value41 !== undefined
+      activeHandle: Dynamic =
+        lastTouchedSnapshot !== undefined
           ? recordFastEditReadResult(
-              context.session.journal,
+              editContext.session.journal,
               {
-                file: context.session.lastTouched,
-                html: value41.html,
-                prefix: value23.prefix,
+                file: editContext.session.lastTouched,
+                html: lastTouchedSnapshot.html,
+                prefix: targetReadResult.prefix,
               },
-              callback18,
+              fileLabelFor,
             ).last
-          : value40.last,
+          : lastReadResult.last,
       state: Dynamic = {
         lastMade:
-          context.session.lastTouched !== "" &&
-          fileIds.idOf.has(context.session.lastTouched)
-            ? fileIds.idOf.get(context.session.lastTouched)
+          editContext.session.lastTouched !== "" &&
+          fileIds.idOf.has(editContext.session.lastTouched)
+            ? fileIds.idOf.get(editContext.session.lastTouched)
             : null,
-        ...(value42 !== null &&
-        value42.file === context.session.lastTouched &&
-        value42.handle !== ""
+        ...(activeHandle !== null &&
+        activeHandle.file === editContext.session.lastTouched &&
+        activeHandle.handle !== ""
           ? {
-              lastElement: value42.handle,
+              lastElement: activeHandle.handle,
             }
           : {}),
       },
-      history: Dynamic = context.session.history,
-      value43: Dynamic = beginHistoryTurn(history),
-      callback19: Dynamic = (input?: Dynamic): Dynamic => {
+      history: Dynamic = editContext.session.history,
+      historyTurnId: Dynamic = beginHistoryTurn(history),
+      trimHistory: Dynamic = (historyText?: Dynamic): Dynamic => {
         history.turns.push({
           role: "user",
-          id: value43,
+          id: historyTurnId,
           content: "",
         });
-        let value69: Dynamic = trimHistoryTurns(
+        let trimmedTurns: Dynamic = trimHistoryTurns(
           history.turns,
-          input,
+          historyText,
         );
         history.turns.pop();
-        return value69;
+        return trimmedTurns;
       },
-      value44: Dynamic = callback19(history.chars),
-      state2: Dynamic = {
+      droppedTurns: Dynamic = trimHistory(history.chars),
+      samplingState: Dynamic = {
         history: history.turns,
-        turn: value43,
+        turn: historyTurnId,
         historyChars: history.chars,
-        renamed: value30,
-        rules: context.rules.split("{{PREFIX}}").join(value23.prefix),
-        ...(context.addRules !== undefined &&
-        (context.comment === undefined || context.comment.pin !== undefined)
+        renamed: renameHints,
+        rules: editContext.rules.split("{{PREFIX}}").join(targetReadResult.prefix),
+        ...(editContext.addRules !== undefined &&
+        (editContext.comment === undefined || editContext.comment.pin !== undefined)
           ? {
-              extraRules: context.addRules
+              extraRules: editContext.addRules
                 .split("{{PREFIX}}")
-                .join(value23.prefix),
+                .join(targetReadResult.prefix),
             }
           : {}),
-        ...(context.contextOnly === true
+        ...(editContext.contextOnly === true
           ? {
               contextOnly: true,
             }
           : {}),
         shown: {
-          id: value21,
+          id: sampleTargetFileId,
           html: removeHelmetHandleIds(
-            value23.html,
-            value23.prefix,
+            targetReadResult.html,
+            targetReadResult.prefix,
           ),
-          w: entry3?.w ?? 0,
-          h: entry3?.h ?? 0,
+          w: targetBoardEntry?.w ?? 0,
+          h: targetBoardEntry?.h ?? 0,
         },
         click:
-          context.comment === undefined
+          editContext.comment === undefined
             ? {}
-            : value33 !== null && !value33.hollow
+            : targetPageEntry !== null && !targetPageEntry.hollow
               ? {
-                  ...context.comment.click,
+                  ...editContext.comment.click,
                   element: {
-                    id: value33.id,
-                    tag: value33.tag,
-                    text: value33.text,
-                    ...(value35
+                    id: targetPageEntry.id,
+                    tag: targetPageEntry.tag,
+                    text: targetPageEntry.text,
+                    ...(targetIsListed
                       ? {
                           inList: true,
                         }
                       : {}),
                     ...((
-                      value33.own === ""
+                      targetPageEntry.own === ""
                         ? containsOnlyTemplateInterpolation(
-                            value33.text,
+                            targetPageEntry.text,
                           )
-                        : value33.own.includes("{{")
+                        : targetPageEntry.own.includes("{{")
                     )
                       ? {
                           fromSetting: true,
                         }
                       : {}),
-                    ...(value33.drawing !== null
+                    ...(targetPageEntry.drawing !== null
                       ? {
-                          drawing: value33.drawing,
+                          drawing: targetPageEntry.drawing,
                         }
                       : {}),
-                    ...(value32 !== null && value32.all !== ""
+                    ...(targetPageState !== null && targetPageState.all !== ""
                       ? {
-                          drawnAs: value32.all,
+                          drawnAs: targetPageState.all,
                         }
                       : {}),
-                    ...(value32 !== null
+                    ...(targetPageState !== null
                       ? {
                           look:
-                            value32.words.length > 0
-                              ? value32.look
+                            targetPageState.words.length > 0
+                              ? targetPageState.look
                               : pickTargetAppearanceContext(
-                                  value32.look,
+                                  targetPageState.look,
                                 ),
                         }
                       : {}),
                   },
-                  parent: value33.parent,
-                  ...(value39 !== null &&
-                  value39 !== FAST_EDIT_TIMEOUT_SENTINEL
+                  parent: targetPageEntry.parent,
+                  ...(canvasLayout !== null &&
+                  canvasLayout !== FAST_EDIT_TIMEOUT_SENTINEL
                     ? {
-                        layout: value39,
+                        layout: canvasLayout,
                       }
                     : {}),
-                  ...(value34 !== null
+                  ...(blankTarget !== null
                     ? {
-                        blank: value34,
+                        blank: blankTarget,
                         ...pickTargetSiblingContext(
                           await resolveFastEditClickTarget(
-                            context,
+                            editContext,
                             targetFile,
-                            context.comment.click,
-                            value23.html,
-                            value23.prefix,
+                            editContext.comment.click,
+                            targetReadResult.html,
+                            targetReadResult.prefix,
                           ),
                         ),
                       }
                     : {}),
                 }
-              : context.comment.click.ground === true ||
-                  context.comment.path !== undefined
+              : editContext.comment.click.ground === true ||
+                  editContext.comment.path !== undefined
                 ? {
-                    ...context.comment.click,
+                    ...editContext.comment.click,
                     ground: true,
-                    ...(value35
+                    ...(targetIsListed
                       ? {
                           ...pickTargetSiblingContext(
                             await resolveFastEditClickTarget(
-                              context,
+                              editContext,
                               targetFile,
-                              context.comment.click,
-                              value23.html,
-                              value23.prefix,
+                              editContext.comment.click,
+                              targetReadResult.html,
+                              targetReadResult.prefix,
                             ),
                           ),
-                          inside: value33.id,
+                          inside: targetPageEntry.id,
                           insideList: true,
                         }
                       : await resolveFastEditClickTarget(
-                          context,
+                          editContext,
                           targetFile,
-                          context.comment.click,
-                          value23.html,
-                          value23.prefix,
+                          editContext.comment.click,
+                          targetReadResult.html,
+                          targetReadResult.prefix,
                         )),
                   }
                 : {
-                    ...context.comment.click,
-                    ...(context.comment.between !== undefined
+                    ...editContext.comment.click,
+                    ...(editContext.comment.between !== undefined
                       ? {
-                          between: context.comment.between.map(
-                            (input?: Dynamic): Dynamic => ({
-                              id: fileIds.idOf.get(input.file) ?? "",
-                              px: input.px,
-                              side: input.side,
+                          between: editContext.comment.between.map(
+                            (referenceHandle?: Dynamic): Dynamic => ({
+                              id: fileIds.idOf.get(referenceHandle.file) ?? "",
+                              px: referenceHandle.px,
+                              side: referenceHandle.side,
                             }),
                           ),
                         }
                       : {}),
-                    ...(value8 !== undefined
+                    ...(selectedRectangle !== undefined
                       ? {
-                          newAt: value8,
+                          newAt: selectedRectangle,
                         }
                       : {}),
                   },
         comment: request.words,
-        maxBytes: context.maxBytes,
-        journal: value40.text,
-        writing: items3
+        maxBytes: editContext.maxBytes,
+        journal: lastReadResult.text,
+        writing: availableFiles
           .filter(
-            (input?: Dynamic): Dynamic =>
-              input !== targetFile && context.holds(input),
+            (fileKey?: Dynamic): Dynamic =>
+              fileKey !== targetFile && editContext.holds(fileKey),
           )
-          .map((input?: Dynamic): Dynamic => fileIds.idOf.get(input)),
-        design: ((input?: Dynamic): Dynamic =>
-          value10.map((input2?: Dynamic): Dynamic => {
-            let entry4: Dynamic = entries.get(input2),
-              value69: Dynamic = artboardsById.has(input2)
-                ? summarizeArtboardText(callback5(input2))
+          .map((fileKey?: Dynamic): Dynamic => fileIds.idOf.get(fileKey)),
+        design: ((distanceMap?: Dynamic): Dynamic =>
+          candidateFiles.map((fileKey?: Dynamic): Dynamic => {
+            let boardEntry: Dynamic = entries.get(fileKey),
+              boardText: Dynamic = originalTemplatesByPath.has(fileKey)
+                ? summarizeArtboardText(getPromptTemplate(fileKey))
                 : "";
             return {
-              id: fileIds.idOf.get(input2),
-              w: entry4.w,
-              h: entry4.h,
-              words: value69,
-              ...(artboardsById.has(input2)
-                ? value69 === "" &&
-                  isEmptyStructuralTemplate(callback5(input2))
+              id: fileIds.idOf.get(fileKey),
+              w: boardEntry.w,
+              h: boardEntry.h,
+              words: boardText,
+              ...(originalTemplatesByPath.has(fileKey)
+                ? boardText === "" &&
+                  isEmptyStructuralTemplate(getPromptTemplate(fileKey))
                   ? {
                       empty: true,
                     }
@@ -1820,35 +1820,35 @@ async function runFastEditSamplingRound(
                 : {
                     tooLarge: true,
                   }),
-              x: entry4.x,
-              y: entry4.y,
-              title: safeArtboardTitle(entry4.title),
-              far: input.get(input2),
+              x: boardEntry.x,
+              y: boardEntry.y,
+              title: safeArtboardTitle(boardEntry.title),
+              far: distanceMap.get(fileKey),
             };
           }))(
           new Map(
-            [...value10]
+            [...candidateFiles]
               .sort(
-                (input?: Dynamic, options?: Dynamic): Dynamic =>
-                  Number(artboardsById.has(options)) -
-                    Number(artboardsById.has(input)) ||
-                  callback4(input) - callback4(options),
+                (leftFile?: Dynamic, rightFile?: Dynamic): Dynamic =>
+                  Number(originalTemplatesByPath.has(rightFile)) -
+                    Number(originalTemplatesByPath.has(leftFile)) ||
+                  getBoardEntry(leftFile) - getBoardEntry(rightFile),
               )
               .map(
-                (input?: Dynamic, options?: Dynamic): Dynamic => [
-                  input,
-                  options,
+                (fileKey?: Dynamic, fileIndex?: Dynamic): Dynamic => [
+                  fileKey,
+                  fileIndex,
                 ],
               ),
           ),
         ),
-        inView: context
-          .inView(items3)
+        inView: editContext
+          .inView(availableFiles)
           .slice(0, 12)
-          .map((input?: Dynamic): Dynamic => fileIds.idOf.get(input)),
+          .map((fileKey?: Dynamic): Dynamic => fileIds.idOf.get(fileKey)),
         ...(target.report !== undefined
           ? {
-              note: target.report.split("{{PREFIX}}").join(value23.prefix),
+              note: target.report.split("{{PREFIX}}").join(targetReadResult.prefix),
               ...(target.line !== undefined
                 ? {
                     noteLine: target.line,
@@ -1856,14 +1856,14 @@ async function runFastEditSamplingRound(
                 : {}),
             }
           : {}),
-        ...(value25 !== undefined
+        ...(inlineHtmlResult !== undefined
           ? {
-              second: value25,
+              second: inlineHtmlResult,
             }
           : {}),
-        ...(value29.length > 0
+        ...(orderedCandidateFiles.length > 0
           ? {
-              more: value29,
+              more: orderedCandidateFiles,
             }
           : {}),
         ...(target.logs !== undefined
@@ -1871,307 +1871,307 @@ async function runFastEditSamplingRound(
               logs: target.logs,
             }
           : {}),
-        ...(context.comment !== undefined
+        ...(editContext.comment !== undefined
           ? state
           : {
               typed: {
                 by: target.by,
                 pictures: request.images.length,
                 ...state,
-                elements: value38.map(
-                  (input?: Dynamic): Dynamic => ({
-                    id: input.id,
-                    tag: input.tag,
-                    text: input.text,
-                    drawing: input.drawing,
-                    ...(input.inList
+                elements: visibleHandles.map(
+                  (handle?: Dynamic): Dynamic => ({
+                    id: handle.id,
+                    tag: handle.tag,
+                    text: handle.text,
+                    drawing: handle.drawing,
+                    ...(handle.inList
                       ? {
                           inList: true,
                         }
                       : {}),
                   }),
                 ),
-                moreElements: value37.length - value38.length,
-                othersChanged: [...context.session.othersChanged]
+                moreElements: resolvedHandleIds.length - visibleHandles.length,
+                othersChanged: [...editContext.session.othersChanged]
                   .map(
-                    (input?: Dynamic): Dynamic =>
-                      fileIds.idOf.get(input) ?? "",
+                    (fileKey?: Dynamic): Dynamic =>
+                      fileIds.idOf.get(fileKey) ?? "",
                   )
-                  .filter((input?: Dynamic): Dynamic => input !== "")
+                  .filter((fileId?: Dynamic): Dynamic => fileId !== "")
                   .slice(0, 6),
                 places:
                   target.by !== "selected"
                     ? describeFreeCanvasSpots(
-                        value10.map(
-                          (input?: Dynamic): Dynamic => ({
-                            id: fileIds.idOf.get(input),
+                        candidateFiles.map(
+                          (fileKey?: Dynamic): Dynamic => ({
+                            id: fileIds.idOf.get(fileKey),
                             ...artboardRectangle(
-                              entries.get(input),
+                              entries.get(fileKey),
                             ),
                           }),
                         ),
-                        value6.map(artboardRectangle),
-                        context
-                          .inView(items3)
+                        boards.map(artboardRectangle),
+                        editContext
+                          .inView(availableFiles)
                           .slice(0, 12)
                           .map(
-                            (input?: Dynamic): Dynamic =>
-                              fileIds.idOf.get(input),
+                            (fileKey?: Dynamic): Dynamic =>
+                              fileIds.idOf.get(fileKey),
                           ),
                       )
                     : findAdjacentArtboardSpaces(
-                        value6
+                        boards
                           .filter(
-                            (input?: Dynamic): Dynamic =>
-                              input.file !== targetFile,
+                            (candidate?: Dynamic): Dynamic =>
+                              candidate.file !== targetFile,
                           )
                           .map(artboardRectangle),
-                        artboardRectangle(entry3),
+                        artboardRectangle(targetBoardEntry),
                       ).line,
               },
             }),
       },
-      callback20: Dynamic = (): Dynamic =>
+      runSampling: Dynamic = (): Dynamic =>
         buildFastEditPrompt({
-          ...state2,
+          ...samplingState,
           told: [
             ...history.told,
-            ...(value44.length > 0
-              ? [describeAutomaticallyDroppedTurns(value44)]
+            ...(droppedTurns.length > 0
+              ? [describeAutomaticallyDroppedTurns(droppedTurns)]
               : []),
           ],
         }),
-      value45: Dynamic = callback20();
+      samplingOutcome: Dynamic = runSampling();
     for (
-      !value45.ok &&
+      !samplingOutcome.ok &&
       history.told.length > 0 &&
-      (resetHistoryNotes(history), (value45 = callback20()));
-      !value45.ok;
+      (resetHistoryNotes(history), (samplingOutcome = runSampling()));
+      !samplingOutcome.ok;
 
     ) {
-      let value69: Dynamic = callback19(
+      let trimmedHistory: Dynamic = trimHistory(
         countHistoryCharacters(history.turns) - 1,
       );
-      if (value69.length === 0) break;
-      value44.push(...value69);
-      value45 = callback20();
+      if (trimmedHistory.length === 0) break;
+      droppedTurns.push(...trimmedHistory);
+      samplingOutcome = runSampling();
     }
-    value44.length > 0 &&
+    droppedTurns.length > 0 &&
       (history.told.push(
-        describeAutomaticallyDroppedTurns(value44),
+        describeAutomaticallyDroppedTurns(droppedTurns),
       ),
-      history.trace.blind.push(value44));
-    value45.ok ||
+      history.trace.blind.push(droppedTurns));
+    samplingOutcome.ok ||
       (resetHistoryNotes(history), fail("prompt_too_large"));
-    appendHistoryUserTurn(history, value43, value45.kept);
-    context.session.turn !== null && (context.session.turn.open = true);
+    appendHistoryUserTurn(history, historyTurnId, samplingOutcome.kept);
+    editContext.session.turn !== null && (editContext.session.turn.open = true);
     request.signal.aborted && fail("cancelled");
     if (
       firstCall &&
       target.retargeted !== true &&
-      context.target === undefined
+      editContext.target === undefined
     ) {
-      let value69: Dynamic = canvas
+      let selectedFileKeys: Dynamic = canvas
           .boards()
-          .map((input?: Dynamic): Dynamic => input.file),
-        value70: Dynamic = selectedFastEditFile(context.host(), value69);
+          .map((selection?: Dynamic): Dynamic => selection.file),
+        selectedFile: Dynamic = selectedFastEditFile(editContext.host(), selectedFileKeys);
       if (
-        value70 !== undefined &&
-        value70 !== targetFile &&
-        handles.has(value70)
+        selectedFile !== undefined &&
+        selectedFile !== targetFile &&
+        handles.has(selectedFile)
       ) {
         cleanup();
-        for (let value71 of draftEmitters.values() as Dynamic) value71.end();
+        for (let emitter of draftEmitters.values() as Dynamic) emitter.end();
         draftEmitters.clear();
-        context.session.busy = value70;
+        editContext.session.busy = selectedFile;
         return {
           again: {
-            file: value70,
+            file: selectedFile,
             by: "selected",
             retargeted: true,
           },
         };
       }
     }
-    result.calls >= (context.maxCalls ?? MAX_FAST_EDIT_CALLS) &&
+    result.calls >= (editContext.maxCalls ?? MAX_FAST_EDIT_CALLS) &&
       fail("call_cap");
     result.calls += 1;
-    let value46: Dynamic = -1,
-      index10: Dynamic = 0,
-      index11: Dynamic = 0,
-      value47: Dynamic = nextHandleSequence(
-        value45.files,
-        value23.prefix,
+    let streamOffset: Dynamic = -1,
+      outputOffset: Dynamic = 0,
+      forgetCount: Dynamic = 0,
+      handleSequence: Dynamic = nextHandleSequence(
+        samplingOutcome.files,
+        targetReadResult.prefix,
       ),
-      callback21: Dynamic = (
-        input?: Dynamic,
-        options?: Dynamic,
-        context2?: Dynamic,
+      parseReplyChunk: Dynamic = (
+        chunkInput?: Dynamic,
+        includeFence?: Dynamic,
+        parseContext?: Dynamic,
       ): Dynamic =>
-        context.feedAsWritten === true
-          ? input
+        editContext.feedAsWritten === true
+          ? chunkInput
           : adoptHandleIds(
               isIncompleteInsertionStatement(
                 rewriteContainerAppendStatements(
-                  input,
-                  options,
-                  context2,
+                  chunkInput,
+                  includeFence,
+                  parseContext,
                 ),
-                options,
+                includeFence,
               ),
-              value23.prefix,
-              value47,
-              options,
-              value13,
+              targetReadResult.prefix,
+              handleSequence,
+              includeFence,
+              ownedElementIds,
             );
-    callback = (input?: Dynamic): Dynamic => {
+    callback = (chunkText?: Dynamic): Dynamic => {
       let rest: Dynamic = extractForgetStatements(
           history.said,
           true,
         ).rest,
-        callback26: Dynamic = (input2?: Dynamic): Dynamic =>
-          input2.split(/[\n\0]/),
-        value69: Dynamic = callback26(callback21(rest, true, "\0")),
-        value70: Dynamic = callback26(
-          context.feedAsWritten === true
+        splitLines: Dynamic = (textValue?: Dynamic): Dynamic =>
+          textValue.split(/[\n\0]/),
+        replyLines: Dynamic = splitLines(parseReplyChunk(rest, true, "\0")),
+        forgetLines: Dynamic = splitLines(
+          editContext.feedAsWritten === true
             ? rest
             : rewriteContainerAppendStatements(rest, true, "\0"),
         ),
-        value71: Dynamic = -1,
-        index12: Dynamic = 0;
-      for (let value72 of items.slice(0, value4 + 1) as Dynamic) {
-        let value73: Dynamic = value72
+        startIndex: Dynamic = -1,
+        lineIndex: Dynamic = 0;
+      for (let line of items.slice(0, lastVisibleIndex + 1) as Dynamic) {
+        let trimmedLine: Dynamic = line
           .split(
             `
 `,
             1,
           )[0]
           .trim();
-        value71 = value69.findIndex(
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            options >= index12 && input2.trim() === value73,
+        startIndex = replyLines.findIndex(
+          (lineText?: Dynamic, lineNumber?: Dynamic): Dynamic =>
+            lineNumber >= lineIndex && lineText.trim() === trimmedLine,
         );
-        value71 >= 0 &&
-          (index12 =
-            value71 +
-            value72.split(`
+        startIndex >= 0 &&
+          (lineIndex =
+            startIndex +
+            line.split(`
 `).length);
       }
-      return value71 < 0
-        ? input
-        : value70.slice(value71, index12).join(`
+      return startIndex < 0
+        ? chunkText
+        : forgetLines.slice(startIndex, lineIndex).join(`
 `);
     };
-    let callback22: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
+    let parseStreamText: Dynamic = (
+      streamText?: Dynamic,
+      saidText?: Dynamic,
     ): Dynamic => {
-      let value69: Dynamic = parseFastEditReplyChunk(
-          input.slice(Math.max(0, value46)),
-          options,
+      let parsedChunk: Dynamic = parseFastEditReplyChunk(
+          streamText.slice(Math.max(0, streamOffset)),
+          saidText,
         ),
-        value70: Dynamic = extractForgetStatements(
-          value69,
-          options,
+        forgetStatements: Dynamic = extractForgetStatements(
+          parsedChunk,
+          saidText,
         );
-      applyForgetStatements(history, value70.calls, index11);
-      index11 = value70.calls.length;
+      applyForgetStatements(history, forgetStatements.calls, forgetCount);
+      forgetCount = forgetStatements.calls.length;
       Object.assign(history, {
-        said: options
-          ? value69
-          : value69.slice(
+        said: saidText
+          ? parsedChunk
+          : parsedChunk.slice(
               0,
-              value69.lastIndexOf(`
+              parsedChunk.lastIndexOf(`
 `) + 1,
             ),
         replied: true,
       });
-      return callback21(value70.rest, options);
+      return parseReplyChunk(forgetStatements.rest, saidText);
     };
-    flag2 && fail("sandbox_failed");
-    let value48: Dynamic = context.engine.call({
-      turns: value45.turns,
+    sandboxFailed && fail("sandbox_failed");
+    let engineCall: Dynamic = editContext.engine.call({
+      turns: samplingOutcome.turns,
       tier: request.tier,
       images: request.images,
-      onText: (items8?: Dynamic): Dynamic => {
+      onText: (textChunk?: Dynamic): Dynamic => {
         if (request.signal.aborted || gateReason !== "" || value !== null)
           return;
-        if (flag2) {
-          value17?.();
+        if (sandboxFailed) {
+          resolvePreview?.();
           return;
         }
-        if (value46 < 0) {
-          let value70: Dynamic = /^\s*```[a-z]*[ \t]*\n/i.exec(items8);
-          if (/^\s*`/.test(items8) && value70 === null) return;
-          value46 =
-            value70 !== null
-              ? value70[0].length
-              : items8.length - items8.trimStart().length;
+        if (streamOffset < 0) {
+          let fenceMatch: Dynamic = /^\s*```[a-z]*[ \t]*\n/i.exec(textChunk);
+          if (/^\s*`/.test(textChunk) && fenceMatch === null) return;
+          streamOffset =
+            fenceMatch !== null
+              ? fenceMatch[0].length
+              : textChunk.length - textChunk.trimStart().length;
         }
         request.report("writing", {
-          chars: items8.length,
+          chars: textChunk.length,
         });
-        if (items8.length > MAX_FAST_EDIT_FED_CHARS) {
+        if (textChunk.length > MAX_FAST_EDIT_FED_CHARS) {
           flag = true;
-          value17?.();
+          resolvePreview?.();
           return;
         }
-        let value69: Dynamic = callback22(items8, false);
-        text2 = value69.slice(
+        let parsedText: Dynamic = parseStreamText(textChunk, false);
+        replyText = parsedText.slice(
           0,
-          value69.lastIndexOf(`
+          parsedText.lastIndexOf(`
 `) + 1,
         );
-        value69.length > index10 &&
-          (callback13(value69.slice(index10)), (index10 = value69.length));
-        if (flag2) {
-          value17?.();
+        parsedText.length > outputOffset &&
+          (emitOutputChunk(parsedText.slice(outputOffset)), (outputOffset = parsedText.length));
+        if (sandboxFailed) {
+          resolvePreview?.();
           return;
         }
         timeout !== undefined && clearTimeout(timeout);
         timeout = setTimeout((): Dynamic => {
           timeout = undefined;
-          !flag5 &&
-            value69.endsWith(`
+          !didRefuse &&
+            parsedText.endsWith(`
 `) &&
-            callback12((input?: Dynamic): Dynamic => input.flush());
+            feedSamplingInput((streamWriter?: Dynamic): Dynamic => streamWriter.flush());
         }, 250);
       },
     });
-    value17 = (): Dynamic => value48.cancel();
-    (flag2 || flag || value !== null) && value17();
+    resolvePreview = (): Dynamic => engineCall.cancel();
+    (sandboxFailed || flag || value !== null) && resolvePreview();
     onAbort = (): Dynamic => {
-      value48.cancel();
+      engineCall.cancel();
       sandbox?.stop();
     };
     request.signal.addEventListener("abort", onAbort, {
       once: true,
     });
-    let value49: Dynamic = await value48.promise;
+    let engineResult: Dynamic = await engineCall.promise;
     request.signal.aborted && fail("cancelled");
     value !== null && fail("ask_claude");
-    value46 < 0 && (value46 = 0);
-    let value50: Dynamic = callback22(value49.text, true),
-      callback23: Dynamic = (input?: Dynamic): Dynamic =>
-        input
+    streamOffset < 0 && (streamOffset = 0);
+    let finalReplyText: Dynamic = parseStreamText(engineResult.text, true),
+      countReplyLines: Dynamic = (lineText?: Dynamic): Dynamic =>
+        lineText
           .split(
             `
 `,
           )
-          .filter((input2?: Dynamic): Dynamic => input2.trim() !== "").length;
+          .filter((line?: Dynamic): Dynamic => line.trim() !== "").length;
     result.skipped +=
-      callback23(
+      countReplyLines(
         stripReplyInlineBackticks(
-          stripReplyCodeFences(value49.text.slice(value46)),
+          stripReplyCodeFences(engineResult.text.slice(streamOffset)),
         ),
-      ) - callback23(value50);
-    text2 = value50;
-    value50.length > index10 &&
-      (callback13(value50.slice(index10)), (index10 = value50.length));
-    callback12((input?: Dynamic): Dynamic => input.flush());
-    flag5 = true;
-    callback12((input?: Dynamic): Dynamic => input.end());
-    let value51: Dynamic = flag2
+      ) - countReplyLines(finalReplyText);
+    replyText = finalReplyText;
+    finalReplyText.length > outputOffset &&
+      (emitOutputChunk(finalReplyText.slice(outputOffset)), (outputOffset = finalReplyText.length));
+    feedSamplingInput((streamWriter?: Dynamic): Dynamic => streamWriter.flush());
+    didRefuse = true;
+    feedSamplingInput((streamWriter?: Dynamic): Dynamic => streamWriter.end());
+    let sandboxSucceeded: Dynamic = sandboxFailed
       ? false
       : (await Promise.race([
           withFastEditTimeout(promise, 5e3),
@@ -2179,27 +2179,27 @@ async function runFastEditSamplingRound(
         ])) !== FAST_EDIT_TIMEOUT_SENTINEL;
     request.signal.aborted && fail("cancelled");
     value !== null && fail("ask_claude");
-    value49.truncated === true && fail("cut_short");
-    (flag2 || !value51) && fail("sandbox_failed");
-    let value52: Dynamic = value15;
-    if (value52 !== null) {
+    engineResult.truncated === true && fail("cut_short");
+    (sandboxFailed || !sandboxSucceeded) && fail("sandbox_failed");
+    let refusal: Dynamic = refusalReason;
+    if (refusal !== null) {
       result.refusedAdd && fail("refused_add");
       result.refusedAdd = true;
-      let value69: Dynamic =
-          value52.id === ""
+      let refusalMessage: Dynamic =
+          refusal.id === ""
             ? "The id you gave the new screen"
-            : "#" + value52.id,
-        value70: Dynamic =
-          (value52.code === "exists"
-            ? value69 +
+            : "#" + refusal.id,
+        refusalReport: Dynamic =
+          (refusal.code === "exists"
+            ? refusalMessage +
               " is already a screen in this document. To change it, write to it; to add a screen, pick a new id."
-            : value52.code === "removed"
-              ? value69 +
+            : refusal.code === "removed"
+              ? refusalMessage +
                 " was removed earlier in the same reply, and an id is not free again within one reply. To move or change a screen, write to it; to replace it, give the new one another id."
-              : value52.code === "own"
-                ? value69 +
+              : refusal.code === "own"
+                ? refusalMessage +
                   " is one of the page\u2019s own names, as is every id made of {{PREFIX}} and digits. Give the new screen a word for an id, like pricing-2."
-                : value69 +
+                : refusalMessage +
                   " cannot be an id (a letter, then letters, digits, - and _; 24 at most). Pick another id for the new screen.") +
           " Nothing of your last reply was applied: write the whole reply again.";
       cleanup();
@@ -2208,24 +2208,24 @@ async function runFastEditSamplingRound(
         again: {
           file: targetFile,
           by: target.by,
-          report: value70,
+          report: refusalReport,
         },
       };
     }
-    if (items4.length > 0 && !result.reads) {
+    if (neighborFiles.length > 0 && !result.reads) {
       result.reads = true;
       cleanup();
       request.report("thinking");
-      let value69: Dynamic = new RegExp(
-        ' id="' + value23.prefix + '\\d{1,6}"',
+      let metadataPattern: Dynamic = new RegExp(
+        ' id="' + targetReadResult.prefix + '\\d{1,6}"',
         "g",
       );
       return {
         again: {
           file: targetFile,
           by: target.by,
-          logs: items4.map(
-            (input?: Dynamic): Dynamic => input.replace(value69, ""),
+          logs: neighborFiles.map(
+            (textValue?: Dynamic): Dynamic => textValue.replace(metadataPattern, ""),
           ),
           ...(target.report !== undefined
             ? {
@@ -2235,10 +2235,10 @@ async function runFastEditSamplingRound(
         },
       };
     }
-    index8 > MAX_FAST_EDIT_FRAME_OUTPUT_CHARS &&
+    frameChars > MAX_FAST_EDIT_FRAME_OUTPUT_CHARS &&
       refuseGate("too_big");
-    values2.size > 0 && refuseGate("box_cannot_hold");
-    let state3: Dynamic = {
+    changedFiles.size > 0 && refuseGate("box_cannot_hold");
+    let operationState: Dynamic = {
       asked: targetFile,
       templates: new Map(),
       places: new Map(),
@@ -2249,564 +2249,564 @@ async function runFastEditSamplingRound(
       pages: new Map(),
     };
     ([...templates].some(
-      ([input, input2]: Dynamic): Dynamic =>
-        TRUNCATED_DATA_URI_PATTERN.test(input2) &&
+      ([fileKey, htmlValue]: Dynamic): Dynamic =>
+        TRUNCATED_DATA_URI_PATTERN.test(htmlValue) &&
         !TRUNCATED_DATA_URI_PATTERN.test(
-          artboardsById.get(input) ?? "",
+          originalTemplatesByPath.get(fileKey) ?? "",
         ),
     ) ||
       [
-        ...entries4.values(),
-        ...entries5.values(),
+        ...templateEntries.values(),
+        ...pendingEntries.values(),
         ...pendingHtml.map(
-          (input?: Dynamic): Dynamic =>
-            "html" in input ? (input.html ?? "") : "",
+          (sectionResult?: Dynamic): Dynamic =>
+            "html" in sectionResult ? (sectionResult.html ?? "") : "",
         ),
       ].some(
-        (input?: Dynamic): Dynamic =>
-          TRUNCATED_DATA_URI_PATTERN.test(input),
+        (dataUri?: Dynamic): Dynamic =>
+          TRUNCATED_DATA_URI_PATTERN.test(dataUri),
       )) &&
       refuseGate("data_cut");
-    let items5: Dynamic = [],
-      entries14: Dynamic = new Map();
-    for (let [value69, value70] of templates as Dynamic) {
-      let entry4: Dynamic = artboardsById.get(value69),
-        entry5: Dynamic = entries.get(value69);
-      if (entry5 === undefined) continue;
-      if (entry4 === undefined) {
-        let value86: Dynamic = parseFastEditArtboardSection(
-          value70,
+    let appliedOperations: Dynamic = [],
+      validatedTemplates: Dynamic = new Map();
+    for (let [fileKey, templateHtml] of templates as Dynamic) {
+      let originalTemplate: Dynamic = originalTemplatesByPath.get(fileKey),
+        fileEntry: Dynamic = entries.get(fileKey);
+      if (fileEntry === undefined) continue;
+      if (originalTemplate === undefined) {
+        let parsedSection: Dynamic = parseFastEditArtboardSection(
+          templateHtml,
         );
-        if (value86 === null) return refuseGate("shape");
-        (unwrapFastEditSection(value70) ?? "").trim() !== "" &&
+        if (parsedSection === null) return refuseGate("shape");
+        (unwrapFastEditSection(templateHtml) ?? "").trim() !== "" &&
           refuseGate("box_cannot_hold");
-        let value87: Dynamic = diffArtboardProperties(
-          entry5,
-          value86,
+        let propertyDiffs: Dynamic = diffArtboardProperties(
+          fileEntry,
+          parsedSection,
         );
-        Object.keys(value87.place).length > 0 &&
-          state3.places.set(value69, value87.place);
-        value87.title !== undefined &&
-          state3.renames.set(value69, value87.title);
+        Object.keys(propertyDiffs.place).length > 0 &&
+          operationState.places.set(fileKey, propertyDiffs.place);
+        propertyDiffs.title !== undefined &&
+          operationState.renames.set(fileKey, propertyDiffs.title);
         continue;
       }
-      let value71: Dynamic = rehydrateFastEditHtml(
-          entry4,
-          value70,
-          value13,
+      let rehydratedHtml: Dynamic = rehydrateFastEditHtml(
+          originalTemplate,
+          templateHtml,
+          ownedElementIds,
         ),
-        value72: Dynamic = parseFastEditArtboardSection(
-          value70,
+        parsedTemplate: Dynamic = parseFastEditArtboardSection(
+          templateHtml,
           new Set(["background", "color", "font"]),
         );
-      if (value72 === null) return refuseGate("shape");
-      let state4: Dynamic = {};
-      for (let value86 of ["background", "color", "font"] as Dynamic) {
-        let value87: Dynamic = value72.page?.[value86],
-          value88: Dynamic = entries2.get(value69)?.[value86];
-        value87 !== undefined &&
-          value87.trim() !== (value88 ?? "") &&
-          (state4[value86] = value87.trim());
+      if (parsedTemplate === null) return refuseGate("shape");
+      let pageStyleChanges: Dynamic = {};
+      for (let styleKey of ["background", "color", "font"] as Dynamic) {
+        let requestedStyle: Dynamic = parsedTemplate.page?.[styleKey],
+          currentStyle: Dynamic = pageStylesByFile.get(fileKey)?.[styleKey];
+        requestedStyle !== undefined &&
+          requestedStyle.trim() !== (currentStyle ?? "") &&
+          (pageStyleChanges[styleKey] = requestedStyle.trim());
       }
-      let items8: Dynamic = ["background", "color", "font"],
-        callback26: Dynamic = (input?: Dynamic): Dynamic => ({
-          ...(input.font !== undefined && input.font !== ""
+      let styleKeys: Dynamic = ["background", "color", "font"],
+        normalizePageStyles: Dynamic = (styles?: Dynamic): Dynamic => ({
+          ...(styles.font !== undefined && styles.font !== ""
             ? {
-                font: input.font,
+                font: styles.font,
               }
             : {}),
-          ...validatePageStyles(input, values),
+          ...validatePageStyles(styles, values),
         }),
-        value73: Dynamic = items8.filter(
-          (input?: Dynamic): Dynamic => state4[input] !== undefined,
+        changedStyleKeys: Dynamic = styleKeys.filter(
+          (styleKey?: Dynamic): Dynamic => pageStyleChanges[styleKey] !== undefined,
         ),
-        value74: Dynamic =
-          context.target === undefined ||
-          (value69 === context.target && context.contextOnly !== true) ||
-          value69 === value26
-            ? callback26(readPageStylesFromSection(value70))
+        requestedStyles: Dynamic =
+          editContext.target === undefined ||
+          (fileKey === editContext.target && editContext.contextOnly !== true) ||
+          fileKey === targetHtmlSnapshot
+            ? normalizePageStyles(readPageStylesFromSection(templateHtml))
             : {};
-      for (let value86 of items8 as Dynamic)
-        state4[value86] === undefined &&
-          value74[value86] !== undefined &&
-          value74[value86] !== (entries2.get(value69)?.[value86] ?? "") &&
-          (state4[value86] = value74[value86]);
-      let value75: Dynamic = validatePageStyles(state4, values),
-        value76: Dynamic = items8.filter(
-          (input?: Dynamic): Dynamic =>
-            value75[input] === undefined &&
-            callback26(state4)[input] !== undefined,
+      for (let styleKey of styleKeys as Dynamic)
+        pageStyleChanges[styleKey] === undefined &&
+          requestedStyles[styleKey] !== undefined &&
+          requestedStyles[styleKey] !== (pageStylesByFile.get(fileKey)?.[styleKey] ?? "") &&
+          (pageStyleChanges[styleKey] = requestedStyles[styleKey]);
+      let validatedStyles: Dynamic = validatePageStyles(pageStyleChanges, values),
+        removedStyleKeys: Dynamic = styleKeys.filter(
+          (styleKey?: Dynamic): Dynamic =>
+            validatedStyles[styleKey] === undefined &&
+            normalizePageStyles(pageStyleChanges)[styleKey] !== undefined,
         ),
-        value77: Dynamic = Object.fromEntries(
-          items8
+        styleDeclarations: Dynamic = Object.fromEntries(
+          styleKeys
             .filter(
-              (input?: Dynamic): Dynamic =>
-                state4[input] !== undefined && !value76.includes(input),
+              (styleKey?: Dynamic): Dynamic =>
+                pageStyleChanges[styleKey] !== undefined && !removedStyleKeys.includes(styleKey),
             )
-            .map((input?: Dynamic): Dynamic => [input, state4[input]]),
+            .map((styleKey?: Dynamic): Dynamic => [styleKey, pageStyleChanges[styleKey]]),
         ),
-        value78: Dynamic =
-          Object.keys(state4).length === 0
+        styleValidation: Dynamic =
+          Object.keys(pageStyleChanges).length === 0
             ? {
                 ok: false,
                 why: "value",
               }
             : updatePageStyleSheet(
-                preserveHelmetMarkup(entry4, value71 ?? ""),
-                value77,
+                preserveHelmetMarkup(originalTemplate, rehydratedHtml ?? ""),
+                styleDeclarations,
                 values,
               ),
-        value79: Dynamic =
-          value71 === null ||
-          !(value78.ok || value78.why === "no_sheet") ||
-          Object.keys(callback26(state4)).length === 0
+        readTemplateResult: Dynamic =
+          rehydratedHtml === null ||
+          !(styleValidation.ok || styleValidation.why === "no_sheet") ||
+          Object.keys(normalizePageStyles(pageStyleChanges)).length === 0
             ? {
-                text: value71,
+                text: rehydratedHtml,
                 own: [],
               }
             : mapFastEditCssChanges(
-                stripHelmetMarkup(entry4),
-                value71,
-                callback26(state4),
-                [...(value78.ok ? [] : items8), ...value76],
+                stripHelmetMarkup(originalTemplate),
+                rehydratedHtml,
+                normalizePageStyles(pageStyleChanges),
+                [...(styleValidation.ok ? [] : styleKeys), ...removedStyleKeys],
                 {
-                  w: value72.w ?? entry5.w,
-                  h: value72.h ?? entry5.h,
+                  w: parsedTemplate.w ?? fileEntry.w,
+                  h: parsedTemplate.h ?? fileEntry.h,
                 },
               ),
-        value80: Dynamic =
-          value79.text === null
+        normalizedTemplate: Dynamic =
+          readTemplateResult.text === null
             ? {
                 ok: false,
                 code: "not_template",
               }
             : validateFastEditTemplate(
-                entry4,
-                preserveHelmetMarkup(entry4, value79.text),
+                originalTemplate,
+                preserveHelmetMarkup(originalTemplate, readTemplateResult.text),
               ),
-        value81: Dynamic = value80.ok && value79.text !== value71,
-        value82: Dynamic =
-          value80.ok || value79.text === value71
-            ? value80
+        templateChanged: Dynamic = normalizedTemplate.ok && readTemplateResult.text !== rehydratedHtml,
+        validatedTemplateResult: Dynamic =
+          normalizedTemplate.ok || readTemplateResult.text === rehydratedHtml
+            ? normalizedTemplate
             : validateFastEditTemplate(
-                entry4,
-                preserveHelmetMarkup(entry4, value71),
+                originalTemplate,
+                preserveHelmetMarkup(originalTemplate, rehydratedHtml),
               ),
-        value83: Dynamic = validateFastEditTemplate(
-          entry4,
-          entry4,
+        existingTemplateResult: Dynamic = validateFastEditTemplate(
+          originalTemplate,
+          originalTemplate,
         );
-      value82.ok
-        ? (entries14.set(value69, value82.template),
-          value83.ok &&
-            value82.template !== value83.template &&
-            state3.templates.set(value69, value82.template))
-        : (items5.push({
-            id: fileIds.idOf.get(value69) ?? "",
-            code: value82.code,
+      validatedTemplateResult.ok
+        ? (validatedTemplates.set(fileKey, validatedTemplateResult.template),
+          existingTemplateResult.ok &&
+            validatedTemplateResult.template !== existingTemplateResult.template &&
+            operationState.templates.set(fileKey, validatedTemplateResult.template))
+        : (appliedOperations.push({
+            id: fileIds.idOf.get(fileKey) ?? "",
+            code: validatedTemplateResult.code,
           }),
-          value83.ok && entries14.set(value69, value83.template));
-      let value84: Dynamic = value76.filter(
-          (input?: Dynamic): Dynamic =>
-            value73.includes(input) &&
-            !(value82.ok && (value79.own.includes(input) || value81)),
+          existingTemplateResult.ok && validatedTemplates.set(fileKey, existingTemplateResult.template));
+      let remainingStyleKeys: Dynamic = removedStyleKeys.filter(
+          (styleKey?: Dynamic): Dynamic =>
+            changedStyleKeys.includes(styleKey) &&
+            !(validatedTemplateResult.ok && (readTemplateResult.own.includes(styleKey) || templateChanged)),
         ),
-        state5: Dynamic = {
-          ...(value78.ok
-            ? value77
-            : value81
+        pageState: Dynamic = {
+          ...(styleValidation.ok
+            ? styleDeclarations
+            : templateChanged
               ? {}
               : Object.fromEntries(
-                  value73
+                  changedStyleKeys
                     .filter(
-                      (input?: Dynamic): Dynamic => !value76.includes(input),
+                      (styleKey?: Dynamic): Dynamic => !removedStyleKeys.includes(styleKey),
                     )
                     .map(
-                      (input?: Dynamic): Dynamic => [input, state4[input]],
+                      (styleKey?: Dynamic): Dynamic => [styleKey, pageStyleChanges[styleKey]],
                     ),
                 )),
           ...Object.fromEntries(
-            value84.map((input?: Dynamic): Dynamic => [input, state4[input]]),
+            remainingStyleKeys.map((styleKey?: Dynamic): Dynamic => [styleKey, pageStyleChanges[styleKey]]),
           ),
         };
-      Object.keys(state5).length > 0 && state3.pages.set(value69, state5);
-      let value85: Dynamic = diffArtboardProperties(
-        entry5,
-        value72,
+      Object.keys(pageState).length > 0 && operationState.pages.set(fileKey, pageState);
+      let operationDiff: Dynamic = diffArtboardProperties(
+        fileEntry,
+        parsedTemplate,
       );
-      Object.keys(value85.place).length > 0 &&
-        state3.places.set(value69, value85.place);
-      value85.title !== undefined &&
-        state3.renames.set(value69, value85.title);
-      value72.del === true &&
-        !state3.deletes.includes(value69) &&
-        state3.deletes.push(value69);
+      Object.keys(operationDiff.place).length > 0 &&
+        operationState.places.set(fileKey, operationDiff.place);
+      operationDiff.title !== undefined &&
+        operationState.renames.set(fileKey, operationDiff.title);
+      parsedTemplate.del === true &&
+        !operationState.deletes.includes(fileKey) &&
+        operationState.deletes.push(fileKey);
     }
-    for (let value69 of pendingHtml as Dynamic)
-      if (value69.op === "remove") {
-        let entry4: Dynamic = fileIds.pathOf.get(value69.id);
-        state3.deletes.includes(entry4) || state3.deletes.push(entry4);
-      } else if (value69.op === "duplicate") {
-        let entry4: Dynamic = fileIds.pathOf.get(value69.id),
-          entry5: Dynamic = entries.get(entry4),
-          value70: Dynamic =
-            (value69.newId !== undefined && entries5.get(value69.newId)) ||
-            value69.html,
-          value71: Dynamic =
-            value70 === undefined
+    for (let pendingOperation of pendingHtml as Dynamic)
+      if (pendingOperation.op === "remove") {
+        let removedFileKey: Dynamic = fileIds.pathOf.get(pendingOperation.id);
+        operationState.deletes.includes(removedFileKey) || operationState.deletes.push(removedFileKey);
+      } else if (pendingOperation.op === "duplicate") {
+        let duplicatedFileKey: Dynamic = fileIds.pathOf.get(pendingOperation.id),
+          duplicatedEntry: Dynamic = entries.get(duplicatedFileKey),
+          duplicateSection: Dynamic =
+            (pendingOperation.newId !== undefined && pendingEntries.get(pendingOperation.newId)) ||
+            pendingOperation.html,
+          duplicateProperties: Dynamic =
+            duplicateSection === undefined
               ? null
-              : parseFastEditArtboardSection(value70);
-        state3.duplicates.push({
-          file: entry4,
-          ...(value69.newId !== undefined
+              : parseFastEditArtboardSection(duplicateSection);
+        operationState.duplicates.push({
+          file: duplicatedFileKey,
+          ...(pendingOperation.newId !== undefined
             ? {
-                id: value69.newId,
+                id: pendingOperation.newId,
               }
             : {}),
-          ...(value71?.title !== undefined && value71.title !== entry5?.title
+          ...(duplicateProperties?.title !== undefined && duplicateProperties.title !== duplicatedEntry?.title
             ? {
-                title: value71.title,
+                title: duplicateProperties.title,
               }
             : {}),
-          ...(value71?.x !== undefined &&
-          value71.y !== undefined &&
-          (value71.x !== entry5?.x || value71.y !== entry5?.y)
+          ...(duplicateProperties?.x !== undefined &&
+          duplicateProperties.y !== undefined &&
+          (duplicateProperties.x !== duplicatedEntry?.x || duplicateProperties.y !== duplicatedEntry?.y)
             ? {
-                x: value71.x,
-                y: value71.y,
+                x: duplicateProperties.x,
+                y: duplicateProperties.y,
               }
             : {}),
         });
-      } else if (value69.op === "add") {
+      } else if (pendingOperation.op === "add") {
         if (
-          value69.id !== undefined &&
-          (values3.has(value69.id) ||
-            value69.id === OPEN_ARTBOARD_PLACEHOLDER_ID)
+          pendingOperation.id !== undefined &&
+          (createdIds.has(pendingOperation.id) ||
+            pendingOperation.id === OPEN_ARTBOARD_PLACEHOLDER_ID)
         )
           continue;
-        let value70: Dynamic =
-            value69.id !== undefined
-              ? (entries4.get(value69.id) ?? value69.html)
-              : value69.html,
-          value71: Dynamic = rehydrateFastEditHtml(
+        let normalizedBody: Dynamic =
+            pendingOperation.id !== undefined
+              ? (templateEntries.get(pendingOperation.id) ?? pendingOperation.html)
+              : pendingOperation.html,
+          rehydratedBody: Dynamic = rehydrateFastEditHtml(
             "",
-            value70,
-            value13,
+            normalizedBody,
+            ownedElementIds,
           ),
-          value72: Dynamic = parseFastEditArtboardSection(
-            value70,
+          parsedBody: Dynamic = parseFastEditArtboardSection(
+            normalizedBody,
           );
-        if (value72 === null) return refuseGate("shape");
-        let value73: Dynamic =
-          value71 === null
+        if (parsedBody === null) return refuseGate("shape");
+        let validatedBody: Dynamic =
+          rehydratedBody === null
             ? {
                 ok: false,
                 code: "not_template",
               }
-            : validateFastEditTemplate("", value71);
-        if (!value73.ok)
-          items5.push({
+            : validateFastEditTemplate("", rehydratedBody);
+        if (!validatedBody.ok)
+          appliedOperations.push({
             id: "",
-            code: value73.code,
+            code: validatedBody.code,
           });
         else {
-          let value74: Dynamic = validatePageStyles(
+          let validatedPageStyles: Dynamic = validatePageStyles(
               {
-                ...readPageStylesFromSection(value70),
-                ...value72.page,
+                ...readPageStylesFromSection(normalizedBody),
+                ...parsedBody.page,
               },
               values,
             ),
-            value75: Dynamic = serializePageStyleDeclarations({
-              ...value74,
-              ...(value74.font !== undefined
+            pageStyleRule: Dynamic = serializePageStyleDeclarations({
+              ...validatedPageStyles,
+              ...(validatedPageStyles.font !== undefined
                 ? {
                     families: validatePageFontFamilies(
-                      value74.font,
+                      validatedPageStyles.font,
                       values,
                     ),
                   }
                 : {}),
             });
-          state3.adds.push({
-            body: value73.template,
-            title: value72.title ?? "",
-            w: value72.w ?? 480,
-            h: value72.h ?? 560,
-            ...(value72.x !== undefined && value72.y !== undefined
+          operationState.adds.push({
+            body: validatedBody.template,
+            title: parsedBody.title ?? "",
+            w: parsedBody.w ?? 480,
+            h: parsedBody.h ?? 560,
+            ...(parsedBody.x !== undefined && parsedBody.y !== undefined
               ? {
-                  x: value72.x,
-                  y: value72.y,
+                  x: parsedBody.x,
+                  y: parsedBody.y,
                 }
               : {}),
-            ...(value69.id !== undefined
+            ...(pendingOperation.id !== undefined
               ? {
-                  id: value69.id,
+                  id: pendingOperation.id,
                 }
               : {}),
-            ...(value75 !== ""
+            ...(pageStyleRule !== ""
               ? {
-                  pageRule: value75,
+                  pageRule: pageStyleRule,
                 }
               : {}),
           });
         }
       }
-    let values4: Dynamic = new Set([
-      ...state3.templates.keys(),
-      ...state3.places.keys(),
-      ...state3.renames.keys(),
-      ...state3.pages.keys(),
-      ...items5
-        .map((input?: Dynamic): Dynamic => fileIds.pathOf.get(input.id) ?? "")
-        .filter((input?: Dynamic): Dynamic => input !== ""),
+    let writtenFileKeys: Dynamic = new Set([
+      ...operationState.templates.keys(),
+      ...operationState.places.keys(),
+      ...operationState.renames.keys(),
+      ...operationState.pages.keys(),
+      ...appliedOperations
+        .map((operation?: Dynamic): Dynamic => fileIds.pathOf.get(operation.id) ?? "")
+        .filter((fileKey?: Dynamic): Dynamic => fileKey !== ""),
     ]);
-    state3.deletes = state3.deletes.filter(
-      (input?: Dynamic): Dynamic => !values4.has(input),
+    operationState.deletes = operationState.deletes.filter(
+      (fileKey?: Dynamic): Dynamic => !writtenFileKeys.has(fileKey),
     );
-    let value53: Dynamic = checkFastEditNewArtboardLimit(state3);
-    value53 !== null && refuseGate(value53);
-    if (value8 !== undefined && state3.adds.length > 0) {
-      let value69: Dynamic = state3.adds[0],
-        value70: Dynamic = callback3(value69.w, value69.h),
-        value71: Dynamic = value70.x - (value69.x ?? value70.x),
-        value72: Dynamic = value70.y - (value69.y ?? value70.y);
-      for (let value73 of state3.adds as Dynamic)
-        value73 === value69
-          ? Object.assign(value73, value70)
-          : value73.x !== undefined &&
-            value73.y !== undefined &&
-            Object.assign(value73, {
-              x: value73.x + value71,
-              y: value73.y + value72,
+    let newArtboardLimitError: Dynamic = checkFastEditNewArtboardLimit(operationState);
+    newArtboardLimitError !== null && refuseGate(newArtboardLimitError);
+    if (selectedRectangle !== undefined && operationState.adds.length > 0) {
+      let firstAddedBoard: Dynamic = operationState.adds[0],
+        sameRectangle: Dynamic = isSameRectangle(firstAddedBoard.w, firstAddedBoard.h),
+        xOffset: Dynamic = sameRectangle.x - (firstAddedBoard.x ?? sameRectangle.x),
+        yOffset: Dynamic = sameRectangle.y - (firstAddedBoard.y ?? sameRectangle.y);
+      for (let addedBoard of operationState.adds as Dynamic)
+        addedBoard === firstAddedBoard
+          ? Object.assign(addedBoard, sameRectangle)
+          : addedBoard.x !== undefined &&
+            addedBoard.y !== undefined &&
+            Object.assign(addedBoard, {
+              x: addedBoard.x + xOffset,
+              y: addedBoard.y + yOffset,
             });
     }
-    let value54: Dynamic = prepareFastEditArtboardChanges(
-      state3,
+    let preparedChanges: Dynamic = prepareFastEditArtboardChanges(
+      operationState,
       canvas.boards(),
       targetFile,
       entries,
-      value8 !== undefined,
-      value7,
+      selectedRectangle !== undefined,
+      targetRectangle,
     );
-    for (let [value69, value70] of state3.pages as Dynamic) {
-      let value71: Dynamic = updatePageStyleSheet(
-        state3.templates.get(value69) ?? entries14.get(value69) ?? "",
-        value70,
+    for (let [fileKey, pageStyles] of operationState.pages as Dynamic) {
+      let updatedTemplate: Dynamic = updatePageStyleSheet(
+        operationState.templates.get(fileKey) ?? validatedTemplates.get(fileKey) ?? "",
+        pageStyles,
         values,
       );
-      value71.ok
-        ? state3.templates.set(value69, value71.template)
-        : items5.push({
-            id: fileIds.idOf.get(value69) ?? "",
+      updatedTemplate.ok
+        ? operationState.templates.set(fileKey, updatedTemplate.template)
+        : appliedOperations.push({
+            id: fileIds.idOf.get(fileKey) ?? "",
             code: "page_style",
           });
     }
-    context.allOrNothing === true &&
-      items5.length > 0 &&
-      refuseGate(items5[0].code);
-    context.target !== undefined &&
-      [...state3.templates.keys(), ...state3.pages.keys()].some(
-        (input?: Dynamic): Dynamic =>
-          (input !== context.target || context.contextOnly === true) &&
-          input !== value26,
+    editContext.allOrNothing === true &&
+      appliedOperations.length > 0 &&
+      refuseGate(appliedOperations[0].code);
+    editContext.target !== undefined &&
+      [...operationState.templates.keys(), ...operationState.pages.keys()].some(
+        (fileKey?: Dynamic): Dynamic =>
+          (fileKey !== editContext.target || editContext.contextOnly === true) &&
+          fileKey !== targetHtmlSnapshot,
       ) &&
       refuseGate("beyond_target");
-    context.allOrNothing === true && index5 > 0 && refuseGate("thrown");
-    let value55: Dynamic =
-      state3.templates.size +
-        state3.places.size +
-        state3.renames.size +
-        state3.adds.length +
-        state3.duplicates.length +
-        state3.deletes.length ===
+    editContext.allOrNothing === true && failureCount > 0 && refuseGate("thrown");
+    let hasRefusal: Dynamic =
+      operationState.templates.size +
+        operationState.places.size +
+        operationState.renames.size +
+        operationState.adds.length +
+        operationState.duplicates.length +
+        operationState.deletes.length ===
       0;
-    value3 !== null &&
-      (context.allOrNothing === true || value55) &&
+    lastError !== null &&
+      (editContext.allOrNothing === true || hasRefusal) &&
       refuseGate("line_no_match");
-    value55 && items5.length > 0 && refuseGate(items5[0].code);
-    value55 &&
-      items4.length > 0 &&
+    hasRefusal && appliedOperations.length > 0 && refuseGate(appliedOperations[0].code);
+    hasRefusal &&
+      neighborFiles.length > 0 &&
       target.logs !== undefined &&
       fail("read_twice");
-    if (value55)
+    if (hasRefusal)
       throw {
         code:
-          value49.text.trim() !== "" &&
+          engineResult.text.trim() !== "" &&
           pendingHtml.length === 0 &&
           templates.size === 0 &&
-          index2 === 0
+          attemptIndex === 0
             ? "words_only"
-            : index2 > 0 && index4 === 0
-              ? index6 > 0
+            : attemptIndex > 0 && noOpCount === 0
+              ? successCount > 0
                 ? "already_so"
                 : "no_match"
-              : index2 === 0
+              : attemptIndex === 0
                 ? "not_run"
                 : "no_change",
       };
-    for (let [value69, value70] of state3.templates as Dynamic) {
-      let value71: Dynamic = validateArtboardTemplateReplacement(
-        context.host().fileText(value69) ?? "",
-        value70,
+    for (let [fileKey, templateHtml] of operationState.templates as Dynamic) {
+      let replacementValidation: Dynamic = validateArtboardTemplateReplacement(
+        editContext.host().fileText(fileKey) ?? "",
+        templateHtml,
       );
-      if (!value71.ok) return refuseGate(value71.code);
-      value69 !== targetFile &&
+      if (!replacementValidation.ok) return refuseGate(replacementValidation.code);
+      fileKey !== targetFile &&
         (await verifySandboxTemplateRoundTrip(
-          context.sandbox,
-          stripHelmetMarkup(artboardsById.get(value69)),
+          editContext.sandbox,
+          stripHelmetMarkup(originalTemplatesByPath.get(fileKey)),
         )) !== "held" &&
         refuseGate("box_cannot_hold");
-      countEmptySvgDrawings(value70) >
+      countEmptySvgDrawings(templateHtml) >
         countEmptySvgDrawings(
-          artboardsById.get(value69) ?? "",
+          originalTemplatesByPath.get(fileKey) ?? "",
         ) && refuseGate("empty_drawing");
     }
-    state3.adds.some(
-      (input?: Dynamic): Dynamic =>
-        countEmptySvgDrawings(input.body) > 0,
+    operationState.adds.some(
+      (operation?: Dynamic): Dynamic =>
+        countEmptySvgDrawings(operation.body) > 0,
     ) && refuseGate("empty_drawing");
-    let value56: Dynamic = await Promise.all(
+    let roundResults: Dynamic = await Promise.all(
       [
-        ...[...state3.templates.values()].map(stripHelmetMarkup),
-        ...state3.adds.map(
-          (input?: Dynamic): Dynamic =>
-            stripHelmetMarkup(input.body),
+        ...[...operationState.templates.values()].map(stripHelmetMarkup),
+        ...operationState.adds.map(
+          (operation?: Dynamic): Dynamic =>
+            stripHelmetMarkup(operation.body),
         ),
       ].map(
-        (input?: Dynamic): Dynamic =>
-          verifySandboxTemplateRoundTrip(context.sandbox, input),
+        (operation?: Dynamic): Dynamic =>
+          verifySandboxTemplateRoundTrip(editContext.sandbox, operation),
       ),
     );
-    value56.includes("reshaped") && refuseGate("reshaped");
-    value56.includes("late") && fail("sandbox_failed");
+    roundResults.includes("reshaped") && refuseGate("reshaped");
+    roundResults.includes("late") && fail("sandbox_failed");
     request.signal.aborted && fail("cancelled");
-    context.host().readOnly && fail("read_only");
+    editContext.host().readOnly && fail("read_only");
     unsubscribe = await canvas.hold();
-    let value57: Dynamic = await Promise.all(
-      [...state3.templates.keys()].map(
-        async (input?: Dynamic): Promise<Dynamic> => [
-          input,
+    let sandboxResults: Dynamic = await Promise.all(
+      [...operationState.templates.keys()].map(
+        async (fileKey?: Dynamic): Promise<Dynamic> => [
+          fileKey,
           await handles
-            .get(input)
+            .get(fileKey)
             ?.askTemplate()
             .catch((): Dynamic => null),
         ],
       ),
     );
     request.signal.aborted && fail("cancelled");
-    let value58: Dynamic = value57
+    let committedFileKeys: Dynamic = sandboxResults
       .filter(
-        ([input, input2]: Dynamic): Dynamic =>
-          input2 !== artboardsById.get(input) || context.holds(input),
+        ([fileKey, boardEntry]: Dynamic): Dynamic =>
+          boardEntry !== originalTemplatesByPath.get(fileKey) || editContext.holds(fileKey),
       )
-      .map(([input]: Dynamic): Dynamic => input);
-    if (value58.length > 0) {
+      .map(([fileKey]: Dynamic): Dynamic => fileKey);
+    if (committedFileKeys.length > 0) {
       errors.push(
-        ...value58.map(
-          (input?: Dynamic): Dynamic => fileIds.idOf.get(input) ?? "",
+        ...committedFileKeys.map(
+          (fileKey?: Dynamic): Dynamic => fileIds.idOf.get(fileKey) ?? "",
         ),
       );
-      for (let value69 of state3.templates.keys() as Dynamic)
-        allowedFiles.add(value69);
+      for (let fileKey of operationState.templates.keys() as Dynamic)
+        allowedFiles.add(fileKey);
       throw {
         code: "conflict",
       };
     }
-    let value59: Dynamic = !result.applied,
-      items6: Dynamic = [];
-    for (let value69 of state3.templates.keys() as Dynamic)
-      value59 &&
-        entries11.has(value69) &&
-        callback12((input?: Dynamic): Dynamic => {
-          items6.push(
-            input.view(fileIds.idOf.get(value69)).then(
-              (input2?: Dynamic): Dynamic => {
-                input2 !== null &&
-                  typeof input2.html == "string" &&
-                  entries12.set(value69, input2.html);
+    let operationFailed: Dynamic = !result.applied,
+      viewPromises: Dynamic = [];
+    for (let fileKey of operationState.templates.keys() as Dynamic)
+      operationFailed &&
+        fileSnapshots.has(fileKey) &&
+        feedSamplingInput((sandboxView?: Dynamic): Dynamic => {
+          viewPromises.push(
+            sandboxView.view(fileIds.idOf.get(fileKey)).then(
+              (viewResult?: Dynamic): Dynamic => {
+                viewResult !== null &&
+                  typeof viewResult.html == "string" &&
+                  pendingHtmlByFile.set(fileKey, viewResult.html);
               },
               (): Dynamic => {},
             ),
           );
         });
-    let value60: Dynamic = withFastEditTimeout(
-      Promise.all(items6),
-      context.viewAfterMs ?? FAST_EDIT_INITIAL_DELAY_MS,
+    let commitPromise: Dynamic = withFastEditTimeout(
+      Promise.all(viewPromises),
+      editContext.viewAfterMs ?? FAST_EDIT_INITIAL_DELAY_MS,
     );
-    flag4 = true;
-    let values5: Dynamic = new Set(),
-      flag6: Dynamic = false,
-      callback24: Dynamic = (): Dynamic => {},
-      entries15: Dynamic = new Map(
-        [...state3.templates.keys()].map(
-          (input?: Dynamic): Dynamic => [
-            input,
-            context.host().fileText(input),
+    cancelled = true;
+    let seenEvents: Dynamic = new Set(),
+      receivedEvent: Dynamic = false,
+      stopEventListener: Dynamic = (): Dynamic => {},
+      initialFileTexts: Dynamic = new Map(
+        [...operationState.templates.keys()].map(
+          (fileKey?: Dynamic): Dynamic => [
+            fileKey,
+            editContext.host().fileText(fileKey),
           ],
         ),
       ),
-      values6: Dynamic = new Set(),
-      value61: Dynamic = context.onDocEvent?.((input?: Dynamic): Dynamic => {
-        if (input.type === "event") return;
-        let value69: Dynamic = input.paths.map(
-          (input2?: Dynamic): Dynamic => input2.replace(/^project\//, ""),
+      seenFileEvents: Dynamic = new Set(),
+      unsubscribeEvents: Dynamic = editContext.onDocEvent?.((event?: Dynamic): Dynamic => {
+        if (event.type === "event") return;
+        let eventPaths: Dynamic = event.paths.map(
+          (path?: Dynamic): Dynamic => path.replace(/^project\//, ""),
         );
-        if (input.type === "started") {
-          for (let value70 of value69 as Dynamic)
-            (value70 === "canvas.json" ||
-              context.host().fileText(value70) !== entries15.get(value70)) &&
-              values6.add(String(input.n) + " " + value70);
+        if (event.type === "started") {
+          for (let path of eventPaths as Dynamic)
+            (path === "canvas.json" ||
+              editContext.host().fileText(path) !== initialFileTexts.get(path)) &&
+              seenFileEvents.add(String(event.n) + " " + path);
           return;
         }
-        if (input.type === "landed")
-          for (let value70 of value69 as Dynamic)
-            values6.has(String(input.n) + " " + value70) &&
-              values5.add(value70);
-        else if (input.code === "conflict") flag6 = true;
+        if (event.type === "landed")
+          for (let path of eventPaths as Dynamic)
+            seenFileEvents.has(String(event.n) + " " + path) &&
+              seenEvents.add(path);
+        else if (event.code === "conflict") receivedEvent = true;
         else return;
-        callback24();
+        stopEventListener();
       }),
-      value62: Dynamic = canvas.depth(),
-      value63: Dynamic = await commitFastEditArtboardChanges(
-        state3,
+      initialDepth: Dynamic = canvas.depth(),
+      commitResult: Dynamic = await commitFastEditArtboardChanges(
+        operationState,
         canvas,
         handles,
         entries,
-        value54,
+        preparedChanges,
         request.signal,
-        artboardsById,
+        originalTemplatesByPath,
       );
     unsubscribe();
-    for (let value69 of value63.stale as Dynamic)
-      items5.push({
-        id: fileIds.idOf.get(value69) ?? "",
+    for (let staleFileKey of commitResult.stale as Dynamic)
+      appliedOperations.push({
+        id: fileIds.idOf.get(staleFileKey) ?? "",
         code: "changed",
       });
-    if (value63.nothingLanded && value63.stale.length > 0) {
-      value61?.();
+    if (commitResult.nothingLanded && commitResult.stale.length > 0) {
+      unsubscribeEvents?.();
       errors.push(
-        ...value63.stale.map(
-          (input?: Dynamic): Dynamic => fileIds.idOf.get(input) ?? "",
+        ...commitResult.stale.map(
+          (fileKey?: Dynamic): Dynamic => fileIds.idOf.get(fileKey) ?? "",
         ),
       );
-      for (let value69 of state3.templates.keys() as Dynamic)
-        allowedFiles.add(value69);
+      for (let fileKey of operationState.templates.keys() as Dynamic)
+        allowedFiles.add(fileKey);
       throw (
-        (flag4 = false),
+        (cancelled = false),
         {
           code: "conflict",
         }
       );
     }
-    value63.nothingLanded && (value61?.(), fail("not_saved"));
+    commitResult.nothingLanded && (unsubscribeEvents?.(), fail("not_saved"));
     result.applied = true;
-    let value64: Dynamic = withFastEditTimeout(
+    let savePromise: Dynamic = withFastEditTimeout(
       Promise.all(
-        value63.landed.map(
-          (input?: Dynamic): Dynamic =>
+        commitResult.landed.map(
+          (fileKey?: Dynamic): Dynamic =>
             handles
-              .get(input)
+              .get(fileKey)
               ?.flushPending()
               .catch((): Dynamic => {}),
         ),
@@ -2814,185 +2814,185 @@ async function runFastEditSamplingRound(
       FAST_EDIT_SANDBOX_START_TIMEOUT_MS,
     ).then((): Dynamic => {
       try {
-        context.host().saveNow();
+        editContext.host().saveNow();
       } catch {}
     });
-    index = value63.records;
-    let value65: Dynamic = value62 + value63.pushes;
+    index = commitResult.records;
+    let targetDepth: Dynamic = initialDepth + commitResult.pushes;
     for (
-      let index12: Dynamic = 0;
-      index12 < 40 && canvas.depth() < value65;
-      index12++
+      let depthStep: Dynamic = 0;
+      depthStep < 40 && canvas.depth() < targetDepth;
+      depthStep++
     )
       await sleep(40);
-    value2 = canvas.depth() === value65 ? canvas.mark() : null;
-    flag3 =
-      value63.stale.length === 0 &&
-      value63.landed.length === state3.templates.size &&
-      value63.added.length === state3.adds.length &&
-      value63.copied.length === state3.duplicates.length &&
-      value63.removed.length === state3.deletes.length &&
+    partialMark = canvas.depth() === targetDepth ? canvas.mark() : null;
+    wholeReply =
+      commitResult.stale.length === 0 &&
+      commitResult.landed.length === operationState.templates.size &&
+      commitResult.added.length === operationState.adds.length &&
+      commitResult.copied.length === operationState.duplicates.length &&
+      commitResult.removed.length === operationState.deletes.length &&
       !request.signal.aborted;
-    for (let value69 of [
-      ...value63.landed,
-      ...value63.moved,
-      ...value63.renamed,
+    for (let fileKey of [
+      ...commitResult.landed,
+      ...commitResult.moved,
+      ...commitResult.renamed,
     ] as Dynamic)
-      result.changed.add(value69);
-    for (let value69 of [...value63.added, ...value63.copied] as Dynamic)
-      result.added.add(value69);
-    for (let value69 of value63.removed as Dynamic)
-      result.removed.add(value69);
+      result.changed.add(fileKey);
+    for (let fileKey of [...commitResult.added, ...commitResult.copied] as Dynamic)
+      result.added.add(fileKey);
+    for (let fileKey of commitResult.removed as Dynamic)
+      result.removed.add(fileKey);
     setTimeout((): Dynamic => draftHtmlPreviewStore.clear(), 350);
-    if (context.session.turn !== null) {
-      let turn: Dynamic = context.session.turn,
-        value69: Dynamic = (turn.also ??= []),
-        value70: Dynamic = canvas.boards(),
+    if (editContext.session.turn !== null) {
+      let turn: Dynamic = editContext.session.turn,
+        turnFiles: Dynamic = (turn.also ??= []),
+        canvasBoards: Dynamic = canvas.boards(),
         idOf: Dynamic = createFastEditFileIds(
-          value70
-            .map((input?: Dynamic): Dynamic => input.file)
+          canvasBoards
+            .map((board?: Dynamic): Dynamic => board.file)
             .slice(0, MAX_FAST_EDIT_FILES),
         ).idOf,
-        callback26: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
-          let value71: Dynamic = await withFastEditTimeout(
+        readBoard: Dynamic = async (fileKey?: Dynamic): Promise<Dynamic> => {
+          let boardReadResult: Dynamic = await withFastEditTimeout(
               handles
-                .get(input)
+                .get(fileKey)
                 ?.askTemplate()
                 .catch((): Dynamic => null) ?? Promise.resolve(null),
               2500,
             ),
-            value72: Dynamic = value70.find(
-              (input2?: Dynamic): Dynamic => input2.file === input,
+            board: Dynamic = canvasBoards.find(
+              (candidateBoard?: Dynamic): Dynamic => candidateBoard.file === fileKey,
             ),
-            entry4: Dynamic = idOf.get(input);
-          return typeof value71 == "string" &&
-            value72 !== undefined &&
-            entry4 !== undefined
+            boardId: Dynamic = idOf.get(fileKey);
+          return typeof boardReadResult == "string" &&
+            board !== undefined &&
+            boardId !== undefined
             ? serializePromptArtboardWithPageStyle(
-                entry4,
-                value72,
-                value71,
+                boardId,
+                board,
+                boardReadResult,
                 values,
               )
             : undefined;
         };
-      for (let value71 of new Set([
-        ...(value5 ? [] : [targetFile]),
-        ...value63.landed,
-        ...value63.moved,
-        ...value63.renamed,
+      for (let fileKey of new Set([
+        ...(isCanvasTarget ? [] : [targetFile]),
+        ...commitResult.landed,
+        ...commitResult.moved,
+        ...commitResult.renamed,
       ]) as Dynamic) {
-        let value72: Dynamic =
-          value71 === turn.file
+        let turnState: Dynamic =
+          fileKey === turn.file
             ? turn
-            : value69.find(
-                (input?: Dynamic): Dynamic => input.file === value71,
+            : turnFiles.find(
+                (turnFile?: Dynamic): Dynamic => turnFile.file === fileKey,
               );
-        value72 === undefined &&
-          value69.push(
-            (value72 = {
-              file: value71,
-              before: artboardsById.has(value71) ? callback5(value71) : "",
+        turnState === undefined &&
+          turnFiles.push(
+            (turnState = {
+              file: fileKey,
+              before: originalTemplatesByPath.has(fileKey) ? getPromptTemplate(fileKey) : "",
             }),
           );
-        let value73: Dynamic = await callback26(value71);
-        value73 !== undefined &&
-          ((value72.after = value73),
-          delete value72.ids,
-          context.comment === undefined &&
-            context.session.seen.set(value71, value73));
+        let seenBoard: Dynamic = await readBoard(fileKey);
+        seenBoard !== undefined &&
+          ((turnState.after = seenBoard),
+          delete turnState.ids,
+          editContext.comment === undefined &&
+            editContext.session.seen.set(fileKey, seenBoard));
       }
-      for (let value71 of [...value63.added, ...value63.copied] as Dynamic) {
-        let value72: Dynamic = await callback26(value71);
-        value69.push({
-          file: value71,
+      for (let fileKey of [...commitResult.added, ...commitResult.copied] as Dynamic) {
+        let addedBoard: Dynamic = await readBoard(fileKey);
+        turnFiles.push({
+          file: fileKey,
           how: "new",
-          ...(value72 !== undefined
+          ...(addedBoard !== undefined
             ? {
-                after: value72,
+                after: addedBoard,
               }
             : {}),
         });
       }
-      for (let value71 of value63.removed as Dynamic)
-        value69.push({
-          file: value71,
+      for (let fileKey of commitResult.removed as Dynamic)
+        turnFiles.push({
+          file: fileKey,
           how: "removed",
         });
     }
-    context.session.lastTouched =
-      value63.added[value63.added.length - 1] ??
-      value63.copied[value63.copied.length - 1] ??
-      [...state3.templates.keys()][0] ??
-      [...state3.places.keys()][0] ??
-      [...state3.renames.keys()][0] ??
+    editContext.session.lastTouched =
+      commitResult.added[commitResult.added.length - 1] ??
+      commitResult.copied[commitResult.copied.length - 1] ??
+      [...operationState.templates.keys()][0] ??
+      [...operationState.places.keys()][0] ??
+      [...operationState.renames.keys()][0] ??
       targetFile;
-    let value66: Dynamic =
-      value63.added[0] ?? value63.copied[0] ?? value63.moved[0];
-    if (value66 !== undefined && !context.pointerDown())
+    let revealedFile: Dynamic =
+      commitResult.added[0] ?? commitResult.copied[0] ?? commitResult.moved[0];
+    if (revealedFile !== undefined && !editContext.pointerDown())
       try {
-        canvas.reveal(value66);
+        canvas.reveal(revealedFile);
       } catch {}
     if (
-      (items5.length > 0 || index5 > 0 || value3 !== null) &&
-      context.allOrNothing !== true &&
+      (appliedOperations.length > 0 || failureCount > 0 || lastError !== null) &&
+      editContext.allOrNothing !== true &&
       !result.partly &&
       !request.signal.aborted &&
       canvas
         .boards()
-        .some((input?: Dynamic): Dynamic => input.file === targetFile)
+        .some((operation?: Dynamic): Dynamic => operation.file === targetFile)
     ) {
       result.partly = true;
-      let value69: Dynamic = [
+      let failureMessages: Dynamic = [
           ...new Set(
             [
-              ...value63.landed,
-              ...state3.places.keys(),
-              ...state3.renames.keys(),
+              ...commitResult.landed,
+              ...operationState.places.keys(),
+              ...operationState.renames.keys(),
             ]
               .map(
-                (input?: Dynamic): Dynamic => fileIds.idOf.get(input) ?? "",
+                (fileKey?: Dynamic): Dynamic => fileIds.idOf.get(fileKey) ?? "",
               )
               .concat(
-                value63.added.map(
-                  (input?: Dynamic): Dynamic =>
-                    input.replace(/\.dc\.html$/, ""),
+                commitResult.added.map(
+                  (fileKey?: Dynamic): Dynamic =>
+                    fileKey.replace(/\.dc\.html$/, ""),
                 ),
               ),
           ),
         ]
-          .filter((input?: Dynamic): Dynamic => input !== "")
+          .filter((message?: Dynamic): Dynamic => message !== "")
           .slice(0, 12),
-        value70: Dynamic =
+        failureReport: Dynamic =
           "PART of your last reply is in" +
-          (value69.length > 0
+          (failureMessages.length > 0
             ? ": " +
-              value69
-                .map((input?: Dynamic): Dynamic => "#" + input)
+              failureMessages
+                .map((fileKey?: Dynamic): Dynamic => "#" + fileKey)
                 .join(", ")
             : "") +
           ". NOT in: " +
           [
-            ...items5
+            ...appliedOperations
               .slice(0, 4)
               .map(
-                (input?: Dynamic): Dynamic =>
-                  (input.id !== "" ? "#" + input.id : "a new artboard") +
+                (failedOperation?: Dynamic): Dynamic =>
+                  (failedOperation.id !== "" ? "#" + failedOperation.id : "a new artboard") +
                   " (" +
-                  input.code +
+                  failedOperation.code +
                   "): " +
-                  (FAST_EDIT_REPAIR_MESSAGES[input.code] ??
+                  (FAST_EDIT_REPAIR_MESSAGES[failedOperation.code] ??
                     FAST_EDIT_MARKUP_REPAIR_INSTRUCTIONS),
               ),
-            ...(index5 > 0
+            ...(failureCount > 0
               ? [
-                  String(index5) +
-                    (index5 === 1 ? " line" : " lines") +
+                  String(failureCount) +
+                    (failureCount === 1 ? " line" : " lines") +
                     " threw: " +
                     FAST_EDIT_REPAIR_MESSAGES.thrown,
                 ]
               : []),
-            ...(value3 !== null
+            ...(lastError !== null
               ? [FAST_EDIT_REPAIR_MESSAGES.line_no_match]
               : []),
           ].join(" ") +
@@ -3003,206 +3003,206 @@ async function runFastEditSamplingRound(
         again: {
           file: targetFile,
           by: target.by,
-          report: value70,
-          ...(value3 !== null
+          report: failureReport,
+          ...(lastError !== null
             ? {
-                line: callback(value3),
+                line: callback(lastError),
               }
             : {}),
         },
       };
     }
-    let text3: Dynamic = "";
-    if (value61 !== undefined) {
-      let value69: Dynamic = value63.landed.filter(
-        (input?: Dynamic): Dynamic => !state3.deletes.includes(input),
+    let failureCode: Dynamic = "";
+    if (unsubscribeEvents !== undefined) {
+      let landedFiles: Dynamic = commitResult.landed.filter(
+        (fileKey?: Dynamic): Dynamic => !operationState.deletes.includes(fileKey),
       );
-      context.comment !== undefined && value69.push(...value63.added);
-      value63.canvasOps > 0 && value69.push("canvas.json");
-      let callback26: Dynamic = (): Dynamic =>
-        flag6
+      editContext.comment !== undefined && landedFiles.push(...commitResult.added);
+      commitResult.canvasOps > 0 && landedFiles.push("canvas.json");
+      let getSaveError: Dynamic = (): Dynamic =>
+        receivedEvent
           ? "save_clash"
-          : value69.every((input?: Dynamic): Dynamic => values5.has(input))
+          : landedFiles.every((fileKey?: Dynamic): Dynamic => seenEvents.has(fileKey))
             ? ""
             : null;
       await Promise.race([
-        value64,
-        new Promise((input?: Dynamic): Dynamic => {
-          callback24 = input;
+        savePromise,
+        new Promise((resolveSave?: Dynamic): Dynamic => {
+          stopEventListener = resolveSave;
         }),
       ]);
-      text3 =
-        callback26() ??
-        (await new Promise((input?: Dynamic): Dynamic => {
-          callback24 = (): Dynamic => {
-            let value70: Dynamic = callback26();
-            value70 !== null && input(value70);
+      failureCode =
+        getSaveError() ??
+        (await new Promise((resolveResult?: Dynamic): Dynamic => {
+          stopEventListener = (): Dynamic => {
+            let saveError: Dynamic = getSaveError();
+            saveError !== null && resolveResult(saveError);
           };
           sleep(FAST_EDIT_ROUNDTRIP_TIMEOUT_MS).then(
-            (): Dynamic => input("save_unknown"),
+            (): Dynamic => resolveResult("save_unknown"),
           );
         }));
-      value61();
+      unsubscribeEvents();
     }
-    await value60;
-    let callback25: Dynamic = (input?: Dynamic): Dynamic =>
+    await commitPromise;
+    let extractIds: Dynamic = (html?: Dynamic): Dynamic =>
         Array.from(
-          input.matchAll(/\sid="([^"]*)"/g),
-          (input2?: Dynamic): Dynamic => input2[1],
+          html.matchAll(/\sid="([^"]*)"/g),
+          (match?: Dynamic): Dynamic => match[1],
         ),
-      value67: Dynamic = new RegExp("^" + value23.prefix + "\\d{1,6}$"),
-      values7: Dynamic = new Set([...entries11.values()].flatMap(callback25)),
-      values8: Dynamic = new Set(
+      generatedIdPattern: Dynamic = new RegExp("^" + targetReadResult.prefix + "\\d{1,6}$"),
+      existingHtmlIds: Dynamic = new Set([...fileSnapshots.values()].flatMap(extractIds)),
+      pendingHtmlIds: Dynamic = new Set(
         history.said.match(
-          new RegExp("\\b" + value23.prefix + "\\d{1,6}\\b", "g"),
+          new RegExp("\\b" + targetReadResult.prefix + "\\d{1,6}\\b", "g"),
         ) ?? [],
       );
-    for (let [value69, value70] of [...entries12] as Dynamic) {
-      let values9: Dynamic = new Set(callback25(value70));
-      [...values9].some(
-        (input?: Dynamic): Dynamic =>
-          !values7.has(input) && (!value67.test(input) || values8.has(input)),
+    for (let [fileKey, html] of [...pendingHtmlByFile] as Dynamic) {
+      let htmlIds: Dynamic = new Set(extractIds(html));
+      [...htmlIds].some(
+        (id?: Dynamic): Dynamic =>
+          !existingHtmlIds.has(id) && (!generatedIdPattern.test(id) || pendingHtmlIds.has(id)),
       ) &&
-        callback25(entries11.get(value69) ?? "").some(
-          (input?: Dynamic): Dynamic => !values9.has(input),
+        extractIds(fileSnapshots.get(fileKey) ?? "").some(
+          (id?: Dynamic): Dynamic => !htmlIds.has(id),
         ) &&
-        entries12.delete(value69);
+        pendingHtmlByFile.delete(fileKey);
     }
-    let items7: Dynamic = [
-      ...(value33 !== null ? [value33.id] : []),
-      ...value38.map((input?: Dynamic): Dynamic => input.id),
+    let actedFiles: Dynamic = [
+      ...(targetPageEntry !== null ? [targetPageEntry.id] : []),
+      ...visibleHandles.map((handle?: Dynamic): Dynamic => handle.id),
       ...Array.from(
         history.said.matchAll(
-          new RegExp("#(" + value23.prefix + "\\d{1,6})(?![\\w-])", "g"),
+          new RegExp("#(" + targetReadResult.prefix + "\\d{1,6})(?![\\w-])", "g"),
         ),
-        (input?: Dynamic): Dynamic => input[1],
+        (pair?: Dynamic): Dynamic => pair[1],
       ),
     ];
-    for (let value69 of (context.session.turn === null
+    for (let turnFile of (editContext.session.turn === null
       ? []
       : [
-          context.session.turn,
-          ...(context.session.turn.also ?? []),
+          editContext.session.turn,
+          ...(editContext.session.turn.also ?? []),
         ]) as Dynamic) {
-      let entry4: Dynamic = entries11.get(value69.file),
-        entry5: Dynamic = entries12.get(value69.file);
-      entry4 !== undefined &&
-        entry5 !== undefined &&
-        value69.after !== undefined &&
-        (value69.ids = {
-          before: entry4,
-          after: entry5,
-          prefix: value23.prefix,
-          acted: items7,
+      let beforeHtml: Dynamic = fileSnapshots.get(turnFile.file),
+        afterHtml: Dynamic = pendingHtmlByFile.get(turnFile.file);
+      beforeHtml !== undefined &&
+        afterHtml !== undefined &&
+        turnFile.after !== undefined &&
+        (turnFile.ids = {
+          before: beforeHtml,
+          after: afterHtml,
+          prefix: targetReadResult.prefix,
+          acted: actedFiles,
         });
     }
     cleanup();
-    let value68: Dynamic =
-      text3 !== ""
-        ? finish("failed", text3, FAST_EDIT_ERROR_MESSAGES[text3])
-        : items5.length > 0 || index5 > 0 || value3 !== null
+    let finishResult: Dynamic =
+      failureCode !== ""
+        ? finish("failed", failureCode, FAST_EDIT_ERROR_MESSAGES[failureCode])
+        : appliedOperations.length > 0 || failureCount > 0 || lastError !== null
           ? finish(
               "saved",
               "partly_kept",
               FAST_EDIT_ERROR_MESSAGES.partly_kept,
             )
           : finish("saved");
-    "done" in value68 &&
-      ((value68.done.changed = [...result.changed, ...result.added].map(
-        (input?: Dynamic): Dynamic =>
-          fileIds.idOf.get(input) ?? input.replace(/\.dc\.html$/, ""),
+    "done" in finishResult &&
+      ((finishResult.done.changed = [...result.changed, ...result.added].map(
+        (fileKey?: Dynamic): Dynamic =>
+          fileIds.idOf.get(fileKey) ?? fileKey.replace(/\.dc\.html$/, ""),
       )),
-      (value68.done.steps = index),
-      (value68.done.mark = value2),
-      (value68.done.whole = flag3 && value68.done.code === ""),
-      (text3 === "save_clash" || text3 === "save_unknown") &&
-        (value68.done.unsaved = text3),
-      value68.done.outcome === "saved" &&
+      (finishResult.done.steps = index),
+      (finishResult.done.mark = partialMark),
+      (finishResult.done.whole = wholeReply && finishResult.done.code === ""),
+      (failureCode === "save_clash" || failureCode === "save_unknown") &&
+        (finishResult.done.unsaved = failureCode),
+      finishResult.done.outcome === "saved" &&
         [
-          ...(value35 ? [value33] : []),
-          ...value38.filter((input?: Dynamic): Dynamic => input.inList),
+          ...(targetIsListed ? [targetPageEntry] : []),
+          ...visibleHandles.filter((handle?: Dynamic): Dynamic => handle.inList),
         ].some(
-          (input?: Dynamic): Dynamic =>
-            readTemplateLoopHtml(value11, input.list) !==
+          (handle?: Dynamic): Dynamic =>
+            readTemplateLoopHtml(targetTemplate, handle.list) !==
             readTemplateLoopHtml(
-              state3.templates.get(targetFile) ?? value11,
-              input.list,
+              operationState.templates.get(targetFile) ?? targetTemplate,
+              handle.list,
             ),
         ) &&
-        (value68.done.inList = true));
+        (finishResult.done.inList = true));
     if (
-      "done" in value68 &&
-      value68.done.whole === true &&
-      value59 &&
+      "done" in finishResult &&
+      finishResult.done.whole === true &&
+      operationFailed &&
       !request.signal.aborted
     ) {
-      let entries16: Dynamic = new Map(),
-        entries17: Dynamic = new Map(),
-        entries18: Dynamic = new Map(),
-        value69: Dynamic =
-          state3.adds.length === 0 &&
-          state3.duplicates.length === 0 &&
-          [...state3.templates.keys()].every(
-            (input?: Dynamic): Dynamic => entries11.has(input),
+      let handleLocations: Dynamic = new Map(),
+        handleFiles: Dynamic = new Map(),
+        handleStates: Dynamic = new Map(),
+        hasHandleState: Dynamic =
+          operationState.adds.length === 0 &&
+          operationState.duplicates.length === 0 &&
+          [...operationState.templates.keys()].every(
+            (fileKey?: Dynamic): Dynamic => fileSnapshots.has(fileKey),
           );
-      for (let [value70, value71] of entries11 as Dynamic) {
-        let value72: Dynamic = [
-            context.session.turn,
-            ...(context.session.turn?.also ?? []),
-          ].find((input?: Dynamic): Dynamic => input?.file === value70),
-          entry4: Dynamic = entries12.get(value70),
-          value73: Dynamic = state3.templates.has(value70),
-          value74: Dynamic = callback16(value73 ? (entry4 ?? "") : value71);
+      for (let [fileKey, snapshotHtml] of fileSnapshots as Dynamic) {
+        let seenState: Dynamic = [
+            editContext.session.turn,
+            ...(editContext.session.turn?.also ?? []),
+          ].find((turn?: Dynamic): Dynamic => turn?.file === fileKey),
+          pendingFileHtml: Dynamic = pendingHtmlByFile.get(fileKey),
+          hasTemplateUpdate: Dynamic = operationState.templates.has(fileKey),
+          templateShape: Dynamic = describeTemplateShape(hasTemplateUpdate ? (pendingFileHtml ?? "") : snapshotHtml);
         if (
-          value73 &&
-          (entry4 === undefined ||
-            value72?.after === undefined ||
-            value74.shape !== callback16(value72.after).shape)
+          hasTemplateUpdate &&
+          (pendingFileHtml === undefined ||
+            seenState?.after === undefined ||
+            templateShape.shape !== describeTemplateShape(seenState.after).shape)
         ) {
-          value69 = false;
+          hasHandleState = false;
           continue;
         }
-        value74.ids.forEach(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
-            entries16.set(input, {
-              file: value70,
-              at: options,
+        templateShape.ids.forEach(
+          (handleId?: Dynamic, handleIndex?: Dynamic): Dynamic =>
+            handleLocations.set(handleId, {
+              file: fileKey,
+              at: handleIndex,
             }),
         );
-        if (value73)
-          for (let value75 of callback16(value71).ids as Dynamic)
-            entries17.set(value75, value70);
-        entries18.set(value70, {
-          text: value73 ? value72.after : callback5(value70),
-          shape: value74.shape,
+        if (hasTemplateUpdate)
+          for (let handleId of describeTemplateShape(snapshotHtml).ids as Dynamic)
+            handleFiles.set(handleId, fileKey);
+        handleStates.set(fileKey, {
+          text: hasTemplateUpdate ? seenState.after : getPromptTemplate(fileKey),
+          shape: templateShape.shape,
         });
       }
-      context.session.named = {
-        at: [...new Set(items7)].flatMap((input?: Dynamic): Dynamic => {
-          let value70: Dynamic =
-            entries16.get(input) ??
-            (value69 && entries17.has(input)
+      editContext.session.named = {
+        at: [...new Set(actedFiles)].flatMap((handleId?: Dynamic): Dynamic => {
+          let handleLocation: Dynamic =
+            handleLocations.get(handleId) ??
+            (hasHandleState && handleFiles.has(handleId)
               ? {
-                  file: entries17.get(input),
+                  file: handleFiles.get(handleId),
                   at: -1,
                 }
               : undefined);
-          return value70 === undefined
+          return handleLocation === undefined
             ? []
             : [
                 {
-                  was: input,
-                  ...value70,
+                  was: handleId,
+                  ...handleLocation,
                 },
               ];
         }),
-        states: entries18,
+        states: handleStates,
       };
     }
-    return value68;
-  } catch (value5: Dynamic) {
+    return finishResult;
+  } catch (thrownError: Dynamic) {
     cleanup();
-    let value6: Dynamic = normalizeFastEditThrownError(value5),
+    let normalizedError: Dynamic = normalizeFastEditThrownError(thrownError),
       aborted: Dynamic = request.signal.aborted;
     if (value !== null && !aborted)
       return {
@@ -3215,7 +3215,7 @@ async function runFastEditSamplingRound(
           forClaude: value,
         },
       };
-    if (value6.code === "conflict" && !aborted) {
+    if (normalizedError.code === "conflict" && !aborted) {
       result.conflicts += 1;
       if (result.conflicts > 1)
         return finish(
@@ -3224,47 +3224,47 @@ async function runFastEditSamplingRound(
           FAST_EDIT_ERROR_MESSAGES.conflict_again,
         );
       request.report("thinking");
-      let value10: Dynamic = 250 + Math.floor(Math.random() * 900),
-        text3: Dynamic = "",
-        index3: Dynamic = 0,
-        index4: Dynamic = 0;
+      let pollDelay: Dynamic = 250 + Math.floor(Math.random() * 900),
+        errorCode: Dynamic = "",
+        pollElapsed: Dynamic = 0,
+        stablePolls: Dynamic = 0;
       for (
         ;
-        index3 < 6e3 &&
-        (index3 < value10 ||
-          index4 < 900 ||
+        pollElapsed < 6e3 &&
+        (pollElapsed < pollDelay ||
+          stablePolls < 900 ||
           [...allowedFiles].some(
-            (input?: Dynamic): Dynamic => context.holds(input),
+            (fileKey?: Dynamic): Dynamic => editContext.holds(fileKey),
           )) &&
         !request.signal.aborted;
 
       ) {
         await sleep(100);
-        index3 += 100;
-        index4 += 100;
-        let value13: Dynamic = (
+        pollElapsed += 100;
+        stablePolls += 100;
+        let latestError: Dynamic = (
           await Promise.all(
             [...allowedFiles].map(
-              (input?: Dynamic): Dynamic =>
+              (fileKey?: Dynamic): Dynamic =>
                 handles
-                  .get(input)
+                  .get(fileKey)
                   ?.askTemplate()
                   .catch((): Dynamic => null) ?? null,
             ),
           )
         ).join("\0");
-        value13 !== text3 && ((text3 = value13), (index4 = 0));
+        latestError !== errorCode && ((errorCode = latestError), (stablePolls = 0));
       }
       if (request.signal.aborted) return finish("stopped", "cancelled");
-      let value11: Dynamic = [...new Set(errors)].filter(
-          (input?: Dynamic): Dynamic => input !== "",
+      let uniqueErrors: Dynamic = [...new Set(errors)].filter(
+          (error?: Dynamic): Dynamic => error !== "",
         ),
-        value12: Dynamic =
+        errorMessage: Dynamic =
           "While you were writing, " +
-          (value11.length > 0
+          (uniqueErrors.length > 0
             ? "artboard " +
-              value11
-                .map((input?: Dynamic): Dynamic => '"' + input + '"')
+              uniqueErrors
+                .map((error?: Dynamic): Dynamic => '"' + error + '"')
                 .join(", ")
             : "an artboard") +
           " was changed by someone else. Nothing of your reply was taken. The canvas below is as it is NOW: answer the request again for it, changing only what is still needed.";
@@ -3272,14 +3272,14 @@ async function runFastEditSamplingRound(
         again: {
           file: targetFile,
           by: target.by,
-          report: value12,
+          report: errorMessage,
         },
       };
     }
-    let value7: Dynamic = gateReason !== "" && !aborted;
+    let hasGateReason: Dynamic = gateReason !== "" && !aborted;
     if (
-      value7 ||
-      (FAST_EDIT_NOOP_CODES.has(value6.code) && !aborted)
+      hasGateReason ||
+      (FAST_EDIT_NOOP_CODES.has(normalizedError.code) && !aborted)
     ) {
       if (result.applied)
         return finish(
@@ -3287,7 +3287,7 @@ async function runFastEditSamplingRound(
           "partly_kept",
           FAST_EDIT_ERROR_MESSAGES.partly_kept,
         );
-      let value10: Dynamic = value7
+      let finalGateReason: Dynamic = hasGateReason
           ? gateReason.startsWith("cap_") ||
             gateReason === "thrown" ||
             gateReason === "line_no_match" ||
@@ -3295,96 +3295,96 @@ async function runFastEditSamplingRound(
             gateReason === "beyond_target"
             ? gateReason
             : "gate_" + gateReason
-          : value6.code === "no_match" || value6.code === "already_so"
-            ? value6.code
+          : normalizedError.code === "no_match" || normalizedError.code === "already_so"
+            ? normalizedError.code
             : "no_change",
         nothing: Dynamic = FAST_EDIT_ERROR_MESSAGES.nothing,
-        value11: Dynamic = text2
+        refusalText: Dynamic = replyText
           .split(
             `
 `,
           )
           .map(
-            (input?: Dynamic): Dynamic => input.replace(/\s+/g, " ").trim(),
+            (line?: Dynamic): Dynamic => line.replace(/\s+/g, " ").trim(),
           )
-          .filter((input?: Dynamic): Dynamic => input !== ""),
+          .filter((line?: Dynamic): Dynamic => line !== ""),
         refused: Dynamic = result.refused;
-      result.refused = value11;
+      result.refused = refusalText;
       if (
-        context.comment !== undefined &&
+        editContext.comment !== undefined &&
         refused !== null &&
         refused.length > 0 &&
-        value11.length > 0 &&
+        refusalText.length > 0 &&
         refused
-          .slice(0, value11.length)
+          .slice(0, refusalText.length)
           .every(
-            (input?: Dynamic, options?: Dynamic): Dynamic =>
-              input === value11[options],
+            (line?: Dynamic, lineIndex?: Dynamic): Dynamic =>
+              line === refusalText[lineIndex],
           )
       )
-        return finish("failed", value10, nothing);
+        return finish("failed", finalGateReason, nothing);
       if (
         result.fixes.length < MAX_FAST_EDIT_READ_ROUNDS &&
         !(
-          (value10 === "no_change" || value10 === "beyond_target") &&
-          result.fixes.includes(value10)
+          (finalGateReason === "no_change" || finalGateReason === "beyond_target") &&
+          result.fixes.includes(finalGateReason)
         )
       ) {
-        result.fixes.push(value10);
+        result.fixes.push(finalGateReason);
         request.report("thinking");
-        let value12: Dynamic =
-          value10 === "already_so"
+        let finalReport: Dynamic =
+          finalGateReason === "already_so"
             ? FAST_EDIT_REPAIR_MESSAGES.already_so
             : describeFastEditRefusal(
-                value10,
-                value7 ? gateReason : value10,
+                finalGateReason,
+                hasGateReason ? gateReason : finalGateReason,
               );
         return {
           again: {
             file: targetFile,
             by: target.by,
-            report: value12,
-            ...(gateReason === "line_no_match" && value3 !== null
+            report: finalReport,
+            ...(gateReason === "line_no_match" && lastError !== null
               ? {
-                  line: callback(value3),
+                  line: callback(lastError),
                 }
               : {}),
           },
         };
       }
-      return finish("failed", value10, nothing);
+      return finish("failed", finalGateReason, nothing);
     }
-    if (!flag && (aborted || (value6.code === "cancelled" && !flag2)))
+    if (!flag && (aborted || (normalizedError.code === "cancelled" && !sandboxFailed)))
       return finish("stopped", "cancelled");
-    let value8: Dynamic = flag
+    let finalStatus: Dynamic = flag
       ? "too_long"
-      : flag2 && value6.code === "cancelled"
+      : sandboxFailed && normalizedError.code === "cancelled"
         ? "sandbox_failed"
-        : value6.code;
-    if (value8 === "call_cap" && result.applied)
+        : normalizedError.code;
+    if (finalStatus === "call_cap" && result.applied)
       return finish(
         "saved",
         "call_cap",
         FAST_EDIT_ERROR_MESSAGES.call_cap,
       );
-    let value9: Dynamic =
+    let finalMessage: Dynamic =
       FAST_EDIT_ERROR_MESSAGES[
         !firstCall &&
-        (value8 === "no_box" ||
-          value8 === "slow_start" ||
-          value8 === "start_stuck")
+        (finalStatus === "no_box" ||
+          finalStatus === "slow_start" ||
+          finalStatus === "start_stuck")
           ? "sandbox_failed"
-          : value8
+          : finalStatus
       ] ??
-      (FAST_EDIT_CAPABILITY_DENIED_CODES.has(value8)
+      (FAST_EDIT_CAPABILITY_DENIED_CODES.has(finalStatus)
         ? FAST_EDIT_CAPABILITY_UNAVAILABLE_MESSAGE
         : FAST_EDIT_ERROR_MESSAGES.upstream_error);
     return finish(
       "failed",
-      value8,
+      finalStatus,
       result.applied
-        ? value9.replace("Nothing changed.", "Changes already made are kept.")
-        : value9,
+        ? finalMessage.replace("Nothing changed.", "Changes already made are kept.")
+        : finalMessage,
     );
   }
 }
@@ -3407,48 +3407,48 @@ export {
 };
 export function installFastEditRequest(): () => void {
   return () => {
-    selectedFastEditFile = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    selectedFastEditFile = (selectionInput?: Dynamic, selectedFiles?: Dynamic): Dynamic =>
       [
-        ...(input.selectedElements ?? []).map(
-          (input2?: Dynamic): Dynamic => input2.file,
+        ...(selectionInput.selectedElements ?? []).map(
+          (selectedFile?: Dynamic): Dynamic => selectedFile.file,
         ),
-        ...input.selected,
-      ].find((input2?: Dynamic): Dynamic => options.includes(input2));
-    summarizeFastEditAppliedChanges = (input?: Dynamic): Dynamic => ({
-      changed: [...input.changed].filter(
-        (input2?: Dynamic): Dynamic =>
-          !input.added.has(input2) && !input.removed.has(input2),
+        ...selectionInput.selected,
+      ].find((fileKey?: Dynamic): Dynamic => selectedFiles.includes(fileKey));
+    summarizeFastEditAppliedChanges = (summary?: Dynamic): Dynamic => ({
+      changed: [...summary.changed].filter(
+        (fileKey?: Dynamic): Dynamic =>
+          !summary.added.has(fileKey) && !summary.removed.has(fileKey),
       ).length,
-      added: [...input.added].filter(
-        (input2?: Dynamic): Dynamic => !input.removed.has(input2),
+      added: [...summary.added].filter(
+        (fileKey?: Dynamic): Dynamic => !summary.removed.has(fileKey),
       ).length,
-      removed: [...input.removed].filter(
-        (input2?: Dynamic): Dynamic => !input.added.has(input2),
+      removed: [...summary.removed].filter(
+        (fileKey?: Dynamic): Dynamic => !summary.added.has(fileKey),
       ).length,
     });
     serializePromptArtboardWithPageStyle = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
+      html?: Dynamic,
+      fallbackHtml?: Dynamic,
+      documentContext?: Dynamic,
+      styleValue?: Dynamic,
     ): Dynamic =>
       serializeFastEditArtboard(
-        input,
-        options,
-        hasPageStylesheet(context)
+        html,
+        fallbackHtml,
+        hasPageStylesheet(documentContext)
           ? serializePageStyleAttributes(
-              readPageStylesFromSheet(context, value),
+              readPageStylesFromSheet(documentContext, styleValue),
             )
           : "",
       ) +
       encodeCamelCaseAttributes(
-        stripHelmetMarkup(context),
+        stripHelmetMarkup(documentContext),
       ) +
       "</section>";
-    stripReplyCodeFences = (input?: Dynamic): Dynamic =>
-      input.replace(/^[ \t]*```[a-z]*[ \t]*(?:\n|$)/gim, "");
-    stripReplyInlineBackticks = (input?: Dynamic): Dynamic =>
-      input.replace(
+    stripReplyCodeFences = (text?: Dynamic): Dynamic =>
+      text.replace(/^[ \t]*```[a-z]*[ \t]*(?:\n|$)/gim, "");
+    stripReplyInlineBackticks = (text?: Dynamic): Dynamic =>
+      text.replace(
         /^`((?:\$\(|\.|askClaude\(|read\(|log\().*)`[ \t]*$/gm,
         "$1",
       );

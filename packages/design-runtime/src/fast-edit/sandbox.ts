@@ -28,7 +28,7 @@ var FAST_EDIT_CANVAS_SANDBOX_LIMITS: Dynamic;
 async function verifyFastEditWorker(bytes?: Dynamic): Promise<Dynamic> {
   if (fastEditWorkerSource !== "" || verifiedFastEditWorkerBytes !== null)
     return true;
-  let copiedBytes: Dynamic, sha2562: Dynamic;
+  let copiedBytes: Dynamic, computedSha256: Dynamic;
   try {
     if (
       !(bytes instanceof Uint8Array) ||
@@ -38,14 +38,14 @@ async function verifyFastEditWorker(bytes?: Dynamic): Promise<Dynamic> {
     )
       return false;
     copiedBytes = new Uint8Array(bytes);
-    sha2562 = Array.from(
+    computedSha256 = Array.from(
       new Uint8Array(await crypto.subtle.digest("SHA-256", copiedBytes)),
-      (input?: Dynamic): Dynamic => input.toString(16).padStart(2, "0"),
+      (byte?: Dynamic): Dynamic => byte.toString(16).padStart(2, "0"),
     ).join("");
   } catch {
     return false;
   }
-  return sha2562 !== FAST_EDIT_WORKER_SHA256
+  return computedSha256 !== FAST_EDIT_WORKER_SHA256
     ? false
     : (fastEditWorkerSource === "" &&
         verifiedFastEditWorkerBytes === null &&
@@ -91,31 +91,31 @@ function createFastEditSandbox({
       );
     if (
       files.some(
-        (input?: Dynamic): Dynamic => input && input.id === "container",
+        (file?: Dynamic): Dynamic => file && file.id === "container",
       )
     )
       throw new Error(
         "createReplBox: a file cannot be named container: #container is the root they attach to",
       );
     filePathsById = Object.create(null);
-    let values3: Dynamic = new Set();
-    for (let value28 of files as Dynamic) {
+    let knownPaths: Dynamic = new Set();
+    for (let fileEntry of files as Dynamic) {
       if (
-        !value28 ||
-        typeof value28.path != "string" ||
-        !value28.path ||
-        value28.path.length > 300 ||
-        values3.has(value28.path) ||
+        !fileEntry ||
+        typeof fileEntry.path != "string" ||
+        !fileEntry.path ||
+        fileEntry.path.length > 300 ||
+        knownPaths.has(fileEntry.path) ||
         files.some(
-          (input?: Dynamic): Dynamic => input && input.id === value28.path,
+          (file?: Dynamic): Dynamic => file && file.id === fileEntry.path,
         )
       )
         throw new Error(
           "createReplBox: every file needs a path (1 to 300 characters) that is unique and is not another file's id",
         );
-      values3.add(value28.path);
-      typeof value28.id == "string" &&
-        (filePathsById[value28.id] = value28.path);
+      knownPaths.add(fileEntry.path);
+      typeof fileEntry.id == "string" &&
+        (filePathsById[fileEntry.id] = fileEntry.path);
     }
     noCurrent = current === undefined;
     verbs = {
@@ -139,7 +139,7 @@ function createFastEditSandbox({
         effectiveLimits.maxHtml +
         " characters",
     );
-  let hasValue: Dynamic = (input?: Dynamic): Dynamic => input != null;
+  let hasValue: Dynamic = (predicateValue?: Dynamic): Dynamic => predicateValue != null;
   if (hasValue(deck))
     throw new Error(
       "createReplBox: the deck (shell) mode is not in this build; use verbs",
@@ -147,57 +147,57 @@ function createFastEditSandbox({
   if (hasValue(deck) && hasValue(verbs))
     throw new Error("createReplBox: pass deck or verbs, not both");
   let validateDeck: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      verbsInput?: Dynamic,
+      modeName?: Dynamic,
+      allowMissingCurrent?: Dynamic,
     ): Dynamic => {
-      let values3: Dynamic = new Set(),
-        items2: Dynamic = [];
+      let slideIds: Dynamic = new Set(),
+        normalizedSlides: Dynamic = [];
       if (
-        typeof input != "object" ||
-        !(context || isSafeFastEditId(input.current)) ||
-        !Array.isArray(input.slides) ||
-        input.slides.length > effectiveLimits.maxSlides
+        typeof verbsInput != "object" ||
+        !(allowMissingCurrent || isSafeFastEditId(verbsInput.current)) ||
+        !Array.isArray(verbsInput.slides) ||
+        verbsInput.slides.length > effectiveLimits.maxSlides
       )
         throw new Error(
           "createReplBox: " +
-            options +
+            modeName +
             " must be { current: id, slides: [{ id, title }] } with at most " +
             effectiveLimits.maxSlides +
             " slides",
         );
-      for (let value28 of input.slides as Dynamic) {
+      for (let slide of verbsInput.slides as Dynamic) {
         if (
-          !value28 ||
-          !isSafeFastEditId(value28.id) ||
-          values3.has(value28.id)
+          !slide ||
+          !isSafeFastEditId(slide.id) ||
+          slideIds.has(slide.id)
         )
           throw new Error(
             "createReplBox: " +
-              options +
+              modeName +
               " slide ids must be unique, match " +
               FAST_EDIT_ID_PATTERN +
               " and not be __proto__ / constructor / prototype",
           );
-        values3.add(value28.id);
-        items2.push({
-          id: value28.id,
+        slideIds.add(slide.id);
+        normalizedSlides.push({
+          id: slide.id,
           title: String(
-            value28.title === undefined ? "" : value28.title,
+            slide.title === undefined ? "" : slide.title,
           ).slice(0, 300),
         });
       }
-      if (!context && !values3.has(input.current))
+      if (!allowMissingCurrent && !slideIds.has(verbsInput.current))
         throw new Error(
           "createReplBox: " +
-            options +
+            modeName +
             ".current must be one of " +
-            options +
+            modeName +
             ".slides",
         );
       return {
-        current: input.current,
-        slides: items2,
+        current: verbsInput.current,
+        slides: normalizedSlides,
       };
     },
     mode: Dynamic = hasValue(deck)
@@ -218,27 +218,27 @@ function createFastEditSandbox({
     knownIds: Dynamic = new Set(),
     createdIds: Dynamic = new Set();
   if (hasSdk) {
-    let value28: Dynamic = Object.create(null),
-      value29: Dynamic = Object.create(null),
-      value30: Dynamic = sdk === 3 ? 0 : html.length;
-    for (let value32 of verbs.slides as Dynamic)
+    let slideHtml: Dynamic = Object.create(null),
+      layoutHtml: Dynamic = Object.create(null),
+      textLength: Dynamic = sdk === 3 ? 0 : html.length;
+    for (let slide of verbs.slides as Dynamic)
       if (
-        (knownIds.add(value32.id),
-        !(sdk !== 3 && value32.id === verbs.current))
+        (knownIds.add(slide.id),
+        !(sdk !== 3 && slide.id === verbs.current))
       ) {
         if (
-          typeof value32.html != "string" ||
-          value32.html.length > effectiveLimits.maxHtml
+          typeof slide.html != "string" ||
+          slide.html.length > effectiveLimits.maxHtml
         )
           throw new Error(
             "createReplBox: sdk:2 needs html (a string of at most " +
               effectiveLimits.maxHtml +
               ' characters) on every slide; "' +
-              value32.id +
+              slide.id +
               '" has none',
           );
-        value28[value32.id] = value32.html;
-        value30 += value32.html.length;
+        slideHtml[slide.id] = slide.html;
+        textLength += slide.html.length;
       }
     if (hasValue(verbs.layouts)) {
       if (
@@ -251,22 +251,22 @@ function createFastEditSandbox({
             effectiveLimits.maxLayouts +
             " names",
         );
-      for (let value32 of Object.keys(verbs.layouts) as Dynamic) {
-        let value33: Dynamic = verbs.layouts[value32];
+      for (let layoutName of Object.keys(verbs.layouts) as Dynamic) {
+        let layoutContent: Dynamic = verbs.layouts[layoutName];
         if (
-          !isSafeFastEditId(value32) ||
-          typeof value33 != "string" ||
-          value33.length > effectiveLimits.maxHtml
+          !isSafeFastEditId(layoutName) ||
+          typeof layoutContent != "string" ||
+          layoutContent.length > effectiveLimits.maxHtml
         )
           throw new Error(
             'createReplBox: layout "' +
-              value32 +
+              layoutName +
               '" must have a name like an id (not __proto__ / constructor / prototype) and html of at most ' +
               effectiveLimits.maxHtml +
               " characters",
           );
-        value29[value32] = value33;
-        value30 += value33.length;
+        layoutHtml[layoutName] = layoutContent;
+        textLength += layoutContent.length;
       }
     }
     if (
@@ -276,7 +276,7 @@ function createFastEditSandbox({
       throw new Error(
         "createReplBox: verbs.title must be a string of at most 300 characters",
       );
-    let items2: Dynamic = [];
+    let sections: Dynamic = [];
     if (hasValue(verbs.sections)) {
       if (
         !Array.isArray(verbs.sections) ||
@@ -287,34 +287,34 @@ function createFastEditSandbox({
             effectiveLimits.maxSlides +
             " entries",
         );
-      for (let value32 of verbs.sections as Dynamic) {
+      for (let section of verbs.sections as Dynamic) {
         if (
-          !value32 ||
-          !isSafeFastEditId(value32.start) ||
-          !knownIds.has(value32.start) ||
-          typeof value32.title != "string" ||
-          value32.title.length > 300 ||
-          items2.some(
-            (input?: Dynamic): Dynamic => input.start === value32.start,
+          !section ||
+          !isSafeFastEditId(section.start) ||
+          !knownIds.has(section.start) ||
+          typeof section.title != "string" ||
+          section.title.length > 300 ||
+          sections.some(
+            (sectionItem?: Dynamic): Dynamic => sectionItem.start === section.start,
           )
         )
           throw new Error(
             "createReplBox: every section needs a start that is one of the slides (each at most once) and a title of at most 300 characters",
           );
-        items2.push({
-          start: value32.start,
-          title: value32.title,
+        sections.push({
+          start: section.start,
+          title: section.title,
         });
-        value30 += value32.title.length;
+        textLength += section.title.length;
       }
     }
-    if (value30 > effectiveLimits.maxInputChars)
+    if (textLength > effectiveLimits.maxInputChars)
       throw new Error(
         "createReplBox: sdk:2 takes at most " +
           effectiveLimits.maxInputChars +
           " characters of slide and layout text in all",
       );
-    let value31: Dynamic = null;
+    let nameAliases: Dynamic = null;
     if (sdk === 3 && hasValue(names)) {
       if (
         typeof names != "object" ||
@@ -324,40 +324,40 @@ function createFastEditSandbox({
         throw new Error(
           "createReplBox: names must be { spelling: implementation | null } with at most 40 entries",
         );
-      value31 = Object.create(null);
-      for (let value32 of Object.keys(names) as Dynamic) {
+      nameAliases = Object.create(null);
+      for (let nameValue of Object.keys(names) as Dynamic) {
         if (
-          !/^[A-Za-z_$][\w$]{0,30}$/.test(value32) ||
-          UNSAFE_FAST_EDIT_IDS.has(value32) ||
+          !/^[A-Za-z_$][\w$]{0,30}$/.test(nameValue) ||
+          UNSAFE_FAST_EDIT_IDS.has(nameValue) ||
           !(
-            names[value32] === null ||
-            (typeof names[value32] == "string" &&
-              /^[A-Za-z]{1,20}$/.test(names[value32]))
+            names[nameValue] === null ||
+            (typeof names[nameValue] == "string" &&
+              /^[A-Za-z]{1,20}$/.test(names[nameValue]))
           )
         )
           throw new Error(
             'createReplBox: names: "' +
-              value32 +
+              nameValue +
               '" must be an identifier and name an implementation (or null)',
           );
-        value31[value32] = names[value32];
+        nameAliases[nameValue] = names[nameValue];
       }
     }
     sandboxConfig = {
       version: sdk,
       paths: filePathsById,
-      names: value31,
-      texts: value28,
-      layouts: value29,
+      names: nameAliases,
+      texts: slideHtml,
+      layouts: layoutHtml,
       title: hasValue(verbs.title) ? verbs.title : "",
-      sections: items2,
+      sections: sections,
     };
   }
   let value: Dynamic =
       typeof onPreview == "function" &&
       Number.isFinite(effectiveLimits.previewMs) &&
       effectiveLimits.previewMs >= 0,
-    value2: Dynamic = JSON.stringify({
+    hasPreview: Dynamic = JSON.stringify({
       deck: mode === "deck" ? validateDeck(deck, "deck") : null,
       verbs: normalizedDeck,
       sdk: sandboxConfig,
@@ -376,11 +376,11 @@ function createFastEditSandbox({
           ? effectiveLimits.chains
           : undefined,
     }),
-    value3: Dynamic = Array.from(
+    nonce: Dynamic = Array.from(
       crypto.getRandomValues(new Uint8Array(16)),
-      (input?: Dynamic): Dynamic => input.toString(16).padStart(2, "0"),
+      (randomByte?: Dynamic): Dynamic => randomByte.toString(16).padStart(2, "0"),
     ).join(""),
-    value4: Dynamic = /^https?:/.test(location.origin)
+    origin: Dynamic = /^https?:/.test(location.origin)
       ? location.origin
       : "*";
   if (fastEditWorkerSource === "") {
@@ -395,7 +395,7 @@ function createFastEditSandbox({
     );
     verifiedFastEditWorkerBytes = null;
   }
-  let value5: Dynamic =
+  let sandboxDocument: Dynamic =
       '<!doctype html><meta http-equiv="Content-Security-Policy" content="' +
       FAST_EDIT_SANDBOX_CSP +
       '"><meta charset="utf-8"><script type="text/plain" id="w">' +
@@ -403,152 +403,152 @@ function createFastEditSandbox({
       '<\/script><script type="text/plain" id="h">' +
       jsonForInlineScript(html) +
       '<\/script><script type="text/plain" id="d">' +
-      jsonForInlineScript(value2) +
+      jsonForInlineScript(hasPreview) +
       "<\/script><script>" +
-      FAST_EDIT_IFRAME_BRIDGE_SOURCE.replace("__NONCE__", value3).replace(
+      FAST_EDIT_IFRAME_BRIDGE_SOURCE.replace("__NONCE__", nonce).replace(
         "__ORIGIN__",
-        value4,
+        origin,
       ) +
       "<\/script>",
-    value6: Dynamic = (document as Dynamic).createElement("iframe");
-  value6.setAttribute("sandbox", "allow-scripts");
-  value6.setAttribute("aria-hidden", "true");
-  value6.setAttribute("tabindex", "-1");
-  value6.style.display = "none";
+    iframe: Dynamic = (document as Dynamic).createElement("iframe");
+  iframe.setAttribute("sandbox", "allow-scripts");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.setAttribute("tabindex", "-1");
+  iframe.style.display = "none";
   if (
     !(
-      value6.sandbox &&
-      value6.sandbox.length === 1 &&
-      value6.sandbox.contains("allow-scripts")
+      iframe.sandbox &&
+      iframe.sandbox.length === 1 &&
+      iframe.sandbox.contains("allow-scripts")
     )
   )
     throw new Error(
       'createReplBox: the frame must carry sandbox="allow-scripts" and nothing else',
     );
   let flag: Dynamic = false,
-    flag2: Dynamic = false,
-    flag3: Dynamic = false,
-    flag4: Dynamic = false,
+    didAbort: Dynamic = false,
+    didLoad: Dynamic = false,
+    didFail: Dynamic = false,
     text: Dynamic = "destroyed",
-    index2: Dynamic = 0,
-    index3: Dynamic = 0,
-    index4: Dynamic = 0,
-    index5: Dynamic = 0,
-    value7: Dynamic = -1,
-    value8: Dynamic = Date.now(),
-    value9: Dynamic = value8,
+    loadCount: Dynamic = 0,
+    protocolErrorCount: Dynamic = 0,
+    frameCount: Dynamic = 0,
+    messageCount: Dynamic = 0,
+    lastFrameId: Dynamic = -1,
+    createdAt: Dynamic = Date.now(),
+    lastActivityAt: Dynamic = createdAt,
     items: Dynamic = [],
-    index6: Dynamic = 0,
-    index7: Dynamic = 0,
-    index8: Dynamic = 0,
-    index9: Dynamic = 0,
-    index10: Dynamic = 0,
-    index11: Dynamic = 0,
-    index12: Dynamic = 0,
-    index13: Dynamic = 0,
-    index14: Dynamic = 0,
-    index15: Dynamic = 0,
+    htmlBytes: Dynamic = 0,
+    resultBytes: Dynamic = 0,
+    frameBytes: Dynamic = 0,
+    statementCount: Dynamic = 0,
+    htmlStatementCount: Dynamic = 0,
+    protocolStatementCount: Dynamic = 0,
+    responseCount: Dynamic = 0,
+    activeRequestCount: Dynamic = 0,
+    frameCharacterCount: Dynamic = 0,
+    runCharacterCount: Dynamic = 0,
     values: Dynamic = new Set(),
-    value10: Dynamic,
-    promise: Dynamic = new Promise((input?: Dynamic): Dynamic => {
-      value10 = input;
+    resolveSandbox: Dynamic,
+    promise: Dynamic = new Promise((callbackValue?: Dynamic): Dynamic => {
+      resolveSandbox = callbackValue;
     }),
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (typeof input == "function")
+    callback: Dynamic = (callbackInput?: Dynamic, callbackOptions?: Dynamic): Dynamic => {
+      if (typeof callbackInput == "function")
         try {
-          input(options);
-        } catch (value28: Dynamic) {
+          callbackInput(callbackOptions);
+        } catch (callbackError: Dynamic) {
           setTimeout((): Dynamic => {
-            throw value28;
+            throw callbackError;
           });
         }
     };
-  function value11(): Dynamic {
+  function stopSandbox(): Dynamic {
     if (!flag) {
       flag = true;
-      (window as Dynamic).removeEventListener("message", value16);
-      value6.removeEventListener("load", value14);
-      clearInterval(value27);
-      value6.remove();
+      (window as Dynamic).removeEventListener("message", handleMessage);
+      iframe.removeEventListener("load", handleIframeLoad);
+      clearInterval(sandboxTimer);
+      iframe.remove();
       items.length = 0;
-      for (let value28 of entries.values() as Dynamic) value28.resolve(null);
+      for (let pendingEntry of entries.values() as Dynamic) pendingEntry.resolve(null);
       entries.clear();
-      value10({
+      resolveSandbox({
         ok: false,
         code: text,
       });
     }
   }
-  function value12(input?: Dynamic, options?: Dynamic): Dynamic {
+  function failSandbox(failureCode?: Dynamic, failureMessage?: Dynamic): Dynamic {
     flag ||
-      ((text = input),
-      value11(),
+      ((text = failureCode),
+      stopSandbox(),
       callback(onError, {
-        code: input,
-        message: options || input,
+        code: failureCode,
+        message: failureMessage || failureCode,
         fatal: true,
       }));
   }
-  function value13(): Dynamic {
-    ++index3 >= effectiveLimits.maxDrops &&
-      value12("protocol", "too many malformed messages");
+  function handleProtocolError(): Dynamic {
+    ++protocolErrorCount >= effectiveLimits.maxDrops &&
+      failSandbox("protocol", "too many malformed messages");
   }
-  function value14(): Dynamic {
-    if (++index2 > 1)
-      return value12(
+  function handleIframeLoad(): Dynamic {
+    if (++loadCount > 1)
+      return failSandbox(
         "navigated",
         "the sandbox frame loaded a second document",
       );
-    let flag5: Dynamic = false;
+    let isSameOrigin: Dynamic = false;
     try {
-      flag5 = value6.contentDocument !== null;
+      isSameOrigin = iframe.contentDocument !== null;
     } catch {
-      flag5 = false;
+      isSameOrigin = false;
     }
-    flag5 && value12("same-origin", "the sandbox frame is not cross-origin");
+    isSameOrigin && failSandbox("same-origin", "the sandbox frame is not cross-origin");
   }
-  let callback2: Dynamic = (items2?: Dynamic, options?: Dynamic): Dynamic =>
-    typeof items2 == "string" && items2.length <= options;
-  function value15(items2?: Dynamic): Dynamic {
-    if (typeof items2 == "string") return items2.length;
-    if (!items2 || typeof items2 != "object") return 0;
-    let index17: Dynamic = 0,
-      index18: Dynamic = 0;
-    for (let value28 in items2) {
-      let value29: Dynamic = items2[value28];
-      if (typeof value29 == "string") index17 += value29.length;
-      else if (value29 && typeof value29 == "object")
-        for (let value30 in value29) {
-          let value31: Dynamic = value29[value30];
-          if (++index18 > 5e4) return index17 + 1e9;
-          if (typeof value31 == "string") index17 += value31.length;
-          else if (value31 && typeof value31 == "object")
-            for (let value32 in value31) {
-              if (++index18 > 5e4) return index17 + 1e9;
-              typeof value31[value32] == "string" &&
-                (index17 += value31[value32].length);
+  let isWithinMessageLimit: Dynamic = (message?: Dynamic, maxMessageLength?: Dynamic): Dynamic =>
+    typeof message == "string" && message.length <= maxMessageLength;
+  function measureNestedData(data?: Dynamic): Dynamic {
+    if (typeof data == "string") return data.length;
+    if (!data || typeof data != "object") return 0;
+    let characterCount: Dynamic = 0,
+      propertyCount: Dynamic = 0;
+    for (let propertyName in data) {
+      let propertyValue: Dynamic = data[propertyName];
+      if (typeof propertyValue == "string") characterCount += propertyValue.length;
+      else if (propertyValue && typeof propertyValue == "object")
+        for (let nestedKey in propertyValue) {
+          let nestedValue: Dynamic = propertyValue[nestedKey];
+          if (++propertyCount > 5e4) return characterCount + 1e9;
+          if (typeof nestedValue == "string") characterCount += nestedValue.length;
+          else if (nestedValue && typeof nestedValue == "object")
+            for (let deepKey in nestedValue) {
+              if (++propertyCount > 5e4) return characterCount + 1e9;
+              typeof nestedValue[deepKey] == "string" &&
+                (characterCount += nestedValue[deepKey].length);
             }
         }
     }
-    return index17;
+    return characterCount;
   }
-  function value16(dataset?: Dynamic): Dynamic {
-    if (flag || dataset.source !== value6.contentWindow) return;
+  function handleMessage(dataset?: Dynamic): Dynamic {
+    if (flag || dataset.source !== iframe.contentWindow) return;
     let data: Dynamic = dataset.data;
     if (data && typeof data == "object" && data.kind === "html") {
-      let value28: Dynamic = value15(data);
+      let messageSize: Dynamic = measureNestedData(data);
       if (
-        value28 > effectiveLimits.maxHtml + effectiveLimits.maxStmt + 1e3 ||
-        (index14 += value28) > effectiveLimits.maxFrameChars
+        messageSize > effectiveLimits.maxHtml + effectiveLimits.maxStmt + 1e3 ||
+        (frameCharacterCount += messageSize) > effectiveLimits.maxFrameChars
       )
-        return value12(
+        return failSandbox(
           "flood",
           "over " +
             effectiveLimits.maxFrameChars +
             " characters of result frames came out of the sandbox in one run",
         );
-    } else if ((index13 += value15(data)) > effectiveLimits.maxOutChars)
-      return value12(
+    } else if ((activeRequestCount += measureNestedData(data)) > effectiveLimits.maxOutChars)
+      return failSandbox(
         "flood",
         "over " +
           effectiveLimits.maxOutChars +
@@ -558,57 +558,57 @@ function createFastEditSandbox({
       dataset.origin !== "null" ||
       !data ||
       typeof data != "object" ||
-      data.nonce !== value3 ||
+      data.nonce !== nonce ||
       !FAST_EDIT_WORKER_MESSAGE_KINDS.has(data.kind)
     )
-      return value13();
-    if (++index4 > effectiveLimits.maxMessages)
-      return value12(
+      return handleProtocolError();
+    if (++frameCount > effectiveLimits.maxMessages)
+      return failSandbox(
         "flood",
         "over " + effectiveLimits.maxMessages + " messages in one run",
       );
-    value8 = Date.now();
+    createdAt = Date.now();
     if (data.kind !== "beat") {
       if (data.kind === "fault")
-        return value12(
+        return failSandbox(
           "no-worker",
-          callback2(data.message, effectiveLimits.maxMessage)
+          isWithinMessageLimit(data.message, effectiveLimits.maxMessage)
             ? data.message
             : "no worker",
         );
       if (data.kind === "ready") {
-        if (flag2) return value13();
-        flag2 = true;
-        value10({
+        if (didAbort) return handleProtocolError();
+        didAbort = true;
+        resolveSandbox({
           ok: true,
         });
-        for (let value28 of items.splice(0) as Dynamic) value25(value28);
+        for (let queuedMessage of items.splice(0) as Dynamic) postMessage(queuedMessage);
         return;
       }
       if (data.kind === "log") {
         if (!hasSdk)
-          return callback2(data.message, effectiveLimits.maxMessage)
+          return isWithinMessageLimit(data.message, effectiveLimits.maxMessage)
             ? callback(onLog, {
                 message: data.message,
               })
-            : value13();
+            : handleProtocolError();
         if (
-          !callback2(data.message, effectiveLimits.maxLogMessage) ||
+          !isWithinMessageLimit(data.message, effectiveLimits.maxLogMessage) ||
           (data.n !== undefined &&
             !(Number.isInteger(data.n) && data.n >= 0 && data.n <= 1e5)) ||
           (data.cut !== undefined && typeof data.cut != "boolean")
         )
-          return value13();
+          return handleProtocolError();
         if (data.n !== undefined) {
           if (
-            index12 + 1 > effectiveLimits.maxLogCalls ||
-            index11 + data.message.length > effectiveLimits.maxLogChars
+            responseCount + 1 > effectiveLimits.maxLogCalls ||
+            protocolStatementCount + data.message.length > effectiveLimits.maxLogChars
           )
-            return value13();
-          index12++;
-          index11 += data.message.length;
+            return handleProtocolError();
+          responseCount++;
+          protocolStatementCount += data.message.length;
         } else if (data.message.length > effectiveLimits.maxMessage)
-          return value13();
+          return handleProtocolError();
         return callback(
           onLog,
           data.n === undefined
@@ -624,16 +624,16 @@ function createFastEditSandbox({
       }
       if (data.kind === "error") {
         if (
-          !callback2(data.message, effectiveLimits.maxMessage) ||
+          !isWithinMessageLimit(data.message, effectiveLimits.maxMessage) ||
           (data.stmt !== undefined &&
-            !callback2(data.stmt, effectiveLimits.maxStmt))
+            !isWithinMessageLimit(data.stmt, effectiveLimits.maxStmt))
         )
-          return value13();
-        let value28: Dynamic =
+          return handleProtocolError();
+        let messageSize: Dynamic =
             data.code !== undefined || data.id !== undefined,
           id: Dynamic = data.id;
         if (
-          value28 &&
+          messageSize &&
           !(
             sdk === 3 &&
             (id === undefined || isSafeFastEditId(id)) &&
@@ -646,7 +646,7 @@ function createFastEditSandbox({
                   : data.code === "not_plain" && id === undefined)
           )
         )
-          return value13();
+          return handleProtocolError();
         callback(
           onError,
           Object.assign(
@@ -663,7 +663,7 @@ function createFastEditSandbox({
               stmt: data.stmt || "",
               fatal: false,
             },
-            value28
+            messageSize
               ? id === undefined
                 ? {
                     refused: data.code,
@@ -676,26 +676,26 @@ function createFastEditSandbox({
           ),
         );
         !hasSdk &&
-          ++index5 >= effectiveLimits.maxStatements &&
-          value12("maxStatements");
+          ++messageCount >= effectiveLimits.maxStatements &&
+          failSandbox("maxStatements");
         return;
       }
-      if (data.kind === "deck") return value17(data);
-      if (data.kind === "op") return value18(data);
+      if (data.kind === "deck") return handleDeckMessage(data);
+      if (data.kind === "op") return handleOperationMessage(data);
       if (data.kind === "view" || data.kind === "handles")
-        return value23(data);
-      if (data.kind === "preview") return value21(data);
-      if (data.kind === "done") return value19(data);
-      if (data.kind === "touch") return value20(data);
+        return handleSourceMessage(data);
+      if (data.kind === "preview") return handlePreviewMessage(data);
+      if (data.kind === "done") return handleDoneMessage(data);
+      if (data.kind === "touch") return handleTouchMessage(data);
       if (
-        !callback2(data.html, effectiveLimits.maxHtml) ||
+        !isWithinMessageLimit(data.html, effectiveLimits.maxHtml) ||
         !Number.isInteger(data.seq) ||
         data.seq < 0 ||
-        data.seq <= value7 ||
-        !callback2(data.stmt, effectiveLimits.maxStmt) ||
+        data.seq <= lastFrameId ||
+        !isWithinMessageLimit(data.stmt, effectiveLimits.maxStmt) ||
         (data.final !== undefined && typeof data.final != "boolean") ||
-        flag4 ||
-        (data.final === true && !flag3) ||
+        didFail ||
+        (data.final === true && !didLoad) ||
         (hasSdk &&
           !(
             typeof data.slideId == "string" &&
@@ -706,9 +706,9 @@ function createFastEditSandbox({
                   : data.slideId === verbs.current)))
           ))
       )
-        return value13();
-      value7 = data.seq;
-      data.final === true && (flag4 = true);
+        return handleProtocolError();
+      lastFrameId = data.seq;
+      data.final === true && (didFail = true);
       callback(
         onHtml,
         hasSdk
@@ -728,78 +728,78 @@ function createFastEditSandbox({
       );
       !hasSdk &&
         !data.final &&
-        ++index5 >= effectiveLimits.maxStatements &&
-        value12("maxStatements");
+        ++messageCount >= effectiveLimits.maxStatements &&
+        failSandbox("maxStatements");
     }
   }
-  let callback3: Dynamic = (items2?: Dynamic, options?: Dynamic): Dynamic =>
-    Array.isArray(items2) &&
-    items2.length <= options &&
-    items2.every(
-      (input?: Dynamic): Dynamic =>
-        typeof input == "string" && FAST_EDIT_ID_PATTERN.test(input),
+  let isBoundedArray: Dynamic = (arrayValue?: Dynamic, maxArrayLength?: Dynamic): Dynamic =>
+    Array.isArray(arrayValue) &&
+    arrayValue.length <= maxArrayLength &&
+    arrayValue.every(
+      (idValue?: Dynamic): Dynamic =>
+        typeof idValue == "string" && FAST_EDIT_ID_PATTERN.test(idValue),
     ) &&
-    new Set(items2).size === items2.length;
-  function value17(input?: Dynamic): Dynamic {
+    new Set(arrayValue).size === arrayValue.length;
+  function handleDeckMessage(deckMessage?: Dynamic): Dynamic {
     if (
       mode !== "deck" ||
-      flag4 ||
-      !Number.isInteger(input.seq) ||
-      input.seq < 0 ||
-      input.seq <= value7 ||
-      (input.stmt !== undefined &&
-        !callback2(input.stmt, effectiveLimits.maxStmt)) ||
-      !callback3(input.order, effectiveLimits.maxSlides) ||
-      !callback3(input.removed, effectiveLimits.maxSlides) ||
-      !Array.isArray(input.added) ||
-      !Array.isArray(input.clones) ||
-      input.added.length > effectiveLimits.maxNewSlides ||
-      input.clones.length > effectiveLimits.maxNewSlides
+      didFail ||
+      !Number.isInteger(deckMessage.seq) ||
+      deckMessage.seq < 0 ||
+      deckMessage.seq <= lastFrameId ||
+      (deckMessage.stmt !== undefined &&
+        !isWithinMessageLimit(deckMessage.stmt, effectiveLimits.maxStmt)) ||
+      !isBoundedArray(deckMessage.order, effectiveLimits.maxSlides) ||
+      !isBoundedArray(deckMessage.removed, effectiveLimits.maxSlides) ||
+      !Array.isArray(deckMessage.added) ||
+      !Array.isArray(deckMessage.clones) ||
+      deckMessage.added.length > effectiveLimits.maxNewSlides ||
+      deckMessage.clones.length > effectiveLimits.maxNewSlides
     )
-      return value13();
-    let index17: Dynamic = 0,
-      items2: Dynamic = [],
-      items3: Dynamic = [];
-    for (let value28 of input.added as Dynamic) {
+      return handleProtocolError();
+    let deckCharacterCount: Dynamic = 0,
+      addedSlides: Dynamic = [],
+      clonedSlides: Dynamic = [];
+    for (let addedSlide of deckMessage.added as Dynamic) {
       if (
-        !value28 ||
-        typeof value28 != "object" ||
-        !FAST_EDIT_ID_PATTERN.test(value28.id) ||
-        !callback2(value28.html, effectiveLimits.maxHtml)
+        !addedSlide ||
+        typeof addedSlide != "object" ||
+        !FAST_EDIT_ID_PATTERN.test(addedSlide.id) ||
+        !isWithinMessageLimit(addedSlide.html, effectiveLimits.maxHtml)
       )
-        return value13();
-      index17 += value28.html.length;
-      items2.push({
-        id: value28.id,
-        html: value28.html,
+        return handleProtocolError();
+      deckCharacterCount += addedSlide.html.length;
+      addedSlides.push({
+        id: addedSlide.id,
+        html: addedSlide.html,
       });
     }
-    for (let value28 of input.clones as Dynamic) {
+    for (let clonedSlide of deckMessage.clones as Dynamic) {
       if (
-        !value28 ||
-        typeof value28 != "object" ||
-        !FAST_EDIT_ID_PATTERN.test(value28.id) ||
-        !FAST_EDIT_ID_PATTERN.test(value28.cloneOf)
+        !clonedSlide ||
+        typeof clonedSlide != "object" ||
+        !FAST_EDIT_ID_PATTERN.test(clonedSlide.id) ||
+        !FAST_EDIT_ID_PATTERN.test(clonedSlide.cloneOf)
       )
-        return value13();
-      items3.push({
-        id: value28.id,
-        cloneOf: value28.cloneOf,
+        return handleProtocolError();
+      clonedSlides.push({
+        id: clonedSlide.id,
+        cloneOf: clonedSlide.cloneOf,
       });
     }
-    for (let value28 of input.order as Dynamic) index17 += value28.length;
-    for (let value28 of input.removed as Dynamic) index17 += value28.length;
-    if (index17 > effectiveLimits.maxDeckChars) return value13();
-    value7 = input.seq;
+    for (let orderedId of deckMessage.order as Dynamic) deckCharacterCount += orderedId.length;
+    for (let removedId of deckMessage.removed as Dynamic) deckCharacterCount += removedId.length;
+    if (deckCharacterCount > effectiveLimits.maxDeckChars) return handleProtocolError();
+    lastFrameId = deckMessage.seq;
     callback(onDeck, {
-      seq: input.seq,
-      stmt: input.stmt || "",
-      order: input.order.slice(),
-      added: items2,
-      clones: items3,
-      removed: input.removed.slice(),
+      seq: deckMessage.seq,
+      stmt: deckMessage.stmt || "",
+      order: deckMessage.order.slice(),
+      added: addedSlides,
+      clones: clonedSlides,
+      removed: deckMessage.removed.slice(),
     });
-    ++index7 >= effectiveLimits.maxStatements && value12("maxStatements");
+    ++resultBytes >= effectiveLimits.maxStatements && failSandbox("maxStatements");
   }
   let state: Dynamic = {
       move: ["id"],
@@ -807,7 +807,7 @@ function createFastEditSandbox({
       duplicate: ["id"],
       add: ["html"],
     },
-    state2: Dynamic = {
+    deckState: Dynamic = {
       move: ["before", "after"],
       remove: [],
       duplicate: ["newId"],
@@ -815,129 +815,129 @@ function createFastEditSandbox({
     };
   hasSdk &&
     ((state.title = ["title"]),
-    (state2.title = []),
+    (deckState.title = []),
     (state.undo = []),
-    (state2.undo = []),
+    (deckState.undo = []),
     (state.section = ["action", "id"]),
-    (state2.section = ["title"]),
-    (state2.duplicate = ["newId", "minted", "html"]),
-    (state2.add = ["before", "after", "id", "minted"]));
+    (deckState.section = ["title"]),
+    (deckState.duplicate = ["newId", "minted", "html"]),
+    (deckState.add = ["before", "after", "id", "minted"]));
   sdk === 3 &&
     ((state.askClaude = []),
-    (state2.askClaude = ["prompt"]),
+    (deckState.askClaude = ["prompt"]),
     (state.order = ["ids"]),
-    (state2.order = []),
-    (state2.move = ["before", "after", "where"]),
-    (state2.add = ["before", "after", "where", "id", "minted"]),
-    (state2.duplicate = ["newId", "minted", "html", "where"]));
-  let callback4: Dynamic = (input?: Dynamic): Dynamic =>
-    input !== null &&
-    typeof input == "object" &&
-    !Array.isArray(input) &&
-    Object.keys(input).length >= 1 &&
-    Object.keys(input).length <= 8 &&
-    Object.keys(input).every(
-      (input2?: Dynamic): Dynamic =>
-        /^[A-Za-z][\w-]{0,31}$/.test(input2) &&
-        input2 !== "before" &&
-        input2 !== "after" &&
-        (callback2(input[input2], 100) ||
-          (typeof input[input2] == "number" &&
-            input[input2] === input[input2])),
+    (deckState.order = []),
+    (deckState.move = ["before", "after", "where"]),
+    (deckState.add = ["before", "after", "where", "id", "minted"]),
+    (deckState.duplicate = ["newId", "minted", "html", "where"]));
+  let isValidOperation: Dynamic = (operation?: Dynamic): Dynamic =>
+    operation !== null &&
+    typeof operation == "object" &&
+    !Array.isArray(operation) &&
+    Object.keys(operation).length >= 1 &&
+    Object.keys(operation).length <= 8 &&
+    Object.keys(operation).every(
+      (fieldName?: Dynamic): Dynamic =>
+        /^[A-Za-z][\w-]{0,31}$/.test(fieldName) &&
+        fieldName !== "before" &&
+        fieldName !== "after" &&
+        (isWithinMessageLimit(operation[fieldName], 100) ||
+          (typeof operation[fieldName] == "number" &&
+            operation[fieldName] === operation[fieldName])),
     );
-  function value18(input?: Dynamic): Dynamic {
-    let op2: Dynamic = input.op;
+  function handleOperationMessage(operationMessage?: Dynamic): Dynamic {
+    let op2: Dynamic = operationMessage.op;
     if (
       mode !== "verbs" ||
-      flag4 ||
-      !Number.isInteger(input.seq) ||
-      input.seq < 0 ||
-      input.seq <= value7 ||
-      (input.stmt !== undefined &&
-        !callback2(input.stmt, effectiveLimits.maxStmt)) ||
+      didFail ||
+      !Number.isInteger(operationMessage.seq) ||
+      operationMessage.seq < 0 ||
+      operationMessage.seq <= lastFrameId ||
+      (operationMessage.stmt !== undefined &&
+        !isWithinMessageLimit(operationMessage.stmt, effectiveLimits.maxStmt)) ||
       !op2 ||
       typeof op2 != "object" ||
       Array.isArray(op2) ||
       typeof op2.op != "string" ||
       !Object.prototype.hasOwnProperty.call(state, op2.op)
     )
-      return value13();
-    let value28: Dynamic = state[op2.op],
-      value29: Dynamic = state2[op2.op],
-      value30: Dynamic = Object.keys(op2),
-      state3: Dynamic = {
+      return handleProtocolError();
+    let allowedFields: Dynamic = state[op2.op],
+      stateFields: Dynamic = deckState[op2.op],
+      operationFields: Dynamic = Object.keys(op2),
+      nextState: Dynamic = {
         op: op2.op,
       };
-    for (let value34 of value30 as Dynamic)
+    for (let fieldName of operationFields as Dynamic)
       if (
-        value34 !== "op" &&
-        !value28.includes(value34) &&
-        !value29.includes(value34)
+        fieldName !== "op" &&
+        !allowedFields.includes(fieldName) &&
+        !stateFields.includes(fieldName)
       )
-        return value13();
-    for (let value34 of value28 as Dynamic)
-      if (!(value34 in op2)) return value13();
-    for (let value34 of value30 as Dynamic) {
-      if (value34 === "op") continue;
-      let value35: Dynamic = op2[value34];
+        return handleProtocolError();
+    for (let fieldName of allowedFields as Dynamic)
+      if (!(fieldName in op2)) return handleProtocolError();
+    for (let fieldName of operationFields as Dynamic) {
+      if (fieldName === "op") continue;
+      let fieldValue: Dynamic = op2[fieldName];
       if (
-        !(value34 === "html"
-          ? callback2(value35, effectiveLimits.maxHtml) &&
+        !(fieldName === "html"
+          ? isWithinMessageLimit(fieldValue, effectiveLimits.maxHtml) &&
             (sdk === 3 ? /^<[a-z][a-z0-9-]*[\s>]/i : /^<section[\s>]/i).test(
-              value35,
+              fieldValue,
             )
-          : value34 === "ids"
-            ? callback3(value35, effectiveLimits.maxSlides) &&
-              value35.every(
-                (input2?: Dynamic): Dynamic => knownIds.has(input2),
+          : fieldName === "ids"
+            ? isBoundedArray(fieldValue, effectiveLimits.maxSlides) &&
+              fieldValue.every(
+                (knownId?: Dynamic): Dynamic => knownIds.has(knownId),
               )
-            : value34 === "where"
-              ? callback4(value35)
-              : value34 === "title"
-                ? callback2(value35, 300) && value35.length > 0
-                : value34 === "prompt"
-                  ? callback2(value35, 1e3) && value35.length > 0
-                  : value34 === "minted"
-                    ? value35 === true
-                    : value34 === "action"
-                      ? value35 === "start" ||
-                        value35 === "rename" ||
-                        value35 === "remove"
-                      : isSafeFastEditId(value35))
+            : fieldName === "where"
+              ? isValidOperation(fieldValue)
+              : fieldName === "title"
+                ? isWithinMessageLimit(fieldValue, 300) && fieldValue.length > 0
+                : fieldName === "prompt"
+                  ? isWithinMessageLimit(fieldValue, 1e3) && fieldValue.length > 0
+                  : fieldName === "minted"
+                    ? fieldValue === true
+                    : fieldName === "action"
+                      ? fieldValue === "start" ||
+                        fieldValue === "rename" ||
+                        fieldValue === "remove"
+                      : isSafeFastEditId(fieldValue))
       )
-        return value13();
-      state3[value34] =
-        value34 === "where"
-          ? Object.assign({}, value35)
-          : value34 === "ids"
-            ? value35.slice()
-            : value35;
+        return handleProtocolError();
+      nextState[fieldName] =
+        fieldName === "where"
+          ? Object.assign({}, fieldValue)
+          : fieldName === "ids"
+            ? fieldValue.slice()
+            : fieldValue;
     }
     if (hasSdk) {
-      for (let value35 of ["id", "before", "after"] as Dynamic)
+      for (let requiredField of ["id", "before", "after"] as Dynamic)
         if (
-          value35 in op2 &&
-          !(op2.op === "add" && value35 === "id") &&
-          !knownIds.has(op2[value35])
+          requiredField in op2 &&
+          !(op2.op === "add" && requiredField === "id") &&
+          !knownIds.has(op2[requiredField])
         )
-          return value13();
-      let value34: Dynamic =
+          return handleProtocolError();
+      let targetId: Dynamic =
         op2.op === "add"
           ? op2.id
           : op2.op === "duplicate"
             ? op2.newId
             : undefined;
       if (
-        (value34 !== undefined &&
-          (knownIds.has(value34) ||
+        (targetId !== undefined &&
+          (knownIds.has(targetId) ||
             knownIds.size >= effectiveLimits.maxSlides)) ||
         (sdk === 3 &&
-          value34 !== undefined &&
-          (!FAST_EDIT_NAME_PATTERN.test(value34) ||
-            isReservedFastEditName(value34))) ||
+          targetId !== undefined &&
+          (!FAST_EDIT_NAME_PATTERN.test(targetId) ||
+            isReservedFastEditName(targetId))) ||
         (op2.op === "section" && (op2.action === "remove") == "title" in op2)
       )
-        return value13();
+        return handleProtocolError();
     }
     if (
       sdk === 3
@@ -948,21 +948,21 @@ function createFastEditSandbox({
         : (op2.op === "move" || op2.op === "add") &&
           "before" in op2 == "after" in op2
     )
-      return value13();
-    let value31: Dynamic = typeof op2.html == "string" ? op2.html.length : 0,
-      value32: Dynamic =
+      return handleProtocolError();
+    let htmlLength: Dynamic = typeof op2.html == "string" ? op2.html.length : 0,
+      operationIsStopped: Dynamic =
         sdk === 3 && (op2.op === "undo" || op2.op === "askClaude");
-    if (value32 && stopped) return value13();
-    let value33: Dynamic = value32 || (sdk === 3 && op2.op === "remove");
+    if (operationIsStopped && stopped) return handleProtocolError();
+    let isRemoveOperation: Dynamic = operationIsStopped || (sdk === 3 && op2.op === "remove");
     if (
-      (!value33 && index8 + 1 > effectiveLimits.maxOps) ||
-      index9 + value31 > effectiveLimits.maxDeckChars
+      (!isRemoveOperation && frameBytes + 1 > effectiveLimits.maxOps) ||
+      statementCount + htmlLength > effectiveLimits.maxDeckChars
     )
-      return value13();
-    value33 || index8++;
-    value32 && (stopped = true);
-    index9 += value31;
-    value7 = input.seq;
+      return handleProtocolError();
+    isRemoveOperation || frameBytes++;
+    operationIsStopped && (stopped = true);
+    statementCount += htmlLength;
+    lastFrameId = operationMessage.seq;
     hasSdk &&
       (op2.op === "add" && op2.id !== undefined && knownIds.add(op2.id),
       op2.op === "duplicate" &&
@@ -971,95 +971,95 @@ function createFastEditSandbox({
       op2.op === "remove" &&
         (knownIds.delete(op2.id), createdIds.add(op2.id)));
     callback(onOp, {
-      seq: input.seq,
-      stmt: input.stmt || "",
-      op: state3,
+      seq: operationMessage.seq,
+      stmt: operationMessage.stmt || "",
+      op: nextState,
     });
   }
-  function value19(input?: Dynamic): Dynamic {
+  function handleDoneMessage(doneMessage?: Dynamic): Dynamic {
     if (
       !hasSdk ||
-      flag4 ||
-      !Number.isInteger(input.seq) ||
-      input.seq < 0 ||
-      input.seq <= value7 ||
-      !Number.isInteger(input.n) ||
-      input.n <= index10 ||
-      input.n > 1e5 ||
-      !callback2(input.stmt, effectiveLimits.maxStmt) ||
-      !callback3(input.changed, effectiveLimits.maxSlides) ||
-      !input.changed.every(
-        (input2?: Dynamic): Dynamic => knownIds.has(input2),
+      didFail ||
+      !Number.isInteger(doneMessage.seq) ||
+      doneMessage.seq < 0 ||
+      doneMessage.seq <= lastFrameId ||
+      !Number.isInteger(doneMessage.n) ||
+      doneMessage.n <= htmlStatementCount ||
+      doneMessage.n > 1e5 ||
+      !isWithinMessageLimit(doneMessage.stmt, effectiveLimits.maxStmt) ||
+      !isBoundedArray(doneMessage.changed, effectiveLimits.maxSlides) ||
+      !doneMessage.changed.every(
+        (knownId?: Dynamic): Dynamic => knownIds.has(knownId),
       ) ||
-      !Number.isInteger(input.logged) ||
-      input.logged < 0 ||
-      input.logged > 1e4 ||
-      (input.skipped !== undefined && typeof input.skipped != "boolean") ||
-      (input.handles !== undefined &&
+      !Number.isInteger(doneMessage.logged) ||
+      doneMessage.logged < 0 ||
+      doneMessage.logged > 1e4 ||
+      (doneMessage.skipped !== undefined && typeof doneMessage.skipped != "boolean") ||
+      (doneMessage.handles !== undefined &&
         !(
           sdk === 3 &&
-          callback3(input.handles, effectiveLimits.maxSlides) &&
-          input.handles.every(
-            (input2?: Dynamic): Dynamic => knownIds.has(input2),
+          isBoundedArray(doneMessage.handles, effectiveLimits.maxSlides) &&
+          doneMessage.handles.every(
+            (knownId?: Dynamic): Dynamic => knownIds.has(knownId),
           )
         )) ||
-      (input.threw !== undefined &&
+      (doneMessage.threw !== undefined &&
         !(
-          input.threw &&
-          typeof input.threw == "object" &&
-          !Array.isArray(input.threw) &&
-          Object.keys(input.threw).length === 1 &&
-          callback2(input.threw.message, effectiveLimits.maxMessage)
+          doneMessage.threw &&
+          typeof doneMessage.threw == "object" &&
+          !Array.isArray(doneMessage.threw) &&
+          Object.keys(doneMessage.threw).length === 1 &&
+          isWithinMessageLimit(doneMessage.threw.message, effectiveLimits.maxMessage)
         ))
     )
-      return value13();
-    value7 = input.seq;
-    index10 = input.n;
-    let state3: Dynamic = {
-      seq: input.seq,
-      n: input.n,
-      stmt: input.stmt,
-      changed: input.changed.slice(),
-      logged: input.logged,
+      return handleProtocolError();
+    lastFrameId = doneMessage.seq;
+    htmlStatementCount = doneMessage.n;
+    let doneState: Dynamic = {
+      seq: doneMessage.seq,
+      n: doneMessage.n,
+      stmt: doneMessage.stmt,
+      changed: doneMessage.changed.slice(),
+      logged: doneMessage.logged,
     };
-    input.threw &&
-      (state3.threw = {
-        message: input.threw.message
+    doneMessage.threw &&
+      (doneState.threw = {
+        message: doneMessage.threw.message
           .split(
             `
 `,
           )[0]
           .slice(0, effectiveLimits.maxErrorChars),
       });
-    input.skipped === true && (state3.skipped = true);
-    input.handles !== undefined && (state3.handles = input.handles.slice());
-    callback(onDone, state3);
-    ++index5 >= effectiveLimits.maxStatements && value12("maxStatements");
+    doneMessage.skipped === true && (doneState.skipped = true);
+    doneMessage.handles !== undefined && (doneState.handles = doneMessage.handles.slice());
+    callback(onDone, doneState);
+    ++messageCount >= effectiveLimits.maxStatements && failSandbox("maxStatements");
   }
-  function value20(input?: Dynamic): Dynamic {
+  function handleTouchMessage(touchMessage?: Dynamic): Dynamic {
     if (
       !hasSdk ||
-      flag4 ||
-      !Number.isInteger(input.seq) ||
-      input.seq < 0 ||
-      input.seq <= value7 ||
-      !Number.isInteger(input.n) ||
-      input.n < 0 ||
-      input.n > 1e5 ||
-      typeof input.slideId != "string" ||
-      !knownIds.has(input.slideId) ||
-      values.has(input.slideId)
+      didFail ||
+      !Number.isInteger(touchMessage.seq) ||
+      touchMessage.seq < 0 ||
+      touchMessage.seq <= lastFrameId ||
+      !Number.isInteger(touchMessage.n) ||
+      touchMessage.n < 0 ||
+      touchMessage.n > 1e5 ||
+      typeof touchMessage.slideId != "string" ||
+      !knownIds.has(touchMessage.slideId) ||
+      values.has(touchMessage.slideId)
     )
-      return value13();
-    value7 = input.seq;
-    values.add(input.slideId);
+      return handleProtocolError();
+    lastFrameId = touchMessage.seq;
+    values.add(touchMessage.slideId);
     callback(onTouch, {
-      seq: input.seq,
-      n: input.n,
-      slideId: input.slideId,
+      seq: touchMessage.seq,
+      n: touchMessage.n,
+      slideId: touchMessage.slideId,
     });
   }
-  let values2: Dynamic = new Set([
+  let allowedEventMethods: Dynamic = new Set([
     "html",
     "append",
     "prepend",
@@ -1068,26 +1068,26 @@ function createFastEditSandbox({
     "create",
     "add",
   ]);
-  function value21(event?: Dynamic): Dynamic {
+  function handlePreviewMessage(event?: Dynamic): Dynamic {
     if (
       !value ||
-      flag4 ||
+      didFail ||
       !Number.isInteger(event.seq) ||
       event.seq < 0 ||
-      event.seq <= value7 ||
-      !values2.has(event.method) ||
-      !callback2(event.html, effectiveLimits.maxHtml) ||
-      !callback2(event.head, 80)
+      event.seq <= lastFrameId ||
+      !allowedEventMethods.has(event.method) ||
+      !isWithinMessageLimit(event.html, effectiveLimits.maxHtml) ||
+      !isWithinMessageLimit(event.head, 80)
     )
-      return value13();
-    let value28: Dynamic = null;
+      return handleProtocolError();
+    let previewTarget: Dynamic = null;
     if (event.target !== null && event.target !== undefined) {
       let target: Dynamic = event.target;
       if (
         typeof target != "object" ||
         Array.isArray(target) ||
         Object.keys(target).some(
-          (input?: Dynamic): Dynamic => input !== "file" && input !== "id",
+          (propertyName?: Dynamic): Dynamic => propertyName !== "file" && propertyName !== "id",
         ) ||
         !(
           target.file === null ||
@@ -1095,54 +1095,54 @@ function createFastEditSandbox({
             hasSdk &&
             knownIds.has(target.file))
         ) ||
-        !(target.id === null || callback2(target.id, 128))
+        !(target.id === null || isWithinMessageLimit(target.id, 128))
       )
-        return value13();
-      value28 = {
+        return handleProtocolError();
+      previewTarget = {
         file: target.file,
         id: target.id,
       };
     }
     if (
       (event.method === "create" || event.method === "add") !=
-        (value28 === null) ||
-      ++index15 > effectiveLimits.maxPreviews
+        (previewTarget === null) ||
+      ++runCharacterCount > effectiveLimits.maxPreviews
     )
-      return value13();
-    value7 = event.seq;
+      return handleProtocolError();
+    lastFrameId = event.seq;
     callback(onPreview, {
       seq: event.seq,
       method: event.method,
-      target: value28,
+      target: previewTarget,
       html: event.html,
       head: event.head,
     });
   }
   let entries: Dynamic = new Map(),
-    index16: Dynamic = 0,
-    value22: Dynamic = /^k[a-z]{0,2}$/;
-  function value23(source?: Dynamic): Dynamic {
-    let value28: Dynamic = Number.isInteger(source.req)
+    requestCount: Dynamic = 0,
+    requestKeyPattern: Dynamic = /^k[a-z]{0,2}$/;
+  function handleSourceMessage(source?: Dynamic): Dynamic {
+    let requestSource: Dynamic = Number.isInteger(source.req)
       ? entries.get(source.req)
       : undefined;
     if (
       sdk !== 3 ||
-      !value28 ||
-      value28.kind !== source.kind ||
+      !requestSource ||
+      requestSource.kind !== source.kind ||
       source.attr !== "id" ||
-      !(typeof source.prefix == "string" && value22.test(source.prefix))
+      !(typeof source.prefix == "string" && requestKeyPattern.test(source.prefix))
     )
-      return value13();
-    let value29: Dynamic;
+      return handleProtocolError();
+    let requestResult: Dynamic;
     if (source.kind === "view") {
       if (
         typeof source.slideId != "string" ||
-        source.slideId !== value28.id ||
+        source.slideId !== requestSource.id ||
         !knownIds.has(source.slideId) ||
-        !callback2(source.html, effectiveLimits.maxViewChars)
+        !isWithinMessageLimit(source.html, effectiveLimits.maxViewChars)
       )
-        return value13();
-      value29 = {
+        return handleProtocolError();
+      requestResult = {
         id: source.slideId,
         attr: "id",
         prefix: source.prefix,
@@ -1153,151 +1153,151 @@ function createFastEditSandbox({
         !Array.isArray(source.rows) ||
         source.rows.length > effectiveLimits.maxHandleRows
       )
-        return value13();
-      let items2: Dynamic = [];
-      for (let value30 of source.rows as Dynamic) {
+        return handleProtocolError();
+      let requestRows: Dynamic = [];
+      for (let row of source.rows as Dynamic) {
         if (
-          !value30 ||
-          typeof value30 != "object" ||
+          !row ||
+          typeof row != "object" ||
           !(
-            typeof value30.k == "string" &&
-            value30.k.startsWith(source.prefix) &&
-            /^\d{1,6}$/.test(value30.k.slice(source.prefix.length))
+            typeof row.k == "string" &&
+            row.k.startsWith(source.prefix) &&
+            /^\d{1,6}$/.test(row.k.slice(source.prefix.length))
           ) ||
-          typeof value30.file != "string" ||
-          !knownIds.has(value30.file) ||
-          !callback2(value30.tag, 20) ||
-          !/^[a-z0-9]*$/.test(value30.tag) ||
-          !callback2(value30.words, 40)
+          typeof row.file != "string" ||
+          !knownIds.has(row.file) ||
+          !isWithinMessageLimit(row.tag, 20) ||
+          !/^[a-z0-9]*$/.test(row.tag) ||
+          !isWithinMessageLimit(row.words, 40)
         )
-          return value13();
-        items2.push({
-          k: value30.k,
-          file: value30.file,
-          tag: value30.tag,
-          words: value30.words,
+          return handleProtocolError();
+        requestRows.push({
+          k: row.k,
+          file: row.file,
+          tag: row.tag,
+          words: row.words,
         });
       }
-      value29 = {
+      requestResult = {
         attr: "id",
         prefix: source.prefix,
-        rows: items2,
+        rows: requestRows,
       };
     }
     entries.delete(source.req);
-    value28.resolve(value29);
+    requestSource.resolve(requestResult);
   }
-  function value24(input?: Dynamic, options?: Dynamic): Dynamic {
+  function requestData(requestKind?: Dynamic, requestOptions?: Dynamic): Dynamic {
     return sdk !== 3
       ? Promise.reject(
           new Error("createReplBox: view() and handles() are sdk:3"),
         )
       : promise.then(
-          (input2?: Dynamic): Dynamic =>
-            new Promise((input3?: Dynamic): Dynamic => {
-              if (!input2.ok || flag || index16 >= effectiveLimits.maxAsks)
-                return input3(null);
-              let value28: Dynamic = ++index16;
-              entries.set(value28, {
-                kind: input,
-                id: options.id,
-                resolve: input3,
+          (requestResponse?: Dynamic): Dynamic =>
+            new Promise((resolveRequest?: Dynamic): Dynamic => {
+              if (!requestResponse.ok || flag || requestCount >= effectiveLimits.maxAsks)
+                return resolveRequest(null);
+              let requestId: Dynamic = ++requestCount;
+              entries.set(requestId, {
+                kind: requestKind,
+                id: requestOptions.id,
+                resolve: resolveRequest,
               });
-              value25(
+              postMessage(
                 Object.assign(
                   {
-                    kind: input,
-                    req: value28,
+                    kind: requestKind,
+                    req: requestId,
                   },
-                  options,
+                  requestOptions,
                 ),
               );
             }),
         );
   }
-  function value25(input?: Dynamic): Dynamic {
-    input.nonce = value3;
-    value6.contentWindow.postMessage(input, "*");
+  function postMessage(message?: Dynamic): Dynamic {
+    message.nonce = nonce;
+    iframe.contentWindow.postMessage(message, "*");
   }
-  function value26(source?: Dynamic): Dynamic {
+  function postSourceMessage(source?: Dynamic): Dynamic {
     flag ||
-      flag4 ||
-      (flag3 && source.kind === "chunk") ||
-      (flag2 ? value25(source) : items.push(source));
+      didFail ||
+      (didLoad && source.kind === "chunk") ||
+      (didAbort ? postMessage(source) : items.push(source));
   }
-  let value27: Dynamic = setInterval((): Dynamic => {
+  let sandboxTimer: Dynamic = setInterval((): Dynamic => {
     if (flag) return;
-    let value28: Dynamic = Date.now();
-    if (value28 - value9 > effectiveLimits.maxMs)
-      return flag4
-        ? value11()
-        : value12("maxMs", "the run passed " + effectiveLimits.maxMs + " ms");
-    if (!flag4) {
-      if (!flag2 && value28 - value9 > effectiveLimits.bootMs)
-        return value12(
+    let now: Dynamic = Date.now();
+    if (now - lastActivityAt > effectiveLimits.maxMs)
+      return didFail
+        ? stopSandbox()
+        : failSandbox("maxMs", "the run passed " + effectiveLimits.maxMs + " ms");
+    if (!didFail) {
+      if (!didAbort && now - lastActivityAt > effectiveLimits.bootMs)
+        return failSandbox(
           "no-worker",
           "the sandbox was not ready in " + effectiveLimits.bootMs + " ms",
         );
-      if (value28 - value8 > effectiveLimits.silenceMs)
-        return value12(
+      if (now - createdAt > effectiveLimits.silenceMs)
+        return failSandbox(
           "timeout",
           "the sandbox went silent for " + effectiveLimits.silenceMs + " ms",
         );
     }
   }, 250);
-  (window as Dynamic).addEventListener("message", value16);
-  value6.addEventListener("load", value14);
-  value6.srcdoc = value5;
-  (document as Dynamic).body.appendChild(value6);
+  (window as Dynamic).addEventListener("message", handleMessage);
+  iframe.addEventListener("load", handleIframeLoad);
+  iframe.srcdoc = sandboxDocument;
+  (document as Dynamic).body.appendChild(iframe);
   return {
-    feed(items2: Dynamic): Dynamic {
-      if (!(typeof items2 != "string" || !items2 || flag || flag3)) {
-        if ((index6 += items2.length) > effectiveLimits.maxFeedChars)
-          return value12(
+    feed(feedChunk: Dynamic): Dynamic {
+      if (!(typeof feedChunk != "string" || !feedChunk || flag || didLoad)) {
+        if ((htmlBytes += feedChunk.length) > effectiveLimits.maxFeedChars)
+          return failSandbox(
             "flood",
             "over " +
               effectiveLimits.maxFeedChars +
               " characters fed in one run",
           );
-        value26({
+        postSourceMessage({
           kind: "chunk",
-          text: items2,
+          text: feedChunk,
         });
       }
     },
-    view(input: Dynamic): Dynamic {
-      let value28: Dynamic =
+    view(viewValue: Dynamic): Dynamic {
+      let viewFileId: Dynamic =
         (filePathsById &&
-          typeof input == "string" &&
+          typeof viewValue == "string" &&
           Object.keys(filePathsById).find(
-            (input2?: Dynamic): Dynamic => filePathsById[input2] === input,
+            (filePath?: Dynamic): Dynamic => filePathsById[filePath] === viewValue,
           )) ||
-        input;
-      return value24("view", {
-        id: value28,
+        viewValue;
+      return requestData("view", {
+        id: viewFileId,
       });
     },
-    handles(input: Dynamic): Dynamic {
-      return value24("handles", {
-        since: Number.isInteger(input) && input > 0 ? input : 0,
+    handles(handleCount: Dynamic): Dynamic {
+      return requestData("handles", {
+        since: Number.isInteger(handleCount) && handleCount > 0 ? handleCount : 0,
       });
     },
     flush(): Dynamic {
-      flag2 &&
-        !flag3 &&
-        value26({
+      didAbort &&
+        !didLoad &&
+        postSourceMessage({
           kind: "flush",
         });
     },
     end(): Dynamic {
-      flag3 ||
-        ((flag3 = true),
-        value26({
+      didLoad ||
+        ((didLoad = true),
+        postSourceMessage({
           kind: "end",
         }));
     },
-    stop: value11,
-    destroy: value11,
+    stop: stopSandbox,
+    destroy: stopSandbox,
     ready: promise,
     get alive(): Dynamic {
       return !flag;
@@ -1381,10 +1381,10 @@ export function installFastEditSandbox(): () => void {
     };
     FAST_EDIT_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
     UNSAFE_FAST_EDIT_IDS = new Set(["__proto__", "constructor", "prototype"]);
-    isSafeFastEditId = (input?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      FAST_EDIT_ID_PATTERN.test(input) &&
-      !UNSAFE_FAST_EDIT_IDS.has(input);
+    isSafeFastEditId = (candidateId?: Dynamic): Dynamic =>
+      typeof candidateId == "string" &&
+      FAST_EDIT_ID_PATTERN.test(candidateId) &&
+      !UNSAFE_FAST_EDIT_IDS.has(candidateId);
     FAST_EDIT_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_-]{0,23}$/;
     FAST_EDIT_HANDLE_ID_PATTERN = /^k[a-z]{0,2}\d{1,6}$/;
     RESERVED_FAST_EDIT_NAMES = [
@@ -1395,9 +1395,9 @@ export function installFastEditSandbox(): () => void {
       "html",
       "head",
     ];
-    isReservedFastEditName = (input?: Dynamic): Dynamic =>
-      FAST_EDIT_HANDLE_ID_PATTERN.test(input) ||
-      RESERVED_FAST_EDIT_NAMES.includes(input.toLowerCase());
+    isReservedFastEditName = (candidateName?: Dynamic): Dynamic =>
+      FAST_EDIT_HANDLE_ID_PATTERN.test(candidateName) ||
+      RESERVED_FAST_EDIT_NAMES.includes(candidateName.toLowerCase());
     FAST_EDIT_WORKER_MESSAGE_KINDS = new Set(
       [
         "ready",
@@ -1414,12 +1414,12 @@ export function installFastEditSandbox(): () => void {
         "fault",
       ].concat([]),
     );
-    jsonForInlineScript = (input?: Dynamic): Dynamic =>
-      JSON.stringify(String(input)).replace(/</g, "\\u003c");
+    jsonForInlineScript = (scriptInput?: Dynamic): Dynamic =>
+      JSON.stringify(String(scriptInput)).replace(/</g, "\\u003c");
     fastEditWorkerSource = "";
     verifiedFastEditWorkerBytes = null;
-    installFastEditWorker = (input?: Dynamic): Dynamic =>
-      verifyFastEditWorker(input);
+    installFastEditWorker = (workerBytes?: Dynamic): Dynamic =>
+      verifyFastEditWorker(workerBytes);
     FAST_EDIT_WORKER_LIFETIME_LIMITS = {
       lifeMs: 27 * 6e4,
       maxSection: FAST_EDIT_INPUT_LIMITS.maxSection,
@@ -1437,16 +1437,16 @@ export function installFastEditSandbox(): () => void {
       maxPreviews: 1e3,
     };
     deriveSandboxBridgeLimits = (
-      input?: Dynamic,
-      options?: Dynamic,
+      limitConfig?: Dynamic,
+      paceConfig?: Dynamic,
     ): Dynamic => ({
-      maxMs: input.lifeMs,
+      maxMs: limitConfig.lifeMs,
       previewMs: 250,
-      pace: options,
+      pace: paceConfig,
       maxFrameChars:
-        options.frameCharsPerMs * input.lifeMs +
-        (input.maxFiles + input.maxOps + 1) *
-          (input.maxSection + input.maxStmt + 200),
+        paceConfig.frameCharsPerMs * limitConfig.lifeMs +
+        (limitConfig.maxFiles + limitConfig.maxOps + 1) *
+          (limitConfig.maxSection + limitConfig.maxStmt + 200),
       maxMessages: 16e3,
     });
     FAST_EDIT_CANVAS_SANDBOX_LIMITS = deriveSandboxBridgeLimits(
