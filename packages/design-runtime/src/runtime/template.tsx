@@ -298,9 +298,9 @@ export var NAVIGATION_URL_ATTRIBUTES: RuntimeValue = new Set([
   ]);
 export function sanitizeKeyframeAttribute(
   attributeName: string,
-  value: unknown,
+  attributeValue: unknown,
 ): string | null {
-  const text: RuntimeValue = String(value),
+  const text: RuntimeValue = String(attributeValue),
     isNavigation: RuntimeValue = NAVIGATION_URL_ATTRIBUTES.has(attributeName);
   if (!isNavigation && !RESOURCE_URL_ATTRIBUTES.has(attributeName)) return text;
   const urls: RuntimeValue =
@@ -340,8 +340,8 @@ export function isSafeKeyframeUrl(
     return false;
   }
 }
-export function parseKeyframeTrack(input: unknown): Keyframe[] | null {
-  let value: RuntimeValue = input;
+export function parseKeyframeTrack(rawTrack: unknown): Keyframe[] | null {
+  let value: RuntimeValue = rawTrack;
   if (typeof value == "string") {
     const json: RuntimeValue = value.trim();
     if (!json) return null;
@@ -362,10 +362,10 @@ export function parseKeyframeTrack(input: unknown): Keyframe[] | null {
   return normalizeKeyframeTrack(value);
 }
 export var keyframeTrackCache: RuntimeValue = new Map();
-export function normalizeKeyframeTrack(input: unknown): Keyframe[] | null {
-  if (!Array.isArray(input)) return null;
+export function normalizeKeyframeTrack(rawFrames: unknown): Keyframe[] | null {
+  if (!Array.isArray(rawFrames)) return null;
   const frames: RuntimeValue = [];
-  for (const frame of input) {
+  for (const frame of rawFrames) {
     if (!frame || typeof frame != "object" || Array.isArray(frame)) continue;
     const { t: time, v: value } = frame;
     typeof time != "number" ||
@@ -436,8 +436,8 @@ export function applyEasing(easing: unknown, progress: number): number {
   }
   return progress;
 }
-export function clampUnit(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
+export function clampUnit(ratio: number): number {
+  return ratio < 0 ? 0 : ratio > 1 ? 1 : ratio;
 }
 export function solveCubicBezier(
   [x1, y1, x2, y2]: number[],
@@ -538,8 +538,8 @@ export function interpolateValue(
 export function lerp(start: number, end: number, progress: number): number {
   return start + (end - start) * progress;
 }
-export function formatInterpolatedNumber(value: number): string {
-  return String(Math.round(value * 1e4) / 1e4);
+export function formatInterpolatedNumber(interpolatedNumber: number): string {
+  return String(Math.round(interpolatedNumber * 1e4) / 1e4);
 }
 export function interpolateHexColor(
   startColor: string,
@@ -571,7 +571,7 @@ export function parseHexChannels(hex: string): number[] {
 export function compileAttributes(
   element?: RuntimeValue,
   mode?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   const propGetters: RuntimeValue = [],
     pseudoClasses: RuntimeValue = [];
@@ -614,7 +614,7 @@ export function compileAttributes(
     }
     if (propName.startsWith("style-")) {
       pseudoClasses.push(
-        context.pseudoClass(propName.slice(6), attributeValue),
+        compileContext.pseudoClass(propName.slice(6), attributeValue),
       );
       continue;
     }
@@ -635,7 +635,7 @@ export function compileAttributes(
       propName === "checked" &&
       element.localName === "input" &&
       !attributeValue.includes("{{") &&
-      !context.omelette
+      !compileContext.omelette
     ) {
       propGetters.push(["defaultChecked", (): RuntimeValue => true]);
       initialChecked = true;
@@ -643,7 +643,7 @@ export function compileAttributes(
     } else if (
       attributeValue === "" &&
       BOOLEAN_ATTRIBUTES.has(propName) &&
-      !context.omelette
+      !compileContext.omelette
     ) {
       propGetters.push([propName, (): RuntimeValue => true]);
       continue;
@@ -695,7 +695,7 @@ export function extractHostLayout(style?: RuntimeValue): RuntimeValue {
 }
 export function compileTemplate(
   html: string,
-  context: TemplateContext,
+  compileContext: TemplateContext,
 ): CompiledTemplate {
   const templateElement: RuntimeValue = document.createElement("template");
   templateElement.innerHTML = preprocessTemplate(html);
@@ -707,7 +707,7 @@ export function compileTemplate(
   })(templateElement.content);
   const children: RuntimeValue = compileChildren(
       templateElement.content,
-      context,
+      compileContext,
     ),
     renderTemplate: RuntimeValue = (
       values?: RuntimeValue,
@@ -722,31 +722,31 @@ export function compileTemplate(
 }
 export function compileChildren(
   node?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   return [...node.childNodes]
-    .map((child?: RuntimeValue): RuntimeValue => compileNode(child, context))
+    .map((child?: RuntimeValue): RuntimeValue => compileNode(child, compileContext))
     .filter((compiled?: RuntimeValue): RuntimeValue => compiled != null);
 }
 export function compileNode(
   node?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   if (node.nodeType === Node.TEXT_NODE) return compileTextNode(node);
   if (node.nodeType !== Node.ELEMENT_NODE) return null;
   const element: RuntimeValue = node,
     tagName: RuntimeValue = element.tagName.toLowerCase();
   return tagName === "sc-for"
-    ? compileLoop(element, context)
+    ? compileLoop(element, compileContext)
     : tagName === "sc-if"
-      ? compileCondition(element, context)
+      ? compileCondition(element, compileContext)
       : tagName === "x-import"
-        ? compileExternalImport(element, context)
+        ? compileExternalImport(element, compileContext)
         : tagName === "sc-helmet"
-          ? context.helmet(element)
+          ? compileContext.helmet(element)
           : tagName === "dc-import"
-            ? compileDesignImport(element, context)
-            : compileDomElement(element, context);
+            ? compileDesignImport(element, compileContext)
+            : compileDomElement(element, compileContext);
 }
 export var warningKeys: RuntimeValue = new Set();
 export function warnOnce(
@@ -773,9 +773,9 @@ export function compileTextNode(node?: RuntimeValue): RuntimeValue {
     key?: RuntimeValue,
   ): RuntimeValue =>
     (() => {
-      const _Component2 = getReact().Fragment;
+      const LoopItemFragment = getReact().Fragment;
       return (
-        <_Component2 key={key}>
+        <LoopItemFragment key={key}>
           {...segments.map(
             (segment?: RuntimeValue, index?: RuntimeValue): RuntimeValue => {
               if (!(index & 1)) return segment;
@@ -810,13 +810,13 @@ export function compileTextNode(node?: RuntimeValue): RuntimeValue {
               );
             },
           )}
-        </_Component2>
+        </LoopItemFragment>
       );
     })();
 }
 export function compileLoop(
   element?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   const listGetter: RuntimeValue = compileInterpolation(
       element.getAttribute("list") || "",
@@ -826,7 +826,7 @@ export function compileLoop(
       element.getAttribute("hint-placeholder-count") || "0",
       10,
     ),
-    children: RuntimeValue = compileChildren(element, context),
+    children: RuntimeValue = compileChildren(element, compileContext),
     listExpression: RuntimeValue = element.getAttribute("list") || "";
   return (
     values?: RuntimeValue,
@@ -849,9 +849,9 @@ export function compileLoop(
             ),
           (items = [])));
     return (() => {
-      const _Component4 = getReact().Fragment;
+      const ConditionFragment = getReact().Fragment;
       return (
-        <_Component4 key={key}>
+        <ConditionFragment key={key}>
           {items.map(
             (item?: RuntimeValue, index?: RuntimeValue): RuntimeValue => {
               const iterationScope: RuntimeValue = {
@@ -860,9 +860,9 @@ export function compileLoop(
                 $index: index,
               };
               return (() => {
-                const _Component3 = getReact().Fragment;
+                const ConditionChildFragment = getReact().Fragment;
                 return (
-                  <_Component3 key={index}>
+                  <ConditionChildFragment key={index}>
                     {children.map(
                       (
                         renderChild?: RuntimeValue,
@@ -870,19 +870,19 @@ export function compileLoop(
                       ): RuntimeValue =>
                         renderChild(iterationScope, host, childIndex),
                     )}
-                  </_Component3>
+                  </ConditionChildFragment>
                 );
               })();
             },
           )}
-        </_Component4>
+        </ConditionFragment>
       );
     })();
   };
 }
 export function compileCondition(
   element?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   const conditionGetter: RuntimeValue = compileInterpolation(
       element.getAttribute("value") || "",
@@ -892,7 +892,7 @@ export function compileCondition(
     ),
     placeholderGetter: RuntimeValue =
       placeholderValue != null ? compileInterpolation(placeholderValue) : null,
-    children: RuntimeValue = compileChildren(element, context);
+    children: RuntimeValue = compileChildren(element, compileContext);
   return (
     values?: RuntimeValue,
     host?: RuntimeValue,
@@ -905,16 +905,16 @@ export function compileCondition(
       (condition = placeholderGetter(values));
     return condition
       ? (() => {
-          const _Component5 = getReact().Fragment;
+          const ImportedFragment = getReact().Fragment;
           return (
-            <_Component5 key={key}>
+            <ImportedFragment key={key}>
               {children.map(
                 (
                   renderChild?: RuntimeValue,
                   index?: RuntimeValue,
                 ): RuntimeValue => renderChild(values, host, index),
               )}
-            </_Component5>
+            </ImportedFragment>
           );
         })()
       : null;
@@ -922,7 +922,7 @@ export function compileCondition(
 }
 export function compileDesignImport(
   element?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   const componentName: RuntimeValue =
     element.getAttribute("name") || element.getAttribute("component") || "";
@@ -936,9 +936,9 @@ export function compileDesignImport(
     { propGetters: propGetters, hintSize: hintSize } = compileAttributes(
       element,
       "dc-import",
-      context,
+      compileContext,
     ),
-    children: RuntimeValue = compileChildren(element, context);
+    children: RuntimeValue = compileChildren(element, compileContext);
   return (
     values?: RuntimeValue,
     host?: RuntimeValue,
@@ -966,14 +966,14 @@ export function compileDesignImport(
           renderChild(values, host, index),
       ));
     return (() => {
-      const _Component6 = context.component(componentName);
-      return <_Component6 {...props} />;
+      const RegisteredComponent = compileContext.component(componentName);
+      return <RegisteredComponent {...props} />;
     })();
   };
 }
 export function compileExternalImport(
   element?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   const globalComponentGetter: RuntimeValue = compileInterpolation(
       element.getAttribute("component-from-global-scope") || "",
@@ -1003,17 +1003,17 @@ export function compileExternalImport(
     { propGetters: propGetters, hintSize: hintSize } = compileAttributes(
       element,
       "x-import",
-      context,
+      compileContext,
     ),
     children: RuntimeValue =
       element.children.length > 0 || !!(element.textContent || "").trim()
-        ? compileChildren(element, context)
+        ? compileChildren(element, compileContext)
         : [],
     dynamicSource: RuntimeValue = sourceText.includes("{{");
   if (sourceUrls.length && !dynamicSource) {
     let previousLoad: RuntimeValue;
     for (const url of sourceUrls)
-      previousLoad = context.loadExternal(sourceType(url), url, previousLoad);
+      previousLoad = compileContext.loadExternal(sourceType(url), url, previousLoad);
   }
   const resolveName: RuntimeValue = (
     getter?: RuntimeValue,
@@ -1035,8 +1035,8 @@ export function compileExternalImport(
         !componentName || dynamicSource
           ? null
           : globalName
-            ? context.resolveExternalGlobal(lastSourceUrl, globalName)
-            : context.resolveExternal(lastSourceUrl, componentName),
+            ? compileContext.resolveExternalGlobal(lastSourceUrl, globalName)
+            : compileContext.resolveExternal(lastSourceUrl, componentName),
       hostStyle: RuntimeValue = styleGetter
         ? extractHostLayout(styleGetter(values))
         : undefined,
@@ -1053,8 +1053,8 @@ export function compileExternalImport(
     if (!Component) {
       const error: RuntimeValue = dynamicSource
           ? "x-import `from` cannot contain {{ \u2026 }} \u2014 module URLs are resolved at parse time; use a literal URL"
-          : context.resolveExternalError(lastSourceUrl, componentName),
-        placeholder: RuntimeValue = context.placeholder({
+          : compileContext.resolveExternalError(lastSourceUrl, componentName),
+        placeholder: RuntimeValue = compileContext.placeholder({
           key: wrapperProps ? undefined : key,
           name: componentName,
           hintSize: hintSize,
@@ -1090,7 +1090,7 @@ export function compileExternalImport(
       props[propName] = value;
     }
     if (hasUnresolvedProps && host?.__htmlStreamingNow) {
-      const placeholder: RuntimeValue = context.placeholder({
+      const placeholder: RuntimeValue = compileContext.placeholder({
         key: wrapperProps ? undefined : key,
         name: componentName,
         hintSize: hintSize,
@@ -1306,7 +1306,7 @@ export function createCssRefCache(): RuntimeValue {
 }
 export function compileDomElement(
   element?: RuntimeValue,
-  context?: RuntimeValue,
+  compileContext?: RuntimeValue,
 ): RuntimeValue {
   const tagName: RuntimeValue =
       ORIGINAL_RAW_TAGS[element.localName] || element.localName,
@@ -1320,12 +1320,12 @@ export function compileDomElement(
       pseudoClasses: pseudoClasses,
       kfTracks: keyframeTracks,
       initialChecked: initialChecked,
-    } = compileAttributes(element, "dom", context),
+    } = compileAttributes(element, "dom", compileContext),
     keySuffix: RuntimeValue =
       (hasOnlyInlineChildren ? "|" + structuralKey(element) : "") +
       (initialChecked ? "|checked" : ""),
-    children: RuntimeValue = compileChildren(element, context),
-    cssRefs: RuntimeValue = context.omelette ? null : createCssRefCache();
+    children: RuntimeValue = compileChildren(element, compileContext),
+    cssRefs: RuntimeValue = compileContext.omelette ? null : createCssRefCache();
   return (
     values?: RuntimeValue,
     host?: RuntimeValue,
@@ -1352,8 +1352,8 @@ export function compileDomElement(
         .join(" "));
     const animatedProperties: RuntimeValue = [];
     if (keyframeTracks.length) {
-      const playhead: RuntimeValue = context.keyframesPlayhead
-        ? context.keyframesPlayhead()
+      const playhead: RuntimeValue = compileContext.keyframesPlayhead
+        ? compileContext.keyframesPlayhead()
         : 0;
       let animatedStyle: RuntimeValue = null;
       for (const trackBinding of keyframeTracks) {
@@ -1394,14 +1394,14 @@ export function compileDomElement(
       props.ref = cssRefs(cssText, preservedProperties.sort(), props.ref);
     }
     return (() => {
-      const _Component7 = tagName;
+      const ElementTag = tagName;
       return (
-        <_Component7 {...props}>
+        <ElementTag {...props}>
           {...children.map(
             (renderChild?: RuntimeValue, index?: RuntimeValue): RuntimeValue =>
               renderChild(values, host, index),
           )}
-        </_Component7>
+        </ElementTag>
       );
     })();
   };

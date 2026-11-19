@@ -83,7 +83,7 @@ export interface PageCaptureResult {
   lg?: string | null;
 }
 export async function capturePage(
-  options: PageCaptureOptions,
+  captureOptions: PageCaptureOptions,
   helpers: PageCaptureHelpers,
 ): Promise<PageCaptureResult> {
   try {
@@ -97,12 +97,12 @@ export async function capturePage(
   var warnings: Dynamic = [];
   // The copy is laid out at the live page's zoom and drawn back down, so its text measures, rounds and breaks as the live text did.
   // The editor measured the zoom in its own document: it is this page's too only while both report the same device pixel ratio.
-  var layout: Dynamic = options.layout,
+  var layout: Dynamic = captureOptions.layout,
     layoutZoom: Dynamic =
       Math.abs(Number(window.devicePixelRatio) - layout.dpr) < 1e-6 ? layout.zoom : 0,
     cloneZoom: Dynamic = layoutZoom || 1;
-  var viewportOnly: Dynamic = options.viewport;
-  var selectionMode: Dynamic = options.selection;
+  var viewportOnly: Dynamic = captureOptions.viewport;
+  var selectionMode: Dynamic = captureOptions.selection;
   var root: Dynamic = document.documentElement;
   // Selection capture root + layout-box measurement — embedded from
   // resolveSelectionRoot (a real exported function, so tests exercise it
@@ -110,14 +110,14 @@ export async function capturePage(
   var selectionBounds: Dynamic = null;
   // Whole-artboard capture: the declared frame — padded with the page
   // background colour when the content is shorter, its full length past it.
-  var frame: Dynamic = options.frame;
+  var frame: Dynamic = captureOptions.frame;
   // Paginated frame capture ({h,max}): page-height windows over ONE clone,
   // a raster each at a scale set by the page — the reply carries pg/pt.
-  var pages: Dynamic = frame ? options.pages : null;
+  var pages: Dynamic = frame ? captureOptions.pages : null;
   if (selectionMode) {
     selectionBounds = helpers.resolveSelectionRoot(
       document,
-      options.selectionRoot,
+      captureOptions.selectionRoot,
       frame,
       !!pages || !!(frame && frame.full),
     );
@@ -131,7 +131,7 @@ export async function capturePage(
     fullHeight: Dynamic = root.scrollHeight;
   var width: Dynamic = viewportOnly ? root.clientWidth : fullWidth,
     height: Dynamic = viewportOnly ? root.clientHeight : fullHeight;
-  var crop: Dynamic = options.crop;
+  var crop: Dynamic = captureOptions.crop;
   // Spliced matte (see buildCaptureScript): optional opaque color ('' =
   // off) for thumbnail captures of canvas-mode documents. The injected
   // canvas backdrop stays at its light default in the main viewer now
@@ -145,7 +145,7 @@ export async function capturePage(
   // the matte painted flat behind the painted bounds. NOTE: never write
   // the spliced token's literal name in comments — splicing must hit the
   // declaration, not prose.
-  var matte: Dynamic = options.matte;
+  var matte: Dynamic = captureOptions.matte;
   if (matte && !root.hasAttribute("data-dc-canvas")) matte = "";
   // Zero-area viewport (iframe not laid out / backgrounded tab): the crop
   // scan's getImageData would throw IndexSizeError and toDataURL returns
@@ -156,7 +156,7 @@ export async function capturePage(
   var scrollX: Dynamic = viewportOnly ? window.scrollX || 0 : 0,
     scrollY: Dynamic = viewportOnly ? window.scrollY || 0 : 0;
   var scale: Dynamic =
-    options.scale || Math.min(1, options.maxDimension / Math.max(width, height, 1));
+    captureOptions.scale || Math.min(1, captureOptions.maxDimension / Math.max(width, height, 1));
   var isTransparent: Dynamic = function (color?: Dynamic): Dynamic {
     return !color || color === "transparent" || color === "rgba(0, 0, 0, 0)";
   };
@@ -174,9 +174,9 @@ export async function capturePage(
     // total canvas pixels (Firefox hard-fails past ~125MP — 120e6 keeps
     // margin under it). Budgeted per PAGE when paginating.
     scale = Math.min(
-      options.scale ||
-        (options.maxDimension
-          ? Math.min(1, options.maxDimension / Math.max(width, pageHeight))
+      captureOptions.scale ||
+        (captureOptions.maxDimension
+          ? Math.min(1, captureOptions.maxDimension / Math.max(width, pageHeight))
           : 2),
       helpers.maxCaptureSide / Math.max(width, pageHeight),
       Math.sqrt(helpers.maxCapturePixels / (width * pageHeight)),
@@ -205,7 +205,7 @@ export async function capturePage(
     // behind the element (a deck slide's ancestor is deck-stage's black
     // :host, but the user sees the shadow .canvas's white). Non-empty also
     // forces the fill below even for PNG.
-    if (options.selectionBackground) selectionBackground = options.selectionBackground;
+    if (captureOptions.selectionBackground) selectionBackground = captureOptions.selectionBackground;
   }
 
   // Cache across captures — the serve path sends no-store so the browser's
@@ -403,7 +403,7 @@ export async function capturePage(
     matte,
     warnings,
     placeholderCss,
-    options.selectionVisibleOnly && selectionMode && selectionBounds ? selectionBounds.root : null,
+    captureOptions.selectionVisibleOnly && selectionMode && selectionBounds ? selectionBounds.root : null,
     layoutZoom,
   );
   // Font-CSS cache: like __omCaptureCache but for the assembled <style> string,
@@ -424,10 +424,10 @@ export async function capturePage(
   // their end state for the duration of the clone walk; the returned restore
   // puts the computed state back.
   var restoreSettled: Dynamic = helpers.settleFrozenAnimations(
-    options.settleFrozen ? document : null,
+    captureOptions.settleFrozen ? document : null,
   );
-  var restoreFrozen: Dynamic = helpers.freezeAnimations(options.freeze ? document : null);
-  if ((options.settleFrozen || options.freeze) && !selectionMode) {
+  var restoreFrozen: Dynamic = helpers.freezeAnimations(captureOptions.freeze ? document : null);
+  if ((captureOptions.settleFrozen || captureOptions.freeze) && !selectionMode) {
     // Settling/freezing can change layout (height/width/flex growth) —
     // re-measure so the foreignObject and canvas are sized to the seeked
     // layout, not the bounds read at the top of the script; otherwise
@@ -439,7 +439,7 @@ export async function capturePage(
     fullHeight = root.scrollHeight;
     width = viewportOnly ? root.clientWidth : fullWidth;
     height = viewportOnly ? root.clientHeight : fullHeight;
-    scale = options.scale || Math.min(1, options.maxDimension / Math.max(width, height, 1));
+    scale = captureOptions.scale || Math.min(1, captureOptions.maxDimension / Math.max(width, height, 1));
   }
   // finally: the clone walk traverses arbitrary user DOM and can throw
   // (e.g. a stack RangeError on pathologically deep content); the live
@@ -462,7 +462,7 @@ export async function capturePage(
   try {
     if (frame) {
       document.body.setAttribute("data-dc-capturing", "");
-      if (!options.selectionBackground) {
+      if (!captureOptions.selectionBackground) {
         var htmlBackground: Dynamic = getComputedStyle(document.documentElement).backgroundColor,
           bodyBackground: Dynamic = getComputedStyle(document.body).backgroundColor;
         selectionBackground = !isTransparent(htmlBackground)
@@ -476,7 +476,7 @@ export async function capturePage(
     // IS the clone's layout; an holds the link-anchor numbers both share.
     try {
       clone = cloneStyled(root);
-      if (options.textLayer && selectionMode && needsPaginationPlan) {
+      if (captureOptions.textLayer && selectionMode && needsPaginationPlan) {
         var textOriginOffset: Dynamic = 0,
           anchorIds: Dynamic = new Map();
         try {
@@ -617,7 +617,7 @@ export async function capturePage(
   // not render); the annotate path's deck slides are HTML sections.
   if (
     selectionMode &&
-    options.overlay &&
+    captureOptions.overlay &&
     clone.nodeType === 1 &&
     clone.namespaceURI !== "http://www.w3.org/2000/svg"
   ) {
@@ -628,7 +628,7 @@ export async function capturePage(
       "px;height:" +
       height +
       "px;overflow:hidden;pointer-events:none";
-    overlayElement.innerHTML = options.overlay;
+    overlayElement.innerHTML = captureOptions.overlay;
     clone.appendChild(overlayElement);
   }
   if (cloneZoom !== 1 && clone.nodeType === 1)
@@ -782,7 +782,7 @@ export async function capturePage(
       pageContext.fillRect(0, 0, pageCanvasWidth, pageCanvasHeight);
       pageContext.scale(scale / cloneZoom, scale / cloneZoom);
       pageContext.drawImage(pageImage, 0, pageOffset * cloneZoom);
-      pageImages.push(pageCanvas.toDataURL(options.format, options.quality));
+      pageImages.push(pageCanvas.toDataURL(captureOptions.format, captureOptions.quality));
       pageCanvas.width = 0;
       pageCanvas.height = 0;
     }
@@ -871,7 +871,7 @@ export async function capturePage(
   // residual alpha onto black (same guard as the crop path below).
   if (
     !crop &&
-    !(selectionMode && options.format === "image/png" && !options.selectionBackground && !frame)
+    !(selectionMode && captureOptions.format === "image/png" && !captureOptions.selectionBackground && !frame)
   ) {
     if (selectionMode) {
       context.fillStyle = "#fff";
@@ -932,9 +932,9 @@ export async function capturePage(
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
   }
-  var format: Dynamic = options.format,
-    quality: Dynamic = options.quality,
-    byteCap: Dynamic = options.byteCap,
+  var format: Dynamic = captureOptions.format,
+    quality: Dynamic = captureOptions.quality,
+    byteCap: Dynamic = captureOptions.byteCap,
     dataUrl: Dynamic = canvas.toDataURL(format, quality);
   // WebKit's canvas can't encode WebP — toDataURL silently returns PNG and
   // ignores quality. Re-encode as JPEG so the quality knob and the maxL
@@ -1036,10 +1036,10 @@ export function buildCaptureTemplate(sources: PageCaptureHelperSources): string 
     "{" +
     Object.entries(sources)
       .map(
-        ([name, value]) =>
+        ([name, frameValue]) =>
           JSON.stringify(name) +
           ":" +
-          (typeof value === "number" ? String(value) : "(" + String(value) + ")"),
+          (typeof frameValue === "number" ? String(frameValue) : "(" + String(frameValue) + ")"),
       )
       .join(",") +
     "}";

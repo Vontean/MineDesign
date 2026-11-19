@@ -64,9 +64,9 @@ export function createRegistry(): ComponentRegistry {
 export var siblingBasePath = ".";
 export function createRuntime(
   documentNode: Document = document,
-  options: RuntimeOptions = {},
+  runtimeOptions: RuntimeOptions = {},
 ): DesignRuntime {
-  const omelette: RuntimeValue = options.omelette === true,
+  const omelette: RuntimeValue = runtimeOptions.omelette === true,
     registry: RuntimeValue = createRegistry(),
     pseudoClass: RuntimeValue = createPseudoClassManager(documentNode),
     helmet: RuntimeValue = createHelmetManager(

@@ -15,10 +15,10 @@ var PlatformMigrationInputAlias: Dynamic;
 var PlatformMigrationInputSubscribers: Dynamic;
 var getCanvasLoadFailure: Dynamic;
 function installMigrationInputBlocker(
-  input: Dynamic = typeof window === "undefined" ? undefined : window,
+  targetWindow: Dynamic = typeof window === "undefined" ? undefined : window,
 ): Dynamic {
-  for (let value of PlatformMigrationInputKeydownKeypressKeyupValues as Dynamic)
-    input?.addEventListener(value, PlatformMigrationInputStartsWith, {
+  for (let eventName of PlatformMigrationInputKeydownKeypressKeyupValues as Dynamic)
+    targetWindow?.addEventListener(eventName, PlatformMigrationInputStartsWith, {
       capture: true,
     });
 }
@@ -30,19 +30,19 @@ function clearMigrationInputBlocker(): Dynamic {
 function isMovedToFiles(): Dynamic {
   return PlatformMigrationStateAlias;
 }
-function setCanvasLoadFailure(input?: Dynamic): Dynamic {
-  if (PlatformMigrationInputAlias !== input) {
-    PlatformMigrationInputAlias = input;
-    for (let value of [...PlatformMigrationInputSubscribers] as Dynamic)
+function setCanvasLoadFailure(failure?: Dynamic): Dynamic {
+  if (PlatformMigrationInputAlias !== failure) {
+    PlatformMigrationInputAlias = failure;
+    for (let listener of [...PlatformMigrationInputSubscribers] as Dynamic)
       try {
-        value();
+        listener();
       } catch {}
   }
 }
-function subscribeCanvasLoadFailure(input?: Dynamic): Dynamic {
-  PlatformMigrationInputSubscribers.add(input);
+function subscribeCanvasLoadFailure(listener?: Dynamic): Dynamic {
+  PlatformMigrationInputSubscribers.add(listener);
   return (): Dynamic => {
-    PlatformMigrationInputSubscribers.delete(input);
+    PlatformMigrationInputSubscribers.delete(listener);
   };
 }
 export {
@@ -64,8 +64,8 @@ export {
 };
 export function installPlatformMigrationInput(): () => void {
   return () => {
-    PlatformMigrationInputTest = (input?: Dynamic): Dynamic =>
-      input === "Escape" || input === "Tab" || /^F\d{1,2}$/.test(input ?? "");
+    PlatformMigrationInputTest = (key?: Dynamic): Dynamic =>
+      key === "Escape" || key === "Tab" || /^F\d{1,2}$/.test(key ?? "");
     PlatformMigrationInputKeydownKeypressKeyupValues = [
       "keydown",
       "keypress",

@@ -7,59 +7,59 @@ var PlatformSaveEventsSubscribers: Dynamic;
 var PlatformSaveEventsHandler: Dynamic;
 var saveReporterActive: Dynamic;
 var PlatformSaveEventsHandler_2: Dynamic;
-function subscribeSaveEvents(input?: Dynamic): Dynamic {
-  PlatformSaveEventsSubscribers.add(input);
+function subscribeSaveEvents(listener?: Dynamic): Dynamic {
+  PlatformSaveEventsSubscribers.add(listener);
   return (): Dynamic => {
-    PlatformSaveEventsSubscribers.delete(input);
+    PlatformSaveEventsSubscribers.delete(listener);
   };
 }
-function createSaveEventReporter(input?: Dynamic): Dynamic {
+function createSaveEventReporter(debugReporter?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(),
     count: Dynamic = 1;
   saveReporterActive = true;
   return {
-    saveStart(input2: Dynamic, options: Dynamic): Dynamic {
+    saveStart(paths: Dynamic, bytes: Dynamic): Dynamic {
       let value: Dynamic = count++;
       entries.set(value, {
-        n: input.saveStart(input2, options),
-        paths: [...input2],
+        n: debugReporter.saveStart(paths, bytes),
+        paths: [...paths],
       });
       PlatformSaveEventsHandler({
         type: "started",
         n: value,
-        paths: [...input2],
+        paths: [...paths],
       });
       return value;
     },
-    saveEnd(input2: Dynamic, options: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input2);
-      entries.delete(input2);
-      input.saveEnd(entry?.n ?? input2, options);
+    saveEnd(saveId: Dynamic, result: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(saveId);
+      entries.delete(saveId);
+      debugReporter.saveEnd(entry?.n ?? saveId, result);
       PlatformSaveEventsHandler(
-        options.ok
+        result.ok
           ? {
               type: "landed",
-              n: input2,
+              n: saveId,
               paths: entry?.paths ?? [],
             }
           : {
               type: "refused",
-              n: input2,
+              n: saveId,
               paths: entry?.paths ?? [],
-              ...(options.code !== undefined
+              ...(result.code !== undefined
                 ? {
-                    code: options.code,
+                    code: result.code,
                   }
                 : {}),
             },
       );
     },
-    event(input2: Dynamic, options: Dynamic): Dynamic {
-      input.event(input2, options);
+    event(eventName: Dynamic, data: Dynamic): Dynamic {
+      debugReporter.event(eventName, data);
       PlatformSaveEventsHandler({
         type: "event",
-        name: input2,
-        data: options,
+        name: eventName,
+        data: data,
       });
     },
   };
@@ -75,10 +75,10 @@ export {
 export function installPlatformSaveEvents(): () => void {
   return () => {
     PlatformSaveEventsSubscribers = new Set();
-    PlatformSaveEventsHandler = (input?: Dynamic): Dynamic => {
+    PlatformSaveEventsHandler = (event?: Dynamic): Dynamic => {
       for (let value of [...PlatformSaveEventsSubscribers] as Dynamic)
         try {
-          value(input);
+          value(event);
         } catch {}
     };
     saveReporterActive = false;

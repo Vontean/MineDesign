@@ -40,15 +40,15 @@ function registerLiveDocumentFlusher(flush?: Dynamic): Dynamic {
 }
 function createLiveDocumentTimers(): Dynamic {
   return {
-    setTimeout: (input?: Dynamic, options?: Dynamic): Dynamic =>
-      setTimeout(input, options),
-    clearTimeout: (input?: Dynamic): Dynamic => clearTimeout(input),
+    setTimeout: (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+      setTimeout(run, delayMs),
+    clearTimeout: (timer?: Dynamic): Dynamic => clearTimeout(timer),
     now: (): Dynamic => Date.now(),
     random: (): Dynamic => Math.random(),
     frame:
       typeof requestAnimationFrame == "function"
-        ? (input?: Dynamic): Dynamic =>
-            requestAnimationFrame((): Dynamic => input())
+        ? (run?: Dynamic): Dynamic =>
+            requestAnimationFrame((): Dynamic => run())
         : undefined,
   };
 }
@@ -65,92 +65,92 @@ function formatSyncTime(timestamp?: Dynamic): Dynamic {
 function pluralizeSyncCount(count?: Dynamic, noun?: Dynamic): Dynamic {
   return count + " " + noun + (count === 1 ? "" : "s");
 }
-function createLiveDocument(options?: Dynamic): Dynamic {
-  let { codec: codec, db: database }: Dynamic = options,
-    timers: Dynamic = options.timers ?? createLiveDocumentTimers(),
+function createLiveDocument(liveOptions?: Dynamic): Dynamic {
+  let { codec: codec, db: database }: Dynamic = liveOptions,
+    timers: Dynamic = liveOptions.timers ?? createLiveDocumentTimers(),
     collections: Dynamic = codec.collections,
     metaPath: Dynamic = codec.metaPath,
-    canWrite: Dynamic = options.canWrite;
+    canWrite: Dynamic = liveOptions.canWrite;
   function parseContentOrFallback(
-    input?: Dynamic,
-    options2?: Dynamic,
+    rawContent?: Dynamic,
+    fallbackContent?: Dynamic,
   ): Dynamic {
     try {
-      return options.parseContent(input);
+      return liveOptions.parseContent(rawContent);
     } catch {
-      return options2;
+      return fallbackContent;
     }
   }
-  function normalizeTitle(input?: Dynamic, options2?: Dynamic): Dynamic {
+  function normalizeTitle(title?: Dynamic, fallbackTitle?: Dynamic): Dynamic {
     return (
       normalizeDocumentTitle(
-        typeof input == "string" ? input.trim() : input,
-      ) ?? options2
+        typeof title == "string" ? title.trim() : title,
+      ) ?? fallbackTitle
     );
   }
   let state: Dynamic = {
-      title: normalizeTitle(options.defaultTitle, "Appifact"),
-      content: options.initialContent,
+      title: normalizeTitle(liveOptions.defaultTitle, "Appifact"),
+      content: liveOptions.initialContent,
       comments: [],
     },
     pathStates: Dynamic = new Map(),
     effectiveDocuments: Dynamic = new Map(),
     documentSizes: Dynamic = new Map(),
     decomposedDocuments: Dynamic = new Map(),
-    value: Dynamic,
+    composeCarry: Dynamic,
     loadState: Dynamic = "loading",
     loadedCollections: Dynamic = new Set(),
     collectionSubscriptions: Dynamic = [],
     subscriptionGeneration: Dynamic = 0,
-    value2: Dynamic,
-    flag: Dynamic = false,
-    flag2: Dynamic = false,
-    index: Dynamic = 0,
-    value3: Dynamic,
-    loadedMetadataCollections: Dynamic = new Set(),
-    flag3: Dynamic = false,
-    flag4: Dynamic = false,
-    value4: Dynamic,
-    value5: Dynamic,
-    index2: Dynamic = 0,
-    flag5: Dynamic = false,
-    flag6: Dynamic = false,
-    flag7: Dynamic = false,
-    index3: Dynamic = 0,
-    value6: Dynamic,
-    callback: Dynamic = (): Dynamic =>
-      (!flag3 || flag6) && (!flag7 || index3 < LIVE_MAX_RECOVERY_RETRIES),
-    value7: Dynamic,
+    initialLoadTimer: Dynamic,
+    reconnecting: Dynamic = false,
+    hasCachedSnapshot: Dynamic = false,
+    lastSnapshotAt: Dynamic = 0,
+    refreshPathsByCollection: Dynamic,
+    recreatedPaths: Dynamic = new Set(),
+    hasMetadataSnapshot: Dynamic = false,
+    recoveryWaitingForMetadata: Dynamic = false,
+    recoveryTimer: Dynamic,
+    reconnectTimer: Dynamic,
+    reconnectAttempts: Dynamic = 0,
+    hasRetriedAfterWrite: Dynamic = false,
+    hasUnresolvedDocuments: Dynamic = false,
+    hasReceivedDocument: Dynamic = false,
+    recoveryAttempts: Dynamic = 0,
+    firstLiveAt: Dynamic,
+    shouldKeepRecovering: Dynamic = (): Dynamic =>
+      (!hasMetadataSnapshot || hasUnresolvedDocuments) && (!hasReceivedDocument || recoveryAttempts < LIVE_MAX_RECOVERY_RETRIES),
+    liveSyncError: Dynamic,
     inFlightWrites: Dynamic = new Map(),
     parkedWrites: Dynamic = new Map(),
-    index4: Dynamic = 0,
-    value8: Dynamic,
-    flag8: Dynamic = false,
-    index5: Dynamic = 0,
-    index6: Dynamic = 0,
-    value9: Dynamic,
-    flag9: Dynamic = false,
-    values: Dynamic = new Set(),
-    values2: Dynamic = new Set(),
-    values3: Dynamic = new Set(),
-    flag10: Dynamic = false,
-    flag11: Dynamic = false,
-    flag12: Dynamic = false,
-    value10: Dynamic,
-    flag13: Dynamic = false,
-    value11: Dynamic,
-    value12: Dynamic,
+    writeSequence: Dynamic = 0,
+    writeFlushTimer: Dynamic,
+    needsDecompose: Dynamic = false,
+    writesPausedUntil: Dynamic = 0,
+    rateLimitFailures: Dynamic = 0,
+    firstRateLimitAt: Dynamic,
+    hasWriteBackoffError: Dynamic = false,
+    collectionsWithPendingWrites: Dynamic = new Set(),
+    seenCollections: Dynamic = new Set(),
+    cachedCollections: Dynamic = new Set(),
+    hasShownContent: Dynamic = false,
+    initialLoadExtended: Dynamic = false,
+    cachedReconnectAvailable: Dynamic = false,
+    cachedReconnectAvailabilityTimer: Dynamic,
+    serializeWrites: Dynamic = false,
+    lastAcknowledgedAt: Dynamic,
+    saveStatusTimer: Dynamic,
     value13: Dynamic,
-    value14: Dynamic,
-    value15: Dynamic,
-    flag14: Dynamic = false,
-    flag15: Dynamic = false,
+    lastSyncedAt: Dynamic,
+    lastError: Dynamic,
+    hasSyncedWrite: Dynamic = false,
+    disposed: Dynamic = false,
     contentListeners: Dynamic = new Set(),
     saveListeners: Dynamic = new Set(),
     stuckListeners: Dynamic = new Set(),
     loadListeners: Dynamic = new Set();
-  function ensurePathState(input?: Dynamic): Dynamic {
-    let entry: Dynamic = pathStates.get(input);
+  function ensurePathState(path?: Dynamic): Dynamic {
+    let entry: Dynamic = pathStates.get(path);
     entry === undefined &&
       ((entry = {
         exists: false,
@@ -164,93 +164,93 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         seq: 0,
         held: false,
       }),
-      pathStates.set(input, entry));
+      pathStates.set(path, entry));
     return entry;
   }
   function applyPendingPatch(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context: Dynamic = false,
+    baseDocument?: Dynamic,
+    pending?: Dynamic,
+    wasRemoved: Dynamic = false,
   ): Dynamic {
-    if (options2 === undefined) return input;
+    if (pending === undefined) return baseDocument;
     if (
-      options2.patch !== DELETE_DOCUMENT &&
-      !(input === undefined && !options2.replace && context)
+      pending.patch !== DELETE_DOCUMENT &&
+      !(baseDocument === undefined && !pending.replace && wasRemoved)
     )
-      return options2.replace || input === undefined
-        ? options2.patch
-        : deepMerge(input, options2.patch);
+      return pending.replace || baseDocument === undefined
+        ? pending.patch
+        : deepMerge(baseDocument, pending.patch);
   }
-  function effectivePathValue(input?: Dynamic): Dynamic {
-    let entry: Dynamic = pathStates.get(input);
+  function effectivePathValue(path?: Dynamic): Dynamic {
+    let entry: Dynamic = pathStates.get(path);
     if (entry === undefined) return;
-    let value23: Dynamic =
+    let document: Dynamic =
         entry.held && entry.heldBase !== undefined
           ? (entry.heldBase ?? undefined)
           : entry.server,
-      value24: Dynamic = entry.removedSeen && entry.server === undefined;
-    for (let value25 of entry.acked as Dynamic)
-      value23 = value25.del
+      wasRemoved: Dynamic = entry.removedSeen && entry.server === undefined;
+    for (let acknowledgedWrite of entry.acked as Dynamic)
+      document = acknowledgedWrite.del
         ? undefined
-        : applyPendingPatch(value23, value25, value24);
+        : applyPendingPatch(document, acknowledgedWrite, wasRemoved);
     entry.inflightEchoed !== true &&
-      (value23 = applyPendingPatch(value23, entry.inflight, value24));
-    value23 = applyPendingPatch(value23, entry.pending, value24);
-    return value23;
+      (document = applyPendingPatch(document, entry.inflight, wasRemoved));
+    document = applyPendingPatch(document, entry.pending, wasRemoved);
+    return document;
   }
-  function updateEffectiveDocument(input?: Dynamic): Dynamic {
-    let value23: Dynamic = effectivePathValue(input),
-      value24: Dynamic =
-        value23 === undefined
+  function updateEffectiveDocument(path?: Dynamic): Dynamic {
+    let effective: Dynamic = effectivePathValue(path),
+      normalized: Dynamic =
+        effective === undefined
           ? undefined
-          : removeNullValues(value23),
-      entry: Dynamic = effectiveDocuments.get(input);
-    return value24 === undefined
+          : removeNullValues(effective),
+      entry: Dynamic = effectiveDocuments.get(path);
+    return normalized === undefined
       ? entry === undefined
         ? false
-        : (effectiveDocuments.delete(input),
-          documentSizes.delete(input),
+        : (effectiveDocuments.delete(path),
+          documentSizes.delete(path),
           true)
-      : entry !== undefined && structurallyEqual(entry, value24)
+      : entry !== undefined && structurallyEqual(entry, normalized)
         ? false
-        : (effectiveDocuments.set(input, value24),
+        : (effectiveDocuments.set(path, normalized),
           documentSizes.set(
-            input,
-            serializedDocumentBytes(value24),
+            path,
+            serializedDocumentBytes(normalized),
           ),
           true);
   }
   function collectionContentSize(
-    input?: Dynamic,
-    options2?: Dynamic,
+    collectionPath?: Dynamic,
+    excludePath?: Dynamic,
   ): Dynamic {
-    let index9: Dynamic = 0;
-    for (let [value23, value24] of documentSizes as Dynamic) {
-      if (value23 === options2 || dirname(value23) !== input)
+    let bytes: Dynamic = 0;
+    for (let [path, documentBytes] of documentSizes as Dynamic) {
+      if (path === excludePath || dirname(path) !== collectionPath)
         continue;
-      let entry: Dynamic = pathStates.get(value23);
-      index9 +=
+      let entry: Dynamic = pathStates.get(path);
+      bytes +=
         entry?.parked !== undefined
           ? entry.server !== undefined
             ? serializedDocumentBytes(entry.server)
             : 0
-          : value24;
+          : documentBytes;
     }
-    return index9;
+    return bytes;
   }
   function isLoaded(): Dynamic {
     return loadState === "live" || loadState === "cached";
   }
   function pendingWriteCount(): Dynamic {
-    let index9: Dynamic = 0;
-    for (let value23 of pathStates.values() as Dynamic)
-      value23.pending !== undefined && (index9 += 1);
-    for (let value23 of inFlightWrites.keys() as Dynamic)
-      pathStates.get(value23)?.pending === undefined && (index9 += 1);
-    return index9 + (flag8 ? 1 : 0);
+    let count: Dynamic = 0;
+    for (let pathState of pathStates.values() as Dynamic)
+      pathState.pending !== undefined && (count += 1);
+    for (let path of inFlightWrites.keys() as Dynamic)
+      pathStates.get(path)?.pending === undefined && (count += 1);
+    return count + (needsDecompose ? 1 : 0);
   }
   function getSaveState(): Dynamic {
-    if (value7 !== undefined)
+    if (liveSyncError !== undefined)
       return {
         status: "readonly",
         get message() { return uiMessage("canvas.liveDocument.liveSyncEndedForThisViewReloadToContinue"); },
@@ -276,7 +276,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         inFlightWrites.size === 0 &&
         parkedWrites.size === 0
       )
-        return values.size > 0
+        return collectionsWithPendingWrites.size > 0
           ? {
               status: "cached",
               get message() { return uiMessage("canvas.liveDocument.showingYourSavedCopyYourChangesWillSyncWhenYouReBackOnline"); },
@@ -286,7 +286,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
               get message() { return uiMessage("canvas.liveDocument.showingYourSavedCopyReconnecting"); },
             };
     }
-    if (flag)
+    if (reconnecting)
       return canWrite
         ? {
             status: "error",
@@ -300,28 +300,28 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       return {
         status: "readonly",
         message:
-          options.readOnlyReason ??
+          liveOptions.readOnlyReason ??
           "Read-only. You\u2019re seeing live changes.",
       };
-    let value23: Dynamic = pendingWriteCount();
+    let pendingCount: Dynamic = pendingWriteCount();
     if (parkedWrites.size > 0) {
-      let [value24]: Dynamic = parkedWrites.values(),
-        value25: Dynamic = value15?.code === "refused";
+      let [parkedReason]: Dynamic = parkedWrites.values(),
+        wasRefused: Dynamic = lastError?.code === "refused";
       return {
         status: "error",
         message:
-          (value24 ?? "A change could not be stored.") +
-          (value23 > parkedWrites.size
+          (parkedReason ?? "A change could not be stored.") +
+          (pendingCount > parkedWrites.size
             ? " Other changes keep syncing."
             : "") +
-          (value25
+          (wasRefused
             ? " Shorten it to resume syncing this item."
             : " Click to retry."),
       };
     }
-    return flag9 ||
-      (value9 !== undefined &&
-        timers.now() - value9 > LIVE_ERROR_SURFACE_DELAY_MS)
+    return hasWriteBackoffError ||
+      (firstRateLimitAt !== undefined &&
+        timers.now() - firstRateLimitAt > LIVE_ERROR_SURFACE_DELAY_MS)
       ? {
           status: "error",
           message:
@@ -335,21 +335,21 @@ function createLiveDocument(options?: Dynamic): Dynamic {
             status: "saving",
             get message() { return uiMessage("canvas.liveDocument.syncing"); },
           }
-        : value23 > 0
+        : pendingCount > 0
           ? {
               status: "dirty",
               message:
-                pluralizeSyncCount(value23, "change") + " waiting to sync.",
+                pluralizeSyncCount(pendingCount, "change") + " waiting to sync.",
             }
-          : values.size > 0
-            ? value11 !== undefined &&
-              timers.now() - value11 < LIVE_WRITE_ACK_TIMEOUT_MS
-              ? ((value12 ??= timers.setTimeout(
+          : collectionsWithPendingWrites.size > 0
+            ? lastAcknowledgedAt !== undefined &&
+              timers.now() - lastAcknowledgedAt < LIVE_WRITE_ACK_TIMEOUT_MS
+              ? ((saveStatusTimer ??= timers.setTimeout(
                   (): Dynamic => {
-                    value12 = undefined;
+                    saveStatusTimer = undefined;
                     notifySaveState();
                   },
-                  value11 + LIVE_WRITE_ACK_TIMEOUT_MS - timers.now(),
+                  lastAcknowledgedAt + LIVE_WRITE_ACK_TIMEOUT_MS - timers.now(),
                 )),
                 {
                   status: "saving",
@@ -362,28 +362,28 @@ function createLiveDocument(options?: Dynamic): Dynamic {
             : {
                 status: "ready",
                 message:
-                  (value14 !== undefined
-                    ? "All changes synced \xB7 " + formatSyncTime(value14)
-                    : flag14
+                  (lastSyncedAt !== undefined
+                    ? "All changes synced \xB7 " + formatSyncTime(lastSyncedAt)
+                    : hasSyncedWrite
                       ? "All changes synced"
                       : "Synced") +
                   ". " +
                   LIVE_SYNC_EXPLANATION,
               };
   }
-  let text: Dynamic = "";
+  let lastSaveStateKey: Dynamic = "";
   function notifySaveState(): Dynamic {
-    let value23: Dynamic = getSaveState(),
-      value24: Dynamic = value23.status + "|" + (value23.message ?? "");
-    if (value24 !== text) {
-      text = value24;
-      for (let value25 of [...saveListeners] as Dynamic) value25(value23);
+    let saveState: Dynamic = getSaveState(),
+      nextSaveStateKey: Dynamic = saveState.status + "|" + (saveState.message ?? "");
+    if (nextSaveStateKey !== lastSaveStateKey) {
+      lastSaveStateKey = nextSaveStateKey;
+      for (let listener of [...saveListeners] as Dynamic) listener(saveState);
     }
   }
-  function notifyContent(input?: Dynamic): Dynamic {
-    for (let value23 of [...contentListeners] as Dynamic)
-      value23(
-        input
+  function notifyContent(isRemote?: Dynamic): Dynamic {
+    for (let listener of [...contentListeners] as Dynamic)
+      listener(
+        isRemote
           ? {
               remote: true,
             }
@@ -391,374 +391,374 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       );
     notifySaveState();
   }
-  function setLoadState(input?: Dynamic): Dynamic {
-    if (loadState !== input) {
-      loadState = input;
-      for (let value23 of [...loadListeners] as Dynamic) value23();
+  function setLoadState(nextLoadState?: Dynamic): Dynamic {
+    if (loadState !== nextLoadState) {
+      loadState = nextLoadState;
+      for (let listener of [...loadListeners] as Dynamic) listener();
       notifySaveState();
     }
   }
-  function composeDocument(input?: Dynamic): Dynamic {
-    flag8 && decomposeChanges();
-    let value23: Dynamic;
+  function composeDocument(isRemote?: Dynamic): Dynamic {
+    needsDecompose && decomposeChanges();
+    let composition: Dynamic;
     try {
-      value23 = codec.compose(effectiveDocuments, value);
-    } catch (value24: Dynamic) {
+      composition = codec.compose(effectiveDocuments, composeCarry);
+    } catch (error: Dynamic) {
       console.error(
         "appifact sync: compose failed; keeping the current content",
-        value24,
+        error,
       );
       return;
     }
-    value = value23.carry;
-    flag6 = value23.dangling.some(
-      (input2?: Dynamic): Dynamic =>
-        pathStates.get(input2)?.removedSeen !== true,
+    composeCarry = composition.carry;
+    hasUnresolvedDocuments = composition.dangling.some(
+      (path?: Dynamic): Dynamic =>
+        pathStates.get(path)?.removedSeen !== true,
     );
     loadState === "live" &&
-      (flag6 && value5 === undefined && value4 === undefined
-        ? value19()
-        : !flag6 && flag3 && !flag4 && (clearReconnectTimer(), (index2 = 0)));
+      (hasUnresolvedDocuments && reconnectTimer === undefined && recoveryTimer === undefined
+        ? schedulePeriodicRefresh()
+        : !hasUnresolvedDocuments && hasMetadataSnapshot && !recoveryWaitingForMetadata && (clearReconnectTimer(), (reconnectAttempts = 0)));
     state = {
-      title: normalizeTitle(value23.title, state.title),
-      content: parseContentOrFallback(value23.content, state.content),
-      comments: parseDocumentComments(value23.comments),
+      title: normalizeTitle(composition.title, state.title),
+      content: parseContentOrFallback(composition.content, state.content),
+      comments: parseDocumentComments(composition.comments),
     };
     decomposedDocuments = new Map(
-      codec.decompose(state, decomposedDocuments, value),
+      codec.decompose(state, decomposedDocuments, composeCarry),
     );
-    notifyContent(input);
+    notifyContent(isRemote);
   }
-  function changeDocument(input?: Dynamic): Dynamic {
-    state = input;
-    if (!flag8) {
-      flag8 = true;
-      let value23: Dynamic =
+  function changeDocument(nextDocument?: Dynamic): Dynamic {
+    state = nextDocument;
+    if (!needsDecompose) {
+      needsDecompose = true;
+      let isPageHidden: Dynamic =
         typeof document !== "undefined" &&
         (document as Dynamic).visibilityState === "hidden";
-      timers.frame !== undefined && !value23
+      timers.frame !== undefined && !isPageHidden
         ? timers.frame(decomposeChanges)
         : timers.setTimeout(decomposeChanges, LIVE_FRAME_FALLBACK_DELAY_MS);
     }
     notifyContent(false);
   }
   function decomposeChanges(): Dynamic {
-    if (!flag8 || flag15) return;
-    flag8 = false;
-    let entries3: Dynamic = new Map(
-        codec.decompose(state, decomposedDocuments, value),
+    if (!needsDecompose || disposed) return;
+    needsDecompose = false;
+    let nextDocuments: Dynamic = new Map(
+        codec.decompose(state, decomposedDocuments, composeCarry),
       ),
-      value23: Dynamic = decomposedDocuments;
-    decomposedDocuments = entries3;
-    if (value7 !== undefined || !canWrite || !isLoaded()) {
+      previousDocuments: Dynamic = decomposedDocuments;
+    decomposedDocuments = nextDocuments;
+    if (liveSyncError !== undefined || !canWrite || !isLoaded()) {
       notifySaveState();
       return;
     }
-    let value24: Dynamic = timers.now(),
-      flag19: Dynamic = false;
-    for (let [value25, value26] of entries3 as Dynamic) {
-      let entry: Dynamic = value23.get(value25);
-      if (entry === value26) continue;
-      let value27: Dynamic = diffRecord(entry, value26);
-      if (value27 === null) continue;
-      let entry2: Dynamic = pathStates.get(value25),
-        value28: Dynamic =
-          entry2 === undefined ||
-          (entry2.server === undefined &&
-            !entry2.exists &&
-            !entry2.removedSeen &&
-            entry2.inflight === undefined &&
-            entry2.pending === undefined),
-        value29: Dynamic =
-          value25 === metaPath &&
-          entry2 !== undefined &&
-          entry2.removedSeen &&
-          entry2.server === undefined &&
-          !entry2.exists;
-      entry !== undefined && (value28 || value29)
+    let now: Dynamic = timers.now(),
+      queuedWrites: Dynamic = false;
+    for (let [path, document] of nextDocuments as Dynamic) {
+      let previousDocument: Dynamic = previousDocuments.get(path);
+      if (previousDocument === document) continue;
+      let patch: Dynamic = diffRecord(previousDocument, document);
+      if (patch === null) continue;
+      let pathState: Dynamic = pathStates.get(path),
+        hasNoStoredDocument: Dynamic =
+          pathState === undefined ||
+          (pathState.server === undefined &&
+            !pathState.exists &&
+            !pathState.removedSeen &&
+            pathState.inflight === undefined &&
+            pathState.pending === undefined),
+        isDeletedMetadata: Dynamic =
+          path === metaPath &&
+          pathState !== undefined &&
+          pathState.removedSeen &&
+          pathState.server === undefined &&
+          !pathState.exists;
+      previousDocument !== undefined && (hasNoStoredDocument || isDeletedMetadata)
         ? queueReplacement(
-            value25,
-            value26,
-            value24,
-            value28 ? entry : undefined,
+            path,
+            document,
+            now,
+            hasNoStoredDocument ? previousDocument : undefined,
           )
-        : entry !== undefined && codec.replaceOnly?.(value25) === true
-          ? queueReplacement(value25, value26, value24)
-          : queuePatch(value25, value27, entry === undefined, value24);
-      flag19 = true;
+        : previousDocument !== undefined && codec.replaceOnly?.(path) === true
+          ? queueReplacement(path, document, now)
+          : queuePatch(path, patch, previousDocument === undefined, now);
+      queuedWrites = true;
     }
-    for (let value25 of value23.keys() as Dynamic)
-      entries3.has(value25) ||
-        (queueDeletion(value25, value24), (flag19 = true));
-    flag19 ? scheduleWriteFlush() : notifySaveState();
+    for (let path of previousDocuments.keys() as Dynamic)
+      nextDocuments.has(path) ||
+        (queueDeletion(path, now), (queuedWrites = true));
+    queuedWrites ? scheduleWriteFlush() : notifySaveState();
   }
   function queuePatch(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
-    value23?: Dynamic,
+    path?: Dynamic,
+    patch?: Dynamic,
+    isNewDocument?: Dynamic,
+    queuedAt?: Dynamic,
   ): Dynamic {
-    let value24: Dynamic = ensurePathState(input),
-      pending: Dynamic = value24.pending;
-    touchPendingState(value24, value23, pending === undefined);
+    let pathState: Dynamic = ensurePathState(path),
+      pending: Dynamic = pathState.pending;
+    touchPendingState(pathState, queuedAt, pending === undefined);
     pending === undefined || pending.patch === DELETE_DOCUMENT
-      ? ((value24.pending = {
-          patch: options2,
-          replace: pending !== undefined || context,
+      ? ((pathState.pending = {
+          patch: patch,
+          replace: pending !== undefined || isNewDocument,
         }),
-        value24.pending.replace && (value24.reAdd = !value24.exists))
+        pathState.pending.replace && (pathState.reAdd = !pathState.exists))
       : pending.replace
-        ? (value24.pending = {
+        ? (pathState.pending = {
             patch: removeNullValues(
-              deepMerge(pending.patch, options2),
+              deepMerge(pending.patch, patch),
             ),
             replace: true,
           })
-        : ((value24.pending = undefined),
-          (value24.pending = combinePendingPatches(
+        : ((pathState.pending = undefined),
+          (pathState.pending = combinePendingPatches(
             pending.patch,
-            options2,
-            effectivePathValue(input),
+            patch,
+            effectivePathValue(path),
           )),
-          value24.pending === undefined &&
-            withdrawPendingWrite(input, value24));
-    value24.pending !== undefined && validatePendingWrite(input, value24);
-    updateEffectiveDocument(input);
+          pathState.pending === undefined &&
+            withdrawPendingWrite(path, pathState));
+    pathState.pending !== undefined && validatePendingWrite(path, pathState);
+    updateEffectiveDocument(path);
   }
   function queueReplacement(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
-    value23?: Dynamic,
+    path?: Dynamic,
+    document?: Dynamic,
+    queuedAt?: Dynamic,
+    createBase?: Dynamic,
   ): Dynamic {
-    let value24: Dynamic = ensurePathState(input);
-    touchPendingState(value24, context, value24.pending === undefined);
-    value24.pending = {
-      patch: removeNullValues(options2),
+    let pathState: Dynamic = ensurePathState(path);
+    touchPendingState(pathState, queuedAt, pathState.pending === undefined);
+    pathState.pending = {
+      patch: removeNullValues(document),
       replace: true,
     };
-    value24.reAdd = !value24.exists;
-    value23 !== undefined && (value24.createBase ??= value23);
-    validatePendingWrite(input, value24);
-    updateEffectiveDocument(input);
+    pathState.reAdd = !pathState.exists;
+    createBase !== undefined && (pathState.createBase ??= createBase);
+    validatePendingWrite(path, pathState);
+    updateEffectiveDocument(path);
   }
   function rebaseReplacementPatch(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    baseDocument?: Dynamic,
+    replacement?: Dynamic,
+    remoteDocument?: Dynamic,
   ): Dynamic {
-    let value23: Dynamic = diffRecord(input, options2);
-    if (value23 === null) return null;
-    let state2: Dynamic = {
-      ...value23,
+    let patch: Dynamic = diffRecord(baseDocument, replacement);
+    if (patch === null) return null;
+    let rebasedPatch: Dynamic = {
+      ...patch,
     };
-    for (let value24 of Object.keys(state2) as Dynamic) {
-      let value25: Dynamic = input[value24],
-        value26: Dynamic = options2[value24],
-        value27: Dynamic = context[value24],
-        callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-          Array.isArray(input2) &&
-          input2.every(
-            (input3?: Dynamic): Dynamic => typeof input3 == "string",
+    for (let key of Object.keys(rebasedPatch) as Dynamic) {
+      let baseValue: Dynamic = baseDocument[key],
+        localValue: Dynamic = replacement[key],
+        remoteValue: Dynamic = remoteDocument[key],
+        isStringList: Dynamic = (candidate?: Dynamic): Dynamic =>
+          Array.isArray(candidate) &&
+          candidate.every(
+            (item?: Dynamic): Dynamic => typeof item == "string",
           );
-      if (!callback5(value25) || !callback5(value26) || !callback5(value27))
+      if (!isStringList(baseValue) || !isStringList(localValue) || !isStringList(remoteValue))
         continue;
-      let items2: Dynamic = [
-        ...value27,
-        ...value26.filter(
-          (input2?: Dynamic): Dynamic =>
-            !value25.includes(input2) && !value27.includes(input2),
+      let mergedList: Dynamic = [
+        ...remoteValue,
+        ...localValue.filter(
+          (item?: Dynamic): Dynamic =>
+            !baseValue.includes(item) && !remoteValue.includes(item),
         ),
       ];
-      structurallyEqual(items2, value27)
-        ? delete state2[value24]
-        : (state2[value24] = items2);
+      structurallyEqual(mergedList, remoteValue)
+        ? delete rebasedPatch[key]
+        : (rebasedPatch[key] = mergedList);
     }
-    return Object.keys(state2).length === 0 ? null : state2;
+    return Object.keys(rebasedPatch).length === 0 ? null : rebasedPatch;
   }
   function combinePendingPatches(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    earlierPatch?: Dynamic,
+    laterPatch?: Dynamic,
+    baseDocument?: Dynamic,
   ): Dynamic {
-    let value23: Dynamic = mergeCompatibleRecords(
-      input,
-      options2,
+    let compatiblePatch: Dynamic = mergeCompatibleRecords(
+      earlierPatch,
+      laterPatch,
     );
-    if (value23 !== null)
+    if (compatiblePatch !== null)
       return {
-        patch: value23,
+        patch: compatiblePatch,
         replace: false,
       };
-    if (context === undefined)
+    if (baseDocument === undefined)
       return {
-        patch: deepMerge(input, options2),
+        patch: deepMerge(earlierPatch, laterPatch),
         replace: false,
       };
-    let value24: Dynamic = diffRecord(
-      context,
+    let combinedPatch: Dynamic = diffRecord(
+      baseDocument,
       deepMerge(
-        deepMerge(context, input),
-        options2,
+        deepMerge(baseDocument, earlierPatch),
+        laterPatch,
       ),
     );
-    return value24 === null
+    return combinedPatch === null
       ? undefined
       : {
-          patch: value24,
+          patch: combinedPatch,
           replace: false,
         };
   }
-  function queueDeletion(input?: Dynamic, options2?: Dynamic): Dynamic {
-    let value23: Dynamic = ensurePathState(input);
-    touchPendingState(value23, options2, value23.pending === undefined);
-    value23.pending = {
+  function queueDeletion(path?: Dynamic, queuedAt?: Dynamic): Dynamic {
+    let pathState: Dynamic = ensurePathState(path);
+    touchPendingState(pathState, queuedAt, pathState.pending === undefined);
+    pathState.pending = {
       patch: DELETE_DOCUMENT,
       replace: false,
     };
-    value23.parked = undefined;
-    parkedWrites.delete(input);
-    updateEffectiveDocument(input);
+    pathState.parked = undefined;
+    parkedWrites.delete(path);
+    updateEffectiveDocument(path);
   }
   function touchPendingState(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    pathState?: Dynamic,
+    queuedAt?: Dynamic,
+    isFirstPendingWrite?: Dynamic,
   ): Dynamic {
-    context &&
-      ((input.firstAt = options2),
-      (input.seq = ++index4),
-      (input.notBefore = 0));
-    input.lastAt = options2;
-    input.due = false;
+    isFirstPendingWrite &&
+      ((pathState.firstAt = queuedAt),
+      (pathState.seq = ++writeSequence),
+      (pathState.notBefore = 0));
+    pathState.lastAt = queuedAt;
+    pathState.due = false;
   }
   function validatePendingWrite(
-    input?: Dynamic,
-    options2?: Dynamic,
+    path?: Dynamic,
+    pathState?: Dynamic,
   ): Dynamic {
     if (
       codec.refuse === undefined ||
-      options2.pending === undefined ||
-      options2.pending.patch === DELETE_DOCUMENT
+      pathState.pending === undefined ||
+      pathState.pending.patch === DELETE_DOCUMENT
     )
       return;
-    let value23: Dynamic = effectivePathValue(input);
-    if (value23 === undefined) return;
-    let value24: Dynamic =
-        collectionContentSize(dirname(input), input) +
-        serializedDocumentBytes(value23),
-      value25: Dynamic = codec.refuse(input, value23, value24);
-    if (value25 === undefined) {
-      options2.parked !== undefined &&
-        ((options2.parked = undefined), parkedWrites.delete(input));
+    let document: Dynamic = effectivePathValue(path);
+    if (document === undefined) return;
+    let collectionBytes: Dynamic =
+        collectionContentSize(dirname(path), path) +
+        serializedDocumentBytes(document),
+      refusal: Dynamic = codec.refuse(path, document, collectionBytes);
+    if (refusal === undefined) {
+      pathState.parked !== undefined &&
+        ((pathState.parked = undefined), parkedWrites.delete(path));
       return;
     }
-    options2.parked = value25;
-    parkedWrites.set(input, value25);
-    value15 = {
+    pathState.parked = refusal;
+    parkedWrites.set(path, refusal);
+    lastError = {
       code: "refused",
-      message: value25,
-      path: input,
+      message: refusal,
+      path: path,
     };
   }
   function scheduleWriteFlush(): Dynamic {
-    if (flag15 || value7 !== undefined) return;
-    value8 !== undefined &&
-      (timers.clearTimeout(value8), (value8 = undefined));
-    let value23: Dynamic = timers.now(),
-      value24: Dynamic = 1 / 0;
-    for (let value25 of pathStates.values() as Dynamic)
-      if (!(value25.pending === undefined || value25.parked !== undefined)) {
-        if (!value25.due) {
-          let value26: Dynamic = Math.min(
-            value25.lastAt + LIVE_WRITE_DEBOUNCE_MS,
-            value25.firstAt + LIVE_WRITE_MAX_WAIT_MS,
+    if (disposed || liveSyncError !== undefined) return;
+    writeFlushTimer !== undefined &&
+      (timers.clearTimeout(writeFlushTimer), (writeFlushTimer = undefined));
+    let now: Dynamic = timers.now(),
+      nextWakeAt: Dynamic = 1 / 0;
+    for (let pathState of pathStates.values() as Dynamic)
+      if (!(pathState.pending === undefined || pathState.parked !== undefined)) {
+        if (!pathState.due) {
+          let dueAt: Dynamic = Math.min(
+            pathState.lastAt + LIVE_WRITE_DEBOUNCE_MS,
+            pathState.firstAt + LIVE_WRITE_MAX_WAIT_MS,
           );
-          value26 <= value23
-            ? (value25.due = true)
-            : (value24 = Math.min(value24, value26));
+          dueAt <= now
+            ? (pathState.due = true)
+            : (nextWakeAt = Math.min(nextWakeAt, dueAt));
         }
-        value25.due &&
-          value25.notBefore > value23 &&
-          (value24 = Math.min(value24, value25.notBefore));
+        pathState.due &&
+          pathState.notBefore > now &&
+          (nextWakeAt = Math.min(nextWakeAt, pathState.notBefore));
       }
-    index5 > value23 && (value24 = Math.min(value24, index5));
+    writesPausedUntil > now && (nextWakeAt = Math.min(nextWakeAt, writesPausedUntil));
     flushDueWrites();
-    value24 !== 1 / 0 &&
-      value8 === undefined &&
-      (value8 = timers.setTimeout(
+    nextWakeAt !== 1 / 0 &&
+      writeFlushTimer === undefined &&
+      (writeFlushTimer = timers.setTimeout(
         (): Dynamic => {
-          value8 = undefined;
+          writeFlushTimer = undefined;
           scheduleWriteFlush();
         },
-        Math.max(0, value24 - timers.now()),
+        Math.max(0, nextWakeAt - timers.now()),
       ));
     notifySaveState();
   }
-  function collectionWriteOrder(input?: Dynamic): Dynamic {
-    let value23: Dynamic = collections.indexOf(dirname(input));
-    return value23 < 0 ? collections.length : value23;
+  function collectionWriteOrder(path?: Dynamic): Dynamic {
+    let collectionIndex: Dynamic = collections.indexOf(dirname(path));
+    return collectionIndex < 0 ? collections.length : collectionIndex;
   }
   function selectNextWrite(): Dynamic {
-    let value23: Dynamic = timers.now(),
-      value24: Dynamic,
-      index9: Dynamic = 0,
-      index10: Dynamic = 0,
-      index11: Dynamic = 0;
-    for (let [value25, value26] of pathStates as Dynamic) {
+    let now: Dynamic = timers.now(),
+      nextPath: Dynamic,
+      nextDeleteRank: Dynamic = 0,
+      nextCollectionRank: Dynamic = 0,
+      nextSequence: Dynamic = 0;
+    for (let [path, pathState] of pathStates as Dynamic) {
       if (
-        value26.pending === undefined ||
-        !value26.due ||
-        value26.notBefore > value23 ||
-        value26.parked !== undefined ||
-        inFlightWrites.has(value25)
+        pathState.pending === undefined ||
+        !pathState.due ||
+        pathState.notBefore > now ||
+        pathState.parked !== undefined ||
+        inFlightWrites.has(path)
       )
         continue;
-      let value27: Dynamic =
-          value26.pending.patch === DELETE_DOCUMENT ? 1 : 0,
-        value28: Dynamic = collectionWriteOrder(value25),
-        value29: Dynamic = value27
-          ? -value28
-          : value28 + (value25 === metaPath ? 0.5 : 0);
-      (value24 === undefined ||
-        value27 < index9 ||
-        (value27 === index9 &&
-          (value29 < index10 ||
-            (value29 === index10 && value26.seq < index11)))) &&
-        ((value24 = value25),
-        (index9 = value27),
-        (index10 = value29),
-        (index11 = value26.seq));
+      let deleteRank: Dynamic =
+          pathState.pending.patch === DELETE_DOCUMENT ? 1 : 0,
+        collectionIndex: Dynamic = collectionWriteOrder(path),
+        collectionRank: Dynamic = deleteRank
+          ? -collectionIndex
+          : collectionIndex + (path === metaPath ? 0.5 : 0);
+      (nextPath === undefined ||
+        deleteRank < nextDeleteRank ||
+        (deleteRank === nextDeleteRank &&
+          (collectionRank < nextCollectionRank ||
+            (collectionRank === nextCollectionRank && pathState.seq < nextSequence)))) &&
+        ((nextPath = path),
+        (nextDeleteRank = deleteRank),
+        (nextCollectionRank = collectionRank),
+        (nextSequence = pathState.seq));
     }
-    return value24;
+    return nextPath;
   }
   function shouldPauseWrites(): Dynamic {
     return (
-      flag15 ||
-      value7 !== undefined ||
+      disposed ||
+      liveSyncError !== undefined ||
       !canWrite ||
       !isLoaded() ||
-      flag ||
-      inFlightWrites.size >= (flag13 ? 1 : LIVE_MAX_INFLIGHT_WRITES)
+      reconnecting ||
+      inFlightWrites.size >= (serializeWrites ? 1 : LIVE_MAX_INFLIGHT_WRITES)
     );
   }
   function flushDueWrites(): Dynamic {
-    let flag19: Dynamic = false;
-    for (; !shouldPauseWrites() && index5 <= timers.now(); ) {
-      let value23: Dynamic = selectNextWrite();
-      if (value23 === undefined) break;
-      sendWrite(value23) && (flag19 = true);
+    let sentWrite: Dynamic = false;
+    for (; !shouldPauseWrites() && writesPausedUntil <= timers.now(); ) {
+      let path: Dynamic = selectNextWrite();
+      if (path === undefined) break;
+      sendWrite(path) && (sentWrite = true);
     }
-    flag19 && notifySaveState();
+    sentWrite && notifySaveState();
   }
-  function sendWrite(input?: Dynamic): Dynamic {
-    let entry: Dynamic = pathStates.get(input),
+  function sendWrite(path?: Dynamic): Dynamic {
+    let entry: Dynamic = pathStates.get(path),
       pending: Dynamic = entry.pending;
     entry.pending = undefined;
-    let value23: Dynamic;
+    let write: Dynamic;
     if (pending.patch === DELETE_DOCUMENT)
-      value23 = {
-        path: input,
+      write = {
+        path: path,
         verb: "delete",
         op: pending,
         sent: timers.now(),
@@ -770,19 +770,19 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         !entry.exists &&
         entry.server === undefined
       ) {
-        withdrawPendingWrite(input, entry);
-        updateEffectiveDocument(input);
+        withdrawPendingWrite(path, entry);
+        updateEffectiveDocument(path);
         composeDocument(true);
         entry.goneNoticed !== true &&
-          options.onNotice?.(
+          liveOptions.onNotice?.(
             "An item you were editing was deleted by someone else.",
           );
         entry.goneNoticed = true;
         return false;
       }
-      let value24: Dynamic = previewInflightValue(input, entry, pending);
-      if (value24 === undefined) return false;
-      let state2: Dynamic = {
+      let documentAfterWrite: Dynamic = previewInflightValue(path, entry, pending);
+      if (documentAfterWrite === undefined) return false;
+      let operation: Dynamic = {
         patch: pending.patch,
         replace: pending.replace,
       };
@@ -792,972 +792,972 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         entry.server === undefined &&
         entry.removedSeen
       ) {
-        let value27: Dynamic = effectivePathValue(input),
-          value28: Dynamic =
-            value27 === undefined
+        let effectiveDocument: Dynamic = effectivePathValue(path),
+          recreatePatch: Dynamic =
+            effectiveDocument === undefined
               ? undefined
               : diffRecord(
-                  value27,
-                  removeNullValues(value24),
+                  effectiveDocument,
+                  removeNullValues(documentAfterWrite),
                 );
-        if (value28 === null) return false;
-        value28 !== undefined &&
-          (state2 = {
-            patch: value28,
+        if (recreatePatch === null) return false;
+        recreatePatch !== undefined &&
+          (operation = {
+            patch: recreatePatch,
             replace: false,
           });
       }
-      let value25: Dynamic =
-          !state2.replace &&
+      let shouldCompactByReplacing: Dynamic =
+          !operation.replace &&
           loadState === "live" &&
-          !flag &&
+          !reconnecting &&
           !entry.held &&
           entry.acked.length === 0 &&
           entry.server !== undefined &&
           countRecordNulls(
-            deepMerge(entry.server, state2.patch),
+            deepMerge(entry.server, operation.patch),
           ) > LIVE_MAX_PATCH_PROPERTY_COUNT,
-        value26: Dynamic = timers.now();
-      value23 = state2.replace
+        sentAt: Dynamic = timers.now();
+      write = operation.replace
         ? {
-            path: input,
+            path: path,
             verb: "set",
-            body: removeNullValues(value24),
+            body: removeNullValues(documentAfterWrite),
             op: {
-              patch: removeNullValues(value24),
+              patch: removeNullValues(documentAfterWrite),
               replace: true,
             },
-            sent: value26,
+            sent: sentAt,
           }
-        : value25
+        : shouldCompactByReplacing
           ? {
-              path: input,
+              path: path,
               verb: "set",
-              body: removeNullValues(value24),
-              op: state2,
-              sent: value26,
+              body: removeNullValues(documentAfterWrite),
+              op: operation,
+              sent: sentAt,
             }
           : {
-              path: input,
+              path: path,
               verb: "update",
-              body: state2.patch,
-              op: state2,
-              sent: value26,
+              body: operation.patch,
+              op: operation,
+              sent: sentAt,
             };
     }
-    entry.inflight = value23.op;
+    entry.inflight = write.op;
     entry.inflightEchoed = false;
-    inFlightWrites.set(input, value23);
-    (value23.verb === "set"
-      ? database.set(input, value23.body)
-      : value23.verb === "update"
-        ? database.update(input, value23.body)
-        : database.del(input)
+    inFlightWrites.set(path, write);
+    (write.verb === "set"
+      ? database.set(path, write.body)
+      : write.verb === "update"
+        ? database.update(path, write.body)
+        : database.del(path)
     ).then(
-      (): Dynamic => handleWriteSuccess(value23),
-      (input2?: Dynamic): Dynamic =>
+      (): Dynamic => handleWriteSuccess(write),
+      (error?: Dynamic): Dynamic =>
         handleWriteFailure(
-          value23,
-          normalizeDatabaseError(input2),
+          write,
+          normalizeDatabaseError(error),
         ),
     );
     return true;
   }
   function previewInflightValue(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    path?: Dynamic,
+    pathState?: Dynamic,
+    operation?: Dynamic,
   ): Dynamic {
-    let inflight: Dynamic = options2.inflight;
-    options2.inflight = context;
-    let value23: Dynamic = effectivePathValue(input);
-    options2.inflight = inflight;
-    return value23;
+    let inflight: Dynamic = pathState.inflight;
+    pathState.inflight = operation;
+    let document: Dynamic = effectivePathValue(path);
+    pathState.inflight = inflight;
+    return document;
   }
-  function handleWriteSuccess(input?: Dynamic): Dynamic {
-    if (flag15) return;
-    let value23: Dynamic = ensurePathState(input.path);
-    inFlightWrites.delete(input.path);
-    value23.inflight = undefined;
-    let value24: Dynamic = value23.inflightEchoed === true;
-    value23.inflightEchoed = undefined;
-    value23.failures = 0;
-    flag14 = true;
-    !flag7 &&
-      flag4 &&
-      !flag5 &&
-      value7 === undefined &&
-      ((flag5 = true),
-      (index2 = 0),
-      flag || refreshCollectionSnapshots(),
-      value19());
-    value14 = timers.now();
-    value11 = value14;
-    flag13 = false;
+  function handleWriteSuccess(write?: Dynamic): Dynamic {
+    if (disposed) return;
+    let pathState: Dynamic = ensurePathState(write.path);
+    inFlightWrites.delete(write.path);
+    pathState.inflight = undefined;
+    let alreadyEchoed: Dynamic = pathState.inflightEchoed === true;
+    pathState.inflightEchoed = undefined;
+    pathState.failures = 0;
+    hasSyncedWrite = true;
+    !hasReceivedDocument &&
+      recoveryWaitingForMetadata &&
+      !hasRetriedAfterWrite &&
+      liveSyncError === undefined &&
+      ((hasRetriedAfterWrite = true),
+      (reconnectAttempts = 0),
+      reconnecting || refreshCollectionSnapshots(),
+      schedulePeriodicRefresh());
+    lastSyncedAt = timers.now();
+    lastAcknowledgedAt = lastSyncedAt;
+    serializeWrites = false;
     clearRecoveredWriteError();
-    let value25: Dynamic = timers.now();
-    if (input.verb === "delete") {
-      let value26: Dynamic = value23.server !== undefined || value23.exists;
-      value23.exists = false;
-      value26
-        ? (value23.acked.push({
+    let acknowledgedAt: Dynamic = timers.now();
+    if (write.verb === "delete") {
+      let existed: Dynamic = pathState.server !== undefined || pathState.exists;
+      pathState.exists = false;
+      existed
+        ? (pathState.acked.push({
             patch: {},
             replace: false,
             del: true,
-            at: value25,
-            sent: input.sent,
-            since: value25,
+            at: acknowledgedAt,
+            sent: write.sent,
+            since: acknowledgedAt,
           }),
-          scheduleStuckCheck(input.path))
-        : (value23.acked = []);
+          scheduleStuckCheck(write.path))
+        : (pathState.acked = []);
     } else {
-      (input.verb === "set" ||
-        value23.server !== undefined ||
-        !value23.removedSeen) &&
-        ((value23.exists = true),
-        (value23.goneNoticed = undefined),
-        (value23.reAdd = undefined));
+      (write.verb === "set" ||
+        pathState.server !== undefined ||
+        !pathState.removedSeen) &&
+        ((pathState.exists = true),
+        (pathState.goneNoticed = undefined),
+        (pathState.reAdd = undefined));
       if (
-        value23.createBase !== undefined &&
-        value23.createTheirs !== undefined &&
-        input.verb === "set"
+        pathState.createBase !== undefined &&
+        pathState.createTheirs !== undefined &&
+        write.verb === "set"
       ) {
-        let value28: Dynamic = deepMerge(
-            value23.createTheirs,
+        let rebasedDocument: Dynamic = deepMerge(
+            pathState.createTheirs,
             rebaseReplacementPatch(
-              value23.createBase,
-              input.body,
-              value23.createTheirs,
+              pathState.createBase,
+              write.body,
+              pathState.createTheirs,
             ) ?? {},
           ),
-          value29: Dynamic = diffRecord(input.body, value28);
-        if (value29 !== null) {
-          let pending: Dynamic = value23.pending;
-          value23.pending =
+          rebasedPatch: Dynamic = diffRecord(write.body, rebasedDocument);
+        if (rebasedPatch !== null) {
+          let pending: Dynamic = pathState.pending;
+          pathState.pending =
             pending === undefined
               ? {
-                  patch: value29,
+                  patch: rebasedPatch,
                   replace: false,
                 }
               : pending.patch === DELETE_DOCUMENT || pending.replace
                 ? pending
-                : combinePendingPatches(value29, pending.patch, input.body);
-          value23.pending !== undefined &&
-            ((value23.due = true),
-            value23.seq === 0 && (value23.seq = ++index4));
+                : combinePendingPatches(rebasedPatch, pending.patch, write.body);
+          pathState.pending !== undefined &&
+            ((pathState.due = true),
+            pathState.seq === 0 && (pathState.seq = ++writeSequence));
         }
       }
-      value23.createBase = value23.createTheirs = undefined;
-      let value26: Dynamic = input.verb === "set",
-        value27: Dynamic =
-          value23.acked.length === 0 &&
-          value23.server !== undefined &&
-          (value26
-            ? structurallyEqual(value23.server, input.body)
-            : containsServerPatch(value23.server, input.body));
-      if (value24 || value27) {
-        for (let value28 of value23.acked as Dynamic)
-          advanceHeldBase(value23, value28);
-        advanceHeldBase(value23, {
-          patch: input.body,
-          replace: value26,
+      pathState.createBase = pathState.createTheirs = undefined;
+      let isReplacement: Dynamic = write.verb === "set",
+        matchesServer: Dynamic =
+          pathState.acked.length === 0 &&
+          pathState.server !== undefined &&
+          (isReplacement
+            ? structurallyEqual(pathState.server, write.body)
+            : containsServerPatch(pathState.server, write.body));
+      if (alreadyEchoed || matchesServer) {
+        for (let acknowledged of pathState.acked as Dynamic)
+          advanceHeldBase(pathState, acknowledged);
+        advanceHeldBase(pathState, {
+          patch: write.body,
+          replace: isReplacement,
           del: false,
-          at: value25,
-          sent: input.sent,
-          since: value25,
+          at: acknowledgedAt,
+          sent: write.sent,
+          since: acknowledgedAt,
         });
-        value23.acked = [];
+        pathState.acked = [];
       } else if (
-        (value23.acked.push({
-          patch: input.body,
-          replace: value26,
+        (pathState.acked.push({
+          patch: write.body,
+          replace: isReplacement,
           del: false,
-          at: value25,
-          sent: input.sent,
-          since: value25,
+          at: acknowledgedAt,
+          sent: write.sent,
+          since: acknowledgedAt,
         }),
-        scheduleStuckCheck(input.path),
-        value23.acked.length > LIVE_MAX_ACKNOWLEDGED_WRITES)
+        scheduleStuckCheck(write.path),
+        pathState.acked.length > LIVE_MAX_ACKNOWLEDGED_WRITES)
       ) {
-        let value28: Dynamic = value23.acked[0].del
-            ? value23.acked.slice(0, 1)
+        let leadingDeletes: Dynamic = pathState.acked[0].del
+            ? pathState.acked.slice(0, 1)
             : [],
-          [value29, value30, ...value31]: Dynamic = value23.acked.slice(
-            value28.length,
+          [earlierWrite, laterWrite, ...remainingWrites]: Dynamic = pathState.acked.slice(
+            leadingDeletes.length,
           ),
-          value32: Dynamic =
-            value30.del || value30.replace || value29.del
+          combinedPatch: Dynamic =
+            laterWrite.del || laterWrite.replace || earlierWrite.del
               ? undefined
-              : value29.replace
-                ? deepMerge(value29.patch, value30.patch)
+              : earlierWrite.replace
+                ? deepMerge(earlierWrite.patch, laterWrite.patch)
                 : mergeCompatibleRecords(
-                    value29.patch,
-                    value30.patch,
+                    earlierWrite.patch,
+                    laterWrite.patch,
                   ),
-          value33: Dynamic =
-            value29.replace &&
-            value23.server === undefined &&
-            value23.removedSeen &&
-            value23.deliveredAt !== undefined &&
-            value29.at <= value23.deliveredAt &&
-            value23.deliveredAt < value30.at,
-          state2: Dynamic = {
-            sent: value29.sent,
-            since: value29.since,
+          useDeliveryTime: Dynamic =
+            earlierWrite.replace &&
+            pathState.server === undefined &&
+            pathState.removedSeen &&
+            pathState.deliveredAt !== undefined &&
+            earlierWrite.at <= pathState.deliveredAt &&
+            pathState.deliveredAt < laterWrite.at,
+          firstWriteTimes: Dynamic = {
+            sent: earlierWrite.sent,
+            since: earlierWrite.since,
           },
-          value34: Dynamic = value30.del
+          mergedWrite: Dynamic = laterWrite.del
             ? {
                 patch: {},
                 replace: false,
                 del: true,
-                at: value30.at,
-                ...state2,
+                at: laterWrite.at,
+                ...firstWriteTimes,
               }
-            : value30.replace || value29.del
+            : laterWrite.replace || earlierWrite.del
               ? {
-                  patch: value30.patch,
+                  patch: laterWrite.patch,
                   replace: true,
                   del: false,
-                  at: value30.at,
-                  ...state2,
+                  at: laterWrite.at,
+                  ...firstWriteTimes,
                 }
-              : value32 != null
+              : combinedPatch != null
                 ? {
-                    patch: value32,
-                    replace: value29.replace,
+                    patch: combinedPatch,
+                    replace: earlierWrite.replace,
                     del: false,
-                    at: value33 ? value23.deliveredAt : value30.at,
-                    ...state2,
+                    at: useDeliveryTime ? pathState.deliveredAt : laterWrite.at,
+                    ...firstWriteTimes,
                   }
                 : undefined;
-        value34 !== undefined &&
-          (value23.acked = [...value28, value34, ...value31]);
+        mergedWrite !== undefined &&
+          (pathState.acked = [...leadingDeletes, mergedWrite, ...remainingWrites]);
       }
     }
-    value23.acked.length > 0 && scheduleAckPruning();
-    parkedWrites.size === 0 && (value15 = undefined);
-    updateEffectiveDocument(input.path) && composeDocument(true);
-    releaseDeferredEcho(input.path, input.op);
+    pathState.acked.length > 0 && scheduleAckPruning();
+    parkedWrites.size === 0 && (lastError = undefined);
+    updateEffectiveDocument(write.path) && composeDocument(true);
+    releaseDeferredEcho(write.path, write.op);
     scheduleWriteFlush();
   }
-  let value16: Dynamic;
+  let ackPruningTimer: Dynamic;
   function acknowledgementDeadline(
-    input?: Dynamic,
-    options2?: Dynamic,
+    pathState?: Dynamic,
+    acknowledgedWrite?: Dynamic,
   ): Dynamic {
-    if (input.deliveredAt === undefined || input.deliveredAt < options2.sent)
+    if (pathState.deliveredAt === undefined || pathState.deliveredAt < acknowledgedWrite.sent)
       return;
-    if (input.server !== undefined || !input.removedSeen)
-      return options2.at + LIVE_WRITE_ACK_TIMEOUT_MS;
+    if (pathState.server !== undefined || !pathState.removedSeen)
+      return acknowledgedWrite.at + LIVE_WRITE_ACK_TIMEOUT_MS;
     if (
-      flag ||
-      (input.inflight !== undefined &&
-        input.inflight.patch !== DELETE_DOCUMENT)
+      reconnecting ||
+      (pathState.inflight !== undefined &&
+        pathState.inflight.patch !== DELETE_DOCUMENT)
     )
       return;
-    let value23: Dynamic = Math.max(input.deliveredAt, options2.at);
-    for (let value24 of input.acked as Dynamic)
-      !value24.del &&
-        !value24.replace &&
-        (value23 = Math.max(value23, value24.at));
-    return value23 + LIVE_WRITE_ACK_TIMEOUT_MS;
+    let latestChangeAt: Dynamic = Math.max(pathState.deliveredAt, acknowledgedWrite.at);
+    for (let write of pathState.acked as Dynamic)
+      !write.del &&
+        !write.replace &&
+        (latestChangeAt = Math.max(latestChangeAt, write.at));
+    return latestChangeAt + LIVE_WRITE_ACK_TIMEOUT_MS;
   }
   function pruneAcknowledgedWrites(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    path?: Dynamic,
+    pathState?: Dynamic,
+    now?: Dynamic,
   ): Dynamic {
-    let length: Dynamic = options2.acked.length,
-      callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-        (acknowledgementDeadline(options2, input2) ?? 1 / 0) <= context;
-    for (let value23 of options2.acked as Dynamic)
-      callback5(value23) && advanceHeldBase(options2, value23);
-    options2.acked = options2.acked.filter(
-      (input2?: Dynamic): Dynamic => !callback5(input2),
+    let previousAckCount: Dynamic = pathState.acked.length,
+      hasExpired: Dynamic = (write?: Dynamic): Dynamic =>
+        (acknowledgementDeadline(pathState, write) ?? 1 / 0) <= now;
+    for (let write of pathState.acked as Dynamic)
+      hasExpired(write) && advanceHeldBase(pathState, write);
+    pathState.acked = pathState.acked.filter(
+      (write?: Dynamic): Dynamic => !hasExpired(write),
     );
-    options2.server === undefined &&
-      options2.removedSeen &&
-      options2.exists &&
-      (!options2.acked.some((input2?: Dynamic): Dynamic => input2.replace) ||
-        options2.acked[options2.acked.length - 1].del) &&
-      ((options2.exists = false),
-      discardInvalidPending(input, options2, true) &&
-        options2.goneNoticed !== true &&
-        (options.onNotice?.(
+    pathState.server === undefined &&
+      pathState.removedSeen &&
+      pathState.exists &&
+      (!pathState.acked.some((write?: Dynamic): Dynamic => write.replace) ||
+        pathState.acked[pathState.acked.length - 1].del) &&
+      ((pathState.exists = false),
+      discardInvalidPending(path, pathState, true) &&
+        pathState.goneNoticed !== true &&
+        (liveOptions.onNotice?.(
           "An item you were editing was deleted by someone else.",
         ),
-        (options2.goneNoticed = true)));
+        (pathState.goneNoticed = true)));
     return (
-      options2.acked.length !== length &&
-      !options2.held &&
-      updateEffectiveDocument(input)
+      pathState.acked.length !== previousAckCount &&
+      !pathState.held &&
+      updateEffectiveDocument(path)
     );
   }
   function discardInvalidPending(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    path?: Dynamic,
+    pathState?: Dynamic,
+    discardReplacement?: Dynamic,
   ): Dynamic {
-    return options2.pending === undefined ||
-      options2.pending.patch === DELETE_DOCUMENT ||
-      (options2.pending.replace && !context)
+    return pathState.pending === undefined ||
+      pathState.pending.patch === DELETE_DOCUMENT ||
+      (pathState.pending.replace && !discardReplacement)
       ? false
-      : (withdrawPendingWrite(input, options2), true);
+      : (withdrawPendingWrite(path, pathState), true);
   }
-  function advanceHeldBase(input?: Dynamic, options2?: Dynamic): Dynamic {
-    !input.held ||
-      input.heldBase === undefined ||
-      options2.del ||
-      (input.heldBase =
-        applyPendingPatch(input.heldBase ?? undefined, options2) ?? null);
+  function advanceHeldBase(pathState?: Dynamic, acknowledgedWrite?: Dynamic): Dynamic {
+    !pathState.held ||
+      pathState.heldBase === undefined ||
+      acknowledgedWrite.del ||
+      (pathState.heldBase =
+        applyPendingPatch(pathState.heldBase ?? undefined, acknowledgedWrite) ?? null);
   }
-  function scheduleStuckCheck(input?: Dynamic): Dynamic {
+  function scheduleStuckCheck(path?: Dynamic): Dynamic {
     stuckListeners.size !== 0 &&
       timers.setTimeout((): Dynamic => {
-        let entry: Dynamic = pathStates.get(input);
+        let entry: Dynamic = pathStates.get(path);
         if (
-          flag15 ||
-          value7 !== undefined ||
-          flag ||
+          disposed ||
+          liveSyncError !== undefined ||
+          reconnecting ||
           loadState !== "live" ||
           entry === undefined ||
           entry.pending !== undefined ||
           entry.inflight !== undefined
         )
           return;
-        let value23: Dynamic = entry.acked.reduce(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-            input2 === undefined || options2.since < input2
-              ? options2.since
-              : input2,
+        let oldestPendingEchoAt: Dynamic = entry.acked.reduce(
+          (earliest?: Dynamic, write?: Dynamic): Dynamic =>
+            earliest === undefined || write.since < earliest
+              ? write.since
+              : earliest,
           undefined,
         );
         if (
-          value23 === undefined ||
-          value23 > timers.now() - LIVE_STUCK_WRITE_TIMEOUT_MS ||
-          entry.stuckSaid === value23
+          oldestPendingEchoAt === undefined ||
+          oldestPendingEchoAt > timers.now() - LIVE_STUCK_WRITE_TIMEOUT_MS ||
+          entry.stuckSaid === oldestPendingEchoAt
         )
           return;
-        let value24: Dynamic = effectivePathValue(input),
-          value25: Dynamic =
+        let effectiveDocument: Dynamic = effectivePathValue(path),
+          stuckReason: Dynamic =
             entry.server === undefined
-              ? entry.removedSeen && value24 !== undefined
+              ? entry.removedSeen && effectiveDocument !== undefined
                 ? "ghost"
                 : undefined
-              : structurallyEqual(value24 ?? null, entry.server)
+              : structurallyEqual(effectiveDocument ?? null, entry.server)
                 ? undefined
                 : "stale";
-        if (value25 !== undefined) {
-          entry.stuckSaid = value23;
-          for (let value26 of [...stuckListeners] as Dynamic)
-            value26(value25);
+        if (stuckReason !== undefined) {
+          entry.stuckSaid = oldestPendingEchoAt;
+          for (let listener of [...stuckListeners] as Dynamic)
+            listener(stuckReason);
         }
       }, LIVE_STUCK_WRITE_TIMEOUT_MS + LIVE_FRAME_FALLBACK_DELAY_MS);
   }
   function scheduleAckPruning(): Dynamic {
-    if (value16 !== undefined) return;
-    let value23: Dynamic = 1 / 0,
-      value24: Dynamic = timers.now();
-    for (let value25 of pathStates.values() as Dynamic)
-      for (let value26 of value25.acked as Dynamic)
-        value23 = Math.min(
-          value23,
-          acknowledgementDeadline(value25, value26) ?? 1 / 0,
+    if (ackPruningTimer !== undefined) return;
+    let firstDeadline: Dynamic = 1 / 0,
+      scheduledAt: Dynamic = timers.now();
+    for (let pathState of pathStates.values() as Dynamic)
+      for (let write of pathState.acked as Dynamic)
+        firstDeadline = Math.min(
+          firstDeadline,
+          acknowledgementDeadline(pathState, write) ?? 1 / 0,
         );
-    value23 !== 1 / 0 &&
-      (value16 = timers.setTimeout(
+    firstDeadline !== 1 / 0 &&
+      (ackPruningTimer = timers.setTimeout(
         (): Dynamic => {
-          value16 = undefined;
-          let value25: Dynamic = timers.now(),
-            flag19: Dynamic = false;
-          for (let [value26, value27] of pathStates as Dynamic)
-            value27.acked.length > 0 &&
-              pruneAcknowledgedWrites(value26, value27, value25) &&
-              (flag19 = true);
-          flag19 && composeDocument(true);
+          ackPruningTimer = undefined;
+          let now: Dynamic = timers.now(),
+            documentsChanged: Dynamic = false;
+          for (let [path, pathState] of pathStates as Dynamic)
+            pathState.acked.length > 0 &&
+              pruneAcknowledgedWrites(path, pathState, now) &&
+              (documentsChanged = true);
+          documentsChanged && composeDocument(true);
           scheduleAckPruning();
         },
-        Math.max(LIVE_FRAME_FALLBACK_DELAY_MS, value23 - value24),
+        Math.max(LIVE_FRAME_FALLBACK_DELAY_MS, firstDeadline - scheduledAt),
       ));
   }
   function clearRecoveredWriteError(): Dynamic {
     [...pathStates.values()].some(
-      (input?: Dynamic): Dynamic =>
-        input.failures > 0 &&
-        (input.pending !== undefined || input.inflight !== undefined),
+      (pathState?: Dynamic): Dynamic =>
+        pathState.failures > 0 &&
+        (pathState.pending !== undefined || pathState.inflight !== undefined),
     ) ||
-      ((flag9 = false),
+      ((hasWriteBackoffError = false),
       (value13 = undefined),
-      (index6 = 0),
-      (value9 = undefined));
+      (rateLimitFailures = 0),
+      (firstRateLimitAt = undefined));
   }
   function withdrawPendingWrite(
-    input?: Dynamic,
-    options2?: Dynamic,
+    path?: Dynamic,
+    pathState?: Dynamic,
   ): Dynamic {
-    options2.pending = undefined;
-    options2.parked = undefined;
-    parkedWrites.delete(input);
-    options2.failures = 0;
-    options2.notBefore = 0;
-    parkedWrites.size === 0 && (value15 = undefined);
+    pathState.pending = undefined;
+    pathState.parked = undefined;
+    parkedWrites.delete(path);
+    pathState.failures = 0;
+    pathState.notBefore = 0;
+    parkedWrites.size === 0 && (lastError = undefined);
     clearRecoveredWriteError();
   }
-  function writeFailureBackoff(input?: Dynamic): Dynamic {
+  function writeFailureBackoff(failures?: Dynamic): Dynamic {
     return Math.min(
       LIVE_MAX_WRITE_RETRY_BACKOFF_MS,
-      LIVE_WRITE_RETRY_INITIAL_BACKOFF_MS * 2 ** Math.max(0, input - 2),
+      LIVE_WRITE_RETRY_INITIAL_BACKOFF_MS * 2 ** Math.max(0, failures - 2),
     );
   }
-  function restoreFailedWrite(input?: Dynamic, options2?: Dynamic): Dynamic {
-    let pending: Dynamic = options2.pending;
+  function restoreFailedWrite(failedWrite?: Dynamic, pathState?: Dynamic): Dynamic {
+    let pending: Dynamic = pathState.pending;
     if (
-      input.op.replace &&
-      input.op.patch !== DELETE_DOCUMENT &&
-      options2.createBase !== undefined &&
-      options2.server !== undefined
+      failedWrite.op.replace &&
+      failedWrite.op.patch !== DELETE_DOCUMENT &&
+      pathState.createBase !== undefined &&
+      pathState.server !== undefined
     ) {
-      let value23: Dynamic =
+      let replacement: Dynamic =
           pending !== undefined && pending.patch !== DELETE_DOCUMENT
             ? pending.replace
               ? pending.patch
               : removeNullValues(
-                  deepMerge(input.op.patch, pending.patch),
+                  deepMerge(failedWrite.op.patch, pending.patch),
                 )
-            : input.op.patch,
-        value24: Dynamic = rebaseReplacementPatch(
-          options2.createBase,
-          value23,
-          options2.server,
+            : failedWrite.op.patch,
+        rebasedPatch: Dynamic = rebaseReplacementPatch(
+          pathState.createBase,
+          replacement,
+          pathState.server,
         );
-      options2.createBase = options2.createTheirs = undefined;
-      options2.pending =
+      pathState.createBase = pathState.createTheirs = undefined;
+      pathState.pending =
         pending !== undefined && pending.patch === DELETE_DOCUMENT
           ? pending
-          : value24 === null
+          : rebasedPatch === null
             ? undefined
             : {
-                patch: value24,
+                patch: rebasedPatch,
                 replace: false,
               };
-      options2.pending !== undefined &&
-        ((options2.due = true),
-        options2.seq === 0 && (options2.seq = ++index4));
+      pathState.pending !== undefined &&
+        ((pathState.due = true),
+        pathState.seq === 0 && (pathState.seq = ++writeSequence));
       return;
     }
-    if (input.op.patch === DELETE_DOCUMENT)
-      pending === undefined && (options2.pending = input.op);
-    else if (pending === undefined) options2.pending = input.op;
+    if (failedWrite.op.patch === DELETE_DOCUMENT)
+      pending === undefined && (pathState.pending = failedWrite.op);
+    else if (pending === undefined) pathState.pending = failedWrite.op;
     else if (pending.patch !== DELETE_DOCUMENT)
-      if (pending.replace) options2.pending = pending;
-      else if (input.op.replace)
-        options2.pending = {
+      if (pending.replace) pathState.pending = pending;
+      else if (failedWrite.op.replace)
+        pathState.pending = {
           patch: removeNullValues(
-            deepMerge(input.op.patch, pending.patch),
+            deepMerge(failedWrite.op.patch, pending.patch),
           ),
           replace: true,
         };
       else {
-        let server: Dynamic = options2.server;
-        for (let value23 of options2.acked as Dynamic)
-          server = value23.del
+        let server: Dynamic = pathState.server;
+        for (let write of pathState.acked as Dynamic)
+          server = write.del
             ? undefined
-            : applyPendingPatch(server, value23);
-        options2.pending = combinePendingPatches(
-          input.op.patch,
+            : applyPendingPatch(server, write);
+        pathState.pending = combinePendingPatches(
+          failedWrite.op.patch,
           pending.patch,
           server,
         );
-        options2.pending === undefined &&
-          withdrawPendingWrite(input.path, options2);
+        pathState.pending === undefined &&
+          withdrawPendingWrite(failedWrite.path, pathState);
       }
-    options2.pending !== undefined &&
-      ((options2.due = true),
-      options2.seq === 0 && (options2.seq = ++index4));
+    pathState.pending !== undefined &&
+      ((pathState.due = true),
+      pathState.seq === 0 && (pathState.seq = ++writeSequence));
   }
-  function handleWriteFailure(input?: Dynamic, options2?: Dynamic): Dynamic {
-    if (flag15) return;
-    let value23: Dynamic = ensurePathState(input.path),
-      entry: Dynamic = entries.get(input.path),
-      value24: Dynamic =
-        options2.code === "unavailable" ||
-        options2.code === "resource_exhausted";
+  function handleWriteFailure(write?: Dynamic, error?: Dynamic): Dynamic {
+    if (disposed) return;
+    let pathState: Dynamic = ensurePathState(write.path),
+      entry: Dynamic = deferredChanges.get(write.path),
+      canRetry: Dynamic =
+        error.code === "unavailable" ||
+        error.code === "resource_exhausted";
     entry?.type === "removed"
-      ? (entries.delete(input.path), items.push(entry), applyServerChanges())
-      : value24 || entries.delete(input.path);
-    inFlightWrites.delete(input.path);
-    value23.inflight = undefined;
-    value23.inflightEchoed = undefined;
-    let value25: Dynamic = timers.now();
-    if (DATABASE_ACCESS_DENIED_CODES.includes(options2.code)) {
-      restoreFailedWrite(input, value23);
-      return endLiveSync(options2);
+      ? (deferredChanges.delete(write.path), pendingServerChanges.push(entry), applyServerChanges())
+      : canRetry || deferredChanges.delete(write.path);
+    inFlightWrites.delete(write.path);
+    pathState.inflight = undefined;
+    pathState.inflightEchoed = undefined;
+    let failedAt: Dynamic = timers.now();
+    if (DATABASE_ACCESS_DENIED_CODES.includes(error.code)) {
+      restoreFailedWrite(write, pathState);
+      return endLiveSync(error);
     }
-    (options2.code === "unavailable" ||
-      options2.code === "resource_exhausted") &&
-      (flag13 = true);
-    if (options2.code === "unavailable") {
-      value23.failures += 1;
-      restoreFailedWrite(input, value23);
-      if (value23.pending !== undefined)
-        if (value23.failures === 1) {
-          let [value26, value27]: Dynamic = LIVE_CONFLICT_RETRY_MS;
-          value23.notBefore =
-            value25 + value26 + timers.random() * (value27 - value26);
+    (error.code === "unavailable" ||
+      error.code === "resource_exhausted") &&
+      (serializeWrites = true);
+    if (error.code === "unavailable") {
+      pathState.failures += 1;
+      restoreFailedWrite(write, pathState);
+      if (pathState.pending !== undefined)
+        if (pathState.failures === 1) {
+          let [minRetryDelayMs, maxRetryDelayMs]: Dynamic = LIVE_CONFLICT_RETRY_MS;
+          pathState.notBefore =
+            failedAt + minRetryDelayMs + timers.random() * (maxRetryDelayMs - minRetryDelayMs);
         } else {
-          flag9 = true;
-          value23.notBefore = value25 + writeFailureBackoff(value23.failures);
-          value13 = value23.notBefore;
-          value15 = {
-            code: options2.code,
-            message: options2.message,
-            path: input.path,
+          hasWriteBackoffError = true;
+          pathState.notBefore = failedAt + writeFailureBackoff(pathState.failures);
+          value13 = pathState.notBefore;
+          lastError = {
+            code: error.code,
+            message: error.message,
+            path: write.path,
           };
         }
     } else
-      options2.code === "resource_exhausted"
-        ? (restoreFailedWrite(input, value23),
-          value23.pending !== undefined &&
-            ((index6 += 1),
-            (index5 =
-              value25 +
+      error.code === "resource_exhausted"
+        ? (restoreFailedWrite(write, pathState),
+          pathState.pending !== undefined &&
+            ((rateLimitFailures += 1),
+            (writesPausedUntil =
+              failedAt +
               Math.min(
                 LIVE_RETRY_MAX_BACKOFF_MS,
-                LIVE_RETRY_INITIAL_BACKOFF_MS * 2 ** (index6 - 1),
+                LIVE_RETRY_INITIAL_BACKOFF_MS * 2 ** (rateLimitFailures - 1),
               )),
-            (value9 ??= value25),
-            (value15 = {
-              code: options2.code,
-              message: options2.message,
-              path: input.path,
+            (firstRateLimitAt ??= failedAt),
+            (lastError = {
+              code: error.code,
+              message: error.message,
+              path: write.path,
             })))
-        : options2.code === "invalid_argument" &&
-            input.verb === "update" &&
-            value23.removedSeen &&
-            value23.server === undefined
-          ? (value23.pending !== undefined &&
-            (value23.pending.patch === DELETE_DOCUMENT ||
-              (value23.pending.replace && !value23.exists))
-              ? ((value23.failures = 0), clearRecoveredWriteError())
-              : withdrawPendingWrite(input.path, value23),
-            (value23.exists = false),
-            (value23.acked = []),
-            updateEffectiveDocument(input.path) && composeDocument(true),
-            value23.goneNoticed !== true &&
-              options.onNotice?.(
+        : error.code === "invalid_argument" &&
+            write.verb === "update" &&
+            pathState.removedSeen &&
+            pathState.server === undefined
+          ? (pathState.pending !== undefined &&
+            (pathState.pending.patch === DELETE_DOCUMENT ||
+              (pathState.pending.replace && !pathState.exists))
+              ? ((pathState.failures = 0), clearRecoveredWriteError())
+              : withdrawPendingWrite(write.path, pathState),
+            (pathState.exists = false),
+            (pathState.acked = []),
+            updateEffectiveDocument(write.path) && composeDocument(true),
+            pathState.goneNoticed !== true &&
+              liveOptions.onNotice?.(
                 "An item you were editing was deleted by someone else.",
               ),
-            (value23.goneNoticed = true))
-          : parkRejectedWrite(input, value23, options2);
-    value23.pending === undefined && entries.delete(input.path);
-    updateEffectiveDocument(input.path) && composeDocument(true);
-    value23.acked.length > 0 && scheduleAckPruning();
+            (pathState.goneNoticed = true))
+          : parkRejectedWrite(write, pathState, error);
+    pathState.pending === undefined && deferredChanges.delete(write.path);
+    updateEffectiveDocument(write.path) && composeDocument(true);
+    pathState.acked.length > 0 && scheduleAckPruning();
     scheduleWriteFlush();
   }
   function parkRejectedWrite(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    write?: Dynamic,
+    pathState?: Dynamic,
+    error?: Dynamic,
   ): Dynamic {
-    restoreFailedWrite(input, options2);
-    if (options2.pending === undefined) return;
-    let value23: Dynamic = effectivePathValue(input.path),
-      value24: Dynamic =
-        (value23 !== undefined
+    restoreFailedWrite(write, pathState);
+    if (pathState.pending === undefined) return;
+    let document: Dynamic = effectivePathValue(write.path),
+      reason: Dynamic =
+        (document !== undefined
           ? codec.refuse?.(
-              input.path,
-              value23,
-              collectionContentSize(dirname(input.path)),
+              write.path,
+              document,
+              collectionContentSize(dirname(write.path)),
             )
           : undefined) ??
-        "This change can\u2019t be stored (" + context.message + ").";
-    options2.parked = value24;
-    parkedWrites.set(input.path, value24);
-    value15 = {
-      code: context.code,
-      message: value24,
-      path: input.path,
+        "This change can\u2019t be stored (" + error.message + ").";
+    pathState.parked = reason;
+    parkedWrites.set(write.path, reason);
+    lastError = {
+      code: error.code,
+      message: reason,
+      path: write.path,
     };
   }
   function retryParkedWrites(): Dynamic {
-    for (let [value23, value24] of pathStates as Dynamic)
-      value24.parked !== undefined &&
-        ((value24.parked = undefined),
-        parkedWrites.delete(value23),
-        validatePendingWrite(value23, value24),
-        value24.parked === undefined && (value24.due = true));
+    for (let [path, pathState] of pathStates as Dynamic)
+      pathState.parked !== undefined &&
+        ((pathState.parked = undefined),
+        parkedWrites.delete(path),
+        validatePendingWrite(path, pathState),
+        pathState.parked === undefined && (pathState.due = true));
   }
   function flushPendingNow(): Dynamic {
-    flag8 && decomposeChanges();
-    let value23: Dynamic = timers.now();
-    for (let value24 of pathStates.values() as Dynamic)
-      value24.pending !== undefined &&
-        ((value24.due = true),
-        (value24.notBefore = Math.min(value24.notBefore, value23)));
-    index5 = 0;
+    needsDecompose && decomposeChanges();
+    let now: Dynamic = timers.now();
+    for (let pathState of pathStates.values() as Dynamic)
+      pathState.pending !== undefined &&
+        ((pathState.due = true),
+        (pathState.notBefore = Math.min(pathState.notBefore, now)));
+    writesPausedUntil = 0;
     scheduleWriteFlush();
   }
-  function endLiveSync(input?: Dynamic): Dynamic {
-    if (value7 === undefined) {
+  function endLiveSync(error?: Dynamic): Dynamic {
+    if (liveSyncError === undefined) {
       unsubscribeCollections();
       clearTimers();
-      if (!flag10) {
-        flag15 = true;
+      if (!hasShownContent) {
+        disposed = true;
         removeLifecycleListeners();
-        options.onStoreUnavailable(
-          input.code + (input.message ? ": " + input.message : ""),
+        liveOptions.onStoreUnavailable(
+          error.code + (error.message ? ": " + error.message : ""),
         );
         return;
       }
-      value7 = input;
-      loadState === "cached" && (flag12 = true);
-      for (let value23 of [...loadListeners] as Dynamic) value23();
-      options.onNotice?.(
+      liveSyncError = error;
+      loadState === "cached" && (cachedReconnectAvailable = true);
+      for (let listener of [...loadListeners] as Dynamic) listener();
+      liveOptions.onNotice?.(
         "Live sync ended for this view. Reload the page to continue editing.",
       );
       notifyContent(false);
     }
   }
   function clearTimers(): Dynamic {
-    for (let value23 of [
-      value8,
-      value2,
-      value16,
-      value18,
-      value5,
-      value4,
-      value10,
-      value17,
-      value12,
+    for (let timer of [
+      writeFlushTimer,
+      initialLoadTimer,
+      ackPruningTimer,
+      resubscribeTimer,
+      reconnectTimer,
+      recoveryTimer,
+      cachedReconnectAvailabilityTimer,
+      cachedReconnectTimer,
+      saveStatusTimer,
     ] as Dynamic)
-      value23 !== undefined && timers.clearTimeout(value23);
-    value8 =
-      value2 =
-      value16 =
-      value18 =
-      value5 =
-      value4 =
-      value10 =
-      value17 =
-      value12 =
+      timer !== undefined && timers.clearTimeout(timer);
+    writeFlushTimer =
+      initialLoadTimer =
+      ackPruningTimer =
+      resubscribeTimer =
+      reconnectTimer =
+      recoveryTimer =
+      cachedReconnectAvailabilityTimer =
+      cachedReconnectTimer =
+      saveStatusTimer =
         undefined;
   }
-  let items: Dynamic = [],
-    flag16: Dynamic = false,
-    flag17: Dynamic = false,
-    flag18: Dynamic = false,
-    value17: Dynamic,
-    index7: Dynamic = 0,
-    entries: Dynamic = new Map(),
-    entries2: Dynamic = new Map();
+  let pendingServerChanges: Dynamic = [],
+    serverFlushScheduled: Dynamic = false,
+    resumeWritesAfterReconnect: Dynamic = false,
+    reconnectTimeoutExtended: Dynamic = false,
+    cachedReconnectTimer: Dynamic,
+    cachedReconnectAttempts: Dynamic = 0,
+    deferredChanges: Dynamic = new Map(),
+    deferredOperations: Dynamic = new Map();
   function deferPendingServerEcho(
-    input?: Dynamic,
-    options2?: Dynamic,
+    change?: Dynamic,
+    snapshotInfo?: Dynamic,
   ): Dynamic {
-    if (!options2.hasPendingWrites || !inFlightWrites.has(input.path))
+    if (!snapshotInfo.hasPendingWrites || !inFlightWrites.has(change.path))
       return false;
     if (
-      input.type === "removed" &&
-      inFlightWrites.get(input.path).verb !== "delete"
+      change.type === "removed" &&
+      inFlightWrites.get(change.path).verb !== "delete"
     ) {
-      entries.delete(input.path);
+      deferredChanges.delete(change.path);
       return false;
     }
-    entries.set(input.path, input);
-    entries2.set(input.path, inFlightWrites.get(input.path).op);
-    let entry: Dynamic = pathStates.get(input.path),
-      value23: Dynamic = entry?.inflight;
+    deferredChanges.set(change.path, change);
+    deferredOperations.set(change.path, inFlightWrites.get(change.path).op);
+    let entry: Dynamic = pathStates.get(change.path),
+      inflight: Dynamic = entry?.inflight;
     entry !== undefined &&
       entry.createBase !== undefined &&
-      input.type !== "removed" &&
-      value23 !== undefined &&
-      value23.patch !== DELETE_DOCUMENT &&
-      value23.replace &&
-      !structurallyEqual(input.data ?? {}, value23.patch) &&
-      (entry.createTheirs = input.data ?? {});
+      change.type !== "removed" &&
+      inflight !== undefined &&
+      inflight.patch !== DELETE_DOCUMENT &&
+      inflight.replace &&
+      !structurallyEqual(change.data ?? {}, inflight.patch) &&
+      (entry.createTheirs = change.data ?? {});
     return true;
   }
-  function releaseDeferredEcho(input?: Dynamic, options2?: Dynamic): Dynamic {
-    let entry: Dynamic = entries.get(input),
-      entry2: Dynamic = entries2.get(input);
-    entries.delete(input);
-    entries2.delete(input);
+  function releaseDeferredEcho(path?: Dynamic, completedOperation?: Dynamic): Dynamic {
+    let entry: Dynamic = deferredChanges.get(path),
+      deferredOperation: Dynamic = deferredOperations.get(path);
+    deferredChanges.delete(path);
+    deferredOperations.delete(path);
     entry !== undefined &&
-      ((entry2 !== undefined && !equalPendingOperations(entry2, options2)) ||
-        (items.push(entry), applyServerChanges()));
+      ((deferredOperation !== undefined && !equalPendingOperations(deferredOperation, completedOperation)) ||
+        (pendingServerChanges.push(entry), applyServerChanges()));
   }
   function equalPendingOperations(
-    input?: Dynamic,
-    options2?: Dynamic,
+    left?: Dynamic,
+    right?: Dynamic,
   ): Dynamic {
-    return input === options2
+    return left === right
       ? true
-      : input.patch === DELETE_DOCUMENT ||
-          options2.patch === DELETE_DOCUMENT
-        ? input.patch === options2.patch
-        : input.replace === options2.replace &&
-          structurallyEqual(input.patch, options2.patch);
+      : left.patch === DELETE_DOCUMENT ||
+          right.patch === DELETE_DOCUMENT
+        ? left.patch === right.patch
+        : left.replace === right.replace &&
+          structurallyEqual(left.patch, right.patch);
   }
   function handleCollectionSnapshot(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    collectionPath?: Dynamic,
+    changes?: Dynamic,
+    snapshotInfo?: Dynamic,
   ): Dynamic {
-    if (flag15 || value7 !== undefined) return;
-    flag && collectionSubscriptions.length > 0 && !context.fromCache
-      ? ((flag = false),
-        (index8 = 0),
-        value18 !== undefined &&
-          (timers.clearTimeout(value18), (value18 = undefined)),
-        (flag17 = true),
-        loadState === "cached" && flag12 && scheduleCachedReconnect())
-      : flag &&
+    if (disposed || liveSyncError !== undefined) return;
+    reconnecting && collectionSubscriptions.length > 0 && !snapshotInfo.fromCache
+      ? ((reconnecting = false),
+        (resubscribeAttempts = 0),
+        resubscribeTimer !== undefined &&
+          (timers.clearTimeout(resubscribeTimer), (resubscribeTimer = undefined)),
+        (resumeWritesAfterReconnect = true),
+        loadState === "cached" && cachedReconnectAvailable && scheduleCachedReconnect())
+      : reconnecting &&
         collectionSubscriptions.length > 0 &&
-        value18 !== undefined &&
-        !flag18 &&
-        ((flag18 = true),
+        resubscribeTimer !== undefined &&
+        !reconnectTimeoutExtended &&
+        ((reconnectTimeoutExtended = true),
         scheduleReconnectTimeout(LIVE_EXTENDED_LOAD_TIMEOUT_MS));
-    let value23: Dynamic = (
-      context.fromCache
-        ? options2.map(
-            (input2?: Dynamic): Dynamic => ({
-              ...input2,
+    let applicableChanges: Dynamic = (
+      snapshotInfo.fromCache
+        ? changes.map(
+            (change?: Dynamic): Dynamic => ({
+              ...change,
               cached: true,
             }),
           )
-        : options2
+        : changes
     ).filter(
-      (input2?: Dynamic): Dynamic => !deferPendingServerEcho(input2, context),
+      (change?: Dynamic): Dynamic => !deferPendingServerEcho(change, snapshotInfo),
     );
-    for (let value25 of options2 as Dynamic)
-      (!context.hasPendingWrites || !inFlightWrites.has(value25.path)) &&
-        entries.delete(value25.path);
-    for (let value25 of value23 as Dynamic) items.push(value25);
-    context.fromCache ? (flag2 = true) : loadedCollections.add(input);
-    if (context.fromCache) values3.add(input);
-    else if (values3.delete(input)) {
-      let value25: Dynamic = timers.now();
-      for (let [value26, value27] of pathStates as Dynamic)
-        dirname(value26) === input &&
-          (value27.deliveredAt = value25);
+    for (let change of changes as Dynamic)
+      (!snapshotInfo.hasPendingWrites || !inFlightWrites.has(change.path)) &&
+        deferredChanges.delete(change.path);
+    for (let change of applicableChanges as Dynamic) pendingServerChanges.push(change);
+    snapshotInfo.fromCache ? (hasCachedSnapshot = true) : loadedCollections.add(collectionPath);
+    if (snapshotInfo.fromCache) cachedCollections.add(collectionPath);
+    else if (cachedCollections.delete(collectionPath)) {
+      let deliveredAt: Dynamic = timers.now();
+      for (let [path, pathState] of pathStates as Dynamic)
+        dirname(path) === collectionPath &&
+          (pathState.deliveredAt = deliveredAt);
     }
-    values2.add(input);
-    context.hasPendingWrites ? values.add(input) : values.delete(input);
-    value23.some((input2?: Dynamic): Dynamic => input2.type !== "removed") &&
-      (flag7 = true);
-    !flag3 &&
-      value23.some(
-        (input2?: Dynamic): Dynamic =>
-          input2.type !== "removed" && input2.path === metaPath,
+    seenCollections.add(collectionPath);
+    snapshotInfo.hasPendingWrites ? collectionsWithPendingWrites.add(collectionPath) : collectionsWithPendingWrites.delete(collectionPath);
+    applicableChanges.some((change?: Dynamic): Dynamic => change.type !== "removed") &&
+      (hasReceivedDocument = true);
+    !hasMetadataSnapshot &&
+      applicableChanges.some(
+        (change?: Dynamic): Dynamic =>
+          change.type !== "removed" && change.path === metaPath,
       ) &&
-      ((flag3 = true), scheduleReconnectRecovery());
+      ((hasMetadataSnapshot = true), scheduleReconnectRecovery());
     (loadState === "loading" || loadState === "failed") &&
       scheduleInitialLoadTimeout();
-    let value24: Dynamic = value3?.get(input);
-    if (value24 !== undefined) {
-      for (let value25 of options2 as Dynamic)
-        value25.type === "removed"
-          ? value24.delete(value25.path)
-          : value24.add(value25.path);
-      context.fromCache || reconcileRemovedDocuments(input, value24);
+    let refreshedPaths: Dynamic = refreshPathsByCollection?.get(collectionPath);
+    if (refreshedPaths !== undefined) {
+      for (let change of changes as Dynamic)
+        change.type === "removed"
+          ? refreshedPaths.delete(change.path)
+          : refreshedPaths.add(change.path);
+      snapshotInfo.fromCache || reconcileRemovedDocuments(collectionPath, refreshedPaths);
     }
-    index = timers.now();
-    flag16 || ((flag16 = true), queueMicrotask(applyServerChanges));
+    lastSnapshotAt = timers.now();
+    serverFlushScheduled || ((serverFlushScheduled = true), queueMicrotask(applyServerChanges));
   }
   function resolveNestedServerPatch(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
-    value23: Dynamic = [],
+    previousServerDocument?: Dynamic,
+    nextServerDocument?: Dynamic,
+    patch?: Dynamic,
+    queuedOperations: Dynamic = [],
   ): Dynamic {
-    let value24: Dynamic,
-      index9: Dynamic = 0;
-    for (let value25 of Object.keys(context) as Dynamic) {
-      let value26: Dynamic = context[value25],
-        value27: Dynamic = input[value25],
-        value28: Dynamic = options2[value25];
+    let resolvedPatch: Dynamic,
+      remainingFieldCount: Dynamic = 0;
+    for (let key of Object.keys(patch) as Dynamic) {
+      let patchValue: Dynamic = patch[key],
+        previousValue: Dynamic = previousServerDocument[key],
+        nextValue: Dynamic = nextServerDocument[key];
       if (
-        isPlainRecord(value26) &&
-        isPlainRecord(value27) &&
-        !isPlainRecord(value28)
+        isPlainRecord(patchValue) &&
+        isPlainRecord(previousValue) &&
+        !isPlainRecord(nextValue)
       ) {
-        if (pendingWritesObjectField(value23, value25)) {
-          index9 += 1;
+        if (pendingWritesObjectField(queuedOperations, key)) {
+          remainingFieldCount += 1;
           continue;
         }
-        value24 ??= {
-          ...context,
+        resolvedPatch ??= {
+          ...patch,
         };
-        delete value24[value25];
+        delete resolvedPatch[key];
         continue;
       }
       if (
-        isPlainRecord(value26) &&
-        isPlainRecord(value27) &&
-        isPlainRecord(value28)
+        isPlainRecord(patchValue) &&
+        isPlainRecord(previousValue) &&
+        isPlainRecord(nextValue)
       ) {
-        let value29: Dynamic = resolveNestedServerPatch(
-          value27,
-          value28,
-          value26,
-          pendingFieldPatches(value23, value25),
+        let nestedPatch: Dynamic = resolveNestedServerPatch(
+          previousValue,
+          nextValue,
+          patchValue,
+          pendingFieldPatches(queuedOperations, key),
         );
-        value29 !== value26 &&
-          ((value24 ??= {
-            ...context,
+        nestedPatch !== patchValue &&
+          ((resolvedPatch ??= {
+            ...patch,
           }),
-          value29 === undefined
-            ? delete value24[value25]
-            : (value24[value25] = value29));
-        value29 !== undefined && (index9 += 1);
+          nestedPatch === undefined
+            ? delete resolvedPatch[key]
+            : (resolvedPatch[key] = nestedPatch));
+        nestedPatch !== undefined && (remainingFieldCount += 1);
         continue;
       }
-      index9 += 1;
+      remainingFieldCount += 1;
     }
-    return value24 === undefined ? context : index9 > 0 ? value24 : undefined;
+    return resolvedPatch === undefined ? patch : remainingFieldCount > 0 ? resolvedPatch : undefined;
   }
   function pendingWritesObjectField(
-    input?: Dynamic,
-    options2?: Dynamic,
+    operations?: Dynamic,
+    key?: Dynamic,
   ): Dynamic {
-    let flag19: Dynamic = false;
-    for (let value23 of input as Dynamic)
-      (value23.replace || Object.hasOwn(value23.patch, options2)) &&
-        (flag19 = !isPlainRecord(value23.patch[options2]));
-    return flag19;
+    let lastWriteReplacesObject: Dynamic = false;
+    for (let operation of operations as Dynamic)
+      (operation.replace || Object.hasOwn(operation.patch, key)) &&
+        (lastWriteReplacesObject = !isPlainRecord(operation.patch[key]));
+    return lastWriteReplacesObject;
   }
-  function pendingFieldPatches(input?: Dynamic, options2?: Dynamic): Dynamic {
-    let items2: Dynamic = [];
-    for (let value23 of input as Dynamic) {
-      let value24: Dynamic = value23.patch[options2];
-      isPlainRecord(value24)
-        ? items2.push({
-            patch: value24,
-            replace: value23.replace,
+  function pendingFieldPatches(operations?: Dynamic, key?: Dynamic): Dynamic {
+    let fieldOperations: Dynamic = [];
+    for (let operation of operations as Dynamic) {
+      let fieldPatch: Dynamic = operation.patch[key];
+      isPlainRecord(fieldPatch)
+        ? fieldOperations.push({
+            patch: fieldPatch,
+            replace: operation.replace,
           })
-        : (value23.replace || Object.hasOwn(value23.patch, options2)) &&
-          items2.push({
+        : (operation.replace || Object.hasOwn(operation.patch, key)) &&
+          fieldOperations.push({
             patch: {},
             replace: true,
           });
     }
-    return items2;
+    return fieldOperations;
   }
-  function containsServerPatch(input?: Dynamic, options2?: Dynamic): Dynamic {
-    for (let value23 of Object.keys(options2) as Dynamic) {
-      let value24: Dynamic = options2[value23],
-        value25: Dynamic = input[value23];
-      if (value24 === null) {
-        if (value25 != null) return false;
+  function containsServerPatch(serverDocument?: Dynamic, patch?: Dynamic): Dynamic {
+    for (let key of Object.keys(patch) as Dynamic) {
+      let patchValue: Dynamic = patch[key],
+        serverValue: Dynamic = serverDocument[key];
+      if (patchValue === null) {
+        if (serverValue != null) return false;
       } else if (
-        isPlainRecord(value24) &&
-        isPlainRecord(value25)
+        isPlainRecord(patchValue) &&
+        isPlainRecord(serverValue)
       ) {
-        if (!containsServerPatch(value25, value24)) return false;
-      } else if (!structurallyEqual(value24, value25))
+        if (!containsServerPatch(serverValue, patchValue)) return false;
+      } else if (!structurallyEqual(patchValue, serverValue))
         return false;
     }
     return true;
   }
   function applyServerChanges(): Dynamic {
-    flag16 = false;
-    let value23: Dynamic = items;
-    items = [];
-    if (flag15 || value7 !== undefined) return;
-    let values4: Dynamic = new Set(),
-      value24: Dynamic = timers.now(),
-      flag19: Dynamic = false;
-    for (let value25 of value23 as Dynamic) {
-      let value26: Dynamic = ensurePathState(value25.path);
-      (!value25.cached || value25.type === "removed") &&
-        (value26.deliveredAt = value24);
-      if (value25.type === "removed") {
-        let exists: Dynamic = value26.exists;
-        value26.server = undefined;
-        value26.removedSeen = true;
-        value26.createBase =
-          value26.createTheirs =
-          value26.heldBase =
+    serverFlushScheduled = false;
+    let changes: Dynamic = pendingServerChanges;
+    pendingServerChanges = [];
+    if (disposed || liveSyncError !== undefined) return;
+    let changedPaths: Dynamic = new Set(),
+      now: Dynamic = timers.now(),
+      discardedLocalEdits: Dynamic = false;
+    for (let change of changes as Dynamic) {
+      let pathState: Dynamic = ensurePathState(change.path);
+      (!change.cached || change.type === "removed") &&
+        (pathState.deliveredAt = now);
+      if (change.type === "removed") {
+        let previouslyExisted: Dynamic = pathState.exists;
+        pathState.server = undefined;
+        pathState.removedSeen = true;
+        pathState.createBase =
+          pathState.createTheirs =
+          pathState.heldBase =
             undefined;
-        let value27: Dynamic = value26.acked.findIndex(
-          (input?: Dynamic): Dynamic =>
-            input.del && value24 - input.at < LIVE_WRITE_ACK_TIMEOUT_MS,
+        let lastLocalDeleteIndex: Dynamic = pathState.acked.findIndex(
+          (write?: Dynamic): Dynamic =>
+            write.del && now - write.at < LIVE_WRITE_ACK_TIMEOUT_MS,
         );
-        if (loadedMetadataCollections.delete(value25.path) && value27 < 0)
+        if (recreatedPaths.delete(change.path) && lastLocalDeleteIndex < 0)
           for (
-            let index9: Dynamic = 0;
-            index9 < value26.acked.length;
-            index9++
+            let index: Dynamic = 0;
+            index < pathState.acked.length;
+            index++
           )
-            value26.acked[index9].del && (value27 = index9);
-        let value28: Dynamic =
-          value27 >= 0 || value26.inflight?.patch === DELETE_DOCUMENT;
-        value26.acked = value27 < 0 ? [] : value26.acked.slice(value27 + 1);
-        value26.exists =
-          value26.acked.length > 0 &&
-          !value26.acked[value26.acked.length - 1].del;
+            pathState.acked[index].del && (lastLocalDeleteIndex = index);
+        let wasLocalDeletion: Dynamic =
+          lastLocalDeleteIndex >= 0 || pathState.inflight?.patch === DELETE_DOCUMENT;
+        pathState.acked = lastLocalDeleteIndex < 0 ? [] : pathState.acked.slice(lastLocalDeleteIndex + 1);
+        pathState.exists =
+          pathState.acked.length > 0 &&
+          !pathState.acked[pathState.acked.length - 1].del;
         !(
-          value28 &&
-          (value26.exists ||
-            (value26.inflight !== undefined &&
-              value26.inflight.patch !== DELETE_DOCUMENT &&
-              value26.inflight.replace))
+          wasLocalDeletion &&
+          (pathState.exists ||
+            (pathState.inflight !== undefined &&
+              pathState.inflight.patch !== DELETE_DOCUMENT &&
+              pathState.inflight.replace))
         ) &&
           discardInvalidPending(
-            value25.path,
-            value26,
-            exists &&
-              !value28 &&
-              value26.reAdd !== true &&
-              value25.path !== metaPath,
+            change.path,
+            pathState,
+            previouslyExisted &&
+              !wasLocalDeletion &&
+              pathState.reAdd !== true &&
+              change.path !== metaPath,
           ) &&
-          ((flag19 = true), (value26.goneNoticed = true));
+          ((discardedLocalEdits = true), (pathState.goneNoticed = true));
       } else {
-        let server: Dynamic = value26.server;
-        value26.server = value25.data ?? {};
-        value26.exists = true;
-        value25.cached || (value26.reAdd = undefined);
-        value26.removedSeen = false;
-        value26.goneNoticed = undefined;
-        let server2: Dynamic = value26.server,
-          inflight: Dynamic = value26.inflight,
-          flag21: Dynamic = false;
+        let previousServerDocument: Dynamic = pathState.server;
+        pathState.server = change.data ?? {};
+        pathState.exists = true;
+        change.cached || (pathState.reAdd = undefined);
+        pathState.removedSeen = false;
+        pathState.goneNoticed = undefined;
+        let nextServerDocument: Dynamic = pathState.server,
+          inflight: Dynamic = pathState.inflight,
+          matchesInflightWrite: Dynamic = false;
         inflight !== undefined &&
           inflight.patch !== DELETE_DOCUMENT &&
-          value26.inflightEchoed !== true &&
-          ((value26.inflightEchoed = inflight.replace
-            ? structurallyEqual(server2, inflight.patch)
-            : containsServerPatch(server2, inflight.patch)),
-          (flag21 = value26.inflightEchoed === true));
-        if (value26.createBase !== undefined)
-          if (value26.inflightEchoed === true)
-            value26.createTheirs === undefined &&
-              (value26.createBase = undefined);
+          pathState.inflightEchoed !== true &&
+          ((pathState.inflightEchoed = inflight.replace
+            ? structurallyEqual(nextServerDocument, inflight.patch)
+            : containsServerPatch(nextServerDocument, inflight.patch)),
+          (matchesInflightWrite = pathState.inflightEchoed === true));
+        if (pathState.createBase !== undefined)
+          if (pathState.inflightEchoed === true)
+            pathState.createTheirs === undefined &&
+              (pathState.createBase = undefined);
           else if (
             inflight !== undefined ||
-            value26.pending === undefined ||
-            value26.pending.patch === DELETE_DOCUMENT ||
-            !value26.pending.replace
+            pathState.pending === undefined ||
+            pathState.pending.patch === DELETE_DOCUMENT ||
+            !pathState.pending.replace
           )
             inflight !== undefined
-              ? (value26.createTheirs = server2)
-              : (value26.createBase = undefined);
+              ? (pathState.createTheirs = nextServerDocument)
+              : (pathState.createBase = undefined);
           else {
-            let value28: Dynamic = rebaseReplacementPatch(
-              value26.createBase,
-              value26.pending.patch,
-              server2,
+            let rebasedPatch: Dynamic = rebaseReplacementPatch(
+              pathState.createBase,
+              pathState.pending.patch,
+              nextServerDocument,
             );
-            value26.createBase = undefined;
-            value28 === null
-              ? withdrawPendingWrite(value25.path, value26)
-              : (value26.pending = {
-                  patch: value28,
+            pathState.createBase = undefined;
+            rebasedPatch === null
+              ? withdrawPendingWrite(change.path, pathState)
+              : (pathState.pending = {
+                  patch: rebasedPatch,
                   replace: false,
                 });
           }
-        let items2: Dynamic = [],
-          value27: Dynamic =
+        let echoedWrites: Dynamic = [],
+          inflightAsAcknowledged: Dynamic =
             inflight !== undefined &&
             inflight.patch !== DELETE_DOCUMENT
               ? {
@@ -1769,91 +1769,91 @@ function createLiveDocument(options?: Dynamic): Dynamic {
                   since: 0,
                 }
               : undefined;
-        if (value26.inflightEchoed === true) {
-          items2 =
-            value27 !== undefined
-              ? [...value26.acked, value27]
-              : value26.acked;
-          value26.acked = [];
+        if (pathState.inflightEchoed === true) {
+          echoedWrites =
+            inflightAsAcknowledged !== undefined
+              ? [...pathState.acked, inflightAsAcknowledged]
+              : pathState.acked;
+          pathState.acked = [];
         } else {
-          let value28: Dynamic = -1;
-          value26.acked.forEach(
-            (input?: Dynamic, options2?: Dynamic): Dynamic => {
-              !input.del &&
-                (input.replace
-                  ? structurallyEqual(server2, input.patch)
-                  : containsServerPatch(server2, input.patch)) &&
-                (value28 = options2);
+          let lastMatchingWriteIndex: Dynamic = -1;
+          pathState.acked.forEach(
+            (write?: Dynamic, index?: Dynamic): Dynamic => {
+              !write.del &&
+                (write.replace
+                  ? structurallyEqual(nextServerDocument, write.patch)
+                  : containsServerPatch(nextServerDocument, write.patch)) &&
+                (lastMatchingWriteIndex = index);
             },
           );
-          value28 >= 0 &&
-            ((items2 = value26.acked.slice(0, value28 + 1)),
-            (value26.acked = value26.acked.slice(value28 + 1)));
+          lastMatchingWriteIndex >= 0 &&
+            ((echoedWrites = pathState.acked.slice(0, lastMatchingWriteIndex + 1)),
+            (pathState.acked = pathState.acked.slice(lastMatchingWriteIndex + 1)));
         }
         if (
-          server !== undefined &&
-          value26.pending !== undefined &&
-          value26.pending.patch !== DELETE_DOCUMENT &&
-          !value26.pending.replace
+          previousServerDocument !== undefined &&
+          pathState.pending !== undefined &&
+          pathState.pending.patch !== DELETE_DOCUMENT &&
+          !pathState.pending.replace
         ) {
-          let value28: Dynamic = items2.filter(
-              (input?: Dynamic): Dynamic =>
-                !input.del && (input !== value27 || flag21),
+          let applicableWrites: Dynamic = echoedWrites.filter(
+              (write?: Dynamic): Dynamic =>
+                !write.del && (write !== inflightAsAcknowledged || matchesInflightWrite),
             ),
-            value29: Dynamic = resolveNestedServerPatch(
-              server,
-              server2,
-              value26.pending.patch,
-              value28,
+            resolvedPatch: Dynamic = resolveNestedServerPatch(
+              previousServerDocument,
+              nextServerDocument,
+              pathState.pending.patch,
+              applicableWrites,
             );
-          value29 !== value26.pending.patch &&
-            ((flag19 = true),
-            value29 === undefined
-              ? withdrawPendingWrite(value25.path, value26)
-              : (value26.pending = {
-                  patch: value29,
+          resolvedPatch !== pathState.pending.patch &&
+            ((discardedLocalEdits = true),
+            resolvedPatch === undefined
+              ? withdrawPendingWrite(change.path, pathState)
+              : (pathState.pending = {
+                  patch: resolvedPatch,
                   replace: false,
                 }));
         }
-        let held: Dynamic = value26.held;
-        value26.held =
+        let held: Dynamic = pathState.held;
+        pathState.held =
           isLoaded() &&
-          options.holdRemote?.(value25.path, value26.server) === true;
-        value26.held &&
-          (!held || value26.heldBase === undefined) &&
-          (value26.heldBase =
-            server ?? effectiveDocuments.get(value25.path) ?? null);
-        if (value26.held)
-          for (let value28 of items2 as Dynamic)
-            advanceHeldBase(value26, value28);
-        else value26.heldBase = undefined;
+          liveOptions.holdRemote?.(change.path, pathState.server) === true;
+        pathState.held &&
+          (!held || pathState.heldBase === undefined) &&
+          (pathState.heldBase =
+            previousServerDocument ?? effectiveDocuments.get(change.path) ?? null);
+        if (pathState.held)
+          for (let write of echoedWrites as Dynamic)
+            advanceHeldBase(pathState, write);
+        else pathState.heldBase = undefined;
       }
-      values4.add(value25.path);
+      changedPaths.add(change.path);
     }
-    loadedMetadataCollections.clear();
-    flag19 &&
+    recreatedPaths.clear();
+    discardedLocalEdits &&
       isLoaded() &&
-      options.onNotice?.(
+      liveOptions.onNotice?.(
         "An item you were editing was deleted by someone else.",
       );
-    for (let value25 of value23 as Dynamic) {
-      if (value25.type !== "removed") continue;
-      let entry: Dynamic = pathStates.get(value25.path);
+    for (let change of changes as Dynamic) {
+      if (change.type !== "removed") continue;
+      let entry: Dynamic = pathStates.get(change.path);
       entry &&
         entry.pending === undefined &&
         entry.inflight === undefined &&
         entry.acked.length === 0 &&
-        !effectiveDocuments.has(value25.path) &&
-        pathStates.delete(value25.path);
+        !effectiveDocuments.has(change.path) &&
+        pathStates.delete(change.path);
     }
-    value16 !== undefined &&
-      (timers.clearTimeout(value16), (value16 = undefined));
+    ackPruningTimer !== undefined &&
+      (timers.clearTimeout(ackPruningTimer), (ackPruningTimer = undefined));
     scheduleAckPruning();
     if (loadState !== "live") {
       loadState === "failed" && setLoadState("loading");
       if (
         collections.every(
-          (input?: Dynamic): Dynamic => loadedCollections.has(input),
+          (collectionPath?: Dynamic): Dynamic => loadedCollections.has(collectionPath),
         )
       ) {
         enterLiveMode();
@@ -1861,220 +1861,220 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       }
       if (loadState !== "cached") return;
     }
-    let flag20: Dynamic = false;
-    for (let value25 of values4 as Dynamic)
-      pathStates.get(value25)?.held ||
-        (updateEffectiveDocument(value25) && (flag20 = true));
-    flag8 && decomposeChanges();
-    flag20 ? composeDocument(true) : notifySaveState();
+    let changedEffectiveDocuments: Dynamic = false;
+    for (let path of changedPaths as Dynamic)
+      pathStates.get(path)?.held ||
+        (updateEffectiveDocument(path) && (changedEffectiveDocuments = true));
+    needsDecompose && decomposeChanges();
+    changedEffectiveDocuments ? composeDocument(true) : notifySaveState();
     resumeWritesAfterSnapshot();
   }
   function resumeWritesAfterSnapshot(): Dynamic {
-    flag17 && ((flag17 = false), scheduleWriteFlush());
+    resumeWritesAfterReconnect && ((resumeWritesAfterReconnect = false), scheduleWriteFlush());
   }
   function refreshEffectiveDocuments(): Dynamic {
-    let flag19: Dynamic = false,
-      values4: Dynamic = new Set([
+    let documentsChanged: Dynamic = false,
+      paths: Dynamic = new Set([
         ...pathStates.keys(),
         ...effectiveDocuments.keys(),
       ]);
-    for (let value23 of values4 as Dynamic)
-      pathStates.get(value23)?.held ||
-        (updateEffectiveDocument(value23) && (flag19 = true));
-    return flag19;
+    for (let path of paths as Dynamic)
+      pathStates.get(path)?.held ||
+        (updateEffectiveDocument(path) && (documentsChanged = true));
+    return documentsChanged;
   }
   function enterCachedMode(): Dynamic {
-    value2 !== undefined &&
-      (timers.clearTimeout(value2), (value2 = undefined));
-    flag8 && decomposeChanges();
+    initialLoadTimer !== undefined &&
+      (timers.clearTimeout(initialLoadTimer), (initialLoadTimer = undefined));
+    needsDecompose && decomposeChanges();
     loadState = "cached";
-    flag10 = true;
-    value10 = timers.setTimeout((): Dynamic => {
-      value10 = undefined;
-      if (!(loadState !== "cached" || flag15)) {
-        flag12 = true;
-        for (let value23 of [...loadListeners] as Dynamic) value23();
+    hasShownContent = true;
+    cachedReconnectAvailabilityTimer = timers.setTimeout((): Dynamic => {
+      cachedReconnectAvailabilityTimer = undefined;
+      if (!(loadState !== "cached" || disposed)) {
+        cachedReconnectAvailable = true;
+        for (let listener of [...loadListeners] as Dynamic) listener();
         scheduleCachedReconnect();
       }
     }, LIVE_EXTENDED_LOAD_TIMEOUT_MS - LIVE_INITIAL_LOAD_TIMEOUT_MS);
     refreshEffectiveDocuments();
     composeDocument(true);
-    for (let value23 of [...loadListeners] as Dynamic) value23();
+    for (let listener of [...loadListeners] as Dynamic) listener();
   }
   function composeCachedSnapshot(): Dynamic {
     if (
-      !flag2 ||
-      !flag3 ||
-      !collections.every((input?: Dynamic): Dynamic => values2.has(input))
+      !hasCachedSnapshot ||
+      !hasMetadataSnapshot ||
+      !collections.every((collectionPath?: Dynamic): Dynamic => seenCollections.has(collectionPath))
     )
       return false;
-    let entries3: Dynamic = new Map();
-    for (let value23 of pathStates.keys() as Dynamic) {
-      let value24: Dynamic = effectivePathValue(value23);
-      value24 !== undefined &&
-        entries3.set(value23, removeNullValues(value24));
+    let cachedDocuments: Dynamic = new Map();
+    for (let path of pathStates.keys() as Dynamic) {
+      let document: Dynamic = effectivePathValue(path);
+      document !== undefined &&
+        cachedDocuments.set(path, removeNullValues(document));
     }
     try {
       return codec
-        .compose(entries3, undefined)
+        .compose(cachedDocuments, undefined)
         .dangling.every(
-          (input?: Dynamic): Dynamic =>
-            pathStates.get(input)?.removedSeen === true,
+          (path?: Dynamic): Dynamic =>
+            pathStates.get(path)?.removedSeen === true,
         );
     } catch {
       return false;
     }
   }
   function enterLiveMode(): Dynamic {
-    value2 !== undefined &&
-      (timers.clearTimeout(value2), (value2 = undefined));
-    flag8 && decomposeChanges();
-    flag10 = true;
-    value10 !== undefined &&
-      (timers.clearTimeout(value10), (value10 = undefined));
-    value17 !== undefined &&
-      (timers.clearTimeout(value17), (value17 = undefined));
-    index7 = 0;
-    value6 === undefined && (value6 = timers.now());
+    initialLoadTimer !== undefined &&
+      (timers.clearTimeout(initialLoadTimer), (initialLoadTimer = undefined));
+    needsDecompose && decomposeChanges();
+    hasShownContent = true;
+    cachedReconnectAvailabilityTimer !== undefined &&
+      (timers.clearTimeout(cachedReconnectAvailabilityTimer), (cachedReconnectAvailabilityTimer = undefined));
+    cachedReconnectTimer !== undefined &&
+      (timers.clearTimeout(cachedReconnectTimer), (cachedReconnectTimer = undefined));
+    cachedReconnectAttempts = 0;
+    firstLiveAt === undefined && (firstLiveAt = timers.now());
     loadState = "live";
-    flag3 || value19();
+    hasMetadataSnapshot || schedulePeriodicRefresh();
     refreshEffectiveDocuments();
     composeDocument(true);
-    for (let value23 of [...loadListeners] as Dynamic) value23();
+    for (let listener of [...loadListeners] as Dynamic) listener();
   }
-  let value18: Dynamic,
-    index8: Dynamic = 0;
+  let resubscribeTimer: Dynamic,
+    resubscribeAttempts: Dynamic = 0;
   function clearReconnectTimer(): Dynamic {
-    value5 !== undefined && timers.clearTimeout(value5);
-    value5 = undefined;
+    reconnectTimer !== undefined && timers.clearTimeout(reconnectTimer);
+    reconnectTimer = undefined;
   }
   function reconnectDelay(): Dynamic {
-    let value23: Dynamic =
+    let backoffMs: Dynamic =
         LIVE_RECONNECT_BACKOFF_MS[
-          Math.min(index2, LIVE_RECONNECT_BACKOFF_MS.length - 1)
+          Math.min(reconnectAttempts, LIVE_RECONNECT_BACKOFF_MS.length - 1)
         ],
-      value24: Dynamic =
+      isPageHidden: Dynamic =
         typeof document !== "undefined" &&
         (document as Dynamic).visibilityState === "hidden";
-    return !flag7 &&
-      !value24 &&
-      value6 !== undefined &&
-      timers.now() - value6 < LIVE_RECENT_RECONNECT_WINDOW_MS
-      ? Math.min(value23, LIVE_RECENT_RECONNECT_DELAY_MS)
-      : value23;
+    return !hasReceivedDocument &&
+      !isPageHidden &&
+      firstLiveAt !== undefined &&
+      timers.now() - firstLiveAt < LIVE_RECENT_RECONNECT_WINDOW_MS
+      ? Math.min(backoffMs, LIVE_RECENT_RECONNECT_DELAY_MS)
+      : backoffMs;
   }
-  function value19(input: Dynamic = reconnectDelay()): Dynamic {
+  function schedulePeriodicRefresh(delayMs: Dynamic = reconnectDelay()): Dynamic {
     clearReconnectTimer();
-    !(!callback() || flag15 || value7 !== undefined) &&
-      (flag3 || (flag4 = true),
-      (value5 = timers.setTimeout((): Dynamic => {
-        value5 = undefined;
-        if (!callback() || flag15 || value7 !== undefined) return;
-        let value23: Dynamic =
+    !(!shouldKeepRecovering() || disposed || liveSyncError !== undefined) &&
+      (hasMetadataSnapshot || (recoveryWaitingForMetadata = true),
+      (reconnectTimer = timers.setTimeout((): Dynamic => {
+        reconnectTimer = undefined;
+        if (!shouldKeepRecovering() || disposed || liveSyncError !== undefined) return;
+        let isPageHidden: Dynamic =
           typeof document !== "undefined" &&
           (document as Dynamic).visibilityState === "hidden";
         loadState === "live" &&
-          !flag &&
-          !value23 &&
-          ((index2 += 1),
-          flag7 && (index3 += 1),
+          !reconnecting &&
+          !isPageHidden &&
+          ((reconnectAttempts += 1),
+          hasReceivedDocument && (recoveryAttempts += 1),
           refreshCollectionSnapshots());
-        value19();
-      }, input)));
+        schedulePeriodicRefresh();
+      }, delayMs)));
   }
   function scheduleReconnectRecovery(): Dynamic {
-    flag4 &&
-      ((flag4 = false),
+    recoveryWaitingForMetadata &&
+      ((recoveryWaitingForMetadata = false),
       clearReconnectTimer(),
-      (value4 = timers.setTimeout((): Dynamic => {
-        value4 = undefined;
-        !flag15 &&
-          value7 === undefined &&
+      (recoveryTimer = timers.setTimeout((): Dynamic => {
+        recoveryTimer = undefined;
+        !disposed &&
+          liveSyncError === undefined &&
           loadState === "live" &&
-          !flag &&
+          !reconnecting &&
           refreshCollectionSnapshots();
-        index2 = 0;
-        flag6 && value19();
+        reconnectAttempts = 0;
+        hasUnresolvedDocuments && schedulePeriodicRefresh();
       }, 250)));
   }
   function subscribeCollections(): Dynamic {
     unsubscribeCollections();
     loadedCollections.clear();
-    values2.clear();
-    values.clear();
-    let value23: Dynamic = subscriptionGeneration;
+    seenCollections.clear();
+    collectionsWithPendingWrites.clear();
+    let generation: Dynamic = subscriptionGeneration;
     collectionSubscriptions = collections.map(
-      (input?: Dynamic): Dynamic =>
+      (collectionPath?: Dynamic): Dynamic =>
         database.subscribe(
-          input,
-          (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-            value23 === subscriptionGeneration &&
-              handleCollectionSnapshot(input, input2, options2);
+          collectionPath,
+          (changes?: Dynamic, snapshotInfo?: Dynamic): Dynamic => {
+            generation === subscriptionGeneration &&
+              handleCollectionSnapshot(collectionPath, changes, snapshotInfo);
           },
-          (input2?: Dynamic): Dynamic => {
-            value23 === subscriptionGeneration && handleStoreError(input2);
+          (error?: Dynamic): Dynamic => {
+            generation === subscriptionGeneration && handleStoreError(error);
           },
         ),
     );
     loadState === "loading" && scheduleInitialLoadTimeout();
   }
   function scheduleInitialLoadTimeout(): Dynamic {
-    value2 !== undefined && timers.clearTimeout(value2);
-    value2 = timers.setTimeout(
+    initialLoadTimer !== undefined && timers.clearTimeout(initialLoadTimer);
+    initialLoadTimer = timers.setTimeout(
       (): Dynamic => {
-        value2 = undefined;
+        initialLoadTimer = undefined;
         if (loadState === "loading") {
           if (composeCachedSnapshot()) return enterCachedMode();
-          if (flag2 && !flag11) {
-            flag11 = true;
+          if (hasCachedSnapshot && !initialLoadExtended) {
+            initialLoadExtended = true;
             return scheduleInitialLoadTimeout();
           }
-          value15 = {
+          lastError = {
             code: "timeout",
             get message() { return uiMessage("canvas.liveDocument.initialSnapshotsDidNotArrive"); },
           };
           setLoadState("failed");
         }
       },
-      flag11
+      initialLoadExtended
         ? LIVE_EXTENDED_LOAD_TIMEOUT_MS - LIVE_INITIAL_LOAD_TIMEOUT_MS
         : LIVE_INITIAL_LOAD_TIMEOUT_MS,
     );
   }
   function unsubscribeCollections(): Dynamic {
     subscriptionGeneration += 1;
-    for (let value23 of collectionSubscriptions as Dynamic) value23();
+    for (let unsubscribe of collectionSubscriptions as Dynamic) unsubscribe();
     collectionSubscriptions = [];
-    value18 !== undefined &&
-      (timers.clearTimeout(value18), (value18 = undefined));
+    resubscribeTimer !== undefined &&
+      (timers.clearTimeout(resubscribeTimer), (resubscribeTimer = undefined));
   }
-  function handleStoreError(input?: Dynamic): Dynamic {
-    if (!flag15) {
-      if (DATABASE_ACCESS_DENIED_CODES.includes(input.code))
-        return endLiveSync(input);
+  function handleStoreError(error?: Dynamic): Dynamic {
+    if (!disposed) {
+      if (DATABASE_ACCESS_DENIED_CODES.includes(error.code))
+        return endLiveSync(error);
       if (loadState !== "failed") {
-        value15 = {
-          code: input.code,
-          message: input.message,
+        lastError = {
+          code: error.code,
+          message: error.message,
         };
         unsubscribeCollections();
         if (loadState === "loading") {
-          value2 !== undefined && timers.clearTimeout(value2);
-          value2 = undefined;
+          initialLoadTimer !== undefined && timers.clearTimeout(initialLoadTimer);
+          initialLoadTimer = undefined;
           setLoadState("failed");
           return;
         }
-        flag = true;
-        index8 += 1;
-        value18 = timers.setTimeout(
+        reconnecting = true;
+        resubscribeAttempts += 1;
+        resubscribeTimer = timers.setTimeout(
           (): Dynamic => {
-            value18 = undefined;
-            !(flag15 || value7 !== undefined || !flag) &&
+            resubscribeTimer = undefined;
+            !(disposed || liveSyncError !== undefined || !reconnecting) &&
               restartSubscriptions();
           },
           Math.min(
             LIVE_MAX_WRITE_RETRY_BACKOFF_MS,
-            LIVE_WRITE_RETRY_INITIAL_BACKOFF_MS * 2 ** (index8 - 1),
+            LIVE_WRITE_RETRY_INITIAL_BACKOFF_MS * 2 ** (resubscribeAttempts - 1),
           ),
         );
         notifySaveState();
@@ -2082,139 +2082,139 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     }
   }
   function refreshCollectionSnapshots(): Dynamic {
-    value3 = new Map(
-      collections.map((input?: Dynamic): Dynamic => [input, new Set()]),
+    refreshPathsByCollection = new Map(
+      collections.map((collectionPath?: Dynamic): Dynamic => [collectionPath, new Set()]),
     );
     subscribeCollections();
   }
   function restartSubscriptions(): Dynamic {
-    value3 = new Map(
-      collections.map((input?: Dynamic): Dynamic => [input, new Set()]),
+    refreshPathsByCollection = new Map(
+      collections.map((collectionPath?: Dynamic): Dynamic => [collectionPath, new Set()]),
     );
     subscribeCollections();
-    flag18 = false;
+    reconnectTimeoutExtended = false;
     scheduleReconnectTimeout(LIVE_INITIAL_LOAD_TIMEOUT_MS);
     notifySaveState();
     scheduleWriteFlush();
   }
-  function scheduleReconnectTimeout(input?: Dynamic): Dynamic {
-    value18 !== undefined && timers.clearTimeout(value18);
-    value18 = timers.setTimeout((): Dynamic => {
-      value18 = undefined;
-      !(!flag || flag15 || value7 !== undefined) &&
-        ((flag = false),
+  function scheduleReconnectTimeout(timeoutMs?: Dynamic): Dynamic {
+    resubscribeTimer !== undefined && timers.clearTimeout(resubscribeTimer);
+    resubscribeTimer = timers.setTimeout((): Dynamic => {
+      resubscribeTimer = undefined;
+      !(!reconnecting || disposed || liveSyncError !== undefined) &&
+        ((reconnecting = false),
         handleStoreError({
           code: "unavailable",
           get message() { return uiMessage("canvas.liveDocument.reSubscribeStayedSilent"); },
         }));
-    }, input);
+    }, timeoutMs);
   }
   function reconcileRemovedDocuments(
-    input?: Dynamic,
-    options2?: Dynamic,
+    collectionPath?: Dynamic,
+    refreshedPaths?: Dynamic,
   ): Dynamic {
-    value3.delete(input);
-    let value23: Dynamic = timers.now();
-    for (let [value24, value25] of pathStates as Dynamic) {
+    refreshPathsByCollection.delete(collectionPath);
+    let now: Dynamic = timers.now();
+    for (let [path, pathState] of pathStates as Dynamic) {
       if (
-        dirname(value24) !== input ||
-        value25.server === undefined ||
-        options2.has(value24)
+        dirname(path) !== collectionPath ||
+        pathState.server === undefined ||
+        refreshedPaths.has(path)
       )
         continue;
-      let value26: Dynamic = -1;
-      for (let index9: Dynamic = 0; index9 < value25.acked.length; index9++)
-        value25.acked[index9].del && (value26 = index9);
-      let value27: Dynamic =
-          (value25.inflight !== undefined &&
-            value25.inflight.patch !== DELETE_DOCUMENT) ||
-          (value25.pending !== undefined &&
-            value25.pending.patch !== DELETE_DOCUMENT &&
-            value25.parked === undefined),
-        value28: Dynamic =
-          (value26 >= 0 && value27) ||
-          value25.acked.some(
-            (input2?: Dynamic, options3?: Dynamic): Dynamic =>
-              options3 > value26 &&
-              (input2.replace || value26 >= 0) &&
-              value23 - input2.at < LIVE_WRITE_ACK_TIMEOUT_MS,
+      let lastDeleteIndex: Dynamic = -1;
+      for (let index: Dynamic = 0; index < pathState.acked.length; index++)
+        pathState.acked[index].del && (lastDeleteIndex = index);
+      let willWriteAgain: Dynamic =
+          (pathState.inflight !== undefined &&
+            pathState.inflight.patch !== DELETE_DOCUMENT) ||
+          (pathState.pending !== undefined &&
+            pathState.pending.patch !== DELETE_DOCUMENT &&
+            pathState.parked === undefined),
+        hasRecentReplacement: Dynamic =
+          (lastDeleteIndex >= 0 && willWriteAgain) ||
+          pathState.acked.some(
+            (write?: Dynamic, index?: Dynamic): Dynamic =>
+              index > lastDeleteIndex &&
+              (write.replace || lastDeleteIndex >= 0) &&
+              now - write.at < LIVE_WRITE_ACK_TIMEOUT_MS,
           );
-      value28 && value26 >= 0 && loadedMetadataCollections.add(value24);
-      !(value25.inflight !== undefined || (value28 && value26 < 0)) &&
-        (items.some(
-          (input2?: Dynamic): Dynamic =>
-            input2.type === "removed" && input2.path === value24,
+      hasRecentReplacement && lastDeleteIndex >= 0 && recreatedPaths.add(path);
+      !(pathState.inflight !== undefined || (hasRecentReplacement && lastDeleteIndex < 0)) &&
+        (pendingServerChanges.some(
+          (change?: Dynamic): Dynamic =>
+            change.type === "removed" && change.path === path,
         ) ||
-          items.push({
+          pendingServerChanges.push({
             type: "removed",
-            path: value24,
+            path: path,
           }));
     }
-    value3.size === 0 && (value3 = undefined);
+    refreshPathsByCollection.size === 0 && (refreshPathsByCollection = undefined);
   }
   function retryLiveSync(): Dynamic {
-    flag15 ||
-      value7 !== undefined ||
+    disposed ||
+      liveSyncError !== undefined ||
       (loadState === "failed"
-        ? ((flag2 = false),
-          (flag11 = false),
+        ? ((hasCachedSnapshot = false),
+          (initialLoadExtended = false),
           setLoadState("loading"),
           subscribeCollections())
-        : flag
+        : reconnecting
           ? restartSubscriptions()
           : loadState === "cached" &&
-            flag12 &&
-            ((index7 = 0),
+            cachedReconnectAvailable &&
+            ((cachedReconnectAttempts = 0),
             refreshCollectionSnapshots(),
             scheduleCachedReconnect()));
   }
   function scheduleCachedReconnect(): Dynamic {
-    value17 !== undefined && timers.clearTimeout(value17);
-    let value23: Dynamic =
+    cachedReconnectTimer !== undefined && timers.clearTimeout(cachedReconnectTimer);
+    let delayMs: Dynamic =
       LIVE_RECONNECT_BACKOFF_MS[
-        Math.min(index7, LIVE_RECONNECT_BACKOFF_MS.length - 1)
+        Math.min(cachedReconnectAttempts, LIVE_RECONNECT_BACKOFF_MS.length - 1)
       ];
-    value17 = timers.setTimeout((): Dynamic => {
-      value17 = undefined;
-      !(loadState !== "cached" || flag15 || value7 !== undefined || flag) &&
-        ((index7 += 1),
+    cachedReconnectTimer = timers.setTimeout((): Dynamic => {
+      cachedReconnectTimer = undefined;
+      !(loadState !== "cached" || disposed || liveSyncError !== undefined || reconnecting) &&
+        ((cachedReconnectAttempts += 1),
         refreshCollectionSnapshots(),
         scheduleCachedReconnect());
-    }, value23);
+    }, delayMs);
   }
-  function releaseHeldDocument(input?: Dynamic): Dynamic {
-    let entry: Dynamic = pathStates.get(input);
+  function releaseHeldDocument(path?: Dynamic): Dynamic {
+    let entry: Dynamic = pathStates.get(path);
     entry === undefined ||
       !entry.held ||
       ((entry.held = false),
       (entry.heldBase = undefined),
-      updateEffectiveDocument(input),
+      updateEffectiveDocument(path),
       composeDocument(true));
   }
-  let callback2: Dynamic = (): Dynamic => {
+  let onVisibilityChange: Dynamic = (): Dynamic => {
       if (
         typeof document !== "undefined" &&
         (document as Dynamic).visibilityState === "visible"
       ) {
-        value5 !== undefined && value19(LIVE_RECONNECT_BACKOFF_MS[0]);
+        reconnectTimer !== undefined && schedulePeriodicRefresh(LIVE_RECONNECT_BACKOFF_MS[0]);
         return;
       }
       flushPendingNow();
     },
-    callback3: Dynamic = (): Dynamic => flushPendingNow(),
-    callback4: Dynamic = (event?: Dynamic): Dynamic => {
+    onPageHide: Dynamic = (): Dynamic => flushPendingNow(),
+    onBeforeUnload: Dynamic = (event?: Dynamic): Dynamic => {
       (pendingWriteCount() === 0 && inFlightWrites.size === 0) ||
         (event.preventDefault(), (event.returnValue = ""));
     },
-    value20: Dynamic =
+    canListenToVisibility: Dynamic =
       typeof document !== "undefined" &&
       typeof (document as Dynamic).addEventListener == "function";
   typeof addEventListener == "function" &&
-    (value20 &&
-      (document as Dynamic).addEventListener("visibilitychange", callback2),
-    addEventListener("pagehide", callback3),
-    canWrite && addEventListener("beforeunload", callback4));
-  let value21: Dynamic = canWrite
+    (canListenToVisibility &&
+      (document as Dynamic).addEventListener("visibilitychange", onVisibilityChange),
+    addEventListener("pagehide", onPageHide),
+    canWrite && addEventListener("beforeunload", onBeforeUnload));
+  let unregisterFlusher: Dynamic = canWrite
     ? registerLiveDocumentFlusher({
         dirty: (): Dynamic =>
           pendingWriteCount() > 0 || inFlightWrites.size > 0,
@@ -2222,25 +2222,25 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       })
     : undefined;
   function removeLifecycleListeners(): Dynamic {
-    value21?.();
+    unregisterFlusher?.();
     typeof removeEventListener == "function" &&
-      (value20 &&
+      (canListenToVisibility &&
         (document as Dynamic).removeEventListener(
           "visibilitychange",
-          callback2,
+          onVisibilityChange,
         ),
-      removeEventListener("pagehide", callback3),
-      removeEventListener("beforeunload", callback4));
+      removeEventListener("pagehide", onPageHide),
+      removeEventListener("beforeunload", onBeforeUnload));
   }
   subscribeCollections();
-  let value22: Dynamic = CommentsValue + "/";
-  function unsavedFilePaths(): Dynamic {
-    let items2: Dynamic = [];
-    for (let [value23, value24] of pathStates as Dynamic)
-      value23.startsWith(value22) &&
-        (value24.pending !== undefined || value24.inflight !== undefined) &&
-        items2.push(value23);
-    return items2;
+  let commentsPathPrefix: Dynamic = CommentsValue + "/";
+  function unsavedCommentPaths(): Dynamic {
+    let paths: Dynamic = [];
+    for (let [path, pathState] of pathStates as Dynamic)
+      path.startsWith(commentsPathPrefix) &&
+        (pathState.pending !== undefined || pathState.inflight !== undefined) &&
+        paths.push(path);
+    return paths;
   }
   return {
     saveMode: (): Dynamic => "auto",
@@ -2249,23 +2249,23 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     title: (): Dynamic => state.title,
     comments: (): Dynamic => state.comments,
     dirty: (): Dynamic => pendingWriteCount() > 0 || inFlightWrites.size > 0,
-    readOnly: (): Dynamic => !canWrite || value7 !== undefined,
+    readOnly: (): Dynamic => !canWrite || liveSyncError !== undefined,
     saveState: getSaveState,
     commentSync(): Dynamic {
-      let value23: Dynamic = unsavedFilePaths(),
-        value24: Dynamic = [...parkedWrites.keys()].find(
-          (input?: Dynamic): Dynamic => input.startsWith(value22),
+      let pendingPaths: Dynamic = unsavedCommentPaths(),
+        rejectedPath: Dynamic = [...parkedWrites.keys()].find(
+          (path?: Dynamic): Dynamic => path.startsWith(commentsPathPrefix),
         );
-      return value24 !== undefined
+      return rejectedPath !== undefined
         ? {
             status: "error",
-            pending: value23.length,
-            message: parkedWrites.get(value24),
+            pending: pendingPaths.length,
+            message: parkedWrites.get(rejectedPath),
           }
-        : value23.length > 0
+        : pendingPaths.length > 0
           ? {
               status: "publishing",
-              pending: value23.length,
+              pending: pendingPaths.length,
             }
           : {
               status: "idle",
@@ -2274,8 +2274,8 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     },
     pendingCommentIds(): Dynamic {
       return new Set(
-        unsavedFilePaths().map(
-          (input?: Dynamic): Dynamic => input.slice(value22.length),
+        unsavedCommentPaths().map(
+          (path?: Dynamic): Dynamic => path.slice(commentsPathPrefix.length),
         ),
       );
     },
@@ -2283,74 +2283,74 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       retryParkedWrites();
       flushPendingNow();
     },
-    setContent(input: Dynamic): Dynamic {
-      input !== state.content &&
+    setContent(content: Dynamic): Dynamic {
+      content !== state.content &&
         (changeDocument({
           ...state,
-          content: input,
+          content: content,
         }),
         recordEdit());
     },
-    updateContent(input: Dynamic, options2: Dynamic): Dynamic {
-      let value23: Dynamic = input(state.content);
-      value23 !== state.content &&
+    updateContent(update: Dynamic, updateOptions: Dynamic): Dynamic {
+      let content: Dynamic = update(state.content);
+      content !== state.content &&
         (changeDocument({
           ...state,
-          content: value23,
+          content: content,
         }),
-        options2?.auto !== true && recordEdit());
+        updateOptions?.auto !== true && recordEdit());
     },
-    setTitle(input: Dynamic): Dynamic {
-      let value23: Dynamic = normalizeNewDocumentTitle(input);
-      value23.length === 0 ||
-        value23 === state.title ||
+    setTitle(newTitle: Dynamic): Dynamic {
+      let title: Dynamic = normalizeNewDocumentTitle(newTitle);
+      title.length === 0 ||
+        title === state.title ||
         (changeDocument({
           ...state,
-          title: value23,
+          title: title,
         }),
         recordEdit());
     },
-    addComment(input: Dynamic): Dynamic {
+    addComment(commentDraft: Dynamic): Dynamic {
       if (state.comments.length >= maxDocumentComments) return;
-      let value23: Dynamic = parseDocumentComments([
+      let comment: Dynamic = parseDocumentComments([
         {
-          ...input,
+          ...commentDraft,
           id: crypto.randomUUID().slice(0, 8),
           at: Date.now(),
         },
       ])[0];
-      if (value23) {
+      if (comment) {
         changeDocument({
           ...state,
-          comments: [...state.comments, value23].sort(
-            (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-              input2.at - options2.at,
+          comments: [...state.comments, comment].sort(
+            (left?: Dynamic, right?: Dynamic): Dynamic =>
+              left.at - right.at,
           ),
         });
-        return value23;
+        return comment;
       }
     },
-    removeComment(input: Dynamic): Dynamic {
+    removeComment(commentId: Dynamic): Dynamic {
       state.comments.some(
-        (input2?: Dynamic): Dynamic => input2.id === input,
+        (comment?: Dynamic): Dynamic => comment.id === commentId,
       ) &&
         changeDocument({
           ...state,
           comments: state.comments.filter(
-            (input2?: Dynamic): Dynamic => input2.id !== input,
+            (comment?: Dynamic): Dynamic => comment.id !== commentId,
           ),
         });
     },
     documentBytes(): Dynamic {
-      let index9: Dynamic = 0;
-      for (let value23 of documentSizes.values() as Dynamic)
-        index9 += value23;
-      return index9;
+      let totalBytes: Dynamic = 0;
+      for (let bytes of documentSizes.values() as Dynamic)
+        totalBytes += bytes;
+      return totalBytes;
     },
     async save(): Promise<Dynamic> {
       (loadState === "failed" ||
-        flag ||
-        (loadState === "cached" && flag12)) &&
+        reconnecting ||
+        (loadState === "cached" && cachedReconnectAvailable)) &&
         retryLiveSync();
       retryParkedWrites();
       flushPendingNow();
@@ -2359,31 +2359,31 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     restoreStash: (): Dynamic => {},
     discardStash: (): Dynamic => {},
     restoreCount: (): Dynamic => 0,
-    subscribe(input: Dynamic): Dynamic {
-      contentListeners.add(input);
-      return (): Dynamic => contentListeners.delete(input);
+    subscribe(listener: Dynamic): Dynamic {
+      contentListeners.add(listener);
+      return (): Dynamic => contentListeners.delete(listener);
     },
-    subscribeSave(input: Dynamic): Dynamic {
-      saveListeners.add(input);
-      return (): Dynamic => saveListeners.delete(input);
+    subscribeSave(listener: Dynamic): Dynamic {
+      saveListeners.add(listener);
+      return (): Dynamic => saveListeners.delete(listener);
     },
-    subscribeStuck(input: Dynamic): Dynamic {
-      stuckListeners.add(input);
-      return (): Dynamic => stuckListeners.delete(input);
+    subscribeStuck(listener: Dynamic): Dynamic {
+      stuckListeners.add(listener);
+      return (): Dynamic => stuckListeners.delete(listener);
     },
     loadState: (): Dynamic => loadState,
     shown: (): Dynamic => isLoaded(),
-    cachedSettled: (): Dynamic => flag12,
-    subscribeLoad(input: Dynamic): Dynamic {
-      loadListeners.add(input);
-      return (): Dynamic => loadListeners.delete(input);
+    cachedSettled: (): Dynamic => cachedReconnectAvailable,
+    subscribeLoad(listener: Dynamic): Dynamic {
+      loadListeners.add(listener);
+      return (): Dynamic => loadListeners.delete(listener);
     },
     flushNow: flushPendingNow,
     retryLoad: retryLiveSync,
     storeUntouched: (): Dynamic =>
       loadState === "live" &&
-      !flag7 &&
-      !flag14 &&
+      !hasReceivedDocument &&
+      !hasSyncedWrite &&
       inFlightWrites.size === 0 &&
       pendingWriteCount() === 0,
     releaseHold: releaseHeldDocument,
@@ -2391,19 +2391,19 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       pending: pendingWriteCount(),
       inflight: inFlightWrites.keys().next().value ?? null,
       flights: inFlightWrites.size,
-      ...(value14 !== undefined
+      ...(lastSyncedAt !== undefined
         ? {
-            lastSyncedAt: value14,
+            lastSyncedAt: lastSyncedAt,
           }
         : {}),
-      ...(value15 !== undefined
+      ...(lastError !== undefined
         ? {
-            lastError: value15,
+            lastError: lastError,
           }
         : {}),
     }),
     dispose(): Dynamic {
-      flag15 = true;
+      disposed = true;
       unsubscribeCollections();
       clearTimers();
       removeLifecycleListeners();

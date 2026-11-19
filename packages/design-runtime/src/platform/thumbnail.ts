@@ -9,9 +9,9 @@ var THUMBNAIL_READY_ATTRIBUTE: Dynamic;
 var THUMBNAIL_BLANK_ATTRIBUTE: Dynamic;
 function watchThumbnailDocumentReady(
   doc?: Dynamic,
-  options: Dynamic = {},
+  thumbnailOptions: Dynamic = {},
 ): Dynamic {
-  let document2: Dynamic = options.document ?? document,
+  let previewDocument: Dynamic = thumbnailOptions.document ?? document,
     finished: Dynamic = false,
     unsubscribe: Dynamic,
     checkReady: Dynamic = (): Dynamic => {
@@ -22,11 +22,11 @@ function watchThumbnailDocumentReady(
         unsubscribe?.(),
         value === "live"
           ? completeThumbnailAfterPromise(
-              options.whenPainted ??
-                ((): Dynamic => waitForThumbnailPaint(document2)),
-              document2,
+              thumbnailOptions.whenPainted ??
+                ((): Dynamic => waitForThumbnailPaint(previewDocument)),
+              previewDocument,
             )
-          : initializeDatabaseThumbnail(document2));
+          : initializeDatabaseThumbnail(previewDocument));
     };
   unsubscribe = doc.subscribeLoad(checkReady);
   checkReady();
@@ -35,97 +35,97 @@ function watchThumbnailDocumentReady(
     unsubscribe?.();
   };
 }
-function initializeDatabaseThumbnail(input: Dynamic = document): Dynamic {
-  if (detectDocumentStorageMode(input) === "db") {
-    if (!isFrameCaptureDocument(input))
+function initializeDatabaseThumbnail(previewDocument: Dynamic = document): Dynamic {
+  if (detectDocumentStorageMode(previewDocument) === "db") {
+    if (!isFrameCaptureDocument(previewDocument))
       return completeThumbnailAfterPromise(
-        (): Dynamic => waitForThumbnailPaint(input),
-        input,
+        (): Dynamic => waitForThumbnailPaint(previewDocument),
+        previewDocument,
       );
-    blankThumbnailDocument(input);
-    markThumbnailReady(input);
+    blankThumbnailDocument(previewDocument);
+    markThumbnailReady(previewDocument);
   }
 }
 function completeThumbnailAfterPromise(
-  input: Dynamic = (): Dynamic => waitForThumbnailPaint(),
-  options: Dynamic = document,
+  whenPainted: Dynamic = (): Dynamic => waitForThumbnailPaint(),
+  previewDocument: Dynamic = document,
 ): Dynamic {
-  let callback: Dynamic = (): Dynamic => markThumbnailReady(options);
-  input().then(callback, callback);
+  let callback: Dynamic = (): Dynamic => markThumbnailReady(previewDocument);
+  whenPainted().then(callback, callback);
 }
 function markThumbnailReady(doc: Dynamic = document): Dynamic {
   doc.documentElement.setAttribute(THUMBNAIL_READY_ATTRIBUTE, "");
 }
-function blankThumbnailDocument(document2?: Dynamic): Dynamic {
-  if (document2.querySelector("[" + THUMBNAIL_BLANK_ATTRIBUTE + "]") !== null)
+function blankThumbnailDocument(previewDocument?: Dynamic): Dynamic {
+  if (previewDocument.querySelector("[" + THUMBNAIL_BLANK_ATTRIBUTE + "]") !== null)
     return;
-  for (let value2 of [document2.documentElement, document2.body] as Dynamic)
-    value2.style.overflow = "hidden";
-  let value: Dynamic = document2.createElement("div");
+  for (let element of [previewDocument.documentElement, previewDocument.body] as Dynamic)
+    element.style.overflow = "hidden";
+  let value: Dynamic = previewDocument.createElement("div");
   value.setAttribute(THUMBNAIL_BLANK_ATTRIBUTE, "");
   value.setAttribute("aria-hidden", "true");
   value.style.cssText =
     "position:fixed;inset:0;z-index:2147483647;background:" +
-    hasOpaqueThumbnailBackground(document2);
-  document2.body.appendChild(value);
+    hasOpaqueThumbnailBackground(previewDocument);
+  previewDocument.body.appendChild(value);
 }
-function hasOpaqueThumbnailBackground(document2?: Dynamic): Dynamic {
-  let window2: Dynamic = document2.defaultView;
-  for (let value of [document2.body, document2.documentElement] as Dynamic) {
-    let value2: Dynamic =
-      window2?.getComputedStyle(value).backgroundColor ?? "";
+function hasOpaqueThumbnailBackground(previewDocument?: Dynamic): Dynamic {
+  let previewWindow: Dynamic = previewDocument.defaultView;
+  for (let value of [previewDocument.body, previewDocument.documentElement] as Dynamic) {
+    let backgroundColor: Dynamic =
+      previewWindow?.getComputedStyle(value).backgroundColor ?? "";
     if (
-      value2 !== "" &&
-      value2 !== "transparent" &&
-      !/^rgba\(.*,\s*0\)$/.test(value2)
+      backgroundColor !== "" &&
+      backgroundColor !== "transparent" &&
+      !/^rgba\(.*,\s*0\)$/.test(backgroundColor)
     )
-      return value2;
+      return backgroundColor;
   }
   return "#fff";
 }
 async function waitForThumbnailPaint(
-  document2: Dynamic = document,
+  previewDocument: Dynamic = document,
 ): Promise<Dynamic> {
-  await waitForRootContent(document2);
-  let window2: Dynamic = document2.defaultView,
+  await waitForRootContent(previewDocument);
+  let previewWindow: Dynamic = previewDocument.defaultView,
     nextFrame: Dynamic = (): Dynamic =>
       new Promise(
-        (input?: Dynamic): Dynamic =>
-          window2?.requestAnimationFrame
-            ? window2.requestAnimationFrame((): Dynamic => input())
-            : setTimeout(input, 16),
+        (resolve?: Dynamic): Dynamic =>
+          previewWindow?.requestAnimationFrame
+            ? previewWindow.requestAnimationFrame((): Dynamic => resolve())
+            : setTimeout(resolve, 16),
       );
   await nextFrame();
   await nextFrame();
-  await document2.fonts?.ready;
-  let value: Dynamic = Array.from(document2.images).filter(
-    (input?: Dynamic): Dynamic =>
-      !(input.loading === "lazy" && !input.complete) &&
-      typeof input.decode == "function",
+  await previewDocument.fonts?.ready;
+  let value: Dynamic = Array.from(previewDocument.images).filter(
+    (image?: Dynamic): Dynamic =>
+      !(image.loading === "lazy" && !image.complete) &&
+      typeof image.decode == "function",
   );
   await Promise.all(
     value.map(
-      (input?: Dynamic): Dynamic => input.decode().catch((): Dynamic => {}),
+      (image?: Dynamic): Dynamic => image.decode().catch((): Dynamic => {}),
     ),
   );
   await nextFrame();
 }
-function waitForRootContent(document2?: Dynamic): Dynamic {
-  let root: Dynamic = document2.getElementById("root"),
+function waitForRootContent(previewDocument?: Dynamic): Dynamic {
+  let root: Dynamic = previewDocument.getElementById("root"),
     hasContent: Dynamic = (): Dynamic =>
       root !== null &&
       Array.from(root.children).some(
-        (input?: Dynamic): Dynamic => !input.hasAttribute("data-placeholder"),
+        (child?: Dynamic): Dynamic => !child.hasAttribute("data-placeholder"),
       );
   if (root === null || hasContent()) return Promise.resolve();
-  let value: Dynamic = document2.defaultView?.MutationObserver;
+  let value: Dynamic = previewDocument.defaultView?.MutationObserver;
   return value === undefined
     ? Promise.resolve()
-    : new Promise((input?: Dynamic): Dynamic => {
-        let value2: Dynamic = new value((): Dynamic => {
-          hasContent() && (value2.disconnect(), input());
+    : new Promise((resolve?: Dynamic): Dynamic => {
+        let observer: Dynamic = new value((): Dynamic => {
+          hasContent() && (observer.disconnect(), resolve());
         });
-        value2.observe(root, {
+        observer.observe(root, {
           childList: true,
         });
       });

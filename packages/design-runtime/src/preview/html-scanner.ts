@@ -248,13 +248,13 @@ export function findHtmlTags(html: string, name: string): TextRange[] {
 /** 把注释和原始文本区的内容换成空格，长度与下标保持不变。 */
 export function maskHtmlRawContent(
   html: string,
-  options: MaskOptions = {},
+  maskOptions: MaskOptions = {},
 ): string {
   const rawTextRanges: TextRange[] = [];
   const commentRanges: TextRange[] = [];
   scanHtmlTags(html, rawTextRanges, commentRanges);
   const ranges = (
-    options.bodies === "keep"
+    maskOptions.bodies === "keep"
       ? commentRanges
       : commentRanges.concat(rawTextRanges)
   ).sort((a, b) => a[0] - b[0]);

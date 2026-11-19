@@ -17,12 +17,12 @@ function canRequestPublishCapability(): Dynamic {
 function getPublishCapability(): Dynamic {
   return resolveHostCapability("self", hasPublishMethod);
 }
-function normalizePublishError(input?: Dynamic): Dynamic {
-  if (typeof input == "object" && input !== null && "code" in input) {
-    let code: Dynamic = input.code,
-      message: Dynamic = input.message,
-      live: Dynamic = input.live,
-      say: Dynamic = input.say;
+function normalizePublishError(error?: Dynamic): Dynamic {
+  if (typeof error == "object" && error !== null && "code" in error) {
+    let code: Dynamic = error.code,
+      message: Dynamic = error.message,
+      live: Dynamic = error.live,
+      say: Dynamic = error.say;
     if (typeof code == "string" && publishErrorCodes.has(code))
       return {
         code: code,
@@ -46,7 +46,7 @@ function normalizePublishError(input?: Dynamic): Dynamic {
   }
   return {
     code: "upstream_error",
-    message: input instanceof Error ? input.message : String(input),
+    message: error instanceof Error ? error.message : String(error),
   };
 }
 function requirePublishCapability(): Dynamic {
@@ -55,14 +55,14 @@ function requirePublishCapability(): Dynamic {
       // MineDesign: the host global is designHost.
       "window.designHost.self is missing \u2014 this view\u2019s runtime predates the self capability (or this page is running outside a Frame shell and the emulator). Content cannot be saved from here.",
     );
-  return async (input?: Dynamic): Promise<Dynamic> => {
+  return async (files?: Dynamic): Promise<Dynamic> => {
     let value: Dynamic = await getPublishCapability();
     if (value === null)
       throw {
         code: "not_granted",
         get message() { return uiMessage("canvas.publish.theSelfCapabilityIsNotAvailableToThisView"); },
       };
-    return value.publish(input);
+    return value.publish(files);
   };
 }
 export {

@@ -25,9 +25,9 @@ function readSystemTheme(): Dynamic {
     ? "dark"
     : "light";
 }
-function writeDocumentTheme(input?: Dynamic): Dynamic {
-  PlatformThemeCurrentState = input;
-  (document as Dynamic).documentElement.setAttribute("data-theme", input);
+function writeDocumentTheme(theme?: Dynamic): Dynamic {
+  PlatformThemeCurrentState = theme;
+  (document as Dynamic).documentElement.setAttribute("data-theme", theme);
 }
 function refreshThemeSnapshot(): Dynamic {
   let value: Dynamic = documentThemePinned
@@ -38,12 +38,12 @@ function refreshThemeSnapshot(): Dynamic {
     writeDocumentTheme(value);
   if (value !== documentThemeSnapshot) {
     documentThemeSnapshot = value;
-    for (let value2 of documentThemeSubscribers as Dynamic) value2();
+    for (let listener of documentThemeSubscribers as Dynamic) listener();
   }
 }
-function subscribeDocumentTheme(input?: Dynamic): Dynamic {
-  documentThemeSubscribers.add(input);
-  return (): Dynamic => documentThemeSubscribers.delete(input);
+function subscribeDocumentTheme(listener?: Dynamic): Dynamic {
+  documentThemeSubscribers.add(listener);
+  return (): Dynamic => documentThemeSubscribers.delete(listener);
 }
 function useDocumentTheme(): Dynamic {
   return {
@@ -98,9 +98,9 @@ export function installPlatformTheme(): () => void {
           refreshThemeSnapshot,
         );
         new MutationObserver((): Dynamic => {
-          let value2: Dynamic = readDocumentTheme();
-          value2 !== null &&
-            value2 !== PlatformThemeCurrentState &&
+          let theme: Dynamic = readDocumentTheme();
+          theme !== null &&
+            theme !== PlatformThemeCurrentState &&
             (documentThemePinned = true);
           refreshThemeSnapshot();
         }).observe((document as Dynamic).documentElement, {

@@ -96,8 +96,8 @@ export function bootRuntime(): RuntimeValue {
             window.parent.postMessage(message, "*");
           } catch {}
         },
-        (callback?: RuntimeValue): RuntimeValue => {
-          setTimeout(callback, 200);
+        (start?: RuntimeValue): RuntimeValue => {
+          setTimeout(start, 200);
         },
         (): RuntimeValue => streaming.live(),
       ),

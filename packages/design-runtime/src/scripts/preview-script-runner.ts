@@ -7,14 +7,14 @@ import type { Dynamic } from "../runtime-types";
   var hasOwnProperty: Dynamic = (Object as Dynamic).prototype.hasOwnProperty;
   var value_fail: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments2: Dynamic[]
+    scriptPath?: Dynamic,
+    ..._reportArgs: Dynamic[]
   ): Dynamic {
     try {
       (window as Dynamic).parent.postMessage(
         {
           __dc_boot_failed: 1,
-          e: "a script of this design did not load: " + input,
+          e: "a script of this design did not load: " + scriptPath,
         },
         "*",
       );
@@ -23,27 +23,27 @@ import type { Dynamic } from "../runtime-types";
   /* a blob: URL that did not load: a file whose text the frame has still runs (inline, at that point); only a URL-only part fails the boot */
   var value_recover: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments3: Dynamic[]
+    scriptPath?: Dynamic,
+    attributes?: Dynamic,
+    ..._inlineArgs: Dynamic[]
   ): Dynamic {
     var value_files: Dynamic = (window as Dynamic).__dcFiles || {};
-    if (!hasOwnProperty.call(value_files, input)) return value_fail(input);
+    if (!hasOwnProperty.call(value_files, scriptPath)) return value_fail(scriptPath);
     var value_s: Dynamic = (document as Dynamic).createElement("script");
-    for (var value_a in options) {
+    for (var value_a in attributes) {
       if (
-        hasOwnProperty.call(options, value_a) &&
+        hasOwnProperty.call(attributes, value_a) &&
         !/^(async|defer|integrity|crossorigin)$/i.test(value_a)
       ) {
         try {
-          value_s.setAttribute(value_a, String(options[value_a]));
+          value_s.setAttribute(value_a, String(attributes[value_a]));
         } catch (value_e: Dynamic) {}
       }
     }
     value_s.text =
-      String(value_files[input]) +
+      String(value_files[scriptPath]) +
       "\n//# sourceURL=/appifact/" +
-      encodeURI(input);
+      encodeURI(scriptPath);
     (
       (document as Dynamic).head || (document as Dynamic).documentElement
     ).appendChild(value_s);
@@ -52,31 +52,31 @@ import type { Dynamic } from "../runtime-types";
    * the only place a document.write lands in place rather than re-opening the document */
   var value_atTip: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments4: Dynamic[]
+    script?: Dynamic,
+    ..._anchorArgs: Dynamic[]
   ): Dynamic {
-    for (var value_n: Dynamic = input; value_n; value_n = value_n.parentNode) {
+    for (var value_n: Dynamic = script; value_n; value_n = value_n.parentNode) {
       if (value_n.nextSibling) return false;
     }
     return true;
   };
   return function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments5: Dynamic[]
+    scriptPath?: Dynamic,
+    attributes?: Dynamic,
+    ..._loadArgs: Dynamic[]
   ): Dynamic {
     var value_files: Dynamic = (window as Dynamic).__dcFiles || {},
       value_urls: Dynamic = (window as Dynamic).__dcPartUrls || {};
-    var src: Dynamic = hasOwnProperty.call(value_urls, input)
-      ? value_urls[input]
+    var src: Dynamic = hasOwnProperty.call(value_urls, scriptPath)
+      ? value_urls[scriptPath]
       : null;
-    if (src === null && !hasOwnProperty.call(value_files, input)) return;
-    options = options || {};
+    if (src === null && !hasOwnProperty.call(value_files, scriptPath)) return;
+    attributes = attributes || {};
     /* defer/async: after the parse, in document order (as every deferred script here has always run) */
     var value_later: Dynamic =
-      hasOwnProperty.call(options, "defer") ||
-      hasOwnProperty.call(options, "async");
+      hasOwnProperty.call(attributes, "defer") ||
+      hasOwnProperty.call(attributes, "async");
     var currentScript: Dynamic = (document as Dynamic).currentScript;
     if (
       (document as Dynamic).readyState === "loading" &&
@@ -90,8 +90,8 @@ import type { Dynamic } from "../runtime-types";
           src = URL.createObjectURL(
             new Blob(
               [
-                String(value_files[input]),
-                "\n//# sourceURL=/appifact/" + encodeURI(input),
+                String(value_files[scriptPath]),
+                "\n//# sourceURL=/appifact/" + encodeURI(scriptPath),
               ],
               {
                 type: "text/javascript",
@@ -105,9 +105,9 @@ import type { Dynamic } from "../runtime-types";
       if (src !== null) {
         var value_h: Dynamic =
           "<" + 'script src="' + src + '"' + (value_later ? " defer" : "");
-        for (var value_n in options) {
+        for (var value_n in attributes) {
           if (
-            hasOwnProperty.call(options, value_n) &&
+            hasOwnProperty.call(attributes, value_n) &&
             /^[\w:.-]+$/.test(value_n) &&
             !/^(async|defer|integrity|crossorigin)$/i.test(value_n)
           )
@@ -115,7 +115,7 @@ import type { Dynamic } from "../runtime-types";
               " " +
               value_n +
               '="' +
-              String(options[value_n])
+              String(attributes[value_n])
                 .replace(/&/g, "&amp;")
                 .replace(/"/g, "&quot;") +
               '"';
@@ -134,9 +134,9 @@ import type { Dynamic } from "../runtime-types";
               "error",
               function (
                 this: Dynamic,
-                ..._extraArguments6: Dynamic[]
+                ..._moduleArgs: Dynamic[]
               ): Dynamic {
-                value_recover(input, options);
+                value_recover(scriptPath, attributes);
               },
             );
             return;
@@ -147,45 +147,45 @@ import type { Dynamic } from "../runtime-types";
     }
     var value_run: Dynamic = function (
       this: Dynamic,
-      ..._extraArguments7: Dynamic[]
+      ..._runnerArgs: Dynamic[]
     ): Dynamic {
       var value_s: Dynamic = (document as Dynamic).createElement("script");
-      for (var value_a in options) {
+      for (var value_a in attributes) {
         if (
-          hasOwnProperty.call(options, value_a) &&
+          hasOwnProperty.call(attributes, value_a) &&
           (src === null ||
             !/^(async|defer|integrity|crossorigin)$/i.test(value_a))
         ) {
           try {
-            value_s.setAttribute(value_a, String(options[value_a]));
+            value_s.setAttribute(value_a, String(attributes[value_a]));
           } catch (value_e: Dynamic) {}
         }
       }
-      if (hasOwnProperty.call(value_files, input))
+      if (hasOwnProperty.call(value_files, scriptPath))
         value_s.text =
-          String(value_files[input]) +
+          String(value_files[scriptPath]) +
           "\n//# sourceURL=/appifact/" +
-          encodeURI(input);
+          encodeURI(scriptPath);
       else {
         value_s.async = false;
         value_s.src = src;
         value_s.addEventListener(
           "error",
-          function (this: Dynamic, ..._extraArguments8: Dynamic[]): Dynamic {
-            value_recover(input, options);
+          function (this: Dynamic, ..._readyArgs: Dynamic[]): Dynamic {
+            value_recover(scriptPath, attributes);
           },
         );
       } /* no text on hand (not expected: the bootloader hands every part's text): by URL, in insertion order */
       /* where the tag stood (document.currentScript keeps its position and data- attributes), else the head */
-      var currentScript2: Dynamic = (document as Dynamic).currentScript;
-      if (currentScript2 && currentScript2.parentNode)
-        currentScript2.parentNode.insertBefore(value_s, currentScript2);
+      var loaderScript: Dynamic = (document as Dynamic).currentScript;
+      if (loaderScript && loaderScript.parentNode)
+        loaderScript.parentNode.insertBefore(value_s, loaderScript);
       else
         (
           (document as Dynamic).head || (document as Dynamic).documentElement
         ).appendChild(value_s);
       /* an external script fires 'load' once it has run; the inline stand-in has run by now, so fire it for onload= handlers */
-      if (hasOwnProperty.call(value_files, input)) {
+      if (hasOwnProperty.call(value_files, scriptPath)) {
         try {
           value_s.dispatchEvent(new Event("load"));
         } catch (value_e: Dynamic) {}
@@ -196,7 +196,7 @@ import type { Dynamic } from "../runtime-types";
         "readystatechange",
         function value_g(
           this: Dynamic,
-          ..._extraArguments9: Dynamic[]
+          ..._frameArgs: Dynamic[]
         ): Dynamic {
           (document as Dynamic).removeEventListener(
             "readystatechange",

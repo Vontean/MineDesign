@@ -21,25 +21,25 @@ export var defineProperty: RuntimeValue = Object.defineProperty,
   defineOwnField: RuntimeValue = (
     target?: RuntimeValue,
     property?: RuntimeValue,
-    value?: RuntimeValue,
+    fieldValue?: RuntimeValue,
   ): RuntimeValue =>
     property in target
       ? defineProperty(target, property, {
           enumerable: true,
           configurable: true,
           writable: true,
-          value: value,
+          value: fieldValue,
         })
-      : (target[property] = value),
+      : (target[property] = fieldValue),
   initializeField: RuntimeValue = (
     target?: RuntimeValue,
     property?: RuntimeValue,
-    value?: RuntimeValue,
+    initialValue?: RuntimeValue,
   ): RuntimeValue =>
     defineOwnField(
       target,
       typeof property != "symbol" ? property + "" : property,
-      value,
+      initialValue,
     );
 export function getReact(): RuntimeValue {
   const react: RuntimeValue = window.React;

@@ -15,184 +15,184 @@ var PlatformMigrationStateSubscribers: Dynamic;
 var MovedToFilesValue: Dynamic;
 var PlatformMigrationStateHandler: Dynamic;
 var ThisCanvasNowSavesInAMessage: Dynamic;
-var ThisCanvasNowSavesInAMessage_2: Dynamic;
+var MIGRATION_REOPENING_MESSAGE: Dynamic;
 var ThisCanvasIsOpenAgainYouMessage: Dynamic;
 var ThisCanvasIsOpenAgainMessage: Dynamic;
 var YourLastChangeIsNotSavedMessage: Dynamic;
 var ThatChangeIsSavedThisCanvasMessage: Dynamic;
-var PlatformMigrationStateConstant: Dynamic;
-var PlatformMigrationStateConstant_2: Dynamic;
-var PlatformMigrationStateAlias_2: Dynamic;
-var PlatformMigrationStateNow: Dynamic;
-var PlatformMigrationStateNow_2: Dynamic;
+var SAVE_DRAIN_POLL_MS: Dynamic;
+var REOPEN_FALLBACK_DELAY_MS: Dynamic;
+var lastMigrationEventAt: Dynamic;
+var markMigrationEvent: Dynamic;
+var wasMigrationEventRecent: Dynamic;
 var PlatformMigrationStateHandler_2: Dynamic;
-var PlatformMigrationStateSubscribers_2: Dynamic;
+var restartFallbackListeners: Dynamic;
 var migrationRestartHandlerInstalled: Dynamic;
-function updateMovedToFilesState(input?: Dynamic): Dynamic {
-  let value: Dynamic = getMovedToMarker(input) !== null,
-    value2: Dynamic =
-      migrationStateLoaded && value && !PlatformMigrationStateAlias;
-  PlatformMigrationStateAlias = value;
-  if (!!value2)
-    for (let value3 of [...PlatformMigrationStateSubscribers] as Dynamic)
+function updateMovedToFilesState(metadata?: Dynamic): Dynamic {
+  let movedToFiles: Dynamic = getMovedToMarker(metadata) !== null,
+    shouldNotifyMove: Dynamic =
+      migrationStateLoaded && movedToFiles && !PlatformMigrationStateAlias;
+  PlatformMigrationStateAlias = movedToFiles;
+  if (!!shouldNotifyMove)
+    for (let listener of [...PlatformMigrationStateSubscribers] as Dynamic)
       try {
-        value3();
+        listener();
       } catch {}
 }
 function markMigrationLoaded(): Dynamic {
   migrationStateLoaded = true;
 }
-function subscribeMovedToFiles(input?: Dynamic): Dynamic {
-  PlatformMigrationStateSubscribers.add(input);
+function subscribeMovedToFiles(listener?: Dynamic): Dynamic {
+  PlatformMigrationStateSubscribers.add(listener);
   return (): Dynamic => {
-    PlatformMigrationStateSubscribers.delete(input);
+    PlatformMigrationStateSubscribers.delete(listener);
   };
 }
-function subscribeMigrationRestart(input?: Dynamic): Dynamic {
-  PlatformMigrationStateSubscribers_2.add(input);
-  return (): Dynamic => PlatformMigrationStateSubscribers_2.delete(input);
+function subscribeMigrationRestart(listener?: Dynamic): Dynamic {
+  restartFallbackListeners.add(listener);
+  return (): Dynamic => restartFallbackListeners.delete(listener);
 }
-function installMigrationRestartHandler(input: Dynamic = {}): Dynamic {
+function installMigrationRestartHandler(restartOptions: Dynamic = {}): Dynamic {
   if (migrationRestartHandlerInstalled) return;
   migrationRestartHandlerInstalled = true;
-  let value: Dynamic =
-      input.hot !== undefined
-        ? input.hot
+  let hotCapability: Dynamic =
+      restartOptions.hot !== undefined
+        ? restartOptions.hot
         // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
         : (globalThis as Dynamic).designHost?.hot,
-    value2: Dynamic = input.show ?? showEditorToast,
-    value3: Dynamic =
-      input.say ??
-      ((input2?: Dynamic): Dynamic => announce(input2)),
-    callback: Dynamic = (): Dynamic => {
+    showToast: Dynamic = restartOptions.show ?? showEditorToast,
+    speakFallback: Dynamic =
+      restartOptions.say ??
+      ((message?: Dynamic): Dynamic => announce(message)),
+    showReloadFallback: Dynamic = (): Dynamic => {
       (
-        input.show ??
-        ((input2?: Dynamic): Dynamic => {
-          showEditorActionToast(input2, null);
+        restartOptions.show ??
+        ((message?: Dynamic): Dynamic => {
+          showEditorActionToast(message, null);
         })
       )(ThisCanvasNowSavesInAMessage);
       try {
-        value3(ThisCanvasNowSavesInAMessage);
+        speakFallback(ThisCanvasNowSavesInAMessage);
       } catch {}
       clearMigrationInputBlocker();
       try {
-        input.onStranded?.();
+        restartOptions.onStranded?.();
       } catch {}
-      for (let value8 of [...PlatformMigrationStateSubscribers_2] as Dynamic)
+      for (let listener of [...restartFallbackListeners] as Dynamic)
         try {
-          value8();
+          listener();
         } catch {}
     };
   if (
     !(
-      typeof value?.restart == "function" &&
-      (input.hot !== undefined
-        ? input.canReopen?.() !== false
-        : (input.canReopen ?? PlatformMigrationStateHandler)())
+      typeof hotCapability?.restart == "function" &&
+      (restartOptions.hot !== undefined
+        ? restartOptions.canReopen?.() !== false
+        : (restartOptions.canReopen ?? PlatformMigrationStateHandler)())
     )
   )
-    return callback();
-  let value4: Dynamic = input.timers ?? {
-      setTimeout: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-        setTimeout(input2, options),
-      clearTimeout: (input2?: Dynamic): Dynamic => clearTimeout(input2),
+    return showReloadFallback();
+  let timers: Dynamic = restartOptions.timers ?? {
+      setTimeout: (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+        setTimeout(run, delayMs),
+      clearTimeout: (timer?: Dynamic): Dynamic => clearTimeout(timer),
       now: (): Dynamic => Date.now(),
     },
-    callback2: Dynamic = (): Dynamic => {
+    restart: Dynamic = (): Dynamic => {
       try {
-        value.restart({
+        hotCapability.restart({
           note: "canvas keeps its content as files",
         });
       } catch {
-        return callback();
+        return showReloadFallback();
       }
-      value4.setTimeout(callback, PlatformMigrationStateConstant_2);
+      timers.setTimeout(showReloadFallback, REOPEN_FALLBACK_DELAY_MS);
     };
-  if (input.quiet === true) return callback2();
-  let value5: Dynamic =
-      input.say ??
-      ((input2?: Dynamic): Dynamic => announce(input2)),
-    value6: Dynamic = value4,
-    value7: Dynamic = input.store ?? PlatformMigrationStateHandler_2(),
-    flag: Dynamic = false,
-    flag2: Dynamic = false,
-    callback3: Dynamic = (): Dynamic => {
-      if (!flag2) {
-        flag2 = true;
+  if (restartOptions.quiet === true) return restart();
+  let say: Dynamic =
+      restartOptions.say ??
+      ((message?: Dynamic): Dynamic => announce(message)),
+    reopenTimers: Dynamic = timers,
+    storage: Dynamic = restartOptions.store ?? PlatformMigrationStateHandler_2(),
+    waitingForSave: Dynamic = false,
+    requestedFlush: Dynamic = false,
+    reopenAfterSaving: Dynamic = (): Dynamic => {
+      if (!requestedFlush) {
+        requestedFlush = true;
         try {
-          input.flush?.();
+          restartOptions.flush?.();
         } catch {}
       }
-      let flag3: Dynamic = true;
+      let isDrained: Dynamic = true;
       try {
-        flag3 = input.drained === undefined || input.drained();
+        isDrained = restartOptions.drained === undefined || restartOptions.drained();
       } catch {}
-      if (!flag3) {
-        flag ||
-          ((flag = true),
-          value2(YourLastChangeIsNotSavedMessage),
-          value5(YourLastChangeIsNotSavedMessage));
-        value6.setTimeout(callback3, PlatformMigrationStateConstant);
+      if (!isDrained) {
+        waitingForSave ||
+          ((waitingForSave = true),
+          showToast(YourLastChangeIsNotSavedMessage),
+          say(YourLastChangeIsNotSavedMessage));
+        reopenTimers.setTimeout(reopenAfterSaving, SAVE_DRAIN_POLL_MS);
         return;
       }
-      if (!flag) return callback2();
-      flag = false;
-      value2(ThatChangeIsSavedThisCanvasMessage);
+      if (!waitingForSave) return restart();
+      waitingForSave = false;
+      showToast(ThatChangeIsSavedThisCanvasMessage);
       scheduleTypingAwareAnnouncement({
-        say: value5,
+        say: say,
         message: ThatChangeIsSavedThisCanvasMessage,
-        ...(input.isTyping !== undefined
+        ...(restartOptions.isTyping !== undefined
           ? {
-              isTyping: input.isTyping,
+              isTyping: restartOptions.isTyping,
             }
           : {}),
-        reopen: callback3,
-        timers: value6,
+        reopen: reopenAfterSaving,
+        timers: reopenTimers,
         note: {
-          store: value7,
+          store: storage,
           why: MovedToFilesValue,
-          ...(input.focus !== undefined
+          ...(restartOptions.focus !== undefined
             ? {
-                focus: input.focus,
+                focus: restartOptions.focus,
               }
             : {}),
         },
       });
     };
-  value2(ThisCanvasNowSavesInAMessage_2);
+  showToast(MIGRATION_REOPENING_MESSAGE);
   scheduleTypingAwareAnnouncement({
-    say: value5,
-    message: ThisCanvasNowSavesInAMessage_2,
-    ...(input.isTyping !== undefined
+    say: say,
+    message: MIGRATION_REOPENING_MESSAGE,
+    ...(restartOptions.isTyping !== undefined
       ? {
-          isTyping: input.isTyping,
+          isTyping: restartOptions.isTyping,
         }
       : {}),
-    reopen: callback3,
-    timers: value6,
+    reopen: reopenAfterSaving,
+    timers: reopenTimers,
     note: {
-      store: value7,
+      store: storage,
       why: MovedToFilesValue,
-      ...(input.focus !== undefined
+      ...(restartOptions.focus !== undefined
         ? {
-            focus: input.focus,
+            focus: restartOptions.focus,
           }
         : {}),
     },
   });
 }
-function announceMigrationReopen(input?: Dynamic): Dynamic {
+function announceMigrationReopen(reopenOptions?: Dynamic): Dynamic {
   return announceReopenedArtifact({
-    store: input.store ?? PlatformMigrationStateHandler_2(),
-    now: input.now ?? Date.now(),
+    store: reopenOptions.store ?? PlatformMigrationStateHandler_2(),
+    now: reopenOptions.now ?? Date.now(),
     say:
-      input.say ??
-      ((input2?: Dynamic): Dynamic => announce(input2)),
+      reopenOptions.say ??
+      ((message?: Dynamic): Dynamic => announce(message)),
     message: (): Dynamic =>
-      input.canWrite
+      reopenOptions.canWrite
         ? ThisCanvasIsOpenAgainYouMessage
         : ThisCanvasIsOpenAgainMessage,
-    focus: (input2?: Dynamic): Dynamic => input.focus(input2),
+    focus: (focusTarget?: Dynamic): Dynamic => reopenOptions.focus(focusTarget),
   });
 }
 export {
@@ -203,22 +203,22 @@ export {
   migrationStateLoaded,
   MovedToFilesValue,
   PlatformMigrationStateAlias,
-  PlatformMigrationStateAlias_2,
-  PlatformMigrationStateConstant,
-  PlatformMigrationStateConstant_2,
+  lastMigrationEventAt as PlatformMigrationStateAlias_2,
+  SAVE_DRAIN_POLL_MS as PlatformMigrationStateConstant,
+  REOPEN_FALLBACK_DELAY_MS as PlatformMigrationStateConstant_2,
   PlatformMigrationStateHandler,
   PlatformMigrationStateHandler_2,
-  PlatformMigrationStateNow,
-  PlatformMigrationStateNow_2,
+  markMigrationEvent as PlatformMigrationStateNow,
+  wasMigrationEventRecent as PlatformMigrationStateNow_2,
   PlatformMigrationStateSubscribers,
-  PlatformMigrationStateSubscribers_2,
+  restartFallbackListeners as PlatformMigrationStateSubscribers_2,
   subscribeMigrationRestart,
   subscribeMovedToFiles,
   ThatChangeIsSavedThisCanvasMessage,
   ThisCanvasIsOpenAgainMessage,
   ThisCanvasIsOpenAgainYouMessage,
   ThisCanvasNowSavesInAMessage,
-  ThisCanvasNowSavesInAMessage_2,
+  MIGRATION_REOPENING_MESSAGE as ThisCanvasNowSavesInAMessage_2,
   updateMovedToFilesState,
   YourLastChangeIsNotSavedMessage,
 };
@@ -231,7 +231,7 @@ export function installPlatformMigrationState(): () => void {
     PlatformMigrationStateHandler = (): Dynamic => canHotRestart();
     ThisCanvasNowSavesInAMessage =
       "This canvas now saves in a newer way. Reload the page to keep editing it.";
-    ThisCanvasNowSavesInAMessage_2 =
+    MIGRATION_REOPENING_MESSAGE =
       "This canvas now saves in a newer way. It reopens here in a moment.";
     ThisCanvasIsOpenAgainYouMessage =
       "This canvas is open again. You can keep editing.";
@@ -240,14 +240,14 @@ export function installPlatformMigrationState(): () => void {
       "Your last change is not saved yet, so this canvas stays open. It reopens by itself once that change is saved.";
     ThatChangeIsSavedThisCanvasMessage =
       "That change is saved. This canvas reopens in a moment.";
-    PlatformMigrationStateConstant = 2e3;
-    PlatformMigrationStateConstant_2 = 2e4;
-    PlatformMigrationStateAlias_2 = -1 / 0;
-    PlatformMigrationStateNow = (input: Dynamic = Date.now()): Dynamic => {
-      PlatformMigrationStateAlias_2 = input;
+    SAVE_DRAIN_POLL_MS = 2e3;
+    REOPEN_FALLBACK_DELAY_MS = 2e4;
+    lastMigrationEventAt = -1 / 0;
+    markMigrationEvent = (now: Dynamic = Date.now()): Dynamic => {
+      lastMigrationEventAt = now;
     };
-    PlatformMigrationStateNow_2 = (input: Dynamic = Date.now()): Dynamic =>
-      input - PlatformMigrationStateAlias_2 < 1500;
+    wasMigrationEventRecent = (now: Dynamic = Date.now()): Dynamic =>
+      now - lastMigrationEventAt < 1500;
     PlatformMigrationStateHandler_2 = (): Dynamic => {
       try {
         return typeof sessionStorage === "undefined"
@@ -257,7 +257,7 @@ export function installPlatformMigrationState(): () => void {
         return;
       }
     };
-    PlatformMigrationStateSubscribers_2 = new Set();
+    restartFallbackListeners = new Set();
     migrationRestartHandlerInstalled = false;
   };
 }

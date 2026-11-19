@@ -22,8 +22,8 @@ function parsePublishedIndexMetadata(text?: Dynamic): Dynamic {
   if (text === null) return null;
   try {
     let value: Dynamic = JSON.parse(text),
-      callback: Dynamic = (input?: Dynamic): Dynamic =>
-        typeof input == "object" && input !== null && !Array.isArray(input);
+      callback: Dynamic = (candidate?: Dynamic): Dynamic =>
+        typeof candidate == "object" && candidate !== null && !Array.isArray(candidate);
     return value !== null &&
       (value.v === 1 || value.v === 2) &&
       callback(value.documents) &&
@@ -49,77 +49,77 @@ async function readServerSnapshot(readSnapshot?: Dynamic): Promise<Dynamic> {
           code: "not_authoritative",
         },
       );
-    await new Promise((input?: Dynamic): Dynamic => {
-      setTimeout(input, SNAPSHOT_CACHE_RETRY_DELAY_MS);
+    await new Promise((resolve?: Dynamic): Dynamic => {
+      setTimeout(resolve, SNAPSHOT_CACHE_RETRY_DELAY_MS);
     });
   }
 }
 function createSnapshotDatabaseAdapter(database?: Dynamic): Dynamic {
   return {
-    async list(input: Dynamic): Promise<Dynamic> {
+    async list(collectionPath: Dynamic): Promise<Dynamic> {
       let value: Dynamic = await readServerSnapshot(
           (): Dynamic =>
             database
-              .collection(input)
+              .collection(collectionPath)
               .limit(MAX_SNAPSHOT_COLLECTION_DOCS)
               .get(),
         ),
         items: Dynamic = [];
-      for (let value2 of value.docs as Dynamic)
-        value2.exists &&
+      for (let doc of value.docs as Dynamic)
+        doc.exists &&
           items.push({
-            path: input + "/" + value2.id,
+            path: collectionPath + "/" + doc.id,
             data: {
-              ...(value2.data() ?? {}),
+              ...(doc.data() ?? {}),
             },
           });
       return items;
     },
-    async get(input: Dynamic): Promise<Dynamic> {
+    async get(documentPath: Dynamic): Promise<Dynamic> {
       let value: Dynamic = await readServerSnapshot(
-        (): Dynamic => database.doc(input).get(),
+        (): Dynamic => database.doc(documentPath).get(),
       );
       return value.exists
         ? {
-            path: input,
+            path: documentPath,
             data: {
               ...(value.data() ?? {}),
             },
           }
         : null;
     },
-    async update(input: Dynamic, options: Dynamic): Promise<Dynamic> {
-      await database.doc(input).update({
-        ...options,
+    async update(documentPath: Dynamic, changes: Dynamic): Promise<Dynamic> {
+      await database.doc(documentPath).update({
+        ...changes,
       });
     },
-    async set(input: Dynamic, options: Dynamic): Promise<Dynamic> {
-      await database.doc(input).set({
-        ...options,
+    async set(documentPath: Dynamic, data: Dynamic): Promise<Dynamic> {
+      await database.doc(documentPath).set({
+        ...data,
       });
     },
-    async acquire(input: Dynamic, options: Dynamic): Promise<Dynamic> {
-      let value: Dynamic = database.doc(input);
+    async acquire(documentPath: Dynamic, leaseOptions: Dynamic): Promise<Dynamic> {
+      let value: Dynamic = database.doc(documentPath);
       if (typeof value.acquire != "function") return "unsupported";
-      let value2: Dynamic = await value.acquire(options);
+      let lease: Dynamic = await value.acquire(leaseOptions);
       return {
-        acquired: value2.acquired === true,
-        ...(typeof value2.expiresAt == "string"
+        acquired: lease.acquired === true,
+        ...(typeof lease.expiresAt == "string"
           ? {
-              expiresAt: value2.expiresAt,
+              expiresAt: lease.expiresAt,
             }
           : {}),
       };
     },
-    watch(input: Dynamic, options: Dynamic): Dynamic {
+    watch(collectionPath: Dynamic, onChange: Dynamic): Dynamic {
       let flag: Dynamic = true,
         value: Dynamic,
-        callback: Dynamic = (input2?: Dynamic): Dynamic => {
+        callback: Dynamic = (snapshot?: Dynamic): Dynamic => {
           try {
-            return input2
+            return snapshot
               .docChanges?.()
               .map(
-                (input3?: Dynamic): Dynamic => input + "/" + input3.doc.id,
+                (change?: Dynamic): Dynamic => collectionPath + "/" + change.doc.id,
               );
           } catch {
             return;
@@ -127,11 +127,11 @@ function createSnapshotDatabaseAdapter(database?: Dynamic): Dynamic {
         };
       try {
         value = database
-          .collection(input)
+          .collection(collectionPath)
           .limit(MAX_SNAPSHOT_COLLECTION_DOCS)
           .onSnapshot(
-            (input2?: Dynamic): Dynamic => {
-              flag ? (flag = false) : options(callback(input2));
+            (snapshot?: Dynamic): Dynamic => {
+              flag ? (flag = false) : onChange(callback(snapshot));
             },
             (): Dynamic => {},
           );

@@ -49,34 +49,34 @@ export function installPlatformProjectPaths(): () => void {
       ],
       migrated_design: ["compat.json", "publish-progress.json"],
     };
-    isReservedProjectPath = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      options.startsWith(projectPathPrefix) &&
-      projectReservedPaths[input].includes(
-        options.slice(projectPathPrefix.length),
+    isReservedProjectPath = (projectType?: Dynamic, path?: Dynamic): Dynamic =>
+      path.startsWith(projectPathPrefix) &&
+      projectReservedPaths[projectType].includes(
+        path.slice(projectPathPrefix.length),
       );
-    toProjectContentPath = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value: Dynamic = projectPathPrefix + input;
-      if (options !== undefined && isReservedProjectPath(options, value))
+    toProjectContentPath = (relativePath?: Dynamic, projectType?: Dynamic): Dynamic => {
+      let absolutePath: Dynamic = projectPathPrefix + relativePath;
+      if (projectType !== undefined && isReservedProjectPath(projectType, absolutePath))
         throw new Error(
           "not a content path: " +
-            JSON.stringify(value) +
+            JSON.stringify(absolutePath) +
             " is the page's own file",
         );
-      return value;
+      return absolutePath;
     };
-    isApplicationCodeFile = (input?: Dynamic): Dynamic =>
-      input === "index.html" ||
-      input === "SKILL.md" ||
-      input.startsWith("artifact-type/");
-    fromProjectContentPath = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      !input.startsWith(projectPathPrefix) ||
-      (options !== undefined && isReservedProjectPath(options, input))
+    isApplicationCodeFile = (path?: Dynamic): Dynamic =>
+      path === "index.html" ||
+      path === "SKILL.md" ||
+      path.startsWith("artifact-type/");
+    fromProjectContentPath = (absolutePath?: Dynamic, projectType?: Dynamic): Dynamic =>
+      !absolutePath.startsWith(projectPathPrefix) ||
+      (projectType !== undefined && isReservedProjectPath(projectType, absolutePath))
         ? undefined
-        : input.slice(projectPathPrefix.length);
-    isProjectMetadataFile = (input?: Dynamic): Dynamic =>
-      input === projectMetadataPaths.design ||
-      input === projectMetadataPaths.slides ||
-      input === projectMetadataPaths.designSystem ||
-      input === legacyMetadataPaths.designSystem;
+        : absolutePath.slice(projectPathPrefix.length);
+    isProjectMetadataFile = (path?: Dynamic): Dynamic =>
+      path === projectMetadataPaths.design ||
+      path === projectMetadataPaths.slides ||
+      path === projectMetadataPaths.designSystem ||
+      path === legacyMetadataPaths.designSystem;
   };
 }

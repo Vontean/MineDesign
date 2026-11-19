@@ -77,26 +77,26 @@ function monitorDocumentSaveHealth(doc?: Dynamic, report?: Dynamic): Dynamic {
           )
             reportSyncHealthSafely(report, ["sync", "success"]);
           else if (status === "error" && ACTIVE_SYNC_STATUSES.has(value)) {
-            let value2: Dynamic = doc.syncDetail().lastError?.code;
-            if (value2 !== undefined || state.leftOut === undefined) {
+            let errorCode: Dynamic = doc.syncDetail().lastError?.code;
+            if (errorCode !== undefined || state.leftOut === undefined) {
               reportSyncHealthSafely(report, [
                 "sync",
                 "failure",
-                classifySyncFailure(value2 ?? state.code),
+                classifySyncFailure(errorCode ?? state.code),
               ]);
               return;
             }
             let values: Dynamic = new Set();
-            for (let value3 of state.leftOut as Dynamic)
-              reportedLeftOutItems.get(value3.id) !== value3.cause &&
-                values.add(INDEX_USER_ERROR_CATEGORIES[value3.cause]);
+            for (let omittedItem of state.leftOut as Dynamic)
+              reportedLeftOutItems.get(omittedItem.id) !== omittedItem.cause &&
+                values.add(INDEX_USER_ERROR_CATEGORIES[omittedItem.cause]);
             reportedLeftOutItems = new Map(
               state.leftOut.map(
-                (input?: Dynamic): Dynamic => [input.id, input.cause],
+                (omittedItem?: Dynamic): Dynamic => [omittedItem.id, omittedItem.cause],
               ),
             );
-            for (let value3 of values as Dynamic)
-              reportSyncHealthSafely(report, ["sync", "failure", value3]);
+            for (let failureCategory of values as Dynamic)
+              reportSyncHealthSafely(report, ["sync", "failure", failureCategory]);
           } else
             status === "readonly" &&
               UNSAVED_SYNC_STATUSES.has(value) &&

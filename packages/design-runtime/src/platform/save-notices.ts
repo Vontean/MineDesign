@@ -12,9 +12,9 @@ async function applyCrashStashEdits(
 ): Promise<Dynamic> {
   let entry: Dynamic = await stash.read();
   if (entry === undefined) return;
-  let edits: Dynamic = entry.edits.filter((input?: Dynamic): Dynamic => {
-    let value: Dynamic = readCurrentText(input.path);
-    return value === undefined || value !== input.text;
+  let edits: Dynamic = entry.edits.filter((edit?: Dynamic): Dynamic => {
+    let value: Dynamic = readCurrentText(edit.path);
+    return value === undefined || value !== edit.text;
   });
   if (edits.length === 0) {
     await stash.clearOffered();
@@ -72,17 +72,17 @@ function describeStuckSave(
       " Still trying; you can retry now."
     );
   if (saveState.code === "rate_limited") {
-    let value2: Dynamic =
+    let secondsUntilRetry: Dynamic =
       saveState.nextRetryAt === undefined
         ? 0
         : Math.ceil((saveState.nextRetryAt - now) / 1e3);
     return (
       "Not saved yet: too many saves in a short time. " +
       stashExplanation +
-      (value2 > 0
+      (secondsUntilRetry > 0
         ? " Trying again in about " +
-          String(value2) +
-          (value2 === 1 ? " second." : " seconds.")
+          String(secondsUntilRetry) +
+          (secondsUntilRetry === 1 ? " second." : " seconds.")
         : " Still trying.")
     );
   }
@@ -96,14 +96,14 @@ function describeStuckSave(
 }
 function describeUnsendableEdits(
   paths?: Dynamic,
-  options: Dynamic = {},
+  saveNoticeOptions: Dynamic = {},
 ): Dynamic {
-  let basename2: Dynamic = (input?: Dynamic): Dynamic =>
-      input.slice(input.lastIndexOf("/") + 1),
+  let shortFileName: Dynamic = (path?: Dynamic): Dynamic =>
+      path.slice(path.lastIndexOf("/") + 1),
     first: Dynamic = paths[0],
     single: Dynamic = paths.length === 1,
     stashExplanation: Dynamic =
-      options.stashed === true
+      saveNoticeOptions.stashed === true
         ? "kept in this browser for up to " +
           CRASH_STASH_RETENTION_LABEL
         : "kept only while this tab stays open",
@@ -113,25 +113,25 @@ function describeUnsendableEdits(
       " not saved, and " +
       stashExplanation +
       ".";
-  return options.restSaved === false
+  return saveNoticeOptions.restSaved === false
     ? (single
-        ? 'Also, "' + basename2(first.path) + '" cannot be saved as it is: '
+        ? 'Also, "' + shortFileName(first.path) + '" cannot be saved as it is: '
         : "Also, " +
           String(paths.length) +
           ' files cannot be saved as they are. The first, "' +
-          basename2(first.path) +
+          shortFileName(first.path) +
           '": ') +
         first.why +
         "." +
         value
     : (single
         ? 'Everything else is saved, but "' +
-          basename2(first.path) +
+          shortFileName(first.path) +
           '" is not: '
         : "Everything else is saved, but " +
           String(paths.length) +
           ' files are not. The first, "' +
-          basename2(first.path) +
+          shortFileName(first.path) +
           '": ') +
         first.why +
         "." +

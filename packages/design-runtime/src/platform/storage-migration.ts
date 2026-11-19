@@ -7,42 +7,42 @@ var ConvertedFromValue: Dynamic;
 var CreatedOnFilesValue: Dynamic;
 var MovedToValue: Dynamic;
 var PlatformStorageMigrationIsArray: Dynamic;
-function getStorageMigrationMarker(input?: Dynamic): Dynamic {
-  if (!PlatformStorageMigrationIsArray(input)) return null;
-  let value: Dynamic = input[ConvertedFromValue];
+function getStorageMigrationMarker(metadata?: Dynamic): Dynamic {
+  if (!PlatformStorageMigrationIsArray(metadata)) return null;
+  let value: Dynamic = metadata[ConvertedFromValue];
   if (PlatformStorageMigrationIsArray(value))
     return {
       kind: "converted",
       marker: value,
     };
-  let value2: Dynamic = input[CreatedOnFilesValue];
-  return PlatformStorageMigrationIsArray(value2)
+  let createdMarker: Dynamic = metadata[CreatedOnFilesValue];
+  return PlatformStorageMigrationIsArray(createdMarker)
     ? {
         kind: "created",
-        marker: value2,
+        marker: createdMarker,
       }
     : null;
 }
-function getStorageModeFromMetadata(input?: Dynamic): Dynamic {
-  return getStorageMigrationMarker(input) === null ? "store" : "files";
+function getStorageModeFromMetadata(metadata?: Dynamic): Dynamic {
+  return getStorageMigrationMarker(metadata) === null ? "store" : "files";
 }
-function getStorageModeFromJson(input?: Dynamic): Dynamic {
-  if (typeof input != "string") return "store";
+function getStorageModeFromJson(metadataJson?: Dynamic): Dynamic {
+  if (typeof metadataJson != "string") return "store";
   try {
-    return getStorageModeFromMetadata(JSON.parse(input));
+    return getStorageModeFromMetadata(JSON.parse(metadataJson));
   } catch {
     return "store";
   }
 }
-function migrationTimestampMarker(input?: Dynamic): Dynamic {
+function migrationTimestampMarker(timestamp?: Dynamic): Dynamic {
   return {
     v: 1,
-    at: input.at,
+    at: timestamp.at,
   };
 }
-function getMovedToMarker(input?: Dynamic): Dynamic {
-  if (!PlatformStorageMigrationIsArray(input)) return null;
-  let value: Dynamic = input[MovedToValue];
+function getMovedToMarker(metadata?: Dynamic): Dynamic {
+  if (!PlatformStorageMigrationIsArray(metadata)) return null;
+  let value: Dynamic = metadata[MovedToValue];
   if (
     !PlatformStorageMigrationIsArray(value) ||
     typeof value.path != "string" ||
@@ -52,8 +52,8 @@ function getMovedToMarker(input?: Dynamic): Dynamic {
   let state: Dynamic = {
     ...value,
   };
-  for (let value2 of ["dropping", "dropped", "took"] as Dynamic)
-    typeof state[value2] != "string" && delete state[value2];
+  for (let timestampKey of ["dropping", "dropped", "took"] as Dynamic)
+    typeof state[timestampKey] != "string" && delete state[timestampKey];
   return state;
 }
 export {
@@ -72,7 +72,7 @@ export function installPlatformStorageMigration(): () => void {
     ConvertedFromValue = "convertedFrom";
     CreatedOnFilesValue = "createdOnFiles";
     MovedToValue = "movedTo";
-    PlatformStorageMigrationIsArray = (input?: Dynamic): Dynamic =>
-      typeof input == "object" && input !== null && !Array.isArray(input);
+    PlatformStorageMigrationIsArray = (metadata?: Dynamic): Dynamic =>
+      typeof metadata == "object" && metadata !== null && !Array.isArray(metadata);
   };
 }

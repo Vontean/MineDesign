@@ -6,101 +6,101 @@ import {
 var sha256RoundConstants: Uint32Array;
 var PlatformSha256TextEncoder: TextEncoder;
 var PlatformSha256Encode: (text: string) => Uint8Array<ArrayBuffer>;
-function sha256Fallback(input: string | Uint8Array): string {
-  let value = typeof input == "string" ? PlatformSha256Encode(input) : input,
-    length = value.length,
-    value2 = ((length + 9 + 63) >> 6) << 6,
-    value3 = new Uint8Array(value2);
-  value3.set(value);
-  value3[length] = 128;
-  let value4 = new DataView(value3.buffer);
-  value4.setUint32(value2 - 8, Math.floor(length / 536870912), false);
-  value4.setUint32(value2 - 4, (length << 3) >>> 0, false);
-  let value5 = new Uint32Array([
+function sha256Fallback(message: string | Uint8Array): string {
+  let bytes = typeof message == "string" ? PlatformSha256Encode(message) : message,
+    byteLength = bytes.length,
+    paddedLength = ((byteLength + 9 + 63) >> 6) << 6,
+    paddedBytes = new Uint8Array(paddedLength);
+  paddedBytes.set(bytes);
+  paddedBytes[byteLength] = 128;
+  let paddedView = new DataView(paddedBytes.buffer);
+  paddedView.setUint32(paddedLength - 8, Math.floor(byteLength / 536870912), false);
+  paddedView.setUint32(paddedLength - 4, (byteLength << 3) >>> 0, false);
+  let hashState = new Uint32Array([
       1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924,
       528734635, 1541459225,
     ]),
-    value6 = new Uint32Array(64);
-  for (let index = 0; index < value2; index += 64) {
-    for (let index2 = 0; index2 < 16; index2++)
-      value6[index2] = value4.getUint32(index + index2 * 4, false);
-    for (let count = 16; count < 64; count++) {
-      let value15 = value6[count - 15]!,
-        value16 = value6[count - 2]!,
-        value17 =
-          ((value15 >>> 7) | (value15 << 25)) ^
-          ((value15 >>> 18) | (value15 << 14)) ^
-          (value15 >>> 3),
-        value18 =
-          ((value16 >>> 17) | (value16 << 15)) ^
-          ((value16 >>> 19) | (value16 << 13)) ^
-          (value16 >>> 10);
-      value6[count] =
-        (value6[count - 16]! + value17 + value6[count - 7]! + value18) | 0;
+    schedule = new Uint32Array(64);
+  for (let blockOffset = 0; blockOffset < paddedLength; blockOffset += 64) {
+    for (let wordIndex = 0; wordIndex < 16; wordIndex++)
+      schedule[wordIndex] = paddedView.getUint32(blockOffset + wordIndex * 4, false);
+    for (let wordIndex = 16; wordIndex < 64; wordIndex++) {
+      let earlierWord = schedule[wordIndex - 15]!,
+        recentWord = schedule[wordIndex - 2]!,
+        smallSigma0 =
+          ((earlierWord >>> 7) | (earlierWord << 25)) ^
+          ((earlierWord >>> 18) | (earlierWord << 14)) ^
+          (earlierWord >>> 3),
+        smallSigma1 =
+          ((recentWord >>> 17) | (recentWord << 15)) ^
+          ((recentWord >>> 19) | (recentWord << 13)) ^
+          (recentWord >>> 10);
+      schedule[wordIndex] =
+        (schedule[wordIndex - 16]! + smallSigma0 + schedule[wordIndex - 7]! + smallSigma1) | 0;
     }
-    let value7 = value5[0]!,
-      value8 = value5[1]!,
-      value9 = value5[2]!,
-      value10 = value5[3]!,
-      value11 = value5[4]!,
-      value12 = value5[5]!,
-      value13 = value5[6]!,
-      value14 = value5[7]!;
-    for (let index2 = 0; index2 < 64; index2++) {
-      let value15 =
-          ((value11 >>> 6) | (value11 << 26)) ^
-          ((value11 >>> 11) | (value11 << 21)) ^
-          ((value11 >>> 25) | (value11 << 7)),
-        value16 = (value11 & value12) ^ (~value11 & value13),
-        value17 =
-          (value14 +
-            value15 +
-            value16 +
-            sha256RoundConstants[index2]! +
-            value6[index2]!) |
+    let a = hashState[0]!,
+      b = hashState[1]!,
+      c = hashState[2]!,
+      d = hashState[3]!,
+      e = hashState[4]!,
+      f = hashState[5]!,
+      g = hashState[6]!,
+      h = hashState[7]!;
+    for (let round = 0; round < 64; round++) {
+      let bigSigma1 =
+          ((e >>> 6) | (e << 26)) ^
+          ((e >>> 11) | (e << 21)) ^
+          ((e >>> 25) | (e << 7)),
+        choose = (e & f) ^ (~e & g),
+        roundSum =
+          (h +
+            bigSigma1 +
+            choose +
+            sha256RoundConstants[round]! +
+            schedule[round]!) |
           0,
-        value18 =
-          ((value7 >>> 2) | (value7 << 30)) ^
-          ((value7 >>> 13) | (value7 << 19)) ^
-          ((value7 >>> 22) | (value7 << 10)),
-        value19 = (value7 & value8) ^ (value7 & value9) ^ (value8 & value9),
-        value20 = (value18 + value19) | 0;
-      value14 = value13;
-      value13 = value12;
-      value12 = value11;
-      value11 = (value10 + value17) | 0;
-      value10 = value9;
-      value9 = value8;
-      value8 = value7;
-      value7 = (value17 + value20) | 0;
+        bigSigma0 =
+          ((a >>> 2) | (a << 30)) ^
+          ((a >>> 13) | (a << 19)) ^
+          ((a >>> 22) | (a << 10)),
+        majority = (a & b) ^ (a & c) ^ (b & c),
+        majoritySum = (bigSigma0 + majority) | 0;
+      h = g;
+      g = f;
+      f = e;
+      e = (d + roundSum) | 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (roundSum + majoritySum) | 0;
     }
-    value5[0] = (value5[0]! + value7) | 0;
-    value5[1] = (value5[1]! + value8) | 0;
-    value5[2] = (value5[2]! + value9) | 0;
-    value5[3] = (value5[3]! + value10) | 0;
-    value5[4] = (value5[4]! + value11) | 0;
-    value5[5] = (value5[5]! + value12) | 0;
-    value5[6] = (value5[6]! + value13) | 0;
-    value5[7] = (value5[7]! + value14) | 0;
+    hashState[0] = (hashState[0]! + a) | 0;
+    hashState[1] = (hashState[1]! + b) | 0;
+    hashState[2] = (hashState[2]! + c) | 0;
+    hashState[3] = (hashState[3]! + d) | 0;
+    hashState[4] = (hashState[4]! + e) | 0;
+    hashState[5] = (hashState[5]! + f) | 0;
+    hashState[6] = (hashState[6]! + g) | 0;
+    hashState[7] = (hashState[7]! + h) | 0;
   }
-  let text = "";
-  for (let index = 0; index < 8; index++)
-    text += (value5[index]! >>> 0).toString(16).padStart(8, "0");
-  return text;
+  let digestHex = "";
+  for (let wordIndex = 0; wordIndex < 8; wordIndex++)
+    digestHex += (hashState[wordIndex]! >>> 0).toString(16).padStart(8, "0");
+  return digestHex;
 }
 async function sha256(
-  input: string | Uint8Array<ArrayBuffer>,
+  message: string | Uint8Array<ArrayBuffer>,
 ): Promise<string> {
-  let value = typeof input == "string" ? PlatformSha256Encode(input) : input,
-    value2 = globalThis.crypto?.subtle;
-  if (typeof value2?.digest == "function" && value.length > 4096)
+  let bytes = typeof message == "string" ? PlatformSha256Encode(message) : message,
+    subtleCrypto = globalThis.crypto?.subtle;
+  if (typeof subtleCrypto?.digest == "function" && bytes.length > 4096)
     try {
-      let value3 = new Uint8Array(await value2.digest("SHA-256", value)),
-        text = "";
-      for (let value4 of value3) text += value4.toString(16).padStart(2, "0");
-      return text;
+      let digest = new Uint8Array(await subtleCrypto.digest("SHA-256", bytes)),
+        digestHex = "";
+      for (let byte of digest) digestHex += byte.toString(16).padStart(2, "0");
+      return digestHex;
     } catch {}
-  return sha256Fallback(value);
+  return sha256Fallback(bytes);
 }
 export {
   PlatformSha256Encode,
@@ -125,7 +125,7 @@ export function installPlatformSha256(): () => void {
       2428436474, 2756734187, 3204031479, 3329325298,
     ]);
     PlatformSha256TextEncoder = new TextEncoder();
-    PlatformSha256Encode = (input?: Dynamic): Dynamic =>
-      PlatformSha256TextEncoder.encode(input);
+    PlatformSha256Encode = (text?: Dynamic): Dynamic =>
+      PlatformSha256TextEncoder.encode(text);
   };
 }

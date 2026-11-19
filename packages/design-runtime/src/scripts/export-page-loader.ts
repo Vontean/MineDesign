@@ -12,7 +12,7 @@ import type { Dynamic } from "../runtime-types";
     function helper_setStatus(
       this: Dynamic,
       textContent?: Dynamic,
-      ..._extraArguments2: Dynamic[]
+      ..._statusArgs: Dynamic[]
     ): Dynamic {
       if (value_loading) value_loading.textContent = textContent;
     }
@@ -21,14 +21,14 @@ import type { Dynamic } from "../runtime-types";
     const value_MIME_TOKEN: Dynamic = /^[\w.+-]+[/][\w.+-]+$/;
     function helper_toBase64(
       this: Dynamic,
-      input?: Dynamic,
-      ..._extraArguments3: Dynamic[]
+      bytes?: Dynamic,
+      ..._encodingArgs: Dynamic[]
     ): Dynamic {
       let text: Dynamic = "";
-      for (let index: Dynamic = 0; index < input.length; index += 0x8000) {
+      for (let index: Dynamic = 0; index < bytes.length; index += 0x8000) {
         text += String.fromCharCode.apply(
           null,
-          input.subarray(index, index + 0x8000),
+          bytes.subarray(index, index + 0x8000),
         );
       }
       return btoa(text);
@@ -40,7 +40,7 @@ import type { Dynamic } from "../runtime-types";
       function (
         this: Dynamic,
         event?: Dynamic,
-        ..._extraArguments4: Dynamic[]
+        ..._fontArgs: Dynamic[]
       ): Dynamic {
         // Failed resource loads (CSP-blocked links, scripts, images) fire plain
         // events at the element — warn only; real JS errors carry message/error.
@@ -81,21 +81,21 @@ import type { Dynamic } from "../runtime-types";
       const element: Dynamic = (document as Dynamic).querySelector(
         'script[type="__bundler/manifest"]',
       );
-      const element2: Dynamic = (document as Dynamic).querySelector(
+      const templateScript: Dynamic = (document as Dynamic).querySelector(
         'script[type="__bundler/template"]',
       );
-      if (!element || !element2) {
+      if (!element || !templateScript) {
         helper_setStatus("Error: missing bundle data");
         console.error(
           "[bundler] Missing script tags — manifestEl:",
           !!element,
           "templateEl:",
-          !!element2,
+          !!templateScript,
         );
         return;
       }
       const value_manifest: Dynamic = JSON.parse(element.textContent);
-      let value_template: Dynamic = JSON.parse(element2.textContent);
+      let value_template: Dynamic = JSON.parse(templateScript.textContent);
 
       // Nested page bundles (iframe targets). Each ships ONCE, in the ROOT
       // document's manifest; frame srcs carry an about:blank#<uuid> marker
@@ -106,11 +106,11 @@ import type { Dynamic } from "../runtime-types";
       // loads at any depth on any host, including a file:// download's
       // opaque origins (where a blob minted by one document cannot be
       // navigated to by another).
-      const element3: Dynamic = (document as Dynamic).querySelector(
+      const pageOrderScript: Dynamic = (document as Dynamic).querySelector(
         'script[type="__bundler/page_order"]',
       );
-      const value_pageOrder: Dynamic = element3
-        ? JSON.parse(element3.textContent)
+      const value_pageOrder: Dynamic = pageOrderScript
+        ? JSON.parse(pageOrderScript.textContent)
         : [];
       const value_pageSet: Dynamic = new Set(value_pageOrder);
       const state: Dynamic = {};
@@ -149,10 +149,10 @@ import type { Dynamic } from "../runtime-types";
         : "*";
       function helper_trustedOrigin(
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments5: Dynamic[]
+        event?: Dynamic,
+        ..._originCheckArgs: Dynamic[]
       ): Dynamic {
-        if (input.origin === (window as Dynamic).origin) return true; // https chains; opaque==opaque
+        if (event.origin === (window as Dynamic).origin) return true; // https chains; opaque==opaque
         // file:// trees: Chrome serializes the file document's origin as
         // 'file://' while the blob: documents it mints serialize as 'null',
         // so the two legitimate shapes can never string-match — accept the
@@ -160,10 +160,10 @@ import type { Dynamic } from "../runtime-types";
         // and sender identity (own child frame / direct parent) is checked
         // separately.
         return (
-          (input.origin === "null" &&
+          (event.origin === "null" &&
             ((window as Dynamic).origin === "file://" ||
               (window as Dynamic).location.protocol === "file:")) ||
-          (/^file:/.test(input.origin) && (window as Dynamic).origin === "null")
+          (/^file:/.test(event.origin) && (window as Dynamic).origin === "null")
         );
       }
       // Non-empty only in the root document (nested bundles ship an empty
@@ -171,39 +171,39 @@ import type { Dynamic } from "../runtime-types";
       // local text and treats a miss as authoritative — never relaying to
       // its (possibly foreign) parent.
       const value_isPageRoot: Dynamic = value_pageOrder.length > 0;
-      const state2: Dynamic = {};
+      const resourceUrlsById: Dynamic = {};
       const __resourceBlobs: Dynamic = {};
       const value_UUID_SHAPE: Dynamic =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-      const state3: Dynamic = {}; // uuid -> [{el, frag}] awaiting text for own frames
-      const state4: Dynamic = {}; // uuid -> [childWindow] awaiting text to pass down
+      const waitingFramesByPageId: Dynamic = {}; // uuid -> [{el, frag}] awaiting text for own frames
+      const waitingChildrenByPageId: Dynamic = {}; // uuid -> [childWindow] awaiting text to pass down
       function helper_mountPage(
         this: Dynamic,
-        input?: Dynamic,
-        options?: Dynamic,
+        frame?: Dynamic,
+        fragment?: Dynamic,
         __bundler_text?: Dynamic,
-        ..._extraArguments6: Dynamic[]
+        ..._mountArgs: Dynamic[]
       ): Dynamic {
         const u2: Dynamic = new Blob([__bundler_text], {
           type: "text/html",
         });
         const value_u: Dynamic = URL.createObjectURL(u2);
         __resourceBlobs[value_u] = u2;
-        input.src = value_u + options;
+        frame.src = value_u + fragment;
       }
       function helper_deliverPage(
         this: Dynamic,
         __bundler_page?: Dynamic,
         __bundler_text?: Dynamic,
-        ..._extraArguments7: Dynamic[]
+        ..._deliveryArgs: Dynamic[]
       ): Dynamic {
-        const value_frames: Dynamic = state3[__bundler_page];
-        delete state3[__bundler_page];
+        const value_frames: Dynamic = waitingFramesByPageId[__bundler_page];
+        delete waitingFramesByPageId[__bundler_page];
         if (value_frames)
           for (const value_f of value_frames as Dynamic)
             helper_mountPage(value_f.el, value_f.frag, __bundler_text);
-        const value_relays: Dynamic = state4[__bundler_page];
-        delete state4[__bundler_page];
+        const value_relays: Dynamic = waitingChildrenByPageId[__bundler_page];
+        delete waitingChildrenByPageId[__bundler_page];
         if (value_relays) {
           for (const value_cw of value_relays as Dynamic) {
             try {
@@ -222,7 +222,7 @@ import type { Dynamic } from "../runtime-types";
       }
       function helper_ownFrameWindows(
         this: Dynamic,
-        ..._extraArguments8: Dynamic[]
+        ..._requestArgs: Dynamic[]
       ): Dynamic {
         const items: Dynamic = [];
         for (const value_f of (Array as Dynamic).from(
@@ -240,29 +240,29 @@ import type { Dynamic } from "../runtime-types";
         "message",
         function (
           this: Dynamic,
-          input?: Dynamic,
-          ..._extraArguments9: Dynamic[]
+          event?: Dynamic,
+          ..._messageArgs: Dynamic[]
         ): Dynamic {
-          const data: Dynamic = input.data;
-          if (!data || typeof data !== "object" || !input.source) return;
+          const data: Dynamic = event.data;
+          if (!data || typeof data !== "object" || !event.source) return;
           // Origin gate first; the structural checks below (own-child-frames
           // for requests, direct-parent + solicited-uuid for replies, the
           // root's never-relay rule) are what hold in fully opaque chains
           // where origin strings can't discriminate — a sandboxed root's
           // FOREIGN wrapper still fails all three even though both serialize
           // as real-vs-'null' rather than matching.
-          if (!helper_trustedOrigin(input)) return;
+          if (!helper_trustedOrigin(event)) return;
           if (
             typeof data.__bundler_need === "string" &&
             value_UUID_SHAPE.test(data.__bundler_need)
           ) {
             // Requests are honored only for this document's own child frames.
-            if (helper_ownFrameWindows().indexOf(input.source) < 0) return;
+            if (helper_ownFrameWindows().indexOf(event.source) < 0) return;
             const __bundler_page: Dynamic = data.__bundler_need;
             const __bundler_text: Dynamic = state[__bundler_page];
             if (typeof __bundler_text === "string") {
               try {
-                input.source.postMessage(
+                event.source.postMessage(
                   {
                     __bundler_page: __bundler_page,
                     __bundler_text: __bundler_text,
@@ -276,17 +276,17 @@ import type { Dynamic } from "../runtime-types";
             }
             if (value_isPageRoot || (window as Dynamic).parent === window)
               return; // authoritative miss
-            const value_waiting: Dynamic = state4[__bundler_page];
+            const value_waiting: Dynamic = waitingChildrenByPageId[__bundler_page];
             if (value_waiting) {
-              if (value_waiting.indexOf(input.source) < 0)
-                value_waiting.push(input.source);
+              if (value_waiting.indexOf(event.source) < 0)
+                value_waiting.push(event.source);
               return;
             }
             // Never-answered uuids would otherwise accumulate forever under a
             // request spray; past the cap (far above any real page count) new
             // relays are dropped rather than remembered.
-            if ((Object as Dynamic).keys(state4).length >= 128) return;
-            state4[__bundler_page] = [input.source];
+            if ((Object as Dynamic).keys(waitingChildrenByPageId).length >= 128) return;
+            waitingChildrenByPageId[__bundler_page] = [event.source];
             (window as Dynamic).parent.postMessage(
               {
                 __bundler_need: __bundler_page,
@@ -305,13 +305,13 @@ import type { Dynamic } from "../runtime-types";
             // Text is accepted only from the direct parent — the document
             // that minted this one.
             if (
-              input.source !== (window as Dynamic).parent ||
+              event.source !== (window as Dynamic).parent ||
               (window as Dynamic).parent === window
             )
               return;
             if (
-              !(data.__bundler_page in state3) &&
-              !(data.__bundler_page in state4)
+              !(data.__bundler_page in waitingFramesByPageId) &&
+              !(data.__bundler_page in waitingChildrenByPageId)
             )
               return;
             helper_deliverPage(data.__bundler_page, data.__bundler_text);
@@ -324,7 +324,7 @@ import type { Dynamic } from "../runtime-types";
         value_uuids.map(
           async (
             __bundler_page?: Dynamic,
-            ..._extraArguments0: Dynamic[]
+            ..._resourceArgs: Dynamic[]
           ): Promise<Dynamic> => {
             const value_entry: Dynamic = value_manifest[__bundler_page];
             try {
@@ -356,10 +356,10 @@ import type { Dynamic } from "../runtime-types";
                     index += value_value.length;
                   }
                   value_finalBytes = new Uint8Array(index);
-                  let index2: Dynamic = 0;
+                  let writeOffset: Dynamic = 0;
                   for (const value_chunk of items as Dynamic) {
-                    value_finalBytes.set(value_chunk, index2);
-                    index2 += value_chunk.length;
+                    value_finalBytes.set(value_chunk, writeOffset);
+                    writeOffset += value_chunk.length;
                   }
                 } else {
                   console.warn(
@@ -380,7 +380,7 @@ import type { Dynamic } from "../runtime-types";
                 value_MIME_TOKEN.test(value_entry.mime)
               ) {
                 // Strict artifact hosts allow font-src data: but not blob:.
-                state2[__bundler_page] =
+                resourceUrlsById[__bundler_page] =
                   "data:" +
                   value_entry.mime +
                   ";base64," +
@@ -391,8 +391,8 @@ import type { Dynamic } from "../runtime-types";
                 const value_blob: Dynamic = new Blob([value_finalBytes], {
                   type: value_entry.mime,
                 });
-                state2[__bundler_page] = URL.createObjectURL(value_blob);
-                __resourceBlobs[state2[__bundler_page]] = value_blob;
+                resourceUrlsById[__bundler_page] = URL.createObjectURL(value_blob);
+                __resourceBlobs[resourceUrlsById[__bundler_page]] = value_blob;
               }
             } catch (value_err: Dynamic) {
               console.error(
@@ -402,22 +402,22 @@ import type { Dynamic } from "../runtime-types";
               const value_blob: Dynamic = new Blob([], {
                 type: value_entry.mime,
               });
-              state2[__bundler_page] = URL.createObjectURL(value_blob);
-              __resourceBlobs[state2[__bundler_page]] = value_blob;
+              resourceUrlsById[__bundler_page] = URL.createObjectURL(value_blob);
+              __resourceBlobs[resourceUrlsById[__bundler_page]] = value_blob;
             }
           },
         ),
       );
-      const element4: Dynamic = (document as Dynamic).querySelector(
+      const externalResourcesScript: Dynamic = (document as Dynamic).querySelector(
         'script[type="__bundler/ext_resources"]',
       );
-      const value_extResources: Dynamic = element4
-        ? JSON.parse(element4.textContent)
+      const value_extResources: Dynamic = externalResourcesScript
+        ? JSON.parse(externalResourcesScript.textContent)
         : [];
-      const state5: Dynamic = {};
+      const externalResourceUrls: Dynamic = {};
       for (const value_entry of value_extResources as Dynamic) {
-        if (state2[value_entry.uuid])
-          state5[value_entry.id] = state2[value_entry.uuid];
+        if (resourceUrlsById[value_entry.uuid])
+          externalResourceUrls[value_entry.id] = resourceUrlsById[value_entry.uuid];
       }
 
       // Artifact-host CSP (connect-src 'self') refuses fetch() of blob: URLs —
@@ -430,7 +430,7 @@ import type { Dynamic } from "../runtime-types";
         if (value_pageSet.has(__bundler_page)) continue;
         value_template = value_template
           .split(__bundler_page)
-          .join(state2[__bundler_page]);
+          .join(resourceUrlsById[__bundler_page]);
       }
 
       // Strip integrity + crossorigin — blob URLs from a file:// document inherit
@@ -444,16 +444,16 @@ import type { Dynamic } from "../runtime-types";
       // — is left alone too; the attribute is then the author's to drop.)
       value_template = value_template.replace(
         /<[a-z][^>]*>/gi,
-        (input?: Dynamic, ..._extraArguments1: Dynamic[]): Dynamic =>
-          /\s(?:src|href|srcset|poster|data|xlink:href)="blob:/i.test(input)
-            ? input
+        (tag?: Dynamic, ..._replacementArgs: Dynamic[]): Dynamic =>
+          /\s(?:src|href|srcset|poster|data|xlink:href)="blob:/i.test(tag)
+            ? tag
                 .replace(/\s+integrity="[^"]*"/gi, "")
                 .replace(/\s+crossorigin="[^"]*"/gi, "")
-            : input,
+            : tag,
       );
       const value_resourceScript: Dynamic =
         "<script>window.__resources = " +
-        JSON.stringify(state5).replace(/<\//g, "<\\/") +
+        JSON.stringify(externalResourceUrls).replace(/<\//g, "<\\/") +
         ";</" +
         "script>";
       // Inject after <head> so the DOCTYPE stays first; prepending the script
@@ -506,8 +506,8 @@ import type { Dynamic } from "../runtime-types";
             (window as Dynamic).parent !== window &&
             !value_isPageRoot
           ) {
-            const value_had: Dynamic = state3[value_m[1]];
-            (state3[value_m[1]] = value_had || []).push({
+            const value_had: Dynamic = waitingFramesByPageId[value_m[1]];
+            (waitingFramesByPageId[value_m[1]] = value_had || []).push({
               el: value_el,
               frag: value_m[2] || "",
             });
@@ -549,7 +549,7 @@ import type { Dynamic } from "../runtime-types";
           ? new Promise(function (
               this: Dynamic,
               onerror?: Dynamic,
-              ..._extraArguments10: Dynamic[]
+              ..._scriptArgs: Dynamic[]
             ): Dynamic {
               value_s.onload = value_s.onerror = onerror;
             })

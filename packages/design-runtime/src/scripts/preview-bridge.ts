@@ -51,12 +51,12 @@ const text: Dynamic = "__ARROW_OWNER__";
     );
     value_ch.port1.onmessage = function (
       this: Dynamic,
-      input?: Dynamic,
-      ..._extraArguments2: Dynamic[]
+      message?: Dynamic,
+      ..._pingArgs: Dynamic[]
     ): Dynamic {
       var value_d: Dynamic = null;
       try {
-        value_d = apply(get, input, []);
+        value_d = apply(get, message, []);
       } catch (value_e: Dynamic) {
         return;
       }
@@ -87,7 +87,7 @@ const text: Dynamic = "__ARROW_OWNER__";
   try {
     (window as Dynamic).addEventListener(
       "pagehide",
-      function (this: Dynamic, ..._extraArguments3: Dynamic[]): Dynamic {
+      function (this: Dynamic, ..._eventArgs: Dynamic[]): Dynamic {
         try {
           parent.postMessage(
             {
@@ -110,10 +110,10 @@ const text: Dynamic = "__ARROW_OWNER__";
       "keydown",
       function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments4: Dynamic[]
+        event?: Dynamic,
+        ..._escapeArgs: Dynamic[]
       ): Dynamic {
-        if (input.key !== "Escape" || input.repeat) return;
+        if (event.key !== "Escape" || event.repeat) return;
         try {
           parent.postMessage(
             {
@@ -139,7 +139,7 @@ const text: Dynamic = "__ARROW_OWNER__";
     /* the page itself scrolls sideways (by more than a stray scrollbar's width) and is not clipped there */
     var value_pageScrollsSideways: Dynamic = function (
       this: Dynamic,
-      ..._extraArguments5: Dynamic[]
+      ..._scrollCheckArgs: Dynamic[]
     ): Dynamic {
       var scrollingElement: Dynamic = (document as Dynamic).scrollingElement;
       if (
@@ -167,7 +167,7 @@ const text: Dynamic = "__ARROW_OWNER__";
       function (
         this: Dynamic,
         event?: Dynamic,
-        ..._extraArguments6: Dynamic[]
+        ..._styleCheckArgs: Dynamic[]
       ): Dynamic {
         value_lastPress =
           (event.composedPath && event.composedPath()[0]) || event.target;
@@ -177,7 +177,7 @@ const text: Dynamic = "__ARROW_OWNER__";
     var value_ownsArrows: Dynamic = function (
       this: Dynamic,
       event?: Dynamic,
-      ..._extraArguments7: Dynamic[]
+      ..._arrowCheckArgs: Dynamic[]
     ): Dynamic {
       var value_path: Dynamic = event.composedPath
         ? event.composedPath()
@@ -217,30 +217,30 @@ const text: Dynamic = "__ARROW_OWNER__";
       "keydown",
       function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments8: Dynamic[]
+        event?: Dynamic,
+        ..._arrowArgs: Dynamic[]
       ): Dynamic {
         if (
-          (input.key !== "ArrowLeft" && input.key !== "ArrowRight") ||
-          input.repeat ||
-          !input.isTrusted
+          (event.key !== "ArrowLeft" && event.key !== "ArrowRight") ||
+          event.repeat ||
+          !event.isTrusted
         )
           return;
         if (
-          input.metaKey ||
-          input.ctrlKey ||
-          input.altKey ||
-          input.shiftKey ||
-          value_ownsArrows(input)
+          event.metaKey ||
+          event.ctrlKey ||
+          event.altKey ||
+          event.shiftKey ||
+          value_ownsArrows(event)
         )
           return;
         if (value_pageScrollsSideways()) return;
-        var __om_step: Dynamic = input.key === "ArrowRight" ? 1 : -1;
+        var __om_step: Dynamic = event.key === "ArrowRight" ? 1 : -1;
         value_afterDispatch(function (
           this: Dynamic,
-          ..._extraArguments9: Dynamic[]
+          ..._defaultActionArgs: Dynamic[]
         ): Dynamic {
-          if (input.defaultPrevented) return;
+          if (event.defaultPrevented) return;
           try {
             parent.postMessage(
               {
@@ -285,49 +285,49 @@ const text: Dynamic = "__ARROW_OWNER__";
     /* a label counts only when it labels something, a summary only as its details' first summary: otherwise the link still navigates */
     var value_ownsClick: Dynamic = function (
       this: Dynamic,
-      input?: Dynamic,
-      ..._extraArguments0: Dynamic[]
+      element?: Dynamic,
+      ..._controlCheckArgs: Dynamic[]
     ): Dynamic {
-      if (input.localName === "label") return !!input.control;
-      if (input.localName !== "summary") return true;
-      var parentNode: Dynamic = input.parentNode;
+      if (element.localName === "label") return !!element.control;
+      if (element.localName !== "summary") return true;
+      var parentNode: Dynamic = element.parentNode;
       return (
         !!parentNode &&
         parentNode.localName === "details" &&
-        parentNode.querySelector(":scope > summary") === input
+        parentNode.querySelector(":scope > summary") === element
       );
     };
     var value_hit: Dynamic = function (
       this: Dynamic,
       event?: Dynamic,
-      ..._extraArguments1: Dynamic[]
+      ..._hitTestArgs: Dynamic[]
     ): Dynamic {
       var value_path: Dynamic = event.composedPath
         ? event.composedPath()
         : [event.target];
-      var control2: Dynamic = null;
+      var clickedControl: Dynamic = null;
       for (var index: Dynamic = 0; index < value_path.length; index += 1) {
         var value_n: Dynamic = value_path[index];
         if (!value_n || value_n.nodeType !== 1 || !value_n.matches) continue;
         if (value_n.matches(text2))
           return {
             a: value_n,
-            control: control2,
+            control: clickedControl,
           };
         if (
-          control2 == null &&
+          clickedControl == null &&
           value_n.matches(value_CONTROL_SEL) &&
           value_ownsClick(value_n)
         )
-          control2 = value_n;
+          clickedControl = value_n;
       }
       return null;
     };
     var value_follow: Dynamic = function (
       this: Dynamic,
       element?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments10: Dynamic[]
+      isMiddleClick?: Dynamic,
+      ..._followArgs: Dynamic[]
     ): Dynamic {
       var value_raw: Dynamic = String(
         element.getAttribute("href") || "",
@@ -335,7 +335,7 @@ const text: Dynamic = "__ARROW_OWNER__";
       if (value_raw === "")
         return; /* SVG xlink-only anchors, empty href: cancelled above, inert here */
       if (value_raw.charAt(0) === "#") {
-        if (options || value_raw === "#")
+        if (isMiddleClick || value_raw === "#")
           return; /* a middle click never scrolls; a bare "#" is the "script owns it" idiom: inert */
         var value_id: Dynamic = value_raw.slice(1);
         try {
@@ -370,7 +370,7 @@ const text: Dynamic = "__ARROW_OWNER__";
           value_url.origin === new URL((document as Dynamic).baseURI).origin;
       } catch (value_e: Dynamic) {}
       if (value_own) {
-        if (options || element.hasAttribute("download"))
+        if (isMiddleClick || element.hasAttribute("download"))
           return; /* a same-origin download names no artboard (in compat mode the page shim saves it) */
         var __om_step: Dynamic = value_compatPage
           ? value_projectRoot !== null
@@ -410,7 +410,7 @@ const text: Dynamic = "__ARROW_OWNER__";
     var value_onLink: Dynamic = function (
       this: Dynamic,
       event?: Dynamic,
-      ..._extraArguments11: Dynamic[]
+      ..._clickArgs: Dynamic[]
     ): Dynamic {
       var value_aux: Dynamic = event.type === "auxclick";
       if (value_aux && event.button !== 1) return;
@@ -433,7 +433,7 @@ const text: Dynamic = "__ARROW_OWNER__";
       var preventDefault: Dynamic = event.preventDefault;
       var value: Dynamic = function (
         this: Dynamic,
-        ..._extraArguments12: Dynamic[]
+        ..._preventArgs: Dynamic[]
       ): Dynamic {
         value_handled = true;
         preventDefault.call(event);
@@ -447,7 +447,7 @@ const text: Dynamic = "__ARROW_OWNER__";
         (Object as Dynamic).defineProperty(event, "defaultPrevented", {
           get: function (
             this: Dynamic,
-            ..._extraArguments13: Dynamic[]
+            ..._preventedArgs: Dynamic[]
           ): Dynamic {
             return value_handled;
           },
@@ -456,16 +456,16 @@ const text: Dynamic = "__ARROW_OWNER__";
         (Object as Dynamic).defineProperty(event, "returnValue", {
           get: function (
             this: Dynamic,
-            ..._extraArguments14: Dynamic[]
+            ..._readReturnArgs: Dynamic[]
           ): Dynamic {
             return !value_handled;
           },
           set: function (
             this: Dynamic,
-            input?: Dynamic,
-            ..._extraArguments15: Dynamic[]
+            returnValue?: Dynamic,
+            ..._writeReturnArgs: Dynamic[]
           ): Dynamic {
-            if (input === false) value();
+            if (returnValue === false) value();
           },
           configurable: true,
         });
@@ -481,7 +481,7 @@ const text: Dynamic = "__ARROW_OWNER__";
         return;
       setTimeout(function (
         this: Dynamic,
-        ..._extraArguments16: Dynamic[]
+        ..._deferArgs: Dynamic[]
       ): Dynamic {
         if (!value_handled) value_follow(a2, value_aux);
       }, 0);
@@ -491,13 +491,13 @@ const text: Dynamic = "__ARROW_OWNER__";
   } catch (value_e: Dynamic) {}
   var value_serialise: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments17: Dynamic[]
+    result?: Dynamic,
+    ..._serializationArgs: Dynamic[]
   ): Dynamic {
     try {
-      return JSON.stringify(input);
+      return JSON.stringify(result);
     } catch (value_e: Dynamic) {
-      return JSON.stringify(String(input));
+      return JSON.stringify(String(result));
     }
   };
   (window as Dynamic).addEventListener(
@@ -512,12 +512,12 @@ const text: Dynamic = "__ARROW_OWNER__";
       if (!data || data.__om_eval !== 1) return;
       var value_reply: Dynamic = function (
         this: Dynamic,
-        input2?: Dynamic,
-        ..._extraArguments19: Dynamic[]
+        reply?: Dynamic,
+        ..._replyArgs: Dynamic[]
       ): Dynamic {
-        input2.__om_eval_r = 1;
-        input2.id = data.id;
-        input.source.postMessage(input2, "*");
+        reply.__om_eval_r = 1;
+        reply.id = data.id;
+        input.source.postMessage(reply, "*");
       };
       try {
         var value_r: Dynamic = eval(data.code);
@@ -525,22 +525,22 @@ const text: Dynamic = "__ARROW_OWNER__";
           value_r.then(
             function (
               this: Dynamic,
-              input2?: Dynamic,
-              ..._extraArguments20: Dynamic[]
+              result?: Dynamic,
+              ..._resolveArgs: Dynamic[]
             ): Dynamic {
               value_reply({
                 ok: 1,
-                v: value_serialise(input2),
+                v: value_serialise(result),
               });
             },
             function (
               this: Dynamic,
-              input2?: Dynamic,
-              ..._extraArguments21: Dynamic[]
+              error?: Dynamic,
+              ..._rejectArgs: Dynamic[]
             ): Dynamic {
               value_reply({
                 ok: 0,
-                e: String(input2),
+                e: String(error),
               });
             },
           );

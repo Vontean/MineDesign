@@ -19,10 +19,10 @@ export function installPlatformRateLimiter(): () => void {
   return () => {
     PlatformRateLimiterResolvedValue = 2 * 1024 * 1024;
     TokenBucket = class {
-      constructor(input: Dynamic, options: Dynamic) {
-        this.cap = input;
-        this.refillPerSec = options;
-        this.tokens = input;
+      constructor(capacity: Dynamic, tokensPerSecond: Dynamic) {
+        this.cap = capacity;
+        this.refillPerSec = tokensPerSecond;
+        this.tokens = capacity;
       }
       cap: Dynamic;
       refillPerSec: Dynamic;

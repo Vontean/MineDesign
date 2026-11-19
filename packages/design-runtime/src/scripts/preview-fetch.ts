@@ -1,12 +1,12 @@
 /** Restored injected script; compiled as an isolated IIFE before insertion into a preview. */
 import type { Dynamic } from "../runtime-types";
 (function (this: Dynamic, ..._extraArguments: Dynamic[]): Dynamic {
-  var value_real: Dynamic = (window as Dynamic).fetch.bind(window);
-  var value_ROOT: Dynamic =
+  var nativeFetch: Dynamic = (window as Dynamic).fetch.bind(window);
+  var projectRoot: Dynamic =
     typeof (window as Dynamic).__dcProjectRoot === "string"
       ? (window as Dynamic).__dcProjectRoot
       : null;
-  var state: Dynamic = {
+  var imageMimeTypes: Dynamic = {
     png: "image/png",
     jpg: "image/jpeg",
     jpeg: "image/jpeg",
@@ -16,7 +16,7 @@ import type { Dynamic } from "../runtime-types";
     bmp: "image/bmp",
     svg: "image/svg+xml",
   };
-  var state2: Dynamic = {
+  var textMimeTypes: Dynamic = {
     html: "text/html",
     css: "text/css",
     js: "text/javascript",
@@ -25,140 +25,140 @@ import type { Dynamic } from "../runtime-types";
   };
   /* The requested URL as a project key: relative to the root file's folder ('../x' too, and the
    * runtime's encoded '..%2FName.dc.html'), or absolute under <base> (/appifact/...) - resolveRef in preview.ts. */
-  var value_norm: Dynamic = function (
+  var toProjectFileKey: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments2: Dynamic[]
+    requestUrl?: Dynamic,
+    ..._normalizeArgs: Dynamic[]
   ): Dynamic {
-    if (input && typeof input === "object" && typeof input.url === "string")
-      input = input.url;
-    input = String(input).split("#")[0]!.split("?")[0];
+    if (requestUrl && typeof requestUrl === "object" && typeof requestUrl.url === "string")
+      requestUrl = requestUrl.url;
+    requestUrl = String(requestUrl).split("#")[0]!.split("?")[0];
     // dc-runtime boot() re-fetches location.href to re-adopt its own raw
     // bytes (camelCase attr repair). In a srcdoc document that URL is
     // about:srcdoc, which fetch() can't load - serve the root source from
     // the map instead, keeping the fidelity pass working.
-    if (input === "about:srcdoc" || input === String(location.href)) {
-      return (window as Dynamic).__dcRootPath || input;
+    if (requestUrl === "about:srcdoc" || requestUrl === String(location.href)) {
+      return (window as Dynamic).__dcRootPath || requestUrl;
     }
-    var value_dir: Dynamic = String(
+    var directory: Dynamic = String(
       (window as Dynamic).__dcRootPath || "",
     ).replace(/[^/]*$/, "");
     /* an absolute URL counts only on this document's own base origin, under /appifact/ or under the stamped project folder */
-    if (/^[a-z][a-z0-9+.-]*:/i.test(input) || input.slice(0, 2) === "//") {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(requestUrl) || requestUrl.slice(0, 2) === "//") {
       try {
-        var value_abs: Dynamic = new URL(input, (document as Dynamic).baseURI),
-          value_base: Dynamic = new URL((document as Dynamic).baseURI);
+        var absoluteUrl: Dynamic = new URL(requestUrl, (document as Dynamic).baseURI),
+          baseUrl: Dynamic = new URL((document as Dynamic).baseURI);
         if (
-          value_abs.origin !== value_base.origin ||
-          (value_abs.pathname.indexOf("/appifact/") !== 0 &&
-            (value_ROOT === null ||
-              value_abs.pathname.indexOf(value_ROOT) !== 0))
+          absoluteUrl.origin !== baseUrl.origin ||
+          (absoluteUrl.pathname.indexOf("/appifact/") !== 0 &&
+            (projectRoot === null ||
+              absoluteUrl.pathname.indexOf(projectRoot) !== 0))
         )
           return null;
-        input = value_abs.pathname;
+        requestUrl = absoluteUrl.pathname;
       } catch (value_e: Dynamic) {
         return null;
       }
     }
     /* with the published base, a path under the project folder is read as the same path under /appifact/ */
-    if (value_ROOT !== null && input.indexOf(value_ROOT) === 0)
-      input = "/appifact/" + input.slice(value_ROOT.length);
-    if (input.indexOf("/appifact/") === 0) {
-      input = input.slice(10);
-      value_dir = "";
-    } else if (input.charAt(0) === "/") value_dir = "";
+    if (projectRoot !== null && requestUrl.indexOf(projectRoot) === 0)
+      requestUrl = "/appifact/" + requestUrl.slice(projectRoot.length);
+    if (requestUrl.indexOf("/appifact/") === 0) {
+      requestUrl = requestUrl.slice(10);
+      directory = "";
+    } else if (requestUrl.charAt(0) === "/") directory = "";
     try {
-      input = decodeURIComponent(input);
+      requestUrl = decodeURIComponent(requestUrl);
     } catch (value_e: Dynamic) {}
-    var items: Dynamic = [];
-    var value_segs: Dynamic = (value_dir + input).split("/");
-    for (var index: Dynamic = 0; index < value_segs.length; index += 1) {
-      if (value_segs[index] === "" || value_segs[index] === ".") continue;
-      if (value_segs[index] === "..") items.pop();
-      else items.push(value_segs[index]);
+    var normalizedSegments: Dynamic = [];
+    var segments: Dynamic = (directory + requestUrl).split("/");
+    for (var index: Dynamic = 0; index < segments.length; index += 1) {
+      if (segments[index] === "" || segments[index] === ".") continue;
+      if (segments[index] === "..") normalizedSegments.pop();
+      else normalizedSegments.push(segments[index]);
     }
-    return items.join("/");
+    return normalizedSegments.join("/");
   };
   /* the stored file a URL names, read live from the map: {key, mime, text, bytes (images)} or null */
   var __dcLookup: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments3: Dynamic[]
+    requestUrl?: Dynamic,
+    ..._lookupArgs: Dynamic[]
   ): Dynamic {
-    var key2: Dynamic = value_norm(input);
-    var value_files: Dynamic = (window as Dynamic).__dcFiles || {};
+    var fileKey: Dynamic = toProjectFileKey(requestUrl);
+    var files: Dynamic = (window as Dynamic).__dcFiles || {};
     if (
-      key2 === null ||
-      !(Object as Dynamic).prototype.hasOwnProperty.call(value_files, key2)
+      fileKey === null ||
+      !(Object as Dynamic).prototype.hasOwnProperty.call(files, fileKey)
     )
       return null;
-    var value_ext: Dynamic = key2
-      .slice(key2.lastIndexOf(".") + 1)
+    var extension: Dynamic = fileKey
+      .slice(fileKey.lastIndexOf(".") + 1)
       .toLowerCase();
-    var value_img: Dynamic = state[value_ext];
-    var text2: Dynamic = String(value_files[key2]);
-    var bytes2: Dynamic = null;
-    if (value_img) {
+    var imageMimeType: Dynamic = imageMimeTypes[extension];
+    var fileText: Dynamic = String(files[fileKey]);
+    var fileBytes: Dynamic = null;
+    if (imageMimeType) {
       try {
-        var value_bin: Dynamic = atob(text2);
-        bytes2 = new Uint8Array(value_bin.length);
-        for (var index: Dynamic = 0; index < value_bin.length; index += 1)
-          bytes2[index] = value_bin.charCodeAt(index);
+        var decodedImage: Dynamic = atob(fileText);
+        fileBytes = new Uint8Array(decodedImage.length);
+        for (var index: Dynamic = 0; index < decodedImage.length; index += 1)
+          fileBytes[index] = decodedImage.charCodeAt(index);
       } catch (value_e: Dynamic) {
-        value_img = "";
-        bytes2 = null;
+        imageMimeType = "";
+        fileBytes = null;
       }
     }
     return {
-      key: key2,
-      mime: value_img || state2[value_ext] || "text/plain",
-      text: text2,
-      bytes: bytes2,
+      key: fileKey,
+      mime: imageMimeType || textMimeTypes[extension] || "text/plain",
+      text: fileText,
+      bytes: fileBytes,
     };
   };
   (window as Dynamic).__dcLookup = __dcLookup;
   (window as Dynamic).fetch = function (
     this: Dynamic,
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments4: Dynamic[]
+    request?: Dynamic,
+    requestOptions?: Dynamic,
+    ..._fetchArgs: Dynamic[]
   ): Dynamic {
-    var value_f: Dynamic = __dcLookup(input);
-    if (value_f)
+    var localFile: Dynamic = __dcLookup(request);
+    if (localFile)
       return Promise.resolve(
-        new Response(value_f.bytes || value_f.text, {
+        new Response(localFile.bytes || localFile.text, {
           status: 200,
           headers: {
-            "Content-Type": value_f.mime,
+            "Content-Type": localFile.mime,
           },
         }),
       );
-    if (value_ROOT === null) return value_real(input, options);
+    if (projectRoot === null) return nativeFetch(request, requestOptions);
     /* a document with the published base reports to the editor a file under the project folder that was answered 403, 404 or 410 (ADDRESS_REFUSED) */
-    return value_real(input, options).then(function (
+    return nativeFetch(request, requestOptions).then(function (
       this: Dynamic,
-      input2?: Dynamic,
-      ..._extraArguments5: Dynamic[]
+      response?: Dynamic,
+      ..._responseArgs: Dynamic[]
     ): Dynamic {
       if (
-        input2 &&
-        (input2.status === 403 ||
-          input2.status === 404 ||
-          input2.status === 410) &&
-        String(input2.url).indexOf((window as Dynamic).origin + value_ROOT) ===
+        response &&
+        (response.status === 403 ||
+          response.status === 404 ||
+          response.status === 410) &&
+        String(response.url).indexOf((window as Dynamic).origin + projectRoot) ===
           0
       ) {
         try {
           (window as Dynamic).parent.postMessage(
             {
               __dc_address_refused: 1,
-              u: input2.url,
+              u: response.url,
             },
             "*",
           );
         } catch (value_e: Dynamic) {}
       }
-      return input2;
+      return response;
     });
   };
 })();

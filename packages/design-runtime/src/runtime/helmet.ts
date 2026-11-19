@@ -28,7 +28,7 @@ export var ATOMIC_CSS =
 export function createHelmetManager(
   documentNode?: RuntimeValue,
   isHtmlStreaming?: RuntimeValue,
-  options: RuntimeValue = {},
+  helmetOptions: RuntimeValue = {},
 ): RuntimeValue {
   const installedResources: RuntimeValue = new Set(),
     headElements: RuntimeValue = new Map();
@@ -47,7 +47,7 @@ export function createHelmetManager(
   } catch {}
   function updateCanvasTheme(): RuntimeValue {
     if (!canvasStyle) return;
-    const background: RuntimeValue = options.omelette
+    const background: RuntimeValue = helmetOptions.omelette
       ? theme === "dark"
         ? OMELETTE_DARK_BACKGROUND
         : OMELETTE_LIGHT_BACKGROUND

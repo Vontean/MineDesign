@@ -166,7 +166,7 @@ export function resolveComponentFile(
 export function updateComponentRuntimeScript(
   currentFile: string,
   source: ComponentSource,
-  context: unknown,
+  runtimeContext: unknown,
 ): string {
   const path = source.path;
   const componentName =
@@ -175,5 +175,5 @@ export function updateComponentRuntimeScript(
       : path === currentFile
         ? PreviewComponentImportsReplace(currentFile)
         : relativeProjectPath(projectDirectoryOf(currentFile), path).slice(0, -8);
-  return `window.__dcUpdate&&window.__dcUpdate(${JSON.stringify(componentName)},${JSON.stringify(source.kind)},${JSON.stringify(context)},${source.streaming ? "true" : "false"},${JSON.stringify(source.viewportKey ?? "")});`;
+  return `window.__dcUpdate&&window.__dcUpdate(${JSON.stringify(componentName)},${JSON.stringify(source.kind)},${JSON.stringify(runtimeContext)},${source.streaming ? "true" : "false"},${JSON.stringify(source.viewportKey ?? "")});`;
 }

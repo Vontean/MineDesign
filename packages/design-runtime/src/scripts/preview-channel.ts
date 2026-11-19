@@ -17,7 +17,7 @@ import type { Dynamic } from "../runtime-types";
     open: Dynamic = prototype.open,
     write: Dynamic = prototype.write,
     close: Dynamic = prototype.close,
-    apply2: Dynamic = Reflect.apply,
+    applyMethod: Dynamic = Reflect.apply,
     value_Str: Dynamic = String;
   var get: Dynamic = (Object as Dynamic).getOwnPropertyDescriptor(
     prototype,
@@ -37,37 +37,37 @@ import type { Dynamic } from "../runtime-types";
         {
           createHTML: function (
             this: Dynamic,
-            input?: Dynamic,
+            html?: Dynamic,
             ..._extraArguments: Dynamic[]
           ): Dynamic {
-            return input;
+            return html;
           },
         },
       );
       value_mint = function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments2: Dynamic[]
+        html?: Dynamic,
+        ..._policyArgs: Dynamic[]
       ): Dynamic {
-        return value_policy.createHTML(input);
+        return value_policy.createHTML(html);
       };
     }
   } catch (value_e: Dynamic) {
     value_mint = null;
   }
   var value_ch: Dynamic = new MessageChannel(),
-    port12: Dynamic = value_ch.port1,
-    port22: Dynamic = value_ch.port2,
+    receivePort: Dynamic = value_ch.port1,
+    sendPort: Dynamic = value_ch.port2,
     postMessage: Dynamic = MessagePort.prototype.postMessage,
-    close2: Dynamic = MessagePort.prototype.close;
+    closePort: Dynamic = MessagePort.prototype.close;
   var value_fail: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments3: Dynamic[]
+    html?: Dynamic,
+    ..._normalizeArgs: Dynamic[]
   ): Dynamic {
     var text: Dynamic = "boot failed";
     try {
-      text = value_Str(input);
+      text = value_Str(html);
     } catch (value_e: Dynamic) {}
     try {
       parent.postMessage(
@@ -81,48 +81,48 @@ import type { Dynamic } from "../runtime-types";
   };
   var value_writeDoc: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments4: Dynamic[]
+    html?: Dynamic,
+    ..._writeArgs: Dynamic[]
   ): Dynamic {
     var value_re: Dynamic = /<\/script[^>]*>/gi,
       items: Dynamic = [],
       index: Dynamic = 0;
-    while (value_re.exec(input) !== null) {
-      items.push(input.slice(index, value_re.lastIndex));
+    while (value_re.exec(html) !== null) {
+      items.push(html.slice(index, value_re.lastIndex));
       index = value_re.lastIndex;
     }
-    items.push(input.slice(index));
+    items.push(html.slice(index));
     if (value_mint) {
-      for (var index2: Dynamic = 0; index2 < items.length; index2 += 1)
-        items[index2] = value_mint(items[index2]);
+      for (var chunkIndex: Dynamic = 0; chunkIndex < items.length; chunkIndex += 1)
+        items[chunkIndex] = value_mint(items[chunkIndex]);
     }
-    var index3: Dynamic = 0,
+    var nextChunkIndex: Dynamic = 0,
       length: Dynamic = items.length,
       value_closed: Dynamic = false;
     var onmessage: Dynamic = function (
       this: Dynamic,
-      ..._extraArguments5: Dynamic[]
+      ..._pumpArgs: Dynamic[]
     ): Dynamic {
-      if (value_closed || index3 >= length) return;
-      var value_chunk: Dynamic = items[index3];
-      index3 += 1;
+      if (value_closed || nextChunkIndex >= length) return;
+      var value_chunk: Dynamic = items[nextChunkIndex];
+      nextChunkIndex += 1;
       try {
         /* window.stop() or a navigation start ended the parser between steps (or an authored document.close did):
          * another write would re-open the document and parse the rest as a fresh one - stop instead */
-        if (index3 > 1 && apply2(get, value_doc, []) !== "loading")
+        if (nextChunkIndex > 1 && applyMethod(get, value_doc, []) !== "loading")
           throw "the document was closed before it was fully written";
-        apply2(write, value_doc, [value_chunk]);
-        if (index3 < length) {
-          apply2(postMessage, port22, [0]);
+        applyMethod(write, value_doc, [value_chunk]);
+        if (nextChunkIndex < length) {
+          applyMethod(postMessage, sendPort, [0]);
           return;
         }
         value_closed = true;
-        apply2(close2, port12, []);
-        apply2(close, value_doc, []);
+        applyMethod(closePort, receivePort, []);
+        applyMethod(close, value_doc, []);
       } catch (value_err: Dynamic) {
         value_closed = true;
         try {
-          apply2(close2, port12, []);
+          applyMethod(closePort, receivePort, []);
         } catch (value_e: Dynamic) {}
         value_fail(value_err);
       }
@@ -131,28 +131,28 @@ import type { Dynamic } from "../runtime-types";
         close =
         get =
         postMessage =
-        close2 =
-        apply2 =
+        closePort =
+        applyMethod =
         value_Str =
         value_fail =
         value_mint =
         items =
-        port12 =
-        port22 =
+        receivePort =
+        sendPort =
         value_doc =
           null;
     };
-    port12.onmessage = onmessage;
-    apply2(open, value_doc, []);
+    receivePort.onmessage = onmessage;
+    applyMethod(open, value_doc, []);
     onmessage();
   };
   var value_onDoc: Dynamic = function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments6: Dynamic[]
+    event?: Dynamic,
+    ..._messageArgs: Dynamic[]
   ): Dynamic {
-    if (input.source !== parent) return;
-    var data: Dynamic = input.data;
+    if (event.source !== parent) return;
+    var data: Dynamic = event.data;
     if (!data || data.__dc_doc !== 1 || typeof data.doc !== "string") return;
     (window as Dynamic).removeEventListener("message", value_onDoc);
     var value_parts: Dynamic =
@@ -177,22 +177,22 @@ import type { Dynamic } from "../runtime-types";
     Promise.all(
       value_ids.map(function (
         this: Dynamic,
-        input2?: Dynamic,
-        ..._extraArguments7: Dynamic[]
+        key?: Dynamic,
+        ..._lookupArgs: Dynamic[]
       ): Dynamic {
-        var value_b: Dynamic = value_parts[input2];
+        var value_b: Dynamic = value_parts[key];
         return value_b instanceof Blob ? value_b.text() : String(value_b);
       }),
     )
       .then(function (
         this: Dynamic,
-        input2?: Dynamic,
-        ..._extraArguments8: Dynamic[]
+        parts?: Dynamic,
+        ..._partsArgs: Dynamic[]
       ): Dynamic {
         var __dcParts: Dynamic = {},
           __dcPartBlobs: Dynamic = {};
         for (var index: Dynamic = 0; index < value_ids.length; index += 1) {
-          __dcParts[value_ids[index]] = input2[index];
+          __dcParts[value_ids[index]] = parts[index];
           if (
             value_ids[index].indexOf("file:") === 0 &&
             value_parts[value_ids[index]] instanceof Blob

@@ -3,10 +3,10 @@ import {
   type Dynamic,
 } from "../runtime-types";
 
-function getTombstoneAction(input?: Dynamic): Dynamic {
-  return !input.tombstone || input.deadStore
+function getTombstoneAction(documentState?: Dynamic): Dynamic {
+  return !documentState.tombstone || documentState.deadStore
     ? "nothing"
-    : input.canWrite
+    : documentState.canWrite
       ? "reopen-read-only-and-tell"
       : "tell";
 }

@@ -44,10 +44,10 @@ export function resolveScriptResource(url?: RuntimeValue, integrity?: RuntimeVal
 }
 export var isCustomElementName: RuntimeValue = (tagName?: RuntimeValue): RuntimeValue =>
   !tagName.includes(".") && tagName.includes("-");
-export function isReactComponent(value?: RuntimeValue): RuntimeValue {
-  return typeof value == "function"
-    ? !isCustomElementConstructor(value)
-    : typeof value == "object" && value !== null && typeof value.$$typeof == "symbol";
+export function isReactComponent(candidate?: RuntimeValue): RuntimeValue {
+  return typeof candidate == "function"
+    ? !isCustomElementConstructor(candidate)
+    : typeof candidate == "object" && candidate !== null && typeof candidate.$$typeof == "symbol";
 }
 export function lookupGlobalPath(root?: RuntimeValue, propertyPath?: RuntimeValue): RuntimeValue {
   let value: RuntimeValue = root;
@@ -259,12 +259,12 @@ export function createExternalModuleLoader(onChange?: RuntimeValue): RuntimeValu
     getError: getError,
   };
 }
-export function isCustomElementConstructor(value?: RuntimeValue): RuntimeValue {
+export function isCustomElementConstructor(candidate?: RuntimeValue): RuntimeValue {
   try {
     return (
-      typeof value == "function" &&
+      typeof candidate == "function" &&
       typeof HTMLElement < "u" &&
-      value.prototype instanceof HTMLElement
+      candidate.prototype instanceof HTMLElement
     );
   } catch {
     return false;

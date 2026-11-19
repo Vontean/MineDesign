@@ -30,8 +30,8 @@ export var StreamableLogic: RuntimeValue = class {
     initializeField(this, "__host");
     this.props = props || {};
   }
-  setState(update?: RuntimeValue, callback?: RuntimeValue): RuntimeValue {
-    this.__host && this.__host.__setLogicState(update, callback);
+  setState(update?: RuntimeValue, afterUpdate?: RuntimeValue): RuntimeValue {
+    this.__host && this.__host.__setLogicState(update, afterUpdate);
   }
   forceUpdate(): RuntimeValue {
     this.__host && this.__host.forceUpdate();
@@ -248,7 +248,7 @@ export function createComponentFactory(
     }
     __setLogicState(
       update?: RuntimeValue,
-      callback?: RuntimeValue,
+      afterUpdate?: RuntimeValue,
     ): RuntimeValue {
       const previousState: RuntimeValue = this.logic.state,
         nextState: RuntimeValue =
@@ -261,7 +261,7 @@ export function createComponentFactory(
         (state?: RuntimeValue): RuntimeValue => ({
           __v: state.__v + 1,
         }),
-        callback,
+        afterUpdate,
       );
     }
     __reconcileLogic(): RuntimeValue {

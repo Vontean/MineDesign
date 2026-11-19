@@ -5,22 +5,22 @@ import {
 import { awaitHostCapability, hasCapabilityMethod, resolveHostCapability } from "./host-capabilities";
 
 var PlatformUserCapabilitiesHandler: Dynamic;
-async function getUserCapabilityMethod(input?: Dynamic): Promise<Dynamic> {
+async function getUserCapabilityMethod(methodName?: Dynamic): Promise<Dynamic> {
   let value: Dynamic = await resolveHostCapability(
     "user",
-    hasCapabilityMethod(input),
+    hasCapabilityMethod(methodName),
   );
-  return value === null ? undefined : value[input].bind(value);
+  return value === null ? undefined : value[methodName].bind(value);
 }
 async function readUserCapability(
-  input?: Dynamic,
-  options?: Dynamic,
+  methodName?: Dynamic,
+  isValid?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic = await getUserCapabilityMethod(input);
+  let value: Dynamic = await getUserCapabilityMethod(methodName);
   if (!value) return null;
   try {
-    let value2: Dynamic = await value();
-    return options(value2) ? value2 : null;
+    let result: Dynamic = await value();
+    return isValid(result) ? result : null;
   } catch {
     return null;
   }
@@ -32,18 +32,18 @@ async function getCurrentUserCanEdit(): Promise<Dynamic> {
   let value: Dynamic = await getUserCapabilityMethod("canEdit");
   if (!value) return null;
   try {
-    let value2: Dynamic = await value();
-    return value2 === true ? true : value2 === false ? false : null;
+    let canEdit: Dynamic = await value();
+    return canEdit === true ? true : canEdit === false ? false : null;
   } catch {
     return null;
   }
 }
-async function getCurrentUserPermission(input?: Dynamic): Promise<Dynamic> {
+async function getCurrentUserPermission(permission?: Dynamic): Promise<Dynamic> {
   let value: Dynamic = await getUserCapabilityMethod("can");
   if (!value) return null;
   try {
-    let value2: Dynamic = await value(input);
-    return typeof value2 == "boolean" ? value2 : null;
+    let allowed: Dynamic = await value(permission);
+    return typeof allowed == "boolean" ? allowed : null;
   } catch {
     return null;
   }
@@ -55,34 +55,34 @@ async function getUserProfiles(items?: Dynamic): Promise<Dynamic> {
         ? await getUserCapabilityMethod("profiles")
         : undefined;
   if (!value) return entries;
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    typeof input == "string" ? input : "";
+  let callback: Dynamic = (candidate?: Dynamic): Dynamic =>
+    typeof candidate == "string" ? candidate : "";
   try {
-    let value2: Dynamic = await value(items);
-    if (typeof value2 != "object" || value2 === null) return entries;
-    for (let value3 of items as Dynamic) {
-      let value4: Dynamic = Object.hasOwn(value2, value3)
-        ? value2[value3]
+    let profiles: Dynamic = await value(items);
+    if (typeof profiles != "object" || profiles === null) return entries;
+    for (let userId of items as Dynamic) {
+      let profile: Dynamic = Object.hasOwn(profiles, userId)
+        ? profiles[userId]
         : undefined;
-      if (typeof value4 != "object" || value4 === null) continue;
+      if (typeof profile != "object" || profile === null) continue;
       let {
-        name: value5,
-        avatarUrl: value6,
-        color: value7,
-      }: Dynamic = value4;
-      entries.set(value3, {
-        name: callback(value5),
-        avatarUrl: callback(value6),
-        color: callback(value7),
+        name: name,
+        avatarUrl: avatarUrl,
+        color: color,
+      }: Dynamic = profile;
+      entries.set(userId, {
+        name: callback(name),
+        avatarUrl: callback(avatarUrl),
+        color: callback(color),
       });
     }
   } catch {}
   return entries;
 }
-async function getUserNames(input?: Dynamic): Promise<Dynamic> {
+async function getUserNames(userIds?: Dynamic): Promise<Dynamic> {
   let entries: Dynamic = new Map();
-  for (let [value, value2] of (await getUserProfiles(input)) as Dynamic)
-    value2.name !== "" && entries.set(value, value2.name);
+  for (let [value, profile] of (await getUserProfiles(userIds)) as Dynamic)
+    profile.name !== "" && entries.set(value, profile.name);
   return entries;
 }
 async function awaitCurrentUserCanEdit(): Promise<Dynamic> {
@@ -92,8 +92,8 @@ async function awaitCurrentUserCanEdit(): Promise<Dynamic> {
   );
   if (value === null) return null;
   try {
-    let value2: Dynamic = await value.canEdit.call(value);
-    return value2 === true ? true : value2 === false ? false : null;
+    let canEdit: Dynamic = await value.canEdit.call(value);
+    return canEdit === true ? true : canEdit === false ? false : null;
   } catch {
     return null;
   }
@@ -105,12 +105,12 @@ async function getCurrentUserProfile(): Promise<Dynamic> {
   );
   if (value === null) return null;
   try {
-    let value2: Dynamic = await value.me.call(value);
-    return typeof value2 != "object" || value2 === null
+    let profile: Dynamic = await value.me.call(value);
+    return typeof profile != "object" || profile === null
       ? null
       : {
-          name: typeof value2.name == "string" ? value2.name : "",
-          color: typeof value2.color == "string" ? value2.color : "",
+          name: typeof profile.name == "string" ? profile.name : "",
+          color: typeof profile.color == "string" ? profile.color : "",
         };
   } catch {
     return null;

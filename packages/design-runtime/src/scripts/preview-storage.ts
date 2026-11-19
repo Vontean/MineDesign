@@ -1,192 +1,192 @@
 /** Restored injected script; compiled as an isolated IIFE before insertion into a preview. */
 import type { Dynamic } from "../runtime-types";
-(function (this: Dynamic, ..._extraArguments: Dynamic[]): Dynamic {
-  var text: Dynamic = "page:";
-  var value_memory: Dynamic = function (
+(function (this: Dynamic, ..._scriptArgs: Dynamic[]): Dynamic {
+  var STORAGE_KEY_PREFIX: Dynamic = "page:";
+  var createMemoryStorage: Dynamic = function (
     this: Dynamic,
-    ..._extraArguments2: Dynamic[]
+    ..._createMemoryArgs: Dynamic[]
   ): Dynamic {
-    var value_m: Dynamic = (Object as Dynamic).create(null);
+    var entries: Dynamic = (Object as Dynamic).create(null);
     return {
       getItem: function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments3: Dynamic[]
+        key?: Dynamic,
+        ..._getItemArgs: Dynamic[]
       ): Dynamic {
-        return input in value_m ? value_m[input] : null;
+        return key in entries ? entries[key] : null;
       },
       setItem: function (
         this: Dynamic,
-        input?: Dynamic,
-        value?: Dynamic,
-        ..._extraArguments4: Dynamic[]
+        key?: Dynamic,
+        itemValue?: Dynamic,
+        ..._setItemArgs: Dynamic[]
       ): Dynamic {
-        value_m[input] = String(value);
+        entries[key] = String(itemValue);
       },
       removeItem: function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments5: Dynamic[]
+        key?: Dynamic,
+        ..._removeItemArgs: Dynamic[]
       ): Dynamic {
-        delete value_m[input];
+        delete entries[key];
       },
       key: function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments6: Dynamic[]
+        index?: Dynamic,
+        ..._keyArgs: Dynamic[]
       ): Dynamic {
-        var value_ks: Dynamic = (Object as Dynamic).keys(value_m);
-        input = Math.floor(Number(input)) || 0;
-        return input >= 0 && input < value_ks.length ? value_ks[input] : null;
+        var keys: Dynamic = (Object as Dynamic).keys(entries);
+        index = Math.floor(Number(index)) || 0;
+        return index >= 0 && index < keys.length ? keys[index] : null;
       },
       get length(): Dynamic {
-        return (Object as Dynamic).keys(value_m).length;
+        return (Object as Dynamic).keys(entries).length;
       },
     };
   };
-  var value_scope: Dynamic = function (
+  var scopeStorage: Dynamic = function (
     this: Dynamic,
-    n?: Dynamic,
-    ..._extraArguments7: Dynamic[]
+    storage?: Dynamic,
+    ..._scopeArgs: Dynamic[]
   ): Dynamic {
-    var value_keys: Dynamic = function (
+    var listScopedKeys: Dynamic = function (
       this: Dynamic,
-      ..._extraArguments8: Dynamic[]
+      ..._listArgs: Dynamic[]
     ): Dynamic {
-      var items: Dynamic = [];
+      var scopedKeys: Dynamic = [];
       // MineDesign: restorer fix — read the scoped storage `n` (`real` in the original script); the restored code read
       // `length.length` / `length.key` off the loop bound, which is undefined, so listing an artboard's keys threw.
       for (
-        var index: Dynamic = 0, length: Dynamic = n.length;
+        var index: Dynamic = 0, length: Dynamic = storage.length;
         index < length;
         index++
       ) {
-        var value_k: Dynamic = n.key(index);
-        if (value_k !== null && value_k.indexOf(text) === 0)
-          items.push(value_k.slice(text.length));
+        var key: Dynamic = storage.key(index);
+        if (key !== null && key.indexOf(STORAGE_KEY_PREFIX) === 0)
+          scopedKeys.push(key.slice(STORAGE_KEY_PREFIX.length));
       }
-      return items;
+      return scopedKeys;
     };
-    var state3: Dynamic = {
+    var scopedStorage: Dynamic = {
       getItem: function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments9: Dynamic[]
+        key?: Dynamic,
+        ..._getItemArgs: Dynamic[]
       ): Dynamic {
-        return n.getItem(text + String(input));
+        return storage.getItem(STORAGE_KEY_PREFIX + String(key));
       },
       setItem: function (
         this: Dynamic,
-        input?: Dynamic,
-        value?: Dynamic,
-        ..._extraArguments0: Dynamic[]
+        key?: Dynamic,
+        itemValue?: Dynamic,
+        ..._setItemArgs: Dynamic[]
       ): Dynamic {
-        n.setItem(text + String(input), String(value));
+        storage.setItem(STORAGE_KEY_PREFIX + String(key), String(itemValue));
       },
       removeItem: function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments1: Dynamic[]
+        key?: Dynamic,
+        ..._removeItemArgs: Dynamic[]
       ): Dynamic {
-        n.removeItem(text + String(input));
+        storage.removeItem(STORAGE_KEY_PREFIX + String(key));
       },
       clear: function (
         this: Dynamic,
-        ..._extraArguments10: Dynamic[]
+        ..._clearArgs: Dynamic[]
       ): Dynamic {
-        value_keys().forEach(function (
+        listScopedKeys().forEach(function (
           this: Dynamic,
-          input?: Dynamic,
-          ..._extraArguments11: Dynamic[]
+          key?: Dynamic,
+          ..._eachKeyArgs: Dynamic[]
         ): Dynamic {
-          n.removeItem(text + input);
+          storage.removeItem(STORAGE_KEY_PREFIX + key);
         });
       },
       key: function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments12: Dynamic[]
+        index?: Dynamic,
+        ..._keyArgs: Dynamic[]
       ): Dynamic {
-        var value_ks: Dynamic = value_keys();
-        input = Math.floor(Number(input)) || 0;
-        return input >= 0 && input < value_ks.length ? value_ks[input] : null;
+        var keys: Dynamic = listScopedKeys();
+        index = Math.floor(Number(index)) || 0;
+        return index >= 0 && index < keys.length ? keys[index] : null;
       },
       get length(): Dynamic {
-        return value_keys().length;
+        return listScopedKeys().length;
       },
     };
-    if (typeof Proxy !== "function") return state3;
-    var value_own: Dynamic = function (
+    if (typeof Proxy !== "function") return scopedStorage;
+    var isStoredKey: Dynamic = function (
       this: Dynamic,
-      input?: Dynamic,
-      ..._extraArguments13: Dynamic[]
+      property?: Dynamic,
+      ..._predicateArgs: Dynamic[]
     ): Dynamic {
       return (
-        typeof input === "string" && !(input in state3) && input !== "length"
+        typeof property === "string" && !(property in scopedStorage) && property !== "length"
       );
     };
-    return new Proxy(state3, {
+    return new Proxy(scopedStorage, {
       get: function (
         this: Dynamic,
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments14: Dynamic[]
+        _target?: Dynamic,
+        property?: Dynamic,
+        ..._getArgs: Dynamic[]
       ): Dynamic {
-        if (options === "length") return value_keys().length;
-        if (options in state3) return state3[options];
-        if (!value_own(options)) return undefined;
-        var value: Dynamic = n.getItem(text + options);
-        return value === null ? undefined : value;
+        if (property === "length") return listScopedKeys().length;
+        if (property in scopedStorage) return scopedStorage[property];
+        if (!isStoredKey(property)) return undefined;
+        var storedValue: Dynamic = storage.getItem(STORAGE_KEY_PREFIX + property);
+        return storedValue === null ? undefined : storedValue;
       },
       set: function (
         this: Dynamic,
-        input?: Dynamic,
-        options?: Dynamic,
-        value?: Dynamic,
-        ..._extraArguments15: Dynamic[]
+        _target?: Dynamic,
+        property?: Dynamic,
+        itemValue?: Dynamic,
+        ..._setArgs: Dynamic[]
       ): Dynamic {
-        if (value_own(options)) n.setItem(text + options, String(value));
+        if (isStoredKey(property)) storage.setItem(STORAGE_KEY_PREFIX + property, String(itemValue));
         return true;
       },
       deleteProperty: function (
         this: Dynamic,
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments16: Dynamic[]
+        _target?: Dynamic,
+        property?: Dynamic,
+        ..._deleteArgs: Dynamic[]
       ): Dynamic {
-        if (value_own(options)) n.removeItem(text + options);
+        if (isStoredKey(property)) storage.removeItem(STORAGE_KEY_PREFIX + property);
         return true;
       },
       has: function (
         this: Dynamic,
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments17: Dynamic[]
+        _target?: Dynamic,
+        property?: Dynamic,
+        ..._hasArgs: Dynamic[]
       ): Dynamic {
         return (
-          options in state3 ||
-          options === "length" ||
-          (value_own(options) && n.getItem(text + options) !== null)
+          property in scopedStorage ||
+          property === "length" ||
+          (isStoredKey(property) && storage.getItem(STORAGE_KEY_PREFIX + property) !== null)
         );
       },
       ownKeys: function (
         this: Dynamic,
-        ..._extraArguments18: Dynamic[]
+        ..._ownKeysArgs: Dynamic[]
       ): Dynamic {
-        return value_keys();
+        return listScopedKeys();
       },
       getOwnPropertyDescriptor: function (
         this: Dynamic,
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments19: Dynamic[]
+        _target?: Dynamic,
+        property?: Dynamic,
+        ..._descriptorArgs: Dynamic[]
       ): Dynamic {
-        if (!value_own(options)) return undefined;
-        var value: Dynamic = n.getItem(text + options);
-        return value === null
+        if (!isStoredKey(property)) return undefined;
+        var storedValue: Dynamic = storage.getItem(STORAGE_KEY_PREFIX + property);
+        return storedValue === null
           ? undefined
           : {
-              value: value,
+              value: storedValue,
               writable: true,
               enumerable: true,
               configurable: true,
@@ -194,25 +194,25 @@ import type { Dynamic } from "../runtime-types";
       },
     });
   };
-  var state: Dynamic = {};
-  var state2: Dynamic = {};
+  var nativeStorageByKind: Dynamic = {};
+  var scopedStorageByKind: Dynamic = {};
   ["localStorage", "sessionStorage"].forEach(function (
     this: Dynamic,
-    input?: Dynamic,
-    ..._extraArguments20: Dynamic[]
+    storageKind?: Dynamic,
+    ..._storageKindArgs: Dynamic[]
   ): Dynamic {
-    var n: Dynamic = null;
+    var storage: Dynamic = null;
     try {
-      n = (window as Dynamic)[input];
+      storage = (window as Dynamic)[storageKind];
     } catch (value_e: Dynamic) {
-      n = null;
+      storage = null;
     }
-    if (!n || typeof n.getItem !== "function") n = value_memory();
-    state[input] = n;
-    state2[input] = value_scope(n);
+    if (!storage || typeof storage.getItem !== "function") storage = createMemoryStorage();
+    nativeStorageByKind[storageKind] = storage;
+    scopedStorageByKind[storageKind] = scopeStorage(storage);
     try {
-      (Object as Dynamic).defineProperty(window, input, {
-        value: state2[input],
+      (Object as Dynamic).defineProperty(window, storageKind, {
+        value: scopedStorageByKind[storageKind],
         configurable: true,
       });
     } catch (value_e: Dynamic) {}
@@ -226,40 +226,40 @@ import type { Dynamic } from "../runtime-types";
       "storage",
       function (
         this: Dynamic,
-        input?: Dynamic,
-        ..._extraArguments21: Dynamic[]
+        event?: Dynamic,
+        ..._eventArgs: Dynamic[]
       ): Dynamic {
-        if (!input.isTrusted)
+        if (!event.isTrusted)
           return; /* one the page dispatched itself (a same-window sync idiom): its own traffic, already in its own terms */
-        var key: Dynamic = input.key;
-        var value: Dynamic =
-          input.storageArea === state.localStorage
-            ? state2.localStorage
-            : input.storageArea === state.sessionStorage
-              ? state2.sessionStorage
+        var key: Dynamic = event.key;
+        var scopedStorage: Dynamic =
+          event.storageArea === nativeStorageByKind.localStorage
+            ? scopedStorageByKind.localStorage
+            : event.storageArea === nativeStorageByKind.sessionStorage
+              ? scopedStorageByKind.sessionStorage
               : null;
         if (
           key === null ||
-          (typeof key === "string" && key.indexOf(text) === 0)
+          (typeof key === "string" && key.indexOf(STORAGE_KEY_PREFIX) === 0)
         ) {
           /* a namespace key, or a whole-store clear (null): the page's, in its terms */
           try {
-            (Object as Dynamic).defineProperties(input, {
+            (Object as Dynamic).defineProperties(event, {
               key: {
-                value: key === null ? null : key.slice(text.length),
+                value: key === null ? null : key.slice(STORAGE_KEY_PREFIX.length),
                 configurable: true,
               },
               storageArea: {
-                value: value,
+                value: scopedStorage,
                 configurable: true,
               },
             });
           } catch (value_x: Dynamic) {
-            input.stopImmediatePropagation();
+            event.stopImmediatePropagation();
           }
           return;
         }
-        input.stopImmediatePropagation();
+        event.stopImmediatePropagation();
       },
       true,
     );

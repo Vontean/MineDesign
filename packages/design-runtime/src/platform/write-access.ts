@@ -25,14 +25,14 @@ async function resolveDesignWriteAccess(): Promise<Dynamic> {
       canWrite: false,
       reason: value,
     };
-  let [value2, value3, value4, value5]: Dynamic = await Promise.all([
+  let [canWriteData, canWriteFiles, canEdit, assetsCapability]: Dynamic = await Promise.all([
     getCurrentUserPermission("data.write"),
     getCurrentUserPermission("files.write"),
     getCurrentUserCanEdit(),
     getAssetsCapability(),
   ]);
-  return value2 !== null || value3 !== null
-    ? (value2 === true || value3 === true) && value4 !== false
+  return canWriteData !== null || canWriteFiles !== null
+    ? (canWriteData === true || canWriteFiles === true) && canEdit !== false
       ? {
           canWrite: true,
         }
@@ -40,7 +40,7 @@ async function resolveDesignWriteAccess(): Promise<Dynamic> {
           canWrite: false,
           reason: LIVE_READONLY_REASON,
         }
-    : value4 !== true && value5 === null
+    : canEdit !== true && assetsCapability === null
       ? {
           canWrite: false,
           reason: LIVE_READONLY_REASON,
@@ -49,16 +49,16 @@ async function resolveDesignWriteAccess(): Promise<Dynamic> {
           canWrite: true,
         };
 }
-function createReadonlyEmbeddedCache(input?: Dynamic): Dynamic {
+function createReadonlyEmbeddedCache(readOnlyReason?: Dynamic): Dynamic {
   return {
-    read: (): Dynamic => input,
+    read: (): Dynamic => readOnlyReason,
     write: (): Dynamic => false,
     clear(): Dynamic {},
   };
 }
 function createEmbeddedReadonlyState(
-  input?: Dynamic,
-  options: Dynamic = SIGN_IN_REQUIRED_REASON,
+  content?: Dynamic,
+  readOnlyReason: Dynamic = SIGN_IN_REQUIRED_REASON,
 ): Dynamic {
   return {
     embeddedState: {
@@ -66,10 +66,10 @@ function createEmbeddedReadonlyState(
         typeof document !== "undefined"
           ? (document as Dynamic).title
           : undefined,
-      content: input,
+      content: content,
       comments: [],
     },
-    roFlag: createReadonlyEmbeddedCache(options),
+    roFlag: createReadonlyEmbeddedCache(readOnlyReason),
     stash: unavailableEmbeddedCache,
     canPublish: true,
     pageParts: EMPTY_EMBEDDED_CONTENT,
