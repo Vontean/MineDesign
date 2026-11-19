@@ -6,39 +6,39 @@ import { currentHttpOrigin, getEmbedContext } from "./file-content";
 import { externalLinkLimiter } from "./rate-limiter";
 
 function openPreviewExternalLink(
-  items?: Dynamic,
-  options: Dynamic = externalLinkLimiter,
+  targetUrl?: Dynamic,
+  rateLimiter: Dynamic = externalLinkLimiter,
 ): Dynamic {
   if (
-    typeof items != "string" ||
-    items.length > 8192 ||
+    typeof targetUrl != "string" ||
+    targetUrl.length > 8192 ||
     navigator.userActivation?.isActive !== true
   )
     return;
-  let value: Dynamic;
+  let url: Dynamic;
   try {
-    value = new URL(items);
+    url = new URL(targetUrl);
   } catch {
     return;
   }
   if (
-    (value.protocol !== "http:" && value.protocol !== "https:") ||
-    value.origin === currentHttpOrigin() ||
-    !options.take()
+    (url.protocol !== "http:" && url.protocol !== "https:") ||
+    url.origin === currentHttpOrigin() ||
+    !rateLimiter.take()
   )
     return;
-  let value2: Dynamic =
+  let ownerDocument: Dynamic =
       getEmbedContext() !== null &&
       (window as Dynamic).parent !== window
         ? (window as Dynamic).parent.document
         : document,
-    value3: Dynamic = value2.createElement("a");
-  value3.href = value.href;
-  value3.target = "_blank";
-  value3.rel = "noopener noreferrer";
-  value2.body.append(value3);
-  value3.click();
-  value3.remove();
+    link: Dynamic = ownerDocument.createElement("a");
+  link.href = url.href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  ownerDocument.body.append(link);
+  link.click();
+  link.remove();
 }
 export {
   openPreviewExternalLink,

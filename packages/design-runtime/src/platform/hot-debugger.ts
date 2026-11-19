@@ -6,9 +6,9 @@ import { cachedRoomCapability } from "./file-content";
 import { HOT_EDIT_RESTART_CATEGORIES } from "./save-notices";
 
 var FILES_DEBUG_STORAGE_KEY: Dynamic;
-var HOT_DEBUG_SAMPLE_PERIOD_MS: Dynamic;
-var HOT_DEBUG_RENDER_DEBOUNCE_MS: Dynamic;
-var HOT_DEBUG_LOG_DEBOUNCE_MS: Dynamic;
+var MAX_RETAINED_EVENTS: Dynamic;
+var MAX_PERSISTED_EVENTS: Dynamic;
+var MAX_VISIBLE_EVENTS: Dynamic;
 var HOT_DEBUG_PANEL_SIZE: Dynamic;
 var HOT_DEBUG_MIN_PANEL_SIZE: Dynamic;
 var HOT_DEBUG_SHORTCUT: Dynamic;
@@ -19,8 +19,8 @@ function classifyHotEditMetric(editEvent?: Dynamic): Dynamic {
   if (editEvent.type === "applied")
     return editEvent.applied > 0 ? ["edit", "success"] : null;
   if (editEvent.type !== "restart") return null;
-  let value: Dynamic = HOT_EDIT_RESTART_CATEGORIES[editEvent.reason];
-  return value === null ? null : ["edit", "failure", value];
+  let failureCategory: Dynamic = HOT_EDIT_RESTART_CATEGORIES[editEvent.reason];
+  return failureCategory === null ? null : ["edit", "failure", failureCategory];
 }
 function isFilesDebugEnabled(
   getStorage: Dynamic = (): Dynamic => (globalThis as Dynamic).localStorage,
@@ -52,8 +52,8 @@ function classifyHotDebugEvent(event?: Dynamic): Dynamic {
   )
     return "error";
   if (type === "read") {
-    let value: Dynamic = event.data?.status ?? 200;
-    return value === 0 || value >= 400 ? "error" : "boot";
+    let status: Dynamic = event.data?.status ?? 200;
+    return status === 0 || status >= 400 ? "error" : "boot";
   }
   return type === "reconcile"
     ? event.data?.ok === false
@@ -74,8 +74,8 @@ function classifyHotDebugEvent(event?: Dynamic): Dynamic {
             ? "room"
             : "other";
 }
-function createHotReloadDebugger(options?: Dynamic): Dynamic {
-  let storagePrefix: Dynamic = "hotdbg/" + options.product + "/",
+function createHotReloadDebugger(debugOptions?: Dynamic): Dynamic {
+  let storagePrefix: Dynamic = "hotdbg/" + debugOptions.product + "/",
     storage: Dynamic = ((): Dynamic => {
       try {
         return typeof sessionStorage === "undefined" ? null : sessionStorage;
@@ -84,344 +84,344 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
       }
     })(),
     readStoredValue: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
+      key?: Dynamic,
+      fallback?: Dynamic,
     ): Dynamic => {
       try {
-        let value60: Dynamic = storage?.getItem(storagePrefix + input);
-        return value60 == null ? options2 : JSON.parse(value60);
+        let storedJson: Dynamic = storage?.getItem(storagePrefix + key);
+        return storedJson == null ? fallback : JSON.parse(storedJson);
       } catch {
-        return options2;
+        return fallback;
       }
     },
-    callback: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
+    writeStoredValue: Dynamic = (key?: Dynamic, valueToStore?: Dynamic): Dynamic => {
       try {
-        options2 === null
-          ? storage?.removeItem(storagePrefix + input)
-          : storage?.setItem(storagePrefix + input, JSON.stringify(options2));
+        valueToStore === null
+          ? storage?.removeItem(storagePrefix + key)
+          : storage?.setItem(storagePrefix + key, JSON.stringify(valueToStore));
       } catch {}
     },
-    callback2: Dynamic = (): Dynamic =>
+    monotonicNow: Dynamic = (): Dynamic =>
       typeof performance !== "undefined" ? performance.now() : Date.now(),
-    value: Dynamic = options.hot ?? null,
-    value2: Dynamic = readStoredValue("tab", "") || createHotDebugTabId();
-  callback("tab", value2);
-  let value3: Dynamic = options.bootStartedAt ?? callback2(),
-    value4: Dynamic = readStoredValue("log", []),
-    entries: Dynamic = new Map(),
-    entries2: Dynamic = new Map(),
-    items: Dynamic = [],
-    entries3: Dynamic = new Map(),
-    index: Dynamic = 0,
-    flag: Dynamic = false,
-    state: Dynamic = {},
-    state2: Dynamic = {
+    hotCapability: Dynamic = debugOptions.hot ?? null,
+    tabId: Dynamic = readStoredValue("tab", "") || createHotDebugTabId();
+  writeStoredValue("tab", tabId);
+  let bootStartedAt: Dynamic = debugOptions.bootStartedAt ?? monotonicNow(),
+    eventLog: Dynamic = readStoredValue("log", []),
+    debugFacts: Dynamic = new Map(),
+    timingSamples: Dynamic = new Map(),
+    updateMeasurements: Dynamic = [],
+    fileVersions: Dynamic = new Map(),
+    hiddenUpdateCount: Dynamic = 0,
+    lastUpdateRestarted: Dynamic = false,
+    debugSources: Dynamic = {},
+    saveFailureCounts: Dynamic = {
       conflict: 0,
       rate: 0,
       other: 0,
     },
-    value5: Dynamic,
-    items2: Dynamic = [],
-    value6: Dynamic = readStoredValue("crumb", null),
-    value7: Dynamic = readStoredValue("seen", false),
-    flag2: Dynamic = false,
-    value8: Dynamic;
+    lastSuccessfulSave: Dynamic,
+    recentSaveFailures: Dynamic = [],
+    previousBootMarker: Dynamic = readStoredValue("crumb", null),
+    hasOpenedBefore: Dynamic = readStoredValue("seen", false),
+    wasHotRestart: Dynamic = false,
+    restartSource: Dynamic;
   try {
-    value8 = value?.from;
-    flag2 = value8 != null;
+    restartSource = hotCapability?.from;
+    wasHotRestart = restartSource != null;
   } catch {}
-  let value9: Dynamic = ((): Dynamic => {
-      let value60: Dynamic = value8?.note;
-      return typeof value60 == "string" ? value60 : undefined;
+  let restartNote: Dynamic = ((): Dynamic => {
+      let note: Dynamic = restartSource?.note;
+      return typeof note == "string" ? note : undefined;
     })(),
-    value10: Dynamic;
-  value6?.phase === "hot-restart"
-    ? (value10 = "hot restart: " + (value6.reason ?? "asked by this page"))
-    : value6?.phase === "publishing"
-      ? (value10 =
+    reloadMessage: Dynamic;
+  previousBootMarker?.phase === "hot-restart"
+    ? (reloadMessage = "hot restart: " + (previousBootMarker.reason ?? "asked by this page"))
+    : previousBootMarker?.phase === "publishing"
+      ? (reloadMessage =
           "reloaded during a publish of " +
-          (value6.paths ?? []).join(", ") +
+          (previousBootMarker.paths ?? []).join(", ") +
           " (likely a conflict: the shell reboots the tab that lost)")
-      : flag2
-        ? (value10 =
+      : wasHotRestart
+        ? (reloadMessage =
             "hot restart by the shell" +
-            (value9 !== undefined
-              ? " (note: " + value9 + ")"
+            (restartNote !== undefined
+              ? " (note: " + restartNote + ")"
               : " (no reason recorded here: no accept handler was registered in time, or the kernel restarted on its own)"))
-        : value7
-          ? (value10 = "plain reload")
-          : (value10 = "first load");
-  let value11: Dynamic =
-      value6?.phase === "hot-restart"
-        ? "hot restart: " + (value6.reason ?? "?")
-        : value6?.phase === "publishing"
+        : hasOpenedBefore
+          ? (reloadMessage = "plain reload")
+          : (reloadMessage = "first load");
+  let reloadCategory: Dynamic =
+      previousBootMarker?.phase === "hot-restart"
+        ? "hot restart: " + (previousBootMarker.reason ?? "?")
+        : previousBootMarker?.phase === "publishing"
           ? "during a publish"
-          : flag2
+          : wasHotRestart
             ? "hot restart by the shell"
-            : value7
+            : hasOpenedBefore
               ? "plain reload"
               : "first load",
-    value12: Dynamic = readStoredValue("reasons", {});
-  value12[value11] = (value12[value11] ?? 0) + 1;
-  callback("reasons", value12);
-  let value13: Dynamic = readStoredValue("reloads", []);
-  value13.push({
+    reloadCounts: Dynamic = readStoredValue("reasons", {});
+  reloadCounts[reloadCategory] = (reloadCounts[reloadCategory] ?? 0) + 1;
+  writeStoredValue("reasons", reloadCounts);
+  let reloadHistory: Dynamic = readStoredValue("reloads", []);
+  reloadHistory.push({
     t: Date.now(),
-    reason: value10,
+    reason: reloadMessage,
   });
-  value13.length > 60 && value13.splice(0, value13.length - 60);
-  callback("reloads", value13);
-  callback("crumb", null);
-  callback("seen", true);
-  let entries4: Dynamic = new Map();
-  function value14(input?: Dynamic, options2?: Dynamic): Dynamic {
-    entries4.has(input) ||
-      entries4.set(input, {
-        label: options2,
-        on: readStoredValue("opt/" + input, true),
+  reloadHistory.length > 60 && reloadHistory.splice(0, reloadHistory.length - 60);
+  writeStoredValue("reloads", reloadHistory);
+  writeStoredValue("crumb", null);
+  writeStoredValue("seen", true);
+  let toggles: Dynamic = new Map();
+  function registerToggle(key?: Dynamic, label?: Dynamic): Dynamic {
+    toggles.has(key) ||
+      toggles.set(key, {
+        label: label,
+        on: readStoredValue("opt/" + key, true),
       });
-    return (): Dynamic => entries4.get(input)?.on ?? true;
+    return (): Dynamic => toggles.get(key)?.on ?? true;
   }
-  let value15: Dynamic,
-    flag3: Dynamic = false,
-    callback3: Dynamic = (): Dynamic => {
-      !flag3 ||
-        value15 !== undefined ||
-        (value15 = setTimeout((): Dynamic => {
-          value15 = undefined;
-          flag3 &&
-            callback("log", value4.slice(-HOT_DEBUG_RENDER_DEBOUNCE_MS));
+  let persistLogTimer: Dynamic,
+    keepEventLog: Dynamic = false,
+    scheduleLogPersistence: Dynamic = (): Dynamic => {
+      !keepEventLog ||
+        persistLogTimer !== undefined ||
+        (persistLogTimer = setTimeout((): Dynamic => {
+          persistLogTimer = undefined;
+          keepEventLog &&
+            writeStoredValue("log", eventLog.slice(-MAX_PERSISTED_EVENTS));
         }, 250));
     };
-  function value16(input?: Dynamic, options2?: Dynamic): Dynamic {
-    value4.push({
+  function recordEvent(eventType?: Dynamic, data?: Dynamic): Dynamic {
+    eventLog.push({
       t: Date.now(),
-      type: input,
-      ...(options2 !== undefined
+      type: eventType,
+      ...(data !== undefined
         ? {
-            data: options2,
+            data: data,
           }
         : {}),
     });
-    value4.length > HOT_DEBUG_SAMPLE_PERIOD_MS &&
-      value4.splice(0, value4.length - HOT_DEBUG_SAMPLE_PERIOD_MS);
-    callback3();
-    value42("events");
+    eventLog.length > MAX_RETAINED_EVENTS &&
+      eventLog.splice(0, eventLog.length - MAX_RETAINED_EVENTS);
+    scheduleLogPersistence();
+    scheduleRender("events");
   }
-  function value17(input?: Dynamic, options2?: Dynamic): Dynamic {
-    if (!Number.isFinite(options2)) return;
-    let value60: Dynamic = entries2.get(input) ?? [];
-    value60.push(Math.round(options2));
-    value60.length > 300 && value60.shift();
-    entries2.set(input, value60);
-    value42("timing");
+  function recordTiming(label?: Dynamic, durationMs?: Dynamic): Dynamic {
+    if (!Number.isFinite(durationMs)) return;
+    let samples: Dynamic = timingSamples.get(label) ?? [];
+    samples.push(Math.round(durationMs));
+    samples.length > 300 && samples.shift();
+    timingSamples.set(label, samples);
+    scheduleRender("timing");
   }
-  let callback4: Dynamic = (): Dynamic =>
+  let pageIsHidden: Dynamic = (): Dynamic =>
       typeof document !== "undefined" &&
       (document as Dynamic).visibilityState !== "visible",
-    value18: Dynamic = callback4() ? Date.now() : undefined;
+    hiddenSince: Dynamic = pageIsHidden() ? Date.now() : undefined;
   typeof document !== "undefined" &&
     (document as Dynamic).addEventListener(
       "visibilitychange",
       (): Dynamic => {
-        value18 = callback4() ? Date.now() : undefined;
-        value16("visibility", {
+        hiddenSince = pageIsHidden() ? Date.now() : undefined;
+        recordEvent("visibility", {
           state: (document as Dynamic).visibilityState,
         });
       },
     );
-  let value19: Dynamic = "hotdbg-" + options.product,
-    value20: Dynamic = readStoredValue("pings", []),
-    callback5: Dynamic = (): Dynamic => {
-      value20 = value20
-        .filter((input?: Dynamic): Dynamic => Date.now() - input.recvAt < 6e4)
+  let roomEventName: Dynamic = "hotdbg-" + debugOptions.product,
+    peerPings: Dynamic = readStoredValue("pings", []),
+    persistRecentPings: Dynamic = (): Dynamic => {
+      peerPings = peerPings
+        .filter((ping?: Dynamic): Dynamic => Date.now() - ping.recvAt < 6e4)
         .slice(-40);
-      callback("pings", value20);
+      writeStoredValue("pings", peerPings);
     };
-  function value21(input?: Dynamic): Dynamic {
-    let value60: Dynamic = input?.data ?? input;
+  function onPeerPing(message?: Dynamic): Dynamic {
+    let payload: Dynamic = message?.data ?? message;
     if (
-      value60 === null ||
-      typeof value60 != "object" ||
-      typeof value60.tab != "string" ||
-      value60.tab === value2 ||
-      typeof value60.n != "number" ||
-      typeof value60.at != "number"
+      payload === null ||
+      typeof payload != "object" ||
+      typeof payload.tab != "string" ||
+      payload.tab === tabId ||
+      typeof payload.n != "number" ||
+      typeof payload.at != "number"
     )
       return;
-    let state4: Dynamic = {
-      tab: value60.tab,
-      n: value60.n,
-      phase: value60.phase === "saved" ? "saved" : "saving",
-      ...(typeof value60.version == "string"
+    let ping: Dynamic = {
+      tab: payload.tab,
+      n: payload.n,
+      phase: payload.phase === "saved" ? "saved" : "saving",
+      ...(typeof payload.version == "string"
         ? {
-            version: value60.version,
+            version: payload.version,
           }
         : {}),
-      at: value60.at,
+      at: payload.at,
       recvAt: Date.now(),
-      ...(Array.isArray(value60.paths)
+      ...(Array.isArray(payload.paths)
         ? {
-            paths: value60.paths,
+            paths: payload.paths,
           }
         : {}),
     };
-    value20.push(state4);
-    callback5();
-    value17("room ping", Math.max(0, state4.recvAt - state4.at));
-    value16("peer-" + state4.phase, {
-      from: state4.tab,
-      n: state4.n,
-      ...(state4.version !== undefined
+    peerPings.push(ping);
+    persistRecentPings();
+    recordTiming("room ping", Math.max(0, ping.recvAt - ping.at));
+    recordEvent("peer-" + ping.phase, {
+      from: ping.tab,
+      n: ping.n,
+      ...(ping.version !== undefined
         ? {
-            version: state4.version,
+            version: ping.version,
           }
         : {}),
-      ...(state4.paths !== undefined
+      ...(ping.paths !== undefined
         ? {
-            paths: state4.paths,
+            paths: ping.paths,
           }
         : {}),
-      skewedMs: state4.recvAt - state4.at,
+      skewedMs: ping.recvAt - ping.at,
     });
-    value41();
+    refreshStatus();
   }
-  let value22: Dynamic = null,
-    flag4: Dynamic = false;
-  options.room !== false &&
+  let room: Dynamic = null,
+    roomEmitFailed: Dynamic = false;
+  debugOptions.room !== false &&
     cachedRoomCapability().then(
-      (input?: Dynamic): Dynamic => {
-        value22 = input;
-        entries.set("room", value22 === null ? "off" : "connected");
-        value42("header");
-        if (value22 === null) return;
+      (capability?: Dynamic): Dynamic => {
+        room = capability;
+        debugFacts.set("room", room === null ? "off" : "connected");
+        scheduleRender("header");
+        if (room === null) return;
         try {
-          value22.on?.(value19, value21, (): Dynamic => {});
+          room.on?.(roomEventName, onPeerPing, (): Dynamic => {});
         } catch {}
-        let entries6: Dynamic = new Map();
+        let presenceSequence: Dynamic = new Map();
         try {
-          value22.onPeers?.((input2?: Dynamic): Dynamic => {
-            for (let value60 of input2.peers as Dynamic) {
-              let value61: Dynamic = value60,
-                value62: Dynamic = value61?.presence?.hotdbg;
+          room.onPeers?.((presence?: Dynamic): Dynamic => {
+            for (let participant of presence.peers as Dynamic) {
+              let peer: Dynamic = participant,
+                ping: Dynamic = peer?.presence?.hotdbg;
               if (
-                value61 === null ||
-                value61.sameTab === true ||
-                value62 === undefined ||
-                typeof value62.tab != "string" ||
-                typeof value62.n != "number"
+                peer === null ||
+                peer.sameTab === true ||
+                ping === undefined ||
+                typeof ping.tab != "string" ||
+                typeof ping.n != "number"
               )
                 continue;
-              let value63: Dynamic =
-                value62.tab + "/" + String(value62.phase);
-              (entries6.get(value63) ?? -1) >= value62.n ||
-                (entries6.set(value63, value62.n),
-                value20.some(
-                  (input3?: Dynamic): Dynamic =>
-                    input3.tab === value62.tab &&
-                    input3.n === value62.n &&
-                    input3.phase ===
-                      (value62.phase === "saved" ? "saved" : "saving"),
-                ) || value21(value62));
+              let sequenceKey: Dynamic =
+                ping.tab + "/" + String(ping.phase);
+              (presenceSequence.get(sequenceKey) ?? -1) >= ping.n ||
+                (presenceSequence.set(sequenceKey, ping.n),
+                peerPings.some(
+                  (knownPing?: Dynamic): Dynamic =>
+                    knownPing.tab === ping.tab &&
+                    knownPing.n === ping.n &&
+                    knownPing.phase ===
+                      (ping.phase === "saved" ? "saved" : "saving"),
+                ) || onPeerPing(ping));
             }
           });
         } catch {}
       },
       (): Dynamic => {},
     );
-  function value23(input?: Dynamic): Dynamic {
-    let state4: Dynamic = {
-        tab: value2,
+  function broadcastPing(pingDetails?: Dynamic): Dynamic {
+    let ping: Dynamic = {
+        tab: tabId,
         at: Date.now(),
-        ...input,
+        ...pingDetails,
       },
-      value60: Dynamic = value22;
-    if (value60 === null) return;
-    let callback11: Dynamic = (): Dynamic => {
-      flag4 = true;
+      connectedRoom: Dynamic = room;
+    if (connectedRoom === null) return;
+    let publishViaPresence: Dynamic = (): Dynamic => {
+      roomEmitFailed = true;
       try {
-        value60
+        connectedRoom
           .presence?.({
-            hotdbg: state4,
+            hotdbg: ping,
           })
           ?.catch?.((): Dynamic => {});
       } catch {}
     };
-    if (flag4 || typeof value60.emit != "function") return callback11();
+    if (roomEmitFailed || typeof connectedRoom.emit != "function") return publishViaPresence();
     try {
-      value60.emit(value19, state4).catch(callback11);
+      connectedRoom.emit(roomEventName, ping).catch(publishViaPresence);
     } catch {
-      callback11();
+      publishViaPresence();
     }
   }
-  let value24: Dynamic = readStoredValue("saveN", 0),
-    entries5: Dynamic = new Map(),
-    callback6: Dynamic = (input?: Dynamic): Dynamic => {
+  let saveSequence: Dynamic = readStoredValue("saveN", 0),
+    pendingSaves: Dynamic = new Map(),
+    summarizeRawSaveError: Dynamic = (raw?: Dynamic): Dynamic => {
       try {
         return JSON.parse(
           JSON.stringify(
-            input,
-            (input2?: Dynamic, items4?: Dynamic): Dynamic =>
-              typeof items4 == "string" && items4.length > 300
-                ? items4.slice(0, 300) + "\u2026"
-                : items4,
+            raw,
+            (_key?: Dynamic, field?: Dynamic): Dynamic =>
+              typeof field == "string" && field.length > 300
+                ? field.slice(0, 300) + "\u2026"
+                : field,
           ),
         );
       } catch {
-        return String(input);
+        return String(raw);
       }
     };
-  function value25(input?: Dynamic, options2?: Dynamic): Dynamic {
-    value24 += 1;
-    callback("saveN", value24);
-    entries5.set(value24, {
-      t: callback2(),
-      paths: [...input],
-      bytes: options2,
+  function recordSaveStart(paths?: Dynamic, bytes?: Dynamic): Dynamic {
+    saveSequence += 1;
+    writeStoredValue("saveN", saveSequence);
+    pendingSaves.set(saveSequence, {
+      t: monotonicNow(),
+      paths: [...paths],
+      bytes: bytes,
     });
-    callback("crumb", {
+    writeStoredValue("crumb", {
       phase: "publishing",
-      paths: flag3 ? [...input] : [],
+      paths: keepEventLog ? [...paths] : [],
       at: Date.now(),
     });
-    value23({
-      n: value24,
+    broadcastPing({
+      n: saveSequence,
       phase: "saving",
-      paths: [...input],
+      paths: [...paths],
     });
-    value16("save-flush", {
-      n: value24,
-      paths: input,
-      bytes: options2,
+    recordEvent("save-flush", {
+      n: saveSequence,
+      paths: paths,
+      bytes: bytes,
     });
-    value42("queue");
-    return value24;
+    scheduleRender("queue");
+    return saveSequence;
   }
-  function value26(input?: Dynamic, options2?: Dynamic): Dynamic {
-    let entry: Dynamic = entries5.get(input);
-    entries5.delete(input);
-    entries5.size === 0 && callback("crumb", null);
-    let value60: Dynamic = entry !== undefined ? callback2() - entry.t : NaN;
-    if (options2.ok) {
-      value17("publish call", value60);
-      value5 = {
-        n: input,
-        ms: Math.round(value60),
-        ...(options2.version !== undefined
+  function recordSaveEnd(saveId?: Dynamic, result?: Dynamic): Dynamic {
+    let entry: Dynamic = pendingSaves.get(saveId);
+    pendingSaves.delete(saveId);
+    pendingSaves.size === 0 && writeStoredValue("crumb", null);
+    let durationMs: Dynamic = entry !== undefined ? monotonicNow() - entry.t : NaN;
+    if (result.ok) {
+      recordTiming("publish call", durationMs);
+      lastSuccessfulSave = {
+        n: saveId,
+        ms: Math.round(durationMs),
+        ...(result.version !== undefined
           ? {
-              version: options2.version,
+              version: result.version,
             }
           : {}),
         at: Date.now(),
       };
-      if (options2.version !== undefined) {
-        entries.set("on version", options2.version);
-        for (let value61 of (entry?.paths ?? []) as Dynamic)
-          entries3.set(value61, options2.version);
-        value23({
-          n: input,
+      if (result.version !== undefined) {
+        debugFacts.set("on version", result.version);
+        for (let filePath of (entry?.paths ?? []) as Dynamic)
+          fileVersions.set(filePath, result.version);
+        broadcastPing({
+          n: saveId,
           phase: "saved",
-          version: options2.version,
+          version: result.version,
           ...(entry !== undefined
             ? {
                 paths: entry.paths,
@@ -429,194 +429,194 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
             : {}),
         });
       }
-      value16("save-ok", {
-        n: input,
-        ms: Math.round(value60),
-        version: options2.version,
+      recordEvent("save-ok", {
+        n: saveId,
+        ms: Math.round(durationMs),
+        version: result.version,
       });
     } else {
-      options2.code === "conflict"
-        ? (state2.conflict += 1)
-        : options2.code === "rate_limited"
-          ? (state2.rate += 1)
-          : (state2.other += 1);
-      items2.push({
+      result.code === "conflict"
+        ? (saveFailureCounts.conflict += 1)
+        : result.code === "rate_limited"
+          ? (saveFailureCounts.rate += 1)
+          : (saveFailureCounts.other += 1);
+      recentSaveFailures.push({
         t: Date.now(),
-        n: input,
-        ...(options2.code !== undefined
+        n: saveId,
+        ...(result.code !== undefined
           ? {
-              code: options2.code,
+              code: result.code,
             }
           : {}),
-        ...(options2.raw !== undefined
+        ...(result.raw !== undefined
           ? {
-              raw: callback6(options2.raw),
+              raw: summarizeRawSaveError(result.raw),
             }
           : {}),
       });
-      items2.length > 30 && items2.shift();
-      value16(options2.code === "conflict" ? "save-conflict" : "save-error", {
-        n: input,
-        ms: Math.round(value60),
-        code: options2.code,
-        ...(options2.raw !== undefined
+      recentSaveFailures.length > 30 && recentSaveFailures.shift();
+      recordEvent(result.code === "conflict" ? "save-conflict" : "save-error", {
+        n: saveId,
+        ms: Math.round(durationMs),
+        code: result.code,
+        ...(result.raw !== undefined
           ? {
-              raw: callback6(options2.raw),
+              raw: summarizeRawSaveError(result.raw),
             }
           : {}),
       });
     }
-    value42("queue");
-    value42("header");
-    value41();
+    scheduleRender("queue");
+    scheduleRender("header");
+    refreshStatus();
   }
-  function value27(input?: Dynamic, options2?: Dynamic): Dynamic {
-    let value60: Dynamic = Date.now(),
-      value61: Dynamic = value18 !== undefined,
-      value62: Dynamic = value20.findIndex(
-        (input2?: Dynamic): Dynamic =>
-          input2.phase === "saved" && input2.version === input,
+  function recordVisibleUpdate(version?: Dynamic, updateMethod?: Dynamic): Dynamic {
+    let visibleAt: Dynamic = Date.now(),
+      wasHidden: Dynamic = hiddenSince !== undefined,
+      matchingSavedPingIndex: Dynamic = peerPings.findIndex(
+        (ping?: Dynamic): Dynamic =>
+          ping.phase === "saved" && ping.version === version,
       ),
-      value63: Dynamic =
-        value62 >= 0
-          ? value20[value62].recvAt
-          : options2 === "restarted"
-            ? value60
+      pingCutoffAt: Dynamic =
+        matchingSavedPingIndex >= 0
+          ? peerPings[matchingSavedPingIndex].recvAt
+          : updateMethod === "restarted"
+            ? visibleAt
             : -1;
-    if (value63 < 0) return;
-    let value64: Dynamic = value20.filter(
-      (input2?: Dynamic): Dynamic => input2.recvAt <= value63,
+    if (pingCutoffAt < 0) return;
+    let matchedPings: Dynamic = peerPings.filter(
+      (ping?: Dynamic): Dynamic => ping.recvAt <= pingCutoffAt,
     );
-    value20 = value20.filter(
-      (input2?: Dynamic): Dynamic => input2.recvAt > value63,
+    peerPings = peerPings.filter(
+      (ping?: Dynamic): Dynamic => ping.recvAt > pingCutoffAt,
     );
-    callback5();
-    let entries6: Dynamic = new Map();
-    for (let value65 of value64 as Dynamic) {
-      let value66: Dynamic = value65.tab + "#" + String(value65.n),
-        value67: Dynamic = entries6.get(value66) ?? {};
-      value67[value65.phase] = value65;
-      entries6.set(value66, value67);
+    persistRecentPings();
+    let pingsByPeerSave: Dynamic = new Map();
+    for (let ping of matchedPings as Dynamic) {
+      let peerSaveKey: Dynamic = ping.tab + "#" + String(ping.n),
+        pingPhases: Dynamic = pingsByPeerSave.get(peerSaveKey) ?? {};
+      pingPhases[ping.phase] = ping;
+      pingsByPeerSave.set(peerSaveKey, pingPhases);
     }
-    for (let value65 of entries6.values() as Dynamic) {
-      let value66: Dynamic = value65.saving ?? value65.saved;
-      if (value66 === undefined) continue;
-      if (value61) {
-        index += 1;
+    for (let pingPhases of pingsByPeerSave.values() as Dynamic) {
+      let firstPing: Dynamic = pingPhases.saving ?? pingPhases.saved;
+      if (firstPing === undefined) continue;
+      if (wasHidden) {
+        hiddenUpdateCount += 1;
         continue;
       }
-      let value67: Dynamic = value60 - value66.recvAt;
-      value17(
-        options2 === "adopted"
+      let visibilityLagMs: Dynamic = visibleAt - firstPing.recvAt;
+      recordTiming(
+        updateMethod === "adopted"
           ? "save \u2192 visible, adopted"
           : "save \u2192 visible, restarted",
-        value67,
+        visibilityLagMs,
       );
-      items.push({
-        how: options2,
-        ms: value67,
+      updateMeasurements.push({
+        how: updateMethod,
+        ms: visibilityLagMs,
       });
-      items.length > 60 && items.shift();
-      value65.saved !== undefined &&
-        value17("saved-ping \u2192 visible", value60 - value65.saved.recvAt);
+      updateMeasurements.length > 60 && updateMeasurements.shift();
+      pingPhases.saved !== undefined &&
+        recordTiming("saved-ping \u2192 visible", visibleAt - pingPhases.saved.recvAt);
     }
-    value16("visible", {
-      version: input,
-      how: options2,
-      saves: entries6.size,
-      hidden: value61,
+    recordEvent("visible", {
+      version: version,
+      how: updateMethod,
+      saves: pingsByPeerSave.size,
+      hidden: wasHidden,
     });
-    value41();
+    refreshStatus();
   }
-  function value28(input?: Dynamic): Dynamic {
-    input.type === "update" &&
-      (entries.set(
+  function onHotEvent(event?: Dynamic): Dynamic {
+    event.type === "update" &&
+      (debugFacts.set(
         "hot shape",
-        input.shape === "calls" ? "three calls" : "string verdicts",
+        event.shape === "calls" ? "three calls" : "string verdicts",
       ),
-      entries.set(
+      debugFacts.set(
         "live seen",
-        input.to +
-          (input.toSeq !== undefined
-            ? " \xB7 seq " + String(input.toSeq)
+        event.to +
+          (event.toSeq !== undefined
+            ? " \xB7 seq " + String(event.toSeq)
             : ""),
       ),
-      input.decision === "adopt" &&
-        (entries.set(
+      event.decision === "adopt" &&
+        (debugFacts.set(
           "on version",
-          input.to +
-            (input.toSeq !== undefined
-              ? " \xB7 seq " + String(input.toSeq)
+          event.to +
+            (event.toSeq !== undefined
+              ? " \xB7 seq " + String(event.toSeq)
               : ""),
         ),
-        (flag = false)),
-      input.decision === "restart" && (flag = true));
-    input.type === "restart" && (flag = true);
-    if (input.type === "applied") {
-      flag = false;
-      input.grantLagMs !== undefined &&
-        value17("adopt \u2192 first 200 (grant lag)", input.grantLagMs);
-      for (let value60 of (input.paths ?? []) as Dynamic)
-        entries3.set(value60, input.to);
-      value42("files");
+        (lastUpdateRestarted = false)),
+      event.decision === "restart" && (lastUpdateRestarted = true));
+    event.type === "restart" && (lastUpdateRestarted = true);
+    if (event.type === "applied") {
+      lastUpdateRestarted = false;
+      event.grantLagMs !== undefined &&
+        recordTiming("adopt \u2192 first 200 (grant lag)", event.grantLagMs);
+      for (let filePath of (event.paths ?? []) as Dynamic)
+        fileVersions.set(filePath, event.to);
+      scheduleRender("files");
     }
-    value16("hot-" + input.type, input);
-    value42("header");
-    value41();
+    recordEvent("hot-" + event.type, event);
+    scheduleRender("header");
+    refreshStatus();
   }
-  function value29(input?: Dynamic): Dynamic {
-    callback("crumb", {
+  function recordRestart(reason?: Dynamic): Dynamic {
+    writeStoredValue("crumb", {
       phase: "hot-restart",
-      reason: input,
+      reason: reason,
       at: Date.now(),
     });
-    value16("restart-asked", {
-      reason: input,
+    recordEvent("restart-asked", {
+      reason: reason,
     });
-    flag3 && callback("log", value4.slice(-HOT_DEBUG_RENDER_DEBOUNCE_MS));
+    keepEventLog && writeStoredValue("log", eventLog.slice(-MAX_PERSISTED_EVENTS));
   }
-  let items3: Dynamic = [];
-  function value30(input?: Dynamic): Dynamic {
-    let value60: Dynamic = Math.round(callback2() - value3);
-    items3.push({
-      name: input,
-      ms: value60,
+  let bootPhases: Dynamic = [];
+  function recordBootPhase(phase?: Dynamic): Dynamic {
+    let elapsedMs: Dynamic = Math.round(monotonicNow() - bootStartedAt);
+    bootPhases.push({
+      name: phase,
+      ms: elapsedMs,
     });
-    (input === "first artboard painted" || input === "first paint") &&
-      value17("boot \u2192 first paint", value60);
-    input === "all painted" && value17("boot \u2192 all painted", value60);
-    value16("boot-phase", {
-      name: input,
-      ms: value60,
+    (phase === "first artboard painted" || phase === "first paint") &&
+      recordTiming("boot \u2192 first paint", elapsedMs);
+    phase === "all painted" && recordTiming("boot \u2192 all painted", elapsedMs);
+    recordEvent("boot-phase", {
+      name: phase,
+      ms: elapsedMs,
     });
-    value42("timing");
+    scheduleRender("timing");
   }
-  function value31(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
-    value60?: Dynamic,
+  function recordFileRead(
+    filePath?: Dynamic,
+    durationMs?: Dynamic,
+    responseStatus?: Dynamic,
+    wasFresh?: Dynamic,
   ): Dynamic {
-    value16("read", {
-      path: input,
-      ms: Math.round(options2),
-      status: context,
-      ...(value60
+    recordEvent("read", {
+      path: filePath,
+      ms: Math.round(durationMs),
+      status: responseStatus,
+      ...(wasFresh
         ? {
             fresh: true,
           }
         : {}),
     });
   }
-  let value32: Dynamic = readStoredValue("ui", {}),
-    state3: Dynamic = {
-      open: value32.open === true,
-      side: value32.side === "right" ? "right" : "bottom",
+  let storedPanelState: Dynamic = readStoredValue("ui", {}),
+    panelState: Dynamic = {
+      open: storedPanelState.open === true,
+      side: storedPanelState.side === "right" ? "right" : "bottom",
       size: {
         ...HOT_DEBUG_PANEL_SIZE,
-        ...(value32.size ?? {}),
+        ...(storedPanelState.size ?? {}),
       },
-      tab: value32.tab ?? "events",
+      tab: storedPanelState.tab ?? "events",
       kinds: {
         hot: true,
         save: true,
@@ -624,96 +624,96 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
         room: true,
         error: true,
         other: true,
-        ...(value32.kinds ?? {}),
+        ...(storedPanelState.kinds ?? {}),
       },
-      text: typeof value32.text == "string" ? value32.text : "",
+      text: typeof storedPanelState.text == "string" ? storedPanelState.text : "",
       paused: false,
     };
-  value32.open === undefined &&
+  storedPanelState.open === undefined &&
     readStoredValue("open", false) &&
-    (state3.open = true);
-  let callback7: Dynamic = (): Dynamic => callback("ui", state3);
-  flag3 = state3.open;
-  flag3 || callback("log", null);
-  let value33: Dynamic = null,
-    value34: Dynamic = null,
-    value35: Dynamic = null,
-    value36: Dynamic = null,
-    value37: Dynamic = null,
-    value38: Dynamic = null,
-    value39: Dynamic = null,
-    value40: Dynamic = null,
-    values: Dynamic = new Set(),
-    values2: Dynamic = new Set(),
-    index2: Dynamic = 0,
-    text: Dynamic = "ok";
-  function value41(): Dynamic {
-    let value60: Dynamic = Date.now(),
-      value61: Dynamic =
-        value20.some(
-          (input?: Dynamic): Dynamic =>
-            input.phase === "saved" && value60 - input.recvAt < 15e3,
+    (panelState.open = true);
+  let persistPanelState: Dynamic = (): Dynamic => writeStoredValue("ui", panelState);
+  keepEventLog = panelState.open;
+  keepEventLog || writeStoredValue("log", null);
+  let panelHost: Dynamic = null,
+    shadowRoot: Dynamic = null,
+    themedContainer: Dynamic = null,
+    statusChip: Dynamic = null,
+    panel: Dynamic = null,
+    panelBody: Dynamic = null,
+    eventRows: Dynamic = null,
+    panelInsetStyles: Dynamic = null,
+    expandedEvents: Dynamic = new Set(),
+    dirtySections: Dynamic = new Set(),
+    renderFrame: Dynamic = 0,
+    status: Dynamic = "ok";
+  function refreshStatus(): Dynamic {
+    let now: Dynamic = Date.now(),
+      hasRecentPeerSaveOrFailure: Dynamic =
+        peerPings.some(
+          (ping?: Dynamic): Dynamic =>
+            ping.phase === "saved" && now - ping.recvAt < 15e3,
         ) ||
-        items2.some((input?: Dynamic): Dynamic => value60 - input.t < 1e4),
-      value62: Dynamic = flag ? "bad" : value61 ? "behind" : "ok";
-    value62 !== text &&
-      ((text = value62),
-      value36 && (value36.dataset.status = text),
-      value42("header"));
+        recentSaveFailures.some((failure?: Dynamic): Dynamic => now - failure.t < 1e4),
+      nextStatus: Dynamic = lastUpdateRestarted ? "bad" : hasRecentPeerSaveOrFailure ? "behind" : "ok";
+    nextStatus !== status &&
+      ((status = nextStatus),
+      statusChip && (statusChip.dataset.status = status),
+      scheduleRender("header"));
   }
-  function value42(input?: Dynamic): Dynamic {
-    !state3.open ||
-      value34 === null ||
-      (values2.add(input),
-      !(index2 !== 0 || typeof requestAnimationFrame != "function") &&
-        (index2 = requestAnimationFrame((): Dynamic => {
-          index2 = 0;
-          value43();
+  function scheduleRender(section?: Dynamic): Dynamic {
+    !panelState.open ||
+      shadowRoot === null ||
+      (dirtySections.add(section),
+      !(renderFrame !== 0 || typeof requestAnimationFrame != "function") &&
+        (renderFrame = requestAnimationFrame((): Dynamic => {
+          renderFrame = 0;
+          renderDirtySections();
         })));
   }
-  function value43(): Dynamic {
-    if (!state3.open || value37 === null) {
-      values2.clear();
+  function renderDirtySections(): Dynamic {
+    if (!panelState.open || panel === null) {
+      dirtySections.clear();
       return;
     }
-    values2.has("header") && value47();
-    let tab: Dynamic = state3.tab;
-    tab === "events" && values2.has("events") && !state3.paused && value49();
-    tab === "timing" && values2.has("timing") && value51();
+    dirtySections.has("header") && renderHeader();
+    let tab: Dynamic = panelState.tab;
+    tab === "events" && dirtySections.has("events") && !panelState.paused && renderEvents();
+    tab === "timing" && dirtySections.has("timing") && renderActiveTab();
     tab === "files" &&
-      (values2.has("files") || values2.has("queue")) &&
-      value51();
+      (dirtySections.has("files") || dirtySections.has("queue")) &&
+      renderActiveTab();
     tab === "queue" &&
-      (values2.has("queue") || values2.has("events")) &&
-      value51();
-    values2.clear();
+      (dirtySections.has("queue") || dirtySections.has("events")) &&
+      renderActiveTab();
+    dirtySections.clear();
   }
-  let callback8: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
+  let setDefaultPanelInset: Dynamic = (side?: Dynamic, insetPx?: Dynamic): Dynamic => {
       if (typeof document === "undefined") return;
-      value40 === null &&
-        ((value40 = (document as Dynamic).createElement("style")),
-        value40.setAttribute("data-hot-debug-room", ""),
-        (value40.textContent =
+      panelInsetStyles === null &&
+        ((panelInsetStyles = (document as Dynamic).createElement("style")),
+        panelInsetStyles.setAttribute("data-hot-debug-room", ""),
+        (panelInsetStyles.textContent =
           ":root{--hotdbg-b:0px;--hotdbg-r:0px}html[data-hotdbg-open] .h-screen{height:calc(100vh - var(--hotdbg-b))!important}html[data-hotdbg-open] .h-dvh{height:calc(100dvh - var(--hotdbg-b))!important}html[data-hotdbg-open] .w-screen{width:calc(100vw - var(--hotdbg-r))!important}"),
-        (document as Dynamic).head.appendChild(value40));
+        (document as Dynamic).head.appendChild(panelInsetStyles));
       let documentElement: Dynamic = (document as Dynamic).documentElement;
-      input === null
+      side === null
         ? documentElement.removeAttribute("data-hotdbg-open")
-        : documentElement.setAttribute("data-hotdbg-open", input);
+        : documentElement.setAttribute("data-hotdbg-open", side);
       documentElement.style.setProperty(
         "--hotdbg-b",
-        input === "bottom" ? String(options2) + "px" : "0px",
+        side === "bottom" ? String(insetPx) + "px" : "0px",
       );
       documentElement.style.setProperty(
         "--hotdbg-r",
-        input === "right" ? String(options2) + "px" : "0px",
+        side === "right" ? String(insetPx) + "px" : "0px",
       );
       try {
         (window as Dynamic).dispatchEvent(new Event("resize"));
       } catch {}
     },
-    value44: Dynamic = options.makeRoom ?? callback8,
-    value45: Dynamic = `
+    makeRoomForPanel: Dynamic = debugOptions.makeRoom ?? setDefaultPanelInset,
+    panelStyles: Dynamic = `
     :host{all:initial}
     *{box-sizing:border-box}
     .t-dark{--bg:#17181a;--bg2:#1e2023;--fg:#e6e6e3;--mut:#8b9098;--line:#ffffff14;--acc:#6fcfb0;--warn:#f0b35a;--bad:#f07a7a;--sel:#ffffff0d}
@@ -775,21 +775,21 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
     label{display:block;padding:1px 0}
     textarea{width:100%;height:120px;background:var(--bg2);color:var(--fg);border:0;font:10px/1.3 ui-monospace,monospace;padding:6px}
   `,
-    callback9: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    createElement: Dynamic = (
+      tagName?: Dynamic,
+      className?: Dynamic,
+      text?: Dynamic,
     ): Dynamic => {
-      let value60: Dynamic = (document as Dynamic).createElement(input);
-      options2 !== undefined && (value60.className = options2);
-      context !== undefined && (value60.textContent = context);
-      return value60;
+      let element: Dynamic = (document as Dynamic).createElement(tagName);
+      className !== undefined && (element.className = className);
+      text !== undefined && (element.textContent = text);
+      return element;
     },
-    callback10: Dynamic = (): Dynamic => {
-      let value60: Dynamic =
+    readTheme: Dynamic = (): Dynamic => {
+      let theme: Dynamic =
         (document as Dynamic).documentElement.getAttribute("data-theme") ??
         (document as Dynamic).documentElement.getAttribute("data-mode");
-      if (value60 === "dark" || value60 === "light") return value60;
+      if (theme === "dark" || theme === "light") return theme;
       try {
         return matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
@@ -798,263 +798,263 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
         return "dark";
       }
     };
-  function value46(input?: Dynamic): Dynamic {
-    let value60: Dynamic = input.data ?? {},
-      callback11: Dynamic = (input2?: Dynamic): Dynamic => {
+  function describeEvent(event?: Dynamic): Dynamic {
+    let data: Dynamic = event.data ?? {},
+      formatValue: Dynamic = (dataToFormat?: Dynamic): Dynamic => {
         try {
-          return JSON.stringify(input2);
+          return JSON.stringify(dataToFormat);
         } catch {
-          return String(input2);
+          return String(dataToFormat);
         }
       };
-    switch (input.type) {
+    switch (event.type) {
       case "hot-update": {
-        let changed: Dynamic = value60.changed,
-          value61: Dynamic =
+        let changed: Dynamic = data.changed,
+          changedDescription: Dynamic =
             changed === null
               ? "changed: null"
               : changed
                   .map(
-                    (input2?: Dynamic): Dynamic =>
-                      input2.path +
-                      (input2.klass === "code" ? " [CODE]" : ""),
+                    (change?: Dynamic): Dynamic =>
+                      change.path +
+                      (change.klass === "code" ? " [CODE]" : ""),
                   )
                   .join(", ");
         return {
           cls:
-            value60.decision === "restart"
+            data.decision === "restart"
               ? "error"
-              : value60.decision === "defer"
+              : data.decision === "defer"
                 ? "warn"
                 : "",
-          text: `${String(value60.decision).toUpperCase()} \xB7 ${abbreviateHotDebugValue(String(value60.from))} \u2192 ${abbreviateHotDebugValue(String(value60.to))}${value60.toSeq !== undefined ? " seq " + String(value60.toSeq) : ""} \xB7 required ${String(value60.required)} \xB7 ${value61} \xB7 ${String(value60.why ?? "")}${value60.early === true ? " (early handler)" : ""}`,
+          text: `${String(data.decision).toUpperCase()} \xB7 ${abbreviateHotDebugValue(String(data.from))} \u2192 ${abbreviateHotDebugValue(String(data.to))}${data.toSeq !== undefined ? " seq " + String(data.toSeq) : ""} \xB7 required ${String(data.required)} \xB7 ${changedDescription} \xB7 ${String(data.why ?? "")}${data.early === true ? " (early handler)" : ""}`,
         };
       }
       case "hot-fetch":
         return {
-          cls: value60.ok === true ? "" : "warn",
-          text: `${String(value60.path)} \xB7 try ${String(value60.attempt)} \u2192 ${value60.ok === true ? "200" : String(value60.status ?? "failed")} at +${String(value60.msAfterAdopt)} ms after adopt`,
+          cls: data.ok === true ? "" : "warn",
+          text: `${String(data.path)} \xB7 try ${String(data.attempt)} \u2192 ${data.ok === true ? "200" : String(data.status ?? "failed")} at +${String(data.msAfterAdopt)} ms after adopt`,
         };
       case "hot-pending":
         return {
           cls: "warn",
-          text: `still refused ${String(value60.msAfterAdopt)} ms after adopt: old content stays, retrying slowly \xB7 ${callback11(value60.paths)}`,
+          text: `still refused ${String(data.msAfterAdopt)} ms after adopt: old content stays, retrying slowly \xB7 ${formatValue(data.paths)}`,
         };
       case "hot-applied":
         return {
           cls: "",
-          text: `${String(value60.applied)}/${String(value60.rows)} rows in ${String(value60.ms)} ms \xB7 grant lag ${String(value60.grantLagMs ?? "\u2014")} ms \xB7 retries ${String(value60.retries)} \xB7 ${callback11(value60.paths ?? [])}`,
+          text: `${String(data.applied)}/${String(data.rows)} rows in ${String(data.ms)} ms \xB7 grant lag ${String(data.grantLagMs ?? "\u2014")} ms \xB7 retries ${String(data.retries)} \xB7 ${formatValue(data.paths ?? [])}`,
         };
       case "hot-restart":
         return {
           cls: "error",
-          text: `restart asked: ${String(value60.reason)}${value60.error !== undefined ? " \xB7 " + String(value60.error) : ""}`,
+          text: `restart asked: ${String(data.reason)}${data.error !== undefined ? " \xB7 " + String(data.error) : ""}`,
         };
       case "hot-deferred":
         return {
           cls: "warn",
-          text: `deferred (${String(value60.reason)})`,
+          text: `deferred (${String(data.reason)})`,
         };
       case "hot-reveal":
         return {
-          cls: value60.timedOut === true ? "warn" : "",
-          text: `restarted realm shown after holding the reveal ${String(value60.heldMs)} ms${value60.timedOut === true ? " (the hold ran out before the editor painted)" : ""}${value60.carried === true ? " \xB7 view carried" : ""}`,
+          cls: data.timedOut === true ? "warn" : "",
+          text: `restarted realm shown after holding the reveal ${String(data.heldMs)} ms${data.timedOut === true ? " (the hold ran out before the editor painted)" : ""}${data.carried === true ? " \xB7 view carried" : ""}`,
         };
       case "reconcile": {
-        let regions: Dynamic = value60.regions,
-          guard: Dynamic = value60.guard,
-          value61: Dynamic = value60.overlapList ?? [];
+        let regions: Dynamic = data.regions,
+          guard: Dynamic = data.guard,
+          overlaps: Dynamic = data.overlapList ?? [];
         return {
           cls:
-            value60.ok === true
-              ? Number(value60.overlaps) > 0
+            data.ok === true
+              ? Number(data.overlaps) > 0
                 ? "warn"
                 : ""
               : "error",
-          text: `${String(value60.file)} \xB7 ${String(value60.trigger)} \xB7 ${value60.ok === true ? "FOLDED" : "NOT merged: " + String(value60.why ?? "")}${regions !== undefined ? ` \xB7 template ${regions.template}, script ${regions.script}, outer ${regions.outer}` : ""} \xB7 ${String(value60.applied)} of mine re-applied \xB7 ${String(value60.overlaps)} overlaps${value61.length > 0 ? " (" + value61.map((input2?: Dynamic): Dynamic => `${input2.name}: mine ${String(input2.to)} over theirs ${String(input2.theirs)}`).join("; ") + ")" : ""}${guard !== undefined ? ` \xB7 same tree: theirs ${String(guard.baseTheirs)}, mine ${String(guard.baseMine)}` : ""} \xB7 ${String(value60.ms)} ms`,
+          text: `${String(data.file)} \xB7 ${String(data.trigger)} \xB7 ${data.ok === true ? "FOLDED" : "NOT merged: " + String(data.why ?? "")}${regions !== undefined ? ` \xB7 template ${regions.template}, script ${regions.script}, outer ${regions.outer}` : ""} \xB7 ${String(data.applied)} of mine re-applied \xB7 ${String(data.overlaps)} overlaps${overlaps.length > 0 ? " (" + overlaps.map((overlap?: Dynamic): Dynamic => `${overlap.name}: mine ${String(overlap.to)} over theirs ${String(overlap.theirs)}`).join("; ") + ")" : ""}${guard !== undefined ? ` \xB7 same tree: theirs ${String(guard.baseTheirs)}, mine ${String(guard.baseMine)}` : ""} \xB7 ${String(data.ms)} ms`,
         };
       }
       case "reconcile-choice":
         return {
           cls: "",
-          text: `${String(value60.file)} \xB7 the person chose: ${String(value60.choice)}`,
+          text: `${String(data.file)} \xB7 the person chose: ${String(data.choice)}`,
         };
       case "board-remote":
         return {
           cls: "",
-          text: `${String(value60.file)} \xB7 ${String(value60.how)}${value60.why !== undefined ? " \xB7 " + String(value60.why) : ""}${value60.ms !== undefined ? " \xB7 " + String(value60.ms) + " ms" : ""}`,
+          text: `${String(data.file)} \xB7 ${String(data.how)}${data.why !== undefined ? " \xB7 " + String(data.why) : ""}${data.ms !== undefined ? " \xB7 " + String(data.ms) + " ms" : ""}`,
         };
       case "save-flush":
         return {
           cls: "",
-          text: `#${String(value60.n)} ${callback11(value60.paths)} \xB7 ${String(value60.bytes)} B`,
+          text: `#${String(data.n)} ${formatValue(data.paths)} \xB7 ${String(data.bytes)} B`,
         };
       case "save-ok":
         return {
           cls: "",
-          text: `#${String(value60.n)} published in ${String(value60.ms)} ms \u2192 ${abbreviateHotDebugValue(String(value60.version))}`,
+          text: `#${String(data.n)} published in ${String(data.ms)} ms \u2192 ${abbreviateHotDebugValue(String(data.version))}`,
         };
       case "save-conflict":
       case "save-error":
         return {
           cls: "error",
-          text: `#${String(value60.n)} ${String(value60.code)} after ${String(value60.ms)} ms \xB7 ${callback11(value60.raw ?? "")}`,
+          text: `#${String(data.n)} ${String(data.code)} after ${String(data.ms)} ms \xB7 ${formatValue(data.raw ?? "")}`,
         };
       case "boot":
         return {
           cls: "",
-          text: String(value60.reason),
+          text: String(data.reason),
         };
       case "boot-phase":
         return {
           cls: "",
-          text: `${String(value60.name)} at +${String(value60.ms)} ms`,
+          text: `${String(data.name)} at +${String(data.ms)} ms`,
         };
       case "read":
         return {
           cls:
-            Number(value60.status) >= 400 || value60.status === 0
+            Number(data.status) >= 400 || data.status === 0
               ? "warn"
               : "",
-          text: `${String(value60.path)} \xB7 ${String(value60.status)} in ${String(value60.ms)} ms${value60.fresh === true ? " (no-store)" : ""}`,
+          text: `${String(data.path)} \xB7 ${String(data.status)} in ${String(data.ms)} ms${data.fresh === true ? " (no-store)" : ""}`,
         };
       case "peer-saving":
       case "peer-saved":
         return {
           cls: "",
-          text: `${String(value60.from)} #${String(value60.n)}${value60.version !== undefined ? " \u2192 " + abbreviateHotDebugValue(String(value60.version)) : ""} ${callback11(value60.paths ?? [])}`,
+          text: `${String(data.from)} #${String(data.n)}${data.version !== undefined ? " \u2192 " + abbreviateHotDebugValue(String(data.version)) : ""} ${formatValue(data.paths ?? [])}`,
         };
       default:
         return {
           cls: "",
-          text: callback11(value60),
+          text: formatValue(data),
         };
     }
   }
-  function value47(): Dynamic {
-    let value60: Dynamic = value37?.querySelector(".bar");
-    if (!value60) return;
-    value60.setAttribute("data-status", text);
-    let callback11: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
+  function renderHeader(): Dynamic {
+    let header: Dynamic = panel?.querySelector(".bar");
+    if (!header) return;
+    header.setAttribute("data-status", status);
+    let updateField: Dynamic = (
+      field?: Dynamic,
+      text?: Dynamic,
     ): Dynamic => {
-      let element: Dynamic = value60.querySelector(
-        '[data-f="' + input + '"]',
+      let element: Dynamic = header.querySelector(
+        '[data-f="' + field + '"]',
       );
       element &&
-        element.textContent !== options2 &&
-        (element.textContent = options2);
+        element.textContent !== text &&
+        (element.textContent = text);
     };
-    callback11("tab", value2);
-    callback11("ver", entries.get("on version") ?? "\u2014");
-    callback11(
+    updateField("tab", tabId);
+    updateField("ver", debugFacts.get("on version") ?? "\u2014");
+    updateField(
       "hot",
-      value === null ? "absent" : (entries.get("hot shape") ?? "present"),
+      hotCapability === null ? "absent" : (debugFacts.get("hot shape") ?? "present"),
     );
-    callback11(
+    updateField(
       "status",
-      text === "ok"
+      status === "ok"
         ? "level with live"
-        : text === "behind"
+        : status === "behind"
           ? "behind live"
           : "last update restarted",
     );
   }
-  function value48(): Dynamic {
-    let value60: Dynamic = state3.text.trim().toLowerCase(),
-      items4: Dynamic = [];
+  function visibleEvents(): Dynamic {
+    let searchText: Dynamic = panelState.text.trim().toLowerCase(),
+      matches: Dynamic = [];
     for (
-      let value61: Dynamic = value4.length - 1;
-      value61 >= 0 && items4.length < HOT_DEBUG_LOG_DEBOUNCE_MS;
-      value61--
+      let index: Dynamic = eventLog.length - 1;
+      index >= 0 && matches.length < MAX_VISIBLE_EVENTS;
+      index--
     ) {
-      let value62: Dynamic = value4[value61];
-      if (state3.kinds[classifyHotDebugEvent(value62)]) {
-        if (value60 !== "") {
-          let type: Dynamic = value62.type;
+      let event: Dynamic = eventLog[index];
+      if (panelState.kinds[classifyHotDebugEvent(event)]) {
+        if (searchText !== "") {
+          let type: Dynamic = event.type;
           try {
-            type += " " + JSON.stringify(value62.data ?? "");
+            type += " " + JSON.stringify(event.data ?? "");
           } catch {}
-          if (!type.toLowerCase().includes(value60)) continue;
+          if (!type.toLowerCase().includes(searchText)) continue;
         }
-        items4.push(value62);
+        matches.push(event);
       }
     }
-    return items4;
+    return matches;
   }
-  function value49(): Dynamic {
-    if (value39 === null) return;
-    let value60: Dynamic = value48(),
-      value61: Dynamic = (document as Dynamic).createDocumentFragment();
-    for (let value62 of value60 as Dynamic) {
-      let value63: Dynamic = value46(value62),
-        value64: Dynamic = classifyHotDebugEvent(value62),
-        value65: Dynamic = callback9(
+  function renderEvents(): Dynamic {
+    if (eventRows === null) return;
+    let events: Dynamic = visibleEvents(),
+      rows: Dynamic = (document as Dynamic).createDocumentFragment();
+    for (let event of events as Dynamic) {
+      let description: Dynamic = describeEvent(event),
+        category: Dynamic = classifyHotDebugEvent(event),
+        row: Dynamic = createElement(
           "div",
-          "row " + (value64 === "error" ? "error" : value63.cls),
+          "row " + (category === "error" ? "error" : description.cls),
         );
-      value65.append(
-        callback9("span", "t", formatHotDebugTimestamp(value62.t)),
-        callback9("span", "ty", value62.type),
-        callback9("span", "s", value63.text),
+      row.append(
+        createElement("span", "t", formatHotDebugTimestamp(event.t)),
+        createElement("span", "ty", event.type),
+        createElement("span", "s", description.text),
       );
-      value65.title = "click for the raw event";
-      value65.addEventListener("click", (): Dynamic => {
-        values.has(value62) ? values.delete(value62) : values.add(value62);
-        value49();
+      row.title = "click for the raw event";
+      row.addEventListener("click", (): Dynamic => {
+        expandedEvents.has(event) ? expandedEvents.delete(event) : expandedEvents.add(event);
+        renderEvents();
       });
-      value61.append(value65);
-      if (values.has(value62)) {
-        let text2: Dynamic = "";
+      rows.append(row);
+      if (expandedEvents.has(event)) {
+        let rawData: Dynamic = "";
         try {
-          text2 = JSON.stringify(value62.data ?? {}, null, 1);
+          rawData = JSON.stringify(event.data ?? {}, null, 1);
         } catch {
-          text2 = String(value62.data);
+          rawData = String(event.data);
         }
-        value61.append(callback9("div", "raw", text2));
+        rows.append(createElement("div", "raw", rawData));
       }
     }
-    value60.length === 0 &&
-      value61.append(
-        callback9(
+    events.length === 0 &&
+      rows.append(
+        createElement(
           "div",
           "pad mut",
-          value4.length === 0
+          eventLog.length === 0
             ? "Nothing logged yet."
             : "No event matches the filters.",
         ),
       );
-    value39.replaceChildren(value61);
+    eventRows.replaceChildren(rows);
   }
-  function value50(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+  function createTable(
+    headings?: Dynamic,
+    rows?: Dynamic,
+    className?: Dynamic,
   ): Dynamic {
-    let value60: Dynamic = callback9("table", context);
-    if (input.some((input2?: Dynamic): Dynamic => input2 !== "")) {
-      let value61: Dynamic = callback9("tr");
-      for (let value62 of input as Dynamic)
-        value61.append(callback9("th", undefined, value62));
-      value60.append(value61);
+    let table: Dynamic = createElement("table", className);
+    if (headings.some((heading?: Dynamic): Dynamic => heading !== "")) {
+      let headerRow: Dynamic = createElement("tr");
+      for (let heading of headings as Dynamic)
+        headerRow.append(createElement("th", undefined, heading));
+      table.append(headerRow);
     }
-    for (let value61 of options2 as Dynamic) {
-      let value62: Dynamic = callback9("tr");
-      for (let value63 of value61 as Dynamic)
-        value62.append(callback9("td", undefined, String(value63)));
-      value60.append(value62);
+    for (let cells of rows as Dynamic) {
+      let row: Dynamic = createElement("tr");
+      for (let cell of cells as Dynamic)
+        row.append(createElement("td", undefined, String(cell)));
+      table.append(row);
     }
-    return value60;
+    return table;
   }
-  function value51(): Dynamic {
-    if (value38 === null) return;
-    let value60: Dynamic = value38;
-    value39 = null;
-    value60.replaceChildren();
-    if (state3.tab === "events") {
-      let value62: Dynamic = callback9("div", "tools");
-      for (let value65 of [
+  function renderActiveTab(): Dynamic {
+    if (panelBody === null) return;
+    let body: Dynamic = panelBody;
+    eventRows = null;
+    body.replaceChildren();
+    if (panelState.tab === "events") {
+      let toolbar: Dynamic = createElement("div", "tools");
+      for (let category of [
         "hot",
         "save",
         "boot",
@@ -1062,189 +1062,189 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
         "error",
         "other",
       ] as Dynamic) {
-        let value66: Dynamic = callback9("button", "fchip", value65);
-        value66.setAttribute("aria-pressed", String(state3.kinds[value65]));
-        value66.addEventListener("click", (): Dynamic => {
-          state3.kinds[value65] = !state3.kinds[value65];
-          value66.setAttribute("aria-pressed", String(state3.kinds[value65]));
-          callback7();
-          value49();
+        let filterButton: Dynamic = createElement("button", "fchip", category);
+        filterButton.setAttribute("aria-pressed", String(panelState.kinds[category]));
+        filterButton.addEventListener("click", (): Dynamic => {
+          panelState.kinds[category] = !panelState.kinds[category];
+          filterButton.setAttribute("aria-pressed", String(panelState.kinds[category]));
+          persistPanelState();
+          renderEvents();
         });
-        value62.append(value66);
+        toolbar.append(filterButton);
       }
-      let value63: Dynamic = callback9("input");
-      value63.type = "text";
-      value63.placeholder = "filter (path, version, reason\u2026)";
-      value63.value = state3.text;
-      value63.addEventListener("input", (): Dynamic => {
-        state3.text = value63.value;
-        callback7();
-        value49();
+      let searchField: Dynamic = createElement("input");
+      searchField.type = "text";
+      searchField.placeholder = "filter (path, version, reason\u2026)";
+      searchField.value = panelState.text;
+      searchField.addEventListener("input", (): Dynamic => {
+        panelState.text = searchField.value;
+        persistPanelState();
+        renderEvents();
       });
-      let value64: Dynamic = callback9(
+      let pauseButton: Dynamic = createElement(
         "button",
         "fchip",
-        state3.paused ? "paused" : "live",
+        panelState.paused ? "paused" : "live",
       );
-      value64.setAttribute("aria-pressed", String(!state3.paused));
-      value64.title = "pause the list (events keep being recorded)";
-      value64.addEventListener("click", (): Dynamic => {
-        state3.paused = !state3.paused;
-        value64.textContent = state3.paused ? "paused" : "live";
-        value64.setAttribute("aria-pressed", String(!state3.paused));
-        state3.paused || value49();
+      pauseButton.setAttribute("aria-pressed", String(!panelState.paused));
+      pauseButton.title = "pause the list (events keep being recorded)";
+      pauseButton.addEventListener("click", (): Dynamic => {
+        panelState.paused = !panelState.paused;
+        pauseButton.textContent = panelState.paused ? "paused" : "live";
+        pauseButton.setAttribute("aria-pressed", String(!panelState.paused));
+        panelState.paused || renderEvents();
       });
-      value62.append(
-        value63,
-        value64,
-        callback9(
+      toolbar.append(
+        searchField,
+        pauseButton,
+        createElement(
           "span",
           "mut",
-          `newest first \xB7 ${String(HOT_DEBUG_LOG_DEBOUNCE_MS)} drawn at most \xB7 ${String(HOT_DEBUG_SAMPLE_PERIOD_MS)} kept`,
+          `newest first \xB7 ${String(MAX_VISIBLE_EVENTS)} drawn at most \xB7 ${String(MAX_RETAINED_EVENTS)} kept`,
         ),
       );
-      value39 = callback9("div");
-      value60.append(value62, value39);
-      value49();
+      eventRows = createElement("div");
+      body.append(toolbar, eventRows);
+      renderEvents();
       return;
     }
-    let value61: Dynamic = callback9("div", "pad");
-    value60.append(value61);
-    if (state3.tab === "timing") {
-      value61.append(callback9("h4", undefined, "timing \xB7 ms"));
-      let value62: Dynamic = [...entries2.entries()].map(
-        ([input, input2]: Dynamic): Dynamic => {
-          let value66: Dynamic = [...input2].sort(
-            (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-              input3 - options2,
+    let content: Dynamic = createElement("div", "pad");
+    body.append(content);
+    if (panelState.tab === "timing") {
+      content.append(createElement("h4", undefined, "timing \xB7 ms"));
+      let timingRows: Dynamic = [...timingSamples.entries()].map(
+        ([label, samples]: Dynamic): Dynamic => {
+          let sortedSamples: Dynamic = [...samples].sort(
+            (left?: Dynamic, right?: Dynamic): Dynamic =>
+              left - right,
           );
           return [
-            input,
-            quantile(value66, 0.5),
-            quantile(value66, 0.95),
-            value66[value66.length - 1],
-            value66.length,
+            label,
+            quantile(sortedSamples, 0.5),
+            quantile(sortedSamples, 0.95),
+            sortedSamples[sortedSamples.length - 1],
+            sortedSamples.length,
           ];
         },
       );
-      value61.append(
-        value62.length > 0
-          ? value50(["", "p50", "p95", "max", "n"], value62)
-          : callback9(
+      content.append(
+        timingRows.length > 0
+          ? createTable(["", "p50", "p95", "max", "n"], timingRows)
+          : createElement(
               "div",
               "mut",
               "No samples yet. Save in another tab and watch this one.",
             ),
       );
-      index > 0 &&
-        value61.append(
-          callback9(
+      hiddenUpdateCount > 0 &&
+        content.append(
+          createElement(
             "div",
             "mut",
-            `${String(index)} samples taken while this tab was hidden were left out.`,
+            `${String(hiddenUpdateCount)} samples taken while this tab was hidden were left out.`,
           ),
         );
-      value61.append(
-        callback9(
+      content.append(
+        createElement(
           "h4",
           undefined,
           "save \u2192 visible, newest on the right \xB7 green adopted, red restarted",
         ),
       );
-      let value63: Dynamic = callback9("div", "spark"),
-        value64: Dynamic = Math.max(
+      let sparkline: Dynamic = createElement("div", "spark"),
+        maxUpdateMs: Dynamic = Math.max(
           1,
-          ...items.map((input?: Dynamic): Dynamic => input.ms),
+          ...updateMeasurements.map((measurement?: Dynamic): Dynamic => measurement.ms),
         );
-      for (let value66 of items as Dynamic) {
-        let value67: Dynamic = callback9(
+      for (let measurement of updateMeasurements as Dynamic) {
+        let bar: Dynamic = createElement(
           "i",
-          value66.how === "restarted" ? "r" : "",
+          measurement.how === "restarted" ? "r" : "",
         );
-        value67.style.height =
-          String(Math.max(2, Math.round((value66.ms / value64) * 40))) + "px";
-        value67.title = value66.how + " \xB7 " + String(value66.ms) + " ms";
-        value63.append(value67);
+        bar.style.height =
+          String(Math.max(2, Math.round((measurement.ms / maxUpdateMs) * 40))) + "px";
+        bar.title = measurement.how + " \xB7 " + String(measurement.ms) + " ms";
+        sparkline.append(bar);
       }
-      value61.append(
-        items.length > 0 ? value63 : callback9("div", "mut", "\u2014"),
+      content.append(
+        updateMeasurements.length > 0 ? sparkline : createElement("div", "mut", "\u2014"),
       );
-      value61.append(
-        callback9("h4", undefined, "boot, from the entry module"),
+      content.append(
+        createElement("h4", undefined, "boot, from the entry module"),
       );
-      let value65: Dynamic = Math.max(
+      let maxBootMs: Dynamic = Math.max(
         1,
-        ...items3.map((input?: Dynamic): Dynamic => input.ms),
+        ...bootPhases.map((phase?: Dynamic): Dynamic => phase.ms),
       );
-      for (let value66 of items3 as Dynamic) {
-        let value67: Dynamic = callback9("div", "wf"),
-          value68: Dynamic = callback9("div"),
-          value69: Dynamic = callback9("div", "barx");
-        value69.style.width =
-          String(Math.max(1, Math.round((value66.ms / value65) * 100))) + "%";
-        value68.append(value69);
-        value67.append(
-          callback9("span", undefined, value66.name),
-          value68,
-          callback9("span", "ms", "+" + String(value66.ms)),
+      for (let phase of bootPhases as Dynamic) {
+        let row: Dynamic = createElement("div", "wf"),
+          barTrack: Dynamic = createElement("div"),
+          bar: Dynamic = createElement("div", "barx");
+        bar.style.width =
+          String(Math.max(1, Math.round((phase.ms / maxBootMs) * 100))) + "%";
+        barTrack.append(bar);
+        row.append(
+          createElement("span", undefined, phase.name),
+          barTrack,
+          createElement("span", "ms", "+" + String(phase.ms)),
         );
-        value61.append(value67);
+        content.append(row);
       }
-      items3.length === 0 &&
-        value61.append(callback9("div", "mut", "\u2014"));
-      if (entries4.size > 0) {
-        value61.append(callback9("h4", undefined, "options"));
-        for (let [value66, value67] of entries4 as Dynamic) {
-          let value68: Dynamic = callback9("label"),
-            value69: Dynamic = callback9("input");
-          value69.type = "checkbox";
-          value69.checked = value67.on;
-          value69.addEventListener("change", (): Dynamic => {
-            value67.on = value69.checked;
-            callback("opt/" + value66, value67.on);
-            value16("option", {
-              key: value66,
-              on: value67.on,
+      bootPhases.length === 0 &&
+        content.append(createElement("div", "mut", "\u2014"));
+      if (toggles.size > 0) {
+        content.append(createElement("h4", undefined, "options"));
+        for (let [key, toggle] of toggles as Dynamic) {
+          let label: Dynamic = createElement("label"),
+            checkbox: Dynamic = createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = toggle.on;
+          checkbox.addEventListener("change", (): Dynamic => {
+            toggle.on = checkbox.checked;
+            writeStoredValue("opt/" + key, toggle.on);
+            recordEvent("option", {
+              key: key,
+              on: toggle.on,
             });
           });
-          value68.append(
-            value69,
-            (document as Dynamic).createTextNode(" " + value67.label),
+          label.append(
+            checkbox,
+            (document as Dynamic).createTextNode(" " + toggle.label),
           );
-          value61.append(value68);
+          content.append(label);
         }
       }
       return;
     }
-    if (state3.tab === "files") {
-      let items4: Dynamic = [];
+    if (panelState.tab === "files") {
+      let files: Dynamic = [];
       try {
-        items4 = state.files?.() ?? [];
+        files = debugSources.files?.() ?? [];
       } catch {
-        items4 = [];
+        files = [];
       }
-      value61.append(
-        callback9(
+      content.append(
+        createElement(
           "h4",
           undefined,
-          `files this tab knows \xB7 ${String(items4.length)}`,
+          `files this tab knows \xB7 ${String(files.length)}`,
         ),
       );
-      if (items4.length === 0) {
-        value61.append(
-          callback9(
+      if (files.length === 0) {
+        content.append(
+          createElement(
             "div",
             "mut",
-            state.files === undefined
+            debugSources.files === undefined
               ? "This editor did not provide its file list."
               : "No files.",
           ),
         );
         return;
       }
-      let value62: Dynamic = callback9("table", "l"),
-        value63: Dynamic = callback9("tr");
-      for (let value64 of [
+      let table: Dynamic = createElement("table", "l"),
+        headerRow: Dynamic = createElement("tr");
+      for (let heading of [
         "path",
         "state",
         "on screen",
@@ -1252,377 +1252,377 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
         "size",
         "last changed at",
       ] as Dynamic)
-        value63.append(callback9("th", undefined, value64));
-      value62.append(value63);
-      for (let value64 of [...items4].sort(
-        (input?: Dynamic, options2?: Dynamic): Dynamic =>
-          input.path < options2.path ? -1 : 1,
+        headerRow.append(createElement("th", undefined, heading));
+      table.append(headerRow);
+      for (let file of [...files].sort(
+        (left?: Dynamic, right?: Dynamic): Dynamic =>
+          left.path < right.path ? -1 : 1,
       ) as Dynamic) {
-        let value65: Dynamic = callback9("tr"),
-          value66: Dynamic = callback9("td");
-        for (let value67 of (value64.state ?? "")
+        let row: Dynamic = createElement("tr"),
+          statusCell: Dynamic = createElement("td");
+        for (let fileStatus of (file.state ?? "")
           .split(" ")
           .filter(Boolean) as Dynamic)
-          value66.append(
-            callback9(
+          statusCell.append(
+            createElement(
               "span",
               "st" +
-                (value67 === "conflicted"
+                (fileStatus === "conflicted"
                   ? " b"
-                  : value67 === "behind" || value67 === "held"
+                  : fileStatus === "behind" || fileStatus === "held"
                     ? " w"
                     : ""),
-              value67,
+              fileStatus,
             ),
           );
-        value65.append(
-          callback9("td", undefined, value64.path),
-          value66,
-          callback9("td", undefined, (value64.sha ?? "\u2014").slice(0, 10)),
-          callback9(
+        row.append(
+          createElement("td", undefined, file.path),
+          statusCell,
+          createElement("td", undefined, (file.sha ?? "\u2014").slice(0, 10)),
+          createElement(
             "td",
             undefined,
-            value64.liveSha === undefined
+            file.liveSha === undefined
               ? ""
-              : (value64.liveSha ?? "removed").slice(0, 10),
+              : (file.liveSha ?? "removed").slice(0, 10),
           ),
-          callback9(
+          createElement(
             "td",
             undefined,
-            value64.size !== undefined ? String(value64.size) : "",
+            file.size !== undefined ? String(file.size) : "",
           ),
-          callback9(
+          createElement(
             "td",
             undefined,
-            abbreviateHotDebugValue(entries3.get(value64.path)),
+            abbreviateHotDebugValue(fileVersions.get(file.path)),
           ),
         );
-        value62.append(value65);
+        table.append(row);
       }
-      value61.append(value62);
+      content.append(table);
       return;
     }
-    if (state3.tab === "queue") {
-      let value62: Dynamic;
+    if (panelState.tab === "queue") {
+      let queue: Dynamic;
       try {
-        value62 = state.queue?.();
+        queue = debugSources.queue?.();
       } catch {
-        value62 = undefined;
+        queue = undefined;
       }
-      value61.append(callback9("h4", undefined, "now"));
-      value61.append(
-        value50(
+      content.append(createElement("h4", undefined, "now"));
+      content.append(
+        createTable(
           ["", ""],
           [
             [
               "dirty",
-              value62 === undefined
+              queue === undefined
                 ? "(not provided)"
-                : value62.dirty.length === 0
+                : queue.dirty.length === 0
                   ? "none"
-                  : value62.dirty.join(", "),
+                  : queue.dirty.join(", "),
             ],
             [
               "in flight",
-              entries5.size > 0
-                ? [...entries5.values()]
-                    .map((input?: Dynamic): Dynamic => input.paths.join(", "))
+              pendingSaves.size > 0
+                ? [...pendingSaves.values()]
+                    .map((save?: Dynamic): Dynamic => save.paths.join(", "))
                     .join(" | ")
-                : value62?.inFlight === true
+                : queue?.inFlight === true
                   ? "yes"
                   : "no",
             ],
             [
               "conflicted",
-              value62?.conflicted !== undefined &&
-              value62.conflicted.length > 0
-                ? value62.conflicted.join(", ")
+              queue?.conflicted !== undefined &&
+              queue.conflicted.length > 0
+                ? queue.conflicted.join(", ")
                 : "none",
             ],
             [
               "last publish",
-              value5 === undefined
+              lastSuccessfulSave === undefined
                 ? "\u2014"
-                : `#${String(value5.n)} \xB7 ${String(value5.ms)} ms \u2192 ${abbreviateHotDebugValue(value5.version)} \xB7 ${formatHotDebugTimestamp(value5.at)}`,
+                : `#${String(lastSuccessfulSave.n)} \xB7 ${String(lastSuccessfulSave.ms)} ms \u2192 ${abbreviateHotDebugValue(lastSuccessfulSave.version)} \xB7 ${formatHotDebugTimestamp(lastSuccessfulSave.at)}`,
             ],
-            ["queue says", value62?.lastError ?? "ok"],
-            ["publishes", String(value24)],
+            ["queue says", queue?.lastError ?? "ok"],
+            ["publishes", String(saveSequence)],
             [
               "errors",
-              `409 conflict \xD7${String(state2.conflict)} \xB7 429 rate limit \xD7${String(state2.rate)} \xB7 other \xD7${String(state2.other)}`,
+              `409 conflict \xD7${String(saveFailureCounts.conflict)} \xB7 429 rate limit \xD7${String(saveFailureCounts.rate)} \xB7 other \xD7${String(saveFailureCounts.other)}`,
             ],
             [
               "catch-up waits",
-              value62?.note ??
+              queue?.note ??
                 "this editor does not wait for a newer version before saving yet",
             ],
           ],
           "l",
         ),
       );
-      value61.append(
-        callback9("h4", undefined, "publish errors, newest first"),
+      content.append(
+        createElement("h4", undefined, "publish errors, newest first"),
       );
-      items2.length === 0 && value61.append(callback9("div", "mut", "none"));
-      for (let value63 of [...items2].reverse() as Dynamic) {
-        let text2: Dynamic = "";
+      recentSaveFailures.length === 0 && content.append(createElement("div", "mut", "none"));
+      for (let failure of [...recentSaveFailures].reverse() as Dynamic) {
+        let rawError: Dynamic = "";
         try {
-          text2 = JSON.stringify(value63.raw ?? {}, null, 1);
+          rawError = JSON.stringify(failure.raw ?? {}, null, 1);
         } catch {
-          text2 = String(value63.raw);
+          rawError = String(failure.raw);
         }
-        let value64: Dynamic = callback9("div", "raw", text2);
-        value64.style.marginLeft = "0";
-        value61.append(
-          callback9(
+        let rawErrorElement: Dynamic = createElement("div", "raw", rawError);
+        rawErrorElement.style.marginLeft = "0";
+        content.append(
+          createElement(
             "div",
             "mut",
-            `${formatHotDebugTimestamp(value63.t)} \xB7 #${String(value63.n)} \xB7 ${String(value63.code)}`,
+            `${formatHotDebugTimestamp(failure.t)} \xB7 #${String(failure.n)} \xB7 ${String(failure.code)}`,
           ),
-          value64,
+          rawErrorElement,
         );
       }
       return;
     }
-    value61.append(
-      callback9("h4", undefined, "this tab last loaded because"),
+    content.append(
+      createElement("h4", undefined, "this tab last loaded because"),
     );
-    value61.append(callback9("div", undefined, value10));
-    value61.append(callback9("h4", undefined, "counts by reason"));
-    value61.append(
-      value50(
+    content.append(createElement("div", undefined, reloadMessage));
+    content.append(createElement("h4", undefined, "counts by reason"));
+    content.append(
+      createTable(
         ["reason", "times"],
-        Object.entries(value12)
+        Object.entries(reloadCounts)
           .sort(
-            (input?: Dynamic, options2?: Dynamic): Dynamic =>
-              options2[1] - input[1],
+            (left?: Dynamic, right?: Dynamic): Dynamic =>
+              right[1] - left[1],
           )
-          .map(([input, input2]: Dynamic): Dynamic => [input, input2]),
+          .map(([reason, count]: Dynamic): Dynamic => [reason, count]),
       ),
     );
-    value61.append(callback9("h4", undefined, "history, newest first"));
-    value61.append(
-      value50(
+    content.append(createElement("h4", undefined, "history, newest first"));
+    content.append(
+      createTable(
         ["when", "reason"],
-        [...value13]
+        [...reloadHistory]
           .reverse()
           .map(
-            (input?: Dynamic): Dynamic => [
-              formatHotDebugTimestamp(input.t),
-              input.reason,
+            (reload?: Dynamic): Dynamic => [
+              formatHotDebugTimestamp(reload.t),
+              reload.reason,
             ],
           ),
         "l",
       ),
     );
   }
-  function value52(input?: Dynamic, options2?: Dynamic): Dynamic {
-    let value60: Dynamic = Math.round(
-      (input === "bottom"
+  function clampPanelSize(side?: Dynamic, size?: Dynamic): Dynamic {
+    let maxSize: Dynamic = Math.round(
+      (side === "bottom"
         ? (window as Dynamic).innerHeight
         : (window as Dynamic).innerWidth) * 0.8,
     );
     return Math.max(
-      HOT_DEBUG_MIN_PANEL_SIZE[input],
-      Math.min(value60, Math.round(options2)),
+      HOT_DEBUG_MIN_PANEL_SIZE[side],
+      Math.min(maxSize, Math.round(size)),
     );
   }
-  function value53(): Dynamic {
-    if (value37 === null || value35 === null) return;
-    value35.className = "t-" + callback10();
-    value37.className = "panel " + state3.side;
-    let value60: Dynamic = value52(state3.side, state3.size[state3.side]);
-    state3.side === "bottom"
-      ? ((value37.style.height = String(value60) + "px"),
-        (value37.style.width = ""))
-      : ((value37.style.width = String(value60) + "px"),
-        (value37.style.height = ""));
-    value44(state3.open ? state3.side : null, state3.open ? value60 : 0);
+  function applyPanelLayout(): Dynamic {
+    if (panel === null || themedContainer === null) return;
+    themedContainer.className = "t-" + readTheme();
+    panel.className = "panel " + panelState.side;
+    let size: Dynamic = clampPanelSize(panelState.side, panelState.size[panelState.side]);
+    panelState.side === "bottom"
+      ? ((panel.style.height = String(size) + "px"),
+        (panel.style.width = ""))
+      : ((panel.style.width = String(size) + "px"),
+        (panel.style.height = ""));
+    makeRoomForPanel(panelState.open ? panelState.side : null, panelState.open ? size : 0);
   }
-  function value54(): Dynamic {
-    value37
+  function refreshActiveTab(): Dynamic {
+    panel
       ?.querySelectorAll(".tab")
       .forEach(
         (element?: Dynamic): Dynamic =>
           element.setAttribute(
             "aria-selected",
-            String(element.getAttribute("data-tab") === state3.tab),
+            String(element.getAttribute("data-tab") === panelState.tab),
           ),
       );
   }
-  function value55(input?: Dynamic): Dynamic {
-    state3.open = input;
-    flag3 = input;
-    input ? callback3() : callback("log", null);
-    callback7();
-    value36 && (value36.dataset.open = input ? "1" : "0");
-    value37 && (value37.style.display = input ? "flex" : "none");
-    input ? (value53(), value47(), value54(), value51()) : value44(null, 0);
+  function setPanelOpen(isOpen?: Dynamic): Dynamic {
+    panelState.open = isOpen;
+    keepEventLog = isOpen;
+    isOpen ? scheduleLogPersistence() : writeStoredValue("log", null);
+    persistPanelState();
+    statusChip && (statusChip.dataset.open = isOpen ? "1" : "0");
+    panel && (panel.style.display = isOpen ? "flex" : "none");
+    isOpen ? (applyPanelLayout(), renderHeader(), refreshActiveTab(), renderActiveTab()) : makeRoomForPanel(null, 0);
   }
-  function value56(): Dynamic {
-    if (value34 === null) return;
-    value35 = callback9("div", "t-" + callback10());
-    let value60: Dynamic = value35;
-    value36 = callback9("div", "chip");
-    value36.dataset.status = text;
-    value36.dataset.open = "0";
-    value36.title = "hot-reload debug panel (" + HOT_DEBUG_SHORTCUT + ")";
-    value36.append(
-      callback9("span", "dot"),
-      callback9("span", undefined, "hot"),
-      callback9("span", "mono", value2),
+  function buildPanel(): Dynamic {
+    if (shadowRoot === null) return;
+    themedContainer = createElement("div", "t-" + readTheme());
+    let container: Dynamic = themedContainer;
+    statusChip = createElement("div", "chip");
+    statusChip.dataset.status = status;
+    statusChip.dataset.open = "0";
+    statusChip.title = "hot-reload debug panel (" + HOT_DEBUG_SHORTCUT + ")";
+    statusChip.append(
+      createElement("span", "dot"),
+      createElement("span", undefined, "hot"),
+      createElement("span", "mono", tabId),
     );
-    value36.addEventListener("click", (): Dynamic => value55(true));
-    value37 = callback9("div", "panel " + state3.side);
-    value37.style.display = "none";
-    value37.tabIndex = -1;
-    let value61: Dynamic = callback9("div", "grip");
-    value61.title = "drag to resize \xB7 double-click to reset";
-    value61.addEventListener("dblclick", (): Dynamic => {
-      state3.size[state3.side] = HOT_DEBUG_PANEL_SIZE[state3.side];
-      callback7();
-      value53();
+    statusChip.addEventListener("click", (): Dynamic => setPanelOpen(true));
+    panel = createElement("div", "panel " + panelState.side);
+    panel.style.display = "none";
+    panel.tabIndex = -1;
+    let resizeGrip: Dynamic = createElement("div", "grip");
+    resizeGrip.title = "drag to resize \xB7 double-click to reset";
+    resizeGrip.addEventListener("dblclick", (): Dynamic => {
+      panelState.size[panelState.side] = HOT_DEBUG_PANEL_SIZE[panelState.side];
+      persistPanelState();
+      applyPanelLayout();
     });
-    value61.addEventListener("pointerdown", (event?: Dynamic): Dynamic => {
+    resizeGrip.addEventListener("pointerdown", (event?: Dynamic): Dynamic => {
       event.preventDefault();
-      value61.classList.add("on");
-      let value66: Dynamic = callback9("div", "shield");
-      value66.style.cursor =
-        state3.side === "bottom" ? "ns-resize" : "ew-resize";
-      value60.append(value66);
-      let callback13: Dynamic = (input?: Dynamic): Dynamic => {
-          state3.size[state3.side] = value52(
-            state3.side,
-            state3.side === "bottom"
-              ? (window as Dynamic).innerHeight - input.clientY
-              : (window as Dynamic).innerWidth - input.clientX,
+      resizeGrip.classList.add("on");
+      let resizeShield: Dynamic = createElement("div", "shield");
+      resizeShield.style.cursor =
+        panelState.side === "bottom" ? "ns-resize" : "ew-resize";
+      container.append(resizeShield);
+      let resizePanel: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+          panelState.size[panelState.side] = clampPanelSize(
+            panelState.side,
+            panelState.side === "bottom"
+              ? (window as Dynamic).innerHeight - pointerEvent.clientY
+              : (window as Dynamic).innerWidth - pointerEvent.clientX,
           );
-          value53();
+          applyPanelLayout();
         },
-        callback14: Dynamic = (): Dynamic => {
-          value66.remove();
-          value61.classList.remove("on");
+        finishResize: Dynamic = (): Dynamic => {
+          resizeShield.remove();
+          resizeGrip.classList.remove("on");
           (window as Dynamic).removeEventListener(
             "pointermove",
-            callback13,
+            resizePanel,
             true,
           );
           (window as Dynamic).removeEventListener(
             "pointerup",
-            callback14,
+            finishResize,
             true,
           );
           (window as Dynamic).removeEventListener(
             "pointercancel",
-            callback14,
+            finishResize,
             true,
           );
-          callback7();
+          persistPanelState();
         };
-      (window as Dynamic).addEventListener("pointermove", callback13, true);
-      (window as Dynamic).addEventListener("pointerup", callback14, true);
-      (window as Dynamic).addEventListener("pointercancel", callback14, true);
+      (window as Dynamic).addEventListener("pointermove", resizePanel, true);
+      (window as Dynamic).addEventListener("pointerup", finishResize, true);
+      (window as Dynamic).addEventListener("pointercancel", finishResize, true);
     });
-    let value62: Dynamic = callback9("div", "bar");
-    value62.setAttribute("data-status", text);
-    let callback11: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
+    let header: Dynamic = createElement("div", "bar");
+    header.setAttribute("data-status", status);
+    let appendHeaderField: Dynamic = (
+      label?: Dynamic,
+      field?: Dynamic,
     ): Dynamic => {
-      value62.append(callback9("span", "k", input));
-      let value66: Dynamic = callback9("span", "v");
-      value66.setAttribute("data-f", options2);
-      value62.append(value66);
+      header.append(createElement("span", "k", label));
+      let fieldValue: Dynamic = createElement("span", "v");
+      fieldValue.setAttribute("data-f", field);
+      header.append(fieldValue);
     };
-    value62.append(callback9("span", "dot"));
-    let value63: Dynamic = callback9("span");
-    value63.setAttribute("data-f", "status");
-    value62.append(value63);
-    callback11("tab", "tab");
-    callback11("version", "ver");
-    callback11("claude.hot", "hot");
-    value62.append(callback9("span", "sp"));
-    let callback12: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    header.append(createElement("span", "dot"));
+    let statusLabel: Dynamic = createElement("span");
+    statusLabel.setAttribute("data-f", "status");
+    header.append(statusLabel);
+    appendHeaderField("tab", "tab");
+    appendHeaderField("version", "ver");
+    appendHeaderField("claude.hot", "hot");
+    header.append(createElement("span", "sp"));
+    let appendHeaderButton: Dynamic = (
+      label?: Dynamic,
+      title?: Dynamic,
+      onClick?: Dynamic,
     ): Dynamic => {
-      let value66: Dynamic = callback9("button", "ib", input);
-      value66.title = options2;
-      value66.addEventListener("click", context);
-      value62.append(value66);
+      let button: Dynamic = createElement("button", "ib", label);
+      button.title = title;
+      button.addEventListener("click", onClick);
+      header.append(button);
     };
-    callback12(
+    appendHeaderButton(
       "dock \u21C4",
       "dock to the other side (bottom / right)",
       (): Dynamic => {
-        state3.side = state3.side === "bottom" ? "right" : "bottom";
-        callback7();
-        value53();
+        panelState.side = panelState.side === "bottom" ? "right" : "bottom";
+        persistPanelState();
+        applyPanelLayout();
       },
     );
-    callback12("clear", "clear the log", (): Dynamic => {
-      value4.length = 0;
-      values.clear();
-      callback("log", value4);
-      value51();
+    appendHeaderButton("clear", "clear the log", (): Dynamic => {
+      eventLog.length = 0;
+      expandedEvents.clear();
+      writeStoredValue("log", eventLog);
+      renderActiveTab();
     });
-    callback12("copy log", "copy the whole log as JSON", (): Dynamic => {
-      let value66: Dynamic = value57(),
-        flag6: Dynamic = false;
+    appendHeaderButton("copy log", "copy the whole log as JSON", (): Dynamic => {
+      let logJson: Dynamic = exportLogJson(),
+        copiedToClipboard: Dynamic = false;
       try {
-        navigator.clipboard?.writeText(value66).then(
+        navigator.clipboard?.writeText(logJson).then(
           (): Dynamic => {
-            flag6 = true;
+            copiedToClipboard = true;
           },
           (): Dynamic => {},
         );
       } catch {}
       setTimeout((): Dynamic => {
-        if (flag6 || value38 === null) return;
-        value38.querySelector("textarea")?.remove();
-        let value67: Dynamic = callback9("textarea");
-        value67.readOnly = true;
-        value67.value = value66;
-        value38.prepend(value67);
+        if (copiedToClipboard || panelBody === null) return;
+        panelBody.querySelector("textarea")?.remove();
+        let clipboardFallback: Dynamic = createElement("textarea");
+        clipboardFallback.readOnly = true;
+        clipboardFallback.value = logJson;
+        panelBody.prepend(clipboardFallback);
       }, 200);
     });
-    callback12(
+    appendHeaderButton(
       "\u2715",
       "close (Esc while the panel has focus, or " + HOT_DEBUG_SHORTCUT + ")",
-      (): Dynamic => value55(false),
+      (): Dynamic => setPanelOpen(false),
     );
-    let value64: Dynamic = callback9("div", "tabs");
-    for (let [value66, value67] of [
+    let tabs: Dynamic = createElement("div", "tabs");
+    for (let [tabIdToShow, tabLabel] of [
       ["events", "Events"],
       ["timing", "Timing"],
       ["files", "Files"],
       ["queue", "Save queue"],
       ["reloads", "Reloads"],
     ] as Dynamic) {
-      let value68: Dynamic = callback9("button", "tab", value67);
-      value68.setAttribute("data-tab", value66);
-      value68.addEventListener("click", (): Dynamic => {
-        state3.tab = value66;
-        callback7();
-        value54();
-        value51();
+      let tabButton: Dynamic = createElement("button", "tab", tabLabel);
+      tabButton.setAttribute("data-tab", tabIdToShow);
+      tabButton.addEventListener("click", (): Dynamic => {
+        panelState.tab = tabIdToShow;
+        persistPanelState();
+        refreshActiveTab();
+        renderActiveTab();
       });
-      value64.append(value68);
+      tabs.append(tabButton);
     }
-    value38 = callback9("div", "body");
-    value37.append(value61, value62, value64, value38);
-    value37.addEventListener("keydown", (input?: Dynamic): Dynamic => {
-      input.key === "Escape" && (input.stopPropagation(), value55(false));
+    panelBody = createElement("div", "body");
+    panel.append(resizeGrip, header, tabs, panelBody);
+    panel.addEventListener("keydown", (event?: Dynamic): Dynamic => {
+      event.key === "Escape" && (event.stopPropagation(), setPanelOpen(false));
     });
-    value60.append(value36, value37);
-    let value65: Dynamic = callback9("style");
-    value65.textContent = value45;
-    value34.replaceChildren(value65, value60);
-    state3.open && value55(true);
+    container.append(statusChip, panel);
+    let styleElement: Dynamic = createElement("style");
+    styleElement.textContent = panelStyles;
+    shadowRoot.replaceChildren(styleElement, container);
+    panelState.open && setPanelOpen(true);
     try {
       new MutationObserver((): Dynamic => {
-        value35 && (value35.className = "t-" + callback10());
+        themedContainer && (themedContainer.className = "t-" + readTheme());
       }).observe((document as Dynamic).documentElement, {
         attributes: true,
         attributeFilter: ["data-theme", "data-mode"],
@@ -1631,63 +1631,63 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
     let innerWidth: Dynamic = (window as Dynamic).innerWidth,
       innerHeight: Dynamic = (window as Dynamic).innerHeight;
     (window as Dynamic).addEventListener("resize", (): Dynamic => {
-      !state3.open ||
+      !panelState.open ||
         ((window as Dynamic).innerWidth === innerWidth &&
           (window as Dynamic).innerHeight === innerHeight) ||
         ((innerWidth = (window as Dynamic).innerWidth),
         (innerHeight = (window as Dynamic).innerHeight),
-        value53());
+        applyPanelLayout());
     });
-    setInterval(value41, 3e3);
+    setInterval(refreshStatus, 3e3);
   }
-  function value57(): Dynamic {
-    let state4: Dynamic = {};
-    for (let [value62, value63] of entries2 as Dynamic) {
-      let value64: Dynamic = [...value63].sort(
-        (input?: Dynamic, options2?: Dynamic): Dynamic => input - options2,
+  function exportLogJson(): Dynamic {
+    let statistics: Dynamic = {};
+    for (let [label, samples] of timingSamples as Dynamic) {
+      let sortedSamples: Dynamic = [...samples].sort(
+        (left?: Dynamic, right?: Dynamic): Dynamic => left - right,
       );
-      state4[value62] = {
-        p50: quantile(value64, 0.5),
-        p95: quantile(value64, 0.95),
-        max: value64[value64.length - 1],
-        n: value64.length,
+      statistics[label] = {
+        p50: quantile(sortedSamples, 0.5),
+        p95: quantile(sortedSamples, 0.95),
+        max: sortedSamples[sortedSamples.length - 1],
+        n: sortedSamples.length,
       };
     }
-    let value60: Dynamic, value61: Dynamic;
+    let files: Dynamic, queue: Dynamic;
     try {
-      value60 = state.files?.();
+      files = debugSources.files?.();
     } catch {}
     try {
-      value61 = state.queue?.();
+      queue = debugSources.queue?.();
     } catch {}
     return JSON.stringify(
       {
-        tab: value2,
-        reloadReason: value10,
-        reasons: value12,
-        reloads: value13,
-        fields: Object.fromEntries(entries),
-        stats: state4,
-        excludedHidden: index,
-        phases: items3,
-        counters: state2,
-        publishErrors: items2,
-        series: items,
-        files: value60,
-        queue: value61,
-        log: value4,
+        tab: tabId,
+        reloadReason: reloadMessage,
+        reasons: reloadCounts,
+        reloads: reloadHistory,
+        fields: Object.fromEntries(debugFacts),
+        stats: statistics,
+        excludedHidden: hiddenUpdateCount,
+        phases: bootPhases,
+        counters: saveFailureCounts,
+        publishErrors: recentSaveFailures,
+        series: updateMeasurements,
+        files: files,
+        queue: queue,
+        log: eventLog,
       },
       null,
       1,
     );
   }
-  let flag5: Dynamic = false;
-  function value58(): Dynamic {
-    if (flag5 || typeof window === "undefined") return;
-    flag5 = true;
-    let callback11: Dynamic = (input?: Dynamic): Dynamic => {
+  let guardsInstalled: Dynamic = false;
+  function installPanelEventGuards(): Dynamic {
+    if (guardsInstalled || typeof window === "undefined") return;
+    guardsInstalled = true;
+    let eventIsInsidePanel: Dynamic = (event?: Dynamic): Dynamic => {
       try {
-        return value37 !== null && input.composedPath().includes(value37);
+        return panel !== null && event.composedPath().includes(panel);
       } catch {
         return false;
       }
@@ -1703,16 +1703,16 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
         ) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          value55(!state3.open);
+          setPanelOpen(!panelState.open);
           return;
         }
-        callback11(event) &&
+        eventIsInsidePanel(event) &&
           (event.stopImmediatePropagation(),
-          event.key === "Escape" && value55(false));
+          event.key === "Escape" && setPanelOpen(false));
       },
       true,
     );
-    for (let value60 of [
+    for (let eventName of [
       "keyup",
       "keypress",
       "copy",
@@ -1722,85 +1722,85 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
       "contextmenu",
     ] as Dynamic)
       (window as Dynamic).addEventListener(
-        value60,
-        (input?: Dynamic): Dynamic => {
-          callback11(input) && input.stopImmediatePropagation();
+        eventName,
+        (event?: Dynamic): Dynamic => {
+          eventIsInsidePanel(event) && event.stopImmediatePropagation();
         },
         true,
       );
   }
-  function value59(input?: Dynamic): Dynamic {
+  function mountPanel(mode?: Dynamic): Dynamic {
     if (
-      input !== "files" ||
+      mode !== "files" ||
       typeof document === "undefined" ||
-      value33 !== null
+      panelHost !== null
     )
       return;
-    value58();
-    let callback11: Dynamic = (): Dynamic => {
-      value33 === null &&
-        ((value33 = (document as Dynamic).createElement("div")),
-        value33.setAttribute("data-hot-debug", ""),
-        (value33.style.cssText =
+    installPanelEventGuards();
+    let attachPanelHost: Dynamic = (): Dynamic => {
+      panelHost === null &&
+        ((panelHost = (document as Dynamic).createElement("div")),
+        panelHost.setAttribute("data-hot-debug", ""),
+        (panelHost.style.cssText =
           "position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;pointer-events:none"),
-        (value34 = value33.attachShadow({
+        (shadowRoot = panelHost.attachShadow({
           mode: "open",
         })),
         (
           (document as Dynamic).body ?? (document as Dynamic).documentElement
-        ).appendChild(value33),
-        value56());
+        ).appendChild(panelHost),
+        buildPanel());
     };
     (document as Dynamic).body !== null
-      ? callback11()
+      ? attachPanelHost()
       : (document as Dynamic).addEventListener(
           "DOMContentLoaded",
-          callback11,
+          attachPanelHost,
           {
             once: true,
           },
         );
   }
-  value16("boot", {
-    reason: value10,
-    viaHot: flag2,
-    ...(value8 != null
+  recordEvent("boot", {
+    reason: reloadMessage,
+    viaHot: wasHotRestart,
+    ...(restartSource != null
       ? {
-          hotFrom: value8,
+          hotFrom: restartSource,
         }
       : {}),
-    ...(value6 !== null
+    ...(previousBootMarker !== null
       ? {
-          crumb: value6,
+          crumb: previousBootMarker,
         }
       : {}),
   });
   return {
-    tab: value2,
-    reloadReason: value10,
-    field(input: Dynamic, options2: Dynamic): Dynamic {
-      entries.set(input, options2);
-      value42("header");
+    tab: tabId,
+    reloadReason: reloadMessage,
+    field(field: Dynamic, fieldValue: Dynamic): Dynamic {
+      debugFacts.set(field, fieldValue);
+      scheduleRender("header");
     },
-    event: value16,
-    hotEvent: value28,
-    beforeRestart: value29,
-    saveStart: value25,
-    saveEnd: value26,
-    phase: value30,
-    read: value31,
-    visible: value27,
-    sample: value17,
-    mount: value59,
-    exportJson: value57,
-    option: value14,
-    provide(input: Dynamic): Dynamic {
-      state = {
-        ...state,
-        ...input,
+    event: recordEvent,
+    hotEvent: onHotEvent,
+    beforeRestart: recordRestart,
+    saveStart: recordSaveStart,
+    saveEnd: recordSaveEnd,
+    phase: recordBootPhase,
+    read: recordFileRead,
+    visible: recordVisibleUpdate,
+    sample: recordTiming,
+    mount: mountPanel,
+    exportJson: exportLogJson,
+    option: registerToggle,
+    provide(sources: Dynamic): Dynamic {
+      debugSources = {
+        ...debugSources,
+        ...sources,
       };
-      value42("files");
-      value42("queue");
+      scheduleRender("files");
+      scheduleRender("queue");
     },
   };
 }
@@ -1825,9 +1825,9 @@ function createNoopHotDebugger(): Dynamic {
     provide: callback,
   };
 }
-function createHotDebugger(options?: Dynamic): Dynamic {
+function createHotDebugger(debugOptions?: Dynamic): Dynamic {
   return isFilesDebugEnabled()
-    ? createHotReloadDebugger(options)
+    ? createHotReloadDebugger(debugOptions)
     : createNoopHotDebugger();
 }
 export {
@@ -1840,11 +1840,11 @@ export {
   createNoopHotDebugger,
   FILES_DEBUG_STORAGE_KEY,
   formatHotDebugTimestamp,
-  HOT_DEBUG_LOG_DEBOUNCE_MS,
+  MAX_VISIBLE_EVENTS as HOT_DEBUG_LOG_DEBOUNCE_MS,
   HOT_DEBUG_MIN_PANEL_SIZE,
   HOT_DEBUG_PANEL_SIZE,
-  HOT_DEBUG_RENDER_DEBOUNCE_MS,
-  HOT_DEBUG_SAMPLE_PERIOD_MS,
+  MAX_PERSISTED_EVENTS as HOT_DEBUG_RENDER_DEBOUNCE_MS,
+  MAX_RETAINED_EVENTS as HOT_DEBUG_SAMPLE_PERIOD_MS,
   HOT_DEBUG_SHORTCUT,
   isFilesDebugEnabled,
   quantile,
@@ -1852,9 +1852,9 @@ export {
 export function installPlatformHotDebugger(): () => void {
   return () => {
     FILES_DEBUG_STORAGE_KEY = "appifact-files-debug";
-    HOT_DEBUG_SAMPLE_PERIOD_MS = 1500;
-    HOT_DEBUG_RENDER_DEBOUNCE_MS = 150;
-    HOT_DEBUG_LOG_DEBOUNCE_MS = 250;
+    MAX_RETAINED_EVENTS = 1500;
+    MAX_PERSISTED_EVENTS = 150;
+    MAX_VISIBLE_EVENTS = 250;
     HOT_DEBUG_PANEL_SIZE = {
       bottom: 300,
       right: 440,
@@ -1865,13 +1865,13 @@ export function installPlatformHotDebugger(): () => void {
     };
     HOT_DEBUG_SHORTCUT = "Ctrl+`";
     createHotDebugTabId = (): Dynamic => Math.random().toString(36).slice(2, 6);
-    formatHotDebugTimestamp = (input?: Dynamic): Dynamic =>
-      new Date(input).toISOString().slice(11, 23);
-    abbreviateHotDebugValue = (items?: Dynamic): Dynamic =>
-      items == null || items === ""
+    formatHotDebugTimestamp = (timestamp?: Dynamic): Dynamic =>
+      new Date(timestamp).toISOString().slice(11, 23);
+    abbreviateHotDebugValue = (text?: Dynamic): Dynamic =>
+      text == null || text === ""
         ? "\u2014"
-        : items.length > 18
-          ? items.slice(0, 10) + "\u2026" + items.slice(-4)
-          : items;
+        : text.length > 18
+          ? text.slice(0, 10) + "\u2026" + text.slice(-4)
+          : text;
   };
 }

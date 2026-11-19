@@ -16,108 +16,108 @@ var expectedUploadFailureReasons: Dynamic;
 var uploadFailureCodeMap: Dynamic;
 async function getAssetsCapability(): Promise<Dynamic> {
   // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
-  let claude: Dynamic = (globalThis as Dynamic).designHost;
-  return typeof claude?.use == "function"
+  let designHost: Dynamic = (globalThis as Dynamic).designHost;
+  return typeof designHost?.use == "function"
     ? awaitHostCapability(
         "assets",
         hasCapabilityMethod("upload"),
       )
-    : typeof claude?.assets?.upload == "function"
-      ? claude.assets
+    : typeof designHost?.assets?.upload == "function"
+      ? designHost.assets
       : null;
 }
-function isEmulatorBlobUrl(input?: Dynamic): Dynamic {
-  return input.startsWith("blob:") && isEmulator();
+function isEmulatorBlobUrl(url?: Dynamic): Dynamic {
+  return url.startsWith("blob:") && isEmulator();
 }
-function isBlobAssetUrl(input?: Dynamic): Dynamic {
-  return blobAssetPathPattern.test(input) || isEmulatorBlobUrl(input);
+function isBlobAssetUrl(url?: Dynamic): Dynamic {
+  return blobAssetPathPattern.test(url) || isEmulatorBlobUrl(url);
 }
-function normalizeUploadedAsset(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null) return;
-  let value: Dynamic = input,
-    value2: Dynamic = typeof value.id == "string" ? value.id : "",
-    value3: Dynamic = typeof value.url == "string" ? value.url : "",
-    value4: Dynamic =
-      blobAssetPathPattern.test(value3) || isEmulatorBlobUrl(value3)
-        ? value3
-        : /^[0-9a-f]{32}$/.test(value2)
-          ? "_blob/" + value2
+function normalizeUploadedAsset(response?: Dynamic): Dynamic {
+  if (typeof response != "object" || response === null) return;
+  let asset: Dynamic = response,
+    id: Dynamic = typeof asset.id == "string" ? asset.id : "",
+    url: Dynamic = typeof asset.url == "string" ? asset.url : "",
+    src: Dynamic =
+      blobAssetPathPattern.test(url) || isEmulatorBlobUrl(url)
+        ? url
+        : /^[0-9a-f]{32}$/.test(id)
+          ? "_blob/" + id
           : "";
-  if (value4 !== "")
+  if (src !== "")
     return {
-      id: value2 || value4.slice(-32),
-      src: value4,
-      bytes: typeof value.sizeBytes == "number" ? value.sizeBytes : 0,
+      id: id || src.slice(-32),
+      src: src,
+      bytes: typeof asset.sizeBytes == "number" ? asset.sizeBytes : 0,
     };
 }
-async function readImageMaxEdge(input?: Dynamic): Promise<Dynamic> {
+async function readImageMaxEdge(image?: Dynamic): Promise<Dynamic> {
   try {
-    let value: Dynamic = await createImageBitmap(input),
-      value2: Dynamic = Math.max(value.width, value.height);
-    value.close();
-    return value2;
+    let bitmap: Dynamic = await createImageBitmap(image),
+      maxEdge: Dynamic = Math.max(bitmap.width, bitmap.height);
+    bitmap.close();
+    return maxEdge;
   } catch {
     return 0;
   }
 }
-async function prepareImageUpload(input?: Dynamic): Promise<Dynamic> {
-  return input.size <= maxDownsampledImageBytes &&
-    (await readImageMaxEdge(input)) <= maxImageUploadEdge
-    ? input
-    : downsampleUploadImage(input);
+async function prepareImageUpload(image?: Dynamic): Promise<Dynamic> {
+  return image.size <= maxDownsampledImageBytes &&
+    (await readImageMaxEdge(image)) <= maxImageUploadEdge
+    ? image
+    : downsampleUploadImage(image);
 }
 async function uploadImageWithFallback(
-  input?: Dynamic,
-  options: Dynamic = {},
+  image?: Dynamic,
+  uploadOptions: Dynamic = {},
 ): Promise<Dynamic> {
-  let value: Dynamic = options.downsample ?? downsampleImageToDataUrl,
-    callback: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => ({
+  let downsampleToDataUrl: Dynamic = uploadOptions.downsample ?? downsampleImageToDataUrl,
+    fallbackToDataUrl: Dynamic = async (reason?: Dynamic): Promise<Dynamic> => ({
       kind: "data",
-      src: await value(input, {
-        maxBytes: options.maxDataBytes ?? 70 * 1024,
+      src: await downsampleToDataUrl(image, {
+        maxBytes: uploadOptions.maxDataBytes ?? 70 * 1024,
       }),
-      reason: input2,
+      reason: reason,
     }),
-    type: Dynamic = input.type,
-    value2: Dynamic = uploadImageMimeTypes.includes(type),
-    value3: Dynamic =
-      type === "image/avif" ||
-      type === "image/bmp" ||
-      type === "image/svg+xml";
-  if (!value2 && !value3) return callback("unsupported_type");
-  let value4: Dynamic = type === "image/gif";
-  if (value4 && input.size > maxImageUploadBytes)
-    return callback("too_large");
-  let value5: Dynamic = await getAssetsCapability();
-  if (value5 === null || typeof value5.upload != "function")
-    return callback("unavailable");
-  let value6: Dynamic = input;
-  if (!value4)
+    mimeType: Dynamic = image.type,
+    canUploadDirectly: Dynamic = uploadImageMimeTypes.includes(mimeType),
+    shouldTranscode: Dynamic =
+      mimeType === "image/avif" ||
+      mimeType === "image/bmp" ||
+      mimeType === "image/svg+xml";
+  if (!canUploadDirectly && !shouldTranscode) return fallbackToDataUrl("unsupported_type");
+  let isGif: Dynamic = mimeType === "image/gif";
+  if (isGif && image.size > maxImageUploadBytes)
+    return fallbackToDataUrl("too_large");
+  let assetsCapability: Dynamic = await getAssetsCapability();
+  if (assetsCapability === null || typeof assetsCapability.upload != "function")
+    return fallbackToDataUrl("unavailable");
+  let preparedImage: Dynamic = image;
+  if (!isGif)
     try {
-      value6 = value3
-        ? await (options.transcode ?? downsampleUploadImage)(input)
-        : await (options.downsize ?? prepareImageUpload)(input);
+      preparedImage = shouldTranscode
+        ? await (uploadOptions.transcode ?? downsampleUploadImage)(image)
+        : await (uploadOptions.downsize ?? prepareImageUpload)(image);
     } catch {
-      return callback("downsize_failed");
+      return fallbackToDataUrl("downsize_failed");
     }
   try {
-    let value7: Dynamic = normalizeUploadedAsset(
-      await value5.upload.call(value5, value6, {
-        type: value6.type || type,
+    let uploadedAsset: Dynamic = normalizeUploadedAsset(
+      await assetsCapability.upload.call(assetsCapability, preparedImage, {
+        type: preparedImage.type || mimeType,
       }),
     );
-    return value7 === undefined
-      ? callback("bad_result")
+    return uploadedAsset === undefined
+      ? fallbackToDataUrl("bad_result")
       : {
           kind: "blob",
-          ...value7,
+          ...uploadedAsset,
         };
-  } catch (value7: Dynamic) {
-    let value8: Dynamic =
-      typeof value7 == "object" && value7 !== null
-        ? String(value7.code ?? "")
+  } catch (error: Dynamic) {
+    let errorCode: Dynamic =
+      typeof error == "object" && error !== null
+        ? String(error.code ?? "")
         : "";
-    return callback(value8 || "upload_failed");
+    return fallbackToDataUrl(errorCode || "upload_failed");
   }
 }
 function classifyUploadResult(source?: Dynamic): Dynamic {
@@ -164,8 +164,8 @@ export function installPlatformImageUpload(): () => void {
     maxImageUploadBytes = 2 * 1024 * 1024;
     maxDownsampledImageBytes = 1.5 * 1024 * 1024;
     maxImageUploadEdge = 2560;
-    downsampleUploadImage = (input?: Dynamic): Dynamic =>
-      downsampleImageBlob(input, {
+    downsampleUploadImage = (image?: Dynamic): Dynamic =>
+      downsampleImageBlob(image, {
         maxEdge: maxImageUploadEdge,
         maxBytes: maxDownsampledImageBytes,
       });

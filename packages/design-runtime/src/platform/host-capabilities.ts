@@ -11,52 +11,52 @@ function getClaudeHost(): Dynamic {
 function hasCapabilityLoader(): Dynamic {
   return typeof getClaudeHost()?.use == "function";
 }
-function getCachedHostCapability(input?: Dynamic): Dynamic {
-  return getClaudeHost()?.[input];
+function getCachedHostCapability(name?: Dynamic): Dynamic {
+  return getClaudeHost()?.[name];
 }
-async function requestHostCapability(input?: Dynamic): Promise<Dynamic> {
-  let value: Dynamic = getClaudeHost();
-  if (typeof value?.use != "function") return null;
-  let value2: Dynamic = await value.use.call(value, input);
-  return value2?.available === false ? null : value2;
+async function requestHostCapability(name?: Dynamic): Promise<Dynamic> {
+  let host: Dynamic = getClaudeHost();
+  if (typeof host?.use != "function") return null;
+  let capability: Dynamic = await host.use.call(host, name);
+  return capability?.available === false ? null : capability;
 }
 async function resolveHostCapability(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = capabilityTimeoutMs,
+  name?: Dynamic,
+  isUsable?: Dynamic,
+  timeoutMs: Dynamic = capabilityTimeoutMs,
 ): Promise<Dynamic> {
-  let value: Dynamic = getCachedHostCapability(input);
-  return options(value)
-    ? value
-    : awaitHostCapability(input, options, context);
+  let cachedCapability: Dynamic = getCachedHostCapability(name);
+  return isUsable(cachedCapability)
+    ? cachedCapability
+    : awaitHostCapability(name, isUsable, timeoutMs);
 }
 async function awaitHostCapability(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = capabilityTimeoutMs,
+  name?: Dynamic,
+  isUsable?: Dynamic,
+  timeoutMs: Dynamic = capabilityTimeoutMs,
 ): Promise<Dynamic> {
-  let value: Dynamic;
+  let timeout: Dynamic;
   try {
-    let promise: Dynamic = new Promise(
-        (input2?: Dynamic): Dynamic =>
-          (value = setTimeout(input2, context, null)),
+    let timeoutPromise: Dynamic = new Promise(
+        (resolve?: Dynamic): Dynamic =>
+          (timeout = setTimeout(resolve, timeoutMs, null)),
       ),
-      value2: Dynamic = await Promise.race([
-        requestHostCapability(input),
-        promise,
+      capability: Dynamic = await Promise.race([
+        requestHostCapability(name),
+        timeoutPromise,
       ]);
-    return options(value2) ? value2 : null;
+    return isUsable(capability) ? capability : null;
   } catch {
     return null;
   } finally {
-    clearTimeout(value);
+    clearTimeout(timeout);
   }
 }
-function hasCapabilityMethod(input?: Dynamic): Dynamic {
-  return (input2?: Dynamic): Dynamic =>
-    (typeof input2 == "object" || typeof input2 == "function") &&
-    input2 !== null &&
-    typeof input2[input] == "function";
+function hasCapabilityMethod(method?: Dynamic): Dynamic {
+  return (capability?: Dynamic): Dynamic =>
+    (typeof capability == "object" || typeof capability == "function") &&
+    capability !== null &&
+    typeof capability[method] == "function";
 }
 export {
   awaitHostCapability,

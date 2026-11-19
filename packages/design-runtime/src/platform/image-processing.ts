@@ -3,184 +3,184 @@ import {
   type Dynamic,
 } from "../runtime-types";
 
-var PlatformImageProcessingItems: Dynamic;
-var PlatformImageProcessingConstant: Dynamic;
-var PlatformImageProcessingLimit: Dynamic;
-var PlatformImageProcessingItems_2: Dynamic;
-function isSvgMimeType(input?: Dynamic): Dynamic {
-  return (input.split(";")[0] ?? "").trim().toLowerCase() === "image/svg+xml";
+var DATA_URL_ENCODING_QUALITIES: Dynamic;
+var IMAGE_RESIZE_STEP: Dynamic;
+var MIN_DOWNSAMPLE_EDGE: Dynamic;
+var BLOB_ENCODING_QUALITIES: Dynamic;
+function isSvgMimeType(mimeType?: Dynamic): Dynamic {
+  return (mimeType.split(";")[0] ?? "").trim().toLowerCase() === "image/svg+xml";
 }
 async function rasterizeSvg(
-  input?: Dynamic,
-  options?: Dynamic,
+  blob?: Dynamic,
+  maxEdge?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic = URL.createObjectURL(input);
+  let objectUrl: Dynamic = URL.createObjectURL(blob);
   try {
-    let value2: Dynamic = new Image();
-    await new Promise((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value11: Dynamic = setTimeout(
-        (): Dynamic => options2(new Error("timed out reading the SVG")),
+    let image: Dynamic = new Image();
+    await new Promise((resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+      let decodeTimeout: Dynamic = setTimeout(
+        (): Dynamic => reject(new Error("timed out reading the SVG")),
         2e4,
       );
-      value2.onload = (): Dynamic => {
-        clearTimeout(value11);
-        input2();
+      image.onload = (): Dynamic => {
+        clearTimeout(decodeTimeout);
+        resolve();
       };
-      value2.onerror = (): Dynamic => {
-        clearTimeout(value11);
-        options2(new Error("the SVG could not be decoded as an image"));
+      image.onerror = (): Dynamic => {
+        clearTimeout(decodeTimeout);
+        reject(new Error("the SVG could not be decoded as an image"));
       };
-      value2.src = value;
+      image.src = objectUrl;
     });
-    let value3: Dynamic = value2.naturalWidth > 0 && value2.naturalHeight > 0,
-      value4: Dynamic = value3 ? value2.naturalWidth : options,
-      value5: Dynamic = value3 ? value2.naturalHeight : options,
-      value6: Dynamic = options / Math.max(value4, value5),
-      value7: Dynamic = Math.max(1, Math.round(value4 * value6)),
-      value8: Dynamic = Math.max(1, Math.round(value5 * value6)),
-      value9: Dynamic = (document as Dynamic).createElement("canvas");
-    value9.width = value7;
-    value9.height = value8;
-    let value10: Dynamic = value9.getContext("2d");
-    if (value10 === null) throw new Error("no 2d canvas in this host");
-    value10.drawImage(value2, 0, 0, value7, value8);
+    let hasIntrinsicSize: Dynamic = image.naturalWidth > 0 && image.naturalHeight > 0,
+      naturalWidth: Dynamic = hasIntrinsicSize ? image.naturalWidth : maxEdge,
+      naturalHeight: Dynamic = hasIntrinsicSize ? image.naturalHeight : maxEdge,
+      scale: Dynamic = maxEdge / Math.max(naturalWidth, naturalHeight),
+      width: Dynamic = Math.max(1, Math.round(naturalWidth * scale)),
+      height: Dynamic = Math.max(1, Math.round(naturalHeight * scale)),
+      canvas: Dynamic = (document as Dynamic).createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    let drawingContext: Dynamic = canvas.getContext("2d");
+    if (drawingContext === null) throw new Error("no 2d canvas in this host");
+    drawingContext.drawImage(image, 0, 0, width, height);
     try {
-      value10.getImageData(0, 0, 1, 1);
+      drawingContext.getImageData(0, 0, 1, 1);
     } catch {
       throw new Error(
         "this SVG uses features that can't be imported (embedded web content)",
       );
     }
-    return createImageBitmap(value9);
+    return createImageBitmap(canvas);
   } finally {
-    URL.revokeObjectURL(value);
+    URL.revokeObjectURL(objectUrl);
   }
 }
 async function decodeImageBlob(
-  input?: Dynamic,
-  options?: Dynamic,
+  blob?: Dynamic,
+  maxEdge?: Dynamic,
 ): Promise<Dynamic> {
-  return isSvgMimeType(input.type)
-    ? rasterizeSvg(input, options)
-    : createImageBitmap(input);
+  return isSvgMimeType(blob.type)
+    ? rasterizeSvg(blob, maxEdge)
+    : createImageBitmap(blob);
 }
 function encodeDownsampledImage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  image?: Dynamic,
+  maxEdge?: Dynamic,
+  quality?: Dynamic,
+  mimeType?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = Math.min(
+  let scale: Dynamic = Math.min(
       1,
-      options / Math.max(input.width, input.height),
+      maxEdge / Math.max(image.width, image.height),
     ),
-    value3: Dynamic = Math.max(1, Math.round(input.width * value2)),
-    value4: Dynamic = Math.max(1, Math.round(input.height * value2)),
-    value5: Dynamic = (document as Dynamic).createElement("canvas");
-  value5.width = value3;
-  value5.height = value4;
-  let value6: Dynamic = value5.getContext("2d");
-  if (!value6) return;
-  value6.drawImage(input, 0, 0, value3, value4);
-  let value7: Dynamic = value5.toDataURL(value, context);
-  return value7.startsWith("data:" + value) ? value7 : undefined;
+    width: Dynamic = Math.max(1, Math.round(image.width * scale)),
+    height: Dynamic = Math.max(1, Math.round(image.height * scale)),
+    canvas: Dynamic = (document as Dynamic).createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  let drawingContext: Dynamic = canvas.getContext("2d");
+  if (!drawingContext) return;
+  drawingContext.drawImage(image, 0, 0, width, height);
+  let dataUrl: Dynamic = canvas.toDataURL(mimeType, quality);
+  return dataUrl.startsWith("data:" + mimeType) ? dataUrl : undefined;
 }
 async function downsampleImageToDataUrl(
-  input?: Dynamic,
-  options: Dynamic = {},
+  blob?: Dynamic,
+  resizeOptions: Dynamic = {},
 ): Promise<Dynamic> {
-  let value: Dynamic = options.maxBytes ?? 71680,
-    value2: Dynamic = options.maxEdge ?? 1280,
-    value3: Dynamic = await decodeImageBlob(
-      input,
-      Math.max(PlatformImageProcessingLimit, value2),
+  let maxBytes: Dynamic = resizeOptions.maxBytes ?? 71680,
+    maxEdge: Dynamic = resizeOptions.maxEdge ?? 1280,
+    image: Dynamic = await decodeImageBlob(
+      blob,
+      Math.max(MIN_DOWNSAMPLE_EDGE, maxEdge),
     );
   try {
-    let value4: Dynamic = Math.max(
-        PlatformImageProcessingLimit,
-        Math.min(value2, Math.max(value3.width, value3.height)),
+    let edge: Dynamic = Math.max(
+        MIN_DOWNSAMPLE_EDGE,
+        Math.min(maxEdge, Math.max(image.width, image.height)),
       ),
-      value5: Dynamic;
-    for (; value4 >= PlatformImageProcessingLimit; ) {
-      for (let value6 of PlatformImageProcessingItems as Dynamic) {
-        let value7: Dynamic =
-          encodeDownsampledImage(value3, value4, value6, "image/webp") ??
-          encodeDownsampledImage(value3, value4, value6, "image/jpeg");
-        if (value7 && value7.length <= value) return value7;
-        value7 &&
-          (!value5 || value7.length < value5.length) &&
-          (value5 = value7);
+      smallestDataUrl: Dynamic;
+    for (; edge >= MIN_DOWNSAMPLE_EDGE; ) {
+      for (let quality of DATA_URL_ENCODING_QUALITIES as Dynamic) {
+        let dataUrl: Dynamic =
+          encodeDownsampledImage(image, edge, quality, "image/webp") ??
+          encodeDownsampledImage(image, edge, quality, "image/jpeg");
+        if (dataUrl && dataUrl.length <= maxBytes) return dataUrl;
+        dataUrl &&
+          (!smallestDataUrl || dataUrl.length < smallestDataUrl.length) &&
+          (smallestDataUrl = dataUrl);
       }
-      value4 = Math.floor(value4 * PlatformImageProcessingConstant);
+      edge = Math.floor(edge * IMAGE_RESIZE_STEP);
     }
     throw new Error(
       "could not fit the image into " +
-        String(value) +
+        String(maxBytes) +
         " bytes" +
-        (value5 ? " (smallest attempt: " + String(value5.length) + ")" : ""),
+        (smallestDataUrl ? " (smallest attempt: " + String(smallestDataUrl.length) + ")" : ""),
     );
   } finally {
-    value3.close();
+    image.close();
   }
 }
 async function encodeDownsampledBlob(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  image?: Dynamic,
+  maxEdge?: Dynamic,
+  quality?: Dynamic,
+  mimeType?: Dynamic,
 ): Promise<Dynamic> {
-  let value2: Dynamic = Math.min(
+  let scale: Dynamic = Math.min(
       1,
-      options / Math.max(input.width, input.height),
+      maxEdge / Math.max(image.width, image.height),
     ),
-    value3: Dynamic = Math.max(1, Math.round(input.width * value2)),
-    value4: Dynamic = Math.max(1, Math.round(input.height * value2)),
-    value5: Dynamic = (document as Dynamic).createElement("canvas");
-  value5.width = value3;
-  value5.height = value4;
-  let value6: Dynamic = value5.getContext("2d");
-  if (!value6) return;
-  value6.drawImage(input, 0, 0, value3, value4);
-  let value7: Dynamic = await new Promise(
-    (input2?: Dynamic): Dynamic => value5.toBlob(input2, value, context),
+    width: Dynamic = Math.max(1, Math.round(image.width * scale)),
+    height: Dynamic = Math.max(1, Math.round(image.height * scale)),
+    canvas: Dynamic = (document as Dynamic).createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  let drawingContext: Dynamic = canvas.getContext("2d");
+  if (!drawingContext) return;
+  drawingContext.drawImage(image, 0, 0, width, height);
+  let encodedBlob: Dynamic = await new Promise(
+    (resolve?: Dynamic): Dynamic => canvas.toBlob(resolve, mimeType, quality),
   );
-  return value7 !== null && value7.type === value ? value7 : undefined;
+  return encodedBlob !== null && encodedBlob.type === mimeType ? encodedBlob : undefined;
 }
 async function downsampleImageBlob(
-  input?: Dynamic,
-  options: Dynamic = {},
+  blob?: Dynamic,
+  resizeOptions: Dynamic = {},
 ): Promise<Dynamic> {
-  let value: Dynamic = options.maxEdge ?? 2560,
-    value2: Dynamic = options.maxBytes ?? 1.5 * 1024 * 1024,
-    value3: Dynamic = await decodeImageBlob(input, value);
+  let maxEdge: Dynamic = resizeOptions.maxEdge ?? 2560,
+    maxBytes: Dynamic = resizeOptions.maxBytes ?? 1.5 * 1024 * 1024,
+    image: Dynamic = await decodeImageBlob(blob, maxEdge);
   try {
-    let value4: Dynamic = Math.max(
-      PlatformImageProcessingLimit,
-      Math.min(value, Math.max(value3.width, value3.height)),
+    let edge: Dynamic = Math.max(
+      MIN_DOWNSAMPLE_EDGE,
+      Math.min(maxEdge, Math.max(image.width, image.height)),
     );
-    for (; value4 >= PlatformImageProcessingLimit; ) {
-      for (let value5 of PlatformImageProcessingItems_2 as Dynamic) {
-        let value6: Dynamic =
+    for (; edge >= MIN_DOWNSAMPLE_EDGE; ) {
+      for (let quality of BLOB_ENCODING_QUALITIES as Dynamic) {
+        let encodedBlob: Dynamic =
           (await encodeDownsampledBlob(
-            value3,
-            value4,
-            value5,
+            image,
+            edge,
+            quality,
             "image/webp",
           )) ??
-          (await encodeDownsampledBlob(value3, value4, value5, "image/jpeg"));
-        if (value6 && value6.size <= value2) return value6;
+          (await encodeDownsampledBlob(image, edge, quality, "image/jpeg"));
+        if (encodedBlob && encodedBlob.size <= maxBytes) return encodedBlob;
       }
-      value4 = Math.floor(value4 * PlatformImageProcessingConstant);
+      edge = Math.floor(edge * IMAGE_RESIZE_STEP);
     }
     throw new Error(
-      "could not fit the image into " + String(value2) + " bytes",
+      "could not fit the image into " + String(maxBytes) + " bytes",
     );
   } finally {
-    value3.close();
+    image.close();
   }
 }
-function isImageFile(input?: Dynamic): Dynamic {
-  return input.type.startsWith("image/");
+function isImageFile(file?: Dynamic): Dynamic {
+  return file.type.startsWith("image/");
 }
 export {
   decodeImageBlob,
@@ -190,17 +190,17 @@ export {
   encodeDownsampledImage,
   isImageFile,
   isSvgMimeType,
-  PlatformImageProcessingConstant,
-  PlatformImageProcessingItems,
-  PlatformImageProcessingItems_2,
-  PlatformImageProcessingLimit,
+  IMAGE_RESIZE_STEP as PlatformImageProcessingConstant,
+  DATA_URL_ENCODING_QUALITIES as PlatformImageProcessingItems,
+  BLOB_ENCODING_QUALITIES as PlatformImageProcessingItems_2,
+  MIN_DOWNSAMPLE_EDGE as PlatformImageProcessingLimit,
   rasterizeSvg,
 };
 export function installPlatformImageProcessing(): () => void {
   return () => {
-    PlatformImageProcessingItems = [0.8, 0.65, 0.5, 0.35, 0.25];
-    PlatformImageProcessingConstant = 0.7;
-    PlatformImageProcessingLimit = 64;
-    PlatformImageProcessingItems_2 = [0.85, 0.75, 0.65, 0.5];
+    DATA_URL_ENCODING_QUALITIES = [0.8, 0.65, 0.5, 0.35, 0.25];
+    IMAGE_RESIZE_STEP = 0.7;
+    MIN_DOWNSAMPLE_EDGE = 64;
+    BLOB_ENCODING_QUALITIES = [0.85, 0.75, 0.65, 0.5];
   };
 }

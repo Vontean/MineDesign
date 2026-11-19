@@ -3,55 +3,55 @@ import {
   type Dynamic,
 } from "../runtime-types";
 
-var PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig: Dynamic;
+var defaultIdleTimers: Dynamic;
 var idleTaskScheduler: Dynamic;
-function scheduleMessageChannelTask(input?: Dynamic): Dynamic {
-  let value: Dynamic = new MessageChannel(),
-    flag: Dynamic = true;
-  value.port1.onmessage = (): Dynamic => {
-    value.port1.close();
-    flag && input();
+function scheduleMessageChannelTask(run?: Dynamic): Dynamic {
+  let channel: Dynamic = new MessageChannel(),
+    active: Dynamic = true;
+  channel.port1.onmessage = (): Dynamic => {
+    channel.port1.close();
+    active && run();
   };
-  value.port2.postMessage(null);
+  channel.port2.postMessage(null);
   return (): Dynamic => {
-    flag = false;
-    value.port1.close();
+    active = false;
+    channel.port1.close();
   };
 }
 export {
   idleTaskScheduler,
-  PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig,
+  defaultIdleTimers as PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig,
   scheduleMessageChannelTask,
 };
 export function installPlatformIdleScheduler(): () => void {
   return () => {
-    PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig =
+    defaultIdleTimers =
       {
         requestIdleCallback:
           typeof (globalThis as Dynamic).requestIdleCallback == "function"
-            ? (input?: Dynamic, options?: Dynamic): Dynamic =>
-                (globalThis as Dynamic).requestIdleCallback(input, options)
+            ? (run?: Dynamic, idleOptions?: Dynamic): Dynamic =>
+                (globalThis as Dynamic).requestIdleCallback(run, idleOptions)
             : undefined,
-        cancelIdleCallback: (input?: Dynamic): Dynamic =>
-          (globalThis as Dynamic).cancelIdleCallback?.(input),
+        cancelIdleCallback: (idleCallbackId?: Dynamic): Dynamic =>
+          (globalThis as Dynamic).cancelIdleCallback?.(idleCallbackId),
         immediate:
           typeof MessageChannel == "function"
             ? scheduleMessageChannelTask
             : undefined,
-        setTimeout: (input?: Dynamic, options?: Dynamic): Dynamic =>
-          (globalThis as Dynamic).setTimeout(input, options),
-        clearTimeout: (input?: Dynamic): Dynamic =>
-          (globalThis as Dynamic).clearTimeout(input),
+        setTimeout: (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+          (globalThis as Dynamic).setTimeout(run, delayMs),
+        clearTimeout: (timeoutId?: Dynamic): Dynamic =>
+          (globalThis as Dynamic).clearTimeout(timeoutId),
       };
-    idleTaskScheduler = class value {
+    idleTaskScheduler = class IdleTaskScheduler {
       constructor(
-        input: Dynamic,
-        options: Dynamic = 1e3,
-        context: Dynamic = PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig,
+        work: Dynamic,
+        timeoutMs: Dynamic = 1e3,
+        timers: Dynamic = defaultIdleTimers,
       ) {
-        this.work = input;
-        this.timeoutMs = options;
-        this.timers = context;
+        this.work = work;
+        this.timeoutMs = timeoutMs;
+        this.timers = timers;
       }
       work: Dynamic;
       timeoutMs: Dynamic;
@@ -61,25 +61,25 @@ export function installPlatformIdleScheduler(): () => void {
       get pending(): Dynamic {
         return this.items;
       }
-      add(input: Dynamic, options: Dynamic): Dynamic {
-        let items: Dynamic = [...new Set(input)];
-        this.items = options?.front
+      add(items: Dynamic, queueOptions: Dynamic): Dynamic {
+        let uniqueItems: Dynamic = [...new Set(items)];
+        this.items = queueOptions?.front
           ? [
-              ...items,
+              ...uniqueItems,
               ...this.items.filter(
-                (input2?: Dynamic): Dynamic => !items.includes(input2),
+                (item?: Dynamic): Dynamic => !uniqueItems.includes(item),
               ),
             ]
           : [
               ...this.items,
-              ...items.filter(
-                (input2?: Dynamic): Dynamic => !this.items.includes(input2),
+              ...uniqueItems.filter(
+                (item?: Dynamic): Dynamic => !this.items.includes(item),
               ),
             ];
         (this.schedule as Dynamic)();
       }
-      retain(input: Dynamic): Dynamic {
-        this.items = this.items.filter(input);
+      retain(shouldKeep: Dynamic): Dynamic {
+        this.items = this.items.filter(shouldKeep);
       }
       dispose(): Dynamic {
         this.cancel?.();
@@ -87,48 +87,48 @@ export function installPlatformIdleScheduler(): () => void {
         this.items = [];
       }
       static MIN_SLICE_MS: Dynamic = 10;
-      schedule(input: Dynamic): Dynamic {
+      schedule(previousDeadline: Dynamic): Dynamic {
         if (this.cancel !== null || this.items.length === 0) return;
-        let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-            input2.didTimeout || input2.timeRemaining() <= value.MIN_SLICE_MS,
-          callback2: Dynamic = (
-            input2?: Dynamic,
-            options: Dynamic = false,
+        let idleSliceEnded: Dynamic = (deadline?: Dynamic): Dynamic =>
+            deadline.didTimeout || deadline.timeRemaining() <= IdleTaskScheduler.MIN_SLICE_MS,
+          runNextItem: Dynamic = (
+            deadline?: Dynamic,
+            respectDeadline: Dynamic = false,
           ): Dynamic => {
             this.cancel = null;
-            if (options && input2 !== undefined && callback(input2))
+            if (respectDeadline && deadline !== undefined && idleSliceEnded(deadline))
               return (this.schedule as Dynamic)();
-            let value2: Dynamic = this.items.shift();
+            let item: Dynamic = this.items.shift();
             try {
-              value2 !== undefined && this.work(value2);
+              item !== undefined && this.work(item);
             } finally {
-              this.schedule(input2);
+              this.schedule(deadline);
             }
           },
           timers: Dynamic = this.timers;
-        if (input !== undefined && !callback(input)) {
+        if (previousDeadline !== undefined && !idleSliceEnded(previousDeadline)) {
           if (timers.immediate !== undefined)
             this.cancel = timers.immediate(
-              (): Dynamic => callback2(input, true),
+              (): Dynamic => runNextItem(previousDeadline, true),
             );
           else {
-            let value2: Dynamic = timers.setTimeout(
-              (): Dynamic => callback2(input, true),
+            let timeoutId: Dynamic = timers.setTimeout(
+              (): Dynamic => runNextItem(previousDeadline, true),
               0,
             );
-            this.cancel = (): Dynamic => timers.clearTimeout(value2);
+            this.cancel = (): Dynamic => timers.clearTimeout(timeoutId);
           }
         } else if (typeof timers.requestIdleCallback == "function") {
-          let value2: Dynamic = timers.requestIdleCallback(callback2, {
+          let idleCallbackId: Dynamic = timers.requestIdleCallback(runNextItem, {
             timeout: this.timeoutMs,
           });
-          this.cancel = (): Dynamic => timers.cancelIdleCallback?.(value2);
+          this.cancel = (): Dynamic => timers.cancelIdleCallback?.(idleCallbackId);
         } else {
-          let value2: Dynamic = timers.setTimeout(
-            (): Dynamic => callback2(),
+          let timeoutId: Dynamic = timers.setTimeout(
+            (): Dynamic => runNextItem(),
             0,
           );
-          this.cancel = (): Dynamic => timers.clearTimeout(value2);
+          this.cancel = (): Dynamic => timers.clearTimeout(timeoutId);
         }
       }
     };

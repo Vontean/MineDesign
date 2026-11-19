@@ -2,19 +2,19 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { CanvasMeasurementsAZaZPattern, CanvasMeasurementsConstant, CanvasMeasurementsConstant_2, CanvasMeasurementsConstant_3, CanvasMeasurementsConstant_4, CanvasMeasurementsIsSafeInteger, CanvasMeasurementsPattern, CanvasMeasurementsPattern_2, CanvasMeasurementsPattern_3, CanvasMeasurementsPattern_4, OpenFindValue, reactCanvasMeasurements_2, SaveNowValue } from "../canvas/measurements";
+import { CanvasMeasurementsAZaZPattern as EXPORT_REQUEST_ID_PATTERN, CanvasMeasurementsConstant as MAX_EXPORT_FORMATS, CanvasMeasurementsConstant_2 as MAX_EXPORT_VARIANTS, CanvasMeasurementsConstant_3 as MAX_DESTINATIONS, CanvasMeasurementsConstant_4 as MAX_FOOT_INSET, CanvasMeasurementsIsSafeInteger as normalizeExportWindowMs, CanvasMeasurementsPattern as EXPORT_FORMAT_PATTERN, CanvasMeasurementsPattern_2 as EXPORT_VARIANT_ID_PATTERN, CanvasMeasurementsPattern_3 as DESTINATION_ID_PATTERN, CanvasMeasurementsPattern_4 as FOOT_GROUND_PATTERN, OpenFindValue, reactCanvasMeasurements_2 as React, SaveNowValue } from "../canvas/measurements";
 import { initializeCdsIndex } from "../cds/index";
 import { load_react } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
 
-var PlatformFrameHostBridgeItems: Dynamic;
+var DEFAULT_HOST_ORIGINS: Dynamic;
 var allowedFrameHostOrigins: Dynamic;
-var createFrameHostBridgeValue: Dynamic;
+var cachedFrameHostBridge: Dynamic;
 var PanelValue: Dynamic;
 var PopoverValue: Dynamic;
 var reactPlatformFrameHostBridge: Dynamic;
-function hostSaveStatus(input?: Dynamic): Dynamic {
-  switch (input) {
+function hostSaveStatus(status?: Dynamic): Dynamic {
+  switch (status) {
     case "loading":
       return null;
     case "cached":
@@ -31,545 +31,545 @@ function hostSaveStatus(input?: Dynamic): Dynamic {
       return "unsaved";
   }
 }
-function getHostOrigins(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.__FRAME_PREAMBLE?.origins;
-  return Array.isArray(value)
-    ? value.filter((input2?: Dynamic): Dynamic => typeof input2 == "string")
-    : PlatformFrameHostBridgeItems;
+function getHostOrigins(hostWindow?: Dynamic): Dynamic {
+  let origins: Dynamic = hostWindow.__FRAME_PREAMBLE?.origins;
+  return Array.isArray(origins)
+    ? origins.filter((origin?: Dynamic): Dynamic => typeof origin == "string")
+    : DEFAULT_HOST_ORIGINS;
 }
-function isAllowedHostOrigin(input?: Dynamic, options?: Dynamic): Dynamic {
-  for (let value of options as Dynamic)
-    if (value.endsWith(":*"))
+function isAllowedHostOrigin(origin?: Dynamic, allowedOrigins?: Dynamic): Dynamic {
+  for (let allowedOrigin of allowedOrigins as Dynamic)
+    if (allowedOrigin.endsWith(":*"))
       try {
-        let value2: Dynamic = new URL(input);
-        if (`${value2.protocol}//${value2.hostname}:*` === value) return true;
+        let url: Dynamic = new URL(origin);
+        if (`${url.protocol}//${url.hostname}:*` === allowedOrigin) return true;
       } catch {}
-    else if (input === value) return true;
+    else if (origin === allowedOrigin) return true;
   return false;
 }
-function normalizeHostExports(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    values: Dynamic = new Set();
-  for (let value of input as Dynamic) {
+function normalizeHostExports(formats?: Dynamic): Dynamic {
+  let normalizedFormats: Dynamic = [],
+    seenFormats: Dynamic = new Set();
+  for (let entry of formats as Dynamic) {
     if (
-      typeof value.format != "string" ||
-      !CanvasMeasurementsPattern.test(value.format) ||
-      values.has(value.format)
+      typeof entry.format != "string" ||
+      !EXPORT_FORMAT_PATTERN.test(entry.format) ||
+      seenFormats.has(entry.format)
     )
       continue;
-    values.add(value.format);
-    let value2: Dynamic = value.handoff === true,
-      state: Dynamic = {
-        format: value.format,
-        ...(value.disabled === true && {
+    seenFormats.add(entry.format);
+    let isHandoff: Dynamic = entry.handoff === true,
+      format: Dynamic = {
+        format: entry.format,
+        ...(entry.disabled === true && {
           disabled: true,
         }),
-        ...(!value2 &&
-          value.interactive === true && {
+        ...(!isHandoff &&
+          entry.interactive === true && {
             interactive: true,
           }),
-        ...(!value2 &&
-          value.bundle === true && {
+        ...(!isHandoff &&
+          entry.bundle === true && {
             bundle: true,
           }),
-        ...(value2 && {
-          handoff: value2,
+        ...(isHandoff && {
+          handoff: isHandoff,
         }),
       },
-      value3: Dynamic =
-        !value2 && Array.isArray(value.variants)
-          ? normalizeHostFindCommands(value.variants)
+      variants: Dynamic =
+        !isHandoff && Array.isArray(entry.variants)
+          ? normalizeHostFindCommands(entry.variants)
           : [];
-    value3.length > 0 && (state.variants = value3);
-    items.push(state);
-    if (items.length === CanvasMeasurementsConstant) break;
+    variants.length > 0 && (format.variants = variants);
+    normalizedFormats.push(format);
+    if (normalizedFormats.length === MAX_EXPORT_FORMATS) break;
   }
-  return items;
+  return normalizedFormats;
 }
-function normalizeHostFindCommands(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    values: Dynamic = new Set();
-  for (let value of input as Dynamic)
+function normalizeHostFindCommands(commands?: Dynamic): Dynamic {
+  let normalizedCommands: Dynamic = [],
+    seenIds: Dynamic = new Set();
+  for (let command of commands as Dynamic)
     if (
       !(
-        typeof value?.id != "string" ||
-        !CanvasMeasurementsPattern_2.test(value.id) ||
-        values.has(value.id)
+        typeof command?.id != "string" ||
+        !EXPORT_VARIANT_ID_PATTERN.test(command.id) ||
+        seenIds.has(command.id)
       ) &&
-      (values.add(value.id),
-      items.push(
-        value.disabled === true
+      (seenIds.add(command.id),
+      normalizedCommands.push(
+        command.disabled === true
           ? {
-              id: value.id,
+              id: command.id,
               disabled: true,
             }
           : {
-              id: value.id,
+              id: command.id,
             },
       ),
-      items.length === CanvasMeasurementsConstant_2)
+      normalizedCommands.length === MAX_EXPORT_VARIANTS)
     )
       break;
-  return items;
+  return normalizedCommands;
 }
-function normalizeHostCanvasCommands(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    values: Dynamic = new Set();
-  for (let value of input as Dynamic)
+function normalizeHostCanvasCommands(commands?: Dynamic): Dynamic {
+  let normalizedCommands: Dynamic = [],
+    seenIds: Dynamic = new Set();
+  for (let command of commands as Dynamic)
     if (
       !(
-        typeof value.id != "string" ||
-        !CanvasMeasurementsPattern_3.test(value.id) ||
-        values.has(value.id)
+        typeof command.id != "string" ||
+        !DESTINATION_ID_PATTERN.test(command.id) ||
+        seenIds.has(command.id)
       ) &&
-      (values.add(value.id),
-      items.push(
-        value.disabled === true
+      (seenIds.add(command.id),
+      normalizedCommands.push(
+        command.disabled === true
           ? {
-              id: value.id,
+              id: command.id,
               disabled: true,
             }
           : {
-              id: value.id,
+              id: command.id,
             },
       ),
-      items.length === CanvasMeasurementsConstant_3)
+      normalizedCommands.length === MAX_DESTINATIONS)
     )
       break;
-  return items;
+  return normalizedCommands;
 }
-function normalizeHostSelectionPaths(items?: Dynamic): Dynamic {
-  return Array.isArray(items) &&
-    items.length <= 8 &&
-    items.every((input?: Dynamic): Dynamic => typeof input == "string")
-    ? items
+function normalizeHostSelectionPaths(paths?: Dynamic): Dynamic {
+  return Array.isArray(paths) &&
+    paths.length <= 8 &&
+    paths.every((path?: Dynamic): Dynamic => typeof path == "string")
+    ? paths
     : [];
 }
-function createFrameHostBridge(input?: Dynamic): Dynamic {
-  let parentWindow: Dynamic = input.parentWindow,
+function createFrameHostBridge(bridgeOptions?: Dynamic): Dynamic {
+  let parentWindow: Dynamic = bridgeOptions.parentWindow,
     // MineDesign: trustParent (from __FRAME_PREAMBLE) trusts window.parent itself instead of an origin list.
     // The desktop parent page is file:// (opaque origin "null", which postMessage cannot target), so replies go to "*".
-    trustParent: Dynamic = input.trustParent === true,
-    value: Dynamic = null,
-    flag: Dynamic = false,
-    values: Dynamic = new Set(),
-    flag2: Dynamic = false,
-    value2: Dynamic = null,
-    value3: Dynamic = null,
-    value4: Dynamic = null,
-    value5: Dynamic = null,
-    value6: Dynamic = null,
-    index: Dynamic = 0,
-    value7: Dynamic = null,
-    value8: Dynamic,
-    value9: Dynamic = null,
-    value10: Dynamic = null,
-    value11: Dynamic = null,
-    values2: Dynamic = new Set(),
-    callback: Dynamic = (): Dynamic => flag && value7?.saved !== undefined,
-    callback2: Dynamic = (): Dynamic =>
-      flag && values.has("readonly") && value7?.saved === "readonly",
-    callback3: Dynamic = (): Dynamic => flag && values.has("claude_tips"),
-    callback4: Dynamic = (): Dynamic =>
-      callback() &&
-      value9 !== null &&
-      value7?.actions?.some(
-        (input2?: Dynamic): Dynamic => input2.id === SaveNowValue,
+    trustParent: Dynamic = bridgeOptions.trustParent === true,
+    replyOrigin: Dynamic = null,
+    hostShowsRows: Dynamic = false,
+    hostFeatures: Dynamic = new Set(),
+    canOpenFind: Dynamic = false,
+    openFindHandler: Dynamic = null,
+    saveState: Dynamic = null,
+    exportFormats: Dynamic = null,
+    destinations: Dynamic = null,
+    foot: Dynamic = null,
+    leaveWorkHolds: Dynamic = 0,
+    snapshot: Dynamic = null,
+    serializedSnapshot: Dynamic,
+    saveNowHandler: Dynamic = null,
+    destinationHandler: Dynamic = null,
+    exportHandler: Dynamic = null,
+    chromeListeners: Dynamic = new Set(),
+    showsSave: Dynamic = (): Dynamic => hostShowsRows && snapshot?.saved !== undefined,
+    showsReadOnly: Dynamic = (): Dynamic =>
+      hostShowsRows && hostFeatures.has("readonly") && snapshot?.saved === "readonly",
+    showsClaudeTips: Dynamic = (): Dynamic => hostShowsRows && hostFeatures.has("claude_tips"),
+    handlesRetry: Dynamic = (): Dynamic =>
+      showsSave() &&
+      saveNowHandler !== null &&
+      snapshot?.actions?.some(
+        (action?: Dynamic): Dynamic => action.id === SaveNowValue,
       ) === true,
-    callback5: Dynamic = (): Dynamic =>
-      String(callback()) +
-      String(callback4()) +
-      String(callback2()) +
-      String(callback3()),
-    value12: Dynamic = callback5(),
-    callback6: Dynamic = (): Dynamic => {
-      let value13: Dynamic = callback5();
-      if (value13 !== value12) {
-        value12 = value13;
-        for (let value14 of values2 as Dynamic)
+    chromeStateKey: Dynamic = (): Dynamic =>
+      String(showsSave()) +
+      String(handlesRetry()) +
+      String(showsReadOnly()) +
+      String(showsClaudeTips()),
+    lastChromeStateKey: Dynamic = chromeStateKey(),
+    notifyChromeListeners: Dynamic = (): Dynamic => {
+      let nextChromeStateKey: Dynamic = chromeStateKey();
+      if (nextChromeStateKey !== lastChromeStateKey) {
+        lastChromeStateKey = nextChromeStateKey;
+        for (let listener of chromeListeners as Dynamic)
           try {
-            value14();
+            listener();
           } catch {}
       }
     },
-    callback7: Dynamic = (): Dynamic => {
+    buildSnapshot: Dynamic = (): Dynamic => {
       if (
-        value3 === null &&
-        value4 === null &&
-        value5 === null &&
-        value6 === null &&
-        index === 0
+        saveState === null &&
+        exportFormats === null &&
+        destinations === null &&
+        foot === null &&
+        leaveWorkHolds === 0
       )
         return null;
       let state: Dynamic = {
         v: 1,
       };
-      value3 !== null &&
-        ((state.saved = value3.saved),
-        (state.actions = value3.saveNow
+      saveState !== null &&
+        ((state.saved = saveState.saved),
+        (state.actions = saveState.saveNow
           ? [
               {
                 id: SaveNowValue,
               },
             ]
           : []));
-      index > 0 && (state.leaveLosesWork = true);
-      let value13: Dynamic =
-          value4?.filter(
-            (input2?: Dynamic): Dynamic => input2.handoff !== true,
+      leaveWorkHolds > 0 && (state.leaveLosesWork = true);
+      let exports: Dynamic =
+          exportFormats?.filter(
+            (format?: Dynamic): Dynamic => format.handoff !== true,
           ) ?? [],
-        value14: Dynamic =
-          value4
-            ?.filter((input2?: Dynamic): Dynamic => input2.handoff === true)
+        handoffs: Dynamic =
+          exportFormats
+            ?.filter((format?: Dynamic): Dynamic => format.handoff === true)
             .map(
-              ({ handoff: handoff, ...props }: Dynamic): Dynamic => props,
+              ({ handoff: _handoff, ...props }: Dynamic): Dynamic => props,
             ) ?? [];
-      value13.length > 0 && (state.exports = value13);
-      value14.length > 0 && (state.handoffs = value14);
-      value5 !== null && (state.destinations = value5);
-      value6?.footInset !== undefined && (state.footInset = value6.footInset);
-      value6?.ground !== undefined && (state.ground = value6.ground);
+      exports.length > 0 && (state.exports = exports);
+      handoffs.length > 0 && (state.handoffs = handoffs);
+      destinations !== null && (state.destinations = destinations);
+      foot?.footInset !== undefined && (state.footInset = foot.footInset);
+      foot?.ground !== undefined && (state.ground = foot.ground);
       return state;
     },
-    callback8: Dynamic = (): Dynamic => {
-      let value13: Dynamic = callback7(),
-        value14: Dynamic = value13 ?? {
+    refreshSnapshot: Dynamic = (): Dynamic => {
+      let baseSnapshot: Dynamic = buildSnapshot(),
+        snapshotWithDefaults: Dynamic = baseSnapshot ?? {
           v: 1,
         },
-        value15: Dynamic = flag2
+        nextSnapshot: Dynamic = canOpenFind
           ? {
-              ...value14,
+              ...snapshotWithDefaults,
               actions: [
-                ...(value14.actions ?? []),
+                ...(snapshotWithDefaults.actions ?? []),
                 {
                   id: OpenFindValue,
                 },
               ],
             }
-          : value13,
-        value16: Dynamic = JSON.stringify(value15);
-      value16 !== value8 &&
-        ((value7 = value15),
-        (value8 = value16),
-        value !== null && callback10(value15, value),
-        callback6());
+          : baseSnapshot,
+        nextSerializedSnapshot: Dynamic = JSON.stringify(nextSnapshot);
+      nextSerializedSnapshot !== serializedSnapshot &&
+        ((snapshot = nextSnapshot),
+        (serializedSnapshot = nextSerializedSnapshot),
+        replyOrigin !== null && postSnapshot(nextSnapshot, replyOrigin),
+        notifyChromeListeners());
     },
-    callback9: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      let value13: Dynamic = [
-        ...(value7?.exports ?? []),
-        ...(value7?.handoffs ?? []),
+    canExport: Dynamic = (format?: Dynamic, variantId?: Dynamic): Dynamic => {
+      let exportFormat: Dynamic = [
+        ...(snapshot?.exports ?? []),
+        ...(snapshot?.handoffs ?? []),
       ].find(
-        (input3?: Dynamic): Dynamic =>
-          input3.format === input2 && input3.disabled !== true,
+        (entry?: Dynamic): Dynamic =>
+          entry.format === format && entry.disabled !== true,
       );
-      return value13 === undefined
+      return exportFormat === undefined
         ? false
-        : options === undefined ||
-            value13.variants?.some(
-              (input3?: Dynamic): Dynamic =>
-                input3.id === options && input3.disabled !== true,
+        : variantId === undefined ||
+            exportFormat.variants?.some(
+              (variant?: Dynamic): Dynamic =>
+                variant.id === variantId && variant.disabled !== true,
             ) === true;
     },
-    callback10: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
+    postSnapshot: Dynamic = (snapshotToPost?: Dynamic, targetOrigin?: Dynamic): Dynamic => {
       try {
         parentWindow?.postMessage(
           {
             __frame_chrome_report: true,
-            snapshot: input2,
+            snapshot: snapshotToPost,
           },
-          options,
+          targetOrigin,
         );
       } catch {}
     },
-    callback11: Dynamic = (dataset?: Dynamic): Dynamic => {
+    handleHostMessage: Dynamic = (event?: Dynamic): Dynamic => {
       if (
         parentWindow === null ||
-        dataset.source !== parentWindow ||
-        (!trustParent && !isAllowedHostOrigin(dataset.origin, input.origins))
+        event.source !== parentWindow ||
+        (!trustParent && !isAllowedHostOrigin(event.origin, bridgeOptions.origins))
       )
         return;
-      let data: Dynamic = dataset.data,
-        value13: Dynamic = data?.__frame_chrome_poke === true,
-        value14: Dynamic = data?.__frame_chrome_cmd === true;
-      if (!(!value13 && !value14)) {
-        value = trustParent ? "*" : dataset.origin;
-        data?.rows !== false && (flag = true);
-        value13 &&
-          (values = new Set(normalizeHostSelectionPaths(data?.words)));
-        value13 && value7 !== null && callback10(value7, value);
-        callback6();
+      let data: Dynamic = event.data,
+        isHandshake: Dynamic = data?.__frame_chrome_poke === true,
+        isCommand: Dynamic = data?.__frame_chrome_cmd === true;
+      if (!(!isHandshake && !isCommand)) {
+        replyOrigin = trustParent ? "*" : event.origin;
+        data?.rows !== false && (hostShowsRows = true);
+        isHandshake &&
+          (hostFeatures = new Set(normalizeHostSelectionPaths(data?.words)));
+        isHandshake && snapshot !== null && postSnapshot(snapshot, replyOrigin);
+        notifyChromeListeners();
         if (
-          value14 &&
+          isCommand &&
           data?.cmd === "action" &&
           data.id === OpenFindValue &&
-          value7?.actions?.some(
-            (input2?: Dynamic): Dynamic =>
-              input2.id === OpenFindValue,
+          snapshot?.actions?.some(
+            (action?: Dynamic): Dynamic =>
+              action.id === OpenFindValue,
           )
         )
           try {
-            value2?.();
-          } catch (value15: Dynamic) {
+            openFindHandler?.();
+          } catch (error: Dynamic) {
             typeof reportError == "function"
-              ? reportError(value15)
-              : console.error(value15);
+              ? reportError(error)
+              : console.error(error);
           }
         if (
-          value14 &&
+          isCommand &&
           data?.cmd === "action" &&
           data.id === SaveNowValue &&
-          value7?.actions?.some(
-            (input2?: Dynamic): Dynamic => input2.id === SaveNowValue,
+          snapshot?.actions?.some(
+            (action?: Dynamic): Dynamic => action.id === SaveNowValue,
           )
         )
           try {
-            value9?.();
-          } catch (value15: Dynamic) {
+            saveNowHandler?.();
+          } catch (error: Dynamic) {
             typeof reportError == "function"
-              ? reportError(value15)
-              : console.error(value15);
+              ? reportError(error)
+              : console.error(error);
           }
-        if (value14 && data?.cmd === "action" && typeof data.id == "string") {
-          let value15: Dynamic = value7?.destinations?.find(
-            (input2?: Dynamic): Dynamic => input2.id === data.id,
+        if (isCommand && data?.cmd === "action" && typeof data.id == "string") {
+          let destination: Dynamic = snapshot?.destinations?.find(
+            (entry?: Dynamic): Dynamic => entry.id === data.id,
           );
-          if (value15 !== undefined && value15.disabled !== true)
+          if (destination !== undefined && destination.disabled !== true)
             try {
-              value10?.(data.id);
-            } catch (value16: Dynamic) {
+              destinationHandler?.(data.id);
+            } catch (error: Dynamic) {
               typeof reportError == "function"
-                ? reportError(value16)
-                : console.error(value16);
+                ? reportError(error)
+                : console.error(error);
             }
         }
-        if (value14 && data?.cmd === "export") {
+        if (isCommand && data?.cmd === "export") {
           let {
-            format: value15,
-            request: value16,
-            interactive: value17,
-            variant: value18,
-            bundle: value19,
-            windowMs: value20,
-            sender: value21,
+            format: format,
+            request: requestId,
+            interactive: interactive,
+            variant: variant,
+            bundle: bundle,
+            windowMs: windowMs,
+            sender: sender,
           }: Dynamic = data;
           if (
-            typeof value15 == "string" &&
-            CanvasMeasurementsPattern.test(value15) &&
-            (value18 === undefined ||
-              (typeof value18 == "string" &&
-                CanvasMeasurementsPattern_2.test(value18))) &&
-            callback9(value15, value18) &&
-            typeof value16 == "string" &&
-            CanvasMeasurementsAZaZPattern.test(value16)
+            typeof format == "string" &&
+            EXPORT_FORMAT_PATTERN.test(format) &&
+            (variant === undefined ||
+              (typeof variant == "string" &&
+                EXPORT_VARIANT_ID_PATTERN.test(variant))) &&
+            canExport(format, variant) &&
+            typeof requestId == "string" &&
+            EXPORT_REQUEST_ID_PATTERN.test(requestId)
           )
             try {
-              value11?.(
-                value15,
-                value16,
-                value17 === true,
-                value18,
-                value17 === true && value19 === true,
-                CanvasMeasurementsIsSafeInteger(value20),
-                value17 !== true &&
-                  (value21 === "viewer" || value21 === "claude")
-                  ? value21
+              exportHandler?.(
+                format,
+                requestId,
+                interactive === true,
+                variant,
+                interactive === true && bundle === true,
+                normalizeExportWindowMs(windowMs),
+                interactive !== true &&
+                  (sender === "viewer" || sender === "claude")
+                  ? sender
                   : undefined,
               );
-            } catch (value22: Dynamic) {
+            } catch (error: Dynamic) {
               typeof reportError == "function"
-                ? reportError(value22)
-                : console.error(value22);
+                ? reportError(error)
+                : console.error(error);
             }
         }
       }
     };
   if (parentWindow !== null) {
-    input.ownWindow.addEventListener("message", callback11);
-    for (let value13 of (trustParent ? ["*"] : input.origins) as Dynamic)
-      if (!value13.endsWith(":*"))
+    bridgeOptions.ownWindow.addEventListener("message", handleHostMessage);
+    for (let origin of (trustParent ? ["*"] : bridgeOptions.origins) as Dynamic)
+      if (!origin.endsWith(":*"))
         try {
           parentWindow.postMessage(
             {
               __frame_chrome_hello: true,
             },
-            value13,
+            origin,
           );
         } catch {}
   }
   return {
-    report(input2: Dynamic, options: Dynamic = false): Dynamic {
+    report(status: Dynamic, canSaveNow: Dynamic = false): Dynamic {
       parentWindow !== null &&
-        ((value3 =
-          input2 === null
+        ((saveState =
+          status === null
             ? null
             : {
-                saved: input2,
-                saveNow: options,
+                saved: status,
+                saveNow: canSaveNow,
               }),
-        callback8());
+        refreshSnapshot());
     },
-    setSaveNowHandler(input2: Dynamic): Dynamic {
-      value9 = input2;
-      callback6();
+    setSaveNowHandler(handler: Dynamic): Dynamic {
+      saveNowHandler = handler;
+      notifyChromeListeners();
     },
-    setDestinations(input2: Dynamic): Dynamic {
+    setDestinations(entries: Dynamic): Dynamic {
       if (parentWindow === null) return;
-      let value13: Dynamic =
-        input2 === null ? [] : normalizeHostCanvasCommands(input2);
-      value5 = value13.length === 0 ? null : value13;
-      callback8();
+      let normalizedDestinations: Dynamic =
+        entries === null ? [] : normalizeHostCanvasCommands(entries);
+      destinations = normalizedDestinations.length === 0 ? null : normalizedDestinations;
+      refreshSnapshot();
     },
-    setDestinationHandler(input2: Dynamic): Dynamic {
-      value10 = input2;
+    setDestinationHandler(handler: Dynamic): Dynamic {
+      destinationHandler = handler;
     },
-    setFoot(input2: Dynamic): Dynamic {
+    setFoot(layout: Dynamic): Dynamic {
       if (parentWindow === null) return;
-      let state: Dynamic = {};
-      input2 !== null &&
-        typeof input2.inset == "number" &&
-        Number.isFinite(input2.inset) &&
-        (state.footInset = Math.min(
-          Math.max(0, Math.round(input2.inset)),
-          CanvasMeasurementsConstant_4,
+      let normalizedFoot: Dynamic = {};
+      layout !== null &&
+        typeof layout.inset == "number" &&
+        Number.isFinite(layout.inset) &&
+        (normalizedFoot.footInset = Math.min(
+          Math.max(0, Math.round(layout.inset)),
+          MAX_FOOT_INSET,
         ));
-      let value13: Dynamic =
-        typeof input2?.ground == "string"
-          ? input2.ground.toLowerCase()
+      let ground: Dynamic =
+        typeof layout?.ground == "string"
+          ? layout.ground.toLowerCase()
           : null;
-      value13 !== null &&
-        CanvasMeasurementsPattern_4.test(value13) &&
-        (state.ground = value13);
-      value6 =
-        state.footInset === undefined && state.ground === undefined
+      ground !== null &&
+        FOOT_GROUND_PATTERN.test(ground) &&
+        (normalizedFoot.ground = ground);
+      foot =
+        normalizedFoot.footInset === undefined && normalizedFoot.ground === undefined
           ? null
-          : state;
-      callback8();
+          : normalizedFoot;
+      refreshSnapshot();
     },
-    setExports(input2: Dynamic): Dynamic {
+    setExports(formats: Dynamic): Dynamic {
       if (parentWindow === null) return;
-      let value13: Dynamic =
-        input2 === null ? [] : normalizeHostExports(input2);
-      value4 = value13.length === 0 ? null : value13;
-      callback8();
+      let normalizedFormats: Dynamic =
+        formats === null ? [] : normalizeHostExports(formats);
+      exportFormats = normalizedFormats.length === 0 ? null : normalizedFormats;
+      refreshSnapshot();
     },
-    setExportHandler(input2: Dynamic): Dynamic {
-      value11 = input2;
+    setExportHandler(handler: Dynamic): Dynamic {
+      exportHandler = handler;
     },
-    setFind(input2: Dynamic, options: Dynamic): Dynamic {
-      value2 = options;
-      !(parentWindow === null || flag2 === input2) &&
-        ((flag2 = input2), callback8());
+    setFind(enabled: Dynamic, handler: Dynamic): Dynamic {
+      openFindHandler = handler;
+      !(parentWindow === null || canOpenFind === enabled) &&
+        ((canOpenFind = enabled), refreshSnapshot());
     },
-    declineExport(input2: Dynamic, options: Dynamic = false): Dynamic {
+    declineExport(requestId: Dynamic, cancelled: Dynamic = false): Dynamic {
       if (
         !(
           parentWindow === null ||
-          value === null ||
-          !CanvasMeasurementsAZaZPattern.test(input2)
+          replyOrigin === null ||
+          !EXPORT_REQUEST_ID_PATTERN.test(requestId)
         )
       )
         try {
           parentWindow.postMessage(
             {
               __frame_chrome_decline: true,
-              request: input2,
-              ...(options && {
-                cancelled: options,
+              request: requestId,
+              ...(cancelled && {
+                cancelled: cancelled,
               }),
             },
-            value,
+            replyOrigin,
           );
         } catch {}
     },
     holdLeaveLosesWork(): Dynamic {
       if (parentWindow === null) return (): Dynamic => {};
-      let flag3: Dynamic = false;
-      index += 1;
-      callback8();
+      let released: Dynamic = false;
+      leaveWorkHolds += 1;
+      refreshSnapshot();
       return (): Dynamic => {
-        flag3 || ((flag3 = true), (index -= 1), callback8());
+        released || ((released = true), (leaveWorkHolds -= 1), refreshSnapshot());
       };
     },
-    witnessed: (): Dynamic => flag,
-    hostDrawsSave: callback,
-    hostDrawsReadOnly: callback2,
-    hostDrawsClaudeTips: callback3,
-    hostTakesRetry: callback4,
-    subscribeHostDrawsSave(input2: Dynamic): Dynamic {
-      values2.add(input2);
+    witnessed: (): Dynamic => hostShowsRows,
+    hostDrawsSave: showsSave,
+    hostDrawsReadOnly: showsReadOnly,
+    hostDrawsClaudeTips: showsClaudeTips,
+    hostTakesRetry: handlesRetry,
+    subscribeHostDrawsSave(listener: Dynamic): Dynamic {
+      chromeListeners.add(listener);
       return (): Dynamic => {
-        values2.delete(input2);
+        chromeListeners.delete(listener);
       };
     },
     dispose(): Dynamic {
       parentWindow !== null &&
-        input.ownWindow.removeEventListener("message", callback11);
-      values2.clear();
+        bridgeOptions.ownWindow.removeEventListener("message", handleHostMessage);
+      chromeListeners.clear();
     },
   };
 }
-function isTrustedHostOrigin(input?: Dynamic): Dynamic {
-  return isAllowedHostOrigin(input, allowedFrameHostOrigins);
+function isTrustedHostOrigin(origin?: Dynamic): Dynamic {
+  return isAllowedHostOrigin(origin, allowedFrameHostOrigins);
 }
 function postToFrameHost(
-  input?: Dynamic,
-  options: Dynamic = window,
-  context: Dynamic = allowedFrameHostOrigins,
+  message?: Dynamic,
+  ownWindow: Dynamic = window,
+  allowedOrigins: Dynamic = allowedFrameHostOrigins,
 ): Dynamic {
-  if (options.parent === options) return;
-  let value: Dynamic = options.location.ancestorOrigins?.[0];
-  for (let value2 of (value !== undefined &&
-  isAllowedHostOrigin(value, context)
-    ? [value]
-    : context) as Dynamic)
-    if (!value2.endsWith(":*"))
+  if (ownWindow.parent === ownWindow) return;
+  let ancestorOrigin: Dynamic = ownWindow.location.ancestorOrigins?.[0];
+  for (let origin of (ancestorOrigin !== undefined &&
+  isAllowedHostOrigin(ancestorOrigin, allowedOrigins)
+    ? [ancestorOrigin]
+    : allowedOrigins) as Dynamic)
+    if (!origin.endsWith(":*"))
       try {
-        options.parent.postMessage(input, value2);
+        ownWindow.parent.postMessage(message, origin);
       } catch {}
 }
 function getFrameHostBridge(): Dynamic {
-  if (createFrameHostBridgeValue === null) {
-    let value: Dynamic =
+  if (cachedFrameHostBridge === null) {
+    let hasParentFrame: Dynamic =
       typeof window == "object" && (window as Dynamic).parent !== window;
-    createFrameHostBridgeValue = createFrameHostBridge({
+    cachedFrameHostBridge = createFrameHostBridge({
       ownWindow: window,
-      parentWindow: value ? (window as Dynamic).parent : null,
+      parentWindow: hasParentFrame ? (window as Dynamic).parent : null,
       origins: allowedFrameHostOrigins,
       // MineDesign: set by packages/design/src/editor before the runtime starts (docs/design/canvas §5).
       trustParent: (window as Dynamic).__FRAME_PREAMBLE?.trustParent === true,
     });
   }
-  return createFrameHostBridgeValue;
+  return cachedFrameHostBridge;
 }
-function reportFrameSaveState(input?: Dynamic, options?: Dynamic): Dynamic {
-  getFrameHostBridge().report(input, options);
+function reportFrameSaveState(status?: Dynamic, canSaveNow?: Dynamic): Dynamic {
+  getFrameHostBridge().report(status, canSaveNow);
 }
-function setFrameExports(input?: Dynamic): Dynamic {
-  getFrameHostBridge().setExports(input);
+function setFrameExports(formats?: Dynamic): Dynamic {
+  getFrameHostBridge().setExports(formats);
 }
-function setFrameExportHandler(input?: Dynamic): Dynamic {
-  getFrameHostBridge().setExportHandler(input);
+function setFrameExportHandler(handler?: Dynamic): Dynamic {
+  getFrameHostBridge().setExportHandler(handler);
 }
-function declineFrameExport(input?: Dynamic, options?: Dynamic): Dynamic {
-  getFrameHostBridge().declineExport(input, options);
+function declineFrameExport(requestId?: Dynamic, cancelled?: Dynamic): Dynamic {
+  getFrameHostBridge().declineExport(requestId, cancelled);
 }
-function useFrameSaveState(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactCanvasMeasurements_2.useRef)(false),
-    value2: Dynamic = input === "loading" && value.current;
-  input !== "loading" && (value.current = input === "error");
-  let value3: Dynamic =
-      input === null ? null : value2 ? "saving" : hostSaveStatus(input),
-    value4: Dynamic =
-      options !== undefined && (input === "error" || input === "dirty"),
-    value5: Dynamic = (0, reactCanvasMeasurements_2.useRef)(options);
-  value5.current = options;
-  (0, reactCanvasMeasurements_2.useEffect)((): Dynamic => {
-    reportFrameSaveState(value3, value4);
-  }, [value3, value4]);
-  (0, reactCanvasMeasurements_2.useEffect)(
+function useFrameSaveState(status?: Dynamic, onSaveNow?: Dynamic): Dynamic {
+  let lastWasError: Dynamic = (0, React.useRef)(false),
+    isRetrying: Dynamic = status === "loading" && lastWasError.current;
+  status !== "loading" && (lastWasError.current = status === "error");
+  let hostStatus: Dynamic =
+      status === null ? null : isRetrying ? "saving" : hostSaveStatus(status),
+    canSaveNow: Dynamic =
+      onSaveNow !== undefined && (status === "error" || status === "dirty"),
+    onSaveNowRef: Dynamic = (0, React.useRef)(onSaveNow);
+  onSaveNowRef.current = onSaveNow;
+  (0, React.useEffect)((): Dynamic => {
+    reportFrameSaveState(hostStatus, canSaveNow);
+  }, [hostStatus, canSaveNow]);
+  (0, React.useEffect)(
     (): Dynamic => (
       getFrameHostBridge().setSaveNowHandler(
-        (): Dynamic => value5.current?.(),
+        (): Dynamic => onSaveNowRef.current?.(),
       ),
       (): Dynamic => {
         getFrameHostBridge().setSaveNowHandler(null);
@@ -579,15 +579,15 @@ function useFrameSaveState(input?: Dynamic, options?: Dynamic): Dynamic {
     [],
   );
 }
-function useFrameFind(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactCanvasMeasurements_2.useRef)(options);
-  value.current = options;
-  (0, reactCanvasMeasurements_2.useEffect)(
+function useFrameFind(enabled?: Dynamic, onOpenFind?: Dynamic): Dynamic {
+  let onOpenFindRef: Dynamic = (0, React.useRef)(onOpenFind);
+  onOpenFindRef.current = onOpenFind;
+  (0, React.useEffect)(
     (): Dynamic => (
-      getFrameHostBridge().setFind(input, (): Dynamic => value.current()),
+      getFrameHostBridge().setFind(enabled, (): Dynamic => onOpenFindRef.current()),
       (): Dynamic => getFrameHostBridge().setFind(false, null)
     ),
-    [input],
+    [enabled],
   );
 }
 function hostDrawsSave(): Dynamic {
@@ -597,7 +597,7 @@ function hostDrawsReadOnly(): Dynamic {
   return getFrameHostBridge().hostDrawsReadOnly();
 }
 function useHostDrawsClaudeTips(): Dynamic {
-  return (0, reactCanvasMeasurements_2.useSyncExternalStore)(
+  return (0, React.useSyncExternalStore)(
     subscribeHostChrome,
     (): Dynamic => getFrameHostBridge().hostDrawsClaudeTips(),
     (): Dynamic => false,
@@ -606,13 +606,13 @@ function useHostDrawsClaudeTips(): Dynamic {
 function hostHandlesRetry(): Dynamic {
   return getFrameHostBridge().hostTakesRetry();
 }
-function subscribeHostChrome(input?: Dynamic): Dynamic {
-  return getFrameHostBridge().subscribeHostDrawsSave(input);
+function subscribeHostChrome(listener?: Dynamic): Dynamic {
+  return getFrameHostBridge().subscribeHostDrawsSave(listener);
 }
 export {
   allowedFrameHostOrigins,
   createFrameHostBridge,
-  createFrameHostBridgeValue,
+  cachedFrameHostBridge as createFrameHostBridgeValue,
   declineFrameExport,
   getFrameHostBridge,
   getHostOrigins,
@@ -627,7 +627,7 @@ export {
   normalizeHostFindCommands,
   normalizeHostSelectionPaths,
   PanelValue,
-  PlatformFrameHostBridgeItems,
+  DEFAULT_HOST_ORIGINS as PlatformFrameHostBridgeItems,
   PopoverValue,
   postToFrameHost,
   reactPlatformFrameHostBridge,
@@ -644,17 +644,17 @@ export function installPlatformFrameHostBridge(): () => void {
     // MineDesign: no host frame is trusted by default; the editor talks to MineDesign through its own shim
     // (packages/design/src/editor). A page that needs this bridge declares origins in __FRAME_PREAMBLE,
     // or trustParent: the design editor does, so MineDesign can drive whole-design export (createFrameHostBridge).
-    PlatformFrameHostBridgeItems = [];
+    DEFAULT_HOST_ORIGINS = [];
     allowedFrameHostOrigins = ((): Dynamic => {
       try {
         return typeof window == "object"
           ? getHostOrigins(window)
-          : PlatformFrameHostBridgeItems;
+          : DEFAULT_HOST_ORIGINS;
       } catch {
-        return PlatformFrameHostBridgeItems;
+        return DEFAULT_HOST_ORIGINS;
       }
     })();
-    createFrameHostBridgeValue = null;
+    cachedFrameHostBridge = null;
     PanelValue = "panel";
     PopoverValue = "popover";
     reactPlatformFrameHostBridge = toModuleNamespace(

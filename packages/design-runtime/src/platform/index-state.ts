@@ -14,201 +14,201 @@ import { cloneIndexValue, equalIndexValue, isPlainMergeObject, mergeIndexValues,
 
 var DESIGN_INDEX_MERGE_POLICY: MergePolicy;
 var IndexFileError: IndexFileErrorConstructor;
-function canonicalizeIndexValue(value: unknown, topLevel?: boolean): unknown {
-  if (Array.isArray(value))
-    return value.map((input) => canonicalizeIndexValue(input, false));
-  if (!isPlainMergeObject(value)) return value;
-  let keys = Object.keys(value)
-    .filter((input) => value[input] !== undefined)
+function canonicalizeIndexValue(indexValue: unknown, topLevel?: boolean): unknown {
+  if (Array.isArray(indexValue))
+    return indexValue.map((item) => canonicalizeIndexValue(item, false));
+  if (!isPlainMergeObject(indexValue)) return indexValue;
+  let keys = Object.keys(indexValue)
+    .filter((key) => indexValue[key] !== undefined)
     .sort();
   if (topLevel) {
-    let value2 = keys.indexOf("v");
-    value2 > 0 && (keys.splice(value2, 1), keys.unshift("v"));
+    let versionKeyIndex = keys.indexOf("v");
+    versionKeyIndex > 0 && (keys.splice(versionKeyIndex, 1), keys.unshift("v"));
   }
-  let state: DataRecord = {};
-  for (let value2 of keys)
+  let canonicalRecord: DataRecord = {};
+  for (let key of keys)
     setSafeObjectKey(
-      state,
-      value2,
-      canonicalizeIndexValue(value[value2], false),
+      canonicalRecord,
+      key,
+      canonicalizeIndexValue(indexValue[key], false),
     );
-  return state;
+  return canonicalRecord;
 }
-function stringifyCanonicalIndex(value: unknown): string {
+function stringifyCanonicalIndex(index: unknown): string {
   return (
-    JSON.stringify(canonicalizeIndexValue(value, true), null, 2) +
+    JSON.stringify(canonicalizeIndexValue(index, true), null, 2) +
     `
 `
   );
 }
 function createIndexFileState<Index extends VersionedIndex>(
-  options: IndexStateOptions<Index>,
+  indexOptions: IndexStateOptions<Index>,
 ): IndexFileState<Index> {
-  let value = options.empty(),
-    base: Index = cloneIndexValue(value) as Index,
+  let currentIndex = indexOptions.empty(),
+    base: Index = cloneIndexValue(currentIndex) as Index,
     baseSha: string | null = null,
-    raw: IndexWriteListener | undefined,
+    onWrite: IndexWriteListener | undefined,
     conflicts: string[] = [],
-    initialized = false;
-  function parseIndex(input: string): Index {
-    let value2: unknown;
+    dirty = false;
+  function parseIndex(text: string): Index {
+    let parsedIndex: unknown;
     try {
-      value2 = JSON.parse(input);
+      parsedIndex = JSON.parse(text);
     } catch {
-      throw new IndexFileError("unreadable", options.path + " is not JSON");
+      throw new IndexFileError("unreadable", indexOptions.path + " is not JSON");
     }
     if (
-      !isPlainMergeObject(value2) ||
-      typeof value2.v != "number"
+      !isPlainMergeObject(parsedIndex) ||
+      typeof parsedIndex.v != "number"
     )
       throw new IndexFileError(
         "unreadable",
-        options.path + " has no numeric v",
+        indexOptions.path + " has no numeric v",
       );
-    let value3 = options.empty();
-    if (value2.v > (options.maxVersion ?? value3.v))
+    let defaultIndex = indexOptions.empty();
+    if (parsedIndex.v > (indexOptions.maxVersion ?? defaultIndex.v))
       throw new IndexFileError(
         "newer_version",
-        options.path +
+        indexOptions.path +
           " was written by a newer editor (v " +
-          String(value2.v) +
+          String(parsedIndex.v) +
           ")",
       );
-    for (let [value4, value5] of Object.entries(value3)) {
-      if (value4 === "v") continue;
-      let value6 = Array.isArray(value5)
+    for (let [key, defaultValue] of Object.entries(defaultIndex)) {
+      if (key === "v") continue;
+      let expectedShape = Array.isArray(defaultValue)
         ? "array"
-        : isPlainMergeObject(value5)
+        : isPlainMergeObject(defaultValue)
           ? "object"
           : undefined;
-      if (value6 === undefined) continue;
-      let value7 = value2[value4],
-        value8 =
-          options.schema.kind === "map"
-            ? options.schema.keys?.[value4]
+      if (expectedShape === undefined) continue;
+      let fieldValue = parsedIndex[key],
+        fieldPolicy =
+          indexOptions.schema.kind === "map"
+            ? indexOptions.schema.keys?.[key]
             : undefined;
       if (
-        value8?.kind === "records" &&
-        value6 === "array" &&
-        isPlainMergeObject(value7)
+        fieldPolicy?.kind === "records" &&
+        expectedShape === "array" &&
+        isPlainMergeObject(fieldValue)
       ) {
-        let value9 = normalizeMergeMap(value7, value8.by);
-        value2[value4] = Object.keys(value9).map((input2) => value9[input2]);
+        let records = normalizeMergeMap(fieldValue, fieldPolicy.by);
+        parsedIndex[key] = Object.keys(records).map((id) => records[id]);
         continue;
       }
-      ((value6 === "array" && !Array.isArray(value7)) ||
-        (value6 === "object" && !isPlainMergeObject(value7))) &&
-        (value2[value4] = value5);
+      ((expectedShape === "array" && !Array.isArray(fieldValue)) ||
+        (expectedShape === "object" && !isPlainMergeObject(fieldValue))) &&
+        (parsedIndex[key] = defaultValue);
     }
-    if (options.validate && !options.validate(value2 as VersionedIndex)) {
+    if (indexOptions.validate && !indexOptions.validate(parsedIndex as VersionedIndex)) {
       throw new IndexFileError(
         "unreadable",
-        options.path + " does not match its document schema",
+        indexOptions.path + " does not match its document schema",
       );
     }
-    return value2 as Index;
+    return parsedIndex as Index;
   }
-  let callback = () => {
-      initialized = true;
-      raw?.(options.path, () => state.serialize(), baseSha);
+  let markDirty = () => {
+      dirty = true;
+      onWrite?.(indexOptions.path, () => indexState.serialize(), baseSha);
     },
-    state: IndexFileState<Index> = {
-      path: options.path,
+    indexState: IndexFileState<Index> = {
+      path: indexOptions.path,
       parse: parseIndex,
       async load() {
-        let value2;
+        let file;
         try {
-          value2 = await options.port.readText(options.path);
-        } catch (value3: unknown) {
+          file = await indexOptions.port.readText(indexOptions.path);
+        } catch (error: unknown) {
           throw new IndexFileError(
             "not_found",
-            options.path +
+            indexOptions.path +
               ": " +
-              (value3 instanceof Error
-                ? value3.message
+              (error instanceof Error
+                ? error.message
                 : String(
                     (
-                      value3 as
+                      error as
                         | {
                             message?: unknown;
                           }
                         | null
                         | undefined
-                    )?.message ?? value3,
+                    )?.message ?? error,
                   )),
           );
         }
-        value = parseIndex(value2.text);
-        base = cloneIndexValue(value) as Index;
-        baseSha = value2.sha256;
-        initialized = false;
-        return value;
+        currentIndex = parseIndex(file.text);
+        base = cloneIndexValue(currentIndex) as Index;
+        baseSha = file.sha256;
+        dirty = false;
+        return currentIndex;
       },
-      loadText(input, options2) {
-        value = parseIndex(input);
-        base = cloneIndexValue(value) as Index;
-        baseSha = options2;
-        initialized = false;
-        return value;
+      loadText(text, sha) {
+        currentIndex = parseIndex(text);
+        base = cloneIndexValue(currentIndex) as Index;
+        baseSha = sha;
+        dirty = false;
+        return currentIndex;
       },
-      init(input) {
-        value = input ?? options.empty();
-        base = options.empty();
+      init(initialIndex) {
+        currentIndex = initialIndex ?? indexOptions.empty();
+        base = indexOptions.empty();
         baseSha = null;
-        callback();
-        return value;
+        markDirty();
+        return currentIndex;
       },
-      get: () => value,
+      get: () => currentIndex,
       base: () => base,
       baseSha: () => baseSha,
-      dirty: () => initialized,
+      dirty: () => dirty,
       lastConflicts: () => [...conflicts],
-      update(input) {
-        input(value);
-        callback();
+      update(edit) {
+        edit(currentIndex);
+        markDirty();
       },
-      mergeFrom(input) {
+      mergeFrom(remoteIndex) {
         conflicts = [];
-        value = preserveIndexProvenance(
-          mergeIndexValues(base, value, input, options.schema, {
+        currentIndex = preserveIndexProvenance(
+          mergeIndexValues(base, currentIndex, remoteIndex, indexOptions.schema, {
             conflicts: conflicts,
-            externalMembers: options.externalMembers,
+            externalMembers: indexOptions.externalMembers,
           }),
-          input,
+          remoteIndex,
           base,
         ) as Index;
-        base = cloneIndexValue(input) as Index;
-        return value;
+        base = cloneIndexValue(remoteIndex) as Index;
+        return currentIndex;
       },
       serialize: () =>
         stringifyCanonicalIndex(
-          preserveIndexProvenance(value, base),
+          preserveIndexProvenance(currentIndex, base),
         ),
-      bind(input) {
-        raw = input;
+      bind(onWriteRequest) {
+        onWrite = onWriteRequest;
       },
-      markSaved(input, options2) {
+      markSaved(savedText, sha) {
         try {
-          base = JSON.parse(input);
+          base = JSON.parse(savedText);
         } catch {
-          base = cloneIndexValue(value) as Index;
+          base = cloneIndexValue(currentIndex) as Index;
         }
-        baseSha = options2;
-        initialized = !equalIndexValue(base, value);
+        baseSha = sha;
+        dirty = !equalIndexValue(base, currentIndex);
       },
       async reloadAndMerge() {
-        let value2 = await options.port.readText(options.path);
-        return value2.sha256 === baseSha
+        let file = await indexOptions.port.readText(indexOptions.path);
+        return file.sha256 === baseSha
           ? []
-          : (state.mergeFrom(parseIndex(value2.text)),
-            (baseSha = value2.sha256),
-            (initialized = !equalIndexValue(base, value)),
-            initialized &&
-              raw?.(options.path, () => state.serialize(), baseSha),
+          : (indexState.mergeFrom(parseIndex(file.text)),
+            (baseSha = file.sha256),
+            (dirty = !equalIndexValue(base, currentIndex)),
+            dirty &&
+              onWrite?.(indexOptions.path, () => indexState.serialize(), baseSha),
             [...conflicts]);
       },
     };
-  return state;
+  return indexState;
 }
 export {
   canonicalizeIndexValue,
@@ -267,9 +267,9 @@ export function installPlatformIndexState(): () => void {
     };
     IndexFileError = class extends Error {
       declare name: string;
-      constructor(input: IndexFileErrorCode, options: string) {
-        super(options);
-        this.code = input;
+      constructor(code: IndexFileErrorCode, message: string) {
+        super(message);
+        this.code = code;
         this.name = "IndexFileError";
       }
       code: IndexFileErrorCode;

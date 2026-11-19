@@ -14,21 +14,21 @@ var cloneIndexValue: (input: unknown) => unknown;
 var LEAF_MERGE_POLICY: MergePolicy;
 var MAX_MERGED_OBJECT_KEYS: number;
 function preserveIndexProvenance<Value>(
-  value: Value,
+  mergedIndex: Value,
   ...sources: unknown[]
 ): Value {
-  if (!isPlainMergeObject(value)) return value;
-  let result = value;
-  for (let value2 of INDEX_PRESERVED_METADATA_KEYS) {
-    if (isPlainMergeObject(result[value2])) continue;
-    let value3 = sources.find(
-      (input): input is DataRecord =>
-        isPlainMergeObject(input) && isPlainMergeObject(input[value2]),
+  if (!isPlainMergeObject(mergedIndex)) return mergedIndex;
+  let result = mergedIndex;
+  for (let key of INDEX_PRESERVED_METADATA_KEYS) {
+    if (isPlainMergeObject(result[key])) continue;
+    let source = sources.find(
+      (candidate): candidate is DataRecord =>
+        isPlainMergeObject(candidate) && isPlainMergeObject(candidate[key]),
     );
-    value3 !== undefined &&
+    source !== undefined &&
       (result = {
         ...result,
-        [value2]: cloneIndexValue(value3[value2]),
+        [key]: cloneIndexValue(source[key]),
       });
   }
   return result;
@@ -36,27 +36,27 @@ function preserveIndexProvenance<Value>(
 function setSafeObjectKey(
   object: DataRecord,
   key: string,
-  value: unknown,
+  propertyValue: unknown,
 ): void {
   key === "__proto__"
     ? Object.defineProperty(object, key, {
-        value: value,
+        value: propertyValue,
         enumerable: true,
         writable: true,
         configurable: true,
       })
-    : (object[key] = value);
+    : (object[key] = propertyValue);
 }
 function replaceIndexObjectProperties(
   target: DataRecord,
   source: DataRecord,
 ): void {
-  for (let value of Object.keys(target))
-    !Object.hasOwn(source, value) &&
-      !INDEX_PRESERVED_METADATA_KEYS.includes(value) &&
-      delete target[value];
-  for (let value of Object.keys(source))
-    setSafeObjectKey(target, value, source[value]);
+  for (let key of Object.keys(target))
+    !Object.hasOwn(source, key) &&
+      !INDEX_PRESERVED_METADATA_KEYS.includes(key) &&
+      delete target[key];
+  for (let key of Object.keys(source))
+    setSafeObjectKey(target, key, source[key]);
 }
 function equalIndexValue(left: unknown, right: unknown): boolean {
   if (left === right) return true;
@@ -64,22 +64,22 @@ function equalIndexValue(left: unknown, right: unknown): boolean {
     return (
       Array.isArray(right) &&
       left.length === right.length &&
-      left.every((input, options) => equalIndexValue(input, right[options]))
+      left.every((item, index) => equalIndexValue(item, right[index]))
     );
   if (isPlainMergeObject(left)) {
     if (!isPlainMergeObject(right)) return false;
-    let value = Object.keys(left).filter(
-        (input) => left[input] !== undefined,
+    let leftKeys = Object.keys(left).filter(
+        (key) => left[key] !== undefined,
       ),
-      value2 = Object.keys(right).filter(
-        (input) => right[input] !== undefined,
+      rightKeys = Object.keys(right).filter(
+        (key) => right[key] !== undefined,
       );
     return (
-      value.length === value2.length &&
-      value.every(
-        (input) =>
-          Object.hasOwn(right, input) &&
-          equalIndexValue(left[input], right[input]),
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every(
+        (key) =>
+          Object.hasOwn(right, key) &&
+          equalIndexValue(left[key], right[key]),
       )
     );
   }
@@ -91,19 +91,19 @@ function getChildMergePolicy(
   ...values: unknown[]
 ): MergePolicy {
   if (policy?.kind === "map") {
-    let value2 =
+    let keyPolicy =
       policy.keys !== undefined && Object.hasOwn(policy.keys, key)
         ? policy.keys[key]
         : undefined;
-    if (value2) return value2;
+    if (keyPolicy) return keyPolicy;
     if (policy.of) return policy.of;
   }
-  let value = values.filter((input) => input !== undefined);
-  return value.length > 0 && value.every(isPlainMergeObject)
+  let existingValues = values.filter((value) => value !== undefined);
+  return existingValues.length > 0 && existingValues.every(isPlainMergeObject)
     ? {
         kind: "map",
       }
-    : value.length > 0 && value.every(isStringList)
+    : existingValues.length > 0 && existingValues.every(isStringList)
       ? {
           kind: "list",
         }
@@ -114,18 +114,18 @@ function mergeLeafValue(
   local: unknown,
   remote: unknown,
   path: string,
-  context: MergeContext,
+  mergeContext: MergeContext,
 ): unknown {
   return equalIndexValue(local, base)
     ? remote
     : equalIndexValue(remote, base) || equalIndexValue(local, remote)
       ? local
-      : (context.conflicts?.push(path), remote);
+      : (mergeContext.conflicts?.push(path), remote);
 }
 function uniqueMergeKeys(keys: readonly string[]): string[] {
   let seen = new Set();
-  return keys.filter((input) =>
-    seen.has(input) ? false : (seen.add(input), true),
+  return keys.filter((key) =>
+    seen.has(key) ? false : (seen.add(key), true),
   );
 }
 function mergeOrderedStringList(
@@ -141,69 +141,69 @@ function mergeOrderedStringList(
   if (equalIndexValue(remoteKeys, baseKeys)) merged = [...localKeys];
   else if (equalIndexValue(localKeys, baseKeys)) merged = [...remoteKeys];
   else {
-    let values = new Set(baseKeys),
-      values2 = new Set(remoteKeys),
-      values3 = new Set(localKeys),
-      value = equalIndexValue(
-        remoteKeys.filter((input) => values.has(input)),
-        baseKeys.filter((input) => values2.has(input)),
+    let baseMembership = new Set(baseKeys),
+      remoteMembership = new Set(remoteKeys),
+      localMembership = new Set(localKeys),
+      remoteOrderUnchanged = equalIndexValue(
+        remoteKeys.filter((key) => baseMembership.has(key)),
+        baseKeys.filter((key) => remoteMembership.has(key)),
       ),
-      value2 = equalIndexValue(
-        localKeys.filter((input) => values.has(input)),
-        baseKeys.filter((input) => values3.has(input)),
+      localOrderUnchanged = equalIndexValue(
+        localKeys.filter((key) => baseMembership.has(key)),
+        baseKeys.filter((key) => localMembership.has(key)),
       ),
-      value3 = value && !value2,
-      [value4, value5] = value3
+      preferLocalOrder = remoteOrderUnchanged && !localOrderUnchanged,
+      [primaryOrder, secondaryOrder] = preferLocalOrder
         ? [localKeys, remoteKeys]
         : [remoteKeys, localKeys],
-      values4 = new Set(value5),
-      values5 = new Set(value4);
-    merged = value4.filter(
-      (input) => !(values.has(input) && !values4.has(input)),
+      secondaryMembership = new Set(secondaryOrder),
+      primaryMembership = new Set(primaryOrder);
+    merged = primaryOrder.filter(
+      (key) => !(baseMembership.has(key) && !secondaryMembership.has(key)),
     );
-    value5.forEach((input, options) => {
-      if (values.has(input) || values5.has(input)) return;
-      let value6 =
-          (value3 || !value) &&
-          value5.slice(options + 1).every((input2) => !values.has(input2)),
-        value7 = value6 ? merged.length : 0;
-      for (let value8 = options - 1; !value6 && value8 >= 0; value8--) {
-        let value9 = merged.indexOf(value5[value8]!);
-        if (value9 >= 0) {
-          value7 = value9 + 1;
+    secondaryOrder.forEach((key, index) => {
+      if (baseMembership.has(key) || primaryMembership.has(key)) return;
+      let appendAtEnd =
+          (preferLocalOrder || !remoteOrderUnchanged) &&
+          secondaryOrder.slice(index + 1).every((followingKey) => !baseMembership.has(followingKey)),
+        insertAt = appendAtEnd ? merged.length : 0;
+      for (let previousIndex = index - 1; !appendAtEnd && previousIndex >= 0; previousIndex--) {
+        let mergedIndex = merged.indexOf(secondaryOrder[previousIndex]!);
+        if (mergedIndex >= 0) {
+          insertAt = mergedIndex + 1;
           break;
         }
       }
-      merged.splice(value7, 0, input);
+      merged.splice(insertAt, 0, key);
     });
   }
   if (allowedKeys !== undefined) {
-    let value =
+    let allowedMembership =
       allowedKeys instanceof Set ? allowedKeys : new Set(allowedKeys);
-    merged = merged.filter((input) => value.has(input));
-    let values = new Set(merged);
-    for (let value2 of value) values.has(value2) || merged.push(value2);
+    merged = merged.filter((key) => allowedMembership.has(key));
+    let mergedMembership = new Set(merged);
+    for (let key of allowedMembership) mergedMembership.has(key) || merged.push(key);
   }
   return merged;
 }
 function normalizeMergeMap(
-  value: unknown,
+  inputRecords: unknown,
   idProperty: string,
 ): Record<string, DataRecord> {
-  let records = Array.isArray(value)
-      ? value
-      : isPlainMergeObject(value)
-        ? Object.keys(value)
-            .filter((input) => Object.hasOwn(value, input))
-            .map((input) => value[input])
+  let records = Array.isArray(inputRecords)
+      ? inputRecords
+      : isPlainMergeObject(inputRecords)
+        ? Object.keys(inputRecords)
+            .filter((key) => Object.hasOwn(inputRecords, key))
+            .map((key) => inputRecords[key])
         : [],
     result: Record<string, DataRecord> = Object.create(null);
-  for (let value2 of records)
-    isPlainMergeObject(value2) &&
-      typeof value2[idProperty] == "string" &&
-      value2[idProperty] !== "" &&
+  for (let record of records)
+    isPlainMergeObject(record) &&
+      typeof record[idProperty] == "string" &&
+      record[idProperty] !== "" &&
       Object.keys(result).length < MAX_MERGED_OBJECT_KEYS &&
-      (result[value2[idProperty]] = value2);
+      (result[record[idProperty]] = record);
   return result;
 }
 function mergeMapValues(
@@ -212,7 +212,7 @@ function mergeMapValues(
   remote: DataRecord,
   policy: MergePolicy,
   path: string,
-  context: MergeContext,
+  mergeContext: MergeContext,
 ): DataRecord {
   let result: DataRecord = {},
     keys = uniqueMergeKeys([...Object.keys(remote), ...Object.keys(local)]),
@@ -220,100 +220,100 @@ function mergeMapValues(
       key: string;
       schema: ListMergePolicy;
     }[] = [];
-  for (let value of keys) {
-    let [items, items2, items3] = [
-        getOwnMergeValue(base, value),
-        getOwnMergeValue(local, value),
-        getOwnMergeValue(remote, value),
+  for (let key of keys) {
+    let [baseValue, localValue, remoteValue] = [
+        getOwnMergeValue(base, key),
+        getOwnMergeValue(local, key),
+        getOwnMergeValue(remote, key),
       ],
-      value2 = items !== undefined,
-      value3 = items2 !== undefined,
-      value4 = items3 !== undefined;
-    if (value2 && (!value3 || !value4)) continue;
-    if (!value3) {
-      setSafeObjectKey(result, value, cloneIndexValue(items3));
+      hadBase = baseValue !== undefined,
+      hasLocal = localValue !== undefined,
+      hasRemote = remoteValue !== undefined;
+    if (hadBase && (!hasLocal || !hasRemote)) continue;
+    if (!hasLocal) {
+      setSafeObjectKey(result, key, cloneIndexValue(remoteValue));
       continue;
     }
-    if (!value4) {
-      setSafeObjectKey(result, value, cloneIndexValue(items2));
+    if (!hasRemote) {
+      setSafeObjectKey(result, key, cloneIndexValue(localValue));
       continue;
     }
-    let value5 = getChildMergePolicy(policy, value, items, items2, items3),
-      value6 = path === "" ? value : path + "/" + value;
+    let childPolicy = getChildMergePolicy(policy, key, baseValue, localValue, remoteValue),
+      childPath = path === "" ? key : path + "/" + key;
     if (
-      value5.kind === "map" &&
-      isPlainMergeObject(items2) &&
-      isPlainMergeObject(items3)
+      childPolicy.kind === "map" &&
+      isPlainMergeObject(localValue) &&
+      isPlainMergeObject(remoteValue)
     )
       setSafeObjectKey(
         result,
-        value,
+        key,
         mergeMapValues(
-          isPlainMergeObject(items) ? items : undefined,
-          items2,
-          items3,
-          value5,
-          value6,
-          context,
+          isPlainMergeObject(baseValue) ? baseValue : undefined,
+          localValue,
+          remoteValue,
+          childPolicy,
+          childPath,
+          mergeContext,
         ),
       );
-    else if (value5.kind === "records") {
-      let value7 = mergeMapValues(
-        normalizeMergeMap(items, value5.by),
-        normalizeMergeMap(items2, value5.by),
-        normalizeMergeMap(items3, value5.by),
+    else if (childPolicy.kind === "records") {
+      let mergedRecords = mergeMapValues(
+        normalizeMergeMap(baseValue, childPolicy.by),
+        normalizeMergeMap(localValue, childPolicy.by),
+        normalizeMergeMap(remoteValue, childPolicy.by),
         {
           kind: "map",
           of: LEAF_MERGE_POLICY,
         },
-        value6,
-        context,
+        childPath,
+        mergeContext,
       );
       setSafeObjectKey(
         result,
-        value,
-        Object.keys(value7)
+        key,
+        Object.keys(mergedRecords)
           .slice(0, MAX_MERGED_OBJECT_KEYS)
-          .map((input) => value7[input]),
+          .map((id) => mergedRecords[id]),
       );
     } else
-      value5.kind === "list" && isStringList(items2) && isStringList(items3)
+      childPolicy.kind === "list" && isStringList(localValue) && isStringList(remoteValue)
         ? (setSafeObjectKey(
             result,
-            value,
+            key,
             mergeOrderedStringList(
-              isStringList(items) ? items : [],
-              items2,
-              items3,
+              isStringList(baseValue) ? baseValue : [],
+              localValue,
+              remoteValue,
             ),
           ),
           deferredLists.push({
-            key: value,
-            schema: value5,
+            key: key,
+            schema: childPolicy,
           }))
         : setSafeObjectKey(
             result,
-            value,
+            key,
             cloneIndexValue(
-              mergeLeafValue(items, items2, items3, value6, context),
+              mergeLeafValue(baseValue, localValue, remoteValue, childPath, mergeContext),
             ),
           );
   }
-  for (let { key: value, schema: value2 } of deferredLists) {
-    let value3 = path === "" ? value : path + "/" + value,
-      value4 =
-        value2.membersOf !== undefined
-          ? getOwnMergeValue(result, value2.membersOf)
+  for (let { key: key, schema: listPolicy } of deferredLists) {
+    let listPath = path === "" ? key : path + "/" + key,
+      members =
+        listPolicy.membersOf !== undefined
+          ? getOwnMergeValue(result, listPolicy.membersOf)
           : undefined,
-      value5 = isPlainMergeObject(value4)
-        ? new Set(Object.keys(value4))
-        : context.externalMembers?.(value3),
-      value6 = getOwnMergeValue(result, value) as string[];
-    value5 !== undefined &&
+      allowedKeys = isPlainMergeObject(members)
+        ? new Set(Object.keys(members))
+        : mergeContext.externalMembers?.(listPath),
+      orderedKeys = getOwnMergeValue(result, key) as string[];
+    allowedKeys !== undefined &&
       setSafeObjectKey(
         result,
-        value,
-        mergeOrderedStringList(value6, value6, value6, value5),
+        key,
+        mergeOrderedStringList(orderedKeys, orderedKeys, orderedKeys, allowedKeys),
       );
   }
   return result;
@@ -323,7 +323,7 @@ function mergeIndexValues(
   local: unknown,
   remote: unknown,
   policy: MergePolicy,
-  context: MergeContext = {},
+  mergeContext: MergeContext = {},
 ): unknown {
   return policy.kind === "map" &&
     isPlainMergeObject(local) &&
@@ -334,16 +334,16 @@ function mergeIndexValues(
         remote,
         policy,
         "",
-        context,
+        mergeContext,
       )
     : policy.kind === "list" && isStringList(local) && isStringList(remote)
       ? mergeOrderedStringList(
           isStringList(base) ? base : [],
           local,
           remote,
-          context.externalMembers?.(""),
+          mergeContext.externalMembers?.(""),
         )
-      : cloneIndexValue(mergeLeafValue(base, local, remote, "", context));
+      : cloneIndexValue(mergeLeafValue(base, local, remote, "", mergeContext));
 }
 export {
   cloneIndexValue,
@@ -368,15 +368,15 @@ export {
 export function installPlatformIndexMerge(): () => void {
   return () => {
     INDEX_PRESERVED_METADATA_KEYS = ["convertedFrom", "createdOnFiles"];
-    isPlainMergeObject = (input: unknown): input is DataRecord =>
-      typeof input == "object" && input !== null && !Array.isArray(input);
-    isStringList = (input: unknown): input is string[] =>
-      Array.isArray(input) &&
-      input.every((input2) => typeof input2 == "string");
-    getOwnMergeValue = (input: DataRecord | undefined, key: string): unknown =>
-      input !== undefined && Object.hasOwn(input, key) ? input[key] : undefined;
-    cloneIndexValue = (input: unknown): unknown =>
-      input === undefined ? input : JSON.parse(JSON.stringify(input));
+    isPlainMergeObject = (value: unknown): value is DataRecord =>
+      typeof value == "object" && value !== null && !Array.isArray(value);
+    isStringList = (value: unknown): value is string[] =>
+      Array.isArray(value) &&
+      value.every((item) => typeof item == "string");
+    getOwnMergeValue = (record: DataRecord | undefined, key: string): unknown =>
+      record !== undefined && Object.hasOwn(record, key) ? record[key] : undefined;
+    cloneIndexValue = (value: unknown): unknown =>
+      value === undefined ? value : JSON.parse(JSON.stringify(value));
     LEAF_MERGE_POLICY = {
       kind: "leaf",
     };

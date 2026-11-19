@@ -12,10 +12,10 @@ var hotReloadController: Dynamic;
 function getHotReloadCapability(): Dynamic {
   try {
     // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
-    let value: Dynamic = (globalThis as Dynamic).designHost?.hot;
-    return (typeof value == "object" || typeof value == "function") &&
-      value !== null
-      ? value
+    let capability: Dynamic = (globalThis as Dynamic).designHost?.hot;
+    return (typeof capability == "object" || typeof capability == "function") &&
+      capability !== null
+      ? capability
       : null;
   } catch {
     return null;
@@ -36,301 +36,301 @@ function createDisabledHotReloadController(): Dynamic {
     armReady(): Dynamic {},
   };
 }
-function getHotReloadController(input?: Dynamic): Dynamic {
-  let value: Dynamic = input === undefined ? getHotReloadCapability() : input;
-  if (value === null) return;
-  let entry: Dynamic = hotReloadControllers.get(value);
-  return entry !== undefined && entry.live() ? entry : undefined;
+function getHotReloadController(hot?: Dynamic): Dynamic {
+  let capability: Dynamic = hot === undefined ? getHotReloadCapability() : hot;
+  if (capability === null) return;
+  let controller: Dynamic = hotReloadControllers.get(capability);
+  return controller !== undefined && controller.live() ? controller : undefined;
 }
-function createHotReloadController(input: Dynamic = {}): Dynamic {
-  let value: Dynamic =
-    input.hot !== undefined ? input.hot : getHotReloadCapability();
+function createHotReloadController(reloadOptions: Dynamic = {}): Dynamic {
+  let capability: Dynamic =
+    reloadOptions.hot !== undefined ? reloadOptions.hot : getHotReloadCapability();
   if (
-    input.embedded === true ||
-    value === null ||
-    typeof value.accept != "function"
+    reloadOptions.embedded === true ||
+    capability === null ||
+    typeof capability.accept != "function"
   )
     return createDisabledHotReloadController();
-  let entry: Dynamic = hotReloadControllers.get(value);
-  if (entry !== undefined && entry.live()) return entry;
-  let value2: Dynamic = input.isCode ?? isHotReloadCodeFile,
-    value3: Dynamic = input.now ?? ((): Dynamic => Date.now()),
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      input.timers !== undefined
-        ? input.timers.setTimeout(input2, options)
-        : setTimeout(input2, options),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      input.timers !== undefined
-        ? input.timers.clearTimeout?.(input2)
-        : clearTimeout(input2);
+  let existingController: Dynamic = hotReloadControllers.get(capability);
+  if (existingController !== undefined && existingController.live()) return existingController;
+  let isCodePath: Dynamic = reloadOptions.isCode ?? isHotReloadCodeFile,
+    now: Dynamic = reloadOptions.now ?? ((): Dynamic => Date.now()),
+    scheduleTimeout: Dynamic = (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+      reloadOptions.timers !== undefined
+        ? reloadOptions.timers.setTimeout(run, delayMs)
+        : setTimeout(run, delayMs),
+    cancelTimeout: Dynamic = (timeoutId?: Dynamic): Dynamic => {
+      reloadOptions.timers !== undefined
+        ? reloadOptions.timers.clearTimeout?.(timeoutId)
+        : clearTimeout(timeoutId);
     },
-    items: Dynamic = [],
-    items2: Dynamic = [],
-    items3: Dynamic = [],
-    state: Dynamic = {},
-    value4: Dynamic,
-    value5: Dynamic,
-    flag: Dynamic = false,
-    flag2: Dynamic = false,
-    flag3: Dynamic = false,
-    flag4: Dynamic = false,
-    value6: Dynamic;
-  function value7(input2?: Dynamic): Dynamic {
-    items2.push(input2);
-    items2.length > 50 && items2.shift();
-    if (state.onEvent === undefined) {
-      items3.push(input2);
-      items3.length > 50 && items3.shift();
+    queuedUpdates: Dynamic = [],
+    recentEvents: Dynamic = [],
+    pendingEvents: Dynamic = [],
+    hooks: Dynamic = {},
+    owedUpdate: Dynamic,
+    carriedState: Dynamic,
+    restarted: Dynamic = false,
+    restored: Dynamic = false,
+    released: Dynamic = false,
+    detached: Dynamic = false,
+    finishPendingReveal: Dynamic;
+  function recordEvent(event?: Dynamic): Dynamic {
+    recentEvents.push(event);
+    recentEvents.length > 50 && recentEvents.shift();
+    if (hooks.onEvent === undefined) {
+      pendingEvents.push(event);
+      pendingEvents.length > 50 && pendingEvents.shift();
       return;
     }
     try {
-      state.onEvent(input2);
+      hooks.onEvent(event);
     } catch {}
   }
-  let callback3: Dynamic = (input2?: Dynamic): Dynamic => ({
-    version: input2.ver,
-    ...(input2.seq !== undefined
+  let readVersion: Dynamic = (snapshot?: Dynamic): Dynamic => ({
+    version: snapshot.ver,
+    ...(snapshot.seq !== undefined
       ? {
-          seq: input2.seq,
+          seq: snapshot.seq,
         }
       : {}),
   });
-  function value8(): Dynamic {
-    let value11: Dynamic = value6;
-    value11 !== undefined &&
-      (state.reveal !== undefined
-        ? Promise.resolve(state.reveal).then(
-            (): Dynamic => value11(false),
-            (): Dynamic => value11(false),
+  function finishRevealWhenReady(): Dynamic {
+    let finishReveal: Dynamic = finishPendingReveal;
+    finishReveal !== undefined &&
+      (hooks.reveal !== undefined
+        ? Promise.resolve(hooks.reveal).then(
+            (): Dynamic => finishReveal(false),
+            (): Dynamic => finishReveal(false),
           )
-        : (flag3 || flag4) && value11(false));
+        : (released || detached) && finishReveal(false));
   }
-  function value9(
-    input2?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value11?: Dynamic,
-    extra?: Dynamic,
+  function deferRestart(
+    update?: Dynamic,
+    updateEvent?: Dynamic,
+    reason?: Dynamic,
+    previousVersion?: Dynamic,
+    nextVersion?: Dynamic,
   ): Dynamic {
-    value4 = {
-      reason: context,
-      from: value4?.from ?? value11,
-      to: extra,
-      at: value3(),
+    owedUpdate = {
+      reason: reason,
+      from: owedUpdate?.from ?? previousVersion,
+      to: nextVersion,
+      at: now(),
     };
-    let value12: Dynamic =
-      context === "code"
+    let explanation: Dynamic =
+      reason === "code"
         ? "a changed path is the page\u2019s own code"
-        : "required is " + String(input2.required);
-    value7({
-      ...options,
+        : "required is " + String(update.required);
+    recordEvent({
+      ...updateEvent,
       decision: "defer",
-      get why() { return (value12) + ("; the editor is still booting, so the restart waits until it has attached"); },
+      get why() { return (explanation) + ("; the editor is still booting, so the restart waits until it has attached"); },
     });
-    value7({
+    recordEvent({
       type: "deferred",
-      from: value11.version,
-      to: extra.version,
-      reason: context,
+      from: previousVersion.version,
+      to: nextVersion.version,
+      reason: reason,
     });
-    if (typeof input2.defer == "function") {
+    if (typeof update.defer == "function") {
       try {
-        input2.defer();
+        update.defer();
       } catch {}
       return;
     }
     return "deferred";
   }
-  value.accept((input2?: Dynamic): Dynamic => {
-    if (flag4) {
-      if (typeof input2.restart == "function") {
+  capability.accept((update?: Dynamic): Dynamic => {
+    if (detached) {
+      if (typeof update.restart == "function") {
         try {
-          input2.restart();
+          update.restart();
         } catch {}
         return;
       }
       return "restart";
     }
-    if (flag3) return;
-    let value11: Dynamic = callback3(input2.from),
-      value12: Dynamic = callback3(input2.to),
-      value13: Dynamic =
-        input2.required !== "none"
+    if (released) return;
+    let previousVersion: Dynamic = readVersion(update.from),
+      nextVersion: Dynamic = readVersion(update.to),
+      restartReason: Dynamic =
+        update.required !== "none"
           ? "required"
-          : input2.changed !== null &&
-              input2.changed.some(
-                (input3?: Dynamic): Dynamic => value2(input3.path),
+          : update.changed !== null &&
+              update.changed.some(
+                (change?: Dynamic): Dynamic => isCodePath(change.path),
               )
             ? "code"
             : undefined,
-      state3: Dynamic = {
+      updateEvent: Dynamic = {
         type: "update",
-        from: value11.version,
-        to: value12.version,
-        ...(value11.seq !== undefined
+        from: previousVersion.version,
+        to: nextVersion.version,
+        ...(previousVersion.seq !== undefined
           ? {
-              fromSeq: value11.seq,
+              fromSeq: previousVersion.seq,
             }
           : {}),
-        ...(value12.seq !== undefined
+        ...(nextVersion.seq !== undefined
           ? {
-              toSeq: value12.seq,
+              toSeq: nextVersion.seq,
             }
           : {}),
-        required: String(input2.required),
-        shape: typeof input2.adopt == "function" ? "calls" : "string",
+        required: String(update.required),
+        shape: typeof update.adopt == "function" ? "calls" : "string",
         changed:
-          input2.changed === null
+          update.changed === null
             ? null
-            : input2.changed.map(
+            : update.changed.map(
                 (source?: Dynamic): Dynamic => ({
                   path: source.path,
                   kind: String(source.kind),
-                  klass: value2(source.path) ? "code" : "content",
+                  klass: isCodePath(source.path) ? "code" : "content",
                 }),
               ),
         busy: false,
         early: true,
       };
-    if (value13 !== undefined)
-      return value9(input2, state3, value13, value11, value12);
-    if (typeof input2.adopt == "function")
+    if (restartReason !== undefined)
+      return deferRestart(update, updateEvent, restartReason, previousVersion, nextVersion);
+    if (typeof update.adopt == "function")
       try {
-        input2.adopt();
+        update.adopt();
       } catch {
-        return value9(input2, state3, "required", value11, value12);
+        return deferRestart(update, updateEvent, "required", previousVersion, nextVersion);
       }
-    items.push({
-      from: value11,
-      to: value12,
-      changed: input2.changed,
-      at: value3(),
+    queuedUpdates.push({
+      from: previousVersion,
+      to: nextVersion,
+      changed: update.changed,
+      at: now(),
     });
-    value7({
-      ...state3,
+    recordEvent({
+      ...updateEvent,
       decision: "adopt",
       why: "content only; the editor is still booting, so the rows wait for it",
     });
     return "applied";
   });
-  let flag5: Dynamic = false;
-  function value10(): Dynamic {
-    if (!(flag5 || typeof value?.ready != "function")) {
-      flag5 = true;
+  let readyArmed: Dynamic = false;
+  function registerReadyHandler(): Dynamic {
+    if (!(readyArmed || typeof capability?.ready != "function")) {
+      readyArmed = true;
       try {
-        value.ready((input2?: Dynamic): Dynamic => {
-          value5 = input2;
-          flag = true;
-          if (state.restore !== undefined && !flag2) {
-            flag2 = true;
+        capability.ready((restartState?: Dynamic): Dynamic => {
+          carriedState = restartState;
+          restarted = true;
+          if (hooks.restore !== undefined && !restored) {
+            restored = true;
             try {
-              state.restore(input2);
+              hooks.restore(restartState);
             } catch {}
           }
-          let value11: Dynamic = value3();
-          return new Promise((input3?: Dynamic): Dynamic => {
-            let callback4: Dynamic = (input4?: Dynamic): Dynamic => {
-                value6 === callback4 &&
-                  ((value6 = undefined),
-                  input4 || callback2(value12),
-                  value7({
+          let revealStartedAt: Dynamic = now();
+          return new Promise((resolve?: Dynamic): Dynamic => {
+            let finishReveal: Dynamic = (timedOut?: Dynamic): Dynamic => {
+                finishPendingReveal === finishReveal &&
+                  ((finishPendingReveal = undefined),
+                  timedOut || cancelTimeout(revealTimeout),
+                  recordEvent({
                     type: "reveal",
-                    heldMs: value3() - value11,
-                    timedOut: input4,
-                    carried: input2 != null,
+                    heldMs: now() - revealStartedAt,
+                    timedOut: timedOut,
+                    carried: restartState != null,
                   }),
-                  input3());
+                  resolve());
               },
-              value12: Dynamic = callback(
-                (): Dynamic => callback4(true),
-                input.revealHoldMs ?? 4500,
+              revealTimeout: Dynamic = scheduleTimeout(
+                (): Dynamic => finishReveal(true),
+                reloadOptions.revealHoldMs ?? 4500,
               );
-            value6 = callback4;
-            value8();
+            finishPendingReveal = finishReveal;
+            finishRevealWhenReady();
           });
         });
       } catch {}
     }
   }
-  input.ready === "now" && value10();
-  if (typeof value.snapshot == "function")
+  reloadOptions.ready === "now" && registerReadyHandler();
+  if (typeof capability.snapshot == "function")
     try {
-      value.snapshot(
-        (input2?: Dynamic): Dynamic =>
-          flag4
+      capability.snapshot(
+        (snapshotContext?: Dynamic): Dynamic =>
+          detached
             ? null
-            : state.snapshot !== undefined
-              ? state.snapshot(input2)
-              : (value5 ?? null),
+            : hooks.snapshot !== undefined
+              ? hooks.snapshot(snapshotContext)
+              : (carriedState ?? null),
       );
     } catch {}
-  let state2: Dynamic = {
+  let controller: Dynamic = {
     active: true,
-    queued: items,
+    queued: queuedUpdates,
     get restarted(): Dynamic {
-      return flag;
+      return restarted;
     },
     get carried(): Dynamic {
-      return value5;
+      return carriedState;
     },
-    events: items2,
-    owed: (): Dynamic => value4,
+    events: recentEvents,
+    owed: (): Dynamic => owedUpdate,
     takeOwed(): Dynamic {
-      let value11: Dynamic = value4;
-      value4 = undefined;
-      return value11;
+      let update: Dynamic = owedUpdate;
+      owedUpdate = undefined;
+      return update;
     },
-    attach(input2: Dynamic): Dynamic {
-      value10();
-      input2.snapshot !== undefined && (state.snapshot = input2.snapshot);
-      input2.restore !== undefined && (state.restore = input2.restore);
-      input2.reveal !== undefined && (state.reveal = input2.reveal);
-      input2.onBeforeRestart !== undefined &&
-        (state.onBeforeRestart = input2.onBeforeRestart);
-      if (input2.onEvent !== undefined) {
-        state.onEvent = input2.onEvent;
-        for (let value11 of items3.splice(0) as Dynamic)
+    attach(nextHooks: Dynamic): Dynamic {
+      registerReadyHandler();
+      nextHooks.snapshot !== undefined && (hooks.snapshot = nextHooks.snapshot);
+      nextHooks.restore !== undefined && (hooks.restore = nextHooks.restore);
+      nextHooks.reveal !== undefined && (hooks.reveal = nextHooks.reveal);
+      nextHooks.onBeforeRestart !== undefined &&
+        (hooks.onBeforeRestart = nextHooks.onBeforeRestart);
+      if (nextHooks.onEvent !== undefined) {
+        hooks.onEvent = nextHooks.onEvent;
+        for (let event of pendingEvents.splice(0) as Dynamic)
           try {
-            input2.onEvent(value11);
+            nextHooks.onEvent(event);
           } catch {}
       }
-      if (flag && !flag2 && state.restore !== undefined) {
-        flag2 = true;
+      if (restarted && !restored && hooks.restore !== undefined) {
+        restored = true;
         try {
-          state.restore(value5);
+          hooks.restore(carriedState);
         } catch {}
       }
-      value8();
+      finishRevealWhenReady();
     },
     release(): Dynamic {
-      flag3 = true;
-      value8();
+      released = true;
+      finishRevealWhenReady();
     },
     detach(): Dynamic {
-      if (flag4) return;
-      flag3 = true;
-      flag4 = true;
-      value8();
-      let value11: Dynamic = value4;
-      value4 = undefined;
-      if (value11 !== undefined) {
+      if (detached) return;
+      released = true;
+      detached = true;
+      finishRevealWhenReady();
+      let update: Dynamic = owedUpdate;
+      owedUpdate = undefined;
+      if (update !== undefined) {
         try {
-          state.onBeforeRestart?.("deferred-update");
+          hooks.onBeforeRestart?.("deferred-update");
         } catch {}
         try {
-          value.restart?.({
+          capability.restart?.({
             note: "deferred-update",
           });
         } catch {}
       }
     },
     armReady(): Dynamic {
-      flag4 || value10();
+      detached || registerReadyHandler();
     },
-    live: (): Dynamic => !flag3 && !flag4,
+    live: (): Dynamic => !released && !detached,
   };
-  hotReloadControllers.set(value, state2);
-  return state2;
+  hotReloadControllers.set(capability, controller);
+  return controller;
 }
 export {
   applicationBootTime,
@@ -345,10 +345,10 @@ export {
 };
 export function installPlatformHotReload(): () => void {
   return () => {
-    isHotReloadCodeFile = (input?: Dynamic): Dynamic =>
-      input === "index.html" ||
-      input === "SKILL.md" ||
-      input.startsWith("artifact-type/");
+    isHotReloadCodeFile = (filePath?: Dynamic): Dynamic =>
+      filePath === "index.html" ||
+      filePath === "SKILL.md" ||
+      filePath.startsWith("artifact-type/");
     hotReloadControllers = new WeakMap();
     applicationBootTime =
       typeof performance !== "undefined" ? performance.now() : 0;

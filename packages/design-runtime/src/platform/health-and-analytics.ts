@@ -6,45 +6,45 @@ import {
 var ChatColumnOverlayActionsSlotValue: Dynamic;
 var AppifactHealthValue: Dynamic;
 var healthReporter: Dynamic;
-var PlatformHealthAndAnalyticsFramedPostConfig: Dynamic;
+var disabledFrameAnalyticsTransport: Dynamic;
 var frameAnalyticsReporter: Dynamic;
 var reportExportOutcome: Dynamic;
 var designAnalyticsEvents: Dynamic;
 function getHealthReporter(): Dynamic {
-  let value: Dynamic = (globalThis as Dynamic)[AppifactHealthValue];
-  if (typeof value != "object" || value === null) return;
-  let value2: Dynamic = value;
-  return typeof value2.report == "function" &&
-    typeof value2.track == "function"
-    ? value
+  let globalReporter: Dynamic = (globalThis as Dynamic)[AppifactHealthValue];
+  if (typeof globalReporter != "object" || globalReporter === null) return;
+  let reporter: Dynamic = globalReporter;
+  return typeof reporter.report == "function" &&
+    typeof reporter.track == "function"
+    ? globalReporter
     : undefined;
 }
-function createFrameAnalyticsReporter(input?: Dynamic): Dynamic {
-  let values: Dynamic = new Set(),
-    index: Dynamic = 0;
-  return (input2?: Dynamic): Dynamic => {
-    if (!values.has(input2)) {
-      values.add(input2);
+function createFrameAnalyticsReporter(transport?: Dynamic): Dynamic {
+  let reportedEvents: Dynamic = new Set(),
+    nextEventId: Dynamic = 0;
+  return (eventName?: Dynamic): Dynamic => {
+    if (!reportedEvents.has(eventName)) {
+      reportedEvents.add(eventName);
       try {
-        if (!input.framed()) return;
-        input.post({
+        if (!transport.framed()) return;
+        transport.post({
           __frame_cap: true,
           cap: "analytics",
-          id: "t" + String(++index),
+          id: "t" + String(++nextEventId),
           method: "track",
-          args: [input2],
+          args: [eventName],
         });
       } catch {}
     }
   };
 }
 function createExportAnalyticsReporter(
-  input?: Dynamic,
-  options?: Dynamic,
+  reportHealth?: Dynamic,
+  trackFrameEvent?: Dynamic,
 ): Dynamic {
-  return (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-    input(...input2);
-    input2[1] === "success" && options(options2);
+  return (healthArgs?: Dynamic, eventName?: Dynamic): Dynamic => {
+    reportHealth(...healthArgs);
+    healthArgs[1] === "success" && trackFrameEvent(eventName);
   };
 }
 export {
@@ -56,7 +56,7 @@ export {
   frameAnalyticsReporter,
   getHealthReporter,
   healthReporter,
-  PlatformHealthAndAnalyticsFramedPostConfig,
+  disabledFrameAnalyticsTransport as PlatformHealthAndAnalyticsFramedPostConfig,
   reportExportOutcome,
 };
 export function installPlatformHealthAndAnalytics(): () => void {
@@ -64,39 +64,39 @@ export function installPlatformHealthAndAnalytics(): () => void {
     ChatColumnOverlayActionsSlotValue = "chat-column-overlay-actions-slot";
     AppifactHealthValue = "__appifact_health";
     healthReporter = {
-      report(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
+      report(event: Dynamic, outcome: Dynamic, detail: Dynamic): Dynamic {
         try {
-          getHealthReporter()?.report(input, options, context);
+          getHealthReporter()?.report(event, outcome, detail);
         } catch {}
       },
       async track(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        event: Dynamic,
+        run: Dynamic,
+        detail: Dynamic,
       ): Promise<Dynamic> {
-        let value: Dynamic = getHealthReporter();
-        if (value === undefined) return await options();
-        let value2: Dynamic;
+        let reporter: Dynamic = getHealthReporter();
+        if (reporter === undefined) return await run();
+        let trackedResult: Dynamic;
         try {
-          value2 = value.track(input, options, context);
+          trackedResult = reporter.track(event, run, detail);
         } catch {
-          return await options();
+          return await run();
         }
-        return await value2;
+        return await trackedResult;
       },
     };
     // MineDesign: no analytics. The page is never treated as framed for analytics, so no `__frame_cap` analytics
     // message is posted to the parent window (MineDesign's UI). Health reports need globalThis.__appifact_health,
     // which the MineDesign page template does not install, so they are dropped by the code above unchanged.
-    PlatformHealthAndAnalyticsFramedPostConfig = {
+    disabledFrameAnalyticsTransport = {
       framed: (): Dynamic => false,
-      post: (input?: Dynamic): Dynamic => {},
+      post: (_message?: Dynamic): Dynamic => {},
     };
     frameAnalyticsReporter = createFrameAnalyticsReporter(
-      PlatformHealthAndAnalyticsFramedPostConfig,
+      disabledFrameAnalyticsTransport,
     );
     reportExportOutcome = createExportAnalyticsReporter(
-      (...input: Dynamic[]): Dynamic => healthReporter.report(...input),
+      (...reportArgs: Dynamic[]): Dynamic => healthReporter.report(...reportArgs),
       frameAnalyticsReporter,
     );
     designAnalyticsEvents = {
