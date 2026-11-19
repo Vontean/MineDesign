@@ -15,8 +15,8 @@ import { normalizeDocumentTitle, normalizeNewDocumentTitle } from "./database-do
 import { buildDesignDocumentFromIndex, buildSelectedBoardsDocument, createEmptyDesignIndex, FILES_INDEX_MERGE_POLICY, INDEX_DESIGN_SYSTEM_TOKENS_KEY, INDEX_LEFT_OUT_KEY, INDEX_SOURCE_KEY, mergeDesignPages, normalizeDesignIndex, orderedDesignMapKeys, parseIndexDeletionSets, updateDesignIndexFromDocument } from "./design-index";
 import { updateDesignSourceFile } from "./design-source";
 import { recordEdit } from "./edit-count";
-import { canvasMetadataFile, getMimeTypeForPath, hashFileMap, isArtboardFile, isDesignSystemFile, isNarrowedFileContext, isSafeProjectPath, isSupportedProjectAsset, parseCanvasMetadata, PlatformFileContentFilesValue, PlatformFileContentResolvedValue_11, PlatformFileContentWebpAvifPattern, serializeCanvasMetadata } from "./file-content";
-import { PlatformFilesHotReloadItems } from "./files-hot-reload";
+import { canvasMetadataFile, getMimeTypeForPath, hashFileMap, isArtboardFile, isDesignSystemFile, isNarrowedFileContext, isSafeProjectPath, isSupportedProjectAsset, parseCanvasMetadata, PlatformFileContentFilesValue as MAX_LISTED_PROJECT_FILES, PlatformFileContentResolvedValue_11 as MAX_DESIGN_FILE_BYTES, PlatformFileContentWebpAvifPattern as BINARY_IMAGE_PATTERN, serializeCanvasMetadata } from "./file-content";
+import { PlatformFilesHotReloadItems as FILE_READ_RETRY_DELAYS_MS } from "./files-hot-reload";
 import { createFilesPublisher } from "./files-publisher";
 import { cloneIndexValue, replaceIndexObjectProperties } from "./index-merge";
 import { createIndexFileState, stringifyCanonicalIndex } from "./index-state";
@@ -66,13 +66,13 @@ function validateListedDesignFile(file?: Dynamic): Dynamic {
     !isSafeProjectPath(relativePath) ||
     (!isArtboardFile(relativePath) &&
       !isSupportedProjectAsset(relativePath)) ||
-    file.size > PlatformFileContentResolvedValue_11
+    file.size > MAX_DESIGN_FILE_BYTES
     ? null
     : relativePath;
 }
 function encodeDesignPortFile(path?: Dynamic, text?: Dynamic): Dynamic {
   let contentType: Dynamic = getDesignFileContentType(path) ?? "text/plain";
-  if (!PlatformFileContentWebpAvifPattern.test(path))
+  if (!BINARY_IMAGE_PATTERN.test(path))
     return {
       content: text,
       contentType: contentType,
@@ -93,16 +93,16 @@ function encodeDesignPortFile(path?: Dynamic, text?: Dynamic): Dynamic {
 }
 function countPortContentBytes(files?: Dynamic): Dynamic {
   let bytes: Dynamic = 0;
-  for (let value of Object.values(files) as Dynamic) {
-    let value2: Dynamic =
-      value !== null && typeof value == "object" && !(value instanceof Blob)
-        ? value.content
-        : value;
-    typeof value2 == "string"
-      ? (bytes += value2.length)
-      : value2 != null &&
-        typeof value2.size == "number" &&
-        (bytes += value2.size);
+  for (let file of Object.values(files) as Dynamic) {
+    let content: Dynamic =
+      file !== null && typeof file == "object" && !(file instanceof Blob)
+        ? file.content
+        : file;
+    typeof content == "string"
+      ? (bytes += content.length)
+      : content != null &&
+        typeof content.size == "number" &&
+        (bytes += content.size);
   }
   return bytes;
 }
@@ -154,13 +154,13 @@ function describeSamePropertyConflict(
     "). Theirs replaced yours."
   );
 }
-function createFilesDesignDocument(options?: Dynamic): Dynamic {
-  let timers: Dynamic = options.timers ?? filesDocumentTimers,
-    canWrite: Dynamic = (options.canWrite ?? true) && options.port.canWrite,
-    hasLocalChanges: Dynamic = false,
-    notice: Dynamic = (input?: Dynamic): Dynamic => options.onNotice?.(input),
+function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
+  let timers: Dynamic = documentOptions.timers ?? filesDocumentTimers,
+    canWrite: Dynamic = (documentOptions.canWrite ?? true) && documentOptions.port.canWrite,
+    hasPartialListing: Dynamic = false,
+    notice: Dynamic = (message?: Dynamic): Dynamic => documentOptions.onNotice?.(message),
     defaultTitle: Dynamic =
-      normalizeDocumentTitle(options.defaultTitle) ?? "Design",
+      normalizeDocumentTitle(documentOptions.defaultTitle) ?? "Design",
     state: Dynamic = {
       title: defaultTitle,
       content: {
@@ -192,20 +192,20 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     keptNoteIds: Dynamic = new Set(),
     keptPageIds: Dynamic = new Set(),
     knownArtboardFiles: Dynamic = new Set(),
-    rememberArtboards: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value14 of Object.keys(input) as Dynamic)
-        isArtboardFile(value14) &&
-          knownArtboardFiles.add(value14);
+    rememberArtboards: Dynamic = (files?: Dynamic): Dynamic => {
+      for (let filePath of Object.keys(files) as Dynamic)
+        isArtboardFile(filePath) &&
+          knownArtboardFiles.add(filePath);
     },
     removedNoteIds: Dynamic = new Set(),
     removedPageIds: Dynamic = new Set(),
     contentListeners: Dynamic = new Set(),
     saveListeners: Dynamic = new Set(),
     loadListeners: Dynamic = new Set(),
-    notifyContent: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value14 of [...contentListeners] as Dynamic)
-        value14(
-          input
+    notifyContent: Dynamic = (isRemote?: Dynamic): Dynamic => {
+      for (let listener of [...contentListeners] as Dynamic)
+        listener(
+          isRemote
             ? {
                 remote: true,
               }
@@ -213,118 +213,118 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         );
     },
     notifySave: Dynamic = (): Dynamic => {
-      let value14: Dynamic = getSaveState();
-      for (let value15 of [...saveListeners] as Dynamic) value15(value14);
+      let saveState: Dynamic = getSaveState();
+      for (let listener of [...saveListeners] as Dynamic) listener(saveState);
     },
-    trackedPort: Dynamic = Object.create(options.port, {
+    trackedPort: Dynamic = Object.create(documentOptions.port, {
       publish: {
         value: async (
-          input?: Dynamic,
-          options2?: Dynamic,
+          filesToPublish?: Dynamic,
+          publishOptions?: Dynamic,
         ): Promise<Dynamic> => {
-          let value14: Dynamic = options.debug?.saveStart(
-              Object.keys(input),
-              countPortContentBytes(input),
+          let debugSaveId: Dynamic = documentOptions.debug?.saveStart(
+              Object.keys(filesToPublish),
+              countPortContentBytes(filesToPublish),
             ),
-            value15: Dynamic,
-            version: Dynamic = options.port.version().version;
+            publishResult: Dynamic,
+            version: Dynamic = documentOptions.port.version().version;
           try {
-            value15 = await options.port.publish(input, options2);
-          } catch (value17: Dynamic) {
+            publishResult = await documentOptions.port.publish(filesToPublish, publishOptions);
+          } catch (error: Dynamic) {
             throw (
-              value14 !== undefined &&
-                options.debug?.saveEnd(value14, {
+              debugSaveId !== undefined &&
+                documentOptions.debug?.saveEnd(debugSaveId, {
                   ok: false,
                   code: "threw",
                   raw:
-                    value17 instanceof Error
-                      ? value17.message
-                      : String(value17),
+                    error instanceof Error
+                      ? error.message
+                      : String(error),
                 }),
-              value17
+              error
             );
           }
-          let value16: Dynamic =
-            value15.ok &&
-            value15.unchanged !== true &&
-            value15.version !== version &&
-            options.port.version().version === value15.version &&
-            (value15.changed === undefined
-              ? value15.preconditionsChecked !== true
-              : value15.changed.length === 0);
-          value14 !== undefined &&
-            options.debug?.saveEnd(
-              value14,
-              value15.ok
+          let isOwnVersion: Dynamic =
+            publishResult.ok &&
+            publishResult.unchanged !== true &&
+            publishResult.version !== version &&
+            documentOptions.port.version().version === publishResult.version &&
+            (publishResult.changed === undefined
+              ? publishResult.preconditionsChecked !== true
+              : publishResult.changed.length === 0);
+          debugSaveId !== undefined &&
+            documentOptions.debug?.saveEnd(
+              debugSaveId,
+              publishResult.ok
                 ? {
                     ok: true,
-                    version: value15.version,
-                    ...(value16
+                    version: publishResult.version,
+                    ...(isOwnVersion
                       ? {
-                          own: value16,
+                          own: isOwnVersion,
                         }
                       : {}),
                   }
                 : {
                     ok: false,
-                    code: value15.code,
-                    raw: value15,
+                    code: publishResult.code,
+                    raw: publishResult,
                   },
             );
-          if (value15.ok) {
-            let value17: Dynamic =
-              value15.shas === undefined
-                ? await hashFileMap(input)
+          if (publishResult.ok) {
+            let computedShas: Dynamic =
+              publishResult.shas === undefined
+                ? await hashFileMap(filesToPublish)
                 : {};
-            for (let [value18, value19] of Object.entries(input) as Dynamic) {
-              if (value19 === null) {
-                liveHashes.delete(value18);
-                publishedHashes.set(value18, null);
-                let value23: Dynamic = fromProjectContentPath(
-                  value18,
+            for (let [absolutePath, file] of Object.entries(filesToPublish) as Dynamic) {
+              if (file === null) {
+                liveHashes.delete(absolutePath);
+                publishedHashes.set(absolutePath, null);
+                let removedPath: Dynamic = fromProjectContentPath(
+                  absolutePath,
                   "design",
                 );
-                value23 !== undefined && overwrittenEdits.delete(value23);
+                removedPath !== undefined && overwrittenEdits.delete(removedPath);
                 continue;
               }
-              let value20: Dynamic =
-                value15.shas?.[value18] ?? value17[value18];
-              if (value20 === undefined) continue;
-              liveHashes.set(value18, value20);
-              publishedHashes.set(value18, value20);
-              let value21: Dynamic =
-                  value19 !== null &&
-                  typeof value19 == "object" &&
-                  !(value19 instanceof Blob)
-                    ? value19.content
-                    : value19,
-                value22: Dynamic = fromProjectContentPath(
-                  value18,
+              let sha: Dynamic =
+                publishResult.shas?.[absolutePath] ?? computedShas[absolutePath];
+              if (sha === undefined) continue;
+              liveHashes.set(absolutePath, sha);
+              publishedHashes.set(absolutePath, sha);
+              let fileText: Dynamic =
+                  file !== null &&
+                  typeof file == "object" &&
+                  !(file instanceof Blob)
+                    ? file.content
+                    : file,
+                relativePath: Dynamic = fromProjectContentPath(
+                  absolutePath,
                   "design",
                 );
-              typeof value21 == "string" &&
-                value22 !== undefined &&
-                (isArtboardFile(value22) &&
-                  savedFiles[value22] !== undefined &&
-                  savedFiles[value22] !== value21 &&
-                  options.sameBoardRule !== "last" &&
-                  overwrittenEdits.set(value22, {
-                    file: value22,
-                    base: savedFiles[value22],
-                    mine: value21,
+              typeof fileText == "string" &&
+                relativePath !== undefined &&
+                (isArtboardFile(relativePath) &&
+                  savedFiles[relativePath] !== undefined &&
+                  savedFiles[relativePath] !== fileText &&
+                  documentOptions.sameBoardRule !== "last" &&
+                  overwrittenEdits.set(relativePath, {
+                    file: relativePath,
+                    base: savedFiles[relativePath],
+                    mine: fileText,
                     at: timers.now(),
                   }),
-                (savedFiles[value22] = value21));
+                (savedFiles[relativePath] = fileText));
             }
-            for (let [value18, value19] of Object.entries(input) as Dynamic)
+            for (let [absolutePath, file] of Object.entries(filesToPublish) as Dynamic)
               ownChangedHashes.set(
-                value18,
-                value19 === null ? null : (liveHashes.get(value18) ?? null),
+                absolutePath,
+                file === null ? null : (liveHashes.get(absolutePath) ?? null),
               );
             lastSaveAt = timers.now();
             lastSaveError = undefined;
           }
-          return value15;
+          return publishResult;
         },
       },
     }),
@@ -345,168 +345,168 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
   );
   let mergeIndex: Dynamic = indexState.mergeFrom.bind(indexState),
     pagesOverlap: Dynamic = false;
-  indexState.mergeFrom = (input?: Dynamic): Dynamic => {
-    let value14: Dynamic = indexState.base(),
-      entry: Dynamic = indexState.get();
-    trackMergedDeletions(value14, entry, input);
-    let value15: Dynamic = mergeDesignPages(
-      callback(value14.pages),
-      callback(entry.pages),
-      callback(input.pages),
+  indexState.mergeFrom = (remoteIndex?: Dynamic): Dynamic => {
+    let baseIndex: Dynamic = indexState.base(),
+      localIndex: Dynamic = indexState.get();
+    trackMergedDeletions(baseIndex, localIndex, remoteIndex);
+    let pageMerge: Dynamic = mergeDesignPages(
+      readIndexPages(baseIndex.pages),
+      readIndexPages(localIndex.pages),
+      readIndexPages(remoteIndex.pages),
     );
-    pagesOverlap = value15.overlap;
-    let value16: Dynamic = mergeIndex(input);
-    Array.isArray(value16.pages)
-      ? value16.pages.splice(0, value16.pages.length, ...value15.pages)
-      : (value16.pages = value15.pages);
-    return value16;
+    pagesOverlap = pageMerge.overlap;
+    let mergedIndex: Dynamic = mergeIndex(remoteIndex);
+    Array.isArray(mergedIndex.pages)
+      ? mergedIndex.pages.splice(0, mergedIndex.pages.length, ...pageMerge.pages)
+      : (mergedIndex.pages = pageMerge.pages);
+    return mergedIndex;
   };
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      Array.isArray(input)
-        ? input.filter(
-            (input2?: Dynamic): Dynamic =>
-              typeof input2 == "object" &&
-              input2 !== null &&
-              typeof input2.id == "string",
+  let readIndexPages: Dynamic = (pages?: Dynamic): Dynamic =>
+      Array.isArray(pages)
+        ? pages.filter(
+            (page?: Dynamic): Dynamic =>
+              typeof page == "object" &&
+              page !== null &&
+              typeof page.id == "string",
           )
         : [],
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      typeof input == "object" && input !== null && !Array.isArray(input)
-        ? Object.keys(input)
+    readIndexKeys: Dynamic = (table?: Dynamic): Dynamic =>
+      typeof table == "object" && table !== null && !Array.isArray(table)
+        ? Object.keys(table)
         : [];
   function trackMergedDeletions(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    baseIndex?: Dynamic,
+    localIndex?: Dynamic,
+    remoteIndex?: Dynamic,
   ): Dynamic {
-    let values5: Dynamic = new Set(callback2(context.boards)),
-      values6: Dynamic = new Set(callback2(context.notes)),
-      values7: Dynamic = new Set(
-        callback(context.pages).map((input2?: Dynamic): Dynamic => input2.id),
+    let remoteBoardPaths: Dynamic = new Set(readIndexKeys(remoteIndex.boards)),
+      remoteNoteIds: Dynamic = new Set(readIndexKeys(remoteIndex.notes)),
+      remotePageIds: Dynamic = new Set(
+        readIndexPages(remoteIndex.pages).map((page?: Dynamic): Dynamic => page.id),
       ),
-      values8: Dynamic = new Set(callback2(input.boards)),
-      values9: Dynamic = new Set(callback2(input.notes)),
-      values10: Dynamic = new Set(
-        callback(input.pages).map((input2?: Dynamic): Dynamic => input2.id),
+      baseBoardPaths: Dynamic = new Set(readIndexKeys(baseIndex.boards)),
+      baseNoteIds: Dynamic = new Set(readIndexKeys(baseIndex.notes)),
+      basePageIds: Dynamic = new Set(
+        readIndexPages(baseIndex.pages).map((page?: Dynamic): Dynamic => page.id),
       );
-    for (let value14 of values8 as Dynamic)
-      !values5.has(value14) &&
-        !fileDirtyVersions.has(value14) &&
+    for (let boardPath of baseBoardPaths as Dynamic)
+      !remoteBoardPaths.has(boardPath) &&
+        !fileDirtyVersions.has(boardPath) &&
         fileDirtyVersions.set(
-          value14,
+          boardPath,
           cloneIndexValue(
-            options2.boards?.[value14] ?? input.boards[value14],
+            localIndex.boards?.[boardPath] ?? baseIndex.boards[boardPath],
           ),
         );
-    for (let value14 of values9 as Dynamic)
-      values6.has(value14) ||
-        (keptNoteIds.add(value14), removedNoteIds.delete(value14));
-    for (let value14 of values10 as Dynamic)
-      values7.has(value14) ||
-        (keptPageIds.add(value14), removedPageIds.delete(value14));
-    for (let value14 of values5 as Dynamic)
-      values8.has(value14) || fileDirtyVersions.delete(value14);
-    for (let value14 of values6 as Dynamic)
-      values9.has(value14) || keptNoteIds.delete(value14);
-    for (let value14 of values7 as Dynamic)
-      values10.has(value14) || keptPageIds.delete(value14);
+    for (let noteId of baseNoteIds as Dynamic)
+      remoteNoteIds.has(noteId) ||
+        (keptNoteIds.add(noteId), removedNoteIds.delete(noteId));
+    for (let pageId of basePageIds as Dynamic)
+      remotePageIds.has(pageId) ||
+        (keptPageIds.add(pageId), removedPageIds.delete(pageId));
+    for (let boardPath of remoteBoardPaths as Dynamic)
+      baseBoardPaths.has(boardPath) || fileDirtyVersions.delete(boardPath);
+    for (let noteId of remoteNoteIds as Dynamic)
+      baseNoteIds.has(noteId) || keptNoteIds.delete(noteId);
+    for (let pageId of remotePageIds as Dynamic)
+      basePageIds.has(pageId) || keptPageIds.delete(pageId);
   }
-  let callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      if (options.sameBoardRule === "last") return;
-      let value14: Dynamic = input.filter(
-        (input2?: Dynamic): Dynamic =>
-          (input2 !== "pages" || pagesOverlap) &&
-          !input2.startsWith(CreatedOnFilesValue + "/"),
+  let notifyIndexMerge: Dynamic = (conflictKeys?: Dynamic): Dynamic => {
+      if (documentOptions.sameBoardRule === "last") return;
+      let visibleConflicts: Dynamic = conflictKeys.filter(
+        (key?: Dynamic): Dynamic =>
+          (key !== "pages" || pagesOverlap) &&
+          !key.startsWith(CreatedOnFilesValue + "/"),
       );
-      value14.length > 0 &&
+      visibleConflicts.length > 0 &&
         notice(
           "Someone else changed " +
-            describeIndexConflictTarget(value14) +
+            describeIndexConflictTarget(visibleConflicts) +
             " at the same moment; their change was kept.",
         );
     },
-    value: Dynamic = createFilesPublisher({
+    publisher: Dynamic = createFilesPublisher({
       port: trackedPort,
       index: indexState,
       timers: timers,
-      ...(options.saveStash !== undefined
+      ...(documentOptions.saveStash !== undefined
         ? {
-            stash: options.saveStash,
+            stash: documentOptions.saveStash,
           }
         : {}),
-      ...(options.paced !== undefined
+      ...(documentOptions.paced !== undefined
         ? {
-            paced: options.paced,
+            paced: documentOptions.paced,
           }
         : {}),
-      onConflict: (input?: Dynamic): Dynamic => {
-        handleBoardClash(input.path, input.theirsSha, "save-refused");
+      onConflict: (conflict?: Dynamic): Dynamic => {
+        handleBoardClash(conflict.path, conflict.theirsSha, "save-refused");
       },
-      onIndexMerged: callback3,
-      onState(input: Dynamic): Dynamic {
-        syncState = input;
-        input.lastError !== undefined &&
+      onIndexMerged: notifyIndexMerge,
+      onState(nextSyncState: Dynamic): Dynamic {
+        syncState = nextSyncState;
+        nextSyncState.lastError !== undefined &&
           (lastSaveError = {
             code: "refused",
-            message: input.lastError,
+            message: nextSyncState.lastError,
           });
-        input.stuck === undefined && (flag = false);
-        let value14: Dynamic =
-          input.dirty === 0 && !input.inFlight && input.stuck === undefined;
-        if (value14)
-          for (let value15 of values as Dynamic)
-            (input.unsendable ?? []).some(
-              (input2?: Dynamic): Dynamic => input2.path === value15,
-            ) || values.delete(value15);
-        ((input.stuck !== undefined && !flag) ||
-          (callback4(input) && (value14 || input.stuck !== undefined))) &&
+        nextSyncState.stuck === undefined && (reportedStuckSave = false);
+        let isIdle: Dynamic =
+          nextSyncState.dirty === 0 && !nextSyncState.inFlight && nextSyncState.stuck === undefined;
+        if (isIdle)
+          for (let filePath of reportedUnsendablePaths as Dynamic)
+            (nextSyncState.unsendable ?? []).some(
+              (edit?: Dynamic): Dynamic => edit.path === filePath,
+            ) || reportedUnsendablePaths.delete(filePath);
+        ((nextSyncState.stuck !== undefined && !reportedStuckSave) ||
+          (hasNewUnsendableEdits(nextSyncState) && (isIdle || nextSyncState.stuck !== undefined))) &&
           scheduleSaveStatusUpdate();
         notifySave();
       },
     }),
-    flag: Dynamic = false,
-    values: Dynamic = new Set(),
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      (input.unsendable ?? []).some(
-        (input2?: Dynamic): Dynamic => !values.has(input2.path),
+    reportedStuckSave: Dynamic = false,
+    reportedUnsendablePaths: Dynamic = new Set(),
+    hasNewUnsendableEdits: Dynamic = (saveState?: Dynamic): Dynamic =>
+      (saveState.unsendable ?? []).some(
+        (edit?: Dynamic): Dynamic => !reportedUnsendablePaths.has(edit.path),
       ),
-    callback5: Dynamic = (input?: Dynamic): Dynamic =>
+    describeLeftOutEdits: Dynamic = (restSaved?: Dynamic): Dynamic =>
       describeUnsendableEdits(syncState.unsendable ?? [], {
-        restSaved: input,
+        restSaved: restSaved,
         stashed: syncState.unsendableStashed === true,
       }),
-    callback6: Dynamic = (input?: Dynamic): Dynamic =>
-      describeStuckSave(input, timers.now()) +
-      (syncState.unsendable !== undefined ? " " + callback5(false) : ""),
-    value2: Dynamic;
+    describeSaveFailure: Dynamic = (stuckSave?: Dynamic): Dynamic =>
+      describeStuckSave(stuckSave, timers.now()) +
+      (syncState.unsendable !== undefined ? " " + describeLeftOutEdits(false) : ""),
+    saveStatusTimer: Dynamic;
   function scheduleSaveStatusUpdate(): Dynamic {
-    value2 === undefined &&
-      (value2 = timers.setTimeout((): Dynamic => {
-        value2 = undefined;
-        let value14: Dynamic = syncState;
+    saveStatusTimer === undefined &&
+      (saveStatusTimer = timers.setTimeout((): Dynamic => {
+        saveStatusTimer = undefined;
+        let latestSyncState: Dynamic = syncState;
         if (
           !(
             disposed ||
-            (value14.stuck === undefined &&
-              (value14.dirty > 0 || value14.inFlight))
+            (latestSyncState.stuck === undefined &&
+              (latestSyncState.dirty > 0 || latestSyncState.inFlight))
           )
         ) {
-          if (value14.stuck !== undefined && !flag)
-            notice(callback6(value14.stuck));
-          else if (callback4(value14))
-            notice(callback5(value14.stuck === undefined));
+          if (latestSyncState.stuck !== undefined && !reportedStuckSave)
+            notice(describeSaveFailure(latestSyncState.stuck));
+          else if (hasNewUnsendableEdits(latestSyncState))
+            notice(describeLeftOutEdits(latestSyncState.stuck === undefined));
           else return;
-          value14.stuck !== undefined && (flag = true);
-          for (let value15 of (value14.unsendable ?? []) as Dynamic)
-            values.add(value15.path);
+          latestSyncState.stuck !== undefined && (reportedStuckSave = true);
+          for (let edit of (latestSyncState.unsendable ?? []) as Dynamic)
+            reportedUnsendablePaths.add(edit.path);
         }
       }, 1e3));
   }
-  function describeIndexConflictTarget(input?: Dynamic): Dynamic {
-    let value14: Dynamic = input[0] ?? "",
-      value15: Dynamic = /^boards\/(.+)\/[^/]+$/.exec(value14);
-    return value15
-      ? "\u201C" + value15[1].replace(/\.dc\.html$/, "") + "\u201D"
+  function describeIndexConflictTarget(conflictKeys?: Dynamic): Dynamic {
+    let firstKey: Dynamic = conflictKeys[0] ?? "",
+      boardMatch: Dynamic = /^boards\/(.+)\/[^/]+$/.exec(firstKey);
+    return boardMatch
+      ? "\u201C" + boardMatch[1].replace(/\.dc\.html$/, "") + "\u201D"
       : "the canvas layout";
   }
   function getSaveState(): Dynamic {
@@ -518,7 +518,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         ? syncState.stuck !== undefined
           ? {
               status: "error",
-              message: callback6(syncState.stuck),
+              message: describeSaveFailure(syncState.stuck),
             }
           : syncState.lastError !== undefined && syncState.dirty > 0
             ? {
@@ -527,18 +527,18 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
               }
             : syncState.inFlight ||
                 syncState.dirty > 0 ||
-                value8 !== undefined
+                localSaveTimer !== undefined
               ? {
                   status: "saving",
                 }
               : syncState.unsendable !== undefined
                 ? {
                     status: "error",
-                    message: callback5(true),
+                    message: describeLeftOutEdits(true),
                     leftOut: syncState.unsendable.map(
-                      (input?: Dynamic): Dynamic => ({
-                        id: input.path,
-                        cause: input.cause,
+                      (edit?: Dynamic): Dynamic => ({
+                        id: edit.path,
+                        cause: edit.cause,
                       }),
                     ),
                   }
@@ -548,48 +548,48 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         : {
             status: "readonly",
             message:
-              hasLocalChanges && (options.canWrite ?? true)
+              hasPartialListing && (documentOptions.canWrite ?? true)
                 ? CANVAS_READ_ERROR_REASON
-                : (options.readOnlyReason ??
+                : (documentOptions.readOnlyReason ??
                   "You can view this canvas but not edit it."),
             atBoot: true,
           };
   }
-  function readWithRetry(input?: Dynamic): Dynamic {
+  function readWithRetry(read?: Dynamic): Dynamic {
     return retryAccessFailure(
-      input,
+      read,
       timers,
       undefined,
-      PlatformFilesHotReloadItems,
+      FILE_READ_RETRY_DELAYS_MS,
     );
   }
-  async function readFile(input?: Dynamic): Promise<Dynamic> {
-    let value14: Dynamic = toProjectContentPath(input);
-    if (PlatformFileContentWebpAvifPattern.test(input)) {
-      let value15: Dynamic = await readWithRetry(
-        (): Dynamic => trackedPort.readBytes(value14),
+  async function readFile(relativePath?: Dynamic): Promise<Dynamic> {
+    let absolutePath: Dynamic = toProjectContentPath(relativePath);
+    if (BINARY_IMAGE_PATTERN.test(relativePath)) {
+      let binaryFile: Dynamic = await readWithRetry(
+        (): Dynamic => trackedPort.readBytes(absolutePath),
       );
-      return bytesToBase64(value15.bytes);
+      return bytesToBase64(binaryFile.bytes);
     }
-    return (await readWithRetry((): Dynamic => trackedPort.readText(value14)))
+    return (await readWithRetry((): Dynamic => trackedPort.readText(absolutePath)))
       .text;
   }
-  async function readFiles(items2?: Dynamic): Promise<Dynamic> {
-    let state2: Dynamic = {},
-      index5: Dynamic = 0,
-      callback19: Dynamic = async (): Promise<Dynamic> => {
-        for (; index5 < items2.length; ) {
-          let value14: Dynamic = items2[index5++];
+  async function readFiles(pathsToRead?: Dynamic): Promise<Dynamic> {
+    let files: Dynamic = {},
+      nextIndex: Dynamic = 0,
+      readNextBatch: Dynamic = async (): Promise<Dynamic> => {
+        for (; nextIndex < pathsToRead.length; ) {
+          let filePath: Dynamic = pathsToRead[nextIndex++];
           try {
-            state2[value14] = await readFile(value14);
-          } catch (value15: Dynamic) {
+            files[filePath] = await readFile(filePath);
+          } catch (error: Dynamic) {
             console.warn(
               "design (files): could not read " +
-                toProjectContentPath(value14) +
+                toProjectContentPath(filePath) +
                 " \u2014 " +
-                (value15 instanceof Error
-                  ? value15.message
-                  : String(value15)),
+                (error instanceof Error
+                  ? error.message
+                  : String(error)),
             );
           }
         }
@@ -597,461 +597,461 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     await Promise.all(
       Array.from(
         {
-          length: Math.min(DESIGN_RESTART_MAX_ATTEMPTS, items2.length),
+          length: Math.min(DESIGN_RESTART_MAX_ATTEMPTS, pathsToRead.length),
         },
-        callback19,
+        readNextBatch,
       ),
     );
-    return state2;
+    return files;
   }
-  function composeFromFiles(input?: Dynamic): Dynamic {
-    let value14: Dynamic = normalizeDesignIndex(
+  function composeFromFiles(files?: Dynamic): Dynamic {
+    let normalizedIndex: Dynamic = normalizeDesignIndex(
       indexState.get(),
     );
     setDesignSystems(
       refreshDesignSystemFileOverlay(
-        value14,
-        input,
-        value14[INDEX_DESIGN_SYSTEM_TOKENS_KEY],
+        normalizedIndex,
+        files,
+        normalizedIndex[INDEX_DESIGN_SYSTEM_TOKENS_KEY],
       ),
     );
-    updateDesignSourceFile(value14[INDEX_SOURCE_KEY]);
+    updateDesignSourceFile(normalizedIndex[INDEX_SOURCE_KEY]);
     missingBoards.clear();
-    for (let value18 of Object.keys(value14.boards) as Dynamic)
-      input[value18] === undefined && missingBoards.add(value18);
-    rememberArtboards(input);
-    let { [canvasMetadataFile]: value15, ...value16 }: Dynamic =
-        input,
-      value17: Dynamic = value14;
-    for (let [value18, value19] of fileDirtyVersions as Dynamic)
-      value16[value18] === undefined ||
-        value18 in value14.boards ||
-        value19 === undefined ||
-        (value17 === value14 &&
-          (value17 = {
-            ...value14,
+    for (let boardPath of Object.keys(normalizedIndex.boards) as Dynamic)
+      files[boardPath] === undefined && missingBoards.add(boardPath);
+    rememberArtboards(files);
+    let { [canvasMetadataFile]: _previousCanvasMetadata, ...contentFiles }: Dynamic =
+        files,
+      indexWithLocalBoards: Dynamic = normalizedIndex;
+    for (let [boardPath, localBoard] of fileDirtyVersions as Dynamic)
+      contentFiles[boardPath] === undefined ||
+        boardPath in normalizedIndex.boards ||
+        localBoard === undefined ||
+        (indexWithLocalBoards === normalizedIndex &&
+          (indexWithLocalBoards = {
+            ...normalizedIndex,
             boards: {
-              ...value14.boards,
+              ...normalizedIndex.boards,
             },
-            order: [...value14.order],
+            order: [...normalizedIndex.order],
           }),
-        (value17.boards[value18] = value19),
-        value17.order.push(value18));
-    value3 = buildDesignDocumentFromIndex(value17, value16);
+        (indexWithLocalBoards.boards[boardPath] = localBoard),
+        indexWithLocalBoards.order.push(boardPath));
+    lastComposedCanvasMetadata = buildDesignDocumentFromIndex(indexWithLocalBoards, contentFiles);
     return {
       files: {
-        ...value16,
-        [canvasMetadataFile]: value3,
+        ...contentFiles,
+        [canvasMetadataFile]: lastComposedCanvasMetadata,
       },
     };
   }
-  let value3: Dynamic,
-    index: Dynamic = 0,
-    value4: Dynamic,
-    value5: Dynamic,
-    value6: Dynamic,
-    index2: Dynamic = 0;
-  function scheduleLoadRetry(input?: Dynamic): Dynamic {
+  let lastComposedCanvasMetadata: Dynamic,
+    loadRetryCount: Dynamic = 0,
+    loadRetryTimer: Dynamic,
+    lastLoadFailure: Dynamic,
+    firstLoadFailureAt: Dynamic,
+    loadRetryAt: Dynamic = 0;
+  function scheduleLoadRetry(delayMs?: Dynamic): Dynamic {
     if (!disposed) {
-      if (value4 !== undefined) {
-        if (timers.now() + input >= index2) return;
-        timers.clearTimeout(value4);
+      if (loadRetryTimer !== undefined) {
+        if (timers.now() + delayMs >= loadRetryAt) return;
+        timers.clearTimeout(loadRetryTimer);
       }
-      index2 = timers.now() + input;
-      options.debug?.event("load-retry", {
-        inMs: input,
-        attempt: index,
+      loadRetryAt = timers.now() + delayMs;
+      documentOptions.debug?.event("load-retry", {
+        inMs: delayMs,
+        attempt: loadRetryCount,
         error: lastSaveError?.message,
       });
-      value4 = timers.setTimeout((): Dynamic => {
-        value4 = undefined;
+      loadRetryTimer = timers.setTimeout((): Dynamic => {
+        loadRetryTimer = undefined;
         retryFailedLoad();
-      }, input);
+      }, delayMs);
     }
   }
-  let value7: Dynamic,
-    index3: Dynamic = 0;
-  async function loadFiles(input: Dynamic = false): Promise<Dynamic> {
-    let value14: Dynamic = timers.now();
+  let offeredCrashStash: Dynamic,
+    restoreCount: Dynamic = 0;
+  async function loadFiles(isManualRetry: Dynamic = false): Promise<Dynamic> {
+    let loadStartedAt: Dynamic = timers.now();
     try {
-      let value15: Dynamic = await readBootFiles({
+      let bootFiles: Dynamic = await readBootFiles({
         port: trackedPort,
         indexPath: DESIGN_INDEX_FILE_PATH,
         timers: timers,
-        wants: (input2?: Dynamic): Dynamic => {
-          let value22: Dynamic = validateListedDesignFile(input2);
+        wants: (file?: Dynamic): Dynamic => {
+          let relativePath: Dynamic = validateListedDesignFile(file);
           return (
-            value22 !== null &&
-            !PlatformFileContentWebpAvifPattern.test(value22)
+            relativePath !== null &&
+            !BINARY_IMAGE_PATTERN.test(relativePath)
           );
         },
-        mayWrite: options.canWrite ?? true,
-        onEvent: (input2?: Dynamic): Dynamic =>
-          options.debug?.event(input2.type, input2),
-      }).catch(async (input2?: Dynamic): Promise<Dynamic> => {
-        if (classifyBootstrapFailure(input2) !== "no_index")
-          throw input2;
-        let value22: Dynamic = await trackedPort.list(),
-          value23: Dynamic =
-            input2.narrowed ??
-            isNarrowedFileContext(value22, trackedPort);
-        if (value23 && (options.canWrite ?? true))
+        mayWrite: documentOptions.canWrite ?? true,
+        onEvent: (event?: Dynamic): Dynamic =>
+          documentOptions.debug?.event(event.type, event),
+      }).catch(async (bootError?: Dynamic): Promise<Dynamic> => {
+        if (classifyBootstrapFailure(bootError) !== "no_index")
+          throw bootError;
+        let listing: Dynamic = await trackedPort.list(),
+          isPartialListing: Dynamic =
+            bootError.narrowed ??
+            isNarrowedFileContext(listing, trackedPort);
+        if (isPartialListing && (documentOptions.canWrite ?? true))
           throw Object.assign(
             new Error(
               "this canvas\u2019s file list is still partial, so whether it has an index cannot be told yet",
             ),
             {
-              cause: input2,
+              cause: bootError,
               narrowed: true,
             },
           );
-        let entries: Dynamic = new Map();
+        let textFiles: Dynamic = new Map();
         await Promise.all(
-          value22
-            .filter((input3?: Dynamic): Dynamic => {
-              let value24: Dynamic = validateListedDesignFile(input3);
+          listing
+            .filter((file?: Dynamic): Dynamic => {
+              let relativePath: Dynamic = validateListedDesignFile(file);
               return (
-                value24 !== null &&
-                !PlatformFileContentWebpAvifPattern.test(value24)
+                relativePath !== null &&
+                !BINARY_IMAGE_PATTERN.test(relativePath)
               );
             })
-            .slice(0, PlatformFileContentFilesValue - 1)
-            .map(async (input3?: Dynamic): Promise<Dynamic> => {
+            .slice(0, MAX_LISTED_PROJECT_FILES - 1)
+            .map(async (file?: Dynamic): Promise<Dynamic> => {
               try {
-                entries.set(
-                  input3.path,
+                textFiles.set(
+                  file.path,
                   await readWithRetry(
-                    (): Dynamic => trackedPort.readText(input3.path),
+                    (): Dynamic => trackedPort.readText(file.path),
                   ),
                 );
               } catch {}
             }),
         );
-        for (let value24 of value22 as Dynamic) {
-          let value25: Dynamic = validateListedDesignFile(value24);
-          value25 === null ||
-            !isArtboardFile(value25) ||
-            isDesignSystemFile(value25) ||
-            entries.has(value24.path) ||
-            value25 in indexState.get().boards ||
-            ((indexState.get().boards[value25] = {
+        for (let file of listing as Dynamic) {
+          let relativePath: Dynamic = validateListedDesignFile(file);
+          relativePath === null ||
+            !isArtboardFile(relativePath) ||
+            isDesignSystemFile(relativePath) ||
+            textFiles.has(file.path) ||
+            relativePath in indexState.get().boards ||
+            ((indexState.get().boards[relativePath] = {
               x: 0,
               y: 0,
               w: 1280,
               h: 720,
             }),
-            indexState.get().order.push(value25));
+            indexState.get().order.push(relativePath));
         }
         return {
-          listing: value22,
+          listing: listing,
           index: undefined,
-          files: entries,
-          narrowed: value23,
+          files: textFiles,
+          narrowed: isPartialListing,
         };
       });
-      hasLocalChanges = value15.narrowed === true;
+      hasPartialListing = bootFiles.narrowed === true;
       canWrite =
-        (options.canWrite ?? true) &&
-        options.port.canWrite &&
-        !hasLocalChanges;
-      for (let value22 of value15.listing as Dynamic)
-        publishedHashes.set(value22.path, value22.sha256);
-      value15.index !== undefined &&
+        (documentOptions.canWrite ?? true) &&
+        documentOptions.port.canWrite &&
+        !hasPartialListing;
+      for (let file of bootFiles.listing as Dynamic)
+        publishedHashes.set(file.path, file.sha256);
+      bootFiles.index !== undefined &&
         (indexState.loadText !== undefined
-          ? indexState.loadText(value15.index.text, value15.index.sha256)
+          ? indexState.loadText(bootFiles.index.text, bootFiles.index.sha256)
           : await indexState.load(),
-        liveHashes.set(DESIGN_INDEX_FILE_PATH, value15.index.sha256));
-      let value16: Dynamic = value15.listing
+        liveHashes.set(DESIGN_INDEX_FILE_PATH, bootFiles.index.sha256));
+      let supportedFiles: Dynamic = bootFiles.listing
           .map(
-            (input2?: Dynamic): Dynamic => [
-              input2,
-              validateListedDesignFile(input2),
+            (file?: Dynamic): Dynamic => [
+              file,
+              validateListedDesignFile(file),
             ],
           )
-          .filter((input2?: Dynamic): Dynamic => input2[1] !== null)
-          .slice(0, PlatformFileContentFilesValue - 1),
-        state2: Dynamic = {};
-      for (let [value22, value23] of value16 as Dynamic) {
-        let entry: Dynamic = value15.files.get(value22.path);
+          .filter((entry?: Dynamic): Dynamic => entry[1] !== null)
+          .slice(0, MAX_LISTED_PROJECT_FILES - 1),
+        files: Dynamic = {};
+      for (let [file, relativePath] of supportedFiles as Dynamic) {
+        let entry: Dynamic = bootFiles.files.get(file.path);
         entry !== undefined &&
-          ((state2[value23] = entry.text),
-          liveHashes.set(value22.path, entry.sha256));
+          ((files[relativePath] = entry.text),
+          liveHashes.set(file.path, entry.sha256));
       }
-      let value17: Dynamic = value16.filter(
-          ([, input2]: Dynamic): Dynamic =>
-            PlatformFileContentWebpAvifPattern.test(input2),
+      let binaryEntries: Dynamic = supportedFiles.filter(
+          ([, relativePath]: Dynamic): Dynamic =>
+            BINARY_IMAGE_PATTERN.test(relativePath),
         ),
-        value18: Dynamic = await readFiles(
-          value17.map(([, input2]: Dynamic): Dynamic => input2),
+        binaryFiles: Dynamic = await readFiles(
+          binaryEntries.map(([, relativePath]: Dynamic): Dynamic => relativePath),
         );
-      for (let [value22, value23] of value17 as Dynamic)
-        value18[value23] !== undefined &&
-          ((state2[value23] = value18[value23]),
-          liveHashes.set(value22.path, value22.sha256));
+      for (let [file, relativePath] of binaryEntries as Dynamic)
+        binaryFiles[relativePath] !== undefined &&
+          ((files[relativePath] = binaryFiles[relativePath]),
+          liveHashes.set(file.path, file.sha256));
       if (disposed) return;
-      let value19: Dynamic = composeFromFiles(state2);
+      let content: Dynamic = composeFromFiles(files);
       rememberManifestDeletions(
         parseCanvasMetadata(
-          value19.files[canvasMetadataFile],
-          value19.files,
+          content.files[canvasMetadataFile],
+          content.files,
         ),
       );
-      let value20: Dynamic = indexState.get()[INDEX_LEFT_OUT_KEY],
-        callback19: Dynamic = (input2?: Dynamic): Dynamic =>
-          Object.entries(value19.files).some(
-            ([input3, input4]: Dynamic): Dynamic =>
-              isArtboardFile(input3) &&
-              input4.includes(input2.slice(input2.lastIndexOf("/") + 1)),
+      let omittedFiles: Dynamic = indexState.get()[INDEX_LEFT_OUT_KEY],
+        artboardReferencesFile: Dynamic = (filePath?: Dynamic): Dynamic =>
+          Object.entries(content.files).some(
+            ([boardPath, boardHtml]: Dynamic): Dynamic =>
+              isArtboardFile(boardPath) &&
+              boardHtml.includes(filePath.slice(filePath.lastIndexOf("/") + 1)),
           );
-      if (canWrite && Array.isArray(value20))
-        for (let value22 of value20.slice(0, 3) as Dynamic)
-          typeof value22 == "string" &&
-            !values3.has(value22) &&
-            callback19(value22) &&
-            (values3.add(value22),
-            options.onNotice?.(describeUnsavableDesignFile(value22)));
+      if (canWrite && Array.isArray(omittedFiles))
+        for (let filePath of omittedFiles.slice(0, 3) as Dynamic)
+          typeof filePath == "string" &&
+            !reportedUnsupportedPaths.has(filePath) &&
+            artboardReferencesFile(filePath) &&
+            (reportedUnsupportedPaths.add(filePath),
+            documentOptions.onNotice?.(describeUnsavableDesignFile(filePath)));
       loadedFiles = {
-        ...value19.files,
+        ...content.files,
       };
       savedFiles = {
-        ...state2,
+        ...files,
       };
-      let value21: Dynamic =
+      let title: Dynamic =
         normalizeDocumentTitle(indexState.get().title.trim()) ??
         state.title;
       state = {
         ...state,
-        title: value21,
-        content: value19,
+        title: title,
+        content: content,
       };
       loadState = "live";
-      index = 0;
-      value6 = undefined;
-      value5 = undefined;
-      if (options.saveStash !== undefined && canWrite) {
-        let values5: Dynamic = new Set(
-          value15.listing.map((input2?: Dynamic): Dynamic => input2.path),
+      loadRetryCount = 0;
+      firstLoadFailureAt = undefined;
+      lastLoadFailure = undefined;
+      if (documentOptions.saveStash !== undefined && canWrite) {
+        let listedPaths: Dynamic = new Set(
+          bootFiles.listing.map((file?: Dynamic): Dynamic => file.path),
         );
-        value7 = await applyCrashStashEdits(
-          options.saveStash,
-          (input2?: Dynamic): Dynamic =>
-            input2 === DESIGN_INDEX_FILE_PATH
+        offeredCrashStash = await applyCrashStashEdits(
+          documentOptions.saveStash,
+          (filePath?: Dynamic): Dynamic =>
+            filePath === DESIGN_INDEX_FILE_PATH
               ? indexState.serialize()
-              : (value15.files.get(input2)?.text ??
-                (values5.has(input2) ? undefined : null)),
+              : (bootFiles.files.get(filePath)?.text ??
+                (listedPaths.has(filePath) ? undefined : null)),
         );
-        let value22: Dynamic = value7?.edits.find(
-            (input2?: Dynamic): Dynamic =>
-              input2.path === DESIGN_INDEX_FILE_PATH,
+        let stashedIndex: Dynamic = offeredCrashStash?.edits.find(
+            (edit?: Dynamic): Dynamic =>
+              edit.path === DESIGN_INDEX_FILE_PATH,
           ),
-          flag2: Dynamic = false;
+          indexAlreadyMatches: Dynamic = false;
         try {
-          flag2 =
-            value22 !== undefined &&
-            value22.text ===
+          indexAlreadyMatches =
+            stashedIndex !== undefined &&
+            stashedIndex.text ===
               serializeDocumentIndex(
-                parseCurrentManifest(value19.files, true),
-                value21,
+                parseCurrentManifest(content.files, true),
+                title,
               );
         } catch {}
-        if (value7 !== undefined && value22 !== undefined && flag2) {
-          let value23: Dynamic = value7.edits.filter(
-            (input2?: Dynamic): Dynamic => input2 !== value22,
+        if (offeredCrashStash !== undefined && stashedIndex !== undefined && indexAlreadyMatches) {
+          let remainingEdits: Dynamic = offeredCrashStash.edits.filter(
+            (edit?: Dynamic): Dynamic => edit !== stashedIndex,
           );
-          value23.length === 0
-            ? ((value7 = undefined), await options.saveStash.clearOffered())
-            : (value7 = {
-                ...value7,
-                edits: value23,
+          remainingEdits.length === 0
+            ? ((offeredCrashStash = undefined), await documentOptions.saveStash.clearOffered())
+            : (offeredCrashStash = {
+                ...offeredCrashStash,
+                edits: remainingEdits,
               });
         }
       }
-    } catch (value15: Dynamic) {
-      classifyBootstrapFailure(value15) === "access_revoked" &&
-        options.saveStash?.clearArtifact();
-      value6 ??= timers.now();
-      let value16: Dynamic = getBootstrapRetryDelay(
-        value15,
-        index,
+    } catch (error: Dynamic) {
+      classifyBootstrapFailure(error) === "access_revoked" &&
+        documentOptions.saveStash?.clearArtifact();
+      firstLoadFailureAt ??= timers.now();
+      let delayMs: Dynamic = getBootstrapRetryDelay(
+        error,
+        loadRetryCount,
       );
       console.error(
         "design (files): this canvas\u2019s files could not be loaded" +
-          (value16 === undefined ? "" : " (it will be tried again)"),
-        value15,
+          (delayMs === undefined ? "" : " (it will be tried again)"),
+        error,
       );
       loadState = "failed";
-      value5 = {
-        error: value15,
-        at: value14,
+      lastLoadFailure = {
+        error: error,
+        at: loadStartedAt,
       };
       lastSaveError = {
         code: "timeout",
         message:
-          value15 instanceof Error
-            ? value15.message
-            : String(value15?.message ?? value15),
+          error instanceof Error
+            ? error.message
+            : String(error?.message ?? error),
       };
-      value16 !== undefined && (input || index++, scheduleLoadRetry(value16));
+      delayMs !== undefined && (isManualRetry || loadRetryCount++, scheduleLoadRetry(delayMs));
     }
-    for (let value15 of [...loadListeners] as Dynamic) value15();
+    for (let listener of [...loadListeners] as Dynamic) listener();
     notifyContent(true);
     notifySave();
-    value7 !== undefined && loadState === "live" && offerCrashStash();
+    offeredCrashStash !== undefined && loadState === "live" && offerCrashStash();
   }
-  let value8: Dynamic;
+  let localSaveTimer: Dynamic;
   function scheduleLocalSave(): Dynamic {
-    value8 !== undefined ||
+    localSaveTimer !== undefined ||
       !canWrite ||
       loadState !== "live" ||
-      ((value8 = timers.setTimeout((): Dynamic => {
-        value8 = undefined;
+      ((localSaveTimer = timers.setTimeout((): Dynamic => {
+        localSaveTimer = undefined;
         publishLocalChanges();
       }, 0)),
       notifySave());
   }
-  let callback7: Dynamic = (input?: Dynamic): Dynamic =>
-    publishedHashes.has(input) &&
-    (publishedHashes.get(input) ?? undefined) !== liveHashes.get(input) &&
-    liveHashes.has(input);
+  let hasNewerPublishedHash: Dynamic = (filePath?: Dynamic): Dynamic =>
+    publishedHashes.has(filePath) &&
+    (publishedHashes.get(filePath) ?? undefined) !== liveHashes.get(filePath) &&
+    liveHashes.has(filePath);
   function parseCurrentManifest(
-    input?: Dynamic,
-    options2: Dynamic = false,
+    files?: Dynamic,
+    forComparison: Dynamic = false,
   ): Dynamic {
-    let value14: Dynamic = input[canvasMetadataFile],
-      value15: Dynamic = parseCanvasMetadata(value14, input),
-      value16: Dynamic = parseIndexDeletionSets(value14),
-      entry: Dynamic = indexState.get();
-    if (value14 !== value3 && !options2) {
-      for (let value24 of value16.notes as Dynamic)
-        keptNoteIds.has(value24) || removedNoteIds.add(value24);
-      for (let value24 of value16.pages as Dynamic)
-        keptPageIds.has(value24) || removedPageIds.add(value24);
+    let metadataText: Dynamic = files[canvasMetadataFile],
+      parsedManifest: Dynamic = parseCanvasMetadata(metadataText, files),
+      deletions: Dynamic = parseIndexDeletionSets(metadataText),
+      currentIndex: Dynamic = indexState.get();
+    if (metadataText !== lastComposedCanvasMetadata && !forComparison) {
+      for (let noteId of deletions.notes as Dynamic)
+        keptNoteIds.has(noteId) || removedNoteIds.add(noteId);
+      for (let pageId of deletions.pages as Dynamic)
+        keptPageIds.has(pageId) || removedPageIds.add(pageId);
     }
-    let values5: Dynamic = new Set(missingBoards),
-      values6: Dynamic = new Set(),
-      values7: Dynamic = new Set(),
-      flag2: Dynamic = false;
-    for (let value24 of Object.keys(entry.boards) as Dynamic)
-      !value16.boards.has(value24) &&
-        !values2.has(value24) &&
-        (values5.add(value24),
-        !missingBoards.has(value24) &&
-          !isDesignSystemFile(value24) &&
-          (flag2 = true));
-    for (let value24 of Object.keys(entry.notes) as Dynamic)
-      !value16.notes.has(value24) &&
-        !removedNoteIds.has(value24) &&
-        (values6.add(value24), (flag2 = true));
-    for (let value24 of callback(entry.pages) as Dynamic)
-      !value16.pages.has(value24.id) &&
-        !removedPageIds.has(value24.id) &&
-        (values7.add(value24.id), (flag2 = true));
-    let value17: Dynamic = [...values5]
+    let keepBoards: Dynamic = new Set(missingBoards),
+      keepNotes: Dynamic = new Set(),
+      keepPages: Dynamic = new Set(),
+      foundUnrecordedDeletions: Dynamic = false;
+    for (let boardPath of Object.keys(currentIndex.boards) as Dynamic)
+      !deletions.boards.has(boardPath) &&
+        !locallyDeletedBoards.has(boardPath) &&
+        (keepBoards.add(boardPath),
+        !missingBoards.has(boardPath) &&
+          !isDesignSystemFile(boardPath) &&
+          (foundUnrecordedDeletions = true));
+    for (let noteId of Object.keys(currentIndex.notes) as Dynamic)
+      !deletions.notes.has(noteId) &&
+        !removedNoteIds.has(noteId) &&
+        (keepNotes.add(noteId), (foundUnrecordedDeletions = true));
+    for (let page of readIndexPages(currentIndex.pages) as Dynamic)
+      !deletions.pages.has(page.id) &&
+        !removedPageIds.has(page.id) &&
+        (keepPages.add(page.id), (foundUnrecordedDeletions = true));
+    let deletionSignature: Dynamic = [...keepBoards]
       .filter(
-        (input2?: Dynamic): Dynamic =>
-          !missingBoards.has(input2) &&
-          !isDesignSystemFile(input2),
+        (boardPath?: Dynamic): Dynamic =>
+          !missingBoards.has(boardPath) &&
+          !isDesignSystemFile(boardPath),
       )
-      .concat([...values6], [...values7])
+      .concat([...keepNotes], [...keepPages])
       .sort().join(`
 `);
-    options2 ||
-      (flag2 && value17 !== text && scheduleFileSave(), (text = value17));
-    let items2: Dynamic = [],
-      value18: Dynamic = value15.artboards.filter(
-        (input2?: Dynamic): Dynamic =>
-          fileDirtyVersions.has(input2.file)
-            ? (value16.boards.has(input2.file) &&
-                !boardClashes.has(input2.file) &&
-                !heldRemoteFiles.has(input2.file) &&
-                !resolvingClashes.has(input2.file) &&
-                !callback8(input2.file) &&
-                items2.push(input2.file),
+    forComparison ||
+      (foundUnrecordedDeletions && deletionSignature !== previousDeletionSignature && scheduleFileSave(), (previousDeletionSignature = deletionSignature));
+    let excludedFromWriteback: Dynamic = [],
+      artboards: Dynamic = parsedManifest.artboards.filter(
+        (artboard?: Dynamic): Dynamic =>
+          fileDirtyVersions.has(artboard.file)
+            ? (deletions.boards.has(artboard.file) &&
+                !boardClashes.has(artboard.file) &&
+                !heldRemoteFiles.has(artboard.file) &&
+                !resolvingClashes.has(artboard.file) &&
+                !shouldHoldRemoteFile(artboard.file) &&
+                excludedFromWriteback.push(artboard.file),
               false)
-            : !(values5.has(input2.file) && !value16.boards.has(input2.file)),
+            : !(keepBoards.has(artboard.file) && !deletions.boards.has(artboard.file)),
       ),
-      value19: Dynamic = value15.annotations?.filter(
-        (input2?: Dynamic): Dynamic =>
-          keptNoteIds.has(input2.id)
-            ? (value16.notes.has(input2.id) &&
-                items2.push("note " + input2.id),
+      annotations: Dynamic = parsedManifest.annotations?.filter(
+        (annotation?: Dynamic): Dynamic =>
+          keptNoteIds.has(annotation.id)
+            ? (deletions.notes.has(annotation.id) &&
+                excludedFromWriteback.push("note " + annotation.id),
               false)
             : true,
       ),
-      value20: Dynamic = value15.pages?.filter(
-        (input2?: Dynamic): Dynamic =>
-          keptPageIds.has(input2.id)
-            ? (value16.pages.has(input2.id) &&
-                items2.push("page " + input2.id),
+      pages: Dynamic = parsedManifest.pages?.filter(
+        (page?: Dynamic): Dynamic =>
+          keptPageIds.has(page.id)
+            ? (deletions.pages.has(page.id) &&
+                excludedFromWriteback.push("page " + page.id),
               false)
             : true,
       );
-    items2.length > 0 &&
-      !options2 &&
-      (options.debug?.event("delete-wins", {
-        notWrittenBack: items2,
+    excludedFromWriteback.length > 0 &&
+      !forComparison &&
+      (documentOptions.debug?.event("delete-wins", {
+        notWrittenBack: excludedFromWriteback,
       }),
       scheduleFileSave());
     let {
-      annotations: value21,
-      pages: value22,
-      ...value23
-    }: Dynamic = value15;
+      annotations: _originalAnnotations,
+      pages: _originalPages,
+      ...restOfManifest
+    }: Dynamic = parsedManifest;
     return {
       manifest: {
-        ...value23,
-        artboards: value18,
-        ...(value19 !== undefined && value19.length > 0
+        ...restOfManifest,
+        artboards: artboards,
+        ...(annotations !== undefined && annotations.length > 0
           ? {
-              annotations: value19,
+              annotations: annotations,
             }
           : {}),
-        ...(value20 !== undefined && value20.length > 0
+        ...(pages !== undefined && pages.length > 0
           ? {
-              pages: value20,
+              pages: pages,
             }
           : {}),
       },
-      keepBoards: values5,
-      keepNotes: values6,
-      keepPages: values7,
+      keepBoards: keepBoards,
+      keepNotes: keepNotes,
+      keepPages: keepPages,
     };
   }
   function serializeDocumentIndex(
-    input?: Dynamic,
-    options2?: Dynamic,
+    parsed?: Dynamic,
+    title?: Dynamic,
   ): Dynamic {
-    let value14: Dynamic = cloneIndexValue(indexState.get());
+    let indexCopy: Dynamic = cloneIndexValue(indexState.get());
     updateDesignIndexFromDocument(
-      value14,
-      input.manifest,
-      options2,
-      input.keepBoards,
-      input.keepNotes,
-      input.keepPages,
+      indexCopy,
+      parsed.manifest,
+      title,
+      parsed.keepBoards,
+      parsed.keepNotes,
+      parsed.keepPages,
     );
-    return stringifyCanonicalIndex(value14);
+    return stringifyCanonicalIndex(indexCopy);
   }
-  let values2: Dynamic = new Set();
-  function rememberManifestDeletions(input?: Dynamic): Dynamic {
-    for (let value14 of (input.annotations ?? []) as Dynamic)
-      keptNoteIds.has(value14.id) || removedNoteIds.add(value14.id);
-    for (let value14 of (input.pages ?? []) as Dynamic)
-      keptPageIds.has(value14.id) || removedPageIds.add(value14.id);
+  let locallyDeletedBoards: Dynamic = new Set();
+  function rememberManifestDeletions(manifest?: Dynamic): Dynamic {
+    for (let annotation of (manifest.annotations ?? []) as Dynamic)
+      keptNoteIds.has(annotation.id) || removedNoteIds.add(annotation.id);
+    for (let page of (manifest.pages ?? []) as Dynamic)
+      keptPageIds.has(page.id) || removedPageIds.add(page.id);
   }
-  let text: Dynamic = "",
-    values3: Dynamic = new Set(),
-    values4: Dynamic = new Set(),
-    value9: Dynamic;
+  let previousDeletionSignature: Dynamic = "",
+    reportedUnsupportedPaths: Dynamic = new Set(),
+    reportedReservedPaths: Dynamic = new Set(),
+    fileSaveTimer: Dynamic;
   function scheduleFileSave(): Dynamic {
-    value9 !== undefined ||
+    fileSaveTimer !== undefined ||
       disposed ||
-      (value9 = timers.setTimeout((): Dynamic => {
-        value9 = undefined;
+      (fileSaveTimer = timers.setTimeout((): Dynamic => {
+        fileSaveTimer = undefined;
         !(disposed || loadState !== "live") &&
-          (value8 !== undefined &&
-            (timers.clearTimeout(value8),
-            (value8 = undefined),
+          (localSaveTimer !== undefined &&
+            (timers.clearTimeout(localSaveTimer),
+            (localSaveTimer = undefined),
             publishLocalChanges()),
           adoptRemoteFiles({
             ...state.content.files,
@@ -1061,389 +1061,389 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
   function publishLocalChanges(): Dynamic {
     if (disposed || !canWrite) return;
     let files: Dynamic = state.content.files,
-      flag2: Dynamic = false;
-    for (let [value20, value21] of Object.entries(files) as Dynamic) {
+      queuedEdits: Dynamic = false;
+    for (let [relativePath, fileContent] of Object.entries(files) as Dynamic) {
       if (
-        value20 === canvasMetadataFile ||
-        loadedFiles[value20] === value21
+        relativePath === canvasMetadataFile ||
+        loadedFiles[relativePath] === fileContent
       )
         continue;
-      if (isMissingRequiredDesignFile(value20)) {
-        loadedFiles[value20] = value21;
-        values4.has(value20) ||
-          (values4.add(value20),
-          options.onNotice?.(describeReservedDesignFilename(value20)));
+      if (isMissingRequiredDesignFile(relativePath)) {
+        loadedFiles[relativePath] = fileContent;
+        reportedReservedPaths.has(relativePath) ||
+          (reportedReservedPaths.add(relativePath),
+          documentOptions.onNotice?.(describeReservedDesignFilename(relativePath)));
         continue;
       }
-      let value22: Dynamic = toProjectContentPath(value20);
-      if (!resolvingClashes.has(value20)) {
-        if (fileDirtyVersions.has(value20) && !boardClashes.has(value20)) {
-          if (callback8(value20)) {
-            heldRemoteFiles.add(value20);
+      let absolutePath: Dynamic = toProjectContentPath(relativePath);
+      if (!resolvingClashes.has(relativePath)) {
+        if (fileDirtyVersions.has(relativePath) && !boardClashes.has(relativePath)) {
+          if (shouldHoldRemoteFile(relativePath)) {
+            heldRemoteFiles.add(relativePath);
             scheduleHeldRemoteCheck();
             continue;
           }
-          handleBoardClash(value22, null, "remote-while-editing");
+          handleBoardClash(absolutePath, null, "remote-while-editing");
           continue;
         }
-        if (boardClashes.has(value20)) {
-          let entry2: Dynamic = boardClashes.get(value20);
-          entry2.ask !== undefined &&
-            entry2.askedAt !== undefined &&
-            timers.now() - entry2.askedAt > 2e4 &&
-            ((entry2.askedAt = timers.now()), entry2.ask());
+        if (boardClashes.has(relativePath)) {
+          let clash: Dynamic = boardClashes.get(relativePath);
+          clash.ask !== undefined &&
+            clash.askedAt !== undefined &&
+            timers.now() - clash.askedAt > 2e4 &&
+            ((clash.askedAt = timers.now()), clash.ask());
           continue;
         }
-        if (callback7(value22)) {
-          if (callback8(value20)) {
-            heldRemoteFiles.add(value20);
+        if (hasNewerPublishedHash(absolutePath)) {
+          if (shouldHoldRemoteFile(relativePath)) {
+            heldRemoteFiles.add(relativePath);
             scheduleHeldRemoteCheck();
             continue;
           }
           handleBoardClash(
-            value22,
-            publishedHashes.get(value22) ?? null,
+            absolutePath,
+            publishedHashes.get(absolutePath) ?? null,
             "remote-while-editing",
           );
           continue;
         }
-        loadedFiles[value20] = value21;
-        missingBoards.delete(value20);
-        if (!canSaveDesignFile(value20)) {
-          values3.has(value20) ||
-            (values3.add(value20),
-            options.onNotice?.(describeUnsupportedDesignFile(value20)));
+        loadedFiles[relativePath] = fileContent;
+        missingBoards.delete(relativePath);
+        if (!canSaveDesignFile(relativePath)) {
+          reportedUnsupportedPaths.has(relativePath) ||
+            (reportedUnsupportedPaths.add(relativePath),
+            documentOptions.onNotice?.(describeUnsupportedDesignFile(relativePath)));
           continue;
         }
-        value.markDirty(
-          value22,
+        publisher.markDirty(
+          absolutePath,
           (): Dynamic =>
             encodeDesignPortFile(
-              value20,
-              state.content.files[value20] ?? value21,
+              relativePath,
+              state.content.files[relativePath] ?? fileContent,
             ),
-          liveHashes.get(value22) ?? null,
+          liveHashes.get(absolutePath) ?? null,
         );
-        flag2 = true;
+        queuedEdits = true;
       }
     }
-    for (let value20 of Object.keys(loadedFiles) as Dynamic) {
-      if (value20 === canvasMetadataFile || value20 in files)
+    for (let relativePath of Object.keys(loadedFiles) as Dynamic) {
+      if (relativePath === canvasMetadataFile || relativePath in files)
         continue;
-      delete loadedFiles[value20];
-      let value21: Dynamic = toProjectContentPath(value20);
-      !canSaveDesignFile(value20) ||
-        isMissingRequiredDesignFile(value20) ||
-        (value.markDirty(
-          value21,
+      delete loadedFiles[relativePath];
+      let absolutePath: Dynamic = toProjectContentPath(relativePath);
+      !canSaveDesignFile(relativePath) ||
+        isMissingRequiredDesignFile(relativePath) ||
+        (publisher.markDirty(
+          absolutePath,
           (): Dynamic => null,
-          liveHashes.get(value21) ?? null,
+          liveHashes.get(absolutePath) ?? null,
         ),
-        isArtboardFile(value20) && values2.add(value20),
-        (flag2 = true));
+        isArtboardFile(relativePath) && locallyDeletedBoards.add(relativePath),
+        (queuedEdits = true));
     }
-    for (let value20 of [...values2] as Dynamic)
-      value20 in files && values2.delete(value20);
-    let value14: Dynamic = parseCurrentManifest(files),
+    for (let boardPath of [...locallyDeletedBoards] as Dynamic)
+      boardPath in files && locallyDeletedBoards.delete(boardPath);
+    let parsed: Dynamic = parseCurrentManifest(files),
       {
-        manifest: value15,
-        keepBoards: value16,
-        keepNotes: value17,
-        keepPages: value18,
-      }: Dynamic = value14,
-      value19: Dynamic = indexState.serialize(),
-      callback19: Dynamic = (input?: Dynamic): Dynamic =>
-        serializeDocumentIndex(value14, input) !== value19;
+        manifest: manifest,
+        keepBoards: keepBoards,
+        keepNotes: keepNotes,
+        keepPages: keepPages,
+      }: Dynamic = parsed,
+      currentIndexText: Dynamic = indexState.serialize(),
+      wouldChangeIndex: Dynamic = (title?: Dynamic): Dynamic =>
+        serializeDocumentIndex(parsed, title) !== currentIndexText;
     !(
       indexState.baseSha() === null &&
       state.title === defaultTitle &&
-      !callback19(indexState.get().title)
+      !wouldChangeIndex(indexState.get().title)
     ) &&
-      callback19(state.title) &&
+      wouldChangeIndex(state.title) &&
       (indexState.update(
-        (input?: Dynamic): Dynamic =>
+        (index?: Dynamic): Dynamic =>
           updateDesignIndexFromDocument(
-            input,
-            value15,
+            index,
+            manifest,
             state.title,
-            value16,
-            value17,
-            value18,
+            keepBoards,
+            keepNotes,
+            keepPages,
           ),
       ),
-      (flag2 = true));
-    let entry: Dynamic = indexState.get();
-    for (let value20 of [...removedNoteIds] as Dynamic)
-      value20 in entry.notes || removedNoteIds.delete(value20);
-    for (let value20 of [...removedPageIds] as Dynamic)
-      callback(entry.pages).some(
-        (input?: Dynamic): Dynamic => input.id === value20,
-      ) || removedPageIds.delete(value20);
-    for (let value20 of [...values2] as Dynamic)
-      value20 in entry.boards || values2.delete(value20);
+      (queuedEdits = true));
+    let updatedIndex: Dynamic = indexState.get();
+    for (let noteId of [...removedNoteIds] as Dynamic)
+      noteId in updatedIndex.notes || removedNoteIds.delete(noteId);
+    for (let pageId of [...removedPageIds] as Dynamic)
+      readIndexPages(updatedIndex.pages).some(
+        (page?: Dynamic): Dynamic => page.id === pageId,
+      ) || removedPageIds.delete(pageId);
+    for (let boardPath of [...locallyDeletedBoards] as Dynamic)
+      boardPath in updatedIndex.boards || locallyDeletedBoards.delete(boardPath);
     loadedFiles[canvasMetadataFile] =
       files[canvasMetadataFile] ??
       loadedFiles[canvasMetadataFile] ??
       "";
-    flag2 && value.commit();
+    queuedEdits && publisher.commit();
     notifySave();
   }
-  function replaceDocument(input?: Dynamic): Dynamic {
-    state = input;
-    rememberArtboards(input.content.files);
+  function replaceDocument(nextDocument?: Dynamic): Dynamic {
+    state = nextDocument;
+    rememberArtboards(nextDocument.content.files);
     notifyContent(false);
     scheduleLocalSave();
   }
-  let callback8: Dynamic = (input?: Dynamic): Dynamic =>
-      options.holdRemote?.(input) === true,
-    callback9: Dynamic = (input?: Dynamic): Dynamic =>
-      state.content.files[input] !== loadedFiles[input];
-  function adoptRemoteFiles(input?: Dynamic): Dynamic {
-    for (let value16 of [...value.unsendable().keys()] as Dynamic) {
-      let value17: Dynamic = fromProjectContentPath(
-        value16,
+  let shouldHoldRemoteFile: Dynamic = (relativePath?: Dynamic): Dynamic =>
+      documentOptions.holdRemote?.(relativePath) === true,
+    hasUnsavedFileEdits: Dynamic = (relativePath?: Dynamic): Dynamic =>
+      state.content.files[relativePath] !== loadedFiles[relativePath];
+  function adoptRemoteFiles(files?: Dynamic): Dynamic {
+    for (let absolutePath of [...publisher.unsendable().keys()] as Dynamic) {
+      let relativePath: Dynamic = fromProjectContentPath(
+        absolutePath,
         "design",
       );
-      value17 !== undefined &&
-        (input[value17] === undefined ||
-          input[value17] === savedFiles[value17]) &&
-        value.withdraw(value16);
+      relativePath !== undefined &&
+        (files[relativePath] === undefined ||
+          files[relativePath] === savedFiles[relativePath]) &&
+        publisher.withdraw(absolutePath);
     }
-    let value14: Dynamic = composeFromFiles(input);
+    let content: Dynamic = composeFromFiles(files);
     loadedFiles = {
       ...loadedFiles,
-      [canvasMetadataFile]: value14.files[canvasMetadataFile],
+      [canvasMetadataFile]: content.files[canvasMetadataFile],
     };
-    let value15: Dynamic =
+    let title: Dynamic =
       normalizeDocumentTitle(indexState.get().title.trim()) ??
       state.title;
     state = {
       ...state,
-      title: value15,
-      content: value14,
+      title: title,
+      content: content,
     };
     notifyContent(true);
   }
-  async function handleRemoteUpdate(input?: Dynamic): Promise<Dynamic> {
+  async function handleRemoteUpdate(update?: Dynamic): Promise<Dynamic> {
     if (loadState === "failed") {
-      let value22: Dynamic =
-        value5 === undefined
+      let retryDelayMs: Dynamic =
+        lastLoadFailure === undefined
           ? 0
           : getRestartDelay(
-              value5.error,
-              input,
+              lastLoadFailure.error,
+              update,
               DESIGN_INDEX_FILE_PATH,
-              timers.now() - value5.at,
+              timers.now() - lastLoadFailure.at,
             );
-      value22 === 0
+      retryDelayMs === 0
         ? retryFailedLoad()
-        : value22 !== undefined && scheduleLoadRetry(value22);
+        : retryDelayMs !== undefined && scheduleLoadRetry(retryDelayMs);
     }
     loadState === "loading" &&
-      (await (value11 ?? value13).catch((): Dynamic => {}));
+      (await (retryLoadPromise ?? initialLoadPromise).catch((): Dynamic => {}));
     if (disposed || loadState !== "live") return;
-    let value14: Dynamic = timers.now(),
-      callback19: Dynamic = (): Dynamic => {
-        value8 !== undefined &&
-          (timers.clearTimeout(value8),
-          (value8 = undefined),
+    let applyStartedAt: Dynamic = timers.now(),
+      flushLocalSave: Dynamic = (): Dynamic => {
+        localSaveTimer !== undefined &&
+          (timers.clearTimeout(localSaveTimer),
+          (localSaveTimer = undefined),
           publishLocalChanges());
       };
-    callback19();
-    let values5: Dynamic = new Set(),
-      value15: Dynamic = input.changed.filter(
-        (input2?: Dynamic): Dynamic =>
-          input2.sha256 === null
-            ? liveHashes.has(input2.path) ||
-              (publishedHashes.get(input2.path) ?? null) !== null
-            : liveHashes.get(input2.path) !== input2.sha256,
+    flushLocalSave();
+    let retainedDeletedArtboards: Dynamic = new Set(),
+      changes: Dynamic = update.changed.filter(
+        (change?: Dynamic): Dynamic =>
+          change.sha256 === null
+            ? liveHashes.has(change.path) ||
+              (publishedHashes.get(change.path) ?? null) !== null
+            : liveHashes.get(change.path) !== change.sha256,
       ),
-      value16: Dynamic = value15.filter(
-        (input2?: Dynamic): Dynamic =>
-          input2.path !== DESIGN_INDEX_FILE_PATH &&
-          ownChangedHashes.has(input2.path) &&
-          ownChangedHashes.get(input2.path) ===
-            (liveHashes.get(input2.path) ?? null) &&
-          input2.sha256 !== ownChangedHashes.get(input2.path),
+      possibleStaleChanges: Dynamic = changes.filter(
+        (change?: Dynamic): Dynamic =>
+          change.path !== DESIGN_INDEX_FILE_PATH &&
+          ownChangedHashes.has(change.path) &&
+          ownChangedHashes.get(change.path) ===
+            (liveHashes.get(change.path) ?? null) &&
+          change.sha256 !== ownChangedHashes.get(change.path),
       );
-    if (value16.length > 0) {
-      let liveSha: Dynamic = options.port.liveSha,
-        wroteSinceAdopt: Dynamic = options.port.wroteSinceAdopt,
-        value22: Dynamic =
+    if (possibleStaleChanges.length > 0) {
+      let liveSha: Dynamic = documentOptions.port.liveSha,
+        wroteSinceAdopt: Dynamic = documentOptions.port.wroteSinceAdopt,
+        safeWriteCheck: Dynamic =
           typeof wroteSinceAdopt != "function"
             ? undefined
             : {
-                call: (input2?: Dynamic, options2?: Dynamic): Dynamic => {
+                call: (_receiver?: Dynamic, filePath?: Dynamic): Dynamic => {
                   try {
                     return (
-                      wroteSinceAdopt.call(options.port, options2) === true
+                      wroteSinceAdopt.call(documentOptions.port, filePath) === true
                     );
                   } catch {
                     return false;
                   }
                 },
               },
-        callback20: Dynamic = (input2?: Dynamic): Dynamic =>
-          value22 !== undefined && value22.call(options.port, input2) === true
-            ? liveSha?.call(options.port, input2)
+        readShaAfterOwnWrite: Dynamic = (filePath?: Dynamic): Dynamic =>
+          safeWriteCheck !== undefined && safeWriteCheck.call(documentOptions.port, filePath) === true
+            ? liveSha?.call(documentOptions.port, filePath)
             : undefined,
-        value23: Dynamic;
-      value22 !== undefined &&
-        value16.some(
-          (input2?: Dynamic): Dynamic =>
-            value22.call(options.port, input2.path) === true &&
-            liveSha?.call(options.port, input2.path) === undefined,
+        listedShas: Dynamic;
+      safeWriteCheck !== undefined &&
+        possibleStaleChanges.some(
+          (change?: Dynamic): Dynamic =>
+            safeWriteCheck.call(documentOptions.port, change.path) === true &&
+            liveSha?.call(documentOptions.port, change.path) === undefined,
         ) &&
-        (value23 = await trackedPort.list().then(
-          (input2?: Dynamic): Dynamic =>
+        (listedShas = await trackedPort.list().then(
+          (listing?: Dynamic): Dynamic =>
             new Map(
-              input2.map(
-                (input3?: Dynamic): Dynamic => [input3.path, input3.sha256],
+              listing.map(
+                (file?: Dynamic): Dynamic => [file.path, file.sha256],
               ),
             ),
           (): Dynamic => {},
         ));
       if (disposed) return;
-      let state3: Dynamic = {
-        get: (input2?: Dynamic): Dynamic => {
+      let latestShas: Dynamic = {
+        get: (filePath?: Dynamic): Dynamic => {
           if (
-            value22 === undefined ||
-            value22.call(options.port, input2) !== true
+            safeWriteCheck === undefined ||
+            safeWriteCheck.call(documentOptions.port, filePath) !== true
           )
             return;
-          let value24: Dynamic = callback20(input2);
-          return value24 !== undefined
-            ? value24
-            : value23 === undefined
+          let currentSha: Dynamic = readShaAfterOwnWrite(filePath);
+          return currentSha !== undefined
+            ? currentSha
+            : listedShas === undefined
               ? undefined
-              : (value23.get(input2) ?? null);
+              : (listedShas.get(filePath) ?? null);
         },
       };
       {
-        let value24: Dynamic = value16.filter(
-          (input2?: Dynamic): Dynamic =>
-            state3.get(input2.path) !== undefined &&
-            (state3.get(input2.path) ?? null) ===
-              ownChangedHashes.get(input2.path),
+        let staleChanges: Dynamic = possibleStaleChanges.filter(
+          (change?: Dynamic): Dynamic =>
+            latestShas.get(change.path) !== undefined &&
+            (latestShas.get(change.path) ?? null) ===
+              ownChangedHashes.get(change.path),
         );
-        value15 = value15.filter(
-          (input2?: Dynamic): Dynamic => !value24.includes(input2),
+        changes = changes.filter(
+          (change?: Dynamic): Dynamic => !staleChanges.includes(change),
         );
-        for (let value25 of value24 as Dynamic) {
-          let value26: Dynamic = fromProjectContentPath(
-            value25.path,
+        for (let change of staleChanges as Dynamic) {
+          let relativePath: Dynamic = fromProjectContentPath(
+            change.path,
             "design",
           );
-          value25.sha256 === null &&
-            value26 !== undefined &&
-            isArtboardFile(value26) &&
-            values5.add(value26);
+          change.sha256 === null &&
+            relativePath !== undefined &&
+            isArtboardFile(relativePath) &&
+            retainedDeletedArtboards.add(relativePath);
         }
       }
     }
-    for (let value22 of value15 as Dynamic)
-      publishedHashes.set(value22.path, value22.sha256);
-    let values6: Dynamic = new Set(),
-      items2: Dynamic = [],
-      items3: Dynamic = [];
-    for (let value22 of value15 as Dynamic) {
-      if (value22.path === DESIGN_INDEX_FILE_PATH) continue;
-      let value23: Dynamic = fromProjectContentPath(
-        value22.path,
+    for (let change of changes as Dynamic)
+      publishedHashes.set(change.path, change.sha256);
+    let removedPaths: Dynamic = new Set(),
+      pathsToRead: Dynamic = [],
+      clashingPaths: Dynamic = [];
+    for (let change of changes as Dynamic) {
+      if (change.path === DESIGN_INDEX_FILE_PATH) continue;
+      let relativePath: Dynamic = fromProjectContentPath(
+        change.path,
         "design",
       );
-      if (value23 !== undefined) {
-        if (value22.sha256 === null) {
-          isArtboardFile(value23) &&
-            !fileDirtyVersions.has(value23) &&
+      if (relativePath !== undefined) {
+        if (change.sha256 === null) {
+          isArtboardFile(relativePath) &&
+            !fileDirtyVersions.has(relativePath) &&
             fileDirtyVersions.set(
-              value23,
-              cloneIndexValue(indexState.get().boards[value23]),
+              relativePath,
+              cloneIndexValue(indexState.get().boards[relativePath]),
             );
-          if (value23 in state.content.files) {
-            if (boardClashes.has(value23)) {
-              boardClashes.set(value23, {
-                ...boardClashes.get(value23),
+          if (relativePath in state.content.files) {
+            if (boardClashes.has(relativePath)) {
+              boardClashes.set(relativePath, {
+                ...boardClashes.get(relativePath),
                 theirsSha: null,
               });
               continue;
             }
-            if (callback8(value23)) {
-              heldRemoteFiles.add(value23);
+            if (shouldHoldRemoteFile(relativePath)) {
+              heldRemoteFiles.add(relativePath);
               scheduleHeldRemoteCheck();
               continue;
             }
-            if (isArtboardFile(value23) && callback10(value23)) {
-              items3.push(value23);
+            if (isArtboardFile(relativePath) && hasLocalBoardChanges(relativePath)) {
+              clashingPaths.push(relativePath);
               continue;
             }
           }
-          values6.add(value23);
-          liveHashes.delete(value22.path);
-          heldRemoteFiles.delete(value23);
+          removedPaths.add(relativePath);
+          liveHashes.delete(change.path);
+          heldRemoteFiles.delete(relativePath);
           continue;
         }
-        fileDirtyVersions.delete(value23);
+        fileDirtyVersions.delete(relativePath);
         if (
           validateListedDesignFile({
-            path: value22.path,
+            path: change.path,
             size: 0,
           }) !== null &&
-          liveHashes.get(value22.path) !== value22.sha256
+          liveHashes.get(change.path) !== change.sha256
         ) {
-          if (boardClashes.has(value23)) {
-            boardClashes.set(value23, {
-              ...boardClashes.get(value23),
-              theirsSha: value22.sha256,
+          if (boardClashes.has(relativePath)) {
+            boardClashes.set(relativePath, {
+              ...boardClashes.get(relativePath),
+              theirsSha: change.sha256,
             });
             continue;
           }
-          if (callback8(value23)) {
-            heldRemoteFiles.add(value23);
+          if (shouldHoldRemoteFile(relativePath)) {
+            heldRemoteFiles.add(relativePath);
             scheduleHeldRemoteCheck();
             continue;
           }
-          if (callback10(value23)) {
-            items3.push(value23);
+          if (hasLocalBoardChanges(relativePath)) {
+            clashingPaths.push(relativePath);
             continue;
           }
-          items2.push(value23);
+          pathsToRead.push(relativePath);
         }
       }
     }
-    let value17: Dynamic = await readFiles(items2),
-      value18: Dynamic = value15.find(
-        (input2?: Dynamic): Dynamic => input2.path === DESIGN_INDEX_FILE_PATH,
+    let readFilesByPath: Dynamic = await readFiles(pathsToRead),
+      indexChange: Dynamic = changes.find(
+        (change?: Dynamic): Dynamic => change.path === DESIGN_INDEX_FILE_PATH,
       ),
-      flag2: Dynamic = false;
+      indexMerged: Dynamic = false;
     if (
-      value18 !== undefined &&
-      value18.sha256 !== null &&
-      liveHashes.get(DESIGN_INDEX_FILE_PATH) !== value18.sha256
+      indexChange !== undefined &&
+      indexChange.sha256 !== null &&
+      liveHashes.get(DESIGN_INDEX_FILE_PATH) !== indexChange.sha256
     )
       try {
-        callback19();
-        callback3(await indexState.reloadAndMerge());
-        liveHashes.set(DESIGN_INDEX_FILE_PATH, value18.sha256);
-        flag2 = true;
-      } catch (value22: Dynamic) {
+        flushLocalSave();
+        notifyIndexMerge(await indexState.reloadAndMerge());
+        liveHashes.set(DESIGN_INDEX_FILE_PATH, indexChange.sha256);
+        indexMerged = true;
+      } catch (error: Dynamic) {
         console.warn(
           "design (files): canvas.json changed but could not be read \u2014 " +
-            (value22 instanceof Error ? value22.message : String(value22)),
+            (error instanceof Error ? error.message : String(error)),
         );
       }
-    let value19: Dynamic = flag2
+    let newBoardPaths: Dynamic = indexMerged
         ? Object.keys(indexState.get().boards)
             .filter(
-              (input2?: Dynamic): Dynamic =>
-                !(input2 in state.content.files) &&
-                !items2.includes(input2) &&
-                !values6.has(input2) &&
+              (relativePath?: Dynamic): Dynamic =>
+                !(relativePath in state.content.files) &&
+                !pathsToRead.includes(relativePath) &&
+                !removedPaths.has(relativePath) &&
                 (publishedHashes.get(
-                  toProjectContentPath(input2),
+                  toProjectContentPath(relativePath),
                 ) ?? null) !== null &&
                 validateListedDesignFile({
-                  path: toProjectContentPath(input2),
+                  path: toProjectContentPath(relativePath),
                   size: 0,
                 }) !== null,
             )
@@ -1451,192 +1451,192 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
               0,
               Math.max(
                 0,
-                PlatformFileContentFilesValue -
+                MAX_LISTED_PROJECT_FILES -
                   1 -
                   Object.keys(state.content.files).length,
               ),
             )
         : [],
-      value20: Dynamic = await readFiles(value19);
+      newBoards: Dynamic = await readFiles(newBoardPaths);
     if (disposed) return;
-    callback19();
-    let state2: Dynamic = {
+    flushLocalSave();
+    let nextFiles: Dynamic = {
         ...state.content.files,
       },
-      value21: Dynamic = flag2;
-    for (let value22 of value19 as Dynamic)
-      value20[value22] === undefined ||
-        value22 in state2 ||
-        ((state2[value22] = value20[value22]),
-        (loadedFiles[value22] = value20[value22]),
-        (savedFiles[value22] = value20[value22]),
+      shouldRecompose: Dynamic = indexMerged;
+    for (let boardPath of newBoardPaths as Dynamic)
+      newBoards[boardPath] === undefined ||
+        boardPath in nextFiles ||
+        ((nextFiles[boardPath] = newBoards[boardPath]),
+        (loadedFiles[boardPath] = newBoards[boardPath]),
+        (savedFiles[boardPath] = newBoards[boardPath]),
         liveHashes.set(
-          toProjectContentPath(value22),
-          publishedHashes.get(toProjectContentPath(value22)),
+          toProjectContentPath(boardPath),
+          publishedHashes.get(toProjectContentPath(boardPath)),
         ));
-    let items4: Dynamic = [];
-    for (let value22 of values6 as Dynamic)
-      value22 in state2 &&
-        (delete state2[value22],
-        delete loadedFiles[value22],
-        delete savedFiles[value22],
-        overwrittenEdits.delete(value22),
-        (value21 = true));
-    for (let value22 of items2 as Dynamic) {
-      if (value17[value22] === undefined) continue;
+    let recoveredEdits: Dynamic = [];
+    for (let relativePath of removedPaths as Dynamic)
+      relativePath in nextFiles &&
+        (delete nextFiles[relativePath],
+        delete loadedFiles[relativePath],
+        delete savedFiles[relativePath],
+        overwrittenEdits.delete(relativePath),
+        (shouldRecompose = true));
+    for (let relativePath of pathsToRead as Dynamic) {
+      if (readFilesByPath[relativePath] === undefined) continue;
       if (
-        callback9(value22) ||
-        (state2[value22] !== undefined &&
-          savedFiles[value22] !== undefined &&
-          state2[value22] !== savedFiles[value22] &&
-          state2[value22] !== value17[value22])
+        hasUnsavedFileEdits(relativePath) ||
+        (nextFiles[relativePath] !== undefined &&
+          savedFiles[relativePath] !== undefined &&
+          nextFiles[relativePath] !== savedFiles[relativePath] &&
+          nextFiles[relativePath] !== readFilesByPath[relativePath])
       ) {
-        items3.push(value22);
+        clashingPaths.push(relativePath);
         continue;
       }
-      let value23: Dynamic = reapplyOverwrittenEdit(
-        value22,
-        value17[value22],
+      let recoveredEdit: Dynamic = reapplyOverwrittenEdit(
+        relativePath,
+        readFilesByPath[relativePath],
       );
-      value23 !== undefined && items4.push(value23);
-      state2[value22] = value17[value22];
-      loadedFiles[value22] = value17[value22];
-      savedFiles[value22] = value17[value22];
+      recoveredEdit !== undefined && recoveredEdits.push(recoveredEdit);
+      nextFiles[relativePath] = readFilesByPath[relativePath];
+      loadedFiles[relativePath] = readFilesByPath[relativePath];
+      savedFiles[relativePath] = readFilesByPath[relativePath];
       liveHashes.set(
-        toProjectContentPath(value22),
-        publishedHashes.get(toProjectContentPath(value22)) ??
-          liveHashes.get(toProjectContentPath(value22)),
+        toProjectContentPath(relativePath),
+        publishedHashes.get(toProjectContentPath(relativePath)) ??
+          liveHashes.get(toProjectContentPath(relativePath)),
       );
-      value21 = true;
+      shouldRecompose = true;
     }
-    value21 && adoptRemoteFiles(state2);
-    for (let value22 of values5 as Dynamic) {
-      fileDirtyVersions.delete(value22);
+    shouldRecompose && adoptRemoteFiles(nextFiles);
+    for (let boardPath of retainedDeletedArtboards as Dynamic) {
+      fileDirtyVersions.delete(boardPath);
       delete loadedFiles[canvasMetadataFile];
     }
-    for (let value22 of items4 as Dynamic)
-      offerOverwrittenEditNotice(value22);
-    for (let value22 of items3 as Dynamic)
+    for (let edit of recoveredEdits as Dynamic)
+      offerOverwrittenEditNotice(edit);
+    for (let relativePath of clashingPaths as Dynamic)
       await handleBoardClash(
-        toProjectContentPath(value22),
-        publishedHashes.get(toProjectContentPath(value22)) ??
+        toProjectContentPath(relativePath),
+        publishedHashes.get(toProjectContentPath(relativePath)) ??
           null,
         "remote-while-editing",
       );
-    options.debug?.event("apply", {
-      to: input.to.version,
-      rows: input.changed.map((input2?: Dynamic): Dynamic => input2.path),
-      alreadyTrue: input.changed.length - value15.length,
-      boardsReread: items2.filter(
-        (input2?: Dynamic): Dynamic => value17[input2] !== undefined,
+    documentOptions.debug?.event("apply", {
+      to: update.to.version,
+      rows: update.changed.map((change?: Dynamic): Dynamic => change.path),
+      alreadyTrue: update.changed.length - changes.length,
+      boardsReread: pathsToRead.filter(
+        (relativePath?: Dynamic): Dynamic => readFilesByPath[relativePath] !== undefined,
       ),
-      removed: [...values6],
+      removed: [...removedPaths],
       held: [...heldRemoteFiles],
-      folded: items3,
-      indexMerged: value18 !== undefined,
-      recomposed: value21,
-      ms: timers.now() - value14,
+      folded: clashingPaths,
+      indexMerged: indexChange !== undefined,
+      recomposed: shouldRecompose,
+      ms: timers.now() - applyStartedAt,
     });
   }
   async function applyClashResolution(
-    input?: Dynamic,
-    options2: Dynamic = false,
-    context?: Dynamic,
+    conflict?: Dynamic,
+    silent: Dynamic = false,
+    mayApply?: Dynamic,
   ): Promise<Dynamic> {
-    let value14: Dynamic = fromProjectContentPath(
-      input.path,
+    let relativePath: Dynamic = fromProjectContentPath(
+      conflict.path,
       "design",
     );
-    if (value14 === undefined) return false;
-    let value15: Dynamic =
-      input.theirsSha === null
+    if (relativePath === undefined) return false;
+    let remoteContent: Dynamic =
+      conflict.theirsSha === null
         ? undefined
-        : (await readFiles([value14]))[value14];
+        : (await readFiles([relativePath]))[relativePath];
     if (
       disposed ||
-      (input.theirsSha !== null && value15 === undefined) ||
-      (context !== undefined && !context())
+      (conflict.theirsSha !== null && remoteContent === undefined) ||
+      (mayApply !== undefined && !mayApply())
     )
       return false;
-    let value16: Dynamic = value14.replace(/\.dc\.html$/, "");
-    !options2 && options.sameBoardRule === "first"
+    let displayName: Dynamic = relativePath.replace(/\.dc\.html$/, "");
+    !silent && documentOptions.sameBoardRule === "first"
       ? notice(
-          value16 +
-            (input.theirsSha === null
+          displayName +
+            (conflict.theirsSha === null
               ? " deleted remotely"
               : " changed remotely"),
         )
-      : !options2 &&
-        options.sameBoardRule !== "last" &&
+      : !silent &&
+        documentOptions.sameBoardRule !== "last" &&
         notice(
           "\u201C" +
-            value16 +
+            displayName +
             "\u201D was changed by someone else while you were editing it. Their version was loaded; your last change to it was not saved.",
         );
-    heldRemoteFiles.delete(value14);
-    overwrittenEdits.delete(value14);
-    let state2: Dynamic = {
+    heldRemoteFiles.delete(relativePath);
+    overwrittenEdits.delete(relativePath);
+    let nextFiles: Dynamic = {
       ...state.content.files,
     };
-    value15 === undefined
-      ? (delete state2[value14],
-        delete loadedFiles[value14],
-        delete savedFiles[value14],
-        liveHashes.delete(input.path))
-      : ((state2[value14] = value15),
-        (loadedFiles[value14] = value15),
-        (savedFiles[value14] = value15),
-        liveHashes.set(input.path, input.theirsSha));
-    adoptRemoteFiles(state2);
+    remoteContent === undefined
+      ? (delete nextFiles[relativePath],
+        delete loadedFiles[relativePath],
+        delete savedFiles[relativePath],
+        liveHashes.delete(conflict.path))
+      : ((nextFiles[relativePath] = remoteContent),
+        (loadedFiles[relativePath] = remoteContent),
+        (savedFiles[relativePath] = remoteContent),
+        liveHashes.set(conflict.path, conflict.theirsSha));
+    adoptRemoteFiles(nextFiles);
     return true;
   }
-  let callback10: Dynamic = (input?: Dynamic): Dynamic =>
-      callback9(input) ||
-      callback11(input) ||
-      (savedFiles[input] !== undefined &&
-        state.content.files[input] !== undefined &&
-        state.content.files[input] !== savedFiles[input]),
-    callback11: Dynamic = (input?: Dynamic): Dynamic =>
-      state.content.files[input] !== undefined &&
-      savedFiles[input] === undefined &&
-      !liveHashes.has(toProjectContentPath(input)),
-    callback12: Dynamic = (input?: Dynamic): Dynamic =>
-      input in state.content.files ||
-      fileDirtyVersions.has(input) ||
-      liveHashes.has(toProjectContentPath(input)) ||
-      (publishedHashes.get(toProjectContentPath(input)) ??
+  let hasLocalBoardChanges: Dynamic = (relativePath?: Dynamic): Dynamic =>
+      hasUnsavedFileEdits(relativePath) ||
+      isNewLocalFile(relativePath) ||
+      (savedFiles[relativePath] !== undefined &&
+        state.content.files[relativePath] !== undefined &&
+        state.content.files[relativePath] !== savedFiles[relativePath]),
+    isNewLocalFile: Dynamic = (relativePath?: Dynamic): Dynamic =>
+      state.content.files[relativePath] !== undefined &&
+      savedFiles[relativePath] === undefined &&
+      !liveHashes.has(toProjectContentPath(relativePath)),
+    isPathTaken: Dynamic = (relativePath?: Dynamic): Dynamic =>
+      relativePath in state.content.files ||
+      fileDirtyVersions.has(relativePath) ||
+      liveHashes.has(toProjectContentPath(relativePath)) ||
+      (publishedHashes.get(toProjectContentPath(relativePath)) ??
         null) !== null;
-  function nextDuplicateFilename(input?: Dynamic): Dynamic {
-    let value14: Dynamic = input.replace(/\.dc\.html$/, ""),
-      value15: Dynamic = /^(.*) (\d+)$/.exec(value14),
-      value16: Dynamic = value15 ? value15[1] : value14;
+  function nextDuplicateFilename(fileName?: Dynamic): Dynamic {
+    let stem: Dynamic = fileName.replace(/\.dc\.html$/, ""),
+      numberedStem: Dynamic = /^(.*) (\d+)$/.exec(stem),
+      baseStem: Dynamic = numberedStem ? numberedStem[1] : stem;
     for (
-      let value17: Dynamic = value15 ? Number(value15[2]) + 1 : 2;
+      let copyNumber: Dynamic = numberedStem ? Number(numberedStem[2]) + 1 : 2;
       ;
-      value17++
+      copyNumber++
     ) {
-      let value18: Dynamic = value16 + " " + String(value17) + ".dc.html";
-      if (!callback12(value18)) return value18;
+      let candidate: Dynamic = baseStem + " " + String(copyNumber) + ".dc.html";
+      if (!isPathTaken(candidate)) return candidate;
     }
   }
-  let value10: Dynamic;
+  let heldRemoteTimer: Dynamic;
   function scheduleHeldRemoteCheck(): Dynamic {
-    value10 !== undefined ||
+    heldRemoteTimer !== undefined ||
       disposed ||
-      (value10 = timers.setTimeout((): Dynamic => {
-        value10 = undefined;
-        for (let value14 of [...heldRemoteFiles] as Dynamic)
-          callback8(value14) || releaseHeldFile(value14);
+      (heldRemoteTimer = timers.setTimeout((): Dynamic => {
+        heldRemoteTimer = undefined;
+        for (let relativePath of [...heldRemoteFiles] as Dynamic)
+          shouldHoldRemoteFile(relativePath) || releaseHeldFile(relativePath);
         heldRemoteFiles.size > 0 && scheduleHeldRemoteCheck();
-      }, options.heldCheckMs ?? 400));
+      }, documentOptions.heldCheckMs ?? 400));
   }
-  function releaseHeldFile(input?: Dynamic): Dynamic {
-    heldRemoteFiles.delete(input);
-    let value14: Dynamic = toProjectContentPath(input);
-    callback10(input)
+  function releaseHeldFile(relativePath?: Dynamic): Dynamic {
+    heldRemoteFiles.delete(relativePath);
+    let absolutePath: Dynamic = toProjectContentPath(relativePath);
+    hasLocalBoardChanges(relativePath)
       ? handleBoardClash(
-          value14,
-          publishedHashes.get(value14) ?? null,
+          absolutePath,
+          publishedHashes.get(absolutePath) ?? null,
           "remote-while-editing",
         )
       : handleRemoteUpdate({
@@ -1644,801 +1644,801 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           to: trackedPort.version(),
           changed: [
             {
-              path: value14,
-              sha256: publishedHashes.get(value14) ?? null,
+              path: absolutePath,
+              sha256: publishedHashes.get(absolutePath) ?? null,
             },
           ],
         });
   }
   async function handleBoardClash(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    absolutePath?: Dynamic,
+    remoteSha?: Dynamic,
+    trigger?: Dynamic,
   ): Promise<Dynamic> {
-    let value14: Dynamic = fromProjectContentPath(
-      input,
+    let relativePath: Dynamic = fromProjectContentPath(
+      absolutePath,
       "design",
     );
-    if (value14 === undefined || disposed || resolvingClashes.has(value14))
+    if (relativePath === undefined || disposed || resolvingClashes.has(relativePath))
       return;
-    if (boardClashes.has(value14)) {
-      boardClashes.set(value14, {
-        ...boardClashes.get(value14),
-        theirsSha: options2,
+    if (boardClashes.has(relativePath)) {
+      boardClashes.set(relativePath, {
+        ...boardClashes.get(relativePath),
+        theirsSha: remoteSha,
       });
       return;
     }
-    let value15: Dynamic = state.content.files[value14];
+    let initialLocalContent: Dynamic = state.content.files[relativePath];
     if (
-      value15 === undefined ||
-      (!isArtboardFile(value14) &&
-        options.sameBoardRule !== "last")
+      initialLocalContent === undefined ||
+      (!isArtboardFile(relativePath) &&
+        documentOptions.sameBoardRule !== "last")
     )
       return void (await applyClashResolution({
-        path: input,
-        base: liveHashes.get(input) ?? null,
-        mine: value15 ?? null,
-        theirsSha: options2,
+        path: absolutePath,
+        base: liveHashes.get(absolutePath) ?? null,
+        mine: initialLocalContent ?? null,
+        theirsSha: remoteSha,
       }));
     if (
-      options2 !== null &&
-      isArtboardFile(value14) &&
-      callback11(value14)
+      remoteSha !== null &&
+      isArtboardFile(relativePath) &&
+      isNewLocalFile(relativePath)
     )
-      return adoptIdenticalBoard(value14, value15, options2);
-    if (options.sameBoardRule === "last") {
+      return adoptIdenticalBoard(relativePath, initialLocalContent, remoteSha);
+    if (documentOptions.sameBoardRule === "last") {
       if (
-        !callback10(value14) &&
-        options2 !== (liveHashes.get(input) ?? null)
+        !hasLocalBoardChanges(relativePath) &&
+        remoteSha !== (liveHashes.get(absolutePath) ?? null)
       ) {
-        value.withdraw(input);
+        publisher.withdraw(absolutePath);
         return void handleRemoteUpdate({
           from: trackedPort.version(),
           to: trackedPort.version(),
           changed: [
             {
-              path: input,
-              sha256: options2,
+              path: absolutePath,
+              sha256: remoteSha,
             },
           ],
         });
       }
-      publishedHashes.set(input, options2);
-      options2 === null
-        ? (liveHashes.delete(input), fileDirtyVersions.delete(value14))
-        : liveHashes.set(input, options2);
-      delete loadedFiles[value14];
-      heldRemoteFiles.delete(value14);
+      publishedHashes.set(absolutePath, remoteSha);
+      remoteSha === null
+        ? (liveHashes.delete(absolutePath), fileDirtyVersions.delete(relativePath))
+        : liveHashes.set(absolutePath, remoteSha);
+      delete loadedFiles[relativePath];
+      heldRemoteFiles.delete(relativePath);
       scheduleLocalSave();
       return;
     }
-    if (options2 !== null && liveHashes.get(input) === options2) {
-      options.sameBoardRule === "first" &&
-        value.resolveConflict(input, "theirs");
-      savedFiles[value14] !== undefined &&
-        (loadedFiles[value14] = savedFiles[value14]);
+    if (remoteSha !== null && liveHashes.get(absolutePath) === remoteSha) {
+      documentOptions.sameBoardRule === "first" &&
+        publisher.resolveConflict(absolutePath, "theirs");
+      savedFiles[relativePath] !== undefined &&
+        (loadedFiles[relativePath] = savedFiles[relativePath]);
       scheduleLocalSave();
       return;
     }
-    if (options.sameBoardRule === "first") {
-      if (callback8(value14)) {
-        heldRemoteFiles.add(value14);
-        publishedHashes.set(input, options2);
+    if (documentOptions.sameBoardRule === "first") {
+      if (shouldHoldRemoteFile(relativePath)) {
+        heldRemoteFiles.add(relativePath);
+        publishedHashes.set(absolutePath, remoteSha);
         scheduleHeldRemoteCheck();
         return;
       }
-      resolvingClashes.add(value14);
+      resolvingClashes.add(relativePath);
       try {
-        let flag2: Dynamic = false;
+        let wasHeldAgain: Dynamic = false;
         if (
           (await applyClashResolution(
             {
-              path: input,
-              base: liveHashes.get(input) ?? null,
-              mine: value15,
-              theirsSha: options2,
+              path: absolutePath,
+              base: liveHashes.get(absolutePath) ?? null,
+              mine: initialLocalContent,
+              theirsSha: remoteSha,
             },
             false,
             (): Dynamic => (
-              (flag2 = callback8(value14)),
-              flag2
+              (wasHeldAgain = shouldHoldRemoteFile(relativePath)),
+              wasHeldAgain
                 ? false
-                : (value.withdraw(input),
-                  ModelHistoryRebaseSet(value14),
+                : (publisher.withdraw(absolutePath),
+                  ModelHistoryRebaseSet(relativePath),
                   true)
             ),
           )) ||
           disposed
         )
-          return void pendingReadVersions.delete(value14);
-        publishedHashes.set(input, options2);
-        if (flag2) {
-          heldRemoteFiles.add(value14);
+          return void pendingReadVersions.delete(relativePath);
+        publishedHashes.set(absolutePath, remoteSha);
+        if (wasHeldAgain) {
+          heldRemoteFiles.add(relativePath);
           scheduleHeldRemoteCheck();
           return;
         }
-        let value17: Dynamic = pendingReadVersions.get(value14) ?? {
+        let readRetry: Dynamic = pendingReadVersions.get(relativePath) ?? {
           tries: 0,
         };
-        if (value17.timer !== undefined) return;
-        if (value17.tries >= DESIGN_BOOT_MAX_ATTEMPTS) {
-          pendingReadVersions.delete(value14);
+        if (readRetry.timer !== undefined) return;
+        if (readRetry.tries >= DESIGN_BOOT_MAX_ATTEMPTS) {
+          pendingReadVersions.delete(relativePath);
           notice(
-            value14.replace(/\.dc\.html$/, "") +
+            relativePath.replace(/\.dc\.html$/, "") +
               " changed remotely; reload to load it",
           );
           return;
         }
-        value17.tries += 1;
-        value17.timer = timers.setTimeout(
+        readRetry.tries += 1;
+        readRetry.timer = timers.setTimeout(
           (): Dynamic => {
-            value17.timer = undefined;
-            disposed || releaseHeldFile(value14);
+            readRetry.timer = undefined;
+            disposed || releaseHeldFile(relativePath);
           },
-          Math.min(6e4, DESIGN_RESTART_DELAY_MS * 2 ** (value17.tries - 1)),
+          Math.min(6e4, DESIGN_RESTART_DELAY_MS * 2 ** (readRetry.tries - 1)),
         );
-        pendingReadVersions.set(value14, value17);
+        pendingReadVersions.set(relativePath, readRetry);
       } finally {
-        resolvingClashes.delete(value14);
+        resolvingClashes.delete(relativePath);
       }
       return;
     }
-    resolvingClashes.add(value14);
-    let value16: Dynamic = timers.now();
+    resolvingClashes.add(relativePath);
+    let mergeStartedAt: Dynamic = timers.now();
     try {
-      let value17: Dynamic = savedFiles[value14],
-        value18: Dynamic;
-      options2 !== null && (value18 = (await readFiles([value14]))[value14]);
+      let baseContent: Dynamic = savedFiles[relativePath],
+        remoteContent: Dynamic;
+      remoteSha !== null && (remoteContent = (await readFiles([relativePath]))[relativePath]);
       if (disposed) return;
-      let value19: Dynamic = state.content.files[value14] ?? value15,
-        value20: Dynamic,
-        value21: Dynamic;
-      options2 === null
-        ? (value21 = "the board was deleted by someone else")
-        : value18 === undefined
-          ? (value21 = "their version could not be read")
-          : value17 === undefined
-            ? (value21 = "this tab does not know what its edits started from")
-            : ((value20 = mergeDcDocuments(
-                value17,
-                value19,
-                value18,
+      let localContent: Dynamic = state.content.files[relativePath] ?? initialLocalContent,
+        merge: Dynamic,
+        mergeProblem: Dynamic;
+      remoteSha === null
+        ? (mergeProblem = "the board was deleted by someone else")
+        : remoteContent === undefined
+          ? (mergeProblem = "their version could not be read")
+          : baseContent === undefined
+            ? (mergeProblem = "this tab does not know what its edits started from")
+            : ((merge = mergeDcDocuments(
+                baseContent,
+                localContent,
+                remoteContent,
               )),
-              value20.ok || (value21 = value20.why));
-      let state2: Dynamic = {
-        file: value14,
-        trigger: context,
-        ok: value20?.ok === true,
-        ...(value21 !== undefined
+              merge.ok || (mergeProblem = merge.why));
+      let mergeEvent: Dynamic = {
+        file: relativePath,
+        trigger: trigger,
+        ok: merge?.ok === true,
+        ...(mergeProblem !== undefined
           ? {
-              why: value21,
+              why: mergeProblem,
             }
           : {}),
-        ...(value20 !== undefined
+        ...(merge !== undefined
           ? {
-              regions: value20.regions,
-              guard: value20.guard,
+              regions: merge.regions,
+              guard: merge.guard,
             }
           : {}),
-        applied: value20?.applied.length ?? 0,
-        overlaps: value20?.overlaps.length ?? 0,
-        ms: timers.now() - value16,
+        applied: merge?.applied.length ?? 0,
+        overlaps: merge?.overlaps.length ?? 0,
+        ms: timers.now() - mergeStartedAt,
       };
-      undoHistory.push(state2);
+      undoHistory.push(mergeEvent);
       undoHistory.length > 100 && undoHistory.shift();
-      options.debug?.event("reconcile", {
-        ...state2,
-        ...(value20 !== undefined
+      documentOptions.debug?.event("reconcile", {
+        ...mergeEvent,
+        ...(merge !== undefined
           ? {
-              appliedList: value20.applied.slice(0, 24),
-              overlapList: value20.overlaps.slice(0, 24),
+              appliedList: merge.applied.slice(0, 24),
+              overlapList: merge.overlaps.slice(0, 24),
             }
           : {}),
       });
       if (
-        value20?.ok === true &&
-        value20.merged !== undefined &&
-        value18 !== undefined &&
-        options2 !== null
+        merge?.ok === true &&
+        merge.merged !== undefined &&
+        remoteContent !== undefined &&
+        remoteSha !== null
       ) {
-        let state3: Dynamic = {
+        let mergedFiles: Dynamic = {
           ...state.content.files,
-          [value14]: value20.merged,
+          [relativePath]: merge.merged,
         };
-        savedFiles[value14] = value18;
-        loadedFiles[value14] = value18;
-        liveHashes.set(input, options2);
-        publishedHashes.set(input, options2);
-        heldRemoteFiles.delete(value14);
-        let value22: Dynamic = reapplyOverwrittenEdit(value14, value18);
-        adoptRemoteFiles(state3);
-        value20.merged !== value18 && scheduleLocalSave();
-        value20.overlaps.length > 0 &&
-          notice(describeIndexMergeConflict(value14, value20.overlaps));
-        value22 !== undefined && offerOverwrittenEditNotice(value22);
+        savedFiles[relativePath] = remoteContent;
+        loadedFiles[relativePath] = remoteContent;
+        liveHashes.set(absolutePath, remoteSha);
+        publishedHashes.set(absolutePath, remoteSha);
+        heldRemoteFiles.delete(relativePath);
+        let recoveredEdit: Dynamic = reapplyOverwrittenEdit(relativePath, remoteContent);
+        adoptRemoteFiles(mergedFiles);
+        merge.merged !== remoteContent && scheduleLocalSave();
+        merge.overlaps.length > 0 &&
+          notice(describeIndexMergeConflict(relativePath, merge.overlaps));
+        recoveredEdit !== undefined && offerOverwrittenEditNotice(recoveredEdit);
         return;
       }
       offerBoardClashNotice(
-        value14,
-        input,
-        options2,
-        value18,
-        value21 ?? "the two versions could not be folded together",
+        relativePath,
+        absolutePath,
+        remoteSha,
+        remoteContent,
+        mergeProblem ?? "the two versions could not be folded together",
       );
     } finally {
-      resolvingClashes.delete(value14);
+      resolvingClashes.delete(relativePath);
     }
   }
   async function adoptIdenticalBoard(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    boardPath?: Dynamic,
+    localContent?: Dynamic,
+    remoteSha?: Dynamic,
   ): Promise<Dynamic> {
-    resolvingClashes.add(input);
+    resolvingClashes.add(boardPath);
     try {
       if (
         sha256Fallback(
-          PlatformSha256Encode(options2),
-        ) === context
+          PlatformSha256Encode(localContent),
+        ) === remoteSha
       ) {
-        loadedFiles[input] = options2;
-        savedFiles[input] = options2;
-        liveHashes.set(toProjectContentPath(input), context);
-        value.resolveConflict(
-          toProjectContentPath(input),
+        loadedFiles[boardPath] = localContent;
+        savedFiles[boardPath] = localContent;
+        liveHashes.set(toProjectContentPath(boardPath), remoteSha);
+        publisher.resolveConflict(
+          toProjectContentPath(boardPath),
           "theirs",
         );
         return;
       }
-      let value14: Dynamic = nextDuplicateFilename(input);
-      knownArtboardFiles.add(value14);
-      let value15: Dynamic = cloneIndexValue(
-        indexState.get().boards[input],
+      let renamedBoardPath: Dynamic = nextDuplicateFilename(boardPath);
+      knownArtboardFiles.add(renamedBoardPath);
+      let boardMetadata: Dynamic = cloneIndexValue(
+        indexState.get().boards[boardPath],
       );
-      indexState.update((input2?: Dynamic): Dynamic => {
-        input2.boards[value14] = value15 ?? {
+      indexState.update((index?: Dynamic): Dynamic => {
+        index.boards[renamedBoardPath] = boardMetadata ?? {
           x: 0,
           y: 0,
           w: 1280,
           h: 720,
         };
-        let value17: Dynamic = input2.order.indexOf(input);
-        input2.order.splice(
-          value17 < 0 ? input2.order.length : value17 + 1,
+        let sourceOrderIndex: Dynamic = index.order.indexOf(boardPath);
+        index.order.splice(
+          sourceOrderIndex < 0 ? index.order.length : sourceOrderIndex + 1,
           0,
-          value14,
+          renamedBoardPath,
         );
       });
-      let value16: Dynamic = (await readFiles([input]))[input];
+      let remoteContent: Dynamic = (await readFiles([boardPath]))[boardPath];
       if (disposed) return;
-      let state2: Dynamic = {
+      let nextFiles: Dynamic = {
         ...state.content.files,
-        [value14]: state.content.files[input] ?? options2,
+        [renamedBoardPath]: state.content.files[boardPath] ?? localContent,
       };
-      delete loadedFiles[input];
-      value16 === undefined
-        ? delete state2[input]
-        : ((state2[input] = value16),
-          (loadedFiles[input] = value16),
-          (savedFiles[input] = value16),
-          liveHashes.set(toProjectContentPath(input), context));
-      value.resolveConflict(
-        toProjectContentPath(input),
+      delete loadedFiles[boardPath];
+      remoteContent === undefined
+        ? delete nextFiles[boardPath]
+        : ((nextFiles[boardPath] = remoteContent),
+          (loadedFiles[boardPath] = remoteContent),
+          (savedFiles[boardPath] = remoteContent),
+          liveHashes.set(toProjectContentPath(boardPath), remoteSha));
+      publisher.resolveConflict(
+        toProjectContentPath(boardPath),
         "theirs",
       );
-      options.debug?.event("moved-aside", {
-        file: input,
-        as: value14,
+      documentOptions.debug?.event("moved-aside", {
+        file: boardPath,
+        as: renamedBoardPath,
       });
-      adoptRemoteFiles(state2);
+      adoptRemoteFiles(nextFiles);
       scheduleLocalSave();
     } finally {
-      resolvingClashes.delete(input);
+      resolvingClashes.delete(boardPath);
     }
   }
   function reapplyOverwrittenEdit(
-    input?: Dynamic,
-    options2?: Dynamic,
+    boardPath?: Dynamic,
+    remoteContent?: Dynamic,
   ): Dynamic {
-    let entry: Dynamic = overwrittenEdits.get(input);
+    let entry: Dynamic = overwrittenEdits.get(boardPath);
     if (
       entry === undefined ||
-      (overwrittenEdits.delete(input), options2 === entry.mine)
+      (overwrittenEdits.delete(boardPath), remoteContent === entry.mine)
     )
       return;
-    let value14: Dynamic = mergeDcDocuments(
+    let merge: Dynamic = mergeDcDocuments(
       entry.base,
       entry.mine,
-      options2,
+      remoteContent,
     );
     if (
-      !value14.ok ||
-      value14.merged === undefined ||
-      value14.merged === options2
+      !merge.ok ||
+      merge.merged === undefined ||
+      merge.merged === remoteContent
     )
       return;
-    value14.overlaps.length > 0 &&
+    merge.overlaps.length > 0 &&
       timers.now() - entry.at < DESIGN_BOOT_MAX_WAIT_MS &&
-      notice(describeSamePropertyConflict(input, value14.overlaps));
-    let callback19: Dynamic = (source?: Dynamic): Dynamic =>
-      value14.overlaps.some(
-        (source2?: Dynamic): Dynamic =>
-          source2.tid === source.tid &&
-          source2.kind === source.kind &&
-          source2.name === source.name,
+      notice(describeSamePropertyConflict(boardPath, merge.overlaps));
+    let isOverlappingChange: Dynamic = (appliedChange?: Dynamic): Dynamic =>
+      merge.overlaps.some(
+        (overlap?: Dynamic): Dynamic =>
+          overlap.tid === appliedChange.tid &&
+          overlap.kind === appliedChange.kind &&
+          overlap.name === appliedChange.name,
       );
-    return value14.regions.template === "mine" ||
-      value14.regions.script === "mine" ||
-      value14.regions.outer === "mine" ||
-      value14.applied.some((input2?: Dynamic): Dynamic => !callback19(input2))
+    return merge.regions.template === "mine" ||
+      merge.regions.script === "mine" ||
+      merge.regions.outer === "mine" ||
+      merge.applied.some((change?: Dynamic): Dynamic => !isOverlappingChange(change))
       ? entry
       : undefined;
   }
-  function offerOverwrittenEditNotice(input?: Dynamic): Dynamic {
-    options.debug?.event("save-dropped", {
-      file: input.file,
+  function offerOverwrittenEditNotice(edit?: Dynamic): Dynamic {
+    documentOptions.debug?.event("save-dropped", {
+      file: edit.file,
     });
-    let flag2: Dynamic = false,
-      callback19: Dynamic = (): Dynamic => {
-        if (flag2 || disposed) return;
-        flag2 = true;
-        let value14: Dynamic = state.content.files[input.file];
-        if (value14 === undefined) return;
-        let value15: Dynamic = mergeDcDocuments(
-          input.base,
-          input.mine,
-          value14,
+    let handled: Dynamic = false,
+      putBack: Dynamic = (): Dynamic => {
+        if (handled || disposed) return;
+        handled = true;
+        let currentContent: Dynamic = state.content.files[edit.file];
+        if (currentContent === undefined) return;
+        let merge: Dynamic = mergeDcDocuments(
+          edit.base,
+          edit.mine,
+          currentContent,
         );
         if (
-          !value15.ok ||
-          value15.merged === undefined ||
-          value15.merged === value14
+          !merge.ok ||
+          merge.merged === undefined ||
+          merge.merged === currentContent
         ) {
           notice(
             "Your change to \u201C" +
-              input.file.replace(/\.dc\.html$/, "") +
+              edit.file.replace(/\.dc\.html$/, "") +
               "\u201D could not be put back on top of the newer version (" +
-              (value15.why ?? "nothing to put back") +
+              (merge.why ?? "nothing to put back") +
               ").",
           );
           return;
         }
         adoptRemoteFiles({
           ...state.content.files,
-          [input.file]: value15.merged,
+          [edit.file]: merge.merged,
         });
         scheduleLocalSave();
       };
-    if (options.onSaveDropped !== undefined) {
+    if (documentOptions.onSaveDropped !== undefined) {
       try {
-        options.onSaveDropped({
-          file: input.file,
-          putBack: callback19,
+        documentOptions.onSaveDropped({
+          file: edit.file,
+          putBack: putBack,
         });
       } catch {}
       return;
     }
     notice(
       "\u201C" +
-        input.file.replace(/\.dc\.html$/, "") +
+        edit.file.replace(/\.dc\.html$/, "") +
         "\u201D was saved over by a version that leaves out a change you had saved.",
     );
   }
   function createMyCopy(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context: Dynamic = false,
+    boardPath?: Dynamic,
+    boardContent?: Dynamic,
+    useNumberedCopy: Dynamic = false,
   ): Dynamic {
     let files: Dynamic = state.content.files,
-      value14: Dynamic = input.replace(/\.dc\.html$/, ""),
-      value15: Dynamic = value14 + " my copy.dc.html",
-      value16: Dynamic = context
-        ? nextDuplicateFilename(input)
-        : callback12(value15)
-          ? nextDuplicateFilename(value15)
-          : value15,
-      value17: Dynamic = parseCanvasMetadata(
+      boardStem: Dynamic = boardPath.replace(/\.dc\.html$/, ""),
+      preferredCopyPath: Dynamic = boardStem + " my copy.dc.html",
+      copyPath: Dynamic = useNumberedCopy
+        ? nextDuplicateFilename(boardPath)
+        : isPathTaken(preferredCopyPath)
+          ? nextDuplicateFilename(preferredCopyPath)
+          : preferredCopyPath,
+      manifest: Dynamic = parseCanvasMetadata(
         files[canvasMetadataFile],
         files,
       ),
-      value18: Dynamic = value17.artboards.find(
-        (input2?: Dynamic): Dynamic => input2.file === input,
+      sourceBoard: Dynamic = manifest.artboards.find(
+        (board?: Dynamic): Dynamic => board.file === boardPath,
       ),
-      state2: Dynamic = {
-        ...value17,
+      nextManifest: Dynamic = {
+        ...manifest,
         artboards: [
-          ...value17.artboards,
+          ...manifest.artboards,
           {
-            ...(value18 ?? {
+            ...(sourceBoard ?? {
               x: 0,
               y: 0,
               w: 1280,
               h: 720,
             }),
-            file: value16,
-            x: (value18?.x ?? 0) + (value18?.w ?? 1280) + 80,
-            ...(context
+            file: copyPath,
+            x: (sourceBoard?.x ?? 0) + (sourceBoard?.w ?? 1280) + 80,
+            ...(useNumberedCopy
               ? {}
               : {
-                  get title() { return value18?.title ?? value14 + " (my copy)"; },
+                  get title() { return sourceBoard?.title ?? boardStem + " (my copy)"; },
                 }),
           },
         ],
       },
-      state3: Dynamic = {
+      nextFiles: Dynamic = {
         ...files,
-        [value16]: options2,
+        [copyPath]: boardContent,
       };
     replaceDocument({
       ...state,
       content: {
         files: {
-          ...state3,
+          ...nextFiles,
           [canvasMetadataFile]: serializeCanvasMetadata(
             parseCanvasMetadata(
-              serializeCanvasMetadata(state2),
-              state3,
+              serializeCanvasMetadata(nextManifest),
+              nextFiles,
             ),
           ),
         },
       },
     });
-    return value16;
+    return copyPath;
   }
   function offerBoardClashNotice(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
-    value14?: Dynamic,
-    extra?: Dynamic,
+    relativePath?: Dynamic,
+    absolutePath?: Dynamic,
+    remoteSha?: Dynamic,
+    remoteContent?: Dynamic,
+    reason?: Dynamic,
   ): Dynamic {
-    let value15: Dynamic = state.content.files[input];
-    if (options.onBoardClash === undefined || value15 === undefined) {
+    let localContent: Dynamic = state.content.files[relativePath];
+    if (documentOptions.onBoardClash === undefined || localContent === undefined) {
       applyClashResolution({
-        path: options2,
-        base: liveHashes.get(options2) ?? null,
-        mine: value15 ?? null,
-        theirsSha: context,
+        path: absolutePath,
+        base: liveHashes.get(absolutePath) ?? null,
+        mine: localContent ?? null,
+        theirsSha: remoteSha,
       });
       return;
     }
-    boardClashes.set(input, {
-      theirsSha: context,
+    boardClashes.set(relativePath, {
+      theirsSha: remoteSha,
     });
-    let flag2: Dynamic = false,
-      value16: Dynamic = context,
-      callback19: Dynamic = (): Dynamic =>
-        publishedHashes.has(options2)
-          ? (publishedHashes.get(options2) ?? null)
-          : value16,
-      callback20: Dynamic =
-        (input2?: Dynamic, options3?: Dynamic): Dynamic =>
+    let resolved: Dynamic = false,
+      resolvedRemoteSha: Dynamic = remoteSha,
+      latestRemoteSha: Dynamic = (): Dynamic =>
+        publishedHashes.has(absolutePath)
+          ? (publishedHashes.get(absolutePath) ?? null)
+          : resolvedRemoteSha,
+      onResolution: Dynamic =
+        (choice?: Dynamic, resolveChoice?: Dynamic): Dynamic =>
         (): Dynamic => {
-          if (flag2 || disposed) return;
-          flag2 = true;
-          let entry: Dynamic = boardClashes.get(input);
-          value16 = entry !== undefined ? entry.theirsSha : context;
-          boardClashes.delete(input);
-          resolvingClashes.add(input);
-          options.debug?.event("reconcile-choice", {
-            file: input,
-            choice: input2,
+          if (resolved || disposed) return;
+          resolved = true;
+          let entry: Dynamic = boardClashes.get(relativePath);
+          resolvedRemoteSha = entry !== undefined ? entry.theirsSha : remoteSha;
+          boardClashes.delete(relativePath);
+          resolvingClashes.add(relativePath);
+          documentOptions.debug?.event("reconcile-choice", {
+            file: relativePath,
+            choice: choice,
           });
           Promise.resolve(
-            options3(state.content.files[input] ?? value15),
+            resolveChoice(state.content.files[relativePath] ?? localContent),
           ).finally((): Dynamic => {
-            resolvingClashes.delete(input);
+            resolvingClashes.delete(relativePath);
             scheduleLocalSave();
           });
         },
-      callback21: Dynamic = (): Dynamic =>
+      takeTheirs: Dynamic = (): Dynamic =>
         applyClashResolution(
           {
-            path: options2,
-            base: liveHashes.get(options2) ?? null,
-            mine: value15,
-            theirsSha: callback19(),
+            path: absolutePath,
+            base: liveHashes.get(absolutePath) ?? null,
+            mine: localContent,
+            theirsSha: latestRemoteSha(),
           },
           true,
         ).then((): Dynamic => {});
-    function value17(): Dynamic {
-      let value19: Dynamic = callback19();
-      value19 === null
-        ? (liveHashes.delete(options2), fileDirtyVersions.delete(input))
-        : liveHashes.set(options2, value19);
-      value14 !== undefined && value19 !== null
-        ? ((savedFiles[input] = value14), (loadedFiles[input] = value14))
-        : (delete savedFiles[input], delete loadedFiles[input]);
+    function keepMine(): Dynamic {
+      let latestSha: Dynamic = latestRemoteSha();
+      latestSha === null
+        ? (liveHashes.delete(absolutePath), fileDirtyVersions.delete(relativePath))
+        : liveHashes.set(absolutePath, latestSha);
+      remoteContent !== undefined && latestSha !== null
+        ? ((savedFiles[relativePath] = remoteContent), (loadedFiles[relativePath] = remoteContent))
+        : (delete savedFiles[relativePath], delete loadedFiles[relativePath]);
     }
-    async function value18(input2?: Dynamic): Promise<Dynamic> {
-      await callback21();
-      disposed || createMyCopy(input, input2);
+    async function keepMineAsCopy(contentToCopy?: Dynamic): Promise<Dynamic> {
+      await takeTheirs();
+      disposed || createMyCopy(relativePath, contentToCopy);
     }
-    let state2: Dynamic = {
-        file: input,
-        why: extra,
+    let offer: Dynamic = {
+        file: relativePath,
+        why: reason,
         get deleted(): Dynamic {
-          return callback19() === null;
+          return latestRemoteSha() === null;
         },
-        takeTheirs: callback20("take theirs", callback21),
-        keepMine: callback20("keep mine", value17),
-        keepMineAsCopy: callback20("keep mine as a copy", value18),
+        takeTheirs: onResolution("take theirs", takeTheirs),
+        keepMine: onResolution("keep mine", keepMine),
+        keepMineAsCopy: onResolution("keep mine as a copy", keepMineAsCopy),
       },
-      callback22: Dynamic = (): Dynamic => {
+      showOffer: Dynamic = (): Dynamic => {
         try {
-          options.onBoardClash?.(state2);
+          documentOptions.onBoardClash?.(offer);
         } catch {}
       };
-    boardClashes.set(input, {
-      theirsSha: context,
+    boardClashes.set(relativePath, {
+      theirsSha: remoteSha,
       askedAt: timers.now(),
-      ask: callback22,
+      ask: showOffer,
     });
-    callback22();
+    showOffer();
   }
-  let callback13: Dynamic = (input?: Dynamic): Dynamic =>
-      input === DESIGN_INDEX_FILE_PATH
+  let latestFileSha: Dynamic = (absolutePath?: Dynamic): Dynamic =>
+      absolutePath === DESIGN_INDEX_FILE_PATH
         ? (liveHashes.get(DESIGN_INDEX_FILE_PATH) ?? null)
-        : publishedHashes.has(input)
-          ? (publishedHashes.get(input) ?? null)
-          : (liveHashes.get(input) ?? null),
-    index4: Dynamic = 0,
-    items: Dynamic = [];
+        : publishedHashes.has(absolutePath)
+          ? (publishedHashes.get(absolutePath) ?? null)
+          : (liveHashes.get(absolutePath) ?? null),
+    offeredChangedCount: Dynamic = 0,
+    stashAnswerListeners: Dynamic = [];
   function offerCrashStash(): Dynamic {
-    let value14: Dynamic = value7;
-    if (value14 === undefined) return;
-    index4 = value14.edits.filter(
-      (input?: Dynamic): Dynamic => input.base !== callback13(input.path),
+    let stash: Dynamic = offeredCrashStash;
+    if (stash === undefined) return;
+    offeredChangedCount = stash.edits.filter(
+      (edit?: Dynamic): Dynamic => edit.base !== latestFileSha(edit.path),
     ).length;
-    let state2: Dynamic = {
-      files: value14.edits.length,
-      changedSince: index4,
-      at: value14.at,
+    let offer: Dynamic = {
+      files: stash.edits.length,
+      changedSince: offeredChangedCount,
+      at: stash.at,
       restore: restoreCrashStash,
       discard: discardCrashStash,
-      whenAnswered: (input?: Dynamic): Dynamic => {
-        items.push(input);
+      whenAnswered: (listener?: Dynamic): Dynamic => {
+        stashAnswerListeners.push(listener);
       },
     };
     try {
-      options.onStashOffer?.(state2);
+      documentOptions.onStashOffer?.(offer);
     } catch {}
   }
   function restoreCrashStash(): Dynamic {
-    let value14: Dynamic = value7;
+    let stash: Dynamic = offeredCrashStash;
     if (
       !(
-        value14 === undefined ||
+        stash === undefined ||
         !canWrite ||
         loadState !== "live" ||
         disposed
       )
     ) {
       if (
-        value14.edits.filter(
-          (input?: Dynamic): Dynamic => input.base !== callback13(input.path),
-        ).length > index4
+        stash.edits.filter(
+          (edit?: Dynamic): Dynamic => edit.base !== latestFileSha(edit.path),
+        ).length > offeredChangedCount
       ) {
         offerCrashStash();
         return;
       }
       clearCrashStashOffer();
-      index3 += 1;
-      applyStashedContent(value14);
+      restoreCount += 1;
+      applyStashedContent(stash);
     }
   }
   function discardCrashStash(): Dynamic {
-    value7 !== undefined &&
+    offeredCrashStash !== undefined &&
       (clearCrashStashOffer(),
-      options.saveStash?.clearOffered(),
+      documentOptions.saveStash?.clearOffered(),
       notifyContent(false));
   }
   function clearCrashStashOffer(): Dynamic {
-    value7 = undefined;
-    for (let value14 of items.splice(0) as Dynamic)
+    offeredCrashStash = undefined;
+    for (let listener of stashAnswerListeners.splice(0) as Dynamic)
       try {
-        value14();
+        listener();
       } catch {}
   }
-  function applyStashedContent(input?: Dynamic): Dynamic {
-    let state2: Dynamic = {
+  function applyStashedContent(stash?: Dynamic): Dynamic {
+    let restoredFiles: Dynamic = {
         ...state.content.files,
       },
-      items2: Dynamic = [],
-      items3: Dynamic = [],
-      items4: Dynamic = [],
-      items5: Dynamic = [];
-    for (let value15 of input.edits as Dynamic) {
-      let value16: Dynamic =
-        value15.path === DESIGN_INDEX_FILE_PATH
+      boardClashOffers: Dynamic = [],
+      skippedPaths: Dynamic = [],
+      conflictingBoardEdits: Dynamic = [],
+      duplicateBoardEdits: Dynamic = [];
+    for (let edit of stash.edits as Dynamic) {
+      let relativePath: Dynamic =
+        edit.path === DESIGN_INDEX_FILE_PATH
           ? undefined
-          : fromProjectContentPath(value15.path, "design");
-      if (value16 === undefined) continue;
-      let value17: Dynamic = callback13(value15.path);
-      if (value15.text === null) {
-        value15.base !== null && value15.base === value17 && value16 in state2
-          ? delete state2[value16]
-          : value17 !== null && items3.push(value16);
+          : fromProjectContentPath(edit.path, "design");
+      if (relativePath === undefined) continue;
+      let remoteSha: Dynamic = latestFileSha(edit.path);
+      if (edit.text === null) {
+        edit.base !== null && edit.base === remoteSha && relativePath in restoredFiles
+          ? delete restoredFiles[relativePath]
+          : remoteSha !== null && skippedPaths.push(relativePath);
         continue;
       }
-      if (value15.base === value17) {
-        state2[value16] = value15.text;
-        continue;
-      }
-      if (
-        isArtboardFile(value16) &&
-        value17 !== null &&
-        options.sameBoardRule === "first"
-      ) {
-        items4.push({
-          p: value16,
-          text: value15.text,
-        });
+      if (edit.base === remoteSha) {
+        restoredFiles[relativePath] = edit.text;
         continue;
       }
       if (
-        options.sameBoardRule === "last" &&
-        isArtboardFile(value16) &&
-        value15.base === null &&
-        value17 !== null
+        isArtboardFile(relativePath) &&
+        remoteSha !== null &&
+        documentOptions.sameBoardRule === "first"
       ) {
-        items5.push({
-          p: value16,
-          text: value15.text,
+        conflictingBoardEdits.push({
+          p: relativePath,
+          text: edit.text,
         });
         continue;
       }
-      if (options.sameBoardRule === "last") {
-        state2[value16] = value15.text;
-        value17 === null
-          ? (liveHashes.delete(value15.path),
-            fileDirtyVersions.delete(value16))
-          : liveHashes.set(value15.path, value17);
-        delete loadedFiles[value16];
-        continue;
-      }
-      if (isArtboardFile(value16) && value17 !== null) {
-        items2.push({
-          p: value16,
-          treePath: value15.path,
-          theirsSha: value17,
-          theirs: state.content.files[value16],
+      if (
+        documentOptions.sameBoardRule === "last" &&
+        isArtboardFile(relativePath) &&
+        edit.base === null &&
+        remoteSha !== null
+      ) {
+        duplicateBoardEdits.push({
+          p: relativePath,
+          text: edit.text,
         });
-        state2[value16] = value15.text;
         continue;
       }
-      items3.push(value16);
+      if (documentOptions.sameBoardRule === "last") {
+        restoredFiles[relativePath] = edit.text;
+        remoteSha === null
+          ? (liveHashes.delete(edit.path),
+            fileDirtyVersions.delete(relativePath))
+          : liveHashes.set(edit.path, remoteSha);
+        delete loadedFiles[relativePath];
+        continue;
+      }
+      if (isArtboardFile(relativePath) && remoteSha !== null) {
+        boardClashOffers.push({
+          p: relativePath,
+          treePath: edit.path,
+          theirsSha: remoteSha,
+          theirs: state.content.files[relativePath],
+        });
+        restoredFiles[relativePath] = edit.text;
+        continue;
+      }
+      skippedPaths.push(relativePath);
     }
-    let value14: Dynamic = input.edits.find(
-      (input2?: Dynamic): Dynamic => input2.path === DESIGN_INDEX_FILE_PATH,
+    let stashedIndexEdit: Dynamic = stash.edits.find(
+      (edit?: Dynamic): Dynamic => edit.path === DESIGN_INDEX_FILE_PATH,
     );
-    if (value14 !== undefined && value14.text !== null) {
-      let value15: Dynamic;
+    if (stashedIndexEdit !== undefined && stashedIndexEdit.text !== null) {
+      let parsedIndex: Dynamic;
       try {
-        value15 = normalizeDesignIndex(JSON.parse(value14.text));
+        parsedIndex = normalizeDesignIndex(JSON.parse(stashedIndexEdit.text));
       } catch {
-        value15 = undefined;
+        parsedIndex = undefined;
       }
       if (
-        value15 !== undefined &&
-        value14.base !== null &&
-        value14.base === (liveHashes.get(DESIGN_INDEX_FILE_PATH) ?? null)
+        parsedIndex !== undefined &&
+        stashedIndexEdit.base !== null &&
+        stashedIndexEdit.base === (liveHashes.get(DESIGN_INDEX_FILE_PATH) ?? null)
       ) {
-        let value16: Dynamic = value15;
+        let restoredIndex: Dynamic = parsedIndex;
         indexState.update(
-          (input2?: Dynamic): Dynamic =>
+          (index?: Dynamic): Dynamic =>
             replaceIndexObjectProperties(
-              input2,
-              cloneIndexValue(value16) as DataRecord,
+              index,
+              cloneIndexValue(restoredIndex) as DataRecord,
             ),
         );
-        value.commit();
-      } else items3.push("the canvas layout");
+        publisher.commit();
+      } else skippedPaths.push("the canvas layout");
     }
-    adoptRemoteFiles(state2);
-    for (let value15 of items2 as Dynamic)
+    adoptRemoteFiles(restoredFiles);
+    for (let offer of boardClashOffers as Dynamic)
       offerBoardClashNotice(
-        value15.p,
-        value15.treePath,
-        value15.theirsSha,
-        value15.theirs,
+        offer.p,
+        offer.treePath,
+        offer.theirsSha,
+        offer.theirs,
         "this is your unsaved edit from before the page reloaded, and the board has changed since",
       );
-    for (let value15 of items5 as Dynamic)
+    for (let edit of duplicateBoardEdits as Dynamic)
       notice(
         "Someone else made \u201C" +
-          value15.p.replace(/\.dc\.html$/, "") +
+          edit.p.replace(/\.dc\.html$/, "") +
           "\u201D meanwhile; yours is \u201C" +
-          createMyCopy(value15.p, value15.text, true).replace(
+          createMyCopy(edit.p, edit.text, true).replace(
             /\.dc\.html$/,
             "",
           ) +
           "\u201D.",
       );
-    for (let value15 of items4 as Dynamic)
+    for (let edit of conflictingBoardEdits as Dynamic)
       notice(
-        value15.p.replace(/\.dc\.html$/, "") +
+        edit.p.replace(/\.dc\.html$/, "") +
           " changed remotely; your unsaved edit is in \u201C" +
-          createMyCopy(value15.p, value15.text).replace(/\.dc\.html$/, "") +
+          createMyCopy(edit.p, edit.text).replace(/\.dc\.html$/, "") +
           "\u201D",
       );
-    items3.length > 0 &&
+    skippedPaths.length > 0 &&
       notice(
         "Some of your unsaved edits from before the page reloaded were not put back, because they changed since: " +
-          items3
+          skippedPaths
             .map(
-              (input2?: Dynamic): Dynamic =>
-                input2.replace(/\.dc\.html$/, ""),
+              (relativePath?: Dynamic): Dynamic =>
+                relativePath.replace(/\.dc\.html$/, ""),
             )
             .join(", ") +
           ".",
       );
-    options.debug?.event("stash-restored", {
-      files: input.edits.length,
-      asked: items2.map((input2?: Dynamic): Dynamic => input2.p),
-      notBack: items3,
+    documentOptions.debug?.event("stash-restored", {
+      files: stash.edits.length,
+      asked: boardClashOffers.map((offer?: Dynamic): Dynamic => offer.p),
+      notBack: skippedPaths,
     });
     scheduleLocalSave();
-    value.stashRestored();
+    publisher.stashRestored();
   }
-  function releaseHeldFocusedFiles(input?: Dynamic): Dynamic {
-    for (let value14 of [...heldRemoteFiles] as Dynamic)
-      (artboardStorePath(value14) !== input &&
-        value14 !== input) ||
-        callback8(value14) ||
-        releaseHeldFile(value14);
+  function releaseHeldFocusedFiles(focusedPath?: Dynamic): Dynamic {
+    for (let relativePath of [...heldRemoteFiles] as Dynamic)
+      (artboardStorePath(relativePath) !== focusedPath &&
+        relativePath !== focusedPath) ||
+        shouldHoldRemoteFile(relativePath) ||
+        releaseHeldFile(relativePath);
   }
-  let value11: Dynamic;
-  function retryFailedLoad(input: Dynamic = false): Dynamic {
+  let retryLoadPromise: Dynamic;
+  function retryFailedLoad(isManualRetry: Dynamic = false): Dynamic {
     if (!(loadState !== "failed" || disposed)) {
-      value4 !== undefined &&
-        (timers.clearTimeout(value4), (value4 = undefined));
+      loadRetryTimer !== undefined &&
+        (timers.clearTimeout(loadRetryTimer), (loadRetryTimer = undefined));
       loadState = "loading";
-      for (let value14 of [...loadListeners] as Dynamic) value14();
+      for (let listener of [...loadListeners] as Dynamic) listener();
       notifySave();
-      value11 = loadFiles(input);
+      retryLoadPromise = loadFiles(isManualRetry);
     }
   }
-  let callback14: Dynamic = (): Dynamic =>
-    value8 !== undefined || Object.keys(state.content.files).some(callback9);
+  let hasLocalEditsToCollect: Dynamic = (): Dynamic =>
+    localSaveTimer !== undefined || Object.keys(state.content.files).some(hasUnsavedFileEdits);
   function flushBeforeExit(): Dynamic {
-    let value14: Dynamic = callback14();
-    value8 !== undefined &&
-      (timers.clearTimeout(value8), (value8 = undefined));
-    value14 && loadState === "live" && publishLocalChanges();
-    value.flushNow();
+    let hasLocalEdits: Dynamic = hasLocalEditsToCollect();
+    localSaveTimer !== undefined &&
+      (timers.clearTimeout(localSaveTimer), (localSaveTimer = undefined));
+    hasLocalEdits && loadState === "live" && publishLocalChanges();
+    publisher.flushNow();
   }
-  let callback15: Dynamic = (): Dynamic => {
+  let onVisibilityChange: Dynamic = (): Dynamic => {
       typeof document !== "undefined" &&
         (document as Dynamic).visibilityState !== "visible" &&
         flushBeforeExit();
     },
-    callback16: Dynamic = (): Dynamic => flushBeforeExit(),
-    callback17: Dynamic = (): Dynamic =>
+    onPageHide: Dynamic = (): Dynamic => flushBeforeExit(),
+    hasPendingSave: Dynamic = (): Dynamic =>
       syncState.dirty > 0 ||
       syncState.inFlight ||
-      value8 !== undefined ||
+      localSaveTimer !== undefined ||
       syncState.unsendable !== undefined,
-    callback18: Dynamic = (event?: Dynamic): Dynamic => {
-      callback17() &&
+    onBeforeUnload: Dynamic = (event?: Dynamic): Dynamic => {
+      hasPendingSave() &&
         (flushBeforeExit(), event.preventDefault(), (event.returnValue = ""));
     },
-    value12: Dynamic =
+    canListenToVisibility: Dynamic =
       typeof document !== "undefined" &&
       typeof (document as Dynamic).addEventListener == "function";
   typeof addEventListener == "function" &&
-    (value12 &&
-      (document as Dynamic).addEventListener("visibilitychange", callback15),
-    addEventListener("pagehide", callback16),
-    canWrite && addEventListener("beforeunload", callback18));
-  let value13: Dynamic = loadFiles();
+    (canListenToVisibility &&
+      (document as Dynamic).addEventListener("visibilitychange", onVisibilityChange),
+    addEventListener("pagehide", onPageHide),
+    canWrite && addEventListener("beforeunload", onBeforeUnload));
+  let initialLoadPromise: Dynamic = loadFiles();
   return {
     saveMode: (): Dynamic => "auto",
     state: (): Dynamic => state,
     content: (): Dynamic => state.content,
     title: (): Dynamic => state.title,
     comments: (): Dynamic => state.comments,
-    dirty: callback17,
+    dirty: hasPendingSave,
     readOnly: (): Dynamic => !canWrite,
     saveState: getSaveState,
     commentSync: (): Dynamic => ({
@@ -2447,30 +2447,30 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     }),
     pendingCommentIds: (): Dynamic => new Set(),
     retryCommentPublish(): Dynamic {},
-    setContent(input: Dynamic): Dynamic {
-      input !== state.content &&
+    setContent(content: Dynamic): Dynamic {
+      content !== state.content &&
         (replaceDocument({
           ...state,
-          content: input,
+          content: content,
         }),
         recordEdit());
     },
-    updateContent(input: Dynamic, options2: Dynamic): Dynamic {
-      let value14: Dynamic = input(state.content);
-      value14 !== state.content &&
+    updateContent(update: Dynamic, updateOptions: Dynamic): Dynamic {
+      let content: Dynamic = update(state.content);
+      content !== state.content &&
         (replaceDocument({
           ...state,
-          content: value14,
+          content: content,
         }),
-        options2?.auto !== true && recordEdit());
+        updateOptions?.auto !== true && recordEdit());
     },
-    setTitle(input: Dynamic): Dynamic {
-      let value14: Dynamic = normalizeNewDocumentTitle(input);
-      value14.length === 0 ||
-        value14 === state.title ||
+    setTitle(newTitle: Dynamic): Dynamic {
+      let title: Dynamic = normalizeNewDocumentTitle(newTitle);
+      title.length === 0 ||
+        title === state.title ||
         (replaceDocument({
           ...state,
-          title: value14,
+          title: title,
         }),
         recordEdit());
     },
@@ -2478,7 +2478,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     removeComment(): Dynamic {},
     documentBytes: (): Dynamic =>
       Object.values(state.content.files).reduce(
-        (input?: Dynamic, items2?: Dynamic): Dynamic => input + items2.length,
+        (total?: Dynamic, content?: Dynamic): Dynamic => total + content.length,
         0,
       ),
     async save(): Promise<Dynamic> {
@@ -2486,89 +2486,89 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       flushBeforeExit();
     },
     stashOffer: (): Dynamic =>
-      value7 === undefined
+      offeredCrashStash === undefined
         ? undefined
         : {
-            at: value7.at,
+            at: offeredCrashStash.at,
           },
     restoreStash(): Dynamic {
       restoreCrashStash();
     },
     discardStash: discardCrashStash,
-    restoreCount: (): Dynamic => index3,
-    subscribe(input: Dynamic): Dynamic {
-      contentListeners.add(input);
+    restoreCount: (): Dynamic => restoreCount,
+    subscribe(listener: Dynamic): Dynamic {
+      contentListeners.add(listener);
       return (): Dynamic => {
-        contentListeners.delete(input);
+        contentListeners.delete(listener);
       };
     },
-    subscribeSave(input: Dynamic): Dynamic {
-      saveListeners.add(input);
+    subscribeSave(listener: Dynamic): Dynamic {
+      saveListeners.add(listener);
       return (): Dynamic => {
-        saveListeners.delete(input);
+        saveListeners.delete(listener);
       };
     },
     debugState(): Dynamic {
-      let liveSha: Dynamic = options.port.liveSha,
-        value14: Dynamic = value.conflicted?.() ?? new Map(),
-        value15: Dynamic = [...liveHashes.keys()]
+      let liveSha: Dynamic = documentOptions.port.liveSha,
+        conflictedFiles: Dynamic = publisher.conflicted?.() ?? new Map(),
+        fileDetails: Dynamic = [...liveHashes.keys()]
           .sort()
-          .map((input?: Dynamic): Dynamic => {
-            let value17: Dynamic =
-                input === DESIGN_INDEX_FILE_PATH
+          .map((absolutePath?: Dynamic): Dynamic => {
+            let relativePath: Dynamic =
+                absolutePath === DESIGN_INDEX_FILE_PATH
                   ? canvasMetadataFile
-                  : input.startsWith(projectPathPrefix)
-                    ? input.slice(projectPathPrefix.length)
-                    : input,
-              value18: Dynamic = state.content.files[value17],
-              value19: Dynamic = liveSha?.call(options.port, input),
-              items2: Dynamic = [];
-            value17 !== canvasMetadataFile &&
-              callback9(value17) &&
-              items2.push("dirty");
+                  : absolutePath.startsWith(projectPathPrefix)
+                    ? absolutePath.slice(projectPathPrefix.length)
+                    : absolutePath,
+              fileText: Dynamic = state.content.files[relativePath],
+              remoteSha: Dynamic = liveSha?.call(documentOptions.port, absolutePath),
+              statuses: Dynamic = [];
+            relativePath !== canvasMetadataFile &&
+              hasUnsavedFileEdits(relativePath) &&
+              statuses.push("dirty");
             syncState.inFlight &&
-              items2.includes("dirty") &&
-              items2.push("in-flight");
-            value14.has(input) && items2.push("conflicted");
-            heldRemoteFiles.has(value17) && items2.push("held");
-            boardClashes.has(value17) &&
-              !items2.includes("conflicted") &&
-              items2.push("conflicted");
-            value19 !== undefined &&
-              value19 !== liveHashes.get(input) &&
-              items2.push("behind");
+              statuses.includes("dirty") &&
+              statuses.push("in-flight");
+            conflictedFiles.has(absolutePath) && statuses.push("conflicted");
+            heldRemoteFiles.has(relativePath) && statuses.push("held");
+            boardClashes.has(relativePath) &&
+              !statuses.includes("conflicted") &&
+              statuses.push("conflicted");
+            remoteSha !== undefined &&
+              remoteSha !== liveHashes.get(absolutePath) &&
+              statuses.push("behind");
             return {
-              path: input,
-              sha: liveHashes.get(input) ?? null,
-              ...(value19 !== undefined
+              path: absolutePath,
+              sha: liveHashes.get(absolutePath) ?? null,
+              ...(remoteSha !== undefined
                 ? {
-                    liveSha: value19,
+                    liveSha: remoteSha,
                   }
                 : {}),
-              ...(typeof value18 == "string"
+              ...(typeof fileText == "string"
                 ? {
-                    size: value18.length,
+                    size: fileText.length,
                   }
                 : {}),
-              state: items2.join(" "),
+              state: statuses.join(" "),
             };
           }),
-        value16: Dynamic = Object.keys(state.content.files)
+        dirtyPaths: Dynamic = Object.keys(state.content.files)
           .filter(
-            (input?: Dynamic): Dynamic =>
-              input !== canvasMetadataFile && callback9(input),
+            (relativePath?: Dynamic): Dynamic =>
+              relativePath !== canvasMetadataFile && hasUnsavedFileEdits(relativePath),
           )
           .map(
-            (input?: Dynamic): Dynamic =>
-              toProjectContentPath(input),
+            (relativePath?: Dynamic): Dynamic =>
+              toProjectContentPath(relativePath),
           );
       return {
-        files: value15,
+        files: fileDetails,
         queue: {
           dirty:
-            value8 !== undefined && value16.length === 0
+            localSaveTimer !== undefined && dirtyPaths.length === 0
               ? ["(a flush is scheduled)"]
-              : value16,
+              : dirtyPaths,
           inFlight: syncState.inFlight,
           ...(syncState.lastError !== undefined
             ? {
@@ -2588,87 +2588,87 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
                     : ""),
               }
             : {}),
-          conflicted: [...value14.keys()],
+          conflicted: [...conflictedFiles.keys()],
           note: "a refused save is re-read and resent with backoff for about 10 s, then reported stuck (and stashed) and retried slowly",
         },
       };
     },
     reconciles: (): Dynamic => undoHistory,
     editorSaw: rememberManifestDeletions,
-    retrySave: (): Dynamic => value.retryNow(),
-    maxFileBytes: PlatformFileContentResolvedValue_11,
+    retrySave: (): Dynamic => publisher.retryNow(),
+    maxFileBytes: MAX_DESIGN_FILE_BYTES,
     loadState: (): Dynamic => loadState,
     shown: (): Dynamic => loadState === "live",
     cachedSettled: (): Dynamic => false,
-    subscribeLoad(input: Dynamic): Dynamic {
-      loadListeners.add(input);
+    subscribeLoad(listener: Dynamic): Dynamic {
+      loadListeners.add(listener);
       return (): Dynamic => {
-        loadListeners.delete(input);
+        loadListeners.delete(listener);
       };
     },
     healthSource(): Dynamic {
-      let callback19: Dynamic = (): Dynamic =>
+      let getHealthLoadState: Dynamic = (): Dynamic =>
           loadState === "failed" &&
-          value4 !== undefined &&
-          index < FILE_READ_MAX_RETRIES &&
-          value5 !== undefined &&
-          timers.now() - (value6 ?? value5.at) < FILE_READ_TIMEOUT_MS
+          loadRetryTimer !== undefined &&
+          loadRetryCount < FILE_READ_MAX_RETRIES &&
+          lastLoadFailure !== undefined &&
+          timers.now() - (firstLoadFailureAt ?? lastLoadFailure.at) < FILE_READ_TIMEOUT_MS
             ? "loading"
             : loadState,
-        callback20: Dynamic = (): Dynamic =>
+        isRetryableSaveError: Dynamic = (): Dynamic =>
           loadState === "live" &&
           canWrite &&
           syncState.stuck === undefined &&
           syncState.unsendable === undefined &&
           syncState.lastError !== undefined,
-        callback21: Dynamic = (state2?: Dynamic): Dynamic =>
-          state2.status === "error" && callback20()
+        saveStateForHealth: Dynamic = (saveState?: Dynamic): Dynamic =>
+          saveState.status === "error" && isRetryableSaveError()
             ? {
                 status: "saving",
               }
-            : state2;
+            : saveState;
       return {
-        loadState: callback19,
+        loadState: getHealthLoadState,
         cachedSettled: (): Dynamic => false,
-        subscribeLoad: (input?: Dynamic): Dynamic => (
-          loadListeners.add(input),
+        subscribeLoad: (listener?: Dynamic): Dynamic => (
+          loadListeners.add(listener),
           (): Dynamic => {
-            loadListeners.delete(input);
+            loadListeners.delete(listener);
           }
         ),
-        saveState: (): Dynamic => callback21(getSaveState()),
-        subscribeSave: (input?: Dynamic): Dynamic => {
-          let callback22: Dynamic = (input2?: Dynamic): Dynamic =>
-            input(callback21(input2));
-          saveListeners.add(callback22);
+        saveState: (): Dynamic => saveStateForHealth(getSaveState()),
+        subscribeSave: (listener?: Dynamic): Dynamic => {
+          let notifyHealthListener: Dynamic = (saveState?: Dynamic): Dynamic =>
+            listener(saveStateForHealth(saveState));
+          saveListeners.add(notifyHealthListener);
           return (): Dynamic => {
-            saveListeners.delete(callback22);
+            saveListeners.delete(notifyHealthListener);
           };
         },
         syncDetail: (): Dynamic => {
-          let value14: Dynamic = syncState.stuck?.code ?? syncState.lastError;
-          return value14 !== undefined
+          let errorCode: Dynamic = syncState.stuck?.code ?? syncState.lastError;
+          return errorCode !== undefined
             ? {
                 lastError: {
                   code:
-                    FILES_ERROR_DATABASE_ALIASES[String(value14)] ??
-                    String(value14),
+                    FILES_ERROR_DATABASE_ALIASES[String(errorCode)] ??
+                    String(errorCode),
                 },
               }
             : {};
         },
-        dirty: (): Dynamic => callback17(),
+        dirty: (): Dynamic => hasPendingSave(),
       };
     },
     flushNow: flushBeforeExit,
     retryLoad: retryFailedLoad,
     storeUntouched: (): Dynamic => false,
     releaseHold: releaseHeldFocusedFiles,
-    theirsOnItsWay: (input?: Dynamic): Dynamic =>
-      heldRemoteFiles.has(input) ||
-      callback7(toProjectContentPath(input)),
+    theirsOnItsWay: (relativePath?: Dynamic): Dynamic =>
+      heldRemoteFiles.has(relativePath) ||
+      hasNewerPublishedHash(toProjectContentPath(relativePath)),
     syncDetail: (): Dynamic => ({
-      pending: syncState.dirty + (value8 !== undefined ? 1 : 0),
+      pending: syncState.dirty + (localSaveTimer !== undefined ? 1 : 0),
       inflight: syncState.inFlight ? DESIGN_INDEX_FILE_PATH : null,
       flights: syncState.inFlight ? 1 : 0,
       ...(lastSaveAt !== undefined
@@ -2684,75 +2684,75 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     }),
     dispose(): Dynamic {
       disposed = true;
-      value10 !== undefined &&
-        (timers.clearTimeout(value10), (value10 = undefined));
-      value9 !== undefined &&
-        (timers.clearTimeout(value9), (value9 = undefined));
-      value4 !== undefined &&
-        (timers.clearTimeout(value4), (value4 = undefined));
-      value8 !== undefined && timers.clearTimeout(value8);
+      heldRemoteTimer !== undefined &&
+        (timers.clearTimeout(heldRemoteTimer), (heldRemoteTimer = undefined));
+      fileSaveTimer !== undefined &&
+        (timers.clearTimeout(fileSaveTimer), (fileSaveTimer = undefined));
+      loadRetryTimer !== undefined &&
+        (timers.clearTimeout(loadRetryTimer), (loadRetryTimer = undefined));
+      localSaveTimer !== undefined && timers.clearTimeout(localSaveTimer);
       typeof removeEventListener == "function" &&
-        (value12 &&
+        (canListenToVisibility &&
           (document as Dynamic).removeEventListener(
             "visibilitychange",
-            callback15,
+            onVisibilityChange,
           ),
-        removeEventListener("pagehide", callback16),
-        removeEventListener("beforeunload", callback18));
-      value.dispose();
+        removeEventListener("pagehide", onPageHide),
+        removeEventListener("beforeunload", onBeforeUnload));
+      publisher.dispose();
     },
-    ready: value13,
+    ready: initialLoadPromise,
     applyRemote: handleRemoteUpdate,
     heldShas: (): Dynamic => liveHashes,
     async settle(): Promise<Dynamic> {
       flushBeforeExit();
-      await value.settle();
+      await publisher.settle();
     },
-    queue: value,
+    queue: publisher,
     index: (): Dynamic => indexState.get(),
     indexSaved: (): Dynamic => indexState.baseSha() !== null,
     listedBoards(): Dynamic {
-      let value14: Dynamic = normalizeDesignIndex(
+      let normalizedIndex: Dynamic = normalizeDesignIndex(
           indexState.get(),
         ),
         files: Dynamic = state.content.files,
-        value15: Dynamic = Object.fromEntries(
-          Object.entries(value14.boards).filter(
-            ([input]: Dynamic): Dynamic =>
-              isArtboardFile(input) &&
-              !isDesignSystemFile(input),
+        designBoards: Dynamic = Object.fromEntries(
+          Object.entries(normalizedIndex.boards).filter(
+            ([relativePath]: Dynamic): Dynamic =>
+              isArtboardFile(relativePath) &&
+              !isDesignSystemFile(relativePath),
           ),
         ),
-        values5: Dynamic = new Set(Object.keys(value15));
-      if (hasLocalChanges)
+        listedPaths: Dynamic = new Set(Object.keys(designBoards));
+      if (hasPartialListing)
         return {
-          listed: values5,
+          listed: listedPaths,
           awaited: [],
         };
-      let value16: Dynamic =
-          PlatformFileContentFilesValue -
+      let remainingSlots: Dynamic =
+          MAX_LISTED_PROJECT_FILES -
           1 -
           Object.keys(files).length,
-        items2: Dynamic = [];
-      for (let value17 of orderedDesignMapKeys(
-        value14.order,
-        value15,
+        awaitedPaths: Dynamic = [];
+      for (let relativePath of orderedDesignMapKeys(
+        normalizedIndex.order,
+        designBoards,
       ) as Dynamic) {
-        if (items2.length >= value16) break;
-        !(value17 in files) &&
-          (publishedHashes.get(toProjectContentPath(value17)) ??
+        if (awaitedPaths.length >= remainingSlots) break;
+        !(relativePath in files) &&
+          (publishedHashes.get(toProjectContentPath(relativePath)) ??
             null) === null &&
-          !knownArtboardFiles.has(value17) &&
-          !fileDirtyVersions.has(value17) &&
+          !knownArtboardFiles.has(relativePath) &&
+          !fileDirtyVersions.has(relativePath) &&
           validateListedDesignFile({
-            path: toProjectContentPath(value17),
+            path: toProjectContentPath(relativePath),
             size: 0,
           }) !== null &&
-          items2.push(value17);
+          awaitedPaths.push(relativePath);
       }
       return {
-        listed: values5,
-        awaited: buildSelectedBoardsDocument(value14, items2),
+        listed: listedPaths,
+        awaited: buildSelectedBoardsDocument(normalizedIndex, awaitedPaths),
       };
     },
   };
@@ -2787,12 +2787,12 @@ export {
 };
 export function installPlatformFilesDesignDocument(): () => void {
   return () => {
-    hasUnstashedUnsendableEdits = (input?: Dynamic): Dynamic =>
-      input.unsendable !== undefined && input.unsendableStashed !== true;
+    hasUnstashedUnsendableEdits = (saveState?: Dynamic): Dynamic =>
+      saveState.unsendable !== undefined && saveState.unsendableStashed !== true;
     filesDocumentTimers = {
-      setTimeout: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        setTimeout(input, options),
-      clearTimeout: (input?: Dynamic): Dynamic => clearTimeout(input),
+      setTimeout: (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+        setTimeout(run, delayMs),
+      clearTimeout: (timer?: Dynamic): Dynamic => clearTimeout(timer),
       now: (): Dynamic => Date.now(),
     };
     DESIGN_FILE_MIME_TYPES = {
@@ -2801,29 +2801,29 @@ export function installPlatformFilesDesignDocument(): () => void {
       tsx: "text/plain",
       ts: "text/plain",
     };
-    canSaveDesignFile = (input?: Dynamic): Dynamic =>
-      getDesignFileContentType(input) !== null;
-    describeUnsupportedDesignFile = (input?: Dynamic): Dynamic =>
+    canSaveDesignFile = (filePath?: Dynamic): Dynamic =>
+      getDesignFileContentType(filePath) !== null;
+    describeUnsupportedDesignFile = (filePath?: Dynamic): Dynamic =>
       "\u201C" +
-      input +
+      filePath +
       "\u201D can\u2019t be saved with this canvas. Add it as a PNG, JPEG, WebP or SVG instead.";
-    isMissingRequiredDesignFile = (input?: Dynamic): Dynamic =>
+    isMissingRequiredDesignFile = (filePath?: Dynamic): Dynamic =>
       isReservedProjectPath(
         "design",
-        projectPathPrefix + input,
+        projectPathPrefix + filePath,
       );
-    describeReservedDesignFilename = (input?: Dynamic): Dynamic =>
+    describeReservedDesignFilename = (filePath?: Dynamic): Dynamic =>
       "\u201C" +
-      input +
+      filePath +
       "\u201D won\u2019t be saved under that name. Give the file another name.";
-    describeMissingDesignFile = (input?: Dynamic): Dynamic =>
+    describeMissingDesignFile = (filePath?: Dynamic): Dynamic =>
       "\u201C" +
-      input +
+      filePath +
       "\u201D is missing from this canvas. Add it again under another name.";
-    describeUnsavableDesignFile = (input?: Dynamic): Dynamic =>
-      isMissingRequiredDesignFile(input)
-        ? describeMissingDesignFile(input)
-        : describeUnsupportedDesignFile(input);
+    describeUnsavableDesignFile = (filePath?: Dynamic): Dynamic =>
+      isMissingRequiredDesignFile(filePath)
+        ? describeMissingDesignFile(filePath)
+        : describeUnsupportedDesignFile(filePath);
     DESIGN_INDEX_FILE_PATH = projectMetadataPaths.design;
     DESIGN_RESTART_MAX_ATTEMPTS = 6;
     DESIGN_RESTART_DELAY_MS = 5e3;
@@ -2835,10 +2835,10 @@ export function installPlatformFilesDesignDocument(): () => void {
         text += String.fromCharCode(...items.subarray(index, index + 32768));
       return btoa(text);
     };
-    base64ToBytes = (input?: Dynamic): Dynamic =>
+    base64ToBytes = (base64?: Dynamic): Dynamic =>
       Uint8Array.from(
-        atob(input),
-        (input2?: Dynamic): Dynamic => input2.charCodeAt(0),
+        atob(base64),
+        (character?: Dynamic): Dynamic => character.charCodeAt(0),
       );
     FILE_READ_MAX_RETRIES = 3;
     FILE_READ_TIMEOUT_MS = 3e4;

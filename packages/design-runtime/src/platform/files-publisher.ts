@@ -32,37 +32,37 @@ var PERMANENT_PUBLISH_ERROR_CODES: Dynamic;
 var isIndexPublishFailure: Dynamic;
 function createPublishTimers(): Dynamic {
   return {
-    setTimeout: (input?: Dynamic, options?: Dynamic): Dynamic =>
-      setTimeout(input, options),
-    clearTimeout: (input?: Dynamic): Dynamic => clearTimeout(input),
+    setTimeout: (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+      setTimeout(run, delayMs),
+    clearTimeout: (timer?: Dynamic): Dynamic => clearTimeout(timer),
     now: (): Dynamic => Date.now(),
     random: (): Dynamic => Math.random(),
   };
 }
-function createFilesPublisher(options?: Dynamic): Dynamic {
-  let { port: originalPort }: Dynamic = options,
+function createFilesPublisher(publisherOptions?: Dynamic): Dynamic {
+  let { port: originalPort }: Dynamic = publisherOptions,
     port: Dynamic = originalPort,
-    timers: Dynamic = options.timers ?? createPublishTimers(),
-    indexState: Dynamic = options.index,
+    timers: Dynamic = publisherOptions.timers ?? createPublishTimers(),
+    indexState: Dynamic = publisherOptions.index,
     indexPath: Dynamic = indexState?.path,
-    isIndexPath: Dynamic = (input?: Dynamic): Dynamic =>
+    isIndexPath: Dynamic = (filePath?: Dynamic): Dynamic =>
       indexPath !== undefined
-        ? input === indexPath
-        : isProjectMetadataFile(input),
+        ? filePath === indexPath
+        : isProjectMetadataFile(filePath),
     dirtyEdits: Dynamic = new Map(),
     inFlightEdits: Dynamic = new Map(),
     conflictHistory: Dynamic = new Map(),
-    entries: Dynamic = new Map(),
-    values: Dynamic = new Set(),
-    values2: Dynamic = new Set(),
+    surfacedConflictsAt: Dynamic = new Map(),
+    conflictLimitedPaths: Dynamic = new Set(),
+    withdrawnPaths: Dynamic = new Set(),
     remoteHashes: Dynamic = new Map(),
-    entries2: Dynamic = new Map(),
+    unsendableReasons: Dynamic = new Map(),
     unsendableEdits: Dynamic = new Map(),
     unsendableStashed: Dynamic = false,
     ownPublishedHashes: Dynamic = new Map(),
     ownChangedPaths: Dynamic = new Set(),
     remoteVersion: Dynamic,
-    callback: Dynamic = (): Dynamic =>
+    hasAdoptedKnownVersion: Dynamic = (): Dynamic =>
       remoteVersion === originalPort.version().version ||
       originalPort.version().version === lastPublishedVersion,
     lastPublishedVersion: Dynamic,
@@ -77,7 +77,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       lastPublishMs: 0,
       surfaced: 0,
     },
-    index: Dynamic = 0,
+    editGeneration: Dynamic = 0,
     inFlight: Dynamic = false,
     flushRequested: Dynamic = false,
     disposed: Dynamic = false,
@@ -85,56 +85,56 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
     backoffUntil: Dynamic,
     backoffMs: Dynamic = FILE_PUBLISH_INITIAL_BACKOFF_MS,
     flushTimer: Dynamic,
-    value: Dynamic = -1 / 0,
+    lastPublishAt: Dynamic = -1 / 0,
     idleWaiters: Dynamic = [],
-    flag: Dynamic = false,
-    flag2: Dynamic = false,
+    retriedWithoutRemoteUpdate: Dynamic = false,
+    retryWhenRemoteChanges: Dynamic = false,
     remoteChangeCount: Dynamic = 0,
     retryWindow: Dynamic,
     retryBudgetMs: Dynamic =
-      options.retryBudgetMs ?? FILE_PUBLISH_RETRY_BUDGET_MS,
+      publisherOptions.retryBudgetMs ?? FILE_PUBLISH_RETRY_BUDGET_MS,
     conflictWindow: Dynamic,
     stuckState: Dynamic,
     retryTimer: Dynamic,
     stuckRetryMs: Dynamic =
-      options.stuckRetryMs ?? FILE_PUBLISH_STUCK_RETRY_MS,
+      publisherOptions.stuckRetryMs ?? FILE_PUBLISH_STUCK_RETRY_MS,
     stashDirty: Dynamic = false,
     stashOffered: Dynamic = false,
     retryNotBefore: Dynamic = 0,
-    flag3: Dynamic = false,
-    value2: Dynamic,
-    value3: Dynamic,
-    flag4: Dynamic = false,
-    flag5: Dynamic = false,
-    value4: Dynamic = -1 / 0,
+    hasServerRetryDelay: Dynamic = false,
+    firstDirtyAt: Dynamic,
+    maxWaitTimer: Dynamic,
+    bypassPacing: Dynamic = false,
+    indexNeedsRebase: Dynamic = false,
+    lastDamagedIndexAt: Dynamic = -1 / 0,
     interruptWait: Dynamic,
     waitIsInterruptible: Dynamic = false,
     random: Dynamic = (): Dynamic => timers.random?.() ?? Math.random(),
-    jitterDelay: Dynamic = (input?: Dynamic): Dynamic =>
-      Math.round(input / 2 + random() * (input / 2)),
+    jitterDelay: Dynamic = (baseDelayMs?: Dynamic): Dynamic =>
+      Math.round(baseDelayMs / 2 + random() * (baseDelayMs / 2)),
     getRetryBudget: Dynamic = (): Dynamic =>
-      options.retryBudgetMs ?? FILE_PUBLISH_RETRY_BUDGET_MS;
+      publisherOptions.retryBudgetMs ?? FILE_PUBLISH_RETRY_BUDGET_MS;
   function interruptibleDelay(
-    input?: Dynamic,
-    options2: Dynamic = false,
+    delayMs?: Dynamic,
+    canInterrupt: Dynamic = false,
   ): Dynamic {
-    return new Promise((input2?: Dynamic): Dynamic => {
-      let value12: Dynamic = timers.setTimeout((): Dynamic => {
+    return new Promise((resolve?: Dynamic): Dynamic => {
+      let delayTimer: Dynamic = timers.setTimeout((): Dynamic => {
         interruptWait = undefined;
-        input2(false);
-      }, input);
-      waitIsInterruptible = options2;
+        resolve(false);
+      }, delayMs);
+      waitIsInterruptible = canInterrupt;
       interruptWait = (): Dynamic => {
-        timers.clearTimeout(value12);
+        timers.clearTimeout(delayTimer);
         interruptWait = undefined;
-        input2(true);
+        resolve(true);
       };
     });
   }
-  let currentLiveHash: Dynamic = (input?: Dynamic): Dynamic =>
-      remoteHashes.has(input)
-        ? remoteHashes.get(input)
-        : port.liveSha?.(input),
+  let currentLiveHash: Dynamic = (filePath?: Dynamic): Dynamic =>
+      remoteHashes.has(filePath)
+        ? remoteHashes.get(filePath)
+        : port.liveSha?.(filePath),
     getSyncState: Dynamic = (): Dynamic => ({
       dirty: dirtyEdits.size,
       inFlight: inFlight,
@@ -159,10 +159,10 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       ...(unsendableEdits.size > 0
         ? {
             unsendable: [...unsendableEdits].map(
-              ([input, input2]: Dynamic): Dynamic => ({
-                path: input,
-                why: input2.why,
-                cause: input2.cause,
+              ([filePath, unsendableEdit]: Dynamic): Dynamic => ({
+                path: filePath,
+                why: unsendableEdit.why,
+                cause: unsendableEdit.cause,
               }),
             ),
             ...(unsendableStashed
@@ -175,35 +175,35 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
     }),
     notifyState: Dynamic = (): Dynamic => {
       try {
-        options.onState?.(getSyncState());
+        publisherOptions.onState?.(getSyncState());
       } catch {}
       if (
         !inFlight &&
         flushTimer === undefined &&
         (dirtyEdits.size === 0 || isStoppedByError())
       ) {
-        let value12: Dynamic = idleWaiters;
+        let waiters: Dynamic = idleWaiters;
         idleWaiters = [];
-        for (let value13 of value12 as Dynamic) value13();
+        for (let resolveIdle of waiters as Dynamic) resolveIdle();
       }
     },
     isStoppedByError: Dynamic = (): Dynamic =>
       lastError !== undefined &&
       backoffUntil === undefined &&
       !flushRequested,
-    isOwnPublishedHash: Dynamic = (input?: Dynamic): Dynamic =>
-      ownPublishedHashes.has(input.path) &&
-      ownPublishedHashes.get(input.path) === input.sha256,
-    value5: Dynamic = -1 / 0,
-    peers: Dynamic = options.peers ?? roomPeersStore,
+    isOwnPublishedHash: Dynamic = (change?: Dynamic): Dynamic =>
+      ownPublishedHashes.has(change.path) &&
+      ownPublishedHashes.get(change.path) === change.sha256,
+    lastRemoteActivityAt: Dynamic = -1 / 0,
+    peers: Dynamic = publisherOptions.peers ?? roomPeersStore,
     hasOtherTabs: Dynamic = (): Dynamic =>
-      peers.getSnapshot().some((input?: Dynamic): Dynamic => !input.sameTab),
+      peers.getSnapshot().some((peer?: Dynamic): Dynamic => !peer.sameTab),
     hasRecentRemoteActivity: Dynamic = (): Dynamic =>
-      timers.now() - value5 < FILE_PUBLISH_PACING.recentMs,
+      timers.now() - lastRemoteActivityAt < FILE_PUBLISH_PACING.recentMs,
     isSoloPaced: Dynamic = (): Dynamic =>
-      options.paced === true && !hasOtherTabs() && !hasRecentRemoteActivity(),
+      publisherOptions.paced === true && !hasOtherTabs() && !hasRecentRemoteActivity(),
     getPacing: Dynamic = (): Dynamic =>
-      options.paced !== true
+      publisherOptions.paced !== true
         ? undefined
         : isSoloPaced()
           ? FILE_PUBLISH_PACING.solo
@@ -215,148 +215,148 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
         (timers.clearTimeout(flushTimer), (flushTimer = undefined));
       schedulePublish();
       try {
-        options.onShared?.();
+        publisherOptions.onShared?.();
       } catch {}
     }
   }
   function noteRemoteActivity(): Dynamic {
-    let value12: Dynamic = isSoloPaced();
-    value5 = timers.now();
-    value12 && switchToSharedPacing();
+    let wasSoloPaced: Dynamic = isSoloPaced();
+    lastRemoteActivityAt = timers.now();
+    wasSoloPaced && switchToSharedPacing();
   }
-  let value6: Dynamic = options.paced === true && hasOtherTabs(),
-    value7: Dynamic =
-      options.paced !== true
+  let previouslyHadOtherTabs: Dynamic = publisherOptions.paced === true && hasOtherTabs(),
+    unsubscribePeers: Dynamic =
+      publisherOptions.paced !== true
         ? undefined
         : peers.subscribe((): Dynamic => {
-            let value12: Dynamic = hasOtherTabs(),
-              value13: Dynamic = value12 && !value6;
-            value6 = value12;
-            value13 && !hasRecentRemoteActivity() && switchToSharedPacing();
+            let hasPeers: Dynamic = hasOtherTabs(),
+              peerJoined: Dynamic = hasPeers && !previouslyHadOtherTabs;
+            previouslyHadOtherTabs = hasPeers;
+            peerJoined && !hasRecentRemoteActivity() && switchToSharedPacing();
           });
   function scheduleMaxWait(): Dynamic {
-    value3 !== undefined &&
-      (timers.clearTimeout(value3), (value3 = undefined));
-    let value12: Dynamic = getPacing();
-    value12 === undefined ||
-      value2 === undefined ||
+    maxWaitTimer !== undefined &&
+      (timers.clearTimeout(maxWaitTimer), (maxWaitTimer = undefined));
+    let pacing: Dynamic = getPacing();
+    pacing === undefined ||
+      firstDirtyAt === undefined ||
       disposed ||
-      (value3 = timers.setTimeout(
+      (maxWaitTimer = timers.setTimeout(
         (): Dynamic => {
-          value3 = undefined;
+          maxWaitTimer = undefined;
           if (dirtyEdits.size === 0) {
-            value2 = undefined;
+            firstDirtyAt = undefined;
             return;
           }
           stuckState === undefined &&
             ((flushRequested = true), schedulePublish());
         },
-        Math.max(0, value2 + value12.maxWaitMs - timers.now()),
+        Math.max(0, firstDirtyAt + pacing.maxWaitMs - timers.now()),
       ));
   }
-  let value8: Dynamic = originalPort.onRemoteChange(
-    (input?: Dynamic): Dynamic => handleRemoteChange(input),
+  let unsubscribeRemoteChange: Dynamic = originalPort.onRemoteChange(
+    (update?: Dynamic): Dynamic => handleRemoteChange(update),
   );
-  function handleRemoteChange(input?: Dynamic): Dynamic {
+  function handleRemoteChange(update?: Dynamic): Dynamic {
     remoteChangeCount += 1;
-    let callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-        isOwnPublishedHash(input2) ||
-        (ownChangedPaths.has(input2.path) &&
-          input2.sha256 !== null &&
-          ownPublishedVersions.has(input.to.version)),
-      value12: Dynamic = input.changed.some(
-        (input2?: Dynamic): Dynamic => !callback2(input2),
+    let isOwnChange: Dynamic = (change?: Dynamic): Dynamic =>
+        isOwnPublishedHash(change) ||
+        (ownChangedPaths.has(change.path) &&
+          change.sha256 !== null &&
+          ownPublishedVersions.has(update.to.version)),
+      hasForeignChange: Dynamic = update.changed.some(
+        (change?: Dynamic): Dynamic => !isOwnChange(change),
       );
-    for (let value15 of input.changed as Dynamic) {
-      remoteHashes.set(value15.path, value15.sha256);
-      ownChangedPaths.delete(value15.path);
-      ownPublishedHashes.has(value15.path) &&
-        ownPublishedHashes.get(value15.path) !== value15.sha256 &&
-        ownPublishedHashes.delete(value15.path);
+    for (let change of update.changed as Dynamic) {
+      remoteHashes.set(change.path, change.sha256);
+      ownChangedPaths.delete(change.path);
+      ownPublishedHashes.has(change.path) &&
+        ownPublishedHashes.get(change.path) !== change.sha256 &&
+        ownPublishedHashes.delete(change.path);
     }
-    remoteVersion = input.to.version;
-    value12 && noteRemoteActivity();
-    let value13: Dynamic =
+    remoteVersion = update.to.version;
+    hasForeignChange && noteRemoteActivity();
+    let indexChangedAfterFailure: Dynamic =
         isIndexPublishFailure(stuckState?.code) &&
         indexPath !== undefined &&
-        input.changed.some(
-          (input2?: Dynamic): Dynamic => input2.path === indexPath,
+        update.changed.some(
+          (change?: Dynamic): Dynamic => change.path === indexPath,
         ),
-      value14: Dynamic =
-        value13 && !flag2
-          ? DAMAGED_INDEX_RETRY_DELAY_MS - (timers.now() - value4)
+      indexRetryDelayMs: Dynamic =
+        indexChangedAfterFailure && !retryWhenRemoteChanges
+          ? DAMAGED_INDEX_RETRY_DELAY_MS - (timers.now() - lastDamagedIndexAt)
           : 0;
-    if (value14 > 0) {
+    if (indexRetryDelayMs > 0) {
       retryTimer === undefined &&
         !disposed &&
         (retryTimer = timers.setTimeout((): Dynamic => {
           retryTimer = undefined;
           retryStuck(getRetryBudget());
-        }, value14));
+        }, indexRetryDelayMs));
       return;
     }
-    (flag2 || value13) &&
+    (retryWhenRemoteChanges || indexChangedAfterFailure) &&
       !inFlight &&
       !disposed &&
       retryStuck(getRetryBudget());
   }
   indexState?.bind?.(
-    (input?: Dynamic, options2?: Dynamic, context?: Dynamic): Dynamic =>
-      markDirty(input, options2, context),
+    (filePath?: Dynamic, readValue?: Dynamic, baseSha?: Dynamic): Dynamic =>
+      markDirty(filePath, readValue, baseSha),
   );
-  function recordConflict(input?: Dynamic): Dynamic {
-    let value12: Dynamic = timers.now();
-    conflictHistory.set(input, [
-      ...(conflictHistory.get(input) ?? []).filter(
-        (input2?: Dynamic): Dynamic =>
-          value12 - input2 < FILE_CONFLICT_HISTORY_WINDOW_MS,
+  function recordConflict(filePath?: Dynamic): Dynamic {
+    let now: Dynamic = timers.now();
+    conflictHistory.set(filePath, [
+      ...(conflictHistory.get(filePath) ?? []).filter(
+        (timestamp?: Dynamic): Dynamic =>
+          now - timestamp < FILE_CONFLICT_HISTORY_WINDOW_MS,
       ),
-      value12,
+      now,
     ]);
   }
   function markDirty(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    filePath?: Dynamic,
+    readValue?: Dynamic,
+    baseSha?: Dynamic,
   ): Dynamic {
     if (disposed) return;
-    let entry: Dynamic = dirtyEdits.get(input);
-    index += 1;
-    let value12: Dynamic =
-        ownPublishedHashes.has(input) &&
-        (currentLiveHash(input) === undefined ||
-          currentLiveHash(input) === ownPublishedHashes.get(input)),
-      value13: Dynamic =
-        context !== undefined
-          ? context
+    let entry: Dynamic = dirtyEdits.get(filePath);
+    editGeneration += 1;
+    let matchesOwnPublish: Dynamic =
+        ownPublishedHashes.has(filePath) &&
+        (currentLiveHash(filePath) === undefined ||
+          currentLiveHash(filePath) === ownPublishedHashes.get(filePath)),
+      editBaseSha: Dynamic =
+        baseSha !== undefined
+          ? baseSha
           : entry !== undefined
             ? entry.base
-            : value12
-              ? ownPublishedHashes.get(input)
-              : (port.heldSha?.(input) ?? currentLiveHash(input) ?? null);
-    entries2.delete(input);
-    unsendableEdits.delete(input);
-    dirtyEdits.set(input, {
-      value: options2,
-      base: value13,
-      gen: index,
+            : matchesOwnPublish
+              ? ownPublishedHashes.get(filePath)
+              : (port.heldSha?.(filePath) ?? currentLiveHash(filePath) ?? null);
+    unsendableReasons.delete(filePath);
+    unsendableEdits.delete(filePath);
+    dirtyEdits.set(filePath, {
+      value: readValue,
+      base: editBaseSha,
+      gen: editGeneration,
     });
-    value2 === undefined && ((value2 = timers.now()), scheduleMaxWait());
-    values2.delete(input);
-    if (context !== undefined) {
-      let entry2: Dynamic = entries.get(input);
-      entry2 !== undefined &&
-        timers.now() - entry2 < FILE_CONFLICT_HISTORY_WINDOW_MS &&
-        recordConflict(input);
-      entries.delete(input);
-      inFlightEdits.delete(input);
+    firstDirtyAt === undefined && ((firstDirtyAt = timers.now()), scheduleMaxWait());
+    withdrawnPaths.delete(filePath);
+    if (baseSha !== undefined) {
+      let surfacedAt: Dynamic = surfacedConflictsAt.get(filePath);
+      surfacedAt !== undefined &&
+        timers.now() - surfacedAt < FILE_CONFLICT_HISTORY_WINDOW_MS &&
+        recordConflict(filePath);
+      surfacedConflictsAt.delete(filePath);
+      inFlightEdits.delete(filePath);
     }
     stuckState !== undefined &&
       (stuckState = {
         ...stuckState,
         paths: [...dirtyEdits.keys()],
       });
-    flag8 = false;
+    stashHandedOff = false;
     scheduleCrashStash();
     notifyState();
   }
@@ -370,25 +370,25 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       schedulePublish();
     }
   }
-  function retryStuck(input?: Dynamic, options2: Dynamic = false): Dynamic {
+  function retryStuck(budgetMs?: Dynamic, ignoreLocalCooldown: Dynamic = false): Dynamic {
     if (disposed || inFlight) return;
-    let value12: Dynamic = retryNotBefore - timers.now();
-    if (value12 > 0 && (flag3 || !options2)) {
+    let remainingDelayMs: Dynamic = retryNotBefore - timers.now();
+    if (remainingDelayMs > 0 && (hasServerRetryDelay || !ignoreLocalCooldown)) {
       retryTimer === undefined &&
         (retryTimer = timers.setTimeout((): Dynamic => {
           retryTimer = undefined;
-          retryStuck(input);
-        }, value12));
+          retryStuck(budgetMs);
+        }, remainingDelayMs));
       return;
     }
     retryTimer !== undefined &&
       (timers.clearTimeout(retryTimer), (retryTimer = undefined));
-    flag4 = true;
+    bypassPacing = true;
     flushTimer !== undefined &&
       (timers.clearTimeout(flushTimer), (flushTimer = undefined));
     retryWindow = undefined;
-    retryBudgetMs = input;
-    flag2 = false;
+    retryBudgetMs = budgetMs;
+    retryWhenRemoteChanges = false;
     lastError = undefined;
     if (dirtyEdits.size === 0) {
       notifyState();
@@ -408,93 +408,93 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       notifyState();
       return;
     }
-    let value12: Dynamic =
-      Math.max(options.minGapMs ?? 0, flag4 ? 0 : (getPacing()?.gapMs ?? 0)) -
-      (timers.now() - value);
-    if (value12 > 0) {
+    let remainingGapMs: Dynamic =
+      Math.max(publisherOptions.minGapMs ?? 0, bypassPacing ? 0 : (getPacing()?.gapMs ?? 0)) -
+      (timers.now() - lastPublishAt);
+    if (remainingGapMs > 0) {
       flushTimer = timers.setTimeout((): Dynamic => {
         flushTimer = undefined;
         schedulePublish();
-      }, value12);
+      }, remainingGapMs);
       scheduleCrashStash(0);
       return;
     }
     flushRequested = false;
-    flag4 = false;
+    bypassPacing = false;
     publishBatch();
   }
   function rebaseDirtyEdits(): Dynamic {
-    values.clear();
-    for (let [value12, value13] of [...dirtyEdits] as Dynamic) {
-      if (isIndexPath(value12)) continue;
-      let value14: Dynamic = currentLiveHash(value12);
-      if (value14 === undefined || value14 === value13.base) continue;
+    conflictLimitedPaths.clear();
+    for (let [filePath, edit] of [...dirtyEdits] as Dynamic) {
+      if (isIndexPath(filePath)) continue;
+      let liveSha: Dynamic = currentLiveHash(filePath);
+      if (liveSha === undefined || liveSha === edit.base) continue;
       if (
-        ownPublishedHashes.has(value12) &&
-        ownPublishedHashes.get(value12) === value14
+        ownPublishedHashes.has(filePath) &&
+        ownPublishedHashes.get(filePath) === liveSha
       ) {
-        value13.base = value14;
+        edit.base = liveSha;
         continue;
       }
       if (
-        ownChangedPaths.has(value12) &&
-        typeof value14 == "string" &&
-        callback()
+        ownChangedPaths.has(filePath) &&
+        typeof liveSha == "string" &&
+        hasAdoptedKnownVersion()
       ) {
-        ownChangedPaths.delete(value12);
-        ownPublishedHashes.set(value12, value14);
-        value13.base = value14;
+        ownChangedPaths.delete(filePath);
+        ownPublishedHashes.set(filePath, liveSha);
+        edit.base = liveSha;
         continue;
       }
-      let value15: Dynamic = timers.now();
+      let now: Dynamic = timers.now();
       if (
-        (conflictHistory.get(value12) ?? []).filter(
-          (input?: Dynamic): Dynamic =>
-            value15 - input < FILE_CONFLICT_HISTORY_WINDOW_MS,
+        (conflictHistory.get(filePath) ?? []).filter(
+          (timestamp?: Dynamic): Dynamic =>
+            now - timestamp < FILE_CONFLICT_HISTORY_WINDOW_MS,
         ).length >= MAX_FILE_CONFLICTS_PER_WINDOW
       ) {
-        values.add(value12);
+        conflictLimitedPaths.add(filePath);
         continue;
       }
-      let value16: Dynamic,
-        flag9: Dynamic = false;
+      let localFile: Dynamic,
+        cannotReadLocalFile: Dynamic = false;
       try {
-        value16 = value13.value();
+        localFile = edit.value();
       } catch {
-        value16 = null;
-        flag9 = true;
+        localFile = null;
+        cannotReadLocalFile = true;
       }
-      let state: Dynamic = {
-        path: value12,
-        base: value13.base,
-        mine: value16,
-        theirsSha: value14,
-        ...(flag9
+      let conflict: Dynamic = {
+        path: filePath,
+        base: edit.base,
+        mine: localFile,
+        theirsSha: liveSha,
+        ...(cannotReadLocalFile
           ? {
               unreadable: true,
             }
           : {}),
       };
-      dirtyEdits.delete(value12);
-      inFlightEdits.set(value12, state);
-      entries.set(value12, value15);
+      dirtyEdits.delete(filePath);
+      inFlightEdits.set(filePath, conflict);
+      surfacedConflictsAt.set(filePath, now);
       metrics.surfaced += 1;
-      options.stash !== undefined && ((stashDirty = true), (flag8 = false));
+      publisherOptions.stash !== undefined && ((stashDirty = true), (stashHandedOff = false));
       try {
-        options.onConflict(state);
+        publisherOptions.onConflict(conflict);
       } catch {}
     }
   }
   function beginRetryAttempt(): Dynamic {
-    let value12: Dynamic = timers.now();
+    let now: Dynamic = timers.now();
     retryWindow ??= {
-      since: value12,
+      since: now,
       refusals: 0,
       budgetMs: retryBudgetMs,
     };
     retryWindow.refusals += 1;
     conflictWindow ??= {
-      since: value12,
+      since: now,
       attempts: 0,
     };
     conflictWindow.attempts += 1;
@@ -502,98 +502,98 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
   }
   async function publishBatch(): Promise<Dynamic> {
     inFlight = true;
-    value = timers.now();
-    let value12: Dynamic = remoteChangeCount;
+    lastPublishAt = timers.now();
+    let remoteChangesAtStart: Dynamic = remoteChangeCount;
     rebaseDirtyEdits();
     if (indexState && indexPath !== undefined && dirtyEdits.has(indexPath)) {
-      let value15: Dynamic = currentLiveHash(indexPath),
-        value16: Dynamic =
-          (value15 != null &&
-            value15 !== indexState.baseSha() &&
-            ownPublishedHashes.get(indexPath) !== value15) ||
-          flag5
+      let liveIndexSha: Dynamic = currentLiveHash(indexPath),
+        indexMergeStatus: Dynamic =
+          (liveIndexSha != null &&
+            liveIndexSha !== indexState.baseSha() &&
+            ownPublishedHashes.get(indexPath) !== liveIndexSha) ||
+          indexNeedsRebase
             ? await reloadAndMergeIndex()
             : "merged";
-      if (value16 !== "merged" && value16 !== "unread") {
+      if (indexMergeStatus !== "merged" && indexMergeStatus !== "unread") {
         beginRetryAttempt();
-        return surfaceStuckState(value16, false, undefined, indexPath);
+        return surfaceStuckState(indexMergeStatus, false, undefined, indexPath);
       }
-      if (value16 === "unread") {
+      if (indexMergeStatus === "unread") {
         lastError = "conflict";
         beginRetryAttempt();
         notifyState();
         return backoffAndRetry("conflict", true);
       }
     }
-    let state: Dynamic = {},
-      entries3: Dynamic = new Map(),
-      state2: Dynamic = {};
-    for (let [value15, value16] of [...dirtyEdits] as Dynamic) {
-      if (values.has(value15)) continue;
-      let value17: Dynamic;
+    let filesToPublish: Dynamic = {},
+      sentGenerations: Dynamic = new Map(),
+      baseShas: Dynamic = {};
+    for (let [filePath, edit] of [...dirtyEdits] as Dynamic) {
+      if (conflictLimitedPaths.has(filePath)) continue;
+      let file: Dynamic;
       try {
-        value17 = value16.value();
+        file = edit.value();
       } catch {
         continue;
       }
-      let value18: Dynamic;
+      let fileProblem: Dynamic;
       try {
         if (port.entryProblemDetail !== undefined)
-          value18 = port.entryProblemDetail(value15, value17);
+          fileProblem = port.entryProblemDetail(filePath, file);
         else if (port.entryProblem !== undefined) {
-          let value19: Dynamic = port.entryProblem(value15, value17);
-          value18 =
-            value19 === undefined
+          let reason: Dynamic = port.entryProblem(filePath, file);
+          fileProblem =
+            reason === undefined
               ? undefined
               : {
-                  why: value19,
+                  why: reason,
                   cause: "other",
                 };
-        } else value18 = describeInvalidFile(value15, value17);
+        } else fileProblem = describeInvalidFile(filePath, file);
       } catch {
-        value18 = describeInvalidFile(value15, value17);
+        fileProblem = describeInvalidFile(filePath, file);
       }
-      if (value18 === undefined) {
-        let value19: Dynamic = describeOversizedFile(value17);
-        value19 !== undefined &&
-          (value18 = {
-            why: value19,
+      if (fileProblem === undefined) {
+        let sizeProblem: Dynamic = describeOversizedFile(file);
+        sizeProblem !== undefined &&
+          (fileProblem = {
+            why: sizeProblem,
             cause: "size",
           });
       }
-      if (value18 !== undefined && value17 === null) {
-        dirtyEdits.delete(value15);
-        entries2.delete(value15);
-        unsendableEdits.delete(value15);
+      if (fileProblem !== undefined && file === null) {
+        dirtyEdits.delete(filePath);
+        unsendableReasons.delete(filePath);
+        unsendableEdits.delete(filePath);
         continue;
       }
-      if (value18 !== undefined) {
-        dirtyEdits.delete(value15);
-        entries2.set(value15, value18.why);
-        unsendableEdits.set(value15, {
-          value: value16.value,
-          base: value16.base,
-          why: value18.why,
-          cause: value18.cause,
+      if (fileProblem !== undefined) {
+        dirtyEdits.delete(filePath);
+        unsendableReasons.set(filePath, fileProblem.why);
+        unsendableEdits.set(filePath, {
+          value: edit.value,
+          base: edit.base,
+          why: fileProblem.why,
+          cause: fileProblem.cause,
         });
         unsendableStashed = false;
-        options.stash !== undefined && ((stashDirty = true), (flag8 = false));
+        publisherOptions.stash !== undefined && ((stashDirty = true), (stashHandedOff = false));
         try {
-          options.onUnsendable?.(value15, value18.why);
+          publisherOptions.onUnsendable?.(filePath, fileProblem.why);
         } catch {}
         continue;
       }
-      state[value15] = value17;
-      entries3.set(value15, value16.gen);
-      state2[value15] = value16.base;
+      filesToPublish[filePath] = file;
+      sentGenerations.set(filePath, edit.gen);
+      baseShas[filePath] = edit.base;
     }
-    if (entries3.size === 0) {
+    if (sentGenerations.size === 0) {
       if (dirtyEdits.size === 0) {
         resetRetryState();
         return;
       }
       return [...dirtyEdits.keys()].every(
-        (input?: Dynamic): Dynamic => values.has(input),
+        (filePath?: Dynamic): Dynamic => conflictLimitedPaths.has(filePath),
       )
         ? surfaceStuckState(
             "conflict",
@@ -603,128 +603,128 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
         : (beginRetryAttempt(), surfaceStuckState("invalid_content", false));
     }
     notifyState();
-    let value13: Dynamic = splitPublishBatches(
-        state,
+    let batches: Dynamic = splitPublishBatches(
+        filesToPublish,
         isIndexPath,
       ),
-      value14: Dynamic;
-    for (let value15 of value13 as Dynamic) {
-      let value16: Dynamic = timers.now(),
-        value17: Dynamic,
-        value18: Dynamic = Object.fromEntries(
-          Object.keys(value15)
+      failure: Dynamic;
+    for (let batch of batches as Dynamic) {
+      let publishStartedAt: Dynamic = timers.now(),
+        result: Dynamic,
+        ifMatch: Dynamic = Object.fromEntries(
+          Object.keys(batch)
             .filter(
-              (input?: Dynamic): Dynamic =>
+              (filePath?: Dynamic): Dynamic =>
                 !(
-                  ownChangedPaths.has(input) &&
-                  state2[input] === ownPublishedHashes.get(input)
+                  ownChangedPaths.has(filePath) &&
+                  baseShas[filePath] === ownPublishedHashes.get(filePath)
                 ),
             )
             .map(
-              (input?: Dynamic): Dynamic => [input, state2[input] ?? null],
+              (filePath?: Dynamic): Dynamic => [filePath, baseShas[filePath] ?? null],
             ),
         ),
         version: Dynamic = originalPort.version().version;
       try {
-        value17 = await originalPort.publish(value15, {
-          ifMatch: value18,
+        result = await originalPort.publish(batch, {
+          ifMatch: ifMatch,
         });
       } catch {
-        value17 = {
+        result = {
           ok: false,
           code: "upstream_error",
         };
       }
-      value17.ok &&
-        value17.unchanged !== true &&
-        value17.version === version &&
-        (value17 = {
-          ...value17,
+      result.ok &&
+        result.unchanged !== true &&
+        result.version === version &&
+        (result = {
+          ...result,
           unchanged: true,
         });
-      if (!value17.ok) {
-        value14 = value17;
+      if (!result.ok) {
+        failure = result;
         break;
       }
-      if (value17.changed)
-        for (let value21 of value17.changed as Dynamic)
-          value21.path in value15 ||
-            (remoteHashes.set(value21.path, value21.sha256),
-            ownChangedPaths.delete(value21.path));
-      let value19: Dynamic =
-        value17.preconditionsChecked === true &&
-        Object.keys(value15).every(
-          (input?: Dynamic): Dynamic => Object.hasOwn(value18, input),
+      if (result.changed)
+        for (let change of result.changed as Dynamic)
+          change.path in batch ||
+            (remoteHashes.set(change.path, change.sha256),
+            ownChangedPaths.delete(change.path));
+      let allPreconditionsChecked: Dynamic =
+        result.preconditionsChecked === true &&
+        Object.keys(batch).every(
+          (filePath?: Dynamic): Dynamic => Object.hasOwn(ifMatch, filePath),
         );
-      value17.unchanged === true ||
-        (value19 && value17.changed === undefined) ||
-        ((lastPublishedVersion = value17.version),
-        ownPublishedVersions.add(value17.version),
+      result.unchanged === true ||
+        (allPreconditionsChecked && result.changed === undefined) ||
+        ((lastPublishedVersion = result.version),
+        ownPublishedVersions.add(result.version),
         ownPublishedVersions.size > MAX_OWN_PUBLISHED_VERSIONS &&
           ownPublishedVersions.delete(
             ownPublishedVersions.values().next().value,
           ));
       metrics.publishes += 1;
-      metrics.pathsSent += Object.keys(value15).length;
-      metrics.lastPublishMs = timers.now() - value16;
-      let value20: Dynamic =
-        value17.shas ?? (await hashFileMap(value15));
-      for (let [value21, value22] of Object.entries(value15) as Dynamic) {
-        let value23: Dynamic =
-          value22 === null ? null : (value20[value21] ?? null);
-        metrics.bytesSent += getRawFileBytes(value22);
-        ownPublishedHashes.set(value21, value23);
-        remoteHashes.set(value21, value23);
+      metrics.pathsSent += Object.keys(batch).length;
+      metrics.lastPublishMs = timers.now() - publishStartedAt;
+      let publishedShas: Dynamic =
+        result.shas ?? (await hashFileMap(batch));
+      for (let [filePath, file] of Object.entries(batch) as Dynamic) {
+        let sha: Dynamic =
+          file === null ? null : (publishedShas[filePath] ?? null);
+        metrics.bytesSent += getRawFileBytes(file);
+        ownPublishedHashes.set(filePath, sha);
+        remoteHashes.set(filePath, sha);
         !(
-          value17.shas?.[value21] !== undefined &&
-          value17.computed?.includes(value21) !== true
+          result.shas?.[filePath] !== undefined &&
+          result.computed?.includes(filePath) !== true
         ) &&
-        value23 !== null &&
-        hasInjectedRuntime(value22)
-          ? ownChangedPaths.add(value21)
-          : ownChangedPaths.delete(value21);
-        value23 !== null &&
-          value17.unchanged !== true &&
-          options.tokens?.advance?.(value21, value23);
-        let entry: Dynamic = dirtyEdits.get(value21);
-        entry !== undefined && entry.gen === entries3.get(value21)
-          ? (dirtyEdits.delete(value21), entries.delete(value21))
-          : entry !== undefined && (entry.base = value23);
+        sha !== null &&
+        hasInjectedRuntime(file)
+          ? ownChangedPaths.add(filePath)
+          : ownChangedPaths.delete(filePath);
+        sha !== null &&
+          result.unchanged !== true &&
+          publisherOptions.tokens?.advance?.(filePath, sha);
+        let entry: Dynamic = dirtyEdits.get(filePath);
+        entry !== undefined && entry.gen === sentGenerations.get(filePath)
+          ? (dirtyEdits.delete(filePath), surfacedConflictsAt.delete(filePath))
+          : entry !== undefined && (entry.base = sha);
         indexState &&
-          value21 === indexPath &&
-          value23 !== null &&
+          filePath === indexPath &&
+          sha !== null &&
           indexState.markSaved(
-            extractPortFileText(value22),
-            value23,
+            extractPortFileText(file),
+            sha,
           );
       }
     }
-    if (value14 === undefined) {
-      let value15: Dynamic = [...values].some(
-        (input?: Dynamic): Dynamic => dirtyEdits.has(input),
+    if (failure === undefined) {
+      let hasConflictLimitedEdits: Dynamic = [...conflictLimitedPaths].some(
+        (filePath?: Dynamic): Dynamic => dirtyEdits.has(filePath),
       );
-      resetRetryState(!value15, !value15);
-      let value16: Dynamic = [...dirtyEdits.keys()].some(
-        (input?: Dynamic): Dynamic => !values.has(input),
+      resetRetryState(!hasConflictLimitedEdits, !hasConflictLimitedEdits);
+      let hasOtherDirtyEdits: Dynamic = [...dirtyEdits.keys()].some(
+        (filePath?: Dynamic): Dynamic => !conflictLimitedPaths.has(filePath),
       );
-      value15 &&
+      hasConflictLimitedEdits &&
         surfaceStuckState(
           "conflict",
           false,
-          value16 ? 0 : FILE_CONFLICT_RETRY_COOLDOWN_MS,
+          hasOtherDirtyEdits ? 0 : FILE_CONFLICT_RETRY_COOLDOWN_MS,
           undefined,
-          value16 ? getRetryBudget() : 0,
+          hasOtherDirtyEdits ? getRetryBudget() : 0,
         );
       return;
     }
-    await handlePublishFailure(value14, value12);
+    await handlePublishFailure(failure, remoteChangesAtStart);
   }
   function resetRetryState(
-    input: Dynamic = true,
-    options2: Dynamic = true,
+    scheduleNextPublish: Dynamic = true,
+    notify: Dynamic = true,
   ): Dynamic {
-    flag = false;
-    flag2 = false;
+    retriedWithoutRemoteUpdate = false;
+    retryWhenRemoteChanges = false;
     lastError = undefined;
     backoffUntil = undefined;
     backoffMs = FILE_PUBLISH_INITIAL_BACKOFF_MS;
@@ -732,77 +732,77 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
     conflictWindow = undefined;
     retryBudgetMs = getRetryBudget();
     stuckState = undefined;
-    stuckRetryMs = options.stuckRetryMs ?? FILE_PUBLISH_STUCK_RETRY_MS;
+    stuckRetryMs = publisherOptions.stuckRetryMs ?? FILE_PUBLISH_STUCK_RETRY_MS;
     retryNotBefore = 0;
-    flag3 = false;
+    hasServerRetryDelay = false;
     retryTimer !== undefined &&
       (timers.clearTimeout(retryTimer), (retryTimer = undefined));
     clearSettledStash();
-    value2 = dirtyEdits.size === 0 ? undefined : timers.now();
+    firstDirtyAt = dirtyEdits.size === 0 ? undefined : timers.now();
     scheduleMaxWait();
     inFlight = false;
-    options2 && notifyState();
-    input && schedulePublish();
+    notify && notifyState();
+    scheduleNextPublish && schedulePublish();
   }
   async function handlePublishFailure(
-    input?: Dynamic,
-    options2?: Dynamic,
+    failure?: Dynamic,
+    remoteChangesAtStart?: Dynamic,
   ): Promise<Dynamic> {
-    lastError = input.code;
-    if (input.code === "conflict") {
+    lastError = failure.code;
+    if (failure.code === "conflict") {
       metrics.conflicts += 1;
-      if (input.changed)
-        for (let value13 of input.changed as Dynamic) {
-          remoteHashes.set(value13.path, value13.sha256);
-          ownChangedPaths.delete(value13.path);
+      if (failure.changed)
+        for (let change of failure.changed as Dynamic) {
+          remoteHashes.set(change.path, change.sha256);
+          ownChangedPaths.delete(change.path);
         }
-      if (input.paths)
-        for (let value13 of input.paths as Dynamic) {
-          remoteHashes.set(value13.path, value13.liveSha);
-          ownChangedPaths.delete(value13.path);
+      if (failure.paths)
+        for (let conflictPath of failure.paths as Dynamic) {
+          remoteHashes.set(conflictPath.path, conflictPath.liveSha);
+          ownChangedPaths.delete(conflictPath.path);
         }
-      let value12: Dynamic = beginRetryAttempt();
+      let retry: Dynamic = beginRetryAttempt();
       for (
         indexState &&
           indexPath !== undefined &&
           dirtyEdits.has(indexPath) &&
-          (flag5 = true),
+          (indexNeedsRebase = true),
           notifyState();
         ;
 
       ) {
-        let value13: Dynamic =
-          remoteChangeCount !== options2 ||
-          (input.live !== undefined &&
-            originalPort.version().version === input.live)
+        let remoteUpdateArrived: Dynamic =
+          remoteChangeCount !== remoteChangesAtStart ||
+          (failure.live !== undefined &&
+            originalPort.version().version === failure.live)
             ? true
             : await waitForRemoteUpdate();
         for (
-          let index3: Dynamic = 0;
-          value13 &&
+          let adoptionWaits: Dynamic = 0;
+          remoteUpdateArrived &&
           ownChangedPaths.size > 0 &&
-          !callback() &&
-          index3 < MAX_FILE_VERSION_ADOPTION_WAITS &&
+          !hasAdoptedKnownVersion() &&
+          adoptionWaits < MAX_FILE_VERSION_ADOPTION_WAITS &&
           !disposed;
-          index3++
+          adoptionWaits++
         )
           await waitForRemoteUpdate();
-        let value14: Dynamic = await refreshLiveHashes();
+        let hashesRefreshed: Dynamic = await refreshLiveHashes();
         if (disposed) {
           inFlight = false;
           notifyState();
           return;
         }
-        if (value13 && !value14 && remoteChangeCount === options2) {
-          if (timers.now() - value12.since >= value12.budgetMs)
+        if (remoteUpdateArrived && !hashesRefreshed && remoteChangeCount === remoteChangesAtStart) {
+          if (timers.now() - retry.since >= retry.budgetMs)
             return surfaceStuckState("conflict", false);
-          let value15: Dynamic = Math.min(
+          let delayMs: Dynamic = Math.min(
             jitterDelay(FILE_PUBLISH_RETRY_JITTER_MS * 2),
-            Math.max(1, value12.budgetMs - (timers.now() - value12.since)),
+            Math.max(1, retry.budgetMs - (timers.now() - retry.since)),
           );
-          backoffUntil = timers.now() + value15;
+          backoffUntil = timers.now() + delayMs;
           notifyState();
-          await interruptibleDelay(value15);
+          await interruptibleDelay(delayMs);
           backoffUntil = undefined;
           continue;
         }
@@ -812,53 +812,53 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
           indexPath !== undefined &&
           dirtyEdits.has(indexPath)
         ) {
-          let value15: Dynamic = await reloadAndMergeIndex();
-          if (value15 !== "merged" && value15 !== "unread")
-            return surfaceStuckState(value15, false, undefined, indexPath);
+          let indexMergeStatus: Dynamic = await reloadAndMergeIndex();
+          if (indexMergeStatus !== "merged" && indexMergeStatus !== "unread")
+            return surfaceStuckState(indexMergeStatus, false, undefined, indexPath);
         }
         if (dirtyEdits.size === 0) {
           resetRetryState();
           return;
         }
-        if (!value13) {
-          if (flag) return surfaceStuckState("conflict", true);
-          flag = true;
+        if (!remoteUpdateArrived) {
+          if (retriedWithoutRemoteUpdate) return surfaceStuckState("conflict", true);
+          retriedWithoutRemoteUpdate = true;
         }
-        return backoffAndRetry("conflict", value13);
+        return backoffAndRetry("conflict", remoteUpdateArrived);
       }
     }
-    if (input.code === "rate_limited") {
+    if (failure.code === "rate_limited") {
       metrics.rateLimited += 1;
-      let value12: Dynamic = beginRetryAttempt(),
-        value13: Dynamic =
-          input.retryAfterMs !== undefined &&
-          Number.isFinite(input.retryAfterMs) &&
-          input.retryAfterMs >= 0
+      let retry: Dynamic = beginRetryAttempt(),
+        serverDelayMs: Dynamic =
+          failure.retryAfterMs !== undefined &&
+          Number.isFinite(failure.retryAfterMs) &&
+          failure.retryAfterMs >= 0
             ? Math.min(
-                Math.max(input.retryAfterMs, FILE_PUBLISH_MIN_RETRY_GAP_MS),
+                Math.max(failure.retryAfterMs, FILE_PUBLISH_MIN_RETRY_GAP_MS),
                 FILE_PUBLISH_RECOVERY_LIMIT_MS,
               )
             : undefined,
-        value14: Dynamic = value13 ?? backoffMs;
+        retryDelayMs: Dynamic = serverDelayMs ?? backoffMs;
       backoffMs = Math.min(FILE_PUBLISH_MAX_BACKOFF_MS, backoffMs * 2);
-      retryNotBefore = timers.now() + value14;
-      flag3 = value13 !== undefined;
+      retryNotBefore = timers.now() + retryDelayMs;
+      hasServerRetryDelay = serverDelayMs !== undefined;
       backoffUntil = retryNotBefore;
       notifyState();
-      let value15: Dynamic =
-          value12.budgetMs - (timers.now() - value12.since),
-        value16: Dynamic = await interruptibleDelay(
-          Math.max(0, Math.min(value14, value15)),
-          flag3,
+      let remainingBudgetMs: Dynamic =
+          retry.budgetMs - (timers.now() - retry.since),
+        wasInterrupted: Dynamic = await interruptibleDelay(
+          Math.max(0, Math.min(retryDelayMs, remainingBudgetMs)),
+          hasServerRetryDelay,
         );
       if (disposed) {
         inFlight = false;
         notifyState();
         return;
       }
-      return !value16 &&
+      return !wasInterrupted &&
         (timers.now() < retryNotBefore ||
-          timers.now() - value12.since >= value12.budgetMs)
+          timers.now() - retry.since >= retry.budgetMs)
         ? surfaceStuckState(
             "rate_limited",
             false,
@@ -873,27 +873,27 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
           (lastError = undefined),
           publishBatch());
     }
-    if (input.code === "upstream_error") {
+    if (failure.code === "upstream_error") {
       beginRetryAttempt();
       notifyState();
       return backoffAndRetry("upstream_error", true);
     }
     beginRetryAttempt();
-    surfaceStuckState(input.code, false);
+    surfaceStuckState(failure.code, false);
   }
   async function backoffAndRetry(
-    input?: Dynamic,
-    options2?: Dynamic,
+    errorCode?: Dynamic,
+    canRetryWithoutRemoteChange?: Dynamic,
   ): Promise<Dynamic> {
-    let value12: Dynamic = retryWindow,
-      value13: Dynamic = timers.now() - value12.since;
-    if (value13 >= value12.budgetMs)
-      return surfaceStuckState(input, !options2);
-    let refusals: Dynamic = value12.refusals,
-      value14: Dynamic;
+    let retry: Dynamic = retryWindow,
+      elapsedMs: Dynamic = timers.now() - retry.since;
+    if (elapsedMs >= retry.budgetMs)
+      return surfaceStuckState(errorCode, !canRetryWithoutRemoteChange);
+    let refusals: Dynamic = retry.refusals,
+      delayMs: Dynamic;
     refusals <= 1
-      ? (value14 =
-          input === "upstream_error"
+      ? (delayMs =
+          errorCode === "upstream_error"
             ? FILE_PUBLISH_CONFLICT_RETRY_MS[0] +
               Math.floor(
                 random() *
@@ -901,18 +901,18 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
                     FILE_PUBLISH_CONFLICT_RETRY_MS[0]),
               )
             : 0)
-      : (value14 = jitterDelay(
+      : (delayMs = jitterDelay(
           Math.min(
             FILE_CONFLICT_MAX_JITTER_MS,
             FILE_PUBLISH_RETRY_JITTER_MS * 2 ** (refusals - 2),
           ),
         ));
-    value14 = Math.min(value14, value12.budgetMs - value13);
+    delayMs = Math.min(delayMs, retry.budgetMs - elapsedMs);
     metrics.retries += 1;
-    value14 > 0 &&
-      ((backoffUntil = timers.now() + value14),
+    delayMs > 0 &&
+      ((backoffUntil = timers.now() + delayMs),
       notifyState(),
-      await interruptibleDelay(value14),
+      await interruptibleDelay(delayMs),
       (backoffUntil = undefined));
     if (disposed) {
       inFlight = false;
@@ -923,148 +923,148 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
     return publishBatch();
   }
   function surfaceStuckState(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
-    value12?: Dynamic,
-    extra: Dynamic = 0,
+    errorCode?: Dynamic,
+    waitForRemoteChange?: Dynamic,
+    delayOverrideMs?: Dynamic,
+    filePath?: Dynamic,
+    nextRetryBudgetMs: Dynamic = 0,
   ): Dynamic {
-    let value13: Dynamic = timers.now();
-    lastError = input;
-    let value14: Dynamic =
-      input === "conflict" &&
+    let now: Dynamic = timers.now();
+    lastError = errorCode;
+    let conflictRetriesExhausted: Dynamic =
+      errorCode === "conflict" &&
       (conflictWindow?.attempts ?? 0) >= FILE_PUBLISH_MAX_RETRIES;
-    flag2 = options2 || value14;
+    retryWhenRemoteChanges = waitForRemoteChange || conflictRetriesExhausted;
     backoffUntil = undefined;
     flushRequested = false;
     inFlight = false;
     retryWindow = undefined;
-    let value15: Dynamic = !PERMANENT_PUBLISH_ERROR_CODES.has(input),
-      value16: Dynamic,
-      value17: Dynamic = options.stuckRetryMs ?? FILE_PUBLISH_STUCK_RETRY_MS;
+    let retryable: Dynamic = !PERMANENT_PUBLISH_ERROR_CODES.has(errorCode),
+      nextRetryAt: Dynamic,
+      configuredRetryMs: Dynamic = publisherOptions.stuckRetryMs ?? FILE_PUBLISH_STUCK_RETRY_MS;
     if (
-      value15 &&
-      !options2 &&
-      !value14 &&
-      (value17 > 0 || context !== undefined)
+      retryable &&
+      !waitForRemoteChange &&
+      !conflictRetriesExhausted &&
+      (configuredRetryMs > 0 || delayOverrideMs !== undefined)
     ) {
-      let value18: Dynamic = context ?? jitterDelay(stuckRetryMs);
-      context === undefined &&
+      let delayMs: Dynamic = delayOverrideMs ?? jitterDelay(stuckRetryMs);
+      delayOverrideMs === undefined &&
         (stuckRetryMs = Math.min(
           FILE_PUBLISH_MAX_BACKOFF_MS,
           stuckRetryMs * 2,
         ));
-      value16 = value13 + value18;
+      nextRetryAt = now + delayMs;
       retryTimer !== undefined && timers.clearTimeout(retryTimer);
       retryTimer = timers.setTimeout((): Dynamic => {
         retryTimer = undefined;
-        retryStuck(extra);
-      }, value18);
+        retryStuck(nextRetryBudgetMs);
+      }, delayMs);
     }
     stuckState = {
-      code: input,
-      since: conflictWindow?.since ?? value13,
+      code: errorCode,
+      since: conflictWindow?.since ?? now,
       attempts: conflictWindow?.attempts ?? 1,
       paths: [...dirtyEdits.keys()],
-      retryable: value15,
+      retryable: retryable,
       stashed: stuckState?.stashed ?? false,
-      ...(value16 !== undefined
+      ...(nextRetryAt !== undefined
         ? {
-            nextRetryAt: value16,
+            nextRetryAt: nextRetryAt,
           }
         : {}),
-      ...(value12 !== undefined
+      ...(filePath !== undefined
         ? {
-            file: value12,
+            file: filePath,
           }
         : {}),
     };
-    flag8 = false;
+    stashHandedOff = false;
     writeCrashStash();
     notifyState();
   }
-  let index2: Dynamic = 0,
-    value9: Dynamic = Promise.resolve();
-  function serializeStashWork(input?: Dynamic): Dynamic {
-    let value12: Dynamic = value9.then(input);
-    value9 = value12.catch((): Dynamic => {});
-    return value12;
+  let stashGeneration: Dynamic = 0,
+    pendingStashWork: Dynamic = Promise.resolve();
+  function serializeStashWork(run?: Dynamic): Dynamic {
+    let work: Dynamic = pendingStashWork.then(run);
+    pendingStashWork = work.catch((): Dynamic => {});
+    return work;
   }
-  let flag6: Dynamic = false,
-    flag7: Dynamic = false;
+  let writingStash: Dynamic = false,
+    stashWriteRequested: Dynamic = false;
   function writeCrashStash(): Dynamic {
-    if (options.stash === undefined || flag8) return;
-    if (flag6) {
-      flag7 = true;
+    if (publisherOptions.stash === undefined || stashHandedOff) return;
+    if (writingStash) {
+      stashWriteRequested = true;
       return;
     }
-    let items: Dynamic = [],
-      flag9: Dynamic = true,
-      value12: Dynamic = [...dirtyEdits].map(
-        ([input, input2]: Dynamic): Dynamic => [
-          input,
-          input2.value,
-          input2.base,
+    let stashEntries: Dynamic = [],
+      capturedAllEdits: Dynamic = true,
+      pendingEdits: Dynamic = [...dirtyEdits].map(
+        ([filePath, edit]: Dynamic): Dynamic => [
+          filePath,
+          edit.value,
+          edit.base,
         ],
       );
-    for (let [value14, value15] of inFlightEdits as Dynamic)
-      if (!dirtyEdits.has(value14)) {
-        if (value15.unreadable === true) {
-          flag9 = false;
+    for (let [filePath, conflict] of inFlightEdits as Dynamic)
+      if (!dirtyEdits.has(filePath)) {
+        if (conflict.unreadable === true) {
+          capturedAllEdits = false;
           continue;
         }
-        value12.push([value14, (): Dynamic => value15.mine, value15.base]);
+        pendingEdits.push([filePath, (): Dynamic => conflict.mine, conflict.base]);
       }
-    for (let [value14, value15] of unsendableEdits as Dynamic)
-      !dirtyEdits.has(value14) &&
-        !inFlightEdits.has(value14) &&
-        value12.push([value14, value15.value, value15.base]);
-    if (value12.length === 0) return;
-    for (let [value14, value15, value16] of value12 as Dynamic) {
-      let value17: Dynamic;
+    for (let [filePath, edit] of unsendableEdits as Dynamic)
+      !dirtyEdits.has(filePath) &&
+        !inFlightEdits.has(filePath) &&
+        pendingEdits.push([filePath, edit.value, edit.base]);
+    if (pendingEdits.length === 0) return;
+    for (let [filePath, readValue, baseSha] of pendingEdits as Dynamic) {
+      let file: Dynamic;
       try {
-        value17 = value15();
+        file = readValue();
       } catch {
-        flag9 = false;
+        capturedAllEdits = false;
         continue;
       }
-      let value18: Dynamic =
-        value17 === null
+      let text: Dynamic =
+        file === null
           ? null
-          : typeof value17 == "object" &&
-              !(typeof Blob !== "undefined" && value17 instanceof Blob)
-            ? value17.content
-            : value17;
-      if (value18 !== null && typeof value18 != "string") {
-        flag9 = false;
+          : typeof file == "object" &&
+              !(typeof Blob !== "undefined" && file instanceof Blob)
+            ? file.content
+            : file;
+      if (text !== null && typeof text != "string") {
+        capturedAllEdits = false;
         continue;
       }
-      items.push({
-        path: value14,
-        text: value18,
-        base: value16,
+      stashEntries.push({
+        path: filePath,
+        text: text,
+        base: baseSha,
       });
     }
     stashDirty = true;
-    flag6 = true;
-    let value13: Dynamic = ++index2,
-      stash: Dynamic = options.stash,
+    writingStash = true;
+    let generation: Dynamic = ++stashGeneration,
+      stash: Dynamic = publisherOptions.stash,
       version: Dynamic = originalPort.version().version;
-    serializeStashWork((): Dynamic => stash.put(items, version))
+    serializeStashWork((): Dynamic => stash.put(stashEntries, version))
       .finally((): Dynamic => {
-        flag6 = false;
-        flag7 && ((flag7 = false), writeCrashStash());
+        writingStash = false;
+        stashWriteRequested && ((stashWriteRequested = false), writeCrashStash());
       })
-      .then((input?: Dynamic): Dynamic => {
-        value13 !== index2 ||
+      .then((saved?: Dynamic): Dynamic => {
+        generation !== stashGeneration ||
           disposed ||
           (stuckState === undefined && unsendableEdits.size === 0) ||
           (stuckState !== undefined &&
             (stuckState = {
               ...stuckState,
-              stashed: input && flag9,
+              stashed: saved && capturedAllEdits,
             }),
-          (unsendableStashed = unsendableEdits.size > 0 && input && flag9),
+          (unsendableStashed = unsendableEdits.size > 0 && saved && capturedAllEdits),
           notifyState());
       });
   }
@@ -1079,32 +1079,32 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       return;
     }
     stashDirty = false;
-    let stash: Dynamic = options.stash,
-      value12: Dynamic = stashOffered;
+    let stash: Dynamic = publisherOptions.stash,
+      hadOfferedStash: Dynamic = stashOffered;
     stashOffered = false;
     stash !== undefined &&
       serializeStashWork(async (): Promise<Dynamic> => {
         await stash.clear();
-        value12 && (await stash.clearOffered());
+        hadOfferedStash && (await stash.clearOffered());
       });
   }
-  let flag8: Dynamic = false,
-    value10: Dynamic,
-    value11: Dynamic;
-  function scheduleCrashStash(input: Dynamic = 1e3): Dynamic {
-    if (!(options.stash === undefined || disposed)) {
-      if (value11 !== undefined) {
-        if (input > 0) return;
-        timers.clearTimeout(value11);
+  let stashHandedOff: Dynamic = false,
+    handoffTimeout: Dynamic,
+    stashTimer: Dynamic;
+  function scheduleCrashStash(delayMs: Dynamic = 1e3): Dynamic {
+    if (!(publisherOptions.stash === undefined || disposed)) {
+      if (stashTimer !== undefined) {
+        if (delayMs > 0) return;
+        timers.clearTimeout(stashTimer);
       }
-      value11 = timers.setTimeout((): Dynamic => {
-        value11 = undefined;
+      stashTimer = timers.setTimeout((): Dynamic => {
+        stashTimer = undefined;
         !disposed &&
           (dirtyEdits.size > 0 ||
             inFlightEdits.size > 0 ||
             unsendableEdits.size > 0) &&
           writeCrashStash();
-      }, input);
+      }, delayMs);
     }
   }
   function clearStuckIfClean(): Dynamic {
@@ -1114,41 +1114,41 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       resetRetryState();
   }
   function waitForRemoteUpdate(): Dynamic {
-    return new Promise((input?: Dynamic): Dynamic => {
-      let flag9: Dynamic = false,
-        callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-          flag9 ||
-            ((flag9 = true),
-            value12(),
-            timers.clearTimeout(value13),
-            input(input2));
+    return new Promise((resolve?: Dynamic): Dynamic => {
+      let finished: Dynamic = false,
+        finish: Dynamic = (receivedUpdate?: Dynamic): Dynamic => {
+          finished ||
+            ((finished = true),
+            unsubscribe(),
+            timers.clearTimeout(updateTimeout),
+            resolve(receivedUpdate));
         },
-        value12: Dynamic = originalPort.onRemoteChange(
-          (): Dynamic => callback2(true),
+        unsubscribe: Dynamic = originalPort.onRemoteChange(
+          (): Dynamic => finish(true),
         ),
-        value13: Dynamic = timers.setTimeout(
-          (): Dynamic => callback2(false),
+        updateTimeout: Dynamic = timers.setTimeout(
+          (): Dynamic => finish(false),
           FILE_REMOTE_UPDATE_WAIT_MS,
         );
     });
   }
   async function refreshLiveHashes(): Promise<Dynamic> {
     try {
-      let value12: Dynamic = await retryAccessFailure(
+      let listedFiles: Dynamic = await retryAccessFailure(
         (): Dynamic => listWritableFiles(originalPort),
         timers,
         undefined,
         FILE_PUBLISH_SETTLE_RETRY_MS,
       );
-      if (isNarrowedFileContext(value12, originalPort))
+      if (isNarrowedFileContext(listedFiles, originalPort))
         return false;
-      let entries3: Dynamic = new Map(
-        value12.map((input?: Dynamic): Dynamic => [input.path, input.sha256]),
+      let listedShas: Dynamic = new Map(
+        listedFiles.map((file?: Dynamic): Dynamic => [file.path, file.sha256]),
       );
-      for (let value13 of dirtyEdits.keys() as Dynamic)
-        remoteHashes.set(value13, entries3.get(value13) ?? null);
+      for (let filePath of dirtyEdits.keys() as Dynamic)
+        remoteHashes.set(filePath, listedShas.get(filePath) ?? null);
       indexPath !== undefined &&
-        remoteHashes.set(indexPath, entries3.get(indexPath) ?? null);
+        remoteHashes.set(indexPath, listedShas.get(indexPath) ?? null);
       return true;
     } catch {
       return false;
@@ -1157,35 +1157,35 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
   async function reloadAndMergeIndex(): Promise<Dynamic> {
     if (!indexState) return "merged";
     try {
-      let value12: Dynamic = await retryAccessFailure(
+      let mergedFields: Dynamic = await retryAccessFailure(
         (): Dynamic => indexState.reloadAndMerge(),
         timers,
         undefined,
         FILE_PUBLISH_SETTLE_RETRY_MS,
       );
-      flag5 = false;
-      if (value12.length > 0)
+      indexNeedsRebase = false;
+      if (mergedFields.length > 0)
         try {
-          options.onIndexMerged?.(value12);
+          publisherOptions.onIndexMerged?.(mergedFields);
         } catch {}
       let entry: Dynamic = dirtyEdits.get(indexState.path);
       entry !== undefined && (entry.base = indexState.baseSha());
       return "merged";
-    } catch (value12: Dynamic) {
+    } catch (error: Dynamic) {
       if (
-        value12 instanceof IndexFileError &&
-        value12.code !== "not_found"
+        error instanceof IndexFileError &&
+        error.code !== "not_found"
       ) {
-        value4 = timers.now();
-        return value12.code === "newer_version"
+        lastDamagedIndexAt = timers.now();
+        return error.code === "newer_version"
           ? "index_newer_build"
           : "index_damaged";
       }
       if (
-        value12?.status === 404 &&
+        error?.status === 404 &&
         currentLiveHash(indexState.path) === null
       ) {
-        flag5 = false;
+        indexNeedsRebase = false;
         let entry: Dynamic = dirtyEdits.get(indexState.path);
         entry !== undefined && (entry.base = null);
         return "merged";
@@ -1199,7 +1199,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
         retryStuck(getRetryBudget());
         return;
       }
-      flag4 = true;
+      bypassPacing = true;
       flushRequested = true;
       flushTimer !== undefined &&
         (timers.clearTimeout(flushTimer), (flushTimer = undefined));
@@ -1215,7 +1215,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       flushTimer === undefined &&
       (dirtyEdits.size === 0 || isStoppedByError())
       ? Promise.resolve()
-      : new Promise((input?: Dynamic): Dynamic => idleWaiters.push(input));
+      : new Promise((resolve?: Dynamic): Dynamic => idleWaiters.push(resolve));
   }
   return {
     markDirty: markDirty,
@@ -1225,54 +1225,54 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       requestImmediatePublish();
       await waitUntilIdle();
       disposed = true;
-      value8();
-      value7?.();
-      value3 !== undefined &&
-        (timers.clearTimeout(value3), (value3 = undefined));
+      unsubscribeRemoteChange();
+      unsubscribePeers?.();
+      maxWaitTimer !== undefined &&
+        (timers.clearTimeout(maxWaitTimer), (maxWaitTimer = undefined));
       flushTimer !== undefined &&
         (timers.clearTimeout(flushTimer), (flushTimer = undefined));
       retryTimer !== undefined &&
         (timers.clearTimeout(retryTimer), (retryTimer = undefined));
-      value10 !== undefined &&
-        (timers.clearTimeout(value10), (value10 = undefined));
-      value11 !== undefined &&
-        (timers.clearTimeout(value11),
-        (value11 = undefined),
+      handoffTimeout !== undefined &&
+        (timers.clearTimeout(handoffTimeout), (handoffTimeout = undefined));
+      stashTimer !== undefined &&
+        (timers.clearTimeout(stashTimer),
+        (stashTimer = undefined),
         writeCrashStash());
       interruptWait?.();
     },
     counters: metrics,
     state: getSyncState,
     conflicted: (): Dynamic => inFlightEdits,
-    unsendable: (): Dynamic => entries2,
-    resolveConflict(input: Dynamic, options2: Dynamic): Dynamic {
-      let entry: Dynamic = inFlightEdits.get(input);
+    unsendable: (): Dynamic => unsendableReasons,
+    resolveConflict(filePath: Dynamic, resolution: Dynamic): Dynamic {
+      let entry: Dynamic = inFlightEdits.get(filePath);
       entry !== undefined &&
-        ((options2 === "mine" && entry.unreadable === true) ||
-          (inFlightEdits.delete(input),
-          options2 === "mine"
-            ? markDirty(input, (): Dynamic => entry.mine, entry.theirsSha)
+        ((resolution === "mine" && entry.unreadable === true) ||
+          (inFlightEdits.delete(filePath),
+          resolution === "mine"
+            ? markDirty(filePath, (): Dynamic => entry.mine, entry.theirsSha)
             : clearSettledStash()));
     },
     pending: (): Dynamic =>
       dirtyEdits.size > 0 ||
       inFlight ||
       inFlightEdits.size > 0 ||
-      entries2.size > 0,
+      unsendableReasons.size > 0,
     isOwnEcho: isOwnPublishedHash,
     solo: isSoloPaced,
-    withdraw(input: Dynamic): Dynamic {
-      let value12: Dynamic = dirtyEdits.delete(input),
-        value13: Dynamic = inFlightEdits.delete(input),
-        value14: Dynamic = entries2.delete(input);
-      unsendableEdits.delete(input);
-      (value12 || value13) && values2.add(input);
-      dirtyEdits.size === 0 && ((value2 = undefined), scheduleMaxWait());
-      (value12 || value13 || value14) && notifyState();
+    withdraw(filePath: Dynamic): Dynamic {
+      let removedDirtyEdit: Dynamic = dirtyEdits.delete(filePath),
+        removedConflict: Dynamic = inFlightEdits.delete(filePath),
+        removedUnsendableEdit: Dynamic = unsendableReasons.delete(filePath);
+      unsendableEdits.delete(filePath);
+      (removedDirtyEdit || removedConflict) && withdrawnPaths.add(filePath);
+      dirtyEdits.size === 0 && ((firstDirtyAt = undefined), scheduleMaxWait());
+      (removedDirtyEdit || removedConflict || removedUnsendableEdit) && notifyState();
       clearStuckIfClean();
       clearSettledStash();
     },
-    withdrawn: (): Dynamic => values2,
+    withdrawn: (): Dynamic => withdrawnPaths,
     retryNow(): Dynamic {
       if (!(disposed || dirtyEdits.size === 0)) {
         conflictHistory.clear();
@@ -1285,20 +1285,20 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
     },
     flushNow: requestImmediatePublish,
     stashRestored(): Dynamic {
-      options.stash !== undefined &&
+      publisherOptions.stash !== undefined &&
         ((stashDirty = true), (stashOffered = true));
     },
     stashHandedOff(): Dynamic {
       if (
-        options.stash === undefined ||
-        ((flag8 = true),
-        value11 !== undefined &&
-          (timers.clearTimeout(value11), (value11 = undefined)),
-        value10 !== undefined && timers.clearTimeout(value10),
-        (value10 = timers.setTimeout((): Dynamic => {
-          value10 = undefined;
-          !(!flag8 || disposed) &&
-            ((flag8 = false),
+        publisherOptions.stash === undefined ||
+        ((stashHandedOff = true),
+        stashTimer !== undefined &&
+          (timers.clearTimeout(stashTimer), (stashTimer = undefined)),
+        handoffTimeout !== undefined && timers.clearTimeout(handoffTimeout),
+        (handoffTimeout = timers.setTimeout((): Dynamic => {
+          handoffTimeout = undefined;
+          !(!stashHandedOff || disposed) &&
+            ((stashHandedOff = false),
             (dirtyEdits.size > 0 ||
               inFlightEdits.size > 0 ||
               unsendableEdits.size > 0) &&
@@ -1308,12 +1308,12 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       )
         return;
       stashDirty = false;
-      let stash: Dynamic = options.stash,
-        value12: Dynamic = stashOffered;
+      let stash: Dynamic = publisherOptions.stash,
+        hadOfferedStash: Dynamic = stashOffered;
       stashOffered = false;
       serializeStashWork(async (): Promise<Dynamic> => {
         await stash.clear();
-        value12 && (await stash.clearOffered());
+        hadOfferedStash && (await stash.clearOffered());
       });
     },
   };
@@ -1384,7 +1384,7 @@ export function installPlatformFilesPublisher(): () => void {
       "index_newer_build",
       "index_damaged",
     ]);
-    isIndexPublishFailure = (input?: Dynamic): Dynamic =>
-      input === "index_newer_build" || input === "index_damaged";
+    isIndexPublishFailure = (errorCode?: Dynamic): Dynamic =>
+      errorCode === "index_newer_build" || errorCode === "index_damaged";
   };
 }

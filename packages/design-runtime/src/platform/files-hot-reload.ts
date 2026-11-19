@@ -8,615 +8,615 @@ import { getCachedHostCapability } from "./host-capabilities";
 import { getHotReloadController } from "./hot-reload";
 import { isApplicationCodeFile } from "./project-paths";
 
-var PlatformFilesHotReloadItems: Dynamic;
-var PlatformFilesHotReloadLimit: Dynamic;
-var PlatformFilesHotReloadName: Dynamic;
-var PlatformFilesHotReloadLimit_2: Dynamic;
-var PlatformFilesHotReloadLimit_3: Dynamic;
-var PlatformFilesHotReloadLimit_4: Dynamic;
-var PlatformFilesHotReloadKind: Dynamic;
-var PlatformFilesHotReloadSlice: Dynamic;
-var PlatformFilesHotReloadVer: Dynamic;
-var PlatformFilesHotReloadPath: Dynamic;
-var PlatformFilesHotReloadAdopt: Dynamic;
-var PlatformFilesHotReloadConstant: Dynamic;
+var DEFAULT_FILE_READ_RETRY_DELAYS_MS: Dynamic;
+var MAX_FILE_READ_ATTEMPTS: Dynamic;
+var readWindowName: Dynamic;
+var RESTART_RATE_WINDOW_MS: Dynamic;
+var MAX_RESTARTS_PER_WINDOW: Dynamic;
+var MAX_RETAINED_HOT_EVENTS: Dynamic;
+var changedFileSha: Dynamic;
+var summarizeError: Dynamic;
+var readUpdateVersion: Dynamic;
+var describeChangedFiles: Dynamic;
+var describeUpdateMethods: Dynamic;
+var HOT_RESTART_READY_TIMEOUT_MS: Dynamic;
 function getHotCapability(): Dynamic {
-  let value: Dynamic = getCachedHostCapability("hot");
-  return (typeof value == "object" || typeof value == "function") &&
-    value !== null
-    ? value
+  let hotCapability: Dynamic = getCachedHostCapability("hot");
+  return (typeof hotCapability == "object" || typeof hotCapability == "function") &&
+    hotCapability !== null
+    ? hotCapability
     : null;
 }
 function hasHotRestartToken(
-  input: Dynamic = PlatformFilesHotReloadName(),
+  windowName: Dynamic = readWindowName(),
 ): Dynamic {
   try {
-    let value: Dynamic = JSON.parse(input)?.hot?.k;
-    return typeof value == "string" && value !== "";
+    let restartToken: Dynamic = JSON.parse(windowName)?.hot?.k;
+    return typeof restartToken == "string" && restartToken !== "";
   } catch {
     return false;
   }
 }
 function canHotRestart(
-  input: Dynamic = getHotCapability(),
-  options?: Dynamic,
+  hotCapability: Dynamic = getHotCapability(),
+  windowName?: Dynamic,
 ): Dynamic {
-  return typeof input?.restart == "function" && hasHotRestartToken(options);
+  return typeof hotCapability?.restart == "function" && hasHotRestartToken(windowName);
 }
 function awaitHotRestartReady(
-  input?: Dynamic,
-  options: Dynamic = {},
+  ready?: Dynamic,
+  holdOptions: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic = options.timers ?? {
-      setTimeout: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        setTimeout(input2, options2),
-      clearTimeout: (input2?: Dynamic): Dynamic => clearTimeout(input2),
+  let timers: Dynamic = holdOptions.timers ?? {
+      setTimeout: (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+        setTimeout(run, delayMs),
+      clearTimeout: (timer?: Dynamic): Dynamic => clearTimeout(timer),
     },
-    callback: Dynamic = (): Dynamic => value.now?.() ?? Date.now(),
-    value2: Dynamic = callback();
-  return new Promise((input2?: Dynamic): Dynamic => {
-    let flag: Dynamic = false,
-      callback2: Dynamic = (input3?: Dynamic): Dynamic => {
-        if (!flag) {
-          flag = true;
-          input3 || value.clearTimeout?.(value3);
+    now: Dynamic = (): Dynamic => timers.now?.() ?? Date.now(),
+    holdStartedAt: Dynamic = now();
+  return new Promise((resolve?: Dynamic): Dynamic => {
+    let finished: Dynamic = false,
+      finish: Dynamic = (timedOut?: Dynamic): Dynamic => {
+        if (!finished) {
+          finished = true;
+          timedOut || timers.clearTimeout?.(holdTimer);
           try {
-            options.onEvent?.({
+            holdOptions.onEvent?.({
               type: "reveal",
-              heldMs: callback() - value2,
-              timedOut: input3,
-              carried: options.carried === true,
+              heldMs: now() - holdStartedAt,
+              timedOut: timedOut,
+              carried: holdOptions.carried === true,
             });
           } catch {}
-          input2();
+          resolve();
         }
       },
-      value3: Dynamic = value.setTimeout(
-        (): Dynamic => callback2(true),
-        options.holdMs ?? PlatformFilesHotReloadConstant,
+      holdTimer: Dynamic = timers.setTimeout(
+        (): Dynamic => finish(true),
+        holdOptions.holdMs ?? HOT_RESTART_READY_TIMEOUT_MS,
       );
-    Promise.resolve(input).then(
-      (): Dynamic => callback2(false),
-      (): Dynamic => callback2(false),
+    Promise.resolve(ready).then(
+      (): Dynamic => finish(false),
+      (): Dynamic => finish(false),
     );
   });
 }
-function createFilesHotReloadController(input?: Dynamic): Dynamic {
-  let value: Dynamic =
-      input.hot !== undefined ? input.hot : getHotCapability(),
-    state: Dynamic = {
+function createFilesHotReloadController(controllerOptions?: Dynamic): Dynamic {
+  let hotCapability: Dynamic =
+      controllerOptions.hot !== undefined ? controllerOptions.hot : getHotCapability(),
+    stats: Dynamic = {
       updates: 0,
       applied: 0,
       deferred: 0,
       restarts: 0,
       fetchRetries: 0,
     },
-    items: Dynamic = [];
+    recentEvents: Dynamic = [];
   if (
-    input.embedded === true ||
-    value === null ||
-    typeof value.accept != "function"
+    controllerOptions.embedded === true ||
+    hotCapability === null ||
+    typeof hotCapability.accept != "function"
   )
     return {
       dispose: (): Dynamic => {},
       active: false,
       stats: (): Dynamic => ({
-        ...state,
+        ...stats,
       }),
-      events: items,
+      events: recentEvents,
     };
-  let { port: value2 }: Dynamic = input,
-    value3: Dynamic = value2,
-    value4: Dynamic = input.isCode ?? isApplicationCodeFile,
-    value5: Dynamic = input.retryMs ?? PlatformFilesHotReloadItems,
-    value6: Dynamic = input.timers ?? {
-      setTimeout: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-        setTimeout(input2, options),
-      clearTimeout: (input2?: Dynamic): Dynamic => clearTimeout(input2),
+  let { port: filePort }: Dynamic = controllerOptions,
+    listingPort: Dynamic = filePort,
+    isCodePath: Dynamic = controllerOptions.isCode ?? isApplicationCodeFile,
+    retryDelaysMs: Dynamic = controllerOptions.retryMs ?? DEFAULT_FILE_READ_RETRY_DELAYS_MS,
+    timers: Dynamic = controllerOptions.timers ?? {
+      setTimeout: (run?: Dynamic, delayMs?: Dynamic): Dynamic =>
+        setTimeout(run, delayMs),
+      clearTimeout: (timer?: Dynamic): Dynamic => clearTimeout(timer),
       now: (): Dynamic => Date.now(),
     },
-    callback: Dynamic = (): Dynamic => value6.now?.() ?? Date.now(),
-    flag: Dynamic = false,
-    value7: Dynamic,
-    value8: Dynamic,
-    items2: Dynamic = [],
-    value9: Dynamic;
-  value3.knownListing === undefined &&
-    value2.list().then(
-      (input2?: Dynamic): Dynamic => {
-        value9 ??= new Map(
-          input2.map(
-            (input3?: Dynamic): Dynamic => [input3.path, input3.sha256],
+    now: Dynamic = (): Dynamic => timers.now?.() ?? Date.now(),
+    disposed: Dynamic = false,
+    restartTimer: Dynamic,
+    queuedRestartReason: Dynamic,
+    restartTimes: Dynamic = [],
+    cachedListing: Dynamic;
+  listingPort.knownListing === undefined &&
+    filePort.list().then(
+      (listedFiles?: Dynamic): Dynamic => {
+        cachedListing ??= new Map(
+          listedFiles.map(
+            (file?: Dynamic): Dynamic => [file.path, file.sha256],
           ),
         );
       },
       (): Dynamic => {},
     );
-  function value10(input2?: Dynamic): Dynamic {
-    items.push(input2);
-    items.length > PlatformFilesHotReloadLimit_4 && items.shift();
+  function recordEvent(event?: Dynamic): Dynamic {
+    recentEvents.push(event);
+    recentEvents.length > MAX_RETAINED_HOT_EVENTS && recentEvents.shift();
     try {
-      input.onEvent
-        ? input.onEvent(input2)
+      controllerOptions.onEvent
+        ? controllerOptions.onEvent(event)
         : (globalThis as Dynamic).console?.debug?.(
             "[hot]",
-            JSON.stringify(input2),
+            JSON.stringify(event),
           );
     } catch {}
   }
-  let callback2: Dynamic = (input2?: Dynamic): Dynamic => {
+  let notifyBeforeRestart: Dynamic = (reason?: Dynamic): Dynamic => {
     try {
-      input.onBeforeRestart?.(input2);
+      controllerOptions.onBeforeRestart?.(reason);
     } catch {}
   };
-  function value11(input2?: Dynamic, options: Dynamic = 0): Dynamic {
-    value8 ??= input2;
-    if (value7 !== undefined || flag) return;
-    let callback3: Dynamic = (): Dynamic => {
-      value7 = undefined;
-      if (flag || value8 === undefined) return;
-      if (input.isBusy?.() === true) {
-        value7 = value6.setTimeout(callback3, input.busyPollMs ?? 250);
+  function scheduleRestart(restartReason?: Dynamic, delayMs: Dynamic = 0): Dynamic {
+    queuedRestartReason ??= restartReason;
+    if (restartTimer !== undefined || disposed) return;
+    let restartWhenIdle: Dynamic = (): Dynamic => {
+      restartTimer = undefined;
+      if (disposed || queuedRestartReason === undefined) return;
+      if (controllerOptions.isBusy?.() === true) {
+        restartTimer = timers.setTimeout(restartWhenIdle, controllerOptions.busyPollMs ?? 250);
         return;
       }
-      let value16: Dynamic = callback();
+      let currentTime: Dynamic = now();
       for (
         ;
-        items2.length > 0 &&
-        value16 - items2[0] > PlatformFilesHotReloadLimit_2;
+        restartTimes.length > 0 &&
+        currentTime - restartTimes[0] > RESTART_RATE_WINDOW_MS;
 
       )
-        items2.shift();
-      if (items2.length >= PlatformFilesHotReloadLimit_3) {
-        value7 = value6.setTimeout(
-          callback3,
-          PlatformFilesHotReloadLimit_2 - (value16 - items2[0]) + 1,
+        restartTimes.shift();
+      if (restartTimes.length >= MAX_RESTARTS_PER_WINDOW) {
+        restartTimer = timers.setTimeout(
+          restartWhenIdle,
+          RESTART_RATE_WINDOW_MS - (currentTime - restartTimes[0]) + 1,
         );
         return;
       }
-      items2.push(value16);
-      let value17: Dynamic = value8;
-      value8 = undefined;
-      state.restarts += 1;
-      callback2(value17);
+      restartTimes.push(currentTime);
+      let reason: Dynamic = queuedRestartReason;
+      queuedRestartReason = undefined;
+      stats.restarts += 1;
+      notifyBeforeRestart(reason);
       try {
-        value.restart?.({
-          note: value17,
+        hotCapability.restart?.({
+          note: reason,
         });
       } catch {}
     };
-    value7 = value6.setTimeout(callback3, options);
+    restartTimer = timers.setTimeout(restartWhenIdle, delayMs);
   }
-  async function value12(): Promise<Dynamic> {
-    let entries: Dynamic = new Map(value3.knownListing?.() ?? value9 ?? []),
-      entries2: Dynamic = new Map(
-        (await listWritableFiles(value2)).map(
-          (input2?: Dynamic): Dynamic => [input2.path, input2.sha256],
+  async function diffFileListing(): Promise<Dynamic> {
+    let previousListing: Dynamic = new Map(listingPort.knownListing?.() ?? cachedListing ?? []),
+      latestListing: Dynamic = new Map(
+        (await listWritableFiles(filePort)).map(
+          (file?: Dynamic): Dynamic => [file.path, file.sha256],
         ),
       );
-    value9 = entries2;
-    let items3: Dynamic = [];
-    for (let [value16, value17] of entries2 as Dynamic)
-      entries.get(value16) !== value17 &&
-        items3.push({
-          path: value16,
-          sha256: value17,
+    cachedListing = latestListing;
+    let changes: Dynamic = [];
+    for (let [filePath, sha] of latestListing as Dynamic)
+      previousListing.get(filePath) !== sha &&
+        changes.push({
+          path: filePath,
+          sha256: sha,
         });
-    for (let value16 of entries.keys() as Dynamic)
-      entries2.has(value16) ||
-        items3.push({
-          path: value16,
+    for (let filePath of previousListing.keys() as Dynamic)
+      latestListing.has(filePath) ||
+        changes.push({
+          path: filePath,
           sha256: null,
         });
-    return items3.sort(
-      (input2?: Dynamic, options?: Dynamic): Dynamic =>
-        input2.path < options.path ? -1 : 1,
+    return changes.sort(
+      (left?: Dynamic, right?: Dynamic): Dynamic =>
+        left.path < right.path ? -1 : 1,
     );
   }
-  function value13(input2?: Dynamic): Dynamic {
-    if (flag) return void input2.restart?.();
-    state.updates += 1;
-    let value16: Dynamic = PlatformFilesHotReloadVer(input2.from),
-      value17: Dynamic = PlatformFilesHotReloadVer(input2.to),
-      value18: Dynamic = input.isBusy?.() === true,
-      value19: Dynamic =
-        input2.required !== "none"
+  function handleHotUpdate(update?: Dynamic): Dynamic {
+    if (disposed) return void update.restart?.();
+    stats.updates += 1;
+    let previousVersion: Dynamic = readUpdateVersion(update.from),
+      nextVersion: Dynamic = readUpdateVersion(update.to),
+      isBusy: Dynamic = controllerOptions.isBusy?.() === true,
+      restartCause: Dynamic =
+        update.required !== "none"
           ? "required"
-          : input2.changed !== null &&
-              input2.changed.some(
-                (input3?: Dynamic): Dynamic => value4(input3.path),
+          : update.changed !== null &&
+              update.changed.some(
+                (change?: Dynamic): Dynamic => isCodePath(change.path),
               )
             ? "code"
             : undefined,
-      state2: Dynamic = {
+      updateEvent: Dynamic = {
         type: "update",
-        from: value16.version,
-        to: value17.version,
-        ...(value16.seq !== undefined
+        from: previousVersion.version,
+        to: nextVersion.version,
+        ...(previousVersion.seq !== undefined
           ? {
-              fromSeq: value16.seq,
+              fromSeq: previousVersion.seq,
             }
           : {}),
-        ...(value17.seq !== undefined
+        ...(nextVersion.seq !== undefined
           ? {
-              toSeq: value17.seq,
+              toSeq: nextVersion.seq,
             }
           : {}),
-        required: String(input2.required),
-        shape: PlatformFilesHotReloadAdopt(input2),
-        changed: PlatformFilesHotReloadPath(input2.changed, value4),
-        busy: value18,
+        required: String(update.required),
+        shape: describeUpdateMethods(update),
+        changed: describeChangedFiles(update.changed, isCodePath),
+        busy: isBusy,
       };
-    if (value19 !== undefined) {
-      let value21: Dynamic =
-          value19 === "code"
+    if (restartCause !== undefined) {
+      let restartExplanation: Dynamic =
+          restartCause === "code"
             ? "a changed path is the page\u2019s own code: " +
-              (input2.changed ?? [])
-                .filter((input3?: Dynamic): Dynamic => value4(input3.path))
-                .map((input3?: Dynamic): Dynamic => input3.path)
+              (update.changed ?? [])
+                .filter((change?: Dynamic): Dynamic => isCodePath(change.path))
+                .map((change?: Dynamic): Dynamic => change.path)
                 .join(", ")
-            : "required is " + String(input2.required),
-        value22: Dynamic =
-          value19 === "code" && input2.changed !== null
-            ? input2.changed.filter(
-                (input3?: Dynamic): Dynamic => !value4(input3.path),
+            : "required is " + String(update.required),
+        contentChanges: Dynamic =
+          restartCause === "code" && update.changed !== null
+            ? update.changed.filter(
+                (change?: Dynamic): Dynamic => !isCodePath(change.path),
               )
             : [];
       if (
-        value18 &&
-        input.contentWhileBusy !== false &&
-        value22.length > 0 &&
-        typeof input2.adopt == "function"
+        isBusy &&
+        controllerOptions.contentWhileBusy !== false &&
+        contentChanges.length > 0 &&
+        typeof update.adopt == "function"
       ) {
         try {
-          input2.adopt();
-        } catch (value24: Dynamic) {
-          value10({
-            ...state2,
+          update.adopt();
+        } catch (adoptError: Dynamic) {
+          recordEvent({
+            ...updateEvent,
             decision: "restart",
-            get why() { return ("u.adopt() threw: ") + (PlatformFilesHotReloadSlice(value24)); },
+            get why() { return ("u.adopt() threw: ") + (summarizeError(adoptError)); },
           });
-          callback2("adopt failed");
-          return void input2.restart?.();
+          notifyBeforeRestart("adopt failed");
+          return void update.restart?.();
         }
-        value10({
-          ...state2,
+        recordEvent({
+          ...updateEvent,
           decision: "adopt",
-          get why() { return (((value21) + ("; the person is busy, so the ")) + (String(value22.length))) + (" content row(s) are applied in place now and the restart waits"); },
+          get why() { return (((restartExplanation) + ("; the person is busy, so the ")) + (String(contentChanges.length))) + (" content row(s) are applied in place now and the restart waits"); },
         });
-        value10({
+        recordEvent({
           type: "deferred",
-          from: value16.version,
-          to: value17.version,
+          from: previousVersion.version,
+          to: nextVersion.version,
           reason: "code",
         });
-        state.deferred += 1;
-        let value23: Dynamic = callback();
+        stats.deferred += 1;
+        let contentAdoptedAt: Dynamic = now();
         try {
-          value3.noteAdopted?.(value17, value16);
+          listingPort.noteAdopted?.(nextVersion, previousVersion);
         } catch {}
-        value11("deferred-update", input.busyPollMs ?? 250);
-        return value14(value22, value16, value17, value23, false).catch(
-          (input3?: Dynamic): Dynamic => (
-            value10({
+        scheduleRestart("deferred-update", controllerOptions.busyPollMs ?? 250);
+        return applyHotUpdate(contentChanges, previousVersion, nextVersion, contentAdoptedAt, false).catch(
+          (applyError?: Dynamic): Dynamic => (
+            recordEvent({
               type: "restart",
-              from: value16.version,
-              to: value17.version,
+              from: previousVersion.version,
+              to: nextVersion.version,
               reason: "apply-failed",
               asked: true,
-              error: PlatformFilesHotReloadSlice(input3),
+              error: summarizeError(applyError),
             }),
-            value11("apply-failed"),
+            scheduleRestart("apply-failed"),
             "applied"
           ),
         );
       }
-      return value18 && typeof input2.defer == "function"
-        ? (input2.defer(),
-          (state.deferred += 1),
-          value10({
-            ...state2,
+      return isBusy && typeof update.defer == "function"
+        ? (update.defer(),
+          (stats.deferred += 1),
+          recordEvent({
+            ...updateEvent,
             decision: "defer",
-            get why() { return (value21) + ("; the person is mid-gesture or typing, so the restart waits"); },
+            get why() { return (restartExplanation) + ("; the person is mid-gesture or typing, so the restart waits"); },
           }),
-          value10({
+          recordEvent({
             type: "deferred",
-            from: value16.version,
-            to: value17.version,
-            reason: value19,
+            from: previousVersion.version,
+            to: nextVersion.version,
+            reason: restartCause,
           }),
-          value11("deferred-update", input.busyPollMs ?? 250),
+          scheduleRestart("deferred-update", controllerOptions.busyPollMs ?? 250),
           "deferred")
-        : ((state.restarts += 1),
-          value10({
-            ...state2,
+        : ((stats.restarts += 1),
+          recordEvent({
+            ...updateEvent,
             decision: "restart",
-            why: value21,
+            why: restartExplanation,
           }),
-          value10({
+          recordEvent({
             type: "restart",
-            from: value16.version,
-            to: value17.version,
-            reason: value19,
+            from: previousVersion.version,
+            to: nextVersion.version,
+            reason: restartCause,
             asked: true,
           }),
-          callback2(
-            value19 === "code"
+          notifyBeforeRestart(
+            restartCause === "code"
               ? "code changed"
-              : "required: " + String(input2.required),
+              : "required: " + String(update.required),
           ),
-          void input2.restart?.());
+          void update.restart?.());
     }
     try {
-      input2.adopt?.();
-    } catch (value21: Dynamic) {
-      value10({
-        ...state2,
+      update.adopt?.();
+    } catch (adoptError: Dynamic) {
+      recordEvent({
+        ...updateEvent,
         decision: "restart",
-        get why() { return ("u.adopt() threw: ") + (PlatformFilesHotReloadSlice(value21)); },
+        get why() { return ("u.adopt() threw: ") + (summarizeError(adoptError)); },
       });
-      callback2("adopt failed");
-      return void input2.restart?.();
+      notifyBeforeRestart("adopt failed");
+      return void update.restart?.();
     }
-    value10({
-      ...state2,
+    recordEvent({
+      ...updateEvent,
       decision: "adopt",
       why:
-        input2.changed === null
+        update.changed === null
           ? "the shell sent no diff (changed: null); the listing is diffed after adopt"
           : "content only",
     });
-    let value20: Dynamic = callback();
+    let adoptedAt: Dynamic = now();
     try {
-      value3.noteAdopted?.(value17, value16);
+      listingPort.noteAdopted?.(nextVersion, previousVersion);
     } catch {}
-    return value14(input2.changed, value16, value17, value20, false).catch(
-      (input3?: Dynamic): Dynamic => (
-        value10({
+    return applyHotUpdate(update.changed, previousVersion, nextVersion, adoptedAt, false).catch(
+      (applyError?: Dynamic): Dynamic => (
+        recordEvent({
           type: "restart",
-          from: value16.version,
-          to: value17.version,
+          from: previousVersion.version,
+          to: nextVersion.version,
           reason: "apply-failed",
           asked: true,
-          error: PlatformFilesHotReloadSlice(input3),
+          error: summarizeError(applyError),
         }),
-        value11("apply-failed"),
+        scheduleRestart("apply-failed"),
         "applied"
       ),
     );
   }
-  async function value14(
-    input2?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value16?: Dynamic,
-    extra?: Dynamic,
+  async function applyHotUpdate(
+    changedFiles?: Dynamic,
+    previousVersion?: Dynamic,
+    nextVersion?: Dynamic,
+    adoptedAt?: Dynamic,
+    isEarlyUpdate?: Dynamic,
   ): Promise<Dynamic> {
-    let index: Dynamic = 0,
-      flag2: Dynamic = false,
-      callback3: Dynamic = (
-        input3?: Dynamic,
-        options2?: Dynamic,
+    let fetchRetryCount: Dynamic = 0,
+      reportedPendingFetch: Dynamic = false,
+      restartAfterApplyFailure: Dynamic = (
+        reason?: Dynamic,
+        error?: Dynamic,
       ): Dynamic => (
-        value10({
+        recordEvent({
           type: "restart",
-          from: options.version,
-          to: context.version,
-          reason: input3,
+          from: previousVersion.version,
+          to: nextVersion.version,
+          reason: reason,
           asked: true,
-          ...(options2 !== undefined
+          ...(error !== undefined
             ? {
-                error: PlatformFilesHotReloadSlice(options2),
+                error: summarizeError(error),
               }
             : {}),
         }),
-        value11(input3),
+        scheduleRestart(reason),
         "applied"
       ),
-      callback4: Dynamic = (input3?: Dynamic): Dynamic => {
-        let value24: Dynamic = input3?.status;
-        return typeof value24 == "number" ? value24 : undefined;
+      readErrorStatus: Dynamic = (error?: Dynamic): Dynamic => {
+        let status: Dynamic = error?.status;
+        return typeof status == "number" ? status : undefined;
       },
-      callback5: Dynamic = (
-        input3?: Dynamic,
-        options2?: Dynamic,
+      fetchWithRetry: Dynamic = (
+        filePath?: Dynamic,
+        fetchFile?: Dynamic,
       ): Dynamic => {
-        let index2: Dynamic = 0;
+        let attempts: Dynamic = 0;
         return retryAccessFailure(
-          (): Dynamic => ((index2 += 1), options2()),
-          value6,
-          (input4?: Dynamic, options3?: Dynamic): Dynamic => {
-            index += 1;
-            state.fetchRetries += 1;
-            let value24: Dynamic = callback4(options3),
-              value25: Dynamic = options3?.redirectedTo;
-            value10({
+          (): Dynamic => ((attempts += 1), fetchFile()),
+          timers,
+          (attempt?: Dynamic, error?: Dynamic): Dynamic => {
+            fetchRetryCount += 1;
+            stats.fetchRetries += 1;
+            let status: Dynamic = readErrorStatus(error),
+              redirectedTo: Dynamic = error?.redirectedTo;
+            recordEvent({
               type: "fetch",
-              to: context.version,
-              path: input3,
-              attempt: input4,
+              to: nextVersion.version,
+              path: filePath,
+              attempt: attempt,
               ok: false,
-              ...(value24 !== undefined
+              ...(status !== undefined
                 ? {
-                    status: value24,
+                    status: status,
                   }
                 : {}),
-              msAfterAdopt: callback() - value16,
-              ...(typeof value25 == "string"
+              msAfterAdopt: now() - adoptedAt,
+              ...(typeof redirectedTo == "string"
                 ? {
-                    redirectedTo: value25,
+                    redirectedTo: redirectedTo,
                   }
                 : {}),
             });
-            input4 >= PlatformFilesHotReloadLimit &&
-              !flag2 &&
-              ((flag2 = true),
-              value10({
+            attempt >= MAX_FILE_READ_ATTEMPTS &&
+              !reportedPendingFetch &&
+              ((reportedPendingFetch = true),
+              recordEvent({
                 type: "pending",
-                from: options.version,
-                to: context.version,
-                paths: [input3],
-                msAfterAdopt: callback() - value16,
+                from: previousVersion.version,
+                to: nextVersion.version,
+                paths: [filePath],
+                msAfterAdopt: now() - adoptedAt,
               }));
           },
-          value5,
+          retryDelaysMs,
         ).then(
-          (input4?: Dynamic): Dynamic => (
-            value10({
+          (response?: Dynamic): Dynamic => (
+            recordEvent({
               type: "fetch",
-              to: context.version,
-              path: input3,
-              attempt: index2,
+              to: nextVersion.version,
+              path: filePath,
+              attempt: attempts,
               ok: true,
-              msAfterAdopt: callback() - value16,
+              msAfterAdopt: now() - adoptedAt,
             }),
-            input4
+            response
           ),
         );
       },
-      value17: Dynamic;
+      incomingChanges: Dynamic;
     try {
-      value17 =
-        input2 === null
-          ? await callback5("_files.json", value12)
-          : input2.map(
-              (input3?: Dynamic): Dynamic => ({
-                path: input3.path,
-                sha256: PlatformFilesHotReloadKind(input3),
+      incomingChanges =
+        changedFiles === null
+          ? await fetchWithRetry("_files.json", diffFileListing)
+          : changedFiles.map(
+              (change?: Dynamic): Dynamic => ({
+                path: change.path,
+                sha256: changedFileSha(change),
               }),
             );
-    } catch (value24: Dynamic) {
-      return callback3("fetch-exhausted", value24);
+    } catch (listingError: Dynamic) {
+      return restartAfterApplyFailure("fetch-exhausted", listingError);
     }
     if (
-      input2 === null &&
-      value17.some((input3?: Dynamic): Dynamic => value4(input3.path))
+      changedFiles === null &&
+      incomingChanges.some((change?: Dynamic): Dynamic => isCodePath(change.path))
     )
       if (
-        input.contentWhileBusy !== false &&
-        input.isBusy?.() === true &&
-        value17.some((input3?: Dynamic): Dynamic => !value4(input3.path))
+        controllerOptions.contentWhileBusy !== false &&
+        controllerOptions.isBusy?.() === true &&
+        incomingChanges.some((change?: Dynamic): Dynamic => !isCodePath(change.path))
       ) {
-        value10({
+        recordEvent({
           type: "restart",
-          from: options.version,
-          to: context.version,
+          from: previousVersion.version,
+          to: nextVersion.version,
           reason: "code-after-adopt",
           asked: true,
         });
-        value11("code-after-adopt");
-        value17 = value17.filter(
-          (input3?: Dynamic): Dynamic => !value4(input3.path),
+        scheduleRestart("code-after-adopt");
+        incomingChanges = incomingChanges.filter(
+          (change?: Dynamic): Dynamic => !isCodePath(change.path),
         );
-      } else return callback3("code-after-adopt");
-    if (value9 !== undefined && input2 !== null)
-      for (let value24 of value17 as Dynamic)
-        value24.sha256 === null
-          ? value9.delete(value24.path)
-          : value9.set(value24.path, value24.sha256);
-    value17 = value17.filter(
-      (input3?: Dynamic): Dynamic =>
-        value3.olderThanMyWrite?.(context.version, input3.path) !== true,
+      } else return restartAfterApplyFailure("code-after-adopt");
+    if (cachedListing !== undefined && changedFiles !== null)
+      for (let change of incomingChanges as Dynamic)
+        change.sha256 === null
+          ? cachedListing.delete(change.path)
+          : cachedListing.set(change.path, change.sha256);
+    incomingChanges = incomingChanges.filter(
+      (change?: Dynamic): Dynamic =>
+        listingPort.olderThanMyWrite?.(nextVersion.version, change.path) !== true,
     );
-    let value18: Dynamic = extra
-      ? value17.slice()
-      : value17.filter((input3?: Dynamic): Dynamic => {
-          let value24: Dynamic = value3.heldSha?.(input3.path);
-          if (value24 === undefined || value24 !== input3.sha256) return true;
-          let value25: Dynamic = value3.liveSha?.(input3.path);
-          return value25 !== undefined && value25 !== input3.sha256;
+    let applicableChanges: Dynamic = isEarlyUpdate
+      ? incomingChanges.slice()
+      : incomingChanges.filter((change?: Dynamic): Dynamic => {
+          let heldSha: Dynamic = listingPort.heldSha?.(change.path);
+          if (heldSha === undefined || heldSha !== change.sha256) return true;
+          let liveSha: Dynamic = listingPort.liveSha?.(change.path);
+          return liveSha !== undefined && liveSha !== change.sha256;
         });
     try {
-      value3.noteIncoming?.(value17);
+      listingPort.noteIncoming?.(incomingChanges);
     } catch {}
-    let callback6: Dynamic = (input3?: Dynamic): Dynamic => {
+    let canReadByReference: Dynamic = (filePath?: Dynamic): Dynamic => {
         try {
-          return value3.answersByReference?.(input3) === true;
+          return listingPort.answersByReference?.(filePath) === true;
         } catch {
           return false;
         }
       },
-      value19: Dynamic = value18.filter(
-        (input3?: Dynamic): Dynamic => input3.sha256 !== null,
+      changedExistingFiles: Dynamic = applicableChanges.filter(
+        (change?: Dynamic): Dynamic => change.sha256 !== null,
       ),
-      value20: Dynamic = value19.filter(
-        (input3?: Dynamic): Dynamic => !callback6(input3.path),
+      filesToFetch: Dynamic = changedExistingFiles.filter(
+        (change?: Dynamic): Dynamic => !canReadByReference(change.path),
       ),
-      entries: Dynamic = new Map(),
-      value21: Dynamic,
-      value22: Dynamic;
-    if (value20.length === 0 && value19.length > 0 && input2 !== null)
+      fetchedFiles: Dynamic = new Map(),
+      grantLagMs: Dynamic,
+      lastFetchError: Dynamic;
+    if (filesToFetch.length === 0 && changedExistingFiles.length > 0 && changedFiles !== null)
       try {
-        await callback5(
+        await fetchWithRetry(
           "_files.json",
-          (): Dynamic => listWritableFiles(value2),
+          (): Dynamic => listWritableFiles(filePort),
         );
-        value21 = callback() - value16;
-      } catch (value24: Dynamic) {
-        return callback3("fetch-exhausted", value24);
+        grantLagMs = now() - adoptedAt;
+      } catch (listingError: Dynamic) {
+        return restartAfterApplyFailure("fetch-exhausted", listingError);
       }
-    let value23: Dynamic = await Promise.all(
-      value20.map(
-        (input3?: Dynamic): Dynamic =>
-          callback5(
-            input3.path,
-            (): Dynamic => value2.readBytes(input3.path),
+    let fetchResults: Dynamic = await Promise.all(
+      filesToFetch.map(
+        (change?: Dynamic): Dynamic =>
+          fetchWithRetry(
+            change.path,
+            (): Dynamic => filePort.readBytes(change.path),
           ).then(
-            (input4?: Dynamic): Dynamic => {
-              value21 ??= callback() - value16;
-              let state3: Dynamic = {
-                ...input4,
-                sha256: input3.sha256 ?? input4.sha256,
+            (fileBytes?: Dynamic): Dynamic => {
+              grantLagMs ??= now() - adoptedAt;
+              let fetchedFile: Dynamic = {
+                ...fileBytes,
+                sha256: change.sha256 ?? fileBytes.sha256,
               };
-              entries.set(input3.path, state3);
+              fetchedFiles.set(change.path, fetchedFile);
               try {
-                value3.primeRead?.(input3.path, state3);
+                listingPort.primeRead?.(change.path, fetchedFile);
               } catch {}
               return true;
             },
-            (input4?: Dynamic): Dynamic => ((value22 = input4), false),
+            (error?: Dynamic): Dynamic => ((lastFetchError = error), false),
           ),
       ),
     );
-    value21 !== undefined &&
-      ((state.lastGrantLagMs = value21),
-      (state.maxGrantLagMs = Math.max(state.maxGrantLagMs ?? 0, value21)));
-    if (value23.includes(false)) return callback3("fetch-exhausted", value22);
-    let state2: Dynamic = {
-      from: options,
-      to: context,
-      changed: value18,
+    grantLagMs !== undefined &&
+      ((stats.lastGrantLagMs = grantLagMs),
+      (stats.maxGrantLagMs = Math.max(stats.maxGrantLagMs ?? 0, grantLagMs)));
+    if (fetchResults.includes(false)) return restartAfterApplyFailure("fetch-exhausted", lastFetchError);
+    let remoteUpdate: Dynamic = {
+      from: previousVersion,
+      to: nextVersion,
+      changed: applicableChanges,
     };
     try {
-      value18.length > 0 && (await input.applyRemote(state2, entries));
-    } catch (value24: Dynamic) {
-      return callback3("apply-failed", value24);
+      applicableChanges.length > 0 && (await controllerOptions.applyRemote(remoteUpdate, fetchedFiles));
+    } catch (applyError: Dynamic) {
+      return restartAfterApplyFailure("apply-failed", applyError);
     }
     try {
-      value3.noteRemote?.(state2);
+      listingPort.noteRemote?.(remoteUpdate);
     } catch {}
-    state.applied += 1;
-    value10({
+    stats.applied += 1;
+    recordEvent({
       type: "applied",
-      from: options.version,
-      to: context.version,
-      rows: value17.length,
-      applied: value18.length,
-      fetched: entries.size,
-      ...(value19.length > value20.length
+      from: previousVersion.version,
+      to: nextVersion.version,
+      rows: incomingChanges.length,
+      applied: applicableChanges.length,
+      fetched: fetchedFiles.size,
+      ...(changedExistingFiles.length > filesToFetch.length
         ? {
-            skipped: value19.length - value20.length,
+            skipped: changedExistingFiles.length - filesToFetch.length,
           }
         : {}),
-      retries: index,
-      ...(value21 !== undefined
+      retries: fetchRetryCount,
+      ...(grantLagMs !== undefined
         ? {
-            grantLagMs: value21,
+            grantLagMs: grantLagMs,
           }
         : {}),
-      ms: callback() - value16,
-      paths: value18.map((input3?: Dynamic): Dynamic => input3.path),
-      ...(extra
+      ms: now() - adoptedAt,
+      paths: applicableChanges.map((change?: Dynamic): Dynamic => change.path),
+      ...(isEarlyUpdate
         ? {
             early: true,
           }
@@ -624,114 +624,114 @@ function createFilesHotReloadController(input?: Dynamic): Dynamic {
     });
     return "applied";
   }
-  let value15: Dynamic =
-    input.early ?? getHotReloadController(value);
-  input.snapshot !== undefined &&
-    typeof value.snapshot == "function" &&
-    value.snapshot(
-      (input2?: Dynamic): Dynamic =>
-        flag ? undefined : input.snapshot(input2),
+  let earlyController: Dynamic =
+    controllerOptions.early ?? getHotReloadController(hotCapability);
+  controllerOptions.snapshot !== undefined &&
+    typeof hotCapability.snapshot == "function" &&
+    hotCapability.snapshot(
+      (snapshotContext?: Dynamic): Dynamic =>
+        disposed ? undefined : controllerOptions.snapshot(snapshotContext),
     );
-  value15?.attach === undefined &&
-    (input.restore !== undefined || input.reveal !== undefined) &&
-    typeof value.ready == "function" &&
-    value.ready((input2?: Dynamic): Dynamic => {
-      if (!flag) {
+  earlyController?.attach === undefined &&
+    (controllerOptions.restore !== undefined || controllerOptions.reveal !== undefined) &&
+    typeof hotCapability.ready == "function" &&
+    hotCapability.ready((carriedState?: Dynamic): Dynamic => {
+      if (!disposed) {
         try {
-          input.restore?.(input2);
+          controllerOptions.restore?.(carriedState);
         } catch {}
-        return input.reveal === undefined
+        return controllerOptions.reveal === undefined
           ? undefined
-          : awaitHotRestartReady(input.reveal, {
-              holdMs: input.revealHoldMs,
-              timers: value6,
-              carried: input2 != null,
-              onEvent: value10,
+          : awaitHotRestartReady(controllerOptions.reveal, {
+              holdMs: controllerOptions.revealHoldMs,
+              timers: timers,
+              carried: carriedState != null,
+              onEvent: recordEvent,
             });
       }
     });
-  value.accept(value13);
-  if (value15 !== undefined) {
-    value15.attach?.({
-      ...(input.snapshot !== undefined
+  hotCapability.accept(handleHotUpdate);
+  if (earlyController !== undefined) {
+    earlyController.attach?.({
+      ...(controllerOptions.snapshot !== undefined
         ? {
-            snapshot: (input2?: Dynamic): Dynamic =>
-              flag ? undefined : input.snapshot(input2),
+            snapshot: (snapshotContext?: Dynamic): Dynamic =>
+              disposed ? undefined : controllerOptions.snapshot(snapshotContext),
           }
         : {}),
-      ...(input.restore !== undefined
+      ...(controllerOptions.restore !== undefined
         ? {
-            restore: (input2?: Dynamic): Dynamic => {
-              flag || input.restore(input2);
+            restore: (carriedState?: Dynamic): Dynamic => {
+              disposed || controllerOptions.restore(carriedState);
             },
           }
         : {}),
-      ...(input.reveal !== undefined
+      ...(controllerOptions.reveal !== undefined
         ? {
-            reveal: input.reveal,
+            reveal: controllerOptions.reveal,
           }
         : {}),
-      onEvent: value10,
-      onBeforeRestart: callback2,
+      onEvent: recordEvent,
+      onBeforeRestart: notifyBeforeRestart,
     });
-    value15.release();
-    let value16: Dynamic = value15.takeOwed?.();
-    value16 !== undefined &&
-      (value10({
+    earlyController.release();
+    let owedRestart: Dynamic = earlyController.takeOwed?.();
+    owedRestart !== undefined &&
+      (recordEvent({
         type: "restart",
-        from: value16.from.version,
-        to: value16.to.version,
+        from: owedRestart.from.version,
+        to: owedRestart.to.version,
         reason: "deferred-update",
         asked: true,
       }),
-      value11("deferred-update", input.busyPollMs ?? 250));
-    let value17: Dynamic = value15.queued.splice(0);
-    if (value17.length > 0) {
-      let value18: Dynamic = value17.some(
-          (input2?: Dynamic): Dynamic => input2.changed === null,
+      scheduleRestart("deferred-update", controllerOptions.busyPollMs ?? 250));
+    let queuedUpdates: Dynamic = earlyController.queued.splice(0);
+    if (queuedUpdates.length > 0) {
+      let needsListingDiff: Dynamic = queuedUpdates.some(
+          (update?: Dynamic): Dynamic => update.changed === null,
         ),
-        entries: Dynamic = new Map();
-      if (!value18)
-        for (let value21 of value17 as Dynamic)
-          for (let value22 of value21.changed as Dynamic)
-            entries.set(value22.path, value22);
-      let value19: Dynamic = value17[0],
-        value20: Dynamic = value17[value17.length - 1];
-      state.updates += value17.length;
+        changesByPath: Dynamic = new Map();
+      if (!needsListingDiff)
+        for (let update of queuedUpdates as Dynamic)
+          for (let change of update.changed as Dynamic)
+            changesByPath.set(change.path, change);
+      let firstUpdate: Dynamic = queuedUpdates[0],
+        lastUpdate: Dynamic = queuedUpdates[queuedUpdates.length - 1];
+      stats.updates += queuedUpdates.length;
       try {
-        value3.noteAdopted?.(value20.to, value19.from);
+        listingPort.noteAdopted?.(lastUpdate.to, firstUpdate.from);
       } catch {}
-      value14(
-        value18 ? null : [...entries.values()],
-        value19.from,
-        value20.to,
-        value19.at,
+      applyHotUpdate(
+        needsListingDiff ? null : [...changesByPath.values()],
+        firstUpdate.from,
+        lastUpdate.to,
+        firstUpdate.at,
         true,
-      ).catch((input2?: Dynamic): Dynamic => {
-        value10({
+      ).catch((applyError?: Dynamic): Dynamic => {
+        recordEvent({
           type: "restart",
-          from: value19.from.version,
-          to: value20.to.version,
+          from: firstUpdate.from.version,
+          to: lastUpdate.to.version,
           reason: "apply-failed",
           asked: true,
-          error: PlatformFilesHotReloadSlice(input2),
+          error: summarizeError(applyError),
         });
-        value11("apply-failed");
+        scheduleRestart("apply-failed");
       });
     }
   }
   return {
     get active(): Dynamic {
-      return !flag;
+      return !disposed;
     },
     stats: (): Dynamic => ({
-      ...state,
+      ...stats,
     }),
-    events: items,
+    events: recentEvents,
     dispose(): Dynamic {
-      flag = true;
-      value7 !== undefined &&
-        (value6.clearTimeout(value7), (value7 = undefined));
+      disposed = true;
+      restartTimer !== undefined &&
+        (timers.clearTimeout(restartTimer), (restartTimer = undefined));
     },
   };
 }
@@ -741,26 +741,26 @@ export {
   createFilesHotReloadController,
   getHotCapability,
   hasHotRestartToken,
-  PlatformFilesHotReloadAdopt,
-  PlatformFilesHotReloadConstant,
-  PlatformFilesHotReloadItems,
-  PlatformFilesHotReloadKind,
-  PlatformFilesHotReloadLimit,
-  PlatformFilesHotReloadLimit_2,
-  PlatformFilesHotReloadLimit_3,
-  PlatformFilesHotReloadLimit_4,
-  PlatformFilesHotReloadName,
-  PlatformFilesHotReloadPath,
-  PlatformFilesHotReloadSlice,
-  PlatformFilesHotReloadVer,
+  describeUpdateMethods as PlatformFilesHotReloadAdopt,
+  HOT_RESTART_READY_TIMEOUT_MS as PlatformFilesHotReloadConstant,
+  DEFAULT_FILE_READ_RETRY_DELAYS_MS as PlatformFilesHotReloadItems,
+  changedFileSha as PlatformFilesHotReloadKind,
+  MAX_FILE_READ_ATTEMPTS as PlatformFilesHotReloadLimit,
+  RESTART_RATE_WINDOW_MS as PlatformFilesHotReloadLimit_2,
+  MAX_RESTARTS_PER_WINDOW as PlatformFilesHotReloadLimit_3,
+  MAX_RETAINED_HOT_EVENTS as PlatformFilesHotReloadLimit_4,
+  readWindowName as PlatformFilesHotReloadName,
+  describeChangedFiles as PlatformFilesHotReloadPath,
+  summarizeError as PlatformFilesHotReloadSlice,
+  readUpdateVersion as PlatformFilesHotReloadVer,
 };
 export function installPlatformFilesHotReload(): () => void {
   return () => {
-    PlatformFilesHotReloadItems = [
+    DEFAULT_FILE_READ_RETRY_DELAYS_MS = [
       150, 300, 600, 1e3, 2e3, 2e3, 2e3, 2e3, 2e3, 2e3, 2e3, 2e3,
     ];
-    PlatformFilesHotReloadLimit = 4;
-    PlatformFilesHotReloadName = (): Dynamic => {
+    MAX_FILE_READ_ATTEMPTS = 4;
+    readWindowName = (): Dynamic => {
       try {
         return typeof window === "undefined"
           ? ""
@@ -769,43 +769,43 @@ export function installPlatformFilesHotReload(): () => void {
         return "";
       }
     };
-    PlatformFilesHotReloadLimit_2 = 6e4;
-    PlatformFilesHotReloadLimit_3 = 1;
-    PlatformFilesHotReloadLimit_4 = 50;
-    PlatformFilesHotReloadKind = (source?: Dynamic): Dynamic =>
+    RESTART_RATE_WINDOW_MS = 6e4;
+    MAX_RESTARTS_PER_WINDOW = 1;
+    MAX_RETAINED_HOT_EVENTS = 50;
+    changedFileSha = (source?: Dynamic): Dynamic =>
       source.kind === "removed"
         ? null
         : typeof source.to == "string"
           ? source.to
           : null;
-    PlatformFilesHotReloadSlice = (input?: Dynamic): Dynamic =>
-      (input instanceof Error
-        ? input.message
-        : String(input?.message ?? input)
+    summarizeError = (error?: Dynamic): Dynamic =>
+      (error instanceof Error
+        ? error.message
+        : String(error?.message ?? error)
       ).slice(0, 120);
-    PlatformFilesHotReloadVer = (input?: Dynamic): Dynamic => ({
-      version: input.ver,
-      ...(input.seq !== undefined
+    readUpdateVersion = (updateVersion?: Dynamic): Dynamic => ({
+      version: updateVersion.ver,
+      ...(updateVersion.seq !== undefined
         ? {
-            seq: input.seq,
+            seq: updateVersion.seq,
           }
         : {}),
     });
-    PlatformFilesHotReloadPath = (
-      input?: Dynamic,
-      options?: Dynamic,
+    describeChangedFiles = (
+      changes?: Dynamic,
+      isCodePath?: Dynamic,
     ): Dynamic =>
-      input === null
+      changes === null
         ? null
-        : input.map(
+        : changes.map(
             (source?: Dynamic): Dynamic => ({
               path: source.path,
               kind: String(source.kind),
-              klass: options(source.path) ? "code" : "content",
+              klass: isCodePath(source.path) ? "code" : "content",
             }),
           );
-    PlatformFilesHotReloadAdopt = (input?: Dynamic): Dynamic =>
-      typeof input.adopt == "function" ? "calls" : "string";
-    PlatformFilesHotReloadConstant = 4500;
+    describeUpdateMethods = (update?: Dynamic): Dynamic =>
+      typeof update.adopt == "function" ? "calls" : "string";
+    HOT_RESTART_READY_TIMEOUT_MS = 4500;
   };
 }

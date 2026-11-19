@@ -11,12 +11,12 @@ var EMPTY_FILES_FALLBACK_CONTENT: Dynamic;
 var unavailableFilesCache: Dynamic;
 var SHARED_RUNTIME_SAVE_REASON: Dynamic;
 function createCanvasErrorState(
-  input?: Dynamic,
-  options: Dynamic = "The canvas could not be opened",
+  failureReason?: Dynamic,
+  messagePrefix: Dynamic = "The canvas could not be opened",
 ): Dynamic {
   return createErrorDocumentState(
     CANVAS_LOAD_ERROR_TITLE,
-    options + " (" + input + ").",
+    messagePrefix + " (" + failureReason + ").",
   );
 }
 function createErrorDocumentState(
@@ -68,15 +68,15 @@ function createErrorDocumentState(
     comments: [],
   };
 }
-function readBootstrapTitle(input?: Dynamic): Dynamic {
-  let title: Dynamic = input.title;
+function readBootstrapTitle(embeddedState?: Dynamic): Dynamic {
+  let title: Dynamic = embeddedState.title;
   return typeof title == "string" && title.length > 0
     ? truncateUtf16Safely(title, 200)
     : undefined;
 }
-function createStaticWritableCache(input?: Dynamic): Dynamic {
+function createStaticWritableCache(cachedValue?: Dynamic): Dynamic {
   return {
-    read: (): Dynamic => input,
+    read: (): Dynamic => cachedValue,
     write: (): Dynamic => true,
     clear(): Dynamic {},
   };
@@ -89,10 +89,10 @@ function createFilesFallbackDocument(bootResult?: Dynamic): Dynamic {
     skipped: Dynamic = bootResult.skipped ?? [],
     displayedSkippedFiles: Dynamic = skipped
       .filter(
-        (input?: Dynamic): Dynamic => SKIPPED_FILE_NAME_PATTERN.test(input),
+        (fileName?: Dynamic): Dynamic => SKIPPED_FILE_NAME_PATTERN.test(fileName),
       )
       .slice(0, 5),
-    value: Dynamic =
+    readOnlyReason: Dynamic =
       bootResult.origin === "failed"
         ? "This canvas couldn\u2019t be loaded."
         : (bootResult.origin === "demo" && bootResult.indexFound === true
@@ -121,21 +121,21 @@ function createFilesFallbackDocument(bootResult?: Dynamic): Dynamic {
     options: {
       embeddedState: state,
       pageParts: EMPTY_FILES_FALLBACK_CONTENT,
-      roFlag: createStaticWritableCache(value),
+      roFlag: createStaticWritableCache(readOnlyReason),
       stash: unavailableFilesCache,
       canPublish: true,
     },
     title: readBootstrapTitle(state),
   };
 }
-function logFilesBootstrapError(input?: Dynamic): Dynamic {
-  input.error !== undefined &&
-    (input.origin === "failed" || input.indexFound === true) &&
-    console.warn("design (files mode): " + input.error);
-  let { options: value, title: value2 }: Dynamic =
-    createFilesFallbackDocument(input);
-  value2 !== undefined && ((document as Dynamic).title = value2);
-  return value;
+function logFilesBootstrapError(bootResult?: Dynamic): Dynamic {
+  bootResult.error !== undefined &&
+    (bootResult.origin === "failed" || bootResult.indexFound === true) &&
+    console.warn("design (files mode): " + bootResult.error);
+  let { options: fallbackOptions, title: title }: Dynamic =
+    createFilesFallbackDocument(bootResult);
+  title !== undefined && ((document as Dynamic).title = title);
+  return fallbackOptions;
 }
 export {
   CANVAS_LOAD_ERROR_TITLE,
@@ -153,11 +153,11 @@ export {
 };
 export function installPlatformFilesFallback(): () => void {
   return () => {
-    escapeErrorHtml = (input?: Dynamic): Dynamic =>
-      input.replace(
+    escapeErrorHtml = (text?: Dynamic): Dynamic =>
+      text.replace(
         /[&<>"'{]/g,
-        (input2?: Dynamic): Dynamic =>
-          "&#" + String(input2.charCodeAt(0)) + ";",
+        (character?: Dynamic): Dynamic =>
+          "&#" + String(character.charCodeAt(0)) + ";",
       );
     CANVAS_LOAD_ERROR_TITLE = "Couldn\u2019t load this canvas";
     SKIPPED_FILE_NAME_PATTERN = /^[A-Za-z0-9._-]{1,40}$/;
