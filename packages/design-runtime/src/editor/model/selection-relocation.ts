@@ -12,538 +12,538 @@ var ModelSelectionRelocationElementCache: Dynamic;
 var ModelSelectionRelocationConstant: Dynamic;
 var ModelSelectionRelocationMap: Dynamic;
 var ModelSelectionRelocationIncludes: Dynamic;
-function indexModelForRelocation(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.elementCount(),
-    items: Dynamic = [],
-    items2: Dynamic = [],
-    items3: Dynamic = [],
-    items4: Dynamic = [],
-    items5: Dynamic = [],
-    items6: Dynamic = [],
-    items7: Dynamic = [],
-    value2: Dynamic = new Array(value).fill(0);
-  for (let index: Dynamic = 0; index < value; index++) {
-    let value3: Dynamic = input.parentTid(index),
-      value4: Dynamic = input.element(index);
-    items.push(value3);
-    items2.push(value3 == null ? 0 : items2[value3] + 1);
-    items3.push(value4?.tagName ?? "");
-    if (value3 != null && !(value3 < index))
+function indexModelForRelocation(model?: Dynamic): Dynamic {
+  let elementCount: Dynamic = model.elementCount(),
+    parentIds: Dynamic = [],
+    depths: Dynamic = [],
+    tagNames: Dynamic = [],
+    ownSignatures: Dynamic = [],
+    exactSignatures: Dynamic = [],
+    isPreformatted: Dynamic = [],
+    keys: Dynamic = [],
+    subtreeEnds: Dynamic = new Array(elementCount).fill(0);
+  for (let index: Dynamic = 0; index < elementCount; index++) {
+    let parentId: Dynamic = model.parentTid(index),
+      element: Dynamic = model.element(index);
+    parentIds.push(parentId);
+    depths.push(parentId == null ? 0 : depths[parentId] + 1);
+    tagNames.push(element?.tagName ?? "");
+    if (parentId != null && !(parentId < index))
       throw new Error(
         "element " +
           index +
           " has parent " +
-          value3 +
+          parentId +
           ": not numbered in document order",
       );
-    let value5: Dynamic = ModelSelectionRelocationReplace(items3[index]);
-    for (let value7 of (value4 ? [...value4.attributes] : []) as Dynamic)
-      value7.name !== DcTplAttribute &&
-        (value5 +=
+    let ownSignature: Dynamic = ModelSelectionRelocationReplace(tagNames[index]);
+    for (let attribute of (element ? [...element.attributes] : []) as Dynamic)
+      attribute.name !== DcTplAttribute &&
+        (ownSignature +=
           "" +
-          ModelSelectionRelocationReplace(value7.name) +
+          ModelSelectionRelocationReplace(attribute.name) +
           "=" +
-          ModelSelectionRelocationReplace(value7.value));
-    let value6: Dynamic = value5;
-    items6.push(
-      /^(pre|textarea)$/i.test(items3[index]) ||
-        (value3 != null && items6[value3]),
+          ModelSelectionRelocationReplace(attribute.value));
+    let exactSignature: Dynamic = ownSignature;
+    isPreformatted.push(
+      /^(pre|textarea)$/i.test(tagNames[index]) ||
+        (parentId != null && isPreformatted[parentId]),
     );
-    if (value4 && !/^(style|script)$/i.test(items3[index])) {
+    if (element && !/^(style|script)$/i.test(tagNames[index])) {
       let text: Dynamic = "",
-        index2: Dynamic = 0,
-        callback3: Dynamic = (): Dynamic => {
-          let value7: Dynamic = items6[index]
+        childElementCount: Dynamic = 0,
+        flushText: Dynamic = (): Dynamic => {
+          let normalizedText: Dynamic = isPreformatted[index]
             ? text
             : text.replace(/[ \t\n\f\r]+/g, " ").replace(/^ | $/g, "");
-          value7 !== "" &&
-            ((value5 += "" + ModelSelectionRelocationReplace(value7)),
-            (value6 +=
-              "" + ModelSelectionRelocationReplace(value7) + "" + index2));
+          normalizedText !== "" &&
+            ((ownSignature += "" + ModelSelectionRelocationReplace(normalizedText)),
+            (exactSignature +=
+              "" + ModelSelectionRelocationReplace(normalizedText) + "" + childElementCount));
           text = "";
         };
-      for (let value7 of [...value4.childNodes] as Dynamic)
-        value7.nodeType === 3
-          ? (text += value7.nodeValue ?? "")
-          : value7.nodeType === 1 && (callback3(), index2++);
-      callback3();
+      for (let childNode of [...element.childNodes] as Dynamic)
+        childNode.nodeType === 3
+          ? (text += childNode.nodeValue ?? "")
+          : childNode.nodeType === 1 && (flushText(), childElementCount++);
+      flushText();
     }
-    items4.push(value5);
-    items5.push(value6);
-    items7.push(items2[index] + "" + value6);
+    ownSignatures.push(ownSignature);
+    exactSignatures.push(exactSignature);
+    keys.push(depths[index] + "" + exactSignature);
   }
-  for (let value3: Dynamic = value - 1; value3 >= 0; value3--) {
-    value2[value3] = Math.max(value2[value3], value3 + 1);
-    items[value3] != null &&
-      (value2[items[value3]] = Math.max(
-        value2[items[value3]],
-        value2[value3],
+  for (let id: Dynamic = elementCount - 1; id >= 0; id--) {
+    subtreeEnds[id] = Math.max(subtreeEnds[id], id + 1);
+    parentIds[id] != null &&
+      (subtreeEnds[parentIds[id]] = Math.max(
+        subtreeEnds[parentIds[id]],
+        subtreeEnds[id],
       ));
   }
-  let entries: Dynamic = new Map(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries.get(input2);
-      if (entry == null) {
-        entry = "";
-        for (let value3: Dynamic = input2; value3 < value2[input2]; value3++)
-          entry +=
-            items2[value3] - items2[input2] + "" + items5[value3] + "\0";
-        entries.set(input2, entry);
+  let signatureCache: Dynamic = new Map(),
+    getSubtreeSignature: Dynamic = (id?: Dynamic): Dynamic => {
+      let signature: Dynamic = signatureCache.get(id);
+      if (signature == null) {
+        signature = "";
+        for (let descendantId: Dynamic = id; descendantId < subtreeEnds[id]; descendantId++)
+          signature +=
+            depths[descendantId] - depths[id] + "" + exactSignatures[descendantId] + "\0";
+        signatureCache.set(id, signature);
       }
-      return entry;
+      return signature;
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      for (let value3: Dynamic = input2; value3 < value2[input2]; value3++)
+    isBareSubtree: Dynamic = (id?: Dynamic): Dynamic => {
+      for (let descendantId: Dynamic = id; descendantId < subtreeEnds[id]; descendantId++)
         if (
-          items4[value3] !== ModelSelectionRelocationReplace(items3[value3])
+          ownSignatures[descendantId] !== ModelSelectionRelocationReplace(tagNames[descendantId])
         )
           return false;
       return true;
     },
-    entries2: Dynamic = new Map();
+    withSourceCache: Dynamic = new Map();
   return {
-    n: value,
-    parent: items,
-    depth: items2,
-    end: value2,
-    own: items4,
-    exact: items5,
-    key: items7,
-    sig: callback,
-    bare: callback2,
+    n: elementCount,
+    parent: parentIds,
+    depth: depths,
+    end: subtreeEnds,
+    own: ownSignatures,
+    exact: exactSignatures,
+    key: keys,
+    sig: getSubtreeSignature,
+    bare: isBareSubtree,
     withSource: (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      signature?: Dynamic,
+      tagName?: Dynamic,
+      subtreeSize?: Dynamic,
     ): Dynamic => {
-      let value3: Dynamic = options + " " + context,
-        entry: Dynamic = entries2.get(value3);
-      if (!entry) {
-        entry = new Map();
-        for (let index: Dynamic = 0; index < value; index++) {
-          if (value2[index] - index !== context || items3[index] !== options)
+      let cacheKey: Dynamic = tagName + " " + subtreeSize,
+        bucketsBySignature: Dynamic = withSourceCache.get(cacheKey);
+      if (!bucketsBySignature) {
+        bucketsBySignature = new Map();
+        for (let index: Dynamic = 0; index < elementCount; index++) {
+          if (subtreeEnds[index] - index !== subtreeSize || tagNames[index] !== tagName)
             continue;
-          let entry2: Dynamic = entry.get(callback(index));
-          entry2 ? entry2.push(index) : entry.set(callback(index), [index]);
+          let bucket: Dynamic = bucketsBySignature.get(getSubtreeSignature(index));
+          bucket ? bucket.push(index) : bucketsBySignature.set(getSubtreeSignature(index), [index]);
         }
-        entries2.set(value3, entry);
+        withSourceCache.set(cacheKey, bucketsBySignature);
       }
-      return entry.get(input2) ?? [];
+      return bucketsBySignature.get(signature) ?? [];
     },
-    tag: (input2?: Dynamic): Dynamic => items3[input2] ?? "",
-    kids: (input2?: Dynamic): Dynamic => input.childTids(input2),
+    tag: (id?: Dynamic): Dynamic => tagNames[id] ?? "",
+    kids: (id?: Dynamic): Dynamic => model.childTids(id),
   };
 }
 function buildModelSignatureLookup(
-  input?: Dynamic,
-  options?: Dynamic,
+  previousIndex?: Dynamic,
+  currentIndex?: Dynamic,
 ): Dynamic {
-  let entries: Dynamic = new Map();
-  return (input2?: Dynamic): Dynamic => {
-    if (!entries.has(input2)) {
-      let value: Dynamic = input.sig(input2),
-        value2: Dynamic =
-          (input.bare(input2)
+  let lookupCache: Dynamic = new Map();
+  return (id?: Dynamic): Dynamic => {
+    if (!lookupCache.has(id)) {
+      let signature: Dynamic = previousIndex.sig(id),
+        candidates: Dynamic =
+          (previousIndex.bare(id)
             ? []
-            : input.withSource(
-                value,
-                input.tag(input2),
-                input.end[input2] - input2,
+            : previousIndex.withSource(
+                signature,
+                previousIndex.tag(id),
+                previousIndex.end[id] - id,
               )
           ).length === 1
-            ? options.withSource(
-                value,
-                input.tag(input2),
-                input.end[input2] - input2,
+            ? currentIndex.withSource(
+                signature,
+                previousIndex.tag(id),
+                previousIndex.end[id] - id,
               )
             : [];
-      entries.set(input2, value2.length === 1 ? value2[0] : null);
+      lookupCache.set(id, candidates.length === 1 ? candidates[0] : null);
     }
-    return entries.get(input2);
+    return lookupCache.get(id);
   };
 }
-function getModelRelocationPair(input?: Dynamic, options?: Dynamic): Dynamic {
-  let entry: Dynamic = ModelSelectionRelocationElementCache.get(input);
-  if (entry?.nowModel === options) return entry.pair;
-  let value: Dynamic = indexModelForRelocation(input),
-    value2: Dynamic = indexModelForRelocation(options),
-    index: Dynamic = 0;
+function getModelRelocationPair(previousModel?: Dynamic, currentModel?: Dynamic): Dynamic {
+  let cachedEntry: Dynamic = ModelSelectionRelocationElementCache.get(previousModel);
+  if (cachedEntry?.nowModel === currentModel) return cachedEntry.pair;
+  let previousIndex: Dynamic = indexModelForRelocation(previousModel),
+    currentIndex: Dynamic = indexModelForRelocation(currentModel),
+    headLength: Dynamic = 0;
   for (
     ;
-    index < value.n &&
-    index < value2.n &&
-    value.key[index] === value2.key[index];
+    headLength < previousIndex.n &&
+    headLength < currentIndex.n &&
+    previousIndex.key[headLength] === currentIndex.key[headLength];
 
   )
-    index++;
-  let index2: Dynamic = 0;
+    headLength++;
+  let tailLength: Dynamic = 0;
   for (
     ;
-    index2 < value.n &&
-    index2 < value2.n &&
-    value.key[value.n - 1 - index2] === value2.key[value2.n - 1 - index2];
+    tailLength < previousIndex.n &&
+    tailLength < currentIndex.n &&
+    previousIndex.key[previousIndex.n - 1 - tailLength] === currentIndex.key[currentIndex.n - 1 - tailLength];
 
   )
-    index2++;
-  let state: Dynamic = {
-    prev: value,
-    now: value2,
-    to: buildModelSignatureLookup(value, value2),
-    head: index,
-    tail: index2,
+    tailLength++;
+  let pair: Dynamic = {
+    prev: previousIndex,
+    now: currentIndex,
+    to: buildModelSignatureLookup(previousIndex, currentIndex),
+    head: headLength,
+    tail: tailLength,
   };
-  ModelSelectionRelocationElementCache.set(input, {
-    nowModel: options,
-    pair: state,
+  ModelSelectionRelocationElementCache.set(previousModel, {
+    nowModel: currentModel,
+    pair: pair,
   });
-  return state;
+  return pair;
 }
 function relocateModelElementIds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  previousModel?: Dynamic,
+  currentModel?: Dynamic,
+  elementIds?: Dynamic,
 ): Dynamic {
-  if (input === options) return [...context];
+  if (previousModel === currentModel) return [...elementIds];
   try {
-    let items: Dynamic = [...new Set(context)],
-      value: Dynamic = ModelSelectionRelocationMap(
-        matchModelElementIds(input, options, items),
+    let uniqueIds: Dynamic = [...new Set(elementIds)],
+      relocatedIds: Dynamic = ModelSelectionRelocationMap(
+        matchModelElementIds(previousModel, currentModel, uniqueIds),
       );
-    return context.map(
-      (input2?: Dynamic): Dynamic => value[items.indexOf(input2)],
+    return elementIds.map(
+      (id?: Dynamic): Dynamic => relocatedIds[uniqueIds.indexOf(id)],
     );
-  } catch (value: Dynamic) {
+  } catch (error: Dynamic) {
     ModelSelectionRelocationConstant++;
     console.warn(
       "[dc-editor] the selection could not be followed, so it is dropped:",
-      value,
+      error,
     );
-    return context.map((): Dynamic => null);
+    return elementIds.map((): Dynamic => null);
   }
 }
 function matchModelElementIds(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  previousModel?: Dynamic,
+  currentModel?: Dynamic,
+  elementIds?: Dynamic,
 ): Dynamic {
   if (
-    input.elementCount() > ModelSelectionRelocationLimit ||
-    options.elementCount() > ModelSelectionRelocationLimit
+    previousModel.elementCount() > ModelSelectionRelocationLimit ||
+    currentModel.elementCount() > ModelSelectionRelocationLimit
   )
-    return context.map((): Dynamic => null);
+    return elementIds.map((): Dynamic => null);
   let {
-      prev: value,
-      now: value2,
-      to: value3,
-      head: value4,
-      tail: value5,
-    }: Dynamic = getModelRelocationPair(input, options),
-    value6: Dynamic = value2.n - value.n,
-    callback: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
-      value7?: Dynamic,
+      prev: previousIndex,
+      now: currentIndex,
+      to: lookupBySignature,
+      head: headLength,
+      tail: tailLength,
+    }: Dynamic = getModelRelocationPair(previousModel, currentModel),
+    sizeDelta: Dynamic = currentIndex.n - previousIndex.n,
+    findMatchingSubtrees: Dynamic = (
+      sourceIndex?: Dynamic,
+      sourceId?: Dynamic,
+      targetIndex?: Dynamic,
+      targetParentId?: Dynamic,
     ): Dynamic => {
-      let value8: Dynamic = input2.end[options2] - options2,
-        items: Dynamic = [];
+      let subtreeSize: Dynamic = sourceIndex.end[sourceId] - sourceId,
+        matches: Dynamic = [];
       for (
-        let value9: Dynamic = value7 + 1;
-        value9 + value8 <= context2.end[value7];
-        value9++
+        let candidateId: Dynamic = targetParentId + 1;
+        candidateId + subtreeSize <= targetIndex.end[targetParentId];
+        candidateId++
       ) {
-        if (context2.end[value9] - value9 !== value8) continue;
-        let flag: Dynamic = true;
-        for (let index: Dynamic = 0; flag && index < value8; index++)
-          flag =
-            context2.exact[value9 + index] ===
-              input2.exact[options2 + index] &&
-            context2.depth[value9 + index] - context2.depth[value9] ===
-              input2.depth[options2 + index] - input2.depth[options2];
-        flag && items.push(value9);
+        if (targetIndex.end[candidateId] - candidateId !== subtreeSize) continue;
+        let isMatch: Dynamic = true;
+        for (let index: Dynamic = 0; isMatch && index < subtreeSize; index++)
+          isMatch =
+            targetIndex.exact[candidateId + index] ===
+              sourceIndex.exact[sourceId + index] &&
+            targetIndex.depth[candidateId + index] - targetIndex.depth[candidateId] ===
+              sourceIndex.depth[sourceId + index] - sourceIndex.depth[sourceId];
+        isMatch && matches.push(candidateId);
       }
-      return items;
+      return matches;
     },
-    entries: Dynamic = new Map(),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => (
-      entries.has(input2) || entries.set(input2, callback3(input2)),
-      entries.get(input2)
+    alignedIdCache: Dynamic = new Map(),
+    getAlignedId: Dynamic = (id?: Dynamic): Dynamic => (
+      alignedIdCache.has(id) || alignedIdCache.set(id, computeAlignedId(id)),
+      alignedIdCache.get(id)
     ),
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
+    computeAlignedId: Dynamic = (id?: Dynamic): Dynamic => {
       if (
         !(
-          input2 <= value4 &&
-          value.n - value.end[input2] <= value5 &&
-          input2 < value2.n &&
-          value2.depth[input2] === value.depth[input2] &&
-          value2.end[input2] === value2.n - (value.n - value.end[input2])
+          id <= headLength &&
+          previousIndex.n - previousIndex.end[id] <= tailLength &&
+          id < currentIndex.n &&
+          currentIndex.depth[id] === previousIndex.depth[id] &&
+          currentIndex.end[id] === currentIndex.n - (previousIndex.n - previousIndex.end[id])
         )
       )
         return null;
-      let value7: Dynamic = value2.own[input2] === value.own[input2],
-        value8: Dynamic = callback(value, input2, value2, input2);
-      if (value8.length > 0)
-        return value8.length === 1 && !value7 && !value.bare(input2)
-          ? value8[0]
+      let isOwnUnchanged: Dynamic = currentIndex.own[id] === previousIndex.own[id],
+        movedMatches: Dynamic = findMatchingSubtrees(previousIndex, id, currentIndex, id);
+      if (movedMatches.length > 0)
+        return movedMatches.length === 1 && !isOwnUnchanged && !previousIndex.bare(id)
+          ? movedMatches[0]
           : null;
       if (
-        value2.tag(input2) !== value.tag(input2) ||
-        callback(value2, input2, value, input2).length > 0
+        currentIndex.tag(id) !== previousIndex.tag(id) ||
+        findMatchingSubtrees(currentIndex, id, previousIndex, id).length > 0
       )
         return null;
       for (
-        let value9: Dynamic = input2 + 1;
-        value9 < value2.end[input2];
-        value9++
+        let descendantId: Dynamic = id + 1;
+        descendantId < currentIndex.end[id];
+        descendantId++
       )
         if (
-          value2.own[value9] === value.own[input2] &&
-          !(value9 < value4 || value9 >= value2.n - value5)
+          currentIndex.own[descendantId] === previousIndex.own[id] &&
+          !(descendantId < headLength || descendantId >= currentIndex.n - tailLength)
         )
           return null;
-      if (!value7) {
+      if (!isOwnUnchanged) {
         for (
-          let value9: Dynamic = input2 + 1;
-          value9 < value.end[input2];
-          value9++
+          let descendantId: Dynamic = id + 1;
+          descendantId < previousIndex.end[id];
+          descendantId++
         )
           if (
-            value.own[value9] === value2.own[input2] &&
-            !(value9 >= value.n - value5)
+            previousIndex.own[descendantId] === currentIndex.own[id] &&
+            !(descendantId >= previousIndex.n - tailLength)
           )
             return null;
       }
-      return input2;
+      return id;
     },
-    callback4: Dynamic = (input2?: Dynamic): Dynamic => {
+    relocateByPosition: Dynamic = (id?: Dynamic): Dynamic => {
       if (
-        value.end[input2] <= value4 &&
-        value2.end[input2] === value.end[input2]
+        previousIndex.end[id] <= headLength &&
+        currentIndex.end[id] === previousIndex.end[id]
       )
-        return input2;
-      if (value.n - input2 > value5) return null;
+        return id;
+      if (previousIndex.n - id > tailLength) return null;
       for (
-        let value7: Dynamic = value.parent[input2];
-        value7 != null;
-        value7 = value.parent[value7]
+        let ancestorId: Dynamic = previousIndex.parent[id];
+        ancestorId != null;
+        ancestorId = previousIndex.parent[ancestorId]
       )
-        if (!(value7 >= value.n - value5 || callback2(value7) === value7))
+        if (!(ancestorId >= previousIndex.n - tailLength || getAlignedId(ancestorId) === ancestorId))
           return null;
-      return input2 + value6;
+      return id + sizeDelta;
     },
-    callback5: Dynamic = (input2?: Dynamic): Dynamic => {
+    relocateByAncestor: Dynamic = (id?: Dynamic): Dynamic => {
       for (
-        let value7: Dynamic = input2;
-        value7 != null;
-        value7 = value.parent[value7]
+        let ancestorId: Dynamic = id;
+        ancestorId != null;
+        ancestorId = previousIndex.parent[ancestorId]
       )
-        if (value.kids(value7).length >= 2 && value3(value7) != null)
-          return value3(value7) + (input2 - value7);
+        if (previousIndex.kids(ancestorId).length >= 2 && lookupBySignature(ancestorId) != null)
+          return lookupBySignature(ancestorId) + (id - ancestorId);
       return null;
     };
-  return context.map((input2?: Dynamic): Dynamic => {
-    if (!(input2 >= 0 && input2 < value.n)) return null;
-    let value7: Dynamic =
-      callback4(input2) ?? callback5(input2) ?? callback2(input2);
-    return value7 != null &&
-      /^(style|script)$/i.test(value.tag(input2)) &&
-      input.element(input2)?.textContent !==
-        options.element(value7)?.textContent
+  return elementIds.map((id?: Dynamic): Dynamic => {
+    if (!(id >= 0 && id < previousIndex.n)) return null;
+    let relocatedId: Dynamic =
+      relocateByPosition(id) ?? relocateByAncestor(id) ?? getAlignedId(id);
+    return relocatedId != null &&
+      /^(style|script)$/i.test(previousIndex.tag(id)) &&
+      previousModel.element(id)?.textContent !==
+        currentModel.element(relocatedId)?.textContent
       ? null
-      : value7;
+      : relocatedId;
   });
 }
 function unchangedAncestorRelocation(
   { prev: prev, now: now }: Dynamic,
-  options?: Dynamic,
+  elementId?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
+  let isUniqueSubtree: Dynamic = (id?: Dynamic): Dynamic =>
       prev.withSource(
-        prev.sig(input),
-        prev.tag(input),
-        prev.end[input] - input,
+        prev.sig(id),
+        prev.tag(id),
+        prev.end[id] - id,
       ).length === 1,
-    value: Dynamic = prev.parent[options] ?? null;
+    ancestorId: Dynamic = prev.parent[elementId] ?? null;
   for (
     ;
-    value !== null && (prev.kids(value).length < 2 || !callback(value));
+    ancestorId !== null && (prev.kids(ancestorId).length < 2 || !isUniqueSubtree(ancestorId));
 
   )
-    value = prev.parent[value] ?? null;
-  let value2: Dynamic = value ?? options;
+    ancestorId = prev.parent[ancestorId] ?? null;
+  let anchorId: Dynamic = ancestorId ?? elementId;
   return (
-    callback(value2) &&
-    value2 < now.n &&
-    prev.depth[value2] === now.depth[value2] &&
-    prev.sig(value2) === now.sig(value2)
+    isUniqueSubtree(anchorId) &&
+    anchorId < now.n &&
+    prev.depth[anchorId] === now.depth[anchorId] &&
+    prev.sig(anchorId) === now.sig(anchorId)
   );
 }
 function hasSameModelPrefix(
   { prev: prev, now: now }: Dynamic,
-  options?: Dynamic,
+  elementId?: Dynamic,
 ): Dynamic {
-  if (options >= now.n) return false;
-  let values: Dynamic = new Set(
+  if (elementId >= now.n) return false;
+  let previousOwnSignatures: Dynamic = new Set(
     prev.own.map(ModelSelectionRelocationIncludes),
   );
-  for (let index: Dynamic = 0; index <= options; index++) {
+  for (let index: Dynamic = 0; index <= elementId; index++) {
     if (
       prev.depth[index] !== now.depth[index] ||
       prev.tag(index) !== now.tag(index)
     )
       return false;
-    let value: Dynamic = ModelSelectionRelocationIncludes(now.own[index]);
+    let ownSignature: Dynamic = ModelSelectionRelocationIncludes(now.own[index]);
     if (
-      value !== "" &&
-      value !== ModelSelectionRelocationIncludes(prev.own[index]) &&
-      values.has(value)
+      ownSignature !== "" &&
+      ownSignature !== ModelSelectionRelocationIncludes(prev.own[index]) &&
+      previousOwnSignatures.has(ownSignature)
     )
       return false;
   }
   return true;
 }
 function relocateTextElementId(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  previousModel?: Dynamic,
+  currentModel?: Dynamic,
+  elementId?: Dynamic,
 ): Dynamic {
   try {
     if (
-      Math.max(input.elementCount(), options.elementCount()) >
+      Math.max(previousModel.elementCount(), currentModel.elementCount()) >
       ModelSelectionRelocationLimit
     )
       return null;
-    ModelSelectionRelocationElementCache.delete(input);
-    let value: Dynamic = getModelRelocationPair(input, options);
-    return Number.isInteger(context) && context >= 0 && context < value.prev.n
-      ? unchangedAncestorRelocation(value, context)
-        ? context
-        : (relocateModelElementIds(input, options, [context])[0] ??
-          value.to(context) ??
-          (hasSameModelPrefix(value, context) ? context : null))
+    ModelSelectionRelocationElementCache.delete(previousModel);
+    let pair: Dynamic = getModelRelocationPair(previousModel, currentModel);
+    return Number.isInteger(elementId) && elementId >= 0 && elementId < pair.prev.n
+      ? unchangedAncestorRelocation(pair, elementId)
+        ? elementId
+        : (relocateModelElementIds(previousModel, currentModel, [elementId])[0] ??
+          pair.to(elementId) ??
+          (hasSameModelPrefix(pair, elementId) ? elementId : null))
       : null;
-  } catch (value: Dynamic) {
+  } catch (error: Dynamic) {
     ModelSelectionRelocationConstant++;
     console.warn(
       "[dc-editor] could not work out where the typed text belongs, so it is treated as having no certain place:",
-      value,
+      error,
     );
     return null;
   }
 }
 function relocateTextEditTarget(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-    input2.isTextEditable(options2),
+  previousModel?: Dynamic,
+  currentModel?: Dynamic,
+  elementId?: Dynamic,
+  canEditText: Dynamic = (model?: Dynamic, id?: Dynamic): Dynamic =>
+    model.isTextEditable(id),
 ): Dynamic {
-  let value2: Dynamic = input
-    ? relocateTextElementId(input, options, context)
-    : context;
-  return input && (value2 === null || !value(options, value2))
+  let relocatedId: Dynamic = previousModel
+    ? relocateTextElementId(previousModel, currentModel, elementId)
+    : elementId;
+  return previousModel && (relocatedId === null || !canEditText(currentModel, relocatedId))
     ? {
-        into: input,
-        tid: context,
+        into: previousModel,
+        tid: elementId,
       }
     : {
-        into: options,
-        tid: value2 ?? context,
+        into: currentModel,
+        tid: relocatedId ?? elementId,
       };
 }
 function relocateSingleElementId(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  previousModel?: Dynamic,
+  currentModel?: Dynamic,
+  elementId?: Dynamic,
 ): Dynamic {
-  return input
-    ? (ModelSelectionRelocationElementCache.delete(input),
-      relocateModelElementIds(input, options, [context])[0] ?? null)
-    : context;
+  return previousModel
+    ? (ModelSelectionRelocationElementCache.delete(previousModel),
+      relocateModelElementIds(previousModel, currentModel, [elementId])[0] ?? null)
+    : elementId;
 }
 function relocateSelectedTextElement(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  previousModel?: Dynamic,
+  currentModel?: Dynamic,
+  selectedId?: Dynamic,
+  textEditId?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic =
-    value === null ? null : relocateTextEditTarget(input, options, value);
-  if (value2 && value === context)
-    return value2.into === options ? value2.tid : null;
-  let value3: Dynamic = relocateSingleElementId(input, options, context);
-  return value3 !== null &&
-    value2?.into === options &&
-    !options.element(value3)?.contains(options.element(value2.tid) ?? null)
+  let textEditTarget: Dynamic =
+    textEditId === null ? null : relocateTextEditTarget(previousModel, currentModel, textEditId);
+  if (textEditTarget && textEditId === selectedId)
+    return textEditTarget.into === currentModel ? textEditTarget.tid : null;
+  let relocatedSelectedId: Dynamic = relocateSingleElementId(previousModel, currentModel, selectedId);
+  return relocatedSelectedId !== null &&
+    textEditTarget?.into === currentModel &&
+    !currentModel.element(relocatedSelectedId)?.contains(currentModel.element(textEditTarget.tid) ?? null)
     ? null
-    : value3;
+    : relocatedSelectedId;
 }
 function relocateSelectionRef(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  selectionRef?: Dynamic,
+  ownerName?: Dynamic,
+  previousModel?: Dynamic,
+  currentModel?: Dynamic,
 ): Dynamic {
-  let current: Dynamic = input.current;
-  if (current?.name !== options || context === value) return;
-  let value2: Dynamic = context
-    ? relocateModelElementIds(context, value, current.tids).filter(
-        (input2?: Dynamic): Dynamic => input2 != null,
+  let current: Dynamic = selectionRef.current;
+  if (current?.name !== ownerName || previousModel === currentModel) return;
+  let relocatedIds: Dynamic = previousModel
+    ? relocateModelElementIds(previousModel, currentModel, current.tids).filter(
+        (id?: Dynamic): Dynamic => id != null,
       )
     : [];
-  input.current =
-    value2.length > 0
+  selectionRef.current =
+    relocatedIds.length > 0
       ? {
           ...current,
-          tids: value2,
+          tids: relocatedIds,
         }
       : null;
-  return input.current;
+  return selectionRef.current;
 }
 function latestSelectionSequence(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  currentSelection?: Dynamic,
+  candidateSelection?: Dynamic,
+  expectedSeq?: Dynamic,
 ): Dynamic {
-  return options?.seq === context ? options : input;
+  return candidateSelection?.seq === expectedSeq ? candidateSelection : currentSelection;
 }
 function isOtherSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  selection?: Dynamic,
+  ownerName?: Dynamic,
+  elementId?: Dynamic,
 ): Dynamic {
   return (
-    input === null ||
-    (input.name === options &&
-      !(input.tids.length === 1 && input.tids[0] === context))
+    selection === null ||
+    (selection.name === ownerName &&
+      !(selection.tids.length === 1 && selection.tids[0] === elementId))
   );
 }
 function deferSelectionClear(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  selectionRef?: Dynamic,
+  token?: Dynamic,
+  onClear?: Dynamic,
+  delayMs?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-    input2 !== options ||
-      input.current !== callback ||
-      ((input.current = null), context());
+  let clearIfCurrent: Dynamic = (clearToken?: Dynamic): Dynamic => {
+    clearToken !== token ||
+      selectionRef.current !== clearIfCurrent ||
+      ((selectionRef.current = null), onClear());
   };
-  input.current = callback;
-  value != null && setTimeout((): Dynamic => callback(options), value);
+  selectionRef.current = clearIfCurrent;
+  delayMs != null && setTimeout((): Dynamic => clearIfCurrent(token), delayMs);
 }
 function modelSelectionIdentityGuard(
-  input?: Dynamic,
-  options?: Dynamic,
+  model?: Dynamic,
+  elementIds?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.map(
-    (input2?: Dynamic): Dynamic => input.element(input2),
+  let elements: Dynamic = elementIds.map(
+    (id?: Dynamic): Dynamic => model.element(id),
   );
-  return (input2?: Dynamic): Dynamic =>
-    input2 === input &&
-    options.every(
-      (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-        input.element(input3) === value[options2],
+  return (currentModel?: Dynamic): Dynamic =>
+    currentModel === model &&
+    elementIds.every(
+      (id?: Dynamic, index?: Dynamic): Dynamic =>
+        model.element(id) === elements[index],
     );
 }
 export {
@@ -576,29 +576,29 @@ export function installEditorModelSelectionRelocation(): () => void {
   return () => {
     ModelSelectionRelocationLimit = 2e4;
     ModelSelectionRelocationLimit_2 = 1024;
-    ModelSelectionRelocationImul = (items?: Dynamic): Dynamic => {
-      let count: Dynamic = 2166136261;
-      for (let index: Dynamic = 0; index < items.length; index++)
-        count = Math.imul(count ^ items.charCodeAt(index), 16777619);
-      return "\\#" + items.length + "#" + (count >>> 0).toString(36);
+    ModelSelectionRelocationImul = (text?: Dynamic): Dynamic => {
+      let hash: Dynamic = 2166136261;
+      for (let index: Dynamic = 0; index < text.length; index++)
+        hash = Math.imul(hash ^ text.charCodeAt(index), 16777619);
+      return "\\#" + text.length + "#" + (hash >>> 0).toString(36);
     };
-    ModelSelectionRelocationReplace = (items?: Dynamic): Dynamic =>
-      items.length > ModelSelectionRelocationLimit_2
-        ? ModelSelectionRelocationImul(items)
-        : items.replace(
+    ModelSelectionRelocationReplace = (text?: Dynamic): Dynamic =>
+      text.length > ModelSelectionRelocationLimit_2
+        ? ModelSelectionRelocationImul(text)
+        : text.replace(
             /[\u0000-\u0004\\]/g,
-            (input?: Dynamic): Dynamic => "\\" + input.charCodeAt(0),
+            (char?: Dynamic): Dynamic => "\\" + char.charCodeAt(0),
           );
     ModelSelectionRelocationElementCache = new WeakMap();
     ModelSelectionRelocationConstant = 0;
-    ModelSelectionRelocationMap = (input?: Dynamic): Dynamic =>
-      input.map(
-        (input2?: Dynamic): Dynamic =>
-          input2 != null && input.indexOf(input2) !== input.lastIndexOf(input2)
+    ModelSelectionRelocationMap = (ids?: Dynamic): Dynamic =>
+      ids.map(
+        (id?: Dynamic): Dynamic =>
+          id != null && ids.indexOf(id) !== ids.lastIndexOf(id)
             ? null
-            : input2,
+            : id,
       );
-    ModelSelectionRelocationIncludes = (input?: Dynamic): Dynamic =>
-      input.includes("") ? input.slice(input.indexOf("")) : "";
+    ModelSelectionRelocationIncludes = (text?: Dynamic): Dynamic =>
+      text.includes("") ? text.slice(text.indexOf("")) : "";
   };
 }

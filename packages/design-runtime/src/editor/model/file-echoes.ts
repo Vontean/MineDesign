@@ -10,8 +10,8 @@ var ModelFileEchoesRegistry: Dynamic;
 var ModelFileEchoesCache_2: Dynamic;
 var ModelFileEchoesResolvedValue: Dynamic;
 var ModelFileEchoesCache_3: Dynamic;
-function normalizeSmartPunctuation(input?: Dynamic): Dynamic {
-  return input
+function normalizeSmartPunctuation(text?: Dynamic): Dynamic {
+  return text
     .replace(/[\u2018\u2019\u201A\u201B\u2039\u203A]/g, "'")
     .replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g, '"')
     .replace(/[\u2013\u2014]/g, "-")
@@ -23,81 +23,81 @@ function normalizeSmartPunctuation(input?: Dynamic): Dynamic {
     )
     .replace(/#/g, "");
 }
-function normalizeProjectFilePath(input?: Dynamic): Dynamic {
-  let items: Dynamic = [];
-  for (let value2 of input.split("/") as Dynamic)
-    if (!(value2 === "" || value2 === ".")) {
-      if (value2 === "..") {
-        items.pop();
+function normalizeProjectFilePath(filePath?: Dynamic): Dynamic {
+  let segments: Dynamic = [];
+  for (let segment of filePath.split("/") as Dynamic)
+    if (!(segment === "" || segment === ".")) {
+      if (segment === "..") {
+        segments.pop();
         continue;
       }
-      items.push(value2);
+      segments.push(segment);
     }
-  let value: Dynamic = items.pop();
-  return value === undefined
+  let fileName: Dynamic = segments.pop();
+  return fileName === undefined
     ? ""
-    : [...items, normalizeSmartPunctuation(value)].join("/");
+    : [...segments, normalizeSmartPunctuation(fileName)].join("/");
 }
-function expectLocalFileEcho(input?: Dynamic, options: Dynamic = 1): Dynamic {
-  let value: Dynamic = Date.now(),
-    entry: Dynamic = ModelFileEchoesCache.get(input),
-    value2: Dynamic = entry && entry.expires > value ? entry.n : 0;
-  ModelFileEchoesCache.set(input, {
-    n: value2 + options,
-    expires: value + ModelFileEchoesConstant,
+function expectLocalFileEcho(filePath?: Dynamic, count: Dynamic = 1): Dynamic {
+  let now: Dynamic = Date.now(),
+    entry: Dynamic = ModelFileEchoesCache.get(filePath),
+    pendingCount: Dynamic = entry && entry.expires > now ? entry.n : 0;
+  ModelFileEchoesCache.set(filePath, {
+    n: pendingCount + count,
+    expires: now + ModelFileEchoesConstant,
   });
 }
-function consumeLocalFileEcho(input?: Dynamic): Dynamic {
-  let entry: Dynamic = ModelFileEchoesCache.get(input);
-  entry && (entry.n--, entry.n <= 0 && ModelFileEchoesCache.delete(input));
+function consumeLocalFileEcho(filePath?: Dynamic): Dynamic {
+  let entry: Dynamic = ModelFileEchoesCache.get(filePath);
+  entry && (entry.n--, entry.n <= 0 && ModelFileEchoesCache.delete(filePath));
 }
-function normalizeEchoPath(input?: Dynamic): Dynamic {
-  return input
+function normalizeEchoPath(path?: Dynamic): Dynamic {
+  return path
     .replace(/^(?:\.\/)+/, "")
     .replace(/\/(?:\.\/)+/g, "/")
     .replace(/\/{2,}/g, "/")
     .replace(/\/+$/, "");
 }
 function markExpectedFileChange(
-  input?: Dynamic,
-  ...items: Dynamic[]
+  projectPath?: Dynamic,
+  ...changedPaths: Dynamic[]
 ): Dynamic {
-  let entry: Dynamic = ModelFileEchoesCache_2.get(input);
-  entry || ((entry = new Map()), ModelFileEchoesCache_2.set(input, entry));
-  let value: Dynamic = Date.now(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      entry.set(input2, {
-        t: value,
-        landed: entry.get(input2)?.landed ?? false,
+  let entry: Dynamic = ModelFileEchoesCache_2.get(projectPath);
+  entry || ((entry = new Map()), ModelFileEchoesCache_2.set(projectPath, entry));
+  let now: Dynamic = Date.now(),
+    recordExpectedChange: Dynamic = (changedPath?: Dynamic): Dynamic =>
+      entry.set(changedPath, {
+        t: now,
+        landed: entry.get(changedPath)?.landed ?? false,
       });
-  items.length === 0 && callback("");
-  for (let value2 of items as Dynamic) value2 && callback(value2);
+  changedPaths.length === 0 && recordExpectedChange("");
+  for (let changedPath of changedPaths as Dynamic) changedPath && recordExpectedChange(changedPath);
 }
 function markLandedFileChange(
-  input?: Dynamic,
-  ...options: Dynamic[]
+  projectPath?: Dynamic,
+  ...landedPaths: Dynamic[]
 ): Dynamic {
-  if (!options.some(Boolean)) return;
-  let entry: Dynamic = ModelFileEchoesCache_3.get(input);
-  entry || ((entry = new Map()), ModelFileEchoesCache_3.set(input, entry));
-  let value: Dynamic = Date.now(),
-    entry2: Dynamic = ModelFileEchoesCache_2.get(input);
-  for (let value2 of options as Dynamic) {
-    if (!value2) continue;
-    let value3: Dynamic = entry2?.get(value2);
-    value3 && (value3.landed = true);
-    entry.set(normalizeEchoPath(value2), value);
+  if (!landedPaths.some(Boolean)) return;
+  let entry: Dynamic = ModelFileEchoesCache_3.get(projectPath);
+  entry || ((entry = new Map()), ModelFileEchoesCache_3.set(projectPath, entry));
+  let now: Dynamic = Date.now(),
+    expectedEntries: Dynamic = ModelFileEchoesCache_2.get(projectPath);
+  for (let landedPath of landedPaths as Dynamic) {
+    if (!landedPath) continue;
+    let expectedChange: Dynamic = expectedEntries?.get(landedPath);
+    expectedChange && (expectedChange.landed = true);
+    entry.set(normalizeEchoPath(landedPath), now);
   }
 }
 function markLocalFileChange(
-  input?: Dynamic,
-  ...options: Dynamic[]
+  projectPath?: Dynamic,
+  ...changedPaths: Dynamic[]
 ): Dynamic {
-  markExpectedFileChange(input, ...options);
-  markLandedFileChange(input, ...options);
-  if (!options.some(Boolean)) {
-    let value: Dynamic = ModelFileEchoesCache_2.get(input)?.get("");
-    value && (value.landed = true);
+  markExpectedFileChange(projectPath, ...changedPaths);
+  markLandedFileChange(projectPath, ...changedPaths);
+  if (!changedPaths.some(Boolean)) {
+    let emptyPathChange: Dynamic = ModelFileEchoesCache_2.get(projectPath)?.get("");
+    emptyPathChange && (emptyPathChange.landed = true);
   }
 }
 export {
@@ -125,17 +125,17 @@ export function installEditorModelFileEchoes(): () => void {
     ModelFileEchoesResolvedValue = 10 * 6e4;
     ModelFileEchoesCache_3 = new Map();
     {
-      let value: Dynamic = getEditorEventRuntime().onOmEvent(
+      let unsubscribe: Dynamic = getEditorEventRuntime().onOmEvent(
         "files-changed",
-        (input?: Dynamic): Dynamic => {
-          let value2: Dynamic = input,
-            value3: Dynamic = value2?.projectPath;
-          value3 &&
-            (value2?.source === "fanout" || value2?.source === "user-import") &&
-            markLocalFileChange(value3);
+        (event?: Dynamic): Dynamic => {
+          let payload: Dynamic = event,
+            projectPath: Dynamic = payload?.projectPath;
+          projectPath &&
+            (payload?.source === "fanout" || payload?.source === "user-import") &&
+            markLocalFileChange(projectPath);
         },
       );
-      ModelFileEchoesRegistry.hot?.dispose(value);
+      ModelFileEchoesRegistry.hot?.dispose(unsubscribe);
     }
   };
 }

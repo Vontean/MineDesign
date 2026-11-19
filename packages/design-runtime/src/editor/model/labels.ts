@@ -9,45 +9,45 @@ import { ModelDomTextRegistry } from "./dom-text";
 
 var ModelLabelsTextHeadingParagraphSet: Dynamic;
 var ModelLabelsSubscribers: Dynamic;
-function readableTagName(input?: Dynamic): Dynamic {
-  return Object.hasOwn(HtmlTagNormalizationFromEntriesValue, input)
-    ? HtmlTagNormalizationFromEntriesValue[input]
-    : input;
+function readableTagName(tagName?: Dynamic): Dynamic {
+  return Object.hasOwn(HtmlTagNormalizationFromEntriesValue, tagName)
+    ? HtmlTagNormalizationFromEntriesValue[tagName]
+    : tagName;
 }
-function tagIcon(input?: Dynamic): Dynamic {
-  return Object.hasOwn(ModelDomTextRegistry, input)
-    ? ModelDomTextRegistry[input]
+function tagIcon(tagName?: Dynamic): Dynamic {
+  return Object.hasOwn(ModelDomTextRegistry, tagName)
+    ? ModelDomTextRegistry[tagName]
     : undefined;
 }
-function detectContainerLayout(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input.children.length === 0) return null;
-  let value: Dynamic = (
-    getStyleProperty(options, "display") ?? ""
+function detectContainerLayout(element?: Dynamic, computedStyle?: Dynamic): Dynamic {
+  if (element.children.length === 0) return null;
+  let display: Dynamic = (
+    getStyleProperty(computedStyle, "display") ?? ""
   ).trim();
-  return value === "flex" || value === "inline-flex"
-    ? (getStyleProperty(options, "flex-direction") ?? "")
+  return display === "flex" || display === "inline-flex"
+    ? (getStyleProperty(computedStyle, "flex-direction") ?? "")
         .trim()
         .startsWith("column")
       ? "column"
       : "row"
-    : value === "grid" || value === "inline-grid"
+    : display === "grid" || display === "inline-grid"
       ? "grid"
       : null;
 }
-function labelToElementKind(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (ModelLabelsTextHeadingParagraphSet.has(input)) return "text";
-  if (input === "Link") return "link";
-  if (input === "Image") return "image";
-  if (input === "Table") return "table";
-  if (input === "Component") return "component";
-  if (input === "Rectangle") return "rect";
-  if (input === "Oval") return "oval";
-  if (input === "Line") return "line";
-  if (ModelLabelsSubscribers.has(input)) return options ?? "frame";
+function labelToElementKind(label?: Dynamic, fallbackKind?: Dynamic): Dynamic {
+  if (ModelLabelsTextHeadingParagraphSet.has(label)) return "text";
+  if (label === "Link") return "link";
+  if (label === "Image") return "image";
+  if (label === "Table") return "table";
+  if (label === "Component") return "component";
+  if (label === "Rectangle") return "rect";
+  if (label === "Oval") return "oval";
+  if (label === "Line") return "line";
+  if (ModelLabelsSubscribers.has(label)) return fallbackKind ?? "frame";
 }
 function isImportedIcon(element?: Dynamic): Dynamic {
-  let value: Dynamic = element.tagName.toLowerCase();
-  return value !== "x-import" && value !== "dc-import"
+  let tagName: Dynamic = element.tagName.toLowerCase();
+  return tagName !== "x-import" && tagName !== "dc-import"
     ? false
     : (
         (element.getAttribute("from") ?? "") +
@@ -60,50 +60,50 @@ function isImportedIcon(element?: Dynamic): Dynamic {
         .includes("deck-stage");
 }
 function slideElementLabel(element?: Dynamic): Dynamic {
-  let value: Dynamic = (element.getAttribute("data-deck-slide") ?? "").trim();
-  if (/^\d+$/.test(value)) return uiMessage("inspector.labels.slideValue1", { value1: String(parseInt(value, 10) + 1) });
+  let slideAttribute: Dynamic = (element.getAttribute("data-deck-slide") ?? "").trim();
+  if (/^\d+$/.test(slideAttribute)) return uiMessage("inspector.labels.slideValue1", { value1: String(parseInt(slideAttribute, 10) + 1) });
   let parentElement: Dynamic = element.parentElement;
   if (!parentElement || parentElement.tagName.toLowerCase() !== "deck-stage")
     return null;
-  let value2: Dynamic =
+  let ignoredTagPattern: Dynamic =
       /^(template|script|style|sc-raw-script|sc-raw-style|sc-helmet)$/,
     index: Dynamic = 0;
-  for (let value3 of parentElement.children as Dynamic)
-    if (!value2.test(value3.tagName.toLowerCase())) {
-      if (value3 === element) return uiMessage("inspector.labels.slideValue1", { value1: String(index + 1) });
+  for (let child of parentElement.children as Dynamic)
+    if (!ignoredTagPattern.test(child.tagName.toLowerCase())) {
+      if (child === element) return uiMessage("inspector.labels.slideValue1", { value1: String(index + 1) });
       index++;
     }
   return null;
 }
 function isDeckStageElement(element?: Dynamic): Dynamic {
-  let value: Dynamic = element.tagName.toLowerCase();
+  let tagName: Dynamic = element.tagName.toLowerCase();
   return (
-    value === "deck-stage" ||
-    (value === "x-import" &&
+    tagName === "deck-stage" ||
+    (tagName === "x-import" &&
       element.getAttribute("component-from-global-scope") === "deck-stage")
   );
 }
-function getDropContainer(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (!input || options === "root-end") return null;
-  let value: Dynamic =
-    options === "into" ? input : (input.parentElement ?? null);
-  if (!value) return null;
-  let parentElement: Dynamic = value.parentElement,
-    value2: Dynamic = parentElement?.parentElement ?? null,
-    value3: Dynamic = null,
-    value4: Dynamic = null;
+function getDropContainer(targetElement?: Dynamic, dropPosition?: Dynamic): Dynamic {
+  if (!targetElement || dropPosition === "root-end") return null;
+  let container: Dynamic =
+    dropPosition === "into" ? targetElement : (targetElement.parentElement ?? null);
+  if (!container) return null;
+  let parentElement: Dynamic = container.parentElement,
+    grandparentElement: Dynamic = parentElement?.parentElement ?? null,
+    deckElement: Dynamic = null,
+    slideElement: Dynamic = null;
   parentElement && isDeckStageElement(parentElement)
-    ? ((value3 = parentElement), (value4 = value))
+    ? ((deckElement = parentElement), (slideElement = container))
     : parentElement &&
-      value2 &&
-      isDeckStageElement(value2) &&
-      ((value3 = value2), (value4 = parentElement));
-  return !value3 || !value4
+      grandparentElement &&
+      isDeckStageElement(grandparentElement) &&
+      ((deckElement = grandparentElement), (slideElement = parentElement));
+  return !deckElement || !slideElement
     ? null
     : {
-        w: parseInt(value3.getAttribute("width") ?? "", 10) || 1920,
-        h: parseInt(value3.getAttribute("height") ?? "", 10) || 1080,
-        slide: value4,
+        w: parseInt(deckElement.getAttribute("width") ?? "", 10) || 1920,
+        h: parseInt(deckElement.getAttribute("height") ?? "", 10) || 1080,
+        slide: slideElement,
       };
 }
 export {

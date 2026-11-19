@@ -4,76 +4,76 @@ import {
 } from "../../runtime-types";
 import { getDcPropsJson, setDcPropsJson } from "../html/dc-props";
 
-function getPendingPropKeys(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = getDcPropsJson(input);
-  if (value == null) return null;
-  let value2: Dynamic;
+function getPendingPropKeys(source?: Dynamic, defaultValues?: Dynamic): Dynamic {
+  let propsJson: Dynamic = getDcPropsJson(source);
+  if (propsJson == null) return null;
+  let parsedProps: Dynamic;
   try {
-    value2 = JSON.parse(value);
+    parsedProps = JSON.parse(propsJson);
   } catch {
     return null;
   }
-  if (value2 == null || typeof value2 != "object" || Array.isArray(value2))
+  if (parsedProps == null || typeof parsedProps != "object" || Array.isArray(parsedProps))
     return null;
-  let value3: Dynamic = value2;
-  for (let [value4, value5] of Object.entries(options) as Dynamic) {
-    let value6: Dynamic = value3[value4],
-      value7: Dynamic =
-        value6 && typeof value6 == "object" && !Array.isArray(value6)
-          ? value6
+  let propsWithDefaults: Dynamic = parsedProps;
+  for (let [propName, defaultValue] of Object.entries(defaultValues) as Dynamic) {
+    let existingEntry: Dynamic = propsWithDefaults[propName],
+      existingEntryObject: Dynamic =
+        existingEntry && typeof existingEntry == "object" && !Array.isArray(existingEntry)
+          ? existingEntry
           : {};
-    value3[value4] = {
-      ...value7,
-      default: value5,
+    propsWithDefaults[propName] = {
+      ...existingEntryObject,
+      default: defaultValue,
     };
   }
-  return setDcPropsJson(input, JSON.stringify(value3));
+  return setDcPropsJson(source, JSON.stringify(propsWithDefaults));
 }
-function getSavedPendingProps(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (options === undefined) return;
-  let value: Dynamic = getDcPropsJson(input);
-  if (value == null) return;
-  let value2: Dynamic;
+function getSavedPendingProps(source?: Dynamic, pendingProps?: Dynamic): Dynamic {
+  if (pendingProps === undefined) return;
+  let propsJson: Dynamic = getDcPropsJson(source);
+  if (propsJson == null) return;
+  let parsedProps: Dynamic;
   try {
-    value2 = JSON.parse(value);
+    parsedProps = JSON.parse(propsJson);
   } catch {
     return;
   }
-  if (value2 == null || typeof value2 != "object" || Array.isArray(value2))
+  if (parsedProps == null || typeof parsedProps != "object" || Array.isArray(parsedProps))
     return;
-  let value3: Dynamic = value2,
-    state: Dynamic = {};
-  for (let value4 of Object.keys(options) as Dynamic) {
-    let value5: Dynamic = Object.hasOwn(value3, value4)
-        ? value3[value4]
+  let propDefinitions: Dynamic = parsedProps,
+    savedDefaults: Dynamic = {};
+  for (let propName of Object.keys(pendingProps) as Dynamic) {
+    let propDefinition: Dynamic = Object.hasOwn(propDefinitions, propName)
+        ? propDefinitions[propName]
         : undefined,
-      value6: Dynamic =
-        value5 != null && typeof value5 == "object" && !Array.isArray(value5)
-          ? value5.default
+      savedDefault: Dynamic =
+        propDefinition != null && typeof propDefinition == "object" && !Array.isArray(propDefinition)
+          ? propDefinition.default
           : undefined;
-    typeof value6 == "string" && (state[value4] = value6);
+    typeof savedDefault == "string" && (savedDefaults[propName] = savedDefault);
   }
-  return Object.keys(state).length > 0 ? state : undefined;
+  return Object.keys(savedDefaults).length > 0 ? savedDefaults : undefined;
 }
-function clearSavedPendingProps(input?: Dynamic): Dynamic {
-  let pendingProps: Dynamic = input.pendingProps,
-    value: Dynamic = getSavedPendingProps(input.src, pendingProps);
-  if (pendingProps === undefined || value === undefined) return;
-  let value2: Dynamic = Object.fromEntries(
+function clearSavedPendingProps(artboard?: Dynamic): Dynamic {
+  let pendingProps: Dynamic = artboard.pendingProps,
+    savedDefaults: Dynamic = getSavedPendingProps(artboard.src, pendingProps);
+  if (pendingProps === undefined || savedDefaults === undefined) return;
+  let remainingProps: Dynamic = Object.fromEntries(
       Object.entries(pendingProps).filter(
-        ([input2, input3]: Dynamic): Dynamic =>
-          !(Object.hasOwn(value, input2) && value[input2] === input3),
+        ([propName, propValue]: Dynamic): Dynamic =>
+          !(Object.hasOwn(savedDefaults, propName) && savedDefaults[propName] === propValue),
       ),
     ),
-    length: Dynamic = Object.keys(value2).length;
+    length: Dynamic = Object.keys(remainingProps).length;
   if (length === 0) {
-    input.pendingProps = undefined;
-    input.pendingPropsBase = undefined;
+    artboard.pendingProps = undefined;
+    artboard.pendingPropsBase = undefined;
     return;
   }
-  length < Object.keys(pendingProps).length && (input.pendingProps = value2);
-  input.pendingPropsBase =
-    getDcPropsJson(input.src) ?? input.pendingPropsBase;
+  length < Object.keys(pendingProps).length && (artboard.pendingProps = remainingProps);
+  artboard.pendingPropsBase =
+    getDcPropsJson(artboard.src) ?? artboard.pendingPropsBase;
 }
 export {
   clearSavedPendingProps,

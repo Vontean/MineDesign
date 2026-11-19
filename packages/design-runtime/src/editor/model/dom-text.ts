@@ -12,45 +12,45 @@ var ModelDomTextH1H2H3Config: Dynamic;
 var ModelDomTextButtonInputPattern: Dynamic;
 var ModelDomTextRegistry: Dynamic;
 function editorAssert(
-  input?: Dynamic,
-  options?: Dynamic,
-  ...context: Dynamic[]
+  condition?: Dynamic,
+  message?: Dynamic,
+  ...details: Dynamic[]
 ): Dynamic {
-  input || console.error(`[dc-editor] ${options}`, ...context);
+  condition || console.error(`[dc-editor] ${message}`, ...details);
 }
-function hasOnlyDirectText(input?: Dynamic): Dynamic {
-  let flag: Dynamic = false;
-  for (let value of input.childNodes as Dynamic) {
-    if (value.nodeType === Node.ELEMENT_NODE) return false;
-    value.nodeType === Node.TEXT_NODE &&
-      (value.nodeValue ?? "").trim().length > 0 &&
-      (flag = true);
+function hasOnlyDirectText(element?: Dynamic): Dynamic {
+  let hasText: Dynamic = false;
+  for (let childNode of element.childNodes as Dynamic) {
+    if (childNode.nodeType === Node.ELEMENT_NODE) return false;
+    childNode.nodeType === Node.TEXT_NODE &&
+      (childNode.nodeValue ?? "").trim().length > 0 &&
+      (hasText = true);
   }
-  return flag;
+  return hasText;
 }
-function elementTextPreview(input?: Dynamic, options: Dynamic = 40): Dynamic {
+function elementTextPreview(element?: Dynamic, maxLength: Dynamic = 40): Dynamic {
   let text: Dynamic = "",
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      for (let value of input2.childNodes as Dynamic) {
-        if (text.length >= options) return;
-        if (value.nodeType === Node.TEXT_NODE) {
-          let value2: Dynamic = (value.nodeValue ?? "").trim();
-          value2 && (text += (text ? " " : "") + value2);
+    collectPreview: Dynamic = (parent?: Dynamic): Dynamic => {
+      for (let childNode of parent.childNodes as Dynamic) {
+        if (text.length >= maxLength) return;
+        if (childNode.nodeType === Node.TEXT_NODE) {
+          let trimmedText: Dynamic = (childNode.nodeValue ?? "").trim();
+          trimmedText && (text += (text ? " " : "") + trimmedText);
         } else
-          value.nodeType === Node.ELEMENT_NODE &&
-            !/^(style|script|template|sc-helmet)$/i.test(value.tagName) &&
-            callback(value);
+          childNode.nodeType === Node.ELEMENT_NODE &&
+            !/^(style|script|template|sc-helmet)$/i.test(childNode.tagName) &&
+            collectPreview(childNode);
       }
     };
-  callback(input);
+  collectPreview(element);
   return text;
 }
 function siblingsSeparatedOnlyByWhitespace(
-  input?: Dynamic,
-  options?: Dynamic,
+  startNode?: Dynamic,
+  endNode?: Dynamic,
 ): Dynamic {
-  let nextSibling: Dynamic = input.nextSibling;
-  for (; nextSibling && nextSibling !== options; ) {
+  let nextSibling: Dynamic = startNode.nextSibling;
+  for (; nextSibling && nextSibling !== endNode; ) {
     if (
       nextSibling.nodeType !== Node.TEXT_NODE ||
       (nextSibling.nodeValue ?? "").trim().length > 0
@@ -58,40 +58,40 @@ function siblingsSeparatedOnlyByWhitespace(
       return false;
     nextSibling = nextSibling.nextSibling;
   }
-  return nextSibling === options;
+  return nextSibling === endNode;
 }
-function nextDirectiveSibling(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function nextDirectiveSibling(node?: Dynamic): Dynamic {
+  let cursor: Dynamic = node;
   for (;;) {
-    for (; !value.nextSibling && isDirectiveElement(value.parentNode); )
-      value = value.parentNode;
-    let nextSibling: Dynamic = value.nextSibling;
+    for (; !cursor.nextSibling && isDirectiveElement(cursor.parentNode); )
+      cursor = cursor.parentNode;
+    let nextSibling: Dynamic = cursor.nextSibling;
     for (; isDirectiveElement(nextSibling) && nextSibling.firstChild; )
       nextSibling = nextSibling.firstChild;
     if (!isDirectiveElement(nextSibling)) return nextSibling;
-    value = nextSibling;
+    cursor = nextSibling;
   }
 }
 function directiveSiblingsAdjacent(
-  input?: Dynamic,
-  options?: Dynamic,
+  startNode?: Dynamic,
+  endNode?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = nextDirectiveSibling(input);
-  for (; value && value !== options; ) {
+  let cursor: Dynamic = nextDirectiveSibling(startNode);
+  for (; cursor && cursor !== endNode; ) {
     if (
-      value.nodeType !== Node.TEXT_NODE ||
-      (value.nodeValue ?? "").trim().length > 0
+      cursor.nodeType !== Node.TEXT_NODE ||
+      (cursor.nodeValue ?? "").trim().length > 0
     )
       return false;
-    value = nextDirectiveSibling(value);
+    cursor = nextDirectiveSibling(cursor);
   }
-  return value === options;
+  return cursor === endNode;
 }
-function containsTemplateText(input?: Dynamic): Dynamic {
-  if (input.nodeType === Node.TEXT_NODE)
-    return (input.nodeValue ?? "").includes("{{");
-  for (let value of input.childNodes as Dynamic)
-    if (containsTemplateText(value)) return true;
+function containsTemplateText(node?: Dynamic): Dynamic {
+  if (node.nodeType === Node.TEXT_NODE)
+    return (node.nodeValue ?? "").includes("{{");
+  for (let childNode of node.childNodes as Dynamic)
+    if (containsTemplateText(childNode)) return true;
   return false;
 }
 export {
@@ -113,11 +113,11 @@ export {
 };
 export function installEditorModelDomText(): () => void {
   return () => {
-    isDirectiveElement = (input?: Dynamic): Dynamic =>
-      input?.nodeType === Node.ELEMENT_NODE &&
-      /^(sc-if|sc-for)$/i.test(input.tagName);
-    directiveParent = (input?: Dynamic): Dynamic => {
-      let parentNode: Dynamic = input.parentNode;
+    isDirectiveElement = (node?: Dynamic): Dynamic =>
+      node?.nodeType === Node.ELEMENT_NODE &&
+      /^(sc-if|sc-for)$/i.test(node.tagName);
+    directiveParent = (node?: Dynamic): Dynamic => {
+      let parentNode: Dynamic = node.parentNode;
       for (; isDirectiveElement(parentNode); )
         parentNode = parentNode.parentNode;
       return parentNode;

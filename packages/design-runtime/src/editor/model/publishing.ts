@@ -9,74 +9,74 @@ import { getPendingPropKeys, getSavedPendingProps } from "./pending-props";
 var ModelPublishingH1H2H3Config: Dynamic;
 var ModelPublishingHandler: Dynamic;
 async function publishModelChanges(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  doc?: Dynamic,
+  projectRoot?: Dynamic,
+  fileClient?: Dynamic,
+  templateOverride?: Dynamic,
+  callOptions?: Dynamic,
 ): Promise<Dynamic> {
-  let src: Dynamic = input.src,
-    originalTemplate: Dynamic = input.originalTemplate,
-    baseVersion: Dynamic = input.baseVersion,
-    value2: Dynamic = value,
-    value3: Dynamic =
-      extra && "pendingScriptAtCall" in extra
-        ? extra.pendingScriptAtCall
-        : input.pendingScript,
-    value4: Dynamic =
-      extra && "pendingScriptBaseAtCall" in extra
-        ? extra.pendingScriptBaseAtCall
-        : input.pendingScriptBase,
-    value5: Dynamic =
-      extra && "pendingPropsAtCall" in extra
-        ? extra.pendingPropsAtCall
-        : input.pendingProps,
-    value6: Dynamic =
-      extra && "pendingPropsBaseAtCall" in extra
-        ? extra.pendingPropsBaseAtCall
-        : input.pendingPropsBase,
-    callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value17: Dynamic = replaceDcTemplate(
-        input2,
-        options2,
-        value2,
+  let src: Dynamic = doc.src,
+    originalTemplate: Dynamic = doc.originalTemplate,
+    baseVersion: Dynamic = doc.baseVersion,
+    currentTemplate: Dynamic = templateOverride,
+    pendingScript: Dynamic =
+      callOptions && "pendingScriptAtCall" in callOptions
+        ? callOptions.pendingScriptAtCall
+        : doc.pendingScript,
+    pendingScriptBase: Dynamic =
+      callOptions && "pendingScriptBaseAtCall" in callOptions
+        ? callOptions.pendingScriptBaseAtCall
+        : doc.pendingScriptBase,
+    pendingProps: Dynamic =
+      callOptions && "pendingPropsAtCall" in callOptions
+        ? callOptions.pendingPropsAtCall
+        : doc.pendingProps,
+    pendingPropsBase: Dynamic =
+      callOptions && "pendingPropsBaseAtCall" in callOptions
+        ? callOptions.pendingPropsBaseAtCall
+        : doc.pendingPropsBase,
+    buildNextSource: Dynamic = (sourceText?: Dynamic, parsedSource?: Dynamic): Dynamic => {
+      let rewrittenSource: Dynamic = replaceDcTemplate(
+        sourceText,
+        parsedSource,
+        currentTemplate,
       );
-      if (value3 !== undefined) {
-        let value18: Dynamic = parseDcHtmlDocument(value17);
-        value18 &&
-          (value17 = setDcScript(value17, value18, value3));
+      if (pendingScript !== undefined) {
+        let parsedNextSource: Dynamic = parseDcHtmlDocument(rewrittenSource);
+        parsedNextSource &&
+          (rewrittenSource = setDcScript(rewrittenSource, parsedNextSource, pendingScript));
       }
-      if (value5 !== undefined) {
-        let value18: Dynamic = getPendingPropKeys(
-          value17,
-          value5,
+      if (pendingProps !== undefined) {
+        let nextSourceWithProps: Dynamic = getPendingPropKeys(
+          rewrittenSource,
+          pendingProps,
         );
-        if (value18 == null)
+        if (nextSourceWithProps == null)
           throw new Error(
             "data-props became unspliceable; prop edit kept pending",
           );
-        value17 = value18;
+        rewrittenSource = nextSourceWithProps;
       }
-      return value17;
+      return rewrittenSource;
     };
-  !extra?.hasQueuedSuccessor &&
-    (value === undefined || input.model.serialize() === value2) &&
-    input.pendingScript === value3 &&
-    input.pendingProps === value5 &&
-    (input.dirty = false);
-  let value7: Dynamic = parseDcHtmlDocument(src);
-  if (!value7) {
-    input.dirty = true;
+  !callOptions?.hasQueuedSuccessor &&
+    (templateOverride === undefined || doc.model.serialize() === currentTemplate) &&
+    doc.pendingScript === pendingScript &&
+    doc.pendingProps === pendingProps &&
+    (doc.dirty = false);
+  let parsedCurrentSource: Dynamic = parseDcHtmlDocument(src);
+  if (!parsedCurrentSource) {
+    doc.dirty = true;
     return {
       kind: "failed",
       error: new Error("dc source is not parseable; edit kept pending"),
     };
   }
   if (
-    value5 !== undefined &&
-    getPendingPropKeys(src, value5) == null
+    pendingProps !== undefined &&
+    getPendingPropKeys(src, pendingProps) == null
   ) {
-    input.dirty = true;
+    doc.dirty = true;
     return {
       kind: "failed",
       error: new Error(
@@ -84,206 +84,206 @@ async function publishModelChanges(
       ),
     };
   }
-  let callback2: Dynamic = (): Dynamic => {
-      value3 !== undefined &&
-        (input.pendingScript === value3
-          ? ((input.pendingScript = undefined),
-            (input.pendingScriptBase = undefined))
-          : (input.pendingScriptBase = value3));
+  let settlePendingScript: Dynamic = (): Dynamic => {
+      pendingScript !== undefined &&
+        (doc.pendingScript === pendingScript
+          ? ((doc.pendingScript = undefined),
+            (doc.pendingScriptBase = undefined))
+          : (doc.pendingScriptBase = pendingScript));
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      value5 !== undefined &&
-        (input.pendingProps === value5
-          ? ((input.pendingProps = undefined),
-            (input.pendingPropsBase = undefined))
-          : input.pendingProps === undefined
-            ? (input.pendingPropsBase = undefined)
-            : (input.pendingPropsBase =
-                getDcPropsJson(input2) ??
-                input.pendingPropsBase));
+    settlePendingProps: Dynamic = (savedSource?: Dynamic): Dynamic => {
+      pendingProps !== undefined &&
+        (doc.pendingProps === pendingProps
+          ? ((doc.pendingProps = undefined),
+            (doc.pendingPropsBase = undefined))
+          : doc.pendingProps === undefined
+            ? (doc.pendingPropsBase = undefined)
+            : (doc.pendingPropsBase =
+                getDcPropsJson(savedSource) ??
+                doc.pendingPropsBase));
     },
-    value8: Dynamic = callback(src, value7),
-    value9: Dynamic =
-      value8 === src &&
-      extra.diskIsMirror === true &&
-      extra.mirrored !== value8;
-  if (value8 === src && !value9) {
-    callback2();
-    callback3(src);
-    let value17: Dynamic = getSavedPendingProps(src, value5);
-    input.originalTemplate = value2;
-    return value17 !== undefined
+    nextSource: Dynamic = buildNextSource(src, parsedCurrentSource),
+    needsMirrorWrite: Dynamic =
+      nextSource === src &&
+      callOptions.diskIsMirror === true &&
+      callOptions.mirrored !== nextSource;
+  if (nextSource === src && !needsMirrorWrite) {
+    settlePendingScript();
+    settlePendingProps(src);
+    let unchangedSettledProps: Dynamic = getSavedPendingProps(src, pendingProps);
+    doc.originalTemplate = currentTemplate;
+    return unchangedSettledProps !== undefined
       ? {
           kind: "noop",
-          settledProps: value17,
+          settledProps: unchangedSettledProps,
         }
       : {
           kind: "noop",
         };
   }
-  let value10: Dynamic = `${options}/${input.path}`,
-    flag: Dynamic = false,
-    value11: Dynamic =
+  let filePath: Dynamic = `${projectRoot}/${doc.path}`,
+    wasRebased: Dynamic = false,
+    localBaseline: Dynamic =
       baseVersion !== undefined
         ? {
             occToken: baseVersion,
           }
         : undefined,
-    value12: Dynamic =
-      value11 !== undefined
-        ? extra?.baselineAtCall?.occToken === value11.occToken
-          ? extra.baselineAtCall
-          : value11
-        : extra?.baselineAtCall,
-    value13: Dynamic;
-  if (context.readWithVersion && !value9) {
-    let value17: Dynamic = null;
+    baseline: Dynamic =
+      localBaseline !== undefined
+        ? callOptions?.baselineAtCall?.occToken === localBaseline.occToken
+          ? callOptions.baselineAtCall
+          : localBaseline
+        : callOptions?.baselineAtCall,
+    readVersion: Dynamic;
+  if (fileClient.readWithVersion && !needsMirrorWrite) {
+    let diskFile: Dynamic = null;
     try {
-      value17 = await context.readWithVersion(value10);
+      diskFile = await fileClient.readWithVersion(filePath);
     } catch {}
     try {
       if (
-        value17 &&
-        !value17.isBase64 &&
-        value17.content &&
-        value17.content !== extra.mirrored
+        diskFile &&
+        !diskFile.isBase64 &&
+        diskFile.content &&
+        diskFile.content !== callOptions.mirrored
       ) {
-        let value18: Dynamic = parseDcHtmlDocument(
-          value17.content,
+        let diskDocument: Dynamic = parseDcHtmlDocument(
+          diskFile.content,
         );
         if (
-          value18 &&
-          value18.template === originalTemplate &&
-          (value3 === undefined || value18.js === value4) &&
-          (value5 === undefined ||
-            getDcPropsJson(value17.content) === value6) &&
-          (value17.version !== undefined &&
-            ((value12 = {
-              occToken: value17.version,
-              content: value17.content,
+          diskDocument &&
+          diskDocument.template === originalTemplate &&
+          (pendingScript === undefined || diskDocument.js === pendingScriptBase) &&
+          (pendingProps === undefined ||
+            getDcPropsJson(diskFile.content) === pendingPropsBase) &&
+          (diskFile.version !== undefined &&
+            ((baseline = {
+              occToken: diskFile.version,
+              content: diskFile.content,
             }),
-            (value13 = value17.version),
-            (input.baseVersion === undefined ||
-              value17.version > input.baseVersion) &&
-              (input.baseVersion = value17.version)),
-          value17.content !== src &&
-            ((input.src = value17.content),
-            (value8 = callback(value17.content, value18)),
-            (flag = true),
-            value8 === value17.content))
+            (readVersion = diskFile.version),
+            (doc.baseVersion === undefined ||
+              diskFile.version > doc.baseVersion) &&
+              (doc.baseVersion = diskFile.version)),
+          diskFile.content !== src &&
+            ((doc.src = diskFile.content),
+            (nextSource = buildNextSource(diskFile.content, diskDocument)),
+            (wasRebased = true),
+            nextSource === diskFile.content))
         ) {
-          callback2();
-          callback3(value17.content);
-          let value19: Dynamic = getSavedPendingProps(
-            value17.content,
-            value5,
+          settlePendingScript();
+          settlePendingProps(diskFile.content);
+          let diskSettledProps: Dynamic = getSavedPendingProps(
+            diskFile.content,
+            pendingProps,
           );
-          return value19 !== undefined
+          return diskSettledProps !== undefined
             ? {
                 kind: "noop",
-                version: value17.version,
-                settledProps: value19,
+                version: diskFile.version,
+                settledProps: diskSettledProps,
               }
             : {
                 kind: "noop",
-                version: value17.version,
+                version: diskFile.version,
               };
         }
       }
-    } catch (value18: Dynamic) {
-      input.dirty = true;
+    } catch (readError: Dynamic) {
+      doc.dirty = true;
       return {
         kind: "failed",
-        error: value18,
-        version: value13,
+        error: readError,
+        version: readVersion,
       };
     }
   }
-  let value14: Dynamic;
+  let writeVersion: Dynamic;
   try {
-    value14 = (
-      await context.write(
-        value10,
-        value8,
-        value12
+    writeVersion = (
+      await fileClient.write(
+        filePath,
+        nextSource,
+        baseline
           ? {
-              baseline: value12,
+              baseline: baseline,
             }
           : undefined,
       )
     )?.version;
-  } catch (value17: Dynamic) {
-    input.dirty = true;
+  } catch (writeError: Dynamic) {
+    doc.dirty = true;
     return {
       kind: "failed",
-      error: value17,
-      version: value13,
+      error: writeError,
+      version: readVersion,
     };
   }
-  input.src = value8;
-  callback2();
-  callback3(value8);
-  let value15: Dynamic = getSavedPendingProps(value8, value5);
-  input.originalTemplate = value2;
-  input.carriedEditCount = 0;
+  doc.src = nextSource;
+  settlePendingScript();
+  settlePendingProps(nextSource);
+  let settledProps: Dynamic = getSavedPendingProps(nextSource, pendingProps);
+  doc.originalTemplate = currentTemplate;
+  doc.carriedEditCount = 0;
   {
-    let value17: Dynamic = value14 ?? value13;
-    value17 !== undefined &&
-      (input.baseVersion === undefined || value17 > input.baseVersion) &&
-      (input.baseVersion = value17);
+    let latestVersion: Dynamic = writeVersion ?? readVersion;
+    latestVersion !== undefined &&
+      (doc.baseVersion === undefined || latestVersion > doc.baseVersion) &&
+      (doc.baseVersion = latestVersion);
   }
-  let value16: Dynamic = value14 ?? value13;
+  let savedVersion: Dynamic = writeVersion ?? readVersion;
   try {
-    let value17: Dynamic = await context.read(value10);
-    if (value17 !== value8) {
-      input.src = value17;
-      let value18: Dynamic = getSavedPendingProps(
-        value17,
-        value5,
+    let savedSource: Dynamic = await fileClient.read(filePath);
+    if (savedSource !== nextSource) {
+      doc.src = savedSource;
+      let savedSettledProps: Dynamic = getSavedPendingProps(
+        savedSource,
+        pendingProps,
       );
-      return flag
+      return wasRebased
         ? {
             kind: "saved-adopted",
-            saved: value17,
+            saved: savedSource,
             rebased: true,
-            version: value16,
-            ...(value18 !== undefined
+            version: savedVersion,
+            ...(savedSettledProps !== undefined
               ? {
-                  settledProps: value18,
+                  settledProps: savedSettledProps,
                 }
               : {}),
           }
         : {
             kind: "saved-adopted",
-            saved: value17,
-            version: value16,
-            ...(value18 !== undefined
+            saved: savedSource,
+            version: savedVersion,
+            ...(savedSettledProps !== undefined
               ? {
-                  settledProps: value18,
+                  settledProps: savedSettledProps,
                 }
               : {}),
           };
     }
-  } catch (value17: Dynamic) {
-    console.warn("[dc-editor] post-save adopt read failed:", value17);
+  } catch (adoptReadError: Dynamic) {
+    console.warn("[dc-editor] post-save adopt read failed:", adoptReadError);
   }
-  return flag
+  return wasRebased
     ? {
         kind: "saved",
         rebased: true,
-        version: value16,
-        ...(value15 !== undefined
+        version: savedVersion,
+        ...(settledProps !== undefined
           ? {
-              settledProps: value15,
+              settledProps: settledProps,
             }
           : {}),
       }
     : {
         kind: "saved",
-        version: value16,
-        ...(value15 !== undefined
+        version: savedVersion,
+        ...(settledProps !== undefined
           ? {
-              settledProps: value15,
+              settledProps: settledProps,
             }
           : {}),
       };
@@ -314,9 +314,9 @@ export function installEditorModelPublishing(): () => void {
       div: "a block",
       section: "a section",
     };
-    ModelPublishingHandler = (input?: Dynamic): Dynamic =>
-      Object.hasOwn(ModelPublishingH1H2H3Config, input.toLowerCase())
-        ? ModelPublishingH1H2H3Config[input.toLowerCase()]
+    ModelPublishingHandler = (tagName?: Dynamic): Dynamic =>
+      Object.hasOwn(ModelPublishingH1H2H3Config, tagName.toLowerCase())
+        ? ModelPublishingH1H2H3Config[tagName.toLowerCase()]
         : "an element";
   };
 }

@@ -19,86 +19,86 @@ var ModelHistoryRebaseNowValue: Dynamic;
 var ModelHistoryRebaseHandler_3: Dynamic;
 var ModelHistoryRebaseHandler_4: Dynamic;
 function isRecentlyEditedFile(
-  input?: Dynamic,
-  options: Dynamic = ModelHistoryRebaseNow(),
+  filePath?: Dynamic,
+  now: Dynamic = ModelHistoryRebaseNow(),
 ): Dynamic {
-  let entry: Dynamic = ModelHistoryRebaseCache.get(input);
+  let entry: Dynamic = ModelHistoryRebaseCache.get(filePath);
   entry !== undefined &&
-    options - entry > ModelHistoryRebaseLimit &&
-    ModelHistoryRebaseCache.delete(input);
-  return ModelHistoryRebaseCache.has(input);
+    now - entry > ModelHistoryRebaseLimit &&
+    ModelHistoryRebaseCache.delete(filePath);
+  return ModelHistoryRebaseCache.has(filePath);
 }
 function rebaseUndoEntries(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  entries?: Dynamic,
+  oldBase?: Dynamic,
+  newBase?: Dynamic,
 ): Dynamic {
-  if (items.length === 0 || options === context)
+  if (entries.length === 0 || oldBase === newBase)
     return {
-      kept: [...items],
+      kept: [...entries],
       dropped: 0,
     };
-  let items2: Dynamic = [],
-    value: Dynamic;
-  for (let value2: Dynamic = items.length - 1; value2 >= 0; value2--) {
-    let value3: Dynamic = items[value2];
-    if (typeof value3 != "string") {
-      value =
+  let rebasedEntries: Dynamic = [],
+    stopReason: Dynamic;
+  for (let index: Dynamic = entries.length - 1; index >= 0; index--) {
+    let entry: Dynamic = entries[index];
+    if (typeof entry != "string") {
+      stopReason =
         "an inline " +
-        value3.kind +
+        entry.kind +
         " entry does not outlive a reset of the base";
       break;
     }
-    let value4: Dynamic = mergeDcTemplates(
-      options,
-      value3,
-      context,
+    let mergeResult: Dynamic = mergeDcTemplates(
+      oldBase,
+      entry,
+      newBase,
     );
-    if (!value4.ok || value4.merged === undefined) {
-      value = value4.guard.baseTheirs
-        ? (value4.why ?? "not mergeable")
+    if (!mergeResult.ok || mergeResult.merged === undefined) {
+      stopReason = mergeResult.guard.baseTheirs
+        ? (mergeResult.why ?? "not mergeable")
         : "the change altered the element tree";
       break;
     }
-    items2.unshift(value4.merged);
+    rebasedEntries.unshift(mergeResult.merged);
   }
   return {
-    kept: items2,
-    dropped: items.length - items2.length,
-    ...(value !== undefined
+    kept: rebasedEntries,
+    dropped: entries.length - rebasedEntries.length,
+    ...(stopReason !== undefined
       ? {
-          why: value,
+          why: stopReason,
         }
       : {}),
   };
 }
 function rebaseModelHistory(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  history?: Dynamic,
+  oldBase?: Dynamic,
+  newBase?: Dynamic,
 ): Dynamic {
   if (!ModelHistoryRebaseAlias) {
-    let value4: Dynamic = input.undo.length + input.redo.length;
-    resetUndoHistory(input);
+    let droppedCount: Dynamic = history.undo.length + history.redo.length;
+    resetUndoHistory(history);
     return {
       undo: 0,
       redo: 0,
-      dropped: value4,
+      dropped: droppedCount,
     };
   }
-  let value: Dynamic = rebaseUndoEntries(input.undo, options, context),
-    value2: Dynamic = rebaseUndoEntries(input.redo, options, context);
-  input.undoFloor = (input.undoFloor ?? 0) + value.dropped;
-  input.undo = value.kept;
-  input.redo = value2.kept;
-  let value3: Dynamic = value.why ?? value2.why;
+  let undoResult: Dynamic = rebaseUndoEntries(history.undo, oldBase, newBase),
+    redoResult: Dynamic = rebaseUndoEntries(history.redo, oldBase, newBase);
+  history.undoFloor = (history.undoFloor ?? 0) + undoResult.dropped;
+  history.undo = undoResult.kept;
+  history.redo = redoResult.kept;
+  let stopReason: Dynamic = undoResult.why ?? redoResult.why;
   return {
-    undo: value.kept.length,
-    redo: value2.kept.length,
-    dropped: value.dropped + value2.dropped,
-    ...(value3 !== undefined
+    undo: undoResult.kept.length,
+    redo: redoResult.kept.length,
+    dropped: undoResult.dropped + redoResult.dropped,
+    ...(stopReason !== undefined
       ? {
-          why: value3,
+          why: stopReason,
         }
       : {}),
   };
@@ -125,17 +125,17 @@ export function installEditorModelHistoryRebase(): () => void {
   return () => {
     ModelHistoryRebaseAlias = false;
     ModelHistoryRebaseHandler = (
-      input?: Dynamic,
-      options?: Dynamic,
+      isEnabled?: Dynamic,
+      onRebase?: Dynamic,
     ): Dynamic => {
-      ModelHistoryRebaseAlias = input;
-      ModelHistoryRebaseAlias_2 = options;
+      ModelHistoryRebaseAlias = isEnabled;
+      ModelHistoryRebaseAlias_2 = onRebase;
     };
     ModelHistoryRebaseHandler_2 = (): Dynamic => ModelHistoryRebaseAlias;
-    ModelHistoryRebaseUndo = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (options.undo + options.redo + options.dropped !== 0)
+    ModelHistoryRebaseUndo = (docKey?: Dynamic, summary?: Dynamic): Dynamic => {
+      if (summary.undo + summary.redo + summary.dropped !== 0)
         try {
-          ModelHistoryRebaseAlias_2?.(input, options);
+          ModelHistoryRebaseAlias_2?.(docKey, summary);
         } catch {}
     };
     ModelHistoryRebaseCache = new Map();
@@ -143,17 +143,17 @@ export function installEditorModelHistoryRebase(): () => void {
     ModelHistoryRebaseNow = (): Dynamic =>
       typeof performance === "undefined" ? Date.now() : performance.now();
     ModelHistoryRebaseSet = (
-      input?: Dynamic,
-      options: Dynamic = ModelHistoryRebaseNow(),
+      filePath?: Dynamic,
+      timestamp: Dynamic = ModelHistoryRebaseNow(),
     ): Dynamic => {
-      ModelHistoryRebaseCache.set(input, options);
+      ModelHistoryRebaseCache.set(filePath, timestamp);
     };
     ModelHistoryRebaseDelete = (
-      input?: Dynamic,
-      options: Dynamic = ModelHistoryRebaseNow(),
+      filePath?: Dynamic,
+      now: Dynamic = ModelHistoryRebaseNow(),
     ): Dynamic =>
-      isRecentlyEditedFile(input, options) &&
-      ModelHistoryRebaseCache.delete(input);
+      isRecentlyEditedFile(filePath, now) &&
+      ModelHistoryRebaseCache.delete(filePath);
     ModelHistoryRebaseNowValue = -1 / 0;
     ModelHistoryRebaseHandler_3 = (): Dynamic => {
       ModelHistoryRebaseNowValue = ModelHistoryRebaseNow();

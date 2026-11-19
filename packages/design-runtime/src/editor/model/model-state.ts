@@ -10,107 +10,107 @@ var DcModelKey: Dynamic;
 var ModelModelStateDataDcDraggingDataDcDragParentDataDcDragFollowerValues: Dynamic;
 var ModelModelStateSubscribers: Dynamic;
 function serializeAsyncFileTask(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  pendingTasks?: Dynamic,
+  taskKey?: Dynamic,
+  task?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (input.get(options) ?? Promise.resolve()).then(
-      context,
-      context,
+  let taskResult: Dynamic = (pendingTasks.get(taskKey) ?? Promise.resolve()).then(
+      task,
+      task,
     ),
-    value2: Dynamic = value.then(
+    settledTail: Dynamic = taskResult.then(
       (): Dynamic => {},
       (): Dynamic => {},
     );
-  input.set(options, value2);
-  value2.finally((): Dynamic => {
-    input.get(options) === value2 && input.delete(options);
+  pendingTasks.set(taskKey, settledTail);
+  settledTail.finally((): Dynamic => {
+    pendingTasks.get(taskKey) === settledTail && pendingTasks.delete(taskKey);
   });
-  return value;
+  return taskResult;
 }
 function recordModelUndo(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = ModelModelStateConstant,
+  docState?: Dynamic,
+  previousTemplate?: Dynamic,
+  undoLimit: Dynamic = ModelModelStateConstant,
 ): Dynamic {
-  return input.model.serialize() === options
+  return docState.model.serialize() === previousTemplate
     ? false
-    : (input.undo.push(options),
-      trimUndoHistory(input, input.undo.length - context),
-      (input.redo = []),
+    : (docState.undo.push(previousTemplate),
+      trimUndoHistory(docState, docState.undo.length - undoLimit),
+      (docState.redo = []),
       true);
 }
-function resetModelBaselines(input?: Dynamic): Dynamic {
-  input.each((input2?: Dynamic, options?: Dynamic): Dynamic => {
-    !options.dirty &&
-    options.pendingScript === undefined &&
-    options.pendingProps === undefined
-      ? ((options.originalTemplate = options.model.serialize()),
-        (options.carriedEditCount = 0))
-      : (options.carriedEditCount =
-          (options.carriedEditCount ?? 0) +
-          options.undo.filter(
-            (input3?: Dynamic): Dynamic => typeof input3 == "string",
+function resetModelBaselines(documents?: Dynamic): Dynamic {
+  documents.each((fileKey?: Dynamic, doc?: Dynamic): Dynamic => {
+    !doc.dirty &&
+    doc.pendingScript === undefined &&
+    doc.pendingProps === undefined
+      ? ((doc.originalTemplate = doc.model.serialize()),
+        (doc.carriedEditCount = 0))
+      : (doc.carriedEditCount =
+          (doc.carriedEditCount ?? 0) +
+          doc.undo.filter(
+            (entry?: Dynamic): Dynamic => typeof entry == "string",
           ).length);
-    resetUndoHistory(options);
+    resetUndoHistory(doc);
   });
 }
-function stripDragAttributes(input?: Dynamic): Dynamic {
-  return input.replace(
+function stripDragAttributes(template?: Dynamic): Dynamic {
+  return template.replace(
     / data-dc-drag(?:ging|-parent|-follower|-block)="\d+"/g,
     "",
   );
 }
-function getPreDragBaseline(input?: Dynamic): Dynamic {
-  return input.previewBaseline !== undefined &&
-    / data-dc-dragging="\d+"/.test(input.model.serialize())
-    ? input.previewBaseline
+function getPreDragBaseline(doc?: Dynamic): Dynamic {
+  return doc.previewBaseline !== undefined &&
+    / data-dc-dragging="\d+"/.test(doc.model.serialize())
+    ? doc.previewBaseline
     : undefined;
 }
-function serializeStableModel(input?: Dynamic): Dynamic {
+function serializeStableModel(doc?: Dynamic): Dynamic {
   return stripDragAttributes(
-    getPreDragBaseline(input) ?? input.model.serialize(),
+    getPreDragBaseline(doc) ?? doc.model.serialize(),
   );
 }
-function hasUnsavedModelChanges(input?: Dynamic): Dynamic {
-  let flag: Dynamic = false;
-  input.each((input2?: Dynamic, options?: Dynamic): Dynamic => {
-    serializeStableModel(options) !==
-      stripDragAttributes(options.originalTemplate) && (flag = true);
-    options.pendingScript !== undefined &&
-      options.pendingScript !== options.pendingScriptBase &&
-      (flag = true);
-    options.pendingProps !== undefined &&
-      Object.keys(options.pendingProps).length > 0 &&
-      (flag = true);
+function hasUnsavedModelChanges(documents?: Dynamic): Dynamic {
+  let hasChanges: Dynamic = false;
+  documents.each((fileKey?: Dynamic, doc?: Dynamic): Dynamic => {
+    serializeStableModel(doc) !==
+      stripDragAttributes(doc.originalTemplate) && (hasChanges = true);
+    doc.pendingScript !== undefined &&
+      doc.pendingScript !== doc.pendingScriptBase &&
+      (hasChanges = true);
+    doc.pendingProps !== undefined &&
+      Object.keys(doc.pendingProps).length > 0 &&
+      (hasChanges = true);
   });
-  return flag;
+  return hasChanges;
 }
-function rebuildModelTemplate(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input.rebuild(options).serialize();
+function rebuildModelTemplate(model?: Dynamic, rebuildInput?: Dynamic): Dynamic {
+  return model.rebuild(rebuildInput).serialize();
 }
-function adoptModelVersion(input?: Dynamic, options?: Dynamic): Dynamic {
-  (input.adoptedVersion === undefined || options > input.adoptedVersion) &&
-    (input.adoptedVersion = options);
+function adoptModelVersion(doc?: Dynamic, version?: Dynamic): Dynamic {
+  (doc.adoptedVersion === undefined || version > doc.adoptedVersion) &&
+    (doc.adoptedVersion = version);
 }
 function warnUnreadableDcDocument(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  fileName?: Dynamic,
+  template?: Dynamic,
+  reason?: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
-    input +
+  let warningKey: Dynamic =
+    fileName +
     `
 ` +
-    context;
-  ModelModelStateSubscribers.has(value) ||
-    !/<x-dc[\s/>]/i.test(options) ||
-    (ModelModelStateSubscribers.add(value),
+    reason;
+  ModelModelStateSubscribers.has(warningKey) ||
+    !/<x-dc[\s/>]/i.test(template) ||
+    (ModelModelStateSubscribers.add(warningKey),
     console.warn(
       "[dc-model] " +
-        input +
+        fileName +
         ": the editor cannot read where the <x-dc> markup ends, so " +
-        context +
+        reason +
         ". If this file is an artboard, most likely its '</x-dc>' line is missing or misspelt: put '</x-dc>' on its own line after the markup, before the <script data-dc-script> block.",
     ));
 }

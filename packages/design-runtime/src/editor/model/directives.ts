@@ -3,37 +3,37 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 
-function buildDirectiveMap(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 === "sc-if" || input2 === "sc-for",
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.flatMap(
-        (input3?: Dynamic): Dynamic =>
-          callback(input3.tag) ? callback2(input3.children) : [input3.tid],
+function buildDirectiveMap(templateNodes?: Dynamic): Dynamic {
+  let isDirectiveTag: Dynamic = (tagName?: Dynamic): Dynamic =>
+      tagName === "sc-if" || tagName === "sc-for",
+    collectDirectiveIds: Dynamic = (nodes?: Dynamic): Dynamic =>
+      nodes.flatMap(
+        (node?: Dynamic): Dynamic =>
+          isDirectiveTag(node.tag) ? collectDirectiveIds(node.children) : [node.tid],
       ),
-    state: Dynamic = {},
-    callback3: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      for (let value of input2 as Dynamic) {
-        if (callback(value.tag)) {
-          let value2: Dynamic = callback2(value.children);
-          value2.length > 0 &&
-            (state[value.tid] = {
-              kind: value.tag === "sc-if" ? "if" : "for",
-              kids: value2,
-              countKids: options
+    directiveMap: Dynamic = {},
+    visitNodes: Dynamic = (nodes?: Dynamic, isInsideLoop?: Dynamic): Dynamic => {
+      for (let node of nodes as Dynamic) {
+        if (isDirectiveTag(node.tag)) {
+          let directiveIds: Dynamic = collectDirectiveIds(node.children);
+          directiveIds.length > 0 &&
+            (directiveMap[node.tid] = {
+              kind: node.tag === "sc-if" ? "if" : "for",
+              kids: directiveIds,
+              countKids: isInsideLoop
                 ? []
-                : value.children
+                : node.children
                     .filter(
-                      (input3?: Dynamic): Dynamic => !callback(input3.tag),
+                      (child?: Dynamic): Dynamic => !isDirectiveTag(child.tag),
                     )
-                    .map((input3?: Dynamic): Dynamic => input3.tid),
+                    .map((child?: Dynamic): Dynamic => child.tid),
             });
         }
-        callback3(value.children, options || value.tag === "sc-for");
+        visitNodes(node.children, isInsideLoop || node.tag === "sc-for");
       }
     };
-  callback3(input, false);
-  return state;
+  visitNodes(templateNodes, false);
+  return directiveMap;
 }
 export {
   buildDirectiveMap,

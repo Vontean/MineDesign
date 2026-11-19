@@ -30,7 +30,7 @@ export function installEditorModelDcEditorModel(): () => void {
       /^(style|script|template|title|noscript|textarea|helmet|sc-helmet|sc-raw-script|sc-raw-style)$/i;
     ModelDcEditorModelAbbrCitePattern =
       /^(a|abbr|b|bdi|bdo|cite|code|em|font|i|kbd|label|mark|q|s|samp|small|span|strong|sub|sup|time|u|var)$/i;
-    DcEditorModel = class value {
+    DcEditorModel = class ModelClass {
       tpl: Dynamic;
       byTid: Dynamic = new Map();
       classRuleCache: Dynamic = null;
@@ -38,12 +38,12 @@ export function installEditorModelDcEditorModel(): () => void {
       serialized: Dynamic = null;
       edits: Dynamic = null;
       raw: Dynamic;
-      constructor(input: Dynamic, options: Dynamic) {
-        this.raw = options?.raw ?? false;
+      constructor(template: Dynamic, modelOptions: Dynamic) {
+        this.raw = modelOptions?.raw ?? false;
         this.tpl = (document as Dynamic).createElement("template");
         this.tpl.innerHTML = this.raw
-          ? input
-          : toParserHtml(input);
+          ? template
+          : toParserHtml(template);
         typeof MutationObserver !== "undefined" &&
           ((this.edits = new MutationObserver((): Dynamic => {
             this.serialized = null;
@@ -55,95 +55,95 @@ export function installEditorModelDcEditorModel(): () => void {
             characterData: true,
           }));
         this.restamp();
-        for (let value2 of this.byTid.values() as Dynamic)
-          isImportedIcon(value2) &&
-            !value2.hasAttribute("data-uneditable") &&
-            value2.setAttribute("data-uneditable", "");
+        for (let element of this.byTid.values() as Dynamic)
+          isImportedIcon(element) &&
+            !element.hasAttribute("data-uneditable") &&
+            element.setAttribute("data-uneditable", "");
       }
-      rebuild(input: Dynamic): Dynamic {
-        return new value(input, {
+      rebuild(template: Dynamic): Dynamic {
+        return new ModelClass(template, {
           raw: this.raw,
         });
       }
       rootText(): Dynamic {
         return [...this.tpl.content.childNodes]
           .map(
-            (input?: Dynamic): Dynamic =>
-              input.nodeType === 3 ? (input.nodeValue ?? "") : "",
+            (node?: Dynamic): Dynamic =>
+              node.nodeType === 3 ? (node.nodeValue ?? "") : "",
           )
           .join("");
       }
       textRuns(): Dynamic {
-        let items: Dynamic = [],
+        let runs: Dynamic = [],
           text: Dynamic = "",
-          callback: Dynamic = (): Dynamic => {
-            text.trim() !== "" && items.push(text);
+          flushText: Dynamic = (): Dynamic => {
+            text.trim() !== "" && runs.push(text);
             text = "";
           },
-          callback2: Dynamic = (input?: Dynamic): Dynamic => {
-            for (let value2 of input.childNodes as Dynamic) {
-              value2.nodeType === Node.TEXT_NODE &&
-                (text += value2.nodeValue ?? "");
-              if (value2.nodeType !== Node.ELEMENT_NODE) continue;
-              let value3: Dynamic = value2;
-              ModelDcEditorModelStyleScriptPattern.test(value3.tagName) ||
-                value3.hasAttribute("hidden") ||
-                (ModelDcEditorModelAbbrCitePattern.test(value3.tagName)
-                  ? callback2(value3)
-                  : (callback(), callback2(value3), callback()));
+          collectText: Dynamic = (parent?: Dynamic): Dynamic => {
+            for (let child of parent.childNodes as Dynamic) {
+              child.nodeType === Node.TEXT_NODE &&
+                (text += child.nodeValue ?? "");
+              if (child.nodeType !== Node.ELEMENT_NODE) continue;
+              let childElement: Dynamic = child;
+              ModelDcEditorModelStyleScriptPattern.test(childElement.tagName) ||
+                childElement.hasAttribute("hidden") ||
+                (ModelDcEditorModelAbbrCitePattern.test(childElement.tagName)
+                  ? collectText(childElement)
+                  : (flushText(), collectText(childElement), flushText()));
             }
           };
-        callback2(this.tpl.content);
-        callback();
-        return items;
+        collectText(this.tpl.content);
+        flushText();
+        return runs;
       }
-      element(input: Dynamic): Dynamic {
-        return this.byTid.get(input) ?? null;
+      element(tid: Dynamic): Dynamic {
+        return this.byTid.get(tid) ?? null;
       }
-      elementsByAttr(input: Dynamic, options: Dynamic): Dynamic {
-        let items: Dynamic = [];
-        for (let value2 of this.byTid.values() as Dynamic)
-          value2.getAttribute(input) === options && items.push(value2);
-        return items;
+      elementsByAttr(attributeName: Dynamic, attributeValue: Dynamic): Dynamic {
+        let matches: Dynamic = [];
+        for (let candidate of this.byTid.values() as Dynamic)
+          candidate.getAttribute(attributeName) === attributeValue && matches.push(candidate);
+        return matches;
       }
-      isUneditable(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        return value2
-          ? value2.hasAttribute("data-uneditable") ||
-              value2.tagName.toLowerCase() === "deck-stage"
+      isUneditable(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        return element
+          ? element.hasAttribute("data-uneditable") ||
+              element.tagName.toLowerCase() === "deck-stage"
           : false;
       }
-      targetParentLocked(input: Dynamic, options: Dynamic): Dynamic {
-        if (input == null) return false;
-        let value2: Dynamic = this.element(input);
-        if (!value2) return false;
-        let value3: Dynamic =
-          options === "into" ? value2 : value2.parentElement;
-        return value3
-          ? value3.tagName.toLowerCase() === "deck-stage" ||
-              value3.hasAttribute("data-uneditable")
+      targetParentLocked(tid: Dynamic, position: Dynamic): Dynamic {
+        if (tid == null) return false;
+        let element: Dynamic = this.element(tid);
+        if (!element) return false;
+        let targetParent: Dynamic =
+          position === "into" ? element : element.parentElement;
+        return targetParent
+          ? targetParent.tagName.toLowerCase() === "deck-stage" ||
+              targetParent.hasAttribute("data-uneditable")
           : false;
       }
-      isLoopDriven(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        for (; value2; ) {
-          if (value2.tagName.toLowerCase() === "sc-for") return true;
-          value2 = value2.parentElement;
+      isLoopDriven(tid: Dynamic): Dynamic {
+        let current: Dynamic = this.element(tid);
+        for (; current; ) {
+          if (current.tagName.toLowerCase() === "sc-for") return true;
+          current = current.parentElement;
         }
         return false;
       }
       elementCount(): Dynamic {
         return this.byTid.size;
       }
-      sameSkeleton(input: Dynamic): Dynamic {
-        if (this.byTid.size !== input.elementCount()) return false;
-        for (let [value2, value3] of this.byTid as Dynamic)
-          if (input.element(value2)?.tagName !== value3.tagName) return false;
+      sameSkeleton(other: Dynamic): Dynamic {
+        if (this.byTid.size !== other.elementCount()) return false;
+        for (let [tid, element] of this.byTid as Dynamic)
+          if (other.element(tid)?.tagName !== element.tagName) return false;
         return true;
       }
       survivesReparse(): Dynamic {
-        let value2: Dynamic = this.serialize();
-        return this.rebuild(value2).serialize() === value2;
+        let html: Dynamic = this.serialize();
+        return this.rebuild(html).serialize() === html;
       }
       serialize(): Dynamic {
         if (
@@ -152,240 +152,240 @@ export function installEditorModelDcEditorModel(): () => void {
           this.serialized !== null
         )
           return this.serialized;
-        let value2: Dynamic = this.tpl.cloneNode(true);
-        for (let value4 of value2.content.querySelectorAll(
+        let templateClone: Dynamic = this.tpl.cloneNode(true);
+        for (let templateNode of templateClone.content.querySelectorAll(
           `[${DcTplAttribute}]`,
         ) as Dynamic)
-          value4.removeAttribute(DcTplAttribute);
-        let value3: Dynamic = fromParserHtml(value2.innerHTML);
-        this.edits !== null && (this.serialized = value3);
-        return value3;
+          templateNode.removeAttribute(DcTplAttribute);
+        let html: Dynamic = fromParserHtml(templateClone.innerHTML);
+        this.edits !== null && (this.serialized = html);
+        return html;
       }
       snapshot(): Dynamic {
-        let values: Dynamic = new Set(["SCRIPT", "STYLE", "NOSCRIPT"]),
-          items: Dynamic = [],
-          callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-            let value2: Dynamic = "  ".repeat(options),
-              value3: Dynamic = this.raw
-                ? input.tagName.toLowerCase()
-                : readableTagName(input.tagName.toLowerCase()),
-              value4: Dynamic = `${value2}<${value3}`;
-            for (let value5 of input.attributes as Dynamic)
-              value5.name !== DcTplAttribute &&
-                (value4 += ` ${value5.name}="${value5.value.replace(/"/g, "&quot;").replace(/\n/g, " ")}"`);
-            items.push(`${value4}>`);
-            if (values.has(input.tagName)) items.push(`${value2}  \u2026`);
+        let skippedTags: Dynamic = new Set(["SCRIPT", "STYLE", "NOSCRIPT"]),
+          lines: Dynamic = [],
+          appendElement: Dynamic = (element?: Dynamic, depth?: Dynamic): Dynamic => {
+            let indent: Dynamic = "  ".repeat(depth),
+              tagName: Dynamic = this.raw
+                ? element.tagName.toLowerCase()
+                : readableTagName(element.tagName.toLowerCase()),
+              openTag: Dynamic = `${indent}<${tagName}`;
+            for (let attribute of element.attributes as Dynamic)
+              attribute.name !== DcTplAttribute &&
+                (openTag += ` ${attribute.name}="${attribute.value.replace(/"/g, "&quot;").replace(/\n/g, " ")}"`);
+            lines.push(`${openTag}>`);
+            if (skippedTags.has(element.tagName)) lines.push(`${indent}  \u2026`);
             else {
-              let value5: Dynamic = input.closest("pre, textarea") != null;
-              for (let value6 of input.childNodes as Dynamic)
-                if (value6.nodeType === Node.ELEMENT_NODE)
-                  callback(value6, options + 1);
-                else if (value6.nodeType === Node.TEXT_NODE) {
-                  let value7: Dynamic = value6.nodeValue ?? "";
-                  if (value5)
-                    for (let value8 of value7.split(`
+              let isPreformatted: Dynamic = element.closest("pre, textarea") != null;
+              for (let childNode of element.childNodes as Dynamic)
+                if (childNode.nodeType === Node.ELEMENT_NODE)
+                  appendElement(childNode, depth + 1);
+                else if (childNode.nodeType === Node.TEXT_NODE) {
+                  let text: Dynamic = childNode.nodeValue ?? "";
+                  if (isPreformatted)
+                    for (let line of text.split(`
 `) as Dynamic)
-                      items.push(`${value2}  ${value8}`);
+                      lines.push(`${indent}  ${line}`);
                   else {
-                    let value8: Dynamic = value7.replace(/\s+/g, " ").trim();
-                    value8 && items.push(`${value2}  ${value8}`);
+                    let collapsedText: Dynamic = text.replace(/\s+/g, " ").trim();
+                    collapsedText && lines.push(`${indent}  ${collapsedText}`);
                   }
                 }
             }
-            items.push(`${value2}</${value3}>`);
+            lines.push(`${indent}</${tagName}>`);
           };
-        for (let value2 of this.tpl.content.children as Dynamic)
-          callback(value2, 0);
-        return items.join(`
+        for (let rootChild of this.tpl.content.children as Dynamic)
+          appendElement(rootChild, 0);
+        return lines.join(`
 `);
       }
       setStyleProperty(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tid: Dynamic,
+        property: Dynamic,
+        propertyValue: Dynamic,
       ): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return false;
-        let value3: Dynamic = setStyleProperty(
+        let element: Dynamic = this.element(tid);
+        if (!element) return false;
+        let nextStyle: Dynamic = setStyleProperty(
           expandShorthandForProperty(
-            value2.getAttribute("style"),
-            options,
-            context === null,
+            element.getAttribute("style"),
+            property,
+            propertyValue === null,
           ),
-          options,
-          context,
+          property,
+          propertyValue,
         );
-        value3 === ""
-          ? value2.removeAttribute("style")
-          : value2.setAttribute("style", value3);
+        nextStyle === ""
+          ? element.removeAttribute("style")
+          : element.setAttribute("style", nextStyle);
         return true;
       }
-      setInlineStyleAttr(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        return value2
-          ? (options === ""
-              ? value2.removeAttribute("style")
-              : value2.setAttribute("style", options),
+      setInlineStyleAttr(tid: Dynamic, style: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        return element
+          ? (style === ""
+              ? element.removeAttribute("style")
+              : element.setAttribute("style", style),
             true)
           : false;
       }
-      setText(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        return !value2 ||
-          (value2.tagName !== "TEXTAREA" &&
-            !hasOnlyDirectText(value2))
+      setText(tid: Dynamic, text: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        return !element ||
+          (element.tagName !== "TEXTAREA" &&
+            !hasOnlyDirectText(element))
           ? false
-          : ((value2.textContent = options),
-            value2.tagName === "STYLE" && (this.classRuleCache = null),
+          : ((element.textContent = text),
+            element.tagName === "STYLE" && (this.classRuleCache = null),
             true);
       }
       setAttribute(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tid: Dynamic,
+        name: Dynamic,
+        attributeValue: Dynamic,
       ): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return false;
-        let value3: Dynamic = /[A-Z]/.test(options)
+        let element: Dynamic = this.element(tid);
+        if (!element) return false;
+        let attributeName: Dynamic = /[A-Z]/.test(name)
           ? ScCamelValue +
-            options.replace(
+            name.replace(
               /[A-Z]/g,
-              (input2?: Dynamic): Dynamic => "-" + input2.toLowerCase(),
+              (char?: Dynamic): Dynamic => "-" + char.toLowerCase(),
             )
-          : options;
-        context == null || context === ""
-          ? value2.removeAttribute(value3)
-          : value2.setAttribute(value3, context);
+          : name;
+        attributeValue == null || attributeValue === ""
+          ? element.removeAttribute(attributeName)
+          : element.setAttribute(attributeName, attributeValue);
         return true;
       }
       pageFillStageTid(): Dynamic {
-        let value2: Dynamic = this.childTids(null).find(
-            (input?: Dynamic): Dynamic =>
+        let firstTid: Dynamic = this.childTids(null).find(
+            (tid?: Dynamic): Dynamic =>
               !/^(helmet|sc-helmet|script|style|template)$/i.test(
-                this.tagName(input) ?? "",
+                this.tagName(tid) ?? "",
               ),
           ),
-          value3: Dynamic = value2 == null ? null : this.element(value2);
+          stage: Dynamic = firstTid == null ? null : this.element(firstTid);
         if (
-          !value3 ||
-          value3.tagName.toLowerCase() !== "section" ||
-          !(value3.getAttribute("class") ?? "").split(/\s+/).includes("stage")
+          !stage ||
+          stage.tagName.toLowerCase() !== "section" ||
+          !(stage.getAttribute("class") ?? "").split(/\s+/).includes("stage")
         )
           return null;
-        let callback: Dynamic = (input?: Dynamic): Dynamic =>
+        let readStageStyle: Dynamic = (property?: Dynamic): Dynamic =>
           getStyleProperty(
-            value3.getAttribute("style"),
-            input,
+            stage.getAttribute("style"),
+            property,
           ).replace(/\s/g, "");
-        return callback("width") === "100%" &&
-          callback("height") === "100vh" &&
-          (callback("background") || callback("background-color"))
-          ? value2
+        return readStageStyle("width") === "100%" &&
+          readStageStyle("height") === "100vh" &&
+          (readStageStyle("background") || readStageStyle("background-color"))
+          ? firstTid
           : null;
       }
       pageSheets(): Dynamic {
-        let items: Dynamic = [
+        let styles: Dynamic = [
           ...this.tpl.content.querySelectorAll("sc-helmet style"),
         ];
         return {
-          styles: items,
-          css: items
-            .map((input?: Dynamic): Dynamic => input.textContent ?? "")
+          styles: styles,
+          css: styles
+            .map((style?: Dynamic): Dynamic => style.textContent ?? "")
             .join(HtmlAuthoringCss),
         };
       }
       pageFill(): Dynamic {
-        let value2: Dynamic = this.pageFillStageTid(),
-          { css: value3 }: Dynamic = this.pageSheets(),
-          callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-            value2 != null
-              ? this.inlineStyleValue(value2, options)
-              : getCssRuleProperty(value3, input, options),
-          state: Dynamic = {
-            background: callback("body", "background"),
-            backgroundColor: callback("body", "background-color"),
+        let stageTid: Dynamic = this.pageFillStageTid(),
+          { css: css }: Dynamic = this.pageSheets(),
+          readBackground: Dynamic = (selector?: Dynamic, property?: Dynamic): Dynamic =>
+            stageTid != null
+              ? this.inlineStyleValue(stageTid, property)
+              : getCssRuleProperty(css, selector, property),
+          fill: Dynamic = {
+            background: readBackground("body", "background"),
+            backgroundColor: readBackground("body", "background-color"),
             vars: {},
           };
-        !state.background &&
-          !state.backgroundColor &&
-          (state = {
-            ...state,
-            background: callback("html", "background"),
-            backgroundColor: callback("html", "background-color"),
+        !fill.background &&
+          !fill.backgroundColor &&
+          (fill = {
+            ...fill,
+            background: readBackground("html", "background"),
+            backgroundColor: readBackground("html", "background-color"),
           });
-        for (let value4 of [
-          state.background,
-          state.backgroundColor,
+        for (let colorValue of [
+          fill.background,
+          fill.backgroundColor,
         ] as Dynamic) {
-          let value5: Dynamic =
-            value4 && resolveCssVariable(value3, "body", value4);
-          value5 && (state.vars[value4] = value5);
+          let resolvedColor: Dynamic =
+            colorValue && resolveCssVariable(css, "body", colorValue);
+          resolvedColor && (fill.vars[colorValue] = resolvedColor);
         }
-        return state;
+        return fill;
       }
-      setPageFill(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.pageFillStageTid();
-        if (value2 != null) {
-          let flag: Dynamic = false;
-          for (let value7 of input as Dynamic)
-            this.inlineStyleValue(value2, value7.prop) !==
-              (value7.value ?? "") &&
-              this.setStyleProperty(value2, value7.prop, value7.value) &&
-              (flag = true);
-          return flag;
+      setPageFill(declarations: Dynamic): Dynamic {
+        let stageTid: Dynamic = this.pageFillStageTid();
+        if (stageTid != null) {
+          let hasChanged: Dynamic = false;
+          for (let declaration of declarations as Dynamic)
+            this.inlineStyleValue(stageTid, declaration.prop) !==
+              (declaration.value ?? "") &&
+              this.setStyleProperty(stageTid, declaration.prop, declaration.value) &&
+              (hasChanged = true);
+          return hasChanged;
         }
-        let items: Dynamic = ["background", "background-color"],
-          { styles: value3, css: value4 }: Dynamic = this.pageSheets();
+        let backgroundProps: Dynamic = ["background", "background-color"],
+          { styles: styleElements, css: css }: Dynamic = this.pageSheets();
         if (
-          value3.some(
-            (input2?: Dynamic): Dynamic =>
-              stripCssNestedContent(input2.textContent ?? ""),
+          styleElements.some(
+            (style?: Dynamic): Dynamic =>
+              stripCssNestedContent(style.textContent ?? ""),
           )
         )
           return false;
-        let value5: Dynamic =
-          items.every(
-            (input2?: Dynamic): Dynamic =>
-              !getCssRuleProperty(value4, "body", input2),
+        let updatedCss: Dynamic =
+          backgroundProps.every(
+            (property?: Dynamic): Dynamic =>
+              !getCssRuleProperty(css, "body", property),
           ) &&
-          items.some(
-            (input2?: Dynamic): Dynamic =>
-              getCssRuleProperty(value4, "html", input2),
+          backgroundProps.some(
+            (property?: Dynamic): Dynamic =>
+              getCssRuleProperty(css, "html", property),
           )
             ? updateCssRuleProperties(
-                value4,
+                css,
                 "html",
-                items.map(
-                  (input2?: Dynamic): Dynamic => ({
-                    prop: input2,
+                backgroundProps.map(
+                  (property?: Dynamic): Dynamic => ({
+                    prop: property,
                     value: null,
                   }),
                 ),
-                items,
+                backgroundProps,
                 false,
               )
-            : value4;
-        value5 = updateCssRuleProperties(
-          value5,
+            : css;
+        updatedCss = updateCssRuleProperties(
+          updatedCss,
           "body",
-          input,
-          items,
+          declarations,
+          backgroundProps,
         );
-        let value6: Dynamic = value5.split(HtmlAuthoringCss);
-        if (value5 === value4 || value6.length !== Math.max(1, value3.length))
+        let cssParts: Dynamic = updatedCss.split(HtmlAuthoringCss);
+        if (updatedCss === css || cssParts.length !== Math.max(1, styleElements.length))
           return false;
-        if (value3.length === 0) {
-          let value7: Dynamic = (document as Dynamic).createElement(
+        if (styleElements.length === 0) {
+          let helmet: Dynamic = (document as Dynamic).createElement(
               "sc-helmet",
             ),
-            value8: Dynamic = (document as Dynamic).createElement("style");
-          value8.textContent = value6[0];
-          value7.appendChild(value8);
-          this.tpl.content.appendChild(value7);
+            styleElement: Dynamic = (document as Dynamic).createElement("style");
+          styleElement.textContent = cssParts[0];
+          helmet.appendChild(styleElement);
+          this.tpl.content.appendChild(helmet);
         } else
-          value6.forEach((input2?: Dynamic, options?: Dynamic): Dynamic => {
-            value3[options].textContent !== input2 &&
-              (value3[options].textContent = input2);
+          cssParts.forEach((partCss?: Dynamic, index?: Dynamic): Dynamic => {
+            styleElements[index].textContent !== partCss &&
+              (styleElements[index].textContent = partCss);
           });
         this.classRuleCache = null;
         return true;
@@ -398,174 +398,174 @@ export function installEditorModelDcEditorModel(): () => void {
           ? lastElementChild
           : null;
       }
-      ensureWebfontLink(input: Dynamic): Dynamic {
-        let value2: Dynamic = buildGoogleFontsUrl(input),
-          value3: Dynamic = input.trim().replace(/\s+/g, "+"),
-          value4: Dynamic = new RegExp(
-            "[?&]family=" + value3.replace(/\+/g, "\\+") + "(?:[:&]|$)",
+      ensureWebfontLink(fontFamily: Dynamic): Dynamic {
+        let fontUrl: Dynamic = buildGoogleFontsUrl(fontFamily),
+          familyParam: Dynamic = fontFamily.trim().replace(/\s+/g, "+"),
+          familyPattern: Dynamic = new RegExp(
+            "[?&]family=" + familyParam.replace(/\+/g, "\\+") + "(?:[:&]|$)",
             "i",
           );
-        for (let value5 of this.tpl.content.querySelectorAll(
+        for (let linkElement of this.tpl.content.querySelectorAll(
           'link[rel="stylesheet"]',
         ) as Dynamic)
           if (
-            value4.test(
-              (value5.getAttribute("href") ?? "").replace(/%20/gi, "+"),
+            familyPattern.test(
+              (linkElement.getAttribute("href") ?? "").replace(/%20/gi, "+"),
             )
           )
             return false;
-        this.appendHelmetLink(value2);
+        this.appendHelmetLink(fontUrl);
         return true;
       }
-      appendHelmetLink(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.trailingHelmet();
-        value2 ||
-          ((value2 = (document as Dynamic).createElement("sc-helmet")),
-          this.tpl.content.appendChild(value2));
-        let value3: Dynamic = (document as Dynamic).createElement("link");
-        value3.setAttribute("rel", "stylesheet");
-        value3.setAttribute("href", input);
-        value2.appendChild(value3);
+      appendHelmetLink(href: Dynamic): Dynamic {
+        let helmet: Dynamic = this.trailingHelmet();
+        helmet ||
+          ((helmet = (document as Dynamic).createElement("sc-helmet")),
+          this.tpl.content.appendChild(helmet));
+        let linkElement: Dynamic = (document as Dynamic).createElement("link");
+        linkElement.setAttribute("rel", "stylesheet");
+        linkElement.setAttribute("href", href);
+        helmet.appendChild(linkElement);
       }
       helmetAssets(): Dynamic {
         let content: Dynamic = this.tpl.content,
-          value2: Dynamic = [...content.children].filter(
-            (input?: Dynamic): Dynamic =>
-              input.tagName.toLowerCase() === "sc-helmet",
+          helmets: Dynamic = [...content.children].filter(
+            (element?: Dynamic): Dynamic =>
+              element.tagName.toLowerCase() === "sc-helmet",
           ),
-          items: Dynamic = [],
-          value3: Dynamic =
-            content.querySelectorAll("sc-helmet").length !== value2.length,
-          values: Dynamic = new Set([
+          assets: Dynamic = [],
+          hasOtherContent: Dynamic =
+            content.querySelectorAll("sc-helmet").length !== helmets.length,
+          allowedLinkAttributes: Dynamic = new Set([
             "rel",
             "href",
             "crossorigin",
             "referrerpolicy",
             DcTplAttribute,
           ]);
-        for (let value4 of value2.flatMap(
-          (input?: Dynamic): Dynamic => [...input.children],
+        for (let helmetChild of helmets.flatMap(
+          (helmet?: Dynamic): Dynamic => [...helmet.children],
         ) as Dynamic) {
-          let value5: Dynamic = value4.tagName.toLowerCase(),
-            value6: Dynamic = (value4.getAttribute("rel") ?? "")
+          let tagName: Dynamic = helmetChild.tagName.toLowerCase(),
+            relValues: Dynamic = (helmetChild.getAttribute("rel") ?? "")
               .toLowerCase()
               .split(/\s+/);
-          if (value5 === "style") {
-            let value7: Dynamic = value4.textContent ?? "";
-            [...value4.attributes].some(
-              (input?: Dynamic): Dynamic =>
-                input.name !== DcTplAttribute,
-            ) || !stripLeadingCssAtRules(value7)
-              ? (value3 = true)
-              : value7.trim() !== "" &&
-                items.push({
-                  css: value7,
+          if (tagName === "style") {
+            let cssText: Dynamic = helmetChild.textContent ?? "";
+            [...helmetChild.attributes].some(
+              (attribute?: Dynamic): Dynamic =>
+                attribute.name !== DcTplAttribute,
+            ) || !stripLeadingCssAtRules(cssText)
+              ? (hasOtherContent = true)
+              : cssText.trim() !== "" &&
+                assets.push({
+                  css: cssText,
                 });
-          } else if (value5 === "link" && value6.includes("stylesheet")) {
-            let value7: Dynamic = value4.getAttribute("href") ?? "";
-            value7 === "" ||
-            value6.length !== 1 ||
-            [...value4.attributes].some(
-              (input?: Dynamic): Dynamic => !values.has(input.name),
+          } else if (tagName === "link" && relValues.includes("stylesheet")) {
+            let href: Dynamic = helmetChild.getAttribute("href") ?? "";
+            href === "" ||
+            relValues.length !== 1 ||
+            [...helmetChild.attributes].some(
+              (attribute?: Dynamic): Dynamic => !allowedLinkAttributes.has(attribute.name),
             )
-              ? (value3 = true)
-              : items.push({
-                  link: value7,
+              ? (hasOtherContent = true)
+              : assets.push({
+                  link: href,
                 });
           } else
-            (value5 === "link"
-              ? !value6.every(
-                  (input?: Dynamic): Dynamic =>
-                    /^(preconnect|dns-prefetch|icon|)$/.test(input),
+            (tagName === "link"
+              ? !relValues.every(
+                  (relValue?: Dynamic): Dynamic =>
+                    /^(preconnect|dns-prefetch|icon|)$/.test(relValue),
                 )
-              : value5 !== "title" && value5 !== "meta") && (value3 = true);
+              : tagName !== "title" && tagName !== "meta") && (hasOtherContent = true);
         }
-        for (let value4 of content.querySelectorAll(
+        for (let strayElement of content.querySelectorAll(
           'style, script, link[rel~="stylesheet" i]',
         ) as Dynamic)
-          value4.closest("sc-helmet") || (value3 = true);
+          strayElement.closest("sc-helmet") || (hasOtherContent = true);
         return {
-          assets: items,
-          atomics: value2.some(
-            (input?: Dynamic): Dynamic => input.hasAttribute("data-dc-atomics"),
+          assets: assets,
+          atomics: helmets.some(
+            (helmet?: Dynamic): Dynamic => helmet.hasAttribute("data-dc-atomics"),
           ),
-          other: value3,
+          other: hasOtherContent,
         };
       }
-      carryHelmet(input: Dynamic): Dynamic {
-        let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-            [...input2.attributes].every(
-              (input3?: Dynamic): Dynamic =>
-                input3.name === DcTplAttribute,
+      carryHelmet(assets: Dynamic): Dynamic {
+        let hasOnlyTemplateAttribute: Dynamic = (element?: Dynamic): Dynamic =>
+            [...element.attributes].every(
+              (attribute?: Dynamic): Dynamic =>
+                attribute.name === DcTplAttribute,
             ),
-          values: Dynamic = new Set(
+          existingCss: Dynamic = new Set(
             this.pageSheets()
-              .styles.filter(callback)
+              .styles.filter(hasOnlyTemplateAttribute)
               .map(
-                (input2?: Dynamic): Dynamic =>
-                  (input2.textContent ?? "").trim(),
+                (style?: Dynamic): Dynamic =>
+                  (style.textContent ?? "").trim(),
               ),
           ),
-          values2: Dynamic = new Set(
+          existingLinks: Dynamic = new Set(
             [
               ...this.tpl.content.querySelectorAll('link[rel~="stylesheet" i]'),
             ].map((element?: Dynamic): Dynamic => element.getAttribute("href")),
           ),
-          items: Dynamic = [];
-        for (let value5 of input as Dynamic) {
-          let value6: Dynamic =
-              "css" in value5 ? value5.css.trim() : value5.link,
-            value7: Dynamic = "css" in value5 ? values : values2;
-          value6 === "" ||
-            value7.has(value6) ||
-            (value7.add(value6), items.push(value5));
+          newAssets: Dynamic = [];
+        for (let asset of assets as Dynamic) {
+          let assetKey: Dynamic =
+              "css" in asset ? asset.css.trim() : asset.link,
+            knownKeys: Dynamic = "css" in asset ? existingCss : existingLinks;
+          assetKey === "" ||
+            knownKeys.has(assetKey) ||
+            (knownKeys.add(assetKey), newAssets.push(asset));
         }
-        if (!items.some((input2?: Dynamic): Dynamic => "css" in input2)) {
-          for (let value5 of items as Dynamic)
-            "link" in value5 && this.appendHelmetLink(value5.link);
+        if (!newAssets.some((asset?: Dynamic): Dynamic => "css" in asset)) {
+          for (let asset of newAssets as Dynamic)
+            "link" in asset && this.appendHelmetLink(asset.link);
           return true;
         }
-        let value2: Dynamic = [...this.tpl.content.children].filter(
-            (input2?: Dynamic): Dynamic =>
-              input2.tagName.toLowerCase() === "sc-helmet",
+        let helmets: Dynamic = [...this.tpl.content.children].filter(
+            (helmet?: Dynamic): Dynamic =>
+              helmet.tagName.toLowerCase() === "sc-helmet",
           ),
-          callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-            [...input2.children].flatMap(
-              (input3?: Dynamic, options?: Dynamic): Dynamic =>
-                /^(link|meta|script)$/i.test(input3.tagName) ? [] : [options],
+          contentIndexes: Dynamic = (helmet?: Dynamic): Dynamic =>
+            [...helmet.children].flatMap(
+              (child?: Dynamic, index?: Dynamic): Dynamic =>
+                /^(link|meta|script)$/i.test(child.tagName) ? [] : [index],
             ),
-          items2: Dynamic = [...this.tpl.content.querySelectorAll("sc-helmet")],
-          callback3: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            items.every(
-              (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-                "link" in input3 ||
-                !items2.some(
-                  (input4?: Dynamic): Dynamic =>
-                    input4 !== input2 &&
-                    callback2(input4).includes(options + options2),
+          allHelmets: Dynamic = [...this.tpl.content.querySelectorAll("sc-helmet")],
+          canHostCss: Dynamic = (candidateHelmet?: Dynamic, childCount?: Dynamic): Dynamic =>
+            newAssets.every(
+              (asset?: Dynamic, offset?: Dynamic): Dynamic =>
+                "link" in asset ||
+                !allHelmets.some(
+                  (otherHelmet?: Dynamic): Dynamic =>
+                    otherHelmet !== candidateHelmet &&
+                    contentIndexes(otherHelmet).includes(childCount + offset),
                 ),
             ),
-          value3: Dynamic = this.trailingHelmet(),
-          value4: Dynamic =
-            value2.find(
-              (input2?: Dynamic): Dynamic =>
-                (input2 !== value3 || callback2(input2).length > 0) &&
-                callback3(input2, input2.children.length),
+          trailing: Dynamic = this.trailingHelmet(),
+          targetHelmet: Dynamic =
+            helmets.find(
+              (helmet?: Dynamic): Dynamic =>
+                (helmet !== trailing || contentIndexes(helmet).length > 0) &&
+                canHostCss(helmet, helmet.children.length),
             ) ?? null;
-        if (!value4) {
-          if (!callback3(null, 0)) return false;
-          value4 = (document as Dynamic).createElement("sc-helmet");
-          this.tpl.content.insertBefore(value4, this.tpl.content.firstChild);
+        if (!targetHelmet) {
+          if (!canHostCss(null, 0)) return false;
+          targetHelmet = (document as Dynamic).createElement("sc-helmet");
+          this.tpl.content.insertBefore(targetHelmet, this.tpl.content.firstChild);
         }
-        for (let value5 of items as Dynamic) {
-          let value6: Dynamic = (document as Dynamic).createElement(
-            "css" in value5 ? "style" : "link",
+        for (let asset of newAssets as Dynamic) {
+          let node: Dynamic = (document as Dynamic).createElement(
+            "css" in asset ? "style" : "link",
           );
-          "css" in value5
-            ? (value6.textContent = value5.css.trim())
-            : (value6.setAttribute("rel", "stylesheet"),
-              value6.setAttribute("href", value5.link));
-          value4.appendChild(value6);
+          "css" in asset
+            ? (node.textContent = asset.css.trim())
+            : (node.setAttribute("rel", "stylesheet"),
+              node.setAttribute("href", asset.link));
+          targetHelmet.appendChild(node);
         }
         this.classRuleCache = null;
         return true;
@@ -573,52 +573,52 @@ export function installEditorModelDcEditorModel(): () => void {
       ensureHelmetAtomics(): Dynamic {
         if (this.tpl.content.querySelector("sc-helmet[data-dc-atomics]"))
           return false;
-        let value2: Dynamic =
+        let helmet: Dynamic =
           [...this.tpl.content.children].find(
-            (input?: Dynamic): Dynamic =>
-              input.tagName.toLowerCase() === "sc-helmet",
+            (element?: Dynamic): Dynamic =>
+              element.tagName.toLowerCase() === "sc-helmet",
           ) ?? null;
-        value2 ||
-          ((value2 = (document as Dynamic).createElement("sc-helmet")),
-          this.tpl.content.insertBefore(value2, this.tpl.content.firstChild));
-        value2.setAttribute("data-dc-atomics", "");
+        helmet ||
+          ((helmet = (document as Dynamic).createElement("sc-helmet")),
+          this.tpl.content.insertBefore(helmet, this.tpl.content.firstChild));
+        helmet.setAttribute("data-dc-atomics", "");
         return true;
       }
-      findDeckStage(input: Dynamic): Dynamic {
-        let callback: Dynamic = (element?: Dynamic): Dynamic => {
-            let value2: Dynamic = element.tagName.toLowerCase();
+      findDeckStage(targetTid: Dynamic): Dynamic {
+        let isDeckStage: Dynamic = (element?: Dynamic): Dynamic => {
+            let tagName: Dynamic = element.tagName.toLowerCase();
             return (
-              (value2 === "x-import" &&
+              (tagName === "x-import" &&
                 element.getAttribute("component-from-global-scope") ===
                   "deck-stage") ||
-              value2 === "deck-stage"
+              tagName === "deck-stage"
             );
           },
-          callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-            input2 !== "template" &&
-            input2 !== "script" &&
-            input2 !== "style" &&
-            input2 !== "sc-helmet",
-          callback3: Dynamic = (
-            input2?: Dynamic,
-            options?: Dynamic,
+          isSlideTag: Dynamic = (tagName?: Dynamic): Dynamic =>
+            tagName !== "template" &&
+            tagName !== "script" &&
+            tagName !== "style" &&
+            tagName !== "sc-helmet",
+          describeDeckStage: Dynamic = (
+            mountTid?: Dynamic,
+            mountElement?: Dynamic,
           ): Dynamic => ({
-            mountTid: input2,
-            slideEls: [...options.children].filter(
-              (input3?: Dynamic): Dynamic =>
-                callback2(input3.tagName.toLowerCase()),
+            mountTid: mountTid,
+            slideEls: [...mountElement.children].filter(
+              (child?: Dynamic): Dynamic =>
+                isSlideTag(child.tagName.toLowerCase()),
             ),
-            slideTids: this.childTids(input2).filter(
-              (input3?: Dynamic): Dynamic =>
-                callback2(this.element(input3)?.tagName.toLowerCase() ?? ""),
+            slideTids: this.childTids(mountTid).filter(
+              (slideTid?: Dynamic): Dynamic =>
+                isSlideTag(this.element(slideTid)?.tagName.toLowerCase() ?? ""),
             ),
           });
-        if (input !== undefined) {
-          let value2: Dynamic = this.element(input);
-          return value2 && callback(value2) ? callback3(input, value2) : null;
+        if (targetTid !== undefined) {
+          let element: Dynamic = this.element(targetTid);
+          return element && isDeckStage(element) ? describeDeckStage(targetTid, element) : null;
         }
-        for (let [value2, value3] of this.byTid as Dynamic)
-          if (callback(value3)) return callback3(value2, value3);
+        for (let [tid, element] of this.byTid as Dynamic)
+          if (isDeckStage(element)) return describeDeckStage(tid, element);
         return null;
       }
       speakerNotesJson(): Dynamic {
@@ -627,78 +627,78 @@ export function installEditorModelDcEditorModel(): () => void {
         );
         if (!element) return null;
         try {
-          let value2: Dynamic = JSON.parse(element.textContent ?? "[]");
-          return Array.isArray(value2)
-            ? value2.map(
-                (input?: Dynamic): Dynamic =>
-                  typeof input == "string" ? input : "",
+          let notes: Dynamic = JSON.parse(element.textContent ?? "[]");
+          return Array.isArray(notes)
+            ? notes.map(
+                (note?: Dynamic): Dynamic =>
+                  typeof note == "string" ? note : "",
               )
             : null;
         } catch {
           return null;
         }
       }
-      speakerNotes(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.findDeckStage(input),
-          value3: Dynamic = this.speakerNotesJson();
-        if (value2) {
-          let value4: Dynamic = value2.slideEls.map(
+      speakerNotes(tid: Dynamic): Dynamic {
+        let deckStage: Dynamic = this.findDeckStage(tid),
+          jsonNotes: Dynamic = this.speakerNotesJson();
+        if (deckStage) {
+          let attributeNotes: Dynamic = deckStage.slideEls.map(
             (element?: Dynamic): Dynamic =>
               element.getAttribute("data-speaker-notes"),
           );
-          if (value4.some((input2?: Dynamic): Dynamic => input2 !== null))
-            return value4.map(
-              (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                input2 ?? value3?.[options] ?? "",
+          if (attributeNotes.some((note?: Dynamic): Dynamic => note !== null))
+            return attributeNotes.map(
+              (note?: Dynamic, index?: Dynamic): Dynamic =>
+                note ?? jsonNotes?.[index] ?? "",
             );
         }
-        return value3;
+        return jsonNotes;
       }
-      syncSpeakerNotesJson(input: Dynamic): Dynamic {
+      syncSpeakerNotesJson(tid: Dynamic): Dynamic {
         let element: Dynamic = this.tpl.content.querySelector(
           "script#speaker-notes",
         );
         if (!element) return;
-        let value2: Dynamic = this.speakerNotes(input);
-        value2 !== null &&
+        let notes: Dynamic = this.speakerNotes(tid);
+        notes !== null &&
           (element.textContent =
             `
 ` +
-            safeJsonStringify(value2, {
+            safeJsonStringify(notes, {
               space: 2,
             }) +
             `
 `);
       }
-      setSpeakerNote(element: Dynamic, options: Dynamic): Dynamic {
-        return element.getAttribute("data-speaker-notes") === options
+      setSpeakerNote(element: Dynamic, note: Dynamic): Dynamic {
+        return element.getAttribute("data-speaker-notes") === note
           ? false
-          : (element.setAttribute("data-speaker-notes", options), true);
+          : (element.setAttribute("data-speaker-notes", note), true);
       }
-      attributes(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return {};
-        let state: Dynamic = {};
-        for (let { name: value3, value: value4 } of [
-          ...value2.attributes,
+      attributes(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return {};
+        let result: Dynamic = {};
+        for (let { name: attributeName, value: attributeValue } of [
+          ...element.attributes,
         ] as Dynamic) {
-          if (value3 === DcTplAttribute || value3 === "style") continue;
-          let value5: Dynamic = value3.startsWith(ScCamelValue)
+          if (attributeName === DcTplAttribute || attributeName === "style") continue;
+          let exposedName: Dynamic = attributeName.startsWith(ScCamelValue)
             ? kebabToCamelCase(
-                value3.slice(ScCamelValue.length),
+                attributeName.slice(ScCamelValue.length),
               )
-            : value3;
-          state[value5] = value4;
+            : attributeName;
+          result[exposedName] = attributeValue;
         }
-        return state;
+        return result;
       }
-      removeElement(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        return value2
-          ? (value2.remove(),
+      removeElement(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        return element
+          ? (element.remove(),
             editorAssert(
-              !value2.isConnected || !this.tpl.content.contains(value2),
-              `removeElement(${input}) left the element in the template`,
+              !element.isConnected || !this.tpl.content.contains(element),
+              `removeElement(${tid}) left the element in the template`,
             ),
             true)
           : false;
@@ -707,76 +707,76 @@ export function installEditorModelDcEditorModel(): () => void {
         this.byTid.clear();
         this.classRuleCache = null;
         let index: Dynamic = 0,
-          callback: Dynamic = (input?: Dynamic): Dynamic => {
-            if (input.nodeType === Node.ELEMENT_NODE) {
-              let value2: Dynamic = input;
-              value2.setAttribute(DcTplAttribute, String(index));
-              this.byTid.set(index, value2);
+          stampNode: Dynamic = (node?: Dynamic): Dynamic => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              let element: Dynamic = node;
+              element.setAttribute(DcTplAttribute, String(index));
+              this.byTid.set(index, element);
               index++;
-              if (this.raw && value2.tagName === "NOSCRIPT") return;
+              if (this.raw && element.tagName === "NOSCRIPT") return;
             }
-            for (let value2 of input.childNodes as Dynamic) callback(value2);
+            for (let child of node.childNodes as Dynamic) stampNode(child);
           };
-        callback(this.tpl.content);
+        stampNode(this.tpl.content);
       }
-      parentTid(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input)?.parentElement;
-        if (!value2) return null;
-        let attribute: Dynamic = value2.getAttribute(DcTplAttribute);
+      parentTid(tid: Dynamic): Dynamic {
+        let parentElement: Dynamic = this.element(tid)?.parentElement;
+        if (!parentElement) return null;
+        let attribute: Dynamic = parentElement.getAttribute(DcTplAttribute);
         return attribute == null ? null : parseInt(attribute, 10);
       }
-      childTids(input: Dynamic): Dynamic {
-        let value2: Dynamic =
-          input == null ? this.tpl.content : this.element(input);
-        if (!value2) return [];
-        let items: Dynamic = [];
-        for (let value3 of value2.children as Dynamic) {
-          let attribute: Dynamic = value3.getAttribute(DcTplAttribute);
-          attribute != null && items.push(parseInt(attribute, 10));
+      childTids(tid: Dynamic): Dynamic {
+        let container: Dynamic =
+          tid == null ? this.tpl.content : this.element(tid);
+        if (!container) return [];
+        let tids: Dynamic = [];
+        for (let child of container.children as Dynamic) {
+          let attribute: Dynamic = child.getAttribute(DcTplAttribute);
+          attribute != null && tids.push(parseInt(attribute, 10));
         }
-        return items;
+        return tids;
       }
-      wrapElements(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = input
-            .map((input2?: Dynamic): Dynamic => this.element(input2))
-            .filter((input2?: Dynamic): Dynamic => input2 != null),
-          value3: Dynamic = value2
+      wrapElements(tids: Dynamic, wrapperHtml: Dynamic): Dynamic {
+        let elements: Dynamic = tids
+            .map((tid?: Dynamic): Dynamic => this.element(tid))
+            .filter((element?: Dynamic): Dynamic => element != null),
+          topLevelElements: Dynamic = elements
             .filter(
-              (input2?: Dynamic): Dynamic =>
-                !value2.some(
-                  (input3?: Dynamic): Dynamic =>
-                    input3 !== input2 && input3.contains(input2),
+              (element?: Dynamic): Dynamic =>
+                !elements.some(
+                  (other?: Dynamic): Dynamic =>
+                    other !== element && other.contains(element),
                 ),
             )
             .sort(
-              (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                input2.compareDocumentPosition(options2) &
+              (first?: Dynamic, second?: Dynamic): Dynamic =>
+                first.compareDocumentPosition(second) &
                 Node.DOCUMENT_POSITION_FOLLOWING
                   ? -1
                   : 1,
             );
-        if (value3.length === 0) return null;
-        let parentNode: Dynamic = value3[0].parentNode;
+        if (topLevelElements.length === 0) return null;
+        let parentNode: Dynamic = topLevelElements[0].parentNode;
         for (
           ;
           parentNode &&
-          !value3.every(
-            (input2?: Dynamic): Dynamic => parentNode.contains(input2),
+          !topLevelElements.every(
+            (element?: Dynamic): Dynamic => parentNode.contains(element),
           );
 
         )
           parentNode = parentNode.parentNode;
         if (!parentNode) return null;
-        for (let value7 of value3 as Dynamic)
+        for (let element of topLevelElements as Dynamic)
           for (
-            let parentElement: Dynamic = value7.parentElement;
+            let parentElement: Dynamic = element.parentElement;
             parentElement && parentElement !== parentNode;
             parentElement = parentElement.parentElement
           ) {
-            let value8: Dynamic = parentElement.tagName.toLowerCase();
+            let ancestorTag: Dynamic = parentElement.tagName.toLowerCase();
             if (
               /^(sc-for|sc-if|svg|deck-stage|x-import|dc-import)$/.test(
-                value8,
+                ancestorTag,
               ) ||
               parentElement.hasAttribute("data-uneditable")
             )
@@ -786,555 +786,555 @@ export function installEditorModelDcEditorModel(): () => void {
           parentNode instanceof Element &&
           (parentNode.tagName.toLowerCase() === "deck-stage" ||
             parentNode.hasAttribute("data-uneditable")) &&
-          !value3.every(
-            (input2?: Dynamic): Dynamic => input2.parentNode === parentNode,
+          !topLevelElements.every(
+            (element?: Dynamic): Dynamic => element.parentNode === parentNode,
           )
         )
           return null;
-        let value4: Dynamic = value3[0];
-        for (; value4.parentNode && value4.parentNode !== parentNode; )
-          value4 = value4.parentNode;
-        let value5: Dynamic = (document as Dynamic).createElement("template");
-        value5.innerHTML = this.raw
-          ? options
-          : toParserHtml(options);
-        let firstElementChild: Dynamic = value5.content.firstElementChild;
+        let anchor: Dynamic = topLevelElements[0];
+        for (; anchor.parentNode && anchor.parentNode !== parentNode; )
+          anchor = anchor.parentNode;
+        let wrapperTemplate: Dynamic = (document as Dynamic).createElement("template");
+        wrapperTemplate.innerHTML = this.raw
+          ? wrapperHtml
+          : toParserHtml(wrapperHtml);
+        let firstElementChild: Dynamic = wrapperTemplate.content.firstElementChild;
         if (!firstElementChild) return null;
-        let value6: Dynamic = parentNode;
+        let container: Dynamic = parentNode;
         for (
           ;
-          value6 instanceof Element &&
-          /^(sc-if|sc-for)$/.test(value6.tagName.toLowerCase());
+          container instanceof Element &&
+          /^(sc-if|sc-for)$/.test(container.tagName.toLowerCase());
 
         )
-          value6 = value6.parentNode;
-        if (value6 instanceof Element) {
-          if (value6.namespaceURI !== "http://www.w3.org/1999/xhtml")
+          container = container.parentNode;
+        if (container instanceof Element) {
+          if (container.namespaceURI !== "http://www.w3.org/1999/xhtml")
             return null;
-          let value7: Dynamic = readableTagName(
-            value6.tagName.toLowerCase(),
+          let parentTag: Dynamic = readableTagName(
+            container.tagName.toLowerCase(),
           );
           if (
-            !canContainHtmlTag(value7, firstElementChild.tagName)
+            !canContainHtmlTag(parentTag, firstElementChild.tagName)
           ) {
-            if (!canContainHtmlTag(value7, "span")) return null;
-            let value8: Dynamic =
+            if (!canContainHtmlTag(parentTag, "span")) return null;
+            let spanElement: Dynamic =
               firstElementChild.ownerDocument.createElement("span");
-            for (let value9 of [...firstElementChild.attributes] as Dynamic)
-              value8.setAttribute(value9.name, value9.value);
-            firstElementChild = value8;
+            for (let attribute of [...firstElementChild.attributes] as Dynamic)
+              spanElement.setAttribute(attribute.name, attribute.value);
+            firstElementChild = spanElement;
           }
         }
-        parentNode.insertBefore(firstElementChild, value4);
-        for (let value7 of value3 as Dynamic)
-          firstElementChild.appendChild(value7);
+        parentNode.insertBefore(firstElementChild, anchor);
+        for (let element of topLevelElements as Dynamic)
+          firstElementChild.appendChild(element);
         return firstElementChild;
       }
-      wrapTextRuns(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input),
-          value3: Dynamic = this.tagName(input) ?? "";
+      wrapTextRuns(tid: Dynamic, includeInlineElements: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid),
+          tagName: Dynamic = this.tagName(tid) ?? "";
         if (
-          !value2 ||
-          value2.namespaceURI !== "http://www.w3.org/1999/xhtml" ||
-          !canContainHtmlChildren(value3) ||
-          value3 === "helmet" ||
-          value3 === "x-import" ||
-          value3 === "dc-import"
+          !element ||
+          element.namespaceURI !== "http://www.w3.org/1999/xhtml" ||
+          !canContainHtmlChildren(tagName) ||
+          tagName === "helmet" ||
+          tagName === "x-import" ||
+          tagName === "dc-import"
         )
           return [];
-        let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-            input2.nodeType === 3 && (input2.nodeValue ?? "").trim() !== "",
-          callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-            (input2.nodeType === 3 && !callback(input2)) ||
-            input2.nodeType === 8,
-          callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-            options &&
-            input2.nodeType === 1 &&
+        let hasText: Dynamic = (node?: Dynamic): Dynamic =>
+            node.nodeType === 3 && (node.nodeValue ?? "").trim() !== "",
+          isDroppableEdge: Dynamic = (node?: Dynamic): Dynamic =>
+            (node.nodeType === 3 && !hasText(node)) ||
+            node.nodeType === 8,
+          isInlineElement: Dynamic = (node?: Dynamic): Dynamic =>
+            includeInlineElements &&
+            node.nodeType === 1 &&
             HtmlTagNormalizationSubscribers.has(
-              input2.tagName.toLowerCase(),
+              node.tagName.toLowerCase(),
             ) &&
-            [...input2.querySelectorAll("*")].every(
-              (input3?: Dynamic): Dynamic =>
+            [...node.querySelectorAll("*")].every(
+              (descendant?: Dynamic): Dynamic =>
                 HtmlTagNormalizationSubscribers.has(
-                  input3.tagName.toLowerCase(),
+                  descendant.tagName.toLowerCase(),
                 ),
             ),
-          items: Dynamic = [],
-          items2: Dynamic = [],
-          callback4: Dynamic = (): Dynamic => {
-            for (; items2.length > 0 && callback2(items2[items2.length - 1]); )
-              items2.pop();
-            items2.some(callback) && items.push(items2);
-            items2 = [];
+          runs: Dynamic = [],
+          currentRun: Dynamic = [],
+          flushRun: Dynamic = (): Dynamic => {
+            for (; currentRun.length > 0 && isDroppableEdge(currentRun[currentRun.length - 1]); )
+              currentRun.pop();
+            currentRun.some(hasText) && runs.push(currentRun);
+            currentRun = [];
           };
-        for (let value4 of [...value2.childNodes] as Dynamic)
-          callback(value4) ||
-          callback3(value4) ||
-          (callback2(value4) && items2.length > 0)
-            ? items2.push(value4)
-            : callback4();
-        callback4();
-        let items3: Dynamic = [];
-        for (let value4 of items as Dynamic) {
-          let value5: Dynamic = value4[0];
-          if (value5.nodeType === 3) {
-            let length: Dynamic = /^\s*/.exec(value5.nodeValue ?? "")![0]
+        for (let childNode of [...element.childNodes] as Dynamic)
+          hasText(childNode) ||
+          isInlineElement(childNode) ||
+          (isDroppableEdge(childNode) && currentRun.length > 0)
+            ? currentRun.push(childNode)
+            : flushRun();
+        flushRun();
+        let wrappers: Dynamic = [];
+        for (let run of runs as Dynamic) {
+          let firstNode: Dynamic = run[0];
+          if (firstNode.nodeType === 3) {
+            let leadingWhitespace: Dynamic = /^\s*/.exec(firstNode.nodeValue ?? "")![0]
               .length;
-            length > 0 && (value4[0] = value5.splitText(length));
+            leadingWhitespace > 0 && (run[0] = firstNode.splitText(leadingWhitespace));
           }
-          let value6: Dynamic = value4[value4.length - 1];
-          if (value6.nodeType === 3) {
-            let value8: Dynamic = value6.nodeValue ?? "",
-              value9: Dynamic =
-                value8.length - value8.replace(/\s+$/, "").length;
-            value9 > 0 && value6.splitText(value8.length - value9);
+          let lastNode: Dynamic = run[run.length - 1];
+          if (lastNode.nodeType === 3) {
+            let lastText: Dynamic = lastNode.nodeValue ?? "",
+              trailingWhitespace: Dynamic =
+                lastText.length - lastText.replace(/\s+$/, "").length;
+            trailingWhitespace > 0 && lastNode.splitText(lastText.length - trailingWhitespace);
           }
-          let value7: Dynamic = value2.ownerDocument.createElement("span");
-          value2.insertBefore(value7, value4[0]);
-          for (let value8 of value4 as Dynamic) value7.appendChild(value8);
-          items3.push(value7);
+          let span: Dynamic = element.ownerDocument.createElement("span");
+          element.insertBefore(span, run[0]);
+          for (let node of run as Dynamic) span.appendChild(node);
+          wrappers.push(span);
         }
-        for (let value4 of [...value2.children] as Dynamic) {
-          if (!/^(sc-if|sc-for)$/.test(value4.tagName.toLowerCase())) continue;
-          let value5: Dynamic = parseInt(
-            value4.getAttribute("data-dc-tpl") ?? "-1",
+        for (let childElement of [...element.children] as Dynamic) {
+          if (!/^(sc-if|sc-for)$/.test(childElement.tagName.toLowerCase())) continue;
+          let childTid: Dynamic = parseInt(
+            childElement.getAttribute("data-dc-tpl") ?? "-1",
             10,
           );
-          value5 >= 0 && items3.push(...this.wrapTextRuns(value5, options));
+          childTid >= 0 && wrappers.push(...this.wrapTextRuns(childTid, includeInlineElements));
         }
-        return items3;
+        return wrappers;
       }
-      unwrapElement(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input),
-          value3: Dynamic = value2?.parentNode;
-        if (!value2 || !value3) return null;
-        let items: Dynamic = [...value2.children];
-        for (; value2.firstChild; )
-          value3.insertBefore(value2.firstChild, value2);
-        value2.remove();
-        return items;
+      unwrapElement(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid),
+          parent: Dynamic = element?.parentNode;
+        if (!element || !parent) return null;
+        let children: Dynamic = [...element.children];
+        for (; element.firstChild; )
+          parent.insertBefore(element.firstChild, element);
+        element.remove();
+        return children;
       }
-      isWithin(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input),
-          value3: Dynamic = this.element(options);
-        for (; value3; ) {
-          if (value3 === value2) return true;
-          value3 = value3.parentElement;
+      isWithin(ancestorTid: Dynamic, descendantTid: Dynamic): Dynamic {
+        let ancestor: Dynamic = this.element(ancestorTid),
+          current: Dynamic = this.element(descendantTid);
+        for (; current; ) {
+          if (current === ancestor) return true;
+          current = current.parentElement;
         }
         return false;
       }
-      duplicateElement(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2 || !value2.parentNode) return null;
-        let value3: Dynamic = value2.cloneNode(true);
-        value2.parentNode.insertBefore(value3, value2.nextSibling);
-        regenerateArrowHeadIds(this.tpl.content, [value3]);
-        return value3;
+      duplicateElement(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element || !element.parentNode) return null;
+        let copy: Dynamic = element.cloneNode(true);
+        element.parentNode.insertBefore(copy, element.nextSibling);
+        regenerateArrowHeadIds(this.tpl.content, [copy]);
+        return copy;
       }
-      subtreeHtml(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return null;
-        let value3: Dynamic = value2.cloneNode(true);
-        value3.removeAttribute(DcTplAttribute);
-        for (let value5 of value3.querySelectorAll(
+      subtreeHtml(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return null;
+        let copy: Dynamic = element.cloneNode(true);
+        copy.removeAttribute(DcTplAttribute);
+        for (let node of copy.querySelectorAll(
           `[${DcTplAttribute}]`,
         ) as Dynamic)
-          value5.removeAttribute(DcTplAttribute);
-        let value4: Dynamic = (document as Dynamic).createElement("template");
-        value4.content.appendChild(value3);
-        return fromParserHtml(value4.innerHTML);
+          node.removeAttribute(DcTplAttribute);
+        let template: Dynamic = (document as Dynamic).createElement("template");
+        template.content.appendChild(copy);
+        return fromParserHtml(template.innerHTML);
       }
-      deckSlides(input: Dynamic): Dynamic {
-        let value2: Dynamic = [
+      deckSlides(deckIndex: Dynamic): Dynamic {
+        let deck: Dynamic = [
           ...this.tpl.content.querySelectorAll(
             'x-import[component-from-global-scope="deck-stage"], deck-stage',
           ),
-        ][input];
-        return value2
-          ? [...value2.children].filter(
-              (input2?: Dynamic): Dynamic =>
-                !/^(template|script|style)$/i.test(input2.tagName),
+        ][deckIndex];
+        return deck
+          ? [...deck.children].filter(
+              (child?: Dynamic): Dynamic =>
+                !/^(template|script|style)$/i.test(child.tagName),
             )
           : null;
       }
-      resolveSlideAnchor(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.deckSlides(input.deck);
-        if (!value2) return null;
-        if (input.label != null) {
-          let value3: Dynamic = value2.filter(
+      resolveSlideAnchor(anchor: Dynamic): Dynamic {
+        let slides: Dynamic = this.deckSlides(anchor.deck);
+        if (!slides) return null;
+        if (anchor.label != null) {
+          let labelMatches: Dynamic = slides.filter(
             (element?: Dynamic): Dynamic =>
-              element.getAttribute("data-label") === input.label,
+              element.getAttribute("data-label") === anchor.label,
           );
-          if (value3.length === 1) return value3[0];
+          if (labelMatches.length === 1) return labelMatches[0];
         }
-        return value2.length !== input.count
+        return slides.length !== anchor.count
           ? null
-          : (value2[input.index] ?? null);
+          : (slides[anchor.index] ?? null);
       }
-      topLevelTags(input: Dynamic): Dynamic {
-        let value2: Dynamic = (document as Dynamic).createElement("template");
-        value2.innerHTML = this.raw ? input : toParserHtml(input);
-        return [...value2.content.children].map(
-          (input2?: Dynamic): Dynamic =>
-            readableTagName(input2.tagName.toLowerCase()),
+      topLevelTags(html: Dynamic): Dynamic {
+        let template: Dynamic = (document as Dynamic).createElement("template");
+        template.innerHTML = this.raw ? html : toParserHtml(html);
+        return [...template.content.children].map(
+          (child?: Dynamic): Dynamic =>
+            readableTagName(child.tagName.toLowerCase()),
         );
       }
-      insertHtml(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-        let value2: Dynamic = (document as Dynamic).createElement("template");
-        value2.innerHTML = this.raw ? input : toParserHtml(input);
-        let items: Dynamic = [...value2.content.children];
-        if (items.length === 0) return null;
-        let content: Dynamic = value2.content;
-        if (context === "root-end" || options == null) {
+      insertHtml(html: Dynamic, targetTid: Dynamic, position: Dynamic): Dynamic {
+        let template: Dynamic = (document as Dynamic).createElement("template");
+        template.innerHTML = this.raw ? html : toParserHtml(html);
+        let inserted: Dynamic = [...template.content.children];
+        if (inserted.length === 0) return null;
+        let content: Dynamic = template.content;
+        if (position === "root-end" || targetTid == null) {
           this.tpl.content.insertBefore(content, this.trailingHelmet());
-          regenerateArrowHeadIds(this.tpl.content, items);
-          return items;
+          regenerateArrowHeadIds(this.tpl.content, inserted);
+          return inserted;
         }
-        let value3: Dynamic = this.element(options);
-        if (!value3) return null;
-        if (context === "into") {
-          if (!canContainHtmlChildren(value3.tagName)) return null;
-          value3.appendChild(content);
-        } else if (value3.parentNode)
-          context === "before"
-            ? value3.parentNode.insertBefore(content, value3)
-            : value3.parentNode.insertBefore(content, value3.nextSibling);
+        let target: Dynamic = this.element(targetTid);
+        if (!target) return null;
+        if (position === "into") {
+          if (!canContainHtmlChildren(target.tagName)) return null;
+          target.appendChild(content);
+        } else if (target.parentNode)
+          position === "before"
+            ? target.parentNode.insertBefore(content, target)
+            : target.parentNode.insertBefore(content, target.nextSibling);
         else return null;
         editorAssert(
-          items.every(
-            (input2?: Dynamic): Dynamic => this.tpl.content.contains(input2),
+          inserted.every(
+            (node?: Dynamic): Dynamic => this.tpl.content.contains(node),
           ),
-          `insertHtml(${options}, ${context}) did not land in the template`,
+          `insertHtml(${targetTid}, ${position}) did not land in the template`,
         );
-        regenerateArrowHeadIds(this.tpl.content, items);
-        return items;
+        regenerateArrowHeadIds(this.tpl.content, inserted);
+        return inserted;
       }
       isRenderedInPlace(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tid: Dynamic,
+        referenceTid: Dynamic,
+        position: Dynamic,
       ): Dynamic {
-        let value2: Dynamic = this.element(input),
-          value3: Dynamic = options == null ? null : this.element(options);
-        return !value2 || !value3 || value2 === value3
+        let element: Dynamic = this.element(tid),
+          reference: Dynamic = referenceTid == null ? null : this.element(referenceTid);
+        return !element || !reference || element === reference
           ? false
-          : context === "before"
-            ? directiveSiblingsAdjacent(value2, value3)
-            : context === "after"
-              ? directiveSiblingsAdjacent(value3, value2)
-              : context === "into"
-                ? directiveParent(value2) === value3 &&
-                  directiveSiblingsAdjacent(value2, null)
+          : position === "before"
+            ? directiveSiblingsAdjacent(element, reference)
+            : position === "after"
+              ? directiveSiblingsAdjacent(reference, element)
+              : position === "into"
+                ? directiveParent(element) === reference &&
+                  directiveSiblingsAdjacent(element, null)
                 : false;
       }
-      isInPlace(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input),
-          value3: Dynamic = options == null ? null : this.element(options);
-        return !value2 || !value3 || value2 === value3
+      isInPlace(tid: Dynamic, referenceTid: Dynamic, position: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid),
+          reference: Dynamic = referenceTid == null ? null : this.element(referenceTid);
+        return !element || !reference || element === reference
           ? false
-          : context === "before"
-            ? siblingsSeparatedOnlyByWhitespace(value2, value3)
-            : context === "after"
-              ? siblingsSeparatedOnlyByWhitespace(value3, value2)
-              : context === "into"
-                ? value2.parentNode === value3 &&
-                  siblingsSeparatedOnlyByWhitespace(value2, null)
+          : position === "before"
+            ? siblingsSeparatedOnlyByWhitespace(element, reference)
+            : position === "after"
+              ? siblingsSeparatedOnlyByWhitespace(reference, element)
+              : position === "into"
+                ? element.parentNode === reference &&
+                  siblingsSeparatedOnlyByWhitespace(element, null)
                 : false;
       }
-      blockEls(input: Dynamic): Dynamic {
-        let value2: Dynamic = input.map(
-          (input2?: Dynamic): Dynamic => this.element(input2),
+      blockEls(tids: Dynamic): Dynamic {
+        let elements: Dynamic = tids.map(
+          (tid?: Dynamic): Dynamic => this.element(tid),
         );
         if (
-          value2.length === 0 ||
-          value2.some((input2?: Dynamic): Dynamic => !input2) ||
-          new Set(value2).size !== value2.length
+          elements.length === 0 ||
+          elements.some((element?: Dynamic): Dynamic => !element) ||
+          new Set(elements).size !== elements.length
         )
           return null;
-        let value3: Dynamic = value2.sort(
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            input2.compareDocumentPosition(options) &
+        let sorted: Dynamic = elements.sort(
+          (first?: Dynamic, second?: Dynamic): Dynamic =>
+            first.compareDocumentPosition(second) &
             Node.DOCUMENT_POSITION_FOLLOWING
               ? -1
               : 1,
         );
-        for (let count: Dynamic = 1; count < value3.length; count++)
-          if (value3[count - 1].contains(value3[count])) return null;
-        return value3;
+        for (let count: Dynamic = 1; count < sorted.length; count++)
+          if (sorted[count - 1].contains(sorted[count])) return null;
+        return sorted;
       }
       blockInPlace(
-        items: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        blocks: Dynamic,
+        reference: Dynamic,
+        position: Dynamic,
       ): Dynamic {
-        if (items.includes(options)) return false;
-        for (let count: Dynamic = 1; count < items.length; count++)
+        if (blocks.includes(reference)) return false;
+        for (let count: Dynamic = 1; count < blocks.length; count++)
           if (
             !directiveSiblingsAdjacent(
-              items[count - 1],
-              items[count],
+              blocks[count - 1],
+              blocks[count],
             )
           )
             return false;
-        let value2: Dynamic = items[0],
-          value3: Dynamic = items[items.length - 1];
-        return context === "before"
-          ? directiveSiblingsAdjacent(value3, options)
-          : context === "after"
-            ? directiveSiblingsAdjacent(options, value2)
-            : context === "into"
-              ? directiveParent(value2) === options &&
-                directiveSiblingsAdjacent(value3, null)
+        let firstBlock: Dynamic = blocks[0],
+          lastBlock: Dynamic = blocks[blocks.length - 1];
+        return position === "before"
+          ? directiveSiblingsAdjacent(lastBlock, reference)
+          : position === "after"
+            ? directiveSiblingsAdjacent(reference, firstBlock)
+            : position === "into"
+              ? directiveParent(firstBlock) === reference &&
+                directiveSiblingsAdjacent(lastBlock, null)
               : false;
       }
       isBlockInPlace(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tids: Dynamic,
+        referenceTid: Dynamic,
+        position: Dynamic,
       ): Dynamic {
-        let value2: Dynamic = this.blockEls(input),
-          value3: Dynamic = options == null ? null : this.element(options);
+        let blocks: Dynamic = this.blockEls(tids),
+          reference: Dynamic = referenceTid == null ? null : this.element(referenceTid);
         return (
-          !!value2 && !!value3 && this.blockInPlace(value2, value3, context)
+          !!blocks && !!reference && this.blockInPlace(blocks, reference, position)
         );
       }
       moveBlockRelative(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tids: Dynamic,
+        referenceTid: Dynamic,
+        position: Dynamic,
       ): Dynamic {
-        if (!this.canMoveBlockRelative(input, options, context)) return false;
-        let value2: Dynamic = this.blockEls(input),
-          value3: Dynamic = this.element(options),
-          value4: Dynamic,
-          value5: Dynamic;
-        if (context === "into") {
-          value4 = value3;
-          value5 = null;
+        if (!this.canMoveBlockRelative(tids, referenceTid, position)) return false;
+        let blocks: Dynamic = this.blockEls(tids),
+          reference: Dynamic = this.element(referenceTid),
+          newParent: Dynamic,
+          beforeNode: Dynamic;
+        if (position === "into") {
+          newParent = reference;
+          beforeNode = null;
         } else
           for (
-            value4 = value3.parentNode,
-              value5 = context === "before" ? value3 : value3.nextSibling;
-            value5 && value2.includes(value5);
+            newParent = reference.parentNode,
+              beforeNode = position === "before" ? reference : reference.nextSibling;
+            beforeNode && blocks.includes(beforeNode);
 
           )
-            value5 = value5.nextSibling;
-        for (let value6 of value2 as Dynamic)
-          value4.insertBefore(value6, value5);
+            beforeNode = beforeNode.nextSibling;
+        for (let block of blocks as Dynamic)
+          newParent.insertBefore(block, beforeNode);
         editorAssert(
-          value2.every(
-            (input2?: Dynamic): Dynamic => input2.parentNode === value4,
+          blocks.every(
+            (block?: Dynamic): Dynamic => block.parentNode === newParent,
           ),
-          `moveBlockRelative(${input.join(",")} ${context} ${options}) did not land together`,
+          `moveBlockRelative(${tids.join(",")} ${position} ${referenceTid}) did not land together`,
         );
         return true;
       }
       canMoveBlockRelative(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tids: Dynamic,
+        referenceTid: Dynamic,
+        position: Dynamic,
       ): Dynamic {
-        let value2: Dynamic = this.blockEls(input);
-        if (!value2 || context === "root-end" || options == null) return false;
-        let value3: Dynamic = this.element(options);
+        let blocks: Dynamic = this.blockEls(tids);
+        if (!blocks || position === "root-end" || referenceTid == null) return false;
+        let reference: Dynamic = this.element(referenceTid);
         if (
-          !value3 ||
-          value2.some((input2?: Dynamic): Dynamic => input2.contains(value3)) ||
-          this.blockInPlace(value2, value3, context)
+          !reference ||
+          blocks.some((block?: Dynamic): Dynamic => block.contains(reference)) ||
+          this.blockInPlace(blocks, reference, position)
         )
           return false;
-        if (context === "into")
-          return value2.every(
-            (input2?: Dynamic): Dynamic =>
-              canContainHtmlTag(value3.tagName, input2.tagName),
+        if (position === "into")
+          return blocks.every(
+            (block?: Dynamic): Dynamic =>
+              canContainHtmlTag(reference.tagName, block.tagName),
           );
-        if (!value3.parentNode) return false;
-        let value4: Dynamic =
-          value3.parentNode instanceof Element
-            ? value3.parentNode.tagName
+        if (!reference.parentNode) return false;
+        let parentTagName: Dynamic =
+          reference.parentNode instanceof Element
+            ? reference.parentNode.tagName
             : null;
         return (
-          value4 == null ||
-          value2.every(
-            (input2?: Dynamic): Dynamic =>
-              canContainHtmlTag(value4, input2.tagName),
+          parentTagName == null ||
+          blocks.every(
+            (block?: Dynamic): Dynamic =>
+              canContainHtmlTag(parentTagName, block.tagName),
           )
         );
       }
       canMoveRelative(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tid: Dynamic,
+        referenceTid: Dynamic,
+        position: Dynamic,
       ): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return false;
-        if (context === "root-end" || options == null) return true;
-        let value3: Dynamic = this.element(options);
-        return !value3 ||
-          value3 === value2 ||
-          this.isWithin(input, options) ||
-          this.isInPlace(input, options, context)
+        let element: Dynamic = this.element(tid);
+        if (!element) return false;
+        if (position === "root-end" || referenceTid == null) return true;
+        let reference: Dynamic = this.element(referenceTid);
+        return !reference ||
+          reference === element ||
+          this.isWithin(tid, referenceTid) ||
+          this.isInPlace(tid, referenceTid, position)
           ? false
-          : context === "into"
-            ? canContainHtmlTag(value3.tagName, value2.tagName)
-            : value3.parentNode != null;
+          : position === "into"
+            ? canContainHtmlTag(reference.tagName, element.tagName)
+            : reference.parentNode != null;
       }
       moveRelative(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        tid: Dynamic,
+        referenceTid: Dynamic,
+        position: Dynamic,
       ): Dynamic {
-        if (!this.canMoveRelative(input, options, context)) return false;
-        let value2: Dynamic = this.element(input);
-        if (context === "root-end" || options == null) {
-          this.tpl.content.insertBefore(value2, this.trailingHelmet());
+        if (!this.canMoveRelative(tid, referenceTid, position)) return false;
+        let element: Dynamic = this.element(tid);
+        if (position === "root-end" || referenceTid == null) {
+          this.tpl.content.insertBefore(element, this.trailingHelmet());
           return true;
         }
-        let value3: Dynamic = this.element(options);
-        context === "into"
-          ? (value3.appendChild(value2),
+        let reference: Dynamic = this.element(referenceTid);
+        position === "into"
+          ? (reference.appendChild(element),
             editorAssert(
-              value2.parentElement === value3,
-              `moveRelative(${input} into ${options}) did not land in the target`,
+              element.parentElement === reference,
+              `moveRelative(${tid} into ${referenceTid}) did not land in the target`,
             ))
-          : context === "before"
-            ? value3.parentNode.insertBefore(value2, value3)
-            : value3.parentNode.insertBefore(value2, value3.nextSibling);
-        (context === "before" || context === "after") &&
+          : position === "before"
+            ? reference.parentNode.insertBefore(element, reference)
+            : reference.parentNode.insertBefore(element, reference.nextSibling);
+        (position === "before" || position === "after") &&
           editorAssert(
-            value2.parentNode === value3.parentNode,
-            `moveRelative(${input} ${context} ${options}) did not land beside the target`,
+            element.parentNode === reference.parentNode,
+            `moveRelative(${tid} ${position} ${referenceTid}) did not land beside the target`,
           );
         return true;
       }
       helmetClassRules(): Dynamic {
         if (this.classRuleCache) return this.classRuleCache;
         let text: Dynamic = "";
-        for (let value4 of this.tpl.content.querySelectorAll(
+        for (let style of this.tpl.content.querySelectorAll(
           "sc-helmet style",
         ) as Dynamic)
           text +=
-            (value4.textContent ?? "") +
+            (style.textContent ?? "") +
             `
 `;
-        let value2: Dynamic = parseUtilityClasses(text),
-          value3: Dynamic = !!this.tpl.content.querySelector(
+        let rules: Dynamic = parseUtilityClasses(text),
+          hasAtomics: Dynamic = !!this.tpl.content.querySelector(
             "sc-helmet[data-dc-atomics]",
           );
-        this.classRuleCache = value3
-          ? [...parseUtilityClassesValue, ...value2]
-          : value2;
+        this.classRuleCache = hasAtomics
+          ? [...parseUtilityClassesValue, ...rules]
+          : rules;
         return this.classRuleCache;
       }
-      ancestorClassesOf(input: Dynamic): Dynamic {
-        let values: Dynamic = new Set(),
-          parentElement: Dynamic = input.parentElement;
+      ancestorClassesOf(element: Dynamic): Dynamic {
+        let classNames: Dynamic = new Set(),
+          parentElement: Dynamic = element.parentElement;
         for (; parentElement; ) {
           let attribute: Dynamic = parentElement.getAttribute("class");
           if (attribute)
-            for (let value2 of attribute.split(/\s+/) as Dynamic)
-              value2 && values.add(value2);
+            for (let className of attribute.split(/\s+/) as Dynamic)
+              className && classNames.add(className);
           parentElement = parentElement.parentElement;
         }
-        return values;
+        return classNames;
       }
       effectiveStyleFor(element: Dynamic): Dynamic {
-        let value2: Dynamic = element.getAttribute("style") ?? "",
-          value3: Dynamic = (element.getAttribute("class") ?? "").trim();
-        return value3 === ""
-          ? value2
+        let inlineStyle: Dynamic = element.getAttribute("style") ?? "",
+          classes: Dynamic = (element.getAttribute("class") ?? "").trim();
+        return classes === ""
+          ? inlineStyle
           : serializeStyleDeclarations(
-              this.effectiveDeclsFor(element, value3, value2),
+              this.effectiveDeclsFor(element, classes, inlineStyle),
             );
       }
       effectiveDeclsFor(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        element: Dynamic,
+        classes: Dynamic,
+        inlineStyle: Dynamic,
       ): Dynamic {
         return mergeAuthoredStyle(
           this.helmetClassRules(),
-          options.split(/\s+/),
-          context,
-          this.ancestorClassesOf(input),
+          classes.split(/\s+/),
+          inlineStyle,
+          this.ancestorClassesOf(element),
         );
       }
-      inlineStyleValue(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        return value2
-          ? getStyleProperty(value2.getAttribute("style"), options)
+      inlineStyleValue(tid: Dynamic, property: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        return element
+          ? getStyleProperty(element.getAttribute("style"), property)
           : "";
       }
-      inlineStyleAttr(input: Dynamic): Dynamic {
-        return this.element(input)?.getAttribute("style") ?? "";
+      inlineStyleAttr(tid: Dynamic): Dynamic {
+        return this.element(tid)?.getAttribute("style") ?? "";
       }
-      anyHasInlineDecl(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = normalizeCssProperty(options);
-        return input.some((input2?: Dynamic): Dynamic => {
-          let value3: Dynamic = parseStyleDeclarations(
-            this.inlineStyleAttr(input2),
+      anyHasInlineDecl(tids: Dynamic, property: Dynamic): Dynamic {
+        let normalizedProperty: Dynamic = normalizeCssProperty(property);
+        return tids.some((tid?: Dynamic): Dynamic => {
+          let declarations: Dynamic = parseStyleDeclarations(
+            this.inlineStyleAttr(tid),
           );
           return (
-            value3.some(
-              (input3?: Dynamic): Dynamic => input3.prop === value2,
+            declarations.some(
+              (declaration?: Dynamic): Dynamic => declaration.prop === normalizedProperty,
             ) ||
-            expandCssDeclarations(value3).some(
-              (input3?: Dynamic): Dynamic => input3.prop === value2,
+            expandCssDeclarations(declarations).some(
+              (declaration?: Dynamic): Dynamic => declaration.prop === normalizedProperty,
             )
           );
         });
       }
-      hasAuthoredStyle(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = normalizeCssProperty(options);
+      hasAuthoredStyle(tid: Dynamic, property: Dynamic): Dynamic {
+        let normalizedProperty: Dynamic = normalizeCssProperty(property);
         return expandCssDeclarations(
-          parseStyleDeclarations(this.effectiveStyleAttr(input)),
-        ).some((input2?: Dynamic): Dynamic => input2.prop === value2);
+          parseStyleDeclarations(this.effectiveStyleAttr(tid)),
+        ).some((declaration?: Dynamic): Dynamic => declaration.prop === normalizedProperty);
       }
-      effectiveStyleAttr(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        return value2 ? this.effectiveStyleFor(value2) : "";
+      effectiveStyleAttr(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        return element ? this.effectiveStyleFor(element) : "";
       }
-      effectiveStyleValue(input: Dynamic, options: Dynamic): Dynamic {
+      effectiveStyleValue(tid: Dynamic, property: Dynamic): Dynamic {
         return getStyleProperty(
-          this.effectiveStyleAttr(input),
-          options,
+          this.effectiveStyleAttr(tid),
+          property,
         );
       }
-      classSources(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return {};
-        let value3: Dynamic = (value2.getAttribute("class") ?? "").trim();
-        return value3 === ""
+      classSources(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return {};
+        let classes: Dynamic = (element.getAttribute("class") ?? "").trim();
+        return classes === ""
           ? {}
           : getCssPropertySources(
               this.effectiveDeclsFor(
-                value2,
-                value3,
-                value2.getAttribute("style") ?? "",
+                element,
+                classes,
+                element.getAttribute("style") ?? "",
               ),
             );
       }
-      classOnlyStyleAttr(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return "";
-        let value3: Dynamic = (value2.getAttribute("class") ?? "").trim();
-        return value3 === ""
+      classOnlyStyleAttr(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return "";
+        let classes: Dynamic = (element.getAttribute("class") ?? "").trim();
+        return classes === ""
           ? ""
           : serializeStyleDeclarations(
-              this.effectiveDeclsFor(value2, value3, ""),
+              this.effectiveDeclsFor(element, classes, ""),
             );
       }
-      inferDisplayValue(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return null;
-        let values: Dynamic = new Set(
+      inferDisplayValue(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return null;
+        let inlineProps: Dynamic = new Set(
             parseStyleDeclarations(
-              value2.getAttribute("style"),
-            ).map((input2?: Dynamic): Dynamic => input2.prop),
+              element.getAttribute("style"),
+            ).map((declaration?: Dynamic): Dynamic => declaration.prop),
           ),
-          callback: Dynamic = (...input2: Dynamic[]): Dynamic =>
-            input2.some((input3?: Dynamic): Dynamic => values.has(input3));
-        return callback(
+          hasAny: Dynamic = (...props: Dynamic[]): Dynamic =>
+            props.some((prop?: Dynamic): Dynamic => inlineProps.has(prop));
+        return hasAny(
           "grid",
           "grid-template",
           "grid-template-columns",
@@ -1346,7 +1346,7 @@ export function installEditorModelDcEditorModel(): () => void {
           "justify-items",
         )
           ? "grid"
-          : callback(
+          : hasAny(
                 "flex-direction",
                 "flex-wrap",
                 "flex-flow",
@@ -1359,228 +1359,228 @@ export function installEditorModelDcEditorModel(): () => void {
               )
             ? "flex"
             : HtmlTagNormalizationSubscribers.has(
-                  this.tagName(input) ?? "",
+                  this.tagName(tid) ?? "",
                 )
               ? "inline"
               : null;
       }
-      attribute(input: Dynamic, options: Dynamic): Dynamic {
-        return this.element(input)?.getAttribute(options) ?? null;
+      attribute(tid: Dynamic, name: Dynamic): Dynamic {
+        return this.element(tid)?.getAttribute(name) ?? null;
       }
-      takeMarkerAttr(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = options != null ? this.element(options) : null,
-          value3: Dynamic = null;
-        for (let [value4, value5] of this.byTid as Dynamic)
-          (value2 && !value2.contains(value5)) ||
-            (value5.hasAttribute(input) &&
-              (value3 == null && (value3 = value4),
-              value5.removeAttribute(input)));
-        return value3;
+      takeMarkerAttr(attributeName: Dynamic, scopeTid: Dynamic): Dynamic {
+        let scope: Dynamic = scopeTid != null ? this.element(scopeTid) : null,
+          firstTid: Dynamic = null;
+        for (let [tid, element] of this.byTid as Dynamic)
+          (scope && !scope.contains(element)) ||
+            (element.hasAttribute(attributeName) &&
+              (firstTid == null && (firstTid = tid),
+              element.removeAttribute(attributeName)));
+        return firstTid;
       }
-      tagName(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return null;
-        let value3: Dynamic = value2.tagName.toLowerCase();
-        return value3 === "sc-helmet"
+      tagName(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return null;
+        let rawTag: Dynamic = element.tagName.toLowerCase();
+        return rawTag === "sc-helmet"
           ? "helmet"
-          : readableTagName(value3);
+          : readableTagName(rawTag);
       }
-      text(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        return value2 &&
-          (value2.tagName === "TEXTAREA" ||
-            hasOnlyDirectText(value2))
-          ? (value2.textContent ?? "")
+      text(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        return element &&
+          (element.tagName === "TEXTAREA" ||
+            hasOnlyDirectText(element))
+          ? (element.textContent ?? "")
           : null;
       }
-      setInnerHtml(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return false;
+      setInnerHtml(tid: Dynamic, html: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return false;
         this.classRuleCache = null;
-        value2.innerHTML = options;
-        for (let value3 of value2.querySelectorAll("*") as Dynamic) {
-          value3.removeAttribute(DcTplAttribute);
-          for (let value4 of [...value3.attributes] as Dynamic)
-            value4.name.startsWith("data-dc-editor-") &&
-              value3.removeAttribute(value4.name);
+        element.innerHTML = html;
+        for (let descendant of element.querySelectorAll("*") as Dynamic) {
+          descendant.removeAttribute(DcTplAttribute);
+          for (let attribute of [...descendant.attributes] as Dynamic)
+            attribute.name.startsWith("data-dc-editor-") &&
+              descendant.removeAttribute(attribute.name);
         }
         return true;
       }
-      setTagName(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2 || value2.tagName.toLowerCase() === options) return false;
-        let value3: Dynamic = (document as Dynamic).createElement(options);
-        for (let value4 of value2.attributes as Dynamic)
-          value3.setAttribute(value4.name, value4.value);
-        for (; value2.firstChild; ) value3.appendChild(value2.firstChild);
-        value2.replaceWith(value3);
-        this.byTid.set(input, value3);
+      setTagName(tid: Dynamic, tagName: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element || element.tagName.toLowerCase() === tagName) return false;
+        let replacement: Dynamic = (document as Dynamic).createElement(tagName);
+        for (let attribute of element.attributes as Dynamic)
+          replacement.setAttribute(attribute.name, attribute.value);
+        for (; element.firstChild; ) replacement.appendChild(element.firstChild);
+        element.replaceWith(replacement);
+        this.byTid.set(tid, replacement);
         return true;
       }
-      innerTemplateHtml(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return "";
-        let value3: Dynamic = value2.cloneNode(true);
-        for (let value4 of value3.querySelectorAll(
+      innerTemplateHtml(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return "";
+        let copy: Dynamic = element.cloneNode(true);
+        for (let node of copy.querySelectorAll(
           `[${DcTplAttribute}]`,
         ) as Dynamic)
-          value4.removeAttribute(DcTplAttribute);
-        return fromParserHtml(value3.innerHTML);
+          node.removeAttribute(DcTplAttribute);
+        return fromParserHtml(copy.innerHTML);
       }
-      isTextEditable(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return false;
-        let value3: Dynamic = this.tagName(input) ?? "";
-        return !canContainHtmlChildren(value3) ||
-          value3 === "helmet" ||
-          value3 === "x-import" ||
-          value3 === "dc-import" ||
-          (HtmlAuthoringTextTspanTextpathSet.has(value3) &&
-            value2.children.length > 0)
+      isTextEditable(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return false;
+        let tagName: Dynamic = this.tagName(tid) ?? "";
+        return !canContainHtmlChildren(tagName) ||
+          tagName === "helmet" ||
+          tagName === "x-import" ||
+          tagName === "dc-import" ||
+          (HtmlAuthoringTextTspanTextpathSet.has(tagName) &&
+            element.children.length > 0)
           ? false
-          : isInlineTextContainer(value2) &&
-              !isIconOnlyElement(value2);
+          : isInlineTextContainer(element) &&
+              !isIconOnlyElement(element);
       }
       textEditables(): Dynamic {
-        let items: Dynamic = [];
-        for (let [value2, value3] of this.byTid as Dynamic)
-          this.isTextEditable(value2) &&
-            items.push(
-              containsTemplateText(value3)
+        let entries: Dynamic = [];
+        for (let [tid, element] of this.byTid as Dynamic)
+          this.isTextEditable(tid) &&
+            entries.push(
+              containsTemplateText(element)
                 ? {
-                    tid: value2,
-                    seed: this.innerTemplateHtml(value2),
+                    tid: tid,
+                    seed: this.innerTemplateHtml(tid),
                   }
                 : {
-                    tid: value2,
+                    tid: tid,
                   },
             );
-        return items;
+        return entries;
       }
-      isOutlineRow(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.tagName(input);
-        return value2 != null && this.outlineListsTag(value2);
+      isOutlineRow(tid: Dynamic): Dynamic {
+        let tagName: Dynamic = this.tagName(tid);
+        return tagName != null && this.outlineListsTag(tagName);
       }
-      outlineListsTag(input: Dynamic): Dynamic {
-        return input === "helmet"
+      outlineListsTag(tagName: Dynamic): Dynamic {
+        return tagName === "helmet"
           ? false
           : !(
               this.raw &&
-              (input === "script" ||
-                input === "style" ||
-                input === "link" ||
-                input === "noscript" ||
-                input === "template")
+              (tagName === "script" ||
+                tagName === "style" ||
+                tagName === "link" ||
+                tagName === "noscript" ||
+                tagName === "template")
             );
       }
-      importTextTargets(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2 || this.isLoopDriven(input)) return [];
-        let items: Dynamic = [],
-          items2: Dynamic = [],
-          callback: Dynamic = (
-            input2?: Dynamic,
-            options2?: Dynamic,
+      importTextTargets(tid: Dynamic, importOptions: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element || this.isLoopDriven(tid)) return [];
+        let ownTexts: Dynamic = [],
+          deepTexts: Dynamic = [],
+          collectTexts: Dynamic = (
+            parent?: Dynamic,
+            isDeep?: Dynamic,
           ): Dynamic => {
-            for (let value3 of input2.childNodes as Dynamic)
-              value3.nodeType === Node.TEXT_NODE
-                ? (options2 ? items2 : items).push(value3.nodeValue ?? "")
-                : value3.nodeType === Node.ELEMENT_NODE &&
-                  callback(value3, true);
+            for (let child of parent.childNodes as Dynamic)
+              child.nodeType === Node.TEXT_NODE
+                ? (isDeep ? deepTexts : ownTexts).push(child.nodeValue ?? "")
+                : child.nodeType === Node.ELEMENT_NODE &&
+                  collectTexts(child, true);
           };
-        callback(value2, false);
-        items.filter((input2?: Dynamic): Dynamic => input2.trim() !== "")
-          .length > 1 && items2.push(...items);
+        collectTexts(element, false);
+        ownTexts.filter((text?: Dynamic): Dynamic => text.trim() !== "")
+          .length > 1 && deepTexts.push(...ownTexts);
         return componentTextOptions(
           {
-            tag: this.tagName(input),
-            text: this.text(input),
-            ownText: items.join(""),
-            deepText: items2,
-            attrs: this.attributes(input),
+            tag: this.tagName(tid),
+            text: this.text(tid),
+            ownText: ownTexts.join(""),
+            deepText: deepTexts,
+            attrs: this.attributes(tid),
           },
-          options,
+          importOptions,
         );
       }
-      importTexts(input: Dynamic): Dynamic {
-        let items: Dynamic = [];
-        for (let [value2, value3] of this.byTid as Dynamic) {
-          if (value3.tagName.toLowerCase() !== "x-import") continue;
-          let value4: Dynamic = this.importTextTargets(value2, input);
-          value4.length > 0 &&
-            items.push({
-              tid: value2,
-              targets: value4,
+      importTexts(importOptions: Dynamic): Dynamic {
+        let entries: Dynamic = [];
+        for (let [tid, element] of this.byTid as Dynamic) {
+          if (element.tagName.toLowerCase() !== "x-import") continue;
+          let targets: Dynamic = this.importTextTargets(tid, importOptions);
+          targets.length > 0 &&
+            entries.push({
+              tid: tid,
+              targets: targets,
             });
         }
-        return items;
+        return entries;
       }
       outline(): Dynamic {
-        let callback: Dynamic = (input?: Dynamic): Dynamic => {
-            let value2: Dynamic = input.trim().replace(/\s+/g, " ");
-            return value2.length > 26 ? `${value2.slice(0, 26)}\u2026` : value2;
+        let shortenText: Dynamic = (text?: Dynamic): Dynamic => {
+            let collapsed: Dynamic = text.trim().replace(/\s+/g, " ");
+            return collapsed.length > 26 ? `${collapsed.slice(0, 26)}\u2026` : collapsed;
           },
-          callback2: Dynamic = (element?: Dynamic): Dynamic => {
+          buildOutlineNode: Dynamic = (element?: Dynamic): Dynamic => {
             let attribute: Dynamic = element.getAttribute(
               DcTplAttribute,
             );
             if (attribute == null) return null;
-            let value2: Dynamic = parseInt(attribute, 10),
-              value3: Dynamic =
-                this.tagName(value2) ?? element.tagName.toLowerCase();
-            if (!this.outlineListsTag(value3)) return null;
-            let attribute2: Dynamic = element.getAttribute("data-om-label"),
-              value4: Dynamic = value3 === "x-import" || value3 === "dc-import",
-              value5: Dynamic = this.effectiveStyleFor(element),
-              value6: Dynamic = tagIcon(value3),
-              value7: Dynamic = detectContainerLayout(
+            let tid: Dynamic = parseInt(attribute, 10),
+              tag: Dynamic =
+                this.tagName(tid) ?? element.tagName.toLowerCase();
+            if (!this.outlineListsTag(tag)) return null;
+            let userLabel: Dynamic = element.getAttribute("data-om-label"),
+              isImport: Dynamic = tag === "x-import" || tag === "dc-import",
+              style: Dynamic = this.effectiveStyleFor(element),
+              icon: Dynamic = tagIcon(tag),
+              layout: Dynamic = detectContainerLayout(
                 element,
-                value5,
+                style,
               ),
-              value8: Dynamic =
-                !value7 &&
-                value3 !== "sc-if" &&
-                value3 !== "sc-for" &&
-                this.isTextEditable(value2),
-              text: Dynamic = "group";
-            value4
-              ? (text = "Component")
-              : value3 === "sc-if"
-                ? (text = "Conditional group")
-                : value3 === "sc-for"
-                  ? (text = "Repeating group")
-                  : value6
-                    ? (text = value6)
-                    : value7 === "column"
-                      ? (text = "Column")
-                      : value7 === "row"
-                        ? (text = "Row")
-                        : value7 === "grid"
-                          ? (text = "Grid")
-                          : (ModelDomTextSubscribers.has(value3) ||
+              isEditableText: Dynamic =
+                !layout &&
+                tag !== "sc-if" &&
+                tag !== "sc-for" &&
+                this.isTextEditable(tid),
+              kind: Dynamic = "group";
+            isImport
+              ? (kind = "Component")
+              : tag === "sc-if"
+                ? (kind = "Conditional group")
+                : tag === "sc-for"
+                  ? (kind = "Repeating group")
+                  : icon
+                    ? (kind = icon)
+                    : layout === "column"
+                      ? (kind = "Column")
+                      : layout === "row"
+                        ? (kind = "Row")
+                        : layout === "grid"
+                          ? (kind = "Grid")
+                          : (ModelDomTextSubscribers.has(tag) ||
                               (element.children.length === 0 &&
                                 (element.textContent ?? "").trim() !== "") ||
-                              value8) &&
-                            (text = "Text");
-            let value9: Dynamic = value4
+                              isEditableText) &&
+                            (kind = "Text");
+            let component: Dynamic = isImport
                 ? parseComponentImport(
-                    value3,
-                    this.attributes(value2),
+                    tag,
+                    this.attributes(tid),
                   )
                 : null,
-              value10: Dynamic = attribute2 || value9?.name || text,
-              value11: Dynamic = labelToElementKind(text, value7),
-              value12: Dynamic =
+              label: Dynamic = userLabel || component?.name || kind,
+              glyph: Dynamic = labelToElementKind(kind, layout),
+              authoredLabel: Dynamic =
                 element.getAttribute("data-label") ||
                 element.getAttribute("data-screen-label") ||
                 element.getAttribute("aria-label") ||
                 element.getAttribute("label") ||
                 "",
-              value13: Dynamic = slideElementLabel(element),
-              value14: Dynamic;
-            if (value9) value14 = attribute2 ? value9.ref : value9.scope;
-            else if (value4)
-              value14 =
+              slideLabel: Dynamic = slideElementLabel(element),
+              detail: Dynamic;
+            if (component) detail = userLabel ? component.ref : component.scope;
+            else if (isImport)
+              detail =
                 element.getAttribute("component-from-global-scope") ||
                 element.getAttribute("component") ||
                 element.getAttribute("name") ||
@@ -1589,244 +1589,244 @@ export function installEditorModelDcEditorModel(): () => void {
                   .pop()
                   ?.replace(/(\.dc)?\.[a-z]+(\?.*)?$/i, "") ||
                 undefined;
-            else if (value13) {
-              let element2: Dynamic = element.querySelector(
+            else if (slideLabel) {
+              let titleElement: Dynamic = element.querySelector(
                   "h1, h2, h3, [data-title]",
                 ),
-                value17: Dynamic =
-                  value12 ||
-                  (element2?.textContent ?? "") ||
+                sourceText: Dynamic =
+                  authoredLabel ||
+                  (titleElement?.textContent ?? "") ||
                   (hasOnlyDirectText(element)
                     ? (element.textContent ?? "")
                     : "");
-              value14 = value17.trim()
-                ? `${value13} \xB7 ${callback(value17)}`
-                : value13;
-            } else if (value12) value14 = callback(value12);
-            else if (hasOnlyDirectText(element) || value8) {
-              let value17: Dynamic = (element.textContent ?? "").trim();
-              value17 && (value14 = `\u201C${callback(value17)}\u201D`);
+              detail = sourceText.trim()
+                ? `${slideLabel} \xB7 ${shortenText(sourceText)}`
+                : slideLabel;
+            } else if (authoredLabel) detail = shortenText(authoredLabel);
+            else if (hasOnlyDirectText(element) || isEditableText) {
+              let ownText: Dynamic = (element.textContent ?? "").trim();
+              ownText && (detail = `\u201C${shortenText(ownText)}\u201D`);
             } else if (
               element.children.length > 0 &&
-              value3 !== "sc-if" &&
-              value3 !== "sc-for"
+              tag !== "sc-if" &&
+              tag !== "sc-for"
             ) {
-              let value17: Dynamic = this.handleOf(element),
-                value18: Dynamic = value17.startsWith("<")
+              let handle: Dynamic = this.handleOf(element),
+                previewText: Dynamic = handle.startsWith("<")
                   ? elementTextPreview(element)
                   : "";
-              value17.startsWith("<")
-                ? value18 && (value14 = `\u201C${callback(value18)}\u201D`)
-                : (value14 = value17);
+              handle.startsWith("<")
+                ? previewText && (detail = `\u201C${shortenText(previewText)}\u201D`)
+                : (detail = handle);
             }
-            let value15: Dynamic =
+            let isHidden: Dynamic =
                 getStyleProperty(
                   element.getAttribute("style"),
                   "display",
                 ).trim() === "none",
-              value16: Dynamic =
+              isLocked: Dynamic =
                 element.parentElement?.tagName.toLowerCase() === "deck-stage" ||
                 element.parentElement?.hasAttribute("data-uneditable") ===
                   true ||
                 element.hasAttribute("data-uneditable") ||
-                value3 === "deck-stage",
-              items2: Dynamic = [];
-            for (let value17 of element.children as Dynamic) {
-              let value18: Dynamic = callback2(value17);
-              value18 && items2.push(value18);
+                tag === "deck-stage",
+              childNodes: Dynamic = [];
+            for (let childElement of element.children as Dynamic) {
+              let childNode: Dynamic = buildOutlineNode(childElement);
+              childNode && childNodes.push(childNode);
             }
             return {
-              tid: value2,
-              tag: value3,
-              kind: text,
-              label: value10,
-              hidden: value15,
-              children: items2,
-              ...(value11
+              tid: tid,
+              tag: tag,
+              kind: kind,
+              label: label,
+              hidden: isHidden,
+              children: childNodes,
+              ...(glyph
                 ? {
-                    glyph: value11,
+                    glyph: glyph,
                   }
                 : {}),
-              ...(attribute2
+              ...(userLabel
                 ? {
-                    userLabel: attribute2,
+                    userLabel: userLabel,
                   }
                 : {}),
-              ...(value14
+              ...(detail
                 ? {
-                    detail: value14,
+                    detail: detail,
                   }
                 : {}),
-              ...(value4 && !value9
+              ...(isImport && !component
                 ? {
                     grayed: true,
                   }
                 : {}),
-              ...(value9
+              ...(component
                 ? {
-                    component: value9,
+                    component: component,
                   }
                 : {}),
-              ...(value16
+              ...(isLocked
                 ? {
                     noHide: true,
                   }
                 : {}),
             };
           },
-          items: Dynamic = [];
-        for (let value2 of this.tpl.content.children as Dynamic) {
-          let value3: Dynamic = callback2(value2);
-          value3 && items.push(value3);
+          nodes: Dynamic = [];
+        for (let rootElement of this.tpl.content.children as Dynamic) {
+          let node: Dynamic = buildOutlineNode(rootElement);
+          node && nodes.push(node);
         }
-        return items;
+        return nodes;
       }
-      isTextual(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return false;
-        if (ModelDomTextSubscribers.has(this.tagName(input) ?? ""))
+      isTextual(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return false;
+        if (ModelDomTextSubscribers.has(this.tagName(tid) ?? ""))
           return true;
-        for (let value3 of value2.childNodes as Dynamic)
+        for (let child of element.childNodes as Dynamic)
           if (
-            value3.nodeType === Node.TEXT_NODE &&
-            (value3.nodeValue ?? "").trim() !== ""
+            child.nodeType === Node.TEXT_NODE &&
+            (child.nodeValue ?? "").trim() !== ""
           )
             return true;
         return false;
       }
       handleOf(element: Dynamic): Dynamic {
-        let value2: Dynamic = (element.getAttribute("id") ?? "").trim(),
-          value3: Dynamic = (element.getAttribute("class") ?? "")
+        let id: Dynamic = (element.getAttribute("id") ?? "").trim(),
+          className: Dynamic = (element.getAttribute("class") ?? "")
             .replace(/\{\{[\s\S]*?\}\}/g, " ")
             .split(/\s+/)
             .find(
-              (input?: Dynamic): Dynamic =>
-                /^[\w-]+$/.test(input) &&
-                !HtmlAuthoringSubscribers.has(input),
+              (name?: Dynamic): Dynamic =>
+                /^[\w-]+$/.test(name) &&
+                !HtmlAuthoringSubscribers.has(name),
             ),
-          value4: Dynamic = /^[\w-]+$/.test(value2)
-            ? "#" + value2
-            : value3
-              ? "." + value3
+          handle: Dynamic = /^[\w-]+$/.test(id)
+            ? "#" + id
+            : className
+              ? "." + className
               : `<${readableTagName(element.tagName.toLowerCase())}>`;
-        return value4.length > 28 ? value4.slice(0, 27) + "\u2026" : value4;
+        return handle.length > 28 ? handle.slice(0, 27) + "\u2026" : handle;
       }
-      typeTextRules(input: Dynamic, options: Dynamic): Dynamic {
-        this.pageTextCache?.css !== input &&
+      typeTextRules(css: Dynamic, tagName: Dynamic): Dynamic {
+        this.pageTextCache?.css !== css &&
           (this.pageTextCache = {
-            css: input,
+            css: css,
             byTag: new Map(),
           });
-        let entry: Dynamic = this.pageTextCache.byTag.get(options);
+        let entry: Dynamic = this.pageTextCache.byTag.get(tagName);
         entry ||
           ((entry = getUnconditionalCssDeclarations(
-            input,
-            options,
+            css,
+            tagName,
             ModelDomTextSplitValue,
           )),
-          this.pageTextCache.byTag.set(options, entry));
+          this.pageTextCache.byTag.set(tagName, entry));
         return entry;
       }
-      inheritedTextStyle(input: Dynamic): Dynamic {
-        let value2: Dynamic = this.element(input);
-        if (!value2) return [];
-        let { css: value3 }: Dynamic = this.pageSheets(),
-          values: Dynamic = new Set(),
-          items: Dynamic = [],
-          callback: Dynamic = (input2?: Dynamic): Dynamic =>
-            /^(|inherit|unset)$/i.test(input2),
-          callback2: Dynamic = (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context: Dynamic = null,
+      inheritedTextStyle(tid: Dynamic): Dynamic {
+        let element: Dynamic = this.element(tid);
+        if (!element) return [];
+        let { css: css }: Dynamic = this.pageSheets(),
+          coveredProps: Dynamic = new Set(),
+          inherited: Dynamic = [],
+          isNeutral: Dynamic = (cssValue?: Dynamic): Dynamic =>
+            /^(|inherit|unset)$/i.test(cssValue),
+          collectFrom: Dynamic = (
+            declarations?: Dynamic,
+            source?: Dynamic,
+            sourceTid: Dynamic = null,
           ): Dynamic => {
             let entries: Dynamic = new Map(
-                input2.map(
-                  (input3?: Dynamic, options2?: Dynamic): Dynamic => [
-                    input3.prop,
+                declarations.map(
+                  (declaration?: Dynamic, index?: Dynamic): Dynamic => [
+                    declaration.prop,
                     {
-                      v: input3.value.trim(),
-                      i: options2,
+                      v: declaration.value.trim(),
+                      i: index,
                     },
                   ],
                 ),
               ),
-              entry: Dynamic = entries.get("font"),
-              value4: Dynamic = entry && !callback(entry.v) ? entry.i : -1;
-            for (let value5 of ModelDomTextSplitValue as Dynamic) {
-              let entry2: Dynamic = entries.get(value5);
+              fontEntry: Dynamic = entries.get("font"),
+              fontIndex: Dynamic = fontEntry && !isNeutral(fontEntry.v) ? fontEntry.i : -1;
+            for (let prop of ModelDomTextSplitValue as Dynamic) {
+              let propEntry: Dynamic = entries.get(prop);
               if (
-                values.has(value5) ||
-                !entry2 ||
-                callback(entry2.v) ||
-                (entry2.i < value4 &&
-                  ModelDomTextSplitValue_2.includes(value5))
+                coveredProps.has(prop) ||
+                !propEntry ||
+                isNeutral(propEntry.v) ||
+                (propEntry.i < fontIndex &&
+                  ModelDomTextSplitValue_2.includes(prop))
               )
                 continue;
-              let value6: Dynamic =
-                value5 === "font" &&
+              let longhandsOverrideFont: Dynamic =
+                prop === "font" &&
                 ModelDomTextSplitValue_2.some(
-                  (input3?: Dynamic): Dynamic =>
-                    values.has(input3) ||
-                    ((entries.get(input3)?.i ?? -1) > value4 &&
-                      !callback(entries.get(input3).v)),
+                  (longhand?: Dynamic): Dynamic =>
+                    coveredProps.has(longhand) ||
+                    ((entries.get(longhand)?.i ?? -1) > fontIndex &&
+                      !isNeutral(entries.get(longhand).v)),
                 );
-              values.add(value5);
-              !value6 &&
-                options != null &&
-                !/^(initial|revert|revert-layer)$/i.test(entry2.v) &&
-                items.push({
-                  prop: value5,
-                  value: entry2.v,
-                  from: options,
-                  fromTid: context,
+              coveredProps.add(prop);
+              !longhandsOverrideFont &&
+                source != null &&
+                !/^(initial|revert|revert-layer)$/i.test(propEntry.v) &&
+                inherited.push({
+                  prop: prop,
+                  value: propEntry.v,
+                  from: source,
+                  fromTid: sourceTid,
                 });
             }
-            if (value4 >= 0)
-              for (let value5 of ModelDomTextSplitValue_2 as Dynamic)
-                values.add(value5);
+            if (fontIndex >= 0)
+              for (let prop of ModelDomTextSplitValue_2 as Dynamic)
+                coveredProps.add(prop);
           };
         for (
-          let value4: Dynamic = value2;
-          value4;
-          value4 = value4.parentElement
+          let ancestor: Dynamic = element;
+          ancestor;
+          ancestor = ancestor.parentElement
         ) {
-          let value5: Dynamic = readableTagName(
-            value4.tagName.toLowerCase(),
+          let tagName: Dynamic = readableTagName(
+            ancestor.tagName.toLowerCase(),
           );
           if (
-            value4 === value2 &&
-            ModelDomTextButtonInputPattern.test(value5)
+            ancestor === element &&
+            ModelDomTextButtonInputPattern.test(tagName)
           )
             return [];
-          let value6: Dynamic = parseInt(
-            value4.getAttribute(DcTplAttribute) ?? "",
+          let ancestorTid: Dynamic = parseInt(
+            ancestor.getAttribute(DcTplAttribute) ?? "",
             10,
           );
-          callback2(
+          collectFrom(
             [
-              ...this.typeTextRules(value3, value5),
+              ...this.typeTextRules(css, tagName),
               ...parseStyleDeclarations(
-                this.effectiveStyleFor(value4),
+                this.effectiveStyleFor(ancestor),
               ),
             ],
-            value4 === value2 ? null : this.handleOf(value4),
-            Number.isNaN(value6) ? null : value6,
+            ancestor === element ? null : this.handleOf(ancestor),
+            Number.isNaN(ancestorTid) ? null : ancestorTid,
           );
-          if (ModelDomTextButtonInputPattern.test(value5)) return items;
-          for (let value7 of (Object.hasOwn(
+          if (ModelDomTextButtonInputPattern.test(tagName)) return inherited;
+          for (let inheritedProp of (Object.hasOwn(
             ModelDomTextH1H2H3Config,
-            value5,
+            tagName,
           )
-            ? ModelDomTextH1H2H3Config[value5]
+            ? ModelDomTextH1H2H3Config[tagName]
             : ""
           ).split(" ") as Dynamic)
-            values.add(value7);
-          value5 === "a" && value4.hasAttribute("href") && values.add("color");
+            coveredProps.add(inheritedProp);
+          tagName === "a" && ancestor.hasAttribute("href") && coveredProps.add("color");
         }
-        for (let value4 of ["body", "html"] as Dynamic)
-          callback2(this.typeTextRules(value3, value4), value4);
-        return items;
+        for (let selector of ["body", "html"] as Dynamic)
+          collectFrom(this.typeTextRules(css, selector), selector);
+        return inherited;
       }
     };
   };
