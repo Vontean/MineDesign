@@ -101,11 +101,11 @@ function blobFilesOwedToFileStorage(
     id: string;
   }[] = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = classifyFileStorage(value, files[value], policy);
-    if (value2.to === "record" && value2.owed) {
+    let storageClassification = classifyFileStorage(value, files[value], policy);
+    if (storageClassification.to === "record" && storageClassification.owed) {
       owedFiles.push({
         path: value,
-        id: value2.id,
+        id: storageClassification.id,
       });
     }
   }
@@ -114,10 +114,10 @@ function blobFilesOwedToFileStorage(
 function encodeFileIndexKey(key: string): string {
   let encodedKey = "";
   for (let value of fileIndexEncoder.encode(key)) {
-    let value2 = String.fromCharCode(value);
+    let character = String.fromCharCode(value);
     encodedKey +=
-      value < 128 && FILE_INDEX_KEY_SAFE_CHARACTER.test(value2)
-        ? value2
+      value < 128 && FILE_INDEX_KEY_SAFE_CHARACTER.test(character)
+        ? character
         : "~" + value.toString(16).padStart(2, "0");
   }
   return encodedKey;
@@ -133,28 +133,28 @@ function decodeFileIndexKey(key: string): string {
       bytes.push(parseInt(value[0], 16));
       index += 2;
     } else {
-      for (let value2 of fileIndexEncoder.encode(key[index])) {
-        bytes.push(value2);
+      for (let encodedByte of fileIndexEncoder.encode(key[index])) {
+        bytes.push(encodedByte);
       }
     }
   }
   return fileIndexDecoder.decode(new Uint8Array(bytes));
 }
-function isFilesIndex(value: unknown): value is Files.FilesIndex {
+function isFilesIndex(indexValue: unknown): indexValue is Files.FilesIndex {
   return (
-    isFilesIndexObject(value) &&
-    !isFilesIndexObject(value.content) &&
-    (hasFilesMigrationMarker(value) ||
-      (typeof value.v === "number" &&
-        value.v >= FILES_INDEX_VERSION &&
-        value.layout === "files"))
+    isFilesIndexObject(indexValue) &&
+    !isFilesIndexObject(indexValue.content) &&
+    (hasFilesMigrationMarker(indexValue) ||
+      (typeof indexValue.v === "number" &&
+        indexValue.v >= FILES_INDEX_VERSION &&
+        indexValue.layout === "files"))
   );
 }
-function hasFilesMigrationMarker(value: unknown) {
+function hasFilesMigrationMarker(indexValue: unknown) {
   return (
-    isFilesIndexObject(value) &&
-    (isFilesIndexObject(value[CONVERTED_FROM_FIELD]) ||
-      isFilesIndexObject(value[CREATED_ON_FILES_FIELD]))
+    isFilesIndexObject(indexValue) &&
+    (isFilesIndexObject(indexValue[CONVERTED_FROM_FIELD]) ||
+      isFilesIndexObject(indexValue[CREATED_ON_FILES_FIELD]))
   );
 }
 function parseFilesIndex(text: string): Files.FilesIndex | null {
@@ -170,9 +170,9 @@ function parseFilesIndex(text: string): Files.FilesIndex | null {
   }
 }
 function readTreeIndex(
-  value: Record<string, unknown>,
+  treeIndexValue: Record<string, unknown>,
 ): Files.FilesIndex | undefined {
-  let index = value[TREE_INDEX_FIELD];
+  let index = treeIndexValue[TREE_INDEX_FIELD];
   if (isFilesIndex(index)) {
     return index;
   } else {
@@ -188,7 +188,7 @@ function hasValidSvgRoot(text: string, offset: number) {
     namespaceUris: Set<string> = new Set(),
     usedPrefixes: string[] = [];
   for (let value = offset + 4; value - offset < 60000; ) {
-    let value2 = isXmlWhitespace(text[value]);
+    let isWhitespace = isXmlWhitespace(text[value]);
     while (isXmlWhitespace(text[value])) {
       value++;
     }
@@ -196,46 +196,46 @@ function hasValidSvgRoot(text: string, offset: number) {
       text[value] === ">" ||
       (text[value] === "/" && text[value + 1] === ">")
     ) {
-      return usedPrefixes.every((input) => namespacePrefixes.has(input));
+      return usedPrefixes.every((prefix) => namespacePrefixes.has(prefix));
     }
     SVG_ATTRIBUTE_PATTERN.lastIndex = value;
-    let value3 = value2 ? SVG_ATTRIBUTE_PATTERN.exec(text) : null;
-    if (value3 === null) {
+    let attributeMatch = isWhitespace ? SVG_ATTRIBUTE_PATTERN.exec(text) : null;
+    if (attributeMatch === null) {
       return false;
     }
-    let value4 = value3[1] ?? "",
-      value5 = value3[2],
-      value6 = value3[3] ?? value3[4] ?? "",
-      value7 = value5 === undefined ? value4 : value4 + ":" + value5;
-    if (attributes.has(value7)) {
+    let namespacePrefix = attributeMatch[1] ?? "",
+      attributeName = attributeMatch[2],
+      attributeValue = attributeMatch[3] ?? attributeMatch[4] ?? "",
+      qualifiedName = attributeName === undefined ? namespacePrefix : namespacePrefix + ":" + attributeName;
+    if (attributes.has(qualifiedName)) {
       return false;
     }
-    attributes.add(value7);
-    if (value4 === "xmlns") {
+    attributes.add(qualifiedName);
+    if (namespacePrefix === "xmlns") {
       if (
-        /[ \t\r\n]/.test(value6) ||
-        RESERVED_XML_NAMESPACES.includes(value6) ||
-        (value6 !== "" && !/[:/]/.test(value6))
+        /[ \t\r\n]/.test(attributeValue) ||
+        RESERVED_XML_NAMESPACES.includes(attributeValue) ||
+        (attributeValue !== "" && !/[:/]/.test(attributeValue))
       ) {
         return false;
       }
       if (
-        value5 !== undefined &&
-        (value6 === "" ||
-          value5 === "xml" ||
-          value5 === "xmlns" ||
-          namespaceUris.has(value6))
+        attributeName !== undefined &&
+        (attributeValue === "" ||
+          attributeName === "xml" ||
+          attributeName === "xmlns" ||
+          namespaceUris.has(attributeValue))
       ) {
         return false;
       }
-      if (value5 !== undefined) {
-        namespacePrefixes.add(value5);
-        namespaceUris.add(value6);
+      if (attributeName !== undefined) {
+        namespacePrefixes.add(attributeName);
+        namespaceUris.add(attributeValue);
       }
-    } else if (value5 !== undefined && value4 !== "xml") {
-      usedPrefixes.push(value4);
+    } else if (attributeName !== undefined && namespacePrefix !== "xml") {
+      usedPrefixes.push(namespacePrefix);
     }
-    value += value3[0].length;
+    value += attributeMatch[0].length;
   }
   return false;
 }
@@ -268,12 +268,12 @@ function isPublishableSvgText(text: string): boolean {
     }
     if (text.startsWith("<\!--", offset)) {
       let value = text.indexOf("-->", offset + 4),
-        value2 =
+        svgText =
           value < 0 || value > 200000 ? "--" : text.slice(offset + 4, value);
       if (
-        value2.includes("--") ||
-        value2.endsWith("-") ||
-        value2.includes("<![")
+        svgText.includes("--") ||
+        svgText.endsWith("-") ||
+        svgText.includes("<![")
       ) {
         return false;
       }
@@ -332,11 +332,11 @@ function detectNonCodeText(text: string): undefined | string {
   }
   if (
     prefixBytes.some(
-      (input) =>
-        input <= 8 ||
-        input === 11 ||
-        (input >= 14 && input <= 26) ||
-        (input >= 28 && input <= 31),
+      (byte) =>
+        byte <= 8 ||
+        byte === 11 ||
+        (byte >= 14 && byte <= 26) ||
+        (byte >= 28 && byte <= 31),
     )
   ) {
     return "binary";
@@ -401,12 +401,12 @@ function decodeFileDataUrl(dataUrl: string): Uint8Array<ArrayBuffer> | null {
     if (!metadata.base64) {
       return new TextEncoder().encode(decodeURIComponent(value));
     }
-    let value2 = atob(value),
-      value3 = new Uint8Array(value2.length);
-    for (let index: number = 0; index < value2.length; index++) {
-      value3[index] = value2.charCodeAt(index);
+    let base64Text = atob(value),
+      decodedBytes = new Uint8Array(base64Text.length);
+    for (let index: number = 0; index < base64Text.length; index++) {
+      decodedBytes[index] = base64Text.charCodeAt(index);
     }
-    return value3;
+    return decodedBytes;
   } catch {
     return null;
   }
@@ -472,9 +472,9 @@ function archiveFileMimeType(path: string, dataUrl: string) {
   ) {
     return null;
   }
-  let isVirtualDiskFooter = (input: number) =>
-    bytesMatchAt(signature.tail, input, asciiCharacterCodes("conectix")) &&
-    bytesMatchAt(signature.tail, input + 12, [0, 1, 0, 0]);
+  let isVirtualDiskFooter = (offset: number) =>
+    bytesMatchAt(signature.tail, offset, asciiCharacterCodes("conectix")) &&
+    bytesMatchAt(signature.tail, offset + 12, [0, 1, 0, 0]);
   if (
     signature.length >= 512 &&
     (bytesMatchAt(signature.tail, 0, [
@@ -519,11 +519,11 @@ function readDataUrlSignature(dataUrl: string): DataUrlSignature | null {
   ) {
     return readFullSignature();
   }
-  let decodeBase64Bytes2 = (input: string) =>
-      Uint8Array.from(atob(input), (input2) => input2.charCodeAt(0)),
-    decodedTail = decodeBase64Bytes2(payload.slice(-688));
+  let decodeBase64Bytes = (encodedText: string) =>
+      Uint8Array.from(atob(encodedText), (character) => character.charCodeAt(0)),
+    decodedTail = decodeBase64Bytes(payload.slice(-688));
   return {
-    head: decodeBase64Bytes2(payload.slice(0, 16)),
+    head: decodeBase64Bytes(payload.slice(0, 16)),
     tail: decodedTail.subarray(decodedTail.length - 512),
     length:
       (payload.length / 4) * 3 -
@@ -625,8 +625,8 @@ function isDerivedProjectPath(path: string) {
 }
 function validDerivedProjectFiles(files: Files.FileTable) {
   let derived = derivedProjectFiles(files);
-  for (let [value, value2] of derived) {
-    if (hasDamagedUnicode(value2)) {
+  for (let [value, filePath] of derived) {
+    if (hasDamagedUnicode(filePath)) {
       derived.delete(value);
     }
   }
@@ -634,8 +634,8 @@ function validDerivedProjectFiles(files: Files.FileTable) {
 }
 function damagedDerivedProjectPaths(files: Files.FileTable) {
   let damagedPaths = [...derivedProjectFiles(files)]
-    .filter(([, input]: [string, string]) => hasDamagedUnicode(input))
-    .map(([input]: [string, string]) => input);
+    .filter(([, fileContent]: [string, string]) => hasDamagedUnicode(fileContent))
+    .map(([filePath]: [string, string]) => filePath);
   if (
     Object.hasOwn(files, DESIGN_SYSTEM_PATHS.tokens) &&
     generatedTokensCssForFiles(files) === null
@@ -647,21 +647,21 @@ function damagedDerivedProjectPaths(files: Files.FileTable) {
 function projectFilesForSave(files: Files.FileTable) {
   let projectFiles = publishableProjectFiles(files);
   for (let value of Object.keys(files)) {
-    let value2 = files[value];
+    let fileContent = files[value];
     if (
-      (isRepairableDamagedText(value, value2) ||
-        isUnsupportedBinaryFile(value, value2)) &&
-      classifyFileStorage(value, value2).to === "file" &&
+      (isRepairableDamagedText(value, fileContent) ||
+        isUnsupportedBinaryFile(value, fileContent)) &&
+      classifyFileStorage(value, fileContent).to === "file" &&
       isProjectContentPath(projectFilePath(value))
     ) {
-      projectFiles.set(projectFilePath(value), value2);
+      projectFiles.set(projectFilePath(value), fileContent);
     } else if (
-      isHeldFilePointer(value, value2) &&
+      isHeldFilePointer(value, fileContent) &&
       isProjectContentPath(projectFilePath(value)) &&
       !hasDamagedUnicode(value) &&
       isPublishableFilePathModelFileTable(projectFilePath(value))
     ) {
-      projectFiles.set(projectFilePath(value), value2);
+      projectFiles.set(projectFilePath(value), fileContent);
     }
   }
   return projectFiles;
@@ -704,12 +704,12 @@ function derivedProjectFiles(files: Files.FileTable) {
       tokensCss,
     );
   }
-  for (let [value, value2] of consumptionDocumentationForFiles(
+  for (let [value, derivedContent] of consumptionDocumentationForFiles(
     files,
     PROJECT_FILE_PREFIXEditorFilesIndex,
   ).files) {
     if (isDerivedProjectPath(projectFilePath(value))) {
-      projectFiles.set(projectFilePath(value), value2);
+      projectFiles.set(projectFilePath(value), derivedContent);
     }
   }
   let manifest = files[DESIGN_SYSTEM_PATHS.manifest];
@@ -800,14 +800,14 @@ function buildFilesIndex(
     ),
     assetGroups: Record<string, Files.FilesIndexAssetGroup> = {},
     groupOrder: string[] = [],
-    ensureGroup = (input: string) => {
-      let value = encodeFileIndexKey(input);
+    ensureGroup = (groupName: string) => {
+      let value = encodeFileIndexKey(groupName);
       if (!isSafeFileIndexKey(value)) {
         return null;
       }
       if (!Object.hasOwn(assetGroups, value)) {
         assetGroups[value] = {
-          name: input,
+          name: groupName,
           order: [],
           files: {},
         };
@@ -815,8 +815,8 @@ function buildFilesIndex(
       return assetGroups[value];
     };
   for (let value of manifest.assetGroups ?? []) {
-    let value2 = ensureGroup(value.name);
-    if (value2 === null) {
+    let group = ensureGroup(value.name);
+    if (group === null) {
       continue;
     }
     if (!groupOrder.includes(encodeFileIndexKey(value.name))) {
@@ -826,10 +826,10 @@ function buildFilesIndex(
       value.tile !== undefined &&
       isAssetTileSize(value.tile)
     ) {
-      value2.tile = value.tile as Files.AssetTileSize;
+      group.tile = value.tile as Files.AssetTileSize;
     }
     if (value.order !== undefined) {
-      value2.order = [...value.order];
+      group.order = [...value.order];
     }
   }
   let blobs: Record<string, Files.IndexBlobRecord> = {};
@@ -837,38 +837,38 @@ function buildFilesIndex(
     if (classifyFileStorage(value, files[value] ?? "").to !== "record") {
       continue;
     }
-    let value2 = assetPathGroup(value),
-      value3 = blobRecordForIndex(
-        value2 !== null ? value2.rel : value,
+    let assetGroup = assetPathGroup(value),
+      blobRecord = blobRecordForIndex(
+        assetGroup !== null ? assetGroup.rel : value,
         storage.files[value],
       );
-    if (value3 === null) {
+    if (blobRecord === null) {
       continue;
     }
-    let value4 = value2 !== null ? ensureGroup(value2.group) : null,
-      value5 = encodeFileIndexKey(value3.name);
-    if (!isSafeFileIndexKey(value5)) {
+    let groupRecord = assetGroup !== null ? ensureGroup(assetGroup.group) : null,
+      blobKey = encodeFileIndexKey(blobRecord.name);
+    if (!isSafeFileIndexKey(blobKey)) {
       continue;
     }
-    if (value4 !== null) {
-      value4.files[value5] = value3;
+    if (groupRecord !== null) {
+      groupRecord.files[blobKey] = blobRecord;
     } else {
-      blobs[value5] = value3;
+      blobs[blobKey] = blobRecord;
     }
   }
   let sections: Record<string, string> = {};
-  for (let [value, value2] of Object.entries(manifest.sections ?? {})) {
+  for (let [value, sectionContent] of Object.entries(manifest.sections ?? {})) {
     if (isSafeFileIndexKey(encodeFileIndexKey(value))) {
-      sections[encodeFileIndexKey(value)] = value2;
+      sections[encodeFileIndexKey(value)] = sectionContent;
     }
   }
   let docs = Object.keys(files)
       .filter(
-        (input) =>
-          isAdditionalMarkdownPath(input) &&
-          classifyFileStorage(input, files[input]).to === "file" &&
-          isProjectContentPath(projectFilePath(input)) &&
-          unpublishableFileReason(input, files[input]) === null,
+        (filePath) =>
+          isAdditionalMarkdownPath(filePath) &&
+          classifyFileStorage(filePath, files[filePath]).to === "file" &&
+          isProjectContentPath(projectFilePath(filePath)) &&
+          unpublishableFileReason(filePath, files[filePath]) === null,
       )
       .sort(),
     index: Files.FilesIndex = {
@@ -904,31 +904,31 @@ function buildFilesIndex(
 function publishableProjectFiles(files: Files.FileTable) {
   let projectFiles: Map<string, string> = new Map();
   for (let value of Object.keys(files)) {
-    let value2 = files[value];
+    let fileContent = files[value];
     if (
-      classifyFileStorage(value, value2).to !== "file" ||
+      classifyFileStorage(value, fileContent).to !== "file" ||
       !isProjectContentPath(projectFilePath(value)) ||
-      unpublishableFileReason(value, value2) !== null
+      unpublishableFileReason(value, fileContent) !== null
     ) {
       continue;
     }
     if (
       !isTextFilePath(value) &&
-      decodeFileDataUrl(value2) === null
+      decodeFileDataUrl(fileContent) === null
     ) {
       continue;
     }
-    projectFiles.set(projectFilePath(value), value2);
+    projectFiles.set(projectFilePath(value), fileContent);
   }
   return projectFiles;
 }
 function filesLeftOutOfMigration(files: Files.FileTable) {
   let leftOut = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = files[value],
-      value3 = classifyFileStorage(value, value2);
+    let fileContent = files[value],
+      storageClassification = classifyFileStorage(value, fileContent);
     if (
-      value3.to === "derived" &&
+      storageClassification.to === "derived" &&
       value !== DESIGN_SYSTEM_PATHS.manifest
     ) {
       leftOut.push({
@@ -939,7 +939,7 @@ function filesLeftOutOfMigration(files: Files.FileTable) {
       continue;
     }
     if (
-      value3.to === "file" &&
+      storageClassification.to === "file" &&
       RESERVED_MIGRATION_FILE_NAMES.includes(value)
     ) {
       leftOut.push({
@@ -950,32 +950,32 @@ function filesLeftOutOfMigration(files: Files.FileTable) {
       continue;
     }
     if (
-      value3.to !== "file" ||
+      storageClassification.to !== "file" ||
       !isProjectContentPath(projectFilePath(value))
     ) {
       continue;
     }
-    let value4 =
-      unpublishableFileReason(value, value2) ??
+    let unpublishableReason =
+      unpublishableFileReason(value, fileContent) ??
       (!isTextFilePath(value) &&
-      decodeFileDataUrl(value2) === null
+      decodeFileDataUrl(fileContent) === null
         ? uiMessage("design-system.filesIndex.itsContentsCouldNotBe")
         : null);
-    if (value4 !== null) {
+    if (unpublishableReason !== null) {
       leftOut.push({
         path: value,
-        reason: value4,
+        reason: unpublishableReason,
       });
     }
   }
   return leftOut;
 }
-function parseIndexBlobRecord(value: unknown) {
+function parseIndexBlobRecord(indexRecord: unknown) {
   if (
-    !isFilesIndexObject(value) ||
-    typeof value.name !== "string" ||
-    typeof value.blob !== "string" ||
-    value.blob === ""
+    !isFilesIndexObject(indexRecord) ||
+    typeof indexRecord.name !== "string" ||
+    typeof indexRecord.blob !== "string" ||
+    indexRecord.blob === ""
   ) {
     return null;
   }
@@ -984,21 +984,21 @@ function parseIndexBlobRecord(value: unknown) {
     id: string;
   } = {
     store: "blob",
-    id: value.blob,
+    id: indexRecord.blob,
     bytes:
-      typeof value.size === "number" && value.size >= 0
-        ? Math.floor(value.size)
+      typeof indexRecord.size === "number" && indexRecord.size >= 0
+        ? Math.floor(indexRecord.size)
         : 0,
-    type: typeof value.type === "string" ? value.type : "",
+    type: typeof indexRecord.type === "string" ? indexRecord.type : "",
   };
-  if (typeof value.sha256 === "string") {
-    record.sha256 = value.sha256;
+  if (typeof indexRecord.sha256 === "string") {
+    record.sha256 = indexRecord.sha256;
   }
-  if (typeof value.storedSha256 === "string") {
-    record.storedSha256 = value.storedSha256;
+  if (typeof indexRecord.storedSha256 === "string") {
+    record.storedSha256 = indexRecord.storedSha256;
   }
   return {
-    name: value.name,
+    name: indexRecord.name,
     rec: record,
   };
 }
@@ -1007,29 +1007,29 @@ function restoreFilesFromIndex(
   projectFiles: ReadonlyMap<string, string>,
 ): RestoredIndexedFiles {
   let files: Record<string, string> = {};
-  for (let [value, value2] of projectFiles) {
+  for (let [value, fileContent] of projectFiles) {
     if (!isProjectContentPath(value)) {
       continue;
     }
-    files[relativeProjectFilePath(value)!] = value2;
+    files[relativeProjectFilePath(value)!] = fileContent;
   }
   let storageRecords: Record<string, Files.StorageRecord> = {},
-    appendBlobFile = (input: string, options: Files.StorageRecord): void => {
+    appendBlobFile = (filePath: string, storageRecord: Files.StorageRecord): void => {
       if (
-        !isValidDesignSystemPath(input) ||
-        Object.hasOwn(files, input)
+        !isValidDesignSystemPath(filePath) ||
+        Object.hasOwn(files, filePath)
       ) {
         return;
       }
-      if (options.type === "") {
-        options.type = mimeTypeForPath(input);
+      if (storageRecord.type === "") {
+        storageRecord.type = mimeTypeForPath(filePath);
       }
-      let value = blobPointer(options.id!);
-      if (storagePointerForFile(input, value) === null) {
+      let value = blobPointer(storageRecord.id!);
+      if (storagePointerForFile(filePath, value) === null) {
         return;
       }
-      files[input] = value;
-      storageRecords[input] = options;
+      files[filePath] = value;
+      storageRecords[filePath] = storageRecord;
     },
     assetGroups: {
       name: string;
@@ -1040,48 +1040,48 @@ function restoreFilesFromIndex(
       isFilesIndexObject(index.assetGroups) ? index.assetGroups : {},
     groupOrder = [
       ...(Array.isArray(index.groups)
-        ? index.groups.filter((input): boolean => typeof input === "string")
+        ? index.groups.filter((groupName): boolean => typeof groupName === "string")
         : []),
       ...Object.keys(indexAssetGroups).sort(),
     ],
     seenGroups: Set<string> = new Set();
   for (let value of groupOrder) {
-    let value2 = indexAssetGroups[value];
-    if (seenGroups.has(value) || !isFilesIndexObject(value2)) {
+    let assetGroup = indexAssetGroups[value];
+    if (seenGroups.has(value) || !isFilesIndexObject(assetGroup)) {
       continue;
     }
     seenGroups.add(value);
-    let value3 =
-      typeof value2.name === "string"
-        ? value2.name
+    let assetGroupName =
+      typeof assetGroup.name === "string"
+        ? assetGroup.name
         : decodeFileIndexKey(value);
-    if (!isAssetGroupName(value3)) {
+    if (!isAssetGroupName(assetGroupName)) {
       continue;
     }
-    let value4 = Array.isArray(value2.order)
-      ? value2.order.filter((input): boolean => typeof input === "string")
+    let order = Array.isArray(assetGroup.order)
+      ? assetGroup.order.filter((filePath): boolean => typeof filePath === "string")
       : [];
     assetGroups.push({
-      name: value3,
-      ...(isAssetTileSize(value2.tile)
+      name: assetGroupName,
+      ...(isAssetTileSize(assetGroup.tile)
         ? {
-            tile: value2.tile,
+            tile: assetGroup.tile,
           }
         : {}),
-      ...(value4.length > 0
+      ...(order.length > 0
         ? {
-            order: value4,
+            order: order,
           }
         : {}),
     });
-    for (let value5 of Object.values(
-      isFilesIndexObject(value2.files) ? value2.files : {},
+    for (let blob of Object.values(
+      isFilesIndexObject(assetGroup.files) ? assetGroup.files : {},
     )) {
-      let value6 = parseIndexBlobRecord(value5);
-      if (value6 !== null) {
+      let blobRecord = parseIndexBlobRecord(blob);
+      if (blobRecord !== null) {
         appendBlobFile(
-          DESIGN_SYSTEM_PATHS.assetsDir + value3 + "/" + value6.name,
-          value6.rec,
+          DESIGN_SYSTEM_PATHS.assetsDir + assetGroupName + "/" + blobRecord.name,
+          blobRecord.rec,
         );
       }
     }
@@ -1089,17 +1089,17 @@ function restoreFilesFromIndex(
   for (let value of Object.values(
     isFilesIndexObject(index.blobs) ? index.blobs : {},
   )) {
-    let value2 = parseIndexBlobRecord(value);
-    if (value2 !== null) {
-      appendBlobFile(value2.name, value2.rec);
+    let blobRecord = parseIndexBlobRecord(value);
+    if (blobRecord !== null) {
+      appendBlobFile(blobRecord.name, blobRecord.rec);
     }
   }
   let sections: Record<string, string> = {};
-  for (let [value, value2] of Object.entries(
+  for (let [value, sectionValue] of Object.entries(
     isFilesIndexObject(index.sections) ? index.sections : {},
   )) {
-    if (typeof value2 === "string") {
-      sections[decodeFileIndexKey(value)] = value2;
+    if (typeof sectionValue === "string") {
+      sections[decodeFileIndexKey(value)] = sectionValue;
     }
   }
   let title = typeof index.title === "string" ? index.title : "",
@@ -1141,7 +1141,7 @@ function restoreFilesFromIndex(
   let sortedFiles = Object.fromEntries(
     Object.keys(files)
       .sort()
-      .map((input) => [input, files[input]]),
+      .map((filePath) => [filePath, files[filePath]]),
   );
   return {
     title: title,
@@ -1357,8 +1357,8 @@ export function installEditorFilesIndex(): () => void {
         },
       },
     };
-    isFilesIndexObject = (value: unknown): value is Record<string, unknown> =>
-      typeof value === "object" && value !== null && !Array.isArray(value);
+    isFilesIndexObject = (candidate: unknown): candidate is Record<string, unknown> =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
     TREE_INDEX_FIELD = "treeIndex";
     PUBLISHABLE_MIME_TYPES = new Set([
       "text/html",
@@ -1430,7 +1430,7 @@ export function installEditorFilesIndex(): () => void {
         `
 `;
     asciiCharacterCodes = (text: string) =>
-      [...text].map((input) => input.charCodeAt(0));
+      [...text].map((character) => character.charCodeAt(0));
     bytesMatchAt = (
       bytes: Uint8Array<ArrayBufferLike>,
       offset: number,
@@ -1439,7 +1439,7 @@ export function installEditorFilesIndex(): () => void {
       offset >= 0 &&
       offset + signature.length <= bytes.length &&
       signature.every(
-        (input, options): boolean => bytes[offset + options] === input,
+        (expectedByte, byteOffset): boolean => bytes[offset + byteOffset] === expectedByte,
       );
     unpublishableFileReason = (path: string, contents: string | undefined) =>
       explainUnpublishableFile(path, contents)?.why ?? null;

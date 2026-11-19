@@ -50,105 +50,105 @@ function sectionsForFilePaths(paths: Iterable<string>): Set<string> {
 function conflictTextDiff(
   ours: string | null,
   theirs: string | null,
-  context: number = 2,
+  diffContext: number = 2,
 ): Editor.ConflictDiffLine[] | null {
   let value =
       theirs === null
         ? []
         : theirs.split(`
 `),
-    value2 =
+    otherText =
       ours === null
         ? []
         : ours.split(`
 `);
   if (
     value.length > CONFLICT_COPIED_DURATION_MS ||
-    value2.length > CONFLICT_COPIED_DURATION_MS
+    otherText.length > CONFLICT_COPIED_DURATION_MS
   ) {
     return null;
   }
   let length = value.length,
-    length2 = value2.length,
+    otherLength = otherText.length,
     items: Uint16Array[] = [];
-  for (let index3: number = 0; index3 <= length; index3++) {
-    items.push(new Uint16Array(length2 + 1));
+  for (let rowIndex: number = 0; rowIndex <= length; rowIndex++) {
+    items.push(new Uint16Array(otherLength + 1));
   }
-  for (let value4: number = length - 1; value4 >= 0; value4--) {
-    for (let value5: number = length2 - 1; value5 >= 0; value5--) {
-      items[value4][value5] =
-        value[value4] === value2[value5]
-          ? items[value4 + 1][value5 + 1] + 1
-          : Math.max(items[value4 + 1][value5], items[value4][value5 + 1]);
+  for (let leftIndex: number = length - 1; leftIndex >= 0; leftIndex--) {
+    for (let rightIndex: number = otherLength - 1; rightIndex >= 0; rightIndex--) {
+      items[leftIndex][rightIndex] =
+        value[leftIndex] === otherText[rightIndex]
+          ? items[leftIndex + 1][rightIndex + 1] + 1
+          : Math.max(items[leftIndex + 1][rightIndex], items[leftIndex][rightIndex + 1]);
     }
   }
-  let items2: Editor.ConflictDiffLine[] = [],
+  let diffLines: Editor.ConflictDiffLine[] = [],
     index: number = 0,
-    index2: number = 0;
-  while (index < length && index2 < length2) {
-    if (value[index] === value2[index2]) {
-      items2.push({
+    rightCursor: number = 0;
+  while (index < length && rightCursor < otherLength) {
+    if (value[index] === otherText[rightCursor]) {
+      diffLines.push({
         kind: "same",
         text: value[index],
       });
       index++;
-      index2++;
-    } else if (items[index + 1][index2] >= items[index][index2 + 1]) {
-      items2.push({
+      rightCursor++;
+    } else if (items[index + 1][rightCursor] >= items[index][rightCursor + 1]) {
+      diffLines.push({
         kind: "theirs",
         text: value[index++],
       });
     } else {
-      items2.push({
+      diffLines.push({
         kind: "mine",
-        text: value2[index2++],
+        text: otherText[rightCursor++],
       });
     }
   }
   while (index < length) {
-    items2.push({
+    diffLines.push({
       kind: "theirs",
       text: value[index++],
     });
   }
-  while (index2 < length2) {
-    items2.push({
+  while (rightCursor < otherLength) {
+    diffLines.push({
       kind: "mine",
-      text: value2[index2++],
+      text: otherText[rightCursor++],
     });
   }
-  let value3 = items2.map((): boolean => false);
-  items2.forEach((source, options): void => {
+  let isContextLine = diffLines.map((): boolean => false);
+  diffLines.forEach((source, lineIndex): void => {
     if (source.kind !== "same") {
-      for (let value4 = -context; value4 <= context; value4++) {
-        if (options + value4 >= 0 && options + value4 < items2.length) {
-          value3[options + value4] = true;
+      for (let offset = -diffContext; offset <= diffContext; offset++) {
+        if (lineIndex + offset >= 0 && lineIndex + offset < diffLines.length) {
+          isContextLine[lineIndex + offset] = true;
         }
       }
     }
   });
-  let items3: Editor.ConflictDiffLine[] = [];
-  for (let index3: number = 0; index3 < items2.length; index3++) {
-    if (value3[index3] === true) {
-      items3.push(items2[index3]);
+  let visibleLines: Editor.ConflictDiffLine[] = [];
+  for (let lineIndex: number = 0; lineIndex < diffLines.length; lineIndex++) {
+    if (isContextLine[lineIndex] === true) {
+      visibleLines.push(diffLines[lineIndex]);
       continue;
     }
     if (
-      items3.length === 0 ||
-      items3[items3.length - 1].text !== "…" ||
-      items3[items3.length - 1].kind !== "same"
+      visibleLines.length === 0 ||
+      visibleLines[visibleLines.length - 1].text !== "…" ||
+      visibleLines[visibleLines.length - 1].kind !== "same"
     ) {
-      items3.push({
+      visibleLines.push({
         kind: "same",
         text: "…",
       });
     }
   }
-  return items3;
+  return visibleLines;
 }
 function conflictBannerDescription(flag: Editor.ConflictFlag): string {
   let value: boolean = flag.theirsSha === null,
-    value2: string =
+    description: string =
       flag.clash !== undefined ? " You both changed " + flag.clash + "." : "";
   if (flag.why === "undo") {
     if (value) {
@@ -166,7 +166,7 @@ function conflictBannerDescription(flag: Editor.ConflictFlag): string {
   if (flag.why === "overwritten") {
     return (
       uiMessage("design-system.conflictBanners.someoneElseSavedItAt") +
-      value2 +
+      description +
       " Yours is back here and is not saved."
     );
   }
@@ -175,7 +175,7 @@ function conflictBannerDescription(flag: Editor.ConflictFlag): string {
   } else {
     return (
       uiMessage("design-system.conflictBanners.someoneElseSavedANewer2") +
-      value2 +
+      description +
       " Your version shows here and is not saved over theirs."
     );
   }
@@ -188,41 +188,41 @@ function FileConflictBanner({
   flag: Editor.ConflictFlag;
 }): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactConflictBanners.useState(false),
-    [value3, value4] = reactConflictBanners.useState<
+  let [value, setExpanded] = reactConflictBanners.useState(false),
+    [conflictState, setConflictState] = reactConflictBanners.useState<
       Editor.ConflictSides | "loading" | null
     >(null);
   reactConflictBanners.useEffect(() => {
     if (!value) {
       return;
     }
-    let flag2: boolean = true;
-    value4("loading");
-    doc.flaggedSides(flag.path).then((input): void => {
-      if (flag2) {
-        value4(input);
+    let hasFlag: boolean = true;
+    setConflictState("loading");
+    doc.flaggedSides(flag.path).then((state): void => {
+      if (hasFlag) {
+        setConflictState(state);
       }
     });
     return (): void => {
-      flag2 = false;
+      hasFlag = false;
     };
   }, [value, doc, flag.path, flag.theirsSha]);
-  let value5 =
-      value3 !== null &&
-      value3 !== "loading" &&
-      isConflictTextFile(flag.path, value3.mine) &&
-      isConflictTextFile(flag.path, value3.theirs)
-        ? conflictTextDiff(value3.mine, value3.theirs)
+  let conflictFiles =
+      conflictState !== null &&
+      conflictState !== "loading" &&
+      isConflictTextFile(flag.path, conflictState.mine) &&
+      isConflictTextFile(flag.path, conflictState.theirs)
+        ? conflictTextDiff(conflictState.mine, conflictState.theirs)
         : null,
-    value6 = sectionForFilePath(flag.path),
-    value7 =
-      value3 === null || value3 === "loading" ? (
+    sectionName = sectionForFilePath(flag.path),
+    conflictDescription =
+      conflictState === null || conflictState === "loading" ? (
         <span className={"text-muted"}>{uiMessage("design-system.conflictBanners.readingBothVersions")}</span>
-      ) : value5 === null ? (
+      ) : conflictFiles === null ? (
         <span className={"text-muted"}>
-          {[uiMessage("design-system.conflictBanners.theirs", { value1: String(conflictFileSummary(flag.path, value3.theirs)) }), uiMessage("design-system.conflictBanners.mine", { value1: String(conflictFileSummary(flag.path, value3.mine)) }), uiMessage("design-system.conflictBanners.tooLargeOrNotText")]}
+          {[uiMessage("design-system.conflictBanners.theirs", { value1: String(conflictFileSummary(flag.path, conflictState.theirs)) }), uiMessage("design-system.conflictBanners.mine", { value1: String(conflictFileSummary(flag.path, conflictState.mine)) }), uiMessage("design-system.conflictBanners.tooLargeOrNotText")]}
         </span>
-      ) : value5.every((source): boolean => source.kind === "same") ? (
+      ) : conflictFiles.every((source): boolean => source.kind === "same") ? (
         <span className={"text-muted"}>
           {uiMessage("design-system.conflictBanners.bothVersionsHoldTheSameText")}
         </span>
@@ -233,7 +233,7 @@ function FileConflictBanner({
           }
           data-testid={"ds-flagged-diff-body"}
         >
-          {value5.map((source, options) =>
+          {conflictFiles.map((source, fileIndex) =>
             (() => {
               const _Element = "div";
               const _elementProps = {
@@ -251,7 +251,7 @@ function FileConflictBanner({
                       ? uiMessage("design-system.conflictBanners.theirs2")
                       : "         ") + source.text,
               };
-              const _elementKey = options;
+              const _elementKey = fileIndex;
               return <_Element key={_elementKey} {..._elementProps} />;
             })(),
           )}
@@ -269,7 +269,7 @@ function FileConflictBanner({
             <span className={"flex flex-wrap items-center gap-xs"}>
               {[<Button
                   variant={"ghost"}
-                  onClick={() => value2((input): boolean => !input)}
+                  onClick={() => setExpanded((isOpen): boolean => !isOpen)}
                   aria-expanded={value}
                   data-testid={"ds-flagged-diff"}
                 >
@@ -297,7 +297,7 @@ function FileConflictBanner({
           }
         >
           <span>
-            {[<span className={"font-mono"}>{flag.path}</span>, <span className={"text-muted"}>{[uiMessage("design-system.conflictBanners.in"), value6, ")"]}</span>, ": ", conflictBannerDescription(flag)]}
+            {[<span className={"font-mono"}>{flag.path}</span>, <span className={"text-muted"}>{[uiMessage("design-system.conflictBanners.in"), sectionName, ")"]}</span>, ": ", conflictBannerDescription(flag)]}
           </span>
         </Callout>, value ? (
           <div
@@ -306,7 +306,7 @@ function FileConflictBanner({
             }
             data-testid={"ds-flagged-diff-panel"}
           >
-            {value7}
+            {conflictDescription}
           </div>
         ) : null]}
     </div>
@@ -343,41 +343,41 @@ function StuckSaveBanner({
   );
 }
 function useFileConflictFlags(
-  document2: Partial<Editor.ConflictDocument>,
+  conflictDocument: Partial<Editor.ConflictDocument>,
 ): Editor.ConflictFlag[] {
-  let [value, value2] = reactConflictBanners.useState(() => [
-    ...(document2.flags?.() ?? EMPTY_CONFLICT_FLAGS).values(),
+  let [value, setFlags] = reactConflictBanners.useState(() => [
+    ...(conflictDocument.flags?.() ?? EMPTY_CONFLICT_FLAGS).values(),
   ]);
   reactConflictBanners.useEffect(() => {
     if (
-      document2.subscribeFlagged === undefined ||
-      document2.flags === undefined
+      conflictDocument.subscribeFlagged === undefined ||
+      conflictDocument.flags === undefined
     ) {
       return;
     }
-    let callback = () => value2([...document2.flags!().values()]);
+    let callback = () => setFlags([...conflictDocument.flags!().values()]);
     callback();
-    return document2.subscribeFlagged(callback);
-  }, [document2]);
+    return conflictDocument.subscribeFlagged(callback);
+  }, [conflictDocument]);
   return value;
 }
 function useStuckSave(
-  document2: Partial<Editor.ConflictDocument>,
+  conflictDocument: Partial<Editor.ConflictDocument>,
 ): Editor.StuckSave | undefined {
-  let [value, value2] = reactConflictBanners.useState(() =>
-    document2.stuck?.(),
+  let [value, setStuck] = reactConflictBanners.useState(() =>
+    conflictDocument.stuck?.(),
   );
   reactConflictBanners.useEffect(() => {
     if (
-      document2.stuck === undefined ||
-      document2.subscribeSave === undefined
+      conflictDocument.stuck === undefined ||
+      conflictDocument.subscribeSave === undefined
     ) {
       return;
     }
-    let callback = () => value2(document2.stuck?.());
+    let callback = () => setStuck(conflictDocument.stuck?.());
     callback();
-    return document2.subscribeSave(callback);
-  }, [document2]);
+    return conflictDocument.subscribeSave(callback);
+  }, [conflictDocument]);
   return value;
 }
 function SaveConflictBanners({
@@ -387,10 +387,10 @@ function SaveConflictBanners({
 }): React.ReactElement | null {
   useUiLocale();
   let value = doc,
-    value2 = useFileConflictFlags(value),
-    value3 = useStuckSave(value);
+    conflictFlags = useFileConflictFlags(value),
+    stuckState = useStuckSave(value);
   if (
-    (value2.length === 0 && value3 === undefined) ||
+    (conflictFlags.length === 0 && stuckState === undefined) ||
     typeof value.resolveFlagged !== "function"
   ) {
     return null;
@@ -401,27 +401,27 @@ function SaveConflictBanners({
       data-testid={"ds-flagged-files"}
       {...UNCOMMENTABLE_PROPS}
     >
-      {[value3 !== undefined ? (
-          <StuckSaveBanner doc={value as Editor.ConflictDocument} stuck={value3} />
-        ) : null, value2.map((input) =>
+      {[stuckState !== undefined ? (
+          <StuckSaveBanner doc={value as Editor.ConflictDocument} stuck={stuckState} />
+        ) : null, conflictFlags.map((flag) =>
           (() => {
-            const _Element2 = FileConflictBanner;
-            const _elementProps2 = {
+            const ConflictBanner = FileConflictBanner;
+            const conflictProps = {
               doc: value as Editor.ConflictDocument,
-              flag: input,
+              flag: flag,
             };
-            const _elementKey2 = input.path;
-            return <_Element2 key={_elementKey2} {..._elementProps2} />;
+            const conflictKey = flag.path;
+            return <ConflictBanner key={conflictKey} {...conflictProps} />;
           })(),
         )]}
     </div>
   );
 }
 function useConflictedSections(
-  document2: Partial<Editor.ConflictDocument>,
+  conflictDocument: Partial<Editor.ConflictDocument>,
 ): ReadonlySet<string> {
-  let value = useFileConflictFlags(document2);
-  return sectionsForFilePaths(value.map((input) => input.path));
+  let value = useFileConflictFlags(conflictDocument);
+  return sectionsForFilePaths(value.map((filePath) => filePath.path));
 }
 export {
   CONFLICT_COPIED_DURATION_MS,
@@ -452,17 +452,17 @@ export function installEditorConflictBanners(): () => void {
       1,
     );
     CONFLICT_COPIED_DURATION_MS = 1500;
-    isConflictTextFile = (path: string, value: string | null) =>
-      value === null ||
+    isConflictTextFile = (path: string, fileContent: string | null) =>
+      fileContent === null ||
       !(
-        value.startsWith("data:") || isHeldFilePointer(path, value)
+        fileContent.startsWith("data:") || isHeldFilePointer(path, fileContent)
       );
-    conflictFileSummary = (path: string, value: string | null): string =>
-      value === null
+    conflictFileSummary = (path: string, fileContent: string | null): string =>
+      fileContent === null
         ? uiMessage("design-system.conflictBanners.theFileIsDeleted")
-        : isHeldFilePointer(path, value)
+        : isHeldFilePointer(path, fileContent)
           ? uiMessage("design-system.conflictBanners.theFileIsKeptAs")
-          : String(value.length) + " characters.";
+          : String(fileContent.length) + " characters.";
     EMPTY_CONFLICT_FLAGS = new Map();
   };
 }

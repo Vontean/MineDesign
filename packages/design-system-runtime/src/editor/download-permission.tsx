@@ -23,11 +23,11 @@ function normalizeDownloadName(name: string): boolean {
       .replace(DOWNLOAD_NAME_IGNORABLE_PATTERN, "")
       .replace(/(^|[\s.])\p{M}+/gu, "$1")
       .replace(/[\s.]+$/, ""),
-    value2 = value.lastIndexOf("."),
-    value3 = value2 === -1 ? "" : value.slice(value2 + 1).toLowerCase();
+    extensionIndex = value.lastIndexOf("."),
+    extension = extensionIndex === -1 ? "" : value.slice(extensionIndex + 1).toLowerCase();
   return (
-    SHELL_DIRECT_DOWNLOAD_EXTENSIONS.has(value3) ||
-    SHELL_BINARY_DOWNLOAD_EXTENSIONS.has(value3)
+    SHELL_DIRECT_DOWNLOAD_EXTENSIONS.has(extension) ||
+    SHELL_BINARY_DOWNLOAD_EXTENSIONS.has(extension)
   );
 }
 function hasDownloadCapability(): boolean {
@@ -49,18 +49,18 @@ function pageDeclaresDownloads(): boolean {
     return false;
   }
   try {
-    let value2: unknown = JSON.parse(value);
+    let parsedMetadata: unknown = JSON.parse(value);
     return (
-      typeof value2 === "object" &&
-      value2 !== null &&
-      Object.hasOwn(value2, "downloads")
+      typeof parsedMetadata === "object" &&
+      parsedMetadata !== null &&
+      Object.hasOwn(parsedMetadata, "downloads")
     );
   } catch {
     return false;
   }
 }
 async function downloadsWithheld(
-  input: number = capabilityLoadTimeoutMs,
+  timeoutMs: number = capabilityLoadTimeoutMs,
 ): Promise<boolean | undefined> {
   let value: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -71,7 +71,7 @@ async function downloadsWithheld(
       return false;
     }
     let promise = new Promise<undefined>(
-      (input2) => (value = setTimeout(input2, input, undefined)),
+      (onTimeout) => (value = setTimeout(onTimeout, timeoutMs, undefined)),
     );
     return (
       (await Promise.race([
@@ -86,15 +86,15 @@ async function downloadsWithheld(
   }
 }
 function useDownloadsWithheld(): boolean | undefined {
-  let [value, value2] = ReactDownloadsPermission.useState(
+  let [value, setWithheld] = ReactDownloadsPermission.useState(
     cachedDownloadsWithheld,
   );
   ReactDownloadsPermission.useEffect(() => {
     let flag: boolean = true;
-    downloadsWithheld().then((input): void => {
-      cachedDownloadsWithheld = input;
+    downloadsWithheld().then((isWithheld): void => {
+      cachedDownloadsWithheld = isWithheld;
       if (flag) {
-        value2(input);
+        setWithheld(isWithheld);
       }
     });
     return (): void => {
@@ -115,7 +115,7 @@ function shellSaveErrorCode(error: unknown): string {
 async function saveThroughShell(
   name: Editor.ShellSaveData,
   bytes: string,
-  options: {
+  saveOptions: {
     request?: unknown;
   } = {},
 ): Promise<Application.ShellSaveResult> {
@@ -133,31 +133,31 @@ async function saveThroughShell(
     };
   }
   try {
-    let value2 =
+    let fileData =
       name instanceof Blob
         ? name
         : new Uint8Array(name as ArrayBuffer).buffer;
     await value.save(
-      options.request === undefined
+      saveOptions.request === undefined
         ? {
             filename: bytes,
-            data: value2,
+            data: fileData,
           }
         : {
             filename: bytes,
-            data: value2,
-            request: options.request,
+            data: fileData,
+            request: saveOptions.request,
           },
     );
     return {
       outcome: "saved",
       code: "",
     };
-  } catch (value2) {
-    let value3 = shellSaveErrorCode(value2);
+  } catch (saveError) {
+    let errorCode = shellSaveErrorCode(saveError);
     return {
-      outcome: value3 === "declined" ? "declined" : "unsupported",
-      code: value3,
+      outcome: errorCode === "declined" ? "declined" : "unsupported",
+      code: errorCode,
     };
   }
 }

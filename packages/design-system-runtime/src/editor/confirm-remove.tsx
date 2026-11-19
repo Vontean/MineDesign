@@ -26,8 +26,8 @@ function ConfirmRemoveDialog({
         <ConfirmationDialog
           open={true}
           initialFocus={"cancel"}
-          onOpenChange={(input: boolean): void => {
-            if (!input) {
+          onOpenChange={(isOpen: boolean): void => {
+            if (!isOpen) {
               onCancel();
             }
           }}

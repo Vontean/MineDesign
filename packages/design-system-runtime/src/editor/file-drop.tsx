@@ -25,27 +25,27 @@ function FileDropZone({
   testid: testid,
 }: Editor.FileDropZoneProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactFileDrop.useState(false),
+  let [value, setDragging] = reactFileDrop.useState(false),
     ref = reactFileDrop.useRef<HTMLInputElement | null>(null),
-    callback = (items: File[], options: number = 0): void => {
-      let value3 =
-        options + Math.max(0, items.length - MAX_DROPPED_FILES);
-      if (value3 > 0) {
-        onLeftOut?.(value3);
+    callback = (items: File[], startIndex: number = 0): void => {
+      let leftOutCount =
+        startIndex + Math.max(0, items.length - MAX_DROPPED_FILES);
+      if (leftOutCount > 0) {
+        onLeftOut?.(leftOutCount);
       }
       if (items.length > 0) {
         onFiles(items.slice(0, MAX_DROPPED_FILES));
       }
     },
-    callback2 = (event: React.DragEvent<HTMLDivElement>): void => {
+    handleDrop = (event: React.DragEvent<HTMLDivElement>): void => {
       if (!event.dataTransfer.types.includes("Files")) {
         return;
       }
       event.preventDefault();
       event.stopPropagation();
-      value2(false);
-      extractDroppedFiles(event.dataTransfer).then((input) =>
-        callback(input.files, input.leftOut),
+      setDragging(false);
+      extractDroppedFiles(event.dataTransfer).then((dropResult) =>
+        callback(dropResult.files, dropResult.leftOut),
       );
     };
   return (
@@ -60,7 +60,7 @@ function FileDropZone({
         if (event.dataTransfer.types.includes("Files")) {
           event.preventDefault();
           event.stopPropagation();
-          value2(true);
+          setDragging(true);
         }
       }}
       onDragOver={(event: React.DragEvent<HTMLDivElement>): void => {
@@ -70,8 +70,8 @@ function FileDropZone({
           event.dataTransfer.dropEffect = "copy";
         }
       }}
-      onDragLeave={() => value2(false)}
-      onDrop={callback2}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
     >
       {[<Icon name={"Upload"} size={large ? "lg" : "md"} />, <span className={"text-center text-body text-secondary"}>
           {line}
@@ -92,8 +92,8 @@ function FileDropZone({
                 variant={large ? "ghost" : "secondary"}
                 size={"sm"}
                 onClick={() =>
-                  void pickUploadFiles(true).then((input) =>
-                    callback(input),
+                  void pickUploadFiles(true).then((pickedFiles) =>
+                    callback(pickedFiles),
                   )
                 }
                 data-testid={testid + "-folder"}
@@ -107,9 +107,9 @@ function FileDropZone({
           multiple={true}
           hidden={true}
           data-testid={testid + "-input"}
-          onChange={(input: React.ChangeEvent<HTMLInputElement>): void => {
-            callback(Array.from(input.currentTarget.files ?? []));
-            input.currentTarget.value = "";
+          onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+            callback(Array.from(event.currentTarget.files ?? []));
+            event.currentTarget.value = "";
           }}
         />]}
     </div>
@@ -126,7 +126,7 @@ function PendingUploadFiles({
       className={"ds-file-rows flex flex-col"}
       data-testid={testid + "-files"}
     >
-      {files.map((input, options) =>
+      {files.map((file, fileIndex) =>
         (() => {
           const _Element = "li";
           const _elementProps = {
@@ -134,9 +134,9 @@ function PendingUploadFiles({
             children: [
               <span
                 className={"min-w-0 flex-1 truncate font-mono text-footnote"}
-                title={input.name}
+                title={file.name}
               >
-                {input.name}
+                {file.name}
               </span>,
               onRemove !== undefined ? (
                 <Button
@@ -144,15 +144,15 @@ function PendingUploadFiles({
                   size={"sm"}
                   iconOnly={true}
                   icon={"X"}
-                  aria-label={uiMessage("design-system.fileDrop.remove2", { value1: String(input.name) })}
+                  aria-label={uiMessage("design-system.fileDrop.remove2", { value1: String(file.name) })}
                   tooltip={uiMessage("design-system.fileDrop.remove")}
-                  onClick={() => onRemove(options)}
-                  data-testid={testid + "-remove-" + String(options)}
+                  onClick={() => onRemove(fileIndex)}
+                  data-testid={testid + "-remove-" + String(fileIndex)}
                 />
               ) : null,
             ],
           };
-          const _elementKey = input.name + ":" + String(options);
+          const _elementKey = file.name + ":" + String(fileIndex);
           return <_Element key={_elementKey} {..._elementProps} />;
         })(),
       )}

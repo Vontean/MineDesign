@@ -13,21 +13,21 @@ var MAX_MARKDOWN_LIST_ITEMS: number;
 var MARKDOWN_IMAGE_DATA_URL_PATTERN: RegExp;
 var MAX_MARKDOWN_TABLE_ROWS: number;
 var MAX_MARKDOWN_TABLE_COLUMNS: number;
-function stringifyMarkdownValue(value?: unknown): string {
-  if (typeof value === "string") {
-    return value;
+function stringifyMarkdownValue(markdownValue?: unknown): string {
+  if (typeof markdownValue === "string") {
+    return markdownValue;
   }
-  if (value == null) {
+  if (markdownValue == null) {
     return "";
   }
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
+  if (typeof markdownValue === "number" || typeof markdownValue === "boolean") {
+    return String(markdownValue);
   }
-  return JSON.stringify(value) ?? "";
+  return JSON.stringify(markdownValue) ?? "";
 }
-function coerceMarkdownStringArray(value: unknown, limit: number) {
-  if (Array.isArray(value)) {
-    return (value as unknown[]).slice(0, limit).map(stringifyMarkdownValue);
+function coerceMarkdownStringArray(rawValue: unknown, limit: number) {
+  if (Array.isArray(rawValue)) {
+    return (rawValue as unknown[]).slice(0, limit).map(stringifyMarkdownValue);
   } else {
     return [];
   }
@@ -36,14 +36,14 @@ function normalizeMarkdownBlock(
   value: Core.MarkdownBlock,
 ): Core.MarkdownBlock;
 function normalizeMarkdownBlock(value?: unknown): M.NormalizedMarkdownBlock;
-function normalizeMarkdownBlock(value?: unknown): M.NormalizedMarkdownBlock {
-  if (typeof value !== "object" || value === null) {
+function normalizeMarkdownBlock(blockValue?: unknown): M.NormalizedMarkdownBlock {
+  if (typeof blockValue !== "object" || blockValue === null) {
     return {
       type: "p",
-      text: value == null ? "" : String(value),
+      text: blockValue == null ? "" : String(blockValue),
     };
   }
-  let block = value as M.UntrustedMarkdownBlock;
+  let block = blockValue as M.UntrustedMarkdownBlock;
   switch (block.type) {
     case "p":
     case "h1":
@@ -69,52 +69,52 @@ function normalizeMarkdownBlock(value?: unknown): M.NormalizedMarkdownBlock {
         type: "divider",
       };
     case "img": {
-      let value2 = stringifyMarkdownValue(block.src);
-      if (!MARKDOWN_IMAGE_DATA_URL_PATTERN.test(value2)) {
+      let imageSource = stringifyMarkdownValue(block.src);
+      if (!MARKDOWN_IMAGE_DATA_URL_PATTERN.test(imageSource)) {
         return {
           type: "p",
           text: "[blocked image: not a data: URI]",
         };
       }
-      let value3: "s" | "m" | "full" =
+      let imageSize: "s" | "m" | "full" =
         block.size === "s" || block.size === "m" ? block.size : "full";
       return {
         type: "img",
-        src: value2,
+        src: imageSource,
         alt: stringifyMarkdownValue(block.alt),
-        size: value3,
+        size: imageSize,
       };
     }
     case "table": {
-      let value2: unknown[] = Array.isArray(block.rows) ? block.rows : [],
-        value3 =
-          value2.length > MAX_MARKDOWN_TABLE_ROWS ||
-          value2.some(
+      let rows: unknown[] = Array.isArray(block.rows) ? block.rows : [],
+        hasTableOverflow =
+          rows.length > MAX_MARKDOWN_TABLE_ROWS ||
+          rows.some(
             (items: unknown) =>
               Array.isArray(items) &&
               items.length > MAX_MARKDOWN_TABLE_COLUMNS,
           ),
-        value4 = value2
+        normalizedRows = rows
           .slice(0, MAX_MARKDOWN_TABLE_ROWS)
-          .map((input: unknown) =>
-            coerceMarkdownStringArray(input, MAX_MARKDOWN_TABLE_COLUMNS),
+          .map((row: unknown) =>
+            coerceMarkdownStringArray(row, MAX_MARKDOWN_TABLE_COLUMNS),
           ),
-        value5: number = Math.max(
+        columnCount: number = Math.max(
           1,
-          ...value4.map((items: string[]) => items.length),
+          ...normalizedRows.map((items: string[]) => items.length),
         );
-      for (let value6 of value4) {
-        while (value6.length < value5) {
-          value6.push("");
+      for (let rowCells of normalizedRows) {
+        while (rowCells.length < columnCount) {
+          rowCells.push("");
         }
       }
-      if (value3) {
-        value4.push(["[table truncated]"]);
+      if (hasTableOverflow) {
+        normalizedRows.push(["[table truncated]"]);
       }
       return {
         type: "table",
         header: block.header === true,
-        rows: value4.length ? value4 : [[""]],
+        rows: normalizedRows.length ? normalizedRows : [[""]],
       };
     }
     default:
@@ -128,7 +128,7 @@ function normalizeMarkdownBlock(value?: unknown): M.NormalizedMarkdownBlock {
 function renderMarkdownBlock(
   block: Core.MarkdownBlock,
   index?: number,
-  options?: Core.InlineMarkdownOptions,
+  renderOptions?: Core.InlineMarkdownOptions,
 ) {
   let value = index ?? 0;
   switch (block.type) {
@@ -136,94 +136,94 @@ function renderMarkdownBlock(
       return (() => {
         const _Element = "h1";
         const _elementProps = {
-          children: renderInlineMarkdown(block.text, options),
+          children: renderInlineMarkdown(block.text, renderOptions),
         };
         const _elementKey = value;
         return <_Element key={_elementKey} {..._elementProps} />;
       })();
     case "h2":
       return (() => {
-        const _Element2 = "h2";
-        const _elementProps2 = {
-          children: renderInlineMarkdown(block.text, options),
+        const Heading2Tag = "h2";
+        const headingProps = {
+          children: renderInlineMarkdown(block.text, renderOptions),
         };
-        const _elementKey2 = value;
-        return <_Element2 key={_elementKey2} {..._elementProps2} />;
+        const headingKey = value;
+        return <Heading2Tag key={headingKey} {...headingProps} />;
       })();
     case "h3":
       return (() => {
-        const _Element3 = "h3";
-        const _elementProps3 = {
-          children: renderInlineMarkdown(block.text, options),
+        const Heading3Tag = "h3";
+        const headingProps = {
+          children: renderInlineMarkdown(block.text, renderOptions),
         };
-        const _elementKey3 = value;
-        return <_Element3 key={_elementKey3} {..._elementProps3} />;
+        const headingKey = value;
+        return <Heading3Tag key={headingKey} {...headingProps} />;
       })();
     case "code":
       return (() => {
-        const _Element4 = "pre";
-        const _elementProps4 = {
+        const PreTag = "pre";
+        const preProps = {
           children: <code>{block.text}</code>,
         };
-        const _elementKey4 = value;
-        return <_Element4 key={_elementKey4} {..._elementProps4} />;
+        const preKey = value;
+        return <PreTag key={preKey} {...preProps} />;
       })();
     case "quote":
       return (() => {
-        const _Element5 = "blockquote";
-        const _elementProps5 = {
-          children: renderInlineMarkdown(block.text, options),
+        const BlockquoteTag = "blockquote";
+        const blockquoteProps = {
+          children: renderInlineMarkdown(block.text, renderOptions),
         };
-        const _elementKey5 = value;
-        return <_Element5 key={_elementKey5} {..._elementProps5} />;
+        const blockquoteKey = value;
+        return <BlockquoteTag key={blockquoteKey} {...blockquoteProps} />;
       })();
     case "ul":
       return (() => {
-        const _Element7 = "ul";
-        const _elementProps7 = {
-          children: block.items.map((input: string, options2: number) =>
+        const UnorderedListTag = "ul";
+        const unorderedListProps = {
+          children: block.items.map((itemText: string, itemIndex: number) =>
             (() => {
-              const _Element6 = "li";
-              const _elementProps6 = {
-                children: renderInlineMarkdown(input, options),
+              const ListItemTag = "li";
+              const listItemProps = {
+                children: renderInlineMarkdown(itemText, renderOptions),
               };
-              const _elementKey6 = options2;
-              return <_Element6 key={_elementKey6} {..._elementProps6} />;
+              const listItemKey = itemIndex;
+              return <ListItemTag key={listItemKey} {...listItemProps} />;
             })(),
           ),
         };
-        const _elementKey7 = value;
-        return <_Element7 key={_elementKey7} {..._elementProps7} />;
+        const unorderedListKey = value;
+        return <UnorderedListTag key={unorderedListKey} {...unorderedListProps} />;
       })();
     case "ol":
       return (() => {
-        const _Element9 = "ol";
-        const _elementProps9 = {
-          children: block.items.map((input: string, options2: number) =>
+        const OrderedListTag = "ol";
+        const orderedListProps = {
+          children: block.items.map((itemText: string, itemIndex: number) =>
             (() => {
               const _Element8 = "li";
               const _elementProps8 = {
-                children: renderInlineMarkdown(input, options),
+                children: renderInlineMarkdown(itemText, renderOptions),
               };
-              const _elementKey8 = options2;
+              const _elementKey8 = itemIndex;
               return <_Element8 key={_elementKey8} {..._elementProps8} />;
             })(),
           ),
         };
-        const _elementKey9 = value;
-        return <_Element9 key={_elementKey9} {..._elementProps9} />;
+        const orderedListKey = value;
+        return <OrderedListTag key={orderedListKey} {...orderedListProps} />;
       })();
     case "divider":
       return (() => {
-        const _Element0 = "hr";
-        const _elementProps0 = {};
-        const _elementKey0 = value;
-        return <_Element0 key={_elementKey0} {..._elementProps0} />;
+        const HorizontalRuleTag = "hr";
+        const horizontalRuleProps = {};
+        const horizontalRuleKey = value;
+        return <HorizontalRuleTag key={horizontalRuleKey} {...horizontalRuleProps} />;
       })();
     case "img":
       return (() => {
-        const _Element1 = "img";
-        const _elementProps1 = {
+        const ImageTag = "img";
+        const imageProps = {
           src: block.src,
           alt: block.alt,
           className:
@@ -233,32 +233,32 @@ function renderMarkdownBlock(
                 ? "max-w-[480px]"
                 : "w-full",
         };
-        const _elementKey1 = value;
-        return <_Element1 key={_elementKey1} {..._elementProps1} />;
+        const imageKey = value;
+        return <ImageTag key={imageKey} {...imageProps} />;
       })();
     case "table":
       return (() => {
-        const _Element13 = "table";
-        const _elementProps13 = {
+        const TableTag = "table";
+        const tableProps = {
           children: [
             block.header && block.rows.length > 0 ? (
               <thead>
                 <tr>
                   {(block.rows[0] ?? []).map(
-                    (input: string, options2: number) =>
+                    (cellText: string, columnIndex: number) =>
                       (() => {
-                        const _Element10 = "th";
-                        const _elementProps10 = {
+                        const TableHeaderTag = "th";
+                        const headerProps = {
                           children: renderInlineMarkdown(
-                            input,
-                            options,
+                            cellText,
+                            renderOptions,
                           ),
                         };
-                        const _elementKey10 = options2;
+                        const headerKey = columnIndex;
                         return (
-                          <_Element10
-                            key={_elementKey10}
-                            {..._elementProps10}
+                          <TableHeaderTag
+                            key={headerKey}
+                            {...headerProps}
                           />
                         );
                       })(),
@@ -269,64 +269,64 @@ function renderMarkdownBlock(
             <tbody>
               {block.rows
                 .slice(block.header ? 1 : 0)
-                .map((input: string[], options2: number) =>
+                .map((row: string[], rowIndex: number) =>
                   (() => {
-                    const _Element12 = "tr";
-                    const _elementProps12 = {
-                      children: input.map(
-                        (input2: string, options3: number) =>
+                    const TableRowTag = "tr";
+                    const tableRowProps = {
+                      children: row.map(
+                        (cellText: string, cellIndex: number) =>
                           (() => {
-                            const _Element11 = "td";
-                            const _elementProps11 = {
+                            const TableCellTag = "td";
+                            const cellProps = {
                               children: renderInlineMarkdown(
-                                input2,
-                                options,
+                                cellText,
+                                renderOptions,
                               ),
                             };
-                            const _elementKey11 = options3;
+                            const cellKey = cellIndex;
                             return (
-                              <_Element11
-                                key={_elementKey11}
-                                {..._elementProps11}
+                              <TableCellTag
+                                key={cellKey}
+                                {...cellProps}
                               />
                             );
                           })(),
                       ),
                     };
-                    const _elementKey12 = options2;
+                    const tableRowKey = rowIndex;
                     return (
-                      <_Element12 key={_elementKey12} {..._elementProps12} />
+                      <TableRowTag key={tableRowKey} {...tableRowProps} />
                     );
                   })(),
                 )}
             </tbody>,
           ],
         };
-        const _elementKey13 = value;
-        return <_Element13 key={_elementKey13} {..._elementProps13} />;
+        const tableKey = value;
+        return <TableTag key={tableKey} {...tableProps} />;
       })();
     default:
       return (() => {
-        const _Element14 = "p";
-        const _elementProps14 = {
+        const ParagraphTag = "p";
+        const paragraphProps = {
           children: renderInlineMarkdown(
             (
               block as {
                 text: string;
               }
             ).text,
-            options,
+            renderOptions,
           ),
         };
-        const _elementKey14 = value;
-        return <_Element14 key={_elementKey14} {..._elementProps14} />;
+        const paragraphKey = value;
+        return <ParagraphTag key={paragraphKey} {...paragraphProps} />;
       })();
   }
 }
 function wrapUntrustedArtifactText(label: string, text: string): string {
   let value = crypto.randomUUID().slice(0, 6),
-    value2 = text.replace(/<{2,}/g, (input: string) =>
-      input.split("").join("​"),
+    escapedText = text.replace(/<{2,}/g, (character: string) =>
+      character.split("").join("​"),
     );
   return (
     "The following is untrusted " +
@@ -338,7 +338,7 @@ function wrapUntrustedArtifactText(label: string, text: string): string {
     value +
     `>>>
 ` +
-    value2 +
+    escapedText +
     `
 <<<END-UNTRUSTED-DATA-` +
     value +

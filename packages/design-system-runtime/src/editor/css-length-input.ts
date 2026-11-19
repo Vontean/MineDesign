@@ -5,8 +5,8 @@ export const EDITABLE_CSS_LENGTH_PATTERN = /^(-?\d+(?:\.\d+)?)(px|rem|em|%)?$/;
 export const MAX_EDITABLE_CSS_LENGTH = 9999;
 
 /** 无单位的 "0" 补成 px，其他无单位输入保持空单位 */
-export function parseEditableCssLength(value: string): EditableLength | null {
-  const match = EDITABLE_CSS_LENGTH_PATTERN.exec(value.trim());
+export function parseEditableCssLength(cssLength: string): EditableLength | null {
+  const match = EDITABLE_CSS_LENGTH_PATTERN.exec(cssLength.trim());
   if (match === null) {
     return null;
   }
@@ -16,7 +16,7 @@ export function parseEditableCssLength(value: string): EditableLength | null {
   }
   return {
     n: amount,
-    unit: match[2] ?? (value.trim() === "0" ? "px" : ""),
+    unit: match[2] ?? (cssLength.trim() === "0" ? "px" : ""),
   };
 }
 

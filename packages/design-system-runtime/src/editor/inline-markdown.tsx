@@ -69,22 +69,22 @@ function createCodeSpanScanner(
     lastDelimiterByLength.set(delimiterLengths[value], value);
   }
   let cursor: number = 0;
-  return (input: number) => {
+  return (cursorIndex: number) => {
     for (; cursor < delimiterOffsets.length; cursor++) {
       let value = delimiterOffsets[cursor];
-      if (value < input) {
+      if (value < cursorIndex) {
         continue;
       }
-      let value2 = matchingDelimiterIndices[cursor];
-      if (value2 < 0) {
+      let delimiterIndex = matchingDelimiterIndices[cursor];
+      if (delimiterIndex < 0) {
         continue;
       }
-      let value3 = delimiterLengths[cursor];
+      let delimiterLength = delimiterLengths[cursor];
       return {
         start: value,
-        end: delimiterOffsets[value2] + value3,
-        from: value + value3,
-        to: delimiterOffsets[value2],
+        end: delimiterOffsets[delimiterIndex] + delimiterLength,
+        from: value + delimiterLength,
+        to: delimiterOffsets[delimiterIndex],
       };
     }
     return;
@@ -92,11 +92,11 @@ function createCodeSpanScanner(
 }
 function tokenizeInlineMarkdown(
   markdown: string,
-  options?: Core.InlineMarkdownOptions,
+  tokenizeOptions?: Core.InlineMarkdownOptions,
 ) {
   let tokens: Core.InlineMarkdownToken[] = [],
     escapedMarkdown =
-      options?.escapes === true ? encodeMarkdownEscapes(markdown) : markdown,
+      tokenizeOptions?.escapes === true ? encodeMarkdownEscapes(markdown) : markdown,
     nextCodeSpan = createCodeSpanScanner(escapedMarkdown),
     inlineMatch: RegExpExecArray | null | undefined,
     offset = 0;
@@ -133,52 +133,52 @@ function tokenizeInlineMarkdown(
       offset = value.end;
       continue;
     }
-    let value2 = inlineMatch as RegExpExecArray;
-    if (value2.index > offset) {
+    let match = inlineMatch as RegExpExecArray;
+    if (match.index > offset) {
       tokens.push({
         kind: "text",
-        text: escapedMarkdown.slice(offset, value2.index),
+        text: escapedMarkdown.slice(offset, match.index),
       });
     }
-    if (value2[2] !== undefined) {
+    if (match[2] !== undefined) {
       tokens.push({
         kind: "bold",
-        text: value2[2],
+        text: match[2],
       });
-    } else if (value2[4] !== undefined) {
+    } else if (match[4] !== undefined) {
       tokens.push({
         kind: "italic",
-        text: value2[4],
+        text: match[4],
       });
-    } else if (value2[6] !== undefined && value2[7] !== undefined) {
+    } else if (match[6] !== undefined && match[7] !== undefined) {
       if (
-        EXTERNAL_LINK_PATTERN.test(value2[7]) &&
-        (options?.linksTo === undefined ||
-          options.linksTo.has(
+        EXTERNAL_LINK_PATTERN.test(match[7]) &&
+        (tokenizeOptions?.linksTo === undefined ||
+          tokenizeOptions.linksTo.has(
             escapedMarkdown === markdown
-              ? value2[7]
-              : decodeMarkdownEscapes(value2[7]),
+              ? match[7]
+              : decodeMarkdownEscapes(match[7]),
           ))
       ) {
         tokens.push({
           kind: "link",
-          text: value2[6],
-          href: value2[7],
+          text: match[6],
+          href: match[7],
         });
       } else {
         tokens.push({
           kind: "text",
-          text: options?.literalUnsafeLinks === true ? value2[0] : value2[6],
+          text: tokenizeOptions?.literalUnsafeLinks === true ? match[0] : match[6],
         });
       }
     }
-    offset = value2.index + value2[0].length;
+    offset = match.index + match[0].length;
   }
   let mergedTokens: Core.InlineMarkdownToken[] = [];
   for (let value of tokens) {
-    let value2 = mergedTokens[mergedTokens.length - 1];
-    if (value.kind === "text" && value2?.kind === "text") {
-      value2.text += value.text;
+    let lastToken = mergedTokens[mergedTokens.length - 1];
+    if (value.kind === "text" && lastToken?.kind === "text") {
+      lastToken.text += value.text;
     } else {
       mergedTokens.push(value);
     }
@@ -232,26 +232,26 @@ function renderCodeSpans(markdown: string): React.ReactNode {
     return markdown;
   }
   return tokenizeCodeSpans(markdown).map(
-    (source: Core.InlineMarkdownToken, options: number) =>
+    (source: Core.InlineMarkdownToken, tokenIndex: number) =>
       source.kind === "code"
-        ? renderInlineCode(options, source.text)
+        ? renderInlineCode(tokenIndex, source.text)
         : source.text,
   );
 }
 function renderInlineMarkdown(
   markdown: string,
-  options?: Core.InlineMarkdownOptions,
+  renderOptions?: Core.InlineMarkdownOptions,
 ) {
-  let value: boolean = options?.escapes === true,
-    value2 = tokenizeInlineMarkdown(markdown, {
+  let value: boolean = renderOptions?.escapes === true,
+    tokens = tokenizeInlineMarkdown(markdown, {
       escapes: value,
-      literalUnsafeLinks: options?.literalUnsafeLinks === true,
-      linksTo: options?.linksTo,
+      literalUnsafeLinks: renderOptions?.literalUnsafeLinks === true,
+      linksTo: renderOptions?.linksTo,
     });
-  if (value2.length === 1 && value2[0]?.kind === "text") {
-    return value2[0].text;
+  if (tokens.length === 1 && tokens[0]?.kind === "text") {
+    return tokens[0].text;
   }
-  return value2.map((source: Core.InlineMarkdownToken, options2: number) => {
+  return tokens.map((source: Core.InlineMarkdownToken, tokenIndex: number) => {
     switch (source.kind) {
       case "bold":
         return (() => {
@@ -259,42 +259,42 @@ function renderInlineMarkdown(
           const _elementProps = {
             children: value ? source.text : renderCodeSpans(source.text),
           };
-          const _elementKey = options2;
+          const _elementKey = tokenIndex;
           return <_Element key={_elementKey} {..._elementProps} />;
         })();
       case "italic":
         return (() => {
-          const _Element2 = "em";
-          const _elementProps2 = {
+          const EmphasisTag = "em";
+          const emphasisProps = {
             children: value ? source.text : renderCodeSpans(source.text),
           };
-          const _elementKey2 = options2;
-          return <_Element2 key={_elementKey2} {..._elementProps2} />;
+          const emphasisKey = tokenIndex;
+          return <EmphasisTag key={emphasisKey} {...emphasisProps} />;
         })();
       case "code":
-        return renderInlineCode(options2, source.text);
+        return renderInlineCode(tokenIndex, source.text);
       case "link": {
-        let value3 = options?.links ?? "live";
+        let linkMode = renderOptions?.links ?? "live";
         if (
-          value3 === "live" &&
+          linkMode === "live" &&
           classifyExternalLink(source.href) === null
         ) {
           return source.text;
         }
-        let value4 = options?.linkTabIndex;
+        let linkTabIndex = renderOptions?.linkTabIndex;
         return (() => {
-          const _Element3 = "a";
-          const _elementProps3 = {
-            ...externalLinkProps(source.href, value3),
-            ...(value4 === undefined
+          const LinkTag = "a";
+          const linkProps = {
+            ...externalLinkProps(source.href, linkMode),
+            ...(linkTabIndex === undefined
               ? {}
               : {
-                  tabIndex: value4,
+                  tabIndex: linkTabIndex,
                 }),
             children: source.text,
           };
-          const _elementKey3 = options2;
-          return <_Element3 key={_elementKey3} {..._elementProps3} />;
+          const linkKey = tokenIndex;
+          return <LinkTag key={linkKey} {...linkProps} />;
         })();
       }
       default:
@@ -330,27 +330,27 @@ export function installEditorInlineMarkdown(): () => void {
     encodeMarkdownEscapes = (markdown: string) =>
       markdown
         .replace(MARKDOWN_ESCAPE_SENTINEL_PATTERN, "")
-        .replace(/\\([*\u0060[\]\\])/g, (input: string, options: string) =>
+        .replace(/\\([*\u0060[\]\\])/g, (escapedChar: string, character: string) =>
           String.fromCharCode(
-            64976 + MARKDOWN_ESCAPABLE_CHARACTERS.indexOf(options),
+            64976 + MARKDOWN_ESCAPABLE_CHARACTERS.indexOf(character),
           ),
         );
     decodeMarkdownEscapes = (markdown: string, preserveBackslashes = false) =>
       markdown.replace(
         MARKDOWN_ESCAPE_SENTINEL_PATTERN,
-        (input: string): string =>
+        (character: string): string =>
           (preserveBackslashes ? "\\" : "") +
-          (MARKDOWN_ESCAPABLE_CHARACTERS[input.charCodeAt(0) - 64976] ?? ""),
+          (MARKDOWN_ESCAPABLE_CHARACTERS[character.charCodeAt(0) - 64976] ?? ""),
       );
     renderInlineCode = (key: number, text: string) =>
       (() => {
-        const _Element4 = "code";
-        const _elementProps4 = {
+        const CodeTag = "code";
+        const codeProps = {
           className: "rounded bg-bg-warm px-1 font-mono text-[0.9em]",
           children: text,
         };
-        const _elementKey4 = key;
-        return <_Element4 key={_elementKey4} {..._elementProps4} />;
+        const codeKey = key;
+        return <CodeTag key={codeKey} {...codeProps} />;
       })();
   };
 }

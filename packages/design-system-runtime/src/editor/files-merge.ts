@@ -36,14 +36,14 @@ export function relativeProjectFilesForMerge(
   return entries;
 }
 
-export function isFilesMergeObject(value: unknown): value is JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+export function isFilesMergeObject(candidate: unknown): candidate is JsonRecord {
+  return typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
 }
 
-export function isFilesMergeStringArray(value: unknown): value is string[] {
+export function isFilesMergeStringArray(candidate: unknown): candidate is string[] {
   return (
-    Array.isArray(value) &&
-    value.every((item: unknown): boolean => typeof item === "string")
+    Array.isArray(candidate) &&
+    candidate.every((item: unknown): boolean => typeof item === "string")
   );
 }
 
@@ -70,7 +70,7 @@ export function isOrderSubsequence(
 export function resolveFilesMergeSchema(
   schema: MergeSchema | undefined,
   key: string,
-  ...context: JsonMergeValue[]
+  ...schemaValues: JsonMergeValue[]
 ): MergeSchema {
   if (schema?.kind === "map") {
     const declared =
@@ -84,8 +84,8 @@ export function resolveFilesMergeSchema(
       return schema.of;
     }
   }
-  const present = context.filter(
-    (value: JsonMergeValue): boolean => value !== undefined,
+  const present = schemaValues.filter(
+    (mergeValue: JsonMergeValue): boolean => mergeValue !== undefined,
   );
   if (present.length > 0 && present.every(isFilesMergeObject)) {
     return {
@@ -229,7 +229,7 @@ export function mergeDesignSystemFiles(
   title: string,
   beforeFiles: FileTable,
   afterFiles: FileTable,
-  options: FileMergeOptions = {},
+  mergeOptions: FileMergeOptions = {},
 ) {
   const beforeProjectFiles = relativeProjectFilesForMerge(beforeFiles);
   const afterProjectFiles = relativeProjectFilesForMerge(afterFiles);
@@ -244,7 +244,7 @@ export function mergeDesignSystemFiles(
   ])) {
     const before = beforeProjectFiles.get(path);
     const after = afterProjectFiles.get(path);
-    if (before === after || options.excluded?.has(path) === true) {
+    if (before === after || mergeOptions.excluded?.has(path) === true) {
       continue;
     }
     const current = currentProjectFiles.get(path);
@@ -258,11 +258,11 @@ export function mergeDesignSystemFiles(
         nextProjectFiles.set(path, after);
       }
     };
-    const stale: boolean = options.stale?.(path) === true;
+    const stale: boolean = mergeOptions.stale?.(path) === true;
     if (stale || current !== before) {
       const mergedText =
         before !== undefined && after !== undefined && current !== undefined
-          ? (options.merge?.(path, before, after, current) ?? null)
+          ? (mergeOptions.merge?.(path, before, after, current) ?? null)
           : null;
       if (mergedText !== null) {
         if (mergedText === current) {
@@ -285,7 +285,7 @@ export function mergeDesignSystemFiles(
   }
   // 较早的一侧缺少对方已有的索引改动时，先按 theirIndex 补上
   const rebaseIndex = (index: FilesIndex) =>
-    (options.theirIndex ?? []).reduce(
+    (mergeOptions.theirIndex ?? []).reduce(
       (
         merged: FilesIndex,
         delta: FileIndexDelta | IndexPresentationDelta,
@@ -293,11 +293,11 @@ export function mergeDesignSystemFiles(
       index,
     );
   const removeExcludedIndexEntries = (index: FilesIndex) => {
-    if (options.excluded === undefined || options.excluded.size === 0) {
+    if (mergeOptions.excluded === undefined || mergeOptions.excluded.size === 0) {
       return index;
     }
     const cloned = cloneMergeValue(index);
-    for (const path of options.excluded) {
+    for (const path of mergeOptions.excluded) {
       const address = assetFileIndexAddress(path);
       if (address === null) {
         continue;
@@ -315,12 +315,12 @@ export function mergeDesignSystemFiles(
     return cloned;
   };
   const beforeIndex = removeExcludedIndexEntries(
-    options.earlierSide === "from"
+    mergeOptions.earlierSide === "from"
       ? rebaseIndex(buildFilesIndex(title, beforeFiles))
       : buildFilesIndex(title, beforeFiles),
   );
   const afterIndex = removeExcludedIndexEntries(
-    options.earlierSide === "to"
+    mergeOptions.earlierSide === "to"
       ? rebaseIndex(buildFilesIndex(title, afterFiles))
       : buildFilesIndex(title, afterFiles),
   );
@@ -392,7 +392,7 @@ export function mergeDesignSystemFiles(
 export function changedProjectFilePaths(
   before: FileTable,
   after: FileTable,
-  context: string,
+  projectRoot: string,
 ) {
   const beforeFiles = relativeProjectFilesForMerge(before);
   const afterFiles = relativeProjectFilesForMerge(after);
@@ -405,8 +405,8 @@ export function changedProjectFilePaths(
   return {
     files: changed.sort(),
     index: !mergeValuesEqual(
-      filesIndexWithoutDocumentMetadata(buildFilesIndex(context, before)),
-      filesIndexWithoutDocumentMetadata(buildFilesIndex(context, after)),
+      filesIndexWithoutDocumentMetadata(buildFilesIndex(projectRoot, before)),
+      filesIndexWithoutDocumentMetadata(buildFilesIndex(projectRoot, after)),
     ),
   };
 }

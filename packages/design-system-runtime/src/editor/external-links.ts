@@ -18,11 +18,11 @@ var onModifiedLinkEnter: React.KeyboardEventHandler<HTMLElement>;
 var onLinkEnter: React.KeyboardEventHandler<HTMLElement>;
 function classifyExternalLink(
   url: string,
-  options?: Core.EditorLinkOptions,
+  linkOptions?: Core.EditorLinkOptions,
 ): string | null {
   if (
     !(
-      options?.storedUrl === true
+      linkOptions?.storedUrl === true
         ? STORED_EXTERNAL_LINK_PATTERN
         : EXTERNAL_LINK_PATTERN
     ).test(url)
@@ -111,25 +111,25 @@ function prepareEditableLinks(root: ParentNode): void {
   for (let value of Array.from<HTMLAnchorElement>(
     root.querySelectorAll<HTMLAnchorElement>("a[href]"),
   )) {
-    let value2 = linkUrlFromElement(value);
+    let resolvedUrl = linkUrlFromElement(value);
     value.removeAttribute("href");
     value.removeAttribute("target");
     value.removeAttribute("rel");
-    if (value2 === "") {
+    if (resolvedUrl === "") {
       continue;
     }
-    value.setAttribute("data-href", value2);
+    value.setAttribute("data-href", resolvedUrl);
     value.setAttribute("role", "link");
     value.setAttribute("tabindex", "0");
-    value.setAttribute("title", value2 + EXTERNAL_LINK_OPEN_HINT);
+    value.setAttribute("title", resolvedUrl + EXTERNAL_LINK_OPEN_HINT);
     value.setAttribute("class", EXTERNAL_LINK_CLASS_NAME);
   }
 }
 function openExternalLink(
   url: string,
-  options?: Core.EditorLinkOptions,
+  linkOptions?: Core.EditorLinkOptions,
 ): void {
-  if (classifyExternalLink(url, options) === null) {
+  if (classifyExternalLink(url, linkOptions) === null) {
     return;
   }
   let value = document.createElement("a");

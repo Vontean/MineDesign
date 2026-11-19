@@ -35,26 +35,26 @@ function colorValueForTheme(
   theme: string,
   firstThemeId?: string,
 ): Token.ThemeColorValue {
-  let value = token.value[theme],
-    value2 = (value === undefined || value === "") && theme !== firstThemeId,
-    value3 = !value2
-      ? (value ?? "")
+  let themeValue = token.value[theme],
+    isInherited = (themeValue === undefined || themeValue === "") && theme !== firstThemeId,
+    declaredCss = !isInherited
+      ? (themeValue ?? "")
       : firstThemeId !== undefined
         ? (token.value[firstThemeId] ?? "")
         : "",
-    value4 = token.alias?.[theme];
-  if (value4 !== undefined) {
+    themeAlias = token.alias?.[theme];
+  if (themeAlias !== undefined) {
     return {
-      css: value4.css,
-      to: value4.to,
-      declared: value3,
-      inherited: value2,
+      css: themeAlias.css,
+      to: themeAlias.to,
+      declared: declaredCss,
+      inherited: isInherited,
     };
   }
   return {
-    css: value3 !== "" ? value3 : undefined,
-    declared: value3,
-    inherited: value2,
+    css: declaredCss !== "" ? declaredCss : undefined,
+    declared: declaredCss,
+    inherited: isInherited,
   };
 }
 function ColorSwatch({
@@ -63,17 +63,17 @@ function ColorSwatch({
   small: small,
 }: Token.ColorSwatchProps): React.ReactElement {
   useUiLocale();
-  let value = isColorLiteral(css as string) ? css! : null;
+  let literalColor = isColorLiteral(css as string) ? css! : null;
   return (
     <span
       className={joinClassNames(
         "ds-chip inline-flex",
         inherited && "ds-cchip-inh",
       )}
-      data-color={value ?? undefined}
+      data-color={literalColor ?? undefined}
     >
       <ColorChip
-        hex={value}
+        hex={literalColor}
         className={joinClassNames(
           small ? "size-4!" : "size-5! rounded-[4px]!",
           inherited &&
@@ -94,34 +94,34 @@ function colorCssForPicker(css: string | undefined): string | undefined {
   if (entry !== undefined || colorCssConversionCache.has(css!)) {
     return entry;
   }
-  let value = colorCssToRgba(css!);
+  let rgbaColor = colorCssToRgba(css!);
   if (colorCssConversionCache.size > 2000) {
     colorCssConversionCache.clear();
   }
-  colorCssConversionCache.set(css!, value);
-  return value;
+  colorCssConversionCache.set(css!, rgbaColor);
+  return rgbaColor;
 }
 function colorCssToRgba(css: string): string {
   try {
-    let value = document.createElement("canvas");
-    value.width = value.height = 1;
-    let value2 = value.getContext("2d", {
+    let canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    let canvasContext = canvas.getContext("2d", {
       willReadFrequently: true,
     });
-    if (value2 === null) {
+    if (canvasContext === null) {
       return css;
     }
-    value2.fillStyle = css;
-    value2.fillRect(0, 0, 1, 1);
-    let [data, data2, data3, data4] = value2.getImageData(0, 0, 1, 1).data,
-      callback = (input: number | undefined) =>
-        (input ?? 0).toString(16).padStart(2, "0");
+    canvasContext.fillStyle = css;
+    canvasContext.fillRect(0, 0, 1, 1);
+    let [redChannel, greenChannel, blueChannel, alphaChannel] = canvasContext.getImageData(0, 0, 1, 1).data,
+      formatHexChannel = (channel: number | undefined) =>
+        (channel ?? 0).toString(16).padStart(2, "0");
     return (
       "#" +
-      callback(data) +
-      callback(data2) +
-      callback(data3) +
-      (data4 !== undefined && data4 < 255 ? callback(data4) : "")
+      formatHexChannel(redChannel) +
+      formatHexChannel(greenChannel) +
+      formatHexChannel(blueChannel) +
+      (alphaChannel !== undefined && alphaChannel < 255 ? formatHexChannel(alphaChannel) : "")
     );
   } catch {
     return css;
@@ -132,65 +132,65 @@ function useColorContrastReport(
   themes: Model.ColorTheme[],
   firstThemeId?: string,
 ): Token.ColorContrastFor {
-  let memo = (reactColorEditors as typeof React).useMemo(
-      () => groups.flatMap((input) => input.tokens),
+  let colorTokens = (reactColorEditors as typeof React).useMemo(
+      () => groups.flatMap((group) => group.tokens),
       [groups],
     ),
-    value = memo
-      .map((input): string => input.name + "\x00" + (input.usage ?? ""))
+    usageSignature = colorTokens
+      .map((token): string => token.name + "\x00" + (token.usage ?? ""))
       .join("\x01"),
-    memo2 = (reactColorEditors as typeof React).useMemo<
+    contrastPairMap = (reactColorEditors as typeof React).useMemo<
       Map<
         string,
         {
           against: string[];
         }
       >
-    >(() => inferColorContrastPairs(memo), [value]);
+    >(() => inferColorContrastPairs(colorTokens), [usageSignature]);
   return (reactColorEditors as typeof React).useMemo(() => {
-    let entries = new Map<string, Token.EditorColorToken>(
-        memo.map((input) => [input.name, input]),
+    let tokensByName = new Map<string, Token.EditorColorToken>(
+        colorTokens.map((token) => [token.name, token]),
       ),
-      value2: boolean = themes.length > 1;
-    return (input: Token.EditorColorToken, options: string) => {
-      let entry = memo2.get(input.name);
+      hasMultipleThemes: boolean = themes.length > 1;
+    return (token: Token.EditorColorToken, themeId: string) => {
+      let entry = contrastPairMap.get(token.name);
       if (entry === undefined) {
         return;
       }
-      let value3 =
-          themes.find((input2): boolean => input2.id === options)?.name ??
-          options,
-        value4 = entry.against.flatMap((input2) => {
-          let entry2 = entries.get(input2),
-            value5 =
-              entry2 === undefined
+      let themeName =
+          themes.find((candidateTheme): boolean => candidateTheme.id === themeId)?.name ??
+          themeId,
+        againstColors = entry.against.flatMap((againstName) => {
+          let againstToken = tokensByName.get(againstName),
+            againstCss =
+              againstToken === undefined
                 ? undefined
                 : colorCssForPicker(
-                    colorValueForTheme(entry2, options, firstThemeId).css,
+                    colorValueForTheme(againstToken, themeId, firstThemeId).css,
                   );
           if (
-            value5 === undefined ||
-            (parseContrastColor(value5)?.a ?? 0) < 1
+            againstCss === undefined ||
+            (parseContrastColor(againstCss)?.a ?? 0) < 1
           ) {
             return [];
           }
           return [
             {
-              css: value5,
-              get label() { return value2 ? ((((input2) + (" (")) + (value3)) + (")")) : (input2); },
+              css: againstCss,
+              get label() { return hasMultipleThemes ? ((((againstName) + (" (")) + (themeName)) + (")")) : (againstName); },
             },
           ];
         });
-      if (value4.length === 0) {
+      if (againstColors.length === 0) {
         return undefined;
       } else {
         return {
-          against: value4,
+          against: againstColors,
           role: "text",
         };
       }
     };
-  }, [memo2, memo, themes, firstThemeId]);
+  }, [contrastPairMap, colorTokens, themes, firstThemeId]);
 }
 function ColorValueCell({
   token: token,
@@ -204,89 +204,89 @@ function ColorValueCell({
   busy = false,
 }: Token.ColorValueCellProps): React.ReactElement {
   useUiLocale();
-  let value = colorValueForTheme(token, theme.id, firstId),
-    [value2, value3] = (reactColorEditors as typeof React).useState(
+  let themeColor = colorValueForTheme(token, theme.id, firstId),
+    [isEditing, setIsEditing] = (reactColorEditors as typeof React).useState(
       false,
     );
-  if (value2 && !busy) {
-    value3(false);
+  if (isEditing && !busy) {
+    setIsEditing(false);
   }
-  let value4 = contrastFor(token, theme.id),
-    value5 = value4 === undefined ? undefined : JSON.stringify(value4),
-    memo = (reactColorEditors as typeof React).useMemo(
-      () => value4,
-      [value5],
+  let contrast = contrastFor(token, theme.id),
+    contrastJson = contrast === undefined ? undefined : JSON.stringify(contrast),
+    stableContrast = (reactColorEditors as typeof React).useMemo(
+      () => contrast,
+      [contrastJson],
     ),
     ref = (
       reactColorEditors as typeof React
     ).useRef<HTMLSpanElement | null>(null),
-    value6: string =
+    ariaLabel: string =
       token.name +
       " · " +
       theme.name +
       ": " +
-      (value.to !== undefined
-        ? uiMessage("design-system.colors.aliasOf2") + value.to
-        : (value.css ?? uiMessage("design-system.colors.noValue"))) +
-      (value.inherited ? " (inherited)" : ""),
-    callback = (): void => {
-      let value12 = value.css ?? "";
-      if (value12 !== "") {
-        copyTextToClipboard(value12).then((input: boolean) =>
+      (themeColor.to !== undefined
+        ? uiMessage("design-system.colors.aliasOf2") + themeColor.to
+        : (themeColor.css ?? uiMessage("design-system.colors.noValue"))) +
+      (themeColor.inherited ? " (inherited)" : ""),
+    copyColor = (): void => {
+      let cssValue = themeColor.css ?? "";
+      if (cssValue !== "") {
+        copyTextToClipboard(cssValue).then((copySucceeded: boolean) =>
           showEditorNotification(
-            input ? value12 + " copied" : value12,
+            copySucceeded ? cssValue + " copied" : cssValue,
           ),
         );
       }
     },
-    value7 =
+    editControl =
       themes[0] !== undefined && themes[0].id !== theme.id
         ? themes[0]
         : undefined,
-    value8 = (
+    editField = (
       <Button
         variant={"ghost"}
         size={"sm"}
         iconOnly={true}
-        icon={<ColorSwatch css={value.css} inherited={value.inherited} />}
+        icon={<ColorSwatch css={themeColor.css} inherited={themeColor.inherited} />}
         className={joinClassNames(
           "ds-cchip",
-          value.inherited && "ds-cchip-inh",
+          themeColor.inherited && "ds-cchip-inh",
         )}
-        aria-label={value6}
+        aria-label={ariaLabel}
         tooltip={
-          uiMessage("design-system.colors.copy", { value1: String(themes.length > 1 ? (theme.name + ": ") : ("")), value2: String(value.css ?? ("")) })
+          uiMessage("design-system.colors.copy", { value1: String(themes.length > 1 ? (theme.name + ": ") : ("")), value2: String(themeColor.css ?? ("")) })
         }
         data-testid={"ds-chip-" + token.name + "-" + theme.id}
         onClick={(event: React.MouseEvent<HTMLButtonElement>): void => {
           event.preventDefault();
           event.stopPropagation();
-          callback();
+          copyColor();
         }}
       />
     ),
-    memo2 = (reactColorEditors as typeof React).useMemo(
+    foregroundContrast = (reactColorEditors as typeof React).useMemo(
       () =>
-        value.css !== undefined && isColorLiteral(value.css)
-          ? /^#|^rgba?\(/i.test(value.css)
-            ? value.css
-            : (colorCssForPicker(value.css) ?? value.css)
+        themeColor.css !== undefined && isColorLiteral(themeColor.css)
+          ? /^#|^rgba?\(/i.test(themeColor.css)
+            ? themeColor.css
+            : (colorCssForPicker(themeColor.css) ?? themeColor.css)
           : undefined,
-      [value.css],
+      [themeColor.css],
     ),
-    value9 = value.inherited ? undefined : memo2,
-    memo3 = (reactColorEditors as typeof React).useMemo(
+    contrastResult = themeColor.inherited ? undefined : foregroundContrast,
+    worstResult = (reactColorEditors as typeof React).useMemo(
       () =>
-        memo2 === undefined || memo === undefined
+        foregroundContrast === undefined || stableContrast === undefined
           ? undefined
-          : colorContrastResults(memo2, memo),
-      [memo2, memo],
+          : colorContrastResults(foregroundContrast, stableContrast),
+      [foregroundContrast, stableContrast],
     ),
-    value10 =
-      memo3 === undefined
+    worstContrast =
+      worstResult === undefined
         ? undefined
-        : worstContrastResult(memo3),
-    value11 = (
+        : worstContrastResult(worstResult),
+    contrastLabel = (
       <jsxColorEditors.Fragment>
         {[edit !== undefined ? (
             <span
@@ -297,44 +297,44 @@ function ColorValueCell({
             >
               <ColorTextPropertyRow
                 label={((token.name) + (" · ")) + (theme.name)}
-                value={value9}
+                value={contrastResult}
                 editsAreUndoSteps={true}
                 popupAttrs={commentTargetProps(
                   "picker",
                   token.name + ":" + theme.id,
                 )}
-                {...(value.inherited && memo2 !== undefined
+                {...(themeColor.inherited && foregroundContrast !== undefined
                   ? {
-                      placeholder: memo2,
+                      placeholder: foregroundContrast,
                     }
                   : {})}
-                {...(value.inherited && value7 !== undefined
+                {...(themeColor.inherited && editControl !== undefined
                   ? {
-                      clearLabel: uiMessage("design-system.colors.inherits") + value7.name,
+                      clearLabel: uiMessage("design-system.colors.inherits") + editControl.name,
                     }
                   : {})}
-                {...(value.to !== undefined
+                {...(themeColor.to !== undefined
                   ? {
-                      title: uiMessage("design-system.colors.aliasOf") + value.to,
-                      description: uiMessage("design-system.colors.aliasOf") + value.to,
+                      title: uiMessage("design-system.colors.aliasOf") + themeColor.to,
+                      description: uiMessage("design-system.colors.aliasOf") + themeColor.to,
                     }
                   : {})}
-                {...(memo !== undefined
+                {...(stableContrast !== undefined
                   ? {
-                      contrast: memo,
+                      contrast: stableContrast,
                       contrastMark: true,
                     }
                   : {})}
-                onChange={(input: string): void => {
-                  if (input === undefined) {
+                onChange={(cssValue: string): void => {
+                  if (cssValue === undefined) {
                     edit.clear?.(token.name, theme.id);
                     return;
                   }
-                  edit.value(token.name, theme.id, input);
+                  edit.value(token.name, theme.id, cssValue);
                   edit.done?.();
                 }}
-                onLive={(input: string) =>
-                  edit.value(token.name, theme.id, input)
+                onLive={(liveCssValue: string) =>
+                  edit.value(token.name, theme.id, liveCssValue)
                 }
                 onLiveEnd={() => edit.done?.()}
               />
@@ -344,34 +344,34 @@ function ColorValueCell({
               className={"ds-cchip-anchor relative inline-flex"}
               ref={ref}
             >
-              {value8}
+              {editField}
             </span>
-          ), edit !== undefined ? null : value.to !== undefined ? (
+          ), edit !== undefined ? null : themeColor.to !== undefined ? (
             <TextLink
               className={joinClassNames(
                 "ds-calias min-w-0 truncate font-mono text-footnote",
-                value.inherited && "text-muted",
+                themeColor.inherited && "text-muted",
               )}
               icon={"ArrowRight"}
               iconPosition={"start"}
-              onClick={() => onGoto(value.to!)}
+              onClick={() => onGoto(themeColor.to!)}
               data-testid={"ds-alias-" + token.name + "-" + theme.id}
             >
-              {value.to}
+              {themeColor.to}
             </TextLink>
-          ) : value.css !== undefined ? (
+          ) : themeColor.css !== undefined ? (
             <span
               className={joinClassNames(
                 "ds-chex min-w-0 truncate font-mono text-footnote",
-                value.inherited ? "text-muted" : "text-secondary",
+                themeColor.inherited ? "text-muted" : "text-secondary",
               )}
-              title={value.css}
+              title={themeColor.css}
               data-testid={"ds-hex-" + token.name + "-" + theme.id}
             >
-              {value.css}
+              {themeColor.css}
             </span>
-          ) : null, edit === undefined && memo3 !== undefined ? (
-            <ContrastMark results={memo3} />
+          ) : null, edit === undefined && worstResult !== undefined ? (
+            <ContrastMark results={worstResult} />
           ) : null]}
       </jsxColorEditors.Fragment>
     );
@@ -388,24 +388,24 @@ function ColorValueCell({
     >
       <span className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
         {[<span className={"flex min-w-0 items-center gap-sm"}>
-            {value11}
-          </span>, memo3 !== undefined && value10 !== undefined && !value10.passes ? (
+            {contrastLabel}
+          </span>, worstResult !== undefined && worstContrast !== undefined && !worstContrast.passes ? (
             <span
               className={
                 "flex min-w-0 flex-wrap items-center gap-x-sm gap-y-0.5"
               }
             >
               {[<ContrastCaption
-                  result={value10}
+                  result={worstContrast}
                   name={stripThemeSuffixFromColorLabel(
-                    value10.ground.label,
+                    worstContrast.ground.label,
                     theme,
                     themes,
                   )}
                 />, edit !== undefined && askClaude !== undefined ? (
                   <DisabledReasonTooltip
                     reason={
-                      busy && !value2
+                      busy && !isEditing
                         ? uiMessage("design-system.colors.aRequestToTheAgent")
                         : undefined
                     }
@@ -416,22 +416,22 @@ function ColorValueCell({
                         get_FIX_WITH_CLAUDE_LABEL() + ": " + token.name + (themes.length > 1 ? ", " + theme.name + uiMessage("design-system.colors.theme2") : "")
                       }
                       data-testid={"ds-fix-" + token.name + "-" + theme.id}
-                      busy={busy && value2}
+                      busy={busy && isEditing}
                       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                       busyLabel={"Asking the agent"}
-                      disabled={busy && !value2}
+                      disabled={busy && !isEditing}
                       onClick={(
-                        input: React.MouseEvent<HTMLButtonElement>,
+                        event: React.MouseEvent<HTMLButtonElement>,
                       ): void => {
-                        value3(true);
+                        setIsEditing(true);
                         askClaude(
                           colorContrastSummary(
                             token.name,
                             theme,
                             themes,
-                            memo3,
+                            worstResult,
                           ),
-                          input.currentTarget,
+                          event.currentTarget,
                         );
                       }}
                     >
@@ -450,9 +450,9 @@ function stripThemeSuffixFromColorLabel(
   theme: Model.ColorTheme,
   themes: Model.ColorTheme[],
 ): string {
-  let value: string = " (" + theme.name + ")";
-  if (themes.length > 1 && label.endsWith(value)) {
-    return label.slice(0, -value.length);
+  let themeSuffix: string = " (" + theme.name + ")";
+  if (themes.length > 1 && label.endsWith(themeSuffix)) {
+    return label.slice(0, -themeSuffix.length);
   } else {
     return label;
   }
@@ -463,30 +463,30 @@ function colorContrastSummary(
   themes: Model.ColorTheme[],
   checks: Color.ContrastResult[],
 ): Token.ContrastRequest {
-  let value = checks
-      .filter((input): boolean => !input.passes)
-      .sort((input, options) => input.ratio - options.ratio)
-      .map((input) => ({
+  let failedChecks = checks
+      .filter((contrastResult): boolean => !contrastResult.passes)
+      .sort((leftResult, rightResult) => leftResult.ratio - rightResult.ratio)
+      .map((contrastResult) => ({
         ground: stripThemeSuffixFromColorLabel(
-          input.ground.label,
+          contrastResult.ground.label,
           theme,
           themes,
         ),
-        ratio: contrastRatioReadout(input.ratio),
+        ratio: contrastRatioReadout(contrastResult.ratio),
       })),
-    state = {
+    contrastRequest = {
       token: token,
       theme: themes.length > 1 ? theme.id : undefined,
-      failing: value,
+      failing: failedChecks,
       min: contrastRatioReadout(
         worstContrastResult(checks).min,
       ),
     },
-    value2 = artifactPageAddress();
+    pageAddress = artifactPageAddress();
   return {
     label: get_FIX_WITH_CLAUDE_LABEL(),
-    request: viewerColorContrastFixPrompt(state, value2),
-    prompt: ownerColorContrastFixPrompt(state, value2),
+    request: viewerColorContrastFixPrompt(contrastRequest, pageAddress),
+    prompt: ownerColorContrastFixPrompt(contrastRequest, pageAddress),
   };
 }
 function ColorTokenRow({
@@ -504,11 +504,11 @@ function ColorTokenRow({
   busy: busy,
 }: Token.ColorTokenRowProps): React.ReactElement {
   useUiLocale();
-  let value = colorValueForTheme(token, firstId ?? "", firstId),
-    value2 = useRowContextMenu(
-      edit !== undefined || (value.css ?? "") !== "",
+  let firstThemeColor = colorValueForTheme(token, firstId ?? "", firstId),
+    rowContextMenu = useRowContextMenu(
+      edit !== undefined || (firstThemeColor.css ?? "") !== "",
     ),
-    callback = () =>
+    openRename = () =>
       document
         .querySelector<HTMLElement>(
           '[data-testid="ds-color-name-' + token.name + '"]',
@@ -525,7 +525,7 @@ function ColorTokenRow({
       style={gridStyle}
       data-testid={"ds-color-" + token.name}
       {...commentTargetProps("token", token.name)}
-      {...value2.rowProps}
+      {...rowContextMenu.rowProps}
     >
       {[<span className={"ds-cname min-w-0 font-mono"} role={"rowheader"}>
           <EditableName
@@ -534,17 +534,17 @@ function ColorTokenRow({
             commit={
               edit === undefined
                 ? undefined
-                : (input: string) => edit.rename(token.name, input)
+                : (name: string) => edit.rename(token.name, name)
             }
             data-testid={"ds-color-name-" + token.name}
           />
         </span>, <span className={"ds-ccells contents"} role={"none"}>
-          {themes.map((input) =>
+          {themes.map((theme) =>
             (() => {
               const _Element = ColorValueCell;
               const _elementProps = {
                 token: token,
-                theme: input,
+                theme: theme,
                 themes: themes,
                 firstId: firstId,
                 edit: edit,
@@ -561,7 +561,7 @@ function ColorTokenRow({
                     }
                   : {}),
               };
-              const _elementKey = input.id;
+              const _elementKey = theme.id;
               return <_Element key={_elementKey} {..._elementProps} />;
             })(),
           )}
@@ -579,7 +579,7 @@ function ColorTokenRow({
               onChange={
                 edit === undefined
                   ? undefined
-                  : (input: string) => edit.usage(token.name, input)
+                  : (usage: string) => edit.usage(token.name, usage)
               }
               onDone={edit?.done}
               data-testid={"ds-color-usage-" + token.name}
@@ -592,23 +592,23 @@ function ColorTokenRow({
             ) : null]}
         </span>, <RowContextMenu
           title={token.name}
-          at={value2.at}
-          anchor={value2.anchor}
-          onClose={value2.close}
+          at={rowContextMenu.at}
+          anchor={rowContextMenu.anchor}
+          onClose={rowContextMenu.close}
           testid={"ds-color-menu-" + token.name}
           actions={{
             ...(edit !== undefined
               ? {
-                  rename: callback,
+                  rename: openRename,
                   remove: () => edit.remove(token.name),
                   get removeLabel() { return uiMessage("design-system.colors.remove", { value1: String(token.name) }); },
                 }
               : {}),
-            copy: value.css ?? "",
-            ...(value.to !== undefined
+            copy: firstThemeColor.css ?? "",
+            ...(firstThemeColor.to !== undefined
               ? {
-                  goto: () => onGoto(value.to!),
-                  gotoLabel: "Go to " + value.to,
+                  goto: () => onGoto(firstThemeColor.to!),
+                  gotoLabel: "Go to " + firstThemeColor.to,
                 }
               : {}),
             ...(edit?.clear !== undefined && themes[0] !== undefined
@@ -616,13 +616,13 @@ function ColorTokenRow({
                   inherit: themes
                     .slice(1)
                     .filter(
-                      (input): boolean =>
-                        !colorValueForTheme(token, input.id, firstId)
+                      (theme): boolean =>
+                        !colorValueForTheme(token, theme.id, firstId)
                           .inherited,
                     )
-                    .map((input) => ({
-                      get label() { return ((input.name) + (": inherit ")) + (themes[0].name); },
-                      run: () => edit.clear?.(token.name, input.id),
+                    .map((theme) => ({
+                      get label() { return ((theme.name) + (": inherit ")) + (themes[0].name); },
+                      run: () => edit.clear?.(token.name, theme.id),
                     })),
                 }
               : {}),
@@ -640,8 +640,8 @@ function colorThemeGridStyle(themeCount: number): {
     },
   };
 }
-function normalizeThemeId(value: string): string {
-  return value
+function normalizeThemeId(themeIdValue: string): string {
+  return themeIdValue
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-")
@@ -653,7 +653,7 @@ function ColorsSectionHeader({
   note: note,
 }: Token.EditorSectionHeaderProps<Token.ColorEdit>): React.ReactElement {
   useUiLocale();
-  let value = edit?.addGroup;
+  let addGroup = edit?.addGroup;
   return (
     <SectionHeader
       title={COLORS_SECTION_LABEL}
@@ -661,12 +661,12 @@ function ColorsSectionHeader({
       pageId={"colors"}
       data-testid={"ds-colors-head"}
       actions={
-        value === undefined ? undefined : (
+        addGroup === undefined ? undefined : (
           <jsxColorEditors.Fragment>
             <SectionAddButton
               label={uiMessage("design-system.colors.add")}
               what={"Add color group"}
-              onClick={() => value(true)}
+              onClick={() => addGroup(true)}
               data-testid={"ds-add-color-group"}
             />
           </jsxColorEditors.Fragment>
@@ -684,7 +684,7 @@ function ColorsSection({
   busy: busy,
 }: Token.ColorsSectionProps): React.ReactElement | null {
   useUiLocale();
-  let value =
+  let visibleThemes =
       themes.length > 0
         ? themes
         : [
@@ -693,44 +693,44 @@ function ColorsSection({
               name: "Value",
             },
           ],
-    value2 = themes[0]?.id,
-    value3 = useColorContrastReport(groups, value, value2),
-    [value4, value5] = (reactColorEditors as typeof React).useState<
+    firstThemeId = themes[0]?.id,
+    contrastReport = useColorContrastReport(groups, visibleThemes, firstThemeId),
+    [flashedToken, setFlashedToken] = (reactColorEditors as typeof React).useState<
       string | null
     >(null),
-    [value6, value7] = (reactColorEditors as typeof React).useState<
+    [selectedTokenName, setSelectedTokenName] = (reactColorEditors as typeof React).useState<
       string | null
     >(null),
     ref = (reactColorEditors as typeof React).useRef(
       new Map<string, HTMLDivElement>(),
     ),
-    memo = (reactColorEditors as typeof React).useMemo(
+    tokenNames = (reactColorEditors as typeof React).useMemo(
       () =>
         names ??
         new Set(
-          groups.flatMap((input) =>
-            input.tokens.map((input2) => input2.name),
+          groups.flatMap((group) =>
+            group.tokens.map((token) => token.name),
           ),
         ),
       [names, groups],
     ),
-    callback = (input: string): void => {
+    gotoToken = (tokenName: string): void => {
       if (
-        !groups.some((input2) =>
-          input2.tokens.some((input3): boolean => input3.name === input),
+        !groups.some((group) =>
+          group.tokens.some((token): boolean => token.name === tokenName),
         )
       ) {
-        showEditorNotification(input + " is not in this file");
+        showEditorNotification(tokenName + " is not in this file");
         return;
       }
-      value7(input);
+      setSelectedTokenName(tokenName);
     };
   (reactColorEditors as typeof React).useLayoutEffect((): void => {
-    if (value6 === null) {
+    if (selectedTokenName === null) {
       return;
     }
-    let entry = ref.current.get(value6);
-    value7(null);
+    let entry = ref.current.get(selectedTokenName);
+    setSelectedTokenName(null);
     if (entry === undefined) {
       return;
     }
@@ -740,38 +740,38 @@ function ColorsSection({
         block: "center",
       });
     }
-    value5(value6);
-  }, [value6]);
+    setFlashedToken(selectedTokenName);
+  }, [selectedTokenName]);
   (reactColorEditors as typeof React).useEffect(() => {
-    if (value4 === null) {
+    if (flashedToken === null) {
       return;
     }
-    let value10 = window.setTimeout(() => value5(null), 1200);
-    return () => window.clearTimeout(value10);
-  }, [value4]);
+    let clearFlashTimer = window.setTimeout(() => setFlashedToken(null), 1200);
+    return () => window.clearTimeout(clearFlashTimer);
+  }, [flashedToken]);
   if (
-    groups.reduce((input, options) => input + options.tokens.length, 0) === 0
+    groups.reduce((group, groupIndex) => group + groupIndex.tokens.length, 0) === 0
   ) {
     return null;
   }
-  let value8 = colorThemeGridStyle(value.length),
-    value9 = (
+  let gridStyle = colorThemeGridStyle(visibleThemes.length),
+    tokenRows = (
       <div
         className={"ds-crow ds-chead text-caption text-muted"}
         role={"row"}
-        style={value8.style}
+        style={gridStyle.style}
         {...UNCOMMENTABLE_PROPS}
       >
-        {[<span role={"columnheader"}>{uiMessage("design-system.colors.name")}</span>, value.map((input) =>
+        {[<span role={"columnheader"}>{uiMessage("design-system.colors.name")}</span>, visibleThemes.map((token) =>
             (() => {
-              const _Element2 = "span";
-              const _elementProps2 = {
+              const ColorNameTag = "span";
+              const colorNameProps = {
                 role: "columnheader",
                 className: "ds-chead-th truncate",
-                children: input.name,
+                children: token.name,
               };
-              const _elementKey2 = input.id;
-              return <_Element2 key={_elementKey2} {..._elementProps2} />;
+              const colorNameKey = token.id;
+              return <ColorNameTag key={colorNameKey} {...colorNameProps} />;
             })(),
           ), <span
             role={"columnheader"}
@@ -780,34 +780,34 @@ function ColorsSection({
           />]}
       </div>
     ),
-    callback2 = (input: Token.EditorColorToken[], options: string) => (
+    renderColorRows = (tokens: Token.EditorColorToken[], themeId: string) => (
       <div className={"ds-cscroll overflow-x-auto"}>
         <div
           className={"ds-ctable"}
           role={"table"}
-          aria-label={uiMessage("design-system.colors.colors", { value1: String(options) })}
+          aria-label={uiMessage("design-system.colors.colors", { value1: String(themeId) })}
           data-edit={edit !== undefined ? "" : undefined}
         >
-          {[value9, input.map((input2) => {
+          {[tokenRows, tokens.map((token) => {
               return (() => {
-                const _Element3 = ColorTokenRow;
-                const _elementProps3 = {
-                  token: input2,
-                  themes: value,
-                  firstId: value2,
+                const ColorTokenRowComponent = ColorTokenRow;
+                const colorTokenRowProps = {
+                  token: token,
+                  themes: visibleThemes,
+                  firstId: firstThemeId,
                   edit: edit,
-                  names: memo,
-                  onGoto: callback,
-                  flash: value4 === input2.name,
-                  rowRef: (input3: HTMLDivElement | null): void => {
-                    if (input3 === null) {
-                      ref.current.delete(input2.name);
+                  names: tokenNames,
+                  onGoto: gotoToken,
+                  flash: flashedToken === token.name,
+                  rowRef: (element: HTMLDivElement | null): void => {
+                    if (element === null) {
+                      ref.current.delete(token.name);
                     } else {
-                      ref.current.set(input2.name, input3);
+                      ref.current.set(token.name, element);
                     }
                   },
-                  gridStyle: value8.style,
-                  contrastFor: value3,
+                  gridStyle: gridStyle.style,
+                  contrastFor: contrastReport,
                   ...(askClaude !== undefined
                     ? {
                         askClaude: askClaude,
@@ -819,53 +819,53 @@ function ColorsSection({
                       }
                     : {}),
                 };
-                const _elementKey3 = input2.name;
-                return <_Element3 key={_elementKey3} {..._elementProps3} />;
+                const tokenKey = token.name;
+                return <ColorTokenRowComponent key={tokenKey} {...colorTokenRowProps} />;
               })();
             })]}
         </div>
       </div>
     ),
-    callback3 = (input: Token.TokenNameGroup<Token.EditorColorToken>) =>
-      input.name === "" ? PALETTE_GROUP_NAME : input.name,
-    callback4 = (input: Token.TokenNameGroup<Token.EditorColorToken>) =>
-      input.name === ""
+    getGroupLabel = (group: Token.TokenNameGroup<Token.EditorColorToken>) =>
+      group.name === "" ? PALETTE_GROUP_NAME : group.name,
+    getGroupKey = (group: Token.TokenNameGroup<Token.EditorColorToken>) =>
+      group.name === ""
         ? PALETTE_GROUP_NAME.toLowerCase()
-        : input.name,
-    values = new Set(groups.map((input) => callback4(input))),
-    callback5 = (input: Token.TokenNameGroup<Token.EditorColorToken>) => {
-      let value10 = edit?.renameGroup;
-      if (value10 === undefined) {
+        : group.name,
+    values = new Set(groups.map((group) => getGroupKey(group))),
+    renameGroup = (group: Token.TokenNameGroup<Token.EditorColorToken>) => {
+      let renameGroupAction = edit?.renameGroup;
+      if (renameGroupAction === undefined) {
         return;
       }
-      return (input2: string) => {
-        let value11 = normalizeThemeId(input2);
-        if (value11 === "") {
+      return (nextGroupName: string) => {
+        let normalizedGroupName = normalizeThemeId(nextGroupName);
+        if (normalizedGroupName === "") {
           showEditorNotification(uiMessage("design-system.colors.aGroupNeedsAName"));
           return true;
         }
         if (
-          value11 === input.name ||
-          (input.name === "" &&
-            value11 === PALETTE_GROUP_NAME.toLowerCase())
+          normalizedGroupName === group.name ||
+          (group.name === "" &&
+            normalizedGroupName === PALETTE_GROUP_NAME.toLowerCase())
         ) {
           return true;
         }
-        if (values.has(value11)) {
+        if (values.has(normalizedGroupName)) {
           showEditorNotification(
-            uiMessage("design-system.colors.thereIsAlreadyA") + value11 + " group",
+            uiMessage("design-system.colors.thereIsAlreadyA") + normalizedGroupName + " group",
           );
           return true;
         }
-        if (!value10(input, value11)) {
+        if (!renameGroupAction(group, normalizedGroupName)) {
           showEditorNotification(
             uiMessage("design-system.colors.couldNotRename") +
-              callback3(input) +
+              getGroupLabel(group) +
               " — a token name is already taken.",
           );
           return true;
         }
-        return value11;
+        return normalizedGroupName;
       };
     };
   return (
@@ -873,42 +873,42 @@ function ColorsSection({
       className={"ds-colors flex flex-col gap-[48px]"}
       data-testid={"ds-colors"}
     >
-      {groups.map((input) => {
-        let value10 = callback4(input),
-          value11 = callback3(input);
+      {groups.map((group) => {
+        let groupDataKey = getGroupKey(group),
+          groupLabel = getGroupLabel(group);
         return (() => {
-          const _Element4 = "section";
-          const _elementProps4 = {
+          const ColorGroupSection = "section";
+          const groupSectionProps = {
             className: joinClassNames(
               "ds-cgroup flex min-w-0 flex-col",
-              input.name === "" && "ds-cgroup-loose",
+              group.name === "" && "ds-cgroup-loose",
             ),
-            "aria-label": value11,
-            "data-testid": "ds-color-group-" + value10,
-            "data-id": commentTargetId("cgroup", input.name),
+            "aria-label": groupLabel,
+            "data-testid": "ds-color-group-" + groupDataKey,
+            "data-id": commentTargetId("cgroup", group.name),
             children: [
               <div
                 className={
                   "ds-cgroup-head flex min-h-10 min-w-0 items-center gap-xs pb-xs"
                 }
-                data-testid={"ds-color-group-" + value10 + "-head"}
+                data-testid={"ds-color-group-" + groupDataKey + "-head"}
                 {...COMMENT_TARGET_PROPS}
               >
                 {[<span className={"min-w-0 flex-1"}>
                     <EditableName
-                      name={value11}
+                      name={groupLabel}
                       taken={values}
-                      commit={callback5(input)}
+                      commit={renameGroup(group)}
                       className={"ds-gname"}
-                      data-testid={"ds-color-group-" + value10 + "-name"}
+                      data-testid={"ds-color-group-" + groupDataKey + "-name"}
                     />
                   </span>, edit?.removeGroup !== undefined ? (
                     <RemoveSectionButton
-                      label={value11}
+                      label={groupLabel}
                       icon={"Trash"}
                       verb={"Delete"}
-                      onRemove={() => edit.removeGroup?.(input)}
-                      data-testid={"ds-color-group-" + value10 + "-delete"}
+                      onRemove={() => edit.removeGroup?.(group)}
+                      data-testid={"ds-color-group-" + groupDataKey + "-delete"}
                     />
                   ) : null, edit?.addTo !== undefined ? (
                     <Button
@@ -916,19 +916,19 @@ function ColorsSection({
                       size={"sm"}
                       iconOnly={true}
                       icon={"Add"}
-                      aria-label={uiMessage("design-system.colors.addColorTo", { value1: String(value11) })}
+                      aria-label={uiMessage("design-system.colors.addColorTo", { value1: String(groupLabel) })}
                       tooltip={uiMessage("design-system.colors.addColor")}
-                      onClick={() => edit.addTo?.(input)}
-                      data-testid={"ds-add-color-" + value10}
+                      onClick={() => edit.addTo?.(group)}
+                      data-testid={"ds-add-color-" + groupDataKey}
                       {...UNCOMMENTABLE_PROPS}
                     />
                   ) : null]}
               </div>,
-              callback2(input.tokens, value11),
+              renderColorRows(group.tokens, groupLabel),
             ],
           };
-          const _elementKey4 = value10;
-          return <_Element4 key={_elementKey4} {..._elementProps4} />;
+          const groupKey = groupDataKey;
+          return <ColorGroupSection key={groupKey} {...groupSectionProps} />;
         })();
       })}
     </div>

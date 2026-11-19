@@ -23,8 +23,8 @@ var reactToolbarPicker: typeof import("react");
 var jsxToolbarPicker: typeof import("react/jsx-runtime");
 var EMPTY_MARKDOWN_FORMAT_STATE: import("../contracts").MarkdownFormatState;
 function ToolbarSelect({
-  value: value,
-  options: options,
+  value: selectedValue,
+  options: selectOptions,
   onChange: onChange,
   title: title,
   testid: testid,
@@ -34,63 +34,63 @@ function ToolbarSelect({
   popupAttrs: popupAttrs,
 }: ToolbarSelectProps) {
   useUiLocale();
-  let value2 =
+  let initialValue =
       reactToolbarPicker.useContext(ToolbarTooltipSideContext) ??
       "bottom",
-    [value3, value4] = reactToolbarPicker.useState(value2),
-    [value5, value6] = reactToolbarPicker.useState(false),
+    [menuSide, setSelectedValue] = reactToolbarPicker.useState(initialValue),
+    [isOpen, setIsOpen] = reactToolbarPicker.useState(false),
     ref = reactToolbarPicker.useRef<HTMLDivElement | null>(null),
-    ref2 = reactToolbarPicker.useRef<HTMLElement | SVGElement | null>(null),
-    value7 = value5 && !disabled;
+    triggerRef = reactToolbarPicker.useRef<HTMLElement | SVGElement | null>(null),
+    isMenuOpen = isOpen && !disabled;
   reactToolbarPicker.useEffect((): void => {
     if (disabled) {
-      value6(false);
+      setIsOpen(false);
     }
   }, [disabled]);
-  let value8 = options.find(
-      (input: ToolbarSelectOption): boolean => input.value === value,
+  let selectedOption = selectOptions.find(
+      (option: ToolbarSelectOption): boolean => option.value === selectedValue,
     ),
-    value9 =
-      value8 === undefined
-        ? (value ?? "")
-        : (value8.text ??
-          (typeof value8.label === "string" ? value8.label : value)),
-    value10 = chipLabel ?? value9,
-    value11: string | undefined =
-      typeof value10 === "string" || typeof value10 === "number"
-        ? String(value10)
+    optionLabel =
+      selectedOption === undefined
+        ? (selectedValue ?? "")
+        : (selectedOption.text ??
+          (typeof selectedOption.label === "string" ? selectedOption.label : selectedValue)),
+    displayValue = chipLabel ?? optionLabel,
+    optionTitle: string | undefined =
+      typeof displayValue === "string" || typeof displayValue === "number"
+        ? String(displayValue)
         : undefined,
-    value12 =
-      disabled || value11 === undefined
+    ariaLabel =
+      disabled || optionTitle === undefined
         ? undefined
-        : value11 === ""
+        : optionTitle === ""
           ? title
-          : title + ": " + value11;
+          : title + ": " + optionTitle;
   return (
     <span className={"inline-flex"}>
-      {[value7 ? <PopupScrim onClose={() => value6(false)} /> : null, <Menu.Root
-          open={value7}
+      {[isMenuOpen ? <PopupScrim onClose={() => setIsOpen(false)} /> : null, <Menu.Root
+          open={isMenuOpen}
           disabled={disabled}
           modal={false}
           onOpenChange={(
-            input: boolean,
-            options2: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+            open: boolean,
+            changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
           ): void => {
-            if (!input && options2.reason === "outside-press") {
-              let value13 = options2.event?.target;
+            if (!open && changeDetails.reason === "outside-press") {
+              let eventTarget = changeDetails.event?.target;
               if (
-                value13 instanceof Element &&
-                value13.hasAttribute("data-mc-scrim")
+                eventTarget instanceof Element &&
+                eventTarget.hasAttribute("data-mc-scrim")
               ) {
-                options2.cancel();
+                changeDetails.cancel();
                 return;
               }
             }
-            if (input) {
-              value4(value2);
-              ref2.current = null;
+            if (open) {
+              setSelectedValue(initialValue);
+              triggerRef.current = null;
             }
-            value6(input);
+            setIsOpen(open);
           }}
         >
           {[<Menu.Trigger
@@ -98,11 +98,11 @@ function ToolbarSelect({
                 <ToolbarStripButton
                   data-testid={testid}
                   title={title}
-                  aria-label={value12}
+                  aria-label={ariaLabel}
                   chevron={true}
                   disabled={disabled}
                 >
-                  {value10}
+                  {displayValue}
                 </ToolbarStripButton>
               }
             />, <Menu.Popup
@@ -110,53 +110,53 @@ function ToolbarSelect({
               ref={ref}
               aria-label={title}
               data-mc-menu={""}
-              side={value3}
-              initialFocus={(input: string): boolean => input === "keyboard"}
-              finalFocus={() => ref2.current ?? true}
-              onKeyDown={(input: React.KeyboardEvent<HTMLElement>): void => {
-                if (input.key !== "Tab" && !input.metaKey && !input.ctrlKey) {
-                  input.stopPropagation();
+              side={menuSide}
+              initialFocus={(focusTarget: string): boolean => focusTarget === "keyboard"}
+              finalFocus={() => triggerRef.current ?? true}
+              onKeyDown={(event: React.KeyboardEvent<HTMLElement>): void => {
+                if (event.key !== "Tab" && !event.metaKey && !event.ctrlKey) {
+                  event.stopPropagation();
                 }
               }}
               className={popoverClassName}
             >
               <Menu.Group>
-                {options.map((input: ToolbarSelectOption) =>
+                {selectOptions.map((option: ToolbarSelectOption) =>
                   (() => {
                     const _Element = Menu.Item;
                     const _elementProps = {
                       checkedRole: "radio" as const,
-                      checked: input.value === value,
+                      checked: option.value === selectedValue,
                       "data-testid": testid
-                        ? testid + "-" + input.value
+                        ? testid + "-" + option.value
                         : undefined,
                       onClick: (): void => {
-                        if (input.value !== value) {
-                          onChange(input.value);
+                        if (option.value !== selectedValue) {
+                          onChange(option.value);
                         }
-                        let value13 = ref.current?.ownerDocument
+                        let ownerDocument = ref.current?.ownerDocument
                           .activeElement as HTMLElement | SVGElement | null;
-                        ref2.current =
-                          value13 !== null &&
-                          value13 !== value13.ownerDocument.body &&
-                          !(ref.current?.contains(value13) ?? false)
-                            ? value13
+                        triggerRef.current =
+                          ownerDocument !== null &&
+                          ownerDocument !== ownerDocument.ownerDocument.body &&
+                          !(ref.current?.contains(ownerDocument) ?? false)
+                            ? ownerDocument
                             : null;
                       },
                       children:
-                        typeof input.label === "string" ? (
-                          input.label
+                        typeof option.label === "string" ? (
+                          option.label
                         ) : (
                           <span
                             className={
                               "flex min-w-0 flex-1 items-center gap-xs"
                             }
                           >
-                            {input.label}
+                            {option.label}
                           </span>
                         ),
                     };
-                    const _elementKey = input.value;
+                    const _elementKey = option.value;
                     return <_Element key={_elementKey} {..._elementProps} />;
                   })(),
                 )}
@@ -221,17 +221,17 @@ function selectedMarkdownBlockKinds(root: HTMLElement) {
     if (!range.intersectsNode(value)) {
       continue;
     }
-    let value2 = value === range.startContainer ? range.startOffset : 0;
+    let selectionOffset = value === range.startContainer ? range.startOffset : 0;
     if (
       (value === range.endContainer
         ? range.endOffset
-        : (value.textContent?.length ?? 0)) <= value2
+        : (value.textContent?.length ?? 0)) <= selectionOffset
     ) {
       continue;
     }
-    let value3 = markdownBlockAtNode(value, root);
-    if (!blockTypes.includes(value3)) {
-      blockTypes.push(value3);
+    let blockKind = markdownBlockAtNode(value, root);
+    if (!blockTypes.includes(blockKind)) {
+      blockTypes.push(blockKind);
     }
   }
   return blockTypes;
@@ -286,8 +286,8 @@ function readMarkdownSelectionFormat(root: HTMLElement) {
   }
   return format;
 }
-function normalizeExternalLinkInput(input: string) {
-  let url = input.trim();
+function normalizeExternalLinkInput(urlInput: string) {
+  let url = urlInput.trim();
   if (url === "") {
     return null;
   }
@@ -297,16 +297,16 @@ function normalizeExternalLinkInput(input: string) {
   return classifyExternalLink(url);
 }
 function executeMarkdownCommand(
-  document2: Document,
+  documentRef: Document,
   command: string,
-  value?: string,
+  commandValue?: string,
 ): void {
-  document2.execCommand("styleWithCSS", false, "false");
-  document2.execCommand(command, false, value);
+  documentRef.execCommand("styleWithCSS", false, "false");
+  documentRef.execCommand(command, false, commandValue);
 }
 function applyMarkdownFormat(
   format: MarkdownCommand,
-  document2: Document = document,
+  documentRef: Document = document,
   currentBlock?: MarkdownBlockKind,
 ) {
   if (
@@ -316,40 +316,40 @@ function applyMarkdownFormat(
     format !== "italic" &&
     format !== "unlink"
   ) {
-    executeMarkdownCommand(document2, "outdent");
+    executeMarkdownCommand(documentRef, "outdent");
   }
   switch (format) {
     case "bold":
     case "italic":
-      return executeMarkdownCommand(document2, format);
+      return executeMarkdownCommand(documentRef, format);
     case "ul":
-      return executeMarkdownCommand(document2, "insertUnorderedList");
+      return executeMarkdownCommand(documentRef, "insertUnorderedList");
     case "ol":
-      return executeMarkdownCommand(document2, "insertOrderedList");
+      return executeMarkdownCommand(documentRef, "insertOrderedList");
     case "p":
     case "h2":
     case "h3":
       return executeMarkdownCommand(
-        document2,
+        documentRef,
         "formatBlock",
         format.toUpperCase(),
       );
     case "quote":
-      return executeMarkdownCommand(document2, "formatBlock", "BLOCKQUOTE");
+      return executeMarkdownCommand(documentRef, "formatBlock", "BLOCKQUOTE");
     case "unlink":
-      return executeMarkdownCommand(document2, "unlink");
+      return executeMarkdownCommand(documentRef, "unlink");
   }
 }
 function applyMarkdownLink(
-  input: string,
-  document2: Document = document,
+  urlInput: string,
+  documentRef: Document = document,
   root?: HTMLElement,
 ): boolean {
-  let value = normalizeExternalLinkInput(input);
+  let value = normalizeExternalLinkInput(urlInput);
   if (value === null) {
     return false;
   }
-  executeMarkdownCommand(document2, "createLink", value);
+  executeMarkdownCommand(documentRef, "createLink", value);
   if (root !== undefined) {
     prepareEditableLinks(root);
   }

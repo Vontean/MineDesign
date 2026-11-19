@@ -19,16 +19,16 @@ var jsxTokenRename: typeof import("react/jsx-runtime");
 var TOKEN_ROW_SELECTOR: string;
 var RENAME_NAME_SELECTOR: string;
 var RENAME_BUTTON_SELECTOR: string;
-function showEditorNotification(message: string, options?: number): void {
+function showEditorNotification(message: string, toastOptions?: number): void {
   clearNonActionToasts();
-  showToast(message, options);
+  showToast(message, toastOptions);
 }
 function showEditorPromiseNotification(
   promise: string,
-  options: Parameters<RuntimeBindings["showActionToast"]>[1],
+  toastOptions: Parameters<RuntimeBindings["showActionToast"]>[1],
 ): number {
   clearAllToasts();
-  return showActionToast(promise, options);
+  return showActionToast(promise, toastOptions);
 }
 function validateTokenRename(
   name: string,
@@ -57,12 +57,12 @@ function normalizeSectionTitle(title: string, defaultTitle?: string): string {
   }
 }
 function captureRenameFocusContext(
-  input: HTMLElement,
+  inputElement: HTMLElement,
 ): Token.RenameFocusContext {
   return {
-    doc: input.ownerDocument,
-    scope: input.closest('section, table, [role="table"]'),
-    inRow: input.closest(TOKEN_ROW_SELECTOR) !== null,
+    doc: inputElement.ownerDocument,
+    scope: inputElement.closest('section, table, [role="table"]'),
+    inRow: inputElement.closest(TOKEN_ROW_SELECTOR) !== null,
   };
 }
 function restoreRenameFocus(
@@ -70,13 +70,13 @@ function restoreRenameFocus(
   committedName: string,
   originalName: string,
 ): void {
-  let callback = (input: ParentNode, options: string) => {
+  let callback = (parentNode: ParentNode, renameScope: string) => {
     return (
-      [...input.querySelectorAll<HTMLElement>(RENAME_NAME_SELECTOR)]
+      [...parentNode.querySelectorAll<HTMLElement>(RENAME_NAME_SELECTOR)]
         .find(
-          (input2) =>
-            input2.dataset.rnName === options &&
-            (input2.closest(TOKEN_ROW_SELECTOR) !== null) === inRow,
+          (candidate) =>
+            candidate.dataset.rnName === renameScope &&
+            (candidate.closest(TOKEN_ROW_SELECTOR) !== null) === inRow,
         )
         ?.querySelector<HTMLElement>('[role="button"]') ?? undefined
     );
@@ -117,59 +117,59 @@ function EditableName({
       "ds-rn" +
       (kind === "title" ? " ds-rn-title" : "") +
       (className !== undefined ? " " + className : ""),
-    callback = (input: string) => {
+    callback = (rawName: string) => {
       if (commit === undefined) {
         return name;
       }
       if (kind === "title") {
-        let value5 = input.replace(/\s+/g, " ").trim();
-        if (value5 === name || (autoEdit && value5 === "")) {
+        let normalizedName = rawName.replace(/\s+/g, " ").trim();
+        if (normalizedName === name || (autoEdit && normalizedName === "")) {
           return name;
         }
-        let value6 = normalizeSectionTitle(input, defaultTitle),
-          value7 = commit(value6);
-        if (value7 === false) {
+        let sectionName = normalizeSectionTitle(rawName, defaultTitle),
+          commitResult = commit(sectionName);
+        if (commitResult === false) {
           showEditorNotification(uiMessage("design-system.editableName.couldNotRename") + name + ".");
           return name;
         }
-        if (typeof value7 === "string") {
-          return value7;
+        if (typeof commitResult === "string") {
+          return commitResult;
         } else {
-          if (value6 === "") {
+          if (sectionName === "") {
             return defaultTitle ?? name;
           } else {
-            return value5;
+            return normalizedName;
           }
         }
       }
-      let value2 = normalizeTokenName(input).replace(
+      let normalizedTokenName = normalizeTokenName(rawName).replace(
         /\s+/g,
         "-",
       );
-      if (value2 === name) {
+      if (normalizedTokenName === name) {
         return name;
       }
-      let value3 = validateTokenRename(value2, name, taken);
-      if (value3 !== null) {
-        showEditorNotification(value3);
+      let validationError = validateTokenRename(normalizedTokenName, name, taken);
+      if (validationError !== null) {
+        showEditorNotification(validationError);
         return name;
       }
-      let value4 = commit(value2);
-      if (value4 === false) {
+      let tokenCommitResult = commit(normalizedTokenName);
+      if (tokenCommitResult === false) {
         showEditorNotification(uiMessage("design-system.editableName.couldNotRename") + name + ".");
         return name;
       }
-      if (typeof value4 === "string") {
-        return value4;
+      if (typeof tokenCommitResult === "string") {
+        return tokenCommitResult;
       } else {
-        return value2;
+        return normalizedTokenName;
       }
     },
-    callback2 = (input: string): void => {
+    commitRename = (nextName: string): void => {
       let current = ref.current;
       ref.current = null;
       if (current !== null && tabIndex === 0) {
-        restoreRenameFocus(current, input, name);
+        restoreRenameFocus(current, nextName, name);
       }
     };
   return (
@@ -204,14 +204,14 @@ function EditableName({
       <EditableText
         value={name}
         readOnly={commit === undefined}
-        onCommit={(input: string) => callback2(callback(input))}
-        onEditingChange={(input: boolean): void => {
-          if (input) {
+        onCommit={(committedName: string) => commitRename(callback(committedName))}
+        onEditingChange={(isEditing: boolean): void => {
+          if (isEditing) {
             ref.current = null;
           }
-          onEditing?.(input);
-          if (!input) {
-            callback2(name);
+          onEditing?.(isEditing);
+          if (!isEditing) {
+            commitRename(name);
           }
         }}
         defaultEditing={autoEdit}

@@ -97,63 +97,63 @@ function MarkdownFormattingToolbar({
   let value = useSelectionToolbar(root, {
       holdWhileFocusIn: hold,
     }),
-    value2 = useCdsLayerAwareZIndex(45),
-    [value3, value4] = reactMarkdownToolbar.useState(
+    layerZIndex = useCdsLayerAwareZIndex(45),
+    [selectionState, setSelectionState] = reactMarkdownToolbar.useState(
       EMPTY_MARKDOWN_FORMAT_STATE,
     ),
-    [value5, value6] = reactMarkdownToolbar.useState<string | null>(
+    [linkUrl, setLinkUrl] = reactMarkdownToolbar.useState<string | null>(
       null,
     ),
-    [value7, value8] = reactMarkdownToolbar.useState(false),
-    [value9, value10] = reactMarkdownToolbar.useState(
+    [linkInvalid, setLinkInvalid] = reactMarkdownToolbar.useState(false),
+    [formatDisabled, setFormatDisabled] = reactMarkdownToolbar.useState(
       EMPTY_SELECTION_STYLE_STATE,
     ),
-    [value11, value12] = reactMarkdownToolbar.useState<
+    [blockType, setBlockType] = reactMarkdownToolbar.useState<
       Files.MarkdownBlockKind[]
     >([]);
   reactMarkdownToolbar.useEffect(() => {
-    let callback4 = (): void => {
+    let refreshSelection = (): void => {
       let current = root.current,
-        value17 =
+        selectionRange =
           current === null
             ? null
             : readMarkdownSelectionFormat(current);
-      if (value17 !== null) {
-        value4(value17);
+      if (selectionRange !== null) {
+        setSelectionState(selectionRange);
       }
-      value10(selectedMarkdownStyles(current));
-      value12(
+      setFormatDisabled(selectedMarkdownStyles(current));
+      setBlockType(
         current === null
           ? []
           : selectedMarkdownBlockKinds(current),
       );
     };
-    callback4();
-    document.addEventListener("selectionchange", callback4);
-    return () => document.removeEventListener("selectionchange", callback4);
+    refreshSelection();
+    document.addEventListener("selectionchange", refreshSelection);
+    return () => document.removeEventListener("selectionchange", refreshSelection);
   }, [root]);
   reactMarkdownToolbar.useEffect((): void => {
     if (value.open) {
       return;
     }
-    value6(null);
-    value8(false);
+    setLinkUrl(null);
+    setLinkInvalid(false);
   }, [value.open]);
-  let callback = (input: Files.MarkdownCommand): void => {
+  let callback = (command: Files.MarkdownCommand): void => {
       if (
         root.current !== null &&
         !root.current.contains(document.activeElement)
       ) {
-        callback2();
+        restoreSelection();
       }
       applyMarkdownFormat(
-        input,
+        command,
         document,
-        value11.includes("quote") ? "quote" : value3.block,
+        blockType.includes("quote") ? "quote" : selectionState.block,
       );
       let current = root.current;
       if (current !== null) {
-        value4(
+        setSelectionState(
           readMarkdownSelectionFormat(current) ??
             EMPTY_MARKDOWN_FORMAT_STATE,
         );
@@ -161,39 +161,39 @@ function MarkdownFormattingToolbar({
       onApplied();
       value.refresh();
     },
-    callback2 = (): void => {
-      let value17 = value.range(),
-        value18 = document.getSelection();
-      if (value17 === null || value18 === null) {
+    restoreSelection = (): void => {
+      let savedRange = value.range(),
+        selection = document.getSelection();
+      if (savedRange === null || selection === null) {
         return;
       }
       root.current?.focus();
-      value18.removeAllRanges();
-      value18.addRange(value17);
+      selection.removeAllRanges();
+      selection.addRange(savedRange);
     },
-    callback3 = () => {
-      if (normalizeExternalLinkInput(value5 ?? "") === null) {
-        return value8(true);
+    openLinkEditor = () => {
+      if (normalizeExternalLinkInput(linkUrl ?? "") === null) {
+        return setLinkInvalid(true);
       }
-      callback2();
+      restoreSelection();
       applyMarkdownLink(
-        value5 ?? "",
+        linkUrl ?? "",
         document,
         root.current ?? undefined,
       );
-      value6(null);
+      setLinkUrl(null);
       onApplied();
     },
-    value13 = value3.ul || value3.ol,
-    value14 = value11.length === 1 ? value11[0] : undefined,
-    value15: boolean = value3.block === "p",
-    value16 = disabledMarkdownFormats(value3, true, value9);
+    isList = selectionState.ul || selectionState.ol,
+    selectedBlock = blockType.length === 1 ? blockType[0] : undefined,
+    isParagraph: boolean = selectionState.block === "p",
+    disabledFormats = disabledMarkdownFormats(selectionState, true, formatDisabled);
   return reactDomMarkdownToolbar.createPortal(
     <div
       ref={value.stripRef as React.Ref<HTMLDivElement>}
       style={{
         ...value.style,
-        zIndex: value2,
+        zIndex: layerZIndex,
       }}
       className={className}
       data-testid={"ds-readme-strip"}
@@ -201,8 +201,8 @@ function MarkdownFormattingToolbar({
     >
       <div
         ref={hold}
-        onBlur={(input: React.FocusEvent<HTMLElement>): void => {
-          let relatedTarget = input.relatedTarget;
+        onBlur={(event: React.FocusEvent<HTMLElement>): void => {
+          let relatedTarget = event.relatedTarget;
           if (
             relatedTarget !== null &&
             (root.current?.contains(relatedTarget) ||
@@ -222,7 +222,7 @@ function MarkdownFormattingToolbar({
           ) {
             return;
           }
-          value6(null);
+          setLinkUrl(null);
           onLeave();
         }}
         onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -241,14 +241,14 @@ function MarkdownFormattingToolbar({
                 TOOLBAR_FOCUSABLE_SELECTOR,
               ),
             ],
-            value17 = items.indexOf(target);
+            itemIndex = items.indexOf(target);
           if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-            if (value17 < 0 || items.length === 0) {
+            if (itemIndex < 0 || items.length === 0) {
               return;
             }
             event.preventDefault();
             items[
-              (value17 +
+              (itemIndex +
                 (event.key === "ArrowRight" ? 1 : items.length - 1)) %
                 items.length
             ]?.focus();
@@ -258,8 +258,8 @@ function MarkdownFormattingToolbar({
             }
             event.preventDefault();
             event.stopPropagation();
-            callback2();
-          } else if (event.key === "Tab" && value17 >= 0) {
+            restoreSelection();
+          } else if (event.key === "Tab" && itemIndex >= 0) {
             event.preventDefault();
             event.stopPropagation();
             root.current?.focus();
@@ -268,27 +268,27 @@ function MarkdownFormattingToolbar({
         }}
       >
         <ToolbarStrip aria-label={uiMessage("design-system.markdownFormatting.format")} placed={value.placed}>
-          {value5 !== null ? (<jsxMarkdownToolbar.Fragment>
+          {linkUrl !== null ? (<jsxMarkdownToolbar.Fragment>
               {[<input
                   autoFocus={true}
-                  value={value5}
+                  value={linkUrl}
                   placeholder={uiMessage("design-system.markdownFormatting.pasteALinkThenEnter")}
                   aria-label={uiMessage("design-system.markdownFormatting.linkURL")}
-                  aria-invalid={value7}
+                  aria-invalid={linkInvalid}
                   spellCheck={false}
                   className={joinClassNames(
                     "h-7 w-56 min-w-0 bg-transparent px-2 text-xs text-fg outline-none placeholder:text-fg-muted",
                     "pointer-coarse:h-10 pointer-coarse:text-sm",
-                    value7 && "text-bad",
+                    linkInvalid && "text-bad",
                   )}
                   onChange={(
                     event: React.ChangeEvent<HTMLInputElement>,
                   ): void => {
-                    value6(event.target.value);
-                    value8(false);
+                    setLinkUrl(event.target.value);
+                    setLinkInvalid(false);
                   }}
-                  onBlur={(input: React.FocusEvent<HTMLElement>): void => {
-                    let relatedTarget = input.relatedTarget;
+                  onBlur={(event: React.FocusEvent<HTMLElement>): void => {
+                    let relatedTarget = event.relatedTarget;
                     if (
                       relatedTarget !== null &&
                       (root.current?.contains(relatedTarget) ||
@@ -296,7 +296,7 @@ function MarkdownFormattingToolbar({
                     ) {
                       return;
                     }
-                    value6(null);
+                    setLinkUrl(null);
                     onLeave();
                   }}
                   onKeyDown={(
@@ -307,13 +307,13 @@ function MarkdownFormattingToolbar({
                     }
                     if (event.key === "Enter") {
                       event.preventDefault();
-                      callback3();
+                      openLinkEditor();
                     } else if (event.key === "Escape") {
                       event.preventDefault();
                       event.stopPropagation();
-                      value6(null);
-                      value8(false);
-                      callback2();
+                      setLinkUrl(null);
+                      setLinkInvalid(false);
+                      restoreSelection();
                     }
                   }}
                 />, <ToolbarStripButton
@@ -321,85 +321,85 @@ function MarkdownFormattingToolbar({
                   aria-label={uiMessage("design-system.markdownFormatting.cancel")}
                   icon={"X"}
                   onClick={(): void => {
-                    value6(null);
-                    value8(false);
-                    callback2();
+                    setLinkUrl(null);
+                    setLinkInvalid(false);
+                    restoreSelection();
                   }}
                 />]}
             </jsxMarkdownToolbar.Fragment>) : (<jsxMarkdownToolbar.Fragment>
               {[<ToolbarStripButton
-                  title={value16.bold ?? (uiMessage("design-system.markdownFormatting.bold"))}
+                  title={disabledFormats.bold ?? (uiMessage("design-system.markdownFormatting.bold"))}
                   aria-label={uiMessage("design-system.markdownFormatting.bold")}
                   icon={"TextBold"}
-                  aria-pressed={value3.bold}
-                  disabled={value16.bold !== undefined}
+                  aria-pressed={selectionState.bold}
+                  disabled={disabledFormats.bold !== undefined}
                   onClick={() => callback("bold")}
                 />, <ToolbarStripButton
-                  title={value16.italic ?? (uiMessage("design-system.markdownFormatting.italic"))}
+                  title={disabledFormats.italic ?? (uiMessage("design-system.markdownFormatting.italic"))}
                   aria-label={uiMessage("design-system.markdownFormatting.italic")}
                   icon={"TextItalics"}
-                  aria-pressed={value3.italic}
-                  disabled={value16.italic !== undefined}
+                  aria-pressed={selectionState.italic}
+                  disabled={disabledFormats.italic !== undefined}
                   onClick={() => callback("italic")}
                 />, <ToolbarStripButton
                   title={
-                    value16.link ?? (value3.link !== undefined ? (uiMessage("design-system.markdownFormatting.removeLink")) : (uiMessage("design-system.markdownFormatting.link")))
+                    disabledFormats.link ?? (selectionState.link !== undefined ? (uiMessage("design-system.markdownFormatting.removeLink")) : (uiMessage("design-system.markdownFormatting.link")))
                   }
                   aria-label={
-                    value3.link !== undefined ? (uiMessage("design-system.markdownFormatting.removeLink")) : (uiMessage("design-system.markdownFormatting.link"))
+                    selectionState.link !== undefined ? (uiMessage("design-system.markdownFormatting.removeLink")) : (uiMessage("design-system.markdownFormatting.link"))
                   }
                   icon={"Link"}
-                  aria-pressed={value3.link !== undefined}
-                  disabled={value16.link !== undefined}
+                  aria-pressed={selectionState.link !== undefined}
+                  disabled={disabledFormats.link !== undefined}
                   onClick={(): void => {
-                    if (value3.link !== undefined) {
+                    if (selectionState.link !== undefined) {
                       callback("unlink");
                     } else {
-                      value8(false);
-                      value6("");
+                      setLinkInvalid(false);
+                      setLinkUrl("");
                     }
                   }}
                 />, <ToolbarDivider />, (() => {
                   const _Element = ToolbarSelect;
                   const _elementProps = {
-                    get title() { return value13 ? (uiMessage("design-system.markdownFormatting.aListItemStaysA")) : (uiMessage("design-system.markdownFormatting.blockStyle")); },
+                    get title() { return isList ? (uiMessage("design-system.markdownFormatting.aListItemStaysA")) : (uiMessage("design-system.markdownFormatting.blockStyle")); },
                     testid: "ds-readme-block-menu",
-                    disabled: value13,
+                    disabled: isList,
                     value:
-                      value14 !== undefined &&
-                      isEditableMarkdownBlock(value14)
-                        ? value14
+                      selectedBlock !== undefined &&
+                      isEditableMarkdownBlock(selectedBlock)
+                        ? selectedBlock
                         : null,
-                    chipLabel: MARKDOWN_BLOCK_LABELS[value14 ?? value3.block],
+                    chipLabel: MARKDOWN_BLOCK_LABELS[selectedBlock ?? selectionState.block],
                     options: EDITABLE_MARKDOWN_BLOCK_TYPES.map(
-                      (input: Core.MarkdownFormatState["block"]) => ({
-                        value: input,
-                        label: MARKDOWN_BLOCK_LABELS[input],
+                      (block: Core.MarkdownFormatState["block"]) => ({
+                        value: block,
+                        label: MARKDOWN_BLOCK_LABELS[block],
                       }),
                     ),
-                    onChange: (input: Files.MarkdownCommand) =>
-                      callback(input),
+                    onChange: (command: Files.MarkdownCommand) =>
+                      callback(command),
                     popupAttrs: README_TOOLBAR_MENU_PROPS,
                   };
                   const _elementKey = value.open ? "open" : "shut";
                   return <_Element key={_elementKey} {..._elementProps} />;
                 })(), <ToolbarStripButton
                   title={
-                    value15 ? (uiMessage("design-system.markdownFormatting.bulletedList")) : (uiMessage("design-system.markdownFormatting.onlyParagraphsBecomeLists"))
+                    isParagraph ? (uiMessage("design-system.markdownFormatting.bulletedList")) : (uiMessage("design-system.markdownFormatting.onlyParagraphsBecomeLists"))
                   }
                   aria-label={uiMessage("design-system.markdownFormatting.bulletedList")}
                   icon={"ListBullet"}
-                  aria-pressed={value3.ul}
-                  disabled={!value15}
+                  aria-pressed={selectionState.ul}
+                  disabled={!isParagraph}
                   onClick={() => callback("ul")}
                 />, <ToolbarStripButton
                   title={
-                    value15 ? (uiMessage("design-system.markdownFormatting.numberedList")) : (uiMessage("design-system.markdownFormatting.onlyParagraphsBecomeLists"))
+                    isParagraph ? (uiMessage("design-system.markdownFormatting.numberedList")) : (uiMessage("design-system.markdownFormatting.onlyParagraphsBecomeLists"))
                   }
                   aria-label={uiMessage("design-system.markdownFormatting.numberedList")}
                   icon={"ListNumbered"}
-                  aria-pressed={value3.ol}
-                  disabled={!value15}
+                  aria-pressed={selectionState.ol}
+                  disabled={!isParagraph}
                   onClick={() => callback("ol")}
                 />]}
             </jsxMarkdownToolbar.Fragment>)}
@@ -416,9 +416,9 @@ function MarkdownLinkPopover({
   useUiLocale();
   let value = useCdsLayerAwareZIndex(45),
     ref = reactMarkdownToolbar.useRef<HTMLDivElement>(null),
-    [value2, value3] =
+    [linkState, setLinkState] =
       reactMarkdownToolbar.useState<M.MarkdownLinkState | null>(null),
-    [value4, value5] =
+    [popoverStyle, setPopoverStyle] =
       reactMarkdownToolbar.useState<React.CSSProperties>({
         position: "fixed",
         top: 0,
@@ -426,87 +426,87 @@ function MarkdownLinkPopover({
         visibility: "hidden",
       });
   reactMarkdownToolbar.useEffect(() => {
-    let value6 = root.current?.ownerDocument ?? document,
-      value7 = value6.defaultView ?? window,
+    let ownerDocument = root.current?.ownerDocument ?? document,
+      windowRef = ownerDocument.defaultView ?? window,
       callback = () => {
         let current = root.current,
-          value8 = value6.getSelection();
+          selection = ownerDocument.getSelection();
         if (
           current === null ||
-          value8 === null ||
-          value8.rangeCount === 0 ||
-          !value8.isCollapsed
+          selection === null ||
+          selection.rangeCount === 0 ||
+          !selection.isCollapsed
         ) {
-          return value3(null);
+          return setLinkState(null);
         }
-        let startContainer = value8.getRangeAt(0).startContainer,
-          value9 =
+        let startContainer = selection.getRangeAt(0).startContainer,
+          linkElement =
             (startContainer.nodeType === 1
               ? (startContainer as Element)
               : startContainer.parentElement
             )?.closest("a[data-href]") ?? null,
-          value10: string =
-            value9 === null || !current.contains(value9)
+          linkHref: string =
+            linkElement === null || !current.contains(linkElement)
               ? ""
-              : safeLinkUrlFromElement(value9);
-        if (value9 === null || value10 === "") {
-          return value3(null);
+              : safeLinkUrlFromElement(linkElement);
+        if (linkElement === null || linkHref === "") {
+          return setLinkState(null);
         }
-        let bounds = value9.getBoundingClientRect();
-        value3((input: M.MarkdownLinkState | null) =>
-          input !== null &&
-          input.href === value10 &&
-          input.rect.top === bounds.top &&
-          input.rect.left === bounds.left
-            ? input
+        let bounds = linkElement.getBoundingClientRect();
+        setLinkState((nextLinkState: M.MarkdownLinkState | null) =>
+          nextLinkState !== null &&
+          nextLinkState.href === linkHref &&
+          nextLinkState.rect.top === bounds.top &&
+          nextLinkState.rect.left === bounds.left
+            ? nextLinkState
             : {
-                href: value10,
+                href: linkHref,
                 rect: bounds,
               },
         );
       };
     callback();
-    value6.addEventListener("selectionchange", callback);
-    value7.addEventListener("scroll", callback, {
+    ownerDocument.addEventListener("selectionchange", callback);
+    windowRef.addEventListener("scroll", callback, {
       capture: true,
       passive: true,
     });
-    value7.addEventListener("resize", callback);
+    windowRef.addEventListener("resize", callback);
     return (): void => {
-      value6.removeEventListener("selectionchange", callback);
-      value7.removeEventListener("scroll", callback, {
+      ownerDocument.removeEventListener("selectionchange", callback);
+      windowRef.removeEventListener("scroll", callback, {
         capture: true,
       });
-      value7.removeEventListener("resize", callback);
+      windowRef.removeEventListener("resize", callback);
     };
   }, [root]);
   reactMarkdownToolbar.useLayoutEffect((): void => {
-    if (value2 === null) {
+    if (linkState === null) {
       return;
     }
-    let value6 = ref.current?.offsetWidth ?? 0,
-      value7 = ref.current?.offsetHeight ?? 0,
+    let popoverWidth = ref.current?.offsetWidth ?? 0,
+      popoverHeight = ref.current?.offsetHeight ?? 0,
       clientWidth = document.documentElement.clientWidth,
       clientHeight = document.documentElement.clientHeight,
-      value8: boolean = value2.rect.bottom + 6 + value7 <= clientHeight - 8;
-    value5({
+      popoverAbove: boolean = linkState.rect.bottom + 6 + popoverHeight <= clientHeight - 8;
+    setPopoverStyle({
       position: "fixed",
       top: Math.round(
-        value8 ? value2.rect.bottom + 6 : value2.rect.top - 6 - value7,
+        popoverAbove ? linkState.rect.bottom + 6 : linkState.rect.top - 6 - popoverHeight,
       ),
       left: Math.round(
-        Math.max(8, Math.min(value2.rect.left, clientWidth - value6 - 8)),
+        Math.max(8, Math.min(linkState.rect.left, clientWidth - popoverWidth - 8)),
       ),
     });
-  }, [value2]);
-  if (value2 === null) {
+  }, [linkState]);
+  if (linkState === null) {
     return null;
   }
   return reactDomMarkdownToolbar.createPortal(
     <div
       ref={ref}
       style={{
-        ...value4,
+        ...popoverStyle,
         zIndex: value,
       }}
       className={className}
@@ -523,14 +523,14 @@ function MarkdownLinkPopover({
         }
       >
         <a
-          {...externalLinkProps(value2.href)}
-          title={value2.href}
+          {...externalLinkProps(linkState.href)}
+          title={linkState.href}
           className={
             "inline-flex max-w-64 items-center gap-1 px-1 text-xs text-blue-text hover:underline pointer-coarse:min-h-10 pointer-coarse:text-sm"
           }
         >
           {[<span className={"truncate"}>
-              {externalLinkDisplayLabel(value2.href)}
+              {externalLinkDisplayLabel(linkState.href)}
             </span>, <KitIcon name={"ArrowUpRight"} size={12} />]}
         </a>
       </ToolbarStrip>
@@ -588,10 +588,10 @@ export function installEditorMarkdownFormatting(): () => void {
     TOOLBAR_FOCUSABLE_SELECTOR =
       'button:not(:disabled), [role="button"][aria-disabled="true"], input';
     EDITABLE_MARKDOWN_BLOCK_TYPES = ["p", "h2", "h3", "quote"];
-    isEditableMarkdownBlock = (input: Core.MarkdownFormatState["block"]) =>
+    isEditableMarkdownBlock = (block: Core.MarkdownFormatState["block"]) =>
       (
         EDITABLE_MARKDOWN_BLOCK_TYPES as readonly Core.MarkdownFormatState["block"][]
-      ).includes(input);
+      ).includes(block);
     EMPTY_SELECTION_STYLE_STATE = {
       bold: false,
       italic: false,

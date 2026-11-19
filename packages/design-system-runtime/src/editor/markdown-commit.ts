@@ -27,22 +27,22 @@ function createMarkdownCommitQueue<Value>(
       }
       timer = undefined;
       let value = pendingValue,
-        value2 = pendingCommit;
+        commitValue = pendingCommit;
       pendingValue = null;
       pendingCommit = null;
       startedAt = 0;
-      if (value !== null && value2 !== null) {
-        value2(value);
+      if (value !== null && commitValue !== null) {
+        commitValue(value);
       }
     },
     queue = {
-      push(input: Value, options: (value: Value) => void): void {
+      push(nextValue: Value, commitCallback: (value: Value) => void): void {
         let value = clock.now();
         if (pendingValue === null) {
           startedAt = value;
         }
-        pendingValue = input;
-        pendingCommit = options;
+        pendingValue = nextValue;
+        pendingCommit = commitCallback;
         if (timer !== undefined) {
           clock.clearTimeout(timer);
         }
@@ -75,19 +75,19 @@ export function installEditorMarkdownCommit(): () => void {
   return () => {
     markdownCommitClock = {
       now: (): number => Date.now(),
-      setTimeout: (input: () => void, options: number) =>
-        setTimeout(input, options),
-      clearTimeout: (input: ReturnType<typeof setTimeout>) =>
-        clearTimeout(input),
+      setTimeout: (timeoutCallback: () => void, delayMs: number) =>
+        setTimeout(timeoutCallback, delayMs),
+      clearTimeout: (timeoutId: ReturnType<typeof setTimeout>) =>
+        clearTimeout(timeoutId),
     };
     markdownCommitQueues = new Set();
     if (typeof window !== "undefined" && typeof document !== "undefined") {
       window.addEventListener(
         "keydown",
-        (input: KeyboardEvent): void => {
+        (event: KeyboardEvent): void => {
           if (
-            (input.metaKey || input.ctrlKey) &&
-            input.key.toLowerCase() === "s"
+            (event.metaKey || event.ctrlKey) &&
+            event.key.toLowerCase() === "s"
           ) {
             flushMarkdownCommitQueues();
           }

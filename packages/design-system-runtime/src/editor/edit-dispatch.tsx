@@ -11,55 +11,55 @@ import { toModuleNamespace } from "../module-helpers";
 var reactAssetGroupEditor: typeof import("react");
 var summarizeChangedFileNames: (names: string[]) => string;
 function performDesignSystemEdit(
-  document2: Editor.DesignSystemEditPreparation,
+  editDocument: Editor.DesignSystemEditPreparation,
   edit: Application.ContentMutation,
   ready: (options?: { withoutBytes: string[] }) => boolean | void,
-  options: Editor.EditPreparationOptions,
+  editOptions: Editor.EditPreparationOptions,
   verb: string = "change",
 ): boolean | void {
-  let value = options.say ?? showEditorNotification;
-  if (document2.busy()) {
+  let value = editOptions.say ?? showEditorNotification;
+  if (editDocument.busy()) {
     value(uiMessage("design-system.editDispatch.stillWorkingOnYourPrevious"));
     return false;
   }
-  if (document2.needs(edit).length === 0) {
+  if (editDocument.needs(edit).length === 0) {
     return ready();
   }
-  document2
+  editDocument
     .prepare(edit)
-    .then((input): void => {
-      if (input.ok) {
+    .then((editResult): void => {
+      if (editResult.ok) {
         ready();
         return;
       }
-      if (input.tooMany) {
+      if (editResult.tooMany) {
         value(
           uiMessage("design-system.editDispatch.thatIsTooMuchTo"),
         );
         return;
       }
-      let value2 = summarizeChangedFileNames(
-          input.failed.map(options.nameOf),
+      let changedNames = summarizeChangedFileNames(
+          editResult.failed.map(editOptions.nameOf),
         ),
-        value3: string = input.failed.length === 1 ? "it" : "them";
-      if (verb === "removal" && options.ask !== undefined) {
-        options.ask({
+        pronoun: string = editResult.failed.length === 1 ? "it" : "them";
+      if (verb === "removal" && editOptions.ask !== undefined) {
+        editOptions.ask({
           get title() { return uiMessage("design-system.editDispatch.removeAnyway"); },
           body:
-            value2 +
+            changedNames +
             " could not be loaded, so removing " +
-            value3 +
+            pronoun +
             " cannot be undone.",
           run: (): void => {
             ready({
-              withoutBytes: input.failed,
+              withoutBytes: editResult.failed,
             });
           },
         });
         return;
       }
       value(
-        value2 +
+        changedNames +
           " could not be loaded, so nothing was changed. Try again, or reload the page if it keeps happening.",
       );
     })

@@ -37,7 +37,7 @@ function fontFamilyStack(family: string, fontPaths: string[] = []): string {
   }
   return (
     fontPaths
-      .map((input) => quoteCssFontFamily(fontFileCssFamilyName(input)))
+      .map((font) => quoteCssFontFamily(fontFileCssFamilyName(font)))
       .join(", ") +
     ", " +
     fallbackStack
@@ -49,12 +49,12 @@ function decodeFontDataUrl(dataUrl: string): ArrayBuffer | null {
   }
   try {
     let value = dataUrl.slice(dataUrl.indexOf(",") + 1),
-      value2 = atob(value),
-      value3 = new Uint8Array(value2.length);
-    for (let index: number = 0; index < value2.length; index++) {
-      value3[index] = value2.charCodeAt(index);
+      base64Data = atob(value),
+      fontBytes = new Uint8Array(base64Data.length);
+    for (let index: number = 0; index < base64Data.length; index++) {
+      fontBytes[index] = base64Data.charCodeAt(index);
     }
-    return value3.buffer;
+    return fontBytes.buffer;
   } catch {
     return null;
   }
@@ -76,16 +76,16 @@ function useInlineFontFaces(
   let fontsKey: string =
       fonts
         .map(
-          (input): string =>
-            input.path +
+          (font): string =>
+            font.path +
             ":" +
-            String(resolvedFontDataUrl(input).length) +
+            String(resolvedFontDataUrl(font).length) +
             ":" +
-            input.family +
+            font.family +
             ":" +
-            input.weight +
+            font.weight +
             ":" +
-            input.style,
+            font.style,
         )
         .join("|") +
       "#" +
@@ -95,21 +95,21 @@ function useInlineFontFaces(
   (reactFontFaces as typeof React).useEffect(() => {
     let items: FontFace[] = [];
     for (let value of fontsRef.current) {
-      let value2 = resolvedFontDataUrl(value);
-      if (value2 === "") {
+      let dataUrl = resolvedFontDataUrl(value);
+      if (dataUrl === "") {
         continue;
       }
-      let value3 = decodeFontDataUrl(value2);
-      if (value3 === null) {
+      let fontData = decodeFontDataUrl(dataUrl);
+      if (fontData === null) {
         continue;
       }
       try {
-        let value4 = new FontFace(fontFileCssFamilyName(value.path), value3, {
+        let fontFace = new FontFace(fontFileCssFamilyName(value.path), fontData, {
           weight: value.weight,
           style: value.style,
         });
-        document.fonts.add(value4);
-        items.push(value4);
+        document.fonts.add(fontFace);
+        items.push(fontFace);
       } catch {}
     }
     return (): void => {
@@ -121,8 +121,8 @@ function useInlineFontFaces(
   useAddressedFontFaces(fonts);
 }
 function useAddressedFontFaces(fonts: Model.ParsedFont[]): void {
-  let [value, value2] = (reactFontFaces as typeof React).useReducer(
-      (input: number) => input + 1,
+  let [value, setRevision] = (reactFontFaces as typeof React).useReducer(
+      (revision: number) => revision + 1,
       0,
     ),
     ref = (reactFontFaces as typeof React).useRef(
@@ -131,107 +131,107 @@ function useAddressedFontFaces(fonts: Model.ParsedFont[]): void {
     entries = new Map<string, Editor.AddressedFontSource>(
       fonts
         .filter(
-          (input) =>
-            input.store === "file" &&
-            input.src !== "" &&
+          (font) =>
+            font.store === "file" &&
+            font.src !== "" &&
             !["image", "video", "audio"].includes(
-              assetKindForPath(input.path),
+              assetKindForPath(font.path),
             ) &&
-            mimeTypeForPath(input.path) !== "application/pdf" &&
+            mimeTypeForPath(font.path) !== "application/pdf" &&
             !Object.hasOwn(
               HELD_BINARY_MIME_TYPES,
-              fileExtension(input.path),
+              fileExtension(font.path),
             ),
         )
-        .map((input) => [
-          input.path +
+        .map((font) => [
+          font.path +
             `
 ` +
-            input.weight +
+            font.weight +
             `
 ` +
-            input.style,
+            font.style,
           {
-            path: input.path,
-            of: resolveFileVersion(input.path) ?? "",
-            at: fontFileUrl(input),
-            weight: input.weight,
-            style: input.style,
+            path: font.path,
+            of: resolveFileVersion(font.path) ?? "",
+            at: fontFileUrl(font),
+            weight: font.weight,
+            style: font.style,
           },
         ]),
     ),
-    ref2 = (reactFontFaces as typeof React).useRef(entries);
-  ref2.current = entries;
-  let value3: boolean = entries.size > 0;
+    previousEntriesRef = (reactFontFaces as typeof React).useRef(entries);
+  previousEntriesRef.current = entries;
+  let hasEntries: boolean = entries.size > 0;
   (reactFontFaces as typeof React).useEffect(
-    () => (value3 ? subscribeAddressedFiles(value2) : undefined),
-    [value3],
+    () => (hasEntries ? subscribeAddressedFiles(setRevision) : undefined),
+    [hasEntries],
   );
-  let value4 = [...entries]
+  let entryList = [...entries]
     .map(
-      ([input, input2]): string => input + ":" + input2.of + ":" + input2.at,
+      ([fontKey, fontAddress]): string => fontKey + ":" + fontAddress.of + ":" + fontAddress.at,
     )
     .join("|");
   (reactFontFaces as typeof React).useEffect((): void => {
-    for (let [value5, value6] of ref.current) {
-      let entry = ref2.current.get(value5);
+    for (let [fontKey, fontEntry] of ref.current) {
+      let entry = previousEntriesRef.current.get(fontKey);
       if (
         entry !== undefined &&
-        entry.of === value6.of &&
-        (entry.at === value6.at ||
-          value6.face.status === "loaded" ||
-          value6.face.status === "loading")
+        entry.of === fontEntry.of &&
+        (entry.at === fontEntry.at ||
+          fontEntry.face.status === "loaded" ||
+          fontEntry.face.status === "loading")
       ) {
         continue;
       }
-      document.fonts.delete(value6.face);
-      ref.current.delete(value5);
+      document.fonts.delete(fontEntry.face);
+      ref.current.delete(fontKey);
     }
-    for (let [value5, value6] of ref2.current) {
-      if (ref.current.has(value5) || value6.at === "") {
+    for (let [fontKey, fontEntry] of previousEntriesRef.current) {
+      if (ref.current.has(fontKey) || fontEntry.at === "") {
         continue;
       }
       try {
-        let value7 = new FontFace(
-          fontFileCssFamilyName(value6.path),
-          'url("' + value6.at + '")',
+        let fontFace = new FontFace(
+          fontFileCssFamilyName(fontEntry.path),
+          'url("' + fontEntry.at + '")',
           {
-            weight: value6.weight,
-            style: value6.style,
+            weight: fontEntry.weight,
+            style: fontEntry.style,
             display: "swap",
           },
         );
-        document.fonts.add(value7);
-        ref.current.set(value5, {
-          face: value7,
-          of: value6.of,
-          at: value6.at,
+        document.fonts.add(fontFace);
+        ref.current.set(fontKey, {
+          face: fontFace,
+          of: fontEntry.of,
+          at: fontEntry.at,
         });
-        value7.loaded.catch((): void => {
-          if (ref.current.get(value5)?.face !== value7) {
+        fontFace.loaded.catch((): void => {
+          if (ref.current.get(fontKey)?.face !== fontFace) {
             return;
           }
-          if (ref2.current.get(value5)?.at !== value6.at) {
-            document.fonts.delete(value7);
-            ref.current.delete(value5);
-            value2();
+          if (previousEntriesRef.current.get(fontKey)?.at !== fontEntry.at) {
+            document.fonts.delete(fontFace);
+            ref.current.delete(fontKey);
+            setRevision();
             return;
           }
           console.warn(
             "design-system: could not load the font " +
-              value6.path +
+              fontEntry.path +
               " from its address (" +
-              value6.at +
+              fontEntry.at +
               "), so text in it is shown in a fallback font. Reload the page; if that does not help, the file may not be a usable font.",
           );
         });
       } catch {}
     }
-  }, [value4, value]);
+  }, [entryList, value]);
   (reactFontFaces as typeof React).useEffect(
     () => (): void => {
-      for (let value5 of ref.current.values()) {
-        document.fonts.delete(value5.face);
+      for (let fontEntry of ref.current.values()) {
+        document.fonts.delete(fontEntry.face);
       }
       ref.current.clear();
     },

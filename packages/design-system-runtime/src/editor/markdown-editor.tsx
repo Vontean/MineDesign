@@ -37,9 +37,9 @@ function appendSerializedMarkdownInline(
   }
   let value: string =
       output.ticks > 0 && text.charCodeAt(0) === 96 ? " " : "",
-    value2 = trailingBacktickCount(text);
+    backtickCount = trailingBacktickCount(text);
   output.ticks =
-    value2 === text.length && value === "" ? output.ticks + value2 : value2;
+    backtickCount === text.length && value === "" ? output.ticks + backtickCount : backtickCount;
   output.s += value + text;
 }
 function serializeMarkdownInlineNode(
@@ -55,7 +55,7 @@ function serializeMarkdownInlineNode(
   let element: Element = node as Element,
     tagName = () =>
       serializeMarkdownInlineNodes(Array.from(element.childNodes)),
-    callback = (input: string) => input.replace(/\s*\n\s*/g, " ");
+    callback = (text: string) => text.replace(/\s*\n\s*/g, " ");
   switch (element.tagName) {
     case "STRONG":
     case "B": {
@@ -80,38 +80,38 @@ function serializeMarkdownInlineNode(
       if (value.trim() === "") {
         return value;
       }
-      let value2 =
+      let backtickCount =
         (value.match(/`+/g) ?? []).reduce(
-          (input: number, items: string): number =>
-            Math.max(input, items.length),
+          (left: number, items: string): number =>
+            Math.max(left, items.length),
           0,
         ) + 1;
-      if (value2 === previousTicks) {
-        value2 += 1;
+      if (backtickCount === previousTicks) {
+        backtickCount += 1;
       }
       let index: number = 0;
       while (index < value.length && value.charCodeAt(index) === 32) {
         index++;
       }
-      let value3: number = value.length - 1;
-      while (value3 > index && value.charCodeAt(value3) === 32) {
-        value3--;
+      let contentEnd: number = value.length - 1;
+      while (contentEnd > index && value.charCodeAt(contentEnd) === 32) {
+        contentEnd--;
       }
-      let value4: string =
+      let contentText: string =
           index < value.length &&
-          (value.charCodeAt(index) === 96 || value.charCodeAt(value3) === 96)
+          (value.charCodeAt(index) === 96 || value.charCodeAt(contentEnd) === 96)
             ? " "
             : "",
-        value5 = "`".repeat(value2);
-      return value5 + value4 + value + value4 + value5;
+        fence = "`".repeat(backtickCount);
+      return fence + contentText + value + contentText + fence;
     }
     case "A": {
       let value = linkUrlFromElement(element),
-        value2 = callback(tagName()).replace(/[\][]/g, " ");
+        linkText = callback(tagName()).replace(/[\][]/g, " ");
       if (value !== "") {
-        return "[" + value2 + "](" + value + ")";
+        return "[" + linkText + "](" + value + ")";
       } else {
-        return value2;
+        return linkText;
       }
     }
     case "BR":
@@ -134,169 +134,169 @@ function serializeMarkdownEditor(
   blockModels?: (node: Element) => MarkdownSource | undefined,
 ): string {
   let items: MarkdownSerializedItem[] = [],
-    callback = (input: string): void => {
-      let value6 = input.trim();
-      if (value6 !== "") {
+    callback = (lineText: string): void => {
+      let trimmedText = lineText.trim();
+      if (trimmedText !== "") {
         items.push({
-          text: value6,
+          text: trimmedText,
           typed: false,
         });
       }
     },
-    callback2 = (input: string): void => {
-      let value6 = input.trim();
-      if (value6 !== "") {
+    appendText = (textValue: string): void => {
+      let trimmedText = textValue.trim();
+      if (trimmedText !== "") {
         items.push({
-          text: value6,
+          text: trimmedText,
           typed: true,
         });
       }
     },
     text = "",
     index = 0,
-    callback3 = (input: string): void => {
+    appendInline = (inlineText: string): void => {
       let state = {
         s: text,
         ticks: index,
       };
-      appendSerializedMarkdownInline(state, input);
+      appendSerializedMarkdownInline(state, inlineText);
       text = state.s;
       index = state.ticks;
     },
-    callback4 = (): void => {
-      callback2(text);
+    finishBlock = (): void => {
+      appendText(text);
       text = "";
       index = 0;
     },
-    callback5 = (input: string, options: Element): void => {
-      callback4();
-      let value6 = serializeMarkdownInlineNode(options)
+    appendHeading = (prefix: string, element: Element): void => {
+      finishBlock();
+      let inlineText = serializeMarkdownInlineNode(element)
         .replace(/\s*\n\s*/g, " ")
         .trim();
-      if (value6 !== "") {
-        callback2(input + " " + value6);
+      if (inlineText !== "") {
+        appendText(prefix + " " + inlineText);
       }
     },
-    callback6 = (element: Element): void => {
+    serializeElement = (element: Element): void => {
       switch (element.tagName) {
         case "H1":
-          callback5("#", element);
+          appendHeading("#", element);
           return;
         case "H2":
-          callback5("##", element);
+          appendHeading("##", element);
           return;
         case "H3":
         case "H4":
         case "H5":
         case "H6":
-          callback5("###", element);
+          appendHeading("###", element);
           return;
         case "PRE": {
-          callback4();
-          let value6 = (element.textContent ?? "").replace(/\n$/, ""),
-            value7 = [...value6.matchAll(/`+/g)].reduce(
-              (input: number, options: RegExpMatchArray): number =>
-                Math.max(input, options[0].length),
+          finishBlock();
+          let textContent = (element.textContent ?? "").replace(/\n$/, ""),
+            maxFenceLength = [...textContent.matchAll(/`+/g)].reduce(
+              (left: number, match: RegExpMatchArray): number =>
+                Math.max(left, match[0].length),
               0,
             ),
-            value8 = "`".repeat(Math.max(3, value7 + 1));
+            fence = "`".repeat(Math.max(3, maxFenceLength + 1));
           callback(
-            value8 +
+            fence +
               `
 ` +
-              value6 +
+              textContent +
               `
 ` +
-              value8,
+              fence,
           );
           return;
         }
         case "BLOCKQUOTE": {
-          callback4();
-          let value6 = serializeMarkdownInlineNode(element)
+          finishBlock();
+          let inlineText = serializeMarkdownInlineNode(element)
             .trim()
             .replace(/\n/g, " ");
-          if (value6 !== "") {
-            callback("> " + value6);
+          if (inlineText !== "") {
+            callback("> " + inlineText);
           }
           return;
         }
         case "UL":
         case "OL": {
-          callback4();
-          let value6: boolean = element.tagName === "OL",
-            value7 = Array.from(element.children)
-              .filter((input: Element): boolean => input.tagName === "LI")
-              .map((input: Element) =>
-                serializeMarkdownInlineNode(input).trim().replace(/\n/g, " "),
+          finishBlock();
+          let isOrderedList: boolean = element.tagName === "OL",
+            listItems = Array.from(element.children)
+              .filter((listElement: Element): boolean => listElement.tagName === "LI")
+              .map((listElement: Element) =>
+                serializeMarkdownInlineNode(listElement).trim().replace(/\n/g, " "),
               )
-              .filter((input: string): boolean => input !== "")
+              .filter((listText: string): boolean => listText !== "")
               .map(
-                (input: string, options: number): string =>
-                  (value6 ? String(options + 1) + ". " : "- ") + input,
+                (listText: string, listIndex: number): string =>
+                  (isOrderedList ? String(listIndex + 1) + ". " : "- ") + listText,
               );
-          if (value7.length > 0) {
+          if (listItems.length > 0) {
             callback(
-              value7.join(`
+              listItems.join(`
 `),
             );
           }
           return;
         }
         case "HR":
-          callback4();
+          finishBlock();
           callback("---");
           return;
         case "IMG": {
-          callback4();
-          let value6 = element.getAttribute("src") ?? "";
-          if (EDITABLE_MARKDOWN_IMAGE_DATA_URL_PATTERN.test(value6)) {
-            let value7 = (element.getAttribute("alt") ?? "")
+          finishBlock();
+          let imageSource = element.getAttribute("src") ?? "";
+          if (EDITABLE_MARKDOWN_IMAGE_DATA_URL_PATTERN.test(imageSource)) {
+            let imageAlt = (element.getAttribute("alt") ?? "")
               .replace(/[\][()]/g, " ")
               .replace(/\s*\n\s*/g, " ");
-            callback2("![" + value7 + "](" + value6 + ")");
+            appendText("![" + imageAlt + "](" + imageSource + ")");
           }
           return;
         }
         case "TABLE": {
-          callback4();
-          let items2: string[][] = [],
+          finishBlock();
+          let tableRows: string[][] = [],
             flag: boolean = false,
-            element2 = element.querySelector("thead");
-          if (element2) {
-            let value7 = Array.from(element2.querySelectorAll("th, td")).map(
-              (input: Element) =>
-                escapeMarkdownTableCell(serializeMarkdownInlineNode(input)),
+            tableHead = element.querySelector("thead");
+          if (tableHead) {
+            let headerCells = Array.from(tableHead.querySelectorAll("th, td")).map(
+              (cell: Element) =>
+                escapeMarkdownTableCell(serializeMarkdownInlineNode(cell)),
             );
-            if (value7.length > 0) {
-              items2.push(value7);
+            if (headerCells.length > 0) {
+              tableRows.push(headerCells);
               flag = true;
             }
           }
-          for (let value7 of Array.from(
+          for (let tableRow of Array.from(
             element.querySelectorAll("tbody tr"),
           )) {
-            items2.push(
-              Array.from(value7.children).map((input: Element) =>
-                escapeMarkdownTableCell(serializeMarkdownInlineNode(input)),
+            tableRows.push(
+              Array.from(tableRow.children).map((cell: Element) =>
+                escapeMarkdownTableCell(serializeMarkdownInlineNode(cell)),
               ),
             );
           }
-          if (items2.length === 0) {
+          if (tableRows.length === 0) {
             return;
           }
-          let value6 = items2.map(
-            (input: string[]): string => "| " + input.join(" | ") + " |",
+          let tableLines = tableRows.map(
+            (row: string[]): string => "| " + row.join(" | ") + " |",
           );
-          if (flag && items2[0] !== undefined) {
-            value6.splice(
+          if (flag && tableRows[0] !== undefined) {
+            tableLines.splice(
               1,
               0,
-              "| " + items2[0].map((): string => "---").join(" | ") + " |",
+              "| " + tableRows[0].map((): string => "---").join(" | ") + " |",
             );
           }
           callback(
-            value6.join(`
+            tableLines.join(`
 `),
           );
           return;
@@ -304,120 +304,120 @@ function serializeMarkdownEditor(
         case "P":
         case "DIV": {
           if (
-            Array.from(element.children).some((input: Element) =>
+            Array.from(element.children).some((child: Element) =>
               /^(H[1-6]|PRE|BLOCKQUOTE|UL|OL|HR|IMG|TABLE|P|DIV)$/.test(
-                input.tagName,
+                child.tagName,
               ),
             )
           ) {
-            callback4();
-            callback7(element);
+            finishBlock();
+            serializeNode(element);
             return;
           }
-          callback4();
-          callback2(serializeMarkdownInlineNode(element).replace(/\n/g, " "));
+          finishBlock();
+          appendText(serializeMarkdownInlineNode(element).replace(/\n/g, " "));
           return;
         }
         default: {
           if (
-            Array.from(element.children).some((input: Element) =>
+            Array.from(element.children).some((child: Element) =>
               /^(H[1-6]|PRE|BLOCKQUOTE|UL|OL|HR|IMG|TABLE|P|DIV)$/.test(
-                input.tagName,
+                child.tagName,
               ),
             )
           ) {
-            callback4();
-            callback7(element);
+            finishBlock();
+            serializeNode(element);
             return;
           }
-          callback4();
-          callback2((element.textContent ?? "").replace(/\s+/g, " "));
+          finishBlock();
+          appendText((element.textContent ?? "").replace(/\s+/g, " "));
         }
       }
     },
-    callback7 = (input: Element): void => {
-      for (let value6 of Array.from(input.childNodes)) {
-        if (value6.nodeType === TEXT_NODE_TYPE) {
-          callback3(value6.textContent ?? "");
+    serializeNode = (node: Element): void => {
+      for (let childNode of Array.from(node.childNodes)) {
+        if (childNode.nodeType === TEXT_NODE_TYPE) {
+          appendInline(childNode.textContent ?? "");
           continue;
         }
-        if (value6.nodeType !== ELEMENT_NODE_TYPE) {
+        if (childNode.nodeType !== ELEMENT_NODE_TYPE) {
           continue;
         }
-        let value7: Element = value6 as Element;
-        if (value7.tagName === "BR") {
-          callback4();
+        let element: Element = childNode as Element;
+        if (element.tagName === "BR") {
+          finishBlock();
           continue;
         }
         if (
           /^(STRONG|B|EM|I|CODE|A|SPAN|U|S|SMALL|SUB|SUP|MARK|FONT)$/.test(
-            value7.tagName,
+            element.tagName,
           )
         ) {
-          callback3(serializeMarkdownInlineNode(value7, index));
+          appendInline(serializeMarkdownInlineNode(element, index));
           continue;
         }
-        let value8 = input === root ? blockModels?.(value7) : undefined;
-        if (value8 !== undefined) {
-          callback4();
+        let blockModel = node === root ? blockModels?.(element) : undefined;
+        if (blockModel !== undefined) {
+          finishBlock();
           items.push({
-            text: value8.text,
+            text: blockModel.text,
             typed: false,
-            source: value8,
+            source: blockModel,
           });
           continue;
         }
-        callback6(value7);
+        serializeElement(element);
       }
     };
-  callback7(root);
-  callback4();
+  serializeNode(root);
+  finishBlock();
   let value: RegExp = /^\|.*\|$/,
-    value2: RegExp = /^[-*+] /,
-    value3: RegExp = /^\d{1,4}[.)] /,
-    value4: RegExp = /^>/,
-    value5 = items[0]?.text ?? "";
+    unorderedListPattern: RegExp = /^[-*+] /,
+    orderedListPattern: RegExp = /^\d{1,4}[.)] /,
+    quotePattern: RegExp = /^>/,
+    firstBlockText = items[0]?.text ?? "";
   for (let count: number = 1; count < items.length; count++) {
-    let value6 = items[count - 1],
-      value7 = items[count];
+    let previousBlock = items[count - 1],
+      currentBlock = items[count];
     if (
-      value6.source !== undefined &&
-      value7.source !== undefined &&
-      value7.source.at === value6.source.at + 1
+      previousBlock.source !== undefined &&
+      currentBlock.source !== undefined &&
+      currentBlock.source.at === previousBlock.source.at + 1
     ) {
-      value5 +=
+      firstBlockText +=
         `
 ` +
-        value7.source.lead +
-        value7.text;
+        currentBlock.source.lead +
+        currentBlock.text;
       continue;
     }
-    let value8 =
-      value6.typed &&
-      value7.typed &&
-      ((value.test(value6.text) && value.test(value7.text)) ||
-        (value2.test(value6.text) && value2.test(value7.text)) ||
-        (value3.test(value6.text) && value3.test(value7.text)) ||
-        (value4.test(value6.text) && value4.test(value7.text)));
-    value5 +=
-      (value8
+    let isCompatible =
+      previousBlock.typed &&
+      currentBlock.typed &&
+      ((value.test(previousBlock.text) && value.test(currentBlock.text)) ||
+        (unorderedListPattern.test(previousBlock.text) && unorderedListPattern.test(currentBlock.text)) ||
+        (orderedListPattern.test(previousBlock.text) && orderedListPattern.test(currentBlock.text)) ||
+        (quotePattern.test(previousBlock.text) && quotePattern.test(currentBlock.text)));
+    firstBlockText +=
+      (isCompatible
         ? `
 `
         : `
 
-`) + value7.text;
+`) + currentBlock.text;
   }
-  return value5;
+  return firstBlockText;
 }
 function removeMarkdownModelNodes(
   root: HTMLElement,
   blockModels: Map<Node, MarkdownSource>,
   removedNodes: MutationRecord[],
 ): void {
-  let callback = (input: Node): void => {
-    blockModels.delete(input);
+  let callback = (node: Node): void => {
+    blockModels.delete(node);
     for (let value of blockModels.keys()) {
-      if (input.contains(value)) {
+      if (node.contains(value)) {
         blockModels.delete(value);
       }
     }
@@ -448,40 +448,40 @@ function MarkdownEditor({
   let ref = DesignSystemReactRuntime.useRef<HTMLDivElement | null>(
       null,
     ),
-    ref2 = DesignSystemReactRuntime.useRef(false),
-    [value, value2] = DesignSystemReactRuntime.useState(false),
-    ref3 = DesignSystemReactRuntime.useRef<HTMLDivElement | null>(
+    isComposingRef = DesignSystemReactRuntime.useRef(false),
+    [value, isFocused] = DesignSystemReactRuntime.useState(false),
+    editorRef = DesignSystemReactRuntime.useRef<HTMLDivElement | null>(
       null,
     ),
-    ref4 = DesignSystemReactRuntime.useRef<string | null>(null),
-    [value3, value4] = DesignSystemReactRuntime.useState(0),
-    ref5 = DesignSystemReactRuntime.useRef(markdown),
-    ref6 = DesignSystemReactRuntime.useRef(markdown);
-  ref6.current = markdown;
-  let ref7 = DesignSystemReactRuntime.useRef<number | null>(null);
+    lastSerializedRef = DesignSystemReactRuntime.useRef<string | null>(null),
+    [serializationVersion, setSerializationVersion] = DesignSystemReactRuntime.useState(0),
+    markdownRef = DesignSystemReactRuntime.useRef(markdown),
+    sourceMarkdownRef = DesignSystemReactRuntime.useRef(markdown);
+  sourceMarkdownRef.current = markdown;
+  let animationFrameRef = DesignSystemReactRuntime.useRef<number | null>(null);
   DesignSystemReactRuntime.useEffect(
     () => (): void => {
-      if (ref7.current !== null) {
-        cancelAnimationFrame(ref7.current);
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     },
     [],
   );
   DesignSystemReactRuntime.useEffect((): void => {
-    if (ref2.current) {
+    if (isComposingRef.current) {
       return;
     }
-    if (markdown !== ref5.current) {
-      ref5.current = markdown;
-      ref4.current = null;
-      value4((input: number) => input + 1);
+    if (markdown !== markdownRef.current) {
+      markdownRef.current = markdown;
+      lastSerializedRef.current = null;
+      setSerializationVersion((version: number) => version + 1);
     }
   }, [markdown]);
   let memo = DesignSystemReactRuntime.useMemo(
-      () => parseMarkdownBlocks(ref5.current),
-      [value3],
+      () => parseMarkdownBlocks(markdownRef.current),
+      [serializationVersion],
     ),
-    value5 = readOnly
+    isReadOnly = readOnly
       ? undefined
       : {
           links: "edit",
@@ -490,10 +490,10 @@ function MarkdownEditor({
     ref8 = DesignSystemReactRuntime.useRef(
       new Map<Node, MarkdownSource>(),
     ),
-    ref9 = DesignSystemReactRuntime.useRef<HTMLDivElement | null>(
+    contentRef = DesignSystemReactRuntime.useRef<HTMLDivElement | null>(
       null,
     ),
-    ref10 = DesignSystemReactRuntime.useRef<MutationObserver | null>(
+    mutationObserverRef = DesignSystemReactRuntime.useRef<MutationObserver | null>(
       null,
     );
   DesignSystemReactRuntime.useLayoutEffect(() => {
@@ -502,17 +502,17 @@ function MarkdownEditor({
       ref8.current = new Map();
       return;
     }
-    if (ref9.current !== current) {
-      ref9.current = current;
+    if (contentRef.current !== current) {
+      contentRef.current = current;
       ref8.current = new Map();
-      let value7 = Array.from(current.children);
-      if (value7.length === memo.sources.length) {
-        value7.forEach((input: Element, options: number): void => {
-          let value8 = memo.sources[options];
-          if (value8 !== undefined) {
-            ref8.current.set(input, {
-              at: options,
-              ...value8,
+      let children = Array.from(current.children);
+      if (children.length === memo.sources.length) {
+        children.forEach((child: Element, index: number): void => {
+          let source = memo.sources[index];
+          if (source !== undefined) {
+            ref8.current.set(child, {
+              at: index,
+              ...source,
             });
           }
         });
@@ -521,9 +521,9 @@ function MarkdownEditor({
     if (readOnly) {
       return;
     }
-    let current2 = ref8.current,
-      observer = new MutationObserver((input: MutationRecord[]) =>
-        removeMarkdownModelNodes(current, current2, input),
+    let previousNodes = ref8.current,
+      observer = new MutationObserver((mutations: MutationRecord[]) =>
+        removeMarkdownModelNodes(current, previousNodes, mutations),
       );
     observer.observe(current, {
       subtree: true,
@@ -531,21 +531,21 @@ function MarkdownEditor({
       characterData: true,
       attributes: true,
     });
-    ref10.current = observer;
+    mutationObserverRef.current = observer;
     return (): void => {
       observer.disconnect();
-      ref10.current = null;
+      mutationObserverRef.current = null;
     };
   }, [memo, readOnly]);
   let callback = (): void => {
-      value2(false);
-      ref11.current?.flush();
+      isFocused(false);
+      commitQueueRef.current?.flush();
       onDone?.();
-      if (ref7.current !== null) {
-        cancelAnimationFrame(ref7.current);
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
-      ref7.current = requestAnimationFrame((): void => {
-        ref7.current = null;
+      animationFrameRef.current = requestAnimationFrame((): void => {
+        animationFrameRef.current = null;
         let current = ref.current;
         if (
           current !== null &&
@@ -554,60 +554,60 @@ function MarkdownEditor({
         ) {
           return;
         }
-        ref2.current = false;
-        ref5.current = ref6.current;
-        ref4.current = null;
-        value4((input: number) => input + 1);
+        isComposingRef.current = false;
+        markdownRef.current = sourceMarkdownRef.current;
+        lastSerializedRef.current = null;
+        setSerializationVersion((version: number) => version + 1);
       });
     },
-    ref11 = DesignSystemReactRuntime.useRef<
+    commitQueueRef = DesignSystemReactRuntime.useRef<
       import("../contracts").MarkdownCommitQueue<string> | null
     >(null);
-  if (ref11.current === null) {
-    ref11.current = createMarkdownCommitQueue(
+  if (commitQueueRef.current === null) {
+    commitQueueRef.current = createMarkdownCommitQueue(
       MARKDOWN_COMMIT_DELAY_MS,
       MARKDOWN_COMMIT_MAX_DELAY_MS,
     );
   }
   DesignSystemReactRuntime.useLayoutEffect(
-    () => () => ref11.current?.dispose(),
+    () => () => commitQueueRef.current?.dispose(),
     [],
   );
-  let ref12 = DesignSystemReactRuntime.useRef(readOnly);
+  let readOnlyRef = DesignSystemReactRuntime.useRef(readOnly);
   DesignSystemReactRuntime.useLayoutEffect((): void => {
-    if (ref12.current === readOnly) {
+    if (readOnlyRef.current === readOnly) {
       return;
     }
-    ref12.current = readOnly;
-    ref11.current?.flush();
-    if (ref2.current) {
-      ref2.current = false;
-      value2(false);
+    readOnlyRef.current = readOnly;
+    commitQueueRef.current?.flush();
+    if (isComposingRef.current) {
+      isComposingRef.current = false;
+      isFocused(false);
       onDone?.();
     }
-    value4((input: number) => input + 1);
+    setSerializationVersion((version: number) => version + 1);
   }, [readOnly]);
-  let callback2 = (): void => {
+  let commitMarkdown = (): void => {
       if (readOnly || ref.current === null) {
         return;
       }
-      if (ref10.current !== null) {
+      if (mutationObserverRef.current !== null) {
         removeMarkdownModelNodes(
           ref.current,
           ref8.current,
-          ref10.current.takeRecords(),
+          mutationObserverRef.current.takeRecords(),
         );
       }
-      let value7 = serializeMarkdownEditor(ref.current, (input: Element) =>
-        ref8.current.get(input),
+      let serializedMarkdown = serializeMarkdownEditor(ref.current, (element: Element) =>
+        ref8.current.get(element),
       );
-      ref4.current = value7;
-      ref5.current = value7;
+      lastSerializedRef.current = serializedMarkdown;
+      markdownRef.current = serializedMarkdown;
       if (onMarkdown !== undefined) {
-        ref11.current?.push(value7, onMarkdown);
+        commitQueueRef.current?.push(serializedMarkdown, onMarkdown);
       }
     },
-    value6: boolean = ref5.current.trim() === "";
+    isEmpty: boolean = markdownRef.current.trim() === "";
   return (
     <jsxEditableMarkdown.Fragment>
       {[(() => {
@@ -624,19 +624,19 @@ function MarkdownEditor({
             role: readOnly ? undefined : "textbox",
             "aria-multiline": readOnly ? undefined : true,
             "aria-label": label ?? "README",
-            "data-placeholder": value6 ? placeholder : undefined,
+            "data-placeholder": isEmpty ? placeholder : undefined,
             onFocus: (): void => {
-              ref2.current = true;
-              value2(true);
+              isComposingRef.current = true;
+              isFocused(true);
             },
             onPaste: (event: React.ClipboardEvent<HTMLDivElement>): void => {
               if (readOnly) {
                 return;
               }
               event.preventDefault();
-              let value7 = event.clipboardData.getData("text/plain");
-              if (value7 !== "") {
-                document.execCommand("insertText", false, value7);
+              let pastedText = event.clipboardData.getData("text/plain");
+              if (pastedText !== "") {
+                document.execCommand("insertText", false, pastedText);
               }
             },
             onDrop: (event: React.DragEvent<HTMLDivElement>): void => {
@@ -672,38 +672,38 @@ function MarkdownEditor({
               ) {
                 return;
               }
-              let value7 = ref.current?.ownerDocument.getSelection();
+              let selection = ref.current?.ownerDocument.getSelection();
               if (
                 event.key === "Enter" &&
                 (event.metaKey || event.ctrlKey) &&
                 !event.nativeEvent.isComposing &&
-                value7 != null &&
-                value7.rangeCount > 0
+                selection != null &&
+                selection.rangeCount > 0
               ) {
-                let startContainer = value7.getRangeAt(0).startContainer,
-                  value10 =
+                let startContainer = selection.getRangeAt(0).startContainer,
+                  linkElement =
                     (startContainer.nodeType === ELEMENT_NODE_TYPE
                       ? (startContainer as Element)
                       : startContainer.parentElement
                     )?.closest("a[data-href]") ?? null;
                 if (
-                  value10 !== null &&
-                  event.currentTarget.contains(value10)
+                  linkElement !== null &&
+                  event.currentTarget.contains(linkElement)
                 ) {
                   event.preventDefault();
                   openExternalLink(
-                    linkUrlFromElement(value10),
+                    linkUrlFromElement(linkElement),
                   );
                   return;
                 }
               }
               if (
                 event.key === "Escape" &&
-                (value7 == null || value7.isCollapsed)
+                (selection == null || selection.isCollapsed)
               ) {
                 event.preventDefault();
                 event.stopPropagation();
-                let value10 =
+                let focusElement =
                   ref.current
                     ?.closest(".ds-tokrow, tr")
                     ?.querySelector<HTMLElement>(
@@ -713,8 +713,8 @@ function MarkdownEditor({
                     ?.closest(".ds-postit")
                     ?.querySelector<HTMLElement>("[data-note-close]") ??
                   null;
-                if (value10 !== null) {
-                  value10.focus();
+                if (focusElement !== null) {
+                  focusElement.focus();
                 } else {
                   (
                     ref.current?.ownerDocument
@@ -723,31 +723,31 @@ function MarkdownEditor({
                 }
                 return;
               }
-              if (value7 == null || value7.isCollapsed) {
+              if (selection == null || selection.isCollapsed) {
                 return;
               }
               if (event.key === "Escape") {
                 event.preventDefault();
                 event.stopPropagation();
-                value7.collapseToEnd();
+                selection.collapseToEnd();
                 return;
               }
-              let value8 =
+              let inputElement =
                   (event.key === "Tab" && !event.shiftKey) ||
                   (event.key === "F10" && event.altKey),
-                value9 =
-                  ref3.current?.querySelector<HTMLElement>(
+                selectionTarget =
+                  editorRef.current?.querySelector<HTMLElement>(
                     "button:not(:disabled), input",
                   ) ??
-                  ref3.current?.querySelector<HTMLElement>(
+                  editorRef.current?.querySelector<HTMLElement>(
                     TOOLBAR_FOCUSABLE_SELECTOR,
                   );
-              if (!value8 || value9 === null || value9 === undefined) {
+              if (!inputElement || selectionTarget === null || selectionTarget === undefined) {
                 return;
               }
               event.preventDefault();
               event.stopPropagation();
-              value9.focus();
+              selectionTarget.focus();
             },
             onInput: (event: React.InputEvent<HTMLDivElement>): void => {
               if (readOnly || ref.current === null) {
@@ -761,16 +761,16 @@ function MarkdownEditor({
                 event.nativeEvent,
                 serializeMarkdownEditor,
               );
-              callback2();
+              commitMarkdown();
             },
-            onBlur: (input: React.FocusEvent<HTMLDivElement>): void => {
-              let value7 = input.relatedTarget ?? null;
+            onBlur: (event: React.FocusEvent<HTMLDivElement>): void => {
+              let relatedTarget = event.relatedTarget ?? null;
               if (
-                value7 !== null &&
-                (ref.current?.contains(value7) ||
-                  ref3.current?.contains(value7) ||
-                  (value7 instanceof Element &&
-                    value7.closest(
+                relatedTarget !== null &&
+                (ref.current?.contains(relatedTarget) ||
+                  editorRef.current?.contains(relatedTarget) ||
+                  (relatedTarget instanceof Element &&
+                    relatedTarget.closest(
                       "[" + README_TOOLBAR_MENU_ATTRIBUTE + "]",
                     ) !== null))
               ) {
@@ -780,12 +780,12 @@ function MarkdownEditor({
             },
             children: memo.blocks.map(
               (
-                input: import("../contracts").MarkdownBlock,
-                options: number,
-              ) => renderMarkdownBlock(input, options, value5),
+                block: import("../contracts").MarkdownBlock,
+                index: number,
+              ) => renderMarkdownBlock(block, index, isReadOnly),
             ),
           };
-          const _elementKey = value3;
+          const _elementKey = serializationVersion;
           return <_Element key={_elementKey} {..._elementProps} />;
         })(), readOnly ? null : (
           <p
@@ -801,8 +801,8 @@ function MarkdownEditor({
           <jsxEditableMarkdown.Fragment>
             {[<MarkdownFormattingToolbar
                 root={ref}
-                hold={ref3}
-                onApplied={callback2}
+                hold={editorRef}
+                onApplied={commitMarkdown}
                 onLeave={callback}
                 className={stripClassName}
               />, <MarkdownLinkPopover

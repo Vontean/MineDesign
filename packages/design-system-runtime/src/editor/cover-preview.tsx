@@ -35,19 +35,19 @@ function CoverPreview({
   head: head,
 }: Editor.CoverPreviewProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = (
+  let [value, setIsOpen] = (
     reactPreviewComponents as typeof React
   ).useState(false);
   (reactPreviewComponents as typeof React).useEffect(
-    () => value2(true),
+    () => setIsOpen(true),
     [],
   );
-  let value3 = clampComponentStageHeight(cover.height),
+  let stageHeight = clampComponentStageHeight(cover.height),
     memo = (reactPreviewComponents as typeof React).useMemo(
       () => coverPreviewHead(head),
       [head],
     ),
-    [value4, value5] = (
+    [staticNote, setStaticNote] = (
       reactPreviewComponents as typeof React
     ).useState<string | null>(null);
   return (
@@ -61,7 +61,7 @@ function CoverPreview({
         >
           {[<PreviewFitBox
               width={COVER_PREVIEW_WIDTH}
-              height={value3}
+              height={stageHeight}
               data-testid={"ds-cover"}
             >
               {value ? (<ComponentPreview
@@ -72,9 +72,9 @@ function CoverPreview({
                     ),
                   )}
                   head={memo}
-                  height={value3}
+                  height={stageHeight}
                   staticPageWidth={COVER_PREVIEW_WIDTH}
-                  onStaticNote={value5}
+                  onStaticNote={setStaticNote}
                   title={uiMessage("design-system.coverPreview.cover")}
                   data-testid={"ds-cover-preview"}
                 />) : (null)}
@@ -83,14 +83,14 @@ function CoverPreview({
               aria-hidden={"true"}
               data-testid={"ds-cover-shield"}
             />]}
-        </div>, value4 !== null ? (
+        </div>, staticNote !== null ? (
           <p
             className={"ds-swatch-note text-footnote text-muted"}
             role={"note"}
             data-testid={"ds-cover-note"}
             {...UNCOMMENTABLE_PROPS}
           >
-            {value4}
+            {staticNote}
           </p>
         ) : null]}
     </jsxCoverPreview.Fragment>

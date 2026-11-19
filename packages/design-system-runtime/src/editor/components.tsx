@@ -35,39 +35,39 @@ var componentStageStyle: (
 ) => React.CSSProperties;
 var EMPTY_COMPONENT_PROPS: Model.InferredPropControl[];
 function hasEditorFlagInLocation(
-  location2: Pick<Location, "search" | "hash"> | undefined,
+  location: Pick<Location, "search" | "hash"> | undefined,
   key: string,
 ): boolean {
   try {
-    if (location2 === undefined) {
+    if (location === undefined) {
       return false;
     }
-    if (new URLSearchParams(location2.search).get(key) === "1") {
+    if (new URLSearchParams(location.search).get(key) === "1") {
       return true;
     }
-    return location2.hash.replace(/^#/, "").split(/[&;]/).includes(key);
+    return location.hash.replace(/^#/, "").split(/[&;]/).includes(key);
   } catch {
     return false;
   }
 }
 function hasEditorFlagInParentLocation(key: string): boolean {
-  let value: Location | undefined, value2: Location | undefined;
+  let value: Location | undefined, parentLocation: Location | undefined;
   try {
     value = globalThis.location;
   } catch {
     value = undefined;
   }
   try {
-    value2 =
+    parentLocation =
       globalThis.parent !== undefined && globalThis.parent !== globalThis.self
         ? globalThis.parent.location
         : undefined;
   } catch {
-    value2 = undefined;
+    parentLocation = undefined;
   }
   return (
     hasEditorFlagInLocation(value, key) ||
-    hasEditorFlagInLocation(value2, key)
+    hasEditorFlagInLocation(parentLocation, key)
   );
 }
 function hasEditorFlagInStorage(key: string): boolean {
@@ -85,11 +85,11 @@ function stripMatchingComponentHeading(
   if (value === null) {
     return markdown;
   }
-  let value2 = normalizedComponentTitle(value[1] ?? ""),
-    value3 = normalizedComponentTitle(name);
+  let normalizedHeading = normalizedComponentTitle(value[1] ?? ""),
+    componentName = normalizedComponentTitle(name);
   if (
-    value3 === "" ||
-    (value2 !== value3 && value2 !== value3 + "s" && value2 !== value3 + "es")
+    componentName === "" ||
+    (normalizedHeading !== componentName && normalizedHeading !== componentName + "s" && normalizedHeading !== componentName + "es")
   ) {
     return markdown;
   }
@@ -173,7 +173,7 @@ function ComponentGuidelines({
   useUiLocale();
   let guidelines = c.guidelines ?? "",
     value = stripMatchingComponentHeading(guidelines, c.name),
-    value2 = guidelines.slice(0, guidelines.length - value.length),
+    guidelineLines = guidelines.slice(0, guidelines.length - value.length),
     ref = reactComponentsSection.useRef<string | null>(null);
   return (
     <UsageNoteEditor
@@ -185,11 +185,11 @@ function ComponentGuidelines({
       data-testid={"ds-comp-guide-" + c.name}
       {...(edit !== undefined
         ? {
-            onChange: (input: string): void => {
-              ref.current = input.trim();
+            onChange: (markdown: string): void => {
+              ref.current = markdown.trim();
               edit.setGuidelines(
                 c.name,
-                ensureComponentGuidelinesHeading(input, c.name, value2),
+                ensureComponentGuidelinesHeading(markdown, c.name, guidelineLines),
               );
             },
             onDone: (): void => {
@@ -206,17 +206,17 @@ function ComponentGuidelines({
 }
 function ComponentPropField({
   spec: spec,
-  value: value,
+  value: propValue,
   placeholder: placeholder,
   onChange: onChange,
 }: Editor.ComponentPropFieldProps): React.ReactElement {
   useUiLocale();
-  let value2: string = "ds-prop-" + spec.name;
+  let testId: string = "ds-prop-" + spec.name;
   if (spec.kind === "boolean") {
     return (
       <Switch
-        checked={value === true}
-        onCheckedChange={(input: boolean) => onChange(input)}
+        checked={propValue === true}
+        onCheckedChange={(checked: boolean) => onChange(checked)}
         aria-label={spec.name}
       />
     );
@@ -231,32 +231,32 @@ function ComponentPropField({
             value: "",
             label: "—",
           },
-          ...(spec.options ?? []).map((input) => ({
-            value: input,
-            label: input,
+          ...(spec.options ?? []).map((option) => ({
+            value: option,
+            label: option,
           })),
         ]}
-        value={value === undefined ? "" : String(value)}
-        onChange={(input: string) =>
+        value={propValue === undefined ? "" : String(propValue)}
+        onChange={(selectedValue: string) =>
           onChange(
-            input === ""
+            selectedValue === ""
               ? undefined
-              : coerceControlOption(spec, input),
+              : coerceControlOption(spec, selectedValue),
           )
         }
-        data-testid={value2}
+        data-testid={testId}
       />
     );
   }
   if (spec.kind === "number") {
     return (
-      <span data-testid={value2} className={"contents"}>
+      <span data-testid={testId} className={"contents"}>
         <PropertyNumberInput
           aria-label={spec.name}
-          value={typeof value === "number" ? value : undefined}
+          value={typeof propValue === "number" ? propValue : undefined}
           clearable={true}
           steppers={false}
-          onValue={(input: number | undefined) => onChange(input)}
+          onValue={(numberValue: number | undefined) => onChange(numberValue)}
         />
       </span>
     );
@@ -264,16 +264,16 @@ function ComponentPropField({
   return (
     <TextInput
       aria-label={spec.name}
-      value={typeof value === "string" ? value : ""}
+      value={typeof propValue === "string" ? propValue : ""}
       placeholder={placeholder ?? spec.typeName ?? ("")}
-      onChange={(input: React.ChangeEvent<HTMLInputElement>) =>
+      onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
         onChange(
-          input.currentTarget.value === ""
+          event.currentTarget.value === ""
             ? undefined
-            : input.currentTarget.value,
+            : event.currentTarget.value,
         )
       }
-      data-testid={value2}
+      data-testid={testId}
     />
   );
 }
@@ -339,8 +339,8 @@ function ComponentPropsEditor({
                           }
                         : {})}
                       onChange={(
-                        input: Editor.ComponentPropValue | undefined,
-                      ) => onChange(source.name, input)}
+                        propValue: Editor.ComponentPropValue | undefined,
+                      ) => onChange(source.name, propValue)}
                     />
                   ),
                 };
@@ -364,46 +364,46 @@ function ComponentsSection({
   staticFiles: staticFiles,
 }: Editor.ComponentsSectionProps): React.ReactElement | null {
   useUiLocale();
-  let [value, value2] = reactComponentsSection.useState<string | null>(null),
-    [value3, value4] = reactComponentsSection.useState<
+  let [value, selectedComponent] = reactComponentsSection.useState<string | null>(null),
+    [componentValueMap, setComponentProps] = reactComponentsSection.useState<
       Record<string, Editor.ComponentPropValues>
     >({});
   if (components.length === 0) {
     return null;
   }
   let callback = (
-      input: string,
-      options: string,
-      context: Editor.ComponentPropValue | undefined,
+      componentName: string,
+      propName: string,
+      propValue: Editor.ComponentPropValue | undefined,
     ) =>
-      value4((input2) => {
+      setComponentProps((currentProps) => {
         let state = {
-          ...(input2[input] ?? {}),
+          ...(currentProps[componentName] ?? {}),
         };
-        if (context === undefined) {
-          delete state[options];
+        if (propValue === undefined) {
+          delete state[propName];
         } else {
-          state[options] = context;
+          state[propName] = propValue;
         }
-        let state2 = {
-          ...input2,
+        let nextProps = {
+          ...currentProps,
         };
         if (Object.keys(state).length === 0) {
-          delete state2[input];
+          delete nextProps[componentName];
         } else {
-          state2[input] = state;
+          nextProps[componentName] = state;
         }
-        return state2;
+        return nextProps;
       }),
-    callback2 = (input: string) =>
-      value4((input2) => {
-        if (!(input in input2)) {
-          return input2;
+    resetComponent = (componentName: string) =>
+      setComponentProps((currentProps) => {
+        if (!(componentName in currentProps)) {
+          return currentProps;
         }
         let state = {
-          ...input2,
+          ...currentProps,
         };
-        delete state[input];
+        delete state[componentName];
         return state;
       });
   return (
@@ -415,7 +415,7 @@ function ComponentsSection({
       {[staticNote !== undefined &&
         staticNote !== "" &&
         components.some(
-          (input): boolean => input.previewHtml !== undefined,
+          (component): boolean => component.previewHtml !== undefined,
         ) ? (
           <div
             className={"ds-pad py-sm text-footnote text-muted"}
@@ -431,15 +431,15 @@ function ComponentsSection({
                     className={"mt-xs font-mono break-all"}
                     data-testid={"ds-components-static-files"}
                   >
-                    {staticFiles.map((input, options) =>
+                    {staticFiles.map((file, fileIndex) =>
                       (() => {
-                        const _Element2 = "li";
-                        const _elementProps2 = {
-                          children: input,
+                        const FileListItem = "li";
+                        const fileProps = {
+                          children: file,
                         };
-                        const _elementKey2 = options;
+                        const fileKey = fileIndex;
                         return (
-                          <_Element2 key={_elementKey2} {..._elementProps2} />
+                          <FileListItem key={fileKey} {...fileProps} />
                         );
                       })(),
                     )}
@@ -458,35 +458,35 @@ function ComponentsSection({
               {...UNCOMMENTABLE_PROPS}
             >
               {[<span role={"columnheader"}>{uiMessage("design-system.components.name")}</span>, <span role={"columnheader"}>{uiMessage("design-system.components.preview")}</span>, <span className={"ds-cgutter"} aria-hidden={"true"} />]}
-            </div>, components.map((input) => {
+            </div>, components.map((component) => {
               let componentProps = editorFeatureFlags.componentProps,
-                value5 = componentProps
-                  ? (propsOf?.(input) ?? EMPTY_COMPONENT_PROPS)
+                propSpecs = componentProps
+                  ? (propsOf?.(component) ?? EMPTY_COMPONENT_PROPS)
                   : EMPTY_COMPONENT_PROPS,
-                value6 = componentProps ? value3[input.name] : undefined,
-                value7: Editor.ComponentPropValues | undefined =
-                  value6 === undefined
+                componentValues = componentProps ? componentValueMap[component.name] : undefined,
+                tweaks: Editor.ComponentPropValues | undefined =
+                  componentValues === undefined
                     ? undefined
                     : Object.fromEntries([
-                        ...value5.flatMap((input2) =>
-                          input2.default !== undefined
-                            ? [[input2.name, input2.default]]
+                        ...propSpecs.flatMap((spec) =>
+                          spec.default !== undefined
+                            ? [[spec.name, spec.default]]
                             : [],
                         ),
-                        ...(value5.some(
-                          (input2): boolean => input2.name === "children",
+                        ...(propSpecs.some(
+                          (spec): boolean => spec.name === "children",
                         )
-                          ? [["children", input.name]]
+                          ? [["children", component.name]]
                           : []),
-                        ...Object.entries(value6),
+                        ...Object.entries(componentValues),
                       ]);
               return (() => {
-                const _Element3 = "div";
-                const _elementProps3 = {
+                const ComponentPreviewContainer = "div";
+                const previewProps = {
                   className: "ds-cmrow ds-tokrow ds-comprow group/row",
                   role: "row",
-                  "data-testid": "ds-comp-" + input.name,
-                  ...commentTargetProps("comp", input.name),
+                  "data-testid": "ds-comp-" + component.name,
+                  ...commentTargetProps("comp", component.name),
                   children: [
                     <span
                       className={"ds-cmname flex min-w-0 flex-col gap-0.5"}
@@ -495,9 +495,9 @@ function ComponentsSection({
                       {[<span className={"flex min-w-0 items-center gap-xs"}>
                           {[<span
                               className={"ds-comprow-name min-w-0 truncate"}
-                              data-testid={"ds-comp-name-" + input.name}
+                              data-testid={"ds-comp-name-" + component.name}
                             >
-                              {input.name}
+                              {component.name}
                             </span>, componentProps ? (
                               <span
                                 className={
@@ -512,55 +512,55 @@ function ComponentsSection({
                                     icon={"Filter"}
                                     className={joinClassNames(
                                       "ds-cact",
-                                      value6 !== undefined &&
+                                      componentValues !== undefined &&
                                         "ds-cact-on text-accent",
                                     )}
-                                    pressed={value === input.name}
-                                    aria-label={("Props: ") + (input.name)}
+                                    pressed={value === component.name}
+                                    aria-label={("Props: ") + (component.name)}
                                     tooltip={uiMessage("design-system.components.props")}
-                                    aria-expanded={value === input.name}
+                                    aria-expanded={value === component.name}
                                     onClick={(
-                                      input2: React.MouseEvent<HTMLButtonElement>,
+                                      event: React.MouseEvent<HTMLButtonElement>,
                                     ): void => {
-                                      input2.stopPropagation();
-                                      value2(
-                                        value !== input.name
-                                          ? input.name
+                                      event.stopPropagation();
+                                      selectedComponent(
+                                        value !== component.name
+                                          ? component.name
                                           : null,
                                       );
                                     }}
                                     data-testid={
-                                      "ds-comp-props-btn-" + input.name
+                                      "ds-comp-props-btn-" + component.name
                                     }
                                   />, <PropertyPopup
-                                    open={value === input.name}
-                                    onClose={() => value2(null)}
+                                    open={value === component.name}
+                                    onClose={() => selectedComponent(null)}
                                     align={"left"}
                                     padding={"none"}
-                                    aria-label={("Props: ") + (input.name)}
+                                    aria-label={("Props: ") + (component.name)}
                                   >
-                                    {value === input.name ? (<ComponentPropsEditor
-                                        c={input}
-                                        specs={value5}
-                                        values={value6}
+                                    {value === component.name ? (<ComponentPropsEditor
+                                        c={component}
+                                        specs={propSpecs}
+                                        values={componentValues}
                                         onChange={(
-                                          input2: string,
-                                          options:
+                                          componentName: string,
+                                          componentOptions:
                                             | Editor.ComponentPropValue
                                             | undefined,
                                         ) =>
                                           callback(
-                                            input.name,
-                                            input2,
-                                            options,
+                                            component.name,
+                                            componentName,
+                                            componentOptions,
                                           )
                                         }
-                                        onReset={() => callback2(input.name)}
+                                        onReset={() => resetComponent(component.name)}
                                       />) : (null)}
                                   </PropertyPopup>]}
                               </span>
                             ) : null]}
-                        </span>, input.floor === true ? (
+                        </span>, component.floor === true ? (
                           <span
                             className={
                               "ds-comp-floor w-fit text-caption text-muted"
@@ -577,15 +577,15 @@ function ComponentsSection({
                     <span className={"ds-cmprev min-w-0"} role={"cell"}>
                       <StickyComponentNote
                         reserve={
-                          input.previewHtml !== undefined
-                            ? componentStageStyle(input)
+                          component.previewHtml !== undefined
+                            ? componentStageStyle(component)
                             : undefined
                         }
                       >
                         <ComponentStage
-                          c={input}
+                          c={component}
                           mode={mode}
-                          tweaks={value7}
+                          tweaks={tweaks}
                           renderPreview={renderPreview}
                         />
                       </StickyComponentNote>
@@ -598,7 +598,7 @@ function ComponentsSection({
                       {...UNCOMMENTABLE_PROPS}
                     >
                       <ComponentGuidelines
-                        c={input}
+                        c={component}
                         {...(edit !== undefined
                           ? {
                               edit: edit,
@@ -608,8 +608,8 @@ function ComponentsSection({
                     </span>,
                   ],
                 };
-                const _elementKey3 = input.name;
-                return <_Element3 key={_elementKey3} {..._elementProps3} />;
+                const componentKey = component.name;
+                return <ComponentPreviewContainer key={componentKey} {...previewProps} />;
               })();
             })]}
         </div>]}
@@ -625,7 +625,7 @@ function StickyComponentNote({
 }): React.ReactElement {
   useUiLocale();
   let ref = reactComponentsSection.useRef<HTMLSpanElement | null>(null),
-    [value, value2] = reactComponentsSection.useState(false);
+    [value, setSticky] = reactComponentsSection.useState(false);
   reactComponentsSection.useLayoutEffect(() => {
     if (value) {
       return;
@@ -638,14 +638,14 @@ function StickyComponentNote({
       typeof IntersectionObserver === "undefined" ||
       current.getBoundingClientRect().top < (window.innerHeight || 800) + 400
     ) {
-      value2(true);
+      setSticky(true);
       return;
     }
-    let value3 = new IntersectionObserver(
-      (input: IntersectionObserverEntry[]): void => {
-        if (input.some((input2) => input2.isIntersecting)) {
-          value2(true);
-          value3.disconnect();
+    let observer = new IntersectionObserver(
+      (entries: IntersectionObserverEntry[]): void => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setSticky(true);
+          observer.disconnect();
         }
       },
       {
@@ -653,8 +653,8 @@ function StickyComponentNote({
         rootMargin: "400px 0px",
       },
     );
-    value3.observe(current);
-    return () => value3.disconnect();
+    observer.observe(current);
+    return () => observer.disconnect();
   }, [value]);
   return (
     <span ref={ref} className={"ds-cmstage block"}>

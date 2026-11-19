@@ -23,19 +23,19 @@ function firstMarkdownTitle(markdown: string): {
     value = markdown.split(`
 `);
   for (let index: number = 0; index < value.length; index++) {
-    let value2 = value[index];
-    if (/^```/.test(value2)) {
+    let lineText = value[index];
+    if (/^```/.test(lineText)) {
       flag = !flag;
       continue;
     }
     if (flag) {
       continue;
     }
-    let value3 = /^#\s+(.+)$/.exec(value2);
-    if (value3 !== null) {
+    let titleMatch = /^#\s+(.+)$/.exec(lineText);
+    if (titleMatch !== null) {
       return {
         line: index,
-        text: value3[1].trim(),
+        text: titleMatch[1].trim(),
       };
     }
   }
@@ -46,10 +46,10 @@ function replaceMarkdownTitle(markdown: string, title: string): string {
   if (value === null) {
     return markdown;
   }
-  let value2 = markdown.split(`
+  let lines = markdown.split(`
 `);
-  value2[value.line] = "# " + title;
-  return value2.join(`
+  lines[value.line] = "# " + title;
+  return lines.join(`
 `);
 }
 function DocumentSections({
@@ -60,15 +60,15 @@ function DocumentSections({
   useUiLocale();
   return (
     <jsxDocumentSections.Fragment>
-      {docs.map((input: Core.ParsedDesignSystem["docs"][number]) =>
+      {docs.map((doc: Core.ParsedDesignSystem["docs"][number]) =>
         (() => {
           const _Element = SectionCard;
           const _elementProps = {
-            head: headFor(input),
+            head: headFor(doc),
             className: "ds-readme-sec ds-guidance-sec",
-            "data-testid": "ds-guidance-" + input.path,
-            cardKey: "guidance:" + input.path,
-            anchorId: commentTargetId("doc", input.path),
+            "data-testid": "ds-guidance-" + doc.path,
+            cardKey: "guidance:" + doc.path,
+            anchorId: commentTargetId("doc", doc.path),
             children: [
               <div
                 className={
@@ -76,27 +76,27 @@ function DocumentSections({
                 }
                 {...UNCOMMENTABLE_PROPS}
               >
-                {input.path}
+                {doc.path}
               </div>,
               <div className={README_MEASURE_CLASS_NAME}>
                 <MarkdownEditor
-                  markdown={input.markdown}
+                  markdown={doc.markdown}
                   readOnly={edit === undefined}
                   placeholder={
                     // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                     uiMessage("design-system.documentSections.guidanceForTheAgentVoiceDoSAndDonTsAnythingTheTokensCanTSay")
                   }
-                  label={input.title}
-                  testId={"ds-guidance-text-" + input.path}
-                  onMarkdown={(input2: string) =>
-                    edit?.setText(input.path, input2)
+                  label={doc.title}
+                  testId={"ds-guidance-text-" + doc.path}
+                  onMarkdown={(markdown: string) =>
+                    edit?.setText(doc.path, markdown)
                   }
                   onDone={edit?.done}
                 />
               </div>,
             ],
           };
-          const _elementKey = input.path;
+          const _elementKey = doc.path;
           return <_Element key={_elementKey} {..._elementProps} />;
         })(),
       )}

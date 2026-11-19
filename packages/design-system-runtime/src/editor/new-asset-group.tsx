@@ -31,49 +31,49 @@ function NewAssetGroupDialog({
   "data-testid": dataTestid = "ds-newset",
 }: Editor.NewAssetGroupDialogProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = (reactAssetFileDrop as typeof React).useState(
+  let [value, setGroupName] = (reactAssetFileDrop as typeof React).useState(
       "",
     ),
-    [value3, value4] = (reactAssetFileDrop as typeof React).useState<
+    [files, setFiles] = (reactAssetFileDrop as typeof React).useState<
       File[]
     >([]),
-    value5 = value.replace(/\s+/g, " ").trim(),
-    value6 =
-      value5 === ""
+    normalizedName = value.replace(/\s+/g, " ").trim(),
+    nameError =
+      normalizedName === ""
         ? null
-        : validateAssetGroupName(value5, "", groups),
-    value7 =
-      value5 === ""
+        : validateAssetGroupName(normalizedName, "", groups),
+    disabledReason =
+      normalizedName === ""
         ? uiMessage("design-system.newAssetGroup.nameTheSet")
-        : value6 !== null
-          ? value6
-          : value3.length === 0
+        : nameError !== null
+          ? nameError
+          : files.length === 0
             ? uiMessage("design-system.newAssetGroup.aSetStartsWithIts")
             : undefined,
-    callback = (input: File[]) =>
-      value4((input2) => [
-        ...input2,
-        ...input.filter(
-          (input3): boolean =>
-            !input2.some(
-              (input4) =>
-                input4.name === input3.name && input4.size === input3.size,
+    callback = (selectedFiles: File[]) =>
+      setFiles((existingFiles) => [
+        ...existingFiles,
+        ...selectedFiles.filter(
+          (candidateFile): boolean =>
+            !existingFiles.some(
+              (file) =>
+                file.name === candidateFile.name && file.size === candidateFile.size,
             ),
         ),
       ]),
-    callback2 = (): void => {
-      if (value7 !== undefined) {
+    handleCreate = (): void => {
+      if (disabledReason !== undefined) {
         return;
       }
-      onCreate(value5, value3);
+      onCreate(normalizedName, files);
     };
   return (
     <div className={"contents"} {...BLOCK_FILE_DROP_HANDLERS}>
       <CdsRoot density={"compact"} className={"contents"}>
         <Dialog.Root
           open={true}
-          onOpenChange={(input: boolean): void => {
-            if (!input) {
+          onOpenChange={(isOpen: boolean): void => {
+            if (!isOpen) {
               onClose();
             }
           }}
@@ -93,11 +93,11 @@ function NewAssetGroupDialog({
                 noValidate={true}
                 onSubmit={(event: React.FormEvent<HTMLFormElement>): void => {
                   event.preventDefault();
-                  callback2();
+                  handleCreate();
                 }}
               >
                 {[<FieldComponents.Root
-                    invalid={value6 !== null || undefined}
+                    invalid={nameError !== null || undefined}
                     className={"flex flex-col gap-xs"}
                   >
                     {[<FieldComponents.Label>
@@ -111,24 +111,24 @@ function NewAssetGroupDialog({
                         aria-label={uiMessage("design-system.newAssetGroup.name")}
                         data-testid={dataTestid + "-name"}
                         onChange={(
-                          input: React.ChangeEvent<HTMLInputElement>,
-                        ) => value2(input.currentTarget.value)}
-                      />, value6 !== null ? (
+                          event: React.ChangeEvent<HTMLInputElement>,
+                        ) => setGroupName(event.currentTarget.value)}
+                      />, nameError !== null ? (
                         <FieldComponents.Error match={true}>
-                          {value6}
+                          {nameError}
                         </FieldComponents.Error>
                       ) : null]}
                   </FieldComponents.Root>, <FileDropZone
                     onFiles={callback}
                     onLeftOut={onLeftOut}
                     testid={dataTestid}
-                  />, value3.length > 0 ? (
+                  />, files.length > 0 ? (
                     <PendingUploadFiles
-                      files={value3}
-                      onRemove={(input: number) =>
-                        value4((input2) =>
-                          input2.filter(
-                            (input3, options): boolean => options !== input,
+                      files={files}
+                      onRemove={(fileIndex: number) =>
+                        setFiles((currentFiles) =>
+                          currentFiles.filter(
+                            (file, index): boolean => index !== fileIndex,
                           ),
                         )
                       }
@@ -141,11 +141,11 @@ function NewAssetGroupDialog({
                         data-testid={dataTestid + "-cancel"}
                       >
                         {uiMessage("design-system.newAssetGroup.cancel")}
-                      </Button>, <DisabledReasonTooltip reason={value7}>
+                      </Button>, <DisabledReasonTooltip reason={disabledReason}>
                         <Button
                           variant={"primary"}
                           type={"submit"}
-                          disabled={value7 !== undefined}
+                          disabled={disabledReason !== undefined}
                           data-testid={dataTestid + "-submit"}
                         >
                           {uiMessage("design-system.newAssetGroup.createSet")}

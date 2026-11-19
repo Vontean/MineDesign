@@ -27,8 +27,8 @@ var cloneMergeValue: <T>(value: T) => T;
 var LEAF_MERGE_SCHEMA: MergeSchema;
 var MAX_KEYED_MERGE_LIST_ITEMS: number;
 var IndexFileError: IndexFileErrorConstructor;
-function sha256Sync(input: string | Uint8Array<ArrayBufferLike>) {
-  let bytes = typeof input === "string" ? encodeFileUtf8(input) : input,
+function sha256Sync(inputData: string | Uint8Array<ArrayBufferLike>) {
+  let bytes = typeof inputData === "string" ? encodeFileUtf8(inputData) : inputData,
     byteLength = bytes.length,
     paddedLength: number = ((byteLength + 9 + 63) >> 6) << 6,
     paddedBytes = new Uint8Array(paddedLength);
@@ -43,67 +43,67 @@ function sha256Sync(input: string | Uint8Array<ArrayBufferLike>) {
     ]),
     words = new Uint32Array(64);
   for (let index = 0; index < paddedLength; index += 64) {
-    for (let index2: number = 0; index2 < 16; index2++) {
-      words[index2] = view.getUint32(index + index2 * 4, false);
+    for (let wordIndex: number = 0; wordIndex < 16; wordIndex++) {
+      words[wordIndex] = view.getUint32(index + wordIndex * 4, false);
     }
     for (let count: number = 16; count < 64; count++) {
-      let value9 = words[count - 15],
-        value10 = words[count - 2],
-        value11: number =
-          ((value9 >>> 7) | (value9 << 25)) ^
-          ((value9 >>> 18) | (value9 << 14)) ^
-          (value9 >>> 3),
-        value12: number =
-          ((value10 >>> 17) | (value10 << 15)) ^
-          ((value10 >>> 19) | (value10 << 13)) ^
-          (value10 >>> 10);
+      let scheduleWord = words[count - 15],
+        scheduleWordTwo = words[count - 2],
+        scheduleWordThree: number =
+          ((scheduleWord >>> 7) | (scheduleWord << 25)) ^
+          ((scheduleWord >>> 18) | (scheduleWord << 14)) ^
+          (scheduleWord >>> 3),
+        scheduleWordFour: number =
+          ((scheduleWordTwo >>> 17) | (scheduleWordTwo << 15)) ^
+          ((scheduleWordTwo >>> 19) | (scheduleWordTwo << 13)) ^
+          (scheduleWordTwo >>> 10);
       words[count] =
-        (words[count - 16] + value11 + words[count - 7] + value12) | 0;
+        (words[count - 16] + scheduleWordThree + words[count - 7] + scheduleWordFour) | 0;
     }
     let value = state[0],
-      value2 = state[1],
-      value3 = state[2],
-      value4 = state[3],
-      value5 = state[4],
-      value6 = state[5],
-      value7 = state[6],
-      value8 = state[7];
-    for (let index2: number = 0; index2 < 64; index2++) {
-      let value9: number =
-          ((value5 >>> 6) | (value5 << 26)) ^
-          ((value5 >>> 11) | (value5 << 21)) ^
-          ((value5 >>> 25) | (value5 << 7)),
-        value10 = (value5 & value6) ^ (~value5 & value7),
-        value11: number =
-          (value8 +
-            value9 +
-            value10 +
-            SHA256_ROUND_CONSTANTS[index2] +
-            words[index2]) |
+      stateA = state[1],
+      stateB = state[2],
+      stateC = state[3],
+      stateD = state[4],
+      stateE = state[5],
+      stateF = state[6],
+      stateG = state[7];
+    for (let roundIndex: number = 0; roundIndex < 64; roundIndex++) {
+      let hashValue: number =
+          ((stateD >>> 6) | (stateD << 26)) ^
+          ((stateD >>> 11) | (stateD << 21)) ^
+          ((stateD >>> 25) | (stateD << 7)),
+        choiceTemp = (stateD & stateE) ^ (~stateD & stateF),
+        hashValueA: number =
+          (stateG +
+            hashValue +
+            choiceTemp +
+            SHA256_ROUND_CONSTANTS[roundIndex] +
+            words[roundIndex]) |
           0,
-        value12: number =
+        hashValueB: number =
           ((value >>> 2) | (value << 30)) ^
           ((value >>> 13) | (value << 19)) ^
           ((value >>> 22) | (value << 10)),
-        value13 = (value & value2) ^ (value & value3) ^ (value2 & value3),
-        value14: number = (value12 + value13) | 0;
-      value8 = value7;
-      value7 = value6;
-      value6 = value5;
-      value5 = (value4 + value11) | 0;
-      value4 = value3;
-      value3 = value2;
-      value2 = value;
-      value = (value11 + value14) | 0;
+        majorityTemp = (value & stateA) ^ (value & stateB) ^ (stateA & stateB),
+        hashValueC: number = (hashValueB + majorityTemp) | 0;
+      stateG = stateF;
+      stateF = stateE;
+      stateE = stateD;
+      stateD = (stateC + hashValueA) | 0;
+      stateC = stateB;
+      stateB = stateA;
+      stateA = value;
+      value = (hashValueA + hashValueC) | 0;
     }
     state[0] = (state[0] + value) | 0;
-    state[1] = (state[1] + value2) | 0;
-    state[2] = (state[2] + value3) | 0;
-    state[3] = (state[3] + value4) | 0;
-    state[4] = (state[4] + value5) | 0;
-    state[5] = (state[5] + value6) | 0;
-    state[6] = (state[6] + value7) | 0;
-    state[7] = (state[7] + value8) | 0;
+    state[1] = (state[1] + stateA) | 0;
+    state[2] = (state[2] + stateB) | 0;
+    state[3] = (state[3] + stateC) | 0;
+    state[4] = (state[4] + stateD) | 0;
+    state[5] = (state[5] + stateE) | 0;
+    state[6] = (state[6] + stateF) | 0;
+    state[7] = (state[7] + stateG) | 0;
   }
   let hexDigest = "";
   for (let index: number = 0; index < 8; index++) {
@@ -112,9 +112,9 @@ function sha256Sync(input: string | Uint8Array<ArrayBufferLike>) {
   return hexDigest;
 }
 async function sha256(
-  input: string | Uint8Array<ArrayBufferLike>,
+  inputData: string | Uint8Array<ArrayBufferLike>,
 ): Promise<string> {
-  let bytes = typeof input === "string" ? encodeFileUtf8(input) : input,
+  let bytes = typeof inputData === "string" ? encodeFileUtf8(inputData) : inputData,
     subtleCrypto = globalThis.crypto?.subtle;
   if (typeof subtleCrypto?.digest === "function" && bytes.length > 4096) {
     try {
@@ -125,8 +125,8 @@ async function sha256(
           ),
         ),
         text = "";
-      for (let value2 of value) {
-        text += value2.toString(16).padStart(2, "0");
+      for (let byte of value) {
+        text += byte.toString(16).padStart(2, "0");
       }
       return text;
     } catch {}
@@ -134,25 +134,25 @@ async function sha256(
   return sha256Sync(bytes);
 }
 function preserveFileMigrationMarkers<Value>(
-  value: Value,
-  ...options: unknown[]
+  migrationValue: Value,
+  ...migrationValueA: unknown[]
 ): Value {
-  if (!isMergeObject(value)) {
-    return value;
+  if (!isMergeObject(migrationValue)) {
+    return migrationValue;
   }
-  let result: JsonRecord = value;
-  for (let value2 of FILE_MIGRATION_MARKER_FIELDS) {
-    if (isMergeObject(result[value2])) {
+  let result: JsonRecord = migrationValue;
+  for (let migrationValueB of FILE_MIGRATION_MARKER_FIELDS) {
+    if (isMergeObject(result[migrationValueB])) {
       continue;
     }
-    let value3 = options.find(
-      (input: unknown): input is JsonRecord =>
-        isMergeObject(input) && isMergeObject(input[value2]),
+    let migrationValueC = migrationValueA.find(
+      (indexValue: unknown): indexValue is JsonRecord =>
+        isMergeObject(indexValue) && isMergeObject(indexValue[migrationValueB]),
     );
-    if (value3 !== undefined) {
+    if (migrationValueC !== undefined) {
       result = {
         ...result,
-        [value2]: cloneMergeValue(value3[value2]),
+        [migrationValueB]: cloneMergeValue(migrationValueC[migrationValueB]),
       };
     }
   }
@@ -161,17 +161,17 @@ function preserveFileMigrationMarkers<Value>(
 function setMergePropertySafely(
   object: JsonRecord,
   key: string,
-  value: JsonMergeValue,
+  propertyValue: JsonMergeValue,
 ): void {
   if (key === "__proto__") {
     Object.defineProperty(object, key, {
-      value: value,
+      value: propertyValue,
       enumerable: true,
       writable: true,
       configurable: true,
     });
   } else {
-    object[key] = value;
+    object[key] = propertyValue;
   }
 }
 function removeMissingMergeProperties(
@@ -198,8 +198,8 @@ function mergeValuesEqual(left: unknown, right: unknown): boolean {
     return (
       Array.isArray(right) &&
       left.length === right.length &&
-      left.every((input: unknown, options: number) =>
-        mergeValuesEqual(input, right[options]),
+      left.every((indexValueA: unknown, indexValueB: number) =>
+        mergeValuesEqual(indexValueA, right[indexValueB]),
       )
     );
   }
@@ -208,17 +208,17 @@ function mergeValuesEqual(left: unknown, right: unknown): boolean {
       return false;
     }
     let value = Object.keys(left).filter(
-        (input: string): boolean => left[input] !== undefined,
+        (indexValueC: string): boolean => left[indexValueC] !== undefined,
       ),
-      value2 = Object.keys(right).filter(
-        (input: string): boolean => right[input] !== undefined,
+      comparisonValue = Object.keys(right).filter(
+        (indexValueD: string): boolean => right[indexValueD] !== undefined,
       );
     return (
-      value.length === value2.length &&
+      value.length === comparisonValue.length &&
       value.every(
-        (input: string) =>
-          Object.hasOwn(right, input) &&
-          mergeValuesEqual(left[input], right[input]),
+        (indexValueE: string) =>
+          Object.hasOwn(right, indexValueE) &&
+          mergeValuesEqual(left[indexValueE], right[indexValueE]),
       )
     );
   }
@@ -227,22 +227,22 @@ function mergeValuesEqual(left: unknown, right: unknown): boolean {
 function resolveChildMergeSchema(
   schema: MergeSchema,
   key: string,
-  ...context: JsonMergeValue[]
+  ...schemaValue: JsonMergeValue[]
 ): MergeSchema {
   if (schema?.kind === "map") {
-    let value2 =
+    let schemaValueA =
       schema.keys !== undefined && Object.hasOwn(schema.keys, key)
         ? schema.keys[key]
         : undefined;
-    if (value2) {
-      return value2;
+    if (schemaValueA) {
+      return schemaValueA;
     }
     if (schema.of) {
       return schema.of;
     }
   }
-  let value = context.filter(
-    (input: JsonMergeValue): boolean => input !== undefined,
+  let value = schemaValue.filter(
+    (indexValueF: JsonMergeValue): boolean => indexValueF !== undefined,
   );
   if (value.length > 0 && value.every(isMergeObject)) {
     return {
@@ -274,8 +274,8 @@ function mergeLeafValue(
 }
 function uniqueMergeList(items: readonly string[]) {
   let seen = new Set();
-  return items.filter((input: string) =>
-    seen.has(input) ? false : (seen.add(input), true),
+  return items.filter((indexValueG: string) =>
+    seen.has(indexValueG) ? false : (seen.add(indexValueG), true),
   );
 }
 function mergeOrderedStringList(
@@ -285,88 +285,88 @@ function mergeOrderedStringList(
   allowedMembers?: ReadonlySet<string> | readonly string[],
 ) {
   let value = uniqueMergeList(base),
-    value2 = uniqueMergeList(ours),
-    value3 = uniqueMergeList(theirs),
-    value4: string[];
-  if (mergeValuesEqual(value3, value)) {
-    value4 = [...value2];
-  } else if (mergeValuesEqual(value2, value)) {
-    value4 = [...value3];
+    mergedListValue = uniqueMergeList(ours),
+    mergedListValueA = uniqueMergeList(theirs),
+    mergedListValueB: string[];
+  if (mergeValuesEqual(mergedListValueA, value)) {
+    mergedListValueB = [...mergedListValue];
+  } else if (mergeValuesEqual(mergedListValue, value)) {
+    mergedListValueB = [...mergedListValueA];
   } else {
     let values = new Set(value),
-      values2 = new Set(value3),
-      values3 = new Set(value2),
-      value5 = mergeValuesEqual(
-        value3.filter((input: string) => values.has(input)),
-        value.filter((input: string) => values2.has(input)),
+      mergedListValueC = new Set(mergedListValueA),
+      mergedListValueD = new Set(mergedListValue),
+      mergedListValueE = mergeValuesEqual(
+        mergedListValueA.filter((indexValueH: string) => values.has(indexValueH)),
+        value.filter((indexValueI: string) => mergedListValueC.has(indexValueI)),
       ),
-      value6 = mergeValuesEqual(
-        value2.filter((input: string) => values.has(input)),
-        value.filter((input: string) => values3.has(input)),
+      mergedListValueF = mergeValuesEqual(
+        mergedListValue.filter((indexValueJ: string) => values.has(indexValueJ)),
+        value.filter((indexValueK: string) => mergedListValueD.has(indexValueK)),
       ),
-      value7 = value5 && !value6,
-      [value8, value9] = value7 ? [value2, value3] : [value3, value2],
-      values4 = new Set(value9),
-      values5 = new Set(value8);
-    value4 = value8.filter(
-      (input: string): boolean => !(values.has(input) && !values4.has(input)),
+      mergedListValueG = mergedListValueE && !mergedListValueF,
+      [mergedListValueH, mergedListValueI] = mergedListValueG ? [mergedListValue, mergedListValueA] : [mergedListValueA, mergedListValue],
+      mergedListValueJ = new Set(mergedListValueI),
+      mergedListValueK = new Set(mergedListValueH);
+    mergedListValueB = mergedListValueH.filter(
+      (indexValueL: string): boolean => !(values.has(indexValueL) && !mergedListValueJ.has(indexValueL)),
     );
-    value9.forEach((input: string, options: number): void => {
-      if (values.has(input) || values5.has(input)) {
+    mergedListValueI.forEach((indexValueM: string, indexValueN: number): void => {
+      if (values.has(indexValueM) || mergedListValueK.has(indexValueM)) {
         return;
       }
-      let value10 =
-          (value7 || !value5) &&
-          value9
-            .slice(options + 1)
-            .every((input2: string): boolean => !values.has(input2)),
-        value11 = value10 ? value4.length : 0;
+      let indexValueO =
+          (mergedListValueG || !mergedListValueE) &&
+          mergedListValueI
+            .slice(indexValueN + 1)
+            .every((indexValueP: string): boolean => !values.has(indexValueP)),
+        indexValueQ = indexValueO ? mergedListValueB.length : 0;
       for (
-        let value12: number = options - 1;
-        !value10 && value12 >= 0;
-        value12--
+        let indexValueR: number = indexValueN - 1;
+        !indexValueO && indexValueR >= 0;
+        indexValueR--
       ) {
-        let value13 = value4.indexOf(value9[value12]);
-        if (value13 >= 0) {
-          value11 = value13 + 1;
+        let indexValueS = mergedListValueB.indexOf(mergedListValueI[indexValueR]);
+        if (indexValueS >= 0) {
+          indexValueQ = indexValueS + 1;
           break;
         }
       }
-      value4.splice(value11, 0, input);
+      mergedListValueB.splice(indexValueQ, 0, indexValueM);
     });
   }
   if (allowedMembers !== undefined) {
-    let value5: ReadonlySet<string> =
+    let mergedListValueL: ReadonlySet<string> =
       allowedMembers instanceof Set
         ? allowedMembers
         : new Set(allowedMembers);
-    value4 = value4.filter((input: string) => value5.has(input));
-    let values = new Set(value4);
-    for (let value6 of value5) {
-      if (!values.has(value6)) {
-        value4.push(value6);
+    mergedListValueB = mergedListValueB.filter((indexValueT: string) => mergedListValueL.has(indexValueT));
+    let values = new Set(mergedListValueB);
+    for (let mergedListValueM of mergedListValueL) {
+      if (!values.has(mergedListValueM)) {
+        mergedListValueB.push(mergedListValueM);
       }
     }
   }
-  return value4;
+  return mergedListValueB;
 }
-function keyedListToMergeObject(value: JsonMergeValue, keyField: string) {
-  let items = Array.isArray(value)
-      ? value
-      : isMergeObject(value)
-        ? Object.keys(value)
-            .filter((input: string) => Object.hasOwn(value, input))
-            .map((input: string) => value[input])
+function keyedListToMergeObject(keyedEntry: JsonMergeValue, keyField: string) {
+  let items = Array.isArray(keyedEntry)
+      ? keyedEntry
+      : isMergeObject(keyedEntry)
+        ? Object.keys(keyedEntry)
+            .filter((indexValueU: string) => Object.hasOwn(keyedEntry, indexValueU))
+            .map((indexValueV: string) => keyedEntry[indexValueV])
         : [],
     keyedItems: Record<string, JsonRecord> = Object.create(null);
-  for (let value2 of items) {
+  for (let keyedEntryA of items) {
     if (
-      isMergeObject(value2) &&
-      typeof value2[keyField] === "string" &&
-      value2[keyField] !== "" &&
+      isMergeObject(keyedEntryA) &&
+      typeof keyedEntryA[keyField] === "string" &&
+      keyedEntryA[keyField] !== "" &&
       Object.keys(keyedItems).length < MAX_KEYED_MERGE_LIST_ITEMS
     ) {
-      keyedItems[value2[keyField]] = value2;
+      keyedItems[keyedEntryA[keyField]] = keyedEntryA;
     }
   }
   return keyedItems;
@@ -383,117 +383,117 @@ function mergeObjectValues(
     value = uniqueMergeList([...Object.keys(theirs), ...Object.keys(ours)]),
     items: { key: string; schema: Extract<MergeSchema, { kind: "list" }> }[] =
       [];
-  for (let value2 of value) {
-    let [items2, items3, items4] = [
-        ownMergeProperty(base, value2),
-        ownMergeProperty(ours, value2),
-        ownMergeProperty(theirs, value2),
+  for (let mergedPropertyValue of value) {
+    let [mergedPropertyValueA, mergedPropertyValueB, mergedPropertyValueC] = [
+        ownMergeProperty(base, mergedPropertyValue),
+        ownMergeProperty(ours, mergedPropertyValue),
+        ownMergeProperty(theirs, mergedPropertyValue),
       ],
-      value3: boolean = items2 !== undefined,
-      value4: boolean = items3 !== undefined,
-      value5: boolean = items4 !== undefined;
-    if (value3 && (!value4 || !value5)) {
+      mergedPropertyValueD: boolean = mergedPropertyValueA !== undefined,
+      mergedPropertyValueE: boolean = mergedPropertyValueB !== undefined,
+      mergedPropertyValueF: boolean = mergedPropertyValueC !== undefined;
+    if (mergedPropertyValueD && (!mergedPropertyValueE || !mergedPropertyValueF)) {
       continue;
     }
-    if (!value4) {
-      setMergePropertySafely(state, value2, cloneMergeValue(items4));
+    if (!mergedPropertyValueE) {
+      setMergePropertySafely(state, mergedPropertyValue, cloneMergeValue(mergedPropertyValueC));
       continue;
     }
-    if (!value5) {
-      setMergePropertySafely(state, value2, cloneMergeValue(items3));
+    if (!mergedPropertyValueF) {
+      setMergePropertySafely(state, mergedPropertyValue, cloneMergeValue(mergedPropertyValueB));
       continue;
     }
-    let value6 = resolveChildMergeSchema(
+    let mergedPropertyValueG = resolveChildMergeSchema(
         schema,
-        value2,
-        items2,
-        items3,
-        items4,
+        mergedPropertyValue,
+        mergedPropertyValueA,
+        mergedPropertyValueB,
+        mergedPropertyValueC,
       ),
-      value7 = path === "" ? value2 : path + "/" + value2;
+      mergedPropertyValueH = path === "" ? mergedPropertyValue : path + "/" + mergedPropertyValue;
     if (
-      value6.kind === "map" &&
-      isMergeObject(items3) &&
-      isMergeObject(items4)
+      mergedPropertyValueG.kind === "map" &&
+      isMergeObject(mergedPropertyValueB) &&
+      isMergeObject(mergedPropertyValueC)
     ) {
       setMergePropertySafely(
         state,
-        value2,
+        mergedPropertyValue,
         mergeObjectValues(
-          isMergeObject(items2) ? items2 : undefined,
-          items3,
-          items4,
-          value6,
-          value7,
+          isMergeObject(mergedPropertyValueA) ? mergedPropertyValueA : undefined,
+          mergedPropertyValueB,
+          mergedPropertyValueC,
+          mergedPropertyValueG,
+          mergedPropertyValueH,
           conflicts,
         ),
       );
-    } else if (value6.kind === "records") {
-      let value8 = mergeObjectValues(
-        keyedListToMergeObject(items2, value6.by),
-        keyedListToMergeObject(items3, value6.by),
-        keyedListToMergeObject(items4, value6.by),
+    } else if (mergedPropertyValueG.kind === "records") {
+      let mergedPropertyValueI = mergeObjectValues(
+        keyedListToMergeObject(mergedPropertyValueA, mergedPropertyValueG.by),
+        keyedListToMergeObject(mergedPropertyValueB, mergedPropertyValueG.by),
+        keyedListToMergeObject(mergedPropertyValueC, mergedPropertyValueG.by),
         {
           kind: "map",
           of: LEAF_MERGE_SCHEMA,
         },
-        value7,
+        mergedPropertyValueH,
         conflicts,
       );
       setMergePropertySafely(
         state,
-        value2,
-        Object.keys(value8)
+        mergedPropertyValue,
+        Object.keys(mergedPropertyValueI)
           .slice(0, MAX_KEYED_MERGE_LIST_ITEMS)
-          .map((input: string) => value8[input]),
+          .map((indexValueW: string) => mergedPropertyValueI[indexValueW]),
       );
     } else if (
-      value6.kind === "list" &&
-      isStringArray(items3) &&
-      isStringArray(items4)
+      mergedPropertyValueG.kind === "list" &&
+      isStringArray(mergedPropertyValueB) &&
+      isStringArray(mergedPropertyValueC)
     ) {
       setMergePropertySafely(
         state,
-        value2,
+        mergedPropertyValue,
         mergeOrderedStringList(
-          isStringArray(items2) ? items2 : [],
-          items3,
-          items4,
+          isStringArray(mergedPropertyValueA) ? mergedPropertyValueA : [],
+          mergedPropertyValueB,
+          mergedPropertyValueC,
         ),
       );
       items.push({
-        key: value2,
-        schema: value6,
+        key: mergedPropertyValue,
+        schema: mergedPropertyValueG,
       });
     } else {
       setMergePropertySafely(
         state,
-        value2,
+        mergedPropertyValue,
         cloneMergeValue(
-          mergeLeafValue(items2, items3, items4, value7, conflicts),
+          mergeLeafValue(mergedPropertyValueA, mergedPropertyValueB, mergedPropertyValueC, mergedPropertyValueH, conflicts),
         ),
       );
     }
   }
-  for (let { key: value2, schema: value3 } of items) {
-    let value4 = path === "" ? value2 : path + "/" + value2,
-      value5 =
-        value3.membersOf !== undefined
-          ? ownMergeProperty(state, value3.membersOf)
+  for (let { key: mergedPropertyValueJ, schema: mergedPropertyValueK } of items) {
+    let mergedPropertyValueL = path === "" ? mergedPropertyValueJ : path + "/" + mergedPropertyValueJ,
+      mergedPropertyValueM =
+        mergedPropertyValueK.membersOf !== undefined
+          ? ownMergeProperty(state, mergedPropertyValueK.membersOf)
           : undefined,
-      value6 = isMergeObject(value5)
-        ? new Set(Object.keys(value5))
-        : conflicts.externalMembers?.(value4),
-      value7 = ownMergeProperty(state, value2);
-    if (value6 !== undefined) {
+      mergedPropertyValueN = isMergeObject(mergedPropertyValueM)
+        ? new Set(Object.keys(mergedPropertyValueM))
+        : conflicts.externalMembers?.(mergedPropertyValueL),
+      mergedPropertyValueO = ownMergeProperty(state, mergedPropertyValueJ);
+    if (mergedPropertyValueN !== undefined) {
       setMergePropertySafely(
         state,
-        value2,
+        mergedPropertyValueJ,
         mergeOrderedStringList(
-          value7 as string[],
-          value7 as string[],
-          value7 as string[],
-          value6,
+          mergedPropertyValueO as string[],
+          mergedPropertyValueO as string[],
+          mergedPropertyValueO as string[],
+          mergedPropertyValueN,
         ),
       );
     }
@@ -505,7 +505,7 @@ function mergeDocumentValues<Value>(
   ours: Value,
   theirs: Value,
   schema: MergeSchema,
-  options: MergeDocumentOptions = {},
+  indexValueX: MergeDocumentOptions = {},
 ): Value {
   if (schema.kind === "map" && isMergeObject(ours) && isMergeObject(theirs)) {
     return mergeObjectValues(
@@ -514,7 +514,7 @@ function mergeDocumentValues<Value>(
       theirs,
       schema,
       "",
-      options,
+      indexValueX,
     ) as unknown as Value;
   }
   if (
@@ -526,7 +526,7 @@ function mergeDocumentValues<Value>(
       isStringArray(base) ? base : [],
       ours,
       theirs,
-      options.externalMembers?.(""),
+      indexValueX.externalMembers?.(""),
     ) as unknown as Value;
   }
   return cloneMergeValue(
@@ -535,7 +535,7 @@ function mergeDocumentValues<Value>(
       ours as unknown as JsonMergeValue,
       theirs as unknown as JsonMergeValue,
       "",
-      options,
+      indexValueX,
     ),
   ) as Value;
 }
@@ -544,29 +544,29 @@ function sortIndexDocumentKeys(
   root: boolean,
 ): JsonMergeValue;
 function sortIndexDocumentKeys(value: unknown, root: boolean): unknown;
-function sortIndexDocumentKeys(value: unknown, root: boolean): unknown {
-  if (Array.isArray(value)) {
-    return value.map((input: unknown) => sortIndexDocumentKeys(input, false));
+function sortIndexDocumentKeys(sortedValue: unknown, root: boolean): unknown {
+  if (Array.isArray(sortedValue)) {
+    return sortedValue.map((indexValueY: unknown) => sortIndexDocumentKeys(indexValueY, false));
   }
-  if (!isMergeObject(value)) {
-    return value;
+  if (!isMergeObject(sortedValue)) {
+    return sortedValue;
   }
-  let result = Object.keys(value)
-    .filter((input: string): boolean => value[input] !== undefined)
+  let result = Object.keys(sortedValue)
+    .filter((indexValueZ: string): boolean => sortedValue[indexValueZ] !== undefined)
     .sort();
   if (root) {
-    let value2 = result.indexOf("v");
-    if (value2 > 0) {
-      result.splice(value2, 1);
+    let sortedValueA = result.indexOf("v");
+    if (sortedValueA > 0) {
+      result.splice(sortedValueA, 1);
       result.unshift("v");
     }
   }
   let state: JsonRecord = {};
-  for (let value2 of result) {
+  for (let sortedValueB of result) {
     setMergePropertySafely(
       state,
-      value2,
-      sortIndexDocumentKeys(value[value2], false),
+      sortedValueB,
+      sortIndexDocumentKeys(sortedValue[sortedValueB], false),
     );
   }
   return state;
@@ -579,164 +579,164 @@ function serializeIndexDocument(index: unknown): string {
   );
 }
 function createIndexFileStore<Index extends { v: number }>(
-  options: IndexFileStoreOptions<Index>,
+  storeValue: IndexFileStoreOptions<Index>,
 ): IndexFileStore<Index> {
-  let value = options.empty(),
-    value2 = cloneMergeValue(value),
-    value3: string | null = null,
-    value4: IndexStoreBinder | undefined,
+  let value = storeValue.empty(),
+    storeValueA = cloneMergeValue(value),
+    storeValueB: string | null = null,
+    storeValueC: IndexStoreBinder | undefined,
     items: string[] = [],
     flag: boolean = false;
-  function value5(input: string): Index {
-    let value6: JsonMergeValue;
+  function storeValueD(serializedText: string): Index {
+    let parsedIndex: JsonMergeValue;
     try {
-      value6 = JSON.parse(input);
+      parsedIndex = JSON.parse(serializedText);
     } catch {
-      throw new IndexFileError("unreadable", options.path + " is not JSON");
+      throw new IndexFileError("unreadable", storeValue.path + " is not JSON");
     }
-    if (!isMergeObject(value6) || typeof value6.v !== "number") {
+    if (!isMergeObject(parsedIndex) || typeof parsedIndex.v !== "number") {
       throw new IndexFileError(
         "unreadable",
-        options.path + " has no numeric v",
+        storeValue.path + " has no numeric v",
       );
     }
-    let value7 = options.empty();
-    if (value6.v > (options.maxVersion ?? value7.v)) {
+    let emptyIndex = storeValue.empty();
+    if (parsedIndex.v > (storeValue.maxVersion ?? emptyIndex.v)) {
       throw new IndexFileError(
         "newer_version",
-        options.path +
+        storeValue.path +
           " was written by a newer editor (v " +
-          String(value6.v) +
+          String(parsedIndex.v) +
           ")",
       );
     }
-    for (let [value8, value9] of Object.entries(value7)) {
-      if (value8 === "v") {
+    for (let [propertyKey, indexValue_] of Object.entries(emptyIndex)) {
+      if (propertyKey === "v") {
         continue;
       }
-      let value10: string | string | undefined = Array.isArray(value9)
+      let propertyKind: string | string | undefined = Array.isArray(indexValue_)
         ? "array"
-        : isMergeObject(value9)
+        : isMergeObject(indexValue_)
           ? "object"
           : undefined;
-      if (value10 === undefined) {
+      if (propertyKind === undefined) {
         continue;
       }
-      let value11 = value6[value8],
-        value12 =
-          options.schema.kind === "map"
-            ? options.schema.keys?.[value8]
+      let indexValuea = parsedIndex[propertyKey],
+        indexValueb =
+          storeValue.schema.kind === "map"
+            ? storeValue.schema.keys?.[propertyKey]
             : undefined;
       if (
-        value12?.kind === "records" &&
-        value10 === "array" &&
-        isMergeObject(value11)
+        indexValueb?.kind === "records" &&
+        propertyKind === "array" &&
+        isMergeObject(indexValuea)
       ) {
-        let value13 = keyedListToMergeObject(value11, value12.by);
-        value6[value8] = Object.keys(value13).map(
-          (input2: string) => value13[input2],
+        let indexValuec = keyedListToMergeObject(indexValuea, indexValueb.by);
+        parsedIndex[propertyKey] = Object.keys(indexValuec).map(
+          (indexValued: string) => indexValuec[indexValued],
         );
         continue;
       }
       if (
-        (value10 === "array" && !Array.isArray(value11)) ||
-        (value10 === "object" && !isMergeObject(value11))
+        (propertyKind === "array" && !Array.isArray(indexValuea)) ||
+        (propertyKind === "object" && !isMergeObject(indexValuea))
       ) {
-        value6[value8] = value9;
+        parsedIndex[propertyKey] = indexValue_;
       }
     }
-    return value6 as unknown as Index;
+    return parsedIndex as unknown as Index;
   }
   let callback = (): void => {
       flag = true;
-      value4?.(options.path, () => state.serialize(), value3);
+      storeValueC?.(storeValue.path, () => state.serialize(), storeValueB);
     },
     state: IndexFileStore<Index> = {
-      path: options.path,
-      parse: value5,
+      path: storeValue.path,
+      parse: storeValueD,
       async load(): Promise<Index> {
-        let value6: Files.FileTextRead;
+        let indexValuee: Files.FileTextRead;
         try {
-          value6 = await options.port.readText(options.path);
-        } catch (value7: unknown) {
+          indexValuee = await storeValue.port.readText(storeValue.path);
+        } catch (indexValuef: unknown) {
           throw new IndexFileError(
             "not_found",
-            options.path +
+            storeValue.path +
               ": " +
-              (value7 instanceof Error
-                ? value7.message
+              (indexValuef instanceof Error
+                ? indexValuef.message
                 : String(
-                    (value7 as { message?: unknown } | null)?.message ??
-                      value7,
+                    (indexValuef as { message?: unknown } | null)?.message ??
+                      indexValuef,
                   )),
           );
         }
-        value = value5(value6.text);
-        value2 = cloneMergeValue(value);
-        value3 = value6.sha256;
+        value = storeValueD(indexValuee.text);
+        storeValueA = cloneMergeValue(value);
+        storeValueB = indexValuee.sha256;
         flag = false;
         return value;
       },
-      loadText(input: string, options2: string | null) {
-        value = value5(input);
-        value2 = cloneMergeValue(value);
-        value3 = options2;
+      loadText(indexValueg: string, indexValueh: string | null) {
+        value = storeValueD(indexValueg);
+        storeValueA = cloneMergeValue(value);
+        storeValueB = indexValueh;
         flag = false;
         return value;
       },
-      init(input?: Index) {
-        value = input ?? options.empty();
-        value2 = options.empty();
-        value3 = null;
+      init(indexValuei?: Index) {
+        value = indexValuei ?? storeValue.empty();
+        storeValueA = storeValue.empty();
+        storeValueB = null;
         callback();
         return value;
       },
       get: () => value,
-      base: () => value2,
-      baseSha: () => value3,
+      base: () => storeValueA,
+      baseSha: () => storeValueB,
       dirty: (): boolean => flag,
       lastConflicts: () => [...items],
-      update(input: (value: Index) => void): void {
-        input(value);
+      update(indexValuej: (value: Index) => void): void {
+        indexValuej(value);
         callback();
       },
-      mergeFrom(input: Index) {
+      mergeFrom(indexValuek: Index) {
         items = [];
         value = preserveFileMigrationMarkers(
-          mergeDocumentValues(value2, value, input, options.schema, {
+          mergeDocumentValues(storeValueA, value, indexValuek, storeValue.schema, {
             conflicts: items,
-            externalMembers: options.externalMembers,
+            externalMembers: storeValue.externalMembers,
           }),
-          input,
-          value2,
+          indexValuek,
+          storeValueA,
         ) as Index;
-        value2 = cloneMergeValue(input);
+        storeValueA = cloneMergeValue(indexValuek);
         return value;
       },
       serialize: () =>
-        serializeIndexDocument(preserveFileMigrationMarkers(value, value2)),
-      bind(input: IndexStoreBinder): void {
-        value4 = input;
+        serializeIndexDocument(preserveFileMigrationMarkers(value, storeValueA)),
+      bind(indexValuel: IndexStoreBinder): void {
+        storeValueC = indexValuel;
       },
-      markSaved(input: string, options2: string): void {
+      markSaved(indexValuem: string, indexValuen: string): void {
         try {
-          value2 = JSON.parse(input);
+          storeValueA = JSON.parse(indexValuem);
         } catch {
-          value2 = cloneMergeValue(value);
+          storeValueA = cloneMergeValue(value);
         }
-        value3 = options2;
-        flag = !mergeValuesEqual(value2, value);
+        storeValueB = indexValuen;
+        flag = !mergeValuesEqual(storeValueA, value);
       },
       async reloadAndMerge(): Promise<string[]> {
-        let value6 = await options.port.readText(options.path);
-        if (value6.sha256 === value3) {
+        let indexValueo = await storeValue.port.readText(storeValue.path);
+        if (indexValueo.sha256 === storeValueB) {
           return [];
         }
-        state.mergeFrom(value5(value6.text));
-        value3 = value6.sha256;
-        flag = !mergeValuesEqual(value2, value);
+        state.mergeFrom(storeValueD(indexValueo.text));
+        storeValueB = indexValueo.sha256;
+        flag = !mergeValuesEqual(storeValueA, value);
         if (flag) {
-          value4?.(options.path, () => state.serialize(), value3);
+          storeValueC?.(storeValue.path, () => state.serialize(), storeValueB);
         }
         return [...items];
       },
@@ -790,17 +790,17 @@ export function installEditorIndexFileStore(): () => void {
     sha256TextEncoder = new TextEncoder();
     encodeFileUtf8 = (text: string) => sha256TextEncoder.encode(text);
     FILE_MIGRATION_MARKER_FIELDS = ["convertedFrom", "createdOnFiles"];
-    isMergeObject = (value: unknown): value is JsonRecord =>
-      typeof value === "object" && value !== null && !Array.isArray(value);
-    isStringArray = (value: unknown): value is string[] =>
-      Array.isArray(value) &&
-      value.every((input: unknown): boolean => typeof input === "string");
+    isMergeObject = (indexValuep: unknown): indexValuep is JsonRecord =>
+      typeof indexValuep === "object" && indexValuep !== null && !Array.isArray(indexValuep);
+    isStringArray = (indexValueq: unknown): indexValueq is string[] =>
+      Array.isArray(indexValueq) &&
+      indexValueq.every((indexValuer: unknown): boolean => typeof indexValuer === "string");
     ownMergeProperty = (object: JsonRecord | undefined, key: string) =>
       object !== undefined && Object.hasOwn(object, key)
         ? object[key]
         : undefined;
-    cloneMergeValue = <T>(value: T): T =>
-      value === undefined ? value : JSON.parse(JSON.stringify(value));
+    cloneMergeValue = <T>(indexValues: T): T =>
+      indexValues === undefined ? indexValues : JSON.parse(JSON.stringify(indexValues));
     LEAF_MERGE_SCHEMA = {
       kind: "leaf",
     };
@@ -808,9 +808,9 @@ export function installEditorIndexFileStore(): () => void {
     IndexFileError = class IndexFileError extends Error {
       declare name: string;
       code: IndexFileErrorCode;
-      constructor(input: IndexFileErrorCode, options: string) {
-        super(options);
-        this.code = input;
+      constructor(indexValuet: IndexFileErrorCode, indexValueu: string) {
+        super(indexValueu);
+        this.code = indexValuet;
         this.name = "IndexFileError";
       }
     };

@@ -50,42 +50,42 @@ function usePreviewStaticNotice(): boolean {
     (): boolean => false,
   );
 }
-function schedulePreviewIdleTask(callback: () => void): () => void {
+function schedulePreviewIdleTask(idleCallback: () => void): () => void {
   let value = window;
   if (typeof value.requestIdleCallback === "function") {
-    let value3 = value.requestIdleCallback(callback, {
+    let idleRequestId = value.requestIdleCallback(idleCallback, {
       timeout: 500,
     });
-    return () => value.cancelIdleCallback?.(value3);
+    return () => value.cancelIdleCallback?.(idleRequestId);
   }
-  let value2 = setTimeout(callback, 0);
-  return () => clearTimeout(value2);
+  let timeoutId = setTimeout(idleCallback, 0);
+  return () => clearTimeout(timeoutId);
 }
 function useDebouncedPreviewValue<Value>(
-  value: Value,
+  previewValue: Value,
   key: unknown,
   delay: number,
 ): Value {
   let [debouncedValue, setDebouncedValue] = (
       reactSwatchPreview as typeof React
-    ).useState(value),
+    ).useState(previewValue),
     keyRef = (reactSwatchPreview as typeof React).useRef(key),
-    valueRef = (reactSwatchPreview as typeof React).useRef(value);
-  valueRef.current = value;
+    valueRef = (reactSwatchPreview as typeof React).useRef(previewValue);
+  valueRef.current = previewValue;
   (reactSwatchPreview as typeof React).useEffect((): void => {
     if (key === keyRef.current) {
-      setDebouncedValue(value);
+      setDebouncedValue(previewValue);
     }
-  }, [key, value]);
+  }, [key, previewValue]);
   (reactSwatchPreview as typeof React).useEffect(() => {
     if (key === keyRef.current) {
       return;
     }
-    let value2 = setTimeout((): void => {
+    let debounceTimer = setTimeout((): void => {
       keyRef.current = key;
       setDebouncedValue(valueRef.current);
     }, delay);
-    return () => clearTimeout(value2);
+    return () => clearTimeout(debounceTimer);
   }, [key, delay]);
   return debouncedValue;
 }
@@ -120,7 +120,7 @@ function ComponentPreview({
       (reactSwatchPreview as typeof React).useSyncExternalStore(
         typeof window === "undefined"
           ? subscribePreviewPoolNoop
-          : (input: () => void) => previewPool.subscribe(input),
+          : (listener: () => void) => previewPool.subscribe(listener),
         () => previewPool.phase(ownerIdRef.current),
         (): string => "idle",
       ) === "live",
@@ -162,12 +162,12 @@ function ComponentPreview({
     ).useRef<IntersectionObserver | null>(null),
     observeContainer = (reactSwatchPreview as typeof React).useMemo(
       () =>
-        (input: HTMLDivElement | null): void => {
+        (container: HTMLDivElement | null): void => {
           let current = ownerIdRef.current;
-          containerRef.current = input;
+          containerRef.current = container;
           intersectionObserverRef.current?.disconnect();
           intersectionObserverRef.current = null;
-          if (input === null) {
+          if (container === null) {
             return;
           }
           if (typeof IntersectionObserver === "undefined") {
@@ -175,16 +175,16 @@ function ComponentPreview({
             return;
           }
           let value = new IntersectionObserver(
-            (input2: IntersectionObserverEntry[]): void => {
-              for (let value2 of input2) {
-                previewPool.visible(current, value2.isIntersecting);
+            (entries: IntersectionObserverEntry[]): void => {
+              for (let entry of entries) {
+                previewPool.visible(current, entry.isIntersecting);
               }
             },
             {
               rootMargin: "200px",
             },
           );
-          value.observe(input);
+          value.observe(container);
           intersectionObserverRef.current = value;
         },
       [previewPool],
@@ -248,16 +248,16 @@ function ComponentPreview({
       previewPool.remove(current);
       return;
     }
-    let current2 = mountRef.current;
-    if (current2 === null) {
+    let mountElement = mountRef.current;
+    if (mountElement === null) {
       return;
     }
     setReady(false);
     let value: Editor.LiveSwatch | null = null,
-      value2: ReturnType<typeof setTimeout> | undefined,
-      value3 = schedulePreviewIdleTask((): void => {
-        let value4: number = Date.now(),
-          callback = () => clearTimeout(value2);
+      stallTimer: ReturnType<typeof setTimeout> | undefined,
+      scheduleStallCheck = schedulePreviewIdleTask((): void => {
+        let stallStartTime: number = Date.now(),
+          callback = () => clearTimeout(stallTimer);
         value = createLiveSwatch({
           html: html,
           ...(cardFile !== undefined && !skipCardAddress
@@ -272,24 +272,24 @@ function ComponentPreview({
             : {}),
           head: headRef.current,
           title: title,
-          onUrlMissed: (input: Editor.SwatchUrlReference) =>
-            notePublishedPreviewFailure(input.url, input.file),
+          onUrlMissed: (reference: Editor.SwatchUrlReference) =>
+            notePublishedPreviewFailure(reference.url, reference.file),
           urlOffered: isPublishedPreviewStillOffered,
           onNavigated: (): void => {
             callback();
             previewPool.booted(current);
             setNavigated(true);
           },
-          onReady: (input?: number): void => {
+          onReady: (readyHeight?: number): void => {
             callback();
             if (
               !initialHeightCapturedRef.current &&
-              Date.now() - value4 <= PREVIEW_POOL_IDLE_TTL_MS
+              Date.now() - stallStartTime <= PREVIEW_POOL_IDLE_TTL_MS
             ) {
               initialHeightCapturedRef.current = true;
-              if (input !== undefined) {
-                setInitialHeight((input2): number =>
-                  Math.max(input2 ?? 0, input),
+              if (readyHeight !== undefined) {
+                setInitialHeight((measuredHeight): number =>
+                  Math.max(measuredHeight ?? 0, readyHeight),
                 );
               }
             }
@@ -298,10 +298,10 @@ function ComponentPreview({
           },
           onContentHeight: setContentHeight,
           declaredHeight: normalizedPreviewHeight(heightRef.current),
-          onError: (input?: "react"): void => {
+          onError: (errorType?: "react"): void => {
             callback();
             previewPool.booted(current);
-            if (input === "react") {
+            if (errorType === "react") {
               showPreviewStaticNotice();
             }
             setBootFailed(true);
@@ -311,84 +311,84 @@ function ComponentPreview({
             setUndeliveredKey(previewKey);
           },
         });
-        current2.appendChild(value!.iframe);
-        let value5 = value!,
+        mountElement.appendChild(value!.iframe);
+        let preview = value!,
           index = 0,
-          callback2 = (input: number): boolean => {
+          scheduleHeadStall = (delayMs: number): boolean => {
             if ((index += 1) > MAX_PREVIEW_HEAD_STALL_RETRIES) {
               return false;
             }
-            value2 = setTimeout(callback3, input);
+            stallTimer = setTimeout(checkHeadStall, delayMs);
             return true;
           },
           flag: boolean = false,
-          callback3 = () => {
-            let value6 = value5.headProgress();
-            if (value6.state === "placed" || value6.state === "gone") {
+          checkHeadStall = () => {
+            let headProgress = preview.headProgress();
+            if (headProgress.state === "placed" || headProgress.state === "gone") {
               return;
             }
-            let value7 = value5.documentAgeMs();
+            let documentAge = preview.documentAgeMs();
             if (
-              (value7 === undefined && value6.state === "no-document") ||
-              value6.state === "not-reached"
+              (documentAge === undefined && headProgress.state === "no-document") ||
+              headProgress.state === "not-reached"
             ) {
-              flag = value6.state === "not-reached";
-              return void (value2 = setTimeout(
-                callback3,
+              flag = headProgress.state === "not-reached";
+              return void (stallTimer = setTimeout(
+                checkHeadStall,
                 PREVIEW_HEAD_STALL_TIMEOUT_MS,
               ));
             }
             if (
-              (document.hidden || value6.state === "no-document") &&
-              callback2(PREVIEW_HEAD_STALL_TIMEOUT_MS)
+              (document.hidden || headProgress.state === "no-document") &&
+              scheduleHeadStall(PREVIEW_HEAD_STALL_TIMEOUT_MS)
             ) {
               return;
             }
-            if (value6.state !== "waiting") {
+            if (headProgress.state !== "waiting") {
               return;
             }
             if (flag) {
               flag = false;
-              return void (value2 = setTimeout(
-                callback3,
+              return void (stallTimer = setTimeout(
+                checkHeadStall,
                 PREVIEW_HEAD_STALL_TIMEOUT_MS,
               ));
             }
             if (
-              value7 !== undefined &&
-              value7 < PREVIEW_HEAD_STALL_TIMEOUT_MS
+              documentAge !== undefined &&
+              documentAge < PREVIEW_HEAD_STALL_TIMEOUT_MS
             ) {
-              return void (value2 = setTimeout(
-                callback3,
-                Math.max(50, PREVIEW_HEAD_STALL_TIMEOUT_MS - value7),
+              return void (stallTimer = setTimeout(
+                checkHeadStall,
+                Math.max(50, PREVIEW_HEAD_STALL_TIMEOUT_MS - documentAge),
               ));
             }
-            let value8 = value6.on ?? value5.awaited[0];
+            let pendingFrame = headProgress.on ?? preview.awaited[0];
             if (
-              value8 === undefined ||
-              failedUrlRef.current.has(value8.url)
+              pendingFrame === undefined ||
+              failedUrlRef.current.has(pendingFrame.url)
             ) {
               return;
             }
-            failedUrlRef.current.add(value8.url);
+            failedUrlRef.current.add(pendingFrame.url);
             notePublishedPreviewFailure(
-              value8.url,
-              value8.file,
+              pendingFrame.url,
+              pendingFrame.file,
               String(PREVIEW_HEAD_STALL_TIMEOUT_MS / 1000),
             );
-            setUrlFailureGeneration((input) => input + 1);
+            setUrlFailureGeneration((generation) => generation + 1);
           };
         if (
-          value5.awaited.some(
-            (input): boolean => !failedUrlRef.current.has(input.url),
+          preview.awaited.some(
+            (reference): boolean => !failedUrlRef.current.has(reference.url),
           )
         ) {
-          value2 = setTimeout(callback3, PREVIEW_HEAD_STALL_TIMEOUT_MS);
+          stallTimer = setTimeout(checkHeadStall, PREVIEW_HEAD_STALL_TIMEOUT_MS);
         }
       });
     return (): void => {
-      value3();
-      clearTimeout(value2);
+      scheduleStallCheck();
+      clearTimeout(stallTimer);
       value?.dispose();
       setContentHeight(undefined);
     };
@@ -431,7 +431,7 @@ function ComponentPreview({
       width: "100%",
       height: effectiveHeight,
     },
-    renderStaticPreview = (input: string | null) => (
+    renderStaticPreview = (htmlContent: string | null) => (
       <div data-testid={dataTestid}>
         {[<StaticPreviewFrame
             html={html}
@@ -446,7 +446,7 @@ function ComponentPreview({
                 "ds-swatch-note ds-pad mt-xs text-footnote text-muted"
               }
             >
-              {input}
+              {htmlContent}
             </p>
           ) : null]}
       </div>

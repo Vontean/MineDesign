@@ -31,19 +31,19 @@ function knownWebFontFamily(family: string): string | undefined {
 }
 function googleFontStylesheetUrl(family: string): string {
   let value = knownFontFamily(family),
-    value2: string = value
+    stylesheetUrl: string = value
       ? ":wght@" + (value.weights ?? [400, 500, 600, 700]).join(";")
       : "";
   return (
     "https://fonts.googleapis.com/css2?family=" +
     (value?.family ?? family.trim()).replace(/ +/g, "+") +
-    value2 +
+    stylesheetUrl +
     "&display=swap"
   );
 }
 function ensureGoogleFonts(
   families: string[],
-  document2: Document = document,
+  documentRef: Document = document,
 ): void {
   for (let value of families) {
     if (
@@ -52,14 +52,14 @@ function ensureGoogleFonts(
     ) {
       continue;
     }
-    let value2 = googleFontStylesheetUrl(value);
-    if (document2.head.querySelector('link[href="' + value2 + '"]')) {
+    let stylesheetUrl = googleFontStylesheetUrl(value);
+    if (documentRef.head.querySelector('link[href="' + stylesheetUrl + '"]')) {
       continue;
     }
-    let value3 = document2.createElement("link");
-    value3.rel = "stylesheet";
-    value3.href = value2;
-    document2.head.appendChild(value3);
+    let linkElement = documentRef.createElement("link");
+    linkElement.rel = "stylesheet";
+    linkElement.href = stylesheetUrl;
+    documentRef.head.appendChild(linkElement);
   }
 }
 export {
@@ -228,22 +228,22 @@ export function installEditorFontCatalog(): () => void {
         italic: false,
       },
     ];
-    GOOGLE_FONT_FAMILY_NAMES = GOOGLE_FONT_CATALOG.map((input) => input.family);
+    GOOGLE_FONT_FAMILY_NAMES = GOOGLE_FONT_CATALOG.map((font) => font.family);
     KNOWN_FONT_FAMILY_MAP = new Map(
-      GOOGLE_FONT_CATALOG.map((input) => [input.family.toLowerCase(), input]),
+      GOOGLE_FONT_CATALOG.map((font) => [font.family.toLowerCase(), font]),
     );
     GOOGLE_FONT_VARIANTS = Object.fromEntries(
-      GOOGLE_FONT_CATALOG.map((input) => [
-        input.family.toLowerCase(),
+      GOOGLE_FONT_CATALOG.map((font) => [
+        font.family.toLowerCase(),
         {
-          ...(input.wght !== undefined
+          ...(font.wght !== undefined
             ? {
-                wght: input.wght,
+                wght: font.wght,
               }
             : {
-                statics: input.statics ?? [400],
+                statics: font.statics ?? [400],
               }),
-          italic: input.italic,
+          italic: font.italic,
         },
       ]),
     );
