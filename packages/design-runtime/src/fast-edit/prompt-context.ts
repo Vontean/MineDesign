@@ -64,115 +64,115 @@ function cropArtboardPromptHtml(
     template.content.childNodes.length !== 1
   )
     return null;
-  let value: Dynamic =
+  let matchingElements: Dynamic =
       target === null
         ? []
         : Array.from(template.content.querySelectorAll("[id]")).filter(
-            (element2?: Dynamic): Dynamic =>
-              element2.getAttribute("id") === target,
+            (candidate?: Dynamic): Dynamic =>
+              candidate.getAttribute("id") === target,
           ),
-    value2: Dynamic =
+    targetElement: Dynamic =
       target === null
         ? root.firstElementChild
-        : value.length === 1
-          ? value[0]
+        : matchingElements.length === 1
+          ? matchingElements[0]
           : null;
-  if (value2 === null || value2 === root) return null;
-  let flag: Dynamic = true,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let outerHTML: Dynamic = input.cloneNode(false).outerHTML,
-        value6: Dynamic = "</" + input.localName + ">",
-        value7: Dynamic = outerHTML.endsWith(value6)
-          ? outerHTML.slice(0, -value6.length)
+  if (targetElement === null || targetElement === root) return null;
+  let isVerbatim: Dynamic = true,
+    splitElementTags: Dynamic = (elementToSplit?: Dynamic): Dynamic => {
+      let outerHTML: Dynamic = elementToSplit.cloneNode(false).outerHTML,
+        closingTag: Dynamic = "</" + elementToSplit.localName + ">",
+        openingTag: Dynamic = outerHTML.endsWith(closingTag)
+          ? outerHTML.slice(0, -closingTag.length)
           : outerHTML;
-      html.includes(value7) || (flag = false);
-      return [value7, outerHTML.endsWith(value6) ? value6 : ""];
+      html.includes(openingTag) || (isVerbatim = false);
+      return [openingTag, outerHTML.endsWith(closingTag) ? closingTag : ""];
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let outerHTML: Dynamic = input.outerHTML;
-      html.includes(outerHTML) || (flag = false);
+    readVerbatimHtml: Dynamic = (sourceElement?: Dynamic): Dynamic => {
+      let outerHTML: Dynamic = sourceElement.outerHTML;
+      html.includes(outerHTML) || (isVerbatim = false);
       return outerHTML;
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      input > 0 ? [element(input)] : [],
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      let value6: Dynamic = (document as Dynamic).createElement("div");
-      value6.textContent = input;
-      return value6.innerHTML;
+    omittedSiblings: Dynamic = (count?: Dynamic): Dynamic =>
+      count > 0 ? [element(count)] : [],
+    escapeText: Dynamic = (text?: Dynamic): Dynamic => {
+      let escapeContainer: Dynamic = (document as Dynamic).createElement("div");
+      escapeContainer.textContent = text;
+      return escapeContainer.innerHTML;
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      let outerHTML: Dynamic = input.outerHTML;
-      if (input.children.length === 0 && outerHTML.length <= 400)
-        return callback2(input);
-      let [value6, value7]: Dynamic = callback(input),
-        value8: Dynamic = (document as Dynamic).createTreeWalker(input, 4),
+    summarizeChild: Dynamic = (child?: Dynamic): Dynamic => {
+      let outerHTML: Dynamic = child.outerHTML;
+      if (child.children.length === 0 && outerHTML.length <= 400)
+        return readVerbatimHtml(child);
+      let [openingTag, closingTag]: Dynamic = splitElementTags(child),
+        textWalker: Dynamic = (document as Dynamic).createTreeWalker(child, 4),
         text: Dynamic = "";
       for (
-        let value9: Dynamic = value8.nextNode();
-        value9 !== null && text.length <= 40;
-        value9 = value8.nextNode()
+        let textNode: Dynamic = textWalker.nextNode();
+        textNode !== null && text.length <= 40;
+        textNode = textWalker.nextNode()
       )
-        text = (text + " " + (value9.nodeValue ?? ""))
+        text = (text + " " + (textNode.nodeValue ?? ""))
           .replace(/\s+/g, " ")
           .trim();
       return (
-        value6 +
-        callback4(text.length > 40 ? text.slice(0, 40) + "\u2026" : text) +
-        callback3(input.children.length).join("") +
-        value7
+        openingTag +
+        escapeText(text.length > 40 ? text.slice(0, 40) + "\u2026" : text) +
+        omittedSiblings(child.children.length).join("") +
+        closingTag
       );
     },
-    callback6: Dynamic = (input?: Dynamic): Dynamic => {
-      let [value6, value7]: Dynamic = callback(input),
-        items3: Dynamic = [value6],
-        value8: Dynamic = Array.from(input.children),
-        value9: Dynamic = fastEditUtf8Size(value6),
+    summarizeElement: Dynamic = (sourceElement?: Dynamic): Dynamic => {
+      let [openingTag, closingTag]: Dynamic = splitElementTags(sourceElement),
+        htmlParts: Dynamic = [openingTag],
+        children: Dynamic = Array.from(sourceElement.children),
+        usedBytes: Dynamic = fastEditUtf8Size(openingTag),
         index: Dynamic = 0;
-      for (; index < value8.length; index++) {
-        let value10: Dynamic = callback5(value8[index]),
-          value11: Dynamic = fastEditUtf8Size(value10) + 1;
-        if (value9 + value11 > 12e3) break;
-        items3.push(value10);
-        value9 += value11;
+      for (; index < children.length; index++) {
+        let childSummary: Dynamic = summarizeChild(children[index]),
+          childBytes: Dynamic = fastEditUtf8Size(childSummary) + 1;
+        if (usedBytes + childBytes > 12e3) break;
+        htmlParts.push(childSummary);
+        usedBytes += childBytes;
       }
-      return [...items3, ...callback3(value8.length - index), value7].filter(
-        (input2?: Dynamic): Dynamic => input2 !== "",
+      return [...htmlParts, ...omittedSiblings(children.length - index), closingTag].filter(
+        (part?: Dynamic): Dynamic => part !== "",
       ).join(`
 `);
     },
-    value3: Dynamic = value2,
-    value4: Dynamic = !click && fastEditUtf8Size(value2.outerHTML) <= 12e3;
-  if (value4)
+    contextElement: Dynamic = targetElement,
+    canUseFullHtml: Dynamic = !click && fastEditUtf8Size(targetElement.outerHTML) <= 12e3;
+  if (canUseFullHtml)
     for (
       ;
-      value3.parentElement !== null &&
-      fastEditUtf8Size(value3.parentElement.outerHTML) <= 12e3;
+      contextElement.parentElement !== null &&
+      fastEditUtf8Size(contextElement.parentElement.outerHTML) <= 12e3;
 
     )
-      value3 = value3.parentElement;
-  let items: Dynamic = [],
-    items2: Dynamic = [];
+      contextElement = contextElement.parentElement;
+  let ancestorOpeningParts: Dynamic = [],
+    ancestorClosingParts: Dynamic = [];
   for (
-    let value6: Dynamic = value3;
-    value6.parentElement !== null;
-    value6 = value6.parentElement
+    let ancestorChild: Dynamic = contextElement;
+    ancestorChild.parentElement !== null;
+    ancestorChild = ancestorChild.parentElement
   ) {
-    let parentElement: Dynamic = value6.parentElement,
-      value7: Dynamic = Array.from(parentElement.children),
-      value8: Dynamic = value7.indexOf(value6),
-      [value9, value10]: Dynamic = callback(parentElement);
-    items.push(...callback3(value8).reverse(), value9);
-    items2.push(...callback3(value7.length - value8 - 1), value10);
+    let parentElement: Dynamic = ancestorChild.parentElement,
+      siblings: Dynamic = Array.from(parentElement.children),
+      childIndex: Dynamic = siblings.indexOf(ancestorChild),
+      [openingTag, closingTag]: Dynamic = splitElementTags(parentElement);
+    ancestorOpeningParts.push(...omittedSiblings(childIndex).reverse(), openingTag);
+    ancestorClosingParts.push(...omittedSiblings(siblings.length - childIndex - 1), closingTag);
   }
-  let value5: Dynamic = [
-    ...items.reverse(),
-    value4 ? callback2(value3) : callback6(value3),
-    ...items2,
+  let partialHtml: Dynamic = [
+    ...ancestorOpeningParts.reverse(),
+    canUseFullHtml ? readVerbatimHtml(contextElement) : summarizeElement(contextElement),
+    ...ancestorClosingParts,
   ].join(`
 `);
-  return flag
+  return isVerbatim
     ? {
-        html: value5,
+        html: partialHtml,
         part: true,
       }
     : null;
@@ -188,13 +188,13 @@ function truncateLargeDataUris(text?: Dynamic): Dynamic {
     value += 5;
     DATA_URI_HEADER_PATTERN.lastIndex = value;
     if (DATA_URI_HEADER_PATTERN.exec(text) === null) continue;
-    let value2: Dynamic = (DATA_URI_BODY_PATTERN.lastIndex =
+    let dataBodyOffset: Dynamic = (DATA_URI_BODY_PATTERN.lastIndex =
         DATA_URI_HEADER_PATTERN.lastIndex),
       length: Dynamic = DATA_URI_BODY_PATTERN.exec(text)[0].length;
-    value = value2 + length;
+    value = dataBodyOffset + length;
     !(length <= MIN_DATA_URI_TRUNCATION_CHARS) &&
       ((result +=
-        text.slice(copyOffset, value2) +
+        text.slice(copyOffset, dataBodyOffset) +
         "(" +
         String(length) +
         " characters left out)"),
@@ -202,11 +202,11 @@ function truncateLargeDataUris(text?: Dynamic): Dynamic {
   }
   return copyOffset === 0 ? text : result + text.slice(copyOffset);
 }
-function buildFastEditPrompt(context?: Dynamic): Dynamic {
+function buildFastEditPrompt(promptContext?: Dynamic): Dynamic {
   let marker: Dynamic = createUntrustedMarker(),
-    click: Dynamic = context.click,
-    width: Dynamic = Number(boundedPromptNumber(context.shown.w, 1e5)),
-    height: Dynamic = Number(boundedPromptNumber(context.shown.h, 1e5)),
+    click: Dynamic = promptContext.click,
+    width: Dynamic = Number(boundedPromptNumber(promptContext.shown.w, 1e5)),
+    height: Dynamic = Number(boundedPromptNumber(promptContext.shown.h, 1e5)),
     coordinates: Dynamic =
       click.page !== undefined
         ? [
@@ -217,12 +217,12 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
             boundedPromptNumber(click.x ?? 0, width),
             boundedPromptNumber(click.y ?? 0, height),
           ],
-    location2: Dynamic =
+    clickLocationText: Dynamic =
       click.x !== undefined && click.y !== undefined
         ? FAST_EDIT_PROMPT_PHRASES.at(...coordinates)
         : "",
-    isSafeIdentifier: Dynamic = (input?: Dynamic): Dynamic =>
-      typeof input == "string" && SAFE_PROMPT_IDENTIFIER_PATTERN.test(input),
+    isSafeIdentifier: Dynamic = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "string" && SAFE_PROMPT_IDENTIFIER_PATTERN.test(candidate),
     pointedElement: Dynamic =
       click.element !== undefined && isSafeIdentifier(click.element.id)
         ? click.element
@@ -243,22 +243,22 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
             : "")
       : "",
     compactText: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = 200,
+      text?: Dynamic,
+      maxChars: Dynamic = 200,
     ): Dynamic => {
-      let value24: Dynamic = input.replace(/\s+/g, " ").trim();
-      return value24.length > options
-        ? value24.slice(0, options - 1) + "\u2026"
-        : value24;
+      let normalizedText: Dynamic = text.replace(/\s+/g, " ").trim();
+      return normalizedText.length > maxChars
+        ? normalizedText.slice(0, maxChars - 1) + "\u2026"
+        : normalizedText;
     },
     shownHtml: Dynamic =
-      context.typed !== undefined
+      promptContext.typed !== undefined
         ? {
-            html: truncateLargeDataUris(context.shown.html),
+            html: truncateLargeDataUris(promptContext.shown.html),
             part: false,
           }
         : limitArtboardPromptHtml(
-            truncateLargeDataUris(context.shown.html),
+            truncateLargeDataUris(promptContext.shown.html),
             pointedElement !== undefined
               ? pointedElement.id
               : isSafeIdentifier(click.inside)
@@ -273,170 +273,170 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
       isSafeIdentifier(click.lastTop)
         ? FAST_EDIT_PROMPT_PHRASES.addAtEnd(click.lastTop, ...coordinates)
         : FAST_EDIT_PROMPT_PHRASES.addOnGround(click.first, ...coordinates),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
+    describeAddByElement: Dynamic = (elementId?: Dynamic): Dynamic =>
       click.layout === undefined
-        ? FAST_EDIT_PROMPT_PHRASES.addByElement(input)
+        ? FAST_EDIT_PROMPT_PHRASES.addByElement(elementId)
         : FAST_EDIT_PROMPT_PHRASES.addIn(
             click.layout,
-            input,
+            elementId,
             isSafeIdentifier(click.parent)
               ? FAST_EDIT_PROMPT_PHRASES.parent(click.parent)
               : FAST_EDIT_PROMPT_PHRASES.someParent,
             knownTag && !PROMPT_STRUCTURAL_ELEMENT_TAGS.has(tagName),
           ),
-    value: Dynamic =
+    pointedDrawing: Dynamic =
       pointedElement?.drawing != null &&
       isSafeIdentifier(pointedElement.drawing.id)
         ? pointedElement.drawing
         : undefined,
-    value2: Dynamic = [
+    pointedElementHints: Dynamic = [
       pointedElement?.look == null
         ? ""
         : FAST_EDIT_PROMPT_PHRASES.look(pointedElement.look),
       pointedElement?.fromSetting === true
         ? FAST_EDIT_PROMPT_PHRASES.fromSetting
         : "",
-      value !== undefined
-        ? FAST_EDIT_PROMPT_PHRASES.aboutDrawing(value.id)
+      pointedDrawing !== undefined
+        ? FAST_EDIT_PROMPT_PHRASES.aboutDrawing(pointedDrawing.id)
         : "",
     ]
-      .filter((input?: Dynamic): Dynamic => input !== "")
+      .filter((hint?: Dynamic): Dynamic => hint !== "")
       .join(" "),
-    value3: Dynamic =
+    isPointingAtBlankNearElement: Dynamic =
       pointedElement !== undefined &&
       click.blank !== undefined &&
-      location2 !== "" &&
+      clickLocationText !== "" &&
       isSafeIdentifier(click.first),
-    value4: Dynamic = context.design.filter(
-      (input?: Dynamic): Dynamic =>
-        FAST_EDIT_ARTBOARD_ID_PATTERN.test(input.id),
+    knownArtboards: Dynamic = promptContext.design.filter(
+      (artboard?: Dynamic): Dynamic =>
+        FAST_EDIT_ARTBOARD_ID_PATTERN.test(artboard.id),
     ),
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      value4.some((input2?: Dynamic): Dynamic => input2.id === input),
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      String(Number.isFinite(input) ? Math.round(input) : 0),
-    callback5: Dynamic = (input?: Dynamic): Dynamic =>
-      ["right", "left", "below", "above"].includes(input) ? input : "right",
-    value5: Dynamic = (click.between ?? [])
-      .filter((input?: Dynamic): Dynamic => callback3(input.id))
+    isKnownArtboard: Dynamic = (artboardId?: Dynamic): Dynamic =>
+      knownArtboards.some((artboard?: Dynamic): Dynamic => artboard.id === artboardId),
+    formatRoundedCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+      String(Number.isFinite(coordinate) ? Math.round(coordinate) : 0),
+    normalizeSide: Dynamic = (side?: Dynamic): Dynamic =>
+      ["right", "left", "below", "above"].includes(side) ? side : "right",
+    nearbyArtboards: Dynamic = (click.between ?? [])
+      .filter((artboard?: Dynamic): Dynamic => isKnownArtboard(artboard.id))
       .slice(0, 2),
-    callback6: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    formatElementHtml: Dynamic = (element?: Dynamic, tag?: Dynamic): Dynamic =>
       "<" +
-      options +
+      tag +
       ' id="' +
-      input.id +
+      element.id +
       '">' +
-      compactText(truncateLargeDataUris(input.text)) +
+      compactText(truncateLargeDataUris(element.text)) +
       "</" +
-      options +
+      tag +
       ">",
-    callback7: Dynamic = (input?: Dynamic): Dynamic =>
-      SAFE_PROMPT_HTML_TAGS.has(input) ? input : "element",
-    callback8: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = "",
+    safeElementTag: Dynamic = (tag?: Dynamic): Dynamic =>
+      SAFE_PROMPT_HTML_TAGS.has(tag) ? tag : "element",
+    describeSelection: Dynamic = (
+      selection?: Dynamic,
+      prefix: Dynamic = "",
     ): Dynamic => {
-      let value24: Dynamic =
-        input.drawing != null && isSafeIdentifier(input.drawing.id)
-          ? input.drawing
+      let drawing: Dynamic =
+        selection.drawing != null && isSafeIdentifier(selection.drawing.id)
+          ? selection.drawing
           : undefined;
-      return value24?.id === input.id
+      return drawing?.id === selection.id
         ? FAST_EDIT_PROMPT_PHRASES.drawing(
-            input.id,
-            callback7(input.tag),
-            boundedPromptNumber(value24.parts, 1e5),
+            selection.id,
+            safeElementTag(selection.tag),
+            boundedPromptNumber(drawing.parts, 1e5),
           )
         : FAST_EDIT_PROMPT_PHRASES.element(
-            input.id,
-            SAFE_PROMPT_HTML_TAGS.has(input.tag)
-              ? "the " + input.tag
+            selection.id,
+            SAFE_PROMPT_HTML_TAGS.has(selection.tag)
+              ? "the " + selection.tag
               : FAST_EDIT_PROMPT_PHRASES.unlisted,
           ) +
-            options +
-            (value24 !== undefined
+            prefix +
+            (drawing !== undefined
               ? FAST_EDIT_PROMPT_PHRASES.partOf(
-                  boundedPromptNumber(value24.parts, 1e5),
-                  value24.id,
+                  boundedPromptNumber(drawing.parts, 1e5),
+                  drawing.id,
                 )
               : "");
     },
-    value6: Dynamic = (context.typed?.elements ?? []).filter(
-      (input?: Dynamic): Dynamic => isSafeIdentifier(input.id),
+    validTypedElements: Dynamic = (promptContext.typed?.elements ?? []).filter(
+      (element?: Dynamic): Dynamic => isSafeIdentifier(element.id),
     ),
-    value7: Dynamic = value6.slice(0, MAX_PROMPT_LIST_ITEMS),
-    callback9: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input != null && callback3(input)
+    listedTypedElements: Dynamic = validTypedElements.slice(0, MAX_PROMPT_LIST_ITEMS),
+    describeLastMade: Dynamic = (artboardId?: Dynamic, elementId?: Dynamic): Dynamic =>
+      artboardId != null && isKnownArtboard(artboardId)
         ? [
             FAST_EDIT_PROMPT_PHRASES.lastMade(
-              input,
-              isSafeIdentifier(options) ? options : "",
+              artboardId,
+              isSafeIdentifier(elementId) ? elementId : "",
             ),
           ]
         : [],
-    value8: Dynamic =
-      value7.length > 0
+    interactionDescription: Dynamic =
+      listedTypedElements.length > 0
         ? FAST_EDIT_PROMPT_PHRASES.typedOn(
-            context.shown.id,
-            value7.map((input?: Dynamic): Dynamic => callback8(input)),
-            value6.length -
-              value7.length +
+            promptContext.shown.id,
+            listedTypedElements.map((element?: Dynamic): Dynamic => describeSelection(element)),
+            validTypedElements.length -
+              listedTypedElements.length +
               Number(
-                boundedPromptNumber(context.typed?.moreElements ?? 0, 1e5),
+                boundedPromptNumber(promptContext.typed?.moreElements ?? 0, 1e5),
               ),
           ) +
           `
 ` +
           fenceUntrustedContent(
             "selected",
-            value7.map(
-              (input?: Dynamic): Dynamic =>
-                callback6(input, callback7(input.tag)),
+            listedTypedElements.map(
+              (element?: Dynamic): Dynamic =>
+                formatElementHtml(element, safeElementTag(element.tag)),
             ).join(`
 `),
             marker,
           ) +
-          value7
-            .filter((input?: Dynamic): Dynamic => input.inList === true)
+          listedTypedElements
+            .filter((element?: Dynamic): Dynamic => element.inList === true)
             .map(
-              (input?: Dynamic, options?: Dynamic): Dynamic =>
-                (options === 0
+              (element?: Dynamic, elementIndex?: Dynamic): Dynamic =>
+                (elementIndex === 0
                   ? `
 
 `
                   : `
-`) + FAST_EDIT_PROMPT_PHRASES.inList(input.id),
+`) + FAST_EDIT_PROMPT_PHRASES.inList(element.id),
             )
             .join("")
-        : context.typed !== undefined
+        : promptContext.typed !== undefined
           ? FAST_EDIT_PROMPT_PHRASES.typed(
-              context.typed.by === "selected" ? context.shown.id : "",
+              promptContext.typed.by === "selected" ? promptContext.shown.id : "",
             ) +
-            (context.typed.by === "none"
+            (promptContext.typed.by === "none"
               ? `
 ` + FAST_EDIT_PROMPT_PHRASES.context
               : "")
-          : value5.length > 0 || click.newAt !== undefined
+          : nearbyArtboards.length > 0 || click.newAt !== undefined
             ? FAST_EDIT_PROMPT_PHRASES.onCanvas(
-                value5.map(
-                  (input?: Dynamic): Dynamic =>
+                nearbyArtboards.map(
+                  (artboard?: Dynamic): Dynamic =>
                     FAST_EDIT_PROMPT_PHRASES.nearBy(
-                      boundedPromptNumber(input.px, 1e5),
-                      callback5(input.side),
-                      input.id,
+                      boundedPromptNumber(artboard.px, 1e5),
+                      normalizeSide(artboard.side),
+                      artboard.id,
                     ),
                 ),
               )
             : pointedElement !== undefined
               ? FAST_EDIT_PROMPT_PHRASES.pinned(
-                  context.shown.id,
-                  location2,
+                  promptContext.shown.id,
+                  clickLocationText,
                   "on " +
-                    callback8(
+                    describeSelection(
                       pointedElement,
-                      value3
+                      isPointingAtBlankNearElement
                         ? FAST_EDIT_PROMPT_PHRASES.blank(
                             boundedPromptNumber(click.blank.px, 1e5),
-                            callback5(click.blank.side),
+                            normalizeSide(click.blank.side),
                           )
                         : "",
                     ),
@@ -445,7 +445,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
 ` +
                 fenceUntrustedContent(
                   "clicked element",
-                  callback6(pointedElement, tagName) +
+                  formatElementHtml(pointedElement, tagName) +
                     (pointedElement.drawnAs !== undefined &&
                     compactText(pointedElement.drawnAs) !==
                       compactText(pointedElement.text)
@@ -461,8 +461,8 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                 `
 
 ` +
-                (value2 !== ""
-                  ? value2 +
+                (pointedElementHints !== ""
+                  ? pointedElementHints +
                     `
 
 `
@@ -473,11 +473,11 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
 
 `
                   : "") +
-                (value3
+                (isPointingAtBlankNearElement
                   ? FAST_EDIT_PROMPT_PHRASES.belongs(pointedElement.id) +
                     `
 ` +
-                    callback2(pointedElement.id) +
+                    describeAddByElement(pointedElement.id) +
                     `
 
 ` +
@@ -485,10 +485,10 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                     `
 ` +
                     callback()
-                  : callback2(pointedElement.id))
+                  : describeAddByElement(pointedElement.id))
               : click.area !== undefined
                 ? FAST_EDIT_PROMPT_PHRASES.pinned(
-                    context.shown.id,
+                    promptContext.shown.id,
                     FAST_EDIT_PROMPT_PHRASES.at(
                       boundedPromptNumber(click.area.x, width),
                       boundedPromptNumber(click.area.y, height),
@@ -499,14 +499,14 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                     ),
                   )
                 : FAST_EDIT_PROMPT_PHRASES.pinned(
-                    context.shown.id,
-                    location2,
-                    click.ground === true && location2 !== ""
+                    promptContext.shown.id,
+                    clickLocationText,
+                    click.ground === true && clickLocationText !== ""
                       ? FAST_EDIT_PROMPT_PHRASES.onGround(relativePosition)
                       : "",
                   ) +
                   (click.ground === true &&
-                  location2 !== "" &&
+                  clickLocationText !== "" &&
                   isSafeIdentifier(click.first)
                     ? `
 
@@ -520,207 +520,207 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                         : "") +
                       callback()
                     : ""),
-    journal: Dynamic = context.journal,
-    value9: Dynamic = MAX_PROMPT_LOG_BYTES,
-    callback10: Dynamic = (items?: Dynamic): Dynamic =>
-      items.length > MAX_INLINE_DATA_URI_CHARS
-        ? items.slice(0, MAX_INLINE_DATA_URI_CHARS) +
+    journal: Dynamic = promptContext.journal,
+    remainingLogBudget: Dynamic = MAX_PROMPT_LOG_BYTES,
+    truncateSnippet: Dynamic = (snippet?: Dynamic): Dynamic =>
+      snippet.length > MAX_INLINE_DATA_URI_CHARS
+        ? snippet.slice(0, MAX_INLINE_DATA_URI_CHARS) +
           `
 (cut here)`
-        : items,
-    value10: Dynamic =
-      context.second !== undefined &&
-      FAST_EDIT_ARTBOARD_ID_PATTERN.test(context.second.id)
+        : snippet,
+    secondaryArtboard: Dynamic =
+      promptContext.second !== undefined &&
+      FAST_EDIT_ARTBOARD_ID_PATTERN.test(promptContext.second.id)
         ? {
-            id: context.second.id,
-            html: truncateLargeDataUris(context.second.html),
+            id: promptContext.second.id,
+            html: truncateLargeDataUris(promptContext.second.html),
           }
         : undefined,
-    value11: Dynamic =
+    remainingInlineCharacters: Dynamic =
       MAX_DATA_URI_SCAN_CHARS -
       shownHtml.html.length -
-      Math.min(value10?.html.length ?? 0, MAX_INLINE_DATA_URI_CHARS),
-    value12: Dynamic = (context.more ?? [])
+      Math.min(secondaryArtboard?.html.length ?? 0, MAX_INLINE_DATA_URI_CHARS),
+    contextArtboards: Dynamic = (promptContext.more ?? [])
       .filter(
-        (input?: Dynamic): Dynamic =>
-          FAST_EDIT_ARTBOARD_ID_PATTERN.test(input.id),
+        (artboard?: Dynamic): Dynamic =>
+          FAST_EDIT_ARTBOARD_ID_PATTERN.test(artboard.id),
       )
       .map(
-        (input?: Dynamic): Dynamic => ({
-          id: input.id,
-          html: truncateLargeDataUris(input.html),
+        (artboard?: Dynamic): Dynamic => ({
+          id: artboard.id,
+          html: truncateLargeDataUris(artboard.html),
         }),
       )
       .filter(
-        (input?: Dynamic): Dynamic =>
-          input.html.length <= value11 && (value11 -= input.html.length) >= 0,
+        (artboard?: Dynamic): Dynamic =>
+          artboard.html.length <= remainingInlineCharacters && (remainingInlineCharacters -= artboard.html.length) >= 0,
       ),
-    value13: Dynamic = (context.logs ?? [])
+    logSnippets: Dynamic = (promptContext.logs ?? [])
       .slice(0, MAX_PROMPT_ARTBOARD_NEIGHBORS)
       .map(truncateLargeDataUris)
-      .map(callback10)
-      .filter((items?: Dynamic): Dynamic => (value9 -= items.length) >= 0),
-    value14: Dynamic = value4.map(
-      (input?: Dynamic): Dynamic =>
+      .map(truncateSnippet)
+      .filter((items?: Dynamic): Dynamic => (remainingLogBudget -= items.length) >= 0),
+    artboardSummaries: Dynamic = knownArtboards.map(
+      (artboard?: Dynamic): Dynamic =>
         "#" +
-        input.id +
+        artboard.id +
         " " +
-        boundedPromptNumber(input.w, 1e5) +
+        boundedPromptNumber(artboard.w, 1e5) +
         "\xD7" +
-        boundedPromptNumber(input.h, 1e5) +
-        (input.x === undefined || input.y === undefined
+        boundedPromptNumber(artboard.h, 1e5) +
+        (artboard.x === undefined || artboard.y === undefined
           ? ""
-          : " at " + callback4(input.x) + "," + callback4(input.y)) +
-        (input.empty === true
+          : " at " + formatRoundedCoordinate(artboard.x) + "," + formatRoundedCoordinate(artboard.y)) +
+        (artboard.empty === true
           ? ", empty"
-          : input.tooLarge === true
+          : artboard.tooLarge === true
             ? ", too large to open here"
             : "") +
-        (compactText(input.words) === ""
+        (compactText(artboard.words) === ""
           ? ""
-          : ' "' + compactText(input.words, 40) + '"') +
-        (input.title === undefined || compactText(input.title) === input.id
+          : ' "' + compactText(artboard.words, 40) + '"') +
+        (artboard.title === undefined || compactText(artboard.title) === artboard.id
           ? ""
-          : ', titled "' + compactText(input.title, 100) + '"'),
+          : ', titled "' + compactText(artboard.title, 100) + '"'),
     ),
-    value15: Dynamic = Math.floor(context.maxBytes * MAX_DATA_URI_SHARE),
-    index: Dynamic = 0,
-    value16: Dynamic = value14.map(
-      (input?: Dynamic): Dynamic => utf8PromptSize(input) + 1,
+    artboardListBudget: Dynamic = Math.floor(promptContext.maxBytes * MAX_DATA_URI_SHARE),
+    artboardListBytes: Dynamic = 0,
+    artboardSummaryBytes: Dynamic = artboardSummaries.map(
+      (summary?: Dynamic): Dynamic => utf8PromptSize(summary) + 1,
     ),
-    value17: Dynamic = value4
-      .map((input?: Dynamic, options?: Dynamic): Dynamic => options)
+    artboardIndicesByDistance: Dynamic = knownArtboards
+      .map((_artboard?: Dynamic, artboardIndex?: Dynamic): Dynamic => artboardIndex)
       .sort(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          (value4[input].far ?? input) - (value4[options].far ?? options),
+        (leftIndex?: Dynamic, rightIndex?: Dynamic): Dynamic =>
+          (knownArtboards[leftIndex].far ?? leftIndex) - (knownArtboards[rightIndex].far ?? rightIndex),
       ),
-    callback11: Dynamic = (): Dynamic => {
+    summarizeArtboardList: Dynamic = (): Dynamic => {
       let values: Dynamic = new Set([
-          context.shown.id,
-          value10?.id,
-          ...value12.map((input?: Dynamic): Dynamic => input.id),
+          promptContext.shown.id,
+          secondaryArtboard?.id,
+          ...contextArtboards.map((artboard?: Dynamic): Dynamic => artboard.id),
         ]),
-        values2: Dynamic = new Set(),
-        value24: Dynamic = value15;
-      for (let value25 of value17 as Dynamic)
-        ((value24 -= value16[value25]) >= 0 ||
-          values.has(value4[value25].id)) &&
-          values2.add(value25);
-      index = [...values2].reduce(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input + value16[options],
+        includedIndices: Dynamic = new Set(),
+        remainingListBudget: Dynamic = artboardListBudget;
+      for (let artboardIndex of artboardIndicesByDistance as Dynamic)
+        ((remainingListBudget -= artboardSummaryBytes[artboardIndex]) >= 0 ||
+          values.has(knownArtboards[artboardIndex].id)) &&
+          includedIndices.add(artboardIndex);
+      artboardListBytes = [...includedIndices].reduce(
+        (subtotalBytes?: Dynamic, artboardIndex?: Dynamic): Dynamic =>
+          subtotalBytes + artboardSummaryBytes[artboardIndex],
         0,
       );
       return [
-        ...value14.flatMap(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
-            values2.has(options)
+        ...artboardSummaries.flatMap(
+          (summary?: Dynamic, artboardIndex?: Dynamic): Dynamic =>
+            includedIndices.has(artboardIndex)
               ? [
-                  input +
-                    (values.has(value4[options].id) ? ", shown below" : ""),
+                  summary +
+                    (values.has(knownArtboards[artboardIndex].id) ? ", shown below" : ""),
                 ]
               : [],
         ),
-        ...(values2.size < value14.length
+        ...(includedIndices.size < artboardSummaries.length
           ? [
               FAST_EDIT_PROMPT_PHRASES.notListed(
-                value14.length - values2.size,
+                artboardSummaries.length - includedIndices.size,
               ),
             ]
           : []),
       ].join(`
 `);
     },
-    callback12: Dynamic = (input?: Dynamic): Dynamic => [
-      ...callback9(input.lastMade, input.lastElement),
+    describeTypedContext: Dynamic = (typedContext?: Dynamic): Dynamic => [
+      ...describeLastMade(typedContext.lastMade, typedContext.lastElement),
       ...((items?: Dynamic): Dynamic =>
         items.length === 0
           ? []
           : [
               FAST_EDIT_PROMPT_PHRASES.byOthers(
                 items
-                  .map((input2?: Dynamic): Dynamic => "#" + input2)
+                  .map((artboardId?: Dynamic): Dynamic => "#" + artboardId)
                   .join(", "),
               ),
-            ])(input.othersChanged.filter(callback3)),
-      FAST_EDIT_PROMPT_PHRASES.places(input.places, context.shown.id),
-      ...(input.pictures > 0
-        ? [FAST_EDIT_PROMPT_PHRASES.pictures(input.pictures)]
+            ])(typedContext.othersChanged.filter(isKnownArtboard)),
+      FAST_EDIT_PROMPT_PHRASES.places(typedContext.places, promptContext.shown.id),
+      ...(typedContext.pictures > 0
+        ? [FAST_EDIT_PROMPT_PHRASES.pictures(typedContext.pictures)]
         : []),
     ],
-    value18: Dynamic = context.inView.filter(callback3),
-    value19: Dynamic = (context.writing ?? [])
+    visibleArtboardIds: Dynamic = promptContext.inView.filter(isKnownArtboard),
+    writingArtboardIds: Dynamic = (promptContext.writing ?? [])
       .filter(
-        (input?: Dynamic): Dynamic =>
-          callback3(input) && input !== context.shown.id,
+        (artboardId?: Dynamic): Dynamic =>
+          isKnownArtboard(artboardId) && artboardId !== promptContext.shown.id,
       )
       .slice(0, 6),
-    value20: Dynamic = context.history ?? [],
-    callback13: Dynamic = (): Dynamic => {
+    history: Dynamic = promptContext.history ?? [],
+    describeRenames: Dynamic = (): Dynamic => {
       let values: Dynamic = new Set([
-          context.shown.id,
-          value10?.id,
-          ...value12.map((input?: Dynamic): Dynamic => input.id),
+          promptContext.shown.id,
+          secondaryArtboard?.id,
+          ...contextArtboards.map((artboard?: Dynamic): Dynamic => artboard.id),
         ]),
-        value24: Dynamic = (context.renamed ?? [])
+        renameDescriptions: Dynamic = (promptContext.renamed ?? [])
           .filter(
-            (input?: Dynamic): Dynamic =>
-              values.has(input.on) &&
-              isSafeIdentifier(input.was) &&
-              (input.now === null || isSafeIdentifier(input.now)),
+            (rename?: Dynamic): Dynamic =>
+              values.has(rename.on) &&
+              isSafeIdentifier(rename.was) &&
+              (rename.now === null || isSafeIdentifier(rename.now)),
           )
           .map(
-            (input?: Dynamic): Dynamic =>
+            (rename?: Dynamic): Dynamic =>
               "#" +
-              input.was +
-              (input.now === null ? " is gone" : " is now #" + input.now),
+              rename.was +
+              (rename.now === null ? " is gone" : " is now #" + rename.now),
           );
-      return value24.length === 0
+      return renameDescriptions.length === 0
         ? ""
         : `
 ` +
             FAST_EDIT_PROMPT_PHRASES.renamed(
-              value24.slice(0, MAX_PROMPT_HISTORY_ENTRIES),
-              value24.length -
-                Math.min(value24.length, MAX_PROMPT_HISTORY_ENTRIES),
+              renameDescriptions.slice(0, MAX_PROMPT_HISTORY_ENTRIES),
+              renameDescriptions.length -
+                Math.min(renameDescriptions.length, MAX_PROMPT_HISTORY_ENTRIES),
             );
     },
-    callback14: Dynamic = (input?: Dynamic): Dynamic =>
+    compileContext: Dynamic = (includeUntrustedContent?: Dynamic): Dynamic =>
       [
-        (context.turn !== undefined ? "[" + context.turn + "] " : "") +
+        (promptContext.turn !== undefined ? "[" + promptContext.turn + "] " : "") +
           "Fence marker for this message: " +
           marker,
-        ...(input
+        ...(includeUntrustedContent
           ? [
-              ...(context.extraRules === undefined
+              ...(promptContext.extraRules === undefined
                 ? []
-                : [context.extraRules]),
-              FAST_EDIT_PROMPT_PHRASES.design(value14.length) +
+                : [promptContext.extraRules]),
+              FAST_EDIT_PROMPT_PHRASES.design(artboardSummaries.length) +
                 `
 ` +
                 fenceUntrustedContent(
                   "design",
-                  callback11(),
+                  summarizeArtboardList(),
                   marker,
                 ),
-              ...(value18.length === 0
+              ...(visibleArtboardIds.length === 0
                 ? []
                 : [
                     FAST_EDIT_PROMPT_PHRASES.view(
-                      value18.map(
-                        (input2?: Dynamic): Dynamic => "#" + input2,
+                      visibleArtboardIds.map(
+                        (artboardId?: Dynamic): Dynamic => "#" + artboardId,
                       ),
                     ),
                   ]),
-              ...(context.shown.id === ""
+              ...(promptContext.shown.id === ""
                 ? []
                 : [
-                    (context.contextOnly === true
-                      ? FAST_EDIT_PROMPT_PHRASES.forContext(context.shown.id)
-                      : value5[0]?.id === context.shown.id
-                        ? FAST_EDIT_PROMPT_PHRASES.nearest(context.shown.id)
+                    (promptContext.contextOnly === true
+                      ? FAST_EDIT_PROMPT_PHRASES.forContext(promptContext.shown.id)
+                      : nearbyArtboards[0]?.id === promptContext.shown.id
+                        ? FAST_EDIT_PROMPT_PHRASES.nearest(promptContext.shown.id)
                         : FAST_EDIT_PROMPT_PHRASES.artboard(
-                            context.shown.id,
+                            promptContext.shown.id,
                           )) +
                       `
 ` +
@@ -735,41 +735,41 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                         marker,
                       ),
                   ]),
-              ...(value10 === undefined
+              ...(secondaryArtboard === undefined
                 ? []
                 : [
-                    (value10.html.length > MAX_INLINE_DATA_URI_CHARS
-                      ? FAST_EDIT_PROMPT_PHRASES.beginning(value10.id)
-                      : context.contextOnly === true
-                        ? FAST_EDIT_PROMPT_PHRASES.forContext(value10.id)
-                        : FAST_EDIT_PROMPT_PHRASES.artboard(value10.id)) +
+                    (secondaryArtboard.html.length > MAX_INLINE_DATA_URI_CHARS
+                      ? FAST_EDIT_PROMPT_PHRASES.beginning(secondaryArtboard.id)
+                      : promptContext.contextOnly === true
+                        ? FAST_EDIT_PROMPT_PHRASES.forContext(secondaryArtboard.id)
+                        : FAST_EDIT_PROMPT_PHRASES.artboard(secondaryArtboard.id)) +
                       `
 ` +
                       fenceUntrustedContent(
                         "file",
-                        callback10(value10.html),
+                        truncateSnippet(secondaryArtboard.html),
                         marker,
                       ),
                   ]),
-              ...value12.map(
-                (input2?: Dynamic): Dynamic =>
-                  (context.typed !== undefined
-                    ? FAST_EDIT_PROMPT_PHRASES.artboard(input2.id)
-                    : FAST_EDIT_PROMPT_PHRASES.forContext(input2.id)) +
+              ...contextArtboards.map(
+                (artboard?: Dynamic): Dynamic =>
+                  (promptContext.typed !== undefined
+                    ? FAST_EDIT_PROMPT_PHRASES.artboard(artboard.id)
+                    : FAST_EDIT_PROMPT_PHRASES.forContext(artboard.id)) +
                   `
 ` +
                   fenceUntrustedContent(
                     "file",
-                    input2.html,
+                    artboard.html,
                     marker,
                   ),
               ),
-              ...(value20.length === 0
+              ...(history.length === 0
                 ? []
-                : [FAST_EDIT_PROMPT_PHRASES.handles + callback13()]),
+                : [FAST_EDIT_PROMPT_PHRASES.handles + describeRenames()]),
             ]
           : []),
-        ...(context.told ?? []),
+        ...(promptContext.told ?? []),
         ...(journal === ""
           ? []
           : [
@@ -782,32 +782,32 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                   marker,
                 ),
             ]),
-        ...(!input || value19.length === 0
+        ...(!includeUntrustedContent || writingArtboardIds.length === 0
           ? []
           : [
               FAST_EDIT_PROMPT_PHRASES.writing(
-                value19
-                  .map((input2?: Dynamic): Dynamic => "#" + input2)
+                writingArtboardIds
+                  .map((artboardId?: Dynamic): Dynamic => "#" + artboardId)
                   .join(", "),
               ),
             ]),
-        ...(input
-          ? context.typed !== undefined
-            ? callback12(context.typed)
-            : callback9(context.lastMade, context.lastElement)
+        ...(includeUntrustedContent
+          ? promptContext.typed !== undefined
+            ? describeTypedContext(promptContext.typed)
+            : describeLastMade(promptContext.lastMade, promptContext.lastElement)
           : []),
-        ...(input && click.newAt !== undefined
+        ...(includeUntrustedContent && click.newAt !== undefined
           ? [
               FAST_EDIT_PROMPT_PHRASES.placeByPin(
-                callback4(click.newAt.x),
-                callback4(click.newAt.y),
+                formatRoundedCoordinate(click.newAt.x),
+                formatRoundedCoordinate(click.newAt.y),
                 click.newAt.atPin === true,
               ),
             ]
           : []),
-        input
-          ? value8
-          : value8.split(
+        includeUntrustedContent
+          ? interactionDescription
+          : interactionDescription.split(
               `
 `,
               1,
@@ -817,67 +817,67 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
 ` +
           fenceUntrustedContent(
             "comment",
-            context.comment,
+            promptContext.comment,
             marker,
           ),
-        ...(!input || value13.length === 0
+        ...(!includeUntrustedContent || logSnippets.length === 0
           ? []
           : [
               FAST_EDIT_PROMPT_PHRASES.log +
                 `
 ` +
-                value13.map(
-                  (input2?: Dynamic, options?: Dynamic): Dynamic =>
+                logSnippets.map(
+                  (log?: Dynamic, logIndex?: Dynamic): Dynamic =>
                     fenceUntrustedContent(
-                      "log " + String(options + 1),
-                      input2,
+                      "log " + String(logIndex + 1),
+                      log,
                       marker,
                     ),
                 ).join(`
 `) +
                 `
 ` +
-                (context.typed !== undefined ||
-                context.contextOnly === true ||
-                context.shown.id === ""
+                (promptContext.typed !== undefined ||
+                promptContext.contextOnly === true ||
+                promptContext.shown.id === ""
                   ? FAST_EDIT_PROMPT_PHRASES.thenChange
-                  : FAST_EDIT_PROMPT_PHRASES.thenEdit(context.shown.id)),
+                  : FAST_EDIT_PROMPT_PHRASES.thenEdit(promptContext.shown.id)),
             ]),
-        ...(!input || context.note === undefined
+        ...(!includeUntrustedContent || promptContext.note === undefined
           ? []
           : [
-              (context.typed !== undefined
-                ? FAST_EDIT_PROMPT_PHRASES.pageNote(context.note)
-                : FAST_EDIT_PROMPT_PHRASES.note(context.note)) +
-                (context.noteLine === undefined
+              (promptContext.typed !== undefined
+                ? FAST_EDIT_PROMPT_PHRASES.pageNote(promptContext.note)
+                : FAST_EDIT_PROMPT_PHRASES.note(promptContext.note)) +
+                (promptContext.noteLine === undefined
                   ? ""
                   : `
 ` +
                     fenceUntrustedContent(
                       "line",
-                      context.noteLine.slice(0, MAX_PROMPT_TAG_NAME_CHARS),
+                      promptContext.noteLine.slice(0, MAX_PROMPT_TAG_NAME_CHARS),
                       marker,
                     )),
             ]),
-        ...(input
+        ...(includeUntrustedContent
           ? [
               describeHistoryPressure(
                 [
-                  ...value20,
+                  ...history,
                   {
                     role: "user",
-                    id: context.turn ?? "",
-                    content: callback14(false),
+                    id: promptContext.turn ?? "",
+                    content: compileContext(false),
                   },
                 ],
-                context.historyChars ?? 4e4,
+                promptContext.historyChars ?? 4e4,
               ),
-            ].filter((input2?: Dynamic): Dynamic => input2 !== "")
+            ].filter((part?: Dynamic): Dynamic => part !== "")
           : []),
       ].join(`
 
 `),
-    value21: Dynamic = context.rules
+    promptRules: Dynamic = promptContext.rules
       .split(
         UNTRUSTED_CONTENT_INSTRUCTIONS +
           `
@@ -887,11 +887,11 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
       .split(UNTRUSTED_CONTENT_INSTRUCTIONS)
       .join("")
       .trimEnd(),
-    callback15: Dynamic = (): Dynamic => [
+    compileTurns: Dynamic = (): Dynamic => [
       {
         role: "user",
         content:
-          value21 +
+          promptRules +
           `
 
 ` +
@@ -900,7 +900,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
 ` +
           UNTRUSTED_FENCE_INSTRUCTIONS,
       },
-      ...value20.map(
+      ...history.map(
         ({ role: role, content: content }: Dynamic): Dynamic => ({
           role: role,
           content: content,
@@ -908,56 +908,56 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
       ),
       {
         role: "user",
-        content: callback14(true),
+        content: compileContext(true),
       },
     ],
-    value22: Dynamic = callback15();
+    turns: Dynamic = compileTurns();
   for (
     ;
-    countPromptBytes(value22) > context.maxBytes && value12.length > 0;
+    countPromptBytes(turns) > promptContext.maxBytes && contextArtboards.length > 0;
 
   ) {
-    value12.pop();
-    value22 = callback15();
+    contextArtboards.pop();
+    turns = compileTurns();
   }
   for (
-    countPromptBytes(value22) > context.maxBytes &&
-    ((value15 = Math.max(
+    countPromptBytes(turns) > promptContext.maxBytes &&
+    ((artboardListBudget = Math.max(
       0,
-      index -
-        (countPromptBytes(value22) - context.maxBytes) -
-        utf8PromptSize(FAST_EDIT_PROMPT_PHRASES.notListed(value14.length)) -
+      artboardListBytes -
+        (countPromptBytes(turns) - promptContext.maxBytes) -
+        utf8PromptSize(FAST_EDIT_PROMPT_PHRASES.notListed(artboardSummaries.length)) -
         1,
     )),
-    (value22 = callback15()));
-    countPromptBytes(value22) > context.maxBytes && value13.length > 1;
+    (turns = compileTurns()));
+    countPromptBytes(turns) > promptContext.maxBytes && logSnippets.length > 1;
 
   ) {
-    value13.pop();
-    value22 = callback15();
+    logSnippets.pop();
+    turns = compileTurns();
   }
-  countPromptBytes(value22) > context.maxBytes &&
-    value13.length === 1 &&
-    value13[0].length > MAX_PROMPT_SNIPPET_CHARS &&
-    ((value13[0] =
-      value13[0].slice(0, MAX_PROMPT_SNIPPET_CHARS) +
+  countPromptBytes(turns) > promptContext.maxBytes &&
+    logSnippets.length === 1 &&
+    logSnippets[0].length > MAX_PROMPT_SNIPPET_CHARS &&
+    ((logSnippets[0] =
+      logSnippets[0].slice(0, MAX_PROMPT_SNIPPET_CHARS) +
       `
 (cut here)`),
-    (value22 = callback15()));
-  countPromptBytes(value22) > context.maxBytes &&
+    (turns = compileTurns()));
+  countPromptBytes(turns) > promptContext.maxBytes &&
     journal !== "" &&
-    ((journal = ""), (value22 = callback15()));
-  let value23: Dynamic = countPromptBytes(value22);
+    ((journal = ""), (turns = compileTurns()));
+  let totalBytes: Dynamic = countPromptBytes(turns);
   return {
-    turns: value22,
-    kept: callback14(false),
+    turns: turns,
+    kept: compileContext(false),
     files: [
       shownHtml.html,
-      ...(value10 === undefined ? [] : [callback10(value10.html)]),
-      ...value12.map((input?: Dynamic): Dynamic => input.html),
+      ...(secondaryArtboard === undefined ? [] : [truncateSnippet(secondaryArtboard.html)]),
+      ...contextArtboards.map((artboard?: Dynamic): Dynamic => artboard.html),
     ],
-    bytes: value23,
-    ok: value23 <= context.maxBytes,
+    bytes: totalBytes,
+    ok: totalBytes <= promptContext.maxBytes,
   };
 }
 export {
@@ -994,8 +994,8 @@ export {
 export function installFastEditPromptContext(): () => void {
   return () => {
     fastEditUtf8Encoder = new TextEncoder();
-    fastEditUtf8Size = (input?: Dynamic): Dynamic =>
-      fastEditUtf8Encoder.encode(input).length;
+    fastEditUtf8Size = (text?: Dynamic): Dynamic =>
+      fastEditUtf8Encoder.encode(text).length;
     MAX_INLINE_DATA_URI_CHARS = 16e3;
     MAX_DATA_URI_SCAN_CHARS = 1e5;
     MAX_DATA_URI_SHARE = 1 / 4;
@@ -1011,12 +1011,12 @@ export function installFastEditPromptContext(): () => void {
     MAX_PROMPT_TAG_NAME_CHARS = 80;
     MAX_PROMPT_LIST_ITEMS = 8;
     MAX_PROMPT_HISTORY_ENTRIES = 8;
-    utf8PromptSize = (input?: Dynamic): Dynamic =>
-      new TextEncoder().encode(input).length;
-    countPromptBytes = (input?: Dynamic): Dynamic =>
-      input.reduce(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2 + utf8PromptSize(options.content),
+    utf8PromptSize = (text?: Dynamic): Dynamic =>
+      new TextEncoder().encode(text).length;
+    countPromptBytes = (turns?: Dynamic): Dynamic =>
+      turns.reduce(
+        (totalBytes?: Dynamic, turn?: Dynamic): Dynamic =>
+          totalBytes + utf8PromptSize(turn.content),
         0,
       );
     UNTRUSTED_FENCE_INSTRUCTIONS =
@@ -1120,344 +1120,344 @@ export function installFastEditPromptContext(): () => void {
       "text",
       "tspan",
     ]);
-    boundedPromptNumber = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    boundedPromptNumber = (candidate?: Dynamic, max?: Dynamic): Dynamic =>
       String(
         Math.min(
-          options,
-          Math.max(0, Number.isFinite(input) ? Math.round(input) : 0),
+          max,
+          Math.max(0, Number.isFinite(candidate) ? Math.round(candidate) : 0),
         ),
       );
     FAST_EDIT_PROMPT_PHRASES = {
-      design: (input?: Dynamic): Dynamic =>
+      design: (count?: Dynamic): Dynamic =>
         "[design] " +
-        String(input) +
-        (input === 1 ? " artboard:" : " artboards:"),
-      notListed: (input?: Dynamic): Dynamic =>
+        String(count) +
+        (count === 1 ? " artboard:" : " artboards:"),
+      notListed: (count?: Dynamic): Dynamic =>
         "and " +
-        String(input) +
+        String(count) +
         " more, the farthest from here, not listed: selectors match them like the others",
       view: (items?: Dynamic): Dynamic =>
         "[view] the person sees " +
         (items.length < 2
           ? items.join("")
           : items.slice(0, -1).join(", ") + " and " + items[items.length - 1]),
-      artboard: (input?: Dynamic): Dynamic =>
-        "[artboard] #" + input + ", as it stands now:",
-      nearest: (input?: Dynamic): Dynamic =>
-        "[artboard] #" + input + ", the nearest to the pin, as it stands now:",
-      forContext: (input?: Dynamic): Dynamic =>
-        "[artboard] #" + input + ", for context only:",
-      beginning: (input?: Dynamic): Dynamic =>
-        "[artboard] #" + input + ", its beginning, for context only:",
+      artboard: (artboardId?: Dynamic): Dynamic =>
+        "[artboard] #" + artboardId + ", as it stands now:",
+      nearest: (artboardId?: Dynamic): Dynamic =>
+        "[artboard] #" + artboardId + ", the nearest to the pin, as it stands now:",
+      forContext: (artboardId?: Dynamic): Dynamic =>
+        "[artboard] #" + artboardId + ", for context only:",
+      beginning: (artboardId?: Dynamic): Dynamic =>
+        "[artboard] #" + artboardId + ", its beginning, for context only:",
       journal: "[journal] oldest first",
       handles:
         "Handles are given anew with every message: those in older turns may name other elements now.",
-      renamed: (input?: Dynamic, options?: Dynamic): Dynamic =>
+      renamed: (renameDescriptions?: Dynamic, omittedCount?: Dynamic): Dynamic =>
         "Of those your last reply and its message named: " +
-        input.join(", ") +
-        (options > 0 ? ", and " + String(options) + " more have changed" : "") +
+        renameDescriptions.join(", ") +
+        (omittedCount > 0 ? ", and " + String(omittedCount) + " more have changed" : "") +
         ".",
       prompt: "[prompt]",
       large:
         "This artboard is large: only the part round the click is shown, with the tags that hold it. The rest is there and stays as it is. A comment that needs a part that is not shown goes to Claude.",
-      notShown: (input?: Dynamic): Dynamic =>
+      notShown: (count?: Dynamic): Dynamic =>
         "<\!-- " +
-        boundedPromptNumber(input, 1e5) +
-        (input === 1 ? " more element" : " more elements") +
+        boundedPromptNumber(count, 1e5) +
+        (count === 1 ? " more element" : " more elements") +
         " here, not shown -->",
       pinned: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        elementId?: Dynamic,
+        tag?: Dynamic,
+        elementDetail?: Dynamic,
       ): Dynamic =>
         "[pointed at] a comment pinned on #" +
-        input +
-        options +
-        (context === "" ? "" : ": " + context),
-      at: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        " at " + input + ", " + options,
+        elementId +
+        tag +
+        (elementDetail === "" ? "" : ": " + elementDetail),
+      at: (x?: Dynamic, y?: Dynamic): Dynamic =>
+        " at " + x + ", " + y,
       typedOn: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        artboardId?: Dynamic,
+        elementDescriptions?: Dynamic,
+        omittedCount?: Dynamic,
       ): Dynamic =>
         "[pointed at] selected on #" +
-        input +
+        artboardId +
         ": " +
-        options.join("; ") +
-        (context > 0 ? "; and " + String(context) + " more" : "") +
+        elementDescriptions.join("; ") +
+        (omittedCount > 0 ? "; and " + String(omittedCount) + " more" : "") +
         ". Typed in the box under the design.",
-      element: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        "#" + input + ", " + options,
-      typed: (input?: Dynamic): Dynamic =>
+      element: (elementId?: Dynamic, tag?: Dynamic): Dynamic =>
+        "#" + elementId + ", " + tag,
+      typed: (artboardId?: Dynamic): Dynamic =>
         "[pointed at] nothing: typed in the box under the design." +
-        (input === "" ? "" : " Selected: #" + input),
+        (artboardId === "" ? "" : " Selected: #" + artboardId),
       context:
         "NOTHING IS PICKED. The prompt is about the first artboard the person sees, unless its words say otherwise.",
-      lastMade: (input?: Dynamic, options?: Dynamic): Dynamic =>
+      lastMade: (artboardId?: Dynamic, elementId?: Dynamic): Dynamic =>
         "[last made or changed] #" +
-        (options === "" ? input : options + ", on #" + input),
-      byOthers: (input?: Dynamic): Dynamic =>
-        "[changed by other people] " + input,
-      places: (input?: Dynamic, options?: Dynamic): Dynamic =>
+        (elementId === "" ? artboardId : elementId + ", on #" + artboardId),
+      byOthers: (artboardHandles?: Dynamic): Dynamic =>
+        "[changed by other people] " + artboardHandles,
+      places: (freePlaces?: Dynamic, artboardId?: Dynamic): Dynamic =>
         "[free places] " +
-        input.replace(/^FREE PLACES near it/, "near #" + options),
-      pictures: (input?: Dynamic): Dynamic =>
+        freePlaces.replace(/^FREE PLACES near it/, "near #" + artboardId),
+      pictures: (count?: Dynamic): Dynamic =>
         "[pictures] " +
-        String(input) +
+        String(count) +
         " attached for you to look at. They are reference only: an artboard cannot hold them.",
-      onCanvas: (input?: Dynamic): Dynamic =>
+      onCanvas: (nearbyArtboards?: Dynamic): Dynamic =>
         "[pointed at] a comment pinned on the canvas" +
-        input.map((input2?: Dynamic): Dynamic => ", " + input2).join(""),
+        nearbyArtboards.map((description?: Dynamic): Dynamic => ", " + description).join(""),
       placeByPin: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        left?: Dynamic,
+        top?: Dynamic,
+        isAtPin?: Dynamic,
       ): Dynamic =>
         "[free places] " +
-        (context
+        (isAtPin
           ? "at the pin"
           : "no room at the pin; the nearest free place") +
         ": left " +
-        input +
+        left +
         ", top " +
-        options,
+        top,
       nearBy: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        distance?: Dynamic,
+        side?: Dynamic,
+        artboardId?: Dynamic,
       ): Dynamic =>
-        input +
+        distance +
         " px " +
-        (options === "right"
+        (side === "right"
           ? "right of"
-          : options === "left"
+          : side === "left"
             ? "left of"
-            : options) +
+            : side) +
         " #" +
-        context,
-      blank: (input?: Dynamic, options?: Dynamic): Dynamic =>
+        artboardId,
+      blank: (distance?: Dynamic, side?: Dynamic): Dynamic =>
         ", on a blank part of it, " +
-        input +
+        distance +
         " px " +
-        (options === "right"
+        (side === "right"
           ? "to the right of"
-          : options === "left"
+          : side === "left"
             ? "to the left of"
-            : options) +
+            : side) +
         " its words",
-      onGround: (input?: Dynamic): Dynamic => "on an empty spot" + input,
-      inside: (input?: Dynamic): Dynamic => " inside #" + input,
-      below: (input?: Dynamic): Dynamic => ", below #" + input,
-      after: (input?: Dynamic): Dynamic => ", after #" + input,
+      onGround: (locationSuffix?: Dynamic): Dynamic => "on an empty spot" + locationSuffix,
+      inside: (elementId?: Dynamic): Dynamic => " inside #" + elementId,
+      below: (elementId?: Dynamic): Dynamic => ", below #" + elementId,
+      after: (elementId?: Dynamic): Dynamic => ", after #" + elementId,
       unlisted: "an element",
-      onArea: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        "on an area drawn from there, " + input + "\xD7" + options + " px",
-      writing: (input?: Dynamic): Dynamic =>
-        "Right now somebody else\u2019s Claude is writing " + input + ".",
+      onArea: (width?: Dynamic, height?: Dynamic): Dynamic =>
+        "on an area drawn from there, " + width + "\xD7" + height + " px",
+      writing: (artboardHandles?: Dynamic): Dynamic =>
+        "Right now somebody else\u2019s Claude is writing " + artboardHandles + ".",
       addAtEnd: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        lastElementId?: Dynamic,
+        x?: Dynamic,
+        y?: Dynamic,
       ): Dynamic =>
         "Something added here goes at the end of the artboard, right after #" +
-        input +
+        lastElementId +
         ", with position: absolute; left: " +
-        options +
+        x +
         "px; top: " +
-        context +
+        y +
         "px; transform: translate(-50%, -50%), so that it sits centred on the click.",
       addOnGround: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        firstElementId?: Dynamic,
+        x?: Dynamic,
+        y?: Dynamic,
       ): Dynamic =>
         "Something added here is the last child of #" +
-        input +
+        firstElementId +
         ", with position: absolute; left: " +
-        options +
+        x +
         "px; top: " +
-        context +
+        y +
         "px; transform: translate(-50%, -50%), so that it sits centred on the click.",
-      belongs: (input?: Dynamic): Dynamic =>
+      belongs: (artboardId?: Dynamic): Dynamic =>
         "If the comment speaks of #" +
-        input +
+        artboardId +
         " itself (next to this, before this, after this):",
       standsHere: "If the comment says here, or at this spot:",
-      addByElement: (input?: Dynamic): Dynamic =>
+      addByElement: (elementId?: Dynamic): Dynamic =>
         "Something added here goes in the flow, right before or after #" +
-        input +
+        elementId +
         ", not on top of it.",
       addIn: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value?: Dynamic,
+        layout?: Dynamic,
+        elementId?: Dynamic,
+        parentDescription?: Dynamic,
+        isTextLikeElement?: Dynamic,
       ): Dynamic => {
-        let value2: Dynamic = "#" + options,
-          value3: Dynamic =
-            "something goes inside " + value2 + ", at its start or its end",
-          value4: Dynamic = "right before or after " + value2,
-          value5: Dynamic =
-            input === "column_stretch"
+        let elementHandle: Dynamic = "#" + elementId,
+          insidePlacement: Dynamic =
+            "something goes inside " + elementHandle + ", at its start or its end",
+          adjacentPlacement: Dynamic = "right before or after " + elementHandle,
+          stretchOverride: Dynamic =
+            layout === "column_stretch"
               ? ", with align-self: flex-start so that it keeps its own width"
               : "";
         return (
-          (input === "row"
-            ? context +
+          (layout === "row"
+            ? parentDescription +
               " lays its children out in a row: something " +
-              value4 +
+              adjacentPlacement +
               " sits beside it."
-            : input === "inline"
-              ? "Something " + value4 + " sits in the same line."
-              : input === "block"
-                ? value2 +
+            : layout === "inline"
+              ? "Something " + adjacentPlacement + " sits in the same line."
+              : layout === "block"
+                ? elementHandle +
                   " is a block with a row of its own. " +
-                  (value
+                  (isTextLikeElement
                     ? "To sit beside its words, " +
-                      value3 +
+                      insidePlacement +
                       "; " +
-                      value4 +
+                      adjacentPlacement +
                       " it gets its own row."
-                    : "Something " + value4 + " gets its own row.")
-                : context +
+                    : "Something " + adjacentPlacement + " gets its own row.")
+                : parentDescription +
                   " stacks its children in a column" +
-                  (input === "column_stretch"
+                  (layout === "column_stretch"
                     ? " and stretches each to the full width"
                     : "") +
                   ". " +
-                  (value
+                  (isTextLikeElement
                     ? "To sit beside the words of " +
-                      value2 +
+                      elementHandle +
                       ", " +
-                      value3 +
+                      insidePlacement +
                       ". On a row of its own it goes " +
-                      value4 +
-                      value5 +
+                      adjacentPlacement +
+                      stretchOverride +
                       "."
                     : "Something " +
-                      value4 +
+                      adjacentPlacement +
                       " gets a row of its own" +
-                      value5 +
+                      stretchOverride +
                       ".")) + " Not on top of it."
         );
       },
-      inList: (input?: Dynamic): Dynamic =>
+      inList: (elementId?: Dynamic): Dynamic =>
         "#" +
-        input +
+        elementId +
         " stands inside a list: the template holds it once and it is drawn once per item, so a change to it shows on every item.",
       drawnAs: "drawn here as: ",
       fromSetting:
         "Its words come from a setting, so they cannot be changed here.",
       drawing: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
+        drawingId?: Dynamic,
+        tag?: Dynamic,
+        partCount?: Dynamic,
       ): Dynamic =>
         "the drawing #" +
-        input +
+        drawingId +
         ", " +
-        (/^(?:svg$|[aeio])/.test(options) ? "an " : "a ") +
-        options +
+        (/^(?:svg$|[aeio])/.test(tag) ? "an " : "a ") +
+        tag +
         " of " +
-        context +
-        (context === "1" ? " part" : " parts"),
-      partOf: (input?: Dynamic, options?: Dynamic): Dynamic =>
+        partCount +
+        (partCount === "1" ? " part" : " parts"),
+      partOf: (partCount?: Dynamic, drawingId?: Dynamic): Dynamic =>
         ", " +
-        (input === "1" ? "the one part" : "one of the " + input + " parts") +
+        (partCount === "1" ? "the one part" : "one of the " + partCount + " parts") +
         " of the drawing #" +
-        options,
-      aboutDrawing: (input?: Dynamic): Dynamic =>
+        drawingId,
+      aboutDrawing: (drawingId?: Dynamic): Dynamic =>
         "A comment on the drawing is about #" +
-        input +
+        drawingId +
         ". To draw it again, replace it whole: $('#" +
-        input +
+        drawingId +
         "').replaceWith(`<svg \u2026`)",
-      look: (input?: Dynamic): Dynamic => {
-        if (input === null || typeof input != "object") return "";
-        let callback: Dynamic = (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value9?: Dynamic,
+      look: (style?: Dynamic): Dynamic => {
+        if (style === null || typeof style != "object") return "";
+        let formatNumber: Dynamic = (
+            candidate?: Dynamic,
+            min?: Dynamic,
+            max?: Dynamic,
+            decimalPlaces?: Dynamic,
           ): Dynamic =>
-            typeof input2 != "number" ||
-            !Number.isFinite(input2) ||
-            input2 < options ||
-            input2 > context
+            typeof candidate != "number" ||
+            !Number.isFinite(candidate) ||
+            candidate < min ||
+            candidate > max
               ? null
               : String(
-                  value9 === 1
-                    ? Math.round(input2 * 10) / 10
-                    : Math.round(input2),
+                  decimalPlaces === 1
+                    ? Math.round(candidate * 10) / 10
+                    : Math.round(candidate),
                 ),
-          callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-            typeof input2 == "string" &&
+          normalizeColor: Dynamic = (color?: Dynamic): Dynamic =>
+            typeof color == "string" &&
             /^(?:#[0-9a-f]{6}|rgba\(\d{1,3}, \d{1,3}, \d{1,3}, 0\.\d{1,2}\))$/.test(
-              input2,
+              color,
             )
-              ? input2
+              ? color
               : null,
-          value: Dynamic = callback(input.size, 1, 2e3, 1),
-          value2: Dynamic = callback(input.weight, 100, 900, 0),
-          value3: Dynamic = callback2(input.color),
-          value4: Dynamic = callback2(input.ground),
-          value5: Dynamic =
-            input.ground === "none" ? callback2(input.behind) : null,
-          value6: Dynamic = callback(input.w, 1, 1e5, 0),
-          value7: Dynamic = callback(input.h, 1, 1e5, 0),
-          value8: Dynamic = [
-            value !== null ? "at " + value + " px" : null,
-            value2 !== null ? "weight " + value2 : null,
-            input.style === "italic" || input.style === "oblique"
+          fontSize: Dynamic = formatNumber(style.size, 1, 2e3, 1),
+          fontWeight: Dynamic = formatNumber(style.weight, 100, 900, 0),
+          foreground: Dynamic = normalizeColor(style.color),
+          background: Dynamic = normalizeColor(style.ground),
+          behindColor: Dynamic =
+            style.ground === "none" ? normalizeColor(style.behind) : null,
+          width: Dynamic = formatNumber(style.w, 1, 1e5, 0),
+          height: Dynamic = formatNumber(style.h, 1, 1e5, 0),
+          descriptionParts: Dynamic = [
+            fontSize !== null ? "at " + fontSize + " px" : null,
+            fontWeight !== null ? "weight " + fontWeight : null,
+            style.style === "italic" || style.style === "oblique"
               ? "italic"
               : null,
-            (value3 !== null ? "in " + value3 : "") +
-              (value4 !== null
-                ? (value3 !== null ? " " : "") + "on " + value4
-                : value5 !== null
-                  ? (value3 !== null ? " " : "") +
+            (foreground !== null ? "in " + foreground : "") +
+              (background !== null
+                ? (foreground !== null ? " " : "") + "on " + background
+                : behindColor !== null
+                  ? (foreground !== null ? " " : "") +
                     "on " +
-                    value5 +
+                    behindColor +
                     ", the ground behind it"
-                  : value3 !== null && input.ground === "none"
+                  : foreground !== null && style.ground === "none"
                     ? " with no ground of its own"
                     : "") || null,
-            input.align === "center"
+            style.align === "center"
               ? "with its words centred"
-              : input.align === "right"
+              : style.align === "right"
                 ? "with its words to the right"
-                : input.align === "justify"
+                : style.align === "justify"
                   ? "with its words justified"
                   : null,
-            value6 !== null && value7 !== null
-              ? value6 + " x " + value7 + " px"
+            width !== null && height !== null
+              ? width + " x " + height + " px"
               : null,
-          ].filter((input2?: Dynamic): Dynamic => input2 !== null);
-        return value8.length === 0
+          ].filter((part?: Dynamic): Dynamic => part !== null);
+        return descriptionParts.length === 0
           ? ""
-          : "It is drawn " + value8.join(", ") + ".";
+          : "It is drawn " + descriptionParts.join(", ") + ".";
       },
-      parent: (input?: Dynamic): Dynamic => "#" + input + ", its parent,",
+      parent: (elementId?: Dynamic): Dynamic => "#" + elementId + ", its parent,",
       someParent: "Its parent",
-      note: (input?: Dynamic): Dynamic =>
+      note: (note?: Dynamic): Dynamic =>
         "Your last reply was not applied: " +
-        input
+        note
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, MAX_PROMPT_NEIGHBOR_TEXT_CHARS)
           .replace(/\bbelow\b/g, "above"),
-      pageNote: (input?: Dynamic): Dynamic =>
+      pageNote: (note?: Dynamic): Dynamic =>
         "NOTE FROM THE PAGE: " +
-        input
+        note
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, 2e3)
           .replace(/\bbelow\b/g, "above"),
       log: "[log] what your last reply printed, in its order; nothing else of that reply was applied",
-      thenEdit: (input?: Dynamic): Dynamic =>
+      thenEdit: (note?: Dynamic): Dynamic =>
         "Now make the edit on #" +
-        input +
+        note +
         ". Reading again brings nothing new.",
       thenChange: "Now make the change.",
     };

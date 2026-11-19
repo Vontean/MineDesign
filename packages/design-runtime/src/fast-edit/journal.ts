@@ -50,34 +50,34 @@ function createElementTextSummarizer(root?: Dynamic): Dynamic {
   let text: Dynamic = root.textContent ?? "";
   if (/\p{Cf}/u.test(text) || UNTRUSTED_TEXT_PATTERN.test(text)) {
     let entries: Dynamic = new Map();
-    return (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value: Dynamic = input.textContent ?? "",
-        entry: Dynamic = entries.get(value);
+    return (element?: Dynamic, maxChars?: Dynamic): Dynamic => {
+      let rawText: Dynamic = element.textContent ?? "",
+        entry: Dynamic = entries.get(rawText);
       entry === undefined &&
-        entries.set(value, (entry = normalizeJournalText(value)));
-      return truncateJournalText(entry, options);
+        entries.set(rawText, (entry = normalizeJournalText(rawText)));
+      return truncateJournalText(entry, maxChars);
     };
   }
-  return (input?: Dynamic, options?: Dynamic): Dynamic => {
-    let text2: Dynamic = "",
-      callback: Dynamic = (input2?: Dynamic): Dynamic => {
-        for (let value of Array.from(input2.childNodes) as Dynamic) {
-          if (value.nodeType === 1 && !callback(value)) return false;
+  return (element?: Dynamic, maxChars?: Dynamic): Dynamic => {
+    let summary: Dynamic = "",
+      collectText: Dynamic = (parent?: Dynamic): Dynamic => {
+        for (let value of Array.from(parent.childNodes) as Dynamic) {
+          if (value.nodeType === 1 && !collectText(value)) return false;
           if (value.nodeType !== 3 && value.nodeType !== 4) continue;
-          let value2: Dynamic = value.textContent ?? "";
-          for (let index: Dynamic = 0; index < value2.length; index += 1024)
+          let nodeText: Dynamic = value.textContent ?? "";
+          for (let index: Dynamic = 0; index < nodeText.length; index += 1024)
             if (
-              ((text2 = normalizeJournalWhitespace(
-                text2 + value2.slice(index, index + 1024),
+              ((summary = normalizeJournalWhitespace(
+                summary + nodeText.slice(index, index + 1024),
               ).trimStart()),
-              text2.trimEnd().length > options)
+              summary.trimEnd().length > maxChars)
             )
               return false;
         }
         return true;
       };
-    callback(input);
-    return truncateJournalText(text2.trimEnd(), options);
+    collectText(element);
+    return truncateJournalText(summary.trimEnd(), maxChars);
   };
 }
 function isDecorativeElement(element?: Dynamic): Dynamic {
@@ -98,25 +98,25 @@ function parseJournalStyle(style?: Dynamic): Dynamic {
   for (let value of splitCssDeclarations_2(
     style ?? "",
   ) as Dynamic) {
-    let value2: Dynamic = value.indexOf(":");
-    if (value2 > 0) {
-      let value3: Dynamic = value.slice(0, value2).trim().toLowerCase();
-      properties.delete(value3);
-      properties.set(value3, normalizeJournalText(value.slice(value2 + 1)));
+    let colonIndex: Dynamic = value.indexOf(":");
+    if (colonIndex > 0) {
+      let property: Dynamic = value.slice(0, colonIndex).trim().toLowerCase();
+      properties.delete(property);
+      properties.set(property, normalizeJournalText(value.slice(colonIndex + 1)));
     }
   }
   return properties;
 }
 function describeStyleChanges(before?: Dynamic, after?: Dynamic): Dynamic {
   let changes: Dynamic = [];
-  for (let [value, value2] of after as Dynamic) {
+  for (let [value, newValue] of after as Dynamic) {
     let entry: Dynamic = before.get(value);
-    entry !== value2 &&
+    entry !== newValue &&
       changes.push(
         value +
           ": " +
           truncateJournalText(
-            truncateLargeDataUris(value2),
+            truncateLargeDataUris(newValue),
             100,
           ) +
           " (was " +
@@ -129,13 +129,13 @@ function describeStyleChanges(before?: Dynamic, after?: Dynamic): Dynamic {
           ")",
       );
   }
-  for (let [value, value2] of before as Dynamic)
+  for (let [value, oldValue] of before as Dynamic)
     after.has(value) ||
       changes.push(
         value +
           ": removed (was " +
           truncateJournalText(
-            truncateLargeDataUris(value2),
+            truncateLargeDataUris(oldValue),
             40,
           ) +
           ")",
@@ -147,67 +147,67 @@ function matchJournalElements(
   after?: Dynamic,
   elementKey?: Dynamic,
 ): Dynamic {
-  let describe: Dynamic = (input?: Dynamic): Dynamic =>
-      input.localName + "|" + elementKey(input),
+  let describe: Dynamic = (element?: Dynamic): Dynamic =>
+      element.localName + "|" + elementKey(element),
     beforeKeys: Dynamic = before.map(describe),
     afterKeys: Dynamic = after.map(describe),
     beforeCount: Dynamic = beforeKeys.length,
     afterCount: Dynamic = afterKeys.length,
     matches: Dynamic = [];
   if (beforeCount * afterCount <= 25e4) {
-    let value: Dynamic = Array.from(
+    let lengths: Dynamic = Array.from(
       {
         length: beforeCount + 1,
       },
       (): Dynamic => new Array(afterCount + 1).fill(0),
     );
-    for (let value2: Dynamic = beforeCount - 1; value2 >= 0; value2--)
-      for (let value3: Dynamic = afterCount - 1; value3 >= 0; value3--)
-        value[value2][value3] =
-          beforeKeys[value2] === afterKeys[value3]
-            ? value[value2 + 1][value3 + 1] + 1
-            : Math.max(value[value2 + 1][value3], value[value2][value3 + 1]);
+    for (let beforeIndex: Dynamic = beforeCount - 1; beforeIndex >= 0; beforeIndex--)
+      for (let afterIndex: Dynamic = afterCount - 1; afterIndex >= 0; afterIndex--)
+        lengths[beforeIndex][afterIndex] =
+          beforeKeys[beforeIndex] === afterKeys[afterIndex]
+            ? lengths[beforeIndex + 1][afterIndex + 1] + 1
+            : Math.max(lengths[beforeIndex + 1][afterIndex], lengths[beforeIndex][afterIndex + 1]);
     for (
-      let index3: Dynamic = 0, index4: Dynamic = 0;
-      index3 < beforeCount && index4 < afterCount;
+      let beforeIndex: Dynamic = 0, afterIndex: Dynamic = 0;
+      beforeIndex < beforeCount && afterIndex < afterCount;
 
     )
-      beforeKeys[index3] === afterKeys[index4]
-        ? (matches.push([index3, index4]), index3++, index4++)
-        : value[index3 + 1][index4] >= value[index3][index4 + 1]
-          ? index3++
-          : index4++;
+      beforeKeys[beforeIndex] === afterKeys[afterIndex]
+        ? (matches.push([beforeIndex, afterIndex]), beforeIndex++, afterIndex++)
+        : lengths[beforeIndex + 1][afterIndex] >= lengths[beforeIndex][afterIndex + 1]
+          ? beforeIndex++
+          : afterIndex++;
   }
-  let items: Dynamic = [],
-    callback: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
+  let pairedIndices: Dynamic = [],
+    matchUnpairedTags: Dynamic = (
+      beforeStart?: Dynamic,
+      beforeEnd?: Dynamic,
+      afterStart?: Dynamic,
+      afterEnd?: Dynamic,
     ): Dynamic => {
-      let value2: Dynamic = context;
-      for (let value3: Dynamic = input; value3 < options; value3++)
-        for (let value4: Dynamic = value2; value4 < value; value4++)
-          if (before[value3].localName === after[value4].localName) {
-            items.push([value3, value4]);
-            value2 = value4 + 1;
+      let nextUnpairedAfterIndex: Dynamic = afterStart;
+      for (let beforeIndex: Dynamic = beforeStart; beforeIndex < beforeEnd; beforeIndex++)
+        for (let afterIndex: Dynamic = nextUnpairedAfterIndex; afterIndex < afterEnd; afterIndex++)
+          if (before[beforeIndex].localName === after[afterIndex].localName) {
+            pairedIndices.push([beforeIndex, afterIndex]);
+            nextUnpairedAfterIndex = afterIndex + 1;
             break;
           }
     },
-    index: Dynamic = 0,
-    index2: Dynamic = 0;
-  for (let [value, value2] of matches as Dynamic) {
-    callback(index, value, index2, value2);
-    items.push([value, value2]);
-    index = value + 1;
-    index2 = value2 + 1;
+    nextBeforeIndex: Dynamic = 0,
+    nextAfterIndex: Dynamic = 0;
+  for (let [beforeIndex, afterIndex] of matches as Dynamic) {
+    matchUnpairedTags(nextBeforeIndex, beforeIndex, nextAfterIndex, afterIndex);
+    pairedIndices.push([beforeIndex, afterIndex]);
+    nextBeforeIndex = beforeIndex + 1;
+    nextAfterIndex = afterIndex + 1;
   }
-  callback(index, beforeCount, index2, afterCount);
-  return items;
+  matchUnpairedTags(nextBeforeIndex, beforeCount, nextAfterIndex, afterCount);
+  return pairedIndices;
 }
 function detectMovedJournalElements(
   indices?: Dynamic,
-  options?: Dynamic,
+  priorityFor?: Dynamic,
 ): Dynamic {
   let subsequenceLength: Dynamic =
       longestIncreasingSubsequenceLength(indices),
@@ -220,36 +220,36 @@ function detectMovedJournalElements(
       moved: moved,
     };
   let items: Dynamic = [...indices];
-  for (let value3 of [...indices].sort(
-    (input?: Dynamic, options2?: Dynamic): Dynamic =>
-      options(input) - options(options2),
+  for (let candidate of [...indices].sort(
+    (leftIndex?: Dynamic, rightIndex?: Dynamic): Dynamic =>
+      priorityFor(leftIndex) - priorityFor(rightIndex),
   ) as Dynamic) {
     if (items.length === subsequenceLength) break;
-    let value4: Dynamic = items.filter(
-      (input?: Dynamic): Dynamic => input !== value3,
+    let remainingIndices: Dynamic = items.filter(
+      (candidateIndex?: Dynamic): Dynamic => candidateIndex !== candidate,
     );
-    longestIncreasingSubsequenceLength(value4) === subsequenceLength &&
-      ((items = value4), moved.add(value3));
+    longestIncreasingSubsequenceLength(remainingIndices) === subsequenceLength &&
+      ((items = remainingIndices), moved.add(candidate));
   }
   let [value]: Dynamic = moved,
-    value2: Dynamic =
+    alternateMovedIndex: Dynamic =
       moved.size !== 1
         ? undefined
         : indices.find(
-            (input?: Dynamic): Dynamic =>
-              input !== value &&
-              options(input) === options(value) &&
+            (candidate?: Dynamic): Dynamic =>
+              candidate !== value &&
+              priorityFor(candidate) === priorityFor(value) &&
               longestIncreasingSubsequenceLength(
                 indices.filter(
-                  (input2?: Dynamic): Dynamic => input2 !== input,
+                  (candidateIndex?: Dynamic): Dynamic => candidateIndex !== candidate,
                 ),
               ) === subsequenceLength,
           );
   return {
     moved: moved,
-    ...(value2 !== undefined
+    ...(alternateMovedIndex !== undefined
       ? {
-          other: value2,
+          other: alternateMovedIndex,
         }
       : {}),
   };
@@ -257,7 +257,7 @@ function detectMovedJournalElements(
 function describeArtboardHtmlChanges(
   beforeHtml?: Dynamic,
   afterHtml?: Dynamic,
-  options?: Dynamic,
+  generatedIdPrefix?: Dynamic,
   limits?: Dynamic,
 ): Dynamic {
   if (beforeHtml === afterHtml) return [];
@@ -265,291 +265,291 @@ function describeArtboardHtmlChanges(
     afterRoot: Dynamic = parseJournalRoot(afterHtml);
   if (beforeRoot === null || afterRoot === null)
     return ["the artboard changed"];
-  let value: Dynamic =
-      options !== undefined && /^[a-z]{1,8}$/.test(options)
-        ? new RegExp("^" + options + "\\d{1,6}$")
+  let generatedIdPattern: Dynamic =
+      generatedIdPrefix !== undefined && /^[a-z]{1,8}$/.test(generatedIdPrefix)
+        ? new RegExp("^" + generatedIdPrefix + "\\d{1,6}$")
         : null,
-    callback: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    buildStableIdMap: Dynamic = (
+      root?: Dynamic,
+      taggedHtml?: Dynamic,
+      idPattern?: Dynamic,
     ): Dynamic => {
-      let value9: Dynamic = parseJournalRoot(options2),
-        value10: Dynamic = Array.from(input.querySelectorAll("*")),
-        value11: Dynamic =
-          value9 === null ? [] : Array.from(value9.querySelectorAll("*"));
-      return value9 === null ||
-        value10.length !== value11.length ||
-        value10.some(
-          (input2?: Dynamic, options3?: Dynamic): Dynamic =>
-            input2.localName !== value11[options3].localName,
+      let taggedRoot: Dynamic = parseJournalRoot(taggedHtml),
+        elements: Dynamic = Array.from(root.querySelectorAll("*")),
+        taggedElements: Dynamic =
+          taggedRoot === null ? [] : Array.from(taggedRoot.querySelectorAll("*"));
+      return taggedRoot === null ||
+        elements.length !== taggedElements.length ||
+        elements.some(
+          (element?: Dynamic, elementIndex?: Dynamic): Dynamic =>
+            element.localName !== taggedElements[elementIndex].localName,
         ) ||
-        normalizeJournalWhitespace(input.textContent ?? "") !==
-          normalizeJournalWhitespace(value9.textContent ?? "")
+        normalizeJournalWhitespace(root.textContent ?? "") !==
+          normalizeJournalWhitespace(taggedRoot.textContent ?? "")
         ? null
         : new Map(
-            value10.flatMap(
-              (input2?: Dynamic, options3?: Dynamic): Dynamic => {
-                let value12: Dynamic =
-                  value11[options3].getAttribute("id") ?? "";
-                return context.test(value12) ? [[input2, value12]] : [];
+            elements.flatMap(
+              (element?: Dynamic, elementIndex?: Dynamic): Dynamic => {
+                let taggedId: Dynamic =
+                  taggedElements[elementIndex].getAttribute("id") ?? "";
+                return idPattern.test(taggedId) ? [[element, taggedId]] : [];
               },
             ),
           );
     },
-    value2: Dynamic =
+    stableIdPattern: Dynamic =
       limits !== undefined && /^[a-z]{1,8}$/.test(limits.prefix)
         ? new RegExp("^" + limits.prefix + "\\d{1,6}$")
         : null,
-    value3: Dynamic =
-      value2 === null ? null : callback(beforeRoot, limits.before, value2),
-    value4: Dynamic =
-      value2 === null ? null : callback(afterRoot, limits.after, value2),
+    beforeIds: Dynamic =
+      stableIdPattern === null ? null : buildStableIdMap(beforeRoot, limits.before, stableIdPattern),
+    afterIds: Dynamic =
+      stableIdPattern === null ? null : buildStableIdMap(afterRoot, limits.after, stableIdPattern),
     entries: Dynamic = new Map(
       (limits?.acted ?? [])
         .map(
-          (input?: Dynamic, options2?: Dynamic): Dynamic => [input, options2],
+          (action?: Dynamic, actionIndex?: Dynamic): Dynamic => [action, actionIndex],
         )
         .reverse(),
     ),
-    value5: Dynamic = value3 !== null && value4 !== null,
-    entries2: Dynamic = new Map(
-      value5
+    hasStableIds: Dynamic = beforeIds !== null && afterIds !== null,
+    beforeElementsById: Dynamic = new Map(
+      hasStableIds
         ? Array.from(
-            value3,
-            ([input, input2]: Dynamic): Dynamic => [input2, input],
+            beforeIds,
+            ([element, stableId]: Dynamic): Dynamic => [stableId, element],
           )
         : [],
     ),
-    entries3: Dynamic = new Map(
-      value5
+    afterElementsById: Dynamic = new Map(
+      hasStableIds
         ? Array.from(
-            value4,
-            ([input, input2]: Dynamic): Dynamic => [input2, input],
+            afterIds,
+            ([element, stableId]: Dynamic): Dynamic => [stableId, element],
           )
         : [],
     ),
     items: Dynamic = [],
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
+    appendChangeLine: Dynamic = (formatLine?: Dynamic): Dynamic => {
       items.push(
         items.length < MAX_JOURNAL_CHANGE_LINES
-          ? truncateJournalText(input(), MAX_JOURNAL_ATTRIBUTE_CHARS)
+          ? truncateJournalText(formatLine(), MAX_JOURNAL_ATTRIBUTE_CHARS)
           : "",
       );
     },
-    entries4: Dynamic = new Map(),
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries4.get(input);
+    immediateTextCache: Dynamic = new Map(),
+    getImmediateText: Dynamic = (element?: Dynamic): Dynamic => {
+      let entry: Dynamic = immediateTextCache.get(element);
       entry === undefined &&
-        entries4.set(input, (entry = immediateElementText(input)));
+        immediateTextCache.set(element, (entry = immediateElementText(element)));
       return entry;
     },
-    value6: Dynamic = createElementTextSummarizer(beforeRoot),
-    value7: Dynamic = createElementTextSummarizer(afterRoot),
-    callback4: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+    summarizeBeforeText: Dynamic = createElementTextSummarizer(beforeRoot),
+    summarizeAfterText: Dynamic = createElementTextSummarizer(afterRoot),
+    describeElement: Dynamic = (
+      summarizeText?: Dynamic,
+      element?: Dynamic,
+      qualifier?: Dynamic,
     ): Dynamic =>
       describeJournalElement(
-        options2.localName,
-        input(options2, MAX_JOURNAL_ELEMENT_LABEL_CHARS),
-        context,
+        element.localName,
+        summarizeText(element, MAX_JOURNAL_ELEMENT_LABEL_CHARS),
+        qualifier,
       ) +
-      (input === value7 &&
-      value7(options2, 1) === "" &&
-      options2 !== afterRoot
-        ? " @" + relativeElementIndexPath(options2, afterRoot)
+      (summarizeText === summarizeAfterText &&
+      summarizeAfterText(element, 1) === "" &&
+      element !== afterRoot
+        ? " @" + relativeElementIndexPath(element, afterRoot)
         : ""),
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      let length: Dynamic = input.querySelectorAll("*").length;
-      return isDecorativeElement(input)
+    describeAddedElement: Dynamic = (addedElement?: Dynamic): Dynamic => {
+      let length: Dynamic = addedElement.querySelectorAll("*").length;
+      return isDecorativeElement(addedElement)
         ? "drawing @" +
-            relativeElementIndexPath(input, afterRoot) +
+            relativeElementIndexPath(addedElement, afterRoot) +
             " (" +
             String(length) +
             (length === 1 ? " part)" : " parts)")
-        : callback4(value7, input, "");
+        : describeElement(summarizeAfterText, addedElement, "");
     },
-    callback6: Dynamic = (
-      element?: Dynamic,
-      element2?: Dynamic,
-      context?: Dynamic,
+    compareElements: Dynamic = (
+      beforeElement?: Dynamic,
+      afterElement?: Dynamic,
+      isArtboardRoot?: Dynamic,
     ): Dynamic => {
-      let value9: Dynamic = callback3(element),
-        value10: Dynamic = callback3(element2),
-        value11: Dynamic = equalElementAttributes(element, element2)
+      let beforeText: Dynamic = getImmediateText(beforeElement),
+        afterText: Dynamic = getImmediateText(afterElement),
+        elementChanges: Dynamic = equalElementAttributes(beforeElement, afterElement)
           ? []
           : [
               ...describeStyleChanges(
-                parseJournalStyle(element.getAttribute("style")),
-                parseJournalStyle(element2.getAttribute("style")),
+                parseJournalStyle(beforeElement.getAttribute("style")),
+                parseJournalStyle(afterElement.getAttribute("style")),
               ),
               ...describeStyleChanges(
-                journalElementAttributes(element, value),
-                journalElementAttributes(element2, value),
+                journalElementAttributes(beforeElement, generatedIdPattern),
+                journalElementAttributes(afterElement, generatedIdPattern),
               ),
             ].map(
-              (input?: Dynamic): Dynamic =>
-                truncateJournalText(input, MAX_JOURNAL_ATTRIBUTE_CHARS),
+              (change?: Dynamic): Dynamic =>
+                truncateJournalText(change, MAX_JOURNAL_ATTRIBUTE_CHARS),
             );
-      value9 !== value10 &&
-        value11.push(
+      beforeText !== afterText &&
+        elementChanges.push(
           truncateJournalText(
             "text: " +
-              (value10 === ""
+              (afterText === ""
                 ? "removed"
                 : '"' +
                   truncateJournalText(
-                    value10,
+                    afterText,
                     MAX_JOURNAL_ELEMENT_LABEL_CHARS,
                   ) +
                   '"') +
               ' (was "' +
-              truncateJournalText(value9, MAX_JOURNAL_DIFF_CHARS) +
+              truncateJournalText(beforeText, MAX_JOURNAL_DIFF_CHARS) +
               '")',
             MAX_JOURNAL_LINE_CHARS,
           ),
         );
-      value11.length > 0 &&
-        (callback2(
+      elementChanges.length > 0 &&
+        (appendChangeLine(
           (): Dynamic =>
-            context ? "the artboard:" : callback4(value7, element2) + ":",
+            isArtboardRoot ? "the artboard:" : describeElement(summarizeAfterText, afterElement) + ":",
         ),
         items.push(
-          ...value11.map((input?: Dynamic): Dynamic => "  " + input),
+          ...elementChanges.map((change?: Dynamic): Dynamic => "  " + change),
         ));
-      let value12: Dynamic = Array.from(element.children),
-        value13: Dynamic = Array.from(element2.children);
-      if (value12.length === 0 && value13.length === 0) return;
-      let value14: Dynamic =
-          value5 &&
-          value12.every((input?: Dynamic): Dynamic => value3.has(input)) &&
-          value13.every((input?: Dynamic): Dynamic => value4.has(input)),
-        entries5: Dynamic = new Map(
-          value14
-            ? value13.map(
-                (input?: Dynamic, options2?: Dynamic): Dynamic => [
-                  value4.get(input),
-                  options2,
+      let beforeChildren: Dynamic = Array.from(beforeElement.children),
+        afterChildren: Dynamic = Array.from(afterElement.children);
+      if (beforeChildren.length === 0 && afterChildren.length === 0) return;
+      let hasStableChildIds: Dynamic =
+          hasStableIds &&
+          beforeChildren.every((child?: Dynamic): Dynamic => beforeIds.has(child)) &&
+          afterChildren.every((child?: Dynamic): Dynamic => afterIds.has(child)),
+        afterIndexById: Dynamic = new Map(
+          hasStableChildIds
+            ? afterChildren.map(
+                (child?: Dynamic, childIndex?: Dynamic): Dynamic => [
+                  afterIds.get(child),
+                  childIndex,
                 ],
               )
             : [],
         ),
-        value15: Dynamic = value14
-          ? value12.flatMap(
-              (input?: Dynamic, options2?: Dynamic): Dynamic => {
-                let entry: Dynamic = entries5.get(value3.get(input));
-                return entry === undefined ? [] : [[options2, entry]];
+        childPairs: Dynamic = hasStableChildIds
+          ? beforeChildren.flatMap(
+              (child?: Dynamic, beforeIndex?: Dynamic): Dynamic => {
+                let entry: Dynamic = afterIndexById.get(beforeIds.get(child));
+                return entry === undefined ? [] : [[beforeIndex, entry]];
               },
             )
-          : matchJournalElements(value12, value13, callback3).filter(
-              ([input, input2]: Dynamic): Dynamic => {
-                let value18: Dynamic = value3?.get(value12[input]),
-                  value19: Dynamic = value4?.get(value13[input2]);
+          : matchJournalElements(beforeChildren, afterChildren, getImmediateText).filter(
+              ([beforeIndex, afterIndex]: Dynamic): Dynamic => {
+                let beforeId: Dynamic = beforeIds?.get(beforeChildren[beforeIndex]),
+                  afterId: Dynamic = afterIds?.get(afterChildren[afterIndex]);
                 return (
-                  value18 === undefined ||
-                  value19 === undefined ||
-                  value18 === value19
+                  beforeId === undefined ||
+                  afterId === undefined ||
+                  beforeId === afterId
                 );
               },
             );
-      if (!value14) {
-        let values2: Dynamic = new Set(
-            value15.map((input?: Dynamic): Dynamic => input[0]),
+      if (!hasStableChildIds) {
+        let pairedBeforeIndices: Dynamic = new Set(
+            childPairs.map((pair?: Dynamic): Dynamic => pair[0]),
           ),
-          values3: Dynamic = new Set(
-            value15.map((input?: Dynamic): Dynamic => input[1]),
+          pairedAfterIndices: Dynamic = new Set(
+            childPairs.map((pair?: Dynamic): Dynamic => pair[1]),
           ),
-          entries7: Dynamic = new Map();
+          unmatchedBeforeByHtml: Dynamic = new Map();
         for (
-          let value18: Dynamic = value12.length - 1;
-          value18 >= 0;
-          value18--
+          let beforeIndex: Dynamic = beforeChildren.length - 1;
+          beforeIndex >= 0;
+          beforeIndex--
         )
-          if (!values2.has(value18)) {
-            let outerHTML: Dynamic = value12[value18].outerHTML,
-              entry: Dynamic = entries7.get(outerHTML);
+          if (!pairedBeforeIndices.has(beforeIndex)) {
+            let outerHTML: Dynamic = beforeChildren[beforeIndex].outerHTML,
+              entry: Dynamic = unmatchedBeforeByHtml.get(outerHTML);
             entry === undefined
-              ? entries7.set(outerHTML, [value18])
-              : entry.push(value18);
+              ? unmatchedBeforeByHtml.set(outerHTML, [beforeIndex])
+              : entry.push(beforeIndex);
           }
-        entries7.size > 0 &&
-          value13.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
-            let value18: Dynamic = values3.has(options2)
+        unmatchedBeforeByHtml.size > 0 &&
+          afterChildren.forEach((child?: Dynamic, afterIndex?: Dynamic): Dynamic => {
+            let beforeIndex: Dynamic = pairedAfterIndices.has(afterIndex)
               ? undefined
-              : entries7.get(input.outerHTML)?.pop();
-            value18 !== undefined && value15.push([value18, options2]);
+              : unmatchedBeforeByHtml.get(child.outerHTML)?.pop();
+            beforeIndex !== undefined && childPairs.push([beforeIndex, afterIndex]);
           });
-        value15.sort(
-          (input?: Dynamic, options2?: Dynamic): Dynamic =>
-            input[0] - options2[0],
+        childPairs.sort(
+          (leftPair?: Dynamic, rightPair?: Dynamic): Dynamic =>
+            leftPair[0] - rightPair[0],
         );
       }
-      let callback7: Dynamic = (input?: Dynamic): Dynamic =>
-          (value14 ? entries.get(value4.get(value13[input])) : undefined) ??
+      let getMovePriority: Dynamic = (afterIndex?: Dynamic): Dynamic =>
+          (hasStableChildIds ? entries.get(afterIds.get(afterChildren[afterIndex])) : undefined) ??
           1 / 0,
-        { moved: value16, other: value17 }: Dynamic =
+        { moved: movedChildIndices, other: alternateMovedIndex }: Dynamic =
           detectMovedJournalElements(
-            value15.map((input?: Dynamic): Dynamic => input[1]),
-            callback7,
+            childPairs.map((pair?: Dynamic): Dynamic => pair[1]),
+            getMovePriority,
           ),
         values: Dynamic = new Set(
-          value15.map((input?: Dynamic): Dynamic => input[0]),
+          childPairs.map((pair?: Dynamic): Dynamic => pair[0]),
         ),
-        entries6: Dynamic = new Map(
-          value15.map((input?: Dynamic): Dynamic => [input[1], input[0]]),
+        beforeIndexByAfterIndex: Dynamic = new Map(
+          childPairs.map((pair?: Dynamic): Dynamic => [pair[1], pair[0]]),
         ),
-        callback8: Dynamic = (input?: Dynamic): Dynamic => {
-          let value18: Dynamic = value13[input - 1],
-            value19: Dynamic = value13[input + 1];
-          return value18 !== undefined
-            ? " after " + callback4(value7, value18)
-            : value19 !== undefined
-              ? " before " + callback4(value7, value19)
-              : context
+        describePosition: Dynamic = (afterIndex?: Dynamic): Dynamic => {
+          let previousChild: Dynamic = afterChildren[afterIndex - 1],
+            nextChild: Dynamic = afterChildren[afterIndex + 1];
+          return previousChild !== undefined
+            ? " after " + describeElement(summarizeAfterText, previousChild)
+            : nextChild !== undefined
+              ? " before " + describeElement(summarizeAfterText, nextChild)
+              : isArtboardRoot
                 ? " in the artboard"
-                : " in " + callback4(value7, element2);
+                : " in " + describeElement(summarizeAfterText, afterElement);
         };
-      value12.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
-        !values.has(options2) &&
-          !(value5 && entries3.has(value3.get(input) ?? "")) &&
-          callback2((): Dynamic => "removed " + callback4(value6, input));
+      beforeChildren.forEach((child?: Dynamic, beforeIndex?: Dynamic): Dynamic => {
+        !values.has(beforeIndex) &&
+          !(hasStableIds && afterElementsById.has(beforeIds.get(child) ?? "")) &&
+          appendChangeLine((): Dynamic => "removed " + describeElement(summarizeBeforeText, child));
       });
-      value13.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
-        let entry: Dynamic = entries6.get(options2),
-          value18: Dynamic =
+      afterChildren.forEach((child?: Dynamic, afterIndex?: Dynamic): Dynamic => {
+        let entry: Dynamic = beforeIndexByAfterIndex.get(afterIndex),
+          previousChild: Dynamic =
             entry !== undefined
-              ? value12[entry]
-              : value5
-                ? entries2.get(value4.get(input) ?? "")
+              ? beforeChildren[entry]
+              : hasStableIds
+                ? beforeElementsById.get(afterIds.get(child) ?? "")
                 : undefined;
-        if (value18 === undefined)
-          return callback2(
-            (): Dynamic => "new " + callback5(input) + callback8(options2),
+        if (previousChild === undefined)
+          return appendChangeLine(
+            (): Dynamic => "new " + describeAddedElement(child) + describePosition(afterIndex),
           );
-        (entry === undefined || value16.has(options2)) &&
-          callback2(
+        (entry === undefined || movedChildIndices.has(afterIndex)) &&
+          appendChangeLine(
             (): Dynamic =>
-              entry !== undefined && value17 !== undefined
-                ? callback4(value7, input) +
+              entry !== undefined && alternateMovedIndex !== undefined
+                ? describeElement(summarizeAfterText, child) +
                   " and " +
-                  callback4(value7, value13[value17]) +
+                  describeElement(summarizeAfterText, afterChildren[alternateMovedIndex]) +
                   " changed places"
-                : "moved " + callback4(value7, input) + callback8(options2),
+                : "moved " + describeElement(summarizeAfterText, child) + describePosition(afterIndex),
           );
-        callback6(value18, input, false);
+        compareElements(previousChild, child, false);
       });
     };
-  callback6(beforeRoot, afterRoot, true);
+  compareElements(beforeRoot, afterRoot, true);
   if (items.length === 0) return ["the artboard changed"];
-  let value8: Dynamic = items.slice(0, MAX_JOURNAL_CHANGE_LINES);
+  let visibleChanges: Dynamic = items.slice(0, MAX_JOURNAL_CHANGE_LINES);
   return items.length > MAX_JOURNAL_CHANGE_LINES
     ? [
-        ...value8,
+        ...visibleChanges,
         "and " + String(items.length - MAX_JOURNAL_CHANGE_LINES) + " more",
       ]
-    : value8;
+    : visibleChanges;
 }
 function classifyJournalChangeSource(
   before?: Dynamic,
@@ -571,14 +571,14 @@ function normalizeJournalChanges(changes?: Dynamic): Dynamic {
   for (let value of changes
     .slice(0, MAX_JOURNAL_CHANGE_LINES + 1)
     .map(
-      (input?: Dynamic): Dynamic =>
-        (input.startsWith("  ") ? "  " : "") +
+      (change?: Dynamic): Dynamic =>
+        (change.startsWith("  ") ? "  " : "") +
         truncateJournalText(
-          normalizeJournalText(input),
+          normalizeJournalText(change),
           MAX_JOURNAL_LINE_CHARS,
         ),
     )
-    .filter((input?: Dynamic): Dynamic => input.trim() !== "") as Dynamic) {
+    .filter((change?: Dynamic): Dynamic => change.trim() !== "") as Dynamic) {
     if ((remainingChars -= journalUtf8Size(value)) < 0) {
       result.push("and more");
       break;
@@ -597,12 +597,12 @@ function appendTurnJournalEntry(
       ? []
       : (entry.also ?? [])
           .map(
-            (input?: Dynamic): Dynamic => ({
-              ...input,
-              changes: normalizeJournalChanges(input.changes),
+            (board?: Dynamic): Dynamic => ({
+              ...board,
+              changes: normalizeJournalChanges(board.changes),
             }),
           )
-          .filter((input?: Dynamic): Dynamic => input.changes.length > 0);
+          .filter((board?: Dynamic): Dynamic => board.changes.length > 0);
   journal.push({
     ...(entry.shape !== undefined
       ? {
@@ -627,10 +627,10 @@ function appendExternalJournalEntry(
   now: Dynamic = new Date(),
 ): Dynamic {
   let otherBoards: Dynamic = (entry.also ?? []).map(
-    (input?: Dynamic): Dynamic => ({
-      ...input,
+    (board?: Dynamic): Dynamic => ({
+      ...board,
       changes:
-        entry.who === "undone" ? [] : normalizeJournalChanges(input.changes),
+        entry.who === "undone" ? [] : normalizeJournalChanges(board.changes),
     }),
   );
   journal.push({
@@ -661,16 +661,16 @@ function summarizeArtboardText(
   html?: Dynamic,
   maxWords: Dynamic = 40,
 ): Dynamic {
-  let walk: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value2 of Array.from(input.childNodes) as Dynamic) {
-        let value3: Dynamic =
-          value2.nodeType === 3
-            ? normalizeJournalText(value2.textContent ?? "")
-            : value2.nodeType === 1 &&
-                !/^(?:style|script)$/.test(value2.localName)
-              ? walk(value2)
+  let walk: Dynamic = (parent?: Dynamic): Dynamic => {
+      for (let child of Array.from(parent.childNodes) as Dynamic) {
+        let text: Dynamic =
+          child.nodeType === 3
+            ? normalizeJournalText(child.textContent ?? "")
+            : child.nodeType === 1 &&
+                !/^(?:style|script)$/.test(child.localName)
+              ? walk(child)
               : "";
-        if (value3 !== "") return value3;
+        if (text !== "") return text;
       }
       return "";
     },
@@ -680,16 +680,16 @@ function summarizeArtboardText(
 function collectJournalChanges(
   session?: Dynamic,
   boards?: Dynamic,
-  options?: Dynamic,
+  artboardExists?: Dynamic,
 ): Dynamic {
   let changes: Dynamic = new Map();
-  if (options !== undefined) {
+  if (artboardExists !== undefined) {
     let values: Dynamic = new Set(
         session.journal.flatMap(
           (source?: Dynamic): Dynamic =>
             source.kind === "between" && source.who === "undone"
               ? allJournalArtboards(source).map(
-                  (input?: Dynamic): Dynamic => input.file,
+                  (board?: Dynamic): Dynamic => board.file,
                 )
               : [],
         ),
@@ -698,55 +698,55 @@ function collectJournalChanges(
         .filter((source?: Dynamic): Dynamic => source.kind === "comment")
         .flatMap(allJournalArtboards)
         .filter(
-          (input?: Dynamic): Dynamic =>
-            input.changes.length === 1 &&
-            !values.has(input.file) &&
-            (input.changes[0] === REMOVED_ARTBOARD_JOURNAL_LABEL
-              ? options(input.file)
-              : input.changes[0] === NEW_ARTBOARD_JOURNAL_LABEL &&
-                !options(input.file)),
+          (board?: Dynamic): Dynamic =>
+            board.changes.length === 1 &&
+            !values.has(board.file) &&
+            (board.changes[0] === REMOVED_ARTBOARD_JOURNAL_LABEL
+              ? artboardExists(board.file)
+              : board.changes[0] === NEW_ARTBOARD_JOURNAL_LABEL &&
+                !artboardExists(board.file)),
         );
     value.length > 0 &&
       changes.set("undonefalse", {
         who: "undone",
         opened: false,
         parts: value.map(
-          (input?: Dynamic): Dynamic => ({
-            file: input.file,
+          (board?: Dynamic): Dynamic => ({
+            file: board.file,
             changes: [],
           }),
         ),
       });
   }
-  for (let { file: value, now: value2, other: value3 } of boards as Dynamic) {
-    let entry: Dynamic = session.seen.get(value),
-      value4: Dynamic = classifyJournalChangeSource(
+  for (let { file: artboardPath, now: currentHtml, other: isOther } of boards as Dynamic) {
+    let entry: Dynamic = session.seen.get(artboardPath),
+      changeSource: Dynamic = classifyJournalChangeSource(
         entry,
-        session.beforeLast.get(value),
-        value2,
-        value3,
+        session.beforeLast.get(artboardPath),
+        currentHtml,
+        isOther,
       );
-    if (value4 !== "nothing") {
-      let value5: Dynamic = value4 !== "undone" && session.opened.has(value),
-        value6: Dynamic = value4 + String(value5);
-      changes.has(value6) ||
-        changes.set(value6, {
-          who: value4,
-          opened: value5,
+    if (changeSource !== "nothing") {
+      let wasOpened: Dynamic = changeSource !== "undone" && session.opened.has(artboardPath),
+        changeGroupKey: Dynamic = changeSource + String(wasOpened);
+      changes.has(changeGroupKey) ||
+        changes.set(changeGroupKey, {
+          who: changeSource,
+          opened: wasOpened,
           parts: [],
         });
-      changes.get(value6).parts.push({
-        file: value,
+      changes.get(changeGroupKey).parts.push({
+        file: artboardPath,
         changes:
-          value4 === "undone"
+          changeSource === "undone"
             ? []
-            : describeArtboardHtmlChanges(entry, value2),
-        shape: hashHtmlStructure(value2),
+            : describeArtboardHtmlChanges(entry, currentHtml),
+        shape: hashHtmlStructure(currentHtml),
       });
-      session.beforeLast.delete(value);
+      session.beforeLast.delete(artboardPath);
     }
-    session.opened.delete(value);
-    session.seen.set(value, value2);
+    session.opened.delete(artboardPath);
+    session.seen.set(artboardPath, currentHtml);
   }
   for (let value of changes.values() as Dynamic)
     appendExternalJournalEntry(
@@ -780,38 +780,38 @@ function finishFastEditJournalTurn(
       session.threads.delete(session.threads.values().next().value));
   let value: Dynamic =
       status === "done" || status === "left" || status === "left_changed",
-    [value2, ...value3]: Dynamic = [turn, ...(turn.also ?? [])].map(
-      (input?: Dynamic): Dynamic => {
-        let value4: Dynamic =
-          value && input.before !== undefined && input.after !== undefined;
-        value4
-          ? (session.beforeLast.set(input.file, input.before),
-            session.seen.set(input.file, input.after))
-          : value && input.how === "new" && input.after !== undefined
-            ? session.seen.set(input.file, input.after)
+    [mainBoard, ...otherBoards]: Dynamic = [turn, ...(turn.also ?? [])].map(
+      (board?: Dynamic): Dynamic => {
+        let hasComparableHtml: Dynamic =
+          value && board.before !== undefined && board.after !== undefined;
+        hasComparableHtml
+          ? (session.beforeLast.set(board.file, board.before),
+            session.seen.set(board.file, board.after))
+          : value && board.how === "new" && board.after !== undefined
+            ? session.seen.set(board.file, board.after)
             : (value || status === "unconfirmed") &&
-              (session.seen.delete(input.file),
-              session.beforeLast.delete(input.file));
+              (session.seen.delete(board.file),
+              session.beforeLast.delete(board.file));
         return {
-          file: input.file,
+          file: board.file,
           changes:
-            input.how !== undefined
+            board.how !== undefined
               ? [
-                  input.how === "new"
+                  board.how === "new"
                     ? NEW_ARTBOARD_JOURNAL_LABEL
                     : REMOVED_ARTBOARD_JOURNAL_LABEL,
                 ]
-              : value4
+              : hasComparableHtml
                 ? describeArtboardHtmlChanges(
-                    input.before,
-                    input.after,
+                    board.before,
+                    board.after,
                     undefined,
-                    input.ids,
+                    board.ids,
                   )
                 : [],
-          ...(input.after !== undefined
+          ...(board.after !== undefined
             ? {
-                shape: hashHtmlStructure(input.after),
+                shape: hashHtmlStructure(board.after),
               }
             : {}),
         };
@@ -821,9 +821,9 @@ function finishFastEditJournalTurn(
   appendTurnJournalEntry(
     session.journal,
     {
-      ...value2,
+      ...mainBoard,
       end: status,
-      also: value3,
+      also: otherBoards,
     },
     session.clock(),
   );
@@ -831,221 +831,221 @@ function finishFastEditJournalTurn(
 function recordFastEditReadResult(
   session?: Dynamic,
   readResult?: Dynamic,
-  options?: Dynamic,
+  readArtboardId?: Dynamic,
 ): Dynamic {
   let root: Dynamic = parseJournalRoot(readResult.html),
     handlePattern: Dynamic = /^[a-z]{1,8}$/.test(readResult.prefix)
       ? new RegExp("^" + readResult.prefix + "\\d{1,6}$")
       : null,
     value: Dynamic = null,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
+    callback: Dynamic = (elementDescription?: Dynamic): Dynamic => {
       if (root === null || handlePattern === null) return "";
       if (value === null) {
         value = new Map();
-        let value5: Dynamic = createElementTextSummarizer(root);
-        for (let value6 of Array.from(
+        let summarizeText: Dynamic = createElementTextSummarizer(root);
+        for (let element of Array.from(
           root.querySelectorAll("*"),
         ) as Dynamic) {
-          if (value5(value6, 1) === "") continue;
-          let value7: Dynamic = describeJournalElement(
-            value6.localName,
-            value5(value6, MAX_JOURNAL_ELEMENT_LABEL_CHARS),
+          if (summarizeText(element, 1) === "") continue;
+          let description: Dynamic = describeJournalElement(
+            element.localName,
+            summarizeText(element, MAX_JOURNAL_ELEMENT_LABEL_CHARS),
           );
           value.set(
-            value7,
-            value.has(value7) ? "" : (value6.getAttribute("id") ?? ""),
+            description,
+            value.has(description) ? "" : (element.getAttribute("id") ?? ""),
           );
         }
       }
-      let value4: Dynamic = value.get(input) ?? "";
-      return handlePattern.test(value4) ? "#" + value4 : "";
+      let elementId: Dynamic = value.get(elementDescription) ?? "";
+      return handlePattern.test(elementId) ? "#" + elementId : "";
     },
-    value2: Dynamic = null,
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value4: Dynamic = options(input);
+    rootStructureHash: Dynamic = null,
+    formatArtboardHandle: Dynamic = (filePath?: Dynamic): Dynamic => {
+      let artboardId: Dynamic = readArtboardId(filePath);
       return (
         "#" +
-        (FAST_EDIT_ARTBOARD_ID_PATTERN.test(value4)
-          ? value4
+        (FAST_EDIT_ARTBOARD_ID_PATTERN.test(artboardId)
+          ? artboardId
           : "artboard")
       );
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let value4: Dynamic = input.map(callback2),
-        value5: Dynamic = MAX_LISTED_HISTORY_TURN_IDS;
+    summarizeArtboardHandles: Dynamic = (filePaths?: Dynamic): Dynamic => {
+      let handles: Dynamic = filePaths.map(formatArtboardHandle),
+        maxListedHandles: Dynamic = MAX_LISTED_HISTORY_TURN_IDS;
       for (
         ;
-        value5 > 1 &&
-        summarizeTurnIds(value4, value5).length >
+        maxListedHandles > 1 &&
+        summarizeTurnIds(handles, maxListedHandles).length >
           MAX_JOURNAL_ATTRIBUTE_CHARS;
 
       )
-        value5 -= 1;
-      return summarizeTurnIds(value4, value5);
+        maxListedHandles -= 1;
+      return summarizeTurnIds(handles, maxListedHandles);
     },
     values: Dynamic = new Set(),
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      input.changes.length === 1 &&
-      (input.changes[0] === NEW_ARTBOARD_JOURNAL_LABEL ||
-        input.changes[0] === REMOVED_ARTBOARD_JOURNAL_LABEL),
-    values2: Dynamic = new Set();
-  session.forEach((source?: Dynamic, options2?: Dynamic): Dynamic => {
+    isArtboardCreationOrRemoval: Dynamic = (board?: Dynamic): Dynamic =>
+      board.changes.length === 1 &&
+      (board.changes[0] === NEW_ARTBOARD_JOURNAL_LABEL ||
+        board.changes[0] === REMOVED_ARTBOARD_JOURNAL_LABEL),
+    revertedCreationPaths: Dynamic = new Set();
+  session.forEach((source?: Dynamic, sourceIndex?: Dynamic): Dynamic => {
     if (!(source.kind !== "between" || source.who !== "undone"))
-      for (let value4 of allJournalArtboards(source) as Dynamic) {
-        let value5: Dynamic = session
-          .slice(0, options2)
+      for (let board of allJournalArtboards(source) as Dynamic) {
+        let earlierEntry: Dynamic = session
+          .slice(0, sourceIndex)
           .reverse()
           .find(
-            (source2?: Dynamic): Dynamic =>
-              allJournalArtboards(source2).some(
-                (input?: Dynamic): Dynamic =>
-                  input.file === value4.file &&
-                  (source2.kind === "between" || input.changes.length > 0),
+            (entry?: Dynamic): Dynamic =>
+              allJournalArtboards(entry).some(
+                (earlierBoard?: Dynamic): Dynamic =>
+                  earlierBoard.file === board.file &&
+                  (entry.kind === "between" || earlierBoard.changes.length > 0),
               ),
           );
-        value5?.kind === "comment" &&
-          (values.add(value5),
-          allJournalArtboards(value5).some(
-            (input?: Dynamic): Dynamic =>
-              input.file === value4.file && callback4(input),
-          ) && values2.add(value4.file));
+        earlierEntry?.kind === "comment" &&
+          (values.add(earlierEntry),
+          allJournalArtboards(earlierEntry).some(
+            (earlierBoard?: Dynamic): Dynamic =>
+              earlierBoard.file === board.file && isArtboardCreationOrRemoval(earlierBoard),
+          ) && revertedCreationPaths.add(board.file));
       }
   });
-  let value3: Dynamic = null;
+  let lastEntry: Dynamic = null;
   return {
     text: session
       .map((source?: Dynamic): Dynamic => {
         if (source.kind === "between" && source.who === "undone") {
-          let value10: Dynamic = allJournalArtboards(source)
-            .map((input?: Dynamic): Dynamic => input.file)
+          let artboardPaths: Dynamic = allJournalArtboards(source)
+            .map((board?: Dynamic): Dynamic => board.file)
             .filter(
-              (input?: Dynamic): Dynamic =>
-                input !== readResult.file || values2.has(input),
+              (filePath?: Dynamic): Dynamic =>
+                filePath !== readResult.file || revertedCreationPaths.has(filePath),
             );
           return truncateJournalText(
             source.at +
               " " +
               FAST_EDIT_TURN_STATUS_LABELS.undone +
-              (value10.length > 0 ? ", on " + callback3(value10) : "") +
+              (artboardPaths.length > 0 ? ", on " + summarizeArtboardHandles(artboardPaths) : "") +
               ": that edit was undone",
             MAX_JOURNAL_TEXT_CHARS,
           );
         }
-        let callback5: Dynamic = (input?: Dynamic): Dynamic => {
-            let value10: Dynamic = input.file === readResult.file,
-              value11: Dynamic =
-                value10 &&
+        let formatBoardChanges: Dynamic = (board?: Dynamic): Dynamic => {
+            let isCurrentArtboard: Dynamic = board.file === readResult.file,
+              hasMatchingStructure: Dynamic =
+                isCurrentArtboard &&
                 root !== null &&
                 handlePattern !== null &&
-                input.shape !== undefined &&
-                input.shape === (value2 ??= hashElementStructure(root)),
-              callback6: Dynamic = (input2?: Dynamic): Dynamic => {
-                let value12: Dynamic = value11 ? root : undefined;
-                for (let value14 of input2.split(".") as Dynamic)
-                  value12 = value12?.children[Number(value14) - 1];
-                let value13: Dynamic = value12?.getAttribute("id") ?? "";
-                return value11 && handlePattern.test(value13)
-                  ? "#" + value13
+                board.shape !== undefined &&
+                board.shape === (rootStructureHash ??= hashElementStructure(root)),
+              elementHandleAtPath: Dynamic = (elementPath?: Dynamic): Dynamic => {
+                let elementAtPath: Dynamic = hasMatchingStructure ? root : undefined;
+                for (let childNumber of elementPath.split(".") as Dynamic)
+                  elementAtPath = elementAtPath?.children[Number(childNumber) - 1];
+                let elementId: Dynamic = elementAtPath?.getAttribute("id") ?? "";
+                return hasMatchingStructure && handlePattern.test(elementId)
+                  ? "#" + elementId
                   : "";
               },
-              callback7: Dynamic = (
-                input2?: Dynamic,
-                options2: Dynamic = input2,
+              resolveElementDescription: Dynamic = (
+                description?: Dynamic,
+                fallbackDescription: Dynamic = description,
               ): Dynamic => {
-                let value12: Dynamic =
-                  /^(the [a-z][a-z0-9]*|an element) @([\d.]+)$/.exec(input2);
-                return value12 !== null
-                  ? callback6(value12[2]) || value12[1]
-                  : (value10 && callback(input2)) || options2;
+                let pathMatch: Dynamic =
+                  /^(the [a-z][a-z0-9]*|an element) @([\d.]+)$/.exec(description);
+                return pathMatch !== null
+                  ? elementHandleAtPath(pathMatch[2]) || pathMatch[1]
+                  : (isCurrentArtboard && callback(description)) || fallbackDescription;
               },
-              callback8: Dynamic = (input2?: Dynamic): Dynamic => {
-                for (let value12 of input2.matchAll(
+              resolvePositionDescription: Dynamic = (changeLine?: Dynamic): Dynamic => {
+                for (let positionMatch of changeLine.matchAll(
                   / (?:after|before|in) /g,
                 ) as Dynamic) {
-                  let value13: Dynamic = value12.index + value12[0].length,
-                    value14: Dynamic = input2.slice(value13),
-                    value15: Dynamic = callback7(value14);
-                  if (value15 !== value14)
-                    return input2.slice(0, value13) + value15;
+                  let positionEnd: Dynamic = positionMatch.index + positionMatch[0].length,
+                    positionDescription: Dynamic = changeLine.slice(positionEnd),
+                    resolvedPosition: Dynamic = resolveElementDescription(positionDescription);
+                  if (resolvedPosition !== positionDescription)
+                    return changeLine.slice(0, positionEnd) + resolvedPosition;
                 }
-                return input2;
+                return changeLine;
               },
-              callback9: Dynamic = (input2?: Dynamic): Dynamic =>
-                callback8(
-                  input2.replace(
+              formatCreatedElement: Dynamic = (changeLine?: Dynamic): Dynamic =>
+                resolvePositionDescription(
+                  changeLine.replace(
                     /^(new [a-z][a-z0-9]*) @([\d.]+)/,
                     (
-                      input3?: Dynamic,
-                      options2?: Dynamic,
-                      context?: Dynamic,
+                      _match?: Dynamic,
+                      elementLabel?: Dynamic,
+                      elementPath?: Dynamic,
                     ): Dynamic =>
-                      options2 +
-                      (callback6(context) === ""
+                      elementLabel +
+                      (elementHandleAtPath(elementPath) === ""
                         ? ""
-                        : " " + callback6(context)),
+                        : " " + elementHandleAtPath(elementPath)),
                   ),
                 ),
-              callback10: Dynamic = (items3?: Dynamic): Dynamic => {
-                let value12: Dynamic = Array.from(
-                    items3.matchAll(/ (?:after|before|in) /g),
+              formatMovedElement: Dynamic = (changeLine?: Dynamic): Dynamic => {
+                let positionMatches: Dynamic = Array.from(
+                    changeLine.matchAll(/ (?:after|before|in) /g),
                   ),
-                  value13: Dynamic =
-                    value12.find((input2?: Dynamic): Dynamic => {
-                      let value16: Dynamic = items3.slice(
-                        input2.index + input2[0].length,
+                  positionMatch: Dynamic =
+                    positionMatches.find((match?: Dynamic): Dynamic => {
+                      let positionDescription: Dynamic = changeLine.slice(
+                        match.index + match[0].length,
                       );
-                      return callback7(value16) !== value16;
-                    }) ?? value12[value12.length - 1],
-                  value14: Dynamic = items3.slice(
+                      return resolveElementDescription(positionDescription) !== positionDescription;
+                    }) ?? positionMatches[positionMatches.length - 1],
+                  movedDescription: Dynamic = changeLine.slice(
                     6,
-                    value13?.index ?? items3.length,
+                    positionMatch?.index ?? changeLine.length,
                   ),
-                  value15: Dynamic = callback7(value14);
+                  resolvedElement: Dynamic = resolveElementDescription(movedDescription);
                 return [
                   "moved " +
-                    (/ @[\d.]+$/.test(value14) ? value15 : value14) +
-                    (value13 === undefined
+                    (/ @[\d.]+$/.test(movedDescription) ? resolvedElement : movedDescription) +
+                    (positionMatch === undefined
                       ? ""
-                      : value13[0] +
-                        callback7(
-                          items3.slice(value13.index + value13[0].length),
+                      : positionMatch[0] +
+                        resolveElementDescription(
+                          changeLine.slice(positionMatch.index + positionMatch[0].length),
                         )),
-                  value15.startsWith("#") ? value15.slice(1) : "",
+                  resolvedElement.startsWith("#") ? resolvedElement.slice(1) : "",
                 ];
               },
               items: Dynamic = [],
-              items2: Dynamic = [],
+              changedHandles: Dynamic = [],
               text: Dynamic = "";
-            for (let value12 of input.changes as Dynamic)
-              if (value12.startsWith("  ")) {
+            for (let changeLine of board.changes as Dynamic)
+              if (changeLine.startsWith("  ")) {
                 items.push(
                   text +
-                    value12
+                    changeLine
                       .slice(2)
                       .replace(
                         ": ",
-                        value12.startsWith("  text: ") ? " " : " \u2192 ",
+                        changeLine.startsWith("  text: ") ? " " : " \u2192 ",
                       ),
                 );
                 text = "";
-              } else if (value12.endsWith(":")) {
-                text = callback7(value12.slice(0, -1)) + " ";
-                items2.push(/^#([a-z]{1,8}\d{1,6}) $/.exec(text)?.[1] ?? "");
-              } else if (value12.startsWith("moved ")) {
-                let [value13, value14]: Dynamic = callback10(value12);
-                items.push(value13);
-                items2.push(value14);
+              } else if (changeLine.endsWith(":")) {
+                text = resolveElementDescription(changeLine.slice(0, -1)) + " ";
+                changedHandles.push(/^#([a-z]{1,8}\d{1,6}) $/.exec(text)?.[1] ?? "");
+              } else if (changeLine.startsWith("moved ")) {
+                let [formattedChange, movedHandle]: Dynamic = formatMovedElement(changeLine);
+                items.push(formattedChange);
+                changedHandles.push(movedHandle);
                 text = "";
               } else {
                 items.push(
-                  value12 === NEW_ARTBOARD_JOURNAL_LABEL ||
-                    value12 === REMOVED_ARTBOARD_JOURNAL_LABEL
-                    ? value12 + " " + callback2(input.file)
-                    : value12.startsWith("new ")
-                      ? callback9(value12)
-                      : value12,
+                  changeLine === NEW_ARTBOARD_JOURNAL_LABEL ||
+                    changeLine === REMOVED_ARTBOARD_JOURNAL_LABEL
+                    ? changeLine + " " + formatArtboardHandle(board.file)
+                    : changeLine.startsWith("new ")
+                      ? formatCreatedElement(changeLine)
+                      : changeLine,
                 );
-                items2.push(
+                changedHandles.push(
                   /^new [a-z][a-z0-9]* #([a-z]{1,8}\d{1,6})(?= |$)/.exec(
                     items[items.length - 1],
                   )?.[1] ?? "",
@@ -1053,59 +1053,59 @@ function recordFastEditReadResult(
                 text = "";
               }
             return {
-              here: value10,
+              here: isCurrentArtboard,
               what: items,
-              heads: items2,
-              now: callback7,
+              heads: changedHandles,
+              now: resolveElementDescription,
             };
           },
-          value4: Dynamic = [
+          createdOrRemoved: Dynamic = [
             NEW_ARTBOARD_JOURNAL_LABEL,
             REMOVED_ARTBOARD_JOURNAL_LABEL,
-          ].flatMap((input?: Dynamic): Dynamic => {
-            let value10: Dynamic = allJournalArtboards(source)
+          ].flatMap((changeLabel?: Dynamic): Dynamic => {
+            let artboardPaths: Dynamic = allJournalArtboards(source)
               .filter(
-                (input2?: Dynamic): Dynamic =>
-                  callback4(input2) && input2.changes[0] === input,
+                (changedBoard?: Dynamic): Dynamic =>
+                  isArtboardCreationOrRemoval(changedBoard) && changedBoard.changes[0] === changeLabel,
               )
-              .map((input2?: Dynamic): Dynamic => input2.file);
-            return value10.length > 0
-              ? [input + " " + callback3(value10)]
+              .map((changedBoard?: Dynamic): Dynamic => changedBoard.file);
+            return artboardPaths.length > 0
+              ? [changeLabel + " " + summarizeArtboardHandles(artboardPaths)]
               : [];
           }),
-          { here: value5, what: value6 }: Dynamic = callback5(source),
-          value7: Dynamic = allJournalArtboards(source)
+          { here: isMainBoardHere, what: boardChanges }: Dynamic = formatBoardChanges(source),
+          otherBoardChanges: Dynamic = allJournalArtboards(source)
             .slice(1)
-            .filter((input?: Dynamic): Dynamic => !callback4(input))
-            .map((input?: Dynamic): Dynamic => {
-              let value10: Dynamic = callback5(input);
+            .filter((changedBoard?: Dynamic): Dynamic => !isArtboardCreationOrRemoval(changedBoard))
+            .map((changedBoard?: Dynamic): Dynamic => {
+              let formattedBoard: Dynamic = formatBoardChanges(changedBoard);
               return (
-                (value10.here ? "" : "on " + callback2(input.file) + ": ") +
-                value10.what.join(", ")
+                (formattedBoard.here ? "" : "on " + formatArtboardHandle(changedBoard.file) + ": ") +
+                formattedBoard.what.join(", ")
               );
             }),
-          value8: Dynamic = [
-            ...value4,
-            ...(value6.length > 0 && !callback4(source)
-              ? [value6.join(", ")]
+          formattedChanges: Dynamic = [
+            ...createdOrRemoved,
+            ...(boardChanges.length > 0 && !isArtboardCreationOrRemoval(source)
+              ? [boardChanges.join(", ")]
               : []),
-            ...value7,
+            ...otherBoardChanges,
           ].join("; "),
-          value9: Dynamic = allJournalArtboards(source).filter(
-            (input?: Dynamic): Dynamic => input.changes.length > 0,
+          changedBoards: Dynamic = allJournalArtboards(source).filter(
+            (changedBoard?: Dynamic): Dynamic => changedBoard.changes.length > 0,
           );
-        (value9.length > 0 || values.has(source)) &&
-          (value3 = values.has(source)
+        (changedBoards.length > 0 || values.has(source)) &&
+          (lastEntry = values.has(source)
             ? null
             : {
-                file: value9[0].file,
+                file: changedBoards[0].file,
                 handle:
-                  value9.length > 1 ||
-                  new Set(callback5(value9[0]).heads).size !== 1
+                  changedBoards.length > 1 ||
+                  new Set(formatBoardChanges(changedBoards[0]).heads).size !== 1
                     ? ""
-                    : callback5(value9[0]).heads[0],
+                    : formatBoardChanges(changedBoards[0]).heads[0],
               });
-        return source.kind === "comment" && value8 === ""
+        return source.kind === "comment" && formattedChanges === ""
           ? ""
           : truncateJournalText(
               source.at +
@@ -1116,19 +1116,19 @@ function recordFastEditReadResult(
                 (source.kind !== "comment" && source.opened === true
                   ? ", since the design was opened"
                   : "") +
-                (value5 ||
-                callback4(source) ||
-                (value6.length === 0 && value7.length + value4.length > 0)
+                (isMainBoardHere ||
+                isArtboardCreationOrRemoval(source) ||
+                (boardChanges.length === 0 && otherBoardChanges.length + createdOrRemoved.length > 0)
                   ? ""
-                  : ", on " + callback2(source.file)) +
+                  : ", on " + formatArtboardHandle(source.file)) +
                 ": " +
-                (value8 !== "" ? value8 : "the artboard changed"),
+                (formattedChanges !== "" ? formattedChanges : "the artboard changed"),
               MAX_JOURNAL_TEXT_CHARS,
             );
       })
-      .filter((input?: Dynamic): Dynamic => input !== "").join(`
+      .filter((line?: Dynamic): Dynamic => line !== "").join(`
 `),
-    last: value3,
+    last: lastEntry,
   };
 }
 export {
@@ -1193,42 +1193,42 @@ export function installFastEditJournal(): () => void {
     NEW_ARTBOARD_JOURNAL_LABEL = "new artboard";
     REMOVED_ARTBOARD_JOURNAL_LABEL = "removed artboard";
     UNTRUSTED_TEXT_PATTERN = /untrusted|[0-9a-f]{32}/i;
-    sanitizeJournalText = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = input.replace(/\p{Cf}/gu, "");
+    sanitizeJournalText = (text?: Dynamic): Dynamic => {
+      let value: Dynamic = text.replace(/\p{Cf}/gu, "");
       return UNTRUSTED_TEXT_PATTERN.test(value)
         ? sanitizeUntrustedText(value)
         : value;
     };
-    normalizeJournalWhitespace = (input?: Dynamic): Dynamic =>
-      input.replace(/[\s\p{Cc}]+/gu, " ");
-    normalizeJournalText = (input?: Dynamic): Dynamic =>
-      normalizeJournalWhitespace(sanitizeJournalText(input)).trim();
-    truncateJournalText = (items?: Dynamic, options?: Dynamic): Dynamic =>
-      items.length > options ? items.slice(0, options - 1) + "\u2026" : items;
-    journalUtf8Size = (input?: Dynamic): Dynamic =>
-      new TextEncoder().encode(input).length;
-    immediateElementText = (input?: Dynamic): Dynamic =>
+    normalizeJournalWhitespace = (text?: Dynamic): Dynamic =>
+      text.replace(/[\s\p{Cc}]+/gu, " ");
+    normalizeJournalText = (text?: Dynamic): Dynamic =>
+      normalizeJournalWhitespace(sanitizeJournalText(text)).trim();
+    truncateJournalText = (text?: Dynamic, maxChars?: Dynamic): Dynamic =>
+      text.length > maxChars ? text.slice(0, maxChars - 1) + "\u2026" : text;
+    journalUtf8Size = (text?: Dynamic): Dynamic =>
+      new TextEncoder().encode(text).length;
+    immediateElementText = (element?: Dynamic): Dynamic =>
       normalizeJournalText(
-        Array.from(input.childNodes)
-          .filter((input2?: Dynamic): Dynamic => input2.nodeType === 3)
-          .map((input2?: Dynamic): Dynamic => input2.textContent ?? "")
+        Array.from(element.childNodes)
+          .filter((child?: Dynamic): Dynamic => child.nodeType === 3)
+          .map((child?: Dynamic): Dynamic => child.textContent ?? "")
           .join(" "),
       );
-    normalizeJournalTagName = (input?: Dynamic): Dynamic =>
-      input.replace(/^sc-raw-/, "");
+    normalizeJournalTagName = (tagName?: Dynamic): Dynamic =>
+      tagName.replace(/^sc-raw-/, "");
     describeJournalElement = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = "the ",
+      tagName?: Dynamic,
+      labelText?: Dynamic,
+      article: Dynamic = "the ",
     ): Dynamic =>
-      (SAFE_PROMPT_HTML_TAGS.has(normalizeJournalTagName(input))
-        ? context + normalizeJournalTagName(input)
-        : context === "the "
+      (SAFE_PROMPT_HTML_TAGS.has(normalizeJournalTagName(tagName))
+        ? article + normalizeJournalTagName(tagName)
+        : article === "the "
           ? "an element"
           : "element") +
-      (options !== ""
+      (labelText !== ""
         ? ' "' +
-          truncateJournalText(options, MAX_JOURNAL_ELEMENT_LABEL_CHARS) +
+          truncateJournalText(labelText, MAX_JOURNAL_ELEMENT_LABEL_CHARS) +
           '"'
         : "");
     MAX_DECORATIVE_ELEMENT_COUNT = 40;
@@ -1239,13 +1239,13 @@ export function installFastEditJournal(): () => void {
         element.getAttribute("style") ?? "",
       );
     relativeElementIndexPath = (
-      input?: Dynamic,
-      options?: Dynamic,
+      element?: Dynamic,
+      root?: Dynamic,
     ): Dynamic => {
       let items: Dynamic = [];
       for (
-        let value: Dynamic = input;
-        value !== options && value.parentElement !== null;
+        let value: Dynamic = element;
+        value !== root && value.parentElement !== null;
         value = value.parentElement
       )
         items.unshift(
@@ -1253,81 +1253,81 @@ export function installFastEditJournal(): () => void {
         );
       return items.join(".");
     };
-    hashElementStructure = (input?: Dynamic): Dynamic => {
+    hashElementStructure = (root?: Dynamic): Dynamic => {
       let count: Dynamic = 2166136261;
       for (let value of [
-        input,
-        ...Array.from(input.querySelectorAll("*")),
+        root,
+        ...Array.from(root.querySelectorAll("*")),
       ] as Dynamic)
-        for (let value2 of (value.localName +
+        for (let character of (value.localName +
           String(value.children.length) +
           " ") as Dynamic)
-          count = Math.imul(count ^ value2.charCodeAt(0), 16777619);
+          count = Math.imul(count ^ character.charCodeAt(0), 16777619);
       return String(count >>> 0);
     };
-    hashHtmlStructure = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = parseJournalRoot(input);
+    hashHtmlStructure = (html?: Dynamic): Dynamic => {
+      let value: Dynamic = parseJournalRoot(html);
       return value === null ? "" : hashElementStructure(value);
     };
-    equalElementAttributes = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let attributes: Dynamic = input.attributes,
-        attributes2: Dynamic = options.attributes;
-      if (attributes.length !== attributes2.length) return false;
+    equalElementAttributes = (left?: Dynamic, right?: Dynamic): Dynamic => {
+      let attributes: Dynamic = left.attributes,
+        rightAttributes: Dynamic = right.attributes;
+      if (attributes.length !== rightAttributes.length) return false;
       for (let index: Dynamic = 0; index < attributes.length; index++)
         if (
-          attributes[index].name !== attributes2[index].name ||
-          attributes[index].value !== attributes2[index].value
+          attributes[index].name !== rightAttributes[index].name ||
+          attributes[index].value !== rightAttributes[index].value
         )
           return false;
       return true;
     };
-    journalElementAttributes = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    journalElementAttributes = (element?: Dynamic, generatedIdPattern?: Dynamic): Dynamic =>
       new Map(
-        Array.from(input.attributes)
+        Array.from(element.attributes)
           .filter(
-            (input2?: Dynamic): Dynamic =>
-              input2.name !== "style" &&
+            (attribute?: Dynamic): Dynamic =>
+              attribute.name !== "style" &&
               !(
-                input2.name === "id" &&
-                options !== null &&
-                options.test(input2.value)
+                attribute.name === "id" &&
+                generatedIdPattern !== null &&
+                generatedIdPattern.test(attribute.value)
               ),
           )
           .map(
-            (input2?: Dynamic): Dynamic => [
-              input2.name,
-              normalizeJournalText(input2.value),
+            (attribute?: Dynamic): Dynamic => [
+              attribute.name,
+              normalizeJournalText(attribute.value),
             ],
           ),
       );
     MAX_REORDER_TRACKING_ITEMS = 400;
-    longestIncreasingSubsequenceLength = (input?: Dynamic): Dynamic => {
+    longestIncreasingSubsequenceLength = (sequence?: Dynamic): Dynamic => {
       let items: Dynamic = [];
-      for (let value of input as Dynamic) {
+      for (let value of sequence as Dynamic) {
         let index: Dynamic = 0,
           length: Dynamic = items.length;
         for (; index < length; ) {
-          let value2: Dynamic = (index + length) >> 1;
-          items[value2] < value ? (index = value2 + 1) : (length = value2);
+          let midpoint: Dynamic = (index + length) >> 1;
+          items[midpoint] < value ? (index = midpoint + 1) : (length = midpoint);
         }
         items[index] = value;
       }
       return items.length;
     };
-    allJournalArtboards = (input?: Dynamic): Dynamic => [
-      input,
-      ...(input.also ?? []),
+    allJournalArtboards = (mainArtboard?: Dynamic): Dynamic => [
+      mainArtboard,
+      ...(mainArtboard.also ?? []),
     ];
-    formatJournalTime = (input?: Dynamic): Dynamic =>
-      String(input.getHours()).padStart(2, "0") +
+    formatJournalTime = (date?: Dynamic): Dynamic =>
+      String(date.getHours()).padStart(2, "0") +
       ":" +
-      String(input.getMinutes()).padStart(2, "0");
+      String(date.getMinutes()).padStart(2, "0");
     createFastEditJournalState = (
-      input: Dynamic = (): Dynamic => new Date(),
-      options?: Dynamic,
+      clock: Dynamic = (): Dynamic => new Date(),
+      historyOptions?: Dynamic,
     ): Dynamic => ({
       journal: [],
-      history: createFastEditHistory(options),
+      history: createFastEditHistory(historyOptions),
       seen: new Map(),
       beforeLast: new Map(),
       opened: new Set(),
@@ -1335,7 +1335,7 @@ export function installFastEditJournal(): () => void {
       threads: new Set(),
       first: null,
       turn: null,
-      clock: input,
+      clock: clock,
     });
     MAX_FAST_EDIT_JOURNAL_ENTRIES = 200;
     HISTORY_TURN_COMPLETION_MESSAGES = {

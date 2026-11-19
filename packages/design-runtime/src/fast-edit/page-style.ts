@@ -81,9 +81,9 @@ function preserveHelmetMarkup(before: string, after: string): string {
         ? helmet.a + helmet.h + after.slice(helmet.a.length)
         : helmet.a + helmet.h + after;
 }
-function validatePageColor(value: unknown): string | null {
-  if (typeof value != "string") return null;
-  let color = value.trim();
+function validatePageColor(colorValue: unknown): string | null {
+  if (typeof colorValue != "string") return null;
+  let color = colorValue.trim();
   return color === "" || color.length > MAX_PAGE_COLOR_CHARS
     ? null
     : CSS_HEX_COLOR_PATTERN.test(color)
@@ -95,35 +95,35 @@ function validatePageColor(value: unknown): string | null {
           : null;
 }
 function validatePageFontFamilies(
-  value: unknown,
+  fontValue: unknown,
   knownFamilies: Iterable<string>,
 ): string | null {
-  if (typeof value != "string" || value.length > 160) return null;
-  let families = value
+  if (typeof fontValue != "string" || fontValue.length > 160) return null;
+  let families = fontValue
     .split(",")
-    .map((input) =>
-      input
+    .map((family) =>
+      family
         .trim()
         .replace(
           /^"([^"]*)"$|^'([^']*)'$/,
-          (input2, options, context) => options ?? context ?? "",
+          (match, doubleQuoted, singleQuoted) => doubleQuoted ?? singleQuoted ?? "",
         ),
     );
   if (families.length === 0 || families.length > 3) return null;
   let values = new Set(
-      [...knownFamilies].map((input) => input.toLowerCase()),
+      [...knownFamilies].map((family) => family.toLowerCase()),
     ),
     items: string[] = [];
-  for (let value2 of families) {
+  for (let familyName of families) {
     if (
-      !FONT_FAMILY_PATTERN.test(value2) ||
-      value2.trim() !== value2 ||
-      /\s{2,}/.test(value2)
+      !FONT_FAMILY_PATTERN.test(familyName) ||
+      familyName.trim() !== familyName ||
+      /\s{2,}/.test(familyName)
     )
       return null;
-    if (GENERIC_FONT_FAMILIES.has(value2.toLowerCase()))
-      items.push(value2.toLowerCase());
-    else if (values.has(value2.toLowerCase())) items.push('"' + value2 + '"');
+    if (GENERIC_FONT_FAMILIES.has(familyName.toLowerCase()))
+      items.push(familyName.toLowerCase());
+    else if (values.has(familyName.toLowerCase())) items.push('"' + familyName + '"');
     else return null;
   }
   return items.join(",");
@@ -133,7 +133,7 @@ function serializePageStyleDeclarations(styles: PageDeclarations): string {
     styles.background !== undefined ? "background:" + styles.background : "",
     styles.color !== undefined ? "color:" + styles.color : "",
     styles.families !== undefined ? "font-family:" + styles.families : "",
-  ].filter((input) => input !== "");
+  ].filter((declaration) => declaration !== "");
   return declarations.length === 0
     ? ""
     : PAGE_STYLE_START_MARKER +
@@ -166,11 +166,11 @@ function updatePageStyleSheet(
       ok: false,
       why: "no_sheet",
     };
-  let value2 = value.split(PAGE_STYLE_START_MARKER).length - 1,
-    value3 = value.split(PAGE_STYLE_END_MARKER).length - 1;
+  let startMarkerCount = value.split(PAGE_STYLE_START_MARKER).length - 1,
+    endMarkerCount = value.split(PAGE_STYLE_END_MARKER).length - 1;
   if (
-    value2 !== value3 ||
-    value2 > 1 ||
+    startMarkerCount !== endMarkerCount ||
+    startMarkerCount > 1 ||
     /ask:page/.test(
       value
         .split(PAGE_STYLE_START_MARKER)
@@ -183,119 +183,119 @@ function updatePageStyleSheet(
       ok: false,
       why: "sentinels",
     };
-  let value4 = value,
+  let styleValue = value,
     text = "",
     state: PageDeclarations = {};
-  if (value2 === 1) {
-    let value8 = value.indexOf(PAGE_STYLE_START_MARKER),
-      value9 = value.indexOf(PAGE_STYLE_END_MARKER);
-    if (value9 < value8)
+  if (startMarkerCount === 1) {
+    let startMarkerIndex = value.indexOf(PAGE_STYLE_START_MARKER),
+      endMarkerIndex = value.indexOf(PAGE_STYLE_END_MARKER);
+    if (endMarkerIndex < startMarkerIndex)
       return {
         ok: false,
         why: "sentinels",
       };
-    let value10 = PAGE_BODY_STYLE_PATTERN.exec(
-      value.slice(value8 + PAGE_STYLE_START_MARKER.length, value9),
+    let bodyStyleMatch = PAGE_BODY_STYLE_PATTERN.exec(
+      value.slice(startMarkerIndex + PAGE_STYLE_START_MARKER.length, endMarkerIndex),
     );
-    if (value10 === null)
+    if (bodyStyleMatch === null)
       return {
         ok: false,
         why: "sentinels",
       };
-    for (let value11 of value10[1]!.split(";")) {
-      let value12 = value11.indexOf(":"),
-        value13 = value11.slice(0, value12),
-        value14 = value11.slice(value12 + 1);
-      value13 === "background"
-        ? (state.background = value14)
-        : value13 === "color"
-          ? (state.color = value14)
-          : (state.families = value14);
+    for (let declaration of bodyStyleMatch[1]!.split(";")) {
+      let colonIndex = declaration.indexOf(":"),
+        property = declaration.slice(0, colonIndex),
+        propertyValue = declaration.slice(colonIndex + 1);
+      property === "background"
+        ? (state.background = propertyValue)
+        : property === "color"
+          ? (state.color = propertyValue)
+          : (state.families = propertyValue);
     }
-    value4 = value.slice(0, value8);
-    text = value.slice(value9 + PAGE_STYLE_END_MARKER.length);
+    styleValue = value.slice(0, startMarkerIndex);
+    text = value.slice(endMarkerIndex + PAGE_STYLE_END_MARKER.length);
   }
-  let state2: PageDeclarations = {
+  let validatedStyles: PageDeclarations = {
     ...state,
   };
   if (styles.background !== undefined)
-    if (styles.background === "") delete state2.background;
+    if (styles.background === "") delete validatedStyles.background;
     else {
-      let value8 = validatePageColor(styles.background);
-      if (value8 === null)
+      let background = validatePageColor(styles.background);
+      if (background === null)
         return {
           ok: false,
           why: "value",
         };
-      state2.background = value8;
+      validatedStyles.background = background;
     }
   if (styles.color !== undefined)
-    if (styles.color === "") delete state2.color;
+    if (styles.color === "") delete validatedStyles.color;
     else {
-      let value8 = validatePageColor(styles.color);
-      if (value8 === null)
+      let color = validatePageColor(styles.color);
+      if (color === null)
         return {
           ok: false,
           why: "value",
         };
-      state2.color = value8;
+      validatedStyles.color = color;
     }
   if (styles.font !== undefined)
-    if (styles.font === "") delete state2.families;
+    if (styles.font === "") delete validatedStyles.families;
     else {
-      let value8 = validatePageFontFamilies(styles.font, families);
-      if (value8 === null)
+      let fontFamilies = validatePageFontFamilies(styles.font, families);
+      if (fontFamilies === null)
         return {
           ok: false,
           why: "value",
         };
-      state2.families = value8;
+      validatedStyles.families = fontFamilies;
     }
   if (
-    (state2.background !== undefined &&
-      validatePageColor(state2.background) === null) ||
-    (state2.color !== undefined &&
-      validatePageColor(state2.color) === null) ||
-    (state2.families !== undefined &&
-      !PAGE_FONT_LIST_PATTERN.test(state2.families))
+    (validatedStyles.background !== undefined &&
+      validatePageColor(validatedStyles.background) === null) ||
+    (validatedStyles.color !== undefined &&
+      validatePageColor(validatedStyles.color) === null) ||
+    (validatedStyles.families !== undefined &&
+      !PAGE_FONT_LIST_PATTERN.test(validatedStyles.families))
   )
     return {
       ok: false,
       why: "sentinels",
     };
-  let value5 = serializePageStyleDeclarations(state2),
-    value6 = value2 === 1 ? value4 + text + value5 : value + value5,
-    value7 =
+  let serializedStyles = serializePageStyleDeclarations(validatedStyles),
+    updatedMarkup = startMarkerCount === 1 ? styleValue + text + serializedStyles : value + serializedStyles,
+    originalMarkup =
       html.slice(0, styleOffset) +
-      value6 +
+      updatedMarkup +
       html.slice(styleOffset + value.length),
-    callback: (css: string) => string = (input) => {
-      let value8 = input.indexOf(PAGE_STYLE_START_MARKER),
-        value9 = input.indexOf(PAGE_STYLE_END_MARKER);
-      return value8 < 0
-        ? input
-        : input.slice(0, value8) +
-            input.slice(value9 + PAGE_STYLE_END_MARKER.length);
+    callback: (css: string) => string = (markup) => {
+      let startMarkerIndex = markup.indexOf(PAGE_STYLE_START_MARKER),
+        endMarkerIndex = markup.indexOf(PAGE_STYLE_END_MARKER);
+      return startMarkerIndex < 0
+        ? markup
+        : markup.slice(0, startMarkerIndex) +
+            markup.slice(endMarkerIndex + PAGE_STYLE_END_MARKER.length);
     };
-  return html.slice(0, styleOffset) !== value7.slice(0, styleOffset) ||
+  return html.slice(0, styleOffset) !== originalMarkup.slice(0, styleOffset) ||
     html.slice(styleOffset + value.length) !==
-      value7.slice(styleOffset + value6.length) ||
-    callback(value6) !== callback(value)
+      originalMarkup.slice(styleOffset + updatedMarkup.length) ||
+    callback(updatedMarkup) !== callback(value)
     ? {
         ok: false,
         why: "outside",
       }
-    : value6.split(PAGE_STYLE_START_MARKER).length - 1 !==
-          (value5 === "" ? 0 : 1) ||
-        value6.split(PAGE_STYLE_END_MARKER).length - 1 !==
-          (value5 === "" ? 0 : 1)
+    : updatedMarkup.split(PAGE_STYLE_START_MARKER).length - 1 !==
+          (serializedStyles === "" ? 0 : 1) ||
+        updatedMarkup.split(PAGE_STYLE_END_MARKER).length - 1 !==
+          (serializedStyles === "" ? 0 : 1)
       ? {
           ok: false,
           why: "outside",
         }
       : {
           ok: true,
-          template: value7,
+          template: originalMarkup,
         };
 }
 function readPageStylesFromSheet(
@@ -309,23 +309,23 @@ function readPageStylesFromSheet(
   for (let value of styleMatch[1]
     .slice(0, styleMatch[1].lastIndexOf("}") + 1)
     .matchAll(/body\s*\{([^}]*)\}/gi))
-    for (let value2 of value[1]!.split(";")) {
-      let value3 = value2.indexOf(":");
-      if (value3 <= 0) continue;
-      let value4 = value2.slice(0, value3).trim().toLowerCase(),
-        value5 = value2.slice(value3 + 1).trim();
-      if (value4 === "background" || value4 === "background-color") {
-        let value6 = validatePageColor(value5);
-        value6 !== null
-          ? (styles.background = value6)
+    for (let declaration of value[1]!.split(";")) {
+      let colonIndex = declaration.indexOf(":");
+      if (colonIndex <= 0) continue;
+      let property = declaration.slice(0, colonIndex).trim().toLowerCase(),
+        propertyValue = declaration.slice(colonIndex + 1).trim();
+      if (property === "background" || property === "background-color") {
+        let background = validatePageColor(propertyValue);
+        background !== null
+          ? (styles.background = background)
           : delete styles.background;
-      } else if (value4 === "color") {
-        let value6 = validatePageColor(value5);
-        value6 !== null ? (styles.color = value6) : delete styles.color;
-      } else if (value4 === "font-family") {
-        let value6 = validatePageFontFamilies(value5, families);
-        value6 !== null
-          ? (styles.font = value6.replace(/"/g, ""))
+      } else if (property === "color") {
+        let color = validatePageColor(propertyValue);
+        color !== null ? (styles.color = color) : delete styles.color;
+      } else if (property === "font-family") {
+        let fontFamilies = validatePageFontFamilies(propertyValue, families);
+        fontFamilies !== null
+          ? (styles.font = fontFamilies.replace(/"/g, ""))
           : delete styles.font;
       }
     }
@@ -342,20 +342,20 @@ function readPageStylesFromSection(html: string): PageStyles {
     value = SECTION_ATTRIBUTE_PATTERN.exec(html)
   )
     if (value[1]!.toLowerCase() === "style") {
-      for (let value2 of (value[2] ?? value[3] ?? value[4] ?? "")
+      for (let declaration of (value[2] ?? value[3] ?? value[4] ?? "")
         .replace(/&quot;/g, '"')
         .replace(/&#39;|&apos;/g, "'")
         .replace(/&amp;/g, "&")
         .split(";")) {
-        let value3 = value2.indexOf(":"),
-          value4 =
-            value3 <= 0 ? "" : value2.slice(0, value3).trim().toLowerCase(),
-          value5 = value2.slice(value3 + 1).trim();
-        value4 === "background" || value4 === "background-color"
-          ? (styles.background = value5)
-          : value4 === "color"
-            ? (styles.color = value5)
-            : value4 === "font-family" && (styles.font = value5);
+        let colonIndex = declaration.indexOf(":"),
+          property =
+            colonIndex <= 0 ? "" : declaration.slice(0, colonIndex).trim().toLowerCase(),
+          propertyValue = declaration.slice(colonIndex + 1).trim();
+        property === "background" || property === "background-color"
+          ? (styles.background = propertyValue)
+          : property === "color"
+            ? (styles.color = propertyValue)
+            : property === "font-family" && (styles.font = propertyValue);
       }
       break;
     }
@@ -474,25 +474,25 @@ export function installFastEditPageStyle(): () => void {
       findMarkupBlock(html, /<style\b[^>]*>/i, /<\/style>/gi);
     findPageStylesheet = (html: string): PageStylesheet | null => {
       let value = findHelmetBlock(html),
-        value2 = value === null ? null : findStyleBlock(value[1]);
-      return value === null || value2 === null
+        styleMatch = value === null ? null : findStyleBlock(value[1]);
+      return value === null || styleMatch === null
         ? null
         : {
             hm: value,
-            sm: value2,
+            sm: styleMatch,
           };
     };
     hasPageStylesheet = (html: string): boolean =>
       findPageStylesheet(html) !== null;
     SECTION_ATTRIBUTE_PATTERN =
       /\s+([^\s=>"'\/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+)))?/y;
-    serializePageStyleAttributes = (input?: Dynamic): Dynamic =>
+    serializePageStyleAttributes = (styles?: Dynamic): Dynamic =>
       ' data-page-background="' +
-      (input.background ?? "") +
+      (styles.background ?? "") +
       '" data-page-color="' +
-      (input.color ?? "") +
+      (styles.color ?? "") +
       '" data-page-font="' +
-      (input.font ?? "") +
+      (styles.font ?? "") +
       '"';
   };
 }
