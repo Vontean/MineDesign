@@ -300,6 +300,18 @@ function textDiff(expected, actual) {
   }
 }
 
+function comparableMessages(file) {
+  const messages = JSON.parse(fs.readFileSync(file, 'utf8'));
+  return JSON.stringify(messages, (_key, value) => {
+    // HTML 导出内嵌运行时代码，局部变量名的长度会改变 ZIP 大小。
+    if (value?.type === 'editor:save-file' && typeof value.filename === 'string' && value.filename.endsWith('-html.zip') &&
+        Number.isSafeInteger(value.data?.blob) && value.data.blob > 0) {
+      return { ...value, data: { ...value.data, blob: '<html-zip>' } };
+    }
+    return value;
+  });
+}
+
 // 截图逐像素比较；在浏览器 canvas 里解码，差异像素标红生成差异图。
 async function compareImage(diffPage, expected, actual) {
   if (expected.equals(actual)) return { pixels: 0 };
@@ -345,6 +357,7 @@ export async function compareEvidence(diffPage, expectedDir, actualDir, diffDir)
     const a = path.join(expectedDir, target), b = path.join(actualDir, target);
     if (!fs.existsSync(a) && !fs.existsSync(b)) continue;
     if (!fs.existsSync(a) || !fs.existsSync(b)) { failures.push({ kind, detail: `${target} ${fs.existsSync(a) ? '本次缺失' : '基线中没有'}` }); continue; }
+    if (target === 'messages.json' && comparableMessages(a) === comparableMessages(b)) continue;
     const diff = textDiff(a, b);
     if (diff) failures.push({ kind, detail: `${target} 不同`, diff: save(`${name}.diff`, diff) });
   }
