@@ -5,20 +5,20 @@ import {
 
 var OutlineValue: Dynamic;
 function getInspectorMode(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  requestedMode?: Dynamic,
+  layout?: Dynamic,
+  sheetTab?: Dynamic,
 ): Dynamic {
-  return input === "tweaks"
+  return requestedMode === "tweaks"
     ? "tweaks"
-    : input === "code"
+    : requestedMode === "code"
       ? "code"
-      : options !== "wide" && context === "outline"
+      : layout !== "wide" && sheetTab === "outline"
         ? "outline"
         : "pro";
 }
-function inspectorModeState(input?: Dynamic): Dynamic {
-  switch (input) {
+function inspectorModeState(mode?: Dynamic): Dynamic {
+  switch (mode) {
     case "tweaks":
       return {
         mode: "tweaks",
@@ -41,14 +41,14 @@ function inspectorModeState(input?: Dynamic): Dynamic {
       };
   }
 }
-function isOutlineKeyboardFocus(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options ||
-    input?.closest(
+function isOutlineKeyboardFocus(element?: Dynamic, isSuppressed?: Dynamic): Dynamic {
+  return isSuppressed ||
+    element?.closest(
       `[data-testid="dc-outline"], [data-menu-owner="${OutlineValue}"]`,
     ) == null
     ? false
-    : input.matches(":focus-visible") &&
-        !input.matches("input, textarea, [contenteditable]");
+    : element.matches(":focus-visible") &&
+        !element.matches("input, textarea, [contenteditable]");
 }
 export {
   getInspectorMode,

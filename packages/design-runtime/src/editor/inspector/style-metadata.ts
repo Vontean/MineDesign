@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems_2 } from "./property-schema";
+import { InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems_2 as propertySpecs } from "./property-schema";
 
 var cssPropertyToComputedKey: Dynamic;
 var InspectorStyleMetadataItems: Dynamic;
@@ -16,27 +16,27 @@ var InspectorStyleMetadataSubscribers: Dynamic;
 var InspectorStyleMetadataSubscribers_2: Dynamic;
 var InspectorStyleMetadataBackgroundColorPattern: Dynamic;
 var InspectorStyleMetadataLabel: Dynamic;
-function formatPropertyKey(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options(input) != null ? input : `@${input}`;
+function formatPropertyKey(prop?: Dynamic, getAuthoredValue?: Dynamic): Dynamic {
+  return getAuthoredValue(prop) != null ? prop : `@${prop}`;
 }
-function hasVisiblePaint(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim().toLowerCase();
+function hasVisiblePaint(paint?: Dynamic): Dynamic {
+  let normalizedPaint: Dynamic = (paint ?? "").trim().toLowerCase();
   return (
-    value !== "" &&
-    value !== "none" &&
-    value !== "hidden" &&
-    !isTransparentColor(value) &&
-    !/^0+(?:\.0+)?[a-z%]*$/.test(value)
+    normalizedPaint !== "" &&
+    normalizedPaint !== "none" &&
+    normalizedPaint !== "hidden" &&
+    !isTransparentColor(normalizedPaint) &&
+    !/^0+(?:\.0+)?[a-z%]*$/.test(normalizedPaint)
   );
 }
-function isTransparentColor(input?: Dynamic): Dynamic {
+function isTransparentColor(color?: Dynamic): Dynamic {
   return (
-    input === "transparent" ||
+    color === "transparent" ||
     /^(?:rgb|hsl)a?\([^,)]+,[^,)]+,[^,)]+,\s*(?:0+(?:\.0+)?|\.0+)%?\s*\)$/.test(
-      input,
+      color,
     ) ||
-    /^(?:rgb|hsl)a?\([^/)]+\/\s*(?:0+(?:\.0+)?|\.0+)%?\s*\)$/.test(input) ||
-    /^#(?:[0-9a-f]{3}0|[0-9a-f]{6}00)$/.test(input)
+    /^(?:rgb|hsl)a?\([^/)]+\/\s*(?:0+(?:\.0+)?|\.0+)%?\s*\)$/.test(color) ||
+    /^#(?:[0-9a-f]{3}0|[0-9a-f]{6}00)$/.test(color)
   );
 }
 export {
@@ -58,18 +58,18 @@ export {
 };
 export function installEditorInspectorStyleMetadata(): () => void {
   return () => {
-    cssPropertyToComputedKey = (input?: Dynamic): Dynamic =>
-      input.replace(
+    cssPropertyToComputedKey = (cssProperty?: Dynamic): Dynamic =>
+      cssProperty.replace(
         /-([a-z])/g,
-        (input2?: Dynamic, options?: Dynamic): Dynamic => options.toUpperCase(),
+        (matchText?: Dynamic, letter?: Dynamic): Dynamic => letter.toUpperCase(),
       );
     InspectorStyleMetadataItems = [
       ...new Set([
-        ...InspectorPropertySchemaItems_2.map(
-          (input?: Dynamic): Dynamic => cssPropertyToComputedKey(input.prop),
+        ...propertySpecs.map(
+          (propertySpec?: Dynamic): Dynamic => cssPropertyToComputedKey(propertySpec.prop),
         ),
         ...InspectorPropertySchemaCursorPointerEventsObjectFitValues.map(
-          (input?: Dynamic): Dynamic => cssPropertyToComputedKey(input),
+          (cssProperty?: Dynamic): Dynamic => cssPropertyToComputedKey(cssProperty),
         ),
         "backgroundColor",
         "backgroundClip",

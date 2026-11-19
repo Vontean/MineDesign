@@ -73,8 +73,8 @@ export function installEditorKeyboardEditActions(): () => void {
         shortcut: "cmd+a",
       },
     };
-    isContextMenuShortcut = (input?: Dynamic): Dynamic =>
-      input.key === "ContextMenu" || (input.key === "F10" && input.shiftKey);
+    isContextMenuShortcut = (keyEvent?: Dynamic): Dynamic =>
+      keyEvent.key === "ContextMenu" || (keyEvent.key === "F10" && keyEvent.shiftKey);
     initializeCdsIndex();
   };
 }

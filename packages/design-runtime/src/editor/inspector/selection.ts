@@ -7,15 +7,15 @@ import { parseStyleDeclarations } from "../css/declarations";
 import { getElementInspector } from "./element";
 import { InspectorPropertySchemaBackgroundFontWeightFontStyleConfig, InspectorPropertySchemaCursorPointerEventsObjectFitValues } from "./property-schema";
 import { InspectorStyleMetadataStrokeStrokeWidthFillValues, InspectorStyleMetadataSubscribers, InspectorStyleMetadataTextTspanTextpathSet, svgShapeTags } from "./style-metadata";
-import { SvgArrowPropertiesLabel, SvgArrowPropertiesLabel_2 } from "../svg/arrow-properties";
+import { SvgArrowPropertiesLabel, SvgArrowPropertiesLabel_2 as mixedArrowheadReason } from "../svg/arrow-properties";
 
 var InspectorSelectionSubscribers: Dynamic;
-function orderInspectorSections(input?: Dynamic): Dynamic {
-  let state: Dynamic = {
+function orderInspectorSections(sections?: Dynamic): Dynamic {
+  let sectionRank: Dynamic = {
       size: 0,
       sizing: 1,
-      text: !input.some(
-        (input2?: Dynamic): Dynamic =>
+      text: !sections.some(
+        (section?: Dynamic): Dynamic =>
           ![
             "size",
             "sizing",
@@ -23,449 +23,449 @@ function orderInspectorSections(input?: Dynamic): Dynamic {
             "text",
             "effects",
             "link",
-          ].includes(input2.id),
+          ].includes(section.id),
       )
         ? 2
         : 4,
       appearance: 3,
       effects: 5,
     },
-    callback: Dynamic = (input2?: Dynamic): Dynamic => state[input2] ?? 2;
-  input.sort(
-    (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      callback(input2.id) - callback(options.id),
+    rankOf: Dynamic = (sectionId?: Dynamic): Dynamic => sectionRank[sectionId] ?? 2;
+  sections.sort(
+    (sectionA?: Dynamic, sectionB?: Dynamic): Dynamic =>
+      rankOf(sectionA.id) - rankOf(sectionB.id),
   );
 }
 function resolveInspectorInheritedValues(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  sections?: Dynamic,
+  advancedRows?: Dynamic,
+  classSources?: Dynamic,
+  authoredValues?: Dynamic,
 ): Dynamic {
-  if (!context) return;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 != null && input2 !== "",
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      Object.hasOwn(context, input2) ? context[input2] : undefined,
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value2: Dynamic = callback(input2.value)
-        ? callback2(input2.prop)
+  if (!classSources) return;
+  let hasValue: Dynamic = (rawValue?: Dynamic): Dynamic =>
+      rawValue != null && rawValue !== "",
+    classSourceFor: Dynamic = (prop?: Dynamic): Dynamic =>
+      Object.hasOwn(classSources, prop) ? classSources[prop] : undefined,
+    resolveRowInheritance: Dynamic = (row?: Dynamic): Dynamic => {
+      let ownInherited: Dynamic = hasValue(row.value)
+        ? classSourceFor(row.prop)
         : undefined;
-      if (callback(input2.value) && !value2) return;
-      let value3: Dynamic = Object.hasOwn(
+      if (hasValue(row.value) && !ownInherited) return;
+      let companionProp: Dynamic = Object.hasOwn(
           InspectorPropertySchemaBackgroundFontWeightFontStyleConfig,
-          input2.prop,
+          row.prop,
         )
           ? InspectorPropertySchemaBackgroundFontWeightFontStyleConfig[
-              input2.prop
+              row.prop
             ]
           : undefined,
-        value4: Dynamic =
-          !!value3 &&
-          (callback(input2.companionValue) || callback(value.get(value3))),
-        value5: Dynamic = value3 && value4 ? callback2(value3) : undefined;
-      if (value4 && !value5) return;
-      let value6: Dynamic = value2 ?? value5;
-      value6 && (input2.inheritedFrom = value6);
+        needsCompanion: Dynamic =
+          !!companionProp &&
+          (hasValue(row.companionValue) || hasValue(authoredValues.get(companionProp))),
+        companionInherited: Dynamic = companionProp && needsCompanion ? classSourceFor(companionProp) : undefined;
+      if (needsCompanion && !companionInherited) return;
+      let inheritedFrom: Dynamic = ownInherited ?? companionInherited;
+      inheritedFrom && (row.inheritedFrom = inheritedFrom);
     };
-  for (let value2 of input as Dynamic) value2.rows.forEach(callback3);
-  options.forEach(callback3);
+  for (let section of sections as Dynamic) section.rows.forEach(resolveRowInheritance);
+  advancedRows.forEach(resolveRowInheritance);
 }
-function inspectSingleElement(input?: Dynamic): Dynamic {
-  return getElementInspector(input);
+function inspectSingleElement(element?: Dynamic): Dynamic {
+  return getElementInspector(element);
 }
-function filterLayoutInspectorRows(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    (input2.value != null && input2.value !== "") || !!input2.mixed;
+function filterLayoutInspectorRows(inspector?: Dynamic): Dynamic {
+  let isFilled: Dynamic = (row?: Dynamic): Dynamic =>
+    (row.value != null && row.value !== "") || !!row.mixed;
   return {
-    sections: input.sections.flatMap((input2?: Dynamic): Dynamic => {
-      let value: Dynamic = input2.rows.filter(
-        (input3?: Dynamic): Dynamic =>
-          InspectorSelectionSubscribers.has(input3.prop) &&
-          (input2.id === "size" || input2.id === "text" || callback(input3)),
+    sections: inspector.sections.flatMap((section?: Dynamic): Dynamic => {
+      let value: Dynamic = section.rows.filter(
+        (row?: Dynamic): Dynamic =>
+          InspectorSelectionSubscribers.has(row.prop) &&
+          (section.id === "size" || section.id === "text" || isFilled(row)),
       );
       return value.length > 0
         ? [
             {
-              ...input2,
+              ...section,
               rows: value,
             },
           ]
         : [];
     }),
-    advanced: input.advanced.filter(
-      (input2?: Dynamic): Dynamic =>
-        InspectorSelectionSubscribers.has(input2.prop) && callback(input2),
+    advanced: inspector.advanced.filter(
+      (row?: Dynamic): Dynamic =>
+        InspectorSelectionSubscribers.has(row.prop) && isFilled(row),
     ),
   };
 }
-function inspectElementSelection(items?: Dynamic): Dynamic {
-  if (items.length === 0)
+function inspectElementSelection(elements?: Dynamic): Dynamic {
+  if (elements.length === 0)
     return {
       sections: [],
       advanced: [],
     };
-  if (items.length === 1) return inspectSingleElement(items[0]);
-  let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      svgShapeTags.has(input.tag) &&
-      parseStyleDeclarations(input.authoredStyle).some(
-        (input2?: Dynamic): Dynamic => input2.prop === options,
+  if (elements.length === 1) return inspectSingleElement(elements[0]);
+  let hasAuthoredProp: Dynamic = (element?: Dynamic, prop?: Dynamic): Dynamic =>
+      svgShapeTags.has(element.tag) &&
+      parseStyleDeclarations(element.authoredStyle).some(
+        (declaration?: Dynamic): Dynamic => declaration.prop === prop,
       ),
-    values: Dynamic = new Set(
+    authoredPaintProps: Dynamic = new Set(
       InspectorStyleMetadataStrokeStrokeWidthFillValues.filter(
-        (input?: Dynamic): Dynamic =>
-          items.some((input2?: Dynamic): Dynamic => callback(input2, input)),
+        (prop?: Dynamic): Dynamic =>
+          elements.some((element?: Dynamic): Dynamic => hasAuthoredProp(element, prop)),
       ),
     ),
-    value: Dynamic = items.map(
-      (input?: Dynamic): Dynamic =>
-        getElementInspector(input, {
+    perElementInspectors: Dynamic = elements.map(
+      (element?: Dynamic): Dynamic =>
+        getElementInspector(element, {
           forMulti: true,
-          cssPaint: values,
+          cssPaint: authoredPaintProps,
         }),
     ),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      input[0]
-        .map((input2?: Dynamic): Dynamic => {
-          let value4: Dynamic = input.map(
-            (input3?: Dynamic): Dynamic =>
-              input3.find(
-                (input4?: Dynamic): Dynamic => input4.prop === input2.prop,
+    mergeRows: Dynamic = (rowsPerElement?: Dynamic): Dynamic =>
+      rowsPerElement[0]
+        .map((baseRow?: Dynamic): Dynamic => {
+          let matchingRows: Dynamic = rowsPerElement.map(
+            (elementRows?: Dynamic): Dynamic =>
+              elementRows.find(
+                (candidate?: Dynamic): Dynamic => candidate.prop === baseRow.prop,
               ),
           );
-          if (value4.some((input3?: Dynamic): Dynamic => input3 == null))
+          if (matchingRows.some((row?: Dynamic): Dynamic => row == null))
             return null;
-          let value5: Dynamic = value4.map(
-              (input3?: Dynamic): Dynamic => input3.value ?? "",
+          let values: Dynamic = matchingRows.map(
+              (row?: Dynamic): Dynamic => row.value ?? "",
             ),
-            value6: Dynamic = value4.map(
-              (input3?: Dynamic): Dynamic => input3.companionValue ?? "",
+            companionValues: Dynamic = matchingRows.map(
+              (row?: Dynamic): Dynamic => row.companionValue ?? "",
             ),
-            value7: Dynamic = value5.every(
-              (input3?: Dynamic): Dynamic => input3 === value5[0],
+            valuesAgree: Dynamic = values.every(
+              (item?: Dynamic): Dynamic => item === values[0],
             ),
-            value8: Dynamic = value6.every(
-              (input3?: Dynamic): Dynamic => input3 === value6[0],
+            companionAgree: Dynamic = companionValues.every(
+              (item?: Dynamic): Dynamic => item === companionValues[0],
             ),
-            value9: Dynamic = value4.every(
-              (input3?: Dynamic): Dynamic =>
-                JSON.stringify(input3.alsoCommit ?? null) ===
-                  JSON.stringify(value4[0].alsoCommit ?? null) &&
-                JSON.stringify(input3.alsoCommitOnClear ?? null) ===
-                  JSON.stringify(value4[0].alsoCommitOnClear ?? null),
+            commitsAgree: Dynamic = matchingRows.every(
+              (row?: Dynamic): Dynamic =>
+                JSON.stringify(row.alsoCommit ?? null) ===
+                  JSON.stringify(matchingRows[0].alsoCommit ?? null) &&
+                JSON.stringify(row.alsoCommitOnClear ?? null) ===
+                  JSON.stringify(matchingRows[0].alsoCommitOnClear ?? null),
             ),
-            state: Dynamic = {
-              ...input2,
-              value: (value7 && value5[0]) || null,
-              companionValue: (value8 && value6[0]) || null,
-              mixed: !value7,
-              companionMixed: !value8,
+            mergedRow: Dynamic = {
+              ...baseRow,
+              value: (valuesAgree && values[0]) || null,
+              companionValue: (companionAgree && companionValues[0]) || null,
+              mixed: !valuesAgree,
+              companionMixed: !companionAgree,
             };
           if (
-            !value9 &&
-            (delete state.alsoCommit,
-            delete state.alsoCommitOnClear,
-            state.prop === "@target")
+            !commitsAgree &&
+            (delete mergedRow.alsoCommit,
+            delete mergedRow.alsoCommitOnClear,
+            mergedRow.prop === "@target")
           )
             return null;
-          value4.some((input3?: Dynamic): Dynamic => input3?.noHug) &&
-            (state.noHug = true);
-          if (state.textFill !== undefined) {
-            let value14: Dynamic = value4.map(
-              (input3?: Dynamic): Dynamic => input3.textFill,
+          matchingRows.some((row?: Dynamic): Dynamic => row?.noHug) &&
+            (mergedRow.noHug = true);
+          if (mergedRow.textFill !== undefined) {
+            let textFills: Dynamic = matchingRows.map(
+              (textFill?: Dynamic): Dynamic => textFill.textFill,
             );
             if (
-              value14.some(
-                (input3?: Dynamic): Dynamic =>
-                  input3 === undefined ||
-                  input3.clipped !== value14[0].clipped ||
-                  input3.inlineClip !== value14[0].inlineClip ||
-                  input3.transparentInk !== value14[0].transparentInk,
+              textFills.some(
+                (textFill?: Dynamic): Dynamic =>
+                  textFill === undefined ||
+                  textFill.clipped !== textFills[0].clipped ||
+                  textFill.inlineClip !== textFills[0].inlineClip ||
+                  textFill.transparentInk !== textFills[0].transparentInk,
               )
             )
-              delete state.textFill;
+              delete mergedRow.textFill;
             else if (
-              value14.some(
-                (input3?: Dynamic): Dynamic =>
-                  (input3.layer ?? "") !== (value14[0].layer ?? ""),
+              textFills.some(
+                (textFill?: Dynamic): Dynamic =>
+                  (textFill.layer ?? "") !== (textFills[0].layer ?? ""),
               )
             ) {
-              let { computedLayer: value15, ...value16 }: Dynamic =
-                value14[0];
-              state.textFill = {
-                ...value16,
+              let { computedLayer: computedLayer, ...textFillWithoutComputed }: Dynamic =
+                textFills[0];
+              mergedRow.textFill = {
+                ...textFillWithoutComputed,
                 layer: null,
               };
             }
           }
-          value4.some(
-            (input3?: Dynamic): Dynamic =>
-              input3.whyDisabled !== state.whyDisabled,
+          matchingRows.some(
+            (row?: Dynamic): Dynamic =>
+              row.whyDisabled !== mergedRow.whyDisabled,
           ) &&
-            (state.whyDisabled !== undefined &&
-              (state.disabled = value4.some(
-                (input3?: Dynamic): Dynamic =>
-                  input3.disabled === true &&
-                  input3.whyDisabled === undefined,
+            (mergedRow.whyDisabled !== undefined &&
+              (mergedRow.disabled = matchingRows.some(
+                (row?: Dynamic): Dynamic =>
+                  row.disabled === true &&
+                  row.whyDisabled === undefined,
               )),
-            delete state.whyDisabled);
-          value4.some(
-            (input3?: Dynamic): Dynamic =>
-              input3.whyDisabled === SvgArrowPropertiesLabel,
+            delete mergedRow.whyDisabled);
+          matchingRows.some(
+            (row?: Dynamic): Dynamic =>
+              row.whyDisabled === SvgArrowPropertiesLabel,
           ) &&
-            Object.assign(state, {
+            Object.assign(mergedRow, {
               disabled: true,
-              whyDisabled: value4.every(
-                (input3?: Dynamic): Dynamic =>
-                  input3.whyDisabled === SvgArrowPropertiesLabel,
+              whyDisabled: matchingRows.every(
+                (row?: Dynamic): Dynamic =>
+                  row.whyDisabled === SvgArrowPropertiesLabel,
               )
                 ? SvgArrowPropertiesLabel
-                : SvgArrowPropertiesLabel_2,
+                : mixedArrowheadReason,
             });
-          state.spec?.longTail &&
-            value4.some(
-              (input3?: Dynamic): Dynamic => !input3.spec?.longTail,
+          mergedRow.spec?.longTail &&
+            matchingRows.some(
+              (row?: Dynamic): Dynamic => !row.spec?.longTail,
             ) &&
-            (state.spec = {
-              ...state.spec,
+            (mergedRow.spec = {
+              ...mergedRow.spec,
               longTail: false,
             });
-          let value10: Dynamic = value4.map(
-            (input3?: Dynamic): Dynamic => input3.fallback ?? "",
+          let fallbacks: Dynamic = matchingRows.map(
+            (fallback?: Dynamic): Dynamic => fallback.fallback ?? "",
           );
-          value10.every(
-            (input3?: Dynamic): Dynamic => input3 === value10[0],
-          ) || delete state.fallback;
-          delete state.companionFallback;
-          let value11: Dynamic = value4
-            .map((input3?: Dynamic): Dynamic => input3.varSource)
-            .filter((input3?: Dynamic): Dynamic => !!input3);
-          value7 && value11.length > 0
-            ? ((state.varSource = value11[0]),
-              value11.length < value4.length ||
-              value11.some(
-                (input3?: Dynamic): Dynamic => input3 !== value11[0],
+          fallbacks.every(
+            (fallback?: Dynamic): Dynamic => fallback === fallbacks[0],
+          ) || delete mergedRow.fallback;
+          delete mergedRow.companionFallback;
+          let varSources: Dynamic = matchingRows
+            .map((row?: Dynamic): Dynamic => row.varSource)
+            .filter((varSource?: Dynamic): Dynamic => !!varSource);
+          valuesAgree && varSources.length > 0
+            ? ((mergedRow.varSource = varSources[0]),
+              varSources.length < matchingRows.length ||
+              varSources.some(
+                (varSource?: Dynamic): Dynamic => varSource !== varSources[0],
               )
-                ? (state.varPartial = true)
-                : delete state.varPartial)
-            : (delete state.varSource, delete state.varPartial);
-          let value12: Dynamic = value4
-            .map((input3?: Dynamic): Dynamic => input3.companionVarSource)
-            .filter((input3?: Dynamic): Dynamic => !!input3);
-          value8 && value12.length > 0
-            ? ((state.companionVarSource = value12[0]),
-              value12.length < value4.length ||
-              value12.some(
-                (input3?: Dynamic): Dynamic => input3 !== value12[0],
+                ? (mergedRow.varPartial = true)
+                : delete mergedRow.varPartial)
+            : (delete mergedRow.varSource, delete mergedRow.varPartial);
+          let companionVarSources: Dynamic = matchingRows
+            .map((row?: Dynamic): Dynamic => row.companionVarSource)
+            .filter((varSource?: Dynamic): Dynamic => !!varSource);
+          companionAgree && companionVarSources.length > 0
+            ? ((mergedRow.companionVarSource = companionVarSources[0]),
+              companionVarSources.length < matchingRows.length ||
+              companionVarSources.some(
+                (varSource?: Dynamic): Dynamic => varSource !== companionVarSources[0],
               )
-                ? (state.companionVarPartial = true)
-                : delete state.companionVarPartial)
-            : (delete state.companionVarSource,
-              delete state.companionVarPartial);
-          let value13: Dynamic = value4.map(
-            (input3?: Dynamic): Dynamic => input3.inheritedFrom,
+                ? (mergedRow.companionVarPartial = true)
+                : delete mergedRow.companionVarPartial)
+            : (delete mergedRow.companionVarSource,
+              delete mergedRow.companionVarPartial);
+          let inheritedFroms: Dynamic = matchingRows.map(
+            (row?: Dynamic): Dynamic => row.inheritedFrom,
           );
-          value8 && value13.every((input3?: Dynamic): Dynamic => !!input3)
-            ? (state.inheritedFrom = [...new Set(value13)].join(", "))
-            : delete state.inheritedFrom;
-          return state;
+          companionAgree && inheritedFroms.every((inheritedFrom?: Dynamic): Dynamic => !!inheritedFrom)
+            ? (mergedRow.inheritedFrom = [...new Set(inheritedFroms)].join(", "))
+            : delete mergedRow.inheritedFrom;
+          return mergedRow;
         })
-        .filter((input2?: Dynamic): Dynamic => input2 != null),
-    items2: Dynamic = [];
-  for (let value4 of value[0].sections as Dynamic) {
-    let value5: Dynamic = value.map(
-      (input?: Dynamic): Dynamic =>
-        input.sections.find(
-          (input2?: Dynamic): Dynamic => input2.id === value4.id,
+        .filter((row?: Dynamic): Dynamic => row != null),
+    mergedSections: Dynamic = [];
+  for (let section of perElementInspectors[0].sections as Dynamic) {
+    let sectionsAcrossElements: Dynamic = perElementInspectors.map(
+      (inspector?: Dynamic): Dynamic =>
+        inspector.sections.find(
+          (candidate?: Dynamic): Dynamic => candidate.id === section.id,
         ),
     );
-    if (value5.some((input?: Dynamic): Dynamic => input == null)) continue;
-    let values4: Dynamic = new Set(
-        value5.map((input?: Dynamic): Dynamic => input.mode),
+    if (sectionsAcrossElements.some((candidateSection?: Dynamic): Dynamic => candidateSection == null)) continue;
+    let modes: Dynamic = new Set(
+        sectionsAcrossElements.map((candidateSection?: Dynamic): Dynamic => candidateSection.mode),
       ),
-      value6: Dynamic = callback2(
-        value5.map((input?: Dynamic): Dynamic => input.rows),
+      mergedRows: Dynamic = mergeRows(
+        sectionsAcrossElements.map((candidateSection?: Dynamic): Dynamic => candidateSection.rows),
       ),
-      state: Dynamic = {
-        ...value4,
-        rows: value6,
-        ...(values4.size > 1
+      mergedSection: Dynamic = {
+        ...section,
+        rows: mergedRows,
+        ...(modes.size > 1
           ? {
               mode: undefined,
             }
           : {}),
       };
-    value5.every(
-      (input?: Dynamic): Dynamic => input.shadowTarget === "shape",
-    ) || delete state.shadowTarget;
-    delete state.dropShadowReason;
-    items2.push(state);
+    sectionsAcrossElements.every(
+      (candidateSection?: Dynamic): Dynamic => candidateSection.shadowTarget === "shape",
+    ) || delete mergedSection.shadowTarget;
+    delete mergedSection.dropShadowReason;
+    mergedSections.push(mergedSection);
   }
-  let callback3: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-    input.sections.find(
-      (input2?: Dynamic): Dynamic =>
+  let sectionKind: Dynamic = (inspector?: Dynamic, element?: Dynamic): Dynamic =>
+    inspector.sections.find(
+      (candidate?: Dynamic): Dynamic =>
         !["size", "sizing", "appearance", "text", "effects"].includes(
-          input2.id,
+          candidate.id,
         ),
     )?.id ??
-    (InspectorStyleMetadataSubscribers.has(options.tag) ||
-    InspectorStyleMetadataTextTspanTextpathSet.has(options.tag)
+    (InspectorStyleMetadataSubscribers.has(element.tag) ||
+    InspectorStyleMetadataTextTspanTextpathSet.has(element.tag)
       ? "text"
       : "container");
   if (
-    value
+    perElementInspectors
       .map(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          callback3(input, items[options]),
+        (kind?: Dynamic, index?: Dynamic): Dynamic =>
+          sectionKind(kind, elements[index]),
       )
-      .every((input?: Dynamic): Dynamic => input === "text")
+      .every((kind?: Dynamic): Dynamic => kind === "text")
   ) {
-    let value4: Dynamic = items2.findIndex(
-      (input?: Dynamic): Dynamic => input.id === "text",
+    let textIndex: Dynamic = mergedSections.findIndex(
+      (section?: Dynamic): Dynamic => section.id === "text",
     );
-    value4 >= 0 &&
-      (items2[value4] = {
-        ...items2[value4],
-        title: uiMessage("inspector.selection.text", { value1: String(items.length) }),
+    textIndex >= 0 &&
+      (mergedSections[textIndex] = {
+        ...mergedSections[textIndex],
+        title: uiMessage("inspector.selection.text", { value1: String(elements.length) }),
       });
   }
-  orderInspectorSections(items2);
+  orderInspectorSections(mergedSections);
   if (
     !(
-      items2
-        .find((input?: Dynamic): Dynamic => input.id === "link")
-        ?.rows.some((input?: Dynamic): Dynamic => input.prop === "@target") ??
+      mergedSections
+        .find((section?: Dynamic): Dynamic => section.id === "link")
+        ?.rows.some((row?: Dynamic): Dynamic => row.prop === "@target") ??
       false
     )
   )
-    for (let value4 of value as Dynamic) {
-      let value5: Dynamic = value4.sections
-        .find((input?: Dynamic): Dynamic => input.id === "link")
-        ?.rows.find((input?: Dynamic): Dynamic => input.prop === "@target");
-      value5 &&
-        value5.value != null &&
-        value5.value !== "" &&
-        !value4.advanced.some(
-          (input?: Dynamic): Dynamic => input.prop === "@target",
+    for (let inspector of perElementInspectors as Dynamic) {
+      let targetRow: Dynamic = inspector.sections
+        .find((section?: Dynamic): Dynamic => section.id === "link")
+        ?.rows.find((row?: Dynamic): Dynamic => row.prop === "@target");
+      targetRow &&
+        targetRow.value != null &&
+        targetRow.value !== "" &&
+        !inspector.advanced.some(
+          (row?: Dynamic): Dynamic => row.prop === "@target",
         ) &&
-        value4.advanced.push({
+        inspector.advanced.push({
           prop: "@target",
           get label() { return uiMessage("inspector.selection.target"); },
-          value: value5.value,
-          disabled: value5.disabled,
+          value: targetRow.value,
+          disabled: targetRow.disabled,
         });
     }
-  let values2: Dynamic = new Set(
-      items2.flatMap(
-        (input?: Dynamic): Dynamic =>
-          input.rows.map((input2?: Dynamic): Dynamic => input2.prop),
+  let mergedProps: Dynamic = new Set(
+      mergedSections.flatMap(
+        (section?: Dynamic): Dynamic =>
+          section.rows.map((row?: Dynamic): Dynamic => row.prop),
       ),
     ),
-    value2: Dynamic = items.some(
-      (input?: Dynamic): Dynamic =>
-        InspectorStyleMetadataTextTspanTextpathSet.has(input.tag),
+    hasSvgText: Dynamic = elements.some(
+      (element?: Dynamic): Dynamic =>
+        InspectorStyleMetadataTextTspanTextpathSet.has(element.tag),
     );
-  value.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
-    for (let value4 of input.sections.flatMap(
-      (input2?: Dynamic): Dynamic => input2.rows,
+  perElementInspectors.forEach((inspector?: Dynamic, index?: Dynamic): Dynamic => {
+    for (let row of inspector.sections.flatMap(
+      (section?: Dynamic): Dynamic => section.rows,
     ) as Dynamic) {
       if (
         !(
           InspectorStyleMetadataStrokeStrokeWidthFillValues.includes(
-            value4.prop,
+            row.prop,
           ) ||
-          (value2 && value4.prop === "color")
+          (hasSvgText && row.prop === "color")
         ) ||
-        values2.has(value4.prop) ||
-        value4.value == null ||
-        value4.value === ""
+        mergedProps.has(row.prop) ||
+        row.value == null ||
+        row.value === ""
       )
         continue;
-      let value5: Dynamic = parseStyleDeclarations(
-          items[options].authoredStyle,
-        ).some((input2?: Dynamic): Dynamic => input2.prop === value4.prop),
-        value6: Dynamic = value5 ? value4.prop : `@${value4.prop}`;
-      input.advanced.some(
-        (input2?: Dynamic): Dynamic => input2.prop === value6,
+      let isAuthored: Dynamic = parseStyleDeclarations(
+          elements[index].authoredStyle,
+        ).some((declaration?: Dynamic): Dynamic => declaration.prop === row.prop),
+        advancedProp: Dynamic = isAuthored ? row.prop : `@${row.prop}`;
+      inspector.advanced.some(
+        (candidate?: Dynamic): Dynamic => candidate.prop === advancedProp,
       ) ||
-        input.advanced.push({
-          prop: value6,
-          label: value6,
-          value: value4.value,
-          ...(value4.varSource
+        inspector.advanced.push({
+          prop: advancedProp,
+          label: advancedProp,
+          value: row.value,
+          ...(row.varSource
             ? {
-                varSource: value4.varSource,
+                varSource: row.varSource,
               }
             : {}),
-          ...(value5 && value4.inheritedFrom
+          ...(isAuthored && row.inheritedFrom
             ? {
-                inheritedFrom: value4.inheritedFrom,
+                inheritedFrom: row.inheritedFrom,
               }
             : {}),
-          disabled: value4.disabled,
+          disabled: row.disabled,
         });
     }
   });
-  let entries: Dynamic = new Map(),
-    values3: Dynamic = new Set(
-      value.flatMap(
-        (input?: Dynamic): Dynamic =>
-          input.sections.flatMap(
-            (input2?: Dynamic): Dynamic =>
-              input2.rows.map((input3?: Dynamic): Dynamic => input3.prop),
+  let advancedByProp: Dynamic = new Map(),
+    mergedSectionProps: Dynamic = new Set(
+      perElementInspectors.flatMap(
+        (inspector?: Dynamic): Dynamic =>
+          inspector.sections.flatMap(
+            (section?: Dynamic): Dynamic =>
+              section.rows.map((row?: Dynamic): Dynamic => row.prop),
           ),
       ),
     );
-  for (let value4 of value as Dynamic)
-    for (let value5 of value4.advanced as Dynamic) {
-      if (value5.stale && values3.has(value5.prop)) continue;
-      let value6: Dynamic = entries.get(value5.prop) ?? [];
-      value6.push(value5);
-      entries.set(value5.prop, value6);
+  for (let inspector of perElementInspectors as Dynamic)
+    for (let advancedRow of inspector.advanced as Dynamic) {
+      if (advancedRow.stale && mergedSectionProps.has(advancedRow.prop)) continue;
+      let rowsForProp: Dynamic = advancedByProp.get(advancedRow.prop) ?? [];
+      rowsForProp.push(advancedRow);
+      advancedByProp.set(advancedRow.prop, rowsForProp);
     }
-  let entries2: Dynamic = new Map(
+  let orderByProp: Dynamic = new Map(
       InspectorPropertySchemaCursorPointerEventsObjectFitValues.map(
-        (input?: Dynamic, options?: Dynamic): Dynamic => [input, options],
+        (prop?: Dynamic, order?: Dynamic): Dynamic => [prop, order],
       ),
     ),
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      input.startsWith("@") ? 2 : entries2.has(input) ? 1 : 0,
-    value3: Dynamic = [...entries.keys()]
+    propGroup: Dynamic = (prop?: Dynamic): Dynamic =>
+      prop.startsWith("@") ? 2 : orderByProp.has(prop) ? 1 : 0,
+    mergedAdvanced: Dynamic = [...advancedByProp.keys()]
       .sort(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          callback4(input) - callback4(options) ||
-          (entries2.get(input) ?? 0) - (entries2.get(options) ?? 0),
+        (propA?: Dynamic, propB?: Dynamic): Dynamic =>
+          propGroup(propA) - propGroup(propB) ||
+          (orderByProp.get(propA) ?? 0) - (orderByProp.get(propB) ?? 0),
       )
-      .map((input?: Dynamic): Dynamic => {
-        let entry: Dynamic = entries.get(input),
-          value4: Dynamic = entry[0],
-          value5: Dynamic = entry.map(
-            (input2?: Dynamic): Dynamic => input2.value ?? "",
+      .map((prop?: Dynamic): Dynamic => {
+        let entry: Dynamic = advancedByProp.get(prop),
+          firstRow: Dynamic = entry[0],
+          rowValues: Dynamic = entry.map(
+            (row?: Dynamic): Dynamic => row.value ?? "",
           ),
-          value6: Dynamic =
-            entry.length === value.length &&
-            value5.every((input2?: Dynamic): Dynamic => input2 === value5[0])
+          mergedAdvancedRow: Dynamic =
+            entry.length === perElementInspectors.length &&
+            rowValues.every((rowValue?: Dynamic): Dynamic => rowValue === rowValues[0])
               ? {
-                  ...value4,
+                  ...firstRow,
                 }
               : {
-                  ...value4,
-                  prop: input,
+                  ...firstRow,
+                  prop: prop,
                   value: null,
                   mixed: true,
                 },
-          value7: Dynamic = entry.map(
-            (input2?: Dynamic): Dynamic => input2.inheritedFrom,
+          advancedInheritedFroms: Dynamic = entry.map(
+            (row?: Dynamic): Dynamic => row.inheritedFrom,
           );
-        entry.length === value.length &&
-        value7.every((input2?: Dynamic): Dynamic => !!input2)
-          ? (value6.inheritedFrom = [...new Set(value7)].join(", "))
-          : delete value6.inheritedFrom;
-        return value6;
+        entry.length === perElementInspectors.length &&
+        advancedInheritedFroms.every((inheritedFrom?: Dynamic): Dynamic => !!inheritedFrom)
+          ? (mergedAdvancedRow.inheritedFrom = [...new Set(advancedInheritedFroms)].join(", "))
+          : delete mergedAdvancedRow.inheritedFrom;
+        return mergedAdvancedRow;
       });
   return {
-    sections: items2,
-    advanced: value3,
+    sections: mergedSections,
+    advanced: mergedAdvanced,
   };
 }
 export {

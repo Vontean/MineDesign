@@ -11,191 +11,191 @@ var opaqueRgbComputedValuePattern: Dynamic;
 var InspectorComputedDataRectCircleEllipseSet: Dynamic;
 var InspectorComputedDataPathLinePolylineSet: Dynamic;
 var InspectorComputedDataItems: Dynamic;
-function normalizePixelValue(input?: Dynamic): Dynamic {
-  return typeof input != "string"
+function normalizePixelValue(pixelValue?: Dynamic): Dynamic {
+  return typeof pixelValue != "string"
     ? null
-    : /^\d{1,4}(\.\d{1,6})?px$/.test(input)
-      ? input
+    : /^\d{1,4}(\.\d{1,6})?px$/.test(pixelValue)
+      ? pixelValue
       : null;
 }
-function normalizeRgbValue(input?: Dynamic): Dynamic {
-  return typeof input != "string"
+function normalizeRgbValue(rgbValue?: Dynamic): Dynamic {
+  return typeof rgbValue != "string"
     ? null
-    : rgbComputedValuePattern.test(input)
-      ? input
+    : rgbComputedValuePattern.test(rgbValue)
+      ? rgbValue
       : null;
 }
-function normalizeFontWeight(input?: Dynamic): Dynamic {
-  return typeof input == "string" &&
-    /^(1000|[1-9]\d{0,2}(\.\d{1,3})?)$/.test(input)
-    ? input
+function normalizeFontWeight(fontWeightValue?: Dynamic): Dynamic {
+  return typeof fontWeightValue == "string" &&
+    /^(1000|[1-9]\d{0,2}(\.\d{1,3})?)$/.test(fontWeightValue)
+    ? fontWeightValue
     : null;
 }
-function normalizeContrastGround(input?: Dynamic): Dynamic {
-  let value: Dynamic = input != null && typeof input == "object" ? input : {};
-  if (value.instances !== 1) return null;
-  let ground: Dynamic = value.ground;
+function normalizeContrastGround(rawData?: Dynamic): Dynamic {
+  let dataObject: Dynamic = rawData != null && typeof rawData == "object" ? rawData : {};
+  if (dataObject.instances !== 1) return null;
+  let ground: Dynamic = dataObject.ground;
   if (ground == null || typeof ground != "object") return null;
-  let { behind: value2, ink: value3 }: Dynamic = ground;
+  let { behind: behind, ink: ink }: Dynamic = ground;
   if (
-    typeof value2 != "string" ||
-    !opaqueRgbComputedValuePattern.test(value2)
+    typeof behind != "string" ||
+    !opaqueRgbComputedValuePattern.test(behind)
   )
     return null;
-  let value4: Dynamic = normalizeRgbValue(value3);
-  return value4 === null
+  let normalizedInk: Dynamic = normalizeRgbValue(ink);
+  return normalizedInk === null
     ? null
     : {
-        behind: value2,
-        ink: value4,
+        behind: behind,
+        ink: normalizedInk,
       };
 }
 function normalizeInspectorComputedData(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = {},
+  kind?: Dynamic,
+  rawData?: Dynamic,
+  flags: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic =
-      options != null && typeof options == "object" ? options : {},
-    value2: Dynamic =
-      value.computed != null && typeof value.computed == "object"
-        ? value.computed
+  let dataObject: Dynamic =
+      rawData != null && typeof rawData == "object" ? rawData : {},
+    computed: Dynamic =
+      dataObject.computed != null && typeof dataObject.computed == "object"
+        ? dataObject.computed
         : {},
-    value3: Dynamic = typeof value.tag == "string" ? value.tag : "",
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      normalizeRgbValue(value2[input2]),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 != null && parseHsvaColor(input2).a > 0
-        ? input2
+    tagName: Dynamic = typeof dataObject.tag == "string" ? dataObject.tag : "",
+    computedRgb: Dynamic = (propName?: Dynamic): Dynamic =>
+      normalizeRgbValue(computed[propName]),
+    visibleColor: Dynamic = (color?: Dynamic): Dynamic =>
+      color != null && parseHsvaColor(color).a > 0
+        ? color
         : null,
-    value4: Dynamic =
-      InspectorComputedDataRectCircleEllipseSet.has(value3) ||
-      InspectorComputedDataPathLinePolylineSet.has(value3) ||
-      value3 === "svg",
-    callback3: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      typeof input2 == "string" && options2.test(input2) ? input2 : null,
-    state: Dynamic = {};
-  if (input !== "line" && !value4) {
-    let callback4: Dynamic = (
-        input2?: Dynamic,
-        options2?: Dynamic,
+    isSvgShape: Dynamic =
+      InspectorComputedDataRectCircleEllipseSet.has(tagName) ||
+      InspectorComputedDataPathLinePolylineSet.has(tagName) ||
+      tagName === "svg",
+    matchingString: Dynamic = (text?: Dynamic, pattern?: Dynamic): Dynamic =>
+      typeof text == "string" && pattern.test(text) ? text : null,
+    boxStyles: Dynamic = {};
+  if (kind !== "line" && !isSvgShape) {
+    let setBoxStyle: Dynamic = (
+        propName?: Dynamic,
+        propValue?: Dynamic,
       ): Dynamic => {
-        options2 != null && options2 !== "0px" && (state[input2] = options2);
+        propValue != null && propValue !== "0px" && (boxStyles[propName] = propValue);
       },
-      value5: Dynamic = ["Top", "Right", "Bottom", "Left"].map(
-        (input2?: Dynamic): Dynamic => ({
-          S: input2,
-          w: normalizePixelValue(value2["border" + input2 + "Width"]),
-          st: callback3(
-            value2["border" + input2 + "Style"],
+      sideBorders: Dynamic = ["Top", "Right", "Bottom", "Left"].map(
+        (side?: Dynamic): Dynamic => ({
+          S: side,
+          w: normalizePixelValue(computed["border" + side + "Width"]),
+          st: matchingString(
+            computed["border" + side + "Style"],
             /^(solid|dashed|dotted)$/,
           ),
         }),
       ),
-      value6: Dynamic = value5.find(
-        (input2?: Dynamic): Dynamic =>
-          input2.st !== null && input2.w !== null && input2.w !== "0px",
+      visibleBorder: Dynamic = sideBorders.find(
+        (sideBorder?: Dynamic): Dynamic =>
+          sideBorder.st !== null && sideBorder.w !== null && sideBorder.w !== "0px",
       );
-    if (value6) {
-      callback4("border-style", value6.st);
-      callback4("border-width", value6.w);
-      callback4("border-color", callback("border" + value6.S + "Color"));
-      for (let value7 of value5 as Dynamic)
-        value7.w != null &&
-          (state["border-" + value7.S.toLowerCase() + "-width"] =
-            value7.st === null ? "0px" : value7.w);
+    if (visibleBorder) {
+      setBoxStyle("border-style", visibleBorder.st);
+      setBoxStyle("border-width", visibleBorder.w);
+      setBoxStyle("border-color", computedRgb("border" + visibleBorder.S + "Color"));
+      for (let sideBorder of sideBorders as Dynamic)
+        sideBorder.w != null &&
+          (boxStyles["border-" + sideBorder.S.toLowerCase() + "-width"] =
+            sideBorder.st === null ? "0px" : sideBorder.w);
     }
-    let items: Dynamic = [
-      normalizePixelValue(value2.borderTopLeftRadius),
-      normalizePixelValue(value2.borderTopRightRadius),
-      normalizePixelValue(value2.borderBottomRightRadius),
-      normalizePixelValue(value2.borderBottomLeftRadius),
+    let cornerRadii: Dynamic = [
+      normalizePixelValue(computed.borderTopLeftRadius),
+      normalizePixelValue(computed.borderTopRightRadius),
+      normalizePixelValue(computed.borderBottomRightRadius),
+      normalizePixelValue(computed.borderBottomLeftRadius),
     ];
-    items.every((input2?: Dynamic): Dynamic => input2 === items[0])
-      ? callback4("border-radius", items[0])
+    cornerRadii.every((radius?: Dynamic): Dynamic => radius === cornerRadii[0])
+      ? setBoxStyle("border-radius", cornerRadii[0])
       : [
           "border-top-left-radius",
           "border-top-right-radius",
           "border-bottom-right-radius",
           "border-bottom-left-radius",
-        ].forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-          items[options2] != null && (state[input2] = items[options2]);
+        ].forEach((propName?: Dynamic, index?: Dynamic): Dynamic => {
+          cornerRadii[index] != null && (boxStyles[propName] = cornerRadii[index]);
         });
-    callback4("padding-top", normalizePixelValue(value2.paddingTop));
-    callback4("padding-right", normalizePixelValue(value2.paddingRight));
-    callback4("padding-bottom", normalizePixelValue(value2.paddingBottom));
-    callback4("padding-left", normalizePixelValue(value2.paddingLeft));
+    setBoxStyle("padding-top", normalizePixelValue(computed.paddingTop));
+    setBoxStyle("padding-right", normalizePixelValue(computed.paddingRight));
+    setBoxStyle("padding-bottom", normalizePixelValue(computed.paddingBottom));
+    setBoxStyle("padding-left", normalizePixelValue(computed.paddingLeft));
   }
   return {
-    box: state,
+    box: boxStyles,
     fontWeight:
-      input === "text" ? normalizeFontWeight(value2.fontWeight) : null,
+      kind === "text" ? normalizeFontWeight(computed.fontWeight) : null,
     fontFamily:
-      input === "text"
-        ? callback3(value2.fontFamily, InspectorComputedDataPattern)
+      kind === "text"
+        ? matchingString(computed.fontFamily, InspectorComputedDataPattern)
         : null,
     fontStyle:
-      input === "text"
-        ? callback3(value2.fontStyle, /^(normal|italic|oblique)$/)
+      kind === "text"
+        ? matchingString(computed.fontStyle, /^(normal|italic|oblique)$/)
         : null,
     textAlign:
-      input === "text"
-        ? callback3(
-            value2.textAlign,
+      kind === "text"
+        ? matchingString(
+            computed.textAlign,
             /^(start|end|left|right|center|justify)$/,
           )
         : null,
     textDecoration:
-      input === "text"
-        ? callback3(
-            value2.textDecorationLine,
+      kind === "text"
+        ? matchingString(
+            computed.textDecorationLine,
             /^(none|underline|line-through|overline)( (underline|line-through|overline))*$/,
           )
         : null,
-    fontSize: input === "text" ? normalizePixelValue(value2.fontSize) : null,
+    fontSize: kind === "text" ? normalizePixelValue(computed.fontSize) : null,
     lineHeight:
-      input === "text"
+      kind === "text"
         ? normalizeLineHeightRatio(
-            normalizePixelValue(value2.lineHeight),
-            normalizePixelValue(value2.fontSize),
+            normalizePixelValue(computed.lineHeight),
+            normalizePixelValue(computed.fontSize),
           )
         : null,
     letterSpacing:
-      input === "text"
-        ? value2.letterSpacing === "normal"
+      kind === "text"
+        ? computed.letterSpacing === "normal"
           ? "0px"
-          : callback3(value2.letterSpacing, /^-?\d{1,4}(\.\d{1,6})?px$/)
+          : matchingString(computed.letterSpacing, /^-?\d{1,4}(\.\d{1,6})?px$/)
         : null,
-    color: input === "text" ? callback("color") : null,
+    color: kind === "text" ? computedRgb("color") : null,
     textClip:
-      input === "text" &&
-      (value2.backgroundClip === "text" ||
-        value2.webkitBackgroundClip === "text"),
+      kind === "text" &&
+      (computed.backgroundClip === "text" ||
+        computed.webkitBackgroundClip === "text"),
     ground:
-      input === "text" && context.ground === true
-        ? normalizeContrastGround(options)
+      kind === "text" && flags.ground === true
+        ? normalizeContrastGround(rawData)
         : null,
     background:
-      input === "line"
+      kind === "line"
         ? null
-        : (callback2(callback("backgroundColor")) ??
-          (InspectorComputedDataRectCircleEllipseSet.has(value3)
-            ? callback("fill")
+        : (visibleColor(computedRgb("backgroundColor")) ??
+          (InspectorComputedDataRectCircleEllipseSet.has(tagName)
+            ? computedRgb("fill")
             : null)),
     stroke:
-      input === "text"
+      kind === "text"
         ? null
-        : callback(value4 ? "stroke" : "borderTopColor"),
+        : computedRgb(isSvgShape ? "stroke" : "borderTopColor"),
   };
 }
 function normalizeLineHeightRatio(
-  input?: Dynamic,
-  options?: Dynamic,
+  lineHeightPx?: Dynamic,
+  fontSizePx?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input !== null ? parseFloat(input) : NaN,
-    value2: Dynamic = options !== null ? parseFloat(options) : NaN;
-  return value > 0 && value2 > 0
-    ? String(Math.round((value / value2) * 100) / 100)
+  let lineHeight: Dynamic = lineHeightPx !== null ? parseFloat(lineHeightPx) : NaN,
+    fontSize: Dynamic = fontSizePx !== null ? parseFloat(fontSizePx) : NaN;
+  return lineHeight > 0 && fontSize > 0
+    ? String(Math.round((lineHeight / fontSize) * 100) / 100)
     : null;
 }
 export {

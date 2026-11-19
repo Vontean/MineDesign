@@ -19,37 +19,37 @@ var InspectorColorPickResolvedValue_5: Dynamic;
 var InspectorColorPickResolvedValue_6: Dynamic;
 var supportsScreenDetails: Dynamic;
 var supportsIntlSegmentation: Dynamic;
-function inspectSelectedColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.tag.toLowerCase(),
-    value2: Dynamic = parseStyleDeclarations(
-      input.authoredStyle,
+function inspectSelectedColor(element?: Dynamic): Dynamic {
+  let tagName: Dynamic = element.tag.toLowerCase(),
+    declarations: Dynamic = parseStyleDeclarations(
+      element.authoredStyle,
     ),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      value2.find((input3?: Dynamic): Dynamic => input3.prop === input2)
+    authoredValue: Dynamic = (propName?: Dynamic): Dynamic =>
+      declarations.find((declaration?: Dynamic): Dynamic => declaration.prop === propName)
         ?.value;
   if (
-    svgShapeTags.has(value) ||
-    InspectorPopoverPositionGUseSet.has(value)
+    svgShapeTags.has(tagName) ||
+    InspectorPopoverPositionGUseSet.has(tagName)
   ) {
-    let value6: Dynamic = (
-      callback("stroke") ??
-      input.computed.stroke ??
+    let strokeColor: Dynamic = (
+      authoredValue("stroke") ??
+      element.computed.stroke ??
       ""
     ).toLowerCase();
-    return svgShapeTags.has(value) &&
-      value6 !== "" &&
-      value6 !== "none"
+    return svgShapeTags.has(tagName) &&
+      strokeColor !== "" &&
+      strokeColor !== "none"
       ? {
-          prop: formatPropertyKey("stroke", callback),
+          prop: formatPropertyKey("stroke", authoredValue),
         }
       : {
-          prop: svgShapeTags.has(value)
-            ? formatPropertyKey("fill", callback)
+          prop: svgShapeTags.has(tagName)
+            ? formatPropertyKey("fill", authoredValue)
             : "fill",
         };
   }
-  if (input.isTextEditable)
-    return hasTextBackgroundClip(callback)
+  if (element.isTextEditable)
+    return hasTextBackgroundClip(authoredValue)
       ? {
           prop: "color",
           unset: ["background", ...InspectorPropertySchemaItems],
@@ -57,29 +57,29 @@ function inspectSelectedColor(input?: Dynamic): Dynamic {
       : {
           prop: "color",
         };
-  let value3: Dynamic = callback("background") != null;
-  if (value3 || callback("background-color") != null)
-    return value3
+  let hasBackground: Dynamic = authoredValue("background") != null;
+  if (hasBackground || authoredValue("background-color") != null)
+    return hasBackground
       ? {
           ...InspectorPopoverPositionPropConfig,
           unset: ["background"],
         }
       : InspectorPopoverPositionPropConfig;
-  if (value === "svg") {
-    let value6: Dynamic = (
-      callback("stroke") ??
-      input.computed.stroke ??
+  if (tagName === "svg") {
+    let strokeColor: Dynamic = (
+      authoredValue("stroke") ??
+      element.computed.stroke ??
       ""
     ).toLowerCase();
-    if (value6 !== "" && value6 !== "none")
+    if (strokeColor !== "" && strokeColor !== "none")
       return {
         prop: "stroke",
       };
   }
-  let value4: Dynamic = input.computed.borderTopStyle ?? "",
-    value5: Dynamic = input.computed.borderTopWidth ?? "";
-  return hasAuthoredAppearance(input.authoredStyle) ||
-    (value4 !== "" && value4 !== "none" && value5 !== "" && value5 !== "0px")
+  let borderStyle: Dynamic = element.computed.borderTopStyle ?? "",
+    borderWidth: Dynamic = element.computed.borderTopWidth ?? "";
+  return hasAuthoredAppearance(element.authoredStyle) ||
+    (borderStyle !== "" && borderStyle !== "none" && borderWidth !== "" && borderWidth !== "0px")
     ? {
         prop: "border-color",
       }

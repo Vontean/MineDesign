@@ -9,7 +9,7 @@ import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
 import { PropertyCornersRow } from "../properties/sides";
 import { toModuleNamespace } from "../../module-helpers";
-import { artboardRadiusCorners, PlatformFileContentResolvedValue_3 } from "../../platform/file-content";
+import { artboardRadiusCorners, PlatformFileContentResolvedValue_3 as maxCornerRadius } from "../../platform/file-content";
 
 var jsxInspectorArtboardRadius: Dynamic;
 var InspectorArtboardRadiusItems: Dynamic;
@@ -22,32 +22,32 @@ function ArtboardRadiusRow({
   onSetRadius: onSetRadius,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = artboardRadiusCorners(radius),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let items: Dynamic = [...value];
-      for (let value2 of input as Dynamic)
-        items[value2.side] = value2.value ?? 0;
-      return items;
+  let corners: Dynamic = artboardRadiusCorners(radius),
+    applyChanges: Dynamic = (changes?: Dynamic): Dynamic => {
+      let nextCorners: Dynamic = [...corners];
+      for (let change of changes as Dynamic)
+        nextCorners[change.side] = change.value ?? 0;
+      return nextCorners;
     };
   return (
     <PropertyCornersRow
       label={uiMessage("inspector.artboardRadius.radius")}
       data-testid={"dc-artboard-radius"}
       title={readOnly ? (ViewOnlyYouCanInspectThisMessage) : (undefined)}
-      values={radius === undefined ? InspectorArtboardRadiusItems : value}
+      values={radius === undefined ? InspectorArtboardRadiusItems : corners}
       placeholders={InspectorArtboardRadiusItems_2}
       unit={"px"}
       min={0}
-      max={PlatformFileContentResolvedValue_3}
+      max={maxCornerRadius}
       disabled={readOnly}
-      onSides={(input?: Dynamic): Dynamic =>
-        onSetRadius(callback(input), false)
+      onSides={(changes?: Dynamic): Dynamic =>
+        onSetRadius(applyChanges(changes), false)
       }
-      onScrubSides={(input?: Dynamic): Dynamic =>
-        onSetRadius(callback(input), true)
+      onScrubSides={(changes?: Dynamic): Dynamic =>
+        onSetRadius(applyChanges(changes), true)
       }
-      onScrubEnd={(input?: Dynamic): Dynamic =>
-        onSetRadius(callback(input), false)
+      onScrubEnd={(changes?: Dynamic): Dynamic =>
+        onSetRadius(applyChanges(changes), false)
       }
       onReset={
         radius !== undefined && !readOnly

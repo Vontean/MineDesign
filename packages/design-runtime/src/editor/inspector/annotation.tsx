@@ -11,7 +11,7 @@ import { InspectorContext, useInspectorContext } from "./context-part-2";
 import { inspectSingleElement } from "./selection";
 import { MediaPlaybackControlsQuerySelector, reactMediaPlaybackControls, VideoSeekControl } from "../media/playback-controls";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
-import { ACanvasPictureShowsAnUploadedMessage, InspectorAppearanceSection, PropertiesAppearanceSectionBoxShadowFilterBackdropFilterSet, PropertiesAppearanceSectionFontSizeFontWeightSet, PropertiesAppearanceSectionHandler, PropertiesAppearanceSectionImageRectOvalConfig, PropertiesAppearanceSectionImageVideoRectConfig, PropertiesAppearanceSectionItems_2, PropertiesAppearanceSectionLabel, PropertiesAppearanceSectionLabel_2, PropertiesAppearanceSectionLabel_3, PropertiesAppearanceSectionLabel_4, PropertiesAppearanceSectionLabel_5, PropertiesAppearanceSectionLabel_6, PropertiesAppearanceSectionLabel_7, PropertiesAppearanceSectionNoteTitle1Config, PropertiesAppearanceSectionSubscribers, PropertiesAppearanceSectionSubscribers_2, PropertiesAppearanceSectionSubscribers_3, PropertiesAppearanceSectionWidthHeightPositionSet, useVisibleInspectorProperties } from "../properties/appearance-section";
+import { ACanvasPictureShowsAnUploadedMessage, InspectorAppearanceSection, PropertiesAppearanceSectionBoxShadowFilterBackdropFilterSet, PropertiesAppearanceSectionFontSizeFontWeightSet, PropertiesAppearanceSectionHandler, PropertiesAppearanceSectionImageRectOvalConfig, PropertiesAppearanceSectionImageVideoRectConfig, PropertiesAppearanceSectionItems_2 as fontWeightFaces, PropertiesAppearanceSectionLabel, PropertiesAppearanceSectionLabel_2 as fixedCanvasObjectSizeReason, PropertiesAppearanceSectionLabel_3 as noteSizeReason, PropertiesAppearanceSectionLabel_4 as titleSizeReason, PropertiesAppearanceSectionLabel_5 as ovalRoundReason, PropertiesAppearanceSectionLabel_6 as canvasObjectPaintReason, PropertiesAppearanceSectionLabel_7 as videoSourceReason, PropertiesAppearanceSectionNoteTitle1Config, PropertiesAppearanceSectionSubscribers, PropertiesAppearanceSectionSubscribers_2 as canvasCssPropertySet, PropertiesAppearanceSectionSubscribers_3 as imageMediaPropertySet, PropertiesAppearanceSectionWidthHeightPositionSet, useVisibleInspectorProperties } from "../properties/appearance-section";
 import { CssEffectsSection } from "../properties/css-effects";
 import { InspectorLayoutSection } from "../properties/layout-section";
 import { PropertyActions } from "../properties/primitives";
@@ -19,59 +19,59 @@ import { PropertySection } from "../properties/section";
 import { SessionArtboardStateEscape } from "../session/artboard-state";
 import { toModuleNamespace } from "../../module-helpers";
 import { initializePlatformCdsIsland } from "../../platform/cds-island";
-import { PlatformFileContentTest_2 } from "../../platform/file-content";
+import { PlatformFileContentTest_2 as isBlobPath } from "../../platform/file-content";
 
 var reactInspectorAnnotation: Dynamic;
 var reactInspectorAnnotation_2: Dynamic;
 var jsxInspectorAnnotation: Dynamic;
 var InspectorAnnotationLargerSmallerPattern: Dynamic;
 var InspectorAnnotationFontFontSizeFontWeightSet: Dynamic;
-function annotationClientRect(input?: Dynamic): Dynamic {
+function annotationClientRect(annotationId?: Dynamic): Dynamic {
   let element: Dynamic = (document as Dynamic).querySelector(
-      '[data-mega-annotation="' + CSS.escape(input) + '"]',
+      '[data-mega-annotation="' + CSS.escape(annotationId) + '"]',
     ),
-    value: Dynamic =
+    shapeElement: Dynamic =
       element?.querySelector(
         '[data-testid^="mega-shape-svg-"], div[data-testid^="mega-shape-body-"], img[data-testid^="mega-shape-body-"], video[data-testid^="mega-shape-body-"], [data-testid^="mega-note-text-"]',
       ) ?? element;
-  if (!value) return {};
-  let value2: Dynamic = getComputedStyle(value),
-    state: Dynamic = {};
-  for (let index: Dynamic = 0; index < value2.length; index++) {
-    let value3: Dynamic = value2.item(index);
-    value3.startsWith("-") ||
-      (state[
-        value3.replace(
+  if (!shapeElement) return {};
+  let computedStyle: Dynamic = getComputedStyle(shapeElement),
+    styleMap: Dynamic = {};
+  for (let index: Dynamic = 0; index < computedStyle.length; index++) {
+    let propertyName: Dynamic = computedStyle.item(index);
+    propertyName.startsWith("-") ||
+      (styleMap[
+        propertyName.replace(
           /-([a-z])/g,
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            options.toUpperCase(),
+          (matchText?: Dynamic, letter?: Dynamic): Dynamic =>
+            letter.toUpperCase(),
         )
-      ] = value2.getPropertyValue(value3));
+      ] = computedStyle.getPropertyValue(propertyName));
   }
-  return state;
+  return styleMap;
 }
 function AnnotationInspector({
   settings: settings,
   readOnly = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { showToast: value }: Dynamic = useToast(),
-    value2: Dynamic = settings.kind === "image",
-    value3: Dynamic = value2 && settings.video !== undefined,
-    value4: Dynamic = settings.kind === "line" || settings.kind === "arrow",
-    value5: Dynamic = value4 || settings.kind === "pen",
-    value6: Dynamic = settings.textStyle !== undefined,
-    value7: Dynamic = "canvas:" + settings.id,
-    [value8, value9]: Dynamic = (0,
+  let { showToast: showToast }: Dynamic = useToast(),
+    isImage: Dynamic = settings.kind === "image",
+    isVideo: Dynamic = isImage && settings.video !== undefined,
+    isLineLike: Dynamic = settings.kind === "line" || settings.kind === "arrow",
+    isStrokeLike: Dynamic = isLineLike || settings.kind === "pen",
+    hasTextStyle: Dynamic = settings.textStyle !== undefined,
+    selectionKey: Dynamic = "canvas:" + settings.id,
+    [forceShown, setForceShown]: Dynamic = (0,
     reactMediaPlaybackControls.useState)((): Dynamic => new Set());
   (0, reactMediaPlaybackControls.useEffect)(
-    (): Dynamic => value9(new Set()),
-    [value7],
+    (): Dynamic => setForceShown(new Set()),
+    [selectionKey],
   );
-  let [value10, value11]: Dynamic = (0,
+  let [clientRect, setClientRect]: Dynamic = (0,
   reactMediaPlaybackControls.useState)({});
   (0, reactMediaPlaybackControls.useEffect)(
-    (): Dynamic => value11(annotationClientRect(settings.id)),
+    (): Dynamic => setClientRect(annotationClientRect(settings.id)),
     [
       settings.id,
       settings.css,
@@ -81,40 +81,40 @@ function AnnotationInspector({
       settings.textStyle,
     ],
   );
-  let value12: Dynamic = useInspectorContext(),
-    value13: Dynamic = (0, reactMediaPlaybackControls.useMemo)(
+  let inspectorContext: Dynamic = useInspectorContext(),
+    annotationContext: Dynamic = (0, reactMediaPlaybackControls.useMemo)(
       (): Dynamic => ({
-        ...value12,
+        ...inspectorContext,
         iframeDefinedVars: PropertiesAppearanceSectionSubscribers,
       }),
-      [value12],
+      [inspectorContext],
     ),
-    value14: Dynamic = (0,
+    inspectedElement: Dynamic = (0,
     reactMediaPlaybackControls.useMemo)((): Dynamic => {
-      let value21: Dynamic = settings.css ?? {},
-        items: Dynamic = [
+      let css: Dynamic = settings.css ?? {},
+        styleDeclarations: Dynamic = [
           "position: absolute",
           "left: " + String(Math.round(settings.x)) + "px",
           "top: " + String(Math.round(settings.y)) + "px",
-          ...(value4 || settings.kind === "title1"
+          ...(isLineLike || settings.kind === "title1"
             ? []
             : ["width: " + String(Math.round(settings.w)) + "px"]),
-          ...(settings.h !== undefined && !value4
+          ...(settings.h !== undefined && !isLineLike
             ? ["height: " + String(Math.round(settings.h)) + "px"]
             : []),
-          ...(value5
+          ...(isStrokeLike
             ? [
                 "fill: none",
                 "stroke: " +
-                  (value21.stroke ?? settings.paint ?? "currentColor"),
+                  (css.stroke ?? settings.paint ?? "currentColor"),
                 "stroke-width: " +
-                  (value21["stroke-width"] ??
+                  (css["stroke-width"] ??
                     String(settings.strokeWidth ?? 4) + "px"),
               ]
             : []),
           ...((settings.kind === "rect" || settings.kind === "oval") &&
-          value21.background === undefined &&
-          value21["background-color"] === undefined &&
+          css.background === undefined &&
+          css["background-color"] === undefined &&
           settings.paint
             ? ["background: " + settings.paint]
             : []),
@@ -129,7 +129,7 @@ function AnnotationInspector({
                   "px",
               ]
             : []),
-          ...(value6
+          ...(hasTextStyle
             ? [
                 "font-size: " + String(settings.textStyle.size) + "px",
                 "font-weight: " + (settings.textStyle.bold ? "700" : "400"),
@@ -137,28 +137,28 @@ function AnnotationInspector({
                   (settings.textStyle.italic ? "italic" : "normal"),
               ]
             : []),
-          ...Object.entries(value21)
+          ...Object.entries(css)
             .filter(
-              ([input]: Dynamic): Dynamic =>
-                !(value5 && (input === "stroke" || input === "stroke-width")),
+              ([propName]: Dynamic): Dynamic =>
+                !(isStrokeLike && (propName === "stroke" || propName === "stroke-width")),
             )
             .map(
-              ([input, input2]: Dynamic): Dynamic =>
-                input + ": " + String(input2),
+              ([propName, propValue]: Dynamic): Dynamic =>
+                propName + ": " + String(propValue),
             ),
         ];
       return inspectSingleElement({
-        tag: value3
+        tag: isVideo
           ? "video"
           : (PropertiesAppearanceSectionImageRectOvalConfig[
               settings.kind
             ] ?? "div"),
-        authoredStyle: items.join("; "),
-        attrs: value3
+        authoredStyle: styleDeclarations.join("; "),
+        attrs: isVideo
           ? {
               src: settings.video ?? "",
             }
-          : value2
+          : isImage
             ? {
                 src: settings.src ?? "",
                 ...(settings.alt
@@ -170,10 +170,10 @@ function AnnotationInspector({
             : {},
         text: null,
         canvasEditable: true,
-        computed: value10,
+        computed: clientRect,
         disabled: readOnly,
         heads:
-          value4 && settings.heads
+          isLineLike && settings.heads
             ? {
                 ...settings.heads,
                 width: 1,
@@ -191,144 +191,144 @@ function AnnotationInspector({
       settings.css,
       settings.src,
       settings.video,
-      value3,
+      isVideo,
       settings.alt,
       settings.kind,
       settings.paint,
       settings.strokeWidth,
       settings.textStyle,
-      value2,
-      value4,
-      value5,
-      value6,
-      value10,
+      isImage,
+      isLineLike,
+      isStrokeLike,
+      hasTextStyle,
+      clientRect,
       readOnly,
     ]),
-    value15: Dynamic = (0,
+    visibleSections: Dynamic = (0,
     reactMediaPlaybackControls.useMemo)((): Dynamic => {
-      let value21: Dynamic =
-          (value3
+      let allowedSectionIds: Dynamic =
+          (isVideo
             ? PropertiesAppearanceSectionImageVideoRectConfig.video
             : PropertiesAppearanceSectionImageVideoRectConfig[
                 settings.kind
               ]) ??
           PropertiesAppearanceSectionImageVideoRectConfig.rect,
-        value22: Dynamic = readOnly
+        readOnlyReason: Dynamic = readOnly
           ? ViewOnlyYouCanInspectThisMessage
           : undefined,
-        value23: Dynamic =
+        fixedSizeReason: Dynamic =
           settings.kind === "title1"
-            ? PropertiesAppearanceSectionLabel_4
-            : PropertiesAppearanceSectionLabel_3;
-      return value14.sections
-        .filter((input?: Dynamic): Dynamic => value21.has(input.id))
+            ? titleSizeReason
+            : noteSizeReason;
+      return inspectedElement.sections
+        .filter((section?: Dynamic): Dynamic => allowedSectionIds.has(section.id))
         .map(
-          (input?: Dynamic): Dynamic => ({
-            ...input,
-            rows: input.rows
+          (section?: Dynamic): Dynamic => ({
+            ...section,
+            rows: section.rows
               .filter(
-                (input2?: Dynamic): Dynamic =>
-                  input.id === "size" || input.id === "sizing"
+                (row?: Dynamic): Dynamic =>
+                  section.id === "size" || section.id === "sizing"
                     ? (PropertiesAppearanceSectionWidthHeightPositionSet.has(
-                        input2.prop,
+                        row.prop,
                       ) ||
                         PropertiesAppearanceSectionNoteTitle1Config[
                           settings.kind
-                        ]?.has(input2.prop) === true) &&
+                        ]?.has(row.prop) === true) &&
                       !(
-                        value4 &&
-                        (input2.prop === "width" || input2.prop === "height")
+                        isLineLike &&
+                        (row.prop === "width" || row.prop === "height")
                       )
-                    : input.id === "image" || input.id === "media"
-                      ? PropertiesAppearanceSectionSubscribers_3.has(
-                          input2.prop,
+                    : section.id === "image" || section.id === "media"
+                      ? imageMediaPropertySet.has(
+                          row.prop,
                         )
-                      : input.id === "effects"
+                      : section.id === "effects"
                         ? PropertiesAppearanceSectionBoxShadowFilterBackdropFilterSet.has(
-                            input2.prop,
+                            row.prop,
                           )
-                        : input.id === "svgPaint"
-                          ? input2.prop === "stroke" ||
-                            input2.prop === "stroke-width" ||
-                            input2.prop === "__headStart" ||
-                            input2.prop === "__headEnd"
-                          : input.id === "text"
+                        : section.id === "svgPaint"
+                          ? row.prop === "stroke" ||
+                            row.prop === "stroke-width" ||
+                            row.prop === "__headStart" ||
+                            row.prop === "__headEnd"
+                          : section.id === "text"
                             ? PropertiesAppearanceSectionFontSizeFontWeightSet.has(
-                                input2.prop,
+                                row.prop,
                               )
-                            : value5
-                              ? input2.prop === "opacity"
-                              : PropertiesAppearanceSectionSubscribers_2.has(
-                                  input2.prop,
-                                ) || input2.prop === "background",
+                            : isStrokeLike
+                              ? row.prop === "opacity"
+                              : canvasCssPropertySet.has(
+                                  row.prop,
+                                ) || row.prop === "background",
               )
               .map(
-                (input2?: Dynamic): Dynamic =>
-                  input2.prop === "position"
+                (row?: Dynamic): Dynamic =>
+                  row.prop === "position"
                     ? {
-                        ...input2,
+                        ...row,
                         disabled: true,
                         whyDisabled:
-                          value22 ?? PropertiesAppearanceSectionLabel,
+                          readOnlyReason ?? PropertiesAppearanceSectionLabel,
                       }
-                    : input2.prop === "max-height" ||
-                        input2.prop === "max-width"
+                    : row.prop === "max-height" ||
+                        row.prop === "max-width"
                       ? {
-                          ...input2,
+                          ...row,
                           fallback: PropertiesAppearanceSectionHandler(
-                            input2.prop === "max-width"
+                            row.prop === "max-width"
                               ? settings.defaultMaxW
                               : settings.defaultMaxH,
                           ),
                           spec:
-                            settings.kind === "note" && input2.spec
+                            settings.kind === "note" && row.spec
                               ? {
-                                  ...input2.spec,
+                                  ...row.spec,
                                   longTail: false,
                                 }
-                              : input2.spec,
-                          whyDisabled: value22,
+                              : row.spec,
+                          whyDisabled: readOnlyReason,
                         }
-                      : (input2.prop === "width" ||
-                            input2.prop === "height") &&
-                          value6 &&
-                          (input2.prop === "height"
+                      : (row.prop === "width" ||
+                            row.prop === "height") &&
+                          hasTextStyle &&
+                          (row.prop === "height"
                             ? settings.kind !== "note"
                             : settings.kind === "title1")
                         ? {
-                            ...input2,
-                            fixedSizeReason: value23,
+                            ...row,
+                            fixedSizeReason: fixedSizeReason,
                             disabled: true,
-                            whyDisabled: value22 ?? value23,
+                            whyDisabled: readOnlyReason ?? fixedSizeReason,
                           }
-                        : input2.prop === "width" || input2.prop === "height"
+                        : row.prop === "width" || row.prop === "height"
                           ? {
-                              ...input2,
+                              ...row,
                               fixedSizeReason:
-                                PropertiesAppearanceSectionLabel_2,
-                              whyDisabled: value22,
+                                fixedCanvasObjectSizeReason,
+                              whyDisabled: readOnlyReason,
                             }
-                          : input2.prop === "@src" && value3
+                          : row.prop === "@src" && isVideo
                             ? {
-                                ...input2,
+                                ...row,
                                 disabled: true,
                                 whyDisabled:
-                                  value22 ??
-                                  PropertiesAppearanceSectionLabel_7,
+                                  readOnlyReason ??
+                                  videoSourceReason,
                               }
-                            : input2.prop === "@src"
+                            : row.prop === "@src"
                               ? {
-                                  ...input2,
+                                  ...row,
                                   imageUploadOnlyReason:
                                     ACanvasPictureShowsAnUploadedMessage,
-                                  whyDisabled: value22,
+                                  whyDisabled: readOnlyReason,
                                 }
-                              : input2.prop === "background"
+                              : row.prop === "background"
                                 ? {
-                                    ...input2,
+                                    ...row,
                                     fillNoImageReason:
-                                      PropertiesAppearanceSectionLabel_6,
-                                    whyDisabled: value22,
+                                      canvasObjectPaintReason,
+                                    whyDisabled: readOnlyReason,
                                     ...(settings.css?.background ===
                                       undefined &&
                                     settings.css?.["background-color"] ===
@@ -339,242 +339,242 @@ function AnnotationInspector({
                                         }
                                       : {}),
                                   }
-                                : input2.prop === "stroke" &&
+                                : row.prop === "stroke" &&
                                     settings.css?.stroke === undefined
                                   ? {
-                                      ...input2,
+                                      ...row,
                                       inheritedFrom: "the canvas palette",
-                                      whyDisabled: value22,
+                                      whyDisabled: readOnlyReason,
                                     }
-                                  : input2.prop === "font-weight"
+                                  : row.prop === "font-weight"
                                     ? {
-                                        ...input2,
+                                        ...row,
                                         faces:
-                                          PropertiesAppearanceSectionItems_2,
-                                        whyDisabled: value22,
+                                          fontWeightFaces,
+                                        whyDisabled: readOnlyReason,
                                       }
                                     : settings.kind === "oval" &&
-                                        /radius/.test(input2.prop)
+                                        /radius/.test(row.prop)
                                       ? {
-                                          ...input2,
+                                          ...row,
                                           disabled: true,
                                           whyDisabled:
-                                            value22 ??
-                                            PropertiesAppearanceSectionLabel_5,
+                                            readOnlyReason ??
+                                            ovalRoundReason,
                                         }
                                       : {
-                                          ...input2,
-                                          whyDisabled: value22,
+                                          ...row,
+                                          whyDisabled: readOnlyReason,
                                         },
               ),
           }),
         )
-        .filter((input?: Dynamic): Dynamic => input.rows.length > 0);
+        .filter((section?: Dynamic): Dynamic => section.rows.length > 0);
     }, [
-      value14,
-      value4,
-      value5,
-      value6,
+      inspectedElement,
+      isLineLike,
+      isStrokeLike,
+      hasTextStyle,
       readOnly,
       settings.kind,
       settings.defaultMaxW,
       settings.defaultMaxH,
     ]),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let state: Dynamic = {},
-        items: Dynamic = [],
-        state2: Dynamic = {};
-      for (let value21 of input as Dynamic)
+    commitProperties: Dynamic = (changedProps?: Dynamic): Dynamic => {
+      let boxChanges: Dynamic = {},
+        cssChanges: Dynamic = [],
+        textStyleChanges: Dynamic = {};
+      for (let change of changedProps as Dynamic)
         if (
-          value21.prop === "left" ||
-          value21.prop === "top" ||
-          value21.prop === "width" ||
-          value21.prop === "height"
+          change.prop === "left" ||
+          change.prop === "top" ||
+          change.prop === "width" ||
+          change.prop === "height"
         ) {
-          let value22: Dynamic =
-            value21.value == null
+          let parsedNumber: Dynamic =
+            change.value == null
               ? null
-              : parseCssNumber(value21.value);
-          if (!value22 || (value22.unit !== "px" && value22.unit !== ""))
+              : parseCssNumber(change.value);
+          if (!parsedNumber || (parsedNumber.unit !== "px" && parsedNumber.unit !== ""))
             continue;
-          state[
-            value21.prop === "left"
+          boxChanges[
+            change.prop === "left"
               ? "x"
-              : value21.prop === "top"
+              : change.prop === "top"
                 ? "y"
-                : value21.prop === "width"
+                : change.prop === "width"
                   ? "w"
                   : settings.kind === "note"
                     ? "maxH"
                     : "h"
-          ] = value22.value;
+          ] = parsedNumber.value;
         } else if (
-          value6 &&
-          (value21.prop === "max-width" || value21.prop === "max-height")
+          hasTextStyle &&
+          (change.prop === "max-width" || change.prop === "max-height")
         ) {
-          let value22: Dynamic =
-            value21.value == null
+          let parsedNumber: Dynamic =
+            change.value == null
               ? null
-              : parseCssNumber(value21.value);
+              : parseCssNumber(change.value);
           if (
-            value21.value != null &&
-            (!value22 || (value22.unit !== "px" && value22.unit !== ""))
+            change.value != null &&
+            (!parsedNumber || (parsedNumber.unit !== "px" && parsedNumber.unit !== ""))
           )
             continue;
-          state[value21.prop === "max-width" ? "maxW" : "maxH"] = value22
-            ? value22.value
+          boxChanges[change.prop === "max-width" ? "maxW" : "maxH"] = parsedNumber
+            ? parsedNumber.value
             : null;
         } else if (
-          value21.prop === "__headStart" ||
-          value21.prop === "__headEnd"
+          change.prop === "__headStart" ||
+          change.prop === "__headEnd"
         )
-          (value21.value === "none" ||
-            value21.value === "open" ||
-            value21.value === "filled") &&
+          (change.value === "none" ||
+            change.value === "open" ||
+            change.value === "filled") &&
             settings.onSetHeads?.(
-              value21.prop === "__headStart" ? "start" : "end",
-              value21.value,
+              change.prop === "__headStart" ? "start" : "end",
+              change.value,
             );
-        else if (value21.prop === "@src")
-          value21.value != null &&
-          PlatformFileContentTest_2(value21.value) !== null
-            ? settings.onReplaceImage?.(value21.value)
-            : value21.value != null &&
-              value(
+        else if (change.prop === "@src")
+          change.value != null &&
+          isBlobPath(change.value) !== null
+            ? settings.onReplaceImage?.(change.value)
+            : change.value != null &&
+              showToast(
                 ACanvasPictureShowsAnUploadedMessage + ".",
                 "info",
               );
-        else if (value6 && value21.prop === "font-size") {
-          let value22: Dynamic =
-            value21.value == null
+        else if (hasTextStyle && change.prop === "font-size") {
+          let parsedNumber: Dynamic =
+            change.value == null
               ? null
-              : parseCssNumber(value21.value);
-          value22 &&
-            (value22.unit === "px" || value22.unit === "") &&
-            (state2.size = value22.value);
+              : parseCssNumber(change.value);
+          parsedNumber &&
+            (parsedNumber.unit === "px" || parsedNumber.unit === "") &&
+            (textStyleChanges.size = parsedNumber.value);
         } else
-          value6 && value21.prop === "font-weight"
-            ? value21.value == null
-              ? (state2.bold = false)
-              : ((state2.bold = /bold|[6-9]00/.test(value21.value)),
-                /italic/.test(value21.value) && (state2.italic = true))
-            : value6 && value21.prop === "font-style"
-              ? (state2.italic =
-                  value21.value != null &&
-                  /italic|oblique/.test(value21.value))
-              : PropertiesAppearanceSectionSubscribers_2.has(
-                  value21.prop,
-                ) && items.push(value21);
-      Object.keys(state).length > 0 &&
-        (ref4.current && (ref.current = true),
-        settings.onSetBox(state, !ref4.current));
-      items.length > 0 &&
-        (ref4.current && (ref2.current = items),
-        settings.onSetCss?.(items, ref4.current));
-      Object.keys(state2).length > 0 &&
-        (ref4.current && (ref3.current = state2),
-        settings.onSetTextStyle?.(state2, ref4.current));
+          hasTextStyle && change.prop === "font-weight"
+            ? change.value == null
+              ? (textStyleChanges.bold = false)
+              : ((textStyleChanges.bold = /bold|[6-9]00/.test(change.value)),
+                /italic/.test(change.value) && (textStyleChanges.italic = true))
+            : hasTextStyle && change.prop === "font-style"
+              ? (textStyleChanges.italic =
+                  change.value != null &&
+                  /italic|oblique/.test(change.value))
+              : canvasCssPropertySet.has(
+                  change.prop,
+                ) && cssChanges.push(change);
+      Object.keys(boxChanges).length > 0 &&
+        (isScrubbingRef.current && (boxDirtyRef.current = true),
+        settings.onSetBox(boxChanges, !isScrubbingRef.current));
+      cssChanges.length > 0 &&
+        (isScrubbingRef.current && (cssPendingRef.current = cssChanges),
+        settings.onSetCss?.(cssChanges, isScrubbingRef.current));
+      Object.keys(textStyleChanges).length > 0 &&
+        (isScrubbingRef.current && (textStylePendingRef.current = textStyleChanges),
+        settings.onSetTextStyle?.(textStyleChanges, isScrubbingRef.current));
     },
-    ref: Dynamic = reactMediaPlaybackControls.default.useRef(false),
-    ref2: Dynamic = reactMediaPlaybackControls.default.useRef(null),
-    ref3: Dynamic = reactMediaPlaybackControls.default.useRef(null),
-    ref4: Dynamic = reactMediaPlaybackControls.default.useRef(false),
-    value16: Dynamic = (0, reactMediaPlaybackControls.useMemo)(
+    boxDirtyRef: Dynamic = reactMediaPlaybackControls.default.useRef(false),
+    cssPendingRef: Dynamic = reactMediaPlaybackControls.default.useRef(null),
+    textStylePendingRef: Dynamic = reactMediaPlaybackControls.default.useRef(null),
+    isScrubbingRef: Dynamic = reactMediaPlaybackControls.default.useRef(false),
+    scrubbingContext: Dynamic = (0, reactMediaPlaybackControls.useMemo)(
       (): Dynamic => ({
-        ...value13,
-        setScrubbing: (input?: Dynamic): Dynamic => {
-          ref4.current = input;
-          value13.setScrubbing(input);
-          !input &&
-            (ref.current && settings.onSetBox({}, true),
-            ref2.current && settings.onSetCss?.(ref2.current, false),
-            ref3.current && settings.onSetTextStyle?.(ref3.current, false),
-            (ref.current = false),
-            (ref2.current = null),
-            (ref3.current = null));
+        ...annotationContext,
+        setScrubbing: (isScrubbing?: Dynamic): Dynamic => {
+          isScrubbingRef.current = isScrubbing;
+          annotationContext.setScrubbing(isScrubbing);
+          !isScrubbing &&
+            (boxDirtyRef.current && settings.onSetBox({}, true),
+            cssPendingRef.current && settings.onSetCss?.(cssPendingRef.current, false),
+            textStylePendingRef.current && settings.onSetTextStyle?.(textStylePendingRef.current, false),
+            (boxDirtyRef.current = false),
+            (cssPendingRef.current = null),
+            (textStylePendingRef.current = null));
         },
       }),
-      [value13, settings],
+      [annotationContext, settings],
     ),
-    value17: Dynamic = useVisibleInspectorProperties({
-      selKey: value7,
-      forceShown: value8,
-      setForceShown: value9,
-      onCommit: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        callback([
+    visibleProperties: Dynamic = useVisibleInspectorProperties({
+      selKey: selectionKey,
+      forceShown: forceShown,
+      setForceShown: setForceShown,
+      onCommit: (prop?: Dynamic, propValue?: Dynamic): Dynamic =>
+        commitProperties([
           {
-            prop: input,
-            value: options,
+            prop: prop,
+            value: propValue,
           },
         ]),
-      onCommitMany: callback,
-      onPickImageFile: (input?: Dynamic): Dynamic =>
-        settings.onReplaceImage?.(input),
+      onCommitMany: commitProperties,
+      onPickImageFile: (file?: Dynamic): Dynamic =>
+        settings.onReplaceImage?.(file),
     }),
     {
-      addItemsFor: value18,
-      renderRow: value19,
-      renderRows: value20,
-    }: Dynamic = value17;
+      addItemsFor: addItemsFor,
+      renderRow: renderRow,
+      renderRows: renderRows,
+    }: Dynamic = visibleProperties;
   return (
-    <InspectorContext.Provider value={value16}>
+    <InspectorContext.Provider value={scrubbingContext}>
       <div
         data-testid={"dc-canvas-object-settings"}
         data-object-kind={settings.kind}
         className={"contents"}
       >
-        {value15.map((input?: Dynamic): Dynamic => {
-          if (input.id === "sizing" || input.id === "size")
+        {visibleSections.map((section?: Dynamic): Dynamic => {
+          if (section.id === "sizing" || section.id === "size")
             return (() => {
-              const _Component = InspectorLayoutSection;
-              const _props = {
-                sec: input,
-                selKey: value7,
+              const SizingSectionComponent = InspectorLayoutSection;
+              const sizingSectionProps = {
+                sec: section,
+                selKey: selectionKey,
                 isNested: false,
                 readOnly: readOnly,
-                renderRows: value20,
-                renderRow: value19,
-                addItemsFor: value18,
-                onCommitMany: callback,
+                renderRows: renderRows,
+                renderRow: renderRow,
+                addItemsFor: addItemsFor,
+                onCommitMany: commitProperties,
               } as const;
-              const _key = input.id;
-              return <_Component key={_key} {..._props} />;
+              const sizingSectionKey = section.id;
+              return <SizingSectionComponent key={sizingSectionKey} {...sizingSectionProps} />;
             })();
-          if (input.id === "appearance")
+          if (section.id === "appearance")
             return (() => {
-              const _Component2 = InspectorAppearanceSection;
-              const _props2 = {
-                sec: input,
-                selKey: value7,
+              const AppearanceSectionComponent = InspectorAppearanceSection;
+              const appearanceSectionProps = {
+                sec: section,
+                selKey: selectionKey,
                 isNested: false,
                 readOnly: readOnly,
-                rows: value17,
-                onCommitMany: callback,
+                rows: visibleProperties,
+                onCommitMany: commitProperties,
                 fillInline:
                   !!settings.css?.background ||
                   !!settings.css?.["background-color"],
               } as const;
-              const _key2 = input.id;
-              return <_Component2 key={_key2} {..._props2} />;
+              const appearanceSectionKey = section.id;
+              return <AppearanceSectionComponent key={appearanceSectionKey} {...appearanceSectionProps} />;
             })();
-          let value21: Dynamic = (() => {
-            const _Component3 = PropertySection;
-            const _props3 = {
-              title: input.title,
-              iconColumn: input.id === "text",
+          let sectionElement: Dynamic = (() => {
+            const PropertySectionComponent = PropertySection;
+            const propertySectionProps = {
+              title: section.title,
+              iconColumn: section.id === "text",
               actions: (
                 <PropertyActions
-                  section={input.title}
-                  data-testid={"dc-add-" + input.id}
-                  items={value18(input.rows)}
+                  section={section.title}
+                  data-testid={"dc-add-" + section.id}
+                  items={addItemsFor(section.rows)}
                   disabled={readOnly}
                 />
               ),
               children: [
-                value20(input.rows),
-                input.id === "media" && value3 && (
+                renderRows(section.rows),
+                section.id === "media" && isVideo && (
                   <VideoSeekControl
-                    key={value7}
+                    key={selectionKey}
                     find={(): Dynamic =>
                       (document as Dynamic).querySelector(
                         SessionArtboardStateEscape(settings.id),
@@ -589,20 +589,20 @@ function AnnotationInspector({
                 ),
               ],
             } as const;
-            const _key3 = input.id;
-            return <_Component3 key={_key3} {..._props3} />;
+            const propertySectionKey = section.id;
+            return <PropertySectionComponent key={propertySectionKey} {...propertySectionProps} />;
           })();
-          return input.id === "effects" && !readOnly ? (
+          return section.id === "effects" && !readOnly ? (
             <CssEffectsSection
-              key={"effects|" + value7}
-              rows={input.rows}
-              onCommitMany={callback}
-              renderRows={value20}
-              addItemsFor={value18}
-              fallback={value21}
+              key={"effects|" + selectionKey}
+              rows={section.rows}
+              onCommitMany={commitProperties}
+              renderRows={renderRows}
+              addItemsFor={addItemsFor}
+              fallback={sectionElement}
             />
           ) : (
-            value21
+            sectionElement
           );
         })}
       </div>

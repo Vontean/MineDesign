@@ -5,78 +5,78 @@ import {
 
 var FrozenStyleCache: Dynamic;
 var LayoutFrozenStyleMmLlHhVvCcSsQqTtAaZzPattern: Dynamic;
-function isSafeSvgPath(items?: Dynamic): Dynamic {
+function isSafeSvgPath(pathData?: Dynamic): Dynamic {
   return (
-    typeof items == "string" &&
-    items.length > 0 &&
-    items.length <= 1e5 &&
-    LayoutFrozenStyleMmLlHhVvCcSsQqTtAaZzPattern.test(items)
+    typeof pathData == "string" &&
+    pathData.length > 0 &&
+    pathData.length <= 1e5 &&
+    LayoutFrozenStyleMmLlHhVvCcSsQqTtAaZzPattern.test(pathData)
   );
 }
-function isFiniteRect(input?: Dynamic): Dynamic {
-  return typeof input != "object" || input == null
+function isFiniteRect(rect?: Dynamic): Dynamic {
+  return typeof rect != "object" || rect == null
     ? false
-    : ["x", "y", "w", "h"].every((input2?: Dynamic): Dynamic => {
-        let value: Dynamic = input[input2];
+    : ["x", "y", "w", "h"].every((key?: Dynamic): Dynamic => {
+        let coordinate: Dynamic = rect[key];
         return (
-          typeof value == "number" &&
-          Number.isFinite(value) &&
-          Math.abs(value) < 1e6
+          typeof coordinate == "number" &&
+          Number.isFinite(coordinate) &&
+          Math.abs(coordinate) < 1e6
         );
       });
 }
-function validateResizeMessage(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    typeof input2 == "number" &&
-    Number.isFinite(input2) &&
-    Math.abs(input2) < 1e6;
+function validateResizeMessage(message?: Dynamic): Dynamic {
+  let isSaneNumber: Dynamic = (candidate?: Dynamic): Dynamic =>
+    typeof candidate == "number" &&
+    Number.isFinite(candidate) &&
+    Math.abs(candidate) < 1e6;
   if (
-    (input.width == null && input.height == null) ||
-    (input.width != null && !callback(input.width)) ||
-    (input.height != null && !callback(input.height))
+    (message.width == null && message.height == null) ||
+    (message.width != null && !isSaneNumber(message.width)) ||
+    (message.height != null && !isSaneNumber(message.height))
   )
     return null;
-  let state: Dynamic = {
-    ...input,
+  let sanitized: Dynamic = {
+    ...message,
   };
-  for (let value of ["left", "top", "right", "bottom"] as Dynamic)
-    state[value] != null && !callback(state[value]) && delete state[value];
-  state.left != null && delete state.right;
-  state.top != null && delete state.bottom;
-  return state;
+  for (let side of ["left", "top", "right", "bottom"] as Dynamic)
+    sanitized[side] != null && !isSaneNumber(sanitized[side]) && delete sanitized[side];
+  sanitized.left != null && delete sanitized.right;
+  sanitized.top != null && delete sanitized.bottom;
+  return sanitized;
 }
-function validateRotateMessage(input?: Dynamic): Dynamic {
-  let angle: Dynamic = input.angle;
+function validateRotateMessage(message?: Dynamic): Dynamic {
+  let angle: Dynamic = message.angle;
   return typeof angle == "number" &&
     Number.isFinite(angle) &&
     Math.abs(angle) <= 360
-    ? input
+    ? message
     : null;
 }
-function normalizePickerPayload(input?: Dynamic): Dynamic {
-  let state: Dynamic = {
-    ...input,
+function normalizePickerPayload(payload?: Dynamic): Dynamic {
+  let sanitized: Dynamic = {
+    ...payload,
   };
-  state.rect != null && !isFiniteRect(state.rect) && delete state.rect;
-  state.path != null &&
-    !(typeof state.path == "object" && isSafeSvgPath(state.path.d)) &&
-    delete state.path;
-  state.dir != null &&
+  sanitized.rect != null && !isFiniteRect(sanitized.rect) && delete sanitized.rect;
+  sanitized.path != null &&
+    !(typeof sanitized.path == "object" && isSafeSvgPath(sanitized.path.d)) &&
+    delete sanitized.path;
+  sanitized.dir != null &&
     !(
-      (state.dir.x === 1 || state.dir.x === -1) &&
-      (state.dir.y === 1 || state.dir.y === -1)
+      (sanitized.dir.x === 1 || sanitized.dir.x === -1) &&
+      (sanitized.dir.y === 1 || sanitized.dir.y === -1)
     ) &&
-    delete state.dir;
-  state.targetTid != null &&
-    !Number.isInteger(state.targetTid) &&
-    (state.targetTid = null);
-  let position: Dynamic = state.position;
+    delete sanitized.dir;
+  sanitized.targetTid != null &&
+    !Number.isInteger(sanitized.targetTid) &&
+    (sanitized.targetTid = null);
+  let position: Dynamic = sanitized.position;
   position !== "before" &&
     position !== "after" &&
     position !== "into" &&
     position !== "root-end" &&
-    (state.position = "root-end");
-  return state;
+    (sanitized.position = "root-end");
+  return sanitized;
 }
 export {
   FrozenStyleCache,
@@ -96,18 +96,18 @@ export function installEditorLayoutFrozenStyle(): () => void {
         this.key = "";
         this.styles.clear();
       }
-      capture(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-        input !== this.key && (this.clear(), (this.key = input));
-        this.styles.has(options) || this.styles.set(options, context());
+      capture(key: Dynamic, tid: Dynamic, readStyle: Dynamic): Dynamic {
+        key !== this.key && (this.clear(), (this.key = key));
+        this.styles.has(tid) || this.styles.set(tid, readStyle());
       }
-      baselineFor(input: Dynamic, options: Dynamic): Dynamic {
-        return input === this.key ? this.styles.get(options) : undefined;
+      baselineFor(key: Dynamic, tid: Dynamic): Dynamic {
+        return key === this.key ? this.styles.get(tid) : undefined;
       }
-      tids(input: Dynamic): Dynamic {
-        return input === this.key ? [...this.styles.keys()] : [];
+      tids(key: Dynamic): Dynamic {
+        return key === this.key ? [...this.styles.keys()] : [];
       }
-      forget(input: Dynamic): Dynamic {
-        input === this.key && this.clear();
+      forget(key: Dynamic): Dynamic {
+        key === this.key && this.clear();
       }
     };
     LayoutFrozenStyleMmLlHhVvCcSsQqTtAaZzPattern =

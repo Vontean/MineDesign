@@ -15,52 +15,52 @@ var KeyboardPasteLabel_4: Dynamic;
 var RoleSwitchValue: Dynamic;
 var KeyboardPasteSubscribers: Dynamic;
 function imagePasteRefusal(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = "",
-  value: Dynamic = "image",
+  target?: Dynamic,
+  isImagePaste?: Dynamic,
+  typedText: Dynamic = "",
+  mediaKind: Dynamic = "image",
 ): Dynamic {
-  let value2: Dynamic = input,
-    value3: Dynamic =
-      value2 != null &&
-      (value2.tagName === "TEXTAREA" || value2.isContentEditable === true),
-    value4: Dynamic =
-      value3 ||
-      value2?.closest?.("[data-note-typing-strip],[data-link-mode]") != null;
-  if ((value3 || value2?.tagName === "INPUT") && context.trim() !== "")
+  let targetElement: Dynamic = target,
+    isTextEntry: Dynamic =
+      targetElement != null &&
+      (targetElement.tagName === "TEXTAREA" || targetElement.isContentEditable === true),
+    isTypingSurface: Dynamic =
+      isTextEntry ||
+      targetElement?.closest?.("[data-note-typing-strip],[data-link-mode]") != null;
+  if ((isTextEntry || targetElement?.tagName === "INPUT") && typedText.trim() !== "")
     return {
       to: "chrome",
     };
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    value === "video" ? KeyboardPasteReplace(input2) : input2;
-  return hasBlockingOverlay(value2?.ownerDocument ?? document)
-    ? options
+  let localizeMessage: Dynamic = (message?: Dynamic): Dynamic =>
+    mediaKind === "video" ? KeyboardPasteReplace(message) : message;
+  return hasBlockingOverlay(targetElement?.ownerDocument ?? document)
+    ? isImagePaste
       ? {
           to: "nobody",
-          say: callback(KeyboardPasteLabel),
+          say: localizeMessage(KeyboardPasteLabel),
         }
       : {
           to: "chrome",
         }
-    : options
-      ? value4
+    : isImagePaste
+      ? isTypingSurface
         ? {
             to: "nobody",
-            say: callback(KeyboardPasteLabel_2),
+            say: localizeMessage(KeyboardPasteLabel_2),
           }
         : {
             to: "canvas",
           }
       : {
-          to: isEditingInputTarget(input) ? "chrome" : "canvas",
+          to: isEditingInputTarget(target) ? "chrome" : "canvas",
         };
 }
-function isControlTarget(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function isControlTarget(target?: Dynamic): Dynamic {
+  let targetElement: Dynamic = target;
   return (
-    value != null &&
-    typeof value.matches == "function" &&
-    value.matches(KeyboardPasteJoinValue)
+    targetElement != null &&
+    typeof targetElement.matches == "function" &&
+    targetElement.matches(KeyboardPasteJoinValue)
   );
 }
 function shouldKeepLocalKeyboardEvent(event?: Dynamic): Dynamic {
@@ -115,8 +115,8 @@ export function installEditorKeyboardPaste(): () => void {
       uiMessage("inspector.paste.theImageWasnTPasted");
     KeyboardPasteLabel_2 =
       uiMessage("inspector.paste.theImageWasnTPasted2");
-    KeyboardPasteReplace = (input?: Dynamic): Dynamic =>
-      input.replace(uiMessage("inspector.paste.theImage"), uiMessage("inspector.paste.theVideo"));
+    KeyboardPasteReplace = (message?: Dynamic): Dynamic =>
+      message.replace(uiMessage("inspector.paste.theImage"), uiMessage("inspector.paste.theVideo"));
     KeyboardPasteJoinValue = [
       "button",
       "summary",
@@ -131,7 +131,7 @@ export function installEditorKeyboardPaste(): () => void {
       '[role="option"]',
       '[role="combobox"]',
     ]
-      .map((input?: Dynamic): Dynamic => input + ':not([aria-disabled="true"])')
+      .map((selector?: Dynamic): Dynamic => selector + ':not([aria-disabled="true"])')
       .join(", ");
     KeyboardPasteLabel_3 =
       '[role="menu"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="listbox"], [role="option"]';

@@ -8,7 +8,7 @@ import { reactCanvasShape_2 } from "../../canvas/shape";
 import { SegmentedControl } from "../../cds/components/selection-points";
 import { ArtboardRadiusRow } from "./artboard-radius";
 import { InspectorContext, useInspectorContext } from "./context-part-2";
-import { InspectorEditorItems_2, InspectorEditorLabel_4, InspectorEditorPropLabelSpecConfig, InspectorEditorSubscribers, inspectorSingleSelectionMessage } from "./editor";
+import { InspectorEditorItems_2 as emptyArtboardColors, InspectorEditorLabel_4 as contentSizedReason, InspectorEditorPropLabelSpecConfig, InspectorEditorSubscribers, inspectorSingleSelectionMessage } from "./editor";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
 import { PropertyInspectorField } from "../properties/inspector-field";
 import { NumericInput } from "../properties/numeric-input";
@@ -22,7 +22,7 @@ function ArtboardInspector({
   pngFollowsPrint = true,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = readOnly
+  let effectiveSettings: Dynamic = readOnly
       ? {
           ...settings,
           onSetPrint: (): Dynamic => {},
@@ -33,42 +33,42 @@ function ArtboardInspector({
           onFitHeight: undefined,
         }
       : settings,
-    value2: Dynamic = value.print === "flow",
-    value3: Dynamic = value2 || value.fillPaginates === true,
-    fill: Dynamic = value.fill,
-    value4: Dynamic = readOnly
+    isFlow: Dynamic = effectiveSettings.print === "flow",
+    isPaginated: Dynamic = isFlow || effectiveSettings.fillPaginates === true,
+    fill: Dynamic = effectiveSettings.fill,
+    readOnlyReason: Dynamic = readOnly
       ? ViewOnlyYouCanInspectThisMessage
       : undefined,
-    value5: Dynamic = useInspectorContext(),
-    value6: Dynamic = (0, reactCanvasShape_2.useMemo)(
+    inspectorContext: Dynamic = useInspectorContext(),
+    artboardContext: Dynamic = (0, reactCanvasShape_2.useMemo)(
       (): Dynamic => ({
-        ...value5,
+        ...inspectorContext,
         iframeDefinedVars: InspectorEditorSubscribers,
-        artboardColors: InspectorEditorItems_2,
+        artboardColors: emptyArtboardColors,
         editsAreUndoSteps: false,
       }),
-      [value5],
+      [inspectorContext],
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (input && fill?.vars[input]) || input || null;
-  return value.frameless ? (
+    resolveFillVar: Dynamic = (varName?: Dynamic): Dynamic =>
+      (varName && fill?.vars[varName]) || varName || null;
+  return effectiveSettings.frameless ? (
     <div
       data-testid={"dc-artboard-settings"}
       className={"[--pp-label-w:84px]"}
     >
-      <PropertySection title={value.label ?? (uiMessage("inspector.artboard.artboard"))}>
+      <PropertySection title={effectiveSettings.label ?? (uiMessage("inspector.artboard.artboard"))}>
         {["w", "h"].map(
-          (input?: Dynamic): Dynamic => (
+          (dimension?: Dynamic): Dynamic => (
             <PropertyRow
-              key={input}
-              label={input === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
-              data-testid={"dc-artboard-" + input}
-              title={InspectorEditorLabel_4}
+              key={dimension}
+              label={dimension === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
+              data-testid={"dc-artboard-" + dimension}
+              title={contentSizedReason}
               disabled={true}
             >
               <NumericInput
-                aria-label={input === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
-                value={Math.round(value[input])}
+                aria-label={dimension === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
+                value={Math.round(effectiveSettings[dimension])}
                 unit={"px"}
                 refuseLetters={true}
                 disabled={true}
@@ -87,18 +87,18 @@ function ArtboardInspector({
     >
       <PropertySection title={uiMessage("inspector.artboard.artboard")}>
         {["w", "h"].map(
-          (input?: Dynamic): Dynamic => (
+          (dimension?: Dynamic): Dynamic => (
             <PropertyRow
-              key={input}
-              label={input === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
-              data-testid={"dc-artboard-" + input}
-              title={value4}
-              {...(input === "h" && value.onFitHeight
+              key={dimension}
+              label={dimension === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
+              data-testid={"dc-artboard-" + dimension}
+              title={readOnlyReason}
+              {...(dimension === "h" && effectiveSettings.onFitHeight
                 ? {
                     actions: [
                       {
                         get label() { return uiMessage("inspector.artboard.fitToContent"); },
-                        onSelect: value.onFitHeight,
+                        onSelect: effectiveSettings.onFitHeight,
                       },
                     ],
                     actionsLabel: "Height actions",
@@ -107,33 +107,33 @@ function ArtboardInspector({
             >
               <NumericInput
                 aria-label={
-                  input === "w" ? (uiMessage("inspector.artboard.artboardWidth")) : (uiMessage("inspector.artboard.artboardHeight"))
+                  dimension === "w" ? (uiMessage("inspector.artboard.artboardWidth")) : (uiMessage("inspector.artboard.artboardHeight"))
                 }
-                value={Math.round(value[input])}
+                value={Math.round(effectiveSettings[dimension])}
                 unit={"px"}
                 refuseLetters={true}
                 disabled={readOnly}
                 min={120}
                 max={8e3}
                 smallStep={1}
-                onValue={(input2?: Dynamic): Dynamic =>
-                  input2 !== undefined &&
-                  value.onSetSize(
+                onValue={(nextSize?: Dynamic): Dynamic =>
+                  nextSize !== undefined &&
+                  effectiveSettings.onSetSize(
                     {
-                      [input]: input2,
+                      [dimension]: nextSize,
                     },
                     true,
                   )
                 }
-                onScrub={(input2?: Dynamic): Dynamic =>
-                  value.onSetSize(
+                onScrub={(nextSize?: Dynamic): Dynamic =>
+                  effectiveSettings.onSetSize(
                     {
-                      [input]: input2,
+                      [dimension]: nextSize,
                     },
                     false,
                   )
                 }
-                onScrubEnd={(): Dynamic => value.onSetSize({}, true)}
+                onScrubEnd={(): Dynamic => effectiveSettings.onSetSize({}, true)}
               />
             </PropertyRow>
           ),
@@ -141,12 +141,12 @@ function ArtboardInspector({
         <PropertyRow
           label={uiMessage("inspector.artboard.printMode")}
           data-testid={"dc-artboard-print"}
-          title={value4}
+          title={readOnlyReason}
         >
           <SegmentedControl
             aria-label={uiMessage("inspector.artboard.printMode")}
             fullWidth={true}
-            value={value.print}
+            value={effectiveSettings.print}
             segments={[
               {
                 value: "flow",
@@ -155,20 +155,20 @@ function ArtboardInspector({
                     ? ", and a PNG keeps its full length"
                     : "" + "\u2014for document-like artboards (memos, reports)"; },
                 disabled: readOnly,
-                disabledReason: value4,
+                disabledReason: readOnlyReason,
               },
               {
                 value: "fixed",
                 get label() { return uiMessage("inspector.artboard.fixed"); },
-                get tooltip() { return value.fillPaginates ? (inspectorSingleSelectionMessage) : ("Exactly one page at the frame\u2019s size" + pngFollowsPrint
+                get tooltip() { return effectiveSettings.fillPaginates ? (inspectorSingleSelectionMessage) : ("Exactly one page at the frame\u2019s size" + pngFollowsPrint
                       ? ", and a PNG stops at the frame"
                       : "" + "\u2014for single-page layouts (posters, brochure pages)"); },
                 disabled: readOnly,
-                disabledReason: value4,
+                disabledReason: readOnlyReason,
               },
             ]}
-            onChange={(input?: Dynamic): Dynamic => {
-              value.print !== input && value.onSetPrint(input);
+            onChange={(printMode?: Dynamic): Dynamic => {
+              effectiveSettings.print !== printMode && effectiveSettings.onSetPrint(printMode);
             }}
           />
         </PropertyRow>
@@ -176,39 +176,39 @@ function ArtboardInspector({
           label={uiMessage("inspector.artboard.paper")}
           data-testid={"dc-artboard-paper"}
           title={
-            value4 ?? (value3 ? (value.paperSet === undefined ? (uiMessage("inspector.artboard.notSetCurrentlyFromThe", { value1: String(paperSizes[value.paper].label) })) : (undefined)) : (uiMessage("inspector.artboard.appliesToFlowFixedExports")))
+            readOnlyReason ?? (isPaginated ? (effectiveSettings.paperSet === undefined ? (uiMessage("inspector.artboard.notSetCurrentlyFromThe", { value1: String(paperSizes[effectiveSettings.paper].label) })) : (undefined)) : (uiMessage("inspector.artboard.appliesToFlowFixedExports")))
           }
         >
           <SegmentedControl
             aria-label={uiMessage("inspector.artboard.paper")}
             fullWidth={true}
-            value={value3 ? (value.paperSet ?? "") : ""}
+            value={isPaginated ? (effectiveSettings.paperSet ?? "") : ""}
             segments={["letter", "a4"].map(
-              (input?: Dynamic): Dynamic => ({
-                value: input,
-                label: paperSizes[input].label,
-                get tooltip() { return value3 ? (uiMessage("inspector.artboard.pages", { value1: String(value2
+              (paperKey?: Dynamic): Dynamic => ({
+                value: paperKey,
+                label: paperSizes[paperKey].label,
+                get tooltip() { return isPaginated ? (uiMessage("inspector.artboard.pages", { value1: String(isFlow
                       ? "Export PDF paginates onto "
-                      : "When Export PDF paginates, it uses "), value2: String(paperSizes[input].label), value3: String(value.paperSet === undefined && value.paper === input
+                      : "When Export PDF paginates, it uses "), value2: String(paperSizes[paperKey].label), value3: String(effectiveSettings.paperSet === undefined && effectiveSettings.paper === paperKey
                       ? " (the current default)"
                       : "") })) : (undefined); },
-                disabled: !value3 || readOnly,
-                disabledReason: value4,
+                disabled: !isPaginated || readOnly,
+                disabledReason: readOnlyReason,
               }),
             )}
-            onChange={(input?: Dynamic): Dynamic => {
-              input && value.onSetPaper(input);
+            onChange={(paperKey?: Dynamic): Dynamic => {
+              paperKey && effectiveSettings.onSetPaper(paperKey);
             }}
           />
         </PropertyRow>
       </PropertySection>
       <PropertySection title={uiMessage("inspector.artboard.appearance")} iconColumn={true}>
-        <InspectorContext.Provider value={value6}>
+        <InspectorContext.Provider value={artboardContext}>
           <PropertyInspectorField
             state={{
               ...InspectorEditorPropLabelSpecConfig,
-              value: callback(fill?.background),
-              companionValue: callback(fill?.backgroundColor),
+              value: resolveFillVar(fill?.background),
+              companionValue: resolveFillVar(fill?.backgroundColor),
               varSource: fill?.vars[fill.background]
                 ? fill.background
                 : undefined,
@@ -217,28 +217,28 @@ function ArtboardInspector({
                 : undefined,
               fallback: "#ffffff",
               disabled: fill == null || readOnly,
-              whyDisabled: value4,
+              whyDisabled: readOnlyReason,
             }}
-            onCommit={(input?: Dynamic, options?: Dynamic): Dynamic =>
-              value.onSetFill([
+            onCommit={(prop?: Dynamic, propValue?: Dynamic): Dynamic =>
+              effectiveSettings.onSetFill([
                 {
-                  prop: input,
-                  value: options,
+                  prop: prop,
+                  value: propValue,
                 },
               ])
             }
-            onCommitMany={value.onSetFill}
+            onCommitMany={effectiveSettings.onSetFill}
           />
         </InspectorContext.Provider>
         {(() => {
-          const _Component = ArtboardRadiusRow;
-          const _props = {
-            radius: value.radius,
+          const RadiusRowComponent = ArtboardRadiusRow;
+          const radiusRowProps = {
+            radius: effectiveSettings.radius,
             readOnly: readOnly,
-            onSetRadius: value.onSetRadius,
+            onSetRadius: effectiveSettings.onSetRadius,
           } as const;
-          const _key = value.file;
-          return <_Component key={_key} {..._props} />;
+          const radiusRowKey = effectiveSettings.file;
+          return <RadiusRowComponent key={radiusRowKey} {...radiusRowProps} />;
         })()}
       </PropertySection>
     </div>

@@ -23,34 +23,34 @@ var InspectorArtboardGuidesStretchStartCenterValues: Dynamic;
 var ArtboardGuidesPanel: Dynamic;
 function artboardGuideDescription(source?: Dynamic): Dynamic {
   if (source.kind === "grid") return `${source.size}px`;
-  let value: Dynamic =
+  let alignLabel: Dynamic =
       InspectorArtboardGuidesColumnsRowsConfig[source.kind][source.align],
-    value2: Dynamic = source.auto ? "Auto" : String(source.count);
+    countLabel: Dynamic = source.auto ? "Auto" : String(source.count);
   return source.align === "stretch"
-    ? `${value2} \xB7 ${value}`
-    : `${value2} \xD7 ${source.size} \xB7 ${value}`;
+    ? `${countLabel} \xB7 ${alignLabel}`
+    : `${countLabel} \xD7 ${source.size} \xB7 ${alignLabel}`;
 }
-function defaultArtboardGuide(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "grid"
+function defaultArtboardGuide(kind?: Dynamic, frameWidth?: Dynamic): Dynamic {
+  return kind === "grid"
     ? {
         kind: "grid",
         size: 8,
       }
-    : input === "rows"
+    : kind === "rows"
       ? {
           kind: "rows",
           count: "auto",
           size: 8,
           gutter: 8,
         }
-      : options >= 1024
+      : frameWidth >= 1024
         ? {
             kind: "columns",
             count: 12,
             gutter: 24,
             margin: 80,
           }
-        : options >= 600
+        : frameWidth >= 600
           ? {
               kind: "columns",
               count: 8,
@@ -74,23 +74,23 @@ function ArtboardGuideRow({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0,
+  let [shouldFocusOnOpen, setShouldFocusOnOpen]: Dynamic = (0,
     reactChromeInspectorSheet.useState)(false),
-    value3: Dynamic = (0, reactChromeInspectorSheet.useRef)(null),
-    value4: Dynamic =
+    anchorRef: Dynamic = (0, reactChromeInspectorSheet.useRef)(null),
+    kindLabel: Dynamic =
       InspectorArtboardGuidesColumnsRowsGridConfig[guide.kind],
-    value5: Dynamic = guide.hidden === true,
-    value6: Dynamic = resolveArtboardGuide(guide, frame);
+    isHidden: Dynamic = guide.hidden === true,
+    resolvedGuide: Dynamic = resolveArtboardGuide(guide, frame);
   return (
     <PropertyRow
-      label={value4}
+      label={kindLabel}
       data-testid={"dc-guide-" + String(index)}
     >
       <span
-        ref={value3}
+        ref={anchorRef}
         className={joinClassNames(
           "relative flex min-w-0 flex-1",
-          value5 && "opacity-60",
+          isHidden && "opacity-60",
         )}
       >
         <PropertyEditorPopover
@@ -98,22 +98,22 @@ function ArtboardGuideRow({
           onOpenChange={onOpenChange}
           trigger={
             <ColorEffectButton
-              label={uiMessage("inspector.artboardGuides.guide", { value1: String(value4) })}
-              color={value6.color}
-              text={artboardGuideDescription(value6)}
-              onClick={(input?: Dynamic): Dynamic =>
-                value2(input.detail === 0)
+              label={uiMessage("inspector.artboardGuides.guide", { value1: String(kindLabel) })}
+              color={resolvedGuide.color}
+              text={artboardGuideDescription(resolvedGuide)}
+              onClick={(clickEvent?: Dynamic): Dynamic =>
+                setShouldFocusOnOpen(clickEvent.detail === 0)
               }
             />
           }
           anchor={(): Dynamic =>
-            value3.current?.closest("[data-property-row]") ?? null
+            anchorRef.current?.closest("[data-property-row]") ?? null
           }
-          focusOnOpen={value}
+          focusOnOpen={shouldFocusOnOpen}
         >
           <ArtboardGuideEditor
             guide={guide}
-            r={value6}
+            r={resolvedGuide}
             onClose={(): Dynamic => onOpenChange(false)}
             {...props}
           />
@@ -123,29 +123,29 @@ function ArtboardGuideRow({
         variant={"ghost"}
         size={"sm"}
         iconOnly={true}
-        icon={value5 ? "EyeSlash" : "Eye"}
-        aria-label={uiMessage("inspector.artboardGuides.hideGuide", { value1: String(value4.toLowerCase()) })}
-        aria-pressed={value5}
-        tooltip={value5 ? (uiMessage("inspector.artboardGuides.showOnTheCanvas")) : (uiMessage("inspector.artboardGuides.hideOnTheCanvas"))}
+        icon={isHidden ? "EyeSlash" : "Eye"}
+        aria-label={uiMessage("inspector.artboardGuides.hideGuide", { value1: String(kindLabel.toLowerCase()) })}
+        aria-pressed={isHidden}
+        tooltip={isHidden ? (uiMessage("inspector.artboardGuides.showOnTheCanvas")) : (uiMessage("inspector.artboardGuides.hideOnTheCanvas"))}
         className={joinClassNames(
           "shrink-0",
-          value5 && "text-muted",
+          isHidden && "text-muted",
         )}
         data-testid={"dc-guide-eye-" + String(index)}
         onClick={(): Dynamic => {
-          let { hidden: value7, ...value8 }: Dynamic = guide;
+          let { hidden: hiddenFlag, ...guideWithoutHidden }: Dynamic = guide;
           props.onChange(
-            value5
-              ? value8
+            isHidden
+              ? guideWithoutHidden
               : {
-                  ...value8,
+                  ...guideWithoutHidden,
                   hidden: true,
                 },
           );
         }}
       />
       <RemovePropertyButton
-        label={uiMessage("inspector.artboardGuides.guide", { value1: String(value4) })}
+        label={uiMessage("inspector.artboardGuides.guide", { value1: String(kindLabel) })}
         onClick={onRemove}
       />
     </PropertyRow>
@@ -160,38 +160,38 @@ function ArtboardGuideEditor({
   onClose: onClose,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => ({
-      onValue: (input2?: Dynamic): Dynamic =>
+  let numberRowHandlers: Dynamic = (guideKey?: Dynamic, toGuideValue?: Dynamic): Dynamic => ({
+      onValue: (nextValue?: Dynamic): Dynamic =>
         onChange({
           ...guide,
-          [input]: options(input2),
+          [guideKey]: toGuideValue(nextValue),
         }),
-      onScrub: (input2?: Dynamic): Dynamic =>
+      onScrub: (nextValue?: Dynamic): Dynamic =>
         onLive({
           ...guide,
-          [input]: options(input2),
+          [guideKey]: toGuideValue(nextValue),
         }),
       onScrubEnd: onLiveEnd,
     }),
-    value: Dynamic = (
+    colorRow: Dynamic = (
       <PropertyHexRow
         label={uiMessage("inspector.artboardGuides.color")}
         value={r8.color}
-        onChange={(input?: Dynamic): Dynamic => {
-          let { color: value3, ...value4 }: Dynamic = guide;
+        onChange={(nextColor?: Dynamic): Dynamic => {
+          let { color: previousColor, ...guideWithoutColor }: Dynamic = guide;
           onChange(
-            input === undefined
-              ? value4
+            nextColor === undefined
+              ? guideWithoutColor
               : {
-                  ...value4,
-                  color: input,
+                  ...guideWithoutColor,
+                  color: nextColor,
                 },
           );
         }}
-        onLive={(input?: Dynamic): Dynamic =>
+        onLive={(liveColor?: Dynamic): Dynamic =>
           onLive({
             ...guide,
-            color: input,
+            color: liveColor,
           })
         }
         onLiveEnd={onLiveEnd}
@@ -207,15 +207,15 @@ function ArtboardGuideEditor({
           step={1}
           smallStep={1}
           unit={"px"}
-          {...callback(
+          {...numberRowHandlers(
             "size",
-            (input?: Dynamic): Dynamic => input ?? r8.size,
+            (nextValue?: Dynamic): Dynamic => nextValue ?? r8.size,
           )}
         />
-        {value}
+        {colorRow}
       </PropertyPopupBody>
     );
-  let value2: Dynamic = r8.align === "stretch";
+  let isStretch: Dynamic = r8.align === "stretch";
   return (
     <PropertyPopupBody
       title={InspectorArtboardGuidesColumnsRowsGridConfig[r8.kind]}
@@ -224,28 +224,28 @@ function ArtboardGuideEditor({
       <PropertyNumberRow
         label={uiMessage("inspector.artboardGuides.count")}
         value={r8.auto ? undefined : r8.count}
-        placeholder={value2 ? (undefined) : (uiMessage("inspector.artboardGuides.auto"))}
+        placeholder={isStretch ? (undefined) : (uiMessage("inspector.artboardGuides.auto"))}
         emptyStepFrom={r8.count}
-        clearable={!value2}
+        clearable={!isStretch}
         {...PlatformFileContentGridSizeCountSizeConfig.count}
         step={1}
         smallStep={1}
-        {...callback("count", (input?: Dynamic): Dynamic => input ?? "auto")}
+        {...numberRowHandlers("count", (nextValue?: Dynamic): Dynamic => nextValue ?? "auto")}
       />
       <PropertySelectRow
         label={uiMessage("inspector.artboardGuides.type")}
         value={r8.align}
         options={InspectorArtboardGuidesStretchStartCenterValues.map(
-          (input?: Dynamic): Dynamic => ({
-            value: input,
-            label: InspectorArtboardGuidesColumnsRowsConfig[r8.kind][input],
+          (alignKey?: Dynamic): Dynamic => ({
+            value: alignKey,
+            label: InspectorArtboardGuidesColumnsRowsConfig[r8.kind][alignKey],
           }),
         )}
-        onChange={(input?: Dynamic): Dynamic =>
+        onChange={(nextAlign?: Dynamic): Dynamic =>
           onChange({
             ...guide,
-            align: input,
-            ...(input === "stretch" && r8.auto
+            align: nextAlign,
+            ...(nextAlign === "stretch" && r8.auto
               ? {
                   count: Math.min(
                     r8.count,
@@ -257,14 +257,14 @@ function ArtboardGuideEditor({
           })
         }
       />
-      {value2 ? (<PropertyNumberRow
+      {isStretch ? (<PropertyNumberRow
           label={uiMessage("inspector.artboardGuides.margin")}
           value={r8.margin}
           {...PlatformFileContentGridSizeCountSizeConfig.margin}
           step={1}
           smallStep={1}
           unit={"px"}
-          {...callback("margin", (input?: Dynamic): Dynamic => input ?? 0)}
+          {...numberRowHandlers("margin", (nextValue?: Dynamic): Dynamic => nextValue ?? 0)}
         />) : (<jsxInspectorArtboardGuides.Fragment>
           <PropertyNumberRow
             label={r8.kind === "columns" ? (uiMessage("inspector.artboardGuides.width")) : (uiMessage("inspector.artboardGuides.height"))}
@@ -273,9 +273,9 @@ function ArtboardGuideEditor({
             step={1}
             smallStep={1}
             unit={"px"}
-            {...callback(
+            {...numberRowHandlers(
               "size",
-              (input?: Dynamic): Dynamic => input ?? r8.size,
+              (nextValue?: Dynamic): Dynamic => nextValue ?? r8.size,
             )}
           />
           {r8.align !== "center" && (<PropertyNumberRow
@@ -285,9 +285,9 @@ function ArtboardGuideEditor({
               step={1}
               smallStep={1}
               unit={"px"}
-              {...callback(
+              {...numberRowHandlers(
                 "offset",
-                (input?: Dynamic): Dynamic => input ?? 0,
+                (nextValue?: Dynamic): Dynamic => nextValue ?? 0,
               )}
             />)}
         </jsxInspectorArtboardGuides.Fragment>)}
@@ -298,9 +298,9 @@ function ArtboardGuideEditor({
         step={1}
         smallStep={1}
         unit={"px"}
-        {...callback("gutter", (input?: Dynamic): Dynamic => input ?? 0)}
+        {...numberRowHandlers("gutter", (nextValue?: Dynamic): Dynamic => nextValue ?? 0)}
       />
-      {value}
+      {colorRow}
     </PropertyPopupBody>
   );
 }
@@ -349,36 +349,36 @@ export function installEditorInspectorArtboardGuides(): () => void {
     ArtboardGuidesPanel = (0, reactChromeInspectorSheet.memo)(
       function ({ settings: settings }: Dynamic): Dynamic {
         let {
-            guides: value,
-            onSetGuides: value2,
-            onLiveGuides: value3,
-            onLiveEnd: value4,
-            w: value5,
-            h: value6,
+            guides: guides,
+            onSetGuides: setGuides,
+            onLiveGuides: setLiveGuides,
+            onLiveEnd: endLiveGuides,
+            w: frameWidth,
+            h: frameHeight,
           }: Dynamic = settings,
-          [value7, value8]: Dynamic = (0,
+          [openIndex, setOpenIndex]: Dynamic = (0,
           reactChromeInspectorSheet.useState)(null),
-          value9: Dynamic =
-            value.length >= 6
+          limitReachedProps: Dynamic =
+            guides.length >= 6
               ? {
                   disabled: true,
                   description: uiMessage("inspector.artboardGuides.atMostPerArtboard", { value1: String(6) }),
                 }
               : {},
-          value10: Dynamic = ["columns", "rows", "grid"].map(
-            (input?: Dynamic): Dynamic => ({
-              label: InspectorArtboardGuidesColumnsRowsGridConfig[input],
+          addGuideItems: Dynamic = ["columns", "rows", "grid"].map(
+            (kind?: Dynamic): Dynamic => ({
+              label: InspectorArtboardGuidesColumnsRowsGridConfig[kind],
               onSelect: (): Dynamic => {
-                value8(value.length);
-                value2([...value, defaultArtboardGuide(input, value5)]);
+                setOpenIndex(guides.length);
+                setGuides([...guides, defaultArtboardGuide(kind, frameWidth)]);
               },
-              ...value9,
+              ...limitReachedProps,
             }),
           ),
-          callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-            value.map(
-              (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                options2 === input ? options : input2,
+          replaceGuideAt: Dynamic = (index?: Dynamic, nextGuide?: Dynamic): Dynamic =>
+            guides.map(
+              (guide?: Dynamic, guideIndex?: Dynamic): Dynamic =>
+                guideIndex === index ? nextGuide : guide,
             );
         return (
           <PropertySection
@@ -386,47 +386,47 @@ export function installEditorInspectorArtboardGuides(): () => void {
             actions={
               <PropertyActions
                 aria-label={uiMessage("inspector.artboardGuides.addLayoutGuide")}
-                items={value10}
+                items={addGuideItems}
               />
             }
           >
-            {value.map(
-              (input?: Dynamic, options?: Dynamic): Dynamic => (
+            {guides.map(
+              (guideItem?: Dynamic, index?: Dynamic): Dynamic => (
                 <ArtboardGuideRow
-                  key={options}
-                  index={options}
-                  guide={input}
+                  key={index}
+                  index={index}
+                  guide={guideItem}
                   frame={{
-                    w: value5,
-                    h: value6,
+                    w: frameWidth,
+                    h: frameHeight,
                   }}
-                  open={value7 === options}
-                  onOpenChange={(input2?: Dynamic): Dynamic =>
-                    value8(
-                      (input3?: Dynamic): Dynamic =>
-                        input2 ? options : input3 === options ? null : input3,
+                  open={openIndex === index}
+                  onOpenChange={(isOpen?: Dynamic): Dynamic =>
+                    setOpenIndex(
+                      (currentIndex?: Dynamic): Dynamic =>
+                        isOpen ? index : currentIndex === index ? null : currentIndex,
                     )
                   }
-                  onChange={(input2?: Dynamic): Dynamic =>
-                    value2(callback(options, input2))
+                  onChange={(nextGuide?: Dynamic): Dynamic =>
+                    setGuides(replaceGuideAt(index, nextGuide))
                   }
-                  onLive={(input2?: Dynamic): Dynamic =>
-                    value3(callback(options, input2))
+                  onLive={(nextGuide?: Dynamic): Dynamic =>
+                    setLiveGuides(replaceGuideAt(index, nextGuide))
                   }
-                  onLiveEnd={value4}
+                  onLiveEnd={endLiveGuides}
                   onRemove={(): Dynamic => {
-                    value8(
-                      (input2?: Dynamic): Dynamic =>
-                        input2 === null || input2 === options
+                    setOpenIndex(
+                      (currentIndex?: Dynamic): Dynamic =>
+                        currentIndex === null || currentIndex === index
                           ? null
-                          : input2 > options
-                            ? input2 - 1
-                            : input2,
+                          : currentIndex > index
+                            ? currentIndex - 1
+                            : currentIndex,
                     );
-                    value2(
-                      value.filter(
-                        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                          options2 !== options,
+                    setGuides(
+                      guides.filter(
+                        (guide?: Dynamic, guideIndex?: Dynamic): Dynamic =>
+                          guideIndex !== index,
                       ),
                     );
                   }}

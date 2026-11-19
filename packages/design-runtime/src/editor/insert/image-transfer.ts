@@ -10,114 +10,114 @@ import { StyleValue } from "./file-drops";
 
 var InsertImageTransferLimit: Dynamic;
 function receiveFileDrops(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  files?: Dynamic,
+  ghostFile?: Dynamic,
+  dropPoint?: Dynamic,
 ): Dynamic {
   markDropPerformance("received");
-  let value: Dynamic =
-      context == null
+  let ghosts: Dynamic =
+      dropPoint == null
         ? []
-        : input.map(
-            (input2?: Dynamic, options2?: Dynamic): Dynamic =>
+        : files.map(
+            (file?: Dynamic, index?: Dynamic): Dynamic =>
               createDropGhost({
-                file: options,
+                file: ghostFile,
                 page: null,
-                x: Math.round(context.x - 160) + options2 * 24,
-                y: Math.round(context.y - 100) + options2 * 24,
+                x: Math.round(dropPoint.x - 160) + index * 24,
+                y: Math.round(dropPoint.y - 100) + index * 24,
                 w: 320,
                 h: 200,
               }),
           ),
-    flag: Dynamic = false,
-    value2: Dynamic =
-      value.length > 0 ? afterNextPaint() : Promise.resolve();
+    hasLanded: Dynamic = false,
+    paintReady: Dynamic =
+      ghosts.length > 0 ? afterNextPaint() : Promise.resolve();
   return {
-    marks: input.map(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        createElementEditId(options2),
+    marks: files.map(
+      (file?: Dynamic, index?: Dynamic): Dynamic =>
+        createElementEditId(index),
     ),
-    sized: input.map(
-      (input2?: Dynamic): Dynamic =>
-        isSvgFile(input2)
+    sized: files.map(
+      (file?: Dynamic): Dynamic =>
+        isSvgFile(file)
           ? Promise.resolve(false)
-          : value2.then(
-              (): Dynamic => canDecodeRasterImage(input2),
+          : paintReady.then(
+              (): Dynamic => canDecodeRasterImage(file),
             ),
     ),
-    place: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      value[input2]?.place(options2),
+    place: (index?: Dynamic, placement?: Dynamic): Dynamic =>
+      ghosts[index]?.place(placement),
     landed: (): Dynamic => {
-      flag = true;
-      for (let value3 of value as Dynamic) value3.landed();
+      hasLanded = true;
+      for (let ghost of ghosts as Dynamic) ghost.landed();
     },
     end: (): Dynamic => {
-      for (let value3 of value.splice(0) as Dynamic) flag || value3.cancel();
+      for (let ghost of ghosts.splice(0) as Dynamic) hasLanded || ghost.cancel();
     },
   };
 }
-function rememberImageInsert(items?: Dynamic, options?: Dynamic): Dynamic {
-  items.push(options);
-  items.length > InsertImageTransferLimit &&
-    items.splice(0, items.length - InsertImageTransferLimit);
+function rememberImageInsert(insertRecords?: Dynamic, insertRecord?: Dynamic): Dynamic {
+  insertRecords.push(insertRecord);
+  insertRecords.length > InsertImageTransferLimit &&
+    insertRecords.splice(0, insertRecords.length - InsertImageTransferLimit);
 }
 function patchInsertedImages(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  insertedImages?: Dynamic,
+  imageName?: Dynamic,
+  documentEditor?: Dynamic,
 ): Dynamic {
-  let flag: Dynamic = false;
-  for (let value of input as Dynamic)
-    if (value.name === options)
-      for (let value2 of context.elementsByAttr(
+  let hasPatched: Dynamic = false;
+  for (let insertedImage of insertedImages as Dynamic)
+    if (insertedImage.name === imageName)
+      for (let element of documentEditor.elementsByAttr(
         "src",
-        value.src,
+        insertedImage.src,
       ) as Dynamic) {
-        let value3: Dynamic = parseInt(
-          value2.getAttribute(DcTplAttribute) ?? "-1",
+        let editId: Dynamic = parseInt(
+          element.getAttribute(DcTplAttribute) ?? "-1",
           10,
         );
-        if (!(value3 < 0)) {
-          for (let [value4, value5] of Object.entries(value.attrs) as Dynamic)
-            value4.startsWith(StyleValue)
-              ? context.setStyleProperty?.(
-                  value3,
-                  value4.slice(StyleValue.length),
-                  value5,
+        if (!(editId < 0)) {
+          for (let [attrName, attrValue] of Object.entries(insertedImage.attrs) as Dynamic)
+            attrName.startsWith(StyleValue)
+              ? documentEditor.setStyleProperty?.(
+                  editId,
+                  attrName.slice(StyleValue.length),
+                  attrValue,
                 )
-              : context.setAttribute(value3, value4, value5);
-          flag = true;
+              : documentEditor.setAttribute(editId, attrName, attrValue);
+          hasPatched = true;
         }
       }
-  return flag;
+  return hasPatched;
 }
 function droppedImageWidth(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  image?: Dynamic,
+  containerWidth?: Dynamic,
+  containerHeight?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = Math.round(options * 0.45),
-    value2: Dynamic = Math.round(
-      context * 0.5 * (input.width / Math.max(1, input.height)),
+  let widthLimit: Dynamic = Math.round(containerWidth * 0.45),
+    heightLimitedWidth: Dynamic = Math.round(
+      containerHeight * 0.5 * (image.width / Math.max(1, image.height)),
     );
-  return Math.max(1, Math.min(input.width, value, value2));
+  return Math.max(1, Math.min(image.width, widthLimit, heightLimitedWidth));
 }
 function clampDroppedImagePosition(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  left?: Dynamic,
+  top?: Dynamic,
+  width?: Dynamic,
+  height?: Dynamic,
+  containerWidth?: Dynamic,
+  containerHeight?: Dynamic,
 ): Dynamic {
   return {
     left: Math.min(
-      Math.max(Math.round(input), 0),
-      Math.max(0, Math.round(extra - context)),
+      Math.max(Math.round(left), 0),
+      Math.max(0, Math.round(containerWidth - width)),
     ),
     top: Math.min(
-      Math.max(Math.round(options), 0),
-      Math.max(0, Math.round(detail - value)),
+      Math.max(Math.round(top), 0),
+      Math.max(0, Math.round(containerHeight - height)),
     ),
   };
 }

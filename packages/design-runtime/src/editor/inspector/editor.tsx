@@ -12,7 +12,7 @@ import { utf16SafeSlice } from "../code/unified-diff";
 import { isEditablePropMetadata } from "../components/prop-validation";
 import { normalizeFontWeight, normalizePixelValue } from "./computed-data";
 import { initializeInspectorLinkPopover, linkPopoverExports } from "./link-popover";
-import { InspectorPropertySchemaItems_2 } from "./property-schema";
+import { InspectorPropertySchemaItems_2 as propertySpecs } from "./property-schema";
 import { PropertiesInspectorFieldNameComponentFromSet } from "../properties/inspector-field";
 import { HostValue } from "../selection/canvas-selection";
 import { toModuleNamespace } from "../../module-helpers";
@@ -43,22 +43,22 @@ var InspectorEditorLabel_3: Dynamic;
 var InspectorEditorLabel_4: Dynamic;
 var inspectorSingleSelectionMessage: Dynamic;
 function markBlockedDragElements(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  tids?: Dynamic,
+  exceptTid?: Dynamic,
 ): Dynamic {
-  for (let value of (options ?? []) as Dynamic)
-    value !== context &&
-      input.setAttribute(value, "data-dc-drag-block", String(value));
+  for (let tid of (tids ?? []) as Dynamic)
+    tid !== exceptTid &&
+      model.setAttribute(tid, "data-dc-drag-block", String(tid));
 }
-function normalizePasteStamp(input?: Dynamic): Dynamic {
-  let stamp: Dynamic = input.stamp;
+function normalizePasteStamp(payload?: Dynamic): Dynamic {
+  let stamp: Dynamic = payload.stamp;
   return typeof stamp == "string" && stamp.length > 0 && stamp.length <= 64
     ? stamp
     : null;
 }
-function foreignArtboardPasteContext(input?: Dynamic): Dynamic {
-  let foreignArtboards: Dynamic = input.foreignArtboards;
+function foreignArtboardPasteContext(payload?: Dynamic): Dynamic {
+  let foreignArtboards: Dynamic = payload.foreignArtboards;
   return typeof foreignArtboards == "number" &&
     Number.isFinite(foreignArtboards) &&
     foreignArtboards > 0
@@ -67,37 +67,37 @@ function foreignArtboardPasteContext(input?: Dynamic): Dynamic {
       }
     : undefined;
 }
-function boundedPasteText(input?: Dynamic): Dynamic {
-  return typeof input.text == "string"
-    ? utf16SafeSlice(input.text, InspectorEditorResolvedValue)
+function boundedPasteText(payload?: Dynamic): Dynamic {
+  return typeof payload.text == "string"
+    ? utf16SafeSlice(payload.text, InspectorEditorResolvedValue)
     : "";
 }
-function textContrastGround(input?: Dynamic, options?: Dynamic): Dynamic {
+function textContrastGround(ground?: Dynamic, computed?: Dynamic): Dynamic {
   if (
-    input === null ||
-    options.backgroundClip === "text" ||
-    options.webkitBackgroundClip === "text"
+    ground === null ||
+    computed.backgroundClip === "text" ||
+    computed.webkitBackgroundClip === "text"
   )
     return null;
-  let value: Dynamic = normalizePixelValue(options.fontSize),
-    value2: Dynamic = normalizeFontWeight(options.fontWeight);
+  let fontSize: Dynamic = normalizePixelValue(computed.fontSize),
+    fontWeight: Dynamic = normalizeFontWeight(computed.fontWeight);
   return {
     ...textContrastContext(
-      input.behind,
-      value === null ? null : parseFloat(value),
-      value2 === null ? null : parseFloat(value2),
+      ground.behind,
+      fontSize === null ? null : parseFloat(fontSize),
+      fontWeight === null ? null : parseFloat(fontWeight),
     ),
-    ink: input.ink,
+    ink: ground.ink,
   };
 }
-function InspectorEmptyState(input?: Dynamic): Dynamic {
+function InspectorEmptyState(props?: Dynamic): Dynamic {
   useUiLocale();
   return (
     <div
-      {...input}
+      {...props}
       className={cn(
         "py-7 px-5 text-center text-xs text-secondary leading-normal",
-        input.className,
+        props.className,
       )}
     />
   );
@@ -151,8 +151,8 @@ export function installEditorInspectorEditor(): () => void {
             ),
           )
           .then(
-            (input?: Dynamic): Dynamic => ({
-              default: input.DcLinkPopover,
+            (linkPopoverModule?: Dynamic): Dynamic => ({
+              default: linkPopoverModule.DcLinkPopover,
             }),
           ),
     );
@@ -175,40 +175,40 @@ export function installEditorInspectorEditor(): () => void {
     ]);
     InspectorEditorSubscribers_2 = new Set();
     if (typeof window !== "undefined") {
-      let callback: Dynamic = (): Dynamic =>
+      let notifyListeners: Dynamic = (): Dynamic =>
         InspectorEditorSubscribers_2.forEach(
-          (input?: Dynamic): Dynamic => input(),
+          (listener?: Dynamic): Dynamic => listener(),
         );
-      (window as Dynamic).addEventListener("pointerdown", callback, true);
+      (window as Dynamic).addEventListener("pointerdown", notifyListeners, true);
       (window as Dynamic).addEventListener(
         "keydown",
-        (input?: Dynamic): Dynamic => {
-          InspectorEditorMetaControlShiftSet.has(input.key) || callback();
+        (keyEvent?: Dynamic): Dynamic => {
+          InspectorEditorMetaControlShiftSet.has(keyEvent.key) || notifyListeners();
         },
         true,
       );
     }
-    InspectorEditorEvery = (items?: Dynamic, items2?: Dynamic): Dynamic =>
-      items.length === items2.length &&
-      items.every(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input === items2[options],
+    InspectorEditorEvery = (listA?: Dynamic, listB?: Dynamic): Dynamic =>
+      listA.length === listB.length &&
+      listA.every(
+        (itemA?: Dynamic, index?: Dynamic): Dynamic =>
+          itemA === listB[index],
       );
-    InspectorEditorKeys = (input?: Dynamic, options: Dynamic = true): Dynamic =>
+    InspectorEditorKeys = (metadata?: Dynamic, excludeInspectorFields: Dynamic = true): Dynamic =>
       new Set(
-        Object.keys(input ?? {}).filter(
-          (input2?: Dynamic): Dynamic =>
+        Object.keys(metadata ?? {}).filter(
+          (propName?: Dynamic): Dynamic =>
             !(
-              options &&
-              PropertiesInspectorFieldNameComponentFromSet.has(input2)
-            ) && isEditablePropMetadata(input?.[input2]),
+              excludeInspectorFields &&
+              PropertiesInspectorFieldNameComponentFromSet.has(propName)
+            ) && isEditablePropMetadata(metadata?.[propName]),
         ),
       );
     InspectorEditorSubscribers_3 = new Set();
-    InspectorEditorReplace = (input?: Dynamic): Dynamic =>
-      input.replace(
+    InspectorEditorReplace = (cssProperty?: Dynamic): Dynamic =>
+      cssProperty.replace(
         /-([a-z])/g,
-        (input2?: Dynamic, options?: Dynamic): Dynamic => options.toUpperCase(),
+        (matchText?: Dynamic, letter?: Dynamic): Dynamic => letter.toUpperCase(),
       );
     InspectorEditorFontFamilyFontWeightFontSizeSet = new Set([
       "font-family",
@@ -237,8 +237,8 @@ export function installEditorInspectorEditor(): () => void {
       prop: "background",
       get label() { return uiMessage("inspector.editor.background"); },
       spec: {
-        ...InspectorPropertySchemaItems_2.find(
-          (input?: Dynamic): Dynamic => input.prop === "background",
+        ...propertySpecs.find(
+          (propertySpec?: Dynamic): Dynamic => propertySpec.prop === "background",
         ),
         get label() { return uiMessage("inspector.editor.background"); },
       },

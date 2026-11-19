@@ -9,19 +9,19 @@ function isApplePlatform(): Dynamic {
     : /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent);
 }
 function keyboardShortcutLabel(
-  input?: Dynamic,
-  { shift: options = false }: Dynamic = {},
+  key?: Dynamic,
+  { shift: withShift = false }: Dynamic = {},
 ): Dynamic {
   return isApplePlatform()
-    ? (options ? "\u21E7\u2318" : "\u2318") + input
-    : "Ctrl+" + (options ? "Shift+" : "") + input;
+    ? (withShift ? "\u21E7\u2318" : "\u2318") + key
+    : "Ctrl+" + (withShift ? "Shift+" : "") + key;
 }
-function isDuplicateShortcut(input?: Dynamic): Dynamic {
+function isDuplicateShortcut(event?: Dynamic): Dynamic {
   return (
-    (input.key === "d" || input.key === "D") &&
-    !input.shiftKey &&
-    !input.altKey &&
-    (isApplePlatform() ? input.metaKey && !input.ctrlKey : input.ctrlKey)
+    (event.key === "d" || event.key === "D") &&
+    !event.shiftKey &&
+    !event.altKey &&
+    (isApplePlatform() ? event.metaKey && !event.ctrlKey : event.ctrlKey)
   );
 }
 export {

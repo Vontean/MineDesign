@@ -15,35 +15,35 @@ var InspectorPropertySchemaHandler_2: Dynamic;
 var InspectorPropertySchemaItems_2: Dynamic;
 var InspectorPropertySchemaCache: Dynamic;
 var InspectorPropertySchemaCursorPointerEventsObjectFitValues: Dynamic;
-function hasTextBackgroundClip(input?: Dynamic): Dynamic {
+function hasTextBackgroundClip(getValue?: Dynamic): Dynamic {
   return (
-    InspectorPropertySchemaTextPattern.test(input("background-clip") ?? "") ||
+    InspectorPropertySchemaTextPattern.test(getValue("background-clip") ?? "") ||
     InspectorPropertySchemaTextPattern.test(
-      input("-webkit-background-clip") ?? "",
+      getValue("-webkit-background-clip") ?? "",
     )
   );
 }
-function getPropertySpecification(input?: Dynamic): Dynamic {
-  return InspectorPropertySchemaCache.get(input.toLowerCase());
+function getPropertySpecification(prop?: Dynamic): Dynamic {
+  return InspectorPropertySchemaCache.get(prop.toLowerCase());
 }
 function normalizePropertyNumber(
-  input?: Dynamic,
-  options?: Dynamic,
+  prop?: Dynamic,
+  rawValue?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.trim(),
-    value2: Dynamic = parseCssNumber(value);
-  return !value2 ||
-    input.startsWith("@") ||
+  let trimmedValue: Dynamic = rawValue.trim(),
+    parsedNumber: Dynamic = parseCssNumber(trimmedValue);
+  return !parsedNumber ||
+    prop.startsWith("@") ||
     /^(line-height|opacity|font-weight|z-index|order|flex|flex-grow|flex-shrink)$/.test(
-      input,
+      prop,
     ) ||
     !/(width|height|top|left|right|bottom|gap|radius|size|spacing|margin|padding|inset|indent|basis)/.test(
-      input,
+      prop,
     ) ||
-    value === "0" ||
-    (value2.unit && normalizeCssUnit(value2.unit))
-    ? value
-    : `${value2.value}px`;
+    trimmedValue === "0" ||
+    (parsedNumber.unit && normalizeCssUnit(parsedNumber.unit))
+    ? trimmedValue
+    : `${parsedNumber.value}px`;
 }
 export {
   getPropertySpecification,
@@ -81,31 +81,31 @@ export function installEditorInspectorPropertySchema(): () => void {
       "backdrop-filter": "-webkit-backdrop-filter",
     };
     InspectorPropertySchemaHandler = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value: Dynamic = {},
+      prop?: Dynamic,
+      defaultLabel?: Dynamic,
+      section?: Dynamic,
+      extraSpec: Dynamic = {},
     ): Dynamic => ({
-      prop: input,
-      get label() { return uiPropertyLabel(input, options); },
+      prop: prop,
+      get label() { return uiPropertyLabel(prop, defaultLabel); },
       editor: "number",
-      section: context,
+      section: section,
       unit: "px",
-      ...value,
+      ...extraSpec,
     });
     InspectorPropertySchemaHandler_2 = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-      extra: Dynamic = {},
+      prop?: Dynamic,
+      defaultLabel?: Dynamic,
+      section?: Dynamic,
+      choices?: Dynamic,
+      extraSpec: Dynamic = {},
     ): Dynamic => ({
-      prop: input,
-      get label() { return uiPropertyLabel(input, options); },
+      prop: prop,
+      get label() { return uiPropertyLabel(prop, defaultLabel); },
       editor: "select",
-      section: context,
-      options: value,
-      ...extra,
+      section: section,
+      options: choices,
+      ...extraSpec,
     });
     InspectorPropertySchemaItems_2 = [
       {
@@ -583,7 +583,7 @@ export function installEditorInspectorPropertySchema(): () => void {
     ];
     InspectorPropertySchemaCache = new Map(
       InspectorPropertySchemaItems_2.map(
-        (input?: Dynamic): Dynamic => [input.prop, input],
+        (spec?: Dynamic): Dynamic => [spec.prop, spec],
       ),
     );
     InspectorPropertySchemaCursorPointerEventsObjectFitValues = [

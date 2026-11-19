@@ -17,22 +17,22 @@ var defaultInspectorOpen: Dynamic;
 var InspectorOpenContext: Dynamic;
 var initializeInspectorContext: Dynamic;
 function getTweakSelection(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  isInspectorOpen?: Dynamic,
+  hasSelection?: Dynamic,
+  mode?: Dynamic,
+  selection?: Dynamic,
 ): Dynamic {
-  return input && options && context === "tweaks" ? value : null;
+  return isInspectorOpen && hasSelection && mode === "tweaks" ? selection : null;
 }
 function useInspectorOpen(): Dynamic {
-  let value: Dynamic = npm_useLocalStorage_QP(
+  let storedOpenState: Dynamic = npm_useLocalStorage_QP(
     inspectorOpenStorageKey,
     defaultInspectorOpen,
   );
   return (
     (0, reactInspectorContext.useContext)(InspectorOpenContext) ?? [
-      value[0],
-      value[1],
+      storedOpenState[0],
+      storedOpenState[1],
     ]
   );
 }

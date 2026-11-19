@@ -6,57 +6,57 @@ import {
 import { parseStyleDeclarations } from "../css/declarations";
 import { expandCssDeclarations } from "../css/shorthand";
 import { classifyStyleValue, replaceCssVariables } from "../css/values";
-import { getPropertySpecification, hasTextBackgroundClip, InspectorPropertySchemaBackgroundFontWeightFontStyleConfig, InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems, InspectorPropertySchemaItems_2 } from "./property-schema";
+import { getPropertySpecification, hasTextBackgroundClip, InspectorPropertySchemaBackgroundFontWeightFontStyleConfig, InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems, InspectorPropertySchemaItems_2 as propertySpecs } from "./property-schema";
 import { orderInspectorSections, resolveInspectorInheritedValues } from "./selection";
-import { cssPropertyToComputedKey, formatPropertyKey, hasVisiblePaint, InspectorStyleMetadataBackgroundColorPattern, InspectorStyleMetadataDataDcTplStyleSet, InspectorStyleMetadataInputTextareaButtonSet, InspectorStyleMetadataLabel, InspectorStyleMetadataLineHeightTextAlignSet, InspectorStyleMetadataStrokeStrokeWidthFillValues, InspectorStyleMetadataSubscribers, InspectorStyleMetadataSubscribers_2, InspectorStyleMetadataTextTspanTextpathSet, isTransparentColor, svgShapeTags } from "./style-metadata";
+import { cssPropertyToComputedKey, formatPropertyKey, hasVisiblePaint, InspectorStyleMetadataBackgroundColorPattern, InspectorStyleMetadataDataDcTplStyleSet, InspectorStyleMetadataInputTextareaButtonSet, InspectorStyleMetadataLabel, InspectorStyleMetadataLineHeightTextAlignSet, InspectorStyleMetadataStrokeStrokeWidthFillValues, InspectorStyleMetadataSubscribers, InspectorStyleMetadataSubscribers_2 as nonContainerTags, InspectorStyleMetadataTextTspanTextpathSet, isTransparentColor, svgShapeTags } from "./style-metadata";
 import { arrowHeadPropertyRows } from "../svg/arrow-properties";
 import { firstFontFamily } from "../typography/font-family";
 import { getAvailableFontVariants, resolveFontVariants } from "../typography/font-variants";
 import { sanitizeCssBackground } from "../../platform/css-sanitization";
 
 function getElementInspector(
-  input?: Dynamic,
-  options: Dynamic = {},
+  element?: Dynamic,
+  inspectorOptions: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic = expandCssDeclarations(
-      parseStyleDeclarations(input.authoredStyle),
+  let declarations: Dynamic = expandCssDeclarations(
+      parseStyleDeclarations(element.authoredStyle),
     ),
-    entries: Dynamic = new Map();
-  for (let value26 of value as Dynamic)
-    entries.set(value26.prop, value26.value);
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input.computed[cssPropertyToComputedKey(input2)] ?? "",
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (!input2 || !input2.includes("var("))
+    authoredValues: Dynamic = new Map();
+  for (let declaration of declarations as Dynamic)
+    authoredValues.set(declaration.prop, declaration.value);
+  let computedValue: Dynamic = (propName?: Dynamic): Dynamic =>
+      element.computed[cssPropertyToComputedKey(propName)] ?? "",
+    resolveCssVariables: Dynamic = (rawValue?: Dynamic): Dynamic => {
+      if (!rawValue || !rawValue.includes("var("))
         return {
-          value: input2,
+          value: rawValue,
         };
-      let value26: Dynamic = replaceCssVariables(
-        input2,
-        input.varValues ?? {},
+      let resolvedValue: Dynamic = replaceCssVariables(
+        rawValue,
+        element.varValues ?? {},
       );
-      return value26 != null && value26 !== input2
+      return resolvedValue != null && resolvedValue !== rawValue
         ? {
-            value: value26,
-            varSource: input2,
+            value: resolvedValue,
+            varSource: rawValue,
           }
         : {
-            value: input2,
+            value: rawValue,
           };
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value26: Dynamic = getPropertySpecification(input2);
+    buildPropertyRow: Dynamic = (propName?: Dynamic): Dynamic => {
+      let propertySpec: Dynamic = getPropertySpecification(propName);
       return {
-        prop: input2,
-        label: value26?.label ?? input2,
-        spec: value26,
-        ...callback2(entries.get(input2) ?? null),
-        fallback: callback(input2) || value26?.defaultValue || "",
-        disabled: input.disabled,
+        prop: propName,
+        label: propertySpec?.label ?? propName,
+        spec: propertySpec,
+        ...resolveCssVariables(authoredValues.get(propName) ?? null),
+        fallback: computedValue(propName) || propertySpec?.defaultValue || "",
+        disabled: element.disabled,
       };
     },
-    items: Dynamic = [],
-    state: Dynamic = {
+    sections: Dynamic = [],
+    objectFitRow: Dynamic = {
       prop: "object-fit",
       get label() { return uiMessage("inspector.element.fit"); },
       spec: {
@@ -66,12 +66,12 @@ function getElementInspector(
         section: "advanced",
         options: ["fill", "contain", "cover", "none", "scale-down"],
       },
-      value: entries.get("object-fit") ?? null,
-      fallback: callback("object-fit"),
-      disabled: input.disabled,
+      value: authoredValues.get("object-fit") ?? null,
+      fallback: computedValue("object-fit"),
+      disabled: element.disabled,
     };
-  input.tag === "img" &&
-    items.push({
+  element.tag === "img" &&
+    sections.push({
       id: "image",
       get title() { return uiMessage("inspector.element.image"); },
       rows: [
@@ -84,67 +84,67 @@ function getElementInspector(
             editor: "image",
             section: "advanced",
           },
-          value: input.attrs.src ?? null,
-          disabled: input.disabled,
+          value: element.attrs.src ?? null,
+          disabled: element.disabled,
         },
-        state,
+        objectFitRow,
       ],
     });
-  let callback4: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value26?: Dynamic,
+  let buildAttributeRow: Dynamic = (
+      attrName?: Dynamic,
+      label?: Dynamic,
+      editor?: Dynamic,
+      attrConfig?: Dynamic,
     ): Dynamic => ({
-      prop: `@${input2}`,
-      label: options2,
+      prop: `@${attrName}`,
+      label: label,
       spec: {
-        prop: `@${input2}`,
-        label: options2,
-        editor: context,
+        prop: `@${attrName}`,
+        label: label,
+        editor: editor,
         section: "advanced",
-        ...(value26?.options
+        ...(attrConfig?.options
           ? {
-              options: value26.options,
+              options: attrConfig.options,
             }
           : {}),
       },
-      value: input.attrs[input2] ?? null,
-      hint: value26?.placeholder,
-      disabled: input.disabled,
+      value: element.attrs[attrName] ?? null,
+      hint: attrConfig?.placeholder,
+      disabled: element.disabled,
     }),
-    flag: Dynamic = false;
-  if (input.tag === "a") {
-    let callback10: Dynamic = (input2?: Dynamic): Dynamic => {
-        let kind: Dynamic = classifyStyleValue(input2).kind;
+    opensInNewTab: Dynamic = false;
+  if (element.tag === "a") {
+    let isDynamicValue: Dynamic = (rawValue?: Dynamic): Dynamic => {
+        let kind: Dynamic = classifyStyleValue(rawValue).kind;
         return kind === "template" || kind === "var";
       },
-      target: Dynamic = input.attrs.target,
-      value26: Dynamic = !callback10(target),
-      rel: Dynamic = input.attrs.rel,
-      value27: Dynamic = !callback10(rel),
-      items5: Dynamic = ["noopener", "noreferrer"],
-      value28: Dynamic = (rel ?? "").trim().split(/\s+/).filter(Boolean),
-      value29: Dynamic = value28.map(
-        (input2?: Dynamic): Dynamic => input2.toLowerCase(),
+      target: Dynamic = element.attrs.target,
+      canEditTarget: Dynamic = !isDynamicValue(target),
+      rel: Dynamic = element.attrs.rel,
+      canEditRel: Dynamic = !isDynamicValue(rel),
+      securityRelTokens: Dynamic = ["noopener", "noreferrer"],
+      relTokens: Dynamic = (rel ?? "").trim().split(/\s+/).filter(Boolean),
+      lowerRelTokens: Dynamic = relTokens.map(
+        (token?: Dynamic): Dynamic => token.toLowerCase(),
       ),
-      value30: Dynamic = [
-        ...value28,
-        ...items5.filter(
-          (input2?: Dynamic): Dynamic => !value29.includes(input2),
+      relWithSecurity: Dynamic = [
+        ...relTokens,
+        ...securityRelTokens.filter(
+          (token?: Dynamic): Dynamic => !lowerRelTokens.includes(token),
         ),
       ].join(" "),
-      value31: Dynamic = value28.filter(
-        (input2?: Dynamic): Dynamic => !items5.includes(input2.toLowerCase()),
+      relWithoutSecurity: Dynamic = relTokens.filter(
+        (token?: Dynamic): Dynamic => !securityRelTokens.includes(token.toLowerCase()),
       ),
-      items6: Dynamic = [
-        callback4("href", "Destination", "string", {
+      linkRows: Dynamic = [
+        buildAttributeRow("href", "Destination", "string", {
           placeholder: "https://\u2026",
         }),
       ];
-    value26 &&
-      ((flag = target == null || target.trim().toLowerCase() === "_blank"),
-      items6.push({
+    canEditTarget &&
+      ((opensInNewTab = target == null || target.trim().toLowerCase() === "_blank"),
+      linkRows.push({
         prop: "@target",
         get label() { return uiMessage("inspector.element.openInNewTab"); },
         spec: {
@@ -155,44 +155,44 @@ function getElementInspector(
           boolOnValue: "_blank",
         },
         value: target ?? null,
-        disabled: input.disabled,
-        ...(value27
+        disabled: element.disabled,
+        ...(canEditRel
           ? {
               alsoCommit: [
                 {
                   prop: "@rel",
-                  value: value30,
+                  value: relWithSecurity,
                 },
               ],
               alsoCommitOnClear: [
                 {
                   prop: "@rel",
-                  value: value31.length ? value31.join(" ") : null,
+                  value: relWithoutSecurity.length ? relWithoutSecurity.join(" ") : null,
                 },
               ],
             }
           : {}),
       }));
-    items.push({
+    sections.push({
       id: "link",
       get title() { return uiMessage("inspector.element.link"); },
-      rows: items6,
+      rows: linkRows,
     });
   }
-  (input.tag === "video" || input.tag === "iframe") &&
-    items.push({
+  (element.tag === "video" || element.tag === "iframe") &&
+    sections.push({
       id: "media",
-      get title() { return input.tag === "video" ? (uiMessage("inspector.element.video")) : ("Embed"); },
+      get title() { return element.tag === "video" ? (uiMessage("inspector.element.video")) : ("Embed"); },
       rows: [
-        callback4("src", "Source", "string", {
+        buildAttributeRow("src", "Source", "string", {
           placeholder: "https://\u2026",
         }),
-        ...(input.tag === "video" ? [state] : []),
+        ...(element.tag === "video" ? [objectFitRow] : []),
       ],
     });
-  if (input.tag === "ul" || input.tag === "ol") {
-    let value26: Dynamic = input.tag === "ol";
-    items.push({
+  if (element.tag === "ul" || element.tag === "ol") {
+    let isOrderedList: Dynamic = element.tag === "ol";
+    sections.push({
       id: "list",
       get title() { return uiMessage("inspector.element.list"); },
       rows: [
@@ -204,7 +204,7 @@ function getElementInspector(
             get label() { return uiMessage("inspector.element.style"); },
             editor: "select",
             section: "advanced",
-            options: value26
+            options: isOrderedList
               ? [
                   "decimal",
                   "lower-alpha",
@@ -213,7 +213,7 @@ function getElementInspector(
                   "none",
                 ]
               : ["disc", "circle", "square", "none"],
-            optionLabels: value26
+            optionLabels: isOrderedList
               ? {
                   decimal: "1",
                   "lower-alpha": "a",
@@ -228,49 +228,49 @@ function getElementInspector(
                   none: "\u2013",
                 },
           },
-          ...callback2(entries.get("list-style-type") ?? null),
-          fallback: callback("list-style-type"),
-          disabled: input.disabled,
+          ...resolveCssVariables(authoredValues.get("list-style-type") ?? null),
+          fallback: computedValue("list-style-type"),
+          disabled: element.disabled,
         },
       ],
     });
   }
-  if (input.tag === "hr") {
-    let callback10: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value26: Dynamic = {},
+  if (element.tag === "hr") {
+    let buildBorderRow: Dynamic = (
+      propName?: Dynamic,
+      label?: Dynamic,
+      editor?: Dynamic,
+      extraSpec: Dynamic = {},
     ): Dynamic => ({
-      prop: input2,
-      label: options2,
+      prop: propName,
+      label: label,
       spec: {
-        prop: input2,
-        label: options2,
-        editor: context,
+        prop: propName,
+        label: label,
+        editor: editor,
         section: "border",
-        ...value26,
+        ...extraSpec,
       },
-      ...callback2(entries.get(input2) ?? null),
-      fallback: callback(input2),
-      disabled: input.disabled,
+      ...resolveCssVariables(authoredValues.get(propName) ?? null),
+      fallback: computedValue(propName),
+      disabled: element.disabled,
     });
-    items.push({
+    sections.push({
       id: "divider",
       get title() { return uiMessage("inspector.element.divider"); },
       rows: [
-        callback10("border-top-width", "Thickness", "number", {
+        buildBorderRow("border-top-width", "Thickness", "number", {
           unit: "px",
           min: 0,
         }),
-        callback10("border-top-color", "Color", "color"),
-        callback10("border-top-style", "Style", "select", {
+        buildBorderRow("border-top-color", "Color", "color"),
+        buildBorderRow("border-top-style", "Style", "select", {
           options: ["solid", "dashed", "dotted", "double"],
         }),
       ],
     });
   }
-  let values: Dynamic = new Set([
+  let containerTags: Dynamic = new Set([
       "ul",
       "ol",
       "dl",
@@ -280,79 +280,79 @@ function getElementInspector(
       "tfoot",
       "tr",
     ]),
-    value2: Dynamic =
-      input.text != null &&
-      !values.has(input.tag) &&
-      input.tag !== "textarea",
-    value3: Dynamic =
-      value2 && input.canvasEditable === false
+    hasEditableText: Dynamic =
+      element.text != null &&
+      !containerTags.has(element.tag) &&
+      element.tag !== "textarea",
+    contentRow: Dynamic =
+      hasEditableText && element.canvasEditable === false
         ? {
             prop: "__text",
             get label() { return uiMessage("inspector.element.content"); },
-            value: input.text,
-            disabled: input.disabled,
+            value: element.text,
+            disabled: element.disabled,
           }
         : null,
-    value4: Dynamic = svgShapeTags.has(input.tag),
-    value5: Dynamic =
-      (input.tag === "svg" &&
-        (entries.get("fill") ?? callback("fill")) === "none") ||
-      (value4 &&
-        (input.attrs.fill ?? input.computed.fill ?? "").toLowerCase() ===
+    isSvgShape: Dynamic = svgShapeTags.has(element.tag),
+    isUnfilledSvg: Dynamic =
+      (element.tag === "svg" &&
+        (authoredValues.get("fill") ?? computedValue("fill")) === "none") ||
+      (isSvgShape &&
+        (element.attrs.fill ?? element.computed.fill ?? "").toLowerCase() ===
           "none"),
-    value6: Dynamic = InspectorStyleMetadataTextTspanTextpathSet.has(
-      input.tag,
+    isSvgText: Dynamic = InspectorStyleMetadataTextTspanTextpathSet.has(
+      element.tag,
     ),
-    value7: Dynamic = value5 || value4 || value6,
-    callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-      options.cssPaint?.has(input2)
-        ? input2
+    isSvgPaintTarget: Dynamic = isUnfilledSvg || isSvgShape || isSvgText,
+    svgPaintProp: Dynamic = (propName?: Dynamic): Dynamic =>
+      inspectorOptions.cssPaint?.has(propName)
+        ? propName
         : formatPropertyKey(
-            input2,
-            (input3?: Dynamic): Dynamic => entries.get(input3),
+            propName,
+            (attrName?: Dynamic): Dynamic => authoredValues.get(attrName),
           );
-  if (input.tag === "svg") {
-    let callback10: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
+  if (element.tag === "svg") {
+    let buildStrokeRow: Dynamic = (
+      propName?: Dynamic,
+      label?: Dynamic,
+      editor?: Dynamic,
     ): Dynamic => ({
-      prop: input2,
-      label: options2,
+      prop: propName,
+      label: label,
       spec: {
-        prop: input2,
-        label: options2,
-        editor: context,
+        prop: propName,
+        label: label,
+        editor: editor,
         section: "stroke",
-        ...(context === "number"
+        ...(editor === "number"
           ? {
               unit: "px",
               min: 0,
             }
           : {}),
       },
-      ...callback2(entries.get(input2) ?? null),
-      fallback: callback(input2),
-      disabled: input.disabled,
+      ...resolveCssVariables(authoredValues.get(propName) ?? null),
+      fallback: computedValue(propName),
+      disabled: element.disabled,
     });
-    items.push({
+    sections.push({
       id: "svgPaint",
-      get title() { return value5 ? (uiMessage("inspector.element.stroke")) : (uiMessage("inspector.element.fillStroke")); },
+      get title() { return isUnfilledSvg ? (uiMessage("inspector.element.stroke")) : (uiMessage("inspector.element.fillStroke")); },
       rows: [
-        ...(value5 ? [] : [callback10("fill", "Fill", "color")]),
-        callback10("stroke", value5 ? "Color" : "Stroke", "color"),
-        callback10("stroke-width", "Thickness", "number"),
-        ...arrowHeadPropertyRows(input),
+        ...(isUnfilledSvg ? [] : [buildStrokeRow("fill", "Fill", "color")]),
+        buildStrokeRow("stroke", isUnfilledSvg ? "Color" : "Stroke", "color"),
+        buildStrokeRow("stroke-width", "Thickness", "number"),
+        ...arrowHeadPropertyRows(element),
       ],
     });
   }
-  let value8: Dynamic =
-      InspectorStyleMetadataInputTextareaButtonSet.has(input.tag),
-    value9: Dynamic = (input.attrs.type ?? "text").toLowerCase(),
-    value10: Dynamic =
-      input.tag === "input" && (value9 === "checkbox" || value9 === "radio"),
-    value11: Dynamic =
-      input.tag === "input" &&
+  let isFormControl: Dynamic =
+      InspectorStyleMetadataInputTextareaButtonSet.has(element.tag),
+    inputType: Dynamic = (element.attrs.type ?? "text").toLowerCase(),
+    isCheckable: Dynamic =
+      element.tag === "input" && (inputType === "checkbox" || inputType === "radio"),
+    isTextLikeInput: Dynamic =
+      element.tag === "input" &&
       [
         "text",
         "search",
@@ -366,50 +366,50 @@ function getElementInspector(
         "datetime-local",
         "month",
         "week",
-      ].includes(value9),
-    values2: Dynamic = new Set();
-  if (value8) {
-    let callback10: Dynamic = (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        context?: Dynamic,
-        value26?: Dynamic,
+      ].includes(inputType),
+    handledAttrs: Dynamic = new Set();
+  if (isFormControl) {
+    let buildControlRow: Dynamic = (
+        attrName?: Dynamic,
+        label?: Dynamic,
+        editor?: Dynamic,
+        choices?: Dynamic,
       ): Dynamic => (
-        values2.add(input2),
+        handledAttrs.add(attrName),
         {
-          prop: `@${input2}`,
-          label: options2,
+          prop: `@${attrName}`,
+          label: label,
           spec: {
-            prop: `@${input2}`,
-            label: options2,
-            editor: context,
+            prop: `@${attrName}`,
+            label: label,
+            editor: editor,
             section: "advanced",
-            ...(value26
+            ...(choices
               ? {
-                  options: value26,
+                  options: choices,
                 }
               : {}),
           },
-          value: input.attrs[input2] ?? null,
-          disabled: input.disabled,
+          value: element.attrs[attrName] ?? null,
+          disabled: element.disabled,
         }
       ),
-      items5: Dynamic = [];
-    ((input.tag === "input" && !value10) || input.tag === "textarea") &&
-      items5.push(callback10("placeholder", "Placeholder", "string"));
-    input.tag === "input" &&
-      classifyStyleValue(input.attrs.type ?? "").kind ===
+      controlRows: Dynamic = [];
+    ((element.tag === "input" && !isCheckable) || element.tag === "textarea") &&
+      controlRows.push(buildControlRow("placeholder", "Placeholder", "string"));
+    element.tag === "input" &&
+      classifyStyleValue(element.attrs.type ?? "").kind ===
         "literal" &&
-      values2.add("type");
-    if (value10) {
-      let checked: Dynamic = input.attrs.checked,
-        value26: Dynamic =
+      handledAttrs.add("type");
+    if (isCheckable) {
+      let checked: Dynamic = element.attrs.checked,
+        isCheckedLiteral: Dynamic =
           checked == null ||
           checked === "" ||
           classifyStyleValue(checked).kind === "literal";
-      value26 && values2.add("checked");
-      value26 &&
-        items5.push({
+      isCheckedLiteral && handledAttrs.add("checked");
+      isCheckedLiteral &&
+        controlRows.push({
           prop: "@checked",
           get label() { return uiMessage("inspector.element.checked"); },
           spec: {
@@ -419,48 +419,48 @@ function getElementInspector(
             section: "advanced",
             boolOnValue: "checked",
           },
-          value: "checked" in input.attrs ? "checked" : null,
-          disabled: input.disabled,
+          value: "checked" in element.attrs ? "checked" : null,
+          disabled: element.disabled,
         });
     } else
-      input.tag === "input" &&
-        items5.push(callback10("value", uiMessage("inspector.element.prefilledText"), "string"));
-    input.tag === "textarea" &&
-      items5.push({
+      element.tag === "input" &&
+        controlRows.push(buildControlRow("value", uiMessage("inspector.element.prefilledText"), "string"));
+    element.tag === "textarea" &&
+      controlRows.push({
         prop: "__text",
         get label() { return uiMessage("inspector.element.prefilledText"); },
-        value: input.text,
-        disabled: input.disabled,
+        value: element.text,
+        disabled: element.disabled,
       });
-    input.tag === "button" &&
-      items5.push(
-        callback10("type", "Type", "select", ["button", "submit", "reset"]),
+    element.tag === "button" &&
+      controlRows.push(
+        buildControlRow("type", "Type", "select", ["button", "submit", "reset"]),
       );
-    items5.length &&
-      items.push({
+    controlRows.length &&
+      sections.push({
         id: "control",
         get title() { return uiMessage("inspector.element.control"); },
-        rows: items5,
+        rows: controlRows,
       });
   }
-  let items2: Dynamic = [];
-  if (svgShapeTags.has(input.tag)) {
-    let callback10: Dynamic = (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        context?: Dynamic,
-        value29?: Dynamic,
+  let strokeRows: Dynamic = [];
+  if (svgShapeTags.has(element.tag)) {
+    let buildShapeStrokeRow: Dynamic = (
+        propName?: Dynamic,
+        label?: Dynamic,
+        editor?: Dynamic,
+        choices?: Dynamic,
       ): Dynamic => {
-        let value30: Dynamic = callback5(input2);
+        let resolvedProp: Dynamic = svgPaintProp(propName);
         return {
-          prop: value30,
-          label: options2,
+          prop: resolvedProp,
+          label: label,
           spec: {
-            prop: value30,
-            label: options2,
-            editor: context,
+            prop: resolvedProp,
+            label: label,
+            editor: editor,
             section: "stroke",
-            ...(context === "number"
+            ...(editor === "number"
               ? {
                   unit: "",
                   min: 0,
@@ -468,66 +468,66 @@ function getElementInspector(
                   scrub: 0.5,
                 }
               : {}),
-            ...(value29
+            ...(choices
               ? {
-                  options: value29,
+                  options: choices,
                 }
               : {}),
           },
-          ...(value30 === input2
-            ? callback2(entries.get(input2) ?? input.attrs[input2] ?? null)
+          ...(resolvedProp === propName
+            ? resolveCssVariables(authoredValues.get(propName) ?? element.attrs[propName] ?? null)
             : {
-                value: input.attrs[input2] ?? null,
+                value: element.attrs[propName] ?? null,
               }),
-          ...(options.cssPaint?.has(input2)
+          ...(inspectorOptions.cssPaint?.has(propName)
             ? {
                 alsoCommitOnClear: [
                   {
-                    prop: `@${input2}`,
+                    prop: `@${propName}`,
                     value: null,
                   },
                 ],
               }
             : {}),
-          fallback: callback(input2),
-          disabled: input.disabled,
+          fallback: computedValue(propName),
+          disabled: element.disabled,
         };
       },
-      value26: Dynamic = callback2(entries.get("fill") ?? null).value,
-      value27: Dynamic = value26?.includes("var(")
-        ? input.computed.fill
-        : (value26 ?? input.attrs.fill ?? input.computed.fill),
-      value28: Dynamic = !/^none\b/i.test((value27 ?? "").trim());
-    items2 = [
-      callback10("stroke", value28 ? "Stroke" : "Color", "color"),
-      callback10("stroke-width", "Thickness", "number"),
-      ...arrowHeadPropertyRows(input),
-      ...(value28 ? [callback10("fill", "Fill", "color")] : []),
-      callback10("stroke-linecap", "Cap", "select", [
+      fillValueRaw: Dynamic = resolveCssVariables(authoredValues.get("fill") ?? null).value,
+      fillValue: Dynamic = fillValueRaw?.includes("var(")
+        ? element.computed.fill
+        : (fillValueRaw ?? element.attrs.fill ?? element.computed.fill),
+      hasVisibleFill: Dynamic = !/^none\b/i.test((fillValue ?? "").trim());
+    strokeRows = [
+      buildShapeStrokeRow("stroke", hasVisibleFill ? "Stroke" : "Color", "color"),
+      buildShapeStrokeRow("stroke-width", "Thickness", "number"),
+      ...arrowHeadPropertyRows(element),
+      ...(hasVisibleFill ? [buildShapeStrokeRow("fill", "Fill", "color")] : []),
+      buildShapeStrokeRow("stroke-linecap", "Cap", "select", [
         "butt",
         "round",
         "square",
       ]),
     ];
-    items.push({
+    sections.push({
       id: "stroke",
-      get title() { return value28 ? (uiMessage("inspector.element.fillStroke")) : (uiMessage("inspector.element.stroke")); },
-      rows: items2,
+      get title() { return hasVisibleFill ? (uiMessage("inspector.element.fillStroke")) : (uiMessage("inspector.element.stroke")); },
+      rows: strokeRows,
     });
   }
-  let value12: Dynamic = (
-      entries.get("position") ||
-      input.computed.position ||
+  let position: Dynamic = (
+      authoredValues.get("position") ||
+      element.computed.position ||
       "static"
     ).toLowerCase(),
-    value13: Dynamic = (
-      entries.get("display") ||
-      input.computed.display ||
+    display: Dynamic = (
+      authoredValues.get("display") ||
+      element.computed.display ||
       ""
     ).toLowerCase(),
-    value14: Dynamic = value13.includes("flex"),
-    value15: Dynamic = value13.includes("grid"),
-    values3: Dynamic = new Set([
+    isFlex: Dynamic = display.includes("flex"),
+    isGrid: Dynamic = display.includes("grid"),
+    valueOnlyProps: Dynamic = new Set([
       "background",
       "border-radius",
       "border-top-left-radius",
@@ -544,199 +544,199 @@ function getElementInspector(
       "min-height",
       "max-height",
     ]),
-    value16: Dynamic = hasTextBackgroundClip(
-      (input2?: Dynamic): Dynamic => entries.get(input2),
+    hasInlineTextClip: Dynamic = hasTextBackgroundClip(
+      (propName?: Dynamic): Dynamic => authoredValues.get(propName),
     ),
-    value17: Dynamic =
-      !value6 &&
-      (value16 ||
+    isTextClipped: Dynamic =
+      !isSvgText &&
+      (hasInlineTextClip ||
         hasTextBackgroundClip(
-          (input2?: Dynamic): Dynamic =>
-            input2 === "background-clip"
-              ? input.computed.backgroundClip
-              : input.computed.webkitBackgroundClip,
+          (propName?: Dynamic): Dynamic =>
+            propName === "background-clip"
+              ? element.computed.backgroundClip
+              : element.computed.webkitBackgroundClip,
         )),
-    value18: Dynamic = (entries.get("color") ?? "").trim().toLowerCase(),
-    value19: Dynamic = value17
+    inlineColor: Dynamic = (authoredValues.get("color") ?? "").trim().toLowerCase(),
+    backgroundImage: Dynamic = isTextClipped
       ? sanitizeCssBackground(
-          input.computed.backgroundImage ?? "",
+          element.computed.backgroundImage ?? "",
         )
       : "transparent",
-    value20: Dynamic =
-      /^(?:repeating-)?(?:linear|radial|conic)-gradient\(/i.test(value19)
-        ? value19
+    gradientLayer: Dynamic =
+      /^(?:repeating-)?(?:linear|radial|conic)-gradient\(/i.test(backgroundImage)
+        ? backgroundImage
         : undefined,
-    state2: Dynamic = {
-      clipped: value17,
-      inlineClip: value16,
-      layer: callback2(
-        entries.get("background-image") ?? entries.get("background") ?? null,
+    textFillState: Dynamic = {
+      clipped: isTextClipped,
+      inlineClip: hasInlineTextClip,
+      layer: resolveCssVariables(
+        authoredValues.get("background-image") ?? authoredValues.get("background") ?? null,
       ).value,
-      ...(value20 !== undefined
+      ...(gradientLayer !== undefined
         ? {
-            computedLayer: value20,
+            computedLayer: gradientLayer,
           }
         : {}),
-      size: entries.get("background-size") ?? null,
-      ...(isTransparentColor(value18)
+      size: authoredValues.get("background-size") ?? null,
+      ...(isTransparentColor(inlineColor)
         ? {
             transparentInk: "inline",
           }
         : isTransparentColor(
-              (input.computed.color ?? "").trim().toLowerCase(),
+              (element.computed.color ?? "").trim().toLowerCase(),
             )
           ? {
               transparentInk: "computed",
             }
           : {}),
     },
-    callback6: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value26: Dynamic = callback3(input2.prop);
-      input2.prop === "color" &&
-        (value17 ||
-          (input.textual ??
-            InspectorStyleMetadataSubscribers.has(input.tag))) &&
-        (value26.textFill = state2);
-      input2.prop === "text-shadow" &&
-        value17 &&
-        !value26.value &&
-        ((value26.disabled = true),
-        (value26.whyDisabled = InspectorStyleMetadataLabel));
-      input2.prop === "width" && value11 && (value26.noHug = true);
-      if (input2.prop === "backdrop-filter" && !value26.value) {
-        let value27: Dynamic = callback2(
-          entries.get("-webkit-backdrop-filter") ?? null,
+    buildInspectorRow: Dynamic = (propertySpec?: Dynamic): Dynamic => {
+      let row: Dynamic = buildPropertyRow(propertySpec.prop);
+      propertySpec.prop === "color" &&
+        (isTextClipped ||
+          (element.textual ??
+            InspectorStyleMetadataSubscribers.has(element.tag))) &&
+        (row.textFill = textFillState);
+      propertySpec.prop === "text-shadow" &&
+        isTextClipped &&
+        !row.value &&
+        ((row.disabled = true),
+        (row.whyDisabled = InspectorStyleMetadataLabel));
+      propertySpec.prop === "width" && isTextLikeInput && (row.noHug = true);
+      if (propertySpec.prop === "backdrop-filter" && !row.value) {
+        let webkitBackdropFilter: Dynamic = resolveCssVariables(
+          authoredValues.get("-webkit-backdrop-filter") ?? null,
         );
-        value27.value && Object.assign(value26, value27);
+        webkitBackdropFilter.value && Object.assign(row, webkitBackdropFilter);
       }
-      if (input2.prop === "background") {
-        let value27: Dynamic = callback2(
-          entries.get("background-color") ?? null,
+      if (propertySpec.prop === "background") {
+        let backgroundColorValue: Dynamic = resolveCssVariables(
+          authoredValues.get("background-color") ?? null,
         );
-        value26.companionValue = value27.value;
-        value27.varSource !== undefined &&
-          (value26.companionVarSource = value27.varSource);
-        value26.fallback = input.computed.backgroundColor ?? "";
-        value17 &&
-          ((value26.disabled = true),
-          (value26.whyDisabled =
+        row.companionValue = backgroundColorValue.value;
+        backgroundColorValue.varSource !== undefined &&
+          (row.companionVarSource = backgroundColorValue.varSource);
+        row.fallback = element.computed.backgroundColor ?? "";
+        isTextClipped &&
+          ((row.disabled = true),
+          (row.whyDisabled =
             uiMessage("inspector.element.thisBackgroundFillsTheText")));
       }
-      input2.prop === "font-style" &&
-        ((value26.companionValue = callback2(
-          entries.get("text-decoration-line") ?? null,
+      propertySpec.prop === "font-style" &&
+        ((row.companionValue = resolveCssVariables(
+          authoredValues.get("text-decoration-line") ?? null,
         ).value),
-        (value26.companionFallback =
-          input.computed.textDecorationLine ?? ""));
-      if (input2.prop === "font-weight") {
-        value26.companionValue = callback2(
-          entries.get("font-style") ?? null,
+        (row.companionFallback =
+          element.computed.textDecorationLine ?? ""));
+      if (propertySpec.prop === "font-weight") {
+        row.companionValue = resolveCssVariables(
+          authoredValues.get("font-style") ?? null,
         ).value;
-        value26.companionFallback = input.computed.fontStyle ?? "";
-        let value27: Dynamic =
-            callback2(entries.get("font-family") ?? null).value ?? "",
-          value28: Dynamic =
-            classifyStyleValue(value27).kind === "literal" &&
+        row.companionFallback = element.computed.fontStyle ?? "";
+        let fontFamilyValue: Dynamic =
+            resolveCssVariables(authoredValues.get("font-family") ?? null).value ?? "",
+          literalFontFamily: Dynamic =
+            classifyStyleValue(fontFamilyValue).kind === "literal" &&
             !/^(?:inherit|initial|unset|revert|revert-layer)\b/i.test(
-              value27.trim(),
+              fontFamilyValue.trim(),
             )
-              ? value27
+              ? fontFamilyValue
               : "",
-          value29: Dynamic = firstFontFamily(
-            value28 || input.computed.fontFamily || "",
+          primaryFontFamily: Dynamic = firstFontFamily(
+            literalFontFamily || element.computed.fontFamily || "",
           );
-        value26.faces = resolveFontVariants(
-          value29,
+        row.faces = resolveFontVariants(
+          primaryFontFamily,
           getAvailableFontVariants(
-            input.fontFaces ?? [],
-            value29,
+            element.fontFaces ?? [],
+            primaryFontFamily,
           ),
         );
       }
-      (input2.prop === "justify-content" || input2.prop === "align-items") &&
-        (value26.flexDirection =
-          entries.get("flex-direction") ||
-          input.computed.flexDirection ||
+      (propertySpec.prop === "justify-content" || propertySpec.prop === "align-items") &&
+        (row.flexDirection =
+          authoredValues.get("flex-direction") ||
+          element.computed.flexDirection ||
           "row");
-      value12 === "static" &&
-        ["top", "left", "bottom", "right"].includes(input2.prop) &&
-        (value26.alsoCommit = [
+      position === "static" &&
+        ["top", "left", "bottom", "right"].includes(propertySpec.prop) &&
+        (row.alsoCommit = [
           {
             prop: "position",
             value: "relative",
           },
         ]);
-      input.tag === "select" &&
-        (entries.get("appearance") ?? "").trim() === "" &&
-        (entries.get("-webkit-appearance") ?? "").trim() === "" &&
-        (input2.prop === "background" ||
-          input2.section === "border" ||
-          input2.section === "borderSides") &&
-        (value26.alsoCommit = [
+      element.tag === "select" &&
+        (authoredValues.get("appearance") ?? "").trim() === "" &&
+        (authoredValues.get("-webkit-appearance") ?? "").trim() === "" &&
+        (propertySpec.prop === "background" ||
+          propertySpec.section === "border" ||
+          propertySpec.section === "borderSides") &&
+        (row.alsoCommit = [
           {
             prop: "appearance",
             value: "base-select",
           },
         ]);
-      return value26;
+      return row;
     },
-    callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-      InspectorPropertySchemaItems_2.filter(
-        (input3?: Dynamic): Dynamic => input3.section === input2,
-      ).map(callback6),
-    callback8: Dynamic = (input2?: Dynamic): Dynamic =>
-      !!input2 && input2.value != null && input2.value !== "",
-    items3: Dynamic = [],
-    callback9: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value26: Dynamic = Object.hasOwn(
+    rowsForSection: Dynamic = (sectionName?: Dynamic): Dynamic =>
+      propertySpecs.filter(
+        (propertySpec?: Dynamic): Dynamic => propertySpec.section === sectionName,
+      ).map(buildInspectorRow),
+    hasValue: Dynamic = (row?: Dynamic): Dynamic =>
+      !!row && row.value != null && row.value !== "",
+    staleRows: Dynamic = [],
+    addStaleRow: Dynamic = (row?: Dynamic): Dynamic => {
+      let companionProp: Dynamic = Object.hasOwn(
           InspectorPropertySchemaBackgroundFontWeightFontStyleConfig,
-          input2.prop,
+          row.prop,
         )
           ? InspectorPropertySchemaBackgroundFontWeightFontStyleConfig[
-              input2.prop
+              row.prop
             ]
           : undefined,
-        value27: Dynamic =
-          input2.companionValue != null &&
-          input2.companionValue !== "" &&
-          !(value26 && getPropertySpecification(value26));
-      (callback8(input2) || value27) &&
-        items3.push({
-          ...input2,
+        hasOrphanCompanionValue: Dynamic =
+          row.companionValue != null &&
+          row.companionValue !== "" &&
+          !(companionProp && getPropertySpecification(companionProp));
+      (hasValue(row) || hasOrphanCompanionValue) &&
+        staleRows.push({
+          ...row,
           stale: true,
         });
     },
-    value21: Dynamic =
-      !(items.length > 0) &&
-      InspectorStyleMetadataSubscribers.has(input.tag),
-    value22: Dynamic = (entries.get("display") ?? "").trim().toLowerCase(),
-    value23: Dynamic =
-      !InspectorStyleMetadataSubscribers_2.has(input.tag) &&
-      (!value21 ||
-        value14 ||
-        value15 ||
-        value22 === "block" ||
-        value22 === "flex" ||
-        value22 === "grid"),
-    value24: Dynamic =
-      input.textual ??
-      InspectorStyleMetadataSubscribers.has(input.tag),
-    value25: Dynamic = value6
-      ? ((input2?: Dynamic): Dynamic =>
-          input2.flatMap((input3?: Dynamic): Dynamic => {
+    isPlainTextTag: Dynamic =
+      !(sections.length > 0) &&
+      InspectorStyleMetadataSubscribers.has(element.tag),
+    inlineDisplay: Dynamic = (authoredValues.get("display") ?? "").trim().toLowerCase(),
+    showsLayoutControls: Dynamic =
+      !nonContainerTags.has(element.tag) &&
+      (!isPlainTextTag ||
+        isFlex ||
+        isGrid ||
+        inlineDisplay === "block" ||
+        inlineDisplay === "flex" ||
+        inlineDisplay === "grid"),
+    isTextual: Dynamic =
+      element.textual ??
+      InspectorStyleMetadataSubscribers.has(element.tag),
+    typographyRows: Dynamic = isSvgText
+      ? ((rows?: Dynamic): Dynamic =>
+          rows.flatMap((row?: Dynamic): Dynamic => {
             if (
-              input3.prop !== "color" &&
+              row.prop !== "color" &&
               !InspectorStyleMetadataLineHeightTextAlignSet.has(
-                input3.prop,
+                row.prop,
               )
             )
-              return [input3];
-            let state3: Dynamic = {
-              ...input3,
+              return [row];
+            let rowWithoutTextFill: Dynamic = {
+              ...row,
             };
-            delete state3.textFill;
-            callback9(state3);
-            return input3.prop !== "color"
+            delete rowWithoutTextFill.textFill;
+            addStaleRow(rowWithoutTextFill);
+            return row.prop !== "color"
               ? []
               : [
                   {
@@ -748,76 +748,76 @@ function getElementInspector(
                       editor: "color",
                       section: "typography",
                     },
-                    ...callback2(entries.get("fill") ?? null),
-                    fallback: callback("fill"),
-                    disabled: input.disabled,
+                    ...resolveCssVariables(authoredValues.get("fill") ?? null),
+                    fallback: computedValue("fill"),
+                    disabled: element.disabled,
                   },
                 ];
-          }))(callback7("typography"))
-      : value7 || value10
+          }))(rowsForSection("typography"))
+      : isSvgPaintTarget || isCheckable
         ? []
-        : callback7("typography");
+        : rowsForSection("typography");
   if (
-    (!value7 || value6) &&
-    !value10 &&
-    (value21 ||
-      value6 ||
-      value24 ||
-      value2 ||
-      (value8 && input.tag !== "button") ||
-      (input.tag === "hr" ? false : value25.some(callback8)))
+    (!isSvgPaintTarget || isSvgText) &&
+    !isCheckable &&
+    (isPlainTextTag ||
+      isSvgText ||
+      isTextual ||
+      hasEditableText ||
+      (isFormControl && element.tag !== "button") ||
+      (element.tag === "hr" ? false : typographyRows.some(hasValue)))
   ) {
-    let state3: Dynamic = {
+    let textSection: Dynamic = {
       id: "text",
       get title() { return uiMessage("inspector.element.text"); },
-      rows: [...(value3 ? [value3] : []), ...value25],
+      rows: [...(contentRow ? [contentRow] : []), ...typographyRows],
     };
-    value21 ? items.unshift(state3) : items.push(state3);
+    isPlainTextTag ? sections.unshift(textSection) : sections.push(textSection);
   } else
-    for (let value26 of callback7("typography") as Dynamic)
-      callback9(value26);
+    for (let row of rowsForSection("typography") as Dynamic)
+      addStaleRow(row);
   {
-    let value26: Dynamic = callback7("sizing"),
-      value27: Dynamic =
-        value7 ||
-        (input.tag === "hr" && !callback7("padding").some(callback8))
-          ? value7
+    let sizingRows: Dynamic = rowsForSection("sizing"),
+      spacingRows: Dynamic =
+        isSvgPaintTarget ||
+        (element.tag === "hr" && !rowsForSection("padding").some(hasValue))
+          ? isSvgPaintTarget
             ? []
-            : callback7("margin")
-          : [...callback7("padding"), ...callback7("margin")];
-    if (value7)
-      for (let value38 of [
-        ...callback7("padding"),
-        ...callback7("margin"),
+            : rowsForSection("margin")
+          : [...rowsForSection("padding"), ...rowsForSection("margin")];
+    if (isSvgPaintTarget)
+      for (let row of [
+        ...rowsForSection("padding"),
+        ...rowsForSection("margin"),
       ] as Dynamic)
-        callback9(value38);
-    let value28: Dynamic = callback7("position"),
-      entries2: Dynamic = new Map(
-        [...value26, ...value28].map(
-          (input2?: Dynamic): Dynamic => [input2.prop, input2],
+        addStaleRow(row);
+    let positionRows: Dynamic = rowsForSection("position"),
+      rowsByProp: Dynamic = new Map(
+        [...sizingRows, ...positionRows].map(
+          (row?: Dynamic): Dynamic => [row.prop, row],
         ),
       ),
-      value29: Dynamic = value26.filter(
-        (input2?: Dynamic): Dynamic =>
-          input2.prop === "width" || input2.prop === "height",
+      sizeRows: Dynamic = sizingRows.filter(
+        (row?: Dynamic): Dynamic =>
+          row.prop === "width" || row.prop === "height",
       ),
-      value30: Dynamic = value26.filter(
-        (input2?: Dynamic): Dynamic => /^(min|max)-/.test(input2.prop),
+      minMaxRows: Dynamic = sizingRows.filter(
+        (row?: Dynamic): Dynamic => /^(min|max)-/.test(row.prop),
       ),
-      value31: Dynamic = callback7("layout"),
-      items5: Dynamic = [],
-      value32: Dynamic;
-    if (value23) {
-      let entries3: Dynamic = new Map(
-        value31.map((input2?: Dynamic): Dynamic => [input2.prop, input2]),
+      layoutRows: Dynamic = rowsForSection("layout"),
+      pickedLayoutRows: Dynamic = [],
+      layoutMode: Dynamic;
+    if (showsLayoutControls) {
+      let layoutRowsByProp: Dynamic = new Map(
+        layoutRows.map((row?: Dynamic): Dynamic => [row.prop, row]),
       );
-      value32 = value15 ? "grid" : value14 ? "flex" : "block";
-      let entry: Dynamic = entries3.get("display");
-      callback8(entry) &&
+      layoutMode = isGrid ? "grid" : isFlex ? "flex" : "block";
+      let entry: Dynamic = layoutRowsByProp.get("display");
+      hasValue(entry) &&
         !(entry.spec?.options ?? []).includes(
           entry.value.trim().toLowerCase(),
         ) &&
-        (callback9({
+        (addStaleRow({
           ...entry,
           get label() { return uiMessage("inspector.element.display"); },
         }),
@@ -827,197 +827,197 @@ function getElementInspector(
           fallback: entry.value,
           varSource: undefined,
         }));
-      let value38: Dynamic =
-          value32 === "flex"
-            ? [entries3.get("flex-direction"), entries3.get("flex-wrap")]
-            : value32 === "grid"
+      let directionRows: Dynamic =
+          layoutMode === "flex"
+            ? [layoutRowsByProp.get("flex-direction"), layoutRowsByProp.get("flex-wrap")]
+            : layoutMode === "grid"
               ? [
-                  entries3.get("grid-template-columns"),
-                  entries3.get("grid-template-rows"),
+                  layoutRowsByProp.get("grid-template-columns"),
+                  layoutRowsByProp.get("grid-template-rows"),
                 ]
               : [],
-        callback10: Dynamic = (input2?: Dynamic): Dynamic => ({
-          ...input2,
+        markLongTail: Dynamic = (row?: Dynamic): Dynamic => ({
+          ...row,
           spec: {
-            ...input2.spec,
+            ...row.spec,
             longTail: true,
           },
         }),
-        value39: Dynamic =
-          value32 === "block"
+        spacingLayoutRows: Dynamic =
+          layoutMode === "block"
             ? []
-            : value32 === "grid"
+            : layoutMode === "grid"
               ? [
-                  entries3.get("gap"),
-                  callback10(entries3.get("justify-items")),
-                  callback10(entries3.get("align-items")),
+                  layoutRowsByProp.get("gap"),
+                  markLongTail(layoutRowsByProp.get("justify-items")),
+                  markLongTail(layoutRowsByProp.get("align-items")),
                 ]
               : [
-                  entries3.get("justify-content"),
-                  entries3.get("align-items"),
-                  entries3.get("gap"),
+                  layoutRowsByProp.get("justify-content"),
+                  layoutRowsByProp.get("align-items"),
+                  layoutRowsByProp.get("gap"),
                 ];
-      items5.push(entry, ...value38, ...value39);
-      for (let value40 of value31 as Dynamic)
-        value40.prop !== "display" &&
-          !items5.some(
-            (input2?: Dynamic): Dynamic => input2.prop === value40.prop,
+      pickedLayoutRows.push(entry, ...directionRows, ...spacingLayoutRows);
+      for (let row of layoutRows as Dynamic)
+        row.prop !== "display" &&
+          !pickedLayoutRows.some(
+            (pickedRow?: Dynamic): Dynamic => pickedRow.prop === row.prop,
           ) &&
-          callback9(value40);
+          addStaleRow(row);
     } else
-      for (let value38 of value31 as Dynamic)
-        callback9(
-          value38.prop === "display"
+      for (let row of layoutRows as Dynamic)
+        addStaleRow(
+          row.prop === "display"
             ? {
-                ...value38,
+                ...row,
                 get label() { return uiMessage("inspector.element.display"); },
               }
-            : value38,
+            : row,
         );
-    let value33: Dynamic = (input.parentDisplay ?? "").toLowerCase(),
-      value34: Dynamic =
-        input.parentDisplay === undefined || value33.includes("flex"),
-      value35: Dynamic = value33.includes("grid")
+    let parentDisplay: Dynamic = (element.parentDisplay ?? "").toLowerCase(),
+      parentIsFlexOrUnknown: Dynamic =
+        element.parentDisplay === undefined || parentDisplay.includes("flex"),
+      childLayoutProps: Dynamic = parentDisplay.includes("grid")
         ? ["grid-column", "grid-row"]
-        : value34
+        : parentIsFlexOrUnknown
           ? ["flex-grow"]
           : [];
-    for (let value38 of [
+    for (let childProp of [
       "align-self",
       "flex-grow",
       "grid-column",
       "grid-row",
       "justify-self",
     ] as Dynamic)
-      value35.includes(value38) || callback9(entries2.get(value38));
-    let value36: Dynamic = value27.filter(
-        (input2?: Dynamic): Dynamic => input2.prop.startsWith("padding-"),
+      childLayoutProps.includes(childProp) || addStaleRow(rowsByProp.get(childProp));
+    let paddingRows: Dynamic = spacingRows.filter(
+        (row?: Dynamic): Dynamic => row.prop.startsWith("padding-"),
       ),
-      value37: Dynamic = value27.filter(
-        (input2?: Dynamic): Dynamic => input2.prop.startsWith("margin-"),
+      marginRows: Dynamic = spacingRows.filter(
+        (row?: Dynamic): Dynamic => row.prop.startsWith("margin-"),
       ),
-      items6: Dynamic = [
-        ...value29,
-        ...value30,
-        entries2.get("position"),
-        entries2.get("top"),
-        entries2.get("left"),
-        entries2.get("bottom"),
-        entries2.get("right"),
-        ...value35.map((input2?: Dynamic): Dynamic => entries2.get(input2)),
+      sizeSectionRows: Dynamic = [
+        ...sizeRows,
+        ...minMaxRows,
+        rowsByProp.get("position"),
+        rowsByProp.get("top"),
+        rowsByProp.get("left"),
+        rowsByProp.get("bottom"),
+        rowsByProp.get("right"),
+        ...childLayoutProps.map((propName?: Dynamic): Dynamic => rowsByProp.get(propName)),
       ],
-      items7: Dynamic = [...items5, ...value36, ...value37];
+      layoutSectionRows: Dynamic = [...pickedLayoutRows, ...paddingRows, ...marginRows];
     if (
-      value7 &&
-      ((items7 = items7.filter(
-        (input2?: Dynamic): Dynamic =>
-          callback8(input2) || !values3.has(input2.prop),
+      isSvgPaintTarget &&
+      ((layoutSectionRows = layoutSectionRows.filter(
+        (row?: Dynamic): Dynamic =>
+          hasValue(row) || !valueOnlyProps.has(row.prop),
       )),
-      (items6 = items6
+      (sizeSectionRows = sizeSectionRows
         .map(
-          (input2?: Dynamic): Dynamic =>
-            input2.prop === "width" || input2.prop === "height"
+          (row?: Dynamic): Dynamic =>
+            row.prop === "width" || row.prop === "height"
               ? {
-                  ...input2,
+                  ...row,
                   spec: {
-                    ...input2.spec,
+                    ...row.spec,
                     editor: "number",
                     unit: "px",
                   },
                 }
-              : input2,
+              : row,
         )
         .filter(
-          (input2?: Dynamic): Dynamic =>
-            input2.prop === input.hiddenSizingAxis
+          (row?: Dynamic): Dynamic =>
+            row.prop === element.hiddenSizingAxis
               ? false
-              : callback8(input2)
+              : hasValue(row)
                 ? true
-                : !values3.has(input2.prop),
+                : !valueOnlyProps.has(row.prop),
         )),
-      value4 || value6)
+      isSvgShape || isSvgText)
     ) {
-      let callback10: Dynamic = (input2?: Dynamic): Dynamic =>
-        !callback8(input2);
-      if (options.forMulti) items6.every(callback10) && (items6 = []);
+      let isEmptyRow: Dynamic = (row?: Dynamic): Dynamic =>
+        !hasValue(row);
+      if (inspectorOptions.forMulti) sizeSectionRows.every(isEmptyRow) && (sizeSectionRows = []);
       else
-        for (let value38 of ["sizing", "position"] as Dynamic) {
-          let callback11: Dynamic = (input2?: Dynamic): Dynamic =>
-            (input2.spec?.section === "position" ? "position" : "sizing") ===
-            value38;
-          items6.filter(callback11).every(callback10) &&
-            (items6 = items6.filter(
-              (input2?: Dynamic): Dynamic => !callback11(input2),
+        for (let axisName of ["sizing", "position"] as Dynamic) {
+          let belongsToAxis: Dynamic = (row?: Dynamic): Dynamic =>
+            (row.spec?.section === "position" ? "position" : "sizing") ===
+            axisName;
+          sizeSectionRows.filter(belongsToAxis).every(isEmptyRow) &&
+            (sizeSectionRows = sizeSectionRows.filter(
+              (row?: Dynamic): Dynamic => !belongsToAxis(row),
             ));
         }
     }
-    items6.length > 0 &&
-      items.push({
+    sizeSectionRows.length > 0 &&
+      sections.push({
         id: "size",
         get title() { return uiMessage("inspector.element.size"); },
-        rows: items6,
+        rows: sizeSectionRows,
       });
-    items7.length > 0 &&
-      items.push({
+    layoutSectionRows.length > 0 &&
+      sections.push({
         id: "sizing",
         get title() { return uiMessage("inspector.element.layout"); },
-        rows: items7,
-        ...(value32 !== undefined
+        rows: layoutSectionRows,
+        ...(layoutMode !== undefined
           ? {
-              mode: value32,
+              mode: layoutMode,
             }
           : {}),
       });
   }
   {
-    let value26: Dynamic =
-      input.tag === "hr"
+    let borderRows: Dynamic =
+      element.tag === "hr"
         ? []
-        : [...callback7("border"), ...callback7("borderSides")];
-    if (input.tag === "hr")
-      for (let value27 of [
-        ...callback7("border"),
-        ...callback7("borderSides"),
+        : [...rowsForSection("border"), ...rowsForSection("borderSides")];
+    if (element.tag === "hr")
+      for (let row of [
+        ...rowsForSection("border"),
+        ...rowsForSection("borderSides"),
       ] as Dynamic)
-        value27.prop !== "border-top-width" && callback9(value27);
-    let items5: Dynamic = [
-      ...callback7("appearance"),
-      ...callback7("radius"),
-      ...value26,
+        row.prop !== "border-top-width" && addStaleRow(row);
+    let appearanceRows: Dynamic = [
+      ...rowsForSection("appearance"),
+      ...rowsForSection("radius"),
+      ...borderRows,
     ];
-    value7 &&
-      (items5 = items5.filter((input2?: Dynamic): Dynamic => {
-        if (callback8(input2)) return true;
-        let value27: Dynamic =
-          input2.spec?.section !== "border" &&
-          input2.spec?.section !== "borderSides" &&
-          !values3.has(input2.prop);
-        value27 ||
-          callback9({
-            ...input2,
-            label: input2.prop,
+    isSvgPaintTarget &&
+      (appearanceRows = appearanceRows.filter((row?: Dynamic): Dynamic => {
+        if (hasValue(row)) return true;
+        let isPlainAppearanceRow: Dynamic =
+          row.spec?.section !== "border" &&
+          row.spec?.section !== "borderSides" &&
+          !valueOnlyProps.has(row.prop);
+        isPlainAppearanceRow ||
+          addStaleRow({
+            ...row,
+            label: row.prop,
           });
-        return value27;
+        return isPlainAppearanceRow;
       }));
-    (items5.length > 0 || !value7) &&
-      items.push({
+    (appearanceRows.length > 0 || !isSvgPaintTarget) &&
+      sections.push({
         id: "appearance",
         get title() { return uiMessage("inspector.element.appearance"); },
-        rows: items5,
+        rows: appearanceRows,
       });
   }
   {
-    let value26: Dynamic = callback7("effects");
-    value7 &&
-      !value6 &&
-      (value26 = value26.filter(
-        (input2?: Dynamic): Dynamic =>
-          callback8(input2) || !values3.has(input2.prop),
+    let effectRows: Dynamic = rowsForSection("effects");
+    isSvgPaintTarget &&
+      !isSvgText &&
+      (effectRows = effectRows.filter(
+        (row?: Dynamic): Dynamic =>
+          hasValue(row) || !valueOnlyProps.has(row.prop),
       ));
-    let computed: Dynamic = input.computed,
-      value27: Dynamic =
+    let computed: Dynamic = element.computed,
+      hasVisibleBoxPaint: Dynamic =
         [
-          ...(value17
+          ...(isTextClipped
             ? []
             : [computed.backgroundColor, computed.backgroundImage]),
           computed.borderTopWidth,
@@ -1025,146 +1025,146 @@ function getElementInspector(
           computed.borderBottomWidth,
           computed.borderLeftWidth,
         ].some(hasVisiblePaint) ||
-        [...entries].some(
-          ([input2, input3]: Dynamic): Dynamic =>
+        [...authoredValues].some(
+          ([propName, propValue]: Dynamic): Dynamic =>
             InspectorStyleMetadataBackgroundColorPattern.test(
-              input2,
+              propName,
             ) &&
-            !(value17 && /^background(?:-color|-image)?$/.test(input2)) &&
-            hasVisiblePaint(callback2(input3).value),
+            !(isTextClipped && /^background(?:-color|-image)?$/.test(propName)) &&
+            hasVisiblePaint(resolveCssVariables(propValue).value),
         ),
-      value28: Dynamic = input.textLeaf ?? input.text != null,
-      value29: Dynamic =
-        value6 ||
-        (value24 &&
-          value28 &&
-          !value7 &&
-          !value27 &&
-          (input.rendered ?? true)),
-      value30: Dynamic =
-        value29 && value17 ? InspectorStyleMetadataLabel : undefined,
-      callback10: Dynamic = (input2?: Dynamic): Dynamic =>
-        value4 &&
-        !options.forMulti &&
-        (input2.prop === "box-shadow" || input2.prop === "backdrop-filter");
-    value26.filter(callback10).forEach(callback9);
-    items.push({
+      isTextLeaf: Dynamic = element.textLeaf ?? element.text != null,
+      shadowTargetsText: Dynamic =
+        isSvgText ||
+        (isTextual &&
+          isTextLeaf &&
+          !isSvgPaintTarget &&
+          !hasVisibleBoxPaint &&
+          (element.rendered ?? true)),
+      dropShadowReason: Dynamic =
+        shadowTargetsText && isTextClipped ? InspectorStyleMetadataLabel : undefined,
+      isShapeShadowRow: Dynamic = (row?: Dynamic): Dynamic =>
+        isSvgShape &&
+        !inspectorOptions.forMulti &&
+        (row.prop === "box-shadow" || row.prop === "backdrop-filter");
+    effectRows.filter(isShapeShadowRow).forEach(addStaleRow);
+    sections.push({
       id: "effects",
       get title() { return uiMessage("inspector.element.effects"); },
-      rows: value26.filter(
-        (input2?: Dynamic): Dynamic => !callback10(input2),
+      rows: effectRows.filter(
+        (row?: Dynamic): Dynamic => !isShapeShadowRow(row),
       ),
-      ...(value29
+      ...(shadowTargetsText
         ? {
             shadowTarget: "text",
-            ...(value30
+            ...(dropShadowReason
               ? {
-                  dropShadowReason: value30,
+                  dropShadowReason: dropShadowReason,
                 }
               : {}),
           }
         : {}),
-      ...(value4
+      ...(isSvgShape
         ? {
             shadowTarget: "shape",
           }
         : {}),
     });
   }
-  let values4: Dynamic = new Set(
-    InspectorPropertySchemaItems_2.map(
-      (input2?: Dynamic): Dynamic => input2.prop,
+  let knownProps: Dynamic = new Set(
+    propertySpecs.map(
+      (propertySpec?: Dynamic): Dynamic => propertySpec.prop,
     ),
   );
-  for (let value26 of Object.values(
+  for (let prop of Object.values(
     InspectorPropertySchemaBackgroundFontWeightFontStyleConfig,
   ) as Dynamic)
-    values4.add(value26);
-  if (value17)
-    for (let value26 of InspectorPropertySchemaItems as Dynamic)
-      values4.add(value26);
-  (input.tag === "img" || input.tag === "video") && values4.add("object-fit");
-  value8 && values4.add("appearance");
-  input.tag === "svg" &&
-    (values4.add("fill"), values4.add("stroke"), values4.add("stroke-width"));
-  for (let value26 of items2 as Dynamic)
-    value26.prop.startsWith("@") || values4.add(value26.prop);
-  value6 && values4.add("fill");
-  (input.tag === "ul" || input.tag === "ol") &&
-    values4.add("list-style-type");
-  if (input.tag === "hr")
-    for (let value26 of [
+    knownProps.add(prop);
+  if (isTextClipped)
+    for (let prop of InspectorPropertySchemaItems as Dynamic)
+      knownProps.add(prop);
+  (element.tag === "img" || element.tag === "video") && knownProps.add("object-fit");
+  isFormControl && knownProps.add("appearance");
+  element.tag === "svg" &&
+    (knownProps.add("fill"), knownProps.add("stroke"), knownProps.add("stroke-width"));
+  for (let prop of strokeRows as Dynamic)
+    prop.prop.startsWith("@") || knownProps.add(prop.prop);
+  isSvgText && knownProps.add("fill");
+  (element.tag === "ul" || element.tag === "ol") &&
+    knownProps.add("list-style-type");
+  if (element.tag === "hr")
+    for (let prop of [
       "border-top-width",
       "border-top-color",
       "border-top-style",
     ] as Dynamic)
-      values4.add(value26);
-  let values5: Dynamic = new Set(
+      knownProps.add(prop);
+  let passthroughProps: Dynamic = new Set(
       InspectorPropertySchemaCursorPointerEventsObjectFitValues,
     ),
-    items4: Dynamic = [
-      ...items3,
-      ...callback7("advanced").filter(
-        (input2?: Dynamic): Dynamic =>
-          !(value7 && !value6 && input2.prop === "overflow"),
+    advancedRows: Dynamic = [
+      ...staleRows,
+      ...rowsForSection("advanced").filter(
+        (propertySpec?: Dynamic): Dynamic =>
+          !(isSvgPaintTarget && !isSvgText && propertySpec.prop === "overflow"),
       ),
     ];
-  for (let value26 of value as Dynamic)
-    values4.has(value26.prop) ||
-      values5.has(value26.prop) ||
-      items4.push({
-        prop: value26.prop,
-        label: value26.prop,
-        ...callback2(value26.value),
-        fallback: callback(value26.prop),
-        disabled: input.disabled,
+  for (let declaration of declarations as Dynamic)
+    knownProps.has(declaration.prop) ||
+      passthroughProps.has(declaration.prop) ||
+      advancedRows.push({
+        prop: declaration.prop,
+        label: declaration.prop,
+        ...resolveCssVariables(declaration.value),
+        fallback: computedValue(declaration.prop),
+        disabled: element.disabled,
       });
-  for (let value26 of InspectorPropertySchemaCursorPointerEventsObjectFitValues as Dynamic)
-    values4.has(value26) ||
-      items4.push({
-        prop: value26,
-        label: value26,
-        ...callback2(entries.get(value26) ?? null),
-        fallback: callback(value26),
-        disabled: input.disabled,
+  for (let prop of InspectorPropertySchemaCursorPointerEventsObjectFitValues as Dynamic)
+    knownProps.has(prop) ||
+      advancedRows.push({
+        prop: prop,
+        label: prop,
+        ...resolveCssVariables(authoredValues.get(prop) ?? null),
+        fallback: computedValue(prop),
+        disabled: element.disabled,
       });
-  let values6: Dynamic = new Set(
-    svgShapeTags.has(input.tag)
+  let specialAttrs: Dynamic = new Set(
+    svgShapeTags.has(element.tag)
       ? InspectorStyleMetadataStrokeStrokeWidthFillValues.filter(
-          (input2?: Dynamic): Dynamic => !entries.has(input2),
+          (prop?: Dynamic): Dynamic => !authoredValues.has(prop),
         )
-      : input.tag === "svg"
+      : element.tag === "svg"
         ? ["preserveAspectRatio"]
-        : input.tag === "a"
-          ? ["href", ...(flag ? ["target"] : [])]
-          : input.tag === "video" || input.tag === "iframe"
+        : element.tag === "a"
+          ? ["href", ...(opensInNewTab ? ["target"] : [])]
+          : element.tag === "video" || element.tag === "iframe"
             ? ["src"]
             : [],
   );
-  for (let [value26, value27] of Object.entries(input.attrs) as Dynamic)
-    InspectorStyleMetadataDataDcTplStyleSet.has(value26) ||
-      (input.tag === "img" && value26 === "src") ||
-      values2.has(value26) ||
-      values6.has(value26) ||
-      items4.push({
-        prop: `@${value26}`,
+  for (let [attrName, attrValue] of Object.entries(element.attrs) as Dynamic)
+    InspectorStyleMetadataDataDcTplStyleSet.has(attrName) ||
+      (element.tag === "img" && attrName === "src") ||
+      handledAttrs.has(attrName) ||
+      specialAttrs.has(attrName) ||
+      advancedRows.push({
+        prop: `@${attrName}`,
         label:
-          (value4 || value6) && entries.has(value26)
-            ? `@${value26}`
-            : value26,
-        value: value27,
-        disabled: input.disabled,
+          (isSvgShape || isSvgText) && authoredValues.has(attrName)
+            ? `@${attrName}`
+            : attrName,
+        value: attrValue,
+        disabled: element.disabled,
       });
-  orderInspectorSections(items);
+  orderInspectorSections(sections);
   resolveInspectorInheritedValues(
-    items,
-    items4,
-    input.classSources,
-    entries,
+    sections,
+    advancedRows,
+    element.classSources,
+    authoredValues,
   );
   return {
-    sections: items,
-    advanced: items4,
+    sections: sections,
+    advanced: advancedRows,
   };
 }
 export {

@@ -10,252 +10,252 @@ import { promoteSvgShapeToRoot } from "../selection/element-order";
 import { SvgArrowsDcArrowHeadFilledPattern, SvgArrowsHandler } from "../svg/arrows";
 import { selectedSvgElements } from "../typography/census";
 
-function sameInsertionPoint(input?: Dynamic, options?: Dynamic): Dynamic {
+function sameInsertionPoint(pointA?: Dynamic, pointB?: Dynamic): Dynamic {
   return (
-    input?.position === options?.position &&
-    input?.targetTid === options?.targetTid
+    pointA?.position === pointB?.position &&
+    pointA?.targetTid === pointB?.targetTid
   );
 }
-function sameArrowHtml(input?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    input2
+function sameArrowHtml(htmlA?: Dynamic, htmlB?: Dynamic): Dynamic {
+  let normalizeArrowHtml: Dynamic = (html?: Dynamic): Dynamic =>
+    html
       .trim()
       .replace(
         SvgArrowsDcArrowHeadFilledPattern,
-        (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-          SvgArrowsHandler(options2),
+        (matchedText?: Dynamic, arrowHeadCapture?: Dynamic): Dynamic =>
+          SvgArrowsHandler(arrowHeadCapture),
       );
-  return callback(input) === callback(options ?? "");
+  return normalizeArrowHtml(htmlA) === normalizeArrowHtml(htmlB ?? "");
 }
 function insertionPointForSelection(
-  input?: Dynamic,
-  items?: Dynamic,
-  context?: Dynamic,
+  model?: Dynamic,
+  selectedTids?: Dynamic,
+  html?: Dynamic,
 ): Dynamic {
-  if (items.length === 0)
-    return input.findDeckStage()
+  if (selectedTids.length === 0)
+    return model.findDeckStage()
       ? {
           targetTid: null,
           position: "root-end",
         }
-      : defaultInsertionPoint(input, context);
-  let items2: Dynamic = [
+      : defaultInsertionPoint(model, html);
+  let promotedTids: Dynamic = [
       ...new Set(
-        items.map(
-          (input2?: Dynamic): Dynamic =>
-            promoteSvgShapeToRoot(input, input2),
+        selectedTids.map(
+          (tid?: Dynamic): Dynamic =>
+            promoteSvgShapeToRoot(model, tid),
         ),
       ),
     ],
-    value: Dynamic = Math.max(...items2),
-    state: Dynamic = {
-      targetTid: value,
+    lastTid: Dynamic = Math.max(...promotedTids),
+    fallbackPoint: Dynamic = {
+      targetTid: lastTid,
       position: "after",
     },
-    value2: Dynamic = items2.length === 1 ? input.element(value) : null;
-  if (!value2) return state;
-  let value3: Dynamic = input.tagName(value) ?? "";
-  if (/^(x-import|dc-import|helmet|sc-for|sc-if)$/.test(value3)) return state;
-  for (let value5: Dynamic = value2; value5; value5 = value5.parentElement)
-    if (value5.tagName.toLowerCase() === "svg") return state;
-  if (input.isUneditable(value) || input.isTextEditable(value)) return state;
-  let value4: Dynamic = input.topLevelTags(context);
-  return value4.length === 0 ||
-    !value4.every(
-      (input2?: Dynamic): Dynamic =>
-        canContainHtmlTag(value3, input2),
+    lastElement: Dynamic = promotedTids.length === 1 ? model.element(lastTid) : null;
+  if (!lastElement) return fallbackPoint;
+  let tagName: Dynamic = model.tagName(lastTid) ?? "";
+  if (/^(x-import|dc-import|helmet|sc-for|sc-if)$/.test(tagName)) return fallbackPoint;
+  for (let ancestor: Dynamic = lastElement; ancestor; ancestor = ancestor.parentElement)
+    if (ancestor.tagName.toLowerCase() === "svg") return fallbackPoint;
+  if (model.isUneditable(lastTid) || model.isTextEditable(lastTid)) return fallbackPoint;
+  let topLevelTags: Dynamic = model.topLevelTags(html);
+  return topLevelTags.length === 0 ||
+    !topLevelTags.every(
+      (tag?: Dynamic): Dynamic =>
+        canContainHtmlTag(tagName, tag),
     ) ||
-    sameArrowHtml(context, input.subtreeHtml(value))
-    ? state
+    sameArrowHtml(html, model.subtreeHtml(lastTid))
+    ? fallbackPoint
     : {
-        targetTid: value,
+        targetTid: lastTid,
         position: "into",
       };
 }
-function defaultInsertionPoint(input?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input
-        .childTids(input2)
+function defaultInsertionPoint(model?: Dynamic, html?: Dynamic): Dynamic {
+  let visibleChildTids: Dynamic = (parentTid?: Dynamic): Dynamic =>
+      model
+        .childTids(parentTid)
         .filter(
-          (input3?: Dynamic): Dynamic =>
+          (childTid?: Dynamic): Dynamic =>
             !ClipboardTemplateFlatteningHelmetScriptPattern.test(
-              input.tagName(input3) ?? "",
+              model.tagName(childTid) ?? "",
             ),
         ),
-    value: Dynamic = callback(null),
-    value2: Dynamic = value.filter((input2?: Dynamic): Dynamic => {
-      let value6: Dynamic = input.element(input2);
+    rootTids: Dynamic = visibleChildTids(null),
+    inFlowTids: Dynamic = rootTids.filter((tid?: Dynamic): Dynamic => {
+      let element: Dynamic = model.element(tid);
       return !(
-        value6 && isUnconstrainedAbsoluteElement(value6, true)
+        element && isUnconstrainedAbsoluteElement(element, true)
       );
     }),
-    value3: Dynamic = value2.length > 0 ? value2 : value,
-    items: Dynamic = [];
-  for (; value3.length === 1 && isDetachableImport(input, value3[0]); ) {
-    items.push(value3[0]);
-    value3 = callback(value3[0]);
+    candidateTids: Dynamic = inFlowTids.length > 0 ? inFlowTids : rootTids,
+    importChain: Dynamic = [];
+  for (; candidateTids.length === 1 && isDetachableImport(model, candidateTids[0]); ) {
+    importChain.push(candidateTids[0]);
+    candidateTids = visibleChildTids(candidateTids[0]);
   }
-  let value4: Dynamic = items.some(
-      (input2?: Dynamic): Dynamic =>
-        sameArrowHtml(options, input.subtreeHtml(input2)),
+  let isRepeatedHtml: Dynamic = importChain.some(
+      (tid?: Dynamic): Dynamic =>
+        sameArrowHtml(html, model.subtreeHtml(tid)),
     ),
-    value5: Dynamic =
-      value3.length === 1 && !value4
-        ? insertionPointForSelection(input, value3, options)
+    nestedPoint: Dynamic =
+      candidateTids.length === 1 && !isRepeatedHtml
+        ? insertionPointForSelection(model, candidateTids, html)
         : null;
-  return value5?.position === "into"
-    ? value5
+  return nestedPoint?.position === "into"
+    ? nestedPoint
     : {
         targetTid: null,
         position: "root-end",
       };
 }
-function isDetachableImport(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.element(options);
+function isDetachableImport(model?: Dynamic, tid?: Dynamic): Dynamic {
+  let importElement: Dynamic = model.element(tid);
   if (
-    !value ||
-    input.tagName(options) !== "x-import" ||
-    input.isUneditable(options) ||
-    input.findDeckStage(options)
+    !importElement ||
+    model.tagName(tid) !== "x-import" ||
+    model.isUneditable(tid) ||
+    model.findDeckStage(tid)
   )
     return false;
-  let value2: Dynamic = [...value.childNodes].filter(
-    (input2?: Dynamic): Dynamic =>
+  let meaningfulChildren: Dynamic = [...importElement.childNodes].filter(
+    (node?: Dynamic): Dynamic =>
       !(
-        input2.nodeType === 1 &&
+        node.nodeType === 1 &&
         ClipboardTemplateFlatteningHelmetScriptPattern.test(
-          input2.tagName,
+          node.tagName,
         )
       ),
   );
   return (
-    value2.filter((input2?: Dynamic): Dynamic => input2.nodeType === 1)
+    meaningfulChildren.filter((node?: Dynamic): Dynamic => node.nodeType === 1)
       .length === 1 &&
-    value2.every(
-      (input2?: Dynamic): Dynamic =>
-        input2.nodeType === 1 ||
-        input2.nodeType === 8 ||
-        (input2.textContent ?? "").trim() === "",
+    meaningfulChildren.every(
+      (node?: Dynamic): Dynamic =>
+        node.nodeType === 1 ||
+        node.nodeType === 8 ||
+        (node.textContent ?? "").trim() === "",
     )
   );
 }
 function textToParagraphHtml(
-  input?: Dynamic,
-  options: Dynamic = "margin: 0",
+  text?: Dynamic,
+  style: Dynamic = "margin: 0",
 ): Dynamic {
-  return input.startsWith("<")
-    ? input
-    : `<p style="${options}">${escapeHtml(input)}</p>`;
+  return text.startsWith("<")
+    ? text
+    : `<p style="${style}">${escapeHtml(text)}</p>`;
 }
 function insertHtmlIntoModel(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  editor?: Dynamic,
+  html?: Dynamic,
+  insertionPoint?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.model.insertHtml(
-    options,
-    context.targetTid,
-    context.position,
+  let insertedElements: Dynamic = editor.model.insertHtml(
+    html,
+    insertionPoint.targetTid,
+    insertionPoint.position,
   );
-  return !value || value.length === 0
+  return !insertedElements || insertedElements.length === 0
     ? []
-    : (input.model.restamp(),
-      value
+    : (editor.model.restamp(),
+      insertedElements
         .map(
           (element?: Dynamic): Dynamic =>
             parseInt(element.getAttribute("data-dc-tpl") ?? "-1", 10),
         )
-        .filter((input2?: Dynamic): Dynamic => input2 >= 0));
+        .filter((tid?: Dynamic): Dynamic => tid >= 0));
 }
-function deleteModelElements(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options.filter(
-    (input2?: Dynamic): Dynamic => input.model.element(input2) != null,
+function deleteModelElements(editor?: Dynamic, tids?: Dynamic): Dynamic {
+  let existingTids: Dynamic = tids.filter(
+    (tid?: Dynamic): Dynamic => editor.model.element(tid) != null,
   );
   if (
-    value.some(
-      (input2?: Dynamic): Dynamic => input.model.isLoopDriven(input2),
+    existingTids.some(
+      (tid?: Dynamic): Dynamic => editor.model.isLoopDriven(tid),
     )
   )
     return 0;
-  let value2: Dynamic = value.filter(
-    (input2?: Dynamic): Dynamic => !input.model.isUneditable(input2),
+  let editableTids: Dynamic = existingTids.filter(
+    (tid?: Dynamic): Dynamic => !editor.model.isUneditable(tid),
   );
-  if (value2.length === 0) return 0;
-  let value3: Dynamic = selectedSvgElements(input.model, [
-    ...value2,
+  if (editableTids.length === 0) return 0;
+  let removableElements: Dynamic = selectedSvgElements(editor.model, [
+    ...editableTids,
   ]);
-  for (let value4 of value3 as Dynamic) input.model.removeElement(value4);
-  input.model = input.model.rebuild(input.model.serialize());
-  return value3.length;
+  for (let element of removableElements as Dynamic) editor.model.removeElement(element);
+  editor.model = editor.model.rebuild(editor.model.serialize());
+  return removableElements.length;
 }
 function restoreGroupPosition(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  model?: Dynamic,
+  snapshot?: Dynamic,
+  groupTid?: Dynamic,
+  expectedParentTid?: Dynamic,
 ): Dynamic {
   if (
-    options.parentTid == null ||
-    options.parentTid !== value ||
-    !input.element(options.parentTid)
+    snapshot.parentTid == null ||
+    snapshot.parentTid !== expectedParentTid ||
+    !model.element(snapshot.parentTid)
   )
     return;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      typeof input2 == "number" &&
-      Number.isFinite(input2) &&
-      Math.abs(input2) < 1e5
-        ? String(Math.round(input2)) + "px"
+  let toPixels: Dynamic = (rawValue?: Dynamic): Dynamic =>
+      typeof rawValue == "number" &&
+      Number.isFinite(rawValue) &&
+      Math.abs(rawValue) < 1e5
+        ? String(Math.round(rawValue)) + "px"
         : null,
-    value2: Dynamic = Array.isArray(options.siblings)
-      ? options.siblings.slice(0, 200)
+    siblings: Dynamic = Array.isArray(snapshot.siblings)
+      ? snapshot.siblings.slice(0, 200)
       : [],
-    entries: Dynamic = new Map();
-  for (let value5 of value2 as Dynamic)
-    value5 &&
-      typeof value5.tid == "number" &&
-      entries.set(value5.tid, (entries.get(value5.tid) ?? 0) + 1);
-  for (let value5 of value2 as Dynamic) {
+    tidCounts: Dynamic = new Map();
+  for (let sibling of siblings as Dynamic)
+    sibling &&
+      typeof sibling.tid == "number" &&
+      tidCounts.set(sibling.tid, (tidCounts.get(sibling.tid) ?? 0) + 1);
+  for (let sibling of siblings as Dynamic) {
     if (
-      !value5 ||
-      typeof value5.tid != "number" ||
-      (entries.get(value5.tid) ?? 0) > 1 ||
-      value5.tid === context ||
-      input.parentTid(value5.tid) !== options.parentTid
+      !sibling ||
+      typeof sibling.tid != "number" ||
+      (tidCounts.get(sibling.tid) ?? 0) > 1 ||
+      sibling.tid === groupTid ||
+      model.parentTid(sibling.tid) !== snapshot.parentTid
     )
       continue;
-    let value6: Dynamic = callback(value5.left),
-      value7: Dynamic = callback(value5.top),
-      value8: Dynamic = callback(value5.w),
-      value9: Dynamic = callback(value5.h);
-    value6 == null ||
-      value7 == null ||
-      value8 == null ||
-      value9 == null ||
-      (input.setStyleProperty(value5.tid, "position", "absolute"),
-      input.setStyleProperty(value5.tid, "left", value6),
-      input.setStyleProperty(value5.tid, "top", value7),
-      input.setStyleProperty(value5.tid, "width", value8),
-      input.setStyleProperty(value5.tid, "height", value9),
-      input.setStyleProperty(value5.tid, "box-sizing", "border-box"),
-      input.setStyleProperty(value5.tid, "max-width", "none"),
-      input.setStyleProperty(value5.tid, "max-height", "none"),
-      input.setStyleProperty(value5.tid, "min-width", "0"),
-      input.setStyleProperty(value5.tid, "min-height", "0"));
+    let leftPx: Dynamic = toPixels(sibling.left),
+      topPx: Dynamic = toPixels(sibling.top),
+      widthPx: Dynamic = toPixels(sibling.w),
+      heightPx: Dynamic = toPixels(sibling.h);
+    leftPx == null ||
+      topPx == null ||
+      widthPx == null ||
+      heightPx == null ||
+      (model.setStyleProperty(sibling.tid, "position", "absolute"),
+      model.setStyleProperty(sibling.tid, "left", leftPx),
+      model.setStyleProperty(sibling.tid, "top", topPx),
+      model.setStyleProperty(sibling.tid, "width", widthPx),
+      model.setStyleProperty(sibling.tid, "height", heightPx),
+      model.setStyleProperty(sibling.tid, "box-sizing", "border-box"),
+      model.setStyleProperty(sibling.tid, "max-width", "none"),
+      model.setStyleProperty(sibling.tid, "max-height", "none"),
+      model.setStyleProperty(sibling.tid, "min-width", "0"),
+      model.setStyleProperty(sibling.tid, "min-height", "0"));
   }
-  let value3: Dynamic = callback(options.w),
-    value4: Dynamic = callback(options.h);
-  value3 != null &&
-    value4 != null &&
-    (input.setStyleProperty(options.parentTid, "width", value3),
-    input.setStyleProperty(options.parentTid, "height", value4),
-    input.setStyleProperty(options.parentTid, "box-sizing", "border-box"),
-    input.setStyleProperty(options.parentTid, "max-width", "none"),
-    input.setStyleProperty(options.parentTid, "max-height", "none"),
-    input.setStyleProperty(options.parentTid, "flex-grow", "0"),
-    input.setStyleProperty(options.parentTid, "flex-shrink", "0"),
-    input.setStyleProperty(options.parentTid, "flex-basis", "auto"),
-    input.inlineStyleValue(options.parentTid, "position") ||
-      input.setStyleProperty(options.parentTid, "position", "relative"));
+  let groupWidthPx: Dynamic = toPixels(snapshot.w),
+    groupHeightPx: Dynamic = toPixels(snapshot.h);
+  groupWidthPx != null &&
+    groupHeightPx != null &&
+    (model.setStyleProperty(snapshot.parentTid, "width", groupWidthPx),
+    model.setStyleProperty(snapshot.parentTid, "height", groupHeightPx),
+    model.setStyleProperty(snapshot.parentTid, "box-sizing", "border-box"),
+    model.setStyleProperty(snapshot.parentTid, "max-width", "none"),
+    model.setStyleProperty(snapshot.parentTid, "max-height", "none"),
+    model.setStyleProperty(snapshot.parentTid, "flex-grow", "0"),
+    model.setStyleProperty(snapshot.parentTid, "flex-shrink", "0"),
+    model.setStyleProperty(snapshot.parentTid, "flex-basis", "auto"),
+    model.inlineStyleValue(snapshot.parentTid, "position") ||
+      model.setStyleProperty(snapshot.parentTid, "position", "relative"));
 }
 export {
   defaultInsertionPoint,

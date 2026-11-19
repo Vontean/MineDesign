@@ -32,93 +32,93 @@ function DcLinkPopover({
   onActivity: onActivity,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactInspectorLinkPopover.useState)(
+  let [linkText, setLinkText]: Dynamic = (0, reactInspectorLinkPopover.useState)(
       href,
     ),
-    [value3, value4]: Dynamic = (0, reactInspectorLinkPopover.useState)(
+    [hasError, setHasError]: Dynamic = (0, reactInspectorLinkPopover.useState)(
       false,
     ),
-    value5: Dynamic = (0, reactInspectorLinkPopover.useRef)(null),
-    value6: Dynamic = (0, reactInspectorLinkPopover.useRef)(null),
-    value7: Dynamic = anchorPosition?.x ?? 0,
-    value8: Dynamic = anchorPosition?.y ?? 0,
-    value9: Dynamic = Math.min(anchorTop ?? value8, value8),
-    value10: Dynamic = (0, reactInspectorLinkPopover.useMemo)(
+    inputRef: Dynamic = (0, reactInspectorLinkPopover.useRef)(null),
+    popoverBodyRef: Dynamic = (0, reactInspectorLinkPopover.useRef)(null),
+    anchorX: Dynamic = anchorPosition?.x ?? 0,
+    anchorY: Dynamic = anchorPosition?.y ?? 0,
+    anchorTopY: Dynamic = Math.min(anchorTop ?? anchorY, anchorY),
+    virtualAnchor: Dynamic = (0, reactInspectorLinkPopover.useMemo)(
       (): Dynamic => ({
         getBoundingClientRect: (): Dynamic =>
           DOMRect.fromRect({
-            x: value7,
-            y: value9,
+            x: anchorX,
+            y: anchorTopY,
             width: 0,
-            height: value8 - value9,
+            height: anchorY - anchorTopY,
           }),
       }),
-      [value7, value8, value9],
+      [anchorX, anchorY, anchorTopY],
     );
   (0, reactInspectorLinkPopover.useEffect)((): Dynamic => {
-    open && (value2(href), value4(false));
+    open && (setLinkText(href), setHasError(false));
   }, [open, href]);
   if (!open) return null;
-  let value11: Dynamic = href.trim() !== "",
-    value12: Dynamic = value11
-      ? sanitizeEditableLink(value)
-      : normalizeLinkInput(value),
-    value13: Dynamic = collapsed && !value11,
-    value14: Dynamic = isElementLink || value11,
-    value15: Dynamic =
-      value11 &&
-      !value3 &&
-      value12 != null &&
-      value.trim() !== "" &&
-      !/^[a-z][a-z0-9+.-]*:/i.test(value.trim()) &&
-      !value.trim().startsWith("//") &&
-      !value.trim().startsWith("#"),
-    callback: Dynamic = (): Dynamic => {
-      if (!value13) {
-        if (value14 && value.trim() === "") {
+  let hasExistingLink: Dynamic = href.trim() !== "",
+    normalizedLink: Dynamic = hasExistingLink
+      ? sanitizeEditableLink(linkText)
+      : normalizeLinkInput(linkText),
+    isApplyDisabled: Dynamic = collapsed && !hasExistingLink,
+    canClearLink: Dynamic = isElementLink || hasExistingLink,
+    isRelativeLink: Dynamic =
+      hasExistingLink &&
+      !hasError &&
+      normalizedLink != null &&
+      linkText.trim() !== "" &&
+      !/^[a-z][a-z0-9+.-]*:/i.test(linkText.trim()) &&
+      !linkText.trim().startsWith("//") &&
+      !linkText.trim().startsWith("#"),
+    applyLink: Dynamic = (): Dynamic => {
+      if (!isApplyDisabled) {
+        if (canClearLink && linkText.trim() === "") {
           onApply(null);
           return;
         }
-        if (value12 == null) {
-          value4(true);
-          value5.current?.focus();
+        if (normalizedLink == null) {
+          setHasError(true);
+          inputRef.current?.focus();
           return;
         }
-        onApply(value12);
+        onApply(normalizedLink);
       }
     },
-    callback2: Dynamic = (event?: Dynamic): Dynamic => {
+    trapTabFocus: Dynamic = (event?: Dynamic): Dynamic => {
       if (event.key !== "Tab") return;
-      let current: Dynamic = value6.current;
+      let current: Dynamic = popoverBodyRef.current;
       if (!current) return;
-      let value16: Dynamic = Array.from(
+      let focusableElements: Dynamic = Array.from(
         current.querySelectorAll("input, button:not([disabled])"),
       );
-      if (value16.length === 0) return;
-      let value17: Dynamic = value16[0],
-        value18: Dynamic = value16[value16.length - 1],
+      if (focusableElements.length === 0) return;
+      let firstFocusable: Dynamic = focusableElements[0],
+        lastFocusable: Dynamic = focusableElements[focusableElements.length - 1],
         activeElement: Dynamic = (document as Dynamic).activeElement;
       event.shiftKey &&
-      (activeElement === value17 || !current.contains(activeElement))
-        ? (event.preventDefault(), value18.focus())
+      (activeElement === firstFocusable || !current.contains(activeElement))
+        ? (event.preventDefault(), lastFocusable.focus())
         : !event.shiftKey &&
-          (activeElement === value18 || !current.contains(activeElement)) &&
-          (event.preventDefault(), value17.focus());
+          (activeElement === lastFocusable || !current.contains(activeElement)) &&
+          (event.preventDefault(), firstFocusable.focus());
     };
   return (
     <CdsIsland density={"compact"} className={"contents"}>
       <PopoverPopoverRootTriggerPopupConfig.Root
         open={true}
         modal={true}
-        onOpenChange={(input?: Dynamic, options?: Dynamic): Dynamic => {
-          input ||
-            (options.reason === "escape-key" &&
-              options.event.preventDefault(),
+        onOpenChange={(isOpen?: Dynamic, changeDetails?: Dynamic): Dynamic => {
+          isOpen ||
+            (changeDetails.reason === "escape-key" &&
+              changeDetails.event.preventDefault(),
             onCancel());
         }}
       >
         <PopoverPopoverRootTriggerPopupConfig.Popup
-          anchor={value10}
+          anchor={virtualAnchor}
           side={"bottom"}
           align={"start"}
           sideOffset={6}
@@ -137,53 +137,53 @@ function DcLinkPopover({
           }}
         >
           <div
-            ref={value6}
-            onKeyDown={(input?: Dynamic): Dynamic => {
+            ref={popoverBodyRef}
+            onKeyDown={(keyEvent?: Dynamic): Dynamic => {
               onActivity?.();
-              callback2(input);
+              trapTabFocus(keyEvent);
             }}
             className={"flex flex-col gap-sm"}
           >
-            <FieldExports.Root invalid={value3}>
+            <FieldExports.Root invalid={hasError}>
               <div className={"flex items-center gap-sm"}>
                 <TextInput
-                  ref={value5}
+                  ref={inputRef}
                   size={"sm"}
                   inputMode={"url"}
-                  value={value}
+                  value={linkText}
                   placeholder={"https://\u2026"}
                   aria-label={uiMessage("inspector.linkPopover.linkURL")}
                   autoFocus={true}
-                  onFocus={(input?: Dynamic): Dynamic =>
-                    input.currentTarget.select()
+                  onFocus={(focusEvent?: Dynamic): Dynamic =>
+                    focusEvent.currentTarget.select()
                   }
-                  onChange={(input?: Dynamic): Dynamic => {
+                  onChange={(changeEvent?: Dynamic): Dynamic => {
                     onActivity?.();
-                    value2(input.currentTarget.value);
-                    value4(false);
+                    setLinkText(changeEvent.currentTarget.value);
+                    setHasError(false);
                   }}
                   onKeyDown={(event?: Dynamic): Dynamic => {
                     event.key === "Enter" &&
-                      (event.preventDefault(), callback());
+                      (event.preventDefault(), applyLink());
                   }}
                   data-testid={"dc-link-url-input"}
                 />
                 <Button
                   size={"sm"}
-                  disabled={value13}
-                  onClick={callback}
+                  disabled={isApplyDisabled}
+                  onClick={applyLink}
                   data-testid={"dc-link-apply"}
                 >
                   {uiMessage("inspector.linkPopover.apply")}
                 </Button>
               </div>
-              {value3 && (<FieldExports.Error match={true}>
+              {hasError && (<FieldExports.Error match={true}>
                   {uiMessage("inspector.linkPopover.enterAWebAddressLikeHttpsExampleCom")}
                 </FieldExports.Error>)}
-              {value13 && (<FieldExports.Description className={"text-caption"}>
+              {isApplyDisabled && (<FieldExports.Description className={"text-caption"}>
                   {uiMessage("inspector.linkPopover.selectSomeTextToLinkIt")}
                 </FieldExports.Description>)}
-              {value15 && !value13 && (<FieldExports.Description
+              {isRelativeLink && !isApplyDisabled && (<FieldExports.Description
                   className={"text-caption"}
                   data-testid={"dc-link-relative-hint"}
                 >

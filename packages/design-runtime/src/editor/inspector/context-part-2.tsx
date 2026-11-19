@@ -19,10 +19,10 @@ var jsxInspectorContext: Dynamic;
 function useInspectorContext(): Dynamic {
   return (0, reactInspectorContext_2.useContext)(InspectorContext);
 }
-function getSupportedTool(input?: Dynamic): Dynamic {
-  return typeof input == "string" &&
-    Object.hasOwn(InspectorContextIconsValue, input)
-    ? input
+function getSupportedTool(toolName?: Dynamic): Dynamic {
+  return typeof toolName == "string" &&
+    Object.hasOwn(InspectorContextIconsValue, toolName)
+    ? toolName
     : undefined;
 }
 function isToolNameList(items?: Dynamic): Dynamic {

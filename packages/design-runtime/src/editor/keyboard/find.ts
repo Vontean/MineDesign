@@ -13,51 +13,51 @@ var KeyboardFindElementCache: Dynamic;
 var KeyboardFindObservedElements: Dynamic;
 var KeyboardFindRangeCheckboxPattern: Dynamic;
 var DcKeyBrowsedAttribute: Dynamic;
-function isPropertyEditorTarget(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function isPropertyEditorTarget(eventTarget?: Dynamic): Dynamic {
+  let targetElement: Dynamic = eventTarget;
   return (
-    value != null &&
-    typeof value.closest == "function" &&
-    value.closest(DataPropertyRowDataTweaksSurfaceRoleSeparatorValue) != null
+    targetElement != null &&
+    typeof targetElement.closest == "function" &&
+    targetElement.closest(DataPropertyRowDataTweaksSurfaceRoleSeparatorValue) != null
   );
 }
-function shortcutMatchesLetter(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input.key.toLowerCase() === options
+function shortcutMatchesLetter(event?: Dynamic, letter?: Dynamic): Dynamic {
+  return event.key.toLowerCase() === letter
     ? true
-    : input.code === "Key" + options.toUpperCase() &&
-        /^[\p{L}\p{M}]$/u.test(input.key) &&
-        !/\p{Script=Latin}/u.test(input.key);
+    : event.code === "Key" + letter.toUpperCase() &&
+        /^[\p{L}\p{M}]$/u.test(event.key) &&
+        !/\p{Script=Latin}/u.test(event.key);
 }
-function registerFindOwner(input?: Dynamic, options?: Dynamic): Dynamic {
-  KeyboardFindElementCache.set(input, options);
+function registerFindOwner(element?: Dynamic, handler?: Dynamic): Dynamic {
+  KeyboardFindElementCache.set(element, handler);
   return (): Dynamic => {
-    KeyboardFindElementCache.delete(input);
+    KeyboardFindElementCache.delete(element);
   };
 }
 function handleFindKeyboardEvent(event?: Dynamic): Dynamic {
   let target: Dynamic = event.target,
-    value: Dynamic =
+    findRoot: Dynamic =
       typeof target?.closest == "function"
         ? target.closest("[" + McFindAttribute + "]")
         : null;
-  if (value === null || target === null || event.key === "F6") return;
-  let flag: Dynamic = false;
+  if (findRoot === null || target === null || event.key === "F6") return;
+  let handledByOwner: Dynamic = false;
   try {
-    flag =
+    handledByOwner =
       event.type === "keydown" &&
-      KeyboardFindElementCache.get(value)?.(event) === true;
+      KeyboardFindElementCache.get(findRoot)?.(event) === true;
   } catch {
-    flag = false;
+    handledByOwner = false;
   }
   if (
-    flag === false &&
+    handledByOwner === false &&
     (target.tagName === "INPUT" ||
       (shortcutMatchesLetter(event, "s") &&
         isPlatformModifier(event, isApplePlatform())))
   )
     return;
   event.stopImmediatePropagation();
-  let value2: Dynamic =
+  let isPlainTyping: Dynamic =
       !event.ctrlKey &&
       !event.metaKey &&
       !event.altKey &&
@@ -65,15 +65,15 @@ function handleFindKeyboardEvent(event?: Dynamic): Dynamic {
       event.key !== "Tab" &&
       event.key !== "Enter" &&
       event.key !== " ",
-    value3: Dynamic =
+    isEditShortcut: Dynamic =
       (event.ctrlKey || event.metaKey) &&
       !event.altKey &&
       KeyboardFindXCVValues.some(
-        (input?: Dynamic): Dynamic => shortcutMatchesLetter(event, input),
+        (letter?: Dynamic): Dynamic => shortcutMatchesLetter(event, letter),
       );
-  !flag &&
+  !handledByOwner &&
     event.type === "keydown" &&
-    (value2 || value3) &&
+    (isPlainTyping || isEditShortcut) &&
     event.preventDefault();
 }
 function handleFindClipboardEvent(event?: Dynamic): Dynamic {
@@ -84,70 +84,70 @@ function handleFindClipboardEvent(event?: Dynamic): Dynamic {
     (target.closest("[" + McFindAttribute + "]") !== null &&
       (event.stopImmediatePropagation(), event.preventDefault()));
 }
-function installFindKeyboardHandlers(input?: Dynamic): Dynamic {
-  if (!KeyboardFindObservedElements.has(input)) {
-    KeyboardFindObservedElements.add(input);
-    for (let value of ["keydown", "keyup", "keypress"] as Dynamic)
-      input.addEventListener(value, handleFindKeyboardEvent, true);
-    for (let value of ["cut", "copy", "paste"] as Dynamic)
-      input.addEventListener(value, handleFindClipboardEvent, true);
+function installFindKeyboardHandlers(target?: Dynamic): Dynamic {
+  if (!KeyboardFindObservedElements.has(target)) {
+    KeyboardFindObservedElements.add(target);
+    for (let eventName of ["keydown", "keyup", "keypress"] as Dynamic)
+      target.addEventListener(eventName, handleFindKeyboardEvent, true);
+    for (let eventName of ["cut", "copy", "paste"] as Dynamic)
+      target.addEventListener(eventName, handleFindClipboardEvent, true);
   }
 }
-function isPlatformModifier(input?: Dynamic, options?: Dynamic): Dynamic {
+function isPlatformModifier(event?: Dynamic, isApple?: Dynamic): Dynamic {
   return (
-    !input.altKey &&
-    (options
-      ? input.metaKey && !input.ctrlKey
-      : input.ctrlKey && !input.metaKey)
+    !event.altKey &&
+    (isApple
+      ? event.metaKey && !event.ctrlKey
+      : event.ctrlKey && !event.metaKey)
   );
 }
 function isFindShortcut(
-  input?: Dynamic,
-  options: Dynamic = isApplePlatform(),
+  event?: Dynamic,
+  isApple: Dynamic = isApplePlatform(),
 ): Dynamic {
   return (
-    isPlatformModifier(input, options) &&
-    !input.shiftKey &&
-    shortcutMatchesLetter(input, "f")
+    isPlatformModifier(event, isApple) &&
+    !event.shiftKey &&
+    shortcutMatchesLetter(event, "f")
   );
 }
 function addNativeEventListener(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  target?: Dynamic,
+  eventName?: Dynamic,
+  listener?: Dynamic,
+  listenerOptions?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = context;
+  let boundListener: Dynamic = listener;
   try {
     EventTarget.prototype.addEventListener.call(
-      input,
-      options,
-      value2,
-      value,
+      target,
+      eventName,
+      boundListener,
+      listenerOptions,
     );
     return (): Dynamic =>
       EventTarget.prototype.removeEventListener.call(
-        input,
-        options,
-        value2,
-        value,
+        target,
+        eventName,
+        boundListener,
+        listenerOptions,
       );
   } catch {
-    input.addEventListener(options, value2, value);
-    return (): Dynamic => input.removeEventListener(options, value2, value);
+    target.addEventListener(eventName, boundListener, listenerOptions);
+    return (): Dynamic => target.removeEventListener(eventName, boundListener, listenerOptions);
   }
 }
 function guardedNativeEventHandler(
-  input?: Dynamic,
-  options: Dynamic = (input2?: Dynamic): Dynamic => input2.isTrusted,
-  context: Dynamic = (): Dynamic => true,
+  findController?: Dynamic,
+  isEventAllowed: Dynamic = (event?: Dynamic): Dynamic => event.isTrusted,
+  isBubbleOwner: Dynamic = (): Dynamic => true,
 ): Dynamic {
   return (event?: Dynamic): Dynamic => {
     try {
-      let value: Dynamic = !context();
+      let isBubbling: Dynamic = !isBubbleOwner();
       if (
-        (event.eventPhase === 1) !== value ||
-        !options(event) ||
+        (event.eventPhase === 1) !== isBubbling ||
+        !isEventAllowed(event) ||
         event.defaultPrevented
       )
         return;
@@ -157,72 +157,72 @@ function guardedNativeEventHandler(
           event.preventDefault();
         return;
       }
-      let callback: Dynamic = (): Dynamic => {
+      let consumeEvent: Dynamic = (): Dynamic => {
         event.preventDefault();
-        value && event.stopImmediatePropagation();
+        isBubbling && event.stopImmediatePropagation();
       };
       if (isFindShortcut(event)) {
-        input.findKey() && callback();
+        findController.findKey() && consumeEvent();
         return;
       }
-      let value2: Dynamic = findDirectionShortcut(event);
+      let direction: Dynamic = findDirectionShortcut(event);
       if (
-        value2 === undefined ||
-        (event.key !== "F3" && input.ownsStepChord?.(event) === true)
+        direction === undefined ||
+        (event.key !== "F3" && findController.ownsStepChord?.(event) === true)
       )
         return;
-      if (!input.isOpen()) {
-        input.findKey() && callback();
+      if (!findController.isOpen()) {
+        findController.findKey() && consumeEvent();
         return;
       }
-      callback();
-      input.step(value2, event);
+      consumeEvent();
+      findController.step(direction, event);
     } catch {
       return;
     }
   };
 }
 function findDirectionShortcut(
-  input?: Dynamic,
-  options: Dynamic = isApplePlatform(),
+  event?: Dynamic,
+  isApple: Dynamic = isApplePlatform(),
 ): Dynamic {
   if (
-    input.key === "F3"
-      ? !input.altKey && !input.metaKey && !input.ctrlKey
-      : isPlatformModifier(input, options) &&
-        shortcutMatchesLetter(input, "g")
+    event.key === "F3"
+      ? !event.altKey && !event.metaKey && !event.ctrlKey
+      : isPlatformModifier(event, isApple) &&
+        shortcutMatchesLetter(event, "g")
   )
-    return input.shiftKey ? -1 : 1;
+    return event.shiftKey ? -1 : 1;
 }
-function isTextEditableTarget(input?: Dynamic): Dynamic {
-  let tagName: Dynamic = input.tagName;
+function isTextEditableTarget(element?: Dynamic): Dynamic {
+  let tagName: Dynamic = element.tagName;
   return (
     tagName === "TEXTAREA" ||
-    input.isContentEditable === true ||
+    element.isContentEditable === true ||
     (tagName === "INPUT" &&
-      !KeyboardFindRangeCheckboxPattern.test(input.type))
+      !KeyboardFindRangeCheckboxPattern.test(element.type))
   );
 }
 function blurTextOutsideFind(
-  input: Dynamic = document,
-  options?: Dynamic,
-  context?: Dynamic,
+  root: Dynamic = document,
+  exemptSelector?: Dynamic,
+  extraBlurSelector?: Dynamic,
 ): Dynamic {
-  let activeElement: Dynamic = input.activeElement;
+  let activeElement: Dynamic = root.activeElement;
   activeElement === null ||
     activeElement.closest("[" + McFindAttribute + "]") !== null ||
     (!isTextEditableTarget(activeElement) &&
-      (context === undefined || activeElement.closest(context) === null)) ||
-    ((options === undefined || activeElement.closest(options) === null) &&
+      (extraBlurSelector === undefined || activeElement.closest(extraBlurSelector) === null)) ||
+    ((exemptSelector === undefined || activeElement.closest(exemptSelector) === null) &&
       activeElement.blur());
 }
-function isEditingInputTarget(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
-  return value == null || typeof value.closest != "function"
+function isEditingInputTarget(target?: Dynamic): Dynamic {
+  let targetElement: Dynamic = target;
+  return targetElement == null || typeof targetElement.closest != "function"
     ? false
-    : /^(INPUT|TEXTAREA|SELECT)$/.test(value.tagName) ||
-        value.isContentEditable === true ||
-        value.closest(
+    : /^(INPUT|TEXTAREA|SELECT)$/.test(targetElement.tagName) ||
+        targetElement.isContentEditable === true ||
+        targetElement.closest(
           DataPropertyRowDataTweaksSurfaceRoleSeparatorValue +
             ',[data-mega-chrome="tweaks"],[data-note-typing-strip],[data-link-mode],[' +
             McFindAttribute +
@@ -230,17 +230,17 @@ function isEditingInputTarget(input?: Dynamic): Dynamic {
             blockingOverlaySelector,
         ) != null;
 }
-function focusedOutlineRow(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
-  if (value == null || typeof value.closest != "function") return null;
-  let ancestor: Dynamic = value.closest('[role="treeitem"]');
+function focusedOutlineRow(target?: Dynamic): Dynamic {
+  let targetElement: Dynamic = target;
+  if (targetElement == null || typeof targetElement.closest != "function") return null;
+  let ancestor: Dynamic = targetElement.closest('[role="treeitem"]');
   return ancestor == null ||
     ancestor.getAttribute("aria-selected") === "true" ||
     ancestor.closest("[" + DcKeyBrowsedAttribute + "]") == null
     ? null
     : {
         name: ancestor.getAttribute("aria-label") || uiMessage("inspector.find.thisRow"),
-        onRow: ancestor === value,
+        onRow: ancestor === targetElement,
       };
 }
 export {

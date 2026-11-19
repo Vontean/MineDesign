@@ -19,58 +19,58 @@ var InspectorClassTargetsLimit: Dynamic;
 var InspectorClassTargetsLabel: Dynamic;
 var jsxInspectorClassTargets: Dynamic;
 var InspectorClassTargetsDataDcDataScPattern: Dynamic;
-function isTextStyleProperty(input?: Dynamic, options?: Dynamic): Dynamic {
+function isTextStyleProperty(propName?: Dynamic, propValue?: Dynamic): Dynamic {
   return (
-    InspectorAnnotationFontFontSizeFontWeightSet.has(input) &&
-    InspectorAnnotationLargerSmallerPattern.test(options)
+    InspectorAnnotationFontFontSizeFontWeightSet.has(propName) &&
+    InspectorAnnotationLargerSmallerPattern.test(propValue)
   );
 }
-function sharedInheritedTextStyle(input?: Dynamic, items?: Dynamic): Dynamic {
-  if (items.length === 0 || items.length > InspectorClassTargetsLimit)
+function sharedInheritedTextStyle(model?: Dynamic, tids?: Dynamic): Dynamic {
+  if (tids.length === 0 || tids.length > InspectorClassTargetsLimit)
     return [];
-  let value: Dynamic = items.map(
-      (input2?: Dynamic): Dynamic => input.inheritedTextStyle?.(input2) ?? [],
+  let styleLists: Dynamic = tids.map(
+      (tid?: Dynamic): Dynamic => model.inheritedTextStyle?.(tid) ?? [],
     ),
-    value2: Dynamic = value[0];
+    firstStyleList: Dynamic = styleLists[0];
   if (
-    value.some(
-      (input2?: Dynamic): Dynamic =>
-        JSON.stringify(input2) !== JSON.stringify(value2),
+    styleLists.some(
+      (styleList?: Dynamic): Dynamic =>
+        JSON.stringify(styleList) !== JSON.stringify(firstStyleList),
     )
   )
     return [];
-  let items2: Dynamic = [];
-  for (let value3 of value2 as Dynamic) {
-    let value4: Dynamic = items2.at(-1),
-      value5: Dynamic = value3.value
+  let groups: Dynamic = [];
+  for (let declaration of firstStyleList as Dynamic) {
+    let lastGroup: Dynamic = groups.at(-1),
+      cleanValue: Dynamic = declaration.value
         .replace(/\s+/g, " ")
         .replace(/\s*!\s*important\s*$/i, "");
-    value4 && value4.from === value3.from && value4.fromTid === value3.fromTid
-      ? value4.decls.push({
-          prop: value3.prop,
-          value: value5,
+    lastGroup && lastGroup.from === declaration.from && lastGroup.fromTid === declaration.fromTid
+      ? lastGroup.decls.push({
+          prop: declaration.prop,
+          value: cleanValue,
         })
-      : items2.push({
-          from: value3.from,
-          fromTid: value3.fromTid,
+      : groups.push({
+          from: declaration.from,
+          fromTid: declaration.fromTid,
           decls: [
             {
-              prop: value3.prop,
-              value: value5,
+              prop: declaration.prop,
+              value: cleanValue,
             },
           ],
         });
   }
-  return items2;
+  return groups;
 }
 function findInspectorOutlineNode(
-  input?: Dynamic,
-  options?: Dynamic,
+  nodes?: Dynamic,
+  tid?: Dynamic,
 ): Dynamic {
-  for (let value of (input ?? []) as Dynamic) {
-    if (value.tid === options) return value;
-    let value2: Dynamic = findInspectorOutlineNode(value.children, options);
-    if (value2) return value2;
+  for (let value of (nodes ?? []) as Dynamic) {
+    if (value.tid === tid) return value;
+    let found: Dynamic = findInspectorOutlineNode(value.children, tid);
+    if (found) return found;
   }
   return null;
 }
@@ -84,16 +84,16 @@ function ClassStyleTargets({
   onHoverTid: onHoverTid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactInspectorAnnotation_2.useRef)(
+  let hoverCallbackRef: Dynamic = (0, reactInspectorAnnotation_2.useRef)(
     onHoverTid,
   );
-  value.current = onHoverTid;
+  hoverCallbackRef.current = onHoverTid;
   (0, reactInspectorAnnotation_2.useEffect)(
-    (): Dynamic => (): Dynamic => value.current?.(null),
+    (): Dynamic => (): Dynamic => hoverCallbackRef.current?.(null),
     [],
   );
   if (groups.length === 0) return null;
-  let value2: Dynamic = many ? uiMessage("inspector.classTargets.theseElements") : uiMessage("inspector.classTargets.thisElement");
+  let targetLabel: Dynamic = many ? uiMessage("inspector.classTargets.theseElements") : uiMessage("inspector.classTargets.thisElement");
   return (
     <CdsIsland density={"compact"} className={"contents"}>
       <div
@@ -101,82 +101,82 @@ function ClassStyleTargets({
         className={
           "flex flex-col gap-2 border-t px-3.5 pt-2.5 pb-3 text-footnote"
         }
-        onKeyDown={(input?: Dynamic): Dynamic => {
-          !input.metaKey &&
-            !input.ctrlKey &&
-            !input.altKey &&
-            input.key !== "Tab" &&
-            input.key !== "Escape" &&
-            input.stopPropagation();
+        onKeyDown={(keyEvent?: Dynamic): Dynamic => {
+          !keyEvent.metaKey &&
+            !keyEvent.ctrlKey &&
+            !keyEvent.altKey &&
+            keyEvent.key !== "Tab" &&
+            keyEvent.key !== "Escape" &&
+            keyEvent.stopPropagation();
         }}
       >
-        {groups.map((input?: Dynamic): Dynamic => {
-          let value3: Dynamic =
-              input.fromTid != null
-                ? findInspectorOutlineNode(outline, input.fromTid)
+        {groups.map((group?: Dynamic): Dynamic => {
+          let sourceNode: Dynamic =
+              group.fromTid != null
+                ? findInspectorOutlineNode(outline, group.fromTid)
                 : null,
-            value4: Dynamic = value3?.glyph
-              ? ChromeToolIconsColumnRowTextConfig[value3.glyph]
+            glyphIcon: Dynamic = sourceNode?.glyph
+              ? ChromeToolIconsColumnRowTextConfig[sourceNode.glyph]
               : undefined,
-            value5: Dynamic = value4 ? (
-              value4.custom ? (
-                <Icon customIcon={value4.custom} size={"sm"} />
+            iconElement: Dynamic = glyphIcon ? (
+              glyphIcon.custom ? (
+                <Icon customIcon={glyphIcon.custom} size={"sm"} />
               ) : (
-                <Icon name={value4.name} size={"sm"} />
+                <Icon name={glyphIcon.name} size={"sm"} />
               )
             ) : undefined;
           return (() => {
-            const _Component2 = "div";
-            const _props2 = {
+            const GroupComponent = "div";
+            const groupProps = {
               role: "group",
-              get "aria-label"() { return uiMessage("inspector.classTargets.from2", { value1: String(input.from) }); },
+              get "aria-label"() { return uiMessage("inspector.classTargets.from2", { value1: String(group.from) }); },
               className: "flex min-w-0 flex-col",
               children: [
                 <div className={"flex min-w-0 items-center gap-1 text-muted"}>
                   <span className={"shrink-0"}>{uiMessage("inspector.classTargets.from")}</span>
-                  {input.fromTid != null && onSelectTid ? (<EditorTooltip
-                      tip={uiMessage("inspector.classTargets.select", { value1: String(input.from) })}
+                  {group.fromTid != null && onSelectTid ? (<EditorTooltip
+                      tip={uiMessage("inspector.classTargets.select", { value1: String(group.from) })}
                       className={"min-w-0"}
                     >
                       <Button
                         variant={"ghost"}
                         size={"xs"}
-                        icon={value5}
-                        aria-label={uiMessage("inspector.classTargets.select", { value1: String(input.from) })}
+                        icon={iconElement}
+                        aria-label={uiMessage("inspector.classTargets.select", { value1: String(group.from) })}
                         className={
                           "min-w-0 font-mono " + InspectorClassTargetsLabel
                         }
                         onClick={(): Dynamic => {
                           onHoverTid?.(null);
-                          onSelectTid(input.fromTid);
+                          onSelectTid(group.fromTid);
                         }}
                         onMouseEnter={(): Dynamic =>
-                          onHoverTid?.(input.fromTid)
+                          onHoverTid?.(group.fromTid)
                         }
                         onMouseLeave={(): Dynamic => onHoverTid?.(null)}
-                        onFocus={(): Dynamic => onHoverTid?.(input.fromTid)}
+                        onFocus={(): Dynamic => onHoverTid?.(group.fromTid)}
                         onBlur={(): Dynamic => onHoverTid?.(null)}
                       >
-                        {input.from}
+                        {group.from}
                       </Button>
                     </EditorTooltip>) : (<span
                       className={
                         "min-w-0 truncate px-1.5 font-mono text-secondary"
                       }
                     >
-                      {input.from}
+                      {group.from}
                     </span>)}
                 </div>,
-                input.decls.map((input2?: Dynamic): Dynamic => {
-                  let value6: Dynamic =
-                      input2.prop === "color"
-                        ? normalizeCssColor(input2.value)
+                group.decls.map((declaration?: Dynamic): Dynamic => {
+                  let colorHex: Dynamic =
+                      declaration.prop === "color"
+                        ? normalizeCssColor(declaration.value)
                         : undefined,
-                    value7: Dynamic = lockFor(input2.prop, input2.value);
+                    lockReason: Dynamic = lockFor(declaration.prop, declaration.value);
                   return (() => {
-                    const _Component = "div";
-                    const _props = {
-                      "data-testid": "dc-code-inherited-" + input2.prop,
+                    const DeclarationComponent = "div";
+                    const declarationProps = {
+                      "data-testid": "dc-code-inherited-" + declaration.prop,
                       className:
                         "flex h-control min-w-0 items-center gap-2 pl-2 font-mono text-[11.5px] pointer-coarse:h-10",
                       children: [
@@ -185,14 +185,14 @@ function ClassStyleTargets({
                             "w-[6.25rem] shrink-0 truncate text-muted"
                           }
                         >
-                          {input2.prop}
+                          {declaration.prop}
                         </span>,
-                        value6 !== undefined && (
+                        colorHex !== undefined && (
                           <ColorWellFace
-                            hex={value6.slice(0, 7)}
+                            hex={colorHex.slice(0, 7)}
                             alpha={
-                              value6.length === 9
-                                ? (parseInt(value6.slice(7), 16) / 255) * 100
+                              colorHex.length === 9
+                                ? (parseInt(colorHex.slice(7), 16) / 255) * 100
                                 : 100
                             }
                           />
@@ -201,9 +201,9 @@ function ClassStyleTargets({
                           className={
                             "min-w-0 flex-1 truncate text-secondary select-text"
                           }
-                          title={input2.value}
+                          title={declaration.value}
                         >
-                          {input2.value}
+                          {declaration.value}
                         </span>,
                         <Button
                           variant={"ghost"}
@@ -211,25 +211,25 @@ function ClassStyleTargets({
                           iconOnly={true}
                           icon={"Add"}
                           data-inherited-set={""}
-                          aria-label={uiMessage("inspector.classTargets.setOn", { value1: String(input2.prop), value2: String(value2) })}
-                          tooltip={uiMessage("inspector.classTargets.setOn2", { value1: String(value2) })}
-                          disabled={value7 !== undefined}
-                          disabledReason={(value7) ?? (uiMessage("inspector.classTargets.setOn2", { value1: String(value2) }))}
+                          aria-label={uiMessage("inspector.classTargets.setOn", { value1: String(declaration.prop), value2: String(targetLabel) })}
+                          tooltip={uiMessage("inspector.classTargets.setOn2", { value1: String(targetLabel) })}
+                          disabled={lockReason !== undefined}
+                          disabledReason={(lockReason) ?? (uiMessage("inspector.classTargets.setOn2", { value1: String(targetLabel) }))}
                           className={"shrink-0 " + InspectorClassTargetsLabel}
                           onClick={(): Dynamic =>
-                            onSet(input2.prop, input2.value)
+                            onSet(declaration.prop, declaration.value)
                           }
                         />,
                       ],
                     } as const;
-                    const _key = input2.prop;
-                    return <_Component key={_key} {..._props} />;
+                    const declarationKey = declaration.prop;
+                    return <DeclarationComponent key={declarationKey} {...declarationProps} />;
                   })();
                 }),
               ],
             } as const;
-            const _key2 = input.from + ":" + String(input.fromTid);
-            return <_Component2 key={_key2} {..._props2} />;
+            const groupKey = group.from + ":" + String(group.fromTid);
+            return <GroupComponent key={groupKey} {...groupProps} />;
           })();
         })}
       </div>
