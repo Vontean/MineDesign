@@ -15,17 +15,17 @@ var ExportDownloadsDocxPptxEpubSet: Dynamic;
 var ExportDownloadsDefaultIgnorablePattern: Dynamic;
 var hasCapabilityMethodValue: Dynamic;
 var ExportDownloadsAlias: Dynamic;
-function normalizeDownloadName(input?: Dynamic): Dynamic {
-  let value: Dynamic = input
+function normalizeDownloadName(fileName?: Dynamic): Dynamic {
+  let value: Dynamic = fileName
       .replace(ExportDownloadsDefaultIgnorablePattern, "")
       .replace(/(^|[\s.])\p{M}+/gu, "$1")
       .replace(/[\s.]+$/, ""),
-    value2: Dynamic = value.lastIndexOf("."),
-    value3: Dynamic =
-      value2 === -1 ? "" : value.slice(value2 + 1).toLowerCase();
+    extensionIndex: Dynamic = value.lastIndexOf("."),
+    extension: Dynamic =
+      extensionIndex === -1 ? "" : value.slice(extensionIndex + 1).toLowerCase();
   return (
-    ExportDownloadsGifPngJpgSet.has(value3) ||
-    ExportDownloadsDocxPptxEpubSet.has(value3)
+    ExportDownloadsGifPngJpgSet.has(extension) ||
+    ExportDownloadsDocxPptxEpubSet.has(extension)
   );
 }
 function hasDownloadCapability(): Dynamic {
@@ -42,26 +42,26 @@ function downloadsCapabilityDeclared(): Dynamic {
     ?.getAttribute("content");
   if (value == null) return false;
   try {
-    let value2: Dynamic = JSON.parse(value);
+    let capabilities: Dynamic = JSON.parse(value);
     return (
-      typeof value2 == "object" &&
-      value2 !== null &&
-      Object.hasOwn(value2, "downloads")
+      typeof capabilities == "object" &&
+      capabilities !== null &&
+      Object.hasOwn(capabilities, "downloads")
     );
   } catch {
     return false;
   }
 }
 async function downloadsWithheld(
-  input: Dynamic = capabilityTimeoutMs,
+  timeoutMs: Dynamic = capabilityTimeoutMs,
 ): Promise<Dynamic> {
   let value: Dynamic;
   try {
     if (!hasCapabilityLoader() || !downloadsCapabilityDeclared())
       return false;
     let promise: Dynamic = new Promise(
-      (input2?: Dynamic): Dynamic =>
-        (value = setTimeout(input2, input, undefined)),
+      (resolveTimeout?: Dynamic): Dynamic =>
+        (value = setTimeout(resolveTimeout, timeoutMs, undefined)),
     );
     return (
       (await Promise.race([
@@ -76,14 +76,14 @@ async function downloadsWithheld(
   }
 }
 function useDownloadsWithheld(): Dynamic {
-  let [value, value2]: Dynamic = (0, reactExportDownloads.useState)(
+  let [value, setWithheld]: Dynamic = (0, reactExportDownloads.useState)(
     ExportDownloadsAlias,
   );
   (0, reactExportDownloads.useEffect)((): Dynamic => {
     let flag: Dynamic = true;
-    downloadsWithheld().then((input?: Dynamic): Dynamic => {
-      ExportDownloadsAlias = input;
-      flag && value2(input);
+    downloadsWithheld().then((isWithheld?: Dynamic): Dynamic => {
+      ExportDownloadsAlias = isWithheld;
+      flag && setWithheld(isWithheld);
     });
     return (): Dynamic => {
       flag = false;
@@ -91,17 +91,17 @@ function useDownloadsWithheld(): Dynamic {
   }, []);
   return value;
 }
-function downloadErrorCode(input?: Dynamic): Dynamic {
-  if (typeof input == "object" && input !== null && "code" in input) {
-    let code: Dynamic = input.code;
+function downloadErrorCode(error?: Dynamic): Dynamic {
+  if (typeof error == "object" && error !== null && "code" in error) {
+    let code: Dynamic = error.code;
     if (typeof code == "string") return code;
   }
   return "";
 }
 async function saveThroughHost(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = {},
+  data?: Dynamic,
+  filename?: Dynamic,
+  requestOptions: Dynamic = {},
 ): Promise<Dynamic> {
   if (await downloadsWithheld())
     return {
@@ -118,29 +118,29 @@ async function saveThroughHost(
       code: "no_shell_save",
     };
   try {
-    let value2: Dynamic =
-      input instanceof Blob ? input : new Uint8Array(input).buffer;
+    let buffer: Dynamic =
+      data instanceof Blob ? data : new Uint8Array(data).buffer;
     await value.save(
-      context.request === undefined
+      requestOptions.request === undefined
         ? {
-            filename: options,
-            data: value2,
+            filename: filename,
+            data: buffer,
           }
         : {
-            filename: options,
-            data: value2,
-            request: context.request,
+            filename: filename,
+            data: buffer,
+            request: requestOptions.request,
           },
     );
     return {
       outcome: "saved",
       code: "",
     };
-  } catch (value2: Dynamic) {
-    let value3: Dynamic = downloadErrorCode(value2);
+  } catch (error: Dynamic) {
+    let errorCode: Dynamic = downloadErrorCode(error);
     return {
-      outcome: value3 === "declined" ? "declined" : "unsupported",
-      code: value3,
+      outcome: errorCode === "declined" ? "declined" : "unsupported",
+      code: errorCode,
     };
   }
 }

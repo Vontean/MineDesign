@@ -8,7 +8,7 @@ import type {
 } from "../contracts/export";
 import type { Size } from "../contracts/geometry";
 import { maxCaptureEdge, maxCapturePixels } from "./capture-runtime";
-import { PlatformFileContentLimit_6 } from "../platform/file-content";
+import { PlatformFileContentLimit_6 as platformFileContentLimit } from "../platform/file-content";
 
 /** 判断导出方式时，画板需要的字段。 */
 export type PrintableArtboard = ExportArtboard;
@@ -99,9 +99,9 @@ export function resolveMeasuredExportHeight(
   measured: number,
   naturalHeight?: number,
 ): ExportHeight {
-  const capped = Math.min(PlatformFileContentLimit_6, Math.ceil(measured));
+  const capped = Math.min(platformFileContentLimit, Math.ceil(measured));
   if (capped > Math.round(declared) + exportHeightTolerance) return capped;
-  if (measured > PlatformFileContentLimit_6 + exportHeightTolerance) return "capped";
+  if (measured > platformFileContentLimit + exportHeightTolerance) return "capped";
   if (naturalHeight !== undefined && Number.isFinite(naturalHeight)) {
     const natural = Math.ceil(naturalHeight);
     if (Math.round(declared) - natural >= naturalHeightShrinkThreshold) return natural;

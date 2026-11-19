@@ -10,11 +10,11 @@ import { validateLosslessPicture } from "./lossless";
 import { buildPdfOutline, maxOutlineTitleLength } from "./outline";
 import { buildPdfStructureTree, collectPdfStructureRoles } from "./structure";
 import { createPdfUnicodeEncoder, encodeWinAnsiOperand, spaceOperands } from "./text-encoding";
-import { buildPdfTextOperators, buildPdfTextRuns, PdfTextOperatorsFreezeValue, PdfTextOperatorsFreezeValue_3, PdfTextOperatorsLimit_2, PdfTextOperatorsSubscribers, PdfTextOperatorsSubscribers_2, textRunsNeedSpace } from "./text-operators";
+import { buildPdfTextOperators, buildPdfTextRuns, PdfTextOperatorsFreezeValue, PdfTextOperatorsFreezeValue_3 as pdfFreezeValues, PdfTextOperatorsLimit_2 as pdfTextOperatorsLimit, PdfTextOperatorsSubscribers, PdfTextOperatorsSubscribers_2 as pdfTextOperatorSubscribers, textRunsNeedSpace } from "./text-operators";
 import { buildPdfFontObjects, pdfHexCodeUnit, PdfUnicodeFontConstant } from "./unicode-font";
 
 var PdfDocumentLimit: Dynamic;
-var PdfDocumentLimit_2: Dynamic;
+var maxPdfDimensionPt: Dynamic;
 var PdfDocumentResolvedValue: Dynamic;
 function encodeAsciiBytes(text?: Dynamic): Dynamic {
   let bytes: Dynamic = new Uint8Array(text.length);
@@ -25,35 +25,35 @@ function encodeAsciiBytes(text?: Dynamic): Dynamic {
   }
   return bytes;
 }
-function formatPdfNumber(value?: Dynamic): Dynamic {
-  return String(Math.round(value * 100) / 100);
+function formatPdfNumber(numberValue?: Dynamic): Dynamic {
+  return String(Math.round(numberValue * 100) / 100);
 }
-function sanitizePdfText(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options === "winansi"
+function sanitizePdfText(textInput?: Dynamic, encoding?: Dynamic): Dynamic {
+  return encoding === "winansi"
     ? Array.from(
-        input.slice(0, 256),
-        (input2?: Dynamic): Dynamic =>
-          /^[\x20-\x7e]$/.test(input2) ? input2 : " ",
+        textInput.slice(0, 256),
+        (character?: Dynamic): Dynamic =>
+          /^[\x20-\x7e]$/.test(character) ? character : " ",
       ).join("")
-    : truncatePdfText(input, 256);
+    : truncatePdfText(textInput, 256);
 }
-function truncatePdfText(input?: Dynamic, options?: Dynamic): Dynamic {
-  return Array.from(input.slice(0, 2 * options))
-    .slice(0, options)
-    .map((input2?: Dynamic): Dynamic => {
-      let value: Dynamic = input2.codePointAt(0);
+function truncatePdfText(textInput?: Dynamic, maxLength?: Dynamic): Dynamic {
+  return Array.from(textInput.slice(0, 2 * maxLength))
+    .slice(0, maxLength)
+    .map((character?: Dynamic): Dynamic => {
+      let value: Dynamic = character.codePointAt(0);
       return value < 32 || (value >= 127 && value <= 159)
         ? " "
         : value >= 55296 && value <= 57343
           ? String.fromCharCode(PdfUnicodeFontConstant)
-          : input2;
+          : character;
     })
     .join("");
 }
-function normalizePdfTitle(input?: Dynamic, options?: Dynamic): Dynamic {
+function normalizePdfTitle(titleInput?: Dynamic, maxLength?: Dynamic): Dynamic {
   return truncatePdfText(
-    input.replace(/[\s\p{Cc}]+/gu, " ").trim(),
-    options,
+    titleInput.replace(/[\s\p{Cc}]+/gu, " ").trim(),
+    maxLength,
   ).trimEnd();
 }
 function pdfStringOperand(items?: Dynamic): Dynamic {
@@ -64,14 +64,14 @@ function pdfStringOperand(items?: Dynamic): Dynamic {
     text += pdfHexCodeUnit(items.charCodeAt(index));
   return "<" + text + ">";
 }
-function pdfTextOperand(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input === "") return "";
-  let value: Dynamic = sanitizePdfText(input, options);
+function pdfTextOperand(textInput?: Dynamic, encoding?: Dynamic): Dynamic {
+  if (textInput === "") return "";
+  let value: Dynamic = sanitizePdfText(textInput, encoding);
   if (
-    options === "winansi" ||
-    Array.from(input)
+    encoding === "winansi" ||
+    Array.from(textInput)
       .slice(0, 256)
-      .every((input2?: Dynamic): Dynamic => /^[\x20-\x7e]$/.test(input2))
+      .every((character?: Dynamic): Dynamic => /^[\x20-\x7e]$/.test(character))
   )
     return "(" + value.replace(/[\\()]/g, "\\$&") + ")";
   let text: Dynamic = "feff";
@@ -79,7 +79,7 @@ function pdfTextOperand(input?: Dynamic, options?: Dynamic): Dynamic {
     text += pdfHexCodeUnit(value.charCodeAt(index));
   return "<" + text + ">";
 }
-function buildPdfXmpMetadata(input?: Dynamic): Dynamic {
+function buildPdfXmpMetadata(metadataInput?: Dynamic): Dynamic {
   let value: Dynamic =
       `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
@@ -88,19 +88,19 @@ function buildPdfXmpMetadata(input?: Dynamic): Dynamic {
 ` +
       [
         "<dc:format>application/pdf</dc:format>",
-        ...(input === ""
+        ...(metadataInput === ""
           ? []
           : [
               '<dc:title><rdf:Alt><rdf:li xml:lang="x-default">' +
-                ((input2?: Dynamic): Dynamic =>
-                  input2
+                ((character?: Dynamic): Dynamic =>
+                  character
                     .replace(
                       /[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g,
                       "\uFFFD",
                     )
                     .replace(/&/g, "&amp;")
                     .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;"))(input) +
+                    .replace(/>/g, "&gt;"))(metadataInput) +
                 "</rdf:li></rdf:Alt></dc:title>",
             ]),
       ].join(`
@@ -110,150 +110,150 @@ function buildPdfXmpMetadata(input?: Dynamic): Dynamic {
 </rdf:RDF>
 </x:xmpmeta>
 <?xpacket end="w"?>`,
-    value2: Dynamic = new TextEncoder().encode(value);
+    metadataBytes: Dynamic = new TextEncoder().encode(value);
   return [
     encodeAsciiBytes(
       "<< /Type /Metadata /Subtype /XML /Length " +
-        String(value2.length) +
+        String(metadataBytes.length) +
         ` >>
 stream
 `,
     ),
-    value2,
+    metadataBytes,
     encodeAsciiBytes(`
 endstream`),
   ];
 }
-function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
+function buildPdfDocument(items?: Dynamic, documentOptions?: Dynamic): Dynamic {
   if (items.length === 0)
     throw new Error("nothing to export \u2014 no pages were produced");
   let value: Dynamic = items.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic => {
+      (page?: Dynamic, pageIndex?: Dynamic): Dynamic => {
         if (
-          !Number.isFinite(input.widthPt) ||
-          !Number.isFinite(input.heightPt) ||
-          input.widthPt < PdfDocumentLimit ||
-          input.heightPt < PdfDocumentLimit ||
-          input.widthPt > PdfDocumentLimit_2 ||
-          input.heightPt > PdfDocumentLimit_2
+          !Number.isFinite(page.widthPt) ||
+          !Number.isFinite(page.heightPt) ||
+          page.widthPt < PdfDocumentLimit ||
+          page.heightPt < PdfDocumentLimit ||
+          page.widthPt > maxPdfDimensionPt ||
+          page.heightPt > maxPdfDimensionPt
         )
           throw new Error(
-            "page " + String(options2 + 1) + " has an out-of-range page size",
+            "page " + String(pageIndex + 1) + " has an out-of-range page size",
           );
         try {
-          let value29: Dynamic = readJpegDimensions(input.jpeg);
-          input.lossless != null &&
-            validateLosslessPicture(input.lossless, value29);
-          if (options?.tagged === true && input.blocks != null) {
-            if (!Array.isArray(input.blocks))
+          let jpegDimensions: Dynamic = readJpegDimensions(page.jpeg);
+          page.lossless != null &&
+            validateLosslessPicture(page.lossless, jpegDimensions);
+          if (documentOptions?.tagged === true && page.blocks != null) {
+            if (!Array.isArray(page.blocks))
               throw new Error("its blocks are not a list");
-            if (input.blocks.length > PdfTextOperatorsLimit_2)
+            if (page.blocks.length > pdfTextOperatorsLimit)
               throw new Error(
                 "it has more than " +
-                  String(PdfTextOperatorsLimit_2) +
+                  String(pdfTextOperatorsLimit) +
                   " blocks",
               );
-            let value30: Dynamic = input.blocks.findIndex(
-              (input2?: Dynamic): Dynamic =>
-                typeof input2 != "object" ||
-                input2 === null ||
-                !PdfTextOperatorsSubscribers.has(input2.role),
+            let invalidBlockIndex: Dynamic = page.blocks.findIndex(
+              (block?: Dynamic): Dynamic =>
+                typeof block != "object" ||
+                block === null ||
+                !PdfTextOperatorsSubscribers.has(block.role),
             );
-            if (value30 >= 0)
+            if (invalidBlockIndex >= 0)
               throw new Error(
                 "block " +
-                  String(value30 + 1) +
+                  String(invalidBlockIndex + 1) +
                   " has a role other than " +
                   PdfTextOperatorsFreezeValue.join(", "),
               );
-            let value31: Dynamic = input.blocks.findIndex(
-                (input2?: Dynamic): Dynamic =>
-                  input2.role === "Figure" &&
+            let invalidFigureIndex: Dynamic = page.blocks.findIndex(
+                (block?: Dynamic): Dynamic =>
+                  block.role === "Figure" &&
                   !(
-                    typeof input2.box == "object" &&
-                    input2.box !== null &&
+                    typeof block.box == "object" &&
+                    block.box !== null &&
                     [
-                      input2.box.xPt,
-                      input2.box.yPt,
-                      input2.box.widthPt,
-                      input2.box.heightPt,
+                      block.box.xPt,
+                      block.box.yPt,
+                      block.box.widthPt,
+                      block.box.heightPt,
                     ].every(
-                      (input3?: Dynamic): Dynamic =>
-                        Number.isFinite(input3) &&
-                        Math.abs(input3) <= PdfDocumentResolvedValue,
+                      (coordinate?: Dynamic): Dynamic =>
+                        Number.isFinite(coordinate) &&
+                        Math.abs(coordinate) <= PdfDocumentResolvedValue,
                     ) &&
-                    (input2.alt === undefined ||
-                      typeof input2.alt == "string")
+                    (block.alt === undefined ||
+                      typeof block.alt == "string")
                   ),
               ),
-              value32: Dynamic = input.blocks.findIndex(
-                (input2?: Dynamic): Dynamic =>
-                  input2.role === "Table" &&
+              invalidTableIndex: Dynamic = page.blocks.findIndex(
+                (block?: Dynamic): Dynamic =>
+                  block.role === "Table" &&
                   !(
-                    Number.isInteger(input2.cols) &&
-                    Number.isInteger(input2.rows) &&
-                    input2.cols >= 1 &&
-                    input2.rows >= 1 &&
-                    input2.cols * input2.rows <=
-                      PdfTextOperatorsLimit_2 &&
-                    (input2.headerRows == null ||
-                      (Number.isInteger(input2.headerRows) &&
-                        input2.headerRows >= 0 &&
-                        input2.headerRows <= input2.rows))
+                    Number.isInteger(block.cols) &&
+                    Number.isInteger(block.rows) &&
+                    block.cols >= 1 &&
+                    block.rows >= 1 &&
+                    block.cols * block.rows <=
+                      pdfTextOperatorsLimit &&
+                    (block.headerRows == null ||
+                      (Number.isInteger(block.headerRows) &&
+                        block.headerRows >= 0 &&
+                        block.headerRows <= block.rows))
                   ),
               );
-            if (value32 >= 0) {
-              let value35: Dynamic = input.blocks[value32],
-                callback6: Dynamic = (input2?: Dynamic): Dynamic =>
-                  String(input2).slice(0, 20);
+            if (invalidTableIndex >= 0) {
+              let tableBlock: Dynamic = page.blocks[invalidTableIndex],
+                formatTableValue: Dynamic = (tableValue?: Dynamic): Dynamic =>
+                  String(tableValue).slice(0, 20);
               throw new Error(
                 "block " +
-                  String(value32 + 1) +
+                  String(invalidTableIndex + 1) +
                   " is a table with rows " +
-                  callback6(value35.rows) +
+                  formatTableValue(tableBlock.rows) +
                   ", cols " +
-                  callback6(value35.cols) +
+                  formatTableValue(tableBlock.cols) +
                   ", headerRows " +
-                  callback6(value35.headerRows) +
+                  formatTableValue(tableBlock.headerRows) +
                   ": rows and cols must be whole numbers from 1 with rows \xD7 cols at most " +
-                  String(PdfTextOperatorsLimit_2) +
+                  String(pdfTextOperatorsLimit) +
                   ", and headerRows, when given, a whole number from 0 to rows",
               );
             }
             if (
-              input.blocks.reduce(
-                (input2?: Dynamic, options3?: Dynamic): Dynamic =>
-                  input2 +
-                  (options3.role === "Table"
-                    ? options3.rows * options3.cols
+              page.blocks.reduce(
+                (blockIndex?: Dynamic, block?: Dynamic): Dynamic =>
+                  blockIndex +
+                  (block.role === "Table"
+                    ? block.rows * block.cols
                     : 0),
                 0,
-              ) > PdfTextOperatorsLimit_2
+              ) > pdfTextOperatorsLimit
             )
               throw new Error(
                 "its tables hold more than " +
-                  String(PdfTextOperatorsLimit_2) +
+                  String(pdfTextOperatorsLimit) +
                   " cells in all",
               );
-            if (value31 >= 0)
+            if (invalidFigureIndex >= 0)
               throw new Error(
                 "block " +
-                  String(value31 + 1) +
+                  String(invalidFigureIndex + 1) +
                   " is a figure with a bad box (xPt, yPt, widthPt and heightPt must each be a finite number of at most " +
                   String(PdfDocumentResolvedValue) +
                   ") or an alt that is not a string",
               );
-            let value33: Dynamic = input.blocks.findIndex(
-              (input2?: Dynamic): Dynamic =>
-                input2.role === "Figure" &&
-                input2.link !== undefined &&
-                !(Number.isInteger(input2.link) && input2.link >= 0),
+            let invalidLinkIndex: Dynamic = page.blocks.findIndex(
+              (block?: Dynamic): Dynamic =>
+                block.role === "Figure" &&
+                block.link !== undefined &&
+                !(Number.isInteger(block.link) && block.link >= 0),
             );
-            if (value33 >= 0) {
-              let link: Dynamic = input.blocks[value33].link;
+            if (invalidLinkIndex >= 0) {
+              let link: Dynamic = page.blocks[invalidLinkIndex].link;
               throw new Error(
                 "block " +
-                  String(value33 + 1) +
+                  String(invalidLinkIndex + 1) +
                   " is a figure with link " +
                   (typeof link == "string"
                     ? JSON.stringify(link)
@@ -262,145 +262,145 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
                   "; it must be a whole number, 0 or more",
               );
             }
-            let value34: Dynamic = input.blocks.findIndex(
-              (input2?: Dynamic): Dynamic =>
-                input2.numbering != null &&
+            let invalidNumberingIndex: Dynamic = page.blocks.findIndex(
+              (block?: Dynamic): Dynamic =>
+                block.numbering != null &&
                 !(
-                  typeof input2.numbering == "string" &&
-                  PdfTextOperatorsSubscribers_2.has(input2.numbering)
+                  typeof block.numbering == "string" &&
+                  pdfTextOperatorSubscribers.has(block.numbering)
                 ),
             );
-            if (value34 >= 0)
+            if (invalidNumberingIndex >= 0)
               throw new Error(
                 "block " +
-                  String(value34 + 1) +
+                  String(invalidNumberingIndex + 1) +
                   " has list numbering " +
                   JSON.stringify(
-                    String(input.blocks[value34].numbering).slice(0, 40),
+                    String(page.blocks[invalidNumberingIndex].numbering).slice(0, 40),
                   ) +
                   "; allowed: " +
-                  PdfTextOperatorsFreezeValue_3.join(", "),
+                  pdfFreezeValues.join(", "),
               );
           }
-          return value29;
-        } catch (value29: Dynamic) {
+          return jpegDimensions;
+        } catch (documentError: Dynamic) {
           throw new Error(
             "page " +
-              String(options2 + 1) +
+              String(pageIndex + 1) +
               ": " +
-              (value29 instanceof Error ? value29.message : String(value29)),
+              (documentError instanceof Error ? documentError.message : String(documentError)),
           );
         }
       },
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic => 4 + 3 * input,
-    callback2: Dynamic = (input?: Dynamic): Dynamic => 5 + 3 * input,
-    callback3: Dynamic = (input?: Dynamic): Dynamic => 6 + 3 * input,
-    value2: Dynamic = items.some(
-      (input?: Dynamic): Dynamic => (input.textRuns?.length ?? 0) > 0,
+    callback: Dynamic = (pageNumber?: Dynamic): Dynamic => 4 + 3 * pageNumber,
+    pageResourceObjectNumber: Dynamic = (pageNumber?: Dynamic): Dynamic => 5 + 3 * pageNumber,
+    pageContentObjectNumber: Dynamic = (pageNumber?: Dynamic): Dynamic => 6 + 3 * pageNumber,
+    hasTextContent: Dynamic = items.some(
+      (page?: Dynamic): Dynamic => (page.textRuns?.length ?? 0) > 0,
     ),
-    value3: Dynamic =
-      options?.textEncoding === "unicode" ? "unicode" : "winansi",
+    textEncoding: Dynamic =
+      documentOptions?.textEncoding === "unicode" ? "unicode" : "winansi",
     state: Dynamic = {
       astral: new Map(),
       highBytes: new Set(),
     },
-    value4: Dynamic =
-      value3 === "unicode"
+    fontObjectNumber: Dynamic =
+      textEncoding === "unicode"
         ? createPdfUnicodeEncoder(state)
         : encodeWinAnsiOperand,
-    value5: Dynamic = 4 + 3 * items.length,
-    value6: Dynamic = value2 ? (value3 === "unicode" ? 6 : 1) : 0,
-    value7: Dynamic = options?.tagged === true,
-    value8: Dynamic = options?.lang;
-  if (value7 && value8 !== undefined && !isLanguageTag(value8))
+    baseObjectNumber: Dynamic = 4 + 3 * items.length,
+    fontObjectOffset: Dynamic = hasTextContent ? (textEncoding === "unicode" ? 6 : 1) : 0,
+    isTagged: Dynamic = documentOptions?.tagged === true,
+    documentLanguage: Dynamic = documentOptions?.lang;
+  if (isTagged && documentLanguage !== undefined && !isLanguageTag(documentLanguage))
     throw new Error(
       "the document language " +
-        JSON.stringify(String(value8).slice(0, 40)) +
+        JSON.stringify(String(documentLanguage).slice(0, 40)) +
         ' is not a language tag such as "en" or "ja-JP"',
     );
-  let value9: Dynamic = items.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        (input.textRuns?.length ?? 0) > 0
+  let normalizedPages: Dynamic = items.map(
+      (page?: Dynamic, pageIndex?: Dynamic): Dynamic =>
+        (page.textRuns?.length ?? 0) > 0
           ? buildPdfTextRuns(
-              input.textRuns,
-              options2,
-              input.widthPt,
-              input.heightPt,
-              value4,
-              input.blocks,
-              value7,
+              page.textRuns,
+              pageIndex,
+              page.widthPt,
+              page.heightPt,
+              fontObjectNumber,
+              page.blocks,
+              isTagged,
             )
           : [],
     ),
-    value10: Dynamic = value9.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        value7
+    textOperators: Dynamic = normalizedPages.map(
+      (page?: Dynamic, pageIndex?: Dynamic): Dynamic =>
+        isTagged
           ? mapPdfFigureLinks(
-              items[options2].blocks,
-              input,
-              items[options2].widthPt,
-              items[options2].heightPt,
+              items[pageIndex].blocks,
+              page,
+              items[pageIndex].widthPt,
+              items[pageIndex].heightPt,
             )
           : new Map(),
     ),
-    value11: Dynamic = value9.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic => {
+    pageOutlines: Dynamic = normalizedPages.map(
+      (pageLinks?: Dynamic, pageIndex?: Dynamic): Dynamic => {
         let entries: Dynamic = new Map();
-        for (let value29 of input as Dynamic) {
-          if (value29.link === undefined) continue;
-          let entry: Dynamic = entries.get(value29.link);
+        for (let linkIndex of pageLinks as Dynamic) {
+          if (linkIndex.link === undefined) continue;
+          let entry: Dynamic = entries.get(linkIndex.link);
           entry === undefined
-            ? entries.set(value29.link, {
-                text: value29.run.text,
-                last: value29.run,
+            ? entries.set(linkIndex.link, {
+                text: linkIndex.run.text,
+                last: linkIndex.run,
               })
-            : entries.set(value29.link, {
+            : entries.set(linkIndex.link, {
                 text:
                   entry.text +
-                  (textRunsNeedSpace(entry.last, value29.run)
+                  (textRunsNeedSpace(entry.last, linkIndex.run)
                     ? " "
                     : "") +
-                  value29.run.text,
-                last: value29.run,
+                  linkIndex.run.text,
+                last: linkIndex.run,
               });
         }
-        let entries2: Dynamic = new Map();
-        for (let [value29, value30] of entries as Dynamic) {
-          let value31: Dynamic = normalizePdfTitle(
-            value30.text,
+        let outlineTitles: Dynamic = new Map();
+        for (let [linkIndex, linkTarget] of entries as Dynamic) {
+          let normalizedTitle: Dynamic = normalizePdfTitle(
+            linkTarget.text,
             maxOutlineTitleLength,
           );
-          value31 !== "" && entries2.set(value29, value31);
+          normalizedTitle !== "" && outlineTitles.set(linkIndex, normalizedTitle);
         }
-        for (let [value29, value30] of value10[options2] as Dynamic) {
-          let alt2: Dynamic = items[options2].blocks[value30].alt,
-            value31: Dynamic =
-              typeof alt2 == "string"
-                ? normalizePdfTitle(alt2, maxOutlineTitleLength)
+        for (let [linkIndex, blockIndex] of textOperators[pageIndex] as Dynamic) {
+          let altText: Dynamic = items[pageIndex].blocks[blockIndex].alt,
+            normalizedAltText: Dynamic =
+              typeof altText == "string"
+                ? normalizePdfTitle(altText, maxOutlineTitleLength)
                 : "";
-          value31 !== "" && entries2.set(value29, value31);
+          normalizedAltText !== "" && outlineTitles.set(linkIndex, normalizedAltText);
         }
-        return (input2?: Dynamic): Dynamic => entries2.get(input2);
+        return (linkIndex?: Dynamic): Dynamic => outlineTitles.get(linkIndex);
       },
     ),
-    value12: Dynamic = maxLinksPerDocument,
+    remainingLinkSlots: Dynamic = maxLinksPerDocument,
     flag: Dynamic = false,
     index: Dynamic = 0,
-    value13: Dynamic = items.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value29: Dynamic = buildPdfLinkAnnotations(
-          input.links,
-          input.widthPt,
-          input.heightPt,
-          value12,
+    pageLinkAnnotations: Dynamic = items.map(
+      (page?: Dynamic, pageIndex?: Dynamic): Dynamic => {
+        let linkAnnotations: Dynamic = buildPdfLinkAnnotations(
+          page.links,
+          page.widthPt,
+          page.heightPt,
+          remainingLinkSlots,
           (): Dynamic => (flag = true),
-          value7 ? items.length + index : undefined,
-          value7 ? value11[options2] : undefined,
+          isTagged ? items.length + index : undefined,
+          isTagged ? pageOutlines[pageIndex] : undefined,
         );
-        value12 -= value29.dicts.length;
-        index += value29.dicts.length;
-        return value29;
+        remainingLinkSlots -= linkAnnotations.dicts.length;
+        index += linkAnnotations.dicts.length;
+        return linkAnnotations;
       },
     );
   flag &&
@@ -409,295 +409,295 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
         String(maxLinksPerDocument) +
         " links; any further ones are not clickable",
     );
-  let value14: Dynamic = value5 + value6,
-    value15: Dynamic = value13.map(
-      (input?: Dynamic): Dynamic => input.dicts.map((): Dynamic => value14++),
+  let nextObjectNumber: Dynamic = baseObjectNumber + fontObjectOffset,
+    pageAnnotationRefs: Dynamic = pageLinkAnnotations.map(
+      (annotationGroup?: Dynamic): Dynamic => annotationGroup.dicts.map((): Dynamic => nextObjectNumber++),
     ),
-    value16: Dynamic = value15.map(
-      (input?: Dynamic): Dynamic =>
-        input
-          .map((input2?: Dynamic): Dynamic => String(input2) + " 0 R")
+    pageAnnotationObjects: Dynamic = pageAnnotationRefs.map(
+      (annotationRef?: Dynamic): Dynamic =>
+        annotationRef
+          .map((objectNumber?: Dynamic): Dynamic => String(objectNumber) + " 0 R")
           .join(" "),
     ),
-    value17: Dynamic = value7
-      ? collectPdfStructureRoles(items, value9)
+    taggedPageRefs: Dynamic = isTagged
+      ? collectPdfStructureRoles(items, normalizedPages)
       : items.map((): Dynamic => []),
-    value18: Dynamic = value9.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic =>
+    pageTextObjects: Dynamic = normalizedPages.map(
+      (page?: Dynamic, pageIndex?: Dynamic): Dynamic =>
         buildPdfTextOperators(
-          input,
-          spaceOperands[value3],
-          value7,
-          value17[options2],
-          items[options2].blocks,
+          page,
+          spaceOperands[textEncoding],
+          isTagged,
+          taggedPageRefs[pageIndex],
+          items[pageIndex].blocks,
           new Set(
-            value13[options2].anchors.filter(
-              (input2?: Dynamic): Dynamic => input2 !== undefined,
+            pageLinkAnnotations[pageIndex].anchors.filter(
+              (anchorIndex?: Dynamic): Dynamic => anchorIndex !== undefined,
             ),
           ),
         ),
     ),
-    value19: Dynamic = items.map(
-      (input?: Dynamic, options2?: Dynamic): Dynamic =>
+    pageContentObjects: Dynamic = items.map(
+      (page?: Dynamic, pageIndex?: Dynamic): Dynamic =>
         buildPdfFigureOperators(
-          input.blocks,
-          input.widthPt,
-          input.heightPt,
-          value18[options2].marks.length,
-          value7,
+          page.blocks,
+          page.widthPt,
+          page.heightPt,
+          pageTextObjects[pageIndex].marks.length,
+          isTagged,
         ),
     );
-  value7 && value3 === "unicode" && state.highBytes.add(0);
-  let value20: Dynamic = value7
+  isTagged && textEncoding === "unicode" && state.highBytes.add(0);
+  let outlineObjects: Dynamic = isTagged
       ? buildPdfStructureTree(
-          value14,
+          nextObjectNumber,
           items,
-          value18,
-          value19,
-          value17,
-          value15,
-          value13.map((input?: Dynamic): Dynamic => input.anchors),
-          value10,
+          pageTextObjects,
+          pageContentObjects,
+          taggedPageRefs,
+          pageAnnotationRefs,
+          pageLinkAnnotations.map((page?: Dynamic): Dynamic => page.anchors),
+          textOperators,
           callback,
         )
       : undefined,
-    value21: Dynamic =
-      value20 !== undefined && options?.outline === true
+    outlineCatalog: Dynamic =
+      outlineObjects !== undefined && documentOptions?.outline === true
         ? buildPdfOutline(
-            value20.nextObj,
-            value9,
-            value17,
+            outlineObjects.nextObj,
+            normalizedPages,
+            taggedPageRefs,
             callback,
           )
         : undefined,
-    value22: Dynamic =
-      value20 !== undefined
-        ? (value21?.nextObj ?? value20.nextObj)
+    pagesObjectNumber: Dynamic =
+      outlineObjects !== undefined
+        ? (outlineCatalog?.nextObj ?? outlineObjects.nextObj)
         : undefined,
-    value23: Dynamic = value22 ?? value14 - 1,
-    value24: Dynamic = items
+    lastObjectNumber: Dynamic = pagesObjectNumber ?? nextObjectNumber - 1,
+    documentItems: Dynamic = items
       .map(
-        (input?: Dynamic, options2?: Dynamic): Dynamic =>
-          String(callback(options2)) + " 0 R",
+        (item?: Dynamic, itemIndex?: Dynamic): Dynamic =>
+          String(callback(itemIndex)) + " 0 R",
       )
       .join(" "),
-    value25: Dynamic = pdfTextOperand(options?.title ?? "", value3),
-    items2: Dynamic = [];
-  items2.push([
+    titleOperand: Dynamic = pdfTextOperand(documentOptions?.title ?? "", textEncoding),
+    pdfObjects: Dynamic = [];
+  pdfObjects.push([
     encodeAsciiBytes(
-      value20 === undefined
+      outlineObjects === undefined
         ? "<< /Type /Catalog /Pages 2 0 R >>"
         : "<< /Type /Catalog /Pages 2 0 R /MarkInfo << /Marked true >> /ViewerPreferences << /DisplayDocTitle true >> /Lang (" +
-            (value8 ?? "und") +
+            (documentLanguage ?? "und") +
             ") /StructTreeRoot " +
-            String(value20.rootObj) +
+            String(outlineObjects.rootObj) +
             " 0 R" +
-            (value21 !== undefined
-              ? " /Outlines " + String(value21.rootObj) + " 0 R"
+            (outlineCatalog !== undefined
+              ? " /Outlines " + String(outlineCatalog.rootObj) + " 0 R"
               : "") +
             " /Metadata " +
-            String(value22) +
+            String(pagesObjectNumber) +
             " 0 R >>",
     ),
   ]);
-  items2.push([
+  pdfObjects.push([
     encodeAsciiBytes(
       "<< /Type /Pages /Kids [" +
-        value24 +
+        documentItems +
         "] /Count " +
         String(items.length) +
         " >>",
     ),
   ]);
-  items2.push([
+  pdfObjects.push([
     encodeAsciiBytes(
-      "<<" + (value25 === "" ? "" : " /Title " + value25) + " >>",
+      "<<" + (titleOperand === "" ? "" : " /Title " + titleOperand) + " >>",
     ),
   ]);
-  items.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
-    let value29: Dynamic = value[options2],
-      value30: Dynamic =
-        input.lossless != null &&
-        input.lossless.zlib.length + 2 < input.jpeg.length
-          ? input.lossless
+  items.forEach((item?: Dynamic, itemIndex?: Dynamic): Dynamic => {
+    let jpegDimensions: Dynamic = value[itemIndex],
+      losslessData: Dynamic =
+        item.lossless != null &&
+        item.lossless.zlib.length + 2 < item.jpeg.length
+          ? item.lossless
           : undefined,
-      value31: Dynamic = formatPdfNumber(input.widthPt),
-      value32: Dynamic = formatPdfNumber(input.heightPt),
-      value33: Dynamic = (input.textRuns?.length ?? 0) > 0;
-    items2.push([
+      widthOperand: Dynamic = formatPdfNumber(item.widthPt),
+      heightOperand: Dynamic = formatPdfNumber(item.heightPt),
+      hasTextRuns: Dynamic = (item.textRuns?.length ?? 0) > 0;
+    pdfObjects.push([
       encodeAsciiBytes(
         "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " +
-          value31 +
+          widthOperand +
           " " +
-          value32 +
+          heightOperand +
           "] /Resources << /XObject << /Im0 " +
-          String(callback3(options2)) +
+          String(pageContentObjectNumber(itemIndex)) +
           " 0 R >> " +
-          (value33 ? "/Font << /F0 " + String(value5) + " 0 R >> " : "") +
+          (hasTextRuns ? "/Font << /F0 " + String(baseObjectNumber) + " 0 R >> " : "") +
           "/ProcSet [/PDF /ImageC" +
-          (value33 ? " /Text" : "") +
+          (hasTextRuns ? " /Text" : "") +
           "] >> /Contents " +
-          String(callback2(options2)) +
+          String(pageResourceObjectNumber(itemIndex)) +
           " 0 R" +
-          (value16[options2] === ""
+          (pageAnnotationObjects[itemIndex] === ""
             ? ""
-            : " /Annots [" + value16[options2] + "]") +
-          (value20 === undefined
+            : " /Annots [" + pageAnnotationObjects[itemIndex] + "]") +
+          (outlineObjects === undefined
             ? ""
-            : " /StructParents " + String(options2) + " /Tabs /S") +
+            : " /StructParents " + String(itemIndex) + " /Tabs /S") +
           " >>",
       ),
     ]);
-    let value34: Dynamic =
+    let contentStream: Dynamic =
         `q
 ` +
-        value31 +
+        widthOperand +
         " 0 0 " +
-        value32 +
+        heightOperand +
         ` 0 0 cm
 /Im0 Do
 Q
 `,
-      value35: Dynamic =
-        (value20 === undefined
-          ? value34
+      compressedContent: Dynamic =
+        (outlineObjects === undefined
+          ? contentStream
           : `/Artifact BMC
 ` +
-            value34 +
+            contentStream +
             `EMC
 `) +
-        value18[options2].ops +
-        value19[options2].ops;
-    items2.push([
+        pageTextObjects[itemIndex].ops +
+        pageContentObjects[itemIndex].ops;
+    pdfObjects.push([
       encodeAsciiBytes(
         "<< /Length " +
-          String(value35.length) +
+          String(compressedContent.length) +
           ` >>
 stream
 ` +
-          value35 +
+          compressedContent +
           "endstream",
       ),
     ]);
-    let value36: Dynamic = value30 !== undefined ? value30.zlib : input.jpeg;
-    items2.push([
+    let imageBytes: Dynamic = losslessData !== undefined ? losslessData.zlib : item.jpeg;
+    pdfObjects.push([
       encodeAsciiBytes(
         "<< /Type /XObject /Subtype /Image /Width " +
-          String(value29.width) +
+          String(jpegDimensions.width) +
           " /Height " +
-          String(value29.height) +
+          String(jpegDimensions.height) +
           " /ColorSpace " +
-          (value30 !== undefined || value29.components === 3
+          (losslessData !== undefined || jpegDimensions.components === 3
             ? "/DeviceRGB"
             : "/DeviceGray") +
           " /BitsPerComponent 8 /Filter " +
-          (value30 !== undefined ? "/FlateDecode" : "/DCTDecode") +
+          (losslessData !== undefined ? "/FlateDecode" : "/DCTDecode") +
           " /Length " +
-          String(value36.length) +
+          String(imageBytes.length) +
           ` >>
 stream
 `,
       ),
-      value36,
+      imageBytes,
       encodeAsciiBytes(`
 endstream`),
     ]);
   });
-  value2 && value3 === "unicode"
-    ? items2.push(...buildPdfFontObjects(value5, state))
-    : value2 &&
-      items2.push([
+  hasTextContent && textEncoding === "unicode"
+    ? pdfObjects.push(...buildPdfFontObjects(baseObjectNumber, state))
+    : hasTextContent &&
+      pdfObjects.push([
         encodeAsciiBytes(
           "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
         ),
       ]);
-  for (let value29 of value13 as Dynamic)
-    for (let value30 of value29.dicts as Dynamic)
-      items2.push([encodeAsciiBytes(value30)]);
-  if (value20 !== undefined) {
-    for (let value29 of value20.bodies as Dynamic)
-      items2.push([encodeAsciiBytes(value29)]);
-    for (let value29 of (value21?.bodies ?? []) as Dynamic)
-      items2.push([encodeAsciiBytes(value29)]);
-    items2.push(
-      buildPdfXmpMetadata(sanitizePdfText(options?.title ?? "", value3)),
+  for (let annotationGroup of pageLinkAnnotations as Dynamic)
+    for (let annotationDictionary of annotationGroup.dicts as Dynamic)
+      pdfObjects.push([encodeAsciiBytes(annotationDictionary)]);
+  if (outlineObjects !== undefined) {
+    for (let outlineBody of outlineObjects.bodies as Dynamic)
+      pdfObjects.push([encodeAsciiBytes(outlineBody)]);
+    for (let catalogBody of (outlineCatalog?.bodies ?? []) as Dynamic)
+      pdfObjects.push([encodeAsciiBytes(catalogBody)]);
+    pdfObjects.push(
+      buildPdfXmpMetadata(sanitizePdfText(documentOptions?.title ?? "", textEncoding)),
     );
   }
-  let items3: Dynamic = [],
-    index2: Dynamic = 0,
-    callback4: Dynamic = (items5?: Dynamic): Dynamic => {
-      items3.push(items5);
-      index2 += items5.length;
+  let contentStreams: Dynamic = [],
+    xrefPosition: Dynamic = 0,
+    appendContentStream: Dynamic = (contentChunk?: Dynamic): Dynamic => {
+      contentStreams.push(contentChunk);
+      xrefPosition += contentChunk.length;
     };
-  callback4(
+  appendContentStream(
     encodeAsciiBytes(
-      value20 === undefined
+      outlineObjects === undefined
         ? `%PDF-1.4
 `
         : `%PDF-1.7
 `,
     ),
   );
-  callback4(Uint8Array.from([37, 226, 227, 207, 211, 10]));
-  let items4: Dynamic = [];
-  items2.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
-    items4.push(index2);
-    callback4(
+  appendContentStream(Uint8Array.from([37, 226, 227, 207, 211, 10]));
+  let objectOffsets: Dynamic = [];
+  pdfObjects.forEach((objectParts?: Dynamic, objectIndex?: Dynamic): Dynamic => {
+    objectOffsets.push(xrefPosition);
+    appendContentStream(
       encodeAsciiBytes(
-        String(options2 + 1) +
+        String(objectIndex + 1) +
           ` 0 obj
 `,
       ),
     );
-    for (let value29 of input as Dynamic) callback4(value29);
-    callback4(
+    for (let objectPart of objectParts as Dynamic) appendContentStream(objectPart);
+    appendContentStream(
       encodeAsciiBytes(`
 endobj
 `),
     );
   });
-  let value26: Dynamic = index2,
-    callback5: Dynamic = (input?: Dynamic): Dynamic =>
-      String(input).padStart(10, "0");
-  callback4(
+  let xrefOffset: Dynamic = xrefPosition,
+    formatXrefOffset: Dynamic = (objectOffset?: Dynamic): Dynamic =>
+      String(objectOffset).padStart(10, "0");
+  appendContentStream(
     encodeAsciiBytes(
       `xref
 0 ` +
-        String(value23 + 1) +
+        String(lastObjectNumber + 1) +
         `
 0000000000 65535 f 
 ` +
-        items4
+        objectOffsets
           .map(
-            (input?: Dynamic): Dynamic =>
-              callback5(input) +
+            (objectOffset?: Dynamic): Dynamic =>
+              formatXrefOffset(objectOffset) +
               ` 00000 n 
 `,
           )
           .join("") +
         `trailer
 << /Size ` +
-        String(value23 + 1) +
+        String(lastObjectNumber + 1) +
         ` /Root 1 0 R /Info 3 0 R >>
 startxref
 ` +
-        String(value26) +
+        String(xrefOffset) +
         `
 %%EOF
 `,
     ),
   );
-  let value27: Dynamic = items3.reduce(
-      (input?: Dynamic, items5?: Dynamic): Dynamic => input + items5.length,
+  let bodyLength: Dynamic = contentStreams.reduce(
+      (currentLength?: Dynamic, contentChunk?: Dynamic): Dynamic => currentLength + contentChunk.length,
       0,
     ),
-    value28: Dynamic = new Uint8Array(value27),
-    index3: Dynamic = 0;
-  for (let value29 of items3 as Dynamic) {
-    value28.set(value29, index3);
-    index3 += value29.length;
+    pdfBytes: Dynamic = new Uint8Array(bodyLength),
+    contentOffset: Dynamic = 0;
+  for (let contentChunk of contentStreams as Dynamic) {
+    pdfBytes.set(contentChunk, contentOffset);
+    contentOffset += contentChunk.length;
   }
-  return value28;
+  return pdfBytes;
 }
 export {
   buildPdfDocument,
@@ -706,7 +706,7 @@ export {
   formatPdfNumber,
   normalizePdfTitle,
   PdfDocumentLimit,
-  PdfDocumentLimit_2,
+  maxPdfDimensionPt as PdfDocumentLimit_2,
   PdfDocumentResolvedValue,
   pdfStringOperand,
   pdfTextOperand,
@@ -716,7 +716,7 @@ export {
 export function installExportPdfDocument(): () => void {
   return () => {
     PdfDocumentLimit = 3;
-    PdfDocumentLimit_2 = 14400;
-    PdfDocumentResolvedValue = 4 * PdfDocumentLimit_2;
+    maxPdfDimensionPt = 14400;
+    PdfDocumentResolvedValue = 4 * maxPdfDimensionPt;
   };
 }

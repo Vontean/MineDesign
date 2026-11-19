@@ -27,7 +27,7 @@ function selectHtmlExportArtboards(
     focusedFile === null
       ? undefined
       : manifest.artboards.find(
-          (input?: Dynamic): Dynamic => input.file === focusedFile,
+          (artboard?: Dynamic): Dynamic => artboard.file === focusedFile,
         );
   return value !== undefined
     ? {
@@ -36,9 +36,9 @@ function selectHtmlExportArtboards(
       }
     : {
         artboards: manifest.artboards.filter(
-          (input?: Dynamic): Dynamic =>
-            designPageId(input, manifest.pages) === pageId &&
-            !input.frameless,
+          (artboard?: Dynamic): Dynamic =>
+            designPageId(artboard, manifest.pages) === pageId &&
+            !artboard.frameless,
         ),
       };
 }
@@ -47,29 +47,29 @@ function exportedCanvasOverviewHtml(
   manifest?: Dynamic,
 ): Dynamic {
   let value: Dynamic = artboardsInReadingOrder(manifest).map(
-    (input?: Dynamic): Dynamic => {
-      let value2: Dynamic =
-          input.title ?? exportBaseFileName(input.file),
-        value3: Dynamic = Math.max(1, Math.round(input.w)),
-        value4: Dynamic = Math.max(1, Math.round(input.h)),
-        value5: Dynamic = artboardRadiusCss(input.radius);
+    (artboard?: Dynamic): Dynamic => {
+      let artboardTitleText: Dynamic =
+          artboard.title ?? exportBaseFileName(artboard.file),
+        width: Dynamic = Math.max(1, Math.round(artboard.w)),
+        height: Dynamic = Math.max(1, Math.round(artboard.h)),
+        radius: Dynamic = artboardRadiusCss(artboard.radius);
       return (
         '<section class="board"><h2>' +
-        escapeHtml(value2) +
+        escapeHtml(artboardTitleText) +
         '</h2><iframe src="' +
-        escapeHtmlAttributeValue(encodeURI(input.file)) +
+        escapeHtmlAttributeValue(encodeURI(artboard.file)) +
         '" title="' +
-        escapeHtmlAttributeValue(value2) +
+        escapeHtmlAttributeValue(artboardTitleText) +
         '" width="' +
-        String(value3) +
+        String(width) +
         '" height="' +
-        String(value4) +
+        String(height) +
         '" loading="eager" style="width:' +
-        String(value3) +
+        String(width) +
         "px;height:" +
-        String(value4) +
+        String(height) +
         "px" +
-        (value5 === undefined ? "" : ";border-radius:" + value5) +
+        (radius === undefined ? "" : ";border-radius:" + radius) +
         '"></iframe></section>'
       );
     },
@@ -105,12 +105,12 @@ function standaloneExportFilename(
   let value: Dynamic =
       sanitizeExportFileName(title) ||
       exportBaseFileName(file),
-    value2: Dynamic =
+    sanitizedArtboardTitle: Dynamic =
       artboardTitle === undefined
         ? ""
         : sanitizeExportFileName(artboardTitle);
   return (
-    [...(value2 === "" ? value : value + " \u2013 " + value2)]
+    [...(sanitizedArtboardTitle === "" ? value : value + " \u2013 " + sanitizedArtboardTitle)]
       .slice(0, 120)
       .join("")
       .trimEnd()
@@ -119,8 +119,8 @@ function standaloneExportFilename(
 }
 function findUnremovedServeTokenWarning(warnings?: Dynamic): Dynamic {
   return warnings.find(
-    (input?: Dynamic): Dynamic =>
-      input.startsWith("serve token not removed:"),
+    (warning?: Dynamic): Dynamic =>
+      warning.startsWith("serve token not removed:"),
   );
 }
 async function fetchExportProjectBlob(
@@ -131,46 +131,46 @@ async function fetchExportProjectBlob(
   try {
     let value: Dynamic = await fetchBlob(path);
     if (!value.ok) return null;
-    let value2: Dynamic =
+    let mimeType: Dynamic =
       value.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ||
       "application/octet-stream";
     return {
       data: new Uint8Array(await value.arrayBuffer()),
-      mime: value2,
+      mime: mimeType,
     };
   } catch {
     return null;
   }
 }
-function createDesignDocumentAssetReader(document2?: Dynamic): Dynamic {
-  let values: Dynamic = new Set(document2.paths),
+function createDesignDocumentAssetReader(document?: Dynamic): Dynamic {
+  let values: Dynamic = new Set(document.paths),
     value: Dynamic = new TextEncoder();
-  return async (input?: Dynamic): Promise<Dynamic> => {
-    let value2: Dynamic = exportBlobPathPattern.exec(input)?.[1];
-    if (value2 !== undefined)
-      return fetchExportProjectBlob(document2.fetchBlob, value2);
-    if (!values.has(input)) return null;
-    let value3: Dynamic = await document2.read(input);
-    if (value3 === undefined) return null;
-    let value4: Dynamic = exportMimeForPath(input);
-    if (exportImageFilenamePattern.test(input))
+  return async (path?: Dynamic): Promise<Dynamic> => {
+    let blobPath: Dynamic = exportBlobPathPattern.exec(path)?.[1];
+    if (blobPath !== undefined)
+      return fetchExportProjectBlob(document.fetchBlob, blobPath);
+    if (!values.has(path)) return null;
+    let content: Dynamic = await document.read(path);
+    if (content === undefined) return null;
+    let mimeType: Dynamic = exportMimeForPath(path);
+    if (exportImageFilenamePattern.test(path))
       try {
         return {
           data: decodeBinaryBase64(
-            value3.replace(/^data:[^,]*,/, ""),
+            content.replace(/^data:[^,]*,/, ""),
           ),
-          mime: value4,
+          mime: mimeType,
         };
       } catch {
         return null;
       }
     return {
       data: value.encode(
-        value4 === "text/html"
-          ? normalizeDcScriptType(value3)
-          : value3,
+        mimeType === "text/html"
+          ? normalizeDcScriptType(content)
+          : content,
       ),
-      mime: value4,
+      mime: mimeType,
     };
   };
 }
@@ -180,152 +180,152 @@ function explainSkippedGoogleFontAssets(
 ): Dynamic {
   if (skippedFonts.length === 0) return warnings;
   let value: Dynamic = skippedFonts.map(
-      (input?: Dynamic): Dynamic =>
+      (warning?: Dynamic): Dynamic =>
         "asset not found: " +
-        redactProjectServeAccessToken(input),
+        redactProjectServeAccessToken(warning),
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+    callback: Dynamic = (warning?: Dynamic): Dynamic =>
       value.some(
-        (input2?: Dynamic): Dynamic =>
-          input === input2 ||
-          input.startsWith(input2 + ' \u2014 inside embedded page "'),
+        (embeddedWarning?: Dynamic): Dynamic =>
+          warning === embeddedWarning ||
+          warning.startsWith(embeddedWarning + ' \u2014 inside embedded page "'),
       ),
     length: Dynamic = skippedFonts.length,
-    value2: Dynamic =
+    fontWarning: Dynamic =
       length === 1
         ? "1 Google Fonts file the artboards never loaded was left as a link on purpose, not inlined"
         : String(length) +
           " Google Fonts files the artboards never loaded were left as links on purpose, not inlined";
   return [
-    ...warnings.filter((input?: Dynamic): Dynamic => !callback(input)),
-    value2 +
+    ...warnings.filter((warning?: Dynamic): Dynamic => !callback(warning)),
+    fontWarning +
       "; a browser opening the export online still fetches " +
       (length === 1 ? "it" : "them"),
   ];
 }
 async function produceStandaloneHtmlExport(
-  input?: Dynamic,
-  options: Dynamic = {},
+  exportInput?: Dynamic,
+  exportOptions: Dynamic = {},
 ): Promise<Dynamic> {
   let value: Dynamic,
-    value2: Dynamic,
-    value3: Dynamic,
-    value4: Dynamic,
-    value5: Dynamic;
-  if (input.kind === "project")
+    overviewTitle: Dynamic,
+    overviewFilename: Dynamic,
+    assetReader: Dynamic,
+    documentAssetReader: Dynamic;
+  if (exportInput.kind === "project")
     throw new ExportHtmlError("empty", "this page has no artboard to send");
   {
-    if (input.artboards.length === 0)
+    if (exportInput.artboards.length === 0)
       throw new ExportHtmlError("empty", "this page has no artboard to send");
-    value4 = createDesignDocumentAssetReader(input);
-    let value13: Dynamic =
-      input.open === undefined
+    assetReader = createDesignDocumentAssetReader(exportInput);
+    let openArtboard: Dynamic =
+      exportInput.open === undefined
         ? undefined
-        : input.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === input.open,
+        : exportInput.artboards.find(
+            (artboard?: Dynamic): Dynamic => artboard.file === exportInput.open,
           );
-    if (input.open !== undefined && value13 === undefined)
+    if (exportInput.open !== undefined && openArtboard === undefined)
       throw new ExportHtmlError(
         "empty",
-        input.open + " is not on this canvas",
+        exportInput.open + " is not on this canvas",
       );
-    if (value13 !== undefined || input.artboards.length === 1) {
-      let value14: Dynamic = value13 ?? input.artboards[0],
-        value15: Dynamic = await input.read(value14.file);
-      if (value15 === undefined)
+    if (openArtboard !== undefined || exportInput.artboards.length === 1) {
+      let selectedArtboard: Dynamic = openArtboard ?? exportInput.artboards[0],
+        artboardHtml: Dynamic = await exportInput.read(selectedArtboard.file);
+      if (artboardHtml === undefined)
         throw new ExportHtmlError(
           "empty",
-          value14.file + " could not be read",
+          selectedArtboard.file + " could not be read",
         );
-      value = normalizeDcScriptType(value15);
-      value2 = value14.file;
-      value13 !== undefined &&
-        (value3 =
-          value13.title ?? exportBaseFileName(value13.file));
-      input.importerReady === true &&
-        (value5 = {
-          w: value14.w,
-          h: value14.h,
+      value = normalizeDcScriptType(artboardHtml);
+      overviewTitle = selectedArtboard.file;
+      openArtboard !== undefined &&
+        (overviewFilename =
+          openArtboard.title ?? exportBaseFileName(openArtboard.file));
+      exportInput.importerReady === true &&
+        (documentAssetReader = {
+          w: selectedArtboard.w,
+          h: selectedArtboard.h,
           label:
-            value14.title?.trim() ||
-            exportBaseFileName(value14.file),
+            selectedArtboard.title?.trim() ||
+            exportBaseFileName(selectedArtboard.file),
         });
     } else {
-      for (let value14 of input.artboards as Dynamic)
-        if ((await input.read(value14.file)) === undefined)
+      for (let artboard of exportInput.artboards as Dynamic)
+        if ((await exportInput.read(artboard.file)) === undefined)
           throw new ExportHtmlError(
             "empty",
-            value14.file + " could not be read",
+            artboard.file + " could not be read",
           );
-      value = exportedCanvasOverviewHtml(input.title, input.artboards);
-      value2 = exportedCanvasOverviewFilename;
+      value = exportedCanvasOverviewHtml(exportInput.title, exportInput.artboards);
+      overviewTitle = exportedCanvasOverviewFilename;
     }
   }
-  let assets: Dynamic = input.assets,
-    value6: Dynamic = createExportAssetResolver(
-      value4,
+  let assets: Dynamic = exportInput.assets,
+    assetResolver: Dynamic = createExportAssetResolver(
+      assetReader,
       assets,
-      options,
+      exportOptions,
     ),
-    value7: Dynamic =
-      input.kind === "canvas" &&
-      input.fontLoads !== undefined &&
-      input.fontLoads.length > 0
-        ? createFontAwareExportResolver(value6, input.fontLoads)
+    fontAwareResolver: Dynamic =
+      exportInput.kind === "canvas" &&
+      exportInput.fontLoads !== undefined &&
+      exportInput.fontLoads.length > 0
+        ? createFontAwareExportResolver(assetResolver, exportInput.fontLoads)
         : undefined,
-    { html: value8, warnings: value9 }: Dynamic = await bundleStandaloneDesignHtml(
+    { html: html, warnings: warnings }: Dynamic = await bundleStandaloneDesignHtml(
       value,
-      value2,
-      value7?.resolve ?? value6,
+      overviewTitle,
+      fontAwareResolver?.resolve ?? assetResolver,
       {},
-      value5 === undefined
+      documentAssetReader === undefined
         ? {}
         : {
             finalizeTemplate: (
-              input2?: Dynamic,
-              options2?: Dynamic,
+              signal?: Dynamic,
+              onWarning?: Dynamic,
             ): Dynamic =>
               prepareStaticArtboardExport(
-                input2,
-                value5,
-                options2,
+                signal,
+                documentAssetReader,
+                onWarning,
               ),
           },
     ),
-    value10: Dynamic = explainSkippedGoogleFontAssets(
-      value9,
-      value7?.leftOut() ?? [],
+    warningsWithFonts: Dynamic = explainSkippedGoogleFontAssets(
+      warnings,
+      fontAwareResolver?.leftOut() ?? [],
     );
-  if (options.signal?.aborted)
+  if (exportOptions.signal?.aborted)
     throw new ExportHtmlError("timeout", "preparing the file took too long");
-  let value11: Dynamic = findUnremovedServeTokenWarning(value10);
-  if (value11 !== undefined)
+  let serveTokenWarning: Dynamic = findUnremovedServeTokenWarning(warningsWithFonts);
+  if (serveTokenWarning !== undefined)
     throw (
-      console.warn("[design/export] " + value11),
+      console.warn("[design/export] " + serveTokenWarning),
       new ExportHtmlError(
         "blocked",
         // MineDesign: user-facing copy calls the agent "the agent", not Claude.
         "the design contains what looks like a live access link, which cannot be sent",
       )
     );
-  let value12: Dynamic = new Blob([value8], {
+  let blob: Dynamic = new Blob([html], {
     type: "text/html",
   });
-  if (value12.size > designExportRuntimeSource)
+  if (blob.size > designExportRuntimeSource)
     throw new ExportHtmlError(
       "too_large",
       "the single-file export is " +
-        (value12.size / 1048576).toFixed(1) +
+        (blob.size / 1048576).toFixed(1) +
         // MineDesign: the limit is no longer 16 MiB (export/downloads.tsx).
         " MiB; the most that can be sent is " +
         (designExportRuntimeSource >> 20) +
         " MiB",
     );
   return {
-    filename: standaloneExportFilename(input.title, value2, value3),
-    blob: value12,
-    bytes: value12.size,
-    warnings: value10,
+    filename: standaloneExportFilename(exportInput.title, overviewTitle, overviewFilename),
+    blob: blob,
+    bytes: blob.size,
+    warnings: warningsWithFonts,
   };
 }
 export {
@@ -350,9 +350,9 @@ export function installExportHtmlProducer(): () => void {
     exportBlobPathPattern = /(?:^|\/)(_blob\/[0-9a-f]{32})$/;
     ExportHtmlError = class extends Error {
       declare name: Dynamic;
-      constructor(input: Dynamic, options: Dynamic) {
-        super(options);
-        this.code = input;
+      constructor(message: Dynamic, cause: Dynamic) {
+        super(cause);
+        this.code = message;
         this.name = "ExportHtmlError";
       }
       code: Dynamic;

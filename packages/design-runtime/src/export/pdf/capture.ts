@@ -4,422 +4,422 @@ import {
 } from "../../runtime-types";
 import { buildCaptureScript } from "../capture-script";
 import { ExportCaptureViewportLabel, lockCaptureViewport } from "../capture-viewport";
-import { collectCaptureWarnings, countMatchingExportWarnings, ExportCaptureWarningsItems, ExportCaptureWarningsItems_2 } from "../capture-warnings";
+import { collectCaptureWarnings, countMatchingExportWarnings, ExportCaptureWarningsItems, ExportCaptureWarningsItems_2 as ExportCaptureWarningsItemsForCapture } from "../capture-warnings";
 import { ExportDeliveryCapMsFinishAnimationsConfig, ExportDeliveryCapMsFinishAnimationsEagerImagesConfig } from "../delivery";
 import { isLanguageTag } from "./language";
 import { normalizePdfLink } from "./link-annotations";
-import { PdfTextOperatorsLimit_2 } from "./text-operators";
+import { PdfTextOperatorsLimit_2 as pdfTextOperatorsLimit } from "./text-operators";
 import { normalizeExportWarnings } from "../warnings";
 
 var PdfCaptureLimit: Dynamic;
 var PdfCaptureConstant: Dynamic;
-var PdfCaptureConstant_2: Dynamic;
+var targetRasterWidth: Dynamic;
 var getPdfRasterScale: Dynamic;
-var PdfCaptureConstant_3: Dynamic;
-var PdfCaptureConstant_4: Dynamic;
-var PdfCaptureLimit_2: Dynamic;
-var PdfCaptureLimit_3: Dynamic;
-var PdfCaptureLimit_4: Dynamic;
-var PdfCaptureLimit_5: Dynamic;
-var PdfCaptureLimit_6: Dynamic;
-var PdfCaptureConstant_5: Dynamic;
-var PdfCaptureLimit_7: Dynamic;
+var flowPageMarginRatio: Dynamic;
+var flowCaptureBatchPages: Dynamic;
+var maxFlowPages: Dynamic;
+var maxTextRuns: Dynamic;
+var maxCapturedItemsPerPage: Dynamic;
+var maxPageImageUriChars: Dynamic;
+var maxTotalImageUriChars: Dynamic;
+var maxTextRunChars: Dynamic;
+var maxCapturedTextChars: Dynamic;
 var PdfCapturePH1H2Set: Dynamic;
 var PdfCaptureHas: Dynamic;
-var PdfCaptureConstant_6: Dynamic;
+var maxFigureAltChars: Dynamic;
 function parseCapturedTextRuns(
   items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  maxTextWidth?: Dynamic,
+  maxTextHeight?: Dynamic,
 ): Dynamic {
   if (!Array.isArray(items))
     return {
       runs: [],
       capped: false,
     };
-  let items2: Dynamic = [],
+  let textRuns: Dynamic = [],
     index: Dynamic = 0,
-    value: Dynamic = Math.min(items.length, 4 * PdfCaptureLimit_3);
-  for (let index2: Dynamic = 0; index2 < value; index2++) {
-    let value2: Dynamic = items[index2];
-    if (typeof value2 != "object" || value2 === null) continue;
+    value: Dynamic = Math.min(items.length, 4 * maxTextRuns);
+  for (let runIndex: Dynamic = 0; runIndex < value; runIndex++) {
+    let runInput: Dynamic = items[runIndex];
+    if (typeof runInput != "object" || runInput === null) continue;
     let {
-      t: value3,
-      x: value4,
-      y: value5,
-      s: value6,
-      w: value7,
-      b: value8,
-      i: value9,
-      sp: value10,
-      a: value11,
-    }: Dynamic = value2;
+      t: text,
+      x: x,
+      y: y,
+      s: fontSize,
+      w: width,
+      b: baseline,
+      i: fontIndex,
+      sp: smallCaps,
+      a: colorIndex,
+    }: Dynamic = runInput;
     if (
-      typeof value3 != "string" ||
-      typeof value4 != "number" ||
-      typeof value5 != "number" ||
-      typeof value6 != "number" ||
-      typeof value7 != "number" ||
-      !Number.isFinite(value4) ||
-      !Number.isFinite(value5) ||
-      !Number.isFinite(value6) ||
-      !Number.isFinite(value7) ||
-      value6 <= 0 ||
-      value6 > context ||
-      value7 < 0 ||
-      value7 > 3 * options ||
-      value4 > options ||
-      value4 + value7 < 0 ||
-      value5 < 0 ||
-      value5 > context
+      typeof text != "string" ||
+      typeof x != "number" ||
+      typeof y != "number" ||
+      typeof fontSize != "number" ||
+      typeof width != "number" ||
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      !Number.isFinite(fontSize) ||
+      !Number.isFinite(width) ||
+      fontSize <= 0 ||
+      fontSize > maxTextHeight ||
+      width < 0 ||
+      width > 3 * maxTextWidth ||
+      x > maxTextWidth ||
+      x + width < 0 ||
+      y < 0 ||
+      y > maxTextHeight
     )
       continue;
-    let value12: Dynamic =
-        value3.charCodeAt(PdfCaptureConstant_5) >= 56320 &&
-        value3.charCodeAt(PdfCaptureConstant_5) <= 57343
-          ? PdfCaptureConstant_5 - 1
-          : PdfCaptureConstant_5,
-      value13: Dynamic = value3.slice(0, value12);
+    let textStart: Dynamic =
+        text.charCodeAt(maxTextRunChars) >= 56320 &&
+        text.charCodeAt(maxTextRunChars) <= 57343
+          ? maxTextRunChars - 1
+          : maxTextRunChars,
+      textChunk: Dynamic = text.slice(0, textStart);
     if (
-      items2.length >= PdfCaptureLimit_3 ||
-      index + value13.length > PdfCaptureLimit_7
+      textRuns.length >= maxTextRuns ||
+      index + textChunk.length > maxCapturedTextChars
     )
       return {
-        runs: items2,
+        runs: textRuns,
         capped: true,
       };
-    index += value13.length;
+    index += textChunk.length;
     let state: Dynamic = {
-      t: value13,
-      x: value4,
-      y: value5,
-      s: value6,
-      w: value7,
+      t: textChunk,
+      x: x,
+      y: y,
+      s: fontSize,
+      w: width,
     };
-    typeof value8 == "number" &&
-      Number.isInteger(value8) &&
-      value8 >= 0 &&
-      value8 < PdfCaptureLimit_3 &&
-      ((state.b = value8),
-      typeof value9 == "number" &&
-        Number.isInteger(value9) &&
-        value9 >= 0 &&
-        value9 < PdfTextOperatorsLimit_2 &&
-        (state.i = value9),
-      typeof value10 == "boolean" && (state.sp = value10));
-    typeof value11 == "number" &&
-      Number.isInteger(value11) &&
-      value11 >= 0 &&
-      value11 < PdfCaptureLimit_4 &&
-      (state.a = value11);
-    items2.push(state);
+    typeof baseline == "number" &&
+      Number.isInteger(baseline) &&
+      baseline >= 0 &&
+      baseline < maxTextRuns &&
+      ((state.b = baseline),
+      typeof fontIndex == "number" &&
+        Number.isInteger(fontIndex) &&
+        fontIndex >= 0 &&
+        fontIndex < pdfTextOperatorsLimit &&
+        (state.i = fontIndex),
+      typeof smallCaps == "boolean" && (state.sp = smallCaps));
+    typeof colorIndex == "number" &&
+      Number.isInteger(colorIndex) &&
+      colorIndex >= 0 &&
+      colorIndex < maxCapturedItemsPerPage &&
+      (state.a = colorIndex);
+    textRuns.push(state);
   }
   return {
-    runs: items2,
+    runs: textRuns,
     capped: false,
   };
 }
 function parseCapturedFigure(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  figureInput?: Dynamic,
+  maxFigureWidth?: Dynamic,
+  maxFigureHeight?: Dynamic,
 ): Dynamic {
-  if (typeof input != "object" || input === null) return;
+  if (typeof figureInput != "object" || figureInput === null) return;
   let {
     r: value,
-    a: value2,
-    l: value3,
-    x: value4,
-    y: value5,
-    w: value6,
-    h: value7,
-  }: Dynamic = input;
+    a: figureAltText,
+    l: figureLabelIndex,
+    x: figureX,
+    y: figureY,
+    w: figureWidth,
+    h: figureHeight,
+  }: Dynamic = figureInput;
   if (
     value !== "Figure" ||
-    typeof value4 != "number" ||
-    typeof value5 != "number" ||
-    typeof value6 != "number" ||
-    typeof value7 != "number" ||
-    ![value4, value5, value6, value7].every(Number.isFinite) ||
-    !(value6 > 0) ||
-    !(value7 > 0)
+    typeof figureX != "number" ||
+    typeof figureY != "number" ||
+    typeof figureWidth != "number" ||
+    typeof figureHeight != "number" ||
+    ![figureX, figureY, figureWidth, figureHeight].every(Number.isFinite) ||
+    !(figureWidth > 0) ||
+    !(figureHeight > 0)
   )
     return;
-  let value8: Dynamic = Math.max(0, value4),
-    value9: Dynamic = Math.max(0, value5),
-    value10: Dynamic = Math.min(options, value4 + value6),
-    value11: Dynamic = Math.min(context, value5 + value7);
-  if (!(value10 - value8 > 0) || !(value11 - value9 > 0)) return;
+  let clippedX: Dynamic = Math.max(0, figureX),
+    clippedY: Dynamic = Math.max(0, figureY),
+    clippedRight: Dynamic = Math.min(maxFigureWidth, figureX + figureWidth),
+    clippedBottom: Dynamic = Math.min(maxFigureHeight, figureY + figureHeight);
+  if (!(clippedRight - clippedX > 0) || !(clippedBottom - clippedY > 0)) return;
   let state: Dynamic = {
-    ...(typeof value3 == "number" &&
-    Number.isInteger(value3) &&
-    value3 >= 0 &&
-    value3 < PdfCaptureLimit_4
+    ...(typeof figureLabelIndex == "number" &&
+    Number.isInteger(figureLabelIndex) &&
+    figureLabelIndex >= 0 &&
+    figureLabelIndex < maxCapturedItemsPerPage
       ? {
-          l: value3,
+          l: figureLabelIndex,
         }
       : {}),
-    x: value8,
-    y: value9,
-    w: value10 - value8,
-    h: value11 - value9,
+    x: clippedX,
+    y: clippedY,
+    w: clippedRight - clippedX,
+    h: clippedBottom - clippedY,
   };
-  if (typeof value2 != "string")
+  if (typeof figureAltText != "string")
     return {
       r: "Figure",
       ...state,
     };
-  let value12: Dynamic =
-    value2.charCodeAt(PdfCaptureConstant_6 - 1) >= 55296 &&
-    value2.charCodeAt(PdfCaptureConstant_6 - 1) <= 56319
-      ? PdfCaptureConstant_6 - 1
-      : PdfCaptureConstant_6;
+  let altTextStart: Dynamic =
+    figureAltText.charCodeAt(maxFigureAltChars - 1) >= 55296 &&
+    figureAltText.charCodeAt(maxFigureAltChars - 1) <= 56319
+      ? maxFigureAltChars - 1
+      : maxFigureAltChars;
   return {
     r: "Figure",
-    a: value2.slice(0, value12),
+    a: figureAltText.slice(0, altTextStart),
     ...state,
   };
 }
 function parseCapturedBlocks(
   items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  maxBlockWidth?: Dynamic,
+  maxBlockHeight?: Dynamic,
 ): Dynamic {
   if (!Array.isArray(items)) return [];
-  let items2: Dynamic = [],
-    value: Dynamic = Math.min(items.length, PdfCaptureLimit_3);
+  let blocks: Dynamic = [],
+    value: Dynamic = Math.min(items.length, maxTextRuns);
   for (let index: Dynamic = 0; index < value; index++) {
-    let value2: Dynamic = items[index];
-    items2.push(
-      PdfCaptureHas(value2)
-        ? value2
-        : parseCapturedFigure(value2, options, context),
+    let blockInput: Dynamic = items[index];
+    blocks.push(
+      PdfCaptureHas(blockInput)
+        ? blockInput
+        : parseCapturedFigure(blockInput, maxBlockWidth, maxBlockHeight),
     );
   }
-  return items2;
+  return blocks;
 }
 function remapCapturedTextBlocks(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  capturedBlocks?: Dynamic,
+  fontRoles?: Dynamic,
+  lineBounds?: Dynamic,
 ): Dynamic {
   let values: Dynamic = new Set();
-  for (let value of input as Dynamic) {
-    let value2: Dynamic =
-      value.b === undefined ? undefined : options[value.b];
-    typeof value2 == "string" &&
-      !(value2 === "L" && value.i === undefined) &&
+  for (let value of capturedBlocks as Dynamic) {
+    let blockText: Dynamic =
+      value.b === undefined ? undefined : fontRoles[value.b];
+    typeof blockText == "string" &&
+      !(blockText === "L" && value.i === undefined) &&
       values.add(value.b);
   }
   let items: Dynamic = [],
     entries: Dynamic = new Map();
-  options.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
+  fontRoles.forEach((roleName?: Dynamic, roleIndex?: Dynamic): Dynamic => {
     if (
       !(
-        items.length >= PdfTextOperatorsLimit_2 ||
-        input2 === undefined
+        items.length >= pdfTextOperatorsLimit ||
+        roleName === undefined
       )
     ) {
-      if (typeof input2 == "string") {
-        if (!values.has(options2)) return;
-        entries.set(options2, items.length);
+      if (typeof roleName == "string") {
+        if (!values.has(roleIndex)) return;
+        entries.set(roleIndex, items.length);
         items.push({
-          role: input2,
+          role: roleName,
         });
       } else if (
-        context === undefined ||
-        (input2.y >= context.y0 && input2.y < context.y1)
+        lineBounds === undefined ||
+        (roleName.y >= lineBounds.y0 && roleName.y < lineBounds.y1)
       ) {
         let value: Dynamic =
-            context === undefined
-              ? input2.y
-              : Math.max(input2.y, context.base ?? context.y0),
-          value2: Dynamic =
-            context === undefined
+            lineBounds === undefined
+              ? roleName.y
+              : Math.max(roleName.y, lineBounds.base ?? lineBounds.y0),
+          blockY: Dynamic =
+            lineBounds === undefined
               ? value
-              : value - (context.base ?? context.y0) + context.off,
-          value3: Dynamic =
-            context === undefined
-              ? input2.h
-              : Math.min(input2.y + input2.h, context.y1) - value;
-        if (!(value3 > 0)) return;
+              : value - (lineBounds.base ?? lineBounds.y0) + lineBounds.off,
+          blockHeight: Dynamic =
+            lineBounds === undefined
+              ? roleName.h
+              : Math.min(roleName.y + roleName.h, lineBounds.y1) - value;
+        if (!(blockHeight > 0)) return;
         let state: Dynamic = {
           role: "Figure",
-          ...(input2.a !== undefined
+          ...(roleName.a !== undefined
             ? {
-                alt: input2.a,
+                alt: roleName.a,
               }
             : {}),
-          ...(input2.l !== undefined
+          ...(roleName.l !== undefined
             ? {
-                link: input2.l,
+                link: roleName.l,
               }
             : {}),
-          x: input2.x,
-          y: value2,
-          w: input2.w,
-          h: value3,
+          x: roleName.x,
+          y: blockY,
+          w: roleName.w,
+          h: blockHeight,
         };
         items.push(state);
       }
     }
   });
   return {
-    textRuns: input.map((input2?: Dynamic): Dynamic => {
-      let { b: value, i: value2, sp: value3, ...value4 }: Dynamic = input2,
-        value5: Dynamic =
+    textRuns: capturedBlocks.map((runInput?: Dynamic): Dynamic => {
+      let { b: value, i: fontIndex, sp: smallCaps, ...runProperties }: Dynamic = runInput,
+        baseline: Dynamic =
           value === undefined ? undefined : entries.get(value),
-        value6: Dynamic = value !== undefined && options[value] === "L";
-      if (value5 === undefined || (value6 && value2 === undefined))
-        return value4;
-      let value7: Dynamic = value6
+        isLargeCaps: Dynamic = value !== undefined && fontRoles[value] === "L";
+      if (baseline === undefined || (isLargeCaps && fontIndex === undefined))
+        return runProperties;
+      let normalizedRun: Dynamic = isLargeCaps
         ? {
-            ...value4,
-            b: value5,
-            i: value2,
+            ...runProperties,
+            b: baseline,
+            i: fontIndex,
           }
         : {
-            ...value4,
-            b: value5,
+            ...runProperties,
+            b: baseline,
           };
-      value3 !== undefined && (value7.sp = value3);
-      return value7;
+      smallCaps !== undefined && (normalizedRun.sp = smallCaps);
+      return normalizedRun;
     }),
     blocks: items,
   };
 }
-function normalizeCaptureLanguage(input?: Dynamic): Dynamic {
-  return isLanguageTag(input) ? input : undefined;
+function normalizeCaptureLanguage(languageInput?: Dynamic): Dynamic {
+  return isLanguageTag(languageInput) ? languageInput : undefined;
 }
 function parseCapturedLinks(
   items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  maxLinkWidth?: Dynamic,
+  maxLinkHeight?: Dynamic,
 ): Dynamic {
   if (!Array.isArray(items)) return [];
-  let items2: Dynamic = [],
-    value: Dynamic = Math.min(items.length, 4 * PdfCaptureLimit_4);
+  let links: Dynamic = [],
+    value: Dynamic = Math.min(items.length, 4 * maxCapturedItemsPerPage);
   for (
     let index: Dynamic = 0;
-    index < value && items2.length < PdfCaptureLimit_4;
+    index < value && links.length < maxCapturedItemsPerPage;
     index++
   ) {
-    let value2: Dynamic = items[index];
-    if (typeof value2 != "object" || value2 === null) continue;
+    let linkInput: Dynamic = items[index];
+    if (typeof linkInput != "object" || linkInput === null) continue;
     let {
-        u: value3,
-        x: value4,
-        y: value5,
-        w: value6,
-        h: value7,
-        a: value8,
-      }: Dynamic = value2,
-      value9: Dynamic = normalizePdfLink(value3);
+        u: linkUrl,
+        x: linkX,
+        y: linkY,
+        w: linkWidth,
+        h: linkHeight,
+        a: linkIndex,
+      }: Dynamic = linkInput,
+      normalizedLink: Dynamic = normalizePdfLink(linkUrl);
     if (
-      value9 === undefined ||
-      typeof value4 != "number" ||
-      typeof value5 != "number" ||
-      typeof value6 != "number" ||
-      typeof value7 != "number"
+      normalizedLink === undefined ||
+      typeof linkX != "number" ||
+      typeof linkY != "number" ||
+      typeof linkWidth != "number" ||
+      typeof linkHeight != "number"
     )
       continue;
-    let value10: Dynamic = Math.max(0, value4),
-      value11: Dynamic = Math.max(0, value5),
-      value12: Dynamic = Math.min(options, value4 + value6),
-      value13: Dynamic = Math.min(context, value5 + value7);
-    if (!(value12 - value10 >= 1 && value13 - value11 >= 1)) continue;
+    let clippedX: Dynamic = Math.max(0, linkX),
+      clippedY: Dynamic = Math.max(0, linkY),
+      clippedRight: Dynamic = Math.min(maxLinkWidth, linkX + linkWidth),
+      clippedBottom: Dynamic = Math.min(maxLinkHeight, linkY + linkHeight);
+    if (!(clippedRight - clippedX >= 1 && clippedBottom - clippedY >= 1)) continue;
     let state: Dynamic = {
-      u: value9,
-      x: value10,
-      y: value11,
-      w: value12 - value10,
-      h: value13 - value11,
+      u: normalizedLink,
+      x: clippedX,
+      y: clippedY,
+      w: clippedRight - clippedX,
+      h: clippedBottom - clippedY,
     };
-    typeof value8 == "number" &&
-      Number.isInteger(value8) &&
-      value8 >= 0 &&
-      value8 < PdfCaptureLimit_4 &&
-      (state.a = value8);
-    items2.push(state);
+    typeof linkIndex == "number" &&
+      Number.isInteger(linkIndex) &&
+      linkIndex >= 0 &&
+      linkIndex < maxCapturedItemsPerPage &&
+      (state.a = linkIndex);
+    links.push(state);
   }
-  return items2;
+  return links;
 }
 function clipCapturedLinks(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  capturedLinks?: Dynamic,
+  clipTop?: Dynamic,
+  clipBottom?: Dynamic,
+  offsetTop?: Dynamic,
 ): Dynamic {
-  return input.flatMap((input2?: Dynamic): Dynamic => {
-    let value2: Dynamic = Math.max(input2.y, options),
-      value3: Dynamic = Math.min(input2.y + input2.h, context);
-    return value3 - value2 >= 1
+  return capturedLinks.flatMap((link?: Dynamic): Dynamic => {
+    let linkTop: Dynamic = Math.max(link.y, clipTop),
+      linkBottom: Dynamic = Math.min(link.y + link.h, clipBottom);
+    return linkBottom - linkTop >= 1
       ? [
           {
-            ...input2,
-            y: value2 - options + value,
-            h: value3 - value2,
+            ...link,
+            y: linkTop - clipTop + offsetTop,
+            h: linkBottom - linkTop,
           },
         ]
       : [];
   });
 }
 async function captureArtboardPdfPages(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = {
+  browserPage?: Dynamic,
+  artboard?: Dynamic,
+  captureContext: Dynamic = {
     flow: false,
   },
-  value: Dynamic = false,
+  waitForSettle: Dynamic = false,
 ): Promise<Dynamic> {
-  let value2: Dynamic = value
-      ? context?.flow
+  let settleConfiguration: Dynamic = waitForSettle
+      ? captureContext?.flow
         ? ExportDeliveryCapMsFinishAnimationsConfig
         : ExportDeliveryCapMsFinishAnimationsEagerImagesConfig
       : null,
-    value3: Dynamic = await lockCaptureViewport(
-      input,
-      options,
-      value2,
+    viewportLock: Dynamic = await lockCaptureViewport(
+      browserPage,
+      artboard,
+      settleConfiguration,
     ),
-    release: Dynamic = value3.release,
-    settleMs: Dynamic = value3.settleMs;
+    release: Dynamic = viewportLock.release,
+    settleMs: Dynamic = viewportLock.settleMs;
   try {
     let flag: Dynamic = false;
-    context?.flow &&
-      context.ifScrolls &&
-      (await input
+    captureContext?.flow &&
+      captureContext.ifScrolls &&
+      (await browserPage
         .executeJavaScript(
           "Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0)>" +
-            String(Number(options.h) + 4),
+            String(Number(artboard.h) + 4),
           2e3,
         )
         .catch((): Dynamic => null)) !== true &&
-      ((context = {
+      ((captureContext = {
         flow: false,
       }),
       (flag = true));
-    let value4: Dynamic = context?.flow ? PdfCaptureLimit_2 : 1,
-      value5: Dynamic =
-        context?.flow && context.pageH
+    let pageCountLimit: Dynamic = captureContext?.flow ? maxFlowPages : 1,
+      captureSize: Dynamic =
+        captureContext?.flow && captureContext.pageH
           ? {
-              w: options.w,
-              h: context.pageH,
+              w: artboard.w,
+              h: captureContext.pageH,
             }
-          : options,
-      value6: Dynamic = context?.flow
-        ? Math.round(value5.h * PdfCaptureConstant_3)
+          : artboard,
+      pageMargin: Dynamic = captureContext?.flow
+        ? Math.round(captureSize.h * flowPageMarginRatio)
         : 0,
       callback: Dynamic = async (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        context2?: Dynamic,
+        captureInput?: Dynamic,
+        pageOffset?: Dynamic,
+        pageTops?: Dynamic,
       ): Promise<Dynamic> => {
-        let value24: Dynamic = buildCaptureScript(
+        let captureScript: Dynamic = buildCaptureScript(
             "image/jpeg",
             PdfCaptureConstant,
             0,
-            input2,
+            captureInput,
             false,
             false,
             0,
@@ -432,372 +432,372 @@ async function captureArtboardPdfPages(
             "",
             false,
             true,
-            value5,
-            context && {
-              h: value5.h,
-              max: value4,
-              margin: value6,
-              from: options2,
-              count: PdfCaptureConstant_4,
-              tops: context2,
+            captureSize,
+            captureContext && {
+              h: captureSize.h,
+              max: pageCountLimit,
+              margin: pageMargin,
+              from: pageOffset,
+              count: flowCaptureBatchPages,
+              tops: pageTops,
             },
           ),
-          value25: Dynamic;
+          captureResult: Dynamic;
         try {
-          let value26: Dynamic =
-            15e3 + (context?.flow ? 4e3 * PdfCaptureConstant_4 : 0);
-          value25 = await input.executeJavaScript(value24, value26);
-        } catch (value26: Dynamic) {
+          let timeoutMs: Dynamic =
+            15e3 + (captureContext?.flow ? 4e3 * flowCaptureBatchPages : 0);
+          captureResult = await browserPage.executeJavaScript(captureScript, timeoutMs);
+        } catch (captureError: Dynamic) {
           throw (
-            console.error("[pdf-export] capture failed:", value26),
+            console.error("[pdf-export] capture failed:", captureError),
             new Error("its page hit an error while it was being drawn")
           );
         }
-        return typeof value25 == "object" && value25 !== null
-          ? value25
+        return typeof captureResult == "object" && captureResult !== null
+          ? captureResult
           : null;
       },
-      callback2: Dynamic = (items?: Dynamic): Dynamic =>
+      isJpegDataUri: Dynamic = (items?: Dynamic): Dynamic =>
         typeof items == "string" &&
-        items.length <= PdfCaptureLimit_5 &&
+        items.length <= maxPageImageUriChars &&
         items.startsWith("data:image/jpeg;base64,"),
-      callback3: Dynamic = (items?: Dynamic): Dynamic => {
+      validatePageTops: Dynamic = (items?: Dynamic): Dynamic => {
         if (
           !Array.isArray(items) ||
           items.length < 1 ||
-          items.length > value4 ||
+          items.length > pageCountLimit ||
           items[0] !== 0
         )
           return null;
         for (let count: Dynamic = 1; count < items.length; count++) {
-          let value24: Dynamic = items[count];
+          let pageTop: Dynamic = items[count];
           if (
-            typeof value24 != "number" ||
-            !Number.isFinite(value24) ||
-            !(value24 > items[count - 1])
+            typeof pageTop != "number" ||
+            !Number.isFinite(pageTop) ||
+            !(pageTop > items[count - 1])
           )
             return null;
         }
         return items;
       },
-      callback4: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
-        let value24: Dynamic = await callback(input2, 0);
-        if (!context || !value24 || "e" in value24)
+      capturePages: Dynamic = async (captureScale?: Dynamic): Promise<Dynamic> => {
+        let firstCapture: Dynamic = await callback(captureScale, 0);
+        if (!captureContext || !firstCapture || "e" in firstCapture)
           return {
-            res: value24,
-            uris: value24 && "u" in value24 ? [value24.u] : [],
+            res: firstCapture,
+            uris: firstCapture && "u" in firstCapture ? [firstCapture.u] : [],
           };
-        let value25: Dynamic = callback3(value24.pt),
-          value26: Dynamic = callback3(value24.pc);
+        let pageTops: Dynamic = validatePageTops(firstCapture.pt),
+          pageCounts: Dynamic = validatePageTops(firstCapture.pc);
         if (
-          value25 === null ||
-          value26 === null ||
-          value26.length !== value25.length ||
-          !Array.isArray(value24.pg)
+          pageTops === null ||
+          pageCounts === null ||
+          pageCounts.length !== pageTops.length ||
+          !Array.isArray(firstCapture.pg)
         )
           throw new Error(
             "its preview returned no usable pages; reload it and try again",
           );
-        let value27: Dynamic = value24.pg.slice(0, value25.length),
+        let pageUris: Dynamic = firstCapture.pg.slice(0, pageTops.length),
           count: Dynamic = 1,
-          callback6: Dynamic = (): Dynamic =>
-            value27.reduce(
-              (input3?: Dynamic, items?: Dynamic): Dynamic =>
-                input3 + (typeof items == "string" ? items.length : 0),
+          withinPayloadLimit: Dynamic = (): Dynamic =>
+            pageUris.reduce(
+              (part?: Dynamic, items?: Dynamic): Dynamic =>
+                part + (typeof items == "string" ? items.length : 0),
               0,
-            ) <= PdfCaptureLimit_6;
-        if (!callback6())
+            ) <= maxTotalImageUriChars;
+        if (!withinPayloadLimit())
           throw new Error("the pages are too large to export");
         for (
           ;
-          value27.length < value25.length && value27.every(callback2);
+          pageUris.length < pageTops.length && pageUris.every(isJpegDataUri);
 
         ) {
-          if (++count > Math.ceil(value4 / PdfCaptureConstant_4) + 1)
+          if (++count > Math.ceil(pageCountLimit / flowCaptureBatchPages) + 1)
             throw new Error(ExportCaptureViewportLabel);
-          let value28: Dynamic = await callback(
-              input2,
-              value27.length,
-              value26,
+          let nextCapture: Dynamic = await callback(
+              captureScale,
+              pageUris.length,
+              pageCounts,
             ),
-            value29: Dynamic =
-              value28 && !("e" in value28) && Array.isArray(value28.pg)
-                ? value28.pg.slice(0, value25.length - value27.length)
+            nextPageUris: Dynamic =
+              nextCapture && !("e" in nextCapture) && Array.isArray(nextCapture.pg)
+                ? nextCapture.pg.slice(0, pageTops.length - pageUris.length)
                 : [];
           if (
-            value29.length === 0 ||
-            !value28 ||
-            "e" in value28 ||
-            typeof value28.lh != "number" ||
-            typeof value24.lh != "number" ||
-            !(Math.abs(value28.lh - value24.lh) <= 4)
+            nextPageUris.length === 0 ||
+            !nextCapture ||
+            "e" in nextCapture ||
+            typeof nextCapture.lh != "number" ||
+            typeof firstCapture.lh != "number" ||
+            !(Math.abs(nextCapture.lh - firstCapture.lh) <= 4)
           )
             throw new Error(ExportCaptureViewportLabel);
-          if (!value29.every(callback2))
+          if (!nextPageUris.every(isJpegDataUri))
             throw new Error(
               "a page image came back empty; it may be too large to export",
             );
-          value27.push(...value29);
-          if (!callback6())
+          pageUris.push(...nextPageUris);
+          if (!withinPayloadLimit())
             throw new Error("the pages are too large to export");
         }
         return {
-          res: value24,
-          uris: value27,
+          res: firstCapture,
+          uris: pageUris,
         };
       };
-    context?.flow &&
-      (await input
+    captureContext?.flow &&
+      (await browserPage
         .executeJavaScript(
           "window.__omCaptureCache={};window.__omCaptureFontCss=null;null",
           5e3,
         )
         .catch((): Dynamic => {}));
-    let flag2: Dynamic = false,
-      callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-        callback4(input2).catch(
-          async (input3?: Dynamic): Promise<Dynamic> => {
+    let retryUsed: Dynamic = false,
+      captureWithRetry: Dynamic = (retryScale?: Dynamic): Dynamic =>
+        capturePages(retryScale).catch(
+          async (retryError?: Dynamic): Promise<Dynamic> => {
             if (
-              value2 === null ||
-              flag2 ||
-              !(input3 instanceof Error) ||
-              input3.message !== ExportCaptureViewportLabel
+              settleConfiguration === null ||
+              retryUsed ||
+              !(retryError instanceof Error) ||
+              retryError.message !== ExportCaptureViewportLabel
             )
-              throw input3;
-            flag2 = true;
-            let value24: Dynamic = Date.now();
-            await input.awaitSettled(value2);
-            settleMs += Date.now() - value24;
-            await input
+              throw retryError;
+            retryUsed = true;
+            let retryStartedAt: Dynamic = Date.now();
+            await browserPage.awaitSettled(settleConfiguration);
+            settleMs += Date.now() - retryStartedAt;
+            await browserPage
               .executeJavaScript("window.__omCaptureFontCss=null;null", 5e3)
               .catch((): Dynamic => {});
-            return callback4(input2);
+            return capturePages(retryScale);
           },
         ),
-      value7: Dynamic = context?.maxScale ?? PdfCaptureLimit,
-      flag3: Dynamic = false,
-      { res: value8, uris: value9 }: Dynamic = await callback5(value7),
-      value10: Dynamic = collectCaptureWarnings(
+      scale: Dynamic = captureContext?.maxScale ?? PdfCaptureLimit,
+      scaledDown: Dynamic = false,
+      { res: captureResponse, uris: responsePageUris }: Dynamic = await captureWithRetry(scale),
+      captureWarnings: Dynamic = collectCaptureWarnings(
         [],
-        value8,
-        ExportCaptureWarningsItems_2,
+        captureResponse,
+        ExportCaptureWarningsItemsForCapture,
       );
-    for (let value24 of [2, 1].filter(
-      (input2?: Dynamic): Dynamic => input2 < value7,
+    for (let fallbackScale of [2, 1].filter(
+      (candidateScale?: Dynamic): Dynamic => candidateScale < scale,
     ) as Dynamic) {
       if (
-        !value8 ||
-        "e" in value8 ||
-        (value9.length > 0 && value9.every(callback2))
+        !captureResponse ||
+        "e" in captureResponse ||
+        (responsePageUris.length > 0 && responsePageUris.every(isJpegDataUri))
       )
         break;
-      value7 = value24;
-      flag3 = true;
-      ({ res: value8, uris: value9 } = await callback5(value24));
-      value10 = collectCaptureWarnings(
-        value10,
-        value8,
-        ExportCaptureWarningsItems_2,
+      scale = fallbackScale;
+      scaledDown = true;
+      ({ res: captureResponse, uris: responsePageUris } = await captureWithRetry(fallbackScale));
+      captureWarnings = collectCaptureWarnings(
+        captureWarnings,
+        captureResponse,
+        ExportCaptureWarningsItemsForCapture,
       );
     }
-    if (!value8)
+    if (!captureResponse)
       throw new Error(
         "its preview returned no image; reload it and try again",
       );
-    if ("e" in value8) {
-      if (value8.e !== "no-selection" && value8.e !== "zero-size")
+    if ("e" in captureResponse) {
+      if (captureResponse.e !== "no-selection" && captureResponse.e !== "zero-size")
         throw new Error(
           "its preview returned no image; reload it and try again",
         );
       return {
         ok: false,
-        softError: value8.e,
+        softError: captureResponse.e,
       };
     }
-    let value11: Dynamic = countMatchingExportWarnings(
-        value8.w,
+    let embedWarningCount: Dynamic = countMatchingExportWarnings(
+        captureResponse.w,
         ExportCaptureWarningsItems,
       ),
-      value12: Dynamic = normalizeExportWarnings(value8.hc),
-      length: Dynamic = value10.length,
+      hiddenContent: Dynamic = normalizeExportWarnings(captureResponse.hc),
+      length: Dynamic = captureWarnings.length,
       state: Dynamic = {
         ...(length
           ? {
               fontWarningCount: length,
             }
           : {}),
-        ...(flag3
+        ...(scaledDown
           ? {
               scaledDown: true,
             }
           : {}),
       },
-      value13: Dynamic = value9.filter(callback2);
-    if (value13.length === 0 || value13.length !== value9.length)
+      validPageUris: Dynamic = responsePageUris.filter(isJpegDataUri);
+    if (validPageUris.length === 0 || validPageUris.length !== responsePageUris.length)
       throw new Error(
         "a page image came back empty; it may be too large to export",
       );
-    let value14: Dynamic =
-        typeof value8.cw == "number" && Number.isInteger(value8.cw)
-          ? value8.cw
+    let canvasWidth: Dynamic =
+        typeof captureResponse.cw == "number" && Number.isInteger(captureResponse.cw)
+          ? captureResponse.cw
           : 0,
-      value15: Dynamic =
-        typeof value8.ch == "number" && Number.isInteger(value8.ch)
-          ? value8.ch
+      canvasHeight: Dynamic =
+        typeof captureResponse.ch == "number" && Number.isInteger(captureResponse.ch)
+          ? captureResponse.ch
           : 0;
-    if (value14 <= 0 || value15 <= 0 || value14 > 1e6 || value15 > 1e6)
+    if (canvasWidth <= 0 || canvasHeight <= 0 || canvasWidth > 1e6 || canvasHeight > 1e6)
       throw new Error("its preview returned an image with no usable size");
-    let value16: Dynamic =
-        Array.isArray(value8.w) &&
-        value8.w.some(
-          (input2?: Dynamic): Dynamic =>
-            input2 === "links could not be measured" ||
-            input2 === "some links were left out",
+    let linksPartial: Dynamic =
+        Array.isArray(captureResponse.w) &&
+        captureResponse.w.some(
+          (warning?: Dynamic): Dynamic =>
+            warning === "links could not be measured" ||
+            warning === "some links were left out",
         ),
-      value17: Dynamic =
-        value8.tt === true ||
-        (Array.isArray(value8.w) &&
-          value8.w.some(
-            (input2?: Dynamic): Dynamic =>
-              input2 === "text layer could not be measured",
+      textPartial: Dynamic =
+        captureResponse.tt === true ||
+        (Array.isArray(captureResponse.w) &&
+          captureResponse.w.some(
+            (warning?: Dynamic): Dynamic =>
+              warning === "text layer could not be measured",
           )),
-      value18: Dynamic = normalizeCaptureLanguage(value8.lg);
-    if (!context) {
-      let value24: Dynamic =
-          typeof value8.lh == "number" && value8.lh < 1e7 ? value8.lh : 0,
-        value25: Dynamic = parseCapturedTextRuns(value8.t, value14, value15);
+      language: Dynamic = normalizeCaptureLanguage(captureResponse.lg);
+    if (!captureContext) {
+      let lineHeight: Dynamic =
+          typeof captureResponse.lh == "number" && captureResponse.lh < 1e7 ? captureResponse.lh : 0,
+        singlePageText: Dynamic = parseCapturedTextRuns(captureResponse.t, canvasWidth, canvasHeight);
       return {
         ok: true,
         pages: [
           {
-            uri: value13[0],
+            uri: validPageUris[0],
             ...remapCapturedTextBlocks(
-              value25.runs,
-              parseCapturedBlocks(value8.tb, value14, value15),
+              singlePageText.runs,
+              parseCapturedBlocks(captureResponse.tb, canvasWidth, canvasHeight),
             ),
-            links: parseCapturedLinks(value8.l, value14, value15),
+            links: parseCapturedLinks(captureResponse.l, canvasWidth, canvasHeight),
           },
         ],
-        ...(value18 !== undefined
+        ...(language !== undefined
           ? {
-              lang: value18,
+              lang: language,
             }
           : {}),
-        cw: value14,
-        ch: value15,
-        cssW: value5.w,
-        cssH: Math.max(value5.h, value24 > 0 ? value24 : value15 / value7),
-        embedWarningCount: value11,
+        cw: canvasWidth,
+        ch: canvasHeight,
+        cssW: captureSize.w,
+        cssH: Math.max(captureSize.h, lineHeight > 0 ? lineHeight : canvasHeight / scale),
+        embedWarningCount: embedWarningCount,
         ...state,
-        textPartial: value25.capped || value17,
-        linksPartial: value16,
+        textPartial: singlePageText.capped || textPartial,
+        linksPartial: linksPartial,
         overflowed: false,
         boxed: false,
-        ...(Object.keys(value12).length > 0
+        ...(Object.keys(hiddenContent).length > 0
           ? {
-              hiddenContent: value12,
+              hiddenContent: hiddenContent,
             }
           : {}),
-        ...(value
+        ...(waitForSettle
           ? {
               settleMs: settleMs,
             }
           : {}),
       };
     }
-    let value19: Dynamic = callback3(value8.pt);
-    if (!(value19[value19.length - 1] < value4 * value15))
+    let allPageTops: Dynamic = validatePageTops(captureResponse.pt);
+    if (!(allPageTops[allPageTops.length - 1] < pageCountLimit * canvasHeight))
       throw new Error(
         "its preview returned no usable pages; reload it and try again",
       );
-    let value20: Dynamic =
-        typeof value8.po == "number" && value8.po >= 0 && value8.po < value15
-          ? value8.po
+    let basePageOffset: Dynamic =
+        typeof captureResponse.po == "number" && captureResponse.po >= 0 && captureResponse.po < canvasHeight
+          ? captureResponse.po
           : 0,
-      value21: Dynamic = parseCapturedTextRuns(
-        value8.t,
-        value14,
-        value19[value19.length - 1] + value15,
+      allTextRuns: Dynamic = parseCapturedTextRuns(
+        captureResponse.t,
+        canvasWidth,
+        allPageTops[allPageTops.length - 1] + canvasHeight,
       ),
-      value22: Dynamic = parseCapturedBlocks(
-        value8.tb,
-        value14,
-        value19[value19.length - 1] + value15,
+      allBlocks: Dynamic = parseCapturedBlocks(
+        captureResponse.tb,
+        canvasWidth,
+        allPageTops[allPageTops.length - 1] + canvasHeight,
       ),
-      value23: Dynamic = parseCapturedLinks(
-        value8.l,
-        value14,
-        value19[value19.length - 1] + value15,
+      allLinks: Dynamic = parseCapturedLinks(
+        captureResponse.l,
+        canvasWidth,
+        allPageTops[allPageTops.length - 1] + canvasHeight,
       );
     return {
       ok: true,
-      pages: value13.map((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value24: Dynamic = options2 > 0 ? value20 : 0;
+      pages: validPageUris.map((pageUri?: Dynamic, pageIndex?: Dynamic): Dynamic => {
+        let pageOffset: Dynamic = pageIndex > 0 ? basePageOffset : 0;
         return {
-          uri: input2,
+          uri: pageUri,
           links: clipCapturedLinks(
-            value23,
-            value19[options2],
+            allLinks,
+            allPageTops[pageIndex],
             Math.min(
-              options2 + 1 < value19.length ? value19[options2 + 1] : 1 / 0,
-              value19[options2] + value15 - value24,
+              pageIndex + 1 < allPageTops.length ? allPageTops[pageIndex + 1] : 1 / 0,
+              allPageTops[pageIndex] + canvasHeight - pageOffset,
             ),
-            value24,
+            pageOffset,
           ),
           ...remapCapturedTextBlocks(
-            value21.runs
+            allTextRuns.runs
               .filter(
-                (input3?: Dynamic): Dynamic =>
-                  input3.y >= value19[options2] &&
-                  (options2 + 1 === value19.length ||
-                    input3.y < value19[options2 + 1]) &&
-                  input3.y - value19[options2] + value24 <= value15,
+                (textRun?: Dynamic): Dynamic =>
+                  textRun.y >= allPageTops[pageIndex] &&
+                  (pageIndex + 1 === allPageTops.length ||
+                    textRun.y < allPageTops[pageIndex + 1]) &&
+                  textRun.y - allPageTops[pageIndex] + pageOffset <= canvasHeight,
               )
               .map(
-                (input3?: Dynamic): Dynamic => ({
-                  ...input3,
-                  y: input3.y - value19[options2] + value24,
+                (textRun?: Dynamic): Dynamic => ({
+                  ...textRun,
+                  y: textRun.y - allPageTops[pageIndex] + pageOffset,
                 }),
               ),
-            value22,
+            allBlocks,
             {
-              y0: options2 > 0 ? value19[options2] : -1 / 0,
+              y0: pageIndex > 0 ? allPageTops[pageIndex] : -1 / 0,
               y1: Math.min(
-                options2 + 1 < value19.length ? value19[options2 + 1] : 1 / 0,
-                value19[options2] + value15 - value24,
+                pageIndex + 1 < allPageTops.length ? allPageTops[pageIndex + 1] : 1 / 0,
+                allPageTops[pageIndex] + canvasHeight - pageOffset,
               ),
-              off: value24,
-              base: value19[options2],
+              off: pageOffset,
+              base: allPageTops[pageIndex],
             },
           ),
         };
       }),
-      ...(value18 !== undefined
+      ...(language !== undefined
         ? {
-            lang: value18,
+            lang: language,
           }
         : {}),
-      cw: value14,
-      ch: value15,
-      cssW: value5.w,
-      cssH: value5.h,
-      embedWarningCount: value11,
+      cw: canvasWidth,
+      ch: canvasHeight,
+      cssW: captureSize.w,
+      cssH: captureSize.h,
+      embedWarningCount: embedWarningCount,
       ...state,
-      textPartial: value21.capped || value17,
-      linksPartial: value16,
-      overflowed: value8.pm === 1,
-      boxed: value8.pm === 2,
+      textPartial: allTextRuns.capped || textPartial,
+      linksPartial: linksPartial,
+      overflowed: captureResponse.pm === 1,
+      boxed: captureResponse.pm === 2,
       ...(flag
         ? {
             atFrame: true,
           }
         : {}),
-      ...(Object.keys(value12).length > 0
+      ...(Object.keys(hiddenContent).length > 0
         ? {
-            hiddenContent: value12,
+            hiddenContent: hiddenContent,
           }
         : {}),
-      ...(value
+      ...(waitForSettle
         ? {
             settleMs: settleMs,
           }
@@ -805,7 +805,7 @@ async function captureArtboardPdfPages(
     };
   } finally {
     release();
-    await input
+    await browserPage
       .executeJavaScript(
         "window.__omCaptureCache=undefined;window.__omCaptureFontCss=undefined;null",
         5e3,
@@ -823,19 +823,19 @@ export {
   parseCapturedLinks,
   parseCapturedTextRuns,
   PdfCaptureConstant,
-  PdfCaptureConstant_2,
-  PdfCaptureConstant_3,
-  PdfCaptureConstant_4,
-  PdfCaptureConstant_5,
-  PdfCaptureConstant_6,
+  targetRasterWidth as PdfCaptureConstant_2,
+  flowPageMarginRatio as PdfCaptureConstant_3,
+  flowCaptureBatchPages as PdfCaptureConstant_4,
+  maxTextRunChars as PdfCaptureConstant_5,
+  maxFigureAltChars as PdfCaptureConstant_6,
   PdfCaptureHas,
   PdfCaptureLimit,
-  PdfCaptureLimit_2,
-  PdfCaptureLimit_3,
-  PdfCaptureLimit_4,
-  PdfCaptureLimit_5,
-  PdfCaptureLimit_6,
-  PdfCaptureLimit_7,
+  maxFlowPages as PdfCaptureLimit_2,
+  maxTextRuns as PdfCaptureLimit_3,
+  maxCapturedItemsPerPage as PdfCaptureLimit_4,
+  maxPageImageUriChars as PdfCaptureLimit_5,
+  maxTotalImageUriChars as PdfCaptureLimit_6,
+  maxCapturedTextChars as PdfCaptureLimit_7,
   PdfCapturePH1H2Set,
   remapCapturedTextBlocks,
 };
@@ -843,20 +843,20 @@ export function installExportPdfCapture(): () => void {
   return () => {
     PdfCaptureLimit = 3;
     PdfCaptureConstant = 0.9;
-    PdfCaptureConstant_2 = 2550;
-    getPdfRasterScale = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = Math.ceil(PdfCaptureConstant_2 / input);
+    targetRasterWidth = 2550;
+    getPdfRasterScale = (scale?: Dynamic): Dynamic => {
+      let value: Dynamic = Math.ceil(targetRasterWidth / scale);
       return value >= PdfCaptureLimit ? PdfCaptureLimit : value >= 2 ? 2 : 1;
     };
-    PdfCaptureConstant_3 = 0.05;
-    PdfCaptureConstant_4 = 6;
-    PdfCaptureLimit_2 = 100;
-    PdfCaptureLimit_3 = 2e4;
-    PdfCaptureLimit_4 = 4e3;
-    PdfCaptureLimit_5 = 64e6;
-    PdfCaptureLimit_6 = 52e7;
-    PdfCaptureConstant_5 = 4e3;
-    PdfCaptureLimit_7 = 15e4;
+    flowPageMarginRatio = 0.05;
+    flowCaptureBatchPages = 6;
+    maxFlowPages = 100;
+    maxTextRuns = 2e4;
+    maxCapturedItemsPerPage = 4e3;
+    maxPageImageUriChars = 64e6;
+    maxTotalImageUriChars = 52e7;
+    maxTextRunChars = 4e3;
+    maxCapturedTextChars = 15e4;
     PdfCapturePH1H2Set = new Set([
       "P",
       "H1",
@@ -868,8 +868,8 @@ export function installExportPdfCapture(): () => void {
       "L",
       "Artifact",
     ]);
-    PdfCaptureHas = (input?: Dynamic): Dynamic =>
-      typeof input == "string" && PdfCapturePH1H2Set.has(input);
-    PdfCaptureConstant_6 = 1e3;
+    PdfCaptureHas = (captureValue?: Dynamic): Dynamic =>
+      typeof captureValue == "string" && PdfCapturePH1H2Set.has(captureValue);
+    maxFigureAltChars = 1e3;
   };
 }

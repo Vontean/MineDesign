@@ -9,7 +9,7 @@ import { DownloadsArenTAvailableToYouForMessage, downloadsWithheld, saveThroughH
 import { exportFileName, sanitizeExportFileName } from "../file-names";
 import { classifyExportFailure, classifyExportSaveOutcome } from "../outcomes";
 import { minEmptyExportTail, getArtboardPaperSize, isFillPagedExport, isFlowExport, paperHeightForWidth, paperSizes } from "../paper-and-scale";
-import { captureArtboardPdfPages, getPdfRasterScale, PdfCaptureLimit_2 } from "./capture";
+import { captureArtboardPdfPages, getPdfRasterScale, PdfCaptureLimit_2 as pdfCapturePageLimit } from "./capture";
 import { buildPdfDocument } from "./document";
 import { decodeJpegDataUrl, pixelsToPoints, readJpegDimensions } from "./jpeg";
 import { inferPdfLanguage } from "./language";
@@ -20,371 +20,371 @@ import { createPreviewHandle } from "../../preview/evaluation";
 
 var PdfOrchestrationLimit: Dynamic;
 var ApplicationPdfValue: Dynamic;
-var PdfOrchestrationLimit_2: Dynamic;
+var maxPdfContentDimensionPt: Dynamic;
 function capturedTextToPdfPoints(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  textRuns?: Dynamic,
+  sourceWidth?: Dynamic,
+  sourceHeight?: Dynamic,
+  targetWidth?: Dynamic,
+  targetHeight?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = value / options,
-    value3: Dynamic = extra / context;
-  return input.map(
-    (input2?: Dynamic): Dynamic => ({
-      text: input2.t,
-      xPt: Math.min(value, input2.x * value2),
-      yPt: Math.max(0, extra - input2.y * value3),
-      sizePt: Math.min(extra, input2.s * value3),
-      widthPt: input2.w * value2,
-      ...(input2.b !== undefined
+  let widthScale: Dynamic = targetWidth / sourceWidth,
+    heightScale: Dynamic = targetHeight / sourceHeight;
+  return textRuns.map(
+    (run?: Dynamic): Dynamic => ({
+      text: run.t,
+      xPt: Math.min(targetWidth, run.x * widthScale),
+      yPt: Math.max(0, targetHeight - run.y * heightScale),
+      sizePt: Math.min(targetHeight, run.s * heightScale),
+      widthPt: run.w * widthScale,
+      ...(run.b !== undefined
         ? {
-            block: input2.b,
+            block: run.b,
           }
         : {}),
-      ...(input2.i !== undefined
+      ...(run.i !== undefined
         ? {
-            item: input2.i,
+            item: run.i,
           }
         : {}),
-      ...(input2.sp !== undefined
+      ...(run.sp !== undefined
         ? {
-            spaceBefore: input2.sp,
+            spaceBefore: run.sp,
           }
         : {}),
-      ...(input2.a !== undefined
+      ...(run.a !== undefined
         ? {
-            link: input2.a,
+            link: run.a,
           }
         : {}),
     }),
   );
 }
 function capturedBlocksToPdfPoints(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  blocks?: Dynamic,
+  sourceWidth?: Dynamic,
+  sourceHeight?: Dynamic,
+  targetWidth?: Dynamic,
+  targetHeight?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = value / options,
-    value3: Dynamic = extra / context;
-  return input.map(
-    (input2?: Dynamic): Dynamic =>
-      input2.role !== "Figure"
+  let widthScale: Dynamic = targetWidth / sourceWidth,
+    heightScale: Dynamic = targetHeight / sourceHeight;
+  return blocks.map(
+    (block?: Dynamic): Dynamic =>
+      block.role !== "Figure"
         ? {
-            role: input2.role,
+            role: block.role,
           }
         : {
             role: "Figure",
-            ...(input2.alt !== undefined
+            ...(block.alt !== undefined
               ? {
-                  alt: input2.alt,
+                  alt: block.alt,
                 }
               : {}),
-            ...(input2.link !== undefined
+            ...(block.link !== undefined
               ? {
-                  link: input2.link,
+                  link: block.link,
                 }
               : {}),
             box: {
-              xPt: input2.x * value2,
-              yPt: extra - (input2.y + input2.h) * value3,
-              widthPt: input2.w * value2,
-              heightPt: input2.h * value3,
+              xPt: block.x * widthScale,
+              yPt: targetHeight - (block.y + block.h) * heightScale,
+              widthPt: block.w * widthScale,
+              heightPt: block.h * heightScale,
             },
           },
   );
 }
 function sharedExportLanguage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  languages?: Dynamic,
+  fallbackLanguage?: Dynamic,
+  items?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.split("-")[0].toLowerCase(),
-    value: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic => input2 !== undefined,
+  let callback: Dynamic = (languageTag?: Dynamic): Dynamic =>
+      languageTag.split("-")[0].toLowerCase(),
+    value: Dynamic = languages.filter(
+      (languageTag?: Dynamic): Dynamic => languageTag !== undefined,
     ),
-    value2: Dynamic =
+    commonLanguage: Dynamic =
       value.length > 0 &&
       value.every(
-        (input2?: Dynamic): Dynamic =>
-          callback(input2) === callback(value[0]),
+        (languageTag?: Dynamic): Dynamic =>
+          callback(languageTag) === callback(value[0]),
       )
         ? value[0]
         : undefined,
-    value3: Dynamic =
-      options +
+    languageText: Dynamic =
+      fallbackLanguage +
       `
 ` +
-      context.flatMap(
-        (input2?: Dynamic): Dynamic =>
-          (input2.textRuns ?? []).map(
-            (input3?: Dynamic): Dynamic => input3.text,
+      items.flatMap(
+        (block?: Dynamic): Dynamic =>
+          (block.textRuns ?? []).map(
+            (run?: Dynamic): Dynamic => run.text,
           ),
       ).join(`
 `),
-    value4: Dynamic =
+    inferredLanguage: Dynamic =
       value.length === 0
-        ? inferPdfLanguage(value3)
-        : inferPdfLanguage(value3, value2 ?? "und");
-  return value2 === undefined
-    ? value4
-    : callback(value4) === callback(value2) ||
-        (callback(value2) !== "en" &&
+        ? inferPdfLanguage(languageText)
+        : inferPdfLanguage(languageText, commonLanguage ?? "und");
+  return commonLanguage === undefined
+    ? inferredLanguage
+    : callback(inferredLanguage) === callback(commonLanguage) ||
+        (callback(commonLanguage) !== "en" &&
           callback(
             inferPdfLanguage(
-              value3.replace(/[^\p{L}]+/gu, ""),
-              value2,
+              languageText.replace(/[^\p{L}]+/gu, ""),
+              commonLanguage,
             ),
-          ) === callback(value2))
-      ? value2
-      : value4;
+          ) === callback(commonLanguage))
+      ? commonLanguage
+      : inferredLanguage;
 }
 function capturedLinksToPdfPoints(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  links?: Dynamic,
+  sourceWidth?: Dynamic,
+  sourceHeight?: Dynamic,
+  targetWidth?: Dynamic,
+  targetHeight?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = value / options,
-    value3: Dynamic = extra / context;
-  return input.map(
-    (input2?: Dynamic): Dynamic => ({
-      uri: input2.u,
-      xPt: input2.x * value2,
-      yPt: extra - (input2.y + input2.h) * value3,
-      widthPt: input2.w * value2,
-      heightPt: input2.h * value3,
-      ...(input2.a !== undefined
+  let widthScale: Dynamic = targetWidth / sourceWidth,
+    heightScale: Dynamic = targetHeight / sourceHeight;
+  return links.map(
+    (link?: Dynamic): Dynamic => ({
+      uri: link.u,
+      xPt: link.x * widthScale,
+      yPt: targetHeight - (link.y + link.h) * heightScale,
+      widthPt: link.w * widthScale,
+      heightPt: link.h * heightScale,
+      ...(link.a !== undefined
         ? {
-            anchor: input2.a,
+            anchor: link.a,
           }
         : {}),
     }),
   );
 }
-function pdfExportFileName(input?: Dynamic): Dynamic {
-  return (sanitizeExportFileName(input) || "design") + ".pdf";
+function pdfExportFileName(fileNameInput?: Dynamic): Dynamic {
+  return (sanitizeExportFileName(fileNameInput) || "design") + ".pdf";
 }
 async function collectPdfExportPages(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = {},
+  designFile?: Dynamic,
+  resolveFile?: Dynamic,
+  documentTitle?: Dynamic,
+  exportOptions: Dynamic = {},
 ): Promise<Dynamic> {
-  let value2: Dynamic = value.capture ?? captureArtboardPdfPages,
-    value3: Dynamic = value.resolveHandle ?? createPreviewHandle,
-    value4: Dynamic = value.measureTail ?? measureEmptyExportTail,
+  let capturePages: Dynamic = exportOptions.capture ?? captureArtboardPdfPages,
+    resolveHandle: Dynamic = exportOptions.resolveHandle ?? createPreviewHandle,
+    measureTail: Dynamic = exportOptions.measureTail ?? measureEmptyExportTail,
     index: Dynamic = 0,
-    index2: Dynamic = 0,
+    captureCount: Dynamic = 0,
     items: Dynamic = [],
-    items2: Dynamic = [],
-    items3: Dynamic = [],
-    items4: Dynamic = [],
-    items5: Dynamic = [],
-    items6: Dynamic = [],
-    items7: Dynamic = [],
-    items8: Dynamic = [],
-    index3: Dynamic = 0,
-    index4: Dynamic = 0,
-    index5: Dynamic = 0,
-    index6: Dynamic = 0,
-    index7: Dynamic = 0,
-    items9: Dynamic = [],
+    exportedPages: Dynamic = [],
+    clippedPages: Dynamic = [],
+    clippedFiles: Dynamic = [],
+    cappedPages: Dynamic = [],
+    boxedPages: Dynamic = [],
+    emptyTailPages: Dynamic = [],
+    emptyTailFiles: Dynamic = [],
+    emptyTailPixels: Dynamic = 0,
+    hiddenCount: Dynamic = 0,
+    embedWarningCount: Dynamic = 0,
+    fontWarningCount: Dynamic = 0,
+    scaledDownCount: Dynamic = 0,
+    textPartialPages: Dynamic = [],
     state: Dynamic = {
       innerClipped: 0,
       scrollRegion: 0,
       collapsed: 0,
       unrevealed: 0,
     },
-    items10: Dynamic = [];
-  for (let value8 of artboardsInReadingOrder(input) as Dynamic) {
-    value.signal?.throwIfAborted();
-    let value9: Dynamic = exportFileName(
-        value8.file,
-        value8.title,
+    languages: Dynamic = [];
+  for (let artboard of artboardsInReadingOrder(designFile) as Dynamic) {
+    exportOptions.signal?.throwIfAborted();
+    let fileName: Dynamic = exportFileName(
+        artboard.file,
+        artboard.title,
       ),
-      value10: Dynamic = await options(value8.file);
-    value.signal?.throwIfAborted();
-    if (value10 && value10.getBoundingClientRect().width === 0) {
-      index4 += 1;
+      fileHandle: Dynamic = await resolveFile(artboard.file);
+    exportOptions.signal?.throwIfAborted();
+    if (fileHandle && fileHandle.getBoundingClientRect().width === 0) {
+      hiddenCount += 1;
       continue;
     }
-    let value11: Dynamic = value10 ? value3(value10) : null;
-    if (!value11)
+    let previewHandle: Dynamic = fileHandle ? resolveHandle(fileHandle) : null;
+    if (!previewHandle)
       throw new Error(
-        '"' + value9 + '" is still loading \u2014 try again in a moment',
+        '"' + fileName + '" is still loading \u2014 try again in a moment',
       );
-    let value12: Dynamic = isFlowExport(
+    let isFlow: Dynamic = isFlowExport(
         {
-          expand: value8.expand,
+          expand: artboard.expand,
         },
-        value.rules,
+        exportOptions.rules,
       ),
-      value13: Dynamic = isFlowExport(value8, value.rules)
-        ? getArtboardPaperSize(value8)
+      flowScale: Dynamic = isFlowExport(artboard, exportOptions.rules)
+        ? getArtboardPaperSize(artboard)
         : null,
-      value14: Dynamic;
+      captureResult: Dynamic;
     try {
-      let value19: Dynamic = value13
-        ? paperHeightForWidth(value8.w, value13)
+      let pageHeight: Dynamic = flowScale
+        ? paperHeightForWidth(artboard.w, flowScale)
         : 0;
-      value14 = await value2(
-        value11,
+      captureResult = await capturePages(
+        previewHandle,
         {
-          w: value8.w,
-          h: value8.h,
+          w: artboard.w,
+          h: artboard.h,
         },
-        value13
+        flowScale
           ? {
               flow: true,
-              pageH: value19,
-              ...(value12
+              pageH: pageHeight,
+              ...(isFlow
                 ? {
-                    maxScale: getPdfRasterScale(value8.w),
-                    ifScrolls: value8.print !== "flow" && value8.h <= value19,
+                    maxScale: getPdfRasterScale(artboard.w),
+                    ifScrolls: artboard.print !== "flow" && artboard.h <= pageHeight,
                   }
                 : {}),
             }
           : {
               flow: false,
             },
-        value.rules?.settle === true &&
-          index2 < ExportCaptureViewportLimit,
+        exportOptions.rules?.settle === true &&
+          captureCount < ExportCaptureViewportLimit,
       );
-    } catch (value19: Dynamic) {
+    } catch (captureError: Dynamic) {
       throw new Error(
         '"' +
-          value9 +
+          fileName +
           '" could not be captured: ' +
-          (value19 instanceof Error ? value19.message : String(value19)),
+          (captureError instanceof Error ? captureError.message : String(captureError)),
       );
     }
-    if (!value14.ok) {
-      if (value14.softError === "zero-size") {
-        index4 += 1;
+    if (!captureResult.ok) {
+      if (captureResult.softError === "zero-size") {
+        hiddenCount += 1;
         continue;
       }
-      throw new Error('"' + value9 + '" could not be captured');
+      throw new Error('"' + fileName + '" could not be captured');
     }
-    value14.atFrame && (value13 = null);
-    let value15: Dynamic = value14.pages.map((input2?: Dynamic): Dynamic => {
-        let value19: Dynamic = decodeJpegDataUrl(input2.uri);
+    captureResult.atFrame && (flowScale = null);
+    let jpegImages: Dynamic = captureResult.pages.map((page?: Dynamic): Dynamic => {
+        let jpegBytes: Dynamic = decodeJpegDataUrl(page.uri);
         try {
-          if (value19 === undefined) throw new Error("not a JPEG data URI");
-          readJpegDimensions(value19);
-        } catch (value20: Dynamic) {
+          if (jpegBytes === undefined) throw new Error("not a JPEG data URI");
+          readJpegDimensions(jpegBytes);
+        } catch (decodeError: Dynamic) {
           throw new Error(
             '"' +
-              value9 +
+              fileName +
               '" produced an unreadable capture: ' +
-              (value20 instanceof Error ? value20.message : String(value20)),
+              (decodeError instanceof Error ? decodeError.message : String(decodeError)),
           );
         }
-        return value19;
+        return jpegBytes;
       }),
-      value16: Dynamic = value13
-        ? paperSizes[value13].wPt
-        : pixelsToPoints(value14.cssW),
-      value17: Dynamic = value13
-        ? paperSizes[value13].hPt
-        : pixelsToPoints(value14.cssH),
-      value18: Dynamic = Math.max(value16, value17);
-    value18 > PdfOrchestrationLimit_2 &&
-      (value16 >= value17
-        ? ((value17 = Math.min(
-            PdfOrchestrationLimit_2,
-            (value17 * PdfOrchestrationLimit_2) / value18,
+      contentWidth: Dynamic = flowScale
+        ? paperSizes[flowScale].wPt
+        : pixelsToPoints(captureResult.cssW),
+      contentHeight: Dynamic = flowScale
+        ? paperSizes[flowScale].hPt
+        : pixelsToPoints(captureResult.cssH),
+      maxContentSize: Dynamic = Math.max(contentWidth, contentHeight);
+    maxContentSize > maxPdfContentDimensionPt &&
+      (contentWidth >= contentHeight
+        ? ((contentHeight = Math.min(
+            maxPdfContentDimensionPt,
+            (contentHeight * maxPdfContentDimensionPt) / maxContentSize,
           )),
-          (value16 = PdfOrchestrationLimit_2))
-        : ((value16 = Math.min(
-            PdfOrchestrationLimit_2,
-            (value16 * PdfOrchestrationLimit_2) / value18,
+          (contentWidth = maxPdfContentDimensionPt))
+        : ((contentWidth = Math.min(
+            maxPdfContentDimensionPt,
+            (contentWidth * maxPdfContentDimensionPt) / maxContentSize,
           )),
-          (value17 = PdfOrchestrationLimit_2)));
-    if (!(value16 >= 3 && value17 >= 3))
+          (contentHeight = maxPdfContentDimensionPt)));
+    if (!(contentWidth >= 3 && contentHeight >= 3))
       throw new Error(
-        '"' + value9 + '" is too small to export as a PDF page',
+        '"' + fileName + '" is too small to export as a PDF page',
       );
-    index5 += value14.embedWarningCount;
-    index6 += value14.fontWarningCount ?? 0;
-    index2 += value14.settleMs ?? 0;
-    value14.scaledDown && (index7 += 1);
-    value14.textPartial && items9.push(value9);
-    for (let value19 of [
+    embedWarningCount += captureResult.embedWarningCount;
+    fontWarningCount += captureResult.fontWarningCount ?? 0;
+    captureCount += captureResult.settleMs ?? 0;
+    captureResult.scaledDown && (scaledDownCount += 1);
+    captureResult.textPartial && textPartialPages.push(fileName);
+    for (let hiddenCategory of [
       "innerClipped",
       "scrollRegion",
       "collapsed",
       "unrevealed",
     ] as Dynamic)
-      (value14.hiddenContent?.[value19] ?? 0) > 0 && (state[value19] += 1);
-    value14.linksPartial &&
+      (captureResult.hiddenContent?.[hiddenCategory] ?? 0) > 0 && (state[hiddenCategory] += 1);
+    captureResult.linksPartial &&
       console.warn(
         '[pdf-export] "' +
-          value9 +
+          fileName +
           '": some links are not clickable in the PDF',
       );
-    value14.overflowed
-      ? (value13
-          ? value14.pages.length >= PdfCaptureLimit_2
-            ? items5
-            : items6
-          : items3
-        ).push(value9)
-      : value14.boxed && items6.push(value9);
-    value14.overflowed && !value13 && items4.push(value8.file);
+    captureResult.overflowed
+      ? (flowScale
+          ? captureResult.pages.length >= pdfCapturePageLimit
+            ? cappedPages
+            : boxedPages
+          : clippedPages
+        ).push(fileName)
+      : captureResult.boxed && boxedPages.push(fileName);
+    captureResult.overflowed && !flowScale && clippedFiles.push(artboard.file);
     if (
-      value12 &&
-      value14.atFrame === true &&
-      !value14.overflowed &&
-      isFillPagedExport(value8) &&
+      isFlow &&
+      captureResult.atFrame === true &&
+      !captureResult.overflowed &&
+      isFillPagedExport(artboard) &&
       index < PdfOrchestrationLimit
     ) {
-      let value19: Dynamic = Date.now(),
-        value20: Dynamic = await value4(value11, {
-          w: value8.w,
-          h: value8.h,
+      let tailMeasurementStartedAt: Dynamic = Date.now(),
+        emptyTailPx: Dynamic = await measureTail(previewHandle, {
+          w: artboard.w,
+          h: artboard.h,
         }).catch((): Dynamic => null);
-      index += Date.now() - value19;
-      value.signal?.throwIfAborted();
-      value20 !== null &&
-        value20 >= minEmptyExportTail &&
-        (items7.push(value9),
-        items8.push(value8.file),
-        (index3 = Math.max(index3, value20)));
+      index += Date.now() - tailMeasurementStartedAt;
+      exportOptions.signal?.throwIfAborted();
+      emptyTailPx !== null &&
+        emptyTailPx >= minEmptyExportTail &&
+        (emptyTailPages.push(fileName),
+        emptyTailFiles.push(artboard.file),
+        (emptyTailPixels = Math.max(emptyTailPixels, emptyTailPx)));
     }
-    items2.push(value9);
-    items10.push(value14.lang);
-    value14.pages.forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
+    exportedPages.push(fileName);
+    languages.push(captureResult.lang);
+    captureResult.pages.forEach((page?: Dynamic, pageIndex?: Dynamic): Dynamic => {
       items.push({
-        jpeg: value15[options2],
-        widthPt: value16,
-        heightPt: value17,
+        jpeg: jpegImages[pageIndex],
+        widthPt: contentWidth,
+        heightPt: contentHeight,
         textRuns: capturedTextToPdfPoints(
-          input2.textRuns,
-          value14.cw,
-          value14.ch,
-          value16,
-          value17,
+          page.textRuns,
+          captureResult.cw,
+          captureResult.ch,
+          contentWidth,
+          contentHeight,
         ),
         links: capturedLinksToPdfPoints(
-          input2.links ?? [],
-          value14.cw,
-          value14.ch,
-          value16,
-          value17,
+          page.links ?? [],
+          captureResult.cw,
+          captureResult.ch,
+          contentWidth,
+          contentHeight,
         ),
-        ...(input2.blocks !== undefined
+        ...(page.blocks !== undefined
           ? {
               blocks: capturedBlocksToPdfPoints(
-                input2.blocks,
-                value14.cw,
-                value14.ch,
-                value16,
-                value17,
+                page.blocks,
+                captureResult.cw,
+                captureResult.ch,
+                contentWidth,
+                contentHeight,
               ),
             }
           : {}),
@@ -393,94 +393,94 @@ async function collectPdfExportPages(
   }
   if (items.length === 0)
     throw new Error(
-      index4 > 0
+      hiddenCount > 0
         ? "every artboard is hidden while one is expanded \u2014 collapse it to export"
         : "there are no artboards to export",
     );
-  let value5: Dynamic = pdfExportFileName(context),
-    state2: Dynamic = {
-      title: context,
-      textEncoding: value.textEncoding,
+  let outputFileName: Dynamic = pdfExportFileName(documentTitle),
+    documentState: Dynamic = {
+      title: documentTitle,
+      textEncoding: exportOptions.textEncoding,
     },
-    value6: Dynamic =
-      value.tagged === true
+    documentOptions: Dynamic =
+      exportOptions.tagged === true
         ? {
-            ...state2,
+            ...documentState,
             tagged: true,
-            lang: sharedExportLanguage(items10, context, items),
+            lang: sharedExportLanguage(languages, documentTitle, items),
           }
-        : state2,
-    value7: Dynamic;
+        : documentState,
+    pdfBytes: Dynamic;
   try {
-    value7 = buildPdfDocument(items, value6);
-  } catch (value8: Dynamic) {
+    pdfBytes = buildPdfDocument(items, documentOptions);
+  } catch (buildError: Dynamic) {
     try {
-      if (value6 === state2) throw value8;
-      value7 = buildPdfDocument(items, state2);
+      if (documentOptions === documentState) throw buildError;
+      pdfBytes = buildPdfDocument(items, documentState);
       console.warn(
         "[pdf-export] the PDF writer rejected the accessibility tags; the file was written without them:",
-        value8,
+        buildError,
       );
-    } catch (value9: Dynamic) {
+    } catch (saveError: Dynamic) {
       if (
         !items.some(
-          (input2?: Dynamic): Dynamic =>
-            input2.textRuns !== undefined && input2.textRuns.length > 0,
+          (page?: Dynamic): Dynamic =>
+            page.textRuns !== undefined && page.textRuns.length > 0,
         )
       )
-        throw value9;
-      value7 = buildPdfDocument(
+        throw saveError;
+      pdfBytes = buildPdfDocument(
         items.map(
-          (input2?: Dynamic): Dynamic => ({
-            jpeg: input2.jpeg,
-            widthPt: input2.widthPt,
-            heightPt: input2.heightPt,
-            links: input2.links,
+          (page?: Dynamic): Dynamic => ({
+            jpeg: page.jpeg,
+            widthPt: page.widthPt,
+            heightPt: page.heightPt,
+            links: page.links,
           }),
         ),
-        state2,
+        documentState,
       );
-      items9 = items2.slice();
+      textPartialPages = exportedPages.slice();
     }
   }
   return {
-    blob: new Blob([value7.slice().buffer], {
+    blob: new Blob([pdfBytes.slice().buffer], {
       type: ApplicationPdfValue,
     }),
-    exported: items2.length,
+    exported: exportedPages.length,
     pages: items.length,
-    clipped: items3,
-    clippedFiles: items4,
-    capped: items5,
-    emptyTail: items7,
-    emptyTailFiles: items8,
-    emptyTailPx: index3,
-    boxed: items6,
-    hidden: index4,
-    filename: value5,
-    embedWarningCount: index5,
-    fontWarningCount: index6,
-    scaledDown: index7,
-    textPartial: items9,
+    clipped: clippedPages,
+    clippedFiles: clippedFiles,
+    capped: cappedPages,
+    emptyTail: emptyTailPages,
+    emptyTailFiles: emptyTailFiles,
+    emptyTailPx: emptyTailPixels,
+    boxed: boxedPages,
+    hidden: hiddenCount,
+    filename: outputFileName,
+    embedWarningCount: embedWarningCount,
+    fontWarningCount: fontWarningCount,
+    scaledDown: scaledDownCount,
+    textPartial: textPartialPages,
     hiddenContent: state,
   };
 }
-function pdfExportWarnings(input?: Dynamic): Dynamic {
+function pdfExportWarnings(result?: Dynamic): Dynamic {
   return {
-    blankImages: input.embedWarningCount,
-    clipped: input.clipped.length > 0,
-    flowOverflow: input.capped.length > 0 || input.boxed.length > 0,
-    hiddenSkipped: input.hidden,
-    fontFallback: input.fontWarningCount,
-    scaledDown: input.scaledDown > 0,
-    ...input.hiddenContent,
+    blankImages: result.embedWarningCount,
+    clipped: result.clipped.length > 0,
+    flowOverflow: result.capped.length > 0 || result.boxed.length > 0,
+    hiddenSkipped: result.hidden,
+    fontFallback: result.fontWarningCount,
+    scaledDown: result.scaledDown > 0,
+    ...result.hiddenContent,
   };
 }
 async function exportPdf(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = {},
+  items?: Dynamic,
+  exportOptions?: Dynamic,
+  documentTitle?: Dynamic,
+  extraOptions: Dynamic = {},
 ): Promise<Dynamic> {
   if (await downloadsWithheld())
     return {
@@ -494,7 +494,7 @@ async function exportPdf(
       emptyTailFiles: [],
       emptyTailPx: 0,
       hidden: 0,
-      filename: pdfExportFileName(context),
+      filename: pdfExportFileName(documentTitle),
       embedWarningCount: 0,
       fontWarningCount: 0,
       scaledDown: 0,
@@ -507,191 +507,191 @@ async function exportPdf(
       },
       saveOutcome: "withheld",
     };
-  let { blob: value2, ...value3 }: Dynamic = await collectPdfExportPages(
-    input,
-    options,
-    context,
-    value,
+  let { blob: pdfBlob, ...exportSummary }: Dynamic = await collectPdfExportPages(
+    items,
+    exportOptions,
+    documentTitle,
+    extraOptions,
   );
   reportExportBuilt({
-    ...pdfExportWarnings(value3),
-    ...value.scope,
+    ...pdfExportWarnings(exportSummary),
+    ...extraOptions.scope,
   });
-  let { filename: value4, embedWarningCount: value5 }: Dynamic = value3,
-    value6: Dynamic =
-      value5 > 0 ? null : await saveThroughHost(value2, value4),
-    value7: Dynamic = value6?.outcome ?? "unsupported";
-  if (value7 === "unsupported") {
+  let { filename: fileName, embedWarningCount: embedWarningCount }: Dynamic = exportSummary,
+    saveResult: Dynamic =
+      embedWarningCount > 0 ? null : await saveThroughHost(pdfBlob, fileName),
+    saveOutcome: Dynamic = saveResult?.outcome ?? "unsupported";
+  if (saveOutcome === "unsupported") {
     try {
-      let value8: Dynamic = (document as Dynamic).createElement("a");
-      value8.href = URL.createObjectURL(value2);
-      value8.download = value4;
-      value8.rel = "noopener";
-      value8.style.display = "none";
-      (document as Dynamic).body.appendChild(value8);
-      value8.click();
-      value8.remove();
-      setTimeout((): Dynamic => URL.revokeObjectURL(value8.href), 6e4);
+      let downloadLink: Dynamic = (document as Dynamic).createElement("a");
+      downloadLink.href = URL.createObjectURL(pdfBlob);
+      downloadLink.download = fileName;
+      downloadLink.rel = "noopener";
+      downloadLink.style.display = "none";
+      (document as Dynamic).body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      setTimeout((): Dynamic => URL.revokeObjectURL(downloadLink.href), 6e4);
     } catch {}
     (window as Dynamic).dispatchEvent(
       new CustomEvent(exportDeliveryEventName, {
         detail: {
           url: "",
-          filename: value4,
-          embedWarningCount: value5,
+          filename: fileName,
+          embedWarningCount: embedWarningCount,
           file: {
-            blob: value2,
+            blob: pdfBlob,
             mime: ApplicationPdfValue,
           },
-          refusal: value6?.code,
+          refusal: saveResult?.code,
         },
       }),
     );
   }
   return {
-    ...value3,
-    saveOutcome: value7,
+    ...exportSummary,
+    saveOutcome: saveOutcome,
   };
 }
 function pdfExportMessage(
-  input?: Dynamic,
-  options?: Dynamic,
+  summary?: Dynamic,
+  errorDetail?: Dynamic,
   {
-    embeds: context = false,
-    fitOffered: context2 = false,
-    fitAdvice: context3 = false,
-    fonts: context4 = true,
+    embeds: embeds = false,
+    fitOffered: fitOffered = false,
+    fitAdvice: fitAdvice = false,
+    fonts: fonts = true,
   }: Dynamic = {},
 ): Dynamic {
   let items: Dynamic = [];
-  input.hidden > 0 &&
+  summary.hidden > 0 &&
     items.push(
       "Exported " +
-        String(input.exported) +
+        String(summary.exported) +
         " of " +
-        String(options) +
+        String(errorDetail) +
         " artboards \u2014 " +
-        String(input.hidden) +
-        (input.hidden === 1 ? " is" : " are") +
+        String(summary.hidden) +
+        (summary.hidden === 1 ? " is" : " are") +
         " hidden while an artboard is expanded (collapse to export all).",
     );
-  context &&
-    input.embedWarningCount > 0 &&
+  embeds &&
+    summary.embedWarningCount > 0 &&
     items.push(
-      input.embedWarningCount === 1
+      summary.embedWarningCount === 1
         ? "1 image could not be embedded and renders blank in the PDF."
-        : String(input.embedWarningCount) +
+        : String(summary.embedWarningCount) +
             " images could not be embedded and render blank in the PDF.",
     );
   let value: Dynamic = formatArtboardNames;
-  input.textPartial.length > 0 &&
+  summary.textPartial.length > 0 &&
     items.push(
       "Some text on " +
-        value(input.textPartial) +
+        value(summary.textPartial) +
         " can't be selected in the PDF (it still shows on the page).",
     );
-  if (input.clipped.length > 0) {
-    let value2: Dynamic = input.clipped.length === 1;
+  if (summary.clipped.length > 0) {
+    let hasSingleClippedFile: Dynamic = summary.clipped.length === 1;
     items.push(
-      value(input.clipped) +
-        (value2
+      value(summary.clipped) +
+        (hasSingleClippedFile
           ? " runs past its frame, so the PDF keeps one page"
           : " run past their frames, so the PDF keeps one page each") +
-        (context2 ? "." : " \u2014 set Print mode to Flow to paginate."),
+        (fitOffered ? "." : " \u2014 set Print mode to Flow to paginate."),
     );
   }
-  input.capped.length > 0 &&
+  summary.capped.length > 0 &&
     items.push(
-      value(input.capped) +
+      value(summary.capped) +
         " stopped at " +
-        String(PdfCaptureLimit_2) +
+        String(pdfCapturePageLimit) +
         " pages.",
     );
-  input.emptyTail.length > 0 &&
+  summary.emptyTail.length > 0 &&
     items.push(
       emptyExportTailMessage(
-        input.emptyTail,
-        input.emptyTailPx,
-        context3,
+        summary.emptyTail,
+        summary.emptyTailPx,
+        fitAdvice,
       ),
     );
-  context4 &&
+  fonts &&
     items.push(
-      ...fontSubstitutionWarnings(input.fontWarningCount),
+      ...fontSubstitutionWarnings(summary.fontWarningCount),
     );
-  input.boxed.length > 0 &&
+  summary.boxed.length > 0 &&
     items.push(
-      value(input.boxed) +
-        (input.boxed.length === 1 ? " has" : " have") +
+      value(summary.boxed) +
+        (summary.boxed.length === 1 ? " has" : " have") +
         " content past the frame that isn\u2019t in the PDF (it sits where pages can\u2019t reach: clipped, or positioned outside the flow).",
     );
   return items;
 }
 async function exportPdfWithFeedback(
   items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = {},
-  detail?: Dynamic,
+  exportOptions?: Dynamic,
+  documentTitle?: Dynamic,
+  notify?: Dynamic,
+  feedbackOptions: Dynamic = {},
+  feedbackDetail?: Dynamic,
 ): Promise<Dynamic> {
   try {
-    let value2: Dynamic = await exportPdf(items, options, context, extra);
+    let exportResult: Dynamic = await exportPdf(items, exportOptions, documentTitle, feedbackOptions);
     reportExportOutcome(
-      classifyExportSaveOutcome("pdf", value2.saveOutcome),
+      classifyExportSaveOutcome("pdf", exportResult.saveOutcome),
       designAnalyticsEvents.exported.pdf,
     );
-    if (value2.saveOutcome === "withheld") {
-      value(DownloadsArenTAvailableToYouForMessage);
+    if (exportResult.saveOutcome === "withheld") {
+      notify(DownloadsArenTAvailableToYouForMessage);
       return;
     }
-    let items2: Dynamic = [...value2.clippedFiles, ...value2.emptyTailFiles],
-      value3: Dynamic = detail ? items2.filter(detail.eligible) : [],
-      value4: Dynamic = value3.length < items2.length,
-      value5: Dynamic =
-        detail && value3.length > 0
-          ? detail.action(
-              value3,
-              value4,
-              value2.saveOutcome === "unsupported",
+    let problemFiles: Dynamic = [...exportResult.clippedFiles, ...exportResult.emptyTailFiles],
+      eligibleFiles: Dynamic = feedbackDetail ? problemFiles.filter(feedbackDetail.eligible) : [],
+      hasIneligibleFiles: Dynamic = eligibleFiles.length < problemFiles.length,
+      feedbackAction: Dynamic =
+        feedbackDetail && eligibleFiles.length > 0
+          ? feedbackDetail.action(
+              eligibleFiles,
+              hasIneligibleFiles,
+              exportResult.saveOutcome === "unsupported",
             )
           : undefined,
-      value6: Dynamic = pdfExportMessage(value2, items.length, {
-        fitOffered: value3.length > 0 && !value4,
-        fonts: value2.saveOutcome !== "declined",
+      messages: Dynamic = pdfExportMessage(exportResult, items.length, {
+        fitOffered: eligibleFiles.length > 0 && !hasIneligibleFiles,
+        fonts: exportResult.saveOutcome !== "declined",
       }),
-      value7: Dynamic =
-        value2.saveOutcome === "saved"
-          ? "Saved " + value2.filename + "."
-          : value6.shift();
-    if (value7 === undefined) return;
-    value(
-      value7,
-      value2.saveOutcome === "saved" ? "success" : undefined,
-      value6.length > 0 || value5 !== undefined
+      message: Dynamic =
+        exportResult.saveOutcome === "saved"
+          ? "Saved " + exportResult.filename + "."
+          : messages.shift();
+    if (message === undefined) return;
+    notify(
+      message,
+      exportResult.saveOutcome === "saved" ? "success" : undefined,
+      messages.length > 0 || feedbackAction !== undefined
         ? {
-            ...(value6.length > 0
+            ...(messages.length > 0
               ? {
-                  description: value6.join(" "),
+                  description: messages.join(" "),
                 }
               : {}),
-            ...(value5 !== undefined
+            ...(feedbackAction !== undefined
               ? {
-                  action: value5,
+                  action: feedbackAction,
                   pinned: true,
                 }
               : {}),
           }
         : undefined,
     );
-  } catch (value2: Dynamic) {
+  } catch (exportError: Dynamic) {
     healthReporter.report(
       ...classifyExportFailure("pdf"),
     );
     reportExportEvent("failed");
-    value(
+    notify(
       "PDF export failed \u2014 " +
-        (value2 instanceof Error ? value2.message : String(value2)) +
+        (exportError instanceof Error ? exportError.message : String(exportError)) +
         ".",
       "error",
     );
@@ -709,13 +709,13 @@ export {
   pdfExportMessage,
   pdfExportWarnings,
   PdfOrchestrationLimit,
-  PdfOrchestrationLimit_2,
+  maxPdfContentDimensionPt as PdfOrchestrationLimit_2,
   sharedExportLanguage,
 };
 export function installExportPdfOrchestration(): () => void {
   return () => {
     PdfOrchestrationLimit = 6e3;
     ApplicationPdfValue = "application/pdf";
-    PdfOrchestrationLimit_2 = 14400;
+    maxPdfContentDimensionPt = 14400;
   };
 }

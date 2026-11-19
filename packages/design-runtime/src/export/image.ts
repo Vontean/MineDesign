@@ -5,7 +5,7 @@ import {
 import { reportExportBuilt, reportExportEvent } from "./analytics";
 import { buildCaptureScript } from "./capture-script";
 import { withCaptureViewport } from "./capture-viewport";
-import { countMatchingExportWarnings, dataUrlToBytes, describeCaptureFailure, ExportCaptureWarningsItems, ExportCaptureWarningsItems_2 } from "./capture-warnings";
+import { countMatchingExportWarnings, dataUrlToBytes, describeCaptureFailure, ExportCaptureWarningsItems, ExportCaptureWarningsItems_2 as ExportCaptureWarningsItemsForImage } from "./capture-warnings";
 import { exportDeliveryEventName, triggerBrowserDownload } from "./delivery";
 import { downloadsWithheld, saveThroughHost } from "./downloads";
 import { exportFileName } from "./file-names";
@@ -15,33 +15,33 @@ import { normalizeExportWarnings, selectionExportFileName } from "./warnings";
 import { designAnalyticsEvents, healthReporter, reportExportOutcome } from "../platform/health-and-analytics";
 
 async function captureArtboardImage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = 2,
-  value?: Dynamic,
+  preview?: Dynamic,
+  format?: Dynamic,
+  settleMs: Dynamic = 2,
+  captureOptions?: Dynamic,
 ): Promise<Dynamic> {
   try {
-    await value?.onBeforeCapture?.();
-    let value2: Dynamic = value?.frame,
-      value3: Dynamic =
-        value2 !== undefined &&
-        Number.isFinite(value2.w) &&
-        Number.isFinite(value2.h) &&
-        value2.w > 0 &&
-        value2.h > 0,
-      value4: Dynamic =
-        value?.clipToFrame && value3
+    await captureOptions?.onBeforeCapture?.();
+    let frameBounds: Dynamic = captureOptions?.frame,
+      hasFrame: Dynamic =
+        frameBounds !== undefined &&
+        Number.isFinite(frameBounds.w) &&
+        Number.isFinite(frameBounds.h) &&
+        frameBounds.w > 0 &&
+        frameBounds.h > 0,
+      clipRegion: Dynamic =
+        captureOptions?.clipToFrame && hasFrame
           ? {
-              h: value2.h,
+              h: frameBounds.h,
               max: 1,
               count: 1,
             }
           : null,
-      value5: Dynamic = buildCaptureScript(
-        exportImageMimeTypes[options],
-        options === "jpg" ? 0.92 : 1,
+      captureScript: Dynamic = buildCaptureScript(
+        exportImageMimeTypes[format],
+        format === "jpg" ? 0.92 : 1,
         0,
-        context,
+        settleMs,
         false,
         false,
         0,
@@ -50,115 +50,115 @@ async function captureArtboardImage(
         true,
         false,
         "",
-        value?.selectionRoot ?? "",
+        captureOptions?.selectionRoot ?? "",
         "",
         false,
-        value4 !== null,
-        value3
+        clipRegion !== null,
+        hasFrame
           ? {
-              w: value2.w,
-              h: value2.h,
-              full: value?.fullLength === true && value4 === null,
+              w: frameBounds.w,
+              h: frameBounds.h,
+              full: captureOptions?.fullLength === true && clipRegion === null,
             }
-          : (value?.frame ?? null),
-        value4,
+          : (captureOptions?.frame ?? null),
+        clipRegion,
       ),
-      value6: Dynamic,
+      captureResult: Dynamic,
       index: Dynamic = 0;
     try {
-      value6 = await withCaptureViewport(
-        input,
-        value?.frame,
-        (input2?: Dynamic): Dynamic => (
-          (index = input2),
-          input.executeJavaScript(value5, 15e3)
+      captureResult = await withCaptureViewport(
+        preview,
+        captureOptions?.frame,
+        (elapsedMs?: Dynamic): Dynamic => (
+          (index = elapsedMs),
+          preview.executeJavaScript(captureScript, 15e3)
         ),
-        value?.settle === true,
+        captureOptions?.settle === true,
       );
-    } catch (value13: Dynamic) {
+    } catch (error: Dynamic) {
       throw (
-        console.error("[selection-export] capture failed:", value13),
-        new Error(describeCaptureFailure(value13))
+        console.error("[selection-export] capture failed:", error),
+        new Error(describeCaptureFailure(error))
       );
     }
-    if (typeof value6 != "object" || value6 === null)
+    if (typeof captureResult != "object" || captureResult === null)
       throw new Error(
         "its preview returned no image; reload it and try again",
       );
-    let value7: Dynamic = value6;
-    if ("e" in value7) {
-      if (value7.e !== "no-selection" && value7.e !== "zero-size")
+    let imageResult: Dynamic = captureResult;
+    if ("e" in imageResult) {
+      if (imageResult.e !== "no-selection" && imageResult.e !== "zero-size")
         throw new Error(
           "its preview returned no image; reload it and try again",
         );
       return {
         ok: false,
-        softError: value7.e,
+        softError: imageResult.e,
       };
     }
-    let value8: Dynamic = Array.isArray(value7.w) ? value7.w.length : 0;
-    value8 && console.warn("[selection-export] capture warnings:", value7.w);
-    let value9: Dynamic = countMatchingExportWarnings(
-        value7.w,
+    let warningCount: Dynamic = Array.isArray(imageResult.w) ? imageResult.w.length : 0;
+    warningCount && console.warn("[selection-export] capture warnings:", imageResult.w);
+    let embedWarningCount: Dynamic = countMatchingExportWarnings(
+        imageResult.w,
         ExportCaptureWarningsItems,
       ),
-      value10: Dynamic = countMatchingExportWarnings(
-        value7.w,
-        ExportCaptureWarningsItems_2,
+      fontWarningCount: Dynamic = countMatchingExportWarnings(
+        imageResult.w,
+        ExportCaptureWarningsItemsForImage,
       ),
-      value11: Dynamic = value4
-        ? Array.isArray(value7.pg)
-          ? value7.pg[0]
+      dataUrl: Dynamic = clipRegion
+        ? Array.isArray(imageResult.pg)
+          ? imageResult.pg[0]
           : undefined
-        : value7.u;
+        : imageResult.u;
     if (
-      typeof value11 != "string" ||
-      !value11.startsWith(
-        `data:${exportImageMimeTypes[options]};base64,`,
+      typeof dataUrl != "string" ||
+      !dataUrl.startsWith(
+        `data:${exportImageMimeTypes[format]};base64,`,
       )
     )
       throw new Error(
         "the image came back empty; it may be too large to export at this scale",
       );
-    let value12: Dynamic = normalizeExportWarnings(value7.hc);
+    let hiddenContent: Dynamic = normalizeExportWarnings(imageResult.hc);
     return {
       ok: true,
-      uri: value11,
-      embedWarningCount: value9,
-      warnings: value8,
-      ...(value10
+      uri: dataUrl,
+      embedWarningCount: embedWarningCount,
+      warnings: warningCount,
+      ...(fontWarningCount
         ? {
-            fontWarningCount: value10,
+            fontWarningCount: fontWarningCount,
           }
         : {}),
-      ...(value4 !== null && value7.pm === 1
+      ...(clipRegion !== null && imageResult.pm === 1
         ? {
             clipped: true,
           }
         : {}),
-      ...(Object.keys(value12).length > 0
+      ...(Object.keys(hiddenContent).length > 0
         ? {
-            hiddenContent: value12,
+            hiddenContent: hiddenContent,
           }
         : {}),
-      ...(value?.settle
+      ...(captureOptions?.settle
         ? {
             settleMs: index,
           }
         : {}),
     };
   } finally {
-    await input
+    await preview
       .executeJavaScript("window.__omCaptureCache=undefined;null", 5e3)
       .catch((): Dynamic => {});
   }
 }
 async function exportArtboardImage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = 2,
-  extra?: Dynamic,
+  preview?: Dynamic,
+  filename?: Dynamic,
+  extension?: Dynamic,
+  scale: Dynamic = 2,
+  exportOptions?: Dynamic,
 ): Promise<Dynamic> {
   if (await downloadsWithheld()) {
     healthReporter.report(
@@ -170,98 +170,98 @@ async function exportArtboardImage(
     };
   }
   try {
-    let value2: Dynamic = await captureArtboardImage(
-      input,
-      context,
-      value,
-      extra,
+    let captureResult: Dynamic = await captureArtboardImage(
+      preview,
+      extension,
+      scale,
+      exportOptions,
     );
-    if (!value2.ok) {
+    if (!captureResult.ok) {
       healthReporter.report(
         ...classifyExportAbort("image"),
       );
       return {
         ok: false,
-        softError: value2.softError,
+        softError: captureResult.softError,
       };
     }
     let {
-      uri: value3,
-      embedWarningCount: value4,
-      clipped: value5,
-      fontWarningCount: value6,
-    }: Dynamic = value2;
+      uri: dataUrl,
+      embedWarningCount: embedWarningCount,
+      clipped: clipped,
+      fontWarningCount: fontWarningCount,
+    }: Dynamic = captureResult;
     reportExportBuilt({
-      blankImages: value4,
-      clipped: value5,
-      fontFallback: value6,
-      ...extra?.scope,
-      ...value2.hiddenContent,
+      blankImages: embedWarningCount,
+      clipped: clipped,
+      fontFallback: fontWarningCount,
+      ...exportOptions?.scope,
+      ...captureResult.hiddenContent,
     });
-    let value7: Dynamic =
-        extra?.filename ??
-        (extra?.selectionRoot
-          ? `${exportFileName(options, extra.title)}-element.${context}`
+    let outputFilename: Dynamic =
+        exportOptions?.filename ??
+        (exportOptions?.selectionRoot
+          ? `${exportFileName(filename, exportOptions.title)}-element.${extension}`
           : selectionExportFileName(
-              options,
-              context,
-              extra?.title,
+              filename,
+              extension,
+              exportOptions?.title,
             )),
-      value8: Dynamic =
-        value4 > 0
+      saveResult: Dynamic =
+        embedWarningCount > 0
           ? null
           : await saveThroughHost(
-              dataUrlToBytes(value3),
-              value7,
+              dataUrlToBytes(dataUrl),
+              outputFilename,
             ),
-      value9: Dynamic = value8?.outcome ?? "unsupported";
-    value9 === "unsupported" &&
-      (triggerBrowserDownload(value3, value7),
+      saveOutcome: Dynamic = saveResult?.outcome ?? "unsupported";
+    saveOutcome === "unsupported" &&
+      (triggerBrowserDownload(dataUrl, outputFilename),
       (window as Dynamic).dispatchEvent(
         new CustomEvent(exportDeliveryEventName, {
           detail: {
-            url: value3,
-            filename: value7,
-            embedWarningCount: value4,
-            mime: exportImageMimeTypes[context],
-            refusal: value8?.code,
+            url: dataUrl,
+            filename: outputFilename,
+            embedWarningCount: embedWarningCount,
+            mime: exportImageMimeTypes[extension],
+            refusal: saveResult?.code,
           },
         }),
       ));
     reportExportOutcome(
-      classifyImageSaveOutcome(value8),
-      designAnalyticsEvents.exported[context],
+      classifyImageSaveOutcome(saveResult),
+      designAnalyticsEvents.exported[extension],
     );
     return {
       ok: true,
-      saveOutcome: value9,
-      ...(value4
+      saveOutcome: saveOutcome,
+      ...(embedWarningCount
         ? {
-            embedWarningCount: value4,
+            embedWarningCount: embedWarningCount,
           }
         : {}),
-      ...(value5
+      ...(clipped
         ? {
-            clipped: value5,
+            clipped: clipped,
           }
         : {}),
-      ...(value6
+      ...(fontWarningCount
         ? {
-            fontWarningCount: value6,
+            fontWarningCount: fontWarningCount,
           }
         : {}),
     };
-  } catch (value2: Dynamic) {
+  } catch (error: Dynamic) {
     throw (
       healthReporter.report(
         ...classifyExportFailure("image"),
       ),
       reportExportEvent("failed"),
-      value2
+      error
     );
   }
 }
-async function captureArtboardThumbnail(input?: Dynamic): Promise<Dynamic> {
+async function captureArtboardThumbnail(preview?: Dynamic): Promise<Dynamic> {
   try {
     let value: Dynamic = buildCaptureScript(
         "image/png",
@@ -275,17 +275,17 @@ async function captureArtboardThumbnail(input?: Dynamic): Promise<Dynamic> {
         false,
         true,
       ),
-      value2: Dynamic = await input.executeJavaScript(value, 15e3);
-    return !value2 ||
-      !("u" in value2) ||
-      typeof value2.u != "string" ||
-      !value2.u.startsWith("data:image/png")
+      thumbnailResult: Dynamic = await preview.executeJavaScript(value, 15e3);
+    return !thumbnailResult ||
+      !("u" in thumbnailResult) ||
+      typeof thumbnailResult.u != "string" ||
+      !thumbnailResult.u.startsWith("data:image/png")
       ? {
           ok: false,
         }
       : {
           ok: true,
-          url: value2.u,
+          url: thumbnailResult.u,
         };
   } catch (value: Dynamic) {
     console.warn("[selection-export] preview capture failed:", value);

@@ -5,110 +5,110 @@ import {
 import { letterPattern } from "./text-encoding";
 
 var PdfLanguageItems: Dynamic;
-var PdfLanguageItems_2: Dynamic;
+var languageScriptDetectors: Dynamic;
 var PdfLanguagePattern: Dynamic;
-var PdfLanguagePattern_2: Dynamic;
-var PdfLanguagePattern_3: Dynamic;
+var hanScriptPattern: Dynamic;
+var hangulScriptPattern: Dynamic;
 var PdfLanguageScriptLatinPattern: Dynamic;
 var PdfLanguageAZaZAZaZPattern: Dynamic;
-var PdfLanguageItems_3: Dynamic;
-function detectTextLanguage(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.slice(0, 2e5),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      (value.match(input2) ?? []).length,
-    value2: Dynamic = callback(/\p{L}/gu);
-  if (value2 < 10) return;
-  let [items, items2, items3]: Dynamic = [
+var localeScriptRules: Dynamic;
+function detectTextLanguage(text?: Dynamic): Dynamic {
+  let value: Dynamic = text.slice(0, 2e5),
+    callback: Dynamic = (pattern?: Dynamic): Dynamic =>
+      (value.match(pattern) ?? []).length,
+    letterCount: Dynamic = callback(/\p{L}/gu);
+  if (letterCount < 10) return;
+  let [items, cjkCount, koreanCount]: Dynamic = [
       callback(PdfLanguagePattern),
-      callback(PdfLanguagePattern_2),
-      callback(PdfLanguagePattern_3),
+      callback(hanScriptPattern),
+      callback(hangulScriptPattern),
     ],
-    value3: Dynamic = value2 + 2 * (items + items2 + items3),
-    callback2: Dynamic = (input2?: Dynamic, options: Dynamic = 1): Dynamic =>
-      input2 * options * 2 > value3;
-  if (callback2(items + items2, 3))
-    return items >= 2 && items * 12 >= items + items2
+    weightedCount: Dynamic = letterCount + 2 * (items + cjkCount + koreanCount),
+    exceedsThreshold: Dynamic = (count?: Dynamic, weight: Dynamic = 1): Dynamic =>
+      count * weight * 2 > weightedCount;
+  if (exceedsThreshold(items + cjkCount, 3))
+    return items >= 2 && items * 12 >= items + cjkCount
       ? "ja"
-      : items * 12 < items + items2 && items3 === 0
+      : items * 12 < items + cjkCount && koreanCount === 0
         ? "zh"
         : undefined;
-  if (callback2(items3, 3)) return "ko";
-  for (let [value5, value6] of PdfLanguageItems_2 as Dynamic)
-    if (callback2(callback(value6))) return value5;
-  if (!callback2(callback(PdfLanguageScriptLatinPattern))) return;
-  let value4: Dynamic = [
+  if (exceedsThreshold(koreanCount, 3)) return "ko";
+  for (let [language, pattern] of languageScriptDetectors as Dynamic)
+    if (exceedsThreshold(callback(pattern))) return language;
+  if (!exceedsThreshold(callback(PdfLanguageScriptLatinPattern))) return;
+  let latinScores: Dynamic = [
       ...scoreLatinLanguages(value.toLowerCase().match(/\p{L}+/gu) ?? []),
     ].sort(
-      (input2?: Dynamic, options?: Dynamic): Dynamic =>
-        options[1] - input2[1],
+      (left?: Dynamic, right?: Dynamic): Dynamic =>
+        right[1] - left[1],
     ),
-    [items4, items5]: Dynamic = [value4[0], value4[1]];
-  return items4[1] >= 5 && items4[1] >= 2 * items5[1] ? items4[0] : undefined;
+    [bestLanguage, secondBest]: Dynamic = [latinScores[0], latinScores[1]];
+  return bestLanguage[1] >= 5 && bestLanguage[1] >= 2 * secondBest[1] ? bestLanguage[0] : undefined;
 }
-function scoreLatinLanguages(input?: Dynamic): Dynamic {
-  return PdfLanguageItems.map(([input2, input3]: Dynamic): Dynamic => {
-    let values: Dynamic = new Set(input3.split(" "));
+function scoreLatinLanguages(words?: Dynamic): Dynamic {
+  return PdfLanguageItems.map(([language, commonWords]: Dynamic): Dynamic => {
+    let values: Dynamic = new Set(commonWords.split(" "));
     return [
-      input2,
-      input.reduce(
-        (input4?: Dynamic, options?: Dynamic): Dynamic =>
-          input4 + (values.has(options) ? 1 : 0),
+      language,
+      words.reduce(
+        (score?: Dynamic, word?: Dynamic): Dynamic =>
+          score + (values.has(word) ? 1 : 0),
         0,
       ),
     ];
   });
 }
-function isLanguageTag(input?: Dynamic): Dynamic {
-  return typeof input == "string" && PdfLanguageAZaZAZaZPattern.test(input);
+function isLanguageTag(tag?: Dynamic): Dynamic {
+  return typeof tag == "string" && PdfLanguageAZaZAZaZPattern.test(tag);
 }
 function inferPdfLanguage(
-  input?: Dynamic,
-  options: Dynamic = (globalThis as Dynamic).navigator?.language,
+  text?: Dynamic,
+  locale: Dynamic = (globalThis as Dynamic).navigator?.language,
 ): Dynamic {
-  let value: Dynamic = detectTextLanguage(input);
+  let value: Dynamic = detectTextLanguage(text);
   if (value !== undefined) return value;
-  if (!isLanguageTag(options)) return "und";
-  let [value2, ...value3]: Dynamic = options.toLowerCase().split("-"),
-    value4: Dynamic = value3.find(
-      (input2?: Dynamic): Dynamic => /^[a-z]{4}$/.test(input2),
+  if (!isLanguageTag(locale)) return "und";
+  let [localeLanguageCode, ...scriptSubtag]: Dynamic = locale.toLowerCase().split("-"),
+    scriptMatch: Dynamic = scriptSubtag.find(
+      (subtag?: Dynamic): Dynamic => /^[a-z]{4}$/.test(subtag),
     ),
-    value5: Dynamic =
-      value2 +
-      (value4 === undefined
+    localeTag: Dynamic =
+      localeLanguageCode +
+      (scriptMatch === undefined
         ? ""
-        : "-" + value4[0].toUpperCase() + value4.slice(1)),
-    value6: Dynamic = input.slice(0, 2e5),
-    length: Dynamic = (value6.match(/\p{L}/gu) ?? []).length;
-  if (length < 10) return value5;
-  for (let [value7, value8, value9] of PdfLanguageItems_3 as Dynamic) {
-    let length2: Dynamic = (value6.match(value7) ?? []).filter(
-      (input2?: Dynamic): Dynamic =>
-        letterPattern.test(input2),
+        : "-" + scriptMatch[0].toUpperCase() + scriptMatch.slice(1)),
+    sampleText: Dynamic = text.slice(0, 2e5),
+    length: Dynamic = (sampleText.match(/\p{L}/gu) ?? []).length;
+  if (length < 10) return localeTag;
+  for (let [scriptPattern, scriptCodes, languageCodes] of localeScriptRules as Dynamic) {
+    let scriptLetterCount: Dynamic = (sampleText.match(scriptPattern) ?? []).filter(
+      (character?: Dynamic): Dynamic =>
+        letterPattern.test(character),
     ).length;
-    if (length2 * 2 <= length) continue;
+    if (scriptLetterCount * 2 <= length) continue;
     if (
-      !(value4 !== undefined
-        ? value8.toLowerCase().split(" ").includes(value4)
-        : value9.split(" ").includes(value2)) ||
-      (value2 === "en" &&
-        (value6.match(/[A-Za-z]/g) ?? []).length * 40 < length2 * 39)
+      !(scriptMatch !== undefined
+        ? scriptCodes.toLowerCase().split(" ").includes(scriptMatch)
+        : languageCodes.split(" ").includes(localeLanguageCode)) ||
+      (localeLanguageCode === "en" &&
+        (sampleText.match(/[A-Za-z]/g) ?? []).length * 40 < scriptLetterCount * 39)
     )
       return "und";
     if (
-      PdfLanguageItems.some(([input2]: Dynamic): Dynamic => input2 === value2)
+      PdfLanguageItems.some(([languageCode]: Dynamic): Dynamic => languageCode === localeLanguageCode)
     ) {
-      let value10: Dynamic = value6.toLowerCase().match(/\p{L}+/gu) ?? [],
-        value11: Dynamic = scoreLatinLanguages(value10),
-        value12: Dynamic = value11.find(
-          ([input2]: Dynamic): Dynamic => input2 === value2,
+      let words: Dynamic = sampleText.toLowerCase().match(/\p{L}+/gu) ?? [],
+        scores: Dynamic = scoreLatinLanguages(words),
+        languageScore: Dynamic = scores.find(
+          ([languageCode]: Dynamic): Dynamic => languageCode === localeLanguageCode,
         )[1];
       if (
-        value11.some(([, input2]: Dynamic): Dynamic => input2 > value12) ||
-        (value10.length >= 30 && value12 * 16 < value10.length)
+        scores.some(([, score]: Dynamic): Dynamic => score > languageScore) ||
+        (words.length >= 30 && languageScore * 16 < words.length)
       )
         return "und";
     }
-    return value5;
+    return localeTag;
   }
   return "und";
 }
@@ -118,11 +118,11 @@ export {
   isLanguageTag,
   PdfLanguageAZaZAZaZPattern,
   PdfLanguageItems,
-  PdfLanguageItems_2,
-  PdfLanguageItems_3,
+  languageScriptDetectors as PdfLanguageItems_2,
+  localeScriptRules as PdfLanguageItems_3,
   PdfLanguagePattern,
-  PdfLanguagePattern_2,
-  PdfLanguagePattern_3,
+  hanScriptPattern as PdfLanguagePattern_2,
+  hangulScriptPattern as PdfLanguagePattern_3,
   PdfLanguageScriptLatinPattern,
   scoreLatinLanguages,
 };
@@ -158,17 +158,17 @@ export function installExportPdfLanguage(): () => void {
         "de het van een en in is op te voor met dat die zijn niet aan er om ook als bij door wordt deze dit wij",
       ],
     ];
-    PdfLanguageItems_2 = [
+    languageScriptDetectors = [
       ["he", /(?=\p{L})[\u0590-\u05ff]/gu],
       ["th", /(?=\p{L})[\u0e00-\u0e7f]/gu],
       ["el", /(?=\p{L})[\u0370-\u03ff]/gu],
     ];
     PdfLanguagePattern = /(?=\p{L})[\u3040-\u30ff\uff66-\uff9f]/gu;
-    PdfLanguagePattern_2 = /[\u3400-\u4dbf\u4e00-\u9fff]/gu;
-    PdfLanguagePattern_3 = /(?=\p{L})[\uac00-\ud7a3\u1100-\u11ff]/gu;
+    hanScriptPattern = /[\u3400-\u4dbf\u4e00-\u9fff]/gu;
+    hangulScriptPattern = /(?=\p{L})[\uac00-\ud7a3\u1100-\u11ff]/gu;
     PdfLanguageScriptLatinPattern = /\p{Script=Latin}/gu;
     PdfLanguageAZaZAZaZPattern = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{1,8}){0,3}$/;
-    PdfLanguageItems_3 = [
+    localeScriptRules = [
       [
         /\p{Script=Latin}/gu,
         "Latn",

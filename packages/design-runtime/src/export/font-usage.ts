@@ -45,12 +45,12 @@ async function collectArtboardFontDescriptors(
       value.length > maxExportFontFaces ||
       !value.every(isValidExportFontDescriptor) ||
       value.reduce(
-        (input, options) =>
-          input +
-          options.family.length +
-          options.style.length +
-          options.weight.length +
-          options.unicodeRange.length,
+        (totalLength, descriptor) =>
+          totalLength +
+          descriptor.family.length +
+          descriptor.style.length +
+          descriptor.weight.length +
+          descriptor.unicodeRange.length,
         0,
       ) > maxExportFontDescriptorBytes ||
       (value.length > 0 &&
@@ -74,77 +74,77 @@ function parseFontUnicodeRanges(
     return [fullUnicodeRange];
   let items: UnicodeRange[] = [];
   for (let value of unicodeRange.split(",")) {
-    let value2 = /^u\+([0-9a-f?]{1,6})(?:-([0-9a-f]{1,6}))?$/i.exec(
+    let rangeMatch = /^u\+([0-9a-f?]{1,6})(?:-([0-9a-f]{1,6}))?$/i.exec(
       value.trim(),
     );
-    if (value2 === null) return null;
-    let [, value3, value4] = value2;
-    value4 !== undefined
-      ? items.push([parseInt(value3!, 16), parseInt(value4, 16)])
-      : value3!.includes("?")
+    if (rangeMatch === null) return null;
+    let [, startCode, endCode] = rangeMatch;
+    endCode !== undefined
+      ? items.push([parseInt(startCode!, 16), parseInt(endCode, 16)])
+      : startCode!.includes("?")
         ? items.push([
-            parseInt(value3!.replaceAll("?", "0"), 16),
-            parseInt(value3!.replaceAll("?", "f"), 16),
+            parseInt(startCode!.replaceAll("?", "0"), 16),
+            parseInt(startCode!.replaceAll("?", "f"), 16),
           ])
-        : items.push([parseInt(value3!, 16), parseInt(value3!, 16)]);
+        : items.push([parseInt(startCode!, 16), parseInt(startCode!, 16)]);
   }
   if (
     items.some(
-      ([input, input2]) =>
-        Number.isNaN(input) || Number.isNaN(input2) || input > input2,
+      ([start, end]) =>
+        Number.isNaN(start) || Number.isNaN(end) || start > end,
     )
   )
     return null;
-  items.sort((input, options) => input[0] - options[0]);
-  let items2: UnicodeRange[] = [];
+  items.sort((leftRange, rightRange) => leftRange[0] - rightRange[0]);
+  let mergedRanges: UnicodeRange[] = [];
   for (let value of items) {
-    let value2 = items2[items2.length - 1];
-    value2 !== undefined && value[0] <= value2[1] + 1
-      ? (value2[1] = Math.max(value2[1], value[1]))
-      : items2.push([value[0], value[1]]);
+    let previousRange = mergedRanges[mergedRanges.length - 1];
+    previousRange !== undefined && value[0] <= previousRange[1] + 1
+      ? (previousRange[1] = Math.max(previousRange[1], value[1]))
+      : mergedRanges.push([value[0], value[1]]);
   }
-  return items2;
+  return mergedRanges;
 }
 function normalizeFontWeightRange(weight: string): string {
   let value = weight
       .trim()
       .toLowerCase()
       .split(/\s+/)
-      .filter((input) => input !== ""),
-    callback: (weight: string) => number = (input) =>
-      input === "normal" ? 400 : input === "bold" ? 700 : Number(input),
-    value2 = value.length === 0 ? 400 : callback(value[0]!),
-    value3 = value.length > 1 ? callback(value[1]!) : value2;
-  return Number.isFinite(value2) && Number.isFinite(value3)
-    ? String(Math.min(value2, value3)) +
+      .filter((weightValue) => weightValue !== ""),
+    callback: (weight: string) => number = (weightValue) =>
+      weightValue === "normal" ? 400 : weightValue === "bold" ? 700 : Number(weightValue),
+    minWeight = value.length === 0 ? 400 : callback(value[0]!),
+    maxWeight = value.length > 1 ? callback(value[1]!) : minWeight;
+  return Number.isFinite(minWeight) && Number.isFinite(maxWeight)
+    ? String(Math.min(minWeight, maxWeight)) +
         " " +
-        String(Math.max(value2, value3))
+        String(Math.max(minWeight, maxWeight))
     : value.join(" ");
 }
 function parseExportFontFaceRules(css: string): ExportFontFace[] {
   let items: ExportFontFace[] = [];
   for (let value of css.match(cssFontFaceRulePattern) ?? []) {
     if (value.indexOf("{") !== value.lastIndexOf("{")) continue;
-    let value2 = parseFontUnicodeRanges(
+    let unicodeRanges = parseFontUnicodeRanges(
         fontUnicodeRangeDeclarationPattern.exec(value)?.[1],
       ),
-      value3 = [...value.matchAll(fontFaceAssetUrlPattern)]
-        .map((input) =>
-          (input[1] ?? input[2] ?? input[3] ?? "").split("#")[0]!.trim(),
+      assetUrls = [...value.matchAll(fontFaceAssetUrlPattern)]
+        .map((match) =>
+          (match[1] ?? match[2] ?? match[3] ?? "").split("#")[0]!.trim(),
         )
-        .filter((input) => /^https:\/\//i.test(input));
-    if (value3.length === 0) continue;
-    let value4 = fontFamilyDeclarationPattern.exec(value)?.[1] ?? "";
+        .filter((url) => /^https:\/\//i.test(url));
+    if (assetUrls.length === 0) continue;
+    let familyDeclaration = fontFamilyDeclarationPattern.exec(value)?.[1] ?? "";
     items.push({
-      family: normalizeFontFamily(value4),
+      family: normalizeFontFamily(familyDeclaration),
       face: fontFaceKey(
-        value4,
+        familyDeclaration,
         fontStyleDeclarationPattern.exec(value)?.[1] ?? "normal",
         fontWeightDeclarationPattern.exec(value)?.[1] ?? "400",
       ),
-      ranges: value2 === null ? null : fontUnicodeRangesKey(value2),
-      coversSpace: value2 === null || fontRangesContainSpace(value2),
-      files: value3,
+      ranges: unicodeRanges === null ? null : fontUnicodeRangesKey(unicodeRanges),
+      coversSpace: unicodeRanges === null || fontRangesContainSpace(unicodeRanges),
+      files: assetUrls,
     });
   }
   return items;
@@ -153,31 +153,31 @@ function indexExportFontUsage(
   fontFaces: readonly FontDescriptor[],
 ): FontUsageIndex {
   let entries: Map<string, string[]> = new Map(),
-    entries2: Map<string, Set<string>> = new Map();
+    drawnFontsByFamily: Map<string, Set<string>> = new Map();
   for (let value of fontFaces) {
-    let value2 = parseFontUnicodeRanges(value.unicodeRange),
-      value3 = value.status.toLowerCase(),
-      value4 =
+    let ranges = parseFontUnicodeRanges(value.unicodeRange),
+      status = value.status.toLowerCase(),
+      fontRuleKey =
         fontFaceKey(value.family, value.style, value.weight) +
         `
 ` +
-        (value2 === null ? "unreadable" : fontUnicodeRangesKey(value2));
-    if (value2 !== null) {
-      let entry = entries.get(value4);
+        (ranges === null ? "unreadable" : fontUnicodeRangesKey(ranges));
+    if (ranges !== null) {
+      let entry = entries.get(fontRuleKey);
       entry === undefined
-        ? entries.set(value4, [value3])
-        : entry.push(value3);
+        ? entries.set(fontRuleKey, [status])
+        : entry.push(status);
     }
-    if (value3 !== "unloaded") {
-      let entry = entries2.get(normalizeFontFamily(value.family));
+    if (status !== "unloaded") {
+      let entry = drawnFontsByFamily.get(normalizeFontFamily(value.family));
       entry === undefined
-        ? entries2.set(normalizeFontFamily(value.family), new Set([value4]))
-        : entry.add(value4);
+        ? drawnFontsByFamily.set(normalizeFontFamily(value.family), new Set([fontRuleKey]))
+        : entry.add(fontRuleKey);
     }
   }
   return {
     byRule: entries,
-    drawnByFamily: entries2,
+    drawnByFamily: drawnFontsByFamily,
   };
 }
 function pruneUnusedExportFontFaces(
@@ -186,50 +186,50 @@ function pruneUnusedExportFontFaces(
 ): FontPruning {
   let value = parseExportFontFaceRules(css),
     values = new Set(
-      value.map((input) =>
-        input.ranges === null
+      value.map((fontFace) =>
+        fontFace.ranges === null
           ? null
-          : input.face +
+          : fontFace.face +
             `
 ` +
-            input.ranges,
+            fontFace.ranges,
       ),
     ),
-    values2 = new Set(
+    usedFamilies = new Set(
       [...fontUsage.drawnByFamily]
-        .filter(([, input]) =>
-          [...input].some((input2) => !values.has(input2)),
+        .filter(([, fontRuleSet]) =>
+          [...fontRuleSet].some((fontRuleKey) => !values.has(fontRuleKey)),
         )
-        .map(([input]) => input),
+        .map(([family]) => family),
     ),
-    value2 = value.map((input) => {
-      if (input.ranges === null || values2.has(input.family)) return true;
+    shouldKeep = value.map((fontFace) => {
+      if (fontFace.ranges === null || usedFamilies.has(fontFace.family)) return true;
       let entry = fontUsage.byRule.get(
-        input.face +
+        fontFace.face +
           `
 ` +
-          input.ranges,
+          fontFace.ranges,
       );
       return (
-        entry === undefined || entry.some((input2) => input2 !== "unloaded")
+        entry === undefined || entry.some((status) => status !== "unloaded")
       );
     }),
-    values3 = new Set(
+    keptFaces = new Set(
       value
-        .filter((input, options) => value2[options])
-        .map((input) => input.face),
+        .filter((fontFace, index) => shouldKeep[index])
+        .map((fontFace) => fontFace.face),
     ),
-    values4: Set<string> = new Set(),
-    values5: Set<string> = new Set();
-  value.forEach((input, options) => {
-    let value3 =
-      value2[options] || (input.coversSpace && values3.has(input.face));
-    for (let value4 of input.files) (value3 ? values4 : values5).add(value4);
+    keepFiles: Set<string> = new Set(),
+    leaveFiles: Set<string> = new Set();
+  value.forEach((fontFace, index) => {
+    let shouldKeepFace =
+      shouldKeep[index] || (fontFace.coversSpace && keptFaces.has(fontFace.face));
+    for (let file of fontFace.files) (shouldKeepFace ? keepFiles : leaveFiles).add(file);
   });
-  for (let value3 of values4) values5.delete(value3);
+  for (let file of keepFiles) leaveFiles.delete(file);
   return {
-    keep: values4,
-    leave: values5,
+    keep: keepFiles,
+    leave: leaveFiles,
   };
 }
 function createFontAwareExportResolver(
@@ -238,40 +238,40 @@ function createFontAwareExportResolver(
 ): FontAwareResolver {
   let value = indexExportFontUsage(fontDescriptors),
     values: Set<string> = new Set(),
-    values2: Set<string> = new Set(),
-    values3: Set<string> = new Set();
+    resolvingUrls: Set<string> = new Set(),
+    omittedUrls: Set<string> = new Set();
   return {
-    resolve: async (input, options) => {
-      if (values2.has(input)) {
-        values3.add(input);
+    resolve: async (url, resolveOptions) => {
+      if (resolvingUrls.has(url)) {
+        omittedUrls.add(url);
         return null;
       }
-      let value2 = await resolveAsset(input, options);
+      let asset = await resolveAsset(url, resolveOptions);
       if (
-        value2 !== null &&
+        asset !== null &&
         fontDescriptors.length > 0 &&
-        /^text\/css\b/i.test(value2.mime)
+        /^text\/css\b/i.test(asset.mime)
       ) {
-        let value3 = new TextDecoder().decode(value2.data),
-          { keep: value4, leave: value5 } = googleFontsCssUrlPattern.test(
-            input,
+        let cssText = new TextDecoder().decode(asset.data),
+          { keep: keepFiles, leave: leaveFiles } = googleFontsCssUrlPattern.test(
+            url,
           )
-            ? pruneUnusedExportFontFaces(value3, value)
+            ? pruneUnusedExportFontFaces(cssText, value)
             : {
-                keep: parseExportFontFaceRules(value3).flatMap(
-                  (input2) => input2.files,
+                keep: parseExportFontFaceRules(cssText).flatMap(
+                  (fontFace) => fontFace.files,
                 ),
                 leave: [],
               };
-        for (let value6 of value4) {
-          values.add(value6);
-          values2.delete(value6);
+        for (let file of keepFiles) {
+          values.add(file);
+          resolvingUrls.delete(file);
         }
-        for (let value6 of value5) values.has(value6) || values2.add(value6);
+        for (let file of leaveFiles) values.has(file) || resolvingUrls.add(file);
       }
-      return value2;
+      return asset;
     },
-    leftOut: () => [...values3],
+    leftOut: () => [...omittedUrls],
   };
 }
 export {
@@ -321,9 +321,9 @@ export function installExportFontUsage(): () => void {
       typeof state == "object" &&
       state !== null &&
       ["family", "style", "weight", "unicodeRange", "status"].every(
-        (input) =>
-          typeof (state as DataRecord)[input] == "string" &&
-          ((state as DataRecord)[input] as string).length <=
+        (key) =>
+          typeof (state as DataRecord)[key] == "string" &&
+          ((state as DataRecord)[key] as string).length <=
             maxExportFontDescriptorLength,
       ) &&
       fontLoadStates.has((state as DataRecord).status as string);
@@ -336,7 +336,7 @@ export function installExportFontUsage(): () => void {
         .toLowerCase();
     fontUnicodeRangesKey = (ranges: readonly UnicodeRange[]): string =>
       ranges
-        .map((input2) => String(input2[0]) + "-" + String(input2[1]))
+        .map((range) => String(range[0]) + "-" + String(range[1]))
         .join(",");
     fontFaceKey = (family: string, style: string, weight: string): string =>
       normalizeFontFamily(family) +
@@ -349,8 +349,8 @@ export function installExportFontUsage(): () => void {
     spaceCodepoint = 32;
     fontRangesContainSpace = (ranges: readonly UnicodeRange[]): boolean =>
       ranges.some(
-        ([input2, input3]) =>
-          input2 <= spaceCodepoint && spaceCodepoint <= input3,
+        ([start, end]) =>
+          start <= spaceCodepoint && spaceCodepoint <= end,
       );
     cssFontFaceRulePattern = /@font-face\s*\{[^}]*\}/gi;
     cssFontFacePropertyPattern = (property: string): RegExp =>

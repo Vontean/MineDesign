@@ -3,42 +3,42 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 
-function deflateSizeBound(input?: Dynamic): Dynamic {
+function deflateSizeBound(byteLength?: Dynamic): Dynamic {
   return (
-    input +
-    Math.floor(input / 4096) +
-    Math.floor(input / 16384) +
-    Math.floor(input / 33554432) +
+    byteLength +
+    Math.floor(byteLength / 4096) +
+    Math.floor(byteLength / 16384) +
+    Math.floor(byteLength / 33554432) +
     13
   );
 }
 function validateLosslessPicture(
-  input?: Dynamic,
-  options?: Dynamic,
+  picture?: Dynamic,
+  jpegSize?: Dynamic,
 ): Dynamic {
-  if (typeof input != "object" || input === null)
+  if (typeof picture != "object" || picture === null)
     throw new Error("its lossless picture is not an object");
   if (
-    !Number.isInteger(input.width) ||
-    !Number.isInteger(input.height) ||
-    input.width !== options.width ||
-    input.height !== options.height
+    !Number.isInteger(picture.width) ||
+    !Number.isInteger(picture.height) ||
+    picture.width !== jpegSize.width ||
+    picture.height !== jpegSize.height
   )
     throw new Error(
       "its lossless picture is " +
-        String(input.width) +
+        String(picture.width) +
         "\xD7" +
-        String(input.height) +
+        String(picture.height) +
         " pixels but its JPEG is " +
-        String(options.width) +
+        String(jpegSize.width) +
         "\xD7" +
-        String(options.height),
+        String(jpegSize.height),
     );
-  let zlib: Dynamic = input.zlib;
+  let zlib: Dynamic = picture.zlib;
   if (
     Object.prototype.toString.call(zlib) !== "[object Uint8Array]" ||
     zlib.length < 8 ||
-    zlib.length > deflateSizeBound(input.width * input.height * 3) ||
+    zlib.length > deflateSizeBound(picture.width * picture.height * 3) ||
     (zlib[0] & 15) !== 8 ||
     zlib[0] >> 4 > 7 ||
     ((zlib[0] << 8) | zlib[1]) % 31 !== 0 ||

@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { CanvasMeasurementsPattern, CanvasMeasurementsPattern_2 } from "../canvas/measurements";
+import { CanvasMeasurementsPattern, CanvasMeasurementsPattern_2 as canvasMeasurementsPatternOverride } from "../canvas/measurements";
 import { initializeButtonButton } from "../cds/button/button";
 import { initializeComponentsIcon_2 } from "../cds/components/icon";
 import { initializeComponentsSelectionRing_5 } from "../cds/components/selection-ring";
@@ -35,8 +35,8 @@ function exportRequestsCompatible(
 function exportCapabilitiesByFormat(formats?: Dynamic): Dynamic {
   let items: Dynamic = [];
   for (let value of formats as Dynamic) {
-    let value2: Dynamic = items.findIndex(
-        (input?: Dynamic): Dynamic => input.format === value.format,
+    let formatIndex: Dynamic = items.findIndex(
+        (candidate?: Dynamic): Dynamic => candidate.format === value.format,
       ),
       state: Dynamic = {
         format: value.format,
@@ -51,7 +51,7 @@ function exportCapabilitiesByFormat(formats?: Dynamic): Dynamic {
         }),
       };
     if (value.variant === undefined) {
-      value2 === -1 &&
+      formatIndex === -1 &&
         items.push({
           ...state,
           ...(value.disabled === true && {
@@ -60,7 +60,7 @@ function exportCapabilitiesByFormat(formats?: Dynamic): Dynamic {
         });
       continue;
     }
-    let value3: Dynamic =
+    let variantEntry: Dynamic =
       value.disabled === true
         ? {
             id: value.variant,
@@ -69,37 +69,37 @@ function exportCapabilitiesByFormat(formats?: Dynamic): Dynamic {
         : {
             id: value.variant,
           };
-    if (value2 === -1)
+    if (formatIndex === -1)
       items.push({
         ...state,
-        variants: [value3],
+        variants: [variantEntry],
       });
     else {
-      let value4: Dynamic = items[value2];
-      value4.variants !== undefined &&
-        (items[value2] = {
-          ...value4,
-          variants: [...value4.variants, value3],
+      let formatEntry: Dynamic = items[formatIndex];
+      formatEntry.variants !== undefined &&
+        (items[formatIndex] = {
+          ...formatEntry,
+          variants: [...formatEntry.variants, variantEntry],
         });
     }
   }
   return items.map(
-    (input?: Dynamic): Dynamic =>
-      input.variants === undefined
-        ? input
-        : input.variants.every(
-              (input2?: Dynamic): Dynamic => input2.disabled === true,
+    (formatEntry?: Dynamic): Dynamic =>
+      formatEntry.variants === undefined
+        ? formatEntry
+        : formatEntry.variants.every(
+              (variant?: Dynamic): Dynamic => variant.disabled === true,
             )
           ? {
-              ...input,
+              ...formatEntry,
               disabled: true,
-              variants: input.variants.map(
-                (input2?: Dynamic): Dynamic => ({
-                  id: input2.id,
+              variants: formatEntry.variants.map(
+                (variant?: Dynamic): Dynamic => ({
+                  id: variant.id,
                 }),
               ),
             }
-          : input,
+          : formatEntry,
   );
 }
 function scheduleInteractiveExportRelease(
@@ -145,90 +145,90 @@ function isExportOutcomeFinal(result?: Dynamic): Dynamic {
 async function runExportProducer(
   format?: Dynamic,
   request?: Dynamic,
-  options?: Dynamic,
+  signal?: Dynamic,
 ): Promise<Dynamic> {
-  let { format: value, variant: value2 }: Dynamic = format,
-    value3: Dynamic =
-      value2 === undefined
+  let { format: value, variant: variant }: Dynamic = format,
+    producerOptions: Dynamic =
+      variant === undefined
         ? {}
         : {
-            variant: value2,
+            variant: variant,
           },
-    value4: Dynamic;
+    result: Dynamic;
   try {
-    value4 = await format.produce({
+    result = await format.produce({
       interactive: request.interactive,
       bundle: request.bundle,
       windowMs: request.windowMs,
       ...(request.sender !== undefined && {
         sender: request.sender,
       }),
-      signal: options,
+      signal: signal,
     });
-  } catch (value9: Dynamic) {
-    let value10: Dynamic =
-        value9 instanceof Error && value9.name === "ExportCancelled",
-      value11: Dynamic = options.aborted
+  } catch (error: Dynamic) {
+    let cancelled: Dynamic =
+        error instanceof Error && error.name === "ExportCancelled",
+      requestState: Dynamic = signal.aborted
         ? request
         : takeQueuedExportRequest(value, request);
-    clearExportReleaseTimer(value11);
-    value11.released !== true &&
-      declineFrameExport(value11.request, value10);
-    return value10
+    clearExportReleaseTimer(requestState);
+    requestState.released !== true &&
+      declineFrameExport(requestState.request, cancelled);
+    return cancelled
       ? {
           format: value,
-          ...value3,
+          ...producerOptions,
           outcome: "declined",
           code: "cancelled",
         }
       : {
           format: value,
-          ...value3,
+          ...producerOptions,
           outcome: "failed",
           code: "producer_failed",
         };
   }
-  let value5: Dynamic = takeQueuedExportRequest(value, request);
-  if (value5.released === true && options.aborted)
+  let queuedRequest: Dynamic = takeQueuedExportRequest(value, request);
+  if (queuedRequest.released === true && signal.aborted)
     return {
       format: value,
-      ...value3,
+      ...producerOptions,
       outcome: "unsupported",
       code: "request_unknown",
-      filename: value4.filename,
+      filename: result.filename,
     };
-  let value6: Dynamic = value5.released === true,
-    value7: Dynamic = value6
-      ? await saveThroughHost(value4.data, value4.filename)
-      : await saveThroughHost(value4.data, value4.filename, {
-          request: value5.request,
+  let wasReleased: Dynamic = queuedRequest.released === true,
+    saveResult: Dynamic = wasReleased
+      ? await saveThroughHost(result.data, result.filename)
+      : await saveThroughHost(result.data, result.filename, {
+          request: queuedRequest.request,
         });
-  !value6 &&
-    !options.aborted &&
+  !wasReleased &&
+    !signal.aborted &&
     request.interactive &&
     format.releaseRequestAfterMs !== undefined &&
-    value7.outcome === "unsupported" &&
-    value7.code === "request_unknown" &&
-    ((value7 = await saveThroughHost(
-      value4.data,
-      value4.filename,
+    saveResult.outcome === "unsupported" &&
+    saveResult.code === "request_unknown" &&
+    ((saveResult = await saveThroughHost(
+      result.data,
+      result.filename,
     )),
-    (value6 = true));
-  !value6 &&
-    !isExportOutcomeFinal(value7) &&
-    declineFrameExport(value5.request);
-  let value8: Dynamic =
-    value7.outcome === "saved" ? "delivered" : value7.outcome;
+    (wasReleased = true));
+  !wasReleased &&
+    !isExportOutcomeFinal(saveResult) &&
+    declineFrameExport(queuedRequest.request);
+  let outcome: Dynamic =
+    saveResult.outcome === "saved" ? "delivered" : saveResult.outcome;
   return {
     format: value,
-    ...value3,
-    outcome: value8,
-    code: value7.code,
-    filename: value4.filename,
-    ...(value6 && {
+    ...producerOptions,
+    outcome: outcome,
+    code: saveResult.code,
+    filename: result.filename,
+    ...(wasReleased && {
       late: {
-        saved: value7,
-        file: value4,
+        saved: saveResult,
+        file: result,
       },
     }),
   };
@@ -237,11 +237,11 @@ function enabledExportFormat(format?: Dynamic, variant?: Dynamic): Dynamic {
   let value: Dynamic =
     variant === undefined
       ? registeredExportFormats?.find(
-          (input?: Dynamic): Dynamic => input.format === format,
+          (candidate?: Dynamic): Dynamic => candidate.format === format,
         )
       : registeredExportFormats?.find(
-          (input?: Dynamic): Dynamic =>
-            input.format === format && input.variant === variant,
+          (candidate?: Dynamic): Dynamic =>
+            candidate.format === format && candidate.variant === variant,
         );
   return value !== undefined && value.disabled !== true ? value : undefined;
 }
@@ -258,8 +258,8 @@ async function receiveExportRequest(
   if (value === undefined) {
     variant === undefined &&
       registeredExportFormats?.some(
-        (input?: Dynamic): Dynamic =>
-          input.format === format && input.variant !== undefined,
+        (candidate?: Dynamic): Dynamic =>
+          candidate.format === format && candidate.variant !== undefined,
       ) === true &&
       declineFrameExport(request);
     return;
@@ -286,44 +286,44 @@ async function receiveExportRequest(
   }
   try {
     for (;;) {
-      let entry3: Dynamic = queuedExportRequests.get(format),
-        value2: Dynamic =
-          entry3 === undefined
+      let nextQueuedEntry: Dynamic = queuedExportRequests.get(format),
+        enabledVariant: Dynamic =
+          nextQueuedEntry === undefined
             ? undefined
-            : enabledExportFormat(format, entry3.variant);
-      if (entry3 === undefined || value2 === undefined) break;
+            : enabledExportFormat(format, nextQueuedEntry.variant);
+      if (nextQueuedEntry === undefined || enabledVariant === undefined) break;
       let controller: Dynamic = new AbortController();
       activeExportRequests.set(format, {
-        interactive: entry3.interactive,
-        bundle: entry3.bundle,
-        windowMs: entry3.windowMs,
-        ...(entry3.sender !== undefined && {
-          sender: entry3.sender,
+        interactive: nextQueuedEntry.interactive,
+        bundle: nextQueuedEntry.bundle,
+        windowMs: nextQueuedEntry.windowMs,
+        ...(nextQueuedEntry.sender !== undefined && {
+          sender: nextQueuedEntry.sender,
         }),
-        ...(entry3.variant !== undefined && {
-          variant: entry3.variant,
+        ...(nextQueuedEntry.variant !== undefined && {
+          variant: nextQueuedEntry.variant,
         }),
         abort: controller,
       });
-      let value3: Dynamic = await runExportProducer(
-        value2,
-        entry3,
+      let result: Dynamic = await runExportProducer(
+        enabledVariant,
+        nextQueuedEntry,
         controller.signal,
       );
       try {
-        registeredExportOptions.onResult?.(value3);
-      } catch (value4: Dynamic) {
+        registeredExportOptions.onResult?.(result);
+      } catch (error: Dynamic) {
         typeof reportError == "function"
-          ? reportError(value4)
-          : console.error(value4);
+          ? reportError(error)
+          : console.error(error);
       }
     }
-    let entry2: Dynamic = queuedExportRequests.get(format);
-    entry2 !== undefined &&
+    let queuedEntry: Dynamic = queuedExportRequests.get(format);
+    queuedEntry !== undefined &&
       (queuedExportRequests.delete(format),
-      clearExportReleaseTimer(entry2),
-      entry2.released !== true &&
-        declineFrameExport(entry2.request));
+      clearExportReleaseTimer(queuedEntry),
+      queuedEntry.released !== true &&
+        declineFrameExport(queuedEntry.request));
   } finally {
     activeExportRequests.delete(format);
   }
@@ -356,20 +356,20 @@ function normalizeExportFormats(formats?: Dynamic): Dynamic {
       !CanvasMeasurementsPattern.test(value.format) ||
       (value.variant !== undefined &&
         (value.handoff === true ||
-          !CanvasMeasurementsPattern_2.test(value.variant)))
+          !canvasMeasurementsPatternOverride.test(value.variant)))
     )
       continue;
-    let value2: Dynamic = items.find(
-      (input?: Dynamic): Dynamic => input.format === value.format,
+    let formatEntry: Dynamic = items.find(
+      (candidate?: Dynamic): Dynamic => candidate.format === value.format,
     );
-    (value2 !== undefined &&
-      (value2.variant === undefined ||
+    (formatEntry !== undefined &&
+      (formatEntry.variant === undefined ||
         value.variant === undefined ||
-        (value2.interactive === true) != (value.interactive === true) ||
-        (value2.bundle === true) != (value.bundle === true) ||
+        (formatEntry.interactive === true) != (value.interactive === true) ||
+        (formatEntry.bundle === true) != (value.bundle === true) ||
         items.some(
-          (input?: Dynamic): Dynamic =>
-            input.format === value.format && input.variant === value.variant,
+          (candidate?: Dynamic): Dynamic =>
+            candidate.format === value.format && candidate.variant === value.variant,
         ))) ||
       items.push(value);
   }
@@ -377,89 +377,89 @@ function normalizeExportFormats(formats?: Dynamic): Dynamic {
 }
 function registerExportFormats(
   formats?: Dynamic,
-  options: Dynamic = {},
+  formatOptions: Dynamic = {},
 ): Dynamic {
   let value: Dynamic = normalizeExportFormats(formats);
   registeredExportFormats = value;
-  registeredExportOptions = options;
+  registeredExportOptions = formatOptions;
   setFrameExportHandler(onHostExportRequest);
   setFrameExports(exportCapabilitiesByFormat(value));
   return (): Dynamic => {
     if (registeredExportFormats === value) {
       registeredExportFormats = null;
       registeredExportOptions = {};
-      for (let value2 of queuedExportRequests.values() as Dynamic) {
-        clearExportReleaseTimer(value2);
-        value2.released !== true &&
-          declineFrameExport(value2.request);
+      for (let request of queuedExportRequests.values() as Dynamic) {
+        clearExportReleaseTimer(request);
+        request.released !== true &&
+          declineFrameExport(request.request);
       }
       queuedExportRequests.clear();
-      for (let value2 of activeExportRequests.values() as Dynamic)
-        value2.abort.abort();
+      for (let request of activeExportRequests.values() as Dynamic)
+        request.abort.abort();
       setFrameExports(null);
       setFrameExportHandler(null);
     }
   };
 }
-function useExportFormats(formats?: Dynamic, options?: Dynamic): Dynamic {
+function useExportFormats(formats?: Dynamic, hookOptions?: Dynamic): Dynamic {
   let value: Dynamic = (0, react_DB.useRef)({
     entries: formats,
-    opts: options,
+    opts: hookOptions,
   });
   value.current = {
     entries: formats,
-    opts: options,
+    opts: hookOptions,
   };
-  let value2: Dynamic = (0, react_DB.useRef)(null),
-    value3: Dynamic =
+  let cleanupRef: Dynamic = (0, react_DB.useRef)(null),
+    registeredFormats: Dynamic =
       formats === null
         ? ""
         : JSON.stringify([
             exportCapabilitiesByFormat(formats),
             formats.map(
-              (input?: Dynamic): Dynamic =>
-                input.releaseRequestAfterMs ?? null,
+              (format?: Dynamic): Dynamic =>
+                format.releaseRequestAfterMs ?? null,
             ),
           ]);
   (0, react_DB.useEffect)((): Dynamic => {
     let { entries: current }: Dynamic = value.current;
     if (current === null) {
-      value2.current?.();
-      value2.current = null;
+      cleanupRef.current?.();
+      cleanupRef.current = null;
       return;
     }
-    let value4: Dynamic = current.map(
-      (input?: Dynamic): Dynamic => ({
-        format: input.format,
-        ...(input.variant !== undefined && {
-          variant: input.variant,
+    let formatOptions: Dynamic = current.map(
+      (format?: Dynamic): Dynamic => ({
+        format: format.format,
+        ...(format.variant !== undefined && {
+          variant: format.variant,
         }),
-        disabled: input.disabled,
-        interactive: input.interactive,
-        bundle: input.bundle,
-        handoff: input.handoff,
-        ...(input.releaseRequestAfterMs !== undefined && {
-          releaseRequestAfterMs: input.releaseRequestAfterMs,
+        disabled: format.disabled,
+        interactive: format.interactive,
+        bundle: format.bundle,
+        handoff: format.handoff,
+        ...(format.releaseRequestAfterMs !== undefined && {
+          releaseRequestAfterMs: format.releaseRequestAfterMs,
         }),
-        produce: (input2?: Dynamic): Dynamic =>
+        produce: (request?: Dynamic): Dynamic =>
           (
             value.current.entries?.find(
-              (input3?: Dynamic): Dynamic =>
-                input3.format === input.format &&
-                input3.variant === input.variant,
-            ) ?? input
-          ).produce(input2),
+              (candidate?: Dynamic): Dynamic =>
+                candidate.format === format.format &&
+                candidate.variant === format.variant,
+            ) ?? format
+          ).produce(request),
       }),
     );
-    value2.current = registerExportFormats(value4, {
-      onResult: (input?: Dynamic): Dynamic =>
-        value.current.opts?.onResult?.(input),
+    cleanupRef.current = registerExportFormats(formatOptions, {
+      onResult: (result?: Dynamic): Dynamic =>
+        value.current.opts?.onResult?.(result),
     });
-  }, [value3]);
+  }, [registeredFormats]);
   (0, react_DB.useEffect)(
     (): Dynamic => (): Dynamic => {
-      value2.current?.();
-      value2.current = null;
+      cleanupRef.current?.();
+      cleanupRef.current = null;
     },
     [],
   );

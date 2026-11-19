@@ -7,15 +7,15 @@ import { ExportDownloadsDefaultIgnorablePattern } from "./downloads";
 
 function exportBaseFileName(
   path: string,
-  options?: ExportNameOptions,
+  nameOptions?: ExportNameOptions,
 ): string {
   let value =
     (path.split("/").pop() ?? path)
       .replace(/(\.dc)?\.html?$/i, "")
       .replace(/\.napkin$/i, "") || "design";
-  return options?.slide == null
+  return nameOptions?.slide == null
     ? value
-    : `${value}-slide-${options.slide + 1}`;
+    : `${value}-slide-${nameOptions.slide + 1}`;
 }
 function sanitizeExportFileName(
   name: string,
@@ -40,13 +40,13 @@ function exportFileName(path: string, title?: string): string {
 }
 function uniqueExportFileNames(): ExportNameAllocator {
   let values: Set<string> = new Set();
-  return (input, options) => {
-    let value: string = exportFileName(input, options),
-      value2: string = value;
-    for (let count = 2; values.has(value2.toLowerCase()); count++)
-      value2 = `${value} (${count})`;
-    values.add(value2.toLowerCase());
-    return value2;
+  return (path, nameOptions) => {
+    let value: string = exportFileName(path, nameOptions),
+      uniqueName: string = value;
+    for (let count = 2; values.has(uniqueName.toLowerCase()); count++)
+      uniqueName = `${value} (${count})`;
+    values.add(uniqueName.toLowerCase());
+    return uniqueName;
   };
 }
 export {
