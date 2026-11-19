@@ -9,19 +9,19 @@ import { BoardsValue, encodeStorePathSegment } from "../../platform/file-content
 
 var SessionArtboardStateConstant: Dynamic;
 var SessionArtboardStateAlias: Dynamic;
-var SessionArtboardStateAlias_2: Dynamic;
+var writableCheck: Dynamic;
 var reactSessionArtboardState: Dynamic;
 var jsxSessionArtboardState: Dynamic;
 var SessionArtboardStatePausedCurrentTimeDurationConfig: Dynamic;
 var SessionArtboardStateEscape: Dynamic;
 var SessionArtboardStateHandler: Dynamic;
 function setArtboardWritableCheck(check?: Dynamic): Dynamic {
-  SessionArtboardStateAlias_2 = check;
+  writableCheck = check;
 }
 function isArtboardWritable(file?: Dynamic): Dynamic {
-  return SessionArtboardStateAlias_2 === "cannot tell"
+  return writableCheck === "cannot tell"
     ? SessionArtboardStateAlias === file
-    : SessionArtboardStateAlias_2?.(file) === true;
+    : writableCheck?.(file) === true;
 }
 function artboardStorePath(file?: Dynamic): Dynamic {
   return (
@@ -50,7 +50,7 @@ export {
   jsxSessionArtboardState,
   reactSessionArtboardState,
   SessionArtboardStateAlias,
-  SessionArtboardStateAlias_2,
+  writableCheck as SessionArtboardStateAlias_2,
   SessionArtboardStateConstant,
   SessionArtboardStateEscape,
   SessionArtboardStateHandler,
@@ -62,7 +62,7 @@ export function installEditorSessionArtboardState(): () => void {
   return () => {
     SessionArtboardStateConstant = 3e4;
     SessionArtboardStateAlias = null;
-    SessionArtboardStateAlias_2 = null;
+    writableCheck = null;
     reactSessionArtboardState = toModuleNamespace(
       load_react(),
       1,

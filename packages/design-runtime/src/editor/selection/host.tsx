@@ -12,8 +12,8 @@ var SelectionHostAlias: Dynamic;
 var SelectionHostThenValue: Dynamic;
 var awaitEditorReady: Dynamic;
 var runSelectionAction: Dynamic;
-var SelectionHostAlias_2: Dynamic;
-var SelectionHostAlias_3: Dynamic;
+var hostFactory: Dynamic;
+var hostedEditorComponent: Dynamic;
 var SelectionHostSubscribers: Dynamic;
 var SelectionHostAdd: Dynamic;
 var HostedEditorErrorBoundary: Dynamic;
@@ -27,11 +27,11 @@ function setEditorReadyPromise(readyPromise?: Dynamic): Dynamic {
   );
 }
 function setSelectionHostFactory(factory?: Dynamic): Dynamic {
-  SelectionHostAlias_2 = factory;
+  hostFactory = factory;
 }
 function setHostedEditorComponent(component?: Dynamic): Dynamic {
-  if (SelectionHostAlias_3 !== component) {
-    SelectionHostAlias_3 = component;
+  if (hostedEditorComponent !== component) {
+    hostedEditorComponent = component;
     for (let notifySubscriber of [...SelectionHostSubscribers] as Dynamic) notifySubscriber();
   }
 }
@@ -39,7 +39,7 @@ function HostedEditor({ host: host }: Dynamic): Dynamic {
   useUiLocale();
   let HostedEditorComponent: Dynamic = (0, reactSelectionHost.useSyncExternalStore)(
     SelectionHostAdd,
-    (): Dynamic => SelectionHostAlias_3,
+    (): Dynamic => hostedEditorComponent,
     (): Dynamic => null,
   );
   return HostedEditorComponent === null ? null : (
@@ -60,8 +60,8 @@ export {
   selectedElementLocations,
   SelectionHostAdd,
   SelectionHostAlias,
-  SelectionHostAlias_2,
-  SelectionHostAlias_3,
+  hostFactory as SelectionHostAlias_2,
+  hostedEditorComponent as SelectionHostAlias_3,
   SelectionHostSubscribers,
   SelectionHostThenValue,
   setEditorReadyPromise,
@@ -102,8 +102,8 @@ export function installEditorSelectionHost(): () => void {
       SelectionHostAlias === null
         ? Promise.resolve(null)
         : SelectionHostAlias(action, payload);
-    SelectionHostAlias_2 = null;
-    SelectionHostAlias_3 = null;
+    hostFactory = null;
+    hostedEditorComponent = null;
     SelectionHostSubscribers = new Set();
     SelectionHostAdd = (subscriber?: Dynamic): Dynamic => (
       SelectionHostSubscribers.add(subscriber),
