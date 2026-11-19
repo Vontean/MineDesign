@@ -8,15 +8,15 @@ var defaultDensity: Dynamic;
 var cdsRootAttributes: Dynamic;
 var automaticColorModeScript: Dynamic;
 var explicitColorModeAttribute: Dynamic;
-function buildColorModeScript(input?: Dynamic): Dynamic {
-  return input === undefined
+function buildColorModeScript(colorMode?: Dynamic): Dynamic {
+  return colorMode === undefined
     ? automaticColorModeScript
     : "(function(){var h=document.documentElement;h.setAttribute('data-mode','" +
-        input +
+        colorMode +
         "');h.setAttribute('" +
         explicitColorModeAttribute +
         "','" +
-        input +
+        colorMode +
         "')})();";
 }
 function applyDocumentCdsTheme(doc?: Dynamic): Dynamic {
@@ -24,28 +24,28 @@ function applyDocumentCdsTheme(doc?: Dynamic): Dynamic {
   documentElement.classList.add(cdsRootClassName);
   documentElement.hasAttribute("data-density") ||
     documentElement.setAttribute("data-density", defaultDensity);
-  let attribute: Dynamic = documentElement.getAttribute(
+  let explicitColorMode: Dynamic = documentElement.getAttribute(
     explicitColorModeAttribute,
   );
-  if (attribute === "light" || attribute === "dark") {
-    documentElement.setAttribute("data-mode", attribute);
+  if (explicitColorMode === "light" || explicitColorMode === "dark") {
+    documentElement.setAttribute("data-mode", explicitColorMode);
     return (): Dynamic => {};
   }
-  let callback: Dynamic = (): Dynamic => {
-    let attribute2: Dynamic = documentElement.getAttribute("data-theme");
-    attribute2 === "light" || attribute2 === "dark"
-      ? documentElement.setAttribute("data-mode", attribute2)
+  let syncColorMode: Dynamic = (): Dynamic => {
+    let theme: Dynamic = documentElement.getAttribute("data-theme");
+    theme === "light" || theme === "dark"
+      ? documentElement.setAttribute("data-mode", theme)
       : documentElement.removeAttribute("data-mode");
   };
-  callback();
-  let value: Dynamic = doc.defaultView?.MutationObserver;
-  if (value === undefined) return (): Dynamic => {};
-  let value2: Dynamic = new value(callback);
-  value2.observe(documentElement, {
+  syncColorMode();
+  let MutationObserverConstructor: Dynamic = doc.defaultView?.MutationObserver;
+  if (MutationObserverConstructor === undefined) return (): Dynamic => {};
+  let themeObserver: Dynamic = new MutationObserverConstructor(syncColorMode);
+  themeObserver.observe(documentElement, {
     attributes: true,
     attributeFilter: ["data-theme"],
   });
-  return (): Dynamic => value2.disconnect();
+  return (): Dynamic => themeObserver.disconnect();
 }
 export {
   applyDocumentCdsTheme,

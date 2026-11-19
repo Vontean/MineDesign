@@ -42,94 +42,94 @@ function isDatabaseCapability(capability?: Dynamic): Dynamic {
 }
 async function resolveDatabaseCapability(): Promise<Dynamic> {
   // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
-  let claude: Dynamic = (globalThis as Dynamic).designHost;
+  let designHost: Dynamic = (globalThis as Dynamic).designHost;
   try {
-    if (typeof claude?.use == "function") {
-      let value: Dynamic = await requestHostCapability("db");
-      return isDatabaseCapability(value) ? value : null;
+    if (typeof designHost?.use == "function") {
+      let capability: Dynamic = await requestHostCapability("db");
+      return isDatabaseCapability(capability) ? capability : null;
     }
   } catch {
     return null;
   }
-  return isDatabaseCapability(claude?.db) ? claude.db : null;
+  return isDatabaseCapability(designHost?.db) ? designHost.db : null;
 }
 function createRealtimeDatabaseAdapter(database?: Dynamic): Dynamic {
   return {
-    subscribe(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-      let flag: Dynamic = true,
-        value: Dynamic;
+    subscribe(collectionPath: Dynamic, onChanges: Dynamic, onError: Dynamic): Dynamic {
+      let isFirstSnapshot: Dynamic = true,
+        unsubscribe: Dynamic;
       try {
-        value = database
-          .collection(input)
+        unsubscribe = database
+          .collection(collectionPath)
           .limit(MAX_DATABASE_COLLECTION_DOCS)
           .onSnapshot(
-            (input2?: Dynamic): Dynamic => {
-              let items: Dynamic = [];
-              for (let value3 of input2.docChanges() as Dynamic) {
-                let value4: Dynamic = input + "/" + value3.doc.id;
-                value3.type === "removed"
-                  ? items.push({
+            (snapshot?: Dynamic): Dynamic => {
+              let changes: Dynamic = [];
+              for (let documentChange of snapshot.docChanges() as Dynamic) {
+                let documentPath: Dynamic = collectionPath + "/" + documentChange.doc.id;
+                documentChange.type === "removed"
+                  ? changes.push({
                       type: "removed",
-                      path: value4,
+                      path: documentPath,
                     })
-                  : items.push({
-                      type: value3.type,
-                      path: value4,
-                      data: value3.doc.data() ?? {},
+                  : changes.push({
+                      type: documentChange.type,
+                      path: documentPath,
+                      data: documentChange.doc.data() ?? {},
                     });
               }
-              let value2: Dynamic = flag;
-              flag = false;
-              options(items, {
-                initial: value2,
-                fromCache: input2.metadata?.fromCache === true,
-                hasPendingWrites: input2.metadata?.hasPendingWrites === true,
+              let isInitialSnapshot: Dynamic = isFirstSnapshot;
+              isFirstSnapshot = false;
+              onChanges(changes, {
+                initial: isInitialSnapshot,
+                fromCache: snapshot.metadata?.fromCache === true,
+                hasPendingWrites: snapshot.metadata?.hasPendingWrites === true,
               });
             },
-            (input2?: Dynamic): Dynamic =>
-              context(normalizeDatabaseError(input2)),
+            (snapshotError?: Dynamic): Dynamic =>
+              onError(normalizeDatabaseError(snapshotError)),
           );
-      } catch (value2: Dynamic) {
+      } catch (subscriptionError: Dynamic) {
         queueMicrotask(
-          (): Dynamic => context(normalizeDatabaseError(value2)),
+          (): Dynamic => onError(normalizeDatabaseError(subscriptionError)),
         );
       }
       return (): Dynamic => {
         try {
-          value?.();
+          unsubscribe?.();
         } catch {}
       };
     },
-    async set(input: Dynamic, options: Dynamic): Promise<Dynamic> {
+    async set(documentPath: Dynamic, documentFields: Dynamic): Promise<Dynamic> {
       try {
-        await database.doc(input).set({
-          ...options,
+        await database.doc(documentPath).set({
+          ...documentFields,
         });
-      } catch (value: Dynamic) {
-        throw normalizeDatabaseError(value);
+      } catch (writeError: Dynamic) {
+        throw normalizeDatabaseError(writeError);
       }
     },
-    async update(input: Dynamic, options: Dynamic): Promise<Dynamic> {
+    async update(documentPath: Dynamic, fieldUpdates: Dynamic): Promise<Dynamic> {
       try {
-        await database.doc(input).update({
-          ...options,
+        await database.doc(documentPath).update({
+          ...fieldUpdates,
         });
-      } catch (value: Dynamic) {
-        throw normalizeDatabaseError(value);
+      } catch (updateError: Dynamic) {
+        throw normalizeDatabaseError(updateError);
       }
     },
-    async del(input: Dynamic): Promise<Dynamic> {
+    async del(documentPath: Dynamic): Promise<Dynamic> {
       try {
-        await database.doc(input).delete();
-      } catch (value: Dynamic) {
-        throw normalizeDatabaseError(value);
+        await database.doc(documentPath).delete();
+      } catch (deletionError: Dynamic) {
+        throw normalizeDatabaseError(deletionError);
       }
     },
   };
 }
 async function getRealtimeDatabaseAdapter(): Promise<Dynamic> {
-  let value: Dynamic = await resolveDatabaseCapability();
-  return value === null ? null : createRealtimeDatabaseAdapter(value);
+  let capability: Dynamic = await resolveDatabaseCapability();
+  return capability === null ? null : createRealtimeDatabaseAdapter(capability);
 }
 export {
   createRealtimeDatabaseAdapter,

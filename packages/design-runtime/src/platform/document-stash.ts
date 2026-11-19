@@ -7,23 +7,23 @@ import { normalizeArtifactPath } from "./edit-count";
 var readOnlyDocumentMessage: Dynamic;
 var documentStashStoragePrefix: Dynamic;
 var readOnlyStashStoragePrefix: Dynamic;
-function getDocumentStashKey(input?: Dynamic): Dynamic {
+function getDocumentStashKey(artifactPath?: Dynamic): Dynamic {
   return (
-    documentStashStoragePrefix + normalizeArtifactPath(input)
+    documentStashStoragePrefix + normalizeArtifactPath(artifactPath)
   );
 }
-function createSessionStorageAdapter(input?: Dynamic): Dynamic {
+function createSessionStorageAdapter(storageKey?: Dynamic): Dynamic {
   return {
     read(): Dynamic {
       try {
-        return sessionStorage.getItem(input);
+        return sessionStorage.getItem(storageKey);
       } catch {
         return null;
       }
     },
-    write(input2: Dynamic): Dynamic {
+    write(serializedStash: Dynamic): Dynamic {
       try {
-        sessionStorage.setItem(input, input2);
+        sessionStorage.setItem(storageKey, serializedStash);
         return true;
       } catch {
         return false;
@@ -31,7 +31,7 @@ function createSessionStorageAdapter(input?: Dynamic): Dynamic {
     },
     clear(): Dynamic {
       try {
-        sessionStorage.removeItem(input);
+        sessionStorage.removeItem(storageKey);
       } catch {}
     },
   };
@@ -40,8 +40,8 @@ function createDocumentStash(): Dynamic {
   return createSessionStorageAdapter(getDocumentStashKey(location.pathname));
 }
 function readReadOnlyStash(): Dynamic {
-  let value: Dynamic = createReadOnlyStash().read();
-  return value !== null && value.length > 0 ? value : null;
+  let serializedStash: Dynamic = createReadOnlyStash().read();
+  return serializedStash !== null && serializedStash.length > 0 ? serializedStash : null;
 }
 function createReadOnlyStash(): Dynamic {
   return typeof location === "undefined"
@@ -57,44 +57,44 @@ function createReadOnlyStash(): Dynamic {
           ),
       );
 }
-function hashDocumentState(items?: Dynamic): Dynamic {
-  let count: Dynamic = 3735928559,
-    count2: Dynamic = 1103547991;
-  for (let index: Dynamic = 0; index < items.length; index++) {
-    let value: Dynamic = items.charCodeAt(index);
-    count = Math.imul(count ^ value, 2654435761);
-    count2 = Math.imul(count2 ^ value, 1597334677);
+function hashDocumentState(serializedState?: Dynamic): Dynamic {
+  let lowHash: Dynamic = 3735928559,
+    highHash: Dynamic = 1103547991;
+  for (let index: Dynamic = 0; index < serializedState.length; index++) {
+    let characterCode: Dynamic = serializedState.charCodeAt(index);
+    lowHash = Math.imul(lowHash ^ characterCode, 2654435761);
+    highHash = Math.imul(highHash ^ characterCode, 1597334677);
   }
-  count =
-    Math.imul(count ^ (count >>> 16), 2246822507) ^
-    Math.imul(count2 ^ (count2 >>> 13), 3266489909);
-  count2 =
-    Math.imul(count2 ^ (count2 >>> 16), 2246822507) ^
-    Math.imul(count ^ (count >>> 13), 3266489909);
+  lowHash =
+    Math.imul(lowHash ^ (lowHash >>> 16), 2246822507) ^
+    Math.imul(highHash ^ (highHash >>> 13), 3266489909);
+  highHash =
+    Math.imul(highHash ^ (highHash >>> 16), 2246822507) ^
+    Math.imul(lowHash ^ (lowHash >>> 13), 3266489909);
   return (
-    (count2 >>> 0).toString(16).padStart(8, "0") +
-    (count >>> 0).toString(16).padStart(8, "0")
+    (highHash >>> 0).toString(16).padStart(8, "0") +
+    (lowHash >>> 0).toString(16).padStart(8, "0")
   );
 }
-function parseDocumentStash(input?: Dynamic): Dynamic {
-  if (input !== null)
+function parseDocumentStash(serializedStash?: Dynamic): Dynamic {
+  if (serializedStash !== null)
     try {
-      let value: Dynamic = JSON.parse(input);
+      let parsedEntry: Dynamic = JSON.parse(serializedStash);
       if (
-        typeof value == "object" &&
-        value !== null &&
-        (value.v === 2 || value.v === 1) &&
-        typeof value.at == "number" &&
-        "state" in value
+        typeof parsedEntry == "object" &&
+        parsedEntry !== null &&
+        (parsedEntry.v === 2 || parsedEntry.v === 1) &&
+        typeof parsedEntry.at == "number" &&
+        "state" in parsedEntry
       ) {
-        let value2: Dynamic = value;
+        let stashEntry: Dynamic = parsedEntry;
         return {
-          at: value2.at,
-          state: value2.state,
-          ops: value2.ops,
+          at: stashEntry.at,
+          state: stashEntry.state,
+          ops: stashEntry.ops,
           expectEmbed:
-            typeof value2.expectEmbed == "string"
-              ? value2.expectEmbed
+            typeof stashEntry.expectEmbed == "string"
+              ? stashEntry.expectEmbed
               : undefined,
         };
       }

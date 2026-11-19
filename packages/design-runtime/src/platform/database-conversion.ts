@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { createDesignDatabaseCodec, DESIGN_SYSTEM_DOCUMENT_PATH } from "./database-codec";
 import { INDEX_LEFT_OUT_KEY } from "./design-index";
-import { BoardsValue, encodeStorePathSegment, FilesValue, isArtboardFile, NotesValue, PlatformFileContentResolvedValue_4, PlatformFileContentResolvedValue_5, splitPublishBatches } from "./file-content";
+import { BoardsValue, encodeStorePathSegment, FilesValue, isArtboardFile, NotesValue, PlatformFileContentResolvedValue_4 as designMetadataPath, PlatformFileContentResolvedValue_5 as designSourceDocumentPath, splitPublishBatches } from "./file-content";
 import { projectMetadataPaths, projectPathPrefix } from "./project-paths";
 import { MAX_SNAPSHOT_COLLECTION_DOCS } from "./snapshot-database";
 import { CreatedOnFilesValue } from "./storage-migration";
@@ -13,198 +13,198 @@ var DESIGN_CONVERSION_TIMEOUT_MS: Dynamic;
 var NONCOPYABLE_PUBLISH_ERRORS: Dynamic;
 var noDesignConversion: Dynamic;
 async function convertDatabaseDesignToFiles(
-  options?: Dynamic,
+  conversionOptions?: Dynamic,
 ): Promise<Dynamic> {
-  let conversionLock: Dynamic,
-    lockHeld: Dynamic = false;
+  let initialReadTimer: Dynamic,
+    didReadMetadata: Dynamic = false;
   try {
-    if (options.listing === undefined || options.listing === null)
+    if (conversionOptions.listing === undefined || conversionOptions.listing === null)
       return {
         did: "nothing",
         why: "list-unread",
       };
-    let value: Dynamic = Object.keys(options.listing ?? {}).filter(
-      (input?: Dynamic): Dynamic =>
-        input.startsWith(projectPathPrefix),
+    let publishedPaths: Dynamic = Object.keys(conversionOptions.listing ?? {}).filter(
+      (path?: Dynamic): Dynamic =>
+        path.startsWith(projectPathPrefix),
     );
-    if (value.includes(projectMetadataPaths.design))
+    if (publishedPaths.includes(projectMetadataPaths.design))
       return {
         did: "nothing",
         why: "has-index",
       };
-    let value2: Dynamic =
-        options.firstReadLimitMs ?? DESIGN_CONVERSION_TIMEOUT_MS,
-      promise: Dynamic = new Promise(
-        (input?: Dynamic, options2?: Dynamic): Dynamic => {
-          conversionLock = setTimeout(
+    let initialReadLimitMs: Dynamic =
+        conversionOptions.firstReadLimitMs ?? DESIGN_CONVERSION_TIMEOUT_MS,
+      readDeadline: Dynamic = new Promise(
+        (_resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+          initialReadTimer = setTimeout(
             (): Dynamic =>
-              options2(
+              reject(
                 new Error(
                   "no answer within " +
-                    String(value2) +
+                    String(initialReadLimitMs) +
                     " ms (may I write, the store, or its first read)",
                 ),
               ),
-            value2,
+            initialReadLimitMs,
           );
         },
       ),
-      callback: Dynamic = (input?: Dynamic): Dynamic =>
-        Promise.race([input, promise]);
-    if (!(await callback(options.canWrite())))
+      beforeReadDeadline: Dynamic = (operation?: Dynamic): Dynamic =>
+        Promise.race([operation, readDeadline]);
+    if (!(await beforeReadDeadline(conversionOptions.canWrite())))
       return {
         did: "nothing",
         why: "cannot-write",
       };
-    let value3: Dynamic = await callback(options.store());
-    if (value3 === null)
+    let databaseStore: Dynamic = await beforeReadDeadline(conversionOptions.store());
+    if (databaseStore === null)
       return {
         did: "nothing",
         why: "no-store",
       };
-    let value4: Dynamic = await callback(
-      value3.get(PlatformFileContentResolvedValue_4),
+    let metadataEntry: Dynamic = await beforeReadDeadline(
+      databaseStore.get(designMetadataPath),
     );
-    clearTimeout(conversionLock);
-    if (value4 === null)
+    clearTimeout(initialReadTimer);
+    if (metadataEntry === null)
       return {
         did: "nothing",
         why: "store-empty",
       };
-    lockHeld = true;
-    if (value4.data.v !== 2)
+    didReadMetadata = true;
+    if (metadataEntry.data.v !== 2)
       return noDesignConversion(
         "design/meta is not the layout this copy knows",
       );
-    if (options.holdOff !== undefined)
-      return noDesignConversion(options.holdOff, true);
-    let entries: Dynamic = new Map([
-      [PlatformFileContentResolvedValue_4, value4],
+    if (conversionOptions.holdOff !== undefined)
+      return noDesignConversion(conversionOptions.holdOff, true);
+    let entriesByPath: Dynamic = new Map([
+      [designMetadataPath, metadataEntry],
     ]);
-    for (let value11 of [
+    for (let metadataPath of [
       DESIGN_SYSTEM_DOCUMENT_PATH,
-      PlatformFileContentResolvedValue_5,
+      designSourceDocumentPath,
     ] as Dynamic) {
-      let value12: Dynamic = await value3.get(value11);
-      value12 !== null && entries.set(value12.path, value12);
+      let entry: Dynamic = await databaseStore.get(metadataPath);
+      entry !== null && entriesByPath.set(entry.path, entry);
     }
-    for (let value11 of [
+    for (let collectionPath of [
       BoardsValue,
       FilesValue,
       NotesValue,
     ] as Dynamic) {
-      let value12: Dynamic = await value3.list(value11);
-      if (value12.length >= MAX_SNAPSHOT_COLLECTION_DOCS)
+      let collectionEntries: Dynamic = await databaseStore.list(collectionPath);
+      if (collectionEntries.length >= MAX_SNAPSHOT_COLLECTION_DOCS)
         return noDesignConversion(
           "the store holds " +
             String(MAX_SNAPSHOT_COLLECTION_DOCS) +
             " " +
-            value11 +
+            collectionPath +
             " or more",
         );
-      for (let value13 of value12 as Dynamic)
-        value13.path.startsWith(value11 + "/") &&
-          !value13.path.slice(value11.length + 1).includes("/") &&
-          entries.set(value13.path, value13);
+      for (let entry of collectionEntries as Dynamic)
+        entry.path.startsWith(collectionPath + "/") &&
+          !entry.path.slice(collectionPath.length + 1).includes("/") &&
+          entriesByPath.set(entry.path, entry);
     }
-    for (let value11 of (Array.isArray(value4.data.boardOrder)
-      ? value4.data.boardOrder
+    for (let orderedBoardName of (Array.isArray(metadataEntry.data.boardOrder)
+      ? metadataEntry.data.boardOrder
       : []) as Dynamic) {
-      let value12: Dynamic =
-        typeof value11 == "string"
+      let boardEntryPath: Dynamic =
+        typeof orderedBoardName == "string"
           ? BoardsValue +
             "/" +
-            encodeStorePathSegment(value11)
+            encodeStorePathSegment(orderedBoardName)
           : undefined;
-      if (value12 !== undefined && !entries.has(value12)) {
-        let value13: Dynamic = await value3.get(value12);
-        value13 !== null && entries.set(value13.path, value13);
+      if (boardEntryPath !== undefined && !entriesByPath.has(boardEntryPath)) {
+        let boardEntry: Dynamic = await databaseStore.get(boardEntryPath);
+        boardEntry !== null && entriesByPath.set(boardEntry.path, boardEntry);
       }
     }
-    let value5: Dynamic = createDesignDatabaseCodec({
-        readBlob: options.readBlob,
-        ...(options.defaultTitle !== undefined
+    let codec: Dynamic = createDesignDatabaseCodec({
+        readBlob: conversionOptions.readBlob,
+        ...(conversionOptions.defaultTitle !== undefined
           ? {
-              defaultTitle: options.defaultTitle,
+              defaultTitle: conversionOptions.defaultTitle,
             }
           : {}),
       }),
-      value6: Dynamic = await value5.toTree(entries);
-    if (Object.keys(value6.index.boards).length === 0)
+      convertedTree: Dynamic = await codec.toTree(entriesByPath);
+    if (Object.keys(convertedTree.index.boards).length === 0)
       return {
         did: "nothing",
         why: "store-empty",
       };
-    let value7: Dynamic = value.find(
-      (input?: Dynamic): Dynamic =>
-        isArtboardFile(input) && !value6.files.has(input),
+    let unmatchedArtboard: Dynamic = publishedPaths.find(
+      (path?: Dynamic): Dynamic =>
+        isArtboardFile(path) && !convertedTree.files.has(path),
     );
-    if (value7 !== undefined)
+    if (unmatchedArtboard !== undefined)
       return {
         did: "nothing",
         why: "other-files",
         reason:
-          value7 +
+          unmatchedArtboard +
           " is an artboard the old store does not hold; nothing was changed",
       };
-    let state: Dynamic = {
-      ...value6.index,
+    let convertedIndex: Dynamic = {
+      ...convertedTree.index,
       [CreatedOnFilesValue]: {
         v: 1,
-        at: (options.now?.() ?? new Date()).toISOString(),
+        at: (conversionOptions.now?.() ?? new Date()).toISOString(),
       },
     };
-    delete state[INDEX_LEFT_OUT_KEY];
-    let value8: Dynamic = options.port(),
-      value9: Dynamic = Object.fromEntries(
-        [...value6.files].filter(
-          ([input]: Dynamic): Dynamic => !value.includes(input),
+    delete convertedIndex[INDEX_LEFT_OUT_KEY];
+    let filePort: Dynamic = conversionOptions.port(),
+      unpublishedFiles: Dynamic = Object.fromEntries(
+        [...convertedTree.files].filter(
+          ([path]: Dynamic): Dynamic => !publishedPaths.includes(path),
         ),
       ),
-      index: Dynamic = 0;
-    for (let value11 of splitPublishBatches(
-      value9,
+      publishedFileCount: Dynamic = 0;
+    for (let batch of splitPublishBatches(
+      unpublishedFiles,
       (): Dynamic => false,
     ) as Dynamic) {
-      let value12: Dynamic = Object.entries(value11);
+      let batchEntries: Dynamic = Object.entries(batch);
       for (
-        let index2: Dynamic = 0;
-        index2 < 2 && value12.length > 0;
-        index2 += 1
+        let attemptIndex: Dynamic = 0;
+        attemptIndex < 2 && batchEntries.length > 0;
+        attemptIndex += 1
       ) {
-        let value13: Dynamic = await value8.publish(
-          Object.fromEntries(value12),
+        let publishResult: Dynamic = await filePort.publish(
+          Object.fromEntries(batchEntries),
           {
             ifMatch: Object.fromEntries(
-              value12.map(([input]: Dynamic): Dynamic => [input, null]),
+              batchEntries.map(([path]: Dynamic): Dynamic => [path, null]),
             ),
           },
         );
-        if (value13.ok) {
-          if (value13.preconditionsChecked !== true)
+        if (publishResult.ok) {
+          if (publishResult.preconditionsChecked !== true)
             return noDesignConversion(
               "the host did not check the conditions of a save",
               true,
             );
-          index += value12.length;
+          publishedFileCount += batchEntries.length;
           break;
         }
-        let values: Dynamic = new Set(
-          (value13.paths ?? []).map((input?: Dynamic): Dynamic => input.path),
+        let conflictPaths: Dynamic = new Set(
+          (publishResult.paths ?? []).map((conflict?: Dynamic): Dynamic => conflict.path),
         );
-        if (value13.code !== "conflict" || values.size === 0 || index2 === 1)
+        if (publishResult.code !== "conflict" || conflictPaths.size === 0 || attemptIndex === 1)
           return noDesignConversion(
-            "content: " + value13.code,
-            !NONCOPYABLE_PUBLISH_ERRORS.has(value13.code),
+            "content: " + publishResult.code,
+            !NONCOPYABLE_PUBLISH_ERRORS.has(publishResult.code),
           );
-        value12 = value12.filter(
-          ([input]: Dynamic): Dynamic => !values.has(input),
+        batchEntries = batchEntries.filter(
+          ([path]: Dynamic): Dynamic => !conflictPaths.has(path),
         );
       }
     }
-    let value10: Dynamic = await value8.publish(
+    let indexPublishResult: Dynamic = await filePort.publish(
       {
-        [projectMetadataPaths.design]: value5.serializeIndex(state),
+        [projectMetadataPaths.design]: codec.serializeIndex(convertedIndex),
       },
       {
         ifMatch: {
@@ -212,28 +212,28 @@ async function convertDatabaseDesignToFiles(
         },
       },
     );
-    return value10.ok
+    return indexPublishResult.ok
       ? {
           did: "restored",
-          files: index + 1,
+          files: publishedFileCount + 1,
         }
-      : value10.code === "conflict"
+      : indexPublishResult.code === "conflict"
         ? {
             did: "nothing",
             why: "someone-else-finished",
           }
-        : noDesignConversion("index: " + value10.code, true);
-  } catch (value: Dynamic) {
+        : noDesignConversion("index: " + indexPublishResult.code, true);
+  } catch (conversionError: Dynamic) {
     return noDesignConversion(
-      value instanceof Error
-        ? value.message
-        : typeof value?.message == "string"
-          ? String(value.message)
-          : String(value),
-      lockHeld,
+      conversionError instanceof Error
+        ? conversionError.message
+        : typeof conversionError?.message == "string"
+          ? String(conversionError.message)
+          : String(conversionError),
+      didReadMetadata,
     );
   } finally {
-    clearTimeout(conversionLock);
+    clearTimeout(initialReadTimer);
   }
 }
 export {
@@ -247,13 +247,13 @@ export function installPlatformDatabaseConversion(): () => void {
     DESIGN_CONVERSION_TIMEOUT_MS = 5e3;
     NONCOPYABLE_PUBLISH_ERRORS = new Set(["too_large", "read_only_path"]);
     noDesignConversion = (
-      input?: Dynamic,
-      options: Dynamic = false,
+      reason?: Dynamic,
+      isPastMetadata: Dynamic = false,
     ): Dynamic => ({
       did: "nothing",
       why: "not-copied",
-      reason: input,
-      ...(options
+      reason: reason,
+      ...(isPastMetadata
         ? {
             pastMeta: true,
           }

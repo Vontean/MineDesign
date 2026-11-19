@@ -15,55 +15,55 @@ function normalizeDocumentTitle(items?: Dynamic): Dynamic {
       )
     : undefined;
 }
-function normalizeNewDocumentTitle(input?: Dynamic): Dynamic {
+function normalizeNewDocumentTitle(title?: Dynamic): Dynamic {
   return truncateUtf16Safely(
-    input.trim(),
+    title.trim(),
     PlatformDatabaseDocumentStoreConstant,
   );
 }
-function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
-  let runtime2: Dynamic = options.runtime;
-  function value(input?: Dynamic): Dynamic {
+function createDatabaseDocumentStore(storeOptions?: Dynamic): Dynamic {
+  let databaseRuntime: Dynamic = storeOptions.runtime;
+  function parseContentWithFallback(rawContent?: Dynamic): Dynamic {
     try {
-      return options.parseContent(input);
+      return storeOptions.parseContent(rawContent);
     } catch {
-      return options.initialContent;
+      return storeOptions.initialContent;
     }
   }
-  let value2: Dynamic = options.defaultTitle ?? "Untitled",
-    state: Dynamic = {
-      title: normalizeDocumentTitle(options.snapshot.title) ?? value2,
-      content: value(options.snapshot.content),
-      comments: parseDocumentComments(options.snapshot.comments),
+  let defaultTitle: Dynamic = storeOptions.defaultTitle ?? "Untitled",
+    documentState: Dynamic = {
+      title: normalizeDocumentTitle(storeOptions.snapshot.title) ?? defaultTitle,
+      content: parseContentWithFallback(storeOptions.snapshot.content),
+      comments: parseDocumentComments(storeOptions.snapshot.comments),
     },
-    value3: Dynamic = runtime2.saving.status === "readonly",
-    value4: Dynamic = options.contentHold?.(options.snapshot.content),
-    value5: Dynamic =
-      runtime2.saving.status === "error"
-        ? (runtime2.saving.lastError?.message ??
+    isReadOnly: Dynamic = databaseRuntime.saving.status === "readonly",
+    contentHoldReason: Dynamic = storeOptions.contentHold?.(storeOptions.snapshot.content),
+    saveErrorMessage: Dynamic =
+      databaseRuntime.saving.status === "error"
+        ? (databaseRuntime.saving.lastError?.message ??
           "Autosave failed \u2014 retrying.")
         : undefined,
-    value6: Dynamic = runtime2.saving.status === "saving",
-    values: Dynamic = new Set(),
-    values2: Dynamic = new Set(),
-    values3: Dynamic = new Set();
-  function value7(): Dynamic {
-    return value4 !== undefined
+    isSaving: Dynamic = databaseRuntime.saving.status === "saving",
+    pendingCommentIds: Dynamic = new Set(),
+    documentListeners: Dynamic = new Set(),
+    saveStateListeners: Dynamic = new Set();
+  function getSaveState(): Dynamic {
+    return contentHoldReason !== undefined
       ? {
           status: "readonly",
-          message: value4,
+          message: contentHoldReason,
         }
-      : value3
+      : isReadOnly
         ? {
             status: "readonly",
             get message() { return uiMessage("canvas.databaseDocumentStore.thisViewCannotEditTheDocument"); },
           }
-        : value5 !== undefined
+        : saveErrorMessage !== undefined
           ? {
               status: "error",
-              message: value5,
+              message: saveErrorMessage,
             }
-          : value6 || runtime2.saving.pending > 0
+          : isSaving || databaseRuntime.saving.pending > 0
             ? {
                 status: "saving",
               }
@@ -71,123 +71,123 @@ function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
                 status: "ready",
               };
   }
-  function value8(): Dynamic {
-    for (let value11 of [...values2] as Dynamic) value11();
-    let value10: Dynamic = value7();
-    for (let value11 of [...values3] as Dynamic) value11(value10);
+  function notifyListeners(): Dynamic {
+    for (let listener of [...documentListeners] as Dynamic) listener();
+    let saveState: Dynamic = getSaveState();
+    for (let listener of [...saveStateListeners] as Dynamic) listener(saveState);
   }
-  runtime2.saving.onStatus((input?: Dynamic, options2?: Dynamic): Dynamic => {
-    value6 = input === "saving";
-    input === "readonly" && (value3 = true);
-    input === "error"
-      ? (value5 = options2?.message ?? "Autosave failed \u2014 retrying.")
-      : (input === "idle" || input === "readonly") && (value5 = undefined);
-    input === "idle" && values.clear();
-    value8();
+  databaseRuntime.saving.onStatus((status?: Dynamic, saveError?: Dynamic): Dynamic => {
+    isSaving = status === "saving";
+    status === "readonly" && (isReadOnly = true);
+    status === "error"
+      ? (saveErrorMessage = saveError?.message ?? "Autosave failed \u2014 retrying.")
+      : (status === "idle" || status === "readonly") && (saveErrorMessage = undefined);
+    status === "idle" && pendingCommentIds.clear();
+    notifyListeners();
   });
-  runtime2.doc.observe("", (input?: Dynamic): Dynamic => {
-    let flag: Dynamic = false;
-    for (let value10 of input as Dynamic)
-      value10.origin !== "local" &&
-        (value10.key === "title"
-          ? ((state.title = normalizeDocumentTitle(value10.value) ?? value2),
-            (flag = true))
-          : value10.key === "content"
-            ? ((state.content = value(value10.value)),
-              (value4 = options.contentHold?.(value10.value)),
-              (flag = true))
-            : value10.key === "comments" &&
-              ((state.comments = parseDocumentComments(
-                value10.value,
+  databaseRuntime.doc.observe("", (changes?: Dynamic): Dynamic => {
+    let didChange: Dynamic = false;
+    for (let change of changes as Dynamic)
+      change.origin !== "local" &&
+        (change.key === "title"
+          ? ((documentState.title = normalizeDocumentTitle(change.value) ?? defaultTitle),
+            (didChange = true))
+          : change.key === "content"
+            ? ((documentState.content = parseContentWithFallback(change.value)),
+              (contentHoldReason = storeOptions.contentHold?.(change.value)),
+              (didChange = true))
+            : change.key === "comments" &&
+              ((documentState.comments = parseDocumentComments(
+                change.value,
               )),
-              (flag = true)));
-    flag && value8();
+              (didChange = true)));
+    didChange && notifyListeners();
   });
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    options.serializeContent !== undefined
-      ? options.serializeContent(input, state.title)
-      : input;
-  function value9(input?: Dynamic, options2?: Dynamic): Dynamic {
-    runtime2.doc.set(input, options2).catch((): Dynamic => {
-      value5 = "Autosave failed \u2014 the change may not be stored.";
-      value8();
+  let serializeContent: Dynamic = (content?: Dynamic): Dynamic =>
+    storeOptions.serializeContent !== undefined
+      ? storeOptions.serializeContent(content, documentState.title)
+      : content;
+  function saveField(key?: Dynamic, fieldValue?: Dynamic): Dynamic {
+    databaseRuntime.doc.set(key, fieldValue).catch((): Dynamic => {
+      saveErrorMessage = "Autosave failed \u2014 the change may not be stored.";
+      notifyListeners();
     });
   }
   return {
     saveMode: (): Dynamic => "auto",
-    title: (): Dynamic => state.title,
-    setTitle: (input?: Dynamic): Dynamic => {
-      if (value4 !== undefined) return;
-      let value10: Dynamic = normalizeNewDocumentTitle(input);
-      value10.length === 0 ||
-        value10 === state.title ||
-        ((state.title = value10),
-        value9("title", value10),
-        options.serializeContent !== undefined &&
-          value9("content", callback(state.content)),
+    title: (): Dynamic => documentState.title,
+    setTitle: (nextTitle?: Dynamic): Dynamic => {
+      if (contentHoldReason !== undefined) return;
+      let normalizedTitle: Dynamic = normalizeNewDocumentTitle(nextTitle);
+      normalizedTitle.length === 0 ||
+        normalizedTitle === documentState.title ||
+        ((documentState.title = normalizedTitle),
+        saveField("title", normalizedTitle),
+        storeOptions.serializeContent !== undefined &&
+          saveField("content", serializeContent(documentState.content)),
         recordEdit(),
-        value8());
+        notifyListeners());
     },
-    content: (): Dynamic => state.content,
-    setContent: (input?: Dynamic): Dynamic => {
-      value4 !== undefined ||
-        input === state.content ||
-        ((state.content = input),
-        value9("content", callback(input)),
+    content: (): Dynamic => documentState.content,
+    setContent: (nextContent?: Dynamic): Dynamic => {
+      contentHoldReason !== undefined ||
+        nextContent === documentState.content ||
+        ((documentState.content = nextContent),
+        saveField("content", serializeContent(nextContent)),
         recordEdit(),
-        value8());
+        notifyListeners());
     },
-    updateContent: (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      if (value4 !== undefined) return;
-      let value10: Dynamic = input(state.content);
-      value10 !== state.content &&
-        ((state.content = value10),
-        value9("content", callback(value10)),
-        options2?.auto !== true && recordEdit(),
-        value8());
+    updateContent: (updateContent?: Dynamic, updateOptions?: Dynamic): Dynamic => {
+      if (contentHoldReason !== undefined) return;
+      let nextContent: Dynamic = updateContent(documentState.content);
+      nextContent !== documentState.content &&
+        ((documentState.content = nextContent),
+        saveField("content", serializeContent(nextContent)),
+        updateOptions?.auto !== true && recordEdit(),
+        notifyListeners());
     },
-    state: (): Dynamic => state,
-    comments: (): Dynamic => state.comments,
-    addComment: (input?: Dynamic): Dynamic => {
-      if (state.comments.length >= maxDocumentComments) return;
-      let value10: Dynamic = parseDocumentComments([
+    state: (): Dynamic => documentState,
+    comments: (): Dynamic => documentState.comments,
+    addComment: (commentDraft?: Dynamic): Dynamic => {
+      if (documentState.comments.length >= maxDocumentComments) return;
+      let comment: Dynamic = parseDocumentComments([
         {
-          ...input,
+          ...commentDraft,
           id: crypto.randomUUID().slice(0, 8),
           at: Date.now(),
         },
       ])[0];
-      if (value10) {
-        state.comments = [...state.comments, value10];
-        values.add(value10.id);
-        value9("comments", state.comments);
-        value8();
-        return value10;
+      if (comment) {
+        documentState.comments = [...documentState.comments, comment];
+        pendingCommentIds.add(comment.id);
+        saveField("comments", documentState.comments);
+        notifyListeners();
+        return comment;
       }
     },
-    removeComment: (input?: Dynamic): Dynamic => {
-      let value10: Dynamic = state.comments.filter(
-        (input2?: Dynamic): Dynamic => input2.id !== input,
+    removeComment: (commentId?: Dynamic): Dynamic => {
+      let remainingComments: Dynamic = documentState.comments.filter(
+        (comment?: Dynamic): Dynamic => comment.id !== commentId,
       );
-      value10.length !== state.comments.length &&
-        ((state.comments = value10),
-        values.delete(input),
-        value9("comments", state.comments),
-        value8());
+      remainingComments.length !== documentState.comments.length &&
+        ((documentState.comments = remainingComments),
+        pendingCommentIds.delete(commentId),
+        saveField("comments", documentState.comments),
+        notifyListeners());
     },
     commentSync: (): Dynamic => {
-      let size: Dynamic = values.size;
-      return value3 && size > 0
+      let size: Dynamic = pendingCommentIds.size;
+      return isReadOnly && size > 0
         ? {
             status: "blocked",
             pending: size,
             get message() { return uiMessage("canvas.databaseDocumentStore.thisViewCannotEditTheDocument"); },
           }
-        : value5 !== undefined && size > 0
+        : saveErrorMessage !== undefined && size > 0
           ? {
               status: "error",
               pending: size,
-              message: value5,
+              message: saveErrorMessage,
             }
           : size > 0
             ? {
@@ -199,30 +199,30 @@ function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
                 pending: 0,
               };
     },
-    pendingCommentIds: (): Dynamic => new Set(values),
+    pendingCommentIds: (): Dynamic => new Set(pendingCommentIds),
     retryCommentPublish: (): Dynamic => {
-      runtime2.saving.save().catch((): Dynamic => {});
+      databaseRuntime.saving.save().catch((): Dynamic => {});
     },
     dirty: (): Dynamic => false,
-    readOnly: (): Dynamic => value3 || value4 !== undefined,
-    saveState: value7,
+    readOnly: (): Dynamic => isReadOnly || contentHoldReason !== undefined,
+    saveState: getSaveState,
     documentBytes: (): Dynamic =>
-      new TextEncoder().encode(JSON.stringify(state)).length,
+      new TextEncoder().encode(JSON.stringify(documentState)).length,
     save: async (): Promise<Dynamic> => {
-      value3 ||
-        (await runtime2.saving.save().catch((): Dynamic => {}), value8());
+      isReadOnly ||
+        (await databaseRuntime.saving.save().catch((): Dynamic => {}), notifyListeners());
     },
     stashOffer: (): Dynamic => {},
     restoreStash: (): Dynamic => {},
     discardStash: (): Dynamic => {},
     restoreCount: (): Dynamic => 0,
-    subscribe: (input?: Dynamic): Dynamic => (
-      values2.add(input),
-      (): Dynamic => values2.delete(input)
+    subscribe: (listener?: Dynamic): Dynamic => (
+      documentListeners.add(listener),
+      (): Dynamic => documentListeners.delete(listener)
     ),
-    subscribeSave: (input?: Dynamic): Dynamic => (
-      values3.add(input),
-      (): Dynamic => values3.delete(input)
+    subscribeSave: (listener?: Dynamic): Dynamic => (
+      saveStateListeners.add(listener),
+      (): Dynamic => saveStateListeners.delete(listener)
     ),
   };
 }

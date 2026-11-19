@@ -1,33 +1,33 @@
 import type { JsonValue, DataRecord } from "../contracts/storage";
 /** Restored application module; prepare first, initialize in original order. */
 
-var PlatformDocumentValuesPattern: RegExp;
-var PlatformDocumentValuesPattern_2: RegExp;
+var htmlEscapePattern: RegExp;
+var unicodeSeparatorPattern: RegExp;
 var DELETE_DOCUMENT: symbol;
-var PlatformDocumentValuesElementCache: WeakMap<object, string>;
-var ProtoValue: string;
-function serializedDocumentBytes(input: JsonValue): number {
-  let value: string = JSON.stringify(input)!,
-    value2 =
-      5 * (value.match(PlatformDocumentValuesPattern)?.length ?? 0) +
-      3 * (value.match(PlatformDocumentValuesPattern_2)?.length ?? 0);
-  return new TextEncoder().encode(value).length + value2;
+var serializedObjectCache: WeakMap<object, string>;
+var prototypeKey: string;
+function serializedDocumentBytes(documentValue: JsonValue): number {
+  let serializedJson: string = JSON.stringify(documentValue)!,
+    escapeOverheadBytes =
+      5 * (serializedJson.match(htmlEscapePattern)?.length ?? 0) +
+      3 * (serializedJson.match(unicodeSeparatorPattern)?.length ?? 0);
+  return new TextEncoder().encode(serializedJson).length + escapeOverheadBytes;
 }
-function isPlainRecord(input: unknown): input is DataRecord {
-  return typeof input == "object" && input !== null && !Array.isArray(input);
+function isPlainRecord(candidate: unknown): candidate is DataRecord {
+  return typeof candidate == "object" && candidate !== null && !Array.isArray(candidate);
 }
-function sortJsonObjectKeys(key: string, value: unknown): unknown {
-  if (!isPlainRecord(value)) return value;
-  let state: DataRecord = {};
-  for (let _localvalue of Object.keys(value).sort())
-    state[_localvalue] = value[_localvalue];
-  return state;
+function sortJsonObjectKeys(key: string, jsonValue: unknown): unknown {
+  if (!isPlainRecord(jsonValue)) return jsonValue;
+  let sortedRecord: DataRecord = {};
+  for (let property of Object.keys(jsonValue).sort())
+    sortedRecord[property] = jsonValue[property];
+  return sortedRecord;
 }
-function stableStringify(value: object): string {
-  let cachedJson = PlatformDocumentValuesElementCache.get(value);
+function stableStringify(record: object): string {
+  let cachedJson = serializedObjectCache.get(record);
   if (cachedJson !== undefined) return cachedJson;
-  let json = JSON.stringify(value, sortJsonObjectKeys) ?? "undefined";
-  PlatformDocumentValuesElementCache.set(value, json);
+  let json = JSON.stringify(record, sortJsonObjectKeys) ?? "undefined";
+  serializedObjectCache.set(record, json);
   return json;
 }
 function structurallyEqual(left: unknown, right: unknown): boolean {
@@ -44,14 +44,14 @@ function deepMerge(base: DataRecord, patch: DataRecord): DataRecord {
   let merged = {
     ...base,
   };
-  for (let value of Object.keys(patch)) {
-    let value2 = patch[value];
-    if (value2 === undefined || value === ProtoValue) continue;
-    let value3 = merged[value];
-    merged[value] =
-      isPlainRecord(value3) && isPlainRecord(value2)
-        ? deepMerge(value3, value2)
-        : value2;
+  for (let property of Object.keys(patch)) {
+    let patchValue = patch[property];
+    if (patchValue === undefined || property === prototypeKey) continue;
+    let baseValue = merged[property];
+    merged[property] =
+      isPlainRecord(baseValue) && isPlainRecord(patchValue)
+        ? deepMerge(baseValue, patchValue)
+        : patchValue;
   }
   return merged;
 }
@@ -59,21 +59,21 @@ function mergeCompatibleRecords(
   base: DataRecord,
   patch: DataRecord,
 ): DataRecord | null {
-  let state = {
+  let merged = {
     ...base,
   };
-  for (let value of Object.keys(patch)) {
-    let value2 = patch[value];
-    if (value2 === undefined || value === ProtoValue) continue;
-    let value3 = state[value];
-    if (isPlainRecord(value2) && value3 !== undefined) {
-      if (!isPlainRecord(value3)) return null;
-      let value4 = mergeCompatibleRecords(value3, value2);
-      if (value4 === null) return null;
-      state[value] = value4;
-    } else state[value] = value2;
+  for (let property of Object.keys(patch)) {
+    let patchValue = patch[property];
+    if (patchValue === undefined || property === prototypeKey) continue;
+    let baseValue = merged[property];
+    if (isPlainRecord(patchValue) && baseValue !== undefined) {
+      if (!isPlainRecord(baseValue)) return null;
+      let mergedValue = mergeCompatibleRecords(baseValue, patchValue);
+      if (mergedValue === null) return null;
+      merged[property] = mergedValue;
+    } else merged[property] = patchValue;
   }
-  return state;
+  return merged;
 }
 function diffRecord(
   before: DataRecord | undefined,
@@ -82,60 +82,60 @@ function diffRecord(
   if (before === after) return null;
   if (before === undefined) return after;
   let patch: DataRecord | null = null;
-  for (let value of Object.keys(after)) {
-    if (value === ProtoValue) continue;
-    let value2 = after[value],
-      value3 = before[value];
-    if (value2 === undefined) {
-      value3 !== undefined && ((patch ??= {})[value] = null);
+  for (let property of Object.keys(after)) {
+    if (property === prototypeKey) continue;
+    let newValue = after[property],
+      oldValue = before[property];
+    if (newValue === undefined) {
+      oldValue !== undefined && ((patch ??= {})[property] = null);
       continue;
     }
-    if (value3 !== value2)
-      if (isPlainRecord(value3) && isPlainRecord(value2)) {
-        let value4 = diffRecord(value3, value2);
-        value4 !== null && ((patch ??= {})[value] = value4);
+    if (oldValue !== newValue)
+      if (isPlainRecord(oldValue) && isPlainRecord(newValue)) {
+        let nestedPatch = diffRecord(oldValue, newValue);
+        nestedPatch !== null && ((patch ??= {})[property] = nestedPatch);
       } else
-        (value3 === undefined || !structurallyEqual(value3, value2)) &&
-          ((patch ??= {})[value] = value2);
+        (oldValue === undefined || !structurallyEqual(oldValue, newValue)) &&
+          ((patch ??= {})[property] = newValue);
   }
-  for (let value of Object.keys(before))
-    before[value] !== undefined &&
-      after[value] === undefined &&
-      ((patch ??= {})[value] = null);
+  for (let property of Object.keys(before))
+    before[property] !== undefined &&
+      after[property] === undefined &&
+      ((patch ??= {})[property] = null);
   return patch;
 }
-function removeNullValues(input: DataRecord): DataRecord {
-  let value: DataRecord | undefined;
-  for (let value2 of Object.keys(input)) {
-    let value3 = input[value2],
-      value4 = value3;
-    value3 == null || value2 === ProtoValue
-      ? (value4 = undefined)
-      : isPlainRecord(value3) && (value4 = removeNullValues(value3));
-    value4 !== value3 &&
-      ((value ??= {
-        ...input,
+function removeNullValues(sourceRecord: DataRecord): DataRecord {
+  let cleanedRecord: DataRecord | undefined;
+  for (let property of Object.keys(sourceRecord)) {
+    let originalValue = sourceRecord[property],
+      cleanedValue = originalValue;
+    originalValue == null || property === prototypeKey
+      ? (cleanedValue = undefined)
+      : isPlainRecord(originalValue) && (cleanedValue = removeNullValues(originalValue));
+    cleanedValue !== originalValue &&
+      ((cleanedRecord ??= {
+        ...sourceRecord,
       }),
-      value4 === undefined ? delete value[value2] : (value[value2] = value4));
+      cleanedValue === undefined ? delete cleanedRecord[property] : (cleanedRecord[property] = cleanedValue));
   }
-  return value ?? input;
+  return cleanedRecord ?? sourceRecord;
 }
-function countRecordNulls(input: DataRecord): number {
-  let index = 0;
-  for (let value of Object.values(input))
-    value === null
-      ? (index += 1)
-      : isPlainRecord(value) && (index += countRecordNulls(value));
-  return index;
+function countRecordNulls(record: DataRecord): number {
+  let nullCount = 0;
+  for (let fieldValue of Object.values(record))
+    fieldValue === null
+      ? (nullCount += 1)
+      : isPlainRecord(fieldValue) && (nullCount += countRecordNulls(fieldValue));
+  return nullCount;
 }
-function recordDepth(value: unknown, depthLimit: number = 64): number {
-  if (typeof value != "object" || value === null) return 0;
+function recordDepth(record: unknown, depthLimit: number = 64): number {
+  if (typeof record != "object" || record === null) return 0;
   let maxChildDepth = 0;
-  for (let value2 of Array.isArray(value) ? value : Object.values(value))
+  for (let child of Array.isArray(record) ? record : Object.values(record))
     if (
       ((maxChildDepth = Math.max(
         maxChildDepth,
-        recordDepth(value2, depthLimit - 1),
+        recordDepth(child, depthLimit - 1),
       )),
       maxChildDepth >= depthLimit)
     )
@@ -158,10 +158,10 @@ export {
   dirname,
   isPlainRecord,
   mergeCompatibleRecords,
-  PlatformDocumentValuesElementCache,
-  PlatformDocumentValuesPattern,
-  PlatformDocumentValuesPattern_2,
-  ProtoValue,
+  serializedObjectCache as PlatformDocumentValuesElementCache,
+  htmlEscapePattern as PlatformDocumentValuesPattern,
+  unicodeSeparatorPattern as PlatformDocumentValuesPattern_2,
+  prototypeKey as ProtoValue,
   recordDepth,
   removeNullValues,
   serializedDocumentBytes,
@@ -171,10 +171,10 @@ export {
 };
 export function installPlatformDocumentValues(): () => void {
   return () => {
-    PlatformDocumentValuesPattern = /[<>&]/g;
-    PlatformDocumentValuesPattern_2 = /[\u2028\u2029]/g;
+    htmlEscapePattern = /[<>&]/g;
+    unicodeSeparatorPattern = /[\u2028\u2029]/g;
     DELETE_DOCUMENT = Symbol("DELETE_DOC");
-    PlatformDocumentValuesElementCache = new WeakMap();
-    ProtoValue = "__proto__";
+    serializedObjectCache = new WeakMap();
+    prototypeKey = "__proto__";
   };
 }

@@ -14,144 +14,144 @@ function truncateUtf16Safely(text?: Dynamic, maxUnits?: Dynamic): Dynamic {
     ? truncated.slice(0, -1)
     : truncated;
 }
-function isValidCommentImage(items?: Dynamic): Dynamic {
-  return /^\/?_blob\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(items)
+function isValidCommentImage(imageRef?: Dynamic): Dynamic {
+  return /^\/?_blob\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(imageRef)
     ? true
-    : items.length <= 2e5 &&
+    : imageRef.length <= 2e5 &&
         /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(
-          items,
+          imageRef,
         );
 }
-function getObjectProperty(input?: Dynamic, options?: Dynamic): Dynamic {
-  return typeof input == "object" && input !== null
-    ? input[options]
+function getObjectProperty(candidate?: Dynamic, property?: Dynamic): Dynamic {
+  return typeof candidate == "object" && candidate !== null
+    ? candidate[property]
     : undefined;
 }
-function parseDocumentComments(input?: Dynamic): Dynamic {
-  if (!Array.isArray(input)) return [];
-  let items: Dynamic = [],
-    values: Dynamic = new Set();
-  for (let value of input as Dynamic) {
-    let value2: Dynamic = getObjectProperty(value, "id"),
-      value3: Dynamic = getObjectProperty(value, "text"),
-      value4: Dynamic = getObjectProperty(value, "at");
+function parseDocumentComments(rawComments?: Dynamic): Dynamic {
+  if (!Array.isArray(rawComments)) return [];
+  let comments: Dynamic = [],
+    seenCommentIds: Dynamic = new Set();
+  for (let rawComment of rawComments as Dynamic) {
+    let commentId: Dynamic = getObjectProperty(rawComment, "id"),
+      commentText: Dynamic = getObjectProperty(rawComment, "text"),
+      timestamp: Dynamic = getObjectProperty(rawComment, "at");
     if (
-      typeof value2 != "string" ||
-      value2.length === 0 ||
-      value2.length > 64 ||
-      values.has(value2) ||
-      typeof value3 != "string" ||
-      typeof value4 != "number" ||
-      !Number.isFinite(value4)
+      typeof commentId != "string" ||
+      commentId.length === 0 ||
+      commentId.length > 64 ||
+      seenCommentIds.has(commentId) ||
+      typeof commentText != "string" ||
+      typeof timestamp != "number" ||
+      !Number.isFinite(timestamp)
     )
       continue;
-    values.add(value2);
-    let value5: Dynamic = getObjectProperty(value, "author"),
-      value6: Dynamic = getObjectProperty(value, "userId"),
-      value7: Dynamic = getObjectProperty(value, "elementKey"),
-      value8: Dynamic = getObjectProperty(value, "elementLabel"),
-      value9: Dynamic = getObjectProperty(value, "images"),
-      value10: Dynamic = Array.isArray(value9)
-        ? value9
+    seenCommentIds.add(commentId);
+    let author: Dynamic = getObjectProperty(rawComment, "author"),
+      userId: Dynamic = getObjectProperty(rawComment, "userId"),
+      elementKey: Dynamic = getObjectProperty(rawComment, "elementKey"),
+      elementLabel: Dynamic = getObjectProperty(rawComment, "elementLabel"),
+      rawImages: Dynamic = getObjectProperty(rawComment, "images"),
+      images: Dynamic = Array.isArray(rawImages)
+        ? rawImages
             .filter(
-              (input2?: Dynamic): Dynamic =>
-                typeof input2 == "string" && isValidCommentImage(input2),
+              (imageRef?: Dynamic): Dynamic =>
+                typeof imageRef == "string" && isValidCommentImage(imageRef),
             )
             .slice(0, maxCommentAttachments)
         : [];
-    items.push({
-      id: value2,
-      text: truncateUtf16Safely(value3, maxCommentTextLength),
-      at: value4,
+    comments.push({
+      id: commentId,
+      text: truncateUtf16Safely(commentText, maxCommentTextLength),
+      at: timestamp,
       author:
-        typeof value5 == "string" && value5.length > 0
-          ? truncateUtf16Safely(value5, 80)
+        typeof author == "string" && author.length > 0
+          ? truncateUtf16Safely(author, 80)
           : "viewer",
       userId:
-        typeof value6 == "string" && value6.length > 0
-          ? truncateUtf16Safely(value6, 128)
+        typeof userId == "string" && userId.length > 0
+          ? truncateUtf16Safely(userId, 128)
           : undefined,
       elementKey:
-        typeof value7 == "string" && value7.length > 0
-          ? truncateUtf16Safely(value7, 400)
+        typeof elementKey == "string" && elementKey.length > 0
+          ? truncateUtf16Safely(elementKey, 400)
           : undefined,
       elementLabel:
-        typeof value8 == "string"
-          ? truncateUtf16Safely(value8, 160)
+        typeof elementLabel == "string"
+          ? truncateUtf16Safely(elementLabel, 160)
           : undefined,
-      ...(value10.length > 0
+      ...(images.length > 0
         ? {
-            images: value10,
+            images: images,
           }
         : {}),
     });
   }
-  items.sort(
-    (input2?: Dynamic, options?: Dynamic): Dynamic => input2.at - options.at,
+  comments.sort(
+    (earlierComment?: Dynamic, laterComment?: Dynamic): Dynamic => earlierComment.at - laterComment.at,
   );
-  return items.slice(-maxDocumentComments);
+  return comments.slice(-maxDocumentComments);
 }
-function applyCommentOperations(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input;
-  for (let value2 of options as Dynamic)
-    if (value2.op === "add") {
+function applyCommentOperations(existingComments?: Dynamic, operations?: Dynamic): Dynamic {
+  let comments: Dynamic = existingComments;
+  for (let operation of operations as Dynamic)
+    if (operation.op === "add") {
       if (
-        value.some(
-          (input2?: Dynamic): Dynamic => input2.id === value2.comment.id,
+        comments.some(
+          (comment?: Dynamic): Dynamic => comment.id === operation.comment.id,
         ) ||
-        value.length >= maxDocumentComments
+        comments.length >= maxDocumentComments
       )
         continue;
-      value = [...value, value2.comment].sort(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          input2.at - options2.at,
+      comments = [...comments, operation.comment].sort(
+        (earlierComment?: Dynamic, laterComment?: Dynamic): Dynamic =>
+          earlierComment.at - laterComment.at,
       );
     } else
-      value = value.filter(
-        (input2?: Dynamic): Dynamic => input2.id !== value2.id,
+      comments = comments.filter(
+        (comment?: Dynamic): Dynamic => comment.id !== operation.id,
       );
-  return value;
+  return comments;
 }
 function filterEffectiveCommentOperations(
-  input?: Dynamic,
-  options?: Dynamic,
+  comments?: Dynamic,
+  operations?: Dynamic,
 ): Dynamic {
-  let values: Dynamic = new Set(
-    input.map((input2?: Dynamic): Dynamic => input2.id),
+  let commentIds: Dynamic = new Set(
+    comments.map((comment?: Dynamic): Dynamic => comment.id),
   );
-  return options.filter(
-    (input2?: Dynamic): Dynamic =>
-      input2.op === "add"
-        ? !values.has(input2.comment.id)
-        : values.has(input2.id),
+  return operations.filter(
+    (operation?: Dynamic): Dynamic =>
+      operation.op === "add"
+        ? !commentIds.has(operation.comment.id)
+        : commentIds.has(operation.id),
   );
 }
-function parseCommentOperations(input?: Dynamic): Dynamic {
-  if (!Array.isArray(input)) return [];
-  let items: Dynamic = [];
-  for (let value of input as Dynamic) {
-    let value2: Dynamic = getObjectProperty(value, "op");
-    if (value2 === "add") {
-      let value3: Dynamic = parseDocumentComments([
-        getObjectProperty(value, "comment"),
+function parseCommentOperations(rawOperations?: Dynamic): Dynamic {
+  if (!Array.isArray(rawOperations)) return [];
+  let operations: Dynamic = [];
+  for (let rawOperation of rawOperations as Dynamic) {
+    let operationKind: Dynamic = getObjectProperty(rawOperation, "op");
+    if (operationKind === "add") {
+      let comment: Dynamic = parseDocumentComments([
+        getObjectProperty(rawOperation, "comment"),
       ])[0];
-      value3 &&
-        items.push({
+      comment &&
+        operations.push({
           op: "add",
-          comment: value3,
+          comment: comment,
         });
-    } else if (value2 === "remove") {
-      let value3: Dynamic = getObjectProperty(value, "id");
-      typeof value3 == "string" &&
-        value3.length > 0 &&
-        value3.length <= 64 &&
-        items.push({
+    } else if (operationKind === "remove") {
+      let commentId: Dynamic = getObjectProperty(rawOperation, "id");
+      typeof commentId == "string" &&
+        commentId.length > 0 &&
+        commentId.length <= 64 &&
+        operations.push({
           op: "remove",
-          id: value3,
+          id: commentId,
         });
     }
   }
-  return items;
+  return operations;
 }
 export {
   applyCommentOperations,

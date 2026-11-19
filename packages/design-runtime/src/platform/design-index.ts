@@ -23,50 +23,50 @@ function orderedDesignMapKeys(order?: Dynamic, records?: Dynamic): Dynamic {
   for (let value of Object.keys(records).sort() as Dynamic) keys.add(value);
   return [...keys];
 }
-function normalizeDesignIndex(value?: Dynamic): Dynamic {
-  let input: Dynamic = isPlainDesignIndexObject(value) ? value : {},
+function normalizeDesignIndex(rawIndex?: Dynamic): Dynamic {
+  let indexRecord: Dynamic = isPlainDesignIndexObject(rawIndex) ? rawIndex : {},
     boards: Dynamic = {};
-  if (isPlainDesignIndexObject(input.boards))
-    for (let [value2, value3] of Object.entries(input.boards) as Dynamic)
-      isPlainDesignIndexObject(value3) &&
-        !isPrototypeProperty(value2) &&
-        (boards[value2] = value3);
+  if (isPlainDesignIndexObject(indexRecord.boards))
+    for (let [artboardPath, boardEntry] of Object.entries(indexRecord.boards) as Dynamic)
+      isPlainDesignIndexObject(boardEntry) &&
+        !isPrototypeProperty(artboardPath) &&
+        (boards[artboardPath] = boardEntry);
   let notes: Dynamic = {};
-  if (isPlainDesignIndexObject(input.notes))
-    for (let [value2, value3] of Object.entries(input.notes) as Dynamic)
-      isPlainDesignIndexObject(value3) &&
-        !isPrototypeProperty(value2) &&
-        (notes[value2] = value3);
+  if (isPlainDesignIndexObject(indexRecord.notes))
+    for (let [annotationId, noteEntry] of Object.entries(indexRecord.notes) as Dynamic)
+      isPlainDesignIndexObject(noteEntry) &&
+        !isPrototypeProperty(annotationId) &&
+        (notes[annotationId] = noteEntry);
   let index: Dynamic = {
-    ...input,
+    ...indexRecord,
     v:
-      typeof input.v == "number" && input.v >= CURRENT_DESIGN_INDEX_VERSION
-        ? input.v
+      typeof indexRecord.v == "number" && indexRecord.v >= CURRENT_DESIGN_INDEX_VERSION
+        ? indexRecord.v
         : CURRENT_DESIGN_INDEX_VERSION,
-    title: typeof input.title == "string" ? input.title : "",
-    launch: isPlainDesignIndexObject(input.launch) ? input.launch : {},
-    pages: Array.isArray(input.pages)
-      ? input.pages.filter(
-          (input2?: Dynamic): Dynamic =>
-            isPlainDesignIndexObject(input2) && typeof input2.id == "string",
+    title: typeof indexRecord.title == "string" ? indexRecord.title : "",
+    launch: isPlainDesignIndexObject(indexRecord.launch) ? indexRecord.launch : {},
+    pages: Array.isArray(indexRecord.pages)
+      ? indexRecord.pages.filter(
+          (page?: Dynamic): Dynamic =>
+            isPlainDesignIndexObject(page) && typeof page.id == "string",
         )
       : [],
     boards: boards,
-    order: Array.isArray(input.order)
-      ? input.order.filter(
-          (input2?: Dynamic): Dynamic => typeof input2 == "string",
+    order: Array.isArray(indexRecord.order)
+      ? indexRecord.order.filter(
+          (artboardPath?: Dynamic): Dynamic => typeof artboardPath == "string",
         )
       : [],
     notes: notes,
-    designSystems: Array.isArray(input.designSystems)
-      ? input.designSystems
+    designSystems: Array.isArray(indexRecord.designSystems)
+      ? indexRecord.designSystems
       : [],
-    attachments: isPlainDesignIndexObject(input.attachments)
-      ? input.attachments
+    attachments: isPlainDesignIndexObject(indexRecord.attachments)
+      ? indexRecord.attachments
       : {},
   };
-  typeof input.cover != "string" && delete index.cover;
-  input.migrated !== true && delete index.migrated;
+  typeof indexRecord.cover != "string" && delete index.cover;
+  indexRecord.migrated !== true && delete index.migrated;
   return index;
 }
 function serializeIndexArtboard(file?: Dynamic, board?: Dynamic): Dynamic {
@@ -104,20 +104,20 @@ function buildDesignDocumentFromIndex(
   let manifestText: Dynamic = JSON.stringify({
     artboards: orderedDesignMapKeys(index.order, index.boards)
       .filter(
-        (input?: Dynamic): Dynamic => !isDesignSystemFile(input),
+        (filePath?: Dynamic): Dynamic => !isDesignSystemFile(filePath),
       )
       .map(
-        (input?: Dynamic): Dynamic =>
-          serializeIndexArtboard(input, index.boards[input]),
+        (filePath?: Dynamic): Dynamic =>
+          serializeIndexArtboard(filePath, index.boards[filePath]),
       ),
     annotations: Object.keys(index.notes)
       .filter(
-        (input?: Dynamic): Dynamic =>
-          isNonemptyIndexAnnotation(index.notes[input]),
+        (annotationId?: Dynamic): Dynamic =>
+          isNonemptyIndexAnnotation(index.notes[annotationId]),
       )
       .map(
-        (input?: Dynamic): Dynamic =>
-          deserializeIndexAnnotation(input, index.notes[input]),
+        (annotationId?: Dynamic): Dynamic =>
+          deserializeIndexAnnotation(annotationId, index.notes[annotationId]),
       ),
     ...(typeof index.launch.view == "string"
       ? {
@@ -151,8 +151,8 @@ function buildSelectedBoardsDocument(
   if (files.length === 0) return [];
   let manifestText: Dynamic = JSON.stringify({
     artboards: files.map(
-      (input?: Dynamic): Dynamic =>
-        serializeIndexArtboard(input, index.boards[input]),
+      (artboardPath?: Dynamic): Dynamic =>
+        serializeIndexArtboard(artboardPath, index.boards[artboardPath]),
     ),
     ...(index.pages.length > 0
       ? {
@@ -162,17 +162,17 @@ function buildSelectedBoardsDocument(
   });
   return parseCanvasMetadata(
     manifestText,
-    Object.fromEntries(files.map((input?: Dynamic): Dynamic => [input, ""])),
-  ).artboards.filter((input?: Dynamic): Dynamic => input.frameless !== true);
+    Object.fromEntries(files.map((filePath?: Dynamic): Dynamic => [filePath, ""])),
+  ).artboards.filter((artboard?: Dynamic): Dynamic => artboard.frameless !== true);
 }
 function updateIndexProperty(
   object?: Dynamic,
   key?: Dynamic,
-  value?: Dynamic,
+  newValue?: Dynamic,
 ): Dynamic {
-  value === undefined
+  newValue === undefined
     ? key in object && delete object[key]
-    : equalDesignIndexJson(object[key], value) || (object[key] = value);
+    : equalDesignIndexJson(object[key], newValue) || (object[key] = newValue);
 }
 function updateIndexArtboard(target?: Dynamic, source?: Dynamic): Dynamic {
   for (let value of PlatformFileContentXYWValues as Dynamic)
@@ -186,8 +186,8 @@ function updateIndexArtboard(target?: Dynamic, source?: Dynamic): Dynamic {
 }
 function updateIndexAnnotation(target?: Dynamic, source?: Dynamic): Dynamic {
   let note: Dynamic = source;
-  for (let value3 of INDEX_ANNOTATION_PROPERTIES as Dynamic)
-    updateIndexProperty(target, value3, note[value3]);
+  for (let property of INDEX_ANNOTATION_PROPERTIES as Dynamic)
+    updateIndexProperty(target, property, note[property]);
   let path: Dynamic = typeof note.d == "string" ? note.d : undefined;
   updateIndexProperty(
     target,
@@ -203,27 +203,27 @@ function updateIndexAnnotation(target?: Dynamic, source?: Dynamic): Dynamic {
       ? path.slice(MAX_NOTE_INLINE_PATH_CHARS)
       : undefined,
   );
-  let value: Dynamic = isPlainDesignIndexObject(note.css)
+  let noteCss: Dynamic = isPlainDesignIndexObject(note.css)
     ? note.css
     : undefined;
-  if (value === undefined) updateIndexProperty(target, "css", undefined);
+  if (noteCss === undefined) updateIndexProperty(target, "css", undefined);
   else {
-    let value3: Dynamic = isPlainDesignIndexObject(target.css)
+    let targetCss: Dynamic = isPlainDesignIndexObject(target.css)
       ? target.css
       : (target.css = {});
-    for (let value4 of PlatformFileContentBackgroundBackgroundColorOpacityValues as Dynamic)
-      updateIndexProperty(value3, value4, value[value4]);
+    for (let cssProperty of PlatformFileContentBackgroundBackgroundColorOpacityValues as Dynamic)
+      updateIndexProperty(targetCss, cssProperty, noteCss[cssProperty]);
   }
-  let value2: Dynamic = isPlainDesignIndexObject(note.crop)
+  let noteCrop: Dynamic = isPlainDesignIndexObject(note.crop)
     ? note.crop
     : undefined;
-  if (value2 === undefined) updateIndexProperty(target, "crop", undefined);
+  if (noteCrop === undefined) updateIndexProperty(target, "crop", undefined);
   else {
-    let value3: Dynamic = isPlainDesignIndexObject(target.crop)
+    let targetCrop: Dynamic = isPlainDesignIndexObject(target.crop)
       ? target.crop
       : (target.crop = {});
-    for (let value4 of ["zoom", "x", "y"] as Dynamic)
-      updateIndexProperty(value3, value4, value2[value4]);
+    for (let cropProperty of ["zoom", "x", "y"] as Dynamic)
+      updateIndexProperty(targetCrop, cropProperty, noteCrop[cropProperty]);
   }
 }
 function parseIndexDeletionSets(manifestText?: Dynamic): Dynamic {
@@ -234,22 +234,22 @@ function parseIndexDeletionSets(manifestText?: Dynamic): Dynamic {
   };
   if (manifestText === undefined || manifestText === "") return deleted;
   try {
-    let value: Dynamic = JSON.parse(manifestText);
-    if (Array.isArray(value?.artboards))
-      for (let value2 of value.artboards as Dynamic)
-        isPlainDesignIndexObject(value2) &&
-          typeof value2.file == "string" &&
-          deleted.boards.add(value2.file);
-    if (Array.isArray(value?.annotations))
-      for (let value2 of value.annotations as Dynamic)
-        isPlainDesignIndexObject(value2) &&
-          typeof value2.id == "string" &&
-          deleted.notes.add(value2.id);
-    if (Array.isArray(value?.pages))
-      for (let value2 of value.pages as Dynamic)
-        isPlainDesignIndexObject(value2) &&
-          typeof value2.id == "string" &&
-          deleted.pages.add(value2.id);
+    let deletionManifest: Dynamic = JSON.parse(manifestText);
+    if (Array.isArray(deletionManifest?.artboards))
+      for (let artboard of deletionManifest.artboards as Dynamic)
+        isPlainDesignIndexObject(artboard) &&
+          typeof artboard.file == "string" &&
+          deleted.boards.add(artboard.file);
+    if (Array.isArray(deletionManifest?.annotations))
+      for (let annotation of deletionManifest.annotations as Dynamic)
+        isPlainDesignIndexObject(annotation) &&
+          typeof annotation.id == "string" &&
+          deleted.notes.add(annotation.id);
+    if (Array.isArray(deletionManifest?.pages))
+      for (let page of deletionManifest.pages as Dynamic)
+        isPlainDesignIndexObject(page) &&
+          typeof page.id == "string" &&
+          deleted.pages.add(page.id);
   } catch {}
   return deleted;
 }
@@ -264,14 +264,14 @@ function updateDesignIndexFromDocument(
   index.v < CURRENT_DESIGN_INDEX_VERSION &&
     (index.v = CURRENT_DESIGN_INDEX_VERSION);
   updateIndexProperty(index, "title", title);
-  let value: Dynamic =
+  let launch: Dynamic =
     manifest.launch !== undefined
       ? {
           ...manifest.launch,
         }
       : {};
-  for (let value5 of ["view", "page", "file"] as Dynamic)
-    updateIndexProperty(index.launch, value5, value[value5]);
+  for (let property of ["view", "page", "file"] as Dynamic)
+    updateIndexProperty(index.launch, property, launch[property]);
   updateIndexProperty(index, "cover", manifest.cover);
   updateIndexProperty(
     index,
@@ -279,89 +279,89 @@ function updateDesignIndexFromDocument(
     manifest.migrated === true ? true : undefined,
   );
   Array.isArray(index.pages) || (index.pages = []);
-  let value2: Dynamic = (manifest.pages ?? []).map(
-    (input?: Dynamic): Dynamic => ({
-      id: input.id,
-      name: input.name,
+  let nextPages: Dynamic = (manifest.pages ?? []).map(
+    (page?: Dynamic): Dynamic => ({
+      id: page.id,
+      name: page.name,
     }),
   );
-  for (let index2: Dynamic = 0; index2 < index.pages.length; index2++) {
-    let value5: Dynamic = index.pages[index2];
+  for (let originalPageIndex: Dynamic = 0; originalPageIndex < index.pages.length; originalPageIndex++) {
+    let originalPage: Dynamic = index.pages[originalPageIndex];
     if (
-      !keepPages.has(value5.id) ||
-      value2.some((input?: Dynamic): Dynamic => input.id === value5.id)
+      !keepPages.has(originalPage.id) ||
+      nextPages.some((page?: Dynamic): Dynamic => page.id === originalPage.id)
     )
       continue;
-    let value6: Dynamic = -1;
+    let predecessorIndex: Dynamic = -1;
     for (
-      let value7: Dynamic = index2 - 1;
-      value7 >= 0 && value6 < 0;
-      value7--
+      let scanIndex: Dynamic = originalPageIndex - 1;
+      scanIndex >= 0 && predecessorIndex < 0;
+      scanIndex--
     )
-      value6 = value2.findIndex(
-        (input?: Dynamic): Dynamic => input.id === index.pages[value7].id,
+      predecessorIndex = nextPages.findIndex(
+        (page?: Dynamic): Dynamic => page.id === index.pages[scanIndex].id,
       );
-    value2.splice(value6 + 1, 0, {
-      id: value5.id,
-      name: value5.name,
+    nextPages.splice(predecessorIndex + 1, 0, {
+      id: originalPage.id,
+      name: originalPage.name,
     });
   }
-  equalDesignIndexJson(index.pages, value2) ||
-    index.pages.splice(0, index.pages.length, ...value2);
+  equalDesignIndexJson(index.pages, nextPages) ||
+    index.pages.splice(0, index.pages.length, ...nextPages);
   let values: Dynamic = new Set(
-    manifest.artboards.map((input?: Dynamic): Dynamic => input.file),
+    manifest.artboards.map((artboard?: Dynamic): Dynamic => artboard.file),
   );
-  for (let value5 of manifest.artboards as Dynamic)
-    isPrototypeProperty(value5.file) ||
-      updateIndexArtboard((index.boards[value5.file] ??= {}), value5);
-  for (let value5 of Object.keys(index.boards) as Dynamic)
-    !values.has(value5) &&
-      !keepBoards.has(value5) &&
-      delete index.boards[value5];
-  let value3: Dynamic = manifest.artboards.map(
-      (input?: Dynamic): Dynamic => input.file,
+  for (let artboard of manifest.artboards as Dynamic)
+    isPrototypeProperty(artboard.file) ||
+      updateIndexArtboard((index.boards[artboard.file] ??= {}), artboard);
+  for (let artboardPath of Object.keys(index.boards) as Dynamic)
+    !values.has(artboardPath) &&
+      !keepBoards.has(artboardPath) &&
+      delete index.boards[artboardPath];
+  let nextBoardOrder: Dynamic = manifest.artboards.map(
+      (artboard?: Dynamic): Dynamic => artboard.file,
     ),
     order: Dynamic = index.order;
-  for (let index2: Dynamic = 0; index2 < order.length; index2++) {
-    let value5: Dynamic = order[index2];
+  for (let originalBoardIndex: Dynamic = 0; originalBoardIndex < order.length; originalBoardIndex++) {
+    let originalBoard: Dynamic = order[originalBoardIndex];
     if (
-      !keepBoards.has(value5) ||
-      value3.includes(value5) ||
-      !(value5 in index.boards)
+      !keepBoards.has(originalBoard) ||
+      nextBoardOrder.includes(originalBoard) ||
+      !(originalBoard in index.boards)
     )
       continue;
-    let value6: Dynamic = -1;
+    let predecessorIndex: Dynamic = -1;
     for (
-      let value7: Dynamic = index2 - 1;
-      value7 >= 0 && value6 < 0;
-      value7--
+      let scanIndex: Dynamic = originalBoardIndex - 1;
+      scanIndex >= 0 && predecessorIndex < 0;
+      scanIndex--
     )
-      value6 = value3.indexOf(order[value7]);
-    value3.splice(value6 + 1, 0, value5);
+      predecessorIndex = nextBoardOrder.indexOf(order[scanIndex]);
+    nextBoardOrder.splice(predecessorIndex + 1, 0, originalBoard);
   }
-  equalDesignIndexJson(order, value3) ||
-    order.splice(0, order.length, ...value3);
-  let value4: Dynamic = manifest.annotations ?? [],
-    values2: Dynamic = new Set(
-      value4.map((input?: Dynamic): Dynamic => input.id),
+  equalDesignIndexJson(order, nextBoardOrder) ||
+    order.splice(0, order.length, ...nextBoardOrder);
+  let annotations: Dynamic = manifest.annotations ?? [],
+    annotationIds: Dynamic = new Set(
+      annotations.map((annotation?: Dynamic): Dynamic => annotation.id),
     );
-  for (let value5 of value4 as Dynamic)
-    isPrototypeProperty(value5.id) ||
-      updateIndexAnnotation((index.notes[value5.id] ??= {}), value5);
-  for (let value5 of Object.keys(index.notes) as Dynamic)
-    !values2.has(value5) &&
-      !keepNotes.has(value5) &&
-      delete index.notes[value5];
+  for (let annotation of annotations as Dynamic)
+    isPrototypeProperty(annotation.id) ||
+      updateIndexAnnotation((index.notes[annotation.id] ??= {}), annotation);
+  for (let annotationId of Object.keys(index.notes) as Dynamic)
+    !annotationIds.has(annotationId) &&
+      !keepNotes.has(annotationId) &&
+      delete index.notes[annotationId];
 }
 function mergeDesignPages(
   base?: Dynamic,
   local?: Dynamic,
   remote?: Dynamic,
 ): Dynamic {
-  let clonePages: Dynamic = (input?: Dynamic): Dynamic =>
-    input.map(
-      (input2?: Dynamic): Dynamic => ({
-        ...input2,
+  let clonePages: Dynamic = (pages?: Dynamic): Dynamic =>
+    pages.map(
+      (page?: Dynamic): Dynamic => ({
+        ...page,
       }),
     );
   if (equalDesignIndexJson(local, base))
@@ -377,92 +377,92 @@ function mergeDesignPages(
       pages: clonePages(local),
       overlap: false,
     };
-  let entries: Dynamic = new Map(
-      base.map((input?: Dynamic): Dynamic => [input.id, input]),
+  let basePagesById: Dynamic = new Map(
+      base.map((page?: Dynamic): Dynamic => [page.id, page]),
     ),
-    entries2: Dynamic = new Map(
-      local.map((input?: Dynamic): Dynamic => [input.id, input]),
+    localPagesById: Dynamic = new Map(
+      local.map((page?: Dynamic): Dynamic => [page.id, page]),
     ),
-    entries3: Dynamic = new Map(
-      remote.map((input?: Dynamic): Dynamic => [input.id, input]),
+    remotePagesById: Dynamic = new Map(
+      remote.map((page?: Dynamic): Dynamic => [page.id, page]),
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input
+    commonPageOrder: Dynamic = (pages?: Dynamic): Dynamic =>
+      pages
         .filter(
-          (input2?: Dynamic): Dynamic =>
-            entries.has(input2.id) &&
-            entries2.has(input2.id) &&
-            entries3.has(input2.id),
+          (page?: Dynamic): Dynamic =>
+            basePagesById.has(page.id) &&
+            localPagesById.has(page.id) &&
+            remotePagesById.has(page.id),
         )
-        .map((input2?: Dynamic): Dynamic => input2.id),
-    value: Dynamic = !equalDesignIndexJson(callback(local), callback(base)),
-    value2: Dynamic = !equalDesignIndexJson(callback(remote), callback(base)),
-    value3: Dynamic =
-      value &&
-      value2 &&
-      !equalDesignIndexJson(callback(local), callback(remote)),
-    [value4, value5, value6]: Dynamic =
-      value && !value2
-        ? [local, remote, entries3]
-        : [remote, local, entries2],
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries.get(input),
-        entry2: Dynamic = entries2.get(input),
-        entry3: Dynamic = entries3.get(input);
-      return entry2 === undefined || entry3 === undefined
-        ? (entry2 ?? entry3).name
-        : entry === undefined ||
-            entry2.name === entry3.name ||
-            entry2.name === entry.name
-          ? entry3.name
-          : entry3.name === entry.name
-            ? entry2.name
-            : ((value3 = true), entry3.name);
+        .map((page?: Dynamic): Dynamic => page.id),
+    didLocalReorder: Dynamic = !equalDesignIndexJson(commonPageOrder(local), commonPageOrder(base)),
+    didRemoteReorder: Dynamic = !equalDesignIndexJson(commonPageOrder(remote), commonPageOrder(base)),
+    hasOverlap: Dynamic =
+      didLocalReorder &&
+      didRemoteReorder &&
+      !equalDesignIndexJson(commonPageOrder(local), commonPageOrder(remote)),
+    [preferredPages, secondaryPages, secondaryPagesById]: Dynamic =
+      didLocalReorder && !didRemoteReorder
+        ? [local, remote, remotePagesById]
+        : [remote, local, localPagesById],
+    mergePageName: Dynamic = (pageId?: Dynamic): Dynamic => {
+      let basePage: Dynamic = basePagesById.get(pageId),
+        localPage: Dynamic = localPagesById.get(pageId),
+        remotePage: Dynamic = remotePagesById.get(pageId);
+      return localPage === undefined || remotePage === undefined
+        ? (localPage ?? remotePage).name
+        : basePage === undefined ||
+            localPage.name === remotePage.name ||
+            localPage.name === basePage.name
+          ? remotePage.name
+          : remotePage.name === basePage.name
+            ? localPage.name
+            : ((hasOverlap = true), remotePage.name);
     },
-    value7: Dynamic = value4
+    mergedPages: Dynamic = preferredPages
       .filter(
-        (input?: Dynamic): Dynamic =>
-          !(entries.has(input.id) && !value6.has(input.id)),
+        (page?: Dynamic): Dynamic =>
+          !(basePagesById.has(page.id) && !secondaryPagesById.has(page.id)),
       )
       .map(
-        (input?: Dynamic): Dynamic => ({
-          ...input,
-          name: callback2(input.id),
+        (page?: Dynamic): Dynamic => ({
+          ...page,
+          name: mergePageName(page.id),
         }),
       );
-  value5.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
+  secondaryPages.forEach((page?: Dynamic, secondaryIndex?: Dynamic): Dynamic => {
     if (
-      entries.has(input.id) ||
-      value7.some((input2?: Dynamic): Dynamic => input2.id === input.id)
+      basePagesById.has(page.id) ||
+      mergedPages.some((mergedPage?: Dynamic): Dynamic => mergedPage.id === page.id)
     )
       return;
-    let value8: Dynamic =
-      (value4 === local ? value : value2) &&
-      !value5
-        .slice(options + 1)
-        .some((input2?: Dynamic): Dynamic => entries.has(input2.id))
-        ? value7.length
+    let insertAt: Dynamic =
+      (preferredPages === local ? didLocalReorder : didRemoteReorder) &&
+      !secondaryPages
+        .slice(secondaryIndex + 1)
+        .some((laterPage?: Dynamic): Dynamic => basePagesById.has(laterPage.id))
+        ? mergedPages.length
         : 0;
     for (
-      let value9: Dynamic = options - 1;
-      value9 >= 0 && value8 < value7.length;
-      value9--
+      let previousIndex: Dynamic = secondaryIndex - 1;
+      previousIndex >= 0 && insertAt < mergedPages.length;
+      previousIndex--
     ) {
-      let value10: Dynamic = value7.findIndex(
-        (input2?: Dynamic): Dynamic => input2.id === value5[value9].id,
+      let predecessorIndex: Dynamic = mergedPages.findIndex(
+        (mergedPage?: Dynamic): Dynamic => mergedPage.id === secondaryPages[previousIndex].id,
       );
-      if (value10 >= 0) {
-        value8 = value10 + 1;
+      if (predecessorIndex >= 0) {
+        insertAt = predecessorIndex + 1;
         break;
       }
     }
-    value7.splice(value8, 0, {
-      ...input,
+    mergedPages.splice(insertAt, 0, {
+      ...page,
     });
   });
   return {
-    pages: value7,
-    overlap: value3,
+    pages: mergedPages,
+    overlap: hasOverlap,
   };
 }
 function createDesignIndexFromFiles(
@@ -513,15 +513,15 @@ export function installPlatformDesignIndex(): () => void {
     INDEX_LEFT_OUT_KEY = "leftOut";
     MAX_NOTE_INLINE_PATH_CHARS = 16e3;
     FILES_INDEX_MERGE_POLICY = DESIGN_INDEX_MERGE_POLICY;
-    isPlainDesignIndexObject = (input?: Dynamic): Dynamic =>
-      typeof input == "object" && input !== null && !Array.isArray(input);
-    isPrototypeProperty = (input?: Dynamic): Dynamic =>
-      input in Object.prototype;
-    equalDesignIndexJson = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input === options || JSON.stringify(input) === JSON.stringify(options);
-    createEmptyDesignIndex = (input: Dynamic = ""): Dynamic =>
+    isPlainDesignIndexObject = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "object" && candidate !== null && !Array.isArray(candidate);
+    isPrototypeProperty = (property?: Dynamic): Dynamic =>
+      property in Object.prototype;
+    equalDesignIndexJson = (left?: Dynamic, right?: Dynamic): Dynamic =>
+      left === right || JSON.stringify(left) === JSON.stringify(right);
+    createEmptyDesignIndex = (title: Dynamic = ""): Dynamic =>
       normalizeDesignIndex({
-        title: input,
+        title: title,
       });
     isNonemptyIndexAnnotation = (source?: Dynamic): Dynamic =>
       source.kind === undefined ||

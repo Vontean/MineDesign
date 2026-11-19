@@ -5,7 +5,7 @@ import {
 } from "../runtime-types";
 import { DesignSystemsKey } from "../design-system/type-declarations";
 import { createDesignIndexFromFiles, INDEX_DESIGN_SYSTEM_TOKENS_KEY, INDEX_LEFT_OUT_KEY, INDEX_SOURCE_KEY, isPrototypeProperty, MAX_NOTE_INLINE_PATH_CHARS, normalizeDesignIndex, orderedDesignMapKeys } from "./design-index";
-import { BoardsValue, canvasMetadataFile, DesignValue, encodeStorePathSegment, FilesValue, isArtboardFile, isProjectTextFilePath, isSafeProjectPath, isSupportedProjectAsset, isTypeDeclarationPath, NotesValue, parseCanvasMetadata, parseDesignSource, PlatformFileContentResolvedValue_4, PlatformFileContentResolvedValue_5, PlatformFileContentXYWValues, serializeCanvasMetadata } from "./file-content";
+import { BoardsValue, canvasMetadataFile, DesignValue, encodeStorePathSegment, FilesValue, isArtboardFile, isProjectTextFilePath, isSafeProjectPath, isSupportedProjectAsset, isTypeDeclarationPath, NotesValue, parseCanvasMetadata, parseDesignSource, PlatformFileContentResolvedValue_4 as designMetadataPath, PlatformFileContentResolvedValue_5 as designSourceDocumentPath, PlatformFileContentXYWValues, serializeCanvasMetadata } from "./file-content";
 import { canSaveDesignFile, encodeDesignPortFile } from "./files-design-document";
 import { isBlobAssetUrl } from "./image-upload";
 import { cloneIndexValue, equalIndexValue } from "./index-merge";
@@ -91,17 +91,17 @@ function readDatabaseAnnotation(record?: Dynamic): Dynamic {
     isPrototypeProperty(documentPathBasename(record.path))
   )
     return;
-  let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-    typeof data[input] == "number" && typeof data[options] == "number";
+  let hasNumericFields: Dynamic = (firstField?: Dynamic, secondField?: Dynamic): Dynamic =>
+    typeof data[firstField] == "number" && typeof data[secondField] == "number";
   return (
     data.kind === "rect" || data.kind === "oval"
-      ? callback("w", "h")
+      ? hasNumericFields("w", "h")
       : data.kind === "line" || data.kind === "arrow"
-        ? callback("x2", "y2")
+        ? hasNumericFields("x2", "y2")
         : data.kind === "pen"
-          ? callback("w", "h") && typeof data.d == "string"
+          ? hasNumericFields("w", "h") && typeof data.d == "string"
           : data.kind === "image"
-            ? callback("w", "h") && typeof data.src == "string"
+            ? hasNumericFields("w", "h") && typeof data.src == "string"
             : typeof data.text == "string"
   )
     ? {
@@ -119,8 +119,8 @@ function buildConvertedDesignIndex(
 ): Dynamic {
   let manifestText: Dynamic = JSON.stringify({
     artboards: order.map(
-      (input?: Dynamic): Dynamic =>
-        serializeConvertedArtboard(input, boards.get(input)),
+      (artboardPath?: Dynamic): Dynamic =>
+        serializeConvertedArtboard(artboardPath, boards.get(artboardPath)),
     ),
     annotations: annotations,
     ...(metadata?.launch !== undefined
@@ -153,15 +153,15 @@ function copyDesignSourceMetadata(
   records?: Dynamic,
 ): Dynamic {
   let sourceMetadata: Dynamic = parseDesignSource(
-    records.get(PlatformFileContentResolvedValue_5)?.data,
+    records.get(designSourceDocumentPath)?.data,
   );
   sourceMetadata !== undefined &&
     (index[INDEX_SOURCE_KEY] = cloneIndexValue(
       sourceMetadata,
     ));
-  let tokens2: Dynamic = records.get(DESIGN_SYSTEM_DOCUMENT_PATH)?.data;
-  tokens2 !== undefined &&
-    (index[INDEX_DESIGN_SYSTEM_TOKENS_KEY] = cloneIndexValue(tokens2));
+  let designSystemTokens: Dynamic = records.get(DESIGN_SYSTEM_DOCUMENT_PATH)?.data;
+  designSystemTokens !== undefined &&
+    (index[INDEX_DESIGN_SYSTEM_TOKENS_KEY] = cloneIndexValue(designSystemTokens));
 }
 function annotationMatchesDatabase(
   annotation?: Dynamic,
@@ -171,9 +171,9 @@ function annotationMatchesDatabase(
   return annotation === undefined || decoded === undefined
     ? false
     : Object.entries(encodeDatabaseAnnotation(decoded)).every(
-        ([input, input2]: Dynamic): Dynamic =>
-          Object.hasOwn(annotation, input) &&
-          equalIndexValue(annotation[input], input2),
+        ([property, propertyValue]: Dynamic): Dynamic =>
+          Object.hasOwn(annotation, property) &&
+          equalIndexValue(annotation[property], propertyValue),
       );
 }
 function sourceMetadataMatchesDatabase(
@@ -182,7 +182,7 @@ function sourceMetadataMatchesDatabase(
 ): Dynamic {
   let metadata: Dynamic =
     index[
-      record.path === PlatformFileContentResolvedValue_5
+      record.path === designSourceDocumentPath
         ? INDEX_SOURCE_KEY
         : INDEX_DESIGN_SYSTEM_TOKENS_KEY
     ];
@@ -191,425 +191,425 @@ function sourceMetadataMatchesDatabase(
     equalIndexValue(metadata, record.data)
   );
 }
-function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
-  async function composeDatabaseSnapshot(input?: Dynamic): Promise<Dynamic> {
-    let value2: Dynamic = input.get(
-        PlatformFileContentResolvedValue_4,
+function createDesignDatabaseCodec(codecOptions?: Dynamic): Dynamic {
+  async function composeDatabaseSnapshot(databaseEntries?: Dynamic): Promise<Dynamic> {
+    let designMetadata: Dynamic = databaseEntries.get(
+        designMetadataPath,
       )?.data,
-      entries: Dynamic = new Map(),
-      state: Dynamic = {},
-      entries2: Dynamic = new Map(),
-      items: Dynamic = [],
-      items2: Dynamic = [];
-    for (let value8 of input.values() as Dynamic)
-      if (isDirectCollectionDocument(value8.path, BoardsValue)) {
-        let value9: Dynamic = databaseArtboardFilePath(value8);
-        value9 !== undefined && entries.set(value9, value8.data);
+      boardDataByPath: Dynamic = new Map(),
+      contentByPath: Dynamic = {},
+      sourcesByPath: Dynamic = new Map(),
+      annotations: Dynamic = [],
+      annotationEntryPaths: Dynamic = [];
+    for (let entry of databaseEntries.values() as Dynamic)
+      if (isDirectCollectionDocument(entry.path, BoardsValue)) {
+        let artboardPath: Dynamic = databaseArtboardFilePath(entry);
+        artboardPath !== undefined && boardDataByPath.set(artboardPath, entry.data);
       } else if (
-        isDirectCollectionDocument(value8.path, NotesValue)
+        isDirectCollectionDocument(entry.path, NotesValue)
       ) {
-        let value9: Dynamic = readDatabaseAnnotation(value8);
-        value9 !== undefined &&
-          (items.push(value9), items2.push(value8.path));
+        let annotation: Dynamic = readDatabaseAnnotation(entry);
+        annotation !== undefined &&
+          (annotations.push(annotation), annotationEntryPaths.push(entry.path));
       }
-    let value3: Dynamic = readDatabaseBoardOrder(
-      value2,
-      (input2?: Dynamic): Dynamic => entries.has(input2),
+    let databaseBoardOrder: Dynamic = readDatabaseBoardOrder(
+      designMetadata,
+      (artboardPath?: Dynamic): Dynamic => boardDataByPath.has(artboardPath),
     );
-    for (let value8 of value3 as Dynamic) {
-      let value9: Dynamic = await readDatabaseArtboardHtml(
-        entries.get(value8),
-        options,
+    for (let artboardPath of databaseBoardOrder as Dynamic) {
+      let artboardHtml: Dynamic = await readDatabaseArtboardHtml(
+        boardDataByPath.get(artboardPath),
+        codecOptions,
       );
-      value9 !== undefined &&
-        ((state[value8] = value9),
-        entries2.set(toProjectContentPath(value8), [
+      artboardHtml !== undefined &&
+        ((contentByPath[artboardPath] = artboardHtml),
+        sourcesByPath.set(toProjectContentPath(artboardPath), [
           BoardsValue +
             "/" +
-            encodeStorePathSegment(value8),
+            encodeStorePathSegment(artboardPath),
         ]));
     }
-    let value4: Dynamic = value3.filter(
-      (input2?: Dynamic): Dynamic => state[input2] !== undefined,
+    let availableBoardOrder: Dynamic = databaseBoardOrder.filter(
+      (artboardPath?: Dynamic): Dynamic => contentByPath[artboardPath] !== undefined,
     );
-    for (let value8 of input.values() as Dynamic) {
-      if (!isDirectCollectionDocument(value8.path, FilesValue))
+    for (let entry of databaseEntries.values() as Dynamic) {
+      if (!isDirectCollectionDocument(entry.path, FilesValue))
         continue;
-      let value9: Dynamic = await readDatabaseFileEntry(value8, options);
-      value9 === undefined ||
-        state[value9.path] !== undefined ||
-        ((state[value9.path] = value9.data),
-        entries2.set(toProjectContentPath(value9.path), [
-          value8.path,
+      let file: Dynamic = await readDatabaseFileEntry(entry, codecOptions);
+      file === undefined ||
+        contentByPath[file.path] !== undefined ||
+        ((contentByPath[file.path] = file.data),
+        sourcesByPath.set(toProjectContentPath(file.path), [
+          entry.path,
         ]));
     }
-    let value5: Dynamic = optionalString(value2?.title) ?? "",
-      value6: Dynamic = createDesignIndexFromFiles(
-        value5,
-        buildConvertedDesignIndex(value2, entries, value4, items, state),
-        state,
+    let title: Dynamic = optionalString(designMetadata?.title) ?? "",
+      convertedIndex: Dynamic = createDesignIndexFromFiles(
+        title,
+        buildConvertedDesignIndex(designMetadata, boardDataByPath, availableBoardOrder, annotations, contentByPath),
+        contentByPath,
       );
-    copyDesignSourceMetadata(value6, input);
-    entries2.set(projectMetadataPaths.design, [
-      PlatformFileContentResolvedValue_4,
-      ...value4.map(
-        (input2?: Dynamic): Dynamic =>
+    copyDesignSourceMetadata(convertedIndex, databaseEntries);
+    sourcesByPath.set(projectMetadataPaths.design, [
+      designMetadataPath,
+      ...availableBoardOrder.map(
+        (artboardPath?: Dynamic): Dynamic =>
           BoardsValue +
           "/" +
-          encodeStorePathSegment(input2),
+          encodeStorePathSegment(artboardPath),
       ),
-      ...items2,
-      ...(input.has(PlatformFileContentResolvedValue_5)
-        ? [PlatformFileContentResolvedValue_5]
+      ...annotationEntryPaths,
+      ...(databaseEntries.has(designSourceDocumentPath)
+        ? [designSourceDocumentPath]
         : []),
-      ...(input.has(DESIGN_SYSTEM_DOCUMENT_PATH)
+      ...(databaseEntries.has(DESIGN_SYSTEM_DOCUMENT_PATH)
         ? [DESIGN_SYSTEM_DOCUMENT_PATH]
         : []),
     ]);
-    let entries3: Dynamic = new Map(),
-      value7: Dynamic = [
-        ...Object.keys(state).filter(
-          (input2?: Dynamic): Dynamic =>
-            !canSaveDesignFile(input2),
+    let filesByPath: Dynamic = new Map(),
+      omittedFiles: Dynamic = [
+        ...Object.keys(contentByPath).filter(
+          (filePath?: Dynamic): Dynamic =>
+            !canSaveDesignFile(filePath),
         ),
-        ...[...input.values()]
+        ...[...databaseEntries.values()]
           .filter(
-            (input2?: Dynamic): Dynamic =>
-              isDirectCollectionDocument(input2.path, FilesValue) &&
-              isReservedConversionFile(input2.data.path),
+            (entry?: Dynamic): Dynamic =>
+              isDirectCollectionDocument(entry.path, FilesValue) &&
+              isReservedConversionFile(entry.data.path),
           )
-          .map((input2?: Dynamic): Dynamic => input2.data.path),
+          .map((entry?: Dynamic): Dynamic => entry.data.path),
       ].sort();
-    value7.length > 0 && (value6[INDEX_LEFT_OUT_KEY] = value7);
-    for (let [value8, value9] of Object.entries(state) as Dynamic)
-      canSaveDesignFile(value8) &&
-        entries3.set(
-          toProjectContentPath(value8),
-          encodeDesignPortFile(value8, value9),
+    omittedFiles.length > 0 && (convertedIndex[INDEX_LEFT_OUT_KEY] = omittedFiles);
+    for (let [relativePath, fileContent] of Object.entries(contentByPath) as Dynamic)
+      canSaveDesignFile(relativePath) &&
+        filesByPath.set(
+          toProjectContentPath(relativePath),
+          encodeDesignPortFile(relativePath, fileContent),
         );
-    let items3: Dynamic = [
-      ...items2.filter(
-        (input2?: Dynamic): Dynamic =>
-          Object.hasOwn(value6.notes, documentPathBasename(input2)) &&
+    let indexSources: Dynamic = [
+      ...annotationEntryPaths.filter(
+        (annotationEntryPath?: Dynamic): Dynamic =>
+          Object.hasOwn(convertedIndex.notes, documentPathBasename(annotationEntryPath)) &&
           annotationMatchesDatabase(
-            value6.notes[documentPathBasename(input2)],
-            input.get(input2),
+            convertedIndex.notes[documentPathBasename(annotationEntryPath)],
+            databaseEntries.get(annotationEntryPath),
           ),
       ),
       ...[
-        PlatformFileContentResolvedValue_5,
+        designSourceDocumentPath,
         DESIGN_SYSTEM_DOCUMENT_PATH,
       ].filter(
-        (input2?: Dynamic): Dynamic =>
-          input.has(input2) &&
-          sourceMetadataMatchesDatabase(value6, input.get(input2)),
+        (metadataPath?: Dynamic): Dynamic =>
+          databaseEntries.has(metadataPath) &&
+          sourceMetadataMatchesDatabase(convertedIndex, databaseEntries.get(metadataPath)),
       ),
     ];
     return {
-      files: entries3,
-      index: value6,
-      sources: entries2,
-      indexSources: items3,
+      files: filesByPath,
+      index: convertedIndex,
+      sources: sourcesByPath,
+      indexSources: indexSources,
     };
   }
-  async function value(input?: Dynamic): Promise<Dynamic> {
-    let value2: Dynamic = normalizeDesignIndex(
-        cloneIndexValue(input.index),
+  async function foldDatabaseChanges(foldOptions?: Dynamic): Promise<Dynamic> {
+    let index: Dynamic = normalizeDesignIndex(
+        cloneIndexValue(foldOptions.index),
       ),
-      entries: Dynamic = new Map(),
-      entries2: Dynamic = new Map(),
-      items: Dynamic = [],
-      value3: Dynamic = input.snapshot.get(
-        PlatformFileContentResolvedValue_4,
+      changedFiles: Dynamic = new Map(),
+      sourcesByPath: Dynamic = new Map(),
+      indexSources: Dynamic = [],
+      designMetadata: Dynamic = foldOptions.snapshot.get(
+        designMetadataPath,
       )?.data;
-    if (value3 === undefined)
+    if (designMetadata === undefined)
       return {
-        files: entries,
-        index: value2,
-        sources: entries2,
+        files: changedFiles,
+        index: index,
+        sources: sourcesByPath,
       };
-    let entries3: Dynamic = new Map();
-    for (let value6 of input.snapshot.values() as Dynamic)
-      if (isDirectCollectionDocument(value6.path, BoardsValue)) {
-        let value7: Dynamic = databaseArtboardFilePath(value6);
-        value7 !== undefined && entries3.set(value7, value6);
+    let boardEntriesByPath: Dynamic = new Map();
+    for (let entry of foldOptions.snapshot.values() as Dynamic)
+      if (isDirectCollectionDocument(entry.path, BoardsValue)) {
+        let artboardPath: Dynamic = databaseArtboardFilePath(entry);
+        artboardPath !== undefined && boardEntriesByPath.set(artboardPath, entry);
       }
-    let items2: Dynamic = [],
-      callback: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
-        let value6: Dynamic = await input.readFileState(input2);
-        return value6.state === "text"
-          ? value6.text
-          : value6.state === "absent"
+    let unfoldedPaths: Dynamic = [],
+      readPublishedText: Dynamic = async (filePath?: Dynamic): Promise<Dynamic> => {
+        let fileState: Dynamic = await foldOptions.readFileState(filePath);
+        return fileState.state === "text"
+          ? fileState.text
+          : fileState.state === "absent"
             ? null
             : "unreadable";
       },
-      value4: Dynamic = await callback(readPortVersion);
-    if (value4 === "unreadable")
+      publishedVersion: Dynamic = await readPublishedText(readPortVersion);
+    if (publishedVersion === "unreadable")
       return {
-        files: entries,
-        index: value2,
-        sources: entries2,
+        files: changedFiles,
+        index: index,
+        sources: sourcesByPath,
         unfolded: [
-          ...input.changed.map((input2?: Dynamic): Dynamic => input2.path),
-          ...input.removed,
+          ...foldOptions.changed.map((entry?: Dynamic): Dynamic => entry.path),
+          ...foldOptions.removed,
         ],
       };
-    let value5: Dynamic =
-        value4 === null
+    let publishedIndexMetadata: Dynamic =
+        publishedVersion === null
           ? null
-          : parsePublishedIndexMetadata(value4),
-      callback2: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        options2 === null ||
-        value5?.files[input2]?.sha256 ===
+          : parsePublishedIndexMetadata(publishedVersion),
+      matchesPublishedHash: Dynamic = (filePath?: Dynamic, fileText?: Dynamic): Dynamic =>
+        fileText === null ||
+        publishedIndexMetadata?.files[filePath]?.sha256 ===
           sha256Fallback(
-            PlatformSha256Encode(options2),
+            PlatformSha256Encode(fileText),
           ),
-      callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-        value5?.files[toProjectContentPath(input2)] !==
+      wasPublished: Dynamic = (relativePath?: Dynamic): Dynamic =>
+        publishedIndexMetadata?.files[toProjectContentPath(relativePath)] !==
         undefined,
-      callback4: Dynamic = (input2?: Dynamic, items3?: Dynamic): Dynamic =>
-        items3 == null ||
-        items3 === "" ||
-        (Array.isArray(items3) && items3.length === 0) ||
-        (typeof items3 == "object" && Object.keys(items3).length === 0) ||
-        (input2 === "title" && items3 === options.defaultTitle),
-      callback5: Dynamic = async (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        context?: Dynamic,
+      isEmptyIndexField: Dynamic = (field?: Dynamic, fieldValue?: Dynamic): Dynamic =>
+        fieldValue == null ||
+        fieldValue === "" ||
+        (Array.isArray(fieldValue) && fieldValue.length === 0) ||
+        (typeof fieldValue == "object" && Object.keys(fieldValue).length === 0) ||
+        (field === "title" && fieldValue === codecOptions.defaultTitle),
+      mayReplaceIndexField: Dynamic = async (
+        databaseEntry?: Dynamic,
+        field?: Dynamic,
+        currentIndexValue?: Dynamic,
       ): Promise<Dynamic> => {
-        let entry: Dynamic = input.recorded.get(input2.path);
-        if (entry === undefined) return true;
-        let value6: Dynamic = entry[options2];
+        let recordedFields: Dynamic = foldOptions.recorded.get(databaseEntry.path);
+        if (recordedFields === undefined) return true;
+        let recordedHash: Dynamic = recordedFields[field];
         return (await hashCanonicalIndex(
-          input2.data[options2],
-        )) === value6
+          databaseEntry.data[field],
+        )) === recordedHash
           ? false
-          : value6 === undefined
-            ? callback4(options2, context)
-            : (await hashCanonicalIndex(context)) === value6;
+          : recordedHash === undefined
+            ? isEmptyIndexField(field, currentIndexValue)
+            : (await hashCanonicalIndex(currentIndexValue)) === recordedHash;
       },
-      callback6: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
-        let entry: Dynamic = entries3.get(input2);
-        if (entry === undefined) return;
-        let value6: Dynamic = !(input2 in value2.boards);
+      foldArtboard: Dynamic = async (artboardPath?: Dynamic): Promise<Dynamic> => {
+        let boardEntry: Dynamic = boardEntriesByPath.get(artboardPath);
+        if (boardEntry === undefined) return;
+        let isNewBoard: Dynamic = !(artboardPath in index.boards);
         if (
-          (value6 && callback3(input2)) ||
-          (!value6 &&
-            !callback3(input2) &&
-            input.recorded.get(entry.path) === undefined)
+          (isNewBoard && wasPublished(artboardPath)) ||
+          (!isNewBoard &&
+            !wasPublished(artboardPath) &&
+            foldOptions.recorded.get(boardEntry.path) === undefined)
         )
           return;
-        let value7: Dynamic = value6
+        let publishedHtml: Dynamic = isNewBoard
           ? null
-          : await callback(toProjectContentPath(input2));
-        if (value7 === "unreadable") return void items2.push(entry.path);
-        let entry2: Dynamic = input.recorded.get(entry.path),
-          value8: Dynamic =
-            entry2 === undefined ||
-            (await hashCanonicalIndex(entry.data.html)) !==
-              entry2.html ||
-            (await hashCanonicalIndex(entry.data.htmlRef)) !==
-              entry2.htmlRef;
+          : await readPublishedText(toProjectContentPath(artboardPath));
+        if (publishedHtml === "unreadable") return void unfoldedPaths.push(boardEntry.path);
+        let recordedFields: Dynamic = foldOptions.recorded.get(boardEntry.path),
+          didHtmlChange: Dynamic =
+            recordedFields === undefined ||
+            (await hashCanonicalIndex(boardEntry.data.html)) !==
+              recordedFields.html ||
+            (await hashCanonicalIndex(boardEntry.data.htmlRef)) !==
+              recordedFields.htmlRef;
         if (
-          value6 ||
-          (value8 &&
-            callback2(toProjectContentPath(input2), value7))
+          isNewBoard ||
+          (didHtmlChange &&
+            matchesPublishedHash(toProjectContentPath(artboardPath), publishedHtml))
         ) {
-          let value10: Dynamic = await readDatabaseArtboardHtml(
-            entry.data,
-            options,
+          let databaseHtml: Dynamic = await readDatabaseArtboardHtml(
+            boardEntry.data,
+            codecOptions,
           );
-          value10 !== undefined &&
-            value10 !== value7 &&
-            (entries.set(
-              toProjectContentPath(input2),
-              encodeDesignPortFile(input2, value10),
+          databaseHtml !== undefined &&
+            databaseHtml !== publishedHtml &&
+            (changedFiles.set(
+              toProjectContentPath(artboardPath),
+              encodeDesignPortFile(artboardPath, databaseHtml),
             ),
-            entries2.set(toProjectContentPath(input2), [
-              entry.path,
+            sourcesByPath.set(toProjectContentPath(artboardPath), [
+              boardEntry.path,
             ]));
         }
-        let value9: Dynamic = (value2.boards[input2] ??= {});
-        for (let value10 of PlatformFileContentXYWValues as Dynamic) {
-          if (!value6 && !(await callback5(entry, value10, value9[value10])))
+        let indexBoard: Dynamic = (index.boards[artboardPath] ??= {});
+        for (let field of PlatformFileContentXYWValues as Dynamic) {
+          if (!isNewBoard && !(await mayReplaceIndexField(boardEntry, field, indexBoard[field])))
             continue;
-          let value11: Dynamic = entry.data[value10];
-          value11 == null
-            ? delete value9[value10]
-            : (value9[value10] = cloneIndexValue(value11));
+          let fieldValue: Dynamic = boardEntry.data[field];
+          fieldValue == null
+            ? delete indexBoard[field]
+            : (indexBoard[field] = cloneIndexValue(fieldValue));
         }
-        value2.order.includes(input2) || value2.order.push(input2);
+        index.order.includes(artboardPath) || index.order.push(artboardPath);
       },
-      values: Dynamic = new Set(
+      databaseBoardPaths: Dynamic = new Set(
         readDatabaseBoardOrder(
-          value3,
-          (input2?: Dynamic): Dynamic => entries3.has(input2),
+          designMetadata,
+          (artboardPath?: Dynamic): Dynamic => boardEntriesByPath.has(artboardPath),
         ),
       );
-    for (let value6 of input.changed as Dynamic)
-      if (value6.path === PlatformFileContentResolvedValue_4) {
-        typeof value6.data.title == "string" &&
-          (await callback5(value6, "title", value2.title)) &&
-          (value2.title = value6.data.title);
-        Array.isArray(value6.data.pages) &&
-          (await callback5(value6, "pages", value2.pages)) &&
-          (value2.pages = cloneIndexValue(value6.data.pages));
-        typeof value6.data.launch == "object" &&
-          value6.data.launch !== null &&
-          (await callback5(value6, "launch", value2.launch)) &&
-          (value2.launch = cloneIndexValue(value6.data.launch));
-        (await callback5(value6, "cover", value2.cover)) &&
-          (typeof value6.data.cover == "string"
-            ? (value2.cover = value6.data.cover)
-            : delete value2.cover);
-        for (let value10 of values as Dynamic)
-          value10 in value2.boards || (await callback6(value10));
-        let value7: Dynamic = [...values].filter(
-            (input2?: Dynamic): Dynamic => input2 in value2.boards,
+    for (let changedEntry of foldOptions.changed as Dynamic)
+      if (changedEntry.path === designMetadataPath) {
+        typeof changedEntry.data.title == "string" &&
+          (await mayReplaceIndexField(changedEntry, "title", index.title)) &&
+          (index.title = changedEntry.data.title);
+        Array.isArray(changedEntry.data.pages) &&
+          (await mayReplaceIndexField(changedEntry, "pages", index.pages)) &&
+          (index.pages = cloneIndexValue(changedEntry.data.pages));
+        typeof changedEntry.data.launch == "object" &&
+          changedEntry.data.launch !== null &&
+          (await mayReplaceIndexField(changedEntry, "launch", index.launch)) &&
+          (index.launch = cloneIndexValue(changedEntry.data.launch));
+        (await mayReplaceIndexField(changedEntry, "cover", index.cover)) &&
+          (typeof changedEntry.data.cover == "string"
+            ? (index.cover = changedEntry.data.cover)
+            : delete index.cover);
+        for (let artboardPath of databaseBoardPaths as Dynamic)
+          artboardPath in index.boards || (await foldArtboard(artboardPath));
+        let availableBoardOrder: Dynamic = [...databaseBoardPaths].filter(
+            (artboardPath?: Dynamic): Dynamic => artboardPath in index.boards,
           ),
-          value8: Dynamic = value7.filter(
-            (input2?: Dynamic): Dynamic =>
-              !input.index.order.includes(input2) && !callback3(input2),
+          newBoardPaths: Dynamic = availableBoardOrder.filter(
+            (artboardPath?: Dynamic): Dynamic =>
+              !foldOptions.index.order.includes(artboardPath) && !wasPublished(artboardPath),
           ),
-          value9: Dynamic = value2.order.filter(
-            (input2?: Dynamic): Dynamic => !value8.includes(input2),
+          nextBoardOrder: Dynamic = index.order.filter(
+            (artboardPath?: Dynamic): Dynamic => !newBoardPaths.includes(artboardPath),
           );
-        for (let value10 of value8 as Dynamic) {
-          let value11: Dynamic = value7
-            .slice(0, value7.indexOf(value10))
+        for (let newBoardPath of newBoardPaths as Dynamic) {
+          let predecessorPath: Dynamic = availableBoardOrder
+            .slice(0, availableBoardOrder.indexOf(newBoardPath))
             .reverse()
-            .find((input2?: Dynamic): Dynamic => value9.includes(input2));
-          value9.splice(
-            value11 === undefined ? 0 : value9.indexOf(value11) + 1,
+            .find((artboardPath?: Dynamic): Dynamic => nextBoardOrder.includes(artboardPath));
+          nextBoardOrder.splice(
+            predecessorPath === undefined ? 0 : nextBoardOrder.indexOf(predecessorPath) + 1,
             0,
-            value10,
+            newBoardPath,
           );
         }
-        value2.order = orderedDesignMapKeys(
-          value9,
-          value2.boards,
+        index.order = orderedDesignMapKeys(
+          nextBoardOrder,
+          index.boards,
         );
       } else if (
-        isDirectCollectionDocument(value6.path, BoardsValue)
+        isDirectCollectionDocument(changedEntry.path, BoardsValue)
       ) {
-        let value7: Dynamic = databaseArtboardFilePath(value6);
-        value7 !== undefined &&
-          (values.has(value7) || value7 in value2.boards) &&
-          (await callback6(value7));
+        let artboardPath: Dynamic = databaseArtboardFilePath(changedEntry);
+        artboardPath !== undefined &&
+          (databaseBoardPaths.has(artboardPath) || artboardPath in index.boards) &&
+          (await foldArtboard(artboardPath));
       } else if (
-        isDirectCollectionDocument(value6.path, FilesValue)
+        isDirectCollectionDocument(changedEntry.path, FilesValue)
       ) {
-        let value7: Dynamic = await readDatabaseFileEntry(value6, options);
-        if (value7 === undefined) continue;
-        let value8: Dynamic = await callback(
-          toProjectContentPath(value7.path),
+        let file: Dynamic = await readDatabaseFileEntry(changedEntry, codecOptions);
+        if (file === undefined) continue;
+        let publishedText: Dynamic = await readPublishedText(
+          toProjectContentPath(file.path),
         );
-        if (value8 === "unreadable") {
-          items2.push(value6.path);
+        if (publishedText === "unreadable") {
+          unfoldedPaths.push(changedEntry.path);
           continue;
         }
-        canSaveDesignFile(value7.path) &&
-          callback2(toProjectContentPath(value7.path), value8) &&
-          value7.data !== value8 &&
-          (entries.set(
-            toProjectContentPath(value7.path),
-            encodeDesignPortFile(value7.path, value7.data),
+        canSaveDesignFile(file.path) &&
+          matchesPublishedHash(toProjectContentPath(file.path), publishedText) &&
+          file.data !== publishedText &&
+          (changedFiles.set(
+            toProjectContentPath(file.path),
+            encodeDesignPortFile(file.path, file.data),
           ),
-          entries2.set(toProjectContentPath(value7.path), [
-            value6.path,
+          sourcesByPath.set(toProjectContentPath(file.path), [
+            changedEntry.path,
           ]));
       } else if (
-        isDirectCollectionDocument(value6.path, NotesValue)
+        isDirectCollectionDocument(changedEntry.path, NotesValue)
       ) {
-        let value7: Dynamic = readDatabaseAnnotation(value6);
-        if (value7 === undefined) continue;
-        let value8: Dynamic = documentPathBasename(value6.path),
-          value9: Dynamic = encodeDatabaseAnnotation(value7),
-          value10: Dynamic = value2.notes[value8];
+        let annotation: Dynamic = readDatabaseAnnotation(changedEntry);
+        if (annotation === undefined) continue;
+        let annotationId: Dynamic = documentPathBasename(changedEntry.path),
+          nextNote: Dynamic = encodeDatabaseAnnotation(annotation),
+          existingNote: Dynamic = index.notes[annotationId];
         if (
-          value10 === undefined ||
-          input.recorded.get(value6.path) === undefined
+          existingNote === undefined ||
+          foldOptions.recorded.get(changedEntry.path) === undefined
         ) {
-          value2.notes[value8] = value9;
-          Object.hasOwn(value2.notes, value8) && items.push(value6.path);
+          index.notes[annotationId] = nextNote;
+          Object.hasOwn(index.notes, annotationId) && indexSources.push(changedEntry.path);
           continue;
         }
-        for (let value11 of new Set([
-          ...Object.keys(value9),
-          ...Object.keys(value10),
+        for (let field of new Set([
+          ...Object.keys(nextNote),
+          ...Object.keys(existingNote),
         ]) as Dynamic)
-          value11 !== "d1" &&
-            (await callback5(
-              value6,
-              value11,
-              value11 === "d" && typeof value10.d == "string"
-                ? String(value10.d) + String(value10.d1 ?? "")
-                : value10[value11],
+          field !== "d1" &&
+            (await mayReplaceIndexField(
+              changedEntry,
+              field,
+              field === "d" && typeof existingNote.d == "string"
+                ? String(existingNote.d) + String(existingNote.d1 ?? "")
+                : existingNote[field],
             )) &&
-            (value9[value11] === undefined
-              ? (delete value10[value11],
-                value11 === "d" && delete value10.d1)
-              : ((value10[value11] = value9[value11]),
-                value11 === "d" &&
-                  (value9.d1 === undefined
-                    ? delete value10.d1
-                    : (value10.d1 = value9.d1))));
-        Object.hasOwn(value2.notes, value8) &&
-          annotationMatchesDatabase(value2.notes[value8], value6) &&
-          items.push(value6.path);
+            (nextNote[field] === undefined
+              ? (delete existingNote[field],
+                field === "d" && delete existingNote.d1)
+              : ((existingNote[field] = nextNote[field]),
+                field === "d" &&
+                  (nextNote.d1 === undefined
+                    ? delete existingNote.d1
+                    : (existingNote.d1 = nextNote.d1))));
+        Object.hasOwn(index.notes, annotationId) &&
+          annotationMatchesDatabase(index.notes[annotationId], changedEntry) &&
+          indexSources.push(changedEntry.path);
       } else
-        (value6.path === PlatformFileContentResolvedValue_5 ||
-          value6.path === DESIGN_SYSTEM_DOCUMENT_PATH) &&
-          (copyDesignSourceMetadata(value2, input.snapshot),
-          sourceMetadataMatchesDatabase(value2, value6) &&
-            items.push(value6.path));
-    for (let value6 of input.removed as Dynamic)
-      if (isDirectCollectionDocument(value6, NotesValue))
-        delete value2.notes[documentPathBasename(value6)];
-      else if (isDirectCollectionDocument(value6, BoardsValue)) {
-        let value7: Dynamic = Object.keys(value2.boards).find(
-          (input2?: Dynamic): Dynamic =>
-            encodeStorePathSegment(input2) ===
-            documentPathBasename(value6),
+        (changedEntry.path === designSourceDocumentPath ||
+          changedEntry.path === DESIGN_SYSTEM_DOCUMENT_PATH) &&
+          (copyDesignSourceMetadata(index, foldOptions.snapshot),
+          sourceMetadataMatchesDatabase(index, changedEntry) &&
+            indexSources.push(changedEntry.path));
+    for (let removedEntryPath of foldOptions.removed as Dynamic)
+      if (isDirectCollectionDocument(removedEntryPath, NotesValue))
+        delete index.notes[documentPathBasename(removedEntryPath)];
+      else if (isDirectCollectionDocument(removedEntryPath, BoardsValue)) {
+        let artboardPath: Dynamic = Object.keys(index.boards).find(
+          (candidatePath?: Dynamic): Dynamic =>
+            encodeStorePathSegment(candidatePath) ===
+            documentPathBasename(removedEntryPath),
         );
-        if (value7 === undefined) continue;
-        let value8: Dynamic = await callback(
-          toProjectContentPath(value7),
+        if (artboardPath === undefined) continue;
+        let publishedHtml: Dynamic = await readPublishedText(
+          toProjectContentPath(artboardPath),
         );
-        if (value8 === "unreadable") {
-          items2.push(value6);
+        if (publishedHtml === "unreadable") {
+          unfoldedPaths.push(removedEntryPath);
           continue;
         }
-        if (!callback2(toProjectContentPath(value7), value8))
+        if (!matchesPublishedHash(toProjectContentPath(artboardPath), publishedHtml))
           continue;
-        delete value2.boards[value7];
-        value2.order = value2.order.filter(
-          (input2?: Dynamic): Dynamic => input2 !== value7,
+        delete index.boards[artboardPath];
+        index.order = index.order.filter(
+          (boardPath?: Dynamic): Dynamic => boardPath !== artboardPath,
         );
-        entries.set(toProjectContentPath(value7), null);
+        changedFiles.set(toProjectContentPath(artboardPath), null);
       }
     return {
-      files: entries,
-      index: value2,
-      sources: entries2,
-      ...(items.length > 0
+      files: changedFiles,
+      index: index,
+      sources: sourcesByPath,
+      ...(indexSources.length > 0
         ? {
-            indexSources: items,
+            indexSources: indexSources,
           }
         : {}),
-      ...(items2.length > 0
+      ...(unfoldedPaths.length > 0
         ? {
-            unfolded: items2,
+            unfolded: unfoldedPaths,
           }
         : {}),
     };
   }
   return {
     toTree: composeDatabaseSnapshot,
-    serializeIndex: (input?: Dynamic): Dynamic =>
-      stringifyCanonicalIndex(input),
-    fold: value,
+    serializeIndex: (index?: Dynamic): Dynamic =>
+      stringifyCanonicalIndex(index),
+    fold: foldDatabaseChanges,
   };
 }
 function encodeDatabaseAnnotation(annotation?: Dynamic): Dynamic {
@@ -651,38 +651,38 @@ export function installPlatformDatabaseCodec(): () => void {
     DESIGN_SYSTEM_DOCUMENT_PATH =
       DesignValue + "/" + DesignSystemsKey;
     DESIGN_CONVERSION_LOCK_PATH = DesignValue + "/convert-lock";
-    optionalString = (input?: Dynamic): Dynamic =>
-      typeof input == "string" ? input : undefined;
-    documentPathBasename = (input?: Dynamic): Dynamic =>
-      input.slice(input.indexOf("/") + 1);
-    isDirectCollectionDocument = (input?: Dynamic, items?: Dynamic): Dynamic =>
-      input.startsWith(items + "/") && input.indexOf("/", items.length + 1) < 0;
-    isReservedConversionFile = (input?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      input !== canvasMetadataFile &&
+    optionalString = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "string" ? candidate : undefined;
+    documentPathBasename = (documentPath?: Dynamic): Dynamic =>
+      documentPath.slice(documentPath.indexOf("/") + 1);
+    isDirectCollectionDocument = (documentPath?: Dynamic, collectionPath?: Dynamic): Dynamic =>
+      documentPath.startsWith(collectionPath + "/") && documentPath.indexOf("/", collectionPath.length + 1) < 0;
+    isReservedConversionFile = (filePath?: Dynamic): Dynamic =>
+      typeof filePath == "string" &&
+      filePath !== canvasMetadataFile &&
       isReservedProjectPath(
         "design",
-        projectPathPrefix + input,
+        projectPathPrefix + filePath,
       );
     serializeConvertedArtboard = (
-      input?: Dynamic,
-      options?: Dynamic,
+      filePath?: Dynamic,
+      boardData?: Dynamic,
     ): Dynamic => {
       let state: Dynamic = {
-        file: input,
+        file: filePath,
       };
       for (let value of PlatformFileContentXYWValues as Dynamic)
-        options[value] !== undefined &&
-          options[value] !== null &&
-          (state[value] = options[value]);
+        boardData[value] !== undefined &&
+          boardData[value] !== null &&
+          (state[value] = boardData[value]);
       return state;
     };
-    readDatabaseBoardOrder = (input?: Dynamic, options?: Dynamic): Dynamic => {
+    readDatabaseBoardOrder = (metadata?: Dynamic, hasBoard?: Dynamic): Dynamic => {
       let items: Dynamic = [];
-      if (Array.isArray(input?.boardOrder))
-        for (let value of input.boardOrder as Dynamic)
+      if (Array.isArray(metadata?.boardOrder))
+        for (let value of metadata.boardOrder as Dynamic)
           typeof value == "string" &&
-            options(value) &&
+            hasBoard(value) &&
             !items.includes(value) &&
             items.push(value);
       return items;

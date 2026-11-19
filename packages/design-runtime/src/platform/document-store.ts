@@ -14,154 +14,154 @@ import { canRequestPublishCapability, getPublishCapability, hasCachedPublishCapa
 import { awaitCurrentUserCanEdit } from "./user-capabilities";
 
 function normalizeDocumentSnapshot(
-  input?: Dynamic,
-  options?: Dynamic,
+  rawSnapshot?: Dynamic,
+  snapshotOptions?: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
-      typeof input == "object" && input !== null ? input : {},
-    value2: Dynamic;
+  let snapshot: Dynamic =
+      typeof rawSnapshot == "object" && rawSnapshot !== null ? rawSnapshot : {},
+    content: Dynamic;
   try {
-    value2 = options.parseContent(value.content);
+    content = snapshotOptions.parseContent(snapshot.content);
   } catch {
-    value2 = options.initialContent;
+    content = snapshotOptions.initialContent;
   }
   return {
     title:
-      normalizeDocumentTitle(value.title) ??
-      options.defaultTitle ??
+      normalizeDocumentTitle(snapshot.title) ??
+      snapshotOptions.defaultTitle ??
       "Appifact",
-    content: value2,
-    comments: parseDocumentComments(value.comments),
+    content: content,
+    comments: parseDocumentComments(snapshot.comments),
   };
 }
-function createDocumentStore(options?: Dynamic): Dynamic {
-  let value: Dynamic = getDatabaseRuntimeSnapshot();
+function createDocumentStore(storeOptions?: Dynamic): Dynamic {
+  let databaseSnapshot: Dynamic = getDatabaseRuntimeSnapshot();
   if (
-    value !== undefined &&
-    options.publish === undefined &&
-    options.canPublish === undefined &&
-    options.embeddedState === undefined &&
-    options.pageParts === undefined
+    databaseSnapshot !== undefined &&
+    storeOptions.publish === undefined &&
+    storeOptions.canPublish === undefined &&
+    storeOptions.embeddedState === undefined &&
+    storeOptions.pageParts === undefined
   )
     return createDatabaseDocumentStore({
-      runtime: value.runtime,
-      snapshot: value.snapshot,
-      parseContent: options.parseContent,
-      ...(options.serializeContent !== undefined
+      runtime: databaseSnapshot.runtime,
+      snapshot: databaseSnapshot.snapshot,
+      parseContent: storeOptions.parseContent,
+      ...(storeOptions.serializeContent !== undefined
         ? {
-            serializeContent: options.serializeContent,
+            serializeContent: storeOptions.serializeContent,
           }
         : {}),
-      ...(options.contentHold !== undefined
+      ...(storeOptions.contentHold !== undefined
         ? {
-            contentHold: options.contentHold,
+            contentHold: storeOptions.contentHold,
           }
         : {}),
-      initialContent: options.initialContent,
-      ...(options.defaultTitle !== undefined
+      initialContent: storeOptions.initialContent,
+      ...(storeOptions.defaultTitle !== undefined
         ? {
-            defaultTitle: options.defaultTitle,
+            defaultTitle: storeOptions.defaultTitle,
           }
         : {}),
     });
-  let value2: Dynamic =
-      options.pageParts ??
+  let pageParts: Dynamic =
+      storeOptions.pageParts ??
       readCompiledPageParts((globalThis as Dynamic).document),
-    value3: Dynamic =
-      options.embeddedState !== undefined
-        ? options.embeddedState
+    embeddedState: Dynamic =
+      storeOptions.embeddedState !== undefined
+        ? storeOptions.embeddedState
         : readEmbeddedDocument((globalThis as Dynamic).document),
-    value4: Dynamic = options.stash ?? createDocumentStash(),
-    value5: Dynamic = options.roFlag ?? createReadOnlyStash(),
-    value6: Dynamic =
-      options.canPublish ?? canRequestPublishCapability(),
-    value7: Dynamic = normalizeDocumentSnapshot(value3, options),
-    value8: Dynamic = hashDocumentState(
-      safeInlineJson(value27(value7)),
+    documentStash: Dynamic = storeOptions.stash ?? createDocumentStash(),
+    readOnlyStash: Dynamic = storeOptions.roFlag ?? createReadOnlyStash(),
+    canPublish: Dynamic =
+      storeOptions.canPublish ?? canRequestPublishCapability(),
+    baseState: Dynamic = normalizeDocumentSnapshot(embeddedState, storeOptions),
+    embeddedStateHash: Dynamic = hashDocumentState(
+      safeInlineJson(serializeState(baseState)),
     ),
-    value9: Dynamic = value7,
-    items: Dynamic = [],
-    flag: Dynamic = false,
-    index: Dynamic = 0,
-    flag2: Dynamic = false,
-    value10: Dynamic,
-    value11: Dynamic,
-    flag3: Dynamic = false,
-    flag4: Dynamic = false,
-    value12: Dynamic = options.contentHold?.(value3?.content),
-    value13: Dynamic = value12 !== undefined || !value6,
-    flag5: Dynamic = false,
-    value14: Dynamic =
-      value12 ??
-      (value6
+    currentState: Dynamic = baseState,
+    pendingCommentOperations: Dynamic = [],
+    isDirty: Dynamic = false,
+    restoreCount: Dynamic = 0,
+    isSaving: Dynamic = false,
+    saveErrorMessage: Dynamic,
+    saveErrorCode: Dynamic,
+    didSaveForReload: Dynamic = false,
+    isReloading: Dynamic = false,
+    contentHold: Dynamic = storeOptions.contentHold?.(embeddedState?.content),
+    isReadOnly: Dynamic = contentHold !== undefined || !canPublish,
+    didBootReadOnly: Dynamic = false,
+    readOnlyMessage: Dynamic =
+      contentHold ??
+      (canPublish
         ? undefined
         : // MineDesign: the host global is designHost.
           "This view\u2019s runtime does not offer self-publish (window.designHost.self is absent) \u2014 content can be viewed but not saved from here.");
-  if (!value13) {
-    let value36: Dynamic = value5.read();
-    value36 !== null &&
-      value36.length > 0 &&
-      ((value13 = true), (value14 = value36));
+  if (!isReadOnly) {
+    let stashedReadOnlyMessage: Dynamic = readOnlyStash.read();
+    stashedReadOnlyMessage !== null &&
+      stashedReadOnlyMessage.length > 0 &&
+      ((isReadOnly = true), (readOnlyMessage = stashedReadOnlyMessage));
   }
-  let flag6: Dynamic = false,
-    value15: Dynamic,
+  let isPublishingComments: Dynamic = false,
+    commentErrorMessage: Dynamic,
     flag7: Dynamic = false,
-    values: Dynamic = new Set(),
-    values2: Dynamic = new Set();
-  function value16(): Dynamic {
-    if (value13)
-      return flag5
+    documentListeners: Dynamic = new Set(),
+    saveListeners: Dynamic = new Set();
+  function readSaveState(): Dynamic {
+    if (isReadOnly)
+      return didBootReadOnly
         ? {
             status: "readonly",
-            message: value14,
+            message: readOnlyMessage,
             atBoot: true,
           }
         : {
             status: "readonly",
-            message: value14,
+            message: readOnlyMessage,
           };
-    let value36: Dynamic = flag2
+    let saveState: Dynamic = isSaving
       ? {
           status: "saving",
         }
-      : value10 !== undefined
+      : saveErrorMessage !== undefined
         ? {
             status: "error",
-            message: value10,
-            ...(value11 !== undefined
+            message: saveErrorMessage,
+            ...(saveErrorCode !== undefined
               ? {
-                  code: value11,
+                  code: saveErrorCode,
                 }
               : {}),
           }
         : {
-            status: flag ? "dirty" : flag3 ? "saved" : "ready",
+            status: isDirty ? "dirty" : didSaveForReload ? "saved" : "ready",
           };
-    return flag4
+    return isReloading
       ? {
-          ...value36,
+          ...saveState,
           reloading: true,
         }
-      : value36;
+      : saveState;
   }
-  function value17(): Dynamic {
+  function readCommentSync(): Dynamic {
     let length: Dynamic = filterEffectiveCommentOperations(
-      value7.comments,
-      items,
+      baseState.comments,
+      pendingCommentOperations,
     ).length;
-    return value13 && length > 0
+    return isReadOnly && length > 0
       ? {
           status: "blocked",
           pending: length,
-          message: value14,
+          message: readOnlyMessage,
         }
-      : value15 !== undefined
+      : commentErrorMessage !== undefined
         ? {
             status: "error",
             pending: length,
-            message: value15,
+            message: commentErrorMessage,
           }
-        : flag6 || length > 0
+        : isPublishingComments || length > 0
           ? {
               status: "publishing",
               pending: length,
@@ -171,625 +171,625 @@ function createDocumentStore(options?: Dynamic): Dynamic {
               pending: 0,
             };
   }
-  let flag8: Dynamic = false;
-  function value18(): Dynamic {
-    flag8 && ((flag8 = false), queueMicrotask((): Dynamic => value19()));
+  let shouldNotifyNewListener: Dynamic = false;
+  function notifyNewListeners(): Dynamic {
+    shouldNotifyNewListener && ((shouldNotifyNewListener = false), queueMicrotask((): Dynamic => notifyDocumentChanged()));
   }
-  function value19(input?: Dynamic): Dynamic {
-    values.size === 0 && (flag8 = true);
-    for (let value36 of values as Dynamic) value36(input);
-    value20();
+  function notifyDocumentChanged(change?: Dynamic): Dynamic {
+    documentListeners.size === 0 && (shouldNotifyNewListener = true);
+    for (let listener of documentListeners as Dynamic) listener(change);
+    notifySaveStateChanged();
   }
-  function value20(): Dynamic {
-    values2.size === 0 && (flag8 = true);
-    let value36: Dynamic = value16();
-    for (let value37 of values2 as Dynamic) value37(value36);
+  function notifySaveStateChanged(): Dynamic {
+    saveListeners.size === 0 && (shouldNotifyNewListener = true);
+    let saveState: Dynamic = readSaveState();
+    for (let listener of saveListeners as Dynamic) listener(saveState);
   }
-  let flag9: Dynamic = true,
-    value21: Dynamic,
-    value22: Dynamic;
-  function value23(): Dynamic {
-    let value36: Dynamic = items,
-      value37: Dynamic = value21 ? value21.state : value9;
-    flag9 = value4.write(
+  let didWriteStash: Dynamic = true,
+    stashOffer: Dynamic,
+    expectedEmbeddedHash: Dynamic;
+  function writeStash(): Dynamic {
+    let commentOperations: Dynamic = pendingCommentOperations,
+      stateToStash: Dynamic = stashOffer ? stashOffer.state : currentState;
+    didWriteStash = documentStash.write(
       JSON.stringify({
         v: 2,
-        at: value21 ? value21.at : Date.now(),
-        state: value37,
-        ...(value36.length > 0
+        at: stashOffer ? stashOffer.at : Date.now(),
+        state: stateToStash,
+        ...(commentOperations.length > 0
           ? {
-              ops: value36,
+              ops: commentOperations,
             }
           : {}),
-        ...(value22 !== undefined && !value21
+        ...(expectedEmbeddedHash !== undefined && !stashOffer
           ? {
-              expectEmbed: value22,
+              expectEmbed: expectedEmbeddedHash,
             }
           : {}),
       }),
     );
-    return flag9;
+    return didWriteStash;
   }
   {
-    let value36: Dynamic = parseDocumentStash(value4.read());
-    if (value36) {
-      let value37: Dynamic = normalizeDocumentSnapshot(
-          value36.state,
-          options,
+    let stashedDocument: Dynamic = parseDocumentStash(documentStash.read());
+    if (stashedDocument) {
+      let stashedState: Dynamic = normalizeDocumentSnapshot(
+          stashedDocument.state,
+          storeOptions,
         ),
-        callback: Dynamic = (input?: Dynamic): Dynamic =>
-          options.serializeContent !== undefined
-            ? options.serializeContent(input.content, input.title)
-            : input.content,
-        value38: Dynamic = filterEffectiveCommentOperations(
-          value7.comments,
-          parseCommentOperations(value36.ops),
+        serializeStashedContent: Dynamic = (documentState?: Dynamic): Dynamic =>
+          storeOptions.serializeContent !== undefined
+            ? storeOptions.serializeContent(documentState.content, documentState.title)
+            : documentState.content,
+        effectiveCommentOperations: Dynamic = filterEffectiveCommentOperations(
+          baseState.comments,
+          parseCommentOperations(stashedDocument.ops),
         );
-      if (value38.length === 0 && value36.ops === undefined) {
-        let values3: Dynamic = new Set(
-          value7.comments.map((input?: Dynamic): Dynamic => input.id),
+      if (effectiveCommentOperations.length === 0 && stashedDocument.ops === undefined) {
+        let existingCommentIds: Dynamic = new Set(
+          baseState.comments.map((comment?: Dynamic): Dynamic => comment.id),
         );
-        value38 = value37.comments
-          .filter((input?: Dynamic): Dynamic => !values3.has(input.id))
+        effectiveCommentOperations = stashedState.comments
+          .filter((comment?: Dynamic): Dynamic => !existingCommentIds.has(comment.id))
           .map(
-            (input?: Dynamic): Dynamic => ({
+            (comment?: Dynamic): Dynamic => ({
               op: "add",
-              comment: input,
+              comment: comment,
             }),
           );
       }
-      let value39: Dynamic =
+      let matchesEmbeddedState: Dynamic =
         JSON.stringify({
-          t: value37.title,
-          c: callback(value37),
+          t: stashedState.title,
+          c: serializeStashedContent(stashedState),
         }) ===
         JSON.stringify({
-          t: value7.title,
-          c: callback(value7),
+          t: baseState.title,
+          c: serializeStashedContent(baseState),
         });
-      items = value38;
-      items.length > 0 &&
-        (value9 = {
-          ...value9,
+      pendingCommentOperations = effectiveCommentOperations;
+      pendingCommentOperations.length > 0 &&
+        (currentState = {
+          ...currentState,
           comments: applyCommentOperations(
-            value7.comments,
-            items,
+            baseState.comments,
+            pendingCommentOperations,
           ),
         });
-      value39
-        ? items.length === 0
-          ? value4.clear()
-          : value23()
-        : value36.expectEmbed === value8
-          ? ((value9 = {
-              title: value37.title,
-              content: value37.content,
+      matchesEmbeddedState
+        ? pendingCommentOperations.length === 0
+          ? documentStash.clear()
+          : writeStash()
+        : stashedDocument.expectEmbed === embeddedStateHash
+          ? ((currentState = {
+              title: stashedState.title,
+              content: stashedState.content,
               comments: applyCommentOperations(
-                value7.comments,
-                items,
+                baseState.comments,
+                pendingCommentOperations,
               ),
             }),
-            (flag = true),
-            value23())
-          : (value21 = {
-              at: value36.at,
-              state: value37,
+            (isDirty = true),
+            writeStash())
+          : (stashOffer = {
+              at: stashedDocument.at,
+              state: stashedState,
             });
     }
   }
-  function value24(input?: Dynamic): Dynamic {
-    value13 = true;
-    value14 =
-      input.code === "not_writer"
+  function setPublishReadOnly(publishError?: Dynamic): Dynamic {
+    isReadOnly = true;
+    readOnlyMessage =
+      publishError.code === "not_writer"
         ? readOnlyDocumentMessage
-        : input.code === "consent_required"
+        : publishError.code === "consent_required"
           ? "Saving needs the self-publish permission this view declined (or has not answered). Reload and accept the prompt to edit."
           : "This view cannot save: " +
-            input.message +
+            publishError.message +
             " (" +
-            input.code +
+            publishError.code +
             ")";
-    (input.code === "not_writer" ||
-      input.code === "not_declared" ||
-      input.code === "capability_disabled" ||
-      input.code === "capability_removed") &&
-      value5.write(value14);
+    (publishError.code === "not_writer" ||
+      publishError.code === "not_declared" ||
+      publishError.code === "capability_disabled" ||
+      publishError.code === "capability_removed") &&
+      readOnlyStash.write(readOnlyMessage);
   }
-  function value25(input?: Dynamic, options2: Dynamic = false): Dynamic {
-    value9 = input;
-    flag = true;
-    flag3 = false;
-    value10 = undefined;
-    value11 = undefined;
-    options2 || ((value21 = undefined), recordEdit());
-    value23();
-    value19();
+  function applyLocalEdit(nextState?: Dynamic, isAutomatic: Dynamic = false): Dynamic {
+    currentState = nextState;
+    isDirty = true;
+    didSaveForReload = false;
+    saveErrorMessage = undefined;
+    saveErrorCode = undefined;
+    isAutomatic || ((stashOffer = undefined), recordEdit());
+    writeStash();
+    notifyDocumentChanged();
   }
-  function value26(): Dynamic {
-    value9 = {
-      ...value9,
-      comments: applyCommentOperations(value7.comments, items),
+  function refreshLocalComments(): Dynamic {
+    currentState = {
+      ...currentState,
+      comments: applyCommentOperations(baseState.comments, pendingCommentOperations),
     };
-    value23();
-    value19();
+    writeStash();
+    notifyDocumentChanged();
   }
-  function value27(input?: Dynamic): Dynamic {
-    return options.serializeContent !== undefined
+  function serializeState(documentState?: Dynamic): Dynamic {
+    return storeOptions.serializeContent !== undefined
       ? {
-          ...input,
-          content: options.serializeContent(input.content, input.title),
+          ...documentState,
+          content: storeOptions.serializeContent(documentState.content, documentState.title),
         }
-      : input;
+      : documentState;
   }
-  function value28(input?: Dynamic): Dynamic {
+  function compilePage(documentState?: Dynamic): Dynamic {
     return compileArtifactDocument(
       {
-        ...value2,
-        title: input.title,
+        ...pageParts,
+        title: documentState.title,
       },
-      safeInlineJson(value27(input)),
+      safeInlineJson(serializeState(documentState)),
     );
   }
-  async function value29(
-    input?: Dynamic,
-    options2?: Dynamic,
+  async function publishPage(
+    html?: Dynamic,
+    publishOptions?: Dynamic,
   ): Promise<Dynamic> {
-    return (options.publish ?? requirePublishCapability())(
-      input,
-      options2,
+    return (storeOptions.publish ?? requirePublishCapability())(
+      html,
+      publishOptions,
     );
   }
-  let value30: Dynamic = Promise.resolve();
-  function value31(input?: Dynamic): Dynamic {
-    let value36: Dynamic = value30.then(input, input);
-    value30 = value36.then(
+  let publishQueue: Dynamic = Promise.resolve();
+  function enqueuePublish(operation?: Dynamic): Dynamic {
+    let queuedPublish: Dynamic = publishQueue.then(operation, operation);
+    publishQueue = queuedPublish.then(
       (): Dynamic => {},
       (): Dynamic => {},
     );
-    return value36;
+    return queuedPublish;
   }
-  function value32(): Dynamic {
+  function publishComments(): Dynamic {
     if (
-      value13 ||
-      flag6 ||
-      filterEffectiveCommentOperations(value7.comments, items)
+      isReadOnly ||
+      isPublishingComments ||
+      filterEffectiveCommentOperations(baseState.comments, pendingCommentOperations)
         .length === 0
     )
       return;
-    flag6 = true;
-    value15 = undefined;
-    value19();
-    let flag10: Dynamic = false;
-    value31(async (): Promise<Dynamic> => {
+    isPublishingComments = true;
+    commentErrorMessage = undefined;
+    notifyDocumentChanged();
+    let didPublishConflict: Dynamic = false;
+    enqueuePublish(async (): Promise<Dynamic> => {
       try {
-        let value36: Dynamic = filterEffectiveCommentOperations(
-          value7.comments,
-          items,
+        let commentOperations: Dynamic = filterEffectiveCommentOperations(
+          baseState.comments,
+          pendingCommentOperations,
         );
-        if (value36.length === 0) return;
+        if (commentOperations.length === 0) return;
         let state: Dynamic = {
-          title: value7.title,
-          content: value7.content,
+          title: baseState.title,
+          content: baseState.content,
           comments: applyCommentOperations(
-            value7.comments,
-            value36,
+            baseState.comments,
+            commentOperations,
           ),
         };
         if (
-          JSON.stringify(state.comments) === JSON.stringify(value7.comments)
+          JSON.stringify(state.comments) === JSON.stringify(baseState.comments)
         ) {
-          let values3: Dynamic = new Set(value36);
-          items = items.filter(
-            (input?: Dynamic): Dynamic => !values3.has(input),
+          let appliedOperations: Dynamic = new Set(commentOperations);
+          pendingCommentOperations = pendingCommentOperations.filter(
+            (operation?: Dynamic): Dynamic => !appliedOperations.has(operation),
           );
-          value9 = {
-            ...value9,
+          currentState = {
+            ...currentState,
             comments: applyCommentOperations(
-              value7.comments,
-              items,
+              baseState.comments,
+              pendingCommentOperations,
             ),
           };
-          value23();
+          writeStash();
           return;
         }
-        let value37: Dynamic = value28(state);
+        let compiledPage: Dynamic = compilePage(state);
         if (
-          new TextEncoder().encode(value37).length >
+          new TextEncoder().encode(compiledPage).length >
           maxCompiledDocumentBytes
         ) {
-          value15 =
+          commentErrorMessage =
             "The document is over the 16 MiB limit \u2014 the comment is kept locally but cannot publish until content shrinks.";
           return;
         }
-        value22 = hashDocumentState(
+        expectedEmbeddedHash = hashDocumentState(
           safeInlineJson(
-            value27(
+            serializeState(
               normalizeDocumentSnapshot(
                 JSON.parse(JSON.stringify(state)),
-                options,
+                storeOptions,
               ),
             ),
           ),
         );
-        value23();
-        if (flag && !flag9) {
-          value22 = undefined;
-          value15 =
+        writeStash();
+        if (isDirty && !didWriteStash) {
+          expectedEmbeddedHash = undefined;
+          commentErrorMessage =
             "Comment held: you have unsaved edits that could NOT be kept locally (this document is too large to stash), and posting the comment reloads the page. Save your edits first, then retry.";
           return;
         }
         try {
-          await value29(value37);
-        } catch (value38: Dynamic) {
+          await publishPage(compiledPage);
+        } catch (firstPublishError: Dynamic) {
           if (
-            normalizePublishError(value38).code !==
+            normalizePublishError(firstPublishError).code !==
             "upstream_error"
           )
-            throw value38;
+            throw firstPublishError;
           await new Promise(
-            (input?: Dynamic): Dynamic =>
-              setTimeout(input, 400 + Math.random() * 1200),
+            (resolve?: Dynamic): Dynamic =>
+              setTimeout(resolve, 400 + Math.random() * 1200),
           );
-          await value29(value37);
+          await publishPage(compiledPage);
         }
-        value7 = state;
-        items = filterEffectiveCommentOperations(
-          value7.comments,
-          items,
+        baseState = state;
+        pendingCommentOperations = filterEffectiveCommentOperations(
+          baseState.comments,
+          pendingCommentOperations,
         );
-        value9 = {
-          ...value9,
+        currentState = {
+          ...currentState,
           comments: applyCommentOperations(
-            value7.comments,
-            items,
+            baseState.comments,
+            pendingCommentOperations,
           ),
         };
-        value23();
-      } catch (value36: Dynamic) {
-        value22 = undefined;
-        let value37: Dynamic = normalizePublishError(value36);
-        value37.code === "conflict"
-          ? (flag10 = true)
-          : publishAuthorizationErrorCodes.includes(value37.code)
-            ? value24(value37)
-            : value37.code === "rate_limited"
-              ? ((value15 =
+        writeStash();
+      } catch (publishError: Dynamic) {
+        expectedEmbeddedHash = undefined;
+        let publishFailure: Dynamic = normalizePublishError(publishError);
+        publishFailure.code === "conflict"
+          ? (didPublishConflict = true)
+          : publishAuthorizationErrorCodes.includes(publishFailure.code)
+            ? setPublishReadOnly(publishFailure)
+            : publishFailure.code === "rate_limited"
+              ? ((commentErrorMessage =
                   "Commenting too frequently \u2014 will retry in a moment."),
                 setTimeout(
                   (): Dynamic => {
-                    value15 = undefined;
-                    value32();
+                    commentErrorMessage = undefined;
+                    publishComments();
                   },
                   4e3 + Math.random() * 3e3,
                 ))
-              : (value15 =
+              : (commentErrorMessage =
                   "Comment not published (" +
-                  value37.message +
+                  publishFailure.message +
                   ") \u2014 it is kept here; use retry to try again.");
-        value23();
+        writeStash();
       } finally {
-        flag6 = false;
-        value19();
-        !flag10 && value15 === undefined && !value13 && value32();
+        isPublishingComments = false;
+        notifyDocumentChanged();
+        !didPublishConflict && commentErrorMessage === undefined && !isReadOnly && publishComments();
       }
     });
   }
-  async function value33(): Promise<Dynamic> {
-    if (value13 || flag2 || !flag) return;
-    flag2 = true;
-    value10 = undefined;
-    value11 = undefined;
-    value20();
-    let title: Dynamic = value9.title,
-      content: Dynamic = value9.content;
-    await value31(async (): Promise<Dynamic> => {
+  async function saveDocument(): Promise<Dynamic> {
+    if (isReadOnly || isSaving || !isDirty) return;
+    isSaving = true;
+    saveErrorMessage = undefined;
+    saveErrorCode = undefined;
+    notifySaveStateChanged();
+    let title: Dynamic = currentState.title,
+      content: Dynamic = currentState.content;
+    await enqueuePublish(async (): Promise<Dynamic> => {
       try {
-        value23();
-        let value36: Dynamic = filterEffectiveCommentOperations(
-            value7.comments,
-            items,
+        writeStash();
+        let commentOperations: Dynamic = filterEffectiveCommentOperations(
+            baseState.comments,
+            pendingCommentOperations,
           ),
           state: Dynamic = {
             title: title,
             content: content,
             comments: applyCommentOperations(
-              value7.comments,
-              value36,
+              baseState.comments,
+              commentOperations,
             ),
           },
-          value37: Dynamic =
-            options.publishesPage === false && options.publish !== undefined
+          compiledPage: Dynamic =
+            storeOptions.publishesPage === false && storeOptions.publish !== undefined
               ? ""
-              : value28(state),
-          length: Dynamic = new TextEncoder().encode(value37).length;
+              : compilePage(state),
+          length: Dynamic = new TextEncoder().encode(compiledPage).length;
         if (length > maxCompiledDocumentBytes) {
-          value10 =
+          saveErrorMessage =
             "The document is " +
             String(Math.round(length / 1024 / 1024)) +
             " MiB \u2014 over the 16 MiB limit. Remove or shrink images (the usual culprit) and save again.";
           return;
         }
-        let value38: Dynamic =
-            options.publish !== undefined
+        let publishOptions: Dynamic =
+            storeOptions.publish !== undefined
               ? {
-                  published: value27(state),
-                  base: value27(value7),
+                  published: serializeState(state),
+                  base: serializeState(baseState),
                 }
               : undefined,
-          value39: Dynamic;
+          publishResult: Dynamic;
         try {
-          value39 = await value29(value37, value38);
-        } catch (value40: Dynamic) {
+          publishResult = await publishPage(compiledPage, publishOptions);
+        } catch (firstPublishError: Dynamic) {
           if (
-            normalizePublishError(value40).code !==
+            normalizePublishError(firstPublishError).code !==
             "upstream_error"
           )
-            throw value40;
+            throw firstPublishError;
           await new Promise(
-            (input?: Dynamic): Dynamic =>
-              setTimeout(input, 400 + Math.random() * 1200),
+            (resolve?: Dynamic): Dynamic =>
+              setTimeout(resolve, 400 + Math.random() * 1200),
           );
-          value39 = await value29(value37, value38);
+          publishResult = await publishPage(compiledPage, publishOptions);
         }
-        value7 = state;
-        items = filterEffectiveCommentOperations(
-          value7.comments,
-          items,
+        baseState = state;
+        pendingCommentOperations = filterEffectiveCommentOperations(
+          baseState.comments,
+          pendingCommentOperations,
         );
-        value9 = {
-          ...value9,
+        currentState = {
+          ...currentState,
           comments: applyCommentOperations(
-            value7.comments,
-            items,
+            baseState.comments,
+            pendingCommentOperations,
           ),
         };
-        value39?.reloads !== false && (flag4 = true);
-        value9.title === title && value9.content === content
-          ? ((flag = false),
-            (flag3 = value39?.reloads !== false),
-            items.length === 0 && (value15 = undefined),
-            flag3 || value21 || items.length > 0 ? value23() : value4.clear(),
-            flag3 || value32())
-          : !flag9 &&
-            value39?.reloads !== false &&
-            (value10 =
+        publishResult?.reloads !== false && (isReloading = true);
+        currentState.title === title && currentState.content === content
+          ? ((isDirty = false),
+            (didSaveForReload = publishResult?.reloads !== false),
+            pendingCommentOperations.length === 0 && (commentErrorMessage = undefined),
+            didSaveForReload || stashOffer || pendingCommentOperations.length > 0 ? writeStash() : documentStash.clear(),
+            didSaveForReload || publishComments())
+          : !didWriteStash &&
+            publishResult?.reloads !== false &&
+            (saveErrorMessage =
               "Saved \u2014 but you kept typing during the save, and those newer changes could NOT be kept locally (this document is too large to stash). Copy anything important now: the page is about to reload to the version without them.");
-      } catch (value36: Dynamic) {
-        let value37: Dynamic = normalizePublishError(value36);
-        value11 = value37.code;
-        value37.code === "conflict"
-          ? (value10 = flag9
+      } catch (publishError: Dynamic) {
+        let publishFailure: Dynamic = normalizePublishError(publishError);
+        saveErrorCode = publishFailure.code;
+        publishFailure.code === "conflict"
+          ? (saveErrorMessage = didWriteStash
               ? "Someone saved a newer version first \u2014 loading it now. Your changes are kept and will be offered for restore."
               : "Someone saved a newer version first \u2014 loading it now. Your changes could NOT be kept locally (this document is too large to stash), so copy anything important before the reload.")
-          : publishAuthorizationErrorCodes.includes(value37.code)
-            ? value24(value37)
-            : value37.say !== undefined
-              ? (value10 = value37.say)
-              : value37.code === "rate_limited"
-                ? (value10 =
+          : publishAuthorizationErrorCodes.includes(publishFailure.code)
+            ? setPublishReadOnly(publishFailure)
+            : publishFailure.say !== undefined
+              ? (saveErrorMessage = publishFailure.say)
+              : publishFailure.code === "rate_limited"
+                ? (saveErrorMessage =
                     "Not saved (" +
-                    value37.message +
+                    publishFailure.message +
                     "). Your changes are kept; give it a moment, then save again.")
-                : value37.code === "invalid_content" ||
-                    value37.code === "transform_error"
-                  ? (value10 =
+                : publishFailure.code === "invalid_content" ||
+                    publishFailure.code === "transform_error"
+                  ? (saveErrorMessage =
                       "The store refused the document (" +
-                      value37.code +
+                      publishFailure.code +
                       ": " +
-                      value37.message +
+                      publishFailure.message +
                       "). This is usually a content problem \u2014 most often a pasted replacement character (U+FFFD, the question-mark-in-a-box glyph), which the platform rejects; find and remove the odd character, then save again. If the content looks clean, this is an appifact bug.")
-                  : value37.code === "too_large"
-                    ? (value10 =
+                  : publishFailure.code === "too_large"
+                    ? (saveErrorMessage =
                         "The store refused the document as too large (16 MiB limit). Remove or shrink images and save again.")
-                    : (value10 =
+                    : (saveErrorMessage =
                         "Saving failed (" +
-                        value37.message +
+                        publishFailure.message +
                         "). Your changes are kept \u2014 try again.");
       } finally {
-        flag2 = false;
-        value19();
+        isSaving = false;
+        notifyDocumentChanged();
       }
     });
   }
-  let value34: Dynamic =
-      options.canPublish === undefined &&
-      (options.publish === undefined || options.publishWrapsFrame === true),
-    value35: Dynamic =
-      !value13 && value34 && !hasCachedPublishCapability()
+  let shouldProbePublishCapability: Dynamic =
+      storeOptions.canPublish === undefined &&
+      (storeOptions.publish === undefined || storeOptions.publishWrapsFrame === true),
+    publishCapabilityProbe: Dynamic =
+      !isReadOnly && shouldProbePublishCapability && !hasCachedPublishCapability()
         ? getPublishCapability().then(
-            (input?: Dynamic): Dynamic => {
-              input !== null ||
-                value13 ||
-                ((value13 = true),
-                (flag5 = !flag),
-                (value14 =
+            (publishCapability?: Dynamic): Dynamic => {
+              publishCapability !== null ||
+                isReadOnly ||
+                ((isReadOnly = true),
+                (didBootReadOnly = !isDirty),
+                (readOnlyMessage =
                   "This view can't save: no publish path is available here."),
-                value19());
+                notifyDocumentChanged());
             },
           )
         : Promise.resolve();
-  !value13 &&
-    value34 &&
-    value35
+  !isReadOnly &&
+    shouldProbePublishCapability &&
+    publishCapabilityProbe
       .then(
         (): Dynamic =>
-          value13
+          isReadOnly
             ? null
             : Promise.all([
                 awaitCurrentUserCanEdit(),
                 getAssetsCapability(),
               ]),
       )
-      .then((input?: Dynamic): Dynamic => {
-        input === null ||
-          input[0] !== false ||
-          input[1] !== null ||
-          value13 ||
-          ((value13 = true),
-          (flag5 = !flag),
-          (value14 = readOnlyDocumentMessage),
-          value19());
+      .then((capabilityChecks?: Dynamic): Dynamic => {
+        capabilityChecks === null ||
+          capabilityChecks[0] !== false ||
+          capabilityChecks[1] !== null ||
+          isReadOnly ||
+          ((isReadOnly = true),
+          (didBootReadOnly = !isDirty),
+          (readOnlyMessage = readOnlyDocumentMessage),
+          notifyDocumentChanged());
       });
-  value13 || queueMicrotask((): Dynamic => value32());
+  isReadOnly || queueMicrotask((): Dynamic => publishComments());
   return {
     saveMode: (): Dynamic => "manual",
-    state: (): Dynamic => value9,
-    content: (): Dynamic => value9.content,
-    title: (): Dynamic => value9.title,
-    comments: (): Dynamic => value9.comments,
-    dirty: (): Dynamic => flag,
-    readOnly: (): Dynamic => value13,
-    saveState: value16,
-    commentSync: value17,
-    setContent(input: Dynamic): Dynamic {
-      input !== value9.content &&
-        value25({
-          ...value9,
-          content: input,
+    state: (): Dynamic => currentState,
+    content: (): Dynamic => currentState.content,
+    title: (): Dynamic => currentState.title,
+    comments: (): Dynamic => currentState.comments,
+    dirty: (): Dynamic => isDirty,
+    readOnly: (): Dynamic => isReadOnly,
+    saveState: readSaveState,
+    commentSync: readCommentSync,
+    setContent(nextContent: Dynamic): Dynamic {
+      nextContent !== currentState.content &&
+        applyLocalEdit({
+          ...currentState,
+          content: nextContent,
         });
     },
-    updateContent(input: Dynamic, options2: Dynamic): Dynamic {
-      let value36: Dynamic = input(value9.content);
-      value36 !== value9.content &&
-        value25(
+    updateContent(updateContent: Dynamic, updateOptions: Dynamic): Dynamic {
+      let nextContent: Dynamic = updateContent(currentState.content);
+      nextContent !== currentState.content &&
+        applyLocalEdit(
           {
-            ...value9,
-            content: value36,
+            ...currentState,
+            content: nextContent,
           },
-          options2?.auto === true,
+          updateOptions?.auto === true,
         );
     },
-    adoptRemote(input: Dynamic): Dynamic {
-      let value36: Dynamic = input(value7.content, value9.content);
-      (value36.base === value7.content &&
-        value36.current === value9.content) ||
-        ((value7 = {
-          ...value7,
-          content: value36.base,
+    adoptRemote(reconcileContent: Dynamic): Dynamic {
+      let reconciled: Dynamic = reconcileContent(baseState.content, currentState.content);
+      (reconciled.base === baseState.content &&
+        reconciled.current === currentState.content) ||
+        ((baseState = {
+          ...baseState,
+          content: reconciled.base,
         }),
-        (value9 = {
-          ...value9,
-          content: value36.current,
+        (currentState = {
+          ...currentState,
+          content: reconciled.current,
         }),
-        flag &&
-          !value36.dirty &&
-          value9.title === value7.title &&
-          ((flag = false), !value21 && items.length === 0 && value4.clear()),
-        flag && value23(),
-        value19({
+        isDirty &&
+          !reconciled.dirty &&
+          currentState.title === baseState.title &&
+          ((isDirty = false), !stashOffer && pendingCommentOperations.length === 0 && documentStash.clear()),
+        isDirty && writeStash(),
+        notifyDocumentChanged({
           remote: true,
         }));
     },
-    setTitle(input: Dynamic): Dynamic {
-      let value36: Dynamic = normalizeNewDocumentTitle(input);
-      value36.length === 0 ||
-        value36 === value9.title ||
-        value25({
-          ...value9,
-          title: value36,
+    setTitle(requestedTitle: Dynamic): Dynamic {
+      let nextTitle: Dynamic = normalizeNewDocumentTitle(requestedTitle);
+      nextTitle.length === 0 ||
+        nextTitle === currentState.title ||
+        applyLocalEdit({
+          ...currentState,
+          title: nextTitle,
         });
     },
-    addComment(input: Dynamic): Dynamic {
-      if (value9.comments.length >= maxDocumentComments) return;
-      let value36: Dynamic = parseDocumentComments([
+    addComment(commentDraft: Dynamic): Dynamic {
+      if (currentState.comments.length >= maxDocumentComments) return;
+      let comment: Dynamic = parseDocumentComments([
         {
-          ...input,
+          ...commentDraft,
           id: crypto.randomUUID().slice(0, 8),
           at: Date.now(),
         },
       ])[0];
-      if (value36) {
-        items = [
-          ...items,
+      if (comment) {
+        pendingCommentOperations = [
+          ...pendingCommentOperations,
           {
             op: "add",
-            comment: value36,
+            comment: comment,
           },
         ];
-        value26();
-        value32();
-        return value36;
+        refreshLocalComments();
+        publishComments();
+        return comment;
       }
     },
-    removeComment(input: Dynamic): Dynamic {
-      (!items.some(
-        (input2?: Dynamic): Dynamic =>
-          input2.op === "add" && input2.comment.id === input,
+    removeComment(commentId: Dynamic): Dynamic {
+      (!pendingCommentOperations.some(
+        (operation?: Dynamic): Dynamic =>
+          operation.op === "add" && operation.comment.id === commentId,
       ) &&
-        !value7.comments.some(
-          (input2?: Dynamic): Dynamic => input2.id === input,
+        !baseState.comments.some(
+          (comment?: Dynamic): Dynamic => comment.id === commentId,
         )) ||
-        ((items = [
-          ...items.filter(
-            (input2?: Dynamic): Dynamic =>
-              !(input2.op === "add" && input2.comment.id === input),
+        ((pendingCommentOperations = [
+          ...pendingCommentOperations.filter(
+            (operation?: Dynamic): Dynamic =>
+              !(operation.op === "add" && operation.comment.id === commentId),
           ),
           {
             op: "remove",
-            id: input,
+            id: commentId,
           },
         ]),
-        value26(),
-        value32());
+        refreshLocalComments(),
+        publishComments());
     },
     pendingCommentIds(): Dynamic {
-      let values3: Dynamic = new Set();
-      for (let value36 of filterEffectiveCommentOperations(
-        value7.comments,
-        items,
+      let pendingIds: Dynamic = new Set();
+      for (let operation of filterEffectiveCommentOperations(
+        baseState.comments,
+        pendingCommentOperations,
       ) as Dynamic)
-        value36.op === "add" && values3.add(value36.comment.id);
-      return values3;
+        operation.op === "add" && pendingIds.add(operation.comment.id);
+      return pendingIds;
     },
     retryCommentPublish(): Dynamic {
-      value15 !== undefined && ((value15 = undefined), value32());
+      commentErrorMessage !== undefined && ((commentErrorMessage = undefined), publishComments());
     },
     documentBytes(): Dynamic {
-      return new TextEncoder().encode(value28(value9)).length;
+      return new TextEncoder().encode(compilePage(currentState)).length;
     },
-    save: value33,
+    save: saveDocument,
     stashOffer: (): Dynamic =>
-      value21
+      stashOffer
         ? {
-            at: value21.at,
+            at: stashOffer.at,
           }
         : undefined,
     restoreStash(): Dynamic {
-      if (!value21) return;
-      let value36: Dynamic = value21,
+      if (!stashOffer) return;
+      let recoveredStash: Dynamic = stashOffer,
         state: Dynamic = {
-          title: value9.title,
-          content: value9.content,
+          title: currentState.title,
+          content: currentState.content,
         };
-      value21 = undefined;
-      index += 1;
-      value25({
-        title: value36.state.title,
-        content: value36.state.content,
-        comments: applyCommentOperations(value7.comments, items),
+      stashOffer = undefined;
+      restoreCount += 1;
+      applyLocalEdit({
+        title: recoveredStash.state.title,
+        content: recoveredStash.state.content,
+        comments: applyCommentOperations(baseState.comments, pendingCommentOperations),
       });
       return {
         get label() { return uiMessage("canvas.documentStore.restoreUnsavedChanges"); },
         do(): Dynamic {
-          value21 = undefined;
-          value25({
-            title: value36.state.title,
-            content: value36.state.content,
+          stashOffer = undefined;
+          applyLocalEdit({
+            title: recoveredStash.state.title,
+            content: recoveredStash.state.content,
             comments: applyCommentOperations(
-              value7.comments,
-              items,
+              baseState.comments,
+              pendingCommentOperations,
             ),
           });
         },
         undo(): Dynamic {
-          value21 = value36;
-          value25(
+          stashOffer = recoveredStash;
+          applyLocalEdit(
             {
               title: state.title,
               content: state.content,
               comments: applyCommentOperations(
-                value7.comments,
-                items,
+                baseState.comments,
+                pendingCommentOperations,
               ),
             },
             true,
@@ -798,22 +798,22 @@ function createDocumentStore(options?: Dynamic): Dynamic {
         },
       };
     },
-    restoreCount: (): Dynamic => index,
+    restoreCount: (): Dynamic => restoreCount,
     discardStash(): Dynamic {
-      value21 &&
-        ((value21 = undefined),
-        items.length === 0 ? value4.clear() : value23(),
-        value19());
+      stashOffer &&
+        ((stashOffer = undefined),
+        pendingCommentOperations.length === 0 ? documentStash.clear() : writeStash(),
+        notifyDocumentChanged());
     },
-    subscribe(input: Dynamic): Dynamic {
-      values.add(input);
-      value18();
-      return (): Dynamic => values.delete(input);
+    subscribe(listener: Dynamic): Dynamic {
+      documentListeners.add(listener);
+      notifyNewListeners();
+      return (): Dynamic => documentListeners.delete(listener);
     },
-    subscribeSave(input: Dynamic): Dynamic {
-      values2.add(input);
-      value18();
-      return (): Dynamic => values2.delete(input);
+    subscribeSave(listener: Dynamic): Dynamic {
+      saveListeners.add(listener);
+      notifyNewListeners();
+      return (): Dynamic => saveListeners.delete(listener);
     },
   };
 }

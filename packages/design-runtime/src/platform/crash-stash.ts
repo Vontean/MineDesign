@@ -18,13 +18,13 @@ var CRASH_STASH_STORE: Dynamic;
 var ARTIFACT_VERSION_PATH_PATTERN: Dynamic;
 var CRASH_STASH_LOCK_PREFIX: Dynamic;
 var getNavigatorLocks: Dynamic;
-function extractPortFileText(value?: Dynamic): Dynamic {
-  if (value === null) return "";
+function extractPortFileText(portFile?: Dynamic): Dynamic {
+  if (portFile === null) return "";
   let content: Dynamic =
-    typeof value == "object" &&
-    !(typeof Blob !== "undefined" && value instanceof Blob)
-      ? value.content
-      : value;
+    typeof portFile == "object" &&
+    !(typeof Blob !== "undefined" && portFile instanceof Blob)
+      ? portFile.content
+      : portFile;
   return typeof content == "string" ? content : "";
 }
 function createCrashStash(
@@ -38,131 +38,131 @@ function createCrashStash(
   let key: Dynamic = crashStashKey(artifactId, viewerId, tabId),
     pending: Dynamic = [],
     attempt: Dynamic = async (
-      input?: Dynamic,
-      options?: Dynamic,
+      fallback?: Dynamic,
+      operation?: Dynamic,
     ): Promise<Dynamic> => {
       try {
-        return await options();
+        return await operation();
       } catch {
-        return input;
+        return fallback;
       }
     },
-    isSameArtifact: Dynamic = (input?: Dynamic): Dynamic =>
-      baseArtifactIdentity(input.artifactId) ===
+    isSameArtifact: Dynamic = (storedEntry?: Dynamic): Dynamic =>
+      baseArtifactIdentity(storedEntry.artifactId) ===
       baseArtifactIdentity(artifactId),
     pruneExpiredEntries: Dynamic = async (): Promise<Dynamic> => {
-      let items: Dynamic = [];
-      for (let value of (await store.all()) as Dynamic) {
+      let unexpiredEntries: Dynamic = [];
+      for (let storedEntry of (await store.all()) as Dynamic) {
         if (
-          !isCrashStashEntry(value) ||
-          now() - value.createdAt > CRASH_STASH_TTL_MS
+          !isCrashStashEntry(storedEntry) ||
+          now() - storedEntry.createdAt > CRASH_STASH_TTL_MS
         ) {
-          typeof value?.key == "string" && (await store.delete(value.key));
+          typeof storedEntry?.key == "string" && (await store.delete(storedEntry.key));
           continue;
         }
-        items.push(value);
+        unexpiredEntries.push(storedEntry);
       }
-      return items;
+      return unexpiredEntries;
     },
     getOtherActiveTabs: Dynamic = async (): Promise<Dynamic> => {
-      let values: Dynamic = new Set(
+      let activeTabIds: Dynamic = new Set(
         await getActiveTabs().catch((): Dynamic => new Set()),
       );
-      values.delete(tabId);
-      return values;
+      activeTabIds.delete(tabId);
+      return activeTabIds;
     };
   return {
-    put: (items?: Dynamic, options?: Dynamic): Dynamic =>
+    put: (edits?: Dynamic, version?: Dynamic): Dynamic =>
       attempt(false, async (): Promise<Dynamic> => {
         if (viewerId === "") return false;
-        if (items.length === 0) {
+        if (edits.length === 0) {
           await store.delete(key);
           return true;
         }
-        let items2: Dynamic = [],
-          index: Dynamic = 0;
-        for (let value6 of items as Dynamic)
-          items2.length >= MAX_CRASH_STASH_EDITS_PER_ENTRY ||
-            index + crashStashEditSize(value6) >
+        let retainedEdits: Dynamic = [],
+          retainedChars: Dynamic = 0;
+        for (let edit of edits as Dynamic)
+          retainedEdits.length >= MAX_CRASH_STASH_EDITS_PER_ENTRY ||
+            retainedChars + crashStashEditSize(edit) >
               MAX_CRASH_STASH_ENTRY_CHARS ||
-            (items2.push({
-              path: value6.path,
-              text: value6.text,
-              base: value6.base,
+            (retainedEdits.push({
+              path: edit.path,
+              text: edit.text,
+              base: edit.base,
             }),
-            (index += crashStashEditSize(value6)));
-        let value: Dynamic = await pruneExpiredEntries(),
-          value2: Dynamic = await getOtherActiveTabs(),
-          value3: Dynamic = value.filter(
-            (input?: Dynamic): Dynamic => input.key !== key,
+            (retainedChars += crashStashEditSize(edit)));
+        let unexpiredEntries: Dynamic = await pruneExpiredEntries(),
+          otherActiveTabs: Dynamic = await getOtherActiveTabs(),
+          otherEntries: Dynamic = unexpiredEntries.filter(
+            (entry?: Dynamic): Dynamic => entry.key !== key,
           ),
-          value4: Dynamic =
-            index +
-            value3.reduce(
-              (input?: Dynamic, options2?: Dynamic): Dynamic =>
-                input + options2.chars,
+          totalChars: Dynamic =
+            retainedChars +
+            otherEntries.reduce(
+              (chars?: Dynamic, entry?: Dynamic): Dynamic =>
+                chars + entry.chars,
               0,
             );
-        for (let value6 of value3
-          .filter((input?: Dynamic): Dynamic => !value2.has(input.tabId))
+        for (let evictableEntry of otherEntries
+          .filter((entry?: Dynamic): Dynamic => !otherActiveTabs.has(entry.tabId))
           .sort(
-            (input?: Dynamic, options2?: Dynamic): Dynamic =>
-              input.at - options2.at,
+            (earlierEntry?: Dynamic, laterEntry?: Dynamic): Dynamic =>
+              earlierEntry.at - laterEntry.at,
           ) as Dynamic) {
-          if (value4 <= MAX_CRASH_STASH_CHARS) break;
-          await store.delete(value6.key);
-          value4 -= value6.chars;
+          if (totalChars <= MAX_CRASH_STASH_CHARS) break;
+          await store.delete(evictableEntry.key);
+          totalChars -= evictableEntry.chars;
         }
-        if (value4 > MAX_CRASH_STASH_CHARS) return false;
-        let value5: Dynamic =
-          value.find((input?: Dynamic): Dynamic => input.key === key)
+        if (totalChars > MAX_CRASH_STASH_CHARS) return false;
+        let createdAt: Dynamic =
+          unexpiredEntries.find((entry?: Dynamic): Dynamic => entry.key === key)
             ?.createdAt ?? now();
         await store.put({
           key: key,
           artifactId: artifactId,
           viewerId: viewerId,
           tabId: tabId,
-          createdAt: value5,
+          createdAt: createdAt,
           at: now(),
-          version: options,
-          edits: items2,
-          chars: index,
+          version: version,
+          edits: retainedEdits,
+          chars: retainedChars,
         });
-        return items2.length === items.length;
+        return retainedEdits.length === edits.length;
       }),
     read: (): Dynamic =>
       attempt(undefined, async (): Promise<Dynamic> => {
         if (viewerId === "") return;
-        let value: Dynamic = await getOtherActiveTabs(),
-          value2: Dynamic = (await pruneExpiredEntries())
+        let otherActiveTabs: Dynamic = await getOtherActiveTabs(),
+          recoverableEntries: Dynamic = (await pruneExpiredEntries())
             .filter(
-              (input?: Dynamic): Dynamic =>
-                input.artifactId === artifactId &&
-                input.viewerId === viewerId &&
-                !value.has(input.tabId),
+              (entry?: Dynamic): Dynamic =>
+                entry.artifactId === artifactId &&
+                entry.viewerId === viewerId &&
+                !otherActiveTabs.has(entry.tabId),
             )
             .sort(
-              (input?: Dynamic, options?: Dynamic): Dynamic =>
-                input.at - options.at,
+              (earlierEntry?: Dynamic, laterEntry?: Dynamic): Dynamic =>
+                earlierEntry.at - laterEntry.at,
             );
-        pending = value2.map(
-          (input?: Dynamic): Dynamic => ({
-            key: input.key,
-            at: input.at,
+        pending = recoverableEntries.map(
+          (entry?: Dynamic): Dynamic => ({
+            key: entry.key,
+            at: entry.at,
           }),
         );
         let entries: Dynamic = new Map();
-        for (let value4 of value2 as Dynamic)
-          for (let value5 of value4.edits as Dynamic)
-            entries.set(value5.path, value5);
+        for (let entry of recoverableEntries as Dynamic)
+          for (let edit of entry.edits as Dynamic)
+            entries.set(edit.path, edit);
         if (entries.size === 0) return;
-        let value3: Dynamic = value2[value2.length - 1];
+        let latestEntry: Dynamic = recoverableEntries[recoverableEntries.length - 1];
         return {
           createdAt: Math.min(
-            ...value2.map((input?: Dynamic): Dynamic => input.createdAt),
+            ...recoverableEntries.map((entry?: Dynamic): Dynamic => entry.createdAt),
           ),
-          at: value3.at,
-          version: value3.version,
+          at: latestEntry.at,
+          version: latestEntry.version,
           edits: [...entries.values()],
         };
       }),
@@ -170,57 +170,57 @@ function createCrashStash(
       attempt(undefined, (): Dynamic => store.delete(key)),
     clearOffered: (): Dynamic =>
       attempt(undefined, async (): Promise<Dynamic> => {
-        let value: Dynamic = pending;
+        let offeredEntries: Dynamic = pending;
         pending = [];
         let entries: Dynamic = new Map(
           (await store.all()).map(
-            (input?: Dynamic): Dynamic => [input.key, input.at],
+            (entry?: Dynamic): Dynamic => [entry.key, entry.at],
           ),
         );
-        for (let value2 of value as Dynamic)
-          entries.get(value2.key) === value2.at &&
-            (await store.delete(value2.key));
+        for (let offeredEntry of offeredEntries as Dynamic)
+          entries.get(offeredEntry.key) === offeredEntry.at &&
+            (await store.delete(offeredEntry.key));
       }),
     clearArtifact: (): Dynamic =>
       attempt(undefined, async (): Promise<Dynamic> => {
-        for (let value of (await store.all()) as Dynamic)
-          typeof value?.artifactId == "string" &&
-            isSameArtifact(value) &&
-            (await store.delete(value.key));
+        for (let entry of (await store.all()) as Dynamic)
+          typeof entry?.artifactId == "string" &&
+            isSameArtifact(entry) &&
+            (await store.delete(entry.key));
       }),
     purgeOtherViewers: (): Dynamic =>
       attempt(undefined, async (): Promise<Dynamic> => {
-        for (let value of (await pruneExpiredEntries()) as Dynamic)
+        for (let entry of (await pruneExpiredEntries()) as Dynamic)
           viewerId !== "" &&
-            isSameArtifact(value) &&
-            value.viewerId !== viewerId &&
-            (await store.delete(value.key));
+            isSameArtifact(entry) &&
+            entry.viewerId !== viewerId &&
+            (await store.delete(entry.key));
       }),
   };
 }
 function awaitIndexedDbRequest(request?: Dynamic): Dynamic {
-  return new Promise((input?: Dynamic, options?: Dynamic): Dynamic => {
-    request.onsuccess = (): Dynamic => input(request.result);
+  return new Promise((resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+    request.onsuccess = (): Dynamic => resolve(request.result);
     request.onerror = (): Dynamic =>
-      options(request.error ?? new Error("indexedDB request failed"));
+      reject(request.error ?? new Error("indexedDB request failed"));
   });
 }
 function createIndexedDbStashStore(indexedDb?: Dynamic): Dynamic {
   let databasePromise: Dynamic,
     openDatabase: Dynamic = (): Dynamic => (
       (databasePromise ??= new Promise(
-        (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value: Dynamic = indexedDb.open(CRASH_STASH_DATABASE, 1);
-          value.onupgradeneeded = (): Dynamic => {
-            value.result.createObjectStore(CRASH_STASH_STORE, {
+        (resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+          let openRequest: Dynamic = indexedDb.open(CRASH_STASH_DATABASE, 1);
+          openRequest.onupgradeneeded = (): Dynamic => {
+            openRequest.result.createObjectStore(CRASH_STASH_STORE, {
               keyPath: "key",
             });
           };
-          value.onsuccess = (): Dynamic => input(value.result);
-          value.onerror = (): Dynamic =>
-            options(value.error ?? new Error("indexedDB open failed"));
-          value.onblocked = (): Dynamic =>
-            options(new Error("indexedDB open blocked"));
+          openRequest.onsuccess = (): Dynamic => resolve(openRequest.result);
+          openRequest.onerror = (): Dynamic =>
+            reject(openRequest.error ?? new Error("indexedDB open failed"));
+          openRequest.onblocked = (): Dynamic =>
+            reject(new Error("indexedDB open blocked"));
         },
       )),
       databasePromise.catch((): Dynamic => {
@@ -228,27 +228,27 @@ function createIndexedDbStashStore(indexedDb?: Dynamic): Dynamic {
       }),
       databasePromise
     ),
-    callback: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
-      let value: Dynamic = (await openDatabase()).transaction(
+    writeToStore: Dynamic = async (createRequest?: Dynamic): Promise<Dynamic> => {
+      let transaction: Dynamic = (await openDatabase()).transaction(
           CRASH_STASH_STORE,
           "readwrite",
         ),
-        promise: Dynamic = new Promise(
-          (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            value.oncomplete = (): Dynamic => input2();
-            value.onerror = (): Dynamic =>
-              options(
-                value.error ?? new Error("indexedDB transaction failed"),
+        transactionComplete: Dynamic = new Promise(
+          (resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+            transaction.oncomplete = (): Dynamic => resolve();
+            transaction.onerror = (): Dynamic =>
+              reject(
+                transaction.error ?? new Error("indexedDB transaction failed"),
               );
-            value.onabort = (): Dynamic =>
-              options(
-                value.error ?? new Error("indexedDB transaction aborted"),
+            transaction.onabort = (): Dynamic =>
+              reject(
+                transaction.error ?? new Error("indexedDB transaction aborted"),
               );
           },
         );
       await Promise.all([
-        awaitIndexedDbRequest(input(value.objectStore(CRASH_STASH_STORE))),
-        promise,
+        awaitIndexedDbRequest(createRequest(transaction.objectStore(CRASH_STASH_STORE))),
+        transactionComplete,
       ]);
     };
   return {
@@ -259,16 +259,16 @@ function createIndexedDbStashStore(indexedDb?: Dynamic): Dynamic {
           .objectStore(CRASH_STASH_STORE)
           .getAll(),
       ),
-    put: (input?: Dynamic): Dynamic =>
-      callback((input2?: Dynamic): Dynamic => input2.put(input)),
-    delete: (input?: Dynamic): Dynamic =>
-      callback((input2?: Dynamic): Dynamic => input2.delete(input)),
+    put: (entry?: Dynamic): Dynamic =>
+      writeToStore((objectStore?: Dynamic): Dynamic => objectStore.put(entry)),
+    delete: (entryKey?: Dynamic): Dynamic =>
+      writeToStore((objectStore?: Dynamic): Dynamic => objectStore.delete(entryKey)),
   };
 }
 function artifactPathIdentity(
-  location2: Dynamic = (globalThis as Dynamic).location,
+  pageLocation: Dynamic = (globalThis as Dynamic).location,
 ): Dynamic {
-  return (location2?.pathname ?? "").replace(
+  return (pageLocation?.pathname ?? "").replace(
     ARTIFACT_VERSION_PATH_PATTERN,
     "$1",
   );
@@ -286,34 +286,34 @@ function trackActiveStashTabs(tabId?: Dynamic): Dynamic {
       async (): Promise<Dynamic> =>
         new Set(
           ((await locks.query()).held ?? [])
-            .map((input?: Dynamic): Dynamic => input.name ?? "")
+            .map((lock?: Dynamic): Dynamic => lock.name ?? "")
             .filter(
-              (input?: Dynamic): Dynamic =>
-                input.startsWith(CRASH_STASH_LOCK_PREFIX),
+              (lockName?: Dynamic): Dynamic =>
+                lockName.startsWith(CRASH_STASH_LOCK_PREFIX),
             )
             .map(
-              (input?: Dynamic): Dynamic =>
-                input.slice(CRASH_STASH_LOCK_PREFIX.length),
+              (lockName?: Dynamic): Dynamic =>
+                lockName.slice(CRASH_STASH_LOCK_PREFIX.length),
             ),
         ));
 }
-function createBrowserCrashStash(options?: Dynamic): Dynamic {
+function createBrowserCrashStash(stashOptions?: Dynamic): Dynamic {
   let indexedDb: Dynamic;
   try {
-    indexedDb = options.indexedDB ?? (globalThis as Dynamic).indexedDB;
+    indexedDb = stashOptions.indexedDB ?? (globalThis as Dynamic).indexedDB;
   } catch {
     indexedDb = undefined;
   }
-  if (indexedDb === undefined || typeof options.viewerId != "string")
+  if (indexedDb === undefined || typeof stashOptions.viewerId != "string")
     return null;
-  let value: Dynamic = options.tabId ?? crypto.randomUUID();
+  let tabId: Dynamic = stashOptions.tabId ?? crypto.randomUUID();
   return createCrashStash(
     createIndexedDbStashStore(indexedDb),
-    options.artifactId ?? artifactPathIdentity(),
-    options.viewerId,
-    value,
-    options.now ?? Date.now,
-    options.liveTabs ?? trackActiveStashTabs(value),
+    stashOptions.artifactId ?? artifactPathIdentity(),
+    stashOptions.viewerId,
+    tabId,
+    stashOptions.now ?? Date.now,
+    stashOptions.liveTabs ?? trackActiveStashTabs(tabId),
   );
 }
 async function restoreBrowserCrashStash(
@@ -360,27 +360,27 @@ export function installPlatformCrashStash(): () => void {
     MAX_CRASH_STASH_ENTRY_CHARS = 1e6;
     MAX_CRASH_STASH_CHARS = 2e6;
     crashStashKey = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => [input, options, context].join("\0");
-    crashStashEditSize = (input?: Dynamic): Dynamic =>
-      input.path.length + (input.text?.length ?? 0);
-    baseArtifactIdentity = (input?: Dynamic): Dynamic => input.split("#")[0];
-    isCrashStashEntry = (input?: Dynamic): Dynamic =>
-      typeof input?.key == "string" &&
-      typeof input.artifactId == "string" &&
-      typeof input.viewerId == "string" &&
-      Number.isFinite(input.createdAt) &&
-      Number.isFinite(input.at) &&
-      Number.isFinite(input.chars) &&
-      input.chars >= 0 &&
-      Array.isArray(input.edits) &&
-      input.edits.every(
-        (input2?: Dynamic): Dynamic =>
-          typeof input2?.path == "string" &&
-          (typeof input2.text == "string" || input2.text === null) &&
-          (typeof input2.base == "string" || input2.base === null),
+      artifactId?: Dynamic,
+      viewerId?: Dynamic,
+      tabId?: Dynamic,
+    ): Dynamic => [artifactId, viewerId, tabId].join("\0");
+    crashStashEditSize = (edit?: Dynamic): Dynamic =>
+      edit.path.length + (edit.text?.length ?? 0);
+    baseArtifactIdentity = (artifactId?: Dynamic): Dynamic => artifactId.split("#")[0];
+    isCrashStashEntry = (entry?: Dynamic): Dynamic =>
+      typeof entry?.key == "string" &&
+      typeof entry.artifactId == "string" &&
+      typeof entry.viewerId == "string" &&
+      Number.isFinite(entry.createdAt) &&
+      Number.isFinite(entry.at) &&
+      Number.isFinite(entry.chars) &&
+      entry.chars >= 0 &&
+      Array.isArray(entry.edits) &&
+      entry.edits.every(
+        (edit?: Dynamic): Dynamic =>
+          typeof edit?.path == "string" &&
+          (typeof edit.text == "string" || edit.text === null) &&
+          (typeof edit.base == "string" || edit.base === null),
       );
     CRASH_STASH_DATABASE = "appifact-crash-stash";
     CRASH_STASH_STORE = "entries";

@@ -24,34 +24,34 @@ async function resolvePublishCapability(): Promise<Dynamic> {
     (await resolveHostCapability("self", publishCapabilityName))
   );
 }
-function parsePublishedFileHashes(value?: Dynamic): Dynamic {
-  if (!Array.isArray(value)) return;
+function parsePublishedFileHashes(rawHashes?: Dynamic): Dynamic {
+  if (!Array.isArray(rawHashes)) return;
   let entries: Dynamic = [];
-  for (let value2 of value as Dynamic) {
-    let value3: Dynamic = normalizeSha256(value2?.sha256);
-    if (typeof value2?.path != "string" || value3 === undefined) return;
+  for (let fileHash of rawHashes as Dynamic) {
+    let fileSha: Dynamic = normalizeSha256(fileHash?.sha256);
+    if (typeof fileHash?.path != "string" || fileSha === undefined) return;
     entries.push({
-      path: value2.path,
-      sha256: value3,
+      path: fileHash.path,
+      sha256: fileSha,
     });
   }
   return entries;
 }
-function parsePublishConflictHashes(value?: Dynamic): Dynamic {
-  if (!Array.isArray(value)) return;
+function parsePublishConflictHashes(rawConflicts?: Dynamic): Dynamic {
+  if (!Array.isArray(rawConflicts)) return;
   let entries: Dynamic = [];
-  for (let value2 of value as Dynamic) {
-    let value3: Dynamic = normalizeSha256(
-      "actual" in (value2 ?? {}) ? value2.actual : value2?.liveSha,
+  for (let conflict of rawConflicts as Dynamic) {
+    let liveSha: Dynamic = normalizeSha256(
+      "actual" in (conflict ?? {}) ? conflict.actual : conflict?.liveSha,
     );
-    if (typeof value2?.path != "string" || value3 === undefined) return;
-    let value4: Dynamic = normalizeSha256(value2.expected);
+    if (typeof conflict?.path != "string" || liveSha === undefined) return;
+    let expectedSha: Dynamic = normalizeSha256(conflict.expected);
     entries.push({
-      path: value2.path,
-      liveSha: value3,
-      ...(value4 !== undefined
+      path: conflict.path,
+      liveSha: liveSha,
+      ...(expectedSha !== undefined
         ? {
-            expected: value4,
+            expected: expectedSha,
           }
         : {}),
     });
@@ -71,8 +71,8 @@ function normalizePublishError_2(error?: Dynamic): Dynamic {
         : typeof record.retry_after_ms == "number"
           ? record.retry_after_ms
           : undefined,
-    value2: Dynamic = parsePublishConflictHashes(record.paths),
-    value3: Dynamic = parsePublishedFileHashes(record.changed);
+    conflictPaths: Dynamic = parsePublishConflictHashes(record.paths),
+    changedFiles: Dynamic = parsePublishedFileHashes(record.changed);
   return {
     ok: false,
     code: code,
@@ -86,53 +86,53 @@ function normalizePublishError_2(error?: Dynamic): Dynamic {
           retryAfterMs: value,
         }
       : {}),
-    ...(value2 !== undefined
+    ...(conflictPaths !== undefined
       ? {
-          paths: value2,
+          paths: conflictPaths,
         }
       : {}),
-    ...(value3 !== undefined
+    ...(changedFiles !== undefined
       ? {
-          changed: value3,
+          changed: changedFiles,
         }
       : {}),
   };
 }
-function createDesignFilesPort(options: Dynamic = {}): Dynamic {
+function createDesignFilesPort(portOptions: Dynamic = {}): Dynamic {
   let fetchFile: Dynamic =
-      options.fetch ??
-      ((input?: Dynamic): Dynamic => (globalThis as Dynamic).fetch(input)),
-    fetchFresh: Dynamic = options.fetchFresh ?? fetchFile,
+      portOptions.fetch ??
+      ((url?: Dynamic): Dynamic => (globalThis as Dynamic).fetch(url)),
+    fetchFresh: Dynamic = portOptions.fetchFresh ?? fetchFile,
     useFreshReads: Dynamic = false,
     now: Dynamic = (): Dynamic =>
       (globalThis as Dynamic).performance?.now() ?? Date.now(),
-    readResponse: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
-      let value: Dynamic = useFreshReads,
-        value2: Dynamic = now();
+    readResponse: Dynamic = async (filePath?: Dynamic): Promise<Dynamic> => {
+      let shouldFetchFresh: Dynamic = useFreshReads,
+        readStartedAt: Dynamic = now();
       try {
-        let value3: Dynamic = await (value ? fetchFresh : fetchFile)(input);
+        let response: Dynamic = await (shouldFetchFresh ? fetchFresh : fetchFile)(filePath);
         try {
-          options.onRead?.(input, now() - value2, value3.status, value);
+          portOptions.onRead?.(filePath, now() - readStartedAt, response.status, shouldFetchFresh);
         } catch {}
-        return value3;
-      } catch (value3: Dynamic) {
+        return response;
+      } catch (readError: Dynamic) {
         try {
-          options.onRead?.(input, now() - value2, 0, value);
+          portOptions.onRead?.(filePath, now() - readStartedAt, 0, shouldFetchFresh);
         } catch {}
-        throw value3;
+        throw readError;
       }
     },
-    resolvePublisher: Dynamic = options.resolveNs ?? resolvePublishCapability,
-    location2: Dynamic = options.location ?? (globalThis as Dynamic).location,
-    version: Dynamic = options.bootVersion ?? {
+    resolvePublisher: Dynamic = portOptions.resolveNs ?? resolvePublishCapability,
+    pageLocation: Dynamic = portOptions.location ?? (globalThis as Dynamic).location,
+    version: Dynamic = portOptions.bootVersion ?? {
       version:
         VERSIONED_ARTIFACT_PATH_PATTERN.exec(
-          location2?.pathname ?? "",
+          pageLocation?.pathname ?? "",
         )?.[1] ?? "",
     },
-    canWrite: Dynamic = options.canWrite ?? true,
-    bootFiles: Dynamic = options.bootFiles,
-    bootNarrowed: Dynamic = options.bootNarrowed === true,
+    canWrite: Dynamic = portOptions.canWrite ?? true,
+    bootFiles: Dynamic = portOptions.bootFiles,
+    bootNarrowed: Dynamic = portOptions.bootNarrowed === true,
     listingNarrowed: Dynamic = false,
     listing: Dynamic,
     readHashes: Dynamic = new Map(),
@@ -144,43 +144,43 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
     pendingReads: Dynamic = new Map(),
     publishedBytes: Dynamic = new Map(),
     dirtyPaths: Dynamic = new Set(),
-    isChangedLocalFile: Dynamic = (input?: Dynamic): Dynamic => {
-      let entry: Dynamic = localFiles.get(input.path);
+    isChangedLocalFile: Dynamic = (change?: Dynamic): Dynamic => {
+      let entry: Dynamic = localFiles.get(change.path);
       return (
         entry !== undefined &&
-        !publishingPaths.has(input.path) &&
-        (entry === null ? null : entry.sha256) !== input.sha256
+        !publishingPaths.has(change.path) &&
+        (entry === null ? null : entry.sha256) !== change.sha256
       );
     },
     normalizeFileMetadata: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
+      filePath?: Dynamic,
+      metadata?: Dynamic,
     ): Dynamic =>
-      typeof options2?.sha256 == "string"
+      typeof metadata?.sha256 == "string"
         ? {
-            sha256: options2.sha256,
-            size: typeof options2.size == "number" ? options2.size : 0,
+            sha256: metadata.sha256,
+            size: typeof metadata.size == "number" ? metadata.size : 0,
             contentType:
-              typeof options2.contentType == "string"
-                ? options2.contentType
-                : (getMimeTypeForPath(input) ??
+              typeof metadata.contentType == "string"
+                ? metadata.contentType
+                : (getMimeTypeForPath(filePath) ??
                   "application/octet-stream"),
           }
         : undefined;
   async function readListing(): Promise<Dynamic> {
     let entries: Dynamic = new Map();
     if (bootFiles !== undefined) {
-      let value3: Dynamic = bootNarrowed,
-        value4: Dynamic = Array.isArray(bootFiles)
-          ? bootFiles.map((input?: Dynamic): Dynamic => [input.path, input])
+      let isNarrowed: Dynamic = bootNarrowed,
+        bootEntries: Dynamic = Array.isArray(bootFiles)
+          ? bootFiles.map((file?: Dynamic): Dynamic => [file.path, file])
           : Object.entries(bootFiles);
-      for (let [value5, value6] of value4 as Dynamic) {
-        let value7: Dynamic = normalizeFileMetadata(value5, value6);
-        value7 && entries.set(value5, value7);
+      for (let [filePath, metadata] of bootEntries as Dynamic) {
+        let fileMetadata: Dynamic = normalizeFileMetadata(filePath, metadata);
+        fileMetadata && entries.set(filePath, fileMetadata);
       }
       return {
         files: entries,
-        narrowed: value3,
+        narrowed: isNarrowed,
       };
     }
     let value: Dynamic = await readResponse(ARTIFACT_FILE_LIST_PATH);
@@ -190,13 +190,13 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         status: value.status,
         message: ARTIFACT_FILE_LIST_PATH + ": HTTP " + String(value.status),
       };
-    let value2: Dynamic = await value.json();
+    let listingDocument: Dynamic = await value.json();
     if (
-      value2 === null ||
-      typeof value2 != "object" ||
-      value2.files === null ||
-      typeof value2.files != "object" ||
-      Array.isArray(value2.files)
+      listingDocument === null ||
+      typeof listingDocument != "object" ||
+      listingDocument.files === null ||
+      typeof listingDocument.files != "object" ||
+      Array.isArray(listingDocument.files)
     )
       throw {
         code: "http",
@@ -204,60 +204,60 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         malformed: true,
         message: ARTIFACT_FILE_LIST_PATH + ": no files object",
       };
-    typeof value2.ver == "string" &&
+    typeof listingDocument.ver == "string" &&
       version.version === "" &&
       (version = {
-        version: value2.ver,
+        version: listingDocument.ver,
       });
-    let files: Dynamic = value2.files;
-    for (let [value3, value4] of Object.entries(files) as Dynamic) {
-      let value5: Dynamic = normalizeFileMetadata(value3, value4);
-      value5 && entries.set(value3, value5);
+    let files: Dynamic = listingDocument.files;
+    for (let [filePath, metadata] of Object.entries(files) as Dynamic) {
+      let fileMetadata: Dynamic = normalizeFileMetadata(filePath, metadata);
+      fileMetadata && entries.set(filePath, fileMetadata);
     }
     return {
       files: entries,
-      narrowed: value2.narrowed === true,
+      narrowed: listingDocument.narrowed === true,
     };
   }
-  function overlayLocalFileMetadata(input?: Dynamic): Dynamic {
-    for (let [value, value2] of localFiles as Dynamic)
-      value2 === null
-        ? input.delete(value)
-        : input.set(value, {
-            sha256: value2.sha256,
-            size: value2.bytes.length,
-            contentType: value2.contentType,
+  function overlayLocalFileMetadata(fileListing?: Dynamic): Dynamic {
+    for (let [value, localFile] of localFiles as Dynamic)
+      localFile === null
+        ? fileListing.delete(value)
+        : fileListing.set(value, {
+            sha256: localFile.sha256,
+            size: localFile.bytes.length,
+            contentType: localFile.contentType,
           });
   }
-  async function refreshListing(input: Dynamic = false): Promise<Dynamic> {
+  async function refreshListing(shouldRefresh: Dynamic = false): Promise<Dynamic> {
     let value: Dynamic = listingGeneration;
-    input &&
+    shouldRefresh &&
       canWrite &&
       bootNarrowed &&
       ((bootFiles = undefined), (bootNarrowed = false));
-    let value2: Dynamic = await readListing();
-    if (input && canWrite && value2.narrowed)
+    let fetchedListing: Dynamic = await readListing();
+    if (shouldRefresh && canWrite && fetchedListing.narrowed)
       throw {
         code: "http",
         status: 403,
         narrowed: true,
         message: ARTIFACT_FILE_LIST_PATH + ": marked as narrowed",
       };
-    let value3: Dynamic = Object.defineProperty(value2.files, "narrowed", {
-      value: value2.narrowed,
+    let updatedListing: Dynamic = Object.defineProperty(fetchedListing.files, "narrowed", {
+      value: fetchedListing.narrowed,
     });
-    overlayLocalFileMetadata(value3);
+    overlayLocalFileMetadata(updatedListing);
     value === listingGeneration &&
       !(
         canWrite &&
-        value2.narrowed &&
+        fetchedListing.narrowed &&
         listing !== undefined &&
         !listingNarrowed
       ) &&
-      ((listing = value3),
-      (listingNarrowed = value2.narrowed),
+      ((listing = updatedListing),
+      (listingNarrowed = fetchedListing.narrowed),
       (cachedListingGeneration = listingGeneration));
-    return value3;
+    return updatedListing;
   }
   let listingRequest: Dynamic,
     deniedListingGeneration: Dynamic = -1;
@@ -269,10 +269,10 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
     let state: Dynamic = {
       at: value,
       p: refreshListing()
-        .catch((input?: Dynamic): Dynamic => {
-          let value2: Dynamic = input?.status;
+        .catch((listingError?: Dynamic): Dynamic => {
+          let status: Dynamic = listingError?.status;
           !canWrite &&
-            (value2 === 401 || value2 === 403) &&
+            (status === 401 || status === 403) &&
             (deniedListingGeneration = value);
         })
         .finally((): Dynamic => {
@@ -283,54 +283,54 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
     return state.p;
   }
   let addressedVersion: Dynamic = (): Dynamic =>
-    VERSIONED_ARTIFACT_PATH_PATTERN.exec(location2?.pathname ?? "")?.[1];
+    VERSIONED_ARTIFACT_PATH_PATTERN.exec(pageLocation?.pathname ?? "")?.[1];
   function rejectWrongVersionRedirect(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    response?: Dynamic,
+    filePath?: Dynamic,
+    expectedVersion?: Dynamic,
   ): Dynamic {
     if (
-      input.redirected !== true ||
+      response.redirected !== true ||
       !useFreshReads ||
       !canWrite ||
-      context === undefined
+      expectedVersion === undefined
     )
       return;
-    let value: Dynamic;
+    let redirectedVersion: Dynamic;
     try {
-      value = VERSIONED_ARTIFACT_PATH_PATTERN.exec(
-        new URL(input.url ?? "", "https://page.invalid").pathname,
+      redirectedVersion = VERSIONED_ARTIFACT_PATH_PATTERN.exec(
+        new URL(response.url ?? "", "https://page.invalid").pathname,
       )?.[1];
     } catch {
-      value = undefined;
+      redirectedVersion = undefined;
     }
-    if (value !== undefined && value !== context)
+    if (redirectedVersion !== undefined && redirectedVersion !== expectedVersion)
       throw {
         code: "redirected",
         status: 403,
-        redirectedTo: input.url,
+        redirectedTo: response.url,
         message:
-          options2 +
+          filePath +
           ": answered by a redirect to /_f/" +
-          value +
+          redirectedVersion +
           "/, not the version this page addresses (/_f/" +
-          context +
+          expectedVersion +
           "/); asked for again",
       };
   }
   async function readFileBytes(
-    input?: Dynamic,
-    options2: Dynamic = false,
+    filePath?: Dynamic,
+    shouldAllowRedirect: Dynamic = false,
   ): Promise<Dynamic> {
-    let entry: Dynamic = localFiles.get(input);
+    let entry: Dynamic = localFiles.get(filePath);
     if (entry === null)
       throw {
         code: "not_found",
         status: 404,
-        message: input + ": deleted by this tab",
+        message: filePath + ": deleted by this tab",
       };
     if (entry !== undefined) {
-      readHashes.set(input, entry.sha256);
+      readHashes.set(filePath, entry.sha256);
       return {
         bytes: entry.bytes,
         sha256: entry.sha256,
@@ -338,39 +338,39 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         raw: false,
       };
     }
-    let entry2: Dynamic = publishedBytes.get(input);
+    let cachedPublishedFile: Dynamic = publishedBytes.get(filePath);
     if (
-      entry2 !== undefined &&
-      (listing?.get(input)?.sha256 ?? entry2.sha256) === entry2.sha256
+      cachedPublishedFile !== undefined &&
+      (listing?.get(filePath)?.sha256 ?? cachedPublishedFile.sha256) === cachedPublishedFile.sha256
     )
       return {
-        ...entry2,
+        ...cachedPublishedFile,
         raw: true,
       };
     let value: Dynamic = addressedVersion(),
-      [value2, value3]: Dynamic = await Promise.all([
-        readResponse(encodePathSegments(input)),
+      [response, currentListing]: Dynamic = await Promise.all([
+        readResponse(encodePathSegments(filePath)),
         listing !== undefined ? Promise.resolve(listing) : getListing(),
       ]);
-    options2 || rejectWrongVersionRedirect(value2, input, value);
-    if (!value2.ok)
+    shouldAllowRedirect || rejectWrongVersionRedirect(response, filePath, value);
+    if (!response.ok)
       throw {
-        code: value2.status === 404 ? "not_found" : "http",
-        status: value2.status,
-        message: input + ": HTTP " + String(value2.status),
+        code: response.status === 404 ? "not_found" : "http",
+        status: response.status,
+        message: filePath + ": HTTP " + String(response.status),
       };
-    let value4: Dynamic = new Uint8Array(await value2.arrayBuffer()),
-      value5: Dynamic = value3?.get(input),
-      value6: Dynamic = value5?.sha256 ?? "",
-      value7: Dynamic =
-        value5?.contentType ??
-        value2.headers?.get("content-type")?.split(";")[0]?.trim() ??
-        getMimeTypeForPath(input) ??
+    let fileBytes: Dynamic = new Uint8Array(await response.arrayBuffer()),
+      metadata: Dynamic = currentListing?.get(filePath),
+      fileSha: Dynamic = metadata?.sha256 ?? "",
+      contentType: Dynamic =
+        metadata?.contentType ??
+        response.headers?.get("content-type")?.split(";")[0]?.trim() ??
+        getMimeTypeForPath(filePath) ??
         "application/octet-stream";
     return {
-      bytes: value4,
-      sha256: value6,
-      contentType: value7,
+      bytes: fileBytes,
+      sha256: fileSha,
+      contentType: contentType,
       raw: true,
     };
   }
@@ -380,26 +380,26 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
     listingGeneration: Dynamic = 0,
     cachedListingGeneration: Dynamic = 0,
     publishGeneration: Dynamic = 0,
-    index: Dynamic = 0;
-  function enqueuePublish(input?: Dynamic, options2?: Dynamic): Dynamic {
+    versionGeneration: Dynamic = 0;
+  function enqueuePublish(files?: Dynamic, publishOptions?: Dynamic): Dynamic {
     let value: Dynamic = publishGeneration,
-      value2: Dynamic = publishQueue.then(
-        (): Dynamic => publishFiles(input, options2, value),
+      queuedPublish: Dynamic = publishQueue.then(
+        (): Dynamic => publishFiles(files, publishOptions, value),
       );
-    publishQueue = value2.catch((): Dynamic => {});
-    return value2;
+    publishQueue = queuedPublish.catch((): Dynamic => {});
+    return queuedPublish;
   }
   async function publishFiles(
-    input?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
+    requestedFiles?: Dynamic,
+    publishOptions?: Dynamic,
+    requestedGeneration?: Dynamic,
   ): Promise<Dynamic> {
     canWrite &&
       (listing === undefined || listingNarrowed) &&
       (await Promise.race([
         refreshListing().catch((): Dynamic => {}),
-        new Promise((input2?: Dynamic): Dynamic => {
-          setTimeout(input2, FILE_PORT_REQUEST_TIMEOUT_MS);
+        new Promise((resolve?: Dynamic): Dynamic => {
+          setTimeout(resolve, FILE_PORT_REQUEST_TIMEOUT_MS);
         }),
       ]));
     if (!canWrite || listingNarrowed)
@@ -407,267 +407,267 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         ok: false,
         code: "not_writer",
       };
-    let value: Dynamic = validatePublishFileMap(input);
+    let value: Dynamic = validatePublishFileMap(requestedFiles);
     if (value) return value;
-    if (context !== publishGeneration && options2?.ifMatch !== undefined)
+    if (requestedGeneration !== publishGeneration && publishOptions?.ifMatch !== undefined)
       return {
         ok: false,
         code: "conflict",
         live: version.version,
       };
-    let value2: Dynamic = await resolvePublisher();
-    if (value2 === null) {
+    let publisher: Dynamic = await resolvePublisher();
+    if (publisher === null) {
       canWrite = false;
       return {
         ok: false,
         code: "capability_disabled",
       };
     }
-    let value3: Dynamic = Object.keys(input).flatMap(
-      (input2?: Dynamic): Dynamic => {
-        let entry: Dynamic = localFiles.get(input2),
-          value12: Dynamic =
-            options2?.ifMatch !== undefined &&
-            Object.hasOwn(options2.ifMatch, input2)
-              ? options2.ifMatch[input2]
+    let conflicts: Dynamic = Object.keys(requestedFiles).flatMap(
+      (filePath?: Dynamic): Dynamic => {
+        let entry: Dynamic = localFiles.get(filePath),
+          expectedSha: Dynamic =
+            publishOptions?.ifMatch !== undefined &&
+            Object.hasOwn(publishOptions.ifMatch, filePath)
+              ? publishOptions.ifMatch[filePath]
               : undefined,
-          value13: Dynamic =
+          liveSha: Dynamic =
             entry === undefined
               ? undefined
               : entry === null
                 ? null
                 : entry.sha256;
-        return value12 === undefined ||
-          value13 === undefined ||
-          publishingPaths.has(input2) ||
-          value12 === value13
+        return expectedSha === undefined ||
+          liveSha === undefined ||
+          publishingPaths.has(filePath) ||
+          expectedSha === liveSha
           ? []
           : [
               {
-                path: input2,
-                liveSha: value13,
-                expected: value12,
+                path: filePath,
+                liveSha: liveSha,
+                expected: expectedSha,
               },
             ];
       },
     );
-    if (value3.length > 0)
+    if (conflicts.length > 0)
       return {
         ok: false,
         code: "conflict",
         live: version.version,
-        paths: value3,
+        paths: conflicts,
       };
     let state: Dynamic = {};
-    for (let [value12, value13] of Object.entries(input) as Dynamic)
-      state[value12] = normalizeFileEntry(value12, value13);
-    let state2: Dynamic = {},
+    for (let [filePath, file] of Object.entries(requestedFiles) as Dynamic)
+      state[filePath] = normalizeFileEntry(filePath, file);
+    let publishEntries: Dynamic = {},
       items: Dynamic = [],
-      value4: Dynamic =
-        options.preconditions === undefined
+      preconditionSupport: Dynamic =
+        portOptions.preconditions === undefined
           ? {
               writes: true,
               deletes: true,
             }
-          : options.preconditions === false
+          : portOptions.preconditions === false
             ? {}
-            : options.preconditions,
-      value5: Dynamic = value4.writes === true,
-      value6: Dynamic = value5 && value4.deletes === true;
-    for (let [value12, value13] of Object.entries(state) as Dynamic) {
-      let value14: Dynamic =
-          options2?.ifMatch !== undefined &&
-          Object.hasOwn(options2.ifMatch, value12)
-            ? options2.ifMatch[value12]
+            : portOptions.preconditions,
+      supportsWritePreconditions: Dynamic = preconditionSupport.writes === true,
+      supportsDeletePreconditions: Dynamic = supportsWritePreconditions && preconditionSupport.deletes === true;
+    for (let [filePath, file] of Object.entries(state) as Dynamic) {
+      let requestedSha: Dynamic =
+          publishOptions?.ifMatch !== undefined &&
+          Object.hasOwn(publishOptions.ifMatch, filePath)
+            ? publishOptions.ifMatch[filePath]
             : undefined,
-        value15: Dynamic = value14;
-      typeof value15 == "string" &&
-        publishingPaths.has(value12) &&
-        localFiles.get(value12)?.sha256 === value15 &&
-        (value15 = undefined);
-      typeof value15 == "string" &&
-        !SHA256_PATTERN.test(value15) &&
-        (value15 = undefined);
-      value13 !== null
-        ? (state2[value12] =
-            value5 && value15 !== undefined
+        preconditionSha: Dynamic = requestedSha;
+      typeof preconditionSha == "string" &&
+        publishingPaths.has(filePath) &&
+        localFiles.get(filePath)?.sha256 === preconditionSha &&
+        (preconditionSha = undefined);
+      typeof preconditionSha == "string" &&
+        !SHA256_PATTERN.test(preconditionSha) &&
+        (preconditionSha = undefined);
+      file !== null
+        ? (publishEntries[filePath] =
+            supportsWritePreconditions && preconditionSha !== undefined
               ? {
-                  ...value13,
-                  ifMatch: value15,
+                  ...file,
+                  ifMatch: preconditionSha,
                 }
-              : value13)
-        : (state2[value12] =
-            value6 && closed && typeof value15 == "string"
+              : file)
+        : (publishEntries[filePath] =
+            supportsDeletePreconditions && closed && typeof preconditionSha == "string"
               ? {
                   delete: true,
-                  ifMatch: value15,
+                  ifMatch: preconditionSha,
                 }
               : null);
-      let value16: Dynamic = state2[value12];
-      value14 !== undefined &&
-        (value16 == null || !("ifMatch" in value16)) &&
-        items.push(value12);
+      let publishEntry: Dynamic = publishEntries[filePath];
+      requestedSha !== undefined &&
+        (publishEntry == null || !("ifMatch" in publishEntry)) &&
+        items.push(filePath);
     }
     let entries: Dynamic = new Map();
-    for (let [value12, value13] of Object.entries(state) as Dynamic)
-      if (value13 !== null) {
-        let value14: Dynamic = await fileContentToBytes(
-          value13.content,
+    for (let [filePath, file] of Object.entries(state) as Dynamic)
+      if (file !== null) {
+        let fileBytes: Dynamic = await fileContentToBytes(
+          file.content,
         );
-        entries.set(value12, {
-          bytes: value14,
-          hash: await sha256(value14),
+        entries.set(filePath, {
+          bytes: fileBytes,
+          hash: await sha256(fileBytes),
         });
       }
-    if (context !== publishGeneration && options2?.ifMatch !== undefined)
+    if (requestedGeneration !== publishGeneration && publishOptions?.ifMatch !== undefined)
       return {
         ok: false,
         code: "conflict",
         live: version.version,
       };
-    let version2: Dynamic = version.version,
-      value7: Dynamic = index,
-      value8: Dynamic;
+    let previousVersion: Dynamic = version.version,
+      publishVersionGeneration: Dynamic = versionGeneration,
+      publishResult: Dynamic;
     try {
-      value8 = await value2.publish(state2);
-    } catch (value12: Dynamic) {
+      publishResult = await publisher.publish(publishEntries);
+    } catch (publishError: Dynamic) {
       try {
-        options.onPublishError?.(value12);
+        portOptions.onPublishError?.(publishError);
       } catch {}
-      let value13: Dynamic = normalizePublishError_2(value12);
-      PUBLISH_ACCESS_ERROR_CODES.has(value13.code) && (canWrite = false);
-      return value13;
+      let normalizedError: Dynamic = normalizePublishError_2(publishError);
+      PUBLISH_ACCESS_ERROR_CODES.has(normalizedError.code) && (canWrite = false);
+      return normalizedError;
     }
-    let state3: Dynamic = {},
-      value9: Dynamic = index !== value7,
-      items2: Dynamic = [];
-    for (let [value12, value13] of Object.entries(state) as Dynamic) {
-      if (value13 === null) {
-        readHashes.set(value12, null);
-        value9 ||
-          (localFiles.set(value12, null),
-          listing?.delete(value12),
-          publishingPaths.delete(value12));
+    let publishedHashes: Dynamic = {},
+      didVersionEpochChange: Dynamic = versionGeneration !== publishVersionGeneration,
+      locallyHashedPaths: Dynamic = [];
+    for (let [filePath, file] of Object.entries(state) as Dynamic) {
+      if (file === null) {
+        readHashes.set(filePath, null);
+        didVersionEpochChange ||
+          (localFiles.set(filePath, null),
+          listing?.delete(filePath),
+          publishingPaths.delete(filePath));
         continue;
       }
-      let { bytes: entry, hash: entry2 }: Dynamic = entries.get(value12),
-        value14: Dynamic = value8.shas?.[value12],
-        value15: Dynamic = value14 ?? entry2;
-      value14 === undefined && items2.push(value12);
-      state3[value12] = value15;
-      readHashes.set(value12, value15);
-      !value9 &&
-        (value14 === undefined && hasInjectedRuntime(value13)
-          ? publishingPaths.add(value12)
-          : publishingPaths.delete(value12),
-        localFiles.set(value12, {
-          sha256: value15,
+      let { bytes: entry, hash: computedSha }: Dynamic = entries.get(filePath),
+        reportedSha: Dynamic = publishResult.shas?.[filePath],
+        publishedSha: Dynamic = reportedSha ?? computedSha;
+      reportedSha === undefined && locallyHashedPaths.push(filePath);
+      publishedHashes[filePath] = publishedSha;
+      readHashes.set(filePath, publishedSha);
+      !didVersionEpochChange &&
+        (reportedSha === undefined && hasInjectedRuntime(file)
+          ? publishingPaths.add(filePath)
+          : publishingPaths.delete(filePath),
+        localFiles.set(filePath, {
+          sha256: publishedSha,
           bytes: entry,
-          contentType: value13.contentType,
+          contentType: file.contentType,
         }),
-        listing?.set(value12, {
-          sha256: value15,
+        listing?.set(filePath, {
+          sha256: publishedSha,
           size: entry.length,
-          contentType: value13.contentType,
+          contentType: file.contentType,
         }));
     }
     bootFiles = undefined;
-    value9 ||
+    didVersionEpochChange ||
       (version = {
-        version: value8.version,
-        ...(typeof value8.seq == "number"
+        version: publishResult.version,
+        ...(typeof publishResult.seq == "number"
           ? {
-              seq: value8.seq,
+              seq: publishResult.seq,
             }
           : {}),
       });
-    let value10: Dynamic =
-      value8.shas !== undefined &&
-      value8.shas !== null &&
-      typeof value8.shas == "object" &&
-      !Array.isArray(value8.shas);
-    value10 && (closed = true);
-    let value11: Dynamic = parsePublishedFileHashes(value8.changed);
-    !(value11 !== undefined
-      ? value11.length > 0
-      : value10 && items.length === 0) &&
-      !value9 &&
-      value8.unchanged !== true &&
-      value8.version !== version2 &&
-      changeListeners.add(value8.version);
+    let didReturnHashes: Dynamic =
+      publishResult.shas !== undefined &&
+      publishResult.shas !== null &&
+      typeof publishResult.shas == "object" &&
+      !Array.isArray(publishResult.shas);
+    didReturnHashes && (closed = true);
+    let changedFiles: Dynamic = parsePublishedFileHashes(publishResult.changed);
+    !(changedFiles !== undefined
+      ? changedFiles.length > 0
+      : didReturnHashes && items.length === 0) &&
+      !didVersionEpochChange &&
+      publishResult.unchanged !== true &&
+      publishResult.version !== previousVersion &&
+      changeListeners.add(publishResult.version);
     listenerSequence += 1;
-    value8.unchanged !== true &&
-      value8.version !== version2 &&
-      (readCache.set(value8.version, listenerSequence),
+    publishResult.unchanged !== true &&
+      publishResult.version !== previousVersion &&
+      (readCache.set(publishResult.version, listenerSequence),
       readCache.size > maxReadCacheEntries &&
         readCache.delete(readCache.keys().next().value));
-    for (let value12 of Object.keys(state) as Dynamic)
-      pendingReads.set(value12, listenerSequence);
+    for (let filePath of Object.keys(state) as Dynamic)
+      pendingReads.set(filePath, listenerSequence);
     return {
       ok: true,
-      version: value8.version,
-      ...(typeof value8.seq == "number"
+      version: publishResult.version,
+      ...(typeof publishResult.seq == "number"
         ? {
-            seq: value8.seq,
+            seq: publishResult.seq,
           }
         : {}),
-      shas: state3,
-      ...(items2.length > 0
+      shas: publishedHashes,
+      ...(locallyHashedPaths.length > 0
         ? {
-            computed: items2,
+            computed: locallyHashedPaths,
           }
         : {}),
-      ...(value8.unchanged === true
+      ...(publishResult.unchanged === true
         ? {
             unchanged: true,
           }
         : {}),
-      ...(value10 && items.length === 0
+      ...(didReturnHashes && items.length === 0
         ? {
             preconditionsChecked: true,
           }
         : {}),
-      ...(value10 && items.length > 0
+      ...(didReturnHashes && items.length > 0
         ? {
             unguarded: items,
           }
         : {}),
-      ...(value11 !== undefined
+      ...(changedFiles !== undefined
         ? {
-            changed: value11,
+            changed: changedFiles,
           }
         : {}),
     };
   }
   async function readFileText(
-    input?: Dynamic,
-    options2?: Dynamic,
+    filePath?: Dynamic,
+    shouldAllowRedirect?: Dynamic,
   ): Promise<Dynamic> {
-    let value: Dynamic = await readFileBytes(input, options2),
-      value2: Dynamic = filePortTextDecoder.decode(value.bytes);
+    let value: Dynamic = await readFileBytes(filePath, shouldAllowRedirect),
+      fileText: Dynamic = filePortTextDecoder.decode(value.bytes);
     value.raw &&
-      isHtmlPath(input) &&
-      (value2 = stripFrameRuntime(value2));
-    let value3: Dynamic =
-      value.sha256 !== "" ? value.sha256 : await sha256(value2);
-    readHashes.set(input, value3);
+      isHtmlPath(filePath) &&
+      (fileText = stripFrameRuntime(fileText));
+    let fileSha: Dynamic =
+      value.sha256 !== "" ? value.sha256 : await sha256(fileText);
+    readHashes.set(filePath, fileSha);
     return {
-      text: value2,
-      sha256: value3,
+      text: fileText,
+      sha256: fileSha,
     };
   }
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-    let value: Dynamic = [...input]
+  let callback: Dynamic = (listingEntries?: Dynamic): Dynamic => {
+    let value: Dynamic = [...listingEntries]
       .sort(
-        ([input2]: Dynamic, [options2]: Dynamic): Dynamic =>
-          input2 < options2 ? -1 : 1,
+        ([earlierPath]: Dynamic, [laterPath]: Dynamic): Dynamic =>
+          earlierPath < laterPath ? -1 : 1,
       )
       .map(
-        ([input2, input3]: Dynamic): Dynamic => ({
-          path: input2,
-          ...input3,
-          ...(publishingPaths.has(input2) &&
-          localFiles.get(input2)?.sha256 === input3.sha256
+        ([filePath, metadata]: Dynamic): Dynamic => ({
+          path: filePath,
+          ...metadata,
+          ...(publishingPaths.has(filePath) &&
+          localFiles.get(filePath)?.sha256 === metadata.sha256
             ? {
                 provisional: true,
               }
@@ -675,7 +675,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         }),
       );
     return Object.defineProperty(value, "narrowed", {
-      value: input.narrowed === true,
+      value: listingEntries.narrowed === true,
     });
   };
   return {
@@ -699,136 +699,136 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
     async list(): Promise<Dynamic> {
       return callback(await refreshListing());
     },
-    async readBytes(input: Dynamic): Promise<Dynamic> {
-      let value: Dynamic = await readFileBytes(input),
-        value2: Dynamic =
+    async readBytes(filePath: Dynamic): Promise<Dynamic> {
+      let value: Dynamic = await readFileBytes(filePath),
+        fileSha: Dynamic =
           value.sha256 !== ""
             ? value.sha256
             : await sha256(value.bytes);
-      readHashes.set(input, value2);
+      readHashes.set(filePath, fileSha);
       return {
         bytes: value.bytes,
-        sha256: value2,
+        sha256: fileSha,
         contentType: value.contentType,
       };
     },
-    async peekBytes(input: Dynamic): Promise<Dynamic> {
-      let callback2: Dynamic = (): Dynamic => {
-          let entry2: Dynamic = localFiles.get(input);
-          if (entry2 === null)
+    async peekBytes(filePath: Dynamic): Promise<Dynamic> {
+      let peekLocalFile: Dynamic = (): Dynamic => {
+          let pendingLocalFile: Dynamic = localFiles.get(filePath);
+          if (pendingLocalFile === null)
             throw {
               code: "not_found",
               status: 404,
-              message: input + ": deleted by this tab",
+              message: filePath + ": deleted by this tab",
             };
-          return entry2 === undefined
+          return pendingLocalFile === undefined
             ? undefined
             : {
-                bytes: entry2.bytes.slice(),
-                ...(publishingPaths.has(input)
+                bytes: pendingLocalFile.bytes.slice(),
+                ...(publishingPaths.has(filePath)
                   ? {}
                   : {
-                      sha256: entry2.sha256,
+                      sha256: pendingLocalFile.sha256,
                     }),
-                contentType: entry2.contentType,
+                contentType: pendingLocalFile.contentType,
               };
         },
-        value: Dynamic = callback2();
+        value: Dynamic = peekLocalFile();
       if (value !== undefined) return value;
-      let entry: Dynamic = publishedBytes.get(input);
+      let entry: Dynamic = publishedBytes.get(filePath);
       if (
         entry !== undefined &&
-        (listing?.get(input)?.sha256 ?? entry.sha256) === entry.sha256
+        (listing?.get(filePath)?.sha256 ?? entry.sha256) === entry.sha256
       )
         return {
           bytes: entry.bytes.slice(),
           sha256: entry.sha256,
           contentType: entry.contentType,
         };
-      let value2: Dynamic = listingGeneration,
-        value3: Dynamic = listing?.get(input)?.sha256,
-        value4: Dynamic = addressedVersion(),
-        value5: Dynamic = await readResponse(
-          encodePathSegments(input),
+      let peekGeneration: Dynamic = listingGeneration,
+        expectedSha: Dynamic = listing?.get(filePath)?.sha256,
+        expectedVersion: Dynamic = addressedVersion(),
+        response: Dynamic = await readResponse(
+          encodePathSegments(filePath),
         );
-      rejectWrongVersionRedirect(value5, input, value4);
-      if (!value5.ok)
+      rejectWrongVersionRedirect(response, filePath, expectedVersion);
+      if (!response.ok)
         throw {
-          code: value5.status === 404 ? "not_found" : "http",
-          status: value5.status,
-          message: input + ": HTTP " + String(value5.status),
+          code: response.status === 404 ? "not_found" : "http",
+          status: response.status,
+          message: filePath + ": HTTP " + String(response.status),
         };
-      let value6: Dynamic = new Uint8Array(await value5.arrayBuffer()),
-        value7: Dynamic = callback2();
-      if (value7 !== undefined) return value7;
-      let value8: Dynamic = listing?.get(input),
-        value9: Dynamic =
-          value2 === listingGeneration &&
+      let fileBytes: Dynamic = new Uint8Array(await response.arrayBuffer()),
+        localFile: Dynamic = peekLocalFile();
+      if (localFile !== undefined) return localFile;
+      let metadata: Dynamic = listing?.get(filePath),
+        fileSha: Dynamic =
+          peekGeneration === listingGeneration &&
           cachedListingGeneration === listingGeneration &&
-          value8?.sha256 === value3 &&
-          value3 !== ""
-            ? value3
+          metadata?.sha256 === expectedSha &&
+          expectedSha !== ""
+            ? expectedSha
             : undefined;
       return {
-        bytes: value6,
-        ...(value9 !== undefined
+        bytes: fileBytes,
+        ...(fileSha !== undefined
           ? {
-              sha256: value9,
+              sha256: fileSha,
             }
           : {}),
         contentType:
-          value8?.contentType ??
-          value5.headers?.get("content-type")?.split(";")[0]?.trim() ??
-          getMimeTypeForPath(input) ??
+          metadata?.contentType ??
+          response.headers?.get("content-type")?.split(";")[0]?.trim() ??
+          getMimeTypeForPath(filePath) ??
           "application/octet-stream",
       };
     },
     peekRows: (): Dynamic =>
       listing === undefined ? undefined : callback(listing),
-    readText: (input?: Dynamic): Dynamic => readFileText(input, false),
-    readTextUnchecked: (input?: Dynamic): Dynamic =>
-      readFileText(input, true),
+    readText: (filePath?: Dynamic): Dynamic => readFileText(filePath, false),
+    readTextUnchecked: (filePath?: Dynamic): Dynamic =>
+      readFileText(filePath, true),
     publish: enqueuePublish,
-    onRemoteChange(input: Dynamic): Dynamic {
-      dirtyPaths.add(input);
+    onRemoteChange(listener: Dynamic): Dynamic {
+      dirtyPaths.add(listener);
       return (): Dynamic => {
-        dirtyPaths.delete(input);
+        dirtyPaths.delete(listener);
       };
     },
-    liveSha: (input?: Dynamic): Dynamic => {
-      if (listing === undefined) return localFiles.get(input)?.sha256;
-      let value: Dynamic = listing.get(input)?.sha256;
+    liveSha: (filePath?: Dynamic): Dynamic => {
+      if (listing === undefined) return localFiles.get(filePath)?.sha256;
+      let value: Dynamic = listing.get(filePath)?.sha256;
       return value === ""
         ? undefined
         : (value ?? (listingNarrowed ? undefined : null));
     },
-    heldSha: (input?: Dynamic): Dynamic => readHashes.get(input),
-    olderThanMyWrite: (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      let entry: Dynamic = readCache.get(input),
-        entry2: Dynamic = pendingReads.get(options2);
-      return entry !== undefined && entry2 !== undefined && entry2 > entry;
+    heldSha: (filePath?: Dynamic): Dynamic => readHashes.get(filePath),
+    olderThanMyWrite: (versionId?: Dynamic, filePath?: Dynamic): Dynamic => {
+      let entry: Dynamic = readCache.get(versionId),
+        writeSequence: Dynamic = pendingReads.get(filePath);
+      return entry !== undefined && writeSequence !== undefined && writeSequence > entry;
     },
-    wroteSinceAdopt: (input?: Dynamic): Dynamic =>
-      localFiles.get(input) !== undefined && localFiles.get(input) !== null,
+    wroteSinceAdopt: (filePath?: Dynamic): Dynamic =>
+      localFiles.get(filePath) !== undefined && localFiles.get(filePath) !== null,
     knownListing: (): Dynamic =>
       new Map(
         [...(listing ?? [])].map(
-          ([input, input2]: Dynamic): Dynamic => [input, input2.sha256],
+          ([filePath, metadata]: Dynamic): Dynamic => [filePath, metadata.sha256],
         ),
       ),
-    primeRead(input: Dynamic, options2: Dynamic): Dynamic {
-      localFiles.has(input) ||
-        (publishedBytes.set(input, options2),
+    primeRead(filePath: Dynamic, cachedFile: Dynamic): Dynamic {
+      localFiles.has(filePath) ||
+        (publishedBytes.set(filePath, cachedFile),
         listing !== undefined &&
-          options2.sha256 !== "" &&
-          listing.set(input, {
-            sha256: options2.sha256,
-            size: options2.bytes.length,
-            contentType: options2.contentType,
+          cachedFile.sha256 !== "" &&
+          listing.set(filePath, {
+            sha256: cachedFile.sha256,
+            size: cachedFile.bytes.length,
+            contentType: cachedFile.contentType,
           }));
     },
-    noteIncoming(input: Dynamic): Dynamic {
-      for (let value of input as Dynamic)
+    noteIncoming(changes: Dynamic): Dynamic {
+      for (let value of changes as Dynamic)
         if (!isChangedLocalFile(value)) {
           if (value.sha256 === null) {
             readHashes.delete(value.path);
@@ -851,20 +851,20 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         }
       cachedListingGeneration = listingGeneration;
     },
-    noteAdopted(input: Dynamic): Dynamic {
+    noteAdopted(adoptedVersion: Dynamic): Dynamic {
       useFreshReads = true;
       listingGeneration += 1;
-      changeListeners.has(input.version) &&
+      changeListeners.has(adoptedVersion.version) &&
         cachedListingGeneration === listingGeneration - 1 &&
         (cachedListingGeneration = listingGeneration);
       publishedBytes.clear();
       bootFiles = undefined;
-      if (!changeListeners.has(input.version)) {
-        let entry: Dynamic = readCache.get(input.version);
-        for (let [value, value2] of [...localFiles] as Dynamic)
+      if (!changeListeners.has(adoptedVersion.version)) {
+        let entry: Dynamic = readCache.get(adoptedVersion.version);
+        for (let [value, localFile] of [...localFiles] as Dynamic)
           (entry !== undefined && (pendingReads.get(value) ?? 0) > entry) ||
             (listing !== undefined &&
-              value2 !== null &&
+              localFile !== null &&
               listing.set(value, {
                 sha256: "",
                 size: listing.get(value)?.size ?? 0,
@@ -876,8 +876,8 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
             localFiles.delete(value),
             publishingPaths.delete(value));
         if (entry !== undefined && listing !== undefined)
-          for (let [value, value2] of pendingReads as Dynamic)
-            value2 >= entry &&
+          for (let [value, writeSequence] of pendingReads as Dynamic)
+            writeSequence >= entry &&
               !localFiles.has(value) &&
               listing.has(value) &&
               listing.set(value, {
@@ -892,38 +892,38 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
           (entry === undefined || (readCache.get(value) ?? 0) <= entry) &&
             changeListeners.delete(value);
         publishGeneration += 1;
-        entry === undefined && (index += 1);
+        entry === undefined && (versionGeneration += 1);
       }
-      version = input;
+      version = adoptedVersion;
     },
-    noteRemote(input: Dynamic): Dynamic {
-      let value: Dynamic = input.changed.filter(
-        (input2?: Dynamic): Dynamic => isChangedLocalFile(input2) === false,
+    noteRemote(remoteChange: Dynamic): Dynamic {
+      let value: Dynamic = remoteChange.changed.filter(
+        (fileChange?: Dynamic): Dynamic => isChangedLocalFile(fileChange) === false,
       );
-      for (let value3 of value as Dynamic)
+      for (let fileChange of value as Dynamic)
         if (listing !== undefined)
-          if (value3.sha256 === null) listing.delete(value3.path);
+          if (fileChange.sha256 === null) listing.delete(fileChange.path);
           else {
-            let entry: Dynamic = listing.get(value3.path);
-            listing.set(value3.path, {
-              sha256: value3.sha256,
-              size: entry?.sha256 === value3.sha256 ? entry.size : 0,
+            let entry: Dynamic = listing.get(fileChange.path);
+            listing.set(fileChange.path, {
+              sha256: fileChange.sha256,
+              size: entry?.sha256 === fileChange.sha256 ? entry.size : 0,
               contentType:
                 entry?.contentType ??
-                getMimeTypeForPath(value3.path) ??
+                getMimeTypeForPath(fileChange.path) ??
                 "application/octet-stream",
             });
           }
-      let value2: Dynamic =
-        value.length === input.changed.length
-          ? input
+      let filteredChange: Dynamic =
+        value.length === remoteChange.changed.length
+          ? remoteChange
           : {
-              ...input,
+              ...remoteChange,
               changed: value,
             };
-      for (let value3 of [...dirtyPaths] as Dynamic)
+      for (let listener of [...dirtyPaths] as Dynamic)
         try {
-          value3(value2);
+          listener(filteredChange);
         } catch {}
     },
   };
@@ -969,11 +969,11 @@ export function installPlatformDesignFilesPort(): () => void {
       transform_error: "invalid_content",
     };
     SHA256_PATTERN = /^[0-9a-f]{64}$/;
-    normalizeSha256 = (input?: Dynamic): Dynamic =>
-      input === null
+    normalizeSha256 = (candidate?: Dynamic): Dynamic =>
+      candidate === null
         ? null
-        : typeof input == "string" && SHA256_PATTERN.test(input)
-          ? input
+        : typeof candidate == "string" && SHA256_PATTERN.test(candidate)
+          ? candidate
           : undefined;
     VERSIONED_ARTIFACT_PATH_PATTERN = /\/_f\/([^/]+)\//;
     FILE_PORT_REQUEST_TIMEOUT_MS = 1e4;

@@ -6,11 +6,11 @@ import {
 var editCountStoragePrefix: Dynamic;
 var PlatformEditCountPattern: Dynamic;
 var PlatformEditCountAlias: Dynamic;
-var PlatformEditCountAlias_2: Dynamic;
+var lastEditTime: Dynamic;
 var PlatformEditCountNow: Dynamic;
 var PlatformEditCountSubscribers: Dynamic;
-function normalizeArtifactPath(input?: Dynamic): Dynamic {
-  return input.replace(/\/_f\/[^/]+(\/|$)/, "/_f/_$1");
+function normalizeArtifactPath(artifactPath?: Dynamic): Dynamic {
+  return artifactPath.replace(/\/_f\/[^/]+(\/|$)/, "/_f/_$1");
 }
 function getEditCountStorageKey(): Dynamic {
   return typeof location === "undefined"
@@ -19,19 +19,19 @@ function getEditCountStorageKey(): Dynamic {
 }
 function readEditCount(): Dynamic {
   try {
-    let value: Dynamic = getEditCountStorageKey(),
-      value2: Dynamic = PlatformEditCountPattern.exec(
-        value === null ? "" : (sessionStorage.getItem(value) ?? ""),
+    let storageKey: Dynamic = getEditCountStorageKey(),
+      storedCountMatch: Dynamic = PlatformEditCountPattern.exec(
+        storageKey === null ? "" : (sessionStorage.getItem(storageKey) ?? ""),
       );
-    return value2 === null ? 0 : Number(value2[1]);
+    return storedCountMatch === null ? 0 : Number(storedCountMatch[1]);
   } catch {
     return 0;
   }
 }
-function writeEditCount(input?: Dynamic): Dynamic {
+function writeEditCount(editCount?: Dynamic): Dynamic {
   try {
-    let value: Dynamic = getEditCountStorageKey();
-    value !== null && sessionStorage.setItem(value, String(input));
+    let storageKey: Dynamic = getEditCountStorageKey();
+    storageKey !== null && sessionStorage.setItem(storageKey, String(editCount));
   } catch {}
 }
 function getEditCount(): Dynamic {
@@ -39,22 +39,22 @@ function getEditCount(): Dynamic {
   return PlatformEditCountAlias;
 }
 function recordEdit(): Dynamic {
-  let value: Dynamic = PlatformEditCountNow(),
-    value2: Dynamic = value - PlatformEditCountAlias_2 < 500;
-  PlatformEditCountAlias_2 = value;
-  if (value2) return;
-  let value3: Dynamic = Math.min(getEditCount() + 1, 999999999);
-  if (value3 !== PlatformEditCountAlias) {
-    PlatformEditCountAlias = value3;
-    writeEditCount(value3);
-    for (let value4 of [...PlatformEditCountSubscribers] as Dynamic)
-      value4(value3);
+  let now: Dynamic = PlatformEditCountNow(),
+    isSameEditBurst: Dynamic = now - lastEditTime < 500;
+  lastEditTime = now;
+  if (isSameEditBurst) return;
+  let nextEditCount: Dynamic = Math.min(getEditCount() + 1, 999999999);
+  if (nextEditCount !== PlatformEditCountAlias) {
+    PlatformEditCountAlias = nextEditCount;
+    writeEditCount(nextEditCount);
+    for (let listener of [...PlatformEditCountSubscribers] as Dynamic)
+      listener(nextEditCount);
   }
 }
-function subscribeEditCount(input?: Dynamic): Dynamic {
-  PlatformEditCountSubscribers.add(input);
+function subscribeEditCount(listener?: Dynamic): Dynamic {
+  PlatformEditCountSubscribers.add(listener);
   return (): Dynamic => {
-    PlatformEditCountSubscribers.delete(input);
+    PlatformEditCountSubscribers.delete(listener);
   };
 }
 export {
@@ -63,7 +63,7 @@ export {
   getEditCountStorageKey,
   normalizeArtifactPath,
   PlatformEditCountAlias,
-  PlatformEditCountAlias_2,
+  lastEditTime as PlatformEditCountAlias_2,
   PlatformEditCountNow,
   PlatformEditCountPattern,
   PlatformEditCountSubscribers,
@@ -76,7 +76,7 @@ export function installPlatformEditCount(): () => void {
   return () => {
     editCountStoragePrefix = "appifact:edits:";
     PlatformEditCountPattern = /^([0-9]{1,9})(?:\/[0-9]{1,9})?$/;
-    PlatformEditCountAlias_2 = -1 / 0;
+    lastEditTime = -1 / 0;
     PlatformEditCountNow = (): Dynamic => Date.now();
     PlatformEditCountSubscribers = new Set();
   };

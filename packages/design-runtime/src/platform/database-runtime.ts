@@ -4,28 +4,28 @@ import {
 } from "../runtime-types";
 
 var databaseRuntimeSnapshot: Dynamic;
-function setDatabaseRuntimeSnapshot(input?: Dynamic): Dynamic {
-  databaseRuntimeSnapshot = input;
+function setDatabaseRuntimeSnapshot(snapshot?: Dynamic): Dynamic {
+  databaseRuntimeSnapshot = snapshot;
 }
 function getDatabaseRuntimeSnapshot(): Dynamic {
   return databaseRuntimeSnapshot;
 }
 async function initializeDatabaseRuntime(): Promise<Dynamic> {
   if (typeof window === "undefined") return;
-  let value: Dynamic = window;
-  if (value.appifact !== undefined)
+  let frameWindow: Dynamic = window;
+  if (frameWindow.appifact !== undefined)
     try {
-      let value2: Dynamic = await value.appifact.ready();
-      if (value2.saving.mode !== "auto") return;
-      let value3: Dynamic = await value2.doc.getAll();
+      let databaseRuntime: Dynamic = await frameWindow.appifact.ready();
+      if (databaseRuntime.saving.mode !== "auto") return;
+      let documentSnapshot: Dynamic = await databaseRuntime.doc.getAll();
       setDatabaseRuntimeSnapshot({
-        runtime: value2,
-        snapshot: value3,
+        runtime: databaseRuntime,
+        snapshot: documentSnapshot,
       });
-    } catch (value2: Dynamic) {
+    } catch (probeError: Dynamic) {
       console.error(
         "appifact runtime probe failed \u2014 booting the frame model",
-        value2,
+        probeError,
       );
     }
 }

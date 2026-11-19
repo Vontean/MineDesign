@@ -5,25 +5,25 @@ import {
 
 var PlatformCssSanitizationExpressionImagePattern: Dynamic;
 function sanitizeCssDisplayValue(
-  input?: Dynamic,
-  options?: Dynamic,
+  cssValue?: Dynamic,
+  propertyName?: Dynamic,
 ): Dynamic {
-  if (typeof input != "string") return "transparent";
-  let value: Dynamic = input.trim();
-  return value.length === 0 ||
-    value.length > 512 ||
-    PlatformCssSanitizationExpressionImagePattern.test(value) ||
+  if (typeof cssValue != "string") return "transparent";
+  let trimmedValue: Dynamic = cssValue.trim();
+  return trimmedValue.length === 0 ||
+    trimmedValue.length > 512 ||
+    PlatformCssSanitizationExpressionImagePattern.test(trimmedValue) ||
     (typeof CSS !== "undefined" &&
       typeof CSS.supports == "function" &&
-      !CSS.supports(options, value))
+      !CSS.supports(propertyName, trimmedValue))
     ? "transparent"
-    : value;
+    : trimmedValue;
 }
-function sanitizeCssColor(input?: Dynamic): Dynamic {
-  return sanitizeCssDisplayValue(input, "color");
+function sanitizeCssColor(cssColor?: Dynamic): Dynamic {
+  return sanitizeCssDisplayValue(cssColor, "color");
 }
-function sanitizeCssBackground(input?: Dynamic): Dynamic {
-  return sanitizeCssDisplayValue(input, "background");
+function sanitizeCssBackground(cssBackground?: Dynamic): Dynamic {
+  return sanitizeCssDisplayValue(cssBackground, "background");
 }
 export {
   PlatformCssSanitizationExpressionImagePattern,

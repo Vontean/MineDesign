@@ -25,24 +25,24 @@ function findHtmlClosingTag(
   startOffset?: Dynamic,
 ): Dynamic {
   for (
-    let value: Dynamic = startOffset;
-    (value = html.indexOf("</", value)) !== -1;
-    value += 2
+    let closingTagOffset: Dynamic = startOffset;
+    (closingTagOffset = html.indexOf("</", closingTagOffset)) !== -1;
+    closingTagOffset += 2
   ) {
-    let index: Dynamic = 0;
+    let tagNameIndex: Dynamic = 0;
     for (
       ;
-      index < tagName.length &&
-      lowercaseAsciiCode(html.charCodeAt(value + 2 + index)) ===
-        tagName.charCodeAt(index);
+      tagNameIndex < tagName.length &&
+      lowercaseAsciiCode(html.charCodeAt(closingTagOffset + 2 + tagNameIndex)) ===
+        tagName.charCodeAt(tagNameIndex);
 
     )
-      index++;
+      tagNameIndex++;
     if (
-      index === tagName.length &&
-      !isHtmlTagNameCode(html.charCodeAt(value + 2 + index))
+      tagNameIndex === tagName.length &&
+      !isHtmlTagNameCode(html.charCodeAt(closingTagOffset + 2 + tagNameIndex))
     )
-      return value;
+      return closingTagOffset;
   }
   return html.length;
 }
@@ -51,46 +51,46 @@ function scanHtmlStartTags(html?: Dynamic, onTag?: Dynamic): Dynamic {
     offset: Dynamic = 0;
   for (; (offset = html.indexOf("<", offset)) !== -1; ) {
     if (html.startsWith("!--", offset + 1)) {
-      let value4: Dynamic = html.indexOf("-->", offset + 4);
-      offset = value4 === -1 ? length : value4 + 3;
+      let commentEnd: Dynamic = html.indexOf("-->", offset + 4);
+      offset = commentEnd === -1 ? length : commentEnd + 3;
       continue;
     }
-    let value: Dynamic = offset + 1;
-    if (value >= length || !isAsciiLetterCode(html.charCodeAt(value))) {
-      offset = value;
+    let tagNameEnd: Dynamic = offset + 1;
+    if (tagNameEnd >= length || !isAsciiLetterCode(html.charCodeAt(tagNameEnd))) {
+      offset = tagNameEnd;
       continue;
     }
-    for (; value < length && isHtmlTagNameCode(html.charCodeAt(value)); )
-      value++;
-    let value2: Dynamic = html.slice(offset + 1, value).toLowerCase(),
-      value3: Dynamic = value;
-    for (let index: Dynamic = 0; value3 < length; value3++) {
-      let value4: Dynamic = html.charCodeAt(value3);
-      if (index !== 0) value4 === index && (index = 0);
-      else if (value4 === 34 || value4 === 39) index = value4;
-      else if (value4 === 62) break;
+    for (; tagNameEnd < length && isHtmlTagNameCode(html.charCodeAt(tagNameEnd)); )
+      tagNameEnd++;
+    let tagName: Dynamic = html.slice(offset + 1, tagNameEnd).toLowerCase(),
+      tagEnd: Dynamic = tagNameEnd;
+    for (let quoteCode: Dynamic = 0; tagEnd < length; tagEnd++) {
+      let characterCode: Dynamic = html.charCodeAt(tagEnd);
+      if (quoteCode !== 0) characterCode === quoteCode && (quoteCode = 0);
+      else if (characterCode === 34 || characterCode === 39) quoteCode = characterCode;
+      else if (characterCode === 62) break;
     }
-    if (value3 >= length) return;
-    NON_CONTENT_HTML_TAGS.has(value2) ||
-      onTag(value2, html.slice(value, value3));
-    offset = value3 + 1;
-    OPAQUE_HTML_TAGS.has(value2) &&
-      html.charCodeAt(value3 - 1) !== 47 &&
-      (offset = findHtmlClosingTag(html, value2, offset));
+    if (tagEnd >= length) return;
+    NON_CONTENT_HTML_TAGS.has(tagName) ||
+      onTag(tagName, html.slice(tagNameEnd, tagEnd));
+    offset = tagEnd + 1;
+    OPAQUE_HTML_TAGS.has(tagName) &&
+      html.charCodeAt(tagEnd - 1) !== 47 &&
+      (offset = findHtmlClosingTag(html, tagName, offset));
   }
 }
 function countDesignSystemImportTags(html?: Dynamic): Dynamic {
   let importCount: Dynamic = 0,
     contentTagCount: Dynamic = 0;
-  scanHtmlStartTags(html, (input?: Dynamic, options?: Dynamic): Dynamic => {
+  scanHtmlStartTags(html, (tagName?: Dynamic, attributes?: Dynamic): Dynamic => {
     contentTagCount++;
-    if (input !== "x-import") return;
-    let value: Dynamic = options.replace(/'[^']*'/g, "''"),
-      value2: Dynamic = GLOBAL_COMPONENT_ATTRIBUTE_PATTERN.exec(value);
-    value2 &&
-      value2[1].includes(".") &&
-      !value2[1].includes("{{") &&
-      !IMPORT_FROM_ATTRIBUTE_PATTERN.test(value.replace(/"[^"]*"/g, '""')) &&
+    if (tagName !== "x-import") return;
+    let normalizedAttributes: Dynamic = attributes.replace(/'[^']*'/g, "''"),
+      componentMatch: Dynamic = GLOBAL_COMPONENT_ATTRIBUTE_PATTERN.exec(normalizedAttributes);
+    componentMatch &&
+      componentMatch[1].includes(".") &&
+      !componentMatch[1].includes("{{") &&
+      !IMPORT_FROM_ATTRIBUTE_PATTERN.test(normalizedAttributes.replace(/"[^"]*"/g, '""')) &&
       importCount++;
   });
   return {
@@ -118,29 +118,29 @@ function computeDesignOpenMetricEvents({
   designSystems > 0 && events.push(DESIGN_OPEN_METRIC_EVENTS.tokens);
   [
     ...Object.keys(files).filter(
-      (input?: Dynamic): Dynamic => !isArtboardFile(input),
+      (filePath?: Dynamic): Dynamic => !isArtboardFile(filePath),
     ),
     ...published,
   ].some(
-    (input?: Dynamic): Dynamic =>
-      COMPONENT_BUNDLE_PATH_PATTERN.test(input) ||
-      DESIGN_SYSTEM_METADATA_PATTERN.test(input),
+    (filePath?: Dynamic): Dynamic =>
+      COMPONENT_BUNDLE_PATH_PATTERN.test(filePath) ||
+      DESIGN_SYSTEM_METADATA_PATTERN.test(filePath),
   ) && events.push(DESIGN_OPEN_METRIC_EVENTS.bundle);
-  let index: Dynamic = 0,
-    index2: Dynamic = 0;
-  for (let [value, value2] of Object.entries(files) as Dynamic) {
+  let importCount: Dynamic = 0,
+    contentTagCount: Dynamic = 0;
+  for (let [filePath, fileHtml] of Object.entries(files) as Dynamic) {
     if (
-      !isArtboardFile(value) ||
-      isLoadingArtboardHtml(value2)
+      !isArtboardFile(filePath) ||
+      isLoadingArtboardHtml(fileHtml)
     )
       continue;
-    let value3: Dynamic = countDesignSystemImportTags(value2);
-    index += value3.mounts;
-    index2 += value3.elements;
+    let counts: Dynamic = countDesignSystemImportTags(fileHtml);
+    importCount += counts.mounts;
+    contentTagCount += counts.elements;
   }
-  index > 0 &&
+  importCount > 0 &&
     events.push(
-      DESIGN_OPEN_METRIC_EVENTS.use[classifyDesignSystemUsage(index, index2)],
+      DESIGN_OPEN_METRIC_EVENTS.use[classifyDesignSystemUsage(importCount, contentTagCount)],
     );
   return events;
 }
@@ -157,7 +157,7 @@ function whenPublishedBoardsReady(
   doc?: Dynamic,
   onReady?: Dynamic,
   timeoutMs: Dynamic = 1e4,
-  runtime2: Dynamic = globalThis,
+  browserRuntime: Dynamic = globalThis,
 ): Dynamic {
   let callSafely: Dynamic = (): Dynamic => {
     try {
@@ -165,62 +165,62 @@ function whenPublishedBoardsReady(
     } catch {}
   };
   whenDocumentLive(doc, (): Dynamic => {
-    let flag: Dynamic = false,
-      callback: Dynamic = (): Dynamic => {},
-      value: Dynamic,
-      value2: Dynamic,
-      callback2: Dynamic = (): Dynamic => {
-        flag ||
-          ((flag = true),
-          callback(),
-          runtime2.clearTimeout(value),
-          runtime2.clearTimeout(value2),
-          typeof runtime2.requestIdleCallback == "function"
-            ? runtime2.requestIdleCallback(callSafely, {
+    let didNotify: Dynamic = false,
+      unsubscribe: Dynamic = (): Dynamic => {},
+      readyTimer: Dynamic,
+      fallbackTimer: Dynamic,
+      notifyReady: Dynamic = (): Dynamic => {
+        didNotify ||
+          ((didNotify = true),
+          unsubscribe(),
+          browserRuntime.clearTimeout(readyTimer),
+          browserRuntime.clearTimeout(fallbackTimer),
+          typeof browserRuntime.requestIdleCallback == "function"
+            ? browserRuntime.requestIdleCallback(callSafely, {
                 timeout: timeoutMs,
               })
-            : runtime2.setTimeout(callSafely, 0));
+            : browserRuntime.setTimeout(callSafely, 0));
       },
-      callback3: Dynamic = (): Dynamic => {
+      readArtboardReadiness: Dynamic = (): Dynamic => {
         try {
-          let flag2: Dynamic = false;
-          for (let [value3, value4] of Object.entries(
+          let hasArtboards: Dynamic = false;
+          for (let [filePath, fileHtml] of Object.entries(
             doc.content().files,
           ) as Dynamic)
-            if (isArtboardFile(value3)) {
-              if (isLoadingArtboardHtml(value4))
+            if (isArtboardFile(filePath)) {
+              if (isLoadingArtboardHtml(fileHtml))
                 return "loading";
-              flag2 = true;
+              hasArtboards = true;
             }
-          return flag2 ? "in" : "none";
+          return hasArtboards ? "in" : "none";
         } catch {
           return "in";
         }
       },
-      callback4: Dynamic = (input?: Dynamic): Dynamic => {
-        if (flag) return;
-        runtime2.clearTimeout(value);
-        let value3: Dynamic = callback3();
-        value3 !== "none" &&
-          ((value2 ??= runtime2.setTimeout(callback2, timeoutMs)),
-          (value =
-            value3 === "in"
-              ? runtime2.setTimeout(callback2, input)
+      scheduleReadinessCheck: Dynamic = (readyDelayMs?: Dynamic): Dynamic => {
+        if (didNotify) return;
+        browserRuntime.clearTimeout(readyTimer);
+        let readiness: Dynamic = readArtboardReadiness();
+        readiness !== "none" &&
+          ((fallbackTimer ??= browserRuntime.setTimeout(notifyReady, timeoutMs)),
+          (readyTimer =
+            readiness === "in"
+              ? browserRuntime.setTimeout(notifyReady, readyDelayMs)
               : undefined));
       };
-    callback = doc.subscribe((): Dynamic => callback4(MAX_TELEMETRY_TAGS));
-    callback4(0);
+    unsubscribe = doc.subscribe((): Dynamic => scheduleReadinessCheck(MAX_TELEMETRY_TAGS));
+    scheduleReadinessCheck(0);
   });
 }
 function reportDesignOpened(
   doc?: Dynamic,
-  context?: Dynamic,
+  openOptions?: Dynamic,
   published?: Dynamic,
   designSystems?: Dynamic,
-  runtime2: Dynamic = globalThis,
+  browserRuntime: Dynamic = globalThis,
 ): Dynamic {
   try {
-    if (!context.canWrite || context.capture || context.embedded) return;
+    if (!openOptions.canWrite || openOptions.capture || openOptions.embedded) return;
     whenPublishedBoardsReady(
       doc,
       (): Dynamic =>
@@ -230,10 +230,10 @@ function reportDesignOpened(
             ...published(),
           }),
           designSystems,
-          runtime2,
+          browserRuntime,
         ),
       undefined,
-      runtime2,
+      browserRuntime,
     );
   } catch {}
 }
@@ -297,11 +297,11 @@ export function installPlatformDesignMetrics(): () => void {
     COMPONENT_BUNDLE_PATH_PATTERN =
       /(?:^|[-/])components\.m?js$|(?:^|\/)ds\/[^/]+\/.+\.m?js$/i;
     DESIGN_SYSTEM_METADATA_PATTERN = /(?:^|\/)design-system\.json$/i;
-    isAsciiLetterCode = (input?: Dynamic): Dynamic =>
-      (input | 32) >= 97 && (input | 32) <= 122;
-    isHtmlTagNameCode = (input?: Dynamic): Dynamic =>
-      isAsciiLetterCode(input) || (input >= 48 && input <= 57) || input === 45;
-    lowercaseAsciiCode = (input?: Dynamic): Dynamic =>
-      input >= 65 && input <= 90 ? input + 32 : input;
+    isAsciiLetterCode = (characterCode?: Dynamic): Dynamic =>
+      (characterCode | 32) >= 97 && (characterCode | 32) <= 122;
+    isHtmlTagNameCode = (characterCode?: Dynamic): Dynamic =>
+      isAsciiLetterCode(characterCode) || (characterCode >= 48 && characterCode <= 57) || characterCode === 45;
+    lowercaseAsciiCode = (characterCode?: Dynamic): Dynamic =>
+      characterCode >= 65 && characterCode <= 90 ? characterCode + 32 : characterCode;
   };
 }

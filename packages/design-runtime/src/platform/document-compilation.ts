@@ -17,53 +17,53 @@ var DbValue: Dynamic;
 function emulatorBuildMetaName(): Dynamic {
   return ["appifact", "emulator", "build"].join("-");
 }
-function escapeHtmlAttribute(input?: Dynamic): Dynamic {
-  return input
+function escapeHtmlAttribute(attribute?: Dynamic): Dynamic {
+  return attribute
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll('"', "&quot;");
 }
-function escapeHtmlComment(input?: Dynamic): Dynamic {
-  return input
+function escapeHtmlComment(comment?: Dynamic): Dynamic {
+  return comment
     .replaceAll("-->", "--\u200B>")
     .replaceAll("--!>", "--\u200B!>");
 }
-function safeInlineJson(input?: Dynamic): Dynamic {
-  return JSON.stringify(input).replaceAll("<", "\\u003c");
+function safeInlineJson(jsonValue?: Dynamic): Dynamic {
+  return JSON.stringify(jsonValue).replaceAll("<", "\\u003c");
 }
-function buildDocumentHtmlAttributes(input?: Dynamic): Dynamic {
+function buildDocumentHtmlAttributes(serializedCapabilities?: Dynamic): Dynamic {
   return (
     'lang="en" ' +
     cdsRootAttributes +
-    (hasDatabaseCapability(input) ? " " + deferThumbnailAttribute : "")
+    (hasDatabaseCapability(serializedCapabilities) ? " " + deferThumbnailAttribute : "")
   );
 }
 function compileArtifactDocument(
-  input?: Dynamic,
-  options?: Dynamic,
+  pageParts?: Dynamic,
+  serializedDocument?: Dynamic,
 ): Dynamic {
   return [
     "<!doctype html>",
     "<html " +
       buildDocumentHtmlAttributes(
-        input.capabilities ?? defaultCapabilitiesJson,
+        pageParts.capabilities ?? defaultCapabilitiesJson,
       ) +
       ">",
     "<head>",
     '<meta charset="utf-8">',
-    "<title>" + escapeHtmlAttribute(input.title) + "</title>",
+    "<title>" + escapeHtmlAttribute(pageParts.title) + "</title>",
     "<\!-- README",
-    escapeHtmlComment(input.readme),
+    escapeHtmlComment(pageParts.readme),
     "-->",
     '<meta name="README" content="' +
-      escapeHtmlAttribute(input.readmeMeta) +
+      escapeHtmlAttribute(pageParts.readmeMeta) +
       '">',
     '<meta name="' +
       capabilityMetaName +
       '" content="' +
-      escapeHtmlAttribute(input.capabilities ?? defaultCapabilitiesJson) +
+      escapeHtmlAttribute(pageParts.capabilities ?? defaultCapabilitiesJson) +
       '">',
-    ...(input.emulator
+    ...(pageParts.emulator
       ? [
           '<meta name="' +
             emulatorBuildMetaName() +
@@ -74,32 +74,32 @@ function compileArtifactDocument(
     '<script id="' +
       documentModeElementId +
       '">' +
-      buildColorModeScript(input.colorMode) +
+      buildColorModeScript(pageParts.colorMode) +
       "<\/script>",
-    ...(input.emulator && input.emulatorShim !== undefined
+    ...(pageParts.emulator && pageParts.emulatorShim !== undefined
       ? [
           '<script id="' + emulatorShimMetaName + '">',
-          input.emulatorShim,
+          pageParts.emulatorShim,
           "<\/script>",
         ]
       : []),
     '<style id="' + documentStyleElementId + '">',
-    input.css,
+    pageParts.css,
     "</style>",
     "</head>",
     "<body>",
     '<div id="root"></div>',
-    ...(options !== undefined
+    ...(serializedDocument !== undefined
       ? [
           '<script type="application/json" id="' +
             documentDataElementId +
             '">',
-          options,
+          serializedDocument,
           "<\/script>",
         ]
       : []),
     '<script id="' + documentAppElementId + '">',
-    input.js,
+    pageParts.js,
     "<\/script>",
     "</body>",
     "</html>",
@@ -107,19 +107,19 @@ function compileArtifactDocument(
   ].join(`
 `);
 }
-function readEmbeddedDocument(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.getElementById(documentDataElementId);
-  if (value)
+function readEmbeddedDocument(document?: Dynamic): Dynamic {
+  let dataElement: Dynamic = document.getElementById(documentDataElementId);
+  if (dataElement)
     try {
-      return JSON.parse(value.textContent ?? "");
+      return JSON.parse(dataElement.textContent ?? "");
     } catch {
       return;
     }
 }
-function readCompiledPageParts(element?: Dynamic): Dynamic {
-  let value: Dynamic = element.getElementById(documentAppElementId),
-    value2: Dynamic = element.getElementById(documentStyleElementId);
-  if (!value || !value2)
+function readCompiledPageParts(document?: Dynamic): Dynamic {
+  let scriptElement: Dynamic = document.getElementById(documentAppElementId),
+    styleElement: Dynamic = document.getElementById(documentStyleElementId);
+  if (!scriptElement || !styleElement)
     throw new Error(
       "page anatomy missing (#" +
         documentAppElementId +
@@ -127,81 +127,81 @@ function readCompiledPageParts(element?: Dynamic): Dynamic {
         documentStyleElementId +
         ") \u2014 this page was not assembled by the appifact compile step, so it cannot safely re-render itself.",
     );
-  let text: Dynamic = "";
-  for (let value9 of Array.from(element.head.childNodes) as Dynamic)
-    if (value9.nodeType === 8) {
-      let data: Dynamic = value9.data;
+  let readme: Dynamic = "";
+  for (let headNode of Array.from(document.head.childNodes) as Dynamic)
+    if (headNode.nodeType === 8) {
+      let commentText: Dynamic = headNode.data;
       if (
-        data.startsWith(` README
+        commentText.startsWith(` README
 `) &&
-        data.endsWith(`
+        commentText.endsWith(`
 `)
       ) {
-        text = data.slice(8, -1);
+        readme = commentText.slice(8, -1);
         break;
       }
     }
-  let value3: Dynamic =
-      element.querySelector('meta[name="README"]')?.getAttribute("content") ??
+  let readmeMeta: Dynamic =
+      document.querySelector('meta[name="README"]')?.getAttribute("content") ??
       "",
-    value4: Dynamic =
-      element.querySelector(
+    isEmulator: Dynamic =
+      document.querySelector(
         'meta[name="' + emulatorBuildMetaName() + '"]',
       ) !== null,
-    value5: Dynamic = element.getElementById(emulatorShimMetaName),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value9: Dynamic = input ?? "";
-      return value9.startsWith(`
+    emulatorShimElement: Dynamic = document.getElementById(emulatorShimMetaName),
+    trimSurroundingNewlines: Dynamic = (sourceText?: Dynamic): Dynamic => {
+      let text: Dynamic = sourceText ?? "";
+      return text.startsWith(`
 `) &&
-        value9.endsWith(`
+        text.endsWith(`
 `)
-        ? value9.slice(1, -1)
-        : value9;
+        ? text.slice(1, -1)
+        : text;
     },
-    value6: Dynamic =
-      element
+    serializedCapabilities: Dynamic =
+      document
         .querySelector('meta[name="' + capabilityMetaName + '"]')
         ?.getAttribute("content") ?? defaultCapabilitiesJson,
-    value7: Dynamic =
-      element.getElementById(documentModeElementId)?.textContent ?? "",
-    value8: Dynamic = ["light", "dark"].find(
-      (input?: Dynamic): Dynamic =>
-        value7 === buildColorModeScript(input),
+    colorModeScript: Dynamic =
+      document.getElementById(documentModeElementId)?.textContent ?? "",
+    explicitColorMode: Dynamic = ["light", "dark"].find(
+      (mode?: Dynamic): Dynamic =>
+        colorModeScript === buildColorModeScript(mode),
     );
   return {
-    title: element.querySelector("title")?.textContent ?? "",
-    capabilities: value6,
-    readme: text,
-    readmeMeta: value3,
-    css: callback(value2.textContent),
-    js: callback(value.textContent),
-    emulator: value4,
-    emulatorShim: value4 && value5 ? callback(value5.textContent) : undefined,
-    ...(value8 !== undefined
+    title: document.querySelector("title")?.textContent ?? "",
+    capabilities: serializedCapabilities,
+    readme: readme,
+    readmeMeta: readmeMeta,
+    css: trimSurroundingNewlines(styleElement.textContent),
+    js: trimSurroundingNewlines(scriptElement.textContent),
+    emulator: isEmulator,
+    emulatorShim: isEmulator && emulatorShimElement ? trimSurroundingNewlines(emulatorShimElement.textContent) : undefined,
+    ...(explicitColorMode !== undefined
       ? {
-          colorMode: value8,
+          colorMode: explicitColorMode,
         }
       : {}),
   };
 }
-function detectDocumentStorageMode(element?: Dynamic): Dynamic {
-  let value: Dynamic =
-    element
+function detectDocumentStorageMode(document?: Dynamic): Dynamic {
+  let serializedCapabilities: Dynamic =
+    document
       .querySelector('meta[name="' + capabilityMetaName + '"]')
       ?.getAttribute("content") ?? "";
-  return hasDatabaseCapability(value)
+  return hasDatabaseCapability(serializedCapabilities)
     ? "db"
-    : element.getElementById(documentDataElementId) !== null
+    : document.getElementById(documentDataElementId) !== null
       ? "page"
       : "files";
 }
-function hasDatabaseCapability(input?: Dynamic): Dynamic {
+function hasDatabaseCapability(serializedCapabilities?: Dynamic): Dynamic {
   try {
-    let value: Dynamic = JSON.parse(input);
+    let capabilities: Dynamic = JSON.parse(serializedCapabilities);
     return (
-      typeof value == "object" &&
-      value !== null &&
-      Object.hasOwn(value, DbValue)
+      typeof capabilities == "object" &&
+      capabilities !== null &&
+      Object.hasOwn(capabilities, DbValue)
     );
   } catch {
     return false;
