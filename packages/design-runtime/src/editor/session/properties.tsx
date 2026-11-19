@@ -50,504 +50,504 @@ import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { validateAttributeEdit } from "../attribute-validation";
 
 /** 选中元素变化时运行：确认元素仍在模型中，向画板读取计算样式、渲染状态、父级布局与文字对比度背景，写入属性面板的选中状态；过期的请求会被丢弃。 */
-export async function loadSelectionInspectorState(deps: { readonly ensureModel: Dynamic; readonly value10: Dynamic; readonly value16: Dynamic; readonly value21: Dynamic; readonly value23: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value64: Dynamic; readonly value67: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value307?: Dynamic,
-        extra: Dynamic = false): Promise<Dynamic> {
-        let value308: Dynamic = ++deps.value50.current,
-          value309: Dynamic = await deps.ensureModel(input);
-        if (value308 !== deps.value50.current) return;
-        let value310: Dynamic = value309
-          ? options.filter(
-              (input2?: Dynamic): Dynamic =>
-                value309.model.element(input2) != null,
+export async function loadSelectionInspectorState(deps: { readonly ensureModel: Dynamic; readonly value10: Dynamic; readonly value16: Dynamic; readonly value21: Dynamic; readonly value23: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value64: Dynamic; readonly value67: Dynamic }, templateName?: Dynamic,
+        tids?: Dynamic,
+        tagOverride?: Dynamic,
+        instanceCountOverride?: Dynamic,
+        afterPaint: Dynamic = false): Promise<Dynamic> {
+        let requestEpoch: Dynamic = ++deps.value50.current,
+          docState: Dynamic = await deps.ensureModel(templateName);
+        if (requestEpoch !== deps.value50.current) return;
+        let validTids: Dynamic = docState
+          ? tids.filter(
+              (tid?: Dynamic): Dynamic =>
+                docState.model.element(tid) != null,
             )
           : [];
-        if (!value309 || value310.length === 0) {
+        if (!docState || validTids.length === 0) {
           deps.value49.current = null;
           deps.value3(null);
           deps.value23(null);
           return null;
         }
-        let items2: Dynamic = [
+        let cssVariableNames: Dynamic = [
             ...new Set(
-              value310.flatMap(
-                (input2?: Dynamic): Dynamic =>
+              validTids.flatMap(
+                (tid?: Dynamic): Dynamic =>
                   getCssVariableNames(
-                    value309.model.effectiveStyleAttr(input2),
+                    docState.model.effectiveStyleAttr(tid),
                   ),
               ),
             ),
           ],
-          value311: Dynamic = deps.value67(),
-          value312: Dynamic = value310.length === 1,
-          items3: Dynamic = [
+          previewFrame: Dynamic = deps.value67(),
+          isSingleSelection: Dynamic = validTids.length === 1,
+          styleNames: Dynamic = [
             ...InspectorStyleMetadataItems,
-            ...items2,
+            ...cssVariableNames,
           ],
-          value313: Dynamic = value311
+          inspection: Dynamic = previewFrame
             ? await inspectPickerSelection(
-                value311,
-                value310[0],
-                input,
-                items3,
+                previewFrame,
+                validTids[0],
+                templateName,
+                styleNames,
                 {
-                  ground: value312,
-                  afterPaint: extra,
+                  ground: isSingleSelection,
+                  afterPaint: afterPaint,
                 },
               )
             : null;
         if (
-          value308 !== deps.value50.current ||
-          (value311 &&
-            extra &&
-            value313 === null &&
-            ((value313 = await inspectPickerSelection(
-              value311,
-              value310[0],
-              input,
-              items3,
+          requestEpoch !== deps.value50.current ||
+          (previewFrame &&
+            afterPaint &&
+            inspection === null &&
+            ((inspection = await inspectPickerSelection(
+              previewFrame,
+              validTids[0],
+              templateName,
+              styleNames,
               {
-                ground: value312,
+                ground: isSingleSelection,
               },
             )),
-            value308 !== deps.value50.current))
+            requestEpoch !== deps.value50.current))
         )
           return;
-        let value314: Dynamic =
-          context ??
-          value309.model.tagName(value310[value310.length - 1]) ??
-          value313?.tag ??
+        let tag: Dynamic =
+          tagOverride ??
+          docState.model.tagName(validTids[validTids.length - 1]) ??
+          inspection?.tag ??
           "div";
-        deps.value10(value313?.computed ?? {});
-        deps.value16(value313?.rendered ?? false);
-        deps.value21(value313?.parent?.display);
-        let value315: Dynamic = value312
-          ? normalizeContrastGround(value313)
+        deps.value10(inspection?.computed ?? {});
+        deps.value16(inspection?.rendered ?? false);
+        deps.value21(inspection?.parent?.display);
+        let contrastGround: Dynamic = isSingleSelection
+          ? normalizeContrastGround(inspection)
           : null;
         deps.value23(
-          (input2?: Dynamic): Dynamic =>
-            input2 !== null &&
-            value315 !== null &&
-            input2.behind === value315.behind &&
-            input2.ink === value315.ink
-              ? input2
-              : value315,
+          (previousGround?: Dynamic): Dynamic =>
+            previousGround !== null &&
+            contrastGround !== null &&
+            previousGround.behind === contrastGround.behind &&
+            previousGround.ink === contrastGround.ink
+              ? previousGround
+              : contrastGround,
         );
-        value311 && deps.value64(value311);
-        let state: Dynamic = {
-          name: input,
-          tids: value310,
-          tag: value314,
-          instances: value307 ?? value313?.instances ?? value310.length,
+        previewFrame && deps.value64(previewFrame);
+        let selection: Dynamic = {
+          name: templateName,
+          tids: validTids,
+          tag: tag,
+          instances: instanceCountOverride ?? inspection?.instances ?? validTids.length,
         };
-        deps.value49.current = state;
-        deps.value3(state);
+        deps.value49.current = selection;
+        deps.value3(selection);
         return textContrastGround(
-          value315,
-          value313?.computed ?? {},
+          contrastGround,
+          inspection?.computed ?? {},
         );
       }
 
 /** 属性面板修改单个属性时运行：对所有选中元素写入该属性（清空 href 时拆掉链接、修改箭头头部、裁剪、文字、字体等有专门处理），记录撤销、推送实时模型并播报。 */
-export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value148: Dynamic; readonly value149: Dynamic; readonly value24: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic; readonly value9: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
+export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value148: Dynamic; readonly value149: Dynamic; readonly value24: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic; readonly value9: Dynamic }, prop?: Dynamic, propValue?: Dynamic): Dynamic {
         let current: Dynamic = deps.value49.current;
         if (!current || deps.readOnlyRef.current || current.name !== deps.rootName)
           return;
-        let value307: Dynamic = deps.modelRef.current.state(current.name);
-        if (!value307) return;
-        let value308: Dynamic = current.tids.filter(
-          (input2?: Dynamic): Dynamic =>
-            value307.model.element(input2) != null,
+        let docState: Dynamic = deps.modelRef.current.state(current.name);
+        if (!docState) return;
+        let selectedTids: Dynamic = current.tids.filter(
+          (tid?: Dynamic): Dynamic =>
+            docState.model.element(tid) != null,
         );
-        if (value308.length === 0) return;
-        let value309: Dynamic = input.toLowerCase();
+        if (selectedTids.length === 0) return;
+        let lowerProp: Dynamic = prop.toLowerCase();
         if (
-          (options == null || options.trim() === "") &&
-          (value309 === "@href" || value309.endsWith(":href")) &&
-          value308.some(
-            (input2?: Dynamic): Dynamic =>
-              value307.model.tagName(input2) === "a",
+          (propValue == null || propValue.trim() === "") &&
+          (lowerProp === "@href" || lowerProp.endsWith(":href")) &&
+          selectedTids.some(
+            (tid?: Dynamic): Dynamic =>
+              docState.model.tagName(tid) === "a",
           )
         ) {
-          let redo: Dynamic = value307.redo,
-            value318: Dynamic = deps.value101(
+          let redo: Dynamic = docState.redo,
+            undoEntry: Dynamic = deps.value101(
               current.name,
               `link-unwrap-${Date.now()}`,
-              value307,
+              docState,
             ),
-            items3: Dynamic = [],
-            flag2: Dynamic = false;
-          for (let value320 of value308 as Dynamic) {
-            if (value307.model.tagName(value320) !== "a") continue;
-            let value321: Dynamic = value307.model.unwrapElement(value320);
-            value321 && (items3.push(...value321), (flag2 = true));
+            unwrappedElements: Dynamic = [],
+            didUnwrap: Dynamic = false;
+          for (let tid of selectedTids as Dynamic) {
+            if (docState.model.tagName(tid) !== "a") continue;
+            let unwrapped: Dynamic = docState.model.unwrapElement(tid);
+            unwrapped && (unwrappedElements.push(...unwrapped), (didUnwrap = true));
           }
-          if (!flag2) {
-            deps.value102(value307, value318, redo);
+          if (!didUnwrap) {
+            deps.value102(docState, undoEntry, redo);
             return;
           }
-          value307.model.restamp();
+          docState.model.restamp();
           deps.value66.current = current.name;
-          deps.pushLiveModel(current.name, value307);
+          deps.pushLiveModel(current.name, docState);
           deps.markModelDirty(current.name);
           deps.incrementSessionEpoch();
-          let value319: Dynamic = items3
+          let unwrappedTids: Dynamic = unwrappedElements
             .map(
               (element?: Dynamic): Dynamic =>
                 parseInt(element.getAttribute("data-dc-tpl") ?? "-1", 10),
             )
-            .filter((input2?: Dynamic): Dynamic => input2 >= 0);
-          if (value319.length > 0) deps.value105(current.name, value319);
+            .filter((tidNumber?: Dynamic): Dynamic => tidNumber >= 0);
+          if (unwrappedTids.length > 0) deps.value105(current.name, unwrappedTids);
           else {
-            let value320: Dynamic = deps.value67();
-            value320 && setPickerSelection(value320, null, null);
+            let previewFrame: Dynamic = deps.value67();
+            previewFrame && setPickerSelection(previewFrame, null, null);
             deps.value50.current++;
             deps.value3(null);
           }
           announce(AccessibilityAnnouncementsLabel_22);
           deps.value8(
-            `${value307.path}: removed link on destination clear (kept content)`,
+            `${docState.path}: removed link on destination clear (kept content)`,
           );
           return;
         }
-        let value310: Dynamic = value308.map(
-          (input2?: Dynamic): Dynamic => value307.model.tagName(input2),
+        let tagNames: Dynamic = selectedTids.map(
+          (tid?: Dynamic): Dynamic => docState.model.tagName(tid),
         );
-        options != null &&
-          options.trim() === "" &&
-          isProtectedAttribute(input, value310) &&
-          (options = null);
-        if (options != null) {
-          let value318: Dynamic = validateAttributeEdit(
-            input,
-            options,
-            value310,
+        propValue != null &&
+          propValue.trim() === "" &&
+          isProtectedAttribute(prop, tagNames) &&
+          (propValue = null);
+        if (propValue != null) {
+          let validation: Dynamic = validateAttributeEdit(
+            prop,
+            propValue,
+            tagNames,
           );
-          if (!value318.ok) {
-            deps.showToast(value318.message);
+          if (!validation.ok) {
+            deps.showToast(validation.message);
             return;
           }
-          options = value318.value;
+          propValue = validation.value;
         }
-        if (input === "__headStart" || input === "__headEnd") {
+        if (prop === "__headStart" || prop === "__headEnd") {
           if (
-            options !== "none" &&
-            options !== "open" &&
-            options !== "filled"
+            propValue !== "none" &&
+            propValue !== "open" &&
+            propValue !== "filled"
           )
             return;
-          let redo: Dynamic = value307.redo,
-            value318: Dynamic = deps.value101(current.name, input, value307),
-            value319: Dynamic = current.tids.map(
-              (input2?: Dynamic): Dynamic => value307.model.element(input2),
+          let redo: Dynamic = docState.redo,
+            headUndoEntry: Dynamic = deps.value101(current.name, prop, docState),
+            previousElements: Dynamic = current.tids.map(
+              (tid?: Dynamic): Dynamic => docState.model.element(tid),
             ),
-            value320: Dynamic = changeSelectedArrowHeads(
-              value307.model,
-              value308,
-              input === "__headStart" ? "start" : "end",
-              options,
-              value308.length === 1
+            headChange: Dynamic = changeSelectedArrowHeads(
+              docState.model,
+              selectedTids,
+              prop === "__headStart" ? "start" : "end",
+              propValue,
+              selectedTids.length === 1
                 ? {
                     stroke: deps.value9.stroke,
                     strokeWidth: deps.value9.strokeWidth,
                   }
                 : {},
             );
-          if (!value320) {
-            deps.value102(value307, value318, redo);
+          if (!headChange) {
+            deps.value102(docState, headUndoEntry, redo);
             return;
           }
-          let value321: Dynamic = value319
+          let newTids: Dynamic = previousElements
             .map(
-              (input2?: Dynamic): Dynamic =>
+              (element?: Dynamic): Dynamic =>
                 parseInt(
                   (
-                    input2 &&
-                    (value320.replaced.get(input2) ?? input2)
+                    element &&
+                    (headChange.replaced.get(element) ?? element)
                   )?.getAttribute(DcTplAttribute) ?? "-1",
                   10,
                 ),
             )
-            .filter((input2?: Dynamic): Dynamic => input2 >= 0);
+            .filter((tidNumber?: Dynamic): Dynamic => tidNumber >= 0);
           deps.value66.current = current.name;
-          deps.pushLiveModel(current.name, value307);
+          deps.pushLiveModel(current.name, docState);
           deps.markModelDirty(current.name);
           deps.incrementSessionEpoch();
-          deps.value106(value307, value321);
-          deps.value105(current.name, value321);
-          let value322: Dynamic = deps.value67();
-          value322 &&
+          deps.value106(docState, newTids);
+          deps.value105(current.name, newTids);
+          let headPreviewFrame: Dynamic = deps.value67();
+          headPreviewFrame &&
             setTimeout((): Dynamic => {
-              let current3: Dynamic = deps.value49.current;
-              current3?.name === current.name &&
-                InspectorEditorEvery(current3.tids, value321) &&
+              let currentSelection: Dynamic = deps.value49.current;
+              currentSelection?.name === current.name &&
+                InspectorEditorEvery(currentSelection.tids, newTids) &&
                 setPickerSelection(
-                  value322,
-                  value321,
+                  headPreviewFrame,
+                  newTids,
                   current.name,
                 );
             }, 60);
-          let value323: Dynamic = `${SvgArrowPropertiesHeadStartHeadEndConfig[input]} arrowhead: ${SvgArrowPropertiesNoneOpenFilledConfig[options]}`;
-          announce(value323);
+          let headAnnouncement: Dynamic = `${SvgArrowPropertiesHeadStartHeadEndConfig[prop]} arrowhead: ${SvgArrowPropertiesNoneOpenFilledConfig[propValue]}`;
+          announce(headAnnouncement);
           deps.value8(
-            `${value307.path}: set ${SvgArrowPropertiesHeadStartHeadEndConfig[input]} arrowhead to ${SvgArrowPropertiesNoneOpenFilledConfig[options]} on ${value320.changed > 1 ? `${value320.changed} lines or arrows` : uiMessage("inspector.session.aLineOrArrow")}`,
-            `${value307.path}:${input}:${value308.join(",")}`,
+            `${docState.path}: set ${SvgArrowPropertiesHeadStartHeadEndConfig[prop]} arrowhead to ${SvgArrowPropertiesNoneOpenFilledConfig[propValue]} on ${headChange.changed > 1 ? `${headChange.changed} lines or arrows` : uiMessage("inspector.session.aLineOrArrow")}`,
+            `${docState.path}:${prop}:${selectedTids.join(",")}`,
           );
           return;
         }
-        deps.value101(current.name, input, value307);
-        let value311: Dynamic = arrowSnapshotsForPropertyChange(
-            value307.model,
-            value308,
-            [input],
+        deps.value101(current.name, prop, docState);
+        let arrowSnapshots: Dynamic = arrowSnapshotsForPropertyChange(
+            docState.model,
+            selectedTids,
+            [prop],
           ),
           flag: Dynamic = false,
-          value312: Dynamic =
-            (input === "object-fit" && options !== "cover") ||
-            input === "@src"
-              ? value308.filter(
-                  (input2?: Dynamic): Dynamic =>
+          cropResetTids: Dynamic =
+            (prop === "object-fit" && propValue !== "cover") ||
+            prop === "@src"
+              ? selectedTids.filter(
+                  (tid?: Dynamic): Dynamic =>
                     MediaObjectCropTest(
-                      (input3?: Dynamic): Dynamic =>
-                        value307.model.inlineStyleValue(input2, input3),
+                      (styleProp?: Dynamic): Dynamic =>
+                        docState.model.inlineStyleValue(tid, styleProp),
                     ),
                 )
               : [];
-        for (let value318 of value308 as Dynamic)
-          if (input === "__text")
-            flag = value307.model.setText(value318, options ?? "") || flag;
-          else if (input.startsWith("@")) {
-            let value319: Dynamic = value307.model.setAttribute(
-              value318,
-              input.slice(1),
-              options,
+        for (let tid of selectedTids as Dynamic)
+          if (prop === "__text")
+            flag = docState.model.setText(tid, propValue ?? "") || flag;
+          else if (prop.startsWith("@")) {
+            let didSetAttribute: Dynamic = docState.model.setAttribute(
+              tid,
+              prop.slice(1),
+              propValue,
             );
-            if (value319 && value312.includes(value318))
-              for (let value320 of [
+            if (didSetAttribute && cropResetTids.includes(tid))
+              for (let cropProp of [
                 "object-view-box",
                 "object-position",
               ] as Dynamic)
-                value307.model.setStyleProperty(value318, value320, null);
-            flag = value319 || flag;
+                docState.model.setStyleProperty(tid, cropProp, null);
+            flag = didSetAttribute || flag;
           } else if (
             ((flag =
-              value307.model.setStyleProperty(value318, input, options) ||
+              docState.model.setStyleProperty(tid, prop, propValue) ||
               flag),
-            value312.includes(value318))
+            cropResetTids.includes(tid))
           )
-            for (let value319 of [
+            for (let cropProp of [
               "object-view-box",
               "object-position",
             ] as Dynamic)
-              value307.model.setStyleProperty(value318, value319, null);
+              docState.model.setStyleProperty(tid, cropProp, null);
         if (!flag) return;
-        let value313: Dynamic = restoreArrowSnapshots(
-            value307.model,
-            value311,
+        let restoredArrows: Dynamic = restoreArrowSnapshots(
+            docState.model,
+            arrowSnapshots,
           ),
-          value314: Dynamic =
-            input === "font-family" && options
+          webFontFamily: Dynamic =
+            prop === "font-family" && propValue
               ? knownWebFontFamily(
-                  firstFontFamily(options),
+                  firstFontFamily(propValue),
                 )
               : undefined,
-          value315: Dynamic =
-            value314 !== undefined &&
-            value307.model.ensureWebfontLink(value314);
-        value315 && value307.model.restamp();
-        let value316: Dynamic =
-            value307.model.tagName(value308[0]) ?? "element",
-          value317: Dynamic =
-            value308.length > 1
-              ? `${value308.length}\xD7 ${value316}`
-              : value316;
+          addedWebfontLink: Dynamic =
+            webFontFamily !== undefined &&
+            docState.model.ensureWebfontLink(webFontFamily);
+        addedWebfontLink && docState.model.restamp();
+        let tagName: Dynamic =
+            docState.model.tagName(selectedTids[0]) ?? "element",
+          targetLabel: Dynamic =
+            selectedTids.length > 1
+              ? `${selectedTids.length}\xD7 ${tagName}`
+              : tagName;
         deps.value149(
           current,
-          value307,
-          value315 || value313 || input === "__text" || input.startsWith("@")
+          docState,
+          addedWebfontLink || restoredArrows || prop === "__text" || prop.startsWith("@")
             ? undefined
             : {
-                [input]: options,
+                [prop]: propValue,
               },
         );
-        let items2: Dynamic = [
+        let edits: Dynamic = [
             {
-              prop: input,
-              value: options,
+              prop: prop,
+              value: propValue,
             },
           ],
-          current2: Dynamic = deps.value24.current,
-          callback7: Dynamic = (input2?: Dynamic): Dynamic =>
+          previousGround: Dynamic = deps.value24.current,
+          announceEdit: Dynamic = (inspection?: Dynamic): Dynamic =>
             announce(
               addContrastToAnnouncement(
-                propertyEditAnnouncement(items2),
-                items2,
-                ...deps.callback3(input2, current2),
+                propertyEditAnnouncement(edits),
+                edits,
+                ...deps.callback3(inspection, previousGround),
               ),
             );
-        value308.length === 1 &&
-        InspectorEditorSubscribers_4.has(input)
-          ? deps.value148(callback7)
-          : callback7();
+        selectedTids.length === 1 &&
+        InspectorEditorSubscribers_4.has(prop)
+          ? deps.value148(announceEdit)
+          : announceEdit();
         deps.value8(
-          `${value307.path}: set ${input}${options != null ? `=${options}` : " (unset)"} on ${value317}`,
-          `${value307.path}:${input}:${value308.join(",")}`,
+          `${docState.path}: set ${prop}${propValue != null ? `=${propValue}` : " (unset)"} on ${targetLabel}`,
+          `${docState.path}:${prop}:${selectedTids.join(",")}`,
         );
       }
 
 /** 属性面板一次提交多项属性时运行：校验后对所有选中元素批量写入属性与样式，必要时加载网页字体，记录撤销；非实时修改会播报属性变化与文字对比度。 */
-export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic; readonly modelRef: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value148: Dynamic; readonly value149: Dynamic; readonly value24: Dynamic; readonly value49: Dynamic; readonly value8: Dynamic }, items2?: Dynamic, options: Dynamic = {}): Dynamic {
+export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic; readonly modelRef: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value148: Dynamic; readonly value149: Dynamic; readonly value24: Dynamic; readonly value49: Dynamic; readonly value8: Dynamic }, edits?: Dynamic, editOptions: Dynamic = {}): Dynamic {
         let current: Dynamic = deps.value49.current;
         if (
           !current ||
           deps.readOnlyRef.current ||
           current.name !== deps.rootName ||
-          items2.length === 0
+          edits.length === 0
         )
           return;
-        let value307: Dynamic = deps.modelRef.current.state(current.name);
-        if (!value307) return;
-        let value308: Dynamic = current.tids.filter(
-          (input?: Dynamic): Dynamic => value307.model.element(input) != null,
+        let docState: Dynamic = deps.modelRef.current.state(current.name);
+        if (!docState) return;
+        let selectedTids: Dynamic = current.tids.filter(
+          (tid?: Dynamic): Dynamic => docState.model.element(tid) != null,
         );
-        if (value308.length === 0) return;
-        let value309: Dynamic = value308.map(
-            (input?: Dynamic): Dynamic => value307.model.tagName(input),
+        if (selectedTids.length === 0) return;
+        let tagNames: Dynamic = selectedTids.map(
+            (tid?: Dynamic): Dynamic => docState.model.tagName(tid),
           ),
-          items3: Dynamic = [];
-        for (let value315 of items2 as Dynamic) {
-          if (value315.value == null) {
-            items3.push(value315);
+          validatedEdits: Dynamic = [];
+        for (let edit of edits as Dynamic) {
+          if (edit.value == null) {
+            validatedEdits.push(edit);
             continue;
           }
           if (
-            value315.value.trim() === "" &&
-            isProtectedAttribute(value315.prop, value309)
+            edit.value.trim() === "" &&
+            isProtectedAttribute(edit.prop, tagNames)
           ) {
-            items3.push({
-              prop: value315.prop,
+            validatedEdits.push({
+              prop: edit.prop,
               value: null,
             });
             continue;
           }
-          let value316: Dynamic = validateAttributeEdit(
-            value315.prop,
-            value315.value,
-            value309,
+          let validation: Dynamic = validateAttributeEdit(
+            edit.prop,
+            edit.value,
+            tagNames,
           );
-          if (!value316.ok) {
-            deps.showToast(value316.message);
+          if (!validation.ok) {
+            deps.showToast(validation.message);
             return;
           }
-          items3.push({
-            prop: value315.prop,
-            value: value316.value,
+          validatedEdits.push({
+            prop: edit.prop,
+            value: validation.value,
           });
         }
-        items2 = items3;
+        edits = validatedEdits;
         deps.value101(
           current.name,
-          items2.map((input?: Dynamic): Dynamic => input.prop).join("+"),
-          value307,
+          edits.map((edit?: Dynamic): Dynamic => edit.prop).join("+"),
+          docState,
         );
-        let value310: Dynamic = arrowSnapshotsForPropertyChange(
-            value307.model,
-            value308,
-            items2.map((input?: Dynamic): Dynamic => input.prop),
+        let arrowSnapshots: Dynamic = arrowSnapshotsForPropertyChange(
+            docState.model,
+            selectedTids,
+            edits.map((edit?: Dynamic): Dynamic => edit.prop),
           ),
           flag: Dynamic = false,
-          state: Dynamic = {};
-        for (let value315 of items2 as Dynamic) {
-          let flag3: Dynamic = false;
-          for (let value316 of value308 as Dynamic)
-            if (value315.prop.startsWith("@"))
+          appliedStyles: Dynamic = {};
+        for (let edit of edits as Dynamic) {
+          let didRemoveStyle: Dynamic = false;
+          for (let tid of selectedTids as Dynamic)
+            if (edit.prop.startsWith("@"))
               flag =
-                value307.model.setAttribute(
-                  value316,
-                  value315.prop.slice(1),
-                  value315.value,
+                docState.model.setAttribute(
+                  tid,
+                  edit.prop.slice(1),
+                  edit.value,
                 ) || flag;
             else {
-              let value317: Dynamic =
-                value315.value == null
-                  ? value307.model.inlineStyleAttr(value316)
+              let styleBefore: Dynamic =
+                edit.value == null
+                  ? docState.model.inlineStyleAttr(tid)
                   : "";
               flag =
-                value307.model.setStyleProperty(
-                  value316,
-                  value315.prop,
-                  value315.value,
+                docState.model.setStyleProperty(
+                  tid,
+                  edit.prop,
+                  edit.value,
                 ) || flag;
-              value315.value == null &&
-                value307.model.inlineStyleAttr(value316) !== value317 &&
-                (flag3 = true);
+              edit.value == null &&
+                docState.model.inlineStyleAttr(tid) !== styleBefore &&
+                (didRemoveStyle = true);
             }
-          (value315.value != null || flag3) &&
-            (state[value315.prop] = value315.value);
+          (edit.value != null || didRemoveStyle) &&
+            (appliedStyles[edit.prop] = edit.value);
         }
         if (!flag) return;
-        let value311: Dynamic = restoreArrowSnapshots(
-            value307.model,
-            value310,
+        let restoredArrows: Dynamic = restoreArrowSnapshots(
+            docState.model,
+            arrowSnapshots,
           ),
-          flag2: Dynamic = false;
-        if (!options.live)
-          for (let value315 of items2 as Dynamic) {
-            if (value315.prop !== "font-family" || !value315.value) continue;
-            let value316: Dynamic = knownWebFontFamily(
-              firstFontFamily(value315.value),
+          didAddWebfontLink: Dynamic = false;
+        if (!editOptions.live)
+          for (let edit of edits as Dynamic) {
+            if (edit.prop !== "font-family" || !edit.value) continue;
+            let webFontFamily: Dynamic = knownWebFontFamily(
+              firstFontFamily(edit.value),
             );
-            value316 !== undefined &&
-              value307.model.ensureWebfontLink(value316) &&
-              (value307.model.restamp(), (flag2 = true));
+            webFontFamily !== undefined &&
+              docState.model.ensureWebfontLink(webFontFamily) &&
+              (docState.model.restamp(), (didAddWebfontLink = true));
           }
-        let value312: Dynamic =
-            value307.model.tagName(value308[0]) ?? "element",
-          value313: Dynamic = items2
-            .map((input?: Dynamic): Dynamic => input.prop)
+        let tagName: Dynamic =
+            docState.model.tagName(selectedTids[0]) ?? "element",
+          editLabel: Dynamic = edits
+            .map((edit?: Dynamic): Dynamic => edit.prop)
             .join("/"),
-          value314: Dynamic =
-            !flag2 &&
-            !value311 &&
-            items2.every(
-              (input?: Dynamic): Dynamic => !input.prop.startsWith("@"),
+          canPatchInPlace: Dynamic =
+            !didAddWebfontLink &&
+            !restoredArrows &&
+            edits.every(
+              (edit?: Dynamic): Dynamic => !edit.prop.startsWith("@"),
             );
-        deps.value149(current, value307, value314 ? state : undefined);
-        if (!options.live) {
-          let current2: Dynamic = deps.value24.current,
-            callback7: Dynamic = (input?: Dynamic): Dynamic =>
+        deps.value149(current, docState, canPatchInPlace ? appliedStyles : undefined);
+        if (!editOptions.live) {
+          let previousGround: Dynamic = deps.value24.current,
+            announceEdit: Dynamic = (inspection?: Dynamic): Dynamic =>
               announce(
                 addContrastToAnnouncement(
-                  propertyEditAnnouncement(items2),
-                  items2,
-                  ...deps.callback3(input, current2),
+                  propertyEditAnnouncement(edits),
+                  edits,
+                  ...deps.callback3(inspection, previousGround),
                 ),
               );
-          value308.length === 1 &&
-          items2.some(
-            (input?: Dynamic): Dynamic =>
-              InspectorEditorSubscribers_4.has(input.prop),
+          selectedTids.length === 1 &&
+          edits.some(
+            (edit?: Dynamic): Dynamic =>
+              InspectorEditorSubscribers_4.has(edit.prop),
           )
-            ? deps.value148(callback7)
-            : callback7();
+            ? deps.value148(announceEdit)
+            : announceEdit();
         }
         deps.value8(
-          `${value307.path}: set ${value313} on ${value308.length > 1 ? `${value308.length}\xD7 ${value312}` : value312}`,
-          `${value307.path}:${value313}:${value308.join(",")}`,
+          `${docState.path}: set ${editLabel} on ${selectedTids.length > 1 ? `${selectedTids.length}\xD7 ${tagName}` : tagName}`,
+          `${docState.path}:${editLabel}:${selectedTids.join(",")}`,
         );
       }
 
 /** 渲染属性面板时对每个分区运行：按分区 id 渲染布局、外观、文字、媒体、效果或通用属性分区，并接上对应的提交回调与只读禁用说明。 */
-export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly installGen: Dynamic; readonly nonDcFile: Dynamic; readonly readOnly: Dynamic; readonly rootName: Dynamic; readonly selectionScopeKey: Dynamic; readonly value13: Dynamic; readonly value14: Dynamic; readonly value148: Dynamic; readonly value152: Dynamic; readonly value199: Dynamic; readonly value2: Dynamic; readonly value20: Dynamic; readonly value200: Dynamic; readonly value201: Dynamic; readonly value203: Dynamic; readonly value204: Dynamic; readonly value206: Dynamic; readonly value270: Dynamic; readonly value271: Dynamic; readonly value272: Dynamic; readonly value273: Dynamic; readonly value274: Dynamic; readonly value275: Dynamic; readonly value278: Dynamic; readonly value280: Dynamic; readonly value32: Dynamic; readonly value33: Dynamic; readonly value34: Dynamic; readonly value67: Dynamic; readonly value9: Dynamic; readonly webviewRef: Dynamic }, input?: Dynamic): Dynamic {
-                    if (input.id === "sizing" || input.id === "size")
+export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly installGen: Dynamic; readonly nonDcFile: Dynamic; readonly readOnly: Dynamic; readonly rootName: Dynamic; readonly selectionScopeKey: Dynamic; readonly value13: Dynamic; readonly value14: Dynamic; readonly value148: Dynamic; readonly value152: Dynamic; readonly value199: Dynamic; readonly value2: Dynamic; readonly value20: Dynamic; readonly value200: Dynamic; readonly value201: Dynamic; readonly value203: Dynamic; readonly value204: Dynamic; readonly value206: Dynamic; readonly value270: Dynamic; readonly value271: Dynamic; readonly value272: Dynamic; readonly value273: Dynamic; readonly value274: Dynamic; readonly value275: Dynamic; readonly value278: Dynamic; readonly value280: Dynamic; readonly value32: Dynamic; readonly value33: Dynamic; readonly value34: Dynamic; readonly value67: Dynamic; readonly value9: Dynamic; readonly webviewRef: Dynamic }, section?: Dynamic): Dynamic {
+                    if (section.id === "sizing" || section.id === "size")
                       return (() => {
-                        const _Component2 =
+                        const SizingFragment =
                           reactCanvasShape_2.default.Fragment;
-                        const _props2 = {
+                        const sizingProps = {
                           children: [
-                            input.id === deps.value280[0]?.id && (
+                            section.id === deps.value280[0]?.id && (
                               <div
                                 className={cn(
                                   "py-0.5",
@@ -561,8 +561,8 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                   rows={
                                     deps.value204
                                       ? deps.value204.sections.flatMap(
-                                          (input2?: Dynamic): Dynamic =>
-                                            input2.rows,
+                                          (subsection?: Dynamic): Dynamic =>
+                                            subsection.rows,
                                         )
                                       : []
                                   }
@@ -571,21 +571,21 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                   multi={deps.value200.length > 1}
                                   standaloneTranslate={
                                     !!deps.value204?.advanced.some(
-                                      (input2?: Dynamic): Dynamic =>
-                                        input2.prop === "translate" &&
-                                        (input2.mixed ||
-                                          ((input2.value ?? "").trim() !==
+                                      (row?: Dynamic): Dynamic =>
+                                        row.prop === "translate" &&
+                                        (row.mixed ||
+                                          ((row.value ?? "").trim() !==
                                             "" &&
-                                            (input2.value ?? "")
+                                            (row.value ?? "")
                                               .trim()
                                               .toLowerCase() !== "none" &&
-                                            !(input2.value ?? "")
+                                            !(row.value ?? "")
                                               .trim()
                                               .split(/\s+/)
                                               .every(
-                                                (input3?: Dynamic): Dynamic =>
+                                                (token?: Dynamic): Dynamic =>
                                                   parseCssNumber(
-                                                    input3,
+                                                    token,
                                                   )?.value === 0,
                                               ))),
                                     )
@@ -601,47 +601,47 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                       ? "Set Position to Absolute first \u2014 a mounted component ignores margins, so it aligns only by its offsets and never to a centre"
                                       : undefined
                                   }
-                                  onCommitMany={(input2?: Dynamic): Dynamic =>
-                                    deps.value152(input2)
+                                  onCommitMany={(edits?: Dynamic): Dynamic =>
+                                    deps.value152(edits)
                                   }
                                 />
                               </div>
                             ),
-                            input.id === deps.value280[0]?.id && deps.value278,
+                            section.id === deps.value280[0]?.id && deps.value278,
                             (() => {
-                              const _Component =
+                              const LayoutSectionView =
                                 InspectorLayoutSection;
-                              const _props = {
-                                sec: input,
+                              const layoutProps = {
+                                sec: section,
                                 selKey: deps.selectionScopeKey,
                                 isNested: deps.value201,
                                 readOnly: deps.readOnly,
                                 renderRows: deps.value274,
                                 renderRow: deps.value273,
                                 addItemsFor: deps.value272,
-                                onCommitMany: (input2?: Dynamic): Dynamic =>
-                                  deps.value152(input2),
+                                onCommitMany: (edits?: Dynamic): Dynamic =>
+                                  deps.value152(edits),
                               } as const;
-                              const _key = input.id;
-                              return <_Component key={_key} {..._props} />;
+                              const layoutKey = section.id;
+                              return <LayoutSectionView key={layoutKey} {...layoutProps} />;
                             })(),
                           ],
                         } as const;
-                        const _key2 = input.id;
-                        return <_Component2 key={_key2} {..._props2} />;
+                        const sizingKey = section.id;
+                        return <SizingFragment key={sizingKey} {...sizingProps} />;
                       })();
-                    if (input.id === "appearance")
+                    if (section.id === "appearance")
                       return (() => {
-                        const _Component3 =
+                        const AppearanceSectionView =
                           InspectorAppearanceSection;
-                        const _props3 = {
-                          sec: input,
+                        const appearanceProps = {
+                          sec: section,
                           selKey: deps.selectionScopeKey,
                           isNested: deps.value201,
                           readOnly: deps.readOnly,
                           rows: deps.value270,
-                          onCommitMany: (input2?: Dynamic): Dynamic => {
-                            deps.value152(input2);
+                          onCommitMany: (edits?: Dynamic): Dynamic => {
+                            deps.value152(edits);
                             deps.value148();
                           },
                           fillInline: deps.value199
@@ -655,148 +655,148 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                               )
                             : true,
                           hasInline: deps.value199
-                            ? (input2?: Dynamic): Dynamic =>
+                            ? (prop?: Dynamic): Dynamic =>
                                 deps.value199.model.anyHasInlineDecl(
                                   deps.value200,
-                                  input2,
+                                  prop,
                                 )
                             : undefined,
                           uaBorder: deps.value199
                             ? deps.value200.some(
-                                (input2?: Dynamic): Dynamic =>
+                                (tid?: Dynamic): Dynamic =>
                                   /^(button|input|select|textarea|hr|fieldset|iframe)$/.test(
-                                    deps.value199.model.tagName(input2) ?? "",
+                                    deps.value199.model.tagName(tid) ?? "",
                                   ),
                               )
                             : undefined,
                           classHasBorder: deps.value199
                             ? deps.value200.some(
-                                (input2?: Dynamic): Dynamic =>
+                                (tid?: Dynamic): Dynamic =>
                                   expandCssDeclarations(
                                     parseStyleDeclarations(
                                       deps.value199.model.classOnlyStyleAttr(
-                                        input2,
+                                        tid,
                                       ),
                                     ),
                                   ).some(
-                                    (input3?: Dynamic): Dynamic =>
+                                    (declaration?: Dynamic): Dynamic =>
                                       (/^border(-(top|right|bottom|left))?-style$/.test(
-                                        input3.prop,
+                                        declaration.prop,
                                       ) &&
                                         !/^(none|hidden)?$/i.test(
-                                          input3.value.trim(),
+                                          declaration.value.trim(),
                                         )) ||
                                       (/^border(-(top|right|bottom|left))?$/.test(
-                                        input3.prop,
+                                        declaration.prop,
                                       ) &&
                                         !/^(none|hidden|0|0px)?$/i.test(
-                                          input3.value.trim(),
+                                          declaration.value.trim(),
                                         )),
                                   ),
                               )
                             : undefined,
                         } as const;
-                        const _key3 = input.id;
-                        return <_Component3 key={_key3} {..._props3} />;
+                        const appearanceKey = section.id;
+                        return <AppearanceSectionView key={appearanceKey} {...appearanceProps} />;
                       })();
-                    if (deps.value201 && !input.rows.some(deps.value271)) return null;
-                    let value307: Dynamic =
-                        input.id === "text" &&
+                    if (deps.value201 && !section.rows.some(deps.value271)) return null;
+                    let attachedStyle: Dynamic =
+                        section.id === "text" &&
                         deps.value206 !== null &&
                         deps.value206.matchedName !== null &&
                         deps.value13 !== deps.selectionScopeKey,
-                      value308: Dynamic =
-                        input.id === "text" && !deps.value275
+                      textListConfig: Dynamic =
+                        section.id === "text" && !deps.value275
                           ? ((): Dynamic => {
-                              let value310: Dynamic = deps.value200[0],
-                                value311: Dynamic = resolveTextListState(
+                              let firstTid: Dynamic = deps.value200[0],
+                                listState: Dynamic = resolveTextListState(
                                   deps.value199
                                     ? deps.value200.map(
-                                        (input2?: Dynamic): Dynamic =>
+                                        (tid?: Dynamic): Dynamic =>
                                           getTextListKind(
-                                            deps.value199.model.element(input2),
+                                            deps.value199.model.element(tid),
                                           ),
                                       )
                                     : [],
                                   deps.value34,
-                                  deps.value201 ? undefined : value310,
-                                  value310 !== undefined &&
+                                  deps.value201 ? undefined : firstTid,
+                                  firstTid !== undefined &&
                                     !!deps.value199 &&
-                                    deps.value199.model.isTextEditable(value310),
+                                    deps.value199.model.isTextEditable(firstTid),
                                 ),
-                                value312: Dynamic = deps.value201
+                                listOffReason: Dynamic = deps.value201
                                   ? null
-                                  : value311.off,
-                                value313: Dynamic = deps.value32.has(
+                                  : listState.off,
+                                isListPanelOpen: Dynamic = deps.value32.has(
                                   TextListValue,
                                 ),
-                                value314: Dynamic =
-                                  value311.value !== "none" ||
-                                  value311.mixed ||
-                                  value313,
-                                callback7: Dynamic = (
-                                  input2?: Dynamic,
+                                showListSelect: Dynamic =
+                                  listState.value !== "none" ||
+                                  listState.mixed ||
+                                  isListPanelOpen,
+                                changeListKind: Dynamic = (
+                                  listKind?: Dynamic,
                                 ): Dynamic => {
-                                  let value317: Dynamic = listKindToTag(
-                                      input2,
-                                      value311.value,
+                                  let tag: Dynamic = listKindToTag(
+                                      listKind,
+                                      listState.value,
                                     ),
-                                    value318: Dynamic = deps.value67();
-                                  value317 === null ||
-                                    !value318 ||
-                                    value311.off !== null ||
+                                    previewFrame: Dynamic = deps.value67();
+                                  tag === null ||
+                                    !previewFrame ||
+                                    listState.off !== null ||
                                     deps.value201 ||
                                     deps.readOnly ||
-                                    value310 === undefined ||
-                                    (value311.live ||
+                                    firstTid === undefined ||
+                                    (listState.live ||
                                       startPickerTextEdit(
-                                        value318,
-                                        value310,
+                                        previewFrame,
+                                        firstTid,
                                         deps.rootName,
                                       ),
                                     formatPickerText(
-                                      value318,
-                                      value317,
-                                      value310,
+                                      previewFrame,
+                                      tag,
+                                      firstTid,
                                     ));
                                 },
-                                callback8: Dynamic = (): Dynamic =>
-                                  deps.value33((input2?: Dynamic): Dynamic => {
-                                    let values: Dynamic = new Set(input2);
+                                closeListPanel: Dynamic = (): Dynamic =>
+                                  deps.value33((openPanels?: Dynamic): Dynamic => {
+                                    let values: Dynamic = new Set(openPanels);
                                     values.delete(TextListValue);
                                     return values;
                                   }),
-                                value315: Dynamic = value314 ? (
+                                listSelect: Dynamic = showListSelect ? (
                                   <TypographyVariantSelect
                                     key={`${deps.selectionScopeKey}|textlist`}
-                                    value={value311.value}
-                                    mixed={value311.mixed}
+                                    value={listState.value}
+                                    mixed={listState.mixed}
                                     disabled={deps.value201 || deps.readOnly}
                                     disabledReason={
-                                      deps.readOnly ? (ViewOnlyYouCanInspectThisMessage) : (value312)
+                                      deps.readOnly ? (ViewOnlyYouCanInspectThisMessage) : (listOffReason)
                                     }
-                                    onChange={callback7}
+                                    onChange={changeListKind}
                                     onReset={
-                                      value311.value !== "none" &&
-                                      value312 === null &&
+                                      listState.value !== "none" &&
+                                      listOffReason === null &&
                                       !deps.value201 &&
                                       !deps.readOnly
-                                        ? (): Dynamic => callback7("none")
-                                        : value313
-                                          ? callback8
+                                        ? (): Dynamic => changeListKind("none")
+                                        : isListPanelOpen
+                                          ? closeListPanel
                                           : undefined
                                     }
                                   />
                                 ) : null,
-                                value316: Dynamic =
-                                  value314 || value312 !== null
+                                addListItem: Dynamic =
+                                  showListSelect || listOffReason !== null
                                     ? null
                                     : {
                                         get label() { return uiMessage("inspector.session.list"); },
                                         onSelect: (): Dynamic => {
                                           deps.value33(
-                                            (input2?: Dynamic): Dynamic =>
-                                              new Set(input2).add(
+                                            (openPanels?: Dynamic): Dynamic =>
+                                              new Set(openPanels).add(
                                                 TextListValue,
                                               ),
                                           );
@@ -811,88 +811,88 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                           );
                                         },
                                       },
-                                callback9: Dynamic = (
-                                  items3?: Dynamic,
+                                textAlignIndex: Dynamic = (
+                                  rows?: Dynamic,
                                 ): Dynamic => {
-                                  let value317: Dynamic = items3.findIndex(
-                                    (input2?: Dynamic): Dynamic =>
-                                      input2.prop === "text-align",
+                                  let alignIndex: Dynamic = rows.findIndex(
+                                    (row?: Dynamic): Dynamic =>
+                                      row.prop === "text-align",
                                   );
-                                  return value317 < 0
-                                    ? items3.length
-                                    : value317;
+                                  return alignIndex < 0
+                                    ? rows.length
+                                    : alignIndex;
                                 },
-                                callback10: Dynamic = (
-                                  input2?: Dynamic,
+                                renderRowsWithList: Dynamic = (
+                                  rows?: Dynamic,
                                 ): Dynamic => (
                                   <jsxInspectorEditor.Fragment>
                                     {deps.value274(
-                                      input2.slice(0, callback9(input2)),
+                                      rows.slice(0, textAlignIndex(rows)),
                                     )}
-                                    {value315}
+                                    {listSelect}
                                     {deps.value274(
-                                      input2.slice(callback9(input2)),
+                                      rows.slice(textAlignIndex(rows)),
                                     )}
                                   </jsxInspectorEditor.Fragment>
                                 ),
-                                items2: Dynamic = [
+                                addItems: Dynamic = [
                                   ...deps.value272(
-                                    input.rows.slice(
+                                    section.rows.slice(
                                       0,
-                                      callback9(input.rows),
+                                      textAlignIndex(section.rows),
                                     ),
                                   ),
-                                  ...(value316 ? [value316] : []),
+                                  ...(addListItem ? [addListItem] : []),
                                   ...deps.value272(
-                                    input.rows.slice(callback9(input.rows)),
+                                    section.rows.slice(textAlignIndex(section.rows)),
                                   ),
                                 ];
                               return {
-                                withRow: callback10,
-                                addItems: items2,
+                                withRow: renderRowsWithList,
+                                addItems: addItems,
                               };
                             })()
                           : null,
-                      value309: Dynamic = (() => {
-                        const _Component4 = PropertySection;
-                        const _props4 = {
-                          title: input.title,
-                          iconColumn: input.id === "text",
+                      sectionElement: Dynamic = (() => {
+                        const SectionView = PropertySection;
+                        const sectionProps = {
+                          title: section.title,
+                          iconColumn: section.id === "text",
                           actions: deps.value201 ? undefined : (
                             <PropertyActions
-                              section={input.title}
-                              data-testid={`dc-add-${input.id}`}
+                              section={section.title}
+                              data-testid={`dc-add-${section.id}`}
                               items={
-                                value308
-                                  ? value308.addItems
-                                  : deps.value272(input.rows)
+                                textListConfig
+                                  ? textListConfig.addItems
+                                  : deps.value272(section.rows)
                               }
                               disabled={deps.readOnly}
                             />
                           ),
                           children:
-                            input.id === "text" ? (
+                            section.id === "text" ? (
                               ((): Dynamic => {
-                                let value310: Dynamic = value307,
-                                  value311: Dynamic =
+                                let attachedToStyle: Dynamic = attachedStyle,
+                                  styleSelect: Dynamic =
                                     deps.value206 !== null && !deps.value275 ? (
                                       <TypographyStyleSelect
                                         key={`${deps.selectionScopeKey}|textstyle`}
                                         model={deps.value206}
-                                        attached={value310}
+                                        attached={attachedToStyle}
                                         disabled={deps.value201 || deps.readOnly}
                                         onApply={(
-                                          input2?: Dynamic,
+                                          edits?: Dynamic,
                                         ): Dynamic => {
                                           deps.value14(null);
                                           deps.value152(
-                                            input2.map(
+                                            edits.map(
                                               ([
-                                                input3,
-                                                input4,
+                                                prop,
+                                                propValue,
                                               ]: Dynamic): Dynamic => ({
-                                                prop: input3,
-                                                value: input4 ?? null,
+                                                prop: prop,
+                                                value: propValue ?? null,
                                               }),
                                             ),
                                           );
@@ -903,67 +903,67 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                         }
                                       />
                                     ) : null,
-                                  value312: Dynamic = value310
-                                    ? input.rows.filter(
-                                        (input2?: Dynamic): Dynamic =>
+                                  visibleRows: Dynamic = attachedToStyle
+                                    ? section.rows.filter(
+                                        (row?: Dynamic): Dynamic =>
                                           !InspectorEditorFontFamilyFontWeightFontSizeSet.has(
-                                            input2.prop,
+                                            row.prop,
                                           ) ||
-                                          !!input2.mixed ||
-                                          !!input2.companionMixed,
+                                          !!row.mixed ||
+                                          !!row.companionMixed,
                                       )
-                                    : input.rows,
-                                  value313: Dynamic = value312.find(
-                                    (input2?: Dynamic): Dynamic =>
-                                      input2.prop === "line-height",
+                                    : section.rows,
+                                  lineHeightRow: Dynamic = visibleRows.find(
+                                    (row?: Dynamic): Dynamic =>
+                                      row.prop === "line-height",
                                   ),
-                                  value314: Dynamic = value312.find(
-                                    (input2?: Dynamic): Dynamic =>
-                                      input2.prop === "letter-spacing",
+                                  letterSpacingRow: Dynamic = visibleRows.find(
+                                    (row?: Dynamic): Dynamic =>
+                                      row.prop === "letter-spacing",
                                   ),
-                                  callback7: Dynamic = (
-                                    input2?: Dynamic,
+                                  renderTextRows: Dynamic = (
+                                    rows?: Dynamic,
                                   ): Dynamic =>
-                                    value308
-                                      ? value308.withRow(input2)
-                                      : deps.value274(input2);
-                                if (!value313 || !value314)
+                                    textListConfig
+                                      ? textListConfig.withRow(rows)
+                                      : deps.value274(rows);
+                                if (!lineHeightRow || !letterSpacingRow)
                                   return (
                                     <jsxInspectorEditor.Fragment>
-                                      {value311}
-                                      {callback7(value312)}
+                                      {styleSelect}
+                                      {renderTextRows(visibleRows)}
                                     </jsxInspectorEditor.Fragment>
                                   );
-                                let value315: Dynamic = value312.slice(
+                                let rowsBeforeSpacing: Dynamic = visibleRows.slice(
                                     0,
-                                    value312.indexOf(value313),
+                                    visibleRows.indexOf(lineHeightRow),
                                   ),
-                                  value316: Dynamic = value312.filter(
-                                    (input2?: Dynamic): Dynamic =>
-                                      input2 !== value313 &&
-                                      input2 !== value314 &&
-                                      !value315.includes(input2),
+                                  rowsAfterSpacing: Dynamic = visibleRows.filter(
+                                    (row?: Dynamic): Dynamic =>
+                                      row !== lineHeightRow &&
+                                      row !== letterSpacingRow &&
+                                      !rowsBeforeSpacing.includes(row),
                                   );
                                 return (
                                   <jsxInspectorEditor.Fragment>
-                                    {value311}
-                                    {deps.value274(value315)}
+                                    {styleSelect}
+                                    {deps.value274(rowsBeforeSpacing)}
                                     <PropertyTextSpacing
                                       key={`${deps.selectionScopeKey}|textspacing`}
-                                      lh={value313}
-                                      ls={value314}
+                                      lh={lineHeightRow}
+                                      ls={letterSpacingRow}
                                       renderRows={deps.value274}
                                       onCommitMany={deps.value152}
                                     />
-                                    {callback7(value316)}
+                                    {renderTextRows(rowsAfterSpacing)}
                                   </jsxInspectorEditor.Fragment>
                                 );
                               })()
                             ) : (
                               <jsxInspectorEditor.Fragment>
-                                {deps.value274(input.rows)}
-                                {input.id === "media" &&
-                                  input.title === "Video" &&
+                                {deps.value274(section.rows)}
+                                {section.id === "media" &&
+                                  section.title === "Video" &&
                                   !deps.value201 &&
                                   deps.value2?.tids.length === 1 && (<VideoSeekControl
                                       key={deps.selectionScopeKey + "|scrub"}
@@ -980,26 +980,26 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                               </jsxInspectorEditor.Fragment>
                             ),
                         } as const;
-                        const _key4 = input.id;
-                        return <_Component4 key={_key4} {..._props4} />;
+                        const sectionKey = section.id;
+                        return <SectionView key={sectionKey} {...sectionProps} />;
                       })();
-                    return input.id === "effects" &&
+                    return section.id === "effects" &&
                       !deps.value201 &&
                       !deps.value275 &&
                       !deps.readOnly
                       ? (() => {
-                          const _Component5 = CssEffectsSection;
-                          const _props5 = {
-                            rows: input.rows,
-                            shadowTarget: input.shadowTarget,
-                            dropShadowReason: input.dropShadowReason,
+                          const EffectsSectionView = CssEffectsSection;
+                          const effectsProps = {
+                            rows: section.rows,
+                            shadowTarget: section.shadowTarget,
+                            dropShadowReason: section.dropShadowReason,
                             onCommitMany: deps.value152,
                             renderRows: deps.value274,
                             addItemsFor: deps.value272,
-                            fallback: value309,
+                            fallback: sectionElement,
                           } as const;
-                          const _key5 = `effects|${deps.value2 ? `${deps.value2.name}:${deps.value2.tids.join(",")}` : "none"}`;
-                          return <_Component5 key={_key5} {..._props5} />;
+                          const effectsKey = `effects|${deps.value2 ? `${deps.value2.name}:${deps.value2.tids.join(",")}` : "none"}`;
+                          return <EffectsSectionView key={effectsKey} {...effectsProps} />;
                         })()
-                      : value309;
+                      : sectionElement;
                   }

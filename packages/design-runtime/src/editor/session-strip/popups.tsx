@@ -45,12 +45,12 @@ function useSessionPopupFocus(isOpen?: Dynamic, openPopup?: Dynamic): Dynamic {
     bodyRef: Dynamic = (0, reactInspectorArtboardRadius_2.useRef)(
       null,
     ),
-    callback: Dynamic = (): Dynamic =>
+    findInitialFocus: Dynamic = (): Dynamic =>
       SessionStripPopupsHandler(bodyRef.current);
   return {
     byKey: isByKey,
     body: bodyRef,
-    initialFocus: callback,
+    initialFocus: findInitialFocus,
     keyed: {
       onKeyDown: (event?: Dynamic): Dynamic => {
         if (event.key === "Enter" || event.key === " ") setIsByKey(true);
@@ -86,7 +86,7 @@ function useSessionPopupFocus(isOpen?: Dynamic, openPopup?: Dynamic): Dynamic {
             let popoverElement: Dynamic =
                 bodyRef.current?.closest("[data-mc-popover]") ?? null,
               focusTarget: Dynamic =
-                callback() ??
+                findInitialFocus() ??
                 (popoverElement !== null
                   ? (getFocusableElements(popoverElement)[0] ?? null)
                   : null);
@@ -217,8 +217,8 @@ function SessionChoicePopup({
           {choices.map(
             (choice?: Dynamic): Dynamic =>
               (() => {
-                const _Component = SessionStripButton_r;
-                const _props = {
+                const ChoiceButton = SessionStripButton_r;
+                const choiceProps = {
                   "data-testid": testid
                     ? testid + "-" + choice.value
                     : undefined,
@@ -244,8 +244,8 @@ function SessionChoicePopup({
                     choice.value !== selectedValue && onChange(choice.value);
                   },
                 } as const;
-                const _key = choice.value;
-                return <_Component key={_key} {..._props} />;
+                const choiceKey = choice.value;
+                return <ChoiceButton key={choiceKey} {...choiceProps} />;
               })(),
           )}
         </div>
@@ -406,9 +406,9 @@ function SessionTypographyPopup({
                             option.subgroup !==
                               filteredOptions[index - 1]?.subgroup);
                       return (() => {
-                        const _Component2 =
+                        const OptionFragment =
                           reactInspectorArtboardRadius_2.Fragment;
-                        const _props2 = {
+                        const optionProps = {
                           children: [
                             startsGroup ? (
                               <PickerListHeader
@@ -461,8 +461,8 @@ function SessionTypographyPopup({
                             </EditorMenuItem>,
                           ],
                         } as const;
-                        const _key2 = option.value;
-                        return <_Component2 key={_key2} {..._props2} />;
+                        const optionKey = option.value;
+                        return <OptionFragment key={optionKey} {...optionProps} />;
                       })();
                     },
                   )}

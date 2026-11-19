@@ -24,236 +24,236 @@ import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { validateAttributeEdit } from "../attribute-validation";
 
 /** 画板里的文字编辑提交时运行：按目标类型把新文字写回作品（普通元素文字、组件实例的属性值或脚本里的字符串字面量），超长或已失效时提示并放弃，然后推送实时模型、标脏、播报并恢复选中。 */
-export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onTextEditEndedRef: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value: Dynamic; readonly value101: Dynamic; readonly value103: Dynamic; readonly value105: Dynamic; readonly value107: Dynamic; readonly value108: Dynamic; readonly value3: Dynamic; readonly value38: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value52: Dynamic; readonly value53: Dynamic; readonly value54: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic; readonly value68: Dynamic; readonly webviewRef: Dynamic }, input?: Dynamic): Dynamic {
-        input.restarted !== true &&
+export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onTextEditEndedRef: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value: Dynamic; readonly value101: Dynamic; readonly value103: Dynamic; readonly value105: Dynamic; readonly value107: Dynamic; readonly value108: Dynamic; readonly value3: Dynamic; readonly value38: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value52: Dynamic; readonly value53: Dynamic; readonly value54: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic; readonly value68: Dynamic; readonly webviewRef: Dynamic }, edit?: Dynamic): Dynamic {
+        edit.restarted !== true &&
           (deps.webviewRef.current?.blur(),
           (document as Dynamic).hasFocus() && (window as Dynamic).focus(),
           deps.onTextEditEndedRef.current?.());
-        let callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-          input.restarted === true
-            ? selectionReadyAnnouncement(input2)
-            : input2;
+        let announcementFor: Dynamic = (announcement?: Dynamic): Dynamic =>
+          edit.restarted === true
+            ? selectionReadyAnnouncement(announcement)
+            : announcement;
         if (
           deps.readOnlyRef.current ||
-          (input.name || deps.rootName) !== deps.rootName ||
-          (input.html != null && typeof input.html != "string") ||
-          (input.text != null && typeof input.text != "string")
+          (edit.name || deps.rootName) !== deps.rootName ||
+          (edit.html != null && typeof edit.html != "string") ||
+          (edit.text != null && typeof edit.text != "string")
         )
           return;
-        let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value307) return;
-        let value308: Dynamic = input.importTarget
+        let docState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!docState) return;
+        let templateTextValues: Dynamic = edit.importTarget
             ? collectTemplateTextValues(
                 tokenizeScriptLiterals(
-                  value307.pendingScript ??
-                    parseDcHtmlDocument(value307.src)?.js ??
+                  docState.pendingScript ??
+                    parseDcHtmlDocument(docState.src)?.js ??
                     "",
                 ),
                 deps.dcPropsRef.current,
               )
             : null,
-          { importTarget: value309, text: value310 }: Dynamic = input,
-          value311: Dynamic = deps.value38.owes(),
-          value312: Dynamic = deps.value38.newBox() === input.tid,
-          { into: value313, tid: value314 }: Dynamic = relocateTextEditTarget(
+          { importTarget: importTarget, text: editText }: Dynamic = edit,
+          owesSync: Dynamic = deps.value38.owes(),
+          isNewBox: Dynamic = deps.value38.newBox() === edit.tid,
+          { into: targetModel, tid: targetTid }: Dynamic = relocateTextEditTarget(
             deps.value38.shown(),
-            value307.model,
-            input.tid,
-            value308
-              ? (input2?: Dynamic, options?: Dynamic): Dynamic =>
+            docState.model,
+            edit.tid,
+            templateTextValues
+              ? (candidateModel?: Dynamic, candidateTid?: Dynamic): Dynamic =>
                   normalizeComponentTextEdit(
-                    value309,
-                    value310,
-                    input2.importTextTargets(options, value308),
+                    importTarget,
+                    editText,
+                    candidateModel.importTextTargets(candidateTid, templateTextValues),
                   ).kind === "commit"
               : undefined,
           );
-        input = {
-          ...input,
-          tid: value314,
+        edit = {
+          ...edit,
+          tid: targetTid,
         };
-        if (!value313.element(input.tid)) return;
-        let callback8: Dynamic = (): Dynamic => {
-            value313 !== value307.model &&
-              ((value307.model = value307.model.rebuild(
-                value313.serialize(),
+        if (!targetModel.element(edit.tid)) return;
+        let adoptTargetModel: Dynamic = (): Dynamic => {
+            targetModel !== docState.model &&
+              ((docState.model = docState.model.rebuild(
+                targetModel.serialize(),
               )),
               (deps.value108.current = true),
               (deps.value54.current = true),
               deps.value68());
           },
-          callback9: Dynamic = (): Dynamic => {
-            let value323: Dynamic = value311 ? deps.value52() : deps.value49.current;
-            return value323?.name === deps.rootName &&
-              value323.tids.includes(input.tid)
-              ? value323
+          currentTextSelection: Dynamic = (): Dynamic => {
+            let selection: Dynamic = owesSync ? deps.value52() : deps.value49.current;
+            return selection?.name === deps.rootName &&
+              selection.tids.includes(edit.tid)
+              ? selection
               : null;
           },
-          callback10: Dynamic = (): Dynamic => {
-            let value323: Dynamic = callback9(),
-              value324: Dynamic = deps.value67();
-            value323 &&
-              value324 &&
+          reselectAfterEdit: Dynamic = (): Dynamic => {
+            let selection: Dynamic = currentTextSelection(),
+              previewFrame: Dynamic = deps.value67();
+            selection &&
+              previewFrame &&
               setTimeout((): Dynamic => {
-                (!value311 || deps.value53(value323.name, value323.tids)) &&
+                (!owesSync || deps.value53(selection.name, selection.tids)) &&
                   setPickerSelection(
-                    value324,
-                    value323.tids,
-                    value323.name,
+                    previewFrame,
+                    selection.tids,
+                    selection.name,
                   );
               }, 60);
           },
-          callback11: Dynamic = (): Dynamic => {
-            callback10();
-            let value323: Dynamic = callback9();
-            value323 && deps.value105(deps.rootName, [...value323.tids]);
+          reselectAndHighlight: Dynamic = (): Dynamic => {
+            reselectAfterEdit();
+            let selection: Dynamic = currentTextSelection();
+            selection && deps.value105(deps.rootName, [...selection.tids]);
           };
-        if (value308) {
-          let value323: Dynamic = normalizeComponentTextEdit(
-            input.importTarget,
-            input.text,
-            value313.importTextTargets(input.tid, value308),
+        if (templateTextValues) {
+          let importEdit: Dynamic = normalizeComponentTextEdit(
+            edit.importTarget,
+            edit.text,
+            targetModel.importTextTargets(edit.tid, templateTextValues),
           );
-          if (value323.kind === "drop" || value323.kind === "noop") return;
-          if (value323.kind !== "commit") {
+          if (importEdit.kind === "drop" || importEdit.kind === "noop") return;
+          if (importEdit.kind !== "commit") {
             deps.showToast(
-              value323.kind === "toolong"
+              importEdit.kind === "toolong"
                 ? uiMessage("inspector.session.tooMuchTextTryFewer")
                 : uiMessage("inspector.session.yourWordsWerenTKept"),
             );
             deps.incrementSessionEpoch();
             return;
           }
-          let { key: value324, text: value325 }: Dynamic = value323;
+          let { key: importKey, text: importText }: Dynamic = importEdit;
           deps.value101(
             deps.rootName,
-            `textedit-import-${input.tid}-${value324}`,
-            value307,
+            `textedit-import-${edit.tid}-${importKey}`,
+            docState,
           );
-          callback8();
-          value324 === "__text"
-            ? value307.model.setText(input.tid, value325)
-            : value307.model.setAttribute(
-                input.tid,
-                value324.slice(1),
-                value325,
+          adoptTargetModel();
+          importKey === "__text"
+            ? docState.model.setText(edit.tid, importText)
+            : docState.model.setAttribute(
+                edit.tid,
+                importKey.slice(1),
+                importText,
               );
           deps.value66.current = deps.rootName;
-          deps.pushLiveModel(deps.rootName, value307);
+          deps.pushLiveModel(deps.rootName, docState);
           deps.markModelDirty(deps.rootName, {
             now: true,
           });
           deps.incrementSessionEpoch();
           announce(
-            callback7(AccessibilityAnnouncementsLabel_17),
+            announcementFor(AccessibilityAnnouncementsLabel_17),
           );
-          let value326: Dynamic = callback9(),
-            value327: Dynamic = deps.value67();
-          value326 &&
-            value327 &&
+          let selection: Dynamic = currentTextSelection(),
+            previewFrame: Dynamic = deps.value67();
+          selection &&
+            previewFrame &&
             setTimeout((): Dynamic => {
-              deps.value53(value326.name, value326.tids) &&
+              deps.value53(selection.name, selection.tids) &&
                 setPickerSelection(
-                  value327,
-                  value326.tids,
-                  value326.name,
+                  previewFrame,
+                  selection.tids,
+                  selection.name,
                 );
             }, 60);
-          value326 && deps.value105(deps.rootName, [...value326.tids]);
+          selection && deps.value105(deps.rootName, [...selection.tids]);
           return;
         }
         if (
-          !value313.isTextEditable(input.tid) ||
+          !targetModel.isTextEditable(edit.tid) ||
           ClipboardLayoutSnapshotsScriptStyleXmpSet.has(
-            value313.tagName(input.tid) ?? "",
+            targetModel.tagName(edit.tid) ?? "",
           )
         )
           return;
-        if (input.propTarget) {
+        if (edit.propTarget) {
           let current: Dynamic = deps.dcPropsRef.current,
-            value323: Dynamic = normalizeComponentPropEdit(
-              input.propTarget,
-              input.text,
+            propEdit: Dynamic = normalizeComponentPropEdit(
+              edit.propTarget,
+              edit.text,
               current.propsMeta,
               current.values,
             );
-          if (value323.kind === "drop" || value323.kind === "noop") return;
-          if (value323.kind === "toolong") {
+          if (propEdit.kind === "drop" || propEdit.kind === "noop") return;
+          if (propEdit.kind === "toolong") {
             deps.showToast(uiMessage("inspector.session.thatTextIsTooLong"));
             deps.incrementSessionEpoch();
             return;
           }
-          if (value323.kind === "refuse") {
+          if (propEdit.kind === "refuse") {
             deps.showToast(
               uiMessage("inspector.session.theComponentSPropsChanged"),
             );
             deps.incrementSessionEpoch();
             return;
           }
-          let { prop: value324, text: value325 }: Dynamic = value323,
-            value326: Dynamic = !Object.hasOwn(
-              value307.pendingProps ?? {},
-              value324,
+          let { prop: propName, text: propText }: Dynamic = propEdit,
+            isFirstPropEdit: Dynamic = !Object.hasOwn(
+              docState.pendingProps ?? {},
+              propName,
             );
-          value326 &&
-            (deps.value.current[value324] = Object.hasOwn(current.values, value324)
+          isFirstPropEdit &&
+            (deps.value.current[propName] = Object.hasOwn(current.values, propName)
               ? {
                   had: true,
-                  value: current.values[value324],
+                  value: current.values[propName],
                 }
               : {
                   had: false,
                 });
-          current.setProp(value324, value325);
-          value307.pendingPropsBase ??=
-            getDcPropsJson(value307.src) ?? "";
-          deps.value103(deps.rootName, `textedit-prop-${input.tid}`, value307, {
+          current.setProp(propName, propText);
+          docState.pendingPropsBase ??=
+            getDcPropsJson(docState.src) ?? "";
+          deps.value103(deps.rootName, `textedit-prop-${edit.tid}`, docState, {
             kind: "prop",
-            prop: value324,
-            before: value326 ? undefined : value307.pendingProps?.[value324],
-            after: value325,
-            base: value307.pendingPropsBase,
-            display: input.propTarget.value,
-            ...(value326
+            prop: propName,
+            before: isFirstPropEdit ? undefined : docState.pendingProps?.[propName],
+            after: propText,
+            base: docState.pendingPropsBase,
+            display: edit.propTarget.value,
+            ...(isFirstPropEdit
               ? {
-                  liveBefore: deps.value.current[value324],
+                  liveBefore: deps.value.current[propName],
                 }
               : {}),
           });
-          value307.pendingProps = {
-            ...value307.pendingProps,
-            [value324]: value325,
+          docState.pendingProps = {
+            ...docState.pendingProps,
+            [propName]: propText,
           };
           deps.value66.current = deps.rootName;
           deps.markModelDirty(deps.rootName, {
             now: true,
           });
           announce(
-            callback7(AccessibilityAnnouncementsLabel_17),
+            announcementFor(AccessibilityAnnouncementsLabel_17),
           );
           return;
         }
-        if (input.scriptTarget) {
+        if (edit.scriptTarget) {
           let {
-              start: scriptTarget,
-              end: scriptTarget2,
-              quote: scriptTarget3,
-              value: scriptTarget4,
-            }: Dynamic = input.scriptTarget,
-            value323: Dynamic =
-              value307.pendingScript ??
-              parseDcHtmlDocument(value307.src)?.js ??
+              start: scriptStart,
+              end: scriptEnd,
+              quote: scriptQuote,
+              value: scriptValue,
+            }: Dynamic = edit.scriptTarget,
+            scriptSource: Dynamic =
+              docState.pendingScript ??
+              parseDcHtmlDocument(docState.src)?.js ??
               "",
-            value324: Dynamic = tokenizeScriptLiterals(
-              value323,
+            literal: Dynamic = tokenizeScriptLiterals(
+              scriptSource,
             ).find(
-              (input2?: Dynamic): Dynamic =>
-                input2.start === scriptTarget && input2.end === scriptTarget2,
+              (token?: Dynamic): Dynamic =>
+                token.start === scriptStart && token.end === scriptEnd,
             );
           if (
-            !value324 ||
-            value324.quote !== scriptTarget3 ||
-            value324.value !== scriptTarget4
+            !literal ||
+            literal.quote !== scriptQuote ||
+            literal.value !== scriptValue
           ) {
             deps.showToast(
               uiMessage("inspector.session.theComponentSCodeChanged"),
@@ -261,28 +261,28 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             deps.incrementSessionEpoch();
             return;
           }
-          let value325: Dynamic = input.text ?? "";
-          if (value325 === value324.value) return;
-          let value326: Dynamic =
-            value323.slice(0, scriptTarget) +
-            quoteScriptString(value325, scriptTarget3) +
-            value323.slice(scriptTarget2);
-          if (value326 === value323) return;
-          value307.pendingScriptBase ??=
-            parseDcHtmlDocument(value307.src)?.js ?? "";
-          deps.value103(deps.rootName, `textedit-script-${input.tid}`, value307, {
+          let newText: Dynamic = edit.text ?? "";
+          if (newText === literal.value) return;
+          let newScript: Dynamic =
+            scriptSource.slice(0, scriptStart) +
+            quoteScriptString(newText, scriptQuote) +
+            scriptSource.slice(scriptEnd);
+          if (newScript === scriptSource) return;
+          docState.pendingScriptBase ??=
+            parseDcHtmlDocument(docState.src)?.js ?? "";
+          deps.value103(deps.rootName, `textedit-script-${edit.tid}`, docState, {
             kind: "script",
-            before: value307.pendingScript,
-            after: value326,
-            base: value307.pendingScriptBase,
+            before: docState.pendingScript,
+            after: newScript,
+            base: docState.pendingScriptBase,
           });
-          value307.pendingScript = value326;
+          docState.pendingScript = newScript;
           deps.value66.current = deps.rootName;
           emitEditorEvent("dc-update", {
             name: deps.rootName,
-            path: value307.path,
+            path: docState.path,
             kind: "js",
-            content: value326,
+            content: newScript,
             streaming: false,
             viewportKey: "dc-model",
           });
@@ -291,203 +291,203 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           });
           deps.incrementSessionEpoch();
           announce(
-            callback7(AccessibilityAnnouncementsLabel_17),
+            announcementFor(AccessibilityAnnouncementsLabel_17),
           );
           return;
         }
-        let value315: Dynamic = value313.text(input.tid),
-          value316: Dynamic = input.html ?? "",
-          value317: Dynamic = value316.includes("<")
-            ? sanitizePastedHtml(value316)
-            : value316,
-          value318: Dynamic = input.text ?? "",
-          value319: Dynamic =
-            value318.trim() === "" &&
-            !/<(img|svg|video|iframe)/i.test(value317);
-        if (value319 && (value313 !== value307.model || value312)) return;
-        let value320: Dynamic =
+        let currentText: Dynamic = targetModel.text(edit.tid),
+          rawHtml: Dynamic = edit.html ?? "",
+          cleanHtml: Dynamic = rawHtml.includes("<")
+            ? sanitizePastedHtml(rawHtml)
+            : rawHtml,
+          newPlainText: Dynamic = edit.text ?? "",
+          isEmpty: Dynamic =
+            newPlainText.trim() === "" &&
+            !/<(img|svg|video|iframe)/i.test(cleanHtml);
+        if (isEmpty && (targetModel !== docState.model || isNewBox)) return;
+        let isPlaceholder: Dynamic =
           placeholderTextElement(
-            value307.model,
+            docState.model,
             deps.value107.current,
-          ) === input.tid;
-        deps.value107.current === input.tid && (deps.value107.current = null);
-        if (value320 && value319) {
-          deps.value101(deps.rootName, `textedit-${input.tid}`, value307);
-          value307.model.removeElement(input.tid);
-          value307.model = value307.model.rebuild(value307.model.serialize());
-          value311 && (deps.value54.current = true);
+          ) === edit.tid;
+        deps.value107.current === edit.tid && (deps.value107.current = null);
+        if (isPlaceholder && isEmpty) {
+          deps.value101(deps.rootName, `textedit-${edit.tid}`, docState);
+          docState.model.removeElement(edit.tid);
+          docState.model = docState.model.rebuild(docState.model.serialize());
+          owesSync && (deps.value54.current = true);
           deps.value66.current = deps.rootName;
-          deps.pushLiveModel(deps.rootName, value307);
+          deps.pushLiveModel(deps.rootName, docState);
           deps.markModelDirty(deps.rootName, {
             now: true,
           });
-          let value323: Dynamic = deps.value67();
-          value323 && setPickerSelection(value323, null, null);
+          let previewFrame: Dynamic = deps.value67();
+          previewFrame && setPickerSelection(previewFrame, null, null);
           deps.value50.current++;
           deps.value3(null);
           deps.incrementSessionEpoch();
           announce(
-            callback7(AccessibilityAnnouncementsLabel_23),
+            announcementFor(AccessibilityAnnouncementsLabel_23),
           );
           return;
         }
-        let value321: Dynamic = /<[a-z][\s\S]*>/i.test(value317);
-        if (!value321 && value318 === value315) {
-          deps.pushLiveModel(deps.rootName, value307);
-          callback10();
+        let hasHtmlMarkup: Dynamic = /<[a-z][\s\S]*>/i.test(cleanHtml);
+        if (!hasHtmlMarkup && newPlainText === currentText) {
+          deps.pushLiveModel(deps.rootName, docState);
+          reselectAfterEdit();
           return;
         }
-        deps.value101(deps.rootName, `textedit-${input.tid}`, value307);
-        callback8();
-        value307.model.tagName(input.tid) === "p" &&
-          /<(ul|ol|div|p|h[1-6]|blockquote|pre|table)\b/i.test(value317) &&
-          value307.model.setTagName(input.tid, "div");
-        let value322: Dynamic = null;
-        value321 || value315 == null
-          ? (value307.model.setInnerHtml(input.tid, value317),
-            (value307.model = value307.model.rebuild(
-              value307.model.serialize(),
+        deps.value101(deps.rootName, `textedit-${edit.tid}`, docState);
+        adoptTargetModel();
+        docState.model.tagName(edit.tid) === "p" &&
+          /<(ul|ol|div|p|h[1-6]|blockquote|pre|table)\b/i.test(cleanHtml) &&
+          docState.model.setTagName(edit.tid, "div");
+        let newLinkTid: Dynamic = null;
+        hasHtmlMarkup || currentText == null
+          ? (docState.model.setInnerHtml(edit.tid, cleanHtml),
+            (docState.model = docState.model.rebuild(
+              docState.model.serialize(),
             )),
-            (value322 = value307.model.takeMarkerAttr(
+            (newLinkTid = docState.model.takeMarkerAttr(
               DcLinkNewAttribute,
-              input.tid,
+              edit.tid,
             )),
-            value311 &&
-              input.restarted !== true &&
+            owesSync &&
+              edit.restarted !== true &&
               ((deps.value54.current = true),
-              value322 == null &&
+              newLinkTid == null &&
                 isOtherSelection(
                   deps.value52(),
                   deps.rootName,
-                  input.tid,
+                  edit.tid,
                 ) &&
                 deps.value68()))
-          : value307.model.setText(input.tid, value318);
+          : docState.model.setText(edit.tid, newPlainText);
         deps.value66.current = deps.rootName;
-        deps.pushLiveModel(deps.rootName, value307);
+        deps.pushLiveModel(deps.rootName, docState);
         deps.markModelDirty(deps.rootName, {
           now: true,
         });
         deps.incrementSessionEpoch();
         announce(
-          callback7(AccessibilityAnnouncementsLabel_17),
+          announcementFor(AccessibilityAnnouncementsLabel_17),
         );
-        if (value322 != null) {
-          let value323: Dynamic = value322,
-            value324: Dynamic = deps.value67();
-          value324 &&
+        if (newLinkTid != null) {
+          let linkTid: Dynamic = newLinkTid,
+            previewFrame: Dynamic = deps.value67();
+          previewFrame &&
             setTimeout((): Dynamic => {
-              (!value311 || deps.value53(deps.rootName, [value323])) &&
+              (!owesSync || deps.value53(deps.rootName, [linkTid])) &&
                 setPickerSelection(
-                  value324,
-                  [value323],
+                  previewFrame,
+                  [linkTid],
                   deps.rootName,
                 );
             }, 60);
-          deps.value105(deps.rootName, [value323], "a", 1);
+          deps.value105(deps.rootName, [linkTid], "a", 1);
           return;
         }
-        callback11();
+        reselectAndHighlight();
       }
 
 /** 链接编辑结束时运行：结束画板内的文字编辑后，链接地址为空就拆掉 <a> 保留其内容，否则校验并改写 href，记录撤销、推送实时模型并重新选中；失败时提示重试。 */
-export async function commitLinkEditResult(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onTextEditEndedRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value108: Dynamic; readonly value196: Dynamic; readonly value3: Dynamic; readonly value38: Dynamic; readonly value50: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic; readonly webviewRef: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value307?: Dynamic): Promise<Dynamic> {
-        if ((options || deps.rootName) !== deps.rootName) {
-          let value313: Dynamic = deps.value67();
-          value313 && cancelPickerLinkEdit(value313);
+export async function commitLinkEditResult(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onTextEditEndedRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value108: Dynamic; readonly value196: Dynamic; readonly value3: Dynamic; readonly value38: Dynamic; readonly value50: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic; readonly webviewRef: Dynamic }, tid?: Dynamic,
+        templateName?: Dynamic,
+        href?: Dynamic,
+        source?: Dynamic): Promise<Dynamic> {
+        if ((templateName || deps.rootName) !== deps.rootName) {
+          let frameForCancel: Dynamic = deps.value67();
+          frameForCancel && cancelPickerLinkEdit(frameForCancel);
           return;
         }
-        let value308: Dynamic = deps.value67(),
-          value309: Dynamic = input,
-          value310: Dynamic = deps.value38.shown();
+        let previewFrame: Dynamic = deps.value67(),
+          resolvedTid: Dynamic = tid,
+          shownBox: Dynamic = deps.value38.shown();
         deps.value108.current = false;
-        value308 &&
-          (await deps.value196.current(undefined, (input2?: Dynamic): Dynamic => {
-            let value313: Dynamic = deps.modelRef.current.state(deps.rootName)?.model;
-            value313 &&
-              value307 === "frame" &&
-              (value309 = relocateSelectedTextElement(
-                deps.value38.shown() ?? value310,
-                value313,
-                input,
-                input2,
+        previewFrame &&
+          (await deps.value196.current(undefined, (renderedState?: Dynamic): Dynamic => {
+            let latestModel: Dynamic = deps.modelRef.current.state(deps.rootName)?.model;
+            latestModel &&
+              source === "frame" &&
+              (resolvedTid = relocateSelectedTextElement(
+                deps.value38.shown() ?? shownBox,
+                latestModel,
+                tid,
+                renderedState,
               ));
           }),
           deps.webviewRef.current?.blur(),
           (window as Dynamic).focus(),
           deps.onTextEditEndedRef.current?.());
-        let value311: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (deps.value108.current ? value307 === "model" : value309 === null) {
+        let docState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (deps.value108.current ? source === "model" : resolvedTid === null) {
           deps.showToast(
-            context == null
+            href == null
               ? uiMessage("inspector.session.linkNotRemovedTryAgain")
               : uiMessage("inspector.session.linkNotChangedTryAgain"),
           );
           return;
         }
-        deps.value108.current || (input = value309);
+        deps.value108.current || (tid = resolvedTid);
         if (
-          !value311 ||
-          !value311.model.element(input) ||
-          value311.model.tagName(input) !== "a"
+          !docState ||
+          !docState.model.element(tid) ||
+          docState.model.tagName(tid) !== "a"
         )
           return;
-        if (context == null) {
-          let redo: Dynamic = value311.redo,
-            value313: Dynamic = deps.value101(
+        if (href == null) {
+          let redo: Dynamic = docState.redo,
+            undoEntry: Dynamic = deps.value101(
               deps.rootName,
               `link-unwrap-${Date.now()}`,
-              value311,
+              docState,
             ),
-            value314: Dynamic = value311.model.unwrapElement(input);
-          if (!value314) {
-            deps.value102(value311, value313, redo);
+            unwrappedElements: Dynamic = docState.model.unwrapElement(tid);
+          if (!unwrappedElements) {
+            deps.value102(docState, undoEntry, redo);
             return;
           }
-          value311.model.restamp();
+          docState.model.restamp();
           deps.value66.current = deps.rootName;
-          deps.pushLiveModel(deps.rootName, value311);
+          deps.pushLiveModel(deps.rootName, docState);
           deps.markModelDirty(deps.rootName);
           deps.incrementSessionEpoch();
-          let value315: Dynamic = value314
+          let unwrappedTids: Dynamic = unwrappedElements
             .map(
               (element?: Dynamic): Dynamic =>
                 parseInt(element.getAttribute("data-dc-tpl") ?? "-1", 10),
             )
-            .filter((input2?: Dynamic): Dynamic => input2 >= 0);
-          value315.length > 0
-            ? deps.value105(deps.rootName, value315)
-            : (value308 &&
-                setPickerSelection(value308, null, null),
+            .filter((tidNumber?: Dynamic): Dynamic => tidNumber >= 0);
+          unwrappedTids.length > 0
+            ? deps.value105(deps.rootName, unwrappedTids)
+            : (previewFrame &&
+                setPickerSelection(previewFrame, null, null),
               deps.value50.current++,
               deps.value3(null));
-          deps.value8(`${value311.path}: removed link (kept content)`);
+          deps.value8(`${docState.path}: removed link (kept content)`);
           return;
         }
-        let value312: Dynamic = validateAttributeEdit(
+        let hrefEdit: Dynamic = validateAttributeEdit(
           "@href",
-          context,
-          [value311.model.tagName(input)],
+          href,
+          [docState.model.tagName(tid)],
         );
-        if (!value312.ok) {
-          deps.showToast(value312.message);
+        if (!hrefEdit.ok) {
+          deps.showToast(hrefEdit.message);
           return;
         }
-        deps.value101(deps.rootName, `link-href-${input}`, value311);
-        value311.model.setAttribute(input, "href", value312.value);
+        deps.value101(deps.rootName, `link-href-${tid}`, docState);
+        docState.model.setAttribute(tid, "href", hrefEdit.value);
         deps.value66.current = deps.rootName;
-        deps.pushLiveModel(deps.rootName, value311);
+        deps.pushLiveModel(deps.rootName, docState);
         deps.markModelDirty(deps.rootName);
         deps.incrementSessionEpoch();
-        deps.value105(deps.rootName, [input], "a", 1);
-        value308 &&
+        deps.value105(deps.rootName, [tid], "a", 1);
+        previewFrame &&
           setTimeout(
             (): Dynamic =>
-              setPickerSelection(value308, [input], deps.rootName),
+              setPickerSelection(previewFrame, [tid], deps.rootName),
             120,
           );
-        deps.value8(`${value311.path}: set link destination ${value312.value}`);
+        deps.value8(`${docState.path}: set link destination ${hrefEdit.value}`);
       }

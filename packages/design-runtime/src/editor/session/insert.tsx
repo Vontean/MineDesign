@@ -48,100 +48,100 @@ import { uploadDesignFile } from "../../canvas/working-state";
 import { videoUploadFailureMessage } from "../media/video-upload";
 
 /** 粘贴或用工具放置内容时运行：把一段 HTML 插入到目标元素之后或画板根部（必要时先把 SVG 图形提升到根部），推送实时模型、标脏并选中新插入的元素。 */
-export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value51: Dynamic; readonly value62: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value307: Dynamic = true): Dynamic {
-        let value308: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value308) return [];
+export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value51: Dynamic; readonly value62: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, html?: Dynamic,
+        undoLabel?: Dynamic,
+        placement?: Dynamic,
+        shouldSelect: Dynamic = true): Dynamic {
+        let docState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!docState) return [];
         let current: Dynamic = deps.value49.current,
-          value309: Dynamic =
+          selectedTids: Dynamic =
             current && current.name === deps.rootName
               ? current.tids.filter(
-                  (input2?: Dynamic): Dynamic =>
-                    value308.model.element(input2) != null,
+                  (tid?: Dynamic): Dynamic =>
+                    docState.model.element(tid) != null,
                 )
               : [],
-          value310: Dynamic =
-            value309.length > 0
+          anchorTid: Dynamic =
+            selectedTids.length > 0
               ? Math.max(
-                  ...value309.map(
-                    (input2?: Dynamic): Dynamic =>
+                  ...selectedTids.map(
+                    (tid?: Dynamic): Dynamic =>
                       promoteSvgShapeToRoot(
-                        value308.model,
-                        input2,
+                        docState.model,
+                        tid,
                       ),
                   ),
                 )
               : null,
-          value311: Dynamic = context ? context.targetTid : value310,
-          value312: Dynamic = context
-            ? context.position
-            : value310 == null
+          targetTid: Dynamic = placement ? placement.targetTid : anchorTid,
+          position: Dynamic = placement
+            ? placement.position
+            : anchorTid == null
               ? "root-end"
               : "after",
-          redo: Dynamic = value308.redo,
-          value313: Dynamic = deps.value101(deps.rootName, options, value308),
-          value314: Dynamic = insertHtmlIntoModel(
-            value308,
-            input,
+          redo: Dynamic = docState.redo,
+          undoEntry: Dynamic = deps.value101(deps.rootName, undoLabel, docState),
+          insertedTids: Dynamic = insertHtmlIntoModel(
+            docState,
+            html,
             {
-              targetTid: value311,
-              position: value312,
+              targetTid: targetTid,
+              position: position,
             },
           );
-        if (value314.length === 0) {
-          deps.value102(value308, value313, redo);
+        if (insertedTids.length === 0) {
+          deps.value102(docState, undoEntry, redo);
           return [];
         }
         deps.value66.current = deps.rootName;
-        deps.pushLiveModel(deps.rootName, value308);
+        deps.pushLiveModel(deps.rootName, docState);
         deps.markModelDirty(deps.rootName);
         deps.incrementSessionEpoch();
-        let value315: Dynamic = deps.value67();
-        if (value307) {
-          let value316: Dynamic = deps.value106(value308, value314);
-          deps.value105(deps.rootName, value314);
-          value316 && (deps.value62.current = deps.value50.current);
-          let current2: Dynamic = deps.value51.current;
-          value315 &&
+        let previewFrame: Dynamic = deps.value67();
+        if (shouldSelect) {
+          let selectionSyncFlag: Dynamic = deps.value106(docState, insertedTids);
+          deps.value105(deps.rootName, insertedTids);
+          selectionSyncFlag && (deps.value62.current = deps.value50.current);
+          let selectionAtInsert: Dynamic = deps.value51.current;
+          previewFrame &&
             setTimeout((): Dynamic => {
-              let current3: Dynamic = deps.value49.current;
-              ((deps.value51.current === current2 &&
-                current2?.seq === deps.value50.current) ||
-                (current3?.name === deps.rootName &&
+              let currentSelection: Dynamic = deps.value49.current;
+              ((deps.value51.current === selectionAtInsert &&
+                selectionAtInsert?.seq === deps.value50.current) ||
+                (currentSelection?.name === deps.rootName &&
                   InspectorEditorEvery(
-                    current3.tids,
-                    value314,
+                    currentSelection.tids,
+                    insertedTids,
                   ))) &&
-                setPickerSelection(value315, value314, deps.rootName);
+                setPickerSelection(previewFrame, insertedTids, deps.rootName);
             }, 60);
         } else
           deps.value49.current?.name === deps.rootName &&
-            (value315 &&
-              setPickerSelection(value315, null, null),
+            (previewFrame &&
+              setPickerSelection(previewFrame, null, null),
             deps.value50.current++,
             deps.value3(null));
-        return value314;
+        return insertedTids;
       }
 
 /** 用绘制类工具（文字、形状、线条、箭头、自由绘制）在画板上点击或拖出范围时运行：生成对应的 HTML 插入画板，文字工具会接管延迟输入并进入编辑；放入静态定位容器时把容器改为相对定位，最后切回选择工具。 */
-export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUntilRef: Dynamic; readonly filePath: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly sessionAliveRef: Dynamic; readonly setTool: Dynamic; readonly toolRef: Dynamic; readonly value107: Dynamic; readonly value163: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic): Promise<Dynamic> {
-        let value307: Dynamic =
+export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUntilRef: Dynamic; readonly filePath: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly sessionAliveRef: Dynamic; readonly setTool: Dynamic; readonly toolRef: Dynamic; readonly value107: Dynamic; readonly value163: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic }, placement?: Dynamic,
+        toolOverride?: Dynamic,
+        providedTextInput?: Dynamic): Promise<Dynamic> {
+        let isDrawActive: Dynamic =
             deps.toolRef.current === "draw" ||
             Date.now() < deps.drawExitGraceUntilRef.current,
-          value308: Dynamic =
-            input.path && value307 ? "draw" : (options ?? deps.toolRef.current);
+          tool: Dynamic =
+            placement.path && isDrawActive ? "draw" : (toolOverride ?? deps.toolRef.current);
         if (
-          value308 === "select" ||
-          value308 === "interact" ||
-          value308 === "hand"
+          tool === "select" ||
+          tool === "interact" ||
+          tool === "hand"
         )
           return;
-        let value309: Dynamic =
-            value308 === "arrow"
+        let html: Dynamic =
+            tool === "arrow"
               ? arrowDrawingHtml(
                   defaultLineLength,
                   0,
@@ -150,212 +150,212 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
                   "",
                   defaultAnnotationStrokeColor,
                 )
-              : defaultToolTemplates[value308],
-          value310: Dynamic =
-            value308 !== "text"
+              : defaultToolTemplates[tool],
+          textInput: Dynamic =
+            tool !== "text"
               ? null
-              : options === undefined
+              : toolOverride === undefined
                 ? beginDeferredTextInput()
-                : (context ?? null);
-        if (value308 === "text") {
-          if (options === undefined && value310 === null) return;
-          let value313: Dynamic = deps.value67(),
-            value314: Dynamic = value313
-              ? await getPickerFirstTextFont(value313)
+                : (providedTextInput ?? null);
+        if (tool === "text") {
+          if (toolOverride === undefined && textInput === null) return;
+          let previewFrame: Dynamic = deps.value67(),
+            firstTextFont: Dynamic = previewFrame
+              ? await getPickerFirstTextFont(previewFrame)
               : null;
           if (!deps.sessionAliveRef.current) {
-            value310 !== null &&
-              finishDeferredTextInput("edit", value310);
+            textInput !== null &&
+              finishDeferredTextInput("edit", textInput);
             return;
           }
-          let value315: Dynamic =
-            typeof value314 == "string" && value314
+          let fontStyleEdits: Dynamic =
+            typeof firstTextFont == "string" && firstTextFont
               ? normalizeStyleEdits([
-                  ["font-family", value314.replace(/"/g, "'")],
+                  ["font-family", firstTextFont.replace(/"/g, "'")],
                 ])
               : [];
-          if (value315.length > 0) {
-            let value316: Dynamic = value315[0][1];
-            value309 = value309.replace(
+          if (fontStyleEdits.length > 0) {
+            let fontFamilyValue: Dynamic = fontStyleEdits[0][1];
+            html = html.replace(
               /style="([^"]*)"/,
-              (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                `style="${options2}; font-family: ${value316}"`,
+              (match?: Dynamic, styleAttr?: Dynamic): Dynamic =>
+                `style="${styleAttr}; font-family: ${fontFamilyValue}"`,
             );
           }
         }
-        if (value308 === "draw") {
-          if (!input.path || !input.rect) {
-            input.endTool && deps.setTool("select");
+        if (tool === "draw") {
+          if (!placement.path || !placement.rect) {
+            placement.endTool && deps.setTool("select");
             return;
           }
-          let rect: Dynamic = input.rect;
-          value309 = `<svg width="${rect.w}" height="${rect.h}" viewBox="0 0 ${rect.w} ${rect.h}" preserveAspectRatio="none" style="position: absolute; left: ${rect.x}px; top: ${rect.y}px; width: ${rect.w}px; height: ${rect.h}px; overflow: visible; fill: none; stroke: ${defaultAnnotationStrokeColor}; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="${input.path.d}" vector-effect="non-scaling-stroke"></path></svg>`;
+          let rect: Dynamic = placement.rect;
+          html = `<svg width="${rect.w}" height="${rect.h}" viewBox="0 0 ${rect.w} ${rect.h}" preserveAspectRatio="none" style="position: absolute; left: ${rect.x}px; top: ${rect.y}px; width: ${rect.w}px; height: ${rect.h}px; overflow: visible; fill: none; stroke: ${defaultAnnotationStrokeColor}; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="${placement.path.d}" vector-effect="non-scaling-stroke"></path></svg>`;
         }
-        if ((value308 === "arrow" || value308 === "line") && input.rect) {
-          let rect: Dynamic = input.rect,
-            value313: Dynamic =
-              value308 === "arrow"
+        if ((tool === "arrow" || tool === "line") && placement.rect) {
+          let rect: Dynamic = placement.rect,
+            buildLineHtml: Dynamic =
+              tool === "arrow"
                 ? arrowDrawingHtml
                 : lineDrawingHtml,
-            { dx: value314, dy: value315 }: Dynamic = lineDrawingInset(rect.w, rect.h);
-          value309 = value313(
+            { dx: insetX, dy: insetY }: Dynamic = lineDrawingInset(rect.w, rect.h);
+          html = buildLineHtml(
             rect.w,
             rect.h,
-            input.dir?.x ?? 1,
-            input.dir?.y ?? -1,
-            `position: absolute; left: ${rect.x - value314}px; top: ${rect.y - value315}px; `,
+            placement.dir?.x ?? 1,
+            placement.dir?.y ?? -1,
+            `position: absolute; left: ${rect.x - insetX}px; top: ${rect.y - insetY}px; `,
             defaultAnnotationStrokeColor,
           );
         }
-        let value311: Dynamic =
-          (input.name ?? deps.rootName) === deps.rootName && input.targetTid != null;
+        let isRootTarget: Dynamic =
+          (placement.name ?? deps.rootName) === deps.rootName && placement.targetTid != null;
         if (
-          input.rect &&
-          value308 !== "draw" &&
-          value308 !== "arrow" &&
-          value308 !== "line"
+          placement.rect &&
+          tool !== "draw" &&
+          tool !== "arrow" &&
+          tool !== "line"
         ) {
-          let rect: Dynamic = input.rect;
-          value309 = value309.replace(
+          let rect: Dynamic = placement.rect;
+          html = html.replace(
             /style="([^"]*)"/,
-            (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-              `style="${options2}; position: absolute; left: ${rect.x}px; top: ${rect.y}px${rect.w > 0 ? `; width: ${rect.w}px` : ""}${rect.h > 0 ? `; height: ${rect.h}px` : ""}"`,
+            (match?: Dynamic, styleAttr?: Dynamic): Dynamic =>
+              `style="${styleAttr}; position: absolute; left: ${rect.x}px; top: ${rect.y}px${rect.w > 0 ? `; width: ${rect.w}px` : ""}${rect.h > 0 ? `; height: ${rect.h}px` : ""}"`,
           );
         }
-        if (value308 === "text") {
-          let value313: Dynamic = deps.value67();
-          value313 && notePickerTextInsert(value313);
+        if (tool === "text") {
+          let previewFrame: Dynamic = deps.value67();
+          previewFrame && notePickerTextInsert(previewFrame);
         }
-        let value312: Dynamic = deps.value163(
-          value309,
-          `insert-${value308}-${Date.now()}`,
-          value311
+        let insertedTids: Dynamic = deps.value163(
+          html,
+          `insert-${tool}-${Date.now()}`,
+          isRootTarget
             ? {
-                targetTid: input.targetTid,
-                position: input.position,
+                targetTid: placement.targetTid,
+                position: placement.position,
               }
             : {
                 targetTid: null,
                 position: "root-end",
               },
-          value308 !== "draw",
+          tool !== "draw",
         );
-        value308 === "draw" &&
+        tool === "draw" &&
           deps.value8(
             `${deps.modelRef.current.state(deps.rootName)?.path ?? deps.filePath}: drew a freehand SVG path \u2014 use the screenshot tool to view it`,
           );
-        if (value308 === "text") {
-          let value313: Dynamic = deps.value67(),
-            value314: Dynamic =
-              value313 && value312 && value312.length > 0 && value310 !== null
-                ? attachDeferredTextSink(value310, {
-                    key: (input2?: Dynamic): Dynamic =>
-                      pickerHeldTextKey(value313, input2),
-                    drop: (input2?: Dynamic): Dynamic => {
-                      !input2 &&
-                        deps.value107.current === value312[0] &&
+        if (tool === "text") {
+          let previewFrame: Dynamic = deps.value67(),
+            textSink: Dynamic =
+              previewFrame && insertedTids && insertedTids.length > 0 && textInput !== null
+                ? attachDeferredTextSink(textInput, {
+                    key: (typed?: Dynamic): Dynamic =>
+                      pickerHeldTextKey(previewFrame, typed),
+                    drop: (isKept?: Dynamic): Dynamic => {
+                      !isKept &&
+                        deps.value107.current === insertedTids[0] &&
                         (deps.value107.current = null);
                       dropPickerInsertedTextEdit(
-                        value313,
-                        input2,
+                        previewFrame,
+                        isKept,
                       );
                     },
                   })
                 : null;
-          !value313 || !value312 || !value314
-            ? (value310 !== null &&
-                finishDeferredTextInput("edit", value310),
-              value313 &&
+          !previewFrame || !insertedTids || !textSink
+            ? (textInput !== null &&
+                finishDeferredTextInput("edit", textInput),
+              previewFrame &&
                 !hasDeferredTextSink() &&
-                dropPickerInsertedTextEdit(value313, false))
-            : ((deps.value107.current = value312[0]),
+                dropPickerInsertedTextEdit(previewFrame, false))
+            : ((deps.value107.current = insertedTids[0]),
               startPickerInsertedTextEdit(
-                value313,
-                value312[0],
+                previewFrame,
+                insertedTids[0],
                 deps.rootName,
-                value314.typed,
-                value314.until,
+                textSink.typed,
+                textSink.until,
               ));
         }
-        if (input.rect && value311 && input.targetTid != null) {
-          let value313: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (placement.rect && isRootTarget && placement.targetTid != null) {
+          let docState: Dynamic = deps.modelRef.current.state(deps.rootName);
           if (
-            value313 &&
-            !value313.model.inlineStyleValue(input.targetTid, "position")
+            docState &&
+            !docState.model.inlineStyleValue(placement.targetTid, "position")
           ) {
-            let value314: Dynamic = value313.model.element(input.targetTid),
-              value315: Dynamic = deps.value67();
-            ((value315
+            let targetElement: Dynamic = docState.model.element(placement.targetTid),
+              previewFrame: Dynamic = deps.value67();
+            ((previewFrame
               ? await inspectPickerSelection(
-                  value315,
-                  input.targetTid,
+                  previewFrame,
+                  placement.targetTid,
                   deps.rootName,
                   ["position"],
                 )
               : null
             )?.computed.position ?? "static") === "static" &&
-              value313.model.element(input.targetTid) === value314 &&
-              (value313.model.setStyleProperty(
-                input.targetTid,
+              docState.model.element(placement.targetTid) === targetElement &&
+              (docState.model.setStyleProperty(
+                placement.targetTid,
                 "position",
                 "relative",
               ),
-              deps.pushLiveModel(deps.rootName, value313),
+              deps.pushLiveModel(deps.rootName, docState),
               deps.markModelDirty(deps.rootName),
               deps.incrementSessionEpoch());
           }
         }
-        (value308 !== "draw" || input.endTool) && deps.setTool("select");
+        (tool !== "draw" || placement.endTool) && deps.setTool("select");
       }
 
 /** 粘贴或拖入图片文件后运行：读取图片尺寸，按落点找到可容纳的容器（含幻灯片舞台、空画板），上传并插入图片元素，失败或目标不能放图片时提示。 */
 export async function insertImageFilesIntoArtboard(deps: { readonly fileDirectory: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pendingStampEditsRef: Dynamic; readonly projectPath: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value163: Dynamic; readonly value38: Dynamic; readonly value92: Dynamic }, dataset?: Dynamic,
-        items2?: Dynamic,
-        context?: Dynamic): Promise<Dynamic> {
-        let value307: Dynamic =
+        files?: Dynamic,
+        dropContext?: Dynamic): Promise<Dynamic> {
+        let shownBox: Dynamic =
             dataset.source === "paste" ? null : deps.value38.shown(),
-          value308: Dynamic =
+          verb: Dynamic =
             dataset.source === "paste" ? "pasted" : "dropped",
-          value309: Dynamic = items2.map(
-            (input?: Dynamic): Dynamic =>
-              imageHeaderDimensions(input),
+          sizePromises: Dynamic = files.map(
+            (file?: Dynamic): Dynamic =>
+              imageHeaderDimensions(file),
           ),
-          value310: Dynamic = items2.map(
-            (input?: Dynamic, options?: Dynamic): Dynamic =>
-              (isSvgFile(input)
-                ? previewImageFile(input)
+          previewPromises: Dynamic = files.map(
+            (file?: Dynamic, index?: Dynamic): Dynamic =>
+              (isSvgFile(file)
+                ? previewImageFile(file)
                 : Promise.all([
-                    context.sized[options],
-                    value309[options],
+                    dropContext.sized[index],
+                    sizePromises[index],
                   ]).then(
-                    ([input2, input3]: Dynamic): Dynamic =>
-                      input2
-                        ? previewImageFile(input, {
+                    ([isSized, head]: Dynamic): Dynamic =>
+                      isSized
+                        ? previewImageFile(file, {
                             sized: true,
-                            head: input3,
+                            head: head,
                           })
                         : null,
                   )
               ).catch((): Dynamic => null),
           );
         deps.value92.current && (await deps.value92.current);
-        let value311: Dynamic =
+        let hasTargetTid: Dynamic =
             (dataset.name ?? deps.rootName) === deps.rootName &&
             dataset.targetTid != null,
           slide: Dynamic = dataset.slide,
-          value312: Dynamic = slide?.count,
-          value313: Dynamic =
+          slideCount: Dynamic = slide?.count,
+          slideAnchor: Dynamic =
             slide != null &&
             typeof slide == "object" &&
             Number.isInteger(slide.deck) &&
             Number.isInteger(slide.index) &&
-            Number.isInteger(value312) &&
+            Number.isInteger(slideCount) &&
             (slide.label == null || typeof slide.label == "string") &&
             (dataset.name ?? deps.rootName) === deps.rootName
               ? {
                   deck: slide.deck,
                   index: slide.index,
-                  count: value312,
+                  count: slideCount,
                   label:
                     typeof slide.label == "string"
                       ? slide.label.slice(0, 256)
@@ -363,7 +363,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
                 }
               : null,
           point: Dynamic = dataset.point,
-          value314: Dynamic =
+          validPoint: Dynamic =
             point != null &&
             typeof point == "object" &&
             typeof point.x == "number" &&
@@ -379,272 +379,272 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
                 }
               : null,
           at: Dynamic = dataset.at,
-          callback7: Dynamic = (input?: Dynamic): Dynamic =>
-            typeof input == "number" &&
-            Number.isFinite(input) &&
-            Math.abs(input) <= 2e4
-              ? Math.round(input)
+          roundCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+            typeof coordinate == "number" &&
+            Number.isFinite(coordinate) &&
+            Math.abs(coordinate) <= 2e4
+              ? Math.round(coordinate)
               : null,
-          value315: Dynamic =
+          atCoordinates: Dynamic =
             at != null && typeof at == "object"
-              ? [at.x, at.y, at.sx, at.sy, at.w, at.h].map(callback7)
+              ? [at.x, at.y, at.sx, at.sy, at.w, at.h].map(roundCoordinate)
               : [],
-          value316: Dynamic =
-            value315.length === 6 &&
-            value315.every((input?: Dynamic): Dynamic => input != null)
+          atRect: Dynamic =
+            atCoordinates.length === 6 &&
+            atCoordinates.every((coordinate?: Dynamic): Dynamic => coordinate != null)
               ? {
-                  x: value315[0],
-                  y: value315[1],
-                  sx: value315[2],
-                  sy: value315[3],
-                  w: value315[4],
-                  h: value315[5],
+                  x: atCoordinates[0],
+                  y: atCoordinates[1],
+                  sx: atCoordinates[2],
+                  sy: atCoordinates[3],
+                  w: atCoordinates[4],
+                  h: atCoordinates[5],
                 }
               : null,
-          value317: Dynamic = deps.modelRef.current.state(deps.rootName);
-        if (!value317) {
+          docState: Dynamic = deps.modelRef.current.state(deps.rootName);
+        if (!docState) {
           deps.showToast(
-            items2.length > 1
-              ? uiMessage("inspector.session.couldNotAddTheValue1", { value1: uiOperation(value308) })
-              : uiMessage("inspector.session.couldNotAddTheValue12", { value1: uiOperation(value308) }),
+            files.length > 1
+              ? uiMessage("inspector.session.couldNotAddTheValue1", { value1: uiOperation(verb) })
+              : uiMessage("inspector.session.couldNotAddTheValue12", { value1: uiOperation(verb) }),
             "error",
           );
           return;
         }
-        let value318: Dynamic = value311
+        let targetTid: Dynamic = hasTargetTid
             ? relocateSingleElementId(
-                value307,
-                value317.model,
+                shownBox,
+                docState.model,
                 dataset.targetTid,
               )
             : null,
-          value319: Dynamic =
-            value318 != null ? value317.model.element(value318) : null,
+          targetElement: Dynamic =
+            targetTid != null ? docState.model.element(targetTid) : null,
           position: Dynamic = dataset.position,
-          callback8: Dynamic = (): Dynamic =>
-            value313 == null
+          findSlideAnchor: Dynamic = (): Dynamic =>
+            slideAnchor == null
               ? null
-              : value317.model.resolveSlideAnchor(value313);
-        if (value313) {
-          let value335: Dynamic = callback8();
-          value335 != null &&
-            (value319 == null ||
-              !(value335 === value319 || value335.contains(value319))) &&
-            ((value319 = value335), (position = "into"));
+              : docState.model.resolveSlideAnchor(slideAnchor);
+        if (slideAnchor) {
+          let slideElement: Dynamic = findSlideAnchor();
+          slideElement != null &&
+            (targetElement == null ||
+              !(slideElement === targetElement || slideElement.contains(targetElement))) &&
+            ((targetElement = slideElement), (position = "into"));
         }
-        value319 != null &&
+        targetElement != null &&
           position !== "into" &&
-          value319.parentElement != null &&
-          isDeckStageElement(value319.parentElement) &&
+          targetElement.parentElement != null &&
+          isDeckStageElement(targetElement.parentElement) &&
           (position = "into");
-        let text2: Dynamic =
+        let placeholderSrcValue: Dynamic =
             "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%27320%27%20height=%27200%27%3E%3Crect%20width=%27100%25%27%20height=%27100%25%27%20fill=%27%23b6b0a7%27/%3E%3C/svg%3E",
-          state: Dynamic = {
+          neutralAttrs: Dynamic = {
             width: null,
             height: null,
             [`${StyleValue}width`]: null,
             [`${StyleValue}aspect-ratio`]: null,
           },
-          value320: Dynamic = await Promise.all(value309),
-          value321: Dynamic = items2.map((): Dynamic => null);
-        value310.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
-          input.then((input2?: Dynamic): Dynamic => {
-            value321[options] = input2;
+          imageSizes: Dynamic = await Promise.all(sizePromises),
+          previewResults: Dynamic = files.map((): Dynamic => null);
+        previewPromises.forEach((previewPromise?: Dynamic, index?: Dynamic): Dynamic => {
+          previewPromise.then((preview?: Dynamic): Dynamic => {
+            previewResults[index] = preview;
           });
         });
         await Promise.resolve();
-        let items3: Dynamic = [...value321],
-          value322: Dynamic = items3.map(
-            (input?: Dynamic): Dynamic =>
-              input
+        let previews: Dynamic = [...previewResults],
+          preApplied: Dynamic = previews.map(
+            (preview?: Dynamic): Dynamic =>
+              preview
                 ? {
-                    src: createDropMarker(input.url),
+                    src: createDropMarker(preview.url),
                   }
                 : null,
           ),
-          marks: Dynamic = context.marks,
-          value323: Dynamic = null;
-        if (value319 != null) {
-          let value335: Dynamic = parseInt(
-            value319.getAttribute(DcTplAttribute) ?? "-1",
+          marks: Dynamic = dropContext.marks,
+          dropTid: Dynamic = null;
+        if (targetElement != null) {
+          let elementTid: Dynamic = parseInt(
+            targetElement.getAttribute(DcTplAttribute) ?? "-1",
             10,
           );
-          value323 =
-            value335 >= 0 && value317.model.element(value335) === value319
-              ? value335
+          dropTid =
+            elementTid >= 0 && docState.model.element(elementTid) === targetElement
+              ? elementTid
               : null;
         }
-        if (value323 == null && value313 != null) {
-          let value335: Dynamic = callback8();
-          if (value335 != null) {
-            let value336: Dynamic = parseInt(
-              value335.getAttribute(DcTplAttribute) ?? "-1",
+        if (dropTid == null && slideAnchor != null) {
+          let slideStageElement: Dynamic = findSlideAnchor();
+          if (slideStageElement != null) {
+            let stageTid: Dynamic = parseInt(
+              slideStageElement.getAttribute(DcTplAttribute) ?? "-1",
               10,
             );
-            value336 >= 0 &&
-              value317.model.element(value336) === value335 &&
-              ((value323 = value336), (position = "into"));
+            stageTid >= 0 &&
+              docState.model.element(stageTid) === slideStageElement &&
+              ((dropTid = stageTid), (position = "into"));
           }
         }
-        let value324: Dynamic =
-            value323 != null
+        let dropContainer: Dynamic =
+            dropTid != null
               ? getDropContainer(
-                  value317.model.element(value323),
+                  docState.model.element(dropTid),
                   position,
                 )
               : null,
-          value325: Dynamic =
-            value314 != null && value324 != null ? value314 : null,
-          value326: Dynamic =
-            value325 == null && value313 == null && value316 != null
-              ? emptyArtboardDropTarget(value317.model)
+          pointInContainer: Dynamic =
+            validPoint != null && dropContainer != null ? validPoint : null,
+          emptyArtboardTarget: Dynamic =
+            pointInContainer == null && slideAnchor == null && atRect != null
+              ? emptyArtboardDropTarget(docState.model)
               : null,
-          value327: Dynamic =
-            value326 != null && value323 != null && value323 !== value326.page
+          rootContainer: Dynamic =
+            emptyArtboardTarget != null && dropTid != null && dropTid !== emptyArtboardTarget.page
               ? rootDropContainer(
-                  value317.model,
-                  value326,
-                  value323,
+                  docState.model,
+                  emptyArtboardTarget,
+                  dropTid,
                 )
               : null,
-          value328: Dynamic =
-            value326 != null &&
-            (value327 == null ||
-              !value327.takesFiles ||
-              (value327.top === value323 && position !== "into"))
-              ? value316
+          fileDropTarget: Dynamic =
+            emptyArtboardTarget != null &&
+            (rootContainer == null ||
+              !rootContainer.takesFiles ||
+              (rootContainer.top === dropTid && position !== "into"))
+              ? atRect
               : null;
-        value325?.needsPositioning &&
-          value323 != null &&
-          !value317.model.inlineStyleValue(value323, "position") &&
-          value317.model.setStyleProperty(value323, "position", "relative");
-        let callback9: Dynamic = (input?: Dynamic): Dynamic =>
-            value324
-              ? droppedImageWidth(input, value324.w, value324.h)
-              : value328
+        pointInContainer?.needsPositioning &&
+          dropTid != null &&
+          !docState.model.inlineStyleValue(dropTid, "position") &&
+          docState.model.setStyleProperty(dropTid, "position", "relative");
+        let dropWidth: Dynamic = (preview?: Dynamic): Dynamic =>
+            dropContainer
+              ? droppedImageWidth(preview, dropContainer.w, dropContainer.h)
+              : fileDropTarget
                 ? Math.round(
-                    Math.min(input.width, Math.max(48, value328.w * 0.6)),
+                    Math.min(preview.width, Math.max(48, fileDropTarget.w * 0.6)),
                   )
-                : input.width,
-          value329: Dynamic =
-            value325 == null || value324 == null
+                : preview.width,
+          clampPosition: Dynamic =
+            pointInContainer == null || dropContainer == null
               ? null
               : (
-                  input?: Dynamic,
-                  options?: Dynamic,
-                  context2?: Dynamic,
+                  index?: Dynamic,
+                  width?: Dynamic,
+                  height?: Dynamic,
                 ): Dynamic =>
                   clampDroppedImagePosition(
-                    value325.x - options / 2 + input * 24,
-                    value325.y - context2 / 2 + input * 24,
-                    options,
-                    context2,
-                    value324.w,
-                    value324.h,
+                    pointInContainer.x - width / 2 + index * 24,
+                    pointInContainer.y - height / 2 + index * 24,
+                    width,
+                    height,
+                    dropContainer.w,
+                    dropContainer.h,
                   ),
-          value330: Dynamic =
-            value329 ??
-            (value328 == null
+          positionFor: Dynamic =
+            clampPosition ??
+            (fileDropTarget == null
               ? null
               : (
-                  input?: Dynamic,
-                  options?: Dynamic,
-                  context2?: Dynamic,
+                  index?: Dynamic,
+                  width?: Dynamic,
+                  height?: Dynamic,
                 ): Dynamic =>
                   fileDropPosition(
-                    value328,
-                    input,
-                    options,
-                    context2,
+                    fileDropTarget,
+                    index,
+                    width,
+                    height,
                   ));
-        value316 != null &&
-          items2.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
-            let value335: Dynamic = items3[options] ?? value320[options],
-              value336: Dynamic = value335
-                ? value328
-                  ? callback9(value335)
+        atRect != null &&
+          files.forEach((file?: Dynamic, index?: Dynamic): Dynamic => {
+            let preview: Dynamic = previews[index] ?? imageSizes[index],
+              width: Dynamic = preview
+                ? fileDropTarget
+                  ? dropWidth(preview)
                   : Math.round(
                       Math.min(
-                        value335.width,
-                        Math.max(48, value316.w * 0.5),
+                        preview.width,
+                        Math.max(48, atRect.w * 0.5),
                       ),
                     )
                 : 320,
-              value337: Dynamic = value335
+              height: Dynamic = preview
                 ? Math.max(
                     1,
-                    Math.round((value336 * value335.height) / value335.width),
+                    Math.round((width * preview.height) / preview.width),
                   )
                 : 200,
-              { left: value338, top: value339 }: Dynamic = value328
+              { left: left, top: top }: Dynamic = fileDropTarget
                 ? fileDropPosition(
-                    value328,
-                    options,
-                    value336,
-                    value337,
+                    fileDropTarget,
+                    index,
+                    width,
+                    height,
                   )
                 : {
                     left:
-                      value316.x + value316.sx - value336 / 2 + options * 24,
+                      atRect.x + atRect.sx - width / 2 + index * 24,
                     top:
-                      value316.y + value316.sy - value337 / 2 + options * 24,
+                      atRect.y + atRect.sy - height / 2 + index * 24,
                   };
-            context.place(options, {
-              x: Math.round(value338 - value316.sx),
-              y: Math.round(value339 - value316.sy),
-              w: value336,
-              h: value337,
+            dropContext.place(index, {
+              x: Math.round(left - atRect.sx),
+              y: Math.round(top - atRect.sy),
+              w: width,
+              h: height,
             });
           });
-        let value331: Dynamic = items2.map(
-            (input?: Dynamic, options?: Dynamic): Dynamic => {
-              let value335: Dynamic = items3[options] ?? value320[options],
-                value336: Dynamic = value335 ? callback9(value335) : null,
-                value337: Dynamic =
-                  value335 && value336 != null
-                    ? `; width: ${value336}px; aspect-ratio: ${value335.width} / ${value335.height}`
+        let imageHtml: Dynamic = files.map(
+            (file?: Dynamic, index?: Dynamic): Dynamic => {
+              let preview: Dynamic = previews[index] ?? imageSizes[index],
+                width: Dynamic = preview ? dropWidth(preview) : null,
+                sizeStyle: Dynamic =
+                  preview && width != null
+                    ? `; width: ${width}px; aspect-ratio: ${preview.width} / ${preview.height}`
                     : "",
-                value338: Dynamic =
-                  value335 && value336 != null
-                    ? ` width="${value336}" height="${Math.max(1, Math.round((value336 * value335.height) / value335.width))}"`
+                sizeAttrs: Dynamic =
+                  preview && width != null
+                    ? ` width="${width}" height="${Math.max(1, Math.round((width * preview.height) / preview.width))}"`
                     : "",
-                value339: Dynamic = value322[options]?.src ?? text2,
-                value340: Dynamic = value322[options]
+                src: Dynamic = preApplied[index]?.src ?? placeholderSrcValue,
+                backgroundStyle: Dynamic = preApplied[index]
                   ? " background-color: #b6b0a7;"
                   : "",
-                value341: Dynamic =
-                  value324 != null ? " position: relative; z-index: 1;" : "";
-              if (value330) {
-                let value342: Dynamic = value336 ?? 320,
-                  value343: Dynamic =
-                    value335 && value336 != null
+                positionStyle: Dynamic =
+                  dropContainer != null ? " position: relative; z-index: 1;" : "";
+              if (positionFor) {
+                let placedWidth: Dynamic = width ?? 320,
+                  placedHeight: Dynamic =
+                    preview && width != null
                       ? Math.max(
                           1,
                           Math.round(
-                            (value336 * value335.height) / value335.width,
+                            (width * preview.height) / preview.width,
                           ),
                         )
                       : 200,
-                  { left: value344, top: value345 }: Dynamic = value330(
-                    options,
-                    value342,
-                    value343,
+                  { left: left, top: top }: Dynamic = positionFor(
+                    index,
+                    placedWidth,
+                    placedHeight,
                   );
-                value341 = ` position: absolute; left: ${value344}px; top: ${value345}px;${value329 ? " z-index: 1;" : ""}`;
+                positionStyle = ` position: absolute; left: ${left}px; top: ${top}px;${clampPosition ? " z-index: 1;" : ""}`;
               }
-              return `<img src="${value339}" alt="" data-dc-drop="${marks[options]}"${value338} style="max-width: 100%; height: auto; display: block;${value340}${value341} object-fit: cover${value337}">`;
+              return `<img src="${src}" alt="" data-dc-drop="${marks[index]}"${sizeAttrs} style="max-width: 100%; height: auto; display: block;${backgroundStyle}${positionStyle} object-fit: cover${sizeStyle}">`;
             },
           ).join(`
 `),
-            value332: Dynamic = (
+            insertedElements: Dynamic = (
             deps.value163(
-              value331,
+              imageHtml,
               `image-drop-${Date.now()}`,
-              value328 && value326
-                ? value326.placement
-                : value323 != null
+              fileDropTarget && emptyArtboardTarget
+                ? emptyArtboardTarget.placement
+                : dropTid != null
                   ? {
-                      targetTid: value323,
+                      targetTid: dropTid,
                       position: position,
                     }
                   : {
@@ -652,57 +652,57 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
                       position: "root-end",
                     },
             ) ?? []
-          ).map((input?: Dynamic): Dynamic => value317.model.element(input));
-        if (value332.every((input?: Dynamic): Dynamic => input == null)) {
+          ).map((tid?: Dynamic): Dynamic => docState.model.element(tid));
+        if (insertedElements.every((element?: Dynamic): Dynamic => element == null)) {
           deps.showToast(
-            uiMessage("inspector.session.targetCannotHoldImagesValue1", { value1: uiOperation(value308 === "pasted" ? "select" : "drop onto") }),
+            uiMessage("inspector.session.targetCannotHoldImagesValue1", { value1: uiOperation(verb === "pasted" ? "select" : "drop onto") }),
             "error",
           );
           return;
         }
-        let callback10: Dynamic = (): Dynamic =>
-          deps.modelRef.current.state(deps.rootName) ?? value317;
+        let currentDocState: Dynamic = (): Dynamic =>
+          deps.modelRef.current.state(deps.rootName) ?? docState;
         markDropPerformance("insert");
-        let value333: Dynamic = marks.map(registerHiddenPickerTag);
-        context.landed();
-        let value334: Dynamic = await insertUploadedFiles({
-          files: items2,
-          targets: value332,
-          upload: (input?: Dynamic): Dynamic =>
-            uploadDesignFile(deps.projectPath, deps.fileDirectory, input),
-          preview: (input?: Dynamic): Dynamic =>
-            value310[items2.indexOf(input)] ??
-            previewImageFile(input),
-          preApplied: value322,
-          patch: (element?: Dynamic, options?: Dynamic): Dynamic => {
-            let value335: Dynamic = callback10(),
-              value336: Dynamic = parseInt(
+        let unregisterMarkers: Dynamic = marks.map(registerHiddenPickerTag);
+        dropContext.landed();
+        let failedCount: Dynamic = await insertUploadedFiles({
+          files: files,
+          targets: insertedElements,
+          upload: (file?: Dynamic): Dynamic =>
+            uploadDesignFile(deps.projectPath, deps.fileDirectory, file),
+          preview: (file?: Dynamic): Dynamic =>
+            previewPromises[files.indexOf(file)] ??
+            previewImageFile(file),
+          preApplied: preApplied,
+          patch: (element?: Dynamic, attrs?: Dynamic): Dynamic => {
+            let latestDoc: Dynamic = currentDocState(),
+              elementTid: Dynamic = parseInt(
                 element.getAttribute(DcTplAttribute) ?? "-1",
                 10,
               );
-            if (value336 < 0 || value335.model.element(value336) !== element)
+            if (elementTid < 0 || latestDoc.model.element(elementTid) !== element)
               return false;
-            for (let [value337, value338] of Object.entries(
-              options,
+            for (let [attrName, attrValue] of Object.entries(
+              attrs,
             ) as Dynamic)
-              value337.startsWith(StyleValue)
-                ? value335.model.setStyleProperty(
-                    value336,
-                    value337.slice(StyleValue.length),
-                    value338,
+              attrName.startsWith(StyleValue)
+                ? latestDoc.model.setStyleProperty(
+                    elementTid,
+                    attrName.slice(StyleValue.length),
+                    attrValue,
                   )
-                : value335.model.setAttribute(value336, value337, value338);
-            deps.pushLiveModel(deps.rootName, value335);
+                : latestDoc.model.setAttribute(elementTid, attrName, attrValue);
+            deps.pushLiveModel(deps.rootName, latestDoc);
             deps.markModelDirty(deps.rootName);
             deps.incrementSessionEpoch();
             return true;
           },
-          relocate: (input?: Dynamic): Dynamic =>
-            callback10().model.elementsByAttr("src", input)[0] ?? null,
-          relocateByMarker: (input?: Dynamic): Dynamic =>
-            callback10().model.elementsByAttr(
+          relocate: (src?: Dynamic): Dynamic =>
+            currentDocState().model.elementsByAttr("src", src)[0] ?? null,
+          relocateByMarker: (index?: Dynamic): Dynamic =>
+            currentDocState().model.elementsByAttr(
               "data-dc-drop",
-              marks[input],
+              marks[index],
             )[0] ?? null,
           markerCleanupAttrs: (): Dynamic => ({
             "data-dc-drop": null,
@@ -710,102 +710,102 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
           }),
           readSrc: (element?: Dynamic): Dynamic =>
             element.getAttribute("src"),
-          onStage: (input?: Dynamic): Dynamic => {
-            markDropPerformance(input);
+          onStage: (stage?: Dynamic): Dynamic => {
+            markDropPerformance(stage);
           },
-          onSettled: (input?: Dynamic, options?: Dynamic): Dynamic =>
+          onSettled: (src?: Dynamic, attrs?: Dynamic): Dynamic =>
             rememberImageInsert(deps.pendingStampEditsRef.current, {
               name: deps.rootName,
-              src: input,
-              attrs: options,
+              src: src,
+              attrs: attrs,
             }),
-          previewAttrs: (input?: Dynamic, options?: Dynamic): Dynamic => {
-            let value335: Dynamic = callback9(input),
-              value336: Dynamic = Math.max(
+          previewAttrs: (preview?: Dynamic, index?: Dynamic): Dynamic => {
+            let width: Dynamic = dropWidth(preview),
+              height: Dynamic = Math.max(
                 1,
-                Math.round((value335 * input.height) / input.width),
+                Math.round((width * preview.height) / preview.width),
               ),
-              state2: Dynamic = {
-                width: String(value335),
-                height: String(value336),
-                [`${StyleValue}width`]: `${value335}px`,
-                [`${StyleValue}aspect-ratio`]: `${input.width} / ${input.height}`,
+              previewAttrs: Dynamic = {
+                width: String(width),
+                height: String(height),
+                [`${StyleValue}width`]: `${width}px`,
+                [`${StyleValue}aspect-ratio`]: `${preview.width} / ${preview.height}`,
               };
-            if (value330) {
-              let { left: value337, top: value338 }: Dynamic = value330(
-                options,
-                value335,
-                value336,
+            if (positionFor) {
+              let { left: left, top: top }: Dynamic = positionFor(
+                index,
+                width,
+                height,
               );
-              state2[`${StyleValue}left`] = `${value337}px`;
-              state2[`${StyleValue}top`] = `${value338}px`;
+              previewAttrs[`${StyleValue}left`] = `${left}px`;
+              previewAttrs[`${StyleValue}top`] = `${top}px`;
             }
-            return state2;
+            return previewAttrs;
           },
-          yieldCleanupAttrs: (input?: Dynamic): Dynamic =>
-            value330
+          yieldCleanupAttrs: (preview?: Dynamic): Dynamic =>
+            positionFor
               ? {
                   width: null,
                   height: null,
                   [`${StyleValue}aspect-ratio`]: null,
                 }
-              : state,
-          revertAttrs: (input?: Dynamic): Dynamic => {
-            if (!value330) return state;
-            let { left: value335, top: value336 }: Dynamic = value330(
-              input,
+              : neutralAttrs,
+          revertAttrs: (index?: Dynamic): Dynamic => {
+            if (!positionFor) return neutralAttrs;
+            let { left: left, top: top }: Dynamic = positionFor(
+              index,
               320,
               200,
             );
             return {
-              ...state,
-              [`${StyleValue}left`]: `${value335}px`,
-              [`${StyleValue}top`]: `${value336}px`,
+              ...neutralAttrs,
+              [`${StyleValue}left`]: `${left}px`,
+              [`${StyleValue}top`]: `${top}px`,
             };
           },
-          insertPinned: (input?: Dynamic): Dynamic =>
-            (items3[input] ?? value320[input]) != null,
-          placeholderSrc: text2,
+          insertPinned: (index?: Dynamic): Dynamic =>
+            (previews[index] ?? imageSizes[index]) != null,
+          placeholderSrc: placeholderSrcValue,
         }).finally((): Dynamic => {
-          for (let value335 of value333 as Dynamic) value335();
+          for (let unregister of unregisterMarkers as Dynamic) unregister();
         });
-        value334 > 0 &&
+        failedCount > 0 &&
           deps.showToast(
-            items2.length > 1
-              ? uiMessage("inspector.session.couldNotAddValue1Of", { value1: String(value334), value2: String(items2.length), value3: uiOperation(value308) })
-              : uiMessage("inspector.session.couldNotAddTheValue12", { value1: uiOperation(value308) }),
+            files.length > 1
+              ? uiMessage("inspector.session.couldNotAddValue1Of", { value1: String(failedCount), value2: String(files.length), value3: uiOperation(verb) })
+              : uiMessage("inspector.session.couldNotAddTheValue12", { value1: uiOperation(verb) }),
             "error",
           );
-        return value334 === 0;
+        return failedCount === 0;
       }
 
 /** 文件拖入或粘贴到画板时运行：筛出图片与视频，视频交给视频上传流程，其余文件提示不支持，图片交给插图流程并在结束后清理拖放状态。 */
 export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic; readonly modelRef: Dynamic; readonly onDropVideos: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value179: Dynamic; readonly value180: Dynamic; readonly webviewRef: Dynamic }, dataset?: Dynamic): Promise<Dynamic> {
-        let value307: Dynamic = (dataset.files ?? []).filter(
-            (input?: Dynamic): Dynamic => input instanceof File,
+        let files: Dynamic = (dataset.files ?? []).filter(
+            (file?: Dynamic): Dynamic => file instanceof File,
           ),
-          value308: Dynamic = value307
+          imageFiles: Dynamic = files
             .filter(
-              (input?: Dynamic): Dynamic => input.type.startsWith("image/"),
+              (file?: Dynamic): Dynamic => file.type.startsWith("image/"),
             )
             .slice(0, 6),
-          value309: Dynamic = value307.filter(isVideoFile),
-          value310: Dynamic =
+          videoFiles: Dynamic = files.filter(isVideoFile),
+          verb: Dynamic =
             dataset.source === "paste" ? "pasted" : "dropped",
           at: Dynamic = dataset.at,
-          callback7: Dynamic = (input?: Dynamic): Dynamic =>
-            typeof input == "number" &&
-            Number.isFinite(input) &&
-            Math.abs(input) <= 2e4,
-          value311: Dynamic =
+          isValidCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+            typeof coordinate == "number" &&
+            Number.isFinite(coordinate) &&
+            Math.abs(coordinate) <= 2e4,
+          dropRect: Dynamic =
             at != null &&
             typeof at == "object" &&
-            callback7(at.x) &&
-            callback7(at.y) &&
-            callback7(at.sx) &&
-            callback7(at.sy) &&
-            callback7(at.w) &&
-            callback7(at.h)
+            isValidCoordinate(at.x) &&
+            isValidCoordinate(at.y) &&
+            isValidCoordinate(at.sx) &&
+            isValidCoordinate(at.sy) &&
+            isValidCoordinate(at.w) &&
+            isValidCoordinate(at.h)
               ? {
                   x: Math.round(at.x),
                   y: Math.round(at.y),
@@ -815,7 +815,7 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
                   h: Math.round(at.h),
                 }
               : null;
-        value309.length > 0
+        videoFiles.length > 0
           ? dataset.slide != null ||
             deps.modelRef.current.state(deps.rootName)?.model.findDeckStage() != null ||
             deps.webviewRef.current?.contentDocument?.querySelector(
@@ -823,30 +823,30 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
             ) != null
             ? deps.showToast(CanvasWorkingStateHandler("artboard"))
             : deps.onDropVideos
-              ? deps.onDropVideos(value309, {
-                  at: value311,
-                  verb: value310,
-                  after: value308.length,
+              ? deps.onDropVideos(videoFiles, {
+                  at: dropRect,
+                  verb: verb,
+                  after: imageFiles.length,
                 })
               : deps.showToast(
                   videoUploadFailureMessage("unavailable"),
                 )
-          : value308.length === 0 &&
+          : imageFiles.length === 0 &&
             Date.now() - deps.value180.current > 5e3 &&
             ((deps.value180.current = Date.now()),
             deps.showToast(
               dataset.refuse === true
                 ? uiMessage("inspector.session.filesCanTBeDropped")
-                : uiMessage("inspector.session.onlyImagesAndMp4Mov", { value1: uiOperation(value310) }),
+                : uiMessage("inspector.session.onlyImagesAndMp4Mov", { value1: uiOperation(verb) }),
             ));
-        if (value308.length === 0) return;
-        let value312: Dynamic = receiveFileDrops(
-          value308,
+        if (imageFiles.length === 0) return;
+        let dropSession: Dynamic = receiveFileDrops(
+          imageFiles,
           deps.filePath,
           at != null &&
             typeof at == "object" &&
-            callback7(at.x) &&
-            callback7(at.y)
+            isValidCoordinate(at.x) &&
+            isValidCoordinate(at.y)
             ? {
                 x: at.x,
                 y: at.y,
@@ -854,98 +854,98 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
             : null,
         );
         try {
-          return await deps.value179(dataset, value308, value312);
+          return await deps.value179(dataset, imageFiles, dropSession);
         } finally {
-          value312.end();
+          dropSession.end();
         }
       }
 
 /** 替换选中图片时运行：把用户选择的文件上传到作品目录，多选时统一改 src，单选时替换图片并记录撤销、推送实时模型；上传失败时提示。 */
-export async function uploadReplacementImage(deps: { readonly fileDirectory: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryDrop: Dynamic; readonly pendingStampEditsRef: Dynamic; readonly projectPath: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value151: Dynamic; readonly value183: Dynamic; readonly value49: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic; readonly value8: Dynamic }, input?: Dynamic): Promise<Dynamic> {
+export async function uploadReplacementImage(deps: { readonly fileDirectory: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryDrop: Dynamic; readonly pendingStampEditsRef: Dynamic; readonly projectPath: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value151: Dynamic; readonly value183: Dynamic; readonly value49: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic; readonly value8: Dynamic }, file?: Dynamic): Promise<Dynamic> {
         let current: Dynamic = deps.value49.current;
         if (!current || deps.readOnlyRef.current || current.name !== deps.rootName)
           return;
-        let value307: Dynamic = deps.modelRef.current.state(current.name);
-        if (!value307) return;
-        let callback7: Dynamic = (): Dynamic =>
-            deps.modelRef.current.state(current.name) ?? value307,
-          value308: Dynamic = current.tids.filter(
-            (input2?: Dynamic): Dynamic =>
-              value307.model.element(input2) != null,
+        let docState: Dynamic = deps.modelRef.current.state(current.name);
+        if (!docState) return;
+        let currentDocState: Dynamic = (): Dynamic =>
+            deps.modelRef.current.state(current.name) ?? docState,
+          existingTids: Dynamic = current.tids.filter(
+            (tid?: Dynamic): Dynamic =>
+              docState.model.element(tid) != null,
           );
-        if (value308.length === 0) return;
-        if (value308.length > 1) {
+        if (existingTids.length === 0) return;
+        if (existingTids.length > 1) {
           try {
-            let { src: value318 }: Dynamic = await uploadDesignFile(deps.projectPath, deps.fileDirectory, input);
-            deps.value151("@src", value318);
-          } catch (value318: Dynamic) {
-            console.error("[dc-editor] image pick upload failed:", value318);
+            let { src: uploadedSrc }: Dynamic = await uploadDesignFile(deps.projectPath, deps.fileDirectory, file);
+            deps.value151("@src", uploadedSrc);
+          } catch (uploadError: Dynamic) {
+            console.error("[dc-editor] image pick upload failed:", uploadError);
             deps.showToast(uiMessage("inspector.session.couldNotUploadTheImage"), "error");
             return false;
           }
           return;
         }
-        let value309: Dynamic = value308[0],
-          value310: Dynamic = value307.model.element(value309);
-        if (value310 == null) return;
-        let value311: Dynamic = (deps.value183.current.get(value310) ?? 0) + 1;
-        deps.value183.current.set(value310, value311);
-        let value312: Dynamic = `src-pick-${Date.now()}`,
-          value313: Dynamic = null,
+        let imageTid: Dynamic = existingTids[0],
+          imageElement: Dynamic = docState.model.element(imageTid);
+        if (imageElement == null) return;
+        let uploadToken: Dynamic = (deps.value183.current.get(imageElement) ?? 0) + 1;
+        deps.value183.current.set(imageElement, uploadToken);
+        let undoKey: Dynamic = `src-pick-${Date.now()}`,
+          redoSnapshot: Dynamic = null,
           {
-            failed: value314,
-            relName: value315,
-            src: value316,
-            applied: value317,
+            failed: failed,
+            relName: relName,
+            src: replacedSrc,
+            applied: applied,
           }: Dynamic = await replaceSelectedImage({
-            file: input,
-            el: value310,
-            getModel: (): Dynamic => callback7().model,
+            file: file,
+            el: imageElement,
+            getModel: (): Dynamic => currentDocState().model,
             isCurrent: (): Dynamic =>
-              deps.value183.current.get(value310) === value311,
-            upload: (input2?: Dynamic): Dynamic =>
+              deps.value183.current.get(imageElement) === uploadToken,
+            upload: (uploadFile?: Dynamic): Dynamic =>
               uploadDesignFile(
                 deps.projectPath,
                 deps.fileDirectory,
-                input2,
+                uploadFile,
               ),
             pushUndo: (): Dynamic => {
-              let value318: Dynamic = callback7();
-              value313 = value318.redo.slice();
-              deps.value101(current.name, value312, value318);
+              let state: Dynamic = currentDocState();
+              redoSnapshot = state.redo.slice();
+              deps.value101(current.name, undoKey, state);
             },
             afterPatch: (): Dynamic => {
               deps.value66.current = current.name;
-              deps.pushLiveModel(current.name, callback7());
+              deps.pushLiveModel(current.name, currentDocState());
               deps.markModelDirty(current.name);
               deps.incrementSessionEpoch();
             },
-            recordSettled: (input2?: Dynamic): Dynamic =>
+            recordSettled: (settled?: Dynamic): Dynamic =>
               rememberImageInsert(deps.pendingStampEditsRef.current, {
                 name: current.name,
-                ...input2,
+                ...settled,
               }),
           });
-        if (value314) {
-          let current2: Dynamic = deps.value65.current,
-            value318: Dynamic = callback7();
-          current2 &&
-            current2.name === current.name &&
-            current2.key === value312 &&
-            value313 != null &&
-            value318.undo.length > 0 &&
-            (value318.undo.pop(),
-            (value318.redo = value313),
+        if (failed) {
+          let pendingUndo: Dynamic = deps.value65.current,
+            latestState: Dynamic = currentDocState();
+          pendingUndo &&
+            pendingUndo.name === current.name &&
+            pendingUndo.key === undoKey &&
+            redoSnapshot != null &&
+            latestState.undo.length > 0 &&
+            (latestState.undo.pop(),
+            (latestState.redo = redoSnapshot),
             deps.onHistoryDrop?.("undo"),
             (deps.value65.current = null));
-          return deps.value183.current.get(value310) === value311
+          return deps.value183.current.get(imageElement) === uploadToken
             ? (deps.showToast(uiMessage("inspector.session.couldNotUploadTheImage"), "error"), false)
             : undefined;
         } else
-          value315 != null &&
-            value317 &&
+          relName != null &&
+            applied &&
             deps.value8(
-              `${value307.path}: set @src=${value316 ?? "./" + value315} on img`,
-              `${value307.path}:@src:${value309}`,
+              `${docState.path}: set @src=${replacedSrc ?? "./" + relName} on img`,
+              `${docState.path}:@src:${imageTid}`,
             );
       }
