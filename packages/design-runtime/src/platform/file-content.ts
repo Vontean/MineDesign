@@ -9,14 +9,14 @@ import { isProjectMetadataFile } from "./project-paths";
 import { PlatformSha256Encode, sha256 } from "./sha256";
 
 var PlatformFileContentLimit: Dynamic;
-var PlatformFileContentLimit_2: Dynamic;
+var maxFilePathBytes: Dynamic;
 var PlatformFileContentResolvedValue: Dynamic;
 var PlatformFileContentFilesBytesConfig: Dynamic;
-var PlatformFileContentResolvedValue_2: Dynamic;
+var maxPublishBatchBytes: Dynamic;
 var PlatformFileContentCache: Dynamic;
 var PlatformFileContentSubscribers: Dynamic;
-var PlatformFileContentSubscribers_2: Dynamic;
-var PlatformFileContentSubscribers_3: Dynamic;
+var explicitContentTypes: Dynamic;
+var textContentTypes: Dynamic;
 var Value_2: Dynamic;
 var PlatformFileContentUDBFFUDFFFPattern: Dynamic;
 var PlatformFileContentIncludes: Dynamic;
@@ -31,10 +31,10 @@ var PlatformFileContentGridSizeCountSizeConfig: Dynamic;
 var PlatformFileContentConstant: Dynamic;
 var PlatformFileContentPattern: Dynamic;
 var PlatformFileContentExpandPrintPaperValues: Dynamic;
-var PlatformFileContentLimit_3: Dynamic;
+var defaultDesignPageLimit: Dynamic;
 var PlatformFileContentLimitAlias: Dynamic;
 var PlatformFileContentBackgroundBackgroundColorOpacityValues: Dynamic;
-var PlatformFileContentPattern_2: Dynamic;
+var safeAnnotationCssSyntax: Dynamic;
 var PlatformFileContentAZPattern: Dynamic;
 var PlatformFileContentRgbaHslaPattern: Dynamic;
 var PlatformFileContentBorderStyleObjectFitOpacityConfig: Dynamic;
@@ -44,9 +44,9 @@ var normalizeAnnotationCss: Dynamic;
 var isShapeAnnotation: Dynamic;
 var annotationRotation: Dynamic;
 var PlatformFileContentSMLConfig: Dynamic;
-var PlatformFileContentConstant_2: Dynamic;
-var PlatformFileContentConstant_3: Dynamic;
-var PlatformFileContentConstant_4: Dynamic;
+var defaultNoteFontSize: Dynamic;
+var minAnnotationFontSize: Dynamic;
+var maxAnnotationFontSize: Dynamic;
 var PlatformFileContentGrayRedOrangeValues: Dynamic;
 var PlatformFileContentGrayRedOrangeValuesAlias: Dynamic;
 var PlatformFileContentNoteTitle1Config: Dynamic;
@@ -59,42 +59,42 @@ var PlatformFileContentHandler: Dynamic;
 var PlatformFileContentKind_2: Dynamic;
 var validCoverArtboard: Dynamic;
 var artboardNameWithoutExtension: Dynamic;
-var PlatformFileContentConstant_5: Dynamic;
-var PlatformFileContentConstant_6: Dynamic;
-var PlatformFileContentConstant_7: Dynamic;
-var PlatformFileContentConstant_8: Dynamic;
-var PlatformFileContentConstant_9: Dynamic;
-var PlatformFileContentConstant_10: Dynamic;
-var PlatformFileContentConstant_11: Dynamic;
-var PlatformFileContentConstant_12: Dynamic;
-var PlatformFileContentConstant_13: Dynamic;
-var PlatformFileContentConstant_14: Dynamic;
+var defaultArtboardWidth: Dynamic;
+var defaultArtboardHeight: Dynamic;
+var newArtboardGap: Dynamic;
+var defaultTextAnnotationWidth: Dynamic;
+var minTextAnnotationWidth: Dynamic;
+var maxTextAnnotationWidth: Dynamic;
+var defaultTextAnnotationMaxWidth: Dynamic;
+var minAnnotationDimensionLimit: Dynamic;
+var maxAnnotationDimensionLimit: Dynamic;
+var maxFittedAnnotationFontSize: Dynamic;
 var PlatformFileContentMin: Dynamic;
 var PlatformFileContentLh: Dynamic;
 var PlatformFileContentMax_2: Dynamic;
 var PlatformFileContentMatch: Dynamic;
 var PlatformFileContentL: Dynamic;
 var PlatformFileContentTest: Dynamic;
-var PlatformFileContentLimit_4: Dynamic;
-var PlatformFileContentLimit_5: Dynamic;
-var PlatformFileContentConstant_15: Dynamic;
-var PlatformFileContentConstant_16: Dynamic;
-var PlatformFileContentConstant_17: Dynamic;
-var PlatformFileContentLimit_6: Dynamic;
-var PlatformFileContentResolvedValue_3: Dynamic;
-var PlatformFileContentConstant_18: Dynamic;
+var maxAnnotationTextChars: Dynamic;
+var maxAnnotations: Dynamic;
+var minArtboardDimension: Dynamic;
+var minEmbeddedArtboardDimension: Dynamic;
+var minFramelessArtboardDimension: Dynamic;
+var maxCanvasItemDimension: Dynamic;
+var maxArtboardRadius: Dynamic;
+var maxCanvasCoordinate: Dynamic;
 var PlatformFileContentRectOvalLineConfig: Dynamic;
-var PlatformFileContentConstant_19: Dynamic;
-var PlatformFileContentConstant_20: Dynamic;
-var PlatformFileContentTest_2: Dynamic;
-var PlatformFileContentTest_3: Dynamic;
-var PlatformFileContentLimit_7: Dynamic;
+var minShapeDimension: Dynamic;
+var minImageDimension: Dynamic;
+var parseAnnotationImageUrl: Dynamic;
+var parseAnnotationVideoUrl: Dynamic;
+var maxPenPathChars: Dynamic;
 var PlatformFileContentTrim_2: Dynamic;
 var PlatformFileContentMin_2: Dynamic;
-var PlatformFileContentConstant_21: Dynamic;
+var maxCanvasLabelChars: Dynamic;
 var PlatformFileContentSlice: Dynamic;
-var PlatformFileContentSlice_2: Dynamic;
-var PlatformFileContentTest_4: Dynamic;
+var normalizeAnnotationText: Dynamic;
+var parseCanvasItemId: Dynamic;
 var PlatformFileContentHandler_2: Dynamic;
 var PlatformFileContentIncludes_2: Dynamic;
 var PlatformFileContentIncludes_3: Dynamic;
@@ -105,36 +105,36 @@ var artboardDisplayName: Dynamic;
 var annotationKindCategory: Dynamic;
 var DesignValue: Dynamic;
 var MetaValue: Dynamic;
-var PlatformFileContentResolvedValue_4: Dynamic;
+var designMetadataPath: Dynamic;
 var SourceValue: Dynamic;
-var PlatformFileContentResolvedValue_5: Dynamic;
+var designSourceDocumentPath: Dynamic;
 var BoardsValue: Dynamic;
 var FilesValue: Dynamic;
 var NotesValue: Dynamic;
-var PlatformFileContentResolvedValue_6: Dynamic;
-var PlatformFileContentResolvedValue_7: Dynamic;
-var PlatformFileContentResolvedValue_8: Dynamic;
-var PlatformFileContentResolvedValue_9: Dynamic;
+var maxSyncedArtboardBytes: Dynamic;
+var maxSyncedFileBytes: Dynamic;
+var maxCollectionBytes: Dynamic;
+var maxInlineArtboardBytes: Dynamic;
 var PlatformFileContentWebpAvifPattern: Dynamic;
 var PlatformFileContentNodeModulesPattern: Dynamic;
 var PlatformFileContentJsonPattern: Dynamic;
-var PlatformFileContentLimit_8: Dynamic;
+var maxProjectPathChars: Dynamic;
 var PlatformFileContentAZaZAZaZPattern: Dynamic;
-var PlatformFileContentPattern_3: Dynamic;
+var reservedProjectSegmentPattern: Dynamic;
 var ProjectValue: Dynamic;
-var PlatformFileContentPattern_4: Dynamic;
-var PlatformFileContentResolvedValue_10: Dynamic;
+var declarationPathPattern: Dynamic;
+var maxDeclarationFileBytes: Dynamic;
 var PlatformFileContentAZaZPattern: Dynamic;
 var PlatformFileContentTextEncoder: Dynamic;
 var PlatformFileContentXYWValues: Dynamic;
 var ClaudeDesignValue: Dynamic;
-var PlatformFileContentLimit_9: Dynamic;
-var PlatformFileContentAZaZPattern_2: Dynamic;
+var maxSourceUrlChars: Dynamic;
+var sourceProjectIdPattern: Dynamic;
 var DesignPValue: Dynamic;
-var PlatformFileContentPattern_5: Dynamic;
+var zonedDateTimePattern: Dynamic;
 var PlatformFileContentFilesValue: Dynamic;
-var PlatformFileContentResolvedValue_11: Dynamic;
-var PlatformFileContentLimit_10: Dynamic;
+var defaultDocumentFileBytes: Dynamic;
+var maxEmbeddedFilePathChars: Dynamic;
 var PlatformFileContentTextEncoder_2: Dynamic;
 var PlatformFileContentTextEncoder_3: Dynamic;
 var FileValue: Dynamic;
@@ -145,86 +145,86 @@ var AppifactValue: Dynamic;
 var PlatformFileContentBeforeWriteVersionOfState: Dynamic;
 var PlatformFileContentController: Dynamic;
 var PlatformFileContentCache_2: Dynamic;
-var PlatformFileContentWebpAvifPattern_2: Dynamic;
+var imageFilePathPattern: Dynamic;
 var projectFilesystem: Dynamic;
 var PreviewGenerationGate: Dynamic;
 var defaultPreviewGenerationGate: Dynamic;
 var PlatformFileContentElementCache: Dynamic;
-var PlatformFileContentAlias_2: Dynamic;
+var roomCapabilityHost: Dynamic;
 var requestRoomCapabilityValue: Dynamic;
 var PlatformFileContentFreezeValue: Dynamic;
 var PlatformFileContentFreezeValueAlias: Dynamic;
-var PlatformFileContentSubscribers_4: Dynamic;
+var roomPeerListeners: Dynamic;
 var roomPeerSubscriptionStarted: Dynamic;
 var PlatformFileContentCurrentState: Dynamic;
 var roomPeersStore: Dynamic;
-var PlatformFileContentAZaZPattern_3: Dynamic;
-var PlatformFileContentAZaZPattern_4: Dynamic;
-var PlatformFileContentResolvedValue_12: Dynamic;
-var PlatformFileContentSubscribers_5: Dynamic;
+var embedStorePrefixPattern: Dynamic;
+var embedMemoryScopePattern: Dynamic;
+var cachedEmbedContext: Dynamic;
+var pendingEmbeddedWrites: Dynamic;
 var embeddedWritesTracked: Dynamic;
 var embeddedEditorFrozen: Dynamic;
 var embeddedFreezeRequested: Dynamic;
 var embeddedWriteFailed: Dynamic;
-var PlatformFileContentAlias_3: Dynamic;
-var PlatformFileContentAlias_4: Dynamic;
-var PlatformFileContentCurrentState_2: Dynamic;
+var embeddedEditorSettler: Dynamic;
+var embeddedPresenceListener: Dynamic;
+var embeddedEditorSilencer: Dynamic;
 var PlatformFileContentDelayMs: Dynamic;
-var PlatformFileContentConstant_22: Dynamic;
-var PlatformFileContentConstant_23: Dynamic;
-function isNarrowedFileContext(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input.narrowed ?? options.narrowed === true;
+var embeddedSettleTimeoutMs: Dynamic;
+var embeddedFlushBufferMs: Dynamic;
+function isNarrowedFileContext(listing?: Dynamic, publication?: Dynamic): Dynamic {
+  return listing.narrowed ?? publication.narrowed === true;
 }
-function validateFileName(input?: Dynamic): Dynamic {
+function validateFileName(filePath?: Dynamic): Dynamic {
   if (
-    input === "" ||
-    PlatformSha256Encode(input).length >
-      PlatformFileContentLimit_2
+    filePath === "" ||
+    PlatformSha256Encode(filePath).length >
+      maxFilePathBytes
   )
     return "its name is empty or too long. Rename it";
-  if (/[\u0000-\u001f\u007f%;:\\]/.test(input))
+  if (/[\u0000-\u001f\u007f%;:\\]/.test(filePath))
     return "its name has a character that cannot be saved (% ; : \\ or a control character). Rename it";
-  if (input.endsWith(".cmekshadow"))
+  if (filePath.endsWith(".cmekshadow"))
     return "its name ends in .cmekshadow, which is reserved. Rename it";
-  let value: Dynamic = input.split("/");
+  let pathSegments: Dynamic = filePath.split("/");
   if (
-    input.startsWith("/") ||
-    value.some(
-      (input2?: Dynamic): Dynamic =>
-        input2 === "" || input2 === "." || input2 === "..",
+    filePath.startsWith("/") ||
+    pathSegments.some(
+      (segment?: Dynamic): Dynamic =>
+        segment === "" || segment === "." || segment === "..",
     )
   )
     return "its path has an empty part, or a part that is only dots. Rename it";
-  if (value[0].startsWith("_"))
+  if (pathSegments[0].startsWith("_"))
     return "its top-level name starts with an underscore, which is reserved. Rename it";
 }
-function isTextFileContent(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (options === null) return false;
-  let value: Dynamic = normalizeFileEntry(input, options);
+function isTextFileContent(filePath?: Dynamic, fileEntry?: Dynamic): Dynamic {
+  if (fileEntry === null) return false;
+  let normalizedEntry: Dynamic = normalizeFileEntry(filePath, fileEntry);
   return (
-    value !== null &&
-    typeof value != "string" &&
-    typeof value.content == "string" &&
-    PlatformFileContentSubscribers_3.has(value.contentType) &&
-    PlatformFileContentIncludes(value.content)
+    normalizedEntry !== null &&
+    typeof normalizedEntry != "string" &&
+    typeof normalizedEntry.content == "string" &&
+    textContentTypes.has(normalizedEntry.contentType) &&
+    PlatformFileContentIncludes(normalizedEntry.content)
   );
 }
-function describeInvalidFile(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = validateFileName(input);
-  if (value !== undefined)
+function describeInvalidFile(filePath?: Dynamic, fileEntry?: Dynamic): Dynamic {
+  let invalidNameReason: Dynamic = validateFileName(filePath);
+  if (invalidNameReason !== undefined)
     return {
-      why: value,
+      why: invalidNameReason,
       cause: "name",
     };
-  if (options === null) return;
-  let value2: Dynamic = normalizeFileEntry(input, options);
-  return typeof value2 == "string"
-    ? value2.includes("files of this kind")
+  if (fileEntry === null) return;
+  let normalizedEntry: Dynamic = normalizeFileEntry(filePath, fileEntry);
+  return typeof normalizedEntry == "string"
+    ? normalizedEntry.includes("files of this kind")
       ? {
-          why: value2.slice(value2.indexOf(": ") + 2),
+          why: normalizedEntry.slice(normalizedEntry.indexOf(": ") + 2),
           cause: "kind",
         }
-      : value2.includes("cannot infer a content type")
+      : normalizedEntry.includes("cannot infer a content type")
         ? {
             why: "files of this kind cannot be saved here (nothing is known for a name like this). Use another format",
             cause: "kind",
@@ -233,138 +233,138 @@ function describeInvalidFile(input?: Dynamic, options?: Dynamic): Dynamic {
             why: "it is in a form that cannot be saved here",
             cause: "unreadable",
           }
-    : isTextFileContent(input, options)
+    : isTextFileContent(filePath, fileEntry)
       ? {
           get why() { return (("it holds a character that did not decode (it shows as ") + (Value_2)) + ("). Find it and type it again"); },
           cause: "damaged_text",
         }
       : undefined;
 }
-function getMimeTypeForPath(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.lastIndexOf("/"),
-    value2: Dynamic = input.lastIndexOf(".");
-  if (!(value2 <= value + 1))
+function getMimeTypeForPath(filePath?: Dynamic): Dynamic {
+  let slashIndex: Dynamic = filePath.lastIndexOf("/"),
+    extensionIndex: Dynamic = filePath.lastIndexOf(".");
+  if (!(extensionIndex <= slashIndex + 1))
     return PlatformFileContentCache.get(
-      input.slice(value2 + 1).toLowerCase(),
+      filePath.slice(extensionIndex + 1).toLowerCase(),
     );
 }
-function stripFrameRuntime(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.indexOf(frameRuntimeStartMarker);
-  if (value < 0) return input;
-  let value2: Dynamic = input.indexOf(
+function stripFrameRuntime(html?: Dynamic): Dynamic {
+  let runtimeStart: Dynamic = html.indexOf(frameRuntimeStartMarker);
+  if (runtimeStart < 0) return html;
+  let runtimeEnd: Dynamic = html.indexOf(
     frameRuntimeEndMarker,
-    value + frameRuntimeStartMarker.length,
+    runtimeStart + frameRuntimeStartMarker.length,
   );
-  return value2 < 0
-    ? input
-    : input.slice(0, value) +
-        input.slice(value2 + frameRuntimeEndMarker.length);
+  return runtimeEnd < 0
+    ? html
+    : html.slice(0, runtimeStart) +
+        html.slice(runtimeEnd + frameRuntimeEndMarker.length);
 }
-function normalizeFileEntry(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (options === null) return null;
-  let value: Dynamic = options,
-    value2: Dynamic;
-  typeof options == "object" &&
-    !(typeof Blob !== "undefined" && options instanceof Blob) &&
-    ((value = options.content), (value2 = options.contentType));
-  let value3: Dynamic = typeof Blob !== "undefined" && value instanceof Blob;
-  if (typeof value != "string" && !value3)
-    return input + ": content must be a string or a Blob";
-  let value4: Dynamic = value3 ? value.type.split(";")[0].trim() : "",
-    value5: Dynamic =
-      value2 ??
-      (PlatformFileContentSubscribers.has(value4) ? value4 : undefined) ??
-      getMimeTypeForPath(input) ??
-      (value4 !== "" ? value4 : undefined);
-  return value5 === undefined
-    ? input +
+function normalizeFileEntry(filePath?: Dynamic, fileEntry?: Dynamic): Dynamic {
+  if (fileEntry === null) return null;
+  let content: Dynamic = fileEntry,
+    explicitContentType: Dynamic;
+  typeof fileEntry == "object" &&
+    !(typeof Blob !== "undefined" && fileEntry instanceof Blob) &&
+    ((content = fileEntry.content), (explicitContentType = fileEntry.contentType));
+  let isBlob: Dynamic = typeof Blob !== "undefined" && content instanceof Blob;
+  if (typeof content != "string" && !isBlob)
+    return filePath + ": content must be a string or a Blob";
+  let blobContentType: Dynamic = isBlob ? content.type.split(";")[0].trim() : "",
+    resolvedContentType: Dynamic =
+      explicitContentType ??
+      (PlatformFileContentSubscribers.has(blobContentType) ? blobContentType : undefined) ??
+      getMimeTypeForPath(filePath) ??
+      (blobContentType !== "" ? blobContentType : undefined);
+  return resolvedContentType === undefined
+    ? filePath +
         ": cannot infer a content type from the name; pass {content, contentType}"
-    : value5 === "" || value5.includes(";")
-      ? input + ": contentType must be a bare media type"
-      : !PlatformFileContentSubscribers.has(value5) &&
+    : resolvedContentType === "" || resolvedContentType.includes(";")
+      ? filePath + ": contentType must be a bare media type"
+      : !PlatformFileContentSubscribers.has(resolvedContentType) &&
           !(
-            value2 !== undefined &&
-            PlatformFileContentSubscribers_2.has(value5)
+            explicitContentType !== undefined &&
+            explicitContentTypes.has(resolvedContentType)
           )
-        ? input +
+        ? filePath +
           ": files of this kind (" +
-          value5 +
+          resolvedContentType +
           ") cannot be saved here. Use another format"
         : {
-            content: value,
-            contentType: value5,
+            content: content,
+            contentType: resolvedContentType,
           };
 }
-function getEncodedFileBytes(input?: Dynamic): Dynamic {
-  if (input === null) return 0;
-  let value: Dynamic = getFileContent(input);
+function getEncodedFileBytes(fileEntry?: Dynamic): Dynamic {
+  if (fileEntry === null) return 0;
+  let value: Dynamic = getFileContent(fileEntry);
   return typeof value == "string"
     ? PlatformSha256Encode(value).length
     : Math.ceil(value.size / 3) * 4;
 }
-function getRawFileBytes(input?: Dynamic): Dynamic {
-  if (input === null) return 0;
-  let value: Dynamic = getFileContent(input);
+function getRawFileBytes(fileEntry?: Dynamic): Dynamic {
+  if (fileEntry === null) return 0;
+  let value: Dynamic = getFileContent(fileEntry);
   return typeof value == "string"
     ? PlatformSha256Encode(value).length
     : value.size;
 }
-function describeOversizedFile(input?: Dynamic): Dynamic {
+function describeOversizedFile(fileEntry?: Dynamic): Dynamic {
   if (
-    input === null ||
-    getEncodedFileBytes(input) <= PlatformFileContentResolvedValue
+    fileEntry === null ||
+    getEncodedFileBytes(fileEntry) <= PlatformFileContentResolvedValue
   )
     return;
-  let value: Dynamic = typeof getFileContent(input) == "string",
-    value2: Dynamic =
-      (value
+  let isText: Dynamic = typeof getFileContent(fileEntry) == "string",
+    maxMegabytes: Dynamic =
+      (isText
         ? PlatformFileContentResolvedValue
         : (PlatformFileContentResolvedValue / 4) * 3) /
       (1024 * 1024);
   return (
     "it is over the " +
-    String(value2) +
+    String(maxMegabytes) +
     " MB limit for one file. Make it smaller" +
-    (value ? " (an image or a font pasted into it is the usual cause)" : "")
+    (isText ? " (an image or a font pasted into it is the usual cause)" : "")
   );
 }
-async function fileContentToBytes(input?: Dynamic): Promise<Dynamic> {
-  return typeof input == "string"
-    ? PlatformSha256Encode(input)
-    : new Uint8Array(await input.arrayBuffer());
+async function fileContentToBytes(content?: Dynamic): Promise<Dynamic> {
+  return typeof content == "string"
+    ? PlatformSha256Encode(content)
+    : new Uint8Array(await content.arrayBuffer());
 }
-async function hashFileMap(input?: Dynamic): Promise<Dynamic> {
+async function hashFileMap(files?: Dynamic): Promise<Dynamic> {
   let state: Dynamic = {};
-  for (let [value, value2] of Object.entries(input) as Dynamic) {
-    let value3: Dynamic = normalizeFileEntry(value, value2);
-    value3 === null ||
-      typeof value3 == "string" ||
-      (state[value] = await sha256(
-        await fileContentToBytes(value3.content),
+  for (let [filePath, fileEntry] of Object.entries(files) as Dynamic) {
+    let normalizedEntry: Dynamic = normalizeFileEntry(filePath, fileEntry);
+    normalizedEntry === null ||
+      typeof normalizedEntry == "string" ||
+      (state[filePath] = await sha256(
+        await fileContentToBytes(normalizedEntry.content),
       ));
   }
   return state;
 }
-function validatePublishFileMap(input?: Dynamic): Dynamic {
-  let value: Dynamic = Object.keys(input);
-  if (value.length === 0 || value.length > PlatformFileContentLimit)
+function validatePublishFileMap(files?: Dynamic): Dynamic {
+  let filePaths: Dynamic = Object.keys(files);
+  if (filePaths.length === 0 || filePaths.length > PlatformFileContentLimit)
     return {
       ok: false,
       code: "invalid_content",
     };
   let index: Dynamic = 0;
-  for (let value2 of value as Dynamic) {
-    if (validateFileName(value2) !== undefined)
+  for (let filePath of filePaths as Dynamic) {
+    if (validateFileName(filePath) !== undefined)
       return {
         ok: false,
         code: "invalid_content",
       };
-    if (typeof normalizeFileEntry(value2, input[value2]) == "string")
+    if (typeof normalizeFileEntry(filePath, files[filePath]) == "string")
       return {
         ok: false,
         code: "invalid_content",
       };
-    index += getEncodedFileBytes(input[value2]);
+    index += getEncodedFileBytes(files[filePath]);
   }
   return index > PlatformFileContentResolvedValue
     ? {
@@ -374,359 +374,359 @@ function validatePublishFileMap(input?: Dynamic): Dynamic {
     : undefined;
 }
 function splitPublishBatches(
-  input?: Dynamic,
-  options: Dynamic = isProjectMetadataFile,
-  context: Dynamic = PlatformFileContentResolvedValue_2,
-  value: Dynamic = PlatformFileContentLimit,
+  files?: Dynamic,
+  isMetadataFile: Dynamic = isProjectMetadataFile,
+  maxBatchBytes: Dynamic = maxPublishBatchBytes,
+  maxBatchFiles: Dynamic = PlatformFileContentLimit,
 ): Dynamic {
-  let value2: Dynamic = Object.entries(input),
-    value3: Dynamic = value2.filter(
-      ([input2]: Dynamic): Dynamic => !options(input2),
+  let fileEntries: Dynamic = Object.entries(files),
+    contentEntries: Dynamic = fileEntries.filter(
+      ([filePath]: Dynamic): Dynamic => !isMetadataFile(filePath),
     ),
-    value4: Dynamic = value2.filter(
-      ([input2]: Dynamic): Dynamic => options(input2),
+    metadataEntries: Dynamic = fileEntries.filter(
+      ([filePath]: Dynamic): Dynamic => isMetadataFile(filePath),
     ),
-    items: Dynamic = [],
-    state: Dynamic = {},
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value5: Dynamic = getEncodedFileBytes(options2);
-      index2 > 0 &&
-        (index + value5 > context || index2 + 1 > value) &&
-        (items.push(state), (state = {}), (index = 0), (index2 = 0));
-      state[input2] = options2;
-      index += value5;
-      index2 += 1;
+    batches: Dynamic = [],
+    batch: Dynamic = {},
+    batchBytes: Dynamic = 0,
+    batchFileCount: Dynamic = 0,
+    appendFile: Dynamic = (filePath?: Dynamic, fileEntry?: Dynamic): Dynamic => {
+      let encodedBytes: Dynamic = getEncodedFileBytes(fileEntry);
+      batchFileCount > 0 &&
+        (batchBytes + encodedBytes > maxBatchBytes || batchFileCount + 1 > maxBatchFiles) &&
+        (batches.push(batch), (batch = {}), (batchBytes = 0), (batchFileCount = 0));
+      batch[filePath] = fileEntry;
+      batchBytes += encodedBytes;
+      batchFileCount += 1;
     };
-  for (let [value5, value6] of value3 as Dynamic) callback(value5, value6);
-  for (let [value5, value6] of value4 as Dynamic) callback(value5, value6);
-  index2 > 0 && items.push(state);
-  return items;
+  for (let [filePath, fileEntry] of contentEntries as Dynamic) appendFile(filePath, fileEntry);
+  for (let [filePath, fileEntry] of metadataEntries as Dynamic) appendFile(filePath, fileEntry);
+  batchFileCount > 0 && batches.push(batch);
+  return batches;
 }
-function hasInjectedRuntime(input?: Dynamic): Dynamic {
-  if (input === null) return false;
-  let value: Dynamic =
-    typeof input == "object" &&
-    !(typeof Blob !== "undefined" && input instanceof Blob)
-      ? input.content
-      : input;
+function hasInjectedRuntime(fileEntry?: Dynamic): Dynamic {
+  if (fileEntry === null) return false;
+  let content: Dynamic =
+    typeof fileEntry == "object" &&
+    !(typeof Blob !== "undefined" && fileEntry instanceof Blob)
+      ? fileEntry.content
+      : fileEntry;
   return (
-    typeof value == "string" &&
-    (value.includes("/_cas/") ||
-      value.includes(frameRuntimeStartMarker) ||
-      value.includes("__frame_comments__"))
+    typeof content == "string" &&
+    (content.includes("/_cas/") ||
+      content.includes(frameRuntimeStartMarker) ||
+      content.includes("__frame_comments__"))
   );
 }
-function artboardAppearanceProperties(input?: Dynamic): Dynamic {
-  let state: Dynamic = {};
-  if (input)
-    for (let value of PlatformFileContentExpandPrintPaperValues as Dynamic)
-      input[value] !== undefined && (state[value] = input[value]);
-  return state;
+function artboardAppearanceProperties(artboard?: Dynamic): Dynamic {
+  let appearance: Dynamic = {};
+  if (artboard)
+    for (let property of PlatformFileContentExpandPrintPaperValues as Dynamic)
+      artboard[property] !== undefined && (appearance[property] = artboard[property]);
+  return appearance;
 }
-function resolveArtboardGuide(source?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = source.color ?? PlatformFileContentLabel;
+function resolveArtboardGuide(source?: Dynamic, dimensions?: Dynamic): Dynamic {
+  let color: Dynamic = source.color ?? PlatformFileContentLabel;
   if (source.kind === "grid")
     return {
       kind: "grid",
       size: source.size ?? 8,
-      color: value,
+      color: color,
     };
-  let value2: Dynamic = source.kind === "columns",
-    value3: Dynamic = source.align ?? (value2 ? "stretch" : "start"),
-    value4: Dynamic = source.size ?? (value2 ? 64 : 8),
-    value5: Dynamic = source.gutter ?? (value2 ? 24 : 8),
-    value6: Dynamic = source.offset ?? 0,
-    value7: Dynamic = source.count ?? (value2 ? 12 : "auto"),
-    value8: Dynamic =
-      (value2 ? options.w : options.h) - (value3 === "center" ? 0 : value6),
-    value9: Dynamic =
-      value7 !== "auto"
-        ? value7
-        : value3 === "stretch"
-          ? value2
+  let isColumnGuide: Dynamic = source.kind === "columns",
+    alignment: Dynamic = source.align ?? (isColumnGuide ? "stretch" : "start"),
+    guideSize: Dynamic = source.size ?? (isColumnGuide ? 64 : 8),
+    gutter: Dynamic = source.gutter ?? (isColumnGuide ? 24 : 8),
+    offset: Dynamic = source.offset ?? 0,
+    requestedCount: Dynamic = source.count ?? (isColumnGuide ? 12 : "auto"),
+    availableLength: Dynamic =
+      (isColumnGuide ? dimensions.w : dimensions.h) - (alignment === "center" ? 0 : offset),
+    guideCount: Dynamic =
+      requestedCount !== "auto"
+        ? requestedCount
+        : alignment === "stretch"
+          ? isColumnGuide
             ? 12
             : 4
           : PlatformFileContentMin_2(
-              Math.floor((value8 + value5) / (value4 + value5)),
+              Math.floor((availableLength + gutter) / (guideSize + gutter)),
               1,
               PlatformFileContentConstant,
             );
   return {
     kind: source.kind,
-    count: value9,
-    align: value3,
-    size: value4,
-    gutter: value5,
+    count: guideCount,
+    align: alignment,
+    size: guideSize,
+    gutter: gutter,
     margin: source.margin ?? 0,
-    offset: value6,
-    color: value,
-    auto: value7 === "auto",
+    offset: offset,
+    color: color,
+    auto: requestedCount === "auto",
   };
 }
-function normalizeArtboardRadius(items?: Dynamic): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    typeof input == "number" && Number.isFinite(input)
+function normalizeArtboardRadius(radius?: Dynamic): Dynamic {
+  let normalizeRadiusValue: Dynamic = (radiusValue?: Dynamic): Dynamic =>
+    typeof radiusValue == "number" && Number.isFinite(radiusValue)
       ? PlatformFileContentMin_2(
-          Math.round(input * 100) / 100,
+          Math.round(radiusValue * 100) / 100,
           0,
-          PlatformFileContentResolvedValue_3,
+          maxArtboardRadius,
         )
       : null;
-  if (Array.isArray(items) && items.length !== 4) return;
-  let value: Dynamic = Array.isArray(items)
-    ? Array.from(items, callback)
-    : Array(4).fill(callback(items));
-  if (value.some((input?: Dynamic): Dynamic => input === null)) return;
-  let [value2, value3, value4, value5]: Dynamic = value;
-  return value2 === value3 && value3 === value4 && value4 === value5
-    ? value2 > 0
-      ? value2
+  if (Array.isArray(radius) && radius.length !== 4) return;
+  let radii: Dynamic = Array.isArray(radius)
+    ? Array.from(radius, normalizeRadiusValue)
+    : Array(4).fill(normalizeRadiusValue(radius));
+  if (radii.some((radiusValue?: Dynamic): Dynamic => radiusValue === null)) return;
+  let [topLeft, topRight, bottomRight, bottomLeft]: Dynamic = radii;
+  return topLeft === topRight && topRight === bottomRight && bottomRight === bottomLeft
+    ? topLeft > 0
+      ? topLeft
       : undefined
-    : [value2, value3, value4, value5];
+    : [topLeft, topRight, bottomRight, bottomLeft];
 }
-function artboardRadiusCorners(input?: Dynamic): Dynamic {
-  return typeof input == "number"
-    ? [input, input, input, input]
-    : input
-      ? [...input]
+function artboardRadiusCorners(radius?: Dynamic): Dynamic {
+  return typeof radius == "number"
+    ? [radius, radius, radius, radius]
+    : radius
+      ? [...radius]
       : [0, 0, 0, 0];
 }
-function artboardRadiusCss(input?: Dynamic): Dynamic {
-  let value: Dynamic = normalizeArtboardRadius(input);
-  return value === undefined
+function artboardRadiusCss(radius?: Dynamic): Dynamic {
+  let normalizedRadius: Dynamic = normalizeArtboardRadius(radius);
+  return normalizedRadius === undefined
     ? undefined
-    : (typeof value == "number" ? [value] : value)
-        .map((input2?: Dynamic): Dynamic => String(input2) + "px")
+    : (typeof normalizedRadius == "number" ? [normalizedRadius] : normalizedRadius)
+        .map((corner?: Dynamic): Dynamic => String(corner) + "px")
         .join(" ");
 }
 function updateArtboardRadius(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  manifest?: Dynamic,
+  artboardPath?: Dynamic,
+  radius?: Dynamic,
 ): Dynamic {
   return {
-    ...input,
-    artboards: input.artboards.map((input2?: Dynamic): Dynamic => {
-      if (input2.file !== options) return input2;
-      let { radius: value, ...value2 }: Dynamic = input2;
-      return context !== undefined
+    ...manifest,
+    artboards: manifest.artboards.map((artboard?: Dynamic): Dynamic => {
+      if (artboard.file !== artboardPath) return artboard;
+      let { radius: value, ...artboardWithoutRadius }: Dynamic = artboard;
+      return radius !== undefined
         ? {
-            ...value2,
-            radius: context,
+            ...artboardWithoutRadius,
+            radius: radius,
           }
-        : value2;
+        : artboardWithoutRadius;
     }),
   };
 }
-function parseArtboardGuides(input?: Dynamic): Dynamic {
-  if (!Array.isArray(input)) return;
-  let callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      typeof input2 == "number" && Number.isFinite(input2)
+function parseArtboardGuides(rawGuides?: Dynamic): Dynamic {
+  if (!Array.isArray(rawGuides)) return;
+  let normalizeGuideNumber: Dynamic = (candidate?: Dynamic, range?: Dynamic): Dynamic =>
+      typeof candidate == "number" && Number.isFinite(candidate)
         ? PlatformFileContentMin_2(
-            Math.round(input2 * 100) / 100,
-            options.min,
-            options.max,
+            Math.round(candidate * 100) / 100,
+            range.min,
+            range.max,
           )
         : undefined,
-    items: Dynamic = [];
-  for (let value of input as Dynamic) {
-    if (items.length >= 6) break;
-    if (typeof value != "object" || value === null) continue;
-    let value2: Dynamic = value,
-      value3: Dynamic =
-        typeof value2.color == "string" &&
-        PlatformFileContentPattern.test(value2.color.trim())
-          ? value2.color.trim()
+    guides: Dynamic = [];
+  for (let candidate of rawGuides as Dynamic) {
+    if (guides.length >= 6) break;
+    if (typeof candidate != "object" || candidate === null) continue;
+    let guide: Dynamic = candidate,
+      color: Dynamic =
+        typeof guide.color == "string" &&
+        PlatformFileContentPattern.test(guide.color.trim())
+          ? guide.color.trim()
           : undefined,
-      state: Dynamic = {
-        ...(value3 !== undefined
+      appearance: Dynamic = {
+        ...(color !== undefined
           ? {
-              color: value3,
+              color: color,
             }
           : {}),
-        ...(value2.hidden === true
+        ...(guide.hidden === true
           ? {
               hidden: true,
             }
           : {}),
       };
-    if (value2.kind === "grid") {
-      let value4: Dynamic = callback(
-        value2.size,
+    if (guide.kind === "grid") {
+      let gridSize: Dynamic = normalizeGuideNumber(
+        guide.size,
         PlatformFileContentGridSizeCountSizeConfig.gridSize,
       );
-      items.push({
+      guides.push({
         kind: "grid",
-        ...(value4 !== undefined
+        ...(gridSize !== undefined
           ? {
-              size: value4,
+              size: gridSize,
             }
           : {}),
-        ...state,
+        ...appearance,
       });
-    } else if (value2.kind === "columns" || value2.kind === "rows") {
-      let value4: Dynamic =
-          value2.align === "stretch" ||
-          value2.align === "start" ||
-          value2.align === "center" ||
-          value2.align === "end"
-            ? value2.align
+    } else if (guide.kind === "columns" || guide.kind === "rows") {
+      let alignment: Dynamic =
+          guide.align === "stretch" ||
+          guide.align === "start" ||
+          guide.align === "center" ||
+          guide.align === "end"
+            ? guide.align
             : undefined,
-        value5: Dynamic =
-          value2.count === "auto"
+        count: Dynamic =
+          guide.count === "auto"
             ? "auto"
-            : typeof value2.count == "number" && Number.isFinite(value2.count)
+            : typeof guide.count == "number" && Number.isFinite(guide.count)
               ? PlatformFileContentMin_2(
-                  Math.round(value2.count),
+                  Math.round(guide.count),
                   PlatformFileContentGridSizeCountSizeConfig.count.min,
                   PlatformFileContentGridSizeCountSizeConfig.count.max,
                 )
               : undefined,
-        value6: Dynamic = callback(
-          value2.size,
+        size: Dynamic = normalizeGuideNumber(
+          guide.size,
           PlatformFileContentGridSizeCountSizeConfig.size,
         ),
-        value7: Dynamic = callback(
-          value2.gutter,
+        gutter: Dynamic = normalizeGuideNumber(
+          guide.gutter,
           PlatformFileContentGridSizeCountSizeConfig.gutter,
         ),
-        value8: Dynamic = callback(
-          value2.margin,
+        margin: Dynamic = normalizeGuideNumber(
+          guide.margin,
           PlatformFileContentGridSizeCountSizeConfig.margin,
         ),
-        value9: Dynamic = callback(
-          value2.offset,
+        offset: Dynamic = normalizeGuideNumber(
+          guide.offset,
           PlatformFileContentGridSizeCountSizeConfig.offset,
         );
-      items.push({
-        kind: value2.kind,
-        ...(value5 !== undefined
+      guides.push({
+        kind: guide.kind,
+        ...(count !== undefined
           ? {
-              count: value5,
+              count: count,
             }
           : {}),
-        ...(value4 !== undefined
+        ...(alignment !== undefined
           ? {
-              align: value4,
+              align: alignment,
             }
           : {}),
-        ...(value6 !== undefined
+        ...(size !== undefined
           ? {
-              size: value6,
+              size: size,
             }
           : {}),
-        ...(value7 !== undefined
+        ...(gutter !== undefined
           ? {
-              gutter: value7,
+              gutter: gutter,
             }
           : {}),
-        ...(value8 !== undefined
+        ...(margin !== undefined
           ? {
-              margin: value8,
+              margin: margin,
             }
           : {}),
-        ...(value9 !== undefined
+        ...(offset !== undefined
           ? {
-              offset: value9,
+              offset: offset,
             }
           : {}),
-        ...state,
+        ...appearance,
       });
     }
   }
-  return items.length > 0 ? items : undefined;
+  return guides.length > 0 ? guides : undefined;
 }
 function maxDesignPages(): Dynamic {
   return PlatformFileContentLimitAlias;
 }
-function parseAnnotationCrop(input?: Dynamic): Dynamic {
-  if (input === null || typeof input != "object") return;
-  let value: Dynamic = input,
-    callback: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value2?: Dynamic,
+function parseAnnotationCrop(rawCrop?: Dynamic): Dynamic {
+  if (rawCrop === null || typeof rawCrop != "object") return;
+  let crop: Dynamic = rawCrop,
+    normalizeCropProperty: Dynamic = (
+      property?: Dynamic,
+      min?: Dynamic,
+      max?: Dynamic,
+      precision?: Dynamic,
     ): Dynamic =>
-      typeof value[input2] == "number" && Number.isFinite(value[input2])
+      typeof crop[property] == "number" && Number.isFinite(crop[property])
         ? Math.round(
-            Math.min(context, Math.max(options, value[input2])) *
-              10 ** value2,
+            Math.min(max, Math.max(min, crop[property])) *
+              10 ** precision,
           ) /
-          10 ** value2
+          10 ** precision
         : null,
-    [items, items2, items3]: Dynamic = [
-      callback("zoom", 1, 50, 4),
-      callback("x", 0, 1, 5),
-      callback("y", 0, 1, 5),
+    [zoom, x, y]: Dynamic = [
+      normalizeCropProperty("zoom", 1, 50, 4),
+      normalizeCropProperty("x", 0, 1, 5),
+      normalizeCropProperty("y", 0, 1, 5),
     ];
-  return items === null ||
-    items2 === null ||
-    items3 === null ||
-    (items === 1 && items2 === 0.5 && items3 === 0.5)
+  return zoom === null ||
+    x === null ||
+    y === null ||
+    (zoom === 1 && x === 0.5 && y === 0.5)
     ? undefined
     : {
-        zoom: items,
-        x: items2,
-        y: items3,
+        zoom: zoom,
+        x: x,
+        y: y,
       };
 }
-function updateAnnotationCrop(input?: Dynamic, options?: Dynamic): Dynamic {
-  let { crop: value, ...value2 }: Dynamic = input;
-  return options === undefined
-    ? value2
+function updateAnnotationCrop(annotation?: Dynamic, crop?: Dynamic): Dynamic {
+  let { crop: value, ...annotationWithoutCrop }: Dynamic = annotation;
+  return crop === undefined
+    ? annotationWithoutCrop
     : {
-        ...value2,
-        crop: options,
+        ...annotationWithoutCrop,
+        crop: crop,
       };
 }
-function updateAnnotationAlt(input?: Dynamic, options?: Dynamic): Dynamic {
-  let { alt: value, ...value2 }: Dynamic = input;
-  return options === undefined
-    ? value2
+function updateAnnotationAlt(annotation?: Dynamic, alt?: Dynamic): Dynamic {
+  let { alt: value, ...annotationWithoutAlt }: Dynamic = annotation;
+  return alt === undefined
+    ? annotationWithoutAlt
     : {
-        ...value2,
-        alt: options,
+        ...annotationWithoutAlt,
+        alt: alt,
       };
 }
-function updateAnnotationVideo(input?: Dynamic, options?: Dynamic): Dynamic {
-  let { video: value, ...value2 }: Dynamic = input;
-  return options === undefined
-    ? value2
+function updateAnnotationVideo(annotation?: Dynamic, video?: Dynamic): Dynamic {
+  let { video: value, ...annotationWithoutVideo }: Dynamic = annotation;
+  return video === undefined
+    ? annotationWithoutVideo
     : {
-        ...value2,
-        video: options,
+        ...annotationWithoutVideo,
+        video: video,
       };
 }
 function updateAnnotationArrowHeads(
-  input?: Dynamic,
-  options?: Dynamic,
+  annotation?: Dynamic,
+  arrowHeads?: Dynamic,
 ): Dynamic {
-  let { headStart: value, headEnd: value2, ...value3 }: Dynamic = input;
+  let { headStart: value, headEnd: _previousEndHead, ...annotationWithoutHeads }: Dynamic = annotation;
   return {
-    ...value3,
-    kind: options.end === "none" ? "line" : "arrow",
-    ...(options.start !== "none"
+    ...annotationWithoutHeads,
+    kind: arrowHeads.end === "none" ? "line" : "arrow",
+    ...(arrowHeads.start !== "none"
       ? {
-          headStart: options.start,
+          headStart: arrowHeads.start,
         }
       : {}),
-    ...(options.end === "open"
+    ...(arrowHeads.end === "open"
       ? {
           headEnd: "open",
         }
       : {}),
   };
 }
-function updateAnnotationCss(input?: Dynamic, options?: Dynamic): Dynamic {
-  let { css: value, ...value2 }: Dynamic = input;
-  return options === undefined
-    ? value2
+function updateAnnotationCss(annotation?: Dynamic, css?: Dynamic): Dynamic {
+  let { css: value, ...annotationWithoutCss }: Dynamic = annotation;
+  return css === undefined
+    ? annotationWithoutCss
     : {
-        ...value2,
-        css: options,
+        ...annotationWithoutCss,
+        css: css,
       };
 }
 function annotationBounds(source?: Dynamic): Dynamic {
@@ -751,65 +751,65 @@ function annotationBounds(source?: Dynamic): Dynamic {
       };
   }
 }
-function annotationVisibleBounds(input?: Dynamic): Dynamic {
-  if (isShapeAnnotation(input)) return annotationBounds(input);
-  let size: Dynamic = annotationTextStyle(input).size;
+function annotationVisibleBounds(annotation?: Dynamic): Dynamic {
+  if (isShapeAnnotation(annotation)) return annotationBounds(annotation);
+  let size: Dynamic = annotationTextStyle(annotation).size;
   return {
-    x: input.x,
-    y: input.y,
-    w: input.w,
-    h: Math.min(Math.round(size * 1.45) + 20, PlatformFileContentKind(input)),
+    x: annotation.x,
+    y: annotation.y,
+    w: annotation.w,
+    h: Math.min(Math.round(size * 1.45) + 20, PlatformFileContentKind(annotation)),
   };
 }
-function updateShapeColor(input?: Dynamic, options?: Dynamic): Dynamic {
-  let { color: value, ...value2 }: Dynamic = input,
+function updateShapeColor(annotation?: Dynamic, color?: Dynamic): Dynamic {
+  let { color: value, ...annotationWithoutColor }: Dynamic = annotation,
     {
-      background: value3,
-      "background-color": value4,
-      stroke: value5,
-      ...value6
-    }: Dynamic = value2.css ?? {},
-    value7: Dynamic = updateAnnotationCss(
-      value2,
-      value2.css === undefined
+      background: _previousBackground,
+      "background-color": _previousBackgroundColor,
+      stroke: _previousStroke,
+      ...nonColorCss
+    }: Dynamic = annotationWithoutColor.css ?? {},
+    annotationWithoutColorStyles: Dynamic = updateAnnotationCss(
+      annotationWithoutColor,
+      annotationWithoutColor.css === undefined
         ? undefined
-        : Object.keys(value6).length > 0
-          ? value6
+        : Object.keys(nonColorCss).length > 0
+          ? nonColorCss
           : undefined,
     );
-  return options === "default"
-    ? value7
+  return color === "default"
+    ? annotationWithoutColorStyles
     : {
-        ...value7,
-        color: options,
+        ...annotationWithoutColorStyles,
+        color: color,
       };
 }
-function updateAnnotationColor(input?: Dynamic, options?: Dynamic): Dynamic {
-  let { color: value, ...value2 }: Dynamic = input;
-  return options === "default"
-    ? value2
+function updateAnnotationColor(annotation?: Dynamic, color?: Dynamic): Dynamic {
+  let { color: value, ...annotationWithoutColor }: Dynamic = annotation;
+  return color === "default"
+    ? annotationWithoutColor
     : {
-        ...value2,
-        color: options,
+        ...annotationWithoutColor,
+        color: color,
       };
 }
 function moveAnnotation(
   source?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  x?: Dynamic,
+  y?: Dynamic,
 ): Dynamic {
   return source.kind === "line" || source.kind === "arrow"
     ? {
         ...source,
-        x: options,
-        y: context,
-        x2: source.x2 + options - source.x,
-        y2: source.y2 + context - source.y,
+        x: x,
+        y: y,
+        x2: source.x2 + x - source.x,
+        y2: source.y2 + y - source.y,
       }
     : {
         ...source,
-        x: options,
-        y: context,
+        x: x,
+        y: y,
       };
 }
 function annotationGeometry(source?: Dynamic): Dynamic {
@@ -847,68 +847,68 @@ function rotatedAnnotationBounds(
   let degrees: Dynamic = annotationRotation(annotation);
   if (!degrees) return rect;
   let value: Dynamic = (degrees * Math.PI) / 180,
-    [items, items2]: Dynamic = [
+    [absCos, absSin]: Dynamic = [
       Math.abs(Math.cos(value)),
       Math.abs(Math.sin(value)),
     ],
-    [items3, items4]: Dynamic = [
-      rect.w * items + rect.h * items2,
-      rect.w * items2 + rect.h * items,
+    [rotatedWidth, rotatedHeight]: Dynamic = [
+      rect.w * absCos + rect.h * absSin,
+      rect.w * absSin + rect.h * absCos,
     ];
   return {
-    x: rect.x + (rect.w - items3) / 2,
-    y: rect.y + (rect.h - items4) / 2,
-    w: items3,
-    h: items4,
+    x: rect.x + (rect.w - rotatedWidth) / 2,
+    y: rect.y + (rect.h - rotatedHeight) / 2,
+    w: rotatedWidth,
+    h: rotatedHeight,
   };
 }
 function updateAnnotationTextStyle(
-  input?: Dynamic,
+  annotation?: Dynamic,
   source?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = annotationTextStyle(input),
-    value2: Dynamic =
+  let value: Dynamic = annotationTextStyle(annotation),
+    defaultStyle: Dynamic =
       source.kind !== undefined && source.kind !== value.kind
         ? PlatformFileContentNoteTitle1Config[source.kind]
         : value,
     state: Dynamic = {
       size: PlatformFileContentHandler_2(
-        Number.isFinite(source.size) ? source.size : value2.size,
-        value2.size,
+        Number.isFinite(source.size) ? source.size : defaultStyle.size,
+        defaultStyle.size,
       ),
       kind: source.kind ?? value.kind,
-      bold: source.bold ?? value2.bold,
-      italic: source.italic ?? value2.italic,
-      color: source.color ?? value2.color,
-      fill: source.fill ?? value2.fill,
+      bold: source.bold ?? defaultStyle.bold,
+      italic: source.italic ?? defaultStyle.italic,
+      color: source.color ?? defaultStyle.color,
+      fill: source.fill ?? defaultStyle.fill,
     },
     {
-      id: value3,
-      x: value4,
-      y: value5,
-      w: value6,
-      text: value7,
-      page: value8,
-      rotate: value9,
-    }: Dynamic = input;
+      id: id,
+      x: x,
+      y: y,
+      w: width,
+      text: text,
+      page: page,
+      rotate: rotation,
+    }: Dynamic = annotation;
   return {
-    id: value3,
-    x: value4,
-    y: value5,
-    w: value6,
+    id: id,
+    x: x,
+    y: y,
+    w: width,
     ...(state.kind === value.kind
-      ? PlatformFileContentHandler(state.kind, input.maxW, input.maxH)
+      ? PlatformFileContentHandler(state.kind, annotation.maxW, annotation.maxH)
       : {}),
-    text: value7,
+    text: text,
     ...PlatformFileContentKind_2(state),
-    ...(value8 !== undefined
+    ...(page !== undefined
       ? {
-          page: value8,
+          page: page,
         }
       : {}),
-    ...(value9
+    ...(rotation
       ? {
-          rotate: value9,
+          rotate: rotation,
         }
       : {}),
   };
@@ -917,35 +917,35 @@ function designPageId(item?: Dynamic, pages?: Dynamic): Dynamic {
   let defaultPage: Dynamic = pages?.[0]?.id ?? "";
   return item.page === undefined
     ? defaultPage
-    : pages?.some((input?: Dynamic): Dynamic => input.id === item.page)
+    : pages?.some((page?: Dynamic): Dynamic => page.id === item.page)
       ? item.page
       : defaultPage;
 }
 function findArtboardByName(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  artboards?: Dynamic,
+  requestedPath?: Dynamic,
+  filterAmbiguousMatch?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.find(
-    (input2?: Dynamic): Dynamic => input2.file === options,
+  let value: Dynamic = artboards.find(
+    (artboard?: Dynamic): Dynamic => artboard.file === requestedPath,
   );
   if (value) return value;
-  let value2: Dynamic = artboardNameWithoutExtension(options),
-    value3: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic =>
-        artboardNameWithoutExtension(input2.file) === value2,
+  let requestedName: Dynamic = artboardNameWithoutExtension(requestedPath),
+    matchingArtboards: Dynamic = artboards.filter(
+      (artboard?: Dynamic): Dynamic =>
+        artboardNameWithoutExtension(artboard.file) === requestedName,
     ),
-    value4: Dynamic =
-      value3.length > 1 && context ? value3.filter(context) : value3;
-  return value4.length === 1
-    ? value4[0]
-    : value3.length > 0
+    narrowedMatches: Dynamic =
+      matchingArtboards.length > 1 && filterAmbiguousMatch ? matchingArtboards.filter(filterAmbiguousMatch) : matchingArtboards;
+  return narrowedMatches.length === 1
+    ? narrowedMatches[0]
+    : matchingArtboards.length > 0
       ? "ambiguous"
       : null;
 }
 function createPageId(pages?: Dynamic, randomize: Dynamic = false): Dynamic {
   let values: Dynamic = new Set(
-    pages.map((input?: Dynamic): Dynamic => input.id),
+    pages.map((page?: Dynamic): Dynamic => page.id),
   );
   if (randomize)
     for (;;) {
@@ -957,52 +957,52 @@ function createPageId(pages?: Dynamic, randomize: Dynamic = false): Dynamic {
   return "page-" + String(count);
 }
 function annotationTextFit(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  textSize?: Dynamic,
+  fontSize?: Dynamic,
+  maxWidth?: Dynamic,
+  maxHeight?: Dynamic,
 ): Dynamic {
-  if (input.w <= 0 || input.h <= 0)
+  if (textSize.w <= 0 || textSize.h <= 0)
     return {
       k: 1,
       wrap: false,
     };
-  let value2: Dynamic = Math.min(1, context / input.w, value / input.h),
-    value3: Dynamic =
-      Math.min(PlatformFileContentConstant_14, options) / options;
-  return value2 >= value3
+  let fitScale: Dynamic = Math.min(1, maxWidth / textSize.w, maxHeight / textSize.h),
+    minimumScale: Dynamic =
+      Math.min(maxFittedAnnotationFontSize, fontSize) / fontSize;
+  return fitScale >= minimumScale
     ? {
-        k: value2,
+        k: fitScale,
         wrap: false,
       }
     : {
-        k: value3,
+        k: minimumScale,
         wrap: true,
       };
 }
 function annotationLineEndpoints(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  shapeKind?: Dynamic,
+  bounds?: Dynamic,
+  direction?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.w > 0 || options.h > 0,
-    [value2, value3]: Dynamic = value
-      ? [options.w, options.h]
-      : PlatformFileContentRectOvalLineConfig[input],
-    [value4, value5]: Dynamic = value ? [context.x, context.y] : [1, 1],
-    [value6, value7]: Dynamic =
-      value4 === 1
-        ? [options.x, options.x + value2]
-        : [options.x + value2, options.x],
-    [value8, value9]: Dynamic =
-      value5 === 1
-        ? [options.y, options.y + value3]
-        : [options.y + value3, options.y];
+  let hasExplicitSize: Dynamic = bounds.w > 0 || bounds.h > 0,
+    [width, height]: Dynamic = hasExplicitSize
+      ? [bounds.w, bounds.h]
+      : PlatformFileContentRectOvalLineConfig[shapeKind],
+    [xDirection, yDirection]: Dynamic = hasExplicitSize ? [direction.x, direction.y] : [1, 1],
+    [startX, endX]: Dynamic =
+      xDirection === 1
+        ? [bounds.x, bounds.x + width]
+        : [bounds.x + width, bounds.x],
+    [startY, endY]: Dynamic =
+      yDirection === 1
+        ? [bounds.y, bounds.y + height]
+        : [bounds.y + height, bounds.y];
   return {
-    x: value6,
-    y: value8,
-    x2: value7,
-    y2: value9,
+    x: startX,
+    y: startY,
+    x2: endX,
+    y2: endY,
   };
 }
 function isArtboardFile(path?: Dynamic): Dynamic {
@@ -1012,337 +1012,337 @@ function isDesignSystemFile(path?: Dynamic): Dynamic {
   return path.startsWith("ds/");
 }
 function parseShapeAnnotation(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  rawAnnotation?: Dynamic,
+  annotationId?: Dynamic,
+  kind?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      typeof input2 == "number" && Number.isFinite(input2)
-        ? input2
-        : options2,
-    value: Dynamic = PlatformFileContentMin_2(
-      callback(input.x, 0),
-      -PlatformFileContentConstant_18,
-      PlatformFileContentConstant_18,
+  let finiteOrFallback: Dynamic = (candidate?: Dynamic, fallback?: Dynamic): Dynamic =>
+      typeof candidate == "number" && Number.isFinite(candidate)
+        ? candidate
+        : fallback,
+    x: Dynamic = PlatformFileContentMin_2(
+      finiteOrFallback(rawAnnotation.x, 0),
+      -maxCanvasCoordinate,
+      maxCanvasCoordinate,
     ),
-    value2: Dynamic = PlatformFileContentMin_2(
-      callback(input.y, 0),
-      -PlatformFileContentConstant_18,
-      PlatformFileContentConstant_18,
+    y: Dynamic = PlatformFileContentMin_2(
+      finiteOrFallback(rawAnnotation.y, 0),
+      -maxCanvasCoordinate,
+      maxCanvasCoordinate,
     ),
-    value3: Dynamic = PlatformFileContentIncludes_2(input.color),
-    value4: Dynamic = normalizeAnnotationCss(input.css),
-    value5: Dynamic = normalizeRotationDegrees(input.rotate),
-    value6: Dynamic =
-      context === "rect" || context === "oval" || context === "image",
-    state: Dynamic = {
-      ...(value5 !== 0 && context !== "line" && context !== "arrow"
+    color: Dynamic = PlatformFileContentIncludes_2(rawAnnotation.color),
+    css: Dynamic = normalizeAnnotationCss(rawAnnotation.css),
+    rotation: Dynamic = normalizeRotationDegrees(rawAnnotation.rotate),
+    supportsFlip: Dynamic =
+      kind === "rect" || kind === "oval" || kind === "image",
+    transforms: Dynamic = {
+      ...(rotation !== 0 && kind !== "line" && kind !== "arrow"
         ? {
-            rotate: value5,
+            rotate: rotation,
           }
         : {}),
-      ...(input.flipX === true && value6
+      ...(rawAnnotation.flipX === true && supportsFlip
         ? {
             flipX: true,
           }
         : {}),
-      ...(input.flipY === true && value6
+      ...(rawAnnotation.flipY === true && supportsFlip
         ? {
             flipY: true,
           }
         : {}),
     },
-    state2: Dynamic = {
-      ...(value3 !== "default"
+    appearance: Dynamic = {
+      ...(color !== "default"
         ? {
-            color: value3,
+            color: color,
           }
         : {}),
-      ...(value4 !== undefined
+      ...(css !== undefined
         ? {
-            css: value4,
+            css: css,
           }
         : {}),
-      ...(PlatformFileContentTest_4(input.page) !== null
+      ...(parseCanvasItemId(rawAnnotation.page) !== null
         ? {
-            page: PlatformFileContentTest_4(input.page),
+            page: parseCanvasItemId(rawAnnotation.page),
           }
         : {}),
-      ...state,
+      ...transforms,
     },
-    [value7, value8]: Dynamic =
-      PlatformFileContentRectOvalLineConfig[context];
-  if (context === "pen") {
-    let value9: Dynamic = PlatformFileContentTrim_2(input.d);
-    return value9 === null
+    [defaultWidth, defaultHeight]: Dynamic =
+      PlatformFileContentRectOvalLineConfig[kind];
+  if (kind === "pen") {
+    let svgPath: Dynamic = PlatformFileContentTrim_2(rawAnnotation.d);
+    return svgPath === null
       ? null
       : {
-          id: options,
-          kind: context,
-          x: value,
-          y: value2,
+          id: annotationId,
+          kind: kind,
+          x: x,
+          y: y,
           w: PlatformFileContentMin_2(
-            callback(input.w, value7),
-            PlatformFileContentConstant_19,
-            PlatformFileContentLimit_6,
+            finiteOrFallback(rawAnnotation.w, defaultWidth),
+            minShapeDimension,
+            maxCanvasItemDimension,
           ),
           h: PlatformFileContentMin_2(
-            callback(input.h, value8),
-            PlatformFileContentConstant_19,
-            PlatformFileContentLimit_6,
+            finiteOrFallback(rawAnnotation.h, defaultHeight),
+            minShapeDimension,
+            maxCanvasItemDimension,
           ),
-          d: value9,
-          ...state2,
+          d: svgPath,
+          ...appearance,
         };
   }
-  if (context === "image") {
-    let value9: Dynamic = PlatformFileContentTest_2(input.src);
-    if (value9 === null) return null;
-    let value10: Dynamic = PlatformFileContentSlice(input.alt),
-      value11: Dynamic = PlatformFileContentTest_4(input.page),
-      value12: Dynamic = value4?.["object-fit"],
-      value13: Dynamic =
-        value12 === undefined || value12 === "cover"
-          ? parseAnnotationCrop(input.crop)
+  if (kind === "image") {
+    let sourceUrl: Dynamic = parseAnnotationImageUrl(rawAnnotation.src);
+    if (sourceUrl === null) return null;
+    let alt: Dynamic = PlatformFileContentSlice(rawAnnotation.alt),
+      page: Dynamic = parseCanvasItemId(rawAnnotation.page),
+      objectFit: Dynamic = css?.["object-fit"],
+      crop: Dynamic =
+        objectFit === undefined || objectFit === "cover"
+          ? parseAnnotationCrop(rawAnnotation.crop)
           : undefined,
-      value14: Dynamic = PlatformFileContentTest_3(input.video);
+      videoUrl: Dynamic = parseAnnotationVideoUrl(rawAnnotation.video);
     return {
-      id: options,
-      kind: context,
-      x: value,
-      y: value2,
+      id: annotationId,
+      kind: kind,
+      x: x,
+      y: y,
       w: PlatformFileContentMin_2(
-        callback(input.w, value7),
-        PlatformFileContentConstant_20,
-        PlatformFileContentLimit_6,
+        finiteOrFallback(rawAnnotation.w, defaultWidth),
+        minImageDimension,
+        maxCanvasItemDimension,
       ),
       h: PlatformFileContentMin_2(
-        callback(input.h, value8),
-        PlatformFileContentConstant_20,
-        PlatformFileContentLimit_6,
+        finiteOrFallback(rawAnnotation.h, defaultHeight),
+        minImageDimension,
+        maxCanvasItemDimension,
       ),
-      src: value9,
-      ...(value14 !== null
+      src: sourceUrl,
+      ...(videoUrl !== null
         ? {
-            video: value14,
+            video: videoUrl,
           }
         : {}),
-      ...(value10 !== undefined
+      ...(alt !== undefined
         ? {
-            alt: value10,
+            alt: alt,
           }
         : {}),
-      ...(value4 !== undefined
+      ...(css !== undefined
         ? {
-            css: value4,
+            css: css,
           }
         : {}),
-      ...(value13 !== undefined
+      ...(crop !== undefined
         ? {
-            crop: value13,
+            crop: crop,
           }
         : {}),
-      ...(value11 !== null
+      ...(page !== null
         ? {
-            page: value11,
+            page: page,
           }
         : {}),
-      ...state,
+      ...transforms,
     };
   }
-  if (context === "line" || context === "arrow") {
-    let callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-        input2 === "none" || input2 === "open" || input2 === "filled"
-          ? input2
+  if (kind === "line" || kind === "arrow") {
+    let parseArrowHead: Dynamic = (candidate?: Dynamic): Dynamic =>
+        candidate === "none" || candidate === "open" || candidate === "filled"
+          ? candidate
           : null,
-      state3: Dynamic = {
-        id: options,
-        kind: context,
-        x: value,
-        y: value2,
+      lineAnnotation: Dynamic = {
+        id: annotationId,
+        kind: kind,
+        x: x,
+        y: y,
         x2: PlatformFileContentMin_2(
-          callback(input.x2, value + value7),
-          -PlatformFileContentConstant_18,
-          PlatformFileContentConstant_18,
+          finiteOrFallback(rawAnnotation.x2, x + defaultWidth),
+          -maxCanvasCoordinate,
+          maxCanvasCoordinate,
         ),
         y2: PlatformFileContentMin_2(
-          callback(input.y2, value2 + value8),
-          -PlatformFileContentConstant_18,
-          PlatformFileContentConstant_18,
+          finiteOrFallback(rawAnnotation.y2, y + defaultHeight),
+          -maxCanvasCoordinate,
+          maxCanvasCoordinate,
         ),
-        ...state2,
+        ...appearance,
       };
-    return updateAnnotationArrowHeads(state3, {
-      start: callback2(input.headStart) ?? "none",
+    return updateAnnotationArrowHeads(lineAnnotation, {
+      start: parseArrowHead(rawAnnotation.headStart) ?? "none",
       end:
-        callback2(input.headEnd) ?? (context === "arrow" ? "filled" : "none"),
+        parseArrowHead(rawAnnotation.headEnd) ?? (kind === "arrow" ? "filled" : "none"),
     });
   }
   return {
-    id: options,
-    kind: context,
-    x: value,
-    y: value2,
+    id: annotationId,
+    kind: kind,
+    x: x,
+    y: y,
     w: PlatformFileContentMin_2(
-      callback(input.w, value7),
-      PlatformFileContentConstant_19,
-      PlatformFileContentLimit_6,
+      finiteOrFallback(rawAnnotation.w, defaultWidth),
+      minShapeDimension,
+      maxCanvasItemDimension,
     ),
     h: PlatformFileContentMin_2(
-      callback(input.h, value8),
-      PlatformFileContentConstant_19,
-      PlatformFileContentLimit_6,
+      finiteOrFallback(rawAnnotation.h, defaultHeight),
+      minShapeDimension,
+      maxCanvasItemDimension,
     ),
-    ...state2,
+    ...appearance,
   };
 }
 function parseAnnotation(rawAnnotation?: Dynamic): Dynamic {
   if (rawAnnotation === null || typeof rawAnnotation != "object") return null;
   let annotation: Dynamic = rawAnnotation,
-    id: Dynamic = PlatformFileContentTest_4(annotation.id);
+    id: Dynamic = parseCanvasItemId(annotation.id);
   if (id === null) return null;
   let kind: Dynamic =
     typeof annotation.text == "string" && annotation.text !== ""
       ? null
       : PlatformFileContentHandler_3(annotation.kind);
   if (kind !== null) return parseShapeAnnotation(annotation, id, kind);
-  let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      typeof input == "number" && Number.isFinite(input) ? input : options,
-    value: Dynamic =
+  let finiteOrFallback: Dynamic = (candidate?: Dynamic, fallback?: Dynamic): Dynamic =>
+      typeof candidate == "number" && Number.isFinite(candidate) ? candidate : fallback,
+    isLargeLegacyText: Dynamic =
       annotation.kind === "text" &&
       PlatformFileContentHandler_2(
         annotation.size,
-        PlatformFileContentConstant_2,
+        defaultNoteFontSize,
       ) >= PlatformFileContentSMLConfig.l,
-    value2: Dynamic =
+    textDefaults: Dynamic =
       PlatformFileContentNoteTitle1Config[
-        PlatformFileContentTest(annotation.kind) || value ? "title1" : "note"
+        PlatformFileContentTest(annotation.kind) || isLargeLegacyText ? "title1" : "note"
       ],
-    value3: Dynamic = PlatformFileContentSlice_2(annotation.text),
-    value4: Dynamic = PlatformFileContentHandler_2(
+    text: Dynamic = normalizeAnnotationText(annotation.text),
+    fontSize: Dynamic = PlatformFileContentHandler_2(
       annotation.size,
-      value2.size,
+      textDefaults.size,
     ),
-    value5: Dynamic = normalizeRotationDegrees(annotation.rotate);
+    rotation: Dynamic = normalizeRotationDegrees(annotation.rotate);
   return {
     id: id,
     x: PlatformFileContentMin_2(
-      callback(annotation.x, 0),
-      -PlatformFileContentConstant_18,
-      PlatformFileContentConstant_18,
+      finiteOrFallback(annotation.x, 0),
+      -maxCanvasCoordinate,
+      maxCanvasCoordinate,
     ),
     y: PlatformFileContentMin_2(
-      callback(annotation.y, 0),
-      -PlatformFileContentConstant_18,
-      PlatformFileContentConstant_18,
+      finiteOrFallback(annotation.y, 0),
+      -maxCanvasCoordinate,
+      maxCanvasCoordinate,
     ),
     w: PlatformFileContentMin_2(
       typeof annotation.w == "number" && Number.isFinite(annotation.w)
         ? annotation.w
-        : value2.kind === "note"
-          ? PlatformFileContentL(value3, value4)
-          : PlatformFileContentConstant_8,
-      PlatformFileContentConstant_9,
-      PlatformFileContentConstant_10,
+        : textDefaults.kind === "note"
+          ? PlatformFileContentL(text, fontSize)
+          : defaultTextAnnotationWidth,
+      minTextAnnotationWidth,
+      maxTextAnnotationWidth,
     ),
     ...PlatformFileContentHandler(
-      value2.kind,
+      textDefaults.kind,
       annotation.maxW,
       annotation.maxH,
     ),
-    text: value3,
+    text: text,
     ...PlatformFileContentKind_2(
-      value
-        ? value2
+      isLargeLegacyText
+        ? textDefaults
         : {
-            size: value4,
-            kind: value2.kind,
+            size: fontSize,
+            kind: textDefaults.kind,
             bold:
               typeof annotation.bold == "boolean"
                 ? annotation.bold
-                : value2.bold,
+                : textDefaults.bold,
             italic:
               typeof annotation.italic == "boolean"
                 ? annotation.italic
-                : value2.italic,
+                : textDefaults.italic,
             color: PlatformFileContentIncludes_2(annotation.color),
             fill: PlatformFileContentIncludes_3(annotation.fill),
           },
     ),
-    ...(PlatformFileContentTest_4(annotation.page) !== null
+    ...(parseCanvasItemId(annotation.page) !== null
       ? {
-          page: PlatformFileContentTest_4(annotation.page),
+          page: parseCanvasItemId(annotation.page),
         }
       : {}),
-    ...(value5 !== 0
+    ...(rotation !== 0
       ? {
-          rotate: value5,
+          rotate: rotation,
         }
       : {}),
   };
 }
-function parseDesignPages(input?: Dynamic): Dynamic {
-  if (!Array.isArray(input)) return [];
-  let items: Dynamic = [],
-    values: Dynamic = new Set();
-  for (let value of input as Dynamic) {
-    if (items.length >= maxDesignPages()) break;
-    if (value === null || typeof value != "object") continue;
-    let value2: Dynamic = value,
-      value3: Dynamic = PlatformFileContentTest_4(value2.id);
-    value3 === null ||
-      values.has(value3) ||
-      (values.add(value3),
-      items.push({
-        id: value3,
+function parseDesignPages(rawPages?: Dynamic): Dynamic {
+  if (!Array.isArray(rawPages)) return [];
+  let pages: Dynamic = [],
+    seenPageIds: Dynamic = new Set();
+  for (let candidate of rawPages as Dynamic) {
+    if (pages.length >= maxDesignPages()) break;
+    if (candidate === null || typeof candidate != "object") continue;
+    let sourcePage: Dynamic = candidate,
+      pageId: Dynamic = parseCanvasItemId(sourcePage.id);
+    pageId === null ||
+      seenPageIds.has(pageId) ||
+      (seenPageIds.add(pageId),
+      pages.push({
+        id: pageId,
         name:
-          PlatformFileContentSlice(value2.name) ??
-          "Page " + String(items.length + 1),
+          PlatformFileContentSlice(sourcePage.name) ??
+          "Page " + String(pages.length + 1),
       }));
   }
-  return items;
+  return pages;
 }
 function parseArtboardSpec(spec?: Dynamic): Dynamic {
-  let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      typeof input == "number" && Number.isFinite(input) ? input : options,
-    value: Dynamic = PlatformFileContentSlice(spec.title),
+  let finiteOrFallback: Dynamic = (candidate?: Dynamic, fallback?: Dynamic): Dynamic =>
+      typeof candidate == "number" && Number.isFinite(candidate) ? candidate : fallback,
+    title: Dynamic = PlatformFileContentSlice(spec.title),
     expand: Dynamic = spec.expand,
     print: Dynamic = spec.print,
     paper: Dynamic = spec.paper,
-    value2: Dynamic = PlatformFileContentTest_4(spec.page),
-    value3: Dynamic = spec.is_interactive === true,
-    value4: Dynamic = spec.frameless === true,
-    value5: Dynamic = parseArtboardGuides(spec.guides),
-    value6: Dynamic = normalizeArtboardRadius(spec.radius);
+    pageId: Dynamic = parseCanvasItemId(spec.page),
+    isInteractive: Dynamic = spec.is_interactive === true,
+    isFrameless: Dynamic = spec.frameless === true,
+    guides: Dynamic = parseArtboardGuides(spec.guides),
+    radius: Dynamic = normalizeArtboardRadius(spec.radius);
   return {
     file: spec.file,
     x: PlatformFileContentMin_2(
-      callback(spec.x, 0),
-      -PlatformFileContentConstant_18,
-      PlatformFileContentConstant_18,
+      finiteOrFallback(spec.x, 0),
+      -maxCanvasCoordinate,
+      maxCanvasCoordinate,
     ),
     y: PlatformFileContentMin_2(
-      callback(spec.y, 0),
-      -PlatformFileContentConstant_18,
-      PlatformFileContentConstant_18,
+      finiteOrFallback(spec.y, 0),
+      -maxCanvasCoordinate,
+      maxCanvasCoordinate,
     ),
     w: PlatformFileContentMin_2(
-      callback(spec.w, PlatformFileContentConstant_5),
-      value4
-        ? PlatformFileContentConstant_17
-        : PlatformFileContentConstant_15,
-      PlatformFileContentLimit_6,
+      finiteOrFallback(spec.w, defaultArtboardWidth),
+      isFrameless
+        ? minFramelessArtboardDimension
+        : minArtboardDimension,
+      maxCanvasItemDimension,
     ),
     h: PlatformFileContentMin_2(
-      callback(spec.h, PlatformFileContentConstant_6),
-      value4
-        ? PlatformFileContentConstant_17
-        : PlatformFileContentConstant_15,
-      PlatformFileContentLimit_6,
+      finiteOrFallback(spec.h, defaultArtboardHeight),
+      isFrameless
+        ? minFramelessArtboardDimension
+        : minArtboardDimension,
+      maxCanvasItemDimension,
     ),
-    ...(value !== undefined
+    ...(title !== undefined
       ? {
-          title: value,
+          title: title,
         }
       : {}),
     ...(expand === "fill"
@@ -1360,69 +1360,69 @@ function parseArtboardSpec(spec?: Dynamic): Dynamic {
           paper: paper,
         }
       : {}),
-    ...(value2 !== null
+    ...(pageId !== null
       ? {
-          page: value2,
+          page: pageId,
         }
       : {}),
-    ...(value3
+    ...(isInteractive
       ? {
           is_interactive: true,
         }
       : {}),
-    ...(value4
+    ...(isFrameless
       ? {
           frameless: true,
         }
       : {}),
-    ...(value5 !== undefined
+    ...(guides !== undefined
       ? {
-          guides: value5,
+          guides: guides,
         }
       : {}),
-    ...(value6 !== undefined
+    ...(radius !== undefined
       ? {
-          radius: value6,
+          radius: radius,
         }
       : {}),
   };
 }
-function artboardSpecFromProps(input?: Dynamic): Dynamic {
-  let value: Dynamic = parseArtboardSpec({
-    ...(typeof input == "object" && input !== null ? input : {}),
+function artboardSpecFromProps(props?: Dynamic): Dynamic {
+  let spec: Dynamic = parseArtboardSpec({
+    ...(typeof props == "object" && props !== null ? props : {}),
     file: "",
   });
   return {
-    w: value.w,
-    h: value.h,
-    ...(value.title !== undefined
+    w: spec.w,
+    h: spec.h,
+    ...(spec.title !== undefined
       ? {
-          title: value.title,
+          title: spec.title,
         }
       : {}),
-    ...artboardAppearanceProperties(value),
+    ...artboardAppearanceProperties(spec),
   };
 }
-function readEmbeddedArtboardProps(input?: Dynamic): Dynamic {
+function readEmbeddedArtboardProps(html?: Dynamic): Dynamic {
   try {
-    let value: Dynamic =
-      typeof input == "string"
-        ? PlatformFileContentScriptDataPropsPattern.exec(input)
+    let propsMatch: Dynamic =
+      typeof html == "string"
+        ? PlatformFileContentScriptDataPropsPattern.exec(html)
         : null;
-    if (!value) return null;
-    let value2: Dynamic = (value[1] ?? value[2] ?? "")
+    if (!propsMatch) return null;
+    let propsJson: Dynamic = (propsMatch[1] ?? propsMatch[2] ?? "")
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .replace(/&amp;/g, "&"),
-      value3: Dynamic = JSON.parse(value2)?.$preview,
-      callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        typeof input2 == "number" && Number.isFinite(input2) && input2 > 0,
-      value4: Dynamic = value3?.width,
-      value5: Dynamic = value3?.height;
-    return callback(value4) && callback(value5)
+      preview: Dynamic = JSON.parse(propsJson)?.$preview,
+      isPositiveDimension: Dynamic = (candidate?: Dynamic): Dynamic =>
+        typeof candidate == "number" && Number.isFinite(candidate) && candidate > 0,
+      width: Dynamic = preview?.width,
+      height: Dynamic = preview?.height;
+    return isPositiveDimension(width) && isPositiveDimension(height)
       ? {
-          w: value4,
-          h: value5,
+          w: width,
+          h: height,
         }
       : null;
   } catch {
@@ -1435,116 +1435,116 @@ function nextArtboardPosition(items?: Dynamic): Dynamic {
       x: 0,
       y: 0,
     };
-  let value: Dynamic = Math.max(
-      ...items.map((input?: Dynamic): Dynamic => input.x + input.w),
+  let rightmostEdge: Dynamic = Math.max(
+      ...items.map((artboard?: Dynamic): Dynamic => artboard.x + artboard.w),
     ),
-    value2: Dynamic = Math.min(
-      ...items.map((input?: Dynamic): Dynamic => input.y),
+    topmostEdge: Dynamic = Math.min(
+      ...items.map((artboard?: Dynamic): Dynamic => artboard.y),
     );
   return {
-    x: value + PlatformFileContentConstant_7,
-    y: value2,
+    x: rightmostEdge + newArtboardGap,
+    y: topmostEdge,
   };
 }
 function parseCanvasMetadata(
   metadataJson?: Dynamic,
   files?: Dynamic,
 ): Dynamic {
-  let values: Dynamic = new Set(Object.keys(files).filter(isArtboardFile)),
-    items: Dynamic = [],
-    values2: Dynamic = new Set(),
-    value: Dynamic = null;
+  let availableArtboardPaths: Dynamic = new Set(Object.keys(files).filter(isArtboardFile)),
+    artboards: Dynamic = [],
+    includedArtboardPaths: Dynamic = new Set(),
+    metadata: Dynamic = null;
   if (metadataJson) {
     try {
-      value = JSON.parse(metadataJson);
+      metadata = JSON.parse(metadataJson);
     } catch {
-      value = null;
+      metadata = null;
     }
-    let value7: Dynamic = value?.artboards;
-    if (Array.isArray(value7))
-      for (let value8 of value7 as Dynamic) {
-        if (!value8 || typeof value8 != "object") continue;
-        let file: Dynamic = value8.file;
+    let rawArtboards: Dynamic = metadata?.artboards;
+    if (Array.isArray(rawArtboards))
+      for (let rawArtboard of rawArtboards as Dynamic) {
+        if (!rawArtboard || typeof rawArtboard != "object") continue;
+        let file: Dynamic = rawArtboard.file;
         typeof file == "string" &&
-          (!values.has(file) ||
-            values2.has(file) ||
-            (values2.add(file), items.push(parseArtboardSpec(value8))));
+          (!availableArtboardPaths.has(file) ||
+            includedArtboardPaths.has(file) ||
+            (includedArtboardPaths.add(file), artboards.push(parseArtboardSpec(rawArtboard))));
       }
   }
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
+  let normalizeEmbeddedDimension: Dynamic = (dimension?: Dynamic): Dynamic =>
     Math.round(
       PlatformFileContentMin_2(
-        input,
-        PlatformFileContentConstant_16,
-        PlatformFileContentLimit_6,
+        dimension,
+        minEmbeddedArtboardDimension,
+        maxCanvasItemDimension,
       ),
     );
-  for (let value7 of values as Dynamic) {
-    if (values2.has(value7) || isDesignSystemFile(value7)) continue;
-    let value8: Dynamic = readEmbeddedArtboardProps(files[value7]);
-    items.push(
+  for (let filePath of availableArtboardPaths as Dynamic) {
+    if (includedArtboardPaths.has(filePath) || isDesignSystemFile(filePath)) continue;
+    let embeddedProps: Dynamic = readEmbeddedArtboardProps(files[filePath]);
+    artboards.push(
       parseArtboardSpec({
-        file: value7,
-        ...nextArtboardPosition(items),
-        ...(value8
+        file: filePath,
+        ...nextArtboardPosition(artboards),
+        ...(embeddedProps
           ? {
-              w: callback(value8.w),
-              h: callback(value8.h),
+              w: normalizeEmbeddedDimension(embeddedProps.w),
+              h: normalizeEmbeddedDimension(embeddedProps.h),
             }
           : {}),
       }),
     );
   }
-  let items2: Dynamic = [],
-    values3: Dynamic = new Set(),
-    value2: Dynamic = value?.annotations;
-  if (Array.isArray(value2))
-    for (let value7 of value2 as Dynamic) {
-      if (items2.length >= PlatformFileContentLimit_5) break;
-      let value8: Dynamic = parseAnnotation(value7);
-      value8 === null ||
-        values3.has(value8.id) ||
-        (values3.add(value8.id), items2.push(value8));
+  let annotations: Dynamic = [],
+    annotationIds: Dynamic = new Set(),
+    rawAnnotations: Dynamic = metadata?.annotations;
+  if (Array.isArray(rawAnnotations))
+    for (let rawAnnotation of rawAnnotations as Dynamic) {
+      if (annotations.length >= maxAnnotations) break;
+      let annotation: Dynamic = parseAnnotation(rawAnnotation);
+      annotation === null ||
+        annotationIds.has(annotation.id) ||
+        (annotationIds.add(annotation.id), annotations.push(annotation));
     }
-  let value3: Dynamic = parseDesignPages(value?.pages),
-    value4: Dynamic = normalizeDesignLaunch(value?.launch, items, value3),
-    values4: Dynamic = new Set(
-      value3.map((input?: Dynamic): Dynamic => input.id),
+  let pages: Dynamic = parseDesignPages(metadata?.pages),
+    launch: Dynamic = normalizeDesignLaunch(metadata?.launch, artboards, pages),
+    pageIds: Dynamic = new Set(
+      pages.map((page?: Dynamic): Dynamic => page.id),
     ),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input.page !== undefined && !values4.has(input.page)) {
-        let { page: value7, ...value8 }: Dynamic = input;
-        return value8;
+    removeUnknownPage: Dynamic = (item?: Dynamic): Dynamic => {
+      if (item.page !== undefined && !pageIds.has(item.page)) {
+        let { page: _unknownPage, ...itemWithoutPage }: Dynamic = item;
+        return itemWithoutPage;
       }
-      return input;
+      return item;
     },
-    value5: Dynamic = value?.migrated === true,
-    value6: Dynamic = validCoverArtboard(value?.cover, items);
+    isMigrated: Dynamic = metadata?.migrated === true,
+    cover: Dynamic = validCoverArtboard(metadata?.cover, artboards);
   return {
-    artboards: items.map(callback2),
-    ...(items2.length > 0
+    artboards: artboards.map(removeUnknownPage),
+    ...(annotations.length > 0
       ? {
-          annotations: items2.map(callback2),
+          annotations: annotations.map(removeUnknownPage),
         }
       : {}),
-    ...(value4 !== undefined
+    ...(launch !== undefined
       ? {
-          launch: value4,
+          launch: launch,
         }
       : {}),
-    ...(value3.length > 0
+    ...(pages.length > 0
       ? {
-          pages: value3,
+          pages: pages,
         }
       : {}),
-    ...(value6 !== undefined
+    ...(cover !== undefined
       ? {
-          cover: value6,
+          cover: cover,
         }
       : {}),
-    ...(value5
+    ...(isMigrated
       ? {
-          migrated: value5,
+          migrated: isMigrated,
         }
       : {}),
   };
@@ -1558,13 +1558,13 @@ function serializeCanvasMetadata(metadata?: Dynamic): Dynamic {
     ),
     cover: Dynamic = validCoverArtboard(metadata.cover, metadata.artboards),
     annotations: Dynamic = (metadata.annotations ?? [])
-      .map((input?: Dynamic): Dynamic => parseAnnotation(input))
-      .filter((input?: Dynamic): Dynamic => input !== null)
-      .slice(0, PlatformFileContentLimit_5);
+      .map((rawAnnotation?: Dynamic): Dynamic => parseAnnotation(rawAnnotation))
+      .filter((annotation?: Dynamic): Dynamic => annotation !== null)
+      .slice(0, maxAnnotations);
   return JSON.stringify(
     {
       artboards: metadata.artboards.map(
-        (input?: Dynamic): Dynamic => parseArtboardSpec(input),
+        (rawArtboard?: Dynamic): Dynamic => parseArtboardSpec(rawArtboard),
       ),
       ...(annotations.length > 0
         ? {
@@ -1596,62 +1596,62 @@ function serializeCanvasMetadata(metadata?: Dynamic): Dynamic {
     2,
   );
 }
-function artboardStackOrder(input?: Dynamic, options?: Dynamic): Dynamic {
+function artboardStackOrder(orderedPaths?: Dynamic, artboards?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(
-      options.map(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic => [
-          input2.file,
-          options2,
+      artboards.map(
+        (artboard?: Dynamic, artboardIndex?: Dynamic): Dynamic => [
+          artboard.file,
+          artboardIndex,
         ],
       ),
     ),
-    value: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic => entries.has(input2),
+    value: Dynamic = orderedPaths.filter(
+      (filePath?: Dynamic): Dynamic => entries.has(filePath),
     ),
     values: Dynamic = new Set(value),
-    value2: Dynamic = options
-      .map((input2?: Dynamic): Dynamic => input2.file)
-      .filter((input2?: Dynamic): Dynamic => !values.has(input2));
-  return [...value, ...value2].map(
-    (input2?: Dynamic): Dynamic => ({
-      spec: options[entries.get(input2)],
-      z: entries.get(input2),
+    unlistedPaths: Dynamic = artboards
+      .map((artboard?: Dynamic): Dynamic => artboard.file)
+      .filter((filePath?: Dynamic): Dynamic => !values.has(filePath));
+  return [...value, ...unlistedPaths].map(
+    (filePath?: Dynamic): Dynamic => ({
+      spec: artboards[entries.get(filePath)],
+      z: entries.get(filePath),
     }),
   );
 }
 function reorderArtboardsOnPages(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  artboards?: Dynamic,
+  selectedPaths?: Dynamic,
+  direction?: Dynamic,
+  pages?: Dynamic,
 ): Dynamic {
-  let items: Dynamic = [...input],
+  let items: Dynamic = [...artboards],
     values: Dynamic = new Set(
-      input
-        .filter((input2?: Dynamic): Dynamic => options.has(input2.file))
-        .map((input2?: Dynamic): Dynamic => designPageId(input2, value)),
+      artboards
+        .filter((artboard?: Dynamic): Dynamic => selectedPaths.has(artboard.file))
+        .map((artboard?: Dynamic): Dynamic => designPageId(artboard, pages)),
     );
-  for (let value2 of values as Dynamic) {
-    let value3: Dynamic = input.flatMap(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          designPageId(input2, value) === value2 ? [options2] : [],
+  for (let pageId of values as Dynamic) {
+    let pageIndices: Dynamic = artboards.flatMap(
+        (artboard?: Dynamic, artboardIndex?: Dynamic): Dynamic =>
+          designPageId(artboard, pages) === pageId ? [artboardIndex] : [],
       ),
-      value4: Dynamic = value3.filter(
-        (input2?: Dynamic): Dynamic => options.has(input[input2].file),
+      selectedIndices: Dynamic = pageIndices.filter(
+        (artboardIndex?: Dynamic): Dynamic => selectedPaths.has(artboards[artboardIndex].file),
       ),
-      value5: Dynamic = value3.filter(
-        (input2?: Dynamic): Dynamic => !options.has(input[input2].file),
+      otherIndices: Dynamic = pageIndices.filter(
+        (artboardIndex?: Dynamic): Dynamic => !selectedPaths.has(artboards[artboardIndex].file),
       ),
-      value6: Dynamic =
-        context === "front" ? [...value5, ...value4] : [...value4, ...value5];
-    value3.forEach(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        (items[input2] = input[value6[options2]]),
+      reorderedIndices: Dynamic =
+        direction === "front" ? [...otherIndices, ...selectedIndices] : [...selectedIndices, ...otherIndices];
+    pageIndices.forEach(
+      (artboardIndex?: Dynamic, orderIndex?: Dynamic): Dynamic =>
+        (items[artboardIndex] = artboards[reorderedIndices[orderIndex]]),
     );
   }
   return items.every(
-    (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      input2 === input[options2],
+    (artboard?: Dynamic, artboardIndex?: Dynamic): Dynamic =>
+      artboard === artboards[artboardIndex],
   )
     ? null
     : items;
@@ -1664,7 +1664,7 @@ function uniqueArtboardFile(
   let values: Dynamic = new Set(
     Object.keys(files)
       .filter(isArtboardFile)
-      .map((input?: Dynamic): Dynamic => input.replace(/\.dc\.html$/, "")),
+      .map((filePath?: Dynamic): Dynamic => filePath.replace(/\.dc\.html$/, "")),
   );
   if (randomize)
     for (;;) {
@@ -1677,31 +1677,31 @@ function uniqueArtboardFile(
   for (; values.has(prefix + String(count)); ) count += 1;
   return prefix + String(count) + ".dc.html";
 }
-function nextArtboardTitle(input?: Dynamic): Dynamic {
+function nextArtboardTitle(artboards?: Dynamic): Dynamic {
   let index: Dynamic = 0;
-  for (let value of input as Dynamic) {
-    let value2: Dynamic = /^Artboard(?: ?(\d{1,9}))?$/.exec(
+  for (let value of artboards as Dynamic) {
+    let defaultTitleMatch: Dynamic = /^Artboard(?: ?(\d{1,9}))?$/.exec(
       artboardDisplayName(value),
     );
-    value2 && (index = Math.max(index, value2[1] ? Number(value2[1]) : 1));
+    defaultTitleMatch && (index = Math.max(index, defaultTitleMatch[1] ? Number(defaultTitleMatch[1]) : 1));
   }
   return "Artboard " + String(index + 1);
 }
 function uniqueElementArtboardTitle(
-  input?: Dynamic,
-  options?: Dynamic,
+  requestedTitle?: Dynamic,
+  artboards?: Dynamic,
 ): Dynamic {
   let value: Dynamic = (
-      input.trim() === ""
+      requestedTitle.trim() === ""
         ? "Element"
-        : input
+        : requestedTitle
             .trim()
             .replace(
               /^./,
-              (input2?: Dynamic): Dynamic => input2.toUpperCase(),
+              (letter?: Dynamic): Dynamic => letter.toUpperCase(),
             )
-    ).slice(0, PlatformFileContentConstant_21 - 10),
-    values: Dynamic = new Set(options.map(artboardDisplayName));
+    ).slice(0, maxCanvasLabelChars - 10),
+    values: Dynamic = new Set(artboards.map(artboardDisplayName));
   if (!values.has(value)) return value;
   let count: Dynamic = 2;
   for (; values.has(value + " (" + String(count) + ")"); ) count += 1;
@@ -1713,7 +1713,7 @@ function duplicateArtboardTitle(
 ): Dynamic {
   let baseTitle: Dynamic = title
       .replace(/ copy(?: \d{1,9})?$/, "")
-      .slice(0, PlatformFileContentConstant_21 - 10),
+      .slice(0, maxCanvasLabelChars - 10),
     titles: Dynamic = new Set(artboards.map(artboardDisplayName));
   if (!titles.has(baseTitle + " copy")) return baseTitle + " copy";
   let suffix: Dynamic = 2;
@@ -1726,7 +1726,7 @@ function createAnnotationId(
   prefix: Dynamic = "note",
 ): Dynamic {
   let values: Dynamic = new Set(
-    annotations.map((input?: Dynamic): Dynamic => input.id),
+    annotations.map((annotation?: Dynamic): Dynamic => annotation.id),
   );
   if (randomize)
     for (;;) {
@@ -1769,30 +1769,30 @@ function replaceDesignArtboards(
   };
 }
 function designArtboardsMatchFiles(
-  input?: Dynamic,
-  options?: Dynamic,
+  metadata?: Dynamic,
+  files?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.artboards
-      .map((input2?: Dynamic): Dynamic => input2.file)
+  let value: Dynamic = metadata.artboards
+      .map((artboard?: Dynamic): Dynamic => artboard.file)
       .sort(),
-    value2: Dynamic = Object.keys(options)
+    actualPaths: Dynamic = Object.keys(files)
       .filter(
-        (input2?: Dynamic): Dynamic =>
-          isArtboardFile(input2) &&
-          (!isDesignSystemFile(input2) || value.includes(input2)),
+        (filePath?: Dynamic): Dynamic =>
+          isArtboardFile(filePath) &&
+          (!isDesignSystemFile(filePath) || value.includes(filePath)),
       )
       .sort();
   return (
-    value2.length === value.length &&
-    value2.every(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        input2 === value[options2],
+    actualPaths.length === value.length &&
+    actualPaths.every(
+      (filePath?: Dynamic, fileIndex?: Dynamic): Dynamic =>
+        filePath === value[fileIndex],
     )
   );
 }
 function designPageContents(metadata?: Dynamic, pageId?: Dynamic): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      designPageId(input, metadata.pages) === pageId,
+  let callback: Dynamic = (item?: Dynamic): Dynamic =>
+      designPageId(item, metadata.pages) === pageId,
     value: Dynamic = (metadata.annotations ?? []).filter(callback);
   return {
     ...metadata,
@@ -1805,65 +1805,65 @@ function designPageContents(metadata?: Dynamic, pageId?: Dynamic): Dynamic {
   };
 }
 function replaceDesignPageContents(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  manifest?: Dynamic,
+  pageId?: Dynamic,
+  replacement?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      designPageId(input2, input.pages) === options,
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.page === undefined && options !== (input.pages?.[0]?.id ?? "")
+  let isOnPage: Dynamic = (item?: Dynamic): Dynamic =>
+      designPageId(item, manifest.pages) === pageId,
+    assignPage: Dynamic = (item?: Dynamic): Dynamic =>
+      item.page === undefined && pageId !== (manifest.pages?.[0]?.id ?? "")
         ? {
-            ...input2,
-            page: options,
+            ...item,
+            page: pageId,
           }
-        : input2,
-    items: Dynamic = [
-      ...input.artboards.filter(
-        (input2?: Dynamic): Dynamic => !callback(input2),
+        : item,
+    artboards: Dynamic = [
+      ...manifest.artboards.filter(
+        (artboard?: Dynamic): Dynamic => !isOnPage(artboard),
       ),
-      ...context.artboards.map(callback2),
+      ...replacement.artboards.map(assignPage),
     ],
-    state: Dynamic = {
-      ...input,
-      artboards: items,
+    nextManifest: Dynamic = {
+      ...manifest,
+      artboards: artboards,
     };
-  if ("annotations" in context) {
-    let items2: Dynamic = [
-      ...(input.annotations ?? []).filter(
-        (input2?: Dynamic): Dynamic => !callback(input2),
+  if ("annotations" in replacement) {
+    let annotations: Dynamic = [
+      ...(manifest.annotations ?? []).filter(
+        (annotation?: Dynamic): Dynamic => !isOnPage(annotation),
       ),
-      ...(context.annotations ?? []).map(callback2),
+      ...(replacement.annotations ?? []).map(assignPage),
     ];
-    items2.length > 0
-      ? (state.annotations = items2)
-      : delete state.annotations;
+    annotations.length > 0
+      ? (nextManifest.annotations = annotations)
+      : delete nextManifest.annotations;
   }
-  "launch" in context &&
-    (context.launch !== undefined
-      ? (state.launch = context.launch)
-      : delete state.launch);
-  return state;
+  "launch" in replacement &&
+    (replacement.launch !== undefined
+      ? (nextManifest.launch = replacement.launch)
+      : delete nextManifest.launch);
+  return nextManifest;
 }
-function isSupportedProjectAsset(input?: Dynamic): Dynamic {
+function isSupportedProjectAsset(filePath?: Dynamic): Dynamic {
   return (
-    PlatformFileContentWebpAvifPattern.test(input) ||
-    (PlatformFileContentJsonPattern.test(input) &&
-      !PlatformFileContentNodeModulesPattern.test(input))
+    PlatformFileContentWebpAvifPattern.test(filePath) ||
+    (PlatformFileContentJsonPattern.test(filePath) &&
+      !PlatformFileContentNodeModulesPattern.test(filePath))
   );
 }
 function isSafeProjectPath(path?: Dynamic): Dynamic {
   return (
     typeof path == "string" &&
     path.length > 0 &&
-    path.length <= PlatformFileContentLimit_8 &&
+    path.length <= maxProjectPathChars &&
     !path.includes("..") &&
     path
       .split("/")
       .every(
-        (input?: Dynamic): Dynamic =>
-          PlatformFileContentAZaZAZaZPattern.test(input) &&
-          !PlatformFileContentPattern_3.test(input),
+        (segment?: Dynamic): Dynamic =>
+          PlatformFileContentAZaZAZaZPattern.test(segment) &&
+          !reservedProjectSegmentPattern.test(segment),
       )
   );
 }
@@ -1875,45 +1875,45 @@ function isProjectTextFilePath(path?: Dynamic): Dynamic {
   );
 }
 function isTypeDeclarationPath(path?: Dynamic): Dynamic {
-  return isSafeProjectPath(path) && PlatformFileContentPattern_4.test(path);
+  return isSafeProjectPath(path) && declarationPathPattern.test(path);
 }
 function isFullProjectPath(path?: Dynamic): Dynamic {
   return isSafeProjectPath(path) && path.startsWith(ProjectValue);
 }
-function hashProjectFileKey(input?: Dynamic): Dynamic {
-  let value: Dynamic = 0x6c62272e07bb014262b821756295c58dn,
-    value2: Dynamic = 0x0000000001000000000000000000013bn,
-    value3: Dynamic = (1n << 128n) - 1n;
-  for (let value4 of PlatformFileContentTextEncoder.encode(input) as Dynamic)
-    value = ((value ^ BigInt(value4)) * value2) & value3;
-  return value.toString(16).padStart(32, "0");
+function hashProjectFileKey(filePath?: Dynamic): Dynamic {
+  let hash: Dynamic = 0x6c62272e07bb014262b821756295c58dn,
+    fnvPrime: Dynamic = 0x0000000001000000000000000000013bn,
+    hashMask: Dynamic = (1n << 128n) - 1n;
+  for (let byte of PlatformFileContentTextEncoder.encode(filePath) as Dynamic)
+    hash = ((hash ^ BigInt(byte)) * fnvPrime) & hashMask;
+  return hash.toString(16).padStart(32, "0");
 }
-function encodeStorePathSegment(input?: Dynamic): Dynamic {
+function encodeStorePathSegment(segment?: Dynamic): Dynamic {
   let text: Dynamic = "";
-  for (let value of PlatformFileContentTextEncoder.encode(input) as Dynamic) {
-    let value2: Dynamic = String.fromCharCode(value);
+  for (let value of PlatformFileContentTextEncoder.encode(segment) as Dynamic) {
+    let character: Dynamic = String.fromCharCode(value);
     text +=
-      value < 128 && PlatformFileContentAZaZPattern.test(value2)
-        ? value2
+      value < 128 && PlatformFileContentAZaZPattern.test(character)
+        ? character
         : "~" + value.toString(16).padStart(2, "0");
   }
   (text === "." || text === "..") && (text = text.replaceAll(".", "~2e"));
-  return text.length > 150 ? "h~" + hashProjectFileKey(input) : text;
+  return text.length > 150 ? "h~" + hashProjectFileKey(segment) : text;
 }
 function artboardDocument(spec?: Dynamic, html?: Dynamic): Dynamic {
-  let document2: Dynamic = {
+  let boardDocument: Dynamic = {
     path: spec.file,
   };
   for (let value of PlatformFileContentXYWValues as Dynamic)
-    spec[value] !== undefined && (document2[value] = spec[value]);
-  document2.html = html;
-  return document2;
+    spec[value] !== undefined && (boardDocument[value] = spec[value]);
+  boardDocument.html = html;
+  return boardDocument;
 }
 function annotationDocument(annotation?: Dynamic): Dynamic {
-  let document2: Dynamic = {};
-  for (let [value, value2] of Object.entries(annotation) as Dynamic)
-    value !== "id" && value2 !== undefined && (document2[value] = value2);
-  return document2;
+  let noteDocument: Dynamic = {};
+  for (let [value, fieldValue] of Object.entries(annotation) as Dynamic)
+    value !== "id" && fieldValue !== undefined && (noteDocument[value] = fieldValue);
+  return noteDocument;
 }
 function projectFileDocument(path?: Dynamic, data?: Dynamic): Dynamic {
   return {
@@ -1923,21 +1923,21 @@ function projectFileDocument(path?: Dynamic, data?: Dynamic): Dynamic {
   };
 }
 function canvasMetaDocument(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  title?: Dynamic,
+  manifest?: Dynamic,
+  boardOrder?: Dynamic,
 ): Dynamic {
   let state: Dynamic = {
     v: 2,
-    title: input,
+    title: title,
     boardOrder:
-      context ??
-      options.artboards.map((input2?: Dynamic): Dynamic => input2.file),
+      boardOrder ??
+      manifest.artboards.map((artboard?: Dynamic): Dynamic => artboard.file),
   };
-  options.pages !== undefined && (state.pages = options.pages);
-  options.launch !== undefined && (state.launch = options.launch);
-  options.cover !== undefined && (state.cover = options.cover);
-  options.migrated === true && (state.migrated = true);
+  manifest.pages !== undefined && (state.pages = manifest.pages);
+  manifest.launch !== undefined && (state.launch = manifest.launch);
+  manifest.cover !== undefined && (state.cover = manifest.cover);
+  manifest.migrated === true && (state.migrated = true);
   return state;
 }
 function designSourceDocument(
@@ -1953,116 +1953,116 @@ function designSourceDocument(
     exportedAt: exportedAt,
   };
 }
-function designSourceRefusal(input?: Dynamic): Dynamic {
-  if (typeof input != "object" || input === null || Array.isArray(input))
+function designSourceRefusal(candidate?: Dynamic): Dynamic {
+  if (typeof candidate != "object" || candidate === null || Array.isArray(candidate))
     return "not an object";
-  let value: Dynamic = input;
+  let value: Dynamic = candidate;
   if (value.v !== 1) return "v is not 1";
   if (value.app !== ClaudeDesignValue)
     return "app is not " + ClaudeDesignValue;
   if (typeof value.url != "string") return "url is not a string";
-  if (value.url.length > PlatformFileContentLimit_9)
+  if (value.url.length > maxSourceUrlChars)
     return (
-      "url is over " + String(PlatformFileContentLimit_9) + " characters"
+      "url is over " + String(maxSourceUrlChars) + " characters"
     );
-  let value2: Dynamic;
+  let parsedUrl: Dynamic;
   try {
-    value2 = new URL(value.url);
+    parsedUrl = new URL(value.url);
   } catch {
     return "url is not an absolute URL";
   }
-  if (value2.protocol !== "https:") return "url is not https";
-  if (value2.username !== "" || value2.password !== "")
+  if (parsedUrl.protocol !== "https:") return "url is not https";
+  if (parsedUrl.username !== "" || parsedUrl.password !== "")
     return "url carries credentials";
-  if (value2.href !== value2.origin + value2.pathname)
+  if (parsedUrl.href !== parsedUrl.origin + parsedUrl.pathname)
     return "url carries a query or fragment";
-  if (value2.href !== value.url)
-    return "url is not in canonical form (" + value2.href + ")";
+  if (parsedUrl.href !== value.url)
+    return "url is not in canonical form (" + parsedUrl.href + ")";
   if (
     typeof value.projectId != "string" ||
-    !PlatformFileContentAZaZPattern_2.test(value.projectId)
+    !sourceProjectIdPattern.test(value.projectId)
   )
     return "projectId is not 1\u201364 of A-Z a-z 0-9 _ -";
-  if (value2.pathname !== DesignPValue + value.projectId)
+  if (parsedUrl.pathname !== DesignPValue + value.projectId)
     return "url is not <origin>" + DesignPValue + "<projectId>";
   if (
     typeof value.exportedAt != "string" ||
-    !PlatformFileContentPattern_5.test(value.exportedAt) ||
+    !zonedDateTimePattern.test(value.exportedAt) ||
     !Number.isFinite(Date.parse(value.exportedAt))
   )
     return "exportedAt is not an ISO-8601 date-time with a zone";
 }
-function parseDesignSource(input?: Dynamic): Dynamic {
-  if (designSourceRefusal(input) !== undefined) return;
-  let value: Dynamic = input;
+function parseDesignSource(candidate?: Dynamic): Dynamic {
+  if (designSourceRefusal(candidate) !== undefined) return;
+  let value: Dynamic = candidate;
   return designSourceDocument(value.url, value.projectId, value.exportedAt);
 }
 function parseDesignContent(
-  input?: Dynamic,
-  options: Dynamic = PlatformFileContentResolvedValue_11,
-  context: Dynamic = false,
+  rawContent?: Dynamic,
+  maxFileBytes: Dynamic = defaultDocumentFileBytes,
+  allowLongPaths: Dynamic = false,
 ): Dynamic {
   let value: Dynamic =
-      typeof input == "object" && input !== null ? input : {},
-    value2: Dynamic =
+      typeof rawContent == "object" && rawContent !== null ? rawContent : {},
+    rawFiles: Dynamic =
       typeof value.files == "object" && value.files !== null
         ? value.files
         : {},
     items: Dynamic = [];
-  for (let value3 in value2) {
+  for (let filePath in rawFiles) {
     if (items.length >= PlatformFileContentFilesValue) break;
     if (
-      !Object.hasOwn(value2, value3) ||
-      value3.length === 0 ||
-      value3.startsWith("/") ||
-      value3.includes("\\") ||
-      (!context &&
-        (value3.length > PlatformFileContentLimit_10 ||
-          value3.includes("..")))
+      !Object.hasOwn(rawFiles, filePath) ||
+      filePath.length === 0 ||
+      filePath.startsWith("/") ||
+      filePath.includes("\\") ||
+      (!allowLongPaths &&
+        (filePath.length > maxEmbeddedFilePathChars ||
+          filePath.includes("..")))
     )
       continue;
-    let value4: Dynamic = value2[value3];
-    typeof value4 == "string" &&
-      (PlatformFileContentTextEncoder_2.encode(value4).length > options ||
-        items.push([value3, value4]));
+    let fileContent: Dynamic = rawFiles[filePath];
+    typeof fileContent == "string" &&
+      (PlatformFileContentTextEncoder_2.encode(fileContent).length > maxFileBytes ||
+        items.push([filePath, fileContent]));
   }
   return {
     files: Object.fromEntries(items),
   };
 }
-function getDocumentFileCap(input?: Dynamic): Dynamic {
-  return "maxFileBytes" in input && typeof input.maxFileBytes == "number"
-    ? input.maxFileBytes
-    : "loadState" in input
-      ? PlatformFileContentResolvedValue_7
-      : PlatformFileContentResolvedValue_11;
+function getDocumentFileCap(document?: Dynamic): Dynamic {
+  return "maxFileBytes" in document && typeof document.maxFileBytes == "number"
+    ? document.maxFileBytes
+    : "loadState" in document
+      ? maxSyncedFileBytes
+      : defaultDocumentFileBytes;
 }
-function createDesignDocumentStore(input: Dynamic = {}): Dynamic {
+function createDesignDocumentStore(storeOptions: Dynamic = {}): Dynamic {
   return createDocumentStore({
     parseContent: parseDesignContent,
     initialContent: {
       files: {},
     },
     defaultTitle: "Design",
-    ...input,
+    ...storeOptions,
   });
 }
-function primaryDesignFile(input?: Dynamic): Dynamic {
-  let value: Dynamic = Object.keys(input.files).sort();
+function primaryDesignFile(content?: Dynamic): Dynamic {
+  let value: Dynamic = Object.keys(content.files).sort();
   return value.includes("Main.dc.html")
     ? "Main.dc.html"
     : (value.find(
-        (input2?: Dynamic): Dynamic => input2.endsWith(".dc.html"),
+        (filePath?: Dynamic): Dynamic => filePath.endsWith(".dc.html"),
       ) ??
         value[0] ??
         null);
 }
-function fileCapFailureMessage(input?: Dynamic): Dynamic {
+function fileCapFailureMessage(error?: Dynamic): Dynamic {
   let value: Dynamic = PlatformFileContentOverPerFilePattern.exec(
-    input instanceof Error
-      ? input.message
-      : typeof input == "string"
-        ? input
+    error instanceof Error
+      ? error.message
+      : typeof error == "string"
+        ? error
         : "",
   );
   return value
@@ -2074,35 +2074,35 @@ function fileCapFailureMessage(input?: Dynamic): Dynamic {
     : undefined;
 }
 function createDocumentKvAdapter(
-  input?: Dynamic,
-  options: Dynamic = PlatformFileContentResolvedValue_11,
-  context: Dynamic = "it would be dropped at the next load",
+  document?: Dynamic,
+  maxFileBytes: Dynamic = defaultDocumentFileBytes,
+  oversizedFileExplanation: Dynamic = "it would be dropped at the next load",
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    input2.startsWith(FileValue) ? input2.slice(FileValue.length) : null;
+  let filePathForKey: Dynamic = (key?: Dynamic): Dynamic =>
+    key.startsWith(FileValue) ? key.slice(FileValue.length) : null;
   return {
-    get(input2: Dynamic): Dynamic {
-      let value: Dynamic = callback(input2);
+    get(key: Dynamic): Dynamic {
+      let value: Dynamic = filePathForKey(key);
       if (value === null) return Promise.resolve(null);
-      let value2: Dynamic = input.content().files[value];
-      return Promise.resolve(value2 === undefined ? null : value2);
+      let fileContent: Dynamic = document.content().files[value];
+      return Promise.resolve(fileContent === undefined ? null : fileContent);
     },
-    set(input2: Dynamic, options2: Dynamic, context2: Dynamic): Dynamic {
-      let value: Dynamic = callback(input2);
+    set(key: Dynamic, fileContent: Dynamic, updateOptions: Dynamic): Dynamic {
+      let value: Dynamic = filePathForKey(key);
       if (value === null)
         return Promise.reject(
-          new Error("only file/ keys exist in the document seam: " + input2),
+          new Error("only file/ keys exist in the document seam: " + key),
         );
-      if (PlatformFileContentTextEncoder_3.encode(options2).length > options)
+      if (PlatformFileContentTextEncoder_3.encode(fileContent).length > maxFileBytes)
         return Promise.reject(
           new Error(
             "file is over the " +
-              String(options / (1024 * 1024)) +
+              String(maxFileBytes / (1024 * 1024)) +
               " MiB per-file cap \u2014 " +
-              context,
+              oversizedFileExplanation,
           ),
         );
-      let files: Dynamic = input.content().files;
+      let files: Dynamic = document.content().files;
       return !Object.hasOwn(files, value) &&
         Object.keys(files).length >= PlatformFileContentFilesValue
         ? Promise.reject(
@@ -2112,45 +2112,45 @@ function createDocumentKvAdapter(
                 ") \u2014 delete something first",
             ),
           )
-        : (input.updateContent(
-            (input3?: Dynamic): Dynamic => ({
+        : (document.updateContent(
+            (content?: Dynamic): Dynamic => ({
               files: {
-                ...input3.files,
-                [value]: options2,
+                ...content.files,
+                [value]: fileContent,
               },
             }),
-            context2,
+            updateOptions,
           ),
           Promise.resolve());
     },
-    list(input2: Dynamic): Dynamic {
-      let value: Dynamic = Object.keys(input.content().files).sort();
+    list(prefix: Dynamic): Dynamic {
+      let value: Dynamic = Object.keys(document.content().files).sort();
       return Promise.resolve(
         value
-          .map((input3?: Dynamic): Dynamic => FileValue + input3)
-          .filter((input3?: Dynamic): Dynamic => input3.startsWith(input2)),
+          .map((filePath?: Dynamic): Dynamic => FileValue + filePath)
+          .filter((key?: Dynamic): Dynamic => key.startsWith(prefix)),
       );
     },
-    delete(input2: Dynamic): Dynamic {
-      let value: Dynamic = callback(input2);
+    delete(key: Dynamic): Dynamic {
+      let value: Dynamic = filePathForKey(key);
       if (value === null) return Promise.resolve(false);
-      let value2: Dynamic = Object.hasOwn(input.content().files, value);
-      value2 &&
-        input.updateContent((input3?: Dynamic): Dynamic => {
+      let hadFile: Dynamic = Object.hasOwn(document.content().files, value);
+      hadFile &&
+        document.updateContent((content?: Dynamic): Dynamic => {
           let state: Dynamic = {
-            ...input3.files,
+            ...content.files,
           };
           delete state[value];
           return {
             files: state,
           };
         });
-      return Promise.resolve(value2);
+      return Promise.resolve(hadFile);
     },
   };
 }
-function setKvClient(input?: Dynamic): Dynamic {
-  PlatformFileContentAlias = input;
+function setKvClient(client?: Dynamic): Dynamic {
+  PlatformFileContentAlias = client;
 }
 function getKvClient(): Dynamic {
   if (!PlatformFileContentAlias)
@@ -2164,19 +2164,19 @@ function stripAppifactPathPrefix(path?: Dynamic): Dynamic {
     ? path.slice(AppifactValue.length)
     : path;
 }
-function registerAssetUrl(input?: Dynamic, options?: Dynamic): Dynamic {
-  PlatformFileContentCache_2.set(input, options);
+function registerAssetUrl(filePath?: Dynamic, assetUrl?: Dynamic): Dynamic {
+  PlatformFileContentCache_2.set(filePath, assetUrl);
 }
-function registerImageFileUrls(input?: Dynamic): Dynamic {
-  for (let [value, value2] of Object.entries(input) as Dynamic)
-    PlatformFileContentWebpAvifPattern_2.test(value) &&
+function registerImageFileUrls(files?: Dynamic): Dynamic {
+  for (let [value, base64Content] of Object.entries(files) as Dynamic)
+    imageFilePathPattern.test(value) &&
       PlatformFileContentCache_2.set(
         value,
-        "data:" + imageFileMimeType(value) + ";base64," + value2,
+        "data:" + imageFileMimeType(value) + ";base64," + base64Content,
       );
 }
-function imageFileMimeType(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.slice(input.lastIndexOf(".") + 1).toLowerCase();
+function imageFileMimeType(filePath?: Dynamic): Dynamic {
+  let value: Dynamic = filePath.slice(filePath.lastIndexOf(".") + 1).toLowerCase();
   return (
     (
       {
@@ -2206,63 +2206,63 @@ function currentHttpOrigin(): Dynamic {
 function resolveProjectAssetUrl(
   project?: Dynamic,
   path?: Dynamic,
-  options: Dynamic = {},
+  _assetOptions: Dynamic = {},
 ): Dynamic {
   return (
     PlatformFileContentCache_2.get(stripAppifactPathPrefix(path)) ??
     `./${stripAppifactPathPrefix(path)}`
   );
 }
-function probePreviewRuntime(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options?.attempts ?? 1,
-    value2: Dynamic = options?.timeoutMs ?? 400;
-  return new Promise((input2?: Dynamic): Dynamic => {
-    let values: Dynamic = new Set(),
-      index: Dynamic = 0,
-      value3: Dynamic,
-      callback: Dynamic = (input3?: Dynamic): Dynamic => {
-        let data: Dynamic = input3.data;
+function probePreviewRuntime(port?: Dynamic, probeOptions?: Dynamic): Dynamic {
+  let attempts: Dynamic = probeOptions?.attempts ?? 1,
+    timeoutMs: Dynamic = probeOptions?.timeoutMs ?? 400;
+  return new Promise((resolve?: Dynamic): Dynamic => {
+    let pendingPingIds: Dynamic = new Set(),
+      attemptCount: Dynamic = 0,
+      probeTimer: Dynamic,
+      receivePong: Dynamic = (message?: Dynamic): Dynamic => {
+        let data: Dynamic = message.data;
         data == null ||
           typeof data != "object" ||
           (typeof data.__om_pong == "string" &&
-            values.has(data.__om_pong) &&
-            callback2("alive"));
+            pendingPingIds.has(data.__om_pong) &&
+            finishProbe("alive"));
       },
-      callback2: Dynamic = (input3?: Dynamic): Dynamic => {
-        clearTimeout(value3);
-        input.removeEventListener("message", callback);
-        input2(input3);
+      finishProbe: Dynamic = (outcome?: Dynamic): Dynamic => {
+        clearTimeout(probeTimer);
+        port.removeEventListener("message", receivePong);
+        resolve(outcome);
       },
-      callback3: Dynamic = (): Dynamic => {
-        index += 1;
-        let value4: Dynamic = crypto.randomUUID();
-        values.add(value4);
+      sendPing: Dynamic = (): Dynamic => {
+        attemptCount += 1;
+        let pingId: Dynamic = crypto.randomUUID();
+        pendingPingIds.add(pingId);
         try {
-          input.postMessage({
-            __om_ping: value4,
+          port.postMessage({
+            __om_ping: pingId,
           });
         } catch {
-          callback2("dead");
+          finishProbe("dead");
           return;
         }
-        value3 = setTimeout((): Dynamic => {
-          index < value ? callback3() : callback2("dead");
-        }, value2);
+        probeTimer = setTimeout((): Dynamic => {
+          attemptCount < attempts ? sendPing() : finishProbe("dead");
+        }, timeoutMs);
       };
-    input.addEventListener("message", callback);
-    input.start();
-    callback3();
+    port.addEventListener("message", receivePong);
+    port.start();
+    sendPing();
   });
 }
 function setPreviewGenerationGate(
-  input?: Dynamic,
-  options?: Dynamic,
+  frame?: Dynamic,
+  gate?: Dynamic,
 ): Dynamic {
-  PlatformFileContentElementCache.set(input, options);
+  PlatformFileContentElementCache.set(frame, gate);
 }
-function getPreviewGenerationGate(input?: Dynamic): Dynamic {
+function getPreviewGenerationGate(frame?: Dynamic): Dynamic {
   return (
-    (input && PlatformFileContentElementCache.get(input)) ||
+    (frame && PlatformFileContentElementCache.get(frame)) ||
     defaultPreviewGenerationGate
   );
 }
@@ -2287,23 +2287,23 @@ async function requestRoomCapability(): Promise<Dynamic> {
   }
   return typeof claude?.room?.presence == "function" ? claude.room : null;
 }
-function roomErrorCode(input?: Dynamic): Dynamic {
+function roomErrorCode(error?: Dynamic): Dynamic {
   let value: Dynamic =
-    typeof input == "object" && input !== null ? input.code : "";
+    typeof error == "object" && error !== null ? error.code : "";
   return typeof value == "string" ? value : "";
 }
-async function publishRoomPresence(input?: Dynamic): Promise<Dynamic> {
+async function publishRoomPresence(presence?: Dynamic): Promise<Dynamic> {
   let value: Dynamic = await requestRoomCapability();
   if (typeof value?.presence != "function") return "off";
   try {
-    await value.presence.call(value, input);
+    await value.presence.call(value, presence);
     return "ok";
-  } catch (value2: Dynamic) {
-    let value3: Dynamic = roomErrorCode(value2);
-    return value3 === "upstream_error"
+  } catch (presenceError: Dynamic) {
+    let errorCode: Dynamic = roomErrorCode(presenceError);
+    return errorCode === "upstream_error"
       ? "retry"
-      : (value3 === "invalid_argument" &&
-          console.warn("appifact room: rejected presence patch", value2),
+      : (errorCode === "invalid_argument" &&
+          console.warn("appifact room: rejected presence patch", presenceError),
         "off");
   }
 }
@@ -2311,29 +2311,29 @@ function cachedRoomCapability(): Dynamic {
   // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
   let claude: Dynamic = (globalThis as Dynamic).designHost;
   (requestRoomCapabilityValue === undefined ||
-    PlatformFileContentAlias_2 !== claude) &&
-    ((PlatformFileContentAlias_2 = claude),
+    roomCapabilityHost !== claude) &&
+    ((roomCapabilityHost = claude),
     (requestRoomCapabilityValue = requestRoomCapability()));
   return requestRoomCapabilityValue;
 }
-function normalizeRoomPeers(input?: Dynamic): Dynamic {
-  if (!Array.isArray(input)) return PlatformFileContentFreezeValue;
+function normalizeRoomPeers(peers?: Dynamic): Dynamic {
+  if (!Array.isArray(peers)) return PlatformFileContentFreezeValue;
   let items: Dynamic = [];
-  for (let value of input as Dynamic) {
+  for (let value of peers as Dynamic) {
     if (typeof value != "object" || value === null) continue;
-    let value2: Dynamic = value;
-    typeof value2.peer == "string" &&
+    let peerRecord: Dynamic = value;
+    typeof peerRecord.peer == "string" &&
       items.push({
-        peer: value2.peer,
+        peer: peerRecord.peer,
         by:
-          typeof value2.by == "string" && value2.by !== "" ? value2.by : null,
-        isMe: value2.isMe === true,
-        sameTab: value2.sameTab === true,
+          typeof peerRecord.by == "string" && peerRecord.by !== "" ? peerRecord.by : null,
+        isMe: peerRecord.isMe === true,
+        sameTab: peerRecord.sameTab === true,
         presence:
-          typeof value2.presence == "object" && value2.presence !== null
-            ? value2.presence
+          typeof peerRecord.presence == "object" && peerRecord.presence !== null
+            ? peerRecord.presence
             : {},
-        updatedAt: typeof value2.updatedAt == "number" ? value2.updatedAt : 0,
+        updatedAt: typeof peerRecord.updatedAt == "number" ? peerRecord.updatedAt : 0,
       });
   }
   return items;
@@ -2341,29 +2341,29 @@ function normalizeRoomPeers(input?: Dynamic): Dynamic {
 function subscribeRoomPeers(): Dynamic {
   roomPeerSubscriptionStarted ||
     ((roomPeerSubscriptionStarted = true),
-    cachedRoomCapability().then((input?: Dynamic): Dynamic => {
+    cachedRoomCapability().then((room?: Dynamic): Dynamic => {
       if (
-        !(typeof input?.onPeers != "function" || !roomPeerSubscriptionStarted)
+        !(typeof room?.onPeers != "function" || !roomPeerSubscriptionStarted)
       )
         try {
-          let value: Dynamic = input.onPeers.call(
-            input,
-            (input2?: Dynamic): Dynamic => {
+          let value: Dynamic = room.onPeers.call(
+            room,
+            (update?: Dynamic): Dynamic => {
               PlatformFileContentFreezeValueAlias = normalizeRoomPeers(
-                input2.peers,
+                update.peers,
               );
-              for (let value2 of [
-                ...PlatformFileContentSubscribers_4,
+              for (let listener of [
+                ...roomPeerListeners,
               ] as Dynamic)
-                value2();
+                listener();
             },
             (): Dynamic => {
               PlatformFileContentFreezeValueAlias =
                 PlatformFileContentFreezeValue;
-              for (let value2 of [
-                ...PlatformFileContentSubscribers_4,
+              for (let listener of [
+                ...roomPeerListeners,
               ] as Dynamic)
-                value2();
+                listener();
             },
           );
           typeof value == "function" &&
@@ -2376,7 +2376,7 @@ function resetRoomPeers(): Dynamic {
   PlatformFileContentCurrentState = null;
   roomPeerSubscriptionStarted = false;
   PlatformFileContentFreezeValueAlias = PlatformFileContentFreezeValue;
-  PlatformFileContentSubscribers_4.clear();
+  roomPeerListeners.clear();
 }
 function hasInvalidEmbedContext(): Dynamic {
   return (
@@ -2386,87 +2386,87 @@ function hasInvalidEmbedContext(): Dynamic {
   );
 }
 function getEmbedContext(): Dynamic {
-  if (PlatformFileContentResolvedValue_12 !== undefined)
-    return PlatformFileContentResolvedValue_12;
+  if (cachedEmbedContext !== undefined)
+    return cachedEmbedContext;
   let value: Dynamic =
       typeof window === "undefined"
         ? undefined
         : (window as Dynamic).__appifactEmbed,
-    value2: Dynamic =
+    embedRecord: Dynamic =
       typeof value == "object" && value !== null ? value : null,
-    value3: Dynamic =
-      value2 !== null &&
-      typeof value2.storePrefix == "string" &&
-      PlatformFileContentAZaZPattern_3.test(value2.storePrefix)
-        ? value2.storePrefix
+    storePrefix: Dynamic =
+      embedRecord !== null &&
+      typeof embedRecord.storePrefix == "string" &&
+      embedStorePrefixPattern.test(embedRecord.storePrefix)
+        ? embedRecord.storePrefix
         : null,
-    value4: Dynamic =
-      value2 !== null &&
-      typeof value2.memoryScope == "string" &&
-      PlatformFileContentAZaZPattern_4.test(value2.memoryScope)
-        ? value2.memoryScope
+    memoryScope: Dynamic =
+      embedRecord !== null &&
+      typeof embedRecord.memoryScope == "string" &&
+      embedMemoryScopePattern.test(embedRecord.memoryScope)
+        ? embedRecord.memoryScope
         : null;
-  PlatformFileContentResolvedValue_12 =
-    value3 !== null && value4 !== null
+  cachedEmbedContext =
+    storePrefix !== null && memoryScope !== null
       ? {
-          storePrefix: value3,
-          memoryScope: value4,
+          storePrefix: storePrefix,
+          memoryScope: memoryScope,
         }
       : null;
-  return PlatformFileContentResolvedValue_12;
+  return cachedEmbedContext;
 }
-function trackEmbeddedWrite(input?: Dynamic): Dynamic {
+function trackEmbeddedWrite(writePromise?: Dynamic): Dynamic {
   !embeddedWritesTracked ||
     embeddedEditorFrozen ||
-    (PlatformFileContentSubscribers_5.add(input),
-    input.then(
-      (input2?: Dynamic): Dynamic => {
-        PlatformFileContentSubscribers_5.delete(input);
+    (pendingEmbeddedWrites.add(writePromise),
+    writePromise.then(
+      (writeSucceeded?: Dynamic): Dynamic => {
+        pendingEmbeddedWrites.delete(writePromise);
         embeddedFreezeRequested &&
-          input2 === false &&
+          writeSucceeded === false &&
           (embeddedWriteFailed = true);
       },
       (): Dynamic => {
-        PlatformFileContentSubscribers_5.delete(input);
+        pendingEmbeddedWrites.delete(writePromise);
         embeddedFreezeRequested && (embeddedWriteFailed = true);
       },
     ));
-  return input;
+  return writePromise;
 }
 function isEmbedFrozen(): Dynamic {
   return embeddedEditorFrozen;
 }
-async function awaitEmbeddedWrites(input?: Dynamic): Promise<Dynamic> {
-  for (; PlatformFileContentSubscribers_5.size > 0; ) {
-    let value: Dynamic = input - Date.now();
+async function awaitEmbeddedWrites(deadline?: Dynamic): Promise<Dynamic> {
+  for (; pendingEmbeddedWrites.size > 0; ) {
+    let value: Dynamic = deadline - Date.now();
     if (value <= 0) return false;
-    let value2: Dynamic;
+    let timeout: Dynamic;
     await Promise.race([
-      Promise.allSettled([...PlatformFileContentSubscribers_5]),
+      Promise.allSettled([...pendingEmbeddedWrites]),
       new Promise(
-        (input2?: Dynamic): Dynamic => (value2 = setTimeout(input2, value)),
+        (resolve?: Dynamic): Dynamic => (timeout = setTimeout(resolve, value)),
       ),
     ]);
-    clearTimeout(value2);
+    clearTimeout(timeout);
   }
   return true;
 }
-function setEmbedSettler(input?: Dynamic): Dynamic {
-  PlatformFileContentAlias_3 = input;
+function setEmbedSettler(settle?: Dynamic): Dynamic {
+  embeddedEditorSettler = settle;
 }
-function setEmbedPresenceListener(input?: Dynamic): Dynamic {
-  PlatformFileContentAlias_4 = input;
+function setEmbedPresenceListener(notify?: Dynamic): Dynamic {
+  embeddedPresenceListener = notify;
 }
-function setEmbedSilencer(input?: Dynamic): Dynamic {
-  PlatformFileContentCurrentState_2 = input;
+function setEmbedSilencer(silence?: Dynamic): Dynamic {
+  embeddedEditorSilencer = silence;
 }
 function silenceEmbeddedEditor(): Dynamic {
-  let value: Dynamic = PlatformFileContentCurrentState_2;
-  PlatformFileContentCurrentState_2 = null;
+  let value: Dynamic = embeddedEditorSilencer;
+  embeddedEditorSilencer = null;
   try {
     value?.();
-  } catch (value2: Dynamic) {
-    console.error("design: silencing the editor failed", value2);
+  } catch (silenceError: Dynamic) {
+    console.error("design: silencing the editor failed", silenceError);
   }
 }
 function dispatchDesignReady(): Dynamic {
@@ -2474,7 +2474,7 @@ function dispatchDesignReady(): Dynamic {
     (window as Dynamic).frameElement?.dispatchEvent(new Event("designready"));
   } catch {}
 }
-function installEmbeddedLifecycle(input?: Dynamic): Dynamic {
+function installEmbeddedLifecycle(document?: Dynamic): Dynamic {
   let __appifactEmbed: Dynamic = (window as Dynamic).__appifactEmbed,
     flag: Dynamic = false;
   embeddedWritesTracked = true;
@@ -2482,80 +2482,80 @@ function installEmbeddedLifecycle(input?: Dynamic): Dynamic {
     embeddedFreezeRequested =
     embeddedWriteFailed =
       false;
-  __appifactEmbed.setPresence = (input2?: Dynamic): Dynamic => {
-    __appifactEmbed.presence = input2;
-    PlatformFileContentAlias_4?.();
+  __appifactEmbed.setPresence = (presence?: Dynamic): Dynamic => {
+    __appifactEmbed.presence = presence;
+    embeddedPresenceListener?.();
   };
   let value: Dynamic = null,
     callback: Dynamic = (): Dynamic => {
       if (
         value === null ||
         flag ||
-        input.readOnly() ||
-        input.loadState?.() !== "live"
+        document.readOnly() ||
+        document.loadState?.() !== "live"
       )
         return;
-      let value3: Dynamic = value;
+      let requestedTitle: Dynamic = value;
       value = null;
-      input.title() !== value3 && input.setTitle(value3);
+      document.title() !== requestedTitle && document.setTitle(requestedTitle);
     },
-    value2: Dynamic = input.subscribeLoad?.(callback);
-  __appifactEmbed.setTitle = (input2?: Dynamic): Dynamic => {
-    typeof input2 == "string" && ((value = input2), callback());
+    unsubscribeLoad: Dynamic = document.subscribeLoad?.(callback);
+  __appifactEmbed.setTitle = (title?: Dynamic): Dynamic => {
+    typeof title == "string" && ((value = title), callback());
   };
   __appifactEmbed.dispose = (): Dynamic => {
     flag ||
       ((flag = true),
       (embeddedEditorFrozen = true),
-      value2?.(),
+      unsubscribeLoad?.(),
       silenceEmbeddedEditor(),
-      input.dispose?.(),
+      document.dispose?.(),
       resetRoomPeers());
   };
-  let callback2: Dynamic = async (): Promise<Dynamic> => {
+  let settleEditor: Dynamic = async (): Promise<Dynamic> => {
     try {
-      await PlatformFileContentAlias_3?.();
+      await embeddedEditorSettler?.();
     } catch {}
   };
   __appifactEmbed.settle = async (): Promise<Dynamic> => {
-    let value3: Dynamic = Date.now() + PlatformFileContentConstant_22;
+    let deadline: Dynamic = Date.now() + embeddedSettleTimeoutMs;
     embeddedFreezeRequested = true;
-    let value4: Dynamic = PlatformFileContentSubscribers_5.size > 0;
+    let hadPendingWrites: Dynamic = pendingEmbeddedWrites.size > 0;
     silenceEmbeddedEditor();
-    await callback2();
-    let flag2: Dynamic = true;
-    (value4 || PlatformFileContentSubscribers_5.size > 0) &&
-      ((flag2 = await awaitEmbeddedWrites(
-        value3 - PlatformFileContentConstant_23,
+    await settleEditor();
+    let didSettleWrites: Dynamic = true;
+    (hadPendingWrites || pendingEmbeddedWrites.size > 0) &&
+      ((didSettleWrites = await awaitEmbeddedWrites(
+        deadline - embeddedFlushBufferMs,
       )),
-      await callback2());
-    let callback3: Dynamic = (): Dynamic => flag2 && !embeddedWriteFailed;
-    return new Promise((input2?: Dynamic): Dynamic => {
-      let callback4: Dynamic = (): Dynamic => {
-        let value5: Dynamic = input.syncDetail?.();
+      await settleEditor());
+    let didSettle: Dynamic = (): Dynamic => didSettleWrites && !embeddedWriteFailed;
+    return new Promise((resolve?: Dynamic): Dynamic => {
+      let isSyncIdle: Dynamic = (): Dynamic => {
+        let syncDetail: Dynamic = document.syncDetail?.();
         return (
-          value5 === undefined ||
-          (value5.pending === 0 && value5.inflight === null)
+          syncDetail === undefined ||
+          (syncDetail.pending === 0 && syncDetail.inflight === null)
         );
       };
-      input.flushNow?.();
+      document.flushNow?.();
       setTimeout((): Dynamic => {
-        input.flushNow?.();
-        if (callback4()) return input2(callback3());
-        if (input.saveState().status === "readonly") return input2(false);
-        let value5: Dynamic = setTimeout(
-            (): Dynamic => value7(callback4() && callback3()),
-            Math.max(0, value3 - Date.now()),
+        document.flushNow?.();
+        if (isSyncIdle()) return resolve(didSettle());
+        if (document.saveState().status === "readonly") return resolve(false);
+        let settleTimer: Dynamic = setTimeout(
+            (): Dynamic => finish(isSyncIdle() && didSettle()),
+            Math.max(0, deadline - Date.now()),
           ),
-          value6: Dynamic = input.subscribeSave((): Dynamic => {
-            callback4()
-              ? value7(callback3())
-              : input.saveState().status === "readonly" && value7(false);
+          unsubscribeSave: Dynamic = document.subscribeSave((): Dynamic => {
+            isSyncIdle()
+              ? finish(didSettle())
+              : document.saveState().status === "readonly" && finish(false);
           });
-        function value7(input3?: Dynamic): Dynamic {
-          clearTimeout(value5);
-          value6();
-          input2(input3);
+        function finish(success?: Dynamic): Dynamic {
+          clearTimeout(settleTimer);
+          unsubscribeSave();
+          resolve(success);
         }
       }, PlatformFileContentDelayMs);
     });
@@ -2566,19 +2566,19 @@ function getEmbeddedPresence(): Dynamic {
   let presence: Dynamic = (window as Dynamic).__appifactEmbed.presence;
   if (typeof presence != "object" || presence === null) return {};
   let state: Dynamic = {};
-  for (let [value, value2] of Object.entries(presence).slice(
+  for (let [value, presenceValue] of Object.entries(presence).slice(
     0,
     24,
   ) as Dynamic)
-    value2 === null ||
-    typeof value2 == "string" ||
-    typeof value2 == "number" ||
-    typeof value2 == "boolean"
-      ? (state[value] = value2)
-      : typeof value2 == "object" &&
-        typeof value2.text == "string" &&
+    presenceValue === null ||
+    typeof presenceValue == "string" ||
+    typeof presenceValue == "number" ||
+    typeof presenceValue == "boolean"
+      ? (state[value] = presenceValue)
+      : typeof presenceValue == "object" &&
+        typeof presenceValue.text == "string" &&
         (state[value] = {
-          text: value2.text,
+          text: presenceValue.text,
         });
   return state;
 }
@@ -2586,52 +2586,52 @@ function embedMemoryPrefix(): Dynamic {
   let value: Dynamic = getEmbedContext();
   return value === null ? "" : value.memoryScope + "/";
 }
-function prefixDocumentStore(input?: Dynamic, items?: Dynamic): Dynamic {
+function prefixDocumentStore(store?: Dynamic, pathPrefix?: Dynamic): Dynamic {
   return {
     subscribe: (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      path?: Dynamic,
+      onRecords?: Dynamic,
+      onError?: Dynamic,
     ): Dynamic =>
-      input.subscribe(
-        items + input2,
-        (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-          options(
-            input3
+      store.subscribe(
+        pathPrefix + path,
+        (records?: Dynamic, snapshotOptions?: Dynamic): Dynamic =>
+          onRecords(
+            records
               .filter(
-                (input4?: Dynamic): Dynamic => input4.path.startsWith(items),
+                (record?: Dynamic): Dynamic => record.path.startsWith(pathPrefix),
               )
               .map(
-                (input4?: Dynamic): Dynamic => ({
-                  ...input4,
-                  path: input4.path.slice(items.length),
+                (record?: Dynamic): Dynamic => ({
+                  ...record,
+                  path: record.path.slice(pathPrefix.length),
                 }),
               ),
-            options2,
+            snapshotOptions,
           ),
-        context,
+        onError,
       ),
-    set: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      input.set(items + input2, options),
-    update: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      input.update(items + input2, options),
-    del: (input2?: Dynamic): Dynamic => input.del(items + input2),
+    set: (path?: Dynamic, record?: Dynamic): Dynamic =>
+      store.set(pathPrefix + path, record),
+    update: (path?: Dynamic, patch?: Dynamic): Dynamic =>
+      store.update(pathPrefix + path, patch),
+    del: (path?: Dynamic): Dynamic => store.del(pathPrefix + path),
   };
 }
 function isPreviewMessage(
   dataset?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  frame?: Dynamic,
+  expectedOrigin?: Dynamic,
 ): Dynamic {
   if (
-    (context == null && getPreviewGenerationGate(options).blocked != null) ||
-    !options ||
-    !("contentWindow" in options) ||
-    !options.contentWindow ||
-    dataset.source !== options.contentWindow
+    (expectedOrigin == null && getPreviewGenerationGate(frame).blocked != null) ||
+    !frame ||
+    !("contentWindow" in frame) ||
+    !frame.contentWindow ||
+    dataset.source !== frame.contentWindow
   )
     return false;
-  let value: Dynamic = context ?? previewMessageOrigin()?.origin;
+  let value: Dynamic = expectedOrigin ?? previewMessageOrigin()?.origin;
   return value ? dataset.origin === value : false;
 }
 export {
@@ -2743,14 +2743,14 @@ export {
   parseDesignSource,
   parseShapeAnnotation,
   PlatformFileContentAlias,
-  PlatformFileContentAlias_2,
-  PlatformFileContentAlias_3,
-  PlatformFileContentAlias_4,
+  roomCapabilityHost as PlatformFileContentAlias_2,
+  embeddedEditorSettler as PlatformFileContentAlias_3,
+  embeddedPresenceListener as PlatformFileContentAlias_4,
   PlatformFileContentAZaZAZaZPattern,
   PlatformFileContentAZaZPattern,
-  PlatformFileContentAZaZPattern_2,
-  PlatformFileContentAZaZPattern_3,
-  PlatformFileContentAZaZPattern_4,
+  sourceProjectIdPattern as PlatformFileContentAZaZPattern_2,
+  embedStorePrefixPattern as PlatformFileContentAZaZPattern_3,
+  embedMemoryScopePattern as PlatformFileContentAZaZPattern_4,
   PlatformFileContentAZPattern,
   PlatformFileContentBackgroundBackgroundColorOpacityValues,
   PlatformFileContentBeforeWriteVersionOfState,
@@ -2758,31 +2758,31 @@ export {
   PlatformFileContentCache,
   PlatformFileContentCache_2,
   PlatformFileContentConstant,
-  PlatformFileContentConstant_10,
-  PlatformFileContentConstant_11,
-  PlatformFileContentConstant_12,
-  PlatformFileContentConstant_13,
-  PlatformFileContentConstant_14,
-  PlatformFileContentConstant_15,
-  PlatformFileContentConstant_16,
-  PlatformFileContentConstant_17,
-  PlatformFileContentConstant_18,
-  PlatformFileContentConstant_19,
-  PlatformFileContentConstant_2,
-  PlatformFileContentConstant_20,
-  PlatformFileContentConstant_21,
-  PlatformFileContentConstant_22,
-  PlatformFileContentConstant_23,
-  PlatformFileContentConstant_3,
-  PlatformFileContentConstant_4,
-  PlatformFileContentConstant_5,
-  PlatformFileContentConstant_6,
-  PlatformFileContentConstant_7,
-  PlatformFileContentConstant_8,
-  PlatformFileContentConstant_9,
+  maxTextAnnotationWidth as PlatformFileContentConstant_10,
+  defaultTextAnnotationMaxWidth as PlatformFileContentConstant_11,
+  minAnnotationDimensionLimit as PlatformFileContentConstant_12,
+  maxAnnotationDimensionLimit as PlatformFileContentConstant_13,
+  maxFittedAnnotationFontSize as PlatformFileContentConstant_14,
+  minArtboardDimension as PlatformFileContentConstant_15,
+  minEmbeddedArtboardDimension as PlatformFileContentConstant_16,
+  minFramelessArtboardDimension as PlatformFileContentConstant_17,
+  maxCanvasCoordinate as PlatformFileContentConstant_18,
+  minShapeDimension as PlatformFileContentConstant_19,
+  defaultNoteFontSize as PlatformFileContentConstant_2,
+  minImageDimension as PlatformFileContentConstant_20,
+  maxCanvasLabelChars as PlatformFileContentConstant_21,
+  embeddedSettleTimeoutMs as PlatformFileContentConstant_22,
+  embeddedFlushBufferMs as PlatformFileContentConstant_23,
+  minAnnotationFontSize as PlatformFileContentConstant_3,
+  maxAnnotationFontSize as PlatformFileContentConstant_4,
+  defaultArtboardWidth as PlatformFileContentConstant_5,
+  defaultArtboardHeight as PlatformFileContentConstant_6,
+  newArtboardGap as PlatformFileContentConstant_7,
+  defaultTextAnnotationWidth as PlatformFileContentConstant_8,
+  minTextAnnotationWidth as PlatformFileContentConstant_9,
   PlatformFileContentController,
   PlatformFileContentCurrentState,
-  PlatformFileContentCurrentState_2,
+  embeddedEditorSilencer as PlatformFileContentCurrentState_2,
   PlatformFileContentDelayMs,
   PlatformFileContentElementCache,
   PlatformFileContentExpandPrintPaperValues,
@@ -2808,15 +2808,15 @@ export {
   PlatformFileContentLabel,
   PlatformFileContentLh,
   PlatformFileContentLimit,
-  PlatformFileContentLimit_10,
-  PlatformFileContentLimit_2,
-  PlatformFileContentLimit_3,
-  PlatformFileContentLimit_4,
-  PlatformFileContentLimit_5,
-  PlatformFileContentLimit_6,
-  PlatformFileContentLimit_7,
-  PlatformFileContentLimit_8,
-  PlatformFileContentLimit_9,
+  maxEmbeddedFilePathChars as PlatformFileContentLimit_10,
+  maxFilePathBytes as PlatformFileContentLimit_2,
+  defaultDesignPageLimit as PlatformFileContentLimit_3,
+  maxAnnotationTextChars as PlatformFileContentLimit_4,
+  maxAnnotations as PlatformFileContentLimit_5,
+  maxCanvasItemDimension as PlatformFileContentLimit_6,
+  maxPenPathChars as PlatformFileContentLimit_7,
+  maxProjectPathChars as PlatformFileContentLimit_8,
+  maxSourceUrlChars as PlatformFileContentLimit_9,
   PlatformFileContentLimitAlias,
   PlatformFileContentMatch,
   PlatformFileContentMax,
@@ -2828,37 +2828,37 @@ export {
   PlatformFileContentNoteTitle1Config,
   PlatformFileContentOverPerFilePattern,
   PlatformFileContentPattern,
-  PlatformFileContentPattern_2,
-  PlatformFileContentPattern_3,
-  PlatformFileContentPattern_4,
-  PlatformFileContentPattern_5,
+  safeAnnotationCssSyntax as PlatformFileContentPattern_2,
+  reservedProjectSegmentPattern as PlatformFileContentPattern_3,
+  declarationPathPattern as PlatformFileContentPattern_4,
+  zonedDateTimePattern as PlatformFileContentPattern_5,
   PlatformFileContentRectOvalLineConfig,
   PlatformFileContentResolvedValue,
-  PlatformFileContentResolvedValue_10,
-  PlatformFileContentResolvedValue_11,
-  PlatformFileContentResolvedValue_12,
-  PlatformFileContentResolvedValue_2,
-  PlatformFileContentResolvedValue_3,
-  PlatformFileContentResolvedValue_4,
-  PlatformFileContentResolvedValue_5,
-  PlatformFileContentResolvedValue_6,
-  PlatformFileContentResolvedValue_7,
-  PlatformFileContentResolvedValue_8,
-  PlatformFileContentResolvedValue_9,
+  maxDeclarationFileBytes as PlatformFileContentResolvedValue_10,
+  defaultDocumentFileBytes as PlatformFileContentResolvedValue_11,
+  cachedEmbedContext as PlatformFileContentResolvedValue_12,
+  maxPublishBatchBytes as PlatformFileContentResolvedValue_2,
+  maxArtboardRadius as PlatformFileContentResolvedValue_3,
+  designMetadataPath as PlatformFileContentResolvedValue_4,
+  designSourceDocumentPath as PlatformFileContentResolvedValue_5,
+  maxSyncedArtboardBytes as PlatformFileContentResolvedValue_6,
+  maxSyncedFileBytes as PlatformFileContentResolvedValue_7,
+  maxCollectionBytes as PlatformFileContentResolvedValue_8,
+  maxInlineArtboardBytes as PlatformFileContentResolvedValue_9,
   PlatformFileContentRgbaHslaPattern,
   PlatformFileContentScriptDataPropsPattern,
   PlatformFileContentSlice,
-  PlatformFileContentSlice_2,
+  normalizeAnnotationText as PlatformFileContentSlice_2,
   PlatformFileContentSMLConfig,
   PlatformFileContentSubscribers,
-  PlatformFileContentSubscribers_2,
-  PlatformFileContentSubscribers_3,
-  PlatformFileContentSubscribers_4,
-  PlatformFileContentSubscribers_5,
+  explicitContentTypes as PlatformFileContentSubscribers_2,
+  textContentTypes as PlatformFileContentSubscribers_3,
+  roomPeerListeners as PlatformFileContentSubscribers_4,
+  pendingEmbeddedWrites as PlatformFileContentSubscribers_5,
   PlatformFileContentTest,
-  PlatformFileContentTest_2,
-  PlatformFileContentTest_3,
-  PlatformFileContentTest_4,
+  parseAnnotationImageUrl as PlatformFileContentTest_2,
+  parseAnnotationVideoUrl as PlatformFileContentTest_3,
+  parseCanvasItemId as PlatformFileContentTest_4,
   PlatformFileContentTextEncoder,
   PlatformFileContentTextEncoder_2,
   PlatformFileContentTextEncoder_3,
@@ -2866,7 +2866,7 @@ export {
   PlatformFileContentTrim_2,
   PlatformFileContentUDBFFUDFFFPattern,
   PlatformFileContentWebpAvifPattern,
-  PlatformFileContentWebpAvifPattern_2,
+  imageFilePathPattern as PlatformFileContentWebpAvifPattern_2,
   PlatformFileContentXYWValues,
   prefixDocumentStore,
   PreviewGenerationGate,
@@ -2924,13 +2924,13 @@ export {
 export function installPlatformFileContent(): () => void {
   return () => {
     PlatformFileContentLimit = 256;
-    PlatformFileContentLimit_2 = 512;
+    maxFilePathBytes = 512;
     PlatformFileContentResolvedValue = 16 * 1024 * 1024;
     PlatformFileContentFilesBytesConfig = {
       files: 512,
       bytes: 256 * 1024 * 1024,
     };
-    PlatformFileContentResolvedValue_2 = 15 * 1024 * 1024;
+    maxPublishBatchBytes = 15 * 1024 * 1024;
     PlatformFileContentCache = new Map([
       ["html", "text/html"],
       ["htm", "text/html"],
@@ -2998,14 +2998,14 @@ export function installPlatformFileContent(): () => void {
       "application/pdf",
       "application/zip+dotlottie",
     ]);
-    PlatformFileContentSubscribers_2 = new Set([
+    explicitContentTypes = new Set([
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/zip",
       "application/x-figma",
     ]);
-    PlatformFileContentSubscribers_3 = new Set([
+    textContentTypes = new Set([
       "text/html",
       "text/ldx",
       "text/css",
@@ -3023,19 +3023,19 @@ export function installPlatformFileContent(): () => void {
     Value_2 = "\uFFFD";
     PlatformFileContentUDBFFUDFFFPattern =
       /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
-    PlatformFileContentIncludes = (input?: Dynamic): Dynamic =>
-      input.includes(Value_2) ||
-      PlatformFileContentUDBFFUDFFFPattern.test(input);
-    isHtmlPath = (input?: Dynamic): Dynamic => /\.html?$/i.test(input);
+    PlatformFileContentIncludes = (text?: Dynamic): Dynamic =>
+      text.includes(Value_2) ||
+      PlatformFileContentUDBFFUDFFFPattern.test(text);
+    isHtmlPath = (filePath?: Dynamic): Dynamic => /\.html?$/i.test(filePath);
     frameRuntimeStartMarker = "<\!-- frame-runtime -->";
     frameRuntimeEndMarker = "<\!-- /frame-runtime -->";
-    getFileContent = (input?: Dynamic): Dynamic =>
-      typeof input == "object" &&
-      !(typeof Blob !== "undefined" && input instanceof Blob)
-        ? input.content
-        : input;
-    encodePathSegments = (input?: Dynamic): Dynamic =>
-      input.split("/").map(encodeURIComponent).join("/");
+    getFileContent = (fileEntry?: Dynamic): Dynamic =>
+      typeof fileEntry == "object" &&
+      !(typeof Blob !== "undefined" && fileEntry instanceof Blob)
+        ? fileEntry.content
+        : fileEntry;
+    encodePathSegments = (filePath?: Dynamic): Dynamic =>
+      filePath.split("/").map(encodeURIComponent).join("/");
     canvasMetadataFile = "canvas.json";
     PlatformFileContentLabel = "rgba(255, 0, 0, 0.1)";
     PlatformFileContentGridSizeCountSizeConfig = {
@@ -3076,8 +3076,8 @@ export function installPlatformFileContent(): () => void {
       "guides",
       "radius",
     ];
-    PlatformFileContentLimit_3 = 40;
-    PlatformFileContentLimitAlias = PlatformFileContentLimit_3;
+    defaultDesignPageLimit = 40;
+    PlatformFileContentLimitAlias = defaultDesignPageLimit;
     PlatformFileContentBackgroundBackgroundColorOpacityValues = [
       "background",
       "background-color",
@@ -3102,7 +3102,7 @@ export function installPlatformFileContent(): () => void {
       "stroke",
       "stroke-width",
     ];
-    PlatformFileContentPattern_2 = /^[a-z0-9#%(),.\/ +-]{1,1200}$/i;
+    safeAnnotationCssSyntax = /^[a-z0-9#%(),.\/ +-]{1,1200}$/i;
     PlatformFileContentAZPattern = /([a-z-]+)\(/gi;
     PlatformFileContentRgbaHslaPattern =
       /^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix|light-dark|(repeating-)?(linear|radial|conic)-gradient|blur|brightness|contrast|drop-shadow|grayscale|hue-rotate|invert|opacity|saturate|sepia)$/i;
@@ -3112,15 +3112,15 @@ export function installPlatformFileContent(): () => void {
       opacity: /^(\d{1,3}(\.\d{1,6})?|\.\d{1,6}|\d{1,3}(\.\d{1,3})?%)$/,
       "stroke-width": /^\d{1,3}(\.\d{1,2})?(px)?$/,
     };
-    PlatformFileContentTrim = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (typeof options != "string") return null;
-      let value: Dynamic = options.trim();
-      if (!PlatformFileContentPattern_2.test(value)) return null;
-      let value2: Dynamic =
-        PlatformFileContentBorderStyleObjectFitOpacityConfig[input];
-      if (value2 !== undefined)
-        return value2.test(value)
-          ? input === "opacity" && !value.endsWith("%") && parseFloat(value) > 1
+    PlatformFileContentTrim = (property?: Dynamic, candidate?: Dynamic): Dynamic => {
+      if (typeof candidate != "string") return null;
+      let value: Dynamic = candidate.trim();
+      if (!safeAnnotationCssSyntax.test(value)) return null;
+      let propertyPattern: Dynamic =
+        PlatformFileContentBorderStyleObjectFitOpacityConfig[property];
+      if (propertyPattern !== undefined)
+        return propertyPattern.test(value)
+          ? property === "opacity" && !value.endsWith("%") && parseFloat(value) > 1
             ? "1"
             : value
           : null;
@@ -3129,11 +3129,11 @@ export function installPlatformFileContent(): () => void {
         [...value.matchAll(PlatformFileContentAZPattern)].length
       )
         return null;
-      for (let value3 of value.matchAll(
+      for (let colorMatch of value.matchAll(
         PlatformFileContentAZPattern,
       ) as Dynamic)
-        if (!PlatformFileContentRgbaHslaPattern.test(value3[1])) return null;
-      return input === "stroke" && /gradient|^none$/i.test(value)
+        if (!PlatformFileContentRgbaHslaPattern.test(colorMatch[1])) return null;
+      return property === "stroke" && /gradient|^none$/i.test(value)
         ? null
         : value;
     };
@@ -3141,14 +3141,14 @@ export function installPlatformFileContent(): () => void {
       start: source.headStart ?? "none",
       end: source.kind === "arrow" ? (source.headEnd ?? "filled") : "none",
     });
-    normalizeAnnotationCss = (input?: Dynamic): Dynamic => {
-      if (input === null || typeof input != "object" || Array.isArray(input))
+    normalizeAnnotationCss = (rawCss?: Dynamic): Dynamic => {
+      if (rawCss === null || typeof rawCss != "object" || Array.isArray(rawCss))
         return;
-      let value: Dynamic = input,
+      let value: Dynamic = rawCss,
         state: Dynamic = {};
-      for (let value2 of PlatformFileContentBackgroundBackgroundColorOpacityValues as Dynamic) {
-        let value3: Dynamic = PlatformFileContentTrim(value2, value[value2]);
-        value3 !== null && (state[value2] = value3);
+      for (let property of PlatformFileContentBackgroundBackgroundColorOpacityValues as Dynamic) {
+        let cssValue: Dynamic = PlatformFileContentTrim(property, value[property]);
+        cssValue !== null && (state[property] = cssValue);
       }
       return Object.keys(state).length > 0 ? state : undefined;
     };
@@ -3170,9 +3170,9 @@ export function installPlatformFileContent(): () => void {
       xl: 72,
       xxl: 120,
     };
-    PlatformFileContentConstant_2 = 14;
-    PlatformFileContentConstant_3 = 8;
-    PlatformFileContentConstant_4 = 400;
+    defaultNoteFontSize = 14;
+    minAnnotationFontSize = 8;
+    maxAnnotationFontSize = 400;
     PlatformFileContentGrayRedOrangeValues = [
       "gray",
       "red",
@@ -3187,7 +3187,7 @@ export function installPlatformFileContent(): () => void {
       PlatformFileContentGrayRedOrangeValues;
     PlatformFileContentNoteTitle1Config = {
       note: {
-        size: PlatformFileContentConstant_2,
+        size: defaultNoteFontSize,
         kind: "note",
         bold: false,
         italic: false,
@@ -3216,45 +3216,45 @@ export function installPlatformFileContent(): () => void {
       };
     };
     PlatformFileContentHas = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      beforeAnnotations?: Dynamic,
+      afterAnnotations?: Dynamic,
+      selectedIds?: Dynamic,
     ): Dynamic => {
-      for (let value of options as Dynamic) {
-        let value2: Dynamic = context.has(value.id)
-          ? input.find((input2?: Dynamic): Dynamic => input2.id === value.id)
+      for (let value of afterAnnotations as Dynamic) {
+        let previousAnnotation: Dynamic = selectedIds.has(value.id)
+          ? beforeAnnotations.find((annotation?: Dynamic): Dynamic => annotation.id === value.id)
           : undefined;
         if (
-          value2 &&
-          !isShapeAnnotation(value2) &&
+          previousAnnotation &&
+          !isShapeAnnotation(previousAnnotation) &&
           !isShapeAnnotation(value) &&
-          value2.kind === value.kind &&
-          (value2.maxW !== value.maxW || value2.maxH !== value.maxH)
+          previousAnnotation.kind === value.kind &&
+          (previousAnnotation.maxW !== value.maxW || previousAnnotation.maxH !== value.maxH)
         )
-          return [value2, value];
+          return [previousAnnotation, value];
       }
       return null;
     };
     PlatformFileContentMax = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
+      isTitle?: Dynamic,
+      maxHeight?: Dynamic,
+      width?: Dynamic,
+      fontSize?: Dynamic,
     ): Dynamic =>
-      input
-        ? options === undefined
+      isTitle
+        ? maxHeight === undefined
           ? 1 / 0
           : Math.max(
-              options,
+              maxHeight,
               Math.ceil(
-                (PlatformFileContentLh(1, value) *
-                  Math.min(PlatformFileContentConstant_14, value)) /
-                  value,
+                (PlatformFileContentLh(1, fontSize) *
+                  Math.min(maxFittedAnnotationFontSize, fontSize)) /
+                  fontSize,
               ),
             )
         : Math.max(
-            options ?? PlatformFileContentMax_2(context, value),
-            PlatformFileContentLh(1, value),
+            maxHeight ?? PlatformFileContentMax_2(width, fontSize),
+            PlatformFileContentLh(1, fontSize),
           );
     PlatformFileContentKind = (source?: Dynamic): Dynamic =>
       PlatformFileContentMax(
@@ -3263,36 +3263,36 @@ export function installPlatformFileContent(): () => void {
         source.w,
         annotationTextStyle(source).size,
       );
-    PlatformFileContentMaxW = (input?: Dynamic): Dynamic =>
-      input.maxW ?? PlatformFileContentConstant_11;
+    PlatformFileContentMaxW = (annotation?: Dynamic): Dynamic =>
+      annotation.maxW ?? defaultTextAnnotationMaxWidth;
     PlatformFileContentHandler = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      kind?: Dynamic,
+      requestedMaxWidth?: Dynamic,
+      requestedMaxHeight?: Dynamic,
     ): Dynamic => {
-      let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-          typeof input2 == "number" && Number.isFinite(input2)
+      let callback: Dynamic = (candidate?: Dynamic): Dynamic =>
+          typeof candidate == "number" && Number.isFinite(candidate)
             ? Math.round(
                 PlatformFileContentMin_2(
-                  input2,
-                  PlatformFileContentConstant_12,
-                  PlatformFileContentConstant_13,
+                  candidate,
+                  minAnnotationDimensionLimit,
+                  maxAnnotationDimensionLimit,
                 ),
               )
             : undefined,
-        [items, items2]: Dynamic = [
-          input === "title1" ? callback(options) : undefined,
-          callback(context),
+        [maxWidth, maxHeight]: Dynamic = [
+          kind === "title1" ? callback(requestedMaxWidth) : undefined,
+          callback(requestedMaxHeight),
         ];
       return {
-        ...(items !== undefined
+        ...(maxWidth !== undefined
           ? {
-              maxW: items,
+              maxW: maxWidth,
             }
           : {}),
-        ...(items2 !== undefined
+        ...(maxHeight !== undefined
           ? {
-              maxH: items2,
+              maxH: maxHeight,
             }
           : {}),
       };
@@ -3332,85 +3332,85 @@ export function installPlatformFileContent(): () => void {
           : {}),
       };
     };
-    validCoverArtboard = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      options.some((input2?: Dynamic): Dynamic => input2.file === input)
-        ? input
+    validCoverArtboard = (coverPath?: Dynamic, artboards?: Dynamic): Dynamic =>
+      typeof coverPath == "string" &&
+      artboards.some((artboard?: Dynamic): Dynamic => artboard.file === coverPath)
+        ? coverPath
         : undefined;
-    artboardNameWithoutExtension = (input?: Dynamic): Dynamic =>
-      (input.split("/").pop() ?? input).replace(/\.dc\.html$/, "");
-    PlatformFileContentConstant_5 = 800;
-    PlatformFileContentConstant_6 = 600;
-    PlatformFileContentConstant_7 = 80;
-    PlatformFileContentConstant_8 = 240;
-    PlatformFileContentConstant_9 = 120;
-    PlatformFileContentConstant_10 = 2e3;
-    PlatformFileContentConstant_11 = 2e3;
-    PlatformFileContentConstant_12 = 24;
-    PlatformFileContentConstant_13 = 8e3;
-    PlatformFileContentConstant_14 = 24;
-    PlatformFileContentMin = (input?: Dynamic): Dynamic => ({
-      lh: Math.min(1.45, Math.max(1.1, 1.45 - (input - 14) * 0.006)),
-      px: Math.round(12 + (input - 14) * 0.2),
-      py: Math.round(10 + (input - 14) * 0.11),
-      ls: input >= 64 ? "-0.02em" : input >= 36 ? "-0.01em" : undefined,
+    artboardNameWithoutExtension = (filePath?: Dynamic): Dynamic =>
+      (filePath.split("/").pop() ?? filePath).replace(/\.dc\.html$/, "");
+    defaultArtboardWidth = 800;
+    defaultArtboardHeight = 600;
+    newArtboardGap = 80;
+    defaultTextAnnotationWidth = 240;
+    minTextAnnotationWidth = 120;
+    maxTextAnnotationWidth = 2e3;
+    defaultTextAnnotationMaxWidth = 2e3;
+    minAnnotationDimensionLimit = 24;
+    maxAnnotationDimensionLimit = 8e3;
+    maxFittedAnnotationFontSize = 24;
+    PlatformFileContentMin = (fontSize?: Dynamic): Dynamic => ({
+      lh: Math.min(1.45, Math.max(1.1, 1.45 - (fontSize - 14) * 0.006)),
+      px: Math.round(12 + (fontSize - 14) * 0.2),
+      py: Math.round(10 + (fontSize - 14) * 0.11),
+      ls: fontSize >= 64 ? "-0.02em" : fontSize >= 36 ? "-0.01em" : undefined,
     });
-    PlatformFileContentLh = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value: Dynamic = PlatformFileContentMin(options);
-      return Math.round(input * options * value.lh) + 2 * value.py;
+    PlatformFileContentLh = (lineCount?: Dynamic, fontSize?: Dynamic): Dynamic => {
+      let value: Dynamic = PlatformFileContentMin(fontSize);
+      return Math.round(lineCount * fontSize * value.lh) + 2 * value.py;
     };
-    PlatformFileContentMax_2 = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      Math.max(Math.round((input * 4) / 3), PlatformFileContentLh(6, options));
+    PlatformFileContentMax_2 = (width?: Dynamic, fontSize?: Dynamic): Dynamic =>
+      Math.max(Math.round((width * 4) / 3), PlatformFileContentLh(6, fontSize));
     PlatformFileContentMatch = (
-      input?: Dynamic,
-      options?: Dynamic,
+      text?: Dynamic,
+      fontSize?: Dynamic,
     ): Dynamic => {
-      let length: Dynamic = (
-          input.match(
+      let wideCharacterCount: Dynamic = (
+          text.match(
             /[\u1100-\u11FF\u2E80-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF\uFF00-\uFFEF]/g,
           ) ?? []
         ).length,
-        length2: Dynamic = (input.match(/[A-Z]/g) ?? []).length;
+        uppercaseCount: Dynamic = (text.match(/[A-Z]/g) ?? []).length;
       return Math.ceil(
-        (length +
-          length2 * 0.75 +
-          ([...input].length - length - length2) * 0.55) *
-          options,
+        (wideCharacterCount +
+          uppercaseCount * 0.75 +
+          ([...text].length - wideCharacterCount - uppercaseCount) * 0.55) *
+          fontSize,
       );
     };
-    PlatformFileContentL = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      options < PlatformFileContentSMLConfig.l
-        ? PlatformFileContentConstant_8
+    PlatformFileContentL = (text?: Dynamic, fontSize?: Dynamic): Dynamic =>
+      fontSize < PlatformFileContentSMLConfig.l
+        ? defaultTextAnnotationWidth
         : Math.min(
-            PlatformFileContentConstant_10,
+            maxTextAnnotationWidth,
             Math.max(
-              PlatformFileContentConstant_8,
-              input
+              defaultTextAnnotationWidth,
+              text
                 .split(
                   `
 `,
                 )
                 .reduce(
-                  (input2?: Dynamic, options2?: Dynamic): Dynamic =>
+                  (maxWidth?: Dynamic, line?: Dynamic): Dynamic =>
                     Math.max(
-                      input2,
-                      PlatformFileContentMatch(options2, options),
+                      maxWidth,
+                      PlatformFileContentMatch(line, fontSize),
                     ),
                   0,
-                ) + options,
+                ) + fontSize,
             ),
           );
-    PlatformFileContentTest = (input?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      /^((title|heading|header)\d*|h[1-6])$/i.test(input);
-    PlatformFileContentLimit_4 = 5e3;
-    PlatformFileContentLimit_5 = 200;
-    PlatformFileContentConstant_15 = 40;
-    PlatformFileContentConstant_16 = 120;
-    PlatformFileContentConstant_17 = 8;
-    PlatformFileContentLimit_6 = 8e3;
-    PlatformFileContentResolvedValue_3 = PlatformFileContentLimit_6 / 2;
-    PlatformFileContentConstant_18 = 1e6;
+    PlatformFileContentTest = (kind?: Dynamic): Dynamic =>
+      typeof kind == "string" &&
+      /^((title|heading|header)\d*|h[1-6])$/i.test(kind);
+    maxAnnotationTextChars = 5e3;
+    maxAnnotations = 200;
+    minArtboardDimension = 40;
+    minEmbeddedArtboardDimension = 120;
+    minFramelessArtboardDimension = 8;
+    maxCanvasItemDimension = 8e3;
+    maxArtboardRadius = maxCanvasItemDimension / 2;
+    maxCanvasCoordinate = 1e6;
     PlatformFileContentRectOvalLineConfig = {
       rect: [120, 120],
       oval: [96, 96],
@@ -3419,76 +3419,76 @@ export function installPlatformFileContent(): () => void {
       pen: [2, 2],
       image: [320, 240],
     };
-    PlatformFileContentConstant_19 = 2;
-    PlatformFileContentConstant_20 = 16;
-    PlatformFileContentTest_2 = (input?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      (/^\/?_blob\/[0-9a-f]{32}$/.test(input) ||
+    minShapeDimension = 2;
+    minImageDimension = 16;
+    parseAnnotationImageUrl = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "string" &&
+      (/^\/?_blob\/[0-9a-f]{32}$/.test(candidate) ||
         /^\.\/[^\/\\:%?#"'\u0000-\u001f]{1,200}\.(png|jpe?g|gif|webp|svg|avif)$/i.test(
-          input,
+          candidate,
         ) ||
-        /^blob:https?:\/\/[A-Za-z0-9.:-]{1,80}\/[0-9a-f-]{36}$/.test(input))
-        ? input
+        /^blob:https?:\/\/[A-Za-z0-9.:-]{1,80}\/[0-9a-f-]{36}$/.test(candidate))
+        ? candidate
         : null;
-    PlatformFileContentTest_3 = (input?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      (/^\/?_blob\/[0-9a-f]{32}$/.test(input) ||
-        /^blob:https?:\/\/[A-Za-z0-9.:-]{1,80}\/[0-9a-f-]{36}$/.test(input))
-        ? input
+    parseAnnotationVideoUrl = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "string" &&
+      (/^\/?_blob\/[0-9a-f]{32}$/.test(candidate) ||
+        /^blob:https?:\/\/[A-Za-z0-9.:-]{1,80}\/[0-9a-f-]{36}$/.test(candidate))
+        ? candidate
         : null;
-    PlatformFileContentLimit_7 = 24e3;
+    maxPenPathChars = 24e3;
     PlatformFileContentTrim_2 = (items?: Dynamic): Dynamic => {
-      if (typeof items != "string" || items.length > PlatformFileContentLimit_7)
+      if (typeof items != "string" || items.length > maxPenPathChars)
         return null;
       let value: Dynamic = items.trim();
       return /^M ?\d+(\.\d+)?[ ,]\d+(\.\d+)?( ?([ML] ?\d+(\.\d+)?[ ,]\d+(\.\d+)?|C ?\d+(\.\d+)?([ ,]\d+(\.\d+)?){5}))+$/.test(
         value,
       ) &&
         (value.match(/\d+(\.\d+)?/g) ?? []).every(
-          (input?: Dynamic): Dynamic =>
-            Number(input) <= PlatformFileContentLimit_6,
+          (coordinate?: Dynamic): Dynamic =>
+            Number(coordinate) <= maxCanvasItemDimension,
         )
         ? value
         : null;
     };
     PlatformFileContentMin_2 = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => Math.min(context, Math.max(options, input));
-    PlatformFileContentConstant_21 = 120;
-    PlatformFileContentSlice = (input?: Dynamic): Dynamic => {
-      if (typeof input != "string") return;
-      let value: Dynamic = input
+      valueToClamp?: Dynamic,
+      min?: Dynamic,
+      max?: Dynamic,
+    ): Dynamic => Math.min(max, Math.max(min, valueToClamp));
+    maxCanvasLabelChars = 120;
+    PlatformFileContentSlice = (candidate?: Dynamic): Dynamic => {
+      if (typeof candidate != "string") return;
+      let value: Dynamic = candidate
         .replace(/[\u0000-\u001f\u007f]/g, "")
         .trim()
-        .slice(0, PlatformFileContentConstant_21);
+        .slice(0, maxCanvasLabelChars);
       return value.length > 0 ? value : undefined;
     };
-    PlatformFileContentSlice_2 = (input?: Dynamic): Dynamic =>
-      typeof input != "string"
+    normalizeAnnotationText = (candidate?: Dynamic): Dynamic =>
+      typeof candidate != "string"
         ? ""
-        : input
+        : candidate
             .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "")
-            .slice(0, PlatformFileContentLimit_4);
-    PlatformFileContentTest_4 = (input?: Dynamic): Dynamic =>
-      typeof input == "string" && /^[A-Za-z0-9_-]{1,40}$/.test(input)
-        ? input
+            .slice(0, maxAnnotationTextChars);
+    parseCanvasItemId = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "string" && /^[A-Za-z0-9_-]{1,40}$/.test(candidate)
+        ? candidate
         : null;
     PlatformFileContentHandler_2 = (
-      input?: Dynamic,
-      options?: Dynamic,
+      requestedSize?: Dynamic,
+      fallbackSize?: Dynamic,
     ): Dynamic =>
-      typeof input == "string" &&
-      Object.hasOwn(PlatformFileContentSMLConfig, input)
-        ? PlatformFileContentSMLConfig[input]
-        : typeof input != "number" || !Number.isFinite(input)
-          ? options
+      typeof requestedSize == "string" &&
+      Object.hasOwn(PlatformFileContentSMLConfig, requestedSize)
+        ? PlatformFileContentSMLConfig[requestedSize]
+        : typeof requestedSize != "number" || !Number.isFinite(requestedSize)
+          ? fallbackSize
           : Math.round(
               PlatformFileContentMin_2(
-                input,
-                PlatformFileContentConstant_3,
-                PlatformFileContentConstant_4,
+                requestedSize,
+                minAnnotationFontSize,
+                maxAnnotationFontSize,
               ),
             );
     PlatformFileContentIncludes_2 = (color?: Dynamic): Dynamic =>
@@ -3496,33 +3496,33 @@ export function installPlatformFileContent(): () => void {
       PlatformFileContentGrayRedOrangeValues.includes(color)
         ? color
         : "default";
-    PlatformFileContentIncludes_3 = (input?: Dynamic): Dynamic =>
-      typeof input == "string" &&
-      PlatformFileContentGrayRedOrangeValuesAlias.includes(input)
-        ? input
+    PlatformFileContentIncludes_3 = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "string" &&
+      PlatformFileContentGrayRedOrangeValuesAlias.includes(candidate)
+        ? candidate
         : "default";
-    PlatformFileContentHandler_3 = (input?: Dynamic): Dynamic =>
-      input === "rect" ||
-      input === "oval" ||
-      input === "line" ||
-      input === "arrow" ||
-      input === "pen" ||
-      input === "image"
-        ? input
+    PlatformFileContentHandler_3 = (kind?: Dynamic): Dynamic =>
+      kind === "rect" ||
+      kind === "oval" ||
+      kind === "line" ||
+      kind === "arrow" ||
+      kind === "pen" ||
+      kind === "image"
+        ? kind
         : null;
     normalizeDesignLaunch = (
-      input?: Dynamic,
-      options?: Dynamic,
+      rawLaunch?: Dynamic,
+      artboards?: Dynamic,
       items?: Dynamic,
     ): Dynamic => {
-      if (input === null || typeof input != "object") return;
-      let view: Dynamic = input.view;
+      if (rawLaunch === null || typeof rawLaunch != "object") return;
+      let view: Dynamic = rawLaunch.view;
       if (view === "canvas") {
-        let page: Dynamic = input.page;
+        let page: Dynamic = rawLaunch.page;
         return typeof page == "string" &&
           items !== undefined &&
           items.length > 1 &&
-          items.some((input2?: Dynamic): Dynamic => input2.id === page)
+          items.some((entry?: Dynamic): Dynamic => entry.id === page)
           ? {
               view: "canvas",
               page: page,
@@ -3532,10 +3532,10 @@ export function installPlatformFileContent(): () => void {
             };
       }
       if (view === "focused") {
-        let file: Dynamic = input.file;
+        let file: Dynamic = rawLaunch.file;
         if (
           typeof file == "string" &&
-          options.some((input2?: Dynamic): Dynamic => input2.file === file)
+          artboards.some((artboard?: Dynamic): Dynamic => artboard.file === file)
         )
           return {
             view: "focused",
@@ -3555,30 +3555,30 @@ export function installPlatformFileContent(): () => void {
           : "shape";
     DesignValue = "design";
     MetaValue = "meta";
-    PlatformFileContentResolvedValue_4 = DesignValue + "/" + MetaValue;
+    designMetadataPath = DesignValue + "/" + MetaValue;
     SourceValue = "source";
-    PlatformFileContentResolvedValue_5 = DesignValue + "/" + SourceValue;
+    designSourceDocumentPath = DesignValue + "/" + SourceValue;
     BoardsValue = "boards";
     FilesValue = "files";
     NotesValue = "notes";
-    PlatformFileContentResolvedValue_6 = 240 * 1024;
-    PlatformFileContentResolvedValue_7 = 180 * 1024;
-    PlatformFileContentResolvedValue_8 = 2 * 1024 * 1024;
-    PlatformFileContentResolvedValue_9 =
-      PlatformFileContentResolvedValue_6 - 2048;
+    maxSyncedArtboardBytes = 240 * 1024;
+    maxSyncedFileBytes = 180 * 1024;
+    maxCollectionBytes = 2 * 1024 * 1024;
+    maxInlineArtboardBytes =
+      maxSyncedArtboardBytes - 2048;
     PlatformFileContentWebpAvifPattern =
       /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
     PlatformFileContentNodeModulesPattern =
       /(^|\/)(node_modules\/.*|(package(-lock)?|npm-shrinkwrap|composer|bower|cypress|jasmine|cdk|railway|claudia|cloudbuild|renovate|biome|app|nodemon|turbo|vercel|now|firebase|nx|project|workspace|angular|lerna|rush)\.json|wrangler\.jsonc?|(ts|js)config(\.[^/]*)?\.json|deno\.jsonc?|[^/]*\.(config|conf|workspace|mix)(\.[^/]*)?\.([cm]?[jt]sx?|json)|(gulp|grunt|jake|danger|plop|broc)file(\.[^/]*)?\.[cm]?[jt]sx?|(gatsby-(config|node|ssr|browser)|ember-cli-build|(brunch|truffle|bs|workbox|sw-precache|medusa|migrate-mongo)-config|truffle|knexfile|testem|cucumber|wallaby|serverless|ormconfig|electron-builder|nightwatch|newrelic|lighthouserc|codegen|setup(Tests|Proxy))(\.[^/]*)?\.([cm]?[jt]sx?|json)|((test|tests|spec|cypress|__tests__|__mocks__)\/.*|([^/]*[._-])?(test|spec)+|(test|spec)[._-][^/]*|[^/]*\.(cy|stories))\.[cm]?[jt]sx?)$/i;
     PlatformFileContentJsonPattern = /\.(css|m?js|jsx|tsx|json)$/i;
-    PlatformFileContentLimit_8 = 300;
+    maxProjectPathChars = 300;
     PlatformFileContentAZaZAZaZPattern =
       /^[A-Za-z0-9_](?:[A-Za-z0-9 ._-]*[A-Za-z0-9_-])?$/;
-    PlatformFileContentPattern_3 =
+    reservedProjectSegmentPattern =
       /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
     ProjectValue = "project/";
-    PlatformFileContentPattern_4 = /\.d\.ts$/i;
-    PlatformFileContentResolvedValue_10 = 2 * 1024 * 1024;
+    declarationPathPattern = /\.d\.ts$/i;
+    maxDeclarationFileBytes = 2 * 1024 * 1024;
     PlatformFileContentAZaZPattern = /[A-Za-z0-9_.-]/;
     PlatformFileContentTextEncoder = new TextEncoder();
     PlatformFileContentXYWValues = [
@@ -3597,14 +3597,14 @@ export function installPlatformFileContent(): () => void {
       "radius",
     ];
     ClaudeDesignValue = "claude-design";
-    PlatformFileContentLimit_9 = 2048;
-    PlatformFileContentAZaZPattern_2 = /^[A-Za-z0-9_-]{1,64}$/;
+    maxSourceUrlChars = 2048;
+    sourceProjectIdPattern = /^[A-Za-z0-9_-]{1,64}$/;
     DesignPValue = "/design/p/";
-    PlatformFileContentPattern_5 =
+    zonedDateTimePattern =
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
     PlatformFileContentFilesValue = PlatformFileContentFilesBytesConfig.files;
-    PlatformFileContentResolvedValue_11 = 2 * 1024 * 1024;
-    PlatformFileContentLimit_10 = 300;
+    defaultDocumentFileBytes = 2 * 1024 * 1024;
+    maxEmbeddedFilePathChars = 300;
     PlatformFileContentTextEncoder_2 = new TextEncoder();
     PlatformFileContentTextEncoder_3 = new TextEncoder();
     FileValue = "file/";
@@ -3615,110 +3615,110 @@ export function installPlatformFileContent(): () => void {
     AppifactValue = "appifact/";
     PlatformFileContentBeforeWriteVersionOfState = null;
     PlatformFileContentController = class extends Error {
-      constructor(input: Dynamic) {
-        super(`file not found: ${input}`);
+      constructor(filePath: Dynamic) {
+        super(`file not found: ${filePath}`);
       }
     };
     PlatformFileContentCache_2 = new Map();
-    PlatformFileContentWebpAvifPattern_2 =
+    imageFilePathPattern =
       /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
     projectFilesystem = {
-      async readdir(input: Dynamic): Promise<Dynamic> {
-        let value: Dynamic = stripAppifactPathPrefix(input),
-          value2: Dynamic = PlatformFileContentHandler_4(
+      async readdir(directoryPath: Dynamic): Promise<Dynamic> {
+        let value: Dynamic = stripAppifactPathPrefix(directoryPath),
+          directoryKeyPrefix: Dynamic = PlatformFileContentHandler_4(
             value ? `${value}/` : "",
           );
-        return (await getKvClient().list(value2)).map(
-          (input2?: Dynamic): Dynamic => ({
-            name: input2.slice(value2.length),
+        return (await getKvClient().list(directoryKeyPrefix)).map(
+          (key?: Dynamic): Dynamic => ({
+            name: key.slice(directoryKeyPrefix.length),
             isFile: true,
           }),
         );
       },
-      async readFile(input: Dynamic): Promise<Dynamic> {
+      async readFile(filePath: Dynamic): Promise<Dynamic> {
         let value: Dynamic = await getKvClient().get(
-          PlatformFileContentHandler_4(stripAppifactPathPrefix(input)),
+          PlatformFileContentHandler_4(stripAppifactPathPrefix(filePath)),
         );
-        if (value == null) throw new PlatformFileContentController(input);
+        if (value == null) throw new PlatformFileContentController(filePath);
         return value;
       },
-      async readFileWithVersion(input: Dynamic): Promise<Dynamic> {
+      async readFileWithVersion(filePath: Dynamic): Promise<Dynamic> {
         let value: Dynamic = await getKvClient().get(
-          PlatformFileContentHandler_4(stripAppifactPathPrefix(input)),
+          PlatformFileContentHandler_4(stripAppifactPathPrefix(filePath)),
         );
-        if (value == null) throw new PlatformFileContentController(input);
+        if (value == null) throw new PlatformFileContentController(filePath);
         return {
           content: value,
           version: PlatformFileContentBeforeWriteVersionOfState?.versionOf(
-            stripAppifactPathPrefix(input),
+            stripAppifactPathPrefix(filePath),
           ),
           isBase64: false,
         };
       },
       async writeFile(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        filePath: Dynamic,
+        content: Dynamic,
+        encoding: Dynamic,
       ): Promise<Dynamic> {
-        let value: Dynamic = stripAppifactPathPrefix(input);
-        if (context === "base64") {
-          await getKvClient().set(PlatformFileContentHandler_4(value), options);
-          let value4: Dynamic = imageFileMimeType(value);
-          registerAssetUrl(value, `data:${value4};base64,${options}`);
+        let value: Dynamic = stripAppifactPathPrefix(filePath);
+        if (encoding === "base64") {
+          await getKvClient().set(PlatformFileContentHandler_4(value), content);
+          let contentType: Dynamic = imageFileMimeType(value);
+          registerAssetUrl(value, `data:${contentType};base64,${content}`);
           return;
         }
-        let value2: Dynamic =
+        let writeDecision: Dynamic =
           PlatformFileContentBeforeWriteVersionOfState === null
             ? "write"
             : PlatformFileContentBeforeWriteVersionOfState.beforeWrite(
                 value,
-                options,
+                content,
                 undefined,
               );
-        if (value2 === "skip") return;
-        let value3: Dynamic =
-          typeof value2 == "object" ? value2.content : options;
-        await getKvClient().set(PlatformFileContentHandler_4(value), value3);
+        if (writeDecision === "skip") return;
+        let contentToWrite: Dynamic =
+          typeof writeDecision == "object" ? writeDecision.content : content;
+        await getKvClient().set(PlatformFileContentHandler_4(value), contentToWrite);
         await PlatformFileContentBeforeWriteVersionOfState?.afterWrite(
           value,
-          value3,
+          contentToWrite,
           false,
         );
       },
       async writeFileVersioned(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
+        filePath: Dynamic,
+        content: Dynamic,
+        writeOptions: Dynamic,
       ): Promise<Dynamic> {
         if (
           PlatformFileContentBeforeWriteVersionOfState === null ||
-          context.encoding === "base64"
+          writeOptions.encoding === "base64"
         ) {
-          await projectFilesystem.writeFile(input, options, context.encoding);
+          await projectFilesystem.writeFile(filePath, content, writeOptions.encoding);
           return {
             version: undefined,
           };
         }
-        let value: Dynamic = stripAppifactPathPrefix(input),
-          value2: Dynamic =
+        let value: Dynamic = stripAppifactPathPrefix(filePath),
+          writeDecision: Dynamic =
             PlatformFileContentBeforeWriteVersionOfState.beforeWrite(
               value,
-              options,
-              context.baseline,
+              content,
+              writeOptions.baseline,
             );
-        if (value2 === "skip")
+        if (writeDecision === "skip")
           return {
             version:
               PlatformFileContentBeforeWriteVersionOfState.versionOf(value),
           };
-        let value3: Dynamic =
-          typeof value2 == "object" ? value2.content : options;
-        await getKvClient().set(PlatformFileContentHandler_4(value), value3);
+        let contentToWrite: Dynamic =
+          typeof writeDecision == "object" ? writeDecision.content : content;
+        await getKvClient().set(PlatformFileContentHandler_4(value), contentToWrite);
         return {
           version:
             await PlatformFileContentBeforeWriteVersionOfState.afterWrite(
               value,
-              value3,
+              contentToWrite,
               true,
             ),
         };
@@ -3735,9 +3735,9 @@ export function installPlatformFileContent(): () => void {
         this.gen += 1;
         return this.gen;
       }
-      generationMounted(input: Dynamic): Dynamic {
-        input === this.gen &&
-          ((this.mountedGen = input),
+      generationMounted(generation: Dynamic): Dynamic {
+        generation === this.gen &&
+          ((this.mountedGen = generation),
           (this.port = null),
           (this.latchedReason = null),
           this.settleHelloWaiters(null));
@@ -3747,30 +3747,30 @@ export function installPlatformFileContent(): () => void {
         this.port = null;
         this.settleHelloWaiters(null);
       }
-      helloReceived(input: Dynamic): Dynamic {
+      helloReceived(port: Dynamic): Dynamic {
         return this.latchedReason != null || this.port != null
           ? "rejected"
-          : ((this.port = input), this.settleHelloWaiters(input), "accepted");
+          : ((this.port = port), this.settleHelloWaiters(port), "accepted");
       }
-      waitForHello(input: Dynamic = 1500): Dynamic {
+      waitForHello(timeoutMs: Dynamic = 1500): Dynamic {
         return this.port != null
           ? Promise.resolve(this.port)
-          : new Promise((input2?: Dynamic): Dynamic => {
-              let callback: Dynamic = (input3?: Dynamic): Dynamic => {
+          : new Promise((resolve?: Dynamic): Dynamic => {
+              let callback: Dynamic = (port?: Dynamic): Dynamic => {
                   clearTimeout(value);
-                  input2(input3);
+                  resolve(port);
                 },
                 value: Dynamic = setTimeout((): Dynamic => {
-                  let value2: Dynamic = this.helloWaiters.indexOf(callback);
-                  value2 >= 0 && this.helloWaiters.splice(value2, 1);
-                  input2(this.port);
-                }, input);
+                  let waiterIndex: Dynamic = this.helloWaiters.indexOf(callback);
+                  waiterIndex >= 0 && this.helloWaiters.splice(waiterIndex, 1);
+                  resolve(this.port);
+                }, timeoutMs);
               this.helloWaiters.push(callback);
             });
       }
-      settleHelloWaiters(input: Dynamic): Dynamic {
+      settleHelloWaiters(port: Dynamic): Dynamic {
         let value: Dynamic = this.helloWaiters.splice(0);
-        for (let value2 of value as Dynamic) value2(input);
+        for (let resolve of value as Dynamic) resolve(port);
       }
       frameLoaded(): Dynamic {
         return this.latchedReason == null && this.consumedGen < this.mountedGen
@@ -3784,10 +3784,10 @@ export function installPlatformFileContent(): () => void {
               kind: "foreign",
             });
       }
-      verdict(input: Dynamic, options: Dynamic): Dynamic {
-        input !== this.gen ||
-          input !== this.mountedGen ||
-          (options !== "alive" &&
+      verdict(generation: Dynamic, status: Dynamic): Dynamic {
+        generation !== this.gen ||
+          generation !== this.mountedGen ||
+          (status !== "alive" &&
             this.latch(
               "the preview stopped answering the editor (replaced by a navigation, or unresponsive for too long)",
             ));
@@ -3801,37 +3801,37 @@ export function installPlatformFileContent(): () => void {
       get blocked(): Dynamic {
         return this.latchedReason;
       }
-      latch(input: Dynamic): Dynamic {
-        this.latchedReason == null && (this.latchedReason = input);
+      latch(reason: Dynamic): Dynamic {
+        this.latchedReason == null && (this.latchedReason = reason);
       }
     };
     defaultPreviewGenerationGate = new PreviewGenerationGate();
     PlatformFileContentElementCache = new WeakMap();
     PlatformFileContentFreezeValue = Object.freeze([]);
     PlatformFileContentFreezeValueAlias = PlatformFileContentFreezeValue;
-    PlatformFileContentSubscribers_4 = new Set();
+    roomPeerListeners = new Set();
     roomPeerSubscriptionStarted = false;
     PlatformFileContentCurrentState = null;
     roomPeersStore = {
       getSnapshot: (): Dynamic => PlatformFileContentFreezeValueAlias,
-      subscribe(input: Dynamic): Dynamic {
-        PlatformFileContentSubscribers_4.add(input);
+      subscribe(listener: Dynamic): Dynamic {
+        roomPeerListeners.add(listener);
         subscribeRoomPeers();
-        return (): Dynamic => PlatformFileContentSubscribers_4.delete(input);
+        return (): Dynamic => roomPeerListeners.delete(listener);
       },
     };
-    PlatformFileContentAZaZPattern_3 = /^(?:[A-Za-z0-9_-]{1,80}\/){1,4}$/;
-    PlatformFileContentAZaZPattern_4 = /^[A-Za-z0-9_-]{1,80}$/;
-    PlatformFileContentSubscribers_5 = new Set();
+    embedStorePrefixPattern = /^(?:[A-Za-z0-9_-]{1,80}\/){1,4}$/;
+    embedMemoryScopePattern = /^[A-Za-z0-9_-]{1,80}$/;
+    pendingEmbeddedWrites = new Set();
     embeddedWritesTracked = false;
     embeddedEditorFrozen = false;
     embeddedFreezeRequested = false;
     embeddedWriteFailed = false;
-    PlatformFileContentAlias_3 = null;
-    PlatformFileContentAlias_4 = null;
-    PlatformFileContentCurrentState_2 = null;
+    embeddedEditorSettler = null;
+    embeddedPresenceListener = null;
+    embeddedEditorSilencer = null;
     PlatformFileContentDelayMs = 60;
-    PlatformFileContentConstant_22 = 6e4;
-    PlatformFileContentConstant_23 = 500;
+    embeddedSettleTimeoutMs = 6e4;
+    embeddedFlushBufferMs = 500;
   };
 }

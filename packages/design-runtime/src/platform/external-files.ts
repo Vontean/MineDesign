@@ -3,186 +3,186 @@ import {
   type Dynamic,
 } from "../runtime-types";
 import { sameOriginFileFetcher, setDeclarationReferences } from "../design-system/type-declarations";
-import { encodeStorePathSegment, FilesValue, isFullProjectPath, isProjectTextFilePath, isTypeDeclarationPath, PlatformFileContentResolvedValue_10, ProjectValue } from "./file-content";
-import { PlatformFileReferencesLimit, PlatformFileReferencesLimit_2, PlatformFileReferencesResolvedValue } from "./file-references";
+import { encodeStorePathSegment, FilesValue, isFullProjectPath, isProjectTextFilePath, isTypeDeclarationPath, PlatformFileContentResolvedValue_10 as maxDeclarationFileBytes, ProjectValue } from "./file-content";
+import { PlatformFileReferencesLimit as maxProjectTextFiles, PlatformFileReferencesLimit_2 as maxDeclarationFiles, PlatformFileReferencesResolvedValue as maxReferencedFileBytes } from "./file-references";
 
-var PlatformExternalFilesItems: Dynamic;
-var PlatformExternalFilesResolvedValue: Dynamic;
+var publishedSupportFileReferences: Dynamic;
+var publishedReferencePaths: Dynamic;
 var parseFileReferencesValue: Dynamic;
 var PlatformExternalFilesProjectWoffPattern: Dynamic;
-var PlatformExternalFilesSubscribers: Dynamic;
-var PlatformExternalFilesMapValue: Dynamic;
-var PlatformExternalFilesResolvedValue_2: Dynamic;
-var PlatformExternalFilesSubscribers_2: Dynamic;
-var PlatformExternalFilesAlias: Dynamic;
+var reservedProjectPaths: Dynamic;
+var externalFileReferences: Dynamic;
+var publishedDeclarationReferences: Dynamic;
+var usedStorePathSegments: Dynamic;
+var referenceStore: Dynamic;
 function getAllFileReferencePaths(): Dynamic {
   return [
-    ...PlatformExternalFilesResolvedValue,
-    ...parseFileReferencesValue.map((input?: Dynamic): Dynamic => input.path),
-    ...PlatformExternalFilesMapValue.map(
-      (input?: Dynamic): Dynamic => input.path,
+    ...publishedReferencePaths,
+    ...parseFileReferencesValue.map((reference?: Dynamic): Dynamic => reference.path),
+    ...externalFileReferences.map(
+      (reference?: Dynamic): Dynamic => reference.path,
     ),
   ];
 }
-function parseFontFileReferences(input?: Dynamic): Dynamic {
-  let items: Dynamic = [];
-  if (input === null || typeof input != "object" || Array.isArray(input))
-    return items;
-  let index: Dynamic = 0,
-    items2: Dynamic = [];
-  for (let [value, value2] of Object.entries(input) as Dynamic) {
-    let value3: Dynamic = value.slice(ProjectValue.length),
-      value4: Dynamic = value2?.size;
+function parseFontFileReferences(publishedFiles?: Dynamic): Dynamic {
+  let textReferences: Dynamic = [];
+  if (publishedFiles === null || typeof publishedFiles != "object" || Array.isArray(publishedFiles))
+    return textReferences;
+  let droppedCount: Dynamic = 0,
+    declarationReferences: Dynamic = [];
+  for (let [fullPath, fileMetadata] of Object.entries(publishedFiles) as Dynamic) {
+    let relativePath: Dynamic = fullPath.slice(ProjectValue.length),
+      fileBytes: Dynamic = fileMetadata?.size;
     if (
       !(
-        !isFullProjectPath(value) ||
-        PlatformExternalFilesSubscribers.has(value.toLowerCase()) ||
-        PlatformExternalFilesProjectWoffPattern.test(value)
+        !isFullProjectPath(fullPath) ||
+        reservedProjectPaths.has(fullPath.toLowerCase()) ||
+        PlatformExternalFilesProjectWoffPattern.test(fullPath)
       )
     ) {
-      if (isTypeDeclarationPath(value3)) {
-        items2.length < PlatformFileReferencesLimit_2 &&
+      if (isTypeDeclarationPath(relativePath)) {
+        declarationReferences.length < maxDeclarationFiles &&
         !(
-          typeof value4 == "number" &&
-          value4 > PlatformFileContentResolvedValue_10
+          typeof fileBytes == "number" &&
+          fileBytes > maxDeclarationFileBytes
         )
-          ? items2.push({
-              path: value3,
-              file: value,
-              ...(typeof value4 == "number"
+          ? declarationReferences.push({
+              path: relativePath,
+              file: fullPath,
+              ...(typeof fileBytes == "number"
                 ? {
-                    bytes: value4,
+                    bytes: fileBytes,
                   }
                 : {}),
             })
-          : index++;
+          : droppedCount++;
         continue;
       }
       if (
-        !isProjectTextFilePath(value3) ||
-        items.length >= PlatformFileReferencesLimit ||
-        (typeof value4 == "number" &&
-          value4 > PlatformFileReferencesResolvedValue)
+        !isProjectTextFilePath(relativePath) ||
+        textReferences.length >= maxProjectTextFiles ||
+        (typeof fileBytes == "number" &&
+          fileBytes > maxReferencedFileBytes)
       ) {
-        index++;
+        droppedCount++;
         continue;
       }
-      items.push({
-        path: value3,
-        file: value,
-        ...(typeof value4 == "number"
+      textReferences.push({
+        path: relativePath,
+        file: fullPath,
+        ...(typeof fileBytes == "number"
           ? {
-              bytes: value4,
+              bytes: fileBytes,
             }
           : {}),
       });
     }
   }
   return Object.assign(
-    items,
-    index > 0
+    textReferences,
+    droppedCount > 0
       ? {
-          dropped: index,
+          dropped: droppedCount,
         }
       : {},
-    items2.length > 0
+    declarationReferences.length > 0
       ? {
-          types: items2,
+          types: declarationReferences,
         }
       : {},
   );
 }
 function setExternalFileReferences(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  referencesByPath?: Dynamic,
+  fetchFile?: Dynamic,
+  existingStorePathSegments?: Dynamic,
 ): Dynamic {
-  options ??= sameOriginFileFetcher();
-  PlatformExternalFilesSubscribers_2 = new Set(context);
-  PlatformExternalFilesMapValue = [...input]
+  fetchFile ??= sameOriginFileFetcher();
+  usedStorePathSegments = new Set(existingStorePathSegments);
+  externalFileReferences = [...referencesByPath]
     .sort(
-      ([input2]: Dynamic, [options2]: Dynamic): Dynamic =>
-        input2 < options2 ? -1 : input2 > options2 ? 1 : 0,
+      ([earlierPath]: Dynamic, [laterPath]: Dynamic): Dynamic =>
+        earlierPath < laterPath ? -1 : earlierPath > laterPath ? 1 : 0,
     )
     .map(
-      ([input2, input3]: Dynamic): Dynamic => ({
-        path: input2,
-        file: input3.ref.startsWith("blob:")
-          ? input3.ref
-          : "/" + input3.ref.replace(/^\//, ""),
-        ...(input3.bytes > 0
+      ([filePath, reference]: Dynamic): Dynamic => ({
+        path: filePath,
+        file: reference.ref.startsWith("blob:")
+          ? reference.ref
+          : "/" + reference.ref.replace(/^\//, ""),
+        ...(reference.bytes > 0
           ? {
-              bytes: input3.bytes,
+              bytes: reference.bytes,
             }
           : {}),
       }),
     );
   setDeclarationReferences(
     getTypeDeclarationReferences(),
-    options,
+    fetchFile,
   );
 }
 function getExternalFileReferences(): Dynamic {
-  return PlatformExternalFilesMapValue.map(
-    (input?: Dynamic): Dynamic => ({
-      path: input.path,
-      ref: input.file.replace(/^\//, ""),
+  return externalFileReferences.map(
+    (reference?: Dynamic): Dynamic => ({
+      path: reference.path,
+      ref: reference.file.replace(/^\//, ""),
     }),
   );
 }
-function setFileReferenceStore(input?: Dynamic): Dynamic {
-  PlatformExternalFilesAlias = input;
+function setFileReferenceStore(store?: Dynamic): Dynamic {
+  referenceStore = store;
 }
 async function saveExternalFileReference(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  filePath?: Dynamic,
+  dataRef?: Dynamic,
+  dataBytes?: Dynamic,
+  contentType?: Dynamic,
+  isPathTaken?: Dynamic,
 ): Promise<Dynamic> {
-  if (PlatformExternalFilesAlias === undefined) return "no-store";
-  let value2: Dynamic = encodeStorePathSegment(
-    input,
+  if (referenceStore === undefined) return "no-store";
+  let normalizedStorePathSegment: Dynamic = encodeStorePathSegment(
+    filePath,
   ).toLowerCase();
-  return extra(input) ||
-    PlatformExternalFilesMapValue.some(
-      (input2?: Dynamic): Dynamic =>
-        input2.path.toLowerCase() === input.toLowerCase(),
+  return isPathTaken(filePath) ||
+    externalFileReferences.some(
+      (reference?: Dynamic): Dynamic =>
+        reference.path.toLowerCase() === filePath.toLowerCase(),
     ) ||
-    [...PlatformExternalFilesSubscribers_2].some(
-      (input2?: Dynamic): Dynamic => input2.toLowerCase() === value2,
+    [...usedStorePathSegments].some(
+      (storedSegment?: Dynamic): Dynamic => storedSegment.toLowerCase() === normalizedStorePathSegment,
     )
     ? "taken"
-    : (PlatformExternalFilesSubscribers_2.add(
-        encodeStorePathSegment(input),
+    : (usedStorePathSegments.add(
+        encodeStorePathSegment(filePath),
       ),
-      await PlatformExternalFilesAlias.set(
-        FilesValue + "/" + encodeStorePathSegment(input),
+      await referenceStore.set(
+        FilesValue + "/" + encodeStorePathSegment(filePath),
         {
-          path: input,
+          path: filePath,
           kind: "text",
-          dataRef: options,
-          dataBytes: context,
-          contentType: value,
+          dataRef: dataRef,
+          dataBytes: dataBytes,
+          contentType: contentType,
         },
       ),
       "written");
 }
 function getTypeDeclarationReferences(): Dynamic {
-  let value: Dynamic = PlatformExternalFilesMapValue.filter(
-    (input?: Dynamic): Dynamic =>
-      isTypeDeclarationPath(input.path) &&
-      !((input.bytes ?? 0) > PlatformFileContentResolvedValue_10),
+  let externalDeclarations: Dynamic = externalFileReferences.filter(
+    (reference?: Dynamic): Dynamic =>
+      isTypeDeclarationPath(reference.path) &&
+      !((reference.bytes ?? 0) > maxDeclarationFileBytes),
   );
   return [
-    ...value,
-    ...PlatformExternalFilesResolvedValue_2.filter(
-      (input?: Dynamic): Dynamic =>
-        !value.some(
-          (input2?: Dynamic): Dynamic => input2.path === input.path,
+    ...externalDeclarations,
+    ...publishedDeclarationReferences.filter(
+      (publishedReference?: Dynamic): Dynamic =>
+        !externalDeclarations.some(
+          (externalReference?: Dynamic): Dynamic => externalReference.path === publishedReference.path,
         ),
     ),
-  ].slice(0, PlatformFileReferencesLimit_2);
+  ].slice(0, maxDeclarationFiles);
 }
 export {
   getAllFileReferencePaths,
@@ -190,47 +190,47 @@ export {
   getTypeDeclarationReferences,
   parseFileReferencesValue,
   parseFontFileReferences,
-  PlatformExternalFilesAlias,
-  PlatformExternalFilesItems,
-  PlatformExternalFilesMapValue,
+  referenceStore as PlatformExternalFilesAlias,
+  publishedSupportFileReferences as PlatformExternalFilesItems,
+  externalFileReferences as PlatformExternalFilesMapValue,
   PlatformExternalFilesProjectWoffPattern,
-  PlatformExternalFilesResolvedValue,
-  PlatformExternalFilesResolvedValue_2,
-  PlatformExternalFilesSubscribers,
-  PlatformExternalFilesSubscribers_2,
+  publishedReferencePaths as PlatformExternalFilesResolvedValue,
+  publishedDeclarationReferences as PlatformExternalFilesResolvedValue_2,
+  reservedProjectPaths as PlatformExternalFilesSubscribers,
+  usedStorePathSegments as PlatformExternalFilesSubscribers_2,
   saveExternalFileReference,
   setExternalFileReferences,
   setFileReferenceStore,
 };
-export function set_parseFileReferencesValue(value: any): any {
-  parseFileReferencesValue = value;
-  return value;
+export function set_parseFileReferencesValue(references: any): any {
+  parseFileReferencesValue = references;
+  return references;
 }
-export function set_PlatformExternalFilesItems(value: any): any {
-  PlatformExternalFilesItems = value;
-  return value;
+export function set_PlatformExternalFilesItems(publishedReferences: any): any {
+  publishedSupportFileReferences = publishedReferences;
+  return publishedReferences;
 }
-export function set_PlatformExternalFilesResolvedValue(value: any): any {
-  PlatformExternalFilesResolvedValue = value;
-  return value;
+export function set_PlatformExternalFilesResolvedValue(publishedPaths: any): any {
+  publishedReferencePaths = publishedPaths;
+  return publishedPaths;
 }
-export function set_PlatformExternalFilesResolvedValue_2(value: any): any {
-  PlatformExternalFilesResolvedValue_2 = value;
-  return value;
+export function set_PlatformExternalFilesResolvedValue_2(publishedTypes: any): any {
+  publishedDeclarationReferences = publishedTypes;
+  return publishedTypes;
 }
 export function installPlatformExternalFiles(): () => void {
   return () => {
-    PlatformExternalFilesItems = [];
-    PlatformExternalFilesResolvedValue = [];
+    publishedSupportFileReferences = [];
+    publishedReferencePaths = [];
     parseFileReferencesValue = [];
     PlatformExternalFilesProjectWoffPattern =
       /^project\/ds\/[^/]+\/.+\.(woff2|woff|ttf|otf)$/i;
-    PlatformExternalFilesSubscribers = new Set([
+    reservedProjectPaths = new Set([
       ProjectValue + "manifest.json",
       ProjectValue + "design-system.json",
     ]);
-    PlatformExternalFilesMapValue = [];
-    PlatformExternalFilesResolvedValue_2 = [];
-    PlatformExternalFilesSubscribers_2 = new Set();
+    externalFileReferences = [];
+    publishedDeclarationReferences = [];
+    usedStorePathSegments = new Set();
   };
 }

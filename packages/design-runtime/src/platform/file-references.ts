@@ -4,67 +4,67 @@ import {
 } from "../runtime-types";
 import { isFullProjectPath, isProjectTextFilePath } from "./file-content";
 
-var InstanceValue: Dynamic;
-var PlatformFileReferencesLimit: Dynamic;
-var PlatformFileReferencesResolvedValue: Dynamic;
-var PlatformFileReferencesResolvedValue_2: Dynamic;
-var PlatformFileReferencesLimit_2: Dynamic;
-var FilesJsonValue: Dynamic;
-function parseFileReferences(input?: Dynamic): Dynamic {
-  let value: Dynamic = input?.files;
-  if (!Array.isArray(value)) return [];
-  let items: Dynamic = [],
-    index: Dynamic = 0;
-  for (let value2 of value as Dynamic) {
-    let value3: Dynamic = value2;
+var instanceScope: Dynamic;
+var maxProjectTextFiles: Dynamic;
+var maxReferencedFileBytes: Dynamic;
+var maxTotalReferencedBytes: Dynamic;
+var maxDeclarationFiles: Dynamic;
+var publishedFileIndexPath: Dynamic;
+function parseFileReferences(indexDocument?: Dynamic): Dynamic {
+  let indexFiles: Dynamic = indexDocument?.files;
+  if (!Array.isArray(indexFiles)) return [];
+  let fileReferences: Dynamic = [],
+    droppedCount: Dynamic = 0;
+  for (let indexEntry of indexFiles as Dynamic) {
+    let fileReference: Dynamic = indexEntry;
     if (
-      items.length >= PlatformFileReferencesLimit ||
-      value3 === null ||
-      typeof value3 != "object" ||
-      !isProjectTextFilePath(value3.path) ||
-      !isFullProjectPath(value3.file) ||
-      (typeof value3.bytes == "number" &&
-        value3.bytes > PlatformFileReferencesResolvedValue) ||
-      items.some((input2?: Dynamic): Dynamic => input2.path === value3.path)
+      fileReferences.length >= maxProjectTextFiles ||
+      fileReference === null ||
+      typeof fileReference != "object" ||
+      !isProjectTextFilePath(fileReference.path) ||
+      !isFullProjectPath(fileReference.file) ||
+      (typeof fileReference.bytes == "number" &&
+        fileReference.bytes > maxReferencedFileBytes) ||
+      fileReferences.some((existingReference?: Dynamic): Dynamic => existingReference.path === fileReference.path)
     ) {
-      index++;
+      droppedCount++;
       continue;
     }
-    items.push({
-      path: value3.path,
-      file: value3.file,
-      ...(typeof value3.bytes == "number"
+    fileReferences.push({
+      path: fileReference.path,
+      file: fileReference.file,
+      ...(typeof fileReference.bytes == "number"
         ? {
-            bytes: value3.bytes,
+            bytes: fileReference.bytes,
           }
         : {}),
     });
   }
   return Object.assign(
-    items,
-    index > 0
+    fileReferences,
+    droppedCount > 0
       ? {
-          dropped: index,
+          dropped: droppedCount,
         }
       : {},
   );
 }
-async function fetchPublishedFileIndex(input?: Dynamic): Promise<Dynamic> {
+async function fetchPublishedFileIndex(fetchFile?: Dynamic): Promise<Dynamic> {
   try {
-    let value: Dynamic = await input(FilesJsonValue);
-    if (!value.ok)
+    let response: Dynamic = await fetchFile(publishedFileIndexPath);
+    if (!response.ok)
       return {
-        files: value.status === 404 ? null : undefined,
+        files: response.status === 404 ? null : undefined,
         narrowed: false,
       };
-    let value2: Dynamic = await value.json(),
-      files: Dynamic = value2.files;
+    let indexDocument: Dynamic = await response.json(),
+      files: Dynamic = indexDocument.files;
     return {
       files:
         files !== null && typeof files == "object" && !Array.isArray(files)
           ? files
           : undefined,
-      narrowed: value2.narrowed === true,
+      narrowed: indexDocument.narrowed === true,
     };
   } catch {
     return {
@@ -74,90 +74,90 @@ async function fetchPublishedFileIndex(input?: Dynamic): Promise<Dynamic> {
   }
 }
 async function loadReferencedFiles(
-  items?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = 0,
+  references?: Dynamic,
+  fetchFile?: Dynamic,
+  alreadyLoadedBytes: Dynamic = 0,
 ): Promise<Dynamic> {
-  let state: Dynamic = {},
-    entries: Dynamic = new Map(),
-    items2: Dynamic = [],
-    value: Dynamic = context,
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    callback: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
-      let callback3: Dynamic = (): Dynamic =>
-        PlatformFileReferencesResolvedValue_2 - value;
-      if ((input.bytes ?? 0) > callback3()) return void index++;
-      let entry: Dynamic = entries.get(input.file);
-      entry === undefined &&
-        ((entry = (async (): Promise<Dynamic> => {
-          let value3: Dynamic = await options(
-            input.file.startsWith("blob:")
-              ? input.file
-              : input.file.split("/").map(encodeURIComponent).join("/"),
+  let loadedFiles: Dynamic = {},
+    downloadsByUrl: Dynamic = new Map(),
+    failedReferences: Dynamic = [],
+    loadedBytes: Dynamic = alreadyLoadedBytes,
+    budgetSkippedCount: Dynamic = 0,
+    nextReferenceIndex: Dynamic = 0,
+    loadReference: Dynamic = async (reference?: Dynamic): Promise<Dynamic> => {
+      let remainingBudget: Dynamic = (): Dynamic =>
+        maxTotalReferencedBytes - loadedBytes;
+      if ((reference.bytes ?? 0) > remainingBudget()) return void budgetSkippedCount++;
+      let download: Dynamic = downloadsByUrl.get(reference.file);
+      download === undefined &&
+        ((download = (async (): Promise<Dynamic> => {
+          let response: Dynamic = await fetchFile(
+            reference.file.startsWith("blob:")
+              ? reference.file
+              : reference.file.split("/").map(encodeURIComponent).join("/"),
           );
-          if (!value3.ok) throw new Error("HTTP " + String(value3.status));
-          let value4: Dynamic = Number(
-            value3.headers?.get?.("content-length") ?? NaN,
+          if (!response.ok) throw new Error("HTTP " + String(response.status));
+          let headerBytes: Dynamic = Number(
+            response.headers?.get?.("content-length") ?? NaN,
           );
           if (
-            value4 > PlatformFileReferencesResolvedValue ||
-            value4 > callback3()
+            headerBytes > maxReferencedFileBytes ||
+            headerBytes > remainingBudget()
           )
             throw new Error("over the size budget");
-          let value5: Dynamic = await value3.arrayBuffer();
-          if (value5.byteLength > PlatformFileReferencesResolvedValue)
+          let receivedBytes: Dynamic = await response.arrayBuffer();
+          if (receivedBytes.byteLength > maxReferencedFileBytes)
             throw new Error("over 20 MiB");
-          return value5;
-        })().catch((input2?: Dynamic): Dynamic => {
+          return receivedBytes;
+        })().catch((downloadError?: Dynamic): Dynamic => {
           console.warn(
             "design (instance files): skipping a listed file \u2014 " +
-              (input2 instanceof Error ? input2.message : String(input2)),
+              (downloadError instanceof Error ? downloadError.message : String(downloadError)),
           );
         })),
-        entries.set(input.file, entry));
-      let value2: Dynamic = await entry;
-      if (value2 === undefined) return void items2.push(input);
-      if (value2.byteLength > callback3()) return void index++;
-      state[input.path] = new TextDecoder().decode(value2);
-      value += value2.byteLength;
+        downloadsByUrl.set(reference.file, download));
+      let fileBytes: Dynamic = await download;
+      if (fileBytes === undefined) return void failedReferences.push(reference);
+      if (fileBytes.byteLength > remainingBudget()) return void budgetSkippedCount++;
+      loadedFiles[reference.path] = new TextDecoder().decode(fileBytes);
+      loadedBytes += fileBytes.byteLength;
     },
-    callback2: Dynamic = async (): Promise<Dynamic> => {
-      for (; index2 < items.length; ) await callback(items[index2++]);
+    loadNextReferences: Dynamic = async (): Promise<Dynamic> => {
+      for (; nextReferenceIndex < references.length; ) await loadReference(references[nextReferenceIndex++]);
     };
   await Promise.all(
     Array.from(
       {
-        length: Math.min(4, items.length),
+        length: Math.min(4, references.length),
       },
-      callback2,
+      loadNextReferences,
     ),
   );
   return {
-    files: state,
-    skipped: index + items2.length,
-    failed: items2,
-    bytes: value,
+    files: loadedFiles,
+    skipped: budgetSkippedCount + failedReferences.length,
+    failed: failedReferences,
+    bytes: loadedBytes,
   };
 }
 export {
   fetchPublishedFileIndex,
-  FilesJsonValue,
-  InstanceValue,
+  publishedFileIndexPath as FilesJsonValue,
+  instanceScope as InstanceValue,
   loadReferencedFiles,
   parseFileReferences,
-  PlatformFileReferencesLimit,
-  PlatformFileReferencesLimit_2,
-  PlatformFileReferencesResolvedValue,
-  PlatformFileReferencesResolvedValue_2,
+  maxProjectTextFiles as PlatformFileReferencesLimit,
+  maxDeclarationFiles as PlatformFileReferencesLimit_2,
+  maxReferencedFileBytes as PlatformFileReferencesResolvedValue,
+  maxTotalReferencedBytes as PlatformFileReferencesResolvedValue_2,
 };
 export function installPlatformFileReferences(): () => void {
   return () => {
-    InstanceValue = "instance";
-    PlatformFileReferencesLimit = 1024;
-    PlatformFileReferencesResolvedValue = 20 * 1024 * 1024;
-    PlatformFileReferencesResolvedValue_2 = 256 * 1024 * 1024;
-    PlatformFileReferencesLimit_2 = 8;
-    FilesJsonValue = "_files.json";
+    instanceScope = "instance";
+    maxProjectTextFiles = 1024;
+    maxReferencedFileBytes = 20 * 1024 * 1024;
+    maxTotalReferencedBytes = 256 * 1024 * 1024;
+    maxDeclarationFiles = 8;
+    publishedFileIndexPath = "_files.json";
   };
 }
