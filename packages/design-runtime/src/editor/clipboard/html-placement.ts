@@ -9,160 +9,160 @@ import { toParserHtml } from "../html/tag-normalization";
 
 var ClipboardHtmlPlacementHtml: Dynamic;
 function positionPastedHtml(
-  input?: Dynamic,
-  options?: Dynamic,
+  html?: Dynamic,
+  placement?: Dynamic,
   doc: Dynamic = document,
 ): Dynamic {
-  let value: Dynamic =
-      typeof options == "number"
+  let placementBox: Dynamic =
+      typeof placement == "number"
         ? {
-            ew: options,
+            ew: placement,
             ox: 0,
             oy: 0,
           }
-        : options,
-    value2: Dynamic = Math.round(value.ox),
-    value3: Dynamic = Math.round(value.oy),
-    value4: Dynamic = doc.createElement("template");
-  value4.innerHTML = toParserHtml(input);
-  let value5: Dynamic =
-      value.ew == null
+        : placement,
+    left: Dynamic = Math.round(placementBox.ox),
+    top: Dynamic = Math.round(placementBox.oy),
+    template: Dynamic = doc.createElement("template");
+  template.innerHTML = toParserHtml(html);
+  let widthStyle: Dynamic =
+      placementBox.ew == null
         ? ""
         : " box-sizing: border-box; width: " +
-          String(Math.ceil(value.ew)) +
+          String(Math.ceil(placementBox.ew)) +
           "px;",
-    value6: Dynamic = Array.from(value4.content.children).filter(
-      (input2?: Dynamic): Dynamic =>
+    rootElements: Dynamic = Array.from(template.content.children).filter(
+      (element?: Dynamic): Dynamic =>
         !/^(style|script|link|meta|title|template|noscript|sc-helmet)$/i.test(
-          input2.tagName,
+          element.tagName,
         ),
     );
-  for (let value7 of value6 as Dynamic) {
-    let value8: Dynamic = (value7.getAttribute("style") ?? "")
+  for (let rootElement of rootElements as Dynamic) {
+    let existingStyle: Dynamic = (rootElement.getAttribute("style") ?? "")
         .replace(/(^|;)\s*margin-(?:top|right|bottom|left)\s*:[^;]*/gi, "$1")
         .replace(/^[;\s]+/, "")
         .trim(),
-      value9: Dynamic =
+      positionStyle: Dynamic =
         "position: absolute; left: " +
-        String(value2) +
+        String(left) +
         "px; top: " +
-        String(value3) +
+        String(top) +
         "px; right: auto; bottom: auto; margin: 0px;" +
-        value5;
-    value7.setAttribute(
+        widthStyle;
+    rootElement.setAttribute(
       "style",
-      (value8 === "" ? "" : value8.replace(/;?$/, "; ")) + value9,
+      (existingStyle === "" ? "" : existingStyle.replace(/;?$/, "; ")) + positionStyle,
     );
   }
-  return fromParserHtml(value4.innerHTML);
+  return fromParserHtml(template.innerHTML);
 }
 function unpositionPastedHtml(
-  input?: Dynamic,
+  html?: Dynamic,
   doc: Dynamic = document,
 ): Dynamic {
-  let value: Dynamic = doc.createElement("template");
-  value.innerHTML = toParserHtml(input);
-  let value2: Dynamic = Array.from(value.content.children).filter(
-      (input2?: Dynamic): Dynamic =>
+  let template: Dynamic = doc.createElement("template");
+  template.innerHTML = toParserHtml(html);
+  let rootElements: Dynamic = Array.from(template.content.children).filter(
+      (element?: Dynamic): Dynamic =>
         !/^(style|script|link|meta|title|template|noscript|sc-helmet)$/i.test(
-          input2.tagName,
+          element.tagName,
         ),
     ),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      /^x-import$/i.test(input2.tagName) && input2.children.length === 1
-        ? callback(input2.children[0])
-        : input2;
-  for (let value3 of value2.map(callback) as Dynamic) {
-    let value4: Dynamic = (value3.getAttribute("style") ?? "")
+    unwrapImport: Dynamic = (element?: Dynamic): Dynamic =>
+      /^x-import$/i.test(element.tagName) && element.children.length === 1
+        ? unwrapImport(element.children[0])
+        : element;
+  for (let rootElement of rootElements.map(unwrapImport) as Dynamic) {
+    let declarations: Dynamic = (rootElement.getAttribute("style") ?? "")
       .split(";")
-      .map((input2?: Dynamic): Dynamic => input2.trim())
-      .filter((input2?: Dynamic): Dynamic => input2 !== "");
+      .map((declaration?: Dynamic): Dynamic => declaration.trim())
+      .filter((declaration?: Dynamic): Dynamic => declaration !== "");
     if (
-      !value4.some(
-        (input2?: Dynamic): Dynamic =>
-          /^position\s*:\s*absolute$/i.test(input2),
+      !declarations.some(
+        (declaration?: Dynamic): Dynamic =>
+          /^position\s*:\s*absolute$/i.test(declaration),
       )
     )
       continue;
-    let callback2: Dynamic = (input2?: Dynamic): Dynamic =>
+    let normalizedProperty: Dynamic = (declaration?: Dynamic): Dynamic =>
         /^(position\s*:\s*absolute|left\s*:\s*-?\d+(?:\.\d+)?px|top\s*:\s*-?\d+(?:\.\d+)?px|right\s*:\s*auto|bottom\s*:\s*auto|margin\s*:\s*0(?:px)?)$/i.exec(
-          input2,
+          declaration,
         )
-          ? input2.split(":")[0].trim().toLowerCase()
+          ? declaration.split(":")[0].trim().toLowerCase()
           : null,
-      values: Dynamic = new Set(),
-      values2: Dynamic = new Set();
-    for (let value9: Dynamic = value4.length - 1; value9 >= 0; value9--) {
-      let value10: Dynamic = callback2(value4[value9]);
-      value10 &&
-        !values.has(value10) &&
-        (values.add(value10), values2.add(value9));
+      seenProperties: Dynamic = new Set(),
+      removableIndexes: Dynamic = new Set();
+    for (let index: Dynamic = declarations.length - 1; index >= 0; index--) {
+      let property: Dynamic = normalizedProperty(declarations[index]);
+      property &&
+        !seenProperties.has(property) &&
+        (seenProperties.add(property), removableIndexes.add(index));
     }
-    let value5: Dynamic = value4
-        .map((input2?: Dynamic, options?: Dynamic): Dynamic => options)
-        .filter((input2?: Dynamic): Dynamic => !values2.has(input2)),
-      value6: Dynamic = value4.findIndex(
-        (input2?: Dynamic): Dynamic =>
-          /^position\s*:\s*absolute$/i.test(input2),
+    let keptIndexes: Dynamic = declarations
+        .map((declaration?: Dynamic, declarationIndex?: Dynamic): Dynamic => declarationIndex)
+        .filter((declarationIndex?: Dynamic): Dynamic => !removableIndexes.has(declarationIndex)),
+      absoluteIndex: Dynamic = declarations.findIndex(
+        (declaration?: Dynamic): Dynamic =>
+          /^position\s*:\s*absolute$/i.test(declaration),
       ),
-      value7: Dynamic = -1;
-    for (let value9: Dynamic = value5.length - 2; value9 >= 0; value9--) {
-      let value10: Dynamic = value5[value9],
-        value11: Dynamic = value5[value9 + 1];
+      sizingPairStart: Dynamic = -1;
+    for (let position: Dynamic = keptIndexes.length - 2; position >= 0; position--) {
+      let boxSizingIndex: Dynamic = keptIndexes[position],
+        widthIndex: Dynamic = keptIndexes[position + 1];
       if (
-        value10 > value6 &&
-        /^box-sizing\s*:\s*border-box$/i.test(value4[value10]) &&
-        /^width\s*:\s*\d+(\.\d+)?px$/i.test(value4[value11])
+        boxSizingIndex > absoluteIndex &&
+        /^box-sizing\s*:\s*border-box$/i.test(declarations[boxSizingIndex]) &&
+        /^width\s*:\s*\d+(\.\d+)?px$/i.test(declarations[widthIndex])
       ) {
-        value7 = value9;
+        sizingPairStart = position;
         break;
       }
     }
-    let value8: Dynamic = value5
+    let cleanedStyle: Dynamic = keptIndexes
       .filter(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          value7 < 0 || (options !== value7 && options !== value7 + 1),
+        (declarationIndex?: Dynamic, position?: Dynamic): Dynamic =>
+          sizingPairStart < 0 || (position !== sizingPairStart && position !== sizingPairStart + 1),
       )
-      .map((input2?: Dynamic): Dynamic => value4[input2])
+      .map((declarationIndex?: Dynamic): Dynamic => declarations[declarationIndex])
       .join("; ");
-    value8 === ""
-      ? value3.removeAttribute("style")
-      : value3.setAttribute("style", value8);
+    cleanedStyle === ""
+      ? rootElement.removeAttribute("style")
+      : rootElement.setAttribute("style", cleanedStyle);
   }
-  return fromParserHtml(value.innerHTML);
+  return fromParserHtml(template.innerHTML);
 }
 function buildDcDocument(
-  input?: Dynamic,
-  options: Dynamic = "",
-  context: Dynamic = {},
+  artboardHtml?: Dynamic,
+  sourceHtml: Dynamic = "",
+  buildOptions: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic = parseDcHtmlDocument(options),
-    value2: Dynamic = value ? options.slice(0, value.templateStart) : "",
-    value3: Dynamic = /<script\b[^>]*support\.js/i.test(value2)
-      ? value2
+  let parsedDocument: Dynamic = parseDcHtmlDocument(sourceHtml),
+    headerHtml: Dynamic = parsedDocument ? sourceHtml.slice(0, parsedDocument.templateStart) : "",
+    documentHead: Dynamic = /<script\b[^>]*support\.js/i.test(headerHtml)
+      ? headerHtml
       : ClipboardHtmlPlacementHtml,
     items: Dynamic = [
-      ...(value ? value.template : options).matchAll(
+      ...(parsedDocument ? parsedDocument.template : sourceHtml).matchAll(
         /<helmet\b([^>]*)>([\s\S]*?)<\/helmet>/gi,
       ),
     ];
   return [
-    value3.trimEnd(),
+    documentHead.trimEnd(),
     "  <helmet" + (items[0]?.[1] ?? "") + ">",
     "    <style>",
     "      html, body { margin: 0; height: 100%; }",
     "    </style>",
     items
-      .map((input2?: Dynamic): Dynamic => (input2[2] ?? "").trim())
-      .filter((input2?: Dynamic): Dynamic => input2 !== "").join(`
+      .map((helmet?: Dynamic): Dynamic => (helmet[2] ?? "").trim())
+      .filter((css?: Dynamic): Dynamic => css !== "").join(`
 `),
     "  </helmet>",
-    input,
+    artboardHtml,
     "</x-dc>",
-    ...(context.logic === false
+    ...(buildOptions.logic === false
       ? []
-      : [stripPrivateDcProps(options)].filter(
-          (input2?: Dynamic): Dynamic => input2 != null,
+      : [stripPrivateDcProps(sourceHtml)].filter(
+          (block?: Dynamic): Dynamic => block != null,
         )),
     "</body>",
     "</html>",
@@ -170,27 +170,27 @@ function buildDcDocument(
   ].join(`
 `);
 }
-function stripPrivateDcProps(input?: Dynamic): Dynamic {
-  let value: Dynamic = input,
-    value2: Dynamic = getDcPropsJson(input);
-  if (value2 != null) {
+function stripPrivateDcProps(html?: Dynamic): Dynamic {
+  let strippedHtml: Dynamic = html,
+    propsJson: Dynamic = getDcPropsJson(html);
+  if (propsJson != null) {
     let text: Dynamic = "";
     try {
-      let value4: Dynamic = JSON.parse(value2),
-        value5: Dynamic = Object.fromEntries(
-          Object.entries(value4).filter(
-            ([input2]: Dynamic): Dynamic => !input2.startsWith("$"),
+      let props: Dynamic = JSON.parse(propsJson),
+        publicProps: Dynamic = Object.fromEntries(
+          Object.entries(props).filter(
+            ([key]: Dynamic): Dynamic => !key.startsWith("$"),
           ),
         );
-      text = Object.keys(value5).length > 0 ? JSON.stringify(value5) : "";
+      text = Object.keys(publicProps).length > 0 ? JSON.stringify(publicProps) : "";
     } catch {
       text = "";
     }
-    value = setDcPropsJson(input, text) ?? input;
+    strippedHtml = setDcPropsJson(html, text) ?? html;
   }
-  let value3: Dynamic = parseDcHtmlDocument(value);
-  return value3?.jsMatch && value3.jsMatch.index >= value3.templateEnd
-    ? value3.jsMatch[0]
+  let parsedHtml: Dynamic = parseDcHtmlDocument(strippedHtml);
+  return parsedHtml?.jsMatch && parsedHtml.jsMatch.index >= parsedHtml.templateEnd
+    ? parsedHtml.jsMatch[0]
     : null;
 }
 export {

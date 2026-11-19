@@ -569,9 +569,9 @@ export function installEditorClipboardArtboards(): () => void {
       (text.length * 3 <= maxFileContentBytes ||
         ClipboardArtboardsTextEncoder.encode(text).length <=
           maxFileContentBytes);
-    ClipboardArtboardsMax = (value?: Dynamic, minimum: Dynamic = 0): Dynamic =>
-      typeof value == "number" && Number.isFinite(value)
-        ? Math.max(minimum, Math.min(maxOffset, value))
+    ClipboardArtboardsMax = (amount?: Dynamic, minimum: Dynamic = 0): Dynamic =>
+      typeof amount == "number" && Number.isFinite(amount)
+        ? Math.max(minimum, Math.min(maxOffset, amount))
         : 0;
   };
 }

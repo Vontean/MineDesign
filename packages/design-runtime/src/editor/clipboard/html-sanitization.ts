@@ -7,7 +7,7 @@ import { escapeHtml } from "../html/escaping";
 
 var ClipboardHtmlSanitizationSubscribers: Dynamic;
 var ClipboardHtmlSanitizationSrcdocContenteditableFormactionSet: Dynamic;
-var ClipboardHtmlSanitizationSubscribers_2: Dynamic;
+var urlAttributeNames: Dynamic;
 var ClipboardHtmlSanitizationAnimateSetAnimatemotionSet: Dynamic;
 var ClipboardHtmlSanitizationDataKeyframesDataDcDataOmValues: Dynamic;
 var ClipboardHtmlSanitizationSome: Dynamic;
@@ -15,336 +15,336 @@ var ClipboardHtmlSanitizationDataKeyframesAttrPattern: Dynamic;
 var ClipboardHtmlSanitizationDynsrcLowsrcUsemapSet: Dynamic;
 var ClipboardHtmlSanitizationExpressionMozBindingPattern: Dynamic;
 var ClipboardHtmlSanitizationAZPattern: Dynamic;
-var ClipboardHtmlSanitizationExpressionMozBindingPattern_2: Dynamic;
+var unsafeCssPatternWithoutTemplates: Dynamic;
 var ClipboardHtmlSanitizationScriptDataDcScriptPattern: Dynamic;
-function isSafePastedTag(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trim().toLowerCase();
-  if (!/^[a-z][a-z0-9:-]*$/.test(value)) return false;
-  let value2: Dynamic = value.slice(value.lastIndexOf(":") + 1);
-  if (value2 === "") return false;
-  for (let value3 of (value2 === value
-    ? [value]
-    : [value, value2]) as Dynamic)
+function isSafePastedTag(tagName?: Dynamic): Dynamic {
+  let normalizedTag: Dynamic = tagName.trim().toLowerCase();
+  if (!/^[a-z][a-z0-9:-]*$/.test(normalizedTag)) return false;
+  let localName: Dynamic = normalizedTag.slice(normalizedTag.lastIndexOf(":") + 1);
+  if (localName === "") return false;
+  for (let name of (localName === normalizedTag
+    ? [normalizedTag]
+    : [normalizedTag, localName]) as Dynamic)
     if (
-      value3.startsWith("on") ||
-      ClipboardHtmlSanitizationSome(value3) ||
+      name.startsWith("on") ||
+      ClipboardHtmlSanitizationSome(name) ||
       ClipboardHtmlSanitizationSrcdocContenteditableFormactionSet.has(
-        value3,
+        name,
       ) ||
-      ClipboardHtmlSanitizationSubscribers_2.has(value3) ||
-      value3 === "srcset" ||
-      value3 === "is" ||
-      value3 === "attributename" ||
-      value3.startsWith("style") ||
-      value3.startsWith("sc-") ||
-      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value3)
+      urlAttributeNames.has(name) ||
+      name === "srcset" ||
+      name === "is" ||
+      name === "attributename" ||
+      name.startsWith("style") ||
+      name.startsWith("sc-") ||
+      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(name)
     )
       return false;
   return true;
 }
-function isUnsafePastedAttribute(input?: Dynamic): Dynamic {
-  return !/^[a-z][a-z0-9-]*$/.test(input) ||
-    input.startsWith("on") ||
-    input.startsWith("sc-") ||
-    ClipboardHtmlSanitizationSome(input) ||
-    input.startsWith("style") ||
-    input === "is" ||
-    ClipboardHtmlSanitizationSrcdocContenteditableFormactionSet.has(input) ||
-    ClipboardHtmlSanitizationDynsrcLowsrcUsemapSet.has(input)
+function isUnsafePastedAttribute(attributeName?: Dynamic): Dynamic {
+  return !/^[a-z][a-z0-9-]*$/.test(attributeName) ||
+    attributeName.startsWith("on") ||
+    attributeName.startsWith("sc-") ||
+    ClipboardHtmlSanitizationSome(attributeName) ||
+    attributeName.startsWith("style") ||
+    attributeName === "is" ||
+    ClipboardHtmlSanitizationSrcdocContenteditableFormactionSet.has(attributeName) ||
+    ClipboardHtmlSanitizationDynsrcLowsrcUsemapSet.has(attributeName)
     ? false
-    : input !== "attributename";
+    : attributeName !== "attributename";
 }
-function isSafePastedProtocol(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = /^([a-z][a-z0-9+.-]*):/.exec(input);
-  if (!value) return true;
-  let value2: Dynamic = value[1];
-  return value2 === "http" ||
-    value2 === "https" ||
-    value2 === "mailto" ||
-    value2 === "tel"
+function isSafePastedProtocol(url?: Dynamic, allowDataImage?: Dynamic): Dynamic {
+  let protocolMatch: Dynamic = /^([a-z][a-z0-9+.-]*):/.exec(url);
+  if (!protocolMatch) return true;
+  let protocol: Dynamic = protocolMatch[1];
+  return protocol === "http" ||
+    protocol === "https" ||
+    protocol === "mailto" ||
+    protocol === "tel"
     ? true
-    : value2 === "data"
-      ? options && input.startsWith("data:image/")
+    : protocol === "data"
+      ? allowDataImage && url.startsWith("data:image/")
       : false;
 }
-function isSafePastedUrl(input?: Dynamic, options: Dynamic = false): Dynamic {
-  let value: Dynamic = input.replace(/[\u0000-\u0020]/g, "").toLowerCase(),
-    value2: Dynamic = value.search(/[:/?#]/);
-  return (value2 === -1 ? value : value.slice(0, value2)).includes("{{")
+function isSafePastedUrl(url?: Dynamic, allowDataImage: Dynamic = false): Dynamic {
+  let compactUrl: Dynamic = url.replace(/[\u0000-\u0020]/g, "").toLowerCase(),
+    delimiterIndex: Dynamic = compactUrl.search(/[:/?#]/);
+  return (delimiterIndex === -1 ? compactUrl : compactUrl.slice(0, delimiterIndex)).includes("{{")
     ? false
-    : isSafePastedProtocol(value, options);
+    : isSafePastedProtocol(compactUrl, allowDataImage);
 }
-function isSafePastedSrcset(input?: Dynamic): Dynamic {
-  return input
+function isSafePastedSrcset(srcset?: Dynamic): Dynamic {
+  return srcset
     .split(",")
-    .map((input2?: Dynamic): Dynamic => input2.trim().split(/\s+/)[0] ?? "")
+    .map((candidate?: Dynamic): Dynamic => candidate.trim().split(/\s+/)[0] ?? "")
     .every(
-      (input2?: Dynamic): Dynamic =>
-        input2 === "" || isSafePastedUrl(input2, true),
+      (candidate?: Dynamic): Dynamic =>
+        candidate === "" || isSafePastedUrl(candidate, true),
     );
 }
-function removeCssStrings(input?: Dynamic): Dynamic {
-  return input.replace(
+function removeCssStrings(css?: Dynamic): Dynamic {
+  return css.replace(
     /\\[\s\S]|"(?:\\[\s\S]|[^"\\\n\r\f])*"|'(?:\\[\s\S]|[^'\\\n\r\f])*'/g,
-    (input2?: Dynamic): Dynamic => (input2[0] === "\\" ? input2 : ""),
+    (token?: Dynamic): Dynamic => (token[0] === "\\" ? token : ""),
   );
 }
-function decodeCssEscapes(input?: Dynamic): Dynamic {
-  return input.replace(
+function decodeCssEscapes(css?: Dynamic): Dynamic {
+  return css.replace(
     /\\([0-9a-fA-F]{1,6})[ \t\n\r\f]?|\\([\s\S])|\\$/g,
-    (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-      if (options !== undefined) {
-        let value: Dynamic = parseInt(options, 16);
-        return value > 0 &&
-          value <= 1114111 &&
-          !(value >= 55296 && value <= 57343)
-          ? String.fromCodePoint(value)
+    (match?: Dynamic, hexCode?: Dynamic, escapedChar?: Dynamic): Dynamic => {
+      if (hexCode !== undefined) {
+        let codePoint: Dynamic = parseInt(hexCode, 16);
+        return codePoint > 0 &&
+          codePoint <= 1114111 &&
+          !(codePoint >= 55296 && codePoint <= 57343)
+          ? String.fromCodePoint(codePoint)
           : "\uFFFD";
       }
-      return context ?? "\uFFFD";
+      return escapedChar ?? "\uFFFD";
     },
   );
 }
-function splitSafeCssDeclarations(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    index: Dynamic = 0,
-    text: Dynamic = "",
-    text2: Dynamic = "",
-    flag: Dynamic = false;
-  for (let value of input as Dynamic) {
-    if (text) {
-      flag
-        ? (flag = false)
-        : value === "\\"
-          ? (flag = true)
-          : value === text && (text = "");
-      text2 += value;
+function splitSafeCssDeclarations(css?: Dynamic): Dynamic {
+  let declarations: Dynamic = [],
+    parenDepth: Dynamic = 0,
+    quote: Dynamic = "",
+    current: Dynamic = "",
+    isEscaped: Dynamic = false;
+  for (let char of css as Dynamic) {
+    if (quote) {
+      isEscaped
+        ? (isEscaped = false)
+        : char === "\\"
+          ? (isEscaped = true)
+          : char === quote && (quote = "");
+      current += char;
       continue;
     }
-    value === '"' || value === "'"
-      ? (text = value)
-      : value === "("
-        ? (index += 1)
-        : value === ")" && (index = Math.max(0, index - 1));
-    value === ";" && index === 0
-      ? (items.push(text2), (text2 = ""))
-      : (text2 += value);
+    char === '"' || char === "'"
+      ? (quote = char)
+      : char === "("
+        ? (parenDepth += 1)
+        : char === ")" && (parenDepth = Math.max(0, parenDepth - 1));
+    char === ";" && parenDepth === 0
+      ? (declarations.push(current), (current = ""))
+      : (current += char);
   }
-  items.push(text2);
-  return items;
+  declarations.push(current);
+  return declarations;
 }
-function isSafeStyleAttribute(input?: Dynamic): Dynamic {
+function isSafeStyleAttribute(attributeName?: Dynamic): Dynamic {
   return (
-    /^style-[a-z][a-z-]*$/.test(input) &&
-    !ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(input)
+    /^style-[a-z][a-z-]*$/.test(attributeName) &&
+    !ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(attributeName)
   );
 }
-function sanitizePastedStyle(items?: Dynamic): Dynamic {
-  if (items.length > 8192) return null;
-  let value: Dynamic = items.trim();
+function sanitizePastedStyle(style?: Dynamic): Dynamic {
+  if (style.length > 8192) return null;
+  let trimmedStyle: Dynamic = style.trim();
   if (
-    /^\{\{[^{}<>'"]*\}\}$/.test(value) &&
-    !ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value)
+    /^\{\{[^{}<>'"]*\}\}$/.test(trimmedStyle) &&
+    !ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(trimmedStyle)
   )
-    return items;
-  let items2: Dynamic = [];
-  for (let value2 of splitSafeCssDeclarations(items) as Dynamic) {
-    let value3: Dynamic = value2.trim();
-    if (!value3) continue;
-    let value4: Dynamic = value3.indexOf(":");
-    if (value4 <= 0) continue;
-    let value5: Dynamic = value3.slice(0, value4).trim(),
-      value6: Dynamic = value3.slice(value4 + 1).trim();
+    return style;
+  let safeDeclarations: Dynamic = [];
+  for (let rawDeclaration of splitSafeCssDeclarations(style) as Dynamic) {
+    let declaration: Dynamic = rawDeclaration.trim();
+    if (!declaration) continue;
+    let colonIndex: Dynamic = declaration.indexOf(":");
+    if (colonIndex <= 0) continue;
+    let property: Dynamic = declaration.slice(0, colonIndex).trim(),
+      cssValue: Dynamic = declaration.slice(colonIndex + 1).trim();
     if (
-      !/^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$/.test(value5) ||
-      isUnsafeCssProperty(value5) ||
-      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value5) ||
-      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value6) ||
-      /\\$/.test(value6) ||
-      /\\[0-9a-fA-F]{0,6}\{\{/.test(value6)
+      !/^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$/.test(property) ||
+      isUnsafeCssProperty(property) ||
+      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(property) ||
+      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(cssValue) ||
+      /\\$/.test(cssValue) ||
+      /\\[0-9a-fA-F]{0,6}\{\{/.test(cssValue)
     )
       continue;
-    let value7: Dynamic = value6.replace(/\{\{[^{}<>'"]*\}\}/g, "0");
+    let valueWithoutTemplates: Dynamic = cssValue.replace(/\{\{[^{}<>'"]*\}\}/g, "0");
     ClipboardHtmlSanitizationExpressionMozBindingPattern.test(
-      decodeCssEscapes(value7).replace(/[\u0000\t\n\r\f]/g, ""),
+      decodeCssEscapes(valueWithoutTemplates).replace(/[\u0000\t\n\r\f]/g, ""),
     ) ||
       ClipboardHtmlSanitizationAZPattern.test(
-        decodeCssEscapes(removeCssStrings(value7)).replace(
+        decodeCssEscapes(removeCssStrings(valueWithoutTemplates)).replace(
           /[\u0000\t\n\r\f]/g,
           "",
         ),
       ) ||
-      ClipboardHtmlSanitizationExpressionMozBindingPattern_2.test(
-        decodeCssEscapes(value6.replace(/\{\{[^{}<>'"]*\}\}/g, "")).replace(
+      unsafeCssPatternWithoutTemplates.test(
+        decodeCssEscapes(cssValue.replace(/\{\{[^{}<>'"]*\}\}/g, "")).replace(
           /[\u0000\t\n\r\f]/g,
           "",
         ),
       ) ||
-      (value6.length !== 0 && items2.push(value5 + ": " + value6));
+      (cssValue.length !== 0 && safeDeclarations.push(property + ": " + cssValue));
   }
-  return items2.length > 0 ? items2.join("; ") : null;
+  return safeDeclarations.length > 0 ? safeDeclarations.join("; ") : null;
 }
-function isPastedStylePreserved(input?: Dynamic): Dynamic {
-  let length: Dynamic = splitSafeCssDeclarations(input).filter(
-      (input2?: Dynamic): Dynamic => input2.trim() !== "",
+function isPastedStylePreserved(style?: Dynamic): Dynamic {
+  let declarationCount: Dynamic = splitSafeCssDeclarations(style).filter(
+      (declaration?: Dynamic): Dynamic => declaration.trim() !== "",
     ).length,
-    value: Dynamic = sanitizePastedStyle(input);
-  return value == null
-    ? length === 0
-    : splitSafeCssDeclarations(value).length === length;
+    sanitizedStyle: Dynamic = sanitizePastedStyle(style);
+  return sanitizedStyle == null
+    ? declarationCount === 0
+    : splitSafeCssDeclarations(sanitizedStyle).length === declarationCount;
 }
-function getNativeDomAccessor(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = Object.getPrototypeOf(input);
-  for (; value; ) {
-    let value2: Dynamic = Object.getOwnPropertyDescriptor(value, options);
-    if (value2?.get) {
-      let get2: Dynamic = value2.get;
-      return (input2?: Dynamic): Dynamic => get2.call(input2);
+function getNativeDomAccessor(node?: Dynamic, memberName?: Dynamic): Dynamic {
+  let prototype: Dynamic = Object.getPrototypeOf(node);
+  for (; prototype; ) {
+    let descriptor: Dynamic = Object.getOwnPropertyDescriptor(prototype, memberName);
+    if (descriptor?.get) {
+      let getter: Dynamic = descriptor.get;
+      return (target?: Dynamic): Dynamic => getter.call(target);
     }
-    if (value2 && typeof value2.value == "function") {
-      let value3: Dynamic = value2.value;
-      return (input2?: Dynamic, ...options2: Dynamic[]): Dynamic =>
-        value3.call(input2, ...options2);
+    if (descriptor && typeof descriptor.value == "function") {
+      let method: Dynamic = descriptor.value;
+      return (target?: Dynamic, ...args: Dynamic[]): Dynamic =>
+        method.call(target, ...args);
     }
-    value = Object.getPrototypeOf(value);
+    prototype = Object.getPrototypeOf(prototype);
   }
-  return (input2?: Dynamic, ...options2: Dynamic[]): Dynamic => {
-    let value2: Dynamic = input2[options];
-    return typeof value2 == "function"
-      ? value2.apply(input2, options2)
-      : value2;
+  return (target?: Dynamic, ...args: Dynamic[]): Dynamic => {
+    let member: Dynamic = target[memberName];
+    return typeof member == "function"
+      ? member.apply(target, args)
+      : member;
   };
 }
-function createNativeDomAccessors(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    getNativeDomAccessor(input, input2);
+function createNativeDomAccessors(node?: Dynamic): Dynamic {
+  let accessorFor: Dynamic = (memberName?: Dynamic): Dynamic =>
+    getNativeDomAccessor(node, memberName);
   return {
-    tagName: callback("tagName"),
-    attributes: callback("attributes"),
-    children: callback("children"),
-    childNodes: callback("childNodes"),
-    nodeType: callback("nodeType"),
-    getAttribute: callback("getAttribute"),
-    removeChild: callback("removeChild"),
-    setAttribute: callback("setAttribute"),
-    removeAttribute: callback("removeAttribute"),
-    remove: callback("remove"),
+    tagName: accessorFor("tagName"),
+    attributes: accessorFor("attributes"),
+    children: accessorFor("children"),
+    childNodes: accessorFor("childNodes"),
+    nodeType: accessorFor("nodeType"),
+    getAttribute: accessorFor("getAttribute"),
+    removeChild: accessorFor("removeChild"),
+    setAttribute: accessorFor("setAttribute"),
+    removeAttribute: accessorFor("removeAttribute"),
+    remove: accessorFor("remove"),
   };
 }
-function sanitizePastedDom(input?: Dynamic, options?: Dynamic): Dynamic {
-  for (let value of Array.from(options.childNodes(input)) as Dynamic)
-    options.nodeType(value) === 8 && options.removeChild(input, value);
-  for (let value of Array.from(options.children(input)) as Dynamic) {
-    let value2: Dynamic = options.tagName(value).toLowerCase(),
-      value3: Dynamic = value2.startsWith("sc-raw-")
-        ? value2.slice(7)
-        : value2;
+function sanitizePastedDom(parent?: Dynamic, accessors?: Dynamic): Dynamic {
+  for (let child of Array.from(accessors.childNodes(parent)) as Dynamic)
+    accessors.nodeType(child) === 8 && accessors.removeChild(parent, child);
+  for (let element of Array.from(accessors.children(parent)) as Dynamic) {
+    let tagName: Dynamic = accessors.tagName(element).toLowerCase(),
+      rawTagName: Dynamic = tagName.startsWith("sc-raw-")
+        ? tagName.slice(7)
+        : tagName;
     if (
-      value2.includes(":") ||
-      ClipboardHtmlSanitizationSubscribers.has(value2) ||
-      ClipboardHtmlSanitizationSubscribers.has(value3)
+      tagName.includes(":") ||
+      ClipboardHtmlSanitizationSubscribers.has(tagName) ||
+      ClipboardHtmlSanitizationSubscribers.has(rawTagName)
     ) {
-      options.remove(value);
+      accessors.remove(element);
       continue;
     }
     if (
-      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test("<" + value2)
+      ClipboardHtmlSanitizationScriptDataDcScriptPattern.test("<" + tagName)
     ) {
-      options.remove(value);
+      accessors.remove(element);
       continue;
     }
     if (
-      (ClipboardHtmlSanitizationAnimateSetAnimatemotionSet.has(value2) ||
-        ClipboardHtmlSanitizationAnimateSetAnimatemotionSet.has(value3)) &&
-      Array.from(options.attributes(value))
+      (ClipboardHtmlSanitizationAnimateSetAnimatemotionSet.has(tagName) ||
+        ClipboardHtmlSanitizationAnimateSetAnimatemotionSet.has(rawTagName)) &&
+      Array.from(accessors.attributes(element))
         .filter(
-          (input2?: Dynamic): Dynamic =>
-            input2.name.toLowerCase() === "attributename",
+          (attribute?: Dynamic): Dynamic =>
+            attribute.name.toLowerCase() === "attributename",
         )
-        .some((input2?: Dynamic): Dynamic => !isSafePastedTag(input2.value))
+        .some((attribute?: Dynamic): Dynamic => !isSafePastedTag(attribute.value))
     ) {
-      options.remove(value);
+      accessors.remove(element);
       continue;
     }
-    for (let value4 of Array.from(options.attributes(value)) as Dynamic) {
-      let value5: Dynamic = value4.name.toLowerCase();
-      if (value5 === "is") {
-        options.remove(value);
+    for (let attribute of Array.from(accessors.attributes(element)) as Dynamic) {
+      let attributeName: Dynamic = attribute.name.toLowerCase();
+      if (attributeName === "is") {
+        accessors.remove(element);
         break;
       }
       if (
-        value5.startsWith("on") ||
+        attributeName.startsWith("on") ||
         ClipboardHtmlSanitizationSrcdocContenteditableFormactionSet.has(
-          value5,
+          attributeName,
         )
       ) {
-        options.removeAttribute(value, value4.name);
+        accessors.removeAttribute(element, attribute.name);
         continue;
       }
-      if (value5.startsWith("sc-")) {
-        options.removeAttribute(value, value4.name);
+      if (attributeName.startsWith("sc-")) {
+        accessors.removeAttribute(element, attribute.name);
         continue;
       }
-      let value6: Dynamic =
-        ClipboardHtmlSanitizationDataKeyframesAttrPattern.exec(value5);
-      if (value6 != null && !isUnsafePastedAttribute(value6[1] ?? "")) {
-        options.removeAttribute(value, value4.name);
+      let keyframesMatch: Dynamic =
+        ClipboardHtmlSanitizationDataKeyframesAttrPattern.exec(attributeName);
+      if (keyframesMatch != null && !isUnsafePastedAttribute(keyframesMatch[1] ?? "")) {
+        accessors.removeAttribute(element, attribute.name);
         continue;
       }
-      if (value5.startsWith("style-")) {
-        if (!isSafeStyleAttribute(value5)) {
-          options.removeAttribute(value, value4.name);
+      if (attributeName.startsWith("style-")) {
+        if (!isSafeStyleAttribute(attributeName)) {
+          accessors.removeAttribute(element, attribute.name);
           continue;
         }
-        let value8: Dynamic = sanitizePastedStyle(value4.value);
-        value8 == null
-          ? options.removeAttribute(value, value4.name)
-          : value8 !== value4.value &&
-            options.setAttribute(value, value4.name, value8);
+        let sanitizedStyle: Dynamic = sanitizePastedStyle(attribute.value);
+        sanitizedStyle == null
+          ? accessors.removeAttribute(element, attribute.name)
+          : sanitizedStyle !== attribute.value &&
+            accessors.setAttribute(element, attribute.name, sanitizedStyle);
         continue;
       }
-      if (value5 === "style") {
-        let value8: Dynamic = sanitizePastedStyle(value4.value);
-        value8 == null
-          ? options.removeAttribute(value, value4.name)
-          : value8 !== value4.value &&
-            options.setAttribute(value, value4.name, value8);
+      if (attributeName === "style") {
+        let sanitizedStyle: Dynamic = sanitizePastedStyle(attribute.value);
+        sanitizedStyle == null
+          ? accessors.removeAttribute(element, attribute.name)
+          : sanitizedStyle !== attribute.value &&
+            accessors.setAttribute(element, attribute.name, sanitizedStyle);
         continue;
       }
-      let value7: Dynamic =
-        value5 === "src" ||
-        value5 === "poster" ||
-        ((value5 === "href" || value5 === "xlink:href") &&
-          (value2 === "image" || value2 === "feimage"));
+      let allowDataImage: Dynamic =
+        attributeName === "src" ||
+        attributeName === "poster" ||
+        ((attributeName === "href" || attributeName === "xlink:href") &&
+          (tagName === "image" || tagName === "feimage"));
       if (
-        ClipboardHtmlSanitizationSubscribers_2.has(value5) &&
-        !isSafePastedUrl(value4.value, value7)
+        urlAttributeNames.has(attributeName) &&
+        !isSafePastedUrl(attribute.value, allowDataImage)
       ) {
-        options.removeAttribute(value, value4.name);
+        accessors.removeAttribute(element, attribute.name);
         continue;
       }
-      if (value5 === "srcset" && !isSafePastedSrcset(value4.value)) {
-        options.removeAttribute(value, value4.name);
+      if (attributeName === "srcset" && !isSafePastedSrcset(attribute.value)) {
+        accessors.removeAttribute(element, attribute.name);
         continue;
       }
       (ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(
-        value4.value,
+        attribute.value,
       ) ||
-        ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value5)) &&
-        options.removeAttribute(value, value4.name);
+        ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(attributeName)) &&
+        accessors.removeAttribute(element, attribute.name);
     }
-    sanitizePastedDom(value, options);
+    sanitizePastedDom(element, accessors);
   }
 }
-function sanitizePastedHtml(input?: Dynamic): Dynamic {
-  if (typeof DOMParser === "undefined") return escapeHtml(input);
-  let value: Dynamic = input;
+function sanitizePastedHtml(html?: Dynamic): Dynamic {
+  if (typeof DOMParser === "undefined") return escapeHtml(html);
+  let currentHtml: Dynamic = html;
   for (let index: Dynamic = 0; index < 2; index++) {
-    let value2: Dynamic = new DOMParser().parseFromString(value, "text/html");
-    sanitizePastedDom(value2.body, createNativeDomAccessors(value2.body));
-    value = value2.body.innerHTML;
+    let parsedDocument: Dynamic = new DOMParser().parseFromString(currentHtml, "text/html");
+    sanitizePastedDom(parsedDocument.body, createNativeDomAccessors(parsedDocument.body));
+    currentHtml = parsedDocument.body.innerHTML;
   }
-  return value;
+  return currentHtml;
 }
 export {
   ClipboardHtmlSanitizationAnimateSetAnimatemotionSet,
@@ -353,12 +353,12 @@ export {
   ClipboardHtmlSanitizationDataKeyframesDataDcDataOmValues,
   ClipboardHtmlSanitizationDynsrcLowsrcUsemapSet,
   ClipboardHtmlSanitizationExpressionMozBindingPattern,
-  ClipboardHtmlSanitizationExpressionMozBindingPattern_2,
+  unsafeCssPatternWithoutTemplates as ClipboardHtmlSanitizationExpressionMozBindingPattern_2,
   ClipboardHtmlSanitizationScriptDataDcScriptPattern,
   ClipboardHtmlSanitizationSome,
   ClipboardHtmlSanitizationSrcdocContenteditableFormactionSet,
   ClipboardHtmlSanitizationSubscribers,
-  ClipboardHtmlSanitizationSubscribers_2,
+  urlAttributeNames as ClipboardHtmlSanitizationSubscribers_2,
   createNativeDomAccessors,
   decodeCssEscapes,
   getNativeDomAccessor,
@@ -412,7 +412,7 @@ export function installEditorClipboardHtmlSanitization(): () => void {
       "formaction",
       "ping",
     ]);
-    ClipboardHtmlSanitizationSubscribers_2 = new Set([
+    urlAttributeNames = new Set([
       "href",
       "xlink:href",
       "src",
@@ -440,9 +440,9 @@ export function installEditorClipboardHtmlSanitization(): () => void {
       "data-dm-",
       "data-react-",
     ];
-    ClipboardHtmlSanitizationSome = (input?: Dynamic): Dynamic =>
+    ClipboardHtmlSanitizationSome = (attributeName?: Dynamic): Dynamic =>
       ClipboardHtmlSanitizationDataKeyframesDataDcDataOmValues.some(
-        (input2?: Dynamic): Dynamic => input.startsWith(input2),
+        (prefix?: Dynamic): Dynamic => attributeName.startsWith(prefix),
       );
     ClipboardHtmlSanitizationDataKeyframesAttrPattern =
       /^data-keyframes-attr-(.*)$/;
@@ -454,7 +454,7 @@ export function installEditorClipboardHtmlSanitization(): () => void {
     ClipboardHtmlSanitizationExpressionMozBindingPattern =
       /[<>{}\\]|\/\*|expression\s*\(|-moz-binding|behavior\s*:|javascript\s*:/i;
     ClipboardHtmlSanitizationAZPattern = /@[a-z-]/i;
-    ClipboardHtmlSanitizationExpressionMozBindingPattern_2 =
+    unsafeCssPatternWithoutTemplates =
       /[<>{}\\]|\/\*|expression\s*\(|-moz-binding|behavior\s*:|javascript\s*:/i;
     ClipboardHtmlSanitizationScriptDataDcScriptPattern =
       /<\/?script|data-dc-script|<\/?x-dc|<\!--/i;

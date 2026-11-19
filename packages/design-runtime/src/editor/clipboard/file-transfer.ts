@@ -5,7 +5,7 @@ import {
 } from "../../runtime-types";
 import { ClipboardAnnotationsLimit } from "./annotations";
 import { artboardBaseName, ClipboardArtboardsResolvedValue, ClipboardArtboardsTextEncoder, fileBaseName, getBlobAssetReferences } from "./artboards";
-import { canvasMetadataFile, encodeStorePathSegment, isArtboardFile, isSafeProjectPath, isShapeAnnotation, isSupportedProjectAsset, PlatformFileContentLimit_5, PlatformFileContentLimit_8, PlatformFileContentResolvedValue_11, PlatformFileContentResolvedValue_7, PlatformFileContentWebpAvifPattern, uniqueArtboardFile } from "../../platform/file-content";
+import { canvasMetadataFile, encodeStorePathSegment, isArtboardFile, isSafeProjectPath, isShapeAnnotation, isSupportedProjectAsset, PlatformFileContentLimit_5 as canvasLimit, PlatformFileContentLimit_8 as maxProjectPathLength, PlatformFileContentResolvedValue_11 as maxFileContentBytes, PlatformFileContentResolvedValue_7 as maxInlineFileContentBytes, PlatformFileContentWebpAvifPattern, uniqueArtboardFile } from "../../platform/file-content";
 import { isProjectSourcePath, renameComponentImports, rewriteProjectReferences } from "../../preview/component-imports";
 
 var ClipboardFileTransferKind: Dynamic;
@@ -22,446 +22,446 @@ var ClipboardFileTransferPasted: Dynamic;
 var ClipboardFileTransferSubscribers: Dynamic;
 var ClipboardFileTransferTest: Dynamic;
 var ClipboardFileTransferHandler_7: Dynamic;
-function isCarryableProjectFile(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.toLowerCase();
+function isCarryableProjectFile(filePath?: Dynamic): Dynamic {
+  let lowerPath: Dynamic = filePath.toLowerCase();
   return (
-    ClipboardFileTransferHandler_7(input) &&
-    isSupportedProjectAsset(input) &&
-    value !== canvasMetadataFile &&
-    !isArtboardFile(value) &&
-    !ClipboardFileTransferSubscribers.has(fileBaseName(value)) &&
-    !ClipboardFileTransferTest(value)
+    ClipboardFileTransferHandler_7(filePath) &&
+    isSupportedProjectAsset(filePath) &&
+    lowerPath !== canvasMetadataFile &&
+    !isArtboardFile(lowerPath) &&
+    !ClipboardFileTransferSubscribers.has(fileBaseName(lowerPath)) &&
+    !ClipboardFileTransferTest(lowerPath)
   );
 }
-function dataUrlToBlob(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic =
-    /^data:([^;,]+)(?:;\s*charset="?[\w-]+"?)?(;base64)?,/i.exec(input);
-  if (!value) return null;
+function dataUrlToBlob(dataUrl?: Dynamic, baseName?: Dynamic): Dynamic {
+  let match: Dynamic =
+    /^data:([^;,]+)(?:;\s*charset="?[\w-]+"?)?(;base64)?,/i.exec(dataUrl);
+  if (!match) return null;
   try {
-    let value2: Dynamic = input.slice(value[0].length),
-      value3: Dynamic = value[2]
+    let payload: Dynamic = dataUrl.slice(match[0].length),
+      bytes: Dynamic = match[2]
         ? Uint8Array.from(
-            atob(value2),
-            (input2?: Dynamic): Dynamic => input2.charCodeAt(0),
+            atob(payload),
+            (char?: Dynamic): Dynamic => char.charCodeAt(0),
           )
         : ClipboardArtboardsTextEncoder.encode(
-            decodeURIComponent(value2),
+            decodeURIComponent(payload),
           ),
-      value4: Dynamic = (value[1].split("/")[1] ?? "png")
+      extension: Dynamic = (match[1].split("/")[1] ?? "png")
         .replace("jpeg", "jpg")
         .replace("svg+xml", "svg");
-    return new File([value3], options + "." + value4, {
-      type: value[1],
+    return new File([bytes], baseName + "." + extension, {
+      type: match[1],
     });
   } catch {
     return null;
   }
 }
-function detectFontMimeType(items?: Dynamic): Dynamic {
-  let value: Dynamic = String.fromCharCode(...items.subarray(0, 4));
-  return value === "wOF2"
+function detectFontMimeType(bytes?: Dynamic): Dynamic {
+  let signature: Dynamic = String.fromCharCode(...bytes.subarray(0, 4));
+  return signature === "wOF2"
     ? "font/woff2"
-    : value === "wOFF"
+    : signature === "wOFF"
       ? "font/woff"
-      : items.length < 5 || items[4] !== 0
+      : bytes.length < 5 || bytes[4] !== 0
         ? null
-        : value === "OTTO"
+        : signature === "OTTO"
           ? "font/otf"
-          : value === "\0\0\0" || value === "true"
+          : signature === "\0\0\0" || signature === "true"
             ? "font/ttf"
             : null;
 }
 async function dataUrlToFontFile(
-  input?: Dynamic,
-  options?: Dynamic,
+  dataUrl?: Dynamic,
+  baseName?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic = dataUrlToBlob(input, options),
-    value2: Dynamic = value
+  let blob: Dynamic = dataUrlToBlob(dataUrl, baseName),
+    mimeType: Dynamic = blob
       ? detectFontMimeType(
-          new Uint8Array(await value.slice(0, 5).arrayBuffer()),
+          new Uint8Array(await blob.slice(0, 5).arrayBuffer()),
         )
       : null;
-  return value && value2
-    ? new File([value], options + "." + value2.slice(5), {
-        type: value2,
+  return blob && mimeType
+    ? new File([blob], baseName + "." + mimeType.slice(5), {
+        type: mimeType,
       })
     : null;
 }
-function fileDataUrl(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (
-    /\.([a-z0-9]+)$/i.exec(input)?.[1] ?? "png"
+function fileDataUrl(fileName?: Dynamic, base64?: Dynamic): Dynamic {
+  let extension: Dynamic = (
+    /\.([a-z0-9]+)$/i.exec(fileName)?.[1] ?? "png"
   ).toLowerCase();
   return (
     "data:" +
-    (value === "jpg"
+    (extension === "jpg"
       ? "image/jpeg"
-      : value === "svg"
+      : extension === "svg"
         ? "image/svg+xml"
-        : "image/" + value) +
+        : "image/" + extension) +
     ";base64," +
-    options.replace(/\s+/g, "")
+    base64.replace(/\s+/g, "")
   );
 }
 function replaceClipboardReferences(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  source?: Dynamic,
+  replacements?: Dynamic,
+  budget?: Dynamic,
 ): Dynamic {
-  if (options.size === 0) return input;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.replace(
+  if (replacements.size === 0) return source;
+  let escapeRegExp: Dynamic = (text?: Dynamic): Dynamic =>
+      text.replace(
         /[.*+?^${}()|[\]\\/]/g,
-        (input3?: Dynamic): Dynamic => "\\" + input3,
+        (char?: Dynamic): Dynamic => "\\" + char,
       ),
-    value: Dynamic = [...options.keys()]
+    pattern: Dynamic = [...replacements.keys()]
       .sort(
-        (items?: Dynamic, items2?: Dynamic): Dynamic =>
-          items2.length - items.length,
+        (first?: Dynamic, second?: Dynamic): Dynamic =>
+          second.length - first.length,
       )
-      .map(callback)
+      .map(escapeRegExp)
       .join("|");
-  return input.replace(
-    new RegExp("(?:\\.?/)?(" + value + ")", "g"),
-    (items?: Dynamic, items2?: Dynamic): Dynamic => {
-      let value2: Dynamic =
-        items2.startsWith("_blob/") || items === items2
-          ? options.get(items2)
-          : items.slice(0, items.length - items2.length) +
-            options.get(items2);
-      if (context !== undefined) {
-        let value3: Dynamic = value2.length - items.length;
-        if (value3 > context.left) return items;
-        value3 > 0 && (context.left -= value3);
+  return source.replace(
+    new RegExp("(?:\\.?/)?(" + pattern + ")", "g"),
+    (match?: Dynamic, reference?: Dynamic): Dynamic => {
+      let replacement: Dynamic =
+        reference.startsWith("_blob/") || match === reference
+          ? replacements.get(reference)
+          : match.slice(0, match.length - reference.length) +
+            replacements.get(reference);
+      if (budget !== undefined) {
+        let growth: Dynamic = replacement.length - match.length;
+        if (growth > budget.left) return match;
+        growth > 0 && (budget.left -= growth);
       }
-      return value2;
+      return replacement;
     },
   );
 }
 function preparePastedArtboardFiles(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = new Set(),
-  extra: Dynamic = context
-    ? PlatformFileContentResolvedValue_7
-    : PlatformFileContentResolvedValue_11,
+  clipboard?: Dynamic,
+  existingFiles?: Dynamic,
+  useInlineLimit?: Dynamic,
+  reservedNames: Dynamic = new Set(),
+  maxFileBytes: Dynamic = useInlineLimit
+    ? maxInlineFileContentBytes
+    : maxFileContentBytes,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => input2.toLowerCase(),
-    state: Dynamic = {
-      ...options,
+  let toLowerCase: Dynamic = (text?: Dynamic): Dynamic => text.toLowerCase(),
+    mergedFiles: Dynamic = {
+      ...existingFiles,
     },
-    values: Dynamic = new Set(
-      [...Object.keys(options), ...Object.keys(input.files)].map(callback),
+    usedNames: Dynamic = new Set(
+      [...Object.keys(existingFiles), ...Object.keys(clipboard.files)].map(toLowerCase),
     ),
-    values2: Dynamic = new Set(
-      value === "unknown" ? [] : [...value].map(callback),
+    reservedLower: Dynamic = new Set(
+      reservedNames === "unknown" ? [] : [...reservedNames].map(toLowerCase),
     ),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      values2.has(callback(input2)) ||
-      values2.has(callback(fileBaseName(input2))),
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-      !values.has(callback(input2)) && !callback2(input2),
-    entries: Dynamic = new Map(
-      Object.keys(options).map(
-        (input2?: Dynamic): Dynamic => [callback(input2), input2],
+    isReserved: Dynamic = (path?: Dynamic): Dynamic =>
+      reservedLower.has(toLowerCase(path)) ||
+      reservedLower.has(toLowerCase(fileBaseName(path))),
+    isNameFree: Dynamic = (path?: Dynamic): Dynamic =>
+      !usedNames.has(toLowerCase(path)) && !isReserved(path),
+    pathByLowerName: Dynamic = new Map(
+      Object.keys(existingFiles).map(
+        (path?: Dynamic): Dynamic => [toLowerCase(path), path],
       ),
     ),
-    entries2: Dynamic = new Map(
-      Object.keys(options).map(
-        (input2?: Dynamic): Dynamic => [
-          encodeStorePathSegment(input2),
-          input2,
+    pathByEncodedName: Dynamic = new Map(
+      Object.keys(existingFiles).map(
+        (path?: Dynamic): Dynamic => [
+          encodeStorePathSegment(path),
+          path,
         ],
       ),
     ),
-    entries3: Dynamic = new Map(),
-    values3: Dynamic = new Set(
-      Object.keys(options)
+    renamedArtboards: Dynamic = new Map(),
+    artboardNames: Dynamic = new Set(
+      Object.keys(existingFiles)
         .filter(isArtboardFile)
         .map(
-          (input2?: Dynamic): Dynamic =>
-            callback(artboardBaseName(input2)),
+          (path?: Dynamic): Dynamic =>
+            toLowerCase(artboardBaseName(path)),
         ),
     ),
-    values4: Dynamic = new Set(),
-    value2: Dynamic = input.artboards.map((input2?: Dynamic): Dynamic => {
-      let value4: Dynamic =
-          ClipboardFileTransferHandler_7(input2.stem + ".dc.html") &&
-          !ClipboardFileTransferTest(input2.stem)
-            ? input2
+    seenStems: Dynamic = new Set(),
+    boards: Dynamic = clipboard.artboards.map((artboard?: Dynamic): Dynamic => {
+      let entry: Dynamic =
+          ClipboardFileTransferHandler_7(artboard.stem + ".dc.html") &&
+          !ClipboardFileTransferTest(artboard.stem)
+            ? artboard
             : {
-                ...input2,
+                ...artboard,
                 stem: "Artboard",
               },
-        value5: Dynamic = uniqueArtboardFile(
-          state,
-          value4.stem,
-          context,
+        path: Dynamic = uniqueArtboardFile(
+          mergedFiles,
+          entry.stem,
+          useInlineLimit,
         );
       for (
         let count: Dynamic = 2;
-        values3.has(callback(artboardBaseName(value5))) ||
-        (entries.has(callback(value5)) && options[value5] === undefined);
+        artboardNames.has(toLowerCase(artboardBaseName(path))) ||
+        (pathByLowerName.has(toLowerCase(path)) && existingFiles[path] === undefined);
         count += 1
       )
-        value5 = uniqueArtboardFile(
-          state,
-          value4.stem + String(count),
-          context,
+        path = uniqueArtboardFile(
+          mergedFiles,
+          entry.stem + String(count),
+          useInlineLimit,
         );
-      values3.add(callback(artboardBaseName(value5)));
-      values.add(callback(value5));
-      state[value5] = value4.src;
-      let value6: Dynamic = artboardBaseName(value4.stem);
-      !values4.has(value6) &&
-        artboardBaseName(value5) !== value6 &&
-        entries3.set(value6, artboardBaseName(value5));
-      values4.add(value6);
+      artboardNames.add(toLowerCase(artboardBaseName(path)));
+      usedNames.add(toLowerCase(path));
+      mergedFiles[path] = entry.src;
+      let stemName: Dynamic = artboardBaseName(entry.stem);
+      !seenStems.has(stemName) &&
+        artboardBaseName(path) !== stemName &&
+        renamedArtboards.set(stemName, artboardBaseName(path));
+      seenStems.add(stemName);
       return {
-        path: value5,
-        entry: value4,
+        path: path,
+        entry: entry,
       };
     }),
-    entries4: Dynamic = new Map(),
-    entries5: Dynamic = new Map(),
-    values5: Dynamic = new Set(),
-    value3: Dynamic = Object.keys(input.files);
-  for (let value4 of [...value3, ...Object.keys(options)] as Dynamic) {
-    let value5: Dynamic = callback(fileBaseName(value4)),
-      entry: Dynamic = entries5.get(value5);
+    renamedFiles: Dynamic = new Map(),
+    pathByBaseName: Dynamic = new Map(),
+    ambiguousBaseNames: Dynamic = new Set(),
+    clipboardFilePaths: Dynamic = Object.keys(clipboard.files);
+  for (let filePath of [...clipboardFilePaths, ...Object.keys(existingFiles)] as Dynamic) {
+    let lowerBaseName: Dynamic = toLowerCase(fileBaseName(filePath)),
+      entry: Dynamic = pathByBaseName.get(lowerBaseName);
     entry !== undefined &&
-      entry !== value4 &&
-      (callback(entry) !== callback(value4) ||
-        (value3.includes(entry) && value3.includes(value4))) &&
-      values5
-        .add(fileBaseName(value4))
+      entry !== filePath &&
+      (toLowerCase(entry) !== toLowerCase(filePath) ||
+        (clipboardFilePaths.includes(entry) && clipboardFilePaths.includes(filePath))) &&
+      ambiguousBaseNames
+        .add(fileBaseName(filePath))
         .add(fileBaseName(entry))
-        .add(value5);
-    entries5.set(value5, value4);
+        .add(lowerBaseName);
+    pathByBaseName.set(lowerBaseName, filePath);
   }
-  for (let value4 of Object.keys(input.files) as Dynamic)
-    /\s/.test(value4) && values5.add(fileBaseName(value4));
-  let callback4: Dynamic = (input2?: Dynamic): Dynamic =>
-      values5.has(fileBaseName(input2))
-        ? input2
-        : fileBaseName(input2),
-    callback5: Dynamic = (items3?: Dynamic): Dynamic => {
-      let value4: Dynamic = fileBaseName(items3).search(
+  for (let filePath of Object.keys(clipboard.files) as Dynamic)
+    /\s/.test(filePath) && ambiguousBaseNames.add(fileBaseName(filePath));
+  let referenceKey: Dynamic = (filePath?: Dynamic): Dynamic =>
+      ambiguousBaseNames.has(fileBaseName(filePath))
+        ? filePath
+        : fileBaseName(filePath),
+    makeUniqueFilePath: Dynamic = (filePath?: Dynamic): Dynamic => {
+      let extensionIndex: Dynamic = fileBaseName(filePath).search(
           /(\.[^./]+)+$/,
         ),
-        value5: Dynamic = items3.slice(
+        directory: Dynamic = filePath.slice(
           0,
-          items3.length - fileBaseName(items3).length,
+          filePath.length - fileBaseName(filePath).length,
         ),
-        [value6, value7]: Dynamic =
-          value4 < 0
-            ? [fileBaseName(items3), ""]
+        [stem, extension]: Dynamic =
+          extensionIndex < 0
+            ? [fileBaseName(filePath), ""]
             : [
-                fileBaseName(items3).slice(0, value4),
-                fileBaseName(items3).slice(value4),
+                fileBaseName(filePath).slice(0, extensionIndex),
+                fileBaseName(filePath).slice(extensionIndex),
               ],
-        callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-          value === "unknown"
+        suffixFor: Dynamic = (count?: Dynamic): Dynamic =>
+          reservedNames === "unknown"
             ? Math.random().toString(36).slice(2, 6).padEnd(4, "0")
-            : String(input2),
-        value8: Dynamic = value5 + value6 + "-" + callback7(2) + value7;
-      for (let count: Dynamic = 3; !callback3(value8); count += 1)
-        value8 = value5 + value6 + "-" + callback7(count) + value7;
-      return value8;
+            : String(count),
+        candidate: Dynamic = directory + stem + "-" + suffixFor(2) + extension;
+      for (let count: Dynamic = 3; !isNameFree(candidate); count += 1)
+        candidate = directory + stem + "-" + suffixFor(count) + extension;
+      return candidate;
     },
-    state2: Dynamic = {},
-    values6: Dynamic = new Set(),
-    items: Dynamic = [],
-    items2: Dynamic = [],
-    state3: Dynamic = {};
-  for (let [value4, value5] of Object.entries(input.files) as Dynamic) {
-    if (!isCarryableProjectFile(value4)) continue;
-    let value6: Dynamic =
-      entries.get(callback(value4)) ??
-      (entries2.get(encodeStorePathSegment(value4)) !== value4
-        ? entries2.get(encodeStorePathSegment(value4))
+    files: Dynamic = {},
+    addedNames: Dynamic = new Set(),
+    reused: Dynamic = [],
+    dropped: Dynamic = [],
+    images: Dynamic = {};
+  for (let [filePath, fileContent] of Object.entries(clipboard.files) as Dynamic) {
+    if (!isCarryableProjectFile(filePath)) continue;
+    let existingPath: Dynamic =
+      pathByLowerName.get(toLowerCase(filePath)) ??
+      (pathByEncodedName.get(encodeStorePathSegment(filePath)) !== filePath
+        ? pathByEncodedName.get(encodeStorePathSegment(filePath))
         : undefined);
-    if (value6 !== undefined && options[value6] === value5) {
-      items.push(value6);
-      if (value6 !== value4) {
-        let value7: Dynamic =
-          callback4(value4) === value4 ||
-          value4.slice(
+    if (existingPath !== undefined && existingFiles[existingPath] === fileContent) {
+      reused.push(existingPath);
+      if (existingPath !== filePath) {
+        let keepFullPath: Dynamic =
+          referenceKey(filePath) === filePath ||
+          filePath.slice(
             0,
-            value4.length - fileBaseName(value4).length,
+            filePath.length - fileBaseName(filePath).length,
           ) !==
-            value6.slice(
+            existingPath.slice(
               0,
-              value6.length - fileBaseName(value6).length,
+              existingPath.length - fileBaseName(existingPath).length,
             );
-        value7 && values5.add(fileBaseName(value4));
-        entries4.set(
-          value7 ? value4 : fileBaseName(value4),
-          value7 ? value6 : fileBaseName(value6),
+        keepFullPath && ambiguousBaseNames.add(fileBaseName(filePath));
+        renamedFiles.set(
+          keepFullPath ? filePath : fileBaseName(filePath),
+          keepFullPath ? existingPath : fileBaseName(existingPath),
         );
       }
     } else if (
-      context &&
-      PlatformFileContentWebpAvifPattern.test(value4) &&
-      value5.length > PlatformFileContentResolvedValue_7
+      useInlineLimit &&
+      PlatformFileContentWebpAvifPattern.test(filePath) &&
+      fileContent.length > maxInlineFileContentBytes
     )
-      state3[value4] = fileDataUrl(value4, value5);
+      images[filePath] = fileDataUrl(filePath, fileContent);
     else if (
-      ClipboardArtboardsTextEncoder.encode(value5).length > extra
+      ClipboardArtboardsTextEncoder.encode(fileContent).length > maxFileBytes
     ) {
-      items2.push({
-        path: value4,
-        get why() { return ((uiMessage("inspector.fileTransfer.overThisCanvasS")) + (String(Math.floor(extra / 1024)))) + (" KB file limit"); },
+      dropped.push({
+        path: filePath,
+        get why() { return ((uiMessage("inspector.fileTransfer.overThisCanvasS")) + (String(Math.floor(maxFileBytes / 1024)))) + (" KB file limit"); },
       });
-      if (value6 !== undefined || callback2(value4) || value === "unknown") {
-        let value7: Dynamic = callback5(value4);
-        values.add(callback(value7));
-        entries4.set(
-          callback4(value4),
-          callback4(value4) === value4
-            ? value7
-            : fileBaseName(value7),
+      if (existingPath !== undefined || isReserved(filePath) || reservedNames === "unknown") {
+        let uniquePath: Dynamic = makeUniqueFilePath(filePath);
+        usedNames.add(toLowerCase(uniquePath));
+        renamedFiles.set(
+          referenceKey(filePath),
+          referenceKey(filePath) === filePath
+            ? uniquePath
+            : fileBaseName(uniquePath),
         );
       }
     } else if (
-      value !== "unknown" &&
-      value6 === undefined &&
-      !values6.has(callback(value4)) &&
-      !value2.some(
-        (input2?: Dynamic): Dynamic =>
-          callback(input2.path) === callback(value4),
+      reservedNames !== "unknown" &&
+      existingPath === undefined &&
+      !addedNames.has(toLowerCase(filePath)) &&
+      !boards.some(
+        (board?: Dynamic): Dynamic =>
+          toLowerCase(board.path) === toLowerCase(filePath),
       ) &&
-      !callback2(value4)
+      !isReserved(filePath)
     ) {
-      state2[value4] = value5;
-      values6.add(callback(value4));
+      files[filePath] = fileContent;
+      addedNames.add(toLowerCase(filePath));
     } else {
-      let value7: Dynamic = callback5(value4);
-      entries4.set(
-        callback4(value4),
-        callback4(value4) === value4
-          ? value7
-          : fileBaseName(value7),
+      let uniquePath: Dynamic = makeUniqueFilePath(filePath);
+      renamedFiles.set(
+        referenceKey(filePath),
+        referenceKey(filePath) === filePath
+          ? uniquePath
+          : fileBaseName(uniquePath),
       );
-      state2[value7] = value5;
-      values.add(callback(value7));
-      values6.add(callback(value7));
+      files[uniquePath] = fileContent;
+      usedNames.add(toLowerCase(uniquePath));
+      addedNames.add(toLowerCase(uniquePath));
     }
-    state[value4] = value5;
+    mergedFiles[filePath] = fileContent;
   }
-  let values7: Dynamic = new Set(
-      [...entries4.keys()].filter(
-        (input2?: Dynamic): Dynamic =>
-          values5.has(fileBaseName(input2)),
+  let renamedAmbiguous: Dynamic = new Set(
+      [...renamedFiles.keys()].filter(
+        (path?: Dynamic): Dynamic =>
+          ambiguousBaseNames.has(fileBaseName(path)),
       ),
     ),
-    callback6: Dynamic = (input2?: Dynamic): Dynamic =>
+    rewriteSource: Dynamic = (source?: Dynamic): Dynamic =>
       rewriteProjectReferences(
-        renameComponentImports(input2, entries3),
-        entries4,
-        values7,
+        renameComponentImports(source, renamedArtboards),
+        renamedFiles,
+        renamedAmbiguous,
       );
-  for (let value4 of value2 as Dynamic)
-    value4.entry = {
-      ...value4.entry,
-      src: callback6(value4.entry.src),
+  for (let board of boards as Dynamic)
+    board.entry = {
+      ...board.entry,
+      src: rewriteSource(board.entry.src),
     };
-  for (let value4 of Object.keys(state2) as Dynamic)
-    isProjectSourcePath(value4) &&
-      (state2[value4] = callback6(state2[value4]));
+  for (let filePath of Object.keys(files) as Dynamic)
+    isProjectSourcePath(filePath) &&
+      (files[filePath] = rewriteSource(files[filePath]));
   return {
-    boards: value2,
-    files: state2,
-    reused: items,
-    dropped: items2,
-    images: state3,
-    ambiguous: values5,
+    boards: boards,
+    files: files,
+    reused: reused,
+    dropped: dropped,
+    images: images,
+    ambiguous: ambiguousBaseNames,
   };
 }
 function remapPastedAssetFiles(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = PlatformFileContentResolvedValue_11,
+  prepared?: Dynamic,
+  blobMap?: Dynamic,
+  assetMap?: Dynamic,
+  maxBytes: Dynamic = maxFileContentBytes,
 ): Dynamic {
-  let entries: Dynamic = new Map(
-      [...context].map(
-        ([input2, input3]: Dynamic): Dynamic => [
-          input.ambiguous.has(fileBaseName(input2))
-            ? input2
-            : fileBaseName(input2),
-          input3,
+  let assetByKey: Dynamic = new Map(
+      [...assetMap].map(
+        ([path, reference]: Dynamic): Dynamic => [
+          prepared.ambiguous.has(fileBaseName(path))
+            ? path
+            : fileBaseName(path),
+          reference,
         ],
       ),
     ),
-    values: Dynamic = new Set(
-      [...entries.keys()].filter(
-        (input2?: Dynamic): Dynamic =>
-          input.ambiguous.has(fileBaseName(input2)),
+    ambiguousKeys: Dynamic = new Set(
+      [...assetByKey.keys()].filter(
+        (key?: Dynamic): Dynamic =>
+          prepared.ambiguous.has(fileBaseName(key)),
       ),
     ),
-    value2: Dynamic = ClipboardArtboardsResolvedValue,
-    callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      options2 === 0
-        ? input2
+    remainingBudget: Dynamic = ClipboardArtboardsResolvedValue,
+    withRelativePrefix: Dynamic = (map?: Dynamic, depth?: Dynamic): Dynamic =>
+      depth === 0
+        ? map
         : new Map(
-            [...input2].map(
-              ([input3, input4]: Dynamic): Dynamic => [
-                input3,
-                input4.startsWith("./")
-                  ? "../".repeat(options2) + input4.slice(2)
-                  : input4,
+            [...map].map(
+              ([key, assetPath]: Dynamic): Dynamic => [
+                key,
+                assetPath.startsWith("./")
+                  ? "../".repeat(depth) + assetPath.slice(2)
+                  : assetPath,
               ],
             ),
           ),
-    callback2: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
+    rewriteSource: Dynamic = (
+      source?: Dynamic,
+      sourceBudget?: Dynamic,
+      boardPath?: Dynamic,
     ): Dynamic => {
-      let value3: Dynamic = context2.split("/").length - 1,
-        value4: Dynamic = callback(options, value3),
-        state: Dynamic = {
+      let depth: Dynamic = boardPath.split("/").length - 1,
+        relativeBlobMap: Dynamic = withRelativePrefix(blobMap, depth),
+        budget: Dynamic = {
           left: Math.max(
             0,
             Math.min(
-              options2 -
-                ClipboardArtboardsTextEncoder.encode(input2).length,
-              value2,
+              sourceBudget -
+                ClipboardArtboardsTextEncoder.encode(source).length,
+              remainingBudget,
             ),
           ),
         },
-        left: Dynamic = state.left,
-        value5: Dynamic = rewriteProjectReferences(
-          input2,
-          callback(entries, value3),
-          values,
-          state,
+        left: Dynamic = budget.left,
+        rewritten: Dynamic = rewriteProjectReferences(
+          source,
+          withRelativePrefix(assetByKey, depth),
+          ambiguousKeys,
+          budget,
         ),
-        entries2: Dynamic = new Map(
-          getBlobAssetReferences(value5)
+        blobReplacements: Dynamic = new Map(
+          getBlobAssetReferences(rewritten)
             .filter(
-              (input3?: Dynamic): Dynamic =>
-                value4.has(input3) && value4.get(input3) !== input3,
+              (reference?: Dynamic): Dynamic =>
+                relativeBlobMap.has(reference) && relativeBlobMap.get(reference) !== reference,
             )
-            .map((input3?: Dynamic): Dynamic => [input3, value4.get(input3)]),
+            .map((reference?: Dynamic): Dynamic => [reference, relativeBlobMap.get(reference)]),
         );
-      value5 = replaceClipboardReferences(value5, entries2, state);
-      value2 -= left - state.left;
-      return value5;
+      rewritten = replaceClipboardReferences(rewritten, blobReplacements, budget);
+      remainingBudget -= left - budget.left;
+      return rewritten;
     };
-  for (let value3 of input.boards as Dynamic)
-    value3.entry = {
-      ...value3.entry,
-      src: callback2(
-        value3.entry.src,
-        PlatformFileContentResolvedValue_11,
-        value3.path,
+  for (let board of prepared.boards as Dynamic)
+    board.entry = {
+      ...board.entry,
+      src: rewriteSource(
+        board.entry.src,
+        maxFileContentBytes,
+        board.path,
       ),
     };
-  for (let value3 of Object.keys(input.files) as Dynamic)
-    isProjectSourcePath(value3) &&
-      (input.files[value3] = callback2(input.files[value3], value, value3));
+  for (let filePath of Object.keys(prepared.files) as Dynamic)
+    isProjectSourcePath(filePath) &&
+      (prepared.files[filePath] = rewriteSource(prepared.files[filePath], maxBytes, filePath));
 }
 export {
   ClipboardFileTransferHandler,
@@ -489,122 +489,122 @@ export {
 };
 export function installEditorClipboardFileTransfer(): () => void {
   return () => {
-    ClipboardFileTransferKind = (items?: Dynamic): Dynamic => {
-      let callback: Dynamic = (source?: Dynamic): Dynamic =>
+    ClipboardFileTransferKind = (annotations?: Dynamic): Dynamic => {
+      let kindOf: Dynamic = (source?: Dynamic): Dynamic =>
           source.kind === "image"
             ? "picture"
             : isShapeAnnotation(source)
               ? "shape"
               : "note",
-        value: Dynamic = ["note", "shape", "picture"].filter(
-          (input?: Dynamic): Dynamic =>
-            items.some(
-              (input2?: Dynamic): Dynamic => callback(input2) === input,
+        kinds: Dynamic = ["note", "shape", "picture"].filter(
+          (kind?: Dynamic): Dynamic =>
+            annotations.some(
+              (annotation?: Dynamic): Dynamic => kindOf(annotation) === kind,
             ),
         ),
-        value2: Dynamic = String(items.length);
-      return value.length === 1
-        ? value2 + " " + value[0] + (items.length === 1 ? "" : "s")
-        : value2 +
+        countText: Dynamic = String(annotations.length);
+      return kinds.length === 1
+        ? countText + " " + kinds[0] + (annotations.length === 1 ? "" : "s")
+        : countText +
             " " +
-            value
+            kinds
               .slice(0, -1)
-              .map((input?: Dynamic): Dynamic => input + "s")
+              .map((kind?: Dynamic): Dynamic => kind + "s")
               .join(", ") +
             " and " +
-            value.at(-1) +
+            kinds.at(-1) +
             "s";
     };
     ClipboardFileTransferHandler = (
-      input?: Dynamic,
-      options?: Dynamic,
+      count?: Dynamic,
+      noun?: Dynamic,
     ): Dynamic =>
-      input === 1 ? "1 " + options : String(input) + " " + options + "s";
-    ClipboardFileTransferHandler_2 = (input?: Dynamic): Dynamic =>
-      `; ${input === 1 ? "1 note or shape" : String(input) + " notes and shapes"} could not be read`;
-    ClipboardFileTransferHandler_3 = (input?: Dynamic): Dynamic =>
-      `; ${input === 1 ? "1 shape" : String(input) + " shapes"} left out (copy ${input === 1 ? "it" : "them"} with an artboard to bring ${input === 1 ? "it" : "them"})`;
+      count === 1 ? "1 " + noun : String(count) + " " + noun + "s";
+    ClipboardFileTransferHandler_2 = (count?: Dynamic): Dynamic =>
+      `; ${count === 1 ? "1 note or shape" : String(count) + " notes and shapes"} could not be read`;
+    ClipboardFileTransferHandler_3 = (count?: Dynamic): Dynamic =>
+      `; ${count === 1 ? "1 shape" : String(count) + " shapes"} left out (copy ${count === 1 ? "it" : "them"} with an artboard to bring ${count === 1 ? "it" : "them"})`;
     VideosCanTBePastedFromAnotherMessage =
       uiMessage("inspector.fileTransfer.videosCanTBePasted");
-    ClipboardFileTransferToUpperCase = (input?: Dynamic): Dynamic =>
-      input.charAt(0).toUpperCase() + input.slice(1);
+    ClipboardFileTransferToUpperCase = (text?: Dynamic): Dynamic =>
+      text.charAt(0).toUpperCase() + text.slice(1);
     ClipboardFileTransferHandler_4 = (
-      input?: Dynamic,
-      options: Dynamic = 0,
+      total?: Dynamic,
+      videoCount: Dynamic = 0,
     ): Dynamic => {
-      let value: Dynamic = input - options;
+      let pictureCount: Dynamic = total - videoCount;
       return (
-        (options > 0
-          ? `; ${ClipboardFileTransferHandler(options, "video")} left out (${VideosCanTBePastedFromAnotherMessage})`
+        (videoCount > 0
+          ? `; ${ClipboardFileTransferHandler(videoCount, "video")} left out (${VideosCanTBePastedFromAnotherMessage})`
           : "") +
-        (value > 0
-          ? `; ${ClipboardFileTransferHandler(value, "picture")} left out (${ClipboardFileTransferHandler_5(value)})`
+        (pictureCount > 0
+          ? `; ${ClipboardFileTransferHandler(pictureCount, "picture")} left out (${ClipboardFileTransferHandler_5(pictureCount)})`
           : "")
       );
     };
-    ClipboardFileTransferHandler_5 = (input?: Dynamic): Dynamic =>
-      `copy ${input === 1 ? "it" : "them"} again, or add ${input === 1 ? "it" : "them"} to this canvas instead`;
-    ClipboardFileTransferHandler_6 = (input?: Dynamic): Dynamic =>
-      `the copied ${input === 1 ? uiMessage("inspector.fileTransfer.pictureWasnT") : uiMessage("inspector.fileTransfer.picturesWerenT")} included`;
+    ClipboardFileTransferHandler_5 = (count?: Dynamic): Dynamic =>
+      `copy ${count === 1 ? "it" : "them"} again, or add ${count === 1 ? "it" : "them"} to this canvas instead`;
+    ClipboardFileTransferHandler_6 = (count?: Dynamic): Dynamic =>
+      `the copied ${count === 1 ? uiMessage("inspector.fileTransfer.pictureWasnT") : uiMessage("inspector.fileTransfer.picturesWerenT")} included`;
     ClipboardFileTransferRegistry = {
       pasted: (
-        items?: Dynamic,
-        options?: Dynamic,
-        context: Dynamic = 0,
-        value: Dynamic = 0,
-        extra: Dynamic = {},
+        annotations?: Dynamic,
+        pictureTotal?: Dynamic,
+        unreadCount: Dynamic = 0,
+        leftOutShapeCount: Dynamic = 0,
+        summary: Dynamic = {},
       ): Dynamic =>
-        (items.length > 0
+        (annotations.length > 0
           ? uiMessage("inspector.fileTransfer.pasted") +
-            ClipboardFileTransferKind(items) +
+            ClipboardFileTransferKind(annotations) +
             " from another canvas"
           : uiMessage("inspector.fileTransfer.nothingPasted")) +
-        (context > 0 ? ClipboardFileTransferHandler_2(context) : "") +
-        (value > 0 ? ClipboardFileTransferHandler_3(value) : "") +
-        (items.length > 0 && (extra.plain ?? 0) > 0
-          ? ClipboardFileTransferRegistry.plainPictures(extra.plain ?? 0, false)
+        (unreadCount > 0 ? ClipboardFileTransferHandler_2(unreadCount) : "") +
+        (leftOutShapeCount > 0 ? ClipboardFileTransferHandler_3(leftOutShapeCount) : "") +
+        (annotations.length > 0 && (summary.plain ?? 0) > 0
+          ? ClipboardFileTransferRegistry.plainPictures(summary.plain ?? 0, false)
           : "") +
-        ((extra.failed ?? 0) > 0
-          ? ClipboardFileTransferRegistry.notBrought(extra.failed ?? 0)
+        ((summary.failed ?? 0) > 0
+          ? ClipboardFileTransferRegistry.notBrought(summary.failed ?? 0)
           : "") +
-        ((extra.overCap ?? 0) > 0
-          ? `; ${ClipboardFileTransferHandler(extra.overCap ?? 0, uiMessage("inspector.fileTransfer.morePicture"))} left out (a paste brings up to ${String(ClipboardAnnotationsLimit)}: copy the rest separately)`
+        ((summary.overCap ?? 0) > 0
+          ? `; ${ClipboardFileTransferHandler(summary.overCap ?? 0, uiMessage("inspector.fileTransfer.morePicture"))} left out (a paste brings up to ${String(ClipboardAnnotationsLimit)}: copy the rest separately)`
           : "") +
-        ClipboardFileTransferHandler_4(options, extra.videos),
-      withObjects: (input?: Dynamic): Dynamic =>
-        " with " + ClipboardFileTransferKind(input),
-      onlyLeftOut: (input?: Dynamic, options: Dynamic = 0): Dynamic =>
-        input - options <= 0
-          ? uiMessage("inspector.fileTransfer.nothingToPasteValue1Add", { value1: String(VideosCanTBePastedFromAnotherMessage), value2: String(options === 1 ? "the video" : "them") })
-          : uiMessage("inspector.fileTransfer.nothingToPasteValue1Value2", { value1: String(ClipboardFileTransferHandler_6(input - options)), value2: String(ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_5(input - options))) }) +
-            (options > 0
+        ClipboardFileTransferHandler_4(pictureTotal, summary.videos),
+      withObjects: (annotations?: Dynamic): Dynamic =>
+        " with " + ClipboardFileTransferKind(annotations),
+      onlyLeftOut: (pictureTotal?: Dynamic, videoCount: Dynamic = 0): Dynamic =>
+        pictureTotal - videoCount <= 0
+          ? uiMessage("inspector.fileTransfer.nothingToPasteValue1Add", { value1: String(VideosCanTBePastedFromAnotherMessage), value2: String(videoCount === 1 ? "the video" : "them") })
+          : uiMessage("inspector.fileTransfer.nothingToPasteValue1Value2", { value1: String(ClipboardFileTransferHandler_6(pictureTotal - videoCount)), value2: String(ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_5(pictureTotal - videoCount))) }) +
+            (videoCount > 0
               ? ` ${ClipboardFileTransferToUpperCase(VideosCanTBePastedFromAnotherMessage)}.`
               : ""),
       onlyShapes:
         "Nothing to paste: shapes paste into another canvas only together with an artboard. Copy them with one to bring them.",
-      alsoLeftOut: (input?: Dynamic, options: Dynamic = 0): Dynamic =>
-        (options > 0
+      alsoLeftOut: (pictureTotal?: Dynamic, videoCount: Dynamic = 0): Dynamic =>
+        (videoCount > 0
           ? ` ${ClipboardFileTransferToUpperCase(VideosCanTBePastedFromAnotherMessage)}.`
           : "") +
-        (input - options > 0
-          ? ` ${ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_6(input - options))}: ${ClipboardFileTransferHandler_5(input - options)}.`
+        (pictureTotal - videoCount > 0
+          ? ` ${ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_6(pictureTotal - videoCount))}: ${ClipboardFileTransferHandler_5(pictureTotal - videoCount)}.`
           : ""),
-      notBrought: (input?: Dynamic): Dynamic =>
-        `; ${ClipboardFileTransferHandler(input, "picture")} could not be brought over (try again, or add ${input === 1 ? "it" : "them"} to this canvas instead)`,
-      bringing: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.pastingValue1FromAnotherCanvas", { value1: String(input === 1 ? "a picture" : String(input) + " pictures") }),
+      notBrought: (count?: Dynamic): Dynamic =>
+        `; ${ClipboardFileTransferHandler(count, "picture")} could not be brought over (try again, or add ${count === 1 ? "it" : "them"} to this canvas instead)`,
+      bringing: (count?: Dynamic): Dynamic =>
+        uiMessage("inspector.fileTransfer.pastingValue1FromAnotherCanvas", { value1: String(count === 1 ? "a picture" : String(count) + " pictures") }),
       stillPasting: "Still working on the previous paste\u2026",
-      picturesNotReady: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedValue1ReadyYetSo", { value1: String(input === 1 ? uiMessage("inspector.fileTransfer.onePictureWasnT") : String(input) + " pictures weren't"), value2: String(input === 1 ? "it" : "them") }),
-      picturesCantGo: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedValue1CanTGo", { value1: String(input === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(input) + " pictures"), value2: String(input === 1 ? "it" : "them") }),
-      picturesWontFit: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedValue1DidnTFit", { value1: String(input === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(input) + " pictures") }),
-      picturesOverCap: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedAnotherCanvasTakesValue1", { value1: String(String(ClipboardAnnotationsLimit)), value2: String(input === 1 ? "one" : String(input)) }),
+      picturesNotReady: (count?: Dynamic): Dynamic =>
+        uiMessage("inspector.fileTransfer.copiedValue1ReadyYetSo", { value1: String(count === 1 ? uiMessage("inspector.fileTransfer.onePictureWasnT") : String(count) + " pictures weren't"), value2: String(count === 1 ? "it" : "them") }),
+      picturesCantGo: (count?: Dynamic): Dynamic =>
+        uiMessage("inspector.fileTransfer.copiedValue1CanTGo", { value1: String(count === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(count) + " pictures"), value2: String(count === 1 ? "it" : "them") }),
+      picturesWontFit: (count?: Dynamic): Dynamic =>
+        uiMessage("inspector.fileTransfer.copiedValue1DidnTFit", { value1: String(count === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(count) + " pictures") }),
+      picturesOverCap: (count?: Dynamic): Dynamic =>
+        uiMessage("inspector.fileTransfer.copiedAnotherCanvasTakesValue1", { value1: String(String(ClipboardAnnotationsLimit)), value2: String(count === 1 ? "one" : String(count)) }),
       wontFitPictures:
         "Couldn't paste: this would make the canvas too large to save. Delete something here first.",
-      atLimit: uiMessage("inspector.fileTransfer.couldnTPasteThisWould", { value1: String(String(PlatformFileContentLimit_5)) }),
+      atLimit: uiMessage("inspector.fileTransfer.couldnTPasteThisWould", { value1: String(String(canvasLimit)) }),
       tooMuchUnasked:
         "Nothing pasted: this is more than can be pasted from another canvas at once. Copy fewer notes at a time.",
       tooMuchStayed:
@@ -625,33 +625,33 @@ export function installEditorClipboardFileTransfer(): () => void {
       notLanded:
         "; nothing else you copied was pasted (it would take this canvas past its limit: copy less at a time, or delete something here first)",
       notRead: "; the notes and shapes could not be read",
-      plainShapes: (input?: Dynamic): Dynamic =>
-        `; ${input === 1 ? "1 shape lost its styling" : String(input) + " shapes lost their styling"} (Paste with code keeps it)`,
-      plainPictures: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        `; ${ClipboardFileTransferHandler(input, "picture")} lost some effects (${options ? uiMessage("inspector.fileTransfer.pasteWithCodeKeepsThem") : `to keep them, copy ${input === 1 ? "it" : "them"} with an artboard and choose Paste with code`})`,
+      plainShapes: (count?: Dynamic): Dynamic =>
+        `; ${count === 1 ? "1 shape lost its styling" : String(count) + " shapes lost their styling"} (Paste with code keeps it)`,
+      plainPictures: (count?: Dynamic, canPasteWithCode?: Dynamic): Dynamic =>
+        `; ${ClipboardFileTransferHandler(count, "picture")} lost some effects (${canPasteWithCode ? uiMessage("inspector.fileTransfer.pasteWithCodeKeepsThem") : `to keep them, copy ${count === 1 ? "it" : "them"} with an artboard and choose Paste with code`})`,
       notesTooMuch:
         "; the notes were left out: copy fewer at a time (this is more than can be pasted from another canvas at once)",
       someUnread: ClipboardFileTransferHandler_2,
-      alsoUnread: (input?: Dynamic): Dynamic =>
-        ` ${input === 1 ? "1 note or shape" : String(input) + " notes and shapes"} could not be read.`,
+      alsoUnread: (count?: Dynamic): Dynamic =>
+        ` ${count === 1 ? "1 note or shape" : String(count) + " notes and shapes"} could not be read.`,
       notesStayedToo:
         " The notes and shapes are too large to go with the artboards: copy fewer of them with the artboards.",
       notEither: " The notes and shapes were not pasted either.",
-      pressAgain: (input?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.pressValue1AgainToPaste", { value1: String(input) }),
+      pressAgain: (key?: Dynamic): Dynamic =>
+        uiMessage("inspector.fileTransfer.pressValue1AgainToPaste", { value1: String(key) }),
     };
-    ClipboardFileTransferPasted = (input?: Dynamic, items?: Dynamic): Dynamic =>
-      items.length > 0 &&
-      input === ClipboardFileTransferRegistry.pasted(items, 0);
+    ClipboardFileTransferPasted = (message?: Dynamic, annotations?: Dynamic): Dynamic =>
+      annotations.length > 0 &&
+      message === ClipboardFileTransferRegistry.pasted(annotations, 0);
     ClipboardFileTransferSubscribers = new Set([
       "support.js",
       "react.js",
       "react-dom.js",
     ]);
-    ClipboardFileTransferTest = (input?: Dynamic): Dynamic =>
-      /^(?:artifact-type|project)\//i.test(input);
-    ClipboardFileTransferHandler_7 = (items?: Dynamic): Dynamic =>
-      isSafeProjectPath(items) &&
-      items.length <= PlatformFileContentLimit_8 - 16;
+    ClipboardFileTransferTest = (path?: Dynamic): Dynamic =>
+      /^(?:artifact-type|project)\//i.test(path);
+    ClipboardFileTransferHandler_7 = (path?: Dynamic): Dynamic =>
+      isSafeProjectPath(path) &&
+      path.length <= maxProjectPathLength - 16;
   };
 }

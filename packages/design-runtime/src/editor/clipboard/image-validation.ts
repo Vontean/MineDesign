@@ -4,7 +4,7 @@ import {
 } from "../../runtime-types";
 
 var ClipboardImageValidationLimit: Dynamic;
-var ClipboardImageValidationLimit_2: Dynamic;
+var maxTotalPixels: Dynamic;
 var ClipboardImageValidationSubscribers: Dynamic;
 var ClipboardImageValidationScriptIframeObjectSet: Dynamic;
 var ClipboardImageValidationHandler: Dynamic;
@@ -14,374 +14,374 @@ var ClipboardImageValidationDecode: Dynamic;
 var ClipboardImageValidationDecode_2: Dynamic;
 var ClipboardImageValidationNow: Dynamic;
 var ClipboardImageValidationSinceSpentMsConfig: Dynamic;
-var ClipboardImageValidationLimit_3: Dynamic;
-var ClipboardImageValidationLimit_4: Dynamic;
-var ClipboardImageValidationLimit_5: Dynamic;
+var spendWindowMs: Dynamic;
+var maxSpentMs: Dynamic;
+var maxPlainDataUrls: Dynamic;
 var ClipboardImageValidationConstant: Dynamic;
 var ClipboardImageValidationPattern: Dynamic;
 var ClipboardImageValidationIso2022JpReplacementShiftJisSet: Dynamic;
 var ClipboardImageValidationCharsetPattern: Dynamic;
-var ClipboardImageValidationResolvedValue_2: Dynamic;
-function readRasterImagePixels(items?: Dynamic): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (items[input] << 8) | items[input + 1],
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      items[input] | (items[input + 1] << 8),
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      items[input] | (items[input + 1] << 8) | (items[input + 2] << 16),
-    callback4: Dynamic = (input?: Dynamic): Dynamic =>
-      ((items[input] << 24) |
-        (items[input + 1] << 16) |
-        (items[input + 2] << 8) |
-        items[input + 3]) >>>
+var maxDecodableImageBytes: Dynamic;
+function readRasterImagePixels(bytes?: Dynamic): Dynamic {
+  let readUint16BE: Dynamic = (offset?: Dynamic): Dynamic =>
+      (bytes[offset] << 8) | bytes[offset + 1],
+    readUint16LE: Dynamic = (offset?: Dynamic): Dynamic =>
+      bytes[offset] | (bytes[offset + 1] << 8),
+    readUint24LE: Dynamic = (offset?: Dynamic): Dynamic =>
+      bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16),
+    readUint32BE: Dynamic = (offset?: Dynamic): Dynamic =>
+      ((bytes[offset] << 24) |
+        (bytes[offset + 1] << 16) |
+        (bytes[offset + 2] << 8) |
+        bytes[offset + 3]) >>>
       0,
-    callback5: Dynamic = (input?: Dynamic): Dynamic =>
-      (items[input] |
-        (items[input + 1] << 8) |
-        (items[input + 2] << 16) |
-        (items[input + 3] << 24)) >>>
+    readUint32LE: Dynamic = (offset?: Dynamic): Dynamic =>
+      (bytes[offset] |
+        (bytes[offset + 1] << 8) |
+        (bytes[offset + 2] << 16) |
+        (bytes[offset + 3] << 24)) >>>
       0,
-    callback6: Dynamic = (input?: Dynamic, items2?: Dynamic): Dynamic =>
-      input + items2.length <= items.length &&
-      [...items2].every(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          items[input + options] === input2.charCodeAt(0),
+    matchesAscii: Dynamic = (offset?: Dynamic, text?: Dynamic): Dynamic =>
+      offset + text.length <= bytes.length &&
+      [...text].every(
+        (char?: Dynamic, charIndex?: Dynamic): Dynamic =>
+          bytes[offset + charIndex] === char.charCodeAt(0),
       );
   if (
-    items.length >= 24 &&
-    items[0] === 137 &&
-    callback6(1, "PNG") &&
-    callback4(4) === 218765834 &&
-    callback6(12, "IHDR")
+    bytes.length >= 24 &&
+    bytes[0] === 137 &&
+    matchesAscii(1, "PNG") &&
+    readUint32BE(4) === 218765834 &&
+    matchesAscii(12, "IHDR")
   )
-    return callback4(16) * callback4(20);
-  if (items.length >= 10 && callback6(0, "GIF8")) {
-    let value2: Dynamic = callback2(6),
-      value3: Dynamic = callback2(8),
-      index: Dynamic = 0,
-      callback7: Dynamic = (input?: Dynamic): Dynamic => {
-        let value5: Dynamic = input;
-        for (; value5 < items.length && items[value5] > 0; )
-          value5 += items[value5] + 1;
-        return value5 + 1;
+    return readUint32BE(16) * readUint32BE(20);
+  if (bytes.length >= 10 && matchesAscii(0, "GIF8")) {
+    let width: Dynamic = readUint16LE(6),
+      height: Dynamic = readUint16LE(8),
+      frameCount: Dynamic = 0,
+      skipSubBlocks: Dynamic = (offset?: Dynamic): Dynamic => {
+        let cursor: Dynamic = offset;
+        for (; cursor < bytes.length && bytes[cursor] > 0; )
+          cursor += bytes[cursor] + 1;
+        return cursor + 1;
       },
-      value4: Dynamic =
-        13 + (items[10] & 128 ? 3 << ((items[10] & 7) + 1) : 0);
-    for (; value4 < items.length && items[value4] !== 59; ) {
-      if (items[value4] === 33) {
-        value4 = callback7(value4 + 2);
+      position: Dynamic =
+        13 + (bytes[10] & 128 ? 3 << ((bytes[10] & 7) + 1) : 0);
+    for (; position < bytes.length && bytes[position] !== 59; ) {
+      if (bytes[position] === 33) {
+        position = skipSubBlocks(position + 2);
         continue;
       }
-      if (items[value4] !== 44 || value4 + 10 > items.length) return;
-      value2 = Math.max(
-        value2,
-        callback2(value4 + 1) + callback2(value4 + 5),
+      if (bytes[position] !== 44 || position + 10 > bytes.length) return;
+      width = Math.max(
+        width,
+        readUint16LE(position + 1) + readUint16LE(position + 5),
       );
-      value3 = Math.max(
-        value3,
-        callback2(value4 + 3) + callback2(value4 + 7),
+      height = Math.max(
+        height,
+        readUint16LE(position + 3) + readUint16LE(position + 7),
       );
-      index += 1;
-      value4 +=
+      frameCount += 1;
+      position +=
         10 +
-        (items[value4 + 9] & 128 ? 3 << ((items[value4 + 9] & 7) + 1) : 0);
-      value4 = callback7(value4 + 1);
+        (bytes[position + 9] & 128 ? 3 << ((bytes[position + 9] & 7) + 1) : 0);
+      position = skipSubBlocks(position + 1);
     }
-    return index > 0 ? value2 * value3 : undefined;
+    return frameCount > 0 ? width * height : undefined;
   }
-  if (items.length >= 26 && callback6(0, "BM"))
-    return callback5(14) === 12
-      ? callback2(18) * callback2(20)
-      : Math.abs(callback5(18) | 0) * Math.abs(callback5(22) | 0);
-  if (items.length >= 30 && callback6(0, "RIFF") && callback6(8, "WEBP")) {
-    let index: Dynamic = 0,
-      index2: Dynamic = 0,
-      flag: Dynamic = false;
-    for (let count: Dynamic = 12; count + 8 <= items.length; ) {
-      let value2: Dynamic = callback5(count + 4),
-        value3: Dynamic = count + 8;
-      if (callback6(count, "VP8X") && value3 + 10 <= items.length) {
-        index = Math.max(index, callback3(value3 + 4) + 1);
-        index2 = Math.max(index2, callback3(value3 + 7) + 1);
-        flag = true;
-      } else if (callback6(count, "VP8L") && value3 + 5 <= items.length) {
-        let value4: Dynamic = callback5(value3 + 1);
-        index = Math.max(index, (value4 & 16383) + 1);
-        index2 = Math.max(index2, ((value4 >>> 14) & 16383) + 1);
-        flag = true;
-      } else if (callback6(count, "VP8 ") && value3 + 10 <= items.length) {
-        index = Math.max(index, callback2(value3 + 6) & 16383);
-        index2 = Math.max(index2, callback2(value3 + 8) & 16383);
-        flag = true;
-      } else if (callback6(count, "ANMF") && value3 + 12 <= items.length) {
-        index = Math.max(
-          index,
-          callback3(value3) * 2 + callback3(value3 + 6) + 1,
+  if (bytes.length >= 26 && matchesAscii(0, "BM"))
+    return readUint32LE(14) === 12
+      ? readUint16LE(18) * readUint16LE(20)
+      : Math.abs(readUint32LE(18) | 0) * Math.abs(readUint32LE(22) | 0);
+  if (bytes.length >= 30 && matchesAscii(0, "RIFF") && matchesAscii(8, "WEBP")) {
+    let canvasWidth: Dynamic = 0,
+      canvasHeight: Dynamic = 0,
+      hasDimensions: Dynamic = false;
+    for (let count: Dynamic = 12; count + 8 <= bytes.length; ) {
+      let chunkSize: Dynamic = readUint32LE(count + 4),
+        payloadStart: Dynamic = count + 8;
+      if (matchesAscii(count, "VP8X") && payloadStart + 10 <= bytes.length) {
+        canvasWidth = Math.max(canvasWidth, readUint24LE(payloadStart + 4) + 1);
+        canvasHeight = Math.max(canvasHeight, readUint24LE(payloadStart + 7) + 1);
+        hasDimensions = true;
+      } else if (matchesAscii(count, "VP8L") && payloadStart + 5 <= bytes.length) {
+        let vp8lBits: Dynamic = readUint32LE(payloadStart + 1);
+        canvasWidth = Math.max(canvasWidth, (vp8lBits & 16383) + 1);
+        canvasHeight = Math.max(canvasHeight, ((vp8lBits >>> 14) & 16383) + 1);
+        hasDimensions = true;
+      } else if (matchesAscii(count, "VP8 ") && payloadStart + 10 <= bytes.length) {
+        canvasWidth = Math.max(canvasWidth, readUint16LE(payloadStart + 6) & 16383);
+        canvasHeight = Math.max(canvasHeight, readUint16LE(payloadStart + 8) & 16383);
+        hasDimensions = true;
+      } else if (matchesAscii(count, "ANMF") && payloadStart + 12 <= bytes.length) {
+        canvasWidth = Math.max(
+          canvasWidth,
+          readUint24LE(payloadStart) * 2 + readUint24LE(payloadStart + 6) + 1,
         );
-        index2 = Math.max(
-          index2,
-          callback3(value3 + 3) * 2 + callback3(value3 + 9) + 1,
+        canvasHeight = Math.max(
+          canvasHeight,
+          readUint24LE(payloadStart + 3) * 2 + readUint24LE(payloadStart + 9) + 1,
         );
-        flag = true;
-        count = value3 + 16;
+        hasDimensions = true;
+        count = payloadStart + 16;
         continue;
       }
-      count = value3 + value2 + (value2 & 1);
+      count = payloadStart + chunkSize + (chunkSize & 1);
     }
-    return flag ? index * index2 : undefined;
+    return hasDimensions ? canvasWidth * canvasHeight : undefined;
   }
-  if (items.length >= 4 && items[0] === 255 && items[1] === 216) {
-    for (let count: Dynamic = 2; count + 9 < items.length; ) {
-      if (items[count] !== 255) return;
-      let value2: Dynamic = items[count + 1];
-      if (value2 === 255) {
+  if (bytes.length >= 4 && bytes[0] === 255 && bytes[1] === 216) {
+    for (let count: Dynamic = 2; count + 9 < bytes.length; ) {
+      if (bytes[count] !== 255) return;
+      let marker: Dynamic = bytes[count + 1];
+      if (marker === 255) {
         count += 1;
         continue;
       }
       if (
-        value2 === 216 ||
-        (value2 >= 208 && value2 <= 215) ||
-        value2 === 1
+        marker === 216 ||
+        (marker >= 208 && marker <= 215) ||
+        marker === 1
       ) {
         count += 2;
         continue;
       }
       if (
-        value2 >= 192 &&
-        value2 <= 207 &&
-        value2 !== 196 &&
-        value2 !== 200 &&
-        value2 !== 204
+        marker >= 192 &&
+        marker <= 207 &&
+        marker !== 196 &&
+        marker !== 200 &&
+        marker !== 204
       )
-        return callback(count + 5) === 0
+        return readUint16BE(count + 5) === 0
           ? undefined
-          : callback(count + 5) * callback(count + 7);
+          : readUint16BE(count + 5) * readUint16BE(count + 7);
       if (
         !(
-          value2 === 196 ||
-          value2 === 204 ||
-          value2 === 219 ||
-          value2 === 220 ||
-          value2 === 221 ||
-          (value2 >= 224 && value2 <= 239) ||
-          value2 === 254
+          marker === 196 ||
+          marker === 204 ||
+          marker === 219 ||
+          marker === 220 ||
+          marker === 221 ||
+          (marker >= 224 && marker <= 239) ||
+          marker === 254
         )
       )
         return;
-      count += 2 + callback(count + 2);
+      count += 2 + readUint16BE(count + 2);
     }
     return;
   }
-  if (!callback6(4, "ftyp")) return;
-  let value: Dynamic;
-  for (let count: Dynamic = 8; count + 16 <= items.length; count++)
-    items[count] === 105 &&
-      callback6(count, "ispe") &&
-      (value = Math.max(
-        value ?? 0,
-        callback4(count + 8) * callback4(count + 12),
+  if (!matchesAscii(4, "ftyp")) return;
+  let maxPixels: Dynamic;
+  for (let count: Dynamic = 8; count + 16 <= bytes.length; count++)
+    bytes[count] === 105 &&
+      matchesAscii(count, "ispe") &&
+      (maxPixels = Math.max(
+        maxPixels ?? 0,
+        readUint32BE(count + 8) * readUint32BE(count + 12),
       ));
-  return value;
+  return maxPixels;
 }
 function stripDelimitedText(
-  input?: Dynamic,
-  items?: Dynamic,
-  items2?: Dynamic,
+  text?: Dynamic,
+  startMarker?: Dynamic,
+  endMarker?: Dynamic,
 ): Dynamic {
-  let text: Dynamic = "",
-    index: Dynamic = 0;
+  let stripped: Dynamic = "",
+    position: Dynamic = 0;
   for (
-    let value: Dynamic = input.indexOf(items);
-    value !== -1;
-    value = input.indexOf(items, index)
+    let startIndex: Dynamic = text.indexOf(startMarker);
+    startIndex !== -1;
+    startIndex = text.indexOf(startMarker, position)
   ) {
-    text += input.slice(index, value);
-    let value2: Dynamic = input.indexOf(items2, value + items.length);
-    if (value2 === -1) return text;
-    index = value2 + items2.length;
+    stripped += text.slice(position, startIndex);
+    let endIndex: Dynamic = text.indexOf(endMarker, startIndex + startMarker.length);
+    if (endIndex === -1) return stripped;
+    position = endIndex + endMarker.length;
   }
-  return text + input.slice(index);
+  return stripped + text.slice(position);
 }
-function decodePercentEncodedBytes(input?: Dynamic): Dynamic {
-  let value: Dynamic = new TextEncoder().encode(input);
-  if (!input.includes("%")) return value;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 <= 57 ? input2 - 48 : (input2 | 32) - 87,
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 !== undefined &&
-      ((input2 >= 48 && input2 <= 57) ||
-        ((input2 | 32) >= 97 && (input2 | 32) <= 102)),
-    index: Dynamic = 0;
-  for (let index2: Dynamic = 0; index2 < value.length; index2++)
-    value[index2] === 37 &&
-    callback2(value[index2 + 1]) &&
-    callback2(value[index2 + 2])
-      ? ((value[index++] =
-          (callback(value[index2 + 1]) << 4) | callback(value[index2 + 2])),
-        (index2 += 2))
-      : (value[index++] = value[index2]);
-  return value.subarray(0, index);
+function decodePercentEncodedBytes(text?: Dynamic): Dynamic {
+  let bytes: Dynamic = new TextEncoder().encode(text);
+  if (!text.includes("%")) return bytes;
+  let hexDigitValue: Dynamic = (code?: Dynamic): Dynamic =>
+      code <= 57 ? code - 48 : (code | 32) - 87,
+    isHexDigit: Dynamic = (code?: Dynamic): Dynamic =>
+      code !== undefined &&
+      ((code >= 48 && code <= 57) ||
+        ((code | 32) >= 97 && (code | 32) <= 102)),
+    writeIndex: Dynamic = 0;
+  for (let readIndex: Dynamic = 0; readIndex < bytes.length; readIndex++)
+    bytes[readIndex] === 37 &&
+    isHexDigit(bytes[readIndex + 1]) &&
+    isHexDigit(bytes[readIndex + 2])
+      ? ((bytes[writeIndex++] =
+          (hexDigitValue(bytes[readIndex + 1]) << 4) | hexDigitValue(bytes[readIndex + 2])),
+        (readIndex += 2))
+      : (bytes[writeIndex++] = bytes[readIndex]);
+  return bytes.subarray(0, writeIndex);
 }
-function decodeCssTextEscapes(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    Number.isFinite(input2) && input2 > 0 && input2 <= 1114111
-      ? String.fromCodePoint(input2)
+function decodeCssTextEscapes(css?: Dynamic): Dynamic {
+  let codePointToString: Dynamic = (codePoint?: Dynamic): Dynamic =>
+    Number.isFinite(codePoint) && codePoint > 0 && codePoint <= 1114111
+      ? String.fromCodePoint(codePoint)
       : "\uFFFD";
-  return input
+  return css
     .replace(/\\\r?\n|\\\r|\\\f/g, "")
     .replace(
       /\\([0-9a-f]{1,6})(?:\r\n|[ \t\n\r\f])?/gi,
-      (input2?: Dynamic, options?: Dynamic): Dynamic =>
-        callback(parseInt(options, 16)),
+      (match?: Dynamic, hex?: Dynamic): Dynamic =>
+        codePointToString(parseInt(hex, 16)),
     )
     .replace(/\\([\s\S])/g, "$1");
 }
-function findSvgDoctypeEnd(items?: Dynamic): Dynamic {
-  let value: Dynamic = items.indexOf("<!DOCTYPE");
-  if (value === -1) return;
-  let text: Dynamic = "";
-  for (let value2: Dynamic = value; value2 < items.length; value2++) {
-    let value3: Dynamic = items[value2];
-    if (text) value3 === text && (text = "");
-    else if (value3 === '"' || value3 === "'") text = value3;
-    else if (value3 === ">") return items.slice(value, value2 + 1);
+function findSvgDoctypeEnd(svg?: Dynamic): Dynamic {
+  let doctypeStart: Dynamic = svg.indexOf("<!DOCTYPE");
+  if (doctypeStart === -1) return;
+  let quote: Dynamic = "";
+  for (let position: Dynamic = doctypeStart; position < svg.length; position++) {
+    let char: Dynamic = svg[position];
+    if (quote) char === quote && (quote = "");
+    else if (char === '"' || char === "'") quote = char;
+    else if (char === ">") return svg.slice(doctypeStart, position + 1);
   }
-  return items.slice(value);
+  return svg.slice(doctypeStart);
 }
-function hasSafeSvgPreamble(input?: Dynamic): Dynamic {
-  let value: Dynamic = stripDelimitedText(input, "<\!--", "-->");
+function hasSafeSvgPreamble(svg?: Dynamic): Dynamic {
+  let withoutComments: Dynamic = stripDelimitedText(svg, "<\!--", "-->");
   return (
-    validateSvgPreamble(value) &&
-    (value === input || validateSvgPreamble(input))
+    validateSvgPreamble(withoutComments) &&
+    (withoutComments === svg || validateSvgPreamble(svg))
   );
 }
-function validateSvgPreamble(input?: Dynamic): Dynamic {
-  let value: Dynamic =
+function validateSvgPreamble(svg?: Dynamic): Dynamic {
+  let encodingName: Dynamic =
     /^[\s\ufeff]*<\?xml[^>]*encoding\s*=\s*["']\s*([^"']*?)\s*["']/i.exec(
-      input,
+      svg,
     )?.[1];
-  if (value !== undefined && !isSafeTextEncoding(value)) return false;
-  let value2: Dynamic = findSvgDoctypeEnd(input);
-  if (value2 === undefined) return !input.includes("<!ENTITY");
-  let value3: Dynamic = value2.indexOf("[");
-  if (value3 !== -1) {
-    let value5: Dynamic = input.indexOf(
+  if (encodingName !== undefined && !isSafeTextEncoding(encodingName)) return false;
+  let doctype: Dynamic = findSvgDoctypeEnd(svg);
+  if (doctype === undefined) return !svg.includes("<!ENTITY");
+  let bracketOffset: Dynamic = doctype.indexOf("[");
+  if (bracketOffset !== -1) {
+    let subsetEnd: Dynamic = svg.indexOf(
       "]",
-      input.indexOf("<!DOCTYPE") + value3,
+      svg.indexOf("<!DOCTYPE") + bracketOffset,
     );
     if (
-      value5 === -1 ||
-      input
-        .slice(input.indexOf("<!DOCTYPE") + value3 + 1, value5)
+      subsetEnd === -1 ||
+      svg
+        .slice(svg.indexOf("<!DOCTYPE") + bracketOffset + 1, subsetEnd)
         .replace(
           /<!ENTITY\s+[A-Za-z_][\w.-]*\s+(?:"[^"<&%]*"|'[^'<&%]*')\s*>/g,
           "",
         )
         .trim() !== "" ||
-      ((value2 = input.slice(
-        input.indexOf("<!DOCTYPE"),
-        input.indexOf("<!DOCTYPE") + value3,
+      ((doctype = svg.slice(
+        svg.indexOf("<!DOCTYPE"),
+        svg.indexOf("<!DOCTYPE") + bracketOffset,
       )),
-      input.indexOf("<!ENTITY", value5) !== -1)
+      svg.indexOf("<!ENTITY", subsetEnd) !== -1)
     )
       return false;
-  } else if (input.includes("<!ENTITY")) return false;
-  let value4: Dynamic = /PUBLIC\s+(?:"([^"]*)"|'([^']*)')/.exec(value2);
+  } else if (svg.includes("<!ENTITY")) return false;
+  let publicIdMatch: Dynamic = /PUBLIC\s+(?:"([^"]*)"|'([^']*)')/.exec(doctype);
   return (
-    value4 === null ||
-    ClipboardImageValidationSubscribers.has(value4[1] ?? value4[2] ?? "")
+    publicIdMatch === null ||
+    ClipboardImageValidationSubscribers.has(publicIdMatch[1] ?? publicIdMatch[2] ?? "")
   );
 }
 function validateEmbeddedCssAssets(
-  input?: Dynamic,
-  options: Dynamic = ClipboardImageValidationNow(),
-  context: Dynamic = 0,
+  css?: Dynamic,
+  budget: Dynamic = ClipboardImageValidationNow(),
+  depth: Dynamic = 0,
 ): Dynamic {
-  let value: Dynamic = decodeCssTextEscapes(input);
+  let decodedCss: Dynamic = decodeCssTextEscapes(css);
   return (
-    validateCssDataUrls(value, options, context) &&
-    (value === input || validateCssDataUrls(input, options, context))
+    validateCssDataUrls(decodedCss, budget, depth) &&
+    (decodedCss === css || validateCssDataUrls(css, budget, depth))
   );
 }
 function chargeEmbeddedImageBudget(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
+  bytes?: Dynamic,
+  contentType?: Dynamic,
+  sourceKey?: Dynamic,
+  checkNestedContent?: Dynamic,
+  budget?: Dynamic,
+  depth?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = extra.doc + " " + context,
-    value3: Dynamic = !extra.charged.has(value2);
-  extra.charged.add(value2);
-  if (value3 && ++extra.count > ClipboardImageValidationLimit) return false;
-  let value4: Dynamic = readRasterImagePixels(items);
-  if (value4 !== undefined) {
+  let chargeKey: Dynamic = budget.doc + " " + sourceKey,
+    isFirstCharge: Dynamic = !budget.charged.has(chargeKey);
+  budget.charged.add(chargeKey);
+  if (isFirstCharge && ++budget.count > ClipboardImageValidationLimit) return false;
+  let pixelCount: Dynamic = readRasterImagePixels(bytes);
+  if (pixelCount !== undefined) {
     if (
-      value4 > 67108864 ||
-      (value3 && (extra.total += value4),
-      extra.total > ClipboardImageValidationLimit_2)
+      pixelCount > 67108864 ||
+      (isFirstCharge && (budget.total += pixelCount),
+      budget.total > maxTotalPixels)
     )
       return false;
-  } else if (ClipboardImageValidationHandler(items)) return false;
-  let value5: Dynamic = ClipboardImageValidationFromCharCode(items);
+  } else if (ClipboardImageValidationHandler(bytes)) return false;
+  let fontSize: Dynamic = ClipboardImageValidationFromCharCode(bytes);
   if (
-    value5 !== undefined &&
-    value3 &&
-    (extra.fonts += Math.max(value5, items.length)) >
+    fontSize !== undefined &&
+    isFirstCharge &&
+    (budget.fonts += Math.max(fontSize, bytes.length)) >
       ClipboardImageValidationResolvedValue
   )
     return false;
-  if (!value3) return true;
-  let value6: Dynamic = ClipboardImageValidationDecode_2(items, options),
-    items2: Dynamic = [
+  if (!isFirstCharge) return true;
+  let decodedTexts: Dynamic = ClipboardImageValidationDecode_2(bytes, contentType),
+    uniqueTexts: Dynamic = [
       ...new Set(
-        value6.map(
-          (input?: Dynamic): Dynamic => input.replace(/\u0000/g, ""),
+        decodedTexts.map(
+          (text?: Dynamic): Dynamic => text.replace(/\u0000/g, ""),
         ),
       ),
     ];
   if (
-    value4 === undefined &&
-    value5 === undefined &&
-    items2.some(
-      (input?: Dynamic): Dynamic =>
-        ClipboardImageValidationCharsetPattern.test(input),
+    pixelCount === undefined &&
+    fontSize === undefined &&
+    uniqueTexts.some(
+      (text?: Dynamic): Dynamic =>
+        ClipboardImageValidationCharsetPattern.test(text),
     )
   )
     return false;
-  if (detail >= 2)
+  if (depth >= 2)
     return (
-      value4 !== undefined &&
-      !items2.some(
-        (input?: Dynamic): Dynamic =>
-          ClipboardImageValidationPattern.test(input) ||
-          ClipboardImageValidationPattern.test(decodeCssTextEscapes(input)),
+      pixelCount !== undefined &&
+      !uniqueTexts.some(
+        (text?: Dynamic): Dynamic =>
+          ClipboardImageValidationPattern.test(text) ||
+          ClipboardImageValidationPattern.test(decodeCssTextEscapes(text)),
       )
     );
   if (
-    value &&
-    !items2.every(
-      (input?: Dynamic): Dynamic =>
-        validateEmbeddedCssAssets(input, extra, detail + 1),
+    checkNestedContent &&
+    !uniqueTexts.every(
+      (text?: Dynamic): Dynamic =>
+        validateEmbeddedCssAssets(text, budget, depth + 1),
     )
   )
     return false;
-  for (let value7 of value6 as Dynamic)
+  for (let decodedText of decodedTexts as Dynamic)
     if (
-      /^[\s\ufeff\u0000]*</.test(value7) &&
+      /^[\s\ufeff\u0000]*</.test(decodedText) &&
       !validateSvgImage(
-        value7.replace(/^[\s\ufeff\u0000]+/, ""),
-        extra,
-        detail + 1,
+        decodedText.replace(/^[\s\ufeff\u0000]+/, ""),
+        budget,
+        depth + 1,
       )
     )
       return false;
   return true;
 }
-function isSafeTextEncoding(input?: Dynamic): Dynamic {
+function isSafeTextEncoding(encodingName?: Dynamic): Dynamic {
   try {
-    let encoding: Dynamic = new TextDecoder(input.trim()).encoding;
+    let encoding: Dynamic = new TextDecoder(encodingName.trim()).encoding;
     return !ClipboardImageValidationIso2022JpReplacementShiftJisSet.has(
       encoding,
     );
@@ -390,89 +390,89 @@ function isSafeTextEncoding(input?: Dynamic): Dynamic {
   }
 }
 function validateCssDataUrls(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  css?: Dynamic,
+  budget?: Dynamic,
+  depth?: Dynamic,
 ): Dynamic {
-  if (/@import/i.test(input)) return false;
-  let index: Dynamic = 0;
-  for (let value of input.matchAll(
+  if (/@import/i.test(css)) return false;
+  let plainUrlCount: Dynamic = 0;
+  for (let match of css.matchAll(
     /(?<![a-z0-9+.-])d[\t\n\r]*a[\t\n\r]*t[\t\n\r]*a[\t\n\r]*:/gi,
   ) as Dynamic) {
     if (
-      Date.now() > options.deadline ||
-      ++options.matches > ClipboardImageValidationLimit * 8
+      Date.now() > budget.deadline ||
+      ++budget.matches > ClipboardImageValidationLimit * 8
     )
       return false;
-    let value2: Dynamic = input.slice(value.index + value[0].length),
-      value3: Dynamic = value2.indexOf(",");
-    if (value3 === -1) return false;
-    let value4: Dynamic = value2.slice(0, value3),
-      value5: Dynamic = value4
+    let afterScheme: Dynamic = css.slice(match.index + match[0].length),
+      commaIndex: Dynamic = afterScheme.indexOf(",");
+    if (commaIndex === -1) return false;
+    let header: Dynamic = afterScheme.slice(0, commaIndex),
+      normalizedHeader: Dynamic = header
         .replace(/[\t\n\r]+/g, "")
         .trim()
         .toLowerCase(),
-      value6: Dynamic = value2.slice(value3 + 1),
-      value7: Dynamic = /; *base64$/.test(value5);
-    if (!value7 && /base64/.test(value5)) return false;
-    let value8: Dynamic = /(?:^|;) *charset=["']?([^;"']*)/.exec(value5)?.[1];
-    if (value8 !== undefined && !isSafeTextEncoding(value8)) return false;
-    if (value7) {
-      let value9: Dynamic = /^[A-Za-z0-9+/=%\s]*/.exec(value6)![0],
-        value10: Dynamic = value6[value9.length];
-      if (value10 !== undefined && !/["');,]/.test(value10)) return false;
-      let flag: Dynamic = false;
-      for (let value11 of new Set([
-        value9,
-        value9.split(/\s/, 1)[0],
+      payload: Dynamic = afterScheme.slice(commaIndex + 1),
+      isBase64: Dynamic = /; *base64$/.test(normalizedHeader);
+    if (!isBase64 && /base64/.test(normalizedHeader)) return false;
+    let charset: Dynamic = /(?:^|;) *charset=["']?([^;"']*)/.exec(normalizedHeader)?.[1];
+    if (charset !== undefined && !isSafeTextEncoding(charset)) return false;
+    if (isBase64) {
+      let base64Prefix: Dynamic = /^[A-Za-z0-9+/=%\s]*/.exec(payload)![0],
+        nextChar: Dynamic = payload[base64Prefix.length];
+      if (nextChar !== undefined && !/["');,]/.test(nextChar)) return false;
+      let isDecoded: Dynamic = false;
+      for (let candidate of new Set([
+        base64Prefix,
+        base64Prefix.split(/\s/, 1)[0],
       ]) as Dynamic) {
-        let value12: Dynamic = (
-          value11.includes("%")
+        let base64Text: Dynamic = (
+          candidate.includes("%")
             ? new TextDecoder("latin1").decode(
-                decodePercentEncodedBytes(value11),
+                decodePercentEncodedBytes(candidate),
               )
-            : value11
+            : candidate
         ).replace(/[\t\n\f\r ]+/g, "");
-        if (/[^A-Za-z0-9+/=]/.test(value12)) return false;
-        let value13: Dynamic;
+        if (/[^A-Za-z0-9+/=]/.test(base64Text)) return false;
+        let decodedBytes: Dynamic;
         try {
-          value13 = Uint8Array.from(
-            atob(value12),
-            (input2?: Dynamic): Dynamic => input2.charCodeAt(0),
+          decodedBytes = Uint8Array.from(
+            atob(base64Text),
+            (char?: Dynamic): Dynamic => char.charCodeAt(0),
           );
         } catch {
           continue;
         }
         if (
           !chargeEmbeddedImageBudget(
-            value13,
-            value5,
-            value4 + "," + value11,
+            decodedBytes,
+            normalizedHeader,
+            header + "," + candidate,
             true,
-            options,
-            context,
+            budget,
+            depth,
           )
         )
           return false;
-        flag = true;
+        isDecoded = true;
         break;
       }
-      if (!flag) return false;
+      if (!isDecoded) return false;
     } else {
-      if (++index > ClipboardImageValidationLimit_5) return false;
-      let value9: Dynamic = value6.replace(/[\t\n\r]+/g, ""),
-        value10: Dynamic = decodePercentEncodedBytes(value9);
+      if (++plainUrlCount > maxPlainDataUrls) return false;
+      let compactPayload: Dynamic = payload.replace(/[\t\n\r]+/g, ""),
+        payloadBytes: Dynamic = decodePercentEncodedBytes(compactPayload);
       if (
-        readRasterImagePixels(value10) !== undefined ||
-        ClipboardImageValidationHandler(value10) ||
-        ClipboardImageValidationFromCharCode(value10) !== undefined ||
+        readRasterImagePixels(payloadBytes) !== undefined ||
+        ClipboardImageValidationHandler(payloadBytes) ||
+        ClipboardImageValidationFromCharCode(payloadBytes) !== undefined ||
         !chargeEmbeddedImageBudget(
-          value10,
-          value5,
-          value4 + "," + value6,
+          payloadBytes,
+          normalizedHeader,
+          header + "," + payload,
           true,
-          options,
-          context,
+          budget,
+          depth,
         )
       )
         return false;
@@ -481,120 +481,120 @@ function validateCssDataUrls(
   return true;
 }
 function validateSvgImage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = 0,
+  svg?: Dynamic,
+  budget?: Dynamic,
+  depth: Dynamic = 0,
 ): Dynamic {
-  if (options !== undefined)
-    return validateNestedSvgImage(input, options, context);
-  let value: Dynamic = Date.now();
-  value - ClipboardImageValidationSinceSpentMsConfig.since >
-    ClipboardImageValidationLimit_3 &&
-    ((ClipboardImageValidationSinceSpentMsConfig.since = value),
+  if (budget !== undefined)
+    return validateNestedSvgImage(svg, budget, depth);
+  let startTime: Dynamic = Date.now();
+  startTime - ClipboardImageValidationSinceSpentMsConfig.since >
+    spendWindowMs &&
+    ((ClipboardImageValidationSinceSpentMsConfig.since = startTime),
     (ClipboardImageValidationSinceSpentMsConfig.spentMs = 0));
   if (
     ClipboardImageValidationSinceSpentMsConfig.spentMs >
-    ClipboardImageValidationLimit_4
+    maxSpentMs
   )
     return false;
-  let flag: Dynamic = false;
+  let isValid: Dynamic = false;
   try {
-    flag = validateNestedSvgImage(input, ClipboardImageValidationNow(), 0);
-    return flag;
+    isValid = validateNestedSvgImage(svg, ClipboardImageValidationNow(), 0);
+    return isValid;
   } finally {
-    let value2: Dynamic = Date.now() - value;
-    (!flag || value2 > 1e3) &&
-      (ClipboardImageValidationSinceSpentMsConfig.spentMs += value2);
+    let elapsed: Dynamic = Date.now() - startTime;
+    (!isValid || elapsed > 1e3) &&
+      (ClipboardImageValidationSinceSpentMsConfig.spentMs += elapsed);
   }
 }
 function validateNestedSvgImage(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  svg?: Dynamic,
+  budget?: Dynamic,
+  depth?: Dynamic,
 ): Dynamic {
-  let doc: Dynamic = options.doc;
-  options.doc = ++options.docs;
+  let doc: Dynamic = budget.doc;
+  budget.doc = ++budget.docs;
   try {
-    return validateSvgDocument(input, options, context);
+    return validateSvgDocument(svg, budget, depth);
   } finally {
-    options.doc = doc;
+    budget.doc = doc;
   }
 }
 function validateSvgDocument(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  svg?: Dynamic,
+  budget?: Dynamic,
+  depth?: Dynamic,
 ): Dynamic {
-  if (typeof DOMParser === "undefined" || !hasSafeSvgPreamble(input))
+  if (typeof DOMParser === "undefined" || !hasSafeSvgPreamble(svg))
     return false;
-  let value: Dynamic = new DOMParser().parseFromString(
-    input,
+  let svgDocument: Dynamic = new DOMParser().parseFromString(
+    svg,
     "image/svg+xml",
   );
   if (
-    value.getElementsByTagName("parsererror").length > 0 ||
-    (value.doctype?.publicId &&
-      !ClipboardImageValidationSubscribers.has(value.doctype.publicId))
+    svgDocument.getElementsByTagName("parsererror").length > 0 ||
+    (svgDocument.doctype?.publicId &&
+      !ClipboardImageValidationSubscribers.has(svgDocument.doctype.publicId))
   )
     return false;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
+  let hasNoProcessingInstructions: Dynamic = (node?: Dynamic): Dynamic => {
     for (
-      let firstChild: Dynamic = input2.firstChild;
+      let firstChild: Dynamic = node.firstChild;
       firstChild;
       firstChild = firstChild.nextSibling
     )
-      if (firstChild.nodeType === 7 || !callback(firstChild)) return false;
+      if (firstChild.nodeType === 7 || !hasNoProcessingInstructions(firstChild)) return false;
     return true;
   };
-  if (!callback(value)) return false;
-  for (let value2 of Array.from(value.querySelectorAll("*")) as Dynamic) {
-    let value3: Dynamic = value2.localName.toLowerCase();
+  if (!hasNoProcessingInstructions(svgDocument)) return false;
+  for (let element of Array.from(svgDocument.querySelectorAll("*")) as Dynamic) {
+    let localName: Dynamic = element.localName.toLowerCase();
     if (
-      ClipboardImageValidationScriptIframeObjectSet.has(value3) ||
-      (value3 === "style" &&
+      ClipboardImageValidationScriptIframeObjectSet.has(localName) ||
+      (localName === "style" &&
         (ClipboardImageValidationCharsetPattern.test(
-          value2.textContent ?? "",
+          element.textContent ?? "",
         ) ||
           !validateEmbeddedCssAssets(
-            value2.textContent ?? "",
-            options,
-            context,
+            element.textContent ?? "",
+            budget,
+            depth,
           )))
     )
       return false;
-    for (let value4 of Array.from(value2.attributes) as Dynamic)
+    for (let attribute of Array.from(element.attributes) as Dynamic)
       if (
-        ClipboardImageValidationCharsetPattern.test(value4.value) ||
-        !validateEmbeddedCssAssets(value4.value, options, context)
+        ClipboardImageValidationCharsetPattern.test(attribute.value) ||
+        !validateEmbeddedCssAssets(attribute.value, budget, depth)
       )
         return false;
   }
   return true;
 }
-async function hasSafeImagePixelCount(input?: Dynamic): Promise<Dynamic> {
+async function hasSafeImagePixelCount(blob?: Dynamic): Promise<Dynamic> {
   try {
-    let value: Dynamic = readRasterImagePixels(
-      new Uint8Array(await input.arrayBuffer()),
+    let pixelCount: Dynamic = readRasterImagePixels(
+      new Uint8Array(await blob.arrayBuffer()),
     );
-    return value !== undefined && value <= 67108864;
+    return pixelCount !== undefined && pixelCount <= 67108864;
   } catch {
     return false;
   }
 }
-async function canDecodeRasterImage(input?: Dynamic): Promise<Dynamic> {
-  return /^image\/svg\+xml(;|$)/i.test(input.type) ||
-    input.size > ClipboardImageValidationResolvedValue_2
+async function canDecodeRasterImage(blob?: Dynamic): Promise<Dynamic> {
+  return /^image\/svg\+xml(;|$)/i.test(blob.type) ||
+    blob.size > maxDecodableImageBytes
     ? false
-    : hasSafeImagePixelCount(input);
+    : hasSafeImagePixelCount(blob);
 }
 async function isPlayableImage(
-  input?: Dynamic,
-  options?: Dynamic,
+  blob?: Dynamic,
+  hasKnownSafePixels?: Dynamic,
 ): Promise<Dynamic> {
-  if (!/^image\/svg\+xml(;|$)/i.test(input.type))
+  if (!/^image\/svg\+xml(;|$)/i.test(blob.type))
     try {
-      return (options ?? (await hasSafeImagePixelCount(input)))
-        ? ((await createImageBitmap(input)).close(), true)
+      return (hasKnownSafePixels ?? (await hasSafeImagePixelCount(blob)))
+        ? ((await createImageBitmap(blob)).close(), true)
         : false;
     } catch {
       return false;
@@ -602,27 +602,27 @@ async function isPlayableImage(
   if (
     !validateSvgImage(
       ClipboardImageValidationDecode(
-        new Uint8Array(await input.arrayBuffer()),
+        new Uint8Array(await blob.arrayBuffer()),
       ),
     )
   )
     return false;
-  let value: Dynamic = URL.createObjectURL(input),
-    value2: Dynamic = new Image(),
-    value3: Dynamic = await new Promise((input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = setTimeout((): Dynamic => input2(false), 1e4);
-      value2.onload = (): Dynamic => {
-        clearTimeout(value4);
-        input2(true);
+  let objectUrl: Dynamic = URL.createObjectURL(blob),
+    image: Dynamic = new Image(),
+    loaded: Dynamic = await new Promise((resolve?: Dynamic): Dynamic => {
+      let timeoutId: Dynamic = setTimeout((): Dynamic => resolve(false), 1e4);
+      image.onload = (): Dynamic => {
+        clearTimeout(timeoutId);
+        resolve(true);
       };
-      value2.onerror = (): Dynamic => {
-        clearTimeout(value4);
-        input2(false);
+      image.onerror = (): Dynamic => {
+        clearTimeout(timeoutId);
+        resolve(false);
       };
-      value2.src = value;
+      image.src = objectUrl;
     });
-  URL.revokeObjectURL(value);
-  return value3;
+  URL.revokeObjectURL(objectUrl);
+  return loaded;
 }
 export {
   canDecodeRasterImage,
@@ -635,14 +635,14 @@ export {
   ClipboardImageValidationHandler,
   ClipboardImageValidationIso2022JpReplacementShiftJisSet,
   ClipboardImageValidationLimit,
-  ClipboardImageValidationLimit_2,
-  ClipboardImageValidationLimit_3,
-  ClipboardImageValidationLimit_4,
-  ClipboardImageValidationLimit_5,
+  maxTotalPixels as ClipboardImageValidationLimit_2,
+  spendWindowMs as ClipboardImageValidationLimit_3,
+  maxSpentMs as ClipboardImageValidationLimit_4,
+  maxPlainDataUrls as ClipboardImageValidationLimit_5,
   ClipboardImageValidationNow,
   ClipboardImageValidationPattern,
   ClipboardImageValidationResolvedValue,
-  ClipboardImageValidationResolvedValue_2,
+  maxDecodableImageBytes as ClipboardImageValidationResolvedValue_2,
   ClipboardImageValidationScriptIframeObjectSet,
   ClipboardImageValidationSinceSpentMsConfig,
   ClipboardImageValidationSubscribers,
@@ -665,7 +665,7 @@ export {
 export function installEditorClipboardImageValidation(): () => void {
   return () => {
     ClipboardImageValidationLimit = 256;
-    ClipboardImageValidationLimit_2 = 67108864;
+    maxTotalPixels = 67108864;
     ClipboardImageValidationSubscribers = new Set([
       "-//W3C//DTD SVG 1.1//EN",
       "-//W3C//DTD SVG 1.0//EN",
@@ -678,108 +678,108 @@ export function installEditorClipboardImageValidation(): () => void {
       "object",
       "embed",
     ]);
-    ClipboardImageValidationHandler = (input?: Dynamic): Dynamic =>
-      (input[0] === 137 &&
-        input[1] === 80 &&
-        input[2] === 78 &&
-        input[3] === 71) ||
-      (input[0] === 255 && input[1] === 216) ||
-      (input[0] === 71 &&
-        input[1] === 73 &&
-        input[2] === 70 &&
-        input[3] === 56) ||
-      (input[0] === 66 && input[1] === 77) ||
-      (input[0] === 82 &&
-        input[1] === 73 &&
-        input[2] === 70 &&
-        input[3] === 70) ||
-      (input[4] === 102 &&
-        input[5] === 116 &&
-        input[6] === 121 &&
-        input[7] === 112) ||
-      (input[0] === 0 &&
-        input[1] === 0 &&
-        (input[2] === 1 || input[2] === 2) &&
-        input[3] === 0) ||
-      (input[0] === 73 &&
-        input[1] === 73 &&
-        input[2] === 42 &&
-        input[3] === 0) ||
-      (input[0] === 77 &&
-        input[1] === 77 &&
-        input[2] === 0 &&
-        input[3] === 42) ||
-      (input[4] === 106 && input[5] === 80 && input[6] === 32) ||
-      (input[0] === 255 &&
-        input[1] === 79 &&
-        input[2] === 255 &&
-        input[3] === 81) ||
-      (input[0] === 37 &&
-        input[1] === 80 &&
-        input[2] === 68 &&
-        input[3] === 70) ||
-      (input[0] === 255 && input[1] === 10) ||
-      (input[4] === 74 &&
-        input[5] === 88 &&
-        input[6] === 76 &&
-        input[7] === 32);
-    ClipboardImageValidationFromCharCode = (items?: Dynamic): Dynamic => {
-      let value: Dynamic = String.fromCharCode(
-        items[0] ?? 0,
-        items[1] ?? 0,
-        items[2] ?? 0,
-        items[3] ?? 0,
+    ClipboardImageValidationHandler = (bytes?: Dynamic): Dynamic =>
+      (bytes[0] === 137 &&
+        bytes[1] === 80 &&
+        bytes[2] === 78 &&
+        bytes[3] === 71) ||
+      (bytes[0] === 255 && bytes[1] === 216) ||
+      (bytes[0] === 71 &&
+        bytes[1] === 73 &&
+        bytes[2] === 70 &&
+        bytes[3] === 56) ||
+      (bytes[0] === 66 && bytes[1] === 77) ||
+      (bytes[0] === 82 &&
+        bytes[1] === 73 &&
+        bytes[2] === 70 &&
+        bytes[3] === 70) ||
+      (bytes[4] === 102 &&
+        bytes[5] === 116 &&
+        bytes[6] === 121 &&
+        bytes[7] === 112) ||
+      (bytes[0] === 0 &&
+        bytes[1] === 0 &&
+        (bytes[2] === 1 || bytes[2] === 2) &&
+        bytes[3] === 0) ||
+      (bytes[0] === 73 &&
+        bytes[1] === 73 &&
+        bytes[2] === 42 &&
+        bytes[3] === 0) ||
+      (bytes[0] === 77 &&
+        bytes[1] === 77 &&
+        bytes[2] === 0 &&
+        bytes[3] === 42) ||
+      (bytes[4] === 106 && bytes[5] === 80 && bytes[6] === 32) ||
+      (bytes[0] === 255 &&
+        bytes[1] === 79 &&
+        bytes[2] === 255 &&
+        bytes[3] === 81) ||
+      (bytes[0] === 37 &&
+        bytes[1] === 80 &&
+        bytes[2] === 68 &&
+        bytes[3] === 70) ||
+      (bytes[0] === 255 && bytes[1] === 10) ||
+      (bytes[4] === 74 &&
+        bytes[5] === 88 &&
+        bytes[6] === 76 &&
+        bytes[7] === 32);
+    ClipboardImageValidationFromCharCode = (bytes?: Dynamic): Dynamic => {
+      let signature: Dynamic = String.fromCharCode(
+        bytes[0] ?? 0,
+        bytes[1] ?? 0,
+        bytes[2] ?? 0,
+        bytes[3] ?? 0,
       );
-      return (value === "wOFF" || value === "wOF2") && items.length >= 20
-        ? ((items[16] << 24) |
-            (items[17] << 16) |
-            (items[18] << 8) |
-            items[19]) >>>
+      return (signature === "wOFF" || signature === "wOF2") && bytes.length >= 20
+        ? ((bytes[16] << 24) |
+            (bytes[17] << 16) |
+            (bytes[18] << 8) |
+            bytes[19]) >>>
             0
-        : value === "OTTO" ||
-            value === "true" ||
-            value === "ttcf" ||
-            (items[0] === 0 &&
-              items[1] === 1 &&
-              items[2] === 0 &&
-              items[3] === 0)
-          ? items.length
+        : signature === "OTTO" ||
+            signature === "true" ||
+            signature === "ttcf" ||
+            (bytes[0] === 0 &&
+              bytes[1] === 1 &&
+              bytes[2] === 0 &&
+              bytes[3] === 0)
+          ? bytes.length
           : undefined;
     };
     ClipboardImageValidationResolvedValue = 64 * 1024 * 1024;
     ClipboardImageValidationDecode = (
-      input?: Dynamic,
-      options: Dynamic = "",
+      bytes?: Dynamic,
+      contentType: Dynamic = "",
     ): Dynamic => {
-      if (input[0] === 255 && input[1] === 254)
-        return new TextDecoder("utf-16le").decode(input.subarray(2));
-      if (input[0] === 254 && input[1] === 255)
-        return new TextDecoder("utf-16be").decode(input.subarray(2));
-      if (input[0] === 239 && input[1] === 187 && input[2] === 191)
-        return new TextDecoder().decode(input.subarray(3));
-      let text: Dynamic = "utf-8";
+      if (bytes[0] === 255 && bytes[1] === 254)
+        return new TextDecoder("utf-16le").decode(bytes.subarray(2));
+      if (bytes[0] === 254 && bytes[1] === 255)
+        return new TextDecoder("utf-16be").decode(bytes.subarray(2));
+      if (bytes[0] === 239 && bytes[1] === 187 && bytes[2] === 191)
+        return new TextDecoder().decode(bytes.subarray(3));
+      let encoding: Dynamic = "utf-8";
       try {
-        let value: Dynamic = /(?:^|;) *charset=["']?([^;"']*)/i.exec(
-          options,
+        let charset: Dynamic = /(?:^|;) *charset=["']?([^;"']*)/i.exec(
+          contentType,
         )?.[1];
-        value && (text = new TextDecoder(value.trim()).encoding);
+        charset && (encoding = new TextDecoder(charset.trim()).encoding);
       } catch {}
       return new TextDecoder(
-        text === "utf-16be" || text === "utf-16le" ? text : "utf-8",
-      ).decode(input);
+        encoding === "utf-16be" || encoding === "utf-16le" ? encoding : "utf-8",
+      ).decode(bytes);
     };
     ClipboardImageValidationDecode_2 = (
-      input?: Dynamic,
-      options?: Dynamic,
+      bytes?: Dynamic,
+      contentType?: Dynamic,
     ): Dynamic => {
-      let values: Dynamic = new Set([
-        ClipboardImageValidationDecode(input, options),
-        new TextDecoder().decode(input),
+      let candidates: Dynamic = new Set([
+        ClipboardImageValidationDecode(bytes, contentType),
+        new TextDecoder().decode(bytes),
       ]);
-      input.indexOf(0) !== -1 &&
-        (values.add(new TextDecoder("utf-16le").decode(input)),
-        values.add(new TextDecoder("utf-16be").decode(input)));
-      return [...values];
+      bytes.indexOf(0) !== -1 &&
+        (candidates.add(new TextDecoder("utf-16le").decode(bytes)),
+        candidates.add(new TextDecoder("utf-16be").decode(bytes)));
+      return [...candidates];
     };
     ClipboardImageValidationNow = (): Dynamic => ({
       matches: 0,
@@ -795,9 +795,9 @@ export function installEditorClipboardImageValidation(): () => void {
       since: 0,
       spentMs: 0,
     };
-    ClipboardImageValidationLimit_3 = 6e4;
-    ClipboardImageValidationLimit_4 = 15e3;
-    ClipboardImageValidationLimit_5 = 32;
+    spendWindowMs = 6e4;
+    maxSpentMs = 15e3;
+    maxPlainDataUrls = 32;
     ClipboardImageValidationConstant = 6e3;
     ClipboardImageValidationPattern =
       /(?<![a-z0-9+.-])d[\t\n\r]*a[\t\n\r]*t[\t\n\r]*a[\t\n\r]*:/i;
@@ -812,6 +812,6 @@ export function installEditorClipboardImageValidation(): () => void {
       "big5",
     ]);
     ClipboardImageValidationCharsetPattern = /@charset|\u001b/i;
-    ClipboardImageValidationResolvedValue_2 = 32 * 1024 * 1024;
+    maxDecodableImageBytes = 32 * 1024 * 1024;
   };
 }
