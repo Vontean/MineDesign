@@ -14,7 +14,7 @@ function componentGuidelinesPath(
   componentName: string,
 ) {
   return (
-    system.components.find((input): boolean => input.name === componentName)
+    system.components.find((component): boolean => component.name === componentName)
       ?.guidelinesPath ??
     DESIGN_SYSTEM_PATHS.componentsDir +
       componentName +
@@ -30,7 +30,7 @@ function setComponentGuidelines(
   let system = parsedDesignSystem(content);
   if (
     !COMPONENT_NAME_PATTERN.test(componentName) ||
-    !system.components.some((input): boolean => input.name === componentName)
+    !system.components.some((component): boolean => component.name === componentName)
   ) {
     return content;
   }
@@ -80,14 +80,14 @@ function addFontFace(
   ) {
     withFile = setFileStorageRecord(withFile, path, font.record);
   }
-  let withFont = updateTokens(withFile, (input): boolean => {
+  let withFont = updateTokens(withFile, (fontCatalog): boolean => {
     let state: Model.FontFace = {
       family: family,
       file: path,
       weight: font.weight.trim() || "400",
       style: font.style,
     };
-    input.type.fonts.push(state);
+    fontCatalog.type.fonts.push(state);
     return true;
   });
   if (withFont === withFile) {
@@ -101,15 +101,15 @@ function deleteFontFace(
   path: string,
 ): Model.DesignSystemContent {
   let withoutFile = deleteDesignSystemFiles(content, [path]),
-    withoutFont = updateTokens(withoutFile, (input): boolean => {
-      let length = input.type.fonts.length;
-      input.type.fonts = input.type.fonts.filter(
-        (input2): boolean => input2.file !== path,
+    withoutFont = updateTokens(withoutFile, (fontCatalog): boolean => {
+      let length = fontCatalog.type.fonts.length;
+      fontCatalog.type.fonts = fontCatalog.type.fonts.filter(
+        (font): boolean => font.file !== path,
       );
-      if (input.type.fonts.length === length) {
+      if (fontCatalog.type.fonts.length === length) {
         return false;
       }
-      pruneUnusedFontFamilies(input);
+      pruneUnusedFontFamilies(fontCatalog);
       return true;
     });
   if (withoutFont === content) {
@@ -121,15 +121,15 @@ function deleteFontFace(
 function removeMissingFontReferences(
   content: Model.DesignSystemContent,
 ): Model.DesignSystemContent {
-  return updateTokens(content, (input): boolean => {
-    let length = input.type.fonts.length;
-    input.type.fonts = input.type.fonts.filter((input2) =>
-      Object.hasOwn(content.files, input2.file),
+  return updateTokens(content, (fontCatalog): boolean => {
+    let length = fontCatalog.type.fonts.length;
+    fontCatalog.type.fonts = fontCatalog.type.fonts.filter((font) =>
+      Object.hasOwn(content.files, font.file),
     );
-    if (input.type.fonts.length === length) {
+    if (fontCatalog.type.fonts.length === length) {
       return false;
     }
-    pruneUnusedFontFamilies(input);
+    pruneUnusedFontFamilies(fontCatalog);
     return true;
   });
 }

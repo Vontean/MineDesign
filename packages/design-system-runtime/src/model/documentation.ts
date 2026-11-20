@@ -109,48 +109,48 @@ function inspectStandaloneMigrationGuide(readme: string): {
 `,
         index,
       ),
-      value2 = value === -1 ? readme.length : value,
-      value3 = readme.slice(
+      lineEnd = value === -1 ? readme.length : value,
+      lineText = readme.slice(
         index,
-        readme.charAt(value2 - 1) === "\r" && value2 > index
-          ? value2 - 1
-          : value2,
+        readme.charAt(lineEnd - 1) === "\r" && lineEnd > index
+          ? lineEnd - 1
+          : lineEnd,
       ),
-      value4 = value3.trimEnd();
-    index = value2 + 1;
-    let [value5, value6] = parseMarkdownFence(value3);
+      trimmedLine = lineText.trimEnd();
+    index = lineEnd + 1;
+    let [fenceMarker, fenceBody] = parseMarkdownFence(lineText);
     if (fence !== "") {
       if (
-        value5 !== "" &&
-        value5[0] === fence[0] &&
-        value5.length >= fence.length &&
-        value6.trim() === ""
+        fenceMarker !== "" &&
+        fenceMarker[0] === fence[0] &&
+        fenceMarker.length >= fence.length &&
+        fenceBody.trim() === ""
       ) {
         fence = "";
       }
       continue;
     }
-    if (value5 !== "" && (value5[0] !== "`" || !value6.includes("`"))) {
-      fence = value5;
+    if (fenceMarker !== "" && (fenceMarker[0] !== "`" || !fenceBody.includes("`"))) {
+      fence = fenceMarker;
       continue;
     }
-    if (value4.startsWith("## ") || value4.startsWith("# ")) {
+    if (trimmedLine.startsWith("## ") || trimmedLine.startsWith("# ")) {
       if (inMigrationSection && sawCanvas && sawSlides) {
         return {
           both: true,
           script: hasScript,
         };
       }
-      inMigrationSection = value4 === STANDALONE_MIGRATION_HEADING;
+      inMigrationSection = trimmedLine === STANDALONE_MIGRATION_HEADING;
       sawCanvas = false;
       sawSlides = false;
       hasScript = false;
     } else if (inMigrationSection) {
-      if (value4.startsWith(canvasPrefix)) {
+      if (trimmedLine.startsWith(canvasPrefix)) {
         sawCanvas = true;
-        hasScript = hasScript || /`project\/[^`]*\.js`/.test(value4);
+        hasScript = hasScript || /`project\/[^`]*\.js`/.test(trimmedLine);
       }
-      sawSlides = sawSlides || value4.startsWith(slidesPrefix);
+      sawSlides = sawSlides || trimmedLine.startsWith(slidesPrefix);
     }
   }
   if (inMigrationSection && sawCanvas && sawSlides) {
@@ -171,34 +171,34 @@ function documentationManifestFacts(
   let hasFileList = Array.isArray(manifest.files),
     files = hasFileList
       ? (manifest.files as unknown[]).filter(
-          (input: unknown): input is string => typeof input === "string",
+          (candidate: unknown): candidate is string => typeof candidate === "string",
         )
       : [],
     fileSet = new Set(files),
     components = Array.isArray(manifest.components)
       ? (manifest.components as (M.RawDocComponent | null | undefined)[])
           .filter(
-            (input): input is M.CheckedDocComponent =>
-              typeof input?.name === "string" &&
-              COMPONENT_NAME_PATTERN.test(input.name),
+            (component): component is M.CheckedDocComponent =>
+              typeof component?.name === "string" &&
+              COMPONENT_NAME_PATTERN.test(component.name),
           )
           .slice(0, MAX_DOCUMENTED_COMPONENTS)
-          .map((input) => ({
-            name: input.name,
+          .map((component) => ({
+            name: component.name,
             group:
-              typeof input.group === "string"
-                ? sanitizeComponentGroupLabel(input.group)
+              typeof component.group === "string"
+                ? sanitizeComponentGroupLabel(component.group)
                 : "",
             summary:
-              typeof input.summary === "string"
-                ? sanitizeMarkdownLine(input.summary).trim()
+              typeof component.summary === "string"
+                ? sanitizeMarkdownLine(component.summary).trim()
                 : "",
-            page: input.page === true,
+            page: component.page === true,
             readme:
               !hasFileList ||
               fileSet.has(
                 DESIGN_SYSTEM_PATHS.componentsDir +
-                  input.name +
+                  component.name +
                   "/README.md",
               ),
           }))
@@ -212,24 +212,24 @@ function documentationManifestFacts(
         : []
     )
       .filter(
-        (input): input is M.CheckedDocLibrary =>
-          typeof input?.name === "string" &&
-          LIBRARY_NAME_PATTERN.test(input.name) &&
-          typeof input.version === "string" &&
-          LIBRARY_VERSION_PATTERN.test(input.version),
+        (candidate): candidate is M.CheckedDocLibrary =>
+          typeof candidate?.name === "string" &&
+          LIBRARY_NAME_PATTERN.test(candidate.name) &&
+          typeof candidate.version === "string" &&
+          LIBRARY_VERSION_PATTERN.test(candidate.version),
       )
-      .map((input) => {
+      .map((library) => {
         let value: string | undefined =
-          typeof input.global === "string"
-            ? input.global
-            : findPackagedLibrary(input.name)?.provides[0];
+          typeof library.global === "string"
+            ? library.global
+            : findPackagedLibrary(library.name)?.provides[0];
         return {
-          name: input.name,
-          version: input.version,
+          name: library.name,
+          version: library.version,
           file:
-            typeof input.file === "string" &&
-            PACKAGED_LIBRARY_PATH_PATTERN.test(input.file)
-              ? input.file
+            typeof library.file === "string" &&
+            PACKAGED_LIBRARY_PATH_PATTERN.test(library.file)
+              ? library.file
               : null,
           global:
             typeof value === "string" &&
@@ -253,7 +253,7 @@ function documentationManifestFacts(
     tokensCss:
       !hasFileList || files.includes(GENERATED_TOKENS_CSS_PATH),
     icon:
-      components.find((input) => /^icons?$/i.test(input.name))?.name ?? null,
+      components.find((component) => /^icons?$/i.test(component.name))?.name ?? null,
   };
 }
 function humanizeFamilyName(key: string): string {
@@ -282,8 +282,8 @@ function generateComponentApiCards(
   ) {
     return cachedComponentApiCards.out;
   }
-  let qualifiedName = (input: string): string =>
-      (facts.ns !== null ? facts.ns + "." : "") + input,
+  let qualifiedName = (name: string): string =>
+      (facts.ns !== null ? facts.ns + "." : "") + name,
     lines = (declarationText ?? "").split(`
 `),
     lineCount = lines.length,
@@ -296,63 +296,63 @@ function generateComponentApiCards(
       index++;
       continue;
     }
-    let value2 = value[1],
-      value3 = value[2],
-      index2 = 0,
-      value4 = index;
-    while (value4 < lineCount) {
-      let value6 = lines[value4],
-        value7 = value6.trimEnd(),
-        value8 = value7.trimStart();
+    let declarationKind = value[1],
+      declarationName = value[2],
+      braceDepth = 0,
+      lineIndex = index;
+    while (lineIndex < lineCount) {
+      let line = lines[lineIndex],
+        trimmedLine = line.trimEnd(),
+        lineStart = trimmedLine.trimStart();
       if (
-        value4 > index &&
-        (value8.startsWith("*") ||
-          value8.startsWith("/*") ||
-          value8.startsWith("//"))
+        lineIndex > index &&
+        (lineStart.startsWith("*") ||
+          lineStart.startsWith("/*") ||
+          lineStart.startsWith("//"))
       ) {
-        value4++;
+        lineIndex++;
         continue;
       }
-      index2 +=
-        countSubstring(value6, "{") -
-        countSubstring(value6, "}") +
-        countSubstring(value6, "(") -
-        countSubstring(value6, ")");
-      if (index2 <= 0 && (value7.endsWith(";") || value7.endsWith("}"))) {
+      braceDepth +=
+        countSubstring(line, "{") -
+        countSubstring(line, "}") +
+        countSubstring(line, "(") -
+        countSubstring(line, ")");
+      if (braceDepth <= 0 && (trimmedLine.endsWith(";") || trimmedLine.endsWith("}"))) {
         break;
       }
-      value4++;
+      lineIndex++;
     }
-    let value5 = index;
-    while (value5 > 0) {
-      let value6 = lines[value5 - 1].trim();
-      if (!(value6.startsWith("*") || value6.startsWith("/**"))) {
+    let commentStart = index;
+    while (commentStart > 0) {
+      let previousLine = lines[commentStart - 1].trim();
+      if (!(previousLine.startsWith("*") || previousLine.startsWith("/**"))) {
         break;
       }
-      value5--;
+      commentStart--;
     }
-    if (!declarations.has(value3)) {
-      declarations.set(value3, []);
+    if (!declarations.has(declarationName)) {
+      declarations.set(declarationName, []);
     }
-    declarations.get(value3)!.push([value2, value5, index, value4]);
-    index = value4 + 1;
+    declarations.get(declarationName)!.push([declarationKind, commentStart, index, lineIndex]);
+    index = lineIndex + 1;
   }
-  let firstDeclaration = (input: string) => declarations.get(input)?.[0],
-    joinJSDoc = (input: readonly string[]): string => {
+  let firstDeclaration = (name: string) => declarations.get(name)?.[0],
+    joinJSDoc = (jsdocLines: readonly string[]): string => {
       let items = [];
-      for (let value of input) {
-        let value2 = value
+      for (let value of jsdocLines) {
+        let line = value
           .trim()
           .replace(/^\/\*\*\s?|\*\/$|^\*\s?/g, "")
           .trim();
-        if (value2) {
-          items.push(value2);
+        if (line) {
+          items.push(line);
         }
       }
       return items.join(" ");
     },
-    declarationDoc = (input: string): string => {
-      let value = firstDeclaration(input);
+    declarationDoc = (name: string): string => {
+      let value = firstDeclaration(name);
       if (value === undefined) {
         return "";
       } else {
@@ -361,81 +361,81 @@ function generateComponentApiCards(
     },
     constTuples = new Map<string, string[]>(),
     typeAliases = new Map<string, string>();
-  for (let [value, value2] of declarations) {
-    for (let [value3, , value4, value5] of value2) {
-      if (value3 === "const") {
-        let value6 = /readonly \[([^\]]*)\]/.exec(
-          lines.slice(value4, value5 + 1).join(`
+  for (let [value, declarationsForName] of declarations) {
+    for (let [declarationKind, , startLine, endLine] of declarationsForName) {
+      if (declarationKind === "const") {
+        let tupleMatch = /readonly \[([^\]]*)\]/.exec(
+          lines.slice(startLine, endLine + 1).join(`
 `),
         );
-        if (value6) {
+        if (tupleMatch) {
           constTuples.set(
             value,
-            value6[1]
+            tupleMatch[1]
               .split(",")
-              .map((input) => input.trim())
-              .filter((input): boolean => input !== "")
-              .map((input) => input.replace(/^"+|"+$/g, "")),
+              .map((item) => item.trim())
+              .filter((item): boolean => item !== "")
+              .map((item) => item.replace(/^"+|"+$/g, "")),
           );
         }
-      } else if (value3 === "type") {
-        let value6 =
+      } else if (declarationKind === "type") {
+        let aliasMatch =
           /^(?:export )?(?:declare )?type [\w$]+(?:<[^\n=]*?>)? = ([^\n]+);$/.exec(
             lines
-              .slice(value4, value5 + 1)
-              .map((input) => input.trim())
+              .slice(startLine, endLine + 1)
+              .map((item) => item.trim())
               .filter(
-                (input) => !input.startsWith("*") && !input.startsWith("/**"),
+                (line) => !line.startsWith("*") && !line.startsWith("/**"),
               )
               .join(" ")
               .replace(/\/\*[\s\S]*?\*\//g, " ")
               .replace(/\s+/g, " "),
           );
-        if (value6) {
-          typeAliases.set(value, value6[1].trim());
+        if (aliasMatch) {
+          typeAliases.set(value, aliasMatch[1].trim());
         }
       }
     }
   }
-  let expandType = (items: string, options = 0): string => {
+  let expandType = (items: string, depth = 0): string => {
       items = items.trim().replace(/import\("react"\)\./g, "React.");
       remainingWork -= items.length / 512;
-      if (options > 3 || remainingWork < 0) {
+      if (depth > 3 || remainingWork < 0) {
         return items;
       }
       let value = /^\(typeof (\w+)\)\[number\]$/.exec(items),
-        value2 = value ? constTuples.get(value[1]) : undefined;
-      if (value2) {
-        return value2.map((input): string => '"' + input + '"').join(" | ");
+        tupleValues = value ? constTuples.get(value[1]) : undefined;
+      if (tupleValues) {
+        return tupleValues.map((item): string => '"' + item + '"').join(" | ");
       }
-      let value3 = items !== "IconName" ? typeAliases.get(items) : undefined;
-      if (value3 !== undefined && unicodeCharacterCount(value3) < 400) {
-        let value5 = expandType(value3, options + 1);
-        if (unicodeCharacterCount(value5) > 1400) {
+      let alias = items !== "IconName" ? typeAliases.get(items) : undefined;
+      if (alias !== undefined && unicodeCharacterCount(alias) < 400) {
+        let expandedAlias = expandType(alias, depth + 1);
+        if (unicodeCharacterCount(expandedAlias) > 1400) {
           return items;
         } else {
-          return value5;
+          return expandedAlias;
         }
       }
-      let value4 = /^(Exclude|Extract)<([\s\S]+)>$/.exec(items);
-      if (value4 !== null) {
-        let [value5, value6] = splitAtDepthZero(value4[2], ","),
-          callback = (input: string) =>
+      let utilityMatch = /^(Exclude|Extract)<([\s\S]+)>$/.exec(items);
+      if (utilityMatch !== null) {
+        let [leftType, rightType] = splitAtDepthZero(utilityMatch[2], ","),
+          callback = (typeText: string) =>
             /^(?:"[^"]*"|-?\d[\d.]*|true|false|null|undefined)(?:\s*\|\s*(?:"[^"]*"|-?\d[\d.]*|true|false|null|undefined))*$/.test(
-              input,
+              typeText,
             ),
-          value7 =
-            value5 !== undefined ? expandType(value5, options + 1) : "",
-          value8 =
-            value6 !== undefined ? expandType(value6, options + 1) : "";
-        if (callback(value7) && callback(value8)) {
-          let values = new Set(splitAtDepthZero(value8, "|")),
-            value9 = splitAtDepthZero(value7, "|").filter(
-              (input): boolean =>
-                (value4[1] === "Exclude") !== values.has(input),
+          leftPart =
+            leftType !== undefined ? expandType(leftType, depth + 1) : "",
+          rightPart =
+            rightType !== undefined ? expandType(rightType, depth + 1) : "";
+        if (callback(leftPart) && callback(rightPart)) {
+          let values = new Set(splitAtDepthZero(rightPart, "|")),
+            filteredParts = splitAtDepthZero(leftPart, "|").filter(
+              (part): boolean =>
+                (utilityMatch[1] === "Exclude") !== values.has(part),
             );
-          if (value9.length > 0) {
-            return value9.join(" | ");
+          if (filteredParts.length > 0) {
+            return filteredParts.join(" | ");
           }
         }
         return items;
@@ -449,10 +449,10 @@ function generateComponentApiCards(
         !items.includes("{") &&
         !items.includes("<")
       ) {
-        let value5 = items.split("|").map((input) => input.trim());
+        let parts = items.split("|").map((part) => part.trim());
         return uniqueValues(
-          value5.map((input) =>
-            /^[A-Z]\w+$/.test(input) ? expandType(input, options + 1) : input,
+          parts.map((part) =>
+            /^[A-Z]\w+$/.test(part) ? expandType(part, depth + 1) : part,
           ),
         ).join(" | ");
       }
@@ -478,68 +478,68 @@ function generateComponentApiCards(
     identifierPattern: RegExp = /^[A-Za-z_$][\w$]*$/,
     importsByAlias = new Map<string, M.DocImportName>();
   for (let value of lines.slice(0, 200)) {
-    let value2 = /^import (?:type )?\{([^}]*)\} from "([^"]+)"/.exec(value);
-    if (value2) {
-      for (let value3 of value2[1].split(",")) {
-        let value4 = /^\s*([\w$]+)(?:\s+as\s+([\w$]+))?\s*$/.exec(value3);
-        if (value4) {
-          importsByAlias.set(value4[2] ?? value4[1], {
-            name: value4[1],
-            from: value2[2],
+    let importDeclaration = /^import (?:type )?\{([^}]*)\} from "([^"]+)"/.exec(value);
+    if (importDeclaration) {
+      for (let importText of importDeclaration[1].split(",")) {
+        let importMatch = /^\s*([\w$]+)(?:\s+as\s+([\w$]+))?\s*$/.exec(importText);
+        if (importMatch) {
+          importsByAlias.set(importMatch[2] ?? importMatch[1], {
+            name: importMatch[1],
+            from: importDeclaration[2],
           });
         }
       }
     }
   }
-  let describeExternalType = (input: string, options = 0): string => {
-      let value = input.replace(
+  let describeExternalType = (externalTypeName: string, depth = 0): string => {
+      let value = externalTypeName.replace(
         /\bimport\("([^"]+)"\)\.([\w$.]+)/g,
-        (input2: string, options2: string, context: string): string =>
-          context + " (" + options2 + ")",
+        (typeName: string, alias: string, renderContext: string): string =>
+          renderContext + " (" + alias + ")",
       );
       value = value.replace(
         /\bComponentProps(?:WithoutRef|WithRef)?<typeof ([\w$.]+)>/g,
-        (input2: string, options2: string): string => options2 + " props",
+        (typeName: string, alias: string): string => alias + " props",
       );
       value = value.replace(
         /\b([A-Za-z_][\w]*(?:\$\d+)?)((?:\.[\w$]+)*)(?![\w$])/g,
-        (input2: string, options2: string, context: string) => {
-          let entry = importsByAlias.get(options2);
+        (typeName: string, importAlias: string, renderContext: string) => {
+          let entry = importsByAlias.get(importAlias);
           if (entry !== undefined) {
-            if (context !== "" || /\$\d+$/.test(options2)) {
-              return entry.name + context + " (" + entry.from + ")";
+            if (renderContext !== "" || /\$\d+$/.test(importAlias)) {
+              return entry.name + renderContext + " (" + entry.from + ")";
             } else {
-              return input2;
+              return typeName;
             }
           }
-          if (options < 2 && firstDeclaration(options2)?.[0] === "type") {
-            let value2 = (typeAliases.get(options2) ?? "").trim();
+          if (depth < 2 && firstDeclaration(importAlias)?.[0] === "type") {
+            let typeAlias = (typeAliases.get(importAlias) ?? "").trim();
             if (
-              value2 !== "" &&
+              typeAlias !== "" &&
               /^[\w$]+(?:\.[\w$]+)*(?:<[^<>]*>)?$|^ComponentProps/.test(
-                value2,
+                typeAlias,
               ) &&
-              [...importsByAlias.keys()].some((input3) =>
-                new RegExp("\\b" + input3.replace(/\$/g, "\\$") + "\\b").test(
-                  value2,
+              [...importsByAlias.keys()].some((alias) =>
+                new RegExp("\\b" + alias.replace(/\$/g, "\\$") + "\\b").test(
+                  typeAlias,
                 ),
               )
             ) {
-              return describeExternalType(value2, options + 1) + context;
+              return describeExternalType(typeAlias, depth + 1) + renderContext;
             }
           }
-          if (/\$\d+$/.test(options2)) {
-            return options2.replace(/\$\d+$/, "") + context;
+          if (/\$\d+$/.test(importAlias)) {
+            return importAlias.replace(/\$\d+$/, "") + renderContext;
           } else {
-            return input2;
+            return typeName;
           }
         },
       );
       return value;
     },
     exportsByName = new Map<string, string>();
-  for (let [value, value2] of declarations) {
-    if (value2.some((input) => lines[input[2]].startsWith("export "))) {
+  for (let [value, declarationsForName] of declarations) {
+    if (declarationsForName.some((declaration) => lines[declaration[2]].startsWith("export "))) {
       exportsByName.set(value, value);
     }
   }
@@ -547,22 +547,22 @@ function generateComponentApiCards(
     if (!value.startsWith("export {")) {
       continue;
     }
-    for (let value2 of value.replace(/^export \{|\};?\s*$/g, "").split(",")) {
-      let value3 = /^\s*(?:type\s+)?([\w$]+)(?:\s+as\s+([\w$]+))?\s*$/.exec(
-        value2,
+    for (let exportName of value.replace(/^export \{|\};?\s*$/g, "").split(",")) {
+      let exportMatch = /^\s*(?:type\s+)?([\w$]+)(?:\s+as\s+([\w$]+))?\s*$/.exec(
+        exportName,
       );
-      if (value3) {
-        exportsByName.set(value3[1], value3[2] ?? value3[1]);
+      if (exportMatch) {
+        exportsByName.set(exportMatch[1], exportMatch[2] ?? exportMatch[1]);
       }
     }
   }
   let hasExportList: boolean = exportsByName.size > 0,
-    splitAtDepthZero = (items: string, options: string) => {
-      let items2 = [],
+    splitAtDepthZero = (items: string, delimiter: string) => {
+      let segments = [],
         index: number = 0,
-        index2 = 0;
-      for (let index3: number = 0; index3 < items.length; index3++) {
-        let value = items[index3];
+        segmentStart = 0;
+      for (let delimiterIndex: number = 0; delimiterIndex < items.length; delimiterIndex++) {
+        let value = items[delimiterIndex];
         if (
           value === "<" ||
           value === "(" ||
@@ -571,27 +571,27 @@ function generateComponentApiCards(
         ) {
           index++;
         } else if (
-          (value === ">" && items[index3 - 1] !== "=") ||
+          (value === ">" && items[delimiterIndex - 1] !== "=") ||
           value === ")" ||
           value === "]" ||
           value === "}"
         ) {
           index = Math.max(0, index - 1);
-        } else if (value === options && index === 0) {
-          items2.push(items.slice(index2, index3));
-          index2 = index3 + 1;
+        } else if (value === delimiter && index === 0) {
+          segments.push(items.slice(segmentStart, delimiterIndex));
+          segmentStart = delimiterIndex + 1;
         }
       }
-      items2.push(items.slice(index2));
-      return items2
-        .map((input) => input.trim())
-        .filter((input): boolean => input !== "");
+      segments.push(items.slice(segmentStart));
+      return segments
+        .map((part) => part.trim())
+        .filter((part): boolean => part !== "");
     },
-    splitTypeArguments = (input: string) => splitAtDepthZero(input, ","),
-    findTopLevelDelimiter = (items: string, options: string): number => {
+    splitTypeArguments = (typeText: string) => splitAtDepthZero(typeText, ","),
+    findTopLevelDelimiter = (items: string, delimiter: string): number => {
       let index: number = 0;
-      for (let index2: number = 0; index2 < items.length; index2++) {
-        let value = items[index2];
+      for (let delimiterIndex: number = 0; delimiterIndex < items.length; delimiterIndex++) {
+        let value = items[delimiterIndex];
         if (
           value === "<" ||
           value === "(" ||
@@ -600,39 +600,39 @@ function generateComponentApiCards(
         ) {
           index++;
         } else if (
-          (value === ">" && items[index2 - 1] !== "=") ||
+          (value === ">" && items[delimiterIndex - 1] !== "=") ||
           value === ")" ||
           value === "]" ||
           value === "}"
         ) {
           index = Math.max(0, index - 1);
         } else if (
-          value === options &&
+          value === delimiter &&
           index === 0 &&
-          items[index2 + 1] !== ">"
+          items[delimiterIndex + 1] !== ">"
         ) {
-          return index2;
+          return delimiterIndex;
         }
       }
       return -1;
     },
     isWrappedExpression = (items: string): boolean => {
       let index: number = 0;
-      for (let index2: number = 0; index2 < items.length; index2++) {
-        let value = items[index2];
+      for (let delimiterIndex: number = 0; delimiterIndex < items.length; delimiterIndex++) {
+        let value = items[delimiterIndex];
         if (value === "(") {
           index++;
         } else if (value === ")") {
           index--;
-          if (index === 0 && index2 < items.length - 1) {
+          if (index === 0 && delimiterIndex < items.length - 1) {
             return false;
           }
         }
       }
       return index === 0;
     },
-    unwrap = (input: string) => {
-      let value = input.trim();
+    unwrap = (typeText: string) => {
+      let value = typeText.trim();
       for (
         let index: number = 0;
         index < 8 &&
@@ -645,12 +645,12 @@ function generateComponentApiCards(
       }
       return value;
     },
-    mergeUnion = (input: string, options: string) => {
+    mergeUnion = (leftType: string, rightType: string) => {
       let values = new Set(
         [
-          ...splitAtDepthZero(input, "|"),
-          ...splitAtDepthZero(options, "|"),
-        ].filter((input2): boolean => input2 !== "never"),
+          ...splitAtDepthZero(leftType, "|"),
+          ...splitAtDepthZero(rightType, "|"),
+        ].filter((part): boolean => part !== "never"),
       );
       if (
         (values.has("true") && values.has("false")) ||
@@ -666,77 +666,77 @@ function generateComponentApiCards(
       (remainingWork -= items.length / 512) < 0
         ? truncateUnicodeText(items, 80) + "…"
         : splitAtDepthZero(items, "|")
-            .map((input) => {
-              let value = input.trim();
+            .map((part) => {
+              let value = part.trim();
               if (!(value.startsWith("{") && value.endsWith("}"))) {
                 return expandType(value);
               }
               return (
                 "{ " +
                 splitAtDepthZero(value.slice(1, -1), ";")
-                  .map((input2): null | string => {
-                    let value2 =
+                  .map((row): null | string => {
+                    let rowMatch =
                       /^(?:readonly )?"?([\w\-]+)"?(\??):\s*([\s\S]*)$/.exec(
-                        input2.replace(/\/\*[\s\S]*?\*\//g, "").trim(),
+                        row.replace(/\/\*[\s\S]*?\*\//g, "").trim(),
                       );
-                    if (value2 === null) {
+                    if (rowMatch === null) {
                       return null;
                     }
-                    let value3 = expandType(value2[3].replace(/\s+/g, " "));
+                    let expandedType = expandType(rowMatch[3].replace(/\s+/g, " "));
                     return (
-                      value2[1] +
-                      value2[2] +
-                      (unicodeCharacterCount(value3) <= 32
-                        ? ": " + value3
+                      rowMatch[1] +
+                      rowMatch[2] +
+                      (unicodeCharacterCount(expandedType) <= 32
+                        ? ": " + expandedType
                         : "")
                     );
                   })
-                  .filter((input2): boolean => input2 !== null)
+                  .filter((row): boolean => row !== null)
                   .join("; ") +
                 " }"
               );
             })
             .join(" | "),
     parsePropRows = (
-      input: readonly string[],
-      options: ReadonlySet<string>,
+      declarationLines: readonly string[],
+      omittedProps: ReadonlySet<string>,
     ): M.DocPropRow[] => {
       let items: M.DocPropRow[] = [],
-        items2: string[] = [],
-        items3: string[] = [],
+        docLines: string[] = [],
+        propLines: string[] = [],
         index = 0,
-        index2: number = 0;
-      for (let value of input) {
-        let value2 = value.trim(),
-          value3 =
-            items3.length === 0
-              ? /^\/\*\*([\s\S]*?)\*\/\s*(?=\S)/.exec(value2)
+        propCount: number = 0;
+      for (let value of declarationLines) {
+        let trimmedLine = value.trim(),
+          docMatch =
+            propLines.length === 0
+              ? /^\/\*\*([\s\S]*?)\*\/\s*(?=\S)/.exec(trimmedLine)
               : null;
-        if (value3 !== null) {
-          items2 = [value3[1]];
-          value2 = value2.slice(value3[0].length);
-          value = "  " + value2;
+        if (docMatch !== null) {
+          docLines = [docMatch[1]];
+          trimmedLine = trimmedLine.slice(docMatch[0].length);
+          value = "  " + trimmedLine;
         }
         if (
-          items3.length === 0 &&
-          (value2.startsWith("/**") ||
-            value2.startsWith("*") ||
-            value2.startsWith("//"))
+          propLines.length === 0 &&
+          (trimmedLine.startsWith("/**") ||
+            trimmedLine.startsWith("*") ||
+            trimmedLine.startsWith("//"))
         ) {
-          if (!value2.startsWith("//")) {
-            items2.push(value2);
+          if (!trimmedLine.startsWith("//")) {
+            docLines.push(trimmedLine);
           }
           continue;
         }
         if (
-          items3.length === 0 &&
-          (value2 === "" || /^[})\]|&,;({]*$/.test(value2))
+          propLines.length === 0 &&
+          (trimmedLine === "" || /^[})\]|&,;({]*$/.test(trimmedLine))
         ) {
-          items2 = [];
+          docLines = [];
           index = 0;
           continue;
         }
-        items3.push(value);
+        propLines.push(value);
         index +=
           countSubstring(value, "{") +
           countSubstring(value, "(") +
@@ -744,53 +744,53 @@ function generateComponentApiCards(
           countSubstring(value, "}") -
           countSubstring(value, ")") -
           countSubstring(value, "]");
-        if (index > 0 && items3.length < 80) {
+        if (index > 0 && propLines.length < 80) {
           continue;
         }
-        let value4 = items3.join(`
+        let propText = propLines.join(`
 `);
-        items3 = [];
+        propLines = [];
         index = 0;
-        let value5 = joinJSDoc(items2).replace(/\s+/g, " ");
-        items2 = [];
-        if (++index2 > maxProps * 4) {
+        let docText = joinJSDoc(docLines).replace(/\s+/g, " ");
+        docLines = [];
+        if (++propCount > maxProps * 4) {
           break;
         }
-        let value6 = propertyPattern.exec(value4),
-          value7 = value6 === null ? methodPattern.exec(value4) : null;
-        if (value6 === null && value7 === null) {
+        let propertyMatch = propertyPattern.exec(propText),
+          methodMatch = propertyMatch === null ? methodPattern.exec(propText) : null;
+        if (propertyMatch === null && methodMatch === null) {
           continue;
         }
-        let value8 = (value6 ?? value7)![1],
-          value9: boolean = (value6 ?? value7)![2] !== undefined,
-          value10 =
-            value6 !== null
-              ? value6[3].replace(/\s*\n\s*/g, " ").trim()
-              : value7![3]
+        let propName = (propertyMatch ?? methodMatch)![1],
+          isOptional: boolean = (propertyMatch ?? methodMatch)![2] !== undefined,
+          propType =
+            propertyMatch !== null
+              ? propertyMatch[3].replace(/\s*\n\s*/g, " ").trim()
+              : methodMatch![3]
                   .replace(/;\s*$/, "")
                   .replace(/\s*\n\s*/g, " ")
                   .replace(/\):\s*/, ") => ");
         if (
-          options.has(value8) ||
-          value10 === "never" ||
-          value5.includes("@internal")
+          omittedProps.has(propName) ||
+          propType === "never" ||
+          docText.includes("@internal")
         ) {
           continue;
         }
-        let value11 = value10.includes("{")
+        let normalizedType = propType.includes("{")
           ? summarizeInlineObject(
-              truncateUnicodeText(value10, maxTypeTextLength * 2),
+              truncateUnicodeText(propType, maxTypeTextLength * 2),
             )
-          : expandType(truncateUnicodeText(value10, maxTypeTextLength * 2));
+          : expandType(truncateUnicodeText(propType, maxTypeTextLength * 2));
         items.push([
-          value8,
-          value9 ? "" : "*",
-          unicodeCharacterCount(value11) > maxTypeTextLength
-            ? truncateUnicodeText(value11, maxTypeTextLength) + "…"
-            : value11,
-          unicodeCharacterCount(value5) > maxTypeTextLength
-            ? truncateUnicodeText(value5, maxTypeTextLength) + "…"
-            : value5,
+          propName,
+          isOptional ? "" : "*",
+          unicodeCharacterCount(normalizedType) > maxTypeTextLength
+            ? truncateUnicodeText(normalizedType, maxTypeTextLength) + "…"
+            : normalizedType,
+          unicodeCharacterCount(docText) > maxTypeTextLength
+            ? truncateUnicodeText(docText, maxTypeTextLength) + "…"
+            : docText,
         ]);
         if (items.length >= maxProps) {
           break;
@@ -798,9 +798,9 @@ function generateComponentApiCards(
       }
       return items;
     },
-    variantPropRows = (input: string): M.DocPropRow[] => {
-      let value = (declarations.get(input) ?? []).find(
-        (input2): boolean => input2[0] === "const",
+    variantPropRows = (componentName: string): M.DocPropRow[] => {
+      let value = (declarations.get(componentName) ?? []).find(
+        (declaration): boolean => declaration[0] === "const",
       );
       if (
         value === undefined ||
@@ -808,17 +808,17 @@ function generateComponentApiCards(
       ) {
         return [];
       }
-      let value2 = lines.slice(value[2] + 1, value[3] + 1);
-      if (!chargeLines(value2)) {
+      let componentLines = lines.slice(value[2] + 1, value[3] + 1);
+      if (!chargeLines(componentLines)) {
         return [];
       }
-      return parsePropRows(value2, keepAllProps).map((input2) => [
-        input2[0],
+      return parsePropRows(componentLines, keepAllProps).map((propRow) => [
+        propRow[0],
         "",
-        splitAtDepthZero(input2[2], "|")
-          .filter((input3) => input3 !== "null" && input3 !== "undefined")
+        splitAtDepthZero(propRow[2], "|")
+          .filter((unionPart) => unionPart !== "null" && unionPart !== "undefined")
           .join(" | "),
-        input2[3],
+        propRow[3],
       ]);
     },
     maxWork: number = 20000,
@@ -834,142 +834,142 @@ function generateComponentApiCards(
       return remainingWork >= 0;
     },
     resolvePropExpression = (
-      input: string,
-      options: Set<string>,
-      context: ReadonlySet<string>,
-      value: string[],
+      expression: string,
+      visitedTypes: Set<string>,
+      omittedProps: ReadonlySet<string>,
+      origins: string[],
     ): M.DocPropRow[] => {
       if (--remainingWork < 0) {
         tooWide = true;
         return [];
       }
-      let value2 = unwrap(input.trim()),
-        value3 = uniqueValues(splitAtDepthZero(value2, "|"));
-      if (value3.length > maxUnionArms) {
+      let unionText = unwrap(expression.trim()),
+        unionParts = uniqueValues(splitAtDepthZero(unionText, "|"));
+      if (unionParts.length > maxUnionArms) {
         tooWide = true;
         return [];
       }
-      if (value3.length > 1) {
-        let value12 = value3.map((input2) =>
+      if (unionParts.length > 1) {
+        let resolvedRows = unionParts.map((option) =>
           resolvePropExpression(
-            input2,
-            new Set(options),
-            context,
-            value,
+            option,
+            new Set(visitedTypes),
+            omittedProps,
+            origins,
           ).slice(0, maxProps),
         );
-        if (value12.every((items): boolean => items.length === 0)) {
+        if (resolvedRows.every((items): boolean => items.length === 0)) {
           return [];
         }
-        let value13 = uniqueValues(
-          value12.flat().map((input2) => input2[0]),
+        let uniqueRows = uniqueValues(
+          resolvedRows.flat().map((row) => row[0]),
         ).slice(0, maxProps);
-        remainingWork -= (value13.length * value12.length * maxProps) / 4096;
+        remainingWork -= (uniqueRows.length * resolvedRows.length * maxProps) / 4096;
         if (remainingWork < 0) {
           tooWide = true;
           return [];
         }
-        return value13.map((input2) => {
-          let value14 = value12
-              .map((input3) =>
-                input3.find((input4): boolean => input4[0] === input2),
+        return uniqueRows.map((rowName) => {
+          let rowGroups = resolvedRows
+              .map((candidateRow) =>
+                candidateRow.find((matchingRow): boolean => matchingRow[0] === rowName),
               )
               .filter(
-                (input3): input3 is M.DocPropRow => input3 !== undefined,
+                (row): row is M.DocPropRow => row !== undefined,
               ),
-            value15: boolean =
-              value14.length ===
-              value12.filter((items): boolean => items.length > 0).length;
+            allOptional: boolean =
+              rowGroups.length ===
+              resolvedRows.filter((items): boolean => items.length > 0).length;
           return [
-            input2,
-            value15 && value14.every((input3): boolean => input3[1] === "*")
+            rowName,
+            allOptional && rowGroups.every((row): boolean => row[1] === "*")
               ? "*"
               : "",
-            value14.map((input3) => input3[2]).reduce(mergeUnion),
-            value14.find((input3): boolean => input3[3] !== "")?.[3] ?? "",
+            rowGroups.map((row) => row[2]).reduce(mergeUnion),
+            rowGroups.find((row): boolean => row[3] !== "")?.[3] ?? "",
           ];
         });
       }
-      let value4 = splitAtDepthZero(value2, "&").map(unwrap);
-      if (value4.length > 1) {
+      let intersectionParts = splitAtDepthZero(unionText, "&").map(unwrap);
+      if (intersectionParts.length > 1) {
         return mergePropRows(
-          value4.flatMap((input2) =>
-            resolvePropExpression(input2, options, context, value).map(
-              (input3) => [input3, "own"],
+          intersectionParts.flatMap((part) =>
+            resolvePropExpression(part, visitedTypes, omittedProps, origins).map(
+              (row) => [row, "own"],
             ),
           ),
         );
       }
-      let value5 = value4[0] ?? "";
-      if (value5.startsWith("{")) {
-        let value12 = value5.slice(1, value5.lastIndexOf("}"));
+      let baseExpression = intersectionParts[0] ?? "";
+      if (baseExpression.startsWith("{")) {
+        let objectBody = baseExpression.slice(1, baseExpression.lastIndexOf("}"));
         return parsePropRows(
-          value12.includes(`
+          objectBody.includes(`
 `)
-            ? value12.split(`
+            ? objectBody.split(`
 `)
-            : splitAtDepthZero(value12, ";").map(
-                (input2): string => "  " + input2 + ";",
+            : splitAtDepthZero(objectBody, ";").map(
+                (line): string => "  " + line + ";",
               ),
-          context,
+          omittedProps,
         );
       }
-      if (value5 !== value2 && value5.includes("|")) {
-        return resolvePropExpression(value5, options, context, value);
+      if (baseExpression !== unionText && baseExpression.includes("|")) {
+        return resolvePropExpression(baseExpression, visitedTypes, omittedProps, origins);
       }
-      let value6 = /^VariantProps<typeof ([\w$]+)>$/.exec(value5);
-      if (value6 !== null) {
-        return variantPropRows(value6[1]);
+      let variantMatch = /^VariantProps<typeof ([\w$]+)>$/.exec(baseExpression);
+      if (variantMatch !== null) {
+        return variantPropRows(variantMatch[1]);
       }
-      let value7 =
+      let genericMatch =
           /^(\w*Omit|Pick|Partial|Readonly|Required)<\s*([A-Za-z_$][\w$]*)\s*(?:<(?:[^<>]|<[^<>]*>)*>)?\s*(?:,([\s\S]*))?>$/.exec(
-            value5,
+            baseExpression,
           ),
-        value8 = value7 !== null ? value7[2] : value5.split("<")[0].trim(),
-        value9 = identifierPattern.test(value8)
-          ? firstDeclaration(value8)?.[0]
+        resolvedTypeName = genericMatch !== null ? genericMatch[2] : baseExpression.split("<")[0].trim(),
+        declarationKind = identifierPattern.test(resolvedTypeName)
+          ? firstDeclaration(resolvedTypeName)?.[0]
           : undefined;
       if (
-        !(value9 === "interface" || value9 === "type") ||
-        externalTypePattern.test(value8)
+        !(declarationKind === "interface" || declarationKind === "type") ||
+        externalTypePattern.test(resolvedTypeName)
       ) {
-        if (/^[A-Za-z_$][\w$.]*(?:<[\s\S]*>)?(?:\[[^\]]*\])?$/.test(value5)) {
-          value.push(value5);
+        if (/^[A-Za-z_$][\w$.]*(?:<[\s\S]*>)?(?:\[[^\]]*\])?$/.test(baseExpression)) {
+          origins.push(baseExpression);
         }
         return [];
       }
-      let [value10, value11] = resolveNamedProps(value8, options, context);
-      if (value7 !== null && value10.length === 0) {
-        value.push(value5);
+      let [namedRows, inheritedRows] = resolveNamedProps(resolvedTypeName, visitedTypes, omittedProps);
+      if (genericMatch !== null && namedRows.length === 0) {
+        origins.push(baseExpression);
         return [];
       }
-      if (value7 !== null) {
+      if (genericMatch !== null) {
         let values = new Set(
-          [...(value7[3] ?? "").matchAll(/"([^"]+)"/g)].map(
-            (input2) => input2[1],
+          [...(genericMatch[3] ?? "").matchAll(/"([^"]+)"/g)].map(
+            (row) => row[1],
           ),
         );
-        if (value7[1].endsWith("Omit")) {
-          value10 = value10.filter(
-            (input2): boolean => !values.has(input2[0]),
+        if (genericMatch[1].endsWith("Omit")) {
+          namedRows = namedRows.filter(
+            (row): boolean => !values.has(row[0]),
           );
-        } else if (value7[1] === "Pick") {
-          value10 = value10.filter((input2) => values.has(input2[0]));
-        } else if (value7[1] === "Partial") {
-          value10 = value10.map((input2) => [
-            input2[0],
+        } else if (genericMatch[1] === "Pick") {
+          namedRows = namedRows.filter((row) => values.has(row[0]));
+        } else if (genericMatch[1] === "Partial") {
+          namedRows = namedRows.map((row) => [
+            row[0],
             "",
-            input2[2],
-            input2[3],
+            row[2],
+            row[3],
           ]);
         }
       }
-      value.push(...value11);
-      return value10;
+      origins.push(...inheritedRows);
+      return namedRows;
     },
-    mergePropRows = (input: readonly M.DocPropOrigin[]): M.DocPropRow[] => {
+    mergePropRows = (origins: readonly M.DocPropOrigin[]): M.DocPropRow[] => {
       let entries = new Map<string, M.DocPropRow>();
-      for (let [value] of input) {
+      for (let [value] of origins) {
         let entry = entries.get(value[0]);
         entries.set(
           value[0],
@@ -981,383 +981,383 @@ function generateComponentApiCards(
       return [...entries.values()];
     },
     resolveNamedProps = (
-      input: string,
-      options = new Set<string>(),
-      context: ReadonlySet<string> = omittedStandardProps,
+      componentName: string,
+      visitedTypes = new Set<string>(),
+      omittedProps: ReadonlySet<string> = omittedStandardProps,
     ): M.DocResolvedProps => {
-      let value = firstDeclaration(input);
-      if (options.size === 0) {
+      let value = firstDeclaration(componentName);
+      if (visitedTypes.size === 0) {
         tooWide = false;
       }
-      if (options.has(input) || value === undefined || options.size > 40) {
+      if (visitedTypes.has(componentName) || value === undefined || visitedTypes.size > 40) {
         return [[], [], null];
       }
       if (--remainingWork < 0) {
         return [[], [], wideTypeSentinel];
       }
-      options.add(input);
+      visitedTypes.add(componentName);
       let items: string[] = [],
-        value2 = lines.slice(value[2], value[3] + 1);
-      if (!chargeLines(value2)) {
+        declarationLines = lines.slice(value[2], value[3] + 1);
+      if (!chargeLines(declarationLines)) {
         return [[], [], wideTypeSentinel];
       }
-      let value3 = value2[0].replace(
+      let firstLine = declarationLines[0].replace(
           new RegExp(
             "^((?:export )?(?:declare )?(?:interface|type) " +
-              input.replace(/\$/g, "\\$") +
+              componentName.replace(/\$/g, "\\$") +
               ")<(?:[^<>]|<[^<>]*>)*>",
           ),
           "$1",
         ),
-        value4: M.DocPropRow[];
+        propRows: M.DocPropRow[];
       if (value[0] === "type") {
-        let value7 = [value3, ...value2.slice(1)].join(`
+        let signature = [firstLine, ...declarationLines.slice(1)].join(`
 `);
-        value4 = resolvePropExpression(
-          value7
-            .slice(findTopLevelDelimiter(value7, "=") + 1)
+        propRows = resolvePropExpression(
+          signature
+            .slice(findTopLevelDelimiter(signature, "=") + 1)
             .replace(/;\s*$/, ""),
-          options,
-          context,
+          visitedTypes,
+          omittedProps,
           items,
         );
       } else {
-        let items2: M.DocPropOrigin[] = [];
-        for (let value8 of value3.matchAll(/\bextends ([^{]+)\{/g)) {
-          for (let value9 of splitTypeArguments(value8[1])) {
-            items2.push(
-              ...resolvePropExpression(value9, options, context, items).map(
-                (input2): M.DocPropOrigin => [input2, "base"],
+        let baseProps: M.DocPropOrigin[] = [];
+        for (let extendsMatch of firstLine.matchAll(/\bextends ([^{]+)\{/g)) {
+          for (let baseTypeName of splitTypeArguments(extendsMatch[1])) {
+            baseProps.push(
+              ...resolvePropExpression(baseTypeName, visitedTypes, omittedProps, items).map(
+                (baseType): M.DocPropOrigin => [baseType, "base"],
               ),
             );
           }
         }
-        let value7 =
-          value2.length === 1
-            ? /\{([^{}]*)\}\s*\)?;?\s*$/.exec(value3)
+        let objectMatch =
+          declarationLines.length === 1
+            ? /\{([^{}]*)\}\s*\)?;?\s*$/.exec(firstLine)
             : null;
-        items2.push(
+        baseProps.push(
           ...parsePropRows(
-            value7 !== null
-              ? value7[1]
+            objectMatch !== null
+              ? objectMatch[1]
                   .split(";")
-                  .map((input2): string => "  " + input2.trim() + ";")
-              : value2.slice(1),
-            context,
-          ).map((input2): M.DocPropOrigin => [input2, "own"]),
+                  .map((line): string => "  " + line.trim() + ";")
+              : declarationLines.slice(1),
+            omittedProps,
+          ).map((line): M.DocPropOrigin => [line, "own"]),
         );
-        value4 = mergePropRows(items2);
+        propRows = mergePropRows(baseProps);
       }
-      if (value4.length > maxProps) {
-        value4 = value4.slice(0, maxProps);
+      if (propRows.length > maxProps) {
+        propRows = propRows.slice(0, maxProps);
       }
-      let value5 =
-          value4.length === 0 && !tooWide
-            ? value2.map((input2) => input2.trim()).join(" ")
+      let propType =
+          propRows.length === 0 && !tooWide
+            ? declarationLines.map((line) => line.trim()).join(" ")
             : "",
-        value6 =
-          tooWide && value4.length === 0
+        inlineProps =
+          tooWide && propRows.length === 0
             ? wideTypeSentinel
             : value[0] === "type" &&
-                value4.length === 0 &&
-                !value5.includes("{")
-              ? value5
-                  .slice(findTopLevelDelimiter(value5, "=") + 1)
+                propRows.length === 0 &&
+                !propType.includes("{")
+              ? propType
+                  .slice(findTopLevelDelimiter(propType, "=") + 1)
                   .replace(/;\s*$/, "")
                   .trim() || null
               : null;
-      return [value4, uniqueValues(items), value6];
+      return [propRows, uniqueValues(items), inlineProps];
     },
     propsNamePattern: RegExp =
       /\b((?:import\("[^"]+"\)\.)?[A-Z][\w$]*(?:\.[A-Z][\w$]*)*?(?:\.Props|Props(?:\$\d+)?))\b/,
-    componentPropsType = (input: string): string | null => {
-      if (declarations.has(input + "Props")) {
-        return input + "Props";
+    componentPropsType = (componentName: string): string | null => {
+      if (declarations.has(componentName + "Props")) {
+        return componentName + "Props";
       }
-      if (declarations.has(input + "RootProps")) {
-        return input + "RootProps";
+      if (declarations.has(componentName + "RootProps")) {
+        return componentName + "RootProps";
       }
-      for (let value of declarations.get(input) ?? []) {
+      for (let value of declarations.get(componentName) ?? []) {
         if (value[0] !== "function" && value[0] !== "const") {
           continue;
         }
-        let value2 =
+        let propsType =
           value[0] === "function"
             ? lines.slice(value[2], value[3] + 1).join(`
 `)
             : lines[value[2]].includes("{")
               ? lines[value[2]].slice(0, lines[value[2]].indexOf("{"))
               : lines[value[2]];
-        for (let value4 of value2.matchAll(
+        for (let propsMatch of propsType.matchAll(
           /\b([A-Z][\w$]*Props(?:\$\d+)?)\b(?!\.)/g,
         )) {
-          let value5 = firstDeclaration(value4[1])?.[0];
-          if (value5 === "interface" || value5 === "type") {
-            return value4[1];
+          let declarationKind = firstDeclaration(propsMatch[1])?.[0];
+          if (declarationKind === "interface" || declarationKind === "type") {
+            return propsMatch[1];
           }
         }
-        let value3 = propsNamePattern.exec(
-          value2.replace(/RefAttributes<[^>]*>/g, ""),
+        let importedProps = propsNamePattern.exec(
+          propsType.replace(/RefAttributes<[^>]*>/g, ""),
         )?.[1];
         if (
-          value3 !== undefined &&
-          firstDeclaration(value3) === undefined &&
-          /[.$]|^import/.test(value3) &&
-          !/^(?:import\("react"\)|React)\./.test(value3) &&
-          inlineComponentProps(input).length === 0
+          importedProps !== undefined &&
+          firstDeclaration(importedProps) === undefined &&
+          /[.$]|^import/.test(importedProps) &&
+          !/^(?:import\("react"\)|React)\./.test(importedProps) &&
+          inlineComponentProps(componentName).length === 0
         ) {
-          return value3;
+          return importedProps;
         }
       }
       return null;
     },
-    wrappedComponentType = (input: string): string | null => {
-      for (let value of declarations.get(input) ?? []) {
+    wrappedComponentType = (componentName: string): string | null => {
+      for (let value of declarations.get(componentName) ?? []) {
         if (value[0] !== "const") {
           continue;
         }
-        let value2 = /:\s*typeof ([\w$]+)\s*&/.exec(lines[value[2]]);
-        if (value2) {
-          return value2[1];
+        let wrappedMatch = /:\s*typeof ([\w$]+)\s*&/.exec(lines[value[2]]);
+        if (wrappedMatch) {
+          return wrappedMatch[1];
         }
       }
       return null;
     },
     inlineComponentProps = (
-      input: string,
-      options?: readonly string[],
+      componentName: string,
+      preferredOptions?: readonly string[],
     ): M.DocPropRow[] => {
-      let value = (declarations.get(input) ?? []).find(
-          (input2) => input2[0] === "function" || input2[0] === "const",
+      let value = (declarations.get(componentName) ?? []).find(
+          (declaration) => declaration[0] === "function" || declaration[0] === "const",
         ),
-        value2 =
-          options ??
+        declarationLines =
+          preferredOptions ??
           (value === undefined ? [] : lines.slice(value[2], value[3] + 1));
-      if (value2.length === 0) {
+      if (declarationLines.length === 0) {
         return [];
       }
       if (
-        options === undefined &&
+        preferredOptions === undefined &&
         /^(?:export )?declare const [\w$]+:\s*(?:typeof [\w$]+\s*&\s*)?\{\s*$/.test(
-          value2[0].trim(),
+          declarationLines[0].trim(),
         )
       ) {
         return [];
       }
-      let value3 =
-        value2.length === 1
-          ? /[)}\w>]\s*[:&<]\s*\{([^{}]*)\}\s*[)>&]/.exec(value2[0])
+      let propsMatch =
+        declarationLines.length === 1
+          ? /[)}\w>]\s*[:&<]\s*\{([^{}]*)\}\s*[)>&]/.exec(declarationLines[0])
           : null;
-      if (value3 !== null) {
+      if (propsMatch !== null) {
         return parsePropRows(
-          value3[1]
+          propsMatch[1]
             .split(";")
-            .map((input2): string => "  " + input2.trim() + ";"),
+            .map((line): string => "  " + line.trim() + ";"),
           omittedStandardProps,
         );
       }
-      let value4 = value2.findIndex(
-        (input2: string, options2: number) =>
-          /(?:\}\s*:|\bprops\??\s*:|&|<)\s*\{\s*$/.test(input2) &&
+      let propsStart = declarationLines.findIndex(
+        (line: string, lineIndex: number) =>
+          /(?:\}\s*:|\bprops\??\s*:|&|<)\s*\{\s*$/.test(line) &&
           !(
-            options2 === 0 &&
-            /^(?:export )?declare const \w+: \{\s*$/.test(input2.trim())
+            lineIndex === 0 &&
+            /^(?:export )?declare const \w+: \{\s*$/.test(line.trim())
           ),
       );
-      if (value4 === -1) {
+      if (propsStart === -1) {
         return [];
       }
       let index = 0,
-        value5 = value4 + 1;
-      for (let value6 = value4; value6 < value2.length; value6++) {
+        propsEnd = propsStart + 1;
+      for (let lineIndex = propsStart; lineIndex < declarationLines.length; lineIndex++) {
         index +=
-          countSubstring(value2[value6], "{") -
-          countSubstring(value2[value6], "}");
-        if (value6 > value4 && index <= 0) {
-          value5 = value6;
+          countSubstring(declarationLines[lineIndex], "{") -
+          countSubstring(declarationLines[lineIndex], "}");
+        if (lineIndex > propsStart && index <= 0) {
+          propsEnd = lineIndex;
           break;
         }
-        value5 = value6 + 1;
+        propsEnd = lineIndex + 1;
       }
       return parsePropRows(
-        value2.slice(value4 + 1, value5),
+        declarationLines.slice(propsStart + 1, propsEnd),
         omittedStandardProps,
       );
     },
-    componentParts = (input: string): M.DocComponentParts => {
+    componentParts = (componentName: string): M.DocComponentParts => {
       let callback = (
-        input2: string,
-        options: readonly string[] | null,
+        typeText: string,
+        typeOptions: readonly string[] | null,
       ): [string | null, M.DocPropRow[] | null] => {
-        let value3 = /\btypeof ([\w$]+(?:\.[\w$]+)*)/.exec(input2)?.[1];
-        if (value3 !== undefined && value3.includes(".")) {
-          return [value3 + ".Props", null];
+        let typeofMatch = /\btypeof ([\w$]+(?:\.[\w$]+)*)/.exec(typeText)?.[1];
+        if (typeofMatch !== undefined && typeofMatch.includes(".")) {
+          return [typeofMatch + ".Props", null];
         }
-        let value4 = value3,
-          value5 = value4 !== undefined ? componentPropsType(value4) : null,
-          value6 =
-            value4 !== undefined
+        let resolvedPropsType = typeofMatch,
+          propsDeclaration = resolvedPropsType !== undefined ? componentPropsType(resolvedPropsType) : null,
+          inlineDeclaration =
+            resolvedPropsType !== undefined
               ? ""
-              : input2.replace(/RefAttributes<[^>]*>/g, "");
-        if (value4 === undefined && /^\s*\(/.test(input2)) {
-          let value11 = (options ?? [input2]).join(`
+              : typeText.replace(/RefAttributes<[^>]*>/g, "");
+        if (resolvedPropsType === undefined && /^\s*\(/.test(typeText)) {
+          let joinedOptions = (typeOptions ?? [typeText]).join(`
 `),
-            value12 =
+            namedType =
               /\(\s*[\w$]+\s*:\s*([A-Z][\w$.]*(?:<[^>]*>)?)\s*\)\s*=>/.exec(
-                value11,
+                joinedOptions,
               )?.[1];
-          if (value12 !== undefined) {
-            return [value12, null];
+          if (namedType !== undefined) {
+            return [namedType, null];
           }
-          if (/^\s*\(\s*\)\s*=>/.test(input2)) {
+          if (/^\s*\(\s*\)\s*=>/.test(typeText)) {
             return [null, []];
           }
           return [
             null,
-            options !== null
-              ? inlineComponentProps("", options)
+            typeOptions !== null
+              ? inlineComponentProps("", typeOptions)
               : inlineComponentProps("", [
-                  input2.replace(
+                  typeText.replace(
                     /^(\s*\([^)]*?:\s*\{)/,
                     "declare function x(p: {",
                   ),
                 ]),
           ];
         }
-        let value7 =
+        let componentType =
             /(?<![").$\w])\b([A-Z][\w$]*Props(?:\$\d+)?)\b(?!\.)/.exec(
-              value6,
+              inlineDeclaration,
             )?.[1],
-          value8 =
-            (value7 !== undefined && firstDeclaration(value7) !== undefined
-              ? value7
+          propsTypeName =
+            (componentType !== undefined && firstDeclaration(componentType) !== undefined
+              ? componentType
               : undefined) ??
-            value5 ??
-            propsNamePattern.exec(value6)?.[1] ??
-            value7 ??
-            (/^\s*[\w$]+\$\d+(?:\.[A-Z][\w$]*)+\s*[;&]/.test(input2)
-              ? input2.trim().replace(/\s*[;&][\s\S]*$/, "") + ".Props"
+            propsDeclaration ??
+            propsNamePattern.exec(inlineDeclaration)?.[1] ??
+            componentType ??
+            (/^\s*[\w$]+\$\d+(?:\.[A-Z][\w$]*)+\s*[;&]/.test(typeText)
+              ? typeText.trim().replace(/\s*[;&][\s\S]*$/, "") + ".Props"
               : undefined),
-          value9 =
-            options !== null &&
-            /(?:Component|FC|ComponentType)<[^{]*\{\s*$/.test(options[0])
-              ? options
+          inlineType =
+            typeOptions !== null &&
+            /(?:Component|FC|ComponentType)<[^{]*\{\s*$/.test(typeOptions[0])
+              ? typeOptions
               : null;
-        if (value8 !== null && value8 !== undefined) {
-          if (value9 === null || firstDeclaration(value8) === undefined) {
-            return [value8, null];
+        if (propsTypeName !== null && propsTypeName !== undefined) {
+          if (inlineType === null || firstDeclaration(propsTypeName) === undefined) {
+            return [propsTypeName, null];
           }
-          let value11 = inlineComponentProps("", value9);
-          if (value11.length === 0) {
-            return [value8, null];
+          let inlineProps = inlineComponentProps("", inlineType);
+          if (inlineProps.length === 0) {
+            return [propsTypeName, null];
           }
           return [
             null,
             [
-              ...resolveNamedProps(value8)[0].filter(
-                (input3): boolean =>
-                  !value11.some((input4): boolean => input4[0] === input3[0]),
+              ...resolveNamedProps(propsTypeName)[0].filter(
+                (prop): boolean =>
+                  !inlineProps.some((existingProp): boolean => existingProp[0] === prop[0]),
               ),
-              ...value11,
+              ...inlineProps,
             ],
           ];
         }
-        let value10 =
-          value4 !== undefined
-            ? inlineComponentProps(value4)
-            : value9 !== null
-              ? inlineComponentProps("", value9)
+        let componentProps =
+          resolvedPropsType !== undefined
+            ? inlineComponentProps(resolvedPropsType)
+            : inlineType !== null
+              ? inlineComponentProps("", inlineType)
               : [];
         return [
           null,
-          value10.length > 0 || value9 !== null || value4 !== undefined
-            ? value10
+          componentProps.length > 0 || inlineType !== null || resolvedPropsType !== undefined
+            ? componentProps
             : null,
         ];
       };
-      for (let [value3, , value4, value5] of declarations.get(input) ?? []) {
-        if (value3 !== "const") {
+      for (let [declarationKind, , startLine, endLine] of declarations.get(componentName) ?? []) {
+        if (declarationKind !== "const") {
           continue;
         }
-        let value6 = lines[value4],
-          value7 = /:\s*typeof [\w$]+\s*&|:\s*\(/.test(value6);
+        let componentLine = lines[startLine],
+          callable = /:\s*typeof [\w$]+\s*&|:\s*\(/.test(componentLine);
         if (
-          !/^(?:export )?declare const \w+: \{/.test(value6) &&
-          !value6.includes("& {")
+          !/^(?:export )?declare const \w+: \{/.test(componentLine) &&
+          !componentLine.includes("& {")
         ) {
           continue;
         }
         let items: M.DocComponentPart[] = [],
           index = 0,
-          value8 = lines.slice(value4, value5 + 1);
-        for (let index2: number = 0; index2 < value8.length; index2++) {
-          let value9 = value8[index2],
-            value10 = index;
-          index += countSubstring(value9, "{") - countSubstring(value9, "}");
-          let value11 =
-            value10 === 1
-              ? /^\s+(?:readonly )?([A-Z]\w*)\??:/.exec(value9)
+          componentLines = lines.slice(startLine, endLine + 1);
+        for (let lineIndex: number = 0; lineIndex < componentLines.length; lineIndex++) {
+          let line = componentLines[lineIndex],
+            startDepth = index;
+          index += countSubstring(line, "{") - countSubstring(line, "}");
+          let propMatch =
+            startDepth === 1
+              ? /^\s+(?:readonly )?([A-Z]\w*)\??:/.exec(line)
               : null;
-          if (value11 === null) {
+          if (propMatch === null) {
             continue;
           }
-          let value12 = index2;
+          let scanIndex = lineIndex;
           if (index > 1) {
-            let value15 = index;
+            let scanDepth = index;
             for (
-              value12 = index2 + 1;
-              value12 < value8.length && value15 > 1;
-              value12++
+              scanIndex = lineIndex + 1;
+              scanIndex < componentLines.length && scanDepth > 1;
+              scanIndex++
             ) {
-              value15 +=
-                countSubstring(value8[value12], "{") -
-                countSubstring(value8[value12], "}");
+              scanDepth +=
+                countSubstring(componentLines[scanIndex], "{") -
+                countSubstring(componentLines[scanIndex], "}");
             }
-            value12--;
+            scanIndex--;
           }
-          let [value13, value14] = callback(
-            value9.slice(value11[0].length),
-            value12 > index2 ? value8.slice(index2, value12 + 1) : null,
+          let [propType, propSource] = callback(
+            line.slice(propMatch[0].length),
+            scanIndex > lineIndex ? componentLines.slice(lineIndex, scanIndex + 1) : null,
           );
-          items.push([value11[1], value13, value14]);
+          items.push([propMatch[1], propType, propSource]);
         }
         return {
           parts: items,
-          callable: value7,
+          callable: callable,
         };
       }
       let value = [...exportsByName].find(
-          ([input2, input3]) => input3 === input && input2 !== input,
+          ([name, declaredName]) => declaredName === componentName && name !== componentName,
         )?.[0],
-        value2 =
+        namespaceDeclaration =
           value !== undefined
             ? (declarations.get(value) ?? []).find(
-                (input2): boolean => input2[0] === "namespace",
+                (declaration): boolean => declaration[0] === "namespace",
               )
             : undefined;
-      if (value2 !== undefined) {
+      if (namespaceDeclaration !== undefined) {
         let items: M.DocComponentPart[] = [];
-        for (let value3 of lines.slice(value2[2], value2[3] + 1)) {
-          let value4 = /^\s*export \{([^}]*)\}/.exec(value3);
-          if (value4 === null) {
+        for (let line of lines.slice(namespaceDeclaration[2], namespaceDeclaration[3] + 1)) {
+          let exportMatch = /^\s*export \{([^}]*)\}/.exec(line);
+          if (exportMatch === null) {
             continue;
           }
-          for (let value5 of value4[1].split(",")) {
-            let value6 = /^\s*([\w$]+)\s+as\s+([A-Z][\w$]*)\s*$/.exec(value5);
-            if (value6 === null) {
+          for (let exportText of exportMatch[1].split(",")) {
+            let aliasMatch = /^\s*([\w$]+)\s+as\s+([A-Z][\w$]*)\s*$/.exec(exportText);
+            if (aliasMatch === null) {
               continue;
             }
-            let value7 = firstDeclaration(value6[1])?.[0];
+            let declarationKind = firstDeclaration(aliasMatch[1])?.[0];
             if (
-              value7 === "const" ||
-              value7 === "function" ||
-              value7 === "class"
+              declarationKind === "const" ||
+              declarationKind === "function" ||
+              declarationKind === "class"
             ) {
               items.push([
-                value6[2],
-                componentPropsType(value6[1]),
-                componentPropsType(value6[1]) === null
-                  ? inlineComponentProps(value6[1])
+                aliasMatch[2],
+                componentPropsType(aliasMatch[1]),
+                componentPropsType(aliasMatch[1]) === null
+                  ? inlineComponentProps(aliasMatch[1])
                   : null,
               ]);
             }
@@ -1376,36 +1376,36 @@ function generateComponentApiCards(
       };
     },
     documentedComponentNames = new Set(
-      facts.comps.map((input) => input.name),
+      facts.comps.map((component) => component.name),
     ),
-    isComponentDeclaration = (input: string) =>
-      (declarations.get(input) ?? []).some(
-        (input2) =>
-          (input2[0] === "function" &&
+    isComponentDeclaration = (name: string) =>
+      (declarations.get(name) ?? []).some(
+        (declaration) =>
+          (declaration[0] === "function" &&
             /\):\s*(?:React\.|import\("react"\)\.)?(?:JSX\.Element|ReactElement|ReactNode)/.test(
-              lines.slice(input2[2], input2[3] + 1).join(" "),
+              lines.slice(declaration[2], declaration[3] + 1).join(" "),
             )) ||
-          (input2[0] === "const" &&
+          (declaration[0] === "const" &&
             /(?:ForwardRefExoticComponent|FC|FunctionComponent|NamedExoticComponent|MemoExoticComponent|ComponentType)</.test(
-              lines[input2[2]],
+              lines[declaration[2]],
             )) ||
-          input2[0] === "class",
+          declaration[0] === "class",
       ),
     relatedComponents = (items: string) =>
       [...declarations.keys()]
         .filter(
-          (input) =>
-            input.startsWith(items) &&
-            input !== items &&
-            /^[A-Z]/.test(input.slice(items.length)) &&
-            !input.endsWith("Props") &&
-            !documentedComponentNames.has(input) &&
-            !/(?:Context|Provider|Variants)$/.test(input),
+          (name) =>
+            name.startsWith(items) &&
+            name !== items &&
+            /^[A-Z]/.test(name.slice(items.length)) &&
+            !name.endsWith("Props") &&
+            !documentedComponentNames.has(name) &&
+            !/(?:Context|Provider|Variants)$/.test(name),
         )
         .filter(
-          (input) =>
-            (hasExportList ? exportsByName.get(input) === input : true) &&
-            isComponentDeclaration(input),
+          (name) =>
+            (hasExportList ? exportsByName.get(name) === name : true) &&
+            isComponentDeclaration(name),
         )
         .slice(0, 12),
     maxRefinedEnumOptions: number = 40,
@@ -1414,35 +1414,35 @@ function generateComponentApiCards(
       Math.floor(400000000 / Math.max(1, (declarationText ?? "").length)),
     ),
     refineEnumProps = (
-      input: string,
+      componentName: string,
       items: M.DocPropRow[],
     ): M.DocPropRow[] => {
       if (
         items.length === 0 ||
-        !/Props(?:\$\d+)?$/.test(input) ||
+        !/Props(?:\$\d+)?$/.test(componentName) ||
         refinementBudget <= 0
       ) {
         return items;
       }
       let value: string = `(?:"[^"]*"|'[^']*'|-?\\d[\\d.]*|true|false|null|undefined|string|number|boolean|ReactNode|ReactElement|React\\.\\w+|IconName|Date|CSSProperties)(?:\\[\\])?`,
-        value2 = new RegExp(
+        namePattern = new RegExp(
           "^(?:" +
             value +
             "(?:\\s*\\|\\s*" +
             value +
             ")*|\\([\\s\\S]*|\\{[\\s\\S]*)$",
         );
-      if (items.every((input2) => value2.test(input2[2]))) {
+      if (items.every((prop) => namePattern.test(prop[2]))) {
         return items;
       }
-      let value3: Core.InferredPropControl[];
+      let controls: Core.InferredPropControl[];
       try {
         refinementBudget--;
-        value3 = inferComponentPropControls(
-          input.replace(/Props(?:\$\d+)?$/, ""),
+        controls = inferComponentPropControls(
+          componentName.replace(/Props(?:\$\d+)?$/, ""),
           [declarationText ?? ""],
           {
-            keep: items.map((input2) => input2[0]),
+            keep: items.map((prop) => prop[0]),
           },
         );
         if (wasTypeInferenceIncomplete()) {
@@ -1452,12 +1452,12 @@ function generateComponentApiCards(
         refinementBudget = 0;
         return items;
       }
-      let entries = new Map(value3.map((input2) => [input2.name, input2]));
-      return items.map((input2) => {
-        if (value2.test(input2[2])) {
-          return input2;
+      let entries = new Map(controls.map((control) => [control.name, control]));
+      return items.map((prop) => {
+        if (namePattern.test(prop[2])) {
+          return prop;
         }
-        let entry = entries.get(input2[0]);
+        let entry = entries.get(prop[0]);
         if (
           entry === undefined ||
           entry.kind !== "enum" ||
@@ -1465,339 +1465,339 @@ function generateComponentApiCards(
           entry.options.length === 0 ||
           entry.options.length > maxRefinedEnumOptions
         ) {
-          return input2;
+          return prop;
         }
-        let value4 = splitAtDepthZero(input2[2], "|"),
-          value5 = value4.filter((input3) => /^"[^"]*"$/.test(input3)),
-          value6 = entry.options.map((input3) =>
+        let unionOptions = splitAtDepthZero(prop[2], "|"),
+          literalOptions = unionOptions.filter((option) => /^"[^"]*"$/.test(option)),
+          controlOptions = entry.options.map((option) =>
             entry.numeric === true ||
             (entry.withBool === true &&
-              (input3 === "true" || input3 === "false"))
-              ? input3
-              : '"' + input3 + '"',
+              (option === "true" || option === "false"))
+              ? option
+              : '"' + option + '"',
           );
         if (
-          value5.length > 0 &&
-          (value5.length <
-            value4.filter(
-              (input3): boolean =>
+          literalOptions.length > 0 &&
+          (literalOptions.length <
+            unionOptions.filter(
+              (option): boolean =>
                 !/^(?:string|number|boolean|true|false|null|undefined)$/.test(
-                  input3,
+                  option,
                 ),
             ).length ||
-            !value5.every((input3) => value6.includes(input3)))
+            !literalOptions.every((option) => controlOptions.includes(option)))
         ) {
-          return input2;
+          return prop;
         }
         if (
-          /\bstring\b/.test(input2[2]) ||
-          /string\s*&/.test(typeAliases.get(input2[2]) ?? "")
+          /\bstring\b/.test(prop[2]) ||
+          /string\s*&/.test(typeAliases.get(prop[2]) ?? "")
         ) {
-          value6.push("string");
+          controlOptions.push("string");
         }
-        return [input2[0], input2[1], value6.join(" | "), input2[3]];
+        return [prop[0], prop[1], controlOptions.join(" | "), prop[3]];
       });
     },
-    kebabPropName = (input: string) =>
-      input.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(),
+    kebabPropName = (name: string) =>
+      name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(),
     maxExampleLength: number = 600,
     componentExamples = (
       items: string,
-      options: M.DocPropRow[],
-      context: string,
-      value = "",
-      extra = new Set<string>(),
+      props: M.DocPropRow[],
+      docs: string,
+      prefix = "",
+      extraNames = new Set<string>(),
     ): [string, string] => {
-      let value2 = items.replace(/\$/g, "\\$"),
-        value3 = qualifiedName(items) + value,
+      let escapedName = items.replace(/\$/g, "\\$"),
+        qualifiedComponentName = qualifiedName(items) + prefix,
         callback = (): [string, string] => {
-          let value14 = options
-              .filter((input) => input[1] === "*" && input[0] !== "children")
+          let requiredProps = props
+              .filter((prop) => prop[1] === "*" && prop[0] !== "children")
               .slice(0, 3),
-            value15 = value14
-              .map(([input, , input2]): string => {
-                let value18 = /^"[^"]*"/.exec(input2.trim());
+            openingProps = requiredProps
+              .map(([propName, , propType]): string => {
+                let literalMatch = /^"[^"]*"/.exec(propType.trim());
                 return (
                   " " +
-                  input +
-                  (value18
-                    ? "=" + value18[0]
-                    : input2 === "string"
+                  propName +
+                  (literalMatch
+                    ? "=" + literalMatch[0]
+                    : propType === "string"
                       ? '="…"'
-                      : input2 === "number"
+                      : propType === "number"
                         ? "={0}"
-                        : input2 === "boolean" || input2 === "true"
+                        : propType === "boolean" || propType === "true"
                           ? ""
                           : "={…}")
                 );
               })
               .join(""),
-            value16 = value14
-              .map(([input, , input2]): string => {
-                let value18 = /^"[^"]*"/.exec(input2.trim());
+            optionalProps = requiredProps
+              .map(([propName, , propType]): string => {
+                let literalMatch = /^"[^"]*"/.exec(propType.trim());
                 return (
                   " " +
-                  kebabPropName(input) +
+                  kebabPropName(propName) +
                   "=" +
-                  (value18
-                    ? value18[0]
-                    : input2 === "string"
+                  (literalMatch
+                    ? literalMatch[0]
+                    : propType === "string"
                       ? '"…"'
-                      : input2 === "number"
+                      : propType === "number"
                         ? '"{{0}}"'
-                        : input2 === "boolean" || input2 === "true"
+                        : propType === "boolean" || propType === "true"
                           ? '"{{yes}}"'
                           : '"{{…}}"')
                 );
               })
               .join(""),
-            value17 =
-              value !== "" ||
-              options.some((input): boolean => input[0] === "children");
+            ellipsis =
+              prefix !== "" ||
+              props.some((prop): boolean => prop[0] === "children");
           return [
-            value17
-              ? "<" + value3 + value15 + ">…</" + value3 + ">"
-              : "<" + value3 + value15 + " />",
+            ellipsis
+              ? "<" + qualifiedComponentName + openingProps + ">…</" + qualifiedComponentName + ">"
+              : "<" + qualifiedComponentName + openingProps + " />",
             '<x-import component-from-global-scope="' +
-              value3 +
+              qualifiedComponentName +
               '"' +
-              value16 +
+              optionalProps +
               ">" +
-              (value17 ? "…" : "") +
+              (ellipsis ? "…" : "") +
               "</x-import>",
           ];
         },
-        value4 = context.includes("@example")
-          ? context.slice(context.indexOf("@example"))
-          : context,
-        value5 = new RegExp("<" + value2 + "(\\.\\w+)?(?=[\\s/>])").exec(
-          value4,
+        hasExampleTag = docs.includes("@example")
+          ? docs.slice(docs.indexOf("@example"))
+          : docs,
+        componentMatch = new RegExp("<" + escapedName + "(\\.\\w+)?(?=[\\s/>])").exec(
+          hasExampleTag,
         );
-      if (value5 === null) {
+      if (componentMatch === null) {
         return callback();
       }
-      let value6 = value5[1] ?? "",
-        value7 = value4.slice(
-          value5.index,
-          value5.index + maxExampleLength * 4,
+      let componentSuffix = componentMatch[1] ?? "",
+        exampleBody = hasExampleTag.slice(
+          componentMatch.index,
+          componentMatch.index + maxExampleLength * 4,
         ),
-        value8 = 1 + items.length + value6.length,
-        items2: [string, string | undefined][] = [],
+        cursor = 1 + items.length + componentSuffix.length,
+        attributes: [string, string | undefined][] = [],
         flag: boolean = false;
       for (;;) {
-        while (value8 < value7.length && /\s/.test(value7[value8])) {
-          value8++;
+        while (cursor < exampleBody.length && /\s/.test(exampleBody[cursor])) {
+          cursor++;
         }
-        if (value7[value8] === ">") {
-          value8++;
+        if (exampleBody[cursor] === ">") {
+          cursor++;
           break;
         }
-        if (value7[value8] === "/" && value7[value8 + 1] === ">") {
+        if (exampleBody[cursor] === "/" && exampleBody[cursor + 1] === ">") {
           flag = true;
-          value8 += 2;
+          cursor += 2;
           break;
         }
-        let value14 = /^[A-Za-z][\w-]*/.exec(value7.slice(value8));
-        if (value14 === null) {
+        let attributeMatch = /^[A-Za-z][\w-]*/.exec(exampleBody.slice(cursor));
+        if (attributeMatch === null) {
           return callback();
         }
-        value8 += value14[0].length;
-        let value15: string | undefined;
-        if (value7[value8] === "=") {
-          if ((value8++, value7[value8] === '"')) {
-            let value16 = value7.indexOf('"', value8 + 1);
-            if (value16 === -1) {
+        cursor += attributeMatch[0].length;
+        let attributeValue: string | undefined;
+        if (exampleBody[cursor] === "=") {
+          if ((cursor++, exampleBody[cursor] === '"')) {
+            let quoteEnd = exampleBody.indexOf('"', cursor + 1);
+            if (quoteEnd === -1) {
               return callback();
             }
-            value15 = value7.slice(value8, value16 + 1);
-            value8 = value16 + 1;
-          } else if (value7[value8] === "{") {
+            attributeValue = exampleBody.slice(cursor, quoteEnd + 1);
+            cursor = quoteEnd + 1;
+          } else if (exampleBody[cursor] === "{") {
             let index: number = 0,
-              value16 = value8,
-              text2 = "";
-            for (; value16 < value7.length; value16++) {
-              let value17 = value7[value16];
-              if (text2 !== "") {
-                if (value17 === text2) {
-                  text2 = "";
+              scanCursor = cursor,
+              quote = "";
+            for (; scanCursor < exampleBody.length; scanCursor++) {
+              let character = exampleBody[scanCursor];
+              if (quote !== "") {
+                if (character === quote) {
+                  quote = "";
                 }
                 continue;
               }
-              if (value17 === '"' || value17 === "'" || value17 === "`") {
-                text2 = value17;
-              } else if (value17 === "{") {
+              if (character === '"' || character === "'" || character === "`") {
+                quote = character;
+              } else if (character === "{") {
                 index++;
-              } else if (value17 === "}" && --index === 0) {
+              } else if (character === "}" && --index === 0) {
                 break;
               }
             }
-            if (value16 >= value7.length) {
+            if (scanCursor >= exampleBody.length) {
               return callback();
             }
-            value15 = value7.slice(value8, value16 + 1);
-            value8 = value16 + 1;
+            attributeValue = exampleBody.slice(cursor, scanCursor + 1);
+            cursor = scanCursor + 1;
           } else {
             return callback();
           }
         }
-        items2.push([value14[0], value15]);
-        if (items2.length > 24 || value8 >= value7.length) {
+        attributes.push([attributeMatch[0], attributeValue]);
+        if (attributes.length > 24 || cursor >= exampleBody.length) {
           return callback();
         }
       }
       let text = "";
       if (!flag) {
-        let value14: string = "<" + items + value6,
-          value15: string = "</" + items + value6 + ">",
+        let openingTag: string = "<" + items + componentSuffix,
+          closingTag: string = "</" + items + componentSuffix + ">",
           count: number = 1,
-          value16 = value8;
+          tagCursor = cursor;
         for (;;) {
-          let value17 = value7.indexOf(value14, value16),
-            value18 = value7.indexOf(value15, value16);
-          if (value18 === -1) {
+          let openingIndex = exampleBody.indexOf(openingTag, tagCursor),
+            closingIndex = exampleBody.indexOf(closingTag, tagCursor);
+          if (closingIndex === -1) {
             return callback();
           }
           if (
-            value17 !== -1 &&
-            value17 < value18 &&
-            /[\s/>]/.test(value7[value17 + value14.length] ?? "")
+            openingIndex !== -1 &&
+            openingIndex < closingIndex &&
+            /[\s/>]/.test(exampleBody[openingIndex + openingTag.length] ?? "")
           ) {
             count++;
-            value16 = value17 + value14.length;
+            tagCursor = openingIndex + openingTag.length;
             continue;
           }
           if (--count === 0) {
-            text = value7.slice(value8, value18).trim();
+            text = exampleBody.slice(cursor, closingIndex).trim();
             break;
           }
-          value16 = value18 + value15.length;
+          tagCursor = closingIndex + closingTag.length;
         }
         if (unicodeCharacterCount(text) > maxExampleLength) {
           return callback();
         }
       }
-      let values = new Set(options.map((input) => input[0]));
+      let values = new Set(props.map((prop) => prop[0]));
       if (
-        !items2.every(
-          ([input]) =>
-            values.has(input) ||
-            extra.has(input) ||
-            /^(?:aria-|data-|on[A-Z])/.test(input),
+        !attributes.every(
+          ([propName]) =>
+            values.has(propName) ||
+            extraNames.has(propName) ||
+            /^(?:aria-|data-|on[A-Z])/.test(propName),
         )
       ) {
         return callback();
       }
-      let value9 = qualifiedName(items) + value6,
-        value10 = items2
+      let componentTag = qualifiedName(items) + componentSuffix,
+        attributeText = attributes
           .map(
-            ([input, input2]): string =>
-              " " + input + (input2 === undefined ? "" : "=" + input2),
+            ([propName, propValue]): string =>
+              " " + propName + (propValue === undefined ? "" : "=" + propValue),
           )
           .join(""),
-        value11 = ((input: string) =>
-          input.replace(
+        formatExampleValue = ((exampleInput: string) =>
+          exampleInput.replace(
             /<(\/?)([A-Z][\w$]*)(?=[\s/>.])/g,
-            (input2: string, options2: string, context2: string) =>
-              context2 === items ||
-              documentedComponentNames.has(context2) ||
-              (exportsByName.get(context2) === context2 &&
-                isComponentDeclaration(context2))
-                ? "<" + options2 + qualifiedName(context2)
-                : input2,
+            (formattedValue: string, componentName: string, componentNamespace: string) =>
+              componentNamespace === items ||
+              documentedComponentNames.has(componentNamespace) ||
+              (exportsByName.get(componentNamespace) === componentNamespace &&
+                isComponentDeclaration(componentNamespace))
+                ? "<" + componentName + qualifiedName(componentNamespace)
+                : formattedValue,
           ))(
           flag
-            ? "<" + items + value6 + value10 + " />"
+            ? "<" + items + componentSuffix + attributeText + " />"
             : "<" +
                 items +
-                value6 +
-                value10 +
+                componentSuffix +
+                attributeText +
                 ">" +
                 text +
                 "</" +
                 items +
-                value6 +
+                componentSuffix +
                 ">",
         ),
-        callback2 = (input: string) =>
+        formatValue = (sourceValue: string) =>
           /^(?:-?\d[\d.]*|true|false|null|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*|'[^']*')$/.test(
-            input,
+            sourceValue,
           )
-            ? input
+            ? sourceValue
             : "…",
-        value12 = items2
+        attributesText = attributes
           .map(
-            ([input, input2]): string =>
+            ([propName, propValue]): string =>
               " " +
-              kebabPropName(input) +
+              kebabPropName(propName) +
               "=" +
-              (input2 === undefined
+              (propValue === undefined
                 ? '"{{yes}}"'
-                : input2.startsWith("{")
+                : propValue.startsWith("{")
                   ? '"{{' +
-                    callback2(input2.slice(1, -1).trim().replace(/"/g, "'")) +
+                    formatValue(propValue.slice(1, -1).trim().replace(/"/g, "'")) +
                     '}}"'
-                  : input2),
+                  : propValue),
           )
           .join(""),
-        value13 = /<\/?[A-Za-z]/.test(text) ? "…" : text;
+        exampleText = /<\/?[A-Za-z]/.test(text) ? "…" : text;
       return [
-        value11,
+        formatExampleValue,
         '<x-import component-from-global-scope="' +
-          value9 +
+          componentTag +
           '"' +
-          value12 +
+          attributesText +
           ">" +
-          value13 +
+          exampleText +
           "</x-import>",
       ];
     },
     propsTable = (
       items: readonly M.DocPropRow[],
-      options = "_No props beyond standard HTML attributes._",
+      fallbackText = "_No props beyond standard HTML attributes._",
     ) => {
       if (items.length === 0) {
-        return options;
+        return fallbackText;
       }
-      let items2 = ["| prop | type | note |", "| --- | --- | --- |"];
-      for (let [value, value2, value3, value4] of items) {
-        let value5 = markdownTableCell(describeExternalType(value3)),
+      let rows = ["| prop | type | note |", "| --- | --- | --- |"];
+      for (let [value, typeText, requiredFlag, noteText] of items) {
+        let typeDisplay = markdownTableCell(describeExternalType(requiredFlag)),
           text: string =
             '(?:"[^"]*"|`[^`]*`|-?\\d[\\d.]*|true|false|null|undefined|string|number|boolean)',
-          value6 = new RegExp(
+          truncationPattern = new RegExp(
             "^" + text + "(?:\\s*\\\\\\|\\s*" + text + ")*$",
-          ).test(value5);
-        if (unicodeCharacterCount(value5) > (value6 ? 600 : 110)) {
-          value5 =
-            truncateUnicodeText(value5, value6 ? 597 : 107).replace(
+          ).test(typeDisplay);
+        if (unicodeCharacterCount(typeDisplay) > (truncationPattern ? 600 : 110)) {
+          typeDisplay =
+            truncateUnicodeText(typeDisplay, truncationPattern ? 597 : 107).replace(
               /\\$/,
               "",
             ) + "…";
         }
-        let value7 = markdownTableCell(value4);
-        if (unicodeCharacterCount(value7) > 160) {
-          value7 = truncateUnicodeText(value7, 157) + "…";
+        let noteDisplay = markdownTableCell(noteText);
+        if (unicodeCharacterCount(noteDisplay) > 160) {
+          noteDisplay = truncateUnicodeText(noteDisplay, 157) + "…";
         }
-        items2.push(
+        rows.push(
           "| " +
             markdownCodeSpan(value) +
-            (value2 ? " *" : "") +
+            (typeText ? " *" : "") +
             " | " +
-            markdownCodeSpan(value5) +
+            markdownCodeSpan(typeDisplay) +
             " | " +
-            value7 +
+            noteDisplay +
             " |",
         );
       }
-      return items2.join(`
+      return rows.join(`
 `);
     },
-    firstSentence = (input: string) => {
-      let value = /^([^\n]+?[.!?])(\s|$)/.exec(input);
-      return truncateUnicodeText(value ? value[1] : input, 160).trim();
+    firstSentence = (text: string) => {
+      let value = /^([^\n]+?[.!?])(\s|$)/.exec(text);
+      return truncateUnicodeText(value ? value[1] : text, 160).trim();
     },
     iconNames = typeAliases.has("IconName")
       ? [...typeAliases.get("IconName")!.matchAll(/"([^"]+)"/g)].map(
-          (input) => input[1],
+          (row) => row[1],
         )
       : [],
     iconsCard: M.ApiDocumentationCard | null = null;
@@ -1850,103 +1850,103 @@ function generateComponentApiCards(
   for (let value of groupDocumentedComponents(facts).flat()) {
     let name = value.name;
     remainingWork = maxWork;
-    let value2 = wrappedComponentType(name),
-      value3 =
+    let wrappedType = wrappedComponentType(name),
+      propsType =
         componentPropsType(name) ??
-        (value2 !== null ? componentPropsType(value2) : null),
-      value4 =
+        (wrappedType !== null ? componentPropsType(wrappedType) : null),
+      description =
         declarationDoc(name) ||
-        declarationDoc(value3 ?? "") ||
-        (value2 !== null ? declarationDoc(value2) : ""),
-      [value5, value6, value7] =
-        value3 !== null
-          ? resolveNamedProps(value3)
-          : [inlineComponentProps(value2 ?? name), [], null],
-      value8 = refineEnumProps(value3 ?? "", value5),
-      { parts: value9, callable: value10 } = value.page
+        declarationDoc(propsType ?? "") ||
+        (wrappedType !== null ? declarationDoc(wrappedType) : ""),
+      [enumProps, propRows, extraProps] =
+        propsType !== null
+          ? resolveNamedProps(propsType)
+          : [inlineComponentProps(wrappedType ?? name), [], null],
+      refinedProps = refineEnumProps(propsType ?? "", enumProps),
+      { parts: pagePartRows, callable: isCallable } = value.page
         ? {
             parts: [],
             callable: false,
           }
         : componentParts(name),
-      value11 = value.page
+      pageParts = value.page
         ? []
         : relatedComponents(name).filter(
-            (input): boolean =>
-              !value9.some((input2): boolean => input === name + input2[0]),
+            (partName): boolean =>
+              !pagePartRows.some((part): boolean => partName === name + part[0]),
           ),
-      value12 = value.summary || firstSentence(value4) || name + ".",
+      summary = value.summary || firstSentence(description) || name + ".",
       values = new Set<string>();
-    for (let value17 of value6) {
-      let value18 =
+    for (let propRow of propRows) {
+      let pickMatch =
         /^(\w*Omit|Pick)<\s*([A-Za-z_$][\w$]*)[^,]*,([\s\S]*)>$/.exec(
-          value17,
+          propRow,
         );
-      if (value18 === null) {
+      if (pickMatch === null) {
         continue;
       }
-      let value19 = [...value18[3].matchAll(/"([^"]+)"/g)].map(
-        (input) => input[1],
+      let pickValues = [...pickMatch[3].matchAll(/"([^"]+)"/g)].map(
+        (tupleValue) => tupleValue[1],
       );
-      if (value18[1] === "Pick") {
-        for (let value20 of value19) {
-          values.add(value20);
+      if (pickMatch[1] === "Pick") {
+        for (let tokenLiteral of pickValues) {
+          values.add(tokenLiteral);
         }
       } else {
-        for (let value20 of resolveNamedProps(value18[2])[0]) {
-          if (!value19.includes(value20[0])) {
-            values.add(value20[0]);
+        for (let prop of resolveNamedProps(pickMatch[2])[0]) {
+          if (!pickValues.includes(prop[0])) {
+            values.add(prop[0]);
           }
         }
       }
     }
-    let [value13, value14] = componentExamples(
+    let [exampleMarkdown, exampleNote] = componentExamples(
         name,
-        value8,
-        value4,
-        !value10 && value9.some((input): boolean => input[0] === "Root")
+        refinedProps,
+        description,
+        !isCallable && pagePartRows.some((part): boolean => part[0] === "Root")
           ? ".Root"
           : "",
         values,
       ),
-      items = [...value9.map((input) => input[0]), ...value11],
-      items2 = [
+      items = [...pagePartRows.map((part) => part[0]), ...pageParts],
+      cardLines = [
         "# " + name,
         "",
-        value12,
+        summary,
         "",
         (value.page
           ? "showcase page"
           : markdownCodeSpan(qualifiedName(name))) +
           (value.group !== "" ? " · " + value.group : "") +
-          (value9.length > 0
-            ? " · parts: " + value9.map((input) => input[0]).join(", ")
+          (pagePartRows.length > 0
+            ? " · parts: " + pagePartRows.map((part) => part[0]).join(", ")
             : "") +
-          (value11.length > 0 ? " · with: " + value11.join(", ") : ""),
+          (pageParts.length > 0 ? " · with: " + pageParts.join(", ") : ""),
         "",
       ];
     if (value.page) {
-      items2.push(
+      cardLines.push(
         "## Use",
         "",
         "A showcase page of the source project, not a component the bundle exports: there is nothing to mount.",
         "",
       );
     } else if (facts.bundle) {
-      items2.push(
+      cardLines.push(
         "## Use",
         "",
         MARKDOWN_CODE_FENCE + "jsx",
-        value13,
+        exampleMarkdown,
         MARKDOWN_CODE_FENCE,
         "",
         MARKDOWN_CODE_FENCE + "html",
-        value14,
+        exampleNote,
         MARKDOWN_CODE_FENCE,
         "",
       );
     } else {
-      items2.push(
+      cardLines.push(
         "## Use",
         "",
         "Documentation only: this system ships no " +
@@ -1958,193 +1958,193 @@ function generateComponentApiCards(
         "",
       );
     }
-    if (value4 !== "" && unicodeCharacterCount(value4) > 40) {
-      items2.push(
+    if (description !== "" && unicodeCharacterCount(description) > 40) {
+      cardLines.push(
         "## Notes",
         "",
-        truncateUnicodeText(sanitizeMarkdownLine(value4), 900),
+        truncateUnicodeText(sanitizeMarkdownLine(description), 900),
         "",
       );
     }
-    let callback = (input: string) => {
-        let value17 = markdownTableCell(input);
-        if (unicodeCharacterCount(value17) > 600) {
-          return truncateUnicodeText(value17, 597) + "…";
+    let callback = (text: string) => {
+        let cellText = markdownTableCell(text);
+        if (unicodeCharacterCount(cellText) > 600) {
+          return truncateUnicodeText(cellText, 597) + "…";
         } else {
-          return value17;
+          return cellText;
         }
       },
-      value15: string = value.readme ? "; see the long README" : "",
-      callback2 = (
-        input: string | null,
-        options: string | null,
-        items4: readonly string[],
+      readmeSuffix: string = value.readme ? "; see the long README" : "",
+      formatTypeCell = (
+        typeName: string | null,
+        typeAlias: string | null,
+        extraTypes: readonly string[],
       ): string =>
-        options === wideTypeSentinel
+        typeAlias === wideTypeSentinel
           ? "_Props are " +
-            markdownCodeSpan(input ?? "a union") +
+            markdownCodeSpan(typeName ?? "a union") +
             ", too wide to tabulate here" +
-            value15 +
+            readmeSuffix +
             " (types: " +
             markdownCodeSpan(DESIGN_SYSTEM_PATHS.indexDts) +
             ")._"
-          : input !== null && firstDeclaration(input) === undefined
+          : typeName !== null && firstDeclaration(typeName) === undefined
             ? "_Props are " +
               markdownCodeSpan(
-                markdownTableCell(describeExternalType(input)),
+                markdownTableCell(describeExternalType(typeName)),
               ) +
               ", from the library this wraps — not spelled out in " +
               markdownCodeSpan(DESIGN_SYSTEM_PATHS.indexDts) +
-              value15 +
+              readmeSuffix +
               "._"
-            : options !== null
+            : typeAlias !== null
               ? "_Props are " +
-                markdownCodeSpan(callback(describeExternalType(options))) +
+                markdownCodeSpan(callback(describeExternalType(typeAlias))) +
                 ", inherited from the library this wraps — not spelled out in " +
                 markdownCodeSpan(DESIGN_SYSTEM_PATHS.indexDts) +
-                value15 +
+                readmeSuffix +
                 "._"
-              : items4.length > 0
+              : extraTypes.length > 0
                 ? "_No props of its own; it takes what " +
                   callback(
-                    describeExternalType(uniqueValues(items4).join(", ")),
+                    describeExternalType(uniqueValues(extraTypes).join(", ")),
                   ) +
                   " takes._"
                 : "_No props of its own._",
-      value16 =
+      propsNote =
         declarationText === null
           ? "_This system ships no " +
             markdownCodeSpan(DESIGN_SYSTEM_PATHS.indexDts) +
-            value15 +
+            readmeSuffix +
             "._"
-          : value3 === null && value6.length === 0
-            ? value8.length > 0
+          : propsType === null && propRows.length === 0
+            ? refinedProps.length > 0
               ? undefined
               : "_No " +
                 markdownCodeSpan(name + "Props") +
                 " in " +
                 markdownCodeSpan(DESIGN_SYSTEM_PATHS.indexDts) +
-                value15 +
+                readmeSuffix +
                 "._"
-            : callback2(value3, value7, value6);
-    if (!(value.page && value3 === null && value8.length === 0)) {
-      items2.push(
+            : formatTypeCell(propsType, extraProps, propRows);
+    if (!(value.page && propsType === null && refinedProps.length === 0)) {
+      cardLines.push(
         "## Props" +
-          (value3 !== null ? " (" + describeExternalType(value3) + ")" : ""),
+          (propsType !== null ? " (" + describeExternalType(propsType) + ")" : ""),
         "",
-        propsTable(value8, value16),
+        propsTable(refinedProps, propsNote),
         "",
       );
     }
-    if (value6.length > 0 && value8.length > 0) {
-      items2.push(
+    if (propRows.length > 0 && refinedProps.length > 0) {
+      cardLines.push(
         "_Also accepts: " +
-          callback(describeExternalType(uniqueValues(value6).join(", "))) +
+          callback(describeExternalType(uniqueValues(propRows).join(", "))) +
           "._",
         "",
       );
     }
-    for (let [value17, value18, value19] of value9) {
-      if (value18 !== null && value18 === value3) {
+    for (let [partName, partPropsType, partControls] of pagePartRows) {
+      if (partPropsType !== null && partPropsType === propsType) {
         continue;
       }
-      let [value20, value21, value22] =
-        value18 !== null
-          ? resolveNamedProps(value18)
-          : [value19 ?? [], [], null];
-      if (value18 === null && value19 === null) {
-        items2.push(
-          "### " + name + "." + value17,
+      let [partEnumProps, partEnumOptions, partEnumExtra] =
+        partPropsType !== null
+          ? resolveNamedProps(partPropsType)
+          : [partControls ?? [], [], null];
+      if (partPropsType === null && partControls === null) {
+        cardLines.push(
+          "### " + name + "." + partName,
           "",
           "_Its props type is not named in " +
             markdownCodeSpan(DESIGN_SYSTEM_PATHS.indexDts) +
-            value15 +
+            readmeSuffix +
             "._",
           "",
         );
         continue;
       }
-      items2.push(
-        "### " + name + "." + value17,
+      cardLines.push(
+        "### " + name + "." + partName,
         "",
         propsTable(
-          refineEnumProps(value18 ?? "", value20),
-          callback2(value18, value22, value21),
+          refineEnumProps(partPropsType ?? "", partEnumProps),
+          formatTypeCell(partPropsType, partEnumExtra, partEnumOptions),
         ),
         "",
       );
-      if (value21.length > 0 && value20.length > 0) {
-        items2.push(
+      if (partEnumOptions.length > 0 && partEnumProps.length > 0) {
+        cardLines.push(
           "_Also accepts: " +
-            callback(describeExternalType(uniqueValues(value21).join(", "))) +
+            callback(describeExternalType(uniqueValues(partEnumOptions).join(", "))) +
             "._",
           "",
         );
       }
     }
-    for (let value17 of value11) {
-      let value18 = componentPropsType(value17),
-        value19 =
-          value18 !== null
-            ? refineEnumProps(value18, resolveNamedProps(value18)[0])
-            : inlineComponentProps(value17);
-      if (value19.length > 0) {
-        items2.push(
-          "### " + value17,
+    for (let partName of pageParts) {
+      let partPropsType = componentPropsType(partName),
+        partRows =
+          partPropsType !== null
+            ? refineEnumProps(partPropsType, resolveNamedProps(partPropsType)[0])
+            : inlineComponentProps(partName);
+      if (partRows.length > 0) {
+        cardLines.push(
+          "### " + partName,
           "",
-          ...(declarationDoc(value17) !== ""
-            ? [firstSentence(declarationDoc(value17)), ""]
+          ...(declarationDoc(partName) !== ""
+            ? [firstSentence(declarationDoc(partName)), ""]
             : []),
-          propsTable(value19),
+          propsTable(partRows),
           "",
         );
       }
     }
-    let items3: string[] = [];
-    for (let value17 of value8) {
-      for (let value18 of value17[2].matchAll(
+    let referencedTypes: string[] = [];
+    for (let propRow of refinedProps) {
+      for (let typeMatch of propRow[2].matchAll(
         /\b(?<!typeof )([A-Z][A-Za-z]+)\b(?!\s*\[\s*["'])/g,
       )) {
-        let value19 = value18[1];
+        let typeName = typeMatch[1];
         if (
-          items3.includes(value19) ||
-          items.includes(value19) ||
-          value19.endsWith("Props") ||
-          value19.startsWith("React") ||
-          value19.startsWith("HTML") ||
-          (facts.ns !== null && value19.startsWith(facts.ns)) ||
-          ["ReactNode", "ReactElement", "IconName", "Date"].includes(value19)
+          referencedTypes.includes(typeName) ||
+          items.includes(typeName) ||
+          typeName.endsWith("Props") ||
+          typeName.startsWith("React") ||
+          typeName.startsWith("HTML") ||
+          (facts.ns !== null && typeName.startsWith(facts.ns)) ||
+          ["ReactNode", "ReactElement", "IconName", "Date"].includes(typeName)
         ) {
           continue;
         }
-        let value20 = firstDeclaration(value19)?.[0];
-        if (value20 === "interface" || value20 === "type") {
-          items3.push(value19);
+        let typeKind = firstDeclaration(typeName)?.[0];
+        if (typeKind === "interface" || typeKind === "type") {
+          referencedTypes.push(typeName);
         }
       }
     }
     let index: number = 0;
-    for (let value17 of items3) {
+    for (let typeName of referencedTypes) {
       if (index >= 6) {
         break;
       }
-      let [value18] = resolveNamedProps(value17, new Set(), keepAllProps);
-      if (value18.length === 0) {
+      let [typeRows] = resolveNamedProps(typeName, new Set(), keepAllProps);
+      if (typeRows.length === 0) {
         continue;
       }
       index++;
-      items2.push(
-        "### " + value17,
+      cardLines.push(
+        "### " + typeName,
         "",
-        ...(declarationDoc(value17) !== ""
-          ? [firstSentence(declarationDoc(value17)), ""]
+        ...(declarationDoc(typeName) !== ""
+          ? [firstSentence(declarationDoc(typeName)), ""]
           : []),
-        propsTable(value18),
+        propsTable(typeRows),
         "",
       );
     }
     if (value.readme) {
-      items2.push(
+      cardLines.push(
         "## More",
         "",
         "Long-form usage: " +
@@ -2164,9 +2164,9 @@ function generateComponentApiCards(
         makeApiDocumentationCard(
           "component",
           name,
-          value12,
+          summary,
           GENERATED_API_DIRECTORY + "components/" + name + ".md",
-          items2,
+          cardLines,
         ),
       );
     }
@@ -2206,40 +2206,40 @@ function fontFamilySlug(family: string): string {
 function chooseRegularFontFace(
   fonts: readonly Core.FontFace[],
 ): Core.FontFace | undefined {
-  let score = (input: Core.FontFace) => {
-    let [value, value2] = input.weight.split(" ").map(Number),
-      value3 = value2 ?? value;
+  let score = (fontFace: Core.FontFace) => {
+    let [value, upperWeight] = fontFace.weight.split(" ").map(Number),
+      lowerWeight = upperWeight ?? value;
     return (
-      (input.style === "normal" ? 0 : 1e4) +
-      (value <= 400 && 400 <= value3
+      (fontFace.style === "normal" ? 0 : 1e4) +
+      (value <= 400 && 400 <= lowerWeight
         ? 0
-        : Math.min(Math.abs(value - 400), Math.abs(value3 - 400)))
+        : Math.min(Math.abs(value - 400), Math.abs(lowerWeight - 400)))
     );
   };
   return [...fonts].sort(
-    (input, options) => score(input) - score(options),
+    (leftFont, rightFont) => score(leftFont) - score(rightFont),
   )[0];
 }
 function generateConsumptionDocumentation(
-  options: M.ConsumptionDocumentationOptions,
+  documentationOptions: M.ConsumptionDocumentationOptions,
 ): Core.ConsumptionDocumentation {
-  let { tokens: tokens, manifest: manifest } = options,
+  let { tokens: tokens, manifest: manifest } = documentationOptions,
     declarationText =
-      options.dts === null ? null : normalizeTextNewlines(options.dts),
-    sourceReadme = normalizeTextNewlines(options.readme),
+      documentationOptions.dts === null ? null : normalizeTextNewlines(documentationOptions.dts),
+    sourceReadme = normalizeTextNewlines(documentationOptions.readme),
     assetReadmes = Object.fromEntries(
-      Object.entries<string>(options.assetReadmes)
-        .filter((input): boolean => typeof input[1] === "string")
-        .map(([input, input2]) => [input, normalizeTextNewlines(input2)]),
+      Object.entries<string>(documentationOptions.assetReadmes)
+        .filter((entry): boolean => typeof entry[1] === "string")
+        .map(([path, content]) => [path, normalizeTextNewlines(content)]),
     ),
     facts = documentationManifestFacts(manifest),
     namespace = facts.ns ?? "window",
-    qualifiedName = (input: string): string =>
-      (facts.ns !== null ? facts.ns + "." : "") + input,
+    qualifiedName = (name: string): string =>
+      (facts.ns !== null ? facts.ns + "." : "") + name,
     listedPaths = new Set(
       Array.isArray(manifest.files)
         ? (manifest.files as unknown[]).filter(
-            (input: unknown): input is string => typeof input === "string",
+            (candidate: unknown): candidate is string => typeof candidate === "string",
           )
         : [],
     ),
@@ -2260,72 +2260,72 @@ function generateConsumptionDocumentation(
         return [];
       }
       let families = tokens!.type.families,
-        callback = (input: string) => {
-          let value2 = storageFiles[input];
+        callback = (path: string) => {
+          let storageRecord = storageFiles[path];
           if (
-            typeof value2 === "object" &&
-            value2 !== null &&
-            value2.store === "blob" &&
-            typeof value2.id === "string" &&
-            BLOB_ID_PATTERN.test(value2.id)
+            typeof storageRecord === "object" &&
+            storageRecord !== null &&
+            storageRecord.store === "blob" &&
+            typeof storageRecord.id === "string" &&
+            BLOB_ID_PATTERN.test(storageRecord.id)
           ) {
-            return markdownCodeSpan("read " + value2.id);
+            return markdownCodeSpan("read " + storageRecord.id);
           }
-          if (!listedPaths.has(input) && facts.listed) {
+          if (!listedPaths.has(path) && facts.listed) {
             return "inline in the page only";
           }
-          let value3 = options.root ?? "";
-          if (value3 === "") {
-            return markdownCodeSpan("read " + input);
+          let rootPath = documentationOptions.root ?? "";
+          if (rootPath === "") {
+            return markdownCodeSpan("read " + path);
           } else {
             return (
               markdownCodeSpan("read") +
               " the file with " +
-              markdownCodeSpan(value3) +
+              markdownCodeSpan(rootPath) +
               " in front"
             );
           }
         },
-        callback2 = (input: string) =>
-          Object.keys(facts.tokensCss ? families : {}).find((input2) =>
-            families[input2]
+        hasTokenName = (tokenName: string) =>
+          Object.keys(facts.tokensCss ? families : {}).find((familyName) =>
+            families[familyName]
               .split(",")
-              .map((input3) =>
-                input3
+              .map((family) =>
+                family
                   .trim()
                   .replace(/^["']|["']$/g, "")
                   .toLowerCase(),
               )
-              .includes(input.toLowerCase()),
+              .includes(tokenName.toLowerCase()),
           );
-      return uniqueValues(value.map((input) => input.family)).map((input) => {
-        let value2 = chooseRegularFontFace(
-            value.filter((input2): boolean => input2.family === input),
+      return uniqueValues(value.map((family) => family.family)).map((family) => {
+        let fontFace = chooseRegularFontFace(
+            value.filter((candidate): boolean => candidate.family === family),
           )!,
-          value3 = callback2(input);
+          cssVariable = hasTokenName(family);
         return [
-          markdownTableCell(input),
-          markdownCodeSpan(value2.file) +
+          markdownTableCell(family),
+          markdownCodeSpan(fontFace.file) +
             " (weight " +
-            markdownTableCell(value2.weight) +
-            (value2.style !== "normal" ? ", " + value2.style : "") +
+            markdownTableCell(fontFace.weight) +
+            (fontFace.style !== "normal" ? ", " + fontFace.style : "") +
             ")",
-          callback(value2.file),
-          value3 !== undefined
+          callback(fontFace.file),
+          cssVariable !== undefined
             ? markdownCodeSpan(
                 "var(--font-" +
-                  escapeTokenCssIdentifier(value3) +
+                  escapeTokenCssIdentifier(cssVariable) +
                   ")",
               )
             : "",
-          markdownCodeSpan(fontFamilySlug(input)),
+          markdownCodeSpan(fontFamilySlug(family)),
         ];
       });
     })(),
     cleanReadme = sourceReadme.replace(/\uFFFD/g, "").trimEnd(),
     migrationGuide = inspectStandaloneMigrationGuide(cleanReadme),
     fontPaths = uniqueValues(
-      (tokens?.type.fonts ?? []).map((input) => input.file),
+      (tokens?.type.fonts ?? []).map((fontPath) => fontPath.file),
     ),
     canInstallFontsByPath =
       !migrationGuide.both &&
@@ -2333,10 +2333,10 @@ function generateConsumptionDocumentation(
       facts.tokensCss &&
       fontPaths.length > 0 &&
       fontPaths.every(
-        (input) =>
-          listedPaths.has(input) &&
-          isInstallableFontPath(input) &&
-          storageFiles[input]?.store !== "blob",
+        (path) =>
+          listedPaths.has(path) &&
+          isInstallableFontPath(path) &&
+          storageFiles[path]?.store !== "blob",
       ),
     fontGuide = fontConsumptionGuide(
       canInstallFontsByPath,
@@ -2348,67 +2348,67 @@ function generateConsumptionDocumentation(
         markdownCodeSpan("faces") +
         " key |",
       "| --- | --- | --- | --- | --- |",
-      ...fontRows.map((input): string => "| " + input.join(" | ") + " |"),
+      ...fontRows.map((row): string => "| " + row.join(" | ") + " |"),
     ],
     cards: M.ApiDocumentationCard[] = [],
     cardPaths = new Set<string>(),
     addCard = (
-      input: string,
-      options2: string,
-      context: string,
-      value: string,
-      extra: readonly string[],
+      kind: string,
+      name: string,
+      purpose: string,
+      path: string,
+      details: readonly string[],
     ): void => {
-      if (cardPaths.has(value.toLowerCase())) {
+      if (cardPaths.has(path.toLowerCase())) {
         return;
       }
-      cardPaths.add(value.toLowerCase());
+      cardPaths.add(path.toLowerCase());
       cards.push(
-        makeApiDocumentationCard(input, options2, context, value, extra),
+        makeApiDocumentationCard(kind, name, purpose, path, details),
       );
     };
   if (tokens !== null && tokens.color.tokens.length > 0) {
-    let value = tokens.color.themes.map((input) => input.id),
-      value2 = commonTokenNamePrefix(
-        tokens.color.tokens.map((input) => input.name),
+    let value = tokens.color.themes.map((theme) => theme.id),
+      prefix = commonTokenNamePrefix(
+        tokens.color.tokens.map((token) => token.name),
       ),
-      callback = (input: Core.ColorToken) =>
-        value2 !== "" && input.name.startsWith(value2)
-          ? input.name.slice(value2.length)
-          : input.name,
-      callback2 = (input: Core.ColorToken) =>
+      callback = (token: Core.ColorToken) =>
+        prefix !== "" && token.name.startsWith(prefix)
+          ? token.name.slice(prefix.length)
+          : token.name,
+      resolveTokenValue = (token: Core.ColorToken) =>
         value
-          .map((input2) =>
+          .map((alias) =>
             markdownTableCell(
-              resolveColorTokenValue(input, input2, tokens) ??
+              resolveColorTokenValue(token, alias, tokens) ??
                 "",
             ),
           )
           .join(" | "),
-      value3: string = facts.css
+      cssPath: string = facts.css
         ? "tokens.css or components/bundle.css"
         : "tokens.css",
       values = new Set<string>();
-    for (let value4 of COLOR_DOCUMENTATION_GROUPS) {
-      let value5 = tokens.color.tokens.filter(
-        (input) =>
-          !values.has(input.name) && value4.test.test(callback(input)),
+    for (let group of COLOR_DOCUMENTATION_GROUPS) {
+      let groupTokens = tokens.color.tokens.filter(
+        (token) =>
+          !values.has(token.name) && group.test.test(callback(token)),
       );
-      for (let value6 of value5) {
-        values.add(value6.name);
+      for (let token of groupTokens) {
+        values.add(token.name);
       }
-      if (value5.length === 0) {
+      if (groupTokens.length === 0) {
         continue;
       }
       let items = [
-        "# Color · " + value4.title,
+        "# Color · " + group.title,
         "",
         "## Use",
         "",
         MARKDOWN_CODE_FENCE + "css",
-        "/* any surface that loads " + value3 + " */",
+        "/* any surface that loads " + cssPath + " */",
         "color: var(--" +
-          escapeTokenCssIdentifier(value5[0].name) +
+          escapeTokenCssIdentifier(groupTokens[0].name) +
           ");",
         "/* a surface with no stylesheet (a slide): the " +
           (value[0] ?? "first") +
@@ -2417,37 +2417,37 @@ function generateConsumptionDocumentation(
           " */",
         MARKDOWN_CODE_FENCE,
         "",
-        "## Tokens (" + String(value5.length) + ")",
+        "## Tokens (" + String(groupTokens.length) + ")",
         "",
         "| token | " + value.join(" | ") + " | usage |",
         "| --- |" + " --- |".repeat(value.length) + " --- |",
       ];
-      if (value4.key === "palette") {
+      if (group.key === "palette") {
         let entries = new Map<string, [number, string][]>();
-        for (let value6 of value5) {
-          let value7 = PALETTE_RAMP_TOKEN_PATTERN.exec(callback(value6));
-          if (value7 === null) {
+        for (let token of groupTokens) {
+          let rampMatch = PALETTE_RAMP_TOKEN_PATTERN.exec(callback(token));
+          if (rampMatch === null) {
             items.push(
               "| " +
-                markdownCodeSpan(value6.name) +
+                markdownCodeSpan(token.name) +
                 " | " +
-                callback2(value6) +
+                resolveTokenValue(token) +
                 " | " +
-                markdownTableCell(value6.usage) +
+                markdownTableCell(token.usage) +
                 " |",
             );
             continue;
           }
-          let value8 = value7[1];
-          if (!entries.has(value8)) {
-            entries.set(value8, []);
+          let rampName = rampMatch[1];
+          if (!entries.has(rampName)) {
+            entries.set(rampName, []);
           }
           entries
-            .get(value8)!
+            .get(rampName)!
             .push([
-              parseInt(value7[2], 10),
+              parseInt(rampMatch[2], 10),
               resolveColorTokenValue(
-                value6,
+                token,
                 value[0] ?? "",
                 tokens,
               ) ?? "",
@@ -2459,39 +2459,39 @@ function generateConsumptionDocumentation(
             "| ramp | steps | first → last (" + (value[0] ?? "") + ") |",
             "| --- | --- | --- |",
           );
-          for (let [value6, value7] of entries) {
-            value7.sort((input, options2) => input[0] - options2[0]);
+          for (let [rampName, rampEntries] of entries) {
+            rampEntries.sort((leftEntry, rightEntry) => leftEntry[0] - rightEntry[0]);
             items.push(
               "| " +
-                markdownCodeSpan(value2 + value6 + "-*") +
+                markdownCodeSpan(prefix + rampName + "-*") +
                 " | " +
-                value7.map((input): string => String(input[0])).join(", ") +
+                rampEntries.map((rampEntry): string => String(rampEntry[0])).join(", ") +
                 " | " +
-                markdownTableCell(value7[0][1]) +
+                markdownTableCell(rampEntries[0][1]) +
                 " → " +
-                markdownTableCell(value7[value7.length - 1][1]) +
+                markdownTableCell(rampEntries[rampEntries.length - 1][1]) +
                 " |",
             );
           }
         }
       } else {
-        let value6 = value5.filter((input) =>
-          COLOR_INTERACTION_SUFFIX_PATTERN.test(input.name),
+        let interactionTokens = groupTokens.filter((token) =>
+          COLOR_INTERACTION_SUFFIX_PATTERN.test(token.name),
         );
-        for (let value7 of value5) {
-          if (!COLOR_INTERACTION_SUFFIX_PATTERN.test(value7.name)) {
+        for (let token of groupTokens) {
+          if (!COLOR_INTERACTION_SUFFIX_PATTERN.test(token.name)) {
             items.push(
               "| " +
-                markdownCodeSpan(value7.name) +
+                markdownCodeSpan(token.name) +
                 " | " +
-                callback2(value7) +
+                resolveTokenValue(token) +
                 " | " +
-                markdownTableCell(value7.usage) +
+                markdownTableCell(token.usage) +
                 " |",
             );
           }
         }
-        if (value6.length > 0) {
+        if (interactionTokens.length > 0) {
           items.push(
             "",
             "**Interaction states** (same roles, suffixed):",
@@ -2499,12 +2499,12 @@ function generateConsumptionDocumentation(
             "| token | " + value.join(" | ") + " |",
             "| --- |" + " --- |".repeat(value.length),
           );
-          for (let value7 of value6) {
+          for (let token of interactionTokens) {
             items.push(
               "| " +
-                markdownCodeSpan(value7.name) +
+                markdownCodeSpan(token.name) +
                 " | " +
-                callback2(value7) +
+                resolveTokenValue(token) +
                 " |",
             );
           }
@@ -2513,12 +2513,12 @@ function generateConsumptionDocumentation(
       items.push("");
       addCard(
         "tokens",
-        "color/" + value4.key,
-        value4.title +
+        "color/" + group.key,
+        group.title +
           " — " +
-          String(value5.length) +
-          (value5.length === 1 ? " token." : " tokens."),
-        GENERATED_API_DIRECTORY + "tokens/" + value4.key + ".md",
+          String(groupTokens.length) +
+          (groupTokens.length === 1 ? " token." : " tokens."),
+        GENERATED_API_DIRECTORY + "tokens/" + group.key + ".md",
         items,
       );
     }
@@ -2530,45 +2530,45 @@ function generateConsumptionDocumentation(
       Object.keys(tokens.type.families).length > 0)
   ) {
     let type = tokens.type,
-      value = type.groups.flatMap((input) =>
-        input.styles.map(
-          (input2): string =>
+      value = type.groups.flatMap((styleGroup) =>
+        styleGroup.styles.map(
+          (style): string =>
             "| " +
-            markdownCodeSpan(input2.name) +
+            markdownCodeSpan(style.name) +
             " | " +
             markdownCodeSpan(
-              "." + escapeTokenCssIdentifier(input2.name),
+              "." + escapeTokenCssIdentifier(style.name),
             ) +
             ", " +
             markdownCodeSpan(
-              "--text-" + escapeTokenCssIdentifier(input2.name),
+              "--text-" + escapeTokenCssIdentifier(style.name),
             ) +
             " | " +
-            markdownTableCell(input2.fontSize) +
+            markdownTableCell(style.fontSize) +
             " / " +
-            markdownTableCell(input2.lineHeight) +
+            markdownTableCell(style.lineHeight) +
             " | " +
-            markdownTableCell(input2.fontWeight) +
+            markdownTableCell(style.fontWeight) +
             " | " +
             markdownCodeSpan(
-              markdownTableCell(input2.family || input.family),
+              markdownTableCell(style.family || styleGroup.family),
             ) +
             " | " +
-            markdownTableCell(input2.usage) +
+            markdownTableCell(style.usage) +
             " |",
         ),
       ),
-      value2 = type.groups[0]?.styles[0]?.name ?? "body",
-      value3 = Object.keys(type.families)[0] ?? "sans",
+      defaultStyleName = type.groups[0]?.styles[0]?.name ?? "body",
+      defaultFamilyName = Object.keys(type.families)[0] ?? "sans",
       items = [
         "# Type",
         "",
         "Use the named styles; no literal px." +
-          (type.groups.some((input): boolean => input.note !== "")
+          (type.groups.some((group): boolean => group.note !== "")
             ? " " +
               type.groups
-                .map((input) => sanitizeMarkdownLine(input.note).trim())
-                .filter((input): boolean => input !== "")
+                .map((note) => sanitizeMarkdownLine(note.note).trim())
+                .filter((note): boolean => note !== "")
                 .join(" ")
             : ""),
         "",
@@ -2576,10 +2576,10 @@ function generateConsumptionDocumentation(
         "",
         MARKDOWN_CODE_FENCE + "css",
         "font: var(--text-" +
-          escapeTokenCssIdentifier(value2) +
+          escapeTokenCssIdentifier(defaultStyleName) +
           ");            /* with tokens.css */",
         "font-family: var(--font-" +
-          escapeTokenCssIdentifier(value3) +
+          escapeTokenCssIdentifier(defaultFamilyName) +
           ");   /* the family alone */",
         MARKDOWN_CODE_FENCE,
         "",
@@ -2594,21 +2594,21 @@ function generateConsumptionDocumentation(
         "",
       );
     }
-    let value4 = Object.entries<string>(type.families);
-    if (value4.length > 0) {
+    let fontFamilies = Object.entries<string>(type.families);
+    if (fontFamilies.length > 0) {
       items.push(
         "## Families",
         "",
         "| family | CSS variable | stack |",
         "| --- | --- | --- |",
-        ...value4.map(
-          ([input, input2]): string =>
+        ...fontFamilies.map(
+          ([familyName, familyValue]): string =>
             "| " +
-            markdownCodeSpan(input) +
+            markdownCodeSpan(familyName) +
             " | " +
-            markdownCodeSpan("--font-" + input) +
+            markdownCodeSpan("--font-" + familyName) +
             " | " +
-            markdownCodeSpan(markdownTableCell(input2)) +
+            markdownCodeSpan(markdownTableCell(familyValue)) +
             " |",
         ),
         "",
@@ -2636,13 +2636,13 @@ function generateConsumptionDocumentation(
               "Every face: " +
                 type.fonts
                   .map(
-                    (input): string =>
-                      markdownCodeSpan(input.file) +
+                    (fontFace): string =>
+                      markdownCodeSpan(fontFace.file) +
                       " (" +
-                      markdownTableCell(input.family) +
+                      markdownTableCell(fontFace.family) +
                       ", " +
-                      markdownTableCell(input.weight) +
-                      (input.style !== "normal" ? ", " + input.style : "") +
+                      markdownTableCell(fontFace.weight) +
+                      (fontFace.style !== "normal" ? ", " + fontFace.style : "") +
                       ")",
                   )
                   .join(", ") +
@@ -2661,47 +2661,47 @@ function generateConsumptionDocumentation(
     );
   }
   if (tokens !== null) {
-    let value = tokens.color.themes.map((input) => input.id),
+    let value = tokens.color.themes.map((theme) => theme.id),
       callback = (
-        input: string,
-        options2: string,
-        context: string,
+        sectionId: string,
+        sectionTitle: string,
+        sectionContext: string,
         items: readonly (Core.ScalarToken | Core.ShadowToken)[],
       ): void => {
         if (items.length === 0) {
           return;
         }
-        let callback2 = (input2: string | Record<string, string>) => {
-            if (typeof input2 === "string") {
-              return markdownTableCell(input2);
+        let formatCell = (cellValue: string | Record<string, string>) => {
+            if (typeof cellValue === "string") {
+              return markdownTableCell(cellValue);
             }
-            let value2 = input2[value[0] ?? ""] ?? "";
+            let defaultCellValue = cellValue[value[0] ?? ""] ?? "";
             return (
-              markdownTableCell(value2) +
+              markdownTableCell(defaultCellValue) +
               value
                 .slice(1)
-                .map((input3): string =>
-                  input2[input3] !== undefined && input2[input3] !== value2
+                .map((key): string =>
+                  cellValue[key] !== undefined && cellValue[key] !== defaultCellValue
                     ? " · " +
-                      input3 +
+                      key +
                       ": " +
-                      markdownTableCell(input2[input3])
+                      markdownTableCell(cellValue[key])
                     : "",
                 )
                 .join("")
             );
           },
           name = items[0].name,
-          items2 = [
-            "# " + options2,
+          markdownLines = [
+            "# " + sectionTitle,
             "",
-            ...(context.trim() !== ""
-              ? [sanitizeMarkdownLine(context).trim(), ""]
+            ...(sectionContext.trim() !== ""
+              ? [sanitizeMarkdownLine(sectionContext).trim(), ""]
               : []),
             "## Use",
             "",
             MARKDOWN_CODE_FENCE + "css",
-            input === "spacing"
+            sectionId === "spacing"
               ? "padding: var(--" +
                 escapeTokenCssIdentifier(name) +
                 ");"
@@ -2715,26 +2715,26 @@ function generateConsumptionDocumentation(
             "| token | value | usage |",
             "| --- | --- | --- |",
             ...items.map(
-              (input2): string =>
+              (row): string =>
                 "| " +
-                markdownCodeSpan(input2.name) +
+                markdownCodeSpan(row.name) +
                 " | " +
-                callback2(input2.value) +
+                formatCell(row.value) +
                 " | " +
-                markdownTableCell(input2.usage) +
+                markdownTableCell(row.usage) +
                 " |",
             ),
             "",
           ];
         addCard(
           "tokens",
-          input,
-          options2 +
+          sectionId,
+          sectionTitle +
             " — " +
             String(items.length) +
             (items.length === 1 ? " token." : " tokens."),
-          GENERATED_API_DIRECTORY + "tokens/" + input + ".md",
-          items2,
+          GENERATED_API_DIRECTORY + "tokens/" + sectionId + ".md",
+          markdownLines,
         );
       };
     callback(
@@ -2745,34 +2745,34 @@ function generateConsumptionDocumentation(
     );
     callback("radius", "Radius", tokens.radius.note, tokens.radius.tokens);
     callback("shadow", "Shadow", tokens.shadow.note, tokens.shadow.tokens);
-    for (let value2 of tokens.extra) {
+    for (let extraTokenFamily of tokens.extra) {
       callback(
-        tokenFamilySlug(value2.key),
-        humanizeFamilyName(value2.key),
-        value2.note,
-        value2.tokens,
+        tokenFamilySlug(extraTokenFamily.key),
+        humanizeFamilyName(extraTokenFamily.key),
+        extraTokenFamily.note,
+        extraTokenFamily.tokens,
       );
     }
   }
-  let tokenCardMode = options.tokenCards ?? DEFAULT_TOKEN_CARD_MODE,
+  let tokenCardMode = documentationOptions.tokenCards ?? DEFAULT_TOKEN_CARD_MODE,
     inlineTokensSection = "";
   if (tokenCardMode !== "per-group" && cards.length > 0) {
     let value = cards.splice(0, cards.length),
       flag: boolean = false,
-      callback = (input: string) =>
-        input
+      callback = (text: string) =>
+        text
           .split(
             `
 `,
           )
-          .map((input2) => {
-            if (input2.startsWith(MARKDOWN_CODE_FENCE)) {
+          .map((line) => {
+            if (line.startsWith(MARKDOWN_CODE_FENCE)) {
               flag = !flag;
             }
-            if (!flag && input2.startsWith("#")) {
-              return "#" + input2;
+            if (!flag && line.startsWith("#")) {
+              return "#" + line;
             } else {
-              return input2;
+              return line;
             }
           }).join(`
 `),
@@ -2780,10 +2780,10 @@ function generateConsumptionDocumentation(
         "# Tokens",
         "",
         "Every token of the system, a section per group: " +
-          value.map((input) => input.purpose.replace(/\.$/, "")).join("; ") +
+          value.map((card) => card.purpose.replace(/\.$/, "")).join("; ") +
           ".",
         "",
-        ...value.map((input) => callback(input.text)),
+        ...value.map((card) => callback(card.text)),
       ];
     if (tokenCardMode === "single") {
       cards.push(
@@ -2792,7 +2792,7 @@ function generateConsumptionDocumentation(
           "tokens",
           "Every token: " +
             value
-              .map((input) => input.name.replace(/^color\//, ""))
+              .map((token) => token.name.replace(/^color\//, ""))
               .join(", ") +
             ".",
           GENERATED_API_DIRECTORY + "tokens.md",
@@ -2819,34 +2819,34 @@ function generateConsumptionDocumentation(
     ? (
         manifest.assetGroups as (M.RawDocAssetGroup | null | undefined)[]
       ).filter(
-        (input): input is M.CheckedDocAssetGroup =>
-          typeof input === "object" &&
-          input !== null &&
-          typeof input.name === "string" &&
+        (group): group is M.CheckedDocAssetGroup =>
+          typeof group === "object" &&
+          group !== null &&
+          typeof group.name === "string" &&
           isPublishableFilePathModelFileTable(
             GENERATED_API_DIRECTORY +
               "assets/" +
-              assetDocumentationSlug(input.name) +
+              assetDocumentationSlug(group.name) +
               ".md",
           ),
       )
     : [];
   for (let value of assetGroups) {
-    let value2 = Array.isArray(value.files)
+    let hasFiles = Array.isArray(value.files)
       ? (value.files as (M.RawDocAssetFile | null | undefined)[]).filter(
-          (input): input is M.CheckedDocAssetFile =>
-            typeof input?.path === "string" &&
-            typeof input.id === "string" &&
-            BLOB_ID_PATTERN.test(input.id) &&
-            isValidDesignSystemPath(input.path),
+          (file): file is M.CheckedDocAssetFile =>
+            typeof file?.path === "string" &&
+            typeof file.id === "string" &&
+            BLOB_ID_PATTERN.test(file.id) &&
+            isValidDesignSystemPath(file.path),
         )
       : [];
-    if (value2.length === 0) {
+    if (hasFiles.length === 0) {
       continue;
     }
-    let value3: string =
-        String(value2.length) + (value2.length === 1 ? " file" : " files"),
-      value4 = (
+    let usageNotes: string =
+        String(hasFiles.length) + (hasFiles.length === 1 ? " file" : " files"),
+      assetUsage = (
         assetReadmes[
           DESIGN_SYSTEM_PATHS.assetsDir + value.name + "/README.md"
         ] ?? ""
@@ -2854,7 +2854,7 @@ function generateConsumptionDocumentation(
       items = [
         "# Assets · " + sanitizeMarkdownLine(value.name),
         "",
-        value3 +
+        usageNotes +
           " under " +
           markdownCodeSpan(
             DESIGN_SYSTEM_PATHS.assetsDir + value.name + "/",
@@ -2890,25 +2890,25 @@ function generateConsumptionDocumentation(
       "",
       MARKDOWN_CODE_FENCE + "html",
       '<img src="<the url the asset upload returned for ' +
-        sanitizeMarkdownLine(value2[0].path.split("/").at(-1)!) +
+        sanitizeMarkdownLine(hasFiles[0].path.split("/").at(-1)!) +
         '>" alt="…">',
       MARKDOWN_CODE_FENCE,
       "",
     );
-    if (value4 !== "") {
-      items.push("## Usage notes", "", value4, "");
+    if (assetUsage !== "") {
+      items.push("## Usage notes", "", assetUsage, "");
     }
     items.push(
       "## Files",
       "",
       "| file | fetch |",
       "| --- | --- |",
-      ...value2.map(
-        (input): string =>
+      ...hasFiles.map(
+        (file): string =>
           "| " +
-          markdownCodeSpan(markdownTableCell(input.path)) +
+          markdownCodeSpan(markdownTableCell(file.path)) +
           " | " +
-          markdownCodeSpan("read " + markdownTableCell(input.id)) +
+          markdownCodeSpan("read " + markdownTableCell(file.id)) +
           " |",
       ),
       "",
@@ -2916,7 +2916,7 @@ function generateConsumptionDocumentation(
     addCard(
       "assets",
       value.name,
-      value3 + ", by asset id.",
+      usageNotes + ", by asset id.",
       GENERATED_API_DIRECTORY +
         "assets/" +
         assetDocumentationSlug(value.name) +
@@ -2933,22 +2933,22 @@ function generateConsumptionDocumentation(
   let files = new Map<string, string>(),
     index: Core.ApiDocumentationIndexEntry[] = [];
   for (let value of cards) {
-    let value2: string =
+    let fileDescription: string =
       GENERATED_API_FILE_HEADER +
       `
 ` +
       value.text;
-    files.set(value.path, value2);
+    files.set(value.path, fileDescription);
     index.push({
       kind: value.kind,
       name: value.name,
       purpose: value.purpose,
       path: value.path,
-      size: unicodeCharacterCount(value2),
+      size: unicodeCharacterCount(fileDescription),
     });
   }
-  let cardsOfKind = (input: string) =>
-      index.filter((source): boolean => source.kind === input),
+  let cardsOfKind = (kind: string) =>
+      index.filter((source): boolean => source.kind === kind),
     hasMigrationGuide = migrationGuide.both,
     consumptionLines = [
       GENERATED_CONSUMPTION_HEADING,
@@ -2993,31 +2993,31 @@ function generateConsumptionDocumentation(
     );
   }
   let componentCount = facts.comps.filter(
-      (input): boolean => !input.page,
+      (component): boolean => !component.page,
     ).length,
     librariesDescription = facts.libs
       .map(
-        (input): string =>
-          (input.file !== null
-            ? markdownCodeSpan(input.file)
-            : input.name +
+        (component): string =>
+          (component.file !== null
+            ? markdownCodeSpan(component.file)
+            : component.name +
               " " +
-              input.version +
+              component.version +
               " (not packed in this system: bring your own copy)") +
-          (input.global !== null
-            ? " (" + markdownCodeSpan("window." + input.global) + ")"
+          (component.global !== null
+            ? " (" + markdownCodeSpan("window." + component.global) + ")"
             : ""),
       )
       .join(", "),
     rootComponent = facts.comps.find(
-      (input) =>
-        input.name === (facts.ns ?? "") + "Root" ||
-        input.name === "Root" ||
-        input.name === (facts.ns ?? "") + "Provider",
+      (component) =>
+        component.name === (facts.ns ?? "") + "Root" ||
+        component.name === "Root" ||
+        component.name === (facts.ns ?? "") + "Provider",
     ),
-    hasListedPath = (input: string) =>
-      !facts.listed || listedPaths.has(input),
-    hasComponentReadmes = facts.comps.some((input) => input.readme),
+    hasListedPath = (path: string) =>
+      !facts.listed || listedPaths.has(path),
+    hasComponentReadmes = facts.comps.some((component) => component.readme),
     componentReadmeCode = markdownCodeSpan(
       DESIGN_SYSTEM_PATHS.componentsDir + "<Comp>/README.md",
     ),
@@ -3045,16 +3045,16 @@ function generateConsumptionDocumentation(
         String(componentCount) +
         " component" +
         (componentCount === 1 ? "" : "s"),
-      value2: string = facts.tokensCss
+      tokensCssPath: string = facts.tokensCss
         ? markdownCodeSpan(GENERATED_TOKENS_CSS_PATH) +
           " is every token as a CSS variable plus " +
           markdownCodeSpan("@font-face") +
           " for the fonts"
         : "",
-      value3: string =
+      readmePath: string =
         facts.libs.length > 0 &&
         facts.libs.every(
-          (input) => input.name === "react" || input.name === "react-dom",
+          (library) => library.name === "react" || library.name === "react-dom",
         )
           ? "; on a Design canvas skip " +
             (facts.libs.length === 1 ? "that file" : "those files") +
@@ -3068,25 +3068,25 @@ function generateConsumptionDocumentation(
             " documented, and the “Design canvas” line above names no script for " +
             (facts.comps.length === 1 ? "it" : "them") +
             componentGuidance +
-            (value2 !== "" ? " " + value2 + "." : "")
+            (tokensCssPath !== "" ? " " + tokensCssPath + "." : "")
         : facts.ns === null
           ? "The “Design canvas” line above names the script for this system’s " +
             value +
             ", and no global is recorded for " +
             (componentCount === 1 ? "it" : "them") +
             componentGuidance +
-            (value2 !== "" ? " " + value2 + "." : "")
+            (tokensCssPath !== "" ? " " + tokensCssPath + "." : "")
           : markdownCodeSpan("window." + facts.ns) +
             " is the components’ global (" +
             value +
             "); the “Design canvas” line above names the script that defines it" +
-            (value2 !== "" ? "; " + value2 : "") +
+            (tokensCssPath !== "" ? "; " + tokensCssPath : "") +
             "." +
             (librariesDescription !== ""
               ? " That script needs " +
                 librariesDescription +
                 ", loaded before it" +
-                value3 +
+                readmePath +
                 "."
               : "") +
             (rootComponent !== undefined
@@ -3120,7 +3120,7 @@ function generateConsumptionDocumentation(
             " for the fonts"
           : "") +
         "." +
-        (options.cssReadsTokens === true && facts.css && facts.tokensCss
+        (documentationOptions.cssReadsTokens === true && facts.css && facts.tokensCss
           ? " " +
             markdownCodeSpan(DESIGN_SYSTEM_PATHS.bundleCss) +
             " reads its variables from " +
@@ -3187,7 +3187,7 @@ function generateConsumptionDocumentation(
         (facts.css ? "; load the stylesheet before the script" : "") +
         (facts.libs.length > 0 &&
         facts.libs.every(
-          (input) => input.name === "react" || input.name === "react-dom",
+          (library) => library.name === "react" || library.name === "react-dom",
         )
           ? "; skip the library files (the artboard supplies React)"
           : "") +
@@ -3262,9 +3262,9 @@ function generateConsumptionDocumentation(
   );
   let longReadmes = [
     ...(hasComponentReadmes ? [componentReadmeCode] : []),
-    ...(cardsOfKind("assets").some((input) =>
+    ...(cardsOfKind("assets").some((asset) =>
       hasListedPath(
-        DESIGN_SYSTEM_PATHS.assetsDir + input.name + "/README.md",
+        DESIGN_SYSTEM_PATHS.assetsDir + asset.name + "/README.md",
       ),
     )
       ? [
@@ -3299,13 +3299,13 @@ function generateConsumptionDocumentation(
     "",
   );
   let indexLines = [GENERATED_INDEX_HEADING, ""],
-    indexLine = (input: Core.ApiDocumentationIndexEntry): string =>
+    indexLine = (entry: Core.ApiDocumentationIndexEntry): string =>
       "- " +
-      markdownCodeSpan(input.path) +
+      markdownCodeSpan(entry.path) +
       " — " +
-      input.purpose +
+      entry.purpose +
       " (" +
-      formatCardCharacterCount(input.size) +
+      formatCardCharacterCount(entry.size) +
       ")";
   if (cardsOfKind("tokens").length > 0) {
     indexLines.push(
@@ -3324,7 +3324,7 @@ function generateConsumptionDocumentation(
     );
   }
   if (facts.comps.length > 0) {
-    let length = facts.comps.filter((input) => input.page).length;
+    let length = facts.comps.filter((component) => component.page).length;
     indexLines.push(
       "**Components** (" +
         markdownCodeSpan(
@@ -3344,17 +3344,17 @@ function generateConsumptionDocumentation(
           (value[0].group !== "" ? "**" + value[0].group + "**: " : "") +
           value
             .map(
-              (input): string =>
-                markdownCodeSpan(input.name) +
-                (input.page ? " (showcase page)" : "") +
+              (component): string =>
+                markdownCodeSpan(component.name) +
+                (component.page ? " (showcase page)" : "") +
                 " — " +
                 markdownTableCell(
                   index.find(
                     (source) =>
                       source.kind === "component" &&
-                      source.name === input.name,
+                      source.name === component.name,
                   )?.purpose ??
-                    (input.summary || input.name),
+                    (component.summary || component.name),
                 ).replace(/\.+$/, ""),
             )
             .join(" · "),
@@ -3397,26 +3397,26 @@ function findLegacyReadmeTail(readme: string): number {
     if (++seen > 64) {
       break;
     }
-    let value2 = readme.indexOf(LEGACY_MARKDOWN_FENCE + "json", value.index);
+    let manifestStart = readme.indexOf(LEGACY_MARKDOWN_FENCE + "json", value.index);
     if (
-      value2 === -1 ||
-      value2 - value.index > 600 ||
-      !LEGACY_MANIFEST_FENCE_PATTERN.test(readme.slice(value2, value2 + 64))
+      manifestStart === -1 ||
+      manifestStart - value.index > 600 ||
+      !LEGACY_MANIFEST_FENCE_PATTERN.test(readme.slice(manifestStart, manifestStart + 64))
     ) {
       continue;
     }
-    let value3 = readme.indexOf(
+    let fenceStart = readme.indexOf(
       `
 ` + LEGACY_MARKDOWN_FENCE,
-      value2 + 8,
+      manifestStart + 8,
     );
-    if (value3 === -1) {
+    if (fenceStart === -1) {
       continue;
     }
-    let value4 = readme.slice(value3 + 1 + LEGACY_MARKDOWN_FENCE.length);
+    let tailText = readme.slice(fenceStart + 1 + LEGACY_MARKDOWN_FENCE.length);
     if (
-      value4.trim() === "" ||
-      LEGACY_GENERATED_SECTION_PATTERN.test(value4)
+      tailText.trim() === "" ||
+      LEGACY_GENERATED_SECTION_PATTERN.test(tailText)
     ) {
       return value.index;
     }
@@ -3427,7 +3427,7 @@ function generatedReadmeTailOffset(readme: string): number {
   let offsets = [
     GENERATED_README_START_PATTERN.exec(readme)?.index ?? -1,
     findLegacyReadmeTail(readme),
-  ].filter((input): boolean => input !== -1);
+  ].filter((index): boolean => index !== -1);
   if (offsets.length === 0) {
     return -1;
   } else {
@@ -3454,11 +3454,11 @@ function stripCssComments(css: string): string {
   for (let index = 0; ; ) {
     let value = css.indexOf("/*", index);
     parts.push(css.slice(index, value === -1 ? undefined : value));
-    let value2 = value === -1 ? -1 : css.indexOf("*/", value + 2);
-    if (value2 === -1) {
+    let commentEnd = value === -1 ? -1 : css.indexOf("*/", value + 2);
+    if (commentEnd === -1) {
       return parts.join(" ");
     }
-    index = value2 + 2;
+    index = commentEnd + 2;
   }
 }
 function stripConditionalCssRules(css: string): string {
@@ -3500,7 +3500,7 @@ function bundleCssReadsTokens(
     return false;
   }
   let cached = cssReadsTokensCache.find(
-    (input) => input.css === bundleCss && input.tokens === tokensText,
+    (bundle) => bundle.css === bundleCss && bundle.tokens === tokensText,
   );
   if (cached !== undefined) {
     return cached.reads;
@@ -3528,7 +3528,7 @@ function bundleCssReadsTokens(
       cssWithoutComments,
       CSS_VAR_REFERENCE_PATTERN,
     ).some(
-      (input) => !declaredVariables.has(input) && tokenVariables.has(input),
+      (variable) => !declaredVariables.has(variable) && tokenVariables.has(variable),
     );
   cssReadsTokensCache.unshift({
     css: bundleCss,
@@ -3559,19 +3559,19 @@ function consumptionDocumentationForFiles(files: Core.FileTable, root = "") {
     }
   }
   let assetReadmeCacheKey = Object.entries<string>(assetReadmes).map(
-      ([input, input2]): string =>
-        input +
+      ([key, mappedValue]): string =>
+        key +
         `
 ` +
-        input2,
+        mappedValue,
     ).join(`
 
 `),
     cached = consumptionDocumentationCache.find(
-      (input) =>
-        input.notes === assetReadmeCacheKey &&
-        input.key.every(
-          (input2, options): boolean => input2 === cacheKey[options],
+      (entry) =>
+        entry.notes === assetReadmeCacheKey &&
+        entry.key.every(
+          (key, index): boolean => key === cacheKey[index],
         ),
     );
   if (cached !== undefined) {
@@ -3707,11 +3707,11 @@ export function installModelDocumentation(): () => void {
     OMITTED_API_CARDS_NOTICE =
       "\n> The api/ cards indexed above are not beside this version: with them this system has more files than one version holds. Until it has fewer files, read `components/<Comp>/README.md` and `assets/<Group>/README.md` instead; token values are in `tokens.css`.\n";
     DOCS_GLOBAL_IDENTIFIER_PATTERN = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/;
-    sanitizeMarkdownLine = (input) =>
-      input.replace(/[\r\n\u2028\u2029\uFFFD]+/g, " ");
-    sanitizeComponentGroupLabel = (input) =>
+    sanitizeMarkdownLine = (text) =>
+      text.replace(/[\r\n\u2028\u2029\uFFFD]+/g, " ");
+    sanitizeComponentGroupLabel = (label) =>
       Array.from<string>(
-        sanitizeMarkdownLine(input)
+        sanitizeMarkdownLine(label)
           .replace(/[*_`|<>[\]\\]+/g, " ")
           .replace(/ {2,}/g, " ")
           .trim(),
@@ -3719,38 +3719,38 @@ export function installModelDocumentation(): () => void {
         .slice(0, MAX_COMPONENT_GROUP_LABEL_LENGTH)
         .join("");
     MAX_DOCUMENTED_COMPONENTS = 1024;
-    unicodeCharacterCount = (input): number => {
+    unicodeCharacterCount = (text): number => {
       let index: number = 0;
-      for (let value of input) {
+      for (let value of text) {
         index++;
       }
       return index;
     };
-    truncateUnicodeText = (items, options) =>
-      items.length <= options
+    truncateUnicodeText = (items, maxLength) =>
+      items.length <= maxLength
         ? items
-        : Array.from<string>(items).slice(0, options).join("");
-    countSubstring = (input, options): number =>
-      input.split(options).length - 1;
-    uniqueValues = (input) => [...new Set(input)];
-    formatCardCharacterCount = (input): string =>
-      (input % 1000 === 250
-        ? (Math.floor(input / 100) / 10).toFixed(1)
-        : (input / 1000).toFixed(1)) + "k";
-    markdownCodeSpan = (input) => {
+        : Array.from<string>(items).slice(0, maxLength).join("");
+    countSubstring = (text, delimiter): number =>
+      text.split(delimiter).length - 1;
+    uniqueValues = (values) => [...new Set(values)];
+    formatCardCharacterCount = (count): string =>
+      (count % 1000 === 250
+        ? (Math.floor(count / 100) / 10).toFixed(1)
+        : (count / 1000).toFixed(1)) + "k";
+    markdownCodeSpan = (text) => {
       let value: number = Math.max(
           0,
-          ...[...(input.match(/`+/g) ?? [])].map((items) => items.length),
+          ...[...(text.match(/`+/g) ?? [])].map((items) => items.length),
         ),
-        value2 = "`".repeat(value + 1);
+        fence = "`".repeat(value + 1);
       if (value === 0) {
-        return value2 + input + value2;
+        return fence + text + fence;
       } else {
-        return value2 + " " + input + " " + value2;
+        return fence + " " + text + " " + fence;
       }
     };
-    markdownTableCell = (input) =>
-      sanitizeMarkdownLine(input).replace(/\|/g, "\\|");
+    markdownTableCell = (text) =>
+      sanitizeMarkdownLine(text).replace(/\|/g, "\\|");
     MARKDOWN_CODE_FENCE = "```";
     joinEnglishList = (items) =>
       items.length < 2
@@ -3765,10 +3765,10 @@ export function installModelDocumentation(): () => void {
         FONT_INSTALL_PATH_SEGMENT_PATTERN +
         ")*$",
     );
-    isInstallableFontPath = (input) =>
-      FONT_INSTALL_PATH_PATTERN.test(input) &&
-      /\.(?:woff2?|ttf|otf)$/i.test(input) &&
-      !/(?:^|\/)node_modules\//i.test(input);
+    isInstallableFontPath = (path) =>
+      FONT_INSTALL_PATH_PATTERN.test(path) &&
+      /\.(?:woff2?|ttf|otf)$/i.test(path) &&
+      !/(?:^|\/)node_modules\//i.test(path);
     OTHER_PAGE_FONT_GUIDANCE =
       // MineDesign: a font is a file in the system's directory (an id is its _blobs/<id>.<ext>), copied or imported with
       // the consumer's own tools, not the Artifact tool's read and publish.
@@ -3797,14 +3797,14 @@ export function installModelDocumentation(): () => void {
       " (no space or leading underscore in its path, for two): any other font, or one kept by id, is uploaded as " +
       markdownCodeSpan("fonts.md") +
       " says.";
-    fontConsumptionGuide = (input, options, context) => {
-      let value = context[0] ?? "",
+    fontConsumptionGuide = (fontGuidance, includeSlides, pathContext) => {
+      let value = pathContext[0] ?? "",
         items = [
-          ...(input
+          ...(fontGuidance
             ? [
                 "- **Design canvas:** copy " +
                   joinEnglishList(
-                    [GENERATED_TOKENS_CSS_PATH, ...context].map(
+                    [GENERATED_TOKENS_CSS_PATH, ...pathContext].map(
                       markdownCodeSpan,
                     ),
                   ) +
@@ -3825,16 +3825,16 @@ export function installModelDocumentation(): () => void {
                   ", or as Design’s instructions say for an artboard in a folder. If the install’s reply leaves a font out, bring that font in as for any other page.",
               ]
             : []),
-          ...(options ? [SLIDES_FONT_GUIDANCE] : []),
+          ...(includeSlides ? [SLIDES_FONT_GUIDANCE] : []),
         ];
-      if (!options) {
+      if (!includeSlides) {
         return [
           "Fonts: on a Design canvas, bring the fonts the “Design canvas” line of this system’s README names; in a Slides deck, the fonts its “Slides deck” line names. Both lines are under “Migrated from the standalone version”. Bring any font that line does not name as for any other page.",
           "",
           "- **Any other page:** " + OTHER_PAGE_FONT_GUIDANCE,
         ];
       }
-      if (!input) {
+      if (!fontGuidance) {
         return ["Fonts: " + OTHER_PAGE_FONT_GUIDANCE, "", ...items];
       }
       return [
@@ -3881,12 +3881,12 @@ export function installModelDocumentation(): () => void {
     COLOR_INTERACTION_SUFFIX_PATTERN =
       /-(?:hover|hovered|active|pressed|disabled|focus)$/;
     PALETTE_RAMP_TOKEN_PATTERN = /^([a-z]+)-(\d+)$/;
-    makeApiDocumentationCard = (input, options, context, value, extra) => ({
-      kind: input,
-      name: options,
-      purpose: context,
-      path: value,
-      text: extra
+    makeApiDocumentationCard = (kind, name, purpose, path, details) => ({
+      kind: kind,
+      name: name,
+      purpose: purpose,
+      path: path,
+      text: details
         .join(
           `
 `,
@@ -3894,17 +3894,17 @@ export function installModelDocumentation(): () => void {
         .replace(/\uFFFD/g, ""),
     });
     cachedComponentApiCards = null;
-    tokenFamilySlug = (input) =>
-      input
+    tokenFamilySlug = (familyName) =>
+      familyName
         .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") || "x";
-    assetDocumentationSlug = (input) =>
-      input.replace(/[^A-Za-z0-9_.]+/g, "-").replace(/^[-.]+|[-.]+$/g, "") ||
+    assetDocumentationSlug = (assetName) =>
+      assetName.replace(/[^A-Za-z0-9_.]+/g, "-").replace(/^[-.]+|[-.]+$/g, "") ||
       "group";
-    normalizeTextNewlines = (input) =>
-      input.replace(
+    normalizeTextNewlines = (text) =>
+      text.replace(
         /\r\n?/g,
         `
 `,
@@ -3913,8 +3913,8 @@ export function installModelDocumentation(): () => void {
       "## Quick start (generated from tokens.json — do not edit)";
     LEGACY_README_INSTRUCTIONS =
       "Read this README first; the manifest below lists the files to read and every asset — read tokens.css or components/bundle.js only if the page you build uses them, and read_asset an asset id only if you need that asset.";
-    escapeRegexPattern = (input) =>
-      input.replace(/[.*+?^$(){}|[\]\\]/g, "\\$&");
+    escapeRegexPattern = (pattern) =>
+      pattern.replace(/[.*+?^$(){}|[\]\\]/g, "\\$&");
     README_SEPARATOR_PATTERN_SOURCE = "\\r?\\n\\r?\\n---\\r?\\n\\r?\\n";
     LEGACY_MARKDOWN_FENCE = "`".repeat(3);
     GENERATED_README_HEADING_PATTERN_SOURCE =
@@ -3957,21 +3957,21 @@ export function installModelDocumentation(): () => void {
     CSS_VAR_REFERENCE_PATTERN = /var\(\s*(--[A-Za-z0-9_-]+)\s*[,)]/gi;
     CSS_VAR_DECLARATION_PATTERN = /(?:^|[;{\s])(--[A-Za-z0-9_-]+)\s*:/g;
     CSS_PROPERTY_DECLARATION_PATTERN = /@property\s+(--[A-Za-z0-9_-]+)\s*\{/gi;
-    firstRegexCaptureValues = (input, options) =>
-      [...input.matchAll(options)].map((input2) => input2[1]);
-    registeredCssPropertyNames = (input) =>
-      [...input.matchAll(CSS_PROPERTY_DECLARATION_PATTERN)].flatMap(
-        (input2) => {
-          let value = input.slice(
-              input2.index + input2[0].length,
-              input2.index + input2[0].length + 400,
+    firstRegexCaptureValues = (text, pattern) =>
+      [...text.matchAll(pattern)].map((match) => match[1]);
+    registeredCssPropertyNames = (cssText) =>
+      [...cssText.matchAll(CSS_PROPERTY_DECLARATION_PATTERN)].flatMap(
+        (match) => {
+          let value = cssText.slice(
+              match.index + match[0].length,
+              match.index + match[0].length + 400,
             ),
-            value2 = value.indexOf("}");
+            closingBraceIndex = value.indexOf("}");
           if (
-            value2 !== -1 &&
-            /\binitial-value\s*:/i.test(value.slice(0, value2))
+            closingBraceIndex !== -1 &&
+            /\binitial-value\s*:/i.test(value.slice(0, closingBraceIndex))
           ) {
-            return [input2[1]];
+            return [match[1]];
           } else {
             return [];
           }

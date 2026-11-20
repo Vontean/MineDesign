@@ -37,26 +37,26 @@ function fileTableInlineBytes(files: Model.FileTable) {
 function fileFitsInlineBudgets(
   content: Model.DesignSystemContent,
   path: string,
-  value: string,
+  fileContents: string,
 ): boolean {
   if (isUnboundedFileParsing()) {
     return true;
   }
   let kind = classifyDesignSystemFile(path),
-    bytes = estimateEmbeddedStringBytes(value);
+    bytes = estimateEmbeddedStringBytes(fileContents);
   if (kind === "dts") {
-    let value2 = bytes;
-    for (let value3 in content.files) {
+    let contentBytes = bytes;
+    for (let filePath in content.files) {
       if (
-        value3 !== path &&
-        classifyDesignSystemFile(value3) === "dts"
+        filePath !== path &&
+        classifyDesignSystemFile(filePath) === "dts"
       ) {
-        value2 += estimateEmbeddedStringBytes(
-          content.files[value3],
+        contentBytes += estimateEmbeddedStringBytes(
+          content.files[filePath],
         );
       }
     }
-    if (value2 > DESIGN_SYSTEM_INLINE_LIMITS.dtsTotal) {
+    if (contentBytes > DESIGN_SYSTEM_INLINE_LIMITS.dtsTotal) {
       return false;
     }
   } else if (bytes > inlineLimitForPath(path, kind)) {
@@ -81,7 +81,7 @@ function fileFitsInlineBudgets(
 function setDesignSystemFile(
   content: Model.DesignSystemContent,
   path: string,
-  value: string,
+  fileContents: string,
 ) {
   if (!isValidDesignSystemPath(path)) {
     return content;
@@ -96,20 +96,20 @@ function setDesignSystemFile(
   }
   if (
     !isTextFilePath(canonicalPath) &&
-    parseDataUriHeader(value) === null &&
-    parseStoragePointer(value) === null
+    parseDataUriHeader(fileContents) === null &&
+    parseStoragePointer(fileContents) === null
   ) {
     return content;
   }
-  if (content.files[canonicalPath] === value) {
+  if (content.files[canonicalPath] === fileContents) {
     return content;
   }
-  if (!fileFitsInlineBudgets(content, canonicalPath, value)) {
+  if (!fileFitsInlineBudgets(content, canonicalPath, fileContents)) {
     return content;
   }
   return contentWithFiles(content, {
     ...content.files,
-    [canonicalPath]: value,
+    [canonicalPath]: fileContents,
   });
 }
 function setProtectedFilePathPredicate(
@@ -122,9 +122,9 @@ function deleteDesignSystemFiles(
   paths: string[],
 ) {
   let removable = paths.filter(
-    (input) =>
-      Object.hasOwn(content.files, input) &&
-      !protectedFilePathPredicate(input),
+    (path) =>
+      Object.hasOwn(content.files, path) &&
+      !protectedFilePathPredicate(path),
   );
   if (removable.length === 0) {
     return content;

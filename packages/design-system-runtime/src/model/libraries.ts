@@ -13,7 +13,7 @@ function findPackagedLibrary(
   name: string,
   catalog = PACKAGED_LIBRARY_CATALOG,
 ) {
-  return catalog.find((input): boolean => input.name === name);
+  return catalog.find((library): boolean => library.name === name);
 }
 function matchesLibraryVersion(
   availableVersion: string,
@@ -35,43 +35,43 @@ function resolvePreviewLibraries(
     missing: string[] = [],
     missingFiles: string[] = [],
     visited = new Set<string>(),
-    visit = (input: Model.DeclaredLibrary): void => {
-      if (visited.has(input.name)) {
+    visit = (libraryToVisit: Model.DeclaredLibrary): void => {
+      if (visited.has(libraryToVisit.name)) {
         return;
       }
-      visited.add(input.name);
+      visited.add(libraryToVisit.name);
       let value = catalog.find(
-        (input2) =>
-          input2.name === input.name &&
-          matchesLibraryVersion(input2.version, input.version),
+        (candidate) =>
+          candidate.name === libraryToVisit.name &&
+          matchesLibraryVersion(candidate.version, libraryToVisit.version),
       );
       if (value !== undefined) {
-        for (let value3 of value.requires) {
-          let value4 = findPackagedLibrary(value3, catalog);
-          if (value4 === undefined) {
+        for (let dependencyName of value.requires) {
+          let packagedLibrary = findPackagedLibrary(dependencyName, catalog);
+          if (packagedLibrary === undefined) {
             continue;
           }
           visit(
-            declared.find((input2): boolean => input2.name === value3) ?? {
-              name: value4.name,
-              version: value4.version,
+            declared.find((declaredLibrary): boolean => declaredLibrary.name === dependencyName) ?? {
+              name: packagedLibrary.name,
+              version: packagedLibrary.version,
             },
           );
         }
       }
-      let value2 = input.file ?? value?.packedFile;
-      if (value2 !== undefined && hasFile(value2)) {
+      let packedFile = libraryToVisit.file ?? value?.packedFile;
+      if (packedFile !== undefined && hasFile(packedFile)) {
         load.push({
-          name: input.name,
-          version: input.version,
-          global: input.global ?? value?.provides[0] ?? null,
-          file: value2,
+          name: libraryToVisit.name,
+          version: libraryToVisit.version,
+          global: libraryToVisit.global ?? value?.provides[0] ?? null,
+          file: packedFile,
         });
       } else if (
         allowCdn &&
         value !== undefined &&
-        value.requires.every((input2) =>
-          fetchLibraries.some((input3): boolean => input3.name === input2),
+        value.requires.every((dependency) =>
+          fetchLibraries.some((library): boolean => library.name === dependency),
         )
       ) {
         fetchLibraries.push({
@@ -82,9 +82,9 @@ function resolvePreviewLibraries(
           integrity: value.cdn.integrity,
         });
       } else if (
-        (missing.push(input.name + " " + input.version), value2 !== undefined)
+        (missing.push(libraryToVisit.name + " " + libraryToVisit.version), packedFile !== undefined)
       ) {
-        missingFiles.push(value2);
+        missingFiles.push(packedFile);
       }
     };
   for (let value of declared) {
@@ -102,18 +102,18 @@ function serializeResolvedLibraries(
   resolved: Model.ResolvedLibraries,
   catalog = PACKAGED_LIBRARY_CATALOG,
 ) {
-  return declared.map((input) => {
+  return declared.map((library) => {
     let value = resolved.load.find(
-        (input2): boolean => input2.name === input.name,
+        (candidate): boolean => candidate.name === library.name,
       ),
-      value2 =
-        input.global ?? findPackagedLibrary(input.name, catalog)?.provides[0];
+      globalName =
+        library.global ?? findPackagedLibrary(library.name, catalog)?.provides[0];
     return {
-      name: input.name,
-      version: input.version,
-      ...(value2 !== undefined
+      name: library.name,
+      version: library.version,
+      ...(globalName !== undefined
         ? {
-            global: value2,
+            global: globalName,
           }
         : {}),
       ...(value !== undefined
@@ -130,15 +130,15 @@ function inferDeclaredLibraries(
   catalog = PACKAGED_LIBRARY_CATALOG,
 ) {
   if (declared.length > 0) {
-    return declared.map((input) => ({
-      ...input,
+    return declared.map((library) => ({
+      ...library,
     }));
   }
   return catalog
-    .filter((input) => hasFile(input.packedFile))
-    .map((input) => ({
-      name: input.name,
-      version: input.version.split(".")[0],
+    .filter((library) => hasFile(library.packedFile))
+    .map((library) => ({
+      name: library.name,
+      version: library.version.split(".")[0],
     }));
 }
 export {
@@ -199,7 +199,7 @@ export function installModelLibraries(): () => void {
       },
     ];
     REACT_LIBRARY_CATALOG = PACKAGED_LIBRARY_CATALOG.filter(
-      (input) => input.name === "react" || input.name === "react-dom",
+      (library) => library.name === "react" || library.name === "react-dom",
     );
     LIBRARY_NAME_PATTERN = /^[a-z][a-z0-9._-]{0,40}$/;
     LIBRARY_VERSION_PATTERN = /^\d{1,4}(?:\.\d{1,4}){0,2}$/;

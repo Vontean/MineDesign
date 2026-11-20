@@ -36,8 +36,8 @@ export const DB_ERROR_CODES: string[] = [
 ];
 
 /** 估算 JSON 内嵌进 HTML 后的字节数：UTF-8 长度加上转义增加的部分 */
-export function estimateEmbeddedJsonBytes(value: unknown): number {
-  const json = JSON.stringify(value)!;
+export function estimateEmbeddedJsonBytes(data: unknown): number {
+  const json = JSON.stringify(data)!;
   const escapeBytes =
     5 * (json.match(JSON_HTML_ESCAPE_PATTERN)?.length ?? 0) +
     3 * (json.match(JSON_LINE_SEPARATOR_ESCAPE_PATTERN)?.length ?? 0);
@@ -45,30 +45,30 @@ export function estimateEmbeddedJsonBytes(value: unknown): number {
 }
 
 export function isCanonicalJsonObject(
-  input: unknown,
-): input is DatabaseRecord {
-  return typeof input === "object" && input !== null && !Array.isArray(input);
+  candidate: unknown,
+): candidate is DatabaseRecord {
+  return typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
 }
 
 /** JSON.stringify 的 replacer：对象的键按字典序排列 */
-export function sortJsonObjectKeys(_key: string, value: unknown): unknown {
-  if (!isCanonicalJsonObject(value)) {
-    return value;
+export function sortJsonObjectKeys(_key: string, candidate: unknown): unknown {
+  if (!isCanonicalJsonObject(candidate)) {
+    return candidate;
   }
   const sorted: DatabaseRecord = {};
-  for (const key of Object.keys(value).sort()) {
-    sorted[key] = value[key];
+  for (const key of Object.keys(candidate).sort()) {
+    sorted[key] = candidate[key];
   }
   return sorted;
 }
 
-export function canonicalJsonString(value: object): string {
-  const cached = canonicalJsonCache.get(value);
+export function canonicalJsonString(data: object): string {
+  const cached = canonicalJsonCache.get(data);
   if (cached !== undefined) {
     return cached;
   }
-  const canonical = JSON.stringify(value, sortJsonObjectKeys) ?? "undefined";
-  canonicalJsonCache.set(value, canonical);
+  const canonical = JSON.stringify(data, sortJsonObjectKeys) ?? "undefined";
+  canonicalJsonCache.set(data, canonical);
   return canonical;
 }
 
@@ -89,14 +89,14 @@ export function documentRecordsEqual(left: unknown, right: unknown): boolean {
 }
 
 /** 嵌套深度，叶子为 0；深度达到 maxDepth 即停止下探 */
-export function jsonValueDepth(value: unknown, maxDepth: number = 64): number {
-  if (typeof value !== "object" || value === null) {
+export function jsonValueDepth(data: unknown, maxDepth: number = 64): number {
+  if (typeof data !== "object" || data === null) {
     return 0;
   }
   let depth = 0;
-  for (const child of Array.isArray(value)
-    ? (value as readonly unknown[])
-    : Object.values<unknown>(value as DatabaseRecord)) {
+  for (const child of Array.isArray(data)
+    ? (data as readonly unknown[])
+    : Object.values<unknown>(data as DatabaseRecord)) {
     depth = Math.max(depth, jsonValueDepth(child, maxDepth - 1));
     if (depth >= maxDepth) {
       break;

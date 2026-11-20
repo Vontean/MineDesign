@@ -21,33 +21,33 @@ var isDesignSystemContentObject: (
   input: unknown,
 ) => input is Record<string, unknown>;
 function parseManifestLibraries(
-  input: unknown,
+  rawLibraries: unknown,
   sourceLabel: string,
   report: ParseReport,
 ) {
   let libraries: Model.DeclaredLibrary[] = [];
-  if (!Array.isArray(input)) {
+  if (!Array.isArray(rawLibraries)) {
     return libraries;
   }
   let seenNames = new Set<string>();
-  for (let value of input as unknown[]) {
+  for (let value of rawLibraries as unknown[]) {
     if (libraries.length >= MAX_MANIFEST_LIBRARIES) {
       break;
     }
     let text = "",
-      text2 = "",
-      value2: string | undefined,
-      value3: string | undefined;
+      version = "",
+      global: string | undefined,
+      file: string | undefined;
     if (typeof value === "string") {
-      let value4 = value.lastIndexOf("@");
-      text = (value4 > 0 ? value.slice(0, value4) : value)
+      let atIndex = value.lastIndexOf("@");
+      text = (atIndex > 0 ? value.slice(0, atIndex) : value)
         .trim()
         .toLowerCase();
-      text2 = value4 > 0 ? value.slice(value4 + 1).trim() : "";
+      version = atIndex > 0 ? value.slice(atIndex + 1).trim() : "";
     } else if (isManifestMetadataObject(value)) {
       text =
         typeof value.name === "string" ? value.name.trim().toLowerCase() : "";
-      text2 =
+      version =
         typeof value.version === "string"
           ? value.version.trim()
           : typeof value.version === "number"
@@ -55,7 +55,7 @@ function parseManifestLibraries(
             : "";
       if (typeof value.global === "string") {
         if (WINDOW_NAMESPACE_PATTERN.test(value.global.trim())) {
-          value2 = value.global.trim();
+          global = value.global.trim();
         } else {
           report.warnings.push(
             sourceLabel +
@@ -66,14 +66,14 @@ function parseManifestLibraries(
         }
       }
       if (typeof value.file === "string") {
-        let value4 = isValidDesignSystemPath(value.file.trim())
+        let normalizedFile = isValidDesignSystemPath(value.file.trim())
           ? normalizeDesignSystemPath(value.file.trim())
           : "";
         if (
-          PACKAGED_LIBRARY_PATH_PATTERN.test(value4) &&
-          isValidDesignSystemPath(value4)
+          PACKAGED_LIBRARY_PATH_PATTERN.test(normalizedFile) &&
+          isValidDesignSystemPath(normalizedFile)
         ) {
-          value3 = value4;
+          file = normalizedFile;
         } else {
           report.warnings.push(
             sourceLabel +
@@ -84,15 +84,15 @@ function parseManifestLibraries(
         }
       }
     }
-    text2 = text2.replace(/^[\^~=v]/, "");
+    version = version.replace(/^[\^~=v]/, "");
     if (
       !LIBRARY_NAME_PATTERN.test(text) ||
-      !LIBRARY_VERSION_PATTERN.test(text2)
+      !LIBRARY_VERSION_PATTERN.test(version)
     ) {
       report.dropped.push(
         sourceLabel +
           " library " +
-          JSON.stringify(text + "@" + text2) +
+          JSON.stringify(text + "@" + version) +
           ": bad name or version",
       );
       continue;
@@ -106,15 +106,15 @@ function parseManifestLibraries(
     seenNames.add(text);
     libraries.push({
       name: text,
-      version: text2,
-      ...(value2 !== undefined
+      version: version,
+      ...(global !== undefined
         ? {
-            global: value2,
+            global: global,
           }
         : {}),
-      ...(value3 !== undefined
+      ...(file !== undefined
         ? {
-            file: value3,
+            file: file,
           }
         : {}),
     });
@@ -149,8 +149,8 @@ function parseManifestBundleMetadata(
     libraries: libraries.length > 0 ? libraries : null,
   };
 }
-function isAssetTileSize(value: unknown): value is Model.AssetTileSize {
-  return typeof value === "string" && ASSET_TILE_SIZES.includes(value);
+function isAssetTileSize(size: unknown): size is Model.AssetTileSize {
+  return typeof size === "string" && ASSET_TILE_SIZES.includes(size);
 }
 function isAssetOrderKey(key: unknown): key is string {
   if (typeof key !== "string" || key === "" || key.length > 400) {
@@ -228,12 +228,12 @@ function parseAssetGroupMetadata(
         Array.isArray(value.order) &&
         !Object.hasOwn(orders, value.name)
       ) {
-        let value2 = [...new Set(value.order.filter(isAssetOrderKey))].slice(
+        let order = [...new Set(value.order.filter(isAssetOrderKey))].slice(
           0,
           MAX_DESIGN_SYSTEM_FILES,
         );
-        if (value2.length > 0) {
-          orders[value.name] = value2;
+        if (order.length > 0) {
+          orders[value.name] = order;
         }
       }
     }
@@ -254,19 +254,19 @@ function serializeAssetGroupMetadata(metadata: AssetGroupMetadata) {
       names.push(value);
     }
   }
-  return names.map((input) => {
-    let value = ownPropertyOrUndefined(metadata.tiles, input),
-      value2 = ownPropertyOrUndefined(metadata.orders, input);
+  return names.map((name) => {
+    let value = ownPropertyOrUndefined(metadata.tiles, name),
+      order = ownPropertyOrUndefined(metadata.orders, name);
     return {
-      name: input,
+      name: name,
       ...(value !== undefined && value !== DEFAULT_ASSET_TILE_SIZE
         ? {
             tile: value,
           }
         : {}),
-      ...(value2 !== undefined && value2.length > 0
+      ...(order !== undefined && order.length > 0
         ? {
-            order: value2,
+            order: order,
           }
         : {}),
     };
@@ -299,18 +299,18 @@ function parseBundleHeader(script: string) {
   let components: string[] = [];
   if (Array.isArray(header.components)) {
     for (let value of header.components as unknown[]) {
-      let value2 =
+      let componentName =
         typeof value === "string"
           ? value
           : isManifestMetadataObject(value) && typeof value.name === "string"
             ? value.name
             : "";
       if (
-        COMPONENT_NAME_PATTERN.test(value2) &&
-        !components.includes(value2) &&
+        COMPONENT_NAME_PATTERN.test(componentName) &&
+        !components.includes(componentName) &&
         components.length < MAX_BUNDLE_HEADER_COMPONENTS
       ) {
-        components.push(value2);
+        components.push(componentName);
       }
     }
   }
@@ -375,16 +375,16 @@ function sectionTitlesFromManifest(
   }
   let titles: Record<string, string> = {};
   for (let value of Object.keys(sections).sort()) {
-    let value2 = (sections as Record<string, unknown>)[value];
+    let titleValue = (sections as Record<string, unknown>)[value];
     if (
       !SECTION_TITLE_KEY_PATTERN.test(value) ||
-      typeof value2 !== "string"
+      typeof titleValue !== "string"
     ) {
       continue;
     }
-    let value3 = normalizeSectionTitleModelManifestMetadata(value2);
-    if (value3 !== "") {
-      titles[value] = value3;
+    let title = normalizeSectionTitleModelManifestMetadata(titleValue);
+    if (title !== "") {
+      titles[value] = title;
     }
   }
   return Object.freeze(titles);
@@ -426,9 +426,9 @@ export {
 export function installModelManifestMetadata(): () => void {
   return () => {
     isManifestMetadataObject = (
-      input: unknown,
-    ): input is Record<string, unknown> =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
+      candidate: unknown,
+    ): candidate is Record<string, unknown> =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
     MAX_MANIFEST_LIBRARIES = 12;
     MAX_BUNDLE_HEADER_COMPONENTS = 300;
     MAX_MANIFEST_ASSET_GROUPS = 60;
@@ -437,8 +437,8 @@ export function installModelManifestMetadata(): () => void {
     DEFAULT_ASSET_TILE_SIZE = "m";
     SECTION_TITLE_KEY_PATTERN = /^\S[^\x00-\x1f]{0,80}$/;
     isDesignSystemContentObject = (
-      input: unknown,
-    ): input is Record<string, unknown> =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
+      candidate: unknown,
+    ): candidate is Record<string, unknown> =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
   };
 }

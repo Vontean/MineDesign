@@ -32,24 +32,24 @@ var storedReadmeCodeSpan: (input: string) => string;
 var STORED_FILES_GUIDANCE_HEADING: string;
 function parseRemoteFileRecord(
   path: string,
-  input: Storage.DatabaseRecord,
+  record: Storage.DatabaseRecord,
 ): Storage.RemoteFileRecord | null {
   let id = blobIdFromReference(
-    stringOrUndefined(input.dataRef) ?? "",
+    stringOrUndefined(record.dataRef) ?? "",
   );
   if (id === null || isPendingBlobId(id)) {
     return null;
   }
-  let contentType = stringOrUndefined(input.contentType),
-    sha2562 = stringOrUndefined(input.sha256),
-    storedSha256 = stringOrUndefined(input.storedSha256);
+  let contentType = stringOrUndefined(record.contentType),
+    sha256 = stringOrUndefined(record.sha256),
+    storedSha256 = stringOrUndefined(record.storedSha256);
   return makeRemoteFileRecord(
     path,
     blobAbsoluteUrl(id),
     {
       bytes:
-        typeof input.dataBytes === "number" && input.dataBytes >= 0
-          ? Math.floor(input.dataBytes)
+        typeof record.dataBytes === "number" && record.dataBytes >= 0
+          ? Math.floor(record.dataBytes)
           : 0,
       contentType:
         contentType !== undefined &&
@@ -57,17 +57,17 @@ function parseRemoteFileRecord(
           ? contentType
           : undefined,
       sha256:
-        sha2562 !== undefined && REMOTE_FILE_SHA256_PATTERN.test(sha2562)
-          ? sha2562.toLowerCase()
+        sha256 !== undefined && REMOTE_FILE_SHA256_PATTERN.test(sha256)
+          ? sha256.toLowerCase()
           : undefined,
       storedSha256:
         storedSha256 !== undefined &&
         REMOTE_FILE_SHA256_PATTERN.test(storedSha256)
           ? storedSha256.toLowerCase()
           : undefined,
-      name: safeBoundedRemoteFileText(input.name, 200),
-      addedAt: safeBoundedRemoteFileText(input.addedAt, 40),
-      via: safeBoundedRemoteFileText(input.via, 120),
+      name: safeBoundedRemoteFileText(record.name, 200),
+      addedAt: safeBoundedRemoteFileText(record.addedAt, 40),
+      via: safeBoundedRemoteFileText(record.via, 120),
     },
   );
 }
@@ -100,60 +100,60 @@ function storageRecordFromRemoteFile(
   return storageRecord;
 }
 function parseStoredSystemMetadata(
-  input: unknown,
+  storedMetadata: unknown,
 ): Storage.StoredSystemMetadata | null {
-  if (input === undefined || !isStoredDocumentObject(input)) {
+  if (storedMetadata === undefined || !isStoredDocumentObject(storedMetadata)) {
     return null;
   }
   let metadata: Storage.StoredSystemMetadata = {
     v: 1,
-    title: stringOrUndefined(input.title) ?? "",
+    title: stringOrUndefined(storedMetadata.title) ?? "",
   };
   if (
-    typeof input.namespace === "string" &&
-    WINDOW_NAMESPACE_PATTERN.test(input.namespace)
+    typeof storedMetadata.namespace === "string" &&
+    WINDOW_NAMESPACE_PATTERN.test(storedMetadata.namespace)
   ) {
-    metadata.namespace = input.namespace;
+    metadata.namespace = storedMetadata.namespace;
   }
-  if (Array.isArray(input.libraries)) {
-    metadata.libraries = input.libraries;
+  if (Array.isArray(storedMetadata.libraries)) {
+    metadata.libraries = storedMetadata.libraries;
   }
-  if (Array.isArray(input.assetGroups)) {
-    metadata.assetGroups = input.assetGroups;
+  if (Array.isArray(storedMetadata.assetGroups)) {
+    metadata.assetGroups = storedMetadata.assetGroups;
   }
-  if (isStoredDocumentObject(input.sections)) {
-    metadata.sections = input.sections;
+  if (isStoredDocumentObject(storedMetadata.sections)) {
+    metadata.sections = storedMetadata.sections;
   }
-  if (isStoredDocumentObject(input.lastChange)) {
-    metadata.lastChange = input.lastChange;
+  if (isStoredDocumentObject(storedMetadata.lastChange)) {
+    metadata.lastChange = storedMetadata.lastChange;
   }
   if (
-    isStoredDocumentObject(input.convertedFrom) &&
-    typeof input.convertedFrom.at === "string"
+    isStoredDocumentObject(storedMetadata.convertedFrom) &&
+    typeof storedMetadata.convertedFrom.at === "string"
   ) {
-    metadata.convertedFrom = input.convertedFrom as Storage.TimestampMetadata;
+    metadata.convertedFrom = storedMetadata.convertedFrom as Storage.TimestampMetadata;
   }
   if (
-    isStoredDocumentObject(input.snapshot) &&
-    typeof input.snapshot.at === "string"
+    isStoredDocumentObject(storedMetadata.snapshot) &&
+    typeof storedMetadata.snapshot.at === "string"
   ) {
-    metadata.snapshot = input.snapshot as Storage.TimestampMetadata;
+    metadata.snapshot = storedMetadata.snapshot as Storage.TimestampMetadata;
   }
-  if (Array.isArray(input.carried)) {
-    metadata.carried = input.carried
+  if (Array.isArray(storedMetadata.carried)) {
+    metadata.carried = storedMetadata.carried
       .slice(0, MAX_CARRIED_FILES_METADATA)
-      .flatMap((input2: unknown): Storage.CarriedFile[] => {
-        if (!isStoredDocumentObject(input2)) {
+      .flatMap((carriedFile: unknown): Storage.CarriedFile[] => {
+        if (!isStoredDocumentObject(carriedFile)) {
           return [];
         }
-        let value = safeBoundedRemoteFileText(input2.path, 300),
-          value2 = safeBoundedRemoteFileText(input2.reason, 400);
+        let value = safeBoundedRemoteFileText(carriedFile.path, 300),
+          reason = safeBoundedRemoteFileText(carriedFile.reason, 400);
         if (
           value === undefined ||
-          value2 === undefined ||
-          typeof input2.form !== "string" ||
+          reason === undefined ||
+          typeof carriedFile.form !== "string" ||
           !CARRIED_FILE_FORMS.includes(
-            input2.form as Storage.CarriedForm,
+            carriedFile.form as Storage.CarriedForm,
           )
         ) {
           return [];
@@ -161,17 +161,17 @@ function parseStoredSystemMetadata(
         return [
           {
             path: value,
-            reason: value2,
-            form: input2.form as Storage.CarriedForm,
-            ...(Array.isArray(input2.referrers)
+            reason: reason,
+            form: carriedFile.form as Storage.CarriedForm,
+            ...(Array.isArray(carriedFile.referrers)
               ? {
-                  referrers: input2.referrers
-                    .map((input3: unknown) =>
-                      safeBoundedRemoteFileText(input3, 300),
+                  referrers: carriedFile.referrers
+                    .map((path: unknown) =>
+                      safeBoundedRemoteFileText(path, 300),
                     )
                     .filter(
-                      (input3: string | undefined): input3 is string =>
-                        input3 !== undefined,
+                      (path: string | undefined): path is string =>
+                        path !== undefined,
                     )
                     .slice(0, MAX_CARRIED_FILE_REFERRERS),
                 }
@@ -180,8 +180,8 @@ function parseStoredSystemMetadata(
         ];
       });
   }
-  if (typeof input.carriedMore === "number" && input.carriedMore > 0) {
-    metadata.carriedMore = Math.floor(input.carriedMore);
+  if (typeof storedMetadata.carriedMore === "number" && storedMetadata.carriedMore > 0) {
+    metadata.carriedMore = Math.floor(storedMetadata.carriedMore);
   }
   return metadata;
 }
@@ -196,7 +196,7 @@ function composeStoredSystemFiles(
     storageFiles: Record<string, Model.StorageRecord> = {},
     remoteText = new Map<string, Storage.RemoteFileRecord>(),
     hidden: number = 0;
-  for (let [value, value2] of documents) {
+  for (let [value, document] of documents) {
     if (
       value === SYSTEM_META_DOCUMENT_PATH ||
       value === SYSTEM_SOURCE_DOCUMENT_PATH ||
@@ -207,47 +207,47 @@ function composeStoredSystemFiles(
     ) {
       continue;
     }
-    if (!isStoredDocumentObject(value2)) {
+    if (!isStoredDocumentObject(document)) {
       hidden++;
       continue;
     }
-    let value3 = validatedFilePathForDocument(value, value2);
-    if (value3 === null) {
+    let validatedPath = validatedFilePathForDocument(value, document);
+    if (validatedPath === null) {
       hidden++;
       continue;
     }
     if (
-      value3 === GENERATED_TOKENS_CSS_PATH ||
-      isGeneratedApiPath(value3)
+      validatedPath === GENERATED_TOKENS_CSS_PATH ||
+      isGeneratedApiPath(validatedPath)
     ) {
       continue;
     }
-    let value4 =
-      stringOrUndefined(value2.dataRef) !== undefined
-        ? parseRemoteFileRecord(value3, value2)
+    let remoteFile =
+      stringOrUndefined(document.dataRef) !== undefined
+        ? parseRemoteFileRecord(validatedPath, document)
         : null;
     if (value === SYSTEM_TOKENS_DOCUMENT_PATH) {
-      files[value3] =
-        JSON.stringify(value2, null, 2) +
+      files[validatedPath] =
+        JSON.stringify(document, null, 2) +
         `
 `;
     } else if (
-      value3 === DESIGN_SYSTEM_PATHS.tokens &&
-      Object.hasOwn(files, value3)
+      validatedPath === DESIGN_SYSTEM_PATHS.tokens &&
+      Object.hasOwn(files, validatedPath)
     ) {
       continue;
-    } else if (value4 !== null && canUseStoragePointer(value3)) {
-      files[value3] = blobPointer(
-        blobIdFromReference(value4.dataRef)!,
+    } else if (remoteFile !== null && canUseStoragePointer(validatedPath)) {
+      files[validatedPath] = blobPointer(
+        blobIdFromReference(remoteFile.dataRef)!,
       );
-      storageFiles[value3] = storageRecordFromRemoteFile(value4);
-    } else if (value4 !== null) {
-      remoteText.set(value3, value4);
-    } else if (typeof value2.data === "string") {
-      files[value3] =
-        value3 === DESIGN_SYSTEM_PATHS.readme
-          ? stripGeneratedReadmeTail(value2.data)
-          : value2.data;
+      storageFiles[validatedPath] = storageRecordFromRemoteFile(remoteFile);
+    } else if (remoteFile !== null) {
+      remoteText.set(validatedPath, remoteFile);
+    } else if (typeof document.data === "string") {
+      files[validatedPath] =
+        validatedPath === DESIGN_SYSTEM_PATHS.readme
+          ? stripGeneratedReadmeTail(document.data)
+          : document.data;
     } else {
       hidden++;
     }
@@ -295,7 +295,7 @@ function composeStoredSystemFiles(
   let sortedFiles = Object.fromEntries(
       Object.keys(files)
         .sort()
-        .map((input: string): [string, string] => [input, files[input]]),
+        .map((path: string): [string, string] => [path, files[path]]),
     ),
     source = documents.get(SYSTEM_SOURCE_DOCUMENT_PATH),
     upgraded = documents.get(SYSTEM_UPGRADED_DOCUMENT_PATH);
@@ -316,12 +316,12 @@ function hydrateStoredSystemText(
   let files = {
     ...system.files,
   };
-  for (let [value, value2] of remoteText) {
+  for (let [value, text] of remoteText) {
     if (system.remoteText.has(value)) {
       files[value] =
         value === DESIGN_SYSTEM_PATHS.readme
-          ? stripGeneratedReadmeTail(value2)
-          : value2;
+          ? stripGeneratedReadmeTail(text)
+          : text;
     }
   }
   files[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget(
@@ -339,7 +339,7 @@ function hydrateStoredSystemText(
     Object.fromEntries(
       Object.keys(files)
         .sort()
-        .map((input: string): [string, string] => [input, files[input]]),
+        .map((path: string): [string, string] => [path, files[path]]),
     ),
   );
 }
@@ -362,7 +362,7 @@ function normalizeLocalFileReference(reference: string): string | null {
   } catch {}
   if (
     isLocalFileReference(path) &&
-    path.split("/").some((input: string) => input !== "" && input !== ".")
+    path.split("/").some((segment: string) => segment !== "" && segment !== ".")
   ) {
     return path;
   } else {
@@ -407,8 +407,8 @@ function componentFileReferences(path: string, content: string): string[] {
   if (kind !== "preview" && kind !== "componentReadme") {
     return references;
   }
-  let addReference = (input: RegExpMatchArray): void => {
-    let value = (input[1] ?? input[2] ?? input[3] ?? "").trim();
+  let addReference = (match: RegExpMatchArray): void => {
+    let value = (match[1] ?? match[2] ?? match[3] ?? "").trim();
     if (
       normalizeLocalFileReference(value) !== null &&
       !references.includes(value)
@@ -446,14 +446,14 @@ function generateStoredFilesGuidance(
   let idsInCollection = (items: string) =>
       [...documents.keys()]
         .filter(
-          (input: string): boolean =>
-            documentCollectionPath(input) === items,
+          (path: string): boolean =>
+            documentCollectionPath(path) === items,
         )
-        .map((input: string) => input.slice(items.length + 1))
+        .map((path: string) => path.slice(items.length + 1))
         .sort(),
-    blobIdForPath = (input: string) =>
+    blobIdForPath = (path: string) =>
       blobIdFromReference(
-        remoteFileRecordAtPath(documents, input)?.dataRef ?? "",
+        remoteFileRecordAtPath(documents, path)?.dataRef ?? "",
       ),
     rawTokensRecord = documents.get(RAW_TOKENS_DOCUMENT_PATH),
     rawTokensId =
@@ -503,13 +503,13 @@ function generateStoredFilesGuidance(
   }
   for (let value of idsInCollection(COMPONENTS_COLLECTION)
     .map(
-      (input: string) =>
+      (componentName: string) =>
         stringOrUndefined(
-          documents.get(COMPONENTS_COLLECTION + "/" + input)?.path,
+          documents.get(COMPONENTS_COLLECTION + "/" + componentName)?.path,
         ) ?? "",
     )
-    .filter((input: string) =>
-      input.startsWith(DESIGN_SYSTEM_PATHS.libDir),
+    .filter((path: string) =>
+      path.startsWith(DESIGN_SYSTEM_PATHS.libDir),
     )
     .sort()) {
     if (blobIdForPath(value) !== null) {
@@ -528,27 +528,27 @@ function generateStoredFilesGuidance(
         ? []
         : parseTokens(tokensRecord).type.fonts;
   for (let value of idsInCollection(FONTS_COLLECTION)) {
-    let value2 =
+    let readmePath =
       stringOrUndefined(
         documents.get(FONTS_COLLECTION + "/" + value)?.path,
       ) ?? "";
-    if (blobIdForPath(value2) === null) {
+    if (blobIdForPath(readmePath) === null) {
       continue;
     }
-    let value3 = fonts.find(
-      (input: Model.FontFace): boolean => input.file === value2,
+    let matchingFont = fonts.find(
+      (font: Model.FontFace): boolean => font.file === readmePath,
     );
     rows.push(
       "| " +
-        (value3 !== undefined
+        (matchingFont !== undefined
           ? sanitizeStoredReadmeCell(
-              value3.family +
-                (value3.style !== "normal" ? " " + value3.style : ""),
+              matchingFont.family +
+                (matchingFont.style !== "normal" ? " " + matchingFont.style : ""),
             ) + " — "
           : "") +
-        storedReadmeCodeSpan(value2) +
+        storedReadmeCodeSpan(readmePath) +
         " | " +
-        storedReadmeCodeSpan(blobIdForPath(value2)!) +
+        storedReadmeCodeSpan(blobIdForPath(readmePath)!) +
         " |",
     );
   }
@@ -693,19 +693,19 @@ function appendStoredFilesGuidance(
     collectionBytes =
       512 *
       plan.uploads
-        .flatMap((input) => input.paths)
+        .flatMap((document) => document.paths)
         .filter(
-          (input: string): boolean =>
+          (path: string): boolean =>
             documentCollectionPath(
-              rawDocumentPathForFile(input),
+              rawDocumentPathForFile(path),
             ) === FILES_COLLECTION,
         ).length;
-  for (let [value, value2] of plan.docs) {
+  for (let [value, documentRecord] of plan.docs) {
     if (
       documentCollectionPath(value) === FILES_COLLECTION
     ) {
       collectionBytes += estimateEmbeddedJsonBytes(
-        value === readmePath ? updatedRecord : value2,
+        value === readmePath ? updatedRecord : documentRecord,
       );
     }
   }
@@ -758,18 +758,18 @@ export {
 };
 export function installModelStoreCompose(): () => void {
   return () => {
-    stringOrUndefined = (input: unknown) =>
-      typeof input === "string" ? input : undefined;
+    stringOrUndefined = (candidateValue: unknown) =>
+      typeof candidateValue === "string" ? candidateValue : undefined;
     isStoredDocumentObject = (
-      input: unknown,
-    ): input is Storage.DatabaseRecord =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
+      candidate: unknown,
+    ): candidate is Storage.DatabaseRecord =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
     REMOTE_FILE_MIME_TYPE_PATTERN =
       /^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}\/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$/;
     REMOTE_FILE_SHA256_PATTERN = /^[0-9a-f]{64}$/i;
-    safeBoundedRemoteFileText = (items: unknown, options: number) =>
+    safeBoundedRemoteFileText = (items: unknown, maxLength: number) =>
       typeof items === "string" &&
-      items.length <= options &&
+      items.length <= maxLength &&
       !/[\u0000-\u001f\u007f]/.test(items)
         ? items
         : undefined;
@@ -780,12 +780,12 @@ export function installModelStoreCompose(): () => void {
       /(?:^|[\s:,(])url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)/g;
     MARKDOWN_IMAGE_REFERENCE_PATTERN =
       /!\[[^\]]*\]\(\s*<?([^)>\s]+)>?(?:\s+"[^"]*")?\s*\)/g;
-    sanitizeStoredReadmeCell = (input: string) =>
-      input.replace(/[|\r\n]+/g, " ").trim();
+    sanitizeStoredReadmeCell = (cell: string) =>
+      cell.replace(/[|\r\n]+/g, " ").trim();
     STORED_README_CODE_DELIMITER = "`";
-    storedReadmeCodeSpan = (input: string): string =>
+    storedReadmeCodeSpan = (text: string): string =>
       STORED_README_CODE_DELIMITER +
-      sanitizeStoredReadmeCell(input).replaceAll(
+      sanitizeStoredReadmeCell(text).replaceAll(
         STORED_README_CODE_DELIMITER,
         "",
       ) +

@@ -100,39 +100,39 @@ function isMirrorEligibleFile(path: string, content: string): boolean {
     return parseDataUriHeader(content)?.base64 === true;
   }
 }
-function estimateEmbeddedStringBytes(value: string) {
-  if (value.length >= MIN_CACHED_STRING_LENGTH) {
-    let entry = embeddedStringSizeCache.get(value);
+function estimateEmbeddedStringBytes(text: string) {
+  if (text.length >= MIN_CACHED_STRING_LENGTH) {
+    let entry = embeddedStringSizeCache.get(text);
     if (entry !== undefined) {
-      embeddedStringSizeCache.delete(value);
-      embeddedStringSizeCache.set(value, entry);
+      embeddedStringSizeCache.delete(text);
+      embeddedStringSizeCache.set(text, entry);
       return entry;
     }
   }
   let bytes: number;
-  if (typeof value === "string" && !JSON_STRING_ESCAPE_PATTERN.test(value)) {
-    bytes = value.length + 2;
+  if (typeof text === "string" && !JSON_STRING_ESCAPE_PATTERN.test(text)) {
+    bytes = text.length + 2;
   } else {
     let index: number = 0;
-    for (let index2: number = 0; index2 < value.length; index2++) {
-      if (value.charCodeAt(index2) === 60) {
+    for (let characterIndex: number = 0; characterIndex < text.length; characterIndex++) {
+      if (text.charCodeAt(characterIndex) === 60) {
         index++;
       }
     }
     bytes =
-      fileBudgetEncoder.encode(JSON.stringify(value)).length + 5 * index;
+      fileBudgetEncoder.encode(JSON.stringify(text)).length + 5 * index;
   }
-  if (value.length >= MIN_CACHED_STRING_LENGTH) {
-    embeddedStringSizeCache.set(value, bytes);
-    embeddedStringCacheCharacters += value.length;
-    for (let [value2] of embeddedStringSizeCache) {
+  if (text.length >= MIN_CACHED_STRING_LENGTH) {
+    embeddedStringSizeCache.set(text, bytes);
+    embeddedStringCacheCharacters += text.length;
+    for (let [cachedText] of embeddedStringSizeCache) {
       if (
         embeddedStringCacheCharacters <= MAX_EMBEDDED_STRING_CACHE_CHARACTERS
       ) {
         break;
       }
-      embeddedStringSizeCache.delete(value2);
-      embeddedStringCacheCharacters -= value2.length;
+      embeddedStringSizeCache.delete(cachedText);
+      embeddedStringCacheCharacters -= cachedText.length;
     }
   }
   return bytes;
@@ -326,77 +326,77 @@ function normalizeDesignSystemPath(path: string) {
       .slice(DESIGN_SYSTEM_PATHS.componentsDir.length)
       .split("/");
     if (value.length === 1) {
-      let value2 = value[0],
-        value3 = /^([A-Za-z_$][A-Za-z0-9_$]*)\.html?$/.exec(value2);
-      if (value3 !== null) {
+      let basename = value[0],
+        htmlMatch = /^([A-Za-z_$][A-Za-z0-9_$]*)\.html?$/.exec(basename);
+      if (htmlMatch !== null) {
         return (
           DESIGN_SYSTEM_PATHS.componentsDir +
-          value3[1] +
+          htmlMatch[1] +
           "/" +
           COMPONENT_FILENAMES.preview
         );
       }
-      value3 = /^([A-Za-z_$][A-Za-z0-9_$]*)\.(?:prompt\.)?md$/.exec(value2);
-      if (value3 !== null && value2.toLowerCase() !== "readme.md") {
+      htmlMatch = /^([A-Za-z_$][A-Za-z0-9_$]*)\.(?:prompt\.)?md$/.exec(basename);
+      if (htmlMatch !== null && basename.toLowerCase() !== "readme.md") {
         return (
           DESIGN_SYSTEM_PATHS.componentsDir +
-          value3[1] +
+          htmlMatch[1] +
           "/" +
           COMPONENT_FILENAMES.readme
         );
       }
     } else if (value.length === 2) {
-      let [value2, value3] = value,
-        value4 = value3.toLowerCase();
+      let [componentName, extension] = value,
+        lowercasePath = extension.toLowerCase();
       if (
-        value4 === "readme.md" ||
-        value4 === value2.toLowerCase() + ".prompt.md" ||
-        value4 === "prompt.md" ||
-        value4 === "usage.md"
+        lowercasePath === "readme.md" ||
+        lowercasePath === componentName.toLowerCase() + ".prompt.md" ||
+        lowercasePath === "prompt.md" ||
+        lowercasePath === "usage.md"
       ) {
         return (
           DESIGN_SYSTEM_PATHS.componentsDir +
-          value2 +
+          componentName +
           "/" +
           COMPONENT_FILENAMES.readme
         );
       }
       if (
-        value4 === "preview.html" ||
-        value4 === "index.html" ||
-        value4 === value2.toLowerCase() + ".html"
+        lowercasePath === "preview.html" ||
+        lowercasePath === "index.html" ||
+        lowercasePath === componentName.toLowerCase() + ".html"
       ) {
         return (
           DESIGN_SYSTEM_PATHS.componentsDir +
-          value2 +
+          componentName +
           "/" +
           COMPONENT_FILENAMES.preview
         );
       }
     } else {
-      let value2 = parseLegacyComponentPath(path);
-      if (value2 !== null && value2.ext === "html") {
+      let legacyPath = parseLegacyComponentPath(path);
+      if (legacyPath !== null && legacyPath.ext === "html") {
         return (
           DESIGN_SYSTEM_PATHS.componentsDir +
-          value2.name +
+          legacyPath.name +
           "/" +
           COMPONENT_FILENAMES.preview
         );
       }
-      if (value2 !== null && value2.ext === "prompt.md") {
+      if (legacyPath !== null && legacyPath.ext === "prompt.md") {
         return (
           DESIGN_SYSTEM_PATHS.componentsDir +
-          value2.name +
+          legacyPath.name +
           "/" +
           COMPONENT_FILENAMES.readme
         );
       }
-      if (value2 !== null && value2.ext === "d.ts") {
+      if (legacyPath !== null && legacyPath.ext === "d.ts") {
         return (
           DESIGN_SYSTEM_PATHS.componentsDir +
-          value2.name +
+          legacyPath.name +
           "/" +
-          value2.name +
+          legacyPath.name +
           ".d.ts"
         );
       }
@@ -405,10 +405,10 @@ function normalizeDesignSystemPath(path: string) {
   return path;
 }
 function parseManifest(
-  input: unknown,
+  inputManifest: unknown,
   report: ParseReport = { dropped: [], warnings: [] },
 ) {
-  let parsed: unknown = input;
+  let parsed: unknown = inputManifest;
   if (typeof parsed === "string") {
     if (parsed.trim() === "") {
       return {};
@@ -416,10 +416,10 @@ function parseManifest(
     try {
       parsed = JSON.parse(parsed);
     } catch (value) {
-      let value2: string =
+      let manifestVersion: string =
         "manifest.json: " + String((value as Error).message).slice(0, 120);
-      if (!report.dropped.includes(value2)) {
-        report.dropped.push(value2);
+      if (!report.dropped.includes(manifestVersion)) {
+        report.dropped.push(manifestVersion);
       }
       return {};
     }
@@ -430,8 +430,8 @@ function parseManifest(
     Array.isArray(parsed)
   ) {
     if (
-      !report.warnings.some((input2) =>
-        input2.startsWith("manifest.json: not a JSON object"),
+      !report.warnings.some((warning) =>
+        warning.startsWith("manifest.json: not a JSON object"),
       )
     ) {
       report.warnings.push(
@@ -444,8 +444,8 @@ function parseManifest(
   if (manifest.manifestVersion !== DESIGN_SYSTEM_MANIFEST_VERSION) {
     if (
       Object.keys(manifest).length > 0 &&
-      !report.warnings.some((input2) =>
-        input2.startsWith("manifest.json: not manifestVersion"),
+      !report.warnings.some((warning) =>
+        warning.startsWith("manifest.json: not manifestVersion"),
       )
     ) {
       report.warnings.push(
@@ -471,17 +471,17 @@ function isUnboundedFileParsing() {
   return unboundedFileParsing;
 }
 function parseFileTable(
-  input: unknown,
+  inputFiles: unknown,
   report: ParseReport = createParseReport(),
-  options: {
+  parseOptions: {
     unbounded?: boolean;
   } = {},
 ): FileTable {
-  let sourceFiles: Record<string, unknown> = isFileTableObject(input)
-      ? input
+  let sourceFiles: Record<string, unknown> = isFileTableObject(inputFiles)
+      ? inputFiles
       : {},
     acceptedFiles = new Map<string, { from: string; value: string }>(),
-    bounded: boolean = !(options.unbounded ?? unboundedFileParsing),
+    bounded: boolean = !(parseOptions.unbounded ?? unboundedFileParsing),
     totalBytes = 0,
     declarationBytes = 0,
     fileCount: number = 0;
@@ -489,13 +489,13 @@ function parseFileTable(
     if (!Object.hasOwn(sourceFiles, value)) {
       continue;
     }
-    let value2 =
+    let parseError =
       typeof value === "string"
         ? explainToolConfigurationPath(value)
         : null;
-    if (value2 !== null) {
+    if (parseError !== null) {
       report.dropped.push(
-        "file " + JSON.stringify(value.slice(0, 80)) + ": " + value2,
+        "file " + JSON.stringify(value.slice(0, 80)) + ": " + parseError,
       );
       continue;
     }
@@ -507,64 +507,64 @@ function parseFileTable(
       );
       continue;
     }
-    let value3 = sourceFiles[value];
-    if (typeof value3 !== "string") {
+    let fileValue = sourceFiles[value];
+    if (typeof fileValue !== "string") {
       report.dropped.push("file " + value + ": not a string");
       continue;
     }
-    let value4 = normalizeDesignSystemPath(value);
+    let normalizedPath = normalizeDesignSystemPath(value);
     if (
-      isGeneratedSystemPath(value4) &&
-      !hasGeneratedSystemHeader(value4, value3)
+      isGeneratedSystemPath(normalizedPath) &&
+      !hasGeneratedSystemHeader(normalizedPath, fileValue)
     ) {
-      let value10 = carriedDocumentPath(value4),
-        callback = (input2: string) =>
-          acceptedFiles.has(input2) || Object.hasOwn(sourceFiles, input2),
-        value11 =
-          value10.lastIndexOf(".") > value10.lastIndexOf("/")
-            ? value10.lastIndexOf(".")
-            : value10.length,
-        value12 = value10;
-      for (let count: number = 2; count < 10 && callback(value12); count++) {
-        value12 =
-          value10.slice(0, value11) +
+      let extensionIndex = carriedDocumentPath(normalizedPath),
+        callback = (isAcceptedPath: string) =>
+          acceptedFiles.has(isAcceptedPath) || Object.hasOwn(sourceFiles, isAcceptedPath),
+        extensionLength =
+          extensionIndex.lastIndexOf(".") > extensionIndex.lastIndexOf("/")
+            ? extensionIndex.lastIndexOf(".")
+            : extensionIndex.length,
+        candidatePath = extensionIndex;
+      for (let count: number = 2; count < 10 && callback(candidatePath); count++) {
+        candidatePath =
+          extensionIndex.slice(0, extensionLength) +
           "-" +
           String(count) +
-          value10.slice(value11);
+          extensionIndex.slice(extensionLength);
       }
-      if (callback(value12)) {
+      if (callback(candidatePath)) {
         report.dropped.push(
           "file " +
-            value4 +
+            normalizedPath +
             ": " +
-            value10 +
+            extensionIndex +
             " and its numbered names are taken — rename the file",
         );
         continue;
       }
       report.warnings.push(
         "file " +
-          value4 +
+          normalizedPath +
           ": carried as " +
-          value12 +
+          candidatePath +
           " — that name is generated beside the page on every save",
       );
-      value4 = value12;
+      normalizedPath = candidatePath;
     }
-    if (value4 !== value && !isValidDesignSystemPath(value4)) {
+    if (normalizedPath !== value && !isValidDesignSystemPath(normalizedPath)) {
       report.dropped.push("file " + value + ": invalid after normalization");
       continue;
     }
-    let value5 =
-      explainGeneratedOrRetiredPath(value4) ??
-      explainReservedSystemPath(value4);
-    if (value5 !== null) {
-      report.dropped.push("file " + value4 + ": " + value5);
+    let inlineError =
+      explainGeneratedOrRetiredPath(normalizedPath) ??
+      explainReservedSystemPath(normalizedPath);
+    if (inlineError !== null) {
+      report.dropped.push("file " + normalizedPath + ": " + inlineError);
       continue;
     }
-    let entry = acceptedFiles.get(value4);
+    let entry = acceptedFiles.get(normalizedPath);
     if (entry !== undefined) {
-      if (entry.from === value4 || value !== value4) {
+      if (entry.from === normalizedPath || value !== normalizedPath) {
         report.warnings.push(
           "file " +
             value +
@@ -584,54 +584,54 @@ function parseFileTable(
       );
       continue;
     }
-    let value6 = classifyDesignSystemFile(value4);
+    let fileKind = classifyDesignSystemFile(normalizedPath);
     if (
-      !isTextFilePath(value4) &&
-      parseDataUriHeader(value3) === null &&
-      parseStoragePointer(value3) === null
+      !isTextFilePath(normalizedPath) &&
+      parseDataUriHeader(fileValue) === null &&
+      parseStoragePointer(fileValue) === null
     ) {
       report.dropped.push(
         "file " +
-          value4 +
+          normalizedPath +
           ": binary file must be a data: URI or a blob:/file: pointer",
       );
       continue;
     }
-    let value7 =
+    let previousInlineBytes =
         entry !== undefined ? estimateEmbeddedStringBytes(entry.value) : 0,
-      value8 = entry !== undefined && value6 === "dts" ? value7 : 0,
-      value9 = estimateEmbeddedStringBytes(value3);
+      previousDeclarationBytes = entry !== undefined && fileKind === "dts" ? previousInlineBytes : 0,
+      inlineBytes = estimateEmbeddedStringBytes(fileValue);
     if (bounded) {
-      if (value6 === "dts") {
+      if (fileKind === "dts") {
         if (
-          declarationBytes - value8 + value9 >
+          declarationBytes - previousDeclarationBytes + inlineBytes >
           DESIGN_SYSTEM_INLINE_LIMITS.dtsTotal
         ) {
           report.dropped.push(
             "file " +
-              value4 +
+              normalizedPath +
               ": .d.ts total would exceed " +
               formatInlineBudgetBytes(DESIGN_SYSTEM_INLINE_LIMITS.dtsTotal),
           );
           continue;
         }
-      } else if (value9 > inlineLimitForPath(value4, value6)) {
+      } else if (inlineBytes > inlineLimitForPath(normalizedPath, fileKind)) {
         report.dropped.push(
           "file " +
-            value4 +
+            normalizedPath +
             ": " +
-            formatInlineBudgetBytes(value9) +
+            formatInlineBudgetBytes(inlineBytes) +
             " exceeds the " +
-            inlineLimitLabelForPath(value4, value6) +
+            inlineLimitLabelForPath(normalizedPath, fileKind) +
             " cap of " +
-            formatInlineBudgetBytes(inlineLimitForPath(value4, value6)),
+            formatInlineBudgetBytes(inlineLimitForPath(normalizedPath, fileKind)),
         );
         continue;
       }
-      if (totalBytes - value7 + value9 > DESIGN_SYSTEM_INLINE_LIMITS.total) {
+      if (totalBytes - previousInlineBytes + inlineBytes > DESIGN_SYSTEM_INLINE_LIMITS.total) {
         report.dropped.push(
           "file " +
-            value4 +
+            normalizedPath +
             ": document total would exceed " +
             formatInlineBudgetBytes(DESIGN_SYSTEM_INLINE_LIMITS.total),
         );
@@ -642,25 +642,25 @@ function parseFileTable(
       report.warnings.push(
         "file " + entry.from + ": superseded by canonically-named " + value,
       );
-      totalBytes -= value7;
-      declarationBytes -= value8;
+      totalBytes -= previousInlineBytes;
+      declarationBytes -= previousDeclarationBytes;
       fileCount--;
     }
-    if (value6 === "dts") {
-      declarationBytes += value9;
+    if (fileKind === "dts") {
+      declarationBytes += inlineBytes;
     }
-    totalBytes += value9;
+    totalBytes += inlineBytes;
     fileCount++;
-    acceptedFiles.set(value4, {
+    acceptedFiles.set(normalizedPath, {
       from: value,
-      value: value3,
+      value: fileValue,
     });
   }
   let sortedEntries = [...acceptedFiles.entries()]
-    .sort((input2, options2): number =>
-      input2[0] < options2[0] ? -1 : input2[0] > options2[0] ? 1 : 0,
+    .sort((leftEntry, rightEntry): number =>
+      leftEntry[0] < rightEntry[0] ? -1 : leftEntry[0] > rightEntry[0] ? 1 : 0,
     )
-    .map(([input2, input3]) => [input2, input3.value]);
+    .map(([path, entry]) => [path, entry.value]);
   return Object.freeze(Object.fromEntries(sortedEntries));
 }
 function formatInlineBudgetBytes(bytes: number): string {
@@ -705,19 +705,19 @@ function computeFileBudgetUsage(
     };
   }
   for (let value in files) {
-    let value2 = files[value],
-      value3 =
-        inlineBytesForPath?.(value) ?? estimateEmbeddedStringBytes(value2),
-      value4 = classifyDesignSystemFile(value);
-    usage[value4].files++;
-    usage[value4].bytes += value3;
+    let fileValue = files[value],
+      fileBytes =
+        inlineBytesForPath?.(value) ?? estimateEmbeddedStringBytes(fileValue),
+      fileKind = classifyDesignSystemFile(value);
+    usage[fileKind].files++;
+    usage[fileKind].bytes += fileBytes;
     usage.total.files++;
-    usage.total.bytes += value3;
-    let value5 = storageKindForFile(value, value2);
-    if (value5 === "blob") {
+    usage.total.bytes += fileBytes;
+    let storageKind = storageKindForFile(value, fileValue);
+    if (storageKind === "blob") {
       usage.blob.files++;
       usage.blob.bytes += storedBytesForPath(value);
-    } else if (value5 === "file") {
+    } else if (storageKind === "file") {
       usage.beside.files++;
       usage.beside.bytes += storedBytesForPath(value);
     }
@@ -850,8 +850,8 @@ export function installModelFileTable(): () => void {
     };
     MAX_DISPLAYED_DOCUMENTS = 24;
     DESIGN_SYSTEM_MANIFEST_VERSION = 3;
-    isFileTableObject = (input: unknown): input is Record<string, unknown> =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
+    isFileTableObject = (candidate: unknown): candidate is Record<string, unknown> =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
     unboundedFileParsing = false;
   };
 }

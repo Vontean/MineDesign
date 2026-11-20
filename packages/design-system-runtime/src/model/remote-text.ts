@@ -34,9 +34,9 @@ function remoteTextEntry(path: string): Storage.RemoteTextEntry | undefined {
 }
 function hydratedRemoteTexts(): Map<string, string> {
   let texts = new Map<string, string>();
-  for (let [value, value2] of remoteTextEntries) {
-    if (value2.text !== undefined) {
-      texts.set(value, value2.text);
+  for (let [value, entry] of remoteTextEntries) {
+    if (entry.text !== undefined) {
+      texts.set(value, entry.text);
     }
   }
   return texts;
@@ -58,28 +58,28 @@ function synchronizeRemoteTextEntries(
       remoteTextEntries.delete(value);
     }
   }
-  for (let [value, value2] of remoteText) {
+  for (let [value, remoteEntry] of remoteText) {
     let entry = remoteTextEntries.get(value);
     remoteTextEntries.set(
       value,
-      entry !== undefined && entry.ptr.dataRef === value2.dataRef
+      entry !== undefined && entry.ptr.dataRef === remoteEntry.dataRef
         ? {
-            ptr: value2,
+            ptr: remoteEntry,
             text: entry.text,
           }
         : {
-            ptr: value2,
+            ptr: remoteEntry,
           },
     );
   }
   if (fetchText === undefined) {
     return;
   }
-  for (let [value, value2] of remoteTextEntries) {
-    let dataRef = value2.ptr.dataRef,
+  for (let [value, remoteEntry] of remoteTextEntries) {
+    let dataRef = remoteEntry.ptr.dataRef,
       entry = failedRemoteTextTimes.get(dataRef);
     if (
-      value2.text !== undefined ||
+      remoteEntry.text !== undefined ||
       fetchingRemoteTextReferences.has(dataRef) ||
       (entry !== undefined && Date.now() - entry < REMOTE_TEXT_RETRY_DELAY_MS)
     ) {
@@ -87,9 +87,9 @@ function synchronizeRemoteTextEntries(
     }
     fetchingRemoteTextReferences.add(dataRef);
     fetchRemoteFileText(dataRef, fetchText).then(
-      (input: string | undefined): void => {
+      (text: string | undefined): void => {
         fetchingRemoteTextReferences.delete(dataRef);
-        if (input === undefined) {
+        if (text === undefined) {
           failedRemoteTextTimes.set(dataRef, Date.now());
           clearTimeout(remoteTextRetryTimer);
           remoteTextRetryTimer = setTimeout(
@@ -97,9 +97,9 @@ function synchronizeRemoteTextEntries(
               synchronizeRemoteTextEntries(
                 new Map(
                   [...remoteTextEntries].map(
-                    ([input2, input3]: [string, Storage.RemoteTextEntry]) => [
-                      input2,
-                      input3.ptr,
+                    ([key, remoteTextRecord]: [string, Storage.RemoteTextEntry]) => [
+                      key,
+                      remoteTextRecord.ptr,
                     ],
                   ),
                 ),
@@ -110,13 +110,13 @@ function synchronizeRemoteTextEntries(
           return;
         }
         failedRemoteTextTimes.delete(dataRef);
-        for (let [value3, value4] of remoteTextEntries) {
-          if (value4.ptr.dataRef !== dataRef || value4.text !== undefined) {
+        for (let [key, localEntry] of remoteTextEntries) {
+          if (localEntry.ptr.dataRef !== dataRef || localEntry.text !== undefined) {
             continue;
           }
-          value4.text = input;
-          if (!localRemoteTextEdits.has(value3)) {
-            remoteTextHydrator?.hydrate(value3, input);
+          localEntry.text = text;
+          if (!localRemoteTextEdits.has(key)) {
+            remoteTextHydrator?.hydrate(key, text);
           }
         }
       },
@@ -153,8 +153,8 @@ function sameOriginFileFetcher(): Storage.RemoteTextFetch | undefined {
   if (typeof location === "undefined" || typeof fetch === "undefined") {
     return undefined;
   } else {
-    return (input: string) =>
-      fetch(input, {
+    return (url: string) =>
+      fetch(url, {
         credentials: "same-origin",
       });
   }
@@ -197,9 +197,9 @@ function recordRemoteTextUploadFailure(
   console.warn("[design-system] " + path + ": " + message);
 }
 function setRemoteTextUploadedCallback(
-  callback: (() => void) | undefined,
+  onUploaded: (() => void) | undefined,
 ): void {
-  remoteTextUploadedCallback = callback;
+  remoteTextUploadedCallback = onUploaded;
 }
 function getLocalRemoteTextEdits(): ReadonlyMap<string, string> {
   return localRemoteTextEdits;
@@ -257,9 +257,9 @@ function setRetainedBlobIdsProvider(provider: () => Iterable<string>): void {
 function retainedRemoteTextBlobIds(): Set<string> {
   let ids = new Set(extraRetainedBlobIdsProvider());
   for (let [, value] of remoteTextEntries) {
-    let value2 = blobIdFromReference(value.ptr.dataRef);
-    if (value2 !== null) {
-      ids.add(value2);
+    let blobId = blobIdFromReference(value.ptr.dataRef);
+    if (blobId !== null) {
+      ids.add(blobId);
     }
   }
   for (let [, value] of uploadedRemoteTextEntries) {
@@ -315,13 +315,13 @@ function uploadEditedRemoteText(
       type: mime,
     },
   ).then(
-    (input: unknown): void => {
+    (candidate: unknown): void => {
       uploadingRemoteTextKeys.delete(key);
       let value =
-          typeof input === "object" && input !== null
-            ? (input as Storage.DatabaseRecord)
+          typeof candidate === "object" && candidate !== null
+            ? (candidate as Storage.DatabaseRecord)
             : {},
-        value2 =
+        blobId =
           typeof value.id === "string"
             ? value.id
             : typeof value.url === "string"
@@ -329,7 +329,7 @@ function uploadEditedRemoteText(
                   value.url,
                 )?.[1] ?? null)
               : null;
-      if (value2 === null) {
+      if (blobId === null) {
         recordRemoteTextUploadFailure(
           key,
           path,
@@ -341,16 +341,16 @@ function uploadEditedRemoteText(
       uploadedRemoteTextEntries.set(path, {
         text: text,
         known: {
-          id: value2,
+          id: blobId,
           bytes: bytes.length,
           contentType: mime,
         },
       });
       remoteTextUploadedCallback?.();
     },
-    (input: unknown): void => {
+    (error: unknown): void => {
       let value: string = String(
-        (input as { code?: unknown } | null | undefined)?.code ?? "",
+        (error as { code?: unknown } | null | undefined)?.code ?? "",
       );
       if (
         retry === 0 &&
@@ -381,8 +381,8 @@ function uploadEditedRemoteText(
         "the asset store refused it (" +
           (value ||
             String(
-              (input as { message?: unknown } | null | undefined)?.message ??
-                input,
+              (error as { message?: unknown } | null | undefined)?.message ??
+                error,
             )) +
           // MineDesign: the system is files in the working directory; there is no Artifact tool.
           ") — add it as a file in this system’s directory; it is shown this session only",

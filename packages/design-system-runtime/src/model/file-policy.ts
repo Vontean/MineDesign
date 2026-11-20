@@ -126,26 +126,26 @@ function isImageSlotStatePath(path: string) {
     segments[segments.length - 1] === IMAGE_SLOT_STATE_FILENAME &&
     !segments
       .slice(0, -1)
-      .some((input) =>
-        normalizePathSegmentForComparison(input).startsWith("."),
+      .some((segment) =>
+        normalizePathSegmentForComparison(segment).startsWith("."),
       )
   );
 }
 function explainToolConfigurationPath(path: string): string | null {
   let segments = path.split("/").map(normalizePathSegmentForComparison);
   if (
-    segments.some((input) => input.startsWith(".")) &&
+    segments.some((segment) => segment.startsWith(".")) &&
     !isImageSlotStatePath(path)
   ) {
     return "dot-file / dot-directory (tool, editor, VCS or agent configuration) — never part of a design system, refused";
   }
   if (
     REFUSED_TOOL_FILENAMES.has(segments[segments.length - 1] ?? "") ||
-    segments.some((input) => REFUSED_TOOL_DIRECTORIES.has(input))
+    segments.some((segment) => REFUSED_TOOL_DIRECTORIES.has(segment))
   ) {
     return "package-manager / toolchain / agent-instruction file that tools auto-load from a working directory — never part of a design system, refused";
   }
-  if (segments.some((input) => WINDOWS_SHORT_NAME_PATTERN.test(input))) {
+  if (segments.some((segment) => WINDOWS_SHORT_NAME_PATTERN.test(segment))) {
     return 'a path segment is shaped like a Windows 8.3 short name (NAME~1), whose real target cannot be known — refused; rename it without the "~digit"';
   }
   return null;
@@ -155,8 +155,8 @@ function isToolConfigurationPath(path: string): boolean {
 }
 function explainReservedSystemPath(path: string): string | null {
   let normalized = normalizePathForComparison(path),
-    isPathOrDescendant = (input: string) =>
-      normalized === input || normalized.startsWith(input + "/");
+    isPathOrDescendant = (pathPrefix: string) =>
+      normalized === pathPrefix || normalized.startsWith(pathPrefix + "/");
   if (isPathOrDescendant("design-system.json")) {
     return (
       "reserved — " +
@@ -302,24 +302,24 @@ function estimateDataUriBytes(content: string) {
 function canUseStoragePointer(path: string) {
   return !isTextFilePath(path) || fileExtension(path) === "svg";
 }
-function parseStoragePointer(value: string): StoragePointer | null {
-  if (value.startsWith(BLOB_POINTER_PREFIX)) {
-    let value2 = value.slice(BLOB_POINTER_PREFIX.length);
-    if (BLOB_ID_PATTERN.test(value2)) {
+function parseStoragePointer(pointer: string): StoragePointer | null {
+  if (pointer.startsWith(BLOB_POINTER_PREFIX)) {
+    let blobId = pointer.slice(BLOB_POINTER_PREFIX.length);
+    if (BLOB_ID_PATTERN.test(blobId)) {
       return {
         store: "blob",
-        id: value2,
+        id: blobId,
       };
     } else {
       return null;
     }
   }
-  if (value.startsWith(FILE_POINTER_PREFIX)) {
-    let value2 = value.slice(FILE_POINTER_PREFIX.length);
-    if (value2 === "" || isValidDesignSystemPath(value2)) {
+  if (pointer.startsWith(FILE_POINTER_PREFIX)) {
+    let relativePath = pointer.slice(FILE_POINTER_PREFIX.length);
+    if (relativePath === "" || isValidDesignSystemPath(relativePath)) {
       return {
         store: "file",
-        rel: value2,
+        rel: relativePath,
       };
     } else {
       return null;
@@ -571,7 +571,7 @@ export function installModelFilePolicy(): () => void {
     BLOB_POINTER_PREFIX = "blob:";
     FILE_POINTER_PREFIX = "file:";
     allowAllBinaryFilePointers = false;
-    isExpensiveHeldImagePath = (input) =>
-      /\.(?:png|jpe?g|gif|webp|avif|ico|pdf)$/i.test(input);
+    isExpensiveHeldImagePath = (path) =>
+      /\.(?:png|jpe?g|gif|webp|avif|ico|pdf)$/i.test(path);
   };
 }

@@ -219,13 +219,13 @@ function storedMimeTypeForPath(
   }
 }
 function boundedStorageText(
-  value: unknown,
+  text: unknown,
   maxLength: number,
 ): string | undefined {
-  if (typeof value !== "string") {
+  if (typeof text !== "string") {
     return;
   }
-  let trimmed = value.trim();
+  let trimmed = text.trim();
   if (
     trimmed === "" ||
     trimmed.length > maxLength ||
@@ -236,28 +236,28 @@ function boundedStorageText(
   return trimmed;
 }
 function boundedStorageBytes(
-  value: unknown,
+  bytes: unknown,
   maxBytes: number = 4398046511104,
 ): number {
-  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
-    return Math.min(Math.floor(value), maxBytes);
+  if (typeof bytes === "number" && Number.isFinite(bytes) && bytes >= 0) {
+    return Math.min(Math.floor(bytes), maxBytes);
   } else {
     return 0;
   }
 }
 function parseStorageRecord(
   path: string,
-  input: unknown,
+  storageRecord: unknown,
   report: Model.ParseReport,
 ): Model.StorageRecord | null {
-  if (!isStorageCatalogObject(input)) {
+  if (!isStorageCatalogObject(storageRecord)) {
     return null;
   }
   let store: Model.StorageKind | null =
-    input.store === "blob" ||
-    input.store === "file" ||
-    input.store === "inline"
-      ? input.store
+    storageRecord.store === "blob" ||
+    storageRecord.store === "file" ||
+    storageRecord.store === "inline"
+      ? storageRecord.store
       : null;
   if (store === null) {
     report.dropped.push(
@@ -267,7 +267,7 @@ function parseStorageRecord(
     );
     return null;
   }
-  let id = boundedStorageText(input.id, 64);
+  let id = boundedStorageText(storageRecord.id, 64);
   if (
     store === "blob" &&
     (id === undefined || !BLOB_ID_PATTERN.test(id))
@@ -279,11 +279,11 @@ function parseStorageRecord(
     );
     return null;
   }
-  let mime = boundedStorageText(input.type, 100)?.toLowerCase(),
+  let mime = boundedStorageText(storageRecord.type, 100)?.toLowerCase(),
     record: Model.StorageRecord = {
       store: store,
       bytes: boundedStorageBytes(
-        input.bytes,
+        storageRecord.bytes,
         store === "blob" ? BLOB_STORAGE_LIMITS.file : undefined,
       ),
       type:
@@ -294,16 +294,16 @@ function parseStorageRecord(
   if (store === "blob") {
     record.id = id;
   }
-  let url = boundedStorageText(input.url, 2048);
+  let url = boundedStorageText(storageRecord.url, 2048);
   if (url !== undefined && STORAGE_BLOB_URL_PATTERN.test(url)) {
     record.url = url;
   }
-  let sha2562 = boundedStorageText(input.sha256, 64)?.toLowerCase();
-  if (sha2562 !== undefined && STORAGE_SHA256_PATTERN.test(sha2562)) {
-    record.sha256 = sha2562;
+  let normalizedSha256 = boundedStorageText(storageRecord.sha256, 64)?.toLowerCase();
+  if (normalizedSha256 !== undefined && STORAGE_SHA256_PATTERN.test(normalizedSha256)) {
+    record.sha256 = normalizedSha256;
   }
   let storedSha256 = boundedStorageText(
-    input.storedSha256,
+    storageRecord.storedSha256,
     64,
   )?.toLowerCase();
   if (
@@ -313,23 +313,23 @@ function parseStorageRecord(
   ) {
     record.storedSha256 = storedSha256;
   }
-  let name = boundedStorageText(input.name, 200);
+  let name = boundedStorageText(storageRecord.name, 200);
   if (name !== undefined) {
     record.name = name;
   }
-  let addedAt = boundedStorageText(input.addedAt, 40);
+  let addedAt = boundedStorageText(storageRecord.addedAt, 40);
   if (addedAt !== undefined) {
     record.addedAt = addedAt;
   }
-  let via = boundedStorageText(input.via, 120);
+  let via = boundedStorageText(storageRecord.via, 120);
   if (via !== undefined) {
     record.via = via;
   }
-  let thumb = boundedStorageText(input.thumb, 300);
+  let thumb = boundedStorageText(storageRecord.thumb, 300);
   if (thumb !== undefined && isValidDesignSystemPath(thumb)) {
     record.thumb = thumb;
   }
-  let supersedes = boundedStorageText(input.supersedes, 64);
+  let supersedes = boundedStorageText(storageRecord.supersedes, 64);
   if (supersedes !== undefined && BLOB_ID_PATTERN.test(supersedes)) {
     record.supersedes = supersedes;
   }
@@ -386,11 +386,11 @@ function storageCatalogFromManifest(
         );
         continue;
       }
-      let value2 = parseStorageRecord(value, storage.files[value], report);
-      if (value2 === null) {
+      let storageRecord = parseStorageRecord(value, storage.files[value], report);
+      if (storageRecord === null) {
         continue;
       }
-      files[value] = value2;
+      files[value] = storageRecord;
       count++;
     }
   }
@@ -405,37 +405,37 @@ function reconcileStorageCatalog(
   let reconciled: Record<string, Model.StorageRecord> = {},
     pointers: [string, Model.StoragePointer][] = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = storagePointerForFile(value, files[value]);
+    let pointer = storagePointerForFile(value, files[value]);
     if (
-      value2 !== null &&
+      pointer !== null &&
       !isHeldFilePointer(value, files[value])
     ) {
-      pointers.push([value, value2]);
+      pointers.push([value, pointer]);
     }
   }
   let recordsById = new Map<string, Model.StorageRecord>();
   for (let value of Object.keys(catalog.files)) {
-    let value2 = catalog.files[value];
+    let record = catalog.files[value];
     if (
-      value2.store === "blob" &&
-      value2.id !== undefined &&
-      !recordsById.has(value2.id)
+      record.store === "blob" &&
+      record.id !== undefined &&
+      !recordsById.has(record.id)
     ) {
-      recordsById.set(value2.id, value2);
+      recordsById.set(record.id, record);
     }
   }
-  for (let [value, value2] of pointers) {
-    let value3 = catalog.files[value];
-    if (value2.store === "blob") {
+  for (let [value, record] of pointers) {
+    let fileRecord = catalog.files[value];
+    if (record.store === "blob") {
       if (
-        value3 !== undefined &&
-        value3.store === "blob" &&
-        value3.id === value2.id
+        fileRecord !== undefined &&
+        fileRecord.store === "blob" &&
+        fileRecord.id === record.id
       ) {
-        reconciled[value] = value3;
+        reconciled[value] = fileRecord;
         continue;
       }
-      let entry = recordsById.get(value2.id);
+      let entry = recordsById.get(record.id);
       reconciled[value] =
         entry !== undefined
           ? {
@@ -443,7 +443,7 @@ function reconcileStorageCatalog(
             }
           : {
               store: "blob",
-              id: value2.id,
+              id: record.id,
               bytes: 0,
               type:
                 storedMimeTypeForPath(value) ??
@@ -451,8 +451,8 @@ function reconcileStorageCatalog(
             };
     } else {
       reconciled[value] =
-        value3 !== undefined && value3.store === "file"
-          ? value3
+        fileRecord !== undefined && fileRecord.store === "file"
+          ? fileRecord
           : {
               store: "file",
               bytes: 0,
@@ -467,9 +467,9 @@ function reconcileStorageCatalog(
 function referencedBlobIds(files: Model.FileTable): Set<string> {
   let ids = new Set<string>();
   for (let value of Object.keys(files)) {
-    let value2 = storagePointerForFile(value, files[value]);
-    if (value2 !== null && value2.store === "blob") {
-      ids.add(value2.id);
+    let pointer = storagePointerForFile(value, files[value]);
+    if (pointer !== null && pointer.store === "blob") {
+      ids.add(pointer.id);
     }
   }
   return ids;
@@ -478,25 +478,25 @@ function uniqueStoredBlobBytes(catalog: Model.StorageCatalog): number {
   let bytes = 0,
     seenIds = new Set();
   for (let value of Object.keys(catalog.files)) {
-    let value2 = catalog.files[value];
+    let record = catalog.files[value];
     if (
-      value2.store !== "blob" ||
-      value2.id === undefined ||
-      seenIds.has(value2.id)
+      record.store !== "blob" ||
+      record.id === undefined ||
+      seenIds.has(record.id)
     ) {
       continue;
     }
-    seenIds.add(value2.id);
-    bytes += value2.bytes;
+    seenIds.add(record.id);
+    bytes += record.bytes;
   }
   return bytes;
 }
 function uniqueStoredBlobCount(catalog: Model.StorageCatalog): number {
   let ids = new Set<string>();
   for (let value of Object.keys(catalog.files)) {
-    let value2 = catalog.files[value];
-    if (value2.store === "blob" && value2.id !== undefined) {
-      ids.add(value2.id);
+    let record = catalog.files[value];
+    if (record.store === "blob" && record.id !== undefined) {
+      ids.add(record.id);
     }
   }
   return ids.size;
@@ -507,29 +507,29 @@ function findStoredBlobByDigest(
   knownIds: ReadonlySet<string> | null | undefined,
 ): Storage.KnownStoredBlob | null {
   for (let value of Object.keys(catalog.files).sort()) {
-    let value2 = catalog.files[value];
+    let record = catalog.files[value];
     if (
-      value2.store !== "blob" ||
-      value2.id === undefined ||
-      (value2.sha256 !== digest &&
-        !(value2.storedSha256 === digest && /\.svg$/i.test(value)))
+      record.store !== "blob" ||
+      record.id === undefined ||
+      (record.sha256 !== digest &&
+        !(record.storedSha256 === digest && /\.svg$/i.test(value)))
     ) {
       continue;
     }
     if (
       knownIds !== undefined &&
       knownIds !== null &&
-      !knownIds.has(value2.id)
+      !knownIds.has(record.id)
     ) {
       continue;
     }
     return {
-      id: value2.id,
-      bytes: value2.bytes,
-      type: value2.type,
-      ...(value2.url !== undefined
+      id: record.id,
+      bytes: record.bytes,
+      type: record.type,
+      ...(record.url !== undefined
         ? {
-            url: value2.url,
+            url: record.url,
           }
         : {}),
     };
@@ -579,11 +579,11 @@ function compareReferencedAndStoredBlobs(
   let referencedIds = referencedBlobIds(files),
     missingPaths: string[] = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = storagePointerForFile(value, files[value]);
+    let pointer = storagePointerForFile(value, files[value]);
     if (
-      value2 !== null &&
-      value2.store === "blob" &&
-      !storedIds.has(value2.id)
+      pointer !== null &&
+      pointer.store === "blob" &&
+      !storedIds.has(pointer.id)
     ) {
       missingPaths.push(value);
     }
@@ -591,10 +591,10 @@ function compareReferencedAndStoredBlobs(
   return {
     missing: missingPaths,
     missingIds: [...referencedIds]
-      .filter((input: string): boolean => !storedIds.has(input))
+      .filter((blobId: string): boolean => !storedIds.has(blobId))
       .sort(),
     unreferenced: [...storedIds]
-      .filter((input: string): boolean => !referencedIds.has(input))
+      .filter((blobId: string): boolean => !referencedIds.has(blobId))
       .sort(),
   };
 }
@@ -608,18 +608,18 @@ function dropMissingBlobDigests(
   let changed: boolean = false,
     files: Record<string, Model.StorageRecord> = {};
   for (let value of Object.keys(catalog.files)) {
-    let value2 = catalog.files[value];
+    let record = catalog.files[value];
     if (
-      value2.store === "blob" &&
-      value2.id !== undefined &&
-      missingIds.has(value2.id) &&
-      (value2.sha256 !== undefined || value2.storedSha256 !== undefined)
+      record.store === "blob" &&
+      record.id !== undefined &&
+      missingIds.has(record.id) &&
+      (record.sha256 !== undefined || record.storedSha256 !== undefined)
     ) {
-      let { sha256: value3, storedSha256: value4, ...value5 } = value2;
-      files[value] = value5;
+      let { sha256: sha256, storedSha256: storedSha256, ...recordWithoutDigests } = record;
+      files[value] = recordWithoutDigests;
       changed = true;
     } else {
-      files[value] = value2;
+      files[value] = record;
     }
   }
   if (changed) {
@@ -639,54 +639,54 @@ function serializeStorageCatalog(
   }
   let files: Record<string, Model.StorageRecord> = {};
   for (let value of paths) {
-    let value2 = catalog.files[value];
+    let record = catalog.files[value];
     files[value] = {
-      store: value2.store,
-      ...(value2.id !== undefined
+      store: record.store,
+      ...(record.id !== undefined
         ? {
-            id: value2.id,
+            id: record.id,
           }
         : {}),
-      ...(value2.url !== undefined
+      ...(record.url !== undefined
         ? {
-            url: value2.url,
+            url: record.url,
           }
         : {}),
-      ...(value2.sha256 !== undefined
+      ...(record.sha256 !== undefined
         ? {
-            sha256: value2.sha256,
+            sha256: record.sha256,
           }
         : {}),
-      ...(value2.storedSha256 !== undefined
+      ...(record.storedSha256 !== undefined
         ? {
-            storedSha256: value2.storedSha256,
+            storedSha256: record.storedSha256,
           }
         : {}),
-      bytes: value2.bytes,
-      type: value2.type,
-      ...(value2.name !== undefined
+      bytes: record.bytes,
+      type: record.type,
+      ...(record.name !== undefined
         ? {
-            name: value2.name,
+            name: record.name,
           }
         : {}),
-      ...(value2.addedAt !== undefined
+      ...(record.addedAt !== undefined
         ? {
-            addedAt: value2.addedAt,
+            addedAt: record.addedAt,
           }
         : {}),
-      ...(value2.via !== undefined
+      ...(record.via !== undefined
         ? {
-            via: value2.via,
+            via: record.via,
           }
         : {}),
-      ...(value2.thumb !== undefined
+      ...(record.thumb !== undefined
         ? {
-            thumb: value2.thumb,
+            thumb: record.thumb,
           }
         : {}),
-      ...(value2.supersedes !== undefined
+      ...(record.supersedes !== undefined
         ? {
-            supersedes: value2.supersedes,
+            supersedes: record.supersedes,
           }
         : {}),
     };
@@ -778,8 +778,8 @@ export function installModelStorage(): () => void {
       /^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/;
     STORAGE_BLOB_URL_PATTERN = /^blob:[^\s"'<>\\]{1,2040}$/;
     isStorageCatalogObject = (
-      input: unknown,
-    ): input is Storage.DatabaseRecord =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
+      candidate: unknown,
+    ): candidate is Storage.DatabaseRecord =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
   };
 }

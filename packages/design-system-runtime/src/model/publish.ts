@@ -86,10 +86,10 @@ function computeMirrorChanges(
     beforeCards = consumptionDocumentationForFiles(
       beforeFiles,
     ).files;
-  for (let [value, value2] of documentation.files) {
-    if (force || beforeCards.get(value) !== value2) {
+  for (let [value, content] of documentation.files) {
+    if (force || beforeCards.get(value) !== content) {
       changes[value] = {
-        content: value2,
+        content: content,
         contentType: mirrorMimeTypeForPath(value)!,
       };
     }
@@ -101,8 +101,8 @@ function computeMirrorChanges(
   }
   let renamedTokensText = tokensJsonWithManifestName(afterFiles);
   for (let value of Object.keys(afterFiles)) {
-    let value2 = afterFiles[value];
-    if (!isMirrorEligibleFile(value, value2)) {
+    let fileContent = afterFiles[value];
+    if (!isMirrorEligibleFile(value, fileContent)) {
       continue;
     }
     if (
@@ -110,22 +110,22 @@ function computeMirrorChanges(
       (value === DESIGN_SYSTEM_PATHS.tokens
         ? renamedTokensText ===
           tokensJsonWithManifestName(beforeFiles)
-        : beforeFiles[value] === value2) &&
+        : beforeFiles[value] === fileContent) &&
       value !== DESIGN_SYSTEM_PATHS.manifest &&
       value !== DESIGN_SYSTEM_PATHS.readme
     ) {
       continue;
     }
-    let value3 = mirrorFileContent(
+    let mirroredContent = mirrorFileContent(
       value,
       value === DESIGN_SYSTEM_PATHS.readme
         ? documentation.readme
         : value === DESIGN_SYSTEM_PATHS.tokens
           ? renamedTokensText!
-          : value2,
+          : fileContent,
     );
-    if (value3 !== null) {
-      changes[value] = value3;
+    if (mirroredContent !== null) {
+      changes[value] = mirroredContent;
     }
   }
   for (let value of Object.keys(beforeFiles)) {
@@ -174,14 +174,14 @@ function estimatePublishContentBytes(
   return bytes;
 }
 function createPageMirrorPublisher(
-  options: Storage.MirrorPublisherOptions = {},
+  publisherOptions: Storage.MirrorPublisherOptions = {},
   resolveArtifact: () => Promise<Storage.SelfPublishCapability | null> = getSelfPublishCapability,
 ): Host.Publisher {
   let mirrorState: string = "untried",
     mirrorCurrent: boolean = false;
   return async (
-    input: string,
-    options2?: Parameters<Host.Publisher>[1],
+    content: string,
+    publishOptions?: Parameters<Host.Publisher>[1],
   ): ReturnType<Host.Publisher> => {
     let value = await resolveArtifact();
     if (value === null) {
@@ -190,57 +190,57 @@ function createPageMirrorPublisher(
         get message() { return uiMessage("design-system.publish.theArtifactCapabilityIsNotAvailableToThisView"); },
       };
     }
-    let value2 =
-        options2 === undefined
+    let publishedTable =
+        publishOptions === undefined
           ? null
-          : fileTableOrNull(options2.published.content),
-      value3 =
-        options2 === undefined
+          : fileTableOrNull(publishOptions.published.content),
+      baseTable =
+        publishOptions === undefined
           ? null
-          : fileTableOrNull(options2.base.content);
-    if (value2 === null || value3 === null || mirrorState === "off") {
-      return value.publish(input);
+          : fileTableOrNull(publishOptions.base.content);
+    if (publishedTable === null || baseTable === null || mirrorState === "off") {
+      return value.publish(content);
     }
-    let callback = (input2: string) => {
+    let callback = (stalePath: string) => {
         mirrorCurrent = false;
-        options.onStale?.(input2);
-        return value.publish(input);
+        publisherOptions.onStale?.(stalePath);
+        return value.publish(content);
       },
-      value4: Model.FilePublishEntries;
+      changes: Model.FilePublishEntries;
     try {
-      value4 = computeMirrorChanges(value3, value2, !mirrorCurrent);
-    } catch (value5: unknown) {
+      changes = computeMirrorChanges(baseTable, publishedTable, !mirrorCurrent);
+    } catch (error: unknown) {
       return callback(
         "the mirror could not be computed (" +
-          (value5 instanceof Error ? value5.message : String(value5)) +
+          (error instanceof Error ? error.message : String(error)) +
           ")",
       );
     }
     if (
-      Math.max(countMirrorFiles(value2), Object.keys(value4).length) + 1 >
+      Math.max(countMirrorFiles(publishedTable), Object.keys(changes).length) + 1 >
         ARTIFACT_FILE_LIMITS.call ||
-      mirrorContentEncoder.encode(input).length +
-        estimatePublishContentBytes(value4) >
+      mirrorContentEncoder.encode(content).length +
+        estimatePublishContentBytes(changes) >
         MAX_PUBLISH_BATCH_BYTES
     ) {
       return callback(
         "the page and its files are more than one save can send",
       );
     }
-    value4["index.html"] = {
-      content: input,
+    changes["index.html"] = {
+      content: content,
       contentType: "text/html",
     };
     try {
-      let value5 = await value.publish(value4);
+      let publishResult = await value.publish(changes);
       mirrorState = "on";
       mirrorCurrent = true;
       return {
-        ...value5,
+        ...publishResult,
         reloads: false,
       };
-    } catch (value5: unknown) {
-      let code = normalizeSelfPublishError(value5).code;
+    } catch (error: unknown) {
+      let code = normalizeSelfPublishError(error).code;
       if (
         code === "capability_disabled" ||
         code === "capability_removed" ||
@@ -263,14 +263,14 @@ function createPageMirrorPublisher(
         );
       }
       if (code === "not_granted" || code === "not_writer") {
-        return value.publish(input);
+        return value.publish(content);
       }
-      throw value5;
+      throw error;
     }
   };
 }
 function createSystemFilesPublisher(
-  options: Storage.MirrorPublisherOptions = {},
+  publisherOptions: Storage.MirrorPublisherOptions = {},
   resolveArtifact: () => Promise<Storage.SelfPublishCapability | null> = getSelfPublishCapability,
 ): Host.Publisher {
   let firstPublish: boolean = true,
@@ -278,8 +278,8 @@ function createSystemFilesPublisher(
     publishedCards = new Map<string, string>(),
     baseCardPaths: Set<string> | null = null;
   return async (
-    input: string,
-    options2?: Parameters<Host.Publisher>[1],
+    publishInput: string,
+    publishOptions?: Parameters<Host.Publisher>[1],
   ): ReturnType<Host.Publisher> => {
     let value = await resolveArtifact();
     if (value === null) {
@@ -288,15 +288,15 @@ function createSystemFilesPublisher(
         get message() { return uiMessage("design-system.publish.theArtifactCapabilityIsNotAvailableToThisView"); },
       };
     }
-    if (options2 === undefined) {
+    if (publishOptions === undefined) {
       throw {
         code: "invalid_content",
         get message() { return uiMessage("design-system.publish.aSystemMadeFromTheSharedTypeSavesItsFilesNeverAPage"); },
       };
     }
-    let value2 = fileTableOrNull(options2.published.content),
-      value3 = fileTableOrNull(options2.base.content);
-    if (value2 === null || value3 === null) {
+    let publishedTable = fileTableOrNull(publishOptions.published.content),
+      baseTable = fileTableOrNull(publishOptions.base.content);
+    if (publishedTable === null || baseTable === null) {
       throw {
         code: "invalid_content",
         get message() { return uiMessage("design-system.publish.theDocumentHasNoFileTableToSave"); },
@@ -305,215 +305,215 @@ function createSystemFilesPublisher(
     let state = {
         content:
           JSON.stringify({
-            title: options2.published.title,
-            content: options2.published.content,
+            title: publishOptions.published.title,
+            content: publishOptions.published.content,
             comments: [],
           }) +
           `
 `,
         contentType: "application/json",
       },
-      value4 =
+      publishLimit =
         ARTIFACT_FILE_LIMITS.files -
         TYPE_RESERVED_FILE_BUDGET.files,
       index = 0,
       flag = false,
-      index2 = 0;
+      firstIndex = 0;
     try {
       baseCardPaths ??= new Set(
-        consumptionDocumentationForFiles(value3).files.keys(),
+        consumptionDocumentationForFiles(baseTable).files.keys(),
       );
-      index = consumptionDocumentationForFiles(value2).files
+      index = consumptionDocumentationForFiles(publishedTable).files
         .size;
-      index2 = countMirrorFiles(value2) + 1;
-      flag = index2 > value4 && index2 - index <= value4;
+      firstIndex = countMirrorFiles(publishedTable) + 1;
+      flag = firstIndex > publishLimit && firstIndex - index <= publishLimit;
     } catch {
-      index2 =
-        Object.keys(value2).filter((input2) =>
-          isMirrorEligibleFile(input2, value2[input2]),
+      firstIndex =
+        Object.keys(publishedTable).filter((path) =>
+          isMirrorEligibleFile(path, publishedTable[path]),
         ).length + 2;
     }
-    let callback = (input2: Model.FilePublishEntries) => {
-        let value10: ReadonlyMap<string, string>;
+    let callback = (entries: Model.FilePublishEntries) => {
+        let existingCards: ReadonlyMap<string, string>;
         try {
-          value10 = consumptionDocumentationForFiles(
-            value2,
+          existingCards = consumptionDocumentationForFiles(
+            publishedTable,
           ).files;
         } catch {
-          return input2;
+          return entries;
         }
-        for (let value13 of Object.keys(input2)) {
+        for (let path of Object.keys(entries)) {
           if (
-            isGeneratedApiPath(value13) &&
-            (input2[value13] === null || flag)
+            isGeneratedApiPath(path) &&
+            (entries[path] === null || flag)
           ) {
-            delete input2[value13];
+            delete entries[path];
           }
         }
-        let value11: number =
-          ARTIFACT_FILE_LIMITS.call - 1 - Object.keys(input2).length;
-        for (let value13 of new Set([
+        let remainingSlots: number =
+          ARTIFACT_FILE_LIMITS.call - 1 - Object.keys(entries).length;
+        for (let path of new Set([
           ...(baseCardPaths ?? []),
           ...publishedCards.keys(),
         ])) {
-          if (value11 <= 0) {
+          if (remainingSlots <= 0) {
             break;
           }
-          if ((flag || !value10.has(value13)) && !(value13 in input2)) {
-            input2[value13] = null;
-            value11--;
+          if ((flag || !existingCards.has(path)) && !(path in entries)) {
+            entries[path] = null;
+            remainingSlots--;
           }
         }
         if (!flag) {
-          return input2;
+          return entries;
         }
-        let value12 = input2[DESIGN_SYSTEM_PATHS.readme];
+        let readmeEntry = entries[DESIGN_SYSTEM_PATHS.readme];
         if (
-          value12 !== null &&
-          typeof value12 === "object" &&
-          !(value12 instanceof Blob) &&
-          typeof value12.content === "string" &&
-          !value12.content.endsWith(OMITTED_API_CARDS_NOTICE)
+          readmeEntry !== null &&
+          typeof readmeEntry === "object" &&
+          !(readmeEntry instanceof Blob) &&
+          typeof readmeEntry.content === "string" &&
+          !readmeEntry.content.endsWith(OMITTED_API_CARDS_NOTICE)
         ) {
-          input2[DESIGN_SYSTEM_PATHS.readme] = {
-            ...value12,
-            content: value12.content + OMITTED_API_CARDS_NOTICE,
+          entries[DESIGN_SYSTEM_PATHS.readme] = {
+            ...readmeEntry,
+            content: readmeEntry.content + OMITTED_API_CARDS_NOTICE,
           };
         }
-        return input2;
+        return entries;
       },
-      value5: string =
+      maxBatchLabel: string =
         String(Math.round(MAX_PUBLISH_BATCH_BYTES / 1024 / 1024)) + " MB",
-      value6: string =
+      maxBatchBytes: string =
         "Not saved: this design system is more than one save can send (" +
-        value5 +
+        maxBatchLabel +
         ") — remove or shrink large files, then save again.";
     if (
       estimatePublishContentBytes({
         [DESIGN_SYSTEM_ENVELOPE_PATH]: state,
       }) > MAX_PUBLISH_BATCH_BYTES
     ) {
-      throw makePublishSizeError(value6);
+      throw makePublishSizeError(maxBatchBytes);
     }
-    let value7: Model.FilePublishEntries | null = null,
-      callback2 = () =>
-        (value7 ??= computeMirrorChanges(value3, value2, true));
+    let pendingChanges: Model.FilePublishEntries | null = null,
+      getCurrentPublished = () =>
+        (pendingChanges ??= computeMirrorChanges(baseTable, publishedTable, true));
     try {
-      for (let value10 of [...owedPaths]) {
-        if ((callback2()[value10] ?? null) === null) {
-          owedPaths.delete(value10);
+      for (let path of [...owedPaths]) {
+        if ((getCurrentPublished()[path] ?? null) === null) {
+          owedPaths.delete(path);
         }
       }
     } catch {
       owedPaths.clear();
     }
-    let value8 = estimatePublishContentBytes({
+    let currentBytes = estimatePublishContentBytes({
         [DESIGN_SYSTEM_ENVELOPE_PATH]: state,
       }),
       cache = new WeakMap<object, number>(),
-      callback3 = (input2: Model.FilePublishEntries) => {
-        let index3: number = 0;
+      processBatch = (batchEntries: Model.FilePublishEntries) => {
+        let batchIndex: number = 0;
         try {
-          for (let value12 of Object.keys(input2)) {
+          for (let path of Object.keys(batchEntries)) {
             if (
-              isGeneratedApiPath(value12) &&
-              input2[value12] !== null
+              isGeneratedApiPath(path) &&
+              batchEntries[path] !== null
             ) {
-              delete input2[value12];
+              delete batchEntries[path];
             }
           }
-          let value10 = value8 + estimatePublishContentBytes(input2),
-            value11 = Object.keys(input2).length + 1;
-          for (let [value12, value13] of consumptionDocumentationForFiles(value2).files) {
-            if (publishedCards.get(value12) === value13) {
+          let batchBytes = currentBytes + estimatePublishContentBytes(batchEntries),
+            entryCount = Object.keys(batchEntries).length + 1;
+          for (let [path, content] of consumptionDocumentationForFiles(publishedTable).files) {
+            if (publishedCards.get(path) === content) {
               continue;
             }
-            let length = mirrorContentEncoder.encode(value13).length;
+            let length = mirrorContentEncoder.encode(content).length;
             if (
-              value10 + length > MAX_PUBLISH_BATCH_BYTES ||
-              value11 >= ARTIFACT_FILE_LIMITS.call
+              batchBytes + length > MAX_PUBLISH_BATCH_BYTES ||
+              entryCount >= ARTIFACT_FILE_LIMITS.call
             ) {
-              index3++;
+              batchIndex++;
               continue;
             }
-            input2[value12] = {
-              content: value13,
-              contentType: mirrorMimeTypeForPath(value12)!,
+            batchEntries[path] = {
+              content: content,
+              contentType: mirrorMimeTypeForPath(path)!,
             };
-            value10 += length;
-            value11++;
+            batchBytes += length;
+            entryCount++;
           }
         } catch {}
-        cache.set(input2, index3);
-        return input2;
+        cache.set(batchEntries, batchIndex);
+        return batchEntries;
       },
-      callback4 = () =>
-        callback3(computeMirrorChanges(value3, value2, false)),
+      currentPublished = () =>
+        processBatch(computeMirrorChanges(baseTable, publishedTable, false)),
       items: [string, () => Model.FilePublishEntries][] = [
         [
           "want",
           () => {
-            let value10 = computeMirrorChanges(value3, value2, false);
-            for (let value11 of owedPaths) {
-              value10[value11] = callback2()[value11];
+            let changes = computeMirrorChanges(baseTable, publishedTable, false);
+            for (let path of owedPaths) {
+              changes[path] = getCurrentPublished()[path];
             }
-            return callback3(value10);
+            return processBatch(changes);
           },
         ],
-        ["changed", callback4],
+        ["changed", currentPublished],
         [
           "least",
           () => {
-            let state2: Model.FilePublishEntries = {};
+            let deletedEntries: Model.FilePublishEntries = {};
             try {
-              for (let [value12, value13] of Object.entries(callback4())) {
-                if (value13 === null) {
-                  state2[value12] = null;
+              for (let [path, entry] of Object.entries(currentPublished())) {
+                if (entry === null) {
+                  deletedEntries[path] = null;
                 }
               }
             } catch {}
-            let value10 = value2[DESIGN_SYSTEM_PATHS.manifest],
-              value11 =
-                typeof value10 === "string" &&
+            let manifestContent = publishedTable[DESIGN_SYSTEM_PATHS.manifest],
+              manifestChanges =
+                typeof manifestContent === "string" &&
                 isMirrorEligibleFile(
                   DESIGN_SYSTEM_PATHS.manifest,
-                  value10,
+                  manifestContent,
                 )
                   ? mirrorFileContent(
                       DESIGN_SYSTEM_PATHS.manifest,
-                      value10,
+                      manifestContent,
                     )
                   : null;
-            if (value11 !== null) {
-              state2[DESIGN_SYSTEM_PATHS.manifest] = value11;
+            if (manifestChanges !== null) {
+              deletedEntries[DESIGN_SYSTEM_PATHS.manifest] = manifestChanges;
             }
             if (flag) {
               try {
-                let value12 =
-                  DESIGN_SYSTEM_PATHS.readme in callback4()
-                    ? callback4()[DESIGN_SYSTEM_PATHS.readme]
-                    : callback2()[DESIGN_SYSTEM_PATHS.readme];
-                if (value12 === null) {
-                  state2[DESIGN_SYSTEM_PATHS.readme] = null;
+                let readmeContent =
+                  DESIGN_SYSTEM_PATHS.readme in currentPublished()
+                    ? currentPublished()[DESIGN_SYSTEM_PATHS.readme]
+                    : getCurrentPublished()[DESIGN_SYSTEM_PATHS.readme];
+                if (readmeContent === null) {
+                  deletedEntries[DESIGN_SYSTEM_PATHS.readme] = null;
                 } else if (
-                  value12 !== undefined &&
-                  value8 +
+                  readmeContent !== undefined &&
+                  currentBytes +
                     estimatePublishContentBytes({
-                      ...state2,
-                      [DESIGN_SYSTEM_PATHS.readme]: value12,
+                      ...deletedEntries,
+                      [DESIGN_SYSTEM_PATHS.readme]: readmeContent,
                     }) <=
                     MAX_PUBLISH_BATCH_BYTES
                 ) {
-                  state2[DESIGN_SYSTEM_PATHS.readme] = value12;
+                  deletedEntries[DESIGN_SYSTEM_PATHS.readme] = readmeContent;
                 } else if (
-                  value12 !== undefined &&
-                  typeof value2[DESIGN_SYSTEM_PATHS.readme] ===
+                  readmeContent !== undefined &&
+                  typeof publishedTable[DESIGN_SYSTEM_PATHS.readme] ===
                     "string"
                 ) {
-                  let state3 = {
+                  let readmeState = {
                     content:
                       stripGeneratedReadmeTail(
-                        value2[DESIGN_SYSTEM_PATHS.readme],
+                        publishedTable[DESIGN_SYSTEM_PATHS.readme],
                       ).replace(/\uFFFD/g, "") +
                       OMITTED_API_CARDS_NOTICE,
                     contentType: mirrorMimeTypeForPath(
@@ -521,19 +521,19 @@ function createSystemFilesPublisher(
                     )!,
                   };
                   if (
-                    value8 +
+                    currentBytes +
                       estimatePublishContentBytes({
-                        ...state2,
-                        [DESIGN_SYSTEM_PATHS.readme]: state3,
+                        ...deletedEntries,
+                        [DESIGN_SYSTEM_PATHS.readme]: readmeState,
                       }) <=
                     MAX_PUBLISH_BATCH_BYTES
                   ) {
-                    state2[DESIGN_SYSTEM_PATHS.readme] = state3;
+                    deletedEntries[DESIGN_SYSTEM_PATHS.readme] = readmeState;
                   }
                 }
               } catch {}
             }
-            return state2;
+            return deletedEntries;
           },
         ],
       ];
@@ -541,62 +541,62 @@ function createSystemFilesPublisher(
       items.unshift([
         "all",
         () => ({
-          ...callback2(),
+          ...getCurrentPublished(),
         }),
       ]);
     }
     let text: string = "",
-      text2: string = "",
-      text3 = "",
-      value9: Host.PublishError | undefined = undefined,
-      flag2: boolean = false;
-    for (let [value10, value11] of items) {
-      let value12: Model.FilePublishEntries;
+      statusMessage: string = "",
+      previousStatusMessage = "",
+      publishError: Host.PublishError | undefined = undefined,
+      allowLeast: boolean = false;
+    for (let [publishMode, publishAction] of items) {
+      let publishEntries: Model.FilePublishEntries;
       try {
-        value12 = callback(value11());
-      } catch (value15: unknown) {
+        publishEntries = callback(publishAction());
+      } catch (error: unknown) {
         text =
           "the files beside it could not be prepared (" +
-          (value15 instanceof Error ? value15.message : String(value15)) +
+          (error instanceof Error ? error.message : String(error)) +
           ") — an appifact bug";
-        text2 = "Not saved: " + text + ".";
+        statusMessage = "Not saved: " + text + ".";
         continue;
       }
-      for (let value15 of Object.keys(value12)) {
-        if (explainUnsafeMirrorPath(value15) !== null) {
-          delete value12[value15];
+      for (let path of Object.keys(publishEntries)) {
+        if (explainUnsafeMirrorPath(path) !== null) {
+          delete publishEntries[path];
         }
       }
-      value12[DESIGN_SYSTEM_ENVELOPE_PATH] = state;
-      let value13: string =
-        Object.keys(value12).sort().join(`
+      publishEntries[DESIGN_SYSTEM_ENVELOPE_PATH] = state;
+      let statusText: string =
+        Object.keys(publishEntries).sort().join(`
 `) +
         `
 ` +
-        String(estimatePublishContentBytes(value12));
-      if (value13 === text3) {
+        String(estimatePublishContentBytes(publishEntries));
+      if (statusText === previousStatusMessage) {
         continue;
       }
-      text3 = value13;
-      let length = Object.keys(value12).length,
-        value14: number = Math.max(
-          index2 - (flag ? index : 0),
+      previousStatusMessage = statusText;
+      let length = Object.keys(publishEntries).length,
+        publishedCount: number = Math.max(
+          firstIndex - (flag ? index : 0),
           length -
-            Object.values(value12).filter(
-              (input2): boolean => input2 === null,
+            Object.values(publishEntries).filter(
+              (entry): boolean => entry === null,
             ).length,
         );
       if (
-        value14 > value4 ||
+        publishedCount > publishLimit ||
         length > ARTIFACT_FILE_LIMITS.call ||
-        estimatePublishContentBytes(value12) > MAX_PUBLISH_BATCH_BYTES
+        estimatePublishContentBytes(publishEntries) > MAX_PUBLISH_BATCH_BYTES
       ) {
         text =
-          value14 > value4
+          publishedCount > publishLimit
             ? "more files than one can hold (" +
-              String(value14 - (flag ? 0 : index)) +
+              String(publishedCount - (flag ? 0 : index)) +
               " of " +
-              String(value4) +
+              String(publishLimit) +
               (index > 0
                 ? "; the " +
                   String(index) +
@@ -610,81 +610,81 @@ function createSystemFilesPublisher(
                 String(ARTIFACT_FILE_LIMITS.call) +
                 ", " +
                 String(
-                  Object.values(value12).filter(
-                    (input2): boolean => input2 === null,
+                  Object.values(publishEntries).filter(
+                    (entry): boolean => entry === null,
                   ).length,
                 ) +
                 " of them deletions)"
-              : "more than one save can send (" + value5 + ")";
-        text2 =
-          value14 > value4 || length > ARTIFACT_FILE_LIMITS.call
+              : "more than one save can send (" + maxBatchLabel + ")";
+        statusMessage =
+          publishedCount > publishLimit || length > ARTIFACT_FILE_LIMITS.call
             ? "Not saved: this design system has " +
               text +
               " — remove some, then save again."
-            : value6;
-        value9 = undefined;
+            : maxBatchBytes;
+        publishError = undefined;
         continue;
       }
       try {
-        let value15 = await value.publish(value12),
+        let publishedEntries = await value.publish(publishEntries),
           values = new Set(
-            Object.keys(value12).filter(
-              (input2) =>
-                value12[input2] !== null &&
-                input2 !== DESIGN_SYSTEM_PATHS.manifest &&
-                input2 !== DESIGN_SYSTEM_ENVELOPE_PATH,
+            Object.keys(publishEntries).filter(
+              (path) =>
+                publishEntries[path] !== null &&
+                path !== DESIGN_SYSTEM_PATHS.manifest &&
+                path !== DESIGN_SYSTEM_ENVELOPE_PATH,
             ),
           );
-        for (let [value17, value18] of Object.entries(value12)) {
-          if (!isGeneratedApiPath(value17)) {
+        for (let [path, entry] of Object.entries(publishEntries)) {
+          if (!isGeneratedApiPath(path)) {
             continue;
           }
-          if (value18 === null) {
-            publishedCards.delete(value17);
-            baseCardPaths?.delete(value17);
+          if (entry === null) {
+            publishedCards.delete(path);
+            baseCardPaths?.delete(path);
           } else if (
-            typeof value18 === "object" &&
-            !(value18 instanceof Blob) &&
-            typeof (value18 as { content?: unknown }).content === "string"
+            typeof entry === "object" &&
+            !(entry instanceof Blob) &&
+            typeof (entry as { content?: unknown }).content === "string"
           ) {
             publishedCards.set(
-              value17,
-              (value18 as { content: string }).content,
+              path,
+              (entry as { content: string }).content,
             );
           }
         }
-        if (value10 === "all" || value10 === "want") {
+        if (publishMode === "all" || publishMode === "want") {
           owedPaths.clear();
         } else {
           try {
-            for (let value17 of values) {
-              owedPaths.delete(value17);
+            for (let path of values) {
+              owedPaths.delete(path);
             }
-            for (let [value17, value18] of Object.entries(callback4())) {
+            for (let [path, entry] of Object.entries(currentPublished())) {
               if (
-                value18 !== null &&
-                value17 !== DESIGN_SYSTEM_PATHS.manifest &&
-                !values.has(value17) &&
-                explainUnsafeMirrorPath(value17) === null &&
-                !isGeneratedApiPath(value17)
+                entry !== null &&
+                path !== DESIGN_SYSTEM_PATHS.manifest &&
+                !values.has(path) &&
+                explainUnsafeMirrorPath(path) === null &&
+                !isGeneratedApiPath(path)
               ) {
-                owedPaths.add(value17);
+                owedPaths.add(path);
               }
             }
           } catch {}
         }
-        let items2: string[] = [];
+        let messages: string[] = [];
         if (flag) {
-          items2.push(
+          messages.push(
             "the generated api/ cards were left out: with them this system is " +
-              String(index2) +
+              String(firstIndex) +
               " files and one version has room for " +
-              String(value4) +
+              String(publishLimit) +
               " — agents read the long-form READMEs instead",
           );
         }
         if (owedPaths.size > 0) {
-          items2.push(
+          messages.push(
             "saved design-system.json; " +
               String(owedPaths.size) +
               " mirrored file(s) beside it are behind (" +
@@ -692,69 +692,69 @@ function createSystemFilesPublisher(
               ") and ride the next save that fits, or a make.ts build",
           );
         }
-        let value16 = cache.get(value12) ?? 0;
-        if (value10 === "least" && !flag) {
+        let duplicateCount = cache.get(publishEntries) ?? 0;
+        if (publishMode === "least" && !flag) {
           try {
-            for (let [value17, value18] of consumptionDocumentationForFiles(value2).files) {
-              if (publishedCards.get(value17) !== value18) {
-                value16++;
+            for (let [path, content] of consumptionDocumentationForFiles(publishedTable).files) {
+              if (publishedCards.get(path) !== content) {
+                duplicateCount++;
               }
             }
           } catch {}
         }
-        if (value16 > 0) {
-          items2.push(
-            String(value16) +
+        if (duplicateCount > 0) {
+          messages.push(
+            String(duplicateCount) +
               " generated api/ card(s) beside it are a save behind (this save was at the size limit) and ride the next save with room, or a make.ts build",
           );
         }
-        if (firstPublish && value10 !== "all") {
-          items2.push(
+        if (firstPublish && publishMode !== "all") {
+          messages.push(
             "the whole mirror was not re-sent this session (" +
               text +
               "); changed files go beside it as they change — a make.ts build refreshes the rest",
           );
         }
-        if (items2.length > 0) {
-          options.onStale?.(items2.join("; "));
+        if (messages.length > 0) {
+          publisherOptions.onStale?.(messages.join("; "));
         }
-        if (value10 !== "least" || flag2) {
+        if (publishMode !== "least" || allowLeast) {
           firstPublish = false;
         }
         return {
-          ...value15,
+          ...publishedEntries,
           reloads: false,
         };
-      } catch (value15: unknown) {
-        let value16 = normalizeSelfPublishError(value15),
-          code = value16.code;
+      } catch (error: unknown) {
+        let normalizedError = normalizeSelfPublishError(error),
+          code = normalizedError.code;
         if (
           code !== "too_large" &&
           code !== "invalid_content" &&
           code !== "transform_error"
         ) {
-          throw value15;
+          throw error;
         }
         text = "the store refused the files beside it (" + code + ")";
-        if (value10 === "all") {
-          flag2 = true;
+        if (publishMode === "all") {
+          allowLeast = true;
         }
-        text2 =
+        statusMessage =
           code === "too_large"
             ? "Not saved: the store refused its files as too large — remove or shrink large files, then save again."
             : "Not saved: the store refused this system’s files (" +
               code +
-              (value16.message !== code ? ": " + value16.message : "") +
+              (normalizedError.message !== code ? ": " + normalizedError.message : "") +
               ") — usually a content problem, most often a pasted replacement character (U+FFFD, the box glyph) in a document: remove it and save again.";
-        value9 = {
-          ...value16,
-          say: text2,
+        publishError = {
+          ...normalizedError,
+          say: statusMessage,
         };
       }
     }
     throw (
-      value9 ??
-      makePublishSizeError(text2 !== "" ? text2 : "Not saved: " + text + ".")
+      publishError ??
+      makePublishSizeError(statusMessage !== "" ? statusMessage : "Not saved: " + text + ".")
     );
   };
 }
@@ -795,7 +795,7 @@ function syncLoadHealthOutcome(
   ];
 }
 function monitorSyncLoadHealth(
-  document2: Storage.MonitoredSyncDocument,
+  document: Storage.MonitoredSyncDocument,
   report: Storage.SyncHealthReporter,
 ): () => void {
   let reported: boolean = false,
@@ -804,11 +804,11 @@ function monitorSyncLoadHealth(
       if (reported) {
         return;
       }
-      let value = document2.loadState();
+      let value = document.loadState();
       if (value === "loading") {
         return;
       }
-      if (value === "cached" && document2.cachedSettled?.() !== true) {
+      if (value === "cached" && document.cachedSettled?.() !== true) {
         return;
       }
       reported = true;
@@ -817,11 +817,11 @@ function monitorSyncLoadHealth(
         report,
         syncLoadHealthOutcome(
           value === "cached" ? "saved_copy" : value,
-          document2.syncDetail().lastError?.code,
+          document.syncDetail().lastError?.code,
         ),
       );
     };
-  unsubscribe = document2.subscribeLoad(check);
+  unsubscribe = document.subscribeLoad(check);
   check();
   return (): void => {
     reported = true;
@@ -829,16 +829,16 @@ function monitorSyncLoadHealth(
   };
 }
 function monitorSyncSaveHealth(
-  document2: Storage.MonitoredSyncDocument,
+  document: Storage.MonitoredSyncDocument,
   report: Storage.SyncHealthReporter,
 ): () => void {
-  let previousStatus = document2.saveState().status,
+  let previousStatus = document.saveState().status,
     previousLeftOut = new Map<string, string>(),
     unsubscribeStuck =
-      document2.subscribeStuck?.(() =>
+      document.subscribeStuck?.(() =>
         safeReportSyncHealth(report, ["sync", "failure", "timeout"]),
       ) ?? ((): void => {}),
-    unsubscribeSave = document2.subscribeSave(
+    unsubscribeSave = document.subscribeSave(
       (state: Storage.MonitoredSaveState): void => {
         let status = state.status;
         if (status === previousStatus) {
@@ -846,7 +846,7 @@ function monitorSyncSaveHealth(
         }
         let value = previousStatus;
         previousStatus = status;
-        if (document2.loadState() !== "live") {
+        if (document.loadState() !== "live") {
           return;
         }
         if (status === "ready") {
@@ -855,31 +855,31 @@ function monitorSyncSaveHealth(
         if (status === "ready" && SYNC_PENDING_SAVE_STATES.has(value)) {
           safeReportSyncHealth(report, ["sync", "success"]);
         } else if (status === "error" && SYNC_READY_SAVE_STATES.has(value)) {
-          let value2 = document2.syncDetail().lastError?.code;
-          if (value2 !== undefined || state.leftOut === undefined) {
+          let syncErrorCode = document.syncDetail().lastError?.code;
+          if (syncErrorCode !== undefined || state.leftOut === undefined) {
             safeReportSyncHealth(report, [
               "sync",
               "failure",
-              classifySyncErrorCode(value2 ?? state.code),
+              classifySyncErrorCode(syncErrorCode ?? state.code),
             ]);
             return;
           }
           let values = new Set<string>();
-          for (let value3 of state.leftOut) {
-            if (previousLeftOut.get(value3.id) !== value3.cause) {
-              values.add(SYNC_FILE_INPUT_ERROR_CLASSIFICATIONS[value3.cause]);
+          for (let leftOutFile of state.leftOut) {
+            if (previousLeftOut.get(leftOutFile.id) !== leftOutFile.cause) {
+              values.add(SYNC_FILE_INPUT_ERROR_CLASSIFICATIONS[leftOutFile.cause]);
             }
           }
           previousLeftOut = new Map(
-            state.leftOut.map((input) => [input.id, input.cause]),
+            state.leftOut.map((file) => [file.id, file.cause]),
           );
-          for (let value3 of values) {
-            safeReportSyncHealth(report, ["sync", "failure", value3]);
+          for (let errorCode of values) {
+            safeReportSyncHealth(report, ["sync", "failure", errorCode]);
           }
         } else if (
           status === "readonly" &&
           SYNC_PENDING_SAVE_STATES.has(value) &&
-          document2.dirty()
+          document.dirty()
         ) {
           safeReportSyncHealth(report, [
             "sync",
@@ -940,17 +940,17 @@ function reportPublisherOutcome(
   report: (result: string) => void,
 ): Host.Publisher {
   return async (
-    input: string,
-    options?: Parameters<Host.Publisher>[1],
+    content: string,
+    publishOptions?: Parameters<Host.Publisher>[1],
   ): ReturnType<Host.Publisher> => {
     try {
-      let value = await publish(input, options);
-      if (options !== undefined) {
+      let value = await publish(content, publishOptions);
+      if (publishOptions !== undefined) {
         report("landed");
       }
       return value;
     } catch (value: unknown) {
-      if (options !== undefined) {
+      if (publishOptions !== undefined) {
         report(normalizeSelfPublishError(value).code);
       }
       throw value;

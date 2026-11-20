@@ -28,7 +28,7 @@ function chunkPublishChanges(
       Object.fromEntries(
         paths
           .slice(index, index + MAX_DELETE_PUBLISH_PATHS)
-          .map((input: string) => [input, changes[input]]),
+          .map((marker: string) => [marker, changes[marker]]),
       ),
     );
   }
@@ -182,9 +182,9 @@ export function installModelMigrationMarkers(): () => void {
     MOVED_TO_MARKER_KEY = "movedTo";
     CONVERTING_MARKER_KEY = "converting";
     isFileMigrationMarkerObject = (
-      input: unknown,
-    ): input is Storage.DatabaseRecord =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
+      candidate: unknown,
+    ): candidate is Storage.DatabaseRecord =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
     MIGRATION_LOCK_TTL_MS = 150000;
   };
 }

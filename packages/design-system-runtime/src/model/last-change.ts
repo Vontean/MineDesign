@@ -16,9 +16,9 @@ var isChangeMetadataObject: (
   input: unknown,
 ) => input is Record<string, unknown>;
 var CHANGE_UNSAFE_CHARACTER_PATTERN: RegExp;
-function sanitizeChangeMetadataText(value: unknown): string {
-  if (typeof value === "string") {
-    return value
+function sanitizeChangeMetadataText(candidate: unknown): string {
+  if (typeof candidate === "string") {
+    return candidate
       .replace(CHANGE_UNSAFE_CHARACTER_PATTERN, " ")
       .replace(/\s+/g, " ")
       .trim();
@@ -26,24 +26,24 @@ function sanitizeChangeMetadataText(value: unknown): string {
     return "";
   }
 }
-function parseLastChange(input: unknown): {
+function parseLastChange(rawChange: unknown): {
   value: LastChange | null;
   warnings: string[];
 } {
   let warnings: string[] = [];
-  if (input === undefined) {
+  if (rawChange === undefined) {
     return {
       value: null,
       warnings: warnings,
     };
   }
-  if (!isChangeMetadataObject(input)) {
+  if (!isChangeMetadataObject(rawChange)) {
     return {
       value: null,
       warnings: ["manifest.json lastChange: not an object — ignored"],
     };
   }
-  let by2 = sanitizeChangeMetadataText(input.by);
+  let by2 = sanitizeChangeMetadataText(rawChange.by);
   if (by2 === "") {
     return {
       value: null,
@@ -60,7 +60,7 @@ function parseLastChange(input: unknown): {
         " characters — clamped",
     );
   }
-  let at2 = sanitizeChangeMetadataText(input.at);
+  let at2 = sanitizeChangeMetadataText(rawChange.at);
   if (at2 === "" || at2.length > 40 || !Number.isFinite(Date.parse(at2))) {
     return {
       value: null,
@@ -74,8 +74,8 @@ function parseLastChange(input: unknown): {
     at: at2,
     extra: {},
   };
-  if (input.via !== undefined && input.via !== null) {
-    let value = sanitizeChangeMetadataText(input.via);
+  if (rawChange.via !== undefined && rawChange.via !== null) {
+    let value = sanitizeChangeMetadataText(rawChange.via);
     if (value.length > MAX_CHANGE_VIA_LENGTH) {
       value = value.slice(0, MAX_CHANGE_VIA_LENGTH);
       warnings.push(
@@ -88,8 +88,8 @@ function parseLastChange(input: unknown): {
       change.via = value;
     }
   }
-  if (input.note !== undefined && input.note !== null) {
-    let value = sanitizeChangeMetadataText(input.note);
+  if (rawChange.note !== undefined && rawChange.note !== null) {
+    let value = sanitizeChangeMetadataText(rawChange.note);
     if (value.length > MAX_CHANGE_NOTE_LENGTH) {
       value = value.slice(0, MAX_CHANGE_NOTE_LENGTH);
       warnings.push(
@@ -103,16 +103,16 @@ function parseLastChange(input: unknown): {
     }
   }
   let droppedExtras: number = 0;
-  for (let value of Object.keys(input)) {
+  for (let value of Object.keys(rawChange)) {
     if (CHANGE_STANDARD_KEYS.has(value)) {
       continue;
     }
-    let value2 = input[value];
+    let extraValue = rawChange[value];
     if (
       !(
-        typeof value2 === "string" ||
-        typeof value2 === "number" ||
-        typeof value2 === "boolean"
+        typeof extraValue === "string" ||
+        typeof extraValue === "number" ||
+        typeof extraValue === "boolean"
       ) ||
       !CHANGE_EXTRA_KEY_PATTERN.test(value) ||
       Object.keys(change.extra).length >= MAX_CHANGE_EXTRA_KEYS
@@ -120,12 +120,12 @@ function parseLastChange(input: unknown): {
       droppedExtras++;
       continue;
     }
-    let value3 = sanitizeChangeMetadataText(String(value2));
-    if (value3.length > MAX_CHANGE_EXTRA_VALUE_LENGTH) {
+    let sanitizedValue = sanitizeChangeMetadataText(String(extraValue));
+    if (sanitizedValue.length > MAX_CHANGE_EXTRA_VALUE_LENGTH) {
       droppedExtras++;
       continue;
     }
-    change.extra[value] = value3;
+    change.extra[value] = sanitizedValue;
   }
   if (droppedExtras > 0) {
     warnings.push(
@@ -209,9 +209,9 @@ export function installModelLastChange(): () => void {
     CHANGE_EXTRA_KEY_PATTERN = /^[A-Za-z0-9_.-]{1,40}$/;
     CHANGE_STANDARD_KEYS = new Set(["by", "via", "at", "note"]);
     isChangeMetadataObject = (
-      input: unknown,
-    ): input is Record<string, unknown> =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
+      candidate: unknown,
+    ): candidate is Record<string, unknown> =>
+      typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
     CHANGE_UNSAFE_CHARACTER_PATTERN =
       /[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069\u2028\u2029]+/g;
   };
