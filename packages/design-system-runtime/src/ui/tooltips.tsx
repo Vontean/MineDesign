@@ -248,7 +248,7 @@ export {
   jsxForUiTooltips,
   MINIMUM_DIALOG_KEYBOARD_VISIBLE_HEIGHT,
   reactForUiTooltips,
-  reactDialog as reactForUiTooltips2,
+  reactDialog,
   readInlineStyleProperty,
   restoreDialogStyleOverride,
   scrollDialogInputIntoView,

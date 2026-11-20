@@ -547,7 +547,7 @@ export {
   measureTabStripContents,
   parsePixelCssValue,
   reactForUiTabs,
-  reactTabs as reactForUiTabs2,
+  reactTabs,
   reactuP,
   resetAncestorHorizontalScroll,
   sortConnectedTabsByDocumentOrder,

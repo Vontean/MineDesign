@@ -23,7 +23,7 @@ import { Button } from "./buttons";
 import { asElement, useForwardedOverlayActions, useIsomorphicLayoutEffect } from "./foundation";
 import { CloseOnActivityHideProvider, cn, elevationSurfaceNames, getSurfaceClasses, layerBaseContext, PortalRoot, useDefaultOverlayLayer, useMergedRefs, useTranslation } from "./interactions";
 import { OVERLAY_ATTRIBUTE, useOverlayFinalFocus, usePortalContainer } from "./overlays";
-import { reactForUiTooltips2 as reactDialog, useDialogVisualKeyboard } from "./tooltips";
+import { reactDialog, useDialogVisualKeyboard } from "./tooltips";
 
 var dialogSurfaceClasses: string;
 var dialogMaximumHeightClasses: string;

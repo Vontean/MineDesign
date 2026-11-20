@@ -45,7 +45,7 @@ import { toModuleNamespace } from "../module-helpers";
 import { AdaptiveSheetPopupHost } from "./adaptive-sheets";
 import { Badge } from "./badges";
 import { Button } from "./buttons";
-import { COMBOBOX_SKELETON_ROW_COUNT, COMBOBOX_STATUS_CLASS, COMBOBOX_VIRTUAL_OVERSCAN, comboboxAccessibilityProps, ComboboxStatus, ComboboxStatus as ComboboxStatus_r, reactForUiInputs24 as reactComboboxHandle, typographyThemeValues, useMirroredAccessibleName } from "./combobox-primitives";
+import { COMBOBOX_SKELETON_ROW_COUNT, COMBOBOX_STATUS_CLASS, COMBOBOX_VIRTUAL_OVERSCAN, comboboxAccessibilityProps, ComboboxStatus, ComboboxStatus as ComboboxStatus_r, reactComboboxHandle, typographyThemeValues, useMirroredAccessibleName } from "./combobox-primitives";
 import { CheckboxVisual } from "./control-labels";
 import { FieldWrapper } from "./field";
 import { defaultSheetHost, FloatingPositionRenderProp, SHEET_DENSITY, SHEET_SCROLL_ATTRIBUTE, SheetContextProvider, sheetParentContext, sheetPopupClasses, sheetPositioningOverrides, useAdaptiveSheet, useControllableOpen, useHasSheetFrame, useIsomorphicLayoutEffect, useSheetCapablePresentation, useValueCapturedOnOpen } from "./foundation";
@@ -2040,11 +2040,11 @@ export {
   ComboboxTrigger,
   ComboboxValue,
   FieldCombobox,
-  ComboboxJsx as jsxForUiInputs24,
-  comboboxVirtualJsx as jsxForUiInputs25,
+  ComboboxJsx,
+  comboboxVirtualJsx,
   normalizeComboboxSearchText,
   nullComboboxElement,
-  reactCombobox as reactForUiInputs25,
+  reactCombobox,
   useComboboxAccessibleName,
   useComboboxListRef,
   useComboboxOutsideInputRegistration,

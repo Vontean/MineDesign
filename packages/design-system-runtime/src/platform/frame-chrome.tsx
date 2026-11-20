@@ -12,7 +12,7 @@ export {
   MENU_POPOVER_OPEN_SELECTORS,
   OPEN_OVERLAY_SELECTOR,
   reactForPlatformFrameChrome,
-  reactForFrameChrome as reactForPlatformFrameChrome2,
+  reactForFrameChrome,
 };
 export function installPlatformFrameChrome(): () => void {
   return () => {

@@ -5,7 +5,7 @@ import type * as React from "react";
 import type * as C from "../contracts/controls";
 import { baseButton as R_baseButton, baseUseRender, clsx, loadJsxNamespace, loadReactNamespace } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
-import { reactForUiIcons2 as reactLinkElements } from "./icons";
+import { reactLinkElements } from "./icons";
 import { cn, Icon, initializeTranslations, isIconName, pointerDismissalContext, useTranslation } from "./interactions";
 import { getAutomaticLinkRel, isSanitizedHrefFallback, linkEventPropNames, opensInSeparateBrowsingContext, pickLinkEventProps, sanitizeHref, useCdsLink } from "./overlays";
 
@@ -139,7 +139,7 @@ export {
   InteractiveLinkElement,
   interactiveLinkReservedProps,
   jsxForUiLinks,
-  TextLinkJsx as jsxForUiLinks2,
+  TextLinkJsx,
   NewTabAnnouncement,
   omitProps,
   reactyq,

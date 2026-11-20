@@ -660,7 +660,7 @@ export {
   propertyNumberFormatter,
   PropertyNumberInput,
   reactForUiNumberControls,
-  reactPropertyNumberInput as reactForUiNumberControls2,
+  reactPropertyNumberInput,
   roundScrubValue,
   scrubPrecision,
   snapScrubValue,

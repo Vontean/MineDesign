@@ -107,7 +107,7 @@ export {
   measureVisibleSiblingWidth,
   numberFieldHydrationNoop,
   NumberInput,
-  reactNumberInput as reactForUiTable3,
+  reactNumberInput,
   subscribeHydration,
   useClientHydrated,
 };

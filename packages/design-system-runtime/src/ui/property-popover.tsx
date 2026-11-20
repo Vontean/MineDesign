@@ -537,7 +537,7 @@ export {
   PropertyPopup,
   reactDOMForUiPropertyPopover,
   reactForUiPropertyPopover,
-  reactPropertyPopup as reactForUiPropertyPopover2,
+  reactPropertyPopup,
   suppressEnterClicksUntilRelease,
   suppressRepeatedEnterClicks,
   usePopupOpenFocus,

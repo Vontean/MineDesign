@@ -2181,7 +2181,7 @@ export {
   MOBILE_COARSE_POINTER_QUERY,
   notifySubscribers,
   OVERLAY_CLOSE_FALLBACK_MS,
-  reactFeatureFlags as PlatformFileContentAlias_2,
+  reactFeatureFlags,
   presentationModeContext,
   reactAdaptiveSheets,
   reactAndroidCloseWatcher,

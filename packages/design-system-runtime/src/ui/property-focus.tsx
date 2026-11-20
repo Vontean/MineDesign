@@ -5,7 +5,7 @@ import type {
   PopoverPlacement,
   UndoPointerProps,
 } from "../contracts/composition";
-import { MENU_POPOVER_OPEN_SELECTORS, OPEN_OVERLAY_SELECTOR, reactForPlatformFrameChrome2 as reactPropertyFocus } from "../platform/frame-chrome";
+import { MENU_POPOVER_OPEN_SELECTORS, OPEN_OVERLAY_SELECTOR, reactForFrameChrome as reactPropertyFocus } from "../platform/frame-chrome";
 
 var UNDO_STEPS_ATTRIBUTE: "data-mc-undo-steps";
 var UNDO_STEPS_HELD_ATTRIBUTE: "data-mc-undo-steps-held";

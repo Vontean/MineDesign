@@ -663,7 +663,7 @@ export {
   pausedFlipAnimations,
   pauseFlipAnimationAtProgress,
   reactForUiSegmentedControl,
-  reactSegmentedControl as reactForUiSegmentedControl2,
+  reactSegmentedControl,
   readCssDuration,
   RESIZE_DRAG_THRESHOLD_PX,
   RESIZE_KEYBOARD_LARGE_STEP_PX,

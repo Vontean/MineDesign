@@ -328,7 +328,7 @@ export {
   REACT_FORWARD_REF_SYMBOL,
   REACT_MEMO_SYMBOL,
   reactForUiIcons,
-  reactLinkElements as reactForUiIcons2,
+  reactLinkElements,
   reactZQ,
   trailingGlyphOutsetClass,
   trailingIconOutsetClasses,

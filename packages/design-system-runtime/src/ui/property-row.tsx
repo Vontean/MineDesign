@@ -378,7 +378,7 @@ export {
   COLOR_SWATCH_CLASS,
   FIELD_SURFACE_CLASS,
   FieldButton,
-  PropertyRowJsx as jsxForUiPropertyRow2,
+  PropertyRowJsx,
   jsxPropertyRowHelpers,
   PROPERTY_ACTIONS_CLASS,
   PROPERTY_ROW_INTERACTIVE_SELECTOR,
@@ -387,7 +387,7 @@ export {
   PropertyRow,
   propertyRowPressShouldIgnore,
   PropertySectionHeader,
-  reactPropertyRow as reactForUiPropertyRow2,
+  reactPropertyRow,
   reactPropertyRowHelpers,
   TEXT_FIELD_BUTTON_CLASS,
 };
