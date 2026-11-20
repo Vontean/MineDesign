@@ -9,10 +9,10 @@ import { getSurfaceBackgroundStyle, initializeCdsRoot, surfaceBackgroundContext,
 var reactForUiSurfaces: typeof React;
 var jsxrm: typeof import("react/jsx-runtime");
 var Surface: C.ForwardComponent<HTMLDivElement, C.SurfaceProps>;
-function useSurfaceStyle(input: C.SurfaceBackground): C.DesignStyle {
+function useSurfaceStyle(background: C.SurfaceBackground): C.DesignStyle {
   let value: "light" | "dark" = useResolvedColorMode();
   return {
-    ...getSurfaceBackgroundStyle(input),
+    ...getSurfaceBackgroundStyle(background),
     "--cds-focus-shadow": focusShadowByMode[value],
     "--cds-focus-shadow-danger": dangerFocusShadowByMode[value],
   };
@@ -41,12 +41,12 @@ export function installUiSurfaces(): () => void {
           children: children,
           ...props
         }: C.SurfaceProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ) => {
         let value = useSurfaceStyle(elevationSurfaceNames[elevation]);
         return (
           <div
-            ref={options}
+            ref={forwardedRef}
             data-cds={"Surface"}
             data-surface={elevation}
             {...props}

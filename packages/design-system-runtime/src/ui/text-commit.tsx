@@ -21,9 +21,9 @@ function createTextCommitController(
       current: null,
     },
     isEditing = false,
-    validateDraft = (input: string) =>
-      options.validate !== undefined && input !== options.value()
-        ? options.validate(input)
+    validateDraft = (draft: string) =>
+      options.validate !== undefined && draft !== options.value()
+        ? options.validate(draft)
         : null,
     commitDraft = () => {
       let value = isEditing ? options.draft.current : null;
@@ -41,14 +41,14 @@ function createTextCommitController(
       }
       options.commit(value);
     },
-    finishEditing = (input: boolean) => {
+    finishEditing = (forced: boolean) => {
       if (options.escaped.current) {
         options.escaped.current = false;
         options.draft.current = null;
         isEditing = false;
         errorRef.current = null;
       } else if (
-        input &&
+        forced &&
         isEditing &&
         (options.draft.current ?? "").trim() === ""
       ) {
@@ -69,11 +69,11 @@ function createTextCommitController(
       errorRef.current = null;
       options.rerender();
     },
-    onChange(input: string) {
-      options.draft.current = input;
+    onChange(nextDraft: string) {
+      options.draft.current = nextDraft;
       isEditing = true;
       if (errorRef.current !== null) {
-        errorRef.current = validateDraft(input);
+        errorRef.current = validateDraft(nextDraft);
       }
       options.rerender();
     },
@@ -83,8 +83,8 @@ function createTextCommitController(
     onForcedExit() {
       finishEditing(true);
     },
-    onKeyDown(input: TextCommitKey) {
-      if (input.key === "Enter") {
+    onKeyDown(keyEvent: TextCommitKey) {
+      if (keyEvent.key === "Enter") {
         let current = options.draft.current,
           value = current === null ? null : validateDraft(current);
         if (value !== null) {
@@ -96,15 +96,15 @@ function createTextCommitController(
           blur: true,
         };
       }
-      if (input.key === "Escape") {
+      if (keyEvent.key === "Escape") {
         options.escaped.current = true;
         return {
           blur: true,
         };
       }
       if (
-        (input.metaKey || input.ctrlKey) &&
-        input.key.toLowerCase() === "s"
+        (keyEvent.metaKey || keyEvent.ctrlKey) &&
+        keyEvent.key.toLowerCase() === "s"
       ) {
         let current = options.draft.current,
           value = current === null ? null : validateDraft(current);
@@ -144,7 +144,7 @@ function observeAutoResizeTextarea(element: TextEditorElement | null) {
   ).observe(element);
 }
 function useTextCommit({
-  value: value,
+  value: committedValue,
   commit: commit,
   fold: fold,
   allowEmpty: allowEmpty,
@@ -155,32 +155,32 @@ function useTextCommit({
     draftRef = reactTextCommit.useRef<string | null>(null),
     escapedRef = reactTextCommit.useRef(false),
     errorRef = reactTextCommit.useRef<string | null>(null),
-    valueRef = reactTextCommit.useRef(value);
-  valueRef.current = value;
+    valueRef = reactTextCommit.useRef(committedValue);
+  valueRef.current = committedValue;
   let commitRef = reactTextCommit.useRef(commit);
   commitRef.current = commit;
   let validateRef = reactTextCommit.useRef(validate);
   validateRef.current = validate;
   let foldRef = reactTextCommit.useRef(fold);
   foldRef.current = fold;
-  let normalizeDraft = (input: string) =>
-      foldRef.current === true ? input.replace(/\s+/g, " ").trim() : input,
+  let normalizeDraft = (draft: string) =>
+      foldRef.current === true ? draft.replace(/\s+/g, " ").trim() : draft,
     controllerOptionsRef = reactTextCommit.useRef<TextCommitOptions | null>(
       null,
     );
   controllerOptionsRef.current ??= {
     value: () => valueRef.current,
-    commit: (input: string) => {
-      if (normalizeDraft(input) !== valueRef.current) {
-        commitRef.current(normalizeDraft(input));
+    commit: (draft: string) => {
+      if (normalizeDraft(draft) !== valueRef.current) {
+        commitRef.current(normalizeDraft(draft));
       }
     },
-    validate: (input: string) =>
-      validateRef.current?.(normalizeDraft(input)) ?? null,
+    validate: (draft: string) =>
+      validateRef.current?.(normalizeDraft(draft)) ?? null,
     draft: draftRef,
     escaped: escapedRef,
     error: errorRef,
-    rerender: () => rerender((input: number) => input + 1),
+    rerender: () => rerender((revision: number) => revision + 1),
   };
   controllerOptionsRef.current.allowEmpty = allowEmpty;
   let controllerRef = reactTextCommit.useRef<TextCommitController | null>(
@@ -205,8 +205,8 @@ function useTextCommit({
   );
   return {
     props: {
-      ref: (input: TextEditorElement | null) =>
-        observeAutoResizeTextarea(input),
+      ref: (editorElement: TextEditorElement | null) =>
+        observeAutoResizeTextarea(editorElement),
       value: controller.display(),
       onFocus: () => {
         if (readOnly === true || draftRef.current !== null) {
@@ -240,11 +240,11 @@ function useTextCommit({
         if (event.key === "Escape" && draftRef.current === null) {
           return;
         }
-        let value2 = controller.onKeyDown(event);
+        let keyResult = controller.onKeyDown(event);
         if (event.key === "Enter" || event.key === "Escape") {
           event.preventDefault();
         }
-        if (value2.blur === true) {
+        if (keyResult.blur === true) {
           controller.onBlur();
         }
       },

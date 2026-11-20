@@ -61,17 +61,17 @@ function showActionToast(
   return value;
 }
 function closeToast(toastId: number) {
-  if (!toastQueue.some((input: QueuedToast) => input.id === toastId)) {
+  if (!toastQueue.some((toast: QueuedToast) => toast.id === toastId)) {
     return;
   }
   toastQueue = toastQueue.filter(
-    (input: QueuedToast) => input.id !== toastId,
+    (toast: QueuedToast) => toast.id !== toastId,
   );
   notifyToastSubscribers();
 }
 function clearNonActionToasts() {
   let value = toastQueue.filter(
-    (input: QueuedToast) => input.action !== undefined,
+    (toast: QueuedToast) => toast.action !== undefined,
   );
   if (value.length === toastQueue.length) {
     return;
@@ -101,7 +101,7 @@ function useToastBridge() {
     }: ToastNotificationBridge = useToastNotifications(),
     ref = reactk_.useRef(new Map<number, string>());
   reactk_.useEffect(() => {
-    let callback = (input: PinnedToast | null) => setPinned(input);
+    let callback = (nextPinnedToast: PinnedToast | null) => setPinned(nextPinnedToast);
     pinnedToastSubscribers.add(callback);
     if (pinnedToast !== null) {
       callback(pinnedToast);
@@ -112,13 +112,13 @@ function useToastBridge() {
   }, [setPinned]);
   reactk_.useEffect(() => {
     let current = ref.current;
-    return subscribeToasts((input: QueuedToast[]) => {
-      let values = new Set(input.map((input2: QueuedToast) => input2.id));
-      for (let value of input) {
+    return subscribeToasts((queue: QueuedToast[]) => {
+      let values = new Set(queue.map((toast: QueuedToast) => toast.id));
+      for (let value of queue) {
         if (current.has(value.id)) {
           continue;
         }
-        let value2 = add({
+        let renderedToastId = add({
           title: value.text,
           action: value.action,
           timeout: Math.max(0, value.durationMs),
@@ -129,14 +129,14 @@ function useToastBridge() {
             value.onClose?.();
           },
         });
-        current.set(value.id, value2);
+        current.set(value.id, renderedToastId);
       }
-      for (let [value, value2] of [...current]) {
+      for (let [value, renderedToastId] of [...current]) {
         if (values.has(value)) {
           continue;
         }
         current.delete(value);
-        close(value2);
+        close(renderedToastId);
       }
     });
   }, [add, close]);

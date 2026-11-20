@@ -13,7 +13,7 @@ import { Tabs } from "./tabs";
 var jsxT_: JsxNamespace;
 function ToolbarTabs({
   tabs: tabs,
-  value: value,
+  value: activeTab,
   onChange: onChange,
   label: label,
 }: ToolbarTabsProps) {
@@ -21,8 +21,8 @@ function ToolbarTabs({
   return (
     <div className={"mc-tabbar"}>
       <Tabs.Root
-        value={value}
-        onValueChange={(input: unknown) => onChange(input as string)}
+        value={activeTab}
+        onValueChange={(nextTab: unknown) => onChange(nextTab as string)}
       >
         <Tabs.List
           aria-label={label}
@@ -31,15 +31,15 @@ function ToolbarTabs({
             "mx-auto w-fit max-w-full min-w-0 overflow-x-auto [scrollbar-width:none]"
           }
         >
-          {tabs.map((input: ToolbarTab) =>
+          {tabs.map((tab: ToolbarTab) =>
             (() => {
               const _Element = Tabs.Tab;
               const _elementProps = {
-                value: input.value,
-                title: input.title,
-                children: input.label,
+                value: tab.value,
+                title: tab.title,
+                children: tab.label,
               };
-              const _elementKey = input.value;
+              const _elementKey = tab.value;
               return <_Element key={_elementKey} {..._elementProps} />;
             })(),
           )}

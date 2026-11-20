@@ -113,59 +113,59 @@ export function installUiTextInput(): () => void {
           onKeyDown: onKeyDown,
           ...props
         }: C.TextInputProps,
-        options: React.ForwardedRef<HTMLInputElement>,
+        forwardedRef: React.ForwardedRef<HTMLInputElement>,
       ) => {
         let {
             id: value,
-            "aria-describedby": value2,
-            "aria-invalid": value3,
-            disabled: value4,
-            ...value5
+            "aria-describedby": describedBy,
+            "aria-invalid": ariaInvalid,
+            disabled: disabled,
+            ...inputProps
           } = props,
           state = {
             id: value,
-            "aria-describedby": value2,
-            disabled: value4,
+            "aria-describedby": describedBy,
+            disabled: disabled,
           },
-          value6: string = useTranslation("clear", "Clear"),
-          value7 = clearLabel ?? value6,
-          value8 = useFieldInvalid(),
-          value9 = value8 || value3,
-          value10 = useFieldDisabled(),
-          value11 = value4 || value10,
-          value12 = fullWidth ? "w-full" : "",
-          value13 = fullWidth ? "w-full min-w-0" : "",
+          defaultClearLabel: string = useTranslation("clear", "Clear"),
+          resolvedClearLabel = clearLabel ?? defaultClearLabel,
+          fieldInvalid = useFieldInvalid(),
+          resolvedInvalid = fieldInvalid || ariaInvalid,
+          fieldDisabled = useFieldDisabled(),
+          isDisabled = disabled || fieldDisabled,
+          wrapperWidthClasses = fullWidth ? "w-full" : "",
+          inputWidthClasses = fullWidth ? "w-full min-w-0" : "",
           ref = reactoK.useRef<HTMLInputElement>(null),
           {
-            clickToFocusProps: value14,
+            clickToFocusProps: clickToFocusProps,
           }: {
             clickToFocusProps: React.HTMLAttributes<HTMLDivElement>;
           } = useClickToFocus(() => ref.current?.focus(), {
-            disabled: value11,
-            readOnly: value5.readOnly,
+            disabled: isDisabled,
+            readOnly: inputProps.readOnly,
           }),
-          value15: React.Ref<HTMLInputElement> = useMergedRefs(
+          mergedRef: React.Ref<HTMLInputElement> = useMergedRefs(
             ref,
-            options,
+            forwardedRef,
           ),
-          value16 = value5.value !== undefined,
-          [value17, value18] = reactoK.useState(
+          isControlled = inputProps.value !== undefined,
+          [uncontrolledHasText, setUncontrolledHasText] = reactoK.useState(
             () =>
-              value5.defaultValue !== undefined &&
-              String(value5.defaultValue).length > 0,
+              inputProps.defaultValue !== undefined &&
+              String(inputProps.defaultValue).length > 0,
           ),
-          value19 = value16
-            ? value5.value !== undefined && String(value5.value).length > 0
-            : value17,
+          hasText = isControlled
+            ? inputProps.value !== undefined && String(inputProps.value).length > 0
+            : uncontrolledHasText,
           callback = (event: React.ChangeEvent<HTMLInputElement>) => {
-            if (clearable && !value16) {
-              value18(event.target.value.length > 0);
+            if (clearable && !isControlled) {
+              setUncontrolledHasText(event.target.value.length > 0);
             }
             onChange?.(event);
           },
-          callback2 = () => {
+          clearInput = () => {
             let current = ref.current;
-            if (!value16 && current) {
+            if (!isControlled && current) {
               Object.getOwnPropertyDescriptor(
                 window.HTMLInputElement.prototype,
                 "value",
@@ -175,19 +175,19 @@ export function installUiTextInput(): () => void {
                   bubbles: true,
                 }),
               );
-              value18(false);
+              setUncontrolledHasText(false);
             }
             onClear?.();
             current?.focus();
           },
-          value20 =
-            (clearable === "always" || (clearable && value19)) && !value11,
-          value21 =
-            value20 &&
-            value19 &&
-            (!value16 || onClear !== undefined) &&
-            !value5.readOnly,
-          value22 = value20 ? (
+          showClearButton =
+            (clearable === "always" || (clearable && hasText)) && !isDisabled,
+          canClearText =
+            showClearButton &&
+            hasText &&
+            (!isControlled || onClear !== undefined) &&
+            !inputProps.readOnly,
+          clearButton = showClearButton ? (
             <Button
               iconOnly={true}
               variant={"ghost"}
@@ -196,25 +196,25 @@ export function installUiTextInput(): () => void {
                 "!size-[var(--fhn)] !rounded-[calc(var(--fr)-(var(--fh)-var(--fhn))/2)]"
               }
               icon={"X"}
-              aria-label={value7}
+              aria-label={resolvedClearLabel}
               tooltip={false}
-              tabIndex={value21 ? -1 : undefined}
+              tabIndex={canClearText ? -1 : undefined}
               onMouseDown={(event: React.MouseEvent<HTMLButtonElement>) =>
                 event.preventDefault()
               }
-              onClick={callback2}
+              onClick={clearInput}
             />
           ) : null,
-          ref2 = reactoK.useRef(false),
-          callback3 = (event: React.KeyboardEvent<HTMLInputElement>) => {
+          handledEscapeRef = reactoK.useRef(false),
+          suppressEscape = (event: React.KeyboardEvent<HTMLInputElement>) => {
             event.preventDefault();
             event.stopPropagation();
             event.nativeEvent.stopImmediatePropagation();
           },
-          callback4 = (event: React.KeyboardEvent<HTMLInputElement>) => {
+          handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
             onKeyDown?.(event);
             if (event.key === "Escape" && !event.repeat) {
-              ref2.current = false;
+              handledEscapeRef.current = false;
             }
             if (
               !(
@@ -234,36 +234,36 @@ export function installUiTextInput(): () => void {
               return;
             }
             if (event.repeat) {
-              if (ref2.current) {
-                callback3(event);
+              if (handledEscapeRef.current) {
+                suppressEscape(event);
               }
               return;
             }
-            ref2.current = value21 && event.currentTarget.value !== "";
-            if (ref2.current) {
-              callback3(event);
-              callback2();
+            handledEscapeRef.current = canClearText && event.currentTarget.value !== "";
+            if (handledEscapeRef.current) {
+              suppressEscape(event);
+              clearInput();
             }
           };
         if (slotStart || slotEnd || clearable) {
-          let value23 = value22 ? textInputTrailingPaddingClasses : "pr-md",
-            value24 = `flex shrink-0 items-center gap-[var(--cds-pad-sm,6px)] text-muted [--fh:var(--cds-h-control)] [--fr:var(--cds-radius)] [--fhn:var(--cds-h-control-nested)] ${textInputNestedControlClasses}`;
+          let trailingPaddingClasses = clearButton ? textInputTrailingPaddingClasses : "pr-md",
+            nestedControlClasses = `flex shrink-0 items-center gap-[var(--cds-pad-sm,6px)] text-muted [--fh:var(--cds-h-control)] [--fr:var(--cds-radius)] [--fhn:var(--cds-h-control-nested)] ${textInputNestedControlClasses}`;
           return (
             <div
               data-cds={"TextInput"}
               {...getControlSizeAttributes(size)}
-              data-invalid={value8 || undefined}
-              onMouseDown={value14.onMouseDown}
+              data-invalid={fieldInvalid || undefined}
+              onMouseDown={clickToFocusProps.onMouseDown}
               className={cn(
                 textInputContainerBaseClasses,
-                value23,
+                trailingPaddingClasses,
                 textInputTrailingControlPaddingClasses,
                 "inline-flex",
-                value13,
-                value11 ? "cursor-default" : "cursor-text",
+                inputWidthClasses,
+                isDisabled ? "cursor-default" : "cursor-text",
                 "items-center gap-[var(--cds-pad-sm,6px)] has-[:focus-visible]:shadow-focus",
                 "has-[input:disabled]:opacity-disabled",
-                value11 ? undefined : fieldHoverClasses,
+                isDisabled ? undefined : fieldHoverClasses,
                 className,
               )}
             >
@@ -275,20 +275,20 @@ export function installUiTextInput(): () => void {
                   {...state}
                   render={
                     <input
-                      ref={value15}
-                      aria-invalid={value9}
-                      {...value5}
+                      ref={mergedRef}
+                      aria-invalid={resolvedInvalid}
+                      {...inputProps}
                       onChange={callback}
-                      onKeyDown={callback4}
+                      onKeyDown={handleInputKeyDown}
                       className={cn(
                         textInputElementBaseClasses,
                         "disabled:opacity-100",
                       )}
                     />
                   }
-                />, value22 || slotEnd ? (
-                  <span data-cds-end-slot={""} className={value24}>
-                    {[slotEnd, value22]}
+                />, clearButton || slotEnd ? (
+                  <span data-cds-end-slot={""} className={nestedControlClasses}>
+                    {[slotEnd, clearButton]}
                   </span>
                 ) : null]}
             </div>
@@ -296,22 +296,22 @@ export function installUiTextInput(): () => void {
         }
         return (
           <baseField.Control
-            ref={options}
+            ref={forwardedRef}
             {...state}
             render={
               <input
                 data-cds={"TextInput"}
                 {...getControlSizeAttributes(size)}
-                data-invalid={value8 || undefined}
-                aria-invalid={value9}
-                {...value5}
+                data-invalid={fieldInvalid || undefined}
+                aria-invalid={resolvedInvalid}
+                {...inputProps}
                 onChange={callback}
-                onKeyDown={callback4}
+                onKeyDown={handleInputKeyDown}
                 className={cn(
                   "cds-input cds-reset",
                   textInputContainerBaseClasses,
                   "pr-md",
-                  value12,
+                  wrapperWidthClasses,
                   "placeholder:text-muted outline-none focus-visible:outline-hidden enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus disabled:opacity-disabled",
                   className,
                 )}

@@ -27,7 +27,7 @@ var reactToolbarControls: typeof import("react");
 var reactForUiToolbarControls: typeof import("react");
 var PANEL_ELEVATION: "panel";
 var POPOVER_ELEVATION: "popover";
-var reactForUiToolbarControls2: typeof import("react");
+var reactToolbarButton: typeof import("react");
 var jsxForUiToolbarControls: typeof import("react/jsx-runtime");
 var ToolbarFloatingContext: React.Context<boolean>;
 var ToolbarQuietContext: React.Context<boolean>;
@@ -42,7 +42,7 @@ var SHORTCUT_SPOKEN_REPLACEMENTS: [RegExp, string, string][];
 var ToolbarButton: React.ForwardRefExoticComponent<
   Color.ToolbarButtonProps & React.RefAttributes<HTMLButtonElement>
 >;
-var jsxForUiToolbarControls2: typeof import("react/jsx-runtime");
+var toolbarButtonJsx: typeof import("react/jsx-runtime");
 var toolbarPointerSession: Color.ToolbarPointerSession | null;
 var installedToolbarPointerDocuments: WeakSet<Document>;
 var monotonicNow: () => number | null;
@@ -107,7 +107,7 @@ function toolbarTooltipContent(props: Color.ToolbarTip): {
 function useDisabledButtonDescription(
   options: Color.ToolbarDisabledDescription,
 ): Color.ToolbarDisabledAccessibility {
-  let value = reactForUiToolbarControls2.useId();
+  let value = reactToolbarButton.useId();
   if (!options.disabled) {
     return {
       props: {},
@@ -115,13 +115,13 @@ function useDisabledButtonDescription(
       mirror: null,
     };
   }
-  let value2 = !!options.reason && options.reason !== options.name;
+  let hasDistinctReason = !!options.reason && options.reason !== options.name;
   return {
     props: {
       role: "button",
       "aria-disabled": true,
       "aria-label": options.name,
-      "aria-describedby": value2 ? value : undefined,
+      "aria-describedby": hasDistinctReason ? value : undefined,
       "aria-pressed": options.pressed,
       "aria-expanded": options.expanded,
       "aria-haspopup": options.hasPopup,
@@ -129,7 +129,7 @@ function useDisabledButtonDescription(
     inner: {
       "aria-hidden": true,
     },
-    mirror: value2 ? (
+    mirror: hasDistinctReason ? (
       <span hidden={true} id={value}>
         {options.reason}
       </span>
@@ -140,17 +140,17 @@ function useDeferredTooltipFocus(
   enabled: React.RefObject<HTMLElement | null>,
   onChange: boolean,
 ): void {
-  let ref = reactForUiToolbarControls2.useRef(onChange);
+  let ref = reactToolbarButton.useRef(onChange);
   ref.current = onChange;
-  let ref2 = reactForUiToolbarControls2.useRef<boolean | undefined>(
+  let lastFocusVisibleRef = reactToolbarButton.useRef<boolean | undefined>(
       undefined,
     ),
-    ref3 = reactForUiToolbarControls2.useRef(false),
-    current = reactForUiToolbarControls2.useRef(
+    returnFocusToButtonRef = reactToolbarButton.useRef(false),
+    current = reactToolbarButton.useRef(
       (event: Color.ToolbarFocusEvent) => {
         let currentTarget = event.currentTarget;
         if (event.type === "pointerdown") {
-          ref2.current = false;
+          lastFocusVisibleRef.current = false;
         } else if (event.type === "focusout") {
           let relatedTarget = event.relatedTarget;
           if (
@@ -159,85 +159,85 @@ function useDeferredTooltipFocus(
             relatedTarget.isConnected &&
             !currentTarget.contains(relatedTarget)
           ) {
-            ref3.current = false;
+            returnFocusToButtonRef.current = false;
           }
         } else if (
-          ((ref2.current =
+          ((lastFocusVisibleRef.current =
             event.target instanceof Element &&
             event.target.matches(":focus-visible")),
           event.type === "focusin" &&
             event.target === currentTarget &&
             ref.current)
         ) {
-          ref3.current = ref2.current;
+          returnFocusToButtonRef.current = lastFocusVisibleRef.current;
         }
       },
     ).current,
-    current2 = reactForUiToolbarControls2.useRef(() => {
-      ref3.current = false;
+    cancelFocusReturn = reactToolbarButton.useRef(() => {
+      returnFocusToButtonRef.current = false;
     }).current,
-    ref4 = reactForUiToolbarControls2.useRef<HTMLElement | null>(null),
+    subscribedElementRef = reactToolbarButton.useRef<HTMLElement | null>(null),
     callback = (element: HTMLElement | null) => {
-      let current3 = ref4.current;
-      if (element === current3) {
+      let previousElement = subscribedElementRef.current;
+      if (element === previousElement) {
         return;
       }
       let items = ["focusin", "focusout", "keydown", "pointerdown"] as const;
-      if (current3 !== null) {
+      if (previousElement !== null) {
         for (let value of items) {
-          current3.removeEventListener(value, current as EventListener);
+          previousElement.removeEventListener(value, current as EventListener);
         }
-        current3.ownerDocument.removeEventListener(
+        previousElement.ownerDocument.removeEventListener(
           "pointerdown",
-          current2,
+          cancelFocusReturn,
           true,
         );
       }
-      ref4.current = element;
+      subscribedElementRef.current = element;
       if (element !== null) {
         for (let value of items) {
           element.addEventListener(value, current as EventListener);
         }
-        element.ownerDocument.addEventListener("pointerdown", current2, true);
+        element.ownerDocument.addEventListener("pointerdown", cancelFocusReturn, true);
       }
     };
-  reactForUiToolbarControls2.useLayoutEffect(() => callback(enabled.current));
-  reactForUiToolbarControls2.useLayoutEffect(() => () => callback(null), []);
-  reactForUiToolbarControls2.useLayoutEffect(() => {
-    let current3 = enabled.current;
-    if (current3 === null) {
+  reactToolbarButton.useLayoutEffect(() => callback(enabled.current));
+  reactToolbarButton.useLayoutEffect(() => () => callback(null), []);
+  reactToolbarButton.useLayoutEffect(() => {
+    let buttonWrapper = enabled.current;
+    if (buttonWrapper === null) {
       return;
     }
-    let ownerDocument = current3.ownerDocument,
+    let ownerDocument = buttonWrapper.ownerDocument,
       value =
         ownerDocument.activeElement instanceof HTMLElement ||
         ownerDocument.activeElement instanceof SVGElement
           ? ownerDocument.activeElement
           : null,
-      value2 =
+      noFocusedControl =
         value === null ||
         value === ownerDocument.body ||
         value === ownerDocument.documentElement;
     if (onChange) {
       if (
         ownerDocument.hasFocus() &&
-        !value2 &&
-        value !== current3 &&
-        current3.contains(value) &&
-        (ref2.current ?? value!.matches(":focus-visible"))
+        !noFocusedControl &&
+        value !== buttonWrapper &&
+        buttonWrapper.contains(value) &&
+        (lastFocusVisibleRef.current ?? value!.matches(":focus-visible"))
       ) {
-        current3.focus({
+        buttonWrapper.focus({
           preventScroll: true,
         });
       }
     } else {
-      let current4 = ref3.current;
-      ref3.current = false;
+      let shouldReturnFocus = returnFocusToButtonRef.current;
+      returnFocusToButtonRef.current = false;
       if (
-        current4 &&
-        (value === current3 || (value2 && ownerDocument.hasFocus()))
+        shouldReturnFocus &&
+        (value === buttonWrapper || (noFocusedControl && ownerDocument.hasFocus()))
       ) {
-        current3.querySelector("button")?.focus({
+        buttonWrapper.querySelector("button")?.focus({
           preventScroll: true,
         });
       }
@@ -253,96 +253,96 @@ function accessibleKeyShortcut(
     return;
   }
   let items: string[] = [],
-    items2: string[] = [];
-  for (let value2 of value.split("+")) {
-    let value3 = value2.toLowerCase();
-    if (value3 === "") {
+    keys: string[] = [];
+  for (let token of value.split("+")) {
+    let normalizedToken = token.toLowerCase();
+    if (normalizedToken === "") {
       continue;
     }
-    let value4 = ownShortcutMapping(SHORTCUT_MODIFIER_NAMES, value3);
-    if (value4 !== undefined) {
-      let value6 = value4[isMac ? 0 : 1];
-      if (!items.includes(value6)) {
-        items.push(value6);
+    let modifierNames = ownShortcutMapping(SHORTCUT_MODIFIER_NAMES, normalizedToken);
+    if (modifierNames !== undefined) {
+      let modifierName = modifierNames[isMac ? 0 : 1];
+      if (!items.includes(modifierName)) {
+        items.push(modifierName);
       }
       continue;
     }
-    let value5 = ownShortcutMapping(SHORTCUT_KEY_NAMES, value3);
-    items2.push(
-      value5 !== undefined
-        ? typeof value5 === "string"
-          ? value5
-          : value5[isMac ? 0 : 1]
-        : value3.length === 1
-          ? value3.toUpperCase()
-          : value3.charAt(0).toUpperCase() + value3.slice(1),
+    let keyName = ownShortcutMapping(SHORTCUT_KEY_NAMES, normalizedToken);
+    keys.push(
+      keyName !== undefined
+        ? typeof keyName === "string"
+          ? keyName
+          : keyName[isMac ? 0 : 1]
+        : normalizedToken.length === 1
+          ? normalizedToken.toUpperCase()
+          : normalizedToken.charAt(0).toUpperCase() + normalizedToken.slice(1),
     );
   }
-  if (items2.length === 0) {
+  if (keys.length === 0) {
     return;
   }
   items.sort(
-    (input, options) =>
-      SHORTCUT_MODIFIER_LABELS.indexOf(input) -
-      SHORTCUT_MODIFIER_LABELS.indexOf(options),
+    (leftModifier, rightModifier) =>
+      SHORTCUT_MODIFIER_LABELS.indexOf(leftModifier) -
+      SHORTCUT_MODIFIER_LABELS.indexOf(rightModifier),
   );
-  return [...items, ...items2].join("+");
+  return [...items, ...keys].join("+");
 }
 function spokenShortcut(shortcut: string, isMac: boolean): string {
   let value = shortcut;
-  for (let [value2, value3, value4] of SHORTCUT_SPOKEN_REPLACEMENTS) {
-    value = value.replace(value2, isMac ? value3 : value4);
+  for (let [tokenPattern, macReplacement, otherReplacement] of SHORTCUT_SPOKEN_REPLACEMENTS) {
+    value = value.replace(tokenPattern, isMac ? macReplacement : otherReplacement);
   }
   return value.replace(/ {2,}/g, " ").trim();
 }
 function useButtonAccessibility(
   props: Color.ToolbarAccessibleDescription,
 ): Color.ToolbarAccessibility {
-  let value = reactForUiToolbarControls2.useId(),
-    value2 = useAppleKeyboard(),
-    value3 = !props.disabled,
-    value4 = props.tip !== "" && !props.name.includes(props.tip),
-    value5 =
-      value3 && props.shortcut !== undefined
-        ? accessibleKeyShortcut(props.shortcut, value2)
+  let value = reactToolbarButton.useId(),
+    usesAppleKeyboard = useAppleKeyboard(),
+    isEnabled = !props.disabled,
+    includeTip = props.tip !== "" && !props.name.includes(props.tip),
+    readableShortcut =
+      isEnabled && props.shortcut !== undefined
+        ? accessibleKeyShortcut(props.shortcut, usesAppleKeyboard)
         : undefined,
-    value6 =
-      value3 && props.shortcut !== undefined
-        ? shortcutToAriaKeyShortcuts(props.shortcut, value2)
+    ariaKeyShortcuts =
+      isEnabled && props.shortcut !== undefined
+        ? shortcutToAriaKeyShortcuts(props.shortcut, usesAppleKeyboard)
         : undefined,
-    value7 =
-      value3 && props.descriptionSuffix ? props.descriptionSuffix : undefined,
-    value8 =
-      value3 && (value4 || value5 !== undefined || value7 !== undefined),
-    value9 =
-      [props.describedBy, value8 ? value : undefined]
+    descriptionSuffix =
+      isEnabled && props.descriptionSuffix ? props.descriptionSuffix : undefined,
+    hasDescription =
+      isEnabled && (includeTip || readableShortcut !== undefined || descriptionSuffix !== undefined),
+    describedBy =
+      [props.describedBy, hasDescription ? value : undefined]
         .filter(Boolean)
         .join(" ") || undefined;
-  if (!value8) {
+  if (!hasDescription) {
     return {
-      describedBy: value9,
-      keyShortcuts: value6,
+      describedBy: describedBy,
+      keyShortcuts: ariaKeyShortcuts,
       mirror: null,
     };
   }
-  let value10 = [
-      value4 ? spokenShortcut(props.tip, value2) : undefined,
-      value5 !== undefined ? "Shortcut: " + value5 : undefined,
+  let description = [
+      includeTip ? spokenShortcut(props.tip, usesAppleKeyboard) : undefined,
+      readableShortcut !== undefined ? "Shortcut: " + readableShortcut : undefined,
     ]
       .filter(Boolean)
       .join(". "),
-    value11 =
-      value7 === undefined
-        ? value10
-        : value10 === ""
-          ? value7
-          : value10 + (/[.!?]$/.test(value10) ? " " : ". ") + value7;
+    fullDescription =
+      descriptionSuffix === undefined
+        ? description
+        : description === ""
+          ? descriptionSuffix
+          : description + (/[.!?]$/.test(description) ? " " : ". ") + descriptionSuffix;
   return {
-    describedBy: value9,
-    keyShortcuts: value6,
+    describedBy: describedBy,
+    keyShortcuts: ariaKeyShortcuts,
     mirror: (
       <span hidden={true} id={value}>
-        {value11}
+        {fullDescription}
       </span>
     ),
   };
@@ -365,38 +365,38 @@ function completedToolbarPointerSession(
   }
   return session as Color.CompletedToolbarPointerSession;
 }
-function installToolbarPointerTracking(document2: Document): void {
-  if (installedToolbarPointerDocuments.has(document2)) {
+function installToolbarPointerTracking(ownerDocument: Document): void {
+  if (installedToolbarPointerDocuments.has(ownerDocument)) {
     return;
   }
-  installedToolbarPointerDocuments.add(document2);
-  document2.addEventListener(
+  installedToolbarPointerDocuments.add(ownerDocument);
+  ownerDocument.addEventListener(
     "pointerdown",
     (event: PointerEvent) => {
       if (event.isPrimary === false) {
         return;
       }
       let value = monotonicNow();
-      for (let value7 of Array.from<Element>(
-        document2.querySelectorAll("[data-mc-through]"),
+      for (let clickThroughElement of Array.from<Element>(
+        ownerDocument.querySelectorAll("[data-mc-through]"),
       )) {
-        let value8 = Number(
-          value7.getAttribute("data-mc-through") || Number.NaN,
+        let clickThroughDeadline = Number(
+          clickThroughElement.getAttribute("data-mc-through") || Number.NaN,
         );
         if (
           !(
             value !== null &&
-            value < value8 &&
-            value8 - value <= TOOLBAR_EARLY_HOLD_MS
+            value < clickThroughDeadline &&
+            clickThroughDeadline - value <= TOOLBAR_EARLY_HOLD_MS
           )
         ) {
-          value7.removeAttribute("data-mc-through");
+          clickThroughElement.removeAttribute("data-mc-through");
         }
       }
       let target = event.target as Element | null,
-        value2 = target?.closest?.("[data-mc-strip]") ?? null,
+        toolbarStrip = target?.closest?.("[data-mc-strip]") ?? null,
         state: Color.ToolbarPointerSession = {
-          onStrip: value2 !== null,
+          onStrip: toolbarStrip !== null,
           inPopup: target?.closest?.(OPEN_OVERLAY_SELECTOR) != null,
           mouse: event.pointerType === "mouse",
           began: {
@@ -407,46 +407,46 @@ function installToolbarPointerTracking(document2: Document): void {
           },
           ended: null,
         },
-        value3 = value === null ? -1 : value - event.timeStamp;
+        eventAge = value === null ? -1 : value - event.timeStamp;
       if (
-        value2 !== null &&
+        toolbarStrip !== null &&
         event.pointerType !== "mouse" &&
-        value3 >= 0 &&
-        value3 <= TOOLBAR_TOUCH_RECENCY_MS
+        eventAge >= 0 &&
+        eventAge <= TOOLBAR_TOUCH_RECENCY_MS
       ) {
         state.early =
-          event.timeStamp < toolbarElementClickThroughDeadline(value2);
+          event.timeStamp < toolbarElementClickThroughDeadline(toolbarStrip);
       }
-      let value4 = completedToolbarPointerSession(
+      let previousSession = completedToolbarPointerSession(
           toolbarPointerSession,
           true,
         ),
-        value5 = value4 === null ? -1 : event.timeStamp - value4.ended.at,
-        value6 = value4 === null ? 0 : (value4.runAt ?? value4.ended.at);
+        timeSincePreviousRelease = previousSession === null ? -1 : event.timeStamp - previousSession.ended.at,
+        sessionStart = previousSession === null ? 0 : (previousSession.runAt ?? previousSession.ended.at);
       if (
-        value4 !== null &&
-        value5 >= 0 &&
-        value5 <= TOOLBAR_POINTER_TIME_TOLERANCE &&
-        event.timeStamp - value6 < TOOLBAR_TOUCH_HOLD_MS
+        previousSession !== null &&
+        timeSincePreviousRelease >= 0 &&
+        timeSincePreviousRelease <= TOOLBAR_POINTER_TIME_TOLERANCE &&
+        event.timeStamp - sessionStart < TOOLBAR_TOUCH_HOLD_MS
       ) {
-        state.runAt = value6;
+        state.runAt = sessionStart;
         state.stray =
           event.pointerType !== "mouse" &&
-          value2 !== null &&
-          pointInsideElement(value2, value4.ended.x, value4.ended.y);
+          toolbarStrip !== null &&
+          pointInsideElement(toolbarStrip, previousSession.ended.x, previousSession.ended.y);
       }
       toolbarPointerSession = state;
     },
     true,
   );
-  document2.addEventListener(
+  ownerDocument.addEventListener(
     "pointerup",
-    (input: PointerEvent) => {
-      if (input.isPrimary !== false && toolbarPointerSession !== null) {
+    (pointerEvent: PointerEvent) => {
+      if (pointerEvent.isPrimary !== false && toolbarPointerSession !== null) {
         toolbarPointerSession.ended = {
-          at: input.timeStamp,
-          x: input.clientX,
-          y: input.clientY,
+          at: pointerEvent.timeStamp,
+          x: pointerEvent.clientX,
+          y: pointerEvent.clientY,
           perf: monotonicNow(),
         };
       }
@@ -511,39 +511,39 @@ function updateToolbarTouchDeadline(
   }
   let value = monotonicNow(),
     bounds = element.getBoundingClientRect(),
-    value2 =
+    positionChanged =
       entry === undefined ||
       Math.abs(bounds.left - entry.left) > TOOLBAR_POSITION_TOLERANCE ||
       Math.abs(bounds.top - entry.top) > TOOLBAR_POSITION_TOLERANCE,
-    value3 = toolbarPointerSession,
-    value4 =
-      value3 === null
+    pointerSession = toolbarPointerSession,
+    lastPointerTime =
+      pointerSession === null
         ? null
-        : value3.ended === null
-          ? value3.began.perf
-          : value3.ended.perf,
-    value5 = value === null || value4 === null ? -1 : value - value4,
-    value6 =
-      value3 !== null &&
-      ((value3.onStrip && value3.stray !== true && value3.early !== true) ||
-        value3.inPopup) &&
-      value5 >= 0 &&
-      value5 <=
-        (value3.ended === null
+        : pointerSession.ended === null
+          ? pointerSession.began.perf
+          : pointerSession.ended.perf,
+    pointerAge = value === null || lastPointerTime === null ? -1 : value - lastPointerTime,
+    isRecentToolbarInteraction =
+      pointerSession !== null &&
+      ((pointerSession.onStrip && pointerSession.stray !== true && pointerSession.early !== true) ||
+        pointerSession.inPopup) &&
+      pointerAge >= 0 &&
+      pointerAge <=
+        (pointerSession.ended === null
           ? TOOLBAR_TOUCH_HOLD_MS
           : TOOLBAR_POINTER_TIME_TOLERANCE);
-  if (value6 && entry !== undefined) {
+  if (isRecentToolbarInteraction && entry !== undefined) {
     [entry.left, entry.top] = [bounds.left, bounds.top];
   }
   if (
-    !value2 ||
+    !positionChanged ||
     value === null ||
     !(bounds.width > 0 && bounds.height > 0) ||
     !coarseToolbarPointer()
   ) {
     return;
   }
-  if (value6) {
+  if (isRecentToolbarInteraction) {
     if (entry === undefined) {
       toolbarTouchDeadlines.set(element, {
         left: bounds.left,
@@ -555,7 +555,7 @@ function updateToolbarTouchDeadline(
     }
     return;
   }
-  let value7 =
+  let movementStartedAt =
       entry !== undefined &&
       (value < entry.end || value - entry.movedAt <= TOOLBAR_TOUCH_HOLD_MS)
         ? entry.since
@@ -565,18 +565,18 @@ function updateToolbarTouchDeadline(
       top: bounds.top,
       end: Math.min(
         value + TOOLBAR_STRAY_HOLD_MS + TOOLBAR_POINTER_TIME_TOLERANCE,
-        value7 + TOOLBAR_EARLY_HOLD_MS,
+        movementStartedAt + TOOLBAR_EARLY_HOLD_MS,
       ),
-      since: value7,
+      since: movementStartedAt,
       movedAt: value,
     };
   toolbarTouchDeadlines.set(element, state);
   afterTwoAnimationFramesUiToolbarControls(() => {
-    let value8 = monotonicNow();
-    if (value8 !== null && toolbarTouchDeadlines.get(element) === state) {
+    let frameTime = monotonicNow();
+    if (frameTime !== null && toolbarTouchDeadlines.get(element) === state) {
       state.end = Math.min(
         state.end,
-        value8 + TOOLBAR_POINTER_TIME_TOLERANCE,
+        frameTime + TOOLBAR_POINTER_TIME_TOLERANCE,
       );
     }
     updateToolbarClickThroughAttributes();
@@ -584,13 +584,13 @@ function updateToolbarTouchDeadline(
 }
 function toolbarElementClickThroughDeadline(element: Element): number {
   let value = completedToolbarPointerSession(toolbarPointerSession),
-    value2 =
+    pointerDeadline =
       value !== null &&
       value.end !== undefined &&
       pointInsideElement(element, value.ended.x, value.ended.y)
         ? value.end
         : 0;
-  return Math.max(toolbarTouchDeadlines.get(element)?.end ?? 0, value2);
+  return Math.max(toolbarTouchDeadlines.get(element)?.end ?? 0, pointerDeadline);
 }
 function toolbarStripClickThroughDeadline(
   element: HTMLElement,
@@ -610,38 +610,38 @@ function toolbarRecentTouchDeadline(
     return 0;
   }
   if (value.end === undefined) {
-    let value2 = now - value.ended.perf;
+    let timeSinceRelease = now - value.ended.perf;
     if (
-      !(value2 >= 0 && value2 <= TOOLBAR_TOUCH_RECENCY_MS) ||
+      !(timeSinceRelease >= 0 && timeSinceRelease <= TOOLBAR_TOUCH_RECENCY_MS) ||
       !pointInsideElement(element, value.ended.x, value.ended.y)
     ) {
       return 0;
     }
-    let value3 =
+    let belongsToPreviousTouch =
       lastToolbarTouchRelease !== null &&
       value.began.perf !== null &&
       value.began.perf < lastToolbarTouchRelease;
-    if (!value3) {
+    if (!belongsToPreviousTouch) {
       lastToolbarTouchRelease =
         now + TOOLBAR_STRAY_HOLD_MS + TOOLBAR_TOUCH_HOLD_MS;
     }
-    let value4 = lastToolbarTouchRelease ?? 0;
+    let releaseDeadline = lastToolbarTouchRelease ?? 0;
     value.end = Math.min(
       now + TOOLBAR_STRAY_HOLD_MS + TOOLBAR_POINTER_TIME_TOLERANCE,
-      value4,
+      releaseDeadline,
     );
     afterTwoAnimationFramesUiToolbarControls(() => {
-      let value5 = monotonicNow();
-      if (value5 !== null && !value3 && lastToolbarTouchRelease === value4) {
+      let frameTime = monotonicNow();
+      if (frameTime !== null && !belongsToPreviousTouch && lastToolbarTouchRelease === releaseDeadline) {
         lastToolbarTouchRelease = Math.min(
-          value4,
-          value5 + TOOLBAR_TOUCH_HOLD_MS,
+          releaseDeadline,
+          frameTime + TOOLBAR_TOUCH_HOLD_MS,
         );
       }
-      if (value5 !== null && value.end !== undefined) {
+      if (frameTime !== null && value.end !== undefined) {
         value.end = Math.min(
           value.end,
-          value5 + TOOLBAR_POINTER_TIME_TOLERANCE,
+          frameTime + TOOLBAR_POINTER_TIME_TOLERANCE,
           lastToolbarTouchRelease ?? 0,
         );
       }
@@ -674,14 +674,14 @@ function updateToolbarClickThroughAttributes(): void {
   toolbarClickThroughTimer = null;
   let value = monotonicNow(),
     index = 0;
-  for (let value2 of toolbarStrips) {
-    let value3 =
-      value === null ? 0 : toolbarStripClickThroughDeadline(value2, value);
-    if (value !== null && value < value3) {
-      value2.setAttribute("data-mc-through", String(Math.ceil(value3)));
-      index = Math.max(index, value3);
+  for (let strip of toolbarStrips) {
+    let deadline =
+      value === null ? 0 : toolbarStripClickThroughDeadline(strip, value);
+    if (value !== null && value < deadline) {
+      strip.setAttribute("data-mc-through", String(Math.ceil(deadline)));
+      index = Math.max(index, deadline);
     } else {
-      value2.removeAttribute("data-mc-through");
+      strip.removeAttribute("data-mc-through");
     }
   }
   if (value !== null && index > 0) {
@@ -712,7 +712,7 @@ function ToolbarStrip({
     [],
   );
   let ref = reactForUiToolbarControls.useRef<HTMLDivElement | null>(null),
-    ref2 = reactForUiToolbarControls.useRef<HTMLDivElement | null>(null),
+    toolbarRowRef = reactForUiToolbarControls.useRef<HTMLDivElement | null>(null),
     value = useCoarsePointer();
   reactForUiToolbarControls.useLayoutEffect(() => {
     let current = ref.current;
@@ -733,53 +733,53 @@ function ToolbarStrip({
       updateToolbarTouchDeadline(ref.current, coversSelection === true);
     }
     updateToolbarClickThroughAttributes();
-    if (ref.current !== null && ref2.current !== null) {
-      updateToolbarOverflowAttributes(ref.current, ref2.current);
+    if (ref.current !== null && toolbarRowRef.current !== null) {
+      updateToolbarOverflowAttributes(ref.current, toolbarRowRef.current);
     }
   });
   reactForUiToolbarControls.useLayoutEffect(() => {
     let current = ref.current,
-      current2 = ref2.current;
+      toolbarRow = toolbarRowRef.current;
     if (
       current === null ||
-      current2 === null ||
+      toolbarRow === null ||
       typeof ResizeObserver === "undefined"
     ) {
       return;
     }
     let observer = new ResizeObserver(() =>
-      updateToolbarOverflowAttributes(current, current2),
+      updateToolbarOverflowAttributes(current, toolbarRow),
     );
-    observer.observe(current2);
+    observer.observe(toolbarRow);
     return () => observer.disconnect();
   }, []);
   reactForUiToolbarControls.useLayoutEffect(() => {
     let current = ref.current,
-      current2 = ref2.current;
+      toolbarRow = toolbarRowRef.current;
     if (
       surface !== "popover" ||
       current === null ||
-      current2 === null ||
+      toolbarRow === null ||
       typeof ResizeObserver === "undefined"
     ) {
       return;
     }
     let callback = () => {
-        let element = current2.querySelector<HTMLElement>(
+        let element = toolbarRow.querySelector<HTMLElement>(
             '[data-cds="Button"]',
           ),
-          value2 = getComputedStyle(current2),
-          value3 =
+          rowStyle = getComputedStyle(toolbarRow),
+          singleRowHeight =
             (element?.offsetHeight ?? 0) +
-            (parseFloat(value2.paddingTop) || 0) +
-            (parseFloat(value2.paddingBottom) || 0);
+            (parseFloat(rowStyle.paddingTop) || 0) +
+            (parseFloat(rowStyle.paddingBottom) || 0);
         current.toggleAttribute(
           "data-mc-wrapped",
-          element !== null && current2.clientHeight > value3 + 1,
+          element !== null && toolbarRow.clientHeight > singleRowHeight + 1,
         );
       },
       observer = new ResizeObserver(callback);
-    observer.observe(current2);
+    observer.observe(toolbarRow);
     callback();
     return () => observer.disconnect();
   }, [surface]);
@@ -792,9 +792,9 @@ function ToolbarStrip({
           role={"toolbar"}
           data-mc-strip={""}
           data-mc-surface={surface}
-          onPointerDown={(input: React.PointerEvent<HTMLDivElement>) => {
-            input.stopPropagation();
-            onPointerDown?.(input);
+          onPointerDown={(pointerEvent: React.PointerEvent<HTMLDivElement>) => {
+            pointerEvent.stopPropagation();
+            onPointerDown?.(pointerEvent);
           }}
           onMouseDownCapture={(
             event: React.MouseEvent<HTMLDivElement> & {
@@ -849,16 +849,16 @@ function ToolbarStrip({
     >
       <div className={"relative min-w-0 flex-auto rounded-[inherit]"}>
         {[<div
-            ref={ref2}
+            ref={toolbarRowRef}
             data-mc-row={""}
-            onScroll={(input: React.UIEvent<HTMLDivElement>) => {
+            onScroll={(scrollEvent: React.UIEvent<HTMLDivElement>) => {
               if (ref.current !== null) {
                 updateToolbarOverflowAttributes(
                   ref.current,
-                  input.currentTarget,
+                  scrollEvent.currentTarget,
                 );
               }
-              onScroll?.(input);
+              onScroll?.(scrollEvent);
             }}
             className={joinClassNames(
               "flex min-w-0 items-center gap-[var(--mc-strip-gap)] rounded-[inherit] p-[var(--mc-strip-pad)]",
@@ -922,7 +922,7 @@ export {
   installToolbarPointerTracking,
   isToolbarClickThrough,
   jsxForUiToolbarControls,
-  jsxForUiToolbarControls2,
+  toolbarButtonJsx as jsxForUiToolbarControls2,
   jsxToolbarButtons,
   jsxToolbarIndicators,
   jsxToolbarLabels,
@@ -936,7 +936,7 @@ export {
   pointInsideElement,
   POPOVER_ELEVATION,
   reactForUiToolbarControls,
-  reactForUiToolbarControls2,
+  reactToolbarButton as reactForUiToolbarControls2,
   reactToolbarButtons,
   reactToolbarControls,
   reactToolbarLayout,
@@ -1015,7 +1015,7 @@ export function installUiToolbarControls(): () => void {
     );
     PANEL_ELEVATION = "panel";
     POPOVER_ELEVATION = "popover";
-    reactForUiToolbarControls2 = toModuleNamespace(
+    reactToolbarButton = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
@@ -1023,8 +1023,8 @@ export function installUiToolbarControls(): () => void {
       loadJsxNamespace(),
       1,
     );
-    ToolbarFloatingContext = reactForUiToolbarControls2.createContext(false);
-    ToolbarQuietContext = reactForUiToolbarControls2.createContext(false);
+    ToolbarFloatingContext = reactToolbarButton.createContext(false);
+    ToolbarQuietContext = reactToolbarButton.createContext(false);
     SHORTCUT_MODIFIER_NAMES = {
       ctrl: ["Control", "Ctrl"],
       control: ["Control", "Ctrl"],
@@ -1080,7 +1080,7 @@ export function installUiToolbarControls(): () => void {
       [/⏎/g, "Return", "Enter"],
       [/⌫/g, "Delete", "Backspace"],
     ];
-    ToolbarButton = reactForUiToolbarControls2.forwardRef(function (
+    ToolbarButton = reactToolbarButton.forwardRef(function (
       {
         icon: icon,
         glyph: glyph,
@@ -1102,83 +1102,83 @@ export function installUiToolbarControls(): () => void {
         "aria-describedby": ariaDescribedby,
         ...props
       }: Color.ToolbarButtonProps,
-      options: React.ForwardedRef<HTMLButtonElement>,
+      forwardedRef: React.ForwardedRef<HTMLButtonElement>,
     ) {
-      let value = reactForUiToolbarControls2.useContext(ToolbarFloatingContext),
-        value2 = props.disabled === true,
-        value3 = count ? label + " (" + String(count) + ")" : label,
-        value4 = icon ?? glyph,
-        value5 = toolbarTooltipContent({
+      let value = reactToolbarButton.useContext(ToolbarFloatingContext),
+        isDisabled = props.disabled === true,
+        buttonLabel = count ? label + " (" + String(count) + ")" : label,
+        buttonIcon = icon ?? glyph,
+        tooltip = toolbarTooltipContent({
           label: label,
           tip: tip,
           disabledTip: disabledTip,
           shortcut: shortcut,
-          disabled: value2,
+          disabled: isDisabled,
         }),
-        value6 = useButtonAccessibility({
-          disabled: value2,
-          name: value3,
-          tip: value5.content,
-          shortcut: value5.shortcut,
+        accessibility = useButtonAccessibility({
+          disabled: isDisabled,
+          name: buttonLabel,
+          tip: tooltip.content,
+          shortcut: tooltip.shortcut,
           describedBy: ariaDescribedby,
           descriptionSuffix: descriptionSuffix,
         }),
-        value7 = useDisabledButtonDescription({
-          disabled: value2,
-          name: value3,
+        disabledAccessibility = useDisabledButtonDescription({
+          disabled: isDisabled,
+          name: buttonLabel,
           reason: disabledTip ?? tip,
           pressed: pressed,
           expanded: expanded ?? ariaExpanded,
           hasPopup: props["aria-haspopup"],
         }),
-        ref = reactForUiToolbarControls2.useRef<HTMLElement | null>(null);
-      useDeferredTooltipFocus(ref, value2);
+        ref = reactToolbarButton.useRef<HTMLElement | null>(null);
+      useDeferredTooltipFocus(ref, isDisabled);
       let state = {
           ...props,
-          ref: options,
+          ref: forwardedRef,
           variant: variant,
           pressed: pressed,
           "aria-expanded": expanded ?? ariaExpanded,
-          "aria-label": value3,
-          "aria-describedby": value6.describedBy,
+          "aria-label": buttonLabel,
+          "aria-describedby": accessibility.describedBy,
           "aria-keyshortcuts":
-            props["aria-keyshortcuts"] ?? value6.keyShortcuts,
-          ...value7.inner,
+            props["aria-keyshortcuts"] ?? accessibility.keyShortcuts,
+          ...disabledAccessibility.inner,
         },
-        value8 = iconOnly === true || (value && variant !== "primary"),
-        value9 = value8 && caret !== true;
+        useIconOnlyLayout = iconOnly === true || (value && variant !== "primary"),
+        hideText = useIconOnlyLayout && caret !== true;
       return (
         <Tooltip
-          content={value5.content}
-          shortcut={value5.shortcut}
+          content={tooltip.content}
+          shortcut={tooltip.shortcut}
           side={tipSide}
           hoverable={false}
         >
           <span
             ref={ref}
-            tabIndex={value2 ? 0 : -1}
-            {...value7.props}
-            data-tb-icon={value9 ? "" : undefined}
+            tabIndex={isDisabled ? 0 : -1}
+            {...disabledAccessibility.props}
+            data-tb-icon={hideText ? "" : undefined}
             className={joinClassNames(
               "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
               className,
             )}
           >
-            {[value8 ? (
+            {[useIconOnlyLayout ? (
                 caret === true ? (
-                  <Button {...state} icon={value4}>
+                  <Button {...state} icon={buttonIcon}>
                     <ToolbarCaret />
                   </Button>
                 ) : (
                   <Button
                     {...state}
                     iconOnly={true}
-                    icon={value4}
+                    icon={buttonIcon}
                     tooltip={false}
                   />
                 )
               ) : (
-                <Button {...state} icon={value4}>
+                <Button {...state} icon={buttonIcon}>
                   {[label, children, caret === true ? (
                       <ToolbarCaret inherit={variant === "primary"} />
                     ) : null]}
@@ -1196,12 +1196,12 @@ export function installUiToolbarControls(): () => void {
                     size={"xs"}
                   />
                 </span>
-              ) : null, value6.mirror, value7.mirror]}
+              ) : null, accessibility.mirror, disabledAccessibility.mirror]}
           </span>
         </Tooltip>
       );
     });
-    jsxForUiToolbarControls2 = toModuleNamespace(
+    toolbarButtonJsx = toModuleNamespace(
       loadJsxNamespace(),
       1,
     );
@@ -1267,7 +1267,7 @@ export function installUiToolbarControls(): () => void {
         "aria-describedby": ariaDescribedby,
         ...props
       }: Color.ToolbarStripButtonProps,
-      options: React.ForwardedRef<HTMLButtonElement>,
+      forwardedRef: React.ForwardedRef<HTMLButtonElement>,
     ) {
       let value =
           ariaPressed === undefined
@@ -1277,44 +1277,44 @@ export function installUiToolbarControls(): () => void {
           event.preventDefault();
           onMouseDown?.(event);
         },
-        value2 = disabled === true,
-        value3 =
+        isDisabled = disabled === true,
+        tooltipSide =
           reactForUiToolbarControls.useContext(
             ToolbarTooltipSideContext,
           ) ?? "top",
-        value4 =
+        accessibleLabel =
           ariaLabel ?? (typeof children === "string" ? children : undefined),
-        value5 = useDisabledButtonDescription({
-          disabled: value2 && title !== undefined,
-          name: value4 ?? title ?? "",
+        disabledAccessibility = useDisabledButtonDescription({
+          disabled: isDisabled && title !== undefined,
+          name: accessibleLabel ?? title ?? "",
           reason: title,
           pressed: ariaPressed,
           expanded: ariaExpanded,
           hasPopup: props["aria-haspopup"],
         }),
         ref = reactForUiToolbarControls.useRef<HTMLElement | null>(null);
-      useDeferredTooltipFocus(ref, value2 && title !== undefined);
-      let value6 = reactForUiToolbarControls.useId(),
-        value7 = !value2 && !!title && value4?.startsWith(title) !== true,
-        value8 =
-          [ariaDescribedby, value7 ? value6 : undefined]
+      useDeferredTooltipFocus(ref, isDisabled && title !== undefined);
+      let descriptionId = reactForUiToolbarControls.useId(),
+        describeWithTitle = !isDisabled && !!title && accessibleLabel?.startsWith(title) !== true,
+        describedBy =
+          [ariaDescribedby, describeWithTitle ? descriptionId : undefined]
             .filter(Boolean)
             .join(" ") || undefined,
         state = {
-          ref: options,
+          ref: forwardedRef,
           variant: "ghost" as const,
           type: type ?? "button",
           pressed: value,
           disabled: disabled,
           "aria-expanded": ariaExpanded,
-          "aria-describedby": value8,
+          "aria-describedby": describedBy,
           onMouseDown: callback,
           className: joinClassNames("shrink-0", className),
           ...props,
           "data-mc-item": "",
-          ...value5.inner,
+          ...disabledAccessibility.inner,
         },
-        value9 =
+        button =
           icon !== undefined &&
           (children === undefined || children === null) ? (
             <Button
@@ -1336,33 +1336,33 @@ export function installUiToolbarControls(): () => void {
             </Button>
           );
       if (title === undefined) {
-        return value9;
+        return button;
       }
       return (
         <Tooltip
           content={title}
-          side={value3}
+          side={tooltipSide}
           hoverable={false}
           open={
-            (ariaExpanded === true || ariaExpanded === "true") && !value2
+            (ariaExpanded === true || ariaExpanded === "true") && !isDisabled
               ? false
               : undefined
           }
         >
           <span
             ref={ref}
-            tabIndex={value2 ? 0 : -1}
-            {...value5.props}
+            tabIndex={isDisabled ? 0 : -1}
+            {...disabledAccessibility.props}
             data-tip={title}
             className={
               "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus"
             }
           >
-            {[value9, value7 ? (
-                <span hidden={true} id={value6}>
+            {[button, describeWithTitle ? (
+                <span hidden={true} id={descriptionId}>
                   {title}
                 </span>
-              ) : null, value5.mirror]}
+              ) : null, disabledAccessibility.mirror]}
           </span>
         </Tooltip>
       );

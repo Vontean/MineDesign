@@ -39,28 +39,28 @@ function useSelectionToolbar(
         value != null &&
         value.contains(current.ownerDocument.activeElement)
       ) {
-        let current2 = rangeRef.current;
-        if (current2 !== null) {
-          setSelectionRect(current2.getBoundingClientRect());
+        let previousRange = rangeRef.current;
+        if (previousRange !== null) {
+          setSelectionRect(previousRange.getBoundingClientRect());
         }
         return;
       }
-      let value2 = current.ownerDocument.getSelection();
-      if (value2 === null || value2.rangeCount === 0 || value2.isCollapsed) {
+      let selection = current.ownerDocument.getSelection();
+      if (selection === null || selection.rangeCount === 0 || selection.isCollapsed) {
         return setSelectionRect(null);
       }
-      let value3 = value2.getRangeAt(0);
+      let selectedRange = selection.getRangeAt(0);
       if (
-        !current.contains(value3.startContainer) ||
-        !current.contains(value3.endContainer)
+        !current.contains(selectedRange.startContainer) ||
+        !current.contains(selectedRange.endContainer)
       ) {
         return setSelectionRect(null);
       }
-      let bounds = value3.getBoundingClientRect();
+      let bounds = selectedRange.getBoundingClientRect();
       if (bounds.width === 0 && bounds.height === 0) {
         return setSelectionRect(null);
       }
-      rangeRef.current = value3.cloneRange();
+      rangeRef.current = selectedRange.cloneRange();
       setSelectionRect(bounds);
     }, [containerRef, enabled, holdWhileFocusIn]);
   reactSelectionToolbar.useEffect(() => {
@@ -68,19 +68,19 @@ function useSelectionToolbar(
       return setSelectionRect(null);
     }
     let value = containerRef.current?.ownerDocument ?? document,
-      value2 = value.defaultView ?? window;
+      ownerWindow = value.defaultView ?? window;
     value.addEventListener("selectionchange", refreshSelection);
-    value2.addEventListener("scroll", refreshSelection, {
+    ownerWindow.addEventListener("scroll", refreshSelection, {
       capture: true,
       passive: true,
     });
-    value2.addEventListener("resize", refreshSelection);
+    ownerWindow.addEventListener("resize", refreshSelection);
     return () => {
       value.removeEventListener("selectionchange", refreshSelection);
-      value2.removeEventListener("scroll", refreshSelection, {
+      ownerWindow.removeEventListener("scroll", refreshSelection, {
         capture: true,
       });
-      value2.removeEventListener("resize", refreshSelection);
+      ownerWindow.removeEventListener("resize", refreshSelection);
     };
   }, [containerRef, enabled, refreshSelection]);
   reactSelectionToolbar.useEffect(() => {
@@ -100,21 +100,21 @@ function useSelectionToolbar(
     }
     let current = stripRef.current,
       value = current?.offsetWidth ?? 0,
-      value2 = current?.offsetHeight ?? 0,
-      value3 =
+      toolbarHeight = current?.offsetHeight ?? 0,
+      viewportWidth =
         containerRef.current?.ownerDocument.documentElement.clientWidth ??
         window.innerWidth,
-      value4 = selectionRect.left + selectionRect.width / 2 - value / 2;
-    value4 = Math.max(8, Math.min(value4, value3 - value - 8));
-    let value5 = selectionRect.top - gap - value2 < 8,
-      value6 = value5
+      left = selectionRect.left + selectionRect.width / 2 - value / 2;
+    left = Math.max(8, Math.min(left, viewportWidth - value - 8));
+    let placeBelow = selectionRect.top - gap - toolbarHeight < 8,
+      top = placeBelow
         ? selectionRect.bottom + gap
-        : selectionRect.top - gap - value2;
-    setPlaced(value5 ? "below" : "above");
+        : selectionRect.top - gap - toolbarHeight;
+    setPlaced(placeBelow ? "below" : "above");
     setStyle({
       position: "fixed",
-      top: Math.round(value6),
-      left: Math.round(value4),
+      top: Math.round(top),
+      left: Math.round(left),
     });
   }, [selectionRect, gap, containerRef, stripWidth]);
   return {

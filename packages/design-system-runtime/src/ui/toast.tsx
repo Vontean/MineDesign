@@ -62,68 +62,68 @@ function ToastView({
       toast.data?.variant ??
       (toast.type as ToastVariant | undefined) ??
       "neutral",
-    value2 = toast.data?.icon,
-    value3 =
-      value2 !== null && value2 !== undefined && typeof value2 !== "boolean",
-    value4 = !front,
-    value5 = value4 && frontHeight ? frontHeight : undefined,
-    value6 = useTranslation("dismiss", "Dismiss"),
-    { update: value7 } = baseToast.useToastManager<ToastData>(),
-    value8 = reactForUiToast.useContext(pinnedToastContext),
+    icon = toast.data?.icon,
+    hasIcon =
+      icon !== null && icon !== undefined && typeof icon !== "boolean",
+    behindFront = !front,
+    lockedHeight = behindFront && frontHeight ? frontHeight : undefined,
+    dismissLabel = useTranslation("dismiss", "Dismiss"),
+    { update: updateToast } = baseToast.useToastManager<ToastData>(),
+    pinnedContext = reactForUiToast.useContext(pinnedToastContext),
     ref = reactForUiToast.useRef<HTMLElement | null>(null),
-    ref2 = reactForUiToast.useRef(""),
-    value9 = toast.data?.titleNode,
-    value10 = toast.data?.count ?? 1,
+    previousTitleRef = reactForUiToast.useRef(""),
+    customTitle = toast.data?.titleNode,
+    repeatCount = toast.data?.count ?? 1,
     id = toast.id,
     callback = () => {
-      let value16 = value8?.userDismissAt,
-        value17 = Date.now();
-      for (let [value18, value19] of value16 ?? []) {
-        if (value17 - value19 > TOAST_TRANSITION_TIMEOUT_MS) {
-          value16?.delete(value18);
+      let userDismissTimes = pinnedContext?.userDismissAt,
+        dismissedAt = Date.now();
+      for (let [toastId, previousDismissTime] of userDismissTimes ?? []) {
+        if (dismissedAt - previousDismissTime > TOAST_TRANSITION_TIMEOUT_MS) {
+          userDismissTimes?.delete(toastId);
         }
       }
-      value16?.set(id, value17);
+      userDismissTimes?.set(id, dismissedAt);
     };
   reactForUiToast.useLayoutEffect(() => {
     let current = ref.current;
-    if (value9 === undefined || !current) {
+    if (customTitle === undefined || !current) {
       return;
     }
-    let callback2 = () => {
-      let value16 = current.textContent ?? "";
-      if (value16 !== ref2.current) {
-        ref2.current = value16;
-        value7(id, {
-          title: value16,
+    let syncTitleText = () => {
+      let titleText = current.textContent ?? "";
+      if (titleText !== previousTitleRef.current) {
+        previousTitleRef.current = titleText;
+        updateToast(id, {
+          title: titleText,
         });
       }
     };
-    callback2();
-    let observer = new MutationObserver(callback2);
+    syncTitleText();
+    let observer = new MutationObserver(syncTitleText);
     observer.observe(current, {
       characterData: true,
       childList: true,
       subtree: true,
     });
     return () => observer.disconnect();
-  }, [value9, id, value7]);
-  let value11 = toast.transitionStatus === "ending",
-    [value12, value13] = reactForUiToast.useState({
-      behind: value4,
-      lockedHeight: value5,
+  }, [customTitle, id, updateToast]);
+  let isEnding = toast.transitionStatus === "ending",
+    [previousStackPosition, setPreviousStackPosition] = reactForUiToast.useState({
+      behind: behindFront,
+      lockedHeight: lockedHeight,
     });
   if (
-    !value11 &&
-    (value12.behind !== value4 || value12.lockedHeight !== value5)
+    !isEnding &&
+    (previousStackPosition.behind !== behindFront || previousStackPosition.lockedHeight !== lockedHeight)
   ) {
-    value13({
-      behind: value4,
-      lockedHeight: value5,
+    setPreviousStackPosition({
+      behind: behindFront,
+      lockedHeight: lockedHeight,
     });
   }
-  let value14 = value11 ? value12.behind : value4,
-    value15 = value11 ? value12.lockedHeight : value5;
+  let renderedBehindFront = isEnding ? previousStackPosition.behind : behindFront,
+    renderedHeight = isEnding ? previousStackPosition.lockedHeight : lockedHeight;
   return (
     <baseToast.Root
       toast={toast}
@@ -132,11 +132,11 @@ function ToastView({
       style={{
         zIndex: zIndex,
       }}
-      onKeyDown={(input: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown={(keyEvent: React.KeyboardEvent<HTMLDivElement>) => {
         if (
-          input.key === "Escape" &&
-          input.currentTarget.contains(
-            input.currentTarget.ownerDocument.activeElement,
+          keyEvent.key === "Escape" &&
+          keyEvent.currentTarget.contains(
+            keyEvent.currentTarget.ownerDocument.activeElement,
           )
         ) {
           callback();
@@ -148,20 +148,20 @@ function ToastView({
       >
         <div
           className={toastContentClasses}
-          data-behind={value14 ? "" : undefined}
+          data-behind={renderedBehindFront ? "" : undefined}
           style={
-            value15 !== undefined
+            renderedHeight !== undefined
               ? {
-                  height: value15,
+                  height: renderedHeight,
                 }
               : undefined
           }
         >
-          {[value2 !== null && (
+          {[icon !== null && (
               <span
                 className={`shrink-0 ${toastSecondaryTextClasses[value]}`}
               >
-                {value3 ? (value2) : (<Icon
+                {hasIcon ? (icon) : (<Icon
                     name={toastDefaultIconNames[value]}
                     size={"md"}
                   />)}
@@ -171,11 +171,11 @@ function ToastView({
                   className={"font-medium"}
                   aria-atomic={"true"}
                 >
-                  {[<span ref={ref}>{value9 ?? (toast.data?.baseTitle)}</span>, value10 > 1 && (
+                  {[<span ref={ref}>{customTitle ?? (toast.data?.baseTitle)}</span>, repeatCount > 1 && (
                       <span
-                        aria-live={value10 > 2 ? "off" : undefined}
+                        aria-live={repeatCount > 2 ? "off" : undefined}
                         data-cds-toast-count={""}
-                      >{` (×${value10})`}</span>
+                      >{` (×${repeatCount})`}</span>
                     )]}
                 </baseToast.Title>, <baseToast.Description />, toast.data?.action && (
                   <div className={"mt-pad-md empty:hidden"}>
@@ -183,7 +183,7 @@ function ToastView({
                   </div>
                 )]}
             </div>, <baseToast.Close
-              aria-label={value6}
+              aria-label={dismissLabel}
               className={toastDismissButtonClasses}
               onClick={callback}
             >
@@ -203,7 +203,7 @@ function PinnedToastView({
 }): React.ReactElement {
   useUiLocale();
   let value = pinned.variant ?? "neutral",
-    value2 = useTranslation("dismiss", "Dismiss");
+    dismissLabel = useTranslation("dismiss", "Dismiss");
   return (
     <div
       data-pinned={""}
@@ -221,7 +221,7 @@ function PinnedToastView({
           </div>, pinned.dismissible && (
             <button
               type={"button"}
-              aria-label={pinned.dismissLabel ?? (value2)}
+              aria-label={pinned.dismissLabel ?? (dismissLabel)}
               onClick={onDismiss}
               className={toastDismissButtonClasses}
             >
@@ -233,10 +233,10 @@ function PinnedToastView({
   );
 }
 function containsVisibleFocus(
-  input: HTMLElement | null | undefined,
+  element: HTMLElement | null | undefined,
 ): boolean {
-  let value = input?.ownerDocument.activeElement;
-  if (!input || !value || !input.contains(value)) {
+  let value = element?.ownerDocument.activeElement;
+  if (!element || !value || !element.contains(value)) {
     return false;
   }
   try {
@@ -253,13 +253,13 @@ function PinnedToastSlot({
   useUiLocale();
   let {
       pinned: value,
-      setPinned: value2,
-      slotRef: value3,
-      focusWasInsideRef: value4,
+      setPinned: setPinned,
+      slotRef: slotRef,
+      focusWasInsideRef: focusWasInsideRef,
     } = ctx,
     ref = reactForUiToast.useRef<HTMLElement | null>(null);
   reactForUiToast.useEffect(() => {
-    let current = value3.current;
+    let current = slotRef.current;
     if (!current) {
       return;
     }
@@ -276,27 +276,27 @@ function PinnedToastSlot({
       };
     ownerDocument.addEventListener("focusin", callback);
     return () => ownerDocument.removeEventListener("focusin", callback);
-  }, [value3]);
+  }, [slotRef]);
   reactForUiToast.useLayoutEffect(() => {
-    let current = value3.current;
-    if (!current || !value4.current) {
+    let current = slotRef.current;
+    if (!current || !focusWasInsideRef.current) {
       return;
     }
-    value4.current = false;
+    focusWasInsideRef.current = false;
     if (current.contains(current.ownerDocument.activeElement)) {
       return;
     }
-    let current2 = ref.current;
-    if (current2?.isConnected) {
-      current2.focus({
+    let focusTarget = ref.current;
+    if (focusTarget?.isConnected) {
+      focusTarget.focus({
         preventScroll: true,
       });
     }
-  }, [value, value3, value4]);
+  }, [value, slotRef, focusWasInsideRef]);
   return (
     <div
-      ref={(input: HTMLElement | null) => {
-        value3.current = input;
+      ref={(element: HTMLElement | null) => {
+        slotRef.current = element;
       }}
       role={"status"}
       className={value ? "w-full" : "sr-only"}
@@ -310,11 +310,11 @@ function PinnedToastSlot({
             event.currentTarget.ownerDocument.activeElement,
           )
         ) {
-          value2(null);
+          setPinned(null);
         }
       }}
     >
-      {value && (<PinnedToastView pinned={value} onDismiss={() => value2(null)} />)}
+      {value && (<PinnedToastView pinned={value} onDismiss={() => setPinned(null)} />)}
     </div>
   );
 }
@@ -325,12 +325,12 @@ function ToastViewport({
 }): React.ReactElement {
   useUiLocale();
   let { toasts: value } = baseToast.useToastManager<ToastData>(),
-    value2 = reactForUiToast.useContext(pinnedToastContext);
+    pinnedContext = reactForUiToast.useContext(pinnedToastContext);
   useIsomorphicLayoutEffect(() => {
-    value2?.syncLiveToasts(value);
-  }, [value, value2]);
-  let value3 = value.find(
-    (input: ToastObject) => input.transitionStatus !== "ending",
+    pinnedContext?.syncLiveToasts(value);
+  }, [value, pinnedContext]);
+  let frontToast = value.find(
+    (toast: ToastObject) => toast.transitionStatus !== "ending",
   );
   return (
     <baseToast.Portal>
@@ -347,24 +347,24 @@ function ToastViewport({
             />
           }
         >
-          {[value2 && <PinnedToastSlot ctx={value2} />, <baseToast.Viewport
+          {[pinnedContext && <PinnedToastSlot ctx={pinnedContext} />, <baseToast.Viewport
               className={
                 "pointer-events-auto relative outline-none focus-visible:outline-hidden"
               }
               style={{
-                height: value3?.height,
+                height: frontToast?.height,
               }}
             >
-              {value.map((input: ToastObject, options: number) =>
+              {value.map((toast: ToastObject, index: number) =>
                 (() => {
                   const _Element = ToastView;
                   const _elementProps = {
-                    toast: input,
-                    front: input === value3,
-                    frontHeight: value3?.height,
-                    zIndex: value.length - options,
+                    toast: toast,
+                    front: toast === frontToast,
+                    frontHeight: frontToast?.height,
+                    zIndex: value.length - index,
                   };
-                  const _elementKey = input.id;
+                  const _elementKey = toast.id;
                   return <_Element key={_elementKey} {..._elementProps} />;
                 })(),
               )}
@@ -389,46 +389,46 @@ function ToastProvider({
   viewportClassName: viewportClassName,
 }: ToastProviderProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactForUiToast.useState<PinnedToast | null>(null),
+  let [value, setPinnedToast] = reactForUiToast.useState<PinnedToast | null>(null),
     ref = reactForUiToast.useRef(value),
-    ref2 = reactForUiToast.useRef<HTMLElement | null>(null),
-    ref3 = reactForUiToast.useRef(false),
-    callback = reactForUiToast.useCallback((input: PinnedToast | null) => {
+    slotRef = reactForUiToast.useRef<HTMLElement | null>(null),
+    focusWasInsideRef = reactForUiToast.useRef(false),
+    callback = reactForUiToast.useCallback((nextPinnedToast: PinnedToast | null) => {
       let current = ref.current;
-      ref.current = input;
-      if (current !== input && !ref3.current) {
-        ref3.current = containsVisibleFocus(ref2.current);
+      ref.current = nextPinnedToast;
+      if (current !== nextPinnedToast && !focusWasInsideRef.current) {
+        focusWasInsideRef.current = containsVisibleFocus(slotRef.current);
       }
-      value2(input);
-      if (current && current !== input) {
+      setPinnedToast(nextPinnedToast);
+      if (current && current !== nextPinnedToast) {
         current.onClose?.();
       }
     }, []),
-    ref4 = reactForUiToast.useRef<ToastObject[]>([]),
-    callback2 = reactForUiToast.useCallback((input: ToastObject[]) => {
-      ref4.current = input;
+    liveToastsRef = reactForUiToast.useRef<ToastObject[]>([]),
+    syncLiveToasts = reactForUiToast.useCallback((liveToasts: ToastObject[]) => {
+      liveToastsRef.current = liveToasts;
     }, []),
-    [value3] = reactForUiToast.useState(createToastMovementState),
+    [movementState] = reactForUiToast.useState(createToastMovementState),
     memo = reactForUiToast.useMemo(
       () => normalizeToastTimeout(timeout),
       [timeout],
     ),
-    memo2 = reactForUiToast.useMemo(
+    pinnedContext = reactForUiToast.useMemo(
       () => ({
         pinned: value,
         setPinned: callback,
-        slotRef: ref2,
-        focusWasInsideRef: ref3,
-        liveToasts: ref4,
-        syncLiveToasts: callback2,
+        slotRef: slotRef,
+        focusWasInsideRef: focusWasInsideRef,
+        liveToasts: liveToastsRef,
+        syncLiveToasts: syncLiveToasts,
         defaultTimeout: memo,
-        ...value3,
+        ...movementState,
       }),
-      [value, callback, callback2, memo, value3],
+      [value, callback, syncLiveToasts, memo, movementState],
     );
   return (
     <baseToast.Provider timeout={memo} limit={limit}>
-      <pinnedToastContext.Provider value={memo2}>
+      <pinnedToastContext.Provider value={pinnedContext}>
         {[children, <ToastViewport className={viewportClassName} />]}
       </pinnedToastContext.Provider>
     </baseToast.Provider>
@@ -436,7 +436,7 @@ function ToastProvider({
 }
 function useToastNotifications(): ToastNotifications {
   let value = baseToast.useToastManager<ToastData>(),
-    value2 = reactForUiToast.useContext(pinnedToastContext);
+    pinnedContext = reactForUiToast.useContext(pinnedToastContext);
   return {
     add: reactForUiToast.useCallback(
       ({
@@ -450,198 +450,198 @@ function useToastNotifications(): ToastNotifications {
         dedupe = false,
         dedupeKey: dedupeKey,
       }: ToastNotification) => {
-        let value3 = variant ?? "neutral",
-          value4 = typeof title === "string",
-          value5 = dedupeKey ?? (value4 ? (title as string) : undefined),
+        let resolvedVariant = variant ?? "neutral",
+          hasTextTitle = typeof title === "string",
+          resolvedDedupeKey = dedupeKey ?? (hasTextTitle ? (title as string) : undefined),
           state = {
-            titleNode: value4 ? undefined : title,
-            baseTitle: value4 ? (title as string) : undefined,
+            titleNode: hasTextTitle ? undefined : title,
+            baseTitle: hasTextTitle ? (title as string) : undefined,
           },
-          value6 = Date.now(),
-          callback = (input: number | undefined) => {
-            let value11 = input ?? value2?.defaultTimeout;
-            if (value11 !== undefined && value11 > 0) {
-              return value6 + value11;
+          now = Date.now(),
+          callback = (duration: number | undefined) => {
+            let timeoutMs = duration ?? pinnedContext?.defaultTimeout;
+            if (timeoutMs !== undefined && timeoutMs > 0) {
+              return now + timeoutMs;
             } else {
               return undefined;
             }
           };
-        if (dedupe && value5 !== undefined) {
-          let value11 = value2?.liveToasts.current ?? value.toasts,
-            value12 = value11.find(
-              (input: ToastObject) =>
-                input.data?.dedupeKey === value5 &&
-                input.transitionStatus !== "ending",
+        if (dedupe && resolvedDedupeKey !== undefined) {
+          let liveToasts = pinnedContext?.liveToasts.current ?? value.toasts,
+            matchingToast = liveToasts.find(
+              (toast: ToastObject) =>
+                toast.data?.dedupeKey === resolvedDedupeKey &&
+                toast.transitionStatus !== "ending",
             );
-          if (value12) {
-            let value13 = (value12.data?.count ?? 1) + 1,
-              value14 = action ?? value12.data?.action,
-              value15 =
-                Boolean(value12.data?.action) ||
-                (value12.timeout ?? value2?.defaultTimeout) === 0,
-              value16 =
+          if (matchingToast) {
+            let repeatCount = (matchingToast.data?.count ?? 1) + 1,
+              resolvedAction = action ?? matchingToast.data?.action,
+              wasPersistent =
+                Boolean(matchingToast.data?.action) ||
+                (matchingToast.timeout ?? pinnedContext?.defaultTimeout) === 0,
+              requestedTimeout =
                 timeout === undefined
                   ? undefined
                   : normalizeToastTimeout(timeout),
-              value17 = value14 ? 0 : value15 ? undefined : value16,
-              state4 = {
-                ...value12.data,
+              updatedTimeout = resolvedAction ? 0 : wasPersistent ? undefined : requestedTimeout,
+              updatedData = {
+                ...matchingToast.data,
                 ...state,
-                variant: variant ?? value12.data?.variant,
+                variant: variant ?? matchingToast.data?.variant,
                 ...(icon !== undefined && {
                   icon: icon,
                 }),
-                action: value14,
-                count: value13,
-                ...(value17 !== undefined && {
-                  expiresAt: callback(value17),
+                action: resolvedAction,
+                count: repeatCount,
+                ...(updatedTimeout !== undefined && {
+                  expiresAt: callback(updatedTimeout),
                 }),
               },
-              value18 = value4 ? title : value12.title,
-              value19 =
-                value13 === 2 && typeof value18 === "string"
-                  ? `${value18} (×2)`
-                  : value4 && title !== value12.data?.baseTitle
+              baseTitle = hasTextTitle ? title : matchingToast.title,
+              refreshedTitle =
+                repeatCount === 2 && typeof baseTitle === "string"
+                  ? `${baseTitle} (×2)`
+                  : hasTextTitle && title !== matchingToast.data?.baseTitle
                     ? title
                     : undefined,
-              value20 = value11.find(
-                (input: ToastObject) => input.transitionStatus !== "ending",
+              frontToast = liveToasts.find(
+                (toast: ToastObject) => toast.transitionStatus !== "ending",
               ),
-              value21 =
+              focusInsideToasts =
                 typeof document !== "undefined" &&
                 Boolean(
                   document.activeElement?.closest('[data-cds="Toast"]'),
                 );
             if (
-              !value2 ||
-              value21 ||
-              (value20?.id === value12.id && !value12.limited)
+              !pinnedContext ||
+              focusInsideToasts ||
+              (frontToast?.id === matchingToast.id && !matchingToast.limited)
             ) {
-              value.update(value12.id, {
-                ...(value19 !== undefined && {
-                  title: value19,
+              value.update(matchingToast.id, {
+                ...(refreshedTitle !== undefined && {
+                  title: refreshedTitle,
                 }),
                 description: description,
-                ...(value17 !== undefined && {
-                  timeout: value17,
+                ...(updatedTimeout !== undefined && {
+                  timeout: updatedTimeout,
                 }),
-                data: state4,
+                data: updatedData,
               });
-              value2?.syncLiveToasts(
-                value11.map((input: ToastObject) =>
-                  input.id === value12.id
+              pinnedContext?.syncLiveToasts(
+                liveToasts.map((toast: ToastObject) =>
+                  toast.id === matchingToast.id
                     ? {
-                        ...input,
-                        data: state4,
-                        timeout: value17 ?? input.timeout,
+                        ...toast,
+                        data: updatedData,
+                        timeout: updatedTimeout ?? toast.timeout,
                       }
-                    : input,
+                    : toast,
                 ),
               );
-              return value12.id;
+              return matchingToast.id;
             }
-            let value22 =
-                state4.expiresAt === undefined
+            let remainingTimeout =
+                updatedData.expiresAt === undefined
                   ? 0
-                  : Math.max(state4.expiresAt - value6, 1),
-              value23 = value17 ?? (value15 ? 0 : Math.max(value22, 6000)),
-              state5 = {
-                ...value12,
-                title: value19 ?? value12.title,
+                  : Math.max(updatedData.expiresAt - now, 1),
+              movedTimeout = updatedTimeout ?? (wasPersistent ? 0 : Math.max(remainingTimeout, 6000)),
+              movedToast = {
+                ...matchingToast,
+                title: refreshedTitle ?? matchingToast.title,
                 description: description,
-                timeout: value23,
+                timeout: movedTimeout,
                 limited: false,
                 data: {
-                  ...state4,
-                  expiresAt: callback(value23),
+                  ...updatedData,
+                  expiresAt: callback(movedTimeout),
                 },
               };
-            value2.movingIds.add(value12.id);
-            value.close(value12.id);
-            value2.movingIds.delete(value12.id);
+            pinnedContext.movingIds.add(matchingToast.id);
+            value.close(matchingToast.id);
+            pinnedContext.movingIds.delete(matchingToast.id);
             value.add({
-              id: state5.id,
-              title: state5.title,
+              id: movedToast.id,
+              title: movedToast.title,
               description: description,
-              type: state5.type,
-              priority: state5.priority,
-              timeout: value23,
-              onClose: state5.onClose,
-              data: state5.data,
+              type: movedToast.type,
+              priority: movedToast.priority,
+              timeout: movedTimeout,
+              onClose: movedToast.onClose,
+              data: movedToast.data,
             });
-            value2.syncLiveToasts([
-              state5,
-              ...value2.liveToasts.current.filter(
-                (input: ToastObject) => input.id !== value12.id,
+            pinnedContext.syncLiveToasts([
+              movedToast,
+              ...pinnedContext.liveToasts.current.filter(
+                (toast: ToastObject) => toast.id !== matchingToast.id,
               ),
             ]);
-            return value12.id;
+            return matchingToast.id;
           }
         }
-        let value7 = Boolean(action),
-          value8 = value2?.allocId(),
-          value9 = value7 ? 0 : normalizeToastTimeout(timeout),
-          state2 = {
-            variant: value3,
+        let hasAction = Boolean(action),
+          reservedId = pinnedContext?.allocId(),
+          resolvedTimeout = hasAction ? 0 : normalizeToastTimeout(timeout),
+          toastData = {
+            variant: resolvedVariant,
             icon: icon,
             action: action,
             ...state,
-            dedupeKey: value5,
+            dedupeKey: resolvedDedupeKey,
             count: 1,
-            expiresAt: callback(value9),
+            expiresAt: callback(resolvedTimeout),
           },
-          state3: import("@base-ui/react/toast").ToastManagerAddOptions<ToastData> =
+          addOptions: import("@base-ui/react/toast").ToastManagerAddOptions<ToastData> =
             {
-              id: value8,
-              title: value4 ? title : undefined,
+              id: reservedId,
+              title: hasTextTitle ? title : undefined,
               description: description,
-              type: value3,
-              timeout: value9,
+              type: resolvedVariant,
+              timeout: resolvedTimeout,
               onClose: () => {
-                if (value8 === undefined || !value2) {
+                if (reservedId === undefined || !pinnedContext) {
                   onClose?.({
                     byUser: false,
                   });
                   return;
                 }
-                if (value2.movingIds.has(value8)) {
+                if (pinnedContext.movingIds.has(reservedId)) {
                   return;
                 }
-                value2.syncLiveToasts(
-                  value2.liveToasts.current.map((input: ToastObject) =>
-                    input.id === value8
+                pinnedContext.syncLiveToasts(
+                  pinnedContext.liveToasts.current.map((toast: ToastObject) =>
+                    toast.id === reservedId
                       ? {
-                          ...input,
+                          ...toast,
                           transitionStatus: "ending",
                         }
-                      : input,
+                      : toast,
                   ),
                 );
-                let entry = value2.userDismissAt.get(value8);
-                value2.userDismissAt.delete(value8);
+                let entry = pinnedContext.userDismissAt.get(reservedId);
+                pinnedContext.userDismissAt.delete(reservedId);
                 onClose?.({
                   byUser:
                     entry !== undefined &&
                     Date.now() - entry < TOAST_TRANSITION_TIMEOUT_MS,
                 });
               },
-              priority: value3 === "danger" ? "high" : "low",
-              data: state2,
+              priority: resolvedVariant === "danger" ? "high" : "low",
+              data: toastData,
             },
-          value10 = value.add(state3);
-        value2?.syncLiveToasts([
+          toastId = value.add(addOptions);
+        pinnedContext?.syncLiveToasts([
           {
-            ...state3,
-            id: value10,
+            ...addOptions,
+            id: toastId,
           },
-          ...value2.liveToasts.current,
+          ...pinnedContext.liveToasts.current,
         ]);
-        return value10;
+        return toastId;
       },
-      [value, value2],
+      [value, pinnedContext],
     ),
     close: value.close,
-    setPinned: value2?.setPinned ?? noopToastPinSetter,
+    setPinned: pinnedContext?.setPinned ?? noopToastPinSetter,
   };
 }
 export {

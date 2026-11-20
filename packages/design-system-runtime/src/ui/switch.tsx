@@ -66,11 +66,11 @@ export function installUiSwitch(): () => void {
           onMouseDown: onMouseDown,
           ...props
         }: C.SwitchProps,
-        options: React.ForwardedRef<HTMLElement>,
+        forwardedRef: React.ForwardedRef<HTMLElement>,
       ) => {
         let value = (
           <baseSwitch.Root
-            ref={options}
+            ref={forwardedRef}
             data-cds={"Switch"}
             {...props}
             {...getControlSizeAttributes(size)}
@@ -78,12 +78,12 @@ export function installUiSwitch(): () => void {
               onMouseDown,
             )}
             onKeyDown={(
-              input: import("@base-ui/react/types").BaseUIEvent<
+              clickEvent: import("@base-ui/react/types").BaseUIEvent<
                 React.KeyboardEvent<HTMLSpanElement>
               >,
             ) => {
-              preventRepeatedSwitchEnter(input);
-              onKeyDown?.(input);
+              preventRepeatedSwitchEnter(clickEvent);
+              onKeyDown?.(clickEvent);
             }}
             className={cn(
               SWITCH_TRACK_CLASS,

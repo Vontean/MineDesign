@@ -27,38 +27,38 @@ var skeletonIconRowWidths: number[];
 var skeletonTextRowWidths: number[];
 var skeletonLineWidths: string[];
 var SkeletonPrimitive: C.SkeletonComponent;
-function isShimmerAnimation(input: C.NamedAnimation): boolean {
-  return input.animationName === "cds-shimmer";
+function isShimmerAnimation(animation: C.NamedAnimation): boolean {
+  return animation.animationName === "cds-shimmer";
 }
-function synchronizeDocumentShimmers(input: C.AnimationDocument): void {
+function synchronizeDocumentShimmers(ownerDocument: C.AnimationDocument): void {
   let value: number | undefined,
     items: C.NamedAnimation[] = [];
-  for (let value3 of input.getAnimations()) {
-    if (!isShimmerAnimation(value3)) {
+  for (let animation of ownerDocument.getAnimations()) {
+    if (!isShimmerAnimation(animation)) {
       continue;
     }
-    let { startTime: value4 } = value3;
+    let { startTime: startTime } = animation;
     if (
-      typeof value4 === "number" &&
-      (value === undefined || value4 < value)
+      typeof startTime === "number" &&
+      (value === undefined || startTime < value)
     ) {
-      value = value4;
+      value = startTime;
     }
-    let value5 = value3.effect?.target;
+    let target = animation.effect?.target;
     if (
-      value5 !== undefined &&
-      value5 !== null &&
-      pendingShimmerElements.has(value5) &&
-      value3.playState === "running"
+      target !== undefined &&
+      target !== null &&
+      pendingShimmerElements.has(target) &&
+      animation.playState === "running"
     ) {
-      items.push(value3);
+      items.push(animation);
     }
   }
-  let value2 = value ?? shimmerStartTimes.get(input) ?? 0;
-  for (let value3 of items) {
-    value3.startTime = value2;
+  let synchronizedStartTime = value ?? shimmerStartTimes.get(ownerDocument) ?? 0;
+  for (let animation of items) {
+    animation.startTime = synchronizedStartTime;
   }
-  shimmerStartTimes.set(input, value2);
+  shimmerStartTimes.set(ownerDocument, synchronizedStartTime);
 }
 function flushShimmerSynchronization() {
   try {
@@ -88,21 +88,21 @@ function scheduleShimmerSynchronization(element: Element | null): void {
 function createSkeletonShownStore(): C.SkeletonShownStore {
   let snapshot = skeletonNotShownSnapshot,
     listeners = new Set<() => void>(),
-    setSnapshot = (input: C.SkeletonSnapshot) => {
-      if (snapshot === input) {
+    setSnapshot = (nextSnapshot: C.SkeletonSnapshot) => {
+      if (snapshot === nextSnapshot) {
         return;
       }
-      snapshot = input;
+      snapshot = nextSnapshot;
       for (let value of listeners) {
         invokeAndReportError(value);
       }
     };
   return {
     getSnapshot: () => snapshot,
-    subscribe: (input: () => void) => {
-      listeners.add(input);
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
       return () => {
-        listeners.delete(input);
+        listeners.delete(listener);
       };
     },
     markShown: () => setSnapshot(skeletonShownSnapshot),
@@ -110,81 +110,81 @@ function createSkeletonShownStore(): C.SkeletonShownStore {
   };
 }
 function markSkeletonShownAfterCallback(
-  input: (() => void) | undefined,
-  options: C.SkeletonShownStore,
+  onShown: (() => void) | undefined,
+  shownStore: C.SkeletonShownStore,
 ) {
   try {
-    input?.();
+    onShown?.();
   } finally {
-    options.markShown();
+    shownStore.markShown();
   }
 }
-function clearSkeletonElapsedStyle(input: HTMLElement): void {
-  input.style.removeProperty("--cds-skel-elapsed");
+function clearSkeletonElapsedStyle(element: HTMLElement): void {
+  element.style.removeProperty("--cds-skel-elapsed");
 }
 function setSkeletonMotion(
-  input: HTMLElement,
-  options: C.SkeletonMotion,
+  element: HTMLElement,
+  motion: C.SkeletonMotion,
 ): void {
-  input.dataset.motion = options;
+  element.dataset.motion = motion;
 }
-function ensurePositionedSkeletonHost(input: HTMLElement): boolean {
-  let position = getComputedStyle(input).position;
+function ensurePositionedSkeletonHost(element: HTMLElement): boolean {
+  let position = getComputedStyle(element).position;
   if (position === "static" || position === "") {
-    input.style.position = "relative";
+    element.style.position = "relative";
     return true;
   }
   return false;
 }
 function synchronizeSkeletonAnimation(
   element: C.AnimationElement,
-  options = SKELETON_BREATHE_ANIMATION,
-  context = 0,
+  animationName = SKELETON_BREATHE_ANIMATION,
+  startOffset = 0,
 ) {
   if (typeof element.getAnimations !== "function") {
     return;
   }
   let value = element
     .getAnimations()
-    .find((input: C.NamedAnimation) => input.animationName === options);
+    .find((animation: C.NamedAnimation) => animation.animationName === animationName);
   if (value === undefined || typeof value.startTime !== "number") {
     return;
   }
-  let value2 = value.effect?.getComputedTiming();
+  let timing = value.effect?.getComputedTiming();
   if (
-    value2?.duration !== SKELETON_ANIMATION_DURATION_MS ||
-    value2.iterations !== 1 / 0
+    timing?.duration !== SKELETON_ANIMATION_DURATION_MS ||
+    timing.iterations !== 1 / 0
   ) {
     return;
   }
-  let value3 = value.startTime + (value2.delay ?? 0),
-    value4 = value3 - context,
+  let firstIterationStart = value.startTime + (timing.delay ?? 0),
+    unshiftedStart = firstIterationStart - startOffset,
     ownerDocument = element.ownerDocument,
     entry = skeletonAnimationStartTimes.get(ownerDocument);
   if (entry === undefined) {
-    skeletonAnimationStartTimes.set(ownerDocument, value4);
+    skeletonAnimationStartTimes.set(ownerDocument, unshiftedStart);
     return;
   }
-  let value5 =
-    (((value4 - entry) % SKELETON_ANIMATION_DURATION_MS) +
+  let phaseDifference =
+    (((unshiftedStart - entry) % SKELETON_ANIMATION_DURATION_MS) +
       SKELETON_ANIMATION_DURATION_MS) %
     SKELETON_ANIMATION_DURATION_MS;
-  if (value5 < SKELETON_SYNC_TOLERANCE_MS || value5 > 1999) {
+  if (phaseDifference < SKELETON_SYNC_TOLERANCE_MS || phaseDifference > 1999) {
     return;
   }
-  let value6 =
+  let currentTimelineTime =
       typeof value.currentTime === "number"
         ? value.startTime + value.currentTime
-        : value3,
-    value7 = Math.ceil(
-      (Math.max(value6, value3) - (entry + context)) /
+        : firstIterationStart,
+    nextCycle = Math.ceil(
+      (Math.max(currentTimelineTime, firstIterationStart) - (entry + startOffset)) /
         SKELETON_ANIMATION_DURATION_MS,
     );
   value.startTime =
     entry +
-    context +
-    value7 * SKELETON_ANIMATION_DURATION_MS -
-    (value2.delay ?? 0);
+    startOffset +
+    nextCycle * SKELETON_ANIMATION_DURATION_MS -
+    (timing.delay ?? 0);
 }
 function SkeletonGroup({
   children: children,
@@ -201,170 +201,170 @@ function SkeletonGroup({
   let value = reactForUiSkeleton.useContext<boolean>(
       skeletonActiveContext,
     ),
-    value2 = reactForUiSkeleton.useContext<C.SkeletonTag>(
+    inheritedTag = reactForUiSkeleton.useContext<C.SkeletonTag>(
       skeletonElementContext,
     ),
-    [value3] = reactForUiSkeleton.useState(as2 ?? value2),
-    value4 = skeletonElementTags[value3],
-    value5 = value3 === "span",
-    value6 = reactForUiSkeleton.useContext<number | null>(
+    [tag] = reactForUiSkeleton.useState(as2 ?? inheritedTag),
+    groupTagName = skeletonElementTags[tag],
+    isInlineTag = tag === "span",
+    groupStartedAt = reactForUiSkeleton.useContext<number | null>(
       skeletonGroupContext,
     ),
-    value7 = reactForUiSkeleton.useContext<C.SkeletonShownStore | null>(
+    parentShownStore = reactForUiSkeleton.useContext<C.SkeletonShownStore | null>(
       skeletonShownStoreContext,
     ),
-    [value8] = reactForUiSkeleton.useState(() => {
-      let value18 = createSkeletonShownStore();
-      if (value ? value7?.getSnapshot().shown === true : hold !== "delayed") {
-        value18.markShown();
+    [shownStore] = reactForUiSkeleton.useState(() => {
+      let store = createSkeletonShownStore();
+      if (value ? parentShownStore?.getSnapshot().shown === true : hold !== "delayed") {
+        store.markShown();
       }
-      return value18;
+      return store;
     }),
-    [value9] = reactForUiSkeleton.useState(value6),
-    [value10, value11] = reactForUiSkeleton.useState(false),
+    [initialGroupStartedAt] = reactForUiSkeleton.useState(groupStartedAt),
+    [becameRoot, setBecameRoot] = reactForUiSkeleton.useState(false),
     ref = reactForUiSkeleton.useRef(false),
-    value12 = value && !value10,
+    isNested = value && !becameRoot,
     callback = reactForUiSkeleton.useCallback(
-      (input: HTMLElement | null) => {
+      (element: HTMLElement | null) => {
         if (
-          input !== null &&
-          input.parentElement !== null &&
-          input.parentElement.closest('[data-cds="SkeletonGroup"]') === null
+          element !== null &&
+          element.parentElement !== null &&
+          element.parentElement.closest('[data-cds="SkeletonGroup"]') === null
         ) {
           ref.current = true;
-          value8.reset();
-          value11(true);
+          shownStore.reset();
+          setBecameRoot(true);
         }
       },
-      [value8],
+      [shownStore],
     ),
-    value13: string = useTranslation("loading", "Loading"),
-    [value14] = reactForUiSkeleton.useState(hold),
-    value15 = value14 === "delayed",
-    value16 = label ?? value13,
-    ref2 = reactForUiSkeleton.useRef<HTMLElement>(null),
-    callback2 = reactForUiSkeleton.useCallback(
-      (input: HTMLElement | null) => {
-        ref2.current = input;
+    defaultLoadingLabel: string = useTranslation("loading", "Loading"),
+    [initialHold] = reactForUiSkeleton.useState(hold),
+    delaysReveal = initialHold === "delayed",
+    loadingLabel = label ?? defaultLoadingLabel,
+    hostRef = reactForUiSkeleton.useRef<HTMLElement>(null),
+    attachHost = reactForUiSkeleton.useCallback(
+      (element: HTMLElement | null) => {
+        hostRef.current = element;
       },
       [],
     ),
-    ref3 = reactForUiSkeleton.useRef(false),
-    ref4 = reactForUiSkeleton.useRef({
+    hasShownRef = reactForUiSkeleton.useRef(false),
+    lifecycleRef = reactForUiSkeleton.useRef({
       onShown: onShown,
       onHidden: onHidden,
-      labelText: value16,
+      labelText: loadingLabel,
     });
   reactForUiSkeleton.useEffect(() => {
-    ref4.current = {
+    lifecycleRef.current = {
       onShown: onShown,
       onHidden: onHidden,
-      labelText: value16,
+      labelText: loadingLabel,
     };
-    if (ref3.current && ref2.current !== null) {
-      let element = ref2.current.querySelector("[data-skeleton-label]");
-      if (element !== null && element.textContent !== value16) {
-        element.textContent = value16;
+    if (hasShownRef.current && hostRef.current !== null) {
+      let element = hostRef.current.querySelector("[data-skeleton-label]");
+      if (element !== null && element.textContent !== loadingLabel) {
+        element.textContent = loadingLabel;
       }
     }
-  }, [onShown, onHidden, value16, decorative]);
+  }, [onShown, onHidden, loadingLabel, decorative]);
   reactForUiSkeleton.useLayoutEffect(() => {
-    if (!value12 && !value15 && !ref3.current) {
-      ref3.current = true;
-      markSkeletonShownAfterCallback(ref4.current.onShown, value8);
+    if (!isNested && !delaysReveal && !hasShownRef.current) {
+      hasShownRef.current = true;
+      markSkeletonShownAfterCallback(lifecycleRef.current.onShown, shownStore);
     }
-  }, [value12, value15, value8]);
+  }, [isNested, delaysReveal, shownStore]);
   reactForUiSkeleton.useLayoutEffect(() => {
-    if (!value12 || ref.current || value7 === null) {
+    if (!isNested || ref.current || parentShownStore === null) {
       return;
     }
-    let callback4 = () => {
-      if (!value7.getSnapshot().shown) {
-        value8.reset();
-      } else if (!ref3.current) {
-        ref3.current = true;
-        markSkeletonShownAfterCallback(ref4.current.onShown, value8);
+    let syncParentShown = () => {
+      if (!parentShownStore.getSnapshot().shown) {
+        shownStore.reset();
+      } else if (!hasShownRef.current) {
+        hasShownRef.current = true;
+        markSkeletonShownAfterCallback(lifecycleRef.current.onShown, shownStore);
       } else {
-        value8.markShown();
+        shownStore.markShown();
       }
     };
-    callback4();
-    return value7.subscribe(callback4);
-  }, [value12, value7, value8]);
+    syncParentShown();
+    return parentShownStore.subscribe(syncParentShown);
+  }, [isNested, parentShownStore, shownStore]);
   reactForUiSkeleton.useEffect(
     () => () => {
-      if (ref3.current) {
-        ref4.current.onHidden?.();
-        ref3.current = false;
+      if (hasShownRef.current) {
+        lifecycleRef.current.onHidden?.();
+        hasShownRef.current = false;
       }
-      value8.reset();
+      shownStore.reset();
     },
-    [value8],
+    [shownStore],
   );
   reactForUiSkeleton.useLayoutEffect(() => {
-    let current = ref2.current;
-    if (current === null || value12 || !value15 || value9 === null) {
+    let current = hostRef.current;
+    if (current === null || isNested || !delaysReveal || initialGroupStartedAt === null) {
       return;
     }
-    let value18 = performance.now() - value9;
-    if (!Number.isFinite(value18) || value18 <= 0) {
+    let elapsedMs = performance.now() - initialGroupStartedAt;
+    if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) {
       return;
     }
-    current.style.setProperty("--cds-skel-elapsed", `${value18}ms`);
+    current.style.setProperty("--cds-skel-elapsed", `${elapsedMs}ms`);
     return () => clearSkeletonElapsedStyle(current);
-  }, [value12, value15, value9]);
-  let ref5 = reactForUiSkeleton.useRef<HTMLElement>(null),
-    callback3 = reactForUiSkeleton.useCallback(
-      (input: HTMLElement | null) => {
-        ref5.current = input;
+  }, [isNested, delaysReveal, initialGroupStartedAt]);
+  let sweepClipRef = reactForUiSkeleton.useRef<HTMLElement>(null),
+    attachSweepClip = reactForUiSkeleton.useCallback(
+      (element: HTMLElement | null) => {
+        sweepClipRef.current = element;
       },
       [],
     );
   reactForUiSkeleton.useEffect(() => {
-    let current = ref5.current,
-      current2 = ref2.current;
+    let current = sweepClipRef.current,
+      host = hostRef.current;
     if (
       motion !== "sweep" ||
-      value12 ||
+      isNested ||
       current === null ||
-      current2 === null
+      host === null
     ) {
       return;
     }
-    let value18 = ensurePositionedSkeletonHost(current2),
-      callback4 = () => {
+    let didSetPosition = ensurePositionedSkeletonHost(host),
+      updateSweepClip = () => {
         let items = [],
-          value20 = current2.querySelectorAll<HTMLElement>(
+          placeholders = host.querySelectorAll<HTMLElement>(
             '[data-cds="Skeleton"]',
           );
         setSkeletonMotion(
-          current2,
-          value20.length === 0 ? "lockstep" : "sweep",
+          host,
+          placeholders.length === 0 ? "lockstep" : "sweep",
         );
-        for (let value21 of value20) {
+        for (let placeholder of placeholders) {
           let index = 0,
-            index2 = 0,
-            value22: HTMLElement | null = value21;
-          while (value22 !== null && value22 !== current2) {
+            offsetY = 0,
+            offsetAncestor: HTMLElement | null = placeholder;
+          while (offsetAncestor !== null && offsetAncestor !== host) {
             if (
-              ((index += value22.offsetLeft),
-              (index2 += value22.offsetTop),
-              (value22 = value22.offsetParent as HTMLElement | null),
-              value22 !== null && value22 !== current2)
+              ((index += offsetAncestor.offsetLeft),
+              (offsetY += offsetAncestor.offsetTop),
+              (offsetAncestor = offsetAncestor.offsetParent as HTMLElement | null),
+              offsetAncestor !== null && offsetAncestor !== host)
             ) {
               index +=
-                (value22 as HTMLElement).clientLeft -
-                (value22 as HTMLElement).scrollLeft;
-              index2 +=
-                (value22 as HTMLElement).clientTop -
-                (value22 as HTMLElement).scrollTop;
+                (offsetAncestor as HTMLElement).clientLeft -
+                (offsetAncestor as HTMLElement).scrollLeft;
+              offsetY +=
+                (offsetAncestor as HTMLElement).clientTop -
+                (offsetAncestor as HTMLElement).scrollTop;
             }
           }
-          if (value22 !== current2) {
+          if (offsetAncestor !== host) {
             continue;
           }
           items.push(
-            `M${index},${index2}h${value21.offsetWidth}v${value21.offsetHeight}h${-value21.offsetWidth}Z`,
+            `M${index},${offsetY}h${placeholder.offsetWidth}v${placeholder.offsetHeight}h${-placeholder.offsetWidth}Z`,
           );
         }
         current.style.clipPath = items.length
@@ -372,66 +372,66 @@ function SkeletonGroup({
           : "";
         current.style.visibility = items.length ? "visible" : "hidden";
       };
-    callback4();
-    let value19: Pick<ResizeObserver, "observe" | "disconnect"> = createSafeResizeObserver(
-      getResizeObserverConstructor(current2) ?? ResizeObserver,
-      callback4,
+    updateSweepClip();
+    let resizeObserver: Pick<ResizeObserver, "observe" | "disconnect"> = createSafeResizeObserver(
+      getResizeObserverConstructor(host) ?? ResizeObserver,
+      updateSweepClip,
     );
-    value19.observe(current2);
+    resizeObserver.observe(host);
     return () => {
-      value19.disconnect();
-      if (value18) {
-        current2.style.removeProperty("position");
+      resizeObserver.disconnect();
+      if (didSetPosition) {
+        host.style.removeProperty("position");
       }
     };
-  }, [motion, value12]);
+  }, [motion, isNested]);
   reactForUiSkeleton.useEffect(() => {
-    let current = ref2.current;
-    if (motion !== "wave" || value12 || current === null) {
+    let current = hostRef.current;
+    if (motion !== "wave" || isNested || current === null) {
       return;
     }
-    let callback4 = () => {
-      let value19 = current.querySelectorAll<HTMLElement>(
+    let updateWaveOrder = () => {
+      let placeholders = current.querySelectorAll<HTMLElement>(
           '[data-cds="Skeleton"]',
         ),
-        value20 = Math.floor(
+        waveSlots = Math.floor(
           SKELETON_ANIMATION_DURATION_MS / SKELETON_MINIMUM_HOLD_MS,
         ),
         index = 0;
-      for (let value21 of value19) {
-        if (value21.style.getPropertyValue("--cds-skel-i") !== "") {
+      for (let placeholder of placeholders) {
+        if (placeholder.style.getPropertyValue("--cds-skel-i") !== "") {
           index += 1;
         }
       }
-      for (let value21 of value19) {
-        if (value21.style.getPropertyValue("--cds-skel-i") === "") {
-          value21.style.setProperty("--cds-skel-i", String(index % value20));
+      for (let placeholder of placeholders) {
+        if (placeholder.style.getPropertyValue("--cds-skel-i") === "") {
+          placeholder.style.setProperty("--cds-skel-i", String(index % waveSlots));
           index += 1;
         }
       }
-      setSkeletonMotion(current, value19.length === 0 ? "lockstep" : "wave");
+      setSkeletonMotion(current, placeholders.length === 0 ? "lockstep" : "wave");
     };
-    callback4();
-    let value18: Pick<MutationObserver, "observe" | "disconnect"> = createSafeMutationObserver(MutationObserver, callback4);
-    value18.observe(current, {
+    updateWaveOrder();
+    let contentObserver: Pick<MutationObserver, "observe" | "disconnect"> = createSafeMutationObserver(MutationObserver, updateWaveOrder);
+    contentObserver.observe(current, {
       childList: true,
       subtree: true,
     });
-    return () => value18.disconnect();
-  }, [motion, value12]);
-  let value17: string | undefined = value5
+    return () => contentObserver.disconnect();
+  }, [motion, isNested]);
+  let hostClassName: string | undefined = isInlineTag
     ? cn("block", className)
     : className;
-  if (value12) {
+  if (isNested) {
     return (() => {
-      const _Element = value4;
+      const _Element = groupTagName;
       const _elementProps = {
         ref: callback,
         "data-cds": "SkeletonGroup",
-        className: value17,
+        className: hostClassName,
         children: (
-          <skeletonElementContext.Provider value={value3}>
-            <skeletonShownStoreContext.Provider value={value8}>
+          <skeletonElementContext.Provider value={tag}>
+            <skeletonShownStoreContext.Provider value={shownStore}>
               {children}
             </skeletonShownStoreContext.Provider>
           </skeletonElementContext.Provider>
@@ -441,23 +441,23 @@ function SkeletonGroup({
     })();
   }
   return (() => {
-    const _Element5 = value4;
-    const _elementProps5 = {
-      ref: callback2,
+    const RootSkeletonHost = groupTagName;
+    const rootSkeletonProps = {
+      ref: attachHost,
       "data-cds": "SkeletonGroup",
       "data-motion": motion,
-      "data-hold": value15 ? "delayed" : "none",
-      "data-hold-reason": value15
+      "data-hold": delaysReveal ? "delayed" : "none",
+      "data-hold-reason": delaysReveal
         ? undefined
         : (
-            value14 as {
+            initialHold as {
               none: string;
             }
           ).none,
-      "data-shown": value15 ? undefined : "",
+      "data-shown": delaysReveal ? undefined : "",
       role: decorative ? undefined : "status",
       "aria-hidden": decorative ? true : undefined,
-      className: value17,
+      className: hostClassName,
       onAnimationEnd: (event: React.AnimationEvent<HTMLElement>) => {
         if (
           event.animationName === "cds-placeholder-reveal" &&
@@ -480,11 +480,11 @@ function SkeletonGroup({
             "[data-skeleton-label]",
           );
           if (element !== null && element.textContent === "") {
-            element.textContent = ref4.current.labelText;
+            element.textContent = lifecycleRef.current.labelText;
           }
-          if (!ref3.current) {
-            ref3.current = true;
-            markSkeletonShownAfterCallback(ref4.current.onShown, value8);
+          if (!hasShownRef.current) {
+            hasShownRef.current = true;
+            markSkeletonShownAfterCallback(lifecycleRef.current.onShown, shownStore);
           }
         } else if (
           (event.animationName === SKELETON_BREATHE_ANIMATION &&
@@ -517,48 +517,48 @@ function SkeletonGroup({
       children: [
         decorative ? null : (
           <span className={"sr-only"} data-skeleton-label={true}>
-            {value15 ? ("") : (value16)}
+            {delaysReveal ? ("") : (loadingLabel)}
           </span>
         ),
         motion === "sweep"
           ? (() => {
-              const _Element3 = value4;
-              const _elementProps3 = {
+              const SweepClip = groupTagName;
+              const sweepClipProps = {
                 "aria-hidden": true,
-                ref: callback3,
+                ref: attachSweepClip,
                 className: "cds-skel-sweep-clip",
                 style: {
                   visibility: "hidden" as const,
                 },
                 children: (() => {
-                  const _Element2 = value4;
-                  const _elementProps2 = {
+                  const SweepBand = groupTagName;
+                  const sweepBandProps = {
                     className: "cds-skel-sweep-band",
                   };
-                  return <_Element2 {..._elementProps2} />;
+                  return <SweepBand {...sweepBandProps} />;
                 })(),
               };
-              return <_Element3 {..._elementProps3} />;
+              return <SweepClip {...sweepClipProps} />;
             })()
           : null,
         <skeletonActiveContext.Provider value={true}>
-          <skeletonElementContext.Provider value={value3}>
-            <skeletonShownStoreContext.Provider value={value8}>
+          <skeletonElementContext.Provider value={tag}>
+            <skeletonShownStoreContext.Provider value={shownStore}>
               {(() => {
-                const _Element4 = value4;
-                const _elementProps4 = {
+                const PlaceholderContent = groupTagName;
+                const placeholderContentProps = {
                   "aria-hidden": true,
                   className: "contents",
                   children: children,
                 };
-                return <_Element4 {..._elementProps4} />;
+                return <PlaceholderContent {...placeholderContentProps} />;
               })()}
             </skeletonShownStoreContext.Provider>
           </skeletonElementContext.Provider>
         </skeletonActiveContext.Provider>,
       ],
     };
-    return <_Element5 {..._elementProps5} />;
+    return <RootSkeletonHost {...rootSkeletonProps} />;
   })();
 }
 function Skeleton({
@@ -572,19 +572,19 @@ function Skeleton({
   let value = reactForUiSkeleton.useContext<boolean>(
       skeletonActiveContext,
     ),
-    value2 = reactForUiSkeleton.useContext<C.SkeletonTag>(
+    inheritedTag = reactForUiSkeleton.useContext<C.SkeletonTag>(
       skeletonElementContext,
     ),
-    value3 = skeletonElementTags[as2 ?? value2],
-    value4 = value3 === "span" ? "block" : undefined,
-    value5: string = useTranslation("loading", "Loading");
+    skeletonTagName = skeletonElementTags[as2 ?? inheritedTag],
+    inlineBlockClass = skeletonTagName === "span" ? "block" : undefined,
+    loadingLabel: string = useTranslation("loading", "Loading");
   if (value) {
     return (() => {
-      const _Element6 = value3;
-      const _elementProps6 = {
+      const NestedSkeleton = skeletonTagName;
+      const nestedSkeletonProps = {
         "data-cds": "Skeleton",
         className: cn(
-          value4,
+          inlineBlockClass,
           "h-[1em] max-w-full rounded bg-[var(--cds-skeleton-base)]",
           className,
         ),
@@ -593,18 +593,18 @@ function Skeleton({
           height: height,
         },
       };
-      return <_Element6 {..._elementProps6} />;
+      return <NestedSkeleton {...nestedSkeletonProps} />;
     })();
   }
   return (() => {
-    const _Element7 = value3;
-    const _elementProps7 = {
+    const StandaloneSkeleton = skeletonTagName;
+    const standaloneSkeletonProps = {
       ref: scheduleShimmerSynchronization,
       "data-cds": "Skeleton",
       role: decorative ? undefined : "status",
       "aria-hidden": decorative ? true : undefined,
       className: cn(
-        value4,
+        inlineBlockClass,
         "relative h-[1em] max-w-full overflow-hidden rounded bg-[var(--cds-skeleton-base)] after:absolute after:inset-0 after:animate-[cds-shimmer_2s_linear_infinite] after:bg-[linear-gradient(90deg,transparent,var(--cds-skeleton-sheen),transparent)] motion-reduce:after:hidden",
         className,
       ),
@@ -613,10 +613,10 @@ function Skeleton({
         height: height,
       },
       children: decorative ? null : (
-        <span className={"sr-only"}>{value5}</span>
+        <span className={"sr-only"}>{loadingLabel}</span>
       ),
     };
-    return <_Element7 {..._elementProps7} />;
+    return <StandaloneSkeleton {...standaloneSkeletonProps} />;
   })();
 }
 function SkeletonRows({ rows = 3, icon = true }: C.SkeletonRowsProps) {
@@ -627,16 +627,16 @@ function SkeletonRows({ rows = 3, icon = true }: C.SkeletonRowsProps) {
           skeletonElementContext,
         )
       ],
-    value2 = value === "span" ? "block" : undefined,
-    value3 = icon ? skeletonIconRowWidths : skeletonTextRowWidths,
-    value4 = (typeof rows === "number" ? [rows] : rows).filter(
-      (input: number) => input > 0,
+    inlineBlockClass = value === "span" ? "block" : undefined,
+    rowWidths = icon ? skeletonIconRowWidths : skeletonTextRowWidths,
+    validGroupSizes = (typeof rows === "number" ? [rows] : rows).filter(
+      (rowCount: number) => rowCount > 0,
     ),
-    value5 = value4.length > 0 ? value4 : [3],
+    groupSizes = validGroupSizes.length > 0 ? validGroupSizes : [3],
     items = [],
     index = 0;
-  for (let [value6, value7] of value5.entries()) {
-    if (value6 > 0) {
+  for (let [groupIndex, groupSize] of groupSizes.entries()) {
+    if (groupIndex > 0) {
       items.push(
         (() => {
           const _Element8 = value;
@@ -644,20 +644,20 @@ function SkeletonRows({ rows = 3, icon = true }: C.SkeletonRowsProps) {
             "aria-hidden": true,
             "data-slot": "menu-skeleton-separator",
             className: cn(
-              value2,
+              inlineBlockClass,
               "compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border",
             ),
           };
-          const _elementKey = `separator-${value6}`;
+          const _elementKey = `separator-${groupIndex}`;
           return <_Element8 key={_elementKey} {..._elementProps8} />;
         })(),
       );
     }
-    for (let value8 = index + value7; index < value8; index++) {
+    for (let groupEndIndex = index + groupSize; index < groupEndIndex; index++) {
       items.push(
         (() => {
-          const _Element9 = value;
-          const _elementProps9 = {
+          const MenuSkeletonRow = value;
+          const menuSkeletonRowProps = {
             "aria-hidden": index > 0 ? true : undefined,
             className:
               "flex h-control items-center gap-xs compact:px-2 comfortable:px-2.5",
@@ -668,25 +668,25 @@ function SkeletonRows({ rows = 3, icon = true }: C.SkeletonRowsProps) {
                 className={"contents"}
               >
                 <SkeletonPrimitive
-                  width={value3[index % value3.length]}
+                  width={rowWidths[index % rowWidths.length]}
                   height={16}
                 />
               </span>,
             ],
           };
-          const _elementKey2 = index;
-          return <_Element9 key={_elementKey2} {..._elementProps9} />;
+          const rowKey = index;
+          return <MenuSkeletonRow key={rowKey} {...menuSkeletonRowProps} />;
         })(),
       );
     }
   }
   return (() => {
-    const _Element0 = value;
-    const _elementProps0 = {
-      className: value2,
+    const MenuSkeletonHost = value;
+    const menuSkeletonHostProps = {
+      className: inlineBlockClass,
       children: items,
     };
-    return <_Element0 {..._elementProps0} />;
+    return <MenuSkeletonHost {...menuSkeletonHostProps} />;
   })();
 }
 function SkeletonChip({ width = 120, shape = "pill" }: C.SkeletonChipProps) {
@@ -714,34 +714,34 @@ function SkeletonLines({
       )
     ];
   return (() => {
-    const _Element10 = value;
-    const _elementProps10 = {
+    const LinesHost = value;
+    const linesHostProps = {
       className: cn("flex flex-col gap-sm", className),
       children: Array.from<unknown, React.ReactElement>(
         {
           length: lines,
         },
-        (input: unknown, options: number) =>
+        (unusedItem: unknown, lineIndex: number) =>
           (() => {
-            const _Element1 = "span";
-            const _elementProps1 = {
-              "aria-hidden": options > 0 ? true : undefined,
+            const LineWrapper = "span";
+            const lineWrapperProps = {
+              "aria-hidden": lineIndex > 0 ? true : undefined,
               className: "contents",
               children: (
                 <SkeletonPrimitive
                   width={
-                    skeletonLineWidths[options % skeletonLineWidths.length]
+                    skeletonLineWidths[lineIndex % skeletonLineWidths.length]
                   }
                   height={14}
                 />
               ),
             };
-            const _elementKey3 = options;
-            return <_Element1 key={_elementKey3} {..._elementProps1} />;
+            const lineKey = lineIndex;
+            return <LineWrapper key={lineKey} {...lineWrapperProps} />;
           })(),
       ),
     };
-    return <_Element10 {..._elementProps10} />;
+    return <LinesHost {...linesHostProps} />;
   })();
 }
 function SkeletonBlock({

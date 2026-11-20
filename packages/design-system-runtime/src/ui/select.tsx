@@ -17,23 +17,23 @@ var COARSE_POINTER_QUERY: string;
 var SelectJsx: typeof import("react/jsx-runtime");
 var selectTriggerClasses: string;
 var selectRowSizes: Record<"md" | "lg", string>;
-function useMediaQuery(input: string): boolean {
+function useMediaQuery(query: string): boolean {
   let callback = reactAC.useCallback(
-    (input2: () => void) => {
+    (listener: () => void) => {
       if (typeof matchMedia !== "function") {
         return () => {
           return;
         };
       }
-      let value = matchMedia(input);
-      value.addEventListener("change", input2);
-      return () => value.removeEventListener("change", input2);
+      let value = matchMedia(query);
+      value.addEventListener("change", listener);
+      return () => value.removeEventListener("change", listener);
     },
-    [input],
+    [query],
   );
   return reactAC.useSyncExternalStore(
     callback,
-    () => typeof matchMedia === "function" && matchMedia(input).matches,
+    () => typeof matchMedia === "function" && matchMedia(query).matches,
     () => false,
   );
 }
@@ -50,7 +50,7 @@ function SelectOptionRow({
 }: C.SelectOptionRowProps) {
   useUiLocale();
   let value = selectRowSizes[rowSize],
-    value2 =
+    optionContent =
       hint !== undefined && hint !== "" ? (
         <span className={"flex min-w-0 flex-1 items-center gap-1.5"}>
           {[<span className={"min-w-0 truncate"}>{children}</span>, <span className={"shrink-0 text-footnote text-muted"}>
@@ -60,28 +60,28 @@ function SelectOptionRow({
       ) : (
         children
       ),
-    value3:
+    rowClassName:
       | string
       | ((state: import("@base-ui/react/menu").Menu.Item.State) => string) =
       typeof className === "function"
-        ? (input: import("@base-ui/react/menu").Menu.Item.State) =>
-            joinClassNames(value, className(input))
+        ? (itemState: import("@base-ui/react/menu").Menu.Item.State) =>
+            joinClassNames(value, className(itemState))
         : joinClassNames(value, className),
-    value4 = disabledReason !== undefined && disabledReason !== "";
+    hasDisabledReason = disabledReason !== undefined && disabledReason !== "";
   return (
     <Menu.Item
       {...props}
-      className={value3}
-      disabled={props.disabled === true || value4}
-      disabledReason={value4 ? (disabledReason) : (undefined)}
+      className={rowClassName}
+      disabled={props.disabled === true || hasDisabledReason}
+      disabledReason={hasDisabledReason ? (disabledReason) : (undefined)}
     >
-      {value2}
+      {optionContent}
     </Menu.Item>
   );
 }
 function Select<Value extends string | number>({
   items: items,
-  value: value,
+  value: selectedValue,
   onChange: onChange,
   "aria-label": ariaLabel,
   placeholder: placeholder,
@@ -100,41 +100,41 @@ function Select<Value extends string | number>({
   "data-testid": dataTestid,
 }: C.SelectProps<Value>) {
   useUiLocale();
-  let value2 =
-      value === null
+  let selectedOption =
+      selectedValue === null
         ? undefined
-        : items.find((input: C.SelectOption<Value>) => input.value === value),
-    value3 = value2?.icon ?? icon,
-    value4 = items.some((input: C.SelectOption<Value>) => input.icon != null),
-    value5 =
-      value2?.label ??
+        : items.find((option: C.SelectOption<Value>) => option.value === selectedValue),
+    triggerIcon = selectedOption?.icon ?? icon,
+    hasOptionIcons = items.some((option: C.SelectOption<Value>) => option.icon != null),
+    selectedLabel =
+      selectedOption?.label ??
       placeholder ??
-      (value !== null && value !== "" ? String(value) : undefined),
-    value6 = value5 ?? hint ?? "",
-    [value7, value8] = (SelectReact as typeof React).useState(""),
+      (selectedValue !== null && selectedValue !== "" ? String(selectedValue) : undefined),
+    triggerText = selectedLabel ?? hint ?? "",
+    [searchQuery, setSearchQuery] = (SelectReact as typeof React).useState(""),
     ref = (SelectReact as typeof React).useRef<HTMLInputElement>(
       null,
     ),
-    value9 = useCoarsePointer(),
-    value10 = searchable ? value7.trim().toLowerCase() : "",
-    value11 =
-      value10 === ""
+    usesCoarsePointer = useCoarsePointer(),
+    normalizedQuery = searchable ? searchQuery.trim().toLowerCase() : "",
+    visibleOptions =
+      normalizedQuery === ""
         ? items
-        : items.filter((input: C.SelectOption<Value>) =>
-            input.label.toLowerCase().includes(value10),
+        : items.filter((option: C.SelectOption<Value>) =>
+            option.label.toLowerCase().includes(normalizedQuery),
           ),
-    callback = (input: HTMLElement, options = false) =>
+    callback = (element: HTMLElement, includeDisabled = false) =>
       Array.from<HTMLElement>(
-        input
+        element
           .closest('[role="menu"]')
           ?.querySelectorAll<HTMLElement>(
             '[role^="menuitem"]' +
-              (options ? "" : ':not([aria-disabled="true"])'),
+              (includeDisabled ? "" : ':not([aria-disabled="true"])'),
           ) ?? [],
       ),
-    callback2 = (event: C.SelectKeyEvent) => {
+    redirectTypingToSearch = (event: C.SelectKeyEvent) => {
       let current = ref.current,
-        value12 = event.getModifierState("AltGraph");
+        usesAltGraph = event.getModifierState("AltGraph");
       if (
         !current ||
         (event.target as HTMLElement).closest("input") ||
@@ -142,7 +142,7 @@ function Select<Value extends string | number>({
         event.keyCode === 229 ||
         event.key.length !== 1 ||
         event.key === " " ||
-        ((event.ctrlKey || event.altKey) && !value12) ||
+        ((event.ctrlKey || event.altKey) && !usesAltGraph) ||
         event.metaKey
       ) {
         return;
@@ -153,9 +153,9 @@ function Select<Value extends string | number>({
       current.focus({
         preventScroll: true,
       });
-      value8(current.value + event.key);
+      setSearchQuery(current.value + event.key);
     },
-    callback3 = (event: C.SelectPointerEvent) => {
+    preserveSearchFocus = (event: C.SelectPointerEvent) => {
       let target = event.target as HTMLElement;
       if (
         target instanceof
@@ -176,11 +176,11 @@ function Select<Value extends string | number>({
     <Menu.Root
       disabled={disabled}
       defaultOpen={defaultOpen}
-      onOpenChange={(input: boolean) => {
-        if (!input) {
-          value8("");
+      onOpenChange={(nextOpen: boolean) => {
+        if (!nextOpen) {
+          setSearchQuery("");
         }
-        onOpenChange?.(input);
+        onOpenChange?.(nextOpen);
       }}
     >
       {[<Menu.Trigger
@@ -191,7 +191,7 @@ function Select<Value extends string | number>({
               data-kit={"PropertySelect"}
               data-testid={dataTestid}
               aria-label={
-                value6 === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (value6))
+                triggerText === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (triggerText))
               }
               title={title}
               className={joinClassNames(
@@ -200,24 +200,24 @@ function Select<Value extends string | number>({
                 className,
               )}
             >
-              {[value3 != null ? (
+              {[triggerIcon != null ? (
                   <KitIcon
-                    name={value3}
+                    name={triggerIcon}
                     size={13}
                     className={
-                      value2?.icon != null ? "text-primary" : "text-muted"
+                      selectedOption?.icon != null ? "text-primary" : "text-muted"
                     }
                   />
                 ) : null, <span
                   className={joinClassNames(
                     "min-w-0 flex-1 truncate",
-                    value5 === undefined && "text-muted",
-                    value2 === undefined &&
-                      value6 === "Mixed" &&
+                    selectedLabel === undefined && "text-muted",
+                    selectedOption === undefined &&
+                      triggerText === "Mixed" &&
                       "text-muted",
                   )}
                 >
-                  {value6}
+                  {triggerText}
                 </span>, <KitIcon
                   name={"CaretDown"}
                   size={16}
@@ -229,9 +229,9 @@ function Select<Value extends string | number>({
           }
         />, <Menu.Popup
           {...popupAttrs}
-          align={align ?? (value4 ? "end" : "start")}
+          align={align ?? (hasOptionIcons ? "end" : "start")}
           className={joinClassNames(
-            value4
+            hasOptionIcons
               ? "w-[calc(var(--anchor-width)+1.375rem)]"
               : "w-[var(--anchor-width)]",
             "max-w-none min-w-[12rem] [&_.scroll-fade-y]:[scrollbar-width:none]",
@@ -246,16 +246,16 @@ function Select<Value extends string | number>({
                   fallbackAxisSide: "none" as const,
                 },
                 maxVisibleItems: 10.5,
-                onKeyDown: callback2,
-                onMouseDown: callback3,
+                onKeyDown: redirectTypingToSearch,
+                onMouseDown: preserveSearchFocus,
                 header: (
                   <div className={"m-1 mb-2"}>
                     <TextInput
                       ref={ref}
-                      value={value7}
+                      value={searchQuery}
                       onChange={(
                         event: React.ChangeEvent<HTMLInputElement>,
-                      ) => value8(event.target.value)}
+                      ) => setSearchQuery(event.target.value)}
                       onKeyDown={(
                         event: React.KeyboardEvent<HTMLInputElement>,
                       ) => {
@@ -263,30 +263,30 @@ function Select<Value extends string | number>({
                           event.stopPropagation();
                           return;
                         }
-                        let value12 = callback(event.currentTarget, true),
-                          value13 =
+                        let menuItems = callback(event.currentTarget, true),
+                          itemToFocus =
                             event.key === "ArrowDown"
-                              ? value12[0]
+                              ? menuItems[0]
                               : event.key === "ArrowUp"
-                                ? value12[value12.length - 1]
+                                ? menuItems[menuItems.length - 1]
                                 : undefined;
-                        if (value13 !== undefined || event.key === "Enter") {
+                        if (itemToFocus !== undefined || event.key === "Enter") {
                           event.preventDefault();
                           event.stopPropagation();
-                          if (value13 !== undefined) {
-                            value13.focus();
-                          } else if (value10 !== "") {
+                          if (itemToFocus !== undefined) {
+                            itemToFocus.focus();
+                          } else if (normalizedQuery !== "") {
                             callback(event.currentTarget)[
                               optionTypeaheadMatch(
-                                value10,
-                                value11
+                                normalizedQuery,
+                                visibleOptions
                                   .filter(
-                                    (input: C.SelectOption<Value>) =>
-                                      input.disabled !== true,
+                                    (option: C.SelectOption<Value>) =>
+                                      option.disabled !== true,
                                   )
                                   .map(
-                                    (input: C.SelectOption<Value>) =>
-                                      input.label,
+                                    (option: C.SelectOption<Value>) =>
+                                      option.label,
                                   ),
                               )
                             ]?.click();
@@ -311,9 +311,9 @@ function Select<Value extends string | number>({
                       autoComplete={"off"}
                       spellCheck={false}
                       clearable={true}
-                      onClear={() => value8("")}
-                      autoFocus={!value9}
-                      tabIndex={value9 ? -1 : undefined}
+                      onClear={() => setSearchQuery("")}
+                      autoFocus={!usesCoarsePointer}
+                      tabIndex={usesCoarsePointer ? -1 : undefined}
                       data-kit={"list-search"}
                       className={"w-full"}
                     />
@@ -322,75 +322,75 @@ function Select<Value extends string | number>({
               }
             : {})}
         >
-          {[groupAdjacentSelectOptions(value11).map(
+          {[groupAdjacentSelectOptions(visibleOptions).map(
               (
-                input: C.SelectOption<Value>[],
-                options: number,
-                context: C.SelectOption<Value>[][],
+                groupOptions: C.SelectOption<Value>[],
+                groupIndex: number,
+                optionGroups: C.SelectOption<Value>[][],
               ) => {
-                let { group: value12, subgroup: value13 } = input[0];
+                let { group: group, subgroup: subgroup } = groupOptions[0];
                 return (() => {
-                  const _Element2 = SelectReact.Fragment;
-                  const _elementProps2 = {
+                  const GroupFragment = SelectReact.Fragment;
+                  const groupFragmentProps = {
                     children: [
-                      value12 !== undefined &&
-                      value12 !== context[options - 1]?.[0]?.group ? (
+                      group !== undefined &&
+                      group !== optionGroups[groupIndex - 1]?.[0]?.group ? (
                         <SelectJsx.Fragment>
-                          {[options > 0 ? <Menu.Separator /> : null, <ColorPickerHeader
-                              text={value12}
+                          {[groupIndex > 0 ? <Menu.Separator /> : null, <ColorPickerHeader
+                              text={group}
                               title={true}
                             />]}
                         </SelectJsx.Fragment>
                       ) : null,
                       <Menu.Group
                         aria-label={
-                          value12 !== undefined && value13 !== undefined ? (((value12) + (" · ")) + (value13)) : (value12)
+                          group !== undefined && subgroup !== undefined ? (((group) + (" · ")) + (subgroup)) : (group)
                         }
                       >
-                        {[value13 !== undefined ? (
-                            <ColorPickerHeader text={value13} />
-                          ) : null, input.map((input2: C.SelectOption<Value>) =>
+                        {[subgroup !== undefined ? (
+                            <ColorPickerHeader text={subgroup} />
+                          ) : null, groupOptions.map((option: C.SelectOption<Value>) =>
                             (() => {
                               const _Element = SelectJsx.Fragment;
                               const _elementProps = {
                                 children: [
-                                  input2.separatorBefore === true ? (
+                                  option.separatorBefore === true ? (
                                     <Menu.Separator />
                                   ) : null,
                                   <SelectOptionRow
-                                    checked={input2.value === value}
+                                    checked={option.value === selectedValue}
                                     checkedRole={"radio"}
-                                    label={input2.label}
-                                    icon={input2.icon}
-                                    disabled={input2.disabled}
-                                    title={input2.title}
+                                    label={option.label}
+                                    icon={option.icon}
+                                    disabled={option.disabled}
+                                    title={option.title}
                                     disabledReason={
-                                      input2.disabled === true ? (input2.title) : (undefined)
+                                      option.disabled === true ? (option.title) : (undefined)
                                     }
-                                    hint={input2.hint}
+                                    hint={option.hint}
                                     rowSize={
-                                      input2.labelStyle !== undefined
+                                      option.labelStyle !== undefined
                                         ? "lg"
                                         : "md"
                                     }
                                     onClick={() => {
-                                      if (input2.value !== value) {
-                                        onChange(input2.value);
+                                      if (option.value !== selectedValue) {
+                                        onChange(option.value);
                                       }
                                     }}
                                   >
-                                    {input2.labelStyle !== undefined ? (<span
+                                    {option.labelStyle !== undefined ? (<span
                                         className={
                                           "truncate leading-tight [font-variation-settings:normal]"
                                         }
-                                        style={input2.labelStyle}
+                                        style={option.labelStyle}
                                       >
-                                        {input2.label}
-                                      </span>) : (input2.label)}
+                                        {option.label}
+                                      </span>) : (option.label)}
                                   </SelectOptionRow>,
                                 ],
                               };
-                              const _elementKey = input2.value;
+                              const _elementKey = option.value;
                               return (
                                 <_Element
                                   key={_elementKey}
@@ -402,16 +402,16 @@ function Select<Value extends string | number>({
                       </Menu.Group>,
                     ],
                   };
-                  const _elementKey2 =
-                    (value12 ?? "") +
+                  const groupKey =
+                    (group ?? "") +
                     ":" +
-                    (value13 ?? "") +
+                    (subgroup ?? "") +
                     ":" +
-                    input[0].value;
-                  return <_Element2 key={_elementKey2} {..._elementProps2} />;
+                    groupOptions[0].value;
+                  return <GroupFragment key={groupKey} {...groupFragmentProps} />;
                 })();
               },
-            ), searchable && value11.length === 0 ? (
+            ), searchable && visibleOptions.length === 0 ? (
               <Menu.Item disabled={true}>
                 {uiMessage("design-system.select.noMatches")}
               </Menu.Item>
@@ -425,13 +425,13 @@ function groupAdjacentSelectOptions<Option extends C.SelectOption>(
 ): Option[][] {
   let items: Option[][] = [];
   for (let value of options) {
-    let value2 = items[items.length - 1];
+    let previousGroup = items[items.length - 1];
     if (
-      value2 !== undefined &&
-      value2[0].group === value.group &&
-      value2[0].subgroup === value.subgroup
+      previousGroup !== undefined &&
+      previousGroup[0].group === value.group &&
+      previousGroup[0].subgroup === value.subgroup
     ) {
-      value2.push(value);
+      previousGroup.push(value);
     } else {
       items.push([value]);
     }

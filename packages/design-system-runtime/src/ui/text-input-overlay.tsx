@@ -19,19 +19,19 @@ var lastCompositionEndTime: number;
 var suppressedCompositionEvents: WeakSet<Event>;
 var compositionLineBreakInputTypes: Set<string>;
 var compositionSuppressionResetEvents: string[];
-function useRefocusAfterPendingSheet(input: boolean) {
+function useRefocusAfterPendingSheet(isPending: boolean) {
   let ref = reactiZ.useRef<HTMLElement>(null),
-    ref2 = reactiZ.useRef(input);
+    wasPendingRef = reactiZ.useRef(isPending);
   reactiZ.useEffect(() => {
-    if (ref2.current && !input) {
+    if (wasPendingRef.current && !isPending) {
       ref.current?.focus({
         preventScroll: true,
       });
     }
-    ref2.current = input;
-  }, [input]);
-  return reactiZ.useCallback((input2: HTMLElement | null) => {
-    ref.current = input2;
+    wasPendingRef.current = isPending;
+  }, [isPending]);
+  return reactiZ.useCallback((element: HTMLElement | null) => {
+    ref.current = element;
   }, []);
 }
 function PendingSheetBackdrop({ kind: kind }: { kind: C.OverlayKind }) {
@@ -39,33 +39,33 @@ function PendingSheetBackdrop({ kind: kind }: { kind: C.OverlayKind }) {
   let value = reactiZ.useContext<
       import("../contracts/overlays").SheetFrameContext | null
     >(sheetFrameContext),
-    value2: Element | ShadowRoot | null | undefined = usePortalContainer(),
-    value3: {
+    portalContainer: Element | ShadowRoot | null | undefined = usePortalContainer(),
+    overlayLayer: {
       portalProps: React.HTMLAttributes<HTMLElement>;
       style: C.DesignStyle;
     } = useDefaultOverlayLayer(kind);
   useAndroidCloseWatcher(value?.open ?? false, value?.dismiss);
-  let [value4, value5] = reactiZ.useState(false),
+  let [isVisible, setIsVisible] = reactiZ.useState(false),
     ref = reactiZ.useRef(false),
-    value6: Window | undefined = useRootWindow();
+    rootWindow: Window | undefined = useRootWindow();
   reactiZ.useEffect(() => {
-    if (value6 === undefined) {
+    if (rootWindow === undefined) {
       return;
     }
-    let value8 = value6.requestAnimationFrame(() => {
-      value5(true);
+    let showFrame = rootWindow.requestAnimationFrame(() => {
+      setIsVisible(true);
     });
     return () => {
-      value6.cancelAnimationFrame(value8);
+      rootWindow.cancelAnimationFrame(showFrame);
     };
-  }, [value6]);
-  let value7 =
-    value2 ?? (typeof document === "undefined" ? null : document.body);
-  if (value7 === null || value === null || !value.open) {
+  }, [rootWindow]);
+  let backdropContainer =
+    portalContainer ?? (typeof document === "undefined" ? null : document.body);
+  if (backdropContainer === null || value === null || !value.open) {
     return null;
   }
   return reactDOMForUiTextInputOverlay.createPortal(
-    <PortalRoot {...value3.portalProps}>
+    <PortalRoot {...overlayLayer.portalProps}>
       <div
         role={"presentation"}
         {...{
@@ -73,12 +73,12 @@ function PendingSheetBackdrop({ kind: kind }: { kind: C.OverlayKind }) {
         }}
         className={clsx(
           sheetBackdropClasses,
-          !value4 && "opacity-0",
+          !isVisible && "opacity-0",
         )}
-        style={value3.style}
-        onPointerDown={(input: React.PointerEvent<HTMLDivElement>) => {
+        style={overlayLayer.style}
+        onPointerDown={(pointerEvent: React.PointerEvent<HTMLDivElement>) => {
           ref.current = true;
-          preventPendingSheetFocus(input);
+          preventPendingSheetFocus(pointerEvent);
         }}
         onPointerCancel={() => {
           ref.current = false;
@@ -93,7 +93,7 @@ function PendingSheetBackdrop({ kind: kind }: { kind: C.OverlayKind }) {
         }}
       />
     </PortalRoot>,
-    value7,
+    backdropContainer,
   );
 }
 function isAppleBrowser() {
@@ -102,8 +102,8 @@ function isAppleBrowser() {
   }
   return /Apple Computer/.test(window.navigator.vendor);
 }
-function recordCompositionEnd(input: number): void {
-  lastCompositionEndTime = input;
+function recordCompositionEnd(timestamp: number): void {
+  lastCompositionEndTime = timestamp;
 }
 function resetCompositionSuppression(
   event: C.CompositionKeyboardEvent,
@@ -120,43 +120,43 @@ function resetCompositionSuppression(
   }
 }
 function shouldSuppressCompositionEnter(
-  input: C.CompositionEnterEvent,
+  keyEvent: C.CompositionEnterEvent,
 ): boolean {
-  if (input.isComposing || input.keyCode === 229) {
+  if (keyEvent.isComposing || keyEvent.keyCode === 229) {
     lastCompositionEndTime = COMPOSITION_TIME_SENTINEL;
     return true;
   }
-  if (suppressedCompositionEvents.has(input)) {
+  if (suppressedCompositionEvents.has(keyEvent)) {
     return true;
   }
   if (
     isAppleBrowser() &&
-    Math.abs(input.timeStamp - lastCompositionEndTime) < 500
+    Math.abs(keyEvent.timeStamp - lastCompositionEndTime) < 500
   ) {
     lastCompositionEndTime = COMPOSITION_TIME_SENTINEL;
-    if (input.metaKey || input.ctrlKey) {
+    if (keyEvent.metaKey || keyEvent.ctrlKey) {
       return false;
     }
-    suppressedCompositionEvents.add(input);
+    suppressedCompositionEvents.add(keyEvent);
     return true;
   }
   return false;
 }
 function suppressFollowupCompositionLineBreak(
-  input: Event,
-  options: EventTarget,
-  context: () => void,
+  compositionEvent: Event,
+  target: EventTarget,
+  onSuppressedLineBreak: () => void,
 ) {
-  if (!suppressedCompositionEvents.has(input)) {
+  if (!suppressedCompositionEvents.has(compositionEvent)) {
     return;
   }
-  let value = input,
+  let value = compositionEvent,
     callback = (event: Event) => {
       if (event === value) {
         return;
       }
-      for (let value2 of compositionSuppressionResetEvents) {
-        options.removeEventListener(value2, callback, {
+      for (let eventName of compositionSuppressionResetEvents) {
+        target.removeEventListener(eventName, callback, {
           capture: true,
         });
       }
@@ -167,11 +167,11 @@ function suppressFollowupCompositionLineBreak(
         compositionLineBreakInputTypes.has(event.inputType)
       ) {
         event.preventDefault();
-        context();
+        onSuppressedLineBreak();
       }
     };
-  for (let value2 of compositionSuppressionResetEvents) {
-    options.addEventListener(value2, callback, {
+  for (let eventName of compositionSuppressionResetEvents) {
+    target.addEventListener(eventName, callback, {
       capture: true,
     });
   }

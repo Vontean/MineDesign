@@ -42,7 +42,7 @@ function isUndoEditingTarget(target: EventTarget | null) {
     target.isContentEditable
   );
 }
-function createUndoKeyHandler(history2: UndoActions) {
+function createUndoKeyHandler(history: UndoActions) {
   return (event: KeyboardEvent) => {
     if (event.defaultPrevented) {
       return;
@@ -59,24 +59,24 @@ function createUndoKeyHandler(history2: UndoActions) {
     }
     event.preventDefault();
     if (value === "redo") {
-      history2.redo();
+      history.redo();
     } else {
-      history2.undo();
+      history.undo();
     }
   };
 }
 function useUndoKeys(
-  history2: UndoActions | null | undefined,
+  history: UndoActions | null | undefined,
   enabled: boolean = true,
 ) {
   reactForPlatformFrameChrome.useEffect(() => {
-    if (!history2 || !enabled) {
+    if (!history || !enabled) {
       return;
     }
-    let value = createUndoKeyHandler(history2);
+    let value = createUndoKeyHandler(history);
     window.addEventListener("keydown", value);
     return () => window.removeEventListener("keydown", value);
-  }, [history2, enabled]);
+  }, [history, enabled]);
 }
 export {
   createUndoKeyHandler,

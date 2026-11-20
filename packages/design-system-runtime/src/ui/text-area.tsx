@@ -14,114 +14,114 @@ var reactForUiTextArea: typeof React;
 var jsxFu: typeof import("react/jsx-runtime");
 var TextArea: C.ForwardComponent<HTMLTextAreaElement, C.TextAreaProps>;
 function resizeTextAreaToContent(
-  input: HTMLTextAreaElement,
-  options: React.RefObject<string>,
+  textarea: HTMLTextAreaElement,
+  appliedHeightRef: React.RefObject<string>,
 ) {
   if (
-    input.clientWidth === 0 ||
-    (input.style.height !== options.current && input.style.height !== "")
+    textarea.clientWidth === 0 ||
+    (textarea.style.height !== appliedHeightRef.current && textarea.style.height !== "")
   ) {
     return;
   }
-  let offsetHeight = input.offsetHeight,
-    value = offsetHeight - input.clientHeight,
-    { overflowY: style, marginBottom: style2 } = input.style;
-  input.style.height = "0px";
-  input.style.marginBottom = `${offsetHeight}px`;
-  input.style.overflowY = "hidden";
-  options.current = `${input.scrollHeight + value}px`;
-  input.style.height = options.current;
-  input.style.marginBottom = style2;
-  input.style.overflowY = style;
+  let offsetHeight = textarea.offsetHeight,
+    value = offsetHeight - textarea.clientHeight,
+    { overflowY: style, marginBottom: originalMarginBottom } = textarea.style;
+  textarea.style.height = "0px";
+  textarea.style.marginBottom = `${offsetHeight}px`;
+  textarea.style.overflowY = "hidden";
+  appliedHeightRef.current = `${textarea.scrollHeight + value}px`;
+  textarea.style.height = appliedHeightRef.current;
+  textarea.style.marginBottom = originalMarginBottom;
+  textarea.style.overflowY = style;
 }
 function observeTextAreaValue(
-  input: HTMLTextAreaElement,
-  options: () => void,
+  textarea: HTMLTextAreaElement,
+  onValueChange: () => void,
 ) {
-  let value = Object.getOwnPropertyDescriptor(input, "value"),
-    value2 =
+  let value = Object.getOwnPropertyDescriptor(textarea, "value"),
+    valueDescriptor =
       value ??
-      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), "value");
-  if (!value2?.set || !value2.configurable) {
+      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(textarea), "value");
+  if (!valueDescriptor?.set || !valueDescriptor.configurable) {
     return;
   }
   let flag = true,
-    callback = (input2: string) => {
-      value2.set?.call(input, input2);
+    callback = (nextText: string) => {
+      valueDescriptor.set?.call(textarea, nextText);
       if (flag) {
-        options();
+        onValueChange();
       }
     };
-  Object.defineProperty(input, "value", {
-    ...value2,
+  Object.defineProperty(textarea, "value", {
+    ...valueDescriptor,
     set: callback,
   });
   return () => {
     flag = false;
-    if (Object.getOwnPropertyDescriptor(input, "value")?.set !== callback) {
+    if (Object.getOwnPropertyDescriptor(textarea, "value")?.set !== callback) {
       return;
     }
     if (value) {
-      Object.defineProperty(input, "value", value);
+      Object.defineProperty(textarea, "value", value);
     } else {
-      Reflect.deleteProperty(input, "value");
+      Reflect.deleteProperty(textarea, "value");
     }
   };
 }
 function useTextAreaAutosize({
   autosize: autosize,
-  value: value,
+  value: text,
   defaultValue: defaultValue,
 }: C.AutosizeOptions) {
-  let value2 = autosize && !supportsNativeFieldSizing,
-    value3 = value !== undefined,
+  let shouldMeasureHeight = autosize && !supportsNativeFieldSizing,
+    isControlled = text !== undefined,
     ref = reactHu.useRef<HTMLTextAreaElement>(null),
-    ref2 = reactHu.useRef("");
+    appliedHeightRef = reactHu.useRef("");
   useIsomorphicLayoutEffect(() => {
     let current = ref.current,
-      value4 = current?.ownerDocument.defaultView;
-    if (!value2 || !current || !value4) {
+      ownerWindow = current?.ownerDocument.defaultView;
+    if (!shouldMeasureHeight || !current || !ownerWindow) {
       return;
     }
-    let callback = () => resizeTextAreaToContent(current, ref2),
+    let callback = () => resizeTextAreaToContent(current, appliedHeightRef),
       index = 0,
-      callback2 = () => {
-        value4.cancelAnimationFrame(index);
-        index = value4.requestAnimationFrame(callback);
+      scheduleResize = () => {
+        ownerWindow.cancelAnimationFrame(index);
+        index = ownerWindow.requestAnimationFrame(callback);
       },
-      value5 = new value4.ResizeObserver(callback2);
-    value5.observe(current);
-    value4.document.fonts.addEventListener("loadingdone", callback);
-    let callback3 = (event: Event) => {
+      resizeObserver = new ownerWindow.ResizeObserver(scheduleResize);
+    resizeObserver.observe(current);
+    ownerWindow.document.fonts.addEventListener("loadingdone", callback);
+    let handleFormReset = (event: Event) => {
         if (event.target === current.form) {
-          callback2();
+          scheduleResize();
         }
       },
-      value6 = current.getRootNode(),
-      value7 = value6 instanceof value4.ShadowRoot ? value6 : value4.document,
-      value8: (() => void) | undefined;
-    if (!value3) {
-      value8 = observeTextAreaValue(current, callback);
+      rootNode = current.getRootNode(),
+      resetEventRoot = rootNode instanceof ownerWindow.ShadowRoot ? rootNode : ownerWindow.document,
+      restoreValueSetter: (() => void) | undefined;
+    if (!isControlled) {
+      restoreValueSetter = observeTextAreaValue(current, callback);
       current.addEventListener("input", callback);
-      value7.addEventListener("reset", callback3, true);
+      resetEventRoot.addEventListener("reset", handleFormReset, true);
     }
     return () => {
-      value8?.();
-      value7.removeEventListener("reset", callback3, true);
-      value5.disconnect();
-      value4.cancelAnimationFrame(index);
-      value4.document.fonts.removeEventListener("loadingdone", callback);
+      restoreValueSetter?.();
+      resetEventRoot.removeEventListener("reset", handleFormReset, true);
+      resizeObserver.disconnect();
+      ownerWindow.cancelAnimationFrame(index);
+      ownerWindow.document.fonts.removeEventListener("loadingdone", callback);
       current.removeEventListener("input", callback);
-      if (current.style.height === ref2.current) {
+      if (current.style.height === appliedHeightRef.current) {
         current.style.height = "";
       }
     };
-  }, [value2, value3]);
+  }, [shouldMeasureHeight, isControlled]);
   useIsomorphicLayoutEffect(() => {
-    if (value2 && ref.current) {
-      resizeTextAreaToContent(ref.current, ref2);
+    if (shouldMeasureHeight && ref.current) {
+      resizeTextAreaToContent(ref.current, appliedHeightRef);
     }
-  }, [value2, value2 ? value : null, value2 ? defaultValue : null]);
+  }, [shouldMeasureHeight, shouldMeasureHeight ? text : null, shouldMeasureHeight ? defaultValue : null]);
   return ref;
 }
 export {
@@ -170,34 +170,34 @@ export function installUiTextArea(): () => void {
           style: style,
           ...props
         }: C.TextAreaProps,
-        options: React.ForwardedRef<HTMLTextAreaElement>,
+        forwardedRef: React.ForwardedRef<HTMLTextAreaElement>,
       ) => {
         let value: boolean = useFieldInvalid(),
-          value2 = rows ?? 3,
-          value3 = autosize && rows !== undefined,
-          value4 = resize === "y" ? "resize-y" : "resize-none",
-          value5 = autosize ? "[field-sizing:content]" : "",
-          value6 = useTextAreaAutosize({
+          resolvedRows = rows ?? 3,
+          enforceMinimumRows = autosize && rows !== undefined,
+          resizeClassName = resize === "y" ? "resize-y" : "resize-none",
+          autosizeClassName = autosize ? "[field-sizing:content]" : "",
+          autosizeRef = useTextAreaAutosize({
             autosize: autosize,
             value: props.value,
             defaultValue: props.defaultValue,
           }),
-          value7: React.Ref<HTMLTextAreaElement> = useMergedRefs(
-            options,
-            value6,
+          mergedRef: React.Ref<HTMLTextAreaElement> = useMergedRefs(
+            forwardedRef,
+            autosizeRef,
           ),
-          value8 = value3
+          minimumHeightClassName = enforceMinimumRows
             ? bare
               ? "min-h-[calc(var(--cds-textarea-rows)*1lh)]"
               : "min-h-[calc(var(--cds-textarea-rows)*1lh+2*var(--cds-pad-sm))]"
             : "",
-          value9 = value3
+          textareaStyle = enforceMinimumRows
             ? {
                 ...style,
-                "--cds-textarea-rows": value2,
+                "--cds-textarea-rows": resolvedRows,
               }
             : style,
-          value10 = fullWidth ? "w-full" : "";
+          widthClassName = fullWidth ? "w-full" : "";
         return (
           <baseField.Control
             id={id}
@@ -205,23 +205,23 @@ export function installUiTextArea(): () => void {
             disabled={disabled}
             render={
               <textarea
-                ref={value7}
+                ref={mergedRef}
                 data-cds={"TextArea"}
-                rows={value2}
-                style={value9}
+                rows={resolvedRows}
+                style={textareaStyle}
                 {...getControlSizeAttributes(size)}
                 data-invalid={value || undefined}
                 aria-invalid={value || ariaInvalid}
                 {...props}
                 className={cn(
                   "cds-reset",
-                  value10,
+                  widthClassName,
                   bare
                     ? "block resize-none border-0 bg-transparent p-0 shadow-none"
-                    : `cds-input font-normal ${textAreaBaseClasses} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus data-[invalid]:focus-visible:shadow-focus-danger ${value4}`,
+                    : `cds-input font-normal ${textAreaBaseClasses} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus data-[invalid]:focus-visible:shadow-focus-danger ${resizeClassName}`,
                   "font-sans text-body text-primary placeholder:text-muted outline-none focus-visible:outline-hidden disabled:opacity-disabled",
-                  value5,
-                  value8,
+                  autosizeClassName,
+                  minimumHeightClassName,
                   className,
                 )}
               />

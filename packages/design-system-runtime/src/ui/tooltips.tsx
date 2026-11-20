@@ -20,62 +20,62 @@ var MINIMUM_DIALOG_KEYBOARD_VISIBLE_HEIGHT: number;
 var dialogOverrideStyleProperties: DialogStyleProperty[];
 var dialogKeyboardExcludedStyleProperties: string[];
 var dialogKeyboardPositionProperties: string[];
-var reactForUiTooltips2: typeof React;
+var reactDialog: typeof React;
 var jsxForUiTooltips: typeof import("react/jsx-runtime");
 function readInlineStyleProperty(
-  input: CSSStyleDeclaration,
-  options: string,
+  style: CSSStyleDeclaration,
+  property: string,
 ): InlineStyleProperty {
   return {
-    value: input.getPropertyValue(options),
-    priority: input.getPropertyPriority(options),
+    value: style.getPropertyValue(property),
+    priority: style.getPropertyPriority(property),
   };
 }
 function isOwnedImportantStyle(
-  input: CSSStyleDeclaration,
-  options: string,
-  context: string | undefined,
+  style: CSSStyleDeclaration,
+  property: string,
+  writtenValue: string | undefined,
 ): boolean {
   return (
-    context !== undefined &&
-    input.getPropertyPriority(options) === "important" &&
-    input.getPropertyValue(options) === context
+    writtenValue !== undefined &&
+    style.getPropertyPriority(property) === "important" &&
+    style.getPropertyValue(property) === writtenValue
   );
 }
-function restoreDialogStyleOverride(input: DialogStyleOverride): void {
-  let style = input.node.style;
+function restoreDialogStyleOverride(override: DialogStyleOverride): void {
+  let style = override.node.style;
   for (let value of dialogOverrideStyleProperties) {
-    if (isOwnedImportantStyle(style, value, input.written[value])) {
-      let { value: value2, priority: value3 } = input.baseline[value];
-      style.setProperty(value, value2, value3);
+    if (isOwnedImportantStyle(style, value, override.written[value])) {
+      let { value: originalValue, priority: originalPriority } = override.baseline[value];
+      style.setProperty(value, originalValue, originalPriority);
     }
   }
 }
 function useDialogVisualKeyboard(
-  input: boolean | undefined,
+  open: boolean | undefined,
 ): React.Dispatch<React.SetStateAction<HTMLElement | null>> {
-  let [value, value2] = reactForUiTooltips.useState<HTMLElement | null>(null),
-    [value3, value4] = reactForUiTooltips.useState<KeyboardInset | null>(
+  let [value, setDialogElement] = reactForUiTooltips.useState<HTMLElement | null>(null),
+    [keyboardInset, setKeyboardInset] = reactForUiTooltips.useState<KeyboardInset | null>(
       null,
     ),
     callback = reactForUiTooltips.useCallback(
-      (input2: () => void): (() => void) => {
-        if (!input || value === null) {
+      (listener: () => void): (() => void) => {
+        if (!open || value === null) {
           return () => {
             return;
           };
         }
-        value.addEventListener("focusin", input2);
-        value.addEventListener("focusout", input2);
+        value.addEventListener("focusin", listener);
+        value.addEventListener("focusout", listener);
         return () => {
-          value.removeEventListener("focusin", input2);
-          value.removeEventListener("focusout", input2);
+          value.removeEventListener("focusin", listener);
+          value.removeEventListener("focusout", listener);
         };
       },
-      [input, value],
+      [open, value],
     ),
-    callback2 = reactForUiTooltips.useCallback(() => {
-      if (!input || value === null) {
+    hasFocusedEditor = reactForUiTooltips.useCallback(() => {
+      if (!open || value === null) {
         return false;
       }
       let activeElement = value.ownerDocument.activeElement;
@@ -83,19 +83,19 @@ function useDialogVisualKeyboard(
         value.contains(activeElement) &&
         isEditableElement(activeElement)
       );
-    }, [input, value]),
-    value5 = reactForUiTooltips.useSyncExternalStore(
+    }, [open, value]),
+    hasEditableFocus = reactForUiTooltips.useSyncExternalStore(
       callback,
-      callback2,
+      hasFocusedEditor,
       () => false,
     );
   useVisualKeyboard(
-    input && (value5 || value3 !== null),
-    value4,
+    open && (hasEditableFocus || keyboardInset !== null),
+    setKeyboardInset,
   );
   let memo = reactForUiTooltips.useMemo(
-      () => getKeyboardAdjustedDialogStyle(value3),
-      [value3],
+      () => getKeyboardAdjustedDialogStyle(keyboardInset),
+      [keyboardInset],
     ),
     ref = reactForUiTooltips.useRef<DialogStyleOverride | null>(null);
   useIsomorphicLayoutEffect(() => {
@@ -113,16 +113,16 @@ function useDialogVisualKeyboard(
         "max-height": memo.maxHeight,
         "min-height": "0px",
       },
-      current2 = ref.current;
-    if (current2 === null) {
+      activeOverride = ref.current;
+    if (activeOverride === null) {
       if (
         dialogKeyboardPositionProperties.some(
-          (input2: string): boolean => style.getPropertyValue(input2) !== "",
+          (property: string): boolean => style.getPropertyValue(property) !== "",
         )
       ) {
         return;
       }
-      current2 = {
+      activeOverride = {
         node: value,
         baseline: {
           top: readInlineStyleProperty(style, "top"),
@@ -133,38 +133,38 @@ function useDialogVisualKeyboard(
         written: {},
         cap: "",
       };
-      ref.current = current2;
+      ref.current = activeOverride;
     } else {
-      let value6 = dialogKeyboardExcludedStyleProperties.some(
-        (input2: string): boolean => style.getPropertyValue(input2) !== "",
+      let hasConflictingStyle = dialogKeyboardExcludedStyleProperties.some(
+        (property: string): boolean => style.getPropertyValue(property) !== "",
       );
-      for (let value7 of dialogOverrideStyleProperties) {
-        if (!isOwnedImportantStyle(style, value7, current2.written[value7])) {
-          let value8 = readInlineStyleProperty(style, value7);
-          current2.baseline[value7] = value8;
-          if (value7 === "top" && value8.value !== "") {
-            value6 = true;
+      for (let property of dialogOverrideStyleProperties) {
+        if (!isOwnedImportantStyle(style, property, activeOverride.written[property])) {
+          let currentStyle = readInlineStyleProperty(style, property);
+          activeOverride.baseline[property] = currentStyle;
+          if (property === "top" && currentStyle.value !== "") {
+            hasConflictingStyle = true;
           }
         }
       }
-      if (value6) {
-        restoreDialogStyleOverride(current2);
+      if (hasConflictingStyle) {
+        restoreDialogStyleOverride(activeOverride);
         ref.current = null;
         return;
       }
     }
-    for (let value6 of dialogOverrideStyleProperties) {
+    for (let property of dialogOverrideStyleProperties) {
       if (
-        current2.intended[value6] !== state[value6] ||
-        !isOwnedImportantStyle(style, value6, current2.written[value6])
+        activeOverride.intended[property] !== state[property] ||
+        !isOwnedImportantStyle(style, property, activeOverride.written[property])
       ) {
-        style.setProperty(value6, state[value6], "important");
-        current2.intended[value6] = state[value6];
-        current2.written[value6] = style.getPropertyValue(value6);
+        style.setProperty(property, state[property], "important");
+        activeOverride.intended[property] = state[property];
+        activeOverride.written[property] = style.getPropertyValue(property);
       }
     }
-    if (current2.cap !== memo.maxHeight) {
-      current2.cap = memo.maxHeight;
+    if (activeOverride.cap !== memo.maxHeight) {
+      activeOverride.cap = memo.maxHeight;
       let activeElement = value.ownerDocument.activeElement,
         defaultView = value.ownerDocument.defaultView as BrowserWindow | null;
       if (
@@ -186,35 +186,35 @@ function useDialogVisualKeyboard(
     },
     [],
   );
-  return value2;
+  return setDialogElement;
 }
-function getKeyboardAdjustedDialogStyle(input: KeyboardInset | null):
+function getKeyboardAdjustedDialogStyle(keyboardInset: KeyboardInset | null):
   | {
       top: string;
       maxHeight: string;
     }
   | undefined {
   if (
-    input === null ||
-    input.visible < MINIMUM_DIALOG_KEYBOARD_VISIBLE_HEIGHT
+    keyboardInset === null ||
+    keyboardInset.visible < MINIMUM_DIALOG_KEYBOARD_VISIBLE_HEIGHT
   ) {
     return;
   }
   return {
-    top: `calc(${input.offset + (input.visible + DIALOG_KEYBOARD_MARGIN_PX) / 2}px - ${DIALOG_KEYBOARD_MARGIN_CSS} / 2)`,
-    maxHeight: `calc(${input.visible - DIALOG_KEYBOARD_MARGIN_PX}px - ${DIALOG_KEYBOARD_MARGIN_CSS})`,
+    top: `calc(${keyboardInset.offset + (keyboardInset.visible + DIALOG_KEYBOARD_MARGIN_PX) / 2}px - ${DIALOG_KEYBOARD_MARGIN_CSS} / 2)`,
+    maxHeight: `calc(${keyboardInset.visible - DIALOG_KEYBOARD_MARGIN_PX}px - ${DIALOG_KEYBOARD_MARGIN_CSS})`,
   };
 }
 function scrollDialogInputIntoView(
   element: HTMLElement,
-  options: HTMLElement,
+  inputElement: HTMLElement,
 ): void {
   let defaultView = element.ownerDocument.defaultView;
   if (defaultView === null) {
     return;
   }
   for (
-    let parentElement = options.parentElement;
+    let parentElement = inputElement.parentElement;
     parentElement !== null;
     parentElement =
       parentElement === element ? null : parentElement.parentElement
@@ -227,13 +227,13 @@ function scrollDialogInputIntoView(
       continue;
     }
     let bounds = parentElement.getBoundingClientRect(),
-      bounds2 = options.getBoundingClientRect();
-    if (bounds2.bottom > bounds.bottom) {
+      inputBounds = inputElement.getBoundingClientRect();
+    if (inputBounds.bottom > bounds.bottom) {
       parentElement.scrollTop +=
-        bounds2.bottom - bounds.bottom + DIALOG_KEYBOARD_MARGIN_PX;
-    } else if (bounds2.top < bounds.top) {
+        inputBounds.bottom - bounds.bottom + DIALOG_KEYBOARD_MARGIN_PX;
+    } else if (inputBounds.top < bounds.top) {
       parentElement.scrollTop -=
-        bounds.top - bounds2.top + DIALOG_KEYBOARD_MARGIN_PX;
+        bounds.top - inputBounds.top + DIALOG_KEYBOARD_MARGIN_PX;
     }
   }
 }
@@ -248,7 +248,7 @@ export {
   jsxForUiTooltips,
   MINIMUM_DIALOG_KEYBOARD_VISIBLE_HEIGHT,
   reactForUiTooltips,
-  reactForUiTooltips2,
+  reactDialog as reactForUiTooltips2,
   readInlineStyleProperty,
   restoreDialogStyleOverride,
   scrollDialogInputIntoView,
@@ -289,7 +289,7 @@ export function installUiTooltips(): () => void {
       "top",
       ...dialogKeyboardExcludedStyleProperties,
     ];
-    reactForUiTooltips2 = toModuleNamespace(
+    reactDialog = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
