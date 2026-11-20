@@ -90,23 +90,23 @@ var Menu: typeof SimpleMenu & {
   PendingList: typeof MenuPendingList;
 };
 function MenuContextProviders(
-  input: React.ReactNode,
-  options: PassiveOpenCell | null,
-  context: React.RefObject<OverlayActions | null>,
-  value: boolean = false,
+  content: React.ReactNode,
+  passiveOpenCell: PassiveOpenCell | null,
+  rootIdentity: React.RefObject<OverlayActions | null>,
+  isContextMenu: boolean = false,
 ): React.ReactElement {
   useUiLocale();
-  let value2 = (
-    <passiveOpenStateContext.Provider value={options}>
-      <menuRootIdentityContext.Provider value={context}>
+  let providers = (
+    <passiveOpenStateContext.Provider value={passiveOpenCell}>
+      <menuRootIdentityContext.Provider value={rootIdentity}>
         <menuIsOpenContext.Provider value={null}>
           <menuTriggerContext.Provider value={null}>
             <submenuStateContext.Provider
               value={defaultSubmenuState}
             >
-              <contextMenuContext.Provider value={value}>
-                {value ? (input) : (<TooltipImplementationProvider>
-                    {input}
+              <contextMenuContext.Provider value={isContextMenu}>
+                {isContextMenu ? (content) : (<TooltipImplementationProvider>
+                    {content}
                   </TooltipImplementationProvider>)}
               </contextMenuContext.Provider>
             </submenuStateContext.Provider>
@@ -115,133 +115,133 @@ function MenuContextProviders(
       </menuRootIdentityContext.Provider>
     </passiveOpenStateContext.Provider>
   );
-  if (value) {
+  if (isContextMenu) {
     return (
       <MenuOpenerProvider value={undefined}>
-        {value2}
+        {providers}
       </MenuOpenerProvider>
     );
   } else {
-    return value2;
+    return providers;
   }
 }
 function isNestedMenuEvent(
-  input: EventTarget | null | undefined,
-  options?: string,
+  target: EventTarget | null | undefined,
+  sheetTreeId?: string,
 ): boolean {
-  let value = asElement(input)?.closest("[data-nested]") ?? null;
+  let value = asElement(target)?.closest("[data-nested]") ?? null;
   if (value === null) {
     return false;
   }
-  if (options === undefined) {
+  if (sheetTreeId === undefined) {
     return true;
   }
-  let value2 = asElement(value.closest("[data-sheet-tree]"));
+  let sheetRoot = asElement(value.closest("[data-sheet-tree]"));
   return (
-    value2 !== null && value2.getAttribute("data-sheet-tree") === options
+    sheetRoot !== null && sheetRoot.getAttribute("data-sheet-tree") === sheetTreeId
   );
 }
-function isFocusOutEvent(input: Event | undefined): input is FocusEvent {
+function isFocusOutEvent(event: Event | undefined): event is FocusEvent {
   return (
-    input !== undefined &&
-    "relatedTarget" in input &&
-    input.type === "focusout"
+    event !== undefined &&
+    "relatedTarget" in event &&
+    event.type === "focusout"
   );
 }
 function shouldRefuseNestedMenuClose(
-  input: boolean,
-  options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
-  context?: string,
+  nextOpen: boolean,
+  changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+  sheetTreeId?: string,
 ): boolean {
-  if (input) {
+  if (nextOpen) {
     return false;
   }
-  let { reason: value, event: value2 } = options;
+  let { reason: value, event: changeEvent } = changeDetails;
   if (value === "outside-press") {
-    return isNestedMenuEvent(value2?.target, context);
+    return isNestedMenuEvent(changeEvent?.target, sheetTreeId);
   }
-  if (value === "focus-out" && isFocusOutEvent(value2)) {
-    let value3 = asElement(value2.relatedTarget),
-      value4 =
-        value2.relatedTarget === null ||
-        (value3 !== null &&
-          (value3 === value3.ownerDocument.body || !value3.isConnected));
+  if (value === "focus-out" && isFocusOutEvent(changeEvent)) {
+    let relatedElement = asElement(changeEvent.relatedTarget),
+      hasLostFocusTarget =
+        changeEvent.relatedTarget === null ||
+        (relatedElement !== null &&
+          (relatedElement === relatedElement.ownerDocument.body || !relatedElement.isConnected));
     return (
-      isNestedMenuEvent(value2.relatedTarget, context) ||
-      (value4 && isNestedMenuEvent(value2.target, context))
+      isNestedMenuEvent(changeEvent.relatedTarget, sheetTreeId) ||
+      (hasLostFocusTarget && isNestedMenuEvent(changeEvent.target, sheetTreeId))
     );
   }
   return false;
 }
 function cancelNestedMenuClose(
-  input: boolean,
-  options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
-  context?: string,
+  nextOpen: boolean,
+  changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+  sheetTreeId?: string,
 ): boolean {
-  if (!shouldRefuseNestedMenuClose(input, options, context)) {
+  if (!shouldRefuseNestedMenuClose(nextOpen, changeDetails, sheetTreeId)) {
     return false;
   }
-  options.cancel();
+  changeDetails.cancel();
   return true;
 }
-function extractReactText(input: React.ReactNode): string | undefined {
-  if (typeof input === "string") {
-    return input;
+function extractReactText(node: React.ReactNode): string | undefined {
+  if (typeof node === "string") {
+    return node;
   }
-  if (typeof input === "number") {
-    return String(input);
+  if (typeof node === "number") {
+    return String(node);
   }
-  if (input === null || input === undefined || typeof input === "boolean") {
+  if (node === null || node === undefined || typeof node === "boolean") {
     return "";
   }
-  if (!Array.isArray(input)) {
+  if (!Array.isArray(node)) {
     return;
   }
   let text = "";
-  for (let value of input as readonly React.ReactNode[]) {
-    let value2 = extractReactText(value);
-    if (value2 === undefined) {
+  for (let value of node as readonly React.ReactNode[]) {
+    let childText = extractReactText(value);
+    if (childText === undefined) {
       return;
     }
-    text += value2;
+    text += childText;
   }
   return text;
 }
-function normalizeLabelText(input: string): string {
-  return input.replace(/\s+/g, " ").trim();
+function normalizeLabelText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
 }
 function useMenuItemLabel(
-  input: React.ReactNode,
-  options?: string,
+  children: React.ReactNode,
+  explicitLabel?: string,
 ): MenuTextState {
   let ref = reacttM.useRef<HTMLElement | null>(null),
-    ref2 = reacttM.useRef<HTMLElement | null>(null),
-    [value, value2] = reacttM.useState<string | undefined>(),
-    value3 =
-      options === undefined
-        ? normalizeLabelText(extractReactText(input) ?? "") || undefined
+    rowRef = reacttM.useRef<HTMLElement | null>(null),
+    [value, setMeasuredLabel] = reacttM.useState<string | undefined>(),
+    extractedLabel =
+      explicitLabel === undefined
+        ? normalizeLabelText(extractReactText(children) ?? "") || undefined
         : undefined,
-    value4 = options === undefined && value3 === undefined;
+    shouldMeasureLabel = explicitLabel === undefined && extractedLabel === undefined;
   useIsomorphicLayoutEffect(() => {
-    if (!value4) {
+    if (!shouldMeasureLabel) {
       return;
     }
-    let value5 = normalizeLabelText(ref.current?.textContent ?? ""),
-      value6 = (ref2.current?.textContent ?? "").startsWith(value5),
-      value7 =
-        value5 === "" || (value6 && value !== value5) ? undefined : value5;
-    if (value7 !== value) {
-      value2(value7);
+    let labelText = normalizeLabelText(ref.current?.textContent ?? ""),
+      rowStartsWithLabel = (rowRef.current?.textContent ?? "").startsWith(labelText),
+      nextLabel =
+        labelText === "" || (rowStartsWithLabel && value !== labelText) ? undefined : labelText;
+    if (nextLabel !== value) {
+      setMeasuredLabel(nextLabel);
     }
   });
   return {
-    label: options ?? value3 ?? (value4 ? value : undefined),
+    label: explicitLabel ?? extractedLabel ?? (shouldMeasureLabel ? value : undefined),
     labelSpanRef: ref,
-    rowRef: ref2,
+    rowRef: rowRef,
   };
 }
-function getShortcutNumeralClasses(input: string | undefined): string {
-  if (numericShortcutPattern.test(input as string)) {
+function getShortcutNumeralClasses(shortcut: string | undefined): string {
+  if (numericShortcutPattern.test(shortcut as string)) {
     return "tabular-nums";
   } else {
     return "";
@@ -262,152 +262,152 @@ function MenuShortcut({ keys: keys }: { keys: string }): React.ReactElement {
   );
 }
 function useMenuPopupElement(
-  input: MenuPopupProps,
-  options: React.ForwardedRef<HTMLDivElement>,
-  context: boolean,
-  value: boolean,
+  props: MenuPopupProps,
+  forwardedRef: React.ForwardedRef<HTMLDivElement>,
+  warnForNestedMenu: boolean,
+  isConcealed: boolean,
 ): React.ReactElement {
   let {
-      side: value2,
-      align: value16 = "start",
-      sideOffset: value3,
-      collisionPadding: value4,
-      collisionAvoidance: value5,
-      anchor: value6,
-      container: value7,
-      className: value8,
-      children: value9,
-      header: value10,
-      footer: value11,
-      maxVisibleItems: value12,
-      layerOffset: value13,
-      stableWhileOpen: value17 = false,
-      "data-cds": value18 = "Menu",
-      initialFocus: value14,
-      ...value15
-    } = input,
-    value19 = usePortalContainer(),
-    value20 = reactForUiMenu.useContext<MenuRootState | null>(
+      side: side,
+      align: align = "start",
+      sideOffset: sideOffset,
+      collisionPadding: collisionPadding,
+      collisionAvoidance: collisionAvoidance,
+      anchor: anchor,
+      container: container,
+      className: className,
+      children: children,
+      header: header,
+      footer: footer,
+      maxVisibleItems: maxVisibleItems,
+      layerOffset: layerOffset,
+      stableWhileOpen: stableWhileOpen = false,
+      "data-cds": dataCds = "Menu",
+      initialFocus: initialFocus,
+      ...popupProps
+    } = props,
+    portalContainer = usePortalContainer(),
+    triggerState = reactForUiMenu.useContext<MenuRootState | null>(
       menuTriggerContext,
     ),
-    value21 =
+    isCursorAnchored =
       reactForUiMenu.useContext<boolean>(contextMenuContext) &&
-      value20 === null,
-    value22 = reactForUiMenu.useContext<{
+      triggerState === null,
+    inheritedCollision = reactForUiMenu.useContext<{
       collisionPadding?: CollisionPadding;
     } | null>(collisionPaddingContext),
-    value23 = value4 ?? value22?.collisionPadding,
+    requestedCollisionPadding = collisionPadding ?? inheritedCollision?.collisionPadding,
     memo = reactForUiMenu.useMemo(
       () =>
-        value6 !== undefined || !value20
-          ? value6
-          : createMenuVirtualAnchor(value20),
-      [value6, value20],
+        anchor !== undefined || !triggerState
+          ? anchor
+          : createMenuVirtualAnchor(triggerState),
+      [anchor, triggerState],
     ),
-    value24 =
-      value3 ??
-      (value21 ? undefined : value20 && value6 === undefined ? 2 : 6),
-    value25 = useStablePopupPlacement({
-      enabled: value17 && !value21,
-      side: value2,
-      align: value16,
+    resolvedSideOffset =
+      sideOffset ??
+      (isCursorAnchored ? undefined : triggerState && anchor === undefined ? 2 : 6),
+    stablePlacement = useStablePopupPlacement({
+      enabled: stableWhileOpen && !isCursorAnchored,
+      side: side,
+      align: align,
     }),
-    value26 = useMenuOwnerRef(
-      value20?.triggerRef,
-      value15.finalFocus,
+    ownerRef = useMenuOwnerRef(
+      triggerState?.triggerRef,
+      popupProps.finalFocus,
     ),
-    value27 = value21
-      ? value15.finalFocus === undefined || value15.finalFocus === null
-      : value6 !== undefined &&
-        value6 !== null &&
-        value20 === null &&
-        value15.finalFocus === undefined,
-    value28 = usePassiveOpenContext(value20 === null);
-  value28.root?.declareFocusProps(value14, value15.finalFocus);
-  if (context && value20 !== null && value14 !== undefined) {
+    anchoredWithoutFinalFocus = isCursorAnchored
+      ? popupProps.finalFocus === undefined || popupProps.finalFocus === null
+      : anchor !== undefined &&
+        anchor !== null &&
+        triggerState === null &&
+        popupProps.finalFocus === undefined,
+    passiveOpen = usePassiveOpenContext(triggerState === null);
+  passiveOpen.root?.declareFocusProps(initialFocus, popupProps.finalFocus);
+  if (warnForNestedMenu && triggerState !== null && initialFocus !== undefined) {
     warnNestedMenuInitialFocus();
   }
-  let value29 = useRefocusAfterPendingSheet(value),
-    value30 = useStableMergedRef(
-      (input2: HTMLElement | null) => {
-        value25.popupRef(input2);
-        value26(input2);
-        value29(input2);
-        value28.root?.registerPopup(input2);
+  let refocusAfterPendingSheet = useRefocusAfterPendingSheet(isConcealed),
+    popupRef = useStableMergedRef(
+      (popupElement: HTMLElement | null) => {
+        stablePlacement.popupRef(popupElement);
+        ownerRef(popupElement);
+        refocusAfterPendingSheet(popupElement);
+        passiveOpen.root?.registerPopup(popupElement);
       },
-      options,
+      forwardedRef,
     );
-  if (context && value20 !== null && value13 !== undefined) {
+  if (warnForNestedMenu && triggerState !== null && layerOffset !== undefined) {
     warnNestedMenuLayerOffset();
   }
-  let value31 = useOverlayLayer(
-    value21 ? "contextmenu" : "menu",
-    value20 === null ? value13 : undefined,
+  let overlayLayer = useOverlayLayer(
+    isCursorAnchored ? "contextmenu" : "menu",
+    triggerState === null ? layerOffset : undefined,
   );
   return (
-    <baseMenu.Portal container={(value7 ?? value19) as import("../contracts/overlays").BaseUIPortalContainer}>
+    <baseMenu.Portal container={(container ?? portalContainer) as import("../contracts/overlays").BaseUIPortalContainer}>
       <PortalRoot
-        {...value31.portalProps}
+        {...overlayLayer.portalProps}
         style={
-          value
+          isConcealed
             ? {
-                ...value31.portalProps.style,
+                ...overlayLayer.portalProps.style,
                 ...concealedPopupStyle,
               }
-            : value31.portalProps.style
+            : overlayLayer.portalProps.style
         }
         surface={elevationSurfaceNames.popover}
         companionModalCatcher={true}
         closeOnActivityHide={true}
       >
         <CollisionPaddingProvider
-          override={value23}
-          container={value7 ?? value19}
+          override={requestedCollisionPadding}
+          container={container ?? portalContainer}
           provideInherit={true}
         >
-          {(input2: CollisionPadding | undefined) => (
-            <layerBaseContext.Provider value={value31.base}>
+          {(resolvedCollisionPadding: CollisionPadding | undefined) => (
+            <layerBaseContext.Provider value={overlayLayer.base}>
               <baseMenu.Positioner
-                ref={value25.positionerRef}
-                className={value25.held?.positionerClassName}
+                ref={stablePlacement.positionerRef}
+                className={stablePlacement.held?.positionerClassName}
                 style={
-                  value25.held !== null
+                  stablePlacement.held !== null
                     ? {
-                        ...value31.style,
-                        ...value25.held.positionerStyle,
+                        ...overlayLayer.style,
+                        ...stablePlacement.held.positionerStyle,
                       }
-                    : value31.style
+                    : overlayLayer.style
                 }
-                side={value25.side}
-                align={value25.align}
-                sideOffset={value24}
-                collisionPadding={input2}
-                collisionAvoidance={value5}
+                side={stablePlacement.side}
+                align={stablePlacement.align}
+                sideOffset={resolvedSideOffset}
+                collisionPadding={resolvedCollisionPadding}
+                collisionAvoidance={collisionAvoidance}
                 anchor={memo}
               >
                 <PassiveOpenGate
-                  cell={value28.cell}
-                  nested={value20 !== null}
+                  cell={passiveOpen.cell}
+                  nested={triggerState !== null}
                 >
-                  {(input3: PassivePopupTransform) => (
+                  {(applyPassivePopupProps: PassivePopupTransform) => (
                     <MenuPopupElement
-                      anchoredWithoutFinalFocus={value27}
-                      cursorAnchored={value21}
-                      data-cds={value18}
-                      ref={value30}
-                      {...input3(value15)}
+                      anchoredWithoutFinalFocus={anchoredWithoutFinalFocus}
+                      cursorAnchored={isCursorAnchored}
+                      data-cds={dataCds}
+                      ref={popupRef}
+                      {...applyPassivePopupProps(popupProps)}
                       className={cn(
                         contextMenuPopupClasses,
-                        value25.held?.popupClassName,
-                        value8,
+                        stablePlacement.held?.popupClassName,
+                        className,
                       )}
                     >
                       <MenuScrollContent
-                        header={value10}
-                        footer={value11}
-                        maxVisibleItems={value12}
+                        header={header}
+                        footer={footer}
+                        maxVisibleItems={maxVisibleItems}
                       >
-                        {value9}
+                        {children}
                       </MenuScrollContent>
                     </MenuPopupElement>
                   )}
@@ -425,105 +425,105 @@ function MenuSubmenu({
   ...props
 }: MenuSubmenuProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactForUiMenu.useState(
+  let [value, setInternalOpen] = reactForUiMenu.useState(
       props.open ?? props.defaultOpen ?? false,
     ),
     ref = reactForUiMenu.useRef(value),
-    value3 = useOptionalEventCallback(props.onOpenChange),
-    { sheet: value4 } = useSheetState(),
-    value5 = reactForUiMenu.useContext<SheetFrameContext | null>(
+    notifyOpenChange = useOptionalEventCallback(props.onOpenChange),
+    { sheet: isSheet } = useSheetState(),
+    sheetFrame = reactForUiMenu.useContext<SheetFrameContext | null>(
       sheetFrameContext,
     ),
-    value6 = value5?.treeId,
-    ref2 = reactForUiMenu.useRef<React.ReactNode>(null),
-    callback = reactForUiMenu.useCallback((input: React.ReactNode): void => {
-      ref2.current = input;
+    sheetTreeId = sheetFrame?.treeId,
+    stashedLabelRef = reactForUiMenu.useRef<React.ReactNode>(null),
+    callback = reactForUiMenu.useCallback((label: React.ReactNode): void => {
+      stashedLabelRef.current = label;
     }, []),
-    [value7, value8] = reactForUiMenu.useState<React.ReactNode>(null),
-    callback2 = reactForUiMenu.useCallback(
+    [openedLabel, setOpenedLabel] = reactForUiMenu.useState<React.ReactNode>(null),
+    handleOpenChange = reactForUiMenu.useCallback(
       (
-        input: boolean,
-        options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+        nextOpen: boolean,
+        changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
       ): void => {
-        if (value4 && cancelNestedMenuClose(input, options, value6)) {
+        if (isSheet && cancelNestedMenuClose(nextOpen, changeDetails, sheetTreeId)) {
           return;
         }
         if (
-          value4 &&
-          !input &&
-          value5?.refusesAmbientClose(options) === true
+          isSheet &&
+          !nextOpen &&
+          sheetFrame?.refusesAmbientClose(changeDetails) === true
         ) {
-          options.cancel();
+          changeDetails.cancel();
           return;
         }
-        value3?.(input, options);
-        if (!options.isCanceled) {
-          ref.current = input;
-          value2(input);
-          if (input) {
-            value8(ref2.current);
+        notifyOpenChange?.(nextOpen, changeDetails);
+        if (!changeDetails.isCanceled) {
+          ref.current = nextOpen;
+          setInternalOpen(nextOpen);
+          if (nextOpen) {
+            setOpenedLabel(stashedLabelRef.current);
           }
         }
       },
-      [value3, value4, value5, value6],
+      [notifyOpenChange, isSheet, sheetFrame, sheetTreeId],
     ),
-    ref3 = reactForUiMenu.useRef<HTMLElement | null>(null),
-    callback3 = reactForUiMenu.useCallback(
-      (input: HTMLElement | null): void => {
-        ref3.current = input;
+    triggerRef = reactForUiMenu.useRef<HTMLElement | null>(null),
+    setTriggerNode = reactForUiMenu.useCallback(
+      (trigger: HTMLElement | null): void => {
+        triggerRef.current = trigger;
       },
       [],
     ),
-    ref4 = reactForUiMenu.useRef<PublicOverlayActions | null>(null);
-  useForwardedOverlayActions(ref4, actionsRef);
-  let callback4 = reactForUiMenu.useCallback(() => {
-      ref4.current?.close();
+    submenuActionsRef = reactForUiMenu.useRef<PublicOverlayActions | null>(null);
+  useForwardedOverlayActions(submenuActionsRef, actionsRef);
+  let closeSubmenu = reactForUiMenu.useCallback(() => {
+      submenuActionsRef.current?.close();
     }, []),
-    value9 =
+    parentOpenActions =
       reactForUiMenu.useContext<React.RefObject<OverlayActions | null> | null>(
         menuIsOpenContext,
       ),
-    value10 =
+    parentRootActions =
       reactForUiMenu.useContext<React.RefObject<OverlayActions | null> | null>(
         menuRootIdentityContext,
       ),
-    value11 = value9 ?? value10,
+    owningMenuActions = parentOpenActions ?? parentRootActions,
     memo = reactForUiMenu.useMemo(
       () => ({
-        triggerRef: ref3,
-        setTriggerNode: callback3,
+        triggerRef: triggerRef,
+        setTriggerNode: setTriggerNode,
         openRef: ref,
-        close: callback4,
+        close: closeSubmenu,
         stashLabel: callback,
       }),
-      [callback3, callback4, callback],
+      [setTriggerNode, closeSubmenu, callback],
     ),
-    value12 = props.open ?? value;
+    resolvedOpen = props.open ?? value;
   useIsomorphicLayoutEffect(() => {
-    ref.current = value12;
-    if (value12) {
-      let current = ref2.current;
-      value8((input: React.ReactNode) =>
-        input === current ? input : current,
+    ref.current = resolvedOpen;
+    if (resolvedOpen) {
+      let current = stashedLabelRef.current;
+      setOpenedLabel((previousLabel: React.ReactNode) =>
+        previousLabel === current ? previousLabel : current,
       );
     }
-  }, [value12]);
-  let memo2 = reactForUiMenu.useMemo(
+  }, [resolvedOpen]);
+  let submenuState = reactForUiMenu.useMemo(
     () => ({
-      label: value7,
-      open: value12,
+      label: openedLabel,
+      open: resolvedOpen,
     }),
-    [value7, value12],
+    [openedLabel, resolvedOpen],
   );
   return (
     <menuTriggerContext.Provider value={memo}>
-      <submenuStateContext.Provider value={memo2}>
-        <menuIsOpenContext.Provider value={value11}>
-          <menuRootIdentityContext.Provider value={ref4}>
+      <submenuStateContext.Provider value={submenuState}>
+        <menuIsOpenContext.Provider value={owningMenuActions}>
+          <menuRootIdentityContext.Provider value={submenuActionsRef}>
             <baseMenu.SubmenuRoot
               {...props}
-              actionsRef={ref4}
-              onOpenChange={callback2}
+              actionsRef={submenuActionsRef}
+              onOpenChange={handleOpenChange}
             />
           </menuRootIdentityContext.Provider>
         </menuIsOpenContext.Provider>
@@ -547,25 +547,25 @@ function MenuHeader({
 }>): React.ReactElement {
   useUiLocale();
   let value = useIsSheet(),
-    value2 =
+    isNested =
       reactForUiMenu.useContext<MenuRootState | null>(
         menuTriggerContext,
       ) !== null,
-    { label: value3 } = reactForUiMenu.useContext<MenuItemState>(
+    { label: submenuLabel } = reactForUiMenu.useContext<MenuItemState>(
       submenuStateContext,
     ),
-    value4 =
+    duplicatesTriggerLabel =
       value &&
-      value2 &&
+      isNested &&
       typeof children === "string" &&
-      typeof value3 === "string" &&
-      children.trim() === value3.trim();
+      typeof submenuLabel === "string" &&
+      children.trim() === submenuLabel.trim();
   return (
     <div
       role={"presentation"}
       className={cn(
         menuGroupLabelClasses,
-        value4 && "first:hidden",
+        duplicatesTriggerLabel && "first:hidden",
         className,
       )}
     >
@@ -588,19 +588,19 @@ function MenuGroupLabel({
     </baseMenu.GroupLabel>
   );
 }
-function isMenuItemList(input: MenuItemsContent): input is MenuItems {
-  return Array.isArray(input);
+function isMenuItemList(content: MenuItemsContent): content is MenuItems {
+  return Array.isArray(content);
 }
-function renderMenuItems(input: MenuItemsContent): React.ReactNode {
-  if (!isMenuItemList(input)) {
-    return input;
+function renderMenuItems(content: MenuItemsContent): React.ReactNode {
+  if (!isMenuItemList(content)) {
+    return content;
   }
-  return input.map((event: MenuItems[number], options: number) => {
+  return content.map((event: MenuItems[number], itemIndex: number) => {
     if (event === "separator") {
       return (() => {
         const _Element = MenuSeparator;
         const _elementProps = {};
-        const _elementKey = options;
+        const _elementKey = itemIndex;
         return <_Element key={_elementKey} {..._elementProps} />;
       })();
     }
@@ -614,8 +614,8 @@ function renderMenuItems(input: MenuItemsContent): React.ReactNode {
     }
     if (event.items) {
       return (() => {
-        const _Element2 = reactForUiMenu.Fragment;
-        const _elementProps2 = {
+        const GroupFragment = reactForUiMenu.Fragment;
+        const groupFragmentProps = {
           children: [
             event.separatorBefore && <MenuSeparator />,
             <MenuSubmenu disabled={event.disabled}>
@@ -625,13 +625,13 @@ function renderMenuItems(input: MenuItemsContent): React.ReactNode {
             </MenuSubmenu>,
           ],
         };
-        const _elementKey2 = options;
-        return <_Element2 key={_elementKey2} {..._elementProps2} />;
+        const groupKey = itemIndex;
+        return <GroupFragment key={groupKey} {...groupFragmentProps} />;
       })();
     }
     return (() => {
-      const _Element3 = reactForUiMenu.Fragment;
-      const _elementProps3 = {
+      const ItemFragment = reactForUiMenu.Fragment;
+      const itemFragmentProps = {
         children: [
           event.separatorBefore && <MenuSeparator />,
           <MenuItem
@@ -658,16 +658,16 @@ function renderMenuItems(input: MenuItemsContent): React.ReactNode {
           </MenuItem>,
         ],
       };
-      const _elementKey3 = options;
-      return <_Element3 key={_elementKey3} {..._elementProps3} />;
+      const itemKey = itemIndex;
+      return <ItemFragment key={itemKey} {...itemFragmentProps} />;
     })();
   });
 }
 function getMenuCaretSize(
-  input: Density,
-  options?: ControlSize,
+  density: Density,
+  size?: ControlSize,
 ): "sm" | "xs" {
-  if (getDensitySizeIndex(input, options) >= 4) {
+  if (getDensitySizeIndex(density, size) >= 4) {
     return "sm";
   } else {
     return "xs";
@@ -680,11 +680,11 @@ function MenuCaret({
 }): React.ReactElement {
   useUiLocale();
   let value = useDensity(),
-    value2 = useButtonGroup();
+    buttonGroup = useButtonGroup();
   return (
     <Icon
       name={"CaretDown"}
-      size={getMenuCaretSize(value, size ?? value2?.size)}
+      size={getMenuCaretSize(value, size ?? buttonGroup?.size)}
       data-cds-part={"menu-caret"}
       className={"shrink-0 opacity-60"}
     />
@@ -719,132 +719,132 @@ function MenuPopupContent({
     </ContextMenuPopupFrame>
   );
 }
-function SimpleMenu(input: MenuProps): React.ReactElement {
+function SimpleMenu(props: MenuProps): React.ReactElement {
   useUiLocale();
   let value = useSheetCapablePresentation(),
-    value2 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    value3: React.RefObject<OverlayActions | null> = useStableObjectRef(),
-    onOpenChange = input.onOpenChange,
-    { onOpenChange: value4, triggerRef: value5 } = useTrackedMenuTrigger(
+    inMenuBar = reactForUiMenu.useContext<boolean>(menuBarContext),
+    actionsRef: React.RefObject<OverlayActions | null> = useStableObjectRef(),
+    onOpenChange = props.onOpenChange,
+    { onOpenChange: handleOpenChange, triggerRef: triggerRef } = useTrackedMenuTrigger(
       (
-        input2: boolean,
-        options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+        nextOpen: boolean,
+        changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
       ) => {
-        onOpenChange?.(input2, options);
-        recordKeyboardContextMenuOpen(value3, input2, options);
+        onOpenChange?.(nextOpen, changeDetails);
+        recordKeyboardContextMenuOpen(actionsRef, nextOpen, changeDetails);
       },
-      value2,
+      inMenuBar,
     ),
-    value6 = usePortalContainer();
+    portalContainer = usePortalContainer();
   if (value) {
-    return <MenuRootProviders {...input} />;
+    return <MenuRootProviders {...props} />;
   }
-  return useDropdownMenu(input, value6, {
-    triggerRef: value5,
-    onOpenChange: value4,
-    actionsRef: value3,
-    contextMenuOnOpenChange: value4,
-    inMenuBar: value2,
+  return useDropdownMenu(props, portalContainer, {
+    triggerRef: triggerRef,
+    onOpenChange: handleOpenChange,
+    actionsRef: actionsRef,
+    contextMenuOnOpenChange: handleOpenChange,
+    inMenuBar: inMenuBar,
   });
 }
-function MenuRootProviders(input: MenuProps): React.ReactElement {
+function MenuRootProviders(props: MenuProps): React.ReactElement {
   useUiLocale();
   let {
       open: value,
-      sheetTitle: value2,
-      backLabel: value3,
-      closeLabel: value4,
-    } = input,
+      sheetTitle: sheetTitle,
+      backLabel: backLabel,
+      closeLabel: closeLabel,
+    } = props,
     memo = reactForUiMenu.useMemo(
       () => ({
-        sheetTitle: value2,
-        backLabel: value3,
-        closeLabel: value4,
+        sheetTitle: sheetTitle,
+        backLabel: backLabel,
+        closeLabel: closeLabel,
       }),
-      [value2, value3, value4],
+      [sheetTitle, backLabel, closeLabel],
     ),
-    value5 = usePortalContainer(),
-    value6 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    { onOpenChange: value7, triggerRef: value8 } = useTrackedMenuTrigger(input.onOpenChange, value6),
-    value9 = useControllableOpen({
+    portalContainer = usePortalContainer(),
+    inMenuBar = reactForUiMenu.useContext<boolean>(menuBarContext),
+    { onOpenChange: handleTrackedOpenChange, triggerRef: triggerRef } = useTrackedMenuTrigger(props.onOpenChange, inMenuBar),
+    controlledOpen = useControllableOpen({
       open: value,
-      onOpenChange: value7,
+      onOpenChange: handleTrackedOpenChange,
     }),
-    open = value9.open,
-    value10 = useAdaptiveSheet({
+    open = controlledOpen.open,
+    sheetState = useAdaptiveSheet({
       open: open,
-      onOpenChange: value9.onOpenChange,
-      closable: !(value !== undefined && input.onOpenChange === undefined),
+      onOpenChange: controlledOpen.onOpenChange,
+      closable: !(value !== undefined && props.onOpenChange === undefined),
       refuseClose: refuseInnerMenuClose,
     }),
-    value11 = useDropdownMenu(input, value5, {
-      triggerRef: value8,
-      onOpenChange: value10.onOpenChange,
-      onOpenChangeComplete: value10.onOpenChangeComplete,
-      actionsRef: value10.actionsRef,
+    dropdownMenu = useDropdownMenu(props, portalContainer, {
+      triggerRef: triggerRef,
+      onOpenChange: sheetState.onOpenChange,
+      onOpenChangeComplete: sheetState.onOpenChangeComplete,
+      actionsRef: sheetState.actionsRef,
       sheetCapable: true,
-      inMenuBar: value6,
+      inMenuBar: inMenuBar,
     });
   return (
-    <SheetContextProvider value={value10}>
+    <SheetContextProvider value={sheetState}>
       <menuSheetLabelsContext.Provider value={memo}>
-        {value11}
+        {dropdownMenu}
       </menuSheetLabelsContext.Provider>
     </SheetContextProvider>
   );
 }
 function useDropdownMenu(
-  input: MenuProps,
-  options: Element | ShadowRoot | undefined,
-  context: ContextMenuState,
+  props: MenuProps,
+  portalContainer: Element | ShadowRoot | undefined,
+  menuState: ContextMenuState,
 ): React.ReactElement {
   let {
     items: value,
-    side: value2,
-    align: value3,
-    sideOffset: value4,
-    collisionPadding: value5,
-    finalFocus: value6,
-    open: value7,
-    disabled: value8,
-    className: value9,
-    style: value10,
-    "data-cds": value11,
-  } = input;
-  if (input.trigger === "context-menu") {
-    if (value8) {
+    side: side,
+    align: align,
+    sideOffset: sideOffset,
+    collisionPadding: collisionPadding,
+    finalFocus: finalFocus,
+    open: open,
+    disabled: disabled,
+    className: className,
+    style: style,
+    "data-cds": dataCds,
+  } = props;
+  if (props.trigger === "context-menu") {
+    if (disabled) {
       return (
-        <div data-disabled={""} className={value9}>
-          {input.children}
+        <div data-disabled={""} className={className}>
+          {props.children}
         </div>
       );
     }
-    if (context.sheetCapable) {
+    if (menuState.sheetCapable) {
       return (
-        <CloseOnActivityHideProvider actionsRef={context.actionsRef}>
+        <CloseOnActivityHideProvider actionsRef={menuState.actionsRef}>
           <baseContextMenu.Root
-            open={value7}
-            onOpenChange={context.onOpenChange as import("../contracts/overlays").ContextMenuChange}
-            onOpenChangeComplete={context.onOpenChangeComplete}
-            actionsRef={context.actionsRef}
+            open={open}
+            onOpenChange={menuState.onOpenChange as import("../contracts/overlays").ContextMenuChange}
+            onOpenChangeComplete={menuState.onOpenChangeComplete}
+            actionsRef={menuState.actionsRef}
           >
             {MenuContextProviders(
               <jsxForUiMenu.Fragment>
-                {[<baseContextMenu.Trigger className={value9}>
-                    {input.children}
+                {[<baseContextMenu.Trigger className={className}>
+                    {props.children}
                   </baseContextMenu.Trigger>, <MenuPopup
-                    side={value2}
-                    align={value3}
-                    sideOffset={value4}
-                    collisionPadding={value5}
-                    finalFocus={value6}
-                    data-cds={value11 ?? "Menu"}
+                    side={side}
+                    align={align}
+                    sideOffset={sideOffset}
+                    collisionPadding={collisionPadding}
+                    finalFocus={finalFocus}
+                    data-cds={dataCds ?? "Menu"}
                   >
                     {renderMenuItems(value)}
                   </MenuPopup>]}
               </jsxForUiMenu.Fragment>,
               null,
-              context.actionsRef,
+              menuState.actionsRef,
               true,
             )}
           </baseContextMenu.Root>
@@ -852,25 +852,25 @@ function useDropdownMenu(
       );
     }
     return (
-      <CloseOnActivityHideProvider actionsRef={context.actionsRef}>
+      <CloseOnActivityHideProvider actionsRef={menuState.actionsRef}>
         <baseContextMenu.Root
-          open={value7}
-          onOpenChange={context.contextMenuOnOpenChange as import("../contracts/overlays").ContextMenuChange}
-          actionsRef={context.actionsRef}
+          open={open}
+          onOpenChange={menuState.contextMenuOnOpenChange as import("../contracts/overlays").ContextMenuChange}
+          actionsRef={menuState.actionsRef}
         >
-          {[<baseContextMenu.Trigger className={value9}>
-              {input.children}
-            </baseContextMenu.Trigger>, <baseContextMenu.Portal container={(options) as import("../contracts/overlays").BaseUIPortalContainer}>
+          {[<baseContextMenu.Trigger className={className}>
+              {props.children}
+            </baseContextMenu.Trigger>, <baseContextMenu.Portal container={(portalContainer) as import("../contracts/overlays").BaseUIPortalContainer}>
               <menuRootIdentityContext.Provider
-                value={context.actionsRef}
+                value={menuState.actionsRef}
               >
                 <MenuPopupContent
-                  side={value2}
-                  align={value3}
-                  sideOffset={value4}
-                  collisionPadding={value5}
-                  finalFocus={value6}
-                  dataCds={value11}
+                  side={side}
+                  align={align}
+                  sideOffset={sideOffset}
+                  collisionPadding={collisionPadding}
+                  finalFocus={finalFocus}
+                  dataCds={dataCds}
                   items={value}
                 />
               </menuRootIdentityContext.Provider>
@@ -879,102 +879,102 @@ function useDropdownMenu(
       </CloseOnActivityHideProvider>
     );
   }
-  let value12: React.ReactNode;
-  if (input.renderTrigger !== undefined) {
-    value12 = (
+  let trigger: React.ReactNode;
+  if (props.renderTrigger !== undefined) {
+    trigger = (
       <baseMenu.Trigger
-        disabled={value8}
-        className={value9}
-        style={value10}
-        render={input.renderTrigger}
+        disabled={disabled}
+        className={className}
+        style={style}
+        render={props.renderTrigger}
       />
     );
-  } else if (input.iconOnly) {
-    let value13 =
-        input.tooltip === false
+  } else if (props.iconOnly) {
+    let tooltipText =
+        props.tooltip === false
           ? undefined
-          : typeof input.tooltip === "string"
-            ? input.tooltip
-            : input["aria-label"],
-      value14 = (
+          : typeof props.tooltip === "string"
+            ? props.tooltip
+            : props["aria-label"],
+      iconTrigger = (
         <baseMenu.Trigger
-          disabled={value8}
+          disabled={disabled}
           render={
             <Button
-              variant={input.variant}
-              size={input.size}
+              variant={props.variant}
+              size={props.size}
               iconOnly={true}
-              icon={input.icon || "DotsVertical"}
-              aria-label={input["aria-label"]}
-              pressed={input.pressed}
+              icon={props.icon || "DotsVertical"}
+              aria-label={props["aria-label"]}
+              pressed={props.pressed}
               tooltip={false}
-              className={value9}
-              style={value10}
+              className={className}
+              style={style}
             />
           }
         />
       ),
-      value15 = value13 ? (
-        <Tooltip content={value13}>{value14}</Tooltip>
+      triggerWithTooltip = tooltipText ? (
+        <Tooltip content={tooltipText}>{iconTrigger}</Tooltip>
       ) : (
-        value14
+        iconTrigger
       );
-    value12 =
-      input.disabledReason !== undefined ? (
+    trigger =
+      props.disabledReason !== undefined ? (
         <DisabledReasonTooltip
-          side={input.disabledReasonSide}
-          reason={value8 ? input.disabledReason : undefined}
+          side={props.disabledReasonSide}
+          reason={disabled ? props.disabledReason : undefined}
         >
-          {value15}
+          {triggerWithTooltip}
         </DisabledReasonTooltip>
       ) : (
-        value15
+        triggerWithTooltip
       );
   } else {
-    value12 = (
+    trigger = (
       <baseMenu.Trigger
-        disabled={value8}
+        disabled={disabled}
         render={
           <Button
-            variant={input.variant}
-            size={input.size}
-            icon={input.icon}
-            iconPosition={input.iconPosition}
-            aria-label={input["aria-label"]}
-            className={value9}
-            style={value10}
+            variant={props.variant}
+            size={props.size}
+            icon={props.icon}
+            iconPosition={props.iconPosition}
+            aria-label={props["aria-label"]}
+            className={className}
+            style={style}
           >
-            {[input.label, <MenuCaret size={input.size} />]}
+            {[props.label, <MenuCaret size={props.size} />]}
           </Button>
         }
       />
     );
   }
   return (
-    <MenuOpenerProvider value={context.triggerRef}>
-      <CloseOnActivityHideProvider actionsRef={context.actionsRef}>
+    <MenuOpenerProvider value={menuState.triggerRef}>
+      <CloseOnActivityHideProvider actionsRef={menuState.actionsRef}>
         <baseMenu.Root<void>
-          open={value7}
-          onOpenChange={context.onOpenChange as import("../contracts/overlays").ContextMenuChange}
-          onOpenChangeComplete={context.onOpenChangeComplete}
-          actionsRef={context.actionsRef}
-          modal={context.inMenuBar ? undefined : true}
+          open={open}
+          onOpenChange={menuState.onOpenChange as import("../contracts/overlays").ContextMenuChange}
+          onOpenChangeComplete={menuState.onOpenChangeComplete}
+          actionsRef={menuState.actionsRef}
+          modal={menuState.inMenuBar ? undefined : true}
         >
           {MenuContextProviders(
             <jsxForUiMenu.Fragment>
-              {[value12, <MenuPopup
-                  side={value2}
-                  align={value3}
-                  sideOffset={value4}
-                  collisionPadding={value5}
-                  finalFocus={value6}
-                  data-cds={value11}
+              {[trigger, <MenuPopup
+                  side={side}
+                  align={align}
+                  sideOffset={sideOffset}
+                  collisionPadding={collisionPadding}
+                  finalFocus={finalFocus}
+                  data-cds={dataCds}
                 >
                   {renderMenuItems(value)}
                 </MenuPopup>]}
             </jsxForUiMenu.Fragment>,
             null,
-            context.actionsRef,
+            menuState.actionsRef,
           )}
         </baseMenu.Root>
       </CloseOnActivityHideProvider>
@@ -982,106 +982,106 @@ function useDropdownMenu(
   );
 }
 function refuseInnerMenuClose(
-  input: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
-  options?: string,
+  changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+  sheetTreeId?: string,
 ): boolean {
-  return shouldRefuseNestedMenuClose(false, input, options);
+  return shouldRefuseNestedMenuClose(false, changeDetails, sheetTreeId);
 }
-function MenuRoot(input: MenuRootProps): React.ReactElement {
+function MenuRoot(props: MenuRootProps): React.ReactElement {
   useUiLocale();
   let {
       children: value,
-      sheetTitle: value2,
-      backLabel: value3,
-      closeLabel: value4,
-      ...value5
-    } = input,
-    value6 = useSheetCapablePresentation(),
-    value7 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    { onOpenChange: value8, triggerRef: value9 } = useTrackedMenuTrigger(value5.onOpenChange, value7),
-    value10 = usePassiveOpenState(value8, value5.open, !value7),
-    value11: React.RefObject<OverlayActions | null> = useStableObjectRef();
-  useForwardedOverlayActions(value11, value5.actionsRef);
-  if (value6) {
+      sheetTitle: sheetTitle,
+      backLabel: backLabel,
+      closeLabel: closeLabel,
+      ...rootProps
+    } = props,
+    canShowSheet = useSheetCapablePresentation(),
+    inMenuBar = reactForUiMenu.useContext<boolean>(menuBarContext),
+    { onOpenChange: handleTrackedOpenChange, triggerRef: triggerRef } = useTrackedMenuTrigger(rootProps.onOpenChange, inMenuBar),
+    passiveOpen = usePassiveOpenState(handleTrackedOpenChange, rootProps.open, !inMenuBar),
+    actionsRef: React.RefObject<OverlayActions | null> = useStableObjectRef();
+  useForwardedOverlayActions(actionsRef, rootProps.actionsRef);
+  if (canShowSheet) {
     return (
-      <CloseOnActivityHideProvider actionsRef={value11}>
-        <ControlledMenuRoot {...input} actionsRef={value11} />
+      <CloseOnActivityHideProvider actionsRef={actionsRef}>
+        <ControlledMenuRoot {...props} actionsRef={actionsRef} />
       </CloseOnActivityHideProvider>
     );
   }
   return (
-    <MenuOpenerProvider value={value9}>
-      <CloseOnActivityHideProvider actionsRef={value11}>
+    <MenuOpenerProvider value={triggerRef}>
+      <CloseOnActivityHideProvider actionsRef={actionsRef}>
         <baseMenu.Root<void>
-          {...value5}
-          modal={value7 ? undefined : value5.modal}
-          actionsRef={value11}
-          onOpenChange={value10.onOpenChange}
+          {...rootProps}
+          modal={inMenuBar ? undefined : rootProps.modal}
+          actionsRef={actionsRef}
+          onOpenChange={passiveOpen.onOpenChange}
         >
-          {typeof value === "function" ? ((input2: {payload:void}) =>
-                MenuContextProviders(value(input2), value10.cell, value11)) : (MenuContextProviders(value, value10.cell, value11))}
+          {typeof value === "function" ? ((renderProps: {payload:void}) =>
+                MenuContextProviders(value(renderProps), passiveOpen.cell, actionsRef)) : (MenuContextProviders(value, passiveOpen.cell, actionsRef))}
         </baseMenu.Root>
       </CloseOnActivityHideProvider>
     </MenuOpenerProvider>
   );
 }
-function ControlledMenuRoot(input: MenuRootProps): React.ReactElement {
+function ControlledMenuRoot(props: MenuRootProps): React.ReactElement {
   useUiLocale();
   let {
       children: value,
-      sheetTitle: value2,
-      backLabel: value3,
-      closeLabel: value4,
-      ...value5
-    } = input,
+      sheetTitle: sheetTitle,
+      backLabel: backLabel,
+      closeLabel: closeLabel,
+      ...rootProps
+    } = props,
     memo = reactForUiMenu.useMemo(
       () => ({
-        sheetTitle: value2,
-        backLabel: value3,
-        closeLabel: value4,
+        sheetTitle: sheetTitle,
+        backLabel: backLabel,
+        closeLabel: closeLabel,
       }),
-      [value2, value3, value4],
+      [sheetTitle, backLabel, closeLabel],
     ),
-    value6 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    { onOpenChange: value7, triggerRef: value8 } = useTrackedMenuTrigger(input.onOpenChange, value6),
-    value9 = usePassiveOpenState(value7, input.open, !value6),
-    value10 = useControllableOpen({
-      ...input,
-      onOpenChange: value9.onOpenChange,
+    inMenuBar = reactForUiMenu.useContext<boolean>(menuBarContext),
+    { onOpenChange: handleTrackedOpenChange, triggerRef: triggerRef } = useTrackedMenuTrigger(props.onOpenChange, inMenuBar),
+    passiveOpen = usePassiveOpenState(handleTrackedOpenChange, props.open, !inMenuBar),
+    controlledOpen = useControllableOpen({
+      ...props,
+      onOpenChange: passiveOpen.onOpenChange,
     }),
-    value11 = useValueCapturedOnOpen(
-      value10.open,
-      () => value9.cell.getLevel() === "declared",
+    structurallyAnchored = useValueCapturedOnOpen(
+      controlledOpen.open,
+      () => passiveOpen.cell.getLevel() === "declared",
       false,
     ),
-    value12 = useAdaptiveSheet({
-      open: value10.open,
-      actionsRef: input.actionsRef,
-      onOpenChange: value10.onOpenChange,
-      onOpenChangeComplete: input.onOpenChangeComplete,
-      structurallyAnchored: value11,
+    sheetState = useAdaptiveSheet({
+      open: controlledOpen.open,
+      actionsRef: props.actionsRef,
+      onOpenChange: controlledOpen.onOpenChange,
+      onOpenChangeComplete: props.onOpenChangeComplete,
+      structurallyAnchored: structurallyAnchored,
       closable: !(
-        input.open !== undefined && input.onOpenChange === undefined
+        props.open !== undefined && props.onOpenChange === undefined
       ),
       refuseClose: refuseInnerMenuClose,
     });
   return (
-    <MenuOpenerProvider value={value8}>
-      <SheetContextProvider value={value12}>
+    <MenuOpenerProvider value={triggerRef}>
+      <SheetContextProvider value={sheetState}>
         <menuSheetLabelsContext.Provider value={memo}>
           <baseMenu.Root<void>
-            {...value5}
-            modal={value6 ? undefined : (value12.modal ?? value5.modal)}
-            actionsRef={value12.actionsRef}
-            onOpenChange={value12.onOpenChange}
-            onOpenChangeComplete={value12.onOpenChangeComplete}
+            {...rootProps}
+            modal={inMenuBar ? undefined : (sheetState.modal ?? rootProps.modal)}
+            actionsRef={sheetState.actionsRef}
+            onOpenChange={sheetState.onOpenChange}
+            onOpenChangeComplete={sheetState.onOpenChangeComplete}
           >
-            {typeof value === "function" ? ((input2: {payload:void}) =>
+            {typeof value === "function" ? ((renderProps: {payload:void}) =>
                   MenuContextProviders(
-                    value(input2),
-                    value9.cell,
-                    value12.actionsRef,
-                  )) : (MenuContextProviders(value, value9.cell, value12.actionsRef))}
+                    value(renderProps),
+                    passiveOpen.cell,
+                    sheetState.actionsRef,
+                  )) : (MenuContextProviders(value, passiveOpen.cell, sheetState.actionsRef))}
           </baseMenu.Root>
         </menuSheetLabelsContext.Provider>
       </SheetContextProvider>
@@ -1092,16 +1092,16 @@ function ResetQueryOnUnmount({ reset: reset }: { reset: () => void }): null {
   reactForUiMenu.useEffect(() => () => reset(), [reset]);
   return null;
 }
-function isMenuSearchEditingKey(input: SearchKeyEvent): boolean {
-  let value = input.getModifierState("AltGraph");
+function isMenuSearchEditingKey(keyEvent: SearchKeyEvent): boolean {
+  let value = keyEvent.getModifierState("AltGraph");
   return (
-    ((input.key.length === 1 && input.key !== " ") ||
-      input.key === "Backspace" ||
-      (input.key === "Delete" && !input.shiftKey)) &&
-    (!input.ctrlKey || value) &&
-    !input.metaKey &&
-    (!input.altKey || value) &&
-    input.keyCode !== 229
+    ((keyEvent.key.length === 1 && keyEvent.key !== " ") ||
+      keyEvent.key === "Backspace" ||
+      (keyEvent.key === "Delete" && !keyEvent.shiftKey)) &&
+    (!keyEvent.ctrlKey || value) &&
+    !keyEvent.metaKey &&
+    (!keyEvent.altKey || value) &&
+    keyEvent.keyCode !== 229
   );
 }
 function MenuSearchTriggerKeyboardBridge({
@@ -1115,8 +1115,8 @@ function MenuSearchTriggerKeyboardBridge({
     menuTriggerContext,
   )?.triggerRef;
   reactForUiMenu.useEffect(() => {
-    let value2 = value?.current;
-    if (!value2) {
+    let triggerElement = value?.current;
+    if (!triggerElement) {
       return;
     }
     let callback = (event: KeyboardEvent): void => {
@@ -1130,8 +1130,8 @@ function MenuSearchTriggerKeyboardBridge({
       });
       applyKey(event.key);
     };
-    value2.addEventListener("keydown", callback, true);
-    return () => value2.removeEventListener("keydown", callback, true);
+    triggerElement.addEventListener("keydown", callback, true);
+    return () => triggerElement.removeEventListener("keydown", callback, true);
   }, [value, inputRef, applyKey]);
   return null;
 }
@@ -1144,27 +1144,27 @@ function MenuSearchTriggerFocusBridge({
     menuTriggerContext,
   );
   reactForUiMenu.useEffect(() => {
-    let value2 = value?.triggerRef.current;
-    if (!value || !value2) {
+    let triggerElement = value?.triggerRef.current;
+    if (!value || !triggerElement) {
       return;
     }
-    let { openRef: value3 } = value,
-      callback = (input: FocusEvent): void => {
+    let { openRef: openRef } = value,
+      callback = (focusEvent: FocusEvent): void => {
         let current = inputRef.current,
-          value4 = asElement(input.relatedTarget);
+          relatedElement = asElement(focusEvent.relatedTarget);
         if (
           current &&
-          value4 &&
-          value3.current &&
-          current.closest('[role="menu"]')?.contains(value4)
+          relatedElement &&
+          openRef.current &&
+          current.closest('[role="menu"]')?.contains(relatedElement)
         ) {
           current.focus({
             preventScroll: true,
           });
         }
       };
-    value2.addEventListener("focus", callback);
-    return () => value2.removeEventListener("focus", callback);
+    triggerElement.addEventListener("focus", callback);
+    return () => triggerElement.removeEventListener("focus", callback);
   }, [value, inputRef]);
   reactForUiMenu.useEffect(() => {
     let callback = (): void => {
@@ -1183,16 +1183,16 @@ function MenuSearchTriggerFocusBridge({
     };
     callback();
     let index = 0,
-      index2 = 0,
-      callback2 = () => {
+      retryFocusFrame = 0,
+      retryFocus = () => {
         callback();
         index += 1;
         if (index < 2) {
-          index2 = requestAnimationFrame(callback2);
+          retryFocusFrame = requestAnimationFrame(retryFocus);
         }
       };
-    index2 = requestAnimationFrame(callback2);
-    return () => cancelAnimationFrame(index2);
+    retryFocusFrame = requestAnimationFrame(retryFocus);
+    return () => cancelAnimationFrame(retryFocusFrame);
   }, [inputRef]);
   return null;
 }
@@ -1210,71 +1210,71 @@ function MenuSearchablePopup({
   ...props
 }: MenuSearchProps): React.ReactElement {
   useUiLocale();
-  let [value, value2] = reactForUiMenu.useState(""),
-    value3 = query ?? value,
-    value4: (input: string) => void = useEventCallback(
-      (input: string) => {
-        value2(input);
-        onQueryChange?.(input);
+  let [value, setInternalQuery] = reactForUiMenu.useState(""),
+    resolvedQuery = query ?? value,
+    updateQuery: (input: string) => void = useEventCallback(
+      (nextQuery: string) => {
+        setInternalQuery(nextQuery);
+        onQueryChange?.(nextQuery);
       },
     ),
-    value5 = useEventCallback(() => {
-      if (value3 !== "") {
-        value4("");
+    resetQuery = useEventCallback(() => {
+      if (resolvedQuery !== "") {
+        updateQuery("");
       }
     }),
     ref = reactForUiMenu.useRef(false);
   reactForUiMenu.useEffect(() => {
     return;
   }, [query, onQueryChange]);
-  let value6 = useIsSheet(),
-    value7 = useMediaQuery__U(
+  let isSheet = useIsSheet(),
+    usesCoarsePointer = useMediaQuery__U(
       useRootWindow(),
       COARSE_POINTER_QUERY_rG,
     ),
-    value8 = !value6 && !value7,
-    value9 =
+    useDesktopSearch = !isSheet && !usesCoarsePointer,
+    parentOpenActions =
       reactForUiMenu.useContext<React.RefObject<OverlayActions | null> | null>(
         menuIsOpenContext,
       ),
-    value10 =
+    menuRootActions =
       reactForUiMenu.useContext<React.RefObject<OverlayActions | null> | null>(
         menuRootIdentityContext,
       ),
-    value11 = value9 ?? value10,
-    ref2 = reactForUiMenu.useRef<HTMLDivElement | null>(null),
-    ref3 = reactForUiMenu.useRef<HTMLInputElement | null>(null),
-    ref4 = reactForUiMenu.useRef<(() => void) | null>(null);
-  reactForUiMenu.useEffect(() => () => ref4.current?.(), []);
-  let callback = reactForUiMenu.useCallback((input: string) => {
-      let current = ref3.current;
+    owningMenuActions = parentOpenActions ?? menuRootActions,
+    accessoryRef = reactForUiMenu.useRef<HTMLDivElement | null>(null),
+    searchInputRef = reactForUiMenu.useRef<HTMLInputElement | null>(null),
+    removeMouseMoveListenerRef = reactForUiMenu.useRef<(() => void) | null>(null);
+  reactForUiMenu.useEffect(() => () => removeMouseMoveListenerRef.current?.(), []);
+  let callback = reactForUiMenu.useCallback((key: string) => {
+      let current = searchInputRef.current;
       if (!current) {
         return;
       }
-      let { value: value12 } = current,
-        value13 = current.selectionStart ?? value12.length,
-        value14 = current.selectionEnd ?? value12.length,
-        value15 = input === "Backspace" || input === "Delete",
-        value16 = value15 ? "" : input;
-      if (value15 && value13 === value14) {
-        if (input === "Backspace") {
-          let value19 = (value12.codePointAt(value13 - 2) ?? 0) > 65535;
-          value13 = Math.max(0, value13 - (value19 ? 2 : 1));
+      let { value: previousText } = current,
+        selectionStart = current.selectionStart ?? previousText.length,
+        selectionEnd = current.selectionEnd ?? previousText.length,
+        isDeletion = key === "Backspace" || key === "Delete",
+        insertedText = isDeletion ? "" : key;
+      if (isDeletion && selectionStart === selectionEnd) {
+        if (key === "Backspace") {
+          let hasLeadingSurrogatePair = (previousText.codePointAt(selectionStart - 2) ?? 0) > 65535;
+          selectionStart = Math.max(0, selectionStart - (hasLeadingSurrogatePair ? 2 : 1));
         } else {
-          let value19 = (value12.codePointAt(value14) ?? 0) > 65535;
-          value14 = Math.min(value12.length, value14 + (value19 ? 2 : 1));
+          let hasTrailingSurrogatePair = (previousText.codePointAt(selectionEnd) ?? 0) > 65535;
+          selectionEnd = Math.min(previousText.length, selectionEnd + (hasTrailingSurrogatePair ? 2 : 1));
         }
       }
-      let value17 =
-          value12.slice(0, value13) + value16 + value12.slice(value14),
-        value18 = current.ownerDocument.defaultView ?? window;
+      let nextText =
+          previousText.slice(0, selectionStart) + insertedText + previousText.slice(selectionEnd),
+        ownerWindow = current.ownerDocument.defaultView ?? window;
       Object.getOwnPropertyDescriptor(
-        value18.HTMLInputElement.prototype,
+        ownerWindow.HTMLInputElement.prototype,
         "value",
-      )?.set?.call(current, value17);
+      )?.set?.call(current, nextText);
       current.setSelectionRange(
-        value13 + value16.length,
-        value13 + value16.length,
+        selectionStart + insertedText.length,
+        selectionStart + insertedText.length,
       );
       current.dispatchEvent(
         new Event("input", {
@@ -1282,17 +1282,17 @@ function MenuSearchablePopup({
         }),
       );
     }, []),
-    callback2 = () => {
-      let current = ref2.current,
-        value12 =
+    focusAccessory = () => {
+      let current = accessoryRef.current,
+        focusableAccessory =
           current?.querySelector<HTMLElement>('[tabindex="0"]') ??
           current?.querySelector<HTMLElement>(
             'input, button, [role="radio"]',
           );
-      if (!value12) {
+      if (!focusableAccessory) {
         return false;
       }
-      value12.focus();
+      focusableAccessory.focus();
       return true;
     };
   return (
@@ -1300,7 +1300,7 @@ function MenuSearchablePopup({
       {...props}
       stableWhileOpen={stableWhileOpen}
       onKeyDown={(event: MenuPopupKeyboardEvent) => {
-        let current = ref3.current;
+        let current = searchInputRef.current;
         if (
           !current ||
           (event.target as HTMLElement).closest?.(
@@ -1325,55 +1325,55 @@ function MenuSearchablePopup({
         let currentTarget = event.currentTarget,
           ownerDocument = currentTarget.ownerDocument;
         if (
-          !value8 ||
+          !useDesktopSearch ||
           event.target !== currentTarget ||
           ownerDocument.activeElement !== currentTarget
         ) {
           return;
         }
-        let value12 = asElement(event.relatedTarget);
+        let relatedElement = asElement(event.relatedTarget);
         if (
           !(
-            value12?.hasAttribute("data-popup-open") &&
-            currentTarget.contains(value12)
+            relatedElement?.hasAttribute("data-popup-open") &&
+            currentTarget.contains(relatedElement)
           )
         ) {
-          ref3.current?.focus({
+          searchInputRef.current?.focus({
             preventScroll: true,
           });
           return;
         }
-        ref4.current?.();
-        let callback3 = (event2: MouseEvent) => {
-          let value13 = asElement(event2.target),
-            value14 = value13?.closest('[role="menu"]'),
+        removeMouseMoveListenerRef.current?.();
+        let handleMouseMove = (mouseEvent: MouseEvent) => {
+          let hoveredElement = asElement(mouseEvent.target),
+            hoveredMenu = hoveredElement?.closest('[role="menu"]'),
             bounds = currentTarget.getBoundingClientRect(),
-            value15 =
-              event2.clientX >= bounds.left &&
-              event2.clientX < bounds.right &&
-              event2.clientY >= bounds.top &&
-              event2.clientY < bounds.bottom;
-          if (!value14 && value15) {
+            isInsidePopup =
+              mouseEvent.clientX >= bounds.left &&
+              mouseEvent.clientX < bounds.right &&
+              mouseEvent.clientY >= bounds.top &&
+              mouseEvent.clientY < bounds.bottom;
+          if (!hoveredMenu && isInsidePopup) {
             return;
           }
-          ref4.current?.();
+          removeMouseMoveListenerRef.current?.();
           if (
             !(
-              value14 &&
-              (value14 !== currentTarget ||
-                value13?.closest('[role^="menuitem"]'))
+              hoveredMenu &&
+              (hoveredMenu !== currentTarget ||
+                hoveredElement?.closest('[role^="menuitem"]'))
             ) &&
             ownerDocument.activeElement === currentTarget
           ) {
-            ref3.current?.focus({
+            searchInputRef.current?.focus({
               preventScroll: true,
             });
           }
         };
-        ownerDocument.addEventListener("mousemove", callback3);
-        ref4.current = () => {
-          ownerDocument.removeEventListener("mousemove", callback3);
-          ref4.current = null;
+        ownerDocument.addEventListener("mousemove", handleMouseMove);
+        removeMouseMoveListenerRef.current = () => {
+          ownerDocument.removeEventListener("mousemove", handleMouseMove);
+          removeMouseMoveListenerRef.current = null;
         };
       }}
       onMouseDown={(event: React.MouseEvent<HTMLElement>) => {
@@ -1401,7 +1401,7 @@ function MenuSearchablePopup({
         <jsxForUiMenu.Fragment>
           {[beforeSearch !== undefined && (
               <div
-                ref={ref2}
+                ref={accessoryRef}
                 role={"presentation"}
                 className={"px-sm pt-sm"}
                 onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1411,17 +1411,17 @@ function MenuSearchablePopup({
                   event.stopPropagation();
                   if (event.key === "Tab") {
                     event.preventDefault();
-                    ref3.current?.focus();
+                    searchInputRef.current?.focus();
                   }
                 }}
               >
                 {beforeSearch}
               </div>
             ), <TextInput
-              ref={ref3}
-              value={value3}
+              ref={searchInputRef}
+              value={resolvedQuery}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                value4(event.target.value)
+                updateQuery(event.target.value)
               }
               onCompositionEnd={(
                 event: React.CompositionEvent<HTMLInputElement>,
@@ -1435,17 +1435,17 @@ function MenuSearchablePopup({
                   return;
                 }
                 if (event.key === "Enter") {
-                  let value12 = value3.trim();
+                  let submittedQuery = resolvedQuery.trim();
                   if (
                     onSubmitQuery !== undefined &&
-                    value12 !== "" &&
+                    submittedQuery !== "" &&
                     !event.repeat &&
                     !event.shiftKey &&
                     !event.altKey
                   ) {
-                    let callback3 = () => {
-                      onSubmitQuery(value12);
-                      value11?.current?.close?.();
+                    let submitAndClose = () => {
+                      onSubmitQuery(submittedQuery);
+                      owningMenuActions?.current?.close?.();
                     };
                     if (
                       shouldSuppressCompositionEnter(
@@ -1455,34 +1455,34 @@ function MenuSearchablePopup({
                       suppressFollowupCompositionLineBreak(
                         event.nativeEvent,
                         event.currentTarget,
-                        callback3,
+                        submitAndClose,
                       );
                     } else {
                       event.preventDefault();
-                      callback3();
+                      submitAndClose();
                     }
                   }
                   event.stopPropagation();
                   return;
                 }
                 if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-                  let value12 = event.currentTarget
+                  let enabledItems = event.currentTarget
                       .closest('[role="menu"]')
                       ?.querySelectorAll<HTMLElement>(
                         '[role^="menuitem"]:not([aria-disabled="true"])',
                       ),
-                    value13 =
+                    nextItem =
                       event.key === "ArrowDown"
-                        ? value12?.[0]
-                        : value12?.[value12.length - 1];
-                  if (value13 !== undefined) {
+                        ? enabledItems?.[0]
+                        : enabledItems?.[enabledItems.length - 1];
+                  if (nextItem !== undefined) {
                     event.preventDefault();
                     event.stopPropagation();
-                    value13.focus();
+                    nextItem.focus();
                   }
                   return;
                 }
-                if (event.key === "Tab" && !event.shiftKey && callback2()) {
+                if (event.key === "Tab" && !event.shiftKey && focusAccessory()) {
                   event.preventDefault();
                   event.stopPropagation();
                   return;
@@ -1496,8 +1496,8 @@ function MenuSearchablePopup({
               aria-label={searchLabel}
               autoComplete={"off"}
               data-1p-ignore={true}
-              autoFocus={value8}
-              tabIndex={value8 ? undefined : -1}
+              autoFocus={useDesktopSearch}
+              tabIndex={useDesktopSearch ? undefined : -1}
               className={
                 "!border-transparent !bg-transparent !shadow-none compact:!pl-2 comfortable:!pl-2.5"
               }
@@ -1507,21 +1507,21 @@ function MenuSearchablePopup({
         </jsxForUiMenu.Fragment>
       }
     >
-      {[resetQueryOnClose && <ResetQueryOnUnmount reset={value5} />, value8 && <MenuSearchTriggerFocusBridge inputRef={ref3} />, <MenuSearchTriggerKeyboardBridge
-          inputRef={ref3}
+      {[resetQueryOnClose && <ResetQueryOnUnmount reset={resetQuery} />, useDesktopSearch && <MenuSearchTriggerFocusBridge inputRef={searchInputRef} />, <MenuSearchTriggerKeyboardBridge
+          inputRef={searchInputRef}
           applyKey={callback}
-        />, children(value3.trim().toLowerCase(), value3.trim())]}
+        />, children(resolvedQuery.trim().toLowerCase(), resolvedQuery.trim())]}
     </MenuPopup>
   );
 }
 function useFocusMenuAfterPending(
-  input: React.RefObject<HTMLElement | null>,
-  options: boolean,
+  listRef: React.RefObject<HTMLElement | null>,
+  isPending: boolean,
 ): void {
-  let ref = reactForUiMenu.useRef(options);
+  let ref = reactForUiMenu.useRef(isPending);
   useIsomorphicLayoutEffect(() => {
-    let value = input.current?.closest<HTMLElement>('[role="menu"]');
-    if (!options || ref.current || !value?.hasAttribute("data-open")) {
+    let value = listRef.current?.closest<HTMLElement>('[role="menu"]');
+    if (!isPending || ref.current || !value?.hasAttribute("data-open")) {
       return;
     }
     let activeElement = value.ownerDocument.activeElement;
@@ -1533,15 +1533,15 @@ function useFocusMenuAfterPending(
         preventScroll: true,
       });
     }
-  }, [input, options]);
+  }, [listRef, isPending]);
   reactForUiMenu.useEffect(() => {
-    let value = ref.current && !options;
-    ref.current = options;
-    let current = input.current;
+    let value = ref.current && !isPending;
+    ref.current = isPending;
+    let current = listRef.current;
     if (!value || !current) {
       return;
     }
-    let value2 = requestAnimationFrame(() => {
+    let focusFrame = requestAnimationFrame(() => {
       let element = current.querySelector<HTMLElement>(
           HIGHLIGHTED_MENU_ITEM_SELECTOR,
         ),
@@ -1556,8 +1556,8 @@ function useFocusMenuAfterPending(
         });
       }
     });
-    return () => cancelAnimationFrame(value2);
-  }, [input, options]);
+    return () => cancelAnimationFrame(focusFrame);
+  }, [listRef, isPending]);
 }
 function MenuPendingList({
   pending = false,
@@ -1568,14 +1568,14 @@ function MenuPendingList({
 }: MenuPendingProps): React.ReactElement {
   useUiLocale();
   let ref = reactForUiMenu.useRef<HTMLDivElement | null>(null),
-    ref2 = reactForUiMenu.useRef(emptyMenuSize);
+    lastMeasuredSizeRef = reactForUiMenu.useRef(emptyMenuSize);
   reactForUiMenu.useEffect(() => {
     let current = ref.current;
     if (!current || typeof ResizeObserver === "undefined") {
       return;
     }
     let observer = new ResizeObserver(() => {
-      ref2.current = {
+      lastMeasuredSizeRef.current = {
         width: current.offsetWidth,
         height: current.offsetHeight,
       };
@@ -1584,44 +1584,44 @@ function MenuPendingList({
     return () => observer.disconnect();
   }, []);
   let value = pending || loading,
-    [value2, value3] = reactForUiMenu.useState(emptyMenuSize);
+    [reservedSize, setReservedSize] = reactForUiMenu.useState(emptyMenuSize);
   useIsomorphicLayoutEffect(() => {
     let current = ref.current;
     if (!value || !current) {
-      value3(emptyMenuSize);
+      setReservedSize(emptyMenuSize);
       return;
     }
-    value3(
-      loading && ref2.current.height > 0
-        ? ref2.current
+    setReservedSize(
+      loading && lastMeasuredSizeRef.current.height > 0
+        ? lastMeasuredSizeRef.current
         : {
             width: current.offsetWidth,
             height: current.offsetHeight,
           },
     );
   }, [value, loading]);
-  let value4 = value && value2.height > 0;
+  let shouldReserveSize = value && reservedSize.height > 0;
   useFocusMenuAfterPending(ref, loading);
   return (
     <div
       ref={ref}
       aria-busy={value || undefined}
       style={
-        value4
+        shouldReserveSize
           ? {
-              minWidth: value2.width,
-              height: value2.height,
+              minWidth: reservedSize.width,
+              height: reservedSize.height,
             }
           : undefined
       }
-      className={value4 ? "overflow-hidden" : undefined}
+      className={shouldReserveSize ? "overflow-hidden" : undefined}
     >
       {loading ? (<SkeletonGroup>
           <SkeletonPrimitive.Rows
             icon={icon}
             rows={
-              value4
-                ? Math.ceil(value2.height / MENU_PLACEHOLDER_MINIMUM_WIDTH)
+              shouldReserveSize
+                ? Math.ceil(reservedSize.height / MENU_PLACEHOLDER_MINIMUM_WIDTH)
                 : placeholderRows
             }
           />
@@ -1719,7 +1719,7 @@ export function installUiMenu(): () => void {
           "data-cds": dataCds = "Menu",
           ...props
         }: MenuPopupProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let state = {
             align: align,
@@ -1728,42 +1728,42 @@ export function installUiMenu(): () => void {
             ...props,
           },
           value = useHasSheetFrame(),
-          value2 = useMenuPopupElement(state, options, !value, false);
+          popup = useMenuPopupElement(state, forwardedRef, !value, false);
         if (value) {
-          return <MenuSheetCapablePopup {...state} ref={options} />;
+          return <MenuSheetCapablePopup {...state} ref={forwardedRef} />;
         }
-        return value2;
+        return popup;
       },
     );
     MenuPopup.displayName = "Menu.Popup";
     MenuSheetCapablePopup = reactForUiMenu.forwardRef(
       (
-        input: MenuPopupProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        props: MenuPopupProps,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let value = useSheetImplementation(),
-          { pending: value2 } = useSheetState(),
-          value3 = reactForUiMenu.useContext<MenuRootState | null>(
+          { pending: isPending } = useSheetState(),
+          triggerState = reactForUiMenu.useContext<MenuRootState | null>(
             menuTriggerContext,
           ),
-          value4: import("../contracts/overlays").OverlayKind =
+          overlayKind: import("../contracts/overlays").OverlayKind =
             reactForUiMenu.useContext<boolean>(contextMenuContext) &&
-            value3 === null
+            triggerState === null
               ? "contextmenu"
               : "menu",
-          value5 = useMenuPopupElement(
-            input,
-            options,
+          fallbackPopup = useMenuPopupElement(
+            props,
+            forwardedRef,
             value === null,
-            value === null && value2,
+            value === null && isPending,
           );
         if (value !== null) {
-          return <value.MenuSheetPopup {...input} ref={options} />;
+          return <value.MenuSheetPopup {...props} ref={forwardedRef} />;
         }
         return (
           <jsxForUiMenu.Fragment>
-            {[value5, value2 && value3 === null ? (
-                <PendingSheetBackdrop kind={value4} />
+            {[fallbackPopup, isPending && triggerState === null ? (
+                <PendingSheetBackdrop kind={overlayKind} />
               ) : null]}
           </jsxForUiMenu.Fragment>
         );
@@ -1797,66 +1797,66 @@ export function installUiMenu(): () => void {
           children: children,
           ...props
         }: MenuItemProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let value = indicator === "checkbox",
-          value2 = value
+          resolvedChecked = value
             ? href !== undefined
               ? undefined
               : (checked ?? false)
             : checked,
-          value3 = value ? "checkbox" : (checkedRole ?? "checkbox"),
-          value4 = checkPosition ?? (value ? "leading" : "trailing"),
-          value5 = useAppleKeyboard(),
-          value6 = reactForUiMenu.useId(),
+          resolvedCheckedRole = value ? "checkbox" : (checkedRole ?? "checkbox"),
+          resolvedCheckPosition = checkPosition ?? (value ? "leading" : "trailing"),
+          usesAppleKeyboard = useAppleKeyboard(),
+          announcementId = reactForUiMenu.useId(),
           {
-            label: value7,
-            labelSpanRef: value8,
-            rowRef: value9,
+            label: resolvedLabel,
+            labelSpanRef: labelSpanRef,
+            rowRef: rowRef,
           } = useMenuItemLabel(children, props.label),
-          value10 = useMergedRefs(options, value9),
-          value11 =
+          mergedRef = useMergedRefs(forwardedRef, rowRef),
+          showDisabledReason =
             props.disabled === true &&
             hasDisabledReason(disabledReason),
           state = {
             "aria-keyshortcuts": shortcut
-              ? shortcutToAriaKeyShortcuts(shortcut, value5)
+              ? shortcutToAriaKeyShortcuts(shortcut, usesAppleKeyboard)
               : undefined,
             "data-cds-icon-row":
               icon !== undefined &&
-              !(value2 !== undefined && value4 === "leading")
+              !(resolvedChecked !== undefined && resolvedCheckPosition === "leading")
                 ? ""
                 : undefined,
             [FOCUSES_NOTHING_ATTRIBUTE]: focusesNothing
               ? ""
               : undefined,
             ...props,
-            label: value7,
+            label: resolvedLabel,
             "aria-describedby":
-              [value11 ? value6 : undefined, props["aria-describedby"]]
+              [showDisabledReason ? announcementId : undefined, props["aria-describedby"]]
                 .filter(Boolean)
                 .join(" ") || undefined,
           },
-          value12 = useMenuPassiveFocusProps(),
-          callback = (input: React.ReactElement): React.ReactElement =>
+          passiveFocusProps = useMenuPassiveFocusProps(),
+          callback = (itemElement: React.ReactElement): React.ReactElement =>
             disabledReason === undefined ? (
-              input
+              itemElement
             ) : (
               <Tooltip
-                content={value11 ? disabledReason : undefined}
+                content={showDisabledReason ? disabledReason : undefined}
                 side={"right"}
                 multiline={true}
                 closeOnClick={false}
               >
                 <div role={"none"}>
-                  {[input, <DisabledReasonAnnouncement
-                      id={value6}
-                      reason={value11 ? disabledReason : undefined}
+                  {[itemElement, <DisabledReasonAnnouncement
+                      id={announcementId}
+                      reason={showDisabledReason ? disabledReason : undefined}
                     />]}
                 </div>
               </Tooltip>
             ),
-          value13 = useCdsLink({
+          anchorAttributes = useCdsLink({
             href: href,
             routerOptions: routerOptions,
             target: target,
@@ -1864,22 +1864,22 @@ export function installUiMenu(): () => void {
             download: download,
             ...pickLinkEventProps(props),
           }),
-          value14 = cn(
+          itemClassName = cn(
             menuItemVariants({
               variant: variant,
             }),
             description ? `${menuItemDescriptionPaddingClass} ` : "",
             className,
           ),
-          value15 = value2 !== undefined && (
+          checkIndicator = resolvedChecked !== undefined && (
             <span
               className={clsx(
                 "flex size-icon shrink-0 items-center justify-center",
-                value4 === "trailing" && !hint && !shortcut && "-mr-1",
-                Boolean(value4 === "trailing" && shortcut && !hint) &&
+                resolvedCheckPosition === "trailing" && !hint && !shortcut && "-mr-1",
+                Boolean(resolvedCheckPosition === "trailing" && shortcut && !hint) &&
                   "pointer-coarse:-mr-1",
                 value &&
-                  value4 === "leading" &&
+                  resolvedCheckPosition === "leading" &&
                   "-ml-1 group-has-[[data-cds-icon-row]]/menu-popup:ml-0",
               )}
               style={
@@ -1892,17 +1892,17 @@ export function installUiMenu(): () => void {
             >
               {value ? (<span data-size={"xs"} className={"flex shrink-0"}>
                   <CheckboxVisual
-                    checked={value2}
+                    checked={resolvedChecked}
                     indeterminate={indeterminate}
                   />
-                </span>) : (value2 && (<Icon name={"Check"} size={"auto"} bold={true} />))}
+                </span>) : (resolvedChecked && (<Icon name={"Check"} size={"auto"} bold={true} />))}
             </span>
           ),
-          value16 = (
+          itemContent = (
             <jsxForUiMenu.Fragment>
-              {[leading, value4 === "leading" && value15, icon !== undefined && <IconSlot icon={icon} />, description ? (
+              {[leading, resolvedCheckPosition === "leading" && checkIndicator, icon !== undefined && <IconSlot icon={icon} />, description ? (
                   <span className={"flex min-w-0 flex-1 flex-col"}>
-                    {[<span ref={value8} className={"truncate"}>
+                    {[<span ref={labelSpanRef} className={"truncate"}>
                         {children}
                       </span>, <span
                         className={
@@ -1913,12 +1913,12 @@ export function installUiMenu(): () => void {
                       </span>]}
                   </span>
                 ) : (
-                  <span ref={value8} className={"min-w-0 flex-1 truncate"}>
+                  <span ref={labelSpanRef} className={"min-w-0 flex-1 truncate"}>
                     {children}
                   </span>
                 ), Boolean(
                   trailing ||
-                    (value2 !== undefined && value4 === "trailing") ||
+                    (resolvedChecked !== undefined && resolvedCheckPosition === "trailing") ||
                     hint ||
                     shortcut,
                 ) && (
@@ -1928,12 +1928,12 @@ export function installUiMenu(): () => void {
                       Boolean(
                         shortcut &&
                           !trailing &&
-                          !(value2 !== undefined && value4 === "trailing") &&
+                          !(resolvedChecked !== undefined && resolvedCheckPosition === "trailing") &&
                           !hint,
                       ) && "pointer-coarse:hidden",
                     )}
                   >
-                    {[trailing, value4 === "trailing" && value15, hint && (
+                    {[trailing, resolvedCheckPosition === "trailing" && checkIndicator, hint && (
                         <span
                           className={`max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote text-muted group-data-[highlighted]/menu-danger:text-on-danger ${getShortcutNumeralClasses(hint)}`}
                         >
@@ -1945,63 +1945,63 @@ export function installUiMenu(): () => void {
             </jsxForUiMenu.Fragment>
           );
         if (href !== undefined) {
-          let value17 = omitLinkEventProps(state);
+          let linkItemProps = omitLinkEventProps(state);
           return callback(
             <baseMenu.Item
-              ref={value10}
-              {...value17}
-              {...value12}
+              ref={mergedRef}
+              {...linkItemProps}
+              {...passiveFocusProps}
               closeOnClick={keepOpen ? false : undefined}
-              className={value14}
-              render={<a {...value13} />}
+              className={itemClassName}
+              render={<a {...anchorAttributes} />}
             >
-              {value16}
+              {itemContent}
             </baseMenu.Item>,
           );
         }
-        if (value2 !== undefined) {
-          if (value3 === "radio") {
+        if (resolvedChecked !== undefined) {
+          if (resolvedCheckedRole === "radio") {
             return callback(
               <baseMenu.Item
-                ref={value10}
+                ref={mergedRef}
                 {...state}
-                {...value12}
+                {...passiveFocusProps}
                 role={"menuitemradio"}
-                aria-checked={value2}
+                aria-checked={resolvedChecked}
                 closeOnClick={keepOpen ? false : undefined}
-                className={value14}
+                className={itemClassName}
               >
-                {value16}
+                {itemContent}
               </baseMenu.Item>,
             );
           }
           return callback(
             <baseMenu.CheckboxItem
-              ref={value10}
+              ref={mergedRef}
               {...state}
               {...(value && indeterminate
                 ? {
                     "aria-checked": "mixed",
                   }
                 : {})}
-              {...value12}
-              checked={value2}
+              {...passiveFocusProps}
+              checked={resolvedChecked}
               closeOnClick={value ? false : !keepOpen}
-              className={value14}
+              className={itemClassName}
             >
-              {value16}
+              {itemContent}
             </baseMenu.CheckboxItem>,
           );
         }
         return callback(
           <baseMenu.Item
-            ref={value10}
+            ref={mergedRef}
             {...state}
-            {...value12}
+            {...passiveFocusProps}
             closeOnClick={keepOpen ? false : undefined}
-            className={value14}
+            className={itemClassName}
           >
-            {value16}
+            {itemContent}
           </baseMenu.Item>,
         );
       },
@@ -2019,37 +2019,37 @@ export function installUiMenu(): () => void {
           openOnHover: openOnHover,
           ...props
         }: MenuSubmenuTriggerProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let value = reactForUiMenu.useContext<MenuRootState | null>(
             menuTriggerContext,
           ),
-          value2 = useIsSheet(),
-          value3 = useMenuPassiveFocusProps(),
+          isSheet = useIsSheet(),
+          passiveFocusProps = useMenuPassiveFocusProps(),
           {
-            label: value4,
-            labelSpanRef: value5,
-            rowRef: value6,
+            label: resolvedLabel,
+            labelSpanRef: labelSpanRef,
+            rowRef: rowRef,
           } = useMenuItemLabel(children, props.label),
-          value7 = useMergedRefs(
+          mergedRef = useMergedRefs(
             value?.setTriggerNode,
-            options,
-            value6,
+            forwardedRef,
+            rowRef,
           ),
-          value8 = value?.stashLabel;
+          stashLabel = value?.stashLabel;
         useIsomorphicLayoutEffect(() => {
-          if (value2) {
-            value8?.(children);
+          if (isSheet) {
+            stashLabel?.(children);
           }
-        }, [value2, value8, children]);
+        }, [isSheet, stashLabel, children]);
         return (
           <baseMenu.SubmenuTrigger
-            ref={value7}
+            ref={mergedRef}
             data-cds-icon-row={icon !== undefined ? "" : undefined}
             {...props}
-            label={value4}
-            {...value3}
-            openOnHover={value2 ? false : openOnHover}
+            label={resolvedLabel}
+            {...passiveFocusProps}
+            openOnHover={isSheet ? false : openOnHover}
             className={cn(
               menuItemVariants({
                 variant: "default",
@@ -2058,7 +2058,7 @@ export function installUiMenu(): () => void {
               className,
             )}
           >
-            {[leading, icon !== undefined && <IconSlot icon={icon} />, <span ref={value5} className={"min-w-0 flex-1 truncate"}>
+            {[leading, icon !== undefined && <IconSlot icon={icon} />, <span ref={labelSpanRef} className={"min-w-0 flex-1 truncate"}>
                 {children}
               </span>, trailing || hint ? (
                 <span className={"ml-md flex shrink-0 items-center gap-xs"}>
@@ -2120,7 +2120,7 @@ export function installUiMenu(): () => void {
     ).displayName = "Menu.Root";
     MenuTriggerButton = reactForUiMenu.forwardRef(function (
       { children: children, id: id, ...props }: MenuTriggerButtonProps,
-      options: React.ForwardedRef<HTMLButtonElement>,
+      forwardedRef: React.ForwardedRef<HTMLButtonElement>,
     ): React.ReactElement {
       return (
         <baseMenu.Trigger
@@ -2128,7 +2128,7 @@ export function installUiMenu(): () => void {
           disabled={props.disabled || props.busy}
           render={
             <Button
-              ref={options}
+              ref={forwardedRef}
               {...props}
               {...(props.busy
                 ? {
@@ -2164,12 +2164,12 @@ export function installUiMenu(): () => void {
         className: className,
         ...props
       }: import("@base-ui/react/menubar").Menubar.Props,
-      options: React.ForwardedRef<HTMLDivElement>,
+      forwardedRef: React.ForwardedRef<HTMLDivElement>,
     ): React.ReactElement {
       return (
         <menuBarContext.Provider value={true}>
           <R_baseMenubarRoot
-            ref={options}
+            ref={forwardedRef}
             data-cds={"MenuBar"}
             {...props}
             className={cn("flex items-center gap-xs", className)}

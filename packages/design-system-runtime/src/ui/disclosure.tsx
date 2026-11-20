@@ -46,7 +46,7 @@ var useDisclosureAnimationRef: () => React.RefCallback<HTMLElement>;
 var useDisclosurePanelRef: (
   ref: React.Ref<HTMLElement> | undefined,
 ) => React.RefCallback<HTMLElement>;
-var reactForUiDisclosure2: typeof React;
+var reactCollapsible: typeof React;
 var reactDOMForUiDisclosure: typeof import("react/jsx-runtime");
 var CollapsibleRoot: ForwardComponent<HTMLDivElement, CollapsibleRootProps>;
 var collapsibleTriggerClasses: string;
@@ -84,8 +84,8 @@ var spinnerSizeMetrics: {
 var reactfk: typeof React;
 var compactableControlContext: React.Context<CompactableControlState>;
 var COMPACTABLE_ATTRIBUTE: string;
-var reactForUiDisclosure3: typeof React;
-var reactForUiDisclosure4: typeof React;
+var reactCompactableDebug: typeof React;
+var reactDeferredTooltip: typeof React;
 var jsxForUiDisclosure: typeof import("react/jsx-runtime");
 var loadedTooltipImplementation: TooltipImplementation | null;
 var tooltipImplementationPromise: Promise<TooltipImplementation> | null;
@@ -118,9 +118,9 @@ function withRepeatedClickSelectionPrevention<
   if (!onMouseDown) {
     return preventRepeatedClickSelection;
   }
-  return (input: Event) => {
-    onMouseDown(input);
-    preventRepeatedClickSelection(input);
+  return (mouseEvent: Event) => {
+    onMouseDown(mouseEvent);
+    preventRepeatedClickSelection(mouseEvent);
   };
 }
 function useHiddenUntilFoundRef(): React.RefCallback<HTMLElement> {
@@ -128,27 +128,27 @@ function useHiddenUntilFoundRef(): React.RefCallback<HTMLElement> {
     node: HTMLElement;
     detach(): void;
   } | null>(null);
-  return react_k.useCallback((input: HTMLElement | null) => {
-    if (!input || input === ref.current?.node) {
+  return react_k.useCallback((element: HTMLElement | null) => {
+    if (!element || element === ref.current?.node) {
       return;
     }
     ref.current?.detach();
     ref.current = {
-      node: input,
-      detach: attachBeforeMatchStyleRecovery(input),
+      node: element,
+      detach: attachBeforeMatchStyleRecovery(element),
     };
   }, []);
 }
 function attachBeforeMatchStyleRecovery(element: HTMLElement): () => void {
   let value: (() => void) | undefined,
-    value2: MutationObserver | undefined,
+    openAttributeObserver: MutationObserver | undefined,
     callback = () => {
-      value2?.disconnect();
-      value2 = undefined;
+      openAttributeObserver?.disconnect();
+      openAttributeObserver = undefined;
       value?.();
       value = undefined;
     },
-    callback2 = (event: Event) => {
+    handleBeforeMatch = (event: Event) => {
       if (event.target !== element || value) {
         return;
       }
@@ -156,20 +156,20 @@ function attachBeforeMatchStyleRecovery(element: HTMLElement): () => void {
         height: "auto",
         "transition-property": "none",
       });
-      value2 = new (element.ownerDocument.defaultView?.MutationObserver ??
+      openAttributeObserver = new (element.ownerDocument.defaultView?.MutationObserver ??
         MutationObserver)(() => {
         if (element.hasAttribute("data-open")) {
           callback();
         }
       });
-      value2.observe(element, {
+      openAttributeObserver.observe(element, {
         attributes: true,
         attributeFilter: ["data-open"],
       });
     };
-  element.addEventListener("beforematch", callback2);
+  element.addEventListener("beforematch", handleBeforeMatch);
   return () => {
-    element.removeEventListener("beforematch", callback2);
+    element.removeEventListener("beforematch", handleBeforeMatch);
     callback();
   };
 }
@@ -178,19 +178,19 @@ function overrideInlineStyles(
   styles: Readonly<Record<string, string>>,
 ): () => void {
   let previousStyles = Object.keys(styles).map(
-    (input: string): [string, string, string] => [
-      input,
-      element.style.getPropertyValue(input),
-      element.style.getPropertyPriority(input),
+    (property: string): [string, string, string] => [
+      property,
+      element.style.getPropertyValue(property),
+      element.style.getPropertyPriority(property),
     ],
   );
-  for (let [value, value2] of Object.entries(styles)) {
-    element.style.setProperty(value, value2);
+  for (let [value, cssValue] of Object.entries(styles)) {
+    element.style.setProperty(value, cssValue);
   }
   return () => {
-    for (let [value, value2, value3] of previousStyles) {
-      if (value2) {
-        element.style.setProperty(value, value2, value3);
+    for (let [value, previousValue, previousPriority] of previousStyles) {
+      if (previousValue) {
+        element.style.setProperty(value, previousValue, previousPriority);
       } else {
         element.style.removeProperty(value);
       }
@@ -205,35 +205,35 @@ function Spinner({
   className: className,
 }: SpinnerProps): React.ReactElement | null {
   useUiLocale();
-  let [value, value2] = reactcK.useState(delay <= 0),
-    [value3, value4] = reactcK.useState(delay);
-  if (delay !== value3) {
-    value4(delay);
+  let [value, setDelayElapsed] = reactcK.useState(delay <= 0),
+    [previousDelay, setPreviousDelay] = reactcK.useState(delay);
+  if (delay !== previousDelay) {
+    setPreviousDelay(delay);
     if (delay > 0 && value) {
-      value2(false);
+      setDelayElapsed(false);
     }
   }
-  let value5 = delay <= 0 || value;
+  let shouldShowSpinner = delay <= 0 || value;
   reactcK.useEffect(() => {
     if (delay <= 0) {
       return;
     }
-    let value14 = window.setTimeout(() => value2(true), delay);
-    return () => window.clearTimeout(value14);
+    let delayTimeout = window.setTimeout(() => setDelayElapsed(true), delay);
+    return () => window.clearTimeout(delayTimeout);
   }, [delay]);
-  let value6 =
+  let sizeMetrics =
       spinnerSizeMetrics[
         (spinnerSizeAliases[size] ?? size) as "sm" | "md" | "lg"
       ],
-    value7 = inheritColor ? "currentColor" : "var(--cds-text-muted)",
-    value8 = inheritColor
+    spinnerColor = inheritColor ? "currentColor" : "var(--cds-text-muted)",
+    trackColor = inheritColor
       ? "color-mix(in srgb, currentColor 25%, transparent)"
       : "var(--cds-border)",
-    value9 = pixelsToScaledRem(value6.box),
-    value10 = pixelsToScaledRem(value6.stroke),
-    value11 = `calc(100% - ${value10})`,
-    value12 = `radial-gradient(farthest-side, transparent ${value11}, #000 calc(${value11} + 0.5px))`,
-    value13 = !value5 ? null : (
+    boxSize = pixelsToScaledRem(sizeMetrics.box),
+    strokeWidth = pixelsToScaledRem(sizeMetrics.stroke),
+    maskInnerEdge = `calc(100% - ${strokeWidth})`,
+    strokeMask = `radial-gradient(farthest-side, transparent ${maskInnerEdge}, #000 calc(${maskInnerEdge} + 0.5px))`,
+    spinner = !shouldShowSpinner ? null : (
       <span
         data-cds={"Spinner"}
         className={cn(
@@ -241,34 +241,34 @@ function Spinner({
           className,
         )}
         style={{
-          width: value9,
-          height: value9,
+          width: boxSize,
+          height: boxSize,
         }}
         aria-hidden={true}
       >
         {[<span
             className={"absolute inset-0 rounded-full"}
             style={{
-              border: `${value10} solid ${value8}`,
+              border: `${strokeWidth} solid ${trackColor}`,
             }}
           />, <span
             className={
               "absolute inset-0 rounded-full animate-[spin_1s_linear_infinite] motion-reduce:animate-none"
             }
             style={{
-              background: `conic-gradient(transparent 40%, ${value7})`,
-              WebkitMask: value12,
-              mask: value12,
+              background: `conic-gradient(transparent 40%, ${spinnerColor})`,
+              WebkitMask: strokeMask,
+              mask: strokeMask,
             }}
           />]}
       </span>
     );
   if (!label) {
-    return value13;
+    return spinner;
   }
   return (
     <span role={"status"} className={"leading-[0]"}>
-      {[value13, <DelayedScreenReaderLabel show={value5}>
+      {[spinner, <DelayedScreenReaderLabel show={shouldShowSpinner}>
           {label}
         </DelayedScreenReaderLabel>]}
     </span>
@@ -279,10 +279,10 @@ function DelayedScreenReaderLabel({
   children: children,
 }: DelayedSpinnerProps): React.ReactElement | null {
   useUiLocale();
-  let [value, value2] = reactcK.useState(false);
+  let [value, setLabelReady] = reactcK.useState(false);
   reactcK.useEffect(() => {
-    let value3 = window.setTimeout(() => value2(true), 100);
-    return () => window.clearTimeout(value3);
+    let labelTimeout = window.setTimeout(() => setLabelReady(true), 100);
+    return () => window.clearTimeout(labelTimeout);
   }, []);
   if (show && value) {
     return <span className={"sr-only"}>{children}</span>;
@@ -294,15 +294,15 @@ function useCompactableControl(): CompactableControlState {
   return reactfk.useContext(compactableControlContext);
 }
 function useCompactableControlDebug(
-  input: React.RefObject<Element | null>,
-  options: string,
+  controlRef: React.RefObject<Element | null>,
+  controlName: string,
 ): void {
-  reactForUiDisclosure3.useEffect(() => {
+  reactCompactableDebug.useEffect(() => {
     return;
-  }, [input, options]);
+  }, [controlRef, controlName]);
 }
-function scheduleTooltipUpdate(input: () => void): void {
-  tooltipBatchCallbacks.add(input);
+function scheduleTooltipUpdate(update: () => void): void {
+  tooltipBatchCallbacks.add(update);
   tooltipBatchTimer ??= setTimeout(() => {
     tooltipBatchTimer = null;
     let items = [...tooltipBatchCallbacks];
@@ -312,8 +312,8 @@ function scheduleTooltipUpdate(input: () => void): void {
     }
   }, 0);
 }
-function cancelTooltipUpdate(input: () => void): void {
-  tooltipBatchCallbacks.delete(input);
+function cancelTooltipUpdate(update: () => void): void {
+  tooltipBatchCallbacks.delete(update);
 }
 function loadTooltipImplementation(): Promise<TooltipImplementation> {
   tooltipImplementationPromise ??= Promise.resolve()
@@ -322,15 +322,15 @@ function loadTooltipImplementation(): Promise<TooltipImplementation> {
       return tooltipExports;
     })
     .then(
-      (input: TooltipImplementation) => {
-        loadedTooltipImplementation = input;
+      (implementation: TooltipImplementation) => {
+        loadedTooltipImplementation = implementation;
         for (let value of tooltipImplementationListeners) {
           value();
         }
-        return input;
+        return implementation;
       },
-      (input: unknown) => {
-        throw ((tooltipImplementationPromise = null), input);
+      (error: unknown) => {
+        throw ((tooltipImplementationPromise = null), error);
       },
     );
   return tooltipImplementationPromise;
@@ -357,24 +357,24 @@ function requestTooltipPreload(): void {
   });
 }
 function adoptTooltipTrigger(
-  input: DeferredTooltipNode,
-  options: HTMLElement | null,
+  triggerState: DeferredTooltipNode,
+  triggerElement: HTMLElement | null,
 ): void {
-  input.node = options;
-  if (options === null) {
+  triggerState.node = triggerElement;
+  if (triggerElement === null) {
     return;
   }
-  input.adopted = true;
-  if (input.handBack) {
-    input.handBack = false;
-    queueMicrotask(() => restoreDeferredTooltipFocus(input, options));
+  triggerState.adopted = true;
+  if (triggerState.handBack) {
+    triggerState.handBack = false;
+    queueMicrotask(() => restoreDeferredTooltipFocus(triggerState, triggerElement));
   }
 }
 function restoreDeferredTooltipFocus(
-  input: DeferredTooltipNode,
+  triggerState: DeferredTooltipNode,
   element: HTMLElement,
 ): void {
-  if (!element.isConnected || !input.focus) {
+  if (!element.isConnected || !triggerState.focus) {
     return;
   }
   let activeElement = element.ownerDocument.activeElement;
@@ -388,43 +388,43 @@ function restoreDeferredTooltipFocus(
     preventScroll: true,
   });
 }
-function cancelTooltipTouchHold(input: DeferredTooltipNode): void {
-  if (input.tapHold !== null) {
-    clearTimeout(input.tapHold);
-    input.tapHold = null;
+function cancelTooltipTouchHold(triggerState: DeferredTooltipNode): void {
+  if (triggerState.tapHold !== null) {
+    clearTimeout(triggerState.tapHold);
+    triggerState.tapHold = null;
   }
 }
 function releaseTooltipTouchHold(
-  input: DeferredTooltipNode,
-  options: TooltipPointerEvent,
-  context: () => void,
+  triggerState: DeferredTooltipNode,
+  pointerEvent: TooltipPointerEvent,
+  scheduleUpdate: () => void,
 ): void {
-  cancelTooltipTouchHold(input);
+  cancelTooltipTouchHold(triggerState);
   if (
-    input.down &&
-    options.type === "pointerup" &&
-    (options.pointerType === "touch" || options.pointerType === "pen")
+    triggerState.down &&
+    pointerEvent.type === "pointerup" &&
+    (pointerEvent.pointerType === "touch" || pointerEvent.pointerType === "pen")
   ) {
-    input.tapHold = setTimeout(() => {
-      input.tapHold = null;
-      input.down = false;
-      context();
+    triggerState.tapHold = setTimeout(() => {
+      triggerState.tapHold = null;
+      triggerState.down = false;
+      scheduleUpdate();
     }, TOUCH_TOOLTIP_HOLD_MS);
     return;
   }
-  input.down = false;
-  context();
+  triggerState.down = false;
+  scheduleUpdate();
 }
 function resolveTooltipImplementation(
-  input: DeferredTooltipScope | null,
+  deferredScope: DeferredTooltipScope | null,
 ): TooltipImplementation | null {
   if (loadedTooltipImplementation !== null) {
     return loadedTooltipImplementation;
   }
-  if (input === null) {
+  if (deferredScope === null) {
     return null;
   } else {
-    return input.ambientImpl();
+    return deferredScope.ambientImpl();
   }
 }
 function hasNonVisibleFocus(element: Element): boolean {
@@ -438,33 +438,33 @@ function hasNonVisibleFocus(element: Element): boolean {
   }
 }
 function useDeferredTooltipImplementation(
-  input: boolean,
+  shouldTrackTrigger: boolean,
 ): DeferredTooltipState {
-  let value = reactForUiDisclosure4.useContext<TooltipImplementation | null>(
+  let value = reactDeferredTooltip.useContext<TooltipImplementation | null>(
       tooltipImplementationContext,
     ),
-    value2 = reactForUiDisclosure4.useContext(
+    deferredScope = reactDeferredTooltip.useContext(
       deferredTooltipImplementationContext,
     ),
-    [value3, value4] =
-      reactForUiDisclosure4.useState<DeferredTooltipLoad | null>(() => {
-        let value7 =
+    [loadedTooltip, setLoadedTooltip] =
+      reactDeferredTooltip.useState<DeferredTooltipLoad | null>(() => {
+        let availableImplementation =
           value ??
-          (value2 !== null && value2.isDeferred()
+          (deferredScope !== null && deferredScope.isDeferred()
             ? null
-            : resolveTooltipImplementation(value2));
-        if (value7 === null) {
+            : resolveTooltipImplementation(deferredScope));
+        if (availableImplementation === null) {
           return null;
         } else {
           return {
-            impl: value7,
+            impl: availableImplementation,
             track: undefined,
           };
         }
       }),
-    value5 = value3 === null ? null : value3.impl,
-    [value6] = reactForUiDisclosure4.useState(value5 === null),
-    ref = reactForUiDisclosure4.useRef<DeferredTooltipNode>({
+    tooltipImplementation = loadedTooltip === null ? null : loadedTooltip.impl,
+    [wasCold] = reactDeferredTooltip.useState(tooltipImplementation === null),
+    ref = reactDeferredTooltip.useRef<DeferredTooltipNode>({
       hover: false,
       focus: false,
       down: false,
@@ -473,219 +473,219 @@ function useDeferredTooltipImplementation(
       handBack: false,
       tapHold: null,
     }),
-    ref2 = reactForUiDisclosure4.useRef(false),
-    callback = reactForUiDisclosure4.useCallback(() => {
-      if (ref.current.adopted || (value2 !== null && value2.isDeferred())) {
+    shouldAdoptWhileHoveredRef = reactDeferredTooltip.useRef(false),
+    callback = reactDeferredTooltip.useCallback(() => {
+      if (ref.current.adopted || (deferredScope !== null && deferredScope.isDeferred())) {
         return;
       }
       let {
         hover: current,
-        focus: current2,
-        down: current3,
-        node: current4,
+        focus: hasFocus,
+        down: isPointerDown,
+        node: triggerElement,
       } = ref.current;
-      if (current3) {
+      if (isPointerDown) {
         return;
       }
-      let current5 = ref2.current;
-      ref2.current = false;
-      let value7 =
-        current2 &&
-        input &&
-        current4 !== null &&
-        hasNonVisibleFocus(current4);
-      if (current2 && !value7) {
+      let shouldAdoptWhileHovered = shouldAdoptWhileHoveredRef.current;
+      shouldAdoptWhileHoveredRef.current = false;
+      let shouldRestoreFocus =
+        hasFocus &&
+        shouldTrackTrigger &&
+        triggerElement !== null &&
+        hasNonVisibleFocus(triggerElement);
+      if (hasFocus && !shouldRestoreFocus) {
         return;
       }
-      let value8 = resolveTooltipImplementation(value2);
-      if (value8 !== null && (!current || current5)) {
-        let current6 = ref.current;
-        current6.handBack = value7;
-        value4(
-          (input2: DeferredTooltipLoad | null) =>
-            input2 ?? {
-              impl: value8,
-              track: input
-                ? (input3: HTMLElement | null) =>
-                    adoptTooltipTrigger(current6, input3)
+      let availableImplementation = resolveTooltipImplementation(deferredScope);
+      if (availableImplementation !== null && (!current || shouldAdoptWhileHovered)) {
+        let triggerState = ref.current;
+        triggerState.handBack = shouldRestoreFocus;
+        setLoadedTooltip(
+          (previousLoad: DeferredTooltipLoad | null) =>
+            previousLoad ?? {
+              impl: availableImplementation,
+              track: shouldTrackTrigger
+                ? (element: HTMLElement | null) =>
+                    adoptTooltipTrigger(triggerState, element)
                 : undefined,
             },
         );
       }
-    }, [value2, input]),
-    callback2 = reactForUiDisclosure4.useCallback(() => {
-      if (resolveTooltipImplementation(value2) === null) {
+    }, [deferredScope, shouldTrackTrigger]),
+    scheduleAdoption = reactDeferredTooltip.useCallback(() => {
+      if (resolveTooltipImplementation(deferredScope) === null) {
         return;
       }
       scheduleTooltipUpdate(callback);
-    }, [value2, callback]),
-    callback3 = reactForUiDisclosure4.useCallback(() => {
-      ref2.current = resolveTooltipImplementation(value2) !== null;
-      callback2();
-    }, [callback2, value2]),
-    ref3 = reactForUiDisclosure4.useRef<{
+    }, [deferredScope, callback]),
+    handleScopeReady = reactDeferredTooltip.useCallback(() => {
+      shouldAdoptWhileHoveredRef.current = resolveTooltipImplementation(deferredScope) !== null;
+      scheduleAdoption();
+    }, [scheduleAdoption, deferredScope]),
+    pointerReleaseListenerRef = reactDeferredTooltip.useRef<{
       doc: Document;
       release(event: PointerEvent): void;
     } | null>(null),
-    callback4 = reactForUiDisclosure4.useCallback(() => {
-      let current = ref3.current;
+    removePointerReleaseListeners = reactDeferredTooltip.useCallback(() => {
+      let current = pointerReleaseListenerRef.current;
       if (current === null) {
         return;
       }
-      ref3.current = null;
+      pointerReleaseListenerRef.current = null;
       current.doc.removeEventListener("pointerup", current.release, true);
       current.doc.removeEventListener("pointercancel", current.release, true);
     }, []),
-    callback5 = reactForUiDisclosure4.useCallback(
-      (input2: Document, options?: number) => {
-        if (ref3.current !== null) {
+    listenForPointerRelease = reactDeferredTooltip.useCallback(
+      (ownerDocument: Document, trackedPointerId?: number) => {
+        if (pointerReleaseListenerRef.current !== null) {
           return;
         }
-        let callback7 = (input3: PointerEvent): void => {
-          let pointerId = input3.pointerId;
+        let handlePointerRelease = (pointerEvent: PointerEvent): void => {
+          let pointerId = pointerEvent.pointerId;
           if (
-            options !== undefined &&
+            trackedPointerId !== undefined &&
             pointerId !== undefined &&
-            pointerId !== options
+            pointerId !== trackedPointerId
           ) {
             return;
           }
-          callback4();
-          releaseTooltipTouchHold(ref.current, input3, callback2);
+          removePointerReleaseListeners();
+          releaseTooltipTouchHold(ref.current, pointerEvent, scheduleAdoption);
         };
-        ref3.current = {
-          doc: input2,
-          release: callback7,
+        pointerReleaseListenerRef.current = {
+          doc: ownerDocument,
+          release: handlePointerRelease,
         };
-        input2.addEventListener("pointerup", callback7, {
+        ownerDocument.addEventListener("pointerup", handlePointerRelease, {
           capture: true,
         });
-        input2.addEventListener("pointercancel", callback7, {
+        ownerDocument.addEventListener("pointercancel", handlePointerRelease, {
           capture: true,
         });
       },
-      [callback2, callback4],
+      [scheduleAdoption, removePointerReleaseListeners],
     );
-  reactForUiDisclosure4.useEffect(() => {
-    if (!value6) {
+  reactDeferredTooltip.useEffect(() => {
+    if (!wasCold) {
       return;
     }
     preloadTooltipsOnInteraction();
     let current = ref.current,
-      callback7 = (): void => {
+      cleanupDeferredTooltip = (): void => {
         cancelTooltipUpdate(callback);
         if (current.tapHold !== null) {
           cancelTooltipTouchHold(current);
           current.down = false;
         }
-        callback4();
+        removePointerReleaseListeners();
       },
       items = [],
-      value7 = value2 !== null && value2.isDeferred();
-    if (value7) {
-      items.push(value2!.subscribe(callback3));
+      isScopeDeferred = deferredScope !== null && deferredScope.isDeferred();
+    if (isScopeDeferred) {
+      items.push(deferredScope!.subscribe(handleScopeReady));
     }
     if (loadedTooltipImplementation === null) {
-      tooltipImplementationListeners.add(callback2);
-      items.push(() => tooltipImplementationListeners.delete(callback2));
+      tooltipImplementationListeners.add(scheduleAdoption);
+      items.push(() => tooltipImplementationListeners.delete(scheduleAdoption));
     }
-    if (!value7 && resolveTooltipImplementation(value2) !== null) {
-      if (value2 !== null) {
-        ref2.current = true;
+    if (!isScopeDeferred && resolveTooltipImplementation(deferredScope) !== null) {
+      if (deferredScope !== null) {
+        shouldAdoptWhileHoveredRef.current = true;
       }
-      callback2();
+      scheduleAdoption();
     }
     return () => {
-      for (let value8 of items) {
-        value8();
+      for (let unsubscribe of items) {
+        unsubscribe();
       }
-      callback7();
+      cleanupDeferredTooltip();
     };
-  }, [callback2, callback3, value2, callback4, callback, value6]);
-  let callback6 = reactForUiDisclosure4.useCallback(() => {
+  }, [scheduleAdoption, handleScopeReady, deferredScope, removePointerReleaseListeners, callback, wasCold]);
+  let requestImplementation = reactDeferredTooltip.useCallback(() => {
     loadTooltipImplementation().catch(() => {
       return;
     });
   }, []);
   return {
-    impl: value5,
-    wasCold: value6,
-    interceptors: reactForUiDisclosure4.useCallback(
-      (input2: TooltipTriggerProps) => {
-        let callback7 =
+    impl: tooltipImplementation,
+    wasCold: wasCold,
+    interceptors: reactDeferredTooltip.useCallback(
+      (triggerProps: TooltipTriggerProps) => {
+        let withTriggerHandler =
           <Event extends React.SyntheticEvent<HTMLElement>>(
-            input3: (event: Event) => void,
-            options: ((event: Event) => void) | undefined,
+            interceptor: (event: Event) => void,
+            originalHandler: ((event: Event) => void) | undefined,
           ): ((event: Event) => void) =>
-          (input4: Event) => {
-            input3(input4);
-            options?.(input4);
+          (triggerEvent: Event) => {
+            interceptor(triggerEvent);
+            originalHandler?.(triggerEvent);
           };
         return {
-          onPointerEnter: callback7(() => {
+          onPointerEnter: withTriggerHandler(() => {
             ref.current.hover = true;
-            callback6();
-          }, input2.onPointerEnter),
-          onPointerLeave: callback7(() => {
+            requestImplementation();
+          }, triggerProps.onPointerEnter),
+          onPointerLeave: withTriggerHandler(() => {
             ref.current.hover = false;
-            callback2();
-          }, input2.onPointerLeave),
-          onPointerDown: callback7(
-            (input3: React.PointerEvent<HTMLElement>) => {
-              if (input3.isPrimary !== false && input3.button === 0) {
+            scheduleAdoption();
+          }, triggerProps.onPointerLeave),
+          onPointerDown: withTriggerHandler(
+            (pointerEvent: React.PointerEvent<HTMLElement>) => {
+              if (pointerEvent.isPrimary !== false && pointerEvent.button === 0) {
                 cancelTooltipTouchHold(ref.current);
                 ref.current.down = true;
-                callback5(
-                  input3.currentTarget.ownerDocument,
-                  input3.pointerId,
+                listenForPointerRelease(
+                  pointerEvent.currentTarget.ownerDocument,
+                  pointerEvent.pointerId,
                 );
               }
             },
-            input2.onPointerDown,
+            triggerProps.onPointerDown,
           ),
-          onPointerUp: callback7(
-            (input3: React.PointerEvent<HTMLElement>) => {
-              if (input3.isPrimary !== false) {
-                releaseTooltipTouchHold(ref.current, input3, callback2);
+          onPointerUp: withTriggerHandler(
+            (pointerEvent: React.PointerEvent<HTMLElement>) => {
+              if (pointerEvent.isPrimary !== false) {
+                releaseTooltipTouchHold(ref.current, pointerEvent, scheduleAdoption);
               }
             },
-            input2.onPointerUp,
+            triggerProps.onPointerUp,
           ),
-          onPointerCancel: callback7(
-            (input3: React.PointerEvent<HTMLElement>) => {
-              if (input3.isPrimary !== false) {
-                releaseTooltipTouchHold(ref.current, input3, callback2);
+          onPointerCancel: withTriggerHandler(
+            (pointerEvent: React.PointerEvent<HTMLElement>) => {
+              if (pointerEvent.isPrimary !== false) {
+                releaseTooltipTouchHold(ref.current, pointerEvent, scheduleAdoption);
               }
             },
-            input2.onPointerCancel,
+            triggerProps.onPointerCancel,
           ),
-          onClick: callback7((input3: React.MouseEvent<HTMLElement>) => {
+          onClick: withTriggerHandler((mouseEvent: React.MouseEvent<HTMLElement>) => {
             if (ref.current.tapHold !== null) {
-              releaseTooltipTouchHold(ref.current, input3, callback2);
+              releaseTooltipTouchHold(ref.current, mouseEvent, scheduleAdoption);
             }
-          }, input2.onClick),
-          onFocus: callback7((input3: React.FocusEvent<HTMLElement>) => {
+          }, triggerProps.onClick),
+          onFocus: withTriggerHandler((focusEvent: React.FocusEvent<HTMLElement>) => {
             ref.current.focus = true;
             ref.current.node = asElement(
-              input3.currentTarget,
+              focusEvent.currentTarget,
             ) as HTMLElement | null;
-            callback6();
-          }, input2.onFocus),
-          onBlur: callback7(() => {
+            requestImplementation();
+          }, triggerProps.onFocus),
+          onBlur: withTriggerHandler(() => {
             ref.current.focus = false;
-            callback2();
-          }, input2.onBlur),
+            scheduleAdoption();
+          }, triggerProps.onBlur),
         };
       },
-      [callback2, callback5, callback6],
+      [scheduleAdoption, listenForPointerRelease, requestImplementation],
     ),
-    trackTrigger: value3?.track,
+    trackTrigger: loadedTooltip?.track,
   };
 }
-function disableElementAutofocus(input: React.ReactNode): React.ReactNode {
-  if (reactForUiDisclosure4.isValidElement(input)) {
-    return reactForUiDisclosure4.cloneElement(
-      input as React.ReactElement<{
+function disableElementAutofocus(element: React.ReactNode): React.ReactNode {
+  if (reactDeferredTooltip.isValidElement(element)) {
+    return reactDeferredTooltip.cloneElement(
+      element as React.ReactElement<{
         autoFocus?: boolean;
       }>,
       {
@@ -693,71 +693,71 @@ function disableElementAutofocus(input: React.ReactNode): React.ReactNode {
       },
     );
   } else {
-    return input;
+    return element;
   }
 }
-function DeferredTooltip(input: TooltipProps): React.ReactElement {
+function DeferredTooltip(tooltipProps: TooltipProps): React.ReactElement {
   useUiLocale();
   let {
       impl: value,
-      wasCold: value2,
-      interceptors: value3,
-      trackTrigger: value4,
+      wasCold: wasCold,
+      interceptors: interceptors,
+      trackTrigger: trackTrigger,
     } = useDeferredTooltipImplementation(true),
-    value5 = input.autoFocus === false;
+    disableAutofocus = tooltipProps.autoFocus === false;
   if (value !== null) {
-    if (value2 || value5) {
+    if (wasCold || disableAutofocus) {
       return (
-        <value.Tooltip {...input} triggerRef={value4}>
-          {disableElementAutofocus(input.children)}
+        <value.Tooltip {...tooltipProps} triggerRef={trackTrigger}>
+          {disableElementAutofocus(tooltipProps.children)}
         </value.Tooltip>
       );
     } else {
-      return <value.Tooltip {...input} />;
+      return <value.Tooltip {...tooltipProps} />;
     }
   }
-  let { children: value6 } = input;
-  if (!reactForUiDisclosure4.isValidElement(value6)) {
+  let { children: children } = tooltipProps;
+  if (!reactDeferredTooltip.isValidElement(children)) {
     return (
-      <jsxForUiDisclosure.Fragment>{value6}</jsxForUiDisclosure.Fragment>
+      <jsxForUiDisclosure.Fragment>{children}</jsxForUiDisclosure.Fragment>
     );
   }
-  let value7 = value6 as React.ReactElement<TooltipTriggerProps>;
-  return reactForUiDisclosure4.cloneElement(value7, {
-    ...value3(value7.props),
+  let trigger = children as React.ReactElement<TooltipTriggerProps>;
+  return reactDeferredTooltip.cloneElement(trigger, {
+    ...interceptors(trigger.props),
     ...pendingTooltipProps,
   });
 }
 function DeferredDisabledReasonTooltip(
-  input: DisabledTooltipProps,
+  tooltipProps: DisabledTooltipProps,
 ): React.ReactElement {
   useUiLocale();
   let {
       impl: value,
-      wasCold: value2,
-      interceptors: value3,
+      wasCold: wasCold,
+      interceptors: interceptors,
     } = useDeferredTooltipImplementation(false),
-    value4 = reactForUiDisclosure4.useId();
+    announcementId = reactDeferredTooltip.useId();
   if (value !== null) {
-    if (value2) {
+    if (wasCold) {
       return (
-        <value.DisabledReasonTooltip {...input}>
-          {disableElementAutofocus(input.children)}
+        <value.DisabledReasonTooltip {...tooltipProps}>
+          {disableElementAutofocus(tooltipProps.children)}
         </value.DisabledReasonTooltip>
       );
     } else {
-      return <value.DisabledReasonTooltip {...input} />;
+      return <value.DisabledReasonTooltip {...tooltipProps} />;
     }
   }
-  let { reason: value5, wrapperClassName: value6, children: value7 } = input;
+  let { reason: reason, wrapperClassName: wrapperClassName, children: children } = tooltipProps;
   return (
     <span
-      {...getDisabledReasonWrapperProps(value5, value4, value6)}
-      title={typeof value5 === "string" ? (value5) : (undefined)}
-      {...value3({})}
+      {...getDisabledReasonWrapperProps(reason, announcementId, wrapperClassName)}
+      title={typeof reason === "string" ? (reason) : (undefined)}
+      {...interceptors({})}
       {...pendingTooltipProps}
     >
-      {[value7, <DisabledReasonAnnouncement id={value4} reason={value5} />]}
+      {[children, <DisabledReasonAnnouncement id={announcementId} reason={reason} />]}
     </span>
   );
 }
@@ -799,9 +799,9 @@ export {
   reactDOMForUiDisclosure,
   reactfk,
   reactForUiDisclosure,
-  reactForUiDisclosure2,
-  reactForUiDisclosure3,
-  reactForUiDisclosure4,
+  reactCollapsible as reactForUiDisclosure2,
+  reactCompactableDebug as reactForUiDisclosure3,
+  reactDeferredTooltip as reactForUiDisclosure4,
   reactXk,
   releaseTooltipTouchHold,
   repeatedClickSelectionProps,
@@ -861,15 +861,15 @@ export function installUiDisclosure(): () => void {
     );
     disclosurePanelClasses =
       "break-words h-[var(--cds-disclosure-panel-height)] transition-[height] duration-base ease-out motion-reduce:transition-none data-[starting-style]:h-0 data-[ending-style]:h-0 data-[starting-style]:[clip-path:inset(-8px_-100vw_0_-100vw)] data-[ending-style]:[clip-path:inset(-8px_-100vw_0_-100vw)] data-[animating]:[clip-path:inset(-8px_-100vw_0_-100vw)] data-[starting-style]:contain-layout data-[ending-style]:contain-layout data-[animating]:contain-layout";
-    isHeightTransition = (input: Animation) =>
-      "transitionProperty" in input && input.transitionProperty === "height";
+    isHeightTransition = (animation: Animation) =>
+      "transitionProperty" in animation && animation.transitionProperty === "height";
     observeDisclosureAnimation = (element: HTMLElement) => {
       let callback = () => {
-          let value2 =
+          let isAnimating =
             element.hasAttribute("data-starting-style") ||
             element.hasAttribute("data-ending-style") ||
             (element.getAnimations?.().some(isHeightTransition) ?? false);
-          element.toggleAttribute("data-animating", value2);
+          element.toggleAttribute("data-animating", isAnimating);
         },
         value = new (element.ownerDocument.defaultView?.MutationObserver ??
           MutationObserver)(callback);
@@ -877,42 +877,42 @@ export function installUiDisclosure(): () => void {
         attributeFilter: ["data-starting-style", "data-ending-style"],
       });
       callback();
-      let callback2 = (event: TransitionEvent) => {
+      let handleTransitionStart = (event: TransitionEvent) => {
           if (event.target === element && event.propertyName === "height") {
             element.setAttribute("data-animating", "");
           }
         },
-        callback3 = (event: TransitionEvent) => {
+        handleTransitionFinish = (event: TransitionEvent) => {
           if (event.target === element && event.propertyName === "height") {
             callback();
           }
         };
-      element.addEventListener("transitionrun", callback2);
-      element.addEventListener("transitionend", callback3);
-      element.addEventListener("transitioncancel", callback3);
+      element.addEventListener("transitionrun", handleTransitionStart);
+      element.addEventListener("transitionend", handleTransitionFinish);
+      element.addEventListener("transitioncancel", handleTransitionFinish);
       return () => {
         value.disconnect();
-        element.removeEventListener("transitionrun", callback2);
-        element.removeEventListener("transitionend", callback3);
-        element.removeEventListener("transitioncancel", callback3);
+        element.removeEventListener("transitionrun", handleTransitionStart);
+        element.removeEventListener("transitionend", handleTransitionFinish);
+        element.removeEventListener("transitioncancel", handleTransitionFinish);
         element.removeAttribute("data-animating");
       };
     };
     useDisclosureAnimationRef = () => {
       let ref = reactXk.useRef<(() => void) | null>(null);
-      return reactXk.useCallback((input: HTMLElement | null) => {
+      return reactXk.useCallback((element: HTMLElement | null) => {
         ref.current?.();
-        ref.current = input ? observeDisclosureAnimation(input) : null;
+        ref.current = element ? observeDisclosureAnimation(element) : null;
       }, []);
     };
-    useDisclosurePanelRef = (input: React.Ref<HTMLElement> | undefined) =>
+    useDisclosurePanelRef = (forwardedRef: React.Ref<HTMLElement> | undefined) =>
       useMergedRefs(
-        input,
+        forwardedRef,
         useDisclosureAnimationRef(),
         useHiddenUntilFoundRef(),
       );
     initializeIcons();
-    reactForUiDisclosure2 = toModuleNamespace(
+    reactCollapsible = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
@@ -920,15 +920,15 @@ export function installUiDisclosure(): () => void {
       loadJsxNamespace(),
       1,
     );
-    CollapsibleRoot = reactForUiDisclosure2.forwardRef(
+    CollapsibleRoot = reactCollapsible.forwardRef(
       (
-        input: CollapsibleRootProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        rootProps: CollapsibleRootProps,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => (
         <baseCollapsible.Root
-          ref={options}
+          ref={forwardedRef}
           data-cds={"Collapsible"}
-          {...input}
+          {...rootProps}
         />
       ),
     );
@@ -937,7 +937,7 @@ export function installUiDisclosure(): () => void {
       "cds-reset group/clp inline-flex w-fit items-center gap-1.5 border-0 select-none outline-none focus-visible:outline-hidden font-sans text-body font-normal text-secondary hover:text-primary transition-shadow duration-fast focus-visible:shadow-focus rounded data-[disabled]:opacity-disabled data-[disabled]:pointer-events-none";
     collapsibleIconClasses =
       "shrink-0 transition-transform rtl:rotate-180 group-data-[panel-open]/clp:rotate-90";
-    CollapsibleTrigger = reactForUiDisclosure2.forwardRef(
+    CollapsibleTrigger = reactCollapsible.forwardRef(
       (
         {
           className: className,
@@ -947,10 +947,10 @@ export function installUiDisclosure(): () => void {
           render: render,
           ...props
         }: CollapsibleTriggerProps,
-        options: React.ForwardedRef<HTMLButtonElement>,
+        forwardedRef: React.ForwardedRef<HTMLButtonElement>,
       ): React.ReactElement => {
         let value = withRepeatedClickSelectionPrevention(props.onMouseDown),
-          value2 = hideCaret ? null : (
+          caretIcon = hideCaret ? null : (
             <Icon
               name={"CaretRight"}
               size={"sm"}
@@ -963,7 +963,7 @@ export function installUiDisclosure(): () => void {
         if (render) {
           return (
             <baseCollapsible.Trigger
-              ref={options}
+              ref={forwardedRef}
               render={render}
               className={className}
               {...props}
@@ -973,12 +973,12 @@ export function installUiDisclosure(): () => void {
         } else {
           return (
             <baseCollapsible.Trigger
-              ref={options}
+              ref={forwardedRef}
               {...props}
               className={cn(collapsibleTriggerClasses, className)}
               onMouseDown={value}
             >
-              {[caretPosition !== "end" && value2, children, caretPosition === "end" && value2]}
+              {[caretPosition !== "end" && caretIcon, children, caretPosition === "end" && caretIcon]}
             </baseCollapsible.Trigger>
           );
         }
@@ -986,12 +986,12 @@ export function installUiDisclosure(): () => void {
     );
     CollapsibleTrigger.displayName = "Collapsible.Trigger";
     collapsiblePanelClasses = `${disclosurePanelClasses} [--cds-disclosure-panel-height:var(--collapsible-panel-height)]`;
-    CollapsiblePanel = reactForUiDisclosure2.forwardRef(
+    CollapsiblePanel = reactCollapsible.forwardRef(
       (
         { className: className, ...props }: CollapsiblePanelProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
-        let value = useDisclosurePanelRef(options);
+        let value = useDisclosurePanelRef(forwardedRef);
         return (
           <baseCollapsible.Panel
             ref={value}
@@ -1049,14 +1049,14 @@ export function installUiDisclosure(): () => void {
       compact: false,
     });
     COMPACTABLE_ATTRIBUTE = "data-cds-compactable";
-    reactForUiDisclosure3 = toModuleNamespace(
+    reactCompactableDebug = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
     initializeElementAccess();
     initializeDisabledReason();
     initializeTooltipContext();
-    reactForUiDisclosure4 = toModuleNamespace(
+    reactDeferredTooltip = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
@@ -1076,6 +1076,6 @@ export function installUiDisclosure(): () => void {
     };
     TOUCH_TOOLTIP_HOLD_MS = 700;
     deferredTooltipImplementationContext =
-      reactForUiDisclosure4.createContext<DeferredTooltipScope | null>(null);
+      reactDeferredTooltip.createContext<DeferredTooltipScope | null>(null);
   };
 }

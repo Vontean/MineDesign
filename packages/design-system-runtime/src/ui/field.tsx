@@ -123,10 +123,10 @@ export function installUiField(): () => void {
           validationMode = "onBlur",
           ...props
         }: C.FieldRootProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ) => (
         <baseField.Root
-          ref={options}
+          ref={forwardedRef}
           data-cds={"Field"}
           validationMode={validationMode}
           {...props}
@@ -135,17 +135,17 @@ export function installUiField(): () => void {
             className,
           )}
           render={(
-            input: React.HTMLAttributes<HTMLDivElement>,
-            options2: import("@base-ui/react/field").Field.Root.State,
+            rootProps: React.HTMLAttributes<HTMLDivElement>,
+            fieldState: import("@base-ui/react/field").Field.Root.State,
           ) => (
             <textFieldStateContext.Provider
               value={
-                FIELD_DISABLED_INVALID_STATES[`${options2.disabled}`][
-                  `${options2.valid === false}`
+                FIELD_DISABLED_INVALID_STATES[`${fieldState.disabled}`][
+                  `${fieldState.valid === false}`
                 ]
               }
             >
-              <div {...input} />
+              <div {...rootProps} />
             </textFieldStateContext.Provider>
           )}
         />
@@ -155,12 +155,12 @@ export function installUiField(): () => void {
     FieldLabel = reactField.forwardRef(
       (
         { className: className, id: id, ...props }: C.FieldLabelProps,
-        options: React.ForwardedRef<HTMLLabelElement>,
+        forwardedRef: React.ForwardedRef<HTMLLabelElement>,
       ) => {
         let value: string | undefined = useFieldLabelId();
         return (
           <baseField.Label
-            ref={options}
+            ref={forwardedRef}
             id={id ?? value}
             {...props}
             className={cn(
@@ -175,10 +175,10 @@ export function installUiField(): () => void {
     FieldDescription = reactField.forwardRef(
       (
         { className: className, ...props }: C.FieldDescriptionProps,
-        options: React.ForwardedRef<HTMLParagraphElement>,
+        forwardedRef: React.ForwardedRef<HTMLParagraphElement>,
       ) => (
         <baseField.Description
-          ref={options}
+          ref={forwardedRef}
           {...props}
           className={cn(
             "text-footnote font-normal leading-snug text-muted",
@@ -195,22 +195,22 @@ export function installUiField(): () => void {
           children: children,
           ...props
         }: C.FieldErrorProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ) => (
         <baseField.Error
-          ref={options}
+          ref={forwardedRef}
           {...props}
           className={cn(
             "flex items-start gap-1 text-footnote font-normal leading-snug text-danger",
             className,
           )}
-          render={(input: React.HTMLAttributes<HTMLDivElement>) => (
-            <div {...input}>
+          render={(errorProps: React.HTMLAttributes<HTMLDivElement>) => (
+            <div {...errorProps}>
               {[<Icon
                   name={"WarningCircle"}
                   size={"sm"}
                   className={"mt-px shrink-0"}
-                />, <span>{children ?? (input.children)}</span>]}
+                />, <span>{children ?? (errorProps.children)}</span>]}
             </div>
           )}
         />
@@ -255,7 +255,7 @@ export function installUiField(): () => void {
           fieldClassName: fieldClassName,
           ...props
         }: C.FieldTextInputProps,
-        options: React.ForwardedRef<HTMLInputElement>,
+        forwardedRef: React.ForwardedRef<HTMLInputElement>,
       ) => (
         <FieldWrapper
           label={label}
@@ -263,7 +263,7 @@ export function installUiField(): () => void {
           error={error}
           fieldClassName={fieldClassName}
         >
-          <TextInput ref={options} required={required} {...props} />
+          <TextInput ref={forwardedRef} required={required} {...props} />
         </FieldWrapper>
       ),
     );
@@ -286,7 +286,7 @@ export function installUiField(): () => void {
           fieldClassName: fieldClassName,
           ...props
         }: C.FieldTextAreaProps,
-        options: React.ForwardedRef<HTMLTextAreaElement>,
+        forwardedRef: React.ForwardedRef<HTMLTextAreaElement>,
       ) => (
         <FieldWrapper
           label={label}
@@ -294,7 +294,7 @@ export function installUiField(): () => void {
           error={error}
           fieldClassName={fieldClassName}
         >
-          <TextArea ref={options} required={required} {...props} />
+          <TextArea ref={forwardedRef} required={required} {...props} />
         </FieldWrapper>
       ),
     );
@@ -317,7 +317,7 @@ export function installUiField(): () => void {
           fieldClassName: fieldClassName,
           ...props
         }: C.FieldNumberInputProps,
-        options: React.ForwardedRef<HTMLInputElement>,
+        forwardedRef: React.ForwardedRef<HTMLInputElement>,
       ) => (
         <FieldWrapper
           label={label}
@@ -325,7 +325,7 @@ export function installUiField(): () => void {
           error={error}
           fieldClassName={fieldClassName}
         >
-          <NumberInput ref={options} required={required} {...props} />
+          <NumberInput ref={forwardedRef} required={required} {...props} />
         </FieldWrapper>
       ),
     );

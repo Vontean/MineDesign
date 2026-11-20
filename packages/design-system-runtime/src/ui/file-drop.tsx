@@ -34,9 +34,9 @@ function dataTransferHasFiles(
   );
 }
 function createFileDropHandlers(options: FileDropHandlerOptions) {
-  let callback = (input: React.DragEvent<HTMLElement>) =>
+  let callback = (dragEvent: React.DragEvent<HTMLElement>) =>
     options.internal?.current !== true &&
-    dataTransferHasFiles(input.dataTransfer);
+    dataTransferHasFiles(dragEvent.dataTransfer);
   return {
     onDragEnter: (event: React.DragEvent<HTMLElement>) => {
       if (!callback(event)) {
@@ -61,8 +61,8 @@ function createFileDropHandlers(options: FileDropHandlerOptions) {
       options.depth.current = Math.max(options.depth.current, 1);
       options.setOver(true);
     },
-    onDragLeave: (input: React.DragEvent<HTMLElement>) => {
-      if (!callback(input)) {
+    onDragLeave: (dragEvent: React.DragEvent<HTMLElement>) => {
+      if (!callback(dragEvent)) {
         return;
       }
       options.depth.current = Math.max(0, options.depth.current - 1);
@@ -81,12 +81,12 @@ function createFileDropHandlers(options: FileDropHandlerOptions) {
         return;
       }
       let value = Array.from(event.dataTransfer.files),
-        value2 =
+        acceptedFiles =
           options.accept === undefined ? value : value.filter(options.accept);
-      if (options.accept !== undefined && value2.length === 0) {
+      if (options.accept !== undefined && acceptedFiles.length === 0) {
         return;
       }
-      options.onFiles(value2, event);
+      options.onFiles(acceptedFiles, event);
     },
   };
 }
@@ -99,73 +99,73 @@ function installInternalFileDragTracking(
     callback = () => {
       internalDragRef.current = true;
     },
-    callback2 = () => {
+    clearInternalDrag = () => {
       internalDragRef.current = false;
     },
-    callback3 = () => {
+    resetDrag = () => {
       internalDragRef.current = false;
       onDrop();
     },
-    callback4 = (input: DragEvent) => {
-      let value2 = input,
-        value3 =
-          value2.clientX > 0 &&
-          value2.clientY > 0 &&
-          value2.clientX < value.innerWidth &&
-          value2.clientY < value.innerHeight;
-      if (value2.relatedTarget === null && !value3) {
-        callback3();
+    handleWindowDragLeave = (dragEvent: DragEvent) => {
+      let leaveEvent = dragEvent,
+        isWithinWindow =
+          leaveEvent.clientX > 0 &&
+          leaveEvent.clientY > 0 &&
+          leaveEvent.clientX < value.innerWidth &&
+          leaveEvent.clientY < value.innerHeight;
+      if (leaveEvent.relatedTarget === null && !isWithinWindow) {
+        resetDrag();
       }
     },
-    callback5 = (input: DragEvent) => {
-      let value2 = input,
-        dataTransfer = value2.dataTransfer;
+    suppressUnhandledFileDrop = (dragEvent: DragEvent) => {
+      let fileDragEvent = dragEvent,
+        dataTransfer = fileDragEvent.dataTransfer;
       if (
         internalDragRef.current ||
-        value2.defaultPrevented ||
+        fileDragEvent.defaultPrevented ||
         !dataTransferHasFiles(dataTransfer)
       ) {
         return;
       }
-      value2.preventDefault();
-      if (value2.type === "dragover") {
+      fileDragEvent.preventDefault();
+      if (fileDragEvent.type === "dragover") {
         dataTransfer.dropEffect = "none";
       }
     };
   target.addEventListener("dragstart", callback, true);
-  target.addEventListener("dragend", callback2, true);
-  target.addEventListener("mousemove", callback2, true);
+  target.addEventListener("dragend", clearInternalDrag, true);
+  target.addEventListener("mousemove", clearInternalDrag, true);
   target.addEventListener("drop", onDrop, true);
-  target.addEventListener("dragleave", callback4, true);
-  target.addEventListener("blur", callback3);
-  target.addEventListener("dragover", callback5);
-  target.addEventListener("drop", callback5);
-  target.addEventListener("drop", callback2);
+  target.addEventListener("dragleave", handleWindowDragLeave, true);
+  target.addEventListener("blur", resetDrag);
+  target.addEventListener("dragover", suppressUnhandledFileDrop);
+  target.addEventListener("drop", suppressUnhandledFileDrop);
+  target.addEventListener("drop", clearInternalDrag);
   return () => {
     target.removeEventListener("dragstart", callback, true);
-    target.removeEventListener("dragend", callback2, true);
-    target.removeEventListener("mousemove", callback2, true);
+    target.removeEventListener("dragend", clearInternalDrag, true);
+    target.removeEventListener("mousemove", clearInternalDrag, true);
     target.removeEventListener("drop", onDrop, true);
-    target.removeEventListener("dragleave", callback4, true);
-    target.removeEventListener("blur", callback3);
-    target.removeEventListener("dragover", callback5);
-    target.removeEventListener("drop", callback5);
-    target.removeEventListener("drop", callback2);
+    target.removeEventListener("dragleave", handleWindowDragLeave, true);
+    target.removeEventListener("blur", resetDrag);
+    target.removeEventListener("dragover", suppressUnhandledFileDrop);
+    target.removeEventListener("drop", suppressUnhandledFileDrop);
+    target.removeEventListener("drop", clearInternalDrag);
   };
 }
 function useFileDrop(options: FileDropOptions) {
-  let [value, value2] = reactpC.useState(false),
+  let [value, setIsDragOver] = reactpC.useState(false),
     ref = reactpC.useRef(0),
-    ref2 = reactpC.useRef(false);
+    internalDragRef = reactpC.useRef(false);
   reactpC.useEffect(
     () =>
       installInternalFileDragTracking(
         window,
         () => {
           ref.current = 0;
-          value2(false);
+          setIsDragOver(false);
         },
-        ref2,
+        internalDragRef,
       ),
     [],
   );
@@ -174,7 +174,7 @@ function useFileDrop(options: FileDropOptions) {
       return;
     }
     ref.current = 0;
-    value2(false);
+    setIsDragOver(false);
   }, [options.disabled]);
   let memo = reactpC.useMemo(
     () =>
@@ -183,8 +183,8 @@ function useFileDrop(options: FileDropOptions) {
         onFiles: options.onFiles,
         accept: options.accept,
         depth: ref,
-        internal: ref2,
-        setOver: value2,
+        internal: internalDragRef,
+        setOver: setIsDragOver,
       }),
     [options.disabled, options.onFiles, options.accept],
   );

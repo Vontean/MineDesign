@@ -29,21 +29,21 @@ var CALLOUT_PICTOGRAM_SIZE: number;
 var calloutVariantClasses: Record<"neutral" | "warning" | "danger", string>;
 var calloutTextClasses: Record<"neutral" | "warning" | "danger", string>;
 var calloutDefaultIcons: Record<"neutral" | "warning" | "danger", string>;
-var reactForUiIcons2: typeof React;
+var reactLinkElements: typeof React;
 var jsxGP: typeof import("react/jsx-runtime");
-function isPictogramElement(input: React.ReactNode): boolean {
+function isPictogramElement(element: React.ReactNode): boolean {
   if (
-    !reactForUiIcons.isValidElement(input) ||
-    typeof input.type === "string"
+    !reactForUiIcons.isValidElement(element) ||
+    typeof element.type === "string"
   ) {
     return false;
   }
-  return isPictogramComponent(input.type as C.PictogramComponent);
+  return isPictogramComponent(element.type as C.PictogramComponent);
 }
 function isPictogramComponent(
-  input: C.PictogramComponent | null | undefined,
+  component: C.PictogramComponent | null | undefined,
 ): boolean {
-  let value = input;
+  let value = component;
   for (
     let index = 0;
     index < 4 && value !== null && value !== undefined;
@@ -52,11 +52,11 @@ function isPictogramComponent(
     if (value.isCdsPictogram === true) {
       return true;
     }
-    let value2 = value;
-    if (value2.$$typeof === REACT_MEMO_SYMBOL) {
-      value = value2.type;
-    } else if (value2.$$typeof === REACT_FORWARD_REF_SYMBOL) {
-      value = value2.render;
+    let wrappedComponent = value;
+    if (wrappedComponent.$$typeof === REACT_MEMO_SYMBOL) {
+      value = wrappedComponent.type;
+    } else if (wrappedComponent.$$typeof === REACT_FORWARD_REF_SYMBOL) {
+      value = wrappedComponent.render;
     } else {
       return false;
     }
@@ -82,112 +82,112 @@ function Callout({
 }: C.CalloutProps) {
   useUiLocale();
   let value: string = useTranslation("dismiss", "Dismiss"),
-    value2 = dismissLabel ?? value,
-    value3: C.Density = useDensity(),
+    resolvedDismissLabel = dismissLabel ?? value,
+    density: C.Density = useDensity(),
     state = {
       "data-step": getDensitySizeIndex(
-        value3,
-        calloutSizeByDensity[value3],
+        density,
+        calloutSizeByDensity[density],
       ),
     },
-    value4 = variant ?? "neutral",
-    value5 =
+    resolvedVariant = variant ?? "neutral",
+    calibrationMode =
       composerCalibration === true
         ? "glyph"
         : composerCalibration === false
           ? undefined
           : composerCalibration,
-    value6 = value5 !== undefined,
-    value7 = icon !== null && icon !== undefined && typeof icon !== "boolean",
-    value8 = isPictogramElement(icon),
-    value9 =
+    usesComposerCalibration = calibrationMode !== undefined,
+    hasIcon = icon !== null && icon !== undefined && typeof icon !== "boolean",
+    hasPictogram = isPictogramElement(icon),
+    hasDetails =
       details !== null &&
       details !== undefined &&
       typeof details !== "boolean",
-    value10 = role ?? (value9 ? "none" : "status"),
-    [value11, value12] = reactZQ.useState(defaultDetailsOpen),
-    [value13, value14] = reactZQ.useState(false),
+    calloutRole = role ?? (hasDetails ? "none" : "status"),
+    [internalDetailsOpen, setInternalDetailsOpen] = reactZQ.useState(defaultDetailsOpen),
+    [isActionWrapped, setIsActionWrapped] = reactZQ.useState(false),
     ref = reactZQ.useRef<HTMLDivElement>(null),
-    ref2 = reactZQ.useRef<HTMLDivElement>(null),
-    ref3 = reactZQ.useRef<HTMLElement>(null),
-    ref4 = reactZQ.useRef(0),
-    value15 =
+    contentRef = reactZQ.useRef<HTMLDivElement>(null),
+    actionRef = reactZQ.useRef<HTMLElement>(null),
+    lastWrappedWidthRef = reactZQ.useRef(0),
+    hasAction =
       action !== null && action !== undefined && typeof action !== "boolean",
-    value16 = !value9 && (value8 || (actionAlign === "center" && !value6)),
-    value17 = value16,
-    value18 = !value9 && value15,
-    value19 = value18 && value13,
-    value20 = value6 && value19 && !value16;
+    shouldCenterAction = !hasDetails && (hasPictogram || (actionAlign === "center" && !usesComposerCalibration)),
+    detectNextLineAction = shouldCenterAction,
+    shouldMeasureAction = !hasDetails && hasAction,
+    hasWrappedAction = shouldMeasureAction && isActionWrapped,
+    useFullWidthAction = usesComposerCalibration && hasWrappedAction && !shouldCenterAction;
   reactZQ.useLayoutEffect(() => {
-    if (!value6 || !value18 || value17) {
-      ref4.current = 0;
+    if (!usesComposerCalibration || !shouldMeasureAction || detectNextLineAction) {
+      lastWrappedWidthRef.current = 0;
     }
-    if (!value18) {
+    if (!shouldMeasureAction) {
       return;
     }
     let current = ref.current,
-      value24: typeof ResizeObserver | undefined = getResizeObserverConstructor(current);
-    if (current === null || value24 === undefined) {
+      ResizeObserverClass: typeof ResizeObserver | undefined = getResizeObserverConstructor(current);
+    if (current === null || ResizeObserverClass === undefined) {
       return;
     }
-    let callback2 = () => {
-      if (value20) {
-        if (current.offsetWidth > ref4.current + CALLOUT_PICTOGRAM_SIZE) {
-          value14(false);
+    let measureActionWrapping = () => {
+      if (useFullWidthAction) {
+        if (current.offsetWidth > lastWrappedWidthRef.current + CALLOUT_PICTOGRAM_SIZE) {
+          setIsActionWrapped(false);
         }
         return;
       }
-      let current3 = ref2.current,
-        current4 = ref3.current;
-      if (current3 === null || current4 === null) {
+      let measuredContent = contentRef.current,
+        measuredAction = actionRef.current;
+      if (measuredContent === null || measuredAction === null) {
         return;
       }
-      let value26 = Number.parseFloat(getComputedStyle(current3).lineHeight);
-      if (!Number.isFinite(value26) || value26 <= 0) {
+      let lineHeight = Number.parseFloat(getComputedStyle(measuredContent).lineHeight);
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
         return;
       }
-      let top = current4.getBoundingClientRect().top,
-        bounds = current3.getBoundingClientRect();
-      if (value17 && bounds.height === 0) {
+      let top = measuredAction.getBoundingClientRect().top,
+        bounds = measuredContent.getBoundingClientRect();
+      if (detectNextLineAction && bounds.height === 0) {
         return;
       }
-      let value27 = value17
+      let actionWraps = detectNextLineAction
         ? top >= bounds.bottom - 1
-        : top - bounds.top > value26 / 2;
-      if (value27 && value6 && !value17) {
-        ref4.current = current.offsetWidth;
+        : top - bounds.top > lineHeight / 2;
+      if (actionWraps && usesComposerCalibration && !detectNextLineAction) {
+        lastWrappedWidthRef.current = current.offsetWidth;
       }
-      value14(value27);
+      setIsActionWrapped(actionWraps);
     };
-    callback2();
-    let value25 = new value24(callback2);
-    value25.observe(current);
-    let current2 = ref2.current;
-    if (value17 && current2 !== null) {
-      value25.observe(current2);
+    measureActionWrapping();
+    let resizeObserver = new ResizeObserverClass(measureActionWrapping);
+    resizeObserver.observe(current);
+    let contentElement = contentRef.current;
+    if (detectNextLineAction && contentElement !== null) {
+      resizeObserver.observe(contentElement);
     }
-    return () => value25.disconnect();
-  }, [value18, value6, value20, value17]);
-  let value21 = detailsOpen ?? value11,
-    callback = (input: boolean) => {
-      value12(input);
-      onDetailsOpenChange?.(input);
+    return () => resizeObserver.disconnect();
+  }, [shouldMeasureAction, usesComposerCalibration, useFullWidthAction, detectNextLineAction]);
+  let resolvedDetailsOpen = detailsOpen ?? internalDetailsOpen,
+    callback = (nextOpen: boolean) => {
+      setInternalDetailsOpen(nextOpen);
+      onDetailsOpenChange?.(nextOpen);
     },
-    value22 = value9 || !value8,
-    value23 = action ? (
+    useInlineIcon = hasDetails || !hasPictogram,
+    actionElement = action ? (
       <span
-        ref={ref3}
+        ref={actionRef}
         {...state}
         className={cn(
           "flex shrink-0 items-center gap-xs",
-          !value19 && "h-[1lh]",
-          value20 && "basis-full",
-          !value19 && "-ms-[2px]",
-          value20 && value5 && leadingIconOutsetClasses[value5],
-          value5 !== undefined &&
+          !hasWrappedAction && "h-[1lh]",
+          useFullWidthAction && "basis-full",
+          !hasWrappedAction && "-ms-[2px]",
+          useFullWidthAction && calibrationMode && leadingIconOutsetClasses[calibrationMode],
+          calibrationMode !== undefined &&
             !onDismiss &&
-            leadingIconSpacingClasses[value5],
-          !value6 && !onDismiss && "-me-[calc(var(--cds-pad-md)-2px)]",
+            leadingIconSpacingClasses[calibrationMode],
+          !usesComposerCalibration && !onDismiss && "-me-[calc(var(--cds-pad-md)-2px)]",
         )}
       >
         {action}
@@ -196,47 +196,47 @@ function Callout({
   return (
     <div
       data-cds={"Banner"}
-      data-icon-layout={value22 ? "first-line" : "centered"}
-      data-cta-layout={value20 ? "stacked" : value19 ? "wrapped" : "inline"}
-      data-action-align={value16 ? "center" : "first-line"}
-      data-composer-keyline={value5}
+      data-icon-layout={useInlineIcon ? "first-line" : "centered"}
+      data-cta-layout={useFullWidthAction ? "stacked" : hasWrappedAction ? "wrapped" : "inline"}
+      data-action-align={shouldCenterAction ? "center" : "first-line"}
+      data-composer-keyline={calibrationMode}
       data-testid={dataTestid}
-      role={value10 === "none" ? undefined : value10}
+      role={calloutRole === "none" ? undefined : calloutRole}
       ref={ref}
       className={cn(
         "flex",
-        value22 ? "items-start" : "items-center",
+        useInlineIcon ? "items-start" : "items-center",
         "gap-xs py-md font-sans text-body font-normal",
-        value6 ? "px-md" : "px-lg",
-        value19 && !value20 && "pb-lg",
-        value6 ? pictogramCardRadiusClass : "rounded-card",
-        calloutVariantClasses[value4],
+        usesComposerCalibration ? "px-md" : "px-lg",
+        hasWrappedAction && !useFullWidthAction && "pb-lg",
+        usesComposerCalibration ? pictogramCardRadiusClass : "rounded-card",
+        calloutVariantClasses[resolvedVariant],
         className,
       )}
     >
-      {[icon !== null && !value20 && (
+      {[icon !== null && !useFullWidthAction && (
           <span
             className={cn(
-              value22 ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
-              calloutTextClasses[value4],
-              value6 && "ms-[4px] -me-[4px]",
+              useInlineIcon ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
+              calloutTextClasses[resolvedVariant],
+              usesComposerCalibration && "ms-[4px] -me-[4px]",
             )}
           >
-            {value7 ? (icon) : (<Icon
-                name={calloutDefaultIcons[value4]}
+            {hasIcon ? (icon) : (<Icon
+                name={calloutDefaultIcons[resolvedVariant]}
                 size={"auto"}
               />)}
           </span>
-        ), value9 ? (
+        ), hasDetails ? (
           <div
             className={cn(
               "flex min-w-0 flex-1 flex-col",
-              value5 && leadingIconInsetClasses[value5],
+              calibrationMode && leadingIconInsetClasses[calibrationMode],
             )}
           >
             <Collapsible.Root
               className={"contents"}
-              open={value21}
+              open={resolvedDetailsOpen}
               onOpenChange={callback}
             >
               {[<div
@@ -255,11 +255,11 @@ function Callout({
                           {[<div className={"min-w-0"}>{children}</div>, <Icon
                               name={"CaretDown"}
                               size={"sm"}
-                              className={`shrink-0 text-secondary transition-transform ${value21 ? "rotate-0" : "-rotate-90 rtl:rotate-90"}`}
+                              className={`shrink-0 text-secondary transition-transform ${resolvedDetailsOpen ? "rotate-0" : "-rotate-90 rtl:rotate-90"}`}
                             />]}
                         </button>
                       }
-                    />, value23]}
+                    />, actionElement]}
                 </div>, <Collapsible.Panel
                   className={"w-full text-secondary"}
                 >
@@ -271,35 +271,35 @@ function Callout({
           <div
             className={cn(
               "flex min-w-0 flex-wrap",
-              value16 ? "items-center" : "items-start",
+              shouldCenterAction ? "items-center" : "items-start",
               "gap-y-sm gap-x-md flex-1",
-              value20 && "gap-y-xs",
-              value5 && leadingIconInsetClasses[value5],
+              useFullWidthAction && "gap-y-xs",
+              calibrationMode && leadingIconInsetClasses[calibrationMode],
             )}
           >
             {[<div
-                ref={ref2}
+                ref={contentRef}
                 className={
-                  !value16
+                  !shouldCenterAction
                     ? "max-w-full min-w-0 flex-auto"
-                    : value6 && value8
+                    : usesComposerCalibration && hasPictogram
                       ? "min-w-[min(40ch,100%)] flex-1"
                       : "min-w-[min(20ch,100%)] flex-1"
                 }
               >
                 {children}
-              </div>, value23]}
+              </div>, actionElement]}
           </div>
         ), onDismiss && (
           <span
             {...state}
-            className={`${value5 !== undefined ? trailingIconOutsetClasses[value5] : "-me-[calc(var(--cds-pad-md)-2px)]"} flex h-[1lh] shrink-0 items-center`}
+            className={`${calibrationMode !== undefined ? trailingIconOutsetClasses[calibrationMode] : "-me-[calc(var(--cds-pad-md)-2px)]"} flex h-[1lh] shrink-0 items-center`}
           >
             <Button
               variant={"ghost"}
               iconOnly={true}
               icon={"X"}
-              aria-label={value2}
+              aria-label={resolvedDismissLabel}
               tooltip={false}
               onClick={onDismiss}
             />
@@ -328,7 +328,7 @@ export {
   REACT_FORWARD_REF_SYMBOL,
   REACT_MEMO_SYMBOL,
   reactForUiIcons,
-  reactForUiIcons2,
+  reactLinkElements as reactForUiIcons2,
   reactZQ,
   trailingGlyphOutsetClass,
   trailingIconOutsetClasses,
@@ -405,7 +405,7 @@ export function installUiIcons(): () => void {
     initializePointerDismissal();
     initializeIcons();
     initializeCdsLink();
-    reactForUiIcons2 = toModuleNamespace(
+    reactLinkElements = toModuleNamespace(
       loadReactNamespace(),
       1,
     );

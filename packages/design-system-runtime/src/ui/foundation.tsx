@@ -65,7 +65,7 @@ var readDocumentFont: () => DocumentFont | undefined;
 var subscribeFontNoop: ExternalStore<DocumentFont | undefined>["subscribe"];
 var getUndefinedFontSnapshot: () => undefined;
 var initializeDocumentFont: () => void;
-var PlatformFileContentAlias_2: typeof React;
+var reactFeatureFlags: typeof React;
 var featureFlagContext: React.Context<string | undefined>;
 var initializeFeatureFlags: () => void;
 var inputDismissalStates: WeakMap<Document, DocumentInputState>;
@@ -184,9 +184,9 @@ function getMediaQueryStore(
   if (store === undefined) {
     let value = windowObject.matchMedia(query);
     store = {
-      subscribe: (input: () => void) => {
-        value.addEventListener("change", input);
-        return () => value.removeEventListener("change", input);
+      subscribe: (listener: () => void) => {
+        value.addEventListener("change", listener);
+        return () => value.removeEventListener("change", listener);
       },
       getSnapshot: () => value.matches,
     };
@@ -234,8 +234,8 @@ function notifySubscribers(subscribers: Set<() => void>): void {
       if (subscribers.has(value)) {
         value();
       }
-    } catch (value2: unknown) {
-      errors.push(value2);
+    } catch (error: unknown) {
+      errors.push(error);
     }
   }
   if (errors.length > 0) {
@@ -335,18 +335,18 @@ function subscribeCoarsePointer(
     }
   };
 }
-function reportAsyncError(input: unknown): void {
+function reportAsyncError(error: unknown): void {
   if (typeof reportError === "function") {
-    reportError(input);
+    reportError(error);
   } else {
     queueMicrotask(() => {
-      throw input;
+      throw error;
     });
   }
 }
-function invokeAndReportError(input: () => void): void {
+function invokeAndReportError(operation: () => void): void {
   try {
-    input();
+    operation();
   } catch (value: unknown) {
     reportAsyncError(value);
   }
@@ -355,10 +355,10 @@ function createSafeObserver<Observer>(
   constructObserver: () => Observer,
 ): SafeObserver<Observer> {
   let reported: boolean = false,
-    reportOnce = (input: unknown): void => {
+    reportOnce = (error: unknown): void => {
       if (!reported) {
         reported = true;
-        reportAsyncError(input);
+        reportAsyncError(error);
       }
     },
     observer: Observer | null = null;
@@ -369,12 +369,12 @@ function createSafeObserver<Observer>(
   }
   return {
     observer: observer,
-    attempt(input: (observer: Observer) => void): boolean {
+    attempt(observeTarget: (observer: Observer) => void): boolean {
       if (observer === null) {
         return false;
       }
       try {
-        input(observer);
+        observeTarget(observer);
         return true;
       } catch (value: unknown) {
         reportOnce(value);
@@ -385,32 +385,32 @@ function createSafeObserver<Observer>(
 }
 function createSafeResizeObserver(
   ObserverConstructor: typeof ResizeObserver,
-  callback: ResizeObserverCallback,
+  onResize: ResizeObserverCallback,
 ): SafeResizeObserver {
   let safeObserver = createSafeObserver(
-    () => new ObserverConstructor(callback),
+    () => new ObserverConstructor(onResize),
   );
   return {
-    observe: (input: Element, options?: ResizeObserverOptions) =>
-      safeObserver.attempt((input2) =>
-        options === undefined
-          ? input2.observe(input)
-          : input2.observe(input, options),
+    observe: (element: Element, resizeOptions?: ResizeObserverOptions) =>
+      safeObserver.attempt((observer) =>
+        resizeOptions === undefined
+          ? observer.observe(element)
+          : observer.observe(element, resizeOptions),
       ),
-    unobserve: (input: Element) => safeObserver.observer?.unobserve(input),
+    unobserve: (element: Element) => safeObserver.observer?.unobserve(element),
     disconnect: () => safeObserver.observer?.disconnect(),
   };
 }
 function createSafeMutationObserver(
   ObserverConstructor: typeof MutationObserver,
-  callback: MutationCallback,
+  onMutation: MutationCallback,
 ): SafeMutationObserver {
   let safeObserver = createSafeObserver(
-    () => new ObserverConstructor(callback),
+    () => new ObserverConstructor(onMutation),
   );
   return {
-    observe: (input: Node, options?: MutationObserverInit) =>
-      safeObserver.attempt((input2) => input2.observe(input, options)),
+    observe: (node: Node, mutationOptions?: MutationObserverInit) =>
+      safeObserver.attempt((observer) => observer.observe(node, mutationOptions)),
     disconnect: () => safeObserver.observer?.disconnect(),
     takeRecords: () => safeObserver.observer?.takeRecords() ?? [],
   };
@@ -419,32 +419,32 @@ function createFontAttributeStore(): ExternalStore<DocumentFont | undefined> {
   let value: DocumentFont | undefined,
     flag = false,
     callback = () => {
-      let value2 = value;
+      let previousFont = value;
       value = readDocumentFont();
       flag = true;
-      return value !== value2;
+      return value !== previousFont;
     };
   return {
-    subscribe: (input: () => void) => {
+    subscribe: (listener: () => void) => {
       if (typeof MutationObserver === "undefined") {
         return () => {
           return;
         };
       }
-      let value2 = createSafeMutationObserver(MutationObserver, () => {
+      let fontObserver = createSafeMutationObserver(MutationObserver, () => {
         if (callback()) {
-          input();
+          listener();
         }
       });
-      value2.observe(document.documentElement, {
+      fontObserver.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ["data-font"],
       });
       if (callback()) {
-        queueMicrotask(input);
+        queueMicrotask(listener);
       }
       return () => {
-        value2.disconnect();
+        fontObserver.disconnect();
         flag = false;
       };
     },
@@ -465,7 +465,7 @@ function useDocumentFont(enabled?: boolean): DocumentFont | undefined {
   );
 }
 function useFeatureFlagAttribute(): string | undefined {
-  return PlatformFileContentAlias_2.useContext(featureFlagContext);
+  return reactFeatureFlags.useContext(featureFlagContext);
 }
 function mergeFeatureFlagNames(
   existingNames: string | undefined,
@@ -496,20 +496,20 @@ function registerInputDismissalTracking(documentObject?: Document): void {
     documentObject.defaultView ?? documentObject;
   eventTarget.addEventListener(
     "keydown",
-    (input) => {
-      if (!input.isTrusted) {
+    (keyEvent) => {
+      if (!keyEvent.isTrusted) {
         return;
       }
       inputState.observedInput = true;
       inputState.lastInputDismissing =
-        !input.isComposing && dismissalKeys.has(input.key);
+        !keyEvent.isComposing && dismissalKeys.has(keyEvent.key);
     },
     true,
   );
   eventTarget.addEventListener(
     "pointerdown",
-    (input) => {
-      if (!input.isTrusted) {
+    (pointerEvent) => {
+      if (!pointerEvent.isTrusted) {
         return;
       }
       inputState.observedInput = true;
@@ -540,14 +540,14 @@ function isInputTriggeredBlur(event: InputFocusEvent): boolean {
   return inputState.lastInputDismissing;
 }
 function runWithTransition<Value>(
-  input: string,
-  options: () => Promise<Value>,
+  transitionName: string,
+  operation: () => Promise<Value>,
 ): Promise<Value> {
   try {
     if (transitionRunner) {
-      return Promise.resolve(transitionRunner(input, options));
+      return Promise.resolve(transitionRunner(transitionName, operation));
     } else {
-      return options();
+      return operation();
     }
   } catch (value: unknown) {
     return Promise.reject(
@@ -563,10 +563,10 @@ function getResizeObserverConstructor(
   )?.ResizeObserver;
 }
 function isAndroidWindow(windowObject: BrowserWindow): boolean {
-  let navigator2 = windowObject.navigator,
-    platform = navigator2.userAgentData?.platform ?? "";
+  let windowNavigator = windowObject.navigator,
+    platform = windowNavigator.userAgentData?.platform ?? "";
   return (
-    /android/i.test(platform) || /android/i.test(navigator2.userAgent ?? "")
+    /android/i.test(platform) || /android/i.test(windowNavigator.userAgent ?? "")
   );
 }
 function useAndroidCloseWatcher(
@@ -595,21 +595,21 @@ function useAndroidCloseWatcher(
         }
         value.onclose = () => {
           onClose();
-          windowObject.addEventListener("pointerup", callback2, {
+          windowObject.addEventListener("pointerup", rearmCloseWatcher, {
             capture: true,
             once: true,
           });
-          windowObject.addEventListener("keydown", callback2, {
+          windowObject.addEventListener("keydown", rearmCloseWatcher, {
             capture: true,
             once: true,
           });
         };
       },
-      callback2 = () => {
-        windowObject.removeEventListener("pointerup", callback2, {
+      rearmCloseWatcher = () => {
+        windowObject.removeEventListener("pointerup", rearmCloseWatcher, {
           capture: true,
         });
-        windowObject.removeEventListener("keydown", callback2, {
+        windowObject.removeEventListener("keydown", rearmCloseWatcher, {
           capture: true,
         });
         if (!flag) {
@@ -620,10 +620,10 @@ function useAndroidCloseWatcher(
     callback();
     return () => {
       flag = true;
-      windowObject.removeEventListener("pointerup", callback2, {
+      windowObject.removeEventListener("pointerup", rearmCloseWatcher, {
         capture: true,
       });
-      windowObject.removeEventListener("keydown", callback2, {
+      windowObject.removeEventListener("keydown", rearmCloseWatcher, {
         capture: true,
       });
       value?.destroy();
@@ -882,14 +882,14 @@ function asElement(node: EventTarget | null | undefined): Element | null {
   }
 }
 function createRequiredRefCallback<Args extends unknown[], Result>(
-  input: React.RefObject<(...args: Args) => Result>,
+  callbackRef: React.RefObject<(...args: Args) => Result>,
 ): (...args: Args) => Result {
-  return (...input2: Args): Result => input.current(...input2);
+  return (...args: Args): Result => callbackRef.current(...args);
 }
 function createOptionalRefCallback<Args extends unknown[], Result>(
-  input: React.RefObject<((...args: Args) => Result) | undefined>,
+  callbackRef: React.RefObject<((...args: Args) => Result) | undefined>,
 ): (...args: Args) => Result | undefined {
-  return (...input2: Args): Result | undefined => input.current?.(...input2);
+  return (...args: Args): Result | undefined => callbackRef.current?.(...args);
 }
 function useOptionalEventCallback<Args extends unknown[], Result>(
   callback: (...args: Args) => Result,
@@ -984,21 +984,21 @@ function useVisualKeyboard(
       index = 0,
       callback = () => {
         index = 0;
-        let value2 = measureVisualKeyboard(windowObject),
+        let measuredKeyboard = measureVisualKeyboard(windowObject),
           clientHeight = windowObject.document.documentElement.clientHeight,
-          value3 =
-            value2 !== null &&
-            value2.visible < clientHeight - KEYBOARD_MINIMUM_HEIGHT,
-          value4 = value3 ? value2 : null;
+          isKeyboardVisible =
+            measuredKeyboard !== null &&
+            measuredKeyboard.visible < clientHeight - KEYBOARD_MINIMUM_HEIGHT,
+          visibleKeyboard = isKeyboardVisible ? measuredKeyboard : null;
         if (
-          value4?.inset !== value?.inset ||
-          value4?.visible !== value?.visible ||
-          value4?.offset !== value?.offset
+          visibleKeyboard?.inset !== value?.inset ||
+          visibleKeyboard?.visible !== value?.visible ||
+          visibleKeyboard?.offset !== value?.offset
         ) {
-          value = value4;
-          notifyKeyboardChange(value4);
+          value = visibleKeyboard;
+          notifyKeyboardChange(visibleKeyboard);
         }
-        if (unpan && value3 && !flag && visualViewport.offsetTop > 0) {
+        if (unpan && isKeyboardVisible && !flag && visualViewport.offsetTop > 0) {
           flag = true;
           windowObject.document.documentElement.scrollIntoView({
             block: "start",
@@ -1011,21 +1011,21 @@ function useVisualKeyboard(
             behavior: "instant",
           });
         }
-        if (!value3) {
+        if (!isKeyboardVisible) {
           flag = false;
         }
       },
-      callback2 = () => {
+      scheduleKeyboardMeasurement = () => {
         if (index === 0) {
           index = windowObject.requestAnimationFrame(callback);
         }
       };
     callback();
-    visualViewport.addEventListener("resize", callback2);
-    visualViewport.addEventListener("scroll", callback2);
+    visualViewport.addEventListener("resize", scheduleKeyboardMeasurement);
+    visualViewport.addEventListener("scroll", scheduleKeyboardMeasurement);
     return () => {
-      visualViewport.removeEventListener("resize", callback2);
-      visualViewport.removeEventListener("scroll", callback2);
+      visualViewport.removeEventListener("resize", scheduleKeyboardMeasurement);
+      visualViewport.removeEventListener("scroll", scheduleKeyboardMeasurement);
       if (index !== 0) {
         windowObject.cancelAnimationFrame(index);
       }
@@ -1117,8 +1117,8 @@ function useOverlayShowing(open: boolean): {
     setWasShowing(true);
   }
   let onOpenChangeComplete = reactPresentationMode.useCallback(
-    (input: boolean) => {
-      if (!input) {
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
         setWasShowing(false);
       }
     },
@@ -1160,9 +1160,9 @@ function useValueCapturedOnOpen<Value>(
       return;
     }
     let value = readValueRef.current();
-    setCapturedState((input) =>
-      input.wasOpen && Object.is(input.value, value)
-        ? input
+    setCapturedState((previousCapture) =>
+      previousCapture.wasOpen && Object.is(previousCapture.value, value)
+        ? previousCapture
         : {
             wasOpen: true,
             value: value,
@@ -1206,8 +1206,8 @@ function createMutableValue<Value>(): MutableCell<Value> {
   let value: Value | null = null;
   return {
     get: () => value,
-    set: (input: Value | null) => {
-      value = input;
+    set: (nextValue: Value | null) => {
+      value = nextValue;
     },
   };
 }
@@ -1284,42 +1284,42 @@ function useSheetFrame(
     lastCompletedOpenRef.current = null;
   }, [open]);
   let handleOpenChangeComplete = reactAdaptiveSheets.useCallback(
-      (input: boolean) => {
-        completeShowingTransition(input);
-        if (lastCompletedOpenRef.current === input) {
+      (nextOpen: boolean) => {
+        completeShowingTransition(nextOpen);
+        if (lastCompletedOpenRef.current === nextOpen) {
           return;
         }
-        lastCompletedOpenRef.current = input;
-        notifyOpenChangeComplete?.(input);
+        lastCompletedOpenRef.current = nextOpen;
+        notifyOpenChangeComplete?.(nextOpen);
       },
       [completeShowingTransition, notifyOpenChangeComplete],
     ),
     pinHeight = reactAdaptiveSheets.useCallback(
-      (input: number, options: boolean = true) => {
-        if (levelsRef.current.length > 0 || !(input > 0)) {
+      (measuredHeight: number, grows: boolean = true) => {
+        if (levelsRef.current.length > 0 || !(measuredHeight > 0)) {
           return;
         }
         levelsRef.current = [
           {
-            height: Math.round(input),
-            grows: options,
+            height: Math.round(measuredHeight),
+            grows: grows,
           },
         ];
-        setHeight(Math.round(input));
-        setCanGrow(options);
+        setHeight(Math.round(measuredHeight));
+        setCanGrow(grows);
       },
       [],
     ),
     repinHeight = reactAdaptiveSheets.useCallback(
-      (input: number, options?: boolean) => {
+      (measuredHeight: number, grows?: boolean) => {
         let current = levelsRef.current,
           value = current[0];
-        if (value === undefined || !(input > 0)) {
+        if (value === undefined || !(measuredHeight > 0)) {
           return;
         }
-        value.height = Math.round(input);
-        if (options !== undefined) {
-          value.grows = options;
+        value.height = Math.round(measuredHeight);
+        if (grows !== undefined) {
+          value.grows = grows;
         }
         setHeight(getStackedSheetHeight(current));
         setCanGrow(getStackedSheetCanGrow(current));
@@ -1327,10 +1327,10 @@ function useSheetFrame(
       [],
     ),
     pushLevelHeight = reactAdaptiveSheets.useCallback(
-      (input: number, options: boolean = true) => {
+      (measuredHeight: number, grows: boolean = true) => {
         let state = {
-            height: Math.round(input),
-            grows: options,
+            height: Math.round(measuredHeight),
+            grows: grows,
           },
           current = levelsRef.current;
         current.push(state);
@@ -1339,13 +1339,13 @@ function useSheetFrame(
         let flag = false,
           callback = () => !flag && current === levelsRef.current;
         return {
-          set: (input2: number, options2?: boolean) => {
+          set: (nextHeight: number, nextGrows?: boolean) => {
             if (!callback()) {
               return;
             }
-            state.height = Math.round(input2);
-            if (options2 !== undefined) {
-              state.grows = options2;
+            state.height = Math.round(nextHeight);
+            if (nextGrows !== undefined) {
+              state.grows = nextGrows;
             }
             setHeight(getStackedSheetHeight(current));
             setCanGrow(getStackedSheetCanGrow(current));
@@ -1547,11 +1547,11 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
     coveringChildrenRef = reactAdaptiveSheets.useRef(new Set<object>()),
     lastUncoveredAtRef = reactAdaptiveSheets.useRef(0),
     [covered, setCovered] = reactAdaptiveSheets.useState(false),
-    cover = reactAdaptiveSheets.useCallback((input: object) => {
-      coveringChildrenRef.current.add(input);
+    cover = reactAdaptiveSheets.useCallback((childSheet: object) => {
+      coveringChildrenRef.current.add(childSheet);
       setCovered(true);
       return () => {
-        coveringChildrenRef.current.delete(input);
+        coveringChildrenRef.current.delete(childSheet);
         lastUncoveredAtRef.current = Date.now();
         setCovered(coveringChildrenRef.current.size > 0);
       };
@@ -1599,22 +1599,22 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
     sheetRef.current = sheet;
   }, [sheet]);
   let refusesAmbientClose = reactAdaptiveSheets.useCallback(
-      (input: Overlays.OverlayEventDetails) => {
-        if (input.reason === undefined) {
+      (details: Overlays.OverlayEventDetails) => {
+        if (details.reason === undefined) {
           return false;
         }
         if (
           (coveringChildrenRef.current.size > 0 ||
             Date.now() - lastUncoveredAtRef.current <
               SHEET_UNCOVER_CLOSE_GRACE_MS) &&
-          ambientCloseReasons.has(input.reason)
+          ambientCloseReasons.has(details.reason)
         ) {
           return true;
         }
         return (
           sheetRef.current &&
-          input.reason === "outside-press" &&
-          isLiveRegionEvent(input.event)
+          details.reason === "outside-press" &&
+          isLiveRegionEvent(details.event)
         );
       },
       [],
@@ -1630,32 +1630,32 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
       }
     }, []),
     handleOpenChange = reactAdaptiveSheets.useCallback(
-      (input: boolean, options: Details) => {
-        let value = options;
-        if (!input && refusesAmbientClose(value)) {
+      (nextOpen: boolean, details: Details) => {
+        let value = details;
+        if (!nextOpen && refusesAmbientClose(value)) {
           value.cancel?.();
           return;
         }
         if (
-          !input &&
+          !nextOpen &&
           sheetRef.current &&
-          refuseCloseCallback?.(options, treeId) === true
+          refuseCloseCallback?.(details, treeId) === true
         ) {
           value.cancel?.();
           return;
         }
-        closeRequestRef.current = input ? null : value;
-        if (!input) {
+        closeRequestRef.current = nextOpen ? null : value;
+        if (!nextOpen) {
           windowObject?.requestAnimationFrame(() => {
             if (closeRequestRef.current === value) {
               closeRequestRef.current = null;
             }
           });
         }
-        if (input && coarsePresentation) {
+        if (nextOpen && coarsePresentation) {
           preloadSheetImplementation();
         }
-        notifyOpenChange?.(input, options);
+        notifyOpenChange?.(nextOpen, details);
       },
       [
         notifyOpenChange,
@@ -1751,7 +1751,7 @@ function FloatingPositionRenderProp<
   );
 }
 function SheetContextProvider({
-  value: value,
+  value: sheetResult,
   children: children,
 }: {
   value: Overlays.SheetPopupResult<Overlays.OverlayEventDetails>;
@@ -1759,9 +1759,9 @@ function SheetContextProvider({
 }): React.ReactElement {
   useUiLocale();
   return (
-    <sheetStateContext.Provider value={value.state}>
-      <sheetCoverContext.Provider value={value.stack.cover}>
-        <sheetFrameContext.Provider value={value.frame}>
+    <sheetStateContext.Provider value={sheetResult.state}>
+      <sheetCoverContext.Provider value={sheetResult.stack.cover}>
+        <sheetFrameContext.Provider value={sheetResult.frame}>
           {children}
         </sheetFrameContext.Provider>
       </sheetCoverContext.Provider>
@@ -1782,10 +1782,10 @@ function useControllableOpen<Details extends Overlays.OverlayEventDetails>(
   return {
     open: open,
     onOpenChange: reactAdaptiveSheets.useCallback(
-      (input: boolean, options: Details) => {
-        onOpenChange?.(input, options);
-        if (!options.isCanceled) {
-          setUncontrolledOpen(input);
+      (nextOpen: boolean, details: Details) => {
+        onOpenChange?.(nextOpen, details);
+        if (!details.isCanceled) {
+          setUncontrolledOpen(nextOpen);
         }
       },
       [onOpenChange],
@@ -1797,8 +1797,8 @@ function useHasSheetFrame(): boolean {
 }
 function useSheetCapablePresentation(): boolean {
   let value = useCoarsePresentation(),
-    value2 = reactAdaptiveSheets.useContext(sheetFrameContext) !== null;
-  return value || value2;
+    hasSheetFrame = reactAdaptiveSheets.useContext(sheetFrameContext) !== null;
+  return value || hasSheetFrame;
 }
 function useSheetImplementation(): Overlays.MobileSheetParts | null {
   let implementation = useLoadedSheetImplementation(),
@@ -1833,9 +1833,9 @@ function isReducedMotion(): boolean {
     document.documentElement.getAttribute(REDUCED_MOTION_ATTRIBUTE) === "true"
   );
 }
-function resetSheetDragStyle(input: HTMLElement): void {
-  input.style.transition = "";
-  input.style.translate = "";
+function resetSheetDragStyle(sheetElement: HTMLElement): void {
+  sheetElement.style.transition = "";
+  sheetElement.style.translate = "";
 }
 function useSheetDrag(): Pick<
   React.DOMAttributes<HTMLElement>,
@@ -1859,20 +1859,20 @@ function useSheetDrag(): Pick<
               `[data-presentation="sheet"][data-sheet-tree="${CSS.escape(frame.treeId)}"]:not([data-ending-style])`,
             ),
           ),
-    applyDragGeometry = (input: SheetGestureSession, options: number) => {
+    applyDragGeometry = (session: SheetGestureSession, deltaY: number) => {
       let {
         height: value,
-        slide: value2,
-        shown: value3,
-      } = calculateSheetDragGeometry(input, input.raw - options);
-      for (let { el: value5 } of input.sheets) {
-        value5.style.height = `${value}px`;
-        value5.style.translate = value2 > 0 ? `0 ${value2}px` : "";
+        slide: slideOffset,
+        shown: visibleFraction,
+      } = calculateSheetDragGeometry(session, session.raw - deltaY);
+      for (let { el: sheetElement } of session.sheets) {
+        sheetElement.style.height = `${value}px`;
+        sheetElement.style.translate = slideOffset > 0 ? `0 ${slideOffset}px` : "";
       }
-      let value4 = value3 < 1 ? value3.toFixed(3) : "";
-      for (let value5 of input.scrims) {
-        if (value5.style.opacity !== value4) {
-          value5.style.opacity = value4;
+      let scrimOpacity = visibleFraction < 1 ? visibleFraction.toFixed(3) : "";
+      for (let scrim of session.scrims) {
+        if (scrim.style.opacity !== scrimOpacity) {
+          scrim.style.opacity = scrimOpacity;
         }
       }
     },
@@ -1906,43 +1906,43 @@ function useSheetDrag(): Pick<
       let bounds = ancestor.getBoundingClientRect(),
         height = bounds.height,
         value = ancestor.parentElement?.getBoundingClientRect().bottom,
-        value2 = Math.max(0, bounds.bottom - (value ?? bounds.bottom)),
+        caughtSlide = Math.max(0, bounds.bottom - (value ?? bounds.bottom)),
         defaultView = ancestor.ownerDocument.defaultView,
-        value3 =
+        availableHeight =
           defaultView === null
             ? height
             : getSheetAvailableHeight(defaultView, ancestor);
       event.currentTarget.setPointerCapture(event.pointerId);
-      let value4 = findTreeSheets(ancestor).map((input: HTMLElement) => {
-          let height2 = input.style.height;
-          input.style.transition = "none";
-          input.style.height = `${height}px`;
+      let sheets = findTreeSheets(ancestor).map((sheetElement: HTMLElement) => {
+          let initialInlineHeight = sheetElement.style.height;
+          sheetElement.style.transition = "none";
+          sheetElement.style.height = `${height}px`;
           return {
-            el: input,
-            height: height2,
+            el: sheetElement,
+            height: initialInlineHeight,
           };
         }),
-        value5 = frame.canGrow || frame.detent === "tall",
-        value6 = calculateSheetBounds(
+        canGrow = frame.canGrow || frame.detent === "tall",
+        sheetBounds = calculateSheetBounds(
           Math.min(frame.height ?? height, height),
-          value3,
+          availableHeight,
           MAX_SHEET_HEIGHT_FRACTION,
-          value5,
+          canGrow,
         ),
-        value7 =
-          isReducedMotion() || !value5
+        dragBounds =
+          isReducedMotion() || !canGrow
             ? {
-                ...value6,
+                ...sheetBounds,
                 room: 0,
               }
-            : value6,
-        value8 = Array.from(
+            : sheetBounds,
+        scrims = Array.from(
           ancestor.ownerDocument.querySelectorAll<HTMLElement>(
             `[data-presentation="sheet"][data-sheet-scrim="${CSS.escape(frame.treeId)}"]`,
           ),
         );
-      for (let value9 of value8) {
-        value9.style.transition = "none";
+      for (let scrim of scrims) {
+        scrim.style.transition = "none";
       }
       let state = {
         owner: dragOwner,
@@ -1952,43 +1952,43 @@ function useSheetDrag(): Pick<
         lastT: event.timeStamp,
         velocity: 0,
         detent: frame.detent,
-        raw: recoverRawSheetHeight(value7, height, value2),
-        caughtSlide: value2,
-        ...value7,
-        sheets: value4,
+        raw: recoverRawSheetHeight(dragBounds, height, caughtSlide),
+        caughtSlide: caughtSlide,
+        ...dragBounds,
+        sheets: sheets,
         doc: ancestor.ownerDocument,
-        scrims: value8,
+        scrims: scrims,
       };
       dragState.set(state);
       applyDragGeometry(state, 0);
     },
-    onPointerMove = (input: React.PointerEvent<HTMLElement>) => {
+    onPointerMove = (pointerEvent: React.PointerEvent<HTMLElement>) => {
       let entry = dragState.get();
       if (
         entry === null ||
         entry.owner !== dragOwner ||
-        input.pointerId !== entry.pointerId
+        pointerEvent.pointerId !== entry.pointerId
       ) {
         return;
       }
-      let value = input.timeStamp - entry.lastT;
+      let value = pointerEvent.timeStamp - entry.lastT;
       if (value > 0) {
-        entry.velocity = (input.clientY - entry.lastY) / value;
+        entry.velocity = (pointerEvent.clientY - entry.lastY) / value;
       }
-      entry.lastY = input.clientY;
-      entry.lastT = input.timeStamp;
-      applyDragGeometry(entry, input.clientY - entry.startY);
+      entry.lastY = pointerEvent.clientY;
+      entry.lastT = pointerEvent.timeStamp;
+      applyDragGeometry(entry, pointerEvent.clientY - entry.startY);
     },
-    restoreDragStyles = (input: SheetGestureSession, options: boolean) => {
-      for (let { el: value, height: value2 } of input.sheets) {
-        if (((value.style.transition = ""), options)) {
+    restoreDragStyles = (session: SheetGestureSession, dismiss: boolean) => {
+      for (let { el: value, height: initialInlineHeight } of session.sheets) {
+        if (((value.style.transition = ""), dismiss)) {
           value.style.translate = `0 ${SHEET_DISMISS_TRANSLATE_CSS}`;
         } else {
-          value.style.height = value2;
+          value.style.height = initialInlineHeight;
           value.style.translate = "";
         }
       }
-      for (let value of input.scrims) {
+      for (let value of session.scrims) {
         value.style.transition = "";
         value.style.opacity = "";
       }
@@ -2028,67 +2028,67 @@ function useSheetDrag(): Pick<
     [dragState, dragOwner],
   );
   let finishDrag = (
-    input: React.PointerEvent<HTMLElement>,
-    options: boolean,
+    pointerEvent: React.PointerEvent<HTMLElement>,
+    commit: boolean,
   ) => {
     let entry = dragState.get();
     if (
       entry === null ||
       entry.owner !== dragOwner ||
       frame === null ||
-      input.pointerId !== entry.pointerId
+      pointerEvent.pointerId !== entry.pointerId
     ) {
       return;
     }
     dragState.set(null);
-    if (input.currentTarget.hasPointerCapture(input.pointerId)) {
-      input.currentTarget.releasePointerCapture(input.pointerId);
+    if (pointerEvent.currentTarget.hasPointerCapture(pointerEvent.pointerId)) {
+      pointerEvent.currentTarget.releasePointerCapture(pointerEvent.pointerId);
     }
     let value = entry.lastY - entry.startY,
-      value2 = input.timeStamp - entry.lastT > 100 ? 0 : entry.velocity,
-      { dismiss: value3, detent: value4 } = determineSheetRelease(entry, {
+      releaseVelocity = pointerEvent.timeStamp - entry.lastT > 100 ? 0 : entry.velocity,
+      { dismiss: shouldDismiss, detent: nextDetent } = determineSheetRelease(entry, {
         detent: entry.detent,
         rawAtGrab: entry.raw,
         rawAtRelease: entry.raw - value,
         caughtSlide: entry.caughtSlide,
-        velocity: value2,
-        commit: options,
+        velocity: releaseVelocity,
+        commit: commit,
       });
-    restoreDragStyles(entry, value3);
-    if (value3) {
+    restoreDragStyles(entry, shouldDismiss);
+    if (shouldDismiss) {
       frame.dismiss();
-      let { doc: value5 } = entry;
-      value5.defaultView?.requestAnimationFrame(() => {
+      let { doc: ownerDocument } = entry;
+      ownerDocument.defaultView?.requestAnimationFrame(() => {
         let current = latestFrameRef.current;
         if (!current.open) {
           return;
         }
-        let value6 =
+        let restoredHeight =
           current.detent === "tall"
             ? MAX_SHEET_HEIGHT_CSS
             : current.height !== undefined
               ? `${current.height}px`
               : "";
-        for (let value7 of value5.querySelectorAll<HTMLElement>(
+        for (let sheetElement of ownerDocument.querySelectorAll<HTMLElement>(
           `[data-sheet-tree="${CSS.escape(frame.treeId)}"][data-presentation="sheet"]`,
         )) {
-          resetSheetDragStyle(value7);
-          value7.style.height = value6;
+          resetSheetDragStyle(sheetElement);
+          sheetElement.style.height = restoredHeight;
         }
       });
-    } else if (value4 !== entry.detent) {
-      frame.setDetent(value4);
+    } else if (nextDetent !== entry.detent) {
+      frame.setDetent(nextDetent);
     }
   };
   return {
     onPointerDown: onPointerDown,
     onPointerMove: onPointerMove,
-    onPointerUp: (input: React.PointerEvent<HTMLElement>) =>
-      finishDrag(input, true),
-    onPointerCancel: (input: React.PointerEvent<HTMLElement>) =>
-      finishDrag(input, false),
-    onLostPointerCapture: (input: React.PointerEvent<HTMLElement>) =>
-      finishDrag(input, false),
+    onPointerUp: (pointerEvent: React.PointerEvent<HTMLElement>) =>
+      finishDrag(pointerEvent, true),
+    onPointerCancel: (pointerEvent: React.PointerEvent<HTMLElement>) =>
+      finishDrag(pointerEvent, false),
+    onLostPointerCapture: (pointerEvent: React.PointerEvent<HTMLElement>) =>
+      finishDrag(pointerEvent, false),
   };
 }
 export {
@@ -2181,7 +2181,7 @@ export {
   MOBILE_COARSE_POINTER_QUERY,
   notifySubscribers,
   OVERLAY_CLOSE_FALLBACK_MS,
-  PlatformFileContentAlias_2,
+  reactFeatureFlags as PlatformFileContentAlias_2,
   presentationModeContext,
   reactAdaptiveSheets,
   reactAndroidCloseWatcher,
@@ -2315,8 +2315,8 @@ export function installUiFoundation(): () => void {
     initializeSafeObservers = initializeOnce(() => {
       initializeErrorReporting();
     });
-    isSupportedFont = (input: string): input is DocumentFont =>
-      Object.hasOwn(supportedFonts, input);
+    isSupportedFont = (font: string): font is DocumentFont =>
+      Object.hasOwn(supportedFonts, font);
     readDocumentFont = (): DocumentFont | undefined => {
       if (typeof document === "undefined") {
         return;
@@ -2346,11 +2346,11 @@ export function installUiFoundation(): () => void {
       };
     });
     initializeFeatureFlags = initializeOnce(() => {
-      PlatformFileContentAlias_2 = toModuleNamespace(
+      reactFeatureFlags = toModuleNamespace(
         loadReactNamespace(),
         1,
       );
-      featureFlagContext = PlatformFileContentAlias_2.createContext<
+      featureFlagContext = reactFeatureFlags.createContext<
         string | undefined
       >(undefined);
     });
@@ -2473,8 +2473,8 @@ export function installUiFoundation(): () => void {
         1,
       );
     });
-    getStackedSheetCanGrow = (input: readonly SheetLevel[]): boolean =>
-      input.at(-1)?.grows ?? true;
+    getStackedSheetCanGrow = (levels: readonly SheetLevel[]): boolean =>
+      levels.at(-1)?.grows ?? true;
     SHEET_IMPLEMENTATION_WAIT_MS = 600;
     sheetImplementationUnavailable = false;
     SHEET_UNCOVER_CLOSE_GRACE_MS = 120;

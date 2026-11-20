@@ -5,7 +5,7 @@ import type * as React from "react";
 import type * as C from "../contracts/controls";
 import { baseButton as R_baseButton, baseUseRender, clsx, loadJsxNamespace, loadReactNamespace } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
-import { reactForUiIcons2 } from "./icons";
+import { reactForUiIcons2 as reactLinkElements } from "./icons";
 import { cn, Icon, initializeTranslations, isIconName, pointerDismissalContext, useTranslation } from "./interactions";
 import { getAutomaticLinkRel, isSanitizedHrefFallback, linkEventPropNames, opensInSeparateBrowsingContext, pickLinkEventProps, sanitizeHref, useCdsLink } from "./overlays";
 
@@ -18,7 +18,7 @@ var interactiveLinkReservedProps: (
 )[];
 var jsxForUiLinks: typeof import("react/jsx-runtime");
 var reactyq: typeof React;
-var jsxForUiLinks2: typeof import("react/jsx-runtime");
+var TextLinkJsx: typeof import("react/jsx-runtime");
 var textLinkResetClasses: string;
 var textLinkUnderlineClass: string;
 var inlineTextLinkClasses: string;
@@ -28,14 +28,14 @@ var textLinkWithIconClasses: string;
 var textLinkDecorationAlias: string;
 var TextLink: C.ForwardComponent<HTMLElement, C.TextLinkProps>;
 function omitProps<Props extends object, Key extends string>(
-  input: Props,
-  options: readonly Key[],
+  props: Props,
+  omittedKeys: readonly Key[],
 ): Omit<Props, Extract<keyof Props, Key>> {
-  let value = input as Record<string, unknown>,
+  let value = props as Record<string, unknown>,
     state: Record<string, unknown> = {};
-  for (let value2 of Object.keys(value)) {
-    if (!(options as readonly string[]).includes(value2)) {
-      state[value2] = value[value2];
+  for (let propName of Object.keys(value)) {
+    if (!(omittedKeys as readonly string[]).includes(propName)) {
+      state[propName] = value[propName];
     }
   }
   return state as Omit<Props, Extract<keyof Props, Key>>;
@@ -52,29 +52,29 @@ function InteractiveLinkElement({
   rest: rest,
 }: C.InteractiveLinkElementProps) {
   useUiLocale();
-  let value = reactForUiIcons2.isValidElement(render),
-    value2: import("../contracts/overlays").LinkAttributes = useCdsLink({
+  let value = reactLinkElements.isValidElement(render),
+    anchorAttributes: import("../contracts/overlays").LinkAttributes = useCdsLink({
       ...linkInput,
       ...pickLinkEventProps(rest),
       href: value ? undefined : linkInput.href,
     }),
-    value3 = omitProps(rest, [...interactiveLinkReservedProps, "disabled"]),
-    value4 = baseUseRender({
+    customRenderProps = omitProps(rest, [...interactiveLinkReservedProps, "disabled"]),
+    customLink = baseUseRender({
       enabled: value,
       render: render,
       ref: forwardedRef,
       props: {
-        ...value3,
+        ...customRenderProps,
         ...stamp,
         className: className,
         children: body,
       },
     });
   if (value) {
-    return value4;
+    return customLink;
   }
   if (linkInput.href !== undefined) {
-    let value6 = omitProps(rest, [
+    let anchorProps = omitProps(rest, [
       ...interactiveLinkReservedProps,
       ...linkEventPropNames,
     ]);
@@ -82,15 +82,15 @@ function InteractiveLinkElement({
       <a
         ref={forwardedRef as React.Ref<HTMLAnchorElement>}
         {...stamp}
-        {...value6}
-        {...value2}
+        {...anchorProps}
+        {...anchorAttributes}
         className={className}
       >
         {body}
       </a>
     );
   }
-  let value5 = omitProps(rest, ["href", "disabled"]);
+  let actionProps = omitProps(rest, ["href", "disabled"]);
   return (
     <R_baseButton
       render={<span {...stamp} />}
@@ -101,7 +101,7 @@ function InteractiveLinkElement({
           }
         : {})}
       ref={forwardedRef}
-      {...(value5 as Omit<typeof value5, "type">)}
+      {...(actionProps as Omit<typeof actionProps, "type">)}
       className={actionClassName}
     >
       {body}
@@ -116,12 +116,12 @@ function NewTabAnnouncement({ id: id }: { id: string }) {
     </span>
   );
 }
-function TextLinkIcon(input: React.ReactNode) {
+function TextLinkIcon(icon: React.ReactNode) {
   useUiLocale();
-  if (isIconName(input)) {
+  if (isIconName(icon)) {
     return (
       <Icon
-        name={input}
+        name={icon}
         size={"sm"}
         className={"self-center"}
         style={{
@@ -130,7 +130,7 @@ function TextLinkIcon(input: React.ReactNode) {
       />
     );
   } else {
-    return <span className={"self-center"}>{input}</span>;
+    return <span className={"self-center"}>{icon}</span>;
   }
 }
 export {
@@ -139,7 +139,7 @@ export {
   InteractiveLinkElement,
   interactiveLinkReservedProps,
   jsxForUiLinks,
-  jsxForUiLinks2,
+  TextLinkJsx as jsxForUiLinks2,
   NewTabAnnouncement,
   omitProps,
   reactyq,
@@ -169,7 +169,7 @@ export function installUiLinks(): () => void {
       loadReactNamespace(),
       1,
     );
-    jsxForUiLinks2 = toModuleNamespace(
+    TextLinkJsx = toModuleNamespace(
       loadJsxNamespace(),
       1,
     );
@@ -195,12 +195,12 @@ export function installUiLinks(): () => void {
           "aria-describedby": ariaDescribedby,
           ...props
         }: C.TextLinkProps,
-        options: React.ForwardedRef<HTMLElement>,
+        forwardedRef: React.ForwardedRef<HTMLElement>,
       ) => {
         let value = "href" in props && props.href !== undefined,
-          value2 = reactyq.useContext<boolean>(pointerDismissalContext),
-          value3 = inheritColor ?? value2,
-          value4 =
+          inheritsContextColor = reactyq.useContext<boolean>(pointerDismissalContext),
+          shouldInheritColor = inheritColor ?? inheritsContextColor,
+          resolvedExternal =
             external &&
             !(
               value &&
@@ -212,76 +212,76 @@ export function installUiLinks(): () => void {
             )
               ? external
               : false,
-          value5 = value
-            ? (props.target ?? (value4 ? "_blank" : undefined))
+          linkTarget = value
+            ? (props.target ?? (resolvedExternal ? "_blank" : undefined))
             : undefined,
-          value6: string | undefined = value
+          linkRel: string | undefined = value
             ? (props.rel ??
-              (value4 &&
-              value5 !== undefined &&
-              !opensInSeparateBrowsingContext(value5)
-                ? getAutomaticLinkRel(props.href, value5)
+              (resolvedExternal &&
+              linkTarget !== undefined &&
+              !opensInSeparateBrowsingContext(linkTarget)
+                ? getAutomaticLinkRel(props.href, linkTarget)
                 : undefined))
             : undefined,
-          value7 = reactyq.useId(),
-          value8 = <NewTabAnnouncement id={value7} />,
-          value9 =
-            icon || (value4 === "with-icon" ? "ArrowUpRight" : undefined),
-          value10 = !!value9,
-          value11 = `${cn(value10 ? clsx(textLinkWithIconClasses, icon ? "gap-[0.25em]" : "gap-0") : inlineTextLinkClasses, value3 && inheritedTextLinkColorClasses)}`,
-          value12 = value10 ? (
-            <jsxForUiLinks2.Fragment>
-              {[iconPosition === "start" && TextLinkIcon(value9), <span
+          newTabAnnouncementId = reactyq.useId(),
+          newTabAnnouncement = <NewTabAnnouncement id={newTabAnnouncementId} />,
+          linkIcon =
+            icon || (resolvedExternal === "with-icon" ? "ArrowUpRight" : undefined),
+          hasIcon = !!linkIcon,
+          textLinkClasses = `${cn(hasIcon ? clsx(textLinkWithIconClasses, icon ? "gap-[0.25em]" : "gap-0") : inlineTextLinkClasses, shouldInheritColor && inheritedTextLinkColorClasses)}`,
+          linkBody = hasIcon ? (
+            <TextLinkJsx.Fragment>
+              {[iconPosition === "start" && TextLinkIcon(linkIcon), <span
                   className={clsx(
                     textLinkDecorationAlias,
-                    value3 && textLinkDecorationTransitionClasses,
+                    shouldInheritColor && textLinkDecorationTransitionClasses,
                   )}
                 >
                   {children}
-                </span>, iconPosition === "end" && TextLinkIcon(value9), value4 && value8]}
-            </jsxForUiLinks2.Fragment>
-          ) : value4 ? (
-            <jsxForUiLinks2.Fragment>
-              {[children, value8]}
-            </jsxForUiLinks2.Fragment>
+                </span>, iconPosition === "end" && TextLinkIcon(linkIcon), resolvedExternal && newTabAnnouncement]}
+            </TextLinkJsx.Fragment>
+          ) : resolvedExternal ? (
+            <TextLinkJsx.Fragment>
+              {[children, newTabAnnouncement]}
+            </TextLinkJsx.Fragment>
           ) : (
             children
           ),
-          value13: string = cn(
-            value11,
+          linkClassName: string = cn(
+            textLinkClasses,
             "cursor-pointer",
             className,
           ),
-          value14 = props.disabled ?? false;
+          isDisabled = props.disabled ?? false;
         return (
           <InteractiveLinkElement
             stamp={{
               "data-cds": "TextLink",
             }}
-            forwardedRef={options}
+            forwardedRef={forwardedRef}
             linkInput={{
               href: value ? props.href : undefined,
               routerOptions: value ? props.routerOptions : undefined,
-              target: value5,
-              rel: value6,
+              target: linkTarget,
+              rel: linkRel,
               download: value ? props.download : undefined,
             }}
             render={render}
-            body={value12}
-            className={value13}
+            body={linkBody}
+            className={linkClassName}
             actionClassName={cn(
-              value11,
-              value14 ? "cursor-default opacity-disabled" : "cursor-pointer",
+              textLinkClasses,
+              isDisabled ? "cursor-default opacity-disabled" : "cursor-pointer",
               className,
             )}
-            actionDisabled={value14}
+            actionDisabled={isDisabled}
             rest={{
               ...props,
-              ...(value3 && {
+              ...(shouldInheritColor && {
                 "data-inherit-color": "",
               }),
               "aria-describedby":
-                [ariaDescribedby, value4 ? value7 : undefined]
+                [ariaDescribedby, resolvedExternal ? newTabAnnouncementId : undefined]
                   .filter(Boolean)
                   .join(" ") || undefined,
             }}

@@ -115,9 +115,9 @@ export function installUiInspectorIcons(): () => void {
       loadReactNamespace(),
       1,
     );
-    iconStrokePath = (input: string, options: number = 1) => ({
-      d: input,
-      strokeWidth: options,
+    iconStrokePath = (pathData: string, strokeWidth: number = 1) => ({
+      d: pathData,
+      strokeWidth: strokeWidth,
     });
     BORDER_WEIGHT_ICON = {
       name: "BorderWeight",

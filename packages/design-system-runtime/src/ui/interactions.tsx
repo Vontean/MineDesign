@@ -191,8 +191,8 @@ function interpolateTranslation(
   if (!values) {
     return template;
   }
-  return template.replace(/\{(\w+)\}/g, (input: string, options: string) =>
-    options in values ? String(values[options]) : input,
+  return template.replace(/\{(\w+)\}/g, (placeholder: string, messageKey: string) =>
+    messageKey in values ? String(values[messageKey]) : placeholder,
   );
 }
 function translateWithFallback(
@@ -334,7 +334,7 @@ function afterElementAnimations(
           onComplete();
           return;
         }
-        Promise.allSettled(value.map((input) => input.finished)).then(() => {
+        Promise.allSettled(value.map((animation) => animation.finished)).then(() => {
           if (active) {
             onComplete();
           }
@@ -348,51 +348,51 @@ function afterElementAnimations(
 }
 function useSheetTextEntryFocus(
   element: HTMLElement | null,
-  options: O.SheetFrameContext | null,
+  frame: O.SheetFrameContext | null,
 ) {
-  let value = options?.setDetent,
-    value2 = options?.holdTextEntryFocus;
+  let value = frame?.setDetent,
+    holdTextEntryFocus = frame?.holdTextEntryFocus;
   reactSheetMeasurement.useEffect(() => {
-    if (element === null || value === undefined || value2 === undefined) {
+    if (element === null || value === undefined || holdTextEntryFocus === undefined) {
       return;
     }
-    let value3: (() => void) | null = null,
+    let releaseFocusHold: (() => void) | null = null,
       callback = () => {
-        if (value3 === null) {
-          value3 = value2();
+        if (releaseFocusHold === null) {
+          releaseFocusHold = holdTextEntryFocus();
         }
       },
-      callback2 = () => {
-        value3?.();
-        value3 = null;
+      releaseTextEntryFocus = () => {
+        releaseFocusHold?.();
+        releaseFocusHold = null;
       },
       index = 0,
-      callback3 = (input: EventTarget | null) => {
-        if (!(input instanceof Element)) {
+      isEditableTarget = (target: EventTarget | null) => {
+        if (!(target instanceof Element)) {
           return false;
         }
-        if (isEditableElement(input)) {
+        if (isEditableElement(target)) {
           return true;
         }
-        let ancestor = input.closest('[data-cds="TextInput"], label');
+        let ancestor = target.closest('[data-cds="TextInput"], label');
         if (ancestor === null) {
           return false;
         }
-        let value4 =
+        let labelControl =
           ancestor instanceof HTMLLabelElement ? ancestor.control : null;
         return (
-          isEditableElement(value4) ||
+          isEditableElement(labelControl) ||
           ancestor.querySelector(
             'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
           ) !== null
         );
       },
-      callback4 = (event: Event) => {
-        if (callback3(event.target)) {
+      recordEditablePress = (event: Event) => {
+        if (isEditableTarget(event.target)) {
           index = event.timeStamp || Date.now();
         }
       },
-      callback5 = (event: Event) => {
+      handleFocusIn = (event: Event) => {
         if (isEditableElement(event.target as Element | null)) {
           callback();
           if (index > 0 && (event.timeStamp || Date.now()) - index < 1000) {
@@ -401,21 +401,21 @@ function useSheetTextEntryFocus(
           }
         }
       },
-      callback6 = (event: Event) => {
-        if (index > 0 && callback3(event.target)) {
+      handleEditableClick = (event: Event) => {
+        if (index > 0 && isEditableTarget(event.target)) {
           index = 0;
           value("tall");
         }
       },
-      callback7 = (event: Event) => {
+      handleFocusOut = (event: Event) => {
         if (isEditableElement(event.target as Element | null)) {
-          callback2();
+          releaseTextEntryFocus();
         }
       };
-    element.addEventListener("pointerdown", callback4);
-    element.addEventListener("focusin", callback5);
-    element.addEventListener("focusout", callback7);
-    element.addEventListener("click", callback6);
+    element.addEventListener("pointerdown", recordEditablePress);
+    element.addEventListener("focusin", handleFocusIn);
+    element.addEventListener("focusout", handleFocusOut);
+    element.addEventListener("click", handleEditableClick);
     if (
       element.contains(element.ownerDocument.activeElement) &&
       isEditableElement(element.ownerDocument.activeElement)
@@ -423,13 +423,13 @@ function useSheetTextEntryFocus(
       callback();
     }
     return () => {
-      element.removeEventListener("pointerdown", callback4);
-      element.removeEventListener("focusin", callback5);
-      element.removeEventListener("focusout", callback7);
-      element.removeEventListener("click", callback6);
-      callback2();
+      element.removeEventListener("pointerdown", recordEditablePress);
+      element.removeEventListener("focusin", handleFocusIn);
+      element.removeEventListener("focusout", handleFocusOut);
+      element.removeEventListener("click", handleEditableClick);
+      releaseTextEntryFocus();
     };
-  }, [element, value, value2]);
+  }, [element, value, holdTextEntryFocus]);
 }
 function useSheetPressedState(element: HTMLElement | null): void {
   reactSheetMeasurement.useEffect(() => {
@@ -446,20 +446,20 @@ function useSheetPressedState(element: HTMLElement | null): void {
         ownerDocument.removeEventListener("pointercancel", callback, true);
         ownerDocument.removeEventListener("keydown", callback, true);
       },
-      callback2 = () => {
+      handleSheetPointerDown = () => {
         ownerDocument.addEventListener("click", callback, true);
         ownerDocument.addEventListener("pointercancel", callback, true);
         ownerDocument.addEventListener("keydown", callback, true);
         element.setAttribute(SHEET_PRESSED_ATTRIBUTE, "");
-        let element2 = element.querySelector("[data-cds-sheet-control]");
-        if (element2?.matches(":focus-visible, [data-highlighted]")) {
-          value = element2;
-          element2.setAttribute(SHEET_CONTROL_HELD_ATTRIBUTE, "");
+        let sheetControl = element.querySelector("[data-cds-sheet-control]");
+        if (sheetControl?.matches(":focus-visible, [data-highlighted]")) {
+          value = sheetControl;
+          sheetControl.setAttribute(SHEET_CONTROL_HELD_ATTRIBUTE, "");
         }
       };
-    element.addEventListener("pointerdown", callback2, true);
+    element.addEventListener("pointerdown", handleSheetPointerDown, true);
     return () => {
-      element.removeEventListener("pointerdown", callback2, true);
+      element.removeEventListener("pointerdown", handleSheetPointerDown, true);
       callback();
     };
   }, [element]);
@@ -476,11 +476,11 @@ function isScrollContentReplacement(
     removedCount = 0;
   for (let value of records) {
     let target = value.target,
-      value2 =
+      targetElement =
         target.nodeType === Node.ELEMENT_NODE
           ? (target as Element)
           : target.parentElement;
-    if (value2 === null || value2.closest(scrollSelector) === null) {
+    if (targetElement === null || targetElement.closest(scrollSelector) === null) {
       return false;
     }
     addedCount += value.addedNodes.length;
@@ -514,17 +514,17 @@ function measureNaturalSheetHeight(element: HTMLElement): number {
     ) {
       lastElementChild = lastElementChild.previousElementSibling;
     }
-    let value2 = element.ownerDocument.defaultView?.getComputedStyle(value),
-      value3 =
-        parseFloat(value2?.paddingTop ?? "0") +
-        parseFloat(value2?.paddingBottom ?? "0"),
-      value4 =
+    let computedStyle = element.ownerDocument.defaultView?.getComputedStyle(value),
+      verticalPadding =
+        parseFloat(computedStyle?.paddingTop ?? "0") +
+        parseFloat(computedStyle?.paddingBottom ?? "0"),
+      naturalChildHeight =
         firstElementChild !== null && lastElementChild !== null
           ? lastElementChild.getBoundingClientRect().bottom -
             firstElementChild.getBoundingClientRect().top +
-            value3
-          : value3;
-    naturalHeight += value4 - value.clientHeight;
+            verticalPadding
+          : verticalPadding;
+    naturalHeight += naturalChildHeight - value.clientHeight;
   }
   return Math.max(0, naturalHeight);
 }
@@ -584,32 +584,32 @@ function createSheetUncoverGate(element: HTMLElement, onReady: () => void) {
   };
 }
 function afterCssTransitions(
-  input: HTMLElement,
-  options: Window,
-  context: () => void,
+  element: HTMLElement,
+  windowObject: Window,
+  onComplete: () => void,
 ) {
-  let style = options.getComputedStyle(input),
-    callback = (input2: string) =>
-      input2.split(",").map((input3: string) => {
-        let value4 = parseFloat(input3);
-        if (!Number.isFinite(value4)) {
+  let style = windowObject.getComputedStyle(element),
+    callback = (durationList: string) =>
+      durationList.split(",").map((cssDuration: string) => {
+        let numericDuration = parseFloat(cssDuration);
+        if (!Number.isFinite(numericDuration)) {
           return 0;
         }
-        if (input3.trim().endsWith("ms")) {
-          return value4;
+        if (cssDuration.trim().endsWith("ms")) {
+          return numericDuration;
         } else {
-          return value4 * 1000;
+          return numericDuration * 1000;
         }
       }),
     value = callback(style.transitionDelay ?? ""),
-    value2 = Math.max(
+    longestTransition = Math.max(
       ...callback(style.transitionDuration ?? "").map(
-        (input2: number, options2: number) =>
-          input2 + (value[options2 % value.length] ?? 0),
+        (duration: number, transitionIndex: number) =>
+          duration + (value[transitionIndex % value.length] ?? 0),
       ),
     ),
-    value3 = options.setTimeout(context, value2 + 34);
-  return () => options.clearTimeout(value3);
+    transitionTimeout = windowObject.setTimeout(onComplete, longestTransition + 34);
+  return () => windowObject.clearTimeout(transitionTimeout);
 }
 function measureSheetScrollContent(element: HTMLElement): {
   visible: number;
@@ -657,16 +657,16 @@ function measureSheetControlOverflow(
       break;
     }
     let style = windowObject.getComputedStyle(parentElement),
-      value2 =
+      parentContentBottom =
         parentElement.getBoundingClientRect().bottom -
         parseFloat(style.paddingBottom) -
         parseFloat(style.borderBottomWidth),
-      value3 = parseFloat(windowObject.getComputedStyle(value).marginBottom);
+      bottomMargin = parseFloat(windowObject.getComputedStyle(value).marginBottom);
     overflow += Math.max(
       0,
       value.getBoundingClientRect().bottom +
-        Math.max(0, value3) -
-        value2 +
+        Math.max(0, bottomMargin) -
+        parentContentBottom +
         parentElement.scrollTop,
     );
     value = parentElement;
@@ -675,22 +675,22 @@ function measureSheetControlOverflow(
 }
 function useDismissSheetOnForeignFocus(
   element: HTMLElement | null,
-  options: O.SheetFrameContext | null,
-  context: boolean,
+  frame: O.SheetFrameContext | null,
+  hasFocusHold: boolean,
 ) {
-  let ref = reactSheetMeasurement.useRef(context);
+  let ref = reactSheetMeasurement.useRef(hasFocusHold);
   reactSheetMeasurement.useEffect(() => {
-    ref.current = context;
-  }, [context]);
-  let value = options?.open ?? false,
-    value2 = options?.dismiss,
-    value3 = options?.treeId;
+    ref.current = hasFocusHold;
+  }, [hasFocusHold]);
+  let value = frame?.open ?? false,
+    dismissSheet = frame?.dismiss,
+    sheetTreeId = frame?.treeId;
   reactSheetMeasurement.useEffect(() => {
     if (
       element === null ||
       !value ||
-      value2 === undefined ||
-      value3 === undefined
+      dismissSheet === undefined ||
+      sheetTreeId === undefined
     ) {
       return;
     }
@@ -710,7 +710,7 @@ function useDismissSheetOnForeignFocus(
             activeElement === ownerDocument.body ||
             element.contains(activeElement) ||
             activeElement.closest(
-              `[data-sheet-tree="${CSS.escape(value3)}"]`,
+              `[data-sheet-tree="${CSS.escape(sheetTreeId)}"]`,
             ) !== null ||
             activeElement.closest(
               '[aria-modal="true"], [data-cds="Dialog"]',
@@ -718,7 +718,7 @@ function useDismissSheetOnForeignFocus(
           ) {
             return;
           }
-          value2();
+          dismissSheet();
         });
       };
     element.addEventListener("focusout", callback);
@@ -728,7 +728,7 @@ function useDismissSheetOnForeignFocus(
         defaultView?.cancelAnimationFrame(index);
       }
     };
-  }, [element, value, value2, value3]);
+  }, [element, value, dismissSheet, sheetTreeId]);
 }
 function createPinnedSheetMeasurement(
   element: HTMLElement,
@@ -754,15 +754,15 @@ function useSheetHeightUntilVisible(
     if (element === null || value === undefined) {
       return;
     }
-    let value2 = new value(() => {
+    let visibilityObserver = new value(() => {
       let height = element.getBoundingClientRect().height;
       if (height > 0) {
-        value2.disconnect();
+        visibilityObserver.disconnect();
         onMeasure(element, height);
       }
     });
-    value2.observe(element);
-    return () => value2.disconnect();
+    visibilityObserver.observe(element);
+    return () => visibilityObserver.disconnect();
   }, [element, onMeasure]);
 }
 function useSheetPopupHost(): I.SheetPopupHostState {
@@ -776,9 +776,9 @@ function useSheetPopupHost(): I.SheetPopupHostState {
     detachedElementRef =
       reactSheetPopupHost.useRef<I.DetachedSheetElement>(null),
     updateHalfHeightFloor = reactSheetPopupHost.useCallback(
-      (input: boolean) => {
-        halfHeightFloorRef.current = input;
-        setHalfHeightFloor(input);
+      (shouldUseHalfHeightFloor: boolean) => {
+        halfHeightFloorRef.current = shouldUseHalfHeightFloor;
+        setHalfHeightFloor(shouldUseHalfHeightFloor);
       },
       [],
     ),
@@ -793,54 +793,54 @@ function useSheetPopupHost(): I.SheetPopupHostState {
     elementRef = reactSheetPopupHost.useRef<HTMLElement>(null),
     pinHeight = frame?.pinHeight,
     measureAndPin = reactSheetPopupHost.useCallback(
-      (input: HTMLElement, options: number) => {
-        let value: boolean = sheetContentCanGrow(input);
-        pinHeight?.(options, value);
-        pinnedElementRef.current = input;
+      (sheetElement: HTMLElement, measuredHeight: number) => {
+        let value: boolean = sheetContentCanGrow(sheetElement);
+        pinHeight?.(measuredHeight, value);
+        pinnedElementRef.current = sheetElement;
         measurementRef.current = createPinnedSheetMeasurement(
-          input,
-          options,
+          sheetElement,
+          measuredHeight,
           value,
         );
       },
       [pinHeight],
     ),
     attachElement = reactSheetPopupHost.useCallback(
-      (input: HTMLElement | null) => {
+      (sheetElement: HTMLElement | null) => {
         let current = detachedElementRef.current;
         detachedElementRef.current =
-          input === null && elementRef.current !== null
+          sheetElement === null && elementRef.current !== null
             ? {
                 node: elementRef.current,
                 half: halfHeightFloorRef.current,
               }
             : null;
-        elementRef.current = sheet ? input : null;
-        setElement(sheet ? input : null);
-        if (sheet && input !== null && current?.node === input) {
+        elementRef.current = sheet ? sheetElement : null;
+        setElement(sheet ? sheetElement : null);
+        if (sheet && sheetElement !== null && current?.node === sheetElement) {
           updateHalfHeightFloor(current.half);
-          if (pinnedElementRef.current !== input) {
-            pinnedElementRef.current = input;
+          if (pinnedElementRef.current !== sheetElement) {
+            pinnedElementRef.current = sheetElement;
             measurementRef.current = createPinnedSheetMeasurement(
-              input,
-              input.getBoundingClientRect().height,
-              sheetContentCanGrow(input),
+              sheetElement,
+              sheetElement.getBoundingClientRect().height,
+              sheetContentCanGrow(sheetElement),
             );
           }
           return;
         }
-        if (input === null || !sheet) {
+        if (sheetElement === null || !sheet) {
           updateHalfHeightFloor(false);
         }
-        if (input !== null && sheet) {
-          let value: boolean = hasEditableSheetContent(input);
+        if (sheetElement !== null && sheet) {
+          let value: boolean = hasEditableSheetContent(sheetElement);
           if (value) {
-            let value2 = `min(${MIN_SHEET_HEIGHT_CSS}, ${MAX_SHEET_HEIGHT_CSS})`;
-            input.style.minHeight = value2;
-            input.style.maxHeight = value2;
+            let defaultSheetHeight = `min(${MIN_SHEET_HEIGHT_CSS}, ${MAX_SHEET_HEIGHT_CSS})`;
+            sheetElement.style.minHeight = defaultSheetHeight;
+            sheetElement.style.maxHeight = defaultSheetHeight;
           }
           updateHalfHeightFloor(value);
-          measureAndPin(input, input.getBoundingClientRect().height);
+          measureAndPin(sheetElement, sheetElement.getBoundingClientRect().height);
         }
       },
       [sheet, measureAndPin, updateHalfHeightFloor],
@@ -874,41 +874,41 @@ function useSheetPopupHost(): I.SheetPopupHostState {
     }
     let index = 0,
       flag = false,
-      flag2 = false,
+      needsContentRemeasurement = false,
       value: Element | null = null,
-      value2 =
+      controlResizeObserver =
         typeof defaultView.ResizeObserver === "undefined"
           ? null
           : new defaultView.ResizeObserver(() => {
-              callback4();
+              scheduleRemeasurement();
             }),
       callback = () => {
-        let element2 = element.querySelector("[data-cds-sheet-control]");
-        if (element2 === value || value2 === null) {
+        let sheetControl = element.querySelector("[data-cds-sheet-control]");
+        if (sheetControl === value || controlResizeObserver === null) {
           return;
         }
         if (value !== null) {
-          value2.unobserve(value);
+          controlResizeObserver.unobserve(value);
         }
-        value = element2;
-        if (element2 !== null) {
-          value2.observe(element2);
+        value = sheetControl;
+        if (sheetControl !== null) {
+          controlResizeObserver.observe(sheetControl);
         }
       },
-      callback2 = (input: number, options: boolean) => {
-        let value5: number = getSheetMinimumHeight(
+      repinWithMinimumHeight = (nextHeight: number, canGrow: boolean) => {
+        let minimumHeight: number = getSheetMinimumHeight(
           defaultView.innerHeight,
           halfHeightFloorRef.current,
         );
-        repinHeight(Math.max(input, value5), options);
+        repinHeight(Math.max(nextHeight, minimumHeight), canGrow);
       },
-      callback3 = () => {
+      remeasureSheet = () => {
         index = 0;
         if (dragState !== undefined && dragState.get() !== null) {
-          index = defaultView.requestAnimationFrame(callback3);
+          index = defaultView.requestAnimationFrame(remeasureSheet);
           return;
         }
-        if (!value3.ready()) {
+        if (!uncoverGate.ready()) {
           return;
         }
         callback();
@@ -920,79 +920,79 @@ function useSheetPopupHost(): I.SheetPopupHostState {
               true,
             );
           }
-          flag2 = false;
+          needsContentRemeasurement = false;
           return;
         }
-        let value5 = measureSheetControlOverflow(element, value),
-          value6 = measureSheetScrollContent(element),
-          value7 =
-            element.getBoundingClientRect().height + value5 - value6.visible,
-          value8 =
+        let controlOverflow = measureSheetControlOverflow(element, value),
+          scrollContent = measureSheetScrollContent(element),
+          chromeHeight =
+            element.getBoundingClientRect().height + controlOverflow - scrollContent.visible,
+          maximumHeight =
             getSheetAvailableHeight(defaultView, element) *
             MAX_SHEET_HEIGHT_FRACTION;
-        if (flag2) {
-          flag2 = false;
-          let value10 = Math.round(
+        if (needsContentRemeasurement) {
+          needsContentRemeasurement = false;
+          let contentHeight = Math.round(
             Math.max(
-              measureNaturalSheetHeight(element) + value5,
-              value6.overflowContent > 0
-                ? value7 + value6.overflowContent
+              measureNaturalSheetHeight(element) + controlOverflow,
+              scrollContent.overflowContent > 0
+                ? chromeHeight + scrollContent.overflowContent
                 : 0,
             ),
           );
-          flag = value10 > value8;
+          flag = contentHeight > maximumHeight;
           measurementRef.current = {
-            contentHeight: value10,
-            written: Math.min(value10, value8),
-            chromeAtPin: value7,
-            chromeSettled: value7,
+            contentHeight: contentHeight,
+            written: Math.min(contentHeight, maximumHeight),
+            chromeAtPin: chromeHeight,
+            chromeSettled: chromeHeight,
             grows: flag,
           };
-          callback2(Math.min(value10, value8), flag);
+          repinWithMinimumHeight(Math.min(contentHeight, maximumHeight), flag);
           return;
         }
         let current = measurementRef.current;
         if (
           current === null ||
-          Math.abs(value7 - current.chromeSettled) < 1
+          Math.abs(chromeHeight - current.chromeSettled) < 1
         ) {
           return;
         }
-        current.chromeSettled = value7;
-        if (Math.abs(value7 - current.chromeAtPin) < 1) {
-          callback2(current.written, current.grows);
+        current.chromeSettled = chromeHeight;
+        if (Math.abs(chromeHeight - current.chromeAtPin) < 1) {
+          repinWithMinimumHeight(current.written, current.grows);
           return;
         }
-        let value9 = current.contentHeight + value7 - current.chromeAtPin;
-        callback2(Math.min(value9, value8), value9 > value8 || current.grows);
+        let adjustedHeight = current.contentHeight + chromeHeight - current.chromeAtPin;
+        repinWithMinimumHeight(Math.min(adjustedHeight, maximumHeight), adjustedHeight > maximumHeight || current.grows);
       },
-      callback4 = () => {
+      scheduleRemeasurement = () => {
         if (index === 0) {
-          index = defaultView.requestAnimationFrame(callback3);
+          index = defaultView.requestAnimationFrame(remeasureSheet);
         }
       },
-      value3 = createSheetUncoverGate(element, callback4);
+      uncoverGate = createSheetUncoverGate(element, scheduleRemeasurement);
     callback();
-    let value4 = new defaultView.MutationObserver(
-      (input: MutationRecord[]) => {
+    let contentObserver = new defaultView.MutationObserver(
+      (mutations: MutationRecord[]) => {
         if (
-          (index !== 0 && flag2) ||
-          isScrollContentReplacement(input, flag)
+          (index !== 0 && needsContentRemeasurement) ||
+          isScrollContentReplacement(mutations, flag)
         ) {
           return;
         }
-        flag2 = true;
-        callback4();
+        needsContentRemeasurement = true;
+        scheduleRemeasurement();
       },
     );
-    value4.observe(element, {
+    contentObserver.observe(element, {
       childList: true,
       subtree: true,
     });
     return () => {
-      value4.disconnect();
-      value3.dispose();
-      value2?.disconnect();
+      contentObserver.disconnect();
+      uncoverGate.dispose();
+      controlResizeObserver?.disconnect();
       if (index !== 0) {
         defaultView.cancelAnimationFrame(index);
       }
@@ -1068,7 +1068,7 @@ function SheetPopupHost({
 }) {
   return children(useSheetPopupHost());
 }
-function checkLayerBase(input: number, options: number): void {
+function checkLayerBase(nextLayerBase: number, parentLayerBase: number): void {
   return;
 }
 function CdsLayer({
@@ -1078,11 +1078,11 @@ function CdsLayer({
 }: LayerProps): React.ReactElement {
   useUiLocale();
   let value = reactLayers.useContext(layerBaseContext),
-    value2 = base ?? value + LAYER_BAND_SIZE;
+    layerBase = base ?? value + LAYER_BAND_SIZE;
   if (base === undefined) {
-    checkLayerBase(value2, value);
+    checkLayerBase(layerBase, value);
   }
-  let value3 =
+  let renderedLayer =
     render === undefined
       ? null
       : reactLayers.cloneElement(
@@ -1091,15 +1091,15 @@ function CdsLayer({
             "data-cds": render.props["data-cds"] ?? "CdsLayer",
             style: {
               ...render.props.style,
-              zIndex: value2,
-              "--cds-layer-base": value2,
+              zIndex: layerBase,
+              "--cds-layer-base": layerBase,
             },
           },
           children,
         );
   return (
-    <layerBaseContext.Provider value={value2}>
-      {value3 ?? (children)}
+    <layerBaseContext.Provider value={layerBase}>
+      {renderedLayer ?? (children)}
     </layerBaseContext.Provider>
   );
 }
@@ -1114,8 +1114,8 @@ function warnInvalidLayerOffset(source: string, layerOffset: number): void {
   let warning = `cds: ${source} — value must be an integer in [0, ${LAYER_BAND_SIZE}). A non-integer is silently invalid as a z-index (the declaration is dropped and the element falls to z-auto); anything outside the range escapes its band and stacks unpredictably against other overlays.`;
   console.warn(warning);
 }
-function useDefaultOverlayLayer(input: OverlayKind): LayerValue {
-  return useOverlayLayer(input);
+function useDefaultOverlayLayer(overlayKind: OverlayKind): LayerValue {
+  return useOverlayLayer(overlayKind);
 }
 function useOverlayLayer(
   parentBase: OverlayKind,
@@ -1123,20 +1123,20 @@ function useOverlayLayer(
 ): LayerValue {
   let zIndex = reactLayers.useContext(layerBaseContext);
   if (layerOffset === undefined) {
-    let value2 = zIndex + LAYER_BAND_SIZE;
-    checkLayerBase(value2, zIndex);
-    let value3 = value2 + overlayLayerOffsets[parentBase];
+    let layerBase = zIndex + LAYER_BAND_SIZE;
+    checkLayerBase(layerBase, zIndex);
+    let overlayZIndex = layerBase + overlayLayerOffsets[parentBase];
     return {
-      base: value2,
+      base: layerBase,
       style: {
-        zIndex: value3,
-        "--cds-layer-base": value2,
+        zIndex: overlayZIndex,
+        "--cds-layer-base": layerBase,
       },
       portalProps: {
         className: portalLayerClasses,
         style: {
-          "--cds-portal-z": value3,
-          "--cds-layer-base": value2,
+          "--cds-portal-z": overlayZIndex,
+          "--cds-layer-base": layerBase,
         },
       },
     };
@@ -1191,30 +1191,30 @@ function CdsLayerVarBridge({
 }
 function setReactRef<Value>(
   ref: CallbackRef<Value>,
-  value: Value | null,
+  node: Value | null,
 ): void | RefCleanup {
   if (typeof ref === "function") {
-    return ref(value);
+    return ref(node);
   }
   if (ref) {
-    ref.current = value;
+    ref.current = node;
   }
 }
 function mergeRefs<Value>(
   ...refs: CallbackRef<Value>[]
 ): React.RefCallback<Value> {
-  return (input: Value | null) => {
-    let value = refs.map((input2) => setReactRef(input2, input));
-    if (!value.some((input2) => typeof input2 === "function")) {
+  return (node: Value | null) => {
+    let value = refs.map((ref) => setReactRef(ref, node));
+    if (!value.some((cleanup) => typeof cleanup === "function")) {
       return;
     }
     return () => {
-      refs.forEach((input2, options) => {
-        let value2 = value[options];
-        if (typeof value2 === "function") {
-          value2();
+      refs.forEach((ref, index) => {
+        let cleanup = value[index];
+        if (typeof cleanup === "function") {
+          cleanup();
         } else {
-          setReactRef(input2, null);
+          setReactRef(ref, null);
         }
       });
     };
@@ -1235,8 +1235,8 @@ function useStableMergedRef<Value>(
   secondRef?: CallbackRef<Value>,
 ): React.RefCallback<Value> {
   let stableFirstRef: React.RefCallback<Value> = useEventCallback(firstRef);
-  return useEventCallback((input: Value | null) =>
-    mergeRefs(stableFirstRef, secondRef)(input),
+  return useEventCallback((node: Value | null) =>
+    mergeRefs(stableFirstRef, secondRef)(node),
   );
 }
 function resolveExperimentalTheme(
@@ -1266,15 +1266,15 @@ function createThemeStore(
       }
     };
   return {
-    subscribe: (input: () => void) => {
-      listeners.add(input);
-      return () => listeners.delete(input);
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
     getSnapshot: () => snapshot,
     getServerSnapshot: () => serverSnapshot,
     getId: () => snapshot?.theme.id,
-    set: (input: I.ThemeConfiguration | null | undefined) => {
-      let value = createResolvedThemeSnapshot(input, snapshot);
+    set: (nextConfiguration: I.ThemeConfiguration | null | undefined) => {
+      let value = createResolvedThemeSnapshot(nextConfiguration, snapshot);
       if (value !== snapshot) {
         snapshot = value;
         notify();
@@ -1353,15 +1353,15 @@ function useExperimentalThemeStore(
   }, [isRoot, ownStore, theme, resolve]);
   useIsomorphicLayoutEffect(() => {
     let current = targetRef.current,
-      current2 = applyRef.current;
+      applyTheme = applyRef.current;
     if (
       isRoot &&
       theme !== undefined &&
-      current2 !== undefined &&
+      applyTheme !== undefined &&
       current !== null
     ) {
       try {
-        cleanupRef.current = current2(theme, {
+        cleanupRef.current = applyTheme(theme, {
           target: current,
         });
       } catch (value: unknown) {
@@ -1384,26 +1384,26 @@ function useExperimentalThemeStore(
   ]);
   return parentStore ?? ownStore;
 }
-function getElementNamespace(input?: unknown): string | null | undefined {
-  let value = input as Element | null | undefined;
+function getElementNamespace(node?: unknown): string | null | undefined {
+  let value = node as Element | null | undefined;
   if (value?.nodeType === 1) {
     return value.namespaceURI;
   } else {
     return undefined;
   }
 }
-function isHtmlElement(input?: unknown): input is HTMLElement {
-  return getElementNamespace(input) === HTML_NAMESPACE;
+function isHtmlElement(node?: unknown): node is HTMLElement {
+  return getElementNamespace(node) === HTML_NAMESPACE;
 }
-function isSvgElement(input?: unknown): input is SVGElement {
-  return getElementNamespace(input) === SVG_NAMESPACE_GE0;
+function isSvgElement(node?: unknown): node is SVGElement {
+  return getElementNamespace(node) === SVG_NAMESPACE_GE0;
 }
-function isHiddenByInlineDisplay(input: Element): boolean {
-  if (!input.isConnected) {
+function isHiddenByInlineDisplay(element: Element): boolean {
+  if (!element.isConnected) {
     return false;
   }
   for (
-    let value: Element | null = input;
+    let value: Element | null = element;
     value !== null;
     value = value.parentElement
   ) {
@@ -1413,8 +1413,8 @@ function isHiddenByInlineDisplay(input: Element): boolean {
   }
   return false;
 }
-function hasOpenChild(input: Element): boolean {
-  for (let value of input.children) {
+function hasOpenChild(element: Element): boolean {
+  for (let value of element.children) {
     if (value.hasAttribute("data-open")) {
       return true;
     }
@@ -1435,8 +1435,8 @@ function CloseOnActivityHideProvider({
     }
     return () => {
       ref.current = false;
-      for (let value2 of value) {
-        if (isHiddenByInlineDisplay(value2) && hasOpenChild(value2)) {
+      for (let element of value) {
+        if (isHiddenByInlineDisplay(element) && hasOpenChild(element)) {
           ref.current = true;
         }
       }
@@ -1449,28 +1449,28 @@ function CloseOnActivityHideProvider({
   );
 }
 function useCloseOnActivityHideRef(
-  input: boolean,
+  enabled: boolean,
 ): React.RefObject<HTMLElement | null> {
   let value = reactActivityHide.useContext(activityHideElementsContext),
     ref = reactActivityHide.useRef<HTMLElement>(null);
   reactActivityHide.useEffect(() => {
     let current = ref.current;
-    if (!input || value === null || current === null) {
+    if (!enabled || value === null || current === null) {
       return;
     }
     value.add(current);
     return () => {
       value.delete(current);
     };
-  }, [value, input]);
+  }, [value, enabled]);
   return ref;
 }
 function getCompanionModalCatcher(
-  input: HTMLElement,
-  options: EventTarget | null,
+  overlayElement: HTMLElement,
+  target: EventTarget | null,
 ): HTMLElement | null {
-  let value = asElement(options) as HTMLElement | null;
-  if (value === null || value.parentElement !== input) {
+  let value = asElement(target) as HTMLElement | null;
+  if (value === null || value.parentElement !== overlayElement) {
     return null;
   }
   if (value.childElementCount === 0 && value.style.position === "fixed") {
@@ -1480,16 +1480,16 @@ function getCompanionModalCatcher(
   }
 }
 function shouldSuppressModalCatcherFocus(
-  input: HTMLElement,
-  options: EventTarget | null,
+  overlayElement: HTMLElement,
+  target: EventTarget | null,
 ) {
-  let value = getCompanionModalCatcher(input, options);
+  let value = getCompanionModalCatcher(overlayElement, target);
   if (value === null) {
     return false;
   }
-  let value2 = asElement(value.ownerDocument.activeElement),
-    value3 = input.parentElement ?? input;
-  return value2 === null || !value3.contains(value2);
+  let activeElement = asElement(value.ownerDocument.activeElement),
+    focusBoundary = overlayElement.parentElement ?? overlayElement;
+  return activeElement === null || !focusBoundary.contains(activeElement);
 }
 function handleModalCatcherPointerDown(
   event: React.PointerEvent<HTMLElement>,
@@ -1513,9 +1513,9 @@ function handleModalCatcherDragStart(
 ): void {
   let currentTarget = event.currentTarget,
     value: HTMLElement | null = null;
-  for (let value3 of currentTarget.children) {
+  for (let child of currentTarget.children) {
     if (
-      ((value = getCompanionModalCatcher(currentTarget, value3)),
+      ((value = getCompanionModalCatcher(currentTarget, child)),
       value !== null)
     ) {
       break;
@@ -1524,28 +1524,28 @@ function handleModalCatcherDragStart(
   if (value === null) {
     return;
   }
-  let value2 = value;
+  let modalCatcher = value;
   if (
     modalCatcherDragSession !== null &&
     modalCatcherDragSession.event === event.nativeEvent
   ) {
-    value2.style.pointerEvents = "none";
+    modalCatcher.style.pointerEvents = "none";
     let restoreAll = modalCatcherDragSession.restoreAll;
     modalCatcherDragSession.restoreAll = () => {
-      value2.style.pointerEvents = "";
+      modalCatcher.style.pointerEvents = "";
       restoreAll();
     };
     return;
   }
   modalCatcherDragSession?.restoreAll();
-  value2.style.pointerEvents = "none";
-  let ownerDocument = value2.ownerDocument,
+  modalCatcher.style.pointerEvents = "none";
+  let ownerDocument = modalCatcher.ownerDocument,
     state = {
       event: event.nativeEvent,
       restoreAll: () => {
-        value2.style.pointerEvents = "";
-        for (let value3 of modalCatcherDragEndEvents) {
-          ownerDocument.removeEventListener(value3, callback, true);
+        modalCatcher.style.pointerEvents = "";
+        for (let eventName of modalCatcherDragEndEvents) {
+          ownerDocument.removeEventListener(eventName, callback, true);
         }
         if (modalCatcherDragSession === state) {
           modalCatcherDragSession = null;
@@ -1554,8 +1554,8 @@ function handleModalCatcherDragStart(
     },
     callback = () => state.restoreAll();
   modalCatcherDragSession = state;
-  for (let value3 of modalCatcherDragEndEvents) {
-    ownerDocument.addEventListener(value3, callback, true);
+  for (let eventName of modalCatcherDragEndEvents) {
+    ownerDocument.addEventListener(eventName, callback, true);
   }
 }
 function ResetSkeletonContexts({
@@ -1585,41 +1585,41 @@ function PortalRoot({
 }: I.PortalRootProps) {
   useUiLocale();
   let value = useCloseOnActivityHideRef(closeOnActivityHide),
-    value2 = useMergedRefs(trackInputForElement, value),
-    value3 = useDensity(),
-    value4 = density ?? value3,
-    value5: "light" | "dark" | undefined = useColorMode(),
-    value6 = useCdsThemeId(),
-    value7: string | undefined = usePlatform(),
-    value8: string | undefined = useFont(),
-    value9: string | undefined =
-      useDocumentFont(value8 === undefined) ?? value8,
-    value10: string | null | undefined = useMonospaceFont(),
-    value11: string | undefined = useFeatureFlagAttribute(),
-    value12: string | undefined = usePageBackground(),
-    value13: string | undefined = useSurfaceBackground(),
-    value14 = surface ?? value13,
-    value15: C.DesignStyle | undefined =
-      value14 || value10 !== undefined || style
+    portalRef = useMergedRefs(trackInputForElement, value),
+    inheritedDensity = useDensity(),
+    resolvedDensity = density ?? inheritedDensity,
+    colorMode: "light" | "dark" | undefined = useColorMode(),
+    themeId = useCdsThemeId(),
+    platform: string | undefined = usePlatform(),
+    inheritedFont: string | undefined = useFont(),
+    resolvedFont: string | undefined =
+      useDocumentFont(inheritedFont === undefined) ?? inheritedFont,
+    monospaceFont: string | null | undefined = useMonospaceFont(),
+    featureFlagAttribute: string | undefined = useFeatureFlagAttribute(),
+    pageBackground: string | undefined = usePageBackground(),
+    inheritedSurface: string | undefined = useSurfaceBackground(),
+    resolvedSurface = surface ?? inheritedSurface,
+    portalStyle: C.DesignStyle | undefined =
+      resolvedSurface || monospaceFont !== undefined || style
         ? {
-            ...getSurfaceBackgroundStyle(value14),
-            ...getMonospaceOverrideStyle(value10),
+            ...getSurfaceBackgroundStyle(resolvedSurface),
+            ...getMonospaceOverrideStyle(monospaceFont),
             ...style,
           }
         : undefined;
   return (
     <div
-      ref={value2}
+      ref={portalRef}
       className={cn("cds-root pointer-events-auto", className)}
       data-cds-portal={""}
-      data-density={value4}
-      data-mode={value5}
-      data-cds-theme={value6}
-      data-platform={value7}
-      data-font={value9}
-      data-cds-fizzy-lake={value11}
-      data-page-bg={value12}
-      style={value15}
+      data-density={resolvedDensity}
+      data-mode={colorMode}
+      data-cds-theme={themeId}
+      data-platform={platform}
+      data-font={resolvedFont}
+      data-cds-fizzy-lake={featureFlagAttribute}
+      data-page-bg={pageBackground}
+      style={portalStyle}
       onPointerDown={
         companionModalCatcher ? handleModalCatcherPointerDown : undefined
       }
@@ -1630,8 +1630,8 @@ function PortalRoot({
         companionModalCatcher ? handleModalCatcherDragStart : undefined
       }
     >
-      <portalDensityContext.Provider value={value4}>
-        <surfaceBackgroundContext.Provider value={value14}>
+      <portalDensityContext.Provider value={resolvedDensity}>
+        <surfaceBackgroundContext.Provider value={resolvedSurface}>
           <isPortalRootContext.Provider value={true}>
             <pointerDismissalContext.Provider value={false}>
               <ResetSkeletonContexts>{children}</ResetSkeletonContexts>
@@ -1664,9 +1664,9 @@ function rootFontSizeProbe(): HTMLDivElement {
 }
 function measureRootRemScale(element: Element): number {
   let value = /^([\d.]+)px$/.exec(getComputedStyle(element).fontSize),
-    value2 = value === null ? NaN : Number(value[1]) / DEFAULT_ROOT_FONT_SIZE;
-  if (value2 > 0) {
-    return value2;
+    remScale = value === null ? NaN : Number(value[1]) / DEFAULT_ROOT_FONT_SIZE;
+  if (remScale > 0) {
+    return remScale;
   }
   return (
     parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
@@ -1694,11 +1694,11 @@ function subscribeRootRemSize(listener: () => void): () => void {
   ) {
     let value = rootFontSizeProbe();
     rootRemResizeObserver = new ResizeObserver(() => {
-      let value2 = readRootRemSize();
-      if (value2 !== cachedRootRemSize) {
-        cachedRootRemSize = value2;
-        for (let value3 of rootRemSubscribers) {
-          value3();
+      let measuredRemSize = readRootRemSize();
+      if (measuredRemSize !== cachedRootRemSize) {
+        cachedRootRemSize = measuredRemSize;
+        for (let subscriber of rootRemSubscribers) {
+          subscriber();
         }
       }
     });
@@ -1743,16 +1743,16 @@ function useDensityIconSize(): C.ResolvedIconSize {
     return "sm";
   }
 }
-function useIconSize(input: C.IconSize = DEFAULT_ICON_SIZE) {
-  return resolveIconSize(input, useDensityIconSize());
+function useIconSize(size: C.IconSize = DEFAULT_ICON_SIZE) {
+  return resolveIconSize(size, useDensityIconSize());
 }
 function getClosestIconSize(pixels: number): C.ResolvedIconSize {
   let closestSize = iconSizes[0],
     minimumDistance = 1 / 0;
   for (let value of iconSizes) {
-    let value2 = Math.abs(iconSizeMetrics[value].px - pixels);
-    if (value2 <= minimumDistance) {
-      minimumDistance = value2;
+    let distance = Math.abs(iconSizeMetrics[value].px - pixels);
+    if (distance <= minimumDistance) {
+      minimumDistance = distance;
       closestSize = value;
     }
   }
@@ -1782,8 +1782,8 @@ function calculateIconFontWeight(
   );
 }
 function validateIconAccessibility(
-  input: string | undefined,
-  options: React.AriaAttributes,
+  alt: string | undefined,
+  ariaProps: React.AriaAttributes,
 ): void {}
 function getCustomIconFontStyle(pixels: number, strokeWidth: number) {
   let masterSize: I.IconMasterSize = pixels <= 18 ? 16 : 20;
@@ -1801,30 +1801,30 @@ function createIconSizeStyles(size: C.ResolvedIconSize): I.IconSizeStyles {
     }),
   });
 }
-function Icon(input: I.IconProps): React.ReactElement {
+function Icon(props: I.IconProps): React.ReactElement {
   useUiLocale();
   let value = useDensityIconSize();
-  if (input.customIcon) {
+  if (props.customIcon) {
     let {
-      customIcon: value27,
-      size: value35 = DEFAULT_ICON_SIZE,
-      alt: value28,
-      className: value29,
-      style: value30,
-      name: value31,
-      icon: value32,
-      animated: value33,
-      ...value34
-    } = input;
-    validateIconAccessibility(value28, value34);
-    let px2 = iconSizeMetrics[resolveIconSize(value35, value)].px,
-      value36 = pixelsToScaledRem(px2);
+      customIcon: customSvg,
+      size: customSvgSize = DEFAULT_ICON_SIZE,
+      alt: customSvgAlt,
+      className: customSvgClassName,
+      style: customSvgStyle,
+      name: unusedIconName,
+      icon: unusedIcon,
+      animated: unusedAnimated,
+      ...svgProps
+    } = props;
+    validateIconAccessibility(customSvgAlt, svgProps);
+    let px2 = iconSizeMetrics[resolveIconSize(customSvgSize, value)].px,
+      fontSize = pixelsToScaledRem(px2);
     return (
       <svg
         data-cds={"Icon"}
         width={"1em"}
         height={"1em"}
-        viewBox={`0 0 ${value27.viewBox} ${value27.viewBox}`}
+        viewBox={`0 0 ${customSvg.viewBox} ${customSvg.viewBox}`}
         fill={"currentColor"}
         fillRule={"evenodd"}
         stroke={"none"}
@@ -1833,112 +1833,112 @@ function Icon(input: I.IconProps): React.ReactElement {
         xmlns={"http://www.w3.org/2000/svg"}
         style={{
           ...customIconBaseStyle,
-          fontSize: value36,
-          ...value30,
+          fontSize: fontSize,
+          ...customSvgStyle,
         }}
-        className={value29}
-        {...value34}
-        role={value34.role ?? (value28 ? "img" : undefined)}
-        aria-hidden={value34["aria-hidden"] ?? (value28 ? undefined : true)}
-        aria-label={value34["aria-label"] ?? (value28 || (undefined))}
+        className={customSvgClassName}
+        {...svgProps}
+        role={svgProps.role ?? (customSvgAlt ? "img" : undefined)}
+        aria-hidden={svgProps["aria-hidden"] ?? (customSvgAlt ? undefined : true)}
+        aria-label={svgProps["aria-label"] ?? (customSvgAlt || (undefined))}
       >
-        {value27.paths.map(
-          (input2: string | I.CustomIconStrokePath, options: number) =>
-            typeof input2 === "string"
+        {customSvg.paths.map(
+          (path: string | I.CustomIconStrokePath, pathIndex: number) =>
+            typeof path === "string"
               ? (() => {
                   const _Element = "path";
                   const _elementProps = {
-                    d: input2,
+                    d: path,
                   };
-                  const _elementKey = options;
+                  const _elementKey = pathIndex;
                   return <_Element key={_elementKey} {..._elementProps} />;
                 })()
               : (() => {
-                  const _Element2 = "path";
-                  const _elementProps2 = {
-                    d: input2.d,
+                  const StrokePath = "path";
+                  const strokePathProps = {
+                    d: path.d,
                     fill: "none",
                     stroke: "currentColor",
-                    strokeWidth: input2.strokeWidth,
+                    strokeWidth: path.strokeWidth,
                     vectorEffect: "non-scaling-stroke",
                   };
-                  const _elementKey2 = options;
-                  return <_Element2 key={_elementKey2} {..._elementProps2} />;
+                  const strokePathKey = pathIndex;
+                  return <StrokePath key={strokePathKey} {...strokePathProps} />;
                 })(),
         )}
       </svg>
     );
   }
   let {
-    bold: value11 = false,
-    animated: value12 = false,
-    alt: value2,
-    className: value3,
-    style: value4,
-    name: value5,
-    icon: value6,
-    size: value7,
-    customSize: value8,
-    customIcon: value9,
-    ...value10
-  } = input;
-  validateIconAccessibility(value2, value10);
-  let value13 = input.name ?? input.icon.name,
-    value14: number,
-    value15: C.ResolvedIconSize;
-  if (value8 !== undefined) {
-    value14 = value8;
-    value15 = getClosestIconSize(value14);
+    bold: bold = false,
+    animated: animated = false,
+    alt: alt,
+    className: className,
+    style: style,
+    name: name,
+    icon: icon,
+    size: size,
+    customSize: customSize,
+    customIcon: customIcon,
+    ...ariaProps
+  } = props;
+  validateIconAccessibility(alt, ariaProps);
+  let iconName = props.name ?? props.icon.name,
+    iconPixels: number,
+    resolvedSize: C.ResolvedIconSize;
+  if (customSize !== undefined) {
+    iconPixels = customSize;
+    resolvedSize = getClosestIconSize(iconPixels);
   } else {
-    value15 = resolveIconSize(value7 ?? DEFAULT_ICON_SIZE, value);
-    value14 = iconSizeMetrics[value15].px;
+    resolvedSize = resolveIconSize(size ?? DEFAULT_ICON_SIZE, value);
+    iconPixels = iconSizeMetrics[resolvedSize].px;
   }
-  let stroke = iconSizeMetrics[value15].stroke,
-    value16 =
-      value7 === "auto" || value7 === "auto-sm" || value7 === "auto-lg",
-    value17 = value11 && !("strong" in stroke) && !value16,
-    value18 = primaryIconGlyphs[value13],
-    value19 =
-      value18 === undefined ? undefined : secondaryIconGlyphs[value13],
-    value20 = iconFontStyles[value15],
-    value21 =
-      value8 === undefined
-        ? value11 && value20.strong !== undefined
-          ? value20.strong
-          : value20.regular
+  let stroke = iconSizeMetrics[resolvedSize].stroke,
+    usesAutomaticSize =
+      size === "auto" || size === "auto-sm" || size === "auto-lg",
+    needsSyntheticBold = bold && !("strong" in stroke) && !usesAutomaticSize,
+    primaryGlyph = primaryIconGlyphs[iconName],
+    secondaryGlyph =
+      primaryGlyph === undefined ? undefined : secondaryIconGlyphs[iconName],
+    sizeFontStyles = iconFontStyles[resolvedSize],
+    fontStyle =
+      customSize === undefined
+        ? bold && sizeFontStyles.strong !== undefined
+          ? sizeFontStyles.strong
+          : sizeFontStyles.regular
         : getCustomIconFontStyle(
-            value14,
-            value11 && "strong" in stroke ? stroke.strong : stroke.regular,
+            iconPixels,
+            bold && "strong" in stroke ? stroke.strong : stroke.regular,
           ),
-    value22 = value12 && animatedIcons.has(value13),
-    value23 = value22 ? animationDurations[value13] : undefined,
-    value24 = value22 ? animationExitDurations[value13] : undefined,
-    value25 = value22 ? animationEasings[value13] : undefined,
-    value26 = value22
+    shouldAnimate = animated && animatedIcons.has(iconName),
+    enterDuration = shouldAnimate ? animationDurations[iconName] : undefined,
+    exitDuration = shouldAnimate ? animationExitDurations[iconName] : undefined,
+    animationEasing = shouldAnimate ? animationEasings[iconName] : undefined,
+    renderedFontStyle = shouldAnimate
       ? {
-          ...value21,
-          "--cds-opsz": value14,
-          "--cds-wght": value21.fontWeight,
-          ...(value23 !== undefined && {
-            "--cds-anim-dur": `${value23}ms`,
+          ...fontStyle,
+          "--cds-opsz": iconPixels,
+          "--cds-wght": fontStyle.fontWeight,
+          ...(enterDuration !== undefined && {
+            "--cds-anim-dur": `${enterDuration}ms`,
           }),
-          ...(value24 !== undefined && {
-            "--cds-anim-dur-out": `${value24}ms`,
+          ...(exitDuration !== undefined && {
+            "--cds-anim-dur-out": `${exitDuration}ms`,
           }),
-          ...(value25 !== undefined && {
-            "--cds-anim-ease": value25,
+          ...(animationEasing !== undefined && {
+            "--cds-anim-ease": animationEasing,
           }),
         }
-      : value21;
+      : fontStyle;
   // MineDesign：有 Lucide 对照的字形改画 SVG；动画图标保留字体的分层动画
-  let lucideNode = value22 ? undefined : lucideIcons[value13];
+  let lucideNode = shouldAnimate ? undefined : lucideIcons[iconName];
   if (lucideNode) {
-    let rotation = lucideRotations[value13];
+    let rotation = lucideRotations[iconName];
     return (
       <svg
         data-cds={"Icon"}
         data-mdn-icon={""}
-        data-mdn-bold={value11 ? "" : undefined}
+        data-mdn-bold={bold ? "" : undefined}
         width={"1em"}
         height={"1em"}
         viewBox={"0 0 24 24"}
@@ -1949,15 +1949,15 @@ function Icon(input: I.IconProps): React.ReactElement {
         xmlns={"http://www.w3.org/2000/svg"}
         style={{
           ...customIconBaseStyle,
-          fontSize: value21.fontSize,
+          fontSize: fontStyle.fontSize,
           ...(rotation ? { transform: `rotate(${rotation}deg)` } : null),
-          ...value4,
+          ...style,
         }}
-        className={value3}
-        {...value10}
-        role={value10.role ?? (value2 ? "img" : undefined)}
-        aria-hidden={value10["aria-hidden"] ?? (value2 ? undefined : true)}
-        aria-label={value10["aria-label"] ?? (value2 || (undefined))}
+        className={className}
+        {...ariaProps}
+        role={ariaProps.role ?? (alt ? "img" : undefined)}
+        aria-hidden={ariaProps["aria-hidden"] ?? (alt ? undefined : true)}
+        aria-label={ariaProps["aria-label"] ?? (alt || (undefined))}
       >
         {lucideNode.map(([Tag, attrs], index) => (
           <Tag key={index} {...attrs} />
@@ -1968,34 +1968,34 @@ function Icon(input: I.IconProps): React.ReactElement {
   return (
     <span
       data-cds={"Icon"}
-      data-cds-anim={value22 ? "" : undefined}
+      data-cds-anim={shouldAnimate ? "" : undefined}
       data-cds-anim-loop={
-        value22 && loopingIcons.has(value13) ? "" : undefined
+        shouldAnimate && loopingIcons.has(iconName) ? "" : undefined
       }
       style={
-        value4
+        style
           ? {
-              ...value26,
-              ...value4,
+              ...renderedFontStyle,
+              ...style,
             }
-          : value26
+          : renderedFontStyle
       }
-      className={value3}
-      {...value10}
-      role={value10.role ?? (value2 ? "img" : undefined)}
-      aria-hidden={value10["aria-hidden"] ?? (value2 ? undefined : true)}
-      aria-label={value10["aria-label"] ?? (value2 || (undefined))}
+      className={className}
+      {...ariaProps}
+      role={ariaProps.role ?? (alt ? "img" : undefined)}
+      aria-hidden={ariaProps["aria-hidden"] ?? (alt ? undefined : true)}
+      aria-label={ariaProps["aria-label"] ?? (alt || (undefined))}
     >
-      {[value19 !== undefined && (
+      {[secondaryGlyph !== undefined && (
           <span data-cds-icon-layer={"secondary"} aria-hidden={"true"}>
-            {String.fromCodePoint(value19)}
+            {String.fromCodePoint(secondaryGlyph)}
           </span>
-        ), value18 !== undefined ? String.fromCodePoint(value18) : null]}
+        ), primaryGlyph !== undefined ? String.fromCodePoint(primaryGlyph) : null]}
     </span>
   );
 }
-function isIconName(input: unknown): input is string {
-  return typeof input === "string";
+function isIconName(icon: unknown): icon is string {
+  return typeof icon === "string";
 }
 function IconSlot({ icon: icon }: { icon?: React.ReactNode }) {
   useUiLocale();
@@ -2012,9 +2012,9 @@ function readDesktopTitlebarInset(doc: Document): number {
         ?.getComputedStyle(documentElement)
         .getPropertyValue("--desktop-titlebar-inset") ||
       documentElement.style.getPropertyValue("--desktop-titlebar-inset"),
-    value2 = Number.parseFloat(value);
-  if (Number.isFinite(value2) && value2 > 0) {
-    return value2;
+    insetPixels = Number.parseFloat(value);
+  if (Number.isFinite(insetPixels) && insetPixels > 0) {
+    return insetPixels;
   } else {
     return 0;
   }
@@ -2025,57 +2025,57 @@ function getDesktopTitlebarStore(doc: Document): D.ExternalStore<number> {
     let values = new Set<() => void>(),
       value: D.SafeMutationObserver | null = null,
       flag = false,
-      value2: number,
-      flag2 = false,
+      cachedInset: number,
+      needsRefresh = false,
       callback = () => {
-        flag2 = false;
-        value2 = readDesktopTitlebarInset(doc);
-        return value2;
+        needsRefresh = false;
+        cachedInset = readDesktopTitlebarInset(doc);
+        return cachedInset;
       };
     entry = {
-      subscribe(input: () => void) {
-        values.add(input);
+      subscribe(subscriber: () => void) {
+        values.add(subscriber);
         if (value === null && !flag) {
-          let value3 = createSafeMutationObserver(
+          let styleObserver = createSafeMutationObserver(
             MutationObserver,
             () => {
               if (values.size === 0) {
-                flag2 = true;
+                needsRefresh = true;
                 return;
               }
-              let value4 = value2;
-              if (callback() !== value4) {
-                for (let value5 of values) {
-                  value5();
+              let previousInset = cachedInset;
+              if (callback() !== previousInset) {
+                for (let listener of values) {
+                  listener();
                 }
               }
             },
           );
           if (
-            value3.observe(doc.documentElement, {
+            styleObserver.observe(doc.documentElement, {
               attributes: true,
               attributeFilter: ["style"],
             })
           ) {
             callback();
-            value = value3;
+            value = styleObserver;
           } else {
             flag = true;
           }
         }
         return () => {
-          values.delete(input);
+          values.delete(subscriber);
         };
       },
       getSnapshot: () => {
         if (value === null) {
           return readDesktopTitlebarInset(doc);
         }
-        let value3 = values.size === 0 && value.takeRecords().length > 0;
-        if (flag2 || value3) {
+        let hasPendingStyleChanges = values.size === 0 && value.takeRecords().length > 0;
+        if (needsRefresh || hasPendingStyleChanges) {
           callback();
         }
-        return value2;
+        return cachedInset;
       },
     };
     desktopTitlebarStores.set(doc, entry);
@@ -2083,18 +2083,18 @@ function getDesktopTitlebarStore(doc: Document): D.ExternalStore<number> {
   return entry;
 }
 function resolveContainerElement(
-  input?: I.ContainerInput,
+  container?: I.ContainerInput,
 ): I.ContainerElement | null {
-  let callback = (input2: I.ContainerInput): input2 is I.ContainerElement =>
-    typeof input2 === "object" &&
-    input2 !== null &&
-    ((input2 as Node).nodeType === 1 || (input2 as Node).nodeType === 11) &&
-    "ownerDocument" in input2;
-  if (callback(input)) {
-    return input;
+  let callback = (candidate: I.ContainerInput): candidate is I.ContainerElement =>
+    typeof candidate === "object" &&
+    candidate !== null &&
+    ((candidate as Node).nodeType === 1 || (candidate as Node).nodeType === 11) &&
+    "ownerDocument" in candidate;
+  if (callback(container)) {
+    return container;
   }
-  if (typeof input === "object" && input !== null && "current" in input) {
-    let current = input.current;
+  if (typeof container === "object" && container !== null && "current" in container) {
+    let current = container.current;
     if (callback(current)) {
       return current;
     } else {
@@ -2103,21 +2103,21 @@ function resolveContainerElement(
   }
   return null;
 }
-function useDesktopTitlebarInset(input?: I.ContainerInput): number {
+function useDesktopTitlebarInset(container?: I.ContainerInput): number {
   let value: HTMLElement | undefined = useRootElement(),
     callback = reactCollisionPadding.useCallback(
       () =>
-        (resolveContainerElement(input) ?? value)?.ownerDocument ??
+        (resolveContainerElement(container) ?? value)?.ownerDocument ??
         (typeof document === "undefined" ? null : document),
-      [input, value],
+      [container, value],
     ),
-    [value2, value3] = reactCollisionPadding.useState(callback);
+    [ownerDocument, setOwnerDocument] = reactCollisionPadding.useState(callback);
   useIsomorphicLayoutEffect(() => {
-    value3(callback());
+    setOwnerDocument(callback());
   });
   let memo = reactCollisionPadding.useMemo(
-    () => (value2 === null ? null : getDesktopTitlebarStore(value2)),
-    [value2],
+    () => (ownerDocument === null ? null : getDesktopTitlebarStore(ownerDocument)),
+    [ownerDocument],
   );
   return reactCollisionPadding.useSyncExternalStore(
     memo === null ? subscribeInsetNoop : memo.subscribe,
@@ -2126,13 +2126,13 @@ function useDesktopTitlebarInset(input?: I.ContainerInput): number {
   );
 }
 function useCollisionPadding(
-  input?: O.CollisionPadding,
-  options?: I.ContainerInput,
+  override?: O.CollisionPadding,
+  container?: I.ContainerInput,
 ): O.CollisionPadding | undefined {
-  let value = useDesktopTitlebarInset(options);
+  let value = useDesktopTitlebarInset(container);
   return reactCollisionPadding.useMemo(() => {
-    if (input !== undefined) {
-      return input;
+    if (override !== undefined) {
+      return override;
     }
     if (value <= 0) {
       return;
@@ -2143,7 +2143,7 @@ function useCollisionPadding(
       bottom: DEFAULT_COLLISION_PADDING,
       left: DEFAULT_COLLISION_PADDING,
     };
-  }, [input, value]);
+  }, [override, value]);
 }
 function CollisionPaddingProvider({
   override: override,
@@ -2159,48 +2159,48 @@ function CollisionPaddingProvider({
       }),
       [value],
     ),
-    value2 = children(value);
+    content = children(value);
   if (provideInherit) {
     return (
       <collisionPaddingContext.Provider value={memo}>
-        {value2}
+        {content}
       </collisionPaddingContext.Provider>
     );
   } else {
-    return value2;
+    return content;
   }
 }
-function getSurfaceClasses(input: C.SurfaceProps["elevation"]): string {
-  return `rounded-card ${surfaceBackgroundClasses[elevationSurfaceNames[input]]} ${elevationShadowClasses[input]}`;
+function getSurfaceClasses(elevation: C.SurfaceProps["elevation"]): string {
+  return `rounded-card ${surfaceBackgroundClasses[elevationSurfaceNames[elevation]]} ${elevationShadowClasses[elevation]}`;
 }
 function createMenuVirtualAnchor(
-  input: Pick<O.MenuRootState, "triggerRef">,
+  menuState: Pick<O.MenuRootState, "triggerRef">,
 ): {
   readonly contextElement: HTMLElement | undefined;
   getBoundingClientRect(): Omit<DOMRectReadOnly, "toJSON">;
 } {
   return {
     get contextElement() {
-      return input.triggerRef.current ?? undefined;
+      return menuState.triggerRef.current ?? undefined;
     },
     getBoundingClientRect: () => {
-      let value = input.triggerRef.current?.getBoundingClientRect(),
-        value2 = input.triggerRef.current
+      let value = menuState.triggerRef.current?.getBoundingClientRect(),
+        anchorBounds = menuState.triggerRef.current
           ?.closest(MENU_ANCHOR_SELECTOR)
           ?.getBoundingClientRect(),
-        value3 = value2?.x ?? value?.x ?? 0,
-        value4 = value?.y ?? 0,
-        value5 = value2?.width ?? value?.width ?? 0,
-        value6 = value?.height ?? 0;
+        anchorX = anchorBounds?.x ?? value?.x ?? 0,
+        triggerY = value?.y ?? 0,
+        anchorWidth = anchorBounds?.width ?? value?.width ?? 0,
+        triggerHeight = value?.height ?? 0;
       return {
-        x: value3,
-        y: value4,
-        width: value5,
-        height: value6,
-        top: value4,
-        left: value3,
-        right: value3 + value5,
-        bottom: value4 + value6,
+        x: anchorX,
+        y: triggerY,
+        width: anchorWidth,
+        height: triggerHeight,
+        top: triggerY,
+        left: anchorX,
+        right: anchorX + anchorWidth,
+        bottom: triggerY + triggerHeight,
       };
     },
   };
@@ -2279,30 +2279,30 @@ function MenuScrollContent({
   );
 }
 function isKeyboardContextMenuEvent(
-  input?: I.ContextMenuInputEvent,
+  event?: I.ContextMenuInputEvent,
 ): boolean {
-  if (input === undefined || input.type !== "contextmenu") {
+  if (event === undefined || event.type !== "contextmenu") {
     return false;
   }
-  let { button: value, pointerType: value2 } = input;
-  return value === -1 && value2 !== "touch" && value2 !== "pen";
+  let { button: value, pointerType: pointerType } = event;
+  return value === -1 && pointerType !== "touch" && pointerType !== "pen";
 }
 function recordKeyboardContextMenuOpen(
-  input: object,
-  options: boolean,
-  context: I.ContextMenuChange,
+  rootIdentity: object,
+  open: boolean,
+  changeDetails: I.ContextMenuChange,
 ): void {
-  if (context.isCanceled) {
+  if (changeDetails.isCanceled) {
     return;
   }
-  if (options && isKeyboardContextMenuEvent(context.event)) {
-    keyboardContextMenuRoots.set(input, true);
+  if (open && isKeyboardContextMenuEvent(changeDetails.event)) {
+    keyboardContextMenuRoots.set(rootIdentity, true);
   } else {
-    keyboardContextMenuRoots.delete(input);
+    keyboardContextMenuRoots.delete(rootIdentity);
   }
 }
 function useKeyboardContextMenuInitialFocus(
-  input: React.RefObject<HTMLElement | null>,
+  popupRef: React.RefObject<HTMLElement | null>,
 ): void {
   let value = reactKeyboardContextMenuFocus.useContext(
     menuRootIdentityContext,
@@ -2314,12 +2314,12 @@ function useKeyboardContextMenuInitialFocus(
     let index = 0,
       count = 3,
       callback = () => {
-        let current = input.current,
-          value2 = current?.ownerDocument.activeElement ?? null;
+        let current = popupRef.current,
+          activeElement = current?.ownerDocument.activeElement ?? null;
         if (
           current !== null &&
-          value2 !== null &&
-          !current.contains(value2) &&
+          activeElement !== null &&
+          !current.contains(activeElement) &&
           count > 0
         ) {
           count -= 1;
@@ -2327,7 +2327,7 @@ function useKeyboardContextMenuInitialFocus(
           return;
         }
         keyboardContextMenuRoots.delete(value);
-        if (current !== null && value2 === current) {
+        if (current !== null && activeElement === current) {
           current
             .querySelector<HTMLElement>(
               '[role^="menuitem"]:not([data-disabled])',
@@ -2341,40 +2341,40 @@ function useKeyboardContextMenuInitialFocus(
     return () => {
       cancelAnimationFrame(index);
     };
-  }, [value, input]);
+  }, [value, popupRef]);
 }
-function blurWithSafeRelatedTarget(input: O.FocusableElement): void {
-  let callback = (input2: Event) => {
-    let relatedTarget = (input2 as FocusEvent).relatedTarget;
+function blurWithSafeRelatedTarget(focusableElement: O.FocusableElement): void {
+  let callback = (focusEvent: Event) => {
+    let relatedTarget = (focusEvent as FocusEvent).relatedTarget;
     if (
       relatedTarget !== null &&
       relatedTarget !== undefined &&
       asElement(relatedTarget) === null
     ) {
-      Object.defineProperty(input2, "relatedTarget", {
+      Object.defineProperty(focusEvent, "relatedTarget", {
         value: null,
         configurable: true,
       });
     }
   };
-  input.addEventListener("focusout", callback, true);
+  focusableElement.addEventListener("focusout", callback, true);
   try {
-    input.blur();
+    focusableElement.blur();
   } finally {
-    input.removeEventListener("focusout", callback, true);
+    focusableElement.removeEventListener("focusout", callback, true);
   }
 }
 function registerOverlayOwner(
-  input: Element,
-  options: () => O.FocusableElement | null,
+  overlayElement: Element,
+  resolveOwner: () => O.FocusableElement | null,
 ): void {
-  overlayOwnerResolvers.set(input, options);
+  overlayOwnerResolvers.set(overlayElement, resolveOwner);
 }
 function getOverlayOwnerAncestors(
-  input: Element | null,
+  element: Element | null,
 ): O.FocusableElement[] {
   let items: O.FocusableElement[] = [],
-    value: Element | null | undefined = input;
+    value: Element | null | undefined = element;
   while (value !== null && items.length < MAX_OVERLAY_OWNER_DEPTH) {
     let entry: (() => O.FocusableElement | null) | undefined =
       overlayOwnerResolvers.get(value);
@@ -2382,12 +2382,12 @@ function getOverlayOwnerAncestors(
       value = value.parentElement;
       continue;
     }
-    let value2: O.FocusableElement | null = entry();
-    if (value2 === null || value2 === value || items.includes(value2)) {
+    let ownerElement: O.FocusableElement | null = entry();
+    if (ownerElement === null || ownerElement === value || items.includes(ownerElement)) {
       break;
     }
-    items.push(value2);
-    value = value2;
+    items.push(ownerElement);
+    value = ownerElement;
   }
   return items;
 }
@@ -2631,15 +2631,15 @@ export {
 };
 export function installUiInteractions(): () => void {
   return () => {
-    getClassMergeThemeValues = (input: D.ThemeClassGroup) =>
-      classMergeThemeKeys[input];
-    createDirectionalClassGroups = (input: string, options: string[]) =>
+    getClassMergeThemeValues = (group: D.ThemeClassGroup) =>
+      classMergeThemeKeys[group];
+    createDirectionalClassGroups = (classPrefix: string, tokens: string[]) =>
       Object.fromEntries(
-        ["", "x", "y", "s", "e", "t", "r", "b", "l"].map((input2: string) => [
-          `${input}${input2}`,
+        ["", "x", "y", "s", "e", "t", "r", "b", "l"].map((direction: string) => [
+          `${classPrefix}${direction}`,
           [
             {
-              [`${input}${input2}`]: options,
+              [`${classPrefix}${direction}`]: tokens,
             },
           ],
         ]),
@@ -2658,9 +2658,9 @@ export function installUiInteractions(): () => void {
       gapTokenNames = getClassMergeThemeValues("gap");
       typographyClassNames = classMergeTypographyScale;
       typographyWeightClassNames = classMergeTypographyScale.flatMap(
-        (input: string) =>
+        (scale: string) =>
           classMergeTypographyWeights.map(
-            (input2: string) => `${input}-${input2}`,
+            (weight: string) => `${scale}-${weight}`,
           ),
       );
       mergeTailwindClasses = extendTailwindMerge<
@@ -2814,14 +2814,14 @@ export function installUiInteractions(): () => void {
           className: className,
           ...props
         }: I.SheetDismissButtonProps,
-        options: React.ForwardedRef<HTMLElement>,
+        forwardedRef: React.ForwardedRef<HTMLElement>,
       ) {
         let value = useTranslation("close", "Close"),
-          value2 = label ?? value;
+          buttonLabel = label ?? value;
         return (() => {
-          const _Element3 = as2;
-          const _elementProps3 = {
-            ref: options,
+          const DismissElement = as2;
+          const dismissElementProps = {
+            ref: forwardedRef,
             type: "button",
             "data-cds-sheet-control": "",
             onClick: onDismiss,
@@ -2831,9 +2831,9 @@ export function installUiInteractions(): () => void {
               "min-h-control",
               className,
             ),
-            children: value2,
+            children: buttonLabel,
           };
-          return <_Element3 {..._elementProps3} />;
+          return <DismissElement {...dismissElementProps} />;
         })();
       });
       SheetChrome = {
@@ -2910,27 +2910,27 @@ export function installUiInteractions(): () => void {
       );
     });
     createResolvedThemeSnapshot = (
-      input?: I.ThemeConfiguration | null,
-      options?: I.ThemeSnapshot,
+      configuration?: I.ThemeConfiguration | null,
+      previousSnapshot?: I.ThemeSnapshot,
     ) => {
       if (
-        input === null ||
-        input === undefined ||
-        input.theme === undefined ||
-        input.theme === null
+        configuration === null ||
+        configuration === undefined ||
+        configuration.theme === undefined ||
+        configuration.theme === null
       ) {
         return;
       }
-      let value = resolveExperimentalTheme(input);
+      let value = resolveExperimentalTheme(configuration);
       if (
-        options !== undefined &&
-        options.theme === input.theme &&
-        options.resolved === value
+        previousSnapshot !== undefined &&
+        previousSnapshot.theme === configuration.theme &&
+        previousSnapshot.resolved === value
       ) {
-        return options;
+        return previousSnapshot;
       } else {
         return {
-          theme: input.theme,
+          theme: configuration.theme,
           resolved: value,
         };
       }
