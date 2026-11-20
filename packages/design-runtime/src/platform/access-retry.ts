@@ -5,20 +5,20 @@ import {
 import { isNarrowedFileContext } from "./file-content";
 
 var PlatformAccessRetryItems: Dynamic;
-function isRetryableAccessFailure(input?: Dynamic): Dynamic {
-  let value: Dynamic = input?.status;
+function isRetryableAccessFailure(error?: Dynamic): Dynamic {
+  let value: Dynamic = error?.status;
   return value === 401 || value === 403 || value === 404;
 }
-async function listWritableFiles(input?: Dynamic): Promise<Dynamic> {
+async function listWritableFiles(access?: Dynamic): Promise<Dynamic> {
   if (
-    input.mayWrite === true &&
-    typeof input.listUnlessNarrowed == "function"
+    access.mayWrite === true &&
+    typeof access.listUnlessNarrowed == "function"
   )
-    return await input.listUnlessNarrowed();
-  let value: Dynamic = await input.list();
+    return await access.listUnlessNarrowed();
+  let value: Dynamic = await access.list();
   if (
-    input.mayWrite === true &&
-    isNarrowedFileContext(value, input)
+    access.mayWrite === true &&
+    isNarrowedFileContext(value, access)
   )
     throw {
       code: "http",
@@ -29,24 +29,24 @@ async function listWritableFiles(input?: Dynamic): Promise<Dynamic> {
   return value;
 }
 async function retryAccessFailure(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  operation?: Dynamic,
+  retryOptions?: Dynamic,
+  onRetry?: Dynamic,
   items: Dynamic = PlatformAccessRetryItems,
 ): Promise<Dynamic> {
-  let value: Dynamic = options ?? {
-    setTimeout: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      setTimeout(input2, options2),
+  let value: Dynamic = retryOptions ?? {
+    setTimeout: (resolve?: Dynamic, delay?: Dynamic): Dynamic =>
+      setTimeout(resolve, delay),
   };
   for (let index: Dynamic = 0; ; index++)
     try {
-      return await input();
-    } catch (value2: Dynamic) {
-      if (index >= items.length || !isRetryableAccessFailure(value2))
-        throw value2;
-      context?.(index + 1, value2);
-      await new Promise((input2?: Dynamic): Dynamic => {
-        value.setTimeout(input2, items[index]);
+      return await operation();
+    } catch (error: Dynamic) {
+      if (index >= items.length || !isRetryableAccessFailure(error))
+        throw error;
+      onRetry?.(index + 1, error);
+      await new Promise((resolveAttempt?: Dynamic): Dynamic => {
+        value.setTimeout(resolveAttempt, items[index]);
       });
     }
 }

@@ -82,18 +82,18 @@ function* inspectTemplateElementNames(
   TEMPLATE_XML_NAME_PATTERN.test(element.localName) ||
     (yield ["an element named " + element.localName, element.localName]);
   for (let value of element.attributes as Dynamic) {
-    let value2: Dynamic = value.name.startsWith(ScCamelValue)
+    let normalizedAttributeName: Dynamic = value.name.startsWith(ScCamelValue)
       ? kebabToCamelCase(
           value.name.slice(ScCamelValue.length),
         )
       : value.name;
-    ((FORBIDDEN_TEMPLATE_ATTRIBUTE_NAMES.has(value2) &&
-      (value2 !== "children" ||
+    ((FORBIDDEN_TEMPLATE_ATTRIBUTE_NAMES.has(normalizedAttributeName) &&
+      (normalizedAttributeName !== "children" ||
         VOID_TEMPLATE_ELEMENTS.has(element.localName))) ||
-      (value2.startsWith("style-") &&
+      (normalizedAttributeName.startsWith("style-") &&
         (/[{}]/.test(value.value) ||
-          !SAFE_TEMPLATE_STATE_ATTRIBUTES.pseudo(value2.slice(6))))) &&
-      (yield ["an attribute named " + value2, value2]);
+          !SAFE_TEMPLATE_STATE_ATTRIBUTES.pseudo(normalizedAttributeName.slice(6))))) &&
+      (yield ["an attribute named " + normalizedAttributeName, normalizedAttributeName]);
   }
 }
 function inspectTemplateComplexity(template?: Dynamic): Dynamic {
@@ -104,45 +104,45 @@ function inspectTemplateComplexity(template?: Dynamic): Dynamic {
       throws: new Map(),
     },
     walk: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      node?: Dynamic,
+      depth?: Dynamic,
+      columnDepth?: Dynamic,
     ): Dynamic => {
       for (let value of [
-        ...input.childNodes,
-        ...(input.content?.childNodes ?? []),
+        ...node.childNodes,
+        ...(node.content?.childNodes ?? []),
       ] as Dynamic) {
         if (value.nodeType !== 1) continue;
-        let value2: Dynamic = value,
-          value3: Dynamic = context + (hasColumnLayout(value2) ? 1 : 0);
+        let childNode: Dynamic = value,
+          nextColumnDepth: Dynamic = columnDepth + (hasColumnLayout(childNode) ? 1 : 0);
         complexity.elements += 1;
-        complexity.depth = Math.max(complexity.depth, options + 1);
-        complexity.columns = Math.max(complexity.columns, value3);
-        for (let [value4, value5] of inspectTemplateElementNames(
-          value2,
+        complexity.depth = Math.max(complexity.depth, depth + 1);
+        complexity.columns = Math.max(complexity.columns, nextColumnDepth);
+        for (let [elementName, elementError] of inspectTemplateElementNames(
+          childNode,
         ) as Dynamic)
-          complexity.throws.set(value4, value5);
-        options < MAX_FAST_EDIT_TEMPLATE_DEPTH &&
-          walk(value2, options + 1, value3);
+          complexity.throws.set(elementName, elementError);
+        depth < MAX_FAST_EDIT_TEMPLATE_DEPTH &&
+          walk(childNode, depth + 1, nextColumnDepth);
       }
     };
   walk(template, 0, 0);
   return complexity;
 }
 function hasClosedTemplateMarkup(html?: Dynamic): Dynamic {
-  let DOMParser2: Dynamic = (document as Dynamic).defaultView.DOMParser,
-    value: Dynamic = new DOMParser2().parseFromString(
+  let Parser: Dynamic = (document as Dynamic).defaultView.DOMParser,
+    value: Dynamic = new Parser().parseFromString(
       "<!doctype html><html><head></head><body><x-dc>" +
         html +
         "</x-dc><x-dc-end></x-dc-end></body></html>",
       "text/html",
     ).body?.lastElementChild,
-    value2: Dynamic = value?.previousElementSibling;
+    previousElement: Dynamic = value?.previousElementSibling;
   return (
     value?.localName === "x-dc-end" &&
     value.childNodes.length === 0 &&
-    value2?.localName === "x-dc" &&
-    value2.previousElementSibling === null
+    previousElement?.localName === "x-dc" &&
+    previousElement.previousElementSibling === null
   );
 }
 function validateFastEditTemplate(
@@ -165,13 +165,13 @@ function validateFastEditTemplateUnsafe(
   after?: Dynamic,
 ): Dynamic {
   let failure: Dynamic = (
-    input?: Dynamic,
-    options: Dynamic = false,
+    reason?: Dynamic,
+    insideBox: Dynamic = false,
   ): Dynamic => ({
     ok: false,
-    ...input,
-    code: options ? "box_cannot_hold" : input.code,
-    detail: input.detail.slice(0, 160),
+    ...reason,
+    code: insideBox ? "box_cannot_hold" : reason.code,
+    detail: reason.detail.slice(0, 160),
   });
   if (typeof after != "string" || typeof before != "string")
     return failure(
@@ -184,58 +184,58 @@ function validateFastEditTemplateUnsafe(
   let value: Dynamic = findForbiddenTemplateMarkup(after);
   if (value !== null)
     return failure(value, findForbiddenTemplateMarkup(before) !== null);
-  let value2: Dynamic = parseFastEditTemplate(after),
-    value3: Dynamic = inspectTemplateComplexity(value2.content),
-    value4: Dynamic = serializeFastEditTemplate(value2),
-    value5: Dynamic,
+  let parsedTemplate: Dynamic = parseFastEditTemplate(after),
+    complexity: Dynamic = inspectTemplateComplexity(parsedTemplate.content),
+    serializedTemplate: Dynamic = serializeFastEditTemplate(parsedTemplate),
+    failureReason: Dynamic,
     callback: Dynamic = (): Dynamic =>
-      (value5 ??= inspectTemplateComplexity(
+      (failureReason ??= inspectTemplateComplexity(
         parseFastEditTemplate(before).content,
       ));
-  if (value3.elements > MAX_FAST_EDIT_TEMPLATE_ELEMENTS)
+  if (complexity.elements > MAX_FAST_EDIT_TEMPLATE_ELEMENTS)
     return failure(
       fastEditTemplateFailure("too_big", "elements", "elements"),
     );
-  if (value3.depth > MAX_FAST_EDIT_TEMPLATE_DEPTH)
+  if (complexity.depth > MAX_FAST_EDIT_TEMPLATE_DEPTH)
     return failure(
       fastEditTemplateFailure("too_big", "depth", "depth"),
       callback().depth > MAX_FAST_EDIT_TEMPLATE_DEPTH,
     );
-  if (value3.columns >= 2 && value3.columns > callback().columns)
+  if (complexity.columns >= 2 && complexity.columns > callback().columns)
     return failure(
       fastEditTemplateFailure("too_big", "columns inside columns", "columns"),
     );
-  let value6: Dynamic =
-    value3.throws.size === 0
+  let forbiddenEntry: Dynamic =
+    complexity.throws.size === 0
       ? undefined
-      : [...value3.throws].find(
-          ([input]: Dynamic): Dynamic => !callback().throws.has(input),
+      : [...complexity.throws].find(
+          ([elementName]: Dynamic): Dynamic => !callback().throws.has(elementName),
         );
-  if (value6 !== undefined)
+  if (forbiddenEntry !== undefined)
     return failure(
       fastEditTemplateFailure(
         "not_template",
-        value6[0],
-        validateTemplateElementId(value6[1]),
+        forbiddenEntry[0],
+        validateTemplateElementId(forbiddenEntry[1]),
       ),
     );
-  if (value4.length > MAX_FAST_EDIT_TEMPLATE_CHARS)
+  if (serializedTemplate.length > MAX_FAST_EDIT_TEMPLATE_CHARS)
     return failure(
-      fastEditTemplateFailure("too_big", String(value4.length), "characters"),
+      fastEditTemplateFailure("too_big", String(serializedTemplate.length), "characters"),
     );
-  if (serializeFastEditTemplate(parseFastEditTemplate(value4)) !== value4)
+  if (serializeFastEditTemplate(parseFastEditTemplate(serializedTemplate)) !== serializedTemplate)
     return failure(
       fastEditTemplateFailure("reparse", "unstable", "unstable"),
     );
-  let value7: Dynamic = findForbiddenTemplateMarkup(value4);
-  if (value7 !== null)
-    return failure(value7, findForbiddenTemplateMarkup(before) !== null);
-  let value8: Dynamic = checkTemplateClosingTags(before, value4);
-  return value8 !== null
-    ? failure(value8)
+  let forbiddenMarkup: Dynamic = findForbiddenTemplateMarkup(serializedTemplate);
+  if (forbiddenMarkup !== null)
+    return failure(forbiddenMarkup, findForbiddenTemplateMarkup(before) !== null);
+  let closingTagError: Dynamic = checkTemplateClosingTags(before, serializedTemplate);
+  return closingTagError !== null
+    ? failure(closingTagError)
     : {
         ok: true,
-        template: value4,
+        template: serializedTemplate,
       };
 }
 function validateArtboardTemplateReplacement(
@@ -243,16 +243,16 @@ function validateArtboardTemplateReplacement(
   templateHtml?: Dynamic,
 ): Dynamic {
   let failure: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      code?: Dynamic,
+      detailText?: Dynamic,
+      what?: Dynamic,
     ): Dynamic => ({
       ok: false,
-      code: input,
-      detail: options,
-      ...(context !== undefined
+      code: code,
+      detail: detailText,
+      ...(what !== undefined
         ? {
-            what: context,
+            what: what,
           }
         : {}),
     }),
@@ -265,13 +265,13 @@ function validateArtboardTemplateReplacement(
       region,
       templateHtml,
     ),
-    value2: Dynamic = parseDcHtmlDocument(value);
-  if (value2 === null) return failure("outside", "unparsable", "unparsable");
-  let value3: Dynamic = documentHtml.slice(0, region.templateStart),
-    value4: Dynamic = documentHtml.slice(region.templateEnd);
+    documentRegion: Dynamic = parseDcHtmlDocument(value);
+  if (documentRegion === null) return failure("outside", "unparsable", "unparsable");
+  let beforeRegionHtml: Dynamic = documentHtml.slice(0, region.templateStart),
+    afterRegionHtml: Dynamic = documentHtml.slice(region.templateEnd);
   if (
     !/<body(?:\s[^>]*)?>\s*$/i.test(
-      value3.slice(0, Math.max(0, value3.search(/<x-dc[\s>][^<]*$/i))),
+      beforeRegionHtml.slice(0, Math.max(0, beforeRegionHtml.search(/<x-dc[\s>][^<]*$/i))),
     )
   )
     return failure(
@@ -280,20 +280,20 @@ function validateArtboardTemplateReplacement(
       "region_not_after_body",
     );
   if (
-    value2.templateStart !== region.templateStart ||
-    value.slice(0, value2.templateStart) !== value3
+    documentRegion.templateStart !== region.templateStart ||
+    value.slice(0, documentRegion.templateStart) !== beforeRegionHtml
   )
     return failure("outside", "before", "before");
   if (
-    value2.template !== templateHtml ||
-    value.slice(value2.templateEnd) !== value4
+    documentRegion.template !== templateHtml ||
+    value.slice(documentRegion.templateEnd) !== afterRegionHtml
   )
     return failure("outside", "after", "after");
-  if (value.search(/<\/x-dc/i) !== value2.templateEnd)
+  if (value.search(/<\/x-dc/i) !== documentRegion.templateEnd)
     return failure("outside", "early close", "early_close");
   if (
-    value2.js !== region.js ||
-    (value2.jsMatch?.[0] ?? null) !== (region.jsMatch?.[0] ?? null)
+    documentRegion.js !== region.js ||
+    (documentRegion.jsMatch?.[0] ?? null) !== (region.jsMatch?.[0] ?? null)
   )
     return failure("outside", "script", "script");
   if (
@@ -307,12 +307,12 @@ function validateArtboardTemplateReplacement(
       templateHtml
     )
       return failure("reparse", "unstable", "unstable");
-    let value5: Dynamic = checkTemplateClosingTags(
+    let closingTagError: Dynamic = checkTemplateClosingTags(
       region.template,
       templateHtml,
     );
-    if (value5 !== null)
-      return failure(value5.code, value5.detail, value5.what);
+    if (closingTagError !== null)
+      return failure(closingTagError.code, closingTagError.detail, closingTagError.what);
   } catch {
     return failure("not_template", "threw", "threw");
   }
@@ -352,24 +352,24 @@ export function installFastEditTemplateValidation(): () => void {
     MAX_FAST_EDIT_TEMPLATE_CHARS = 2e5;
     MAX_FAST_EDIT_TEMPLATE_ELEMENTS = 5e3;
     MAX_FAST_EDIT_TEMPLATE_DEPTH = 100;
-    serializeFastEditTemplate = (input?: Dynamic): Dynamic =>
-      fromParserHtml(input.innerHTML);
+    serializeFastEditTemplate = (templateDocument?: Dynamic): Dynamic =>
+      fromParserHtml(templateDocument.innerHTML);
     fastEditTemplateFailure = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      code?: Dynamic,
+      detailText?: Dynamic,
+      what?: Dynamic,
     ): Dynamic => ({
-      code: input,
-      detail: options,
-      ...(context !== undefined
+      code: code,
+      detail: detailText,
+      ...(what !== undefined
         ? {
-            what: context,
+            what: what,
           }
         : {}),
     });
     TEMPLATE_ELEMENT_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._:-]{0,39}$/;
-    validateTemplateElementId = (input?: Dynamic): Dynamic =>
-      TEMPLATE_ELEMENT_ID_PATTERN.test(input) ? input : undefined;
+    validateTemplateElementId = (elementId?: Dynamic): Dynamic =>
+      TEMPLATE_ELEMENT_ID_PATTERN.test(elementId) ? elementId : undefined;
     TEMPLATE_XML_NAME_PATTERN =
       /^(?!xml(?:ns)?:|xmlns$)[A-Za-z][A-Za-z0-9._-]*(?::[A-Za-z][A-Za-z0-9._-]*)?$/i;
     FORBIDDEN_TEMPLATE_ATTRIBUTE_NAMES = new Set([
@@ -397,8 +397,8 @@ export function installFastEditTemplateValidation(): () => void {
     ]);
     FORBIDDEN_TEMPLATE_TAGS = /^[A-Za-z-]+(?:\([^()]*\))?$/;
     SAFE_TEMPLATE_STATE_ATTRIBUTES = {
-      pseudo(input: Dynamic): Dynamic {
-        if (!FORBIDDEN_TEMPLATE_TAGS.test(input)) return false;
+      pseudo(tagName: Dynamic): Dynamic {
+        if (!FORBIDDEN_TEMPLATE_TAGS.test(tagName)) return false;
         let value: Dynamic = (document as Dynamic).defaultView?.CSS;
         if (typeof value?.supports != "function") return true;
         try {
@@ -406,8 +406,8 @@ export function installFastEditTemplateValidation(): () => void {
             value.supports("selector(:no-such-pseudo-class)") ||
             value.supports(
               "selector(" +
-                (input === "before" || input === "after" ? "::" : ":") +
-                input +
+                (tagName === "before" || tagName === "after" ? "::" : ":") +
+                tagName +
                 ")",
             )
           );
@@ -425,21 +425,21 @@ export function installFastEditTemplateValidation(): () => void {
         value
           .split(";")
           .some(
-            (input?: Dynamic): Dynamic =>
+            (pseudoSelector?: Dynamic): Dynamic =>
               MULTICOLUMN_PROPERTY_PATTERN.test(
                 camelToKebabCss(
-                  input.slice(0, Math.max(0, input.indexOf(":"))).trim(),
+                  pseudoSelector.slice(0, Math.max(0, pseudoSelector.indexOf(":"))).trim(),
                 ).toLowerCase(),
               ),
           )
       );
     };
     checkTemplateClosingTags = (
-      input?: Dynamic,
-      options?: Dynamic,
+      beforeHtml?: Dynamic,
+      afterHtml?: Dynamic,
     ): Dynamic => {
-      let value: Dynamic = hasClosedTemplateMarkup(input);
-      return value && hasClosedTemplateMarkup(options)
+      let value: Dynamic = hasClosedTemplateMarkup(beforeHtml);
+      return value && hasClosedTemplateMarkup(afterHtml)
         ? null
         : fastEditTemplateFailure(
             value ? "not_template" : "box_cannot_hold",

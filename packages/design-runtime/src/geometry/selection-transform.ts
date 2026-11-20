@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { selectionResizeLimits, transformPointBetweenRects, transformRectBetweenRects } from "../editor/geometry/resize";
 import { rotatePoint } from "../editor/geometry/rotation";
-import { annotationBounds, annotationGeometry, annotationRotation, isShapeAnnotation, normalizeRotationDegrees, PlatformFileContentConstant_16, PlatformFileContentConstant_19, PlatformFileContentConstant_20, PlatformFileContentLimit_6 } from "../platform/file-content";
+import { annotationBounds, annotationGeometry, annotationRotation, isShapeAnnotation, normalizeRotationDegrees, PlatformFileContentConstant_16 as defaultScale, PlatformFileContentConstant_19 as annotationScale, PlatformFileContentConstant_20 as imageScale, PlatformFileContentLimit_6 as maximumScale } from "../platform/file-content";
 
 var annotationTransformSnapshot: Dynamic;
 var artboardTransformSnapshot: Dynamic;
@@ -19,12 +19,12 @@ function preserveRoundedTransformValues(
 ): Dynamic {
   let state: Dynamic = {},
     value: Dynamic = previous;
-  for (let value2 of Object.keys(values) as Dynamic) {
-    let value3: Dynamic = values[value2];
-    if (!touched.has(value2) || value3 === undefined) continue;
-    let [items, items2]: Dynamic = [Math.round(value3), value[value2]];
-    state[value2] =
-      items2 !== undefined && Math.round(items2) === items ? items2 : items;
+  for (let propertyName of Object.keys(values) as Dynamic) {
+    let propertyValue: Dynamic = values[propertyName];
+    if (!touched.has(propertyName) || propertyValue === undefined) continue;
+    let [items, roundedValue]: Dynamic = [Math.round(propertyValue), value[propertyName]];
+    state[propertyName] =
+      roundedValue !== undefined && Math.round(roundedValue) === items ? roundedValue : items;
   }
   return state;
 }
@@ -39,7 +39,7 @@ function transformArtboardBounds(
       fromRect,
       toRect,
     ),
-    value2: Dynamic = artboard.frameless
+    isFrameless: Dynamic = artboard.frameless
       ? {
           x: value.x,
           y: value.y,
@@ -50,18 +50,18 @@ function transformArtboardBounds(
           w: clampResizedDimension(
             value.w,
             artboard.w,
-            PlatformFileContentConstant_16,
-            PlatformFileContentLimit_6,
+            defaultScale,
+            maximumScale,
           ),
           h: clampResizedDimension(
             value.h,
             artboard.h,
-            PlatformFileContentConstant_16,
-            PlatformFileContentLimit_6,
+            defaultScale,
+            maximumScale,
           ),
         };
   return preserveRoundedTransformValues(
-    value2,
+    isFrameless,
     artboardTransformSnapshot(artboard),
     transformTouchedProperties(axes),
   );
@@ -79,16 +79,16 @@ function transformAnnotationBounds(
       annotationTransformSnapshot(annotation),
       value,
     );
-  let value2: Dynamic = annotation;
-  switch (value2.kind) {
+  let annotationValue: Dynamic = annotation;
+  switch (annotationValue.kind) {
     case "line":
     case "arrow": {
-      let [items, items2]: Dynamic = [
-        transformPointBetweenRects(value2, fromRect, toRect),
+      let [items, annotationPoint]: Dynamic = [
+        transformPointBetweenRects(annotationValue, fromRect, toRect),
         transformPointBetweenRects(
           {
-            x: value2.x2,
-            y: value2.y2,
+            x: annotationValue.x2,
+            y: annotationValue.y2,
           },
           fromRect,
           toRect,
@@ -98,10 +98,10 @@ function transformAnnotationBounds(
         {
           x: items.x,
           y: items.y,
-          x2: items2.x,
-          y2: items2.y,
+          x2: annotationPoint.x,
+          y2: annotationPoint.y,
         },
-        annotationGeometry(value2),
+        annotationGeometry(annotationValue),
         value,
       );
     }
@@ -109,33 +109,33 @@ function transformAnnotationBounds(
     case "rect":
     case "oval":
     case "pen": {
-      let value3: Dynamic = transformRectBetweenRects(
-          annotationBounds(value2),
+      let transformedRect: Dynamic = transformRectBetweenRects(
+          annotationBounds(annotationValue),
           fromRect,
           toRect,
         ),
-        value4: Dynamic =
-          value2.kind === "image"
-            ? PlatformFileContentConstant_20
-            : PlatformFileContentConstant_19;
+        rotation: Dynamic =
+          annotationValue.kind === "image"
+            ? imageScale
+            : annotationScale;
       return preserveRoundedTransformValues(
         {
-          x: value3.x,
-          y: value3.y,
+          x: transformedRect.x,
+          y: transformedRect.y,
           w: clampResizedDimension(
-            value3.w,
-            value2.w,
-            value4,
-            PlatformFileContentLimit_6,
+            transformedRect.w,
+            annotationValue.w,
+            rotation,
+            maximumScale,
           ),
           h: clampResizedDimension(
-            value3.h,
-            value2.h,
-            value4,
-            PlatformFileContentLimit_6,
+            transformedRect.h,
+            annotationValue.h,
+            rotation,
+            maximumScale,
           ),
         },
-        annotationGeometry(value2),
+        annotationGeometry(annotationValue),
         value,
       );
     }
@@ -149,7 +149,7 @@ function rotateAnnotationAboutPoint(
 ): Dynamic {
   let value: Dynamic = transformTouchedProperties("rotate");
   if (annotation.kind === "line" || annotation.kind === "arrow") {
-    let [items, items2]: Dynamic = [
+    let [items, rotatedPoint]: Dynamic = [
       rotatePoint(annotation, pivot, degrees),
       rotatePoint(
         {
@@ -164,8 +164,8 @@ function rotateAnnotationAboutPoint(
       {
         x: items.x,
         y: items.y,
-        x2: items2.x,
-        y2: items2.y,
+        x2: rotatedPoint.x,
+        y2: rotatedPoint.y,
       },
       annotationGeometry(annotation),
       value,
@@ -175,11 +175,11 @@ function rotateAnnotationAboutPoint(
       x: box.x + box.w / 2,
       y: box.y + box.h / 2,
     },
-    value2: Dynamic = rotatePoint(state, pivot, degrees);
+    rotatedDelta: Dynamic = rotatePoint(state, pivot, degrees);
   return preserveRoundedTransformValues(
     {
-      x: annotation.x + value2.x - state.x,
-      y: annotation.y + value2.y - state.y,
+      x: annotation.x + rotatedDelta.x - state.x,
+      y: annotation.y + rotatedDelta.y - state.y,
       rotate: normalizeRotationDegrees(
         annotationRotation(annotation) + degrees,
       ),
@@ -193,21 +193,21 @@ function selectionScaleLimits(
   artboards?: Dynamic,
   annotations?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic => ({
-      w: input,
-      h: input,
+  let callback: Dynamic = (coordinate?: Dynamic): Dynamic => ({
+      w: coordinate,
+      h: coordinate,
     }),
-    { min: value, max: value2 }: Dynamic = selectionResizeLimits(
+    { min: value, max: maxScale }: Dynamic = selectionResizeLimits(
       selectionBox,
       [
         ...artboards
-          .filter((input?: Dynamic): Dynamic => !input.frameless)
+          .filter((board?: Dynamic): Dynamic => !board.frameless)
           .map(
-            (input?: Dynamic): Dynamic => ({
-              w: input.w,
-              h: input.h,
-              min: callback(PlatformFileContentConstant_16),
-              max: callback(PlatformFileContentLimit_6),
+            (board?: Dynamic): Dynamic => ({
+              w: board.w,
+              h: board.h,
+              min: callback(defaultScale),
+              max: callback(maximumScale),
             }),
           ),
         ...annotations.flatMap(
@@ -221,10 +221,10 @@ function selectionScaleLimits(
                     h: box.h,
                     min: callback(
                       spec.kind === "image"
-                        ? PlatformFileContentConstant_20
-                        : PlatformFileContentConstant_19,
+                        ? imageScale
+                        : annotationScale,
                     ),
-                    max: callback(PlatformFileContentLimit_6),
+                    max: callback(maximumScale),
                   },
                 ]
               : [],
@@ -242,7 +242,7 @@ function selectionScaleLimits(
         Math.min(transformHandleHitPadding, selectionBox.h),
       ),
     },
-    max: value2,
+    max: maxScale,
   };
 }
 function selectionTransformMembers(
@@ -251,10 +251,10 @@ function selectionTransformMembers(
 ): Dynamic {
   return [
     ...artboards.map(
-      (input?: Dynamic): Dynamic => ({
-        id: "board:" + input.file,
-        at: [input.x, input.y],
-        fixed: [input.w, input.h],
+      (member?: Dynamic): Dynamic => ({
+        id: "board:" + member.file,
+        at: [member.x, member.y],
+        fixed: [member.w, member.h],
       }),
     ),
     ...annotations.map(
@@ -285,36 +285,36 @@ function translatedSelectionTransform(
 ): Dynamic {
   if (members.length !== snapshot.members.length || members.length === 0)
     return null;
-  let [items, items2]: Dynamic = [
+  let [items, offsetY]: Dynamic = [
     members[0].at[0] - snapshot.members[0].at[0],
     members[0].at[1] - snapshot.members[0].at[1],
   ];
   for (let index: Dynamic = 0; index < members.length; index++) {
-    let [items3, items4]: Dynamic = [snapshot.members[index], members[index]];
+    let [previousMember, currentMember]: Dynamic = [snapshot.members[index], members[index]];
     if (
-      items3.id !== items4.id ||
-      items3.at.length !== items4.at.length ||
-      items3.fixed.some(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input !== items4.fixed[options],
+      previousMember.id !== currentMember.id ||
+      previousMember.at.length !== currentMember.at.length ||
+      previousMember.fixed.some(
+        (coordinate?: Dynamic, axisIndex?: Dynamic): Dynamic =>
+          coordinate !== currentMember.fixed[axisIndex],
       )
     )
       return null;
-    for (let index2: Dynamic = 0; index2 < items3.at.length; index2 += 2)
+    for (let coordinateIndex: Dynamic = 0; coordinateIndex < previousMember.at.length; coordinateIndex += 2)
       if (
-        Math.abs(items4.at[index2] - items3.at[index2] - items) > 0.5 ||
-        Math.abs(items4.at[index2 + 1] - items3.at[index2 + 1] - items2) > 0.5
+        Math.abs(currentMember.at[coordinateIndex] - previousMember.at[coordinateIndex] - items) > 0.5 ||
+        Math.abs(currentMember.at[coordinateIndex + 1] - previousMember.at[coordinateIndex + 1] - offsetY) > 0.5
       )
         return null;
   }
-  return items === 0 && items2 === 0
+  return items === 0 && offsetY === 0
     ? snapshot
     : {
         ...snapshot,
         box: {
           ...snapshot.box,
           x: snapshot.box.x + items,
-          y: snapshot.box.y + items2,
+          y: snapshot.box.y + offsetY,
         },
       };
 }
@@ -356,48 +356,48 @@ export {
 };
 export function installGeometrySelectionTransform(): () => void {
   return () => {
-    annotationTransformSnapshot = (input?: Dynamic): Dynamic =>
-      isShapeAnnotation(input)
-        ? annotationGeometry(input)
+    annotationTransformSnapshot = (annotation?: Dynamic): Dynamic =>
+      isShapeAnnotation(annotation)
+        ? annotationGeometry(annotation)
         : {
-            x: input.x,
-            y: input.y,
-            rotate: input.rotate ?? 0,
+            x: annotation.x,
+            y: annotation.y,
+            rotate: annotation.rotate ?? 0,
           };
-    artboardTransformSnapshot = (input?: Dynamic): Dynamic =>
-      input.frameless
+    artboardTransformSnapshot = (board?: Dynamic): Dynamic =>
+      board.frameless
         ? {
-            x: input.x,
-            y: input.y,
+            x: board.x,
+            y: board.y,
           }
         : {
-            x: input.x,
-            y: input.y,
-            w: input.w,
-            h: input.h,
+            x: board.x,
+            y: board.y,
+            w: board.w,
+            h: board.h,
           };
     transformAxisProperties = {
       x: ["x", "w", "x2"],
       y: ["y", "h", "y2"],
     };
-    transformTouchedProperties = (input?: Dynamic): Dynamic =>
+    transformTouchedProperties = (property?: Dynamic): Dynamic =>
       new Set(
-        input === "rotate"
+        property === "rotate"
           ? ["x", "y", "x2", "y2", "rotate"]
           : [
-              ...(input.x ? transformAxisProperties.x : []),
-              ...(input.y ? transformAxisProperties.y : []),
+              ...(property.x ? transformAxisProperties.x : []),
+              ...(property.y ? transformAxisProperties.y : []),
             ],
       );
     clampResizedDimension = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
+      minimum?: Dynamic,
+      maximum?: Dynamic,
+      currentValue?: Dynamic,
+      minimumValue?: Dynamic,
     ): Dynamic =>
       Math.min(
-        Math.max(value, options),
-        Math.max(Math.min(context, options), input),
+        Math.max(minimumValue, maximum),
+        Math.max(Math.min(currentValue, maximum), minimum),
       );
     transformHandleHitPadding = 8;
   };

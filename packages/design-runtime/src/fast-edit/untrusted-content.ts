@@ -12,26 +12,26 @@ var UNTRUSTED_REMOVED_PLACEHOLDER: Dynamic;
 function createUntrustedMarker(): Dynamic {
   let value: Dynamic = new Uint8Array(16);
   crypto.getRandomValues(value);
-  let value2: Dynamic = Array.from(
+  let marker: Dynamic = Array.from(
     value,
-    (input?: Dynamic): Dynamic => input.toString(16).padStart(2, "0"),
+    (byte?: Dynamic): Dynamic => byte.toString(16).padStart(2, "0"),
   ).join("");
-  issuedUntrustedMarkers.push(value2);
+  issuedUntrustedMarkers.push(marker);
   issuedUntrustedMarkers.length > MAX_UNTRUSTED_MARKER_HISTORY &&
     issuedUntrustedMarkers.shift();
-  return value2;
+  return marker;
 }
-function sanitizeUntrustedText(value?: Dynamic): Dynamic {
-  let sanitized: Dynamic = String(value).replace(/\p{Cf}/gu, "");
+function sanitizeUntrustedText(text?: Dynamic): Dynamic {
+  let sanitized: Dynamic = String(text).replace(/\p{Cf}/gu, "");
   for (let index: Dynamic = 0; ; index++) {
     if (index >= MAX_UNTRUSTED_SANITIZE_PASSES)
       return UNTRUSTED_REMOVED_PLACEHOLDER;
-    let value2: Dynamic = sanitized;
-    for (let value3 of issuedUntrustedMarkers as Dynamic)
-      sanitized.includes(value3) &&
-        (sanitized = sanitized.split(value3).join(""));
+    let previousText: Dynamic = sanitized;
+    for (let marker of issuedUntrustedMarkers as Dynamic)
+      sanitized.includes(marker) &&
+        (sanitized = sanitized.split(marker).join(""));
     sanitized = sanitized.replace(UNTRUSTED_MARKER_WORD_PATTERN, "");
-    if (sanitized === value2) return sanitized;
+    if (sanitized === previousText) return sanitized;
   }
 }
 function fenceUntrustedContent(
@@ -42,17 +42,17 @@ function fenceUntrustedContent(
   let sanitized: Dynamic = sanitizeUntrustedText(content)
     .replace(
       /\p{Cc}/gu,
-      (input?: Dynamic): Dynamic =>
-        input ===
+      (character?: Dynamic): Dynamic =>
+        character ===
           `
-` || input === "	"
-          ? input
+` || character === "	"
+          ? character
           : " ",
     )
     .replace(
       /<{2,}|>{2,}/g,
-      (input?: Dynamic): Dynamic =>
-        input.split("").join(UNTRUSTED_FENCE_SEPARATOR),
+      (text?: Dynamic): Dynamic =>
+        text.split("").join(UNTRUSTED_FENCE_SEPARATOR),
     );
   return (
     "<<<" +

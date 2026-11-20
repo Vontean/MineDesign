@@ -25,23 +25,23 @@ var textRunCacheLimit: Dynamic;
 var cachedDesignTextRuns: Dynamic;
 function normalizedElementBox(element?: Dynamic, box?: Dynamic): Dynamic {
   let value: Dynamic = element.clientWidth || 1,
-    value2: Dynamic = element.clientHeight || 1,
-    value3: Dynamic = Math.min(Math.max(box.x, 0), value),
-    value4: Dynamic = Math.min(Math.max(box.y, 0), value2);
+    elementHeight: Dynamic = element.clientHeight || 1,
+    clampedX: Dynamic = Math.min(Math.max(box.x, 0), value),
+    clampedY: Dynamic = Math.min(Math.max(box.y, 0), elementHeight);
   return {
-    x: value3 / value,
-    y: value4 / value2,
-    w: (Math.min(Math.max(box.x + box.w, value3), value) - value3) / value,
-    h: (Math.min(Math.max(box.y + box.h, value4), value2) - value4) / value2,
+    x: clampedX / value,
+    y: clampedY / elementHeight,
+    w: (Math.min(Math.max(box.x + box.w, clampedX), value) - clampedX) / value,
+    h: (Math.min(Math.max(box.y + box.h, clampedY), elementHeight) - clampedY) / elementHeight,
   };
 }
 function annotationTextLines(annotation?: Dynamic): Dynamic {
   if (annotation.kind === "title1")
     return NotesDomHandler_2(annotation.text).split(`
 `);
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    NotesBlocksHandler(input)
-      .map((input2?: Dynamic): Dynamic => input2.text)
+  let callback: Dynamic = (note?: Dynamic): Dynamic =>
+    NotesBlocksHandler(note)
+      .map((noteLine?: Dynamic): Dynamic => noteLine.text)
       .join("");
   return parseNoteBlocks(annotation.text).flatMap(
     (source?: Dynamic): Dynamic =>
@@ -94,13 +94,13 @@ function runFindRevealAfterSettle(
     return;
   }
   return new Promise(
-    (input?: Dynamic): Dynamic =>
+    (notify?: Dynamic): Dynamic =>
       settle((): Dynamic => {
         let flag: Dynamic = false;
         try {
           signal.aborted || (reveal(), (flag = true));
         } finally {
-          input(flag);
+          notify(flag);
         }
       }),
   );
@@ -111,297 +111,297 @@ function createCanvasFindAdapter(
 ): Dynamic {
   let values: Dynamic = new Set(),
     entries: Dynamic = new Map(),
-    values2: Dynamic = new Set(),
+    activeSubscriptions: Dynamic = new Set(),
     value: Dynamic = null,
     text: Dynamic = "",
-    text2: Dynamic = "",
-    values3: Dynamic = new Set(),
-    entries2: Dynamic = new Map(),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      "scrollY" in input
-        ? [input.scrollX, input.scrollY]
-        : [input.scrollLeft, input.scrollTop],
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      ("scrollY" in input
-        ? input.document.documentElement
-        : input
+    previousText: Dynamic = "",
+    matchedIds: Dynamic = new Set(),
+    scrollEntries: Dynamic = new Map(),
+    callback: Dynamic = (scrollTarget?: Dynamic): Dynamic =>
+      "scrollY" in scrollTarget
+        ? [scrollTarget.scrollX, scrollTarget.scrollY]
+        : [scrollTarget.scrollLeft, scrollTarget.scrollTop],
+    getScrollContainer: Dynamic = (target?: Dynamic): Dynamic =>
+      ("scrollY" in target
+        ? target.document.documentElement
+        : target
       ).getClientRects().length !== 0,
-    callback3: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    revealRange: Dynamic = (
+      range?: Dynamic,
+      revealOptions?: Dynamic,
+      isReleased?: Dynamic,
     ): Dynamic =>
-      revealTextRange(input, {
-        ...options,
-        onScroll: (input2?: Dynamic): Dynamic => {
-          let value2: Dynamic =
-            "scrollY" in input2 || input2 === options.card;
-          entries2.set(input2, {
+      revealTextRange(range, {
+        ...revealOptions,
+        onScroll: (scrollTarget?: Dynamic): Dynamic => {
+          let isWindowTarget: Dynamic =
+            "scrollY" in scrollTarget || scrollTarget === revealOptions.card;
+          scrollEntries.set(scrollTarget, {
             from:
-              entries2.get(input2)?.from ??
-              (value2 && context() ? [0, 0] : callback(input2)),
-            free: context,
+              scrollEntries.get(scrollTarget)?.from ??
+              (isWindowTarget && isReleased() ? [0, 0] : callback(scrollTarget)),
+            free: isReleased,
             owed: false,
           });
         },
       }),
-    callback4: Dynamic = (
-      input: Dynamic = null,
-      options: Dynamic = false,
+    releaseScrollEntries: Dynamic = (
+      range: Dynamic = null,
+      forceRelease: Dynamic = false,
     ): Dynamic => {
-      for (let [value2, value3] of [...entries2] as Dynamic)
+      for (let [scrollTarget, scrollState] of [...scrollEntries] as Dynamic)
         try {
           if (
-            "scrollY" in value2
-              ? value2.closed || value2.frameElement?.isConnected !== true
-              : !value2.isConnected ||
-                value2.ownerDocument.defaultView === null
+            "scrollY" in scrollTarget
+              ? scrollTarget.closed || scrollTarget.frameElement?.isConnected !== true
+              : !scrollTarget.isConnected ||
+                scrollTarget.ownerDocument.defaultView === null
           ) {
-            entries2.delete(value2);
+            scrollEntries.delete(scrollTarget);
             continue;
           }
           if (
-            (options && !value3.owed) ||
-            (input !== null &&
-              ("scrollY" in value2
-                ? input.startContainer.ownerDocument?.defaultView === value2
-                : value2.contains(input.startContainer)))
+            (forceRelease && !scrollState.owed) ||
+            (range !== null &&
+              ("scrollY" in scrollTarget
+                ? range.startContainer.ownerDocument?.defaultView === scrollTarget
+                : scrollTarget.contains(range.startContainer)))
           )
             continue;
-          if (!callback2(value2) || value3.free()) {
-            entries2.set(value2, {
-              ...value3,
+          if (!getScrollContainer(scrollTarget) || scrollState.free()) {
+            scrollEntries.set(scrollTarget, {
+              ...scrollState,
               owed: true,
             });
             continue;
           }
-          entries2.delete(value2);
-          value2.scrollTo({
-            left: value3.from[0],
-            top: value3.from[1],
+          scrollEntries.delete(scrollTarget);
+          scrollTarget.scrollTo({
+            left: scrollState.from[0],
+            top: scrollState.from[1],
             behavior: "instant",
           });
         } catch {
-          entries2.delete(value2);
+          scrollEntries.delete(scrollTarget);
         }
     },
-    callback5: Dynamic = (): Dynamic => {
-      callback4(null, true);
-      values3.clear();
-      for (let value2 of [...values] as Dynamic) value2();
+    notifySubscribers: Dynamic = (): Dynamic => {
+      releaseScrollEntries(null, true);
+      matchedIds.clear();
+      for (let unsubscribe of [...values] as Dynamic) unsubscribe();
     },
-    callback6: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = text,
+    findInRange: Dynamic = (
+      element?: Dynamic,
+      limit?: Dynamic,
+      query: Dynamic = text,
     ): Dynamic => {
-      if (!input) return null;
+      if (!element) return null;
       try {
-        return findRenderedTextRanges(input, context, {
-          limit: options,
-          skip: (input2?: Dynamic): Dynamic =>
-            input2.matches(findExcludedEditorSelector),
+        return findRenderedTextRanges(element, query, {
+          limit: limit,
+          skip: (node?: Dynamic): Dynamic =>
+            node.matches(findExcludedEditorSelector),
         });
       } catch {
         return null;
       }
     },
-    callback7: Dynamic = (input?: Dynamic): Dynamic => {
+    getElementBody: Dynamic = (fileKey?: Dynamic): Dynamic => {
       try {
-        return environment.frame(input)?.contentDocument?.body ?? null;
+        return environment.frame(fileKey)?.contentDocument?.body ?? null;
       } catch {
         return null;
       }
     },
-    callback8: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = text,
+    extractText: Dynamic = (
+      lines?: Dynamic,
+      query: Dynamic = text,
     ): Dynamic =>
-      (input ?? []).flatMap(
-        (input2?: Dynamic): Dynamic =>
-          findTextOffsets(input2, options).map(
+      (lines ?? []).flatMap(
+        (line?: Dynamic): Dynamic =>
+          findTextOffsets(line, query).map(
             (): Dynamic => null,
           ),
       ),
-    callback9: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value2 of (environment
+    findTitleElement: Dynamic = (fileKey?: Dynamic): Dynamic => {
+      for (let element of (environment
         .canvasRoot()
         ?.querySelectorAll("[data-mega-artboard]") ?? []) as Dynamic)
-        if (value2.getAttribute("data-mega-artboard") === input)
-          return value2.querySelector("[data-mega-title-text]");
+        if (element.getAttribute("data-mega-artboard") === fileKey)
+          return element.querySelector("[data-mega-title-text]");
       return null;
     },
-    callback10: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value2 of (environment
+    findAnnotationElement: Dynamic = (annotationId?: Dynamic): Dynamic => {
+      for (let element of (environment
         .canvasRoot()
         ?.querySelectorAll("[data-mega-annotation]") ?? []) as Dynamic)
-        if (value2.getAttribute("data-mega-annotation") === input)
-          return value2;
+        if (element.getAttribute("data-mega-annotation") === annotationId)
+          return element;
       return null;
     },
-    callback11: Dynamic = async (
-      input?: Dynamic,
-      options?: Dynamic,
+    searchCanvas: Dynamic = async (
+      query?: Dynamic,
+      searchOptions?: Dynamic,
     ): Promise<Dynamic> => {
-      let value2: Dynamic = environment.pageId();
-      input !== text && ((text2 = value2), values3.clear(), callback4());
-      text = input;
-      if (input === "") return [];
-      let value3: Dynamic = environment.manifest(),
-        value4: Dynamic = environment.windowFile(),
-        value5: Dynamic = value4 !== null,
-        value6: Dynamic =
-          value3.pages && value3.pages.length > 0
-            ? value3.pages.map((input2?: Dynamic): Dynamic => input2.id)
+      let pageId: Dynamic = environment.pageId();
+      query !== text && ((previousText = pageId), matchedIds.clear(), releaseScrollEntries());
+      text = query;
+      if (query === "") return [];
+      let manifest: Dynamic = environment.manifest(),
+        windowFile: Dynamic = environment.windowFile(),
+        hasWindowFile: Dynamic = windowFile !== null,
+        pageIds: Dynamic =
+          manifest.pages && manifest.pages.length > 0
+            ? manifest.pages.map((page?: Dynamic): Dynamic => page.id)
             : [""],
         items: Dynamic = [],
-        callback21: Dynamic = (): Dynamic => 1001 - items.length,
-        callback22: Dynamic = (
+        remainingCapacity: Dynamic = (): Dynamic => 1001 - items.length,
+        appendResults: Dynamic = (
           source?: Dynamic,
-          options2?: Dynamic,
+          resultOptions?: Dynamic,
         ): Dynamic => {
-          let value9: Dynamic =
+          let resultKey: Dynamic =
             source.kind === "note" ? source.id : source.file;
-          options2
-            .slice(0, callback21())
-            .forEach((input2?: Dynamic, options3?: Dynamic): Dynamic => {
-              let value10: Dynamic = [
+          resultOptions
+            .slice(0, remainingCapacity())
+            .forEach((range?: Dynamic, rangeIndex?: Dynamic): Dynamic => {
+              let resultId: Dynamic = [
                 source.page,
                 source.kind,
-                value9,
-                options3,
+                resultKey,
+                rangeIndex,
               ].join("|");
-              values3.has(value10) ||
+              matchedIds.has(resultId) ||
                 items.push({
                   ...source,
-                  query: input,
-                  index: options3,
-                  range: input2,
-                  key: value10,
+                  query: query,
+                  index: rangeIndex,
+                  range: range,
+                  key: resultId,
                 });
             });
         },
-        value7: Dynamic = performance.now(),
-        value8: Dynamic = value6.includes(text2) ? text2 : value2;
-      for (let value9 of [
-        value8,
-        ...value6.filter((input2?: Dynamic): Dynamic => input2 !== value8),
+        searchStartedAt: Dynamic = performance.now(),
+        activePageId: Dynamic = pageIds.includes(previousText) ? previousText : pageId;
+      for (let pageCandidate of [
+        activePageId,
+        ...pageIds.filter((otherPageId?: Dynamic): Dynamic => otherPageId !== activePageId),
       ] as Dynamic) {
-        let value10: Dynamic = value9 === value2,
-          value11: Dynamic = value3.artboards
+        let isCurrentPage: Dynamic = pageCandidate === pageId,
+          artboards: Dynamic = manifest.artboards
             .filter(
-              (input2?: Dynamic): Dynamic =>
-                designPageId(input2, value3.pages) === value9 &&
-                !(value5 && input2.frameless),
+              (board?: Dynamic): Dynamic =>
+                designPageId(board, manifest.pages) === pageCandidate &&
+                !(hasWindowFile && board.frameless),
             )
             .map(
-              (input2?: Dynamic): Dynamic => ({
-                ...input2,
-                board: input2,
+              (annotation?: Dynamic): Dynamic => ({
+                ...annotation,
+                board: annotation,
                 note: undefined,
               }),
             ),
-          value12: Dynamic = value5
+          windowEntries: Dynamic = hasWindowFile
             ? []
-            : (value3.annotations ?? [])
+            : (manifest.annotations ?? [])
                 .filter(
-                  (input2?: Dynamic): Dynamic =>
-                    !isShapeAnnotation(input2) &&
-                    input2.text !== "" &&
-                    designPageId(input2, value3.pages) ===
-                      value9,
+                  (annotation?: Dynamic): Dynamic =>
+                    !isShapeAnnotation(annotation) &&
+                    annotation.text !== "" &&
+                    designPageId(annotation, manifest.pages) ===
+                      pageCandidate,
                 )
                 .map(
-                  (input2?: Dynamic): Dynamic => ({
-                    ...annotationVisibleBounds(input2),
-                    note: input2,
+                  (annotation?: Dynamic): Dynamic => ({
+                    ...annotationVisibleBounds(annotation),
+                    note: annotation,
                     board: undefined,
                   }),
                 );
-        for (let { board: value13, note: value14 } of sortArtboardsInReadingOrder([
-          ...value11,
-          ...value12,
+        for (let { board: board, note: note } of sortArtboardsInReadingOrder([
+          ...artboards,
+          ...windowEntries,
         ]) as Dynamic) {
-          if (options.aborted || callback21() <= 0) return items;
-          value14 &&
-            callback22(
+          if (searchOptions.aborted || remainingCapacity() <= 0) return items;
+          note &&
+            appendResults(
               {
-                page: value9,
+                page: pageCandidate,
                 kind: "note",
-                id: value14.id,
+                id: note.id,
               },
-              (value10
-                ? callback6(
-                    callback10(value14.id)?.querySelector("[data-note-text]"),
-                    callback21(),
+              (isCurrentPage
+                ? findInRange(
+                    findAnnotationElement(note.id)?.querySelector("[data-note-text]"),
+                    remainingCapacity(),
                   )
-                : null) ?? callback8(annotationTextLines(value14)),
+                : null) ?? extractText(annotationTextLines(note)),
             );
-          value13 &&
-            !value5 &&
-            !value13.frameless &&
-            callback22(
+          board &&
+            !hasWindowFile &&
+            !board.frameless &&
+            appendResults(
               {
-                page: value9,
+                page: pageCandidate,
                 kind: "name",
-                file: value13.file,
+                file: board.file,
               },
-              (value10
-                ? callback6(callback9(value13.file), callback21())
-                : null) ?? callback8([findArtboardTitle(value13)]),
+              (isCurrentPage
+                ? findInRange(findTitleElement(board.file), remainingCapacity())
+                : null) ?? extractText([findArtboardTitle(board)]),
             );
-          let value15: Dynamic =
-            value10 && (!value5 || value13?.file === value4);
-          value13 &&
-            callback22(
+          let hasTextResults: Dynamic =
+            isCurrentPage && (!hasWindowFile || board?.file === windowFile);
+          board &&
+            appendResults(
               {
-                page: value9,
+                page: pageCandidate,
                 kind: "text",
-                file: value13.file,
+                file: board.file,
               },
-              (value15
-                ? callback6(callback7(value13.file), callback21())
+              (hasTextResults
+                ? findInRange(getElementBody(board.file), remainingCapacity())
                 : null) ??
-                callback8(
-                  environment.storedText?.(value13.file),
+                extractText(
+                  environment.storedText?.(board.file),
                   collapseFindWhitespace(text),
                 ),
             );
-          !(performance.now() - value7 < findViewportTransformTolerance) &&
-            (await waitForFindReveal(0), (value7 = performance.now()));
+          !(performance.now() - searchStartedAt < findViewportTransformTolerance) &&
+            (await waitForFindReveal(0), (searchStartedAt = performance.now()));
         }
       }
       return items;
     },
-    callback12: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      new Promise((input2?: Dynamic): Dynamic => {
-        let value2: Dynamic = environment.frame(input);
-        if (value2 !== null || options.aborted)
-          return input2(options.aborted ? null : value2);
-        let callback21: Dynamic = (): Dynamic => {
-            clearTimeout(value3);
-            options.removeEventListener("abort", callback21);
-            entries.get(input)?.delete(callback21);
-            input2(options.aborted ? null : environment.frame(input));
+    waitForFrame: Dynamic = (fileKey?: Dynamic, waitOptions?: Dynamic): Dynamic =>
+      new Promise((resolveFrame?: Dynamic): Dynamic => {
+        let frameWindow: Dynamic = environment.frame(fileKey);
+        if (frameWindow !== null || waitOptions.aborted)
+          return resolveFrame(waitOptions.aborted ? null : frameWindow);
+        let cancelProbe: Dynamic = (): Dynamic => {
+            clearTimeout(probeTimer);
+            waitOptions.removeEventListener("abort", cancelProbe);
+            entries.get(fileKey)?.delete(cancelProbe);
+            resolveFrame(waitOptions.aborted ? null : environment.frame(fileKey));
           },
-          value3: Dynamic = setTimeout(callback21, findFrameProbeTimeoutMs);
-        options.addEventListener("abort", callback21);
-        entries.set(input, (entries.get(input) ?? new Set()).add(callback21));
+          probeTimer: Dynamic = setTimeout(cancelProbe, findFrameProbeTimeoutMs);
+        waitOptions.addEventListener("abort", cancelProbe);
+        entries.set(fileKey, (entries.get(fileKey) ?? new Set()).add(cancelProbe));
       }),
-    callback13: Dynamic = async (
-      input?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = findFrameCaptureTimeoutMs,
+    waitUntil: Dynamic = async (
+      condition?: Dynamic,
+      waitOptions?: Dynamic,
+      frameTimeoutMs: Dynamic = findFrameCaptureTimeoutMs,
     ): Promise<Dynamic> => {
-      let value2: Dynamic = performance.now() + context;
-      for (; !input(); ) {
-        if (options.aborted || performance.now() > value2) return false;
+      let deadline: Dynamic = performance.now() + frameTimeoutMs;
+      for (; !condition(); ) {
+        if (waitOptions.aborted || performance.now() > deadline) return false;
         await waitForFindReveal(50);
       }
-      return !options.aborted;
+      return !waitOptions.aborted;
     },
-    callback14: Dynamic = (input?: Dynamic, element?: Dynamic): Dynamic => {
-      let range: Dynamic = input.range;
+    updateRange: Dynamic = (source?: Dynamic, element?: Dynamic): Dynamic => {
+      let range: Dynamic = source.range;
       try {
         if (
           range !== null &&
@@ -411,325 +411,325 @@ function createCanvasFindAdapter(
         )
           return range;
       } catch {}
-      let value2: Dynamic =
-        callback6(element, input.index + 1, input.query) ?? [];
-      input.range = value2[Math.min(input.index, value2.length - 1)] ?? null;
-      return input.range;
+      let ranges: Dynamic =
+        findInRange(element, source.index + 1, source.query) ?? [];
+      source.range = ranges[Math.min(source.index, ranges.length - 1)] ?? null;
+      return source.range;
     },
-    callback15: Dynamic = (input?: Dynamic): Dynamic =>
-      input !== null &&
-      input.clientWidth > 0 &&
-      input.getClientRects().length > 0,
-    callback16: Dynamic = async (
-      input?: Dynamic,
-      options?: Dynamic,
+    isVisible: Dynamic = (element?: Dynamic): Dynamic =>
+      element !== null &&
+      element.clientWidth > 0 &&
+      element.getClientRects().length > 0,
+    revealInWindow: Dynamic = async (
+      source?: Dynamic,
+      revealOptions?: Dynamic,
     ): Promise<Dynamic> => {
-      let value2: Dynamic = environment.windowFile(),
-        value3: Dynamic =
-          value2 === null || value2 === input.file
+      let windowFile: Dynamic = environment.windowFile(),
+        frameWindow: Dynamic =
+          windowFile === null || windowFile === source.file
             ? null
-            : (environment.frame(value2)?.contentWindow ?? null);
-      value3 !== null &&
-        !entries2.has(value3) &&
-        entries2.set(value3, {
+            : (environment.frame(windowFile)?.contentWindow ?? null);
+      frameWindow !== null &&
+        !scrollEntries.has(frameWindow) &&
+        scrollEntries.set(frameWindow, {
           from: [0, 0],
-          free: (): Dynamic => environment.scrollsItself(value2),
+          free: (): Dynamic => environment.scrollsItself(windowFile),
           owed: false,
         });
-      let value4: Dynamic = environment.showInWindow(
-        input.page,
-        input.file,
-        options,
+      let revealResult: Dynamic = environment.showInWindow(
+        source.page,
+        source.file,
+        revealOptions,
       );
       if (
-        (value4 !== undefined && !(await value4)) ||
-        !(await callback13(
-          (): Dynamic => environment.windowFile() === input.file,
-          options,
+        (revealResult !== undefined && !(await revealResult)) ||
+        !(await waitUntil(
+          (): Dynamic => environment.windowFile() === source.file,
+          revealOptions,
         )) ||
-        (await callback12(input.file, options)) === null
+        (await waitForFrame(source.file, revealOptions)) === null
       )
         return true;
       await waitForFindReveal(50);
-      let value5: Dynamic =
-        options.aborted || environment.windowFile() !== input.file
+      let elementRange: Dynamic =
+        revealOptions.aborted || environment.windowFile() !== source.file
           ? null
-          : callback14(input, callback7(input.file));
-      return value5 === null
+          : updateRange(source, getElementBody(source.file));
+      return elementRange === null
         ? true
-        : (callback3(
-            value5,
+        : (revealRange(
+            elementRange,
             {
               viewport: true,
             },
-            (): Dynamic => environment.scrollsItself(input.file),
+            (): Dynamic => environment.scrollsItself(source.file),
           ),
-          !callback15(environment.frame(input.file)) ||
-            classifyTextRangeVisibility(value5) !== "never");
+          !isVisible(environment.frame(source.file)) ||
+            classifyTextRangeVisibility(elementRange) !== "never");
     },
-    callback17: Dynamic = async (
-      input?: Dynamic,
-      options?: Dynamic,
+    revealFileRange: Dynamic = async (
+      source?: Dynamic,
+      revealOptions?: Dynamic,
     ): Promise<Dynamic> => {
-      let value2: Dynamic = environment
+      let fileEntry: Dynamic = environment
         .manifest()
         .artboards.find(
-          (input2?: Dynamic): Dynamic => input2.file === input.file,
+          (candidate?: Dynamic): Dynamic => candidate.file === source.file,
         );
-      if (!value2) return true;
+      if (!fileEntry) return true;
       environment.showsTextMatchesOnCanvas() &&
-        environment.keepRunning(value2.file);
+        environment.keepRunning(fileEntry.file);
       if (
         environment.windowFile() !== null ||
         !environment.showsTextMatchesOnCanvas()
       )
-        return callback16(input, options);
-      if (input.page !== environment.pageId()) {
-        let value7: Dynamic = environment.showPage(
-          input.page,
-          value2.file,
-          options,
+        return revealInWindow(source, revealOptions);
+      if (source.page !== environment.pageId()) {
+        let pageRevealResult: Dynamic = environment.showPage(
+          source.page,
+          fileEntry.file,
+          revealOptions,
         );
-        if (value7 !== undefined && !(await value7)) return true;
-        value = value2.file;
+        if (pageRevealResult !== undefined && !(await pageRevealResult)) return true;
+        value = fileEntry.file;
       }
-      environment.panTo(value2);
-      let value3: Dynamic = await callback12(value2.file, options);
+      environment.panTo(fileEntry);
+      let frameElement: Dynamic = await waitForFrame(fileEntry.file, revealOptions);
       if (
-        value === value2.file &&
-        value3 !== null &&
+        value === fileEntry.file &&
+        frameElement !== null &&
         environment.editorOn !== undefined
       ) {
-        let value7: Dynamic = await callback13(
-          (): Dynamic => environment.editorOn?.(value2.file) === true,
-          options,
+        let paintResult: Dynamic = await waitUntil(
+          (): Dynamic => environment.editorOn?.(fileEntry.file) === true,
+          revealOptions,
           timeoutMs,
         );
-        if (options.aborted) return true;
+        if (revealOptions.aborted) return true;
         value = null;
-        value3 = environment.frame(value2.file);
-        value7 && callback5();
+        frameElement = environment.frame(fileEntry.file);
+        paintResult && notifySubscribers();
       }
-      let value4: Dynamic =
-        value3 === null ? null : callback14(input, callback7(value2.file));
-      if (value3 === null || value4 === null || !callback15(value3))
+      let textRange: Dynamic =
+        frameElement === null ? null : updateRange(source, getElementBody(fileEntry.file));
+      if (frameElement === null || textRange === null || !isVisible(frameElement))
         return true;
-      classifyTextRangeVisibility(value4) !== "never" &&
-        callback3(
-          value4,
+      classifyTextRangeVisibility(textRange) !== "never" &&
+        revealRange(
+          textRange,
           {
             viewport: true,
           },
-          (): Dynamic => environment.scrollsItself(value2.file),
+          (): Dynamic => environment.scrollsItself(fileEntry.file),
         );
-      let value5: Dynamic =
-        classifyTextRangeVisibility(value4) === "shown"
-          ? rangeCanvasRect(value4)
+      let sourceBox: Dynamic =
+        classifyTextRangeVisibility(textRange) === "shown"
+          ? rangeCanvasRect(textRange)
           : null;
-      if (value5 === null) return false;
-      let value6: Dynamic = normalizedElementBox(value3, value5);
+      if (sourceBox === null) return false;
+      let normalizedBox: Dynamic = normalizedElementBox(frameElement, sourceBox);
       environment.panTo(
         {
-          x: value2.x + value6.x * value2.w,
-          y: value2.y + value6.y * value2.h,
-          w: value6.w * value2.w,
-          h: value6.h * value2.h,
+          x: fileEntry.x + normalizedBox.x * fileEntry.w,
+          y: fileEntry.y + normalizedBox.y * fileEntry.h,
+          w: normalizedBox.w * fileEntry.w,
+          h: normalizedBox.h * fileEntry.h,
         },
         true,
       );
       return true;
     },
-    callback18: Dynamic = (input?: Dynamic): Dynamic =>
+    findSourceById: Dynamic = (sourceId?: Dynamic): Dynamic =>
       (environment.manifest().annotations ?? []).find(
-        (input2?: Dynamic): Dynamic => input2.id === input,
+        (source?: Dynamic): Dynamic => source.id === sourceId,
       ),
-    callback19: Dynamic = (source?: Dynamic): Dynamic => {
-      let value2: Dynamic = environment.manifest();
+    findSourceBounds: Dynamic = (source?: Dynamic): Dynamic => {
+      let manifest: Dynamic = environment.manifest();
       if (source.kind === "name")
         return (
-          value2.artboards.find(
-            (input?: Dynamic): Dynamic => input.file === source.file,
+          manifest.artboards.find(
+            (sourceEntry?: Dynamic): Dynamic => sourceEntry.file === source.file,
           ) ?? null
         );
-      let value3: Dynamic = callback18(source.id);
-      return value3 ? annotationVisibleBounds(value3) : null;
+      let annotation: Dynamic = findSourceById(source.id);
+      return annotation ? annotationVisibleBounds(annotation) : null;
     },
-    callback20: Dynamic = async (
+    revealSource: Dynamic = async (
       source?: Dynamic,
-      options?: Dynamic,
+      revealOptions?: Dynamic,
     ): Promise<Dynamic> => {
       if (environment.windowFile() !== null) return true;
-      let value2: Dynamic = callback19(source);
-      if (value2 === null) return true;
-      let callback21: Dynamic = (): Dynamic =>
+      let sourceBounds: Dynamic = findSourceBounds(source);
+      if (sourceBounds === null) return true;
+      let getSourceElement: Dynamic = (): Dynamic =>
         source.kind === "note"
-          ? callback10(source.id)
-          : callback9(source.file);
+          ? findAnnotationElement(source.id)
+          : findTitleElement(source.file);
       if (source.page !== environment.pageId()) {
-        let value9: Dynamic = environment.showPage(
+        let pageReveal: Dynamic = environment.showPage(
           source.page,
           undefined,
-          options,
+          revealOptions,
         );
-        if (value9 !== undefined && !(await value9)) return true;
-        await callback13((): Dynamic => callback21() !== null, options);
+        if (pageReveal !== undefined && !(await pageReveal)) return true;
+        await waitUntil((): Dynamic => getSourceElement() !== null, revealOptions);
       }
-      if (options.aborted) return true;
-      let value3: Dynamic = callback21(),
-        value4: Dynamic = callback14(
+      if (revealOptions.aborted) return true;
+      let sourceElementForNote: Dynamic = getSourceElement(),
+        sourceRange: Dynamic = updateRange(
           source,
           source.kind === "note"
-            ? value3?.querySelector("[data-note-text]")
-            : value3,
+            ? sourceElementForNote?.querySelector("[data-note-text]")
+            : sourceElementForNote,
         ),
-        value5: Dynamic =
-          source.kind === "note" ? callback18(source.id) : undefined,
-        value6: Dynamic = value5
-          ? value3?.querySelector("[data-note-scroll]")
+        sourceEntry: Dynamic =
+          source.kind === "note" ? findSourceById(source.id) : undefined,
+        sourceElement: Dynamic = sourceEntry
+          ? sourceElementForNote?.querySelector("[data-note-scroll]")
           : null,
-        callback22: Dynamic = (): Dynamic =>
-          value6 == null ||
+        keepSourceVisible: Dynamic = (): Dynamic =>
+          sourceElement == null ||
           /auto|scroll/.test(
-            value6.ownerDocument.defaultView?.getComputedStyle(value6)
+            sourceElement.ownerDocument.defaultView?.getComputedStyle(sourceElement)
               .overflowY ?? "",
           );
-      value4 !== null &&
-        value3 &&
-        value5 &&
-        callback3(
-          value4,
+      sourceRange !== null &&
+        sourceElementForNote &&
+        sourceEntry &&
+        revealRange(
+          sourceRange,
           {
             viewport: false,
-            within: value3,
-            fade: isShapeAnnotation(value5)
+            within: sourceElementForNote,
+            fade: isShapeAnnotation(sourceEntry)
               ? 0
               : CanvasPanZoomRound(
-                  annotationTextStyle(value5).size,
+                  annotationTextStyle(sourceEntry).size,
                 ),
-            card: value6,
+            card: sourceElement,
           },
-          callback22,
+          keepSourceVisible,
         );
-      let value7: Dynamic =
-        value4 !== null &&
-        value3 !== null &&
-        classifyTextRangeVisibility(value4, {
-          within: value3,
+      let isRangeHidden: Dynamic =
+        sourceRange !== null &&
+        sourceElementForNote !== null &&
+        classifyTextRangeVisibility(sourceRange, {
+          within: sourceElementForNote,
         }) === "never";
-      if (value7 && source.kind === "note") return false;
-      let value8: Dynamic =
-        value4 === null || value7
+      if (isRangeHidden && source.kind === "note") return false;
+      let rangeRectangle: Dynamic =
+        sourceRange === null || isRangeHidden
           ? null
-          : rangeCanvasRect(value4);
+          : rangeCanvasRect(sourceRange);
       environment.panTo(
-        value8 === null ? value2 : environment.toCanvas(value8),
+        rangeRectangle === null ? sourceBounds : environment.toCanvas(rangeRectangle),
       );
       return true;
     };
   return {
-    search: callback11,
-    async reveal(source: Dynamic, options: Dynamic): Promise<Dynamic> {
+    search: searchCanvas,
+    async reveal(source: Dynamic, revealOptions: Dynamic): Promise<Dynamic> {
       let flag: Dynamic = true;
       try {
         flag = await (source.kind === "text"
-          ? callback17(source, options)
-          : callback20(source, options));
+          ? revealFileRange(source, revealOptions)
+          : revealSource(source, revealOptions));
       } finally {
-        options.aborted || callback4(flag ? source.range : null);
+        revealOptions.aborted || releaseScrollEntries(flag ? source.range : null);
       }
-      !flag && !options.aborted && values3.add(source.key);
-      return flag || options.aborted;
+      !flag && !revealOptions.aborted && matchedIds.add(source.key);
+      return flag || revealOptions.aborted;
     },
-    paint(input: Dynamic, options: Dynamic): Dynamic {
-      let entries3: Dynamic = new Map();
-      for (let { range: value3 } of input as Dynamic)
+    paint(ranges: Dynamic, highlightIndex: Dynamic): Dynamic {
+      let rangesByDocument: Dynamic = new Map();
+      for (let { range: range } of ranges as Dynamic)
         try {
-          let value4: Dynamic = value3?.startContainer.ownerDocument;
-          value3 &&
-            value4 &&
-            value3.startContainer.isConnected &&
-            entries3.set(value4, [...(entries3.get(value4) ?? []), value3]);
+          let document: Dynamic = range?.startContainer.ownerDocument;
+          range &&
+            document &&
+            range.startContainer.isConnected &&
+            rangesByDocument.set(document, [...(rangesByDocument.get(document) ?? []), range]);
         } catch {
           continue;
         }
-      let value2: Dynamic = input[options]?.range ?? null,
-        values4: Dynamic = new Set(entries3.keys());
-      for (let value3 of new Set([
-        ...values2,
-        ...entries3.keys(),
+      let selectedRange: Dynamic = ranges[highlightIndex]?.range ?? null,
+        documents: Dynamic = new Set(rangesByDocument.keys());
+      for (let document of new Set([
+        ...activeSubscriptions,
+        ...rangesByDocument.keys(),
       ]) as Dynamic) {
-        let entry: Dynamic = entries3.get(value3);
+        let entry: Dynamic = rangesByDocument.get(document);
         try {
           entry
             ? applyFindHighlights(
-                value3,
+                document,
                 entry,
-                value2 !== null && entry.includes(value2) ? value2 : null,
+                selectedRange !== null && entry.includes(selectedRange) ? selectedRange : null,
               )
-            : clearFindHighlights(value3);
+            : clearFindHighlights(document);
         } catch {
-          values4.add(value3);
+          documents.add(document);
         }
       }
-      values2 = values4;
+      activeSubscriptions = documents;
     },
     clear(): Dynamic {
-      callback4();
-      for (let value2 of values2 as Dynamic)
+      releaseScrollEntries();
+      for (let document of activeSubscriptions as Dynamic)
         try {
-          clearFindHighlights(value2);
+          clearFindHighlights(document);
         } catch {}
-      values2 = new Set();
+      activeSubscriptions = new Set();
       text = "";
-      values3.clear();
+      matchedIds.clear();
       value = null;
       environment.keepRunning(null);
     },
-    subscribe(input: Dynamic): Dynamic {
-      values.add(input);
+    subscribe(subscriber: Dynamic): Dynamic {
+      values.add(subscriber);
       return (): Dynamic => {
-        values.delete(input);
+        values.delete(subscriber);
       };
     },
     describe(source: Dynamic): Dynamic {
-      let value2: Dynamic = environment.manifest(),
-        value3: Dynamic =
+      let manifest: Dynamic = environment.manifest(),
+        label: Dynamic =
           source.page === environment.pageId()
             ? ""
-            : (value2.pages?.find(
-                (input?: Dynamic): Dynamic => input.id === source.page,
+            : (manifest.pages?.find(
+                (board?: Dynamic): Dynamic => board.id === source.page,
               )?.name ?? ""),
-        value4: Dynamic =
+        artboard: Dynamic =
           source.kind === "note"
             ? undefined
-            : value2.artboards.find(
-                (input?: Dynamic): Dynamic => input.file === source.file,
+            : manifest.artboards.find(
+                (annotation?: Dynamic): Dynamic => annotation.file === source.file,
               ),
-        value5: Dynamic =
+        note: Dynamic =
           source.kind === "note"
-            ? (value2.annotations ?? []).find(
-                (input?: Dynamic): Dynamic => input.id === source.id,
+            ? (manifest.annotations ?? []).find(
+                (annotation?: Dynamic): Dynamic => annotation.id === source.id,
               )
             : undefined,
-        value6: Dynamic = value4
-          ? (/^artboard\b/i.test(findArtboardTitle(value4))
+        labelSuffix: Dynamic = artboard
+          ? (/^artboard\b/i.test(findArtboardTitle(artboard))
               ? ""
-              : "Artboard ") + findArtboardTitle(value4)
-          : value5
-            ? value5.kind === "title1"
+              : "Artboard ") + findArtboardTitle(artboard)
+          : note
+            ? note.kind === "title1"
               ? "Canvas text"
               : "Note"
             : undefined;
-      return value6 === undefined
+      return labelSuffix === undefined
         ? undefined
-        : value3 === ""
-          ? value6
-          : value3 + ", " + value6;
+        : label === ""
+          ? labelSuffix
+          : label + ", " + labelSuffix;
     },
-    changed: callback5,
-    frameBooted(input: Dynamic): Dynamic {
-      for (let value2 of [...(entries.get(input) ?? [])] as Dynamic) value2();
-      callback5();
+    changed: notifySubscribers,
+    frameBooted(fileKey: Dynamic): Dynamic {
+      for (let releaseCallback of [...(entries.get(fileKey) ?? [])] as Dynamic) releaseCallback();
+      notifySubscribers();
     },
   };
 }
@@ -748,18 +748,18 @@ function isCompatibleFindCameraGlide(
   )
     return false;
   let value: Dynamic = glide.to.x - glide.from.x,
-    value2: Dynamic = glide.to.y - glide.from.y,
-    value3: Dynamic = camera.x - glide.from.x,
-    value4: Dynamic = camera.y - glide.from.y,
-    value5: Dynamic = Math.hypot(value, value2),
-    value6: Dynamic = 0.5 / camera.scale,
-    value7: Dynamic =
-      value5 === 0
-        ? Math.hypot(value3, value4)
-        : Math.abs(value * value4 - value2 * value3) / value5,
-    value8: Dynamic =
-      value5 === 0 ? 0 : (value * value3 + value2 * value4) / value5;
-  return value7 <= value6 && value8 >= -value6 && value8 <= value5 + value6;
+    deltaY: Dynamic = glide.to.y - glide.from.y,
+    deltaX: Dynamic = camera.x - glide.from.x,
+    deltaCameraY: Dynamic = camera.y - glide.from.y,
+    distance: Dynamic = Math.hypot(value, deltaY),
+    tolerance: Dynamic = 0.5 / camera.scale,
+    minProjection: Dynamic =
+      distance === 0
+        ? Math.hypot(deltaX, deltaCameraY)
+        : Math.abs(value * deltaCameraY - deltaY * deltaX) / distance,
+    projection: Dynamic =
+      distance === 0 ? 0 : (value * deltaX + deltaY * deltaCameraY) / distance;
+  return minProjection <= tolerance && projection >= -tolerance && projection <= distance + tolerance;
 }
 function designFileTextRuns(file?: Dynamic, source?: Dynamic): Dynamic {
   if (source === undefined || isLoadingArtboardHtml(source))
@@ -768,7 +768,7 @@ function designFileTextRuns(file?: Dynamic, source?: Dynamic): Dynamic {
   if (entry?.src === source) return entry.runs;
   try {
     let value: Dynamic = parseDcHtmlDocument(source),
-      value2: Dynamic = (
+      textRuns: Dynamic = (
         value
           ? new DcEditorModel(value.template)
           : new DcEditorModel(source, {
@@ -777,19 +777,19 @@ function designFileTextRuns(file?: Dynamic, source?: Dynamic): Dynamic {
       )
         .textRuns()
         .map(
-          (input?: Dynamic): Dynamic =>
-            collapseFindWhitespace(input).trim(),
+          (line?: Dynamic): Dynamic =>
+            collapseFindWhitespace(line).trim(),
         );
     cachedDesignTextRuns.delete(file);
     cachedDesignTextRuns.set(file, {
       src: source,
-      runs: value2,
+      runs: textRuns,
     });
-    for (let value3 of cachedDesignTextRuns.keys() as Dynamic) {
+    for (let fileKey of cachedDesignTextRuns.keys() as Dynamic) {
       if (cachedDesignTextRuns.size <= textRunCacheLimit) break;
-      cachedDesignTextRuns.delete(value3);
+      cachedDesignTextRuns.delete(fileKey);
     }
-    return value2;
+    return textRuns;
   } catch {
     return null;
   }
@@ -823,10 +823,10 @@ export function installFindCanvasAdapter(): () => void {
     findFrameCaptureTimeoutMs = 3e3;
     findViewportRestoreTimeoutMs = 600;
     findViewportTransformTolerance = 8;
-    findArtboardTitle = (input?: Dynamic): Dynamic =>
-      input.title ?? input.file.replace(/\.dc\.html$/, "");
-    waitForFindReveal = (input?: Dynamic): Dynamic =>
-      new Promise((input2?: Dynamic): Dynamic => setTimeout(input2, input));
+    findArtboardTitle = (artboard?: Dynamic): Dynamic =>
+      artboard.title ?? artboard.file.replace(/\.dc\.html$/, "");
+    waitForFindReveal = (milliseconds?: Dynamic): Dynamic =>
+      new Promise((resolve?: Dynamic): Dynamic => setTimeout(resolve, milliseconds));
     textRunCacheLimit = 200;
     cachedDesignTextRuns = new Map();
   };

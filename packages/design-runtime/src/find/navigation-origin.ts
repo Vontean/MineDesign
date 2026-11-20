@@ -21,37 +21,37 @@ function findReturnToScope(state?: Dynamic): Dynamic {
 function createFindNavigationOriginTracker(): Dynamic {
   let value: Dynamic = null;
   return {
-    showedPage(input: Dynamic, options: Dynamic): Dynamic {
+    showedPage(page: Dynamic, view: Dynamic): Dynamic {
       value = {
-        page: input,
-        view: options,
+        page: page,
+        view: view,
       };
     },
-    pageIs(input: Dynamic): Dynamic {
-      value !== null && value.page !== input && (value = null);
+    pageIs(page: Dynamic): Dynamic {
+      value !== null && value.page !== page && (value = null);
     },
-    pansFrom(input: Dynamic, options: Dynamic): Dynamic {
+    pansFrom(now: Dynamic, glide: Dynamic): Dynamic {
       value !== null &&
         findReturnToScope({
           crossPage: false,
           findShowed: value.view,
-          glide: options,
-          now: input,
+          glide: glide,
+          now: now,
         }) === "canvas" &&
         (value = null);
     },
     opensWindow(
-      input: Dynamic,
-      options: Dynamic,
-      context: Dynamic,
-      value2: Dynamic,
+      page: Dynamic,
+      crossPage: Dynamic,
+      now: Dynamic,
+      glide: Dynamic,
     ): Dynamic {
       return findReturnToScope({
-        crossPage: options,
+        crossPage: crossPage,
         findShowed:
-          value !== null && value.page === input ? value.view : null,
-        glide: value2,
-        now: context,
+          value !== null && value.page === page ? value.view : null,
+        glide: glide,
+        now: now,
       });
     },
   };

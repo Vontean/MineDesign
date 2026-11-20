@@ -10,21 +10,21 @@ var FrameClaudeActivityAskValue: Dynamic;
 var FrameClaudeActivityValue: Dynamic;
 var createClaudeActivityStoreValue: Dynamic;
 var claudeActivityStore: Dynamic;
-function createClaudeActivityStore(input?: Dynamic): Dynamic {
-  let parentWindow: Dynamic = input.parentWindow,
+function createClaudeActivityStore(windows?: Dynamic): Dynamic {
+  let parentWindow: Dynamic = windows.parentWindow,
     values: Dynamic = new Set(),
     text: Dynamic = "unknown",
     flag: Dynamic = false,
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (input2 !== text) {
-        text = input2;
+    callback: Dynamic = (activityText?: Dynamic): Dynamic => {
+      if (activityText !== text) {
+        text = activityText;
         for (let value of [...values] as Dynamic)
           try {
             value();
           } catch {}
       }
     },
-    callback2: Dynamic = (dataset?: Dynamic): Dynamic => {
+    handleMessage: Dynamic = (dataset?: Dynamic): Dynamic => {
       if (parentWindow === null || dataset.source !== parentWindow) return;
       let data: Dynamic = dataset.data;
       typeof data != "object" ||
@@ -34,11 +34,11 @@ function createClaudeActivityStore(input?: Dynamic): Dynamic {
           ? callback("working")
           : data.working === false && callback("idle"));
     },
-    callback3: Dynamic = (): Dynamic => {
+    notifySubscribers: Dynamic = (): Dynamic => {
       if (!(flag || parentWindow === null)) {
         flag = true;
         try {
-          input.ownWindow.addEventListener("message", callback2);
+          windows.ownWindow.addEventListener("message", handleMessage);
           parentWindow.postMessage(
             {
               [FrameClaudeActivityAskValue]: true,
@@ -50,15 +50,15 @@ function createClaudeActivityStore(input?: Dynamic): Dynamic {
     };
   return {
     get: (): Dynamic => text,
-    subscribe(input2: Dynamic): Dynamic {
-      values.add(input2);
-      callback3();
+    subscribe(subscriber: Dynamic): Dynamic {
+      values.add(subscriber);
+      notifySubscribers();
       return (): Dynamic => {
-        values.delete(input2);
+        values.delete(subscriber);
       };
     },
     dispose(): Dynamic {
-      flag && input.ownWindow.removeEventListener("message", callback2);
+      flag && windows.ownWindow.removeEventListener("message", handleMessage);
       flag = false;
       values.clear();
       text = "unknown";
@@ -104,8 +104,8 @@ export function installPlatformClaudeActivity(): () => void {
     createClaudeActivityStoreValue = null;
     claudeActivityStore = {
       get: (): Dynamic => getClaudeActivityStore().get(),
-      subscribe: (input?: Dynamic): Dynamic =>
-        getClaudeActivityStore().subscribe(input),
+      subscribe: (subscriber?: Dynamic): Dynamic =>
+        getClaudeActivityStore().subscribe(subscriber),
     };
   };
 }

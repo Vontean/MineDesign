@@ -28,34 +28,34 @@ function mapFastEditCssChanges(
   after?: Dynamic,
   prefix?: Dynamic,
   families?: Dynamic,
-  options?: Dynamic,
+  styleOptions?: Dynamic,
 ): Dynamic {
   let changes: Dynamic = [];
   try {
-    let callback: Dynamic = (input?: Dynamic): Dynamic =>
+    let callback: Dynamic = (declaration?: Dynamic): Dynamic =>
         camelToKebabCss(
-          input.slice(0, Math.max(0, input.indexOf(":"))).trim(),
+          declaration.slice(0, Math.max(0, declaration.indexOf(":"))).trim(),
         ).toLowerCase(),
-      callback2: Dynamic = (input?: Dynamic): Dynamic =>
+      readStyleDeclarations: Dynamic = (element?: Dynamic): Dynamic =>
         splitCssDeclarations_2(
-          input?.getAttribute("style") ?? "",
+          element?.getAttribute("style") ?? "",
         ),
-      callback3: Dynamic = (
-        input?: Dynamic,
-        options2?: Dynamic,
-        context?: Dynamic,
+      matchesViewportSize: Dynamic = (
+        cssValue?: Dynamic,
+        expected?: Dynamic,
+        minimum?: Dynamic,
       ): Dynamic =>
-        input === "100%" ||
-        input === options2 ||
-        (input !== undefined &&
-          /^\d+(\.\d+)?px$/.test(input) &&
-          parseFloat(input) >= context),
-      callback4: Dynamic = (input?: Dynamic): Dynamic => {
+        cssValue === "100%" ||
+        cssValue === expected ||
+        (cssValue !== undefined &&
+          /^\d+(\.\d+)?px$/.test(cssValue) &&
+          parseFloat(cssValue) >= minimum),
+      rewriteBackgroundStyles: Dynamic = (declarations?: Dynamic): Dynamic => {
         let entries: Dynamic = new Map(
-          callback2(input).map(
-            (input2?: Dynamic): Dynamic => [
-              callback(input2),
-              splitCssPropertyValue(input2)[1].toLowerCase(),
+          readStyleDeclarations(declarations).map(
+            (declaration?: Dynamic): Dynamic => [
+              callback(declaration),
+              splitCssPropertyValue(declaration)[1].toLowerCase(),
             ],
           ),
         );
@@ -67,48 +67,48 @@ function mapFastEditCssChanges(
             "max-block-size",
             "inline-size",
             "block-size",
-          ].some((input2?: Dynamic): Dynamic => entries.has(input2)) &&
-          callback3(entries.get("width"), "100vw", options.w) &&
-          (callback3(entries.get("height"), "100vh", options.h) ||
-            callback3(entries.get("min-height"), "100vh", options.h))
+          ].some((propertyName?: Dynamic): Dynamic => entries.has(propertyName)) &&
+          matchesViewportSize(entries.get("width"), "100vw", styleOptions.w) &&
+          (matchesViewportSize(entries.get("height"), "100vh", styleOptions.h) ||
+            matchesViewportSize(entries.get("min-height"), "100vh", styleOptions.h))
         );
       },
-      callback5: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-        let callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-            PAGE_STYLE_PROPERTY_ALIASES.background.includes(callback(input2)),
-          callback8: Dynamic = (input2?: Dynamic): Dynamic =>
-            callback(input2) === "background" &&
+      injectBackgroundColor: Dynamic = (declarations?: Dynamic, backgroundColor?: Dynamic): Dynamic => {
+        let isBackgroundAlias: Dynamic = (declaration?: Dynamic): Dynamic =>
+            PAGE_STYLE_PROPERTY_ALIASES.background.includes(callback(declaration)),
+          isBackgroundColor: Dynamic = (declaration?: Dynamic): Dynamic =>
+            callback(declaration) === "background" &&
             validatePageColor(
-              splitCssPropertyValue(input2)[1],
+              splitCssPropertyValue(declaration)[1],
             ) === null,
-          value4: Dynamic = input.map(callback8).lastIndexOf(true),
-          value5: Dynamic = input.map(
-            (input2?: Dynamic): Dynamic =>
-              callback7(input2) && !callback8(input2)
-                ? callback(input2) + ": " + options2
-                : input2,
+          backgroundIndex: Dynamic = declarations.map(isBackgroundColor).lastIndexOf(true),
+          rewrittenDeclarations: Dynamic = declarations.map(
+            (declaration?: Dynamic): Dynamic =>
+              isBackgroundAlias(declaration) && !isBackgroundColor(declaration)
+                ? callback(declaration) + ": " + backgroundColor
+                : declaration,
           );
-        value4 >= 0 &&
-          !input.slice(value4 + 1).some(callback7) &&
-          value5.splice(value4 + 1, 0, "background-color: " + options2);
-        return value5;
+        backgroundIndex >= 0 &&
+          !declarations.slice(backgroundIndex + 1).some(isBackgroundAlias) &&
+          rewrittenDeclarations.splice(backgroundIndex + 1, 0, "background-color: " + backgroundColor);
+        return rewrittenDeclarations;
       },
-      callback6: Dynamic = (input?: Dynamic): Dynamic =>
-        input.content.children.length === 1
-          ? input.content.children[0]
+      findTemplateRoot: Dynamic = (element?: Dynamic): Dynamic =>
+        element.content.children.length === 1
+          ? element.content.children[0]
           : undefined,
       value: Dynamic = parseScopedTemplate(after),
-      value2: Dynamic = callback6(value),
-      value3: Dynamic = callback6(parseScopedTemplate(before));
+      templateRoot: Dynamic = findTemplateRoot(value),
+      beforeRoot: Dynamic = findTemplateRoot(parseScopedTemplate(before));
     if (
-      value2 === undefined ||
+      templateRoot === undefined ||
       !(
-        callback4(value2) ||
-        (BLOCK_LAYOUT_ELEMENT_TAGS.has(value2.localName) &&
-          !callback2(value2).some(
-            (input?: Dynamic): Dynamic =>
+        rewriteBackgroundStyles(templateRoot) ||
+        (BLOCK_LAYOUT_ELEMENT_TAGS.has(templateRoot.localName) &&
+          !readStyleDeclarations(templateRoot).some(
+            (styleElement?: Dynamic): Dynamic =>
               PAGE_STYLE_PROPERTY_ALIASES.background.includes(
-                callback(input),
+                callback(styleElement),
               ),
           ))
       )
@@ -118,42 +118,42 @@ function mapFastEditCssChanges(
         own: changes,
       };
     let flag: Dynamic = false;
-    for (let value4 of ["background", "color", "font"] as Dynamic) {
-      let value5: Dynamic = prefix[value4],
-        callback7: Dynamic = (input?: Dynamic): Dynamic =>
-          PAGE_STYLE_PROPERTY_ALIASES[value4].includes(callback(input)),
-        value6: Dynamic = callback2(value2),
-        value7: Dynamic = value6.some(callback7);
-      if (value5 !== undefined) {
+    for (let styleKey of ["background", "color", "font"] as Dynamic) {
+      let stylePrefix: Dynamic = prefix[styleKey],
+        hasStyleFamily: Dynamic = (propertyName?: Dynamic): Dynamic =>
+          PAGE_STYLE_PROPERTY_ALIASES[styleKey].includes(callback(propertyName)),
+        styleDeclarations: Dynamic = readStyleDeclarations(templateRoot),
+        hasStyleFamilyMatch: Dynamic = styleDeclarations.some(hasStyleFamily);
+      if (stylePrefix !== undefined) {
         if (
-          value6
-            .filter(callback7)
-            .map((input?: Dynamic): Dynamic => input.trim())
+          styleDeclarations
+            .filter(hasStyleFamily)
+            .map((declaration?: Dynamic): Dynamic => declaration.trim())
             .join(";") !==
-          callback2(value3)
-            .filter(callback7)
-            .map((input?: Dynamic): Dynamic => input.trim())
+          readStyleDeclarations(beforeRoot)
+            .filter(hasStyleFamily)
+            .map((declaration?: Dynamic): Dynamic => declaration.trim())
             .join(";")
         ) {
-          changes.push(value4);
+          changes.push(styleKey);
           continue;
         }
-        (!value7 && !families.includes(value4)) ||
-          (value2.setAttribute(
+        (!hasStyleFamilyMatch && !families.includes(styleKey)) ||
+          (templateRoot.setAttribute(
             "style",
             joinCssDeclarations(
-              value7
-                ? value4 === "background"
-                  ? callback5(value6, value5)
-                  : value6.map(
-                      (input?: Dynamic): Dynamic =>
-                        callback7(input)
-                          ? callback(input) + ": " + value5
-                          : input,
+              hasStyleFamilyMatch
+                ? styleKey === "background"
+                  ? injectBackgroundColor(styleDeclarations, stylePrefix)
+                  : styleDeclarations.map(
+                      (declaration?: Dynamic): Dynamic =>
+                        hasStyleFamily(declaration)
+                          ? callback(declaration) + ": " + stylePrefix
+                          : declaration,
                     )
                 : [
-                    ...value6,
-                    PAGE_STYLE_PROPERTY_ALIASES[value4][0] + ": " + value5,
+                    ...styleDeclarations,
+                    PAGE_STYLE_PROPERTY_ALIASES[styleKey][0] + ": " + stylePrefix,
                   ],
             ),
           ),
@@ -177,21 +177,21 @@ function collectOwnedElementIds(htmls?: Dynamic): Dynamic {
     "g",
   );
   return new Set(
-    htmls.flatMap((input?: Dynamic): Dynamic => input.match(pattern) ?? []),
+    htmls.flatMap((html?: Dynamic): Dynamic => html.match(pattern) ?? []),
   );
 }
 function nextHandleSequence(htmls?: Dynamic, prefix?: Dynamic): Dynamic {
   let pattern: Dynamic = new RegExp("^" + prefix + "(\\d{1,6})$"),
     next: Dynamic = 0;
   for (let value of htmls as Dynamic) {
-    let value2: Dynamic = (document as Dynamic).createElement("template");
-    value2.innerHTML = toParserHtml(value);
-    for (let value3 of Array.from(
-      value2.content.querySelectorAll("[id]"),
+    let templateElement: Dynamic = (document as Dynamic).createElement("template");
+    templateElement.innerHTML = toParserHtml(value);
+    for (let element of Array.from(
+      templateElement.content.querySelectorAll("[id]"),
     ) as Dynamic)
       next = Math.max(
         next,
-        Number(pattern.exec(value3.getAttribute("id") ?? "")?.[1] ?? 0),
+        Number(pattern.exec(element.getAttribute("id") ?? "")?.[1] ?? 0),
       );
   }
   return next;
@@ -200,25 +200,25 @@ function adoptHandleIds(
   html?: Dynamic,
   prefix?: Dynamic,
   sequence?: Dynamic,
-  options?: Dynamic,
+  reservedIdOptions?: Dynamic,
   reservedIds: Dynamic = new Set(),
 ): Dynamic {
-  let availableOwnedId: Dynamic = (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = OWNED_ELEMENT_ID_PREFIX + input;
-      for (let count: Dynamic = 2; reservedIds.has(value2); count++)
-        value2 = OWNED_ELEMENT_ID_PREFIX + input + "_" + String(count);
-      return value2;
+  let availableOwnedId: Dynamic = (baseId?: Dynamic): Dynamic => {
+      let candidateId: Dynamic = OWNED_ELEMENT_ID_PREFIX + baseId;
+      for (let count: Dynamic = 2; reservedIds.has(candidateId); count++)
+        candidateId = OWNED_ELEMENT_ID_PREFIX + baseId + "_" + String(count);
+      return candidateId;
     },
     htmlLength: Dynamic = html.length;
-  if (!options) {
+  if (!reservedIdOptions) {
     let length: Dynamic = /\d{0,6}$/.exec(html)![0].length,
-      value2: Dynamic = html.slice(0, htmlLength - length);
-    for (let length2: Dynamic = prefix.length; length2 > 0; length2--)
+      prefixText: Dynamic = html.slice(0, htmlLength - length);
+    for (let prefixLength: Dynamic = prefix.length; prefixLength > 0; prefixLength--)
       if (
-        (length === 0 || length2 === prefix.length) &&
-        value2.endsWith(prefix.slice(0, length2))
+        (length === 0 || prefixLength === prefix.length) &&
+        prefixText.endsWith(prefix.slice(0, prefixLength))
       ) {
-        htmlLength -= length + length2;
+        htmlLength -= length + prefixLength;
         break;
       }
   }
@@ -226,7 +226,7 @@ function adoptHandleIds(
     value: Dynamic = prefix + "(\\d{1,6})(?![A-Za-z0-9_-])",
     text: Dynamic = "",
     index: Dynamic = 0;
-  for (let value2 of html.matchAll(
+  for (let match of html.matchAll(
     new RegExp(
       `((?<![\\w-])[iI][dD]\\s*=\\s*\\\\?["'])` +
         value +
@@ -235,22 +235,22 @@ function adoptHandleIds(
       "g",
     ),
   ) as Dynamic) {
-    let [value3, value4, value5, value6, value7]: Dynamic = value2;
-    if (value2.index + value3.length > htmlLength) break;
-    value4 !== undefined &&
-      value5 !== undefined &&
-      Number(value5) > sequence &&
-      values.add(value5);
+    let [fullMatch, matchPrefix, sequenceText, suffix, suffixSequence]: Dynamic = match;
+    if (match.index + fullMatch.length > htmlLength) break;
+    matchPrefix !== undefined &&
+      sequenceText !== undefined &&
+      Number(sequenceText) > sequence &&
+      values.add(sequenceText);
     text +=
-      html.slice(index, value2.index) +
-      (value4 !== undefined && value5 !== undefined
-        ? Number(value5) > sequence
-          ? value4 + availableOwnedId(value5)
-          : value3
-        : value6 !== undefined && value7 !== undefined && values.has(value7)
-          ? value6 + availableOwnedId(value7)
-          : value3);
-    index = value2.index + value3.length;
+      html.slice(index, match.index) +
+      (matchPrefix !== undefined && sequenceText !== undefined
+        ? Number(sequenceText) > sequence
+          ? matchPrefix + availableOwnedId(sequenceText)
+          : fullMatch
+        : suffix !== undefined && suffixSequence !== undefined && values.has(suffixSequence)
+          ? suffix + availableOwnedId(suffixSequence)
+          : fullMatch);
+    index = match.index + fullMatch.length;
   }
   return text + html.slice(index, htmlLength);
 }
@@ -273,8 +273,8 @@ function isIncompleteInsertionStatement(
       : text
   ).replace(
     /(\$\(\s*(?:'[^'<\n][^'\n]*'|"[^"<\n][^"\n]*"|`[^`<\n][^`\n]*`)\s*\))\.insert(After|Before)\((?=\s*[`'"]<)/g,
-    (input?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-      options + "." + context.toLowerCase() + "(",
+    (name?: Dynamic, objectName?: Dynamic, methodName?: Dynamic): Dynamic =>
+      objectName + "." + methodName.toLowerCase() + "(",
   );
 }
 function parseAppendedArtboardSection(statement?: Dynamic): Dynamic {
@@ -294,8 +294,8 @@ function parseAppendedArtboardSection(statement?: Dynamic): Dynamic {
       /\s+([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/g,
     ),
   )
-    .filter((input?: Dynamic): Dynamic => input[1].toLowerCase() === "id")
-    .map((input?: Dynamic): Dynamic => input[2] ?? input[3] ?? "");
+    .filter((attribute?: Dynamic): Dynamic => attribute[1].toLowerCase() === "id")
+    .map((attributeMatch?: Dynamic): Dynamic => attributeMatch[2] ?? attributeMatch[3] ?? "");
   return value.length === 1 && /^[A-Za-z][\w-]*$/.test(value[0])
     ? value[0]
     : null;
@@ -308,17 +308,17 @@ function classifyFastEditStatement(
 ): Dynamic {
   let pendingResult: Dynamic = complete ? "aim" : "wait",
     classifyChain: Dynamic = (items?: Dynamic): Dynamic => {
-      let value9: Dynamic = /^\s*\.([A-Za-z]*)/.exec(items);
-      return value9 === null
+      let chainMatch: Dynamic = /^\s*\.([A-Za-z]*)/.exec(items);
+      return chainMatch === null
         ? /^\s*$/.test(items)
           ? pendingResult
           : "aim"
-        : value9[0].length === items.length
+        : chainMatch[0].length === items.length
           ? pendingResult
-          : items[value9[0].length] === "("
+          : items[chainMatch[0].length] === "("
             ? {
-                name: value9[1],
-                to: value9[0].length + 1,
+                name: chainMatch[1],
+                to: chainMatch[0].length + 1,
               }
             : "aim";
     },
@@ -330,74 +330,74 @@ function classifyFastEditStatement(
     !HTML_INSERTION_METHODS.has(value.name)
   )
     return "aim";
-  let value2: Dynamic = statement.slice(value.to).replace(/^\s+/, ""),
-    value3: Dynamic = value2[0];
-  if (value3 === undefined) return pendingResult;
+  let statementBody: Dynamic = statement.slice(value.to).replace(/^\s+/, ""),
+    statementPrefix: Dynamic = statementBody[0];
+  if (statementPrefix === undefined) return pendingResult;
   if (HTML_INSERTION_METHODS.has(value.name)) {
-    let value9: Dynamic =
-      value3 === "`" || value3 === "'" || value3 === '"'
-        ? value2.slice(1).replace(/^\s+/, "")
+    let sectionPrefix: Dynamic =
+      statementPrefix === "`" || statementPrefix === "'" || statementPrefix === '"'
+        ? statementBody.slice(1).replace(/^\s+/, "")
         : "x";
-    return value9.length < 9 && "<section".startsWith(value9.slice(0, 8))
+    return sectionPrefix.length < 9 && "<section".startsWith(sectionPrefix.slice(0, 8))
       ? pendingResult
-      : /^<section[\s>]/.test(value9)
+      : /^<section[\s>]/.test(sectionPrefix)
         ? "leave"
         : "aim";
   }
-  let value4: Dynamic = null,
-    value5: Dynamic = value2.slice(1);
-  if (value3 !== ")") {
-    if (value3 !== "`" && value3 !== "'" && value3 !== '"') return "aim";
+  let selector: Dynamic = null,
+    selectorBody: Dynamic = statementBody.slice(1);
+  if (statementPrefix !== ")") {
+    if (statementPrefix !== "`" && statementPrefix !== "'" && statementPrefix !== '"') return "aim";
     let count: Dynamic = 1;
     for (
       ;
-      count < value2.length &&
-      value2[count] !== value3 &&
-      value2[count] !== "\\" &&
-      value2[count] !==
+      count < statementBody.length &&
+      statementBody[count] !== statementPrefix &&
+      statementBody[count] !== "\\" &&
+      statementBody[count] !==
         `
 `;
 
     )
       count += 1;
-    if (count === value2.length) return pendingResult;
-    if (value2[count] !== value3) return "aim";
-    let value9: Dynamic = value2.slice(count + 1).replace(/^\s+/, "");
-    if (value9 === "") return pendingResult;
-    if (value9[0] !== ")") return "aim";
-    value4 = value2.slice(1, count).trim();
-    value5 = value9.slice(1);
+    if (count === statementBody.length) return pendingResult;
+    if (statementBody[count] !== statementPrefix) return "aim";
+    let selectorTail: Dynamic = statementBody.slice(count + 1).replace(/^\s+/, "");
+    if (selectorTail === "") return pendingResult;
+    if (selectorTail[0] !== ")") return "aim";
+    selector = statementBody.slice(1, count).trim();
+    selectorBody = selectorTail.slice(1);
   }
   if (
-    value4 !== null &&
-    (isOutsideArtboardSelector(value4, target, html) ||
+    selector !== null &&
+    (isOutsideArtboardSelector(selector, target, html) ||
       (value.name === "children" &&
-        (value4 === ":last-child" || value4 === ":last")))
+        (selector === ":last-child" || selector === ":last")))
   )
     return "leave";
   if (
     !(value.name === "children"
-      ? value4 === null || value4 === "section"
-      : value4 === "section" || value4 === "> section")
+      ? selector === null || selector === "section"
+      : selector === "section" || selector === "> section")
   )
     return "aim";
-  let value6: Dynamic = classifyChain(value5);
-  if (typeof value6 == "string") return value6;
-  let value7: Dynamic = value5.indexOf(")", value6.to),
-    value8: Dynamic = value5
-      .slice(value6.to, value7 < 0 ? undefined : value7 + 1)
+  let chainResult: Dynamic = classifyChain(selectorBody);
+  if (typeof chainResult == "string") return chainResult;
+  let closingParenIndex: Dynamic = selectorBody.indexOf(")", chainResult.to),
+    remainingSelector: Dynamic = selectorBody
+      .slice(chainResult.to, closingParenIndex < 0 ? undefined : closingParenIndex + 1)
       .replace(/\s+/g, "");
-  return value6.name !== "eq"
-    ? value6.name !== "last"
+  return chainResult.name !== "eq"
+    ? chainResult.name !== "last"
       ? "aim"
-      : value8 === ""
+      : remainingSelector === ""
         ? pendingResult
-        : value8[0] === ")"
+        : remainingSelector[0] === ")"
           ? "leave"
           : "aim"
-    : value8.length < 3 && "-1)".startsWith(value8)
+    : remainingSelector.length < 3 && "-1)".startsWith(remainingSelector)
       ? pendingResult
-      : value8.startsWith("-1)")
+      : remainingSelector.startsWith("-1)")
         ? "leave"
         : "aim";
 }
@@ -418,53 +418,53 @@ function rewriteContainerAppendStatements(
     value = appendPattern.exec(reply)
   ) {
     let lastIndex: Dynamic = appendPattern.lastIndex,
-      value2: Dynamic = reply[lastIndex] ?? "";
-    if (value2 !== "`" && value2 !== "'" && value2 !== '"') continue;
-    let value3: Dynamic = lastIndex + 1;
+      quote: Dynamic = reply[lastIndex] ?? "";
+    if (quote !== "`" && quote !== "'" && quote !== '"') continue;
+    let scanIndex: Dynamic = lastIndex + 1;
     for (
       ;
-      value3 < replyLength &&
-      reply[value3] !== value2 &&
-      reply[value3] !== "\\" &&
-      !(value2 === "`"
-        ? reply[value3] === "$" && reply[value3 + 1] === "{"
-        : reply[value3] ===
+      scanIndex < replyLength &&
+      reply[scanIndex] !== quote &&
+      reply[scanIndex] !== "\\" &&
+      !(quote === "`"
+        ? reply[scanIndex] === "$" && reply[scanIndex + 1] === "{"
+        : reply[scanIndex] ===
           `
 `);
 
     )
-      value3 += 1;
-    appendPattern.lastIndex = value3;
-    if (value3 >= replyLength) break;
-    let value4: Dynamic =
-        reply[value3] === value2
-          ? /^\s*\)(\s*)\.(?!\d)/.exec(reply.slice(value3 + 1))
+      scanIndex += 1;
+    appendPattern.lastIndex = scanIndex;
+    if (scanIndex >= replyLength) break;
+    let matchStart: Dynamic =
+        reply[scanIndex] === quote
+          ? /^\s*\)(\s*)\.(?!\d)/.exec(reply.slice(scanIndex + 1))
           : null,
-      value5: Dynamic =
-        value4 === null
+      matchEnd: Dynamic =
+        matchStart === null
           ? null
-          : parseAppendedArtboardSection(reply.slice(lastIndex + 1, value3));
-    if (value4 === null || value5 === null) continue;
-    let value6: Dynamic = value3 + value4[0].length,
-      value7: Dynamic = classifyFastEditStatement(
-        reply.slice(value6),
+          : parseAppendedArtboardSection(reply.slice(lastIndex + 1, scanIndex));
+    if (matchStart === null || matchEnd === null) continue;
+    let statementEnd: Dynamic = scanIndex + matchStart[0].length,
+      statementKind: Dynamic = classifyFastEditStatement(
+        reply.slice(statementEnd),
         target,
-        value5,
-        reply.slice(lastIndex + 1, value3),
+        matchEnd,
+        reply.slice(lastIndex + 1, scanIndex),
       );
-    if (value7 === "wait") return rewritten + reply.slice(offset, value6);
-    appendPattern.lastIndex = value6;
-    value7 !== "leave" &&
+    if (statementKind === "wait") return rewritten + reply.slice(offset, statementEnd);
+    appendPattern.lastIndex = statementEnd;
+    statementKind !== "leave" &&
       ((rewritten +=
-        reply.slice(offset, value6) +
-        (value4[1].includes(`
+        reply.slice(offset, statementEnd) +
+        (matchStart[1].includes(`
 `)
           ? ""
           : newline) +
         "$('#" +
-        value5 +
+        matchEnd +
         "')"),
-      (offset = value6));
+      (offset = statementEnd));
   }
   return rewritten + reply.slice(offset);
 }
@@ -480,42 +480,42 @@ function resolveOwnedElementIdCollisions(
         after.matchAll(
           new RegExp(' id="(' + OWNED_ELEMENT_ID_PATTERN + ')"', "g"),
         ),
-        (input?: Dynamic): Dynamic => [input[2], input[1]],
+        (match?: Dynamic): Dynamic => [match[2], match[1]],
       ).filter(
-        ([, input]: Dynamic): Dynamic => !(prefix ?? usedIds).has(input),
+        ([, id]: Dynamic): Dynamic => !(prefix ?? usedIds).has(id),
       ),
     ),
     value: Dynamic = after.replace(
       /(?<![\w-])k(?:[a-z]{2})?(\d{1,6})(?![\w-])/g,
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        replacements.get(options) ?? input,
+      (sourceValue?: Dynamic, replacementId?: Dynamic): Dynamic =>
+        replacements.get(replacementId) ?? sourceValue,
     ),
-    value2: Dynamic = (document as Dynamic).createElement("template");
-  value2.innerHTML = toParserHtml(value);
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
+    templateElement: Dynamic = (document as Dynamic).createElement("template");
+  templateElement.innerHTML = toParserHtml(value);
+  let callback: Dynamic = (id?: Dynamic): Dynamic =>
       (
-        value.match(new RegExp("(?<![\\w-])" + input + "(?![\\w-])", "g")) ??
+        value.match(new RegExp("(?<![\\w-])" + id + "(?![\\w-])", "g")) ??
         []
       ).length,
     entries: Dynamic = new Map(),
-    value3: Dynamic = new RegExp("^" + OWNED_ELEMENT_ID_PATTERN + "$"),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value4 of Array.from(input.querySelectorAll("*")) as Dynamic) {
-        let value5: Dynamic = value4.getAttribute("id") ?? "";
-        value3.test(value5) &&
-          entries.set(value5, [...(entries.get(value5) ?? []), value4]);
-        let content: Dynamic = value4.content;
-        content !== undefined && callback2(content);
+    ownedIdPattern: Dynamic = new RegExp("^" + OWNED_ELEMENT_ID_PATTERN + "$"),
+    scanElement: Dynamic = (element?: Dynamic): Dynamic => {
+      for (let elementNode of Array.from(element.querySelectorAll("*")) as Dynamic) {
+        let elementId: Dynamic = elementNode.getAttribute("id") ?? "";
+        ownedIdPattern.test(elementId) &&
+          entries.set(elementId, [...(entries.get(elementId) ?? []), elementNode]);
+        let content: Dynamic = elementNode.content;
+        content !== undefined && scanElement(content);
       }
     };
-  callback2(value2.content);
+  scanElement(templateElement.content);
   let flag: Dynamic = false;
-  for (let [value4, value5] of entries as Dynamic)
-    if (!usedIds.has(value4) && callback(value4) <= value5.length) {
-      for (let value6 of value5 as Dynamic) value6.removeAttribute("id");
+  for (let [duplicateId, duplicateNodes] of entries as Dynamic)
+    if (!usedIds.has(duplicateId) && callback(duplicateId) <= duplicateNodes.length) {
+      for (let duplicateNode of duplicateNodes as Dynamic) duplicateNode.removeAttribute("id");
       flag = true;
     }
-  return flag ? fromParserHtml(value2.innerHTML) : value;
+  return flag ? fromParserHtml(templateElement.innerHTML) : value;
 }
 export {
   adoptHandleIds,
@@ -542,19 +542,19 @@ export {
 };
 export function installFastEditStatementParser(): () => void {
   return () => {
-    splitCssPropertyValue = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = input.indexOf(":");
+    splitCssPropertyValue = (declarations?: Dynamic): Dynamic => {
+      let value: Dynamic = declarations.indexOf(":");
       return value < 0
-        ? ["", input.trim()]
+        ? ["", declarations.trim()]
         : [
-            input.slice(0, value).trim().toLowerCase(),
-            input.slice(value + 1).trim(),
+            declarations.slice(0, value).trim().toLowerCase(),
+            declarations.slice(value + 1).trim(),
           ];
     };
-    joinCssDeclarations = (input?: Dynamic): Dynamic =>
-      input
-        .map((input2?: Dynamic): Dynamic => input2.trim())
-        .filter((input2?: Dynamic): Dynamic => input2 !== "")
+    joinCssDeclarations = (declarations?: Dynamic): Dynamic =>
+      declarations
+        .map((declaration?: Dynamic): Dynamic => declaration.trim())
+        .filter((declaration?: Dynamic): Dynamic => declaration !== "")
         .join("; ");
     PAGE_STYLE_PROPERTY_ALIASES = {
       background: ["background", "background-color"],
@@ -585,25 +585,25 @@ export function installFastEditStatementParser(): () => void {
     ]);
     HTML_INSERTION_METHODS = new Set(["append", "prepend", "after", "before"]);
     isOutsideArtboardSelector = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      selectorText?: Dynamic,
+      expectedTag?: Dynamic,
+      selectorPattern?: Dynamic,
     ): Dynamic => {
       let values: Dynamic = new Set(
         Array.from(
-          context.matchAll(
+          selectorPattern.matchAll(
             /\sid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi,
           ),
-          (input2?: Dynamic): Dynamic =>
-            input2[1] ?? input2[2] ?? input2[3] ?? "",
+          (match?: Dynamic): Dynamic =>
+            match[1] ?? match[2] ?? match[3] ?? "",
         ),
       );
       return (
-        !/[[\]()"']/.test(input) &&
-        input.split(",").every((input2?: Dynamic): Dynamic => {
-          let value: Dynamic = /^#([A-Za-z][\w-]*)/.exec(input2.trim())?.[1];
+        !/[[\]()"']/.test(selectorText) &&
+        selectorText.split(",").every((selector?: Dynamic): Dynamic => {
+          let value: Dynamic = /^#([A-Za-z][\w-]*)/.exec(selector.trim())?.[1];
           return (
-            value !== undefined && (value === options || !values.has(value))
+            value !== undefined && (value === expectedTag || !values.has(value))
           );
         })
       );

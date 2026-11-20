@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 
 var FAST_EDIT_WRITE_PACING: Dynamic;
-function createFastEditWriteScheduler(options?: Dynamic): Dynamic {
+function createFastEditWriteScheduler(schedulerOptions?: Dynamic): Dynamic {
   let pendingWrites: Dynamic = new Map(),
     measuredDelay: Dynamic = 0,
     timer: Dynamic = null,
@@ -13,37 +13,37 @@ function createFastEditWriteScheduler(options?: Dynamic): Dynamic {
       timer = null;
       let value: Dynamic = pendingWrites.entries().next();
       if (value.done === true) return;
-      let [value2, value3]: Dynamic = value.value;
-      pendingWrites.delete(value2);
-      let value4: Dynamic = options.now(),
+      let [key, write]: Dynamic = value.value;
+      pendingWrites.delete(key);
+      let startedAt: Dynamic = schedulerOptions.now(),
         index: Dynamic = 0;
       closed = true;
       try {
-        index = value3();
+        index = write();
       } catch {
       } finally {
         closed = false;
       }
-      let value5: Dynamic = options.now();
+      let now: Dynamic = schedulerOptions.now();
       measuredDelay =
-        value5 +
+        now +
         Math.max(
           FAST_EDIT_WRITE_PACING.minMs,
           index / FAST_EDIT_WRITE_PACING.charsPerMs,
-          FAST_EDIT_WRITE_PACING.timesMeasured * (value5 - value4),
+          FAST_EDIT_WRITE_PACING.timesMeasured * (now - startedAt),
         );
       pendingWrites.size > 0 &&
-        (timer = options.schedule(flushNext, measuredDelay - value5));
+        (timer = schedulerOptions.schedule(flushNext, measuredDelay - now));
     };
   return {
-    ask(input: Dynamic, options2: Dynamic): Dynamic {
-      pendingWrites.set(input, options2);
+    ask(key: Dynamic, write: Dynamic): Dynamic {
+      pendingWrites.set(key, write);
       if (timer !== null || closed) return;
-      let value: Dynamic = measuredDelay - options.now();
-      value <= 0 ? flushNext() : (timer = options.schedule(flushNext, value));
+      let value: Dynamic = measuredDelay - schedulerOptions.now();
+      value <= 0 ? flushNext() : (timer = schedulerOptions.schedule(flushNext, value));
     },
-    drop(input: Dynamic): Dynamic {
-      pendingWrites.delete(input);
+    drop(key: Dynamic): Dynamic {
+      pendingWrites.delete(key);
     },
     clear(): Dynamic {
       pendingWrites.clear();

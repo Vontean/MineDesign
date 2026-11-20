@@ -33,17 +33,17 @@ function scrollDeltaToRevealInterval(
     (padding > 0 && end - start > visibleEnd - visibleStart - 2 * padding)
   )
     return (start + end) / 2 - (visibleStart + visibleEnd) / 2;
-  let [items, items2]: Dynamic = [
+  let [items, endOffset]: Dynamic = [
       visibleStart + padding,
       visibleEnd - padding,
     ],
-    value: Dynamic = end - start <= items2 - items;
+    value: Dynamic = end - start <= endOffset - items;
   return start < items
     ? value
       ? start - items
-      : end - items2
+      : end - endOffset
     : value
-      ? end - items2
+      ? end - endOffset
       : start - items;
 }
 function rangeCanvasRect(range?: Dynamic): Dynamic {
@@ -82,27 +82,27 @@ function composedParentNode(node?: Dynamic): Dynamic {
 }
 function elementClientContentRect(element?: Dynamic): Dynamic {
   let bounds: Dynamic = element.getBoundingClientRect(),
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      options > 0 && input > 0 ? input / options : 1,
+    callback: Dynamic = (distance?: Dynamic, size?: Dynamic): Dynamic =>
+      size > 0 && distance > 0 ? distance / size : 1,
     value: Dynamic = callback(bounds.width, element.offsetWidth),
-    value2: Dynamic = callback(bounds.height, element.offsetHeight);
+    scale: Dynamic = callback(bounds.height, element.offsetHeight);
   return {
     left: bounds.left + element.clientLeft * value,
-    top: bounds.top + element.clientTop * value2,
+    top: bounds.top + element.clientTop * scale,
     w: element.clientWidth * value,
-    h: element.clientHeight * value2,
+    h: element.clientHeight * scale,
     sx: value,
-    sy: value2,
+    sy: scale,
   };
 }
 function describeScrollTransform(transform?: Dynamic): Dynamic {
   let value: Dynamic =
       /^matrix\(([^)]*)\)/.exec(transform)?.[1]?.split(",").map(Number) ?? [],
-    [value2 = 1, value3 = 0, value4 = 0, value5 = 1]: Dynamic = value;
+    [scaleX = 1, skewX = 0, skewY = 0, scaleY = 1]: Dynamic = value;
   return {
-    spun: value.length >= 4 && (Math.abs(value3) > 1e-4 || value2 < 0),
+    spun: value.length >= 4 && (Math.abs(skewX) > 1e-4 || scaleX < 0),
     even:
-      Math.abs(value2 - value5) < 1e-4 && Math.abs(value3 + value4) < 1e-4,
+      Math.abs(scaleX - scaleY) < 1e-4 && Math.abs(skewX + skewY) < 1e-4,
   };
 }
 function probeScrollableRangePosition(
@@ -113,14 +113,14 @@ function probeScrollableRangePosition(
   onScroll?: Dynamic,
   environment?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic => ({
-      x: input.x + input.w / 2,
-      y: input.y + input.h / 2,
+  let callback: Dynamic = (rect?: Dynamic): Dynamic => ({
+      x: rect.x + rect.w / 2,
+      y: rect.y + rect.h / 2,
     }),
     value: Dynamic = element.scrollHeight - element.clientHeight,
     scrollTop: Dynamic = element.scrollTop,
-    value2: Dynamic = rangeCanvasRect(range);
-  if (value2 === null || value <= 0) return;
+    rangeRect: Dynamic = rangeCanvasRect(range);
+  if (rangeRect === null || value <= 0) return;
   environment?.(element);
   element.scrollTo({
     top:
@@ -130,69 +130,69 @@ function probeScrollableRangePosition(
     behavior: "instant",
   });
   let bounds: Dynamic = element.getBoundingClientRect(),
-    value3: Dynamic = rangeCanvasRect(range),
-    value4: Dynamic = element.scrollTop - scrollTop,
-    value5: Dynamic =
-      value3 === null || value4 === 0
+    nextRangeRect: Dynamic = rangeCanvasRect(range),
+    scrollDistance: Dynamic = element.scrollTop - scrollTop,
+    direction: Dynamic =
+      nextRangeRect === null || scrollDistance === 0
         ? null
         : {
-            x: (callback(value3).x - callback(value2).x) / value4,
-            y: (callback(value3).y - callback(value2).y) / value4,
+            x: (callback(nextRangeRect).x - callback(rangeRect).x) / scrollDistance,
+            y: (callback(nextRangeRect).y - callback(rangeRect).y) / scrollDistance,
           },
-    value6: Dynamic =
-      value5 === null ? 0 : value5.x * value5.x + value5.y * value5.y;
-  if (value5 === null || value6 === 0)
+    directionLength: Dynamic =
+      direction === null ? 0 : direction.x * direction.x + direction.y * direction.y;
+  if (direction === null || directionLength === 0)
     return void element.scrollTo({
       top: scrollTop,
       behavior: "instant",
     });
-  let callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value13: Dynamic =
+  let projectRect: Dynamic = (rect?: Dynamic, scrollDelta?: Dynamic): Dynamic => {
+      let center: Dynamic =
           element.clientHeight / 2 +
-          options +
-          ((bounds.left + bounds.width / 2 - callback(input).x) * value5.x +
-            (bounds.top + bounds.height / 2 - callback(input).y) * value5.y) /
-            value6,
-        value14: Dynamic =
-          (input.w * Math.abs(value5.x) + input.h * Math.abs(value5.y)) /
-          value6 /
+          scrollDelta +
+          ((bounds.left + bounds.width / 2 - callback(rect).x) * direction.x +
+            (bounds.top + bounds.height / 2 - callback(rect).y) * direction.y) /
+            directionLength,
+        halfExtent: Dynamic =
+          (rect.w * Math.abs(direction.x) + rect.h * Math.abs(direction.y)) /
+          directionLength /
           2;
-      return [value13 - value14, value13 + value14];
+      return [center - halfExtent, center + halfExtent];
     },
-    [value7, value8]: Dynamic = callback2(value2, 0),
+    [startPosition, endPosition]: Dynamic = projectRect(rangeRect, 0),
     startContainer: Dynamic = range.startContainer,
-    value9: Dynamic =
+    textRangeRect: Dynamic =
       viewport &&
       startContainer === range.endContainer &&
       startContainer.nodeType === 3 &&
       range.endOffset - range.startOffset > 1
         ? [range.startOffset, range.endOffset - 1].map(
-            (input?: Dynamic): Dynamic => {
-              let value13: Dynamic =
+            (offset?: Dynamic): Dynamic => {
+              let textRange: Dynamic =
                 startContainer.ownerDocument.createRange();
-              value13.setStart(startContainer, input);
-              value13.setEnd(startContainer, input + 1);
-              return rangeCanvasRect(value13);
+              textRange.setStart(startContainer, offset);
+              textRange.setEnd(startContainer, offset + 1);
+              return rangeCanvasRect(textRange);
             },
           )
         : [],
-    [value10, value11]: Dynamic = value9;
-  if (value10 != null && value11 != null && value10.h > 0 && value11.h > 0) {
-    let [items, items2]: Dynamic = [
-      callback2(value10, value4),
-      callback2(value11, value4),
+    [startRect, endRect]: Dynamic = textRangeRect;
+  if (startRect != null && endRect != null && startRect.h > 0 && endRect.h > 0) {
+    let [items, viewportRange]: Dynamic = [
+      projectRect(startRect, scrollDistance),
+      projectRect(endRect, scrollDistance),
     ];
-    [value7, value8] = [
-      Math.max(value7, Math.min(items[0], items2[0])),
-      Math.min(value8, Math.max(items[1], items2[1])),
+    [startPosition, endPosition] = [
+      Math.max(startPosition, Math.min(items[0], viewportRange[0])),
+      Math.min(endPosition, Math.max(items[1], viewportRange[1])),
     ];
   }
-  let value12: Dynamic =
-    value8 - value7 > element.clientHeight
-      ? (value7 + value8) / 2 - element.clientHeight / 2
+  let desiredScroll: Dynamic =
+    endPosition - startPosition > element.clientHeight
+      ? (startPosition + endPosition) / 2 - element.clientHeight / 2
       : scrollDeltaToRevealInterval(
-          value7,
-          value8,
+          startPosition,
+          endPosition,
           0,
           element.clientHeight,
           tolerance,
@@ -200,233 +200,233 @@ function probeScrollableRangePosition(
         );
   element.scrollTo({
     top:
-      Math.abs(value12) < scrollRevealPixelTolerance(element)
+      Math.abs(desiredScroll) < scrollRevealPixelTolerance(element)
         ? scrollTop
-        : Math.max(0, Math.min(value, scrollTop + value12)),
+        : Math.max(0, Math.min(value, scrollTop + desiredScroll)),
     behavior: "instant",
   });
 }
-function revealTextRange(range?: Dynamic, options?: Dynamic): Dynamic {
+function revealTextRange(range?: Dynamic, revealOptions?: Dynamic): Dynamic {
   let startContainer: Dynamic = range.startContainer,
     value: Dynamic =
       startContainer.nodeType === 1
         ? startContainer
         : startContainer.parentElement,
-    value2: Dynamic = value?.ownerDocument,
-    value3: Dynamic = value2?.defaultView;
-  if (!value || !value2 || !value3) return;
-  let value4: Dynamic = value2.scrollingElement ?? value2.documentElement,
-    value5: Dynamic =
-      options.within !== undefined
+    document: Dynamic = value?.ownerDocument,
+    window: Dynamic = document?.defaultView;
+  if (!value || !document || !window) return;
+  let scrollContainer: Dynamic = document.scrollingElement ?? document.documentElement,
+    transform: Dynamic =
+      revealOptions.within !== undefined
         ? describeScrollTransform(
-            value3.getComputedStyle(options.within).transform,
+            window.getComputedStyle(revealOptions.within).transform,
           )
         : {
             spun: false,
             even: false,
           },
     flag: Dynamic = false,
-    flag2: Dynamic = false;
+    crossedViewport: Dynamic = false;
   for (
-    let value9: Dynamic = value;
-    value9 !== null && value9 !== value4 && value9.nodeType === 1;
-    value9 = value9 === options.within ? null : composedParentNode(value9)
+    let ancestor: Dynamic = value;
+    ancestor !== null && ancestor !== scrollContainer && ancestor.nodeType === 1;
+    ancestor = ancestor === revealOptions.within ? null : composedParentNode(ancestor)
   ) {
-    let value10: Dynamic = value9,
-      style: Dynamic = value3.getComputedStyle(value10);
+    let element: Dynamic = ancestor,
+      style: Dynamic = window.getComputedStyle(element);
     if (
-      ((flag2 || (flag && style.position === "static")) &&
+      ((crossedViewport || (flag && style.position === "static")) &&
         !createsFixedContainingBlock(style)) ||
       ((flag = style.position === "absolute"),
-      (flag2 = style.position === "fixed"),
+      (crossedViewport = style.position === "fixed"),
       style.display === "inline" || style.display === "contents")
     )
       continue;
-    let value11: Dynamic =
-      (value10 === options.card ||
+    let elementRect: Dynamic =
+      (element === revealOptions.card ||
         /auto|scroll/.test(
           style.overflow + " " + style.overflowX + " " + style.overflowY,
         )) &&
-      (value10.scrollHeight > value10.clientHeight ||
-        value10.scrollWidth > value10.clientWidth)
+      (element.scrollHeight > element.clientHeight ||
+        element.scrollWidth > element.clientWidth)
         ? rangeCanvasRect(range)
         : null;
-    if (value11 === null) continue;
-    let value12: Dynamic =
-        options.fade !== undefined && options.fade > 0 ? options.fade : 0,
-      value13: Dynamic = CanvasPanZoomScrollTop(value10);
-    if (value5.spun) {
+    if (elementRect === null) continue;
+    let scrollAmount: Dynamic =
+        revealOptions.fade !== undefined && revealOptions.fade > 0 ? revealOptions.fade : 0,
+      panZoomScroll: Dynamic = CanvasPanZoomScrollTop(element);
+    if (transform.spun) {
       probeScrollableRangePosition(
-        value10,
+        element,
         range,
-        value5.even,
-        value12,
+        transform.even,
+        scrollAmount,
         {
-          lo: value13.above,
-          hi: value13.below,
+          lo: panZoomScroll.above,
+          hi: panZoomScroll.below,
         },
-        options.onScroll,
+        revealOptions.onScroll,
       );
       continue;
     }
-    let value14: Dynamic = elementClientContentRect(value10),
-      value15: Dynamic =
+    let contentRect: Dynamic = elementClientContentRect(element),
+      scrollTopDelta: Dynamic =
         scrollDeltaToRevealInterval(
-          value11.y,
-          value11.y + value11.h,
-          value14.top,
-          value14.top + value14.h,
-          value12 * value14.sy,
+          elementRect.y,
+          elementRect.y + elementRect.h,
+          contentRect.top,
+          contentRect.top + contentRect.h,
+          scrollAmount * contentRect.sy,
           {
-            lo: value13.above,
-            hi: value13.below,
+            lo: panZoomScroll.above,
+            hi: panZoomScroll.below,
           },
-        ) / value14.sy,
-      value16: Dynamic =
+        ) / contentRect.sy,
+      scrollLeftDelta: Dynamic =
         scrollDeltaToRevealInterval(
-          value11.x,
-          value11.x + value11.w,
-          value14.left,
-          value14.left + value14.w,
-        ) / value14.sx;
-    (value12 > 0
-      ? Math.max(Math.abs(value16), Math.abs(value15)) >=
-        scrollRevealPixelTolerance(value10)
-      : value16 !== 0 || value15 !== 0) &&
-      (options.onScroll?.(value10),
-      value10.scrollTo({
-        left: value10.scrollLeft + value16,
-        top: value10.scrollTop + value15,
+          elementRect.x,
+          elementRect.x + elementRect.w,
+          contentRect.left,
+          contentRect.left + contentRect.w,
+        ) / contentRect.sx;
+    (scrollAmount > 0
+      ? Math.max(Math.abs(scrollLeftDelta), Math.abs(scrollTopDelta)) >=
+        scrollRevealPixelTolerance(element)
+      : scrollLeftDelta !== 0 || scrollTopDelta !== 0) &&
+      (revealOptions.onScroll?.(element),
+      element.scrollTo({
+        left: element.scrollLeft + scrollLeftDelta,
+        top: element.scrollTop + scrollTopDelta,
         behavior: "instant",
       }));
   }
-  if (!options.viewport || flag2) return;
-  let value6: Dynamic = rangeCanvasRect(range);
-  if (value6 === null) return;
-  let value7: Dynamic = scrollDeltaToRevealInterval(
-      value6.y,
-      value6.y + value6.h,
+  if (!revealOptions.viewport || crossedViewport) return;
+  let rangeRect: Dynamic = rangeCanvasRect(range);
+  if (rangeRect === null) return;
+  let verticalDelta: Dynamic = scrollDeltaToRevealInterval(
+      rangeRect.y,
+      rangeRect.y + rangeRect.h,
       0,
-      value4.clientHeight || value3.innerHeight,
+      scrollContainer.clientHeight || window.innerHeight,
     ),
-    value8: Dynamic = scrollDeltaToRevealInterval(
-      value6.x,
-      value6.x + value6.w,
+    horizontalDelta: Dynamic = scrollDeltaToRevealInterval(
+      rangeRect.x,
+      rangeRect.x + rangeRect.w,
       0,
-      value4.clientWidth || value3.innerWidth,
+      scrollContainer.clientWidth || window.innerWidth,
     );
-  (value8 === 0 && value7 === 0) ||
-    (options.onScroll?.(value3),
-    value3.scrollBy({
-      left: value8,
-      top: value7,
+  (horizontalDelta === 0 && verticalDelta === 0) ||
+    (revealOptions.onScroll?.(window),
+    window.scrollBy({
+      left: horizontalDelta,
+      top: verticalDelta,
       behavior: "instant",
     }));
 }
 function classifyTextRangeVisibility(
   range?: Dynamic,
-  options: Dynamic = {},
+  visibilityOptions: Dynamic = {},
 ): Dynamic {
   let value: Dynamic = rangeCanvasRect(range),
     startContainer: Dynamic = range.startContainer,
-    value2: Dynamic =
+    document: Dynamic =
       startContainer.nodeType === 1
         ? startContainer
         : startContainer.parentElement,
-    value3: Dynamic = value2?.ownerDocument.defaultView;
-  if (value === null || !value2 || !value3 || value.w <= 0 || value.h <= 0)
+    window: Dynamic = document?.ownerDocument.defaultView;
+  if (value === null || !document || !window || value.w <= 0 || value.h <= 0)
     return "never";
-  let value4: Dynamic =
-      value2.ownerDocument.scrollingElement ??
-      value2.ownerDocument.documentElement,
+  let scrollingElement: Dynamic =
+      document.ownerDocument.scrollingElement ??
+      document.ownerDocument.documentElement,
     state: Dynamic = {
-      x: value3.scrollX,
-      y: value3.scrollY,
+      x: window.scrollX,
+      y: window.scrollY,
     };
   for (
-    let value5: Dynamic = value2;
-    value5 !== null && value5 !== value4 && value5.nodeType === 1;
-    value5 = composedParentNode(value5)
+    let ancestor: Dynamic = document;
+    ancestor !== null && ancestor !== scrollingElement && ancestor.nodeType === 1;
+    ancestor = composedParentNode(ancestor)
   ) {
-    state.x += value5.scrollLeft;
-    state.y += value5.scrollTop;
+    state.x += ancestor.scrollLeft;
+    state.y += ancestor.scrollTop;
   }
   if (
-    options.within === undefined &&
+    visibilityOptions.within === undefined &&
     (value.x + value.w + state.x <= 0 || value.y + value.h + state.y <= 0)
   )
     return "never";
   let text: Dynamic = "shown",
     flag: Dynamic = false,
-    flag2: Dynamic = false;
+    crossedViewport: Dynamic = false;
   for (
-    let value5: Dynamic = value2;
-    value5 !== null && value5 !== value4 && value5.nodeType === 1;
-    value5 = value5 === options.within ? null : composedParentNode(value5)
+    let ancestor: Dynamic = document;
+    ancestor !== null && ancestor !== scrollingElement && ancestor.nodeType === 1;
+    ancestor = ancestor === visibilityOptions.within ? null : composedParentNode(ancestor)
   ) {
-    let value6: Dynamic = value5,
-      style: Dynamic = value3.getComputedStyle(value6);
+    let element: Dynamic = ancestor,
+      style: Dynamic = window.getComputedStyle(element);
     if (
-      ((flag2 || (flag && style.position === "static")) &&
+      ((crossedViewport || (flag && style.position === "static")) &&
         !createsFixedContainingBlock(style)) ||
       ((flag = style.position === "absolute"),
-      (flag2 = style.position === "fixed"),
+      (crossedViewport = style.position === "fixed"),
       style.display === "inline" || style.display === "contents")
     )
       continue;
-    let value7: Dynamic = elementClientContentRect(value6);
-    for (let [value8, value9, value10, value11, value12] of [
+    let contentRect: Dynamic = elementClientContentRect(element);
+    for (let [overflowMode, visibleBefore, visibleAfter, clippedBefore, clippedAfter] of [
       [
         style.overflowX || style.overflow,
         intervalOverlapLength(
           value.x,
           value.x + value.w,
-          value7.left,
-          value7.left + value7.w,
+          contentRect.left,
+          contentRect.left + contentRect.w,
         ),
         value.w,
-        value6.clientWidth,
-        value6.scrollWidth > value6.clientWidth,
+        element.clientWidth,
+        element.scrollWidth > element.clientWidth,
       ],
       [
         style.overflowY || style.overflow,
         intervalOverlapLength(
           value.y,
           value.y + value.h,
-          value7.top,
-          value7.top + value7.h,
+          contentRect.top,
+          contentRect.top + contentRect.h,
         ),
         value.h,
-        value6.clientHeight,
-        value6.scrollHeight > value6.clientHeight,
+        element.clientHeight,
+        element.scrollHeight > element.clientHeight,
       ],
     ] as Dynamic)
       if (
         !(
-          value9 >= Math.min(rangeVisibleTolerance, value10) ||
-          value8 === "visible" ||
-          value8 === ""
+          visibleBefore >= Math.min(rangeVisibleTolerance, visibleAfter) ||
+          overflowMode === "visible" ||
+          overflowMode === ""
         )
       )
-        return !/auto|scroll/.test(value8) ||
-          !value12 ||
-          value11 < rangeVisibleTolerance
+        return !/auto|scroll/.test(overflowMode) ||
+          !clippedAfter ||
+          clippedBefore < rangeVisibleTolerance
           ? "never"
           : "scroll";
   }
-  options.within !== undefined ||
-    flag2 ||
+  visibilityOptions.within !== undefined ||
+    crossedViewport ||
     ((intervalsDoNotOverlap(
       value.x,
       value.x + value.w,
       0,
-      value4.clientWidth || value3.innerWidth,
+      scrollingElement.clientWidth || window.innerWidth,
     ) ||
       intervalsDoNotOverlap(
         value.y,
         value.y + value.h,
         0,
-        value4.clientHeight || value3.innerHeight,
+        scrollingElement.clientHeight || window.innerHeight,
       )) &&
       (text = "scroll"));
   return text;
@@ -449,11 +449,11 @@ export {
 };
 export function installFindScrollReveal(): () => void {
   return () => {
-    isNontrivialCssTransformValue = (input?: Dynamic): Dynamic =>
-      input !== undefined &&
-      input !== "" &&
-      input !== "none" &&
-      input !== "auto";
+    isNontrivialCssTransformValue = (transformValue?: Dynamic): Dynamic =>
+      transformValue !== undefined &&
+      transformValue !== "" &&
+      transformValue !== "none" &&
+      transformValue !== "auto";
     scrollRevealPixelTolerance = (element?: Dynamic): Dynamic =>
       0.625 *
       Math.max(
@@ -462,16 +462,16 @@ export function installFindScrollReveal(): () => void {
       );
     rangeVisibleTolerance = 2;
     intervalsDoNotOverlap = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-    ): Dynamic => options <= context || input >= value;
+      start?: Dynamic,
+      end?: Dynamic,
+      rangeStart?: Dynamic,
+      rangeEnd?: Dynamic,
+    ): Dynamic => end <= rangeStart || start >= rangeEnd;
     intervalOverlapLength = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-    ): Dynamic => Math.min(options, value) - Math.max(input, context);
+      start?: Dynamic,
+      end?: Dynamic,
+      rangeStart?: Dynamic,
+      rangeEnd?: Dynamic,
+    ): Dynamic => Math.min(end, rangeEnd) - Math.max(start, rangeStart);
   };
 }

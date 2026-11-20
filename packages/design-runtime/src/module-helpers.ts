@@ -35,74 +35,74 @@ export function installModuleHelpers(): () => void {
     getPrototypeOf = Object.getPrototypeOf;
     hasOwnProperty = Object.prototype.hasOwnProperty;
     initializeOnce =
-      (input?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
+      (factory?: Dynamic, moduleExports?: Dynamic, errorState?: Dynamic): Dynamic =>
       (): Dynamic => {
-        if (context) throw context[0];
+        if (errorState) throw errorState[0];
         try {
-          input && (options = input((input = 0)));
-          return options;
+          factory && (moduleExports = factory((factory = 0)));
+          return moduleExports;
         } catch (value: Dynamic) {
-          throw ((context = [value]), value);
+          throw ((errorState = [value]), value);
         }
       };
     initializeCommonJS =
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
+      (moduleValue?: Dynamic, moduleExports?: Dynamic): Dynamic =>
       (): Dynamic => {
         try {
-          options ||
-            input(
-              (options = {
+          moduleExports ||
+            moduleValue(
+              (moduleExports = {
                 exports: {},
               }).exports,
-              options,
+              moduleExports,
             );
-          return options.exports;
+          return moduleExports.exports;
         } catch (value: Dynamic) {
-          throw ((options = 0), value);
+          throw ((moduleExports = 0), value);
         }
       };
-    defineLiveExports = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      for (var value in options)
-        defineProperty(input, value, {
-          get: options[value],
+    defineLiveExports = (target?: Dynamic, exports?: Dynamic): Dynamic => {
+      for (var value in exports)
+        defineProperty(target, value, {
+          get: exports[value],
           enumerable: true,
         });
     };
     copyModuleProperties = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
+      target?: Dynamic,
+      source?: Dynamic,
+      defaultKey?: Dynamic,
+      propertyDescriptor?: Dynamic,
     ): Dynamic => {
       if (
-        (options && typeof options == "object") ||
-        typeof options == "function"
+        (source && typeof source == "object") ||
+        typeof source == "function"
       )
-        for (let value2 of getOwnPropertyNames(options) as Dynamic)
-          !hasOwnProperty.call(input, value2) &&
-            value2 !== context &&
-            defineProperty(input, value2, {
-              get: (): Dynamic => options[value2],
+        for (let propertyName of getOwnPropertyNames(source) as Dynamic)
+          !hasOwnProperty.call(target, propertyName) &&
+            propertyName !== defaultKey &&
+            defineProperty(target, propertyName, {
+              get: (): Dynamic => source[propertyName],
               enumerable:
-                !(value = getOwnPropertyDescriptor(options, value2)) ||
-                value.enumerable,
+                !(propertyDescriptor = getOwnPropertyDescriptor(source, propertyName)) ||
+                propertyDescriptor.enumerable,
             });
-      return input;
+      return target;
     };
     toModuleNamespace = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      moduleValue?: Dynamic,
+      hasDefaultExport?: Dynamic,
+      target?: Dynamic,
     ): Dynamic => (
-      (context = input != null ? createObject(getPrototypeOf(input)) : {}),
+      (target = moduleValue != null ? createObject(getPrototypeOf(moduleValue)) : {}),
       copyModuleProperties(
-        options || !input || !input.__esModule
-          ? defineProperty(context, "default", {
-              value: input,
+        hasDefaultExport || !moduleValue || !moduleValue.__esModule
+          ? defineProperty(target, "default", {
+              value: moduleValue,
               enumerable: true,
             })
-          : context,
-        input,
+          : target,
+        moduleValue,
       )
     );
   };

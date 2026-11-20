@@ -62,11 +62,11 @@ function FindBar(props?: Dynamic): Dynamic {
 function createStableFindStatusReader(getStatus?: Dynamic): Dynamic {
   let value: Dynamic = null;
   return (): Dynamic => {
-    let value2: Dynamic = getStatus();
-    value2.query === ""
+    let status: Dynamic = getStatus();
+    status.query === ""
       ? (value = null)
-      : value2.searching || (value = value2);
-    return value2.searching && value !== null ? value : value2;
+      : status.searching || (value = status);
+    return status.searching && value !== null ? value : status;
   };
 }
 function FindBarContents({
@@ -82,21 +82,21 @@ function FindBarContents({
       (): Dynamic => createStableFindStatusReader(getStatus),
       [getStatus],
     ),
-    value2: Dynamic = (0, react_Kw.useSyncExternalStore)(subscribe, value),
-    [value3, value4]: Dynamic = (0, react_Kw.useState)(""),
-    value5: Dynamic = (0, react_Kw.useRef)(null),
-    value6: Dynamic = (0, react_Kw.useRef)((): Dynamic => false);
-  value6.current = (event?: Dynamic): Dynamic => {
+    findState: Dynamic = (0, react_Kw.useSyncExternalStore)(subscribe, value),
+    [query, setQuery]: Dynamic = (0, react_Kw.useState)(""),
+    inputRef: Dynamic = (0, react_Kw.useRef)(null),
+    compositionHandler: Dynamic = (0, react_Kw.useRef)((): Dynamic => false);
+  compositionHandler.current = (event?: Dynamic): Dynamic => {
     if (event.isComposing || event.keyCode === 229) return false;
     let current: Dynamic = fieldRef.current,
-      value9: Dynamic =
+      stepResult: Dynamic =
         event.key === "Enter" && event.target === current
           ? event.shiftKey
             ? -1
             : 1
           : findDirectionShortcut(event);
     if (event.key === "Escape") onClose();
-    else if (value9 !== undefined) onStep(value9);
+    else if (stepResult !== undefined) onStep(stepResult);
     else if (isFindShortcut(event)) {
       current?.focus();
       current?.select();
@@ -106,11 +106,11 @@ function FindBarContents({
   };
   (0, react_Kw.useEffect)(
     (): Dynamic =>
-      value5.current === null
+      inputRef.current === null
         ? undefined
         : registerFindOwner(
-            value5.current,
-            (input?: Dynamic): Dynamic => value6.current(input),
+            inputRef.current,
+            (event?: Dynamic): Dynamic => compositionHandler.current(event),
           ),
     [],
   );
@@ -118,11 +118,11 @@ function FindBarContents({
       event.target.closest(editableElementSelector) === null &&
         event.preventDefault();
     },
-    value7: Dynamic = value2.total === 0,
-    value8: Dynamic =
-      value2.query === ""
+    isEmpty: Dynamic = findState.total === 0,
+    disabledTip: Dynamic =
+      findState.query === ""
         ? findFieldPlaceholder
-        : value2.searching
+        : findState.searching
           ? undefined
           : noFindMatchesLabel;
   return (
@@ -138,7 +138,7 @@ function FindBarContents({
             [McFindAttribute]: "",
           }}
           style={findBarStyle}
-          ref={value5}
+          ref={inputRef}
           onMouseDown={callback}
         />
       }
@@ -146,13 +146,13 @@ function FindBarContents({
       <TooltipGroup>
         <TextInput
           ref={fieldRef}
-          value={value3}
+          value={query}
           onChange={(event?: Dynamic): Dynamic => {
-            value4(event.target.value);
+            setQuery(event.target.value);
             event.nativeEvent.isComposing || onQuery(event.target.value);
           }}
-          onCompositionEnd={(input?: Dynamic): Dynamic =>
-            onQuery(input.currentTarget.value)
+          onCompositionEnd={(compositionEvent?: Dynamic): Dynamic =>
+            onQuery(compositionEvent.currentTarget.value)
           }
           placeholder={findInPageLabel}
           aria-label={findInPageLabel}
@@ -168,13 +168,13 @@ function FindBarContents({
           className={"text-muted text-caption"}
           style={findCountStyle}
         >
-          <span aria-hidden={"true"}>{findMatchCountText(value2)}</span>
+          <span aria-hidden={"true"}>{findMatchCountText(findState)}</span>
           <span style={findLiveAnnouncementStyle}>
-            {findMatchCountText(value2) === "" ? ("") : (findMatchAriaStatus(
-                  value2.current,
-                  value2.total,
-                  value2.capped,
-                  value2.place,
+            {findMatchCountText(findState) === "" ? ("") : (findMatchAriaStatus(
+                  findState.current,
+                  findState.total,
+                  findState.capped,
+                  findState.place,
                 ))}
           </span>
         </span>
@@ -182,16 +182,16 @@ function FindBarContents({
           iconOnly={true}
           icon={"ArrowUp"}
           label={previousFindMatchLabel}
-          disabled={value7}
-          disabledTip={value8}
+          disabled={isEmpty}
+          disabledTip={disabledTip}
           onClick={(): Dynamic => onStep(-1)}
         />
         <ToolbarPrimitivesComponent
           iconOnly={true}
           icon={"ArrowDown"}
           label={nextFindMatchLabel}
-          disabled={value7}
-          disabledTip={value8}
+          disabled={isEmpty}
+          disabledTip={disabledTip}
           onClick={(): Dynamic => onStep(1)}
         />
         <ToolbarPrimitivesComponent

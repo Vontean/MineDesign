@@ -9,9 +9,9 @@ function snapCanvasDrag(
   dy2?: Dynamic,
   snapState?: Dynamic,
   tolerance?: Dynamic,
-  disabled2?: Dynamic,
+  snapDisabled?: Dynamic,
 ): Dynamic {
-  if (!snapState || disabled2)
+  if (!snapState || snapDisabled)
     return {
       dx: dx,
       dy: dy2,
@@ -30,7 +30,7 @@ function snapCanvasDrag(
       snapState.lines,
       tolerance,
     ),
-    value2: Dynamic = snapState.boxes
+    axisGaps: Dynamic = snapState.boxes
       ? snapEqualObjectGaps(state, snapState.boxes, tolerance, {
           x: value.dx,
           y: value.dy,
@@ -40,35 +40,35 @@ function snapCanvasDrag(
           dy: 0,
           gaps: [],
         },
-    state2: Dynamic = {
+    computedSnap: Dynamic = {
       dx: dx,
       dy: dy2,
       guides: [],
       gaps: [],
     };
-  for (let value3 of ["x", "y"] as Dynamic) {
-    let value4: Dynamic = value.guides.find(
-        (input?: Dynamic): Dynamic => input.axis === value3,
+  for (let axis of ["x", "y"] as Dynamic) {
+    let guide: Dynamic = value.guides.find(
+        (gap?: Dynamic): Dynamic => gap.axis === axis,
       ),
-      value5: Dynamic = value2.gaps.filter(
-        (input?: Dynamic): Dynamic => input.axis === value3,
+      matchingGaps: Dynamic = axisGaps.gaps.filter(
+        (gap?: Dynamic): Dynamic => gap.axis === axis,
       ),
-      [value6, value7]: Dynamic =
-        value3 === "x" ? [value.dx, value2.dx] : [value.dy, value2.dy];
-    if (!value4 && value5.length === 0) continue;
-    let value8: Dynamic =
-        value4 &&
-        (value5.length === 0 || Math.abs(value6) <= Math.abs(value7) + 0.5),
-      value9: Dynamic = value8 ? value6 : value7;
-    value3 === "x" ? (state2.dx += value9) : (state2.dy += value9);
-    value4 &&
-      (value8 || Math.abs(value6 - value9) <= 0.5) &&
-      state2.guides.push(value4);
-    value5.length > 0 &&
-      (!value8 || Math.abs(value7 - value9) <= 0.5) &&
-      state2.gaps.push(...value5);
+      [guideDelta, gapDelta]: Dynamic =
+        axis === "x" ? [value.dx, axisGaps.dx] : [value.dy, axisGaps.dy];
+    if (!guide && matchingGaps.length === 0) continue;
+    let hasGuide: Dynamic =
+        guide &&
+        (matchingGaps.length === 0 || Math.abs(guideDelta) <= Math.abs(gapDelta) + 0.5),
+      snapDelta: Dynamic = hasGuide ? guideDelta : gapDelta;
+    axis === "x" ? (computedSnap.dx += snapDelta) : (computedSnap.dy += snapDelta);
+    guide &&
+      (hasGuide || Math.abs(guideDelta - snapDelta) <= 0.5) &&
+      computedSnap.guides.push(guide);
+    matchingGaps.length > 0 &&
+      (!hasGuide || Math.abs(gapDelta - snapDelta) <= 0.5) &&
+      computedSnap.gaps.push(...matchingGaps);
   }
-  return state2;
+  return computedSnap;
 }
 function preserveUnroundedDragPosition(
   original?: Dynamic,
@@ -87,12 +87,12 @@ function canvasSnapReferenceObjects(
 ): Dynamic {
   return [
     ...artboards.filter(
-      (input?: Dynamic): Dynamic =>
-        includeSelected || !selection.files.has(input.file),
+      (file?: Dynamic): Dynamic =>
+        includeSelected || !selection.files.has(file.file),
     ),
     ...annotations.filter(
-      (input?: Dynamic): Dynamic =>
-        includeSelected || !selection.notes.has(input.id),
+      (annotation?: Dynamic): Dynamic =>
+        includeSelected || !selection.notes.has(annotation.id),
     ),
   ];
 }
@@ -126,216 +126,216 @@ function snapEqualObjectGaps(
     gaps: [],
   };
   for (let value of ["x", "y"] as Dynamic) {
-    let [value2, value3, value4, value5]: Dynamic =
+    let [startCoordinate, endCoordinate, axisStart, axisSize]: Dynamic =
         value === "x" ? ["x", "w", "y", "h"] : ["y", "h", "x", "w"],
-      callback: Dynamic = (input?: Dynamic): Dynamic => input[value2],
-      callback2: Dynamic = (input?: Dynamic): Dynamic =>
-        input[value2] + input[value3],
-      callback3: Dynamic = (input?: Dynamic): Dynamic => input[value4],
-      callback4: Dynamic = (input?: Dynamic): Dynamic =>
-        input[value4] + input[value5],
-      value6: Dynamic = box[value3],
-      [items, items2]: Dynamic = [
-        callback3(box) + shift[value4],
-        callback4(box) + shift[value4],
+      callback: Dynamic = (boxEntry?: Dynamic): Dynamic => boxEntry[startCoordinate],
+      endOf: Dynamic = (boxEntry?: Dynamic): Dynamic =>
+        boxEntry[startCoordinate] + boxEntry[endCoordinate],
+      startOf: Dynamic = (boxEntry?: Dynamic): Dynamic => boxEntry[axisStart],
+      endWithSize: Dynamic = (boxEntry?: Dynamic): Dynamic =>
+        boxEntry[axisStart] + boxEntry[axisSize],
+      boxSize: Dynamic = box[endCoordinate],
+      [items, boxRange]: Dynamic = [
+        startOf(box) + shift[axisStart],
+        endWithSize(box) + shift[axisStart],
       ],
-      value7: Dynamic = neighbors.filter(
-        (input?: Dynamic): Dynamic =>
-          callback3(input) < items2 && callback4(input) > items,
+      overlappingNeighbors: Dynamic = neighbors.filter(
+        (neighbor?: Dynamic): Dynamic =>
+          startOf(neighbor) < boxRange && endWithSize(neighbor) > items,
       ),
-      callback5: Dynamic = (input?: Dynamic): Dynamic =>
-        callback(input) <= callback(box) &&
-        callback2(input) >= callback2(box),
-      value8: Dynamic = value7
-        .filter(callback5)
+      isBetween: Dynamic = (neighbor?: Dynamic): Dynamic =>
+        callback(neighbor) <= callback(box) &&
+        endOf(neighbor) >= endOf(box),
+      nearestNeighbor: Dynamic = overlappingNeighbors
+        .filter(isBetween)
         .reduce(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
-            input === null || options[value3] < input[value3]
-              ? options
-              : input,
+          (candidate?: Dynamic, currentBest?: Dynamic): Dynamic =>
+            candidate === null || currentBest[endCoordinate] < candidate[endCoordinate]
+              ? currentBest
+              : candidate,
           null,
         ),
-      value9: Dynamic = value7.filter(
-        (input?: Dynamic): Dynamic =>
-          !callback5(input) &&
-          (!value8 ||
-            (callback(input) >= callback(value8) &&
-              callback2(input) <= callback2(value8))),
+      alignedNeighbors: Dynamic = overlappingNeighbors.filter(
+        (neighbor?: Dynamic): Dynamic =>
+          !isBetween(neighbor) &&
+          (!nearestNeighbor ||
+            (callback(neighbor) >= callback(nearestNeighbor) &&
+              endOf(neighbor) <= endOf(nearestNeighbor))),
       ),
-      value10: Dynamic = (callback(box) + callback2(box)) / 2,
-      value11: Dynamic = value9.filter(
-        (input?: Dynamic): Dynamic =>
-          (callback(input) + callback2(input)) / 2 < value10,
+      center: Dynamic = (callback(box) + endOf(box)) / 2,
+      leftNeighbors: Dynamic = alignedNeighbors.filter(
+        (neighbor?: Dynamic): Dynamic =>
+          (callback(neighbor) + endOf(neighbor)) / 2 < center,
       ),
-      value12: Dynamic = value9.filter(
-        (input?: Dynamic): Dynamic =>
-          (callback(input) + callback2(input)) / 2 >= value10,
+      rightNeighbors: Dynamic = alignedNeighbors.filter(
+        (neighbor?: Dynamic): Dynamic =>
+          (callback(neighbor) + endOf(neighbor)) / 2 >= center,
       ),
-      callback6: Dynamic = (input?: Dynamic): Dynamic =>
-        input.reduce(
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            input2 === null || callback2(options) > callback2(input2)
-              ? options
-              : input2,
+      nearestLeft: Dynamic = (neighborList?: Dynamic): Dynamic =>
+        neighborList.reduce(
+          (best?: Dynamic, candidate?: Dynamic): Dynamic =>
+            best === null || endOf(candidate) > endOf(best)
+              ? candidate
+              : best,
           null,
         ),
-      callback7: Dynamic = (input?: Dynamic): Dynamic =>
-        input.reduce(
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            input2 === null || callback(options) < callback(input2)
-              ? options
-              : input2,
+      nearestRight: Dynamic = (neighborList?: Dynamic): Dynamic =>
+        neighborList.reduce(
+          (best?: Dynamic, candidate?: Dynamic): Dynamic =>
+            best === null || callback(candidate) < callback(best)
+              ? candidate
+              : best,
           null,
         ),
-      value13: Dynamic = callback6(value11),
-      value14: Dynamic =
-        value13 &&
-        callback6(
-          value11.filter(
-            (input?: Dynamic): Dynamic =>
-              input !== value13 && callback2(input) <= callback(value13),
+      leftNeighbor: Dynamic = nearestLeft(leftNeighbors),
+      rightNeighbor: Dynamic =
+        leftNeighbor &&
+        nearestLeft(
+          leftNeighbors.filter(
+            (neighbor?: Dynamic): Dynamic =>
+              neighbor !== leftNeighbor && endOf(neighbor) <= callback(leftNeighbor),
           ),
         ),
-      value15: Dynamic = callback7(value12),
-      value16: Dynamic =
-        value15 &&
-        callback7(
-          value12.filter(
-            (input?: Dynamic): Dynamic =>
-              input !== value15 && callback(input) >= callback2(value15),
+      rightAlignedNeighbor: Dynamic = nearestRight(rightNeighbors),
+      leftAlignedNeighbor: Dynamic =
+        rightAlignedNeighbor &&
+        nearestRight(
+          rightNeighbors.filter(
+            (neighbor?: Dynamic): Dynamic =>
+              neighbor !== rightAlignedNeighbor && callback(neighbor) >= endOf(rightAlignedNeighbor),
           ),
         ),
-      callback8: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-        let [items4, items5]: Dynamic = [
+      coordinateRange: Dynamic = (startBox?: Dynamic, endBox?: Dynamic): Dynamic => {
+        let [startRange, endRange]: Dynamic = [
           Math.max(
-            input ? callback3(input) : items,
-            options ? callback3(options) : items,
+            startBox ? startOf(startBox) : items,
+            endBox ? startOf(endBox) : items,
           ),
           Math.min(
-            input ? callback4(input) : items2,
-            options ? callback4(options) : items2,
+            startBox ? endWithSize(startBox) : boxRange,
+            endBox ? endWithSize(endBox) : boxRange,
           ),
         ];
-        return items4 <= items5
-          ? (items4 + items5) / 2
-          : (items + items2) / 2;
+        return startRange <= endRange
+          ? (startRange + endRange) / 2
+          : (items + boxRange) / 2;
       },
-      callback9: Dynamic = (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value18: Dynamic = String(Math.round(options - input)),
+      makeGuide: Dynamic = (
+        from?: Dynamic,
+        to?: Dynamic,
+        at?: Dynamic,
+        label: Dynamic = String(Math.round(to - from)),
       ): Dynamic => ({
         axis: value,
-        from: input,
-        to: options,
-        at: context,
-        label: value18,
+        from: from,
+        to: to,
+        at: at,
+        label: label,
       }),
-      items3: Dynamic = [];
-    if (value13 && value15) {
-      let value18: Dynamic =
-          (callback(value15) - callback2(value13) - value6) / 2,
-        value19: Dynamic = Math.round(callback2(value13) + value18);
-      Math.round(value19 - callback2(value13)) >= 1 &&
-        Math.round(callback(value15) - value19 - value6) >= 1 &&
-        items3.push({
-          adjust: value19 - callback(box),
+      candidates: Dynamic = [];
+    if (leftNeighbor && rightAlignedNeighbor) {
+      let centerOffset: Dynamic =
+          (callback(rightAlignedNeighbor) - endOf(leftNeighbor) - boxSize) / 2,
+        snapCoordinate: Dynamic = Math.round(endOf(leftNeighbor) + centerOffset);
+      Math.round(snapCoordinate - endOf(leftNeighbor)) >= 1 &&
+        Math.round(callback(rightAlignedNeighbor) - snapCoordinate - boxSize) >= 1 &&
+        candidates.push({
+          adjust: snapCoordinate - callback(box),
           between: true,
           gaps: [
-            callback9(callback2(value13), value19, callback8(value13, null)),
-            callback9(
-              value19 + value6,
-              callback(value15),
-              callback8(null, value15),
+            makeGuide(endOf(leftNeighbor), snapCoordinate, coordinateRange(leftNeighbor, null)),
+            makeGuide(
+              snapCoordinate + boxSize,
+              callback(rightAlignedNeighbor),
+              coordinateRange(null, rightAlignedNeighbor),
             ),
           ],
         });
     }
-    let callback10: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      !value9.some(
-        (input2?: Dynamic): Dynamic =>
-          callback(input2) < options &&
-          callback2(input2) > input &&
-          !(callback(input2) <= input && callback2(input2) >= options),
+    let overlapsRange: Dynamic = (start?: Dynamic, end?: Dynamic): Dynamic =>
+      !alignedNeighbors.some(
+        (candidate?: Dynamic): Dynamic =>
+          callback(candidate) < end &&
+          endOf(candidate) > start &&
+          !(callback(candidate) <= start && endOf(candidate) >= end),
       );
     if (
-      value13 &&
-      value14 &&
-      callback10(callback2(value14), callback(value13))
+      leftNeighbor &&
+      rightNeighbor &&
+      overlapsRange(endOf(rightNeighbor), callback(leftNeighbor))
     ) {
-      let value18: Dynamic = callback(value13) - callback2(value14),
-        value19: Dynamic = Math.round(callback2(value13) + value18);
+      let leftOffset: Dynamic = callback(leftNeighbor) - endOf(rightNeighbor),
+        leftSnap: Dynamic = Math.round(endOf(leftNeighbor) + leftOffset);
       if (
-        Math.round(value18) >= 1 &&
-        Math.round(value19 - callback2(value13)) >= 1
+        Math.round(leftOffset) >= 1 &&
+        Math.round(leftSnap - endOf(leftNeighbor)) >= 1
       ) {
-        let value20: Dynamic = callback9(
-          callback2(value14),
-          callback(value13),
-          callback8(value14, value13),
+        let leftGuide: Dynamic = makeGuide(
+          endOf(rightNeighbor),
+          callback(leftNeighbor),
+          coordinateRange(rightNeighbor, leftNeighbor),
         );
-        items3.push({
-          adjust: value19 - callback(box),
+        candidates.push({
+          adjust: leftSnap - callback(box),
           between: false,
           gaps: [
-            value20,
-            callback9(
-              callback2(value13),
-              value19,
-              callback8(value13, null),
-              value20.label,
+            leftGuide,
+            makeGuide(
+              endOf(leftNeighbor),
+              leftSnap,
+              coordinateRange(leftNeighbor, null),
+              leftGuide.label,
             ),
           ],
         });
       }
     }
     if (
-      value15 &&
-      value16 &&
-      callback10(callback2(value15), callback(value16))
+      rightAlignedNeighbor &&
+      leftAlignedNeighbor &&
+      overlapsRange(endOf(rightAlignedNeighbor), callback(leftAlignedNeighbor))
     ) {
-      let value18: Dynamic = callback(value16) - callback2(value15),
-        value19: Dynamic = Math.round(callback(value15) - value18 - value6);
+      let rightOffset: Dynamic = callback(leftAlignedNeighbor) - endOf(rightAlignedNeighbor),
+        rightSnap: Dynamic = Math.round(callback(rightAlignedNeighbor) - rightOffset - boxSize);
       if (
-        Math.round(value18) >= 1 &&
-        Math.round(callback(value15) - value19 - value6) >= 1
+        Math.round(rightOffset) >= 1 &&
+        Math.round(callback(rightAlignedNeighbor) - rightSnap - boxSize) >= 1
       ) {
-        let value20: Dynamic = callback9(
-          callback2(value15),
-          callback(value16),
-          callback8(value15, value16),
+        let rightGuide: Dynamic = makeGuide(
+          endOf(rightAlignedNeighbor),
+          callback(leftAlignedNeighbor),
+          coordinateRange(rightAlignedNeighbor, leftAlignedNeighbor),
         );
-        items3.push({
-          adjust: value19 - callback(box),
+        candidates.push({
+          adjust: rightSnap - callback(box),
           between: false,
           gaps: [
-            callback9(
-              value19 + value6,
-              callback(value15),
-              callback8(null, value15),
-              value20.label,
+            makeGuide(
+              rightSnap + boxSize,
+              callback(rightAlignedNeighbor),
+              coordinateRange(null, rightAlignedNeighbor),
+              rightGuide.label,
             ),
-            value20,
+            rightGuide,
           ],
         });
       }
     }
-    let value17: Dynamic = null;
-    for (let value18 of items3 as Dynamic)
-      Math.abs(value18.adjust) <= tolerance &&
-        (!value17 ||
-          Math.abs(value18.adjust) < Math.abs(value17.adjust) - 0.5 ||
-          (Math.abs(Math.abs(value18.adjust) - Math.abs(value17.adjust)) <=
+    let bestSnap: Dynamic = null;
+    for (let candidateSnap of candidates as Dynamic)
+      Math.abs(candidateSnap.adjust) <= tolerance &&
+        (!bestSnap ||
+          Math.abs(candidateSnap.adjust) < Math.abs(bestSnap.adjust) - 0.5 ||
+          (Math.abs(Math.abs(candidateSnap.adjust) - Math.abs(bestSnap.adjust)) <=
             0.5 &&
-            value18.between &&
-            !value17.between)) &&
-        (value17 = value18);
-    value17 &&
+            candidateSnap.between &&
+            !bestSnap.between)) &&
+        (bestSnap = candidateSnap);
+    bestSnap &&
       (value === "x"
-        ? (state.dx = value17.adjust)
-        : (state.dy = value17.adjust),
-      state.gaps.push(...value17.gaps));
+        ? (state.dx = bestSnap.adjust)
+        : (state.dy = bestSnap.adjust),
+      state.gaps.push(...bestSnap.gaps));
   }
   return state;
 }

@@ -14,228 +14,228 @@ var emptyFindStatus: Dynamic;
 var blockingFindDialogSelector: Dynamic;
 function createFindController(
   adapter?: Dynamic,
-  options: Dynamic = {},
+  controllerOptions: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic = options.debounceMs ?? 120,
+  let value: Dynamic = controllerOptions.debounceMs ?? 120,
     values: Dynamic = new Set(),
-    value2: Dynamic = emptyFindStatus,
+    status: Dynamic = emptyFindStatus,
     items: Dynamic = [],
-    value3: Dynamic = -1,
-    value4: Dynamic,
+    activeIndex: Dynamic = -1,
+    debounceTimer: Dynamic,
     text: Dynamic = "",
-    value5: Dynamic,
-    value6: Dynamic,
-    value7: Dynamic,
+    pendingQuery: Dynamic,
+    searchAbort: Dynamic,
+    revealAbort: Dynamic,
     flag: Dynamic = false,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value2 = input;
-      for (let value9 of [...values] as Dynamic) value9(value2);
+    callback: Dynamic = (nextStatus?: Dynamic): Dynamic => {
+      status = nextStatus;
+      for (let listener of [...values] as Dynamic) listener(status);
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      input === undefined ? undefined : adapter.describe?.(input),
-    callback3: Dynamic = (): Dynamic => {
-      value4 !== undefined && clearTimeout(value4);
-      value4 = undefined;
+    describeItem: Dynamic = (item?: Dynamic): Dynamic =>
+      item === undefined ? undefined : adapter.describe?.(item),
+    clearSearch: Dynamic = (): Dynamic => {
+      debounceTimer !== undefined && clearTimeout(debounceTimer);
+      debounceTimer = undefined;
     },
-    callback4: Dynamic = async (input: Dynamic = 1): Promise<Dynamic> => {
-      value7?.abort();
+    runSearch: Dynamic = async (direction: Dynamic = 1): Promise<Dynamic> => {
+      revealAbort?.abort();
       let controller: Dynamic = new AbortController();
-      value7 = controller;
-      let values2: Dynamic = new Set();
+      revealAbort = controller;
+      let seenKeys: Dynamic = new Set();
       for (; !controller.signal.aborted && !flag; ) {
-        let value9: Dynamic = items[value3];
-        if (value9 === undefined || values2.has(value9.key)) return;
-        values2.add(value9.key);
-        value5 = value9.key;
-        let value10: Dynamic;
+        let resultItem: Dynamic = items[activeIndex];
+        if (resultItem === undefined || seenKeys.has(resultItem.key)) return;
+        seenKeys.add(resultItem.key);
+        pendingQuery = resultItem.key;
+        let searchResult: Dynamic;
         try {
-          value10 = await adapter.reveal(value9, controller.signal);
+          searchResult = await adapter.reveal(resultItem, controller.signal);
         } catch {
           return;
         }
         if (
           controller.signal.aborted ||
           flag ||
-          items[value3]?.key !== value9.key
+          items[activeIndex]?.key !== resultItem.key
         )
           return;
-        if (value10 !== false) {
-          adapter.paint(items, value3);
+        if (searchResult !== false) {
+          adapter.paint(items, activeIndex);
           return;
         }
         items = items.filter(
-          (input2?: Dynamic): Dynamic => input2.key !== value9.key,
+          (item?: Dynamic): Dynamic => item.key !== resultItem.key,
         );
-        value3 =
+        activeIndex =
           items.length === 0
             ? -1
-            : input === 1
-              ? value3 % items.length
-              : (value3 - 1 + items.length) % items.length;
+            : direction === 1
+              ? activeIndex % items.length
+              : (activeIndex - 1 + items.length) % items.length;
         callback({
-          ...value2,
+          ...status,
           total: items.length,
-          current: value3 + 1,
-          place: callback2(items[value3]),
+          current: activeIndex + 1,
+          place: describeItem(items[activeIndex]),
         });
-        adapter.paint(items, value3);
+        adapter.paint(items, activeIndex);
       }
     },
-    callback5: Dynamic = async (): Promise<Dynamic> => {
-      callback3();
-      value6?.abort();
+    refreshResults: Dynamic = async (): Promise<Dynamic> => {
+      clearSearch();
+      searchAbort?.abort();
       let controller: Dynamic = new AbortController();
-      value6 = controller;
-      let query: Dynamic = value2.query,
-        value9: Dynamic;
+      searchAbort = controller;
+      let query: Dynamic = status.query,
+        resultItems: Dynamic;
       try {
-        value9 = await adapter.search(query, controller.signal);
+        resultItems = await adapter.search(query, controller.signal);
       } catch {
-        value9 = [];
+        resultItems = [];
       }
-      if (controller.signal.aborted || flag || query !== value2.query) return;
-      let value10: Dynamic = query !== text,
-        value11: Dynamic = value10 ? undefined : items[value3]?.key,
-        value12: Dynamic = value9.length > 1e3;
-      items = value12 ? value9.slice(0, 1e3) : value9;
-      (value10 || items.length === 0) && (value5 = undefined);
+      if (controller.signal.aborted || flag || query !== status.query) return;
+      let queryChanged: Dynamic = query !== text,
+        previousKey: Dynamic = queryChanged ? undefined : items[activeIndex]?.key,
+        isCapped: Dynamic = resultItems.length > 1e3;
+      items = isCapped ? resultItems.slice(0, 1e3) : resultItems;
+      (queryChanged || items.length === 0) && (pendingQuery = undefined);
       text = query;
-      let value13: Dynamic =
-        value11 === undefined
+      let nextIndex: Dynamic =
+        previousKey === undefined
           ? -1
           : items.findIndex(
-              (input?: Dynamic): Dynamic => input.key === value11,
+              (item?: Dynamic): Dynamic => item.key === previousKey,
             );
-      value3 =
+      activeIndex =
         items.length === 0
           ? -1
-          : value13 !== -1
-            ? value13
-            : value10
+          : nextIndex !== -1
+            ? nextIndex
+            : queryChanged
               ? 0
-              : Math.min(Math.max(value3, 0), items.length - 1);
+              : Math.min(Math.max(activeIndex, 0), items.length - 1);
       callback({
         query: query,
         total: items.length,
-        current: value3 + 1,
-        capped: value12,
+        current: activeIndex + 1,
+        capped: isCapped,
         searching: false,
-        place: callback2(items[value3]),
+        place: describeItem(items[activeIndex]),
       });
-      adapter.paint(items, value3);
-      value10 && callback4();
+      adapter.paint(items, activeIndex);
+      queryChanged && runSearch();
     },
-    callback6: Dynamic = (): Dynamic => {
-      callback3();
+    openSearch: Dynamic = (): Dynamic => {
+      clearSearch();
       if (value <= 0) {
-        callback5();
+        refreshResults();
         return;
       }
-      value4 = setTimeout((): Dynamic => {
-        callback5();
+      debounceTimer = setTimeout((): Dynamic => {
+        refreshResults();
       }, value);
     },
-    callback7: Dynamic = (): Dynamic => {
-      callback3();
+    closeSearch: Dynamic = (): Dynamic => {
+      clearSearch();
       text = "";
-      value6?.abort();
-      value7?.abort();
+      searchAbort?.abort();
+      revealAbort?.abort();
       items = [];
-      value3 = -1;
+      activeIndex = -1;
       adapter.clear();
     },
-    value8: Dynamic = adapter.subscribe?.((): Dynamic => {
-      !flag && value2.query !== "" && callback6();
+    unsubscribeAdapter: Dynamic = adapter.subscribe?.((): Dynamic => {
+      !flag && status.query !== "" && openSearch();
     });
   return {
-    setQuery(input: Dynamic): Dynamic {
-      if (!(flag || input === value2.query)) {
-        if (input === "") {
-          callback7();
+    setQuery(query: Dynamic): Dynamic {
+      if (!(flag || query === status.query)) {
+        if (query === "") {
+          closeSearch();
           callback(emptyFindStatus);
           return;
         }
-        value6?.abort();
-        value7?.abort();
+        searchAbort?.abort();
+        revealAbort?.abort();
         callback({
-          ...value2,
-          query: input,
+          ...status,
+          query: query,
           searching: true,
         });
-        callback6();
+        openSearch();
       }
     },
-    step(input: Dynamic): Dynamic {
-      if (!(flag || value2.query === "")) {
-        if (value2.query !== text) {
-          value4 !== undefined && callback5();
+    step(stepAmount: Dynamic): Dynamic {
+      if (!(flag || status.query === "")) {
+        if (status.query !== text) {
+          debounceTimer !== undefined && refreshResults();
           return;
         }
         items.length !== 0 &&
-          (items[value3]?.key === value5 &&
-            (value3 = (value3 + input + items.length) % items.length),
+          (items[activeIndex]?.key === pendingQuery &&
+            (activeIndex = (activeIndex + stepAmount + items.length) % items.length),
           callback({
-            ...value2,
-            current: value3 + 1,
-            place: callback2(items[value3]),
+            ...status,
+            current: activeIndex + 1,
+            place: describeItem(items[activeIndex]),
           }),
-          adapter.paint(items, value3),
-          callback4(input));
+          adapter.paint(items, activeIndex),
+          runSearch(stepAmount));
       }
     },
     clear(): Dynamic {
       flag ||
-        (callback7(),
-        value2 !== emptyFindStatus && callback(emptyFindStatus));
+        (closeSearch(),
+        status !== emptyFindStatus && callback(emptyFindStatus));
     },
-    status: (): Dynamic => value2,
-    subscribe(input: Dynamic): Dynamic {
-      values.add(input);
+    status: (): Dynamic => status,
+    subscribe(subscriber: Dynamic): Dynamic {
+      values.add(subscriber);
       return (): Dynamic => {
-        values.delete(input);
+        values.delete(subscriber);
       };
     },
     dispose(): Dynamic {
-      flag || (callback7(), (flag = true), value8?.(), values.clear());
+      flag || (closeSearch(), (flag = true), unsubscribeAdapter?.(), values.clear());
     },
   };
 }
-function isFindBlockedByDialog(document2?: Dynamic): Dynamic {
+function isFindBlockedByDialog(document?: Dynamic): Dynamic {
   return (
-    !!document2.fullscreenElement ||
-    [...document2.querySelectorAll(blockingFindDialogSelector)].some(
-      (input?: Dynamic): Dynamic => !isClosedOverlay(input),
+    !!document.fullscreenElement ||
+    [...document.querySelectorAll(blockingFindDialogSelector)].some(
+      (overlay?: Dynamic): Dynamic => !isClosedOverlay(overlay),
     )
   );
 }
-function isFindBlockedByLinkMode(document2?: Dynamic): Dynamic {
-  return document2.activeElement?.closest("[data-link-mode]") != null;
+function isFindBlockedByLinkMode(document?: Dynamic): Dynamic {
+  return document.activeElement?.closest("[data-link-mode]") != null;
 }
-function isApplicationRootInert(document2?: Dynamic): Dynamic {
-  return document2.getElementById("root")?.hasAttribute("inert") === true;
+function isApplicationRootInert(document?: Dynamic): Dynamic {
+  return document.getElementById("root")?.hasAttribute("inert") === true;
 }
-function dispatchFindEscape(document2?: Dynamic): Dynamic {
-  let value: Dynamic = document2.defaultView?.KeyboardEvent;
+function dispatchFindEscape(document?: Dynamic): Dynamic {
+  let value: Dynamic = document.defaultView?.KeyboardEvent;
   if (value === undefined) return;
-  let value2: Dynamic = new value("keydown", {
+  let keyboardEvent: Dynamic = new value("keydown", {
       key: "Escape",
       code: "Escape",
       bubbles: true,
       cancelable: true,
     }),
-    activeElement: Dynamic = document2.activeElement,
-    value3: Dynamic =
+    activeElement: Dynamic = document.activeElement,
+    focusedElement: Dynamic =
       activeElement?.closest(blockingOverlaySelector) ?? null;
   activeElement !== null &&
-    value3 !== null &&
-    value3 !== activeElement &&
+    focusedElement !== null &&
+    focusedElement !== activeElement &&
     isTextEditableTarget(activeElement) &&
     activeElement.blur();
-  (value3 !== null && document2.activeElement !== activeElement
-    ? value3
-    : (activeElement ?? document2.body)
-  ).dispatchEvent(value2);
-  value2.preventDefault();
+  (focusedElement !== null && document.activeElement !== activeElement
+    ? focusedElement
+    : (activeElement ?? document.body)
+  ).dispatchEvent(keyboardEvent);
+  keyboardEvent.preventDefault();
 }
 function useFindInPage({
   adapter: adapter,
@@ -246,14 +246,14 @@ function useFindInPage({
   restoreFocus: restoreFocus,
   returnTo: returnTo,
 }: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0, react_Cl.useState)(false),
-    [value3, value4]: Dynamic = (0, react_Cl.useState)(false),
-    value5: Dynamic = (0, react_Cl.useRef)(null),
-    value6: Dynamic = (0, react_Cl.useRef)(null),
-    value7: Dynamic = (0, react_Cl.useRef)(null),
-    value8: Dynamic = (0, react_Cl.useRef)(0),
-    value9: Dynamic = (0, react_Cl.useRef)(0),
-    value10: Dynamic = (0, react_Cl.useRef)({
+  let [value, setOpen]: Dynamic = (0, react_Cl.useState)(false),
+    [frameFindEnabled, setFrameFindEnabled]: Dynamic = (0, react_Cl.useState)(false),
+    fieldRef: Dynamic = (0, react_Cl.useRef)(null),
+    returnFocusRef: Dynamic = (0, react_Cl.useRef)(null),
+    restoreFocusRef: Dynamic = (0, react_Cl.useRef)(null),
+    operationCount: Dynamic = (0, react_Cl.useRef)(0),
+    viewMoveCount: Dynamic = (0, react_Cl.useRef)(0),
+    findStateRef: Dynamic = (0, react_Cl.useRef)({
       adapter: adapter,
       isOpen: value,
       enabled: enabled,
@@ -264,7 +264,7 @@ function useFindInPage({
       returnTo: returnTo,
     });
   (0, react_Cl.useEffect)((): Dynamic => {
-    value10.current = {
+    findStateRef.current = {
       adapter: adapter,
       isOpen: value,
       enabled: enabled,
@@ -275,23 +275,23 @@ function useFindInPage({
       returnTo: returnTo,
     };
   });
-  let [{ controller: value11, changes: value12 }]: Dynamic = (0,
+  let [{ controller: findController, changes: changeNotifier }]: Dynamic = (0,
   react_Cl.useState)((): Dynamic => {
     installFindKeyboardHandlers(window);
     let state: Dynamic = {};
     return {
       controller: createFindController({
-        search: (input?: Dynamic, options?: Dynamic): Dynamic =>
-          value10.current.adapter.search(input, options),
-        reveal: (input?: Dynamic, options?: Dynamic): Dynamic =>
-          value10.current.adapter.reveal(input, options),
-        paint: (input?: Dynamic, options?: Dynamic): Dynamic =>
-          value10.current.adapter.paint(input, options),
-        clear: (): Dynamic => value10.current.adapter.clear(),
-        describe: (input?: Dynamic): Dynamic =>
-          value10.current.adapter.describe?.(input),
-        subscribe: (input?: Dynamic): Dynamic => (
-          (state.notify = input),
+        search: (query?: Dynamic, searchOptions?: Dynamic): Dynamic =>
+          findStateRef.current.adapter.search(query, searchOptions),
+        reveal: (query?: Dynamic, revealOptions?: Dynamic): Dynamic =>
+          findStateRef.current.adapter.reveal(query, revealOptions),
+        paint: (items?: Dynamic, paintOptions?: Dynamic): Dynamic =>
+          findStateRef.current.adapter.paint(items, paintOptions),
+        clear: (): Dynamic => findStateRef.current.adapter.clear(),
+        describe: (item?: Dynamic): Dynamic =>
+          findStateRef.current.adapter.describe?.(item),
+        subscribe: (subscriber?: Dynamic): Dynamic => (
+          (state.notify = subscriber),
           (): Dynamic => {
             state.notify = undefined;
           }
@@ -301,62 +301,62 @@ function useFindInPage({
     };
   });
   (0, react_Cl.useEffect)(
-    (): Dynamic => adapter.subscribe?.((): Dynamic => value12.notify?.()),
-    [adapter, value12],
+    (): Dynamic => adapter.subscribe?.((): Dynamic => changeNotifier.notify?.()),
+    [adapter, changeNotifier],
   );
   (0, react_Cl.useEffect)(
     (): Dynamic => (): Dynamic => {
-      value8.current++;
-      value11.clear();
+      operationCount.current++;
+      findController.clear();
     },
-    [value11],
+    [findController],
   );
-  let value13: Dynamic = (0, react_Cl.useCallback)((): Dynamic => {
-      let current: Dynamic = value10.current,
+  let isBlockedByDialog: Dynamic = (0, react_Cl.useCallback)((): Dynamic => {
+      let current: Dynamic = findStateRef.current,
         isOpen: Dynamic = current.isOpen,
         activeElement: Dynamic = (document as Dynamic).activeElement;
       try {
         (typeof activeElement?.closest == "function" &&
           activeElement.closest("[" + McFindAttribute + "]") !==
             null) ||
-          ((value6.current =
+          ((returnFocusRef.current =
             typeof activeElement?.focus == "function" ? activeElement : null),
-          (value7.current =
-            value6.current === null
+          (restoreFocusRef.current =
+            returnFocusRef.current === null
               ? null
-              : (current.returnTo?.(value6.current) ?? null)),
-          (value9.current = current.viewMoves?.() ?? 0));
-        isOpen || (0, reactDOM_jCt.flushSync)((): Dynamic => value2(true));
-        let current2: Dynamic = value5.current;
-        current2 !== null &&
+              : (current.returnTo?.(returnFocusRef.current) ?? null)),
+          (viewMoveCount.current = current.viewMoves?.() ?? 0));
+        isOpen || (0, reactDOM_jCt.flushSync)((): Dynamic => setOpen(true));
+        let fieldElement: Dynamic = fieldRef.current;
+        fieldElement !== null &&
           activeElement?.tagName === "IFRAME" &&
           (activeElement.blur(), (window as Dynamic).focus());
-        current2?.focus();
+        fieldElement?.focus();
         if (
-          current2 !== null &&
-          (document as Dynamic).activeElement === current2
+          fieldElement !== null &&
+          (document as Dynamic).activeElement === fieldElement
         ) {
-          current2.select();
+          fieldElement.select();
           return true;
         }
       } catch {}
-      isOpen || value2(false);
+      isOpen || setOpen(false);
       return false;
     }, []),
-    value14: Dynamic = (0, react_Cl.useCallback)(
+    canFocusSearch: Dynamic = (0, react_Cl.useCallback)(
       (): Dynamic =>
-        value10.current.enabled && !isFindBlockedByDialog(document),
+        findStateRef.current.enabled && !isFindBlockedByDialog(document),
       [],
     ),
-    value15: Dynamic = (0, react_Cl.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        if (value10.current.isOurs?.(input) === false) return false;
-        let value22: Dynamic = ++value8.current;
-        if (!value14() || isFindBlockedByLinkMode(document)) return true;
+    handleFocusEvent: Dynamic = (0, react_Cl.useCallback)(
+      (eventTarget?: Dynamic): Dynamic => {
+        if (findStateRef.current.isOurs?.(eventTarget) === false) return false;
+        let operationId: Dynamic = ++operationCount.current;
+        if (!canFocusSearch() || isFindBlockedByLinkMode(document)) return true;
         if (hasBlockingOverlay(document)) {
           let index: Dynamic = 0,
             callback: Dynamic = (): Dynamic => {
-              if (value22 !== value8.current || !value14()) return;
+              if (operationId !== operationCount.current || !canFocusSearch()) return;
               let flag: Dynamic = false;
               try {
                 hasBlockingOverlay(document)
@@ -364,7 +364,7 @@ function useFindInPage({
                     index % 6 === 0 &&
                     index <= 18 &&
                     dispatchFindEscape(document)
-                  : isApplicationRootInert(document) || (flag = value13());
+                  : isApplicationRootInert(document) || (flag = isBlockedByDialog());
               } catch {
                 flag = false;
               }
@@ -376,111 +376,111 @@ function useFindInPage({
           (window as Dynamic).requestAnimationFrame(callback);
           return true;
         }
-        return isApplicationRootInert(document) ? true : value13();
+        return isApplicationRootInert(document) ? true : isBlockedByDialog();
       },
-      [value13, value14],
+      [isBlockedByDialog, canFocusSearch],
     ),
-    value16: Dynamic = (0, react_Cl.useCallback)(
-      (input?: Dynamic): Dynamic => {
+    handleStep: Dynamic = (0, react_Cl.useCallback)(
+      (stepAmount?: Dynamic): Dynamic => {
         !isFindBlockedByDialog(document) &&
           !isApplicationRootInert(document) &&
           !isFindBlockedByLinkMode(document) &&
-          value11.step(input);
+          findController.step(stepAmount);
       },
-      [value11],
+      [findController],
     ),
-    value17: Dynamic = (0, react_Cl.useCallback)(
+    handleKeyDown: Dynamic = (0, react_Cl.useCallback)(
       (event?: Dynamic): Dynamic => {
-        let value22: Dynamic = event.defaultPrevented
+        let defaultPrevented: Dynamic = event.defaultPrevented
           ? undefined
           : findDirectionShortcut(event);
         if (
           !(
-            value22 === undefined ||
-            value10.current.isOurs?.(event.target) === false
+            defaultPrevented === undefined ||
+            findStateRef.current.isOurs?.(event.target) === false
           ) &&
           !(
             event.key !== "F3" &&
-            value10.current.ownsStepChord?.(event) === true
+            findStateRef.current.ownsStepChord?.(event) === true
           )
         ) {
-          if (!value10.current.isOpen) {
-            value15(event.target) && event.preventDefault();
+          if (!findStateRef.current.isOpen) {
+            handleFocusEvent(event.target) && event.preventDefault();
             return;
           }
           event.preventDefault();
-          value16(value22);
+          handleStep(defaultPrevented);
         }
       },
-      [value15, value16],
+      [handleFocusEvent, handleStep],
     ),
-    value18: Dynamic = (0, react_Cl.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value10.current;
+    restoreFocusHandler: Dynamic = (0, react_Cl.useCallback)(
+      (focusEvent?: Dynamic): Dynamic => {
+        let current: Dynamic = findStateRef.current;
         if (!current.isOpen) return;
-        value11.clear();
-        let current2: Dynamic = value6.current,
-          current3: Dynamic = value7.current;
-        value6.current = null;
-        value7.current = null;
+        findController.clear();
+        let returnFocus: Dynamic = returnFocusRef.current,
+          restoreFocusCallback: Dynamic = restoreFocusRef.current;
+        returnFocusRef.current = null;
+        restoreFocusRef.current = null;
         let activeElement: Dynamic = (document as Dynamic).activeElement,
-          value22: Dynamic =
-            input &&
+          shouldRestore: Dynamic =
+            focusEvent &&
             (activeElement === null ||
               activeElement === (document as Dynamic).body ||
               activeElement.closest("[" + McFindAttribute + "]") !==
                 null),
-          value23: Dynamic = value22 ? (current3?.() ?? null) : null,
-          value24: Dynamic =
-            value23 ?? (value22 && current3 === null ? current2 : null),
-          value25: Dynamic = (current.viewMoves?.() ?? 0) !== value9.current,
-          value26: Dynamic =
-            value22 && value24?.isConnected === true && !value25
-              ? value24
+          restoredElement: Dynamic = shouldRestore ? (restoreFocusCallback?.() ?? null) : null,
+          connectedElement: Dynamic =
+            restoredElement ?? (shouldRestore && restoreFocusCallback === null ? returnFocus : null),
+          viewChanged: Dynamic = (current.viewMoves?.() ?? 0) !== viewMoveCount.current,
+          focusTarget: Dynamic =
+            shouldRestore && connectedElement?.isConnected === true && !viewChanged
+              ? connectedElement
               : null;
-        value26?.focus(
-          value26 === value23
+        focusTarget?.focus(
+          focusTarget === restoredElement
             ? {
                 preventScroll: true,
               }
             : undefined,
         );
-        let activeElement2: Dynamic = (document as Dynamic).activeElement,
-          value27: Dynamic =
-            value26 !== null &&
-            activeElement2 !== null &&
-            activeElement2 !== (document as Dynamic).body &&
-            activeElement2.closest("[" + McFindAttribute + "]") ===
+        let currentActiveElement: Dynamic = (document as Dynamic).activeElement,
+          hasActiveFindField: Dynamic =
+            focusTarget !== null &&
+            currentActiveElement !== null &&
+            currentActiveElement !== (document as Dynamic).body &&
+            currentActiveElement.closest("[" + McFindAttribute + "]") ===
               null;
-        value2(false);
-        value22 && !value27 && current.restoreFocus?.();
+        setOpen(false);
+        shouldRestore && !hasActiveFindField && current.restoreFocus?.();
       },
-      [value11],
+      [findController],
     ),
-    value19: Dynamic = (0, react_Cl.useCallback)(
-      (): Dynamic => value18(true),
-      [value18],
+    closeFind: Dynamic = (0, react_Cl.useCallback)(
+      (): Dynamic => restoreFocusHandler(true),
+      [restoreFocusHandler],
     ),
-    value20: Dynamic = (0, react_Cl.useCallback)((): Dynamic => {
-      value15(null);
-    }, [value15]);
-  useFrameFind(value3, value20);
+    openFind: Dynamic = (0, react_Cl.useCallback)((): Dynamic => {
+      handleFocusEvent(null);
+    }, [handleFocusEvent]);
+  useFrameFind(frameFindEnabled, openFind);
   (0, react_Cl.useEffect)((): Dynamic => {
-    enabled || value18(false);
-  }, [enabled, value18]);
+    enabled || restoreFocusHandler(false);
+  }, [enabled, restoreFocusHandler]);
   (0, react_Cl.useEffect)((): Dynamic => {
     let callback: Dynamic = (event?: Dynamic): Dynamic => {
       try {
         if (event.isComposing) {
           (isFindShortcut(event) ||
             findDirectionShortcut(event) !== undefined) &&
-            value10.current.isOurs?.(event.target) !== false &&
+            findStateRef.current.isOurs?.(event.target) !== false &&
             event.preventDefault();
           return;
         }
         isFindShortcut(event)
-          ? value15(event.target) && event.preventDefault()
-          : value17(event);
+          ? handleFocusEvent(event.target) && event.preventDefault()
+          : handleKeyDown(event);
       } catch {
         return;
       }
@@ -488,63 +488,63 @@ function useFindInPage({
     (window as Dynamic).addEventListener("keydown", callback, true);
     return (): Dynamic =>
       (window as Dynamic).removeEventListener("keydown", callback, true);
-  }, [value15, value17]);
-  let value21: Dynamic = (0, react_Cl.useCallback)(
+  }, [handleFocusEvent, handleKeyDown]);
+  let attachFindField: Dynamic = (0, react_Cl.useCallback)(
     (
-      input?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = (input2?: Dynamic): Dynamic => input2(),
+      callbackFn?: Dynamic,
+      callbackOptions?: Dynamic,
+      runGuarded: Dynamic = (runCallback?: Dynamic): Dynamic => runCallback(),
     ): Dynamic => {
-      let value22: Dynamic = guardedNativeEventHandler(
+      let guardedCallback: Dynamic = guardedNativeEventHandler(
           {
-            findKey: (): Dynamic => value15(null),
-            isOpen: (): Dynamic => value10.current.isOpen,
-            step: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-              context((): Dynamic => value16(input2), options2),
-            ownsStepChord: (input2?: Dynamic): Dynamic =>
-              value10.current.ownsStepChord?.(input2) === true,
+            findKey: (): Dynamic => handleFocusEvent(null),
+            isOpen: (): Dynamic => findStateRef.current.isOpen,
+            step: (stepAmount?: Dynamic, stepOptions?: Dynamic): Dynamic =>
+              runGuarded((): Dynamic => handleStep(stepAmount), stepOptions),
+            ownsStepChord: (event?: Dynamic): Dynamic =>
+              findStateRef.current.ownsStepChord?.(event) === true,
           },
           undefined,
-          options,
+          callbackOptions,
         ),
         items: Dynamic = [
           addNativeEventListener(
-            input,
+            callbackFn,
             "keydown",
-            value22,
+            guardedCallback,
             true,
           ),
           addNativeEventListener(
-            input,
+            callbackFn,
             "keydown",
-            value22,
+            guardedCallback,
             false,
           ),
         ];
       return (): Dynamic =>
-        items.forEach((input2?: Dynamic): Dynamic => input2());
+        items.forEach((subscriber?: Dynamic): Dynamic => subscriber());
     },
-    [value15, value16],
+    [handleFocusEvent, handleStep],
   );
   return (0, react_Cl.useMemo)(
     (): Dynamic => ({
       isOpen: value,
-      open: value20,
-      close: value19,
-      step: value16,
-      attach: value21,
+      open: openFind,
+      close: closeFind,
+      step: handleStep,
+      attach: attachFindField,
       bar: {
         open: value,
-        subscribe: value11.subscribe,
-        getStatus: value11.status,
-        fieldRef: value5,
-        onQuery: value11.setQuery,
-        onStep: value16,
-        onClose: value19,
-        onMounted: value4,
+        subscribe: findController.subscribe,
+        getStatus: findController.status,
+        fieldRef: fieldRef,
+        onQuery: findController.setQuery,
+        onStep: handleStep,
+        onClose: closeFind,
+        onMounted: setFrameFindEnabled,
       },
     }),
-    [value, value20, value19, value16, value21, value11],
+    [value, openFind, closeFind, handleStep, attachFindField, findController],
   );
 }
 export {

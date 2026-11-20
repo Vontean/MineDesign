@@ -18,24 +18,24 @@ function foldFindText(text?: Dynamic): Dynamic {
       caseFoldReplacementPattern,
       replaceCaseFoldCharacter,
     );
-  let text2: Dynamic = "";
+  let foldedText: Dynamic = "";
   for (let index: Dynamic = 0; index < text.length; index++) {
-    let value2: Dynamic = text[index].toLowerCase();
-    text2 += value2.length === 1 ? value2 : text[index];
+    let foldedCharacter: Dynamic = text[index].toLowerCase();
+    foldedText += foldedCharacter.length === 1 ? foldedCharacter : text[index];
   }
-  return text2.replace(caseFoldReplacementPattern, replaceCaseFoldCharacter);
+  return foldedText.replace(caseFoldReplacementPattern, replaceCaseFoldCharacter);
 }
 function findTextOffsets(text?: Dynamic, query?: Dynamic): Dynamic {
   if (query === "") return [];
   let value: Dynamic = foldFindText(text),
-    value2: Dynamic = foldFindText(query),
+    foldedQuery: Dynamic = foldFindText(query),
     items: Dynamic = [];
   for (
-    let value3: Dynamic = value.indexOf(value2);
-    value3 !== -1;
-    value3 = value.indexOf(value2, value3 + value2.length)
+    let matchOffset: Dynamic = value.indexOf(foldedQuery);
+    matchOffset !== -1;
+    matchOffset = value.indexOf(foldedQuery, matchOffset + foldedQuery.length)
   )
-    items.push(value3);
+    items.push(matchOffset);
   return items;
 }
 function collapseFindWhitespace(text?: Dynamic): Dynamic {
@@ -75,11 +75,11 @@ function isElementPermanentlyTransparent(element?: Dynamic): Dynamic {
       continue;
     if (
       !(value.getAnimations?.() ?? []).some(
-        (input?: Dynamic): Dynamic =>
-          input.playState === "running" &&
-          input.effect
+        (animation?: Dynamic): Dynamic =>
+          animation.playState === "running" &&
+          animation.effect
             ?.getKeyframes?.()
-            .some((input2?: Dynamic): Dynamic => "opacity" in input2) ===
+            .some((child?: Dynamic): Dynamic => "opacity" in child) ===
             true,
       )
     )
@@ -91,26 +91,26 @@ function isElementPermanentlyTransparent(element?: Dynamic): Dynamic {
 function isFindElementVisible(element?: Dynamic, style?: Dynamic): Dynamic {
   let value: Dynamic = style?.visibility ?? "";
   if (value !== "" && value !== "visible") return false;
-  let value2: Dynamic = element;
+  let currentElement: Dynamic = element;
   for (
     ;
-    value2 !== null &&
-    (value2 === element
+    currentElement !== null &&
+    (currentElement === element
       ? style?.display
-      : value2.ownerDocument.defaultView?.getComputedStyle(value2)
+      : currentElement.ownerDocument.defaultView?.getComputedStyle(currentElement)
           .display) === "contents";
 
   )
-    value2 = value2.parentElement;
-  let value3: Dynamic = value2?.checkVisibility;
-  return value2 === null ||
-    typeof value3 != "function" ||
-    value3.call(value2, {
+    currentElement = currentElement.parentElement;
+  let visibilityCheck: Dynamic = currentElement?.checkVisibility;
+  return currentElement === null ||
+    typeof visibilityCheck != "function" ||
+    visibilityCheck.call(currentElement, {
       opacityProperty: true,
       checkOpacity: true,
     })
     ? true
-    : value3.call(value2, {}) && isElementPermanentlyTransparent(value2);
+    : visibilityCheck.call(currentElement, {}) && isElementPermanentlyTransparent(currentElement);
 }
 function visitRenderedTextRuns(
   element?: Dynamic,
@@ -147,29 +147,29 @@ function visitRenderedTextRuns(
       };
       text = "";
     },
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let data: Dynamic = input.data,
-        value2: Dynamic = state.nodes.push(input) - 1;
-      options !== "none" && (state.collapses = true);
+    visitTextNode: Dynamic = (node?: Dynamic, collapseMode?: Dynamic): Dynamic => {
+      let data: Dynamic = node.data,
+        nodeIndex: Dynamic = state.nodes.push(node) - 1;
+      collapseMode !== "none" && (state.collapses = true);
       for (
-        let index2: Dynamic = 0;
-        index2 < data.length && value > 0;
-        index2++, value--
+        let characterIndex: Dynamic = 0;
+        characterIndex < data.length && value > 0;
+        characterIndex++, value--
       ) {
-        let value3: Dynamic = data[index2];
+        let character: Dynamic = data[characterIndex];
         if (
-          options !== "none" &&
-          (value3 === " " ||
-            value3 === "	" ||
-            value3 === "\r" ||
-            value3 === "\f" ||
-            value3 === "\xA0" ||
-            value3 === "\u2007" ||
-            value3 === "\u202F" ||
-            (value3 ===
+          collapseMode !== "none" &&
+          (character === " " ||
+            character === "	" ||
+            character === "\r" ||
+            character === "\f" ||
+            character === "\xA0" ||
+            character === "\u2007" ||
+            character === "\u202F" ||
+            (character ===
               `
 ` &&
-              options === "all"))
+              collapseMode === "all"))
         ) {
           if (
             text === "" ||
@@ -179,31 +179,31 @@ function visitRenderedTextRuns(
 `
           )
             continue;
-          value3 = " ";
+          character = " ";
         }
-        items.push(value3);
-        state.nodeAt.push(value2);
-        state.offsetAt.push(index2);
-        text = value3;
+        items.push(character);
+        state.nodeAt.push(nodeIndex);
+        state.offsetAt.push(characterIndex);
+        text = character;
       }
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
+    visitElement: Dynamic = (elementNode?: Dynamic): Dynamic => {
       if (
         !flag ||
-        findExcludedTags.has(input.tagName.toUpperCase()) ||
-        skip?.(input) === true
+        findExcludedTags.has(elementNode.tagName.toUpperCase()) ||
+        skip?.(elementNode) === true
       )
         return;
-      let value2: Dynamic = defaultView?.getComputedStyle(input),
-        value3: Dynamic = value2?.display ?? "";
-      if (value3 === "none") return;
-      let value4: Dynamic =
-        input !== element && isFindBlockBoundary(input, value3);
-      value4 && callback();
-      let value5: Dynamic,
-        text2: Dynamic = "none";
+      let computedStyle: Dynamic = defaultView?.getComputedStyle(elementNode),
+        displayMode: Dynamic = computedStyle?.display ?? "";
+      if (displayMode === "none") return;
+      let isBlockBoundary: Dynamic =
+        elementNode !== element && isFindBlockBoundary(elementNode, displayMode);
+      isBlockBoundary && callback();
+      let collapseWhitespace: Dynamic,
+        textCollapseMode: Dynamic = "none";
       for (
-        let firstChild: Dynamic = input.firstChild;
+        let firstChild: Dynamic = elementNode.firstChild;
         firstChild !== null && flag;
         firstChild = firstChild.nextSibling
       ) {
@@ -212,56 +212,56 @@ function visitRenderedTextRuns(
           return;
         }
         firstChild.nodeType === 3
-          ? (value5 === undefined &&
-              ((value5 = isFindElementVisible(input, value2)),
-              (text2 = value5
-                ? findWhitespaceCollapseMode(value2?.whiteSpace ?? "", input)
+          ? (collapseWhitespace === undefined &&
+              ((collapseWhitespace = isFindElementVisible(elementNode, computedStyle)),
+              (textCollapseMode = collapseWhitespace
+                ? findWhitespaceCollapseMode(computedStyle?.whiteSpace ?? "", elementNode)
                 : "none")),
-            value5 && callback2(firstChild, text2))
-          : firstChild.nodeType === 1 && callback3(firstChild);
+            collapseWhitespace && visitTextNode(firstChild, textCollapseMode))
+          : firstChild.nodeType === 1 && visitElement(firstChild);
       }
-      value4 && callback();
+      isBlockBoundary && callback();
     };
-  callback3(element);
+  visitElement(element);
   callback();
 }
 function findRenderedTextRanges(
   element?: Dynamic,
   query?: Dynamic,
-  options: Dynamic = {},
+  rangeOptions: Dynamic = {},
 ): Dynamic {
   let items: Dynamic = [],
-    value: Dynamic = options.limit ?? 1 / 0,
-    value2: Dynamic = element.ownerDocument.defaultView?.StaticRange,
-    value3: Dynamic = collapseFindWhitespace(query);
-  visitRenderedTextRuns(element, options.skip, (input?: Dynamic): Dynamic => {
-    let value4: Dynamic = input.collapses ? value3 : query;
-    for (let value5 of findTextOffsets(input.text, value4) as Dynamic) {
+    value: Dynamic = rangeOptions.limit ?? 1 / 0,
+    StaticRangeConstructor: Dynamic = element.ownerDocument.defaultView?.StaticRange,
+    collapsedQuery: Dynamic = collapseFindWhitespace(query);
+  visitRenderedTextRuns(element, rangeOptions.skip, (textRun?: Dynamic): Dynamic => {
+    let effectiveQuery: Dynamic = textRun.collapses ? collapsedQuery : query;
+    for (let startOffset of findTextOffsets(textRun.text, effectiveQuery) as Dynamic) {
       if (items.length >= value) return false;
-      let value6: Dynamic = value5 + value4.length - 1,
+      let endOffset: Dynamic = startOffset + effectiveQuery.length - 1,
         state: Dynamic = {
-          node: input.nodes[input.nodeAt[value5]],
-          offset: input.offsetAt[value5],
+          node: textRun.nodes[textRun.nodeAt[startOffset]],
+          offset: textRun.offsetAt[startOffset],
         },
-        state2: Dynamic = {
-          node: input.nodes[input.nodeAt[value6]],
-          offset: input.offsetAt[value6] + 1,
+        endPosition: Dynamic = {
+          node: textRun.nodes[textRun.nodeAt[endOffset]],
+          offset: textRun.offsetAt[endOffset] + 1,
         };
-      if (typeof value2 == "function") {
+      if (typeof StaticRangeConstructor == "function") {
         items.push(
-          new value2({
+          new StaticRangeConstructor({
             startContainer: state.node,
             startOffset: state.offset,
-            endContainer: state2.node,
-            endOffset: state2.offset,
+            endContainer: endPosition.node,
+            endOffset: endPosition.offset,
           }),
         );
         continue;
       }
-      let value7: Dynamic = element.ownerDocument.createRange();
-      value7.setStart(state.node, state.offset);
-      value7.setEnd(state2.node, state2.offset);
-      items.push(value7);
+      let range: Dynamic = element.ownerDocument.createRange();
+      range.setStart(state.node, state.offset);
+      range.setEnd(endPosition.node, endPosition.offset);
+      items.push(range);
     }
     return true;
   });
@@ -312,8 +312,8 @@ export function installFindTextRanges(): () => void {
   return () => {
     caseFoldSlowPathPattern = /[\u03a3\ud800-\udfff]/;
     caseFoldReplacementPattern = /[\u00a0\u2007\u202f\u03c2]/g;
-    replaceCaseFoldCharacter = (input?: Dynamic): Dynamic =>
-      input === "\u03C2" ? "\u03C3" : " ";
+    replaceCaseFoldCharacter = (character?: Dynamic): Dynamic =>
+      character === "\u03C2" ? "\u03C3" : " ";
     findBlockBoundaryTags = new Set([
       "ADDRESS",
       "ARTICLE",

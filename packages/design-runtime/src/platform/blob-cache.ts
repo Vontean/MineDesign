@@ -11,81 +11,81 @@ var blobCacheBytes: Dynamic;
 var maxBlobCacheBytes: Dynamic;
 var blobFetchFailures: Dynamic;
 var blobFailureCooldownMs: Dynamic;
-function recordBlobCacheSize(input?: Dynamic, options?: Dynamic): Dynamic {
-  blobCacheSizes.set(input, options);
-  blobCacheBytes += options;
-  for (let [value, value2] of blobCacheSizes as Dynamic) {
+function recordBlobCacheSize(assetUrl?: Dynamic, byteSize?: Dynamic): Dynamic {
+  blobCacheSizes.set(assetUrl, byteSize);
+  blobCacheBytes += byteSize;
+  for (let [value, cachedSize] of blobCacheSizes as Dynamic) {
     if (blobCacheBytes <= maxBlobCacheBytes) break;
-    value !== input &&
+    value !== assetUrl &&
       (blobCacheSizes.delete(value),
       blobFetchPromises.delete(value),
       blobObjectUrls.delete(value),
-      (blobCacheBytes -= value2));
+      (blobCacheBytes -= cachedSize));
   }
 }
 function fetchBlobAsset(
-  input?: Dynamic,
-  options: Dynamic = 8e3,
-  context: Dynamic = {},
+  url?: Dynamic,
+  timeoutMs: Dynamic = 8e3,
+  fetchOptions: Dynamic = {},
 ): Dynamic {
-  let entry: Dynamic = blobFetchPromises.get(input);
+  let entry: Dynamic = blobFetchPromises.get(url);
   if (entry !== undefined) return entry;
-  let entry2: Dynamic = blobFetchFailures.get(input);
+  let recentFailureAt: Dynamic = blobFetchFailures.get(url);
   if (
-    entry2 !== undefined &&
-    context.ignoreRecentFailure !== true &&
-    Date.now() - entry2 < blobFailureCooldownMs
+    recentFailureAt !== undefined &&
+    fetchOptions.ignoreRecentFailure !== true &&
+    Date.now() - recentFailureAt < blobFailureCooldownMs
   )
     return Promise.reject(new Error("blob fetch failed recently"));
   let value: Dynamic = (async (): Promise<Dynamic> => {
-    if (!isBlobAssetUrl(input))
+    if (!isBlobAssetUrl(url))
       throw new Error("not a blob ref");
-    let value2: Dynamic =
+    let abortController: Dynamic =
         typeof AbortController == "function"
           ? new AbortController()
           : undefined,
-      value3: Dynamic = setTimeout((): Dynamic => value2?.abort(), options);
+      timeoutId: Dynamic = setTimeout((): Dynamic => abortController?.abort(), timeoutMs);
     try {
-      let value4: Dynamic = await fetch(input, {
+      let response: Dynamic = await fetch(url, {
         credentials: "same-origin",
-        signal: value2?.signal,
+        signal: abortController?.signal,
       });
-      if (!value4.ok)
+      if (!response.ok)
         throw Object.assign(
-          new Error("blob fetch " + String(value4.status)),
+          new Error("blob fetch " + String(response.status)),
           {
-            status: value4.status,
+            status: response.status,
           },
         );
-      let value5: Dynamic = await value4.blob();
+      let blob: Dynamic = await response.blob();
       return await new Promise(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-          let value6: Dynamic = new FileReader();
-          value6.onload = (): Dynamic => input2(String(value6.result));
-          value6.onerror = (): Dynamic =>
-            options2(new Error("blob read failed"));
-          value6.readAsDataURL(value5);
+        (resolveDataUrl?: Dynamic, rejectDataUrl?: Dynamic): Dynamic => {
+          let reader: Dynamic = new FileReader();
+          reader.onload = (): Dynamic => resolveDataUrl(String(reader.result));
+          reader.onerror = (): Dynamic =>
+            rejectDataUrl(new Error("blob read failed"));
+          reader.readAsDataURL(blob);
         },
       );
     } finally {
-      clearTimeout(value3);
+      clearTimeout(timeoutId);
     }
   })();
-  blobFetchPromises.set(input, value);
+  blobFetchPromises.set(url, value);
   value.then(
     (items?: Dynamic): Dynamic => {
-      blobObjectUrls.set(input, items);
-      recordBlobCacheSize(input, items.length);
+      blobObjectUrls.set(url, items);
+      recordBlobCacheSize(url, items.length);
     },
     (): Dynamic => {
-      blobFetchPromises.delete(input);
-      blobFetchFailures.set(input, Date.now());
+      blobFetchPromises.delete(url);
+      blobFetchFailures.set(url, Date.now());
     },
   );
   return value;
 }
-function getCachedBlobObjectUrl(input?: Dynamic): Dynamic {
-  return blobObjectUrls.get(input);
+function getCachedBlobObjectUrl(assetUrl?: Dynamic): Dynamic {
+  return blobObjectUrls.get(assetUrl);
 }
 export {
   blobCacheBytes,

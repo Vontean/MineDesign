@@ -26,10 +26,10 @@ function removeTemplateInterpolations(text?: Dynamic): Dynamic {
   for (;;) {
     let value: Dynamic = text.indexOf("{{", offset);
     if (value < 0) break;
-    let value2: Dynamic = text.indexOf("}}", value + 2);
-    if (value2 < 0) break;
+    let closingDelimiterIndex: Dynamic = text.indexOf("}}", value + 2);
+    if (closingDelimiterIndex < 0) break;
     result += text.slice(offset, value);
-    offset = value2 + 2;
+    offset = closingDelimiterIndex + 2;
   }
   return result + text.slice(offset);
 }
@@ -46,33 +46,33 @@ function buildStaticFastEditPreview(
   try {
     resolvedHtml = flattenTemplateValues(
       resolvedHtml,
-      (input?: Dynamic): Dynamic =>
-        Object.prototype.hasOwnProperty.call(defaults, input)
-          ? defaults[input]
+      (key?: Dynamic): Dynamic =>
+        Object.prototype.hasOwnProperty.call(defaults, key)
+          ? defaults[key]
           : undefined,
     );
   } catch {}
   let template: Dynamic = parseStaticPreviewTemplate(resolvedHtml),
     placeholders: Dynamic = [],
-    walk: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value2 of Array.from(input.childNodes) as Dynamic) {
-        if (value2.nodeType === 3) {
-          let value5: Dynamic = value2.nodeValue ?? "";
-          value5.includes("{{") &&
-            (value2.nodeValue = removeTemplateInterpolations(value5));
+    walk: Dynamic = (element?: Dynamic): Dynamic => {
+      for (let descendantNode of Array.from(element.childNodes) as Dynamic) {
+        if (descendantNode.nodeType === 3) {
+          let textContent: Dynamic = descendantNode.nodeValue ?? "";
+          textContent.includes("{{") &&
+            (descendantNode.nodeValue = removeTemplateInterpolations(textContent));
           continue;
         }
-        if (value2.nodeType !== 1) {
-          value2.parentNode?.removeChild(value2);
+        if (descendantNode.nodeType !== 1) {
+          descendantNode.parentNode?.removeChild(descendantNode);
           continue;
         }
-        let value3: Dynamic = value2,
-          localName: Dynamic = value3.localName;
+        let currentElement: Dynamic = descendantNode,
+          localName: Dynamic = currentElement.localName;
         if (localName === "sc-helmet") {
-          for (let value5 of Array.from(value3.children) as Dynamic)
-            value5.localName === "style" &&
-              placeholders.push(value5.outerHTML);
-          value3.remove();
+          for (let childElement of Array.from(currentElement.children) as Dynamic)
+            childElement.localName === "style" &&
+              placeholders.push(childElement.outerHTML);
+          currentElement.remove();
           continue;
         }
         if (
@@ -86,114 +86,114 @@ function buildStaticFastEditPreview(
           localName === "object" ||
           localName === "embed"
         ) {
-          value3.remove();
+          currentElement.remove();
           continue;
         }
         if (localName === "sc-if") {
-          let value5: Dynamic = (
-            value3.getAttribute("hint-placeholder-val") ?? ""
+          let attributeValue: Dynamic = (
+            currentElement.getAttribute("hint-placeholder-val") ?? ""
           ).replace(/[{}\s]/g, "");
-          if (value5 === "false" || value5 === "0" || value5 === "null") {
-            value3.remove();
+          if (attributeValue === "false" || attributeValue === "0" || attributeValue === "null") {
+            currentElement.remove();
             continue;
           }
-          walk(value3);
-          value3.replaceWith(...Array.from(value3.childNodes));
+          walk(currentElement);
+          currentElement.replaceWith(...Array.from(currentElement.childNodes));
           continue;
         }
         if (localName === "sc-for") {
-          let value5: Dynamic = Math.max(
+          let repeatCount: Dynamic = Math.max(
             1,
             Math.min(
               6,
               parseInt(
-                value3.getAttribute("hint-placeholder-count") ?? "1",
+                currentElement.getAttribute("hint-placeholder-count") ?? "1",
                 10,
               ) || 1,
             ),
           );
-          walk(value3);
+          walk(currentElement);
           let items: Dynamic = [];
-          for (let index: Dynamic = 0; index < value5; index++)
-            for (let value6 of Array.from(value3.childNodes) as Dynamic)
-              items.push(value6.cloneNode(true));
-          value3.replaceWith(...items);
+          for (let index: Dynamic = 0; index < repeatCount; index++)
+            for (let childNode of Array.from(currentElement.childNodes) as Dynamic)
+              items.push(childNode.cloneNode(true));
+          currentElement.replaceWith(...items);
           continue;
         }
         if (localName === "dc-import" || localName === "x-import") {
-          let value5: Dynamic = (document as Dynamic).createElement("div");
-          value5.className = "ask-ph";
-          let [value6, value7]: Dynamic = (
-            value3.getAttribute("hint-size") ?? ""
+          let placeholderElement: Dynamic = (document as Dynamic).createElement("div");
+          placeholderElement.className = "ask-ph";
+          let [placeholderWidth, placeholderHeight]: Dynamic = (
+            currentElement.getAttribute("hint-size") ?? ""
           )
             .split(",")
-            .map((input2?: Dynamic): Dynamic => input2.trim());
-          value5.setAttribute(
+            .map((token?: Dynamic): Dynamic => token.trim());
+          placeholderElement.setAttribute(
             "style",
-            removeTemplateInterpolations(value3.getAttribute("style") ?? "") +
+            removeTemplateInterpolations(currentElement.getAttribute("style") ?? "") +
               ";width:" +
-              (value6 !== undefined && PLACEHOLDER_SIZE_PATTERN.test(value6)
-                ? value6
+              (placeholderWidth !== undefined && PLACEHOLDER_SIZE_PATTERN.test(placeholderWidth)
+                ? placeholderWidth
                 : "100%") +
               ";height:" +
-              (value7 !== undefined && PLACEHOLDER_SIZE_PATTERN.test(value7)
-                ? value7
+              (placeholderHeight !== undefined && PLACEHOLDER_SIZE_PATTERN.test(placeholderHeight)
+                ? placeholderHeight
                 : "64px"),
           );
-          value3.replaceWith(value5);
+          currentElement.replaceWith(placeholderElement);
           continue;
         }
-        let value4: Dynamic =
-          value3.namespaceURI === "http://www.w3.org/2000/svg";
-        for (let value5 of Array.from(value3.attributes) as Dynamic) {
-          let value6: Dynamic = value5.name.startsWith(ScCamelValue)
+        let isSvgElement: Dynamic =
+          currentElement.namespaceURI === "http://www.w3.org/2000/svg";
+        for (let attribute of Array.from(currentElement.attributes) as Dynamic) {
+          let attributeName: Dynamic = attribute.name.startsWith(ScCamelValue)
               ? kebabToCamelCase(
-                  value5.name.slice(ScCamelValue.length),
+                  attribute.name.slice(ScCamelValue.length),
                 )
-              : value5.name,
-            value7: Dynamic = value6.toLowerCase();
+              : attribute.name,
+            normalizedName: Dynamic = attributeName.toLowerCase();
           if (
-            value7.startsWith("on") ||
-            value7.startsWith("style-") ||
-            value7.startsWith("hint-") ||
-            value7.startsWith("sc-") ||
-            value7 === "srcdoc" ||
-            value7 === "contenteditable" ||
-            value7 === "autofocus"
+            normalizedName.startsWith("on") ||
+            normalizedName.startsWith("style-") ||
+            normalizedName.startsWith("hint-") ||
+            normalizedName.startsWith("sc-") ||
+            normalizedName === "srcdoc" ||
+            normalizedName === "contenteditable" ||
+            normalizedName === "autofocus"
           ) {
-            value3.removeAttribute(value5.name);
+            currentElement.removeAttribute(attribute.name);
             continue;
           }
-          let value8: Dynamic = value5.value;
-          if (value8.includes("{{"))
-            if (value7 === "style")
-              value8 = value8
+          let attributeText: Dynamic = attribute.value;
+          if (attributeText.includes("{{"))
+            if (normalizedName === "style")
+              attributeText = attributeText
                 .split(";")
-                .filter((input2?: Dynamic): Dynamic => !input2.includes("{{"))
+                .filter((attributeValue?: Dynamic): Dynamic => !attributeValue.includes("{{"))
                 .join(";");
             else {
-              value3.removeAttribute(value5.name);
+              currentElement.removeAttribute(attribute.name);
               continue;
             }
-          let value9: Dynamic =
-            value5.name.startsWith(ScCamelValue) &&
-            !(value4 && CASE_SENSITIVE_SVG_ATTRIBUTES.has(value6))
-              ? value6 === "className"
+          let outputAttributeName: Dynamic =
+            attribute.name.startsWith(ScCamelValue) &&
+            !(isSvgElement && CASE_SENSITIVE_SVG_ATTRIBUTES.has(attributeName))
+              ? attributeName === "className"
                 ? "class"
-                : value6 === "htmlFor"
+                : attributeName === "htmlFor"
                   ? "for"
-                  : value5.name.slice(ScCamelValue.length)
-              : value5.name;
-          if (value9 !== value5.name) {
-            value3.removeAttribute(value5.name);
+                  : attribute.name.slice(ScCamelValue.length)
+              : attribute.name;
+          if (outputAttributeName !== attribute.name) {
+            currentElement.removeAttribute(attribute.name);
             try {
-              value3.setAttribute(value9, value8);
+              currentElement.setAttribute(outputAttributeName, attributeText);
             } catch {}
           } else
-            value8 !== value5.value &&
-              value3.setAttribute(value5.name, value8);
+            attributeText !== attribute.value &&
+              currentElement.setAttribute(attribute.name, attributeText);
         }
-        walk(value3);
+        walk(currentElement);
       }
     };
   walk(template.content);
@@ -222,9 +222,9 @@ export {
 export function installFastEditStaticPreview(): () => void {
   return () => {
     FAST_EDIT_ARTBOARD_SECTION_OPEN = '<section id="artboard">';
-    wrapFastEditTemplate = (input?: Dynamic): Dynamic =>
+    wrapFastEditTemplate = (templateHtml?: Dynamic): Dynamic =>
       FAST_EDIT_ARTBOARD_SECTION_OPEN +
-      encodeCamelCaseAttributes(input) +
+      encodeCamelCaseAttributes(templateHtml) +
       "</section>";
     CASE_SENSITIVE_SVG_ATTRIBUTES = new Set([
       "viewBox",

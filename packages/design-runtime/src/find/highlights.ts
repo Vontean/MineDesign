@@ -7,8 +7,8 @@ var findHighlightName: Dynamic;
 var activeFindHighlightName: Dynamic;
 var findHighlightStyles: Dynamic;
 var findHighlightStylesheetCache: Dynamic;
-function getFindHighlightApi(document2?: Dynamic): Dynamic {
-  let defaultView: Dynamic = document2.defaultView,
+function getFindHighlightApi(document?: Dynamic): Dynamic {
+  let defaultView: Dynamic = document.defaultView,
     value: Dynamic = defaultView?.CSS?.highlights;
   return !defaultView ||
     !value ||
@@ -22,50 +22,50 @@ function getFindHighlightApi(document2?: Dynamic): Dynamic {
       };
 }
 function adoptFindStylesheet(
-  document2?: Dynamic,
+  document?: Dynamic,
   stylesheet?: Dynamic,
 ): Dynamic {
-  if (!document2.adoptedStyleSheets.includes(stylesheet))
+  if (!document.adoptedStyleSheets.includes(stylesheet))
     try {
-      document2.adoptedStyleSheets.push(stylesheet);
+      document.adoptedStyleSheets.push(stylesheet);
     } catch {
-      document2.adoptedStyleSheets = [
-        ...document2.adoptedStyleSheets,
+      document.adoptedStyleSheets = [
+        ...document.adoptedStyleSheets,
         stylesheet,
       ];
     }
 }
 function unadoptFindStylesheet(
-  document2?: Dynamic,
+  document?: Dynamic,
   stylesheet?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = document2.adoptedStyleSheets.indexOf(stylesheet);
+  let value: Dynamic = document.adoptedStyleSheets.indexOf(stylesheet);
   if (value !== -1)
     try {
-      document2.adoptedStyleSheets.splice(value, 1);
+      document.adoptedStyleSheets.splice(value, 1);
     } catch {
-      document2.adoptedStyleSheets = document2.adoptedStyleSheets.filter(
-        (input?: Dynamic): Dynamic => input !== stylesheet,
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        (stylesheetCandidate?: Dynamic): Dynamic => stylesheetCandidate !== stylesheet,
       );
     }
 }
 function applyFindHighlights(
-  document2?: Dynamic,
+  document?: Dynamic,
   ranges?: Dynamic,
   activeRange?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = getFindHighlightApi(document2);
+  let value: Dynamic = getFindHighlightApi(document);
   if (value === null) return false;
-  let entry: Dynamic = findHighlightStylesheetCache.get(document2);
+  let entry: Dynamic = findHighlightStylesheetCache.get(document);
   entry === undefined &&
     ((entry = new value.CSSStyleSheet()),
     entry.replaceSync(findHighlightStyles),
-    findHighlightStylesheetCache.set(document2, entry));
-  adoptFindStylesheet(document2, entry);
+    findHighlightStylesheetCache.set(document, entry));
+  adoptFindStylesheet(document, entry);
   value.highlights.set(
     findHighlightName,
     new value.Highlight(
-      ...ranges.filter((input?: Dynamic): Dynamic => input !== activeRange),
+      ...ranges.filter((range?: Dynamic): Dynamic => range !== activeRange),
     ),
   );
   activeRange === null
@@ -76,14 +76,14 @@ function applyFindHighlights(
       );
   return true;
 }
-function clearFindHighlights(document2?: Dynamic): Dynamic {
-  let value: Dynamic = getFindHighlightApi(document2);
+function clearFindHighlights(document?: Dynamic): Dynamic {
+  let value: Dynamic = getFindHighlightApi(document);
   value?.highlights.delete(findHighlightName);
   value?.highlights.delete(activeFindHighlightName);
-  let entry: Dynamic = findHighlightStylesheetCache.get(document2);
+  let entry: Dynamic = findHighlightStylesheetCache.get(document);
   entry !== undefined &&
-    (unadoptFindStylesheet(document2, entry),
-    findHighlightStylesheetCache.delete(document2));
+    (unadoptFindStylesheet(document, entry),
+    findHighlightStylesheetCache.delete(document));
 }
 export {
   activeFindHighlightName,
