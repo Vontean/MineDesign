@@ -236,14 +236,14 @@ function useCaptureOverlayOpener(
     rootRef.current = rootElement ?? null;
     let value = rootElement?.ownerDocument ?? document,
       activeElement = value.activeElement,
-      value2 =
+      opener =
         activeElement && activeElement !== value.body
           ? (activeElement as HTMLElement)
           : null;
-    openerRef.current = value2;
+    openerRef.current = opener;
     if (ownerAncestorsRef) {
       ownerAncestorsRef.current = getOverlayOwnerAncestors(
-        value2,
+        opener,
       );
     }
     onCaptured?.();
@@ -300,9 +300,9 @@ function useOverlayFocusReturn(
   );
 }
 function resolveConnectedRefElement(
-  input: React.RefObject<HTMLElement | null> | null | undefined,
+  elementRef: React.RefObject<HTMLElement | null> | null | undefined,
 ): HTMLElement | null {
-  let value = input?.current ?? null;
+  let value = elementRef?.current ?? null;
   if (value?.isConnected) {
     return value;
   } else {
@@ -342,23 +342,23 @@ function useOverlayFinalFocus(
     }
     let value = rootElement?.ownerDocument ?? document;
     if (!openerRef.current) {
-      let value4 = fallbackTriggerRef?.current ?? null;
+      let fallbackTrigger = fallbackTriggerRef?.current ?? null;
       fallbackOpenerRef.current =
-        value4 !== null &&
-        value4.isConnected &&
-        !popupRef.current?.contains(value4)
-          ? value4
+        fallbackTrigger !== null &&
+        fallbackTrigger.isConnected &&
+        !popupRef.current?.contains(fallbackTrigger)
+          ? fallbackTrigger
           : null;
     }
     if (!takeFocus) {
       return;
     }
-    let value2 = asElement(value.activeElement),
-      value3 = value2 && value2 !== value.body ? value2 : null;
-    if (!value3 || popupRef.current?.contains(value3)) {
+    let activeNode = asElement(value.activeElement),
+      activeTarget = activeNode && activeNode !== value.body ? activeNode : null;
+    if (!activeTarget || popupRef.current?.contains(activeTarget)) {
       return;
     }
-    blurWithSafeRelatedTarget(value3 as FocusableElement);
+    blurWithSafeRelatedTarget(activeTarget as FocusableElement);
   }, [open, takeFocus, fallbackTriggerRef, rootElement]);
   let skipRestoreOnOutsideFocus = !takeFocus,
     finalFocus = reactOverlayFocus.useCallback(() => {
@@ -377,7 +377,7 @@ function useOverlayFinalFocus(
       if (openerRef.current) {
         if (!openerRef.current.isConnected) {
           let value = ownerAncestorsRef.current.find(
-            (input) => input.isConnected,
+            (ancestor) => ancestor.isConnected,
           );
           if (value) {
             return resolveFinalFocusTarget(value, popupRef.current);
@@ -435,16 +435,16 @@ function resolveFinalFocusTarget(
   }
   return focusTarget;
 }
-function isTextEntryTarget(input: Element): boolean {
-  return input.matches(TEXT_ENTRY_SELECTOR);
+function isTextEntryTarget(element: Element): boolean {
+  return element.matches(TEXT_ENTRY_SELECTOR);
 }
 function createOverlayStack(): OverlayStack {
   let overlays: InnerOverlay[] = [];
   return {
-    register: (input: InnerOverlay) => {
-      overlays.push(input);
+    register: (overlay: InnerOverlay) => {
+      overlays.push(overlay);
       return () => {
-        let value = overlays.lastIndexOf(input);
+        let value = overlays.lastIndexOf(overlay);
         if (value !== -1) {
           overlays.splice(value, 1);
         }
@@ -452,9 +452,9 @@ function createOverlayStack(): OverlayStack {
     },
     topmostOpen: () => {
       for (let value = overlays.length - 1; value >= 0; value -= 1) {
-        let value2 = overlays[value];
-        if (value2?.isOpen()) {
-          return value2;
+        let overlay = overlays[value];
+        if (overlay?.isOpen()) {
+          return overlay;
         }
       }
     },
@@ -476,9 +476,9 @@ function useRegisterInnerOverlay(overlay: InnerOverlay): void {
     });
   }, [stack]);
 }
-function isDocumentCurrentTarget(input: OverlayEvent | undefined): boolean {
+function isDocumentCurrentTarget(event: OverlayEvent | undefined): boolean {
   return (
-    (input?.currentTarget as Node | null | undefined)?.nodeType ===
+    (event?.currentTarget as Node | null | undefined)?.nodeType ===
     DOCUMENT_NODE_TYPE
   );
 }
@@ -592,29 +592,29 @@ function useClickToFocus(
           if (event.button !== 0 || readOnly || disabled) {
             return;
           }
-          let { target: value, currentTarget: value2 } =
+          let { target: value, currentTarget: focusRegion } =
             event as React.MouseEvent<HTMLElement> & {
               target: HTMLElement;
             };
-          if (!value2.contains(value)) {
+          if (!focusRegion.contains(value)) {
             return;
           }
-          if (value !== value2) {
+          if (value !== focusRegion) {
             if (ignoreTargetCallback?.(value)) {
               return;
             }
             let ancestor = value.closest(INTERACTIVE_CLICK_TARGET_SELECTOR);
             if (
               ancestor &&
-              ancestor !== value2 &&
-              value2.contains(ancestor)
+              ancestor !== focusRegion &&
+              focusRegion.contains(ancestor)
             ) {
               return;
             }
           }
-          let { offsetX: nativeEvent, offsetY: nativeEvent2 } =
+          let { offsetX: nativeEvent, offsetY: offsetY } =
             event.nativeEvent;
-          if (isScrollbarPointerPosition(nativeEvent, nativeEvent2, value)) {
+          if (isScrollbarPointerPosition(nativeEvent, offsetY, value)) {
             return;
           }
           event.preventDefault();
@@ -679,209 +679,209 @@ function createPassiveOpenState(): PassiveOpenGateState {
   let value: MenuChange | undefined,
     flag = true,
     text: PassiveOpenLevel = "off",
-    value2: HTMLElement | null = null,
-    value3: FocusableElement | null = null,
-    flag2 = false,
-    value4: PopupFocus | null | undefined = undefined,
-    value5: InitialPopupFocus | undefined = undefined,
-    flag3 = false,
-    value6: HTMLElement | null = null,
-    value7: HTMLElement | null = null,
-    value8: Layers.PassiveOpenInput | null = null,
-    value9: boolean | undefined = undefined,
-    flag4 = false,
-    flag5 = false,
+    popup: HTMLElement | null = null,
+    pendingFocusReturn: FocusableElement | null = null,
+    captureOpenerOnMount = false,
+    finalFocus: PopupFocus | null | undefined = undefined,
+    initialFocus: InitialPopupFocus | undefined = undefined,
+    shouldRestoreOpener = false,
+    opener: HTMLElement | null = null,
+    trigger: HTMLElement | null = null,
+    openInput: Layers.PassiveOpenInput | null = null,
+    previousControlledOpen: boolean | undefined = undefined,
+    openedThroughChangeEvent = false,
+    isOpen = false,
     values = new Set<() => void>(),
-    callback = (input: PassiveOpenLevel, options: boolean) => {
-      if (input === text) {
+    callback = (nextLevel: PassiveOpenLevel, notify: boolean) => {
+      if (nextLevel === text) {
         return;
       }
-      text = input;
-      if (options) {
-        values.forEach((input2: () => void) => {
-          input2();
+      text = nextLevel;
+      if (notify) {
+        values.forEach((listener: () => void) => {
+          listener();
         });
       }
     },
-    callback2 = () => {
-      flag3 = false;
-      value6 = null;
-      value7 = null;
-      value8 = null;
-      flag2 = false;
+    resetOpenerState = () => {
+      shouldRestoreOpener = false;
+      opener = null;
+      trigger = null;
+      openInput = null;
+      captureOpenerOnMount = false;
     };
   return {
     cell: {
       getLevel: () => text,
-      subscribe(input: () => void): () => void {
-        values.add(input);
+      subscribe(listener: () => void): () => void {
+        values.add(listener);
         return () => {
-          values.delete(input);
+          values.delete(listener);
         };
       },
       engage(): void {
         if (text === "declared") {
-          flag3 = false;
+          shouldRestoreOpener = false;
         }
         callback("off", true);
       },
       registerPopup(element: HTMLElement | null): void {
-        value2 = element;
+        popup = element;
         if (element !== null) {
-          if (flag2) {
-            flag2 = false;
-            value6 = getFocusedElement(element.ownerDocument);
+          if (captureOpenerOnMount) {
+            captureOpenerOnMount = false;
+            opener = getFocusedElement(element.ownerDocument);
           }
-        } else if (!flag5) {
+        } else if (!isOpen) {
           callback("off", false);
-          if (value3 !== null) {
-            let value10 = value3;
-            value3 = null;
+          if (pendingFocusReturn !== null) {
+            let focusTarget = pendingFocusReturn;
+            pendingFocusReturn = null;
             restorePassiveOverlayFocus(
-              value10.ownerDocument,
+              focusTarget.ownerDocument,
               null,
-              value10,
+              focusTarget,
               false,
             );
           }
         }
       },
       declareFocusProps(
-        input: InitialPopupFocus | undefined,
-        options: PopupFocus | null | undefined,
+        nextInitialFocus: InitialPopupFocus | undefined,
+        nextFinalFocus: PopupFocus | null | undefined,
       ): void {
-        value4 = options;
-        let value10 = input !== value5;
-        value5 = input;
-        if (!value10 || !flag5 || value2 !== null || value8 === null) {
+        finalFocus = nextFinalFocus;
+        let initialFocusChanged = nextInitialFocus !== initialFocus;
+        initialFocus = nextInitialFocus;
+        if (!initialFocusChanged || !isOpen || popup !== null || openInput === null) {
           return;
         }
-        let value11 = declinesInitialFocus(input, value8.type);
-        if (value11 === (text === "declared")) {
+        let declinesFocus = declinesInitialFocus(nextInitialFocus, openInput.type);
+        if (declinesFocus === (text === "declared")) {
           return;
         }
-        let value12: PassiveOpenLevel = value11
+        let nextLevel: PassiveOpenLevel = declinesFocus
           ? "declared"
-          : value8.byHover
+          : openInput.byHover
             ? "hover"
             : "off";
-        flag3 = value12 !== "off";
-        callback(value12, false);
+        shouldRestoreOpener = nextLevel !== "off";
+        callback(nextLevel, false);
       },
-      getPopup: () => value2,
-      getTrigger: () => value7,
+      getPopup: () => popup,
+      getTrigger: () => trigger,
     },
     renderedWith(
-      input: boolean | undefined,
-      options: MenuChange | undefined,
-      context: boolean,
+      controlledOpen: boolean | undefined,
+      notifyOpenChange: MenuChange | undefined,
+      allowPassiveHover: boolean,
     ): void {
-      value = options;
-      flag = context;
-      if (value9 !== true && input === true && !flag4) {
-        flag5 = true;
-        value3 = null;
-        if (value2 !== null) {
-          value6 = getFocusedElement(value2.ownerDocument);
+      value = notifyOpenChange;
+      flag = allowPassiveHover;
+      if (previousControlledOpen !== true && controlledOpen === true && !openedThroughChangeEvent) {
+        isOpen = true;
+        pendingFocusReturn = null;
+        if (popup !== null) {
+          opener = getFocusedElement(popup.ownerDocument);
         } else {
-          value6 = null;
-          flag2 = true;
+          opener = null;
+          captureOpenerOnMount = true;
         }
-        value7 = null;
-        value8 = {
+        trigger = null;
+        openInput = {
           type: "",
           byHover: false,
         };
-        flag3 = declinesInitialFocus(value5, "");
-        callback(flag3 ? "declared" : "off", false);
-      } else if (value9 === true && input === false) {
-        flag5 = false;
-        flag4 = false;
-        value3 =
-          text === "declared" && flag3
-            ? resolvePassiveFinalFocus(value4, value6)
+        shouldRestoreOpener = declinesInitialFocus(initialFocus, "");
+        callback(shouldRestoreOpener ? "declared" : "off", false);
+      } else if (previousControlledOpen === true && controlledOpen === false) {
+        isOpen = false;
+        openedThroughChangeEvent = false;
+        pendingFocusReturn =
+          text === "declared" && shouldRestoreOpener
+            ? resolvePassiveFinalFocus(finalFocus, opener)
             : null;
-        callback2();
+        resetOpenerState();
         if (text === "hover") {
           callback("off", false);
         }
       }
-      value9 = input;
+      previousControlledOpen = controlledOpen;
     },
     onOpenChange(
-      input: boolean,
-      options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+      nextOpen: boolean,
+      changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
     ): void {
-      value?.(input, options);
-      if (options.isCanceled === true) {
+      value?.(nextOpen, changeDetails);
+      if (changeDetails.isCanceled === true) {
         return;
       }
-      flag2 = false;
-      let value10 = flag && options.reason === PASSIVE_HOVER_OPEN_REASON,
-        value11 =
-          options.trigger?.ownerDocument ??
-          value2?.ownerDocument ??
+      captureOpenerOnMount = false;
+      let byHover = flag && changeDetails.reason === PASSIVE_HOVER_OPEN_REASON,
+        ownerDocument =
+          changeDetails.trigger?.ownerDocument ??
+          popup?.ownerDocument ??
           getDocumentIfAvailable();
-      if (!input) {
-        flag5 = false;
-        flag4 = false;
-        if (flag3 && value11 !== undefined) {
-          let value15 = resolvePassiveFinalFocus(
-            value4,
-            options.reason === PASSIVE_FOCUS_OUT_REASON && value7 !== null
-              ? value7
-              : value6,
+      if (!nextOpen) {
+        isOpen = false;
+        openedThroughChangeEvent = false;
+        if (shouldRestoreOpener && ownerDocument !== undefined) {
+          let focusTarget = resolvePassiveFinalFocus(
+            finalFocus,
+            changeDetails.reason === PASSIVE_FOCUS_OUT_REASON && trigger !== null
+              ? trigger
+              : opener,
           );
-          if (value15 !== null) {
-            restorePassiveOverlayFocus(value11, value2, value15, !value10);
+          if (focusTarget !== null) {
+            restorePassiveOverlayFocus(ownerDocument, popup, focusTarget, !byHover);
           }
         }
-        callback2();
+        resetOpenerState();
         if (text === "hover") {
           callback("off", true);
         }
         return;
       }
-      flag5 = true;
-      flag4 = true;
-      value3 = null;
-      let value12 =
-          value11 !== undefined &&
-          elementIsWithin(value11.activeElement, value2),
-        value13 = classifyOpenInputType(options.event),
-        value14: PassiveOpenLevel = value12
+      isOpen = true;
+      openedThroughChangeEvent = true;
+      pendingFocusReturn = null;
+      let focusInsidePopup =
+          ownerDocument !== undefined &&
+          elementIsWithin(ownerDocument.activeElement, popup),
+        inputType = classifyOpenInputType(changeDetails.event),
+        nextLevel: PassiveOpenLevel = focusInsidePopup
           ? "off"
-          : declinesInitialFocus(value5, value13)
+          : declinesInitialFocus(initialFocus, inputType)
             ? "declared"
-            : value10
+            : byHover
               ? "hover"
               : "off";
-      if (!(value10 && value12)) {
-        value6 = getFocusedElement(value11);
-        value7 = asElement(
-          options.trigger ?? null,
+      if (!(byHover && focusInsidePopup)) {
+        opener = getFocusedElement(ownerDocument);
+        trigger = asElement(
+          changeDetails.trigger ?? null,
         ) as HTMLElement | null;
-        value8 = value12
+        openInput = focusInsidePopup
           ? null
           : {
-              type: value13,
-              byHover: value10,
+              type: inputType,
+              byHover: byHover,
             };
-        flag3 = value14 !== "off";
+        shouldRestoreOpener = nextLevel !== "off";
       }
-      callback(value14, true);
+      callback(nextLevel, true);
     },
   };
 }
-function classifyOpenInputType(input?: Event): PopupInputKind {
-  if (input === undefined) {
+function classifyOpenInputType(event?: Event): PopupInputKind {
+  if (event === undefined) {
     return "";
   }
-  if ("key" in input) {
+  if ("key" in event) {
     return "keyboard";
   }
-  let { type: value } = input;
-  if (value === "click" && (input as MouseEvent).detail === 0) {
+  let { type: value } = event;
+  if (value === "click" && (event as MouseEvent).detail === 0) {
     return "keyboard";
   }
   if (
@@ -932,18 +932,18 @@ function resolvePassiveFinalFocus(
   }
   return finalFocus.current ?? fallbackElement;
 }
-function getFocusedElement(input: Document | undefined): HTMLElement | null {
+function getFocusedElement(ownerDocument: Document | undefined): HTMLElement | null {
   let value = asElement(
-    input?.activeElement ?? null,
+    ownerDocument?.activeElement ?? null,
   ) as HTMLElement | null;
-  if (value === null || value === input?.body) {
+  if (value === null || value === ownerDocument?.body) {
     return null;
   } else {
     return value;
   }
 }
-function elementIsWithin(input: Node | null, options: Node | null): boolean {
-  return input !== null && options !== null && options.contains(input);
+function elementIsWithin(node: Node | null, container: Node | null): boolean {
+  return node !== null && container !== null && container.contains(node);
 }
 function restorePassiveOverlayFocus(
   documentObject: Document,
@@ -961,12 +961,12 @@ function restorePassiveOverlayFocus(
       opener.isConnected &&
       opener !== activeElement
     ) {
-      let value2 =
+      let elementToBlur =
         blurBeforeRestore && value
           ? asElement(activeElement)
           : null;
-      if (value2 !== null) {
-        blurWithSafeRelatedTarget(value2 as FocusableElement);
+      if (elementToBlur !== null) {
+        blurWithSafeRelatedTarget(elementToBlur as FocusableElement);
       }
       opener.focus({
         preventScroll: true,
@@ -974,12 +974,12 @@ function restorePassiveOverlayFocus(
     }
   });
 }
-function usePassiveOpenContext(input: boolean): {
+function usePassiveOpenContext(isRoot: boolean): {
   cell: PassiveOpenCell | null;
   root: PassiveOpenCell | null;
 } {
   let value = reactPassiveOpen.useContext(passiveOpenStateContext);
-  if (input) {
+  if (isRoot) {
     return {
       cell: value,
       root: value,
@@ -1009,30 +1009,30 @@ function PassiveOpenGate({
       cell === null ? getPassiveOffSnapshot : cell.getLevel,
       getPassiveOffSnapshot,
     ),
-    value2 =
+    effectiveLevel =
       cell === null ? "off" : nested && value === "hover" ? "off" : value;
   return (
-    <passiveFocusDeclinedContext.Provider value={value2 === "declared"}>
-      {[value2 === "declared" && !nested && cell !== null ? (
+    <passiveFocusDeclinedContext.Provider value={effectiveLevel === "declared"}>
+      {[effectiveLevel === "declared" && !nested && cell !== null ? (
           <PassiveOpenKeyboardBridge cell={cell} />
         ) : null, children(
-          cell === null || value2 === "off"
+          cell === null || effectiveLevel === "off"
             ? unchangedPopupProps
-            : value2 === "hover"
-              ? (input: PassivePopupProps) => ({
-                  ...input,
+            : effectiveLevel === "hover"
+              ? (popupProps: PassivePopupProps) => ({
+                  ...popupProps,
                   tabIndex: undefined,
                   onFocus(
-                    input2: Parameters<
+                    focusEvent: Parameters<
                       NonNullable<PassivePopupProps["onFocus"]>
                     >[0],
                   ): void {
-                    input.onFocus?.(input2);
+                    popupProps.onFocus?.(focusEvent);
                     cell.engage();
                   },
                 })
-              : (input: PassivePopupProps) => ({
-                  ...input,
+              : (popupProps: PassivePopupProps) => ({
+                  ...popupProps,
                   tabIndex: undefined,
                   finalFocus: false,
                   onMouseDown(
@@ -1040,7 +1040,7 @@ function PassiveOpenGate({
                       NonNullable<PassivePopupProps["onMouseDown"]>
                     >[0],
                   ): void {
-                    input.onMouseDown?.(event);
+                    popupProps.onMouseDown?.(event);
                     if (!shouldAllowPopupPointerFocus(event)) {
                       event.preventDefault();
                     }
@@ -1050,7 +1050,7 @@ function PassiveOpenGate({
                       NonNullable<PassivePopupProps["onKeyDown"]>
                     >[0],
                   ): void {
-                    input.onKeyDown?.(event);
+                    popupProps.onKeyDown?.(event);
                     if (
                       !event.nativeEvent.isComposing &&
                       passiveOpenEngagementKeys.has(event.key)
@@ -1090,22 +1090,22 @@ function PassiveOpenKeyboardBridge({
       ) {
         return;
       }
-      let value2 = cell.getPopup(),
-        value3 =
-          value2 === null
+      let popup = cell.getPopup(),
+        enabledItems =
+          popup === null
             ? []
             : Array.from(
-                value2.querySelectorAll(
+                popup.querySelectorAll(
                   '[role^="menuitem"]:not([data-disabled])',
                 ),
               ),
-        value4 =
-          event.key === "ArrowDown" ? value3[0] : value3[value3.length - 1],
-        value5 = asElement(value4 ?? null) as HTMLElement | null;
-      if (value5 !== null && value5.hasAttribute("data-highlighted")) {
+        selectedItem =
+          event.key === "ArrowDown" ? enabledItems[0] : enabledItems[enabledItems.length - 1],
+        focusTarget = asElement(selectedItem ?? null) as HTMLElement | null;
+      if (focusTarget !== null && focusTarget.hasAttribute("data-highlighted")) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        value5.focus({
+        focusTarget.focus({
           preventScroll: true,
         });
       }
@@ -1118,18 +1118,18 @@ function PassiveOpenKeyboardBridge({
   return null;
 }
 function isCanceledOpenWithinTrigger(
-  input: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+  changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
 ): boolean {
-  if (input.reason !== "cancel-open") {
+  if (changeDetails.reason !== "cancel-open") {
     return false;
   }
-  let value = input.trigger ?? null,
-    value2 = input.event?.target ?? null;
-  if (value === null || value2 === null || !("nodeType" in value2)) {
+  let value = changeDetails.trigger ?? null,
+    eventTarget = changeDetails.event?.target ?? null;
+  if (value === null || eventTarget === null || !("nodeType" in eventTarget)) {
     return false;
   }
-  let value3 = value2 as Node;
-  if (value.contains(value3)) {
+  let targetNode = eventTarget as Node;
+  if (value.contains(targetNode)) {
     return true;
   }
   let attribute = value.getAttribute("aria-controls");
@@ -1137,7 +1137,7 @@ function isCanceledOpenWithinTrigger(
     (attribute
       ? value.ownerDocument.getElementById(attribute)
       : null
-    )?.contains(value3) ?? false
+    )?.contains(targetNode) ?? false
   );
 }
 function useTrackedMenuTrigger(
@@ -1152,20 +1152,20 @@ function useTrackedMenuTrigger(
     triggerRef: triggerRef,
     onOpenChange: useEventCallback(
       (
-        input: boolean,
-        options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+        nextOpen: boolean,
+        changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
       ) => {
         if (
-          !input &&
+          !nextOpen &&
           refuseCanceledTriggerOpen &&
-          isCanceledOpenWithinTrigger(options)
+          isCanceledOpenWithinTrigger(changeDetails)
         ) {
-          options.cancel?.();
+          changeDetails.cancel?.();
           return;
         }
         triggerRef.current =
-          (options.trigger as HTMLElement | undefined) ?? null;
-        onOpenChange?.(input, options);
+          (changeDetails.trigger as HTMLElement | undefined) ?? null;
+        onOpenChange?.(nextOpen, changeDetails);
       },
     ),
   };
@@ -1174,30 +1174,30 @@ function useMenuOpenerRef(): React.RefObject<HTMLElement | null> | undefined {
   return reactMenuOpener.useContext(menuOpenerRefContext);
 }
 function useMenuOwnerRef(
-  input: React.RefObject<HTMLElement | null> | undefined,
-  options: PopupFocus | null | undefined,
+  triggerRef: React.RefObject<HTMLElement | null> | undefined,
+  finalFocus: PopupFocus | null | undefined,
 ): React.RefCallback<HTMLElement> {
   let value = reactMenuOpener.useContext(menuOpenerRefContext),
-    ref = reactMenuOpener.useRef(options);
+    ref = reactMenuOpener.useRef(finalFocus);
   useIsomorphicLayoutEffect(() => {
-    ref.current = options;
-  }, [options]);
+    ref.current = finalFocus;
+  }, [finalFocus]);
   let callback = reactMenuOpener.useCallback(() => {
-    let value2 =
-        input !== undefined ? input.current : (value?.current ?? null),
+    let fallbackOwner =
+        triggerRef !== undefined ? triggerRef.current : (value?.current ?? null),
       current = ref.current;
     if (current === false || typeof current === "function") {
       return null;
     }
     if (current === undefined || current === true || current === null) {
-      return value2;
+      return fallbackOwner;
     }
-    return current.current ?? value2;
-  }, [input, value]);
+    return current.current ?? fallbackOwner;
+  }, [triggerRef, value]);
   return reactMenuOpener.useCallback(
-    (input2: HTMLElement | null) => {
-      if (input2 !== null) {
-        registerOverlayOwner(input2, callback);
+    (popup: HTMLElement | null) => {
+      if (popup !== null) {
+        registerOverlayOwner(popup, callback);
       }
     },
     [callback],
@@ -1210,21 +1210,21 @@ function readPopupPlacement(element: Element): PopupPlacement {
   };
 }
 function arePopupPlacementsEqual(
-  input: PopupPlacement | null,
-  options: PopupPlacement,
+  previousPlacement: PopupPlacement | null,
+  nextPlacement: PopupPlacement,
 ): boolean {
   return (
-    input !== null &&
-    input.side === options.side &&
-    input.align === options.align
+    previousPlacement !== null &&
+    previousPlacement.side === nextPlacement.side &&
+    previousPlacement.align === nextPlacement.align
   );
 }
-function placementNeedsBottomHold(input: PopupPlacement | null): boolean {
+function placementNeedsBottomHold(placement: PopupPlacement | null): boolean {
   return (
-    input?.side === "top" ||
-    (input?.side !== undefined &&
-      input.side !== "bottom" &&
-      input.align === "end")
+    placement?.side === "top" ||
+    (placement?.side !== undefined &&
+      placement.side !== "bottom" &&
+      placement.align === "end")
   );
 }
 function useStablePopupPlacement({
@@ -1232,111 +1232,111 @@ function useStablePopupPlacement({
   side: side,
   align: align,
 }: PopupAnimationInput): Layers.StablePopupPlacement {
-  let [value, value2] =
+  let [value, setSettledPlacement] =
       reactStablePopupPlacement.useState<PopupPlacement | null>(null),
-    [value3, value4] =
+    [observedPlacement, setObservedPlacement] =
       reactStablePopupPlacement.useState<PopupPlacement | null>(null),
-    [value5, value6] = reactStablePopupPlacement.useState<
+    [heldHeight, setHeldHeight] = reactStablePopupPlacement.useState<
       number | undefined
     >(),
     ref = reactStablePopupPlacement.useRef<HTMLElement | null>(null),
-    ref2 = reactStablePopupPlacement.useRef(false),
-    ref3 = reactStablePopupPlacement.useRef<(() => void) | null>(null),
+    holdBottomRef = reactStablePopupPlacement.useRef(false),
+    stopPositionerObservationRef = reactStablePopupPlacement.useRef<(() => void) | null>(null),
     callback = reactStablePopupPlacement.useCallback(
       (element: HTMLElement | null): void => {
-        ref3.current?.();
-        ref3.current = null;
+        stopPositionerObservationRef.current?.();
+        stopPositionerObservationRef.current = null;
         if (!element) {
-          value2(null);
-          value4(null);
-          ref2.current = false;
+          setSettledPlacement(null);
+          setObservedPlacement(null);
+          holdBottomRef.current = false;
           return;
         }
-        let value8 = element.ownerDocument.defaultView ?? window,
-          value9 = typeof value8.requestAnimationFrame === "function",
+        let ownerWindow = element.ownerDocument.defaultView ?? window,
+          canScheduleFrame = typeof ownerWindow.requestAnimationFrame === "function",
           index = 0,
-          index2 = 0,
-          callback3 = () => {
-            index2 += 1;
-            if (index2 < POPUP_PLACEMENT_SETTLE_FRAMES) {
-              index = value8.requestAnimationFrame(callback3);
+          elapsedFrames = 0,
+          settlePlacement = () => {
+            elapsedFrames += 1;
+            if (elapsedFrames < POPUP_PLACEMENT_SETTLE_FRAMES) {
+              index = ownerWindow.requestAnimationFrame(settlePlacement);
               return;
             }
             index = 0;
-            let value10 = readPopupPlacement(element);
-            value2((input: PopupPlacement | null) =>
-              arePopupPlacementsEqual(input, value10) ? input : value10,
+            let measuredPlacement = readPopupPlacement(element);
+            setSettledPlacement((previousPlacement: PopupPlacement | null) =>
+              arePopupPlacementsEqual(previousPlacement, measuredPlacement) ? previousPlacement : measuredPlacement,
             );
           },
-          callback4 = () => {
-            let value10 = readPopupPlacement(element);
-            value4((input: PopupPlacement | null) =>
-              arePopupPlacementsEqual(input, value10) ? input : value10,
+          observePlacement = () => {
+            let measuredPlacement = readPopupPlacement(element);
+            setObservedPlacement((previousPlacement: PopupPlacement | null) =>
+              arePopupPlacementsEqual(previousPlacement, measuredPlacement) ? previousPlacement : measuredPlacement,
             );
-            ref2.current = placementNeedsBottomHold(value10);
-            if (!ref2.current) {
-              let value11 = ref.current?.getBoundingClientRect().height;
-              value6(
-                value11 !== undefined && value11 > 0 ? value11 : undefined,
+            holdBottomRef.current = placementNeedsBottomHold(measuredPlacement);
+            if (!holdBottomRef.current) {
+              let popupHeight = ref.current?.getBoundingClientRect().height;
+              setHeldHeight(
+                popupHeight !== undefined && popupHeight > 0 ? popupHeight : undefined,
               );
             }
-            index2 = 0;
-            if (value9 && index === 0) {
-              index = value8.requestAnimationFrame(callback3);
+            elapsedFrames = 0;
+            if (canScheduleFrame && index === 0) {
+              index = ownerWindow.requestAnimationFrame(settlePlacement);
             }
           };
-        callback4();
-        let observer = new MutationObserver(callback4);
+        observePlacement();
+        let observer = new MutationObserver(observePlacement);
         observer.observe(element, {
           attributes: true,
           attributeFilter: ["data-side", "data-align"],
         });
-        ref3.current = () => {
+        stopPositionerObservationRef.current = () => {
           observer.disconnect();
           if (index !== 0) {
-            value8.cancelAnimationFrame(index);
+            ownerWindow.cancelAnimationFrame(index);
           }
         };
       },
       [],
     ),
-    ref4 = reactStablePopupPlacement.useRef<ResizeObserver | null>(null),
-    callback2 = reactStablePopupPlacement.useCallback(
-      (input: HTMLElement | null): void => {
-        ref4.current?.disconnect();
-        ref4.current = null;
-        ref.current = input;
-        if (!input) {
-          value6(undefined);
+    resizeObserverRef = reactStablePopupPlacement.useRef<ResizeObserver | null>(null),
+    attachPopup = reactStablePopupPlacement.useCallback(
+      (popup: HTMLElement | null): void => {
+        resizeObserverRef.current?.disconnect();
+        resizeObserverRef.current = null;
+        ref.current = popup;
+        if (!popup) {
+          setHeldHeight(undefined);
           return;
         }
         if (!enabled) {
           return;
         }
-        let callback3 = () => {
-          let height = input.getBoundingClientRect().height;
+        let measurePopupHeight = () => {
+          let height = popup.getBoundingClientRect().height;
           if (height > 0) {
-            value6((input2: number | undefined) =>
-              ref2.current && input2 !== undefined && height <= input2
-                ? input2
+            setHeldHeight((previousHeight: number | undefined) =>
+              holdBottomRef.current && previousHeight !== undefined && height <= previousHeight
+                ? previousHeight
                 : height,
             );
           }
         };
-        callback3();
+        measurePopupHeight();
         if (typeof ResizeObserver !== "undefined") {
-          let observer = new ResizeObserver(callback3);
-          observer.observe(input);
-          ref4.current = observer;
+          let observer = new ResizeObserver(measurePopupHeight);
+          observer.observe(popup);
+          resizeObserverRef.current = observer;
         }
       },
       [enabled],
     ),
-    value7: Layers.PopupHeldPlacement | null =
-      enabled && placementNeedsBottomHold(value3) && value5 !== undefined
+    heldPlacement: Layers.PopupHeldPlacement | null =
+      enabled && placementNeedsBottomHold(observedPlacement) && heldHeight !== undefined
         ? {
             positionerStyle: {
-              minHeight: `min(${Math.floor(value5)}px, var(--available-height))`,
+              minHeight: `min(${Math.floor(heldHeight)}px, var(--available-height))`,
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-end",
@@ -1347,23 +1347,23 @@ function useStablePopupPlacement({
         : null;
   return {
     positionerRef: enabled ? callback : undefined,
-    popupRef: callback2,
+    popupRef: attachPopup,
     side: enabled ? (value?.side ?? side) : side,
     align: enabled ? (value?.align ?? align) : align,
-    held: value7,
+    held: heldPlacement,
   };
 }
-function resolvePlatformWindow(input?: Window): Window | undefined {
-  return input ?? (typeof window === "undefined" ? undefined : window);
+function resolvePlatformWindow(ownerWindow?: Window): Window | undefined {
+  return ownerWindow ?? (typeof window === "undefined" ? undefined : window);
 }
-function matchesWindowMediaQuery(input: string, options?: Window): boolean {
-  let value = resolvePlatformWindow(options);
+function matchesWindowMediaQuery(mediaQuery: string, ownerWindow?: Window): boolean {
+  let value = resolvePlatformWindow(ownerWindow);
   return (
-    typeof value?.matchMedia === "function" && value.matchMedia(input).matches
+    typeof value?.matchMedia === "function" && value.matchMedia(mediaQuery).matches
   );
 }
-function usesImmediateModalRelease(input?: Window): boolean {
-  let value = resolvePlatformWindow(input);
+function usesImmediateModalRelease(ownerWindow?: Window): boolean {
+  let value = resolvePlatformWindow(ownerWindow);
   if (value?.navigator?.userAgent?.includes(ELECTRON_USER_AGENT_TOKEN)) {
     return true;
   }
@@ -1374,56 +1374,56 @@ function usesImmediateModalRelease(input?: Window): boolean {
 }
 function makeOutsidePortalInert(element: HTMLElement): () => void {
   let items: Element[] = [],
-    callback = (input: Element) => {
-      let value2 = modalInertRefCounts.get(input) ?? 0;
-      if (value2 === 0) {
-        if (input.hasAttribute("inert")) {
+    callback = (target: Element) => {
+      let referenceCount = modalInertRefCounts.get(target) ?? 0;
+      if (referenceCount === 0) {
+        if (target.hasAttribute("inert")) {
           return;
         }
-        input.setAttribute("inert", "");
-        input.setAttribute("data-cds-sheet-inert", "");
+        target.setAttribute("inert", "");
+        target.setAttribute("data-cds-sheet-inert", "");
       }
-      modalInertRefCounts.set(input, value2 + 1);
-      items.push(input);
+      modalInertRefCounts.set(target, referenceCount + 1);
+      items.push(target);
     },
-    callback2 = (element2: Element) => {
+    makeTreeInert = (subtree: Element) => {
       if (
-        inertExcludedTags.has(element2.tagName) ||
-        element2.matches(MODAL_INERT_LIVE_REGION_SELECTOR)
+        inertExcludedTags.has(subtree.tagName) ||
+        subtree.matches(MODAL_INERT_LIVE_REGION_SELECTOR)
       ) {
         return;
       }
-      if (element2.querySelector(MODAL_INERT_LIVE_REGION_SELECTOR) === null) {
-        callback(element2);
+      if (subtree.querySelector(MODAL_INERT_LIVE_REGION_SELECTOR) === null) {
+        callback(subtree);
         return;
       }
-      for (let value2 of Array.from(element2.children)) {
-        callback2(value2);
+      for (let child of Array.from(subtree.children)) {
+        makeTreeInert(child);
       }
     },
     value = element,
     body = element.ownerDocument.body;
   while (value !== null && value !== body && value.parentElement !== null) {
     let parentElement = value.parentElement,
-      value2 = value;
-    for (let value3 of Array.from(parentElement.children)) {
-      if (value3 !== value2) {
-        callback2(value3);
+      portalAncestor = value;
+    for (let sibling of Array.from(parentElement.children)) {
+      if (sibling !== portalAncestor) {
+        makeTreeInert(sibling);
       }
     }
     value = parentElement;
   }
   return () => {
-    for (let value2 of items) {
-      let value3 = (modalInertRefCounts.get(value2) ?? 1) - 1;
-      if (value3 <= 0) {
-        modalInertRefCounts.delete(value2);
-        if (value2.hasAttribute("data-cds-sheet-inert")) {
-          value2.removeAttribute("inert");
-          value2.removeAttribute("data-cds-sheet-inert");
+    for (let target of items) {
+      let remainingReferences = (modalInertRefCounts.get(target) ?? 1) - 1;
+      if (remainingReferences <= 0) {
+        modalInertRefCounts.delete(target);
+        if (target.hasAttribute("data-cds-sheet-inert")) {
+          target.removeAttribute("inert");
+          target.removeAttribute("data-cds-sheet-inert");
         }
       } else {
-        modalInertRefCounts.set(value2, value3);
+        modalInertRefCounts.set(target, remainingReferences);
       }
     }
   };
@@ -1434,84 +1434,84 @@ function useModalPortalInert({
   liftOnClose: liftOnClose,
 }: Layers.ModalPortalInertOptions): () => void {
   let value = useRootWindow(),
-    value2 = useOptionalEventCallback(liftOnClose),
+    getReleaseTiming = useOptionalEventCallback(liftOnClose),
     ref = reactModalPortalInert.useRef<(() => void) | null>(null),
-    ref2 = reactModalPortalInert.useRef<(() => void) | null>(null);
+    finishDeferredReleaseRef = reactModalPortalInert.useRef<(() => void) | null>(null);
   useIsomorphicLayoutEffect(() => {
     if (!open || node === null || value === undefined) {
       return;
     }
-    let value3 = value.requestAnimationFrame(() => {
+    let inertFrame = value.requestAnimationFrame(() => {
       if (ref.current === null) {
-        let value4 = findOverlayPortalContainer(node);
-        if (value4 !== null) {
-          ref.current = makeOutsidePortalInert(value4);
+        let portalContainer = findOverlayPortalContainer(node);
+        if (portalContainer !== null) {
+          ref.current = makeOutsidePortalInert(portalContainer);
         }
       }
     });
     return () => {
-      value.cancelAnimationFrame(value3);
+      value.cancelAnimationFrame(inertFrame);
       let current = ref.current;
       ref.current = null;
       if (current === null) {
         return;
       }
       if (
-        (value2?.() ?? "now") === "now" ||
+        (getReleaseTiming?.() ?? "now") === "now" ||
         !canDelayModalInertRelease(value)
       ) {
         current();
         return;
       }
-      let value4 = releaseInertAfterPaint(value, current, () => {
-        if (ref2.current === value4) {
-          ref2.current = null;
+      let finishDeferredRelease = releaseInertAfterPaint(value, current, () => {
+        if (finishDeferredReleaseRef.current === finishDeferredRelease) {
+          finishDeferredReleaseRef.current = null;
         }
       });
-      ref2.current = value4;
+      finishDeferredReleaseRef.current = finishDeferredRelease;
     };
-  }, [node, open, value, value2]);
-  return reactModalPortalInert.useCallback(() => ref2.current?.(), []);
+  }, [node, open, value, getReleaseTiming]);
+  return reactModalPortalInert.useCallback(() => finishDeferredReleaseRef.current?.(), []);
 }
-function canDelayModalInertRelease(input: Window): boolean {
+function canDelayModalInertRelease(ownerWindow: Window): boolean {
   return (
-    !usesImmediateModalRelease(input) &&
+    !usesImmediateModalRelease(ownerWindow) &&
     !isReducedMotion() &&
-    input.document.visibilityState !== "hidden"
+    ownerWindow.document.visibilityState !== "hidden"
   );
 }
 function releaseInertAfterPaint(
-  input: Window,
-  options: () => void,
-  context: () => void,
+  ownerWindow: Window,
+  release: () => void,
+  onReleased: () => void,
 ): () => void {
-  let document2 = input.document,
+  let ownerDocument = ownerWindow.document,
     flag = false,
     callback = () => {
       if (flag) {
         return;
       }
       flag = true;
-      input.cancelAnimationFrame(value);
-      input.removeEventListener("pointerdown", callback, true);
-      input.removeEventListener("keydown", callback, true);
-      input.removeEventListener("pagehide", callback);
-      document2.removeEventListener("visibilitychange", callback2);
-      options();
-      context();
+      ownerWindow.cancelAnimationFrame(value);
+      ownerWindow.removeEventListener("pointerdown", callback, true);
+      ownerWindow.removeEventListener("keydown", callback, true);
+      ownerWindow.removeEventListener("pagehide", callback);
+      ownerDocument.removeEventListener("visibilitychange", handleVisibilityChange);
+      release();
+      onReleased();
     },
-    callback2 = () => {
-      if (document2.visibilityState === "hidden") {
+    handleVisibilityChange = () => {
+      if (ownerDocument.visibilityState === "hidden") {
         callback();
       }
     },
-    value = input.requestAnimationFrame(() => {
-      value = input.requestAnimationFrame(callback);
+    value = ownerWindow.requestAnimationFrame(() => {
+      value = ownerWindow.requestAnimationFrame(callback);
     });
-  input.addEventListener("pointerdown", callback, true);
-  input.addEventListener("keydown", callback, true);
-  input.addEventListener("pagehide", callback);
-  document2.addEventListener("visibilitychange", callback2);
+  ownerWindow.addEventListener("pointerdown", callback, true);
+  ownerWindow.addEventListener("keydown", callback, true);
+  ownerWindow.addEventListener("pagehide", callback);
+  ownerDocument.addEventListener("visibilitychange", handleVisibilityChange);
   return callback;
 }
 function findOverlayPortalContainer(
@@ -1519,7 +1519,7 @@ function findOverlayPortalContainer(
 ): HTMLElement | null {
   let body = element.ownerDocument.body,
     value: HTMLElement | null = element,
-    value2: HTMLElement | null = null;
+    topmostAncestor: HTMLElement | null = null;
   while (value !== null && value !== body) {
     if (
       value.hasAttribute("data-base-ui-portal") ||
@@ -1527,10 +1527,10 @@ function findOverlayPortalContainer(
     ) {
       return value;
     }
-    value2 = value;
+    topmostAncestor = value;
     value = value.parentElement;
   }
-  return value2;
+  return topmostAncestor;
 }
 function preventModalTabNavigation(
   event: React.KeyboardEvent<HTMLElement>,
@@ -1540,33 +1540,33 @@ function preventModalTabNavigation(
     event.stopPropagation();
   }
 }
-function coverParentMenuSheet(input: Element, options: object): void {
-  let entry = coveredMenuSheetOwners.get(input);
+function coverParentMenuSheet(menuElement: Element, coverToken: object): void {
+  let entry = coveredMenuSheetOwners.get(menuElement);
   if (entry === undefined) {
     entry = new Set();
-    coveredMenuSheetOwners.set(input, entry);
+    coveredMenuSheetOwners.set(menuElement, entry);
   }
-  entry.add(options);
-  input.setAttribute("aria-hidden", "true");
-  input.setAttribute(SHEET_DRILLED_ATTRIBUTE, "");
+  entry.add(coverToken);
+  menuElement.setAttribute("aria-hidden", "true");
+  menuElement.setAttribute(SHEET_DRILLED_ATTRIBUTE, "");
 }
-function uncoverParentMenuSheet(input: Element, options: object): void {
-  let entry = coveredMenuSheetOwners.get(input);
-  entry?.delete(options);
+function uncoverParentMenuSheet(menuElement: Element, coverToken: object): void {
+  let entry = coveredMenuSheetOwners.get(menuElement);
+  entry?.delete(coverToken);
   if (entry === undefined || entry.size === 0) {
-    input.removeAttribute("aria-hidden");
-    input.removeAttribute(SHEET_DRILLED_ATTRIBUTE);
+    menuElement.removeAttribute("aria-hidden");
+    menuElement.removeAttribute(SHEET_DRILLED_ATTRIBUTE);
   }
 }
 function getSheetInertReleaseTiming(
-  input?: Overlays.OverlayEventDetails | null,
+  changeDetails?: Overlays.OverlayEventDetails | null,
 ): "now" | "after-paint" {
-  if (input?.reason === "outside-press") {
+  if (changeDetails?.reason === "outside-press") {
     return "after-paint";
   }
-  let value = input?.event;
+  let value = changeDetails?.event;
   if (
-    input?.reason !== "item-press" ||
+    changeDetails?.reason !== "item-press" ||
     value === undefined ||
     !("detail" in value) ||
     value.detail === 0
@@ -1594,25 +1594,25 @@ function MenuSheetTitleBar({
   let value = reactMenuSheetPopup.useContext<Overlays.MenuRootState | null>(
       menuTriggerContext,
     ),
-    { label: value2 } =
+    { label: submenuLabel } =
       reactMenuSheetPopup.useContext<Overlays.MenuItemState>(
         submenuStateContext,
       ),
-    value3 = reactMenuSheetPopup.useContext<Overlays.MenuLabels>(
+    sheetLabels = reactMenuSheetPopup.useContext<Overlays.MenuLabels>(
       menuSheetLabelsContext,
     ),
-    value4 = useTranslation("back", "Back"),
-    value5 = value3.backLabel ?? value4;
+    defaultBackLabel = useTranslation("back", "Back"),
+    backLabel = sheetLabels.backLabel ?? defaultBackLabel;
   return (
     <SheetTitleBar
-      title={nested ? (value2) : (value3.sheetTitle)}
+      title={nested ? (submenuLabel) : (sheetLabels.sheetTitle)}
       leading={
         nested ? (
           <baseMenu.Item
             closeOnClick={false}
             onClick={() => value?.close()}
-            aria-label={value5}
-            label={value5}
+            aria-label={backLabel}
+            label={backLabel}
             className={cn(
               menuItemVariants({
                 variant: "default",
@@ -1641,19 +1641,19 @@ function MenuSheetCloseButton(): React.ReactElement {
       reactMenuSheetPopup.useContext<Overlays.SheetFrameContext | null>(
         sheetFrameContext,
       ),
-    value2 = useTranslation("close", "Close"),
-    value3 =
+    defaultCloseLabel = useTranslation("close", "Close"),
+    closeLabel =
       reactMenuSheetPopup.useContext(
         menuSheetLabelsContext as React.Context<{
           closeLabel?: string;
         }>,
-      ).closeLabel ?? value2;
+      ).closeLabel ?? defaultCloseLabel;
   return (
     <baseMenu.Item
       closeOnClick={false}
       onClick={() => value?.dismiss()}
-      aria-label={value3}
-      label={value3}
+      aria-label={closeLabel}
+      label={closeLabel}
       data-cds-sheet-control={""}
       className={
         "group/sheet-close cds-reset block w-full rounded outline-none select-none focus-visible:outline-hidden [&:not(:focus-visible):not([data-highlighted]):not([data-cds-sheet-control-held])]:sr-only"
@@ -1667,7 +1667,7 @@ function MenuSheetCloseButton(): React.ReactElement {
           "group-data-[highlighted]/sheet-close:bg-fill-ghost-hover",
         )}
       >
-        {[<IconSlot icon={"X"} />, <span className={"min-w-0 flex-1 truncate"}>{value3}</span>]}
+        {[<IconSlot icon={"X"} />, <span className={"min-w-0 flex-1 truncate"}>{closeLabel}</span>]}
       </span>
     </baseMenu.Item>
   );
@@ -1744,10 +1744,10 @@ function ContextMenuSheetBackdrop({
     />
   );
 }
-function subscribeSheetImplementation(input: () => void): () => void {
-  sheetImplementationSubscribers.add(input);
+function subscribeSheetImplementation(subscriber: () => void): () => void {
+  sheetImplementationSubscribers.add(subscriber);
   return () => {
-    sheetImplementationSubscribers.delete(input);
+    sheetImplementationSubscribers.delete(subscriber);
   };
 }
 function loadSheetImplementation(): Promise<Overlays.MobileSheetParts | null> {
@@ -1761,27 +1761,27 @@ function loadSheetImplementation(): Promise<Overlays.MobileSheetParts | null> {
       }),
   )
     .then(
-      (input: Overlays.MobileSheetParts | null) =>
-        typeof input === "object" &&
-        input !== null &&
-        "SheetPopupHost" in input
-          ? input
+      (sheetParts: Overlays.MobileSheetParts | null) =>
+        typeof sheetParts === "object" &&
+        sheetParts !== null &&
+        "SheetPopupHost" in sheetParts
+          ? sheetParts
           : null,
       () => null,
     )
-    .then((input: Overlays.MobileSheetParts | null) => {
+    .then((sheetParts: Overlays.MobileSheetParts | null) => {
       if (value !== sheetImplementationGeneration) {
-        return input;
+        return sheetParts;
       }
-      if (input === null) {
+      if (sheetParts === null) {
         sheetImplementationFailed = true;
       } else {
-        loadedSheetImplementation = input;
+        loadedSheetImplementation = sheetParts;
       }
-      for (let value2 of sheetImplementationSubscribers) {
-        value2();
+      for (let subscriber of sheetImplementationSubscribers) {
+        subscriber();
       }
-      return input;
+      return sheetParts;
     });
   return sheetImplementationPromise!;
 }
@@ -1817,18 +1817,18 @@ function useLoadedSheetImplementation(): Overlays.MobileSheetParts | null {
   );
 }
 function usePreloadSheetsForCoarsePointer(
-  input: boolean,
-  options: Window | undefined,
+  enabled: boolean,
+  ownerWindow: Window | undefined,
 ): void {
   let value = useMediaQuery__U(
-    input ? options : undefined,
+    enabled ? ownerWindow : undefined,
     COARSE_POINTER_QUERY_rG,
   );
   reactPreloadSheets.useEffect(() => {
-    if (input && value) {
+    if (enabled && value) {
       preloadSheetImplementation();
     }
-  }, [input, value]);
+  }, [enabled, value]);
 }
 function detectCdsPlatform(): Layers.CdsPlatform {
   if (typeof navigator === "undefined") {
@@ -1841,9 +1841,9 @@ function detectCdsPlatform(): Layers.CdsPlatform {
   }
 }
 function reportLinkSanitizationDebug(
-  input: string,
-  options: string,
-  context: string,
+  originalHref: string,
+  sanitizedHref: string,
+  reason: string,
 ): void {
   return;
 }
@@ -1852,11 +1852,11 @@ function truncateLinkDebugValue(items: string): string {
     return items;
   }
   let value = items.charCodeAt(119),
-    value2 = value >= 55296 && value <= 56319 ? 119 : MAX_LINK_DEBUG_LENGTH;
-  return `${items.slice(0, value2)}…`;
+    cutoff = value >= 55296 && value <= 56319 ? 119 : MAX_LINK_DEBUG_LENGTH;
+  return `${items.slice(0, cutoff)}…`;
 }
-function normalizeHrefWhitespace(input: string): string {
-  let value = input.replace(linkWhitespacePattern, ""),
+function normalizeHrefWhitespace(href: string): string {
+  let value = href.replace(linkWhitespacePattern, ""),
     index = 0,
     length = value.length;
   while (index < length && value.charCodeAt(index) <= 32) {
@@ -1872,38 +1872,38 @@ function normalizeHrefWhitespace(input: string): string {
   }
 }
 function isSanitizedHrefFallback(
-  input: string | undefined,
-  options: string | undefined,
+  originalHref: string | undefined,
+  sanitizedHref: string | undefined,
 ): boolean {
   return (
-    options === "#" &&
-    input !== undefined &&
-    normalizeHrefWhitespace(input) !== "#"
+    sanitizedHref === "#" &&
+    originalHref !== undefined &&
+    normalizeHrefWhitespace(originalHref) !== "#"
   );
 }
 function opensInSeparateBrowsingContext(
-  input: string | null | undefined,
+  target: string | null | undefined,
 ): boolean {
-  return !!input && !existingBrowsingContextNames.has(input.toLowerCase());
+  return !!target && !existingBrowsingContextNames.has(target.toLowerCase());
 }
 function normalizeLinkRel(
-  input: string | null | undefined,
-  options: string | null | undefined,
-  context: () => string,
+  target: string | null | undefined,
+  rel: string | null | undefined,
+  getDefaultRel: () => string,
 ): string | undefined {
-  if (!opensInSeparateBrowsingContext(input)) {
-    return options ?? undefined;
+  if (!opensInSeparateBrowsingContext(target)) {
+    return rel ?? undefined;
   }
-  if (options === undefined || options === null) {
-    return context();
+  if (rel === undefined || rel === null) {
+    return getDefaultRel();
   }
-  let value = options
+  let value = rel
     .split(/\s+/)
     .filter(
-      (input2: string) => input2 !== "" && input2.toLowerCase() !== "opener",
+      (token: string) => token !== "" && token.toLowerCase() !== "opener",
     );
   if (
-    !value.some((input2: string) => unsafeLinkRelTokenPattern.test(input2))
+    !value.some((token: string) => unsafeLinkRelTokenPattern.test(token))
   ) {
     value.push("noopener");
   }
@@ -1912,11 +1912,11 @@ function normalizeLinkRel(
 function useCdsRouter(): Overlays.LinkRouter | undefined {
   return reactCdsLink.useContext(cdsRouterContext);
 }
-function sanitizeHref(input: string | undefined): string | undefined {
-  if (!input) {
-    return input;
+function sanitizeHref(href: string | undefined): string | undefined {
+  if (!href) {
+    return href;
   }
-  let value = normalizeHrefWhitespace(input);
+  let value = normalizeHrefWhitespace(href);
   if (forbiddenHrefControlCharacterPattern.test(value)) {
     return rejectUnsafeHref(value, uiMessage("design-system.overlays.itContainsAControlCharacter"));
   }
@@ -1960,119 +1960,119 @@ function sanitizeHref(input: string | undefined): string | undefined {
   }
   return validateRelativeHref(value);
 }
-function rejectUnsafeHref(input: string, options: string): string {
-  reportLinkSanitizationDebug(input, "#", options);
+function rejectUnsafeHref(href: string, reason: string): string {
+  reportLinkSanitizationDebug(href, "#", reason);
   return "#";
 }
-function validateRelativeHref(input: string): string {
-  let value = networkPathHrefPattern.test(input);
+function validateRelativeHref(href: string): string {
+  let value = networkPathHrefPattern.test(href);
   try {
-    let value2 = new URL(input, HTTPS_RELATIVE_HREF_BASE),
-      value3 =
-        value2.pathname.replace(/^\/{2,}/, "/") + value2.search + value2.hash;
+    let parsedUrl = new URL(href, HTTPS_RELATIVE_HREF_BASE),
+      resolvedPath =
+        parsedUrl.pathname.replace(/^\/{2,}/, "/") + parsedUrl.search + parsedUrl.hash;
     if (
       value ||
-      value2.origin !== HTTPS_RELATIVE_HREF_BASE ||
-      value2.pathname.startsWith("//")
+      parsedUrl.origin !== HTTPS_RELATIVE_HREF_BASE ||
+      parsedUrl.pathname.startsWith("//")
     ) {
       reportLinkSanitizationDebug(
-        input,
-        value3,
-        value || value2.origin !== HTTPS_RELATIVE_HREF_BASE
+        href,
+        resolvedPath,
+        value || parsedUrl.origin !== HTTPS_RELATIVE_HREF_BASE
           ? "it reads as a path but names a host"
           : "its dot segments resolve to a path that would re-read as protocol-relative",
       );
-      return value3;
+      return resolvedPath;
     }
-    if (hasUnsafeRelativePath(input)) {
+    if (hasUnsafeRelativePath(href)) {
       reportLinkSanitizationDebug(
-        input,
-        value3,
+        href,
+        resolvedPath,
         "its path has a backslash or dot segment, which the browser resolves before navigating",
       );
-      return value3;
+      return resolvedPath;
     }
-    let value4 = getHrefPathBeforeQuery(input);
+    let originalPath = getHrefPathBeforeQuery(href);
     if (
-      unrootedHrefPattern.test(input) &&
-      encodedOrBackslashPathPattern.test(value4) &&
-      !value2.pathname.startsWith("//")
+      unrootedHrefPattern.test(href) &&
+      encodedOrBackslashPathPattern.test(originalPath) &&
+      !parsedUrl.pathname.startsWith("//")
     ) {
-      let value5 = value4
+      let normalizedPath = originalPath
         .replaceAll("\\", "/")
         .split("/")
-        .map((input2: string) =>
-          dotSegmentPattern.test(input2)
-            ? input2.replace(/%2e/gi, ".")
-            : input2,
+        .map((segment: string) =>
+          dotSegmentPattern.test(segment)
+            ? segment.replace(/%2e/gi, ".")
+            : segment,
         )
         .join("/");
-      if (value5 !== value4) {
-        let value6 = value5 + input.slice(value4.length);
+      if (normalizedPath !== originalPath) {
+        let normalizedHref = normalizedPath + href.slice(originalPath.length);
         reportLinkSanitizationDebug(
-          input,
-          value6,
+          href,
+          normalizedHref,
           "its path has a backslash or a %2e-spelled dot segment, which the browser reads as a plain slash or dot",
         );
-        return value6;
+        return normalizedHref;
       }
     }
   } catch {
     if (value) {
       return rejectUnsafeHref(
-        input,
+        href,
         uiMessage("design-system.overlays.itNamesAHostThis"),
       );
     }
   }
-  return input;
+  return href;
 }
-function hasUnsafeRelativePath(input: string): boolean {
-  if (!rootRelativeHrefPattern.test(input)) {
+function hasUnsafeRelativePath(path: string): boolean {
+  if (!rootRelativeHrefPattern.test(path)) {
     return false;
   }
-  let value = getHrefPathBeforeQuery(input);
+  let value = getHrefPathBeforeQuery(path);
   return value.includes("\\") || relativePathDotSegmentPattern.test(value);
 }
-function getHrefPathBeforeQuery(input: string): string {
-  let value = input.search(/[?#]/);
+function getHrefPathBeforeQuery(href: string): string {
+  let value = href.search(/[?#]/);
   if (value < 0) {
-    return input;
+    return href;
   } else {
-    return input.slice(0, value);
+    return href.slice(0, value);
   }
 }
-function isAllowedEditorHref(input: string): boolean {
+function isAllowedEditorHref(href: string): boolean {
   return allowedEditorHrefPattern.test(
-    input.replace(editorHrefSchemePattern, (input2: string) =>
-      input2.toLowerCase(),
+    href.replace(editorHrefSchemePattern, (scheme: string) =>
+      scheme.toLowerCase(),
     ),
   );
 }
-function isAllowedAndroidIntentHref(input: string): boolean {
-  if (!androidIntentHrefPattern.test(input)) {
+function isAllowedAndroidIntentHref(href: string): boolean {
+  if (!androidIntentHrefPattern.test(href)) {
     return false;
   }
-  let value = input.indexOf("#");
-  if (value < 0 || input.indexOf("#", value + 1) >= 0) {
+  let value = href.indexOf("#");
+  if (value < 0 || href.indexOf("#", value + 1) >= 0) {
     return false;
   }
-  let value2 = input.slice(value + 1);
-  if (!value2.startsWith("Intent;") || !value2.endsWith(";end")) {
+  let intentFragment = href.slice(value + 1);
+  if (!intentFragment.startsWith("Intent;") || !intentFragment.endsWith(";end")) {
     return false;
   }
-  let value3 = value2.slice(7, -4),
+  let properties = intentFragment.slice(7, -4),
     entries = new Map<string, string>();
-  for (let value4 of value3.split(";")) {
-    let value5 = value4.indexOf("=");
-    if (value5 <= 0) {
+  for (let property of properties.split(";")) {
+    let separatorIndex = property.indexOf("=");
+    if (separatorIndex <= 0) {
       return false;
     }
-    let value6 = value4.slice(0, value5);
-    if (entries.has(value6) || !allowedIntentPropertyNames.has(value6)) {
+    let propertyName = property.slice(0, separatorIndex);
+    if (entries.has(propertyName) || !allowedIntentPropertyNames.has(propertyName)) {
       return false;
     }
-    entries.set(value6, value4.slice(value5 + 1));
+    entries.set(propertyName, property.slice(separatorIndex + 1));
   }
   let entry = entries.get("package");
   if (
@@ -2082,24 +2082,24 @@ function isAllowedAndroidIntentHref(input: string): boolean {
   ) {
     return false;
   }
-  let entry2 = entries.get("S.browser_fallback_url");
-  if (entry2 === undefined) {
+  let fallbackUrl = entries.get("S.browser_fallback_url");
+  if (fallbackUrl === undefined) {
     return true;
   }
   try {
-    return new URL(decodeURIComponent(entry2)).protocol === "https:";
+    return new URL(decodeURIComponent(fallbackUrl)).protocol === "https:";
   } catch {
     return false;
   }
 }
-function classifyHrefOrigin(input: string, options: string): HrefOrigin {
+function classifyHrefOrigin(href: string, baseOrigin: string): HrefOrigin {
   let value: URL;
   try {
-    value = new URL(input, options);
+    value = new URL(href, baseOrigin);
   } catch {
     return "other";
   }
-  if (value.origin === options) {
+  if (value.origin === baseOrigin) {
     return "relative";
   }
   if (value.protocol !== "https:" && value.protocol !== "http:") {
@@ -2108,8 +2108,8 @@ function classifyHrefOrigin(input: string, options: string): HrefOrigin {
   let hostname = value.hostname;
   if (
     trustedAnthropicDomains.some(
-      (input2: string) =>
-        hostname === input2 || hostname.endsWith("." + input2),
+      (trustedDomain: string) =>
+        hostname === trustedDomain || hostname.endsWith("." + trustedDomain),
     )
   ) {
     return "first-party";
@@ -2117,29 +2117,29 @@ function classifyHrefOrigin(input: string, options: string): HrefOrigin {
     return "other";
   }
 }
-function isOriginStableHref(input: string | undefined): boolean {
-  if (!input) {
+function isOriginStableHref(href: string | undefined): boolean {
+  if (!href) {
     return false;
   }
-  let value = classifyHrefOrigin(input, HTTPS_RELATIVE_HREF_BASE);
+  let value = classifyHrefOrigin(href, HTTPS_RELATIVE_HREF_BASE);
   return (
     value !== "other" &&
-    value === classifyHrefOrigin(input, HTTP_RELATIVE_HREF_BASE)
+    value === classifyHrefOrigin(href, HTTP_RELATIVE_HREF_BASE)
   );
 }
-function getSeparateContextRel(input: string | undefined): string {
-  if (isOriginStableHref(input)) {
+function getSeparateContextRel(href: string | undefined): string {
+  if (isOriginStableHref(href)) {
     return "noopener";
   } else {
     return "noopener noreferrer";
   }
 }
 function getAutomaticLinkRel(
-  input: string | undefined,
-  options: string | null | undefined,
+  href: string | undefined,
+  target: string | null | undefined,
 ): string | undefined {
-  let value = sanitizeHref(input);
-  if (opensInSeparateBrowsingContext(options)) {
+  let value = sanitizeHref(href);
+  if (opensInSeparateBrowsingContext(target)) {
     return getSeparateContextRel(value);
   }
   if (isOriginStableHref(value)) {
@@ -2148,12 +2148,12 @@ function getAutomaticLinkRel(
     return "noreferrer";
   }
 }
-function isSameOriginHref(input: string): boolean {
+function isSameOriginHref(href: string): boolean {
   if (typeof window === "undefined") {
     return false;
   }
   try {
-    let value = new URL(input, window.location.href);
+    let value = new URL(href, window.location.href);
     return (
       value.origin !== "null" &&
       value.protocol === window.location.protocol &&
@@ -2179,40 +2179,40 @@ function shouldHandleLinkWithRouter(event: Layers.LinkCandidate): boolean {
   }
   return isSameOriginHref(event.href);
 }
-function normalizeRouterHref(input: string): string {
-  if (!absoluteHrefPattern.test(input)) {
-    return input;
+function normalizeRouterHref(href: string): string {
+  if (!absoluteHrefPattern.test(href)) {
+    return href;
   }
-  let value = new URL(input, window.location.href);
+  let value = new URL(href, window.location.href);
   return value.pathname.replace(/^\/{2,}/, "/") + value.search + value.hash;
 }
-function isModifiedLinkClick(input: Layers.LinkClickEvent): boolean {
+function isModifiedLinkClick(clickEvent: Layers.LinkClickEvent): boolean {
   return (
-    input.defaultPrevented ||
-    input.button !== 0 ||
-    input.metaKey ||
-    input.ctrlKey ||
-    input.shiftKey ||
-    input.altKey
+    clickEvent.defaultPrevented ||
+    clickEvent.button !== 0 ||
+    clickEvent.metaKey ||
+    clickEvent.ctrlKey ||
+    clickEvent.shiftKey ||
+    clickEvent.altKey
   );
 }
 function pickLinkEventProps(
-  input: Overlays.RouterEvents,
+  linkProps: Overlays.RouterEvents,
 ): Overlays.RouterEvents {
-  let value = input,
+  let value = linkProps,
     state: Layers.LinkEvents = {};
-  for (let value2 of linkEventPropNames) {
-    if (value[value2] !== undefined) {
-      state[value2] = value[value2];
+  for (let eventName of linkEventPropNames) {
+    if (value[eventName] !== undefined) {
+      state[eventName] = value[eventName];
     }
   }
   return state;
 }
 function omitLinkEventProps<Props extends Overlays.RouterEvents>(
-  input: Props,
+  props: Props,
 ): Omit<Props, Layers.LinkEventName> {
   let state = {
-    ...input,
+    ...props,
   };
   for (let value of linkEventPropNames) {
     delete state[value];
@@ -2222,17 +2222,17 @@ function omitLinkEventProps<Props extends Overlays.RouterEvents>(
 function composeLinkEventHandlers<
   Event extends React.SyntheticEvent<HTMLElement>,
 >(
-  input: React.EventHandler<Event> | undefined,
-  options: React.EventHandler<Event> | undefined,
-  context?: boolean,
+  userHandler: React.EventHandler<Event> | undefined,
+  routerHandler: React.EventHandler<Event> | undefined,
+  respectDefaultPrevented?: boolean,
 ): ((event: Event) => void) | undefined {
-  if (!options) {
-    return input;
+  if (!routerHandler) {
+    return userHandler;
   }
-  return (input2: Event) => {
-    input?.(input2);
-    if (!context || !input2.defaultPrevented) {
-      options(input2);
+  return (event: Event) => {
+    userHandler?.(event);
+    if (!respectDefaultPrevented || !event.defaultPrevented) {
+      routerHandler(event);
     }
   };
 }
@@ -2306,20 +2306,20 @@ function useCdsLink({
           onFocus: onFocus,
           onBlur: onBlur,
         },
-        state2: Layers.LinkEvents = {};
+        prefetchHandlers: Layers.LinkEvents = {};
       for (let value of linkPrefetchEventNames) {
-        let value2 = composeLinkEventHandlers<
+        let composedHandler = composeLinkEventHandlers<
           React.SyntheticEvent<HTMLElement>
         >(
           state[value],
           routerIntentHandlers?.[value],
           linkPrefetchEventKinds[value],
         );
-        if (value2) {
-          state2[value] = value2;
+        if (composedHandler) {
+          prefetchHandlers[value] = composedHandler;
         }
       }
-      return state2;
+      return prefetchHandlers;
     }, [
       routerIntentHandlers,
       onPointerEnter,
@@ -2340,9 +2340,9 @@ function useCdsLink({
   };
 }
 function getElementWindow(
-  input: Element | null | undefined,
+  element: Element | null | undefined,
 ): Window | undefined {
-  return input?.ownerDocument.defaultView ?? globalThis.window;
+  return element?.ownerDocument.defaultView ?? globalThis.window;
 }
 function elementHasUnavailableWindow(element: Element | undefined): boolean {
   return (
@@ -2351,12 +2351,12 @@ function elementHasUnavailableWindow(element: Element | undefined): boolean {
   );
 }
 function getConnectedElementWindow(
-  input: Element | undefined,
+  element: Element | undefined,
 ): Window | undefined {
-  if (elementHasUnavailableWindow(input)) {
+  if (elementHasUnavailableWindow(element)) {
     return;
   }
-  return getElementWindow(input);
+  return getElementWindow(element);
 }
 function hasCdsHtmlFontSizing(element: HTMLElement): boolean {
   return (
@@ -2372,71 +2372,71 @@ function migrateCdsHtmlFontSizing(): void {
   try {
     let items: string[] = [],
       values = new Set<string>(),
-      callback = (input: string | null | undefined) => {
-        if (!input) {
+      callback = (layerName: string | null | undefined) => {
+        if (!layerName) {
           return;
         }
-        let value3 = input.split(".")[0] ?? input;
-        if (!values.has(value3)) {
-          values.add(value3);
-          items.push(value3);
+        let rootLayerName = layerName.split(".")[0] ?? layerName;
+        if (!values.has(rootLayerName)) {
+          values.add(rootLayerName);
+          items.push(rootLayerName);
         }
       },
-      callback2 = (input: CSSStyleSheet) => {
-        let value3: CSSRuleList;
+      collectSheetLayers = (stylesheet: CSSStyleSheet) => {
+        let rules: CSSRuleList;
         try {
-          value3 = input.cssRules;
+          rules = stylesheet.cssRules;
         } catch {
           return;
         }
-        for (let value4 of value3) {
-          let name = value4.constructor.name;
+        for (let rule of rules) {
+          let name = rule.constructor.name;
           if (name === "CSSLayerStatementRule") {
-            for (let value5 of (value4 as CSSLayerStatementRule).nameList) {
-              callback(value5);
+            for (let layerName of (rule as CSSLayerStatementRule).nameList) {
+              callback(layerName);
             }
           } else if (name === "CSSLayerBlockRule") {
-            callback((value4 as CSSLayerBlockRule).name);
+            callback((rule as CSSLayerBlockRule).name);
           } else if (name === "CSSImportRule") {
-            let value5 = value4 as CSSImportRule;
-            callback(value5.layerName);
-            if (value5.styleSheet) {
-              callback2(value5.styleSheet);
+            let importRule = rule as CSSImportRule;
+            callback(importRule.layerName);
+            if (importRule.styleSheet) {
+              collectSheetLayers(importRule.styleSheet);
             }
           }
         }
       };
-    for (let value3 of document.styleSheets) {
-      callback2(value3);
+    for (let stylesheet of document.styleSheets) {
+      collectSheetLayers(stylesheet);
     }
     let value = items.indexOf("utilities");
     if (value === -1) {
       return;
     }
-    let value2 = items.indexOf("cds-card");
-    if (value2 === -1 || value2 > value) {
+    let cardLayerIndex = items.indexOf("cds-card");
+    if (cardLayerIndex === -1 || cardLayerIndex > value) {
       console.error(
         "cds: the `cds-card` cascade layer is " +
-          (value2 === -1 ? "not declared" : "declared after `utilities`") +
+          (cardLayerIndex === -1 ? "not declared" : "declared after `utilities`") +
           " in this document, so Card's stretched-link lift rules outrank consumer positioning utilities — `absolute`/`z-*` on interactive children inside <Card> will silently lose, and a `backgroundClassName` surface override stops applying, since the fill layer's resting color and hover step sit in the same layer and must rank below consumer utilities to be overridable. Fix: add `@layer cds-card;` before the `@import \"tailwindcss\"` line in this app's Tailwind entry CSS (see packages/cds/src/component-base.css § cds-card).",
       );
     }
   } catch {}
 }
-function getControlSizeAttributes(input?: ControlSize): {
+function getControlSizeAttributes(size?: ControlSize): {
   "data-size"?: Exclude<ControlSize, "base">;
 } {
-  if (input && input !== "base") {
+  if (size && size !== "base") {
     return {
-      "data-size": input,
+      "data-size": size,
     };
   } else {
     return {};
   }
 }
-function getDensitySizeIndex(input: Density, options?: ControlSize): number {
+function getDensitySizeIndex(density: Density, size?: ControlSize): number {
   let value =
-    densitySizeIndices[input] + controlSizeOffsets[options ?? "base"]!;
+    densitySizeIndices[density] + controlSizeOffsets[size ?? "base"]!;
   if (value < 1) {
     return 1;
   } else {
@@ -2457,8 +2457,8 @@ function createColorModeStore(
         : null,
     getSetting = () =>
       configuredMode ?? normalizeColorMode(inheritedModeAttribute),
-    modeFromDarkPreference = (input: boolean): ColorMode =>
-      input ? "dark" : "light",
+    modeFromDarkPreference = (prefersDark: boolean): ColorMode =>
+      prefersDark ? "dark" : "light",
     colorSchemeMedia: MediaQueryList | undefined,
     systemColorMode: ColorMode | undefined,
     initialized = false,
@@ -2488,11 +2488,11 @@ function createColorModeStore(
       }
     },
     explicitColorMode = (
-      input: Layers.ConfiguredColorMode | undefined,
+      mode: Layers.ConfiguredColorMode | undefined,
     ): ColorMode | undefined =>
-      input === "light" || input === "dark" ? input : undefined,
+      mode === "light" || mode === "dark" ? mode : undefined,
     listeners = new Set<() => void>(),
-    notify = () => listeners.forEach((input: () => void) => input()),
+    notify = () => listeners.forEach((listener: () => void) => listener()),
     changedBeforeSubscription = false,
     startObserving = () => {
       let items: (() => void)[] = [];
@@ -2505,9 +2505,9 @@ function createColorModeStore(
         };
         value.addEventListener("change", callback);
         items.push(() => value.removeEventListener("change", callback));
-        let value2 = modeFromDarkPreference(value.matches);
-        if (value2 !== systemColorMode) {
-          systemColorMode = value2;
+        let currentSystemMode = modeFromDarkPreference(value.matches);
+        if (currentSystemMode !== systemColorMode) {
+          systemColorMode = currentSystemMode;
           changedBeforeSubscription = true;
         }
       }
@@ -2515,39 +2515,39 @@ function createColorModeStore(
         configuredMode === undefined &&
         typeof MutationObserver !== "undefined"
       ) {
-        let value2 = inheritedModeAttribute;
+        let initialInheritedMode = inheritedModeAttribute;
         readInheritedMode();
-        if (inheritedModeAttribute !== value2) {
+        if (inheritedModeAttribute !== initialInheritedMode) {
           changedBeforeSubscription = true;
         }
-        let value3 = createSafeMutationObserver(
+        let modeObserver = createSafeMutationObserver(
           MutationObserver,
           () => {
-            let value4 = inheritedModeAttribute;
+            let previousInheritedMode = inheritedModeAttribute;
             readInheritedMode();
-            if (inheritedModeAttribute !== value4) {
+            if (inheritedModeAttribute !== previousInheritedMode) {
               notify();
             }
           },
         );
-        value3.observe(document.documentElement, {
+        modeObserver.observe(document.documentElement, {
           attributes: true,
           attributeFilter: ["data-mode"],
           subtree: true,
         });
-        items.push(() => value3.disconnect());
+        items.push(() => modeObserver.disconnect());
       }
       if (changedBeforeSubscription) {
         changedBeforeSubscription = false;
         queueMicrotask(notify);
       }
-      return () => items.forEach((input: () => void) => input());
+      return () => items.forEach((unsubscribe: () => void) => unsubscribe());
     },
     stopObserving: (() => void) | undefined;
   return {
-    setElement: (input: HTMLElement | null) => {
-      element = input;
-      if (configuredMode === undefined && input !== null) {
+    setElement: (nextElement: HTMLElement | null) => {
+      element = nextElement;
+      if (configuredMode === undefined && nextElement !== null) {
         let value = inheritedModeAttribute;
         readInheritedMode();
         if (inheritedModeAttribute !== value && listeners.size === 0) {
@@ -2556,13 +2556,13 @@ function createColorModeStore(
         notify();
       }
     },
-    subscribe: (input: () => void) => {
+    subscribe: (listener: () => void) => {
       if (listeners.size === 0) {
         stopObserving = startObserving();
       }
-      listeners.add(input);
+      listeners.add(listener);
       return () => {
-        listeners.delete(input);
+        listeners.delete(listener);
         if (listeners.size === 0) {
           stopObserving?.();
           stopObserving = undefined;
@@ -2618,13 +2618,13 @@ function useFont(): Layers.CdsFont | undefined {
 function useMonospaceFont(): string | null | undefined {
   return reactCdsRoot.useContext(monospaceFontContext);
 }
-function getMonospaceOverrideStyle(input?: string | null): DesignStyle {
-  if (input === null) {
+function getMonospaceOverrideStyle(font?: string | null): DesignStyle {
+  if (font === null) {
     return {
       "--cds-font-mono-override": "initial",
     };
   }
-  let value = input?.trim();
+  let value = font?.trim();
   if (!value) {
     return {};
   }
@@ -2638,25 +2638,25 @@ function getMonospaceOverrideStyle(input?: string | null): DesignStyle {
 function useSurfaceBackground(): string | undefined {
   return reactCdsRoot.useContext(surfaceBackgroundContext);
 }
-function getSurfaceBackgroundStyle(input?: string): DesignStyle {
-  if (!input) {
+function getSurfaceBackgroundStyle(background?: string): DesignStyle {
+  if (!background) {
     return {};
   }
   return {
-    "--cds-page-bg": isSurfaceToken(input)
-      ? `var(--cds-${input})`
-      : sanitizeCssBackground(input),
-    ...(isTintedFillSurface(input) ? opaqueTintOverrides : {}),
+    "--cds-page-bg": isSurfaceToken(background)
+      ? `var(--cds-${background})`
+      : sanitizeCssBackground(background),
+    ...(isTintedFillSurface(background) ? opaqueTintOverrides : {}),
   };
 }
-function isTintedFillSurface(input: string): boolean {
-  return isSurfaceToken(input) && input.startsWith("fill-");
+function isTintedFillSurface(background: string): boolean {
+  return isSurfaceToken(background) && background.startsWith("fill-");
 }
-function sanitizeCssBackground(input: string): string {
-  return input.replaceAll(/[\u0000-\u001f\u007f;{}*]/g, "");
+function sanitizeCssBackground(background: string): string {
+  return background.replaceAll(/[\u0000-\u001f\u007f;{}*]/g, "");
 }
-function isSurfaceToken(input: string): boolean {
-  return surfaceTokenNames.has(input);
+function isSurfaceToken(background: string): boolean {
+  return surfaceTokenNames.has(background);
 }
 function useCdsLocale(): string | undefined {
   return reactCdsRoot.useContext(localeContext);
@@ -2666,9 +2666,9 @@ function useRootElement(): HTMLElement | undefined {
 }
 function usePortalContainer(): Layers.PortalContainer {
   let value = reactCdsRoot.useContext(rootElementContext),
-    value2 = reactCdsRoot.useContext(rootPortalContainerContext),
-    value3 = reactCdsRoot.useContext(isPortalRootContext);
-  return value ?? (value3 ? undefined : value2);
+    rootPortalContainer = reactCdsRoot.useContext(rootPortalContainerContext),
+    insidePortalRoot = reactCdsRoot.useContext(isPortalRootContext);
+  return value ?? (insidePortalRoot ? undefined : rootPortalContainer);
 }
 function useRootWindow(): Window | undefined {
   return getElementWindow(reactCdsRoot.useContext(rootElementContext));
@@ -2710,12 +2710,12 @@ function CdsRoot({
       () =>
         labels && parentLabels
           ? (
-              input: string,
-              options: string,
-              context?: Overlays.LabelValues,
+              messageKey: string,
+              fallback: string,
+              values?: Overlays.LabelValues,
             ) =>
-              labels(input, options, context) ||
-              parentLabels(input, options, context)
+              labels(messageKey, fallback, values) ||
+              parentLabels(messageKey, fallback, values)
           : (labels ?? parentLabels),
       [labels, parentLabels],
     ),
@@ -3251,21 +3251,21 @@ export function installUiOverlays(): () => void {
             "data-cds": dataCds,
             ...props
           }: MenuPopupProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let { finalFocus: value, popupRef: value2 } = useOverlayFocusReturn({
+          let { finalFocus: value, popupRef: focusPopupRef } = useOverlayFocusReturn({
             registerOpenerReturn:
               finalFocus === undefined || finalFocus === null,
           });
-          useKeyboardContextMenuInitialFocus(value2);
-          let value3 = useDefaultOverlayLayer("contextmenu"),
-            { elementRef: value4, overlayAttrs: value5 } =
+          useKeyboardContextMenuInitialFocus(focusPopupRef);
+          let overlayLayer = useDefaultOverlayLayer("contextmenu"),
+            { elementRef: overlayElementRef, overlayAttrs: overlayAttributes } =
               useMenuOverlayRegistration(),
-            value6 = useMergedRefs(options, value2, value4);
+            mergedRef = useMergedRefs(forwardedRef, focusPopupRef, overlayElementRef);
           return (
             <ResetSheetContexts>
               <PortalRoot
-                {...value3.portalProps}
+                {...overlayLayer.portalProps}
                 surface={elevationSurfaceNames.popover}
                 companionModalCatcher={true}
                 closeOnActivityHide={true}
@@ -3274,20 +3274,20 @@ export function installUiOverlays(): () => void {
                   override={collisionPadding}
                   provideInherit={true}
                 >
-                  {(input: CollisionPadding) => (
-                    <layerBaseContext.Provider value={value3.base}>
+                  {(resolvedCollisionPadding: CollisionPadding) => (
+                    <layerBaseContext.Provider value={overlayLayer.base}>
                       <baseContextMenu.Positioner
-                        style={value3.style}
+                        style={overlayLayer.style}
                         anchor={anchor}
                         side={side}
                         align={align}
                         sideOffset={sideOffset}
-                        collisionPadding={input}
+                        collisionPadding={resolvedCollisionPadding}
                       >
                         <baseContextMenu.Popup
                           data-cds={dataCds}
-                          {...value5}
-                          ref={value6}
+                          {...overlayAttributes}
+                          ref={mergedRef}
                           finalFocus={(finalFocus ?? value) as import("../contracts/overlays").BaseUIPopupFocus}
                           {...props}
                           className={cn(
@@ -3334,7 +3334,7 @@ export function installUiOverlays(): () => void {
       return;
     };
     getPassiveOffSnapshot = () => "off";
-    unchangedPopupProps = (input: PassivePopupProps) => input;
+    unchangedPopupProps = (popupProps: PassivePopupProps) => popupProps;
     initializePassiveOpen = initializeOnce(() => {
       initializeElementAccess();
       initializeSafeBlur();
@@ -3440,7 +3440,7 @@ export function installUiOverlays(): () => void {
             finalFocus: finalFocus,
             ...props
           }: MenuPopupElementProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
           let value =
               reactMenuPopupElement.useContext(
@@ -3451,28 +3451,28 @@ export function installUiOverlays(): () => void {
                   | null
                 >,
               )?.open ?? true,
-            { elementRef: value2, overlayAttrs: value3 } =
+            { elementRef: overlayElementRef, overlayAttrs: overlayAttributes } =
               useMenuOverlayRegistration(),
-            value4 = useOverlayFocusReturn({
+            focusReturn = useOverlayFocusReturn({
               open: value,
               skipRestoreOnOutsideFocus: !cursorAnchored,
               registerOpenerReturn: anchoredWithoutFinalFocus,
               triggerRef: useMenuOpenerRef(),
             }),
-            value5 = useMergedRefs(
-              options,
-              value2,
-              anchoredWithoutFinalFocus ? value4.popupRef : undefined,
+            mergedRef = useMergedRefs(
+              forwardedRef,
+              overlayElementRef,
+              anchoredWithoutFinalFocus ? focusReturn.popupRef : undefined,
             );
           return (
             <baseMenu.Popup
-              {...value3}
-              ref={value5}
+              {...overlayAttributes}
+              ref={mergedRef}
               finalFocus={
                 ((finalFocus === undefined ||
                   (cursorAnchored && finalFocus === null)) &&
                 anchoredWithoutFinalFocus
-                  ? value4.finalFocus
+                  ? focusReturn.finalFocus
                   : finalFocus) as import("../contracts/overlays").BaseUIPopupFocus
               }
               {...props}
@@ -3575,69 +3575,69 @@ export function installUiOverlays(): () => void {
             initialFocus: initialFocus,
             ...props
           }: MenuPopupProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ) => {
           let value = usePortalContainer(),
-            value2 =
+            triggerState =
               reactMenuSheetPopup.useContext<Overlays.MenuRootState | null>(
                 menuTriggerContext,
               ),
-            value3 =
+            isCursorAnchored =
               reactMenuSheetPopup.useContext<boolean>(
                 contextMenuContext,
-              ) && value2 === null,
-            value4 = useIsSheet(),
-            value5 = value4 && value2 !== null,
-            value6 = reactMenuSheetPopup.useContext<{
+              ) && triggerState === null,
+            isSheet = useIsSheet(),
+            isNestedSheet = isSheet && triggerState !== null,
+            inheritedCollision = reactMenuSheetPopup.useContext<{
               collisionPadding?: CollisionPadding;
             } | null>(collisionPaddingContext),
-            value7 = collisionPadding ?? value6?.collisionPadding,
+            requestedCollisionPadding = collisionPadding ?? inheritedCollision?.collisionPadding,
             memo = reactMenuSheetPopup.useMemo(
               () =>
-                anchor !== undefined || !value2
+                anchor !== undefined || !triggerState
                   ? anchor
-                  : createMenuVirtualAnchor(value2),
-              [anchor, value2],
+                  : createMenuVirtualAnchor(triggerState),
+              [anchor, triggerState],
             ),
-            value8 =
+            resolvedSideOffset =
               sideOffset ??
-              (value3 ? undefined : value2 && anchor === undefined ? 2 : 6),
-            value9 = useStablePopupPlacement({
-              enabled: stableWhileOpen && !value4 && !value3,
+              (isCursorAnchored ? undefined : triggerState && anchor === undefined ? 2 : 6),
+            stablePlacement = useStablePopupPlacement({
+              enabled: stableWhileOpen && !isSheet && !isCursorAnchored,
               side: side,
               align: align,
             }),
-            value10 =
+            sheetFrame =
               reactMenuSheetPopup.useContext<Overlays.SheetFrameContext | null>(
                 sheetFrameContext,
               ),
-            value11 = reactMenuSheetPopup.useContext<Overlays.MenuItemState>(
+            submenuState = reactMenuSheetPopup.useContext<Overlays.MenuItemState>(
               submenuStateContext,
             ),
             ref = reactMenuSheetPopup.useRef<HTMLElement | null>(null),
-            ref2 = reactMenuSheetPopup.useRef<Element | null>(null),
+            coveredParentRef = reactMenuSheetPopup.useRef<Element | null>(null),
             callback = reactMenuSheetPopup.useCallback(() => {
-              let current = ref2.current;
+              let current = coveredParentRef.current;
               if (current !== null) {
-                uncoverParentMenuSheet(current, ref2);
-                ref2.current = null;
+                uncoverParentMenuSheet(current, coveredParentRef);
+                coveredParentRef.current = null;
               }
             }, []),
-            callback2 = reactMenuSheetPopup.useCallback(
+            coverParentAndFocus = reactMenuSheetPopup.useCallback(
               (element: HTMLElement) => {
-                if (value2 === null) {
+                if (triggerState === null) {
                   return;
                 }
-                let value43 =
-                  value10 !== null
-                    ? (value2.triggerRef.current?.closest(
-                        `[data-sheet-tree="${CSS.escape(value10.treeId)}"][data-presentation="sheet"]`,
+                let parentSheetElement =
+                  sheetFrame !== null
+                    ? (triggerState.triggerRef.current?.closest(
+                        `[data-sheet-tree="${CSS.escape(sheetFrame.treeId)}"][data-presentation="sheet"]`,
                       ) ?? null)
                     : null;
-                if (value43 !== null && ref2.current !== value43) {
+                if (parentSheetElement !== null && coveredParentRef.current !== parentSheetElement) {
                   callback();
-                  coverParentMenuSheet(value43, ref2);
-                  ref2.current = value43;
+                  coverParentMenuSheet(parentSheetElement, coveredParentRef);
+                  coveredParentRef.current = parentSheetElement;
                 }
                 if (!element.contains(element.ownerDocument.activeElement)) {
                   element.focus({
@@ -3645,65 +3645,65 @@ export function installUiOverlays(): () => void {
                   });
                 }
               },
-              [value2, callback, value10],
+              [triggerState, callback, sheetFrame],
             ),
-            [value12, value13] = reactMenuSheetPopup.useState(false),
-            ref3 = reactMenuSheetPopup.useRef(false),
-            callback3 = reactMenuSheetPopup.useCallback((input: boolean) => {
-              ref3.current = input;
-              value13(input);
+            [useHalfHeightFloor, setHalfHeightFloor] = reactMenuSheetPopup.useState(false),
+            halfHeightFloorRef = reactMenuSheetPopup.useRef(false),
+            updateHalfHeightFloor = reactMenuSheetPopup.useCallback((shouldUseHalfHeightFloor: boolean) => {
+              halfHeightFloorRef.current = shouldUseHalfHeightFloor;
+              setHalfHeightFloor(shouldUseHalfHeightFloor);
             }, []),
-            [value14, value15] =
+            [modalPopup, setModalPopup] =
               reactMenuSheetPopup.useState<HTMLElement | null>(null),
-            value16 = value10?.takeCloseRequest,
-            callback4 = reactMenuSheetPopup.useCallback(
-              () => getSheetInertReleaseTiming(value16?.() ?? null),
-              [value16],
+            takeCloseRequest = sheetFrame?.takeCloseRequest,
+            getInertReleaseTiming = reactMenuSheetPopup.useCallback(
+              () => getSheetInertReleaseTiming(takeCloseRequest?.() ?? null),
+              [takeCloseRequest],
             ),
-            value17 = useModalPortalInert({
-              node: value14,
-              open: value4 && !value5 && (value10?.open ?? false),
-              liftOnClose: callback4,
+            finishDeferredInertRelease = useModalPortalInert({
+              node: modalPopup,
+              open: isSheet && !isNestedSheet && (sheetFrame?.open ?? false),
+              liftOnClose: getInertReleaseTiming,
             }),
-            value18: Dom.SheetState = useSheetState(),
-            value19 =
+            sheetState: Dom.SheetState = useSheetState(),
+            parentSheet =
               reactMenuSheetPopup.useContext<Dom.SheetParentState | null>(
                 sheetParentContext,
               ),
-            value20 = reactMenuSheetPopup.useContext<
+            coverSheet = reactMenuSheetPopup.useContext<
               ((token: object) => () => void) | null
             >(sheetCoverContext),
-            [value21, value22] =
+            [sheetElement, setSheetElement] =
               reactMenuSheetPopup.useState<HTMLElement | null>(null),
-            callback5 = reactMenuSheetPopup.useCallback(
+            attachPopup = reactMenuSheetPopup.useCallback(
               (element: HTMLElement | null) => {
-                ref.current = value4 ? element : null;
-                value22(value4 ? element : null);
-                value15(value4 && !value5 ? element : null);
+                ref.current = isSheet ? element : null;
+                setSheetElement(isSheet ? element : null);
+                setModalPopup(isSheet && !isNestedSheet ? element : null);
                 if (element === null) {
-                  value17();
+                  finishDeferredInertRelease();
                   callback();
-                  callback3(false);
+                  updateHalfHeightFloor(false);
                   return;
                 }
-                if (!value4) {
-                  callback3(false);
+                if (!isSheet) {
+                  updateHalfHeightFloor(false);
                   return;
                 }
-                if (!value5) {
-                  let value43 = hasEditableSheetContent(element);
-                  if (value43) {
+                if (!isNestedSheet) {
+                  let hasTextEntry = hasEditableSheetContent(element);
+                  if (hasTextEntry) {
                     element.style.minHeight = MIN_SHEET_HEIGHT_CSS;
                     element.style.maxHeight = MIN_SHEET_HEIGHT_CSS;
                   }
-                  callback3(value43);
-                  value10?.pinHeight(
+                  updateHalfHeightFloor(hasTextEntry);
+                  sheetFrame?.pinHeight(
                     element.getBoundingClientRect().height,
                     sheetContentCanGrow(element),
                   );
                   return;
                 }
-                callback2(element);
+                coverParentAndFocus(element);
                 element.style.transition = "none";
                 element.style.translate =
                   element.ownerDocument.defaultView?.getComputedStyle(element)
@@ -3715,152 +3715,152 @@ export function installUiOverlays(): () => void {
                 element.style.translate = "";
               },
               [
-                value4,
-                value5,
-                value10,
+                isSheet,
+                isNestedSheet,
+                sheetFrame,
                 callback,
-                callback2,
-                callback3,
-                value17,
+                coverParentAndFocus,
+                updateHalfHeightFloor,
+                finishDeferredInertRelease,
               ],
             );
-          useSheetTextEntryFocus(value21, value10);
-          useSheetPressedState(value21);
+          useSheetTextEntryFocus(sheetElement, sheetFrame);
+          useSheetPressedState(sheetElement);
           useDismissSheetOnForeignFocus(
-            value21,
-            value10,
-            value18.covered,
+            sheetElement,
+            sheetFrame,
+            sheetState.covered,
           );
-          let value23 = value4 && value18.covered,
-            value24 = value4 && value18.inert;
+          let isCovered = isSheet && sheetState.covered,
+            isInert = isSheet && sheetState.inert;
           useAndroidCloseWatcher(
-            value4 && (value5 ? value11.open : (value10?.open ?? false)),
-            value5 ? value2?.close : value10?.dismiss,
+            isSheet && (isNestedSheet ? submenuState.open : (sheetFrame?.open ?? false)),
+            isNestedSheet ? triggerState?.close : sheetFrame?.dismiss,
           );
-          let ref4 = reactMenuSheetPopup.useRef(false),
-            value25 = value10?.open ?? false;
+          let wasNestedSheetMountedRef = reactMenuSheetPopup.useRef(false),
+            isFrameOpen = sheetFrame?.open ?? false;
           useIsomorphicLayoutEffect(() => {
             let current = ref.current,
-              value43 = value5 && value11.open && current !== null,
-              current2 = ref4.current;
-            ref4.current = value43;
-            if (value43 && !current2) {
-              callback2(current!);
-            } else if (!value43 && value25) {
+              isNestedSheetMounted = isNestedSheet && submenuState.open && current !== null,
+              wasNestedSheetMounted = wasNestedSheetMountedRef.current;
+            wasNestedSheetMountedRef.current = isNestedSheetMounted;
+            if (isNestedSheetMounted && !wasNestedSheetMounted) {
+              coverParentAndFocus(current!);
+            } else if (!isNestedSheetMounted && isFrameOpen) {
               callback();
             }
-          }, [value5, value11.open, value25, callback2, callback]);
-          let ref5 = reactMenuSheetPopup.useRef(false),
-            [value26, value27] = reactMenuSheetPopup.useState(false);
+          }, [isNestedSheet, submenuState.open, isFrameOpen, coverParentAndFocus, callback]);
+          let wasNestedSheetOpenRef = reactMenuSheetPopup.useRef(false),
+            [isReturningToParent, setIsReturningToParent] = reactMenuSheetPopup.useState(false);
           useIsomorphicLayoutEffect(() => {
-            let value43 = value5 && value11.open,
-              current = ref5.current;
-            ref5.current = value43;
-            if (value43 !== current) {
-              value27(!value43 && value25);
+            let isNestedSheetOpen = isNestedSheet && submenuState.open,
+              current = wasNestedSheetOpenRef.current;
+            wasNestedSheetOpenRef.current = isNestedSheetOpen;
+            if (isNestedSheetOpen !== current) {
+              setIsReturningToParent(!isNestedSheetOpen && isFrameOpen);
             }
-          }, [value5, value11.open, value25]);
+          }, [isNestedSheet, submenuState.open, isFrameOpen]);
           useIsomorphicLayoutEffect(() => {
             let current = ref.current;
-            if (value5 && value11.open && current !== null) {
+            if (isNestedSheet && submenuState.open && current !== null) {
               resetSheetDragStyle(current);
             }
-          }, [value5, value11.open]);
-          let value28 = value10?.pushLevelHeight,
-            value29 = value10?.drag;
+          }, [isNestedSheet, submenuState.open]);
+          let pushLevelHeight = sheetFrame?.pushLevelHeight,
+            dragState = sheetFrame?.drag;
           reactMenuSheetPopup.useEffect(() => {
             if (
-              !value5 ||
-              !value11.open ||
-              value21 === null ||
-              value28 === undefined
+              !isNestedSheet ||
+              !submenuState.open ||
+              sheetElement === null ||
+              pushLevelHeight === undefined
             ) {
               return;
             }
-            let defaultView = value21.ownerDocument.defaultView,
-              value43: Dom.SheetLevelHandle | undefined,
+            let defaultView = sheetElement.ownerDocument.defaultView,
+              heightHandle: Dom.SheetLevelHandle | undefined,
               flag = false,
-              callback6 = () => {
-                let value47 = defaultView?.innerHeight ?? 1 / 0,
-                  value48 =
+              measureNestedSheet = () => {
+                let viewportHeight = defaultView?.innerHeight ?? 1 / 0,
+                  maximumHeight =
                     (defaultView
                       ? getSheetAvailableHeight(
                           defaultView,
-                          value21,
+                          sheetElement,
                         )
                       : 1 / 0) * MAX_SHEET_HEIGHT_FRACTION,
-                  value49 = hasEditableSheetContent(value21),
-                  value50 = measureNaturalSheetHeight(value21);
-                flag = value50 > value48;
-                let value51 = value49
-                    ? value47 * MIN_SHEET_HEIGHT_FRACTION
-                    : Math.min(value50, value48),
-                  value52 = value49 || flag;
-                if (value43 === undefined) {
-                  value43 = value28(value51, value52);
+                  hasTextEntry = hasEditableSheetContent(sheetElement),
+                  naturalHeight = measureNaturalSheetHeight(sheetElement);
+                flag = naturalHeight > maximumHeight;
+                let nextHeight = hasTextEntry
+                    ? viewportHeight * MIN_SHEET_HEIGHT_FRACTION
+                    : Math.min(naturalHeight, maximumHeight),
+                  canGrow = hasTextEntry || flag;
+                if (heightHandle === undefined) {
+                  heightHandle = pushLevelHeight(nextHeight, canGrow);
                 } else {
-                  value43.set(value51, value52);
+                  heightHandle.set(nextHeight, canGrow);
                 }
               },
-              callback7 = () => {
-                value45 = undefined;
-                if (value29 !== undefined && value29.get() !== null) {
-                  value45 = defaultView?.requestAnimationFrame(callback7);
+              measureWhenUncovered = () => {
+                measurementFrame = undefined;
+                if (dragState !== undefined && dragState.get() !== null) {
+                  measurementFrame = defaultView?.requestAnimationFrame(measureWhenUncovered);
                   return;
                 }
-                if (!value44.ready()) {
+                if (!uncoverGate.ready()) {
                   return;
                 }
-                callback6();
+                measureNestedSheet();
               },
-              value44 = createSheetUncoverGate(value21, () => {
-                if (value45 === undefined) {
-                  value45 = defaultView?.requestAnimationFrame(callback7);
+              uncoverGate = createSheetUncoverGate(sheetElement, () => {
+                if (measurementFrame === undefined) {
+                  measurementFrame = defaultView?.requestAnimationFrame(measureWhenUncovered);
                 }
               }),
-              value45 = defaultView?.requestAnimationFrame(callback7),
-              value46 =
+              measurementFrame = defaultView?.requestAnimationFrame(measureWhenUncovered),
+              contentObserver =
                 defaultView !== null &&
                 typeof defaultView.MutationObserver !== "undefined"
                   ? new defaultView.MutationObserver(
-                      (input: MutationRecord[]) => {
+                      (mutations: MutationRecord[]) => {
                         if (
-                          value45 !== undefined ||
-                          value43 === undefined ||
-                          isScrollContentReplacement(input, flag)
+                          measurementFrame !== undefined ||
+                          heightHandle === undefined ||
+                          isScrollContentReplacement(mutations, flag)
                         ) {
                           return;
                         }
-                        value45 = defaultView.requestAnimationFrame(callback7);
+                        measurementFrame = defaultView.requestAnimationFrame(measureWhenUncovered);
                       },
                     )
                   : null;
-            value46?.observe(value21, {
+            contentObserver?.observe(sheetElement, {
               childList: true,
               subtree: true,
             });
             return () => {
-              value46?.disconnect();
-              value44.dispose();
-              if (value45 !== undefined) {
-                defaultView?.cancelAnimationFrame(value45);
+              contentObserver?.disconnect();
+              uncoverGate.dispose();
+              if (measurementFrame !== undefined) {
+                defaultView?.cancelAnimationFrame(measurementFrame);
               }
-              value43?.release();
+              heightHandle?.release();
             };
-          }, [value5, value11.open, value21, value28, value29]);
-          let value30 = value10?.repinHeight,
-            value31 = value10?.open ?? false;
+          }, [isNestedSheet, submenuState.open, sheetElement, pushLevelHeight, dragState]);
+          let repinHeight = sheetFrame?.repinHeight,
+            shouldMeasureOpenSheet = sheetFrame?.open ?? false;
           reactMenuSheetPopup.useEffect(() => {
             if (
-              !value4 ||
-              value5 ||
-              !value31 ||
-              value21 === null ||
-              value30 === undefined
+              !isSheet ||
+              isNestedSheet ||
+              !shouldMeasureOpenSheet ||
+              sheetElement === null ||
+              repinHeight === undefined
             ) {
               return;
             }
-            let defaultView = value21.ownerDocument.defaultView;
+            let defaultView = sheetElement.ownerDocument.defaultView;
             if (
               defaultView === null ||
               typeof defaultView.MutationObserver === "undefined"
@@ -3869,19 +3869,19 @@ export function installUiOverlays(): () => void {
             }
             let index = 0,
               flag = false,
-              callback6 = () => {
+              remeasureRootSheet = () => {
                 index = 0;
-                if (value29 !== undefined && value29.get() !== null) {
-                  index = defaultView.requestAnimationFrame(callback6);
+                if (dragState !== undefined && dragState.get() !== null) {
+                  index = defaultView.requestAnimationFrame(remeasureRootSheet);
                   return;
                 }
-                if (!value43.ready()) {
+                if (!uncoverGate.ready()) {
                   return;
                 }
-                if (hasEditableSheetContent(value21)) {
-                  if (!ref3.current) {
-                    callback3(true);
-                    value30(
+                if (hasEditableSheetContent(sheetElement)) {
+                  if (!halfHeightFloorRef.current) {
+                    updateHalfHeightFloor(true);
+                    repinHeight(
                       defaultView.innerHeight *
                         MIN_SHEET_HEIGHT_FRACTION,
                       true,
@@ -3889,259 +3889,259 @@ export function installUiOverlays(): () => void {
                   }
                   return;
                 }
-                let value45 =
-                    getSheetAvailableHeight(defaultView, value21) *
+                let maximumHeight =
+                    getSheetAvailableHeight(defaultView, sheetElement) *
                     MAX_SHEET_HEIGHT_FRACTION,
-                  value46 = measureNaturalSheetHeight(value21);
-                flag = value46 > value45;
-                let value47 = getSheetMinimumHeight(
+                  naturalHeight = measureNaturalSheetHeight(sheetElement);
+                flag = naturalHeight > maximumHeight;
+                let minimumHeight = getSheetMinimumHeight(
                   defaultView.innerHeight,
-                  ref3.current,
+                  halfHeightFloorRef.current,
                 );
-                value30(Math.max(Math.min(value46, value45), value47), flag);
+                repinHeight(Math.max(Math.min(naturalHeight, maximumHeight), minimumHeight), flag);
               },
-              value43 = createSheetUncoverGate(value21, () => {
+              uncoverGate = createSheetUncoverGate(sheetElement, () => {
                 if (index === 0) {
-                  index = defaultView.requestAnimationFrame(callback6);
+                  index = defaultView.requestAnimationFrame(remeasureRootSheet);
                 }
               }),
-              value44 = new defaultView.MutationObserver(
-                (input: MutationRecord[]) => {
+              contentObserver = new defaultView.MutationObserver(
+                (mutations: MutationRecord[]) => {
                   if (
                     index !== 0 ||
-                    isScrollContentReplacement(input, flag)
+                    isScrollContentReplacement(mutations, flag)
                   ) {
                     return;
                   }
-                  index = defaultView.requestAnimationFrame(callback6);
+                  index = defaultView.requestAnimationFrame(remeasureRootSheet);
                 },
               );
-            value44.observe(value21, {
+            contentObserver.observe(sheetElement, {
               childList: true,
               subtree: true,
             });
             return () => {
-              value44.disconnect();
-              value43.dispose();
+              contentObserver.disconnect();
+              uncoverGate.dispose();
               if (index !== 0) {
                 defaultView.cancelAnimationFrame(index);
               }
             };
-          }, [value4, value5, value31, value21, value30, value29, callback3]);
-          let value32 = value10?.height,
-            value33 = value10?.pinHeight;
+          }, [isSheet, isNestedSheet, shouldMeasureOpenSheet, sheetElement, repinHeight, dragState, updateHalfHeightFloor]);
+          let pinnedHeight = sheetFrame?.height,
+            pinHeight = sheetFrame?.pinHeight;
           useIsomorphicLayoutEffect(() => {
             let current = ref.current;
             if (
-              !value4 ||
-              value5 ||
-              value32 !== undefined ||
+              !isSheet ||
+              isNestedSheet ||
+              pinnedHeight !== undefined ||
               current === null
             ) {
               return;
             }
             resetSheetDragStyle(current);
-            value33?.(
+            pinHeight?.(
               current.getBoundingClientRect().height,
               sheetContentCanGrow(current),
             );
-          }, [value4, value5, value32, value33]);
-          let value34 = useMenuOwnerRef(value2?.triggerRef, props.finalFocus),
-            value35 = value3
+          }, [isSheet, isNestedSheet, pinnedHeight, pinHeight]);
+          let ownerRef = useMenuOwnerRef(triggerState?.triggerRef, props.finalFocus),
+            anchoredWithoutFinalFocus = isCursorAnchored
               ? props.finalFocus === undefined || props.finalFocus === null
               : anchor !== undefined &&
                 anchor !== null &&
-                value2 === null &&
+                triggerState === null &&
                 props.finalFocus === undefined,
-            value36 = usePassiveOpenContext(value2 === null);
-          value36.root?.declareFocusProps(initialFocus, props.finalFocus);
-          if (value2 !== null && initialFocus !== undefined) {
+            passiveOpen = usePassiveOpenContext(triggerState === null);
+          passiveOpen.root?.declareFocusProps(initialFocus, props.finalFocus);
+          if (triggerState !== null && initialFocus !== undefined) {
             warnNestedMenuInitialFocus();
           }
           let state = {
               ...props,
               onKeyDown: (
-                input: Parameters<NonNullable<MenuPopupProps["onKeyDown"]>>[0],
+                keyEvent: Parameters<NonNullable<MenuPopupProps["onKeyDown"]>>[0],
               ) => {
-                props.onKeyDown?.(input);
-                preventModalTabNavigation(input);
+                props.onKeyDown?.(keyEvent);
+                preventModalTabNavigation(keyEvent);
               },
             },
-            value37 = useStableMergedRef(
-              (input: HTMLElement | null) => {
-                value9.popupRef(input);
-                callback5(input);
-                value34(input);
-                value36.root?.registerPopup(input);
+            mergedPopupRef = useStableMergedRef(
+              (popup: HTMLElement | null) => {
+                stablePlacement.popupRef(popup);
+                attachPopup(popup);
+                ownerRef(popup);
+                passiveOpen.root?.registerPopup(popup);
               },
-              options,
+              forwardedRef,
             ),
-            value38 = value4
-              ? getSheetPopupStyle(value10, {
-                  floor: value12 ? "half" : "content",
-                  parentFrameHeight: value5 ? undefined : value19?.frameHeight,
+            sheetStyle = isSheet
+              ? getSheetPopupStyle(sheetFrame, {
+                  floor: useHalfHeightFloor ? "half" : "content",
+                  parentFrameHeight: isNestedSheet ? undefined : parentSheet?.frameHeight,
                 })
               : undefined,
-            value39 =
-              value38 === undefined
+            popupStyle =
+              sheetStyle === undefined
                 ? style
                 : typeof style === "function"
                   ? (
-                      input: import("@base-ui/react/menu").Menu.Popup.State,
+                      popupState: import("@base-ui/react/menu").Menu.Popup.State,
                     ) => ({
                       ...(
                         style as (
                           state: import("@base-ui/react/menu").Menu.Popup.State,
                         ) => React.CSSProperties
-                      )(input),
-                      ...value38,
+                      )(popupState),
+                      ...sheetStyle,
                     })
                   : {
                       ...style,
-                      ...value38,
+                      ...sheetStyle,
                     };
-          if (value2 !== null && layerOffset !== undefined) {
+          if (triggerState !== null && layerOffset !== undefined) {
             warnNestedMenuLayerOffset();
           }
-          let value40 = useOverlayLayer(
-              value3 ? "contextmenu" : "menu",
-              value2 === null ? layerOffset : undefined,
+          let overlayLayer = useOverlayLayer(
+              isCursorAnchored ? "contextmenu" : "menu",
+              triggerState === null ? layerOffset : undefined,
             ),
-            value41 = useRootWindow(),
-            value42 = getSheetFrameHeight(
-              value10,
-              value41,
-              value21,
+            rootWindow = useRootWindow(),
+            frameHeight = getSheetFrameHeight(
+              sheetFrame,
+              rootWindow,
+              sheetElement,
             ),
-            memo2 = reactMenuSheetPopup.useMemo(
+            sheetParentContextValue = reactMenuSheetPopup.useMemo(
               () =>
-                value4 && value20 !== null
+                isSheet && coverSheet !== null
                   ? {
-                      depth: value18.depth,
-                      frameHeight: value42,
-                      cover: value20,
+                      depth: sheetState.depth,
+                      frameHeight: frameHeight,
+                      cover: coverSheet,
                     }
                   : null,
-              [value4, value20, value18.depth, value42],
+              [isSheet, coverSheet, sheetState.depth, frameHeight],
             );
           return (
             <baseMenu.Portal container={(container ?? value) as import("../contracts/overlays").BaseUIPortalContainer}>
               <PortalRoot
-                {...value40.portalProps}
+                {...overlayLayer.portalProps}
                 surface={elevationSurfaceNames.popover}
-                density={value4 ? SHEET_DENSITY : undefined}
-                companionModalCatcher={!value4}
+                density={isSheet ? SHEET_DENSITY : undefined}
+                companionModalCatcher={!isSheet}
                 closeOnActivityHide={true}
               >
-                {[value4 && !value5 && (
+                {[isSheet && !isNestedSheet && (
                     <baseMenu.Backdrop
                       data-presentation={"sheet"}
-                      data-sheet-scrim={value10?.treeId}
+                      data-sheet-scrim={sheetFrame?.treeId}
                       className={
-                        value18.depth > 0
+                        sheetState.depth > 0
                           ? "draggable-none fixed inset-0 bg-transparent"
                           : sheetBackdropClasses
                       }
                     />
                   ), <CollisionPaddingProvider
-                    override={value7}
+                    override={requestedCollisionPadding}
                     container={container ?? value}
                     provideInherit={true}
                   >
-                    {(input: CollisionPadding | undefined) => (
-                      <layerBaseContext.Provider value={value40.base}>
+                    {(resolvedCollisionPadding: CollisionPadding | undefined) => (
+                      <layerBaseContext.Provider value={overlayLayer.base}>
                         <baseMenu.Positioner
-                          ref={value9.positionerRef}
-                          data-sheet-tree={value4 ? value10?.treeId : undefined}
+                          ref={stablePlacement.positionerRef}
+                          data-sheet-tree={isSheet ? sheetFrame?.treeId : undefined}
                           style={
-                            value4
+                            isSheet
                               ? {
-                                  ...value40.style,
+                                  ...overlayLayer.style,
                                   ...getSheetPositionerStyle(
-                                    value10,
+                                    sheetFrame,
                                   ),
                                 }
-                              : value9.held !== null
+                              : stablePlacement.held !== null
                                 ? {
-                                    ...value40.style,
-                                    ...value9.held.positionerStyle,
+                                    ...overlayLayer.style,
+                                    ...stablePlacement.held.positionerStyle,
                                   }
-                                : value40.style
+                                : overlayLayer.style
                           }
-                          side={value9.side}
-                          align={value9.align}
-                          sideOffset={value8}
-                          collisionPadding={input}
+                          side={stablePlacement.side}
+                          align={stablePlacement.align}
+                          sideOffset={resolvedSideOffset}
+                          collisionPadding={resolvedCollisionPadding}
                           collisionAvoidance={collisionAvoidance}
                           anchor={memo}
-                          {...(value4 ? (sheetPositioningOverrides as Partial<typeof sheetPositioningOverrides>) : {})}
+                          {...(isSheet ? (sheetPositioningOverrides as Partial<typeof sheetPositioningOverrides>) : {})}
                           className={
-                            value4
-                              ? value5
+                            isSheet
+                              ? isNestedSheet
                                 ? sheetClipClasses
-                                : value18.depth === 0
+                                : sheetState.depth === 0
                                   ? sheetOverflowBackgroundClasses
                                   : undefined
-                              : value9.held?.positionerClassName
+                              : stablePlacement.held?.positionerClassName
                           }
                         >
                           <PassiveOpenGate
-                            cell={value4 ? null : value36.cell}
-                            nested={value2 !== null}
+                            cell={isSheet ? null : passiveOpen.cell}
+                            nested={triggerState !== null}
                           >
-                            {(input2: PassivePopupTransform) => (
+                            {(applyPassivePopupProps: PassivePopupTransform) => (
                               <MenuPopupElement
-                                anchoredWithoutFinalFocus={value35}
-                                cursorAnchored={value3}
+                                anchoredWithoutFinalFocus={anchoredWithoutFinalFocus}
+                                cursorAnchored={isCursorAnchored}
                                 data-cds={dataCds}
-                                data-presentation={value4 ? "sheet" : undefined}
+                                data-presentation={isSheet ? "sheet" : undefined}
                                 data-sheet-tree={
-                                  value4 ? value10?.treeId : undefined
+                                  isSheet ? sheetFrame?.treeId : undefined
                                 }
                                 data-cds-sheet-depth={
-                                  value4 ? String(value18.depth) : undefined
+                                  isSheet ? String(sheetState.depth) : undefined
                                 }
-                                {...(value23
+                                {...(isCovered
                                   ? {
                                       [SHEET_COVERED_ATTRIBUTE]: "",
                                     }
                                   : {})}
-                                {...(value24 ? (inertElementProps as React.HTMLAttributes<HTMLDivElement>) : {})}
-                                {...(value5 && value10 !== null && !value10.open
+                                {...(isInert ? (inertElementProps as React.HTMLAttributes<HTMLDivElement>) : {})}
+                                {...(isNestedSheet && sheetFrame !== null && !sheetFrame.open
                                   ? {
                                       [SHEET_TREE_CLOSING_ATTRIBUTE]:
                                         "",
                                     }
                                   : {})}
-                                {...(value5 && value26 && !value11.open
+                                {...(isNestedSheet && isReturningToParent && !submenuState.open
                                   ? {
                                       [SHEET_PEELING_ATTRIBUTE]: "",
                                     }
                                   : {})}
-                                {...(value4
+                                {...(isSheet
                                   ? getControlSizeAttributes("lg")
                                   : {})}
-                                ref={value37}
-                                {...input2(value4 ? state : props)}
-                                style={value39}
+                                ref={mergedPopupRef}
+                                {...applyPassivePopupProps(isSheet ? state : props)}
+                                style={popupStyle}
                                 className={cn(
                                   contextMenuPopupClasses,
-                                  value9.held?.popupClassName,
-                                  value4 && sheetPopupClasses,
-                                  value4 &&
-                                    (value5
+                                  stablePlacement.held?.popupClassName,
+                                  isSheet && sheetPopupClasses,
+                                  isSheet &&
+                                    (isNestedSheet
                                       ? "bg-transparent shadow-none [&[data-ending-style]:not([data-cds-sheet-tree-closing])]:translate-x-full rtl:[&[data-ending-style]:not([data-cds-sheet-tree-closing])]:-translate-x-full [&[data-ending-style][data-cds-sheet-peeling]]:translate-x-full rtl:[&[data-ending-style][data-cds-sheet-peeling]]:-translate-x-full [&[data-ending-style][data-cds-sheet-tree-closing]]:translate-y-[calc(100%+1.5rem)]"
                                       : "data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]"),
-                                  value4 &&
+                                  isSheet &&
                                     "origin-top [&[data-cds-sheet-covered]:not([data-starting-style]):not([data-ending-style])]:-translate-y-3 data-[cds-sheet-covered]:scale-[0.94] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:transition-opacity after:duration-sheet motion-reduce:after:transition-none data-[cds-sheet-covered]:after:opacity-100",
                                   className,
                                 )}
                               >
-                                {value4 ? (<sheetParentContext.Provider
-                                    value={memo2}
+                                {isSheet ? (<sheetParentContext.Provider
+                                    value={sheetParentContextValue}
                                   >
                                     {[<SheetHandle
-                                        drawPill={!value5}
+                                        drawPill={!isNestedSheet}
                                       />, <div
                                         className={
                                           sheetDrillBodyClasses
@@ -4155,10 +4155,10 @@ export function installUiOverlays(): () => void {
                                             footer={footer}
                                             fill={true}
                                           >
-                                            {[children, !value5 && (
+                                            {[children, !isNestedSheet && (
                                                 <MenuSheetCloseButton />
                                               )]}
-                                          </MenuScrollContent>, <MenuSheetTitleBar nested={value5} />]}
+                                          </MenuScrollContent>, <MenuSheetTitleBar nested={isNestedSheet} />]}
                                       </div>]}
                                   </sheetParentContext.Provider>) : (<MenuScrollContent
                                     header={header}
@@ -4318,17 +4318,17 @@ export function installUiOverlays(): () => void {
     subscribePlatformNoop = () => () => {};
     getWebPlatformSnapshot = () => "web";
     getCoarsePointerServerSnapshot = () => false;
-    subscribeRootCoarsePointer = (input: () => void) => {
-      let value = subscribeCoarsePointer(input);
-      queueMicrotask(input);
+    subscribeRootCoarsePointer = (listener: () => void) => {
+      let value = subscribeCoarsePointer(listener);
+      queueMicrotask(listener);
       return value;
     };
     hasMigratedHtmlFontSizing = false;
     DARK_COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
-    normalizeColorMode = (input: string | null | undefined) =>
-      input === "dark" || input === "light"
-        ? input
-        : input === "auto" || input === "system"
+    normalizeColorMode = (mode: string | null | undefined) =>
+      mode === "dark" || mode === "light"
+        ? mode
+        : mode === "auto" || mode === "system"
           ? "system"
           : undefined;
     initializeCdsRoot = initializeOnce(() => {
@@ -4425,9 +4425,9 @@ export function installUiOverlays(): () => void {
         reactCdsRoot.createContext<Layers.PortalContainer>(undefined);
       isPortalRootContext = reactCdsRoot.createContext<boolean>(false);
       opaqueTintOverrides = Object.fromEntries(
-        accentColorNames.map((input: string) => [
-          `--cds-bg-tint-${input}`,
-          `var(--cds-bg-tint-${input}-opaque)`,
+        accentColorNames.map((accentColor: string) => [
+          `--cds-bg-tint-${accentColor}`,
+          `var(--cds-bg-tint-${accentColor}-opaque)`,
         ]),
       );
       surfaceTokenNames = new Set([

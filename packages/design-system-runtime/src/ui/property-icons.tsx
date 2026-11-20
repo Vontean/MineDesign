@@ -7,8 +7,8 @@ import { toModuleNamespace } from "../module-helpers";
 import { Icon } from "./interactions";
 
 var jsxForUiPropertyIcons: typeof import("react/jsx-runtime");
-function joinClassNames(...input: (string | false | null | undefined)[]) {
-  return input.filter(Boolean).join(" ");
+function joinClassNames(...classNames: (string | false | null | undefined)[]) {
+  return classNames.filter(Boolean).join(" ");
 }
 function KitIcon({
   name: name,

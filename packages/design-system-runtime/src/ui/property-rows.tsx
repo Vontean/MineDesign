@@ -32,7 +32,7 @@ var COLOR_CHIP_PATTERN: RegExp;
 var preventDefaultEvent: (event: React.SyntheticEvent) => void;
 function NumberPropertyRow({
   label: label,
-  value: value,
+  value: numberValue,
   onValue: onValue,
   onScrub: onScrub,
   onScrubEnd: onScrubEnd,
@@ -65,29 +65,29 @@ function NumberPropertyRow({
       }, 0);
       onScrubEnd?.();
     },
-    value2 =
+    numericPlaceholder =
       onScrub &&
       emptyStepFrom !== null &&
       placeholder !== undefined &&
       /^-?\d+(\.\d+)?$/.test(placeholder)
         ? Number(placeholder)
         : undefined,
-    value3 =
-      value ??
+    scrubStart =
+      numberValue ??
       (typeof emptyStepFrom === "number" && Number.isFinite(emptyStepFrom)
         ? emptyStepFrom
-        : value2),
-    value4 = !disabled && !mixed && value3 !== undefined,
-    value5 = useNumberScrubGesture({
-      value: value3 ?? NaN,
+        : numericPlaceholder),
+    canScrub = !disabled && !mixed && scrubStart !== undefined,
+    scrubGesture = useNumberScrubGesture({
+      value: scrubStart ?? NaN,
       step: step,
       min: min,
       max: max,
-      disabled: !value4,
-      onScrub: (input: number) => (onScrub ?? onValue)(input),
+      disabled: !canScrub,
+      onScrub: (nextNumber: number) => (onScrub ?? onValue)(nextNumber),
       onScrubEnd: callback,
     }),
-    value6 = units !== undefined && onUnit !== undefined;
+    hasUnitMenu = units !== undefined && onUnit !== undefined;
   return (
     <PropertyRow
       label={label}
@@ -97,9 +97,9 @@ function NumberPropertyRow({
       onReset={onReset}
       trailing={trailing}
       labelProps={{
-        onMouseDown: value4 ? value5 : undefined,
-        onPointerDown: value4 ? captureNumberScrubPointer : undefined,
-        className: value4 ? "cursor-ew-resize" : undefined,
+        onMouseDown: canScrub ? scrubGesture : undefined,
+        onPointerDown: canScrub ? captureNumberScrubPointer : undefined,
+        className: canScrub ? "cursor-ew-resize" : undefined,
       }}
       onPress={(element: HTMLElement) => {
         if (ref.current) {
@@ -111,8 +111,8 @@ function NumberPropertyRow({
       {[<PropertyNumberInput
           aria-label={label}
           prefix={prefix}
-          unit={value6 ? undefined : unit}
-          value={value}
+          unit={hasUnitMenu ? undefined : unit}
+          value={numberValue}
           onValue={onValue}
           onScrub={onScrub}
           onScrubEnd={callback}
@@ -126,14 +126,14 @@ function NumberPropertyRow({
           clearable={clearable}
           mixed={mixed}
           disabled={disabled}
-        />, value6 ? (
+        />, hasUnitMenu ? (
           <Select
             compact={true}
             aria-label={uiMessage("design-system.propertyRows.unit2", { value1: String(label) })}
             title={uiMessage("design-system.propertyRows.unit")}
-            items={units!.map((input: string) => ({
-              value: input,
-              label: input,
+            items={units!.map((unitOption: string) => ({
+              value: unitOption,
+              label: unitOption,
             }))}
             value={unit ?? units![0] ?? null}
             onChange={onUnit!}
@@ -177,20 +177,20 @@ function ColorChip({
 }
 function useContrastResult(
   contrast: import("../contracts/color-controls").ContrastOptions | undefined,
-  value: string | undefined,
+  color: string | undefined,
 ) {
-  let value2 = contrast === undefined ? undefined : JSON.stringify(contrast);
+  let contrastKey = contrast === undefined ? undefined : JSON.stringify(contrast);
   return reactForUiPropertyRows.useMemo(
     () =>
-      contrast === undefined || value === undefined
+      contrast === undefined || color === undefined
         ? undefined
-        : colorContrastResults(value, contrast),
-    [value2, value],
+        : colorContrastResults(color, contrast),
+    [contrastKey, color],
   );
 }
 function ColorPropertyRow({
   label: label,
-  value: value,
+  value: colorValue,
   onChange: onChange,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
@@ -228,34 +228,34 @@ function ColorPropertyRow({
   testid: testid,
 }: ColorPropertyRowProps) {
   useUiLocale();
-  let [value2, value3] = reactForUiPropertyRows.useState(false),
-    value4 = open ?? value2,
-    callback = (input: boolean) => {
-      value3(input);
-      onOpenChange?.(input);
+  let [internalOpen, setInternalOpen] = reactForUiPropertyRows.useState(false),
+    resolvedOpen = open ?? internalOpen,
+    callback = (nextOpen: boolean) => {
+      setInternalOpen(nextOpen);
+      onOpenChange?.(nextOpen);
     },
-    [value5, value6] = reactForUiPropertyRows.useState(false),
+    [openWithPickerFocus, setOpenWithPickerFocus] = reactForUiPropertyRows.useState(false),
     ref = reactForUiPropertyRows.useRef(false),
-    ref2 = reactForUiPropertyRows.useRef<HTMLButtonElement | null>(null),
-    value7 = popover?.anchor,
-    value8 =
-      value7 === undefined
+    triggerRef = reactForUiPropertyRows.useRef<HTMLButtonElement | null>(null),
+    getPopoverAnchor = popover?.anchor,
+    resolvePopoverAnchor =
+      getPopoverAnchor === undefined
         ? undefined
-        : () => (ref2.current === null ? null : value7(ref2.current)),
+        : () => (triggerRef.current === null ? null : getPopoverAnchor(triggerRef.current)),
     memo = reactForUiPropertyRows.useMemo(() => {
-      let value23 = value ?? placeholder;
-      if (value23 === undefined) {
+      let chipColor = colorValue ?? placeholder;
+      if (chipColor === undefined) {
         return;
       }
-      let value24 = parseCssColorToHsva(value23);
+      let hsva = parseCssColorToHsva(chipColor);
       return {
-        solid: hsvaToHexColor(value24),
-        alpha: value24.a,
+        solid: hsvaToHexColor(hsva),
+        alpha: hsva.a,
       };
-    }, [value, placeholder]),
-    value9 = value !== undefined && COLOR_CHIP_PATTERN.test(value),
-    memo2 = reactForUiPropertyRows.useMemo(() => {
-      if (!value9 || memo === undefined) {
+    }, [colorValue, placeholder]),
+    isColorLiteral = colorValue !== undefined && COLOR_CHIP_PATTERN.test(colorValue),
+    swatchLabel = reactForUiPropertyRows.useMemo(() => {
+      if (!isColorLiteral || memo === undefined) {
         return;
       }
       if (valueName !== undefined) {
@@ -268,97 +268,97 @@ function ColorPropertyRow({
         if (current === null) {
           return;
         }
-        let value24 = swatches.find(
-          (input: import("../contracts/color-controls").ColorSwatchInput) =>
-            typeof input !== "string" &&
-            (input.name === current ||
-              ("picks" in input && input.picks === current)),
+        let matchingSwatch = swatches.find(
+          (swatch: import("../contracts/color-controls").ColorSwatchInput) =>
+            typeof swatch !== "string" &&
+            (swatch.name === current ||
+              ("picks" in swatch && swatch.picks === current)),
         );
         if (
-          value24 !== undefined &&
-          typeof value24 !== "string" &&
-          value24.label !== undefined &&
-          value24.label.trim() !== ""
+          matchingSwatch !== undefined &&
+          typeof matchingSwatch !== "string" &&
+          matchingSwatch.label !== undefined &&
+          matchingSwatch.label.trim() !== ""
         ) {
-          return value24.label;
+          return matchingSwatch.label;
         } else {
           return undefined;
         }
       }
-      let value23 = memo.solid.toLowerCase();
-      for (let value24 of swatches) {
-        let value25 =
-          typeof value24 === "string"
-            ? value24
-            : "value" in value24
-              ? value24.value
-              : value24.color;
-        if (!COLOR_CHIP_PATTERN.test(value25)) {
+      let solidHex = memo.solid.toLowerCase();
+      for (let swatch of swatches) {
+        let swatchColor =
+          typeof swatch === "string"
+            ? swatch
+            : "value" in swatch
+              ? swatch.value
+              : swatch.color;
+        if (!COLOR_CHIP_PATTERN.test(swatchColor)) {
           continue;
         }
-        let value26 = parseCssColorToHsva(value25);
-        if (value26.a < 1) {
+        let swatchHsva = parseCssColorToHsva(swatchColor);
+        if (swatchHsva.a < 1) {
           continue;
         }
-        if (hsvaToHexColor(value26).toLowerCase() !== value23) {
+        if (hsvaToHexColor(swatchHsva).toLowerCase() !== solidHex) {
           continue;
         }
         if (
-          typeof value24 !== "string" &&
-          value24.label !== undefined &&
-          value24.label.trim() !== ""
+          typeof swatch !== "string" &&
+          swatch.label !== undefined &&
+          swatch.label.trim() !== ""
         ) {
-          return value24.label;
+          return swatch.label;
         } else {
           return undefined;
         }
       }
       return;
-    }, [value9, memo, swatches, current, valueName]),
-    value10 =
-      value !== undefined
+    }, [isColorLiteral, memo, swatches, current, valueName]),
+    displayValue =
+      colorValue !== undefined
         ? typeof valueName === "string"
           ? valueName
-          : value9 && memo !== undefined
-            ? (memo2 ?? memo.solid.toUpperCase())
-            : value
+          : isColorLiteral && memo !== undefined
+            ? (swatchLabel ?? memo.solid.toUpperCase())
+            : colorValue
         : (clearLabel ?? placeholder ?? "None"),
-    value11 =
-      value9 && memo !== undefined && memo.alpha < 1
+    displayAlpha =
+      isColorLiteral && memo !== undefined && memo.alpha < 1
         ? Math.round(memo.alpha * 100) + "%"
         : undefined,
-    value12 =
-      mixed || chip !== undefined ? undefined : (value ?? placeholder),
-    value13 = useContrastResult(contrast, value12),
-    memo3 = reactForUiPropertyRows.useMemo(
+    contrastColor =
+      mixed || chip !== undefined ? undefined : (colorValue ?? placeholder),
+    contrastResult = useContrastResult(contrast, contrastColor),
+    contrastSentence = reactForUiPropertyRows.useMemo(
       () =>
-        value13 === undefined
+        contrastResult === undefined
           ? undefined
-          : contrastDisplayInfo(value13).sentence,
-      [value13],
+          : contrastDisplayInfo(contrastResult).sentence,
+      [contrastResult],
     ),
-    value14 =
+    describedValue =
       description !== undefined && description !== ""
-        ? memo3 !== undefined
-          ? description.replace(/\.?\s*$/, ". ") + memo3
+        ? contrastSentence !== undefined
+          ? description.replace(/\.?\s*$/, ". ") + contrastSentence
           : description
-        : memo3,
-    value15 = reactForUiPropertyRows.useId(),
-    value16 = swatches !== undefined && swatches.length > 0,
-    value17 =
+        : contrastSentence,
+    descriptionId = reactForUiPropertyRows.useId(),
+    hasSwatches = swatches !== undefined && swatches.length > 0,
+    isColorTab =
       headerTabs === undefined ||
       headerTabs.value === (headerTabs.colorTab ?? "color"),
-    [value18, value19] = reactForUiPropertyRows.useState("system"),
-    [value20, value21] = reactForUiPropertyRows.useState(value4);
-  if (value4 !== value20) {
-    value21(value4);
-    if (value4) {
-      value19(value16 && value17 ? "system" : "custom");
-      value6(ref.current);
+    [pickerTab, setPickerTab] = reactForUiPropertyRows.useState("system"),
+    [previousOpen, setPreviousOpen] = reactForUiPropertyRows.useState(resolvedOpen);
+  if (resolvedOpen !== previousOpen) {
+    setPreviousOpen(resolvedOpen);
+    if (resolvedOpen) {
+      setPickerTab(hasSwatches && isColorTab ? "system" : "custom");
+      setOpenWithPickerFocus(ref.current);
       ref.current = false;
     }
   }
-  let value22 = (
+  let colorPicker = (
     <ColorSelect
       testid={testid !== undefined ? testid + "-menu" : undefined}
       title={popoverTitle ?? (label)}
@@ -366,11 +366,11 @@ function ColorPropertyRow({
       current={current}
       onSwatch={onSwatch}
       fold={fold}
-      value={value ?? placeholder ?? "#000000"}
-      unset={value === undefined || mixed || !value17 || unset}
+      value={colorValue ?? placeholder ?? "#000000"}
+      unset={colorValue === undefined || mixed || !isColorTab || unset}
       repick={unset && current != null}
       opaque={opaque}
-      contrast={value12 !== undefined ? contrast : undefined}
+      contrast={contrastColor !== undefined ? contrast : undefined}
       onChange={onLive ?? onChange}
       onPickEnd={onLive ? onLiveEnd : undefined}
       none={
@@ -378,7 +378,7 @@ function ColorPropertyRow({
           ? {
               current:
                 isNone ??
-                (value === undefined &&
+                (colorValue === undefined &&
                   placeholder === undefined &&
                   chip === undefined &&
                   !mixed),
@@ -410,11 +410,11 @@ function ColorPropertyRow({
           : undefined
       }
       face={panel}
-      tab={value16 ? value18 : undefined}
-      onTab={value19}
+      tab={hasSwatches ? pickerTab : undefined}
+      onTab={setPickerTab}
       heading={popoverTitle ?? label}
       headerEnd={
-        value16 || headerTabs !== undefined || popoverTitle !== undefined ? (
+        hasSwatches || headerTabs !== undefined || popoverTitle !== undefined ? (
           <Button
             variant={"ghost"}
             size={"sm"}
@@ -436,12 +436,12 @@ function ColorPropertyRow({
   );
   return (
     <span
-      ref={ref2}
+      ref={triggerRef}
       className={"relative flex min-w-0 flex-1"}
       title={disabled ? (disabledReason) : (undefined)}
     >
       {[<PropertyPopup
-          open={value4}
+          open={resolvedOpen}
           onOpen={() => callback(true)}
           onClose={() => callback(false)}
           trigger={
@@ -449,13 +449,13 @@ function ColorPropertyRow({
               data-testid={testid}
               title={disabled ? (disabledReason ?? (title)) : (title)}
               aria-label={
-                label + ": " + (mixed ? MIXED_LABEL : chip !== undefined ? chip.text : value !== undefined ? value10 + (value11 !== undefined ? " " + value11 : "") : clearLabel !== undefined && /[\p{L}\p{N}]/u.test(clearLabel) ? clearLabel : clearLabel !== undefined ? uiMessage("design-system.propertyRows.none") : uiMessage("design-system.propertyRows.unset"))
+                label + ": " + (mixed ? MIXED_LABEL : chip !== undefined ? chip.text : colorValue !== undefined ? displayValue + (displayAlpha !== undefined ? " " + displayAlpha : "") : clearLabel !== undefined && /[\p{L}\p{N}]/u.test(clearLabel) ? clearLabel : clearLabel !== undefined ? uiMessage("design-system.propertyRows.none") : uiMessage("design-system.propertyRows.unset"))
               }
-              aria-describedby={value14 !== undefined ? value15 : undefined}
+              aria-describedby={describedValue !== undefined ? descriptionId : undefined}
               disabled={disabled}
-              onClick={(input: React.MouseEvent<HTMLElement>) => {
-                if (!value4) {
-                  ref.current = input.detail === 0;
+              onClick={(mouseEvent: React.MouseEvent<HTMLElement>) => {
+                if (!resolvedOpen) {
+                  ref.current = mouseEvent.detail === 0;
                 }
               }}
               onMouseDown={keepFocus ? preventDefaultEvent : undefined}
@@ -487,32 +487,32 @@ function ColorPropertyRow({
                   />
                 )
               }
-              caption={!mixed && chip === undefined ? value11 : undefined}
+              caption={!mixed && chip === undefined ? displayAlpha : undefined}
               trailing={
-                contrastMark && value13 !== undefined ? (
+                contrastMark && contrastResult !== undefined ? (
                   <ContrastMark
-                    results={value13}
+                    results={contrastResult}
                     sentence={false}
                     className={"ml-auto pl-1"}
                   />
                 ) : undefined
               }
             >
-              {mixed ? (MIXED_LABEL) : (chip !== undefined ? (chip.text) : (value10))}
+              {mixed ? (MIXED_LABEL) : (chip !== undefined ? (chip.text) : (displayValue))}
             </FieldButton>
           }
           align={"left"}
           side={popover?.side}
-          positionAnchor={value8}
+          positionAnchor={resolvePopoverAnchor}
           padding={"none"}
           aria-label={popoverTitle ?? (label)}
           className={COLOR_PICKER_POPOVER_CLASS}
           popupAttrs={popupAttrs}
           editsAreUndoSteps={editsAreUndoSteps}
-          focusOnOpen={value5}
+          focusOnOpen={openWithPickerFocus}
           keepFocus={keepFocus}
           planHeight={
-            value16 || headerTabs !== undefined
+            hasSwatches || headerTabs !== undefined
               ? COLOR_PICKER_POPOVER_HEIGHT
               : undefined
           }
@@ -521,11 +521,11 @@ function ColorPropertyRow({
               data-session-strip={""}
               onKeyDownCapture={popupPointerEvent}
             >
-              {value22}
-            </div>) : (value22)}
-        </PropertyPopup>, value14 !== undefined ? (
-          <span id={value15} hidden={true} data-kit={"field-description"}>
-            {value14}
+              {colorPicker}
+            </div>) : (colorPicker)}
+        </PropertyPopup>, describedValue !== undefined ? (
+          <span id={descriptionId} hidden={true} data-kit={"field-description"}>
+            {describedValue}
           </span>
         ) : null]}
     </span>
@@ -533,7 +533,7 @@ function ColorPropertyRow({
 }
 function ColorTextPropertyRow({
   label: label,
-  value: value,
+  value: colorValue,
   onChange: onChange,
   contrast: contrast,
   placeholder: placeholder,
@@ -549,7 +549,7 @@ function ColorTextPropertyRow({
   ...remainingProps
 }: ColorTextPropertyRowProps) {
   useUiLocale();
-  let [value2, value3] = reactForUiPropertyRows.useState(false);
+  let [isOpen, setIsOpen] = reactForUiPropertyRows.useState(false);
   return (
     <PropertyRow
       label={label}
@@ -557,7 +557,7 @@ function ColorTextPropertyRow({
       disabled={disabled}
       onReset={
         onReset ??
-        (clearLabel !== undefined && value !== undefined
+        (clearLabel !== undefined && colorValue !== undefined
           ? () => onChange(undefined)
           : undefined)
       }
@@ -566,11 +566,11 @@ function ColorTextPropertyRow({
         if (disabled) {
           return;
         }
-        value3(!value2);
+        setIsOpen(!isOpen);
       }}
       onPointerDown={(event: React.PointerEvent<HTMLDivElement>) => {
         if (
-          value2 &&
+          isOpen &&
           !propertyRowPressShouldIgnore(
             event.currentTarget,
             event.target as Element,
@@ -583,7 +583,7 @@ function ColorTextPropertyRow({
       {[<ColorPropertyRow
           {...remainingProps}
           label={label}
-          value={value}
+          value={colorValue}
           onChange={onChange}
           description={description}
           contrast={contrast}
@@ -592,8 +592,8 @@ function ColorTextPropertyRow({
           mixed={mixed}
           chip={chip}
           disabled={disabled}
-          open={value2}
-          onOpenChange={value3}
+          open={isOpen}
+          onOpenChange={setIsOpen}
         />, adornment]}
     </PropertyRow>
   );

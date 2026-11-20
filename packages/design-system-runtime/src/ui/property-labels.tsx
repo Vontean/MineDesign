@@ -61,9 +61,9 @@ function contrastResultDetails(
   result: Color.ContrastDetailsSentence,
 ): string {
   let value = contrastResultSummary(result),
-    value2 = result.alsoFailing ?? [];
-  if (value2.length > 0) {
-    value += "; also below " + result.min + " on " + value2.join(" and ");
+    failingGrounds = result.alsoFailing ?? [];
+  if (failingGrounds.length > 0) {
+    value += "; also below " + result.min + " on " + failingGrounds.join(" and ");
   }
   return value + additionalPassingGroundsMessage(result.alsoPassing ?? 0);
 }

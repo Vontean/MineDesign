@@ -22,26 +22,26 @@ function optionMatchesQuery(
   return (
     value === "" ||
     values.some(
-      (input: string | undefined) =>
-        input !== undefined && input.toLowerCase().includes(value),
+      (candidate: string | undefined) =>
+        candidate !== undefined && candidate.toLowerCase().includes(value),
     )
   );
 }
 function optionTypeaheadMatch(query: string, options: readonly string[]) {
   let value = query.trim().toLowerCase(),
-    callback = (input: (value: string) => boolean) =>
-      options.findIndex((input2: string) => input(input2.toLowerCase()));
+    callback = (matches: (value: string) => boolean) =>
+      options.findIndex((option: string) => matches(option.toLowerCase()));
   return (
     [
-      callback((input: string) => input === value),
-      callback((input: string) => input.startsWith(value)),
-    ].find((input: number) => input >= 0) ?? 0
+      callback((option: string) => option === value),
+      callback((option: string) => option.startsWith(value)),
+    ].find((optionIndex: number) => optionIndex >= 0) ?? 0
   );
 }
 function createOptionListKeyHandler(
   command: string,
   {
-    across: options = false,
+    across: across = false,
   }: {
     across?: boolean;
   } = {},
@@ -58,28 +58,28 @@ function createOptionListKeyHandler(
       return;
     }
     let value =
-        event.key === "ArrowUp" || (options && event.key === "ArrowLeft"),
-      value2 =
-        event.key === "ArrowDown" || (options && event.key === "ArrowRight");
-    if (!value && !value2 && event.key !== "Home" && event.key !== "End") {
+        event.key === "ArrowUp" || (across && event.key === "ArrowLeft"),
+      moveForward =
+        event.key === "ArrowDown" || (across && event.key === "ArrowRight");
+    if (!value && !moveForward && event.key !== "Home" && event.key !== "End") {
       return;
     }
     let target = event.target;
     if (!(target instanceof HTMLElement)) {
       return;
     }
-    let value3 = Array.from<HTMLElement>(
+    let focusableOptions = Array.from<HTMLElement>(
         event.currentTarget.querySelectorAll<HTMLElement>(command),
-      ).flatMap((input: HTMLElement) => {
-        if (!input.matches(":disabled")) {
-          return [input];
+      ).flatMap((option: HTMLElement) => {
+        if (!option.matches(":disabled")) {
+          return [option];
         }
-        let parentElement = input.parentElement;
+        let parentElement = option.parentElement;
         if (
           parentElement !== null &&
           parentElement !== event.currentTarget &&
           parentElement.tabIndex >= 0 &&
-          parentElement.firstElementChild === input &&
+          parentElement.firstElementChild === option &&
           parentElement.querySelectorAll<HTMLElement>(command).length === 1
         ) {
           return [parentElement];
@@ -87,22 +87,22 @@ function createOptionListKeyHandler(
           return [];
         }
       }),
-      value4 = value3.indexOf(target);
-    if (value4 === -1) {
+      currentIndex = focusableOptions.indexOf(target);
+    if (currentIndex === -1) {
       return;
     }
-    let value5 =
+    let nextIndex =
       event.key === "Home"
         ? 0
         : event.key === "End"
-          ? value3.length - 1
-          : (value4 + (value2 ? 1 : -1) + value3.length) % value3.length;
+          ? focusableOptions.length - 1
+          : (currentIndex + (moveForward ? 1 : -1) + focusableOptions.length) % focusableOptions.length;
     event.preventDefault();
-    value3[value5].focus();
+    focusableOptions[nextIndex].focus();
   };
 }
 function OptionList({
-  value: value,
+  value: query,
   onChange: onChange,
   label: label,
   rowSelector: rowSelector,
@@ -114,7 +114,7 @@ function OptionList({
   return (
     <div className={className ?? "mt-0.5 mb-2 w-0 min-w-full"}>
       <TextInput
-        value={value}
+        value={query}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
           onChange(event.target.value)
         }
@@ -122,28 +122,28 @@ function OptionList({
           if (event.nativeEvent.isComposing) {
             return;
           }
-          let value2 = Array.from<HTMLElement>(
+          let enabledOptions = Array.from<HTMLElement>(
               event.currentTarget
                 .closest("[data-search-scope]")
                 ?.querySelectorAll<HTMLElement>(rowSelector) ?? [],
-            ).filter((input: HTMLElement) => !input.matches(":disabled")),
-            value3 =
+            ).filter((option: HTMLElement) => !option.matches(":disabled")),
+            optionToFocus =
               event.key === "ArrowDown"
-                ? value2[0]
+                ? enabledOptions[0]
                 : event.key === "ArrowUp"
-                  ? value2[value2.length - 1]
+                  ? enabledOptions[enabledOptions.length - 1]
                   : undefined;
-          if (value3 !== undefined) {
+          if (optionToFocus !== undefined) {
             event.preventDefault();
-            value3.focus();
+            optionToFocus.focus();
           } else if (
             event.key === "Enter" &&
-            value.trim() !== "" &&
-            value2.length > 0
+            query.trim() !== "" &&
+            enabledOptions.length > 0
           ) {
             event.preventDefault();
-            value2[onEnterIndex?.() ?? 0]?.click();
-          } else if (event.key === "Escape" && value !== "") {
+            enabledOptions[onEnterIndex?.() ?? 0]?.click();
+          } else if (event.key === "Escape" && query !== "") {
             event.preventDefault();
             event.stopPropagation();
             onChange("");

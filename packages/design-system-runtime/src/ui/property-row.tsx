@@ -19,11 +19,11 @@ import { Menu } from "./menu";
 import { joinClassNames, KitIcon } from "./property-icons";
 import { get_MORE_ACTIONS_LABEL, RESET_LABEL } from "./property-labels";
 
-var reactForUiPropertyRow2: ReactNamespace;
+var reactPropertyRow: ReactNamespace;
 var PROPERTY_ROW_INTERACTIVE_SELECTOR: string;
 var reactPropertyRowHelpers: ReactNamespace;
 var jsxPropertyRowHelpers: JsxNamespace;
-var jsxForUiPropertyRow2: JsxNamespace;
+var PropertyRowJsx: JsxNamespace;
 var FIELD_SURFACE_CLASS: string;
 var TEXT_FIELD_BUTTON_CLASS: string;
 var CHIP_FIELD_BUTTON_CLASS: string;
@@ -89,42 +89,42 @@ function PropertyRow({
 }: PropertyRowProps) {
   useUiLocale();
   let value = typeof label === "string" ? label : undefined,
-    ref = reactForUiPropertyRow2.useRef<HTMLDivElement | null>(null),
-    value2 = reactForUiPropertyRow2.useId(),
-    ref2 = reactForUiPropertyRow2.useRef(false);
-  reactForUiPropertyRow2.useLayoutEffect(() => {
-    if (!description && !ref2.current) {
+    ref = reactPropertyRow.useRef<HTMLDivElement | null>(null),
+    descriptionId = reactPropertyRow.useId(),
+    hadDescriptionRef = reactPropertyRow.useRef(false);
+  reactPropertyRow.useLayoutEffect(() => {
+    if (!description && !hadDescriptionRef.current) {
       return;
     }
     let current = ref.current;
     if (!current) {
       return;
     }
-    let value6 = current.querySelectorAll(
+    let controls = current.querySelectorAll(
       'input:not([type="hidden"]), textarea, select, [role="combobox"], [role="radiogroup"], [role="switch"], button[aria-haspopup], button[aria-expanded]',
     );
-    for (let value7 of value6) {
-      let value8 = (value7.getAttribute("aria-describedby") ?? "")
+    for (let control of controls) {
+      let descriptionIds = (control.getAttribute("aria-describedby") ?? "")
         .split(/\s+/)
-        .filter((input: string) => input && input !== value2);
+        .filter((id: string) => id && id !== descriptionId);
       if (description) {
-        value8.push(value2);
+        descriptionIds.push(descriptionId);
       }
-      if (value8.length > 0) {
-        value7.setAttribute("aria-describedby", value8.join(" "));
+      if (descriptionIds.length > 0) {
+        control.setAttribute("aria-describedby", descriptionIds.join(" "));
       } else {
-        value7.removeAttribute("aria-describedby");
+        control.removeAttribute("aria-describedby");
       }
     }
-    ref2.current = !!description;
+    hadDescriptionRef.current = !!description;
   });
-  let [value3, value4] = reactForUiPropertyRow2.useState(defaultActionsOpen),
-    value5 =
+  let [actionsOpen, setActionsOpen] = reactPropertyRow.useState(defaultActionsOpen),
+    availableActions =
       actions !== undefined && actions.length > 0 ? actions : undefined;
-  if (value5 === undefined && value3) {
-    value4(false);
+  if (availableActions === undefined && actionsOpen) {
+    setActionsOpen(false);
   }
-  let ref3 = reactForUiPropertyRow2.useRef(false);
+  let resetTouchedRef = reactPropertyRow.useRef(false);
   return (
     <div
       data-property-row={""}
@@ -192,24 +192,24 @@ function PropertyRow({
                     tooltipSide={"left"}
                     disabled={disabled}
                     onPointerDown={(
-                      input: React.PointerEvent<HTMLButtonElement>,
+                      pointerEvent: React.PointerEvent<HTMLButtonElement>,
                     ) => {
-                      ref3.current = input.pointerType === "touch";
+                      resetTouchedRef.current = pointerEvent.pointerType === "touch";
                     }}
-                    onClick={(input: React.MouseEvent<HTMLButtonElement>) => {
-                      let value6 = input.currentTarget
+                    onClick={(mouseEvent: React.MouseEvent<HTMLButtonElement>) => {
+                      let focusTarget = mouseEvent.currentTarget
                           .closest("[data-property-row]")
                           ?.querySelector<HTMLElement>(
                             'input, button:not([data-kit="row-reset"]), [tabindex="0"]',
                           ),
-                        current = ref3.current;
-                      ref3.current = false;
-                      let value7 =
-                        value6?.matches(
+                        current = resetTouchedRef.current;
+                      resetTouchedRef.current = false;
+                      let targetsEditable =
+                        focusTarget?.matches(
                           "input, textarea, [contenteditable]",
                         ) ?? false;
-                      if (value6 && !(current && value7)) {
-                        value6.focus();
+                      if (focusTarget && !(current && targetsEditable)) {
+                        focusTarget.focus();
                       }
                       onReset();
                     }}
@@ -228,10 +228,10 @@ function PropertyRow({
           )}
         >
           {[children, description ? (
-              <span id={value2} hidden={true} data-kit={"row-description"}>
+              <span id={descriptionId} hidden={true} data-kit={"row-description"}>
                 {description}
               </span>
-            ) : null, value5 !== undefined ? (
+            ) : null, availableActions !== undefined ? (
               <Menu
                 iconOnly={true}
                 icon={"DotsHorizontal"}
@@ -240,14 +240,14 @@ function PropertyRow({
                 tooltip={actionsLabel}
                 align={"end"}
                 disabled={disabled}
-                open={value3}
-                onOpenChange={value4}
-                items={value5.map((input: PropertyAction) => ({
-                  label: input.label,
-                  onSelect: input.onSelect,
-                  variant: input.variant,
-                  disabled: input.disabled,
-                  separatorBefore: input.separatorBefore,
+                open={actionsOpen}
+                onOpenChange={setActionsOpen}
+                items={availableActions.map((action: PropertyAction) => ({
+                  label: action.label,
+                  onSelect: action.onSelect,
+                  variant: action.variant,
+                  disabled: action.disabled,
+                  separatorBefore: action.separatorBefore,
                 }))}
                 className={"-ml-1 pointer-coarse:ml-0 shrink-0"}
               />
@@ -276,7 +276,7 @@ function PropertySectionHeader({
 }: PropertySectionHeaderProps) {
   useUiLocale();
   let value = onToggle !== undefined,
-    value2 = joinClassNames(
+    headerClasses = joinClassNames(
       "flex min-w-0 shrink-0 items-center gap-xs select-none",
       PROPERTY_SECTION_GUTTER_CLASS,
       subsection
@@ -284,7 +284,7 @@ function PropertySectionHeader({
         : "min-h-10 border-t border-alpha-2 py-2 text-body-semibold text-primary first:border-t-0",
       className,
     ),
-    value3 = value ? (
+    collapseCaret = value ? (
       <span
         aria-hidden={"true"}
         className={
@@ -309,11 +309,11 @@ function PropertySectionHeader({
           aria-expanded={!collapsed}
           onClick={onToggle}
           className={joinClassNames(
-            value2,
+            headerClasses,
             "w-full cursor-default text-left outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
           )}
         >
-          {[<span className={"min-w-0 flex-1 truncate"}>{title}</span>, value3]}
+          {[<span className={"min-w-0 flex-1 truncate"}>{title}</span>, collapseCaret]}
         </button>
       </h3>
     );
@@ -336,7 +336,7 @@ function PropertySectionHeader({
           : undefined
       }
       className={joinClassNames(
-        value2,
+        headerClasses,
         value && "cursor-default",
       )}
     >
@@ -344,8 +344,8 @@ function PropertySectionHeader({
           {value ? (<button
               type={"button"}
               aria-expanded={!collapsed}
-              onClick={(input: React.MouseEvent<HTMLElement>) => {
-                input.stopPropagation();
+              onClick={(mouseEvent: React.MouseEvent<HTMLElement>) => {
+                mouseEvent.stopPropagation();
                 onToggle!();
               }}
               className={
@@ -362,14 +362,14 @@ function PropertySectionHeader({
             )}
             onClick={
               value
-                ? (input: React.MouseEvent<HTMLElement>) =>
-                    input.stopPropagation()
+                ? (mouseEvent: React.MouseEvent<HTMLElement>) =>
+                    mouseEvent.stopPropagation()
                 : undefined
             }
           >
             {actions}
           </span>
-        ) : null, value3]}
+        ) : null, collapseCaret]}
     </div>
   );
 }
@@ -378,7 +378,7 @@ export {
   COLOR_SWATCH_CLASS,
   FIELD_SURFACE_CLASS,
   FieldButton,
-  jsxForUiPropertyRow2,
+  PropertyRowJsx as jsxForUiPropertyRow2,
   jsxPropertyRowHelpers,
   PROPERTY_ACTIONS_CLASS,
   PROPERTY_ROW_INTERACTIVE_SELECTOR,
@@ -387,13 +387,13 @@ export {
   PropertyRow,
   propertyRowPressShouldIgnore,
   PropertySectionHeader,
-  reactForUiPropertyRow2,
+  reactPropertyRow as reactForUiPropertyRow2,
   reactPropertyRowHelpers,
   TEXT_FIELD_BUTTON_CLASS,
 };
 export function installUiPropertyRow(): () => void {
   return () => {
-    reactForUiPropertyRow2 = toModuleNamespace(
+    reactPropertyRow = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
@@ -407,7 +407,7 @@ export function installUiPropertyRow(): () => void {
       loadJsxNamespace(),
       1,
     );
-    jsxForUiPropertyRow2 = toModuleNamespace(
+    PropertyRowJsx = toModuleNamespace(
       loadJsxNamespace(),
       1,
     );
@@ -423,7 +423,7 @@ export function installUiPropertyRow(): () => void {
     );
     COLOR_SWATCH_CLASS =
       "relative inline-block h-4 w-4 shrink-0 overflow-hidden rounded-[4px] shadow-card-ring bg-[repeating-conic-gradient(var(--cds-alpha-2)_0_25%,transparent_0_50%)] bg-[length:8px_8px]";
-    FieldButton = reactForUiPropertyRow2.forwardRef(function (
+    FieldButton = reactPropertyRow.forwardRef(function (
       {
         chip: chip,
         children: children,
@@ -434,12 +434,12 @@ export function installUiPropertyRow(): () => void {
         type = "button",
         ...props
       }: FieldButtonProps,
-      options: React.ForwardedRef<HTMLButtonElement>,
+      forwardedRef: React.ForwardedRef<HTMLButtonElement>,
     ) {
       return (
         <button
           {...props}
-          ref={options}
+          ref={forwardedRef}
           type={type}
           className={joinClassNames(
             chip != null

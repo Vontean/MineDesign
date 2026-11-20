@@ -65,21 +65,21 @@ var PopoverComponents: {
   createHandle: typeof import("@base-ui/react/popover").Popover.createHandle;
 };
 function usePopoverStyleDebug(
-  input: string | undefined,
-  options: PopoverPopupProps["style"],
+  className: string | undefined,
+  style: PopoverPopupProps["style"],
 ): void {
   let ref = reactForUiPopover.useRef(false);
   reactForUiPopover.useEffect(() => {
     return;
-  }, [input, options]);
+  }, [className, style]);
 }
-function isPopoverArrow(input: React.ReactNode): boolean {
+function isPopoverArrow(node: React.ReactNode): boolean {
   return (
-    reactForUiPopover.isValidElement(input) &&
-    input.type === basePopover.Arrow
+    reactForUiPopover.isValidElement(node) &&
+    node.type === basePopover.Arrow
   );
 }
-function usePopoverOverlayStack(input: PopoverRootProps["onOpenChange"]): {
+function usePopoverOverlayStack(notifyOpenChange: PopoverRootProps["onOpenChange"]): {
   innerOverlays: InnerOverlayStack;
   onOpenChange: NonNullable<PopoverRootProps["onOpenChange"]>;
 } {
@@ -90,26 +90,26 @@ function usePopoverOverlayStack(input: PopoverRootProps["onOpenChange"]): {
     innerOverlays: value,
     onOpenChange: reactForUiPopover.useCallback(
       (
-        input2: boolean,
-        options: import("@base-ui/react/popover").Popover.Root.ChangeEventDetails,
+        nextOpen: boolean,
+        changeDetails: import("@base-ui/react/popover").Popover.Root.ChangeEventDetails,
       ): void => {
         if (
-          interceptEscapeForInnerOverlay(value, input2, options)
+          interceptEscapeForInnerOverlay(value, nextOpen, changeDetails)
         ) {
           return;
         }
-        input?.(input2, options);
+        notifyOpenChange?.(nextOpen, changeDetails);
       },
-      [value, input],
+      [value, notifyOpenChange],
     ),
   };
 }
 function resolvePopoverAnchor(
-  input: PopoverAnchorState,
+  anchorState: PopoverAnchorState,
 ): Element | null | "virtual" {
-  let anchor = input.anchor;
+  let anchor = anchorState.anchor;
   if (anchor === undefined || anchor === null) {
-    return input.triggerEl;
+    return anchorState.triggerEl;
   }
   if (anchor instanceof Element) {
     return anchor;
@@ -124,11 +124,11 @@ function resolvePopoverAnchor(
   }
   return "virtual";
 }
-function popoverRefusesFocusOut(input: PopoverAnchorState): boolean {
-  if (!input.popupMounted || !input.declinesFocus) {
+function popoverRefusesFocusOut(anchorState: PopoverAnchorState): boolean {
+  if (!anchorState.popupMounted || !anchorState.declinesFocus) {
     return false;
   }
-  let value = resolvePopoverAnchor(input);
+  let value = resolvePopoverAnchor(anchorState);
   if (value === "virtual") {
     return true;
   }
@@ -152,13 +152,13 @@ function PopoverRoot<Payload = void>({
 }: PopoverRootProps<Payload>): React.ReactElement {
   useUiLocale();
   let value = usePopoverOverlayStack(onOpenChange),
-    value2 = useSheetCapablePresentation(),
+    canShowSheet = useSheetCapablePresentation(),
     ref = reactForUiPopover.useRef<OverlayActions | null>(null);
   useForwardedOverlayActions(ref, actionsRef);
   return (
     <popoverControlledStateContext.Provider value={value.innerOverlays}>
       <CloseOnActivityHideProvider actionsRef={ref}>
-        {value2 ? (<ControlledPopoverRoot
+        {canShowSheet ? (<ControlledPopoverRoot
             {...props}
             actionsRef={ref}
             onOpenChange={value.onOpenChange}
@@ -188,38 +188,38 @@ function ControlledPopoverRoot<Payload = void>({
     }),
     memo = reactForUiPopover.useMemo<PopoverAnchorStore>(
       () => ({
-        update: (input: Partial<PopoverAnchorState>): void => {
-          Object.assign(ref.current, input);
+        update: (changes: Partial<PopoverAnchorState>): void => {
+          Object.assign(ref.current, changes);
         },
         read: (): PopoverAnchorState => ref.current,
       }),
       [],
     ),
-    value2 = useValueCapturedOnOpen(
+    structurallyAnchored = useValueCapturedOnOpen(
       value.open,
       () => {
-        let value4 = memo.read();
-        return !value4.popupMounted || popoverRefusesFocusOut(value4);
+        let anchorState = memo.read();
+        return !anchorState.popupMounted || popoverRefusesFocusOut(anchorState);
       },
       false,
     ),
-    value3 = useAdaptiveSheet({
+    sheetState = useAdaptiveSheet({
       open: value.open,
       actionsRef: props.actionsRef,
       onOpenChange: value.onOpenChange,
       onOpenChangeComplete: props.onOpenChangeComplete,
-      structurallyAnchored: value2,
+      structurallyAnchored: structurallyAnchored,
       closable: !(props.open !== undefined && !consumerHandlesOpenChange),
     });
   return (
     <popoverStateContext.Provider value={memo}>
-      <SheetContextProvider value={value3}>
+      <SheetContextProvider value={sheetState}>
         <basePopover.Root
           {...props}
-          modal={value3.modal ?? props.modal}
-          actionsRef={value3.actionsRef}
-          onOpenChange={value3.onOpenChange}
-          onOpenChangeComplete={value3.onOpenChangeComplete}
+          modal={sheetState.modal ?? props.modal}
+          actionsRef={sheetState.actionsRef}
+          onOpenChange={sheetState.onOpenChange}
+          onOpenChangeComplete={sheetState.onOpenChangeComplete}
         />
       </SheetContextProvider>
     </popoverStateContext.Provider>
@@ -282,27 +282,27 @@ export function installUiPopover(): () => void {
           children: children,
           ...props
         }: PopoverPopupInnerProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let value =
             reactForUiPopover.useContext<SheetFrameContext | null>(
               sheetFrameContext,
             )?.open ?? true,
-          value2 = anchored && finalFocus === undefined,
-          value3 = useOverlayFocusReturn({
+          shouldRestoreFocus = anchored && finalFocus === undefined,
+          focusReturn = useOverlayFocusReturn({
             skipRestoreOnOutsideFocus: true,
             open: value,
-            registerOpenerReturn: value2,
+            registerOpenerReturn: shouldRestoreFocus,
           }),
-          value4 = useMergedRefs(options, value3.popupRef);
+          mergedRef = useMergedRefs(forwardedRef, focusReturn.popupRef);
         return (
           <basePopover.Popup
             data-cds={"Popover"}
             {...{
               [OVERLAY_ATTRIBUTE]: "",
             }}
-            ref={value4}
-            finalFocus={(value2 ? value3.finalFocus : finalFocus) as import("../contracts/overlays").BaseUIPopupFocus}
+            ref={mergedRef}
+            finalFocus={(shouldRestoreFocus ? focusReturn.finalFocus : finalFocus) as import("../contracts/overlays").BaseUIPopupFocus}
             {...props}
             className={className}
           >
@@ -322,7 +322,7 @@ export function installUiPopover(): () => void {
           scrollFade = true,
           ...props
         }: PopoverPopupProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let state = {
           side: side,
@@ -333,12 +333,12 @@ export function installUiPopover(): () => void {
           ...props,
         };
         if (useHasSheetFrame()) {
-          return <PopoverSheetCapablePopup {...state} ref={options} />;
+          return <PopoverSheetCapablePopup {...state} ref={forwardedRef} />;
         } else {
           return (
             <PopoverPopupView
               {...state}
-              ref={options}
+              ref={forwardedRef}
               sheetPopup={defaultSheetHost}
               sheetParts={null}
             />
@@ -349,19 +349,19 @@ export function installUiPopover(): () => void {
     PopoverPopup.displayName = "Popover.Popup";
     PopoverSheetCapablePopup = reactForUiPopover.forwardRef(
       (
-        input: PopoverPopupProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        popupProps: PopoverPopupProps,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => (
         <AdaptiveSheetPopupHost kind={"popover"}>
           {(
-            input2: SheetRenderState,
-            options2: MobileSheetParts | null,
+            sheetPopup: SheetRenderState,
+            sheetParts: MobileSheetParts | null,
           ): React.ReactElement => (
             <PopoverPopupView
-              {...input}
-              ref={options}
-              sheetPopup={input2}
-              sheetParts={options2}
+              {...popupProps}
+              ref={forwardedRef}
+              sheetPopup={sheetPopup}
+              sheetParts={sheetParts}
             />
           )}
         </AdaptiveSheetPopupHost>
@@ -374,57 +374,57 @@ export function installUiPopover(): () => void {
         sheetParts: sheetParts,
         ...props
       }: PopoverPopupViewProps,
-      options: React.ForwardedRef<HTMLDivElement>,
+      forwardedRef: React.ForwardedRef<HTMLDivElement>,
     ): React.ReactElement {
       let {
-          side: value12 = "bottom",
-          align: value13 = "center",
-          sideOffset: value14 = 6,
+          side: side = "bottom",
+          align: align = "center",
+          sideOffset: sideOffset = 6,
           alignOffset: value,
-          anchor: value2,
-          collisionPadding: value3,
-          padding: value15 = "lg",
-          scrollFade: value16 = true,
-          layerOffset: value4,
-          closeLabel: value5,
-          sheetHeight: value6,
-          className: value7,
-          children: value8,
-          onFocus: value9,
-          onMouseDown: value10,
-          keepFocus: value17 = false,
-          ...value11
+          anchor: anchor,
+          collisionPadding: collisionPadding,
+          padding: padding = "lg",
+          scrollFade: scrollFade = true,
+          layerOffset: layerOffset,
+          closeLabel: closeLabel,
+          sheetHeight: sheetHeight,
+          className: className,
+          children: children,
+          onFocus: onFocus,
+          onMouseDown: onMouseDown,
+          keepFocus: keepFocus = false,
+          ...popupProps
         } = props,
         ref = reactForUiPopover.useRef<HTMLDivElement | null>(null),
         sheet = sheetPopup.sheet,
-        value18 = reactForUiPopover.useContext<SheetFrameContext | null>(
+        sheetFrame = reactForUiPopover.useContext<SheetFrameContext | null>(
           sheetFrameContext,
         ),
-        value19 = (value18?.open ?? false) && value18?.height !== undefined,
-        value20 = value18?.setDetent;
+        hasPinnedSheetHeight = (sheetFrame?.open ?? false) && sheetFrame?.height !== undefined,
+        setSheetDetent = sheetFrame?.setDetent;
       useIsomorphicLayoutEffect(() => {
         let current = ref.current;
         if (
           sheet &&
-          value19 &&
-          value6 === "tall" &&
+          hasPinnedSheetHeight &&
+          sheetHeight === "tall" &&
           current !== null &&
           current.querySelector(
             'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
           ) !== null
         ) {
-          value20?.("tall");
+          setSheetDetent?.("tall");
         }
-      }, [sheet, value19, value6, value20]);
-      let value21 = sheetPopup.sheet && sheetParts !== null ? sheetParts : null,
-        value22 = reactForUiPopover.useContext(popoverStateContext),
-        value23 = value11.initialFocus === false,
+      }, [sheet, hasPinnedSheetHeight, sheetHeight, setSheetDetent]);
+      let ActiveSheetParts = sheetPopup.sheet && sheetParts !== null ? sheetParts : null,
+        anchorStore = reactForUiPopover.useContext(popoverStateContext),
+        declinesInitialFocus = popupProps.initialFocus === false,
         callback: React.MouseEventHandler<HTMLDivElement> = (event) => {
-          let value31 = asElement(event.target);
+          let targetElement = asElement(event.target);
           if (
-            !value17 ||
-            value31 === null ||
-            !event.currentTarget.contains(value31)
+            !keepFocus ||
+            targetElement === null ||
+            !event.currentTarget.contains(targetElement)
           ) {
             return;
           }
@@ -436,34 +436,34 @@ export function installUiPopover(): () => void {
             event.preventDefault();
           }
         },
-        value24 = reactForUiPopover.useContext(popoverControlledStateContext);
+        overlayStack = reactForUiPopover.useContext(popoverControlledStateContext);
       useIsomorphicLayoutEffect(() => {
-        if (value22 === null) {
+        if (anchorStore === null) {
           return;
         }
-        value22.update({
+        anchorStore.update({
           popupMounted: true,
-          declinesFocus: value23,
-          anchor: value2,
+          declinesFocus: declinesInitialFocus,
+          anchor: anchor,
         });
         return () => {
-          value22.update({
+          anchorStore.update({
             popupMounted: false,
           });
         };
-      }, [value22, value23, value2]);
-      let value25 = useRefocusAfterPendingSheet(
-          sheetPopup.concealed && !value23,
+      }, [anchorStore, declinesInitialFocus, anchor]);
+      let refocusAfterPendingSheet = useRefocusAfterPendingSheet(
+          sheetPopup.concealed && !declinesInitialFocus,
         ),
-        value26 = useMergedRefs(options, sheetPopup.ref, value25),
-        value27 = useOverlayLayer("popover", value4);
-      usePopoverStyleDebug(value7, value11.style);
-      let value28 = reactForUiPopover.Children.toArray(value8),
-        value29 = value28.filter(isPopoverArrow),
-        value30 = (
-          <overlayStackContext.Provider value={value24}>
-            {value28.filter(
-              (input: React.ReactNode): boolean => !isPopoverArrow(input),
+        mergedPopupRef = useMergedRefs(forwardedRef, sheetPopup.ref, refocusAfterPendingSheet),
+        overlayLayer = useOverlayLayer("popover", layerOffset);
+      usePopoverStyleDebug(className, popupProps.style);
+      let popupChildren = reactForUiPopover.Children.toArray(children),
+        arrows = popupChildren.filter(isPopoverArrow),
+        body = (
+          <overlayStackContext.Provider value={overlayStack}>
+            {popupChildren.filter(
+              (child: React.ReactNode): boolean => !isPopoverArrow(child),
             )}
           </overlayStackContext.Provider>
         );
@@ -472,38 +472,38 @@ export function installUiPopover(): () => void {
           container={(usePortalContainer()) as import("../contracts/overlays").BaseUIPortalContainer}
         >
           <PortalRoot
-            {...value27.portalProps}
+            {...overlayLayer.portalProps}
             style={
               sheetPopup.concealed
                 ? {
-                    ...value27.portalProps.style,
+                    ...overlayLayer.portalProps.style,
                     ...concealedPopupStyle,
                   }
-                : value27.portalProps.style
+                : overlayLayer.portalProps.style
             }
             surface={elevationSurfaceNames.popover}
             density={sheet ? SHEET_DENSITY : undefined}
             companionModalCatcher={!sheet}
             closeOnActivityHide={true}
           >
-            {[value21 !== null && sheetPopup.sheet && (
-                <value21.PopoverSheetBackdrop sheetPopup={sheetPopup} />
-              ), <layerBaseContext.Provider value={value27.base}>
+            {[ActiveSheetParts !== null && sheetPopup.sheet && (
+                <ActiveSheetParts.PopoverSheetBackdrop sheetPopup={sheetPopup} />
+              ), <layerBaseContext.Provider value={overlayLayer.base}>
                 <basePopover.Positioner
                   style={
                     sheetPopup.positionerStyle !== undefined
                       ? {
-                          ...value27.style,
+                          ...overlayLayer.style,
                           ...sheetPopup.positionerStyle,
                         }
-                      : value27.style
+                      : overlayLayer.style
                   }
-                  side={value12}
-                  align={value13}
-                  sideOffset={value14}
+                  side={side}
+                  align={align}
+                  sideOffset={sideOffset}
                   alignOffset={value}
-                  anchor={value2}
-                  collisionPadding={value3}
+                  anchor={anchor}
+                  collisionPadding={collisionPadding}
                   {...(sheet ? sheetPositioningOverrides : {})}
                   className={
                     sheet && sheetPopup.state.depth === 0
@@ -512,10 +512,10 @@ export function installUiPopover(): () => void {
                   }
                 >
                   <PopoverPopupInner
-                    anchored={value2 !== undefined && value2 !== null}
-                    ref={value26}
+                    anchored={anchor !== undefined && anchor !== null}
+                    ref={mergedPopupRef}
                     {...(sheetPopup.attrs as React.HTMLAttributes<HTMLDivElement>)}
-                    {...value11}
+                    {...popupProps}
                     {...(sheet
                       ? {
                           initialFocus: undefined,
@@ -523,32 +523,32 @@ export function installUiPopover(): () => void {
                       : {})}
                     onMouseDown={
                       sheet
-                        ? value10
+                        ? onMouseDown
                         : (
-                            input: Parameters<
+                            mouseEvent: Parameters<
                               NonNullable<PopoverPopupInnerProps["onMouseDown"]>
                             >[0],
                           ): void => {
-                            value10?.(input);
-                            callback(input);
+                            onMouseDown?.(mouseEvent);
+                            callback(mouseEvent);
                           }
                     }
                     style={
                       sheetPopup.style === undefined
-                        ? value11.style
-                        : typeof value11.style === "function"
+                        ? popupProps.style
+                        : typeof popupProps.style === "function"
                           ? (
-                              input: import("@base-ui/react/popover").Popover.Popup.State,
+                              popupState: import("@base-ui/react/popover").Popover.Popup.State,
                             ): React.CSSProperties => ({
                               ...(
-                                value11.style as (
+                                popupProps.style as (
                                   state: import("@base-ui/react/popover").Popover.Popup.State,
                                 ) => React.CSSProperties
-                              )(input),
+                              )(popupState),
                               ...sheetPopup.style,
                             })
                           : {
-                              ...value11.style,
+                              ...popupProps.style,
                               ...sheetPopup.style,
                             }
                     }
@@ -557,7 +557,7 @@ export function installUiPopover(): () => void {
                         NonNullable<PopoverPopupInnerProps["onFocus"]>
                       >[0],
                     ): void => {
-                      value9?.(event);
+                      onFocus?.(event);
                       let currentTarget = event.currentTarget;
                       if (
                         event.target === currentTarget &&
@@ -577,22 +577,22 @@ export function installUiPopover(): () => void {
                       sheet &&
                         "origin-top [&[data-cds-sheet-covered]:not([data-starting-style]):not([data-ending-style])]:-translate-y-3 data-[cds-sheet-covered]:scale-[0.94] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:transition-opacity after:duration-sheet motion-reduce:after:transition-none data-[cds-sheet-covered]:after:opacity-100",
                       sheet && "flex flex-col",
-                      !sheet && value7,
+                      !sheet && className,
                     )}
                   >
-                    {value21 !== null && sheetPopup.sheet ? (<value21.PopoverSheetContent
+                    {ActiveSheetParts !== null && sheetPopup.sheet ? (<ActiveSheetParts.PopoverSheetContent
                         sheetPopup={sheetPopup as SheetRenderState & {chrome: NonNullable<SheetRenderState["chrome"]>}}
-                        className={value7}
+                        className={className}
                         bodyRef={ref}
                         bodyClassName={cn(
                           popoverScrollBodyClasses,
-                          value16 && "scroll-fade-y",
-                          popoverPaddingClasses[value15],
+                          scrollFade && "scroll-fade-y",
+                          popoverPaddingClasses[padding],
                         )}
-                        closeLabel={value5}
+                        closeLabel={closeLabel}
                       >
-                        {value30}
-                      </value21.PopoverSheetContent>) : (<jsxForUiPopover.Fragment>
+                        {body}
+                      </ActiveSheetParts.PopoverSheetContent>) : (<jsxForUiPopover.Fragment>
                         {[<div
                             ref={ref}
                             tabIndex={-1}
@@ -602,12 +602,12 @@ export function installUiPopover(): () => void {
                             }}
                             className={cn(
                               popoverScrollBodyClasses,
-                              value16 && "scroll-fade-y",
-                              popoverPaddingClasses[value15],
+                              scrollFade && "scroll-fade-y",
+                              popoverPaddingClasses[padding],
                             )}
                           >
-                            {value30}
-                          </div>, value29]}
+                            {body}
+                          </div>, arrows]}
                       </jsxForUiPopover.Fragment>)}
                   </PopoverPopupInner>
                 </basePopover.Positioner>
@@ -623,20 +623,20 @@ export function installUiPopover(): () => void {
       reactForUiPopover.createContext<InnerOverlayStack | null>(null);
     (PopoverRoot as React.FC<PopoverRootProps>).displayName = "Popover.Root";
     PopoverTrigger = reactForUiPopover.forwardRef(function (
-      input: import("@base-ui/react/popover").Popover.Trigger.Props<void>,
-      options: React.ForwardedRef<HTMLButtonElement>,
+      triggerProps: import("@base-ui/react/popover").Popover.Trigger.Props<void>,
+      forwardedRef: React.ForwardedRef<HTMLButtonElement>,
     ): React.ReactElement {
       let value = reactForUiPopover.useContext(popoverStateContext),
         callback = reactForUiPopover.useCallback(
-          (input2: HTMLElement | null): void => {
+          (triggerElement: HTMLElement | null): void => {
             value?.update({
-              triggerEl: input2,
+              triggerEl: triggerElement,
             });
           },
           [value],
         ),
-        value2 = useMergedRefs(options, callback);
-      return <basePopover.Trigger {...input} ref={value2} />;
+        mergedRef = useMergedRefs(forwardedRef, callback);
+      return <basePopover.Trigger {...triggerProps} ref={mergedRef} />;
     });
     PopoverTrigger.displayName = "Popover.Trigger";
     PopoverTriggerAlias = PopoverTrigger;

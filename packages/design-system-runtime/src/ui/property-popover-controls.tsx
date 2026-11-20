@@ -71,7 +71,7 @@ function PropertyPopoverPanel({
 }
 function ShadowPropertyEditor({
   title: title,
-  value: value,
+  value: shadow,
   onChange: onChange,
   onLive: onLive,
   onLiveEnd: onLiveEnd,
@@ -84,18 +84,18 @@ function ShadowPropertyEditor({
   editsAreUndoSteps: editsAreUndoSteps,
 }: ShadowPropertyEditorProps) {
   useUiLocale();
-  let callback = (input: Partial<ShadowValue>) =>
+  let callback = (changes: Partial<ShadowValue>) =>
       onChange({
-        ...value,
-        ...input,
+        ...shadow,
+        ...changes,
       }),
-    callback2 = (input: "x" | "y" | "blur" | "spread") =>
+    getScrubHandlers = (field: "x" | "y" | "blur" | "spread") =>
       onLive && onLiveEnd
         ? {
-            onScrub: (input2: number) =>
+            onScrub: (nextNumber: number) =>
               onLive({
-                ...value,
-                [input]: input2,
+                ...shadow,
+                [field]: nextNumber,
               }),
             onScrubEnd: onLiveEnd,
           }
@@ -114,80 +114,80 @@ function ShadowPropertyEditor({
                 aria-label={uiMessage("design-system.propertyPopoverControls.horizontalOffset")}
                 prefix={"X"}
                 steppers={false}
-                value={value.x}
-                onValue={(input: number | undefined) =>
-                  input !== undefined &&
+                value={shadow.x}
+                onValue={(offsetX: number | undefined) =>
+                  offsetX !== undefined &&
                   callback({
-                    x: input,
+                    x: offsetX,
                   })
                 }
                 disabled={disabled}
                 {...bounds.x}
-                {...callback2("x")}
+                {...getScrubHandlers("x")}
               />, <PropertyNumberInput
                 aria-label={uiMessage("design-system.propertyPopoverControls.verticalOffset")}
                 prefix={"Y"}
                 steppers={false}
-                value={value.y}
-                onValue={(input: number | undefined) =>
-                  input !== undefined &&
+                value={shadow.y}
+                onValue={(offsetY: number | undefined) =>
+                  offsetY !== undefined &&
                   callback({
-                    y: input,
+                    y: offsetY,
                   })
                 }
                 disabled={disabled}
                 {...bounds.y}
-                {...callback2("y")}
+                {...getScrubHandlers("y")}
               />]}
           </div>
         </PropertyRow>, <NumberPropertyRow
           label={uiMessage("design-system.propertyPopoverControls.blur")}
           unit={"px"}
-          value={value.blur}
-          onValue={(input: number | undefined) =>
-            input !== undefined &&
+          value={shadow.blur}
+          onValue={(blur: number | undefined) =>
+            blur !== undefined &&
             callback({
-              blur: input,
+              blur: blur,
             })
           }
           disabled={disabled}
           min={0}
           {...bounds.blur}
-          {...callback2("blur")}
+          {...getScrubHandlers("blur")}
         />, spread && (
           <NumberPropertyRow
             label={uiMessage("design-system.propertyPopoverControls.spread")}
             unit={"px"}
-            value={value.spread ?? 0}
-            onValue={(input: number | undefined) =>
-              input !== undefined &&
+            value={shadow.spread ?? 0}
+            onValue={(spreadRadius: number | undefined) =>
+              spreadRadius !== undefined &&
               callback({
-                spread: input,
+                spread: spreadRadius,
               })
             }
             disabled={disabled}
             {...bounds.spread}
-            {...callback2("spread")}
+            {...getScrubHandlers("spread")}
           />
         ), <ColorTextPropertyRow
           label={uiMessage("design-system.propertyPopoverControls.color")}
-          value={value.color}
+          value={shadow.color}
           disabled={disabled}
           swatches={swatches}
           popoverTitle={unifiedPopover ? COLOR_LABEL : undefined}
           editsAreUndoSteps={editsAreUndoSteps}
-          onChange={(input: string | undefined) =>
-            input !== undefined &&
+          onChange={(color: string | undefined) =>
+            color !== undefined &&
             callback({
-              color: input,
+              color: color,
             })
           }
           {...(onLive && onLiveEnd
             ? {
-                onLive: (input: string) =>
+                onLive: (color: string) =>
                   onLive({
-                    ...value,
-                    color: input,
+                    ...shadow,
+                    color: color,
                   }),
                 onLiveEnd: () => onLiveEnd!(),
               }
@@ -291,7 +291,7 @@ export function installUiPropertyPopoverControls(): () => void {
         disabled: disabled,
         ...props
       }: PropertyPopoverTriggerProps,
-      options: React.ForwardedRef<HTMLButtonElement>,
+      forwardedRef: React.ForwardedRef<HTMLButtonElement>,
     ) {
       let memo = reactdC.useMemo(
         () =>
@@ -309,7 +309,7 @@ export function installUiPropertyPopoverControls(): () => void {
               }
             : undefined)}
           {...props}
-          ref={options}
+          ref={forwardedRef}
           aria-label={((label) + (": ")) + (text)}
           disabled={disabled}
           onClick={onClick}

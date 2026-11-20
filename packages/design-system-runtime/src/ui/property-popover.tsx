@@ -16,7 +16,7 @@ import { PopoverComponents } from "./popover";
 import { anyMenuOrPopoverOpen, choosePopoverSide, pendingPopupFocusReturn, popupFocusReturnTimer, TEXT_EDITABLE_SELECTOR, ToolbarTooltipSideContext } from "./property-focus";
 import { joinClassNames } from "./property-icons";
 
-var reactForUiPropertyPopover2: ReactNamespace;
+var reactPropertyPopup: ReactNamespace;
 var reactForUiPropertyPopover: ReactNamespace;
 var reactDOMForUiPropertyPopover: typeof import("react-dom");
 var jsxForUiPropertyPopover: JsxNamespace;
@@ -40,30 +40,30 @@ function PopupScrim({ onClose: onClose }: { onClose(): void }) {
   useUiLocale();
   let ref = reactForUiPropertyPopover.useRef(onClose);
   ref.current = onClose;
-  let ref2 = reactForUiPropertyPopover.useRef<HTMLDivElement | null>(null),
-    ref3 = reactForUiPropertyPopover.useRef(false),
-    [value, value2] = reactForUiPropertyPopover.useState(false),
-    ref4 = reactForUiPropertyPopover.useRef(false);
+  let scrimRef = reactForUiPropertyPopover.useRef<HTMLDivElement | null>(null),
+    pointerDownRef = reactForUiPropertyPopover.useRef(false),
+    [value, setIsDragging] = reactForUiPropertyPopover.useState(false),
+    isDraggingRef = reactForUiPropertyPopover.useRef(false);
   reactForUiPropertyPopover.useEffect(() => {
     let callback = () => {
-        ref4.current = true;
-        if (ref2.current) {
-          ref2.current.style.pointerEvents = "none";
+        isDraggingRef.current = true;
+        if (scrimRef.current) {
+          scrimRef.current.style.pointerEvents = "none";
         }
-        value2(true);
+        setIsDragging(true);
       },
-      callback2 = () => {
-        ref4.current = false;
-        if (ref2.current) {
-          ref2.current.style.pointerEvents = "";
+      restoreScrim = () => {
+        isDraggingRef.current = false;
+        if (scrimRef.current) {
+          scrimRef.current.style.pointerEvents = "";
         }
-        value2(false);
+        setIsDragging(false);
       };
     document.addEventListener("dragstart", callback, true);
-    document.addEventListener("dragend", callback2, true);
-    document.addEventListener("drop", callback2, true);
-    let current = ref2.current,
-      callback3 = (event: WheelEvent) => {
+    document.addEventListener("dragend", restoreScrim, true);
+    document.addEventListener("drop", restoreScrim, true);
+    let current = scrimRef.current,
+      dismissAndForwardWheel = (event: WheelEvent) => {
         event.preventDefault();
         if (!current) {
           return;
@@ -71,15 +71,15 @@ function PopupScrim({ onClose: onClose }: { onClose(): void }) {
         current.style.pointerEvents = "none";
         blurActivePopupEditor();
         ref.current();
-        let value3 = document.elementFromPoint?.(
+        let elementUnderScrim = document.elementFromPoint?.(
           event.clientX,
           event.clientY,
         );
-        if (value3 && value3 !== current) {
-          value3.dispatchEvent(new WheelEvent("wheel", event));
+        if (elementUnderScrim && elementUnderScrim !== current) {
+          elementUnderScrim.dispatchEvent(new WheelEvent("wheel", event));
         }
       },
-      callback4 = (event: Event) => {
+      dismissOnGesture = (event: Event) => {
         event.preventDefault();
         if (current) {
           current.style.pointerEvents = "none";
@@ -87,27 +87,27 @@ function PopupScrim({ onClose: onClose }: { onClose(): void }) {
         blurActivePopupEditor();
         ref.current();
       };
-    current?.addEventListener("wheel", callback3, {
+    current?.addEventListener("wheel", dismissAndForwardWheel, {
       passive: false,
     });
-    current?.addEventListener("gesturestart", callback4, {
+    current?.addEventListener("gesturestart", dismissOnGesture, {
       passive: false,
     });
-    current?.addEventListener("gesturechange", callback4, {
+    current?.addEventListener("gesturechange", dismissOnGesture, {
       passive: false,
     });
     return () => {
       document.removeEventListener("dragstart", callback, true);
-      document.removeEventListener("dragend", callback2, true);
-      document.removeEventListener("drop", callback2, true);
-      current?.removeEventListener("wheel", callback3);
-      current?.removeEventListener("gesturestart", callback4);
-      current?.removeEventListener("gesturechange", callback4);
+      document.removeEventListener("dragend", restoreScrim, true);
+      document.removeEventListener("drop", restoreScrim, true);
+      current?.removeEventListener("wheel", dismissAndForwardWheel);
+      current?.removeEventListener("gesturestart", dismissOnGesture);
+      current?.removeEventListener("gesturechange", dismissOnGesture);
     };
   }, []);
   return reactDOMForUiPropertyPopover.createPortal(
     <div
-      ref={ref2}
+      ref={scrimRef}
       data-mc-scrim={""}
       aria-hidden={"true"}
       className={"fixed inset-0 z-scrim"}
@@ -119,25 +119,25 @@ function PopupScrim({ onClose: onClose }: { onClose(): void }) {
         event.stopPropagation();
         blurActivePopupEditor();
         if (event.button === 0) {
-          ref3.current = true;
+          pointerDownRef.current = true;
         } else {
           event.currentTarget.style.pointerEvents = "none";
           onClose();
         }
       }}
       onPointerCancel={() => {
-        if (!ref3.current) {
+        if (!pointerDownRef.current) {
           return;
         }
-        ref3.current = false;
+        pointerDownRef.current = false;
         onClose();
       }}
-      onClick={(input: React.MouseEvent<HTMLDivElement>) => {
-        input.stopPropagation();
-        if (!ref3.current) {
+      onClick={(mouseEvent: React.MouseEvent<HTMLDivElement>) => {
+        mouseEvent.stopPropagation();
+        if (!pointerDownRef.current) {
           return;
         }
-        ref3.current = false;
+        pointerDownRef.current = false;
         onClose();
       }}
       onContextMenu={(event: React.MouseEvent<HTMLElement>) => {
@@ -147,7 +147,7 @@ function PopupScrim({ onClose: onClose }: { onClose(): void }) {
         onClose();
       }}
       onDragEnter={() => {
-        if (ref4.current) {
+        if (isDraggingRef.current) {
           return;
         }
         blurActivePopupEditor();
@@ -157,54 +157,54 @@ function PopupScrim({ onClose: onClose }: { onClose(): void }) {
     document.body,
   );
 }
-function suppressRepeatedEnterClicks(input: boolean) {
-  let value = input,
+function suppressRepeatedEnterClicks(isEnterInitiallyDown: boolean) {
+  let value = isEnterInitiallyDown,
     flag = false,
-    flag2 = false,
+    teardownRequested = false,
     callback = () => {
-      window.removeEventListener("keydown", callback2, true);
-      window.removeEventListener("keyup", callback2, true);
-      window.removeEventListener("click", callback4, true);
-      window.removeEventListener("blur", callback3);
+      window.removeEventListener("keydown", trackEnterKey, true);
+      window.removeEventListener("keyup", trackEnterKey, true);
+      window.removeEventListener("click", blockRepeatedClick, true);
+      window.removeEventListener("blur", resetOnBlur);
     },
-    callback2 = (input2: KeyboardEvent) => {
-      if (input2.key !== "Enter") {
+    trackEnterKey = (keyEvent: KeyboardEvent) => {
+      if (keyEvent.key !== "Enter") {
         return;
       }
-      value = input2.type === "keydown";
-      flag = value && input2.repeat;
-      if (flag2 && !flag) {
+      value = keyEvent.type === "keydown";
+      flag = value && keyEvent.repeat;
+      if (teardownRequested && !flag) {
         callback();
       }
     },
-    callback3 = () => {
+    resetOnBlur = () => {
       value = flag = false;
-      if (flag2) {
+      if (teardownRequested) {
         callback();
       }
     },
-    callback4 = (event: MouseEvent) => {
+    blockRepeatedClick = (event: MouseEvent) => {
       if (!flag || event.detail !== 0) {
         return;
       }
       event.preventDefault();
       event.stopPropagation();
     };
-  window.addEventListener("keydown", callback2, true);
-  window.addEventListener("keyup", callback2, true);
-  window.addEventListener("click", callback4, true);
-  window.addEventListener("blur", callback3);
+  window.addEventListener("keydown", trackEnterKey, true);
+  window.addEventListener("keyup", trackEnterKey, true);
+  window.addEventListener("click", blockRepeatedClick, true);
+  window.addEventListener("blur", resetOnBlur);
   return () => {
-    flag2 = true;
+    teardownRequested = true;
     if (!value) {
       callback();
     }
   };
 }
-function usePopupOpenFocus(input: boolean) {
-  reactForUiPropertyPopover2.useEffect(
-    () => (input ? suppressRepeatedEnterClicks(false) : undefined),
-    [input],
+function usePopupOpenFocus(isActive: boolean) {
+  reactPropertyPopup.useEffect(
+    () => (isActive ? suppressRepeatedEnterClicks(false) : undefined),
+    [isActive],
   );
 }
 function suppressEnterClicksUntilRelease() {
@@ -230,57 +230,57 @@ function PropertyPopup({
   keepFocus = false,
 }: PropertyPopupProps) {
   useUiLocale();
-  let ref = reactForUiPropertyPopover2.useRef<HTMLDivElement | null>(null);
+  let ref = reactPropertyPopup.useRef<HTMLDivElement | null>(null);
   usePopupOpenFocus(open && focusOnOpen);
-  let ref2 = reactForUiPropertyPopover2.useRef<HTMLSpanElement | null>(null),
-    value = reactForUiPropertyPopover2.useContext(
+  let anchorMarkerRef = reactPropertyPopup.useRef<HTMLSpanElement | null>(null),
+    value = reactPropertyPopup.useContext(
       ToolbarTooltipSideContext as React.Context<
         "top" | "bottom" | undefined
       >,
     ),
-    value2 = side === undefined ? value : undefined,
-    value3 = side ?? value2 ?? "bottom",
-    value4 = value3 === "bottom" || value3 === "top",
-    [value5, value6] = reactForUiPropertyPopover2.useState<PopoverPlacement>({
-      side: value4 ? (value3 as "top" | "bottom") : "bottom",
+    inheritedSide = side === undefined ? value : undefined,
+    preferredSide = side ?? inheritedSide ?? "bottom",
+    isVerticalPlacement = preferredSide === "bottom" || preferredSide === "top",
+    [placement, setPlacement] = reactPropertyPopup.useState<PopoverPlacement>({
+      side: isVerticalPlacement ? (preferredSide as "top" | "bottom") : "bottom",
       maxHeight: undefined,
     });
-  reactForUiPropertyPopover2.useLayoutEffect(() => {
+  reactPropertyPopup.useLayoutEffect(() => {
     if (!open) {
       return;
     }
-    value6(
-      value4 && planHeight !== undefined
+    setPlacement(
+      isVerticalPlacement && planHeight !== undefined
         ? choosePopoverSide(
-            positionAnchor?.() ?? ref2.current?.parentElement,
+            positionAnchor?.() ?? anchorMarkerRef.current?.parentElement,
             planHeight,
-            value3 as "top" | "bottom",
-            value2 !== undefined ? popupFocusReturnTimer : undefined,
+            preferredSide as "top" | "bottom",
+            inheritedSide !== undefined ? popupFocusReturnTimer : undefined,
           )
         : {
-            side: value4 ? (value3 as "top" | "bottom") : "bottom",
+            side: isVerticalPlacement ? (preferredSide as "top" | "bottom") : "bottom",
             maxHeight: undefined,
           },
     );
   }, [open]);
-  let value7 = value4 && planHeight !== undefined,
-    value8 = value4 ? value5.side : value3,
-    ref3 = reactForUiPropertyPopover2.useRef(onClose);
-  ref3.current = onClose;
-  let ref4 = reactForUiPropertyPopover2.useRef(onOpen);
-  ref4.current = onOpen;
-  let ref5 = reactForUiPropertyPopover2.useRef(false);
-  reactForUiPropertyPopover2.useEffect(() => {
+  let useMeasuredHeight = isVerticalPlacement && planHeight !== undefined,
+    resolvedSide = isVerticalPlacement ? placement.side : preferredSide,
+    closeCallbackRef = reactPropertyPopup.useRef(onClose);
+  closeCallbackRef.current = onClose;
+  let openCallbackRef = reactPropertyPopup.useRef(onOpen);
+  openCallbackRef.current = onOpen;
+  let didRequestCloseRef = reactPropertyPopup.useRef(false);
+  reactPropertyPopup.useEffect(() => {
     if (!open) {
       return;
     }
-    ref5.current = false;
-    let value9 = Symbol("popover");
-    EMPTY_EDITOR_TOOL_OPTIONS.push(value9);
+    didRequestCloseRef.current = false;
+    let stackToken = Symbol("popover");
+    EMPTY_EDITOR_TOOL_OPTIONS.push(stackToken);
     let callback = () =>
         EMPTY_EDITOR_TOOL_OPTIONS[EMPTY_EDITOR_TOOL_OPTIONS.length - 1] ===
-        value9,
-      callback2 = (event: PointerEvent) => {
+        stackToken,
+      dismissOnOutsidePointer = (event: PointerEvent) => {
         if (!callback()) {
           return;
         }
@@ -300,13 +300,13 @@ function PropertyPopup({
         ) {
           return;
         }
-        let value10 = ref2.current?.parentElement?.contains(target) ?? false,
-          value11 = ref.current?.contains(target) ?? false;
-        if (!value10 && !value11) {
-          ref3.current();
+        let isInAnchor = anchorMarkerRef.current?.parentElement?.contains(target) ?? false,
+          isInPopup = ref.current?.contains(target) ?? false;
+        if (!isInAnchor && !isInPopup) {
+          closeCallbackRef.current();
         }
       },
-      callback3 = (event: PointerEvent) => {
+      dismissOnStripPointer = (event: PointerEvent) => {
         let target = event.target as HTMLElement | null;
         if (!(target instanceof Element)) {
           return;
@@ -314,9 +314,9 @@ function PropertyPopup({
         if (target.closest("[data-mc-strip]") === null) {
           return;
         }
-        callback2(event);
+        dismissOnOutsidePointer(event);
       },
-      callback4 = (event: KeyboardEvent) => {
+      dismissOnEscape = (event: KeyboardEvent) => {
         if (event.defaultPrevented || !callback()) {
           return;
         }
@@ -325,10 +325,10 @@ function PropertyPopup({
         }
         if (event.key === "Escape") {
           event.preventDefault();
-          ref3.current();
+          closeCallbackRef.current();
         }
       },
-      callback5 = (event: KeyboardEvent) => {
+      captureEscapeOutsideEditors = (event: KeyboardEvent) => {
         if (
           event.key !== "Escape" ||
           event.defaultPrevented ||
@@ -353,68 +353,68 @@ function PropertyPopup({
         }
         event.preventDefault();
         event.stopPropagation();
-        ref3.current();
+        closeCallbackRef.current();
       };
-    document.addEventListener("pointerdown", callback2);
-    document.addEventListener("pointerdown", callback3, {
+    document.addEventListener("pointerdown", dismissOnOutsidePointer);
+    document.addEventListener("pointerdown", dismissOnStripPointer, {
       capture: true,
     });
-    window.addEventListener("keydown", callback4);
-    window.addEventListener("keydown", callback5, {
+    window.addEventListener("keydown", dismissOnEscape);
+    window.addEventListener("keydown", captureEscapeOutsideEditors, {
       capture: true,
     });
     return () => {
-      let value10 = EMPTY_EDITOR_TOOL_OPTIONS.indexOf(value9);
-      if (value10 >= 0) {
-        EMPTY_EDITOR_TOOL_OPTIONS.splice(value10, 1);
+      let stackIndex = EMPTY_EDITOR_TOOL_OPTIONS.indexOf(stackToken);
+      if (stackIndex >= 0) {
+        EMPTY_EDITOR_TOOL_OPTIONS.splice(stackIndex, 1);
       }
-      document.removeEventListener("pointerdown", callback2);
-      document.removeEventListener("pointerdown", callback3, {
+      document.removeEventListener("pointerdown", dismissOnOutsidePointer);
+      document.removeEventListener("pointerdown", dismissOnStripPointer, {
         capture: true,
       });
-      window.removeEventListener("keydown", callback4);
-      window.removeEventListener("keydown", callback5, {
+      window.removeEventListener("keydown", dismissOnEscape);
+      window.removeEventListener("keydown", captureEscapeOutsideEditors, {
         capture: true,
       });
     };
   }, [open]);
   return (
     <CanvasEditorJsx.Fragment>
-      {[<span ref={ref2} className={"hidden"} aria-hidden={"true"} />, open ? <PopupScrim onClose={() => ref3.current()} /> : null, <PopoverComponents.Root
+      {[<span ref={anchorMarkerRef} className={"hidden"} aria-hidden={"true"} />, open ? <PopupScrim onClose={() => closeCallbackRef.current()} /> : null, <PopoverComponents.Root
           open={open}
           onOpenChange={(
-            input: boolean,
-            options: PropertyPopupChangeDetails,
+            nextOpen: boolean,
+            changeDetails: PropertyPopupChangeDetails,
           ) => {
-            if (input) {
-              ref4.current?.();
+            if (nextOpen) {
+              openCallbackRef.current?.();
               return;
             }
-            if (options.reason === "escape-key") {
-              if (!options.event!.defaultPrevented) {
-                options.event!.preventDefault();
-                if (!ref5.current) {
-                  ref3.current();
+            if (changeDetails.reason === "escape-key") {
+              if (!changeDetails.event!.defaultPrevented) {
+                changeDetails.event!.preventDefault();
+                if (!didRequestCloseRef.current) {
+                  closeCallbackRef.current();
                 }
-                ref5.current = true;
+                didRequestCloseRef.current = true;
               }
-              options.cancel();
+              changeDetails.cancel();
               return;
             }
             if (
-              options.reason === "trigger-press" ||
-              options.reason === "imperative-action" ||
-              options.reason === "close-press" ||
-              (options.reason === "focus-out" &&
-                isBaseUiFocusGuardEvent(options))
+              changeDetails.reason === "trigger-press" ||
+              changeDetails.reason === "imperative-action" ||
+              changeDetails.reason === "close-press" ||
+              (changeDetails.reason === "focus-out" &&
+                isBaseUiFocusGuardEvent(changeDetails))
             ) {
-              if (!ref5.current) {
-                ref3.current();
+              if (!didRequestCloseRef.current) {
+                closeCallbackRef.current();
               }
-              ref5.current = true;
+              didRequestCloseRef.current = true;
               return;
             }
-            options.cancel();
+            changeDetails.cancel();
           }}
         >
           {[trigger !== undefined ? (
@@ -423,15 +423,15 @@ function PropertyPopup({
               ref={ref}
               aria-label={ariaLabel}
               anchor={() =>
-                positionAnchor?.() ?? ref2.current?.parentElement ?? null
+                positionAnchor?.() ?? anchorMarkerRef.current?.parentElement ?? null
               }
-              side={value8}
-              align={!value4 || align === "left" ? "start" : "end"}
-              sideOffset={value3 === "right" ? 12 : value3 === "left" ? 8 : 4}
+              side={resolvedSide}
+              align={!isVerticalPlacement || align === "left" ? "start" : "end"}
+              sideOffset={preferredSide === "right" ? 12 : preferredSide === "left" ? 8 : 4}
               style={
-                value7 && value5.maxHeight !== undefined
+                useMeasuredHeight && placement.maxHeight !== undefined
                   ? {
-                      maxHeight: `min(${value5.maxHeight}px, var(--available-height))`,
+                      maxHeight: `min(${placement.maxHeight}px, var(--available-height))`,
                     }
                   : undefined
               }
@@ -459,26 +459,26 @@ function PropertyPopup({
                       ) {
                         return;
                       }
-                      let value9 = collectFocusableDescendants(current);
-                      if (value9.length === 0) {
+                      let focusableElements = collectFocusableDescendants(current);
+                      if (focusableElements.length === 0) {
                         return;
                       }
-                      let value10 = value9[0],
-                        value11 = value9[value9.length - 1];
+                      let firstFocusable = focusableElements[0],
+                        lastFocusable = focusableElements[focusableElements.length - 1];
                       if (
                         event.shiftKey &&
                         (document.activeElement as HTMLElement | null) ===
-                          value10
+                          firstFocusable
                       ) {
                         event.preventDefault();
-                        value11?.focus();
+                        lastFocusable?.focus();
                       } else if (
                         !event.shiftKey &&
                         (document.activeElement as HTMLElement | null) ===
-                          value11
+                          lastFocusable
                       ) {
                         event.preventDefault();
-                        value10?.focus();
+                        firstFocusable?.focus();
                       }
                     }
                   : undefined
@@ -504,14 +504,14 @@ function PropertyPopup({
     </CanvasEditorJsx.Fragment>
   );
 }
-function collectFocusableDescendants(input: Element) {
+function collectFocusableDescendants(container: Element) {
   return Array.from<HTMLElement>(
-    input.querySelectorAll<HTMLElement>(
+    container.querySelectorAll<HTMLElement>(
       'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
     ),
   ).filter(
-    (input2: HTMLElement) =>
-      input2.tabIndex >= 0 && input2.closest('[aria-hidden="true"]') === null,
+    (element: HTMLElement) =>
+      element.tabIndex >= 0 && element.closest('[aria-hidden="true"]') === null,
   );
 }
 function isBaseUiFocusGuardEvent(details: {
@@ -537,14 +537,14 @@ export {
   PropertyPopup,
   reactDOMForUiPropertyPopover,
   reactForUiPropertyPopover,
-  reactForUiPropertyPopover2,
+  reactPropertyPopup as reactForUiPropertyPopover2,
   suppressEnterClicksUntilRelease,
   suppressRepeatedEnterClicks,
   usePopupOpenFocus,
 };
 export function installUiPropertyPopover(): () => void {
   return () => {
-    reactForUiPropertyPopover2 = toModuleNamespace(
+    reactPropertyPopup = toModuleNamespace(
       loadReactNamespace(),
       1,
     );

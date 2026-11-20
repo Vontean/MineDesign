@@ -5,7 +5,7 @@ import type {
   PopoverPlacement,
   UndoPointerProps,
 } from "../contracts/composition";
-import { MENU_POPOVER_OPEN_SELECTORS, OPEN_OVERLAY_SELECTOR, reactForPlatformFrameChrome2 } from "../platform/frame-chrome";
+import { MENU_POPOVER_OPEN_SELECTORS, OPEN_OVERLAY_SELECTOR, reactForPlatformFrameChrome2 as reactPropertyFocus } from "../platform/frame-chrome";
 
 var UNDO_STEPS_ATTRIBUTE: "data-mc-undo-steps";
 var UNDO_STEPS_HELD_ATTRIBUTE: "data-mc-undo-steps-held";
@@ -27,27 +27,27 @@ function anyMenuOrPopoverOpen(page: ParentNode = document) {
   }
   return false;
 }
-function hasOpenOverlay(input: ParentNode = document) {
-  for (let value of input.querySelectorAll(OPEN_OVERLAY_SELECTOR)) {
+function hasOpenOverlay(root: ParentNode = document) {
+  for (let value of root.querySelectorAll(OPEN_OVERLAY_SELECTOR)) {
     if (!isOverlayClosed(value)) {
       return true;
     }
   }
   return false;
 }
-function markHeldUndoPointer(input: React.PointerEvent<HTMLElement>) {
-  if (input.button !== 0) {
+function markHeldUndoPointer(pointerEvent: React.PointerEvent<HTMLElement>) {
+  if (pointerEvent.button !== 0) {
     return;
   }
-  let currentTarget = input.currentTarget,
+  let currentTarget = pointerEvent.currentTarget,
     ownerDocument = currentTarget.ownerDocument,
-    pointerId = input.pointerId,
+    pointerId = pointerEvent.pointerId,
     value = heldUndoPointerIds.get(currentTarget) ?? new Set();
   heldUndoPointerIds.set(currentTarget, value);
   value.add(pointerId);
   currentTarget.setAttribute(UNDO_STEPS_HELD_ATTRIBUTE, "");
-  let callback = (input2: PointerEvent) => {
-    if (input2.pointerId !== pointerId) {
+  let callback = (releaseEvent: PointerEvent) => {
+    if (releaseEvent.pointerId !== pointerId) {
       return;
     }
     value.delete(pointerId);
@@ -60,8 +60,8 @@ function markHeldUndoPointer(input: React.PointerEvent<HTMLElement>) {
   ownerDocument.addEventListener("pointerup", callback, true);
   ownerDocument.addEventListener("pointercancel", callback, true);
 }
-function overlaysBlockUndo(input: ParentNode = document) {
-  for (let value of input.querySelectorAll(OPEN_OVERLAY_SELECTOR)) {
+function overlaysBlockUndo(root: ParentNode = document) {
+  for (let value of root.querySelectorAll(OPEN_OVERLAY_SELECTOR)) {
     if (value.hasAttribute(UNDO_STEPS_HELD_ATTRIBUTE)) {
       return true;
     }
@@ -74,8 +74,8 @@ function overlaysBlockUndo(input: ParentNode = document) {
   }
   return false;
 }
-function isOverlayClosed(input: Element) {
-  return (input.closest("[data-open], [data-closed]") ?? input).hasAttribute(
+function isOverlayClosed(overlay: Element) {
+  return (overlay.closest("[data-open], [data-closed]") ?? overlay).hasAttribute(
     "data-closed",
   );
 }
@@ -96,19 +96,19 @@ function choosePopoverSide(
       (anchor.ownerDocument.defaultView?.innerHeight ?? bounds.bottom) -
       bounds.bottom -
       16,
-    value2 = bounds.top - 16,
-    [value3, value4] =
-      preferredSide === "top" ? [value2, value] : [value, value2],
-    value5 =
-      value3 >= Math.min(expectedHeight, minimumHeight) || value3 >= value4
+    spaceAbove = bounds.top - 16,
+    [preferredSpace, alternateSpace] =
+      preferredSide === "top" ? [spaceAbove, value] : [value, spaceAbove],
+    resolvedSide =
+      preferredSpace >= Math.min(expectedHeight, minimumHeight) || preferredSpace >= alternateSpace
         ? preferredSide
         : preferredSide === "top"
           ? "bottom"
           : "top",
-    value6 = value5 === "bottom" ? value : value2;
+    availableHeight = resolvedSide === "bottom" ? value : spaceAbove;
   return {
-    side: value5,
-    maxHeight: value6 < expectedHeight ? Math.max(value6, 120) : undefined,
+    side: resolvedSide,
+    maxHeight: availableHeight < expectedHeight ? Math.max(availableHeight, 120) : undefined,
   };
 }
 export {
@@ -144,7 +144,7 @@ export function installUiPropertyFocus(): () => void {
       }
     };
     ToolbarTooltipSideContext = (
-      reactForPlatformFrameChrome2 as typeof import("react")
+      reactPropertyFocus as typeof import("react")
     ).createContext<PopoverSide | "left" | "right" | undefined>(undefined);
     popupFocusReturnTimer = 320;
   };

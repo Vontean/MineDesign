@@ -10,7 +10,7 @@ import { NumberInput } from "./number-input";
 import { joinClassNames, KitIcon } from "./property-icons";
 import { DECREASE_LABEL, INCREASE_LABEL, MIXED_LABEL, numberChangeRefusalMessage } from "./property-labels";
 
-var reactForUiNumberControls2: typeof import("react");
+var reactPropertyNumberInput: typeof import("react");
 var reactForUiNumberControls: typeof import("react");
 var activeNumberScrubCleanup: (() => void) | null;
 var jsxForUiNumberControls: typeof import("react/jsx-runtime");
@@ -20,17 +20,17 @@ var PROPERTY_NUMBER_UNIT_CLASS: string;
 var PROPERTY_NUMBER_INPUT_CLASS: string;
 var PROPERTY_NUMBER_STEPPER_CLASS: string;
 function decimalPlaces(value: number): number {
-  let value2 = String(value),
-    value3 = value2.indexOf(".");
-  if (value3 === -1 || value2.includes("e")) {
+  let numberText = String(value),
+    decimalPoint = numberText.indexOf(".");
+  if (decimalPoint === -1 || numberText.includes("e")) {
     return 0;
   } else {
-    return value2.length - value3 - 1;
+    return numberText.length - decimalPoint - 1;
   }
 }
 function roundScrubValue(value: number, step: number): number {
-  let value2 = 10 ** scrubPrecision(step);
-  return Math.round(value * value2) / value2;
+  let roundingScale = 10 ** scrubPrecision(step);
+  return Math.round(value * roundingScale) / roundingScale;
 }
 function scrubPrecision(step: number): number {
   return Math.max(
@@ -47,18 +47,18 @@ function snapScrubValue(
   if (!(step > 0) || !Number.isFinite(step) || !Number.isFinite(value)) {
     return value + 0;
   }
-  let value2 = origin == null && Number.isInteger(step) ? 1 : step,
-    value3 = origin ?? 0,
-    value4 = (value - value3) / value2,
-    value5 = Math.round(Number(value4.toPrecision(12))),
-    value6 = 10 ** Math.max(scrubPrecision(value2), decimalPlaces(value3)),
-    value7 = Math.round((value5 * value2 + value3) * value6) / value6 + 0;
-  if (Math.abs(value4) < 1000000000000 && Number.isFinite(value7)) {
-    return value7;
+  let snapStep = origin == null && Number.isInteger(step) ? 1 : step,
+    snapOrigin = origin ?? 0,
+    stepOffset = (value - snapOrigin) / snapStep,
+    roundedSteps = Math.round(Number(stepOffset.toPrecision(12))),
+    roundingScale = 10 ** Math.max(scrubPrecision(snapStep), decimalPlaces(snapOrigin)),
+    snappedValue = Math.round((roundedSteps * snapStep + snapOrigin) * roundingScale) / roundingScale + 0;
+  if (Math.abs(stepOffset) < 1000000000000 && Number.isFinite(snappedValue)) {
+    return snappedValue;
   }
-  let value8 = roundScrubValue(value, step) + 0;
-  if (Number.isFinite(value8)) {
-    return value8;
+  let roundedFallback = roundScrubValue(value, step) + 0;
+  if (Number.isFinite(roundedFallback)) {
+    return roundedFallback;
   } else {
     return value + 0;
   }
@@ -68,43 +68,43 @@ function createNumberScrubGesture(
   startX: number,
 ): Color.NumberScrubGesture {
   let value = startX,
-    value2: number | null = null,
+    unsnappedValue: number | null = null,
     flag = false;
   return {
-    move(input: number, options?: boolean) {
-      let value3 = getOptions(),
-        value4 = input - value;
-      value = input;
+    move(clientX: number, accelerate?: boolean) {
+      let scrubOptions = getOptions(),
+        deltaX = clientX - value;
+      value = clientX;
       if (!flag) {
-        if (value4 === 0) {
+        if (deltaX === 0) {
           return;
         }
         flag = true;
-        value3.onScrubbing?.(true);
+        scrubOptions.onScrubbing?.(true);
       }
-      if (value2 == null) {
-        value2 = Number.isFinite(value3.value) ? value3.value : 0;
+      if (unsnappedValue == null) {
+        unsnappedValue = Number.isFinite(scrubOptions.value) ? scrubOptions.value : 0;
       }
-      let value5 = value3.step ?? 1,
-        callback = (input2: number) =>
+      let step = scrubOptions.step ?? 1,
+        callback = (candidateValue: number) =>
           Math.min(
-            value3.max ?? 1 / 0,
-            Math.max(value3.min ?? -1 / 0, input2),
+            scrubOptions.max ?? 1 / 0,
+            Math.max(scrubOptions.min ?? -1 / 0, candidateValue),
           );
-      value2 = callback(value2 + value4 * value5 * (options ? 10 : 1));
-      let value6 =
-        value2 === value3.min || value2 === value3.max
-          ? value2
-          : callback(snapScrubValue(value2, value5, value3.origin));
-      value3.onScrub(value6 + 0);
+      unsnappedValue = callback(unsnappedValue + deltaX * step * (accelerate ? 10 : 1));
+      let scrubbedValue =
+        unsnappedValue === scrubOptions.min || unsnappedValue === scrubOptions.max
+          ? unsnappedValue
+          : callback(snapScrubValue(unsnappedValue, step, scrubOptions.origin));
+      scrubOptions.onScrub(scrubbedValue + 0);
     },
     up() {
       if (!flag) {
         return;
       }
-      let value3 = getOptions();
-      value3.onScrubbing?.(false);
-      value3.onScrubEnd?.();
+      let scrubOptions = getOptions();
+      scrubOptions.onScrubbing?.(false);
+      scrubOptions.onScrubEnd?.();
     },
     get live() {
       return flag;
@@ -116,11 +116,11 @@ function useNumberScrubGesture(
 ): React.MouseEventHandler<HTMLElement> {
   let ref = reactForUiNumberControls.useRef(options);
   ref.current = options;
-  let ref2 = reactForUiNumberControls.useRef<(() => void) | null>(null);
+  let gestureCleanupRef = reactForUiNumberControls.useRef<(() => void) | null>(null);
   reactForUiNumberControls.useEffect(
     () => () => {
-      if (ref2.current && ref2.current === activeNumberScrubCleanup) {
-        ref2.current();
+      if (gestureCleanupRef.current && gestureCleanupRef.current === activeNumberScrubCleanup) {
+        gestureCleanupRef.current();
       }
     },
     [],
@@ -142,7 +142,7 @@ function useNumberScrubGesture(
     ) {
       (activeElement as HTMLElement).blur?.();
     }
-    ref2.current = attachNumberScrubGesture(
+    gestureCleanupRef.current = attachNumberScrubGesture(
       createNumberScrubGesture(() => ref.current, event.clientX),
     );
   };
@@ -162,51 +162,51 @@ function attachNumberScrubGesture(
   ownWindow: Window = window,
 ): () => void {
   activeNumberScrubCleanup?.();
-  let callback = (input: MouseEvent) => {
-      let value = input;
+  let callback = (mouseEvent: MouseEvent) => {
+      let value = mouseEvent;
       if (value.buttons === 0) {
-        callback3();
+        finishGesture();
         return;
       }
       gesture.move(value.clientX, value.shiftKey);
     },
-    callback2 = (event: KeyboardEvent) => {
+    handleEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
         return;
       }
       if (gesture.live) {
         event.preventDefault();
       }
-      callback3();
+      finishGesture();
     },
-    callback3 = () => {
-      if (activeNumberScrubCleanup === callback3) {
+    finishGesture = () => {
+      if (activeNumberScrubCleanup === finishGesture) {
         activeNumberScrubCleanup = null;
       }
       ownWindow.removeEventListener("mousemove", callback);
-      ownWindow.removeEventListener("mouseup", callback3);
-      ownWindow.removeEventListener("blur", callback3);
-      ownWindow.removeEventListener("keydown", callback2, true);
+      ownWindow.removeEventListener("mouseup", finishGesture);
+      ownWindow.removeEventListener("blur", finishGesture);
+      ownWindow.removeEventListener("keydown", handleEscape, true);
       gesture.up();
     };
-  activeNumberScrubCleanup = callback3;
+  activeNumberScrubCleanup = finishGesture;
   ownWindow.addEventListener("mousemove", callback);
-  ownWindow.addEventListener("mouseup", callback3);
-  ownWindow.addEventListener("blur", callback3);
-  ownWindow.addEventListener("keydown", callback2, true);
-  return callback3;
+  ownWindow.addEventListener("mouseup", finishGesture);
+  ownWindow.addEventListener("blur", finishGesture);
+  ownWindow.addEventListener("keydown", handleEscape, true);
+  return finishGesture;
 }
 function numberInputDecimalPlaces(value: number): number {
-  let value2 = String(value),
-    value3 = value2.indexOf(".");
-  if (value3 === -1 || value2.includes("e")) {
+  let numberText = String(value),
+    decimalPoint = numberText.indexOf(".");
+  if (decimalPoint === -1 || numberText.includes("e")) {
     return 0;
   } else {
-    return value2.length - value3 - 1;
+    return numberText.length - decimalPoint - 1;
   }
 }
 function PropertyNumberInput({
-  value: value,
+  value: numberValue,
   onValue: onValue,
   onScrub: onScrub,
   onScrubEnd: onScrubEnd,
@@ -234,93 +234,93 @@ function PropertyNumberInput({
   className: className,
 }: Color.PropertyNumberInputProps): React.ReactElement {
   useUiLocale();
-  let ref = reactForUiNumberControls2.useRef<HTMLInputElement | null>(null),
-    callback = reactForUiNumberControls2.useCallback(
-      (input: HTMLInputElement | null) => {
-        ref.current = input;
+  let ref = reactPropertyNumberInput.useRef<HTMLInputElement | null>(null),
+    callback = reactPropertyNumberInput.useCallback(
+      (element: HTMLInputElement | null) => {
+        ref.current = element;
         if (typeof inputRef === "function") {
-          inputRef(input);
+          inputRef(element);
         } else if (inputRef) {
-          inputRef.current = input;
+          inputRef.current = element;
         }
       },
       [inputRef],
     ),
-    value2 =
+    hasUnit =
       unit !== undefined && unit !== null && unit !== false && unit !== "",
-    value3 =
-      value === undefined &&
+    numericPlaceholder =
+      numberValue === undefined &&
       !mixed &&
       emptyStepFrom !== null &&
       placeholder !== undefined &&
       /^-?\d+(\.\d+)?$/.test(placeholder)
         ? Number(placeholder)
         : undefined,
-    value4 = value ?? value3,
-    ref2 = reactForUiNumberControls2.useRef(false),
-    ref3 = reactForUiNumberControls2.useRef(false),
-    ref4 = reactForUiNumberControls2.useRef(false),
-    ref5 = reactForUiNumberControls2.useRef(""),
-    ref6 = reactForUiNumberControls2.useRef(false),
-    callback2 = () => {
-      let value14 = ref5.current.toLowerCase();
-      ref5.current = "";
+    displayedNumber = numberValue ?? numericPlaceholder,
+    suppressCommitRef = reactPropertyNumberInput.useRef(false),
+    pendingSelectAllRef = reactPropertyNumberInput.useRef(false),
+    stepBlurRef = reactPropertyNumberInput.useRef(false),
+    typedUnitRef = reactPropertyNumberInput.useRef(""),
+    refuseNextStepRef = reactPropertyNumberInput.useRef(false),
+    rejectTypedUnit = () => {
+      let typedUnit = typedUnitRef.current.toLowerCase();
+      typedUnitRef.current = "";
       if (
         !refuseLetters ||
-        !value14 ||
-        value14 === (ownUnit ?? "").toLowerCase()
+        !typedUnit ||
+        typedUnit === (ownUnit ?? "").toLowerCase()
       ) {
         return false;
       }
-      if (ref4.current) {
-        ref6.current = true;
+      if (stepBlurRef.current) {
+        refuseNextStepRef.current = true;
       }
       return true;
     },
-    value5 = step ?? 1,
-    value6 = smallStep ?? Math.min(0.1, value5),
-    value7 =
+    regularStep = step ?? 1,
+    fineStep = smallStep ?? Math.min(0.1, regularStep),
+    fieldLabel =
       ariaLabel ||
       (typeof prefix === "string" && prefix !== "" ? prefix : undefined),
-    callback3 = (input: number | null) => {
-      if (ref2.current) {
+    commitNumber = (nextNumber: number | null) => {
+      if (suppressCommitRef.current) {
         return;
       }
-      if (callback2()) {
+      if (rejectTypedUnit()) {
         announceLiveMessage(
-          numberChangeRefusalMessage(value7, ownUnit),
+          numberChangeRefusalMessage(fieldLabel, ownUnit),
         );
         return;
       }
-      if (input === null) {
+      if (nextNumber === null) {
         if (
           clearable &&
           !mixed &&
-          value !== undefined &&
-          !(ref4.current && emptyStepFrom !== undefined)
+          numberValue !== undefined &&
+          !(stepBlurRef.current && emptyStepFrom !== undefined)
         ) {
           onValue(undefined);
         }
         return;
       }
-      if (value === undefined && min !== undefined) {
-        input = Math.max(min, input);
+      if (numberValue === undefined && min !== undefined) {
+        nextNumber = Math.max(min, nextNumber);
       }
-      if (value === undefined && max !== undefined) {
-        input = Math.min(max, input);
+      if (numberValue === undefined && max !== undefined) {
+        nextNumber = Math.min(max, nextNumber);
       }
-      if (mixed || input !== value) {
-        onValue(input);
+      if (mixed || nextNumber !== numberValue) {
+        onValue(nextNumber);
       }
     },
-    callback4 = (event: Color.NumberInputKeyEvent) => {
-      ref3.current = false;
-      ref6.current = false;
+    handleInputKeyDown = (event: Color.NumberInputKeyEvent) => {
+      pendingSelectAllRef.current = false;
+      refuseNextStepRef.current = false;
       if (!event.metaKey && !event.ctrlKey) {
         if (/^[a-zA-Z%]$/.test(event.key)) {
-          ref5.current += event.key;
+          typedUnitRef.current += event.key;
         } else if (/^[0-9.\-]$/.test(event.key)) {
-          ref5.current = "";
+          typedUnitRef.current = "";
         }
       }
       if (event.key === "Enter") {
@@ -329,12 +329,12 @@ function PropertyNumberInput({
         current?.blur();
         current?.focus();
         current?.select();
-        ref3.current = true;
+        pendingSelectAllRef.current = true;
         queueMicrotask(() => {
-          if (!ref3.current || !current) {
+          if (!pendingSelectAllRef.current || !current) {
             return;
           }
-          ref3.current = false;
+          pendingSelectAllRef.current = false;
           if (current.ownerDocument.activeElement === current) {
             current.select();
           }
@@ -343,10 +343,10 @@ function PropertyNumberInput({
       }
       if (event.key === "Escape") {
         event.preventDefault();
-        ref5.current = "";
-        ref2.current = true;
+        typedUnitRef.current = "";
+        suppressCommitRef.current = true;
         ref.current?.blur();
-        ref2.current = false;
+        suppressCommitRef.current = false;
         return;
       }
       if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -360,15 +360,15 @@ function PropertyNumberInput({
           }
           event.preventDefault();
           event.stopPropagation();
-          callback7(event.key === "ArrowUp" ? 1 : -1, event);
+          applyStep(event.key === "ArrowUp" ? 1 : -1, event);
         }
         let current = ref.current;
-        ref3.current = true;
+        pendingSelectAllRef.current = true;
         setTimeout(() => {
-          if (!ref3.current || !current) {
+          if (!pendingSelectAllRef.current || !current) {
             return;
           }
-          ref3.current = false;
+          pendingSelectAllRef.current = false;
           if (current.ownerDocument.activeElement === current) {
             current.select();
           }
@@ -387,154 +387,154 @@ function PropertyNumberInput({
       }
       event.stopPropagation();
     },
-    value8 =
-      value ??
+    scrubStart =
+      numberValue ??
       (typeof emptyStepFrom === "number" && Number.isFinite(emptyStepFrom)
         ? emptyStepFrom
         : onScrub
-          ? value3
+          ? numericPlaceholder
           : undefined),
-    value9 = !disabled && !mixed && value8 !== undefined,
-    [value10, value11] =
-      reactForUiNumberControls2.useState<Color.NumberScrubState | null>(null),
-    value12 = useNumberScrubGesture({
-      value: value8 ?? NaN,
+    canScrub = !disabled && !mixed && scrubStart !== undefined,
+    [scrubState, setScrubState] =
+      reactPropertyNumberInput.useState<Color.NumberScrubState | null>(null),
+    startScrubbing = useNumberScrubGesture({
+      value: scrubStart ?? NaN,
       step: step,
       min: min,
       max: max,
       origin: scrubOrigin,
-      disabled: !value9,
-      onScrub: (input) => {
-        value11((input2) => ({
-          from: input2 ? input2.from : value,
-          v: input,
+      disabled: !canScrub,
+      onScrub: (nextNumber) => {
+        setScrubState((previousScrub) => ({
+          from: previousScrub ? previousScrub.from : numberValue,
+          v: nextNumber,
           hostMoved:
-            !!input2 && (input2.hostMoved || !Object.is(value, input2.from)),
+            !!previousScrub && (previousScrub.hostMoved || !Object.is(numberValue, previousScrub.from)),
         }));
-        (onScrub ?? onValue)(input);
+        (onScrub ?? onValue)(nextNumber);
       },
       onScrubEnd: () => {
-        value11(null);
+        setScrubState(null);
         onScrubEnd?.();
       },
     }),
-    callback5 = (input: React.MouseEvent<HTMLElement>) => {
-      value12(input);
-      input.stopPropagation();
+    handleScrubMouseDown = (mouseEvent: React.MouseEvent<HTMLElement>) => {
+      startScrubbing(mouseEvent);
+      mouseEvent.stopPropagation();
     },
-    callback6 = () => {
+    refocusInput = () => {
       let current = ref.current;
       if (!current) {
         return;
       }
-      ref6.current = false;
+      refuseNextStepRef.current = false;
       if (current.ownerDocument.activeElement === current) {
-        ref4.current = true;
+        stepBlurRef.current = true;
         try {
           current.blur();
         } finally {
-          ref4.current = false;
+          stepBlurRef.current = false;
         }
       }
       current.focus({
         preventScroll: true,
       });
     },
-    callback7 = (
-      input: number,
-      options: {
+    applyStep = (
+      direction: number,
+      modifiers: {
         altKey: boolean;
         shiftKey: boolean;
       },
     ) => {
-      let value14 =
-          value4 === undefined || mixed
+      let formattedNumber =
+          displayedNumber === undefined || mixed
             ? ""
-            : propertyNumberFormatter.format(value4),
-        callback8 = () => {
-          if (!ref6.current) {
+            : propertyNumberFormatter.format(displayedNumber),
+        consumeStepRefusal = () => {
+          if (!refuseNextStepRef.current) {
             return false;
           }
-          ref6.current = false;
-          ref5.current = "";
+          refuseNextStepRef.current = false;
+          typedUnitRef.current = "";
           return true;
         };
-      if (callback8()) {
+      if (consumeStepRefusal()) {
         return;
       }
       let current = ref.current;
       if (
         current &&
         current.ownerDocument.activeElement === current &&
-        current.value !== value14
+        current.value !== formattedNumber
       ) {
-        callback6();
+        refocusInput();
       }
-      if (callback8()) {
+      if (consumeStepRefusal()) {
         return;
       }
-      ref5.current = "";
-      let value15 = ref.current?.value ?? "",
-        value16 =
-          value15 !== value14 ? Number.parseFloat(value15) : Number.NaN,
-        value17 = mixed || value15.trim() === "";
-      if (value17 && !Number.isFinite(value16) && emptyStepFrom === null) {
+      typedUnitRef.current = "";
+      let inputText = ref.current?.value ?? "",
+        typedNumber =
+          inputText !== formattedNumber ? Number.parseFloat(inputText) : Number.NaN,
+        isEmpty = mixed || inputText.trim() === "";
+      if (isEmpty && !Number.isFinite(typedNumber) && emptyStepFrom === null) {
         return;
       }
-      let value18 = Number.isFinite(value16)
-          ? value16
-          : value17
+      let startingNumber = Number.isFinite(typedNumber)
+          ? typedNumber
+          : isEmpty
             ? (emptyStepFrom ?? min ?? 0)
-            : (value4 ?? 0),
-        value19 = options.altKey
-          ? value6
-          : value5 * (options.shiftKey ? 10 : 1),
-        value20 = Math.min(
+            : (displayedNumber ?? 0),
+        increment = modifiers.altKey
+          ? fineStep
+          : regularStep * (modifiers.shiftKey ? 10 : 1),
+        decimalPrecision = Math.min(
           20,
           Math.max(
-            numberInputDecimalPlaces(value18),
-            numberInputDecimalPlaces(value5),
-            options.altKey ? numberInputDecimalPlaces(value6) : 0,
+            numberInputDecimalPlaces(startingNumber),
+            numberInputDecimalPlaces(regularStep),
+            modifiers.altKey ? numberInputDecimalPlaces(fineStep) : 0,
           ),
         ),
-        value21 = Number((value18 + input * value19).toFixed(value20));
+        steppedNumber = Number((startingNumber + direction * increment).toFixed(decimalPrecision));
       if (min !== undefined) {
-        value21 = Math.max(min, value21);
+        steppedNumber = Math.max(min, steppedNumber);
       }
       if (max !== undefined) {
-        value21 = Math.min(max, value21);
+        steppedNumber = Math.min(max, steppedNumber);
       }
-      if (mixed || value21 !== value4) {
-        onValue(value21);
+      if (mixed || steppedNumber !== displayedNumber) {
+        onValue(steppedNumber);
       }
     },
     state = {
       ref: callback,
       value: mixed
         ? null
-        : ((value10 && !value10.hostMoved && Object.is(value10.from, value)
-            ? value10.v
-            : value4) ?? null),
-      onValueCommitted: callback3,
+        : ((scrubState && !scrubState.hostMoved && Object.is(scrubState.from, numberValue)
+            ? scrubState.v
+            : displayedNumber) ?? null),
+      onValueCommitted: commitNumber,
       min: min,
       max: max,
-      step: value5,
-      largeStep: value5 * 10,
-      smallStep: value6,
+      step: regularStep,
+      largeStep: regularStep * 10,
+      smallStep: fineStep,
       format: PROPERTY_NUMBER_FORMAT_OPTIONS,
       locale: "en-US",
       inputMode: "decimal" as const,
-      "aria-label": value7,
+      "aria-label": fieldLabel,
       disabled: disabled,
       placeholder: mixed ? MIXED_LABEL : (placeholder ?? hint),
-      onKeyDown: callback4,
+      onKeyDown: handleInputKeyDown,
       onFocus: (event: React.FocusEvent<HTMLInputElement>) => {
         event.preventDefault();
         event.currentTarget.select();
-        ref5.current = "";
+        typedUnitRef.current = "";
       },
     },
-    value13 = steppers;
+    showSteppers = steppers;
   return (
     <NumberInput
       {...state}
@@ -543,7 +543,7 @@ function PropertyNumberInput({
       className={joinClassNames(
         "group/field min-w-12",
         !mixed &&
-          value3 === undefined &&
+          numericPlaceholder === undefined &&
           placeholder !== undefined &&
           placeholder !== MIXED_LABEL &&
           "[&_input]:placeholder:text-primary",
@@ -553,12 +553,12 @@ function PropertyNumberInput({
         prefix !== undefined && prefix !== "" ? (
           <span
             data-scrub={""}
-            onMouseDown={value9 ? callback5 : undefined}
-            onPointerDown={value9 ? captureNumberScrubPointer : undefined}
+            onMouseDown={canScrub ? handleScrubMouseDown : undefined}
+            onPointerDown={canScrub ? captureNumberScrubPointer : undefined}
             className={joinClassNames(
               PROPERTY_NUMBER_UNIT_CLASS,
               "inline-flex items-center text-caption-medium",
-              value9 && "cursor-ew-resize",
+              canScrub && "cursor-ew-resize",
             )}
           >
             {prefix}
@@ -566,25 +566,25 @@ function PropertyNumberInput({
         ) : undefined
       }
       slotEnd={
-        value2 || value13 ? (
+        hasUnit || showSteppers ? (
           <span className={"flex items-center gap-2"}>
-            {[value2 ? (
+            {[hasUnit ? (
                 <span
                   data-scrub={""}
-                  onMouseDown={value9 && unitScrubs ? callback5 : undefined}
+                  onMouseDown={canScrub && unitScrubs ? handleScrubMouseDown : undefined}
                   onPointerDown={
-                    value9 && unitScrubs
+                    canScrub && unitScrubs
                       ? captureNumberScrubPointer
                       : undefined
                   }
                   className={joinClassNames(
                     PROPERTY_NUMBER_INPUT_CLASS,
-                    value9 && unitScrubs && "cursor-ew-resize",
+                    canScrub && unitScrubs && "cursor-ew-resize",
                   )}
                 >
                   {unit}
                 </span>
-              ) : null, value13 ? (
+              ) : null, showSteppers ? (
                 <span
                   className={
                     "hidden flex-col group-focus-within/field:flex pointer-coarse:hidden!"
@@ -594,7 +594,7 @@ function PropertyNumberInput({
                       type={"button"}
                       tabIndex={-1}
                       aria-label={
-                        value7 ? (((INCREASE_LABEL) + (" ")) + (value7)) : (INCREASE_LABEL)
+                        fieldLabel ? (((INCREASE_LABEL) + (" ")) + (fieldLabel)) : (INCREASE_LABEL)
                       }
                       className={PROPERTY_NUMBER_STEPPER_CLASS}
                       disabled={disabled}
@@ -605,11 +605,11 @@ function PropertyNumberInput({
                         if (event.button !== 0) {
                           return;
                         }
-                        callback6();
+                        refocusInput();
                       }}
-                      onMouseLeave={() => (ref6.current = false)}
-                      onClick={(input: React.MouseEvent<HTMLButtonElement>) =>
-                        callback7(1, input)
+                      onMouseLeave={() => (refuseNextStepRef.current = false)}
+                      onClick={(mouseEvent: React.MouseEvent<HTMLButtonElement>) =>
+                        applyStep(1, mouseEvent)
                       }
                     >
                       <KitIcon name={"CaretUp"} size={12} />
@@ -617,7 +617,7 @@ function PropertyNumberInput({
                       type={"button"}
                       tabIndex={-1}
                       aria-label={
-                        value7 ? (((DECREASE_LABEL) + (" ")) + (value7)) : (DECREASE_LABEL)
+                        fieldLabel ? (((DECREASE_LABEL) + (" ")) + (fieldLabel)) : (DECREASE_LABEL)
                       }
                       className={PROPERTY_NUMBER_STEPPER_CLASS}
                       disabled={disabled}
@@ -628,11 +628,11 @@ function PropertyNumberInput({
                         if (event.button !== 0) {
                           return;
                         }
-                        callback6();
+                        refocusInput();
                       }}
-                      onMouseLeave={() => (ref6.current = false)}
-                      onClick={(input: React.MouseEvent<HTMLButtonElement>) =>
-                        callback7(-1, input)
+                      onMouseLeave={() => (refuseNextStepRef.current = false)}
+                      onClick={(mouseEvent: React.MouseEvent<HTMLButtonElement>) =>
+                        applyStep(-1, mouseEvent)
                       }
                     >
                       <KitIcon name={"CaretDown"} size={12} />
@@ -660,7 +660,7 @@ export {
   propertyNumberFormatter,
   PropertyNumberInput,
   reactForUiNumberControls,
-  reactForUiNumberControls2,
+  reactPropertyNumberInput as reactForUiNumberControls2,
   roundScrubValue,
   scrubPrecision,
   snapScrubValue,
@@ -668,7 +668,7 @@ export {
 };
 export function installUiNumberControls(): () => void {
   return () => {
-    reactForUiNumberControls2 = toModuleNamespace(
+    reactPropertyNumberInput = toModuleNamespace(
       loadReactNamespace(),
       1,
     );

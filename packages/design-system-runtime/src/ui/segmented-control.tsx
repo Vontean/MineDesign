@@ -26,7 +26,7 @@ var noopFlipCleanup: () => void;
 var FLIP_HELD_MARKER: string;
 var FLIP_PAUSE_DURATION_MS: number;
 var pausedFlipAnimations: WeakMap<HTMLElement, Animation>;
-var reactForUiSegmentedControl2: typeof React;
+var reactSegmentedControl: typeof React;
 var jsxForUiSegmentedControl: typeof import("react/jsx-runtime");
 var segmentedControlSegmentClasses: string;
 var segmentedControlTextPaddingClasses: string;
@@ -46,144 +46,144 @@ var segmentedControlResizeObservers: WeakMap<Window, C.SegmentObserverEntry>;
 var DISAMBIGUATED_CURRENCY_CODES: Set<string>;
 var CURRENCY_NUMBER_PART_TYPES: Set<Intl.NumberFormatPartTypes>;
 function animateSegmentedControlThumb(
-  input: HTMLElement,
-  options: HTMLElement,
-  context: C.SegmentBounds | null,
+  thumb: HTMLElement,
+  track: HTMLElement,
+  nextBounds: C.SegmentBounds | null,
   {
-    correction: value = false,
+    correction: correction = false,
   }: {
     correction?: boolean;
   } = {},
 ) {
-  if (context === null || context.width <= 0) {
-    let value9 = getElementAnimations(input);
+  if (nextBounds === null || nextBounds.width <= 0) {
+    let animationsToCancel = getElementAnimations(thumb);
     return () => {
-      cancelAnimations(value9);
-      input.style.visibility = "";
-      input.style.willChange = "";
-      delete input.dataset.flipAt;
+      cancelAnimations(animationsToCancel);
+      thumb.style.visibility = "";
+      thumb.style.willChange = "";
+      delete thumb.dataset.flipAt;
     };
   }
-  let value2 = `${context.left},${context.width}`,
-    flipAt = input.dataset.flipAt;
-  if (flipAt === value2) {
+  let nextFlipMarker = `${nextBounds.left},${nextBounds.width}`,
+    flipAt = thumb.dataset.flipAt;
+  if (flipAt === nextFlipMarker) {
     return noopFlipCleanup;
   }
-  let bounds = input.getBoundingClientRect(),
-    left = options.getBoundingClientRect().left,
-    value3 = getComputedStyle(input),
-    value4 = readCssDuration(value3, "--cds-dur-base"),
-    value5 = value3.getPropertyValue("--cds-ease-snap").trim() || "linear",
-    value6 = usesAlphaBackground(value3),
-    value7 = value && !hasRunningAnimations(input),
-    value8 = getElementAnimations(input);
+  let bounds = thumb.getBoundingClientRect(),
+    left = track.getBoundingClientRect().left,
+    thumbStyle = getComputedStyle(thumb),
+    duration = readCssDuration(thumbStyle, "--cds-dur-base"),
+    easing = thumbStyle.getPropertyValue("--cds-ease-snap").trim() || "linear",
+    hasTranslucentBackground = usesAlphaBackground(thumbStyle),
+    shouldSkipCorrectionAnimation = correction && !hasRunningAnimations(thumb),
+    previousAnimations = getElementAnimations(thumb);
   return () => {
-    cancelAnimations(value8);
-    input.dataset.flipAt = value2;
-    input.style.width = `${context.width}px`;
-    input.style.transform = `translateX(${context.left}px)`;
-    input.style.visibility = "inherit";
-    if (!value6) {
-      input.style.willChange = "";
+    cancelAnimations(previousAnimations);
+    thumb.dataset.flipAt = nextFlipMarker;
+    thumb.style.width = `${nextBounds.width}px`;
+    thumb.style.transform = `translateX(${nextBounds.left}px)`;
+    thumb.style.visibility = "inherit";
+    if (!hasTranslucentBackground) {
+      thumb.style.willChange = "";
     }
     if (
       flipAt === undefined ||
-      !supportsElementAnimations(input) ||
+      !supportsElementAnimations(thumb) ||
       isReducedMotion()
     ) {
       return;
     }
-    if (value7) {
+    if (shouldSkipCorrectionAnimation) {
       return;
     }
     try {
-      input.animate(
+      thumb.animate(
         {
           transform: [
-            `translateX(${bounds.left - left}px) scaleX(${bounds.width / context.width})`,
-            `translateX(${context.left}px) scaleX(1)`,
+            `translateX(${bounds.left - left}px) scaleX(${bounds.width / nextBounds.width})`,
+            `translateX(${nextBounds.left}px) scaleX(1)`,
           ],
         },
         {
-          duration: value4,
-          easing: value5,
+          duration: duration,
+          easing: easing,
         },
       );
-      if (value4 > 0) {
-        setTransformWillChange(input, value6);
+      if (duration > 0) {
+        setTransformWillChange(thumb, hasTranslucentBackground);
       }
     } catch {}
   };
 }
 function readCssDuration(
-  input: CSSStyleDeclaration,
-  options: string,
+  style: CSSStyleDeclaration,
+  property: string,
 ): number {
-  let value = input.getPropertyValue(options).trim(),
-    value2 = value.endsWith("ms") ? 1 : value.endsWith("s") ? 1000 : 0;
-  return Math.max(0, parseFloat(value) * value2) || 0;
+  let value = style.getPropertyValue(property).trim(),
+    millisecondsPerUnit = value.endsWith("ms") ? 1 : value.endsWith("s") ? 1000 : 0;
+  return Math.max(0, parseFloat(value) * millisecondsPerUnit) || 0;
 }
-function supportsElementAnimations(input: Element): boolean {
+function supportsElementAnimations(element: Element): boolean {
   return (
-    typeof input.animate === "function" &&
-    typeof input.getAnimations === "function"
+    typeof element.animate === "function" &&
+    typeof element.getAnimations === "function"
   );
 }
-function usesAlphaBackground(input: CSSStyleDeclaration): boolean {
-  return /^rgba\(|\//.test(input.backgroundColor);
+function usesAlphaBackground(style: CSSStyleDeclaration): boolean {
+  return /^rgba\(|\//.test(style.backgroundColor);
 }
-function setTransformWillChange(input: HTMLElement, options: boolean): void {
-  input.style.willChange = options ? "transform" : "";
+function setTransformWillChange(element: HTMLElement, enabled: boolean): void {
+  element.style.willChange = enabled ? "transform" : "";
 }
-function hasRunningAnimations(input: Element): boolean {
+function hasRunningAnimations(element: Element): boolean {
   return (
-    supportsElementAnimations(input) &&
-    input
+    supportsElementAnimations(element) &&
+    element
       .getAnimations()
-      .some((input2: Animation) => input2.playState === "running")
+      .some((animation: Animation) => animation.playState === "running")
   );
 }
-function getElementAnimations(input: Element): Animation[] {
-  if (supportsElementAnimations(input)) {
-    return input.getAnimations();
+function getElementAnimations(element: Element): Animation[] {
+  if (supportsElementAnimations(element)) {
+    return element.getAnimations();
   } else {
     return [];
   }
 }
-function cancelAnimations(input: readonly Animation[]): void {
-  for (let value of input) {
+function cancelAnimations(animations: readonly Animation[]): void {
+  for (let value of animations) {
     value.cancel();
   }
 }
-function hasFlipAnimationMarker(input: HTMLElement): boolean {
-  return input.dataset.flipAt !== undefined;
+function hasFlipAnimationMarker(thumb: HTMLElement): boolean {
+  return thumb.dataset.flipAt !== undefined;
 }
 function pauseFlipAnimationAtProgress(
-  input: HTMLElement,
-  options: number,
-  context: () => C.SegmentBounds[],
+  thumb: HTMLElement,
+  progress: number,
+  measureSegments: () => C.SegmentBounds[],
 ) {
   if (
-    !Number.isFinite(options) ||
-    !hasFlipAnimationMarker(input) ||
-    !supportsElementAnimations(input)
+    !Number.isFinite(progress) ||
+    !hasFlipAnimationMarker(thumb) ||
+    !supportsElementAnimations(thumb)
   ) {
     return;
   }
-  let entry = pausedFlipAnimations.get(input);
+  let entry = pausedFlipAnimations.get(thumb);
   if (entry?.playState !== "paused") {
-    let value = context();
+    let value = measureSegments();
     if (
       value.length < 2 ||
-      value.some((input2: C.SegmentBounds) => input2.width <= 0)
+      value.some((segmentBounds: C.SegmentBounds) => segmentBounds.width <= 0)
     ) {
       return;
     }
-    let value2 = parseFloat(input.style.width),
-      value3 = usesAlphaBackground(getComputedStyle(input));
-    entry = input.animate(
-      value.map((input2: C.SegmentBounds) => ({
-        transform: `translateX(${input2.left}px) scaleX(${input2.width / value2})`,
+    let thumbWidth = parseFloat(thumb.style.width),
+      hasTranslucentBackground = usesAlphaBackground(getComputedStyle(thumb));
+    entry = thumb.animate(
+      value.map((segmentBounds: C.SegmentBounds) => ({
+        transform: `translateX(${segmentBounds.left}px) scaleX(${segmentBounds.width / thumbWidth})`,
       })),
       {
         duration: (value.length - 1) * FLIP_PAUSE_DURATION_MS,
@@ -191,53 +191,53 @@ function pauseFlipAnimationAtProgress(
       },
     );
     entry.pause();
-    setTransformWillChange(input, value3);
-    pausedFlipAnimations.set(input, entry);
-    input.dataset.flipAt = FLIP_HELD_MARKER;
+    setTransformWillChange(thumb, hasTranslucentBackground);
+    pausedFlipAnimations.set(thumb, entry);
+    thumb.dataset.flipAt = FLIP_HELD_MARKER;
   }
-  entry.currentTime = options * FLIP_PAUSE_DURATION_MS;
+  entry.currentTime = progress * FLIP_PAUSE_DURATION_MS;
 }
-function isImmediateFlipMarker(input: HTMLElement): boolean {
-  return input.dataset.flipAt === FLIP_HELD_MARKER;
+function isImmediateFlipMarker(thumb: HTMLElement): boolean {
+  return thumb.dataset.flipAt === FLIP_HELD_MARKER;
 }
 function observeSegmentedControlSize(
-  input: HTMLElement,
-  options: typeof ResizeObserver,
-  context: C.SegmentMeasure,
+  element: HTMLElement,
+  ResizeObserverClass: typeof ResizeObserver,
+  measureSegmentedControl: C.SegmentMeasure,
 ) {
-  let value: Window = getElementWindow(input) ?? window,
+  let value: Window = getElementWindow(element) ?? window,
     entry = segmentedControlResizeObservers.get(value);
-  if (entry?.Observer !== options) {
+  if (entry?.Observer !== ResizeObserverClass) {
     let entries = new Map<Element, C.SegmentMeasure>();
     entry = {
-      Observer: options,
-      observer: new options((input2: ResizeObserverEntry[]) => {
+      Observer: ResizeObserverClass,
+      observer: new ResizeObserverClass((resizeEntries: ResizeObserverEntry[]) => {
         let items: (() => void)[] = [];
-        for (let value4 of input2) {
-          let entry2 = entries.get(value4.target);
-          if (entry2) {
-            invokeAndReportError(() => entry2(false, items));
+        for (let resizeEntry of resizeEntries) {
+          let measure = entries.get(resizeEntry.target);
+          if (measure) {
+            invokeAndReportError(() => measure(false, items));
           }
         }
-        for (let value4 of items) {
-          invokeAndReportError(value4);
+        for (let applyMeasurement of items) {
+          invokeAndReportError(applyMeasurement);
         }
       }),
       measures: entries,
     };
     segmentedControlResizeObservers.set(value, entry);
   }
-  let { observer: value2, measures: value3 } = entry;
-  value3.set(input, context);
-  value2.observe(input);
+  let { observer: resizeObserver, measures: measureCallbacks } = entry;
+  measureCallbacks.set(element, measureSegmentedControl);
+  resizeObserver.observe(element);
   return () => {
-    value2.unobserve(input);
-    value3.delete(input);
+    resizeObserver.unobserve(element);
+    measureCallbacks.delete(element);
   };
 }
 function SegmentedControl({
   segments: segments,
-  value: value,
+  value: selectedValue,
   onChange: onChange,
   variant = "contained",
   size: size,
@@ -253,152 +253,152 @@ function SegmentedControl({
   className: className,
 }: C.SegmentedControlProps) {
   useUiLocale();
-  let ref = reactForUiSegmentedControl2.useRef<HTMLDivElement>(null);
+  let ref = reactSegmentedControl.useRef<HTMLDivElement>(null);
   useCompactableControlDebug(ref, "SegmentedControl");
-  let ref2 = reactForUiSegmentedControl2.useRef<HTMLDivElement>(null),
-    value2: boolean = useHasFieldContext(),
-    value3: boolean = useAppleKeyboard(),
-    ref3 = reactForUiSegmentedControl2.useRef<C.SegmentLayoutState>({
+  let thumbRef = reactSegmentedControl.useRef<HTMLDivElement>(null),
+    hasFieldContext: boolean = useHasFieldContext(),
+    usesAppleKeyboard: boolean = useAppleKeyboard(),
+    layoutStateRef = reactSegmentedControl.useRef<C.SegmentLayoutState>({
       live: false,
       poll: null,
     }),
-    callback = reactForUiSegmentedControl2.useCallback(function value8(
-      input = false,
-      options?: (() => void)[],
+    callback = reactSegmentedControl.useCallback(function measureThumb(
+      correction = false,
+      pendingUpdates?: (() => void)[],
     ) {
       let current = ref.current,
-        current2 = ref2.current;
-      if (!current || !current2) {
+        thumb = thumbRef.current;
+      if (!current || !thumb) {
         return;
       }
       let element = current.querySelector<HTMLElement>("[data-checked]"),
-        value9 = element ? measureScaledElementWidth(current) : null,
-        value10: (() => void) | null = null;
-      if (!input || !(value9?.scaled || isImmediateFlipMarker(current2))) {
-        let value11 = element
+        trackWidth = element ? measureScaledElementWidth(current) : null,
+        applyThumbLayout: (() => void) | null = null;
+      if (!correction || !(trackWidth?.scaled || isImmediateFlipMarker(thumb))) {
+        let selectedBounds = element
           ? getRelativeSegmentBounds(element, current)
           : null;
-        value10 = animateSegmentedControlThumb(current2, current, value11, {
-          correction: input,
+        applyThumbLayout = animateSegmentedControlThumb(thumb, current, selectedBounds, {
+          correction: correction,
         });
       }
-      let callback3 = () => {
-        value10?.();
-        if (!ref3.current.live) {
+      let updateLayoutAndPoll = () => {
+        applyThumbLayout?.();
+        if (!layoutStateRef.current.live) {
           return;
         }
-        let poll = ref3.current.poll;
+        let poll = layoutStateRef.current.poll;
         poll?.cancel();
-        ref3.current.poll = null;
-        if (!value9 || (!input && !poll && !value9.scaled)) {
+        layoutStateRef.current.poll = null;
+        if (!trackWidth || (!correction && !poll && !trackWidth.scaled)) {
           return;
         }
         let {
-          width: value11,
-          still: value12,
-          frames: value13,
+          width: previousWidth,
+          still: stableFrames,
+          frames: frames,
         } = poll ?? {
-          width: value9.width,
+          width: trackWidth.width,
           still: 0,
           frames: 0,
         };
-        if (input) {
-          value12 = value11 === value9.width ? value12 + 1 : 0;
-          value11 = value9.width;
-          value13 += 1;
+        if (correction) {
+          stableFrames = previousWidth === trackWidth.width ? stableFrames + 1 : 0;
+          previousWidth = trackWidth.width;
+          frames += 1;
           if (
-            value12 >=
-              (value9.scaled
+            stableFrames >=
+              (trackWidth.scaled
                 ? SEGMENT_INDICATOR_SETTLE_MS
                 : SEGMENT_INDICATOR_SETTLE_FRAMES) ||
-            value13 >= SEGMENT_TOOLTIP_DELAY_MS
+            frames >= SEGMENT_TOOLTIP_DELAY_MS
           ) {
             return;
           }
         }
-        let value14 = scheduleElementAnimationFrame(current, () =>
-          value8(true),
+        let cancelNextMeasurement = scheduleElementAnimationFrame(current, () =>
+          measureThumb(true),
         );
-        if (value14) {
-          ref3.current.poll = {
-            cancel: value14,
-            width: value11,
-            still: value12,
-            frames: value13,
+        if (cancelNextMeasurement) {
+          layoutStateRef.current.poll = {
+            cancel: cancelNextMeasurement,
+            width: previousWidth,
+            still: stableFrames,
+            frames: frames,
           };
         }
       };
-      if (options) {
-        options.push(callback3);
+      if (pendingUpdates) {
+        pendingUpdates.push(updateLayoutAndPoll);
       } else {
-        callback3();
+        updateLayoutAndPoll();
       }
     }, []),
-    value4 = segments
-      .map((input: C.SegmentOption) => input.value)
+    segmentValuesKey = segments
+      .map((segment: C.SegmentOption) => segment.value)
       .join("\x00");
-  reactForUiSegmentedControl2.useLayoutEffect(() => {
+  reactSegmentedControl.useLayoutEffect(() => {
     let current = ref.current,
-      current2 = ref2.current,
-      value8: typeof ResizeObserver | undefined = getResizeObserverConstructor(current),
-      value9 = current !== null && value8 !== undefined,
-      current3 = ref3.current;
-    current3.live = true;
-    if (!value9 || (current2 !== null && hasFlipAnimationMarker(current2))) {
+      thumb = thumbRef.current,
+      ResizeObserverClass: typeof ResizeObserver | undefined = getResizeObserverConstructor(current),
+      canObserve = current !== null && ResizeObserverClass !== undefined,
+      layoutState = layoutStateRef.current;
+    layoutState.live = true;
+    if (!canObserve || (thumb !== null && hasFlipAnimationMarker(thumb))) {
       callback();
     }
-    let value10 = value9
+    let stopObservingSize = canObserve
       ? observeSegmentedControlSize(
           current as HTMLElement,
-          value8 as typeof ResizeObserver,
+          ResizeObserverClass as typeof ResizeObserver,
           callback,
         )
       : null;
     return () => {
-      value10?.();
-      current3.live = false;
-      current3.poll?.cancel();
+      stopObservingSize?.();
+      layoutState.live = false;
+      layoutState.poll?.cancel();
     };
-  }, [value, variant, fullWidth, value4, callback]);
-  reactForUiSegmentedControl2.useLayoutEffect(() => {
+  }, [selectedValue, variant, fullWidth, segmentValuesKey, callback]);
+  reactSegmentedControl.useLayoutEffect(() => {
     if (!thumbPosition) {
       return;
     }
-    let callback3 = (input: number | null) => {
+    let updateThumbProgress = (progress: number | null) => {
       let current = ref.current,
-        current2 = ref2.current;
-      if (!current || !current2) {
+        thumb = thumbRef.current;
+      if (!current || !thumb) {
         return;
       }
-      if (input === null) {
-        if (isImmediateFlipMarker(current2)) {
+      if (progress === null) {
+        if (isImmediateFlipMarker(thumb)) {
           callback();
         }
         return;
       }
-      pauseFlipAnimationAtProgress(current2, input, () =>
+      pauseFlipAnimationAtProgress(thumb, progress, () =>
         Array.from<HTMLElement, C.SegmentBounds>(
           current.querySelectorAll<HTMLElement>('[role="radio"]'),
-          (input2: HTMLElement) => getRelativeSegmentBounds(input2, current),
+          (segment: HTMLElement) => getRelativeSegmentBounds(segment, current),
         ),
       );
     };
-    callback3(thumbPosition.get());
-    let value8 = thumbPosition.on("change", callback3);
+    updateThumbProgress(thumbPosition.get());
+    let unsubscribe = thumbPosition.on("change", updateThumbProgress);
     return () => {
-      value8();
-      callback3(null);
+      unsubscribe();
+      updateThumbProgress(null);
     };
   }, [thumbPosition, callback]);
-  let callback2 = reactForUiSegmentedControl2.useCallback(
-      (input: string) => {
-        onChange(input);
+  let handleChange = reactSegmentedControl.useCallback(
+      (nextValue: string) => {
+        onChange(nextValue);
       },
       [onChange],
     ),
-    value5 = variant === "contained",
-    value6: boolean = useHasTooltipProvider(),
-    value7 = (
+    isContained = variant === "contained",
+    hasTooltipProvider: boolean = useHasTooltipProvider(),
+    segmentGroup = (
       <R_baseRadioGroup
         ref={ref}
         data-cds={"SegmentedControl"}
@@ -406,15 +406,15 @@ function SegmentedControl({
         aria-required={ariaRequired}
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedby}
-        value={value}
-        onValueChange={callback2}
+        value={selectedValue}
+        onValueChange={handleChange}
         disabled={disabled}
         {...getControlSizeAttributes(size)}
         className={cn(
           "relative inline-flex",
           fullWidth ? "w-full" : "w-fit",
           "shrink-0 items-stretch h-control font-sans",
-          value5
+          isContained
             ? "rounded bg-[var(--cds-segmented-control-track)] p-px"
             : "gap-[1px]",
           className,
@@ -422,48 +422,48 @@ function SegmentedControl({
       >
         {[<div
             aria-hidden={true}
-            className={`pointer-events-none absolute inset-0 overflow-clip ${value5 ? "rounded" : ""}`}
+            className={`pointer-events-none absolute inset-0 overflow-clip ${isContained ? "rounded" : ""}`}
           >
             <div
-              ref={ref2}
-              className={`${segmentedControlThumbClasses} ${value5 ? containedSegmentThumbClasses : ghostSegmentThumbClasses}`}
+              ref={thumbRef}
+              className={`${segmentedControlThumbClasses} ${isContained ? containedSegmentThumbClasses : ghostSegmentThumbClasses}`}
             />
-          </div>, segments.map((input: C.SegmentOption) => {
-            let value8 = input.icon && input.label === undefined,
-              value9 = value8
-                ? (input.tooltip ?? String(input.value))
-                : input.tooltip,
-              value10 =
-                typeof input.tooltip === "string"
-                  ? input.tooltip
-                  : String(input.value),
-              value11 = input.icon ? (
-                <Icon name={input.icon} size={"auto"} />
+          </div>, segments.map((segment: C.SegmentOption) => {
+            let isIconOnly = segment.icon && segment.label === undefined,
+              tooltip = isIconOnly
+                ? (segment.tooltip ?? String(segment.value))
+                : segment.tooltip,
+              accessibleLabel =
+                typeof segment.tooltip === "string"
+                  ? segment.tooltip
+                  : String(segment.value),
+              segmentIcon = segment.icon ? (
+                <Icon name={segment.icon} size={"auto"} />
               ) : null,
-              value12 = (
+              segmentRadio = (
                 <baseRadio.Root
-                  value={input.value}
-                  disabled={input.disabled}
-                  aria-label={value8 ? (value10) : (undefined)}
+                  value={segment.value}
+                  disabled={segment.disabled}
+                  aria-label={isIconOnly ? (accessibleLabel) : (undefined)}
                   aria-keyshortcuts={
-                    input.shortcut
+                    segment.shortcut
                       ? shortcutToAriaKeyShortcuts(
-                          input.shortcut,
-                          value3,
+                          segment.shortcut,
+                          usesAppleKeyboard,
                         )
                       : undefined
                   }
                   onMouseDown={withRepeatedClickSelectionPrevention(undefined)}
-                  className={`${segmentedControlSegmentClasses} ${value5 ? segmentedControlTextClasses : ghostSegmentHoverClasses} ${value8 ? segmentedControlIconAspectClasses : segmentedControlTextPaddingClasses}${fullWidth ? " flex-1" : ""}`}
+                  className={`${segmentedControlSegmentClasses} ${isContained ? segmentedControlTextClasses : ghostSegmentHoverClasses} ${isIconOnly ? segmentedControlIconAspectClasses : segmentedControlTextPaddingClasses}${fullWidth ? " flex-1" : ""}`}
                 >
-                  {[value11 && input.indicator ? (
+                  {[segmentIcon && segment.indicator ? (
                       <span className={"grid"}>
                         {[<span
                             className={
                               "col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]"
                             }
                           >
-                            {value11}
+                            {segmentIcon}
                           </span>, <span
                             aria-hidden={true}
                             data-cds-part={"indicator"}
@@ -471,119 +471,119 @@ function SegmentedControl({
                               "relative col-start-1 row-start-1 -me-px -mt-px self-start justify-self-end has-[>[data-cds=Pulse]]:[--cds-page-bg:transparent]"
                             }
                           >
-                            {input.indicator}
+                            {segment.indicator}
                           </span>]}
                       </span>
                     ) : (
-                      value11
-                    ), input.label]}
+                      segmentIcon
+                    ), segment.label]}
                 </baseRadio.Root>
               ),
-              value13 =
-                input.disabled && !!input.disabledReason ? (
+              segmentContent =
+                segment.disabled && !!segment.disabledReason ? (
                   <DisabledReasonTooltip
-                    reason={input.disabledReason}
+                    reason={segment.disabledReason}
                     side={tooltipSide}
                     hoverable={false}
                     wrapperClassName={
                       fullWidth
-                        ? `${segmentedControlVisualLayerClasses} ${value8 ? segmentedControlFullWidthItemClasses : segmentedControlFlexibleItemClasses}`
+                        ? `${segmentedControlVisualLayerClasses} ${isIconOnly ? segmentedControlFullWidthItemClasses : segmentedControlFlexibleItemClasses}`
                         : segmentedControlVisualLayerClasses
                     }
                   >
-                    {value12}
+                    {segmentRadio}
                   </DisabledReasonTooltip>
-                ) : value9 !== undefined ? (
+                ) : tooltip !== undefined ? (
                   <Tooltip
-                    content={value9}
-                    detail={input.tooltipDetail}
-                    shortcut={input.shortcut}
+                    content={tooltip}
+                    detail={segment.tooltipDetail}
+                    shortcut={segment.shortcut}
                     side={tooltipSide}
-                    hoverable={input.tooltipHoverable ?? false}
+                    hoverable={segment.tooltipHoverable ?? false}
                     className={tooltipClassName}
                   >
-                    {value12}
+                    {segmentRadio}
                   </Tooltip>
                 ) : (
-                  value12
+                  segmentRadio
                 );
-            if (value2) {
+            if (hasFieldContext) {
               return (() => {
                 const _Element = baseLabelableProvider;
                 const _elementProps = {
-                  children: value13,
+                  children: segmentContent,
                 };
-                const _elementKey = input.value;
+                const _elementKey = segment.value;
                 return <_Element key={_elementKey} {..._elementProps} />;
               })();
             } else {
               return (() => {
-                const _Element2 = reactForUiSegmentedControl2.Fragment;
-                const _elementProps2 = {
-                  children: value13,
+                const SegmentFragment = reactSegmentedControl.Fragment;
+                const fragmentProps = {
+                  children: segmentContent,
                 };
-                const _elementKey2 = input.value;
-                return <_Element2 key={_elementKey2} {..._elementProps2} />;
+                const segmentKey = segment.value;
+                return <SegmentFragment key={segmentKey} {...fragmentProps} />;
               })();
             }
           })]}
       </R_baseRadioGroup>
     );
-  if (value6) {
-    return value7;
+  if (hasTooltipProvider) {
+    return segmentGroup;
   } else {
-    return <TooltipProvider>{value7}</TooltipProvider>;
+    return <TooltipProvider>{segmentGroup}</TooltipProvider>;
   }
 }
-function getRelativeSegmentBounds(input: HTMLElement, options: HTMLElement) {
-  let bounds = options.getBoundingClientRect(),
-    value = getUnscaledBorderBoxWidth(options),
-    value2 = Math.abs(bounds.width - value) < 0.01 ? 1 : bounds.width / value;
-  if (!(value2 > 0) || !Number.isFinite(value2)) {
+function getRelativeSegmentBounds(segment: HTMLElement, track: HTMLElement) {
+  let bounds = track.getBoundingClientRect(),
+    value = getUnscaledBorderBoxWidth(track),
+    trackScale = Math.abs(bounds.width - value) < 0.01 ? 1 : bounds.width / value;
+  if (!(trackScale > 0) || !Number.isFinite(trackScale)) {
     return {
-      left: input.offsetLeft,
-      width: input.offsetWidth,
+      left: segment.offsetLeft,
+      width: segment.offsetWidth,
     };
   }
-  let bounds2 = input.getBoundingClientRect(),
-    value3: number =
-      getElementWindow(options)?.devicePixelRatio || 1,
-    callback = (input2: number) => Math.round(input2 * value3) / value3;
+  let segmentBounds = segment.getBoundingClientRect(),
+    devicePixelRatio: number =
+      getElementWindow(track)?.devicePixelRatio || 1,
+    callback = (position: number) => Math.round(position * devicePixelRatio) / devicePixelRatio;
   return {
-    left: (callback(bounds2.left) - callback(bounds.left)) / value2,
-    width: (callback(bounds2.right) - callback(bounds2.left)) / value2,
+    left: (callback(segmentBounds.left) - callback(bounds.left)) / trackScale,
+    width: (callback(segmentBounds.right) - callback(segmentBounds.left)) / trackScale,
   };
 }
-function measureScaledElementWidth(input: HTMLElement): C.SegmentWidth {
-  let width = input.getBoundingClientRect().width;
+function measureScaledElementWidth(element: HTMLElement): C.SegmentWidth {
+  let width = element.getBoundingClientRect().width;
   return {
     width: width,
     scaled:
-      input.offsetWidth > 0 &&
-      Math.abs(width - getUnscaledBorderBoxWidth(input)) >= 0.01,
+      element.offsetWidth > 0 &&
+      Math.abs(width - getUnscaledBorderBoxWidth(element)) >= 0.01,
   };
 }
 function scheduleElementAnimationFrame(
-  input: HTMLElement,
-  options: FrameRequestCallback,
+  element: HTMLElement,
+  onFrame: FrameRequestCallback,
 ) {
   let value: Window | undefined = getConnectedElementWindow(
-    input,
+    element,
   );
   if (!value || typeof value.requestAnimationFrame !== "function") {
     return null;
   }
-  let value2 = value.requestAnimationFrame(options);
+  let animationFrame = value.requestAnimationFrame(onFrame);
   return () => {
     try {
-      value.cancelAnimationFrame(value2);
+      value.cancelAnimationFrame(animationFrame);
     } catch {}
   };
 }
-function getUnscaledBorderBoxWidth(input: HTMLElement): number {
+function getUnscaledBorderBoxWidth(element: HTMLElement): number {
   let style: CSSStyleDeclaration = (
-      getElementWindow(input) ?? window
-    ).getComputedStyle(input),
+      getElementWindow(element) ?? window
+    ).getComputedStyle(element),
     value = parseFloat(style.width);
   if (style.boxSizing === "border-box") {
     return value;
@@ -603,33 +603,33 @@ function currencyDisplayParts(
 ): C.CurrencyDisplayParts {
   let value = currency.toUpperCase();
   try {
-    let value2 = new Intl.NumberFormat(locale, {
+    let numberParts = new Intl.NumberFormat(locale, {
         style: "currency",
         currency: value,
         currencyDisplay: DISAMBIGUATED_CURRENCY_CODES.has(value)
           ? "code"
           : "symbol",
       }).formatToParts(1),
-      value3 = value2.findIndex(
-        (input: Intl.NumberFormatPart) => input.type === "currency",
+      currencyIndex = numberParts.findIndex(
+        (part: Intl.NumberFormatPart) => part.type === "currency",
       ),
-      value4 = value2[value3];
-    if (value4 === undefined) {
+      currencyPart = numberParts[currencyIndex];
+    if (currencyPart === undefined) {
       return {
         symbol: value,
         side: "start",
       };
     }
-    let value5: "start" | "end" = value2
-      .slice(0, value3)
-      .some((input: Intl.NumberFormatPart) =>
-        CURRENCY_NUMBER_PART_TYPES.has(input.type),
+    let symbolSide: "start" | "end" = numberParts
+      .slice(0, currencyIndex)
+      .some((part: Intl.NumberFormatPart) =>
+        CURRENCY_NUMBER_PART_TYPES.has(part.type),
       )
       ? "end"
       : "start";
     return {
-      symbol: value4.value,
-      side: value5,
+      symbol: currencyPart.value,
+      side: symbolSide,
     };
   } catch {
     return {
@@ -663,7 +663,7 @@ export {
   pausedFlipAnimations,
   pauseFlipAnimationAtProgress,
   reactForUiSegmentedControl,
-  reactForUiSegmentedControl2,
+  reactSegmentedControl as reactForUiSegmentedControl2,
   readCssDuration,
   RESIZE_DRAG_THRESHOLD_PX,
   RESIZE_KEYBOARD_LARGE_STEP_PX,
@@ -721,72 +721,72 @@ export function installUiSegmentedControl(): () => void {
         className: className,
         ...props
       }: C.ResizeHandleProps,
-      options: React.ForwardedRef<HTMLDivElement>,
+      forwardedRef: React.ForwardedRef<HTMLDivElement>,
     ) {
       let value =
           side === undefined
             ? orientation === "vertical"
             : side === "inline-start" || side === "inline-end",
-        [value2, value3] = reactForUiSegmentedControl.useState(false),
+        [isDragging, setIsDragging] = reactForUiSegmentedControl.useState(false),
         ref = reactForUiSegmentedControl.useRef<Document>(null),
-        ref2 = reactForUiSegmentedControl.useRef(onResize),
-        ref3 = reactForUiSegmentedControl.useRef(onResizeStart),
-        ref4 = reactForUiSegmentedControl.useRef(onResizeEnd);
+        resizeCallbackRef = reactForUiSegmentedControl.useRef(onResize),
+        resizeStartCallbackRef = reactForUiSegmentedControl.useRef(onResizeStart),
+        resizeEndCallbackRef = reactForUiSegmentedControl.useRef(onResizeEnd);
       useIsomorphicLayoutEffect(() => {
-        ref2.current = onResize;
-        ref3.current = onResizeStart;
-        ref4.current = onResizeEnd;
+        resizeCallbackRef.current = onResize;
+        resizeStartCallbackRef.current = onResizeStart;
+        resizeEndCallbackRef.current = onResizeEnd;
       }, [onResize, onResizeStart, onResizeEnd]);
-      let ref5 = reactForUiSegmentedControl.useRef(0),
-        ref6 = reactForUiSegmentedControl.useRef(false),
-        ref7 = reactForUiSegmentedControl.useRef(true),
+      let dragStartCoordinateRef = reactForUiSegmentedControl.useRef(0),
+        crossedDragThresholdRef = reactForUiSegmentedControl.useRef(false),
+        dragFinishedRef = reactForUiSegmentedControl.useRef(true),
         callback = reactForUiSegmentedControl.useCallback(() => {
-          if (ref7.current) {
+          if (dragFinishedRef.current) {
             return;
           }
-          ref7.current = true;
-          value3(false);
-          ref4.current?.(ref6.current);
+          dragFinishedRef.current = true;
+          setIsDragging(false);
+          resizeEndCallbackRef.current?.(crossedDragThresholdRef.current);
         }, []);
       reactForUiSegmentedControl.useEffect(() => {
         let current = ref.current;
-        if (!value2 || current === null) {
+        if (!isDragging || current === null) {
           return;
         }
-        let callback4 = (input: MouseEvent) => {
-            let value4 = (value ? input.clientX : input.clientY) - ref5.current;
-            if (Math.abs(value4) > RESIZE_DRAG_THRESHOLD_PX) {
-              ref6.current = true;
+        let handleDragMove = (mouseEvent: MouseEvent) => {
+            let dragDelta = (value ? mouseEvent.clientX : mouseEvent.clientY) - dragStartCoordinateRef.current;
+            if (Math.abs(dragDelta) > RESIZE_DRAG_THRESHOLD_PX) {
+              crossedDragThresholdRef.current = true;
             }
-            ref2.current(value4);
+            resizeCallbackRef.current(dragDelta);
           },
           style = current.body.style;
         style.cursor = value ? "col-resize" : "row-resize";
         style.userSelect = "none";
-        current.addEventListener("mousemove", callback4);
+        current.addEventListener("mousemove", handleDragMove);
         current.addEventListener("mouseup", callback);
         return () => {
-          current.removeEventListener("mousemove", callback4);
+          current.removeEventListener("mousemove", handleDragMove);
           current.removeEventListener("mouseup", callback);
           style.cursor = "";
           style.userSelect = "";
         };
-      }, [value2, value, callback]);
+      }, [isDragging, value, callback]);
       reactForUiSegmentedControl.useEffect(() => callback, [callback]);
-      let callback2 = (event: React.MouseEvent<HTMLDivElement>) => {
+      let handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
           if (event.button === 0) {
             event.preventDefault();
-            ref5.current = value ? event.clientX : event.clientY;
-            ref6.current = false;
-            ref7.current = false;
+            dragStartCoordinateRef.current = value ? event.clientX : event.clientY;
+            crossedDragThresholdRef.current = false;
+            dragFinishedRef.current = false;
             ref.current = event.currentTarget.ownerDocument;
-            value3(true);
-            ref3.current?.();
+            setIsDragging(true);
+            resizeStartCallbackRef.current?.();
           }
           onMouseDown?.(event);
         },
-        callback3 = (event: React.KeyboardEvent<HTMLDivElement>) => {
-          if (event.metaKey || event.ctrlKey || event.altKey || !ref7.current) {
+        handleResizeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+          if (event.metaKey || event.ctrlKey || event.altKey || !dragFinishedRef.current) {
             return;
           }
           if ((event.key === "Enter" || event.key === " ") && !event.shiftKey) {
@@ -794,43 +794,43 @@ export function installUiSegmentedControl(): () => void {
             if (event.repeat) {
               return;
             }
-            ref3.current?.();
-            ref4.current?.(false);
+            resizeStartCallbackRef.current?.();
+            resizeEndCallbackRef.current?.(false);
             return;
           }
-          let value4 = event.shiftKey
+          let stepSize = event.shiftKey
               ? RESIZE_KEYBOARD_LARGE_STEP_PX
               : RESIZE_KEYBOARD_STEP_PX,
-            [value5, value6] = value
+            [decreaseKey, increaseKey] = value
               ? ["ArrowLeft", "ArrowRight"]
               : ["ArrowUp", "ArrowDown"],
-            value7 =
-              event.key === value5
-                ? -value4
-                : event.key === value6
-                  ? value4
+            keyboardDelta =
+              event.key === decreaseKey
+                ? -stepSize
+                : event.key === increaseKey
+                  ? stepSize
                   : 0;
-          if (value7 === 0) {
+          if (keyboardDelta === 0) {
             return;
           }
           event.preventDefault();
-          ref3.current?.();
-          ref2.current(value7);
-          ref4.current?.(true);
+          resizeStartCallbackRef.current?.();
+          resizeCallbackRef.current(keyboardDelta);
+          resizeEndCallbackRef.current?.(true);
         };
       return (
         <div
           {...props}
-          ref={options}
+          ref={forwardedRef}
           data-cds={"ResizeHandle"}
           role={"separator"}
           aria-orientation={value ? "vertical" : "horizontal"}
           tabIndex={0}
-          data-dragging={value2 ? "" : undefined}
-          onMouseDown={callback2}
-          onKeyDown={(input: React.KeyboardEvent<HTMLDivElement>) => {
-            callback3(input);
-            onKeyDown?.(input);
+          data-dragging={isDragging ? "" : undefined}
+          onMouseDown={handleMouseDown}
+          onKeyDown={(keyEvent: React.KeyboardEvent<HTMLDivElement>) => {
+            handleResizeKeyDown(keyEvent);
+            onKeyDown?.(keyEvent);
           }}
           className={cn(
             "cds-reset group/resize outline-none focus-visible:outline-hidden",
@@ -857,7 +857,7 @@ export function installUiSegmentedControl(): () => void {
                 value
                   ? "h-full max-h-12 w-[3px] group-focus-visible/resize:max-h-none"
                   : "h-[3px] w-full max-w-12 group-focus-visible/resize:max-w-none",
-                value2
+                isDragging
                   ? "text-secondary opacity-100 duration-snap"
                   : "text-muted opacity-[var(--cds-resize-pill-force,0)] delay-200 duration-base group-hover/resize:opacity-100",
                 "group-focus-visible/resize:bg-fill-accent group-focus-visible/resize:opacity-100 group-focus-visible/resize:delay-0",
@@ -881,7 +881,7 @@ export function installUiSegmentedControl(): () => void {
     FLIP_HELD_MARKER = "held";
     FLIP_PAUSE_DURATION_MS = 1000;
     pausedFlipAnimations = new WeakMap();
-    reactForUiSegmentedControl2 = toModuleNamespace(
+    reactSegmentedControl = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
