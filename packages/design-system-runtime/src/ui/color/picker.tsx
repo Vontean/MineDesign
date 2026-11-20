@@ -16,49 +16,49 @@ var COLOR_ALPHA_CHECKERBOARD: string;
 var COLOR_SWATCH_BUTTON_CLASS: string;
 var COLOR_PICKER_POPOVER_HEIGHT: number;
 var COLOR_PICKER_POPOVER_CLASS: string;
-function joinPickerClasses(...input: (string | false | null | undefined)[]) {
-  return input.filter(Boolean).join(" ");
+function joinPickerClasses(...classNames: (string | false | null | undefined)[]) {
+  return classNames.filter(Boolean).join(" ");
 }
 function normalizedRgbToHsva(
-  input: number,
-  options: number,
-  context: number,
-  value: number,
+  red: number,
+  green: number,
+  blue: number,
+  alpha: number,
 ): Color.HsvaColor {
-  let value2 = Math.max(input, options, context),
-    value3 = Math.min(input, options, context),
-    value4 = value2 - value3,
+  let maxChannel = Math.max(red, green, blue),
+    minChannel = Math.min(red, green, blue),
+    chroma = maxChannel - minChannel,
     index = 0;
-  if (value4 !== 0) {
-    if (value2 === input) {
-      index = ((options - context) / value4) % 6;
-    } else if (value2 === options) {
-      index = (context - input) / value4 + 2;
+  if (chroma !== 0) {
+    if (maxChannel === red) {
+      index = ((green - blue) / chroma) % 6;
+    } else if (maxChannel === green) {
+      index = (blue - red) / chroma + 2;
     } else {
-      index = (input - options) / value4 + 4;
+      index = (red - green) / chroma + 4;
     }
     index *= 60;
     if (index < 0) {
       index += 360;
     }
   }
-  let value5 = value2 === 0 ? 0 : value4 / value2;
+  let saturation = maxChannel === 0 ? 0 : chroma / maxChannel;
   return {
     h: index,
-    s: value5,
-    v: value2,
-    a: value,
+    s: saturation,
+    v: maxChannel,
+    a: alpha,
   };
 }
-function parseCssColorToHsva(input: string): Color.HsvaColor {
-  let value = input.match(/^#([0-9a-f]{3,8})$/i)?.[1];
+function parseCssColorToHsva(cssColor: string): Color.HsvaColor {
+  let value = cssColor.match(/^#([0-9a-f]{3,8})$/i)?.[1];
   if (value && value.length !== 5 && value.length !== 7) {
-    let value5 =
+    let expandedHex =
         value.length <= 4
-          ? value.replace(/[0-9a-f]/gi, (input2: string) => input2 + input2)
+          ? value.replace(/[0-9a-f]/gi, (digit: string) => digit + digit)
           : value.padEnd(8, "f"),
-      callback = (input2: number) =>
-        parseInt(value5.slice(input2 * 2, input2 * 2 + 2), 16) / 255;
+      callback = (channelIndex: number) =>
+        parseInt(expandedHex.slice(channelIndex * 2, channelIndex * 2 + 2), 16) / 255;
     return normalizedRgbToHsva(
       callback(0),
       callback(1),
@@ -66,16 +66,16 @@ function parseCssColorToHsva(input: string): Color.HsvaColor {
       value.length === 4 || value.length === 8 ? callback(3) : 1,
     );
   }
-  let value2 = input.match(
+  let rgbMatch = cssColor.match(
     /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/,
   );
-  if (value2) {
-    let callback = (input2: number) => Math.min(1, Math.max(0, input2));
+  if (rgbMatch) {
+    let callback = (channel: number) => Math.min(1, Math.max(0, channel));
     return normalizedRgbToHsva(
-      callback(+(value2[1] ?? 0) / 255),
-      callback(+(value2[2] ?? 0) / 255),
-      callback(+(value2[3] ?? 0) / 255),
-      value2[4] != null ? callback(+value2[4]) : 1,
+      callback(+(rgbMatch[1] ?? 0) / 255),
+      callback(+(rgbMatch[2] ?? 0) / 255),
+      callback(+(rgbMatch[3] ?? 0) / 255),
+      rgbMatch[4] != null ? callback(+rgbMatch[4]) : 1,
     );
   }
   if (
@@ -89,15 +89,15 @@ function parseCssColorToHsva(input: string): Color.HsvaColor {
       a: 1,
     };
   }
-  let value3 = document.createElement("div");
-  value3.style.color = input;
-  document.body.appendChild(value3);
-  let color = getComputedStyle(value3).color;
-  document.body.removeChild(value3);
-  let value4 = color.match(
+  let colorProbe = document.createElement("div");
+  colorProbe.style.color = cssColor;
+  document.body.appendChild(colorProbe);
+  let color = getComputedStyle(colorProbe).color;
+  document.body.removeChild(colorProbe);
+  let computedRgbMatch = color.match(
     /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/,
   );
-  if (!value4) {
+  if (!computedRgbMatch) {
     return {
       h: 0,
       s: 0,
@@ -106,51 +106,51 @@ function parseCssColorToHsva(input: string): Color.HsvaColor {
     };
   }
   return normalizedRgbToHsva(
-    +(value4[1] ?? 0) / 255,
-    +(value4[2] ?? 0) / 255,
-    +(value4[3] ?? 0) / 255,
-    value4[4] != null ? +value4[4] : 1,
+    +(computedRgbMatch[1] ?? 0) / 255,
+    +(computedRgbMatch[2] ?? 0) / 255,
+    +(computedRgbMatch[3] ?? 0) / 255,
+    computedRgbMatch[4] != null ? +computedRgbMatch[4] : 1,
   );
 }
-function hsvaToCssColor(input: Color.HsvaColor): string {
-  let { h: value, s: value2, v: value3, a: value4 } = input,
-    value5 = value3 * value2,
-    value6 = value5 * (1 - Math.abs(((value / 60) % 2) - 1)),
-    value7 = value3 - value5,
+function hsvaToCssColor(hsva: Color.HsvaColor): string {
+  let { h: value, s: saturation, v: brightness, a: alpha } = hsva,
+    chroma = brightness * saturation,
+    intermediateChannel = chroma * (1 - Math.abs(((value / 60) % 2) - 1)),
+    channelOffset = brightness - chroma,
     index = 0,
-    index2 = 0,
-    index3 = 0;
+    greenComponent = 0,
+    blueComponent = 0;
   if (value < 60) {
-    index = value5;
-    index2 = value6;
+    index = chroma;
+    greenComponent = intermediateChannel;
   } else if (value < 120) {
-    index = value6;
-    index2 = value5;
+    index = intermediateChannel;
+    greenComponent = chroma;
   } else if (value < 180) {
-    index2 = value5;
-    index3 = value6;
+    greenComponent = chroma;
+    blueComponent = intermediateChannel;
   } else if (value < 240) {
-    index2 = value6;
-    index3 = value5;
+    greenComponent = intermediateChannel;
+    blueComponent = chroma;
   } else if (value < 300) {
-    index = value6;
-    index3 = value5;
+    index = intermediateChannel;
+    blueComponent = chroma;
   } else {
-    index = value5;
-    index3 = value6;
+    index = chroma;
+    blueComponent = intermediateChannel;
   }
-  let value8 = Math.round((index + value7) * 255),
-    value9 = Math.round((index2 + value7) * 255),
-    value10 = Math.round((index3 + value7) * 255);
-  if (value4 < 1) {
-    return `rgba(${value8}, ${value9}, ${value10}, ${+value4.toFixed(3)})`;
+  let redByte = Math.round((index + channelOffset) * 255),
+    greenByte = Math.round((greenComponent + channelOffset) * 255),
+    blueByte = Math.round((blueComponent + channelOffset) * 255);
+  if (alpha < 1) {
+    return `rgba(${redByte}, ${greenByte}, ${blueByte}, ${+alpha.toFixed(3)})`;
   } else {
-    return `rgb(${value8}, ${value9}, ${value10})`;
+    return `rgb(${redByte}, ${greenByte}, ${blueByte})`;
   }
 }
-function hsvaToHexColor(input: Color.HsvaColor): string {
+function hsvaToHexColor(hsva: Color.HsvaColor): string {
   let value = hsvaToCssColor({
-    ...input,
+    ...hsva,
     a: 1,
   }).match(/(\d+),\s*(\d+),\s*(\d+)/);
   if (!value) {
@@ -159,7 +159,7 @@ function hsvaToHexColor(input: Color.HsvaColor): string {
   return (
     "#" +
     [+(value[1] ?? 0), +(value[2] ?? 0), +(value[3] ?? 0)]
-      .map((input2: number) => input2.toString(16).padStart(2, "0"))
+      .map((channel: number) => channel.toString(16).padStart(2, "0"))
       .join("")
       .toUpperCase()
   );
@@ -203,28 +203,28 @@ function beginColorPickerPointerGesture(
     currentTarget.setPointerCapture(pointerId);
   } catch {}
   onMove(event.clientX, event.clientY, bounds);
-  let callback = (input: PointerEvent) => {
-      if (input.pointerId !== pointerId) {
+  let callback = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) {
         return;
       }
-      onMove(input.clientX, input.clientY, bounds);
+      onMove(pointerEvent.clientX, pointerEvent.clientY, bounds);
     },
-    callback2 = () => {
+    removeGestureListeners = () => {
       window.removeEventListener("pointermove", callback);
-      window.removeEventListener("pointerup", callback3);
-      window.removeEventListener("pointercancel", callback3);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
     },
-    callback3 = (input: PointerEvent) => {
-      if (input.pointerId !== pointerId) {
+    handlePointerEnd = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) {
         return;
       }
-      callback2();
+      removeGestureListeners();
       onEnd?.();
     };
   window.addEventListener("pointermove", callback);
-  window.addEventListener("pointerup", callback3);
-  window.addEventListener("pointercancel", callback3);
-  return callback2;
+  window.addEventListener("pointerup", handlePointerEnd);
+  window.addEventListener("pointercancel", handlePointerEnd);
+  return removeGestureListeners;
 }
 function colorTrackFraction(
   clientX: number,
@@ -378,7 +378,7 @@ function SwatchButton({
   );
 }
 function ColorHexInput({
-  value: value,
+  value: selectedFormat,
   onChange: onChange,
   className = "mb-2",
 }: Color.ColorHexInputProps): React.ReactElement {
@@ -386,26 +386,26 @@ function ColorHexInput({
   let ref = (
       reactForUiColorPicker as typeof React
     ).useRef<HTMLDivElement | null>(null),
-    callback = (input: string) => {
+    callback = (nextFormat: string) => {
       let activeElement = document.activeElement,
-        value2 =
+        popup =
           ref.current?.closest('[data-mc-popover], [role="dialog"]') ??
           ref.current?.parentElement;
       if (
         activeElement instanceof HTMLElement &&
-        value2 &&
-        value2.contains(activeElement) &&
+        popup &&
+        popup.contains(activeElement) &&
         !ref.current!.contains(activeElement)
       ) {
         activeElement.blur();
       }
-      onChange(input);
+      onChange(nextFormat);
     };
   return (
     <Tabs.Root
       ref={ref}
-      value={value}
-      onValueChange={(input: unknown) => callback(input as string)}
+      value={selectedFormat}
+      onValueChange={(nextFormat: unknown) => callback(nextFormat as string)}
     >
       <Tabs.List
         aria-label={uiMessage("design-system.picker.source")}
@@ -420,7 +420,7 @@ function ColorHexInput({
   );
 }
 function ColorPicker({
-  value: value,
+  value: cssColor,
   unset: unset,
   opaque: opaque,
   onChange: onChange,
@@ -428,384 +428,384 @@ function ColorPicker({
   contrast: contrast,
 }: Color.ColorPickerProps): React.ReactElement {
   useUiLocale();
-  let callback = (input: Color.HsvaColor) =>
+  let callback = (hsva: Color.HsvaColor) =>
       opaque
         ? {
-            ...input,
+            ...hsva,
             a: 1,
           }
-        : input,
-    [value2, value3] = (
+        : hsva,
+    [color, setColor] = (
       reactForUiColorPicker as typeof React
-    ).useState(() => callback(parseCssColorToHsva(value))),
-    ref = (reactForUiColorPicker as typeof React).useRef(value2);
-  ref.current = value2;
-  let ref2 = (reactForUiColorPicker as typeof React).useRef(false),
-    [value4, value5] = (
+    ).useState(() => callback(parseCssColorToHsva(cssColor))),
+    ref = (reactForUiColorPicker as typeof React).useRef(color);
+  ref.current = color;
+  let suppressCommitRef = (reactForUiColorPicker as typeof React).useRef(false),
+    [hexDraft, setHexDraft] = (
       reactForUiColorPicker as typeof React
-    ).useState(() => hsvaToHexColor(value2)),
-    [value6, value7] = (
+    ).useState(() => hsvaToHexColor(color)),
+    [alphaDraft, setAlphaDraft] = (
       reactForUiColorPicker as typeof React
-    ).useState(() => Math.round(value2.a * 100).toString()),
-    ref3 = (
-      reactForUiColorPicker as typeof React
-    ).useRef<HTMLInputElement | null>(null),
-    ref4 = (
+    ).useState(() => Math.round(color.a * 100).toString()),
+    hexInputRef = (
       reactForUiColorPicker as typeof React
     ).useRef<HTMLInputElement | null>(null),
-    ref5 = (reactForUiColorPicker as typeof React).useRef(
+    alphaInputRef = (
+      reactForUiColorPicker as typeof React
+    ).useRef<HTMLInputElement | null>(null),
+    unsetRef = (reactForUiColorPicker as typeof React).useRef(
       unset ?? false,
     );
-  ref5.current = unset ?? false;
-  let ref6 = (reactForUiColorPicker as typeof React).useRef(
+  unsetRef.current = unset ?? false;
+  let opaqueRef = (reactForUiColorPicker as typeof React).useRef(
     opaque ?? false,
   );
-  ref6.current = opaque ?? false;
-  let ref7 = (reactForUiColorPicker as typeof React).useRef(
+  opaqueRef.current = opaque ?? false;
+  let onPickEndRef = (reactForUiColorPicker as typeof React).useRef(
     onPickEnd,
   );
-  ref7.current = onPickEnd;
+  onPickEndRef.current = onPickEnd;
   let ref8 = (reactForUiColorPicker as typeof React).useRef(contrast);
   ref8.current = contrast;
-  let callback2 = (reactForUiColorPicker as typeof React).useCallback(
-      (input: string, options?: boolean) => {
-        ref7.current?.(input);
+  let completePick = (reactForUiColorPicker as typeof React).useCallback(
+      (pickedColor: string, announceContrast?: boolean) => {
+        onPickEndRef.current?.(pickedColor);
         let current = ref8.current;
-        if (!options || current === undefined) {
+        if (!announceContrast || current === undefined) {
           return;
         }
         announceLiveMessage(() => {
-          let value18 = colorContrastResults(input, current);
-          if (value18 === undefined) {
+          let results = colorContrastResults(pickedColor, current);
+          if (results === undefined) {
             return null;
           } else {
-            return contrastDisplayInfo(value18).spoken;
+            return contrastDisplayInfo(results).spoken;
           }
         });
       },
       [],
     ),
-    ref9 = (reactForUiColorPicker as typeof React).useRef(false),
-    ref10 = (reactForUiColorPicker as typeof React).useRef(value),
-    callback3 = (reactForUiColorPicker as typeof React).useCallback(
-      (input: string) => {
-        ref10.current = input;
-        let value18 = callback(parseCssColorToHsva(input));
-        if (rgbaHexColor(value18) === rgbaHexColor(ref.current)) {
+    hasEditedHexRef = (reactForUiColorPicker as typeof React).useRef(false),
+    lastCssColorRef = (reactForUiColorPicker as typeof React).useRef(cssColor),
+    syncFromCssColor = (reactForUiColorPicker as typeof React).useCallback(
+      (nextCssColor: string) => {
+        lastCssColorRef.current = nextCssColor;
+        let nextColor = callback(parseCssColorToHsva(nextCssColor));
+        if (rgbaHexColor(nextColor) === rgbaHexColor(ref.current)) {
           return;
         }
-        value3(value18);
-        ref.current = value18;
-        value5(hsvaToHexColor(value18));
-        value7(Math.round(value18.a * 100).toString());
+        setColor(nextColor);
+        ref.current = nextColor;
+        setHexDraft(hsvaToHexColor(nextColor));
+        setAlphaDraft(Math.round(nextColor.a * 100).toString());
       },
       [],
     );
   (reactForUiColorPicker as typeof React).useEffect(() => {
-    if (value === ref10.current) {
+    if (cssColor === lastCssColorRef.current) {
       return;
     }
     let activeElement = document.activeElement;
-    if (activeElement === ref3.current || activeElement === ref4.current) {
+    if (activeElement === hexInputRef.current || activeElement === alphaInputRef.current) {
       return;
     }
-    callback3(value);
-  }, [value, callback3]);
-  let callback4 = (
-      input: React.FocusEvent<HTMLInputElement>,
-      options: boolean,
+    syncFromCssColor(cssColor);
+  }, [cssColor, syncFromCssColor]);
+  let syncOnInputBlur = (
+      focusEvent: React.FocusEvent<HTMLInputElement>,
+      didCommit: boolean,
     ) => {
-      if (options) {
+      if (didCommit) {
         return;
       }
-      let relatedTarget = input.relatedTarget;
+      let relatedTarget = focusEvent.relatedTarget;
       if (
         relatedTarget !== null &&
-        (relatedTarget === ref3.current || relatedTarget === ref4.current)
+        (relatedTarget === hexInputRef.current || relatedTarget === alphaInputRef.current)
       ) {
         return;
       }
-      if (value !== ref10.current) {
-        callback3(value);
+      if (cssColor !== lastCssColorRef.current) {
+        syncFromCssColor(cssColor);
       }
     },
-    callback5 = (reactForUiColorPicker as typeof React).useCallback(
-      (input: Color.HsvaColor) => {
-        let value18 = ref6.current
+    previewColor = (reactForUiColorPicker as typeof React).useCallback(
+      (candidate: Color.HsvaColor) => {
+        let nextColor = opaqueRef.current
             ? {
-                ...input,
+                ...candidate,
                 a: 1,
               }
-            : input,
-          value19 = rgbaHexColor(value18),
-          value20 = value19 !== rgbaHexColor(ref.current);
-        value3(value18);
-        ref.current = value18;
-        value5(hsvaToHexColor(value18));
-        value7(Math.round(value18.a * 100).toString());
-        if (!value20 && !ref5.current) {
+            : candidate,
+          nextHex = rgbaHexColor(nextColor),
+          colorChanged = nextHex !== rgbaHexColor(ref.current);
+        setColor(nextColor);
+        ref.current = nextColor;
+        setHexDraft(hsvaToHexColor(nextColor));
+        setAlphaDraft(Math.round(nextColor.a * 100).toString());
+        if (!colorChanged && !unsetRef.current) {
           return false;
         }
-        ref10.current = value19;
-        onChange(value19);
+        lastCssColorRef.current = nextHex;
+        onChange(nextHex);
         return true;
       },
       [onChange],
     ),
-    callback6 = (reactForUiColorPicker as typeof React).useCallback(
-      (input: Color.HsvaColor) => {
-        let value18 = ref6.current
+    commitColor = (reactForUiColorPicker as typeof React).useCallback(
+      (candidate: Color.HsvaColor) => {
+        let nextColor = opaqueRef.current
           ? {
-              ...input,
+              ...candidate,
               a: 1,
             }
-          : input;
+          : candidate;
         if (
-          !ref5.current &&
-          rgbaHexColor(value18) === rgbaHexColor(ref.current)
+          !unsetRef.current &&
+          rgbaHexColor(nextColor) === rgbaHexColor(ref.current)
         ) {
-          value5(hsvaToHexColor(ref.current));
-          value7(Math.round(ref.current.a * 100).toString());
+          setHexDraft(hsvaToHexColor(ref.current));
+          setAlphaDraft(Math.round(ref.current.a * 100).toString());
           return false;
         }
-        callback5(value18);
-        callback2(rgbaHexColor(value18), true);
+        previewColor(nextColor);
+        completePick(rgbaHexColor(nextColor), true);
         return true;
       },
-      [callback5, callback2],
+      [previewColor, completePick],
     ),
-    callback7 = (
+    createGestureCompletion = (
       reactForUiColorPicker as typeof React
     ).useCallback(() => {
-      return (input?: boolean) => {
-        callback2(rgbaHexColor(ref.current), input);
+      return (announceContrast?: boolean) => {
+        completePick(rgbaHexColor(ref.current), announceContrast);
       };
-    }, [callback2]),
-    ref11 = (reactForUiColorPicker as typeof React).useRef(
+    }, [completePick]),
+    pendingGestureCleanupsRef = (reactForUiColorPicker as typeof React).useRef(
       new Set<() => void>(),
     ),
-    [value8, value9] = (
+    [gestureState, setGestureState] = (
       reactForUiColorPicker as typeof React
     ).useState<Color.ColorGestureState | undefined>(undefined),
-    value10 = value8 !== undefined,
-    ref12 = (
+    isGestureActive = gestureState !== undefined,
+    contrastFixRef = (
       reactForUiColorPicker as typeof React
     ).useRef<HTMLSpanElement | null>(null),
-    ref13 = (reactForUiColorPicker as typeof React).useRef(false),
-    callback8 = (input: boolean) => {
-      if (!input) {
-        ref3.current?.focus();
+    restoreFocusAfterFixRef = (reactForUiColorPicker as typeof React).useRef(false),
+    focusHexInput = (fromTouch: boolean) => {
+      if (!fromTouch) {
+        hexInputRef.current?.focus();
       }
     };
   (reactForUiColorPicker as typeof React).useEffect(
     () => () => {
-      for (let value18 of ref11.current) {
-        value18();
+      for (let cleanup of pendingGestureCleanupsRef.current) {
+        cleanup();
       }
-      ref11.current.clear();
+      pendingGestureCleanupsRef.current.clear();
     },
     [],
   );
-  let callback9 = (
-      input: React.PointerEvent<HTMLElement>,
-      options: Color.ColorGestureMove,
+  let startColorGesture = (
+      pointerEvent: React.PointerEvent<HTMLElement>,
+      moveColor: Color.ColorGestureMove,
     ) => {
-      if (input.button !== 0) {
+      if (pointerEvent.button !== 0) {
         return;
       }
-      if (ref12.current?.contains(document.activeElement)) {
-        callback8(input.pointerType === "touch");
+      if (contrastFixRef.current?.contains(document.activeElement)) {
+        focusHexInput(pointerEvent.pointerType === "touch");
       }
-      value9(
-        (input2) =>
-          input2 ?? {
-            shade: memo3,
+      setGestureState(
+        (previousGesture) =>
+          previousGesture ?? {
+            shade: suggestedFix,
           },
       );
-      let value18 = callback7(),
+      let completeGesture = createGestureCompletion(),
         flag = false,
-        callback18 = () => {},
-        callback19 = (input2: boolean) => {
-          ref11.current.delete(callback20);
-          if (ref11.current.size === 0) {
-            value9(undefined);
+        removeGestureListeners = () => {},
+        finishGesture = (announceContrast: boolean) => {
+          pendingGestureCleanupsRef.current.delete(cancelGesture);
+          if (pendingGestureCleanupsRef.current.size === 0) {
+            setGestureState(undefined);
           }
-          callback18();
+          removeGestureListeners();
           if (flag) {
             flag = false;
-            value18(input2);
+            completeGesture(announceContrast);
           }
         },
-        callback20 = () => callback19(false);
-      callback18 = beginColorPickerPointerGesture(
-        input,
-        (input2: number, options2: number, context: DOMRect) => {
-          if (options(input2, options2, context)) {
+        cancelGesture = () => finishGesture(false);
+      removeGestureListeners = beginColorPickerPointerGesture(
+        pointerEvent,
+        (clientX: number, clientY: number, bounds: DOMRect) => {
+          if (moveColor(clientX, clientY, bounds)) {
             flag = true;
           }
         },
-        () => callback19(true),
+        () => finishGesture(true),
       );
-      ref11.current.add(callback20);
+      pendingGestureCleanupsRef.current.add(cancelGesture);
     },
-    callback10 = (input: React.PointerEvent<HTMLElement>) =>
-      callback9(input, (input2: number, options: number, context: DOMRect) =>
-        callback5({
+    handleSaturationPointerDown = (pointerEvent: React.PointerEvent<HTMLElement>) =>
+      startColorGesture(pointerEvent, (clientX: number, clientY: number, bounds: DOMRect) =>
+        previewColor({
           ...ref.current,
-          s: colorTrackFraction(input2, context),
+          s: colorTrackFraction(clientX, bounds),
           v:
             1 -
             Math.max(
               0,
               Math.min(
                 1,
-                (options - context.top - 7) / (context.height - 14),
+                (clientY - bounds.top - 7) / (bounds.height - 14),
               ),
             ),
         }),
       ),
-    callback11 = (input: React.PointerEvent<HTMLElement>) =>
-      callback9(input, (input2: number, options: number, context: DOMRect) =>
-        callback5({
+    handleHuePointerDown = (pointerEvent: React.PointerEvent<HTMLElement>) =>
+      startColorGesture(pointerEvent, (clientX: number, unusedClientY: number, bounds: DOMRect) =>
+        previewColor({
           ...ref.current,
-          h: colorTrackFraction(input2, context) * 360,
+          h: colorTrackFraction(clientX, bounds) * 360,
         }),
       ),
-    callback12 = (input: React.PointerEvent<HTMLElement>) =>
-      callback9(input, (input2: number, options: number, context: DOMRect) =>
-        callback5({
+    handleAlphaPointerDown = (pointerEvent: React.PointerEvent<HTMLElement>) =>
+      startColorGesture(pointerEvent, (clientX: number, unusedClientY: number, bounds: DOMRect) =>
+        previewColor({
           ...ref.current,
-          a: colorTrackFraction(input2, context),
+          a: colorTrackFraction(clientX, bounds),
         }),
       ),
-    callback13 = async (): Promise<void> => {
-      let value18 = await pickScreenColor();
-      if (!value18) {
+    pickEyedropperColor = async (): Promise<void> => {
+      let pickedCss = await pickScreenColor();
+      if (!pickedCss) {
         return;
       }
-      callback6({
-        ...parseCssColorToHsva(value18),
+      commitColor({
+        ...parseCssColorToHsva(pickedCss),
         a: ref.current.a,
       });
     },
-    callback14 = () => {
-      if (ref2.current) {
-        ref2.current = false;
+    commitHexDraft = () => {
+      if (suppressCommitRef.current) {
+        suppressCommitRef.current = false;
         return false;
       }
-      if (ref5.current && !ref9.current) {
+      if (unsetRef.current && !hasEditedHexRef.current) {
         return false;
       }
-      let value18 = value4.trim();
+      let hexText = hexDraft.trim();
       if (
         /^#?(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(
-          value18,
+          hexText,
         )
       ) {
-        let value19 = parseCssColorToHsva(
-            value18.startsWith("#") ? value18 : "#" + value18,
+        let parsedColor = parseCssColorToHsva(
+            hexText.startsWith("#") ? hexText : "#" + hexText,
           ),
-          length = value18.replace(/^#/, "").length;
-        return callback6(
+          length = hexText.replace(/^#/, "").length;
+        return commitColor(
           length === 4 || length === 8
-            ? value19
+            ? parsedColor
             : {
-                ...value19,
-                a: value2.a,
+                ...parsedColor,
+                a: color.a,
               },
         );
       }
-      value5(hsvaToHexColor(value2));
+      setHexDraft(hsvaToHexColor(color));
       return false;
     },
-    callback15 = () => {
-      if (ref2.current) {
-        ref2.current = false;
+    commitAlphaDraft = () => {
+      if (suppressCommitRef.current) {
+        suppressCommitRef.current = false;
         return false;
       }
-      let value18 = parseFloat(value6);
-      if (isNaN(value18)) {
-        value7(Math.round(value2.a * 100).toString());
+      let alphaPercent = parseFloat(alphaDraft);
+      if (isNaN(alphaPercent)) {
+        setAlphaDraft(Math.round(color.a * 100).toString());
         return false;
       }
-      if (Math.round(value18) === Math.round(value2.a * 100)) {
-        value7(Math.round(value2.a * 100).toString());
+      if (Math.round(alphaPercent) === Math.round(color.a * 100)) {
+        setAlphaDraft(Math.round(color.a * 100).toString());
         return false;
       }
-      return callback6({
-        ...value2,
-        a: Math.max(0, Math.min(1, value18 / 100)),
+      return commitColor({
+        ...color,
+        a: Math.max(0, Math.min(1, alphaPercent / 100)),
       });
     },
-    value11 = hsvaToCssColor({
-      ...value2,
+    opaqueCss = hsvaToCssColor({
+      ...color,
       a: 1,
     }),
-    value12 = rgbaHexColor(value2),
-    value13 = contrast === undefined ? undefined : JSON.stringify(contrast),
+    rgbaHex = rgbaHexColor(color),
+    contrastKey = contrast === undefined ? undefined : JSON.stringify(contrast),
     memo = (reactForUiColorPicker as typeof React).useMemo(
       () => contrast,
-      [value13],
+      [contrastKey],
     ),
-    memo2 = (reactForUiColorPicker as typeof React).useMemo(
+    contrastResults = (reactForUiColorPicker as typeof React).useMemo(
       () =>
         memo === undefined
           ? undefined
-          : colorContrastResults(value12, memo),
-      [memo, value12],
+          : colorContrastResults(rgbaHex, memo),
+      [memo, rgbaHex],
     ),
-    memo3 = (reactForUiColorPicker as typeof React).useMemo(
+    suggestedFix = (reactForUiColorPicker as typeof React).useMemo(
       () =>
-        memo === undefined || value10
+        memo === undefined || isGestureActive
           ? undefined
-          : contrastColorFix(value12, memo),
-      [memo, value12, value10],
+          : contrastColorFix(rgbaHex, memo),
+      [memo, rgbaHex, isGestureActive],
     ),
-    value14 = value8 !== undefined ? value8.shade : memo3,
-    value15 = memo2 !== undefined && value14 !== undefined;
+    visibleFix = gestureState !== undefined ? gestureState.shade : suggestedFix,
+    showContrastFix = contrastResults !== undefined && visibleFix !== undefined;
   (reactForUiColorPicker as typeof React).useLayoutEffect(() => {
-    if (!ref13.current) {
+    if (!restoreFocusAfterFixRef.current) {
       return;
     }
-    ref13.current = false;
-    if (!value15) {
-      ref3.current?.focus();
+    restoreFocusAfterFixRef.current = false;
+    if (!showContrastFix) {
+      hexInputRef.current?.focus();
     }
-  }, [value15]);
-  let callback16 = (input: boolean) => {
-      if (memo3 === undefined) {
+  }, [showContrastFix]);
+  let applyContrastFix = (fromTouch: boolean) => {
+      if (suggestedFix === undefined) {
         return;
       }
-      callback6(parseCssColorToHsva(memo3.css));
-      callback8(input);
+      commitColor(parseCssColorToHsva(suggestedFix.css));
+      focusHexInput(fromTouch);
     },
-    callback17 = () => {
-      ref13.current = true;
+    requestFocusAfterFix = () => {
+      restoreFocusAfterFixRef.current = true;
     },
-    value16 = (reactForUiColorPicker as typeof React).useId(),
-    value17 = memo2 === undefined ? undefined : value16;
+    contrastId = (reactForUiColorPicker as typeof React).useId(),
+    contrastDescriptionId = contrastResults === undefined ? undefined : contrastId;
   return (
     <div className={"flex w-full min-w-56 flex-col"}>
       {[<div
           className={"relative aspect-[3/2] w-full touch-none rounded-md"}
           style={{
-            background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${value2.h}, 100%, 50%))`,
+            background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${color.h}, 100%, 50%))`,
           }}
-          onPointerDown={callback10}
+          onPointerDown={handleSaturationPointerDown}
         >
           <div
             className={
               "pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3)]"
             }
             style={{
-              left: `calc(${value2.s} * (100% - 14px) + 7px)`,
-              top: `calc(${1 - value2.v} * (100% - 14px) + 7px)`,
-              background: value11,
+              left: `calc(${color.s} * (100% - 14px) + 7px)`,
+              top: `calc(${1 - color.v} * (100% - 14px) + 7px)`,
+              background: opaqueCss,
             }}
           />
         </div>, <div
           className={"relative touch-none pt-2 pb-1 pointer-coarse:py-3.5"}
-          onPointerDown={callback11}
+          onPointerDown={handleHuePointerDown}
         >
           <div
             className={
@@ -817,20 +817,20 @@ function ColorPicker({
                 "pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3)]"
               }
               style={{
-                left: `calc(${value2.h / 360} * (100% - 14px) + 7px)`,
-                background: `hsl(${value2.h}, 100%, 50%)`,
+                left: `calc(${color.h / 360} * (100% - 14px) + 7px)`,
+                background: `hsl(${color.h}, 100%, 50%)`,
               }}
             />
           </div>
         </div>, !opaque && (
           <div
             className={"relative touch-none py-1 pointer-coarse:py-3.5"}
-            onPointerDown={callback12}
+            onPointerDown={handleAlphaPointerDown}
           >
             <div
               className={"relative h-3 w-full rounded-md"}
               style={{
-                background: `linear-gradient(to right, transparent, ${value11}), ${COLOR_ALPHA_CHECKERBOARD}`,
+                background: `linear-gradient(to right, transparent, ${opaqueCss}), ${COLOR_ALPHA_CHECKERBOARD}`,
               }}
             >
               <div
@@ -838,8 +838,8 @@ function ColorPicker({
                   "pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3)]"
                 }
                 style={{
-                  left: `calc(${value2.a} * (100% - 14px) + 7px)`,
-                  background: hsvaToCssColor(value2),
+                  left: `calc(${color.a} * (100% - 14px) + 7px)`,
+                  background: hsvaToCssColor(color),
                 }}
               />
             </div>
@@ -850,7 +850,7 @@ function ColorPicker({
                 type={"button"}
                 title={uiMessage("design-system.picker.pickColorFromScreen")}
                 aria-label={uiMessage("design-system.picker.pickColorFromScreen")}
-                onClick={callback13}
+                onClick={pickEyedropperColor}
                 className={
                   "flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted outline-none hover:bg-alpha-1 hover:text-primary focus-visible:outline-hidden focus-visible:shadow-focus pointer-coarse:h-10 pointer-coarse:w-10"
                 }
@@ -863,22 +863,22 @@ function ColorPicker({
               }
             >
               {[<input
-                  ref={ref3}
+                  ref={hexInputRef}
                   className={
                     "h-full min-w-0 flex-1 bg-transparent px-1.5 font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
                   }
-                  value={value4}
+                  value={hexDraft}
                   aria-label={uiMessage("design-system.picker.hexColor")}
-                  aria-describedby={value17}
+                  aria-describedby={contrastDescriptionId}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    ref9.current = true;
-                    value5(event.target.value);
+                    hasEditedHexRef.current = true;
+                    setHexDraft(event.target.value);
                   }}
                   onFocus={() => {
-                    ref9.current = false;
+                    hasEditedHexRef.current = false;
                   }}
-                  onBlur={(input: React.FocusEvent<HTMLInputElement>) =>
-                    callback4(input, callback14())
+                  onBlur={(focusEvent: React.FocusEvent<HTMLInputElement>) =>
+                    syncOnInputBlur(focusEvent, commitHexDraft())
                   }
                   onKeyDown={(
                     event: React.KeyboardEvent<HTMLInputElement> & {
@@ -888,8 +888,8 @@ function ColorPicker({
                     if (event.key === "Enter") {
                       event.target.blur();
                     } else if (event.key === "Escape") {
-                      ref2.current = true;
-                      value5(hsvaToHexColor(value2));
+                      suppressCommitRef.current = true;
+                      setHexDraft(hsvaToHexColor(color));
                       event.target.blur();
                     }
                     event.stopPropagation();
@@ -901,18 +901,18 @@ function ColorPicker({
                           "my-1 w-px shrink-0 self-stretch bg-alpha-2"
                         }
                       />, <input
-                        ref={ref4}
+                        ref={alphaInputRef}
                         className={
                           "h-full w-[34px] bg-transparent pl-1.5 pr-1 text-right font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
                         }
-                        value={value6}
+                        value={alphaDraft}
                         aria-label={uiMessage("design-system.picker.alphaPercent")}
-                        aria-describedby={value17}
+                        aria-describedby={contrastDescriptionId}
                         onChange={(
                           event: React.ChangeEvent<HTMLInputElement>,
-                        ) => value7(event.target.value)}
-                        onBlur={(input: React.FocusEvent<HTMLInputElement>) =>
-                          callback4(input, callback15())
+                        ) => setAlphaDraft(event.target.value)}
+                        onBlur={(focusEvent: React.FocusEvent<HTMLInputElement>) =>
+                          syncOnInputBlur(focusEvent, commitAlphaDraft())
                         }
                         onKeyDown={(
                           event: React.KeyboardEvent<HTMLInputElement> & {
@@ -922,8 +922,8 @@ function ColorPicker({
                           if (event.key === "Enter") {
                             event.target.blur();
                           } else if (event.key === "Escape") {
-                            ref2.current = true;
-                            value7(Math.round(value2.a * 100).toString());
+                            suppressCommitRef.current = true;
+                            setAlphaDraft(Math.round(color.a * 100).toString());
                             event.target.blur();
                           }
                           event.stopPropagation();
@@ -934,22 +934,22 @@ function ColorPicker({
                   </jsxForUiColorPicker.Fragment>
                 )]}
             </div>]}
-        </div>, memo2 !== undefined ? (
+        </div>, contrastResults !== undefined ? (
           <ContrastColorDetails
-            fg={value12}
-            results={memo2}
-            sentenceId={value16}
-            {...(value15
+            fg={rgbaHex}
+            results={contrastResults}
+            sentenceId={contrastId}
+            {...(showContrastFix
               ? {
                   fix: {
-                    css: value14!.css,
-                    ratio: value14!.ratio,
-                    ground: value14!.ground.label,
-                    onUse: callback16,
+                    css: visibleFix!.css,
+                    ratio: visibleFix!.ratio,
+                    ground: visibleFix!.ground.label,
+                    onUse: applyContrastFix,
                   },
-                  fixHeld: value10,
-                  fixRef: ref12,
-                  onFixGoneFocused: callback17,
+                  fixHeld: isGestureActive,
+                  fixRef: contrastFixRef,
+                  onFixGoneFocused: requestFocusAfterFix,
                 }
               : {})}
           />

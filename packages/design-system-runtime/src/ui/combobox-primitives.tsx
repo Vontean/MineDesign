@@ -156,15 +156,15 @@ var typographyThemeValues: {
     comfortable: number;
   };
 };
-var reactForUiInputs222: typeof React;
+var reactAccessibleCombobox: typeof React;
 var reactComboboxStatus: typeof React;
 var jsxComboboxStatus: typeof import("react/jsx-runtime");
 var COMBOBOX_STATUS_DELAY_MS: number;
 var COMBOBOX_STATUS_CLASS: string;
 var COMBOBOX_LOADING_CLASS: string;
 var ComboboxStatus: ForwardComponent<HTMLDivElement, ComboboxStatusProps>;
-var reactForUiInputs24: typeof React;
-var jsxForUiInputs23: typeof import("react/jsx-runtime");
+var reactComboboxHandle: typeof React;
+var comboboxJsx: typeof import("react/jsx-runtime");
 var COMBOBOX_VIRTUAL_OVERSCAN: number;
 var COMBOBOX_SKELETON_ROW_COUNT: number;
 function comboboxAccessibilityProps({
@@ -176,24 +176,24 @@ function comboboxAccessibilityProps({
   insideField: insideField,
 }: ComboboxLabelInput): ComboboxLabelResult {
   let value = label ? `${reactId}-label` : undefined,
-    value2 = mode === "select" && triggerMode !== "chips",
-    value3 =
+    labelsSelectedValue = mode === "select" && triggerMode !== "chips",
+    usesTriggerLabel =
       value !== undefined ||
-      (!insideField && (triggerPrefix !== undefined || value2)),
-    value4 = value3 ? `${reactId}-trigger` : undefined,
-    value5 = value3 && value2 ? `${reactId}-trigger-value` : undefined,
-    value6 = value3
-      ? [value, value5].filter(Boolean).join(" ") || undefined
+      (!insideField && (triggerPrefix !== undefined || labelsSelectedValue)),
+    triggerId = usesTriggerLabel ? `${reactId}-trigger` : undefined,
+    triggerValueId = usesTriggerLabel && labelsSelectedValue ? `${reactId}-trigger-value` : undefined,
+    triggerLabelledBy = usesTriggerLabel
+      ? [value, triggerValueId].filter(Boolean).join(" ") || undefined
       : undefined;
   return {
     labelId: value,
-    triggerId: value4,
-    triggerValueId: value5,
+    triggerId: triggerId,
+    triggerValueId: triggerValueId,
     ownLabelProps:
-      value3 && value4
+      usesTriggerLabel && triggerId
         ? {
-            id: value4,
-            "aria-labelledby": value6,
+            id: triggerId,
+            "aria-labelledby": triggerLabelledBy,
           }
         : undefined,
   };
@@ -201,7 +201,7 @@ function comboboxAccessibilityProps({
 function accessibleNameFromElement(
   element: Element | null | undefined,
   {
-    fallback: options,
+    fallback: fallback,
     fromTextEntry = false,
   }: {
     fallback?: string;
@@ -218,23 +218,23 @@ function accessibleNameFromElement(
   let ownerDocument = element.ownerDocument,
     value = (element.getAttribute("aria-labelledby") ?? "")
       .split(/\s+/)
-      .filter((input: string) => {
-        if (input === "") {
+      .filter((id: string) => {
+        if (id === "") {
           return false;
         }
-        let value2 = ownerDocument.getElementById(input);
-        return value2 !== null && !element.contains(value2);
+        let labelElement = ownerDocument.getElementById(id);
+        return labelElement !== null && !element.contains(labelElement);
       });
   if (value.length > 0) {
     return {
       "aria-labelledby": value.join(" "),
     };
   }
-  for (let value2 of [element.getAttribute("aria-label"), options]) {
-    let value3 = value2?.trim();
-    if (value3 !== undefined && value3 !== "") {
+  for (let label of [element.getAttribute("aria-label"), fallback]) {
+    let trimmedLabel = label?.trim();
+    if (trimmedLabel !== undefined && trimmedLabel !== "") {
       return {
-        "aria-label": value3,
+        "aria-label": trimmedLabel,
       };
     }
   }
@@ -245,7 +245,7 @@ function useMirroredAccessibleName(
   getFallback: () => Element | null | undefined,
   nameProps: AccessibleNameProps,
   {
-    fallback: options,
+    fallback: fallback,
     fromTextEntry = false,
   }: {
     fallback?: string;
@@ -255,41 +255,41 @@ function useMirroredAccessibleName(
   ref: React.RefCallback<HTMLElement>;
   nameProps: AccessibleNameProps;
 } {
-  let [value, value2] = reactForUiInputs222.useState<AccessibleNameProps>({}),
-    value3 =
+  let [value, setMirroredName] = reactAccessibleCombobox.useState<AccessibleNameProps>({}),
+    hasExplicitName =
       nameProps["aria-label"] !== undefined ||
       nameProps["aria-labelledby"] !== undefined,
-    callback = reactForUiInputs222.useCallback(
-      (input: HTMLElement | null): void => {
-        if (input === null || value3) {
+    callback = reactAccessibleCombobox.useCallback(
+      (trigger: HTMLElement | null): void => {
+        if (trigger === null || hasExplicitName) {
           return;
         }
-        let value4 = accessibleNameFromElement(getFallback(), {
-          fallback: options,
+        let mirroredName = accessibleNameFromElement(getFallback(), {
+          fallback: fallback,
           fromTextEntry: fromTextEntry,
         });
-        value2((input2: AccessibleNameProps) =>
-          input2["aria-labelledby"] === value4["aria-labelledby"] &&
-          input2["aria-label"] === value4["aria-label"]
-            ? input2
-            : value4,
+        setMirroredName((previousName: AccessibleNameProps) =>
+          previousName["aria-labelledby"] === mirroredName["aria-labelledby"] &&
+          previousName["aria-label"] === mirroredName["aria-label"]
+            ? previousName
+            : mirroredName,
         );
       },
-      [value3, getFallback, options, fromTextEntry],
+      [hasExplicitName, getFallback, fallback, fromTextEntry],
     );
   return {
     ref: useMergedRefs(ref, callback),
-    nameProps: value3 ? nameProps : value,
+    nameProps: hasExplicitName ? nameProps : value,
   };
 }
 function useDelayedVisible(timeoutMs: number): boolean {
-  let [value, value2] = reactComboboxStatus.useState(timeoutMs <= 0);
+  let [value, setStatusVisible] = reactComboboxStatus.useState(timeoutMs <= 0);
   reactComboboxStatus.useEffect(() => {
     if (timeoutMs <= 0) {
       return;
     }
-    let value3 = window.setTimeout(() => value2(true), timeoutMs);
-    return () => window.clearTimeout(value3);
+    let revealTimeout = window.setTimeout(() => setStatusVisible(true), timeoutMs);
+    return () => window.clearTimeout(revealTimeout);
   }, [timeoutMs]);
   return timeoutMs <= 0 || value;
 }
@@ -317,10 +317,10 @@ export {
   ComboboxStatus,
   DelayedVisible,
   jsxComboboxStatus,
-  jsxForUiInputs23,
+  comboboxJsx as jsxForUiInputs23,
   reactComboboxStatus,
-  reactForUiInputs222,
-  reactForUiInputs24,
+  reactAccessibleCombobox as reactForUiInputs222,
+  reactComboboxHandle as reactForUiInputs24,
   typographyThemeValues,
   useDelayedVisible,
   useMirroredAccessibleName,
@@ -458,7 +458,7 @@ export function installUiComboboxPrimitives(): () => void {
     };
     initializeMergedRefs();
     initializeVisualKeyboard();
-    reactForUiInputs222 = toModuleNamespace(
+    reactAccessibleCombobox = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
@@ -482,14 +482,14 @@ export function installUiComboboxPrimitives(): () => void {
           loadingLabel: loadingLabel,
           ...props
         }: ComboboxStatusProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let value = useTranslation(
           "loadingOptions",
           uiMessage("design-system.comboboxPrimitives.loadingOptions"),
         );
         return (
-          <baseCombobox.Status ref={options} {...props}>
+          <baseCombobox.Status ref={forwardedRef} {...props}>
             {loading && (<DelayedVisible ms={delay}>
                 <div className={COMBOBOX_LOADING_CLASS}>
                   {[<Spinner size={"sm"} />, <span>{loadingLabel ?? (value)}</span>]}
@@ -501,11 +501,11 @@ export function installUiComboboxPrimitives(): () => void {
     );
     ComboboxStatus.displayName = "Combobox.Status";
     initializeIsomorphicLayoutEffect();
-    reactForUiInputs24 = toModuleNamespace(
+    reactComboboxHandle = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
-    jsxForUiInputs23 = toModuleNamespace(
+    comboboxJsx = toModuleNamespace(
       loadJsxNamespace(),
       1,
     );

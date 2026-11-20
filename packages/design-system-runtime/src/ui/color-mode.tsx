@@ -24,8 +24,8 @@ function colorModeBootstrapScript(mode?: "light" | "dark"): string {
     );
   }
 }
-function initializeDocumentColorMode(document2: Document): () => void {
-  let documentElement = document2.documentElement;
+function initializeDocumentColorMode(ownerDocument: Document): () => void {
+  let documentElement = ownerDocument.documentElement;
   documentElement.classList.add("cds-root");
   if (!documentElement.hasAttribute("data-density")) {
     documentElement.setAttribute("data-density", "comfortable");
@@ -36,25 +36,25 @@ function initializeDocumentColorMode(document2: Document): () => void {
     return () => {};
   }
   let callback = () => {
-    let attribute2 = documentElement.getAttribute("data-theme");
-    if (attribute2 === "light" || attribute2 === "dark") {
-      documentElement.setAttribute("data-mode", attribute2);
+    let themeMode = documentElement.getAttribute("data-theme");
+    if (themeMode === "light" || themeMode === "dark") {
+      documentElement.setAttribute("data-mode", themeMode);
     } else {
       documentElement.removeAttribute("data-mode");
     }
   };
   callback();
-  let value = (document2.defaultView as (Window & typeof globalThis) | null)
+  let value = (ownerDocument.defaultView as (Window & typeof globalThis) | null)
     ?.MutationObserver;
   if (value === undefined) {
     return () => {};
   }
-  let value2 = new value(callback);
-  value2.observe(documentElement, {
+  let themeObserver = new value(callback);
+  themeObserver.observe(documentElement, {
     attributes: true,
     attributeFilter: ["data-theme"],
   });
-  return () => value2.disconnect();
+  return () => themeObserver.disconnect();
 }
 export {
   APP_DENSITY,

@@ -34,7 +34,7 @@ function AppDesignProvider({ children: children }: React.PropsWithChildren) {
   );
 }
 function CommitTextInput({
-  value: value,
+  value: initialText,
   onCommit: onCommit,
   onCancel: onCancel,
   onChange: onChange,
@@ -46,13 +46,13 @@ function CommitTextInput({
   ...remainingProps
 }: CommitTextInputProps) {
   useUiLocale();
-  let [value2, value3] = reactJW.useState(value),
+  let [draft, setDraft] = reactJW.useState(initialText),
     ref = reactJW.useRef(false),
-    ref2 = reactJW.useRef(false),
-    ref3 = reactJW.useRef(false),
-    ref4 = reactJW.useRef<HTMLInputElement | null>(null);
+    committedByEnterRef = reactJW.useRef(false),
+    finishedRef = reactJW.useRef(false),
+    inputRef = reactJW.useRef<HTMLInputElement | null>(null);
   reactJW.useEffect(() => {
-    let current = ref4.current;
+    let current = inputRef.current;
     if (current === null) {
       return;
     }
@@ -66,34 +66,34 @@ function CommitTextInput({
     }
   }, [selectOnOpen]);
   let callback = () => {
-      if (ref3.current) {
+      if (finishedRef.current) {
         return;
       }
-      ref3.current = true;
+      finishedRef.current = true;
       if (ref.current) {
         ref.current = false;
         onCancel?.();
         return;
       }
-      onCommit(value2, ref2.current ? "enter" : "blur");
+      onCommit(draft, committedByEnterRef.current ? "enter" : "blur");
     },
-    value4 = value2 !== "" ? value2 : (placeholder ?? "");
+    displayText = draft !== "" ? draft : (placeholder ?? "");
   return (
     <input
       {...remainingProps}
-      ref={ref4}
+      ref={inputRef}
       className={joinClassNames("kit-rn-in", className)}
-      value={value2}
+      value={draft}
       placeholder={placeholder}
       spellCheck={false}
       autoComplete={"off"}
-      size={Math.max(2, value4.length + 1)}
-      onChange={(input: React.ChangeEvent<HTMLInputElement>) => {
-        value3(input.currentTarget.value);
-        onChange?.(input.currentTarget.value);
+      size={Math.max(2, displayText.length + 1)}
+      onChange={(changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+        setDraft(changeEvent.currentTarget.value);
+        onChange?.(changeEvent.currentTarget.value);
       }}
-      onBlur={(input: React.FocusEvent<HTMLInputElement>) => {
-        onBlur?.(input);
+      onBlur={(focusEvent: React.FocusEvent<HTMLInputElement>) => {
+        onBlur?.(focusEvent);
         callback();
       }}
       onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -104,7 +104,7 @@ function CommitTextInput({
         }
         if (event.key === "Enter") {
           event.preventDefault();
-          ref2.current = true;
+          committedByEnterRef.current = true;
           event.currentTarget.blur();
         } else if (event.key === "Escape") {
           event.preventDefault();
@@ -116,7 +116,7 @@ function CommitTextInput({
   );
 }
 function EditableText({
-  value: value,
+  value: committedText,
   onCommit: onCommit,
   readOnly = false,
   onEditingChange: onEditingChange,
@@ -150,9 +150,9 @@ function EditableText({
       });
     }
   }, [editing]);
-  let callback = (input: boolean) => {
+  let callback = (restoreFocus: boolean) => {
     initialRenderRef.current = false;
-    cancelledRef.current = input;
+    cancelledRef.current = restoreFocus;
     setEditing(false);
   };
   if (readOnly) {
@@ -161,7 +161,7 @@ function EditableText({
         className={joinClassNames("kit-rn", className)}
         data-testid={testId}
       >
-        {value}
+        {committedText}
       </span>
     );
   }
@@ -177,8 +177,8 @@ function EditableText({
         tabIndex={tabIndex}
         aria-description={uiMessage("design-system.commitTextInput.clickToRename")}
         data-testid={testId}
-        onClick={(input: React.MouseEvent<HTMLSpanElement>) => {
-          input.stopPropagation();
+        onClick={(clickEvent: React.MouseEvent<HTMLSpanElement>) => {
+          clickEvent.stopPropagation();
           setEditing(true);
         }}
         onKeyDown={(event: React.KeyboardEvent<HTMLSpanElement>) => {
@@ -189,33 +189,33 @@ function EditableText({
           }
         }}
       >
-        {value}
+        {committedText}
       </span>
     );
   }
   return (
     <span
       className={joinClassNames("kit-rn-on", className)}
-      onClick={(input: React.MouseEvent<HTMLSpanElement>) =>
-        input.stopPropagation()
+      onClick={(clickEvent: React.MouseEvent<HTMLSpanElement>) =>
+        clickEvent.stopPropagation()
       }
     >
       <CommitTextInput
         value={
           initialRenderRef.current && initialDraft !== undefined
             ? initialDraft
-            : value
+            : committedText
         }
         placeholder={placeholder}
         maxLength={maxLength}
-        aria-label={ariaLabel ?? (uiMessage("design-system.commitTextInput.rename", { value1: String(value) }))}
+        aria-label={ariaLabel ?? (uiMessage("design-system.commitTextInput.rename", { value1: String(committedText) }))}
         data-testid={
           inputTestId ??
           (testId !== undefined ? testId + "-input" : undefined)
         }
-        onCommit={(input: string, options: "enter" | "blur") => {
-          callback(options === "enter");
-          onCommit(input);
+        onCommit={(nextText: string, reason: "enter" | "blur") => {
+          callback(reason === "enter");
+          onCommit(nextText);
         }}
         onCancel={() => callback(true)}
       />

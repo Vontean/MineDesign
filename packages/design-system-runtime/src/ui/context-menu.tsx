@@ -58,24 +58,24 @@ function ContextMenu({
         }
       : lastContentRef.current,
     value = content?.anchor === "tap",
-    value2 = content?.at.x,
-    value3 = content?.at.y,
+    anchorX = content?.at.x,
+    anchorY = content?.at.y,
     memo = reactContextMenu.useMemo(() => {
-      if (value2 === undefined || value3 === undefined) {
+      if (anchorX === undefined || anchorY === undefined) {
         return;
       }
       let state = {
-        x: value2,
-        y: value3,
-        left: value2,
-        top: value3,
-        right: value2,
-        bottom: value3,
+        x: anchorX,
+        y: anchorY,
+        left: anchorX,
+        top: anchorY,
+        right: anchorX,
+        bottom: anchorY,
         width: 0,
         height: 0,
         toJSON: () => ({
-          x: value2,
-          y: value3,
+          x: anchorX,
+          y: anchorY,
           width: 0,
           height: 0,
         }),
@@ -83,7 +83,7 @@ function ContextMenu({
       return {
         getBoundingClientRect: () => state,
       };
-    }, [value2, value3]),
+    }, [anchorX, anchorY]),
     ref = reactContextMenu.useRef<HTMLElement | null>(null);
   reactContextMenu.useLayoutEffect(() => {
     if (!open) {
@@ -106,7 +106,7 @@ function ContextMenu({
     if (!open || !focusFirstItem) {
       return;
     }
-    let value4 = requestAnimationFrame(() => {
+    let openFrame = requestAnimationFrame(() => {
       let current = popupRef.current;
       if (current === null) {
         return;
@@ -128,7 +128,7 @@ function ContextMenu({
         element.focus();
       }
     });
-    return () => cancelAnimationFrame(value4);
+    return () => cancelAnimationFrame(openFrame);
   }, [open, focusFirstItem]);
   return (
     <jsxChromeContextMenu.Fragment>
@@ -137,24 +137,24 @@ function ContextMenu({
         ) : null, <Menu.Root
           open={open}
           modal={false}
-          onOpenChange={(input: boolean, options: PopupChangeDetails) => {
-            if (input) {
+          onOpenChange={(nextOpen: boolean, changeDetails: PopupChangeDetails) => {
+            if (nextOpen) {
               return;
             }
-            if (options.reason === "outside-press") {
-              let value4 = options.event?.target;
+            if (changeDetails.reason === "outside-press") {
+              let target = changeDetails.event?.target;
               if (
-                value4 instanceof Element &&
-                value4.hasAttribute("data-mc-scrim")
+                target instanceof Element &&
+                target.hasAttribute("data-mc-scrim")
               ) {
-                options.cancel();
+                changeDetails.cancel();
                 return;
               }
             }
             onCloseRef.current();
           }}
-          onOpenChangeComplete={(input: boolean) => {
-            if (!input) {
+          onOpenChangeComplete={(isOpen: boolean) => {
+            if (!isOpen) {
               setRetained(false);
             }
           }}
@@ -189,9 +189,9 @@ function ContextMenu({
               event.preventDefault();
               event.stopPropagation();
             }}
-            onKeyDown={(input: React.KeyboardEvent<HTMLElement>) => {
-              if (input.key !== "Tab" && !input.metaKey && !input.ctrlKey) {
-                input.stopPropagation();
+            onKeyDown={(keyEvent: React.KeyboardEvent<HTMLElement>) => {
+              if (keyEvent.key !== "Tab" && !keyEvent.metaKey && !keyEvent.ctrlKey) {
+                keyEvent.stopPropagation();
               }
             }}
             className={className}

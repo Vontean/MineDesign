@@ -21,51 +21,51 @@ function contrastDisplayInfo(
   results: Color.ContrastResult[],
 ): Color.ContrastDisplayInfo {
   let value = worstContrastResult(results),
-    value2 = results.filter((input) => input !== value),
+    otherResults = results.filter((result) => result !== value),
     items = [
       value,
-      ...value2.sort((input, options) => input.ratio - options.ratio),
+      ...otherResults.sort((leftResult, rightResult) => leftResult.ratio - rightResult.ratio),
     ],
     state = {
       ratio: contrastRatioSpoken(value.ratio),
       ground: value.ground.label,
       passes: value.passes,
       min: contrastRatioSpoken(value.min),
-      alsoPassing: value2.filter((input) => input.passes).length,
+      alsoPassing: otherResults.filter((result) => result.passes).length,
     },
-    value3 = value2.filter((input) => !input.passes),
-    value4 = contrastResultCountSummary({
+    failingResults = otherResults.filter((result) => !result.passes),
+    announcement = contrastResultCountSummary({
       ...state,
-      alsoFailing: value3.length,
+      alsoFailing: failingResults.length,
     }),
-    value5 = value4.length - MAX_ANNOUNCEMENT_LENGTH;
-  if (value5 > 0) {
-    let value6 = state.ground
-      .slice(0, Math.max(1, state.ground.length - value5 - 1))
+    excessLength = announcement.length - MAX_ANNOUNCEMENT_LENGTH;
+  if (excessLength > 0) {
+    let shortenedGround = state.ground
+      .slice(0, Math.max(1, state.ground.length - excessLength - 1))
       .replace(/[\uD800-\uDBFF]$/, "");
-    value4 = contrastResultCountSummary({
+    announcement = contrastResultCountSummary({
       ...state,
-      ground: value6 + "…",
-      alsoFailing: value3.length,
+      ground: shortenedGround + "…",
+      alsoFailing: failingResults.length,
     });
   }
   return {
     worst: value,
     title: items
       .map(
-        (input) =>
-          contrastRatioReadout(input.ratio) +
+        (result) =>
+          contrastRatioReadout(result.ratio) +
           " " +
           CONTRAST_GROUND_PREPOSITION +
           " " +
-          input.ground.label,
+          result.ground.label,
       )
       .join(" · "),
     sentence: contrastResultDetails({
       ...state,
-      alsoFailing: value3.map((input) => input.ground.label),
+      alsoFailing: failingResults.map((result) => result.ground.label),
     }),
-    spoken: value4,
+    spoken: announcement,
   };
 }
 function contrastRgbCss(
@@ -74,7 +74,7 @@ function contrastRgbCss(
   if (color === undefined) {
     return;
   }
-  let callback = (input: number) => Math.round(input * 255);
+  let callback = (channel: number) => Math.round(channel * 255);
   return (
     "rgb(" +
     String(callback(color.r)) +
@@ -243,36 +243,36 @@ function ContrastFixButton({
   useUiLocale();
   let value = (reactForUiContrastControls as typeof React).useId(),
     ref = (reactForUiContrastControls as typeof React).useRef(false),
-    ref2 = (
+    buttonWrapperRef = (
       reactForUiContrastControls as typeof React
     ).useRef<HTMLSpanElement | null>(null),
     callback = (
       reactForUiContrastControls as typeof React
     ).useCallback(
-      (input: HTMLSpanElement | null) => {
-        ref2.current = input;
+      (element: HTMLSpanElement | null) => {
+        buttonWrapperRef.current = element;
         if (typeof rootRef === "function") {
-          rootRef(input);
+          rootRef(element);
         } else if (rootRef) {
-          rootRef.current = input;
+          rootRef.current = element;
         }
       },
       [rootRef],
     ),
-    ref3 = (reactForUiContrastControls as typeof React).useRef(false),
-    ref4 = (reactForUiContrastControls as typeof React).useRef(held);
-  ref4.current = held;
-  let ref5 = (reactForUiContrastControls as typeof React).useRef(
+    wasFocusedOnPressRef = (reactForUiContrastControls as typeof React).useRef(false),
+    heldRef = (reactForUiContrastControls as typeof React).useRef(held);
+  heldRef.current = held;
+  let onGoneFocusedRef = (reactForUiContrastControls as typeof React).useRef(
     onGoneFocused,
   );
-  ref5.current = onGoneFocused;
+  onGoneFocusedRef.current = onGoneFocused;
   (reactForUiContrastControls as typeof React).useLayoutEffect(
     () => () => {
-      if (ref3.current || ref4.current || ref2.current === null) {
+      if (wasFocusedOnPressRef.current || heldRef.current || buttonWrapperRef.current === null) {
         return;
       }
-      if (ref2.current.contains(document.activeElement)) {
-        ref5.current?.();
+      if (buttonWrapperRef.current.contains(document.activeElement)) {
+        onGoneFocusedRef.current?.();
       }
     },
     [],
@@ -295,13 +295,13 @@ function ContrastFixButton({
           }
           aria-describedby={value}
           disabled={held}
-          onPointerDown={(input: React.PointerEvent<HTMLButtonElement>) => {
-            ref.current = input.pointerType === "touch";
+          onPointerDown={(pointerEvent: React.PointerEvent<HTMLButtonElement>) => {
+            ref.current = pointerEvent.pointerType === "touch";
           }}
           onClick={() => {
             let current = ref.current;
             ref.current = false;
-            ref3.current = current;
+            wasFocusedOnPressRef.current = current;
             fix.onUse(current);
           }}
         >

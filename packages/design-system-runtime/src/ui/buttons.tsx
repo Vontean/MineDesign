@@ -30,46 +30,46 @@ var buttonOutsetStyle: C.DesignStyle;
 var buttonIconSizeContext: React.Context<C.ResolvedIconSize | undefined>;
 var Button: C.ForwardComponent<C.ButtonElement, C.ButtonProps>;
 function isButtonActivationKey(
-  input: Pick<C.ButtonKeyEvent, "key">,
+  keyEvent: Pick<C.ButtonKeyEvent, "key">,
 ): boolean {
-  return input.key === "Enter" || input.key === " ";
+  return keyEvent.key === "Enter" || keyEvent.key === " ";
 }
-function isUnmodifiedButtonActivation(input: C.ButtonKeyEvent): boolean {
+function isUnmodifiedButtonActivation(keyEvent: C.ButtonKeyEvent): boolean {
   return (
-    isButtonActivationKey(input) &&
-    !input.ctrlKey &&
-    !input.metaKey &&
-    !input.altKey &&
-    !input.shiftKey
+    isButtonActivationKey(keyEvent) &&
+    !keyEvent.ctrlKey &&
+    !keyEvent.metaKey &&
+    !keyEvent.altKey &&
+    !keyEvent.shiftKey
   );
 }
 function useButtonGroup() {
   return reacttJ.useContext(buttonGroupContext);
 }
-function getButtonIconSize(input?: C.ControlSize): C.IconSize {
-  if (input === "xs" || input === "xxs") {
+function getButtonIconSize(controlSize?: C.ControlSize): C.IconSize {
+  if (controlSize === "xs" || controlSize === "xxs") {
     return "auto-sm";
   }
-  if (input === "lg") {
+  if (controlSize === "lg") {
     return "md";
   } else {
     return "auto";
   }
 }
-function useButtonIconSize(input?: C.ControlSize): C.ResolvedIconSize {
+function useButtonIconSize(controlSize?: C.ControlSize): C.ResolvedIconSize {
   let value = useButtonGroup(),
-    value2 = reacttJ.useContext(buttonIconSizeContext);
+    contextIconSize = reacttJ.useContext(buttonIconSizeContext);
   return useIconSize(
-    input !== undefined
-      ? getButtonIconSize(input)
-      : (value2 ??
+    controlSize !== undefined
+      ? getButtonIconSize(controlSize)
+      : (contextIconSize ??
           (value?.size !== undefined
             ? getButtonIconSize(value.size)
             : "auto")),
   );
 }
-function getButtonIconVerticalPadding(input: C.ResolvedIconSize): string {
-  return `calc((var(--cds-h-control) - ${pixelsToScaledRem(iconSizeMetrics[input].px)}) / 2)`;
+function getButtonIconVerticalPadding(iconSize: C.ResolvedIconSize): string {
+  return `calc((var(--cds-h-control) - ${pixelsToScaledRem(iconSizeMetrics[iconSize].px)}) / 2)`;
 }
 export {
   Button,
@@ -209,10 +209,10 @@ export function installUiButtons(): () => void {
           "aria-label": ariaLabel,
           ...props
         }: C.ButtonProps,
-        options: React.ForwardedRef<C.ButtonElement>,
+        forwardedRef: React.ForwardedRef<C.ButtonElement>,
       ) => {
         let value = useButtonGroup(),
-          value2 = value?.joined;
+          joinedPosition = value?.joined;
         if (value) {
           if (((size = size ?? value.size), value.enforceVariant)) {
             variant = value.buttonVariant;
@@ -220,127 +220,127 @@ export function installUiButtons(): () => void {
             variant = variant ?? value.buttonVariant;
           }
         }
-        let value3 = variant ?? "secondary",
-          value4: {
+        let resolvedVariant = variant ?? "secondary",
+          compactableControl: {
             icon?: React.ReactNode;
             compact: boolean;
           } = useCompactableControl(),
-          value5 = iconOnly === true ? undefined : value4.icon,
-          value6 = value5 !== undefined && value4.compact,
-          value7 = iconOnly === true || value6,
-          value8 = value6 ? value5 : icon,
-          value9 = value6 ? (
+          compactIcon = iconOnly === true ? undefined : compactableControl.icon,
+          isCompact = compactIcon !== undefined && compactableControl.compact,
+          rendersIconOnly = iconOnly === true || isCompact,
+          activeIcon = isCompact ? compactIcon : icon,
+          compactLabel = isCompact ? (
             <span data-cds-part={"compact-name"} className={"contents"}>
               {children}
             </span>
           ) : null,
-          value10 =
+          requestedOutset =
             flush === true ? "start" : flush === false ? undefined : flush,
-          value11 =
-            value10 !== undefined && Object.hasOwn(buttonOutsetClasses, value10)
-              ? value10
+          supportedOutset =
+            requestedOutset !== undefined && Object.hasOwn(buttonOutsetClasses, requestedOutset)
+              ? requestedOutset
               : undefined,
-          value12 =
-            value11 !== undefined && !value2 && value3 === "ghost"
-              ? value11
+          appliedOutset =
+            supportedOutset !== undefined && !joinedPosition && resolvedVariant === "ghost"
+              ? supportedOutset
               : undefined,
-          value13: boolean = useAppleKeyboard(),
+          usesAppleKeyboard: boolean = useAppleKeyboard(),
           ref = reacttJ.useRef<HTMLSpanElement>(null);
         useCompactableControlDebug(ref, "Button");
-        let value14 = useButtonIconSize(size),
-          value15 =
-            value7 && value8 ? (
-              isIconName(value8) ? (
-                <Icon name={value8} size={value14} />
+        let resolvedIconSize = useButtonIconSize(size),
+          iconOnlyContent =
+            rendersIconOnly && activeIcon ? (
+              isIconName(activeIcon) ? (
+                <Icon name={activeIcon} size={resolvedIconSize} />
               ) : (
-                value8
+                activeIcon
               )
             ) : null,
-          value16: boolean = useTooltipsDisabled(),
-          value17 =
-            (value7 && ariaLabel && tooltip !== false) || value5 !== undefined,
-          value18 =
-            value5 !== undefined
-              ? value6
-                ? value9
+          tooltipsDisabled: boolean = useTooltipsDisabled(),
+          showTooltip =
+            (rendersIconOnly && ariaLabel && tooltip !== false) || compactIcon !== undefined,
+          tooltipContent =
+            compactIcon !== undefined
+              ? isCompact
+                ? compactLabel
                 : undefined
               : typeof tooltip === "string"
                 ? tooltip
                 : ariaLabel,
-          value19 = href === undefined && !!disabled && !!disabledReason,
-          value20 = href === undefined && render === undefined,
-          value21 = busy && value20,
+          hasDisabledReason = href === undefined && !!disabled && !!disabledReason,
+          isNativeButton = href === undefined && render === undefined,
+          blocksActivation = busy && isNativeButton,
           callback = (event: React.KeyboardEvent<C.ButtonElement>) => {
             if (isButtonActivationKey(event)) {
-              if (value21 && isUnmodifiedButtonActivation(event)) {
+              if (blocksActivation && isUnmodifiedButtonActivation(event)) {
                 event.preventDefault();
                 event.stopPropagation();
                 return;
               }
-              if (event.repeat && value20) {
+              if (event.repeat && isNativeButton) {
                 event.preventDefault();
               }
             }
             props.onKeyDown?.(event);
           },
-          callback2 = (event: React.KeyboardEvent<C.ButtonElement>) => {
-            if (value21 && isUnmodifiedButtonActivation(event)) {
+          handleKeyUp = (event: React.KeyboardEvent<C.ButtonElement>) => {
+            if (blocksActivation && isUnmodifiedButtonActivation(event)) {
               event.preventDefault();
               event.stopPropagation();
               return;
             }
             props.onKeyUp?.(event);
           },
-          value22 =
-            value12 === undefined
+          outsetStyle =
+            appliedOutset === undefined
               ? undefined
-              : value7
+              : rendersIconOnly
                 ? {
-                    "--cds-outset-x": getButtonIconVerticalPadding(value14),
+                    "--cds-outset-x": getButtonIconVerticalPadding(resolvedIconSize),
                   }
                 : buttonOutsetStyle,
-          value23: string = cn(
+          buttonClassName: string = cn(
             buttonVariants({
               variant: variant,
-              iconOnly: value7,
+              iconOnly: rendersIconOnly,
             }),
-            value21 ? "pointer-events-none" : "",
-            value12 ? buttonOutsetClasses[value12] : "",
-            value2 && value3 !== "ghost"
-              ? joinedButtonRadiusClasses[value2]
+            blocksActivation ? "pointer-events-none" : "",
+            appliedOutset ? buttonOutsetClasses[appliedOutset] : "",
+            joinedPosition && resolvedVariant !== "ghost"
+              ? joinedButtonRadiusClasses[joinedPosition]
               : "",
             className,
           ),
-          value24 = (
+          buttonContent = (
             <jsxForUiButtons.Fragment>
               {[<span
                   aria-hidden={true}
                   className={getButtonBackgroundLayerClasses({
-                    joined: !!value2,
+                    joined: !!joinedPosition,
                     solid:
-                      value3 === "primary" ||
-                      value3 === "danger" ||
-                      value3 === "brand",
+                      resolvedVariant === "primary" ||
+                      resolvedVariant === "danger" ||
+                      resolvedVariant === "brand",
                   })}
                 >
                   <span
                     ref={ref}
                     data-cds-part={"paint"}
                     className={`${buttonBackgroundVariants({
-                      variant: value3,
-                    })} ${buttonPressedFillClasses} ${value3 === "secondary" && !value2 ? buttonJoinedFillClasses : ""}`}
+                      variant: resolvedVariant,
+                    })} ${buttonPressedFillClasses} ${resolvedVariant === "secondary" && !joinedPosition ? buttonJoinedFillClasses : ""}`}
                   />
                 </span>, <span
                   className={`inline-flex min-w-0 items-center gap-1 ${busy ? "opacity-0" : ""}`}
                 >
-                  <buttonIconSizeContext.Provider value={value14}>
-                    {value15 ? (indicator ? (<span className={"grid"}>
+                  <buttonIconSizeContext.Provider value={resolvedIconSize}>
+                    {iconOnlyContent ? (indicator ? (<span className={"grid"}>
                           {[<span
                               className={
                                 "col-start-1 row-start-1 [--btn-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--btn-dot-x:calc(100%_-_var(--btn-dot-r)_+_1px)] [&:dir(rtl)]:[--btn-dot-x:calc(var(--btn-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>[data-cds=Pulse]]:[mask-image:radial-gradient(circle_at_var(--btn-dot-x)_calc(var(--btn-dot-r)_-_1px),transparent_calc(var(--btn-dot-r)_+_2px),black_calc(var(--btn-dot-r)_+_2.5px))]"
                               }
                             >
-                              {value15}
+                              {iconOnlyContent}
                             </span>, <span
                               aria-hidden={true}
                               data-cds-part={"indicator"}
@@ -350,32 +350,32 @@ export function installUiButtons(): () => void {
                             >
                               {indicator}
                             </span>]}
-                        </span>) : (value6 ? (<jsxForUiButtons.Fragment>
-                          {[value15, <span className={"sr-only"}>{value9}</span>]}
-                        </jsxForUiButtons.Fragment>) : (value15))) : (<jsxForUiButtons.Fragment>
-                        {[value8 &&
+                        </span>) : (isCompact ? (<jsxForUiButtons.Fragment>
+                          {[iconOnlyContent, <span className={"sr-only"}>{compactLabel}</span>]}
+                        </jsxForUiButtons.Fragment>) : (iconOnlyContent))) : (<jsxForUiButtons.Fragment>
+                        {[activeIcon &&
                             iconPosition === "start" &&
-                            (isIconName(value8) ? (
+                            (isIconName(activeIcon) ? (
                               <Icon
-                                name={value8}
-                                size={value14}
+                                name={activeIcon}
+                                size={resolvedIconSize}
                                 className={"-ms-1"}
                               />
                             ) : (
                               <span className={"-ms-1 inline-flex"}>
-                                {value8}
+                                {activeIcon}
                               </span>
-                            )), children, value8 &&
+                            )), children, activeIcon &&
                             iconPosition === "end" &&
-                            (isIconName(value8) ? (
+                            (isIconName(activeIcon) ? (
                               <Icon
-                                name={value8}
-                                size={value14}
+                                name={activeIcon}
+                                size={resolvedIconSize}
                                 className={"-me-1"}
                               />
                             ) : (
                               <span className={"-me-1 inline-flex"}>
-                                {value8}
+                                {activeIcon}
                               </span>
                             )), shortcut && (
                             <Shortcut
@@ -383,7 +383,7 @@ export function installUiButtons(): () => void {
                               aria-hidden={true}
                               className={clsx(
                                 "pointer-coarse:hidden ms-1",
-                                (!value2 || value2 === "end") &&
+                                (!joinedPosition || joinedPosition === "end") &&
                                   buttonIndicatorMarginClass,
                               )}
                             />
@@ -405,7 +405,7 @@ export function installUiButtons(): () => void {
                 )]}
             </jsxForUiButtons.Fragment>
           ),
-          value25: React.AnchorHTMLAttributes<HTMLAnchorElement> = useCdsLink({
+          anchorAttributes: React.AnchorHTMLAttributes<HTMLAnchorElement> = useCdsLink({
             href: href,
             routerOptions: routerOptions,
             target: target,
@@ -413,7 +413,7 @@ export function installUiButtons(): () => void {
             download: download,
             ...pickLinkEventProps(props),
           }),
-          value26 = baseUseRender({
+          renderedButton = baseUseRender({
             render:
               render ??
               (href !== undefined ? (
@@ -421,20 +421,20 @@ export function installUiButtons(): () => void {
               ) : (
                 <button type={type ?? "button"} disabled={disabled} />
               )),
-            ref: options,
+            ref: forwardedRef,
             props: {
               "data-cds": "Button",
-              ...(value7
+              ...(rendersIconOnly
                 ? {
                     "data-cds-icon-only": "",
                   }
                 : undefined),
-              ...(value5 !== undefined
+              ...(compactIcon !== undefined
                 ? {
                     [COMPACTABLE_ATTRIBUTE]: "",
                   }
                 : undefined),
-              ...(value3 === "ghost"
+              ...(resolvedVariant === "ghost"
                 ? {
                     "data-cds-ghost": "",
                   }
@@ -444,52 +444,52 @@ export function installUiButtons(): () => void {
                     "data-step": "1",
                   }
                 : getControlSizeAttributes(size)),
-              className: value23,
-              style: value22
+              className: buttonClassName,
+              style: outsetStyle
                 ? {
-                    ...value22,
+                    ...outsetStyle,
                     ...style,
                   }
                 : style,
               "aria-busy": busy || undefined,
               "aria-pressed": href === undefined ? pressed : undefined,
-              "aria-disabled": value21 || undefined,
+              "aria-disabled": blocksActivation || undefined,
               "aria-label": ariaLabel,
               "aria-keyshortcuts": shortcut
-                ? shortcutToAriaKeyShortcuts(shortcut, value13)
+                ? shortcutToAriaKeyShortcuts(shortcut, usesAppleKeyboard)
                 : undefined,
-              children: value24,
+              children: buttonContent,
               ...props,
               onMouseDown: withRepeatedClickSelectionPrevention(
                 props.onMouseDown,
               ),
-              onClick: value21 ? preventAndStopEvent : props.onClick,
+              onClick: blocksActivation ? preventAndStopEvent : props.onClick,
               onKeyDown: callback,
-              onKeyUp: callback2,
-              ...(href !== undefined ? value25 : undefined),
+              onKeyUp: handleKeyUp,
+              ...(href !== undefined ? anchorAttributes : undefined),
             },
           }),
-          value27 = value17 ? (
+          buttonWithTooltip = showTooltip ? (
             <DeferredTooltip
               side={tooltipSide}
               hoverable={false}
-              content={value16 || value19 ? undefined : value18}
+              content={tooltipsDisabled || hasDisabledReason ? undefined : tooltipContent}
               shortcut={shortcut}
             >
-              {value26}
+              {renderedButton}
             </DeferredTooltip>
           ) : (
-            value26
+            renderedButton
           );
         if (disabledReason === undefined || href !== undefined) {
-          return value27;
+          return buttonWithTooltip;
         }
         return (
           <DeferredDisabledReasonTooltip
             side={disabledReasonSide}
-            reason={value19 ? disabledReason : undefined}
+            reason={hasDisabledReason ? disabledReason : undefined}
           >
-            {value27}
+            {buttonWithTooltip}
           </DeferredDisabledReasonTooltip>
         );
       },

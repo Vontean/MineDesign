@@ -27,30 +27,30 @@ var isEmptySwatch: (swatch: Color.ColorSwatch) => boolean;
 var swatchLabelIsColor: (swatch: Color.ColorSwatch) => boolean;
 var emptySwatchValue: string;
 function swatchPreviewStyle(
-  input: string | undefined,
+  cssColor: string | undefined,
 ): React.CSSProperties | undefined {
-  if (input === undefined) {
+  if (cssColor === undefined) {
     return;
   }
-  if (/gradient\(/.test(input) && !unsafeColorPattern.test(input)) {
+  if (/gradient\(/.test(cssColor) && !unsafeColorPattern.test(cssColor)) {
     return {
-      background: input,
+      background: cssColor,
     };
   }
-  if (symbolicColorPattern.test(input) && !unsafeColorPattern.test(input)) {
+  if (symbolicColorPattern.test(cssColor) && !unsafeColorPattern.test(cssColor)) {
     return {
-      backgroundColor: input,
+      backgroundColor: cssColor,
     };
   }
-  let value = parseCssColorToHsva(input),
-    value2 = hsvaToCssColor(value);
+  let value = parseCssColorToHsva(cssColor),
+    colorWithAlpha = hsvaToCssColor(value);
   if (value.a < 1) {
     return {
-      background: `linear-gradient(${value2}, ${value2}), ${COLOR_ALPHA_CHECKERBOARD}`,
+      background: `linear-gradient(${colorWithAlpha}, ${colorWithAlpha}), ${COLOR_ALPHA_CHECKERBOARD}`,
     };
   } else {
     return {
-      backgroundColor: value2,
+      backgroundColor: colorWithAlpha,
     };
   }
 }
@@ -83,114 +83,114 @@ function SwatchPalette({
   className: className,
 }: Color.SwatchPaletteProps): React.ReactElement {
   useUiLocale();
-  let value = swatches.some((input) => !isEmptySwatch(input)),
-    value2 = value && color !== undefined,
-    value3 = kind !== undefined && kind.options.length > 1 ? kind : undefined,
-    value4 =
-      value3 === undefined || value3.value === (value3.colorValue ?? "color"),
-    [value5, value6] = (ColorSelectReact as typeof React).useState(
-      () => (value && value4 ? "system" : "custom"),
+  let value = swatches.some((swatch) => !isEmptySwatch(swatch)),
+    hasSwatchTabs = value && color !== undefined,
+    fillKind = kind !== undefined && kind.options.length > 1 ? kind : undefined,
+    showColorControls =
+      fillKind === undefined || fillKind.value === (fillKind.colorValue ?? "color"),
+    [internalTab, setInternalTab] = (ColorSelectReact as typeof React).useState(
+      () => (value && showColorControls ? "system" : "custom"),
     ),
-    value7 = !value2
+    selectedTab = !hasSwatchTabs
       ? color === undefined
         ? "system"
         : "custom"
-      : (tab ?? value5),
-    callback = (input: string) => {
-      value6(input);
-      onTab?.(input);
+      : (tab ?? internalTab),
+    callback = (nextTab: string) => {
+      setInternalTab(nextTab);
+      onTab?.(nextTab);
     },
-    value8 =
-      value2 &&
-      (swatches.some((input) => input.subgroup !== undefined) ||
+    showSwatchSearch =
+      hasSwatchTabs &&
+      (swatches.some((swatch) => swatch.subgroup !== undefined) ||
         swatches.length > COMMENT_AREA_RESIZE_MIN_PX),
-    [value9, value10] = (ColorSelectReact as typeof React).useState(
+    [searchQuery, setSearchQuery] = (ColorSelectReact as typeof React).useState(
       "",
     ),
-    value11 = value8 ? value9.trim().toLowerCase() : "",
-    value12 = JSON.stringify(
-      swatches.map((input) => [
-        input.name,
-        input.color,
-        input.label,
-        input.group,
-        input.subgroup,
-        input.empty === true,
-        input.disabledReason ?? null,
-        input.picks ?? null,
+    normalizedQuery = showSwatchSearch ? searchQuery.trim().toLowerCase() : "",
+    swatchCacheKey = JSON.stringify(
+      swatches.map((swatch) => [
+        swatch.name,
+        swatch.color,
+        swatch.label,
+        swatch.group,
+        swatch.subgroup,
+        swatch.empty === true,
+        swatch.disabledReason ?? null,
+        swatch.picks ?? null,
       ]),
     ),
-    { shown: memo, foldedInto: memo2 } = (
+    { shown: memo, foldedInto: foldedSwatches } = (
       ColorSelectReact as typeof React
     ).useMemo(() => {
       let entries = new Map<string, string>(),
-        entries2 = new Map<string, string>(),
+        aliases = new Map<string, string>(),
         items: Color.ColorSwatch[] = [];
-      for (let value19 of swatches) {
-        if (isEmptySwatch(value19) || !fold) {
-          items.push(value19);
+      for (let swatch of swatches) {
+        if (isEmptySwatch(swatch) || !fold) {
+          items.push(swatch);
           continue;
         }
-        let value20 = swatchColorKey(value19.color),
-          entry = entries.get(value20);
-        if (entry !== undefined && swatchLabelIsColor(value19)) {
-          entries2.set(value19.name, entry);
+        let colorKey = swatchColorKey(swatch.color),
+          entry = entries.get(colorKey);
+        if (entry !== undefined && swatchLabelIsColor(swatch)) {
+          aliases.set(swatch.name, entry);
           continue;
         }
         if (entry === undefined) {
-          entries.set(value20, value19.name);
+          entries.set(colorKey, swatch.name);
         }
-        items.push(value19);
+        items.push(swatch);
       }
       return {
         shown: items,
-        foldedInto: entries2,
+        foldedInto: aliases,
       };
-    }, [value12, fold]),
-    value13 = current !== null ? (memo2.get(current) ?? current) : null,
-    value14 = memo.filter((input) =>
+    }, [swatchCacheKey, fold]),
+    selectedSwatch = current !== null ? (foldedSwatches.get(current) ?? current) : null,
+    matchingSwatches = memo.filter((swatch) =>
       optionMatchesQuery(
-        value11,
-        swatchLabel(input),
-        input.color,
-        input.subgroup,
-        input.group,
+        normalizedQuery,
+        swatchLabel(swatch),
+        swatch.color,
+        swatch.subgroup,
+        swatch.group,
       ),
     ),
-    value15 = value8 ? (
+    searchInput = showSwatchSearch ? (
       <OptionList
-        value={value9}
-        onChange={value10}
+        value={searchQuery}
+        onChange={setSearchQuery}
         label={get_COLOR_SEARCH_LABEL()}
         className={"mt-1 mb-2 w-0 min-w-full"}
         rowSelector={"[data-swatch]"}
         onEnterIndex={() =>
           optionTypeaheadMatch(
-            value11,
-            value14
-              .filter((input) => input.disabledReason === undefined)
-              .map((input) => swatchLabel(input)),
+            normalizedQuery,
+            matchingSwatches
+              .filter((swatch) => swatch.disabledReason === undefined)
+              .map((swatch) => swatchLabel(swatch)),
           )
         }
         data-testid={testid !== undefined ? testid + "-search" : undefined}
       />
     ) : null,
-    callback2 = (input: Color.ColorSwatch) => {
-      let value19 = (
+    renderSwatch = (swatch: Color.ColorSwatch) => {
+      let swatchRow = (
         <SwatchButton
-          label={swatchLabel(input)}
+          label={swatchLabel(swatch)}
           data-testid={
-            testid !== undefined ? testid + "-" + input.name : undefined
+            testid !== undefined ? testid + "-" + swatch.name : undefined
           }
-          data-swatch={input.name}
+          data-swatch={swatch.name}
           paint={
-            input.empty === true ? undefined : swatchPreviewStyle(input.color)
+            swatch.empty === true ? undefined : swatchPreviewStyle(swatch.color)
           }
           current={
-            input.name === value13 ||
-            (input.picks !== undefined && input.picks === value13)
+            swatch.name === selectedSwatch ||
+            (swatch.picks !== undefined && swatch.picks === selectedSwatch)
           }
-          disabled={input.disabledReason !== undefined}
+          disabled={swatch.disabledReason !== undefined}
           onMouseDown={(event: React.MouseEvent<HTMLButtonElement>) =>
             event.preventDefault()
           }
@@ -198,74 +198,74 @@ function SwatchPalette({
             onPicked?.();
             if (
               repick ||
-              (input.picks ?? input.name) !== current ||
-              isEmptySwatch(input)
+              (swatch.picks ?? swatch.name) !== current ||
+              isEmptySwatch(swatch)
             ) {
-              onSwatch(input.picks ?? input.name);
+              onSwatch(swatch.picks ?? swatch.name);
             }
           }}
         />
       );
-      if (input.disabledReason === undefined) {
-        return value19;
+      if (swatch.disabledReason === undefined) {
+        return swatchRow;
       } else {
         return (
           <DisabledReasonTooltip
-            reason={input.disabledReason}
+            reason={swatch.disabledReason}
             wrapperClassName={"flex w-full shrink-0 cursor-not-allowed"}
           >
-            {value19}
+            {swatchRow}
           </DisabledReasonTooltip>
         );
       }
     },
-    callback3 = (input: Color.ColorSwatch[], options?: string) => (
+    renderSwatchGroup = (groupSwatches: Color.ColorSwatch[], groupClassName?: string) => (
       <ColorPickerGroup
         label={title}
-        className={joinClassNames("w-0 min-w-full", options)}
+        className={joinClassNames("w-0 min-w-full", groupClassName)}
       >
-        {input.map((input2, options2) => {
-          let value19 =
-              input2.group !== undefined &&
-              input2.group !== input[options2 - 1]?.group,
-            value20 =
-              input2.subgroup !== undefined &&
-              (value19 || input2.subgroup !== input[options2 - 1]?.subgroup);
+        {groupSwatches.map((swatch, swatchIndex) => {
+          let showGroupHeader =
+              swatch.group !== undefined &&
+              swatch.group !== groupSwatches[swatchIndex - 1]?.group,
+            showSubgroupHeader =
+              swatch.subgroup !== undefined &&
+              (showGroupHeader || swatch.subgroup !== groupSwatches[swatchIndex - 1]?.subgroup);
           return (() => {
             const _Element = (ColorSelectReact as typeof React)
               .Fragment;
             const _elementProps = {
               children: [
-                value19 ? (
+                showGroupHeader ? (
                   <ColorPickerHeader
-                    text={input2.group}
+                    text={swatch.group}
                     title={true}
                   />
                 ) : null,
-                value20 ? (
-                  <ColorPickerHeader text={input2.subgroup} />
+                showSubgroupHeader ? (
+                  <ColorPickerHeader text={swatch.subgroup} />
                 ) : null,
-                callback2(input2),
+                renderSwatch(swatch),
               ],
             };
-            const _elementKey = input2.name + ":" + String(options2);
+            const _elementKey = swatch.name + ":" + String(swatchIndex);
             return <_Element key={_elementKey} {..._elementProps} />;
           })();
         })}
       </ColorPickerGroup>
     ),
-    value16 =
-      !headless && (value2 || headerEnd !== undefined) ? (
+    header =
+      !headless && (hasSwatchTabs || headerEnd !== undefined) ? (
         <div
           className={joinClassNames(
             "-mx-2 -mt-2 mb-1 flex items-center justify-between gap-2",
-            !value2 && "order-first",
+            !hasSwatchTabs && "order-first",
           )}
           data-kit={"color-popover-header"}
         >
-          {[value2 ? (
+          {[hasSwatchTabs ? (
               <ColorHexInput
-                value={value7}
+                value={selectedTab}
                 onChange={callback}
                 className={""}
               />
@@ -277,51 +277,51 @@ function SwatchPalette({
               >
                 {heading}
               </span>
-            ), title !== undefined && value2 ? (
+            ), title !== undefined && hasSwatchTabs ? (
               <span className={"sr-only"}>{title}</span>
             ) : null, headerEnd]}
         </div>
       ) : null,
-    value17 = !value2 && color !== undefined ? memo : [],
-    value18 = (
+    inlineSwatches = !hasSwatchTabs && color !== undefined ? memo : [],
+    customColorControls = (
       <ColorSelectJsx.Fragment>
-        {[value17.length > 0 ? (
+        {[inlineSwatches.length > 0 ? (
             <div className={"-mx-2 mb-1 flex flex-col"}>
-              {callback3(value17)}
+              {renderSwatchGroup(inlineSwatches)}
             </div>
-          ) : null, value3 !== undefined ? (
+          ) : null, fillKind !== undefined ? (
             <PropertyRow
               label={TYPE_LABEL}
-              className={value4 ? "mb-1" : undefined}
+              className={showColorControls ? "mb-1" : undefined}
               {...gradientStopKeyboardHandlers}
             >
               <SegmentedControl
-                aria-label={value3.label ?? (uiMessage("design-system.colorSelect.fillType"))}
+                aria-label={fillKind.label ?? (uiMessage("design-system.colorSelect.fillType"))}
                 fullWidth={true}
-                segments={value3.options.map((input) => ({
+                segments={fillKind.options.map((option) => ({
                   ...fillModeOption(
-                    input.value,
-                    input.label,
-                    value3.disabled === true ||
-                      input.disabledReason !== undefined
+                    option.value,
+                    option.label,
+                    fillKind.disabled === true ||
+                      option.disabledReason !== undefined
                       ? true
                       : undefined,
                   ),
-                  ...(input.disabledReason !== undefined
+                  ...(option.disabledReason !== undefined
                     ? {
-                        disabledReason: input.disabledReason,
+                        disabledReason: option.disabledReason,
                       }
                     : {}),
                 }))}
-                value={value3.value}
-                onChange={(input: string) =>
-                  input !== value3.value &&
-                  !value3.disabled &&
-                  value3.onChange(input)
+                value={fillKind.value}
+                onChange={(fillValue: string) =>
+                  fillValue !== fillKind.value &&
+                  !fillKind.disabled &&
+                  fillKind.onChange(fillValue)
                 }
               />
             </PropertyRow>
-          ) : null, value4 && color !== undefined ? (
+          ) : null, showColorControls && color !== undefined ? (
             <ColorPicker {...color} />
           ) : (
             face
@@ -338,17 +338,17 @@ function SwatchPalette({
         className,
       )}
     >
-      {[value2 ? value16 : null, value7 === "system" ? (
+      {[hasSwatchTabs ? header : null, selectedTab === "system" ? (
           <div
             className={joinClassNames(
               "flex min-h-0 flex-col",
-              value2 ? "-mx-2" : "-m-2",
+              hasSwatchTabs ? "-mx-2" : "-m-2",
             )}
           >
-            {[value15, value14.length > 0 ? (
-                callback3(
-                  value14,
-                  value2
+            {[searchInput, matchingSwatches.length > 0 ? (
+                renderSwatchGroup(
+                  matchingSwatches,
+                  hasSwatchTabs
                     ? "mb-[calc(-1*var(--cs-bottom,16px))] pb-[var(--cs-bottom,16px)]"
                     : undefined,
                 )
@@ -362,8 +362,8 @@ function SwatchPalette({
               )]}
           </div>
         ) : (
-          value18
-        ), value2 ? null : value16]}
+          customColorControls
+        ), hasSwatchTabs ? null : header]}
     </div>
   );
 }
@@ -372,26 +372,26 @@ function normalizeColorSwatches(
   allowEmpty?: boolean,
   disabledReason?: React.ReactNode,
 ): Color.ColorSwatch[] {
-  let value = (swatches ?? []).map((input) =>
-    typeof input === "string"
+  let value = (swatches ?? []).map((swatch) =>
+    typeof swatch === "string"
       ? {
-          name: input,
-          color: input,
+          name: swatch,
+          color: swatch,
         }
-      : "value" in input
+      : "value" in swatch
         ? {
-            name: input.name,
-            color: input.value,
-            label: input.label,
-            group: input.group,
-            subgroup: input.subgroup,
-            ...(input.picks !== undefined
+            name: swatch.name,
+            color: swatch.value,
+            label: swatch.label,
+            group: swatch.group,
+            subgroup: swatch.subgroup,
+            ...(swatch.picks !== undefined
               ? {
-                  picks: input.picks,
+                  picks: swatch.picks,
                 }
               : {}),
           }
-        : input,
+        : swatch,
   );
   if (!allowEmpty) {
     return value;
@@ -410,7 +410,7 @@ function normalizeColorSwatches(
   return [state, ...value];
 }
 function ColorSelect({
-  value: value,
+  value: cssColor,
   unset: unset,
   opaque: opaque,
   onChange: onChange,
@@ -432,24 +432,24 @@ function ColorSelect({
         ),
       [swatches, none !== undefined, none?.disabledReason],
     ),
-    callback = (input: string) =>
+    callback = (css: string) =>
       rgbaHexColor({
-        ...parseCssColorToHsva(input),
+        ...parseCssColorToHsva(css),
         ...(opaque
           ? {
               a: 1,
             }
           : {}),
       }),
-    value2 = JSON.stringify(memo.map((input) => [input.name, input.color])),
-    memo2 = (ColorSelectReact as typeof React).useMemo(
+    swatchCacheKey = JSON.stringify(memo.map((swatch) => [swatch.name, swatch.color])),
+    normalizedSwatchColors = (ColorSelectReact as typeof React).useMemo(
       () =>
-        memo.map((input) =>
-          input.empty === true ? null : callback(input.color),
+        memo.map((swatch) =>
+          swatch.empty === true ? null : callback(swatch.color),
         ),
-      [value2, opaque],
+      [swatchCacheKey, opaque],
     ),
-    memo3 = (ColorSelectReact as typeof React).useMemo(() => {
+    selectedSwatch = (ColorSelectReact as typeof React).useMemo(() => {
       if (none?.current) {
         return emptySwatchValue;
       }
@@ -459,46 +459,46 @@ function ColorSelect({
       if (unset) {
         return null;
       }
-      let value3 = callback(value),
-        value4 = memo2.indexOf(value3);
-      if (value4 < 0) {
+      let normalizedColor = callback(cssColor),
+        matchingIndex = normalizedSwatchColors.indexOf(normalizedColor);
+      if (matchingIndex < 0) {
         return null;
       } else {
-        return memo[value4].picks ?? memo[value4].name;
+        return memo[matchingIndex].picks ?? memo[matchingIndex].name;
       }
-    }, [memo, memo2, value, unset, opaque, none?.current, current]);
+    }, [memo, normalizedSwatchColors, cssColor, unset, opaque, none?.current, current]);
   return (
     <SwatchPalette
       {...props}
       swatches={memo}
-      current={memo3}
-      onSwatch={(input: string) => {
-        if (input === emptySwatchValue) {
+      current={selectedSwatch}
+      onSwatch={(swatchName: string) => {
+        if (swatchName === emptySwatchValue) {
           return none?.onPick();
         }
         if (onSwatch !== undefined) {
-          return onSwatch(input);
+          return onSwatch(swatchName);
         }
-        let value3 = memo.find((input2) => input2.name === input);
-        if (value3 === undefined) {
+        let selectedSwatchEntry = memo.find((swatch) => swatch.name === swatchName);
+        if (selectedSwatchEntry === undefined) {
           return;
         }
-        let value4 = callback(value3.color);
-        onChange(value4);
-        onPickEnd?.(value4);
+        let nextColor = callback(selectedSwatchEntry.color);
+        onChange(nextColor);
+        onPickEnd?.(nextColor);
         if (contrast !== undefined) {
           announceLiveMessage(() => {
-            let value5 = colorContrastResults(value4, contrast);
-            if (value5 === undefined) {
+            let results = colorContrastResults(nextColor, contrast);
+            if (results === undefined) {
               return null;
             } else {
-              return contrastDisplayInfo(value5).spoken;
+              return contrastDisplayInfo(results).spoken;
             }
           });
         }
       }}
       color={{
-        value: value,
+        value: cssColor,
         unset: unset,
         opaque: opaque,
         onChange: onChange,
@@ -536,11 +536,11 @@ export function installUiColorSelect(): () => void {
     symbolicColorPattern = /^\s*(var|color-mix)\(/i;
     unsafeColorPattern =
       /url\s*\(|image(-set)?\s*\(|src\s*\(|cross-fade\s*\(|element\s*\(|\\/i;
-    swatchLabel = (input) =>
-      input.label ?? input.name[0].toUpperCase() + input.name.slice(1);
-    isEmptySwatch = (input) => input.empty === true || input.name === "default";
-    swatchLabelIsColor = (input) =>
-      /^(#|rgba?\(|hsla?\()/i.test((input.label ?? input.name).trim());
+    swatchLabel = (swatch) =>
+      swatch.label ?? swatch.name[0].toUpperCase() + swatch.name.slice(1);
+    isEmptySwatch = (swatch) => swatch.empty === true || swatch.name === "default";
+    swatchLabelIsColor = (swatch) =>
+      /^(#|rgba?\(|hsla?\()/i.test((swatch.label ?? swatch.name).trim());
     emptySwatchValue = ":none";
   };
 }

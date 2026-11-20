@@ -70,34 +70,34 @@ export function installUiCheckbox(): () => void {
           onMouseDown: onMouseDown,
           ...props
         }: C.CheckboxProps,
-        options: React.ForwardedRef<HTMLElement>,
+        forwardedRef: React.ForwardedRef<HTMLElement>,
       ) => {
         let value = reactCheckbox.useId(),
-          value2 = reactCheckbox.useId(),
-          value3 =
+          descriptionId = reactCheckbox.useId(),
+          hasLabel =
             label !== null &&
             label !== undefined &&
             typeof label !== "boolean" &&
             label !== "",
-          value4 = value3 && !!description,
-          [value5, value6] = reactCheckbox.useState(
+          hasDescription = hasLabel && !!description,
+          [previousIndeterminate, setPreviousIndeterminate] = reactCheckbox.useState(
             props.indeterminate ?? false,
           ),
-          value7 =
-            props.indeterminate === true || (props.checked === false && value5);
-        if (value7 !== value5) {
-          value6(value7);
+          isIndeterminate =
+            props.indeterminate === true || (props.checked === false && previousIndeterminate);
+        if (isIndeterminate !== previousIndeterminate) {
+          setPreviousIndeterminate(isIndeterminate);
         }
-        let value8 = (
+        let checkbox = (
           <baseCheckbox.Root
-            ref={options}
+            ref={forwardedRef}
             data-cds={"Checkbox"}
             aria-labelledby={
               ariaLabelledby ||
-              (value4 && !props["aria-label"] ? value : undefined)
+              (hasDescription && !props["aria-label"] ? value : undefined)
             }
             aria-describedby={
-              [ariaDescribedby, value4 ? value2 : undefined]
+              [ariaDescribedby, hasDescription ? descriptionId : undefined]
                 .filter(Boolean)
                 .join(" ") || undefined
             }
@@ -113,7 +113,7 @@ export function installUiCheckbox(): () => void {
             className={cn(
               "cds-reset group/cb border-0 outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled",
               CONTROL_LABEL_CLASS,
-              value3 ? "items-start" : "items-center",
+              hasLabel ? "items-start" : "items-center",
               size === "xxs" &&
                 "[--cds-checkbox:var(--cds-checkbox-xxs)] [--cds-checkbox-radius:var(--cds-checkbox-xxs-radius)] [--cds-checkbox-glyph:var(--cds-checkbox-xxs-glyph)]",
               className,
@@ -122,7 +122,7 @@ export function installUiCheckbox(): () => void {
             {[<span
                 className={clsx(
                   CHECKBOX_INDICATOR_CLASS,
-                  value3 && "mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]",
+                  hasLabel && "mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]",
                 )}
               >
                 <span
@@ -130,13 +130,13 @@ export function installUiCheckbox(): () => void {
                     "text-on-accent [clip-path:inset(0_100%_0_0)] transition-[clip-path] duration-snap ease-out motion-reduce:transition-none group-data-[checked]/cb:[clip-path:inset(0)] group-data-[checked]/cb:duration-base group-data-[indeterminate]/cb:[clip-path:inset(0)] group-data-[indeterminate]/cb:duration-base"
                   }
                 >
-                  <CheckboxGlyph indeterminate={value7} />
+                  <CheckboxGlyph indeterminate={isIndeterminate} />
                 </span>
-              </span>, value3 &&
-                (value4 ? (
+              </span>, hasLabel &&
+                (hasDescription ? (
                   <span className={"flex min-w-0 flex-col"}>
                     {[<span id={value}>{label}</span>, <span
-                        id={value2}
+                        id={descriptionId}
                         className={"text-footnote leading-snug text-muted"}
                       >
                         {description}
@@ -148,13 +148,13 @@ export function installUiCheckbox(): () => void {
           </baseCheckbox.Root>
         );
         if (disabledReason === undefined) {
-          return value8;
+          return checkbox;
         }
         return (
           <DisabledReasonTooltip
             reason={props.disabled ? disabledReason : undefined}
           >
-            {value8}
+            {checkbox}
           </DisabledReasonTooltip>
         );
       },
@@ -180,10 +180,10 @@ export function installUiCheckbox(): () => void {
           "aria-describedby": ariaDescribedby,
           ...props
         }: C.FieldCheckboxProps,
-        options: React.ForwardedRef<HTMLElement>,
+        forwardedRef: React.ForwardedRef<HTMLElement>,
       ) => {
         let value = reactFieldCheckbox.useId(),
-          value2 = reactFieldCheckbox.useId();
+          descriptionId = reactFieldCheckbox.useId();
         return (
           <FieldWrapper error={error} fieldClassName={fieldClassName}>
             <label
@@ -204,10 +204,10 @@ export function installUiCheckbox(): () => void {
                   )}
                 >
                   <Checkbox
-                    ref={options}
+                    ref={forwardedRef}
                     aria-labelledby={ariaLabelledby || value}
                     aria-describedby={
-                      [ariaDescribedby, description ? value2 : undefined]
+                      [ariaDescribedby, description ? descriptionId : undefined]
                         .filter(Boolean)
                         .join(" ") || undefined
                     }
@@ -221,7 +221,7 @@ export function installUiCheckbox(): () => void {
                 >
                   {[<span id={value}>{label}</span>, !!description && (
                       <span
-                        id={value2}
+                        id={descriptionId}
                         className={cn(
                           "text-footnote leading-snug text-muted",
                           props.disabled && "text-disabled",

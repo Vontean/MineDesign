@@ -23,7 +23,7 @@ import { Button } from "./buttons";
 import { asElement, useForwardedOverlayActions, useIsomorphicLayoutEffect } from "./foundation";
 import { CloseOnActivityHideProvider, cn, elevationSurfaceNames, getSurfaceClasses, layerBaseContext, PortalRoot, useDefaultOverlayLayer, useMergedRefs, useTranslation } from "./interactions";
 import { OVERLAY_ATTRIBUTE, useOverlayFinalFocus, usePortalContainer } from "./overlays";
-import { reactForUiTooltips2, useDialogVisualKeyboard } from "./tooltips";
+import { reactForUiTooltips2 as reactDialog, useDialogVisualKeyboard } from "./tooltips";
 
 var dialogSurfaceClasses: string;
 var dialogMaximumHeightClasses: string;
@@ -128,14 +128,14 @@ function preserveDialogBackdropFocus(
     return;
   }
   claudeActivityBridge?.abort();
-  let value2 = new (ownerDocument.defaultView?.AbortController ??
+  let bridgeAbortController = new (ownerDocument.defaultView?.AbortController ??
     AbortController)();
-  claudeActivityBridge = value2;
-  let { signal: value3 } = value2;
-  value3.addEventListener(
+  claudeActivityBridge = bridgeAbortController;
+  let { signal: signal } = bridgeAbortController;
+  signal.addEventListener(
     "abort",
     () => {
-      if (claudeActivityBridge === value2) {
+      if (claudeActivityBridge === bridgeAbortController) {
         claudeActivityBridge = null;
       }
     },
@@ -143,17 +143,17 @@ function preserveDialogBackdropFocus(
       once: true,
     },
   );
-  ownerDocument.addEventListener("mousedown", () => value2.abort(), {
+  ownerDocument.addEventListener("mousedown", () => bridgeAbortController.abort(), {
     capture: true,
     once: true,
-    signal: value3,
+    signal: signal,
   });
   ownerDocument.addEventListener(
     "mouseup",
-    (event2: MouseEvent) => {
-      value2.abort();
+    (mouseEvent: MouseEvent) => {
+      bridgeAbortController.abort();
       if (
-        event2.target !== currentTarget &&
+        mouseEvent.target !== currentTarget &&
         ownerDocument.activeElement === ownerDocument.body &&
         value.isConnected
       ) {
@@ -165,7 +165,7 @@ function preserveDialogBackdropFocus(
     {
       capture: true,
       once: true,
-      signal: value3,
+      signal: signal,
     },
   );
 }
@@ -180,58 +180,58 @@ function DesktopWindowDragStrip(): React.ReactElement {
     />
   );
 }
-function useDialogStyleDebug(input?: string): void {
-  reactForUiTooltips2.useEffect(() => {
+function useDialogStyleDebug(className?: string): void {
+  reactDialog.useEffect(() => {
     return;
-  }, [input]);
+  }, [className]);
 }
 function useDialogInitialFocus(
-  input: React.RefObject<HTMLElement | null>,
-  options: boolean,
-  context: React.RefObject<HTMLElement | null>,
-  value: React.RefObject<boolean>,
-  extra: React.RefObject<boolean>,
-  detail: () => HTMLElement | null,
+  popupRef: React.RefObject<HTMLElement | null>,
+  focusVisible: boolean,
+  protectedFocusRef: React.RefObject<HTMLElement | null>,
+  openRef: React.RefObject<boolean>,
+  hadUserInteractionRef: React.RefObject<boolean>,
+  getFocusTarget: () => HTMLElement | null,
 ): () => HTMLElement | null {
-  let ref = reactForUiTooltips2.useRef<(() => void) | null>(null);
-  reactForUiTooltips2.useEffect(() => () => ref.current?.(), []);
-  return reactForUiTooltips2.useCallback(() => {
-    let current = input.current,
-      value2 = current?.ownerDocument,
-      value3: BrowserWindow | null | undefined = value2?.defaultView;
-    if (current && value2 && value3) {
-      value3.requestAnimationFrame(() => {
-        if (!value.current || !current.isConnected) {
+  let ref = reactDialog.useRef<(() => void) | null>(null);
+  reactDialog.useEffect(() => () => ref.current?.(), []);
+  return reactDialog.useCallback(() => {
+    let current = popupRef.current,
+      ownerDocument = current?.ownerDocument,
+      ownerWindow: BrowserWindow | null | undefined = ownerDocument?.defaultView;
+    if (current && ownerDocument && ownerWindow) {
+      ownerWindow.requestAnimationFrame(() => {
+        if (!openRef.current || !current.isConnected) {
           return;
         }
-        let current2 = context.current,
-          activeElement = value2.activeElement;
+        let protectedFocus = protectedFocusRef.current,
+          activeElement = ownerDocument.activeElement;
         if (
-          current2 &&
+          protectedFocus &&
           activeElement &&
           activeElement !== current &&
-          current2.contains(activeElement)
+          protectedFocus.contains(activeElement)
         ) {
           return;
         }
         current.focus({
           preventScroll: true,
-          focusVisible: options,
+          focusVisible: focusVisible,
         } as FocusOptionsWithVisibility);
       });
       let index = 0,
         flag = false,
         callback = (event: FocusEvent) => {
-          let current2 = context.current,
+          let protectedFocus = protectedFocusRef.current,
             target = event.target;
           if (
             flag ||
-            !value.current ||
-            extra.current ||
+            !openRef.current ||
+            hadUserInteractionRef.current ||
             index >= 3 ||
-            !current2 ||
-            !(target instanceof value3.Element) ||
-            current2.contains(target)
+            !protectedFocus ||
+            !(target instanceof ownerWindow.Element) ||
+            protectedFocus.contains(target)
           ) {
             return;
           }
@@ -240,33 +240,33 @@ function useDialogInitialFocus(
             return;
           }
           index += 1;
-          value3.requestAnimationFrame(() => {
-            let value5 = detail();
+          ownerWindow.requestAnimationFrame(() => {
+            let focusTarget = getFocusTarget();
             if (
-              !value.current ||
-              extra.current ||
-              !value5?.isConnected ||
-              (value5 instanceof value3.HTMLButtonElement && value5.disabled)
+              !openRef.current ||
+              hadUserInteractionRef.current ||
+              !focusTarget?.isConnected ||
+              (focusTarget instanceof ownerWindow.HTMLButtonElement && focusTarget.disabled)
             ) {
               return;
             }
-            value5.focus({
+            focusTarget.focus({
               preventScroll: true,
-              focusVisible: value5 !== context.current,
+              focusVisible: focusTarget !== protectedFocusRef.current,
             } as FocusOptionsWithVisibility);
           });
         };
       ref.current?.();
-      value2.addEventListener("focusin", callback, true);
-      let value4 = value3.setTimeout(() => ref.current?.(), 1000);
+      ownerDocument.addEventListener("focusin", callback, true);
+      let cleanupTimeout = ownerWindow.setTimeout(() => ref.current?.(), 1000);
       ref.current = () => {
-        value3.clearTimeout(value4);
-        value2.removeEventListener("focusin", callback, true);
+        ownerWindow.clearTimeout(cleanupTimeout);
+        ownerDocument.removeEventListener("focusin", callback, true);
         ref.current = null;
       };
     }
     return current;
-  }, [input, options, context, value, extra, detail]);
+  }, [popupRef, focusVisible, protectedFocusRef, openRef, hadUserInteractionRef, getFocusTarget]);
 }
 function DialogCloseButton({
   "aria-label": ariaLabel,
@@ -306,7 +306,7 @@ function DialogHeader({
   children: children,
 }: DialogHeaderProps): React.ReactElement {
   useUiLocale();
-  let value = reactForUiTooltips2.useContext(
+  let value = reactDialog.useContext(
     confirmationDialogContext,
   );
   return (
@@ -363,11 +363,11 @@ function DialogRoot<Payload = void>({
   ...props
 }: DialogRootProps<Payload>): React.ReactElement {
   useUiLocale();
-  let ref = reactForUiTooltips2.useRef<HTMLButtonElement | null>(
+  let ref = reactDialog.useRef<HTMLButtonElement | null>(
       null,
     ),
-    ref2 = reactForUiTooltips2.useRef<OverlayActions | null>(null);
-  useForwardedOverlayActions(ref2, actionsRef);
+    dialogActionsRef = reactDialog.useRef<OverlayActions | null>(null);
+  useForwardedOverlayActions(dialogActionsRef, actionsRef);
   let value =
     disablePointerDismissal ?? (dismissible === false ? true : undefined);
   return (
@@ -375,10 +375,10 @@ function DialogRoot<Payload = void>({
       <dialogStateContext.Provider value={props.modal}>
         <dialogTriggerRefContext.Provider value={ref}>
           <dialogInitialFocusContext.Provider value={!value}>
-            <CloseOnActivityHideProvider actionsRef={ref2}>
+            <CloseOnActivityHideProvider actionsRef={dialogActionsRef}>
               <baseAlertDialog.Root
                 disablePointerDismissal={value}
-                actionsRef={ref2}
+                actionsRef={dialogActionsRef}
                 {...(props as import("@base-ui/react/alert-dialog").AlertDialog.Root.Props<Payload>)}
               />
             </CloseOnActivityHideProvider>
@@ -393,7 +393,7 @@ function AlertDialogRoot<Payload = void>({
   ...props
 }: AlertDialogRootProps<Payload>): React.ReactElement {
   useUiLocale();
-  let ref = reactForUiTooltips2.useRef<OverlayActions | null>(null);
+  let ref = reactDialog.useRef<OverlayActions | null>(null);
   useForwardedOverlayActions(ref, actionsRef);
   return (
     <confirmationDialogContext.Provider value={true}>
@@ -427,93 +427,93 @@ function ConfirmationDialog({
 }: ConfirmationDialogProps): React.ReactElement {
   useUiLocale();
   let value = useTranslation("confirm", "Confirm"),
-    value2 = useTranslation("cancel", "Cancel"),
-    value3 = confirmLabel ?? value,
-    value4 = cancelLabel ?? value2,
-    [value5, value6] = reactForUiTooltips2.useState(false),
-    ref = reactForUiTooltips2.useRef<HTMLButtonElement | null>(null),
-    ref2 = reactForUiTooltips2.useRef<HTMLButtonElement | null>(null),
-    { finalFocus: value7, popupRef: value8 } = useOverlayFinalFocus(open),
+    defaultCancelLabel = useTranslation("cancel", "Cancel"),
+    resolvedConfirmLabel = confirmLabel ?? value,
+    resolvedCancelLabel = cancelLabel ?? defaultCancelLabel,
+    [isConfirming, setIsConfirming] = reactDialog.useState(false),
+    ref = reactDialog.useRef<HTMLButtonElement | null>(null),
+    confirmButtonRef = reactDialog.useRef<HTMLButtonElement | null>(null),
+    { finalFocus: finalFocus, popupRef: popupRef } = useOverlayFinalFocus(open),
     callback = (): ConfirmationFocus =>
       initialFocus === "cancel" ? "cancel" : disabled ? "pending" : "confirm",
-    [value9, value10] = reactForUiTooltips2.useState(callback),
-    ref3 = reactForUiTooltips2.useRef(value9);
+    [focusPreference, setFocusPreference] = reactDialog.useState(callback),
+    focusPreferenceRef = reactDialog.useRef(focusPreference);
   useIsomorphicLayoutEffect(() => {
-    ref3.current = value9;
-  }, [value9]);
-  let callback2 = reactForUiTooltips2.useCallback(() => {
-      switch (ref3.current) {
+    focusPreferenceRef.current = focusPreference;
+  }, [focusPreference]);
+  let getFocusTarget = reactDialog.useCallback(() => {
+      switch (focusPreferenceRef.current) {
         case "confirm":
-          return ref2.current;
+          return confirmButtonRef.current;
         case "cancel":
           return ref.current;
         default:
-          return value8.current;
+          return popupRef.current;
       }
-    }, [value8]),
-    ref4 = reactForUiTooltips2.useRef(false),
-    callback3 = reactForUiTooltips2.useCallback(() => {
-      ref4.current = true;
+    }, [popupRef]),
+    hadUserInteractionRef = reactDialog.useRef(false),
+    recordInteraction = reactDialog.useCallback(() => {
+      hadUserInteractionRef.current = true;
     }, []);
   useIsomorphicLayoutEffect(() => {
     if (open) {
-      ref4.current = false;
-      value10(callback());
+      hadUserInteractionRef.current = false;
+      setFocusPreference(callback());
     }
   }, [open]);
-  let callback4 = reactForUiTooltips2.useCallback(
-    (input: ConfirmationFocus): void => {
-      value10(input);
-      let value15 = input === "confirm" ? ref2.current : ref.current,
-        current = value8.current;
-      if (!value15 || !current) {
+  let updateFocus = reactDialog.useCallback(
+    (nextFocus: ConfirmationFocus): void => {
+      setFocusPreference(nextFocus);
+      let focusButton = nextFocus === "confirm" ? confirmButtonRef.current : ref.current,
+        current = popupRef.current;
+      if (!focusButton || !current) {
         return;
       }
-      let activeElement = value15.ownerDocument.activeElement,
-        value16 =
+      let activeElement = focusButton.ownerDocument.activeElement,
+        focusIsUnassigned =
           !activeElement ||
           activeElement === current ||
-          activeElement === value15.ownerDocument.body ||
+          activeElement === focusButton.ownerDocument.body ||
           (!current.contains(activeElement) &&
             activeElement.closest(DIALOG_HIDDEN_SELECTOR) !== null),
-        value17 =
-          activeElement === ref.current || activeElement === ref2.current;
-      if (value16 || (value17 && !ref4.current)) {
-        value15.focus({
+        focusOnAction =
+          activeElement === ref.current || activeElement === confirmButtonRef.current;
+      if (focusIsUnassigned || (focusOnAction && !hadUserInteractionRef.current)) {
+        focusButton.focus({
           preventScroll: true,
           focusVisible: true,
         } as FocusOptionsWithVisibility);
       }
     },
-    [value8],
+    [popupRef],
   );
-  reactForUiTooltips2.useEffect(() => {
-    if (!open || value9 !== "pending") {
+  reactDialog.useEffect(() => {
+    if (!open || focusPreference !== "pending") {
       return;
     }
     if (!disabled) {
-      let value16 = requestAnimationFrame(() => callback4("confirm"));
-      return () => cancelAnimationFrame(value16);
+      let confirmationFocusFrame = requestAnimationFrame(() => updateFocus("confirm"));
+      return () => cancelAnimationFrame(confirmationFocusFrame);
     }
-    let value15 = setTimeout(
-      () => callback4("cancel"),
+    let cancelFocusTimeout = setTimeout(
+      () => updateFocus("cancel"),
       DIALOG_AUTOFILL_WAIT_MS,
     );
-    return () => clearTimeout(value15);
-  }, [disabled, value9, callback4, open]);
-  let ref5 = reactForUiTooltips2.useRef(open);
+    return () => clearTimeout(cancelFocusTimeout);
+  }, [disabled, focusPreference, updateFocus, open]);
+  let openRef = reactDialog.useRef(open);
   useIsomorphicLayoutEffect(() => {
-    ref5.current = open;
+    openRef.current = open;
   }, [open]);
-  let value11 = useDialogInitialFocus(
-      value9 === "confirm" ? ref2 : value9 === "cancel" ? ref : value8,
-      value9 !== "pending",
-      value8,
-      ref5,
-      ref4,
-      callback2,
+  let dialogInitialFocus = useDialogInitialFocus(
+      focusPreference === "confirm" ? confirmButtonRef : focusPreference === "cancel" ? ref : popupRef,
+      focusPreference !== "pending",
+      popupRef,
+      openRef,
+      hadUserInteractionRef,
+      getFocusTarget,
     ),
-    callback5 = reactForUiTooltips2.useCallback(
+    handleConfirmKeyDown = reactDialog.useCallback(
       (event: React.KeyboardEvent<HTMLButtonElement>): void => {
         if (event.repeat && (event.key === "Enter" || event.key === " ")) {
           event.preventDefault();
@@ -521,82 +521,82 @@ function ConfirmationDialog({
       },
       [],
     ),
-    ref6 = reactForUiTooltips2.useRef(false);
-  reactForUiTooltips2.useEffect(() => {
+    confirmStartedRef = reactDialog.useRef(false);
+  reactDialog.useEffect(() => {
     if (open) {
-      ref6.current = false;
+      confirmStartedRef.current = false;
     }
   }, [open]);
-  let value12 = usePortalContainer(),
-    callback6 = reactForUiTooltips2.useCallback(() => {
-      if (value5 || disabled || !open || ref6.current) {
+  let portalContainer = usePortalContainer(),
+    handleConfirm = reactDialog.useCallback(() => {
+      if (isConfirming || disabled || !open || confirmStartedRef.current) {
         return;
       }
       if (closeOnConfirm) {
-        ref6.current = true;
+        confirmStartedRef.current = true;
       } else {
-        value6(true);
+        setIsConfirming(true);
       }
-      let value15: Promise<void>;
+      let confirmation: Promise<void>;
       try {
-        value15 = Promise.resolve(onConfirm());
-      } catch (value16: unknown) {
-        value15 = Promise.reject(value16);
+        confirmation = Promise.resolve(onConfirm());
+      } catch (error: unknown) {
+        confirmation = Promise.reject(error);
       }
       if (closeOnConfirm) {
         onOpenChange(false, {
           reason: "confirm",
         });
       }
-      value15.finally(() => {
+      confirmation.finally(() => {
         if (!closeOnConfirm) {
-          value6(false);
+          setIsConfirming(false);
         }
       });
-    }, [value5, closeOnConfirm, disabled, onConfirm, onOpenChange, open]),
-    callback7 = reactForUiTooltips2.useCallback(
-      (input: boolean): void => {
-        if (value5 || !open) {
+    }, [isConfirming, closeOnConfirm, disabled, onConfirm, onOpenChange, open]),
+    handleOpenChange = reactDialog.useCallback(
+      (nextOpen: boolean): void => {
+        if (isConfirming || !open) {
           return;
         }
-        onOpenChange(input, {
+        onOpenChange(nextOpen, {
           reason: "dismiss",
         });
       },
-      [value5, onOpenChange, open],
+      [isConfirming, onOpenChange, open],
     ),
-    value13 = useDefaultOverlayLayer("modal");
+    overlayLayer = useDefaultOverlayLayer("modal");
   useDialogStyleDebug(portalClassName);
-  let ref7 = reactForUiTooltips2.useRef<OverlayActions | null>(null),
-    value14 = (
+  let dialogActionsRef = reactDialog.useRef<OverlayActions | null>(null),
+    closeButton = (
       <Button
-        ref={ref2}
+        ref={confirmButtonRef}
         variant={confirmVariant}
-        busy={value5}
+        busy={isConfirming}
         disabled={disabled}
         disabledReason={confirmDisabledReason}
-        data-initial-focus={value9 === "confirm" ? "" : undefined}
-        onClick={callback6}
-        onKeyDown={callback5}
+        data-initial-focus={focusPreference === "confirm" ? "" : undefined}
+        onClick={handleConfirm}
+        onKeyDown={handleConfirmKeyDown}
       >
-        {value3}
+        {resolvedConfirmLabel}
       </Button>
     );
   return (
-    <CloseOnActivityHideProvider actionsRef={ref7}>
+    <CloseOnActivityHideProvider actionsRef={dialogActionsRef}>
       <baseDialog.Root
         open={open}
-        onOpenChange={callback7}
-        actionsRef={ref7}
+        onOpenChange={handleOpenChange}
+        actionsRef={dialogActionsRef}
       >
-        <baseDialog.Portal container={(value12) as import("../contracts/overlays").BaseUIPortalContainer}>
+        <baseDialog.Portal container={(portalContainer) as import("../contracts/overlays").BaseUIPortalContainer}>
           <PortalRoot
             className={cn("relative", portalClassName)}
-            style={value13.style}
+            style={overlayLayer.style}
             surface={elevationSurfaceNames.popover}
             closeOnActivityHide={true}
           >
-            <layerBaseContext.Provider value={value13.base}>
+            <layerBaseContext.Provider value={overlayLayer.base}>
               {[<baseDialog.Backdrop
                   forceRender={true}
                   onMouseDown={preventDialogBackdropDefault}
@@ -606,11 +606,11 @@ function ConfirmationDialog({
                   )}
                 />, <DesktopWindowDragStrip />, <ConfirmationDialogPopupInner
                   data-cds={"ConfirmationDialog"}
-                  ref={value8 as React.Ref<HTMLDivElement>}
-                  onKeyDownCapture={callback3}
-                  onPointerDownCapture={callback3}
-                  initialFocus={value11}
-                  finalFocus={value7 as import("../contracts/overlays").BaseUIPopupFocus}
+                  ref={popupRef as React.Ref<HTMLDivElement>}
+                  onKeyDownCapture={recordInteraction}
+                  onPointerDownCapture={recordInteraction}
+                  initialFocus={dialogInitialFocus}
+                  finalFocus={finalFocus as import("../contracts/overlays").BaseUIPopupFocus}
                   className={cn(
                     "draggable-none",
                     nestedDialogOverlayClasses,
@@ -642,15 +642,15 @@ function ConfirmationDialog({
                               <Button
                                 ref={ref}
                                 variant={"secondary"}
-                                disabled={value5}
+                                disabled={isConfirming}
                                 data-initial-focus={
-                                  value9 === "cancel" ? "" : undefined
+                                  focusPreference === "cancel" ? "" : undefined
                                 }
                               >
-                                {value4}
+                                {resolvedCancelLabel}
                               </Button>
                             }
-                          />, value14]}
+                          />, closeButton]}
                       </DialogFooter>]}
                   </div>
                 </ConfirmationDialogPopupInner>]}
@@ -738,39 +738,39 @@ export function installUiDialog(): () => void {
       "3xl": "max-w-[1152px]",
     };
     dialogZIndexClassPattern = /(^|\s)!?-?z-/;
-    dialogStateContext = reactForUiTooltips2.createContext<
+    dialogStateContext = reactDialog.createContext<
       boolean | "trap-focus" | undefined
     >(undefined);
     confirmationDialogContext =
-      reactForUiTooltips2.createContext(false);
+      reactDialog.createContext(false);
     dialogTitleClasses = "text-heading font-medium break-words";
     largeDialogTitleClasses = "text-title font-semibold break-words";
     dialogDescriptionSmallSpacing = "-mt-0.5";
     dialogDescriptionLargeSpacing = "-mt-1";
     dialogDescriptionClasses =
       "mt-1 text-body font-normal text-secondary break-words";
-    dialogTriggerRefContext = reactForUiTooltips2.createContext<
+    dialogTriggerRefContext = reactDialog.createContext<
       React.RefObject<HTMLButtonElement | null> | undefined
     >(undefined);
     dialogInitialFocusContext =
-      reactForUiTooltips2.createContext(false);
-    DialogTrigger = reactForUiTooltips2.forwardRef(
+      reactDialog.createContext(false);
+    DialogTrigger = reactDialog.forwardRef(
       (
-        input: import("@base-ui/react/dialog").Dialog.Trigger.Props<void>,
-        options: React.ForwardedRef<HTMLButtonElement>,
+        triggerProps: import("@base-ui/react/dialog").Dialog.Trigger.Props<void>,
+        forwardedRef: React.ForwardedRef<HTMLButtonElement>,
       ): React.ReactElement => {
-        let value = reactForUiTooltips2.useContext(
+        let value = reactDialog.useContext(
             dialogTriggerRefContext,
           ),
-          value2 = input.handle ? null : (value ?? null),
-          value3 = useMergedRefs(options, value2);
-        return <baseAlertDialog.Trigger ref={value3} {...(input as import("@base-ui/react/alert-dialog").AlertDialog.Trigger.Props<void>)} />;
+          triggerRef = triggerProps.handle ? null : (value ?? null),
+          mergedRef = useMergedRefs(forwardedRef, triggerRef);
+        return <baseAlertDialog.Trigger ref={mergedRef} {...(triggerProps as import("@base-ui/react/alert-dialog").AlertDialog.Trigger.Props<void>)} />;
       },
     );
     DialogTrigger.displayName = "Dialog.Trigger";
     DIALOG_AUTOFILL_WAIT_MS = 250;
     DIALOG_HIDDEN_SELECTOR = '[aria-hidden="true"], [inert]';
-    DialogPopupInner = reactForUiTooltips2.forwardRef(
+    DialogPopupInner = reactDialog.forwardRef(
       (
         {
           finalFocus: finalFocus,
@@ -778,22 +778,22 @@ export function installUiDialog(): () => void {
           children: children,
           ...props
         }: DialogPopupInnerProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
-        let value = reactForUiTooltips2.useContext(dialogStateContext),
-          value2 = reactForUiTooltips2.useContext(
+        let value = reactDialog.useContext(dialogStateContext),
+          triggerRef = reactDialog.useContext(
             dialogTriggerRefContext,
           ),
-          { finalFocus: value3, popupRef: value4 } = useOverlayFinalFocus(true, value !== false, value2),
-          value5 = useDialogVisualKeyboard(fitVisualViewport),
-          value6 = useMergedRefs(options, value4, value5);
+          { finalFocus: returnFocus, popupRef: popupRef } = useOverlayFinalFocus(true, value !== false, triggerRef),
+          keyboardRef = useDialogVisualKeyboard(fitVisualViewport),
+          mergedRef = useMergedRefs(forwardedRef, popupRef, keyboardRef);
         return (
           <baseAlertDialog.Popup
             {...{
               [OVERLAY_ATTRIBUTE]: "",
             }}
-            ref={value6}
-            finalFocus={(finalFocus ?? value3) as import("../contracts/overlays").BaseUIPopupFocus}
+            ref={mergedRef}
+            finalFocus={(finalFocus ?? returnFocus) as import("../contracts/overlays").BaseUIPopupFocus}
             aria-modal={value === false ? "false" : undefined}
             {...props}
           >
@@ -803,22 +803,22 @@ export function installUiDialog(): () => void {
       },
     );
     DialogPopupInner.displayName = "Dialog.PopupInner";
-    ConfirmationDialogPopupInner = reactForUiTooltips2.forwardRef(
+    ConfirmationDialogPopupInner = reactDialog.forwardRef(
       (
         {
           children: children,
           ...props
         }: import("@base-ui/react/alert-dialog").AlertDialog.Popup.Props,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let value = useDialogVisualKeyboard(true),
-          value2 = useMergedRefs(options, value);
+          mergedRef = useMergedRefs(forwardedRef, value);
         return (
           <baseDialog.Popup
             {...{
               [OVERLAY_ATTRIBUTE]: "",
             }}
-            ref={value2}
+            ref={mergedRef}
             {...props}
           >
             {children}
@@ -827,7 +827,7 @@ export function installUiDialog(): () => void {
       },
     );
     ConfirmationDialogPopupInner.displayName = "ConfirmationDialog.PopupInner";
-    DialogPopup = reactForUiTooltips2.forwardRef(
+    DialogPopup = reactDialog.forwardRef(
       (
         {
           size = "md",
@@ -841,49 +841,49 @@ export function installUiDialog(): () => void {
           children: children,
           ...props
         }: DialogPopupProps,
-        options: React.ForwardedRef<HTMLDivElement>,
+        forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
         let value = unstyled
             ? ""
             : `${dialogFullHeightClasses} ${dialogPopupTransitionClasses} ${nestedDialogBlurClasses} ${dialogSizeClasses[size]} ${fullHeight ? "h-dvh" : ""}`,
-          value2 = useDefaultOverlayLayer("modal");
+          overlayLayer = useDefaultOverlayLayer("modal");
         useDialogStyleDebug(portalClassName);
-        let value3 = reactForUiTooltips2.useContext(dialogStateContext),
-          value4 = reactForUiTooltips2.useContext(
+        let isOpen = reactDialog.useContext(dialogStateContext),
+          keepBackdropBehind = reactDialog.useContext(
             dialogInitialFocusContext,
           ),
-          value5 = value3 === undefined || value3 === true;
+          shouldRenderBackdrop = isOpen === undefined || isOpen === true;
         return (
           <baseAlertDialog.Portal
             container={(usePortalContainer()) as import("../contracts/overlays").BaseUIPortalContainer}
           >
             <PortalRoot
               className={cn("relative", portalClassName)}
-              style={value2.style}
+              style={overlayLayer.style}
               surface={
                 surface ??
                 (unstyled ? undefined : elevationSurfaceNames.popover)
               }
               closeOnActivityHide={true}
             >
-              <layerBaseContext.Provider value={value2.base}>
+              <layerBaseContext.Provider value={overlayLayer.base}>
                 {[<baseAlertDialog.Backdrop
-                    forceRender={value5}
+                    forceRender={shouldRenderBackdrop}
                     onMouseDown={
-                      value4
+                      keepBackdropBehind
                         ? preserveDialogBackdropFocus
                         : preventDialogBackdropDefault
                     }
                     className={cn(
                       dialogBackdropClasses,
                       !unstyled && dialogStartingOpacityClass,
-                      value3 === false && "pointer-events-none opacity-0",
+                      isOpen === false && "pointer-events-none opacity-0",
                       backdropClassName,
                     )}
                     style={backdropStyle}
                   />, <DesktopWindowDragStrip />, <DialogPopupInner
                     data-cds={"Dialog"}
-                    ref={options}
+                    ref={forwardedRef}
                     {...props}
                     fitVisualViewport={!unstyled}
                     className={cn(
@@ -904,17 +904,17 @@ export function installUiDialog(): () => void {
       },
     );
     DialogPopup.displayName = "Dialog.Popup";
-    DialogTitle = reactForUiTooltips2.forwardRef(
+    DialogTitle = reactDialog.forwardRef(
       (
         { className: className, ...props }: DialogTitleProps,
-        options: React.ForwardedRef<HTMLHeadingElement>,
+        forwardedRef: React.ForwardedRef<HTMLHeadingElement>,
       ): React.ReactElement => {
-        let value = reactForUiTooltips2.useContext(
+        let value = reactDialog.useContext(
           confirmationDialogContext,
         );
         return (
           <baseAlertDialog.Title
-            ref={options}
+            ref={forwardedRef}
             {...props}
             className={cn(
               "text-primary",
@@ -937,13 +937,13 @@ export function installUiDialog(): () => void {
         displayName?: string;
       }
     ).displayName = "Dialog.Header";
-    DialogDescription = reactForUiTooltips2.forwardRef(
+    DialogDescription = reactDialog.forwardRef(
       (
         { className: className, ...props }: DialogDescriptionProps,
-        options: React.ForwardedRef<HTMLParagraphElement>,
+        forwardedRef: React.ForwardedRef<HTMLParagraphElement>,
       ): React.ReactElement => (
         <baseAlertDialog.Description
-          ref={options}
+          ref={forwardedRef}
           {...props}
           className={cn(dialogDescriptionClasses, className)}
         />

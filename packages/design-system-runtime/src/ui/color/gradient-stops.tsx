@@ -82,10 +82,10 @@ export function installUiColorGradientStops(): () => void {
                 .closest('[role="radiogroup"]')
                 ?.querySelectorAll<HTMLElement>('[role="radio"]') ?? []),
             ],
-            value2 =
+            direction =
               event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1;
           items[
-            (items.indexOf(value) + value2 + items.length) % items.length
+            (items.indexOf(value) + direction + items.length) % items.length
           ]?.focus();
         } else if (event.key === "Enter") {
           event.preventDefault();

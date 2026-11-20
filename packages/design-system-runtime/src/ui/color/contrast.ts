@@ -17,50 +17,50 @@ var RGB_GAMUT_TOLERANCE: number;
 var rgbIsInGamut: (color: number[]) => boolean;
 function parseContrastColor(text: string): Color.RgbaColor | undefined {
   let value = text.trim(),
-    value2 = CONTRAST_HEX_PATTERN.exec(value)?.[1];
-  if (value2 !== undefined) {
-    let value8 =
-        value2.length <= 4
-          ? value2.replace(/[0-9a-f]/gi, (input: string) => input + input)
-          : value2,
-      callback2 = (input: number) =>
-        parseInt(value8.slice(input * 2, input * 2 + 2), 16) / 255;
+    hexDigits = CONTRAST_HEX_PATTERN.exec(value)?.[1];
+  if (hexDigits !== undefined) {
+    let expandedHex =
+        hexDigits.length <= 4
+          ? hexDigits.replace(/[0-9a-f]/gi, (digit: string) => digit + digit)
+          : hexDigits,
+      readHexChannel = (channelIndex: number) =>
+        parseInt(expandedHex.slice(channelIndex * 2, channelIndex * 2 + 2), 16) / 255;
     return {
-      r: callback2(0),
-      g: callback2(1),
-      b: callback2(2),
-      a: value8.length === 8 ? callback2(3) : 1,
+      r: readHexChannel(0),
+      g: readHexChannel(1),
+      b: readHexChannel(2),
+      a: expandedHex.length === 8 ? readHexChannel(3) : 1,
     };
   }
-  let value3 = CONTRAST_RGB_PATTERN.exec(value);
-  if (value3 === null) {
+  let rgbMatch = CONTRAST_RGB_PATTERN.exec(value);
+  if (rgbMatch === null) {
     return;
   }
-  let callback = (input: string, options: string) =>
-      clampColorChannel_di(Number(input) / (options === "%" ? 100 : 255)),
-    value4 = callback(value3[1], value3[2]),
-    value5 = callback(value3[3], value3[4]),
-    value6 = callback(value3[5], value3[6]),
-    value7 =
-      value3[7] === undefined
+  let callback = (component: string, unit: string) =>
+      clampColorChannel_di(Number(component) / (unit === "%" ? 100 : 255)),
+    red = callback(rgbMatch[1], rgbMatch[2]),
+    green = callback(rgbMatch[3], rgbMatch[4]),
+    blue = callback(rgbMatch[5], rgbMatch[6]),
+    alpha =
+      rgbMatch[7] === undefined
         ? 1
         : clampColorChannel_di(
-            Number(value3[7]) / (value3[8] === "%" ? 100 : 1),
+            Number(rgbMatch[7]) / (rgbMatch[8] === "%" ? 100 : 1),
           );
-  if ([value4, value5, value6, value7].every(Number.isFinite)) {
+  if ([red, green, blue, alpha].every(Number.isFinite)) {
     return {
-      r: value4,
-      g: value5,
-      b: value6,
-      a: value7,
+      r: red,
+      g: green,
+      b: blue,
+      a: alpha,
     };
   } else {
     return undefined;
   }
 }
 function relativeLuminance(color: Color.RgbaColor): number {
-  let callback = (input: number) =>
-    input <= 0.03928 ? input / 12.92 : ((input + 0.055) / 1.055) ** 2.4;
+  let callback = (channel: number) =>
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   return (
     0.2126 * callback(color.r) +
     0.7152 * callback(color.g) +
@@ -71,8 +71,8 @@ function compositeContrastColor(
   foreground: Color.RgbaColor,
   background: Color.RgbaColor,
 ): Color.RgbaColor {
-  let callback = (input: number, options: number) =>
-    foreground.a * input + (1 - foreground.a) * options;
+  let callback = (foregroundChannel: number, backgroundChannel: number) =>
+    foreground.a * foregroundChannel + (1 - foreground.a) * backgroundChannel;
   return {
     r: callback(foreground.r, background.r),
     g: callback(foreground.g, background.g),
@@ -87,11 +87,11 @@ function contrastRatio(
   let value = relativeLuminance(
       compositeContrastColor(foreground, background),
     ),
-    value2 = relativeLuminance(background);
-  if (value > value2) {
-    return (value + 0.05) / (value2 + 0.05);
+    backgroundLuminance = relativeLuminance(background);
+  if (value > backgroundLuminance) {
+    return (value + 0.05) / (backgroundLuminance + 0.05);
   } else {
-    return (value2 + 0.05) / (value + 0.05);
+    return (backgroundLuminance + 0.05) / (value + 0.05);
   }
 }
 function colorContrastResults(
@@ -102,25 +102,25 @@ function colorContrastResults(
   if (value === undefined) {
     return;
   }
-  let value2 = CONTRAST_MINIMUMS[contrast.role ?? "text"],
-    value3 = Array.isArray(contrast.against)
+  let minimumRatio = CONTRAST_MINIMUMS[contrast.role ?? "text"],
+    backgrounds = Array.isArray(contrast.against)
       ? contrast.against
       : [contrast.against],
     items: Color.ContrastResult[] = [];
-  for (let value4 of value3) {
-    let value5 = parseContrastColor(value4.css);
-    if (value5 === undefined) {
+  for (let background of backgrounds) {
+    let backgroundColor = parseContrastColor(background.css);
+    if (backgroundColor === undefined) {
       continue;
     }
-    let value6 = contrastRatio(value, {
-      ...value5,
+    let ratio = contrastRatio(value, {
+      ...backgroundColor,
       a: 1,
     });
     items.push({
-      ground: value4,
-      ratio: value6,
-      min: value2,
-      passes: value6 + CONTRAST_RATIO_EPSILON >= value2,
+      ground: background,
+      ratio: ratio,
+      min: minimumRatio,
+      passes: ratio + CONTRAST_RATIO_EPSILON >= minimumRatio,
     });
   }
   if (items.length > 0) {
@@ -133,9 +133,9 @@ function worstContrastResult(
   results: Color.ContrastResult[],
 ): Color.ContrastResult {
   let value = results[0];
-  for (let value2 of results) {
-    if (value2.ratio < value.ratio) {
-      value = value2;
+  for (let result of results) {
+    if (result.ratio < value.ratio) {
+      value = result;
     }
   }
   return value;
@@ -147,8 +147,8 @@ function contrastRatioSpoken(ratio: number): string {
   return formatContrastRatio(ratio) + " to 1";
 }
 function contrastColorHex(color: Color.RgbaColor): string {
-  let callback = (input: number) =>
-    Math.round(clampColorChannel_di(input) * 255)
+  let callback = (channel: number) =>
+    Math.round(clampColorChannel_di(channel) * 255)
       .toString(16)
       .padStart(2, "0")
       .toUpperCase();
@@ -162,27 +162,27 @@ function contrastColorHex(color: Color.RgbaColor): string {
 }
 function rgbToOklch(color: Color.RgbaColor): Color.OklchColor {
   let value = srgbToLinearChannel(color.r),
-    value2 = srgbToLinearChannel(color.g),
-    value3 = srgbToLinearChannel(color.b),
-    value4 = Math.cbrt(
-      0.4122214708 * value + 0.5363325363 * value2 + 0.0514459929 * value3,
+    linearGreen = srgbToLinearChannel(color.g),
+    linearBlue = srgbToLinearChannel(color.b),
+    lmsLongRoot = Math.cbrt(
+      0.4122214708 * value + 0.5363325363 * linearGreen + 0.0514459929 * linearBlue,
     ),
-    value5 = Math.cbrt(
-      0.2119034982 * value + 0.6806995451 * value2 + 0.1073969566 * value3,
+    lmsMediumRoot = Math.cbrt(
+      0.2119034982 * value + 0.6806995451 * linearGreen + 0.1073969566 * linearBlue,
     ),
-    value6 = Math.cbrt(
-      0.0883024619 * value + 0.2817188376 * value2 + 0.6299787005 * value3,
+    lmsShortRoot = Math.cbrt(
+      0.0883024619 * value + 0.2817188376 * linearGreen + 0.6299787005 * linearBlue,
     ),
-    value7 =
-      0.2104542553 * value4 + 0.793617785 * value5 - 0.0040720468 * value6,
-    value8 =
-      1.9779984951 * value4 - 2.428592205 * value5 + 0.4505937099 * value6,
-    value9 =
-      0.0259040371 * value4 + 0.7827717662 * value5 - 0.808675766 * value6;
+    lightness =
+      0.2104542553 * lmsLongRoot + 0.793617785 * lmsMediumRoot - 0.0040720468 * lmsShortRoot,
+    oklabA =
+      1.9779984951 * lmsLongRoot - 2.428592205 * lmsMediumRoot + 0.4505937099 * lmsShortRoot,
+    oklabB =
+      0.0259040371 * lmsLongRoot + 0.7827717662 * lmsMediumRoot - 0.808675766 * lmsShortRoot;
   return {
-    l: value7,
-    c: Math.hypot(value8, value9),
-    h: Math.atan2(value9, value8),
+    l: lightness,
+    c: Math.hypot(oklabA, oklabB),
+    h: Math.atan2(oklabB, oklabA),
   };
 }
 function oklchToRgb(
@@ -191,19 +191,19 @@ function oklchToRgb(
   hue: number,
 ): [number, number, number] {
   let value = chroma * Math.cos(hue),
-    value2 = chroma * Math.sin(hue),
-    value3 = (lightness + 0.3963377774 * value + 0.2158037573 * value2) ** 3,
-    value4 = (lightness - 0.1055613458 * value - 0.0638541728 * value2) ** 3,
-    value5 = (lightness - 0.0894841775 * value - 1.291485548 * value2) ** 3;
+    oklabB = chroma * Math.sin(hue),
+    lmsLong = (lightness + 0.3963377774 * value + 0.2158037573 * oklabB) ** 3,
+    lmsMedium = (lightness - 0.1055613458 * value - 0.0638541728 * oklabB) ** 3,
+    lmsShort = (lightness - 0.0894841775 * value - 1.291485548 * oklabB) ** 3;
   return [
     linearToSrgbChannel(
-      4.0767416621 * value3 - 3.3077115913 * value4 + 0.2309699292 * value5,
+      4.0767416621 * lmsLong - 3.3077115913 * lmsMedium + 0.2309699292 * lmsShort,
     ),
     linearToSrgbChannel(
-      -1.2684380046 * value3 + 2.6097574011 * value4 - 0.3413193965 * value5,
+      -1.2684380046 * lmsLong + 2.6097574011 * lmsMedium - 0.3413193965 * lmsShort,
     ),
     linearToSrgbChannel(
-      -0.0041960863 * value3 - 0.7034186147 * value4 + 1.707614701 * value5,
+      -0.0041960863 * lmsLong - 0.7034186147 * lmsMedium + 1.707614701 * lmsShort,
     ),
   ];
 }
@@ -216,23 +216,23 @@ function clippedOklchColor(
   let index = 0,
     value = chroma;
   if (!rgbIsInGamut(oklchToRgb(lightness, chroma, hue))) {
-    for (let index2 = 0; index2 < 18; index2++) {
-      let value5 = (index + value) / 2;
-      if (rgbIsInGamut(oklchToRgb(lightness, value5, hue))) {
-        index = value5;
+    for (let iteration = 0; iteration < 18; iteration++) {
+      let candidateChroma = (index + value) / 2;
+      if (rgbIsInGamut(oklchToRgb(lightness, candidateChroma, hue))) {
+        index = candidateChroma;
       } else {
-        value = value5;
+        value = candidateChroma;
       }
     }
     value = index;
   }
-  let [value2, value3, value4] = oklchToRgb(lightness, value, hue),
-    callback = (input: number) =>
-      Math.round(clampColorChannel_di(input) * 255) / 255;
+  let [red, green, blue] = oklchToRgb(lightness, value, hue),
+    callback = (channel: number) =>
+      Math.round(clampColorChannel_di(channel) * 255) / 255;
   return {
-    r: callback(value2),
-    g: callback(value3),
-    b: callback(value4),
+    r: callback(red),
+    g: callback(green),
+    b: callback(blue),
     a: callback(alpha),
   };
 }
@@ -245,15 +245,15 @@ function contrastColorFix(
     return;
   }
   let callback = (
-    input: Color.RgbaColor,
+    candidateColor: Color.RgbaColor,
   ): Color.ContrastVerdict | undefined => {
-    let value7 = colorContrastResults(input, contrast);
-    if (value7 === undefined) {
+    let results = colorContrastResults(candidateColor, contrast);
+    if (results === undefined) {
       return undefined;
     } else {
       return {
-        passes: value7.every((input2) => input2.passes),
-        worst: worstContrastResult(value7),
+        passes: results.every((result) => result.passes),
+        worst: worstContrastResult(results),
       };
     }
   };
@@ -261,72 +261,72 @@ function contrastColorFix(
     return;
   }
   let { l: l5, c: c, h: h } = rgbToOklch(value),
-    value2 = c < 0.0001 ? 0 : c,
+    adjustedChroma = c < 0.0001 ? 0 : c,
     count = 0.00390625,
-    value3 =
+    hasContrastRequirements =
       (Array.isArray(contrast.against) ? contrast.against.length : 1) === 1,
-    callback2 = (input: number): Color.ContrastFixCandidate | undefined => {
+    searchTowardsLightness = (targetLightness: number): Color.ContrastFixCandidate | undefined => {
       if (
-        value3 &&
-        callback(clippedOklchColor(input, value2, h, value.a))?.passes !==
+        hasContrastRequirements &&
+        callback(clippedOklchColor(targetLightness, adjustedChroma, h, value.a))?.passes !==
           true
       ) {
         return;
       }
-      let value7 = l5;
-      for (let value8 = l5; value8 !== input; ) {
-        value7 = value8;
-        value8 =
-          Math.abs(input - value8) <= count
-            ? input
-            : value8 + Math.sign(input - l5) * count;
-        let value9 = clippedOklchColor(value8, value2, h, value.a),
-          value10 = callback(value9);
-        if (value10?.passes !== true) {
+      let failingLightness = l5;
+      for (let candidateLightness = l5; candidateLightness !== targetLightness; ) {
+        failingLightness = candidateLightness;
+        candidateLightness =
+          Math.abs(targetLightness - candidateLightness) <= count
+            ? targetLightness
+            : candidateLightness + Math.sign(targetLightness - l5) * count;
+        let passingColor = clippedOklchColor(candidateLightness, adjustedChroma, h, value.a),
+          passingResults = callback(passingColor);
+        if (passingResults?.passes !== true) {
           continue;
         }
         for (let index = 0; index < 12; index++) {
-          let value11 = (value7 + value8) / 2,
-            value12 = clippedOklchColor(value11, value2, h, value.a),
-            value13 = callback(value12);
-          if (value13?.passes === true) {
-            value8 = value11;
-            value9 = value12;
-            value10 = value13;
+          let midpointLightness = (failingLightness + candidateLightness) / 2,
+            midpointColor = clippedOklchColor(midpointLightness, adjustedChroma, h, value.a),
+            midpointResults = callback(midpointColor);
+          if (midpointResults?.passes === true) {
+            candidateLightness = midpointLightness;
+            passingColor = midpointColor;
+            passingResults = midpointResults;
           } else {
-            value7 = value11;
+            failingLightness = midpointLightness;
           }
         }
         return {
-          rgba: value9,
-          worst: value10.worst,
-          moved: Math.abs(rgbToOklch(value9).l - l5),
+          rgba: passingColor,
+          worst: passingResults.worst,
+          moved: Math.abs(rgbToOklch(passingColor).l - l5),
         };
       }
       return;
     },
-    value4 = callback2(1),
-    value5 = callback2(0),
-    value6 =
-      value4 === undefined
-        ? value5
-        : value5 === undefined
-          ? value4
-          : Math.abs(value4.moved - value5.moved) > 0.001
-            ? value4.moved < value5.moved
-              ? value4
-              : value5
-            : value4.worst.ratio >= value5.worst.ratio
-              ? value4
-              : value5;
-  if (value6 === undefined) {
+    lighterCandidate = searchTowardsLightness(1),
+    darkerCandidate = searchTowardsLightness(0),
+    preferredCandidate =
+      lighterCandidate === undefined
+        ? darkerCandidate
+        : darkerCandidate === undefined
+          ? lighterCandidate
+          : Math.abs(lighterCandidate.moved - darkerCandidate.moved) > 0.001
+            ? lighterCandidate.moved < darkerCandidate.moved
+              ? lighterCandidate
+              : darkerCandidate
+            : lighterCandidate.worst.ratio >= darkerCandidate.worst.ratio
+              ? lighterCandidate
+              : darkerCandidate;
+  if (preferredCandidate === undefined) {
     return undefined;
   } else {
     return {
-      rgba: value6.rgba,
-      css: contrastColorHex(value6.rgba),
-      ground: value6.worst.ground,
-      ratio: value6.worst.ratio,
+      rgba: preferredCandidate.rgba,
+      css: contrastColorHex(preferredCandidate.rgba),
+      ground: preferredCandidate.worst.ground,
+      ratio: preferredCandidate.worst.ratio,
     };
   }
 }
@@ -385,8 +385,8 @@ export function installUiColorContrast(): () => void {
     RGB_GAMUT_TOLERANCE = 0.001953125;
     rgbIsInGamut = (color) =>
       color.every(
-        (input: number) =>
-          input >= -RGB_GAMUT_TOLERANCE && input <= 1 + RGB_GAMUT_TOLERANCE,
+        (channel: number) =>
+          channel >= -RGB_GAMUT_TOLERANCE && channel <= 1 + RGB_GAMUT_TOLERANCE,
       );
   };
 }
