@@ -32,28 +32,28 @@ function AssetContextMenu({
 }: Editor.AssetContextMenuProps): React.ReactElement {
   useUiLocale();
   let value = items.length === 1 ? items[0] : undefined,
-    value2: string | undefined =
+    disabledReason: string | undefined =
       value === undefined ? uiMessage("design-system.assetContextMenu.worksOnOneFileAt") : undefined,
-    value3 = useDownloadsWithheld(),
-    value4 =
-      value2 ??
+    downloadsWithheld = useDownloadsWithheld(),
+    groupActionDisabledProps =
+      disabledReason ??
       (value !== undefined
-        ? assetDownloadBlockedReason(value, value3)
+        ? assetDownloadBlockedReason(value, downloadsWithheld)
         : undefined),
     length = items.length,
-    value5 = assetGroupDisplayName,
-    value6 = value !== undefined ? value.name : String(length) + " files";
+    groupDisplayName = assetGroupDisplayName,
+    selectionTitle = value !== undefined ? value.name : String(length) + " files";
   return (
     <ContextMenu
       at={items.length > 0 ? at2 : null}
       anchor={anchor}
       onClose={onClose}
-      title={value6}
+      title={selectionTitle}
       className={"min-w-[12rem]"}
     >
       {[<Menu.Item
           icon={"Expand"}
-          {...assetActionDisabledProps(value2)}
+          {...assetActionDisabledProps(disabledReason)}
           onClick={() => value !== undefined && onOpen(value)}
           data-testid={"ds-amenu-open"}
         >
@@ -61,7 +61,7 @@ function AssetContextMenu({
         </Menu.Item>, edit !== undefined ? (
           <Menu.Item
             icon={"Edit"}
-            {...assetActionDisabledProps(value2)}
+            {...assetActionDisabledProps(disabledReason)}
             onClick={() => value !== undefined && edit.rename(value)}
             data-testid={"ds-amenu-rename"}
           >
@@ -69,7 +69,7 @@ function AssetContextMenu({
           </Menu.Item>
         ) : null, <Menu.Item
           icon={"Download"}
-          {...assetActionDisabledProps(value4)}
+          {...assetActionDisabledProps(groupActionDisabledProps)}
           onClick={() => value !== undefined && onDownload(value)}
           data-testid={"ds-amenu-download"}
         >
@@ -79,25 +79,25 @@ function AssetContextMenu({
             {[<Menu.Separator />, <Menu.Group>
                 {[<Menu.GroupLabel>
                     {length > 1 ? (uiMessage("design-system.assetContextMenu.moveFilesTo", { value1: String(String(length)) })) : (uiMessage("design-system.assetContextMenu.moveTo"))}
-                  </Menu.GroupLabel>, groups.map((input) =>
+                  </Menu.GroupLabel>, groups.map((group) =>
                     (() => {
                       const _Element = Menu.Item;
                       const _elementProps = {
                         icon: "Folder",
                         ...assetActionDisabledProps(
                           items.every(
-                            (input2): boolean => input2.group === input.name,
+                            (item): boolean => item.group === group.name,
                           )
                             ? (length > 1
                                 ? uiMessage("design-system.assetContextMenu.theyAreAllIn")
-                                : uiMessage("design-system.assetContextMenu.alreadyIn")) + value5(input.name)
+                                : uiMessage("design-system.assetContextMenu.alreadyIn")) + groupDisplayName(group.name)
                             : undefined,
                         ),
-                        onClick: () => edit.moveTo(items, input.name),
-                        "data-testid": "ds-amenu-move-" + input.name,
-                        children: value5(input.name),
+                        onClick: () => edit.moveTo(items, group.name),
+                        "data-testid": "ds-amenu-move-" + group.name,
+                        children: groupDisplayName(group.name),
                       };
-                      const _elementKey = input.name;
+                      const _elementKey = group.name;
                       return (
                         <_Element key={_elementKey} {..._elementProps} />
                       );

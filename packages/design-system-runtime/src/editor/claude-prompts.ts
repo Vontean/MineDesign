@@ -20,12 +20,12 @@ var DESIGN_SYSTEM_UPDATE_PROMPT_SUFFIX: string;
 // the tab opens the system). The page address itself carries a grant and means nothing to the agent, so it is
 // never written into a prompt. The parameter keeps the original's type; only `search` is read from it.
 function artifactPageAddress(
-  location2:
+  pageAddress:
     | Pick<Location, "protocol" | "origin" | "pathname">
     | undefined = globalThis.location,
 ): string {
   let value: string | null = null,
-    search = (location2 as Partial<Pick<Location, "search">> | undefined)
+    search = (pageAddress as Partial<Pick<Location, "search">> | undefined)
       ?.search;
   try {
     value =
@@ -87,28 +87,28 @@ function colorContrastFixDescription(
   address: string,
   pronouns: { me: string; my: string },
 ): string {
-  let callback = (input: string): string =>
-      "`" + safeArtifactLabel(input).replaceAll("`", "'") + "`",
+  let callback = (label: string): string =>
+      "`" + safeArtifactLabel(label).replaceAll("`", "'") + "`",
     value: string =
       request.theme === undefined
         ? ""
         : " in the " + callback(request.theme) + " theme",
-    value2: number = request.failing.length - MAX_COLOR_FIX_REQUESTS,
-    value3: string =
+    remainingFixes: number = request.failing.length - MAX_COLOR_FIX_REQUESTS,
+    description: string =
       request.failing
         .slice(0, MAX_COLOR_FIX_REQUESTS)
-        .map((input): string => input.ratio + " on " + callback(input.ground))
+        .map((issue): string => issue.ratio + " on " + callback(issue.ground))
         .join(" and ") +
-      (value2 > 0
+      (remainingFixes > 0
         ? " and " +
-          String(value2) +
+          String(remainingFixes) +
           " more ground" +
-          (value2 === 1 ? "" : "s")
+          (remainingFixes === 1 ? "" : "s")
         : ""),
-    value4 =
+    requestList =
       request.failing.length === 1
         ? callback(request.failing[0].ground)
-        : value2 > 0
+        : remainingFixes > 0
           ? "every ground it is judged on"
           : "those grounds";
   return (
@@ -119,7 +119,7 @@ function colorContrastFixDescription(
     ", is hard to read" +
     value +
     ": " +
-    value3 +
+    description +
     ", below " +
     request.min +
     ". Propose a value for " +
@@ -128,7 +128,7 @@ function colorContrastFixDescription(
     " that keeps its hue family and reaches at least " +
     request.min +
     " on " +
-    value4 +
+    requestList +
     ", tell " +
     pronouns.me +
     " the new figures, and wait for " +
@@ -183,16 +183,16 @@ function safeHandoffFileLabel(fileName: string): string {
 function handoffFileLabels(files: Editor.HandoffFile[]): string {
   let items = [];
   for (let value of [
-    files.filter((input): boolean => input.handOff === "figma"),
-    files.filter((input): boolean => input.handOff !== "figma"),
+    files.filter((file): boolean => file.handOff === "figma"),
+    files.filter((file): boolean => file.handOff !== "figma"),
   ]) {
-    for (let value2 of value.slice(0, MAX_HANDOFF_FILE_NAMES)) {
+    for (let file of value.slice(0, MAX_HANDOFF_FILE_NAMES)) {
       items.push(
-        safeHandoffFileLabel(value2.name) +
-          (value2.handOff === "figma"
+        safeHandoffFileLabel(file.name) +
+          (file.handOff === "figma"
             ? ""
             : " (" +
-              formatInlineBudgetBytes(value2.bytes).replace(
+              formatInlineBudgetBytes(file.bytes).replace(
                 /\.0 MB$/,
                 " MB",
               ) +
@@ -237,7 +237,7 @@ function viewerHandoffFilesPrompt(
   address: string,
 ): string {
   let length = files.filter(
-      (input): boolean => input.handOff === "figma",
+      (file): boolean => file.handOff === "figma",
     ).length,
     value = files.length - length,
     text = "";
@@ -286,7 +286,7 @@ function ownerHandoffFilesPrompt(
   address: string,
 ): string {
   let length = files.filter(
-      (input): boolean => input.handOff === "figma",
+      (file): boolean => file.handOff === "figma",
     ).length,
     value = files.length - length,
     text = "";

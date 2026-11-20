@@ -30,20 +30,20 @@ var BLOCKED_WORKER_CAPABILITIES: Dynamic = [
 ];
 for (let value of BLOCKED_WORKER_CAPABILITIES) {
   for (
-    let value2: Dynamic = self;
-    value2 && value2 !== Object.prototype;
-    value2 = Object.getPrototypeOf(value2)
+    let globalPrototype: Dynamic = self;
+    globalPrototype && globalPrototype !== Object.prototype;
+    globalPrototype = Object.getPrototypeOf(globalPrototype)
   )
     try {
-      delete value2[value];
-    } catch (value3: Dynamic) {}
+      delete globalPrototype[value];
+    } catch (propertyDeleteError: Dynamic) {}
   try {
     Object.defineProperty(self, value, {
       value: undefined,
       writable: false,
       configurable: false,
     });
-  } catch (value2: Dynamic) {}
+  } catch (definePropertyError: Dynamic) {}
 }
 try {
   let value: Dynamic = Object.getPrototypeOf((self as Dynamic).navigator);
@@ -54,25 +54,25 @@ try {
 } catch (value: Dynamic) {}
 var consoleLogCount: Dynamic = 0;
 var createConsoleLogger: Dynamic =
-  (input?: Dynamic, ..._extraArguments: Dynamic[]): Dynamic =>
-  (...input2: Dynamic[]): Dynamic => {
+  (logLevel?: Dynamic, ..._extraArguments: Dynamic[]): Dynamic =>
+  (...consoleArguments: Dynamic[]): Dynamic => {
     if (consoleLogCount++ >= DEFAULT_LIMITS.maxLogs) return;
     let value: Dynamic;
     try {
-      value = input2
+      value = consoleArguments
         .map(
-          (input3?: Dynamic, ..._extraArguments2: Dynamic[]): Dynamic =>
-            typeof input3 === "string"
-              ? input3
-              : (JSON.stringify(input3) ?? String(input3)),
+          (loggedValue?: Dynamic, ..._unusedArguments: Dynamic[]): Dynamic =>
+            typeof loggedValue === "string"
+              ? loggedValue
+              : (JSON.stringify(loggedValue) ?? String(loggedValue)),
         )
         .join(" ");
-    } catch (value2: Dynamic) {
-      value = input2.map(String).join(" ");
+    } catch (serializationError: Dynamic) {
+      value = consoleArguments.map(String).join(" ");
     }
     sendWorkerMessage({
       kind: "log",
-      message: (input === "log" ? "" : input + ": ") + value.slice(0, 1500),
+      message: (logLevel === "log" ? "" : logLevel + ": ") + value.slice(0, 1500),
     });
   };
 (self as Dynamic).console = {
@@ -91,17 +91,17 @@ var createConsoleLogger: Dynamic =
 };
 var editRuntime: Dynamic = createEditRuntime(sendWorkerMessage);
 scheduleHeartbeat(
-  (..._extraArguments3: Dynamic[]): Dynamic =>
+  (..._unusedArguments: Dynamic[]): Dynamic =>
     sendWorkerMessage({
       kind: "beat",
     }),
   500,
 );
 (self as Dynamic).onmessage = (
-  input?: Dynamic,
-  ..._extraArguments4: Dynamic[]
+  messageEvent?: Dynamic,
+  ..._unusedArguments: Dynamic[]
 ): Dynamic => {
-  let data: Dynamic = input.data;
+  let data: Dynamic = messageEvent.data;
   if (!data || typeof data !== "object") return;
   try {
     if (data.kind === "init")

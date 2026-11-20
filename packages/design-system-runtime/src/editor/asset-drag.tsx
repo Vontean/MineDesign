@@ -46,66 +46,66 @@ function assetDropTargetsEqual(
   );
 }
 function assetDropTargetAtPoint(
-  document2: Document,
+  document: Document,
   clientX: number,
   clientY: number,
   leadIds: ReadonlySet<string>,
   allowNewGroup: Model.AssetDropTarget | null,
 ): Model.AssetDropTarget | null {
-  let value = document2.elementFromPoint(clientX, clientY);
-  if (value === null || typeof value.closest !== "function") {
+  let targetElement = document.elementFromPoint(clientX, clientY);
+  if (targetElement === null || typeof targetElement.closest !== "function") {
     return null;
   }
-  if (value.closest<HTMLElement>('[data-drop-zone="new"]') !== null) {
+  if (targetElement.closest<HTMLElement>('[data-drop-zone="new"]') !== null) {
     return {
       kind: "new",
     };
   }
-  let ancestor = value.closest<HTMLElement>("[data-drop-group]");
-  if (ancestor === null) {
+  let dropGroupElement = targetElement.closest<HTMLElement>("[data-drop-group]");
+  if (dropGroupElement === null) {
     return null;
   }
-  let value2 = ancestor.dataset.dropGroup ?? "",
-    ancestor2 = value.closest<HTMLElement>("[data-tile-id]");
-  if (ancestor2 !== null && ancestor.contains(ancestor2)) {
-    let value3 = ancestor2.dataset.tileId ?? "",
-      items = [...ancestor.querySelectorAll<HTMLElement>("[data-tile-id]")],
-      callback = (input: number) =>
+  let groupId = dropGroupElement.dataset.dropGroup ?? "",
+    dropTileElement = targetElement.closest<HTMLElement>("[data-tile-id]");
+  if (dropTileElement !== null && dropGroupElement.contains(dropTileElement)) {
+    let draggedTileId = dropTileElement.dataset.tileId ?? "",
+      items = [...dropGroupElement.querySelectorAll<HTMLElement>("[data-tile-id]")],
+      findNextTileId = (offset: number) =>
         items
-          .slice(input)
-          .map((input2) => input2.dataset.tileId ?? "")
-          .find((input2): boolean => !leadIds.has(input2)) ?? null;
-    if (leadIds.has(value3)) {
+          .slice(offset)
+          .map((tileElement) => tileElement.dataset.tileId ?? "")
+          .find((tileId): boolean => !leadIds.has(tileId)) ?? null;
+    if (leadIds.has(draggedTileId)) {
       return {
         kind: "slot",
-        group: value2,
-        before: callback(items.indexOf(ancestor2) + 1),
+        group: groupId,
+        before: findNextTileId(items.indexOf(dropTileElement) + 1),
       };
     }
-    let bounds = ancestor2.getBoundingClientRect(),
-      value4: boolean =
-        ancestor2.dataset.tileAxis === "y"
+    let bounds = dropTileElement.getBoundingClientRect(),
+      insertBefore: boolean =
+        dropTileElement.dataset.tileAxis === "y"
           ? clientY < bounds.top + bounds.height / 2
           : clientX < bounds.left + bounds.width / 2;
     return {
       kind: "slot",
-      group: value2,
-      before: value4 ? value3 : callback(items.indexOf(ancestor2) + 1),
+      group: groupId,
+      before: insertBefore ? draggedTileId : findNextTileId(items.indexOf(dropTileElement) + 1),
     };
   }
-  if (value.closest<HTMLElement>("[data-drop-slot]") !== null) {
+  if (targetElement.closest<HTMLElement>("[data-drop-slot]") !== null) {
     return allowNewGroup;
   }
   if (
     allowNewGroup !== null &&
     allowNewGroup.kind !== "new" &&
-    allowNewGroup.group === value2
+    allowNewGroup.group === groupId
   ) {
     return allowNewGroup;
   }
   return {
     kind: "group",
-    group: value2,
+    group: groupId,
   };
 }
 function assetDragScrollDelta(
@@ -136,84 +136,84 @@ function assetDragScrollDelta(
   return 0;
 }
 function useAssetDrag(
-  options: Editor.AssetDragOptions,
+  dragOptions: Editor.AssetDragOptions,
 ): Editor.AssetDragController {
-  let optionsRef = reactAssetDrag.useRef(options);
-  optionsRef.current = options;
+  let optionsRef = reactAssetDrag.useRef(dragOptions);
+  optionsRef.current = dragOptions;
   let [drag, setDrag] = reactAssetDrag.useState<Editor.AssetDragView | null>(
       null,
     ),
     dragRef = reactAssetDrag.useRef<Editor.AssetDragView | null>(null),
-    callback = (input: Editor.AssetDragView | null): void => {
-      dragRef.current = input;
-      setDrag(input);
+    setDragView = (updateDrag: Editor.AssetDragView | null): void => {
+      dragRef.current = updateDrag;
+      setDrag(updateDrag);
     },
-    ref = reactAssetDrag.useRef<Editor.AssetPointerSession | null>(null),
-    ref2 = reactAssetDrag.useRef({
+    pointerSessionRef = reactAssetDrag.useRef<Editor.AssetPointerSession | null>(null),
+    pointerPositionRef = reactAssetDrag.useRef({
       x: 0,
       y: 0,
     }),
-    ref3 = reactAssetDrag.useRef<HTMLElement | null>(null),
-    ref4 = reactAssetDrag.useRef(false),
-    ref5 = reactAssetDrag.useRef(0),
-    ref6 = reactAssetDrag.useRef<Editor.AssetDragListeners | null>(null),
-    callback2 = (): void => {
-      let current = ref3.current;
+    dragGhostRef = reactAssetDrag.useRef<HTMLElement | null>(null),
+    justDroppedRef = reactAssetDrag.useRef(false),
+    scrollAnimationFrameRef = reactAssetDrag.useRef(0),
+    listenersRef = reactAssetDrag.useRef<Editor.AssetDragListeners | null>(null),
+    updateGhostPosition = (): void => {
+      let current = dragGhostRef.current;
       if (current !== null) {
         current.style.transform =
           "translate3d(" +
-          String(ref2.current.x) +
+          String(pointerPositionRef.current.x) +
           "px," +
-          String(ref2.current.y) +
+          String(pointerPositionRef.current.y) +
           "px,0)";
       }
     },
-    callback3 = (): void => {
+    updateDropTarget = (): void => {
       let current = dragRef.current;
       if (current === null || typeof document === "undefined") {
         return;
       }
-      let value = assetDropTargetAtPoint(
+      let dropTarget = assetDropTargetAtPoint(
         document,
-        ref2.current.x,
-        ref2.current.y,
+        pointerPositionRef.current.x,
+        pointerPositionRef.current.y,
         new Set(current.ids),
         current.target,
       );
-      if (!assetDropTargetsEqual(value, current.target)) {
-        callback({
+      if (!assetDropTargetsEqual(dropTarget, current.target)) {
+        setDragView({
           ...current,
-          target: value,
+          target: dropTarget,
         });
       }
     },
-    callback4 = (): void => {
-      if (ref5.current !== 0) {
-        cancelAnimationFrame(ref5.current);
+    stopAutoScroll = (): void => {
+      if (scrollAnimationFrameRef.current !== 0) {
+        cancelAnimationFrame(scrollAnimationFrameRef.current);
       }
-      ref5.current = 0;
+      scrollAnimationFrameRef.current = 0;
     },
-    callback5 = (): void => {
-      ref5.current = 0;
+    autoScroll = (): void => {
+      scrollAnimationFrameRef.current = 0;
       let current = optionsRef.current.scroller.current;
       if (dragRef.current === null || current === null) {
         return;
       }
       let bounds = current.getBoundingClientRect(),
-        value = assetDragScrollDelta(
-          ref2.current.y,
+        scrollDelta = assetDragScrollDelta(
+          pointerPositionRef.current.y,
           bounds.top,
           bounds.bottom,
         );
-      if (value !== 0) {
-        current.scrollTop += value;
-        callback3();
+      if (scrollDelta !== 0) {
+        current.scrollTop += scrollDelta;
+        updateDropTarget();
       }
-      ref5.current = requestAnimationFrame(callback5);
+      scrollAnimationFrameRef.current = requestAnimationFrame(autoScroll);
     },
-    callback6 = (): void => {
-      let current = ref6.current;
-      ref6.current = null;
+    removeListeners = (): void => {
+      let current = listenersRef.current;
+      listenersRef.current = null;
       if (current === null) {
         return;
       }
@@ -223,41 +223,41 @@ function useAssetDrag(
       window.removeEventListener("blur", current.cancel);
       window.removeEventListener("keydown", current.key, true);
     },
-    callback7 = (): void => {
-      ref.current = null;
-      callback6();
-      callback4();
+    cancelDrag = (): void => {
+      pointerSessionRef.current = null;
+      removeListeners();
+      stopAutoScroll();
       optionsRef.current.scroller.current?.removeAttribute("data-dragging");
-      callback(null);
+      setDragView(null);
     },
-    callback8 = (): void => {
-      ref4.current = true;
-      let callback13 = (): void => {
-        window.removeEventListener("pointerup", callback13, true);
-        window.removeEventListener("pointercancel", callback13, true);
-        setTimeout(() => (ref4.current = false), 0);
+    markJustDropped = (): void => {
+      justDroppedRef.current = true;
+      let resetJustDropped = (): void => {
+        window.removeEventListener("pointerup", resetJustDropped, true);
+        window.removeEventListener("pointercancel", resetJustDropped, true);
+        setTimeout(() => (justDroppedRef.current = false), 0);
       };
-      window.addEventListener("pointerup", callback13, true);
-      window.addEventListener("pointercancel", callback13, true);
+      window.addEventListener("pointerup", resetJustDropped, true);
+      window.addEventListener("pointercancel", resetJustDropped, true);
     },
-    callback9 = (input: PointerEvent) => {
-      let current = ref.current;
-      if (current === null || current.pointerId !== input.pointerId) {
+    handlePointerMove = (event: PointerEvent) => {
+      let current = pointerSessionRef.current;
+      if (current === null || current.pointerId !== event.pointerId) {
         return;
       }
-      if (input.pointerType === "mouse" && input.buttons === 0) {
-        return callback7();
+      if (event.pointerType === "mouse" && event.buttons === 0) {
+        return cancelDrag();
       }
       if (
         !current.moved &&
-        Math.hypot(input.clientX - current.sx, input.clientY - current.sy) <
+        Math.hypot(event.clientX - current.sx, event.clientY - current.sy) <
           ASSET_DRAG_START_DISTANCE_PX
       ) {
         return;
       }
-      ref2.current = {
-        x: input.clientX,
-        y: input.clientY,
+      pointerPositionRef.current = {
+        x: event.clientX,
+        y: event.clientY,
       };
       if (!current.moved) {
         current.moved = true;
@@ -265,7 +265,7 @@ function useAssetDrag(
           "data-dragging",
           "",
         );
-        callback({
+        setDragView({
           ids: current.ids,
           lead: current.id,
           grab: current.grab,
@@ -274,113 +274,113 @@ function useAssetDrag(
               ? null
               : assetDropTargetAtPoint(
                   document,
-                  input.clientX,
-                  input.clientY,
+                  event.clientX,
+                  event.clientY,
                   new Set(current.ids),
                   null,
                 ),
         });
         if (
-          ref5.current === 0 &&
+          scrollAnimationFrameRef.current === 0 &&
           typeof requestAnimationFrame === "function"
         ) {
-          ref5.current = requestAnimationFrame(callback5);
+          scrollAnimationFrameRef.current = requestAnimationFrame(autoScroll);
         }
       } else {
-        callback3();
+        updateDropTarget();
       }
-      callback2();
+      updateGhostPosition();
     },
-    callback10 = (input: PointerEvent): void => {
-      let current = ref.current;
-      if (current === null || current.pointerId !== input.pointerId) {
+    handlePointerUp = (event: PointerEvent): void => {
+      let current = pointerSessionRef.current;
+      if (current === null || current.pointerId !== event.pointerId) {
         return;
       }
-      let current2 = dragRef.current,
+      let activeDrag = dragRef.current,
         moved = current.moved;
-      callback7();
-      if (!moved || current2 === null) {
+      cancelDrag();
+      if (!moved || activeDrag === null) {
         return;
       }
-      ref4.current = true;
-      setTimeout(() => (ref4.current = false), 0);
-      if (current2.target !== null) {
-        optionsRef.current.onDrop(current2.ids, current2.target);
+      justDroppedRef.current = true;
+      setTimeout(() => (justDroppedRef.current = false), 0);
+      if (activeDrag.target !== null) {
+        optionsRef.current.onDrop(activeDrag.ids, activeDrag.target);
       }
     },
-    callback11 = (event: KeyboardEvent): void => {
-      if (event.key !== "Escape" || ref.current === null) {
+    handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape" || pointerSessionRef.current === null) {
         return;
       }
       event.preventDefault();
       event.stopPropagation();
-      let moved = ref.current.moved;
-      callback7();
+      let moved = pointerSessionRef.current.moved;
+      cancelDrag();
       if (moved) {
-        callback8();
+        markJustDropped();
       }
     };
   reactAssetDrag.useEffect(
     () => (): void => {
-      callback6();
-      callback4();
+      removeListeners();
+      stopAutoScroll();
     },
     [],
   );
-  let callback12 = reactAssetDrag.useCallback(
-    (input: React.PointerEvent<HTMLElement>, options2: string): void => {
+  let handlePointerDown = reactAssetDrag.useCallback(
+    (event: React.PointerEvent<HTMLElement>, pointerAssetId: string): void => {
       let current = optionsRef.current;
-      if (input.button !== 0 || ref.current !== null) {
+      if (event.button !== 0 || pointerSessionRef.current !== null) {
         return;
       }
       if (
-        input.shiftKey ||
-        input.metaKey ||
-        input.ctrlKey ||
-        input.altKey ||
-        input.pointerType === "touch"
+        event.shiftKey ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.pointerType === "touch"
       ) {
         return;
       }
-      if (!current.selected.includes(options2)) {
-        current.onGrab(options2);
+      if (!current.selected.includes(pointerAssetId)) {
+        current.onGrab(pointerAssetId);
       }
       if (!current.enabled) {
         return;
       }
-      let bounds = input.currentTarget.getBoundingClientRect(),
-        value = current.selected.includes(options2)
+      let bounds = event.currentTarget.getBoundingClientRect(),
+        selectedAssetIds = current.selected.includes(pointerAssetId)
           ? current.selected
-          : [options2],
-        value2 =
-          value.length > 1
-            ? current.order.filter((input2) => value.includes(input2))
-            : [options2];
-      ref.current = {
-        id: options2,
-        ids: value2,
-        pointerId: input.pointerId,
-        sx: input.clientX,
-        sy: input.clientY,
+          : [pointerAssetId],
+        selectedIds =
+          selectedAssetIds.length > 1
+            ? current.order.filter((assetId) => selectedAssetIds.includes(assetId))
+            : [pointerAssetId];
+      pointerSessionRef.current = {
+        id: pointerAssetId,
+        ids: selectedIds,
+        pointerId: event.pointerId,
+        sx: event.clientX,
+        sy: event.clientY,
         moved: false,
         grab: {
-          dx: input.clientX - bounds.left,
-          dy: input.clientY - bounds.top,
+          dx: event.clientX - bounds.left,
+          dy: event.clientY - bounds.top,
           w: bounds.width,
           h: bounds.height,
         },
       };
-      ref2.current = {
-        x: input.clientX,
-        y: input.clientY,
+      pointerPositionRef.current = {
+        x: event.clientX,
+        y: event.clientY,
       };
       let state = {
-        move: callback9,
-        up: callback10,
-        cancel: callback7,
-        key: callback11,
+        move: handlePointerMove,
+        up: handlePointerUp,
+        cancel: cancelDrag,
+        key: handleKeyDown,
       };
-      ref6.current = state;
+      listenersRef.current = state;
       window.addEventListener("pointermove", state.move);
       window.addEventListener("pointerup", state.up);
       window.addEventListener("pointercancel", state.cancel);
@@ -391,15 +391,15 @@ function useAssetDrag(
   );
   reactAssetDrag.useEffect((): void => {
     if (drag !== null) {
-      callback2();
+      updateGhostPosition();
     }
   });
   return {
     drag: drag,
-    onPointerDown: callback12,
-    ghostRef: ref3,
-    justDropped: () => ref4.current,
-    cancel: callback7,
+    onPointerDown: handlePointerDown,
+    ghostRef: dragGhostRef,
+    justDropped: () => justDroppedRef.current,
+    cancel: cancelDrag,
   };
 }
 export {

@@ -8,20 +8,20 @@ var AUTOSAVE_MAX_WAIT_MS: number;
 var AUTOSAVE_RETRY_DELAYS_MS: number[];
 function withAutomaticSave<Content>(
   artifactDocument: Host.ArtifactDocument<Content>,
-  options: Host.AutosaveOptions = {},
+  autosaveOptions: Host.AutosaveOptions = {},
 ): Host.ArtifactDocument<Content> {
   let offFlag =
-    options.offFlag ?? createArtifactLocalFlag("autosave-off");
+    autosaveOptions.offFlag ?? createArtifactLocalFlag("autosave-off");
   if (artifactDocument.saveMode() === "auto" || offFlag.read() !== null) {
     return artifactDocument;
   }
-  let timers = options.timers ?? {
-      setTimeout: (input, options2) => setTimeout(input, options2),
-      clearTimeout: (input) => clearTimeout(input),
+  let timers = autosaveOptions.timers ?? {
+      setTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
+      clearTimeout: (timerId) => clearTimeout(timerId),
       now: (): number => Date.now(),
     },
-    idleMs = options.idleMs ?? AUTOSAVE_IDLE_MS,
-    maxWaitMs = options.maxWaitMs ?? AUTOSAVE_MAX_WAIT_MS,
+    idleMs = autosaveOptions.idleMs ?? AUTOSAVE_IDLE_MS,
+    maxWaitMs = autosaveOptions.maxWaitMs ?? AUTOSAVE_MAX_WAIT_MS,
     saveTimer: ReturnType<typeof setTimeout> | undefined,
     previousStatus: Host.SaveState["status"] | undefined,
     firstDirtyAt: number | undefined,
@@ -32,7 +32,7 @@ function withAutomaticSave<Content>(
     disabled: boolean = false;
   function saveNow() {
     saveTimer = undefined;
-    if (options.hold?.() === true) {
+    if (autosaveOptions.hold?.() === true) {
       return scheduleSave(timers.now() + idleMs);
     }
     isSaving = true;
@@ -43,12 +43,12 @@ function withAutomaticSave<Content>(
       }
     });
   }
-  function scheduleSave(input: number): void {
+  function scheduleSave(remainingMs: number): void {
     timers.clearTimeout(saveTimer);
     if (!disabled) {
       saveTimer = timers.setTimeout(
         saveNow,
-        Math.max(0, input - timers.now()),
+        Math.max(0, remainingMs - timers.now()),
       );
     }
   }
@@ -62,13 +62,13 @@ function withAutomaticSave<Content>(
       return;
     }
     if (state.status === "dirty") {
-      let value2 = timers.now();
-      firstDirtyAt ??= value2;
+      let now = timers.now();
+      firstDirtyAt ??= now;
       willRetry = false;
       if (!isSaving) {
         scheduleSave(
           Math.max(
-            Math.min(value2 + idleMs, firstDirtyAt + maxWaitMs),
+            Math.min(now + idleMs, firstDirtyAt + maxWaitMs),
             retryAfter,
           ),
         );
@@ -113,7 +113,7 @@ function withAutomaticSave<Content>(
         artifactDocument.saveState().status === "dirty" &&
         !disabled &&
         timers.now() >= retryAfter &&
-        options.hold?.() !== true
+        autosaveOptions.hold?.() !== true
       ) {
         artifactDocument.save();
       }
@@ -153,9 +153,9 @@ function withAutomaticSave<Content>(
     ...artifactDocument,
     saveMode: (): "auto" => "auto",
     saveState: () => presentSaveState(artifactDocument.saveState()),
-    subscribeSave: (input) =>
-      artifactDocument.subscribeSave((input2) =>
-        input(presentSaveState(input2)),
+    subscribeSave: (notify) =>
+      artifactDocument.subscribeSave((saveState) =>
+        notify(presentSaveState(saveState)),
       ),
   };
 }

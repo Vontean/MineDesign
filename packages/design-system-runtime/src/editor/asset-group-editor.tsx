@@ -74,53 +74,53 @@ function assetFileCountLabel(count: number): string {
   }
 }
 function useAssetGroupEditor(
-  options: Editor.AssetGroupEditorOptions,
+  editorOptions: Editor.AssetGroupEditorOptions,
 ): Editor.AssetGroupEditorResult {
-  let { groups: value, edit: value2, scroller: value3 } = options,
-    ref = (reactAssetGroupEditor as typeof React).useRef(options);
-  ref.current = options;
-  let value4 = assetGroupDisplayName,
-    value5 = useCoarsePointer(),
+  let { groups: value, edit: editContent, scroller: assetScroller } = editorOptions,
+    ref = (reactAssetGroupEditor as typeof React).useRef(editorOptions);
+  ref.current = editorOptions;
+  let getGroupName = assetGroupDisplayName,
+    isCoarsePointer = useCoarsePointer(),
     memo = (reactAssetGroupEditor as typeof React).useMemo(
       () =>
-        value.flatMap((input) => input.assets.map((input2) => input2.path)),
+        value.flatMap((group) => group.assets.map((asset) => asset.path)),
       [value],
     ),
-    memo2 = (reactAssetGroupEditor as typeof React).useMemo<
+    assetMetadata = (reactAssetGroupEditor as typeof React).useMemo<
       Map<string, Application.EditorAsset>
     >(
       () =>
         new Map(
-          value.flatMap((input) =>
-            input.assets.map((input2) => [input2.path, input2]),
+          value.flatMap((groupRecord) =>
+            groupRecord.assets.map((asset) => [asset.path, asset]),
           ),
         ),
       [value],
     ),
-    [value6, value7] = (
+    [renamingName, setRenamingName] = (
       reactAssetGroupEditor as typeof React
     ).useState<string | null>(null),
-    [value8, value9] = (
+    [renamingPath, setRenamingPath] = (
       reactAssetGroupEditor as typeof React
     ).useState<string | null>(null),
-    ref2 = (
+    editorControllerRef = (
       reactAssetGroupEditor as typeof React
     ).useRef<Editor.AssetGridInteractions | null>(null),
     callback = () => ({
-      nameOf: (input: string) =>
-        memo2.get(input)?.name ?? input.slice(input.lastIndexOf("/") + 1),
-      ask: (input: Omit<Application.ConfirmationState, "confirmLabel">) =>
-        ref.current.askRemove(input),
+      nameOf: (path: string) =>
+        assetMetadata.get(path)?.name ?? path.slice(path.lastIndexOf("/") + 1),
+      ask: (confirmation: Omit<Application.ConfirmationState, "confirmLabel">) =>
+        ref.current.askRemove(confirmation),
     }),
-    callback2 = (reactAssetGroupEditor as typeof React).useCallback(
+    handleDrop = (reactAssetGroupEditor as typeof React).useCallback(
       (items: string[], source: Model.AssetDropTarget): void => {
-        if (value2 === undefined || items.length === 0) {
+        if (editContent === undefined || items.length === 0) {
           return;
         }
         let groups = ref.current.groups,
-          value13: boolean = source.kind === "new",
-          value14 = value13
-            ? nextAssetGroupName(groups.map((input) => input.name))
+          isNewGroup: boolean = source.kind === "new",
+          targetGroup = isNewGroup
+            ? nextAssetGroupName(groups.map((asset) => asset.name))
             : (
                 source as Exclude<
                   Model.AssetDropTarget,
@@ -129,60 +129,60 @@ function useAssetGroupEditor(
                   }
                 >
               ).group,
-          value15 =
+          targetPath =
             source.kind === "slot"
               ? source.before
               : source.kind === "group"
                 ? null
                 : undefined,
-          values = new Set(items.map((input) => memo2.get(input)?.group)),
-          value16 = !value13 && values.size === 1 && values.has(value14),
-          callback5 = (input: Model.DesignSystemContent) =>
-            moveAssetsToGroup(input, items, value14, value15);
+          values = new Set(items.map((assetId) => assetMetadata.get(assetId)?.group)),
+          isMoveWithinGroup = !isNewGroup && values.size === 1 && values.has(targetGroup),
+          applyMove = (content: Model.DesignSystemContent) =>
+            moveAssetsToGroup(content, items, targetGroup, targetPath);
         performDesignSystemEdit(
-          value2,
-          callback5,
+          editContent,
+          applyMove,
           (): boolean => {
-            let files = value2.content().files;
+            let files = editContent.content().files;
             if (
-              !value2.exec(
-                (value16 ? uiMessage("design-system.assetGroupEditor.reorder") : uiMessage("design-system.assetGroupEditor.move")) +
+              !editContent.exec(
+                (isMoveWithinGroup ? uiMessage("design-system.assetGroupEditor.reorder") : uiMessage("design-system.assetGroupEditor.move")) +
                   assetFileCountLabel(items.length) +
                   " to " +
-                  value14,
-                callback5,
+                  targetGroup,
+                applyMove,
               )
             ) {
               return false;
             }
-            let value17: string =
-                value14 === UNGROUPED_ASSETS_NAME
+            let folderPrefix: string =
+                targetGroup === UNGROUPED_ASSETS_NAME
                   ? "assets/"
-                  : "assets/" + value14 + "/",
-              files2 = value2.content().files,
-              items2 = [
-                ...items.filter((input) => Object.hasOwn(files2, input)),
-                ...Object.keys(files2).filter(
-                  (input) =>
-                    !Object.hasOwn(files, input) &&
-                    input.startsWith(value17) &&
-                    !input.slice(value17.length).includes("/"),
+                  : "assets/" + targetGroup + "/",
+              fileTable = editContent.content().files,
+              selectedPaths = [
+                ...items.filter((path) => Object.hasOwn(fileTable, path)),
+                ...Object.keys(fileTable).filter(
+                  (path) =>
+                    !Object.hasOwn(files, path) &&
+                    path.startsWith(folderPrefix) &&
+                    !path.slice(folderPrefix.length).includes("/"),
                 ),
               ];
-            ref2.current?.selection.set(items2);
-            if (value13) {
-              value7(value14);
+            editorControllerRef.current?.selection.set(selectedPaths);
+            if (isNewGroup) {
+              setRenamingName(targetGroup);
               ref.current.reveal({
                 kind: "assets",
-                key: value14,
+                key: targetGroup,
               });
             } else {
-              ref2.current?.focus(items2[0] ?? null);
+              editorControllerRef.current?.focus(selectedPaths[0] ?? null);
             }
             let length = items.filter(
-              (input) =>
-                Object.hasOwn(files2, input) &&
-                memo2.get(input)?.group !== value14,
+              (path) =>
+                Object.hasOwn(fileTable, path) &&
+                assetMetadata.get(path)?.group !== targetGroup,
             ).length;
             if (length > 0) {
               showEditorNotification(
@@ -194,83 +194,83 @@ function useAssetGroupEditor(
           callback(),
         );
       },
-      [value2, memo2],
+      [editContent, assetMetadata],
     ),
-    callback3 = (reactAssetGroupEditor as typeof React).useCallback(
+    handleRemove = (reactAssetGroupEditor as typeof React).useCallback(
       (items: string[]): void => {
-        if (value2 === undefined || items.length === 0) {
+        if (editContent === undefined || items.length === 0) {
           return;
         }
-        let value13 = items.filter(
-          (input: string): boolean =>
-            remoteTextEntry(input) !== undefined,
+        let selectedItems = items.filter(
+          (text: string): boolean =>
+            remoteTextEntry(text) !== undefined,
         );
-        if (value13.length > 0) {
+        if (selectedItems.length > 0) {
           showEditorNotification(
-            (value13.length === 1
-              ? (memo2.get(value13[0])?.name ?? "1 file") + " is"
-              : assetFileCountLabel(value13.length) + " are") +
+            (selectedItems.length === 1
+              ? (assetMetadata.get(selectedItems[0])?.name ?? "1 file") + " is"
+              : assetFileCountLabel(selectedItems.length) + " are") +
               " kept in this system’s store as code — remove " +
-              (value13.length === 1 ? "it" : "them") +
+              (selectedItems.length === 1 ? "it" : "them") +
               // MineDesign: user-facing copy calls the agent "the agent", not Claude.
               " with the agent for now",
           );
           items = items.filter(
-            (input: string): boolean =>
-              remoteTextEntry(input) === undefined,
+            (text: string): boolean =>
+              remoteTextEntry(text) === undefined,
           );
           if (items.length === 0) {
             return;
           }
         }
-        let callback5 = (): void => {
+        let focusNextAsset = (): void => {
           let values = new Set(items),
-            value14 = memo.indexOf(items[0]),
-            value15 =
+            currentIndex = memo.indexOf(items[0]),
+            nextPath =
               memo
-                .slice(value14 + 1)
-                .find((input: string): boolean => !values.has(input)) ??
+                .slice(currentIndex + 1)
+                .find((group: string): boolean => !values.has(group)) ??
               memo
-                .slice(0, Math.max(0, value14))
+                .slice(0, Math.max(0, currentIndex))
                 .reverse()
-                .find((input: string): boolean => !values.has(input)) ??
+                .find((group: string): boolean => !values.has(group)) ??
               null,
-            callback6 = (input: Model.DesignSystemContent) =>
-              deleteAssetFiles(input, items);
+            deleteFiles = (content: Model.DesignSystemContent) =>
+              deleteAssetFiles(content, items);
           performDesignSystemEdit(
-            value2,
-            callback6,
-            (input?: { withoutBytes: string[] }): boolean => {
+            editContent,
+            deleteFiles,
+            (removeOptions?: { withoutBytes: string[] }): boolean => {
               if (
-                !value2.exec(
+                !editContent.exec(
                   uiMessage("design-system.assetGroupEditor.remove2") + assetFileCountLabel(items.length),
-                  callback6,
-                  input,
+                  deleteFiles,
+                  removeOptions,
                 )
               ) {
                 return false;
               }
-              let value16: string =
+              let removedPath: string =
                   uiMessage("design-system.assetGroupEditor.removed") +
                   (items.length === 1
-                    ? (memo2.get(items[0])?.name ?? "1 file")
+                    ? (assetMetadata.get(items[0])?.name ?? "1 file")
                     : assetFileCountLabel(items.length)),
-                length = value2.lastNotUndoable().length;
+                length = editContent.lastNotUndoable().length;
               if (length === 0) {
-                ref.current.removed(value16);
+                ref.current.removed(removedPath);
               } else if (length >= items.length) {
                 showEditorNotification(
-                  value16 + ". This cannot be undone.",
+                  removedPath + ". This cannot be undone.",
                 );
               } else {
                 ref.current.removed(
-                  value16 +
+                  removedPath +
                     ". Undo brings back all but " +
                     assetFileCountLabel(length) +
                     ".",
                 );
               }
-              ref2.current?.focus(value15);
+              editorControllerRef.current?.focus(nextPath);
               return true;
             },
             callback(),
@@ -278,148 +278,148 @@ function useAssetGroupEditor(
           );
         };
         if (items.length === 1) {
-          callback5();
+          focusNextAsset();
         } else {
           ref.current.askRemove({
             get title() { return uiMessage("design-system.assetGroupEditor.remove", { value1: String(assetFileCountLabel(items.length)) }); },
             body: "The files are deleted from assets/. Anything linking to them will break. Undo brings them back.",
-            run: callback5,
+            run: focusNextAsset,
           });
         }
       },
-      [value2, memo2, memo],
+      [editContent, assetMetadata, memo],
     ),
-    value10 = useAssetGridInteractions({
+    gridInteractions = useAssetGridInteractions({
       order: memo,
-      editable: value2 !== undefined,
-      coarse: value5,
-      scroller: value3,
-      onOpen: (input: string) => ref.current.openAsset(input),
-      onDrop: callback2,
-      onRemove: callback3,
+      editable: editContent !== undefined,
+      coarse: isCoarsePointer,
+      scroller: assetScroller,
+      onOpen: (path: string) => ref.current.openAsset(path),
+      onDrop: handleDrop,
+      onRemove: handleRemove,
     });
-  ref2.current = value10;
-  let callback4 = (
-      input: Application.EditorAsset[],
-      options2: string | symbol,
+  editorControllerRef.current = gridInteractions;
+  let moveToGroup = (
+      assets: Application.EditorAsset[],
+      targetGroup: string | symbol,
     ) =>
-      callback2(
-        input.map((input2) => input2.path),
-        options2 === NEW_ASSET_GROUP_SENTINEL
+      handleDrop(
+        assets.map((asset) => asset.path),
+        targetGroup === NEW_ASSET_GROUP_SENTINEL
           ? {
               kind: "new",
             }
           : {
               kind: "group",
-              group: options2 as string,
+              group: targetGroup as string,
             },
       ),
-    value11 =
-      value10.menu === null
+    assetItems =
+      gridInteractions.menu === null
         ? []
-        : value10.menu.paths.flatMap((input: string) => {
-            let entry = memo2.get(input);
+        : gridInteractions.menu.paths.flatMap((path: string) => {
+            let entry = assetMetadata.get(path);
             if (entry !== undefined) {
               return [entry];
             } else {
               return [];
             }
           }),
-    value12 = (
+    overlay = (
       <AssetContextMenu
-        at={value10.menu}
-        anchor={value10.menu?.anchor}
-        onClose={value10.closeMenu}
-        items={value11}
+        at={gridInteractions.menu}
+        anchor={gridInteractions.menu?.anchor}
+        onClose={gridInteractions.closeMenu}
+        items={assetItems}
         groups={value}
-        onOpen={(input: Application.EditorAsset) =>
-          ref.current.openAsset(input.path)
+        onOpen={(asset: Application.EditorAsset) =>
+          ref.current.openAsset(asset.path)
         }
-        onDownload={(input: Application.EditorAsset) =>
-          ref.current.downloadAsset(input)
+        onDownload={(asset: Application.EditorAsset) =>
+          ref.current.downloadAsset(asset)
         }
         edit={
-          value2 === undefined
+          editContent === undefined
             ? undefined
             : {
-                rename: (input: Application.EditorAsset): void => {
-                  value9(input.path);
-                  ref.current.openAsset(input.path);
+                rename: (asset: Application.EditorAsset): void => {
+                  setRenamingPath(asset.path);
+                  ref.current.openAsset(asset.path);
                 },
-                moveTo: callback4,
-                remove: (input: Application.EditorAsset[]) =>
-                  callback3(input.map((input2) => input2.path)),
+                moveTo: moveToGroup,
+                remove: (assets: Application.EditorAsset[]) =>
+                  handleRemove(assets.map((asset) => asset.path)),
               }
         }
       />
     );
   return {
-    tiles: value10,
-    headFor: (input: Application.EditorAssetGroup) =>
-      value2 === undefined
+    tiles: gridInteractions,
+    headFor: (group: Application.EditorAssetGroup) =>
+      editContent === undefined
         ? {}
         : {
-            onRename: (input2: string): void => {
-              let value13 = input2.replace(/\s+/g, " ").trim();
-              if (value13 === "" || value13 === input.name) {
+            onRename: (name: string): void => {
+              let normalizedName = name.replace(/\s+/g, " ").trim();
+              if (normalizedName === "" || normalizedName === group.name) {
                 return;
               }
               let items = [
                   ...new Set(
                     Object.keys(ref.current.files()).flatMap(
-                      (input3) =>
-                        parseAssetGroupPath(input3)?.group ?? [],
+                      (groupPath) =>
+                        parseAssetGroupPath(groupPath)?.group ?? [],
                     ),
                   ),
                 ],
-                value14 = validateAssetGroupName(value13, input.name, items);
-              if (value14 !== null) {
-                showEditorNotification(value14);
+                validationError = validateAssetGroupName(normalizedName, group.name, items);
+              if (validationError !== null) {
+                showEditorNotification(validationError);
                 return;
               }
-              let callback5 = (input3: Model.DesignSystemContent) =>
-                renameAssetGroup(input3, input.name, value13);
+              let renameGroup = (content: Model.DesignSystemContent) =>
+                renameAssetGroup(content, group.name, normalizedName);
               performDesignSystemEdit(
-                value2,
-                callback5,
+                editContent,
+                renameGroup,
                 (): boolean => {
-                  if (!value2.exec(uiMessage("design-system.assetGroupEditor.renameGroup") + input.name, callback5)) {
+                  if (!editContent.exec(uiMessage("design-system.assetGroupEditor.renameGroup") + group.name, renameGroup)) {
                     showEditorNotification(
                       uiMessage("design-system.assetGroupEditor.couldNotRename") +
-                        value4(input.name) +
+                        getGroupName(group.name) +
                         " to “" +
-                        value13 +
+                        normalizedName +
                         "”. Try a different name.",
                     );
                     return false;
                   }
-                  let callback6 = (input3: string) =>
-                      input3.startsWith(input.folder) &&
-                      (input.name !== UNGROUPED_ASSETS_NAME ||
-                        !input3.slice(input.folder.length).includes("/"))
+                  let relativePath = (path: string) =>
+                      path.startsWith(group.folder) &&
+                      (group.name !== UNGROUPED_ASSETS_NAME ||
+                        !path.slice(group.folder.length).includes("/"))
                         ? "assets/" +
-                          value13 +
+                          normalizedName +
                           "/" +
-                          input3.slice(input.folder.length)
-                        : input3,
-                    current = ref2.current;
+                          path.slice(group.folder.length)
+                        : path,
+                    current = editorControllerRef.current;
                   if (current !== undefined && current !== null) {
                     if (
                       current.selection.selected.some(
-                        (input3): boolean => callback6(input3) !== input3,
+                        (path): boolean => relativePath(path) !== path,
                       )
                     ) {
                       current.selection.set(
-                        current.selection.selected.map(callback6),
+                        current.selection.selected.map(relativePath),
                       );
                     }
-                    let value15 = input.assets[0]?.path;
-                    if (value15 !== undefined) {
-                      current.focus(callback6(value15));
+                    let firstAssetPath = group.assets[0]?.path;
+                    if (firstAssetPath !== undefined) {
+                      current.focus(relativePath(firstAssetPath));
                     }
                   }
-                  if (value6 === input.name) {
-                    value7(null);
+                  if (renamingName === group.name) {
+                    setRenamingName(null);
                   }
                   return true;
                 },
@@ -427,98 +427,98 @@ function useAssetGroupEditor(
               );
             },
             onRemove: (): void => {
-              let value13 = assetGroupFilePaths(
+              let groupPaths = assetGroupFilePaths(
                   ref.current.files(),
-                  input.name,
+                  group.name,
                 ),
-                value14 = value13.filter(
-                  (input2: string): boolean =>
-                    remoteTextEntry(input2) !== undefined,
+                remotePaths = groupPaths.filter(
+                  (path: string): boolean =>
+                    remoteTextEntry(path) !== undefined,
                 ),
-                value15 = value13.filter(
-                  (input2: string): boolean =>
-                    remoteTextEntry(input2) === undefined,
+                localPaths = groupPaths.filter(
+                  (path: string): boolean =>
+                    remoteTextEntry(path) === undefined,
                 );
-              if (value14.length > 0 && value15.length === 0) {
+              if (remotePaths.length > 0 && localPaths.length === 0) {
                 showEditorNotification(
-                  assetFileCountLabel(value14.length) +
+                  assetFileCountLabel(remotePaths.length) +
                     " in " +
-                    value4(input.name) +
+                    getGroupName(group.name) +
                     " " +
-                    (value14.length === 1 ? "is" : "are") +
+                    (remotePaths.length === 1 ? "is" : "are") +
                     " kept in this system’s store as code — remove " +
-                    (value14.length === 1 ? "it" : "them") +
+                    (remotePaths.length === 1 ? "it" : "them") +
                     // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                     " with the agent for now",
                 );
                 return;
               }
               ref.current.askRemove({
-                get title() { return uiMessage("design-system.assetGroupEditor.removeAndIts", { value1: String(value4(input.name)), value2: String(assetFileCountLabel(value15.length)) }); },
+                get title() { return uiMessage("design-system.assetGroupEditor.removeAndIts", { value1: String(getGroupName(group.name)), value2: String(assetFileCountLabel(localPaths.length)) }); },
                 body:
                   uiMessage("design-system.assetGroupEditor.theFilesAreDeletedFrom") +
-                  input.folder +
+                  group.folder +
                   ". Anything linking to them will break. Undo brings them back.",
                 run: (): void => {
-                  let value16 = memo.indexOf(input.assets[0]?.path ?? ""),
-                    value17 =
+                  let groupIndex = memo.indexOf(group.assets[0]?.path ?? ""),
+                    nextGroupPath =
                       memo
-                        .slice(value16 + input.assets.length)
+                        .slice(groupIndex + group.assets.length)
                         .find((): boolean => true) ??
-                      (value16 > 0 ? memo[value16 - 1] : null) ??
+                      (groupIndex > 0 ? memo[groupIndex - 1] : null) ??
                       null,
-                    callback5 = (input2: Model.DesignSystemContent) =>
+                    applyGroupRemoval = (content: Model.DesignSystemContent) =>
                       deleteAssetFiles(
-                        input2,
+                        content,
                         assetGroupFilePaths(
-                          input2.files,
-                          input.name,
+                          content.files,
+                          group.name,
                         ).filter(
-                          (input3: string): boolean =>
-                            remoteTextEntry(input3) ===
+                          (path: string): boolean =>
+                            remoteTextEntry(path) ===
                             undefined,
                         ),
                       );
                   performDesignSystemEdit(
-                    value2,
-                    callback5,
-                    (input2?: { withoutBytes: string[] }): boolean => {
+                    editContent,
+                    applyGroupRemoval,
+                    (removeOptions?: { withoutBytes: string[] }): boolean => {
                       if (
-                        !value2.exec(
-                          uiMessage("design-system.assetGroupEditor.removeGroup") + input.name,
-                          callback5,
-                          input2,
+                        !editContent.exec(
+                          uiMessage("design-system.assetGroupEditor.removeGroup") + group.name,
+                          applyGroupRemoval,
+                          removeOptions,
                         )
                       ) {
                         return false;
                       }
-                      let value18: string =
+                      let removedPath: string =
                           uiMessage("design-system.assetGroupEditor.removed") +
-                          value4(input.name) +
+                          getGroupName(group.name) +
                           " and its " +
-                          assetFileCountLabel(value15.length) +
-                          (value14.length > 0
+                          assetFileCountLabel(localPaths.length) +
+                          (remotePaths.length > 0
                             ? " (" +
-                              assetFileCountLabel(value14.length) +
+                              assetFileCountLabel(remotePaths.length) +
                               // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                               " of stored code kept — remove with the agent)"
                             : ""),
-                        length = value2.lastNotUndoable().length;
+                        length = editContent.lastNotUndoable().length;
                       if (length === 0) {
-                        ref.current.removed(value18);
-                      } else if (length >= value15.length) {
+                        ref.current.removed(removedPath);
+                      } else if (length >= localPaths.length) {
                         showEditorNotification(
-                          value18 + ". This cannot be undone.",
+                          removedPath + ". This cannot be undone.",
                         );
                       } else {
                         ref.current.removed(
-                          value18 +
+                          removedPath +
                             ". Undo brings back all but " +
                             assetFileCountLabel(length) +
                             ".",
                         );
                       }
-                      ref2.current?.focus(value17);
+                      editorControllerRef.current?.focus(nextGroupPath);
                       return true;
                     },
                     callback(),
@@ -528,24 +528,24 @@ function useAssetGroupEditor(
               });
             },
             autoEdit:
-              value6 === input.name
+              renamingName === group.name
                 ? {
                     placeholder: uiMessage("design-system.assetGroupEditor.nameThisSet"),
-                    onEnd: () => value7(null),
+                    onEnd: () => setRenamingName(null),
                   }
                 : undefined,
           },
-    overlay: value12,
-    renaming: value8,
-    clearRenaming: () => value9(null),
-    nameGroup: (input: string): void => {
-      value7(input);
+    overlay: overlay,
+    renaming: renamingPath,
+    clearRenaming: () => setRenamingPath(null),
+    nameGroup: (groupName: string): void => {
+      setRenamingName(groupName);
       ref.current.reveal({
         kind: "assets",
-        key: input,
+        key: groupName,
       });
     },
-    remove: callback3,
+    remove: handleRemove,
   };
 }
 function get_NEW_ASSET_GROUP_PLACEHOLDER() {

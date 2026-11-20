@@ -47,71 +47,71 @@ function createStoredZip(entries: Application.ZipEntry[]): Uint8Array {
     localEntries: Uint8Array[] = [],
     centralDirectory: Uint8Array[] = [],
     offset = 0;
-  for (let value4 of entries) {
-    let value5 = encoder.encode(value4.name),
-      value6 =
-        typeof value4.data === "string"
-          ? encoder.encode(value4.data)
-          : value4.data,
-      value7 = zipCrc32(value6),
-      value8 = new DataView(new ArrayBuffer(30));
-    value8.setUint32(0, 67324752, true);
-    value8.setUint16(4, 20, true);
-    value8.setUint16(6, 2048, true);
-    value8.setUint16(8, 0, true);
-    value8.setUint16(10, 0, true);
-    value8.setUint16(12, 33, true);
-    value8.setUint32(14, value7, true);
-    value8.setUint32(18, value6.length, true);
-    value8.setUint32(22, value6.length, true);
-    value8.setUint16(26, value5.length, true);
-    value8.setUint16(28, 0, true);
-    localEntries.push(new Uint8Array(value8.buffer), value5, value6);
-    let value9 = new DataView(new ArrayBuffer(46));
-    value9.setUint32(0, 33639248, true);
-    value9.setUint16(4, 20, true);
-    value9.setUint16(6, 20, true);
-    value9.setUint16(8, 2048, true);
-    value9.setUint16(10, 0, true);
-    value9.setUint16(12, 0, true);
-    value9.setUint16(14, 33, true);
-    value9.setUint32(16, value7, true);
-    value9.setUint32(20, value6.length, true);
-    value9.setUint32(24, value6.length, true);
-    value9.setUint16(28, value5.length, true);
-    value9.setUint16(30, 0, true);
-    value9.setUint16(32, 0, true);
-    value9.setUint16(34, 0, true);
-    value9.setUint16(36, 0, true);
-    value9.setUint32(38, 0, true);
-    value9.setUint32(42, offset, true);
-    centralDirectory.push(new Uint8Array(value9.buffer), value5);
-    offset += 30 + value5.length + value6.length;
+  for (let entry of entries) {
+    let entryNameBytes = encoder.encode(entry.name),
+      entryBytes =
+        typeof entry.data === "string"
+          ? encoder.encode(entry.data)
+          : entry.data,
+      entryCrc = zipCrc32(entryBytes),
+      localHeader = new DataView(new ArrayBuffer(30));
+    localHeader.setUint32(0, 67324752, true);
+    localHeader.setUint16(4, 20, true);
+    localHeader.setUint16(6, 2048, true);
+    localHeader.setUint16(8, 0, true);
+    localHeader.setUint16(10, 0, true);
+    localHeader.setUint16(12, 33, true);
+    localHeader.setUint32(14, entryCrc, true);
+    localHeader.setUint32(18, entryBytes.length, true);
+    localHeader.setUint32(22, entryBytes.length, true);
+    localHeader.setUint16(26, entryNameBytes.length, true);
+    localHeader.setUint16(28, 0, true);
+    localEntries.push(new Uint8Array(localHeader.buffer), entryNameBytes, entryBytes);
+    let centralHeader = new DataView(new ArrayBuffer(46));
+    centralHeader.setUint32(0, 33639248, true);
+    centralHeader.setUint16(4, 20, true);
+    centralHeader.setUint16(6, 20, true);
+    centralHeader.setUint16(8, 2048, true);
+    centralHeader.setUint16(10, 0, true);
+    centralHeader.setUint16(12, 0, true);
+    centralHeader.setUint16(14, 33, true);
+    centralHeader.setUint32(16, entryCrc, true);
+    centralHeader.setUint32(20, entryBytes.length, true);
+    centralHeader.setUint32(24, entryBytes.length, true);
+    centralHeader.setUint16(28, entryNameBytes.length, true);
+    centralHeader.setUint16(30, 0, true);
+    centralHeader.setUint16(32, 0, true);
+    centralHeader.setUint16(34, 0, true);
+    centralHeader.setUint16(36, 0, true);
+    centralHeader.setUint32(38, 0, true);
+    centralHeader.setUint32(42, offset, true);
+    centralDirectory.push(new Uint8Array(centralHeader.buffer), entryNameBytes);
+    offset += 30 + entryNameBytes.length + entryBytes.length;
   }
   let value = centralDirectory.reduce(
-      (input, items2) => input + items2.length,
+      (totalLength, chunk) => totalLength + chunk.length,
       0,
     ),
-    value2 = new DataView(new ArrayBuffer(22));
-  value2.setUint32(0, 101010256, true);
-  value2.setUint16(8, entries.length, true);
-  value2.setUint16(10, entries.length, true);
-  value2.setUint32(12, value, true);
-  value2.setUint32(16, offset, true);
+    endRecord = new DataView(new ArrayBuffer(22));
+  endRecord.setUint32(0, 101010256, true);
+  endRecord.setUint16(8, entries.length, true);
+  endRecord.setUint16(10, entries.length, true);
+  endRecord.setUint32(12, value, true);
+  endRecord.setUint32(16, offset, true);
   let items = [
       ...localEntries,
       ...centralDirectory,
-      new Uint8Array(value2.buffer),
+      new Uint8Array(endRecord.buffer),
     ],
-    value3 = new Uint8Array(
-      items.reduce((input, items2) => input + items2.length, 0),
+    archiveBytes = new Uint8Array(
+      items.reduce((totalLength, chunk) => totalLength + chunk.length, 0),
     ),
     index = 0;
-  for (let value4 of items) {
-    value3.set(value4, index);
-    index += value4.length;
+  for (let chunk of items) {
+    archiveBytes.set(chunk, index);
+    index += chunk.length;
   }
-  return value3;
+  return archiveBytes;
 }
 function downloadDataUrlBytes(dataUrl: string): Uint8Array | null {
   let metadata = parseDataUriHeader(dataUrl);
@@ -122,11 +122,11 @@ function downloadDataUrlBytes(dataUrl: string): Uint8Array | null {
   if (metadata.base64) {
     try {
       let value = atob(payload),
-        value2 = new Uint8Array(value.length);
+        decodedBytes = new Uint8Array(value.length);
       for (let index: number = 0; index < value.length; index++) {
-        value2[index] = value.charCodeAt(index);
+        decodedBytes[index] = value.charCodeAt(index);
       }
-      return value2;
+      return decodedBytes;
     } catch {
       return null;
     }
@@ -151,42 +151,42 @@ async function collectDownloadFiles(
     missing: string[] = [],
     usedNames = new Set();
   for (let value of Object.keys(files).sort()) {
-    let value2 = files[value],
-      value3 = storagePointerForFile(value, value2);
-    if (value3 === null && isTextFilePath(value)) {
+    let fileData = files[value],
+      storagePointer = storagePointerForFile(value, fileData);
+    if (storagePointer === null && isTextFilePath(value)) {
       entries.push({
         name: value,
-        data: value2,
+        data: fileData,
       });
       usedNames.add(value);
       continue;
     }
-    if (value3 === null) {
-      let value5 = downloadDataUrlBytes(value2);
-      if (value5 === null) {
+    if (storagePointer === null) {
+      let dataUrlBytes = downloadDataUrlBytes(fileData);
+      if (dataUrlBytes === null) {
         missing.push(value);
       } else {
         entries.push({
           name: value,
-          data: value5,
+          data: dataUrlBytes,
         });
         usedNames.add(value);
       }
       continue;
     }
-    let value4 = await preflightDownloadFiles(
+    let downloadedBytes = await preflightDownloadFiles(
       [
         addressedDownloadFileUrl(files, value),
         filePreviewUrl(files, value, prefix),
       ],
       fetchBytes,
     );
-    if (value4 === null) {
+    if (downloadedBytes === null) {
       missing.push(value);
     } else {
       entries.push({
         name: value,
-        data: value4,
+        data: downloadedBytes,
       });
       usedNames.add(value);
     }
@@ -202,13 +202,13 @@ async function collectDownloadFiles(
     data: generateNamedTokensCss(paths, storage),
   });
   try {
-    for (let [value, value2] of consumptionDocumentationForFiles(
+    for (let [value, documentedData] of consumptionDocumentationForFiles(
       files,
     ).files) {
       if (!usedNames.has(value)) {
         entries.push({
           name: value,
-          data: value2,
+          data: documentedData,
         });
       }
     }
@@ -229,9 +229,9 @@ async function saveDownloadFile(
         : contents,
     permission = await saveThroughShell(bytes, name),
     callback = (
-      input: Application.ArtifactDownloadOutcome["outcome"],
+      outcome: Application.ArtifactDownloadOutcome["outcome"],
     ): Application.ArtifactDownloadOutcome => ({
-      outcome: input,
+      outcome: outcome,
       shell: permission,
     });
   if (
@@ -255,15 +255,15 @@ async function saveDownloadFile(
     let value = new Blob([bytes as BlobPart], {
         type: mimeType,
       }),
-      value2 = document.createElement("a");
-    value2.href = URL.createObjectURL(value);
-    value2.download = name;
-    value2.rel = "noopener";
-    document.body.appendChild(value2);
-    value2.click();
+      downloadLink = document.createElement("a");
+    downloadLink.href = URL.createObjectURL(value);
+    downloadLink.download = name;
+    downloadLink.rel = "noopener";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
     setTimeout((): void => {
-      URL.revokeObjectURL(value2.href);
-      value2.remove();
+      URL.revokeObjectURL(downloadLink.href);
+      downloadLink.remove();
     }, 800);
     return callback("downloaded");
   } catch {
@@ -302,11 +302,11 @@ async function preflightDownloadFiles(
     if (value === null || value === undefined) {
       continue;
     }
-    let value2 = /^data:/i.test(value)
+    let isDataUrl = /^data:/i.test(value)
       ? downloadDataUrlBytes(value)
       : await files(value);
-    if (value2 !== null) {
-      return value2;
+    if (isDataUrl !== null) {
+      return isDataUrl;
     }
   }
   return null;
@@ -321,11 +321,11 @@ async function readDownloadFileBytes(
   if (value === undefined) {
     return null;
   }
-  let value2 = storagePointerForFile(path, value);
-  if (value2 === null && isTextFilePath(path)) {
+  let storagePointer = storagePointerForFile(path, value);
+  if (storagePointer === null && isTextFilePath(path)) {
     return new TextEncoder().encode(value);
   }
-  if (value2 === null) {
+  if (storagePointer === null) {
     return downloadDataUrlBytes(value);
   }
   return preflightDownloadFiles(
@@ -347,9 +347,9 @@ function inferFontMetadata(fileName: string): Editor.InferredFontMetadata {
   if (/variable|\bVF\b|var\b/i.test(baseName)) {
     weight = "100 900";
   } else {
-    for (let [value, value2] of FONT_FILE_WEIGHT_PATTERNS) {
+    for (let [value, matchedWeight] of FONT_FILE_WEIGHT_PATTERNS) {
       if (value.test(baseName)) {
-        weight = value2;
+        weight = matchedWeight;
         break;
       }
     }
@@ -407,13 +407,13 @@ function extractDroppedFiles(
       if (value.kind !== "file") {
         continue;
       }
-      let value2 = value.webkitGetAsEntry();
-      if (value2 !== null) {
-        entries.push(value2);
+      let entry = value.webkitGetAsEntry();
+      if (entry !== null) {
+        entries.push(entry);
       } else {
-        let value3 = value.getAsFile();
-        if (value3 !== null) {
-          files.push(value3);
+        let file = value.getAsFile();
+        if (file !== null) {
+          files.push(file);
         }
       }
     }
@@ -430,9 +430,9 @@ async function collectDroppedDirectories(
       files: [],
       leftOut: 0,
     },
-    appendFile = (input: File): void => {
+    appendFile = (file: File): void => {
       if (result.files.length < MAX_DROPPED_FILES) {
-        result.files.push(input);
+        result.files.push(file);
       } else {
         result.leftOut++;
       }
@@ -443,46 +443,46 @@ async function collectDroppedDirectories(
     }
   }
   let callback = async (
-    input: Editor.DroppedEntry,
-    options: string,
+    droppedEntry: Editor.DroppedEntry,
+    relativePath: string,
   ): Promise<void> => {
-    if (isIgnoredUploadFileName(input.name)) {
+    if (isIgnoredUploadFileName(droppedEntry.name)) {
       return;
     }
-    if (input.isFile && input.file !== undefined) {
-      let value = await new Promise<File | null>((input2) =>
-        input.file?.(
-          (input3) => input2(input3),
-          () => input2(null),
+    if (droppedEntry.isFile && droppedEntry.file !== undefined) {
+      let value = await new Promise<File | null>((resolveFile) =>
+        droppedEntry.file?.(
+          (file) => resolveFile(file),
+          () => resolveFile(null),
         ),
       );
       if (value !== null) {
         appendFile(
-          options === ""
+          relativePath === ""
             ? value
-            : withUploadedFileRelativePath(value, options + value.name),
+            : withUploadedFileRelativePath(value, relativePath + value.name),
         );
       }
       return;
     }
-    if (input.isDirectory && input.createReader !== undefined) {
-      let value = input.createReader();
+    if (droppedEntry.isDirectory && droppedEntry.createReader !== undefined) {
+      let value = droppedEntry.createReader();
       for (;;) {
-        let value2 = await new Promise<Editor.DroppedEntry[]>((input2) =>
+        let droppedEntries = await new Promise<Editor.DroppedEntry[]>((resolveEntries) =>
           value.readEntries(
-            (input3) => input2(input3),
-            () => input2([]),
+            (directoryEntries) => resolveEntries(directoryEntries),
+            () => resolveEntries([]),
           ),
         );
-        if (value2.length === 0) {
+        if (droppedEntries.length === 0) {
           break;
         }
-        for (let value3 of value2) {
-          if (result.files.length >= MAX_DROPPED_FILES && value3.isFile) {
+        for (let entry of droppedEntries) {
+          if (result.files.length >= MAX_DROPPED_FILES && entry.isFile) {
             result.leftOut++;
             continue;
           }
-          await callback(value3, options + input.name + "/");
+          await callback(entry, relativePath + droppedEntry.name + "/");
         }
       }
     }
@@ -527,11 +527,11 @@ export function installEditorAssetUpload(): () => void {
     zipCrc32Table = (() => {
       let value = new Uint32Array(256);
       for (let index: number = 0; index < 256; index++) {
-        let value2: number = index;
-        for (let index2: number = 0; index2 < 8; index2++) {
-          value2 = value2 & 1 ? 3988292384 ^ (value2 >>> 1) : value2 >>> 1;
+        let crc: number = index;
+        for (let bit: number = 0; bit < 8; bit++) {
+          crc = crc & 1 ? 3988292384 ^ (crc >>> 1) : crc >>> 1;
         }
-        value[index] = value2 >>> 0;
+        value[index] = crc >>> 0;
       }
       return value;
     })();

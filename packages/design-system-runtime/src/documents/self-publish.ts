@@ -20,9 +20,9 @@ function normalizeSelfPublishError(error: unknown): Host.PublishError {
   if (typeof error === "object" && error !== null && "code" in error) {
     let {
       code: value,
-      message: value2,
-      live: value3,
-      say: value4,
+      message: errorMessage,
+      live: liveMessage,
+      say: spokenMessage,
     } = error as {
       code: unknown;
       message?: unknown;
@@ -32,11 +32,11 @@ function normalizeSelfPublishError(error: unknown): Host.PublishError {
     if (typeof value === "string" && SELF_PUBLISH_ERROR_CODE_SET.has(value)) {
       return {
         code: value,
-        message: typeof value2 === "string" ? value2 : value,
-        live: typeof value3 === "string" ? value3 : undefined,
-        ...(typeof value4 === "string"
+        message: typeof errorMessage === "string" ? errorMessage : value,
+        live: typeof liveMessage === "string" ? liveMessage : undefined,
+        ...(typeof spokenMessage === "string"
           ? {
-              say: value4,
+              say: spokenMessage,
             }
           : {}),
       };
@@ -45,7 +45,7 @@ function normalizeSelfPublishError(error: unknown): Host.PublishError {
       return {
         code: "upstream_error",
         message:
-          (typeof value2 === "string" ? value2 : "publish failed") +
+          (typeof errorMessage === "string" ? errorMessage : "publish failed") +
           " (unrecognized code: " +
           value +
           ")",
@@ -65,7 +65,7 @@ function createSelfPublisher(): Host.Publisher {
         "the self capability (or this page is running outside a Frame shell and the emulator). Content cannot be saved from here.",
     );
   }
-  return async (input): Promise<Host.PublishResult | undefined> => {
+  return async (publishInput): Promise<Host.PublishResult | undefined> => {
     let value = await getSelfPublishCapability();
     if (value === null) {
       throw {
@@ -73,7 +73,7 @@ function createSelfPublisher(): Host.Publisher {
         get message() { return uiMessage("design-system.selfPublish.theSelfCapabilityIsNotAvailableToThisView"); },
       };
     }
-    return value.publish(input);
+    return value.publish(publishInput);
   };
 }
 export {

@@ -37,198 +37,198 @@ function assetKeyboardDestination(
     return order[Math.min(order.length - 1, index + 1)] ?? null;
   }
   let value: boolean = key === "ArrowUp",
-    value2 = order[value ? index - 1 : index + 1];
-  if (value2 !== undefined && columns(value2) === null) {
-    return value2;
+    neighborId = order[value ? index - 1 : index + 1];
+  if (neighborId !== undefined && columns(neighborId) === null) {
+    return neighborId;
   }
-  let value3 = columns(id);
-  if (value3 === null) {
+  let currentBounds = columns(id);
+  if (currentBounds === null) {
     return id;
   }
-  let value4 = value3.left + value3.width / 2,
-    value5: {
+  let currentCenterX = currentBounds.left + currentBounds.width / 2,
+    bestCandidate: {
       id: string;
       dy: number;
       dx: number;
     } | null = null;
-  for (let value6 of order) {
-    if (value6 === id) {
+  for (let candidateId of order) {
+    if (candidateId === id) {
       continue;
     }
-    let value7 = columns(value6);
-    if (value7 === null) {
+    let candidateBounds = columns(candidateId);
+    if (candidateBounds === null) {
       continue;
     }
-    let value8 = value
-      ? value3.top - (value7.top + value7.height)
-      : value7.top - (value3.top + value3.height);
-    if (value8 < -value7.height / 2) {
+    let verticalDistance = value
+      ? currentBounds.top - (candidateBounds.top + candidateBounds.height)
+      : candidateBounds.top - (currentBounds.top + currentBounds.height);
+    if (verticalDistance < -candidateBounds.height / 2) {
       continue;
     }
-    let value9: number = Math.abs(value7.left + value7.width / 2 - value4);
+    let horizontalDistance: number = Math.abs(candidateBounds.left + candidateBounds.width / 2 - currentCenterX);
     if (
-      value5 === null ||
-      value8 < value5.dy - 1 ||
-      (Math.abs(value8 - value5.dy) <= 1 && value9 < value5.dx)
+      bestCandidate === null ||
+      verticalDistance < bestCandidate.dy - 1 ||
+      (Math.abs(verticalDistance - bestCandidate.dy) <= 1 && horizontalDistance < bestCandidate.dx)
     ) {
-      value5 = {
-        id: value6,
-        dy: value8,
-        dx: value9,
+      bestCandidate = {
+        id: candidateId,
+        dy: verticalDistance,
+        dx: horizontalDistance,
       };
     }
   }
-  return value5?.id ?? id;
+  return bestCandidate?.id ?? id;
 }
 function useAssetGridInteractions(
-  options: Editor.AssetGridOptions,
+  gridOptions: Editor.AssetGridOptions,
 ): Editor.AssetGridInteractions {
   let {
       order: value,
-      editable: value2,
-      coarse: value3,
-      scroller: value4,
-    } = options,
-    ref = (reactAssetInteractions as typeof React).useRef(options);
-  ref.current = options;
-  let value5 = useAssetSelection(value),
+      editable: editable,
+      coarse: coarsePointer,
+      scroller: scroller,
+    } = gridOptions,
+    ref = (reactAssetInteractions as typeof React).useRef(gridOptions);
+  ref.current = gridOptions;
+  let selection = useAssetSelection(value),
     memo = (reactAssetInteractions as typeof React).useMemo(
-      () => new Set<string>(value5.selected),
-      [value5.selected],
+      () => new Set<string>(selection.selected),
+      [selection.selected],
     ),
-    [value6, value7] = (
+    [menu, setMenu] = (
       reactAssetInteractions as typeof React
     ).useState<Editor.AssetGridMenu | null>(null),
     callback = (reactAssetInteractions as typeof React).useCallback(
-      () => value7(null),
+      () => setMenu(null),
       [],
     ),
-    callback2 = (
-      input: string,
-      options2: {
+    openContextMenu = (
+      openedAssetId: string,
+      menuOptions: {
         x: number;
         y: number;
       },
-      context: "tap" | "point",
+      sourceContext: "tap" | "point",
     ): void => {
-      let value10 = value5.selected.includes(input)
-        ? value.filter((input2) => value5.has(input2))
-        : [input];
-      if (!value5.selected.includes(input)) {
-        value5.only(input);
+      let selectedAssetIds = selection.selected.includes(openedAssetId)
+        ? value.filter((assetId) => selection.has(assetId))
+        : [openedAssetId];
+      if (!selection.selected.includes(openedAssetId)) {
+        selection.only(openedAssetId);
       }
-      value7({
-        ...options2,
-        paths: value10,
-        anchor: context,
+      setMenu({
+        ...menuOptions,
+        paths: selectedAssetIds,
+        anchor: sourceContext,
       });
     },
-    value8 = useAssetDrag({
-      enabled: value2 && !value3,
+    dragController = useAssetDrag({
+      enabled: editable && !coarsePointer,
       order: value,
-      selected: value5.selected,
-      onGrab: value5.only,
-      scroller: value4,
-      onDrop: (input: string[], options2: Model.AssetDropTarget) =>
-        ref.current.onDrop(input, options2),
+      selected: selection.selected,
+      onGrab: selection.only,
+      scroller: scroller,
+      onDrop: (assetIds: string[], dropTarget: Model.AssetDropTarget) =>
+        ref.current.onDrop(assetIds, dropTarget),
     }),
-    ref2 = (reactAssetInteractions as typeof React).useRef<
+    pointerSessionRef = (reactAssetInteractions as typeof React).useRef<
       import("../contracts/token-editors").RowTouchSession | null
     >(null),
-    callback3 = () => {
-      let current = ref2.current;
+    clearPointerSession = () => {
+      let current = pointerSessionRef.current;
       if (current === null) {
         return false;
       }
       window.clearTimeout(current.timer);
-      ref2.current = null;
+      pointerSessionRef.current = null;
       return current.fired;
     },
-    ref3 = (reactAssetInteractions as typeof React).useRef(false),
-    callback4 = (reactAssetInteractions as typeof React).useCallback(
-      (input: React.PointerEvent<HTMLElement>, options2: string): void => {
-        ref4.current = null;
-        if (input.pointerType === "touch" && input.button === 0) {
-          callback3();
+    justDroppedRef = (reactAssetInteractions as typeof React).useRef(false),
+    handlePointerDown = (reactAssetInteractions as typeof React).useCallback(
+      (event: React.PointerEvent<HTMLElement>, assetId: string): void => {
+        focusTargetRef.current = null;
+        if (event.pointerType === "touch" && event.button === 0) {
+          clearPointerSession();
           let state = {
-            x: input.clientX,
-            y: input.clientY,
+            x: event.clientX,
+            y: event.clientY,
           };
-          ref2.current = {
+          pointerSessionRef.current = {
             x: state.x,
             y: state.y,
             fired: false,
             timer: window.setTimeout((): void => {
-              if (ref2.current !== null) {
-                ref2.current.fired = true;
+              if (pointerSessionRef.current !== null) {
+                pointerSessionRef.current.fired = true;
               }
-              callback2(options2, state, "tap");
+              openContextMenu(assetId, state, "tap");
             }, ASSET_LONG_PRESS_MS),
           };
         }
-        value8.onPointerDown(input, options2);
+        dragController.onPointerDown(event, assetId);
       },
-      [value8.onPointerDown, value, value5],
+      [dragController.onPointerDown, value, selection],
     );
   (reactAssetInteractions as typeof React).useEffect(() => {
-    let callback11 = (input: PointerEvent): void => {
-        let current = ref2.current;
+    let handlePointerMove = (event: PointerEvent): void => {
+        let current = pointerSessionRef.current;
         if (
           current !== null &&
-          Math.hypot(input.clientX - current.x, input.clientY - current.y) >
+          Math.hypot(event.clientX - current.x, event.clientY - current.y) >
             ASSET_LONG_PRESS_MOVE_TOLERANCE_PX
         ) {
-          callback3();
+          clearPointerSession();
         }
       },
-      callback12 = (): void => {
-        if (callback3()) {
-          ref3.current = true;
-          setTimeout(() => (ref3.current = false), 0);
+      handlePointerEnd = (): void => {
+        if (clearPointerSession()) {
+          justDroppedRef.current = true;
+          setTimeout(() => (justDroppedRef.current = false), 0);
         }
       };
-    window.addEventListener("pointermove", callback11, true);
-    window.addEventListener("pointerup", callback12, true);
-    window.addEventListener("pointercancel", callback12, true);
+    window.addEventListener("pointermove", handlePointerMove, true);
+    window.addEventListener("pointerup", handlePointerEnd, true);
+    window.addEventListener("pointercancel", handlePointerEnd, true);
     return (): void => {
-      window.removeEventListener("pointermove", callback11, true);
-      window.removeEventListener("pointerup", callback12, true);
-      window.removeEventListener("pointercancel", callback12, true);
+      window.removeEventListener("pointermove", handlePointerMove, true);
+      window.removeEventListener("pointerup", handlePointerEnd, true);
+      window.removeEventListener("pointercancel", handlePointerEnd, true);
     };
   }, []);
-  let callback5 = (
+  let handleClick = (
       reactAssetInteractions as typeof React
     ).useCallback(
-      (input: React.MouseEvent<HTMLElement>, options2: string): void => {
-        if (value8.justDropped() || ref3.current) {
+      (event: React.MouseEvent<HTMLElement>, assetId: string): void => {
+        if (dragController.justDropped() || justDroppedRef.current) {
           return;
         }
         if (
           !ref.current.editable &&
-          !input.shiftKey &&
-          !hasSelectionModifier(input)
+          !event.shiftKey &&
+          !hasSelectionModifier(event)
         ) {
-          value5.only(options2);
-          ref.current.onOpen(options2);
+          selection.only(assetId);
+          ref.current.onOpen(assetId);
           return;
         }
-        value5.click(options2, input);
+        selection.click(assetId, event);
       },
-      [value8, value5],
+      [dragController, selection],
     ),
-    callback6 = (reactAssetInteractions as typeof React).useCallback(
-      (input: string) => ref.current.onOpen(input),
+    handleDoubleClick = (reactAssetInteractions as typeof React).useCallback(
+      (assetId: string) => ref.current.onOpen(assetId),
       [],
     ),
-    callback7 = (reactAssetInteractions as typeof React).useCallback(
-      (event: React.MouseEvent<HTMLElement>, options2: string): void => {
+    handleContextMenu = (reactAssetInteractions as typeof React).useCallback(
+      (event: React.MouseEvent<HTMLElement>, assetId: string): void => {
         event.preventDefault();
-        if (ref2.current?.fired === true) {
+        if (pointerSessionRef.current?.fired === true) {
           return;
         }
-        callback3();
-        callback2(
-          options2,
+        clearPointerSession();
+        openContextMenu(
+          assetId,
           {
             x: event.clientX,
             y: event.clientY,
@@ -236,71 +236,71 @@ function useAssetGridInteractions(
           "point",
         );
       },
-      [value, value5],
+      [value, selection],
     ),
-    callback8 = (input: HTMLElement): void => {
-      input.focus({
+    focusTile = (element: HTMLElement): void => {
+      element.focus({
         preventScroll: true,
       });
-      input.scrollIntoView({
+      element.scrollIntoView({
         block: "nearest",
         inline: "nearest",
       });
     },
-    ref4 = (reactAssetInteractions as typeof React).useRef<
+    focusTargetRef = (reactAssetInteractions as typeof React).useRef<
       string | null
     >(null);
   (reactAssetInteractions as typeof React).useEffect((): void => {
-    if (ref4.current === null) {
+    if (focusTargetRef.current === null) {
       return;
     }
-    let value10 = findAssetTile(value4.current, ref4.current);
-    if (value10 === null) {
+    let targetTile = findAssetTile(scroller.current, focusTargetRef.current);
+    if (targetTile === null) {
       return;
     }
-    ref4.current = null;
-    callback8(value10);
+    focusTargetRef.current = null;
+    focusTile(targetTile);
   });
-  let callback9 = (
+  let setFocusTarget = (
       reactAssetInteractions as typeof React
-    ).useCallback((input: string | null): void => {
-      ref4.current = input;
+    ).useCallback((assetId: string | null): void => {
+      focusTargetRef.current = assetId;
     }, []),
-    callback10 = (reactAssetInteractions as typeof React).useCallback(
-      (event: React.KeyboardEvent<HTMLElement>, options2: string): void => {
+    handleKeyDown = (reactAssetInteractions as typeof React).useCallback(
+      (event: React.KeyboardEvent<HTMLElement>, keyboardAssetId: string): void => {
         if (event.defaultPrevented || event.target !== event.currentTarget) {
           return;
         }
         let current = ref.current,
-          value10 = event.metaKey || event.ctrlKey;
-        if (event.key === "Enter" && !value10) {
+          hasCommandModifier = event.metaKey || event.ctrlKey;
+        if (event.key === "Enter" && !hasCommandModifier) {
           event.preventDefault();
-          current.onOpen(options2);
+          current.onOpen(keyboardAssetId);
         } else if (event.key === " ") {
           event.preventDefault();
-          value5.click(options2, {
+          selection.click(keyboardAssetId, {
             shiftKey: false,
             metaKey: true,
             ctrlKey: false,
             altKey: false,
           });
         } else if (event.key === "Escape") {
-          if (value5.selected.length === 0) {
+          if (selection.selected.length === 0) {
             return;
           }
           event.preventDefault();
-          value5.clear();
+          selection.clear();
         } else if (
-          value10 &&
+          hasCommandModifier &&
           !event.shiftKey &&
           !event.altKey &&
           (event.key === "a" || event.key === "A")
         ) {
           event.preventDefault();
-          value5.all();
+          selection.all();
         } else if (
           (event.key === "Delete" || event.key === "Backspace") &&
-          !value10 &&
+          !hasCommandModifier &&
           !event.altKey
         ) {
           event.preventDefault();
@@ -308,9 +308,9 @@ function useAssetGridInteractions(
             return;
           }
           current.onRemove(
-            value5.selected.includes(options2)
-              ? current.order.filter((input) => value5.has(input))
-              : [options2],
+            selection.selected.includes(keyboardAssetId)
+              ? current.order.filter((assetId) => selection.has(assetId))
+              : [keyboardAssetId],
           );
         } else if (
           event.key === "ContextMenu" ||
@@ -318,8 +318,8 @@ function useAssetGridInteractions(
         ) {
           event.preventDefault();
           let bounds = event.currentTarget.getBoundingClientRect();
-          callback2(
-            options2,
+          openContextMenu(
+            keyboardAssetId,
             {
               x: bounds.left + Math.min(40, bounds.width / 2),
               y: bounds.top + Math.min(24, bounds.height / 2),
@@ -328,55 +328,55 @@ function useAssetGridInteractions(
           );
         } else if (
           event.key.startsWith("Arrow") &&
-          !value10 &&
+          !hasCommandModifier &&
           !event.altKey
         ) {
           event.preventDefault();
           let entries = new Map<string, HTMLElement>();
-          for (let value13 of current.scroller.current?.querySelectorAll<HTMLElement>(
+          for (let tileElement of current.scroller.current?.querySelectorAll<HTMLElement>(
             "[data-tile-id]",
           ) ?? []) {
-            entries.set(value13.dataset.tileId ?? "", value13);
+            entries.set(tileElement.dataset.tileId ?? "", tileElement);
           }
-          let value11 = current.order.filter((input) => {
-              let entry2 = entries.get(input);
+          let visibleIds = current.order.filter((assetId) => {
+              let tileElement = entries.get(assetId);
               return (
-                entry2 === undefined || entry2.getClientRects().length > 0
+                tileElement === undefined || tileElement.getClientRects().length > 0
               );
             }),
-            value12 = assetKeyboardDestination(
+            keyboardTarget = assetKeyboardDestination(
               event.key,
-              options2,
-              value11,
-              (input) => entries.get(input)?.getBoundingClientRect() ?? null,
+              keyboardAssetId,
+              visibleIds,
+              (assetId) => entries.get(assetId)?.getBoundingClientRect() ?? null,
             );
-          if (value12 === null) {
+          if (keyboardTarget === null) {
             return;
           }
           if (event.shiftKey) {
-            value5.extend(value12);
+            selection.extend(keyboardTarget);
           } else {
-            value5.only(value12);
+            selection.only(keyboardTarget);
           }
-          let entry = entries.get(value12);
+          let entry = entries.get(keyboardTarget);
           if (entry !== undefined) {
-            callback8(entry);
+            focusTile(entry);
           } else {
-            callback9(value12);
+            setFocusTarget(keyboardTarget);
           }
         }
       },
-      [value5],
+      [selection],
     ),
-    ref5 = (reactAssetInteractions as typeof React).useRef(value5);
-  ref5.current = value5;
+    selectionRef = (reactAssetInteractions as typeof React).useRef(selection);
+  selectionRef.current = selection;
   (reactAssetInteractions as typeof React).useEffect(() => {
-    let current = value4.current;
+    let current = scroller.current;
     if (current === null) {
       return;
     }
-    let callback11 = (event: PointerEvent): void => {
-      if (event.button !== 0 || ref5.current.selected.length === 0) {
+    let handleNativePointerDown = (event: PointerEvent): void => {
+      if (event.button !== 0 || selectionRef.current.selected.length === 0) {
         return;
       }
       let target = event.target;
@@ -388,32 +388,32 @@ function useAssetGridInteractions(
       ) {
         return;
       }
-      ref5.current.clear();
+      selectionRef.current.clear();
     };
-    current.addEventListener("pointerdown", callback11);
-    return () => current.removeEventListener("pointerdown", callback11);
-  }, [value4]);
-  let value9 =
-    value5.focus !== null && value.includes(value5.focus)
-      ? value5.focus
-      : (value5.selected.at(-1) ?? null);
+    current.addEventListener("pointerdown", handleNativePointerDown);
+    return () => current.removeEventListener("pointerdown", handleNativePointerDown);
+  }, [scroller]);
+  let focusId =
+    selection.focus !== null && value.includes(selection.focus)
+      ? selection.focus
+      : (selection.selected.at(-1) ?? null);
   return {
-    selection: value5,
+    selection: selection,
     selected: memo,
-    focusId: value9,
-    editable: value2,
-    coarse: value3,
-    drag: value8.drag,
-    ghostRef: value8.ghostRef,
-    menu: value6,
+    focusId: focusId,
+    editable: editable,
+    coarse: coarsePointer,
+    drag: dragController.drag,
+    ghostRef: dragController.ghostRef,
+    menu: menu,
     closeMenu: callback,
-    focus: callback9,
-    remove: (input: string[]) => ref.current.onRemove(input),
-    onPointerDown: callback4,
-    onClick: callback5,
-    onDoubleClick: callback6,
-    onContextMenu: callback7,
-    onKeyDown: callback10,
+    focus: setFocusTarget,
+    remove: (assetIds: string[]) => ref.current.onRemove(assetIds),
+    onPointerDown: handlePointerDown,
+    onClick: handleClick,
+    onDoubleClick: handleDoubleClick,
+    onContextMenu: handleContextMenu,
+    onKeyDown: handleKeyDown,
   };
 }
 export {

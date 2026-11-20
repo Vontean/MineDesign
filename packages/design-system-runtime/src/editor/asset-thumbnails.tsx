@@ -56,18 +56,18 @@ function retryAssetThumbnailAddress(
 ): void {
   try {
     let value = globalThis.document?.baseURI ?? "",
-      value2 =
+      thumbnailUrl =
         image?.currentTarget?.currentSrc ||
         image?.currentTarget?.src ||
         encodeRelativeUrlPath(
           projectFilePath(files),
         ),
-      pathname = new URL(value2, value).pathname,
-      value3 = assetAddressRoot(pathname),
+      pathname = new URL(thumbnailUrl, value).pathname,
+      assetAddress = assetAddressRoot(pathname),
       entry = assetThumbnailRetryTimers.get(pathname);
     if (entry === undefined) {
-      entry = new Promise<void>((input) =>
-        setTimeout(input, ASSET_THUMBNAIL_RETRY_MS),
+      entry = new Promise<void>((resolve) =>
+        setTimeout(resolve, ASSET_THUMBNAIL_RETRY_MS),
       )
         .then(() =>
           fetch(pathname, {
@@ -95,12 +95,12 @@ function retryAssetThumbnailAddress(
         return;
       }
       reason();
-      if (state.status === 0 || reportedAssetThumbnailFailures.has(value3)) {
+      if (state.status === 0 || reportedAssetThumbnailFailures.has(assetAddress)) {
         return;
       }
-      reportedAssetThumbnailFailures.add(value3);
+      reportedAssetThumbnailFailures.add(assetAddress);
       if (
-        value3 === assetAddressRoot(new URL(value).pathname) &&
+        assetAddress === assetAddressRoot(new URL(value).pathname) &&
         isPublishedPreviewStillOffered(pathname)
       ) {
         notePublishedPreviewFailure(pathname, files);
@@ -127,8 +127,8 @@ function useAssetThumbnailSource(
   useAssetThumbnailSources();
   let value = isHeldFilePointer(path, files[path] ?? ""),
     ref = reactAssetThumbnail.useRef<Editor.AddressedLoadState | null>(null),
-    [, value2] = reactAssetThumbnail.useReducer(
-      (input: number) => input + 1,
+    [, refreshSource] = reactAssetThumbnail.useReducer(
+      (generation: number) => generation + 1,
       0,
     );
   if (!value) {
@@ -145,28 +145,28 @@ function useAssetThumbnailSource(
     );
   }
   let current = ref.current!,
-    value3 = refreshAddressedFileVersion(
+    addressedSourceVersion = refreshAddressedFileVersion(
       current,
       addressedFileEntry(projectFilePath(path))
         ?.sha256 ?? resolveFileVersion(path),
       callback,
     ),
-    value4 = currentAddressedFileSource(current, callback);
+    fileSource = currentAddressedFileSource(current, callback);
   return {
-    part: value3,
-    ...(value4 !== undefined
+    part: addressedSourceVersion,
+    ...(fileSource !== undefined
       ? {
-          src: value4,
+          src: fileSource,
         }
       : {}),
     onLoad: (): void => {
       current.loaded = true;
     },
-    onError: (input: Editor.ThumbnailEvent): void => {
+    onError: (error: Editor.ThumbnailEvent): void => {
       if (retryAddressedFileSource(current, callback)) {
         setTimeout((): void => {
           advanceAddressedFileSource(current);
-          value2();
+          refreshSource();
         }, ASSET_THUMBNAIL_RETRY_MS);
         return;
       }
@@ -174,10 +174,10 @@ function useAssetThumbnailSource(
         return;
       }
       let last = current.last,
-        value5 = callback();
+        retryToken = callback();
       retryAssetThumbnailAddress(
         path,
-        input,
+        error,
         (): void => {
           if (current.last === last) {
             current.loaded = true;
@@ -185,7 +185,7 @@ function useAssetThumbnailSource(
         },
         (): void => {
           if (current.last === last) {
-            refuseAddressedFileSource(current, () => value5);
+            refuseAddressedFileSource(current, () => retryToken);
           }
         },
       );
@@ -236,9 +236,9 @@ export function installEditorAssetThumbnails(): () => void {
     };
     subscribeAddressedFileEntries(notifyAssetThumbnailSources);
     subscribeAddressedFiles(notifyAssetThumbnailSources);
-    subscribeAssetThumbnailSources = (input: () => void) => {
-      assetThumbnailSubscribers.add(input);
-      return () => void assetThumbnailSubscribers.delete(input);
+    subscribeAssetThumbnailSources = (subscriber: () => void) => {
+      assetThumbnailSubscribers.add(subscriber);
+      return () => void assetThumbnailSubscribers.delete(subscriber);
     };
     assetThumbnailSourceSnapshot = (): number => assetThumbnailGeneration;
     ASSET_THUMBNAIL_RETRY_MS = 300;

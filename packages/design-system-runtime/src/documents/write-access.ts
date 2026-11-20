@@ -25,14 +25,14 @@ async function determineSlidesWriteAccess(): Promise<Host.WriteAccess> {
       reason: options,
     };
   }
-  let [value, value2, value3, value4] = await Promise.all([
+  let [value, canEditSlides, canEditImages, writeAccessError] = await Promise.all([
     currentUserCan("data.write"),
     currentUserCan("files.write"),
     currentUserCanEdit(),
     getAssetsCapability(),
   ]);
-  if (value !== null || value2 !== null) {
-    if ((value === true || value2 === true) && value3 !== false) {
+  if (value !== null || canEditSlides !== null) {
+    if ((value === true || canEditSlides === true) && canEditImages !== false) {
       return {
         canWrite: true,
       };
@@ -43,7 +43,7 @@ async function determineSlidesWriteAccess(): Promise<Host.WriteAccess> {
       };
     }
   }
-  if (value3 !== true && value4 === null) {
+  if (canEditImages !== true && writeAccessError === null) {
     return {
       canWrite: false,
       reason: LIVE_READ_ONLY_MESSAGE,

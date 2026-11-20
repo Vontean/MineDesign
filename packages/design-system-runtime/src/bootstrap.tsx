@@ -14,9 +14,9 @@ export function installBootstrap(): () => void {
       detectCompiledPageStorageMode(document),
     ) === "files"
       ? bootDesignSystemFilesMode()
-          .catch((input: unknown): void =>
+          .catch((bootError: unknown): void =>
             configureLegacyDesignSystemBoot(
-              failedLegacyStateOutcome(input),
+              failedLegacyStateOutcome(bootError),
             ),
           )
           .then((): void => {

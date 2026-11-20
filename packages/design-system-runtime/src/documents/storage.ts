@@ -13,9 +13,9 @@ import { assembleCompiledPage, compiledPageMaxBytes, readCompiledPageAnatomy, re
 var READ_ONLY_ARTIFACT_MESSAGE: string;
 var ARTIFACT_STASH_PREFIX: string;
 var ARTIFACT_READ_ONLY_PREFIX: string;
-function artifactStashKey(input: string): string {
+function artifactStashKey(sessionPath: string): string {
   return (
-    ARTIFACT_STASH_PREFIX + normalizeArtifactSessionPath(input)
+    ARTIFACT_STASH_PREFIX + normalizeArtifactSessionPath(sessionPath)
   );
 }
 function createSessionStorageSlot(key: string): Host.StorageSlot {
@@ -27,9 +27,9 @@ function createSessionStorageSlot(key: string): Host.StorageSlot {
         return null;
       }
     },
-    write(input): boolean {
+    write(serializedValue): boolean {
       try {
-        sessionStorage.setItem(key, input);
+        sessionStorage.setItem(key, serializedValue);
         return true;
       } catch {
         return false;
@@ -119,14 +119,14 @@ function parseArtifactStash(
       typeof value.at === "number" &&
       "state" in value
     ) {
-      let value2 = value;
+      let stashRecord = value;
       return {
-        at: value2.at as number,
-        state: value2.state,
-        ops: value2.ops,
+        at: stashRecord.at as number,
+        state: stashRecord.state,
+        ops: stashRecord.ops,
         expectEmbed:
-          typeof value2.expectEmbed === "string"
-            ? value2.expectEmbed
+          typeof stashRecord.expectEmbed === "string"
+            ? stashRecord.expectEmbed
             : undefined,
       };
     }
@@ -135,7 +135,7 @@ function parseArtifactStash(
 }
 function parseEmbeddedArtifactState<Content>(
   state: unknown,
-  options: Host.ArtifactParser<Content>,
+  parser: Host.ArtifactParser<Content>,
 ): Host.ArtifactEnvelope<Content> {
   let record =
       typeof state === "object" && state !== null
@@ -143,68 +143,68 @@ function parseEmbeddedArtifactState<Content>(
         : {},
     content: Content;
   try {
-    content = options.parseContent(record.content);
+    content = parser.parseContent(record.content);
   } catch {
-    content = options.initialContent;
+    content = parser.initialContent;
   }
   return {
     title:
       normalizeArtifactTitle(record.title) ??
-      options.defaultTitle ??
+      parser.defaultTitle ??
       "Appifact",
     content: content,
     comments: normalizeComments(record.comments),
   };
 }
 function createArtifactDocument<Content>(
-  options: Host.DocumentOptions<Content>,
+  documentOptions: Host.DocumentOptions<Content>,
 ): Host.ArtifactDocument<Content> {
   let autoSaveRuntime = getAutoSavingArtifactRuntime();
   if (
     autoSaveRuntime !== undefined &&
-    options.publish === undefined &&
-    options.canPublish === undefined &&
-    options.embeddedState === undefined &&
-    options.pageParts === undefined
+    documentOptions.publish === undefined &&
+    documentOptions.canPublish === undefined &&
+    documentOptions.embeddedState === undefined &&
+    documentOptions.pageParts === undefined
   ) {
     return createRuntimeArtifactDocument({
       runtime: autoSaveRuntime.runtime,
       snapshot: autoSaveRuntime.snapshot,
-      parseContent: options.parseContent,
-      ...(options.serializeContent !== undefined
+      parseContent: documentOptions.parseContent,
+      ...(documentOptions.serializeContent !== undefined
         ? {
-            serializeContent: options.serializeContent,
+            serializeContent: documentOptions.serializeContent,
           }
         : {}),
-      ...(options.contentHold !== undefined
+      ...(documentOptions.contentHold !== undefined
         ? {
-            contentHold: options.contentHold,
+            contentHold: documentOptions.contentHold,
           }
         : {}),
-      initialContent: options.initialContent,
-      ...(options.defaultTitle !== undefined
+      initialContent: documentOptions.initialContent,
+      ...(documentOptions.defaultTitle !== undefined
         ? {
-            defaultTitle: options.defaultTitle,
+            defaultTitle: documentOptions.defaultTitle,
           }
         : {}),
     });
   }
   let pageParts =
-      options.pageParts ??
+      documentOptions.pageParts ??
       readCompiledPageAnatomy(
         (globalThis as typeof globalThis & { document: Document }).document,
       ),
     embeddedState =
-      options.embeddedState !== undefined
-        ? options.embeddedState
+      documentOptions.embeddedState !== undefined
+        ? documentOptions.embeddedState
         : readCompiledPageDocument(
             (globalThis as typeof globalThis & { document: Document })
               .document,
           ),
-    stash = options.stash ?? currentArtifactStash(),
-    readOnlyFlag = options.roFlag ?? currentArtifactReadOnlySlot(),
-    canPublish = options.canPublish ?? selfPublishAvailable(),
-    publishedState = parseEmbeddedArtifactState(embeddedState, options),
+    stash = documentOptions.stash ?? currentArtifactStash(),
+    readOnlyFlag = documentOptions.roFlag ?? currentArtifactReadOnlySlot(),
+    canPublish = documentOptions.canPublish ?? selfPublishAvailable(),
+    publishedState = parseEmbeddedArtifactState(embeddedState, documentOptions),
     embeddedStateHash = hashArtifactState(
       stringifyInlineJson(serializeEnvelope(publishedState)),
     ),
@@ -217,7 +217,7 @@ function createArtifactDocument<Content>(
     saveErrorCode: string | undefined,
     hasSaved: boolean = false,
     reloading: boolean = false,
-    contentHoldReason = options.contentHold?.(
+    contentHoldReason = documentOptions.contentHold?.(
       (embeddedState as { content?: unknown } | undefined)?.content,
     ),
     readOnly = contentHoldReason !== undefined || !canPublish,
@@ -321,12 +321,12 @@ function createArtifactDocument<Content>(
     notificationOwed = false;
     queueMicrotask(() => notifyDocumentSubscribers());
   }
-  function notifyDocumentSubscribers(input?: { remote: boolean }): void {
+  function notifyDocumentSubscribers(event?: { remote: boolean }): void {
     if (documentSubscribers.size === 0) {
       notificationOwed = true;
     }
     for (let value of documentSubscribers) {
-      value(input);
+      value(event);
     }
     notifySaveSubscribers();
   }
@@ -335,8 +335,8 @@ function createArtifactDocument<Content>(
       notificationOwed = true;
     }
     let value = getSaveState();
-    for (let value2 of saveSubscribers) {
-      value2(value);
+    for (let subscriber of saveSubscribers) {
+      subscriber(value);
     }
   }
   let stashWriteSucceeded = true,
@@ -346,12 +346,12 @@ function createArtifactDocument<Content>(
     expectedEmbeddedStateHash: string | undefined;
   function writeStash(): boolean {
     let value = pendingCommentOperations,
-      value2 = stashOffer ? stashOffer.state : localState;
+      stashState = stashOffer ? stashOffer.state : localState;
     stashWriteSucceeded = stash.write(
       JSON.stringify({
         v: 2,
         at: stashOffer ? stashOffer.at : Date.now(),
-        state: value2,
+        state: stashState,
         ...(value.length > 0
           ? {
               ops: value,
@@ -369,36 +369,36 @@ function createArtifactDocument<Content>(
   {
     let value = parseArtifactStash(stash.read());
     if (value) {
-      let value2 = parseEmbeddedArtifactState(value.state, options),
-        callback = (input: Host.ArtifactEnvelope<Content>) =>
-          options.serializeContent !== undefined
-            ? options.serializeContent(input.content, input.title)
-            : input.content,
-        value3 = applicableCommentOperations(
+      let embeddedDocument = parseEmbeddedArtifactState(value.state, documentOptions),
+        callback = (envelope: Host.ArtifactEnvelope<Content>) =>
+          documentOptions.serializeContent !== undefined
+            ? documentOptions.serializeContent(envelope.content, envelope.title)
+            : envelope.content,
+        commentOperations = applicableCommentOperations(
           publishedState.comments,
           normalizeCommentOperations(value.ops),
         );
-      if (value3.length === 0 && value.ops === undefined) {
+      if (commentOperations.length === 0 && value.ops === undefined) {
         let values = new Set(
-          publishedState.comments.map((input) => input.id),
+          publishedState.comments.map((comment) => comment.id),
         );
-        value3 = value2.comments
-          .filter((input): boolean => !values.has(input.id))
-          .map((input) => ({
+        commentOperations = embeddedDocument.comments
+          .filter((comment): boolean => !values.has(comment.id))
+          .map((comment) => ({
             op: "add",
-            comment: input,
+            comment: comment,
           }));
       }
-      let value4: boolean =
+      let hasPendingComments: boolean =
         JSON.stringify({
-          t: value2.title,
-          c: callback(value2),
+          t: embeddedDocument.title,
+          c: callback(embeddedDocument),
         }) ===
         JSON.stringify({
           t: publishedState.title,
           c: callback(publishedState),
         });
-      pendingCommentOperations = value3;
+      pendingCommentOperations = commentOperations;
       if (pendingCommentOperations.length > 0) {
         localState = {
           ...localState,
@@ -408,7 +408,7 @@ function createArtifactDocument<Content>(
           ),
         };
       }
-      if (value4) {
+      if (hasPendingComments) {
         if (pendingCommentOperations.length === 0) {
           stash.clear();
         } else {
@@ -416,8 +416,8 @@ function createArtifactDocument<Content>(
         }
       } else if (value.expectEmbed === embeddedStateHash) {
         localState = {
-          title: value2.title,
-          content: value2.content,
+          title: embeddedDocument.title,
+          content: embeddedDocument.content,
           comments: applyCommentOperations(
             publishedState.comments,
             pendingCommentOperations,
@@ -428,42 +428,42 @@ function createArtifactDocument<Content>(
       } else {
         stashOffer = {
           at: value.at,
-          state: value2,
+          state: embeddedDocument,
         };
       }
     }
   }
-  function markReadOnlyFromError(input: Host.PublishError): void {
+  function markReadOnlyFromError(publishError: Host.PublishError): void {
     readOnly = true;
     readOnlyReason =
-      input.code === "not_writer"
+      publishError.code === "not_writer"
         ? READ_ONLY_ARTIFACT_MESSAGE
-        : input.code === "consent_required"
+        : publishError.code === "consent_required"
           ? "Saving needs the self-publish permission this view declined (or has not answered). Reload and accept the prompt to edit."
           : "This view cannot save: " +
-            input.message +
+            publishError.message +
             " (" +
-            input.code +
+            publishError.code +
             ")";
     if (
-      input.code === "not_writer" ||
-      input.code === "not_declared" ||
-      input.code === "capability_disabled" ||
-      input.code === "capability_removed"
+      publishError.code === "not_writer" ||
+      publishError.code === "not_declared" ||
+      publishError.code === "capability_disabled" ||
+      publishError.code === "capability_removed"
     ) {
       readOnlyFlag.write(readOnlyReason);
     }
   }
   function updateLocalState(
-    input: Host.ArtifactEnvelope<Content>,
-    options2: boolean = false,
+    envelope: Host.ArtifactEnvelope<Content>,
+    isRemote: boolean = false,
   ): void {
-    localState = input;
+    localState = envelope;
     dirty = true;
     hasSaved = false;
     saveError = undefined;
     saveErrorCode = undefined;
-    if (!options2) {
+    if (!isRemote) {
       stashOffer = undefined;
       recordArtifactEdit();
     }
@@ -482,43 +482,43 @@ function createArtifactDocument<Content>(
     notifyDocumentSubscribers();
   }
   function serializeEnvelope(
-    input: Host.ArtifactEnvelope<Content>,
+    envelope: Host.ArtifactEnvelope<Content>,
   ): Host.ArtifactEnvelope<unknown> {
-    if (options.serializeContent !== undefined) {
+    if (documentOptions.serializeContent !== undefined) {
       return {
-        ...input,
-        content: options.serializeContent(input.content, input.title),
+        ...envelope,
+        content: documentOptions.serializeContent(envelope.content, envelope.title),
       };
     } else {
-      return input;
+      return envelope;
     }
   }
-  function buildPublishedPage(input: Host.ArtifactEnvelope<Content>): string {
+  function buildPublishedPage(envelope: Host.ArtifactEnvelope<Content>): string {
     return assembleCompiledPage(
       {
         ...pageParts,
-        title: input.title,
+        title: envelope.title,
       },
-      stringifyInlineJson(serializeEnvelope(input)),
+      stringifyInlineJson(serializeEnvelope(envelope)),
     );
   }
   async function publishPage(
-    input: string,
-    options2?: {
+    pageHtml: string,
+    publishOptions?: {
       published: Host.ArtifactEnvelope<unknown>;
       base: Host.ArtifactEnvelope<unknown>;
     },
   ): Promise<Host.PublishResult | undefined> {
-    return (options.publish ?? createSelfPublisher())(
-      input,
-      options2,
+    return (documentOptions.publish ?? createSelfPublisher())(
+      pageHtml,
+      publishOptions,
     );
   }
   let publishChain: Promise<void> = Promise.resolve();
   function serializePublish<Result>(
-    input: () => Promise<Result>,
+    publishTask: () => Promise<Result>,
   ): Promise<Result> {
-    let value = publishChain.then(input, input);
+    let value = publishChain.then(publishTask, publishTask);
     publishChain = value.then(
       (): void => {
         return;
@@ -544,7 +544,7 @@ function createArtifactDocument<Content>(
     publishingComments = true;
     commentPublishError = undefined;
     notifyDocumentSubscribers();
-    let flag2: boolean = false;
+    let commentPublishConflict: boolean = false;
     serializePublish(async (): Promise<void> => {
       try {
         let value = applicableCommentOperations(
@@ -568,7 +568,7 @@ function createArtifactDocument<Content>(
         ) {
           let values = new Set(value);
           pendingCommentOperations = pendingCommentOperations.filter(
-            (input): boolean => !values.has(input),
+            (commentId): boolean => !values.has(commentId),
           );
           localState = {
             ...localState,
@@ -580,9 +580,9 @@ function createArtifactDocument<Content>(
           writeStash();
           return;
         }
-        let value2 = buildPublishedPage(state);
+        let publishedPage = buildPublishedPage(state);
         if (
-          new TextEncoder().encode(value2).length >
+          new TextEncoder().encode(publishedPage).length >
           compiledPageMaxBytes
         ) {
           commentPublishError =
@@ -595,7 +595,7 @@ function createArtifactDocument<Content>(
             serializeEnvelope(
               parseEmbeddedArtifactState(
                 JSON.parse(JSON.stringify(state)),
-                options,
+                documentOptions,
               ),
             ),
           ),
@@ -608,18 +608,18 @@ function createArtifactDocument<Content>(
           return;
         }
         try {
-          await publishPage(value2);
-        } catch (value3: unknown) {
+          await publishPage(publishedPage);
+        } catch (publishError: unknown) {
           if (
-            normalizeSelfPublishError(value3).code !==
+            normalizeSelfPublishError(publishError).code !==
             "upstream_error"
           ) {
-            throw value3;
+            throw publishError;
           }
-          await new Promise((input) =>
-            setTimeout(input, 400 + Math.random() * 1200),
+          await new Promise((resolveRetry) =>
+            setTimeout(resolveRetry, 400 + Math.random() * 1200),
           );
-          await publishPage(value2);
+          await publishPage(publishedPage);
         }
         publishedState = state;
         pendingCommentOperations = applicableCommentOperations(
@@ -636,14 +636,14 @@ function createArtifactDocument<Content>(
         writeStash();
       } catch (value: unknown) {
         expectedEmbeddedStateHash = undefined;
-        let value2 = normalizeSelfPublishError(value);
-        if (value2.code === "conflict") {
-          flag2 = true;
+        let publishError = normalizeSelfPublishError(value);
+        if (publishError.code === "conflict") {
+          commentPublishConflict = true;
         } else if (
-          SELF_PUBLISH_PERMISSION_ERROR_CODES.includes(value2.code)
+          SELF_PUBLISH_PERMISSION_ERROR_CODES.includes(publishError.code)
         ) {
-          markReadOnlyFromError(value2);
-        } else if (value2.code === "rate_limited") {
+          markReadOnlyFromError(publishError);
+        } else if (publishError.code === "rate_limited") {
           commentPublishError =
             "Commenting too frequently — will retry in a moment.";
           setTimeout(
@@ -656,14 +656,14 @@ function createArtifactDocument<Content>(
         } else {
           commentPublishError =
             "Comment not published (" +
-            value2.message +
+            publishError.message +
             ") — it is kept here; use retry to try again.";
         }
         writeStash();
       } finally {
         publishingComments = false;
         notifyDocumentSubscribers();
-        if (!flag2 && commentPublishError === undefined && !readOnly) {
+        if (!commentPublishConflict && commentPublishError === undefined && !readOnly) {
           publishPendingComments();
         }
       }
@@ -677,27 +677,27 @@ function createArtifactDocument<Content>(
     saveError = undefined;
     saveErrorCode = undefined;
     notifySaveSubscribers();
-    let { title: value, content: value2 } = localState;
+    let { title: value, content: localContent } = localState;
     await serializePublish(async (): Promise<void> => {
       try {
         writeStash();
-        let value3 = applicableCommentOperations(
+        let pendingOperations = applicableCommentOperations(
             publishedState.comments,
             pendingCommentOperations,
           ),
           state = {
             title: value,
-            content: value2,
+            content: localContent,
             comments: applyCommentOperations(
               publishedState.comments,
-              value3,
+              pendingOperations,
             ),
           },
-          value4 =
-            options.publishesPage === false && options.publish !== undefined
+          serializedContent =
+            documentOptions.publishesPage === false && documentOptions.publish !== undefined
               ? ""
               : buildPublishedPage(state),
-          length = new TextEncoder().encode(value4).length;
+          length = new TextEncoder().encode(serializedContent).length;
         if (length > compiledPageMaxBytes) {
           saveError =
             "The document is " +
@@ -706,27 +706,27 @@ function createArtifactDocument<Content>(
             "(the usual culprit) and save again.";
           return;
         }
-        let value5 =
-            options.publish !== undefined
+        let publishTitle =
+            documentOptions.publish !== undefined
               ? {
                   published: serializeEnvelope(state),
                   base: serializeEnvelope(publishedState),
                 }
               : undefined,
-          value6: Host.PublishResult | undefined;
+          publishResult: Host.PublishResult | undefined;
         try {
-          value6 = await publishPage(value4, value5);
-        } catch (value7: unknown) {
+          publishResult = await publishPage(serializedContent, publishTitle);
+        } catch (publishError: unknown) {
           if (
-            normalizeSelfPublishError(value7).code !==
+            normalizeSelfPublishError(publishError).code !==
             "upstream_error"
           ) {
-            throw value7;
+            throw publishError;
           }
-          await new Promise((input) =>
-            setTimeout(input, 400 + Math.random() * 1200),
+          await new Promise((resolveRetry) =>
+            setTimeout(resolveRetry, 400 + Math.random() * 1200),
           );
-          value6 = await publishPage(value4, value5);
+          publishResult = await publishPage(serializedContent, publishTitle);
         }
         publishedState = state;
         pendingCommentOperations = applicableCommentOperations(
@@ -740,12 +740,12 @@ function createArtifactDocument<Content>(
             pendingCommentOperations,
           ),
         };
-        if (value6?.reloads !== false) {
+        if (publishResult?.reloads !== false) {
           reloading = true;
         }
-        if (localState.title === value && localState.content === value2) {
+        if (localState.title === value && localState.content === localContent) {
           dirty = false;
-          hasSaved = value6?.reloads !== false;
+          hasSaved = publishResult?.reloads !== false;
           if (pendingCommentOperations.length === 0) {
             commentPublishError = undefined;
           }
@@ -757,49 +757,49 @@ function createArtifactDocument<Content>(
           if (!hasSaved) {
             publishPendingComments();
           }
-        } else if (!stashWriteSucceeded && value6?.reloads !== false) {
+        } else if (!stashWriteSucceeded && publishResult?.reloads !== false) {
           saveError =
             "Saved — but you kept typing during the save, and those newer " +
             "changes could NOT be kept locally (this document is too large to stash). Copy anything important now: the page is about to reload to the version without them.";
         }
-      } catch (value3: unknown) {
-        let value4 = normalizeSelfPublishError(value3);
-        saveErrorCode = value4.code;
-        if (value4.code === "conflict") {
+      } catch (publishError: unknown) {
+        let normalizedError = normalizeSelfPublishError(publishError);
+        saveErrorCode = normalizedError.code;
+        if (normalizedError.code === "conflict") {
           saveError = stashWriteSucceeded
             ? "Someone saved a newer version first — loading it now. Your " +
               "changes are kept and will be offered for restore."
             : "Someone saved a newer version first — loading it now. Your " +
               "changes could NOT be kept locally (this document is too large to stash), so copy anything important before the reload.";
         } else if (
-          SELF_PUBLISH_PERMISSION_ERROR_CODES.includes(value4.code)
+          SELF_PUBLISH_PERMISSION_ERROR_CODES.includes(normalizedError.code)
         ) {
-          markReadOnlyFromError(value4);
-        } else if (value4.say !== undefined) {
-          saveError = value4.say;
-        } else if (value4.code === "rate_limited") {
+          markReadOnlyFromError(normalizedError);
+        } else if (normalizedError.say !== undefined) {
+          saveError = normalizedError.say;
+        } else if (normalizedError.code === "rate_limited") {
           saveError =
             "Not saved (" +
-            value4.message +
+            normalizedError.message +
             "). Your changes are kept; give it a moment, then save again.";
         } else if (
-          value4.code === "invalid_content" ||
-          value4.code === "transform_error"
+          normalizedError.code === "invalid_content" ||
+          normalizedError.code === "transform_error"
         ) {
           saveError =
             "The store refused the document (" +
-            value4.code +
+            normalizedError.code +
             ": " +
-            value4.message +
+            normalizedError.message +
             "). This is usually a content problem — most often a pasted " +
             "replacement character (U+FFFD, the question-mark-in-a-box glyph), which the platform rejects; find and remove the odd character, then save again. If the content looks clean, this is an appifact bug.";
-        } else if (value4.code === "too_large") {
+        } else if (normalizedError.code === "too_large") {
           saveError =
             "The store refused the document as too large (16 MiB limit). Remove or shrink images and save again.";
         } else {
           saveError =
             "Saving failed (" +
-            value4.message +
+            normalizedError.message +
             "). Your changes are kept — " +
             "try again.";
         }
@@ -810,13 +810,13 @@ function createArtifactDocument<Content>(
     });
   }
   let canCheckLiveState =
-      options.canPublish === undefined &&
-      (options.publish === undefined || options.publishWrapsFrame === true),
+      documentOptions.canPublish === undefined &&
+      (documentOptions.publish === undefined || documentOptions.publishWrapsFrame === true),
     selfCapabilityReady =
       !readOnly && canCheckLiveState && !selfPublishInstalled()
         ? getSelfPublishCapability().then(
-            (input: Host.SelfCapability | null): void => {
-              if (input !== null || readOnly) {
+            (capability: Host.SelfCapability | null): void => {
+              if (capability !== null || readOnly) {
                 return;
               }
               readOnly = true;
@@ -839,14 +839,14 @@ function createArtifactDocument<Content>(
       )
       .then(
         (
-          input:
+          selfCapability:
             | [boolean | null | undefined, Host.AssetsCapability | null]
             | null,
         ): void => {
           if (
-            input === null ||
-            input[0] !== false ||
-            input[1] !== null ||
+            selfCapability === null ||
+            selfCapability[0] !== false ||
+            selfCapability[1] !== null ||
             readOnly
           ) {
             return;
@@ -871,17 +871,17 @@ function createArtifactDocument<Content>(
     readOnly: () => readOnly,
     saveState: getSaveState,
     commentSync: getCommentSyncState,
-    setContent(input): void {
-      if (input === localState.content) {
+    setContent(content): void {
+      if (content === localState.content) {
         return;
       }
       updateLocalState({
         ...localState,
-        content: input,
+        content: content,
       });
     },
-    updateContent(input, options2): void {
-      let value = input(localState.content);
+    updateContent(transformContent, updateOptions): void {
+      let value = transformContent(localState.content);
       if (value === localState.content) {
         return;
       }
@@ -890,11 +890,11 @@ function createArtifactDocument<Content>(
           ...localState,
           content: value,
         },
-        options2?.auto === true,
+        updateOptions?.auto === true,
       );
     },
-    adoptRemote(input): void {
-      let value = input(publishedState.content, localState.content);
+    adoptRemote(remoteContent): void {
+      let value = remoteContent(publishedState.content, localState.content);
       if (
         value.base === publishedState.content &&
         value.current === localState.content
@@ -926,8 +926,8 @@ function createArtifactDocument<Content>(
         remote: true,
       });
     },
-    setTitle(input): void {
-      let value = normalizeTitleInput(input);
+    setTitle(titleInput): void {
+      let value = normalizeTitleInput(titleInput);
       if (value.length === 0 || value === localState.title) {
         return;
       }
@@ -936,13 +936,13 @@ function createArtifactDocument<Content>(
         title: value,
       });
     },
-    addComment(input) {
+    addComment(comment) {
       if (localState.comments.length >= MAX_ARTIFACT_COMMENTS) {
         return;
       }
       let value = normalizeComments([
         {
-          ...input,
+          ...comment,
           id: crypto.randomUUID().slice(0, 8),
           at: Date.now(),
         },
@@ -961,25 +961,25 @@ function createArtifactDocument<Content>(
       publishPendingComments();
       return value;
     },
-    removeComment(input): void {
+    removeComment(commentId): void {
       if (
         !pendingCommentOperations.some(
-          (input2) => input2.op === "add" && input2.comment.id === input,
+          (operation) => operation.op === "add" && operation.comment.id === commentId,
         ) &&
         !publishedState.comments.some(
-          (input2): boolean => input2.id === input,
+          (comment): boolean => comment.id === commentId,
         )
       ) {
         return;
       }
       pendingCommentOperations = [
         ...pendingCommentOperations.filter(
-          (input2): boolean =>
-            !(input2.op === "add" && input2.comment.id === input),
+          (operation): boolean =>
+            !(operation.op === "add" && operation.comment.id === commentId),
         ),
         {
           op: "remove",
-          id: input,
+          id: commentId,
         },
       ];
       recomposeComments();
@@ -1076,15 +1076,15 @@ function createArtifactDocument<Content>(
       }
       notifyDocumentSubscribers();
     },
-    subscribe(input) {
-      documentSubscribers.add(input);
+    subscribe(subscriber) {
+      documentSubscribers.add(subscriber);
       flushOwedNotification();
-      return () => documentSubscribers.delete(input);
+      return () => documentSubscribers.delete(subscriber);
     },
-    subscribeSave(input) {
-      saveSubscribers.add(input);
+    subscribeSave(subscriber) {
+      saveSubscribers.add(subscriber);
       flushOwedNotification();
-      return () => saveSubscribers.delete(input);
+      return () => saveSubscribers.delete(subscriber);
     },
   };
 }

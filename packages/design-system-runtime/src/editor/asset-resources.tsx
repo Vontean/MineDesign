@@ -56,8 +56,8 @@ function assetUploadDestination(
   let parentGroups = relativePath
     .split("/")
     .slice(0, -1)
-    .map((input) => input.trim())
-    .filter((input) => input !== "" && input !== "." && input !== "..");
+    .map((segment) => segment.trim())
+    .filter((segment) => segment !== "" && segment !== "." && segment !== "..");
   if (parentGroups.length > 0) {
     return {
       to: "assets",
@@ -224,8 +224,8 @@ function readBlobDataUrl(
   let fetchBlob =
     fetcher ??
     (typeof fetch === "function"
-      ? (input: string) =>
-          fetch(input, {
+      ? (requestUrl: string) =>
+          fetch(requestUrl, {
             credentials: "same-origin",
           })
       : undefined);
@@ -240,21 +240,21 @@ function readBlobDataUrl(
         if (!value.ok) {
           throw Error(uiMessage("design-system.assetResources.notOk"));
         }
-        let value2 = new Uint8Array(await value.arrayBuffer());
-        if (value2.length > MAX_BLOB_READ_BYTES) {
-          reportBlobReadFailure(url, value2.length);
+        let bytes = new Uint8Array(await value.arrayBuffer());
+        if (bytes.length > MAX_BLOB_READ_BYTES) {
+          reportBlobReadFailure(url, bytes.length);
           return null;
         }
-        let value3 =
+        let assetMimeType =
             mimeType !== ""
               ? mimeType
               : (value.headers?.get("content-type") ?? "")
                   .split(";")[0]
                   ?.trim() || "application/octet-stream",
-          value4 = bytesToFileDataUrl(value3, value2);
-        blobDataUrlCache.set(url, value4);
+          dataUrl = bytesToFileDataUrl(assetMimeType, bytes);
+        blobDataUrlCache.set(url, dataUrl);
         notifyBlobResources();
-        return value4;
+        return dataUrl;
       } catch {
         let value = (blobReadFailureCounts.get(url) ?? 0) + 1;
         blobReadFailureCounts.set(url, value);
@@ -274,25 +274,25 @@ function readBlobDataUrl(
   return promise;
 }
 function useBlobDataUrls(resources: Editor.BlobResource[]): number {
-  let [value, value2] = reactBlobResource.useState(blobResourceGeneration);
+  let [value, setGeneration] = reactBlobResource.useState(blobResourceGeneration);
   reactBlobResource.useEffect(
-    () => subscribeBlobResources(() => value2(blobResourceGeneration)),
+    () => subscribeBlobResources(() => setGeneration(blobResourceGeneration)),
     [],
   );
-  let value3 = resources.map((input) => input.src).join(`
+  let resourceKey = resources.map((resource) => resource.src).join(`
 `);
   reactBlobResource.useEffect((): void => {
-    for (let value4 of resources) {
-      if (value4.src !== "" && !/^data:/i.test(value4.src)) {
+    for (let resource of resources) {
+      if (resource.src !== "" && !/^data:/i.test(resource.src)) {
         readBlobDataUrl(
-          value4.src,
-          value4.type,
+          resource.src,
+          resource.type,
           undefined,
-          value4.bytes ?? 0,
+          resource.bytes ?? 0,
         );
       }
     }
-  }, [value3, value]);
+  }, [resourceKey, value]);
   return value;
 }
 export {
@@ -371,7 +371,7 @@ export function installEditorAssetResources(): () => void {
       otf: "otf",
     };
     FONT_FILE_ACCEPT = FONT_FILE_EXTENSIONS.map(
-      (input): string => "." + input,
+      (extension): string => "." + extension,
     ).join(",");
     ASSET_EXTENSION_MIME_TYPES = {
       png: "image/png",

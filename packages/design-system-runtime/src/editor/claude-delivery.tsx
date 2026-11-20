@@ -67,30 +67,30 @@ function cachedClaudeRoom(): Promise<Editor.RoomCapability | null> {
   }
   return roomApiPromise;
 }
-function normalizeRoomPeers(value: unknown): readonly Editor.RoomPeer[] {
-  if (!Array.isArray(value)) {
+function normalizeRoomPeers(peerPayload: unknown): readonly Editor.RoomPeer[] {
+  if (!Array.isArray(peerPayload)) {
     return EMPTY_ROOM_PEERS;
   }
   let items: Editor.RoomPeer[] = [];
-  for (let value2 of value as unknown[]) {
-    if (typeof value2 !== "object" || value2 === null) {
+  for (let peerRecord of peerPayload as unknown[]) {
+    if (typeof peerRecord !== "object" || peerRecord === null) {
       continue;
     }
-    let value3 = value2 as Record<string, unknown>;
-    if (typeof value3.peer !== "string") {
+    let peerData = peerRecord as Record<string, unknown>;
+    if (typeof peerData.peer !== "string") {
       continue;
     }
     items.push({
-      peer: value3.peer,
+      peer: peerData.peer,
       by:
-        typeof value3.by === "string" && value3.by !== "" ? value3.by : null,
-      isMe: value3.isMe === true,
-      sameTab: value3.sameTab === true,
+        typeof peerData.by === "string" && peerData.by !== "" ? peerData.by : null,
+      isMe: peerData.isMe === true,
+      sameTab: peerData.sameTab === true,
       presence:
-        typeof value3.presence === "object" && value3.presence !== null
-          ? value3.presence
+        typeof peerData.presence === "object" && peerData.presence !== null
+          ? peerData.presence
           : {},
-      updatedAt: typeof value3.updatedAt === "number" ? value3.updatedAt : 0,
+      updatedAt: typeof peerData.updatedAt === "number" ? peerData.updatedAt : 0,
     });
   }
   return items;
@@ -100,23 +100,23 @@ function startRoomPeerListener(): void {
     return;
   }
   roomPeerListenerStarted = true;
-  cachedClaudeRoom().then((input): void => {
-    if (typeof input?.onPeers !== "function" || !roomPeerListenerStarted) {
+  cachedClaudeRoom().then((room): void => {
+    if (typeof room?.onPeers !== "function" || !roomPeerListenerStarted) {
       return;
     }
     try {
-      let value = input.onPeers.call(
-        input,
-        (input2): void => {
-          roomPeers = normalizeRoomPeers(input2.peers);
-          for (let value2 of [...roomPeerSubscribers]) {
-            value2();
+      let value = room.onPeers.call(
+        room,
+        (peerSnapshot): void => {
+          roomPeers = normalizeRoomPeers(peerSnapshot.peers);
+          for (let notifySubscriber of [...roomPeerSubscribers]) {
+            notifySubscriber();
           }
         },
         (): void => {
           roomPeers = EMPTY_ROOM_PEERS;
-          for (let value2 of [...roomPeerSubscribers]) {
-            value2();
+          for (let notifySubscriber of [...roomPeerSubscribers]) {
+            notifySubscriber();
           }
         },
       );
@@ -141,31 +141,31 @@ function resolvePromptSuggestion(
       getObjectProperty(environment, "designSystemHost"),
       "chat",
     ),
-    value2 = getObjectProperty(value, "suggestPrompt");
-  if (typeof value2 !== "function") {
+    suggestPrompt = getObjectProperty(value, "suggestPrompt");
+  if (typeof suggestPrompt !== "function") {
     return;
   }
-  return async (input: string): Promise<void> => {
-    await (value2 as (prompt: string) => Promise<unknown>).call(value, input);
+  return async (promptText: string): Promise<void> => {
+    await (suggestPrompt as (prompt: string) => Promise<unknown>).call(value, promptText);
   };
 }
 function withClaudeRequestTimeout<T>(
   promise: Promise<T>,
   timeout: number,
 ): Promise<T> {
-  return new Promise<T>((input, options): void => {
+  return new Promise<T>((resolvePromise, rejectPromise): void => {
     let value = setTimeout(
-      () => options(new ClaudeRequestTimeoutError("timeout")),
+      () => rejectPromise(new ClaudeRequestTimeoutError("timeout")),
       timeout,
     );
     promise.then(
-      (input2) => {
+      (result) => {
         clearTimeout(value);
-        return input(input2);
+        return resolvePromise(result);
       },
-      (input2: unknown) => {
+      (error: unknown) => {
         clearTimeout(value);
-        return options(input2);
+        return rejectPromise(error);
       },
     );
   });
@@ -179,28 +179,28 @@ function fitClaudePayload(
     index < 8 && value.selectedText !== undefined;
     index++
   ) {
-    let value2: number = claudePayloadLength(value) - CLAUDE_PAYLOAD_MAX;
-    if (value2 <= 0) {
+    let excessLength: number = claudePayloadLength(value) - CLAUDE_PAYLOAD_MAX;
+    if (excessLength <= 0) {
       break;
     }
-    let { selectedText: value3, ...value4 } = value,
-      value5 = value3.replace(SELECTION_TRUNCATION_NOTE_PATTERN, ""),
-      value6: number =
-        claudePayloadLength(value5) / Math.max(1, value5.length),
-      value7: number =
-        value5.length -
+    let { selectedText: selectedText, ...payloadWithoutText } = value,
+      textWithoutNote = selectedText.replace(SELECTION_TRUNCATION_NOTE_PATTERN, ""),
+      payloadLengthRatio: number =
+        claudePayloadLength(textWithoutNote) / Math.max(1, textWithoutNote.length),
+      targetTextLength: number =
+        textWithoutNote.length -
         Math.ceil(
-          (value2 + SELECTION_TRUNCATION_NOTE_RESERVE) / Math.max(1, value6),
+          (excessLength + SELECTION_TRUNCATION_NOTE_RESERVE) / Math.max(1, payloadLengthRatio),
         ),
-      value8 =
-        value7 > 0 ? truncateUtf16Safely(value5, value7) : "";
+      truncatedText =
+        targetTextLength > 0 ? truncateUtf16Safely(textWithoutNote, targetTextLength) : "";
     value =
-      value8.length > 0
+      truncatedText.length > 0
         ? {
-            ...value4,
-            selectedText: value8 + selectionTruncationNote(value8.length),
+            ...payloadWithoutText,
+            selectedText: truncatedText + selectionTruncationNote(truncatedText.length),
           }
-        : value4;
+        : payloadWithoutText;
   }
   return value;
 }
@@ -216,12 +216,12 @@ function roomWithSendCapability(
   }
 }
 function resolveSessionRoute(
-  options: Editor.SessionRouteOptions = {},
+  routeOptions: Editor.SessionRouteOptions = {},
 ): Promise<Editor.SessionRoute | null> {
   return resolveClaudeSessionCapability(
-    options,
-    (input: Editor.SessionSender, options2: unknown) =>
-      chooseSessionRoute(input, options2, options.confirm === true),
+    routeOptions,
+    (sender: Editor.SessionSender, availability: unknown) =>
+      chooseSessionRoute(sender, availability, routeOptions.confirm === true),
   );
 }
 function chooseSessionRoute(
@@ -256,20 +256,20 @@ function chooseSessionRoute(
   return null;
 }
 async function resolveClaudeSessionCapability<T>(
-  options: Editor.SessionRouteOptions,
+  capabilityOptions: Editor.SessionRouteOptions,
   choose: (namespace: Editor.SessionSender, availability: unknown) => T,
 ): Promise<T | null> {
   try {
-    let value = options.resolveRoom ?? resolveClaudeRoom,
-      value2 = roomWithSendCapability(await value());
-    if (!value2) {
+    let value = capabilityOptions.resolveRoom ?? resolveClaudeRoom,
+      senderNamespace = roomWithSendCapability(await value());
+    if (!senderNamespace) {
       return null;
     }
-    let value3 = value2[CAN_SEND_TO_CLAUDE_METHOD];
-    if (typeof value3 !== "function") {
+    let sendMethod = senderNamespace[CAN_SEND_TO_CLAUDE_METHOD];
+    if (typeof sendMethod !== "function") {
       return null;
     }
-    return choose(value2, await value3.call(value2));
+    return choose(senderNamespace, await sendMethod.call(senderNamespace));
   } catch {
     return null;
   }
@@ -283,8 +283,8 @@ async function sendOrSuggestToClaude(
   let value = await trySendToClaudeSession(
     request,
     available,
-    (input: unknown): boolean =>
-      !(request.deliver === "send" && input === "rate_limited"),
+    (errorCode: unknown): boolean =>
+      !(request.deliver === "send" && errorCode === "rate_limited"),
   );
   if (value !== null) {
     if (value === "started") {
@@ -318,9 +318,9 @@ function callSendToClaude(
     onStatus: request.onStatus,
   });
 }
-function isClaudeSessionDestination(value: unknown): boolean {
-  let value2 = getObjectProperty(value, "to");
-  return value2 === "session" || value2 === "new";
+function isClaudeSessionDestination(destination: unknown): boolean {
+  let destinationType = getObjectProperty(destination, "to");
+  return destinationType === "session" || destinationType === "new";
 }
 async function trySendToClaudeSession(
   request: Editor.SessionRequest,
@@ -329,69 +329,69 @@ async function trySendToClaudeSession(
 ): Promise<"started" | "staged" | "unanswered" | null> {
   let value = sanitizeClaudeRequest(request.request, Number.MAX_SAFE_INTEGER);
   if (available && value.length <= CLAUDE_REQUEST_MAX) {
-    let value2: Promise<unknown> | null = null;
+    let sendPromise: Promise<unknown> | null = null;
     try {
-      let value3 = request.selection?.label?.trim(),
-        value4 = request.selection
+      let selectionLabel = request.selection?.label?.trim(),
+        selectionText = request.selection
           ? sanitizeClaudeRequest(
               request.selection.text,
               Number.MAX_SAFE_INTEGER,
             )
           : "",
-        value5 =
-          value4.length <= CLAUDE_SELECTION_TEXT_MAX
-            ? value4
+        selectionNote =
+          selectionText.length <= CLAUDE_SELECTION_TEXT_MAX
+            ? selectionText
             : truncateUtf16Safely(
-                value4,
+                selectionText,
                 CLAUDE_SELECTION_TEXT_MAX,
               ) +
               selectionTruncationNote(
                 truncateUtf16Safely(
-                  value4,
+                  selectionText,
                   CLAUDE_SELECTION_TEXT_MAX,
                 ).length,
               ),
-        value6 = fitClaudePayload({
-          ...(value3
+        payload = fitClaudePayload({
+          ...(selectionLabel
             ? {
                 label: sanitizeClaudeRequest(
-                  value3,
+                  selectionLabel,
                   CLAUDE_SELECTION_LABEL_MAX,
                 ),
               }
             : {}),
-          ...(value4.trim() !== ""
+          ...(selectionText.trim() !== ""
             ? {
-                selectedText: value5,
+                selectedText: selectionNote,
               }
             : {}),
           request: value,
         });
-      value2 =
-        value4.trim() === "" || value6.selectedText !== undefined
-          ? callSendToClaude(available, value6, request)
+      sendPromise =
+        selectionText.trim() === "" || payload.selectedText !== undefined
+          ? callSendToClaude(available, payload, request)
           : null;
     } catch {
-      value2 = null;
+      sendPromise = null;
     }
-    if (value2) {
+    if (sendPromise) {
       try {
-        let value3 = await withClaudeRequestTimeout(
-          value2,
+        let route = await withClaudeRequestTimeout(
+          sendPromise,
           CLAUDE_SEND_TIMEOUT_MS,
         );
         if (
           request.deliver === "send" &&
-          isClaudeSessionDestination(value3)
+          isClaudeSessionDestination(route)
         ) {
           return "started";
         } else {
           return "staged";
         }
-      } catch (value3) {
+      } catch (sendError) {
         if (
-          value3 instanceof ClaudeRequestTimeoutError ||
-          !send(getObjectProperty(value3, "code"))
+          sendError instanceof ClaudeRequestTimeoutError ||
+          !send(getObjectProperty(sendError, "code"))
         ) {
           return "unanswered";
         }
@@ -418,20 +418,20 @@ async function suggestPromptOrCopy(
     return "failed";
   }
 }
-function safeArtifactLabel(value: unknown): string {
-  let value2 = String(value ?? "").replace(
+function safeArtifactLabel(label: unknown): string {
+  let labelText = String(label ?? "").replace(
     UNSAFE_ARTIFACT_LABEL_PATTERN,
     "?",
   );
-  if (value2.length <= 120) {
-    return value2;
+  if (labelText.length <= 120) {
+    return labelText;
   }
   let count = 120,
-    value3 = value2.charCodeAt(count - 1);
-  if (value3 >= 55296 && value3 <= 56319) {
+    codeUnit = labelText.charCodeAt(count - 1);
+  if (codeUnit >= 55296 && codeUnit <= 56319) {
     count -= 1;
   }
-  return value2.slice(0, count) + "…";
+  return labelText.slice(0, count) + "…";
 }
 async function resolveClaudeDeliveryContext(
   resolveSession: () => Promise<Editor.SessionRoute | null> = resolveSessionRoute,
@@ -464,17 +464,17 @@ function createClaudeDeliveryContextStore(
 ): Application.ClaudeDeliveryContextStore {
   let value = EMPTY_CLAUDE_DELIVERY_CONTEXT,
     index: number = 0,
-    index2 = 0;
+    bestIndex = 0;
   return {
     current: () => value,
     refresh: (): void => {
-      let value2 = ++index;
-      resolveContext().then((input): void => {
-        if (value2 < index2) {
+      let candidateIndex = ++index;
+      resolveContext().then((resolvedContext): void => {
+        if (candidateIndex < bestIndex) {
           return;
         }
-        index2 = value2;
-        value = input;
+        bestIndex = candidateIndex;
+        value = resolvedContext;
       });
     },
   };
@@ -508,13 +508,13 @@ async function resolveOwnerChatCapability(
 }
 function chooseClaudeDeliveryRoad(
   request: Application.ClaudeRequest,
-  context: Application.ClaudeDeliveryContext,
+  deliveryContext: Application.ClaudeDeliveryContext,
   holdOwnerChat: boolean,
 ): Application.ClaudeDeliveryRoad {
   if (
     request.ownerChat !== true ||
-    context.sender !== null ||
-    context.ownerChat === null
+    deliveryContext.sender !== null ||
+    deliveryContext.ownerChat === null
   ) {
     return "sender";
   }
@@ -527,17 +527,17 @@ function chooseClaudeDeliveryRoad(
 function deliverClaudeRequest(
   request: Application.ClaudeRequest,
   anchor: Element | null | undefined,
-  context: Application.ClaudeDeliveryContext,
+  deliveryContext: Application.ClaudeDeliveryContext,
   holdOwnerChat: boolean = false,
   environment?: Editor.ClaudeEnvironment,
   copy?: (text: string) => Promise<boolean>,
 ): Promise<Application.ClaudeDeliveryResult> {
-  let value = chooseClaudeDeliveryRoad(request, context, holdOwnerChat);
+  let value = chooseClaudeDeliveryRoad(request, deliveryContext, holdOwnerChat);
   if (value === "sender") {
     return deliverClaudePrompt(
       request,
       anchor,
-      context.sender,
+      deliveryContext.sender,
       environment,
       copy,
     );
@@ -555,11 +555,11 @@ function deliverClaudeRequest(
           : source,
     );
   }
-  let { deliver: value2, ...value3 } = request;
+  let { deliver: deliveryMode, ...requestWithoutMode } = request;
   return deliverClaudePrompt(
-    value3,
+    requestWithoutMode,
     anchor,
-    context.ownerChat,
+    deliveryContext.ownerChat,
     environment,
     copy,
   );
@@ -603,7 +603,7 @@ async function deliverClaudePrompt(
           : "available") === "available"
       ) {
         let value = anchor ?? environment.document?.body ?? null,
-          value2 =
+          promptSuggestion =
             typeof ownerChat.anchorFor === "function" && value !== null
               ? await ownerChat.anchorFor.call(ownerChat, value)
               : {
@@ -611,15 +611,15 @@ async function deliverClaudePrompt(
                   x: 0.5,
                   y: 0.5,
                 },
-          value3 = await ownerChat.sendToClaude.call(ownerChat, {
-            anchor: value2,
+          sendResult = await ownerChat.sendToClaude.call(ownerChat, {
+            anchor: promptSuggestion,
             text: prompt,
           });
         return {
           kind: "sent",
-          ...(typeof value3?.threadId === "string"
+          ...(typeof sendResult?.threadId === "string"
             ? {
-                threadId: value3.threadId,
+                threadId: sendResult.threadId,
               }
             : {}),
         };
@@ -700,10 +700,10 @@ export function installEditorClaudeDelivery(): () => void {
     roomPeerUnsubscribe = null;
     roomPeerStore = {
       getSnapshot: () => roomPeers,
-      subscribe(input: () => void) {
-        roomPeerSubscribers.add(input);
+      subscribe(subscriber: () => void) {
+        roomPeerSubscribers.add(subscriber);
         startRoomPeerListener();
-        return () => roomPeerSubscribers.delete(input);
+        return () => roomPeerSubscribers.delete(subscriber);
       },
     };
     SEND_TO_CLAUDE_METHOD = "sendToClaudeSession";

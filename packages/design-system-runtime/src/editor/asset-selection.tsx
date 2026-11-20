@@ -55,7 +55,7 @@ function selectAssetByClick(
     if (selection.selected.includes(id)) {
       return {
         ...selection,
-        selected: selection.selected.filter((input): boolean => input !== id),
+        selected: selection.selected.filter((assetId): boolean => assetId !== id),
       };
     } else {
       return {
@@ -91,7 +91,7 @@ function pruneAssetSelection(
   order: string[],
 ): Model.AssetSelection {
   let available = new Set(order),
-    selected = selection.selected.filter((input) => available.has(input)),
+    selected = selection.selected.filter((assetId) => available.has(assetId)),
     anchor =
       selection.anchor !== null && available.has(selection.anchor)
         ? selection.anchor
@@ -121,79 +121,79 @@ function useAssetSelection(order: string[]): Editor.AssetSelectionController {
     orderRef = reactAssetSelection.useRef(order);
   orderRef.current = order;
   reactAssetSelection.useEffect((): void => {
-    setSelection((input) => pruneAssetSelection(input, order));
+    setSelection((selectionState) => pruneAssetSelection(selectionState, order));
   }, [order]);
   let memo = reactAssetSelection.useMemo(
       () => new Set(selection.selected),
       [selection.selected],
     ),
     callback = reactAssetSelection.useCallback(
-      (input: string) => memo.has(input),
+      (assetId: string) => memo.has(assetId),
       [memo],
     ),
-    callback2 = reactAssetSelection.useCallback(
-      (input: string, options: Editor.SelectionKeys) =>
-        setSelection((input2) =>
-          selectAssetByClick(input2, orderRef.current, input, options),
+    selectByClick = reactAssetSelection.useCallback(
+      (assetId: string, selectionKeys: Editor.SelectionKeys) =>
+        setSelection((selectionState) =>
+          selectAssetByClick(selectionState, orderRef.current, assetId, selectionKeys),
         ),
       [],
     ),
-    callback3 = reactAssetSelection.useCallback(
-      (input: string) =>
+    selectSingle = reactAssetSelection.useCallback(
+      (assetId: string) =>
         setSelection({
-          selected: [input],
-          anchor: input,
-          focus: input,
+          selected: [assetId],
+          anchor: assetId,
+          focus: assetId,
         }),
       [],
     ),
-    callback4 = reactAssetSelection.useCallback(
-      (input: string) =>
-        setSelection((input2) =>
-          selectAssetRange(input2, orderRef.current, input),
+    extendSelection = reactAssetSelection.useCallback(
+      (assetId: string) =>
+        setSelection((selectionState) =>
+          selectAssetRange(selectionState, orderRef.current, assetId),
         ),
       [],
     ),
-    callback5 = reactAssetSelection.useCallback(
+    selectAll = reactAssetSelection.useCallback(
       () =>
-        setSelection((input) => ({
+        setSelection((selectionState) => ({
           selected: [...orderRef.current],
-          anchor: input.anchor ?? orderRef.current[0] ?? null,
-          focus: input.focus,
+          anchor: selectionState.anchor ?? orderRef.current[0] ?? null,
+          focus: selectionState.focus,
         })),
       [],
     ),
-    callback6 = reactAssetSelection.useCallback(
+    clearSelection = reactAssetSelection.useCallback(
       () =>
-        setSelection((input) =>
-          input.selected.length === 0
-            ? input
+        setSelection((selectionState) =>
+          selectionState.selected.length === 0
+            ? selectionState
             : {
                 selected: [],
-                anchor: input.anchor,
-                focus: input.focus,
+                anchor: selectionState.anchor,
+                focus: selectionState.focus,
               },
         ),
       [],
     ),
-    callback7 = reactAssetSelection.useCallback(
-      (input: string[]) =>
-        setSelection((input2) => ({
-          selected: [...input],
-          anchor: input.at(-1) ?? input2.anchor,
-          focus: input.at(-1) ?? input2.focus,
+    updateSelection = reactAssetSelection.useCallback(
+      (assetIds: string[]) =>
+        setSelection((selectionState) => ({
+          selected: [...assetIds],
+          anchor: assetIds.at(-1) ?? selectionState.anchor,
+          focus: assetIds.at(-1) ?? selectionState.focus,
         })),
       [],
     );
   return {
     ...selection,
     has: callback,
-    click: callback2,
-    only: callback3,
-    extend: callback4,
-    all: callback5,
-    clear: callback6,
-    set: callback7,
+    click: selectByClick,
+    only: selectSingle,
+    extend: extendSelection,
+    all: selectAll,
+    clear: clearSelection,
+    set: updateSelection,
   };
 }
 export {

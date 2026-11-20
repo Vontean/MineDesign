@@ -56,70 +56,70 @@ function addTokenDialogTitle(request: AddTokenRequest): string {
       return uiMessage("design-system.addTokenDialog.new2") + request.label;
   }
 }
-function normalizeNewTokenName(value: string): string {
-  return normalizeTokenName(value).replace(/\s+/g, "-");
+function normalizeNewTokenName(rawName: string): string {
+  return normalizeTokenName(rawName).replace(/\s+/g, "-");
 }
 function validateNewColorValue(
-  value: string,
+  rawColor: string,
   allowEmpty: boolean,
   names: string,
   tokenName: ReadonlySet<string>,
 ) {
-  let value2 = normalizeNewColorValue(value);
-  if (value2 === "") {
+  let normalizedColor = normalizeNewColorValue(rawColor);
+  if (normalizedColor === "") {
     if (allowEmpty) {
       return null;
     } else {
       return uiMessage("design-system.addTokenDialog.colorRequired");
     }
   }
-  if (!isColorOrAlias(value2)) {
+  if (!isColorOrAlias(normalizedColor)) {
     return uiMessage("design-system.addTokenDialog.notAColorTryRrggbb", { token: "{token}" });
   }
-  let value3 = colorAliasTarget(value2);
-  if (value3 === undefined) {
+  let aliasTarget = colorAliasTarget(normalizedColor);
+  if (aliasTarget === undefined) {
     return null;
   }
-  if (value3 === names) {
+  if (aliasTarget === names) {
     return uiMessage("design-system.addTokenDialog.selfAlias");
   }
-  if (!tokenName.has(value3)) {
+  if (!tokenName.has(aliasTarget)) {
     return uiMessage("design-system.addTokenDialog.namesNoColorToken");
   }
   return null;
 }
-function normalizeNewColorValue(value: string): string {
-  return normalizeColorEditorInput(value);
+function normalizeNewColorValue(rawColorValue: string): string {
+  return normalizeColorEditorInput(rawColorValue);
 }
-function appendDefaultLengthUnit(value: string): string {
-  let value2 = value.trim();
-  if (/^-?\d{1,4}(?:\.\d{1,6})?$/.test(value2) && value2 !== "0") {
-    return value2 + "px";
+function appendDefaultLengthUnit(rawLength: string): string {
+  let trimmedLength = rawLength.trim();
+  if (/^-?\d{1,4}(?:\.\d{1,6})?$/.test(trimmedLength) && trimmedLength !== "0") {
+    return trimmedLength + "px";
   } else {
-    return value2;
+    return trimmedLength;
   }
 }
 function validateNewTokenValue(
   kind: ScalarTokenKind,
-  value: string,
+  rawValue: string,
 ): string | undefined {
   return normalizeScalarTokenValue(
     kind,
     kind === "spacing" || kind === "radius"
-      ? appendDefaultLengthUnit(value)
-      : value.trim(),
+      ? appendDefaultLengthUnit(rawValue)
+      : rawValue.trim(),
   );
 }
 function validateNewTypeField(
   field: "fontSize" | "lineHeight" | "letterSpacing",
-  value: string,
+  rawTypeValue: string,
 ): string | null {
-  let value2 = value.trim();
+  let trimmedTypeValue = rawTypeValue.trim();
   switch (field) {
     case "fontSize":
       if (
         normalizeCssLength(
-          appendDefaultLengthUnit(value2),
+          appendDefaultLengthUnit(trimmedTypeValue),
           false,
         ) === undefined
       ) {
@@ -128,16 +128,16 @@ function validateNewTypeField(
         return null;
       }
     case "lineHeight":
-      if (normalizeLineHeight(value2) === undefined) {
+      if (normalizeLineHeight(trimmedTypeValue) === undefined) {
         return uiMessage("design-system.addTokenDialog.notALineHeightTry");
       } else {
         return null;
       }
     case "letterSpacing":
       if (
-        value2 === "" ||
+        trimmedTypeValue === "" ||
         normalizeCssLength(
-          appendDefaultLengthUnit(value2),
+          appendDefaultLengthUnit(trimmedTypeValue),
           false,
         ) !== undefined
       ) {
@@ -153,10 +153,10 @@ function ignorePasswordManagerForInput(
   if (element === null) {
     return;
   }
-  for (let [value, value2] of Object.entries(PASSWORD_MANAGER_IGNORE_PROPS)) {
+  for (let [value, ignoredProperty] of Object.entries(PASSWORD_MANAGER_IGNORE_PROPS)) {
     element.setAttribute(
       value === "autoComplete" ? "autocomplete" : value,
-      value2,
+      ignoredProperty,
     );
   }
 }
@@ -223,118 +223,118 @@ function AddTokenDialog({
   let ref = reactDesignSystemEditors.useRef<HTMLFormElement | null>(
       null,
     ),
-    ref2 = reactDesignSystemEditors.useRef<HTMLInputElement | null>(
+    nameInputRef = reactDesignSystemEditors.useRef<HTMLInputElement | null>(
       null,
     ),
-    [value, value2] = reactDesignSystemEditors.useState(0);
+    [value, stepCounter] = reactDesignSystemEditors.useState(0);
   reactDesignSystemEditors.useEffect(() => {
     if (value === 0) {
       return;
     }
-    let value49 = setTimeout(() => {
-      let current = ref2.current;
+    let focusTimeout = setTimeout(() => {
+      let current = nameInputRef.current;
       current?.focus();
       current?.setSelectionRange(current.value.length, current.value.length);
     }, 50);
-    return () => clearTimeout(value49);
+    return () => clearTimeout(focusTimeout);
   }, [value]);
-  let value3 =
+  let tokenSets =
       req.kind === "color"
         ? req.groups
         : req.kind !== "type" && req.kind !== "shadow"
           ? (req.groups ?? [])
           : [],
-    value4 = req.kind === "type" && req.sets.length === 0,
-    value5 =
+    isEmptyTypeSet = req.kind === "type" && req.sets.length === 0,
+    defaultGroupName =
       req.kind === "color"
         ? req.namespace
         : req.kind !== "type" && req.kind !== "shadow"
           ? (req.namespace ?? "")
           : "",
-    [value6, value7] = reactDesignSystemEditors.useState(
+    [selectedGroup, setSelectedGroup] = reactDesignSystemEditors.useState(
       req.kind === "color"
         ? req.group
         : req.kind === "type"
-          ? value4
+          ? isEmptyTypeSet
             ? NEW_TOKEN_GROUP_SENTINEL
             : req.set
           : req.kind !== "shadow"
             ? (req.group ?? "")
             : "",
     ),
-    [value8, value9] = reactDesignSystemEditors.useState(
-      value4 ? "Styles" : "",
+    [themeId, setThemeId] = reactDesignSystemEditors.useState(
+      isEmptyTypeSet ? "Styles" : "",
     ),
-    [value10, value11] = reactDesignSystemEditors.useState<
+    [fontFamily, setFontFamily] = reactDesignSystemEditors.useState<
       string | null
     >(null),
-    ref3 = reactDesignSystemEditors.useRef<string | null>(null),
-    callback = (input: string | null) => {
-      ref3.current = input;
-      value11(input);
+    fontFamilyRef = reactDesignSystemEditors.useRef<string | null>(null),
+    callback = (fontFamilyValue: string | null) => {
+      fontFamilyRef.current = fontFamilyValue;
+      setFontFamily(fontFamilyValue);
     },
-    value12 =
-      value10 === null || req.kind !== "type"
+    fontValidationError =
+      fontFamily === null || req.kind !== "type"
         ? null
-        : validateNewFontFamily(value10, req.families),
-    [value13, value14] = reactDesignSystemEditors.useState(false),
-    [value15, value16] = reactDesignSystemEditors.useState(req.name),
-    [value17, value18] = reactDesignSystemEditors.useState(false),
-    ref4 = reactDesignSystemEditors.useRef(req.name),
-    callback2 = (input: string, options: string) => {
-      let value49 = stripAddDialogNamespace(
-        normalizeThemeId(options),
-        value5,
+        : validateNewFontFamily(fontFamily, req.families),
+    [showAdvanced, setShowAdvanced] = reactDesignSystemEditors.useState(false),
+    [tokenName, setTokenName] = reactDesignSystemEditors.useState(req.name),
+    [isTypeToken, setIsTypeToken] = reactDesignSystemEditors.useState(false),
+    initialNameRef = reactDesignSystemEditors.useRef(req.name),
+    seedForGroup = (groupKey: string, themeKey: string) => {
+      let normalizedNamespace = stripAddDialogNamespace(
+        normalizeThemeId(themeKey),
+        defaultGroupName,
       );
-      if (req.kind === "color" && input === NEW_TOKEN_GROUP_SENTINEL) {
-        if (value49 === "") {
+      if (req.kind === "color" && groupKey === NEW_TOKEN_GROUP_SENTINEL) {
+        if (normalizedNamespace === "") {
           return "";
         } else {
-          return req.seedFor(value49);
+          return req.seedFor(normalizedNamespace);
         }
       }
-      return value3.find((input2) => input2.key === input)?.seed ?? "";
+      return tokenSets.find((tokenSet) => tokenSet.key === groupKey)?.seed ?? "";
     },
-    callback3 = (input: string, options: string) => {
-      if (req.kind === "type" || value15 !== ref4.current) {
+    updateTokenName = (groupKey: string, themeKey: string) => {
+      if (req.kind === "type" || tokenName !== initialNameRef.current) {
         return;
       }
-      let value49 = callback2(input, options);
-      ref4.current = value49;
-      value16(value49);
+      let nextTokenName = seedForGroup(groupKey, themeKey);
+      initialNameRef.current = nextTokenName;
+      setTokenName(nextTokenName);
     },
-    callback4 = (input: string) => {
-      value7(input);
-      callback3(input, value8);
+    handleGroupChange = (groupKey: string) => {
+      setSelectedGroup(groupKey);
+      updateTokenName(groupKey, themeId);
       requestAnimationFrame(() => {
-        let value49 =
-          input === NEW_TOKEN_GROUP_SENTINEL
+        let groupInput =
+          groupKey === NEW_TOKEN_GROUP_SENTINEL
             ? ref.current?.querySelector<HTMLInputElement>(
                 '[data-field="fresh"]',
               )
-            : ref2.current;
-        value49?.focus();
+            : nameInputRef.current;
+        groupInput?.focus();
         if (
-          value49 !== null &&
-          value49 !== undefined &&
-          value49 === ref2.current
+          groupInput !== null &&
+          groupInput !== undefined &&
+          groupInput === nameInputRef.current
         ) {
-          value49.setSelectionRange(
-            value49.value.length,
-            value49.value.length,
+          groupInput.setSelectionRange(
+            groupInput.value.length,
+            groupInput.value.length,
           );
         }
       });
     },
-    [value19, value20] = reactDesignSystemEditors.useState(""),
-    [value21, value22] = reactDesignSystemEditors.useState<
+    [description, setDescription] = reactDesignSystemEditors.useState(""),
+    [colorValues, setColorValues] = reactDesignSystemEditors.useState<
       Record<string, string>
     >(() => {
       if (req.kind === "color" || req.kind === "shadow") {
-        let value49 = req.themes[0]?.id;
-        if (value49 !== undefined) {
+        let initialThemeId = req.themes[0]?.id;
+        if (initialThemeId !== undefined) {
           return {
-            [value49]: req.value,
+            [initialThemeId]: req.value,
           };
         } else {
           return {};
@@ -342,12 +342,12 @@ function AddTokenDialog({
       }
       return {};
     }),
-    [value23, value24] = reactDesignSystemEditors.useState(
+    [tokenValue, setTokenValue] = reactDesignSystemEditors.useState(
       req.kind === "type" || req.kind === "color" || req.kind === "shadow"
         ? ""
         : req.value,
     ),
-    [value25, value26] =
+    [typeStyle, setTypeStyle] =
       reactDesignSystemEditors.useState<NewTypeStyle>(
         req.kind === "type"
           ? {
@@ -366,194 +366,194 @@ function AddTokenDialog({
               letterSpacing: "",
             },
       ),
-    ref5 = reactDesignSystemEditors.useRef({
-      style: value25,
-      value: value23,
+    typeStyleRef = reactDesignSystemEditors.useRef({
+      style: typeStyle,
+      value: tokenValue,
     }),
-    callback5 = (input: (style: NewTypeStyle) => NewTypeStyle) => {
-      ref5.current = {
-        ...ref5.current,
-        style: input(ref5.current.style),
+    updateTypeStyle = (styleUpdater: (style: NewTypeStyle) => NewTypeStyle) => {
+      typeStyleRef.current = {
+        ...typeStyleRef.current,
+        style: styleUpdater(typeStyleRef.current.style),
       };
-      value26(ref5.current.style);
+      setTypeStyle(typeStyleRef.current.style);
     },
-    callback6 = (input: React.SetStateAction<string>) => {
-      ref5.current = {
-        ...ref5.current,
+    updateTypeField = (fieldValue: React.SetStateAction<string>) => {
+      typeStyleRef.current = {
+        ...typeStyleRef.current,
         value:
-          typeof input === "function" ? input(ref5.current.value) : input,
+          typeof fieldValue === "function" ? fieldValue(typeStyleRef.current.value) : fieldValue,
       };
-      value24(ref5.current.value);
+      setTokenValue(typeStyleRef.current.value);
     };
   reactDesignSystemEditors.useEffect(() => {
-    let value49 = requestAnimationFrame(() => {
-      let value50 =
-        value6 === NEW_TOKEN_GROUP_SENTINEL && !value4
+    let focusFrame = requestAnimationFrame(() => {
+      let focusableElement =
+        selectedGroup === NEW_TOKEN_GROUP_SENTINEL && !isEmptyTypeSet
           ? (ref.current?.querySelector<HTMLInputElement>(
               '[data-field="fresh"]',
-            ) ?? ref2.current)
-          : ref2.current;
-      if (value50 === null) {
+            ) ?? nameInputRef.current)
+          : nameInputRef.current;
+      if (focusableElement === null) {
         return;
       }
-      value50.focus();
-      value50.setSelectionRange(value50.value.length, value50.value.length);
+      focusableElement.focus();
+      focusableElement.setSelectionRange(focusableElement.value.length, focusableElement.value.length);
     });
-    return () => cancelAnimationFrame(value49);
+    return () => cancelAnimationFrame(focusFrame);
   }, []);
-  let value27 = value6 === NEW_TOKEN_GROUP_SENTINEL,
-    value28 =
+  let isNewGroup = selectedGroup === NEW_TOKEN_GROUP_SENTINEL,
+    selectedGroupName =
       req.kind === "type"
-        ? value8.replace(/\s+/g, " ").trim()
+        ? themeId.replace(/\s+/g, " ").trim()
         : stripAddDialogNamespace(
-            normalizeThemeId(value8),
-            value5,
+            normalizeThemeId(themeId),
+            defaultGroupName,
           ),
-    value29 = value28.toLowerCase(),
-    value30 =
+    normalizedGroupName = selectedGroupName.toLowerCase(),
+    groupNameError =
       req.kind === "color"
-        ? value3.some(
-            (input) =>
-              input.key.toLowerCase() === value29 ||
-              input.label.toLowerCase() === value29,
+        ? tokenSets.some(
+            (tokenSet) =>
+              tokenSet.key.toLowerCase() === normalizedGroupName ||
+              tokenSet.label.toLowerCase() === normalizedGroupName,
           )
         : req.kind === "type"
-          ? req.sets.some((input) => input.toLowerCase() === value29)
+          ? req.sets.some((groupName) => groupName.toLowerCase() === normalizedGroupName)
           : false,
-    value31 = req.kind === "type" ? "set" : "group",
-    value32 = value27 && value28 === "",
-    value33 = !value27
+    groupKindLabel = req.kind === "type" ? "set" : "group",
+    missingGroupName = isNewGroup && selectedGroupName === "",
+    groupNameValidation = !isNewGroup
       ? null
-      : value32
-        ? value13
-          ? uiMessage("design-system.addTokenDialog.a") + value31 + " needs a name."
+      : missingGroupName
+        ? showAdvanced
+          ? uiMessage("design-system.addTokenDialog.a") + groupKindLabel + " needs a name."
           : null
-        : value30
-          ? uiMessage("design-system.addTokenDialog.thereIsAlreadyA") + value31 + " called " + value28 + "."
+        : groupNameError
+          ? uiMessage("design-system.addTokenDialog.thereIsAlreadyA") + groupKindLabel + " called " + selectedGroupName + "."
           : null,
-    value34 = normalizeNewTokenName(value15),
-    value35 = value34 === "" || /[-.]$/.test(value34),
-    value36 = value35 && !value17,
-    value37: React.ReactNode = value36
+    normalizedTokenName = normalizeNewTokenName(tokenName),
+    invalidTokenName = normalizedTokenName === "" || /[-.]$/.test(normalizedTokenName),
+    nameErrorRequired = invalidTokenName && !isTypeToken,
+    nameError: React.ReactNode = nameErrorRequired
       ? null
-      : (validateTokenRename(value34, "", req.taken) ??
-        (value35 ? uiMessage("design-system.addTokenDialog.finishTheNameEG") + value34 + "500." : null)),
-    value38 = value36 || value37 !== null ? null : value39();
-  if (value38 !== null) {
-    let callback15 = () => {
-      value38.run();
-      value2((input) => input + 1);
+      : (validateTokenRename(normalizedTokenName, "", req.taken) ??
+        (invalidTokenName ? uiMessage("design-system.addTokenDialog.finishTheNameEG") + normalizedTokenName + "500." : null)),
+    nameAction = nameErrorRequired || nameError !== null ? null : buildNameAction();
+  if (nameAction !== null) {
+    let runNameAction = () => {
+      nameAction.run();
+      stepCounter((count) => count + 1);
     };
-    value37 =
-      value38.verb === "" ? (
-        value38.say
+    nameError =
+      nameAction.verb === "" ? (
+        nameAction.say
       ) : (
         <jsxAddTokenDialog.Fragment>
-          {[value38.say, " ", <TextLink
-              onClick={callback15}
+          {[nameAction.say, " ", <TextLink
+              onClick={runNameAction}
               data-testid={dataTestid + "-regroup"}
             >
-              {value38.verb}
+              {nameAction.verb}
             </TextLink>]}
         </jsxAddTokenDialog.Fragment>
       );
   }
-  function value39(): {
+  function buildNameAction(): {
     say: string;
     verb: string;
     run(): void;
   } | null {
-    let value49 = value5,
-      value50 = "“" + value34 + "”";
-    if (value49 !== "" && !value34.startsWith(value49)) {
-      let value56 = value34.toLowerCase().startsWith(value49.toLowerCase())
-        ? value34.slice(value49.length)
-        : value34;
+    let groupPrefix = defaultGroupName,
+      quotedTokenName = "“" + normalizedTokenName + "”";
+    if (groupPrefix !== "" && !normalizedTokenName.startsWith(groupPrefix)) {
+      let suffixAfterPrefix = normalizedTokenName.toLowerCase().startsWith(groupPrefix.toLowerCase())
+        ? normalizedTokenName.slice(groupPrefix.length)
+        : normalizedTokenName;
       return {
         say:
           uiMessage("design-system.addTokenDialog.everyNameHereStartsWith") +
-          value49 +
+          groupPrefix +
           "; without it this one would regroup the card.",
-        verb: uiMessage("design-system.addTokenDialog.startItWith") + value49,
-        run: () => value16(value49 + value56),
+        verb: uiMessage("design-system.addTokenDialog.startItWith") + groupPrefix,
+        run: () => setTokenName(groupPrefix + suffixAfterPrefix),
       };
     }
     if (
       req.kind === "type" ||
       req.kind === "shadow" ||
-      value3.length === 0 ||
-      value33 !== null ||
-      value32
+      tokenSets.length === 0 ||
+      groupNameValidation !== null ||
+      missingGroupName
     ) {
       return null;
     }
-    let value51 = value27 ? value28 : value6,
-      value52 =
+    let effectiveGroup = isNewGroup ? selectedGroupName : selectedGroup,
+      effectiveGroupKey =
         req.kind === "color"
-          ? req.groupOf(value34)
-          : (req.groupOf?.(value34) ?? value6);
-    if (value52 === value51) {
+          ? req.groupOf(normalizedTokenName)
+          : (req.groupOf?.(normalizedTokenName) ?? selectedGroup);
+    if (effectiveGroupKey === effectiveGroup) {
       return null;
     }
     if (
-      value49 !== "" &&
-      value34.toLowerCase().startsWith((value49 + value49).toLowerCase())
+      groupPrefix !== "" &&
+      normalizedTokenName.toLowerCase().startsWith((groupPrefix + groupPrefix).toLowerCase())
     ) {
       return {
-        say: value50 + " has " + value49 + " twice.",
-        verb: uiMessage("design-system.addTokenDialog.use") + value49 + value34.slice(2 * value49.length),
-        run: () => value16(value49 + value34.slice(2 * value49.length)),
+        say: quotedTokenName + " has " + groupPrefix + " twice.",
+        verb: uiMessage("design-system.addTokenDialog.use") + groupPrefix + normalizedTokenName.slice(2 * groupPrefix.length),
+        run: () => setTokenName(groupPrefix + normalizedTokenName.slice(2 * groupPrefix.length)),
       };
     }
-    let value53 = value27
-        ? value28
-        : (value3.find((input) => input.key === value6)?.label ?? value6),
-      value54 = value3.find((input) => input.key === value52);
-    if (value54 !== undefined) {
+    let groupPrefixLabel = isNewGroup
+        ? selectedGroupName
+        : (tokenSets.find((tokenSet) => tokenSet.key === selectedGroup)?.label ?? selectedGroup),
+      matchingTokenSet = tokenSets.find((tokenSet) => tokenSet.key === effectiveGroupKey);
+    if (matchingTokenSet !== undefined) {
       return {
         say:
-          value50 +
+          quotedTokenName +
           " would file under " +
-          value54.label +
+          matchingTokenSet.label +
           ", not " +
-          value53 +
+          groupPrefixLabel +
           ".",
-        verb: uiMessage("design-system.addTokenDialog.putItIn") + value54.label,
-        run: () => value7(value54.key),
+        verb: uiMessage("design-system.addTokenDialog.putItIn") + matchingTokenSet.label,
+        run: () => setSelectedGroup(matchingTokenSet.key),
       };
     }
     if (req.kind !== "color") {
       return null;
     }
     if (
-      value52 !== "" &&
-      normalizeThemeId(value52) === value52 &&
-      stripAddDialogNamespace(value52, value49) === value52 &&
-      !value3.some((input) => input.label.toLowerCase() === value52)
+      effectiveGroupKey !== "" &&
+      normalizeThemeId(effectiveGroupKey) === effectiveGroupKey &&
+      stripAddDialogNamespace(effectiveGroupKey, groupPrefix) === effectiveGroupKey &&
+      !tokenSets.some((tokenSet) => tokenSet.label.toLowerCase() === effectiveGroupKey)
     ) {
       return {
-        say: value50 + " would start a new group, " + value52 + ".",
-        verb: uiMessage("design-system.addTokenDialog.make") + value52 + " a new group",
+        say: quotedTokenName + " would start a new group, " + effectiveGroupKey + ".",
+        verb: uiMessage("design-system.addTokenDialog.make") + effectiveGroupKey + " a new group",
         run: () => {
-          value9(value52);
-          value7(NEW_TOKEN_GROUP_SENTINEL);
+          setThemeId(effectiveGroupKey);
+          setSelectedGroup(NEW_TOKEN_GROUP_SENTINEL);
         },
       };
     }
-    let value55 =
-      value51 === ""
-        ? value49 !== ""
-          ? value49 + " and one plain word"
+    let groupSuffix =
+      effectiveGroup === ""
+        ? groupPrefix !== ""
+          ? groupPrefix + " and one plain word"
           : uiMessage("design-system.addTokenDialog.onePlainWord")
-        : value49 + value51 + "-";
+        : groupPrefix + effectiveGroup + "-";
     return {
       say:
-        value50 +
+        quotedTokenName +
         " would not file under " +
-        value53 +
+        groupPrefixLabel +
         " — names there start with " +
-        value55 +
-        (value52 !== "" && normalizeThemeId(value52) !== value52
+        groupSuffix +
+        (effectiveGroupKey !== "" && normalizeThemeId(effectiveGroupKey) !== effectiveGroupKey
           ? " (group prefixes are lowercase letters, digits and single hyphens)"
           : "") +
         ".",
@@ -561,131 +561,131 @@ function AddTokenDialog({
       run: () => {},
     };
   }
-  let value40 =
+  let colorTokenSets =
       req.kind === "color" || req.kind === "shadow" ? req.themes : [],
-    value41 = value40[0]?.id,
+    primaryColorId = colorTokenSets[0]?.id,
     state: Record<string, string | null> = {};
   if (req.kind === "color") {
-    for (let value49 of value40) {
-      state[value49.id] = validateNewColorValue(
-        value21[value49.id] ?? "",
-        value49.id !== value41,
-        value34,
+    for (let colorSet of colorTokenSets) {
+      state[colorSet.id] = validateNewColorValue(
+        colorValues[colorSet.id] ?? "",
+        colorSet.id !== primaryColorId,
+        normalizedTokenName,
         req.names,
       );
     }
   }
   if (req.kind === "shadow") {
-    for (let value49 of value40) {
-      let value50 = (value21[value49.id] ?? "").trim();
-      state[value49.id] =
-        value50 === ""
-          ? value49.id === value41
+    for (let colorSet of colorTokenSets) {
+      let rawColorValue = (colorValues[colorSet.id] ?? "").trim();
+      state[colorSet.id] =
+        rawColorValue === ""
+          ? colorSet.id === primaryColorId
             ? uiMessage("design-system.addTokenDialog.aBoxShadowIsNeeded")
             : null
-          : normalizeBoxShadow(value50) === undefined
+          : normalizeBoxShadow(rawColorValue) === undefined
             ? uiMessage("design-system.addTokenDialog.notABoxShadowTry")
             : null;
     }
   }
-  let value42 =
+  let colorValidationError =
       req.kind === "spacing" || req.kind === "radius" || req.kind === "extra"
-        ? validateNewTokenValue(req.kind, value23) === undefined
+        ? validateNewTokenValue(req.kind, tokenValue) === undefined
           ? TOKEN_LENGTH_VALIDATION_MESSAGES[req.kind]
           : null
         : null,
-    value43 =
+    validatedColorValues =
       req.kind === "type"
         ? {
-            fontSize: validateNewTypeField("fontSize", value25.fontSize),
+            fontSize: validateNewTypeField("fontSize", typeStyle.fontSize),
             lineHeight: validateNewTypeField(
               "lineHeight",
-              value25.lineHeight,
+              typeStyle.lineHeight,
             ),
             letterSpacing: validateNewTypeField(
               "letterSpacing",
-              value25.letterSpacing,
+              typeStyle.letterSpacing,
             ),
           }
         : null,
-    value44 =
-      value33 === null &&
-      !value32 &&
-      !value35 &&
-      value37 === null &&
-      value42 === null &&
-      Object.values(state).every((input) => input === null) &&
-      value12 === null &&
-      (value43 === null ||
-        Object.values(value43).every((input) => input === null)),
-    callback7 = (input: HTMLInputElement) => {
-      let value49 = input.closest("[data-knob]")?.getAttribute("data-knob"),
-        style = ref5.current.style;
-      if (value49 === "size") {
+    isValueValid =
+      groupNameValidation === null &&
+      !missingGroupName &&
+      !invalidTokenName &&
+      nameError === null &&
+      colorValidationError === null &&
+      Object.values(state).every((stateValue) => stateValue === null) &&
+      fontValidationError === null &&
+      (validatedColorValues === null ||
+        Object.values(validatedColorValues).every((validatedValue) => validatedValue === null)),
+    readCssLength = (element: HTMLInputElement) => {
+      let knobName = element.closest("[data-knob]")?.getAttribute("data-knob"),
+        style = typeStyleRef.current.style;
+      if (knobName === "size") {
         return style.fontSize;
       } else {
-        if (value49 === "lh") {
+        if (knobName === "lh") {
           return style.lineHeight;
         } else {
-          if (value49 === "ls") {
+          if (knobName === "ls") {
             if (style.letterSpacing.trim() === "") {
               return "0";
             } else {
               return style.letterSpacing;
             }
           } else {
-            return ref5.current.value;
+            return typeStyleRef.current.value;
           }
         }
       }
     },
-    callback8 = (input: HTMLInputElement, options: string) => {
-      let value49 = callback7(input).trim();
-      if (options === "") {
+    validateCssLength = (element: HTMLInputElement, rawInput: string) => {
+      let knob = readCssLength(element).trim();
+      if (rawInput === "") {
         return false;
       }
-      let value50 = Number(options.replace(/,/g, "")),
-        value51 = parseEditableCssLength(value49)?.n;
+      let numericValue = Number(rawInput.replace(/,/g, "")),
+        parsedLength = parseEditableCssLength(knob)?.n;
       return (
-        value51 !== undefined && Math.abs(value50 - value51) < 0.000000001
+        parsedLength !== undefined && Math.abs(numericValue - parsedLength) < 0.000000001
       );
     },
-    callback9 = () => {
-      let value49 =
+    commitCssLength = () => {
+      let inputElement =
         ref.current?.querySelector<HTMLInputElement>(
           NUMBER_INPUT_SELECTOR + ":focus",
         ) ?? null;
-      if (value49 === null) {
+      if (inputElement === null) {
         return true;
       }
-      let value50 = value49.value.trim();
-      value49.blur();
-      value49.focus();
-      return callback8(value49, value50);
+      let inputValue = inputElement.value.trim();
+      inputElement.blur();
+      inputElement.focus();
+      return validateCssLength(inputElement, inputValue);
     },
-    callback10 = (input?: React.FormEvent<HTMLFormElement>) => {
-      input?.preventDefault();
-      let value49 =
+    handleSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
+      event?.preventDefault();
+      let focusedElement =
         ref.current?.querySelector<HTMLInputElement>(
           '[data-testid$="-family-custom"]:focus',
         ) ?? null;
-      if (value49 !== null) {
-        value49.blur();
+      if (focusedElement !== null) {
+        focusedElement.blur();
         if (
-          ref3.current !== null &&
+          fontFamilyRef.current !== null &&
           validateNewFontFamily(
-            ref3.current,
+            fontFamilyRef.current,
             req.kind === "type" ? req.families : {},
           ) !== null
         ) {
           return;
         }
       }
-      if (!callback9() || !value44) {
+      if (!commitCssLength() || !isValueValid) {
         return;
       }
-      let { style: current, value: current2 } = ref5.current,
-        value50 = value19
+      let { style: current, value: currentValue } = typeStyleRef.current,
+        descriptionValue = description
           .replace(
             /[ \t]+\n/g,
             `
@@ -694,50 +694,50 @@ function AddTokenDialog({
           .trim();
       switch (req.kind) {
         case "color": {
-          let state3: Record<string, string> = {};
-          for (let value51 of value40) {
-            let value52 = normalizeNewColorValue(
-              ref6.current[value51.id] ?? "",
+          let normalizedValues: Record<string, string> = {};
+          for (let colorSet of colorTokenSets) {
+            let normalizedValue = normalizeNewColorValue(
+              colorValuesRef.current[colorSet.id] ?? "",
             );
-            if (value52 !== "") {
-              state3[value51.id] = value52;
+            if (normalizedValue !== "") {
+              normalizedValues[colorSet.id] = normalizedValue;
             }
           }
           onSubmit({
             kind: "color",
-            name: value34,
-            group: value27 ? value28 : value6,
-            newGroup: value27,
-            values: state3,
-            usage: value50,
+            name: normalizedTokenName,
+            group: isNewGroup ? selectedGroupName : selectedGroup,
+            newGroup: isNewGroup,
+            values: normalizedValues,
+            usage: descriptionValue,
           });
           return;
         }
         case "shadow": {
-          let state3: Record<string, string> = {};
-          for (let value51 of value40) {
-            let value52 = (ref6.current[value51.id] ?? "").trim();
+          let normalizedValues: Record<string, string> = {};
+          for (let colorSet of colorTokenSets) {
+            let normalizedValue = (colorValuesRef.current[colorSet.id] ?? "").trim();
             if (
-              value52 !== "" &&
-              normalizeBoxShadow(value52) !== undefined
+              normalizedValue !== "" &&
+              normalizeBoxShadow(normalizedValue) !== undefined
             ) {
-              state3[value51.id] = value52;
+              normalizedValues[colorSet.id] = normalizedValue;
             }
           }
           onSubmit({
             kind: "shadow",
-            name: value34,
-            values: state3,
-            usage: value50,
+            name: normalizedTokenName,
+            values: normalizedValues,
+            usage: descriptionValue,
           });
           return;
         }
         case "type":
           onSubmit({
             kind: "type",
-            name: value34,
-            set: value27 ? value28 : value6,
-            newSet: value27,
+            name: normalizedTokenName,
+            set: isNewGroup ? selectedGroupName : selectedGroup,
+            newSet: isNewGroup,
             style: {
               ...current,
               fontSize: appendDefaultLengthUnit(current.fontSize),
@@ -747,47 +747,47 @@ function AddTokenDialog({
                   : appendDefaultLengthUnit(current.letterSpacing),
               lineHeight: current.lineHeight.trim(),
             },
-            ...(ref3.current !== null
+            ...(fontFamilyRef.current !== null
               ? {
-                  font: ref3.current,
+                  font: fontFamilyRef.current,
                 }
               : {}),
-            usage: value50,
+            usage: descriptionValue,
           });
           return;
         default:
           onSubmit({
             kind: req.kind,
-            name: value34,
-            value: validateNewTokenValue(req.kind, current2),
-            usage: value50,
-            ...(value3.length > 0
+            name: normalizedTokenName,
+            value: validateNewTokenValue(req.kind, currentValue),
+            usage: descriptionValue,
+            ...(tokenSets.length > 0
               ? {
-                  group: value6,
+                  group: selectedGroup,
                 }
               : {}),
           });
       }
     },
-    callback11 = (event: React.KeyboardEvent) => {
+    handleKeyboard = (event: React.KeyboardEvent) => {
       if (
         event.key === "Enter" &&
         (event.metaKey || event.ctrlKey) &&
         !isComposingEvent(event)
       ) {
         event.preventDefault();
-        callback10();
+        handleSubmit();
       }
     },
-    ref6 = reactDesignSystemEditors.useRef(value21),
-    callback12 = (input: string, options: string) => {
-      ref6.current = {
-        ...ref6.current,
-        [input]: options,
+    colorValuesRef = reactDesignSystemEditors.useRef(colorValues),
+    updateColorValue = (tokenId: string, colorValue: string) => {
+      colorValuesRef.current = {
+        ...colorValuesRef.current,
+        [tokenId]: colorValue,
       };
-      value22(ref6.current);
+      setColorValues(colorValuesRef.current);
     },
-    callback13 = (event: React.KeyboardEvent) => {
+    handleColorKeyboard = (event: React.KeyboardEvent) => {
       if (
         event.key !== "Enter" ||
         !event.isDefaultPrevented() ||
@@ -803,19 +803,19 @@ function AddTokenDialog({
       ) {
         return;
       }
-      if (callback8(event.target, event.target.value.trim())) {
-        callback10();
+      if (validateCssLength(event.target, event.target.value.trim())) {
+        handleSubmit();
       }
     },
-    state2: Record<string, string> = {
-      color: value6 === "" ? "e.g. white" : "e.g. brand-500",
+    fieldPlaceholderValues: Record<string, string> = {
+      color: selectedGroup === "" ? "e.g. white" : "e.g. brand-500",
       type: "e.g. heading-lg",
       spacing: "e.g. space-md",
       radius: "e.g. radius-md",
       shadow: "e.g. shadow-sm",
       extra: "e.g. token-1",
     },
-    value45 = (
+    dialogFields = (
       <AddDialogField
         label={
           (
@@ -825,244 +825,244 @@ function AddTokenDialog({
             } as Record<string, string>
           )[req.kind] ?? (uiMessage("design-system.addTokenDialog.name"))
         }
-        hint={value37}
+        hint={nameError}
       >
         <TextInput
           {...PASSWORD_MANAGER_IGNORE_PROPS}
-          ref={ref2}
+          ref={nameInputRef}
           className={"font-mono"}
-          value={value15}
-          placeholder={state2[req.kind]}
+          value={tokenName}
+          placeholder={fieldPlaceholderValues[req.kind]}
           spellCheck={false}
           aria-label={uiMessage("design-system.addTokenDialog.name")}
           data-testid={dataTestid + "-name"}
           onChange={(
-            input: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+            event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
           ) => {
-            value18(true);
-            value16(input.currentTarget.value);
+            setIsTypeToken(true);
+            setTokenName(event.currentTarget.value);
           }}
         />
       </AddDialogField>
     ),
-    callback14 = (
-      input: string,
+    renderField = (
+      fieldName: string,
       items: {
         value: string;
         label: string;
       }[],
-      context: string,
-      value49 = true,
+      fieldContext: string,
+      required = true,
     ) => (
       <jsxAddTokenDialog.Fragment>
         {[<AddDialogFieldGroup
-            label={input}
-            testid={dataTestid + "-" + input.toLowerCase() + "-row"}
+            label={fieldName}
+            testid={dataTestid + "-" + fieldName.toLowerCase() + "-row"}
           >
             <Select
               popupAttrs={UNCOMMENTABLE_PROPS}
               items={
-                value49
+                required
                   ? [
                       ...items,
                       {
                         value: NEW_TOKEN_GROUP_SENTINEL,
-                        get label() { return uiMessage("design-system.addTokenDialog.new", { value1: String(input.toLowerCase()) }); },
+                        get label() { return uiMessage("design-system.addTokenDialog.new", { value1: String(fieldName.toLowerCase()) }); },
                         separatorBefore: items.length > 0,
                       },
                     ]
                   : items
               }
-              value={value6}
-              aria-label={input}
-              data-testid={dataTestid + "-" + input.toLowerCase()}
-              onChange={callback4}
+              value={selectedGroup}
+              aria-label={fieldName}
+              data-testid={dataTestid + "-" + fieldName.toLowerCase()}
+              onChange={handleGroupChange}
             />
-          </AddDialogFieldGroup>, value27 ? (
-            <AddDialogField label={uiMessage("design-system.addTokenDialog.name2", { value1: String(input) })} hint={value33}>
+          </AddDialogFieldGroup>, isNewGroup ? (
+            <AddDialogField label={uiMessage("design-system.addTokenDialog.name2", { value1: String(fieldName) })} hint={groupNameValidation}>
               <TextInput
                 {...PASSWORD_MANAGER_IGNORE_PROPS}
                 data-field={"fresh"}
-                value={value8}
-                placeholder={context}
+                value={themeId}
+                placeholder={fieldContext}
                 maxLength={MAX_TOKEN_LABEL_LENGTH}
                 spellCheck={false}
-                aria-label={uiMessage("design-system.addTokenDialog.name2", { value1: String(input) })}
+                aria-label={uiMessage("design-system.addTokenDialog.name2", { value1: String(fieldName) })}
                 data-testid={
                   dataTestid +
                   "-" +
-                  (input === "Set" ? "set" : "group") +
+                  (fieldName === "Set" ? "set" : "group") +
                   "-name"
                 }
-                onChange={(input2: React.ChangeEvent<HTMLInputElement>) => {
-                  let value50 = input2.currentTarget.value;
-                  value14(true);
-                  value9(value50);
-                  callback3(NEW_TOKEN_GROUP_SENTINEL, value50);
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  let themeValue = event.currentTarget.value;
+                  setShowAdvanced(true);
+                  setThemeId(themeValue);
+                  updateTokenName(NEW_TOKEN_GROUP_SENTINEL, themeValue);
                 }}
               />
             </AddDialogField>
           ) : null]}
       </jsxAddTokenDialog.Fragment>
     ),
-    value46 = (
+    dialogContent = (
       <AddDialogField label={uiMessage("design-system.addTokenDialog.usageNote")} top={true}>
         <TextArea
           {...PASSWORD_MANAGER_IGNORE_PROPS}
           rows={2}
           autosize={true}
           resize={"none"}
-          value={value19}
+          value={description}
           placeholder={
             // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-            uiMessage("design-system.addTokenDialog.optionalWhenShouldTheAgent", { value1: String(value35 ? (uiMessage("design-system.addTokenDialog.it")) : (value34)) })
+            uiMessage("design-system.addTokenDialog.optionalWhenShouldTheAgent", { value1: String(invalidTokenName ? (uiMessage("design-system.addTokenDialog.it")) : (normalizedTokenName)) })
           }
           aria-label={uiMessage("design-system.addTokenDialog.usageNote")}
           data-testid={dataTestid + "-usage"}
           onChange={(
-            input: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-          ) => value20(input.currentTarget.value)}
-          onKeyDown={callback11}
+            event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+          ) => setDescription(event.currentTarget.value)}
+          onKeyDown={handleKeyboard}
         />
       </AddDialogField>
     ),
-    value47: React.ReactNode,
-    value48: React.ReactNode = null;
+    dialogFooter: React.ReactNode,
+    dialogError: React.ReactNode = null;
   switch (req.kind) {
     case "color": {
-      value48 = (
+      dialogError = (
         <div
           className={"ds-well ds-addd-well"}
           aria-hidden={"true"}
           data-testid={dataTestid + "-preview"}
         >
-          {value40.map((input, options) => {
-            let value49 = normalizeColorEditorInput(
-                value21[input.id] ?? "",
+          {colorTokenSets.map((tokenSet, setIndex) => {
+            let normalizedValue = normalizeColorEditorInput(
+                colorValues[tokenSet.id] ?? "",
               ),
-              value50 = normalizeColorEditorInput(
-                value21[value41 ?? ""] ?? "",
+              fallbackValue = normalizeColorEditorInput(
+                colorValues[primaryColorId ?? ""] ?? "",
               ),
-              value51 = isColorLiteral(value49)
-                ? value49
-                : options > 0 && isColorLiteral(value50)
-                  ? value50
+              backgroundColor = isColorLiteral(normalizedValue)
+                ? normalizedValue
+                : setIndex > 0 && isColorLiteral(fallbackValue)
+                  ? fallbackValue
                   : undefined;
             return (() => {
               const _Element = "span";
               const _elementProps = {
                 className: "ds-addd-swatch",
                 style:
-                  value51 !== undefined
+                  backgroundColor !== undefined
                     ? {
-                        background: value51,
+                        background: backgroundColor,
                       }
                     : undefined,
-                title: input.name,
+                title: tokenSet.name,
               };
-              const _elementKey = input.id;
+              const _elementKey = tokenSet.id;
               return <_Element key={_elementKey} {..._elementProps} />;
             })();
           })}
         </div>
       );
-      value47 = (
+      dialogFooter = (
         <jsxAddTokenDialog.Fragment>
-          {[callback14(
+          {[renderField(
               "Group",
-              req.groups.map((input) => ({
-                value: input.key,
-                label: input.label,
+              req.groups.map((group) => ({
+                value: group.key,
+                label: group.label,
               })),
               "e.g. brand",
-            ), value45, value40.map((input, options) => {
-              let value49 = normalizeColorEditorInput(
-                  value21[input.id] ?? "",
+            ), dialogFields, colorTokenSets.map((tokenSet, setIndex) => {
+              let normalizedValue = normalizeColorEditorInput(
+                  colorValues[tokenSet.id] ?? "",
                 ),
-                value50 = normalizeColorEditorInput(
-                  value21[value41 ?? ""] ?? "",
+                placeholderValue = normalizeColorEditorInput(
+                  colorValues[primaryColorId ?? ""] ?? "",
                 );
               return (() => {
-                const _Element2 = "div";
-                const _elementProps2 = {
+                const FieldElement = "div";
+                const fieldProps = {
                   className:
                     "ds-addd-crow [--pp-gutter-l:0px] [--pp-gutter-r:0px] [--prop-row-h:24px]",
-                  "data-testid": dataTestid + "-value-" + input.id,
+                  "data-testid": dataTestid + "-value-" + tokenSet.id,
                   children: (
                     <ColorTextPropertyRow
-                      label={value40.length > 1 ? (input.name) : (uiMessage("design-system.addTokenDialog.value"))}
+                      label={colorTokenSets.length > 1 ? (tokenSet.name) : (uiMessage("design-system.addTokenDialog.value"))}
                       popupAttrs={commentTargetProps(
                         "picker",
-                        "add-dialog:" + input.id,
+                        "add-dialog:" + tokenSet.id,
                       )}
                       value={
-                        value49 !== "" && isColorLiteral(value49)
-                          ? value49
+                        normalizedValue !== "" && isColorLiteral(normalizedValue)
+                          ? normalizedValue
                           : undefined
                       }
-                      {...(options > 0
+                      {...(setIndex > 0
                         ? {
                             clearLabel:
-                              uiMessage("design-system.addTokenDialog.inherits") + (value40[0]?.name ?? ""),
-                            ...(isColorLiteral(value50)
+                              uiMessage("design-system.addTokenDialog.inherits") + (colorTokenSets[0]?.name ?? ""),
+                            ...(isColorLiteral(placeholderValue)
                               ? {
-                                  placeholder: value50,
+                                  placeholder: placeholderValue,
                                 }
                               : {}),
                           }
                         : {})}
-                      onChange={(input2: string | undefined) =>
-                        callback12(input.id, input2 ?? "")
+                      onChange={(colorValue: string | undefined) =>
+                        updateColorValue(tokenSet.id, colorValue ?? "")
                       }
                     />
                   ),
                 };
-                const _elementKey2 = input.id;
-                return <_Element2 key={_elementKey2} {..._elementProps2} />;
+                const fieldKey = tokenSet.id;
+                return <FieldElement key={fieldKey} {...fieldProps} />;
               })();
-            }), value46]}
+            }), dialogContent]}
         </jsxAddTokenDialog.Fragment>
       );
       break;
     }
     case "shadow": {
-      value47 = (
+      dialogFooter = (
         <jsxAddTokenDialog.Fragment>
-          {[value45, value40.map((input, options) =>
+          {[dialogFields, colorTokenSets.map((field, fieldIndex) =>
               (() => {
-                const _Element3 = AddDialogField;
-                const _elementProps3 = {
-                  label: value40.length > 1 ? input.name : uiMessage("design-system.addTokenDialog.value"),
-                  hint: state[input.id] ?? null,
-                  testid: dataTestid + "-value-" + input.id,
+                const FieldComponent = AddDialogField;
+                const fieldProps = {
+                  label: colorTokenSets.length > 1 ? field.name : uiMessage("design-system.addTokenDialog.value"),
+                  hint: state[field.id] ?? null,
+                  testid: dataTestid + "-value-" + field.id,
                   children: (
                     <ShadowValueEditor
-                      label={uiMessage("design-system.addTokenDialog.value2", { value1: String(input.name) })}
-                      anchorKey={"add-dialog:" + input.id}
-                      value={value21[input.id] ?? ""}
-                      onChange={(input2: string | undefined) =>
-                        callback12(input.id, input2 as string)
+                      label={uiMessage("design-system.addTokenDialog.value2", { value1: String(field.name) })}
+                      anchorKey={"add-dialog:" + field.id}
+                      value={colorValues[field.id] ?? ""}
+                      onChange={(colorValue: string | undefined) =>
+                        updateColorValue(field.id, colorValue as string)
                       }
-                      testid={dataTestid + "-chip-" + input.id}
-                      {...(options > 0
+                      testid={dataTestid + "-chip-" + field.id}
+                      {...(fieldIndex > 0
                         ? {
                             clear: {
-                              label: uiMessage("design-system.addTokenDialog.inherit") + (value40[0]?.name ?? ""),
-                              run: () => callback12(input.id, ""),
+                              label: uiMessage("design-system.addTokenDialog.inherit") + (colorTokenSets[0]?.name ?? ""),
+                              run: () => updateColorValue(field.id, ""),
                             },
                           }
                         : {})}
                     />
                   ),
                 };
-                const _elementKey3 = input.id;
-                return <_Element3 key={_elementKey3} {..._elementProps3} />;
+                const fieldKey = field.id;
+                return <FieldComponent key={fieldKey} {...fieldProps} />;
               })(),
-            ), value46]}
+            ), dialogContent]}
         </jsxAddTokenDialog.Fragment>
       );
-      let value49 = (value21[value41 ?? ""] ?? "").trim();
-      value48 = (
+      let boxShadowValue = (colorValues[primaryColorId ?? ""] ?? "").trim();
+      dialogError = (
         <div
           className={"ds-well ds-addd-well"}
           aria-hidden={"true"}
@@ -1071,9 +1071,9 @@ function AddTokenDialog({
           <span
             className={"ds-shadow-surface"}
             style={
-              isSafeBoxShadow(value49)
+              isSafeBoxShadow(boxShadowValue)
                 ? {
-                    boxShadow: value49,
+                    boxShadow: boxShadowValue,
                   }
                 : undefined
             }
@@ -1083,43 +1083,43 @@ function AddTokenDialog({
       break;
     }
     case "type": {
-      let value49 =
-          value10 !== null
-            ? "'" + value10 + "', sans-serif"
-            : (req.families[value25.family] ??
+      let fontFamilyValue =
+          fontFamily !== null
+            ? "'" + fontFamily + "', sans-serif"
+            : (req.families[typeStyle.family] ??
               Object.values(req.families)[0] ??
               "system-ui, sans-serif"),
-        value50 = typeStylePreviewStyle(
+        previewStyle = typeStylePreviewStyle(
           {
-            name: value34,
-            fontSize: appendDefaultLengthUnit(value25.fontSize),
-            lineHeight: value25.lineHeight,
-            fontWeight: value25.fontWeight,
+            name: normalizedTokenName,
+            fontSize: appendDefaultLengthUnit(typeStyle.fontSize),
+            lineHeight: typeStyle.lineHeight,
+            fontWeight: typeStyle.fontWeight,
             letterSpacing:
-              value25.letterSpacing.trim() === ""
+              typeStyle.letterSpacing.trim() === ""
                 ? "0"
-                : appendDefaultLengthUnit(value25.letterSpacing),
-            fontStyle: value25.fontStyle,
+                : appendDefaultLengthUnit(typeStyle.letterSpacing),
+            fontStyle: typeStyle.fontStyle,
           },
-          value49,
+          fontFamilyValue,
         ),
-        value51 = Math.min(
+        previewFontSize = Math.min(
           56,
           Math.max(
             14,
             parseEditableCssLength(
-              appendDefaultLengthUnit(value25.fontSize),
+              appendDefaultLengthUnit(typeStyle.fontSize),
             )?.unit === "px"
               ? (parseEditableCssLength(
-                  appendDefaultLengthUnit(value25.fontSize),
+                  appendDefaultLengthUnit(typeStyle.fontSize),
                 )?.n ?? 16)
               : 16 *
                   (parseEditableCssLength(
-                    appendDefaultLengthUnit(value25.fontSize),
+                    appendDefaultLengthUnit(typeStyle.fontSize),
                   )?.n ?? 1),
           ),
         );
-      value48 = (
+      dialogError = (
         <div
           className={"ds-well ds-twell ds-addd-well"}
           data-testid={dataTestid + "-specimen"}
@@ -1127,8 +1127,8 @@ function AddTokenDialog({
           <span
             className={"ds-spec ds-taa text-primary"}
             style={{
-              ...value50,
-              fontSize: String(value51) + "px",
+              ...previewStyle,
+              fontSize: String(previewFontSize) + "px",
               lineHeight: 1,
             }}
           >
@@ -1136,94 +1136,94 @@ function AddTokenDialog({
           </span>
         </div>
       );
-      let callback15 = (input: keyof NewTypeStyle, options: string) => {
-        if (input === "family") {
+      let handleTypeFieldChange = (field: keyof NewTypeStyle, fieldValue: string) => {
+        if (field === "family") {
           callback(null);
         }
-        callback5((input2) =>
-          input === "family"
+        updateTypeStyle((style) =>
+          field === "family"
             ? {
-                ...input2,
-                family: options,
+                ...style,
+                family: fieldValue,
               }
-            : input === "fontSize"
+            : field === "fontSize"
               ? {
-                  ...input2,
-                  fontSize: options,
+                  ...style,
+                  fontSize: fieldValue,
                 }
-              : input === "fontWeight"
+              : field === "fontWeight"
                 ? {
-                    ...input2,
-                    fontWeight: options,
+                    ...style,
+                  fontWeight: fieldValue,
                   }
-                : input === "lineHeight"
+                : field === "lineHeight"
                   ? {
-                      ...input2,
-                      lineHeight: options,
+                      ...style,
+                    lineHeight: fieldValue,
                     }
-                  : input === "letterSpacing"
+                  : field === "letterSpacing"
                     ? {
-                        ...input2,
-                        letterSpacing: options,
+                        ...style,
+                        letterSpacing: fieldValue,
                       }
-                    : input2,
+                    : style,
         );
       };
-      value47 = (
+      dialogFooter = (
         <jsxAddTokenDialog.Fragment>
-          {[callback14(
+          {[renderField(
               "Set",
-              req.sets.map((input) => ({
-                value: input,
-                label: input,
+              req.sets.map((setName) => ({
+                value: setName,
+                label: setName,
               })),
               "e.g. Display",
-            ), value45, <TypeStyleFields
+            ), dialogFields, <TypeStyleFields
               v={{
-                family: value10 !== null ? "" : value25.family,
-                fontSize: appendDefaultLengthUnit(value25.fontSize),
-                fontWeight: value25.fontWeight,
-                lineHeight: value25.lineHeight,
-                letterSpacing: value25.letterSpacing,
+                family: fontFamily !== null ? "" : typeStyle.family,
+                fontSize: appendDefaultLengthUnit(typeStyle.fontSize),
+                fontWeight: typeStyle.fontWeight,
+                lineHeight: typeStyle.lineHeight,
+                letterSpacing: typeStyle.letterSpacing,
               }}
-              fontLabel={value10 ?? undefined}
+              fontLabel={fontFamily ?? undefined}
               families={req.families}
               familyNames={req.familyNames}
               fontNames={req.fontNames}
-              onField={callback15}
-              onFont={(input: string) => {
-                callback(input);
-                callback5((input2) => ({
-                  ...input2,
+              onField={handleTypeFieldChange}
+              onFont={(selectedFontFamily: string) => {
+                callback(selectedFontFamily);
+                updateTypeStyle((style) => ({
+                  ...style,
                   family: "",
                 }));
               }}
               testid={dataTestid}
               inputRef={ignorePasswordManagerForInput}
-              row={(input: string, options: React.ReactNode) =>
-                input === "Font" ? (
-                  <AddDialogField label={input} hint={value12}>
-                    {options}
+              row={(label: string, children: React.ReactNode) =>
+                label === "Font" ? (
+                  <AddDialogField label={label} hint={fontValidationError}>
+                    {children}
                   </AddDialogField>
                 ) : (
-                  <AddDialogFieldGroup label={input}>
-                    {options}
+                  <AddDialogFieldGroup label={label}>
+                    {children}
                   </AddDialogFieldGroup>
                 )
               }
-            />, value46]}
+            />, dialogContent]}
         </jsxAddTokenDialog.Fragment>
       );
       break;
     }
     default: {
-      let value49 = validateNewTokenValue(req.kind, value23),
-        value50 =
-          value49 !== undefined
-            ? cssLengthPreviewPixels(value49)
+      let validatedValue = validateNewTokenValue(req.kind, tokenValue),
+        previewPixels =
+          validatedValue !== undefined
+            ? cssLengthPreviewPixels(validatedValue)
             : null;
       if (req.kind === "spacing") {
-        value48 = (
+        dialogError = (
           <div
             className={"ds-well ds-addd-well"}
             aria-hidden={"true"}
@@ -1233,7 +1233,7 @@ function AddTokenDialog({
               className={"ds-addd-gap"}
               style={{
                 gap:
-                  String(value50 === null ? 0 : Math.min(120, value50)) +
+                  String(previewPixels === null ? 0 : Math.min(120, previewPixels)) +
                   "px",
               }}
             >
@@ -1242,7 +1242,7 @@ function AddTokenDialog({
           </div>
         );
       } else if (req.kind === "radius") {
-        value48 = (
+        dialogError = (
           <div
             className={"ds-well ds-addd-well"}
             aria-hidden={"true"}
@@ -1252,24 +1252,24 @@ function AddTokenDialog({
               className={"ds-addd-card ds-addd-corner"}
               style={{
                 borderTopLeftRadius:
-                  value50 === null ? 0 : Math.min(60, value50),
+                  previewPixels === null ? 0 : Math.min(60, previewPixels),
               }}
             />
           </div>
         );
       }
-      let value51: React.ReactNode;
+      let typeFields: React.ReactNode;
       if (req.kind === "spacing" || req.kind === "radius") {
-        let value52 = parseEditableCssLength(
-          appendDefaultLengthUnit(value23),
+        let parsedLength = parseEditableCssLength(
+          appendDefaultLengthUnit(tokenValue),
         ) ?? {
           n: 0,
           unit: "px",
         };
-        value51 = (
+        typeFields = (
           <AddDialogField
             label={uiMessage("design-system.addTokenDialog.value")}
-            hint={value42}
+            hint={colorValidationError}
             testid={dataTestid + "-value"}
             knob={"value"}
           >
@@ -1277,51 +1277,51 @@ function AddTokenDialog({
               aria-label={uiMessage("design-system.addTokenDialog.value")}
               inputRef={ignorePasswordManagerForInput}
               refuseLetters={true}
-              unit={value52.unit}
-              value={value52.n}
+              unit={parsedLength.unit}
+              value={parsedLength.n}
               min={0}
               max={MAX_EDITABLE_CSS_LENGTH}
-              step={cssLengthInputStep(value52.unit)}
-              onValue={(input: number | undefined) => {
-                if (input !== undefined) {
-                  callback6(formatNumberWithUnit(input, value52.unit));
+              step={cssLengthInputStep(parsedLength.unit)}
+              onValue={(numberValue: number | undefined) => {
+                if (numberValue !== undefined) {
+                  updateTypeField(formatNumberWithUnit(numberValue, parsedLength.unit));
                 }
               }}
             />
           </AddDialogField>
         );
       } else {
-        value51 = (
-          <AddDialogField label={uiMessage("design-system.addTokenDialog.value")} hint={value42}>
+        typeFields = (
+          <AddDialogField label={uiMessage("design-system.addTokenDialog.value")} hint={colorValidationError}>
             <TextInput
               {...PASSWORD_MANAGER_IGNORE_PROPS}
               className={"font-mono"}
-              value={value23}
+              value={tokenValue}
               spellCheck={false}
               aria-label={uiMessage("design-system.addTokenDialog.value")}
               data-testid={dataTestid + "-value"}
               onChange={(
-                input: React.ChangeEvent<
+                event: React.ChangeEvent<
                   HTMLInputElement | HTMLTextAreaElement
                 >,
-              ) => callback6(input.currentTarget.value)}
+              ) => updateTypeField(event.currentTarget.value)}
             />
           </AddDialogField>
         );
       }
-      value47 = (
+      dialogFooter = (
         <jsxAddTokenDialog.Fragment>
-          {[value3.length > 1
-              ? callback14(
+          {[tokenSets.length > 1
+              ? renderField(
                   "Group",
-                  value3.map((input) => ({
-                    value: input.key,
-                    label: input.label,
+                  tokenSets.map((tokenSet) => ({
+                    value: tokenSet.key,
+                    label: tokenSet.label,
                   })),
                   "",
                   false,
                 )
-              : null, value45, value51, value46]}
+              : null, dialogFields, typeFields, dialogContent]}
         </jsxAddTokenDialog.Fragment>
       );
     }
@@ -1331,8 +1331,8 @@ function AddTokenDialog({
       <CdsRoot density={"compact"} className={"contents"}>
         <Dialog.Root
           open={true}
-          onOpenChange={(input: boolean) => {
-            if (!input) {
+          onOpenChange={(isOpen: boolean) => {
+            if (!isOpen) {
               onClose();
             }
           }}
@@ -1353,10 +1353,10 @@ function AddTokenDialog({
                 }
                 autoComplete={"off"}
                 noValidate={true}
-                onSubmit={callback10}
-                onKeyDown={callback13}
+                onSubmit={handleSubmit}
+                onKeyDown={handleColorKeyboard}
               >
-                {[value48, value47, <Dialog.Footer align={"end"}>
+                {[dialogError, dialogFooter, <Dialog.Footer align={"end"}>
                     {[<Button
                         variant={"ghost"}
                         onClick={onClose}
@@ -1366,7 +1366,7 @@ function AddTokenDialog({
                       </Button>, <Button
                         variant={"primary"}
                         type={"submit"}
-                        disabled={!value44}
+                        disabled={!isValueValid}
                         data-testid={dataTestid + "-submit"}
                       >
                         {uiMessage("design-system.addTokenDialog.add")}
@@ -1420,8 +1420,8 @@ export function installEditorAddTokenDialog(): () => void {
       "data-bwignore": "true",
       "data-form-type": "other",
     };
-    formatNumberWithUnit = (value: number, unit: string) =>
-      String(Math.round(value * 1e6) / 1e6) + unit;
+    formatNumberWithUnit = (numberValue: number, unit: string) =>
+      String(Math.round(numberValue * 1e6) / 1e6) + unit;
     NUMBER_INPUT_SELECTOR = '[data-cds="NumberInput"] input';
     stripAddDialogNamespace = (name: string, namespace: string) =>
       namespace !== "" &&

@@ -36,59 +36,59 @@ function AssetDetailsPreview({
       asset.kind === "image" || asset.kind === "svg" || asset.kind === "video"
         ? filePreviewUrl(files, asset.path, storage)
         : null,
-    value2: string = "ds-thumb-media ds-thumb-" + size,
-    value3 = useAssetThumbnailSource(files, asset.path);
+    thumbnailClass: string = "ds-thumb-media ds-thumb-" + size,
+    thumbnailSource = useAssetThumbnailSource(files, asset.path);
   if ((asset.kind === "image" || asset.kind === "svg") && value !== null) {
     return (() => {
       const _Element = "img";
       const _elementProps = {
-        className: value2,
+        className: thumbnailClass,
         "data-kind":
           asset.kind === "svg" &&
           isHeldFilePointer(asset.path, files[asset.path] ?? "")
             ? "svg"
             : undefined,
-        src: value3.src ?? value,
+        src: thumbnailSource.src ?? value,
         alt: asset.name,
         draggable: false,
         loading: "lazy" as const,
-        onLoad: value3.onLoad,
-        onError: value3.onError,
+        onLoad: thumbnailSource.onLoad,
+        onError: thumbnailSource.onError,
       };
-      const _elementKey = value3.part;
+      const _elementKey = thumbnailSource.part;
       return <_Element key={_elementKey} {..._elementProps} />;
     })();
   }
   if (asset.kind === "video" && value !== null) {
     if (size === "full") {
       return (() => {
-        const _Element2 = "video";
-        const _elementProps2 = {
-          className: value2,
-          src: value3.src ?? value,
+        const VideoElement = "video";
+        const videoProps = {
+          className: thumbnailClass,
+          src: thumbnailSource.src ?? value,
           controls: true,
           muted: true,
           playsInline: true,
-          onLoadedMetadata: value3.onLoad,
-          onError: value3.onError,
+          onLoadedMetadata: thumbnailSource.onLoad,
+          onError: thumbnailSource.onError,
         };
-        const _elementKey2 = value3.part;
-        return <_Element2 key={_elementKey2} {..._elementProps2} />;
+        const videoKey = thumbnailSource.part;
+        return <VideoElement key={videoKey} {...videoProps} />;
       })();
     } else {
       return (() => {
-        const _Element3 = "video";
-        const _elementProps3 = {
-          className: value2,
-          src: value3.src ?? value,
+        const VideoElement = "video";
+        const videoProps = {
+          className: thumbnailClass,
+          src: thumbnailSource.src ?? value,
           muted: true,
           playsInline: true,
           preload: "metadata",
-          onLoadedMetadata: value3.onLoad,
-          onError: value3.onError,
+          onLoadedMetadata: thumbnailSource.onLoad,
+          onError: thumbnailSource.onError,
         };
-        const _elementKey3 = value3.part;
-        return <_Element3 key={_elementKey3} {..._elementProps3} />;
+        const videoKey = thumbnailSource.part;
+        return <VideoElement key={videoKey} {...videoProps} />;
       })();
     }
   }
@@ -96,7 +96,7 @@ function AssetDetailsPreview({
     return (
       <span
         className={
-          value2 +
+          thumbnailClass +
           " ds-thumb-font leading-none text-primary " +
           (size === "full" ? "p-6 text-[96px]" : "text-[28px]")
         }
@@ -111,22 +111,22 @@ function AssetDetailsPreview({
       </span>
     );
   }
-  let value4 = assetKindLabel(asset),
-    value5 = assetFileSizeLabel(
+  let assetKind = assetKindLabel(asset),
+    fileSize = assetFileSizeLabel(
       resolvedAssetFileBytes(files, asset.path, asset.bytes),
     );
   return (
     <span
       className={
-        value2 +
+        thumbnailClass +
         " ds-thumb-generic inline-flex flex-col items-center gap-sm text-muted"
       }
     >
       {[<KitIcon
-          name={value4.icon}
+          name={assetKind.icon}
           size={size === "full" ? 36 : 22}
         />, <span className={"font-mono text-caption"}>
-          {value4.label + (size === "full" && value5 !== "" ? " · " + value5 : "")}
+          {assetKind.label + (size === "full" && fileSize !== "" ? " · " + fileSize : "")}
         </span>]}
     </span>
   );
@@ -168,32 +168,32 @@ function AssetDetailsDialog({
       asset,
       useDownloadsWithheld(),
     ),
-    [value2, value3] = (reactAssetUpload as typeof React).useState(
+    [name, setName] = (reactAssetUpload as typeof React).useState(
       asset.name,
     ),
-    [value4, value5] = (reactAssetUpload as typeof React).useState<
+    [renameError, setRenameError] = (reactAssetUpload as typeof React).useState<
       string | null
     >(null),
-    ref2 = (reactAssetUpload as typeof React).useRef(false);
+    renameAttempted = (reactAssetUpload as typeof React).useRef(false);
   (reactAssetUpload as typeof React).useEffect(
-    () => value3(asset.name),
+    () => setName(asset.name),
     [asset.name],
   );
   let callback = (): void => {
-      let value7 = ref2.current ? asset.name : value2.trim();
-      ref2.current = false;
-      if (value7 === "" || value7 === asset.name) {
-        value3(asset.name);
-        value5(null);
+      let nextName = renameAttempted.current ? asset.name : name.trim();
+      renameAttempted.current = false;
+      if (nextName === "" || nextName === asset.name) {
+        setName(asset.name);
+        setRenameError(null);
         return;
       }
-      if (onRename?.(value7) === false) {
-        value5(uiMessage("design-system.assetDetails.thatNameIsTakenOr"));
+      if (onRename?.(nextName) === false) {
+        setRenameError(uiMessage("design-system.assetDetails.thatNameIsTakenOr"));
       } else {
-        value5(null);
+        setRenameError(null);
       }
     },
-    value6 =
+    isVideo =
       asset.kind === "image" ||
       asset.kind === "svg" ||
       asset.kind === "video";
@@ -202,8 +202,8 @@ function AssetDetailsDialog({
       <CdsRoot density={"compact"} className={"contents"}>
         <Dialog.Root
           open={true}
-          onOpenChange={(input: boolean): void => {
-            if (!input) {
+          onOpenChange={(isOpen: boolean): void => {
+            if (!isOpen) {
               onClose();
             }
           }}
@@ -218,12 +218,12 @@ function AssetDetailsDialog({
             }
           >
             {[<Dialog.Header showClose={true}>
-                {value6 ? (asset.kind === "video" ? (uiMessage("design-system.assetDetails.video")) : (uiMessage("design-system.assetDetails.image"))) : (assetKindLabel(asset).label)}
+                {isVideo ? (asset.kind === "video" ? (uiMessage("design-system.assetDetails.video")) : (uiMessage("design-system.assetDetails.image"))) : (assetKindLabel(asset).label)}
               </Dialog.Header>, <div className={"flex flex-col gap-md"}>
                 {[<div
-                    className={"ds-lb-prev" + (value6 ? "" : " ds-lb-file")}
+                    className={"ds-lb-prev" + (isVideo ? "" : " ds-lb-file")}
                     data-tone={
-                      value6 && isReversedLogoAsset(asset)
+                      isVideo && isReversedLogoAsset(asset)
                         ? "dark"
                         : undefined
                     }
@@ -240,13 +240,13 @@ function AssetDetailsDialog({
                       label={uiMessage("design-system.assetDetails.fileName")}
                       onFocus={
                         focusName
-                          ? (input: React.FocusEvent<HTMLInputElement>) =>
-                              input.currentTarget.select()
+                          ? (event: React.FocusEvent<HTMLInputElement>) =>
+                              event.currentTarget.select()
                           : undefined
                       }
-                      error={value4 ?? undefined}
+                      error={renameError ?? undefined}
                       hint={
-                        value4 === null
+                        renameError === null
                           ? assetFileSizeLabel(
                               resolvedAssetFileBytes(
                                 files,
@@ -257,14 +257,14 @@ function AssetDetailsDialog({
                           : undefined
                       }
                       className={"font-mono"}
-                      value={value2}
+                      value={name}
                       spellCheck={false}
                       data-testid={"ds-asset-name"}
                       onChange={(
-                        input: React.ChangeEvent<HTMLInputElement>,
+                        event: React.ChangeEvent<HTMLInputElement>,
                       ): void => {
-                        value3(input.currentTarget.value);
-                        value5(null);
+                        setName(event.currentTarget.value);
+                        setRenameError(null);
                       }}
                       onBlur={callback}
                       onKeyDown={(
@@ -278,7 +278,7 @@ function AssetDetailsDialog({
                         } else if (event.key === "Escape") {
                           event.preventDefault();
                           event.stopPropagation();
-                          ref2.current = true;
+                          renameAttempted.current = true;
                           event.currentTarget.blur();
                         }
                       }}

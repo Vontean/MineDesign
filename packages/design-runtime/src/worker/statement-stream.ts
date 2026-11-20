@@ -60,20 +60,20 @@ var CONTROL_CONTINUATIONS: Record<string, ControlRule> = {
 };
 var REGEX_PREFIX_KEYWORDS: RegExp =
   /(?:^|[^\w$.])(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await)\s*$/;
-var isWhitespace: (input: string) => boolean = (input) =>
-  input === " " ||
-  input === "\t" ||
-  input === "\r" ||
-  input ===
+var isWhitespace: (input: string) => boolean = (character) =>
+  character === " " ||
+  character === "\t" ||
+  character === "\r" ||
+  character ===
     `
 `;
 function createStatementStream(
   options?: StatementStreamOptions,
 ): StatementStream;
 function createStatementStream(
-  options?: StatementStreamOptions,
+  streamOptions?: StatementStreamOptions,
 ): StatementStream {
-  let settings: StatementStreamOptions = options || {};
+  let settings: StatementStreamOptions = streamOptions || {};
   let joinChains = !!settings.joinChains;
   let regexAfterKeywords = settings.regexAfterKeywords !== false;
   let buffer: string;
@@ -128,43 +128,43 @@ function createStatementStream(
   let atTopLevel = () =>
     parenDepth === 0 && braceDepth === 0 && bracketDepth === 0;
   function emitStatement(
-    input: string,
-    options2: boolean,
-    context: number,
-    value2: number,
+    statement: string,
+    isChain: boolean,
+    startOffset: number,
+    endOffset: number,
   ): void {
-    let value3 = statementCount++;
+    let statementIndex = statementCount++;
     if (settings.onStatement)
       try {
-        settings.onStatement(input, value3, {
-          chain: options2,
-          start: context,
-          end: value2,
+        settings.onStatement(statement, statementIndex, {
+          chain: isChain,
+          start: startOffset,
+          end: endOffset,
         });
-      } catch (value4: unknown) {
-        if (settings.onError) settings.onError(value4);
-        else throw value4;
+      } catch (error: unknown) {
+        if (settings.onError) settings.onError(error);
+        else throw error;
       }
   }
   function queueStatement(
-    input: string,
-    options2: number,
-    context: number,
+    statement: string,
+    statementOffset: number,
+    unusedContext: number,
   ): void {
-    let value2 = input.length - input.trimStart().length;
-    let value3 = input.trim();
-    let value4 = value3[0] === ".";
-    let value5 = bufferOffset + options2 + value2;
-    let value6 = value5 + value3.length;
+    let leadingWhitespace = statement.length - statement.trimStart().length;
+    let trimmedStatement = statement.trim();
+    let isChained = trimmedStatement[0] === ".";
+    let absoluteStart = bufferOffset + statementOffset + leadingWhitespace;
+    let absoluteEnd = absoluteStart + trimmedStatement.length;
     if (!joinChains) {
-      emitStatement(value3, value4, value5, value6);
+      emitStatement(trimmedStatement, isChained, absoluteStart, absoluteEnd);
       return;
     }
-    if (value4 && pendingChain) {
+    if (isChained && pendingChain) {
       pendingChain.code +=
         `
-` + value3;
-      pendingChain.end = value6;
+` + trimmedStatement;
+      pendingChain.end = absoluteEnd;
       return;
     }
     if (pendingChain)
@@ -175,52 +175,52 @@ function createStatementStream(
         pendingChain.end,
       );
     pendingChain = {
-      code: value3,
-      start: value5,
-      end: value6,
-      chain: value4,
+      code: trimmedStatement,
+      start: absoluteStart,
+      end: absoluteEnd,
+      chain: isChained,
     };
   }
   function flushChain(): void {
     if (pendingChain) {
-      let value2 = pendingChain;
+      let chain = pendingChain;
       pendingChain = null;
-      emitStatement(value2.code, value2.chain, value2.start, value2.end);
+      emitStatement(chain.code, chain.chain, chain.start, chain.end);
     }
   }
   function flushControlStatement(): void {
-    let value2 = statementStart;
+    let controlStart = statementStart;
     let slice = buffer.slice(statementStart, controlEnd);
     if (((statementStart = continuationStart), (controlEnd = -1), slice.trim()))
-      queueStatement(slice, value2, value2 + slice.length);
+      queueStatement(slice, controlStart, controlStart + slice.length);
   }
-  function finishStatement(input: number): boolean {
-    let value2 = statementStart;
-    let slice = buffer.slice(statementStart, input);
-    let value3 = slice.replace(TRAILING_COMMENTS, "");
+  function finishStatement(endOffset: number): boolean {
+    let statementStartOffset = statementStart;
+    let slice = buffer.slice(statementStart, endOffset);
+    let trimmedCode = slice.replace(TRAILING_COMMENTS, "");
     if (
-      /(?<!\.)\b(else|try|do|finally)$/.test(value3) ||
-      hasUnfilledControlBody(value3)
+      /(?<!\.)\b(else|try|do|finally)$/.test(trimmedCode) ||
+      hasUnfilledControlBody(trimmedCode)
     )
       return false;
-    let value4 = (CONTROL_STATEMENT.exec(slice) || [])[1];
-    if (value4) {
-      controlEnd = input;
+    let controlKeyword = (CONTROL_STATEMENT.exec(slice) || [])[1];
+    if (controlKeyword) {
+      controlEnd = endOffset;
       continuationStart = buffer.length;
-      continuationRule = CONTROL_CONTINUATIONS[value4]!;
+      continuationRule = CONTROL_CONTINUATIONS[controlKeyword]!;
       return true;
     }
     if (((statementStart = buffer.length), !slice.trim())) return false;
-    queueStatement(slice, value2, input);
+    queueStatement(slice, statementStartOffset, endOffset);
     return true;
   }
   function checkControlContinuation(): void {
     if (controlEnd < 0) return;
-    let value2 = continuationRule!;
-    let value3 = buffer.slice(continuationStart).replace(/^\s+/, "");
-    if (value3 === "/" || value2.kws.some((input) => input.startsWith(value3)))
+    let continuation = continuationRule!;
+    let remainingCode = buffer.slice(continuationStart).replace(/^\s+/, "");
+    if (remainingCode === "/" || continuation.kws.some((keyword) => keyword.startsWith(remainingCode)))
       return;
-    if (value2.re.test(value3)) {
+    if (continuation.re.test(remainingCode)) {
       controlEnd = -1;
       return;
     }
@@ -229,9 +229,9 @@ function createStatementStream(
   function finishAtDelimiter(): void {
     if (controlEnd < 0) finishStatement(buffer.length - 1);
   }
-  function acceptCharacter(input: string): void {
+  function acceptCharacter(character: string): void {
     if (pendingSlash) {
-      if (((pendingSlash = false), input === "/")) {
+      if (((pendingSlash = false), character === "/")) {
         if (
           ((lineComment = true),
           (lineCommentStart = buffer.length - 2),
@@ -240,7 +240,7 @@ function createStatementStream(
           finishStatement(lineCommentStart);
         return;
       }
-      if (input === "*") {
+      if (character === "*") {
         blockComment = true;
         return;
       }
@@ -256,7 +256,7 @@ function createStatementStream(
       else lastSignificantChar = "/";
     }
     if (blockComment) {
-      if (input === "/" && buffer[buffer.length - 2] === "*") {
+      if (character === "/" && buffer[buffer.length - 2] === "*") {
         if (((blockComment = false), controlEnd >= 0 && atTopLevel()))
           continuationStart = buffer.length;
       }
@@ -264,7 +264,7 @@ function createStatementStream(
     }
     if (lineComment) {
       if (
-        input ===
+        character ===
         `
 `
       ) {
@@ -278,27 +278,27 @@ function createStatementStream(
     }
     if (quote !== null) {
       if (escapedString) {
-        escapedString = input === "\\";
+        escapedString = character === "\\";
         templateDollar = false;
         return;
       }
-      if (input === "\\") {
+      if (character === "\\") {
         escapedString = true;
         templateDollar = false;
         return;
       }
       if (quote === "`") {
-        if (input === "{" && templateDollar) {
+        if (character === "{" && templateDollar) {
           templateDollar = false;
           templateDepths.push(braceDepth);
           braceDepth++;
           quote = null;
           return;
         }
-        templateDollar = input === "$";
+        templateDollar = character === "$";
       }
-      if (input === quote) {
-        lastSignificantChar = input;
+      if (character === quote) {
+        lastSignificantChar = character;
         quote = null;
       }
       return;
@@ -308,43 +308,43 @@ function createStatementStream(
         escapedRegex = false;
         return;
       }
-      if (input === "\\") {
+      if (character === "\\") {
         escapedRegex = true;
         return;
       }
       if (regexCharacterClass) {
-        if (input === "]") regexCharacterClass = false;
+        if (character === "]") regexCharacterClass = false;
         return;
       }
-      if (input === "[") {
+      if (character === "[") {
         regexCharacterClass = true;
         return;
       }
-      if (input === "/") {
+      if (character === "/") {
         regex = false;
         lastSignificantChar = "/";
       }
       return;
     }
-    if (arrowBodyPending && !isWhitespace(input)) arrowBodyPending = false;
-    switch ((checkControlContinuation(), input)) {
+    if (arrowBodyPending && !isWhitespace(character)) arrowBodyPending = false;
+    switch ((checkControlContinuation(), character)) {
       case "'":
       case '"':
       case "`":
-        quote = input;
-        lastSignificantChar = input;
+        quote = character;
+        lastSignificantChar = character;
         return;
       case "(":
         parenDepth++;
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case ")":
         if (parenDepth > 0) parenDepth--;
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case "{":
         braceDepth++;
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case "}":
         if (braceDepth > 0) braceDepth--;
@@ -355,15 +355,15 @@ function createStatementStream(
           templateDepths.pop();
           quote = "`";
         }
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case "[":
         bracketDepth++;
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case "]":
         if (bracketDepth > 0) bracketDepth--;
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case "/":
         pendingSlash = true;
@@ -371,7 +371,7 @@ function createStatementStream(
       case ">":
         if (buffer[buffer.length - 2] === "=" && atTopLevel())
           arrowBodyPending = true;
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case `
 `:
@@ -380,44 +380,44 @@ function createStatementStream(
         return;
       case ";":
         if (atTopLevel()) finishAtDelimiter();
-        lastSignificantChar = input;
+        lastSignificantChar = character;
         return;
       case " ":
       case "\t":
       case "\r":
         return;
       default:
-        lastSignificantChar = input;
+        lastSignificantChar = character;
     }
   }
   function compactBuffer(): void {
     if (controlEnd >= 0 || statementStart < 4096) return;
-    let value2 = Math.min(
+    let trimLength = Math.min(
       statementStart,
       lineCommentStart > statementStart || !lineComment
         ? statementStart
         : lineCommentStart,
     );
-    if (value2 <= 0) return;
-    buffer = buffer.slice(value2);
-    bufferOffset += value2;
-    statementStart -= value2;
-    continuationStart = Math.max(0, continuationStart - value2);
-    lineCommentStart = Math.max(0, lineCommentStart - value2);
+    if (trimLength <= 0) return;
+    buffer = buffer.slice(trimLength);
+    bufferOffset += trimLength;
+    statementStart -= trimLength;
+    continuationStart = Math.max(0, continuationStart - trimLength);
+    lineCommentStart = Math.max(0, lineCommentStart - trimLength);
   }
-  function push(input: string): void {
+  function push(chunk: string): void {
     if (ended) {
-      let value2 = Error(
+      let error = Error(
         "stmtstream: push() after end(); call reset() to start a new program",
       ) as StatementFailure;
-      if (((value2.code = "ENDED"), settings.onError)) settings.onError(value2);
-      else throw value2;
+      if (((error.code = "ENDED"), settings.onError)) settings.onError(error);
+      else throw error;
       return;
     }
-    input = String(input);
-    for (let index = 0; index < input.length; index++) {
-      buffer += input[index];
-      acceptCharacter(input[index]!);
+    chunk = String(chunk);
+    for (let index = 0; index < chunk.length; index++) {
+      buffer += chunk[index];
+      acceptCharacter(chunk[index]!);
     }
     compactBuffer();
   }
@@ -437,8 +437,8 @@ function createStatementStream(
   function value(): void {
     if (ended) return;
     ended = true;
-    let value2 = quote !== null || blockComment || regex;
-    if (!value2) {
+    let hasOpenSyntax = quote !== null || blockComment || regex;
+    if (!hasOpenSyntax) {
       if (pendingSlash) {
         pendingSlash = false;
         lastSignificantChar = "/";
@@ -450,42 +450,42 @@ function createStatementStream(
     }
     if (controlEnd >= 0) flushControlStatement();
     let slice = buffer.slice(statementStart);
-    let value3 = slice.replace(TRAILING_COMMENTS, "").trim();
-    let value4 = false;
-    if (value3) {
-      let value5 = describeOpenSyntax();
-      if (value5 || value2) value4 = true;
+    let trimmedStatement = slice.replace(TRAILING_COMMENTS, "").trim();
+    let incomplete = false;
+    if (trimmedStatement) {
+      let openSyntax = describeOpenSyntax();
+      if (openSyntax || hasOpenSyntax) incomplete = true;
       else if (
-        /(?<!\.)\b(else|try|do|finally)$/.test(value3) ||
-        hasUnfilledControlBody(value3) ||
+        /(?<!\.)\b(else|try|do|finally)$/.test(trimmedStatement) ||
+        hasUnfilledControlBody(trimmedStatement) ||
         arrowBodyPending
       )
-        value4 = true;
-      if (value4) {
+        incomplete = true;
+      if (incomplete) {
         flushChain();
-        let value6 = Error(
+        let error = Error(
           "stmtstream: the program ends in the middle of a statement" +
-            (value5
-              ? " (still open: " + value5 + ")"
+            (openSyntax
+              ? " (still open: " + openSyntax + ")"
               : " (its body has not arrived)"),
         ) as StatementFailure;
         if (
-          ((value6.code = "INCOMPLETE"),
-          (value6.tail = slice.trim()),
-          (value6.open = value5),
+          ((error.code = "INCOMPLETE"),
+          (error.tail = slice.trim()),
+          (error.open = openSyntax),
           settings.onError)
         )
-          settings.onError(value6);
+          settings.onError(error);
       } else {
-        let value6 = statementStart;
+        let statementStartOffset = statementStart;
         statementStart = buffer.length;
-        queueStatement(slice, value6, value6 + slice.length);
+        queueStatement(slice, statementStartOffset, statementStartOffset + slice.length);
       }
     }
     if ((flushChain(), settings.onDone))
       settings.onDone({
         statements: statementCount,
-        incomplete: value4,
+        incomplete: incomplete,
       });
   }
   return {
@@ -516,33 +516,33 @@ function splitStatements(
 ): SplitStatementsResult<string | DetailedStatement>;
 function splitStatements(
   code: string,
-  options?: StatementStreamOptions,
+  streamOptions?: StatementStreamOptions,
 ): SplitStatementsResult<string | DetailedStatement> {
   let statements: (string | DetailedStatement)[] = [];
-  let settings: StatementStreamOptions = Object.assign({}, options);
+  let settings: StatementStreamOptions = Object.assign({}, streamOptions);
   let incomplete: string | null = null;
   let stream = createStatementStream(
     Object.assign(settings, {
       onStatement: (
-        input: string,
-        options2: number,
-        context: StatementLocation,
+        statement: string,
+        index: number,
+        location: StatementLocation,
       ): number =>
         statements.push(
           settings.detailed
             ? Object.assign(
                 {
-                  code: input,
-                  index: options2,
+                  code: statement,
+                  index: index,
                 },
-                context,
+                location,
               )
-            : input,
+            : statement,
         ),
-      onError: (input: unknown) => {
-        const error = input as StatementFailure;
+      onError: (streamError: unknown) => {
+        const error = streamError as StatementFailure;
         if (error.code === "INCOMPLETE") incomplete = error.tail!;
-        else throw input;
+        else throw streamError;
       },
     }),
   );

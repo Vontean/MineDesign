@@ -111,12 +111,12 @@ function assetGroupRenderTiles(
     draggedIds = new Set(drag?.ids ?? []),
     assetLookup = new Map<string, Application.EditorAsset>();
   for (let value of groups) {
-    for (let value2 of value.assets) {
-      assetLookup.set(value2.path, value2);
+    for (let asset of value.assets) {
+      assetLookup.set(asset.path, asset);
     }
   }
-  let dragSlots: Editor.AssetTile[] = (drag?.ids ?? []).flatMap((input) => {
-      let entry = assetLookup.get(input);
+  let dragSlots: Editor.AssetTile[] = (drag?.ids ?? []).flatMap((assetId) => {
+      let entry = assetLookup.get(assetId);
       if (entry !== undefined) {
         return [
           {
@@ -131,12 +131,12 @@ function assetGroupRenderTiles(
     target = drag?.target ?? null;
   for (let value of groups) {
     let items: Editor.AssetTile[] = [];
-    for (let value2 of value.assets) {
-      if (draggedIds.has(value2.path)) {
+    for (let asset of value.assets) {
+      if (draggedIds.has(asset.path)) {
         if (target === null) {
           items.push({
             kind: "slot",
-            a: value2,
+            a: asset,
           });
         }
         continue;
@@ -145,13 +145,13 @@ function assetGroupRenderTiles(
         target !== null &&
         target.kind === "slot" &&
         target.group === value.name &&
-        target.before === value2.path
+        target.before === asset.path
       ) {
         items.push(...dragSlots);
       }
       items.push({
         kind: "asset",
-        a: value2,
+        a: asset,
       });
     }
     if (
@@ -182,23 +182,23 @@ function AssetGroupsList({
 }: Editor.AssetGroupsListProps): React.ReactElement | null {
   useUiLocale();
   let memo = (reactAssetGroups as typeof React).useMemo(
-      () => groups.filter((input): boolean => input.assets.length > 0),
+      () => groups.filter((group): boolean => group.assets.length > 0),
       [groups],
     ),
     value = tiles?.drag ?? null,
-    memo2 = (reactAssetGroups as typeof React).useMemo(
+    groupAssetMap = (reactAssetGroups as typeof React).useMemo(
       () => assetGroupRenderTiles(memo, value),
       [memo, value],
     ),
-    memo3 = (reactAssetGroups as typeof React).useMemo(
+    groupLookup = (reactAssetGroups as typeof React).useMemo(
       () =>
         new Map(
-          memo.flatMap((input) =>
-            input.assets.map((input2) => [
-              input2.path,
+          memo.flatMap((group) =>
+            group.assets.map((asset) => [
+              asset.path,
               {
-                a: input2,
-                g: input,
+                a: asset,
+                g: group,
               },
             ]),
           ),
@@ -208,39 +208,39 @@ function AssetGroupsList({
   if (memo.length === 0 && footer === undefined) {
     return null;
   }
-  let value2 = tiles?.focusId ?? memo[0]?.assets[0]?.path ?? null,
-    value3 = value?.target ?? null,
-    value4 = value !== null && tiles?.editable === true;
+  let focusAssetId = tiles?.focusId ?? memo[0]?.assets[0]?.path ?? null,
+    dropTarget = value?.target ?? null,
+    isEditable = value !== null && tiles?.editable === true;
   return (
     <jsxAssetGroups.Fragment>
-      {[memo.map((input, options) =>
+      {[memo.map((group, groupIndex) =>
           (() => {
             const _Element = AssetGroupGrid;
             const _elementProps = {
-              group: input,
-              items: memo2.get(input.name) ?? [],
-              head: headFor?.(input),
-              title: assetGroupDisplayName(input.name),
+              group: group,
+              items: groupAssetMap.get(group.name) ?? [],
+              head: headFor?.(group),
+              title: assetGroupDisplayName(group.name),
               renderThumb: renderThumb,
               tiles: tiles,
-              tabStop: value2,
+              tabStop: focusAssetId,
               wanted: reveal,
               onOpen: onOpen,
               onUpload: onUpload,
               onDropFiles: onDropFiles,
               onRename: onRename,
               targeted:
-                value3 !== null &&
-                value3.kind !== "new" &&
-                value3.group === input.name,
-              footer: options === memo.length - 1 ? footer : undefined,
+                dropTarget !== null &&
+                dropTarget.kind !== "new" &&
+                dropTarget.group === group.name,
+              footer: groupIndex === memo.length - 1 ? footer : undefined,
             };
-            const _elementKey = input.name;
+            const _elementKey = group.name;
             return <_Element key={_elementKey} {..._elementProps} />;
           })(),
-        ), value4 ? (
+        ), isEditable ? (
           <NewAssetGroupDropZone
-            targeted={value3?.kind === "new"}
+            targeted={dropTarget?.kind === "new"}
             count={value!.ids.length}
           />
         ) : null, memo.length === 0 && footer !== undefined && footer !== null ? (
@@ -259,7 +259,7 @@ function AssetGroupsList({
           <AssetDragOverlay
             drag={value}
             tiles={tiles}
-            lookup={memo3}
+            lookup={groupLookup}
             renderThumb={renderThumb}
           />
         ) : null]}
@@ -304,12 +304,12 @@ function AssetDragOverlay({
     return null;
   }
   let value = isFileIconAsset(entry.a),
-    value2: number = value ? 64 : 28,
-    value3 = drag.ids
-      .filter((input): boolean => input !== drag.lead)
+    overlaySize: number = value ? 64 : 28,
+    draggedIds = drag.ids
+      .filter((assetId): boolean => assetId !== drag.lead)
       .slice(0, 3)
-      .map((input) => lookup.get(input))
-      .filter((input): input is Editor.AssetLookup => input !== undefined);
+      .map((assetId) => lookup.get(assetId))
+      .filter((assetLookup): assetLookup is Editor.AssetLookup => assetLookup !== undefined);
   return (
     reactDomAssetGroups as typeof import("react-dom")
   ).createPortal(
@@ -323,41 +323,41 @@ function AssetDragOverlay({
         className={"absolute"}
         style={{
           left: -12,
-          top: -value2 / 2,
-          width: value ? value2 : undefined,
+          top: -overlaySize / 2,
+          width: value ? overlaySize : undefined,
         }}
       >
-        {[value3.map((input, options) =>
+        {[draggedIds.map((asset, stackIndex) =>
             (() => {
-              const _Element2 = "div";
-              const _elementProps2 = {
+              const StackElement = "div";
+              const stackProps = {
                 className: "ds-ghost-tile absolute opacity-80",
-                "data-tone": isReversedLogoAsset(input.a)
+                "data-tone": isReversedLogoAsset(asset.a)
                   ? "dark"
                   : undefined,
                 style: {
-                  width: value ? value2 : 160,
-                  height: value ? value2 : 28,
+                  width: value ? overlaySize : 160,
+                  height: value ? overlaySize : 28,
                   transform:
                     "translate(" +
-                    String((value3.length - options) * 6) +
+                    String((draggedIds.length - stackIndex) * 6) +
                     "px," +
-                    String((value3.length - options) * 6) +
+                    String((draggedIds.length - stackIndex) * 6) +
                     "px)",
                 },
-                children: isFileIconAsset(input.a)
-                  ? renderThumb(input.a)
+                children: isFileIconAsset(asset.a)
+                  ? renderThumb(asset.a)
                   : null,
               };
-              const _elementKey2 = input.a.path;
-              return <_Element2 key={_elementKey2} {..._elementProps2} />;
+              const stackKey = asset.a.path;
+              return <StackElement key={stackKey} {...stackProps} />;
             })(),
           ), <div
             className={"ds-ghost-tile relative"}
             data-tone={isReversedLogoAsset(entry.a) ? "dark" : undefined}
             style={{
-              width: value ? value2 : 160,
-              height: value ? value2 : 28,
+              width: value ? overlaySize : 160,
+              height: value ? overlaySize : 28,
             }}
           >
             {value ? (renderThumb(entry.a)) : (<span
@@ -436,30 +436,30 @@ function useAssetGhostSlotHeights(
           top: number;
         }
       >();
-    for (let value2 of current.querySelectorAll<HTMLElement>(
+    for (let tile of current.querySelectorAll<HTMLElement>(
       "[data-tile-id]",
     )) {
-      let value3 = value2.dataset.tileId ?? "",
-        bounds = value2.getBoundingClientRect();
-      entries.set(value3, {
+      let tileId = tile.dataset.tileId ?? "",
+        bounds = tile.getBoundingClientRect();
+      entries.set(tileId, {
         left: bounds.left,
         top: bounds.top,
       });
-      let entry = slotHeightsRef.current.get(value3);
+      let entry = slotHeightsRef.current.get(tileId);
       if (entry === undefined || value) {
         continue;
       }
-      let value4 = entry.left - bounds.left,
-        value5 = entry.top - bounds.top;
-      if (Math.abs(value4) < 1 && Math.abs(value5) < 1) {
+      let deltaX = entry.left - bounds.left,
+        deltaY = entry.top - bounds.top;
+      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) {
         continue;
       }
-      value2.style.transition = "none";
-      value2.style.transform =
-        "translate(" + String(value4) + "px," + String(value5) + "px)";
+      tile.style.transition = "none";
+      tile.style.transform =
+        "translate(" + String(deltaX) + "px," + String(deltaY) + "px)";
       requestAnimationFrame((): void => {
-        value2.style.transition = "transform 150ms ease-out";
-        value2.style.transform = "";
+        tile.style.transition = "transform 150ms ease-out";
+        tile.style.transform = "";
       });
     }
     slotHeightsRef.current = entries;
@@ -511,7 +511,7 @@ function AssetGroupGrid({
 }: Editor.AssetGroupGridProps): React.ReactElement {
   useUiLocale();
   useAssetThumbnailSources();
-  let [value, value2] = (reactAssetGroups as typeof React).useState(
+  let [value, setExpanded] = (reactAssetGroups as typeof React).useState(
       false,
     ),
     ref = (
@@ -522,21 +522,21 @@ function AssetGroupGrid({
     tiles?.drag !== null && tiles?.drag !== undefined,
   );
   let callback = (reactAssetGroups as typeof React).useCallback(
-      (input: File[], options: React.DragEvent<HTMLElement>): void => {
-        options.stopPropagation();
-        onDropFiles?.(group, options);
+      (_files: File[], dragEvent: React.DragEvent<HTMLElement>): void => {
+        dragEvent.stopPropagation();
+        onDropFiles?.(group, dragEvent);
       },
       [onDropFiles, group],
     ),
-    value3 = useFileDrop({
+    fileDrop = useFileDrop({
       disabled: onDropFiles === undefined,
       onFiles: callback,
     }),
-    value4 = targeted || value3.over,
-    value5 = value
+    showDropRing = targeted || fileDrop.over,
+    visibleItems = value
       ? items
       : assetVisibleTileBoundary(items, MIN_ASSET_TILE_SIZE),
-    value6 = (value ? [] : items.slice(value5.length)).some(
+    shouldExpand = (value ? [] : items.slice(visibleItems.length)).some(
       (source) =>
         source.kind === "asset" &&
         (tiles?.selected.has(source.a.path) === true ||
@@ -544,48 +544,48 @@ function AssetGroupGrid({
           wanted === source.a.path),
     );
   (reactAssetGroups as typeof React).useLayoutEffect((): void => {
-    if (value6) {
-      value2(true);
+    if (shouldExpand) {
+      setExpanded(true);
     }
-  }, [value6]);
-  let value7 = head?.title ?? title,
-    value8 = tiles !== undefined && tiles.editable,
-    callback2 = (input: Application.EditorAsset) => {
-      let value9: boolean = tiles?.selected.has(input.path) === true;
+  }, [shouldExpand]);
+  let groupTitle = head?.title ?? title,
+    canEditTiles = tiles !== undefined && tiles.editable,
+    getAssetTileProps = (asset: Application.EditorAsset) => {
+      let isSelected: boolean = tiles?.selected.has(asset.path) === true;
       return {
         role: "option",
-        "aria-selected": value9,
-        "aria-label": assetGroupRelativePath(input, group),
-        tabIndex: tiles === undefined || tabStop === input.path ? 0 : -1,
-        "data-tile-id": input.path,
+        "aria-selected": isSelected,
+        "aria-label": assetGroupRelativePath(asset, group),
+        tabIndex: tiles === undefined || tabStop === asset.path ? 0 : -1,
+        "data-tile-id": asset.path,
         "data-tile-axis": "y",
-        "data-selected": value9 ? "" : undefined,
+        "data-selected": isSelected ? "" : undefined,
         onPointerDown:
           tiles !== undefined
-            ? (input2: React.PointerEvent<HTMLElement>) =>
-                tiles.onPointerDown(input2, input.path)
+            ? (pointerEvent: React.PointerEvent<HTMLElement>) =>
+                tiles.onPointerDown(pointerEvent, asset.path)
             : undefined,
         onClick:
           tiles !== undefined
-            ? (input2: React.MouseEvent<HTMLElement>) =>
-                tiles.onClick(input2, input.path)
-            : () => onOpen(input),
+            ? (mouseEvent: React.MouseEvent<HTMLElement>) =>
+                tiles.onClick(mouseEvent, asset.path)
+            : () => onOpen(asset),
         onDoubleClick:
           tiles !== undefined
-            ? () => tiles.onDoubleClick(input.path)
+            ? () => tiles.onDoubleClick(asset.path)
             : undefined,
         onContextMenu:
           tiles !== undefined
-            ? (input2: React.MouseEvent<HTMLElement>) =>
-                tiles.onContextMenu(input2, input.path)
+            ? (contextMenuEvent: React.MouseEvent<HTMLElement>) =>
+                tiles.onContextMenu(contextMenuEvent, asset.path)
             : undefined,
         onKeyDown:
           tiles !== undefined
-            ? (input2: React.KeyboardEvent<HTMLElement>) =>
-                tiles.onKeyDown(input2, input.path)
-            : (input2: React.KeyboardEvent<HTMLElement>): void => {
-                if (input2.key === "Enter") {
-                  onOpen(input);
+            ? (keyEvent: React.KeyboardEvent<HTMLElement>) =>
+                tiles.onKeyDown(keyEvent, asset.path)
+            : (keyEvent: React.KeyboardEvent<HTMLElement>): void => {
+                if (keyEvent.key === "Enter") {
+                  onOpen(asset);
                 }
               },
       };
@@ -599,13 +599,13 @@ function AssetGroupGrid({
       className={"ds-assets-sec"}
       data-testid={"ds-assets-pane-" + group.name}
       dropGroup={group.name}
-      dropHandlers={value3.targetProps}
+      dropHandlers={fileDrop.targetProps}
       overlay={
-        value4 ? (
+        showDropRing ? (
           <div
             className={joinClassNames(
               "pointer-events-none absolute inset-0 z-[3] rounded-card",
-              value3.over
+              fileDrop.over
                 ? FILE_DROP_RING_CLASS
                 : ASSET_SELECTION_CLASS_NAME,
             )}
@@ -624,7 +624,7 @@ function AssetGroupGrid({
             size={"sm"}
             iconOnly={true}
             icon={"Upload"}
-            aria-label={uiMessage("design-system.assetGroups.uploadFileTo", { value1: String(value7) })}
+            aria-label={uiMessage("design-system.assetGroups.uploadFileTo", { value1: String(groupTitle) })}
             tooltip={uiMessage("design-system.assetGroups.uploadFile")}
             onClick={() => onUpload(group)}
             data-testid={"ds-assets-upload-" + group.name}
@@ -638,7 +638,7 @@ function AssetGroupGrid({
             className={"ds-atable ds-ctable"}
             role={"listbox"}
             aria-multiselectable={"true"}
-            aria-label={uiMessage("design-system.assetGroups.files", { value1: String(value7) })}
+            aria-label={uiMessage("design-system.assetGroups.files", { value1: String(groupTitle) })}
             data-testid={"ds-flist"}
           >
             {[<div
@@ -652,23 +652,23 @@ function AssetGroupGrid({
                   className={"ds-arow ds-tokrow ds-crow"}
                   aria-hidden={"true"}
                 />
-              ) : null, value5.map((source) => {
+              ) : null, visibleItems.map((source) => {
                 if (source.kind === "slot") {
                   return (() => {
-                    const _Element3 = "div";
-                    const _elementProps3 = {
+                    const DropSlot = "div";
+                    const dropSlotProps = {
                       className: "ds-fslot",
                       "data-drop-slot": "",
                       "data-testid": "ds-slot-" + source.a.path,
                     };
-                    const _elementKey3 = "slot:" + source.a.path;
+                    const dropSlotKey = "slot:" + source.a.path;
                     return (
-                      <_Element3 key={_elementKey3} {..._elementProps3} />
+                      <DropSlot key={dropSlotKey} {...dropSlotProps} />
                     );
                   })();
                 }
-                let value9 = assetKindLabel(source.a),
-                  value10 = assetFileSizeLabel(
+                let assetKind = assetKindLabel(source.a),
+                  assetSize = assetFileSizeLabel(
                     (source.a.bytes ?? 0) > 0 || source.a.store !== "file"
                       ? (source.a.bytes ?? 0)
                       : (addressedFileEntry(
@@ -676,8 +676,8 @@ function AssetGroupGrid({
                         )?.size ?? 0),
                   );
                 return (() => {
-                  const _Element4 = "div";
-                  const _elementProps4 = {
+                  const AssetElement = "div";
+                  const assetProps = {
                     className:
                       "ds-arow ds-tokrow ds-crow group/row cursor-default select-none outline-none",
                     "data-testid": "ds-asset-" + source.a.path,
@@ -685,7 +685,7 @@ function AssetGroupGrid({
                       "asset",
                       source.a.path,
                     ),
-                    ...callback2(source.a),
+                    ...getAssetTileProps(source.a),
                     children: [
                       onRename !== undefined ? (
                         <span
@@ -701,10 +701,10 @@ function AssetGroupGrid({
                             taken={EMPTY_ASSET_SELECTION_SET}
                             placeholder={uiMessage("design-system.assetGroups.fileName")}
                             tabIndex={-1}
-                            commit={(input: string) =>
-                              input === "" ||
-                              input === source.a.name ||
-                              onRename(source.a, input)
+                            commit={(name: string) =>
+                              name === "" ||
+                              name === source.a.name ||
+                              onRename(source.a, name)
                             }
                             data-testid={"ds-asset-name-" + source.a.path}
                           />
@@ -730,19 +730,19 @@ function AssetGroupGrid({
                           "ds-bcell ds-atype min-w-0 truncate text-footnote text-muted"
                         }
                       >
-                        {value9.label + (value10 !== "" ? " · " + value10 : "")}
+                        {assetKind.label + (assetSize !== "" ? " · " + assetSize : "")}
                       </span>,
                       <span
                         className={"ds-cgutter"}
                         onPointerDown={(
-                          input: React.PointerEvent<HTMLElement>,
-                        ) => input.stopPropagation()}
-                        onClick={(input: React.MouseEvent<HTMLElement>) =>
-                          input.stopPropagation()
+                          event: React.PointerEvent<HTMLElement>,
+                        ) => event.stopPropagation()}
+                        onClick={(event: React.MouseEvent<HTMLElement>) =>
+                          event.stopPropagation()
                         }
                         {...UNCOMMENTABLE_PROPS}
                       >
-                        {value8 ? (<RemoveRowButton
+                        {canEditTiles ? (<RemoveRowButton
                             label={uiMessage("design-system.assetGroups.remove", { value1: String(source.a.name) })}
                             onRemove={() => tiles!.remove([source.a.path])}
                             tabIndex={-1}
@@ -751,14 +751,14 @@ function AssetGroupGrid({
                       </span>,
                     ],
                   };
-                  const _elementKey4 = source.a.path;
-                  return <_Element4 key={_elementKey4} {..._elementProps4} />;
+                  const assetTileKey = source.a.path;
+                  return <AssetElement key={assetTileKey} {...assetProps} />;
                 })();
               })]}
-          </div>, items.length > value5.length ? (
+          </div>, items.length > visibleItems.length ? (
             <TextLink
               className={"ds-apad mt-sm w-fit text-footnote"}
-              onClick={() => value2(true)}
+              onClick={() => setExpanded(true)}
               data-testid={"ds-wall-all"}
               {...UNCOMMENTABLE_PROPS}
             >

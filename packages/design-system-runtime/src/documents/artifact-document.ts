@@ -25,30 +25,30 @@ function normalizeTitleInput(title: string): string {
   );
 }
 function createRuntimeArtifactDocument<Content>(
-  options: Host.RuntimeDocumentOptions<Content>,
+  documentOptions: Host.RuntimeDocumentOptions<Content>,
 ): Host.ArtifactDocument<Content> {
-  let runtime2 = options.runtime;
-  function parseContent(input: unknown): Content {
+  let runtime = documentOptions.runtime;
+  function parseContent(serializedContent: unknown): Content {
     try {
-      return options.parseContent(input);
+      return documentOptions.parseContent(serializedContent);
     } catch {
-      return options.initialContent;
+      return documentOptions.initialContent;
     }
   }
-  let defaultTitle = options.defaultTitle ?? "Untitled",
+  let defaultTitle = documentOptions.defaultTitle ?? "Untitled",
     snapshot = {
-      title: normalizeArtifactTitle(options.snapshot.title) ?? defaultTitle,
-      content: parseContent(options.snapshot.content),
-      comments: normalizeComments(options.snapshot.comments),
+      title: normalizeArtifactTitle(documentOptions.snapshot.title) ?? defaultTitle,
+      content: parseContent(documentOptions.snapshot.content),
+      comments: normalizeComments(documentOptions.snapshot.comments),
     },
-    readOnly: boolean = runtime2.saving.status === "readonly",
-    contentHoldReason = options.contentHold?.(options.snapshot.content),
+    readOnly: boolean = runtime.saving.status === "readonly",
+    contentHoldReason = documentOptions.contentHold?.(documentOptions.snapshot.content),
     saveError =
-      runtime2.saving.status === "error"
-        ? (runtime2.saving.lastError?.message ??
+      runtime.saving.status === "error"
+        ? (runtime.saving.lastError?.message ??
           "Autosave failed — retrying.")
         : undefined,
-    saving: boolean = runtime2.saving.status === "saving",
+    saving: boolean = runtime.saving.status === "saving",
     pendingCommentIds = new Set<string>(),
     documentSubscribers = new Set<(event?: { remote: boolean }) => void>(),
     saveSubscribers = new Set<(state: Host.SaveState) => void>();
@@ -71,7 +71,7 @@ function createRuntimeArtifactDocument<Content>(
         message: saveError,
       };
     }
-    if (saving || runtime2.saving.pending > 0) {
+    if (saving || runtime.saving.pending > 0) {
       return {
         status: "saving",
       };
@@ -80,33 +80,33 @@ function createRuntimeArtifactDocument<Content>(
       status: "ready",
     };
   }
-  function notifySubscribers2(): void {
-    for (let value2 of [...documentSubscribers]) {
-      value2();
+  function notifySubscribers(): void {
+    for (let subscriber of [...documentSubscribers]) {
+      subscriber();
     }
     let value = getSaveState();
-    for (let value2 of [...saveSubscribers]) {
-      value2(value);
+    for (let subscriber of [...saveSubscribers]) {
+      subscriber(value);
     }
   }
-  runtime2.saving.onStatus((input, options2): void => {
-    saving = input === "saving";
-    if (input === "readonly") {
+  runtime.saving.onStatus((status, statusError): void => {
+    saving = status === "saving";
+    if (status === "readonly") {
       readOnly = true;
     }
-    if (input === "error") {
-      saveError = options2?.message ?? "Autosave failed — retrying.";
-    } else if (input === "idle" || input === "readonly") {
+    if (status === "error") {
+      saveError = statusError?.message ?? "Autosave failed — retrying.";
+    } else if (status === "idle" || status === "readonly") {
       saveError = undefined;
     }
-    if (input === "idle") {
+    if (status === "idle") {
       pendingCommentIds.clear();
     }
-    notifySubscribers2();
+    notifySubscribers();
   });
-  runtime2.doc.observe("", (input): void => {
+  runtime.doc.observe("", (changes): void => {
     let flag: boolean = false;
-    for (let value of input) {
+    for (let value of changes) {
       if (value.origin === "local") {
         continue;
       }
@@ -115,7 +115,7 @@ function createRuntimeArtifactDocument<Content>(
         flag = true;
       } else if (value.key === "content") {
         snapshot.content = parseContent(value.value);
-        contentHoldReason = options.contentHold?.(value.value);
+        contentHoldReason = documentOptions.contentHold?.(value.value);
         flag = true;
       } else if (value.key === "comments") {
         snapshot.comments = normalizeComments(value.value);
@@ -123,72 +123,72 @@ function createRuntimeArtifactDocument<Content>(
       }
     }
     if (flag) {
-      notifySubscribers2();
+      notifySubscribers();
     }
   });
-  let serializeContent = (input: Content): unknown =>
-    options.serializeContent !== undefined
-      ? options.serializeContent(input, snapshot.title)
-      : input;
-  function setRuntimeField(input: string, options2: unknown): void {
-    runtime2.doc.set(input, options2).catch((): void => {
+  let serializeContent = (content: Content): unknown =>
+    documentOptions.serializeContent !== undefined
+      ? documentOptions.serializeContent(content, snapshot.title)
+      : content;
+  function setRuntimeField(field: string, fieldValue: unknown): void {
+    runtime.doc.set(field, fieldValue).catch((): void => {
       saveError = "Autosave failed — the change may not be stored.";
-      notifySubscribers2();
+      notifySubscribers();
     });
   }
   return {
     saveMode: (): "auto" => "auto",
     title: () => snapshot.title,
-    setTitle: (input): void => {
+    setTitle: (title): void => {
       if (contentHoldReason !== undefined) {
         return;
       }
-      let value = normalizeTitleInput(input);
+      let value = normalizeTitleInput(title);
       if (value.length === 0 || value === snapshot.title) {
         return;
       }
       snapshot.title = value;
       setRuntimeField("title", value);
-      if (options.serializeContent !== undefined) {
+      if (documentOptions.serializeContent !== undefined) {
         setRuntimeField("content", serializeContent(snapshot.content));
       }
       recordArtifactEdit();
-      notifySubscribers2();
+      notifySubscribers();
     },
     content: () => snapshot.content,
-    setContent: (input): void => {
-      if (contentHoldReason !== undefined || input === snapshot.content) {
+    setContent: (content): void => {
+      if (contentHoldReason !== undefined || content === snapshot.content) {
         return;
       }
-      snapshot.content = input;
-      setRuntimeField("content", serializeContent(input));
+      snapshot.content = content;
+      setRuntimeField("content", serializeContent(content));
       recordArtifactEdit();
-      notifySubscribers2();
+      notifySubscribers();
     },
-    updateContent: (input, options2): void => {
+    updateContent: (updater, updateOptions): void => {
       if (contentHoldReason !== undefined) {
         return;
       }
-      let value = input(snapshot.content);
+      let value = updater(snapshot.content);
       if (value === snapshot.content) {
         return;
       }
       snapshot.content = value;
       setRuntimeField("content", serializeContent(value));
-      if (options2?.auto !== true) {
+      if (updateOptions?.auto !== true) {
         recordArtifactEdit();
       }
-      notifySubscribers2();
+      notifySubscribers();
     },
     state: () => snapshot,
     comments: () => snapshot.comments,
-    addComment: (input) => {
+    addComment: (comment) => {
       if (snapshot.comments.length >= MAX_ARTIFACT_COMMENTS) {
         return;
       }
       let value = normalizeComments([
         {
-          ...input,
+          ...comment,
           id: crypto.randomUUID().slice(0, 8),
           at: Date.now(),
         },
@@ -199,20 +199,20 @@ function createRuntimeArtifactDocument<Content>(
       snapshot.comments = [...snapshot.comments, value];
       pendingCommentIds.add(value.id);
       setRuntimeField("comments", snapshot.comments);
-      notifySubscribers2();
+      notifySubscribers();
       return value;
     },
-    removeComment: (input): void => {
+    removeComment: (commentId): void => {
       let value = snapshot.comments.filter(
-        (input2: Host.ArtifactComment): boolean => input2.id !== input,
+        (comment: Host.ArtifactComment): boolean => comment.id !== commentId,
       );
       if (value.length === snapshot.comments.length) {
         return;
       }
       snapshot.comments = value;
-      pendingCommentIds.delete(input);
+      pendingCommentIds.delete(commentId);
       setRuntimeField("comments", snapshot.comments);
-      notifySubscribers2();
+      notifySubscribers();
     },
     commentSync: () => {
       let size = pendingCommentIds.size;
@@ -243,7 +243,7 @@ function createRuntimeArtifactDocument<Content>(
     },
     pendingCommentIds: () => new Set(pendingCommentIds),
     retryCommentPublish: (): void => {
-      runtime2.saving.save().catch((): void => {});
+      runtime.saving.save().catch((): void => {});
     },
     dirty: (): boolean => false,
     readOnly: () => readOnly || contentHoldReason !== undefined,
@@ -254,8 +254,8 @@ function createRuntimeArtifactDocument<Content>(
       if (readOnly) {
         return;
       }
-      await runtime2.saving.save().catch((): void => {});
-      notifySubscribers2();
+      await runtime.saving.save().catch((): void => {});
+      notifySubscribers();
     },
     stashOffer: (): undefined => {
       return;
@@ -267,20 +267,20 @@ function createRuntimeArtifactDocument<Content>(
       return;
     },
     restoreCount: (): number => 0,
-    subscribe: (input) => {
-      documentSubscribers.add(input);
-      return () => documentSubscribers.delete(input);
+    subscribe: (subscriber) => {
+      documentSubscribers.add(subscriber);
+      return () => documentSubscribers.delete(subscriber);
     },
-    subscribeSave: (input) => {
-      saveSubscribers.add(input);
-      return () => saveSubscribers.delete(input);
+    subscribeSave: (subscriber) => {
+      saveSubscribers.add(subscriber);
+      return () => saveSubscribers.delete(subscriber);
     },
   };
 }
 function setAutoSavingArtifactRuntime(
-  input: Host.ActiveArtifactRuntime | undefined,
+  runtime: Host.ActiveArtifactRuntime | undefined,
 ): void {
-  activeArtifactDocument = input;
+  activeArtifactDocument = runtime;
 }
 function getAutoSavingArtifactRuntime():
   | Host.ActiveArtifactRuntime
@@ -296,19 +296,19 @@ async function detectAutoSavingArtifactRuntime(): Promise<void> {
     return;
   }
   try {
-    let value2 = await value.appifact.ready();
-    if (value2.saving.mode !== "auto") {
+    let runtime = await value.appifact.ready();
+    if (runtime.saving.mode !== "auto") {
       return;
     }
-    let value3 = await value2.doc.getAll();
+    let snapshot = await runtime.doc.getAll();
     setAutoSavingArtifactRuntime({
-      runtime: value2,
-      snapshot: value3,
+      runtime: runtime,
+      snapshot: snapshot,
     });
-  } catch (value2: unknown) {
+  } catch (error: unknown) {
     console.error(
       "appifact runtime probe failed — booting the frame model",
-      value2,
+      error,
     );
   }
 }
