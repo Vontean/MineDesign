@@ -80,7 +80,7 @@ import { openPreviewExternalLink } from "../platform/link-navigation";
 import { addressedArtboardCacheKey, addressedArtboardFailure, filterAddressedFiles, isRequiredProjectFile, resolveAddressedArtboard } from "../preview/addressed-artboards";
 import { projectDirectoryOf, rewriteProjectAssets } from "../preview/asset-rewriting";
 import { normalizeBlobAssetPaths, normalizeProjectBlobPaths } from "../preview/blob-paths";
-import { buildPreviewDocument, componentRuntimeDependencies, PreviewBuildDocumentResolvedValue_3, PreviewBuildDocumentStringify, TheArtboardRuntimeDidNotLoadMessage } from "../preview/build-document";
+import { buildPreviewDocument, componentRuntimeDependencies, PreviewBuildDocumentResolvedValue_3 as buildPreviewFromFiles, PreviewBuildDocumentStringify, TheArtboardRuntimeDidNotLoadMessage } from "../preview/build-document";
 import { collectProjectDependencyFiles, resolveComponentFile, updateComponentRuntimeScript } from "../preview/dependency-graph";
 import { DcAddressRefusedValue, rewritePreviewAssets } from "../preview/dependency-injection";
 import { createPreviewHandle } from "../preview/evaluation";
@@ -106,58 +106,58 @@ function ArtboardSelectionChrome({
   board: board,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactCanvasShape.useState)(null);
-  sinkRef.current = value2;
-  let value3: Dynamic = useViewportScale(live && value !== null),
-    value4: Dynamic = useViewportMinScale(
+  let [selectionChrome, setSelectionChrome]: Dynamic = (0, reactCanvasShape.useState)(null);
+  sinkRef.current = setSelectionChrome;
+  let scale: Dynamic = useViewportScale(live && selectionChrome !== null),
+    canShowInteractiveChrome: Dynamic = useViewportMinScale(
       selectionChromeMinimumScale,
     ),
-    value5: Dynamic = crop !== null && !(interactive && value4);
+    shouldCancelCrop: Dynamic = crop !== null && !(interactive && canShowInteractiveChrome);
   (0, reactCanvasShape.useEffect)((): Dynamic => {
-    value5 && crop?.onDone(true);
-  }, [value5, crop]);
+    shouldCancelCrop && crop?.onDone(true);
+  }, [shouldCancelCrop, crop]);
   (0, reactCanvasShape.useEffect)((): Dynamic => {
-    live || value2(null);
+    live || setSelectionChrome(null);
   }, [live]);
   return !slot ||
     !live ||
-    !value ||
-    (value.rings.length === 0 &&
-      !value.stroke &&
-      !value.measure &&
-      !value.guides &&
-      !value.artboard &&
-      !value.pen)
+    !selectionChrome ||
+    (selectionChrome.rings.length === 0 &&
+      !selectionChrome.stroke &&
+      !selectionChrome.measure &&
+      !selectionChrome.guides &&
+      !selectionChrome.artboard &&
+      !selectionChrome.pen)
     ? null
     : (0, reactDomCanvasShape.createPortal)(
         <jsx_ip.Fragment>
           <SelectionChromeOverlay
-            chrome={value}
-            scale={value3}
-            interactive={interactive && value4}
+            chrome={selectionChrome}
+            scale={scale}
+            interactive={interactive && canShowInteractiveChrome}
             onGripDown={onGripDown}
             onContextMenu={onContextMenu}
-            crop={interactive && value4 ? crop : null}
+            crop={interactive && canShowInteractiveChrome ? crop : null}
             board={board}
           />
-          {value.pen && vectorEdit && interactive && value4 && (<div
+          {selectionChrome.pen && vectorEdit && interactive && canShowInteractiveChrome && (<div
               className={"pointer-events-none absolute left-0 top-0"}
               style={{
                 ...PickerRuntimeScriptTAppAccentConfig,
-                transform: `scale(${String(1 / value3)})`,
+                transform: `scale(${String(1 / scale)})`,
                 transformOrigin: "0 0",
               }}
             >
               {(() => {
                 const _Component = ElementPenEditor;
                 const _props = {
-                  pen: value.pen,
-                  scale: value3,
+                  pen: selectionChrome.pen,
+                  scale: scale,
                   onPreview: onPenPreview,
                   onCommitStroke: onPenCommit,
                   onGesture: onPenGesture,
                 } as const;
-                const _key = value.pen.tid;
+                const _key = selectionChrome.pen.tid;
                 return <_Component key={_key} {..._props} />;
               })()}
             </div>)}
@@ -172,655 +172,655 @@ export {
 export function installCanvasArtboardFrame(): () => void {
   return () => {
     ArtboardFrame = (0, reactCanvasShape.memo)(function (
-      input?: Dynamic,
+      props?: Dynamic,
     ): Dynamic {
-      let { showToast: value }: Dynamic = useToast(),
+      let { showToast: showToast }: Dynamic = useToast(),
         {
-          vectorEdit: value69 = false,
-          file: value2,
-          displayTitle: value3,
-          title: value4,
-          live: value70 = true,
-          expanded: value71 = false,
-          onPagePointer: value5,
-          onPageScroll: value6,
-          playing: value72 = false,
-          migrated: value73 = false,
-          frameless: value74 = false,
-          onContentHull: value7,
-          box: value8,
-          boxRowH: value75 = 0,
-          component: value76 = false,
-          chromeSlot: value77 = null,
-          onHostGesture: value9,
-          onTweaksRow: value10,
-          onTweaksDirty: value11,
-          onOpenTweaks: value12,
-          canvasScaleRef: value13,
-          assets: value14,
-          doc: value15,
-          editing: value78 = false,
-          routeForwardedKey: value16,
-          onDragEvent: value17,
-          onModifierKey: value18,
-          onBoxEvent: value19,
-          onPanZoom: value20,
-          onRepeatRefused: value21,
-          pointerInert: value79 = false,
-          keyboardInert: value80 = false,
-          inertFrame: value81 = false,
-          onPreviewClick: value22,
-          panelMounted: value23,
-          gripless: value82 = false,
-          readOnly: value83 = false,
-          frameArmed: value24,
-          editable: value25,
-          onHandle: value26,
-          onPreviewDropNotice: value27,
-          onReadyGen: value28,
-          dsVarNames: value29,
-          onDefinedVars: value30,
-          onBlockedChange: value31,
-          onProblemsChange: value32,
-          exitGuardRef: value33,
-          textEditOpenRef: value34,
-          settleSessionRef: value35,
-          commitOpenTextEditRef: value36,
-          onSessionDirtyChange: value37,
-          onEditInput: value38,
-          onLocalEdit: value39,
-          onUndoStack: value40,
-          onToolChange: value41,
-          toolResetTick: value42,
-          onOpenFile: value43,
-          onPasteImages: value44,
-          onDropVideos: value45,
-          onPointerPresence: value46,
-          onPointerAt: value47,
-          onHistoryPush: value48,
-          onModelReparsed: value49,
-          onHistoryApply: value50,
-          onHistoryRevoke: value51,
-          onHistoryDrop: value52,
-          onTweakEdit: value53,
-          sessionEpoch: value54,
-          actionsRef: value55,
-          onSelection: value56,
-          onSelectionSeq: value57,
-          onGestureStream: value58,
-          onTextEditState: value59,
-          onTextEditEnded: value60,
-          keyboardSkipsContent: value61,
-          artboardSettings: value62,
-          canvasObject: value63,
-          outlineArtboards: value64,
-          presentPropsTick: value65,
-          onPresentPropsHandled: value66,
-          placeRequest: value67,
-          onPlaceHandled: value68,
-        }: Dynamic = input,
-        flag: Dynamic = false,
-        value84: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value85: Dynamic = (0, reactCanvasShape.useMemo)(
+          vectorEdit: vectorEdit = false,
+          file: previewFile,
+          displayTitle: displayTitle,
+          title: title,
+          live: live = true,
+          expanded: expanded = false,
+          onPagePointer: onPagePointer,
+          onPageScroll: onPageScroll,
+          playing: playing = false,
+          migrated: migrated = false,
+          frameless: frameless = false,
+          onContentHull: onContentHull,
+          box: box,
+          boxRowH: boxRowH = 0,
+          component: component = false,
+          chromeSlot: chromeSlot = null,
+          onHostGesture: onHostGesture,
+          onTweaksRow: onTweaksRow,
+          onTweaksDirty: onTweaksDirty,
+          onOpenTweaks: onOpenTweaks,
+          canvasScaleRef: canvasScaleRef,
+          assets: assets,
+          doc: doc,
+          editing: editing = false,
+          routeForwardedKey: routeForwardedKey,
+          onDragEvent: onDragEvent,
+          onModifierKey: onModifierKey,
+          onBoxEvent: onBoxEvent,
+          onPanZoom: onPanZoom,
+          onRepeatRefused: onRepeatRefused,
+          pointerInert: pointerInert = false,
+          keyboardInert: keyboardInert = false,
+          inertFrame: inertFrame = false,
+          onPreviewClick: onPreviewClick,
+          panelMounted: panelMounted,
+          gripless: gripless = false,
+          readOnly: readOnly = false,
+          frameArmed: frameArmed,
+          editable: editable,
+          onHandle: onHandle,
+          onPreviewDropNotice: onPreviewDropNotice,
+          onReadyGen: onReadyGen,
+          dsVarNames: dsVarNames,
+          onDefinedVars: onDefinedVars,
+          onBlockedChange: onBlockedChange,
+          onProblemsChange: onProblemsChange,
+          exitGuardRef: exitGuardRef,
+          textEditOpenRef: textEditOpenRef,
+          settleSessionRef: settleSessionRef,
+          commitOpenTextEditRef: commitOpenTextEditRef,
+          onSessionDirtyChange: onSessionDirtyChange,
+          onEditInput: onEditInput,
+          onLocalEdit: onLocalEdit,
+          onUndoStack: onUndoStack,
+          onToolChange: onToolChange,
+          toolResetTick: toolResetTick,
+          onOpenFile: onOpenFile,
+          onPasteImages: onPasteImages,
+          onDropVideos: onDropVideos,
+          onPointerPresence: onPointerPresence,
+          onPointerAt: onPointerAt,
+          onHistoryPush: onHistoryPush,
+          onModelReparsed: onModelReparsed,
+          onHistoryApply: onHistoryApply,
+          onHistoryRevoke: onHistoryRevoke,
+          onHistoryDrop: onHistoryDrop,
+          onTweakEdit: onTweakEdit,
+          sessionEpoch: sessionEpoch,
+          actionsRef: actionsRef,
+          onSelection: onSelection,
+          onSelectionSeq: onSelectionSeq,
+          onGestureStream: onGestureStream,
+          onTextEditState: onTextEditState,
+          onTextEditEnded: onTextEditEnded,
+          keyboardSkipsContent: keyboardSkipsContent,
+          artboardSettings: artboardSettings,
+          canvasObject: canvasObject,
+          outlineArtboards: outlineArtboards,
+          presentPropsTick: presentPropsTick,
+          onPresentPropsHandled: onPresentPropsHandled,
+          placeRequest: placeRequest,
+          onPlaceHandled: onPlaceHandled,
+        }: Dynamic = props,
+        showInlineTweakControls: Dynamic = false,
+        iframeRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        previewGenerationGate: Dynamic = (0, reactCanvasShape.useMemo)(
           (): Dynamic => new PreviewGenerationGate(),
           [],
         ),
-        [value86, value87]: Dynamic = (0, reactCanvasShape.useState)(
+        [previewDocument, setPreviewDocument]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
-        value88: Dynamic = value86?.srcdoc ?? null,
-        value89: Dynamic = (0, reactCanvasShape.useRef)(-1),
-        value90: Dynamic = (0, reactCanvasShape.useRef)(-1),
-        [value91, value92]: Dynamic = (0, reactCanvasShape.useState)(0),
-        [value93, value94]: Dynamic = (0, reactCanvasShape.useState)(0),
-        [value95, value96]: Dynamic = (0, reactCanvasShape.useState)(
+        srcdoc: Dynamic = previewDocument?.srcdoc ?? null,
+        lastRenderedGenerationRef: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        pendingGenerationRef: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        [readyGeneration, setReadyGeneration]: Dynamic = (0, reactCanvasShape.useState)(0),
+        [displayedGeneration, setDisplayedGeneration]: Dynamic = (0, reactCanvasShape.useState)(0),
+        [previewLoadError, setPreviewLoadError]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
-        [value97, value98]: Dynamic = (0, reactCanvasShape.useState)(
+        [previewBlockedReason, setPreviewBlockedReason]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
-        [value99, value100]: Dynamic = (0, reactCanvasShape.useState)(
+        [artboardErrors, setArtboardErrors]: Dynamic = (0, reactCanvasShape.useState)(
           emptyArtboardErrors,
         ),
-        value101: Dynamic = (0, reactCanvasShape.useRef)(-1),
-        value102: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value103: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value104: Dynamic = (0, reactCanvasShape.useRef)(0),
-        value105: Dynamic = (0, reactCanvasShape.useRef)({
+        loadedGenerationRef: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        mediaSinkRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        activeMediaRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        lastFocusAtRef: Dynamic = (0, reactCanvasShape.useRef)(0),
+        lastFailureRef: Dynamic = (0, reactCanvasShape.useRef)({
           why: "",
           at: 0,
         }),
-        [value106, value107]: Dynamic = (0, reactCanvasShape.useState)(
+        [frameReady, setFrameReady]: Dynamic = (0, reactCanvasShape.useState)(
           false,
         ),
-        value108: Dynamic = (0, reactCanvasShape.useRef)(false);
-      value108.current = value106;
-      let value109: Dynamic = (0, reactCanvasShape.useRef)(null);
-      value109.current = value88;
-      let value110: Dynamic = (0, reactCanvasShape.useRef)(value86);
-      value110.current = value86;
+        frameReadyRef: Dynamic = (0, reactCanvasShape.useRef)(false);
+      frameReadyRef.current = frameReady;
+      let srcdocRef: Dynamic = (0, reactCanvasShape.useRef)(null);
+      srcdocRef.current = srcdoc;
+      let previewDocumentRef: Dynamic = (0, reactCanvasShape.useRef)(previewDocument);
+      previewDocumentRef.current = previewDocument;
       (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => {},
-        [value88],
+        [srcdoc],
       );
-      let value111: Dynamic = (0, reactCanvasShape.useRef)(-1),
-        value112: Dynamic = (0, reactCanvasShape.useRef)(-1),
-        value113: Dynamic = (0, reactCanvasShape.useRef)(value93);
-      value113.current = value93;
-      let value114: Dynamic = (0, reactCanvasShape.useRef)(value70);
-      value114.current = value70;
-      let value115: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
-        value116: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
-        value117: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
-        value118: Dynamic = (0, reactCanvasShape.useRef)(0),
-        value119: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value120: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
-        value121: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
-        value122: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value123: Dynamic = (0, reactCanvasShape.useRef)(0),
-        value124: Dynamic = (0, reactCanvasShape.useRef)(null);
-      value124.current = value95;
-      let value125: Dynamic = (0, reactCanvasShape.useRef)(null);
-      value125.current = value97;
-      let [value126, value127]: Dynamic = (0,
+      let bootGenerationRef: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        displayGenerationRef: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        displayedGenerationRef: Dynamic = (0, reactCanvasShape.useRef)(displayedGeneration);
+      displayedGenerationRef.current = displayedGeneration;
+      let liveRef: Dynamic = (0, reactCanvasShape.useRef)(live);
+      liveRef.current = live;
+      let loadedComponentIdsRef: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        dependencyFilesRef: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        expandedComponentsRef: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        probeRetryCountRef: Dynamic = (0, reactCanvasShape.useRef)(0),
+        probeRetryWindowRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        coveredStylesheetsRef: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        compilationAddressesRef: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        rewrittenSrcdocRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        retiredGenerationRef: Dynamic = (0, reactCanvasShape.useRef)(0),
+        loadErrorRef: Dynamic = (0, reactCanvasShape.useRef)(null);
+      loadErrorRef.current = previewLoadError;
+      let blockedReasonRef: Dynamic = (0, reactCanvasShape.useRef)(null);
+      blockedReasonRef.current = previewBlockedReason;
+      let [scheduledToBoot, setScheduledToBoot]: Dynamic = (0,
         reactCanvasShape.useState)(false),
-        value128: Dynamic = value88 != null,
-        value129: Dynamic = value95 != null || value97 != null;
+        hasSrcdoc: Dynamic = srcdoc != null,
+        isPreviewBlocked: Dynamic = previewLoadError != null || previewBlockedReason != null;
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (!(!value70 || !value24 || !value128 || value126 || value129))
+        if (!(!live || !frameArmed || !hasSrcdoc || scheduledToBoot || isPreviewBlocked))
           return artboardBootScheduler.request(
-            value2,
+            previewFile,
             (): Dynamic =>
-              value114.current
-                ? value127(true)
-                : artboardBootScheduler.done(value2),
+              liveRef.current
+                ? setScheduledToBoot(true)
+                : artboardBootScheduler.done(previewFile),
           );
-      }, [value70, value24, value128, value126, value129, value2]);
+      }, [live, frameArmed, hasSrcdoc, scheduledToBoot, isPreviewBlocked, previewFile]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value106 && artboardBootScheduler.done(value2);
-      }, [value106, value2]);
+        frameReady && artboardBootScheduler.done(previewFile);
+      }, [frameReady, previewFile]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        (value95 == null && value97 == null) ||
-          (artboardBootScheduler.done(value2), value127(false));
-      }, [value95, value97, value2]);
+        (previewLoadError == null && previewBlockedReason == null) ||
+          (artboardBootScheduler.done(previewFile), setScheduledToBoot(false));
+      }, [previewLoadError, previewBlockedReason, previewFile]);
       (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic =>
-          artboardBootScheduler.done(value2),
-        [value2],
+          artboardBootScheduler.done(previewFile),
+        [previewFile],
       );
-      let value130: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            value84.current = input2;
-            input2 != null &&
-              (setPreviewGenerationGate(input2, value85),
-              value85.generationMounted(value93));
+      let attachIframe: Dynamic = (0, reactCanvasShape.useCallback)(
+          (iframe?: Dynamic): Dynamic => {
+            iframeRef.current = iframe;
+            iframe != null &&
+              (setPreviewGenerationGate(iframe, previewGenerationGate),
+              previewGenerationGate.generationMounted(displayedGeneration));
           },
-          [value85, value93],
+          [previewGenerationGate, displayedGeneration],
         ),
-        value131: Dynamic = (0, reactCanvasShape.useRef)({}),
-        value132: Dynamic = (0, reactCanvasShape.useRef)(0),
-        value133: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value134: Dynamic = (0,
+        frameHoldRef: Dynamic = (0, reactCanvasShape.useRef)({}),
+        frameUpdateCountRef: Dynamic = (0, reactCanvasShape.useRef)(0),
+        syncBeforeCompileRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        retireFrame: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          value123.current = value85.mountedGeneration;
-          value85.frameRetired();
-          value87(null);
-          value107(false);
-        }, [value85]);
+          retiredGenerationRef.current = previewGenerationGate.mountedGeneration;
+          previewGenerationGate.frameRetired();
+          setPreviewDocument(null);
+          setFrameReady(false);
+        }, [previewGenerationGate]);
       (0, reactCanvasShape.useEffect)(
-        (): Dynamic => value134,
-        [value134],
+        (): Dynamic => retireFrame,
+        [retireFrame],
       );
-      let [value135, value136]: Dynamic = (0,
+      let [isLoadingArtboard, setIsLoadingArtboard]: Dynamic = (0,
         reactCanvasShape.useState)(false),
-        value137: Dynamic = value25 && !value135,
-        value138: Dynamic = (0, reactCanvasShape.useRef)(0),
-        value139: Dynamic = (0, reactCanvasShape.useRef)(new Map()),
-        value140: Dynamic = (0,
+        canEditPreview: Dynamic = editable && !isLoadingArtboard,
+        buildRequestRef: Dynamic = (0, reactCanvasShape.useRef)(0),
+        componentPreviewCacheRef: Dynamic = (0, reactCanvasShape.useRef)(new Map()),
+        rebuildPreview: Dynamic = (0,
         reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          value139.current.clear();
-          let callback5: Dynamic = (): Dynamic =>
-            value85.blocked == null &&
-            value124.current == null &&
-            value125.current == null &&
-            value131.current.holdFrame?.("rebuild") === true;
-          if (callback5()) return;
-          let value286: Dynamic = ++value138.current,
-            callback6: Dynamic = (): Dynamic => value286 !== value138.current;
+          componentPreviewCacheRef.current.clear();
+          let deferRebuild: Dynamic = (): Dynamic =>
+            previewGenerationGate.blocked == null &&
+            loadErrorRef.current == null &&
+            blockedReasonRef.current == null &&
+            frameHoldRef.current.holdFrame?.("rebuild") === true;
+          if (deferRebuild()) return;
+          let buildRequestId: Dynamic = ++buildRequestRef.current,
+            hasNewerBuild: Dynamic = (): Dynamic => buildRequestId !== buildRequestRef.current;
           try {
-            let value287: Dynamic = await getKvClient().list(
+            let fileKeys: Dynamic = await getKvClient().list(
                 FileValue,
               ),
-              state2: Dynamic = {
+              projectFiles: Dynamic = {
                 ...getDesignSystemFiles(),
               };
-            for (let value297 of value287 as Dynamic) {
-              let value298: Dynamic = await getKvClient().get(
-                value297,
+            for (let fileKey of fileKeys as Dynamic) {
+              let fileContent: Dynamic = await getKvClient().get(
+                fileKey,
               );
-              value298 != null &&
-                (state2[value297.slice(FileValue.length)] = value298);
+              fileContent != null &&
+                (projectFiles[fileKey.slice(FileValue.length)] = fileContent);
             }
-            registerImageFileUrls(state2);
-            value136(isLoadingArtboardHtml(state2[value2] ?? ""));
+            registerImageFileUrls(projectFiles);
+            setIsLoadingArtboard(isLoadingArtboardHtml(projectFiles[previewFile] ?? ""));
             try {
-              await value133.current?.(value2);
+              await syncBeforeCompileRef.current?.(previewFile);
             } catch {
             } finally {
-              value139.current.clear();
+              componentPreviewCacheRef.current.clear();
             }
-            let callback7: Dynamic = (): Dynamic =>
-              value114.current
+            let cancelIfInactive: Dynamic = (): Dynamic =>
+              liveRef.current
                 ? false
-                : (value134(),
-                  value96(null),
-                  value98(null),
-                  value100(emptyArtboardErrors),
+                : (retireFrame(),
+                  setPreviewLoadError(null),
+                  setPreviewBlockedReason(null),
+                  setArtboardErrors(emptyArtboardErrors),
                   true);
-            if (callback6() || callback7() || callback5()) return;
-            let value288: Dynamic = null,
-              value289: Dynamic = artboardsAtAddressEnabled(),
-              value290: Dynamic = PreviewBuildDocumentStringify({
+            if (hasNewerBuild() || cancelIfInactive() || deferRebuild()) return;
+            let previewDetail: Dynamic = null,
+              addressedArtboards: Dynamic = artboardsAtAddressEnabled(),
+              compilationKey: Dynamic = PreviewBuildDocumentStringify({
                 partMin: effectiveDesignPartMinScale(),
-                frameless: value74,
-                assets: value14,
+                frameless: frameless,
+                assets: assets,
                 installed: designSystemCacheKey(),
-                address: addressedArtboardCacheKey(value289),
+                address: addressedArtboardCacheKey(addressedArtboards),
               }),
-              value291: Dynamic = getCachedArtboardCompilation(
-                value2,
-                state2,
-                value290,
+              compilation: Dynamic = getCachedArtboardCompilation(
+                previewFile,
+                projectFiles,
+                compilationKey,
               );
-            if (value291 === null) {
-              let value297: Dynamic = collectProjectDependencyFiles(state2, value2),
-                value298: Dynamic = resolveAddressedArtboard(
-                  value297,
-                  value2,
-                  value289,
+            if (compilation === null) {
+              let dependencyClosure: Dynamic = collectProjectDependencyFiles(projectFiles, previewFile),
+                addressedResolution: Dynamic = resolveAddressedArtboard(
+                  dependencyClosure,
+                  previewFile,
+                  addressedArtboards,
                 ),
-                value299: Dynamic =
-                  value298 === undefined || "copied" in value298
+                publishedArtboard: Dynamic =
+                  addressedResolution === undefined || "copied" in addressedResolution
                     ? undefined
-                    : value298;
-              value289 &&
-                value298 !== undefined &&
+                    : addressedResolution;
+              addressedArtboards &&
+                addressedResolution !== undefined &&
                 notifyUndoGesture("board-address", {
-                  file: value2,
+                  file: previewFile,
                   how:
-                    "copied" in value298
+                    "copied" in addressedResolution
                       ? uiMessage("canvas.artboardFrame.theAppifactBase")
                       : uiMessage("canvas.artboardFrame.thePublishedBase"),
-                  ...("copied" in value298
+                  ...("copied" in addressedResolution
                     ? {
-                        why: value298.copied,
+                        why: addressedResolution.copied,
                       }
                     : {}),
                 });
-              let value300: Dynamic = normalizeProjectBlobPaths(
-                  value299?.files ?? value297,
+              let normalizedFiles: Dynamic = normalizeProjectBlobPaths(
+                  publishedArtboard?.files ?? dependencyClosure,
                 ),
                 values: Dynamic = new Set(),
                 {
-                  doc: value301,
-                  parts: value302,
-                  sheetUrls: value303,
-                  byAddress: value304,
+                  doc: html,
+                  parts: compiledModuleParts,
+                  sheetUrls: compiledSheetUrls,
+                  byAddress: filesByAddress,
                 }: Dynamic = buildPreviewDocument(
-                  value300,
-                  value2,
-                  value14,
+                  normalizedFiles,
+                  previewFile,
+                  assets,
                   values,
-                  value299 !== undefined
+                  publishedArtboard !== undefined
                     ? {
-                        frameless: value74,
+                        frameless: frameless,
                         atAddress: {
-                          projectRoot: value299.projectPath,
-                          base: value299.pageUrl,
+                          projectRoot: publishedArtboard.projectPath,
+                          base: publishedArtboard.pageUrl,
                         },
                       }
                     : {
                         partMin: effectiveDesignPartMinScale(),
-                        frameless: value74,
-                        sheetUrlFor: createProjectAssetReadinessProbe(state2),
+                        frameless: frameless,
+                        sheetUrlFor: createProjectAssetReadinessProbe(projectFiles),
                         installedUrlFor:
                           resolvePublishedDesignSystemFile,
                         fileUrlFor: createLinkedFileScript,
                       },
                 );
-              value291 = {
-                names: projectFileNamesKey(state2),
-                opts: value290,
-                closure: value297,
-                doc: value301,
-                parts: value302,
-                sheetUrls: value303 ?? {},
-                byAddress: value304,
+              compilation = {
+                names: projectFileNamesKey(projectFiles),
+                opts: compilationKey,
+                closure: dependencyClosure,
+                doc: html,
+                parts: compiledModuleParts,
+                sheetUrls: compiledSheetUrls ?? {},
+                byAddress: filesByAddress,
                 rootSheets: values,
-                ...(value299 !== undefined
+                ...(publishedArtboard !== undefined
                   ? {
-                      at: value299,
+                      at: publishedArtboard,
                     }
                   : {}),
               };
-              cacheArtboardCompilation(value2, value291);
+              cacheArtboardCompilation(previewFile, compilation);
             }
             let {
-              doc: value292,
-              parts: value293,
-              closure: value294,
-              rootSheets: value295,
-              sheetUrls: value296,
-            }: Dynamic = value291;
-            value291.at !== undefined
-              ? value87({
-                  srcdoc: value292,
-                  projectRoot: value291.at.projectRoot,
+              doc: compiledHtml,
+              parts: moduleParts,
+              closure: dependencyFiles,
+              rootSheets: rootSheets,
+              sheetUrls: sheetUrls,
+            }: Dynamic = compilation;
+            compilation.at !== undefined
+              ? setPreviewDocument({
+                  srcdoc: compiledHtml,
+                  projectRoot: compilation.at.projectRoot,
                 })
-              : value87(
-                  Object.keys(value293).length > 0
+              : setPreviewDocument(
+                  Object.keys(moduleParts).length > 0
                     ? {
-                        srcdoc: PreviewBuildDocumentResolvedValue_3,
+                        srcdoc: buildPreviewFromFiles,
                         boot: {
-                          doc: value292,
-                          parts: runtimeModuleBlobs(value293),
+                          doc: compiledHtml,
+                          parts: runtimeModuleBlobs(moduleParts),
                           urls: {
-                            ...runtimeModuleUrls(value293),
-                            ...value296,
+                            ...runtimeModuleUrls(moduleParts),
+                            ...sheetUrls,
                           },
                         },
                       }
                     : {
-                        srcdoc: value292,
+                        srcdoc: compiledHtml,
                       },
                 );
-            value144.current = state2[value2];
-            value115.current = new Set(
-              Object.keys(value291.at?.files ?? value294),
+            compiledSourceRef.current = projectFiles[previewFile];
+            loadedComponentIdsRef.current = new Set(
+              Object.keys(compilation.at?.files ?? dependencyFiles),
             );
-            value116.current = new Set(Object.keys(value294));
-            value120.current = new Set(value295);
-            value121.current = new Set(Object.values(value291.byAddress));
-            value94(value85.hostWillLoad());
-            value96(null);
-            value98(null);
-          } catch (value287: Dynamic) {
-            value98(String(value287));
+            dependencyFilesRef.current = new Set(Object.keys(dependencyFiles));
+            coveredStylesheetsRef.current = new Set(rootSheets);
+            compilationAddressesRef.current = new Set(Object.values(compilation.byAddress));
+            setDisplayedGeneration(previewGenerationGate.hostWillLoad());
+            setPreviewLoadError(null);
+            setPreviewBlockedReason(null);
+          } catch (error: Dynamic) {
+            setPreviewBlockedReason(String(error));
             unblockDesignFramesReady();
           }
-        }, [value2, value85, value134, value74]);
+        }, [previewFile, previewGenerationGate, retireFrame, frameless]);
       (0, reactCanvasShape.useEffect)(
         (): Dynamic =>
           subscribeArtboardsAtAddressFlag((): Dynamic => {
-            value140();
+            rebuildPreview();
           }),
-        [value140],
+        [rebuildPreview],
       );
-      let value141: Dynamic = (0, reactCanvasShape.useRef)([]),
-        value142: Dynamic = (0, reactCanvasShape.useCallback)(
+      let previewSubscriptionRef: Dynamic = (0, reactCanvasShape.useRef)([]),
+        isPreviewRetired: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic => false,
-          [value140],
+          [rebuildPreview],
         );
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value140();
-        let value286: Dynamic = subscribeDesignSystemFiles(
+        rebuildPreview();
+        let unsubscribeDesignSystemFiles: Dynamic = subscribeDesignSystemFiles(
             (): Dynamic => {
-              value140();
+              rebuildPreview();
             },
           ),
-          value287: Dynamic = subscribeHtmlReferences(
-            (input2?: Dynamic): Dynamic => {
-              input2.some(
-                (input3?: Dynamic): Dynamic =>
+          unsubscribeHtmlReferences: Dynamic = subscribeHtmlReferences(
+            (referencePaths?: Dynamic): Dynamic => {
+              referencePaths.some(
+                (referencePath?: Dynamic): Dynamic =>
                   isRequiredProjectFile(
-                    input3,
-                    value2,
-                    value116.current,
-                    value115.current,
+                    referencePath,
+                    previewFile,
+                    dependencyFilesRef.current,
+                    loadedComponentIdsRef.current,
                   ),
-              ) && value140();
+              ) && rebuildPreview();
             },
           );
         return (): Dynamic => {
-          value286();
-          value287();
+          unsubscribeDesignSystemFiles();
+          unsubscribeHtmlReferences();
         };
-      }, [value140]);
-      let value143: Dynamic = (0, reactCanvasShape.useRef)(value70);
+      }, [rebuildPreview]);
+      let previousLiveRef: Dynamic = (0, reactCanvasShape.useRef)(live);
       (0, reactCanvasShape.useLayoutEffect)((): Dynamic => {
-        if (value70 !== value143.current) {
-          value143.current = value70;
-          if (!value70) {
-            value109.current != null &&
-              value124.current == null &&
-              value125.current == null &&
+        if (live !== previousLiveRef.current) {
+          previousLiveRef.current = live;
+          if (!live) {
+            srcdocRef.current != null &&
+              loadErrorRef.current == null &&
+              blockedReasonRef.current == null &&
               (set_lastDesignEditAt(performance.now()));
-            value134();
-            value127(false);
-            artboardBootScheduler.done(value2);
+            retireFrame();
+            setScheduledToBoot(false);
+            artboardBootScheduler.done(previewFile);
             return;
           }
-          value124.current != null || value125.current != null || value140();
+          loadErrorRef.current != null || blockedReasonRef.current != null || rebuildPreview();
         }
-      }, [value70, value140, value134]);
-      let value144: Dynamic = (0, reactCanvasShape.useRef)(undefined),
-        value145: Dynamic = (0,
+      }, [live, rebuildPreview, retireFrame]);
+      let compiledSourceRef: Dynamic = (0, reactCanvasShape.useRef)(undefined),
+        refreshCompiledSource: Dynamic = (0,
         reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          let value286: Dynamic = value15.content().files[value2],
-            current: Dynamic = value144.current;
-          if (value286 !== undefined && value286 === current) return null;
+          let updatedSource: Dynamic = doc.content().files[previewFile],
+            previousSource: Dynamic = compiledSourceRef.current;
+          if (updatedSource !== undefined && updatedSource === previousSource) return null;
           if (
-            !createPreviewHandle(value84.current) ||
-            value124.current != null ||
-            value125.current != null
+            !createPreviewHandle(iframeRef.current) ||
+            loadErrorRef.current != null ||
+            blockedReasonRef.current != null
           )
             return uiMessage("canvas.artboardFrame.theFrameIsNotLive");
-          let value287: Dynamic = compareDesignSourceScripts(
-            current,
-            value286,
+          let sourceComparison: Dynamic = compareDesignSourceScripts(
+            previousSource,
+            updatedSource,
           );
-          if (!value287.ok) return value287.why;
-          let value288: Dynamic = artboardComponentName(value2);
+          if (!sourceComparison.ok) return sourceComparison.why;
+          let componentName: Dynamic = artboardComponentName(previewFile);
           try {
-            await value133.current?.(value2);
+            await syncBeforeCompileRef.current?.(previewFile);
           } catch {}
-          let value289: Dynamic = value159.current.state(value288),
-            value290: Dynamic =
-              value289 && value289.path === value2 ? value289 : null;
+          let componentSession: Dynamic = componentSessionRef.current.state(componentName),
+            artboardSession: Dynamic =
+              componentSession && componentSession.path === previewFile ? componentSession : null;
           if (
-            value290 &&
-            (value290.dirty ||
-              value290.pendingScript !== undefined ||
-              value290.pendingProps !== undefined)
+            artboardSession &&
+            (artboardSession.dirty ||
+              artboardSession.pendingScript !== undefined ||
+              artboardSession.pendingProps !== undefined)
           )
             return uiMessage("canvas.artboardFrame.thisBoardHasUnsavedLocal");
-          if (value290 && value290.src === value286) {
-            value290.stampGen = (value290.stampGen ?? -1) + 1;
-            value290.liveStampsStale = false;
-            value159.current.pushLive(value288);
+          if (artboardSession && artboardSession.src === updatedSource) {
+            artboardSession.stampGen = (artboardSession.stampGen ?? -1) + 1;
+            artboardSession.liveStampsStale = false;
+            componentSessionRef.current.pushLive(componentName);
           } else {
-            if (value290)
+            if (artboardSession)
               return uiMessage("canvas.artboardFrame.theModelDidNotAdopt");
             emitEditorEvent("dc-update", {
-              name: value288,
-              path: value2,
+              name: componentName,
+              path: previewFile,
               kind: "html",
-              content: value287.template,
+              content: sourceComparison.template,
               streaming: false,
               viewportKey: "dc-model",
             });
-            value49?.(value2, null, null);
+            onModelReparsed?.(previewFile, null, null);
           }
-          value144.current = value286;
+          compiledSourceRef.current = updatedSource;
           return null;
-        }, [value2]),
-        value146: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
+        }, [previewFile]),
+        releaseFrame: Dynamic = (0, reactCanvasShape.useCallback)(
+          (reason?: Dynamic): Dynamic => {
             notifyUndoGesture("board-remote", {
-              file: value2,
+              file: previewFile,
               how:
                 uiMessage("canvas.artboardFrame.theTextBoxOrDrag") +
-                (input2 === "rebuild" ? uiMessage("canvas.artboardFrame.reloadingNow") : uiMessage("canvas.artboardFrame.redrawingNow")),
+                (reason === "rebuild" ? uiMessage("canvas.artboardFrame.reloadingNow") : uiMessage("canvas.artboardFrame.redrawingNow")),
             });
-            input2 === "rebuild"
-              ? value140()
-              : value159.current.pushLive(
-                  artboardComponentName(value2),
+            reason === "rebuild"
+              ? rebuildPreview()
+              : componentSessionRef.current.pushLive(
+                  artboardComponentName(previewFile),
                 );
           },
-          [value140, value2],
+          [rebuildPreview, previewFile],
         );
       npm_useEventListener_bc(
         forceRefreshEventName,
         (): Dynamic => {
-          value140();
+          rebuildPreview();
         },
       );
       npm_useEventListener_bc(
         remoteFilesEventName,
-        (input2?: Dynamic): Dynamic => {
-          let value286: Dynamic = input2.detail?.paths ?? [],
-            value287: Dynamic = filterAddressedFiles(
-              value286,
-              value2,
-              value116.current,
-              value115.current,
+        (fileChangeEvent?: Dynamic): Dynamic => {
+          let changedPaths: Dynamic = fileChangeEvent.detail?.paths ?? [],
+            affectedPaths: Dynamic = filterAddressedFiles(
+              changedPaths,
+              previewFile,
+              dependencyFilesRef.current,
+              loadedComponentIdsRef.current,
               (): Dynamic =>
                 collectProjectDependencyFiles(
                   mergeDesignSystemFileOverlay(
-                    value15.content().files,
+                    doc.content().files,
                   ),
-                  value2,
+                  previewFile,
                 ),
             );
-          if (value287.length !== 0) {
+          if (affectedPaths.length !== 0) {
             if (
-              value287.length === 1 &&
-              value287[0] === value2 &&
+              affectedPaths.length === 1 &&
+              affectedPaths[0] === previewFile &&
               editorOwnsUndo()
             ) {
-              let value288: Dynamic = performance.now();
-              value145().then(
-                (input3?: Dynamic): Dynamic => {
-                  input3 === null
+              let startedAt: Dynamic = performance.now();
+              refreshCompiledSource().then(
+                (sourceComparison?: Dynamic): Dynamic => {
+                  sourceComparison === null
                     ? notifyUndoGesture("board-remote", {
-                        file: value2,
+                        file: previewFile,
                         how: "in place (__dcUpdate)",
-                        ms: Math.round(performance.now() - value288),
+                        ms: Math.round(performance.now() - startedAt),
                       })
                     : (notifyUndoGesture("board-remote", {
-                        file: value2,
+                        file: previewFile,
                         how: "rebuilt iframe",
-                        why: input3,
+                        why: sourceComparison,
                       }),
-                      value140());
+                      rebuildPreview());
                 },
-                (input3?: Dynamic): Dynamic => {
+                (error?: Dynamic): Dynamic => {
                   notifyUndoGesture("board-remote", {
-                    file: value2,
+                    file: previewFile,
                     how: "rebuilt iframe",
-                    get why() { return ("in-place threw: ") + (String(input3)); },
+                    get why() { return ("in-place threw: ") + (String(error)); },
                   });
-                  value140();
+                  rebuildPreview();
                 },
               );
               return;
             }
             notifyUndoGesture("board-remote", {
-              file: value2,
+              file: previewFile,
               how: "rebuilt iframe",
-              get why() { return value287.length === 1 && value287[0] === value2 ? ("in-place is off") : ((uiMessage("canvas.artboardFrame.aFileThisBoardImports")) + (value287.join(", "))); },
+              get why() { return affectedPaths.length === 1 && affectedPaths[0] === previewFile ? ("in-place is off") : ((uiMessage("canvas.artboardFrame.aFileThisBoardImports")) + (affectedPaths.join(", "))); },
             });
-            value140();
+            rebuildPreview();
           }
         },
       );
       (0, reactCanvasShape.useEffect)(
         (): Dynamic =>
           scheduleDesktopRenderingRefresh(
-            (): Dynamic => value84.current,
+            (): Dynamic => iframeRef.current,
           ),
-        [value91],
+        [readyGeneration],
       );
-      let value147: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value148: Dynamic = useDcProps({
-          webviewRef: value84,
-          readyGen: value91,
+      let noteOwnWriteRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        tweakProperties: Dynamic = useDcProps({
+          webviewRef: iframeRef,
+          readyGen: readyGeneration,
           projectPath: "appifact",
-          filePath: value2,
+          filePath: previewFile,
           enabled: true,
-          onWritten: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            value147.current?.(
-              artboardComponentName(input2),
-              options,
+          onWritten: (file?: Dynamic, contents?: Dynamic): Dynamic =>
+            noteOwnWriteRef.current?.(
+              artboardComponentName(file),
+              contents,
             ),
         });
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value10?.(value2, value148.hasProps);
-      }, [value2, value148.hasProps, value10]);
-      let value149: Dynamic = (0,
+        onTweaksRow?.(previewFile, tweakProperties.hasProps);
+      }, [previewFile, tweakProperties.hasProps, onTweaksRow]);
+      let saveTweakDefaults: Dynamic = (0,
       reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-        await value148.saveAsDefaults();
+        await tweakProperties.saveAsDefaults();
         try {
-          await value133.current?.(value2);
+          await syncBeforeCompileRef.current?.(previewFile);
         } catch {}
-      }, [value2, value148.saveAsDefaults]);
+      }, [previewFile, tweakProperties.saveAsDefaults]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value11?.(value2, value137 && value148.dirty ? value149 : null);
+        onTweaksDirty?.(previewFile, canEditPreview && tweakProperties.dirty ? saveTweakDefaults : null);
       }, [
-        value2,
-        value137,
-        value148.dirty,
-        value148.values,
-        value149,
-        value11,
+        previewFile,
+        canEditPreview,
+        tweakProperties.dirty,
+        tweakProperties.values,
+        saveTweakDefaults,
+        onTweaksDirty,
       ]);
       (0, reactCanvasShape.useEffect)(
-        (): Dynamic => (): Dynamic => value11?.(value2, null),
-        [value2, value11],
+        (): Dynamic => (): Dynamic => onTweaksDirty?.(previewFile, null),
+        [previewFile, onTweaksDirty],
       );
-      let value150: Dynamic = (0, reactCanvasShape.useRef)(value59);
-      value150.current = value59;
+      let textEditStateCallbackRef: Dynamic = (0, reactCanvasShape.useRef)(onTextEditState);
+      textEditStateCallbackRef.current = onTextEditState;
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value23 || value150.current?.(value2, null);
-      }, [value23, value2]);
+        panelMounted || textEditStateCallbackRef.current?.(previewFile, null);
+      }, [panelMounted, previewFile]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value150.current?.(value2, null);
-      }, [value93, value2]);
+        textEditStateCallbackRef.current?.(previewFile, null);
+      }, [displayedGeneration, previewFile]);
       npm_useEventListener_bc(
         "message",
         (dataset?: Dynamic): Dynamic => {
-          let data: Dynamic = dataset.data;
-          if (data?.__om_hello === 1) {
-            let value286: Dynamic = value84.current?.contentWindow;
+          let message: Dynamic = dataset.data;
+          if (message?.__om_hello === 1) {
+            let previewWindow: Dynamic = iframeRef.current?.contentWindow;
             if (
-              value286 != null &&
-              dataset.source === value286 &&
+              previewWindow != null &&
+              dataset.source === previewWindow &&
               dataset.origin === currentHttpOrigin()
             ) {
-              let value287: Dynamic = dataset.ports[0];
-              value287 != null && value85.helloReceived(value287);
+              let helloPort: Dynamic = dataset.ports[0];
+              helloPort != null && previewGenerationGate.helloReceived(helloPort);
             }
             return;
           }
-          if (data?.__om_nav_away === 1) {
+          if (message?.__om_nav_away === 1) {
             if (dataset.origin !== currentHttpOrigin()) return;
-            let mountedGeneration: Dynamic = value85.mountedGeneration,
-              helloPort: Dynamic = value85.helloPort;
+            let mountedGeneration: Dynamic = previewGenerationGate.mountedGeneration,
+              helloPort: Dynamic = previewGenerationGate.helloPort;
             if (helloPort == null) return;
-            let value286: Dynamic =
+            let probeAttempts: Dynamic =
               performance.now() - lastDesignEditAt <
               designEditQuietPeriodMs
                 ? navigationProbeAttemptsAfterEdit
                 : navigationProbeAttempts;
             probePreviewRuntime(helloPort, {
-              attempts: value286,
-            }).then((input2?: Dynamic): Dynamic => {
-              mountedGeneration <= value123.current ||
-                (value85.verdict(mountedGeneration, input2),
-                value85.blocked != null &&
-                  !value142() &&
-                  (value96(value85.blocked),
+              attempts: probeAttempts,
+            }).then((probeVerdict?: Dynamic): Dynamic => {
+              mountedGeneration <= retiredGenerationRef.current ||
+                (previewGenerationGate.verdict(mountedGeneration, probeVerdict),
+                previewGenerationGate.blocked != null &&
+                  !isPreviewRetired() &&
+                  (setPreviewLoadError(previewGenerationGate.blocked),
                   unblockDesignFramesReady()));
             });
             return;
@@ -830,381 +830,381 @@ export function installCanvasArtboardFrame(): () => void {
       npm_useEventListener_bc(
         "message",
         (dataset?: Dynamic): Dynamic => {
-          if (!isPreviewMessage(dataset, value84.current)) return;
-          let data: Dynamic = dataset.data;
-          if (data != null && typeof data == "object" && "__om_link" in data) {
-            openPreviewExternalLink(data.__om_link);
+          if (!isPreviewMessage(dataset, iframeRef.current)) return;
+          let message: Dynamic = dataset.data;
+          if (message != null && typeof message == "object" && "__om_link" in message) {
+            openPreviewExternalLink(message.__om_link);
             return;
           }
           if (
-            data != null &&
-            typeof data == "object" &&
-            "__dc_boot_failed" in data
+            message != null &&
+            typeof message == "object" &&
+            "__dc_boot_failed" in message
           ) {
             if (
-              value90.current === value113.current ||
-              (value110.current?.boot != null &&
-                value89.current !== value113.current) ||
-              (data.e === TheArtboardRuntimeDidNotLoadMessage &&
+              pendingGenerationRef.current === displayedGenerationRef.current ||
+              (previewDocumentRef.current?.boot != null &&
+                lastRenderedGenerationRef.current !== displayedGenerationRef.current) ||
+              (message.e === TheArtboardRuntimeDidNotLoadMessage &&
                 dataset.source !== null &&
-                value119.current === dataset.source)
+                probeRetryWindowRef.current === dataset.source)
             )
               return;
             if (
-              data.e === TheArtboardRuntimeDidNotLoadMessage &&
-              value118.current < 2
+              message.e === TheArtboardRuntimeDidNotLoadMessage &&
+              probeRetryCountRef.current < 2
             ) {
-              value118.current++;
-              value119.current = dataset.source;
-              markRuntimeUrlBlocked(data.u);
+              probeRetryCountRef.current++;
+              probeRetryWindowRef.current = dataset.source;
+              markRuntimeUrlBlocked(message.u);
               console.warn(
                 "[design] artboard " +
-                  value2 +
+                  previewFile +
                   " could not load its runtime by URL; rebuilding without that URL",
               );
-              value140();
+              rebuildPreview();
               return;
             }
             console.warn(
               "[design] artboard " +
-                value2 +
+                previewFile +
                 " did not boot: " +
-                String(data.e).slice(0, 200),
+                String(message.e).slice(0, 200),
             );
-            value98(uiMessage("canvas.artboardFrame.itsContentDidnTLoad"));
+            setPreviewBlockedReason(uiMessage("canvas.artboardFrame.itsContentDidnTLoad"));
             unblockDesignFramesReady();
             return;
           }
           if (
-            data != null &&
-            typeof data == "object" &&
-            DcAddressRefusedValue in data
+            message != null &&
+            typeof message == "object" &&
+            DcAddressRefusedValue in message
           ) {
-            let u: Dynamic = data.u,
-              current: Dynamic = value110.current;
-            if (current?.projectRoot !== undefined) {
-              if (value122.current === current.srcdoc) return;
-              let value296: Dynamic = lookupPublishedUrl(
-                  current.projectRoot,
+            let u: Dynamic = message.u,
+              activePreview: Dynamic = previewDocumentRef.current;
+            if (activePreview?.projectRoot !== undefined) {
+              if (rewrittenSrcdocRef.current === activePreview.srcdoc) return;
+              let publishedUrl: Dynamic = lookupPublishedUrl(
+                  activePreview.projectRoot,
                   u,
                 ),
-                value297: Dynamic = invalidatePublishedRoot(
-                  current.projectRoot,
+                publishedRootInvalidation: Dynamic = invalidatePublishedRoot(
+                  activePreview.projectRoot,
                   u,
                 );
-              if (value297 === undefined || value296 === undefined) return;
-              value122.current = current.srcdoc;
+              if (publishedRootInvalidation === undefined || publishedUrl === undefined) return;
+              rewrittenSrcdocRef.current = activePreview.srcdoc;
               notifyUndoGesture("board-address", {
-                file: value2,
+                file: previewFile,
                 how: "built again after a failed load",
-                get why() { return (uiMessage("canvas.artboardFrame.aPublishedFileDidNot")) + (value296); },
+                get why() { return (uiMessage("canvas.artboardFrame.aPublishedFileDidNot")) + (publishedUrl); },
               });
-              value297 === "first" &&
+              publishedRootInvalidation === "first" &&
                 console.warn(
                   "[design] Could not load " +
-                    value296 +
+                    publishedUrl +
                     (getCurrentPublishedProjectRoot() === undefined
                       ? " from where this canvas is published. Artboards are drawn from the editor's own copy of the files instead."
                       : " from an older saved version. The artboard is drawn again from the version this page shows now.") +
                     " Your files are not changed.",
                 );
-              value140();
+              rebuildPreview();
               return;
             }
-            let value295: Dynamic = invalidateDesignSystemUrl(
-              value121.current,
+            let invalidation: Dynamic = invalidateDesignSystemUrl(
+              compilationAddressesRef.current,
               u,
             );
-            value295 === "first" &&
+            invalidation === "first" &&
               console.warn(
                 "[design] a design system file did not load from " +
                   String(u) +
                   ". Artboards that use that design system are shown from the page's own copy; fonts its stylesheets name by relative path will not load until the page is reloaded or shows another version.",
               );
-            value295 !== undefined && value140();
+            invalidation !== undefined && rebuildPreview();
             return;
           }
-          if (data?.type === "__dc_render_errors") {
-            let value295: Dynamic = normalizeArtboardErrorMessages(
-              data.errors,
+          if (message?.type === "__dc_render_errors") {
+            let normalizedErrors: Dynamic = normalizeArtboardErrorMessages(
+              message.errors,
             );
-            value100(
-              (input2?: Dynamic): Dynamic =>
-                reuseEqualStringArray(input2, value295),
+            setArtboardErrors(
+              (previousErrors?: Dynamic): Dynamic =>
+                reuseEqualStringArray(previousErrors, normalizedErrors),
             );
             return;
           }
-          if (data?.__dcEditorEvt?.type === "__dc_preview_drop_notice") {
-            if (!value137) return;
-            value27(value2, data.__dcEditorEvt.video === true);
+          if (message?.__dcEditorEvt?.type === "__dc_preview_drop_notice") {
+            if (!canEditPreview) return;
+            onPreviewDropNotice(previewFile, message.__dcEditorEvt.video === true);
             return;
           }
-          if (data?.__dcEditorEvt?.type === "previewClick") {
-            if (value23 || !value22) return;
-            let __dcEditorEvt: Dynamic = data.__dcEditorEvt;
-            value22(
-              value2,
+          if (message?.__dcEditorEvt?.type === "previewClick") {
+            if (panelMounted || !onPreviewClick) return;
+            let __dcEditorEvt: Dynamic = message.__dcEditorEvt;
+            onPreviewClick(
+              previewFile,
               __dcEditorEvt.shift === true || __dcEditorEvt.meta === true,
             );
             return;
           }
           if (
-            data?.type === "__dc_booted" &&
-            typeof data.rootName == "string"
+            message?.type === "__dc_booted" &&
+            typeof message.rootName == "string"
           ) {
-            artboardBootScheduler.done(value2);
-            value101.current = value113.current;
-            data.tellsErrors !== true && value100(emptyArtboardErrors);
-            data.mounted === true &&
-              data.rootName !== artboardComponentName(value2) &&
-              value112.current !== value113.current &&
-              ((value112.current = value113.current),
+            artboardBootScheduler.done(previewFile);
+            loadedGenerationRef.current = displayedGenerationRef.current;
+            message.tellsErrors !== true && setArtboardErrors(emptyArtboardErrors);
+            message.mounted === true &&
+              message.rootName !== artboardComponentName(previewFile) &&
+              displayGenerationRef.current !== displayedGenerationRef.current &&
+              ((displayGenerationRef.current = displayedGenerationRef.current),
               console.error(
                 "[design] artboard " +
-                  value2 +
+                  previewFile +
                   ' booted as "' +
-                  data.rootName.slice(0, 80) +
+                  message.rootName.slice(0, 80) +
                   '", host pushes to "' +
-                  artboardComponentName(value2) +
+                  artboardComponentName(previewFile) +
                   '" \u2014 live edits will not render',
               ));
-            value148.lifecycleCallbacks.onDcBooted({
-              rootName: data.rootName,
-              propsMeta: data.propsMeta ?? null,
+            tweakProperties.lifecycleCallbacks.onDcBooted({
+              rootName: message.rootName,
+              propsMeta: message.propsMeta ?? null,
             });
-            value111.current !== value113.current &&
-              ((value111.current = value113.current),
-              value170(value169)?.dirty && value159.current.pushLive(value169));
+            bootGenerationRef.current !== displayedGenerationRef.current &&
+              ((bootGenerationRef.current = displayedGenerationRef.current),
+              resolveComponentState(artboardComponentId)?.dirty && componentSessionRef.current.pushLive(artboardComponentId));
             return;
           }
-          let value286: Dynamic = data?.__dcEditorEvt;
-          if (value286?.type === "modifierKey") {
+          let modifierEvent: Dynamic = message?.__dcEditorEvt;
+          if (modifierEvent?.type === "modifierKey") {
             if (
-              !value23 ||
-              value83 ||
-              !value18 ||
-              value286.key !== "deep" ||
-              typeof value286.on != "boolean"
+              !panelMounted ||
+              readOnly ||
+              !onModifierKey ||
+              modifierEvent.key !== "deep" ||
+              typeof modifierEvent.on != "boolean"
             )
               return;
-            value18(value2, "deep", value286.on, value286.blur === true);
+            onModifierKey(previewFile, "deep", modifierEvent.on, modifierEvent.blur === true);
             return;
           }
-          let value287: Dynamic = data?.__dcEditorEvt;
+          let boxEvent: Dynamic = message?.__dcEditorEvt;
           if (
-            value287 &&
-            (value287.type === "boxLive" ||
-              value287.type === "boxEnd" ||
-              value287.type === "boxCancel" ||
-              value287.type === "canvasPointerDown")
+            boxEvent &&
+            (boxEvent.type === "boxLive" ||
+              boxEvent.type === "boxEnd" ||
+              boxEvent.type === "boxCancel" ||
+              boxEvent.type === "canvasPointerDown")
           ) {
             if (
-              value23 &&
-              !value83 &&
-              value19 &&
-              typeof value287.gestureKey == "string" &&
-              /^[0-9a-f]{16}$/.test(value287.gestureKey)
+              panelMounted &&
+              !readOnly &&
+              onBoxEvent &&
+              typeof boxEvent.gestureKey == "string" &&
+              /^[0-9a-f]{16}$/.test(boxEvent.gestureKey)
             ) {
-              let value295: Dynamic =
-                value287.type === "canvasPointerDown"
+              let boxEventType: Dynamic =
+                boxEvent.type === "canvasPointerDown"
                   ? "press"
-                  : value287.type === "boxLive"
+                  : boxEvent.type === "boxLive"
                     ? "live"
-                    : value287.type === "boxEnd"
+                    : boxEvent.type === "boxEnd"
                       ? "end"
                       : "cancel";
-              value19(value2, {
-                type: value295,
-                key: value287.gestureKey,
+              onBoxEvent(previewFile, {
+                type: boxEventType,
+                key: boxEvent.gestureKey,
               });
             }
-            if (value287.type !== "canvasPointerDown") return;
+            if (boxEvent.type !== "canvasPointerDown") return;
           }
-          let value288: Dynamic = data?.__dcEditorEvt;
+          let dragEvent: Dynamic = message?.__dcEditorEvt;
           if (
-            value288 &&
-            typeof value288.type == "string" &&
-            value288.type.startsWith("drag") &&
-            value17
+            dragEvent &&
+            typeof dragEvent.type == "string" &&
+            dragEvent.type.startsWith("drag") &&
+            onDragEvent
           ) {
-            if (!value23 || value83) return;
-            let value295: Dynamic = value288,
-              value296: Dynamic =
-                typeof value295.gestureKey == "string" &&
-                /^[0-9a-f]{16}$/.test(value295.gestureKey)
-                  ? value295.gestureKey
+            if (!panelMounted || readOnly) return;
+            let dragPayload: Dynamic = dragEvent,
+              gestureKey: Dynamic =
+                typeof dragPayload.gestureKey == "string" &&
+                /^[0-9a-f]{16}$/.test(dragPayload.gestureKey)
+                  ? dragPayload.gestureKey
                   : null;
-            if (!value296) return;
-            let callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-                typeof input2 == "number" &&
-                Number.isFinite(input2) &&
-                Math.abs(input2) < 1e6
-                  ? input2
+            if (!gestureKey) return;
+            let finiteNumber: Dynamic = (candidateNumber?: Dynamic): Dynamic =>
+                typeof candidateNumber == "number" &&
+                Number.isFinite(candidateNumber) &&
+                Math.abs(candidateNumber) < 1e6
+                  ? candidateNumber
                   : null,
-              callback6: Dynamic = (): Dynamic =>
-                Array.isArray(value295.tids)
-                  ? value295.tids
+              readSelectedIds: Dynamic = (): Dynamic =>
+                Array.isArray(dragPayload.tids)
+                  ? dragPayload.tids
                       .filter(
-                        (input2?: Dynamic): Dynamic =>
-                          typeof input2 == "number" &&
-                          Number.isInteger(input2) &&
-                          input2 >= 0 &&
-                          input2 < 1e6,
+                        (candidateIndex?: Dynamic): Dynamic =>
+                          typeof candidateIndex == "number" &&
+                          Number.isInteger(candidateIndex) &&
+                          candidateIndex >= 0 &&
+                          candidateIndex < 1e6,
                       )
                       .slice(0, 16)
                   : [],
-              callback7: Dynamic = (): Dynamic => {
-                let value297: Dynamic = callback5(value295.w),
-                  value298: Dynamic = callback5(value295.h);
+              boxSize: Dynamic = (): Dynamic => {
+                let width: Dynamic = finiteNumber(dragPayload.w),
+                  height: Dynamic = finiteNumber(dragPayload.h);
                 if (
-                  value297 == null ||
-                  value298 == null ||
-                  value297 < 1 ||
-                  value298 < 1
+                  width == null ||
+                  height == null ||
+                  width < 1 ||
+                  height < 1
                 )
                   return null;
-                let callback8: Dynamic = (input2?: Dynamic): Dynamic =>
-                    Math.round(Math.min(input2, 8e3)),
-                  value299: Dynamic = callback5(value295.ew),
-                  value300: Dynamic = callback5(value295.eh),
-                  callback9: Dynamic = (input2?: Dynamic): Dynamic =>
+                let clampDimension: Dynamic = (dimension?: Dynamic): Dynamic =>
+                    Math.round(Math.min(dimension, 8e3)),
+                  exportWidth: Dynamic = finiteNumber(dragPayload.ew),
+                  exportHeight: Dynamic = finiteNumber(dragPayload.eh),
+                  clampOffset: Dynamic = (offset?: Dynamic): Dynamic =>
                     Math.round(
-                      Math.max(-8e3, Math.min(8e3, callback5(input2) ?? 0)),
+                      Math.max(-8e3, Math.min(8e3, finiteNumber(offset) ?? 0)),
                     );
                 return {
-                  w: callback8(value297),
-                  h: callback8(value298),
+                  w: clampDimension(width),
+                  h: clampDimension(height),
                   ew:
-                    value299 != null && value299 >= 1
-                      ? callback8(value299)
-                      : callback8(value297),
+                    exportWidth != null && exportWidth >= 1
+                      ? clampDimension(exportWidth)
+                      : clampDimension(width),
                   eh:
-                    value300 != null && value300 >= 1
-                      ? callback8(value300)
-                      : callback8(value298),
-                  ox: callback9(value295.ox),
-                  oy: callback9(value295.oy),
+                    exportHeight != null && exportHeight >= 1
+                      ? clampDimension(exportHeight)
+                      : clampDimension(height),
+                  ox: clampOffset(dragPayload.ox),
+                  oy: clampOffset(dragPayload.oy),
                   gx: Math.round(
                     Math.min(
-                      value297,
+                      width,
                       8e3,
-                      Math.max(0, callback5(value295.gx) ?? value297 / 2),
+                      Math.max(0, finiteNumber(dragPayload.gx) ?? width / 2),
                     ),
                   ),
                   gy: Math.round(
                     Math.min(
-                      value298,
+                      height,
                       8e3,
-                      Math.max(0, callback5(value295.gy) ?? value298 / 2),
+                      Math.max(0, finiteNumber(dragPayload.gy) ?? height / 2),
                     ),
                   ),
                 };
               };
-            if (value295.type === "dragExit") {
-              let value297: Dynamic = callback6();
-              if (value297.length === 0) return;
-              value17(value2, {
+            if (dragPayload.type === "dragExit") {
+              let selectedIds: Dynamic = readSelectedIds();
+              if (selectedIds.length === 0) return;
+              onDragEvent(previewFile, {
                 type: "exit",
-                key: value296,
-                tids: value297,
-                alt: value295.alt === true,
-                box: callback7(),
+                key: gestureKey,
+                tids: selectedIds,
+                alt: dragPayload.alt === true,
+                box: boxSize(),
               });
-            } else if (value295.type === "dragState") {
-              if (value295.live === true) {
-                let value297: Dynamic = callback6();
-                value17(value2, {
+            } else if (dragPayload.type === "dragState") {
+              if (dragPayload.live === true) {
+                let selectedIds: Dynamic = readSelectedIds();
+                onDragEvent(previewFile, {
                   type: "arm",
-                  key: value296,
-                  tids: value297.length > 0 ? value297 : null,
-                  alt: value295.alt === true,
-                  box: callback7(),
+                  key: gestureKey,
+                  tids: selectedIds.length > 0 ? selectedIds : null,
+                  alt: dragPayload.alt === true,
+                  box: boxSize(),
                 });
               } else
-                value17(value2, {
+                onDragEvent(previewFile, {
                   type: "disarm",
-                  key: value296,
+                  key: gestureKey,
                 });
-            } else if (value295.type === "dragMove") {
-              let value297: Dynamic = callback5(value295.x),
-                value298: Dynamic = callback5(value295.y);
-              if (value297 == null || value298 == null) return;
-              value17(value2, {
+            } else if (dragPayload.type === "dragMove") {
+              let x: Dynamic = finiteNumber(dragPayload.x),
+                y: Dynamic = finiteNumber(dragPayload.y);
+              if (x == null || y == null) return;
+              onDragEvent(previewFile, {
                 type: "move",
-                key: value296,
-                x: value297,
-                y: value298,
-                alt: value295.alt === true,
-                ctrl: value295.ctrl === true,
+                key: gestureKey,
+                x: x,
+                y: y,
+                alt: dragPayload.alt === true,
+                ctrl: dragPayload.ctrl === true,
               });
-            } else if (value295.type === "dragDrop") {
-              let value297: Dynamic = callback5(value295.x),
-                value298: Dynamic = callback5(value295.y);
-              if (value297 == null || value298 == null) return;
-              value17(value2, {
+            } else if (dragPayload.type === "dragDrop") {
+              let x: Dynamic = finiteNumber(dragPayload.x),
+                y: Dynamic = finiteNumber(dragPayload.y);
+              if (x == null || y == null) return;
+              onDragEvent(previewFile, {
                 type: "drop",
-                key: value296,
-                x: value297,
-                y: value298,
-                alt: value295.alt === true,
-                ctrl: value295.ctrl === true,
+                key: gestureKey,
+                x: x,
+                y: y,
+                alt: dragPayload.alt === true,
+                ctrl: dragPayload.ctrl === true,
               });
             } else
-              (value295.type === "dragCancel" ||
-                value295.type === "dragReturn") &&
-                value17(value2, {
+              (dragPayload.type === "dragCancel" ||
+                dragPayload.type === "dragReturn") &&
+                onDragEvent(previewFile, {
                   type: "cancel",
-                  key: value296,
+                  key: gestureKey,
                 });
             return;
           }
-          let value289: Dynamic = data?.__dcEditorEvt;
-          if (value289 && value289.type === "panZoom") {
-            if (!value20) return;
-            let value295: Dynamic = value289,
-              callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-                typeof input2 == "number" && Number.isFinite(input2)
-                  ? input2
+          let panEvent: Dynamic = message?.__dcEditorEvt;
+          if (panEvent && panEvent.type === "panZoom") {
+            if (!onPanZoom) return;
+            let panPayload: Dynamic = panEvent,
+              finiteCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
+                typeof coordinate == "number" && Number.isFinite(coordinate)
+                  ? coordinate
                   : null,
-              value296: Dynamic = callback5(value295.dx),
-              value297: Dynamic = callback5(value295.dy),
-              value298: Dynamic = callback5(value295.x),
-              value299: Dynamic = callback5(value295.y),
-              value300: Dynamic = callback5(value295.dz) ?? 0;
+              deltaX: Dynamic = finiteCoordinate(panPayload.dx),
+              deltaY: Dynamic = finiteCoordinate(panPayload.dy),
+              panX: Dynamic = finiteCoordinate(panPayload.x),
+              panY: Dynamic = finiteCoordinate(panPayload.y),
+              deltaZoom: Dynamic = finiteCoordinate(panPayload.dz) ?? 0;
             if (
-              value296 == null ||
-              value297 == null ||
-              value298 == null ||
-              value299 == null
+              deltaX == null ||
+              deltaY == null ||
+              panX == null ||
+              panY == null
             )
               return;
-            let callback6: Dynamic = (
-              input2?: Dynamic,
-              options?: Dynamic,
-              context?: Dynamic,
-            ): Dynamic => Math.max(options, Math.min(context, input2));
-            value20(value2, {
-              pinch: value295.pinch === true,
-              touch: value295.touch === true,
-              dx: callback6(value296, -1e3, 1e3),
-              dy: callback6(value297, -1e3, 1e3),
-              dz: callback6(value300, -0.25, 0.25),
-              x: callback6(value298, 0, 1e5),
-              y: callback6(value299, 0, 1e5),
+            let clampRange: Dynamic = (
+              candidate?: Dynamic,
+              minimum?: Dynamic,
+              maximum?: Dynamic,
+            ): Dynamic => Math.max(minimum, Math.min(maximum, candidate));
+            onPanZoom(previewFile, {
+              pinch: panPayload.pinch === true,
+              touch: panPayload.touch === true,
+              dx: clampRange(deltaX, -1e3, 1e3),
+              dy: clampRange(deltaY, -1e3, 1e3),
+              dz: clampRange(deltaZoom, -0.25, 0.25),
+              x: clampRange(panX, 0, 1e5),
+              y: clampRange(panY, 0, 1e5),
             });
             return;
           }
-          if (value289 && value289.type === "panHold") {
-            let value295: Dynamic = value289.on === true;
-            (!value295 || value23) &&
-              suppressNativeContextMenu(value295);
+          if (panEvent && panEvent.type === "panHold") {
+            let nativeMenuOpen: Dynamic = panEvent.on === true;
+            (!nativeMenuOpen || panelMounted) &&
+              suppressNativeContextMenu(nativeMenuOpen);
             return;
           }
-          let value290: Dynamic = data?.__dcEditorEvt;
-          if (value290 && value290.type === "repeatRefused") {
-            if (!value21 || !value23 || value83) return;
-            let count: Dynamic = value290.count,
-              reason: Dynamic = value290.reason;
+          let repeatEvent: Dynamic = message?.__dcEditorEvt;
+          if (repeatEvent && repeatEvent.type === "repeatRefused") {
+            if (!onRepeatRefused || !panelMounted || readOnly) return;
+            let count: Dynamic = repeatEvent.count,
+              reason: Dynamic = repeatEvent.reason;
             if (
               typeof count != "number" ||
               !Number.isFinite(count) ||
@@ -1213,948 +1213,948 @@ export function installCanvasArtboardFrame(): () => void {
               (reason !== "self" && reason !== "siblings")
             )
               return;
-            value21(value2, Math.floor(count), reason);
+            onRepeatRefused(previewFile, Math.floor(count), reason);
             return;
           }
-          let value291: Dynamic = data?.__dcEditorEvt;
-          if (value291 && value291.type === "textEditState" && value59) {
-            if (!value23 || value83) return;
-            let value295: Dynamic = value291;
-            if (value295.active !== true) {
-              value59(value2, null);
+          let textEditEvent: Dynamic = message?.__dcEditorEvt;
+          if (textEditEvent && textEditEvent.type === "textEditState" && onTextEditState) {
+            if (!panelMounted || readOnly) return;
+            let textEditState: Dynamic = textEditEvent;
+            if (textEditState.active !== true) {
+              onTextEditState(previewFile, null);
               return;
             }
-            value39?.(value2);
-            if (value295.plain === true)
-              value59(value2, {
+            onLocalEdit?.(previewFile);
+            if (textEditState.plain === true)
+              onTextEditState(previewFile, {
                 formats: null,
               });
             else {
-              let formats: Dynamic = value295.formats,
-                callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-                  input2 === true;
-              value59(value2, {
+              let formats: Dynamic = textEditState.formats,
+                toBoolean: Dynamic = (booleanValue?: Dynamic): Dynamic =>
+                  booleanValue === true;
+              onTextEditState(previewFile, {
                 formats: {
-                  bold: callback5(formats?.bold),
-                  italic: callback5(formats?.italic),
-                  underline: callback5(formats?.underline),
-                  ul: callback5(formats?.ul),
-                  ol: callback5(formats?.ol),
-                  link: callback5(formats?.link),
+                  bold: toBoolean(formats?.bold),
+                  italic: toBoolean(formats?.italic),
+                  underline: toBoolean(formats?.underline),
+                  ul: toBoolean(formats?.ul),
+                  ol: toBoolean(formats?.ol),
+                  link: toBoolean(formats?.link),
                 },
               });
             }
             return;
           }
-          let value292: Dynamic = data?.__dcEditorEvt;
-          value292 &&
-            value292.type === "chrome" &&
-            value8 &&
-            (value23 || (value137 && value78)) &&
+          let chromeEvent: Dynamic = message?.__dcEditorEvt;
+          chromeEvent &&
+            chromeEvent.type === "chrome" &&
+            box &&
+            (panelMounted || (canEditPreview && editing)) &&
             updateDropGhostDemand(
-              value2,
+              previewFile,
               parseSelectionChromePayload(
-                value292,
-                value8,
+                chromeEvent,
+                box,
               ).rings.reduce(
-                (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                  input2 + +(options.k === "busy"),
+                (count?: Dynamic, eventContext?: Dynamic): Dynamic =>
+                  count + +(eventContext.k === "busy"),
                 0,
               ),
             );
-          if (value292 && value292.type === "chrome") {
-            if (!value8 || !(value23 || (value137 && value78))) return;
-            let value295: Dynamic = parseSelectionChromePayload(
-                value292,
-                value8,
+          if (chromeEvent && chromeEvent.type === "chrome") {
+            if (!box || !(panelMounted || (canEditPreview && editing))) return;
+            let selectionPayload: Dynamic = parseSelectionChromePayload(
+                chromeEvent,
+                box,
                 {
-                  gripless: value168.current,
-                  cropTid: value198.current?.tid,
+                  gripless: griplessRef.current,
+                  cropTid: selectedMediaRef.current?.tid,
                 },
               ),
-              value296: Dynamic = value295.rings.find(
-                (input2?: Dynamic): Dynamic =>
-                  input2.media !== undefined || input2.cropOff !== undefined,
+              selectedMedia: Dynamic = selectionPayload.rings.find(
+                (ring?: Dynamic): Dynamic =>
+                  ring.media !== undefined || ring.cropOff !== undefined,
               );
-            value103.current = value296?.media ? value296 : null;
-            let value297: Dynamic =
-              value296?.media !== undefined &&
+            activeMediaRef.current = selectedMedia?.media ? selectedMedia : null;
+            let selectionPoint: Dynamic =
+              selectedMedia?.media !== undefined &&
               !MediaObjectCropSupports() &&
-              !!value159.current
-                .state(value169)
-                ?.model.inlineStyleValue(value296.media.tid, "object-view-box");
-            updateElementSessionState(value2, {
-              target: value296?.media
-                ? value297
+              !!componentSessionRef.current
+                .state(artboardComponentId)
+                ?.model.inlineStyleValue(selectedMedia.media.tid, "object-view-box");
+            updateElementSessionState(previewFile, {
+              target: selectedMedia?.media
+                ? selectionPoint
                   ? {
                       off: "foreign-zoom",
                     }
                   : {
-                      tid: value296.media.tid,
+                      tid: selectedMedia.media.tid,
                     }
-                : value296?.cropOff
+                : selectedMedia?.cropOff
                   ? {
-                      off: value296.cropOff,
+                      off: selectedMedia.cropOff,
                     }
                   : null,
             });
-            value198.current &&
-              (!value211.current() ||
-                value296?.media?.tid !== value198.current.tid) &&
-              value212.current(true);
-            value102.current?.(value295);
+            selectedMediaRef.current &&
+              (!readCropEnabledRef.current() ||
+                selectedMedia?.media?.tid !== selectedMediaRef.current.tid) &&
+              finishCropRef.current(true);
+            mediaSinkRef.current?.(selectionPayload);
             return;
           }
-          if (value292 && value292.type === "cropRequest") {
-            let tid: Dynamic = value292.tid,
-              value295: Dynamic =
+          if (chromeEvent && chromeEvent.type === "cropRequest") {
+            let tid: Dynamic = chromeEvent.tid,
+              isNativeMenuOpen: Dynamic =
                 navigator.userActivation === undefined ||
                 navigator.userActivation.isActive;
             if (
-              !value23 ||
-              value198.current ||
-              !value295 ||
+              !panelMounted ||
+              selectedMediaRef.current ||
+              !isNativeMenuOpen ||
               !Number.isSafeInteger(tid) ||
-              SessionElementStateGet(value2).selected !== tid ||
-              Date.now() - value104.current < 500
+              SessionElementStateGet(previewFile).selected !== tid ||
+              Date.now() - lastFocusAtRef.current < 500
             )
               return;
-            value104.current = Date.now();
+            lastFocusAtRef.current = Date.now();
             let target: Dynamic = SessionElementStateGet(
-              value2,
+              previewFile,
             ).target;
             if (target !== null && "tid" in target && target.tid === tid)
-              value213.current(tid, true);
-            else if (value208.current) {
-              let value296: Dynamic =
+              toggleCropRef.current(tid, true);
+            else if (canEditRef.current) {
+              let failureReason: Dynamic =
                 target !== null && "off" in target
                   ? SessionElementStateUnloadedTurnedAutoConfig[
                       target.off
                     ]
                   : CropIsNotAvailableHereForMessage;
-              (value105.current.why !== value296 ||
-                Date.now() - value105.current.at > 5e3) &&
-                value(value296);
-              value105.current = {
-                why: value296,
+              (lastFailureRef.current.why !== failureReason ||
+                Date.now() - lastFailureRef.current.at > 5e3) &&
+                showToast(failureReason);
+              lastFailureRef.current = {
+                why: failureReason,
                 at: Date.now(),
               };
             }
             return;
           }
-          if (value292 && value292.type === "contentHull") {
-            if (!value74) return;
-            if (value292.empty === true) value7?.(value2, null);
+          if (chromeEvent && chromeEvent.type === "contentHull") {
+            if (!frameless) return;
+            if (chromeEvent.empty === true) onContentHull?.(previewFile, null);
             else {
-              let value295: Dynamic = normalizeArtboardMeasuredSize(value292);
-              value295 && value7?.(value2, value295);
+              let measuredSize: Dynamic = normalizeArtboardMeasuredSize(chromeEvent);
+              measuredSize && onContentHull?.(previewFile, measuredSize);
             }
             return;
           }
-          let value293: Dynamic = data?.__dcEditorEvt;
-          value293 &&
-            value58 &&
-            value23 &&
-            !value83 &&
-            (value293.type === "stylePreview" || value293.type === "movePreview"
-              ? value58(value2, true)
-              : (value293.type === "move" ||
-                  value293.type === "resize" ||
-                  value293.type === "rotate" ||
-                  value293.type === "groupTransform" ||
-                  value293.type === "styleRevert" ||
-                  value293.type === "movePreviewCancel") &&
-                value58(value2, false));
-          let value294: Dynamic = data?.__dcEditorEvt;
-          if (value294?.type === "select" && value56) {
-            typeof value294.s == "number" &&
-              Number.isSafeInteger(value294.s) &&
-              value294.s >= 0 &&
-              value57?.(value2, value294.s);
-            let callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-                typeof input2 == "number" &&
-                Number.isFinite(input2) &&
-                Math.abs(input2) < 1e6
-                  ? input2
+          let previewEvent: Dynamic = message?.__dcEditorEvt;
+          previewEvent &&
+            onGestureStream &&
+            panelMounted &&
+            !readOnly &&
+            (previewEvent.type === "stylePreview" || previewEvent.type === "movePreview"
+              ? onGestureStream(previewFile, true)
+              : (previewEvent.type === "move" ||
+                  previewEvent.type === "resize" ||
+                  previewEvent.type === "rotate" ||
+                  previewEvent.type === "groupTransform" ||
+                  previewEvent.type === "styleRevert" ||
+                  previewEvent.type === "movePreviewCancel") &&
+                onGestureStream(previewFile, false));
+          let selectionEvent: Dynamic = message?.__dcEditorEvt;
+          if (selectionEvent?.type === "select" && onSelection) {
+            typeof selectionEvent.s == "number" &&
+              Number.isSafeInteger(selectionEvent.s) &&
+              selectionEvent.s >= 0 &&
+              onSelectionSeq?.(previewFile, selectionEvent.s);
+            let finiteValue: Dynamic = (candidate?: Dynamic): Dynamic =>
+                typeof candidate == "number" &&
+                Number.isFinite(candidate) &&
+                Math.abs(candidate) < 1e6
+                  ? candidate
                   : null,
-              rect: Dynamic = value294.rect,
-              value295: Dynamic = callback5(rect?.x),
-              value296: Dynamic = callback5(rect?.y),
-              value297: Dynamic = callback5(rect?.w),
-              value298: Dynamic = callback5(rect?.h);
-            if (!value23) return;
-            let value299: Dynamic = Array.isArray(value294.tids)
-              ? value294.tids
+              rect: Dynamic = selectionEvent.rect,
+              selectionX: Dynamic = finiteValue(rect?.x),
+              selectionY: Dynamic = finiteValue(rect?.y),
+              selectionWidth: Dynamic = finiteValue(rect?.w),
+              selectionHeight: Dynamic = finiteValue(rect?.h);
+            if (!panelMounted) return;
+            let selectedTidList: Dynamic = Array.isArray(selectionEvent.tids)
+              ? selectionEvent.tids
                   .filter(
-                    (input2?: Dynamic): Dynamic =>
-                      typeof input2 == "number" &&
-                      Number.isInteger(input2) &&
-                      input2 >= 0 &&
-                      input2 < 1e6,
+                    (candidateIndex?: Dynamic): Dynamic =>
+                      typeof candidateIndex == "number" &&
+                      Number.isInteger(candidateIndex) &&
+                      candidateIndex >= 0 &&
+                      candidateIndex < 1e6,
                   )
                   .slice(0, 512)
               : null;
             if (
-              value294.name != null &&
-              (typeof value294.name != "string" ||
-                !isEditableComponentName(value294.name) ||
-                value294.name !== artboardComponentName(value2))
+              selectionEvent.name != null &&
+              (typeof selectionEvent.name != "string" ||
+                !isEditableComponentName(selectionEvent.name) ||
+                selectionEvent.name !== artboardComponentName(previewFile))
             )
               return;
-            let value300: Dynamic =
-              typeof value294.name == "string" ? value294.name : null;
-            value56(value2, {
-              tids: value299,
-              name: value300,
-              tag: typeof value294.tag == "string" ? value294.tag : undefined,
-              part: value294.part === "text" ? "text" : undefined,
+            let selectionName: Dynamic =
+              typeof selectionEvent.name == "string" ? selectionEvent.name : null;
+            onSelection(previewFile, {
+              tids: selectedTidList,
+              name: selectionName,
+              tag: typeof selectionEvent.tag == "string" ? selectionEvent.tag : undefined,
+              part: selectionEvent.part === "text" ? "text" : undefined,
               rect:
-                value295 != null &&
-                value296 != null &&
-                value297 != null &&
-                value298 != null
+                selectionX != null &&
+                selectionY != null &&
+                selectionWidth != null &&
+                selectionHeight != null
                   ? {
-                      x: value295,
-                      y: value296,
-                      w: value297,
-                      h: value298,
+                      x: selectionX,
+                      y: selectionY,
+                      w: selectionWidth,
+                      h: selectionHeight,
                     }
                   : null,
               re:
-                typeof value294.re == "string" &&
-                /^[A-Za-z0-9:._-]{1,32}$/.test(value294.re)
-                  ? value294.re
+                typeof selectionEvent.re == "string" &&
+                /^[A-Za-z0-9:._-]{1,32}$/.test(selectionEvent.re)
+                  ? selectionEvent.re
                   : undefined,
-              additive: value294.additive === true,
+              additive: selectionEvent.additive === true,
               s:
-                typeof value294.s == "number" &&
-                Number.isSafeInteger(value294.s) &&
-                value294.s >= 0
-                  ? value294.s
+                typeof selectionEvent.s == "number" &&
+                Number.isSafeInteger(selectionEvent.s) &&
+                selectionEvent.s >= 0
+                  ? selectionEvent.s
                   : undefined,
-              artboard: value294.artboard === true && value299 == null,
+              artboard: selectionEvent.artboard === true && selectedTidList == null,
             });
           }
         },
       );
-      let [value151, value152]: Dynamic = (0,
+      let [sessionEpochState, setSessionEpoch]: Dynamic = (0,
         reactCanvasShape.useState)(0),
-        value153: Dynamic = (0, reactCanvasShape.useRef)(null);
+        reloadTimerRef: Dynamic = (0, reactCanvasShape.useRef)(null);
       (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => {
-          value153.current && clearTimeout(value153.current);
+          reloadTimerRef.current && clearTimeout(reloadTimerRef.current);
         },
         [],
       );
       npm_useEventListener_bc(
         "dc-update",
-        (input2?: Dynamic): Dynamic => {
-          let detail: Dynamic = input2.detail;
-          if (!createPreviewHandle(value84.current)) return;
-          let value286: Dynamic = mergeDesignSystemFileOverlay(
-              value15.content().files,
+        (detailEvent?: Dynamic): Dynamic => {
+          let detail: Dynamic = detailEvent.detail;
+          if (!createPreviewHandle(iframeRef.current)) return;
+          let mergedFiles: Dynamic = mergeDesignSystemFileOverlay(
+              doc.content().files,
             ),
-            value287: Dynamic = resolveComponentFile(value286, {
+            resolvedFile: Dynamic = resolveComponentFile(mergedFiles, {
               ...detail,
               kind: "html",
             });
           if (
-            value287 !== undefined &&
-            value287 !== value2 &&
-            !value115.current.has(value287) &&
-            !value117.current.has(value287)
+            resolvedFile !== undefined &&
+            resolvedFile !== previewFile &&
+            !loadedComponentIdsRef.current.has(resolvedFile) &&
+            !expandedComponentsRef.current.has(resolvedFile)
           )
             return;
-          let value288: Dynamic = value287 ?? value2,
-            value289: Dynamic = value110.current?.projectRoot,
-            flag2: Dynamic = false;
-          if (value289 !== undefined && detail.kind === "html") {
-            let value296: Dynamic = addressedArtboardFailure(
+          let activePreviewFile: Dynamic = resolvedFile ?? previewFile,
+            projectRoot: Dynamic = previewDocumentRef.current?.projectRoot,
+            hasAddressedFailure: Dynamic = false;
+          if (projectRoot !== undefined && detail.kind === "html") {
+            let artboardFailure: Dynamic = addressedArtboardFailure(
               {
-                ...value286,
-                [value288]: detail.content,
+                ...mergedFiles,
+                [activePreviewFile]: detail.content,
               },
-              value2,
-              value289,
+              previewFile,
+              projectRoot,
             );
-            flag2 = value296 === undefined;
-            value296 !== undefined &&
+            hasAddressedFailure = artboardFailure === undefined;
+            artboardFailure !== undefined &&
               notifyUndoGesture("board-address", {
-                file: value2,
+                file: previewFile,
                 how: "a push prepared by copying files in",
-                why: value296,
+                why: artboardFailure,
               });
           }
-          let value290: Dynamic = flag2
-              ? selectPageFiles(value286)
-              : value286,
-            value291: Dynamic =
-              value287 === value2 && detail.kind === "html"
+          let failureMessage: Dynamic = hasAddressedFailure
+              ? selectPageFiles(mergedFiles)
+              : mergedFiles,
+            coveredStylesheets: Dynamic =
+              resolvedFile === previewFile && detail.kind === "html"
                 ? new Set()
                 : undefined,
-            value292: Dynamic = value291
+            inlinedStylesheets: Dynamic = coveredStylesheets
               ? {
-                  inlined: value291,
+                  inlined: coveredStylesheets,
                 }
               : {
-                  covered: value120.current,
+                  covered: coveredStylesheetsRef.current,
                 },
-            value293: Dynamic =
+            normalizedBlobPaths: Dynamic =
               detail.kind === "html"
                 ? rewritePreviewAssets(
                     detail.content,
-                    value290,
-                    value288,
-                    value292,
+                    failureMessage,
+                    activePreviewFile,
+                    inlinedStylesheets,
                   )
                 : rewriteProjectAssets(
                     detail.content,
-                    value290,
-                    projectDirectoryOf(value288),
+                    failureMessage,
+                    projectDirectoryOf(activePreviewFile),
                   );
-          value291 && (value120.current = value291);
-          let current: Dynamic = value115.current,
-            value294: Dynamic = componentRuntimeDependencies(
-              value290,
-              value2,
-              current,
+          coveredStylesheets && (coveredStylesheetsRef.current = coveredStylesheets);
+          let loadedComponentIds: Dynamic = loadedComponentIdsRef.current,
+            runtimeDependencies: Dynamic = componentRuntimeDependencies(
+              failureMessage,
+              previewFile,
+              loadedComponentIds,
               detail,
-              value120.current,
+              coveredStylesheetsRef.current,
             ),
-            value295: Dynamic = Object.keys(value294);
-          ((input3?: Dynamic, options?: Dynamic): Dynamic => {
-            let value296: Dynamic = createPreviewHandle(
-              value84.current,
+            dependencyPaths: Dynamic = Object.keys(runtimeDependencies);
+          ((scriptInput?: Dynamic, scriptOptions?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            if (!value296) return;
-            let value297: Dynamic = `${value295.length > 0 ? `window.__dcFiles=Object.assign(window.__dcFiles||{},${JSON.stringify(options)});` : ""}${updateComponentRuntimeScript(value2, detail, input3)}${detail.kind === "html" ? PickerBridgeLabel : ""}`;
-            value291 &&
+            if (!previewHandle) return;
+            let runtimeScript: Dynamic = `${dependencyPaths.length > 0 ? `window.__dcFiles=Object.assign(window.__dcFiles||{},${JSON.stringify(scriptOptions)});` : ""}${updateComponentRuntimeScript(previewFile, detail, scriptInput)}${detail.kind === "html" ? PickerBridgeLabel : ""}`;
+            coveredStylesheets &&
               !detail.streaming &&
-              (value153.current && clearTimeout(value153.current),
-              (value153.current = setTimeout(
+              (reloadTimerRef.current && clearTimeout(reloadTimerRef.current),
+              (reloadTimerRef.current = setTimeout(
                 (): Dynamic =>
-                  value152((input4?: Dynamic): Dynamic => input4 + 1),
+                  setSessionEpoch((count?: Dynamic): Dynamic => count + 1),
                 400,
               )));
-            if (value295.length === 0) {
-              value296.executeJavaScriptUnchecked(value297);
+            if (dependencyPaths.length === 0) {
+              previewHandle.executeJavaScriptUnchecked(runtimeScript);
               return;
             }
-            for (let value298 of value295 as Dynamic)
-              value117.current.add(value298);
-            value296.executeJavaScript(value297 + ";void 0").then(
+            for (let componentPath of dependencyPaths as Dynamic)
+              expandedComponentsRef.current.add(componentPath);
+            previewHandle.executeJavaScript(runtimeScript + ";void 0").then(
               (): Dynamic =>
-                value295.forEach((input4?: Dynamic): Dynamic => {
-                  current.add(input4);
-                  value117.current.delete(input4);
+                dependencyPaths.forEach((componentPath?: Dynamic): Dynamic => {
+                  loadedComponentIds.add(componentPath);
+                  expandedComponentsRef.current.delete(componentPath);
                 }),
               (): Dynamic => {},
             );
           })(
-            normalizeBlobAssetPaths(value293),
-            normalizeProjectBlobPaths(value294),
+            normalizeBlobAssetPaths(normalizedBlobPaths),
+            normalizeProjectBlobPaths(runtimeDependencies),
           );
         },
       );
-      let value154: Dynamic = "loadState" in value15,
-        value155: Dynamic = (0, reactCanvasShape.useContext)(
+      let hasLoadState: Dynamic = "loadState" in doc,
+        historyKeeper: Dynamic = (0, reactCanvasShape.useContext)(
           CanvasWorkingStateContext,
         ),
-        value156: Dynamic = (0, reactCanvasShape.useRef)(
-          value155?.peekEpoch(value2),
+        sessionEpochRef: Dynamic = (0, reactCanvasShape.useRef)(
+          historyKeeper?.peekEpoch(previewFile),
         ),
-        callback: Dynamic = (
-          input2?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
+        adoptComponentModel: Dynamic = (
+          componentName?: Dynamic,
+          previousModel?: Dynamic,
+          adoptedModel?: Dynamic,
         ): Dynamic =>
           adoptModelAndRelocateSelection({
-            adopt: context,
+            adopt: adoptedModel,
             own: (): Dynamic => {
-              let value286: Dynamic = value159.current.state(input2);
-              return input2 === artboardComponentName(value2) &&
-                value286?.path === value2
-                ? value286.model
+              let componentState: Dynamic = componentSessionRef.current.state(componentName);
+              return componentName === artboardComponentName(previewFile) &&
+                componentState?.path === previewFile
+                ? componentState.model
                 : undefined;
             },
-            prev: options,
+            prev: previousModel,
             heldElsewhere: (): Dynamic => {
-              let value286: Dynamic = value131.current.heldComponent?.();
-              return value286 != null && value286 !== input2;
+              let heldComponent: Dynamic = frameHoldRef.current.heldComponent?.();
+              return heldComponent != null && heldComponent !== componentName;
             },
             pending: {
               drop: (): Dynamic => {
-                value139.current.delete(input2);
+                componentPreviewCacheRef.current.delete(componentName);
               },
-              arm: (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-                value139.current.set(input2, {
-                  then: input3,
-                  stillValid: options2,
+              arm: (reason?: Dynamic, stillValid?: Dynamic): Dynamic => {
+                componentPreviewCacheRef.current.set(componentName, {
+                  then: reason,
+                  stillValid: stillValid,
                 });
               },
             },
-            tellHost: (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-              value49?.(value2, input3, options2),
-            log: (input3?: Dynamic, options2?: Dynamic): Dynamic =>
+            tellHost: (model?: Dynamic, diagnostics?: Dynamic): Dynamic =>
+              onModelReparsed?.(previewFile, model, diagnostics),
+            log: (message?: Dynamic, details?: Dynamic): Dynamic =>
               console.error(
-                "[artboard] adopting an outside edit: " + input3 + ":",
-                options2,
+                "[artboard] adopting an outside edit: " + message + ":",
+                details,
               ),
           }),
-        value157: Dynamic = useDcModel("appifact", value2, {
+        modelRuntime: Dynamic = useDcModel("appifact", previewFile, {
           enabled: true,
-          historyKeeper: value155 ?? undefined,
+          historyKeeper: historyKeeper ?? undefined,
           get historyEpoch(): Dynamic {
-            return value156.current;
+            return sessionEpochRef.current;
           },
-          sessionHeld: value23,
+          sessionHeld: panelMounted,
           get liveStore(): Dynamic {
-            return value154 || false;
+            return hasLoadState || false;
           },
-          onAdopted: (input2?: Dynamic, options?: Dynamic): Dynamic => {},
+          onAdopted: (model?: Dynamic, adoptionOptions?: Dynamic): Dynamic => {},
           onLocalEdit: (): Dynamic => {
-            value132.current += 1;
-            value39?.(value2);
+            frameUpdateCountRef.current += 1;
+            onLocalEdit?.(previewFile);
           },
-          holdPush: (input2?: Dynamic): Dynamic =>
-            input2 === artboardComponentName(value2) &&
-            value131.current.holdFrame?.("push") === true,
-          onPushLive: (input2?: Dynamic): Dynamic => {
-            value132.current += 1;
-            value131.current.onPushLive?.(input2);
-            let entry: Dynamic = value139.current.get(input2);
-            value139.current.delete(input2);
+          holdPush: (componentName?: Dynamic): Dynamic =>
+            componentName === artboardComponentName(previewFile) &&
+            frameHoldRef.current.holdFrame?.("push") === true,
+          onPushLive: (componentName?: Dynamic): Dynamic => {
+            frameUpdateCountRef.current += 1;
+            frameHoldRef.current.onPushLive?.(componentName);
+            let entry: Dynamic = componentPreviewCacheRef.current.get(componentName);
+            componentPreviewCacheRef.current.delete(componentName);
             entry?.then(
               (): Dynamic =>
-                entry.stillValid(value159.current.state(input2)?.model),
+                entry.stillValid(componentSessionRef.current.state(componentName)?.model),
             );
           },
           onBeforeMutate: (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
+            componentName?: Dynamic,
+            reparseOptions?: Dynamic,
+            reparseContext?: Dynamic,
+            heldComponent?: Dynamic,
           ): Dynamic => {
-            value48?.(value2);
-            value286 && value139.current.delete(input2);
-            value131.current.onBeforeMutate?.(
-              input2,
-              options,
-              context,
-              value286,
+            onHistoryPush?.(previewFile);
+            heldComponent && componentPreviewCacheRef.current.delete(componentName);
+            frameHoldRef.current.onBeforeMutate?.(
+              componentName,
+              reparseOptions,
+              reparseContext,
+              heldComponent,
             );
           },
-          onExternalReparse: (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            value132.current += 1;
-            callback(
-              input2,
-              options,
+          onExternalReparse: (model?: Dynamic, externalReparseOptions?: Dynamic): Dynamic => {
+            frameUpdateCountRef.current += 1;
+            adoptComponentModel(
+              model,
+              externalReparseOptions,
               (): Dynamic =>
-                value131.current.onExternalReparse?.(input2, options),
+                frameHoldRef.current.onExternalReparse?.(model, externalReparseOptions),
             );
           },
           onPendingPropsDropped: (
-            input2?: Dynamic,
-            options?: Dynamic,
+            pendingProps?: Dynamic,
+            pendingPropsOptions?: Dynamic,
           ): Dynamic =>
-            value131.current.onPendingPropsDropped?.(input2, options),
+            frameHoldRef.current.onPendingPropsDropped?.(pendingProps, pendingPropsOptions),
           onPendingPropsSettled: (
-            input2?: Dynamic,
-            options?: Dynamic,
+            settledProps?: Dynamic,
+            settledPropsOptions?: Dynamic,
           ): Dynamic =>
-            value131.current.onPendingPropsSettled?.(input2, options),
+            frameHoldRef.current.onPendingPropsSettled?.(settledProps, settledPropsOptions),
           writes: {
-            onSavedAdopted: (input2?: Dynamic, options?: Dynamic): Dynamic => {
-              value132.current += 1;
-              callback(
-                input2,
-                value159.current.state(input2)?.model ?? null,
+            onSavedAdopted: (componentName?: Dynamic, savedAdoptionOptions?: Dynamic): Dynamic => {
+              frameUpdateCountRef.current += 1;
+              adoptComponentModel(
+                componentName,
+                componentSessionRef.current.state(componentName)?.model ?? null,
                 (): Dynamic =>
-                  value131.current.onSavedAdopted?.(input2, options),
+                  frameHoldRef.current.onSavedAdopted?.(componentName, savedAdoptionOptions),
               );
             },
-            onWriteError: (input2?: Dynamic): Dynamic => {
-              value131.current.onWriteError
-                ? value131.current.onWriteError(input2)
-                : value(
-                    fileCapFailureMessage(input2) ??
+            onWriteError: (error?: Dynamic): Dynamic => {
+              frameHoldRef.current.onWriteError
+                ? frameHoldRef.current.onWriteError(error)
+                : showToast(
+                    fileCapFailureMessage(error) ??
                       uiMessage("canvas.artboardFrame.couldnTSaveEditsIn") +
-                        value2 +
+                        previewFile +
                         " \u2014 focus that artboard to retry.",
                     "error",
                   );
             },
             onWriteConflict: (
-              input2?: Dynamic,
-              options?: Dynamic,
-              context?: Dynamic,
-              value286?: Dynamic,
+              componentName?: Dynamic,
+              pageEventOptions?: Dynamic,
+              pageEventContext?: Dynamic,
+              error?: Dynamic,
             ): Dynamic => {
-              value(
+              showToast(
                 uiMessage("canvas.artboardFrame.saveConflictedWithAnotherChange"),
                 "error",
               );
             },
-            onWriteReverted: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-              value(
-                fileCapFailureMessage(options) ??
+            onWriteReverted: (error?: Dynamic, details?: Dynamic): Dynamic =>
+              showToast(
+                fileCapFailureMessage(details) ??
                   uiMessage("canvas.artboardFrame.couldnTSaveThatChange"),
                 "error",
               ),
             awaitWriteClearance: async (): Promise<Dynamic> => {},
           },
         });
-      value133.current = value157.adoptExternal;
-      value147.current = value157.noteOwnWrite;
-      let { installGen: value158 }: Dynamic = useArtboardRuntimeInstallation(
-        value84,
-        value91,
-        value23,
+      syncBeforeCompileRef.current = modelRuntime.adoptExternal;
+      noteOwnWriteRef.current = modelRuntime.noteOwnWrite;
+      let { installGen: installGeneration }: Dynamic = useArtboardRuntimeInstallation(
+        iframeRef,
+        readyGeneration,
+        panelMounted,
         true,
         false,
         false,
-        value83,
+        readOnly,
       );
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (value158 === 0) return;
-        let value286: Dynamic = createPreviewHandle(
-          value84.current,
+        if (installGeneration === 0) return;
+        let previewHandle: Dynamic = createPreviewHandle(
+          iframeRef.current,
         );
-        if (value286) {
+        if (previewHandle) {
           setPickerInteractive(
-            value286,
-            value71 ? "scroll" : value72 ? "play" : true,
+            previewHandle,
+            expanded ? "scroll" : playing ? "play" : true,
           );
-          let value287: Dynamic = value13?.current;
-          value287 !== undefined &&
-            value287 !== 1 &&
-            setPickerHostScale(value286, value287);
+          let canvasScale: Dynamic = canvasScaleRef?.current;
+          canvasScale !== undefined &&
+            canvasScale !== 1 &&
+            setPickerHostScale(previewHandle, canvasScale);
         }
-      }, [value158, value13, value71, value72]);
+      }, [installGeneration, canvasScaleRef, expanded, playing]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (!value71 || value91 === 0 || (!value5 && !value6)) return;
-        let value286: Dynamic = value84.current?.contentWindow;
-        if (value286)
+        if (!expanded || readyGeneration === 0 || (!onPagePointer && !onPageScroll)) return;
+        let contentWindow: Dynamic = iframeRef.current?.contentWindow;
+        if (contentWindow)
           return (
             observePageScrollAndPointer(
-              value286,
-              (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                value5?.(value2, input2, options),
-              (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                value6?.(value2, input2, options),
+              contentWindow,
+              (event?: Dynamic, pointerOptions?: Dynamic): Dynamic =>
+                onPagePointer?.(previewFile, event, pointerOptions),
+              (event?: Dynamic, scrollOptions?: Dynamic): Dynamic =>
+                onPageScroll?.(previewFile, event, scrollOptions),
             ) ?? undefined
           );
-      }, [value71, value91, value2, value5, value6]);
-      let value159: Dynamic = (0, reactCanvasShape.useRef)(value157);
-      value159.current = value157;
-      let value160: Dynamic = (0, reactCanvasShape.useRef)(value148);
-      value160.current = value148;
-      let value161: Dynamic = (0, reactCanvasShape.useRef)(value53);
-      value161.current = value53;
-      let value162: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let current: Dynamic = value160.current,
-              value286: Dynamic = getPropCurrentValue(
-                current,
-                input2,
+      }, [expanded, readyGeneration, previewFile, onPagePointer, onPageScroll]);
+      let componentSessionRef: Dynamic = (0, reactCanvasShape.useRef)(modelRuntime);
+      componentSessionRef.current = modelRuntime;
+      let tweakPropertiesRef: Dynamic = (0, reactCanvasShape.useRef)(tweakProperties);
+      tweakPropertiesRef.current = tweakProperties;
+      let tweakEditRef: Dynamic = (0, reactCanvasShape.useRef)(onTweakEdit);
+      tweakEditRef.current = onTweakEdit;
+      let setProperty: Dynamic = (0, reactCanvasShape.useCallback)(
+          (propertyName?: Dynamic, overrideValue?: Dynamic): Dynamic => {
+            let latestTweakProperties: Dynamic = tweakPropertiesRef.current,
+              currentValue: Dynamic = getPropCurrentValue(
+                latestTweakProperties,
+                propertyName,
               ),
-              value287: Dynamic =
-                options === undefined
-                  ? current.propsMeta[input2]?.default
-                  : options;
-            equalPropValues(value286, value287) ||
-              value161.current?.(
-                value2,
+              nextValue: Dynamic =
+                overrideValue === undefined
+                  ? latestTweakProperties.propsMeta[propertyName]?.default
+                  : overrideValue;
+            equalPropValues(currentValue, nextValue) ||
+              tweakEditRef.current?.(
+                previewFile,
                 {
-                  [input2]: value286,
+                  [propertyName]: currentValue,
                 },
                 {
-                  [input2]: value287,
+                  [propertyName]: nextValue,
                 },
               );
-            current.setProp(
-              input2,
-              overridePropDefault(current, input2, options),
+            latestTweakProperties.setProp(
+              propertyName,
+              overridePropDefault(latestTweakProperties, propertyName, overrideValue),
             );
           },
-          [value2],
+          [previewFile],
         ),
-        value163: Dynamic = (0,
+        resetProperties: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let current: Dynamic = value160.current,
-            state2: Dynamic = {},
-            state3: Dynamic = {};
-          for (let value286 of Object.keys(current.values) as Dynamic)
-            value286 in current.propsMeta &&
-              ((state2[value286] = current.values[value286]),
-              (state3[value286] = current.propsMeta[value286]?.default));
-          Object.keys(state2).length > 0 &&
-            value161.current?.(value2, state2, state3, false);
-          current.reset();
-        }, [value2]),
-        state: Dynamic = {
-          ...value148,
-          setProp: value162,
-          reset: value163,
-          autoSavesDefaults: value154,
+          let latestTweakProperties: Dynamic = tweakPropertiesRef.current,
+            propertyValues: Dynamic = {},
+            propertyDefaults: Dynamic = {};
+          for (let propertyName of Object.keys(latestTweakProperties.values) as Dynamic)
+            propertyName in latestTweakProperties.propsMeta &&
+              ((propertyValues[propertyName] = latestTweakProperties.values[propertyName]),
+              (propertyDefaults[propertyName] = latestTweakProperties.propsMeta[propertyName]?.default));
+          Object.keys(propertyValues).length > 0 &&
+            tweakEditRef.current?.(previewFile, propertyValues, propertyDefaults, false);
+          latestTweakProperties.reset();
+        }, [previewFile]),
+        tweaksBridge: Dynamic = {
+          ...tweakProperties,
+          setProp: setProperty,
+          reset: resetProperties,
+          autoSavesDefaults: hasLoadState,
         },
-        value164: Dynamic = (0, reactCanvasShape.useRef)(value52);
-      value164.current = value52;
-      let value165: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => value164.current?.(value2, input2),
-          [value2],
+        historyDropRef: Dynamic = (0, reactCanvasShape.useRef)(onHistoryDrop);
+      historyDropRef.current = onHistoryDrop;
+      let handleHistoryDrop: Dynamic = (0, reactCanvasShape.useCallback)(
+          (historyState?: Dynamic): Dynamic => historyDropRef.current?.(previewFile, historyState),
+          [previewFile],
         ),
-        value166: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let current: Dynamic = value160.current;
-            for (let [value286, value287] of Object.entries(input2) as Dynamic)
-              current.setProp(
-                value286,
-                overridePropDefault(current, value286, value287),
+        setTweaks: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tweaks?: Dynamic): Dynamic => {
+            let latestTweakProperties: Dynamic = tweakPropertiesRef.current;
+            for (let [propertyName, propertyValue] of Object.entries(tweaks) as Dynamic)
+              latestTweakProperties.setProp(
+                propertyName,
+                overridePropDefault(latestTweakProperties, propertyName, propertyValue),
               );
           },
           [],
         ),
-        value167: Dynamic = (0, reactCanvasShape.useRef)(value23),
-        value168: Dynamic = (0, reactCanvasShape.useRef)(value82);
-      value168.current = value82;
-      value167.current = value23;
+        panelMountedRef: Dynamic = (0, reactCanvasShape.useRef)(panelMounted),
+        griplessRef: Dynamic = (0, reactCanvasShape.useRef)(gripless);
+      griplessRef.current = gripless;
+      panelMountedRef.current = panelMounted;
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        !(value23 || (value137 && value78)) ||
-          value54 === undefined ||
-          (value156.current !== value54 &&
-            ((value156.current = value54),
-            resetModelBaselines(value159.current)));
-      }, [value23, value137, value78, value54]);
-      let value169: Dynamic = (0, reactCanvasShape.useMemo)(
-          (): Dynamic => artboardComponentName(value2),
-          [value2],
+        !(panelMounted || (canEditPreview && editing)) ||
+          sessionEpoch === undefined ||
+          (sessionEpochRef.current !== sessionEpoch &&
+            ((sessionEpochRef.current = sessionEpoch),
+            resetModelBaselines(componentSessionRef.current)));
+      }, [panelMounted, canEditPreview, editing, sessionEpoch]);
+      let artboardComponentId: Dynamic = (0, reactCanvasShape.useMemo)(
+          (): Dynamic => artboardComponentName(previewFile),
+          [previewFile],
         ),
-        value170: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            if (input2 !== value169) return null;
-            let value286: Dynamic = value159.current.state(input2);
-            return value286 && value286.path === value2 ? value286 : null;
+        resolveComponentState: Dynamic = (0, reactCanvasShape.useCallback)(
+          (componentName?: Dynamic): Dynamic => {
+            if (componentName !== artboardComponentId) return null;
+            let componentState: Dynamic = componentSessionRef.current.state(componentName);
+            return componentState && componentState.path === previewFile ? componentState : null;
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value171: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(input2);
-            return !value286 || !value286.model.element(options)
+        readAttributes: Dynamic = (0, reactCanvasShape.useCallback)(
+          (componentName?: Dynamic, attributeOptions?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(componentName);
+            return !componentState || !componentState.model.element(attributeOptions)
               ? null
-              : value286.model.attributes(options);
+              : componentState.model.attributes(attributeOptions);
           },
-          [value170],
+          [resolveComponentState],
         ),
-        value172: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic =>
+        listKindOf: Dynamic = (0, reactCanvasShape.useCallback)(
+          (componentName?: Dynamic): Dynamic =>
             getTextListKind(
-              value170(value169)?.model.element(input2),
+              resolveComponentState(artboardComponentId)?.model.element(componentName),
             ),
-          [value170, value169],
+          [resolveComponentState, artboardComponentId],
         ),
-        value173: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            input2 === value169 && value159.current.ensureModel(input2);
+        ensureModel: Dynamic = (0, reactCanvasShape.useCallback)(
+          (componentName?: Dynamic): Dynamic => {
+            componentName === artboardComponentId && componentSessionRef.current.ensureModel(componentName);
           },
-          [value169],
+          [artboardComponentId],
         ),
-        value174: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value175: Dynamic = (0,
+        outlineRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        ensureOutline: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let current: Dynamic = value174.current;
-          if (current) return current;
-          let value286: Dynamic = value159.current
-            .ensureModel(value169)
+          let activeOutline: Dynamic = outlineRef.current;
+          if (activeOutline) return activeOutline;
+          let componentState: Dynamic = componentSessionRef.current
+            .ensureModel(artboardComponentId)
             .then(
-              (input2?: Dynamic): Dynamic =>
-                input2 ? input2.model.outline() : null,
+              (componentModelState?: Dynamic): Dynamic =>
+                componentModelState ? componentModelState.model.outline() : null,
             )
             .finally((): Dynamic => {
-              value174.current === value286 && (value174.current = null);
+              outlineRef.current === componentState && (outlineRef.current = null);
             });
-          value174.current = value286;
-          return value286;
-        }, [value169]),
-        value176: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(input2);
-            return !value286 || !value286.model.element(options)
+          outlineRef.current = componentState;
+          return componentState;
+        }, [artboardComponentId]),
+        readInlineStyle: Dynamic = (0, reactCanvasShape.useCallback)(
+          (componentName?: Dynamic, styleName?: Dynamic, styleContext?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(componentName);
+            return !componentState || !componentState.model.element(styleName)
               ? null
-              : (value286.model.inlineStyleValue(options, context) ?? null);
+              : (componentState.model.inlineStyleValue(styleName, styleContext) ?? null);
           },
-          [value170],
+          [resolveComponentState],
         ),
-        value177: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(value169);
-            if (!value286) return null;
-            let value287: Dynamic = copySelectedElementsHtml(
-              value286.model,
-              input2,
+        copySelectionHtml: Dynamic = (0, reactCanvasShape.useCallback)(
+          (selectionIds?: Dynamic, pasteOptions?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            if (!componentState) return null;
+            let copiedHtml: Dynamic = copySelectedElementsHtml(
+              componentState.model,
+              selectionIds,
             );
-            value287 != null &&
-              options?.lift &&
-              (value287 = flattenSelectionTemplates(
-                value286.model,
-                input2,
-                positionPastedHtml(value287, options.lift),
+            copiedHtml != null &&
+              pasteOptions?.lift &&
+              (copiedHtml = flattenSelectionTemplates(
+                componentState.model,
+                selectionIds,
+                positionPastedHtml(copiedHtml, pasteOptions.lift),
               ));
-            if (value287 == null || !options?.bakeProps) return value287;
-            let state2: Dynamic = {};
+            if (copiedHtml == null || !pasteOptions?.bakeProps) return copiedHtml;
+            let bakedProps: Dynamic = {};
             try {
-              let value291: Dynamic = JSON.parse(
-                getDcPropsJson(value286.src) ?? "{}",
+              let parsedProps: Dynamic = JSON.parse(
+                getDcPropsJson(componentState.src) ?? "{}",
               );
-              value291 &&
-                typeof value291 == "object" &&
-                !Array.isArray(value291) &&
-                (state2 = value291);
+              parsedProps &&
+                typeof parsedProps == "object" &&
+                !Array.isArray(parsedProps) &&
+                (bakedProps = parsedProps);
             } catch {
-              state2 = {};
+              bakedProps = {};
             }
-            let values: Dynamic = value160.current.values,
-              value288: Dynamic = value286.pendingProps ?? {},
-              value289: Dynamic = options?.vals,
-              value290: Dynamic = getLoopTemplateVariables(
-                value287,
+            let values: Dynamic = tweakPropertiesRef.current.values,
+              pendingProps: Dynamic = componentState.pendingProps ?? {},
+              overrideValues: Dynamic = pasteOptions?.vals,
+              templateVariables: Dynamic = getLoopTemplateVariables(
+                copiedHtml,
               );
             return flattenTemplateValues(
-              value287,
-              (input3?: Dynamic): Dynamic => {
+              copiedHtml,
+              (propertyName?: Dynamic): Dynamic => {
                 if (
-                  input3.startsWith("$") ||
+                  propertyName.startsWith("$") ||
                   ClipboardTemplateFlatteningTrueFalseNullSet.has(
-                    input3,
+                    propertyName,
                   )
                 )
                   return;
-                if (!Object.hasOwn(state2, input3))
-                  return value289 &&
-                    !value290.has(input3) &&
-                    Object.hasOwn(value289, input3)
-                    ? value289[input3]
+                if (!Object.hasOwn(bakedProps, propertyName))
+                  return overrideValues &&
+                    !templateVariables.has(propertyName) &&
+                    Object.hasOwn(overrideValues, propertyName)
+                    ? overrideValues[propertyName]
                     : undefined;
-                if (Object.hasOwn(values, input3)) return values[input3];
-                if (Object.hasOwn(value288, input3)) return value288[input3];
-                let value291: Dynamic = state2[input3];
-                return value291 && typeof value291 == "object"
-                  ? value291.default
+                if (Object.hasOwn(values, propertyName)) return values[propertyName];
+                if (Object.hasOwn(pendingProps, propertyName)) return pendingProps[propertyName];
+                let propertyValue: Dynamic = bakedProps[propertyName];
+                return propertyValue && typeof propertyValue == "object"
+                  ? propertyValue.default
                   : undefined;
               },
             );
           },
-          [value170, value169],
+          [resolveComponentState, artboardComponentId],
         ),
-        value178: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = await value159.current.mutate(
-              value169,
-              (input3?: Dynamic, options?: Dynamic): Dynamic =>
-                options.path !== value2
+        removeSelection: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (removableElementIds?: Dynamic): Promise<Dynamic> => {
+            let mutationResult: Dynamic = await componentSessionRef.current.mutate(
+              artboardComponentId,
+              (selectionIds?: Dynamic, selectionOptions?: Dynamic): Dynamic =>
+                selectionOptions.path !== previewFile
                   ? false
-                  : deleteModelElements(options, input2) > 0,
+                  : deleteModelElements(selectionOptions, removableElementIds) > 0,
               {
                 structural: true,
               },
             );
-            return value286 === "applied" || value286 === "applied-dirty";
+            return mutationResult === "applied" || mutationResult === "applied-dirty";
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value179: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = await value159.current.mutate(
-              value169,
-              (input3?: Dynamic, options?: Dynamic): Dynamic => {
+        duplicateSelection: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (duplicatedElementIds?: Dynamic): Promise<Dynamic> => {
+            let mutationResult: Dynamic = await componentSessionRef.current.mutate(
+              artboardComponentId,
+              (selectionIds?: Dynamic, selectionOptions?: Dynamic): Dynamic => {
                 if (
-                  options.path !== value2 ||
-                  containsUneditableSelection(options.model, [
-                    ...input2,
+                  selectionOptions.path !== previewFile ||
+                  containsUneditableSelection(selectionOptions.model, [
+                    ...duplicatedElementIds,
                   ])
                 )
                   return false;
-                let value287: Dynamic = selectedRootElementIds(
-                  options.model,
-                  [...input2],
+                let rootIds: Dynamic = selectedRootElementIds(
+                  selectionOptions.model,
+                  [...duplicatedElementIds],
                 ).filter(
-                  (input4?: Dynamic): Dynamic =>
-                    options.model.element(input4) != null &&
-                    !options.model.isUneditable(input4),
+                  (elementId?: Dynamic): Dynamic =>
+                    selectionOptions.model.element(elementId) != null &&
+                    !selectionOptions.model.isUneditable(elementId),
                 );
-                if (value287.length === 0) return false;
-                let flag2: Dynamic = false;
-                for (let value288 of value287 as Dynamic)
-                  options.model.duplicateElement(value288) && (flag2 = true);
-                flag2 && options.model.restamp();
-                return flag2;
+                if (rootIds.length === 0) return false;
+                let duplicated: Dynamic = false;
+                for (let elementId of rootIds as Dynamic)
+                  selectionOptions.model.duplicateElement(elementId) && (duplicated = true);
+                duplicated && selectionOptions.model.restamp();
+                return duplicated;
               },
               {
                 structural: true,
               },
             );
-            return value286 === "applied" || value286 === "applied-dirty";
+            return mutationResult === "applied" || mutationResult === "applied-dirty";
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value180: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic =
-              await value159.current.ensureModel(value169);
-            if (!value286 || value286.path !== value2) return null;
-            let model: Dynamic = value286.model;
-            return options === "children"
-              ? selectionChildren(model, input2)
-              : options === "parents"
-                ? selectionParents(model, input2)
-                : options === "siblings"
-                  ? selectionSiblingIds(model, input2)
+        walkSelectionTids: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (selectionIds?: Dynamic, direction?: Dynamic): Promise<Dynamic> => {
+            let componentState: Dynamic =
+              await componentSessionRef.current.ensureModel(artboardComponentId);
+            if (!componentState || componentState.path !== previewFile) return null;
+            let model: Dynamic = componentState.model;
+            return direction === "children"
+              ? selectionChildren(model, selectionIds)
+              : direction === "parents"
+                ? selectionParents(model, selectionIds)
+                : direction === "siblings"
+                  ? selectionSiblingIds(model, selectionIds)
                   : selectionAdjacentSiblings(
                       model,
-                      input2,
-                      options,
+                      selectionIds,
+                      direction,
                     );
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value181: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value182: Dynamic = (0, reactCanvasShape.useCallback)(
+        selectionHistoryRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        moveSelection: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
+            movableElementIds?: Dynamic,
+            deltaX?: Dynamic,
+            deltaY?: Dynamic,
+            afterMove?: Dynamic,
           ): Promise<Dynamic> => {
-            let state2: Dynamic = {
-              tids: [...input2],
+            let moveState: Dynamic = {
+              tids: [...movableElementIds],
               did: "none",
             };
             if (
-              !Number.isFinite(options) ||
-              !Number.isFinite(context) ||
-              (options === 0 && context === 0)
+              !Number.isFinite(deltaX) ||
+              !Number.isFinite(deltaY) ||
+              (deltaX === 0 && deltaY === 0)
             )
-              return state2;
-            let value287: Dynamic =
-              await value159.current.ensureModel(value169);
-            if (!value287 || value287.path !== value2) return state2;
-            let { targets: value288 }: Dynamic = promotedSvgSelection(value287.model, input2);
-            if (value288.length === 0) return state2;
+              return moveState;
+            let componentState: Dynamic =
+              await componentSessionRef.current.ensureModel(artboardComponentId);
+            if (!componentState || componentState.path !== previewFile) return moveState;
+            let { targets: targetIds }: Dynamic = promotedSvgSelection(componentState.model, movableElementIds);
+            if (targetIds.length === 0) return moveState;
             if (
-              canMovePositionedSelection(value287.model, value288)
+              canMovePositionedSelection(componentState.model, targetIds)
             ) {
               if (
                 !hasPositionedSelectionAxes(
-                  value287.model,
-                  value288,
-                  options,
-                  context,
+                  componentState.model,
+                  targetIds,
+                  deltaX,
+                  deltaY,
                 )
               )
-                return state2;
-              let value292: Dynamic = value288.join(","),
-                current: Dynamic = value181.current,
-                value293: Dynamic = Date.now(),
-                value294: Dynamic =
-                  current != null &&
-                  current.key === value292 &&
-                  value293 - current.at < ModelModelStateLimit &&
-                  value287.undo.length === current.depth &&
-                  value287.undo[current.depth - 1] === current.top,
-                value295: Dynamic = await value159.current.mutate(
-                  value169,
-                  (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-                    options2.path !== value2
+                return moveState;
+              let selectionKey: Dynamic = targetIds.join(","),
+                previousSelection: Dynamic = selectionHistoryRef.current,
+                timestamp: Dynamic = Date.now(),
+                isRedo: Dynamic =
+                  previousSelection != null &&
+                  previousSelection.key === selectionKey &&
+                  timestamp - previousSelection.at < ModelModelStateLimit &&
+                  componentState.undo.length === previousSelection.depth &&
+                  componentState.undo[previousSelection.depth - 1] === previousSelection.top,
+                mutationStatus: Dynamic = await componentSessionRef.current.mutate(
+                  artboardComponentId,
+                  (selectionIds?: Dynamic, selectionOptions?: Dynamic): Dynamic =>
+                    selectionOptions.path !== previewFile
                       ? false
                       : (nudgeModelSelection(
-                          input3,
-                          value288,
-                          options,
-                          context,
+                          selectionIds,
+                          targetIds,
+                          deltaX,
+                          deltaY,
                         ),
                         true),
                   {
                     structural: false,
-                    pushUndo: !value294,
+                    pushUndo: !isRedo,
                   },
                 ),
-                value296: Dynamic =
-                  value295 === "applied" || value295 === "applied-dirty",
-                value297: Dynamic = value159.current.state(value169);
-              value296 &&
-                value297 &&
-                (value181.current = {
-                  key: value292,
-                  at: value293,
-                  depth: value297.undo.length,
-                  top: value297.undo[value297.undo.length - 1],
+                historyResult: Dynamic =
+                  mutationStatus === "applied" || mutationStatus === "applied-dirty",
+                historyState: Dynamic = componentSessionRef.current.state(artboardComponentId);
+              historyResult &&
+                historyState &&
+                (selectionHistoryRef.current = {
+                  key: selectionKey,
+                  at: timestamp,
+                  depth: historyState.undo.length,
+                  top: historyState.undo[historyState.undo.length - 1],
                 });
-              return value296
+              return historyResult
                 ? {
-                    tids: [...input2],
+                    tids: [...movableElementIds],
                     did: "nudged",
                   }
-                : state2;
+                : moveState;
             }
-            let value289: Dynamic = null,
-              value290: Dynamic = input2.filter(
-                (input3?: Dynamic): Dynamic =>
-                  value287.model.element(input3) != null,
+            let currentSelection: Dynamic = null,
+              validSelection: Dynamic = movableElementIds.filter(
+                (elementId?: Dynamic): Dynamic =>
+                  componentState.model.element(elementId) != null,
               );
             if (
               !canReorderSelection(
-                value287.model,
-                value290,
-                options < 0 || context < 0 ? -1 : 1,
+                componentState.model,
+                validSelection,
+                deltaX < 0 || deltaY < 0 ? -1 : 1,
               )
             )
-              return state2;
-            value286?.();
-            let value291: Dynamic = await value159.current.mutate(
-              value169,
-              (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-                options2.path !== value2
+              return moveState;
+            afterMove?.();
+            let mutationResult: Dynamic = await componentSessionRef.current.mutate(
+              artboardComponentId,
+              (selectionIds?: Dynamic, selectionOptions?: Dynamic): Dynamic =>
+                selectionOptions.path !== previewFile
                   ? false
-                  : ((value289 = reorderModelSelection(
-                      input3,
-                      value290,
-                      options < 0 || context < 0 ? -1 : 1,
+                  : ((currentSelection = reorderModelSelection(
+                      selectionIds,
+                      validSelection,
+                      deltaX < 0 || deltaY < 0 ? -1 : 1,
                     )),
-                    value289 != null),
+                    currentSelection != null),
               {
                 structural: true,
               },
             );
-            value181.current = null;
-            return !(value291 === "applied" || value291 === "applied-dirty") ||
-              value289 == null
-              ? state2
+            selectionHistoryRef.current = null;
+            return !(mutationResult === "applied" || mutationResult === "applied-dirty") ||
+              currentSelection == null
+              ? moveState
               : {
-                  tids: modelIdsFromElements(value289),
+                  tids: modelIdsFromElements(currentSelection),
                   did: "reordered",
                 };
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value183: Dynamic = (0, reactCanvasShape.useRef)(
+        moveQueueRef: Dynamic = (0, reactCanvasShape.useRef)(
           Promise.resolve(),
         ),
-        value184: Dynamic = (0, reactCanvasShape.useCallback)(
+        nudgeSelection: Dynamic = (0, reactCanvasShape.useCallback)(
           (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
+            selectionIds?: Dynamic,
+            deltaX?: Dynamic,
+            deltaY?: Dynamic,
+            currentModel?: Dynamic,
           ): Dynamic => {
-            let callback5: Dynamic = (): Dynamic => {
-                let value288: Dynamic,
+            let flushMoveQueue: Dynamic = (): Dynamic => {
+                let timeoutId: Dynamic,
                   promise: Dynamic = new Promise(
-                    (input3?: Dynamic): Dynamic => {
-                      value288 = setTimeout(
+                    (mutationResult?: Dynamic): Dynamic => {
+                      timeoutId = setTimeout(
                         (): Dynamic =>
-                          input3({
-                            tids: [...input2],
+                          mutationResult({
+                            tids: [...selectionIds],
                             did: "timeout",
                           }),
                         1e4,
@@ -2162,320 +2162,320 @@ export function installCanvasArtboardFrame(): () => void {
                     },
                   );
                 return Promise.race([
-                  value182(input2, options, context, value286),
+                  moveSelection(selectionIds, deltaX, deltaY, currentModel),
                   promise,
-                ]).finally((): Dynamic => clearTimeout(value288));
+                ]).finally((): Dynamic => clearTimeout(timeoutId));
               },
-              value287: Dynamic = value183.current.then(callback5, callback5);
-            value183.current = value287.catch((): Dynamic => {});
-            return value287;
+              queuedMove: Dynamic = moveQueueRef.current.then(flushMoveQueue, flushMoveQueue);
+            moveQueueRef.current = queuedMove.catch((): Dynamic => {});
+            return queuedMove;
           },
-          [value182],
+          [moveSelection],
         ),
-        value185: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic =
-                await value159.current.ensureModel(value169),
-              value287: Dynamic = createPreviewHandle(
-                value84.current,
+        flipRead: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (flippableElementIds?: Dynamic): Promise<Dynamic> => {
+            let componentState: Dynamic =
+                await componentSessionRef.current.ensureModel(artboardComponentId),
+              previewHandle: Dynamic = createPreviewHandle(
+                iframeRef.current,
               );
-            if (!value286 || value286.path !== value2 || !value287) return null;
-            let value288: Dynamic = input2.map(
-                (input3?: Dynamic): Dynamic => value286.model.element(input3),
+            if (!componentState || componentState.path !== previewFile || !previewHandle) return null;
+            let elementIds: Dynamic = flippableElementIds.map(
+                (elementId?: Dynamic): Dynamic => componentState.model.element(elementId),
               ),
-              value289: Dynamic = await inspectFlipSelection(
-                value286.model,
-                input2,
+              flipFacts: Dynamic = await inspectFlipSelection(
+                componentState.model,
+                flippableElementIds,
                 (
-                  input3?: Dynamic,
-                  options?: Dynamic,
-                  context?: Dynamic,
+                  selectionIds?: Dynamic,
+                  flipOptions?: Dynamic,
+                  afterPaint?: Dynamic,
                 ): Dynamic =>
                   inspectPickerSelection(
-                    value287,
-                    input3,
-                    value169,
-                    options,
+                    previewHandle,
+                    selectionIds,
+                    artboardComponentId,
+                    flipOptions,
                     {
                       pose: true,
-                      afterPaint: context,
+                      afterPaint: afterPaint,
                     },
                   ),
               );
             return selectionNeedsFlipInspection(
-              value286.model,
-              input2,
-              value289,
+              componentState.model,
+              flippableElementIds,
+              flipFacts,
             )
               ? null
               : {
-                  tids: input2,
-                  picked: value288,
-                  facts: value289,
+                  tids: flippableElementIds,
+                  picked: elementIds,
+                  facts: flipFacts,
                 };
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value186: Dynamic = (0, reactCanvasShape.useCallback)(
+        flipSelection: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             { tids: tids, picked: picked, facts: facts }: Dynamic,
-            options?: Dynamic,
+            flipOptions?: Dynamic,
           ): Promise<Dynamic> => {
-            let state2: Dynamic = {
+            let flipState: Dynamic = {
                 flipped: [],
               },
-              value286: Dynamic = await value159.current.mutate(
-                value169,
-                (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                  options2.path !== value2 ||
+              mutationResult: Dynamic = await componentSessionRef.current.mutate(
+                artboardComponentId,
+                (model?: Dynamic, selectionOptions?: Dynamic): Dynamic =>
+                  selectionOptions.path !== previewFile ||
                   tids.some(
-                    (input3?: Dynamic, options3?: Dynamic): Dynamic =>
-                      input2.element(input3) !== picked[options3],
+                    (elementId?: Dynamic, index?: Dynamic): Dynamic =>
+                      model.element(elementId) !== picked[index],
                   )
                     ? false
-                    : ((state2 = flipModelSelection(
-                        input2,
+                    : ((flipState = flipModelSelection(
+                        model,
                         tids,
-                        options,
+                        flipOptions,
                         facts,
                       )),
-                      state2.flipped.length > 0),
+                      flipState.flipped.length > 0),
                 {
                   structural: false,
                   pushUndo: true,
                 },
               ),
-              value287: Dynamic =
-                value286 === "applied" || value286 === "applied-dirty",
-              value288: Dynamic = !value287 && state2.flipped.length > 0;
+              didFlip: Dynamic =
+                mutationResult === "applied" || mutationResult === "applied-dirty",
+              hasRefused: Dynamic = !didFlip && flipState.flipped.length > 0;
             return {
-              flipped: value287 ? state2.flipped.length : 0,
-              ...(state2.refused !== undefined && !value288
+              flipped: didFlip ? flipState.flipped.length : 0,
+              ...(flipState.refused !== undefined && !hasRefused
                 ? {
-                    refused: state2.refused,
+                    refused: flipState.refused,
                   }
                 : {}),
             };
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value187: Dynamic = (0, reactCanvasShape.useRef)(
+        styleQueueRef: Dynamic = (0, reactCanvasShape.useRef)(
           Promise.resolve(),
         ),
-        value188: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = value187.current.then(input2, input2);
-            value187.current = value286.catch((): Dynamic => {});
-            return value286;
+        flushStyleQueue: Dynamic = (0, reactCanvasShape.useCallback)(
+          (flushCallback?: Dynamic): Dynamic => {
+            let queuedResult: Dynamic = styleQueueRef.current.then(flushCallback, flushCallback);
+            styleQueueRef.current = queuedResult.catch((): Dynamic => {});
+            return queuedResult;
           },
           [],
         ),
-        value189: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let entries: Dynamic = new Map();
-            for (let [value286, value287] of input2 as Dynamic) {
-              let value288: Dynamic = normalizeStyleEdits(
-                value287,
+        setStylePropsPerTid: Dynamic = (0, reactCanvasShape.useCallback)(
+          (edits?: Dynamic, editOptions?: Dynamic): Dynamic => {
+            let editsByTid: Dynamic = new Map();
+            for (let [tid, properties] of edits as Dynamic) {
+              let normalizedEdits: Dynamic = normalizeStyleEdits(
+                properties,
               );
-              value288.length > 0 && entries.set(value286, value288);
+              normalizedEdits.length > 0 && editsByTid.set(tid, normalizedEdits);
             }
-            return entries.size === 0
+            return editsByTid.size === 0
               ? Promise.resolve(false)
-              : value188(async (): Promise<Dynamic> => {
-                  let value286: Dynamic = await value159.current.mutate(
-                    value169,
-                    (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-                      if (options2.path !== value2) return false;
-                      let flag2: Dynamic = false,
-                        value287: Dynamic = arrowSnapshotsForPropertyChange(
-                          options2.model,
-                          entries.keys(),
-                          [...entries.values()]
+              : flushStyleQueue(async (): Promise<Dynamic> => {
+                  let mutationResult: Dynamic = await componentSessionRef.current.mutate(
+                    artboardComponentId,
+                    (model?: Dynamic, modelState?: Dynamic): Dynamic => {
+                      if (modelState.path !== previewFile) return false;
+                      let updatedFont: Dynamic = false,
+                        arrowSnapshots: Dynamic = arrowSnapshotsForPropertyChange(
+                          modelState.model,
+                          editsByTid.keys(),
+                          [...editsByTid.values()]
                             .flat()
-                            .map(([input4]: Dynamic): Dynamic => input4),
+                            .map(([propertyName]: Dynamic): Dynamic => propertyName),
                         );
-                      for (let [value288, value289] of entries as Dynamic)
-                        if (options2.model.element(value288))
-                          for (let [value290, value291] of value289 as Dynamic)
-                            input3.setStyleProperty(
-                              value288,
-                              value290,
-                              value291,
-                            ) && (flag2 = true);
-                      flag2 &&
+                      for (let [tid, properties] of editsByTid as Dynamic)
+                        if (modelState.model.element(tid))
+                          for (let [propertyName, propertyValue] of properties as Dynamic)
+                            model.setStyleProperty(
+                              tid,
+                              propertyName,
+                              propertyValue,
+                            ) && (updatedFont = true);
+                      updatedFont &&
                         restoreArrowSnapshots(
-                          options2.model,
-                          value287,
+                          modelState.model,
+                          arrowSnapshots,
                         );
-                      if (flag2)
-                        for (let [value288, value289] of [
-                          ...entries.values(),
+                      if (updatedFont)
+                        for (let [propertyName, propertyValue] of [
+                          ...editsByTid.values(),
                         ].flat() as Dynamic) {
-                          let value290: Dynamic =
-                            value288 === "font-family" && value289
+                          let fontFamily: Dynamic =
+                            propertyName === "font-family" && propertyValue
                               ? knownWebFontFamily(
-                                  firstFontFamily(value289),
+                                  firstFontFamily(propertyValue),
                                 )
                               : undefined;
-                          value290 !== undefined &&
-                            input3.ensureWebfontLink(value290);
+                          fontFamily !== undefined &&
+                            model.ensureWebfontLink(fontFamily);
                         }
-                      return flag2;
+                      return updatedFont;
                     },
                     {
                       structural: false,
-                      pushUndo: options?.undo ?? true,
+                      pushUndo: editOptions?.undo ?? true,
                     },
                   );
-                  return value286 === "applied" || value286 === "applied-dirty";
+                  return mutationResult === "applied" || mutationResult === "applied-dirty";
                 });
           },
-          [value169, value2, value188],
+          [artboardComponentId, previewFile, flushStyleQueue],
         ),
-        value190: Dynamic = (0, reactCanvasShape.useCallback)(
+        pageFill: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic =>
-            value159.current
-              .ensureModel(value169)
+            componentSessionRef.current
+              .ensureModel(artboardComponentId)
               .then(
-                (input2?: Dynamic): Dynamic =>
-                  input2 && input2.path === value2
-                    ? input2.model.pageFill()
+                (model?: Dynamic): Dynamic =>
+                  model && model.path === previewFile
+                    ? model.model.pageFill()
                     : null,
               ),
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value191: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value192: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = input2.map(
-              (input3?: Dynamic): Dynamic => ({
-                prop: input3.prop,
+        pageFillRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        setPageFill: Dynamic = (0, reactCanvasShape.useCallback)(
+          (edits?: Dynamic): Dynamic => {
+            let normalizedEdits: Dynamic = edits.map(
+              (edit?: Dynamic): Dynamic => ({
+                prop: edit.prop,
                 value:
-                  input3.value === null
+                  edit.value === null
                     ? null
                     : isSafeBackgroundStyle(
-                        input3.prop,
-                        input3.value,
+                        edit.prop,
+                        edit.value,
                       ),
               }),
             );
-            return value286.length === 0 ||
-              value286.some(
-                (input3?: Dynamic, options?: Dynamic): Dynamic =>
+            return normalizedEdits.length === 0 ||
+              normalizedEdits.some(
+                (edit?: Dynamic, index?: Dynamic): Dynamic =>
                   !CssEditValidationBackgroundBackgroundColorSet.has(
-                    input3.prop,
+                    edit.prop,
                   ) ||
-                  (input2[options].value !== null && input3.value === null),
+                  (edits[index].value !== null && edit.value === null),
               )
               ? Promise.resolve(false)
-              : value188(async (): Promise<Dynamic> => {
-                  let value287: Dynamic = value170(value169),
-                    value288: Dynamic = value286
-                      .map((input3?: Dynamic): Dynamic => input3.prop)
+              : flushStyleQueue(async (): Promise<Dynamic> => {
+                  let componentState: Dynamic = resolveComponentState(artboardComponentId),
+                    editKey: Dynamic = normalizedEdits
+                      .map((edit?: Dynamic): Dynamic => edit.prop)
                       .join("+"),
-                    current: Dynamic = value191.current,
-                    value289: Dynamic = Date.now(),
-                    value290: Dynamic =
-                      current != null &&
-                      value287 != null &&
-                      current.key === value288 &&
-                      value289 - current.at < ModelModelStateLimit &&
-                      value287.undo.length === current.depth &&
-                      value287.undo[current.depth - 1] === current.top,
-                    value291: Dynamic = await value159.current.mutate(
-                      value169,
-                      (input3?: Dynamic, options?: Dynamic): Dynamic =>
-                        options.path !== value2
+                    previousFillEdit: Dynamic = pageFillRef.current,
+                    timestamp: Dynamic = Date.now(),
+                    pushUndo: Dynamic =
+                      previousFillEdit != null &&
+                      componentState != null &&
+                      previousFillEdit.key === editKey &&
+                      timestamp - previousFillEdit.at < ModelModelStateLimit &&
+                      componentState.undo.length === previousFillEdit.depth &&
+                      componentState.undo[previousFillEdit.depth - 1] === previousFillEdit.top,
+                    mutationResult: Dynamic = await componentSessionRef.current.mutate(
+                      artboardComponentId,
+                      (model?: Dynamic, modelState?: Dynamic): Dynamic =>
+                        modelState.path !== previewFile
                           ? false
-                          : input3.setPageFill(value286),
+                          : model.setPageFill(normalizedEdits),
                       {
                         structural: false,
-                        pushUndo: !value290,
+                        pushUndo: !pushUndo,
                       },
                     ),
-                    value292: Dynamic =
-                      value291 === "applied" || value291 === "applied-dirty",
-                    value293: Dynamic = value170(value169);
-                  value292 &&
-                    value293 &&
-                    (value191.current = {
-                      key: value288,
-                      at: value289,
-                      depth: value293.undo.length,
-                      top: value293.undo[value293.undo.length - 1],
+                    historyResult: Dynamic =
+                      mutationResult === "applied" || mutationResult === "applied-dirty",
+                    historyState: Dynamic = resolveComponentState(artboardComponentId);
+                  historyResult &&
+                    historyState &&
+                    (pageFillRef.current = {
+                      key: editKey,
+                      at: timestamp,
+                      depth: historyState.undo.length,
+                      top: historyState.undo[historyState.undo.length - 1],
                     });
-                  return value292;
+                  return historyResult;
                 });
           },
-          [value169, value2, value188, value170],
+          [artboardComponentId, previewFile, flushStyleQueue, resolveComponentState],
         ),
-        value193: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value194: Dynamic = (0,
+        styleGestureRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        beginStyleGesture: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          value188((): Dynamic => {
-            let value286: Dynamic = value170(value169);
-            value193.current = value286 ? value286.model.serialize() : null;
+          flushStyleQueue((): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            styleGestureRef.current = componentState ? componentState.model.serialize() : null;
           });
-        }, [value188, value170, value169]),
-        value195: Dynamic = (0, reactCanvasShape.useCallback)(
+        }, [flushStyleQueue, resolveComponentState, artboardComponentId]),
+        endStyleGesture: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic =>
-            value188((): Dynamic => {
-              let current: Dynamic = value193.current;
-              value193.current = null;
-              return current == null
+            flushStyleQueue((): Dynamic => {
+              let beforeGestureSnapshot: Dynamic = styleGestureRef.current;
+              styleGestureRef.current = null;
+              return beforeGestureSnapshot == null
                 ? false
-                : value159.current.pushUndoSnapshot(value169, current);
+                : componentSessionRef.current.pushUndoSnapshot(artboardComponentId, beforeGestureSnapshot);
             }),
-          [value188, value169],
+          [flushStyleQueue, artboardComponentId],
         ),
-        [value196, value197]: Dynamic = (0, reactCanvasShape.useState)(
+        [selectedMediaSnapshot, setSelectedMedia]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
-        value198: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value199: Dynamic = (0, reactCanvasShape.useRef)(false),
-        value200: Dynamic = (0, reactCanvasShape.useRef)(0),
-        value201: Dynamic = (0,
+        selectedMediaRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        cropActiveRef: Dynamic = (0, reactCanvasShape.useRef)(false),
+        lastCropChangeRef: Dynamic = (0, reactCanvasShape.useRef)(0),
+        readCropState: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let [items, items2]: Dynamic = [value198.current, value170(value169)],
-            value286: Dynamic = parseInt(
-              items?.el.getAttribute(DcTplAttribute) ?? "",
+          let [selectedMedia, currentState]: Dynamic = [selectedMediaRef.current, resolveComponentState(artboardComponentId)],
+            cropTid: Dynamic = parseInt(
+              selectedMedia?.el.getAttribute(DcTplAttribute) ?? "",
               10,
             );
-          return items &&
-            items2 &&
-            Number.isSafeInteger(value286) &&
-            items2.model.element(value286) === items.el
-            ? value286
+          return selectedMedia &&
+            currentState &&
+            Number.isSafeInteger(cropTid) &&
+            currentState.model.element(cropTid) === selectedMedia.el
+            ? cropTid
             : null;
-        }, [value169, value170]),
-        value202: Dynamic = (0, reactCanvasShape.useRef)(new WeakMap()),
-        value203: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = (value202.current.get(input2) ?? 0) + 1;
-            value202.current.set(input2, value286);
-            return value286;
+        }, [artboardComponentId, resolveComponentState]),
+        styleEditCountsRef: Dynamic = (0, reactCanvasShape.useRef)(new WeakMap()),
+        applyStyleEdit: Dynamic = (0, reactCanvasShape.useCallback)(
+          (element?: Dynamic): Dynamic => {
+            let editCount: Dynamic = (styleEditCountsRef.current.get(element) ?? 0) + 1;
+            styleEditCountsRef.current.set(element, editCount);
+            return editCount;
           },
           [],
         ),
-        value204: Dynamic = (0, reactCanvasShape.useCallback)(
-          (element?: Dynamic, options?: Dynamic): Dynamic => (
-            value203(element),
-            value188(
+        setStyleProperty: Dynamic = (0, reactCanvasShape.useCallback)(
+          (element?: Dynamic, styleOptions?: Dynamic): Dynamic => (
+            applyStyleEdit(element),
+            flushStyleQueue(
               (): Dynamic =>
-                value159.current.mutate(
-                  value169,
-                  (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-                    let value286: Dynamic = parseInt(
+                componentSessionRef.current.mutate(
+                  artboardComponentId,
+                  (model?: Dynamic, modelState?: Dynamic): Dynamic => {
+                    let propertyIndex: Dynamic = parseInt(
                       element.getAttribute(DcTplAttribute) ?? "",
                       10,
                     );
-                    return options2.path !== value2 ||
-                      options2.model.element(value286) !== element
+                    return modelState.path !== previewFile ||
+                      modelState.model.element(propertyIndex) !== element
                       ? false
-                      : options
+                      : styleOptions
                           .map(
-                            ([input3, input4]: Dynamic): Dynamic =>
-                              input2.setStyleProperty(value286, input3, input4),
+                            ([propertyName, propertyValue]: Dynamic): Dynamic =>
+                              model.setStyleProperty(propertyIndex, propertyName, propertyValue),
                           )
                           .some(Boolean);
                   },
@@ -2486,686 +2486,686 @@ export function installCanvasArtboardFrame(): () => void {
                 ),
             )
           ),
-          [value2, value169, value188, value203],
+          [previewFile, artboardComponentId, flushStyleQueue, applyStyleEdit],
         ),
-        value205: Dynamic = (0, reactCanvasShape.useRef)(value204);
-      value205.current = value204;
-      let value206: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let current: Dynamic = value198.current;
-            if (!current) return;
-            let value286: Dynamic = value201() !== null;
-            value198.current = null;
-            value197(null);
-            updateElementSessionState(value2, {
+        setStylePropertyRef: Dynamic = (0, reactCanvasShape.useRef)(setStyleProperty);
+      setStylePropertyRef.current = setStyleProperty;
+      let finishCrop: Dynamic = (0, reactCanvasShape.useCallback)(
+          (cropState?: Dynamic): Dynamic => {
+            let selectedMedia: Dynamic = selectedMediaRef.current;
+            if (!selectedMedia) return;
+            let isCropActive: Dynamic = readCropState() !== null;
+            selectedMediaRef.current = null;
+            setSelectedMedia(null);
+            updateElementSessionState(previewFile, {
               cropping: null,
             });
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value287 && setPickerScrubbing(value287, false);
-            let callback5: Dynamic = (): Dynamic => {
-                if (value287)
-                  for (let value290 of current.tids as Dynamic)
+            previewHandle && setPickerScrubbing(previewHandle, false);
+            let finishWrite: Dynamic = (): Dynamic => {
+                if (previewHandle)
+                  for (let tid of selectedMedia.tids as Dynamic)
                     unpatchPickerStyle(
-                      value287,
-                      value169,
-                      [value290],
-                      current.token,
+                      previewHandle,
+                      artboardComponentId,
+                      [tid],
+                      selectedMedia.token,
                     );
               },
-              value288: Dynamic = normalizeStyleEdits(
+              normalizedEdits: Dynamic = normalizeStyleEdits(
                 imageCropStyleEdits(
-                  current.at.frame,
-                  current.at.natural,
-                  current.live,
+                  selectedMedia.at.frame,
+                  selectedMedia.at.natural,
+                  selectedMedia.live,
                 ),
               ),
-              value289: Dynamic = JSON.stringify(value288) !== current.wrote;
-            input2 &&
-              value289 &&
-              !value286 &&
+              didWrite: Dynamic = JSON.stringify(normalizedEdits) !== selectedMedia.wrote;
+            cropState &&
+              didWrite &&
+              !isCropActive &&
               (announce(
                 uiMessage("canvas.artboardFrame.thePictureChangedWhileYou"),
               ),
-              value(
+              showToast(
                 uiMessage("canvas.artboardFrame.thePictureChangedWhileYou"),
               ));
-            current.closed =
-              !input2 || !value286 ? "dropped" : value289 ? "wrote" : "held";
-            if (current.closed !== "wrote") return callback5();
-            value199.current = true;
-            value103.current = null;
-            updateElementSessionState(value2, {
+            selectedMedia.closed =
+              !cropState || !isCropActive ? "dropped" : didWrite ? "wrote" : "held";
+            if (selectedMedia.closed !== "wrote") return finishWrite();
+            cropActiveRef.current = true;
+            activeMediaRef.current = null;
+            updateElementSessionState(previewFile, {
               target: null,
             });
-            value204(current.el, value288)
-              .then((input3?: Dynamic): Dynamic => {
-                input3 === "applied" || input3 === "applied-dirty"
+            setStyleProperty(selectedMedia.el, normalizedEdits)
+              .then((mutationStatus?: Dynamic): Dynamic => {
+                mutationStatus === "applied" || mutationStatus === "applied-dirty"
                   ? announce("Cropped.", {
                       ifIdle: true,
                     })
-                  : callback5();
-              }, callback5)
+                  : finishWrite();
+              }, finishWrite)
               .finally((): Dynamic => {
-                value199.current = false;
-                value287 && repostPickerChrome(value287);
+                cropActiveRef.current = false;
+                previewHandle && repostPickerChrome(previewHandle);
               });
           },
-          [value2, value169, value201, value204, value],
+          [previewFile, artboardComponentId, readCropState, setStyleProperty, showToast],
         ),
-        value207: Dynamic = value137 === true && !value83,
-        value208: Dynamic = (0, reactCanvasShape.useRef)(value207);
-      value208.current = value207;
-      let value209: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options: Dynamic = false): Dynamic => {
-            if (value198.current) return value206(true);
-            let current: Dynamic = value103.current,
-              value286: Dynamic = value170(value169)
-                ?.model.tagName(input2)
+        canEdit: Dynamic = canEditPreview === true && !readOnly,
+        canEditRef: Dynamic = (0, reactCanvasShape.useRef)(canEdit);
+      canEditRef.current = canEdit;
+      let toggleCrop: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tid?: Dynamic, isLive: Dynamic = false): Dynamic => {
+            if (selectedMediaRef.current) return finishCrop(true);
+            let activeMedia: Dynamic = activeMediaRef.current,
+              tagName: Dynamic = resolveComponentState(artboardComponentId)
+                ?.model.tagName(tid)
                 ?.toLowerCase(),
-              value287: Dynamic = createPreviewHandle(
-                value84.current,
+              previewHandle: Dynamic = createPreviewHandle(
+                iframeRef.current,
               );
             if (
-              !value207 ||
-              value199.current ||
-              !value287 ||
-              !current?.media ||
-              current.media.tid !== input2 ||
-              SessionElementStateGet(value2).target === null ||
-              "off" in SessionElementStateGet(value2).target ||
-              (value286 !== "img" && value286 !== "video")
+              !canEdit ||
+              cropActiveRef.current ||
+              !previewHandle ||
+              !activeMedia?.media ||
+              activeMedia.media.tid !== tid ||
+              SessionElementStateGet(previewFile).target === null ||
+              "off" in SessionElementStateGet(previewFile).target ||
+              (tagName !== "img" && tagName !== "video")
             )
               return;
-            let value288: Dynamic = value170(value169)?.model.element(input2);
-            if (!value288) return;
-            let { media: value289 }: Dynamic = current,
-              state2: Dynamic = {
-                w: current.w * (1 - value289.inset[0] - value289.inset[2]),
-                h: current.h * (1 - value289.inset[1] - value289.inset[3]),
+            let element: Dynamic = resolveComponentState(artboardComponentId)?.model.element(tid);
+            if (!element) return;
+            let { media: media }: Dynamic = activeMedia,
+              cropState: Dynamic = {
+                w: activeMedia.w * (1 - media.inset[0] - media.inset[2]),
+                h: activeMedia.h * (1 - media.inset[1] - media.inset[3]),
               },
-              value290: Dynamic = MediaObjectCropEvery(
-                state2,
-                value289,
+              cropGeometry: Dynamic = MediaObjectCropEvery(
+                cropState,
+                media,
                 cropFromObjectStyles(
-                  state2,
-                  value289,
-                  value289.view,
+                  cropState,
+                  media,
+                  media.view,
                 ),
               );
-            options
+            isLive
               ? ((document as Dynamic).activeElement instanceof HTMLElement &&
                   (document as Dynamic).activeElement.tagName === "IFRAME" &&
                   (document as Dynamic).activeElement.blur(),
                 (window as Dynamic).focus())
               : focusCanvasDocument();
-            let value291: Dynamic = "crop-" + String(Date.now());
-            setPickerScrubbing(value287, true);
+            let cropToken: Dynamic = "crop-" + String(Date.now());
+            setPickerScrubbing(previewHandle, true);
             patchPickerStyle(
-              value287,
-              value169,
-              [input2],
+              previewHandle,
+              artboardComponentId,
+              [tid],
               Object.fromEntries(
                 imageCropStyleEdits(
-                  state2,
-                  value289,
-                  value290,
+                  cropState,
+                  media,
+                  cropGeometry,
                 ).map(
-                  ([input3, input4]: Dynamic): Dynamic => [
-                    input3,
-                    input4 ?? "none",
+                  ([property, propertyValue]: Dynamic): Dynamic => [
+                    property,
+                    propertyValue ?? "none",
                   ],
                 ),
               ),
-              value291,
+              cropToken,
             );
-            value203(value288);
-            value198.current = {
-              tid: input2,
-              tids: new Set([input2]),
-              token: value291,
-              el: value288,
-              live: value290,
+            applyStyleEdit(element);
+            selectedMediaRef.current = {
+              tid: tid,
+              tids: new Set([tid]),
+              token: cropToken,
+              el: element,
+              live: cropGeometry,
               wrote: JSON.stringify(
                 normalizeStyleEdits(
-                  imageCropStyleEdits(state2, value289, value290),
+                  imageCropStyleEdits(cropState, media, cropGeometry),
                 ),
               ),
               at: {
-                frame: state2,
+                frame: cropState,
                 natural: {
-                  w: value289.w,
-                  h: value289.h,
+                  w: media.w,
+                  h: media.h,
                 },
               },
             };
-            let value292: Dynamic =
-                value170(value169)?.model.attributes(input2)?.src,
-              value293: Dynamic = MediaObjectCropSupports()
+            let imageSource: Dynamic =
+                resolveComponentState(artboardComponentId)?.model.attributes(tid)?.src,
+              supportsCropZoom: Dynamic = MediaObjectCropSupports()
                 ? undefined
                 : ThisBrowserCanTZoomAPictureMessage;
-            value197({
-              tid: input2,
-              live: value290,
+            setSelectedMedia({
+              tid: tid,
+              live: cropGeometry,
               src:
-                inlineImageUrl(value292) ??
-                (value292 !== undefined
-                  ? inlineImagePreview(value292)
+                inlineImageUrl(imageSource) ??
+                (imageSource !== undefined
+                  ? inlineImagePreview(imageSource)
                   : null),
-              noZoom: value293,
+              noZoom: supportsCropZoom,
             });
-            updateElementSessionState(value2, {
-              cropping: input2,
+            updateElementSessionState(previewFile, {
+              cropping: tid,
             });
           },
-          [value2, value169, value170, value207, value206],
+          [previewFile, artboardComponentId, resolveComponentState, canEdit, finishCrop],
         ),
-        value210: Dynamic = (0,
+        readCropEnabled: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let [items, items2, items3]: Dynamic = [
-            value198.current,
-            createPreviewHandle(value84.current),
-            value201(),
+          let [selectedMedia, previewHandle, currentCropTid]: Dynamic = [
+            selectedMediaRef.current,
+            createPreviewHandle(iframeRef.current),
+            readCropState(),
           ];
-          return !items || !items2 || items3 === null
+          return !selectedMedia || !previewHandle || currentCropTid === null
             ? false
-            : (items3 === items.tid ||
+            : (currentCropTid === selectedMedia.tid ||
                 (unpatchPickerStyle(
-                  items2,
-                  value169,
-                  [items.tid],
-                  items.token,
+                  previewHandle,
+                  artboardComponentId,
+                  [selectedMedia.tid],
+                  selectedMedia.token,
                 ),
-                (items.tid = items3),
-                items.tids.add(items3),
+                (selectedMedia.tid = currentCropTid),
+                selectedMedia.tids.add(currentCropTid),
                 patchPickerStyle(
-                  items2,
-                  value169,
-                  [items3],
+                  previewHandle,
+                  artboardComponentId,
+                  [currentCropTid],
                   Object.fromEntries(
                     imageCropStyleEdits(
-                      items.at.frame,
-                      items.at.natural,
-                      items.live,
+                      selectedMedia.at.frame,
+                      selectedMedia.at.natural,
+                      selectedMedia.live,
                     ).map(
-                      ([input2, input3]: Dynamic): Dynamic => [
-                        input2,
-                        input3 ?? "none",
+                      ([property, propertyValue]: Dynamic): Dynamic => [
+                        property,
+                        propertyValue ?? "none",
                       ],
                     ),
                   ),
-                  items.token,
+                  selectedMedia.token,
                 ),
-                value197(
-                  (input2?: Dynamic): Dynamic =>
-                    input2 && {
-                      ...input2,
-                      tid: items3,
+                setSelectedMedia(
+                  (media?: Dynamic): Dynamic =>
+                    media && {
+                      ...media,
+                      tid: currentCropTid,
                     },
                 ),
-                updateElementSessionState(value2, {
-                  cropping: items3,
+                updateElementSessionState(previewFile, {
+                  cropping: currentCropTid,
                 })),
               true);
-        }, [value2, value169, value201]),
-        value211: Dynamic = (0, reactCanvasShape.useRef)(value210);
-      value211.current = value210;
-      let value212: Dynamic = (0, reactCanvasShape.useRef)(value206);
-      value212.current = value206;
-      let value213: Dynamic = (0, reactCanvasShape.useRef)(value209);
-      value213.current = value209;
+        }, [previewFile, artboardComponentId, readCropState]),
+        readCropEnabledRef: Dynamic = (0, reactCanvasShape.useRef)(readCropEnabled);
+      readCropEnabledRef.current = readCropEnabled;
+      let finishCropRef: Dynamic = (0, reactCanvasShape.useRef)(finishCrop);
+      finishCropRef.current = finishCrop;
+      let toggleCropRef: Dynamic = (0, reactCanvasShape.useRef)(toggleCrop);
+      toggleCropRef.current = toggleCrop;
       (0, reactCanvasShape.useEffect)(
-        (): Dynamic => (): Dynamic => value212.current(false),
+        (): Dynamic => (): Dynamic => finishCropRef.current(false),
         [],
       );
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value207 || value212.current(false);
-      }, [value207]);
+        canEdit || finishCropRef.current(false);
+      }, [canEdit]);
       (0, reactCanvasShape.useEffect)(
-        (): Dynamic => (): Dynamic => value212.current(false),
-        [value93],
+        (): Dynamic => (): Dynamic => finishCropRef.current(false),
+        [displayedGeneration],
       );
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value23 !== true && value212.current(true);
-      }, [value23]);
-      let value214: Dynamic = (0, reactCanvasShape.useMemo)(
+        panelMounted !== true && finishCropRef.current(true);
+      }, [panelMounted]);
+      let cropModel: Dynamic = (0, reactCanvasShape.useMemo)(
           (): Dynamic =>
-            value196 && {
-              tid: value196.tid,
-              live: value196.live,
-              src: value196.src,
-              zoomDisabledReason: value196.noZoom,
+            selectedMediaSnapshot && {
+              tid: selectedMediaSnapshot.tid,
+              live: selectedMediaSnapshot.live,
+              src: selectedMediaSnapshot.src,
+              zoomDisabledReason: selectedMediaSnapshot.noZoom,
               onLive: (
-                input2?: Dynamic,
-                options?: Dynamic,
-                context?: Dynamic,
+                liveCrop?: Dynamic,
+                frame?: Dynamic,
+                naturalSize?: Dynamic,
               ): Dynamic => {
-                let current: Dynamic = value198.current,
-                  value286: Dynamic = createPreviewHandle(
-                    value84.current,
+                let selectedMedia: Dynamic = selectedMediaRef.current,
+                  previewHandle: Dynamic = createPreviewHandle(
+                    iframeRef.current,
                   );
-                if (!(!current || !value286 || !value210())) {
+                if (!(!selectedMedia || !previewHandle || !readCropEnabled())) {
                   if (
-                    input2.zoom > current.live.zoom &&
-                    MediaObjectCropZoom(options, context, input2)
+                    liveCrop.zoom > selectedMedia.live.zoom &&
+                    MediaObjectCropZoom(frame, naturalSize, liveCrop)
                   ) {
-                    Date.now() - value200.current > 2e3 &&
+                    Date.now() - lastCropChangeRef.current > 2e3 &&
                       announce(
                         YouCanTCropAnyFurtherAtMessage,
                       );
-                    value200.current = Date.now();
+                    lastCropChangeRef.current = Date.now();
                     return;
                   }
-                  current.live = input2;
-                  current.at = {
-                    frame: options,
-                    natural: context,
+                  selectedMedia.live = liveCrop;
+                  selectedMedia.at = {
+                    frame: frame,
+                    natural: naturalSize,
                   };
-                  value197(
-                    (input3?: Dynamic): Dynamic =>
-                      input3 && {
-                        ...input3,
-                        live: input2,
+                  setSelectedMedia(
+                    (cropState?: Dynamic): Dynamic =>
+                      cropState && {
+                        ...cropState,
+                        live: liveCrop,
                       },
                   );
                   holdPickerStyle(
-                    value286,
-                    value169,
-                    [current.tid],
+                    previewHandle,
+                    artboardComponentId,
+                    [selectedMedia.tid],
                     Object.fromEntries(
                       imageCropStyleEdits(
-                        options,
-                        context,
-                        input2,
+                        frame,
+                        naturalSize,
+                        liveCrop,
                       ).map(
-                        ([input3, input4]: Dynamic): Dynamic => [
-                          input3,
-                          input4 ?? "none",
+                        ([property, propertyValue]: Dynamic): Dynamic => [
+                          property,
+                          propertyValue ?? "none",
                         ],
                       ),
                     ),
-                    current.token,
+                    selectedMedia.token,
                   );
                 }
               },
-              onDone: value206,
-              onGesture: (input2?: Dynamic): Dynamic =>
-                value9?.("element-crop", input2),
+              onDone: finishCrop,
+              onGesture: (gesture?: Dynamic): Dynamic =>
+                onHostGesture?.("element-crop", gesture),
               onSideStart: (
-                input2?: Dynamic,
-                options?: Dynamic,
-                context?: Dynamic,
-              ): Dynamic => value281.current(input2, options, context),
+                tid?: Dynamic,
+                frame?: Dynamic,
+                natural?: Dynamic,
+              ): Dynamic => cropGestureRef.current(tid, frame, natural),
             },
-          [value196, value169, value210, value206, value9],
+          [selectedMediaSnapshot, artboardComponentId, readCropEnabled, finishCrop, onHostGesture],
         ),
-        value215: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(value169);
-            if (!value286) return [];
-            let items: Dynamic = [];
-            for (let value287 of input2 as Dynamic) {
-              let value288: Dynamic = value286.model.element(value287);
-              if (!value288) continue;
-              let items2: Dynamic = [];
-              for (let value291: Dynamic = value287; value291 !== null; ) {
-                let value292: Dynamic = value286.model.parentTid(value291);
-                items2.unshift(
-                  value286.model.childTids(value292).indexOf(value291),
+        describeSelectionTids: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tids?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            if (!componentState) return [];
+            let descriptions: Dynamic = [];
+            for (let tid of tids as Dynamic) {
+              let describedElement: Dynamic = componentState.model.element(tid);
+              if (!describedElement) continue;
+              let ancestorPath: Dynamic = [];
+              for (let ancestorTid: Dynamic = tid; ancestorTid !== null; ) {
+                let parentTid: Dynamic = componentState.model.parentTid(ancestorTid);
+                ancestorPath.unshift(
+                  componentState.model.childTids(parentTid).indexOf(ancestorTid),
                 );
-                value291 = value292;
+                ancestorTid = parentTid;
               }
-              let value289: Dynamic =
-                  value286.model.tagName(value287)?.toLowerCase() ?? "",
-                callback5: Dynamic = (input3?: Dynamic): Dynamic =>
-                  value289 === "img"
-                    ? (value288.getAttribute("alt") ?? "")
-                    : extractVisibleElementText(value288, {
-                        visits: input3,
+              let tagName: Dynamic =
+                  componentState.model.tagName(tid)?.toLowerCase() ?? "",
+                extractText: Dynamic = (element?: Dynamic): Dynamic =>
+                  tagName === "img"
+                    ? (describedElement.getAttribute("alt") ?? "")
+                    : extractVisibleElementText(describedElement, {
+                        visits: element,
                       }),
-                value290: Dynamic = isTextCapableElement(
-                  value288,
-                  value286.model.isTextEditable(value287),
+                elementKind: Dynamic = isTextCapableElement(
+                  describedElement,
+                  componentState.model.isTextEditable(tid),
                 );
-              items.push({
-                path: String(value287) + ":" + items2.join("/"),
-                kind: value290 === "box" ? "shape" : value290,
-                words: callback5,
+              descriptions.push({
+                path: String(tid) + ":" + ancestorPath.join("/"),
+                kind: elementKind === "box" ? "shape" : elementKind,
+                words: extractText,
               });
             }
-            return items;
+            return descriptions;
           },
-          [value170, value169],
+          [resolveComponentState, artboardComponentId],
         ),
-        value216: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(value169);
-            return value286
-              ? input2
+        describeTids: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tids?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            return componentState
+              ? tids
                   .filter(
-                    (input3?: Dynamic): Dynamic =>
-                      value286.model.element(input3) != null,
+                    (tid?: Dynamic): Dynamic =>
+                      componentState.model.element(tid) != null,
                   )
-                  .map((input3?: Dynamic): Dynamic => {
-                    let value287: Dynamic = value286.model.element(input3),
-                      value288: Dynamic = value286.model.isTextEditable(input3);
+                  .map((tid?: Dynamic): Dynamic => {
+                    let element: Dynamic = componentState.model.element(tid),
+                      isTextEditable: Dynamic = componentState.model.isTextEditable(tid);
                     return {
-                      tid: input3,
+                      tid: tid,
                       kind: isTextCapableElement(
-                        value287,
-                        value288,
+                        element,
+                        isTextEditable,
                       ),
-                      tag: value287.tagName.toLowerCase(),
-                      editable: value288,
+                      tag: element.tagName.toLowerCase(),
+                      editable: isTextEditable,
                     };
                   })
               : [];
           },
-          [value170, value169],
+          [resolveComponentState, artboardComponentId],
         ),
-        value217: Dynamic = (0, reactCanvasShape.useCallback)(
+        insertHtml: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
-            input2?: Dynamic,
-            options: Dynamic = "root-end",
-            context?: Dynamic,
+            html?: Dynamic,
+            placement: Dynamic = "root-end",
+            insertContext?: Dynamic,
           ): Promise<Dynamic> => {
-            let items: Dynamic = [];
-            await value159.current.mutate(
-              value169,
-              (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-                if (options2.path !== value2) return false;
-                let callback5: Dynamic = (input4?: Dynamic): Dynamic => {
-                    let value290: Dynamic =
-                        context != null &&
-                        options2.model
-                          .topLevelTags(input4)
+            let insertedTids: Dynamic = [];
+            await componentSessionRef.current.mutate(
+              artboardComponentId,
+              (dropTargetTid?: Dynamic, modelState?: Dynamic): Dynamic => {
+                if (modelState.path !== previewFile) return false;
+                let resolveTarget: Dynamic = (targetTid?: Dynamic): Dynamic => {
+                    let parentTarget: Dynamic =
+                        insertContext != null &&
+                        modelState.model
+                          .topLevelTags(targetTid)
                           .filter(
-                            (input5?: Dynamic): Dynamic =>
+                            (selector?: Dynamic): Dynamic =>
                               !SelectionActionsHelmetScHelmetPattern.test(
-                                input5,
+                                selector,
                               ),
                           ).length === 1
-                          ? context
+                          ? insertContext
                           : null,
-                      value291: Dynamic =
-                        value290 != null || options === "page"
+                      parentElement: Dynamic =
+                        parentTarget != null || placement === "page"
                           ? emptyArtboardDropTarget(
-                              options2.model,
-                              input4,
+                              modelState.model,
+                              targetTid,
                             )
                           : null,
-                      value292: Dynamic = pasteParentTarget(
-                        options,
-                        value290,
-                        value291,
-                        input4,
+                      placementTarget: Dynamic = pasteParentTarget(
+                        placement,
+                        parentTarget,
+                        parentElement,
+                        targetTid,
                       ),
-                      value293: Dynamic =
-                        options === "root-end" &&
+                      insertionMode: Dynamic =
+                        placement === "root-end" &&
                         containsFlowPastedElements(
-                          value292 != null,
-                          input4,
+                          placementTarget != null,
+                          targetTid,
                         ),
-                      value294: Dynamic = value291
-                        ? value291.placement
-                        : options === "stage"
+                      resolvedPlacement: Dynamic = parentElement
+                        ? parentElement.placement
+                        : placement === "stage"
                           ? defaultInsertionPoint(
-                              options2.model,
-                              input4,
+                              modelState.model,
+                              targetTid,
                             )
-                          : value293
+                          : insertionMode
                             ? insertionPointForSelection(
-                                options2.model,
+                                modelState.model,
                                 [],
-                                input4,
+                                targetTid,
                               )
                             : {
                                 targetTid: null,
                                 position: "root-end",
                               };
                     return {
-                      html: value292
-                        ? positionPastedHtml(input4, value292)
-                        : input4,
-                      placement: value294,
+                      html: placementTarget
+                        ? positionPastedHtml(targetTid, placementTarget)
+                        : targetTid,
+                      placement: resolvedPlacement,
                     };
                   },
-                  value286: Dynamic = callback5(input2),
-                  value287: Dynamic =
-                    options === "stage"
-                      ? wrapInlinePastedHtml(input2)
-                      : input2,
-                  value288: Dynamic =
-                    value287 !== input2 ? callback5(value287) : null,
-                  value289: Dynamic =
-                    value288 &&
+                  resolvedTarget: Dynamic = resolveTarget(html),
+                  fallbackTarget: Dynamic =
+                    placement === "stage"
+                      ? wrapInlinePastedHtml(html)
+                      : html,
+                  parentInfo: Dynamic =
+                    fallbackTarget !== html ? resolveTarget(fallbackTarget) : null,
+                  fallbackPlacement: Dynamic =
+                    parentInfo &&
                     sameInsertionPoint(
-                      value288.placement,
-                      value286.placement,
+                      parentInfo.placement,
+                      resolvedTarget.placement,
                     )
-                      ? value288
-                      : value286;
-                items = insertHtmlIntoModel(
-                  options2,
-                  value289.html,
-                  value289.placement,
+                      ? parentInfo
+                      : resolvedTarget;
+                insertedTids = insertHtmlIntoModel(
+                  modelState,
+                  fallbackPlacement.html,
+                  fallbackPlacement.placement,
                 );
-                return items.length > 0;
+                return insertedTids.length > 0;
               },
               {
                 structural: true,
               },
             );
-            return items;
+            return insertedTids;
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value218: Dynamic = (0, reactCanvasShape.useCallback)(
+        insertLayerAt: Dynamic = (0, reactCanvasShape.useCallback)(
           (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
+            insertHtmlContent?: Dynamic,
+            insertPlacement?: Dynamic,
+            insertLiveState?: Dynamic,
+            replaced?: Dynamic,
           ): Dynamic => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
             return placeElementAtMeasuredPoint(
               {
-                state: (): Dynamic => value170(value169),
+                state: (): Dynamic => resolveComponentState(artboardComponentId),
                 measure: (
-                  input3?: Dynamic,
-                  options2?: Dynamic,
-                  context2?: Dynamic,
+                  html?: Dynamic,
+                  placement?: Dynamic,
+                  liveState?: Dynamic,
                 ): Dynamic =>
-                  value287
+                  previewHandle
                     ? requestInsertionContainerTransform(
-                        value287,
-                        value169,
-                        input3,
-                        options2,
-                        context2,
+                        previewHandle,
+                        artboardComponentId,
+                        html,
+                        placement,
+                        liveState,
                       )
                     : Promise.resolve(null),
-                live: context,
-                replaced: value286,
-                mutate: async (input3?: Dynamic): Promise<Dynamic> => {
-                  let items: Dynamic = [];
-                  await value159.current.mutate(
-                    value169,
-                    (input4?: Dynamic, options2?: Dynamic): Dynamic =>
-                      options2.path !== value2
+                live: insertLiveState,
+                replaced: replaced,
+                mutate: async (mutate?: Dynamic): Promise<Dynamic> => {
+                  let insertedTids: Dynamic = [];
+                  await componentSessionRef.current.mutate(
+                    artboardComponentId,
+                    (html?: Dynamic, mutationOptions?: Dynamic): Dynamic =>
+                      mutationOptions.path !== previewFile
                         ? false
-                        : ((items = input3(options2)), items.length > 0),
+                        : ((insertedTids = mutate(mutationOptions)), insertedTids.length > 0),
                     {
                       structural: true,
                     },
                   );
-                  return items;
+                  return insertedTids;
                 },
               },
-              input2,
-              options,
+              insertHtmlContent,
+              insertPlacement,
             );
           },
-          [value170, value169, value2],
+          [resolveComponentState, artboardComponentId, previewFile],
         ),
-        value219: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-            value218(input2, options, context, (): Dynamic => null),
-          [value218],
+        insertAtPoint: Dynamic = (0, reactCanvasShape.useCallback)(
+          (html?: Dynamic, placement?: Dynamic, insertContext?: Dynamic): Dynamic =>
+            insertLayerAt(html, placement, insertContext, (): Dynamic => null),
+          [insertLayerAt],
         ),
-        value220: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        formatCommand: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tid?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 && formatPickerText(value286, input2);
+            previewHandle && formatPickerText(previewHandle, tid);
           },
           [],
         ),
-        value221: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        startTextEdit: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tid?: Dynamic, text?: Dynamic, selection?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 &&
+            previewHandle &&
               startPickerTextEdit(
-                value286,
-                options,
-                input2,
-                context,
+                previewHandle,
+                text,
+                tid,
+                selection,
               );
           },
           [],
         ),
-        value222: Dynamic = (0,
+        holdsDeck: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          if (value170(value169)?.model.findDeckStage() != null) return true;
+          if (resolveComponentState(artboardComponentId)?.model.findDeckStage() != null) return true;
           try {
             return (
-              value84.current?.contentDocument?.querySelector("deck-stage") !=
+              iframeRef.current?.contentDocument?.querySelector("deck-stage") !=
               null
             );
           } catch {
             return false;
           }
-        }, [value170, value169]),
-        value223: Dynamic = (0,
+        }, [resolveComponentState, artboardComponentId]),
+        pageFonts: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = value170(value169);
-          return value286
-            ? collectFontFamilies(value286.model.serialize())
+          let componentState: Dynamic = resolveComponentState(artboardComponentId);
+          return componentState
+            ? collectFontFamilies(componentState.model.serialize())
             : [];
-        }, [value170, value169]),
-        value224: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value225: Dynamic = (0,
+        }, [resolveComponentState, artboardComponentId]),
+        pageCensusRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        pageCensus: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = value170(value169),
-            current: Dynamic = value224.current,
-            value287: Dynamic = value286?.stampGen ?? -1,
-            value288: Dynamic = getDesignSystemColorVariables();
+          let componentState: Dynamic = resolveComponentState(artboardComponentId),
+            cachedCensus: Dynamic = pageCensusRef.current,
+            stampGeneration: Dynamic = componentState?.stampGen ?? -1,
+            colorVariables: Dynamic = getDesignSystemColorVariables();
           if (
-            current &&
-            value286 &&
-            current.model === value286.model &&
-            current.stamp === value287 &&
-            current.gen === value132.current &&
-            current.tokens === value288
+            cachedCensus &&
+            componentState &&
+            cachedCensus.model === componentState.model &&
+            cachedCensus.stamp === stampGeneration &&
+            cachedCensus.gen === frameUpdateCountRef.current &&
+            cachedCensus.tokens === colorVariables
           )
-            return current.census;
-          let value289: Dynamic = value286 ? value286.model.serialize() : "",
-            state2: Dynamic = {
-              fonts: value286 ? collectFontFamilies(value289) : [],
-              webfonts: value286
-                ? collectGoogleFontFamilies(value289)
+            return cachedCensus.census;
+          let serializedModel: Dynamic = componentState ? componentState.model.serialize() : "",
+            censusState: Dynamic = {
+              fonts: componentState ? collectFontFamilies(serializedModel) : [],
+              webfonts: componentState
+                ? collectGoogleFontFamilies(serializedModel)
                 : [],
-              sizes: value286 ? collectFontSizes(value289) : [],
-              colors: value286
-                ? collectColorTokens(value289, value288)
+              sizes: componentState ? collectFontSizes(serializedModel) : [],
+              colors: componentState
+                ? collectColorTokens(serializedModel, colorVariables)
                 : new Map(),
-              roles: value286
-                ? collectFontSizeFamilyUsage(value289)
+              roles: componentState
+                ? collectFontSizeFamilyUsage(serializedModel)
                 : new Map(),
-              families: value286
-                ? collectTypographyRoles(value289)
+              families: componentState
+                ? collectTypographyRoles(serializedModel)
                 : new Map(),
             };
-          value224.current = value286
+          pageCensusRef.current = componentState
             ? {
-                model: value286.model,
-                stamp: value287,
-                gen: value132.current,
-                tokens: value288,
-                census: state2,
+                model: componentState.model,
+                stamp: stampGeneration,
+                gen: frameUpdateCountRef.current,
+                tokens: colorVariables,
+                census: censusState,
               }
             : null;
-          return state2;
-        }, [value170, value169]),
-        value226: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            if (!validatePastedAttributeEdits(options))
+          return censusState;
+        }, [resolveComponentState, artboardComponentId]),
+        swapImageAttrs: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (sourceImageId?: Dynamic, mutationOptions?: Dynamic): Promise<Dynamic> => {
+            if (!validatePastedAttributeEdits(mutationOptions))
               return false;
-            let flag2: Dynamic = false;
-            await value159.current.mutate(
-              value169,
-              (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-                if (options2.path !== value2) return false;
-                for (let value286 of options2.model.elementsByAttr(
+            let updated: Dynamic = false;
+            await componentSessionRef.current.mutate(
+              artboardComponentId,
+              (imageId?: Dynamic, modelState?: Dynamic): Dynamic => {
+                if (modelState.path !== previewFile) return false;
+                for (let element of modelState.model.elementsByAttr(
                   "src",
-                  input2,
+                  sourceImageId,
                 ) as Dynamic) {
-                  if (value286.tagName.toLowerCase() !== "img") continue;
-                  let value287: Dynamic = parseInt(
-                    value286.getAttribute("data-dc-tpl") ?? "-1",
+                  if (element.tagName.toLowerCase() !== "img") continue;
+                  let templateId: Dynamic = parseInt(
+                    element.getAttribute("data-dc-tpl") ?? "-1",
                     10,
                   );
-                  if (!(value287 < 0)) {
-                    for (let [value288, value289] of Object.entries(
-                      options,
+                  if (!(templateId < 0)) {
+                    for (let [attributeName, attributeValue] of Object.entries(
+                      mutationOptions,
                     ) as Dynamic)
-                      options2.model.setAttribute(value287, value288, value289);
-                    flag2 = true;
+                      modelState.model.setAttribute(templateId, attributeName, attributeValue);
+                    updated = true;
                   }
                 }
-                return flag2;
+                return updated;
               },
               {
                 structural: false,
               },
             );
-            return flag2;
+            return updated;
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value227: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            if (!validatePastedAttributeEdits(options))
+        replaceImageFor: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (imageId?: Dynamic, mutationOptions?: Dynamic): Promise<Dynamic> => {
+            if (!validatePastedAttributeEdits(mutationOptions))
               return false;
-            value212.current(false);
-            let value286: Dynamic = await value159.current.mutate(
-              value169,
-              (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-                if (options2.path !== value2) return false;
-                let value287: Dynamic = options2.model.element(input2);
-                if (!value287 || value287.tagName.toLowerCase() !== "img")
+            finishCropRef.current(false);
+            let mutationResult: Dynamic = await componentSessionRef.current.mutate(
+              artboardComponentId,
+              (model?: Dynamic, modelState?: Dynamic): Dynamic => {
+                if (modelState.path !== previewFile) return false;
+                let imageElement: Dynamic = modelState.model.element(imageId);
+                if (!imageElement || imageElement.tagName.toLowerCase() !== "img")
                   return false;
-                for (let [value288, value289] of Object.entries(
-                  options,
+                for (let [attributeName, attributeValue] of Object.entries(
+                  mutationOptions,
                 ) as Dynamic)
-                  options2.model.setAttribute(input2, value288, value289);
+                  modelState.model.setAttribute(imageId, attributeName, attributeValue);
                 if (
                   MediaObjectCropTest(
-                    (input4?: Dynamic): Dynamic =>
-                      options2.model.inlineStyleValue(input2, input4),
+                    (styleProperty?: Dynamic): Dynamic =>
+                      modelState.model.inlineStyleValue(imageId, styleProperty),
                   )
                 )
-                  for (let value288 of [
+                  for (let propertyName of [
                     "object-view-box",
                     "object-position",
                   ] as Dynamic)
-                    input3.setStyleProperty(input2, value288, null);
+                    model.setStyleProperty(imageId, propertyName, null);
                 return true;
               },
               {
@@ -3173,71 +3173,71 @@ export function installCanvasArtboardFrame(): () => void {
                 pushUndo: true,
               },
             );
-            return value286 === "applied" || value286 === "applied-dirty";
+            return mutationResult === "applied" || mutationResult === "applied-dirty";
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value228: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
+        videoElement: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tid?: Dynamic): Dynamic => {
             try {
               return findPreviewMediaElement(
-                value84.current?.contentDocument,
+                iframeRef.current?.contentDocument,
                 DcTplAttribute,
-                input2,
-                value169,
+                tid,
+                artboardComponentId,
               );
             } catch {
               return null;
             }
           },
-          [value169],
+          [artboardComponentId],
         ),
-        value229: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(value169);
-            return value286
-              ? createVideoElementIdentity(value286.model, input2)
+        videoKey: Dynamic = (0, reactCanvasShape.useCallback)(
+          (tid?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            return componentState
+              ? createVideoElementIdentity(componentState.model, tid)
               : null;
           },
-          [value170, value169],
+          [resolveComponentState, artboardComponentId],
         ),
-        value230: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            if (!isValidVideoDimensions(options)) return "refused";
+        replaceVideoFor: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (videoId?: Dynamic, videoOptions?: Dynamic): Promise<Dynamic> => {
+            if (!isValidVideoDimensions(videoOptions)) return "refused";
             let text: Dynamic = "gone";
-            value212.current(false);
-            let value286: Dynamic = await value159.current.mutate(
-              value169,
-              (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-                if (options2.path !== value2) return false;
-                let value287: Dynamic = resolveVideoElementIdentity(options2.model, input2);
-                if (typeof value287 != "number") {
-                  text = value287;
+            finishCropRef.current(false);
+            let mutationResult: Dynamic = await componentSessionRef.current.mutate(
+              artboardComponentId,
+              (model?: Dynamic, modelState?: Dynamic): Dynamic => {
+                if (modelState.path !== previewFile) return false;
+                let videoElementId: Dynamic = resolveVideoElementIdentity(modelState.model, videoId);
+                if (typeof videoElementId != "number") {
+                  text = videoElementId;
                   return false;
                 }
                 if (
                   MediaObjectCropTest(
-                    (input4?: Dynamic): Dynamic =>
-                      options2.model.inlineStyleValue(value287, input4),
+                    (styleProperty?: Dynamic): Dynamic =>
+                      modelState.model.inlineStyleValue(videoElementId, styleProperty),
                   )
                 )
-                  for (let value288 of [
+                  for (let propertyName of [
                     "object-view-box",
                     "object-position",
                   ] as Dynamic)
-                    input3.setStyleProperty(value287, value288, null);
-                options2.model.setAttribute(value287, "src", options.src);
-                options2.model.setAttribute(
-                  value287,
+                    model.setStyleProperty(videoElementId, propertyName, null);
+                modelState.model.setAttribute(videoElementId, "src", videoOptions.src);
+                modelState.model.setAttribute(
+                  videoElementId,
                   "width",
-                  String(options.width),
+                  String(videoOptions.width),
                 );
-                options2.model.setAttribute(
-                  value287,
+                modelState.model.setAttribute(
+                  videoElementId,
                   "height",
-                  String(options.height),
+                  String(videoOptions.height),
                 );
-                options2.model.setAttribute(value287, "poster", null);
+                modelState.model.setAttribute(videoElementId, "poster", null);
                 return true;
               },
               {
@@ -3245,278 +3245,278 @@ export function installCanvasArtboardFrame(): () => void {
                 pushUndo: true,
               },
             );
-            return value286 === "applied" || value286 === "applied-dirty"
+            return mutationResult === "applied" || mutationResult === "applied-dirty"
               ? "ok"
               : text;
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value231: Dynamic = (0, reactCanvasShape.useRef)(null),
-        value232: Dynamic = (0,
+        videoPreviewRef: Dynamic = (0, reactCanvasShape.useRef)(null),
+        readTextTids: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = value159.current.state(value169);
-          if (!value286) return null;
-          let value287: Dynamic = value286.model.serialize(),
-            current: Dynamic = value231.current,
-            value288: Dynamic =
-              current && current.src === value287
-                ? current.tids
-                : value286.model
+          let componentState: Dynamic = componentSessionRef.current.state(artboardComponentId);
+          if (!componentState) return null;
+          let serializedModel: Dynamic = componentState.model.serialize(),
+            cachedVideoVisibility: Dynamic = videoPreviewRef.current,
+            textTids: Dynamic =
+              cachedVideoVisibility && cachedVideoVisibility.src === serializedModel
+                ? cachedVideoVisibility.tids
+                : componentState.model
                     .textEditables()
-                    .map((input2?: Dynamic): Dynamic => input2.tid);
-          value231.current = {
-            src: value287,
-            tids: value288,
+                    .map((element?: Dynamic): Dynamic => element.tid);
+          videoPreviewRef.current = {
+            src: serializedModel,
+            tids: textTids,
           };
-          return value288;
-        }, [value169]),
-        value233: Dynamic = (0, reactCanvasShape.useCallback)(
+          return textTids;
+        }, [artboardComponentId]),
+        pickAt: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context: Dynamic = "plain",
-            value286: Dynamic = [],
+            point?: Dynamic,
+            selectionMode?: Dynamic,
+            kind: Dynamic = "plain",
+            excludedTids: Dynamic = [],
           ): Promise<Dynamic> => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            if (!value287 || !(await value159.current.ensureModel(value169)))
+            if (!previewHandle || !(await componentSessionRef.current.ensureModel(artboardComponentId)))
               return null;
-            let value288: Dynamic = await pickAtPoint(
-              value287,
-              input2,
-              options,
-              context,
-              value286,
-              value232() ?? [],
+            let pickedElement: Dynamic = await pickAtPoint(
+              previewHandle,
+              point,
+              selectionMode,
+              kind,
+              excludedTids,
+              readTextTids() ?? [],
             );
-            if (!value288) return null;
-            let value289: Dynamic = value159.current.state(value169),
-              value290: Dynamic = value289
-                ? value289.model
+            if (!pickedElement) return null;
+            let componentState: Dynamic = componentSessionRef.current.state(artboardComponentId),
+              pickedTids: Dynamic = componentState
+                ? componentState.model
                     .childTids(null)
                     .filter(
-                      (input3?: Dynamic): Dynamic =>
+                      (tid?: Dynamic): Dynamic =>
                         !SelectionActionsHelmetScHelmetPattern.test(
-                          value289.model.tagName(input3) ?? "",
+                          componentState.model.tagName(tid) ?? "",
                         ),
                     )
                 : [];
-            if ("empty" in value288) {
-              if (!value289) return null;
-              let value295: Dynamic =
-                value290.length === 1
-                  ? value289.model.element(value290[0])
+            if ("empty" in pickedElement) {
+              if (!componentState) return null;
+              let pickedText: Dynamic =
+                pickedTids.length === 1
+                  ? componentState.model.element(pickedTids[0])
                   : null;
-              return value290.length === 0 ||
-                (value295 != null &&
+              return pickedTids.length === 0 ||
+                (pickedText != null &&
                   pickerElementSignature(
-                    value295,
-                    (input3?: Dynamic): Dynamic =>
-                      classifyElementStyleKind(input3) === "text",
+                    pickedText,
+                    (element?: Dynamic): Dynamic =>
+                      classifyElementStyleKind(element) === "text",
                   ))
-                ? value288
+                ? pickedElement
                 : null;
             }
-            if (!value289 || !value289.model.element(value288.tid)) return null;
-            let value291: Dynamic =
-              value289.model.tagName(value288.tid)?.toLowerCase() ?? "";
+            if (!componentState || !componentState.model.element(pickedElement.tid)) return null;
+            let importTag: Dynamic =
+              componentState.model.tagName(pickedElement.tid)?.toLowerCase() ?? "";
             if (
-              !equivalentDesignImportTags(value291, value288.tag)
+              !equivalentDesignImportTags(importTag, pickedElement.tag)
             )
               return null;
-            let value292: Dynamic =
-                value288.root &&
-                value290.length === 1 &&
-                value290[0] === value288.tid,
-              text: Dynamic = value288.text,
-              value293: Dynamic =
-                !value292 && text ? value289.model.element(text.tid) : null,
-              value294: Dynamic =
+            let rootElement: Dynamic =
+                pickedElement.root &&
+                pickedTids.length === 1 &&
+                pickedTids[0] === pickedElement.tid,
+              text: Dynamic = pickedElement.text,
+              nestedRoot: Dynamic =
+                !rootElement && text ? componentState.model.element(text.tid) : null,
+              textElement: Dynamic =
                 text &&
-                value293 &&
-                value289.model.element(value288.tid)?.contains(value293) &&
+                nestedRoot &&
+                componentState.model.element(pickedElement.tid)?.contains(nestedRoot) &&
                 equivalentDesignImportTags(
-                  value289.model.tagName(text.tid)?.toLowerCase() ?? "",
+                  componentState.model.tagName(text.tid)?.toLowerCase() ?? "",
                   text.tag,
                 ) &&
-                value289.model.isTextEditable(text.tid) &&
-                !value289.model.isTextEditable(value288.tid)
+                componentState.model.isTextEditable(text.tid) &&
+                !componentState.model.isTextEditable(pickedElement.tid)
                   ? {
                       tid: text.tid,
                       rect: text.rect,
                     }
                   : null;
             return {
-              tid: value288.tid,
-              rect: value288.rect,
-              root: value292,
-              page: value292 && value288.page,
-              text: value294,
+              tid: pickedElement.tid,
+              rect: pickedElement.rect,
+              root: rootElement,
+              page: rootElement && pickedElement.page,
+              text: textElement,
             };
           },
-          [value169, value232],
+          [artboardComponentId, readTextTids],
         ),
-        value234: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        pickIn: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (point?: Dynamic, pickOptions?: Dynamic): Promise<Dynamic> => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            if (!value286 || !(await value159.current.ensureModel(value169)))
+            if (!previewHandle || !(await componentSessionRef.current.ensureModel(artboardComponentId)))
               return null;
-            let value287: Dynamic = await pickInBox(
-              value286,
-              input2,
-              options,
+            let pickedElement: Dynamic = await pickInBox(
+              previewHandle,
+              point,
+              pickOptions,
             );
-            if (value287 == null) return null;
-            let value288: Dynamic = value159.current.state(value169);
-            return value288
+            if (pickedElement == null) return null;
+            let componentState: Dynamic = componentSessionRef.current.state(artboardComponentId);
+            return componentState
               ? [
                   ...new Set(
-                    value287
+                    pickedElement
                       .filter(
-                        (input3?: Dynamic): Dynamic =>
-                          value288.model.element(input3.tid) != null &&
+                        (element?: Dynamic): Dynamic =>
+                          componentState.model.element(element.tid) != null &&
                           equivalentDesignImportTags(
-                            value288.model.tagName(input3.tid)?.toLowerCase() ??
+                            componentState.model.tagName(element.tid)?.toLowerCase() ??
                               "",
-                            input3.tag,
+                            element.tag,
                           ),
                       )
-                      .map((input3?: Dynamic): Dynamic => input3.tid),
+                      .map((element?: Dynamic): Dynamic => element.tid),
                   ),
                 ]
               : null;
           },
-          [value169],
+          [artboardComponentId],
         ),
-        value235: Dynamic = (0, reactCanvasShape.useCallback)(
+        setShownSelection: Dynamic = (0, reactCanvasShape.useCallback)(
           (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
+            selectionIds?: Dynamic,
+            selectionOptions?: Dynamic,
+            selectionContext?: Dynamic,
+            selection?: Dynamic,
           ): Dynamic => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            return value287
+            return previewHandle
               ? (setPickerSelection(
-                  value287,
-                  input2 ? [...input2] : null,
-                  options,
-                  context,
-                  value286,
+                  previewHandle,
+                  selectionIds ? [...selectionIds] : null,
+                  selectionOptions,
+                  selectionContext,
+                  selection,
                 ),
                 true)
               : false;
           },
           [],
         ),
-        value236: Dynamic = (0,
+        clearLabelPart: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = createPreviewHandle(
-            value84.current,
+          let previewHandle: Dynamic = createPreviewHandle(
+            iframeRef.current,
           );
-          value286 && clearPickerPart(value286);
+          previewHandle && clearPickerPart(previewHandle);
         }, []),
-        value237: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        hostDrag: Dynamic = (0, reactCanvasShape.useCallback)(
+          (dragData?: Dynamic, dragOptions?: Dynamic, isExternal?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 &&
+            previewHandle &&
               finishExitedPickerDrag(
-                value286,
-                input2,
-                options,
-                !!context,
+                previewHandle,
+                dragData,
+                dragOptions,
+                !!isExternal,
               );
           },
           [],
         ),
-        value238: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        cancelBox: Dynamic = (0, reactCanvasShape.useCallback)(
+          (reason?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 && cancelPickerBox(value286, input2);
+            previewHandle && cancelPickerBox(previewHandle, reason);
           },
           [],
         ),
-        value239: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        armedByClick: Dynamic = (0, reactCanvasShape.useCallback)(
+          (point?: Dynamic, pickOptions?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 &&
-              armPickerByClick(value286, input2, options);
+            previewHandle &&
+              armPickerByClick(previewHandle, point, pickOptions);
           },
           [],
         ),
-        value240: Dynamic = (0,
+        textPlacing: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = createPreviewHandle(
-            value84.current,
+          let previewHandle: Dynamic = createPreviewHandle(
+            iframeRef.current,
           );
-          value286 && beginPickerTextPlacing(value286);
+          previewHandle && beginPickerTextPlacing(previewHandle);
         }, []),
-        value241: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = createPreviewHandle(
-                value84.current,
+        applySelectionChanges: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (selection?: Dynamic, selectionOptions?: Dynamic): Promise<Dynamic> => {
+            let previewHandle: Dynamic = createPreviewHandle(
+                iframeRef.current,
               ),
-              value287: Dynamic = value159.current.state(value169);
+              componentState: Dynamic = componentSessionRef.current.state(artboardComponentId);
             if (
-              !value286 ||
-              !value287 ||
-              value287.model.element(input2.tid) !== input2.el
+              !previewHandle ||
+              !componentState ||
+              componentState.model.element(selection.tid) !== selection.el
             )
               return;
-            let value288: Dynamic = await inspectPickerSelection(
-              value286,
-              input2.tid,
-              value169,
-              [...input2.pinned.keys()],
+            let pickerResult: Dynamic = await inspectPickerSelection(
+              previewHandle,
+              selection.tid,
+              artboardComponentId,
+              [...selection.pinned.keys()],
               {
                 unpinned: true,
-                afterPaint: options,
+                afterPaint: selectionOptions,
               },
             );
             if (
-              value159.current.state(value169) !== value287 ||
-              value287.model.element(input2.tid) !== input2.el
+              componentSessionRef.current.state(artboardComponentId) !== componentState ||
+              componentState.model.element(selection.tid) !== selection.el
             )
               return;
-            if (!value288) {
-              options ||
+            if (!pickerResult) {
+              selectionOptions ||
                 setTimeout((): Dynamic => {
-                  value241(input2, true);
+                  applySelectionChanges(selection, true);
                 }, 300);
               return;
             }
-            let value289: Dynamic = frozenInheritedStyleEdits(
-              input2.pinned,
-              value288.computed,
-              input2.freeze,
-              (input3?: Dynamic): Dynamic =>
-                value287.model.inlineStyleValue(input2.tid, input3),
+            let styleEdits: Dynamic = frozenInheritedStyleEdits(
+              selection.pinned,
+              pickerResult.computed,
+              selection.freeze,
+              (styleProperty?: Dynamic): Dynamic =>
+                componentState.model.inlineStyleValue(selection.tid, styleProperty),
             );
-            value289.length !== 0 &&
-              (await value159.current.mutate(
-                value169,
-                (input3?: Dynamic, options2?: Dynamic): Dynamic => {
+            styleEdits.length !== 0 &&
+              (await componentSessionRef.current.mutate(
+                artboardComponentId,
+                (model?: Dynamic, modelState?: Dynamic): Dynamic => {
                   if (
-                    options2.path !== value2 ||
-                    options2.model.element(input2.tid) !== input2.el
+                    modelState.path !== previewFile ||
+                    modelState.model.element(selection.tid) !== selection.el
                   )
                     return false;
-                  let flag2: Dynamic = false;
-                  for (let value290 of value289 as Dynamic)
-                    input3.setStyleProperty(input2.tid, value290, null) &&
-                      (flag2 = true);
-                  return flag2;
+                  let updated: Dynamic = false;
+                  for (let propertyName of styleEdits as Dynamic)
+                    model.setStyleProperty(selection.tid, propertyName, null) &&
+                      (updated = true);
+                  return updated;
                 },
                 {
                   structural: false,
@@ -3524,278 +3524,278 @@ export function installCanvasArtboardFrame(): () => void {
                 },
               ));
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         ),
-        value242: Dynamic = (0, reactCanvasShape.useCallback)(
+        moveStart: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
-            extra?: Dynamic,
+            selection?: Dynamic,
+            elementId?: Dynamic,
+            point?: Dynamic,
+            candidateElementId?: Dynamic,
+            excludedTids?: Dynamic,
           ): Promise<Dynamic> => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
             if (
-              !value287 ||
-              !extra.includes(options) ||
-              !(await value159.current.ensureModel(value169))
+              !previewHandle ||
+              !excludedTids.includes(elementId) ||
+              !(await componentSessionRef.current.ensureModel(artboardComponentId))
             )
               return null;
-            let value288: Dynamic = await beginPickerMove(
-              value287,
-              input2,
-              options,
-              context?.x ?? null,
-              context?.y ?? null,
-              value286,
+            let moveResult: Dynamic = await beginPickerMove(
+              previewHandle,
+              selection,
+              elementId,
+              point?.x ?? null,
+              point?.y ?? null,
+              candidateElementId,
             );
             if (
-              value288 == null ||
-              typeof value288 != "object" ||
-              !Array.isArray(value288.tids) ||
-              value288.tids.length > 500
+              moveResult == null ||
+              typeof moveResult != "object" ||
+              !Array.isArray(moveResult.tids) ||
+              moveResult.tids.length > 500
             ) {
-              cancelPickerMove(value287, input2);
+              cancelPickerMove(previewHandle, selection);
               return null;
             }
-            let value289: Dynamic = value288.tids.filter(
-              (input3?: Dynamic): Dynamic =>
-                Number.isInteger(input3) && input3 >= 0,
+            let validTids: Dynamic = moveResult.tids.filter(
+              (tid?: Dynamic): Dynamic =>
+                Number.isInteger(tid) && tid >= 0,
             );
             if (
-              value289.length !== value288.tids.length ||
-              value289.length === 0 ||
-              !value289.every(
-                (input3?: Dynamic): Dynamic => extra.includes(input3),
+              validTids.length !== moveResult.tids.length ||
+              validTids.length === 0 ||
+              !validTids.every(
+                (tid?: Dynamic): Dynamic => excludedTids.includes(tid),
               )
             ) {
-              cancelPickerMove(value287, input2);
+              cancelPickerMove(previewHandle, selection);
               return null;
             }
-            let value290: Dynamic = value159.current.state(value169);
+            let componentState: Dynamic = componentSessionRef.current.state(artboardComponentId);
             if (
-              !value290 ||
-              value289.some(
-                (input3?: Dynamic): Dynamic => !value290.model.element(input3),
+              !componentState ||
+              validTids.some(
+                (tid?: Dynamic): Dynamic => !componentState.model.element(tid),
               ) ||
-              typeof value288.tag != "string" ||
+              typeof moveResult.tag != "string" ||
               !equivalentDesignImportTags(
-                value290.model.tagName(options)?.toLowerCase() ?? "",
-                value288.tag,
+                componentState.model.tagName(elementId)?.toLowerCase() ?? "",
+                moveResult.tag,
               )
             ) {
-              cancelPickerMove(value287, input2);
+              cancelPickerMove(previewHandle, selection);
               return null;
             }
-            let rect: Dynamic = value288.rect,
-              callback5: Dynamic = (input3?: Dynamic): Dynamic =>
-                typeof input3 == "number" &&
-                Number.isFinite(input3) &&
-                Math.abs(input3) < 1e6
-                  ? input3
+            let rect: Dynamic = moveResult.rect,
+              finiteNumber: Dynamic = (candidate?: Dynamic): Dynamic =>
+                typeof candidate == "number" &&
+                Number.isFinite(candidate) &&
+                Math.abs(candidate) < 1e6
+                  ? candidate
                   : null,
-              value291: Dynamic =
+              moveRect: Dynamic =
                 rect != null && typeof rect == "object"
                   ? {
-                      x: callback5(rect.x),
-                      y: callback5(rect.y),
-                      w: callback5(rect.w),
-                      h: callback5(rect.h),
+                      x: finiteNumber(rect.x),
+                      y: finiteNumber(rect.y),
+                      w: finiteNumber(rect.w),
+                      h: finiteNumber(rect.h),
                     }
                   : null;
             if (
-              !value291 ||
-              value291.x == null ||
-              value291.y == null ||
-              value291.w == null ||
-              value291.h == null
+              !moveRect ||
+              moveRect.x == null ||
+              moveRect.y == null ||
+              moveRect.w == null ||
+              moveRect.h == null
             ) {
-              cancelPickerMove(value287, input2);
+              cancelPickerMove(previewHandle, selection);
               return null;
             }
-            let items: Dynamic = [],
-              members: Dynamic = value288.members;
+            let moveMembers: Dynamic = [],
+              members: Dynamic = moveResult.members;
             if (Array.isArray(members))
-              for (let value292 of members.slice(0, 500) as Dynamic) {
-                if (value292 == null || typeof value292 != "object") continue;
-                let value293: Dynamic = value292,
-                  tid: Dynamic = value293.tid;
+              for (let memberValue of members.slice(0, 500) as Dynamic) {
+                if (memberValue == null || typeof memberValue != "object") continue;
+                let member: Dynamic = memberValue,
+                  tid: Dynamic = member.tid;
                 if (
                   !Number.isInteger(tid) ||
-                  !value289.includes(tid) ||
-                  typeof value293.tag != "string" ||
-                  !/^[a-z][a-z0-9-]{0,63}$/.test(value293.tag) ||
+                  !validTids.includes(tid) ||
+                  typeof member.tag != "string" ||
+                  !/^[a-z][a-z0-9-]{0,63}$/.test(member.tag) ||
                   !equivalentDesignImportTags(
-                    value290.model.tagName(tid)?.toLowerCase() ?? "",
-                    value293.tag,
+                    componentState.model.tagName(tid)?.toLowerCase() ?? "",
+                    member.tag,
                   )
                 )
                   continue;
-                let rect2: Dynamic = value293.rect,
-                  value294: Dynamic =
-                    rect2 != null && typeof rect2 == "object"
+                let memberRect: Dynamic = member.rect,
+                  memberBounds: Dynamic =
+                    memberRect != null && typeof memberRect == "object"
                       ? {
-                          x: callback5(rect2.x),
-                          y: callback5(rect2.y),
-                          w: callback5(rect2.w),
-                          h: callback5(rect2.h),
+                          x: finiteNumber(memberRect.x),
+                          y: finiteNumber(memberRect.y),
+                          w: finiteNumber(memberRect.w),
+                          h: finiteNumber(memberRect.h),
                         }
                       : null;
-                !value294 ||
-                  value294.x == null ||
-                  value294.y == null ||
-                  value294.w == null ||
-                  value294.h == null ||
-                  items.push({
+                !memberBounds ||
+                  memberBounds.x == null ||
+                  memberBounds.y == null ||
+                  memberBounds.w == null ||
+                  memberBounds.h == null ||
+                  moveMembers.push({
                     tid: tid,
-                    tag: value293.tag,
+                    tag: member.tag,
                     rect: {
-                      x: value294.x,
-                      y: value294.y,
-                      w: value294.w,
-                      h: value294.h,
+                      x: memberBounds.x,
+                      y: memberBounds.y,
+                      w: memberBounds.w,
+                      h: memberBounds.h,
                     },
                   });
               }
             return {
-              tids: value289,
+              tids: validTids,
               rect: {
-                x: value291.x,
-                y: value291.y,
-                w: value291.w,
-                h: value291.h,
+                x: moveRect.x,
+                y: moveRect.y,
+                w: moveRect.w,
+                h: moveRect.h,
               },
-              mode: value288.mode === "abs" ? "abs" : "flow",
-              members: items,
+              mode: moveResult.mode === "abs" ? "abs" : "flow",
+              members: moveMembers,
             };
           },
-          [value169],
+          [artboardComponentId],
         ),
-        value243: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        moveMove: Dynamic = (0, reactCanvasShape.useCallback)(
+          (selection?: Dynamic, point?: Dynamic, dropContext?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 &&
+            previewHandle &&
               updatePickerMove(
-                value286,
-                input2,
-                options.x,
-                options.y,
-                context,
+                previewHandle,
+                selection,
+                point.x,
+                point.y,
+                dropContext,
               );
           },
           [],
         ),
-        value244: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        moveCancel: Dynamic = (0, reactCanvasShape.useCallback)(
+          (reason?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 && cancelPickerMove(value286, input2);
+            previewHandle && cancelPickerMove(previewHandle, reason);
           },
           [],
         ),
-        value245: Dynamic = (0,
+        moveSettle: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = createPreviewHandle(
-            value84.current,
+          let previewHandle: Dynamic = createPreviewHandle(
+            iframeRef.current,
           );
-          value286 && settlePickerMove(value286);
+          previewHandle && settlePickerMove(previewHandle);
         }, []),
-        value246: Dynamic = (0, reactCanvasShape.useCallback)(
+        moveEnd: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
+            selection?: Dynamic,
+            point?: Dynamic,
+            dropContext?: Dynamic,
+            fallback?: Dynamic,
           ): Promise<Dynamic> => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            if (!value287) return null;
-            let value288: Dynamic = await finishPickerMove(
-              value287,
-              input2,
-              options.x,
-              options.y,
-              context,
+            if (!previewHandle) return null;
+            let moveResult: Dynamic = await finishPickerMove(
+              previewHandle,
+              selection,
+              point.x,
+              point.y,
+              dropContext,
             );
-            return value288 == null ||
-              typeof value288 != "object" ||
-              value288.plan == null
+            return moveResult == null ||
+              typeof moveResult != "object" ||
+              moveResult.plan == null
               ? null
-              : parseElementMoveSnapshot(value288.plan, value286);
+              : parseElementMoveSnapshot(moveResult.plan, fallback);
           },
           [],
         ),
-        value247: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (items?: Dynamic): Promise<Dynamic> => {
-            if (items.length !== 1) return "refused";
-            let items2: Dynamic = [],
-              items3: Dynamic = [],
-              flag2: Dynamic = false,
-              value286: Dynamic;
+        moveElements: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (moves?: Dynamic): Promise<Dynamic> => {
+            if (moves.length !== 1) return "refused";
+            let newTids: Dynamic = [],
+              groupTids: Dynamic = [],
+              inPlace: Dynamic = false,
+              moveStatus: Dynamic;
             try {
-              value286 = await value159.current.mutate(
-                value169,
-                (input2?: Dynamic, options?: Dynamic): Dynamic => {
-                  if (options.path !== value2) return false;
-                  let value287: Dynamic = options.model.serialize(),
-                    items4: Dynamic = [],
-                    items5: Dynamic = [],
-                    value288: Dynamic = items.map(
-                      (input3?: Dynamic): Dynamic => {
-                        let value289: Dynamic =
-                          input3.block ??
+              moveStatus = await componentSessionRef.current.mutate(
+                artboardComponentId,
+                (model?: Dynamic, modelState?: Dynamic): Dynamic => {
+                  if (modelState.path !== previewFile) return false;
+                  let serializedModel: Dynamic = modelState.model.serialize(),
+                    movedTids: Dynamic = [],
+                    groupedTids: Dynamic = [],
+                    moveResults: Dynamic = moves.map(
+                      (element?: Dynamic): Dynamic => {
+                        let matchedMove: Dynamic =
+                          element.block ??
                           sameParentDropGroup(
-                            options.model,
-                            input3.tid,
-                            input3.group,
+                            modelState.model,
+                            element.tid,
+                            element.group,
                           );
                         return {
-                          ...input3,
+                          ...element,
                           block:
-                            value289 && value289[0] === input3.tid
-                              ? value289
+                            matchedMove && matchedMove[0] === element.tid
+                              ? matchedMove
                               : null,
                         };
                       },
                     );
                   if (
-                    value288.every(
-                      (input3?: Dynamic): Dynamic =>
+                    moveResults.every(
+                      (element?: Dynamic): Dynamic =>
                         elementMoveRefusal(
-                          options.model,
-                          input3,
+                          modelState.model,
+                          element,
                         ) === "in-place",
                     )
                   ) {
-                    flag2 = true;
+                    inPlace = true;
                     return false;
                   }
-                  for (let value289 of value288 as Dynamic) {
-                    let value290: Dynamic = moveModelElement(
-                      options,
-                      value289,
+                  for (let moveResult of moveResults as Dynamic) {
+                    let movedElement: Dynamic = moveModelElement(
+                      modelState,
+                      moveResult,
                     );
-                    if (!value290) {
-                      options.model = options.model.rebuild(value287);
+                    if (!movedElement) {
+                      modelState.model = modelState.model.rebuild(serializedModel);
                       return false;
                     }
-                    items4.push(
-                      value290.newTid,
-                      ...value290.groupTids.filter(
-                        (input3?: Dynamic): Dynamic =>
-                          input3 !== value290.newTid && input3 >= 0,
+                    movedTids.push(
+                      movedElement.newTid,
+                      ...movedElement.groupTids.filter(
+                        (tid?: Dynamic): Dynamic =>
+                          tid !== movedElement.newTid && tid >= 0,
                       ),
                     );
-                    items5.push(...value290.pins);
+                    groupedTids.push(...movedElement.pins);
                   }
-                  items2 = [...new Set(items4)];
-                  items3 = items5;
+                  newTids = [...new Set(movedTids)];
+                  groupTids = groupedTids;
                   return true;
                 },
                 {
@@ -3805,141 +3805,141 @@ export function installCanvasArtboardFrame(): () => void {
             } catch {
               return "failed";
             }
-            if (flag2) return "in-place";
-            if (value286 !== "applied" && value286 !== "applied-dirty")
-              return value286 === "refused" ? "refused" : "failed";
-            for (let value287 of items3 as Dynamic)
+            if (inPlace) return "in-place";
+            if (moveStatus !== "applied" && moveStatus !== "applied-dirty")
+              return moveStatus === "refused" ? "refused" : "failed";
+            for (let tid of groupTids as Dynamic)
               setTimeout((): Dynamic => {
-                value241(value287, false);
+                applySelectionChanges(tid, false);
               }, 120);
             return {
-              newTids: items2,
+              newTids: newTids,
             };
           },
-          [value169, value2, value241],
+          [artboardComponentId, previewFile, applySelectionChanges],
         ),
-        value248: Dynamic = (0,
+        stageIsEmpty: Dynamic = (0,
         reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          if (!(await value159.current.ensureModel(value169))) return false;
-          let value286: Dynamic = value159.current.state(value169);
-          if (!value286) return false;
-          let value287: Dynamic = value286.model
+          if (!(await componentSessionRef.current.ensureModel(artboardComponentId))) return false;
+          let componentState: Dynamic = componentSessionRef.current.state(artboardComponentId);
+          if (!componentState) return false;
+          let stageTids: Dynamic = componentState.model
               .childTids(null)
               .filter(
-                (input2?: Dynamic): Dynamic =>
+                (tid?: Dynamic): Dynamic =>
                   !SelectionActionsHelmetScHelmetPattern.test(
-                    value286.model.tagName(input2) ?? "",
+                    componentState.model.tagName(tid) ?? "",
                   ),
               ),
-            value288: Dynamic =
-              value287.length === 1
-                ? value286.model.element(value287[0])
+            stageElement: Dynamic =
+              stageTids.length === 1
+                ? componentState.model.element(stageTids[0])
                 : null;
           return (
-            value287.length === 0 ||
-            (value288 != null &&
+            stageTids.length === 0 ||
+            (stageElement != null &&
               pickerElementSignature(
-                value288,
-                (input2?: Dynamic): Dynamic =>
-                  classifyElementStyleKind(input2) === "text",
+                stageElement,
+                (element?: Dynamic): Dynamic =>
+                  classifyElementStyleKind(element) === "text",
               ))
           );
-        }, [value169]),
-        value249: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic): Promise<Dynamic> => {
-            if (!(await value159.current.ensureModel(value169))) return false;
-            let value286: Dynamic = value159.current.state(value169);
+        }, [artboardComponentId]),
+        isFreeCanvas: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (point?: Dynamic): Promise<Dynamic> => {
+            if (!(await componentSessionRef.current.ensureModel(artboardComponentId))) return false;
+            let componentState: Dynamic = componentSessionRef.current.state(artboardComponentId);
             return (
-              value286 != null &&
-              emptyArtboardDropTarget(value286.model, input2) !=
+              componentState != null &&
+              emptyArtboardDropTarget(componentState.model, point) !=
                 null
             );
           },
-          [value169],
+          [artboardComponentId],
         ),
-        value250: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        moveHost: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (selection?: Dynamic, point?: Dynamic): Promise<Dynamic> => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            return value286
-              ? pickerMoveHold(value286, input2, options)
+            return previewHandle
+              ? pickerMoveHold(previewHandle, selection, point)
               : false;
           },
           [],
         ),
-        value251: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        moveExit: Dynamic = (0, reactCanvasShape.useCallback)(
+          (reason?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 && exitPickerMove(value286, input2);
+            previewHandle && exitPickerMove(previewHandle, reason);
           },
           [],
         ),
-        value252: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        moveReturn: Dynamic = (0, reactCanvasShape.useCallback)(
+          (reason?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 && returnPickerMove(value286, input2);
+            previewHandle && returnPickerMove(previewHandle, reason);
           },
           [],
         ),
-        value253: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        moveTouch: Dynamic = (0, reactCanvasShape.useCallback)(
+          (touch?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 && touchPickerMove(value286, input2);
+            previewHandle && touchPickerMove(previewHandle, touch);
           },
           [],
         ),
-        value254: Dynamic = (0, reactCanvasShape.useCallback)(
+        canDropHtml: Dynamic = (0, reactCanvasShape.useCallback)(
           (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context?: Dynamic,
-            value286?: Dynamic,
+            model?: Dynamic,
+            dropOptions?: Dynamic,
+            targetTag?: Dynamic,
+            parentElement?: Dynamic,
           ): Dynamic => {
-            let targetTid: Dynamic = options.targetTid;
+            let targetTid: Dynamic = dropOptions.targetTid;
             if (targetTid != null) {
-              let value289: Dynamic = input2.element(targetTid);
+              let dropTargetElement: Dynamic = model.element(targetTid);
               if (
-                !value289 ||
-                containsUneditableSelection(input2, [targetTid]) ||
-                input2.isUneditable(targetTid) ||
-                value289.closest("svg") ||
-                input2.targetParentLocked(targetTid, options.position)
+                !dropTargetElement ||
+                containsUneditableSelection(model, [targetTid]) ||
+                model.isUneditable(targetTid) ||
+                dropTargetElement.closest("svg") ||
+                model.targetParentLocked(targetTid, dropOptions.position)
               )
                 return false;
             }
-            let value287: Dynamic =
-              options.position === "into"
+            let targetElement: Dynamic =
+              dropOptions.position === "into"
                 ? targetTid
                 : targetTid != null
-                  ? input2.parentTid(targetTid)
+                  ? model.parentTid(targetTid)
                   : null;
             if (
-              value287 != null &&
-              (input2.isTextEditable(value287) ||
-                containsUneditableSelection(input2, [value287]))
+              targetElement != null &&
+              (model.isTextEditable(targetElement) ||
+                containsUneditableSelection(model, [targetElement]))
             )
               return false;
-            let value288: Dynamic =
-              value287 != null
-                ? (input2.tagName(value287)?.toLowerCase() ?? "div")
+            let allowedTags: Dynamic =
+              targetElement != null
+                ? (model.tagName(targetElement)?.toLowerCase() ?? "div")
                 : "div";
-            if (!canContainHtmlTag(value288, context))
+            if (!canContainHtmlTag(allowedTags, targetTag))
               return false;
-            if (value286 != null) {
-              let value289: Dynamic = input2
-                .topLevelTags(value286)
-                .map((input3?: Dynamic): Dynamic => input3.toLowerCase());
+            if (parentElement != null) {
+              let targetTags: Dynamic = model
+                .topLevelTags(parentElement)
+                .map((tag?: Dynamic): Dynamic => tag.toLowerCase());
               if (
-                value289.length !== 1 ||
-                value289[0] !== context ||
-                !canContainHtmlTag(value288, value289[0])
+                targetTags.length !== 1 ||
+                targetTags[0] !== targetTag ||
+                !canContainHtmlTag(allowedTags, targetTags[0])
               )
                 return false;
             }
@@ -3947,319 +3947,319 @@ export function installCanvasArtboardFrame(): () => void {
           },
           [],
         ),
-        value255: Dynamic = (0, reactCanvasShape.useCallback)(
+        dropPlanAt: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
-            input2?: Dynamic,
-            options?: Dynamic,
-            items?: Dynamic,
-            value286?: Dynamic,
+            selection?: Dynamic,
+            point?: Dynamic,
+            movingMembers?: Dynamic,
+            dropContext?: Dynamic,
           ): Promise<Dynamic> => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            if (!value287 || items.length > 500) return null;
-            let value288: Dynamic = await planPickerDrop(
-                value287,
-                input2,
-                options.x,
-                options.y,
-                items,
-                value286,
+            if (!previewHandle || movingMembers.length > 500) return null;
+            let dropPlan: Dynamic = await planPickerDrop(
+                previewHandle,
+                selection,
+                point.x,
+                point.y,
+                movingMembers,
+                dropContext,
               ),
-              value289: Dynamic = parseGroupMoveSnapshot(
-                value288,
-                items.map((input3?: Dynamic): Dynamic => input3.tid),
+              groupMovePlan: Dynamic = parseGroupMoveSnapshot(
+                dropPlan,
+                movingMembers.map((element?: Dynamic): Dynamic => element.tid),
               );
-            if (!value289) return null;
-            let value290: Dynamic = (await value159.current.ensureModel(
-              value169,
+            if (!groupMovePlan) return null;
+            let model: Dynamic = (await componentSessionRef.current.ensureModel(
+              artboardComponentId,
             ))
-              ? value170(value169)
+              ? resolveComponentState(artboardComponentId)
               : null;
-            if (!value290) return null;
-            let items2: Dynamic = [...value289.refused],
-              value291: Dynamic = value289.landing.filter(
-                (input3?: Dynamic): Dynamic => {
-                  let value292: Dynamic =
-                      items.find(
-                        (input4?: Dynamic): Dynamic =>
-                          input4.tid === input3.tid,
+            if (!model) return null;
+            let refusedTids: Dynamic = [...groupMovePlan.refused],
+              landingTids: Dynamic = groupMovePlan.landing.filter(
+                (element?: Dynamic): Dynamic => {
+                  let landingEntry: Dynamic =
+                      movingMembers.find(
+                        (landing?: Dynamic): Dynamic =>
+                          landing.tid === element.tid,
                       )?.tag ?? "div",
-                    value293: Dynamic = value254(
-                      value290.model,
-                      input3,
-                      value292,
+                    dropPreview: Dynamic = canDropHtml(
+                      model.model,
+                      element,
+                      landingEntry,
                       null,
                     );
-                  value293 || items2.push(input3.tid);
-                  return value293;
+                  dropPreview || refusedTids.push(element.tid);
+                  return dropPreview;
                 },
               );
             return {
-              container: value289.container,
-              landing: value291,
-              refused: items2,
+              container: groupMovePlan.container,
+              landing: landingTids,
+              refused: refusedTids,
             };
           },
-          [value170, value169, value254],
+          [resolveComponentState, artboardComponentId, canDropHtml],
         ),
-        value256: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options: Dynamic = false): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        dropPlanClear: Dynamic = (0, reactCanvasShape.useCallback)(
+          (reason?: Dynamic, force: Dynamic = false): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 &&
-              clearPickerDropPlan(value286, input2, options);
+            previewHandle &&
+              clearPickerDropPlan(previewHandle, reason, force);
           },
           [],
         ),
-        value257: Dynamic = (0, reactCanvasShape.useCallback)(
+        landTravellers: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
-            items?: Dynamic,
-            items2?: Dynamic,
-            context: Dynamic = [],
+            landingMembers?: Dynamic,
+            travellers?: Dynamic,
+            fallbackTids: Dynamic = [],
           ): Promise<Dynamic> => {
-            let entries: Dynamic = new Map(),
-              value286: Dynamic = null,
-              value287: Dynamic = null,
-              items3: Dynamic = [],
-              value288: Dynamic,
-              callback5: Dynamic = (element?: Dynamic): Dynamic =>
+            let landedByTid: Dynamic = new Map(),
+              moveStatus: Dynamic = null,
+              stayersOwn: Dynamic = null,
+              stayerTids: Dynamic = [],
+              moveResult: Dynamic,
+              resolveElement: Dynamic = (element?: Dynamic): Dynamic =>
                 parseInt(element.getAttribute("data-dc-tpl") ?? "-1", 10);
             try {
-              value288 = await value159.current.mutate(
-                value169,
-                (input2?: Dynamic, options?: Dynamic): Dynamic => {
-                  if (options.path !== value2) return false;
-                  let value289: Dynamic = options.model.serialize();
+              moveResult = await componentSessionRef.current.mutate(
+                artboardComponentId,
+                (model?: Dynamic, modelState?: Dynamic): Dynamic => {
+                  if (modelState.path !== previewFile) return false;
+                  let serializedModel: Dynamic = modelState.model.serialize();
                   try {
-                    let value290: Dynamic = items.map(
-                        (input3?: Dynamic): Dynamic =>
-                          input3.landing.targetTid == null
+                    let travellerElements: Dynamic = landingMembers.map(
+                        (traveller?: Dynamic): Dynamic =>
+                          traveller.landing.targetTid == null
                             ? null
-                            : options.model.element(input3.landing.targetTid),
+                            : modelState.model.element(traveller.landing.targetTid),
                       ),
-                      value291: Dynamic =
-                        items2.length === 1
+                      travellerTids: Dynamic =
+                        travellers.length === 1
                           ? [
-                              items2[0].tid,
-                              ...(items2[0].followers ?? []).map(
-                                (input3?: Dynamic): Dynamic => input3.tid,
+                              travellers[0].tid,
+                              ...(travellers[0].followers ?? []).map(
+                                (traveller?: Dynamic): Dynamic => traveller.tid,
                               ),
-                              ...(items2[0].group ?? []).map(
-                                (input3?: Dynamic): Dynamic => input3.tid,
+                              ...(travellers[0].group ?? []).map(
+                                (traveller?: Dynamic): Dynamic => traveller.tid,
                               ),
                             ]
-                          : [...context],
-                      value292: Dynamic = [...new Set(value291)]
+                          : [...fallbackTids],
+                      uniqueTids: Dynamic = [...new Set(travellerTids)]
                         .map(
-                          (input3?: Dynamic): Dynamic =>
-                            options.model.element(input3),
+                          (tid?: Dynamic): Dynamic =>
+                            modelState.model.element(tid),
                         )
-                        .filter((input3?: Dynamic): Dynamic => input3 != null),
-                      items4: Dynamic = [];
-                    if (items2.length === 1) {
-                      let value294: Dynamic = items2[0],
-                        value295: Dynamic =
-                          value294.block ??
+                        .filter((tid?: Dynamic): Dynamic => tid != null),
+                      movedElements: Dynamic = [];
+                    if (travellers.length === 1) {
+                      let traveller: Dynamic = travellers[0],
+                        matchedMove: Dynamic =
+                          traveller.block ??
                           sameParentDropGroup(
-                            options.model,
-                            value294.tid,
-                            value294.group,
+                            modelState.model,
+                            traveller.tid,
+                            traveller.group,
                           ),
-                        state2: Dynamic = {
-                          ...value294,
+                        moveState: Dynamic = {
+                          ...traveller,
                           block:
-                            value295 && value295[0] === value294.tid
-                              ? value295
+                            matchedMove && matchedMove[0] === traveller.tid
+                              ? matchedMove
                               : null,
                         };
                       if (
                         elementMoveRefusal(
-                          options.model,
-                          state2,
+                          modelState.model,
+                          moveState,
                         ) === "in-place"
                       )
-                        value286 = "in-place";
+                        moveStatus = "in-place";
                       else {
-                        let value296: Dynamic = moveModelElement(
-                          options,
-                          state2,
+                        let movedElement: Dynamic = moveModelElement(
+                          modelState,
+                          moveState,
                         );
-                        value296
-                          ? ((value292 = [
-                              value296.newTid,
-                              ...value296.groupTids.filter(
-                                (input3?: Dynamic): Dynamic =>
-                                  input3 !== value296.newTid && input3 >= 0,
+                        movedElement
+                          ? ((uniqueTids = [
+                              movedElement.newTid,
+                              ...movedElement.groupTids.filter(
+                                (tid?: Dynamic): Dynamic =>
+                                  tid !== movedElement.newTid && tid >= 0,
                               ),
                             ]
                               .map(
-                                (input3?: Dynamic): Dynamic =>
-                                  options.model.element(input3),
+                                (tid?: Dynamic): Dynamic =>
+                                  modelState.model.element(tid),
                               )
                               .filter(
-                                (input3?: Dynamic): Dynamic => input3 != null,
+                                (tid?: Dynamic): Dynamic => tid != null,
                               )),
-                            (items4 = value296.pins.flatMap(
-                              (input3?: Dynamic): Dynamic => {
-                                let value297: Dynamic = options.model.element(
-                                  input3.tid,
+                            (movedElements = movedElement.pins.flatMap(
+                              (element?: Dynamic): Dynamic => {
+                                let domElement: Dynamic = modelState.model.element(
+                                  element.tid,
                                 );
-                                return value297
+                                return domElement
                                   ? [
                                       {
-                                        pin: input3,
-                                        el: value297,
+                                        pin: element,
+                                        el: domElement,
                                       },
                                     ]
                                   : [];
                               },
                             )),
-                            (value286 = {
+                            (moveStatus = {
                               newTids: [],
                             }))
-                          : ((options.model = options.model.rebuild(value289)),
-                            (value286 = "refused"),
-                            (value292 = [...new Set(value291)]
+                          : ((modelState.model = modelState.model.rebuild(serializedModel)),
+                            (moveStatus = "refused"),
+                            (uniqueTids = [...new Set(travellerTids)]
                               .map(
-                                (input3?: Dynamic): Dynamic =>
-                                  options.model.element(input3),
+                                (tid?: Dynamic): Dynamic =>
+                                  modelState.model.element(tid),
                               )
                               .filter(
-                                (input3?: Dynamic): Dynamic => input3 != null,
+                                (element?: Dynamic): Dynamic => element != null,
                               )));
                       }
-                    } else items2.length > 1 && (value286 = "refused");
-                    let entries2: Dynamic = new Map(),
-                      value293: Dynamic = null;
+                    } else travellers.length > 1 && (moveStatus = "refused");
+                    let moveEntries: Dynamic = new Map(),
+                      absoluteParent: Dynamic = null;
                     for (
                       let index: Dynamic = 0;
-                      index < items.length;
+                      index < landingMembers.length;
                       index++
                     ) {
-                      let value294: Dynamic = items[index],
-                        landing: Dynamic = value294.landing,
-                        value295: Dynamic =
-                          options.model
-                            .topLevelTags(value294.html)[0]
+                      let traveller: Dynamic = landingMembers[index],
+                        landing: Dynamic = traveller.landing,
+                        landingTarget: Dynamic =
+                          modelState.model
+                            .topLevelTags(traveller.html)[0]
                             ?.toLowerCase() ?? "",
-                        value296: Dynamic,
-                        value297: Dynamic;
+                        targetTid: Dynamic,
+                        position: Dynamic;
                       if (
-                        value293 &&
+                        absoluteParent &&
                         !landing.absolute &&
                         (landing.position === "before" ||
                           landing.position === "after")
                       ) {
-                        value296 = callback5(value293);
-                        value297 = "after";
+                        targetTid = resolveElement(absoluteParent);
+                        position = "after";
                       } else {
-                        let value301: Dynamic = value290[index];
-                        if (landing.targetTid != null && !value301) continue;
-                        value296 = value301 ? callback5(value301) : null;
-                        value297 = landing.position;
+                        let existingElement: Dynamic = travellerElements[index];
+                        if (landing.targetTid != null && !existingElement) continue;
+                        targetTid = existingElement ? resolveElement(existingElement) : null;
+                        position = landing.position;
                       }
                       if (
-                        !value254(
-                          options.model,
+                        !canDropHtml(
+                          modelState.model,
                           {
                             ...landing,
-                            targetTid: value296,
-                            position: value297,
+                            targetTid: targetTid,
+                            position: position,
                           },
-                          value295,
-                          value294.html,
+                          landingTarget,
+                          traveller.html,
                         )
                       )
                         continue;
-                      let value298: Dynamic = options.model.insertHtml(
-                        value294.html,
-                        value296,
-                        value297,
+                      let insertedTids: Dynamic = modelState.model.insertHtml(
+                        traveller.html,
+                        targetTid,
+                        position,
                       );
-                      if (!value298 || value298.length === 0) continue;
-                      options.model.restamp();
-                      let value299: Dynamic = value298[0],
-                        value300: Dynamic = callback5(value299);
+                      if (!insertedTids || insertedTids.length === 0) continue;
+                      modelState.model.restamp();
+                      let insertedElement: Dynamic = insertedTids[0],
+                        insertedParent: Dynamic = resolveElement(insertedElement);
                       if (landing.absolute) {
-                        options.model.setStyleProperty(
-                          value300,
+                        modelState.model.setStyleProperty(
+                          insertedParent,
                           "position",
                           "absolute",
                         );
-                        for (let [value301, value302] of Object.entries(
+                        for (let [attributeName, attributeValue] of Object.entries(
                           landing.absStyles ?? {},
                         ) as Dynamic)
-                          options.model.setStyleProperty(
-                            value300,
-                            value301,
-                            value302,
+                          modelState.model.setStyleProperty(
+                            insertedParent,
+                            attributeName,
+                            attributeValue,
                           );
                         landing.parentNeedsPositioning === true &&
-                          value296 != null &&
-                          !options.model.inlineStyleValue(
-                            value296,
+                          targetTid != null &&
+                          !modelState.model.inlineStyleValue(
+                            targetTid,
                             "position",
                           ) &&
-                          options.model.setStyleProperty(
-                            value296,
+                          modelState.model.setStyleProperty(
+                            targetTid,
                             "position",
                             "relative",
                           );
                       } else
-                        for (let value301 of [
+                        for (let styleProperty of [
                           "position",
                           "left",
                           "top",
                           "right",
                           "bottom",
                         ] as Dynamic)
-                          options.model.inlineStyleValue(value300, value301) &&
-                            options.model.setStyleProperty(
-                              value300,
-                              value301,
+                          modelState.model.inlineStyleValue(insertedParent, styleProperty) &&
+                            modelState.model.setStyleProperty(
+                              insertedParent,
+                              styleProperty,
                               null,
                             );
-                      entries2.set(value294.key, [...value298]);
-                      value293 = landing.absolute ? value293 : value299;
+                      moveEntries.set(traveller.key, [...insertedTids]);
+                      absoluteParent = landing.absolute ? absoluteParent : insertedElement;
                     }
                     if (
-                      entries2.size === 0 &&
-                      (value286 == null ||
-                        value286 === "in-place" ||
-                        value286 === "refused")
+                      moveEntries.size === 0 &&
+                      (moveStatus == null ||
+                        moveStatus === "in-place" ||
+                        moveStatus === "refused")
                     ) {
-                      options.model = options.model.rebuild(value289);
+                      modelState.model = modelState.model.rebuild(serializedModel);
                       return false;
                     }
-                    for (let [value294, value295] of entries2 as Dynamic)
-                      entries.set(
-                        value294,
-                        value295
-                          .map(callback5)
-                          .filter((input3?: Dynamic): Dynamic => input3 >= 0),
+                    for (let [groupKey, groupEntries] of moveEntries as Dynamic)
+                      landedByTid.set(
+                        groupKey,
+                        groupEntries
+                          .map(resolveElement)
+                          .filter((tid?: Dynamic): Dynamic => tid >= 0),
                       );
-                    value286 && typeof value286 == "object"
-                      ? (value286.newTids = value292
-                          .map(callback5)
-                          .filter((input3?: Dynamic): Dynamic => input3 >= 0))
-                      : (value286 === "in-place" ||
-                          value286 === "refused" ||
-                          value286 == null) &&
-                        (value287 = value292
-                          .map(callback5)
-                          .filter((input3?: Dynamic): Dynamic => input3 >= 0));
-                    items3 = items4.map(
-                      ({ pin: pin2, el: el }: Dynamic): Dynamic => ({
-                        ...pin2,
-                        tid: callback5(el),
+                    moveStatus && typeof moveStatus == "object"
+                      ? (moveStatus.newTids = uniqueTids
+                          .map(resolveElement)
+                          .filter((tid?: Dynamic): Dynamic => tid >= 0))
+                      : (moveStatus === "in-place" ||
+                          moveStatus === "refused" ||
+                          moveStatus == null) &&
+                        (stayersOwn = uniqueTids
+                          .map(resolveElement)
+                          .filter((tid?: Dynamic): Dynamic => tid >= 0));
+                    stayerTids = movedElements.map(
+                      ({ pin: pin, el: el }: Dynamic): Dynamic => ({
+                        ...pin,
+                        tid: resolveElement(el),
                         el: el,
                       }),
                     );
                     return true;
                   } catch {
-                    options.model = options.model.rebuild(value289);
+                    modelState.model = modelState.model.rebuild(serializedModel);
                     return false;
                   }
                 },
@@ -4270,62 +4270,62 @@ export function installCanvasArtboardFrame(): () => void {
             } catch {
               return "failed";
             }
-            if (value288 !== "applied" && value288 !== "applied-dirty")
+            if (moveResult !== "applied" && moveResult !== "applied-dirty")
               return "failed";
-            for (let value289 of items3 as Dynamic)
+            for (let stayerTid of stayerTids as Dynamic)
               setTimeout((): Dynamic => {
-                value241(value289, false);
+                applySelectionChanges(stayerTid, false);
               }, 120);
             return {
-              landed: entries,
-              stayers: value286,
-              ...(value287
+              landed: landedByTid,
+              stayers: moveStatus,
+              ...(stayersOwn
                 ? {
-                    stayersOwn: value287,
+                    stayersOwn: stayersOwn,
                   }
                 : {}),
             };
           },
-          [value169, value2, value241, value254],
+          [artboardComponentId, previewFile, applySelectionChanges, canDropHtml],
         ),
-        value258: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (items?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = value170(value169);
-            if (!value286) return "refused";
-            let value287: Dynamic = items.map(
-              (input2?: Dynamic): Dynamic => value286.model.element(input2),
+        removeElements: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (elementIds?: Dynamic, selectedElementIds?: Dynamic): Promise<Dynamic> => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            if (!componentState) return "refused";
+            let selectedElements: Dynamic = elementIds.map(
+              (elementId?: Dynamic): Dynamic => componentState.model.element(elementId),
             );
             if (
-              value287.some((input2?: Dynamic): Dynamic => input2 == null) ||
-              items.some(
-                (input2?: Dynamic): Dynamic =>
-                  value286.model.isLoopDriven(input2) ||
-                  value286.model.isUneditable(input2),
+              selectedElements.some((elementId?: Dynamic): Dynamic => elementId == null) ||
+              elementIds.some(
+                (elementId?: Dynamic): Dynamic =>
+                  componentState.model.isLoopDriven(elementId) ||
+                  componentState.model.isUneditable(elementId),
               )
             )
               return "refused";
-            let value288: Dynamic = options
+            let protectedElements: Dynamic = selectedElementIds
                 .map(
-                  (input2?: Dynamic): Dynamic => value286.model.element(input2),
+                  (elementId?: Dynamic): Dynamic => componentState.model.element(elementId),
                 )
-                .filter((input2?: Dynamic): Dynamic => input2 != null),
-              items2: Dynamic = [],
-              value289: Dynamic;
+                .filter((elementId?: Dynamic): Dynamic => elementId != null),
+              removedTemplateIds: Dynamic = [],
+              mutationStatus: Dynamic;
             try {
-              value289 = await value159.current.mutate(
-                value169,
-                (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-                  if (options2.path !== value2 || options2 !== value286)
+              mutationStatus = await componentSessionRef.current.mutate(
+                artboardComponentId,
+                (model?: Dynamic, nextState?: Dynamic): Dynamic => {
+                  if (nextState.path !== previewFile || nextState !== componentState)
                     return false;
-                  for (let index: Dynamic = 0; index < items.length; index++)
+                  for (let index: Dynamic = 0; index < elementIds.length; index++)
                     if (
-                      options2.model.element(items[index]) !== value287[index]
+                      nextState.model.element(elementIds[index]) !== selectedElements[index]
                     )
                       return false;
-                  for (let value290 of items as Dynamic)
-                    options2.model.removeElement(value290);
-                  options2.model.restamp();
-                  items2 = value288
+                  for (let elementId of elementIds as Dynamic)
+                    nextState.model.removeElement(elementId);
+                  nextState.model.restamp();
+                  removedTemplateIds = protectedElements
                     .map(
                       (element?: Dynamic): Dynamic =>
                         parseInt(
@@ -4333,9 +4333,9 @@ export function installCanvasArtboardFrame(): () => void {
                           10,
                         ),
                     )
-                    .filter((input3?: Dynamic): Dynamic => input3 >= 0);
-                  options2.model = options2.model.rebuild(
-                    options2.model.serialize(),
+                    .filter((templateId?: Dynamic): Dynamic => templateId >= 0);
+                  nextState.model = nextState.model.rebuild(
+                    nextState.model.serialize(),
                   );
                   return true;
                 },
@@ -4346,276 +4346,276 @@ export function installCanvasArtboardFrame(): () => void {
             } catch {
               return "failed";
             }
-            return value289 === "refused" || value289 === false
+            return mutationStatus === "refused" || mutationStatus === false
               ? "refused"
-              : value289 !== "applied" && value289 !== "applied-dirty"
+              : mutationStatus !== "applied" && mutationStatus !== "applied-dirty"
                 ? "failed"
                 : {
-                    kept: items2,
+                    kept: removedTemplateIds,
                   };
           },
-          [value170, value169, value2],
+          [resolveComponentState, artboardComponentId, previewFile],
         ),
-        value259: Dynamic = (0,
+        getUndoDepth: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = value170(value169);
-          return value286 ? value286.undo.length : null;
-        }, [value170, value169]),
-        value260: Dynamic = (0,
+          let componentState: Dynamic = resolveComponentState(artboardComponentId);
+          return componentState ? componentState.undo.length : null;
+        }, [resolveComponentState, artboardComponentId]),
+        getUndoFloor: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = value170(value169);
-          return value286 ? (value286.undoFloor ?? 0) : null;
-        }, [value170, value169]),
-        value261: Dynamic = (0,
+          let componentState: Dynamic = resolveComponentState(artboardComponentId);
+          return componentState ? (componentState.undoFloor ?? 0) : null;
+        }, [resolveComponentState, artboardComponentId]),
+        getRedoDepth: Dynamic = (0,
         reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = value170(value169);
-          return value286 ? value286.redo.length : null;
-        }, [value170, value169]),
-        value262: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(value169);
-            value286 && trimUndoHistory(value286, input2);
+          let componentState: Dynamic = resolveComponentState(artboardComponentId);
+          return componentState ? componentState.redo.length : null;
+        }, [resolveComponentState, artboardComponentId]),
+        trimUndoHistoryForComponent: Dynamic = (0, reactCanvasShape.useCallback)(
+          (keepCount?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            componentState && trimUndoHistory(componentState, keepCount);
           },
-          [value170, value169],
+          [resolveComponentState, artboardComponentId],
         ),
-        value263: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = value170(value169),
-              value287: Dynamic = value286?.redo;
-            if (!value286 || !value287 || value287.length === 0)
+        dropRedoHistory: Dynamic = (0, reactCanvasShape.useCallback)(
+          (historyIndex?: Dynamic): Dynamic => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId),
+              redoEntries: Dynamic = componentState?.redo;
+            if (!componentState || !redoEntries || redoEntries.length === 0)
               return (): Dynamic => {};
-            let value288: Dynamic =
-              input2 === undefined ? 0 : input2 - 1 - value286.undo.length;
-            if (value288 < 0 || value288 >= value287.length)
+            let dropCount: Dynamic =
+              historyIndex === undefined ? 0 : historyIndex - 1 - componentState.undo.length;
+            if (dropCount < 0 || dropCount >= redoEntries.length)
               return (): Dynamic => {};
-            let value289: Dynamic = value287.slice(value287.length - value288);
-            value286.redo = value289;
+            let remainingRedoEntries: Dynamic = redoEntries.slice(redoEntries.length - dropCount);
+            componentState.redo = remainingRedoEntries;
             return (): Dynamic => {
-              value286.redo.length === 0 && (value286.redo = value287);
+              componentState.redo.length === 0 && (componentState.redo = redoEntries);
             };
           },
-          [value170, value169],
+          [resolveComponentState, artboardComponentId],
         ),
-        value264: Dynamic = (0,
+        flushPendingWrites: Dynamic = (0,
         reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          await value159.current.writeNow(value169);
-        }, [value169, value2]),
-        value265: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = value170(input2);
-            if (!value286) return false;
-            let length: Dynamic = value286[options].length,
-              length2: Dynamic = value286.redo.length,
-              model: Dynamic = value286.model,
-              value287: Dynamic = applyElementUndo(
-                value286,
-                options,
+          await componentSessionRef.current.writeNow(artboardComponentId);
+        }, [artboardComponentId, previewFile]),
+        applyHistoryEntry: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (componentName?: Dynamic, historyDirection?: Dynamic): Promise<Dynamic> => {
+            let componentState: Dynamic = resolveComponentState(componentName);
+            if (!componentState) return false;
+            let length: Dynamic = componentState[historyDirection].length,
+              redoDepthBeforeApply: Dynamic = componentState.redo.length,
+              model: Dynamic = componentState.model,
+              appliedEntry: Dynamic = applyElementUndo(
+                componentState,
+                historyDirection,
                 {
-                  overrides: value160.current.values,
+                  overrides: tweakPropertiesRef.current.values,
                 },
               );
-            if (!value287) {
-              if (value286[options].length < length) {
-                if (options === "undo")
+            if (!appliedEntry) {
+              if (componentState[historyDirection].length < length) {
+                if (historyDirection === "undo")
                   for (
-                    let length3: Dynamic = value286.redo.length;
-                    length3 < length2;
-                    length3++
+                    let redoDepth: Dynamic = componentState.redo.length;
+                    redoDepth < redoDepthBeforeApply;
+                    redoDepth++
                   )
-                    value52?.(value2, "redo");
-                value52?.(value2, options);
+                    onHistoryDrop?.(previewFile, "redo");
+                onHistoryDrop?.(previewFile, historyDirection);
               }
               return false;
             }
-            value50?.(value2, options);
-            return value287.kind === "prop" || value287.kind === "script"
-              ? (value287.kind === "prop"
-                  ? value160.current.setProp(value287.prop, value287.liveValue)
+            onHistoryApply?.(previewFile, historyDirection);
+            return appliedEntry.kind === "prop" || appliedEntry.kind === "script"
+              ? (appliedEntry.kind === "prop"
+                  ? tweakPropertiesRef.current.setProp(appliedEntry.prop, appliedEntry.liveValue)
                   : emitEditorEvent("dc-update", {
-                      name: input2,
-                      path: value286.path,
+                      name: componentName,
+                      path: componentState.path,
                       kind: "js",
-                      content: value287.js,
+                      content: appliedEntry.js,
                       streaming: false,
                       viewportKey: "dc-model",
                     }),
-                (value286.dirty = true),
-                value167.current
+                (componentState.dirty = true),
+                panelMountedRef.current
                   ? true
-                  : (await value159.current.writeNow(input2)) !== "failed")
-              : ((value286.dirty = true),
-                value167.current || value159.current.writeNow(input2),
-                (value286.stampGen = (value286.stampGen ?? -1) + 1),
-                (value286.liveStampsStale = false),
-                value159.current.pushLive(input2),
-                value131.current.onTemplateRestored?.(input2, model),
-                (await value159.current.writeNow(input2)) !== "failed");
+                  : (await componentSessionRef.current.writeNow(componentName)) !== "failed")
+              : ((componentState.dirty = true),
+                panelMountedRef.current || componentSessionRef.current.writeNow(componentName),
+                (componentState.stampGen = (componentState.stampGen ?? -1) + 1),
+                (componentState.liveStampsStale = false),
+                componentSessionRef.current.pushLive(componentName),
+                frameHoldRef.current.onTemplateRestored?.(componentName, model),
+                (await componentSessionRef.current.writeNow(componentName)) !== "failed");
           },
           [],
         ),
-        value266: Dynamic = (0, reactCanvasShape.useCallback)(
+        isCanvasReady: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic =>
-            value114.current && value108.current && value84.current != null,
+            liveRef.current && frameReadyRef.current && iframeRef.current != null,
           [],
         ),
-        value267: Dynamic = (0, reactCanvasShape.useCallback)(
-          (): Dynamic => value124.current != null || value125.current != null,
+        isCanvasBlocked: Dynamic = (0, reactCanvasShape.useCallback)(
+          (): Dynamic => loadErrorRef.current != null || blockedReasonRef.current != null,
           [],
         ),
-        value268: Dynamic = (0,
+        readPickerProperties: Dynamic = (0,
         reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          let value286: Dynamic = createPreviewHandle(
-              value84.current,
+          let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             ),
-            value287: Dynamic = value170(value169);
-          if (!value286 || !value287 || !value266()) return {};
-          let state2: Dynamic = {};
+            componentState: Dynamic = resolveComponentState(artboardComponentId);
+          if (!previewHandle || !componentState || !isCanvasReady()) return {};
+          let pickerProperties: Dynamic = {};
           try {
-            let value288: Dynamic = JSON.parse(
-              getDcPropsJson(value287.src) ?? "{}",
+            let rawPickerProperties: Dynamic = JSON.parse(
+              getDcPropsJson(componentState.src) ?? "{}",
             );
             if (
-              value288 &&
-              typeof value288 == "object" &&
-              !Array.isArray(value288)
+              rawPickerProperties &&
+              typeof rawPickerProperties == "object" &&
+              !Array.isArray(rawPickerProperties)
             )
-              for (let [value289, value290] of Object.entries(
-                value288,
+              for (let [propertyName, propertyDefinition] of Object.entries(
+                rawPickerProperties,
               ) as Dynamic)
-                !value289.startsWith("$") &&
-                  value290 &&
-                  typeof value290 == "object" &&
-                  (state2[value289] = value290.default);
+                !propertyName.startsWith("$") &&
+                  propertyDefinition &&
+                  typeof propertyDefinition == "object" &&
+                  (pickerProperties[propertyName] = propertyDefinition.default);
           } catch {}
           Object.assign(
-            state2,
-            value287.pendingProps ?? {},
-            value160.current.values,
+            pickerProperties,
+            componentState.pendingProps ?? {},
+            tweakPropertiesRef.current.values,
           );
-          return inspectPickerProps(value286, state2);
-        }, [value266, value170, value169]),
-        value269: Dynamic = (0,
+          return inspectPickerProps(previewHandle, pickerProperties);
+        }, [isCanvasReady, resolveComponentState, artboardComponentId]),
+        copyAllEditableElements: Dynamic = (0,
         reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          let value286: Dynamic =
-            (await value159.current
-              .ensureModel(value169)
-              .catch((): Dynamic => null)) ?? value170(value169);
-          if (!value286 || value286.path !== value2) return null;
-          let value287: Dynamic = value286.model
+          let componentState: Dynamic =
+            (await componentSessionRef.current
+              .ensureModel(artboardComponentId)
+              .catch((): Dynamic => null)) ?? resolveComponentState(artboardComponentId);
+          if (!componentState || componentState.path !== previewFile) return null;
+          let editableElementIds: Dynamic = componentState.model
             .childTids(null)
             .filter(
-              (input2?: Dynamic): Dynamic =>
+              (elementId?: Dynamic): Dynamic =>
                 !SelectionActionsHelmetScHelmetPattern.test(
-                  value286.model.tagName(input2) ?? "",
+                  componentState.model.tagName(elementId) ?? "",
                 ) &&
-                !value286.model.isUneditable(input2) &&
-                !value286.model.isLoopDriven(input2),
+                !componentState.model.isUneditable(elementId) &&
+                !componentState.model.isLoopDriven(elementId),
             );
-          if (value287.length === 0) return null;
-          let value288: Dynamic = value177(value287, {
+          if (editableElementIds.length === 0) return null;
+          let copiedHtml: Dynamic = copySelectionHtml(editableElementIds, {
             bakeProps: true,
-            vals: await value268(),
+            vals: await readPickerProperties(),
           });
-          return value288 ? unpositionPastedHtml(value288) : null;
-        }, [value170, value169, value177, value268]),
-        value270: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = value170(value169);
-            return !value286 ||
-              !value286.model.element(input2) ||
-              value286.model.isUneditable(input2) ||
-              value286.model.isLoopDriven(input2) ||
-              promoteSvgShapeToRoot(value286.model, input2) !==
-                input2
+          return copiedHtml ? unpositionPastedHtml(copiedHtml) : null;
+        }, [resolveComponentState, artboardComponentId, copySelectionHtml, readPickerProperties]),
+        canCopyElement: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (elementId?: Dynamic): Promise<Dynamic> => {
+            let componentState: Dynamic = resolveComponentState(artboardComponentId);
+            return !componentState ||
+              !componentState.model.element(elementId) ||
+              componentState.model.isUneditable(elementId) ||
+              componentState.model.isLoopDriven(elementId) ||
+              promoteSvgShapeToRoot(componentState.model, elementId) !==
+                elementId
               ? null
-              : value177([input2], {
+              : copySelectionHtml([elementId], {
                   bakeProps: true,
-                  vals: await value268(),
+                  vals: await readPickerProperties(),
                 });
           },
-          [value170, value169, value177, value268],
+          [resolveComponentState, artboardComponentId, copySelectionHtml, readPickerProperties],
         ),
-        value271: Dynamic = (0,
+        serializeCurrentModel: Dynamic = (0,
         reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          let value286: Dynamic = await value159.current.ensureModel(value169);
-          return value286 && value286.path === value2
-            ? value286.model.serialize()
+          let componentState: Dynamic = await componentSessionRef.current.ensureModel(artboardComponentId);
+          return componentState && componentState.path === previewFile
+            ? componentState.model.serialize()
             : null;
-        }, [value169, value2]),
-        value272: Dynamic = (0, reactCanvasShape.useCallback)(
-          async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let flag2: Dynamic = false,
-              flag3: Dynamic = false,
-              value286: Dynamic;
+        }, [artboardComponentId, previewFile]),
+        commitModelSerialization: Dynamic = (0, reactCanvasShape.useCallback)(
+          async (componentName?: Dynamic, expectedSerialization?: Dynamic): Promise<Dynamic> => {
+            let hasSameSerialization: Dynamic = false,
+              isStale: Dynamic = false,
+              mutationStatus: Dynamic;
             try {
-              let callback5: Dynamic = (
-                  input3?: Dynamic,
-                  options2?: Dynamic,
+              let hasStructuralDifference: Dynamic = (
+                  leftModel?: Dynamic,
+                  rightModel?: Dynamic,
                 ): Dynamic => {
-                  let callback6: Dynamic = (
-                      input4?: Dynamic,
-                      options3?: Dynamic,
+                  let serializeElementSnapshot: Dynamic = (
+                      model?: Dynamic,
+                      elementId?: Dynamic,
                     ): Dynamic =>
                       JSON.stringify([
-                        input4.tagName(options3),
-                        input4.attributes(options3),
-                        input4.inlineStyleAttr(options3),
+                        model.tagName(elementId),
+                        model.attributes(elementId),
+                        model.inlineStyleAttr(elementId),
                         Array.from(
-                          input4.element(options3)?.childNodes ?? [],
-                          (input5?: Dynamic): Dynamic =>
-                            input5.nodeType === 3 ? input5.nodeValue : null,
+                          model.element(elementId)?.childNodes ?? [],
+                          (childNode?: Dynamic): Dynamic =>
+                            childNode.nodeType === 3 ? childNode.nodeValue : null,
                         ),
                       ]),
                     values: Dynamic = new Set(),
-                    items: Dynamic = [];
+                    rightSnapshots: Dynamic = [];
                   for (
                     let index: Dynamic = 0;
-                    index < input3.elementCount();
+                    index < leftModel.elementCount();
                     index++
                   ) {
-                    let value291: Dynamic = callback6(input3, index),
-                      value292: Dynamic = callback6(options2, index);
-                    value291 !== value292 &&
-                      (values.add(value291), items.push(value292));
+                    let leftSnapshot: Dynamic = serializeElementSnapshot(leftModel, index),
+                      rightSnapshot: Dynamic = serializeElementSnapshot(rightModel, index);
+                    leftSnapshot !== rightSnapshot &&
+                      (values.add(leftSnapshot), rightSnapshots.push(rightSnapshot));
                   }
-                  return items.some(
-                    (input4?: Dynamic): Dynamic => values.has(input4),
+                  return rightSnapshots.some(
+                    (snapshot?: Dynamic): Dynamic => values.has(snapshot),
                   );
                 },
-                value287: Dynamic =
-                  await value159.current.ensureModel(value169),
-                value288: Dynamic = value287?.model.serialize(),
-                value289: Dynamic = value287?.model.rebuild(input2),
-                value290: Dynamic =
-                  value287 != null &&
-                  value289 !== undefined &&
-                  value287.model.sameSkeleton(value289) &&
-                  !callback5(value287.model, value289);
-              value286 = await value159.current.mutate(
-                value169,
-                (input3?: Dynamic, options2?: Dynamic): Dynamic => {
-                  if (options2.path !== value2) return false;
-                  let value291: Dynamic = options2.model.serialize();
+                componentState: Dynamic =
+                  await componentSessionRef.current.ensureModel(artboardComponentId),
+                currentSerialization: Dynamic = componentState?.model.serialize(),
+                rebuiltModel: Dynamic = componentState?.model.rebuild(componentName),
+                hasUnchangedStructure: Dynamic =
+                  componentState != null &&
+                  rebuiltModel !== undefined &&
+                  componentState.model.sameSkeleton(rebuiltModel) &&
+                  !hasStructuralDifference(componentState.model, rebuiltModel);
+              mutationStatus = await componentSessionRef.current.mutate(
+                artboardComponentId,
+                (model?: Dynamic, nextState?: Dynamic): Dynamic => {
+                  if (nextState.path !== previewFile) return false;
+                  let serializedModel: Dynamic = nextState.model.serialize();
                   if (
-                    (options !== undefined && value291 !== options) ||
-                    (value290 && value291 !== value288)
+                    (expectedSerialization !== undefined && serializedModel !== expectedSerialization) ||
+                    (hasUnchangedStructure && serializedModel !== currentSerialization)
                   ) {
-                    flag3 = true;
+                    isStale = true;
                     return false;
                   }
-                  if (value291 === input2) {
-                    flag2 = true;
+                  if (serializedModel === componentName) {
+                    hasSameSerialization = true;
                     return false;
                   }
-                  let value292: Dynamic =
-                    value289 !== undefined && value291 === value288
-                      ? value289
-                      : options2.model.rebuild(input2);
-                  return value292.serialize() !== input2
+                  let rebuiltDocument: Dynamic =
+                    rebuiltModel !== undefined && serializedModel === currentSerialization
+                      ? rebuiltModel
+                      : nextState.model.rebuild(componentName);
+                  return rebuiltDocument.serialize() !== componentName
                     ? false
-                    : ((options2.model = value292), true);
+                    : ((nextState.model = rebuiltDocument), true);
                 },
-                value290
+                hasUnchangedStructure
                   ? {
                       structural: false,
                       pushUndo: true,
@@ -4627,1016 +4627,1016 @@ export function installCanvasArtboardFrame(): () => void {
             } catch {
               return "failed";
             }
-            return flag3
+            return isStale
               ? "stale"
-              : flag2
+              : hasSameSerialization
                 ? "same"
-                : value286 === "applied" || value286 === "applied-dirty"
+                : mutationStatus === "applied" || mutationStatus === "applied-dirty"
                   ? "applied"
-                  : value286 === "refused" || value286 === false
+                  : mutationStatus === "refused" || mutationStatus === false
                     ? "refused"
                     : "failed";
           },
-          [value169, value2],
+          [artboardComponentId, previewFile],
         );
       (0, reactCanvasShape.useEffect)(
         (): Dynamic => (
-          value26(value2, {
-            file: value2,
-            askTemplate: value271,
-            askCommit: value272,
-            webviewRef: value84,
-            isReady: value266,
-            isBlocked: value267,
-            rebuild: value140,
-            readAttrs: value171,
-            listKindOf: value172,
-            readInlineStyle: value176,
-            ensureModel: value173,
-            ensureOutline: value175,
-            applyHistory: value265,
-            undoDepth: value259,
-            undoFloor: value260,
-            redoDepth: value261,
-            cutUndo: value262,
-            dropRedo: value263,
-            flushPending: value264,
+          onHandle(previewFile, {
+            file: previewFile,
+            askTemplate: serializeCurrentModel,
+            askCommit: commitModelSerialization,
+            webviewRef: iframeRef,
+            isReady: isCanvasReady,
+            isBlocked: isCanvasBlocked,
+            rebuild: rebuildPreview,
+            readAttrs: readAttributes,
+            listKindOf: listKindOf,
+            readInlineStyle: readInlineStyle,
+            ensureModel: ensureModel,
+            ensureOutline: ensureOutline,
+            applyHistory: applyHistoryEntry,
+            undoDepth: getUndoDepth,
+            undoFloor: getUndoFloor,
+            redoDepth: getRedoDepth,
+            cutUndo: trimUndoHistoryForComponent,
+            dropRedo: dropRedoHistory,
+            flushPending: flushPendingWrites,
             hasPendingEdits: (): Dynamic =>
-              value159.current.anyDirty() ||
-              value159.current.anyWriteInFlight(),
-            setTweaks: value166,
-            pickAt: value233,
-            textTids: value232,
-            pickIn: value234,
-            setShownSelection: value235,
-            clearLabelPart: value236,
-            hostDrag: value237,
-            cancelBox: value238,
-            armedByClick: value239,
-            textPlacing: value240,
-            moveStart: value242,
-            moveMove: value243,
-            moveEnd: value246,
-            moveCancel: value244,
-            moveSettle: value245,
-            moveElements: value247,
-            stageIsEmpty: value248,
-            isFreeCanvas: value249,
-            moveHost: value250,
-            moveExit: value251,
-            moveReturn: value252,
-            moveTouch: value253,
-            dropPlanAt: value255,
-            dropPlanClear: value256,
-            landTravellers: value257,
-            removeTravelled: value258,
-            travellerHtml: value270,
-            pieceContent: value269,
-            serializeSelection: value177,
-            renderDefaults: value268,
-            removeSelection: value178,
-            duplicateSelection: value179,
-            walkTids: value180,
-            nudgeSelection: value184,
-            flipRead: value185,
-            flipSelection: value186,
-            insertHtml: value217,
-            insertLayerAt: value218,
-            swapImageAttrs: value226,
-            replaceImageFor: value227,
-            toggleCrop: value209,
-            replaceVideoFor: value230,
-            videoKey: value229,
-            videoEl: value228,
-            pageFill: value190,
-            setPageFill: value192,
-            setStylePropsPerTid: value189,
-            beginStyleGesture: value194,
-            endStyleGesture: value195,
-            describeTids: value216,
-            viewEntries: value215,
-            formatCommand: value220,
-            startTextEdit: value221,
-            pageFonts: value223,
-            holdsDeck: value222,
-            pageCensus: value225,
+              componentSessionRef.current.anyDirty() ||
+              componentSessionRef.current.anyWriteInFlight(),
+            setTweaks: setTweaks,
+            pickAt: pickAt,
+            textTids: readTextTids,
+            pickIn: pickIn,
+            setShownSelection: setShownSelection,
+            clearLabelPart: clearLabelPart,
+            hostDrag: hostDrag,
+            cancelBox: cancelBox,
+            armedByClick: armedByClick,
+            textPlacing: textPlacing,
+            moveStart: moveStart,
+            moveMove: moveMove,
+            moveEnd: moveEnd,
+            moveCancel: moveCancel,
+            moveSettle: moveSettle,
+            moveElements: moveElements,
+            stageIsEmpty: stageIsEmpty,
+            isFreeCanvas: isFreeCanvas,
+            moveHost: moveHost,
+            moveExit: moveExit,
+            moveReturn: moveReturn,
+            moveTouch: moveTouch,
+            dropPlanAt: dropPlanAt,
+            dropPlanClear: dropPlanClear,
+            landTravellers: landTravellers,
+            removeTravelled: removeElements,
+            travellerHtml: canCopyElement,
+            pieceContent: copyAllEditableElements,
+            serializeSelection: copySelectionHtml,
+            renderDefaults: readPickerProperties,
+            removeSelection: removeSelection,
+            duplicateSelection: duplicateSelection,
+            walkTids: walkSelectionTids,
+            nudgeSelection: nudgeSelection,
+            flipRead: flipRead,
+            flipSelection: flipSelection,
+            insertHtml: insertHtml,
+            insertLayerAt: insertLayerAt,
+            swapImageAttrs: swapImageAttrs,
+            replaceImageFor: replaceImageFor,
+            toggleCrop: toggleCrop,
+            replaceVideoFor: replaceVideoFor,
+            videoKey: videoKey,
+            videoEl: videoElement,
+            pageFill: pageFill,
+            setPageFill: setPageFill,
+            setStylePropsPerTid: setStylePropsPerTid,
+            beginStyleGesture: beginStyleGesture,
+            endStyleGesture: endStyleGesture,
+            describeTids: describeTids,
+            viewEntries: describeSelectionTids,
+            formatCommand: formatCommand,
+            startTextEdit: startTextEdit,
+            pageFonts: pageFonts,
+            holdsDeck: holdsDeck,
+            pageCensus: pageCensus,
           }),
-          (): Dynamic => value26(value2, null)
+          (): Dynamic => onHandle(previewFile, null)
         ),
         [
-          value2,
-          value140,
-          value171,
-          value172,
-          value176,
-          value173,
-          value175,
-          value265,
-          value259,
-          value260,
-          value261,
-          value262,
-          value263,
-          value166,
-          value233,
-          value232,
-          value234,
-          value235,
-          value236,
-          value237,
-          value238,
-          value239,
-          value240,
-          value242,
-          value243,
-          value246,
-          value244,
-          value245,
-          value247,
-          value248,
-          value249,
-          value250,
-          value251,
-          value252,
-          value253,
-          value255,
-          value256,
-          value257,
-          value258,
-          value270,
-          value269,
-          value177,
-          value268,
-          value178,
-          value179,
-          value180,
-          value184,
-          value185,
-          value186,
-          value217,
-          value218,
-          value226,
-          value227,
-          value209,
-          value230,
-          value229,
-          value228,
-          value190,
-          value192,
-          value189,
-          value194,
-          value195,
-          value216,
-          value215,
-          value220,
-          value223,
-          value222,
-          value225,
-          value271,
-          value272,
+          previewFile,
+          rebuildPreview,
+          readAttributes,
+          listKindOf,
+          readInlineStyle,
+          ensureModel,
+          ensureOutline,
+          applyHistoryEntry,
+          getUndoDepth,
+          getUndoFloor,
+          getRedoDepth,
+          trimUndoHistoryForComponent,
+          dropRedoHistory,
+          setTweaks,
+          pickAt,
+          readTextTids,
+          pickIn,
+          setShownSelection,
+          clearLabelPart,
+          hostDrag,
+          cancelBox,
+          armedByClick,
+          textPlacing,
+          moveStart,
+          moveMove,
+          moveEnd,
+          moveCancel,
+          moveSettle,
+          moveElements,
+          stageIsEmpty,
+          isFreeCanvas,
+          moveHost,
+          moveExit,
+          moveReturn,
+          moveTouch,
+          dropPlanAt,
+          dropPlanClear,
+          landTravellers,
+          removeElements,
+          canCopyElement,
+          copyAllEditableElements,
+          copySelectionHtml,
+          readPickerProperties,
+          removeSelection,
+          duplicateSelection,
+          walkSelectionTids,
+          nudgeSelection,
+          flipRead,
+          flipSelection,
+          insertHtml,
+          insertLayerAt,
+          swapImageAttrs,
+          replaceImageFor,
+          toggleCrop,
+          replaceVideoFor,
+          videoKey,
+          videoElement,
+          pageFill,
+          setPageFill,
+          setStylePropsPerTid,
+          beginStyleGesture,
+          endStyleGesture,
+          describeTids,
+          describeSelectionTids,
+          formatCommand,
+          pageFonts,
+          holdsDeck,
+          pageCensus,
+          serializeCurrentModel,
+          commitModelSerialization,
         ],
       );
-      let value273: Dynamic = (0, reactCanvasShape.useRef)(value26);
-      value273.current = value26;
+      let onHandleRef: Dynamic = (0, reactCanvasShape.useRef)(onHandle);
+      onHandleRef.current = onHandle;
       (0, reactCanvasShape.useEffect)(
-        (): Dynamic => (): Dynamic => value273.current(value2, null, true),
-        [value2],
+        (): Dynamic => (): Dynamic => onHandleRef.current(previewFile, null, true),
+        [previewFile],
       );
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value91 > 0 && value28?.(value2, value91);
-      }, [value91]);
-      let [value274, value275]: Dynamic = (0,
+        readyGeneration > 0 && onReadyGen?.(previewFile, readyGeneration);
+      }, [readyGeneration]);
+      let [definedVariables, setDefinedVariables]: Dynamic = (0,
       reactCanvasShape.useState)(undefined);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value23 && value152((input2?: Dynamic): Dynamic => input2 + 1);
-      }, [value23]);
+        panelMounted && setSessionEpoch((observedVariables?: Dynamic): Dynamic => observedVariables + 1);
+      }, [panelMounted]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (!value29 || value29.length === 0) {
-          value275(undefined);
+        if (!dsVarNames || dsVarNames.length === 0) {
+          setDefinedVariables(undefined);
           return;
         }
-        if (value91 === 0) return;
-        let value286: Dynamic = createPreviewHandle(
-          value84.current,
+        if (readyGeneration === 0) return;
+        let previewHandle: Dynamic = createPreviewHandle(
+          iframeRef.current,
         );
-        if (value286)
+        if (previewHandle)
           return observePickerCssVariables(
-            value286,
-            value29,
-            (input2?: Dynamic): Dynamic =>
-              value275(
-                (input3?: Dynamic): Dynamic =>
-                  sameStringSet(input3, input2) ? input3 : input2,
+            previewHandle,
+            dsVarNames,
+            (nextVariables?: Dynamic): Dynamic =>
+              setDefinedVariables(
+                (previousVariables?: Dynamic): Dynamic =>
+                  sameStringSet(previousVariables, nextVariables) ? previousVariables : nextVariables,
               ),
           );
-      }, [value91, value29, value151]);
+      }, [readyGeneration, dsVarNames, sessionEpochState]);
       (0, reactCanvasShape.useEffect)(
         (): Dynamic => (
-          value30?.(value2, value274),
-          (): Dynamic => value30?.(value2, undefined)
+          onDefinedVars?.(previewFile, definedVariables),
+          (): Dynamic => onDefinedVars?.(previewFile, undefined)
         ),
-        [value2, value274, value30],
+        [previewFile, definedVariables, onDefinedVars],
       );
-      let value276: Dynamic = value95 != null || value97 != null;
+      let previewBlocked: Dynamic = previewLoadError != null || previewBlockedReason != null;
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value31?.(value2, value276);
-      }, [value276]);
-      let value277: Dynamic = (0, reactCanvasShape.useRef)(value32);
-      value277.current = value32;
+        onBlockedChange?.(previewFile, previewBlocked);
+      }, [previewBlocked]);
+      let problemsChangeRef: Dynamic = (0, reactCanvasShape.useRef)(onProblemsChange);
+      problemsChangeRef.current = onProblemsChange;
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value277.current?.(
-          value2,
-          artboardLoadErrorMessages(value97, value95, value99),
+        problemsChangeRef.current?.(
+          previewFile,
+          artboardLoadErrorMessages(previewBlockedReason, previewLoadError, artboardErrors),
         );
-      }, [value2, value97, value95, value99]);
+      }, [previewFile, previewBlockedReason, previewLoadError, artboardErrors]);
       (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic =>
-          value277.current?.(value2, emptyArtboardErrors),
-        [value2],
+          problemsChangeRef.current?.(previewFile, emptyArtboardErrors),
+        [previewFile],
       );
-      let value278: Dynamic = value137 && !value23 && value78,
-        value279: Dynamic = (value23 === true || value278 === true) && value106;
+      let previewEditEnabled: Dynamic = canEditPreview && !panelMounted && editing,
+        interactiveFrame: Dynamic = (panelMounted === true || previewEditEnabled === true) && frameReady;
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        value102.current?.(null);
-      }, [value93]);
+        mediaSinkRef.current?.(null);
+      }, [displayedGeneration]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (!value279) return;
-        let value286: Dynamic = createPreviewHandle(
-          value84.current,
+        if (!interactiveFrame) return;
+        let previewHandle: Dynamic = createPreviewHandle(
+          iframeRef.current,
         );
-        value286 && repostPickerChrome(value286);
-      }, [value279, value82]);
-      let callback2: Dynamic = (event?: Dynamic): Dynamic => {
-          if (!value77 || !value8) return;
-          let value286: Dynamic = createPreviewHandle(
-            value84.current,
+        previewHandle && repostPickerChrome(previewHandle);
+      }, [interactiveFrame, gripless]);
+      let handleChromeContextMenu: Dynamic = (event?: Dynamic): Dynamic => {
+          if (!chromeSlot || !box) return;
+          let previewHandle: Dynamic = createPreviewHandle(
+            iframeRef.current,
           );
-          if (!value286) return;
+          if (!previewHandle) return;
           event.preventDefault();
           event.stopPropagation();
-          let bounds: Dynamic = value77.getBoundingClientRect(),
-            value287: Dynamic = bounds.width > 0 ? bounds.width / value8.w : 1;
+          let bounds: Dynamic = chromeSlot.getBoundingClientRect(),
+            scale: Dynamic = bounds.width > 0 ? bounds.width / box.w : 1;
           pickerContextMenuAt(
-            value286,
-            (event.clientX - bounds.left) / value287,
-            (event.clientY - bounds.top) / value287,
+            previewHandle,
+            (event.clientX - bounds.left) / scale,
+            (event.clientY - bounds.top) / scale,
           );
         },
-        value280: Dynamic = (0, reactCanvasShape.useRef)(false),
-        callback3: Dynamic = (
-          items?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
+        cropPointerActiveRef: Dynamic = (0, reactCanvasShape.useRef)(false),
+        handleCropPointerDown: Dynamic = (
+          directions?: Dynamic,
+          cropPointerEvent?: Dynamic,
+          cropContext?: Dynamic,
         ): Dynamic => {
-          let current: Dynamic = value198.current,
-            value286: Dynamic = createPreviewHandle(
-              value84.current,
+          let selectedMedia: Dynamic = selectedMediaRef.current,
+            previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             ),
-            current2: Dynamic = value103.current;
+            mediaBounds: Dynamic = activeMediaRef.current;
           if (
-            !current ||
-            !value286 ||
-            !current2 ||
-            !value77 ||
-            !value8 ||
-            value280.current ||
-            !value210() ||
-            !canStartCanvasDrag(options)
+            !selectedMedia ||
+            !previewHandle ||
+            !mediaBounds ||
+            !chromeSlot ||
+            !box ||
+            cropPointerActiveRef.current ||
+            !readCropEnabled() ||
+            !canStartCanvasDrag(cropPointerEvent)
           )
             return true;
-          options.stopPropagation();
-          value280.current = true;
+          cropPointerEvent.stopPropagation();
+          cropPointerActiveRef.current = true;
           try {
-            options.currentTarget.setPointerCapture(options.pointerId);
+            cropPointerEvent.currentTarget.setPointerCapture(cropPointerEvent.pointerId);
           } catch {}
-          value9?.("element-crop", true);
-          let [items2, items3, items4, items5]: Dynamic = [
-              options.pointerId,
-              options.clientX,
-              options.clientY,
-              value77,
+          onHostGesture?.("element-crop", true);
+          let [pointerId, pointerStartX, pointerStartY, chromeElement]: Dynamic = [
+              cropPointerEvent.pointerId,
+              cropPointerEvent.clientX,
+              cropPointerEvent.clientY,
+              chromeSlot,
             ],
-            callback5: Dynamic = (): Dynamic => {
-              let bounds: Dynamic = items5.getBoundingClientRect();
-              return bounds.width > 0 ? bounds.width / value8.w : 1;
+            getCanvasScale: Dynamic = (): Dynamic => {
+              let bounds: Dynamic = chromeElement.getBoundingClientRect();
+              return bounds.width > 0 ? bounds.width / box.w : 1;
             },
-            callback6: Dynamic = (
-              input2?: Dynamic,
-              options2?: Dynamic,
+            toCanvasPoint: Dynamic = (
+              clientX?: Dynamic,
+              clientY?: Dynamic,
             ): Dynamic => {
-              let bounds: Dynamic = items5.getBoundingClientRect();
+              let bounds: Dynamic = chromeElement.getBoundingClientRect();
               return {
-                x: (input2 - bounds.left) / callback5(),
-                y: (options2 - bounds.top) / callback5(),
+                x: (clientX - bounds.left) / getCanvasScale(),
+                y: (clientY - bounds.top) / getCanvasScale(),
               };
             },
-            value287: Dynamic = callback6(items3, items4),
+            pointerStartPoint: Dynamic = toCanvasPoint(pointerStartX, pointerStartY),
             {
-              frame: value288,
-              natural: value289,
-              rot: value290,
-            }: Dynamic = context,
-            [items6, items7, items8]: Dynamic = [
-              current.live,
+              frame: cropFrame,
+              natural: naturalImageSize,
+              rot: rotation,
+            }: Dynamic = cropContext,
+            [liveCrop, supportsZoom, cropTid]: Dynamic = [
+              selectedMedia.live,
               MediaObjectCropSupports(),
-              current.tid,
+              selectedMedia.tid,
             ],
-            callback7: Dynamic = (): Dynamic =>
-              value198.current === current && value201() === items8,
-            [items9, items10]: Dynamic = [
-              current2.w - value288.w,
-              current2.h - value288.h,
+            isCurrentCrop: Dynamic = (): Dynamic =>
+              selectedMediaRef.current === selectedMedia && readCropState() === cropTid,
+            [widthDelta, heightDelta]: Dynamic = [
+              mediaBounds.w - cropFrame.w,
+              mediaBounds.h - cropFrame.h,
             ],
-            callback8: Dynamic = (
-              input2?: Dynamic,
-              options2?: Dynamic,
+            resizeCropFrame: Dynamic = (
+              direction?: Dynamic,
+              nextFrame?: Dynamic,
             ): Dynamic => {
-              let value294: Dynamic =
-                  input2.includes("e") || input2.includes("w")
-                    ? Math.max(1, Math.round(options2.w + items9) - items9)
-                    : value288.w,
-                value295: Dynamic =
-                  input2.includes("n") || input2.includes("s")
-                    ? Math.max(1, Math.round(options2.h + items10) - items10)
-                    : value288.h;
+              let nextWidth: Dynamic =
+                  direction.includes("e") || direction.includes("w")
+                    ? Math.max(1, Math.round(nextFrame.w + widthDelta) - widthDelta)
+                    : cropFrame.w,
+                nextHeight: Dynamic =
+                  direction.includes("n") || direction.includes("s")
+                    ? Math.max(1, Math.round(nextFrame.h + heightDelta) - heightDelta)
+                    : cropFrame.h;
               return {
-                x: input2.includes("w") ? value288.w - value294 : 0,
-                y: input2.includes("n") ? value288.h - value295 : 0,
-                w: value294,
-                h: value295,
+                x: direction.includes("w") ? cropFrame.w - nextWidth : 0,
+                y: direction.includes("n") ? cropFrame.h - nextHeight : 0,
+                w: nextWidth,
+                h: nextHeight,
               };
             },
-            callback9: Dynamic = (input2?: Dynamic): Dynamic =>
-              callback8(items, input2),
-            { autoW: value291, autoH: value292 }: Dynamic =
-              current2.media ?? {},
-            value293: Dynamic =
-              items.length === 2
-                ? items
-                : items === "e"
-                  ? value292
+            resizeForDirection: Dynamic = (direction?: Dynamic): Dynamic =>
+              resizeCropFrame(directions, direction),
+            { autoW: autoWidth, autoH: autoHeight }: Dynamic =
+              mediaBounds.media ?? {},
+            resizeDirection: Dynamic =
+              directions.length === 2
+                ? directions
+                : directions === "e"
+                  ? autoHeight
                     ? "se"
                     : "e"
-                  : items === "w"
-                    ? value292
+                  : directions === "w"
+                    ? autoHeight
                       ? "sw"
                       : "w"
-                    : items === "s"
-                      ? value291
+                    : directions === "s"
+                      ? autoWidth
                         ? "se"
                         : "s"
-                      : value291
+                      : autoWidth
                         ? "ne"
                         : "n";
-          registerElementSession(value169, current.el);
-          pickerGesturePhase(value286, {
+          registerElementSession(artboardComponentId, selectedMedia.el);
+          pickerGesturePhase(previewHandle, {
             phase: "start",
             kind: "resize",
-            dir: value293,
-            x: value287.x,
-            y: value287.y,
+            dir: resizeDirection,
+            x: pointerStartPoint.x,
+            y: pointerStartPoint.y,
           });
-          let [items11, items12, items13]: Dynamic = [false, false, false],
-            callback10: Dynamic = (
-              input2?: Dynamic,
-              options2?: Dynamic,
+          let [hasMoved, zoomWarningShown, didResize]: Dynamic = [false, false, false],
+            getCropStyleEdits: Dynamic = (
+              liveState?: Dynamic,
+              frameState?: Dynamic,
             ): Dynamic =>
               Object.fromEntries(
                 imageCropStyleEdits(
-                  options2,
-                  value289,
-                  input2,
+                  frameState,
+                  naturalImageSize,
+                  liveState,
                 ).map(
-                  ([input3, input4]: Dynamic): Dynamic => [
-                    input3,
-                    input4 ?? "none",
+                  ([propertyName, propertyValue]: Dynamic): Dynamic => [
+                    propertyName,
+                    propertyValue ?? "none",
                   ],
                 ),
               ),
-            callback11: Dynamic = (
-              input2?: Dynamic,
-              options2?: Dynamic,
+            updateCropState: Dynamic = (
+              liveState?: Dynamic,
+              frameState?: Dynamic,
             ): Dynamic => {
-              current.live = input2;
-              current.at = {
-                frame: options2,
-                natural: value289,
+              selectedMedia.live = liveState;
+              selectedMedia.at = {
+                frame: frameState,
+                natural: naturalImageSize,
               };
-              value197(
-                (input3?: Dynamic): Dynamic =>
-                  input3 && {
-                    ...input3,
-                    live: input2,
+              setSelectedMedia(
+                (selectedMediaState?: Dynamic): Dynamic =>
+                  selectedMediaState && {
+                    ...selectedMediaState,
+                    live: liveState,
                   },
               );
             },
-            callback12: Dynamic = (input2?: Dynamic): Dynamic => {
+            handleCropPointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
               if (
-                input2.pointerId !== items2 ||
-                (!items11 &&
-                  Math.hypot(input2.clientX - items3, input2.clientY - items4) <
+                moveEvent.pointerId !== pointerId ||
+                (!hasMoved &&
+                  Math.hypot(moveEvent.clientX - pointerStartX, moveEvent.clientY - pointerStartY) <
                     4)
               )
                 return;
-              if (!callback7()) return callback13(false);
-              items11 = true;
-              let value294: Dynamic = callback6(input2.clientX, input2.clientY),
-                [items14, items15, items16, items17]: Dynamic = [
-                  value294.x - value287.x,
-                  value294.y - value287.y,
-                  Math.cos(value290),
-                  Math.sin(value290),
+              if (!isCurrentCrop()) return finishCropGesture(false);
+              hasMoved = true;
+              let currentPoint: Dynamic = toCanvasPoint(moveEvent.clientX, moveEvent.clientY),
+                [deltaX, deltaY, cosRotation, sinRotation]: Dynamic = [
+                  currentPoint.x - pointerStartPoint.x,
+                  currentPoint.y - pointerStartPoint.y,
+                  Math.cos(rotation),
+                  Math.sin(rotation),
                 ],
-                [items18, items19, items20]: Dynamic = [
-                  items14 * items16 + items15 * items17,
-                  items15 * items16 - items14 * items17,
-                  Math.max(16 / callback5(), 8),
+                [rotatedDeltaX, rotatedDeltaY, minimumCropSize]: Dynamic = [
+                  deltaX * cosRotation + deltaY * sinRotation,
+                  deltaY * cosRotation - deltaX * sinRotation,
+                  Math.max(16 / getCanvasScale(), 8),
                 ],
-                callback18: Dynamic = (input3?: Dynamic): Dynamic =>
-                  !items7 && input3.zoom > Math.max(1, items6.zoom) + 0.001,
-                value295: Dynamic = resizeImageCropFrame(
-                  value288,
-                  value289,
-                  items6,
-                  items,
-                  items18,
-                  items19,
-                  items20,
+                exceedsZoomLimit: Dynamic = (cropResult?: Dynamic): Dynamic =>
+                  !supportsZoom && cropResult.zoom > Math.max(1, liveCrop.zoom) + 0.001,
+                resizedCrop: Dynamic = resizeImageCropFrame(
+                  cropFrame,
+                  naturalImageSize,
+                  liveCrop,
+                  directions,
+                  rotatedDeltaX,
+                  rotatedDeltaY,
+                  minimumCropSize,
                 ),
-                value296: Dynamic = callback9(value295.frame),
-                value297: Dynamic = cropIntoFrame(
-                  value288,
-                  value289,
-                  items6,
-                  value296,
+                constrainedFrame: Dynamic = resizeForDirection(resizedCrop.frame),
+                nextCrop: Dynamic = cropIntoFrame(
+                  cropFrame,
+                  naturalImageSize,
+                  liveCrop,
+                  constrainedFrame,
                 );
-              for (let value301 of (callback18(value297) && items.length === 2
-                ? [items[1], items[0]]
+              for (let alternateDirection of (exceedsZoomLimit(nextCrop) && directions.length === 2
+                ? [directions[1], directions[0]]
                 : []) as Dynamic) {
-                let value302: Dynamic = resizeImageCropFrame(
-                    value288,
-                    value289,
-                    items6,
-                    value301,
-                    items18,
-                    items19,
-                    items20,
+                let alternateCrop: Dynamic = resizeImageCropFrame(
+                    cropFrame,
+                    naturalImageSize,
+                    liveCrop,
+                    alternateDirection,
+                    rotatedDeltaX,
+                    rotatedDeltaY,
+                    minimumCropSize,
                   ),
-                  [items21, items22]: Dynamic = [
-                    callback8(value301, value302.frame),
+                  [alternateFrame, alternateCropResult]: Dynamic = [
+                    resizeCropFrame(alternateDirection, alternateCrop.frame),
                     cropIntoFrame(
-                      value288,
-                      value289,
-                      items6,
-                      callback8(value301, value302.frame),
+                      cropFrame,
+                      naturalImageSize,
+                      liveCrop,
+                      resizeCropFrame(alternateDirection, alternateCrop.frame),
                     ),
                   ];
-                if (!callback18(items22)) {
-                  [value295, value296, value297] = [value302, items21, items22];
+                if (!exceedsZoomLimit(alternateCropResult)) {
+                  [resizedCrop, constrainedFrame, nextCrop] = [alternateCrop, alternateFrame, alternateCropResult];
                   break;
                 }
               }
-              let value298: Dynamic =
-                (value296.w < current.at.frame.w ||
-                  value296.h < current.at.frame.h) &&
+              let cropTooSmall: Dynamic =
+                (constrainedFrame.w < selectedMedia.at.frame.w ||
+                  constrainedFrame.h < selectedMedia.at.frame.h) &&
                 MediaObjectCropZoom(
                   {
-                    w: value296.w,
-                    h: value296.h,
+                    w: constrainedFrame.w,
+                    h: constrainedFrame.h,
                   },
-                  value289,
-                  value297,
+                  naturalImageSize,
+                  nextCrop,
                 );
-              if (callback18(value297) || value298) {
-                items12 ||
+              if (exceedsZoomLimit(nextCrop) || cropTooSmall) {
+                zoomWarningShown ||
                   announce(
-                    callback18(value297)
+                    exceedsZoomLimit(nextCrop)
                       ? ThisBrowserCanTZoomAPictureMessage
                       : YouCanTCropAnyFurtherAtMessage,
                   );
-                items12 = true;
+                zoomWarningShown = true;
                 return;
               }
-              let value299: Dynamic = items.includes("e")
-                  ? value295.frame.w - value288.w
-                  : items.includes("w")
-                    ? value295.frame.x
+              let edgeOffsetX: Dynamic = directions.includes("e")
+                  ? resizedCrop.frame.w - cropFrame.w
+                  : directions.includes("w")
+                    ? resizedCrop.frame.x
                     : 0,
-                value300: Dynamic = items.includes("s")
-                  ? value295.frame.h - value288.h
-                  : items.includes("n")
-                    ? value295.frame.y
+                edgeOffsetY: Dynamic = directions.includes("s")
+                  ? resizedCrop.frame.h - cropFrame.h
+                  : directions.includes("n")
+                    ? resizedCrop.frame.y
                     : 0;
               resizePickerSelection(
-                value286,
-                callback10(value297, value296),
+                previewHandle,
+                getCropStyleEdits(nextCrop, constrainedFrame),
               );
-              items13 = true;
-              pickerGesturePhase(value286, {
+              didResize = true;
+              pickerGesturePhase(previewHandle, {
                 phase: "move",
                 kind: "resize",
-                x: value287.x + value299 * items16 - value300 * items17,
-                y: value287.y + value299 * items17 + value300 * items16,
+                x: pointerStartPoint.x + edgeOffsetX * cosRotation - edgeOffsetY * sinRotation,
+                y: pointerStartPoint.y + edgeOffsetX * sinRotation + edgeOffsetY * cosRotation,
                 shift: false,
               });
-              callback11(value297, {
-                w: value296.w,
-                h: value296.h,
+              updateCropState(nextCrop, {
+                w: constrainedFrame.w,
+                h: constrainedFrame.h,
               });
             },
-            callback13: Dynamic = (input2?: Dynamic): Dynamic => {
+            finishCropGesture: Dynamic = (shouldCommit?: Dynamic): Dynamic => {
               (window as Dynamic).removeEventListener(
                 "pointermove",
-                callback12,
+                handleCropPointerMove,
               );
-              (window as Dynamic).removeEventListener("pointerup", callback14);
+              (window as Dynamic).removeEventListener("pointerup", handlePointerUp);
               (window as Dynamic).removeEventListener(
                 "pointercancel",
-                callback15,
+                handlePointerCancel,
               );
-              (window as Dynamic).removeEventListener("blur", callback17);
+              (window as Dynamic).removeEventListener("blur", handleWindowBlur);
               (window as Dynamic).removeEventListener(
                 "keydown",
-                callback16,
+                handleCropKeyDown,
                 true,
               );
-              value280.current = false;
-              value9?.("element-crop", false);
+              cropPointerActiveRef.current = false;
+              onHostGesture?.("element-crop", false);
               unregisterElementSession(
-                value169,
-                current.el,
-                items13,
+                artboardComponentId,
+                selectedMedia.el,
+                didResize,
               );
-              let value294: Dynamic =
-                input2 &&
-                items11 &&
-                callback7() &&
-                (Math.abs(current.at.frame.w - value288.w) >= 0.5 ||
-                  Math.abs(current.at.frame.h - value288.h) >= 0.5);
-              if (value294) {
-                let value295: Dynamic = normalizeStyleEdits(
+              let shouldPersistCrop: Dynamic =
+                shouldCommit &&
+                hasMoved &&
+                isCurrentCrop() &&
+                (Math.abs(selectedMedia.at.frame.w - cropFrame.w) >= 0.5 ||
+                  Math.abs(selectedMedia.at.frame.h - cropFrame.h) >= 0.5);
+              if (shouldPersistCrop) {
+                let normalizedEdits: Dynamic = normalizeStyleEdits(
                     imageCropStyleEdits(
-                      current.at.frame,
-                      value289,
-                      current.live,
+                      selectedMedia.at.frame,
+                      naturalImageSize,
+                      selectedMedia.live,
                     ),
                   ),
-                  value296: Dynamic = JSON.stringify(value295),
-                  value297: Dynamic = value203(current.el);
-                registerLateGesture(value169, items8, {
-                  el: current.el,
-                  edits: value295,
-                  lapsed: (input3?: Dynamic): Dynamic => {
-                    if (input3 === "stale") return void (current.wrote = "");
-                    value198.current === current
-                      ? ((current.wrote = ""),
-                        callback7() &&
+                  serializedEdits: Dynamic = JSON.stringify(normalizedEdits),
+                  editCount: Dynamic = applyStyleEdit(selectedMedia.el);
+                registerLateGesture(artboardComponentId, cropTid, {
+                  el: selectedMedia.el,
+                  edits: normalizedEdits,
+                  lapsed: (status?: Dynamic): Dynamic => {
+                    if (status === "stale") return void (selectedMedia.wrote = "");
+                    selectedMediaRef.current === selectedMedia
+                      ? ((selectedMedia.wrote = ""),
+                        isCurrentCrop() &&
                           patchPickerStyle(
-                            value286,
-                            value169,
-                            [current.tid],
-                            callback10(current.live, current.at.frame),
-                            current.token,
+                            previewHandle,
+                            artboardComponentId,
+                            [selectedMedia.tid],
+                            getCropStyleEdits(selectedMedia.live, selectedMedia.at.frame),
+                            selectedMedia.token,
                           ))
-                      : current.closed === "held" &&
-                        current.wrote === value296 &&
-                        value202.current.get(current.el) === value297 &&
-                        value205.current(current.el, value295);
+                      : selectedMedia.closed === "held" &&
+                        selectedMedia.wrote === serializedEdits &&
+                        styleEditCountsRef.current.get(selectedMedia.el) === editCount &&
+                        setStylePropertyRef.current(selectedMedia.el, normalizedEdits);
                   },
                 });
-                current.wrote = value296;
+                selectedMedia.wrote = serializedEdits;
               } else
-                items11 &&
-                  value198.current === current &&
-                  callback11(items6, value288);
-              pickerGesturePhase(value286, {
+                hasMoved &&
+                  selectedMediaRef.current === selectedMedia &&
+                  updateCropState(liveCrop, cropFrame);
+              pickerGesturePhase(previewHandle, {
                 phase: "end",
                 kind: "resize",
-                commit: value294,
+                commit: shouldPersistCrop,
               });
-              callback7() &&
+              isCurrentCrop() &&
                 holdPickerStyle(
-                  value286,
-                  value169,
-                  [current.tid],
-                  callback10(current.live, current.at.frame),
-                  current.token,
+                  previewHandle,
+                  artboardComponentId,
+                  [selectedMedia.tid],
+                  getCropStyleEdits(selectedMedia.live, selectedMedia.at.frame),
+                  selectedMedia.token,
                 );
             },
-            callback14: Dynamic = (input2?: Dynamic): Dynamic => {
-              input2.pointerId === items2 && callback13(true);
+            handlePointerUp: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+              pointerEvent.pointerId === pointerId && finishCropGesture(true);
             },
-            callback15: Dynamic = (input2?: Dynamic): Dynamic => {
-              input2.pointerId === items2 && callback13(false);
+            handlePointerCancel: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+              pointerEvent.pointerId === pointerId && finishCropGesture(false);
             },
-            callback16: Dynamic = (event?: Dynamic): Dynamic => {
+            handleCropKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
               /^(Shift|Control|Alt|AltGraph|Meta|OS|CapsLock|NumLock)$/.test(
                 event.key,
               ) ||
                 (event.preventDefault(),
                 event.stopImmediatePropagation(),
-                event.key === "Escape" && callback13(false));
+                event.key === "Escape" && finishCropGesture(false));
             },
-            callback17: Dynamic = (): Dynamic => callback13(true);
-          (window as Dynamic).addEventListener("pointermove", callback12);
-          (window as Dynamic).addEventListener("pointerup", callback14);
-          (window as Dynamic).addEventListener("pointercancel", callback15);
-          (window as Dynamic).addEventListener("blur", callback17);
-          (window as Dynamic).addEventListener("keydown", callback16, true);
+            handleWindowBlur: Dynamic = (): Dynamic => finishCropGesture(true);
+          (window as Dynamic).addEventListener("pointermove", handleCropPointerMove);
+          (window as Dynamic).addEventListener("pointerup", handlePointerUp);
+          (window as Dynamic).addEventListener("pointercancel", handlePointerCancel);
+          (window as Dynamic).addEventListener("blur", handleWindowBlur);
+          (window as Dynamic).addEventListener("keydown", handleCropKeyDown, true);
           return true;
         },
-        value281: Dynamic = (0, reactCanvasShape.useRef)(callback3);
-      value281.current = callback3;
-      let value282: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        cropGestureRef: Dynamic = (0, reactCanvasShape.useRef)(handleCropPointerDown);
+      cropGestureRef.current = handleCropPointerDown;
+      let handlePenPreview: Dynamic = (0, reactCanvasShape.useCallback)(
+          (point?: Dynamic, penOptions?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 &&
-              pickerPenPreview(value286, input2, options);
+            previewHandle &&
+              pickerPenPreview(previewHandle, point, penOptions);
           },
           [],
         ),
-        value283: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = createPreviewHandle(
-              value84.current,
+        handlePenCommit: Dynamic = (0, reactCanvasShape.useCallback)(
+          (point?: Dynamic, penOptions?: Dynamic, gestureContext?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value286 &&
+            previewHandle &&
               pickerVectorPreview(
-                value286,
-                input2,
-                options,
-                context,
+                previewHandle,
+                point,
+                penOptions,
+                gestureContext,
               );
           },
           [],
         ),
-        value284: Dynamic = (0, reactCanvasShape.useCallback)(
-          (input2?: Dynamic): Dynamic => value9?.("element-grip", input2),
-          [value9],
+        handleGripGesture: Dynamic = (0, reactCanvasShape.useCallback)(
+          (gestureEvent?: Dynamic): Dynamic => onHostGesture?.("element-grip", gestureEvent),
+          [onHostGesture],
         ),
-        callback4: Dynamic = (source?: Dynamic, options?: Dynamic): Dynamic => {
-          if (value280.current || !value77 || !value8) return;
-          let value286: Dynamic = createPreviewHandle(
-            value84.current,
+        handleGripDown: Dynamic = (source?: Dynamic, gripPointerEvent?: Dynamic): Dynamic => {
+          if (cropPointerActiveRef.current || !chromeSlot || !box) return;
+          let previewHandle: Dynamic = createPreviewHandle(
+            iframeRef.current,
           );
-          if (!value286 || !canStartCanvasDrag(options)) return;
+          if (!previewHandle || !canStartCanvasDrag(gripPointerEvent)) return;
           focusCanvasDocument();
-          options.stopPropagation();
-          value280.current = true;
-          let currentTarget: Dynamic = options.currentTarget;
+          gripPointerEvent.stopPropagation();
+          cropPointerActiveRef.current = true;
+          let currentTarget: Dynamic = gripPointerEvent.currentTarget;
           try {
-            currentTarget.setPointerCapture(options.pointerId);
+            currentTarget.setPointerCapture(gripPointerEvent.pointerId);
           } catch {}
-          value9?.("element-grip", true);
-          let pointerId: Dynamic = options.pointerId,
-            clientX: Dynamic = options.clientX,
-            clientY: Dynamic = options.clientY,
-            value287: Dynamic = value77,
-            callback5: Dynamic = (
-              input2?: Dynamic,
-              options2?: Dynamic,
+          onHostGesture?.("element-grip", true);
+          let pointerId: Dynamic = gripPointerEvent.pointerId,
+            clientX: Dynamic = gripPointerEvent.clientX,
+            clientY: Dynamic = gripPointerEvent.clientY,
+            chromeElement: Dynamic = chromeSlot,
+            toChromePoint: Dynamic = (
+              pointerClientX?: Dynamic,
+              pointerClientY?: Dynamic,
             ): Dynamic => {
-              let bounds: Dynamic = value287.getBoundingClientRect(),
-                value289: Dynamic =
-                  bounds.width > 0 ? bounds.width / value8.w : 1;
+              let bounds: Dynamic = chromeElement.getBoundingClientRect(),
+                canvasScale: Dynamic =
+                  bounds.width > 0 ? bounds.width / box.w : 1;
               return {
-                x: (input2 - bounds.left) / value289,
-                y: (options2 - bounds.top) / value289,
+                x: (pointerClientX - bounds.left) / canvasScale,
+                y: (pointerClientY - bounds.top) / canvasScale,
               };
             },
-            value288: Dynamic = callback5(clientX, clientY);
-          pickerGesturePhase(value286, {
+            startPoint: Dynamic = toChromePoint(clientX, clientY);
+          pickerGesturePhase(previewHandle, {
             phase: "start",
             ...source,
-            x: value288.x,
-            y: value288.y,
+            x: startPoint.x,
+            y: startPoint.y,
           });
-          let flag2: Dynamic = false,
-            callback6: Dynamic = (input2?: Dynamic): Dynamic => {
+          let hasMoved: Dynamic = false,
+            handleGripMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
               if (
-                input2.pointerId !== pointerId ||
-                (!flag2 &&
+                moveEvent.pointerId !== pointerId ||
+                (!hasMoved &&
                   Math.hypot(
-                    input2.clientX - clientX,
-                    input2.clientY - clientY,
+                    moveEvent.clientX - clientX,
+                    moveEvent.clientY - clientY,
                   ) < 4)
               )
                 return;
-              flag2 = true;
-              let value289: Dynamic = callback5(input2.clientX, input2.clientY);
-              pickerGesturePhase(value286, {
+              hasMoved = true;
+              let currentPoint: Dynamic = toChromePoint(moveEvent.clientX, moveEvent.clientY);
+              pickerGesturePhase(previewHandle, {
                 phase: "move",
                 kind: source.kind,
-                x: value289.x,
-                y: value289.y,
-                shift: input2.shiftKey,
+                x: currentPoint.x,
+                y: currentPoint.y,
+                shift: moveEvent.shiftKey,
               });
             },
-            callback7: Dynamic = (input2?: Dynamic): Dynamic => {
-              if (!(input2.pointerId !== pointerId || !value280.current))
+            handleLostPointerCapture: Dynamic = (captureEvent?: Dynamic): Dynamic => {
+              if (!(captureEvent.pointerId !== pointerId || !cropPointerActiveRef.current))
                 try {
-                  value287.setPointerCapture(pointerId);
+                  chromeElement.setPointerCapture(pointerId);
                 } catch {}
             };
           (document as Dynamic).addEventListener(
             "lostpointercapture",
-            callback7,
+            handleLostPointerCapture,
             true,
           );
-          let callback8: Dynamic = (input2?: Dynamic): Dynamic => {
-              (window as Dynamic).removeEventListener("pointermove", callback6);
-              (window as Dynamic).removeEventListener("pointerup", callback9);
+          let finishGripGesture: Dynamic = (shouldCommit?: Dynamic): Dynamic => {
+              (window as Dynamic).removeEventListener("pointermove", handleGripMove);
+              (window as Dynamic).removeEventListener("pointerup", handleGripPointerUp);
               (window as Dynamic).removeEventListener(
                 "pointercancel",
-                callback10,
+                handleGripPointerCancel,
               );
               (window as Dynamic).removeEventListener(
                 "keydown",
-                callback11,
+                handleGripKeyDown,
                 true,
               );
               (document as Dynamic).removeEventListener(
                 "lostpointercapture",
-                callback7,
+                handleLostPointerCapture,
                 true,
               );
-              value280.current = false;
-              value9?.("element-grip", false);
-              pickerGesturePhase(value286, {
+              cropPointerActiveRef.current = false;
+              onHostGesture?.("element-grip", false);
+              pickerGesturePhase(previewHandle, {
                 phase: "end",
                 kind: source.kind,
-                commit: input2,
+                commit: shouldCommit,
               });
             },
-            callback9: Dynamic = (input2?: Dynamic): Dynamic => {
-              input2.pointerId === pointerId && callback8(flag2);
+            handleGripPointerUp: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+              pointerEvent.pointerId === pointerId && finishGripGesture(hasMoved);
             },
-            callback10: Dynamic = (input2?: Dynamic): Dynamic => {
-              input2.pointerId === pointerId && callback8(false);
+            handleGripPointerCancel: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+              pointerEvent.pointerId === pointerId && finishGripGesture(false);
             },
-            callback11: Dynamic = (event?: Dynamic): Dynamic => {
+            handleGripKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
               event.key === "Escape" &&
                 (event.preventDefault(),
                 event.stopImmediatePropagation(),
-                callback8(false));
+                finishGripGesture(false));
             };
-          (window as Dynamic).addEventListener("pointermove", callback6);
-          (window as Dynamic).addEventListener("pointerup", callback9);
-          (window as Dynamic).addEventListener("pointercancel", callback10);
-          (window as Dynamic).addEventListener("keydown", callback11, true);
+          (window as Dynamic).addEventListener("pointermove", handleGripMove);
+          (window as Dynamic).addEventListener("pointerup", handleGripPointerUp);
+          (window as Dynamic).addEventListener("pointercancel", handleGripPointerCancel);
+          (window as Dynamic).addEventListener("keydown", handleGripKeyDown, true);
         };
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (value158 === 0) return;
-        let value286: Dynamic = createPreviewHandle(
-          value84.current,
+        if (installGeneration === 0) return;
+        let ringsPreviewHandle: Dynamic = createPreviewHandle(
+          iframeRef.current,
         );
-        if (value286) {
-          setPickerRingsOnly(value286, value278);
+        if (ringsPreviewHandle) {
+          setPickerRingsOnly(ringsPreviewHandle, previewEditEnabled);
           return (): Dynamic => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value287 && setPickerRingsOnly(value287, false);
+            previewHandle && setPickerRingsOnly(previewHandle, false);
           };
         }
-      }, [value278, value158, value91]);
+      }, [previewEditEnabled, installGeneration, readyGeneration]);
       (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic =>
-          updateDropGhostDemand(value2, 0),
-        [value2],
+          updateDropGhostDemand(previewFile, 0),
+        [previewFile],
       );
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (value158 === 0 || !value137) return;
-        let callback5: Dynamic = (): Dynamic => {
-          let value286: Dynamic = createPreviewHandle(
-            value84.current,
+        if (installGeneration === 0 || !canEditPreview) return;
+        let refreshHiddenPickerTags: Dynamic = (): Dynamic => {
+          let previewHandle: Dynamic = createPreviewHandle(
+            iframeRef.current,
           );
-          value286 &&
+          previewHandle &&
             setPickerHiddenTags(
-              value286,
+              previewHandle,
               getHiddenPickerTags(),
             );
         };
-        callback5();
-        return subscribeHiddenPickerTags(callback5);
-      }, [value137, value158, value91]);
+        refreshHiddenPickerTags();
+        return subscribeHiddenPickerTags(refreshHiddenPickerTags);
+      }, [canEditPreview, installGeneration, readyGeneration]);
       (0, reactCanvasShape.useEffect)((): Dynamic => {
-        if (!value23 || value158 === 0) return;
-        let callback5: Dynamic = (input2?: Dynamic): Dynamic => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+        if (!panelMounted || installGeneration === 0) return;
+        let setMeasureMode: Dynamic = (measureEvent?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value287 && setPickerMeasure(value287, input2);
+            previewHandle && setPickerMeasure(previewHandle, measureEvent);
           },
-          callback6: Dynamic = (input2?: Dynamic): Dynamic => {
-            let value287: Dynamic = createPreviewHandle(
-              value84.current,
+          setDeepSelection: Dynamic = (enabled?: Dynamic): Dynamic => {
+            let previewHandle: Dynamic = createPreviewHandle(
+              iframeRef.current,
             );
-            value287 && setPickerDeepSelection(value287, input2);
+            previewHandle && setPickerDeepSelection(previewHandle, enabled);
           },
-          callback7: Dynamic = (input2?: Dynamic): Dynamic => {
-            input2.key === "Alt" &&
-              !input2.repeat &&
-              callback5(input2.type === "keydown");
+          handleModifierKey: Dynamic = (keyboardEvent?: Dynamic): Dynamic => {
+            keyboardEvent.key === "Alt" &&
+              !keyboardEvent.repeat &&
+              setMeasureMode(keyboardEvent.type === "keydown");
           },
-          callback8: Dynamic = (): Dynamic => {
-            (document as Dynamic).hasFocus() || callback5(false);
+          handleWindowBlur: Dynamic = (): Dynamic => {
+            (document as Dynamic).hasFocus() || setMeasureMode(false);
           };
-        (window as Dynamic).addEventListener("keydown", callback7, true);
-        (window as Dynamic).addEventListener("keyup", callback7, true);
-        (window as Dynamic).addEventListener("blur", callback8);
-        let value286: Dynamic = subscribePrimaryModifierHeld(
-          callback6,
+        (window as Dynamic).addEventListener("keydown", handleModifierKey, true);
+        (window as Dynamic).addEventListener("keyup", handleModifierKey, true);
+        (window as Dynamic).addEventListener("blur", handleWindowBlur);
+        let unsubscribeModifierHeld: Dynamic = subscribePrimaryModifierHeld(
+          setDeepSelection,
         );
-        getPrimaryModifierHeld() && callback6(true);
+        getPrimaryModifierHeld() && setDeepSelection(true);
         return (): Dynamic => {
-          (window as Dynamic).removeEventListener("keydown", callback7, true);
-          (window as Dynamic).removeEventListener("keyup", callback7, true);
-          (window as Dynamic).removeEventListener("blur", callback8);
-          value286();
-          callback5(false);
-          callback6(false);
+          (window as Dynamic).removeEventListener("keydown", handleModifierKey, true);
+          (window as Dynamic).removeEventListener("keyup", handleModifierKey, true);
+          (window as Dynamic).removeEventListener("blur", handleWindowBlur);
+          unsubscribeModifierHeld();
+          setMeasureMode(false);
+          setDeepSelection(false);
         };
-      }, [value23, value158, value91]);
-      let value285: Dynamic = value23 ? (
+      }, [panelMounted, installGeneration, readyGeneration]);
+      let editorSessionElement: Dynamic = panelMounted ? (
         <DesignEditorSession
-          webviewRef={value84}
+          webviewRef={iframeRef}
           projectPath={"appifact"}
-          filePath={value2}
-          exportTitle={value4}
+          filePath={previewFile}
+          exportTitle={title}
           active={true}
-          readOnly={value83}
-          canvasTools={!flag}
-          installGen={value158}
-          iframeDefinedVars={value274}
+          readOnly={readOnly}
+          canvasTools={!showInlineTweakControls}
+          installGen={installGeneration}
+          iframeDefinedVars={definedVariables}
           modeOverride={"pro"}
-          actionsRef={value55}
-          dcProps={value148}
-          tweaksProps={state}
-          dcModel={value157}
-          dcModelCbRef={value131}
-          exitGuardRef={value33}
-          textEditOpenRef={value34}
-          onFrameFree={value146}
-          settleSessionRef={value35}
-          commitOpenTextEditRef={value36}
-          onSessionDirtyChange={value37}
-          onEditInput={value38 ? (): Dynamic => value38(value2) : undefined}
-          onUndoStack={value40}
-          onToolChange={value41}
-          toolResetTick={value42}
-          onHistoryPush={value48 ? (): Dynamic => value48(value2) : undefined}
+          actionsRef={actionsRef}
+          dcProps={tweakProperties}
+          tweaksProps={tweaksBridge}
+          dcModel={modelRuntime}
+          dcModelCbRef={frameHoldRef}
+          exitGuardRef={exitGuardRef}
+          textEditOpenRef={textEditOpenRef}
+          onFrameFree={releaseFrame}
+          settleSessionRef={settleSessionRef}
+          commitOpenTextEditRef={commitOpenTextEditRef}
+          onSessionDirtyChange={onSessionDirtyChange}
+          onEditInput={onEditInput ? (): Dynamic => onEditInput(previewFile) : undefined}
+          onUndoStack={onUndoStack}
+          onToolChange={onToolChange}
+          toolResetTick={toolResetTick}
+          onHistoryPush={onHistoryPush ? (): Dynamic => onHistoryPush(previewFile) : undefined}
           onHistoryApply={
-            value50
-              ? (input2?: Dynamic): Dynamic => value50(value2, input2)
+            onHistoryApply
+              ? (historyDirection?: Dynamic): Dynamic => onHistoryApply(previewFile, historyDirection)
               : undefined
           }
-          onHistoryRevoke={value51 ? (): Dynamic => value51(value2) : undefined}
-          onHistoryDrop={value165}
-          onOpenFile={value43}
+          onHistoryRevoke={onHistoryRevoke ? (): Dynamic => onHistoryRevoke(previewFile) : undefined}
+          onHistoryDrop={handleHistoryDrop}
+          onOpenFile={onOpenFile}
           onPasteImages={
-            value44 &&
-            ((input2?: Dynamic, options?: Dynamic): Dynamic =>
-              value44(value2, input2, options))
+            onPasteImages &&
+            ((imageItems?: Dynamic, pasteOptions?: Dynamic): Dynamic =>
+              onPasteImages(previewFile, imageItems, pasteOptions))
           }
           onDropVideos={
-            value45 &&
-            ((input2?: Dynamic, options?: Dynamic): Dynamic =>
-              value45(value2, input2, options))
+            onDropVideos &&
+            ((videoItems?: Dynamic, dropOptions?: Dynamic): Dynamic =>
+              onDropVideos(previewFile, videoItems, dropOptions))
           }
           onPointerPresence={
-            value46 && ((input2?: Dynamic): Dynamic => value46(value2, input2))
+            onPointerPresence && ((pointerEvent?: Dynamic): Dynamic => onPointerPresence(previewFile, pointerEvent))
           }
           onPointerAt={
-            value47 && ((input2?: Dynamic): Dynamic => value47(value2, input2))
+            onPointerAt && ((point?: Dynamic): Dynamic => onPointerAt(previewFile, point))
           }
-          onTextEditEnded={value60 && ((): Dynamic => value60(value2))}
-          routeForwardedKey={value16}
-          artboardSettings={value62}
-          canvasObject={value63}
-          outlineArtboards={value64}
-          presentPropsTick={value65}
-          onPresentPropsHandled={value66}
-          placeRequest={value67}
-          onPlaceHandled={value68}
-          insertAtPoint={value219}
+          onTextEditEnded={onTextEditEnded && ((): Dynamic => onTextEditEnded(previewFile))}
+          routeForwardedKey={routeForwardedKey}
+          artboardSettings={artboardSettings}
+          canvasObject={canvasObject}
+          outlineArtboards={outlineArtboards}
+          presentPropsTick={presentPropsTick}
+          onPresentPropsHandled={onPresentPropsHandled}
+          placeRequest={placeRequest}
+          onPlaceHandled={onPlaceHandled}
+          insertAtPoint={insertAtPoint}
         />
       ) : null;
-      return value97 != null || value95 != null ? (
+      return previewBlockedReason != null || previewLoadError != null ? (
         <div
           className={
             "absolute inset-0 z-[15] flex items-center justify-center bg-danger p-4 text-center text-sm text-danger"
           }
           title={
-            artboardLoadErrorMessage(value97, value95) ?? (undefined)
+            artboardLoadErrorMessage(previewBlockedReason, previewLoadError) ?? (undefined)
           }
         >
           {uiMessage("canvas.artboardFrame.anErrorOccurred")}
         </div>
       ) : (
         <jsx_ip.Fragment>
-          {value8 && value148.hasProps && value71 && flag && (<ViewportScaleThreshold
+          {box && tweakProperties.hasProps && expanded && showInlineTweakControls && (<ViewportScaleThreshold
               min={selectionChromeMinimumScale}
             >
-              {(input2?: Dynamic): Dynamic => (
+              {(isInteractive?: Dynamic): Dynamic => (
                 <ArtboardTweaksRow
-                  file={value2}
-                  dcProps={state}
-                  width={value8.w}
-                  interactive={input2 && value70 && value106}
-                  keyboardInert={value80}
-                  readonly={!value137}
-                  onOpenTweaks={value12}
+                  file={previewFile}
+                  dcProps={tweaksBridge}
+                  width={box.w}
+                  interactive={isInteractive && live && frameReady}
+                  keyboardInert={keyboardInert}
+                  readonly={!canEditPreview}
+                  onOpenTweaks={onOpenTweaks}
                 />
               )}
             </ViewportScaleThreshold>)}
           {false}
-          {value70 && value24 && value88 != null && value126 && (<iframe
-              key={value93}
-              ref={value130}
-              title={value2}
-              aria-label={value3}
+          {live && frameArmed && srcdoc != null && scheduledToBoot && (<iframe
+              key={displayedGeneration}
+              ref={attachIframe}
+              title={previewFile}
+              aria-label={displayTitle}
               tabIndex={
-                (value61 && !value71 && !value72) || value80 ? -1 : undefined
+                (keyboardSkipsContent && !expanded && !playing) || keyboardInert ? -1 : undefined
               }
-              inert={value81 ? true : undefined}
+              inert={inertFrame ? true : undefined}
               sandbox={"allow-scripts allow-same-origin"}
-              srcDoc={value88}
+              srcDoc={srcdoc}
               onLoad={(): Dynamic => {
-                let value286: Dynamic = value86?.boot;
-                if (value286 != null && value89.current !== value93) {
-                  value89.current = value93;
-                  value84.current?.contentWindow?.postMessage(
+                let bootPayload: Dynamic = previewDocument?.boot;
+                if (bootPayload != null && lastRenderedGenerationRef.current !== displayedGeneration) {
+                  lastRenderedGenerationRef.current = displayedGeneration;
+                  iframeRef.current?.contentWindow?.postMessage(
                     {
                       __dc_doc: 1,
-                      doc: value286.doc,
-                      parts: value286.parts,
-                      urls: value286.urls,
+                      doc: bootPayload.doc,
+                      parts: bootPayload.parts,
+                      urls: bootPayload.urls,
                     },
                     "*",
                   );
                   return;
                 }
                 setPreviewProjectRoot(
-                  value84.current?.contentWindow,
-                  value86?.projectRoot === undefined
+                  iframeRef.current?.contentWindow,
+                  previewDocument?.projectRoot === undefined
                     ? undefined
-                    : new URL(value86.projectRoot).pathname,
+                    : new URL(previewDocument.projectRoot).pathname,
                 );
-                let value287: Dynamic = value85.frameLoaded();
-                if (value287.kind === "foreign") {
-                  value142() ||
-                    (value96(value85.blocked),
+                let frameLoadResult: Dynamic = previewGenerationGate.frameLoaded();
+                if (frameLoadResult.kind === "foreign") {
+                  isPreviewRetired() ||
+                    (setPreviewLoadError(previewGenerationGate.blocked),
                     unblockDesignFramesReady());
                   return;
                 }
                 (async (): Promise<Dynamic> => {
-                  let value288: Dynamic = await value85.waitForHello(),
-                    value289: Dynamic =
-                      value288 == null
+                  let helloPayload: Dynamic = await previewGenerationGate.waitForHello(),
+                    runtimeProbeResult: Dynamic =
+                      helloPayload == null
                         ? "dead"
-                        : await probePreviewRuntime(value288, {
+                        : await probePreviewRuntime(helloPayload, {
                             attempts: 3,
                           });
-                  if (!(value287.gen <= value123.current)) {
-                    value85.verdict(value287.gen, value289);
-                    if (value85.blocked != null) {
-                      value142() ||
-                        (value96(value85.blocked),
+                  if (!(frameLoadResult.gen <= retiredGenerationRef.current)) {
+                    previewGenerationGate.verdict(frameLoadResult.gen, runtimeProbeResult);
+                    if (previewGenerationGate.blocked != null) {
+                      isPreviewRetired() ||
+                        (setPreviewLoadError(previewGenerationGate.blocked),
                         unblockDesignFramesReady());
                       return;
                     }
-                    value90.current = value287.gen;
-                    value287.gen === value113.current &&
-                      value101.current !== value287.gen &&
-                      value100(emptyArtboardErrors);
+                    pendingGenerationRef.current = frameLoadResult.gen;
+                    frameLoadResult.gen === displayedGenerationRef.current &&
+                      loadedGenerationRef.current !== frameLoadResult.gen &&
+                      setArtboardErrors(emptyArtboardErrors);
                     !(
                       isFrameCaptureDocument() &&
-                      !value135 &&
+                      !isLoadingArtboard &&
                       (await createPreviewHandle(
-                        value84.current,
+                        iframeRef.current,
                       )?.awaitSettled({
                         capMs: 1200,
                         finishAnimations: true,
                       }),
-                      value287.gen !== value85.mountedGeneration)
+                      frameLoadResult.gen !== previewGenerationGate.mountedGeneration)
                     ) &&
-                      (value107(true),
-                      value92((input2?: Dynamic): Dynamic => input2 + 1),
-                      refreshDesktopRendering(value84.current),
-                      value135 || markDesignFramesReady());
+                      (setFrameReady(true),
+                      setReadyGeneration((generation?: Dynamic): Dynamic => generation + 1),
+                      refreshDesktopRendering(iframeRef.current),
+                      isLoadingArtboard || markDesignFramesReady());
                   }
                 })();
               }}
               className={"min-h-0 w-full flex-1 border-0"}
               style={{
                 display: "block",
-                pointerEvents: value79 ? "none" : undefined,
+                pointerEvents: pointerInert ? "none" : undefined,
               }}
             />)}
-          {value70 && (!value24 || value88 == null || !value106) && (<div
+          {live && (!frameArmed || srcdoc == null || !frameReady) && (<div
               data-testid={"mega-artboard-loading"}
               className={
                 "absolute inset-0 z-10 bg-om-bg-canvas"
@@ -5644,27 +5644,27 @@ export function installCanvasArtboardFrame(): () => void {
             >
               {/* MineDesign：载入中的画板显示为骨块（assets/skeleton/skeleton.css），文字只留给读屏 */}
               <span className={"mdn-skel-bone absolute inset-0"} />
-              {!value74 && (<span className={"sr-only"}>
+              {!frameless && (<span className={"sr-only"}>
                   {uiMessage("canvas.artboardFrame.loading")}
                 </span>)}
             </div>)}
-          {value285}
+          {editorSessionElement}
           <ArtboardSelectionChrome
-            slot={value77}
-            live={value279}
-            interactive={value23 === true && value137 === true}
-            onGripDown={callback4}
-            onContextMenu={callback2}
-            sinkRef={value102}
-            crop={value214}
-            onPenPreview={value282}
-            onPenCommit={value283}
-            onPenGesture={value284}
-            vectorEdit={value69}
+            slot={chromeSlot}
+            live={interactiveFrame}
+            interactive={panelMounted === true && canEditPreview === true}
+            onGripDown={handleGripDown}
+            onContextMenu={handleChromeContextMenu}
+            sinkRef={mediaSinkRef}
+            crop={cropModel}
+            onPenPreview={handlePenPreview}
+            onPenCommit={handlePenCommit}
+            onPenGesture={handleGripGesture}
+            vectorEdit={vectorEdit}
             board={artboardContentSizeDescriptor(
-              value8,
-              value75,
-              value76,
+              box,
+              boxRowH,
+              component,
             )}
           />
         </jsx_ip.Fragment>
