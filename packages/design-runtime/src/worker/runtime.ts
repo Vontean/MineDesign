@@ -73,18 +73,18 @@ var UNITLESS_CSS_PROPERTIES: Dynamic = new Set([
   "orphans",
 ]);
 var camelCaseCssProperty: Dynamic = (
-  input?: Dynamic,
+  cssPropertyName?: Dynamic,
   ..._extraArguments: Dynamic[]
 ): Dynamic =>
-  String(input)
+  String(cssPropertyName)
     .replace(/^-ms-/, "ms-")
     .replace(
       /-([a-z])/g,
       (
-        input2?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments2: Dynamic[]
-      ): Dynamic => options.toUpperCase(),
+        _matchedDashAndLetter?: Dynamic,
+        propertyName?: Dynamic,
+        ..._unusedCallbackArgs: Dynamic[]
+      ): Dynamic => propertyName.toUpperCase(),
     );
 var CHAIN_CONTINUATION: Dynamic = /^\s*(?:\.(?!\d)|\?|:|&&|\|\||,)/;
 var CODE_FENCE: Dynamic = /^\s*```[\w-]*\s*$/;
@@ -130,24 +130,24 @@ function createEditRuntime(
   let previewCount: Dynamic = 0;
   let queuedFrames: Dynamic = new Map();
   function sendQueuedFrames(
-    input?: Dynamic,
-    ..._extraArguments4: Dynamic[]
+    flushAll?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    for (let [value2, value3] of queuedFrames) {
-      if (!input && Date.now() < nextFrameTime) return;
-      queuedFrames.delete(value2);
+    for (let [slideId, framePayload] of queuedFrames) {
+      if (!flushAll && Date.now() < nextFrameTime) return;
+      queuedFrames.delete(slideId);
       emit({
         kind: "html" as const,
         seq: sequence++,
-        slideId: value2,
-        html: value3.html,
-        stmt: value3.stmt,
+        slideId: slideId,
+        html: framePayload.html,
+        stmt: framePayload.stmt,
       });
       nextFrameTime =
         Date.now() +
         Math.max(
           pace.frameMs,
-          (value3.html.length + value3.stmt.length + value2.length + 100) /
+          (framePayload.html.length + framePayload.stmt.length + slideId.length + 100) /
             pace.frameCharsPerMs,
         );
     }
@@ -158,71 +158,71 @@ function createEditRuntime(
   let consumedLineChars: Dynamic = 0;
   let recognizedCode: Dynamic = false;
   let validFileId: Dynamic = {
-    test: (input?: Dynamic, ..._extraArguments5: Dynamic[]): Dynamic =>
-      /^[A-Za-z0-9_-]{1,64}$/.test(input) &&
-      input !== "__proto__" &&
-      input !== "constructor" &&
-      input !== "prototype",
+    test: (key?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+      /^[A-Za-z0-9_-]{1,64}$/.test(key) &&
+      key !== "__proto__" &&
+      key !== "constructor" &&
+      key !== "prototype",
   };
   let truncate: Dynamic = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments6: Dynamic[]
+    truncateInput?: Dynamic,
+    maxLength?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
-    input = String(input);
-    return input.length > options ? input.slice(0, options) : input;
+    truncateInput = String(truncateInput);
+    return truncateInput.length > maxLength ? truncateInput.slice(0, maxLength) : truncateInput;
   };
   let fileTerminology: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments7: Dynamic[]
+    filePath?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
-    String(input)
+    String(filePath)
       .replace(/\bdeck: /g, "")
       .replace(/\bslides\b/g, "files")
       .replace(/\bslide\b/g, "file")
       .replace(/\bdeck\b/g, "project");
   let formatError: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments8: Dynamic[]
+    error?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
     project
       ? truncate(
-          (project.v3 ? fileTerminology(input) : String(input)).split(`
+          (project.v3 ? fileTerminology(error) : String(error)).split(`
 `)[0],
           200,
         )
-      : truncate(input, limits.maxMsg);
+      : truncate(error, limits.maxMsg);
   let emitError: Dynamic = (
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments9: Dynamic[]
+    error?: Dynamic,
+    statement?: Dynamic,
+    metadata?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
     emit(
       Object.assign(
         {
           kind: "error" as const,
-          message: formatError(input),
-          stmt: truncate(options || "", limits.maxStmt),
+          message: formatError(error),
+          stmt: truncate(statement || "", limits.maxStmt),
         },
-        context,
+        metadata,
       ),
     );
   let emitStatementError: Dynamic = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments0: Dynamic[]
+    error?: Dynamic,
+    statement?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
-    if ((emitError(input, options), project))
+    if ((emitError(error, statement), project))
       emit({
         kind: "done" as const,
         seq: sequence++,
         n: ++project.n,
-        stmt: truncate(options || "", limits.maxStmt),
+        stmt: truncate(statement || "", limits.maxStmt),
         changed: [],
         logged: 0,
         threw: {
-          message: formatError(input),
+          message: formatError(error),
         },
       });
   };
@@ -231,16 +231,16 @@ function createEditRuntime(
     domDeckMetadata?: Dynamic,
     metadata?: Dynamic,
     sdk?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments1: Dynamic[]
+    runtimeOptions?: Dynamic,
+    ..._unusedInitializeArgs: Dynamic[]
   ): Dynamic {
-    if (options && Number.isFinite(options.previewMs))
-      limits.previewMs = options.previewMs;
-    let requestedPace: Dynamic = options && options.pace;
+    if (runtimeOptions && Number.isFinite(runtimeOptions.previewMs))
+      limits.previewMs = runtimeOptions.previewMs;
+    let requestedPace: Dynamic = runtimeOptions && runtimeOptions.pace;
     let positiveNumber: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments10: Dynamic[]
-    ): Dynamic => Number.isFinite(input) && input > 0;
+      positiveValue?: Dynamic,
+      ..._unusedArgs: Dynamic[]
+    ): Dynamic => Number.isFinite(positiveValue) && positiveValue > 0;
     pace =
       requestedPace &&
       typeof requestedPace === "object" &&
@@ -259,8 +259,8 @@ function createEditRuntime(
     previewCount = 0;
     queuedFrames.clear();
     chainMode =
-      options && typeof options.chains === "boolean"
-        ? options.chains
+      runtimeOptions && typeof runtimeOptions.chains === "boolean"
+        ? runtimeOptions.chains
         : !!(sdk && sdk.version === 3);
     window = new HappyWindow({
       url: "about:blank",
@@ -279,28 +279,28 @@ function createEditRuntime(
         },
       },
     });
-    for (let value3 of WINDOW_INTRINSICS)
-      if (window[value3] === undefined)
-        window[value3] = (globalThis as Dynamic)[value3];
+    for (let intrinsicName of WINDOW_INTRINSICS)
+      if (window[intrinsicName] === undefined)
+        window[intrinsicName] = (globalThis as Dynamic)[intrinsicName];
     window.getComputedStyle = (
-      input?: Dynamic,
-      ..._extraArguments11: Dynamic[]
+      element?: Dynamic,
+      ..._unusedStyleArgs: Dynamic[]
     ): Dynamic =>
-      new Proxy(input.style, {
-        get(input2: Dynamic, options2: Dynamic): Dynamic {
-          if (options2 === "getPropertyValue")
+      new Proxy(element.style, {
+        get(styleObject: Dynamic, propertyKey: Dynamic): Dynamic {
+          if (propertyKey === "getPropertyValue")
             return (
-              input3?: Dynamic,
-              ..._extraArguments12: Dynamic[]
+              propertyName?: Dynamic,
+              ..._unusedCallbackArgs: Dynamic[]
             ): Dynamic =>
-              input2.getPropertyValue(input3) ||
-              getFallbackStyle(input, String(input3));
-          let entry: Dynamic = Reflect.get(input2, options2);
-          if (typeof entry === "function") return entry.bind(input2);
+              styleObject.getPropertyValue(propertyName) ||
+              getFallbackStyle(element, String(propertyName));
+          let entry: Dynamic = Reflect.get(styleObject, propertyKey);
+          if (typeof entry === "function") return entry.bind(styleObject);
           return (entry === "" || entry === undefined) &&
-            typeof options2 === "string" &&
-            /^[a-zA-Z-]+$/.test(options2)
-            ? getFallbackStyle(input, kebabCaseCssProperty(options2)) || entry
+            typeof propertyKey === "string" &&
+            /^[a-zA-Z-]+$/.test(propertyKey)
+            ? getFallbackStyle(element, kebabCaseCssProperty(propertyKey)) || entry
             : entry;
         },
       });
@@ -308,7 +308,7 @@ function createEditRuntime(
     try {
       window.Element.prototype.toString = function (
         this: Dynamic,
-        ..._extraArguments13: Dynamic[]
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic {
         return (
           "[object " +
@@ -316,12 +316,12 @@ function createEditRuntime(
           "]"
         );
       };
-    } catch (value3: Dynamic) {}
+    } catch (_ignoredError: Dynamic) {}
     if ((collectPlaceholders(html), sdk)) {
-      for (let value3 of Object.keys(sdk.texts || {}))
-        collectPlaceholders(sdk.texts[value3]);
-      for (let value3 of Object.keys(sdk.layouts || {}))
-        collectPlaceholders(sdk.layouts[value3]);
+      for (let textFile of Object.keys(sdk.texts || {}))
+        collectPlaceholders(sdk.texts[textFile]);
+      for (let layoutName of Object.keys(sdk.layouts || {}))
+        collectPlaceholders(sdk.layouts[layoutName]);
     }
     if (
       ((originalHadTbody = /<tbody[\s>]/i.test(String(html))),
@@ -348,62 +348,62 @@ function createEditRuntime(
     jquery.style = function (
       this: Dynamic,
       element?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value3?: Dynamic,
-      ..._extraArguments14: Dynamic[]
+      cssProperty?: Dynamic,
+      propertyValue?: Dynamic,
+      fallbackValue?: Dynamic,
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic {
       if (
-        typeof context === "number" &&
-        context === context &&
-        !UNITLESS_CSS_PROPERTIES.has(camelCaseCssProperty(options2)) &&
-        !String(options2).startsWith("--")
+        typeof propertyValue === "number" &&
+        propertyValue === propertyValue &&
+        !UNITLESS_CSS_PROPERTIES.has(camelCaseCssProperty(cssProperty)) &&
+        !String(cssProperty).startsWith("--")
       )
-        context = context + "px";
-      if (context === undefined || !element || element.nodeType !== 1)
-        return style.call(this, element, options2, context, value3);
-      let value4: Dynamic = kebabCaseCssProperty(options2);
+        propertyValue = propertyValue + "px";
+      if (propertyValue === undefined || !element || element.nodeType !== 1)
+        return style.call(this, element, cssProperty, propertyValue, fallbackValue);
+      let propertyName: Dynamic = kebabCaseCssProperty(cssProperty);
       let entry: Dynamic = fallbackStyles.get(element);
-      if (typeof context === "string" && /url\(/i.test(context))
-        return setFallbackStyle(element, value4, context);
-      if (context === "" || context === null) {
-        if (entry) entry.delete(value4);
+      if (typeof propertyValue === "string" && /url\(/i.test(propertyValue))
+        return setFallbackStyle(element, propertyName, propertyValue);
+      if (propertyValue === "" || propertyValue === null) {
+        if (entry) entry.delete(propertyName);
         if (!removedStyleProperties.has(element))
           removedStyleProperties.set(element, new Set());
-        removedStyleProperties.get(element).add(value4);
-        return style.call(this, element, options2, context, value3);
+        removedStyleProperties.get(element).add(propertyName);
+        return style.call(this, element, cssProperty, propertyValue, fallbackValue);
       }
-      if (entry) entry.delete(value4);
+      if (entry) entry.delete(propertyName);
       let attribute: Dynamic = element.getAttribute("style");
       let cssText: Dynamic = element.style.cssText;
-      let value5: Dynamic = style.call(
+      let styleResult: Dynamic = style.call(
         this,
         element,
-        options2,
-        context,
-        value3,
+        cssProperty,
+        propertyValue,
+        fallbackValue,
       );
       if (
-        typeof context === "string" &&
-        context.trim() &&
+        typeof propertyValue === "string" &&
+        propertyValue.trim() &&
         element.style.cssText === cssText &&
-        element.style.getPropertyValue(value4) === "" &&
-        getFallbackStyle(element, value4) !== context
+        element.style.getPropertyValue(propertyName) === "" &&
+        getFallbackStyle(element, propertyName) !== propertyValue
       )
-        setFallbackStyle(element, value4, context);
+        setFallbackStyle(element, propertyName, propertyValue);
       else {
-        let value6: Dynamic =
-          typeof context === "string" &&
-          !/^[-+]=/.test(context) &&
-          !(jquery.cssHooks[camelCaseCssProperty(options2)] || {}).set
-            ? context.trim()
-            : element.style.getPropertyValue(value4);
-        let value7: Dynamic =
-          element.style.cssText === cssText || !value6
+        let styleAttribute: Dynamic =
+          typeof propertyValue === "string" &&
+          !/^[-+]=/.test(propertyValue) &&
+          !(jquery.cssHooks[camelCaseCssProperty(cssProperty)] || {}).set
+            ? propertyValue.trim()
+            : element.style.getPropertyValue(propertyName);
+        let normalizedStyle: Dynamic =
+          element.style.cssText === cssText || !styleAttribute
             ? attribute
-            : mergeCssDeclaration(attribute || "", value4, value6);
-        if (value7 === null) element.removeAttribute("style");
-        else element.setAttribute("style", value7);
+            : mergeCssDeclaration(attribute || "", propertyName, styleAttribute);
+        if (normalizedStyle === null) element.removeAttribute("style");
+        else element.setAttribute("style", normalizedStyle);
         if (
           attribute === null ||
           (lastJqueryStyles.has(element)
@@ -411,56 +411,56 @@ function createEditRuntime(
             : !originalStyles.has(element) ||
               originalStyles.get(element) === attribute)
         )
-          lastJqueryStyles.set(element, value7);
+          lastJqueryStyles.set(element, normalizedStyle);
         else lastJqueryStyles.delete(element);
       }
-      return value5;
+      return styleResult;
     };
     jquery.attrHooks.style = {
       set: (
-        input?: Dynamic,
-        options2?: Dynamic,
-        ..._extraArguments15: Dynamic[]
+        element?: Dynamic,
+        styleText?: Dynamic,
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic => {
-        directStyleWrites.add(input);
-        fallbackStyles.delete(input);
-        input.setAttribute("style", String(options2));
-        return options2;
+        directStyleWrites.add(element);
+        fallbackStyles.delete(element);
+        element.setAttribute("style", String(styleText));
+        return styleText;
       },
     };
-    let value2: Dynamic = (..._extraArguments16: Dynamic[]): Dynamic => {
+    let throwRemovedSlide: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic => {
       throw Error(project.goneMsg);
     };
     if (
       ((select = function (
-        input?: Dynamic,
-        options2?: Dynamic,
-        ..._extraArguments17: Dynamic[]
+        selector?: Dynamic,
+        searchContext?: Dynamic,
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic {
         if (project && project.v3)
           return project.seen(
             arguments.length
-              ? jquery(input, options2)
+              ? jquery(selector, searchContext)
               : jquery(document.body).children(),
           );
         if (
           project &&
           project.currentRemoved &&
           (!arguments.length ||
-            (typeof input === "string" &&
-              options2 === undefined &&
-              !/^\s*</.test(input)))
+            (typeof selector === "string" &&
+              searchContext === undefined &&
+              !/^\s*</.test(selector)))
         )
-          value2();
+          throwRemovedSlide();
         return arguments.length
-          ? jquery(input, options2)
+          ? jquery(selector, searchContext)
           : jquery(currentElement);
       }),
       Object.setPrototypeOf(select, jquery),
       (select.prototype = jquery.prototype),
       Object.defineProperty(select, "slide", {
-        get: (..._extraArguments18: Dynamic[]): Dynamic =>
-          project && project.currentRemoved ? value2() : jquery(currentElement),
+        get: (..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          project && project.currentRemoved ? throwRemovedSlide() : jquery(currentElement),
       }),
       (scratchElement = document.createElement("div")),
       project && project.v3)
@@ -472,17 +472,17 @@ function createEditRuntime(
       });
       return true;
     }
-    for (let value3 of [
+    for (let element of [
       currentElement,
       ...currentElement.querySelectorAll("[style]"),
     ])
-      if (value3.getAttribute("style") !== null)
-        originalStyles.set(value3, value3.getAttribute("style"));
+      if (element.getAttribute("style") !== null)
+        originalStyles.set(element, element.getAttribute("style"));
     if (((lastHtml = serializeCurrentSlide()), project && project.current))
       project.slides.get(project.current).last = lastHtml;
     if (domDeck) {
-      let value3: Dynamic = validateDomDeck();
-      domDeck.last = value3.ok ? JSON.stringify(value3.state) : "";
+      let domDeckState: Dynamic = validateDomDeck();
+      domDeck.last = domDeckState.ok ? JSON.stringify(domDeckState.state) : "";
     }
     initialized = true;
     emit({
@@ -494,7 +494,7 @@ function createEditRuntime(
   let scratchElement: Dynamic = null;
   function parseCssDeclarations(
     css?: Dynamic,
-    ..._extraArguments19: Dynamic[]
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     let declarations: Dynamic = [];
     let parenthesisDepth: Dynamic = 0;
@@ -523,12 +523,12 @@ function createEditRuntime(
     return declarations;
   }
   let cssDeclarationMap: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments20: Dynamic[]
+    declarations?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
     new Map(
-      parseCssDeclarations(input).map(
-        (declaration?: Dynamic, ..._extraArguments21: Dynamic[]): Dynamic => [
+      parseCssDeclarations(declarations).map(
+        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic => [
           declaration.prop,
           declaration.value,
         ],
@@ -536,10 +536,10 @@ function createEditRuntime(
     );
   let normalizeCssDeclaration: Dynamic = (
     declaration?: Dynamic,
-    ..._extraArguments22: Dynamic[]
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
     scratchElement.setAttribute("style", declaration.text);
-    let value2: Dynamic = cssDeclarationMap(scratchElement.style.cssText);
+    let parsedDeclarations: Dynamic = cssDeclarationMap(scratchElement.style.cssText);
     scratchElement.removeAttribute("style");
     try {
       scratchElement.style.setProperty(
@@ -547,73 +547,73 @@ function createEditRuntime(
         declaration.value.replace(/\s*!important\s*$/, ""),
         /!important\s*$/.test(declaration.value) ? "important" : "",
       );
-    } catch (value4: Dynamic) {}
-    let value3: Dynamic = cssDeclarationMap(
+    } catch (error: Dynamic) {}
+    let normalizedDeclarations: Dynamic = cssDeclarationMap(
       scratchElement.getAttribute("style") || "",
     );
     scratchElement.removeAttribute("style");
-    return [value2, value3];
+    return [parsedDeclarations, normalizedDeclarations];
   };
   let matchesCssDeclarations: Dynamic = (
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments23: Dynamic[]
+    declarations?: Dynamic,
+    expectedDeclarations?: Dynamic,
+    seenProperties?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
-    if (!input.size) return false;
-    for (let [value2, value3] of input)
-      if (options.get(value2) !== value3 || context.has(value2)) return false;
+    if (!declarations.size) return false;
+    for (let [propertyName, declaration] of declarations)
+      if (expectedDeclarations.get(propertyName) !== declaration || seenProperties.has(propertyName)) return false;
     return true;
   };
   let freshCssDeclaration: Dynamic = (
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments24: Dynamic[]
+    property?: Dynamic,
+    cssValue?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => ({
-    prop: input,
-    value: options,
+    prop: property,
+    value: cssValue,
     fresh: true,
   });
   function collapseFlexShorthand(
-    input?: Dynamic,
-    ..._extraArguments25: Dynamic[]
+    declarations?: Dynamic,
+    ..._unusedCollapseArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = (
-      input2?: Dynamic,
-      ..._extraArguments26: Dynamic[]
+    let findDeclaration: Dynamic = (
+      property?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic =>
-      input.find(
-        (declaration?: Dynamic, ..._extraArguments27: Dynamic[]): Dynamic =>
-          declaration.fresh && declaration.prop === input2,
+      declarations.find(
+        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          declaration.fresh && declaration.prop === property,
       );
-    let value3: Dynamic = value2("flex-grow");
-    let value4: Dynamic = value2("flex-shrink");
-    let value5: Dynamic = value2("flex-basis");
+    let flexGrow: Dynamic = findDeclaration("flex-grow");
+    let flexShrink: Dynamic = findDeclaration("flex-shrink");
+    let flexBasis: Dynamic = findDeclaration("flex-basis");
     if (
-      value3 &&
-      value4 &&
-      value5 &&
-      value4.value === "1" &&
-      value5.value === "0%"
+      flexGrow &&
+      flexShrink &&
+      flexBasis &&
+      flexShrink.value === "1" &&
+      flexBasis.value === "0%"
     ) {
-      value3.prop = "flex";
-      input = input.filter(
-        (input2?: Dynamic, ..._extraArguments28: Dynamic[]): Dynamic =>
-          input2 !== value4 && input2 !== value5,
+      flexGrow.prop = "flex";
+      declarations = declarations.filter(
+        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          declaration !== flexShrink && declaration !== flexBasis,
       );
     }
-    for (let value6 of input)
-      if (value6.fresh && value6.prop === "flex")
-        value6.value = value6.value.replace(/^(\d+(?:\.\d+)?) 1 0%$/, "$1");
-    return input;
+    for (let declaration of declarations)
+      if (declaration.fresh && declaration.prop === "flex")
+        declaration.value = declaration.value.replace(/^(\d+(?:\.\d+)?) 1 0%$/, "$1");
+    return declarations;
   }
   let serializeCssDeclarations: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments29: Dynamic[]
+    declarations?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
-    input
+    declarations
       .map(
-        (declaration?: Dynamic, ..._extraArguments30: Dynamic[]): Dynamic =>
+        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
           declaration.fresh
             ? declaration.prop + ": " + declaration.value
             : declaration.text,
@@ -623,457 +623,457 @@ function createEditRuntime(
   let removedStyleProperties: Dynamic = new WeakMap();
   let directStyleWrites: Dynamic = new WeakSet();
   let kebabCaseCssProperty: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments31: Dynamic[]
+    propertyName?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
-    String(input)
+    String(propertyName)
       .replace(/^ms(?=[A-Z])/, "-ms")
       .replace(
         /[A-Z]/g,
-        (input2?: Dynamic, ..._extraArguments32: Dynamic[]): Dynamic =>
-          "-" + input2.toLowerCase(),
+        (character?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          "-" + character.toLowerCase(),
       );
   let extractBackgroundUrl: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments33: Dynamic[]
+    cssText?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
-    let value2: Dynamic = input.search(/url\(/i);
-    if (value2 < 0) return "";
+    let urlStart: Dynamic = cssText.search(/url\(/i);
+    if (urlStart < 0) return "";
     let text: Dynamic = "";
-    for (let value3: Dynamic = value2 + 4; value3 < input.length; value3++) {
-      let value4: Dynamic = input[value3];
+    for (let index: Dynamic = urlStart + 4; index < cssText.length; index++) {
+      let character: Dynamic = cssText[index];
       if (text) {
-        if (value4 === text) text = "";
-      } else if (value4 === '"' || value4 === "'") text = value4;
-      else if (value4 === ")") return input.slice(value2, value3 + 1);
+        if (character === text) text = "";
+      } else if (character === '"' || character === "'") text = character;
+      else if (character === ")") return cssText.slice(urlStart, index + 1);
     }
     return "";
   };
   function replaceCssDeclaration(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments34: Dynamic[]
+    cssText?: Dynamic,
+    propertyName?: Dynamic,
+    propertyValue?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = parseCssDeclarations(input);
-    let value3: Dynamic = false;
+    let declarations: Dynamic = parseCssDeclarations(cssText);
+    let replaced: Dynamic = false;
     let items: Dynamic = [];
-    for (let value4 of value2)
-      if (value4.prop !== options) items.push(value4.text);
-      else if (!value3) {
-        items.push(options + ": " + context);
-        value3 = true;
+    for (let declaration of declarations)
+      if (declaration.prop !== propertyName) items.push(declaration.text);
+      else if (!replaced) {
+        items.push(propertyName + ": " + propertyValue);
+        replaced = true;
       }
-    if (!value3) items.push(options + ": " + context);
+    if (!replaced) items.push(propertyName + ": " + propertyValue);
     return items.join("; ");
   }
   let lastJqueryStyles: Dynamic = new WeakMap();
   let canonicalCss: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments35: Dynamic[]
+    cssText?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
-    scratchElement.setAttribute("style", input);
-    let value2: Dynamic = parseCssDeclarations(scratchElement.style.cssText)
+    scratchElement.setAttribute("style", cssText);
+    let declarations: Dynamic = parseCssDeclarations(scratchElement.style.cssText)
       .map(
-        (input2?: Dynamic, ..._extraArguments36: Dynamic[]): Dynamic =>
-          input2.text,
+        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          declaration.text,
       )
       .sort()
       .join(";");
     scratchElement.removeAttribute("style");
-    return value2;
+    return declarations;
   };
   function mergeCssDeclaration(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments37: Dynamic[]
+    cssText?: Dynamic,
+    propertyName?: Dynamic,
+    propertyValue?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = options + ": " + context;
-    let value3: Dynamic = canonicalCss(value2);
+    let replacement: Dynamic = propertyName + ": " + propertyValue;
+    let canonicalReplacement: Dynamic = canonicalCss(replacement);
     let items: Dynamic = [];
-    let value4: Dynamic = -1;
-    for (let value5 of parseCssDeclarations(input))
+    let insertAt: Dynamic = -1;
+    for (let declaration of parseCssDeclarations(cssText))
       if (
-        containsKnownPlaceholder(value5.value) ||
-        (value5.prop !== options &&
-          (canonicalCss(value5.text) === "" ||
-            canonicalCss(value5.text + "; " + value2) !== value3))
+        containsKnownPlaceholder(declaration.value) ||
+        (declaration.prop !== propertyName &&
+          (canonicalCss(declaration.text) === "" ||
+            canonicalCss(declaration.text + "; " + replacement) !== canonicalReplacement))
       )
-        items.push(value5);
-      else if (value4 < 0) value4 = items.length;
+        items.push(declaration);
+      else if (insertAt < 0) insertAt = items.length;
     if (
-      value4 < 0 ||
+      insertAt < 0 ||
       items
-        .slice(value4)
+        .slice(insertAt)
         .some(
-          (declaration?: Dynamic, ..._extraArguments38: Dynamic[]): Dynamic =>
-            declaration.prop === options ||
-            canonicalCss(declaration.text + "; " + value2) !==
-              canonicalCss(value2 + "; " + declaration.text),
+          (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            declaration.prop === propertyName ||
+            canonicalCss(declaration.text + "; " + replacement) !==
+              canonicalCss(replacement + "; " + declaration.text),
         )
     )
-      value4 = items.length;
+      insertAt = items.length;
     return [
       ...items
-        .slice(0, value4)
+        .slice(0, insertAt)
         .map(
-          (input2?: Dynamic, ..._extraArguments39: Dynamic[]): Dynamic =>
-            input2.text,
+          (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            declaration.text,
         ),
-      value2,
+      replacement,
       ...items
-        .slice(value4)
+        .slice(insertAt)
         .map(
-          (input2?: Dynamic, ..._extraArguments40: Dynamic[]): Dynamic =>
-            input2.text,
+          (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            declaration.text,
         ),
     ].join("; ");
   }
   function setFallbackStyle(
     element?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments41: Dynamic[]
+    propertyName?: Dynamic,
+    propertyValue?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     if (!fallbackStyles.has(element)) fallbackStyles.set(element, new Map());
     if (
-      (fallbackStyles.get(element).set(options, context),
+      (fallbackStyles.get(element).set(propertyName, propertyValue),
       removedStyleProperties.has(element))
     )
-      removedStyleProperties.get(element).delete(options);
+      removedStyleProperties.get(element).delete(propertyName);
     try {
-      element.style.removeProperty(options);
-    } catch (value2: Dynamic) {}
+      element.style.removeProperty(propertyName);
+    } catch (error: Dynamic) {}
     element.setAttribute(
       "style",
       replaceCssDeclaration(
         element.getAttribute("style") || "",
-        options,
-        context,
+        propertyName,
+        propertyValue,
       ),
     );
   }
   function getFallbackStyle(
     element?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments42: Dynamic[]
+    propertyName?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     let entry: Dynamic = fallbackStyles.get(element);
-    if (entry && entry.has(options)) return entry.get(options);
-    let value2: Dynamic = new Map([
+    if (entry && entry.has(propertyName)) return entry.get(propertyName);
+    let defaultStyles: Dynamic = new Map([
       ...cssDeclarationMap(originalStyles.get(element) || ""),
       ...cssDeclarationMap(element.getAttribute("style") || ""),
     ]);
     if (
       removedStyleProperties.has(element) &&
-      removedStyleProperties.get(element).has(options)
+      removedStyleProperties.get(element).has(propertyName)
     )
       return "";
-    if (value2.has(options)) return value2.get(options);
-    if (options === "background-image") {
-      let value3: Dynamic =
-        (entry && entry.get("background")) || value2.get("background");
-      return value3 ? extractBackgroundUrl(value3) : "";
+    if (defaultStyles.has(propertyName)) return defaultStyles.get(propertyName);
+    if (propertyName === "background-image") {
+      let backgroundValue: Dynamic =
+        (entry && entry.get("background")) || defaultStyles.get("background");
+      return backgroundValue ? extractBackgroundUrl(backgroundValue) : "";
     }
     return "";
   }
   let TEMPLATE_PLACEHOLDER: Dynamic = /\{\{[^{}]{0,80}\}\}/g;
   let knownPlaceholders: Dynamic = new Set();
   let collectPlaceholders: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments43: Dynamic[]
+    text?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
-    for (let value2 of String(input).match(TEMPLATE_PLACEHOLDER) || [])
-      knownPlaceholders.add(value2);
+    for (let placeholder of String(text).match(TEMPLATE_PLACEHOLDER) || [])
+      knownPlaceholders.add(placeholder);
   };
   let containsKnownPlaceholder: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments44: Dynamic[]
+    text?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
     knownPlaceholders.size > 0 &&
-    (input.match(TEMPLATE_PLACEHOLDER) || []).some(
-      (input2?: Dynamic, ..._extraArguments45: Dynamic[]): Dynamic =>
-        knownPlaceholders.has(input2),
+    (text.match(TEMPLATE_PLACEHOLDER) || []).some(
+      (placeholder?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+        knownPlaceholders.has(placeholder),
     );
   function reconcileCss(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments46: Dynamic[]
+    cssText?: Dynamic,
+    styleText?: Dynamic,
+    element?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = cssDeclarationMap(options);
-    let value3: Dynamic = new Set();
+    let expectedStyles: Dynamic = cssDeclarationMap(styleText);
+    let matchedProperties: Dynamic = new Set();
     let items: Dynamic = [];
-    let value4: Dynamic = (context && fallbackStyles.get(context)) || new Map();
-    let value5: Dynamic =
-      (context && removedStyleProperties.get(context)) || new Set();
-    let value6: Dynamic = !!context && directStyleWrites.has(context);
-    for (let [value7, value8] of value4) value2.set(value7, value8);
-    for (let value7 of parseCssDeclarations(input)) {
-      let [value8, value9]: Dynamic = normalizeCssDeclaration(value7);
-      let value10: Dynamic = matchesCssDeclarations(value8, value2, value3)
-        ? value8
-        : matchesCssDeclarations(value9, value2, value3)
-          ? value9
+    let fallbackProperties: Dynamic = (element && fallbackStyles.get(element)) || new Map();
+    let removedProperties: Dynamic =
+      (element && removedStyleProperties.get(element)) || new Set();
+    let hasDirectWrite: Dynamic = !!element && directStyleWrites.has(element);
+    for (let [propertyName, propertyValue] of fallbackProperties) expectedStyles.set(propertyName, propertyValue);
+    for (let declaration of parseCssDeclarations(cssText)) {
+      let [normalDeclarations, fallbackDeclarations]: Dynamic = normalizeCssDeclaration(declaration);
+      let matchingProperties: Dynamic = matchesCssDeclarations(normalDeclarations, expectedStyles, matchedProperties)
+        ? normalDeclarations
+        : matchesCssDeclarations(fallbackDeclarations, expectedStyles, matchedProperties)
+          ? fallbackDeclarations
           : null;
-      if (containsKnownPlaceholder(value7.value)) {
-        if ((items.push(value7), value10))
-          for (let value11 of value10.keys()) value3.add(value11);
-        else if (value2.get(value7.prop) === value7.value)
-          value3.add(value7.prop);
+      if (containsKnownPlaceholder(declaration.value)) {
+        if ((items.push(declaration), matchingProperties))
+          for (let propertyName of matchingProperties.keys()) matchedProperties.add(propertyName);
+        else if (expectedStyles.get(declaration.prop) === declaration.value)
+          matchedProperties.add(declaration.prop);
         continue;
       }
-      if (!value10 && !value8.size && !value9.size) {
-        if (value3.has(value7.prop)) continue;
-        if (value2.has(value7.prop)) {
+      if (!matchingProperties && !normalDeclarations.size && !fallbackDeclarations.size) {
+        if (matchedProperties.has(declaration.prop)) continue;
+        if (expectedStyles.has(declaration.prop)) {
           items.push(
-            value2.get(value7.prop) === value7.value
-              ? value7
-              : freshCssDeclaration(value7.prop, value2.get(value7.prop)),
+            expectedStyles.get(declaration.prop) === declaration.value
+              ? declaration
+              : freshCssDeclaration(declaration.prop, expectedStyles.get(declaration.prop)),
           );
-          value3.add(value7.prop);
-        } else if (!value5.has(value7.prop) && !value6) {
-          items.push(value7);
-          value3.add(value7.prop);
+          matchedProperties.add(declaration.prop);
+        } else if (!removedProperties.has(declaration.prop) && !hasDirectWrite) {
+          items.push(declaration);
+          matchedProperties.add(declaration.prop);
         }
         continue;
       }
-      if (value10) {
-        items.push(value7);
-        for (let value11 of value10.keys()) value3.add(value11);
+      if (matchingProperties) {
+        items.push(declaration);
+        for (let propertyName of matchingProperties.keys()) matchedProperties.add(propertyName);
         continue;
       }
-      for (let value11 of new Set([...value8.keys(), ...value9.keys()]))
-        if (value2.has(value11) && !value3.has(value11)) {
-          items.push(freshCssDeclaration(value11, value2.get(value11)));
-          value3.add(value11);
+      for (let propertyName of new Set([...normalDeclarations.keys(), ...fallbackDeclarations.keys()]))
+        if (expectedStyles.has(propertyName) && !matchedProperties.has(propertyName)) {
+          items.push(freshCssDeclaration(propertyName, expectedStyles.get(propertyName)));
+          matchedProperties.add(propertyName);
         }
     }
-    for (let [value7, value8] of value2)
-      if (!value3.has(value7)) items.push(freshCssDeclaration(value7, value8));
+    for (let [propertyName, propertyValue] of expectedStyles)
+      if (!matchedProperties.has(propertyName)) items.push(freshCssDeclaration(propertyName, propertyValue));
     return serializeCssDeclarations(collapseFlexShorthand(items));
   }
   function settleStyles(
-    input?: Dynamic,
-    ..._extraArguments47: Dynamic[]
+    rootElement?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    for (let value2 of [input, ...input.querySelectorAll("[style]")]) {
-      let attribute: Dynamic = value2.getAttribute("style");
+    for (let element of [rootElement, ...rootElement.querySelectorAll("[style]")]) {
+      let attribute: Dynamic = element.getAttribute("style");
       if (attribute === null) continue;
-      let entry: Dynamic = originalStyles.get(value2);
+      let entry: Dynamic = originalStyles.get(element);
       if (entry === attribute) continue;
-      let value3: Dynamic = attribute;
+      let styleText: Dynamic = attribute;
       try {
-        let value4: Dynamic =
-          lastJqueryStyles.get(value2) === attribute &&
-          !fallbackStyles.has(value2) &&
-          !removedStyleProperties.has(value2);
-        if (directStyleWrites.has(value2)) value3 = attribute;
-        else if (entry !== undefined && !value4)
-          value3 = reconcileCss(entry, attribute, value2);
-        else if (fallbackStyles.has(value2)) {
-          value3 = attribute;
-          for (let [value5, value6] of fallbackStyles.get(value2))
-            value3 = replaceCssDeclaration(value3, value5, value6);
+        let styleWasRemoved: Dynamic =
+          lastJqueryStyles.get(element) === attribute &&
+          !fallbackStyles.has(element) &&
+          !removedStyleProperties.has(element);
+        if (directStyleWrites.has(element)) styleText = attribute;
+        else if (entry !== undefined && !styleWasRemoved)
+          styleText = reconcileCss(entry, attribute, element);
+        else if (fallbackStyles.has(element)) {
+          styleText = attribute;
+          for (let [propertyName, propertyValue] of fallbackStyles.get(element))
+            styleText = replaceCssDeclaration(styleText, propertyName, propertyValue);
         } else if (
           /flex-basis\s*:\s*0%|flex\s*:\s*[\d.]+\s+1\s+0%/.test(attribute)
         ) {
-          let value5: Dynamic = new Set(
+          let styleProperties: Dynamic = new Set(
             parseCssDeclarations(entry || "").map(
-              (input2?: Dynamic, ..._extraArguments48: Dynamic[]): Dynamic =>
-                input2.text,
+              (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                declaration.text,
             ),
           );
-          value3 =
+          styleText =
             serializeCssDeclarations(
               collapseFlexShorthand(
                 parseCssDeclarations(attribute).map(
                   (
                     declaration?: Dynamic,
-                    ..._extraArguments49: Dynamic[]
+                    ..._unusedCallbackArgs: Dynamic[]
                   ): Dynamic =>
                     /^flex(-grow|-shrink|-basis)?$/.test(declaration.prop) &&
-                    !value5.has(declaration.text)
+                    !styleProperties.has(declaration.text)
                       ? freshCssDeclaration(declaration.prop, declaration.value)
                       : declaration,
                 ),
               ),
             ) + (/;\s*$/.test(attribute) ? ";" : "");
         }
-      } catch (value4: Dynamic) {
-        value3 = attribute;
+      } catch (_ignoredError: Dynamic) {
+        styleText = attribute;
       }
-      if (value3 !== attribute) value2.setAttribute("style", value3);
-      originalStyles.set(value2, value3);
-      fallbackStyles.delete(value2);
-      removedStyleProperties.delete(value2);
-      directStyleWrites.delete(value2);
-      lastJqueryStyles.delete(value2);
+      if (styleText !== attribute) element.setAttribute("style", styleText);
+      originalStyles.set(element, styleText);
+      fallbackStyles.delete(element);
+      removedStyleProperties.delete(element);
+      directStyleWrites.delete(element);
+      lastJqueryStyles.delete(element);
     }
   }
   function createDeckApi(
     metadata?: Dynamic,
     state?: Dynamic,
-    ..._extraArguments50: Dynamic[]
+    ..._unusedDeckArgs: Dynamic[]
   ): Dynamic {
     let currentId: Dynamic = String(metadata.current);
     let slides: Dynamic = [];
     let operationCount: Dynamic = 0;
-    for (let value2 of metadata.slides) {
-      let value3: Dynamic = String(value2 && value2.id);
+    for (let slideMetadata of metadata.slides) {
+      let slideId: Dynamic = String(slideMetadata && slideMetadata.id);
       if (
-        validFileId.test(value3) &&
+        validFileId.test(slideId) &&
         !slides.some(
-          (entry?: Dynamic, ..._extraArguments51: Dynamic[]): Dynamic =>
-            entry.id === value3,
+          (entry?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            entry.id === slideId,
         )
       )
         slides.push({
-          id: value3,
-          title: String((value2 && value2.title) || "").slice(0, 300),
+          id: slideId,
+          title: String((slideMetadata && slideMetadata.title) || "").slice(0, 300),
         });
     }
     let fail: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments52: Dynamic[]
+      message?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      throw Error("deck: " + input);
+      throw Error("deck: " + message);
     };
     let slideIndex: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments53: Dynamic[]
+      slideId?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic =>
       slides.findIndex(
-        (entry?: Dynamic, ..._extraArguments54: Dynamic[]): Dynamic =>
-          entry.id === input,
+        (entry?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          entry.id === slideId,
       );
     if (state)
-      state.order = (..._extraArguments55: Dynamic[]): Dynamic =>
+      state.order = (..._unusedOrderArgs: Dynamic[]): Dynamic =>
         slides.map(
-          (entry?: Dynamic, ..._extraArguments56: Dynamic[]): Dynamic =>
+          (entry?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
             entry.id,
         );
     let requireSlideId: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments57: Dynamic[]
+      slideId?: Dynamic,
+      parameterName?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      if (typeof input !== "string" || !validFileId.test(input))
-        fail(options + " must be a slide id (letters, digits, - or _)");
-      if (slideIndex(input) < 0) fail('no slide with the id "' + input + '"');
-      return input;
+      if (typeof slideId !== "string" || !validFileId.test(slideId))
+        fail(parameterName + " must be a slide id (letters, digits, - or _)");
+      if (slideIndex(slideId) < 0) fail('no slide with the id "' + slideId + '"');
+      return slideId;
     };
     let validatePlace: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments58: Dynamic[]
+      placement?: Dynamic,
+      defaultPlacement?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      if (input === undefined && options) return options;
-      if (!input || typeof input !== "object" || Array.isArray(input))
+      if (placement === undefined && defaultPlacement) return defaultPlacement;
+      if (!placement || typeof placement !== "object" || Array.isArray(placement))
         fail("the place must be {before: id} or {after: id}");
-      let value2: Dynamic = Object.keys(input);
+      let placementKeys: Dynamic = Object.keys(placement);
       if (
-        value2.length !== 1 ||
-        (value2[0] !== "before" && value2[0] !== "after")
+        placementKeys.length !== 1 ||
+        (placementKeys[0] !== "before" && placementKeys[0] !== "after")
       )
         fail("the place must have exactly one of before / after");
       return {
-        [value2[0]]: requireSlideId(input[value2[0]], value2[0]),
+        [placementKeys[0]]: requireSlideId(placement[placementKeys[0]], placementKeys[0]),
       };
     };
     let insertSlide: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments59: Dynamic[]
+      slide?: Dynamic,
+      placement?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      let value2: Dynamic =
-        options.before !== undefined ? options.before : options.after;
-      let value3: Dynamic = slideIndex(value2);
+      let neighborId: Dynamic =
+        placement.before !== undefined ? placement.before : placement.after;
+      let neighborIndex: Dynamic = slideIndex(neighborId);
       slides.splice(
-        options.before !== undefined ? value3 : value3 + 1,
+        placement.before !== undefined ? neighborIndex : neighborIndex + 1,
         0,
-        input,
+        slide,
       );
     };
     let queueOperation: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments60: Dynamic[]
+      operation?: Dynamic,
+      slideEntry?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
       if (operationCount >= 24) fail("at most 24 deck calls in one run");
       if ((operationCount++, state))
         state.ops.push({
-          op: input,
-          entry: options || null,
+          op: operation,
+          entry: slideEntry || null,
         });
       else
         emit({
           kind: "op" as const,
           seq: sequence++,
           stmt: truncate(executingStatement, limits.maxStmt),
-          op: input,
+          op: operation,
         });
     };
     let requireActiveReply: Dynamic = (
-      ..._extraArguments61: Dynamic[]
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
       if (state && state.halted) fail("the reply ended at deck.undo()");
       if (operationCount >= 24) fail("at most 24 deck calls in one run");
     };
     let mintSlideId: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments62: Dynamic[]
+      idPrefix?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      let slice: Dynamic = String(input).slice(0, 56);
-      let value2: Dynamic = slice;
+      let slice: Dynamic = String(idPrefix).slice(0, 56);
+      let candidateId: Dynamic = slice;
       for (
         let count: Dynamic = 2;
-        slideIndex(value2) >= 0 ||
-        state.slides.has(value2) ||
-        !validFileId.test(value2);
+        slideIndex(candidateId) >= 0 ||
+        state.slides.has(candidateId) ||
+        !validFileId.test(candidateId);
         count++
       )
-        value2 = slice + "-" + count;
-      return value2;
+        candidateId = slice + "-" + count;
+      return candidateId;
     };
     let checkSlideCapacity: Dynamic = (
-      ..._extraArguments63: Dynamic[]
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
       let index: Dynamic = 0;
-      for (let value2 of state.slides.values()) if (!value2.removed) index++;
+      for (let slide of state.slides.values()) if (!slide.removed) index++;
       if (index >= 64) fail("a deck holds at most 64 slides here");
     };
     let createSlideEntry: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value2?: Dynamic,
-      argument?: Dynamic,
-      ..._extraArguments64: Dynamic[]
+      slideId?: Dynamic,
+      slideElement?: Dynamic,
+      holder?: Dynamic,
+      slideHtml?: Dynamic,
+      hadTbody?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
       let record: Dynamic = {
-        id: input,
-        text: value2,
-        holder: context,
-        el: options,
+        id: slideId,
+        text: slideHtml,
+        holder: holder,
+        el: slideElement,
         last: null,
         removed: false,
-        hadTbody: argument,
+        hadTbody: hadTbody,
         made: true,
         born: state.n,
       };
-      for (let value3 of [options, ...options.querySelectorAll("[style]")])
-        if (value3.getAttribute("style") !== null)
-          originalStyles.set(value3, value3.getAttribute("style"));
+      for (let styledElement of [slideElement, ...slideElement.querySelectorAll("[style]")])
+        if (styledElement.getAttribute("style") !== null)
+          originalStyles.set(styledElement, styledElement.getAttribute("style"));
       record.last = state.text(record);
-      state.slides.set(input, record);
+      state.slides.set(slideId, record);
       return record;
     };
     let api: Dynamic = {
       get slides(): Dynamic {
         return slides.map(
-          (entry?: Dynamic, ..._extraArguments65: Dynamic[]): Dynamic => ({
+          (entry?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic => ({
             id: entry.id,
             title: entry.title,
           }),
@@ -1082,39 +1082,39 @@ function createEditRuntime(
       get current(): Dynamic {
         return currentId;
       },
-      move(input: Dynamic, options: Dynamic): Dynamic {
+      move(slideId: Dynamic, placement: Dynamic): Dynamic {
         requireActiveReply();
-        requireSlideId(input, "id");
-        let value2: Dynamic = validatePlace(options);
-        if ((value2.before || value2.after) === input)
+        requireSlideId(slideId, "id");
+        let validatedPlacement: Dynamic = validatePlace(placement);
+        if ((validatedPlacement.before || validatedPlacement.after) === slideId)
           fail("a slide cannot be moved next to itself");
-        let value3: Dynamic = slides.splice(slideIndex(input), 1)[0];
-        insertSlide(value3, value2);
+        let movedSlide: Dynamic = slides.splice(slideIndex(slideId), 1)[0];
+        insertSlide(movedSlide, validatedPlacement);
         queueOperation(
           Object.assign(
             {
               op: "move",
-              id: input,
+              id: slideId,
             },
-            value2,
+            validatedPlacement,
           ),
         );
       },
-      remove(input: Dynamic): Dynamic {
+      remove(slideId: Dynamic): Dynamic {
         if (
           (requireActiveReply(),
-          requireSlideId(input, "id"),
-          input === currentId && !state)
+          requireSlideId(slideId, "id"),
+          slideId === currentId && !state)
         )
           fail('the current slide ("' + currentId + '") cannot be removed');
         if (state && slides.length <= 1)
           fail("the last slide of the deck cannot be removed");
         if (
-          (slides.splice(slideIndex(input), 1),
-          state && state.slides.has(input))
+          (slides.splice(slideIndex(slideId), 1),
+          state && state.slides.has(slideId))
         )
-          state.slides.get(input).removed = true;
-        if (state && input === currentId) {
+          state.slides.get(slideId).removed = true;
+        if (state && slideId === currentId) {
           if (
             ((state.currentRemoved = true),
             currentElement && currentElement.parentNode)
@@ -1123,400 +1123,400 @@ function createEditRuntime(
         }
         queueOperation({
           op: "remove",
-          id: input,
+          id: slideId,
         });
       },
-      duplicate(input: Dynamic, options: Dynamic): Dynamic {
+      duplicate(slideId: Dynamic, requestedId: Dynamic): Dynamic {
         if (
           (requireActiveReply(),
-          requireSlideId(input, "id"),
-          options !== undefined)
+          requireSlideId(slideId, "id"),
+          requestedId !== undefined)
         ) {
-          if (typeof options !== "string" || !validFileId.test(options))
+          if (typeof requestedId !== "string" || !validFileId.test(requestedId))
             fail("newId must be letters, digits, - or _ (at most 64)");
-          if (slideIndex(options) >= 0 || (state && state.slides.has(options)))
-            fail('a slide with the id "' + options + '" exists already');
+          if (slideIndex(requestedId) >= 0 || (state && state.slides.has(requestedId)))
+            fail('a slide with the id "' + requestedId + '" exists already');
         }
         if (!state) {
-          slides.splice(slideIndex(input) + 1, 0, {
-            id: options === undefined ? null : options,
-            title: slides[slideIndex(input)].title,
+          slides.splice(slideIndex(slideId) + 1, 0, {
+            id: requestedId === undefined ? null : requestedId,
+            title: slides[slideIndex(slideId)].title,
           });
           queueOperation(
-            options === undefined
+            requestedId === undefined
               ? {
                   op: "duplicate",
-                  id: input,
+                  id: slideId,
                 }
               : {
                   op: "duplicate",
-                  id: input,
-                  newId: options,
+                  id: slideId,
+                  newId: requestedId,
                 },
           );
           return;
         }
         checkSlideCapacity();
-        let value2: Dynamic =
-          input === currentId ? null : state.ensure(state.slides.get(input));
-        if (value2 && !value2.made) state.touch(input);
-        let value3: Dynamic =
-          options === undefined ? mintSlideId(input + "-copy") : options;
-        let value4: Dynamic = document.createElement("div");
-        let value5: Dynamic = (value2 ? value2.el : currentElement).cloneNode(
+        let sourceSlide: Dynamic =
+          slideId === currentId ? null : state.ensure(state.slides.get(slideId));
+        if (sourceSlide && !sourceSlide.made) state.touch(slideId);
+        let duplicateId: Dynamic =
+          requestedId === undefined ? mintSlideId(slideId + "-copy") : requestedId;
+        let holder: Dynamic = document.createElement("div");
+        let duplicateElement: Dynamic = (sourceSlide ? sourceSlide.el : currentElement).cloneNode(
           true,
         );
-        if (value5.getAttribute("id") !== null)
-          value5.setAttribute("id", value3);
-        value4.appendChild(value5);
-        let value6: Dynamic = createSlideEntry(
-          value3,
-          value5,
-          value4,
+        if (duplicateElement.getAttribute("id") !== null)
+          duplicateElement.setAttribute("id", duplicateId);
+        holder.appendChild(duplicateElement);
+        let duplicateSlide: Dynamic = createSlideEntry(
+          duplicateId,
+          duplicateElement,
+          holder,
           "",
-          value2 ? value2.hadTbody : originalHadTbody,
+          sourceSlide ? sourceSlide.hadTbody : originalHadTbody,
         );
-        slides.splice(slideIndex(input) + 1, 0, {
-          id: value3,
-          title: slides[slideIndex(input)].title,
+        slides.splice(slideIndex(slideId) + 1, 0, {
+          id: duplicateId,
+          title: slides[slideIndex(slideId)].title,
         });
         queueOperation(
-          options === undefined
+          requestedId === undefined
             ? {
                 op: "duplicate",
-                id: input,
-                newId: value3,
+                id: slideId,
+                newId: duplicateId,
                 minted: true,
               }
             : {
                 op: "duplicate",
-                id: input,
-                newId: options,
+                id: slideId,
+                newId: requestedId,
               },
-          value6,
+          duplicateSlide,
         );
-        return jquery(value5);
+        return jquery(duplicateElement);
       },
-      add(input: Dynamic, options: Dynamic): Dynamic {
-        if ((requireActiveReply(), input && input.jquery))
-          input = input[0] && input[0].outerHTML;
+      add(slideHtml: Dynamic, placement: Dynamic): Dynamic {
+        if ((requireActiveReply(), slideHtml && slideHtml.jquery))
+          slideHtml = slideHtml[0] && slideHtml[0].outerHTML;
         else if (
-          input &&
-          typeof input === "object" &&
-          typeof input.outerHTML === "string"
+          slideHtml &&
+          typeof slideHtml === "object" &&
+          typeof slideHtml.outerHTML === "string"
         )
-          input = input.outerHTML;
-        if (typeof input !== "string")
+          slideHtml = slideHtml.outerHTML;
+        if (typeof slideHtml !== "string")
           fail("add(html) takes ONE <section …>…</section> as a string");
-        if (((input = input.trim()), input.length > limits.maxHtml))
+        if (((slideHtml = slideHtml.trim()), slideHtml.length > limits.maxHtml))
           fail("the new slide is over " + limits.maxHtml + " characters");
-        if (!/^<section[\s>]/i.test(input))
+        if (!/^<section[\s>]/i.test(slideHtml))
           fail("the new slide must start with <section");
-        if (state && state.currentRemoved && options === undefined)
+        if (state && state.currentRemoved && placement === undefined)
           fail("say where: {before: id} or {after: id}");
-        let value2: Dynamic = validatePlace(options, {
+        let validatedPlacement: Dynamic = validatePlace(placement, {
           after: currentId,
         });
-        scratchElement.innerHTML = input;
+        scratchElement.innerHTML = slideHtml;
         let children: Dynamic = scratchElement.children;
-        let value3: Dynamic =
+        let sectionElement: Dynamic =
           children.length === 1 && children[0].tagName === "SECTION"
             ? children[0]
             : null;
-        let value4: Dynamic = value3 && value3.getAttribute("id");
-        if (((scratchElement.innerHTML = ""), !value3))
+        let suppliedId: Dynamic = sectionElement && sectionElement.getAttribute("id");
+        if (((scratchElement.innerHTML = ""), !sectionElement))
           fail("add(html) takes exactly one <section>");
-        if (value4 !== null && value4 !== undefined) {
-          if (!validFileId.test(value4))
+        if (suppliedId !== null && suppliedId !== undefined) {
+          if (!validFileId.test(suppliedId))
             fail(
               "the new slide's id must be letters, digits, - or _ (at most 64)",
             );
-          if (slideIndex(value4) >= 0 || (state && state.slides.has(value4)))
-            fail('a slide with the id "' + value4 + '" exists already');
+          if (slideIndex(suppliedId) >= 0 || (state && state.slides.has(suppliedId)))
+            fail('a slide with the id "' + suppliedId + '" exists already');
         }
         if (!state) {
           insertSlide(
             {
-              id: value4 || null,
+              id: suppliedId || null,
               title: "",
             },
-            value2,
+            validatedPlacement,
           );
           queueOperation(
             Object.assign(
               {
                 op: "add",
-                html: input,
+                html: slideHtml,
               },
-              value4
+              suppliedId
                 ? {
-                    id: value4,
+                    id: suppliedId,
                   }
                 : {},
-              value2,
+              validatedPlacement,
             ),
           );
           return;
         }
         checkSlideCapacity();
-        let value5: Dynamic = value4 || mintSlideId("slide");
-        let value6: Dynamic = document.createElement("div");
-        value6.innerHTML = input;
-        let value7: Dynamic = createSlideEntry(
-          value5,
-          value6.querySelector("section"),
-          value6,
-          input,
-          /<tbody[\s>]/i.test(input),
+        let slideId: Dynamic = suppliedId || mintSlideId("slide");
+        let holder: Dynamic = document.createElement("div");
+        holder.innerHTML = slideHtml;
+        let newSlide: Dynamic = createSlideEntry(
+          slideId,
+          holder.querySelector("section"),
+          holder,
+          slideHtml,
+          /<tbody[\s>]/i.test(slideHtml),
         );
         insertSlide(
           {
-            id: value5,
+            id: slideId,
             title: "",
           },
-          value2,
+          validatedPlacement,
         );
         queueOperation(
           Object.assign(
             {
               op: "add",
-              html: input,
-              id: value5,
+              html: slideHtml,
+              id: slideId,
             },
-            value4
+            suppliedId
               ? {}
               : {
                   minted: true,
                 },
-            value2,
+            validatedPlacement,
           ),
-          value7,
+          newSlide,
         );
-        return jquery(value7.el);
+        return jquery(newSlide.el);
       },
     };
     if (state)
       Object.defineProperties(
         api,
         Object.getOwnPropertyDescriptors({
-          slide(input: Dynamic): Dynamic {
+          slide(slideId: Dynamic): Dynamic {
             requireRunningReply();
             let filtered: Dynamic = [...state.slides.keys()].filter(
-              (input2?: Dynamic, ..._extraArguments66: Dynamic[]): Dynamic =>
-                !state.slides.get(input2).removed,
+              (candidateId?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                !state.slides.get(candidateId).removed,
             );
-            if (input === currentId && state.currentRemoved && currentId)
+            if (slideId === currentId && state.currentRemoved && currentId)
               fail("this slide was removed");
             if (
-              typeof input !== "string" ||
-              !state.slides.has(input) ||
-              state.slides.get(input).removed
+              typeof slideId !== "string" ||
+              !state.slides.has(slideId) ||
+              state.slides.get(slideId).removed
             )
               fail(
                 "no slide with the id " +
-                  JSON.stringify(input) +
+                  JSON.stringify(slideId) +
                   "; the slides are: " +
                   filtered.join(", "),
               );
-            if (input === currentId) return jquery(currentElement);
-            let value2: Dynamic = state.ensure(state.slides.get(input));
-            state.touch(input);
-            return jquery(value2.el);
+            if (slideId === currentId) return jquery(currentElement);
+            let slideEntry: Dynamic = state.ensure(state.slides.get(slideId));
+            state.touch(slideId);
+            return jquery(slideEntry.el);
           },
-          all(input: Dynamic): Dynamic {
+          all(selector: Dynamic): Dynamic {
             if (
               (requireRunningReply(),
-              input !== undefined && typeof input !== "string")
+              selector !== undefined && typeof selector !== "string")
             )
               fail("all(selector) takes a selector string, or nothing");
             let items: Dynamic = [];
-            for (let value2 of slides) {
-              let value3: Dynamic = value2.id && state.slides.get(value2.id);
-              if (!value3 || value3.removed) continue;
-              if (value2.id === currentId) {
-                if (input === undefined) items.push(currentElement);
-                else items.push(...jquery(document.body).find(input).toArray());
+            for (let slide of slides) {
+              let slideEntry: Dynamic = slide.id && state.slides.get(slide.id);
+              if (!slideEntry || slideEntry.removed) continue;
+              if (slide.id === currentId) {
+                if (selector === undefined) items.push(currentElement);
+                else items.push(...jquery(document.body).find(selector).toArray());
                 continue;
               }
               if (
-                (state.ensure(value3),
-                state.touch(value2.id),
-                input === undefined)
+                (state.ensure(slideEntry),
+                state.touch(slide.id),
+                selector === undefined)
               )
-                items.push(value3.el);
-              else items.push(...jquery(value3.holder).find(input).toArray());
+                items.push(slideEntry.el);
+              else items.push(...jquery(slideEntry.holder).find(selector).toArray());
             }
             return jquery().pushStack(items);
           },
           get layouts(): Dynamic {
             return Object.keys(state.layouts);
           },
-          layout(input: Dynamic): Dynamic {
+          layout(layoutName: Dynamic): Dynamic {
             if (
-              typeof input !== "string" ||
-              !Object.prototype.hasOwnProperty.call(state.layouts, input)
+              typeof layoutName !== "string" ||
+              !Object.prototype.hasOwnProperty.call(state.layouts, layoutName)
             )
               fail(
                 "no layout named " +
-                  JSON.stringify(input) +
+                  JSON.stringify(layoutName) +
                   "; the layouts are: " +
                   Object.keys(state.layouts).join(", "),
               );
-            return state.layouts[input];
+            return state.layouts[layoutName];
           },
-          title(input: Dynamic): Dynamic {
-            if (input === undefined) return state.title;
+          title(titleText: Dynamic): Dynamic {
+            if (titleText === undefined) return state.title;
             if (
               (requireActiveReply(),
-              typeof input !== "string" || !input.trim() || input.length > 300)
+              typeof titleText !== "string" || !titleText.trim() || titleText.length > 300)
             )
               fail("title(text) takes 1 to 300 characters");
-            state.title = input.trim();
+            state.title = titleText.trim();
             queueOperation({
               op: "title",
               title: state.title,
             });
           },
-          section(input: Dynamic, options: Dynamic): Dynamic {
+          section(startSlideId: Dynamic, title: Dynamic): Dynamic {
             requireRunningReply();
-            requireSlideId(input, "id");
+            requireSlideId(startSlideId, "id");
             let index: Dynamic = state.sections.findIndex(
-              (input2?: Dynamic, ..._extraArguments67: Dynamic[]): Dynamic =>
-                input2.start === input,
+              (section?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                section.start === startSlideId,
             );
-            let value2: Dynamic = (..._extraArguments68: Dynamic[]): Dynamic =>
+            let listSectionStartIds: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic =>
               state.sections
                 .map(
                   (
-                    input2?: Dynamic,
-                    ..._extraArguments69: Dynamic[]
-                  ): Dynamic => input2.start,
+                    section?: Dynamic,
+                    ..._unusedCallbackArgs: Dynamic[]
+                  ): Dynamic => section.start,
                 )
                 .join(", ") || "(none)";
-            let value3: Dynamic = (
-              input2?: Dynamic,
-              ..._extraArguments70: Dynamic[]
+            let validateSectionTitle: Dynamic = (
+              candidateTitle?: Dynamic,
+              ..._unusedArgs: Dynamic[]
             ): Dynamic => {
               if (
-                typeof input2 !== "string" ||
-                !input2.trim() ||
-                input2.length > 300
+                typeof candidateTitle !== "string" ||
+                !candidateTitle.trim() ||
+                candidateTitle.length > 300
               )
                 fail("a section title takes 1 to 300 characters");
-              return input2.trim();
+              return candidateTitle.trim();
             };
-            let value4: Dynamic = (
-              input2?: Dynamic,
-              ..._extraArguments71: Dynamic[]
+            let createSectionHandle: Dynamic = (
+              sectionStartId?: Dynamic,
+              ..._unusedArgs: Dynamic[]
             ): Dynamic =>
               Object.freeze({
-                start: input2,
+                start: sectionStartId,
                 get title(): Dynamic {
                   let match: Dynamic = state.sections.find(
                     (
-                      input3?: Dynamic,
-                      ..._extraArguments72: Dynamic[]
-                    ): Dynamic => input3.start === input2,
+                      section?: Dynamic,
+                      ..._unusedCallbackArgs: Dynamic[]
+                    ): Dynamic => section.start === sectionStartId,
                   );
                   return match ? match.title : undefined;
                 },
                 rename: Object.freeze(
                   (
-                    input3?: Dynamic,
-                    ..._extraArguments73: Dynamic[]
+                    nextTitle?: Dynamic,
+                    ..._unusedRenameArgs: Dynamic[]
                   ): Dynamic => {
                     requireActiveReply();
                     let match: Dynamic = state.sections.find(
                       (
-                        input4?: Dynamic,
-                        ..._extraArguments74: Dynamic[]
-                      ): Dynamic => input4.start === input2,
+                        section?: Dynamic,
+                        ..._unusedCallbackArgs: Dynamic[]
+                      ): Dynamic => section.start === sectionStartId,
                     );
                     if (!match)
-                      fail('no section starts at "' + input2 + '" any more');
-                    match.title = value3(input3);
+                      fail('no section starts at "' + sectionStartId + '" any more');
+                    match.title = validateSectionTitle(nextTitle);
                     queueOperation({
                       op: "section",
                       action: "rename",
-                      id: input2,
+                      id: sectionStartId,
                       title: match.title,
                     });
                   },
                 ),
                 remove: Object.freeze(
-                  (..._extraArguments75: Dynamic[]): Dynamic => {
+                  (..._unusedRemoveArgs: Dynamic[]): Dynamic => {
                     requireActiveReply();
-                    let index2: Dynamic = state.sections.findIndex(
+                    let sectionIndex: Dynamic = state.sections.findIndex(
                       (
-                        input3?: Dynamic,
-                        ..._extraArguments76: Dynamic[]
-                      ): Dynamic => input3.start === input2,
+                        section?: Dynamic,
+                        ..._unusedCallbackArgs: Dynamic[]
+                      ): Dynamic => section.start === sectionStartId,
                     );
-                    if (index2 < 0)
-                      fail('no section starts at "' + input2 + '" any more');
-                    state.sections.splice(index2, 1);
+                    if (sectionIndex < 0)
+                      fail('no section starts at "' + sectionStartId + '" any more');
+                    state.sections.splice(sectionIndex, 1);
                     queueOperation({
                       op: "section",
                       action: "remove",
-                      id: input2,
+                      id: sectionStartId,
                     });
                   },
                 ),
               });
-            if (arguments.length < 2 || options === undefined) {
+            if (arguments.length < 2 || title === undefined) {
               if (index < 0)
                 fail(
                   'no section starts at "' +
-                    input +
+                    startSlideId +
                     '"; sections start at: ' +
-                    value2(),
+                    listSectionStartIds(),
                 );
-              return value4(input);
+              return createSectionHandle(startSlideId);
             }
             requireActiveReply();
-            let value5: Dynamic = value3(options);
+            let sectionTitle: Dynamic = validateSectionTitle(title);
             if (index >= 0)
               fail(
                 'a section already starts at "' +
-                  input +
+                  startSlideId +
                   '"; use deck.section("' +
-                  input +
+                  startSlideId +
                   '").rename(title)',
               );
             if (state.sections.length >= 64) fail("at most 64 sections");
             state.sections.push({
-              start: input,
-              title: value5,
+              start: startSlideId,
+              title: sectionTitle,
             });
             queueOperation({
               op: "section",
               action: "start",
-              id: input,
-              title: value5,
+              id: startSlideId,
+              title: sectionTitle,
             });
-            return value4(input);
+            return createSectionHandle(startSlideId);
           },
           sections(): Dynamic {
             return state.sections
               .filter(
-                (input?: Dynamic, ..._extraArguments77: Dynamic[]): Dynamic =>
-                  slideIndex(input.start) >= 0,
+                (section?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                  slideIndex(section.start) >= 0,
               )
               .sort(
                 (
-                  input?: Dynamic,
-                  options?: Dynamic,
-                  ..._extraArguments78: Dynamic[]
+                  leftSection?: Dynamic,
+                  rightSection?: Dynamic,
+                  ..._unusedCallbackArgs: Dynamic[]
                 ): Dynamic =>
-                  slideIndex(input.start) - slideIndex(options.start),
+                  slideIndex(leftSection.start) - slideIndex(rightSection.start),
               )
               .map(
                 (
-                  input?: Dynamic,
-                  ..._extraArguments79: Dynamic[]
+                  section?: Dynamic,
+                  ..._unusedCallbackArgs: Dynamic[]
                 ): Dynamic => ({
-                  start: input.start,
-                  title: input.title,
+                  start: section.start,
+                  title: section.title,
                 }),
               );
           },
@@ -1529,22 +1529,22 @@ function createEditRuntime(
           },
         }),
       );
-    function requireRunningReply(..._extraArguments80: Dynamic[]): Dynamic {
+    function requireRunningReply(..._unusedArgs: Dynamic[]): Dynamic {
       if (state && state.halted) fail("the reply ended at deck.undo()");
     }
-    for (let value2 of ["move", "remove", "duplicate", "add"].concat(
+    for (let methodName of ["move", "remove", "duplicate", "add"].concat(
       state
         ? ["slide", "all", "layout", "title", "undo", "section", "sections"]
         : [],
     ))
-      Object.freeze(api[value2]);
+      Object.freeze(api[methodName]);
     return Object.freeze(api);
   }
   function createProjectState(
     metadata?: Dynamic,
     sdk?: Dynamic,
     html?: Dynamic,
-    ..._extraArguments81: Dynamic[]
+    ..._unusedProjectArgs: Dynamic[]
   ): Dynamic {
     let state: Dynamic = {
       current: String(metadata.current),
@@ -1558,15 +1558,15 @@ function createEditRuntime(
       logChars: 0,
       logCalls: 0,
       halted: false,
-      order: (..._extraArguments82: Dynamic[]): Dynamic => [],
+      order: (..._unusedCallbackArgs: Dynamic[]): Dynamic => [],
     };
     let texts: Dynamic = (sdk && sdk.texts) || {};
-    for (let value3 of metadata.slides) {
-      let value4: Dynamic = String(value3 && value3.id);
-      if (validFileId.test(value4) && !state.slides.has(value4))
-        state.slides.set(value4, {
-          id: value4,
-          text: typeof texts[value4] === "string" ? texts[value4] : "",
+    for (let slideMetadata of metadata.slides) {
+      let slideId: Dynamic = String(slideMetadata && slideMetadata.id);
+      if (validFileId.test(slideId) && !state.slides.has(slideId))
+        state.slides.set(slideId, {
+          id: slideId,
+          text: typeof texts[slideId] === "string" ? texts[slideId] : "",
           holder: null,
           el: null,
           last: null,
@@ -1585,9 +1585,9 @@ function createEditRuntime(
         hadTbody: true,
       });
     if (sdk && sdk.layouts && typeof sdk.layouts === "object") {
-      for (let value3 of Object.keys(sdk.layouts))
-        if (validFileId.test(value3) && typeof sdk.layouts[value3] === "string")
-          state.layouts[value3] = sdk.layouts[value3];
+      for (let layoutName of Object.keys(sdk.layouts))
+        if (validFileId.test(layoutName) && typeof sdk.layouts[layoutName] === "string")
+          state.layouts[layoutName] = sdk.layouts[layoutName];
     }
     if (sdk && typeof sdk.title === "string")
       state.title = sdk.title.slice(0, 300);
@@ -1601,158 +1601,158 @@ function createEditRuntime(
     state.rows = [];
     state.currentRemoved = false;
     state.goneMsg = "deck: this slide was removed";
-    let value2: Dynamic = (..._extraArguments83: Dynamic[]): Dynamic => {
+    let throwRemovedSlide: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic => {
       throw Error(state.goneMsg);
     };
     if (
       ((state.ghost = new Proxy(
-        function (..._extraArguments84: Dynamic[]): Dynamic {},
+        function (..._unusedCallbackArgs: Dynamic[]): Dynamic {},
         {
           get: (
-            input?: Dynamic,
-            options?: Dynamic,
-            ..._extraArguments85: Dynamic[]
+            _target?: Dynamic,
+            propertyName?: Dynamic,
+            ..._unusedCallbackArgs: Dynamic[]
           ): Dynamic =>
-            typeof options === "symbol" || options === "then"
+            typeof propertyName === "symbol" || propertyName === "then"
               ? undefined
-              : value2(),
-          set: value2,
-          has: value2,
-          apply: value2,
-          construct: value2,
+              : throwRemovedSlide(),
+          set: throwRemovedSlide,
+          has: throwRemovedSlide,
+          apply: throwRemovedSlide,
+          construct: throwRemovedSlide,
         },
       )),
       sdk && Array.isArray(sdk.sections))
     ) {
-      for (let value3 of sdk.sections)
+      for (let savedSection of sdk.sections)
         if (
-          value3 &&
-          state.slides.has(String(value3.start)) &&
-          typeof value3.title === "string" &&
+          savedSection &&
+          state.slides.has(String(savedSection.start)) &&
+          typeof savedSection.title === "string" &&
           !state.sections.some(
-            (input?: Dynamic, ..._extraArguments86: Dynamic[]): Dynamic =>
-              input.start === value3.start,
+            (section?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+              section.start === savedSection.start,
           )
         )
           state.sections.push({
-            start: String(value3.start),
-            title: value3.title.slice(0, 300),
+            start: String(savedSection.start),
+            title: savedSection.title.slice(0, 300),
           });
     }
     state.ensure = (
       entry?: Dynamic,
-      ..._extraArguments87: Dynamic[]
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic => {
       if (entry.holder) return entry;
-      let value3: Dynamic = document.createElement("div");
-      value3.innerHTML = entry.text;
-      let element: Dynamic = value3.querySelector("section");
+      let holder: Dynamic = document.createElement("div");
+      holder.innerHTML = entry.text;
+      let element: Dynamic = holder.querySelector("section");
       if (!element)
         throw Error('deck: the slide "' + entry.id + '" has no <section>');
-      entry.holder = value3;
+      entry.holder = holder;
       entry.el = element;
       entry.hadTbody = /<tbody[\s>]/i.test(entry.text);
-      for (let value4 of [element, ...element.querySelectorAll("[style]")])
-        if (value4.getAttribute("style") !== null)
-          originalStyles.set(value4, value4.getAttribute("style"));
+      for (let styledElement of [element, ...element.querySelectorAll("[style]")])
+        if (styledElement.getAttribute("style") !== null)
+          originalStyles.set(styledElement, styledElement.getAttribute("style"));
       entry.last = state.text(entry);
       return entry;
     };
     state.text = (
       entry?: Dynamic,
-      ..._extraArguments88: Dynamic[]
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic => {
       let element: Dynamic = entry.holder.querySelector("section");
       if (!element) {
         entry.holder.innerHTML = entry.last;
         element = entry.holder.querySelector("section");
         entry.el = element;
-        for (let value4 of [element, ...element.querySelectorAll("[style]")])
-          if (value4.getAttribute("style") !== null)
-            originalStyles.set(value4, value4.getAttribute("style"));
+        for (let styledElement of [element, ...element.querySelectorAll("[style]")])
+          if (styledElement.getAttribute("style") !== null)
+            originalStyles.set(styledElement, styledElement.getAttribute("style"));
         throw Error(
           'the <section> of the slide "' + entry.id + '" was removed; restored',
         );
       }
       entry.el = element;
-      let value3: Dynamic = serializeElement(element);
-      return entry.hadTbody ? value3 : value3.replace(/<\/?tbody>/g, "");
+      let slideHtml: Dynamic = serializeElement(element);
+      return entry.hadTbody ? slideHtml : slideHtml.replace(/<\/?tbody>/g, "");
     };
     state.touch = (
-      input?: Dynamic,
-      ..._extraArguments89: Dynamic[]
+      slideId?: Dynamic,
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic => {
       if (
-        input !== state.current &&
-        !state.touched.has(input) &&
-        !(state.slides.get(input) || {}).made
+        slideId !== state.current &&
+        !state.touched.has(slideId) &&
+        !(state.slides.get(slideId) || {}).made
       ) {
-        state.touched.add(input);
+        state.touched.add(slideId);
         emit({
           kind: "touch" as const,
           seq: sequence++,
           n: state.n,
-          slideId: input,
+          slideId: slideId,
         });
       }
     };
     state.log = Object.freeze(function (
-      input?: Dynamic,
-      ..._extraArguments90: Dynamic[]
+      loggedValue?: Dynamic,
+      ..._unusedLogArgs: Dynamic[]
     ): Dynamic {
-      let value3: Dynamic;
+      let logText: Dynamic;
       try {
-        if (input && input.jquery)
-          value3 = input
+        if (loggedValue && loggedValue.jquery)
+          logText = loggedValue
             .toArray()
             .map(
-              (input2?: Dynamic, ..._extraArguments91: Dynamic[]): Dynamic =>
-                input2 && typeof input2.outerHTML === "string"
-                  ? input2.outerHTML
+              (item?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                item && typeof item.outerHTML === "string"
+                  ? item.outerHTML
                   : String(
-                      input2 && input2.textContent !== undefined
-                        ? input2.textContent
-                        : input2,
+                      item && item.textContent !== undefined
+                        ? item.textContent
+                        : item,
                     ),
             ).join(`
 `);
         else if (
-          input &&
-          typeof input === "object" &&
-          typeof input.outerHTML === "string"
+          loggedValue &&
+          typeof loggedValue === "object" &&
+          typeof loggedValue.outerHTML === "string"
         )
-          value3 = input.outerHTML;
-        else if (typeof input === "string") value3 = input;
-        else if (input !== null && typeof input === "object") {
-          if (((value3 = JSON.stringify(input)), value3 === undefined))
-            value3 = String(input);
-        } else value3 = String(input);
-      } catch (value5: Dynamic) {
-        value3 = String(input);
+          logText = loggedValue.outerHTML;
+        else if (typeof loggedValue === "string") logText = loggedValue;
+        else if (loggedValue !== null && typeof loggedValue === "object") {
+          if (((logText = JSON.stringify(loggedValue)), logText === undefined))
+            logText = String(loggedValue);
+        } else logText = String(loggedValue);
+      } catch (_serializationError: Dynamic) {
+        logText = String(loggedValue);
       }
       let count: Dynamic = 12000;
-      let count2: Dynamic = 24576;
-      let count3: Dynamic = 12;
-      let value4: Dynamic = value3.length > count;
-      if (state.logCalls >= count3)
+      let totalLogCharacterLimit: Dynamic = 24576;
+      let logCallLimit: Dynamic = 12;
+      let wasTruncated: Dynamic = logText.length > count;
+      if (state.logCalls >= logCallLimit)
         throw Error(
           "log: at most " +
-            count3 +
+            logCallLimit +
             " values in one run; end the reply and read what you have",
         );
-      if (value4) value3 = value3.slice(0, count);
-      if (state.logChars + value3.length > count2)
+      if (wasTruncated) logText = logText.slice(0, count);
+      if (state.logChars + logText.length > totalLogCharacterLimit)
         throw Error(
           "log: over 24 KB of values in this run; end the reply and read what you have",
         );
-      state.logChars += value3.length;
+      state.logChars += logText.length;
       state.logged++;
       state.logCalls++;
       emit({
         kind: "log" as const,
         n: state.n,
-        message: value3,
-        cut: value4,
+        message: logText,
+        cut: wasTruncated,
       });
     });
     return state;
@@ -1760,7 +1760,7 @@ function createEditRuntime(
   function initializeFileSdk(
     metadata?: Dynamic,
     sdk?: Dynamic,
-    ..._extraArguments92: Dynamic[]
+    ..._unusedInitializeArgs: Dynamic[]
   ): Dynamic {
     let state: Dynamic = project;
     let container: Dynamic = document.body;
@@ -1768,13 +1768,13 @@ function createEditRuntime(
     let head: Dynamic = document.head;
     let currentFileId: Dynamic = String(metadata.current || "");
     if (sdk.paths) {
-      for (let value23 of Object.keys(sdk.paths))
+      for (let pathKey of Object.keys(sdk.paths))
         if (
-          state.slides.has(value23) &&
-          typeof sdk.paths[value23] === "string"
+          state.slides.has(pathKey) &&
+          typeof sdk.paths[pathKey] === "string"
         ) {
-          state.paths.set(sdk.paths[value23], value23);
-          state.pathOf.set(value23, sdk.paths[value23]);
+          state.paths.set(sdk.paths[pathKey], pathKey);
+          state.pathOf.set(pathKey, sdk.paths[pathKey]);
         }
     }
     state.one = true;
@@ -1788,22 +1788,22 @@ function createEditRuntime(
     state.retired = new Set();
     container.innerHTML = "";
     container.setAttribute("id", "container");
-    let value2: Dynamic = [...state.slides.values()]
+    let textSlides: Dynamic = [...state.slides.values()]
       .map(
-        (input?: Dynamic, ..._extraArguments93: Dynamic[]): Dynamic =>
-          input.text,
+        (slide?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          slide.text,
       )
       .concat(
         Object.keys(state.layouts).map(
-          (input?: Dynamic, ..._extraArguments94: Dynamic[]): Dynamic =>
-            state.layouts[input],
+          (layoutId?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            state.layouts[layoutId],
         ),
       );
     state.P = "k";
     while (
-      value2.some(
-        (input?: Dynamic, ..._extraArguments95: Dynamic[]): Dynamic =>
-          new RegExp(`id\\s*=\\s*["']?` + state.P + "\\d").test(input),
+      textSlides.some(
+        (text?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          new RegExp(`id\\s*=\\s*["']?` + state.P + "\\d").test(text),
       )
     )
       state.P =
@@ -1813,105 +1813,105 @@ function createEditRuntime(
           .replace(/[^a-z]/g, "")
           .slice(0, 2)
           .padEnd(2, "q");
-    let value3: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments96: Dynamic[]
+    let hasOwnedId: Dynamic = (
+      elementId?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic =>
-      typeof input === "string" &&
-      input.startsWith(state.P) &&
-      /^\d{1,6}$/.test(input.slice(state.P.length));
-    let value4: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments97: Dynamic[]
+      typeof elementId === "string" &&
+      elementId.startsWith(state.P) &&
+      /^\d{1,6}$/.test(elementId.slice(state.P.length));
+    let captureStyles: Dynamic = (
+      rootElement?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      for (let value23 of [input, ...input.querySelectorAll("[style]")])
-        if (value23.getAttribute("style") !== null)
-          originalStyles.set(value23, value23.getAttribute("style"));
+      for (let element of [rootElement, ...rootElement.querySelectorAll("[style]")])
+        if (element.getAttribute("style") !== null)
+          originalStyles.set(element, element.getAttribute("style"));
     };
-    let value5: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments98: Dynamic[]
+    let registerElement: Dynamic = (
+      entry?: Dynamic,
+      element?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      input.el = options;
-      input.holder = container;
-      state.entryOf.set(options, input);
-      value4(options);
+      entry.el = element;
+      entry.holder = container;
+      state.entryOf.set(element, entry);
+      captureStyles(element);
     };
-    for (let value23 of state.slides.values()) {
-      let value24: Dynamic = document.createElement("div");
-      value24.innerHTML = value23.text;
-      let value25: Dynamic =
-        value24.children.length === 1 && value23.id !== "container"
-          ? value24.children[0]
+    for (let slide of state.slides.values()) {
+      let slideContainer: Dynamic = document.createElement("div");
+      slideContainer.innerHTML = slide.text;
+      let slideElement: Dynamic =
+        slideContainer.children.length === 1 && slide.id !== "container"
+          ? slideContainer.children[0]
           : null;
-      if (!value25) {
+      if (!slideElement) {
         emitError(
           'the file "' +
-            value23.id +
+            slide.id +
             '" must be ONE element (it has ' +
-            value24.children.length +
+            slideContainer.children.length +
             ")",
           "",
         );
-        value23.removed = true;
+        slide.removed = true;
         continue;
       }
-      value23.rootId = value25.getAttribute("id");
-      value23.hadTbody = /<tbody[\s>]/i.test(value23.text);
-      value23.hadSection = value25.getAttribute("data-section") !== null;
-      value23.section = null;
-      value25.setAttribute("id", value23.id);
-      value23.idAt = [...value25.attributes].findIndex(
-        (input?: Dynamic, ..._extraArguments99: Dynamic[]): Dynamic =>
-          input.name === "id",
+      slide.rootId = slideElement.getAttribute("id");
+      slide.hadTbody = /<tbody[\s>]/i.test(slide.text);
+      slide.hadSection = slideElement.getAttribute("data-section") !== null;
+      slide.section = null;
+      slideElement.setAttribute("id", slide.id);
+      slide.idAt = [...slideElement.attributes].findIndex(
+        (attribute?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          attribute.name === "id",
       );
-      container.appendChild(value25);
-      value5(value23, value25);
-      for (let value26 of value25.querySelectorAll("[id]"))
-        if (state.slides.has(value26.getAttribute("id"))) {
-          state.origId.set(value26, value26.getAttribute("id"));
-          value26.removeAttribute("id");
+      container.appendChild(slideElement);
+      registerElement(slide, slideElement);
+      for (let element of slideElement.querySelectorAll("[id]"))
+        if (state.slides.has(element.getAttribute("id"))) {
+          state.origId.set(element, element.getAttribute("id"));
+          element.removeAttribute("id");
         }
     }
-    for (let value23 of state.sections) {
-      let entry: Dynamic = state.slides.get(value23.start);
+    for (let section of state.sections) {
+      let entry: Dynamic = state.slides.get(section.start);
       if (entry && !entry.removed) {
-        if (((entry.section = value23.title), !entry.hadSection))
-          entry.el.setAttribute("data-section", value23.title);
+        if (((entry.section = section.title), !entry.hadSection))
+          entry.el.setAttribute("data-section", section.title);
       }
     }
-    let value6: Dynamic = (..._extraArguments100: Dynamic[]): Dynamic =>
+    let setOrder: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic =>
       [...container.children]
         .map(
-          (input?: Dynamic, ..._extraArguments101: Dynamic[]): Dynamic =>
-            state.entryOf.get(input),
+          (element?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            state.entryOf.get(element),
         )
         .filter(
-          (input?: Dynamic, ..._extraArguments102: Dynamic[]): Dynamic =>
-            input && !input.removed,
+          (entry?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            entry && !entry.removed,
         )
         .map(
-          (entry?: Dynamic, ..._extraArguments103: Dynamic[]): Dynamic =>
+          (entry?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
             entry.id,
         );
-    state.order = value6;
+    state.order = setOrder;
     state.fileOf = (
-      input?: Dynamic,
-      ..._extraArguments104: Dynamic[]
+      element?: Dynamic,
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic => {
-      let value23: Dynamic = input;
-      while (value23 && value23.parentNode && value23.parentNode !== container)
-        value23 = value23.parentNode;
-      let value24: Dynamic =
-        value23 && value23.parentNode === container
-          ? state.entryOf.get(value23)
+      let ancestorElement: Dynamic = element;
+      while (ancestorElement && ancestorElement.parentNode && ancestorElement.parentNode !== container)
+        ancestorElement = ancestorElement.parentNode;
+      let currentEntry: Dynamic =
+        ancestorElement && ancestorElement.parentNode === container
+          ? state.entryOf.get(ancestorElement)
           : null;
-      return value24 && !value24.removed ? value24.id : null;
+      return currentEntry && !currentEntry.removed ? currentEntry.id : null;
     };
     state.used = new Set();
     state.started = false;
-    state.assign = (..._extraArguments105: Dynamic[]): Dynamic => {
+    state.assign = (..._unusedCallbackArgs: Dynamic[]): Dynamic => {
       let unhandledElements: Dynamic = [];
       for (let fileElement of container.children) {
         let fileEntry: Dynamic = state.entryOf.get(fileElement);
@@ -1923,7 +1923,7 @@ function createEditRuntime(
             oldHandle !== undefined &&
             elementId !== null &&
             elementId !== oldHandle &&
-            value3(elementId) &&
+            hasOwnedId(elementId) &&
             !state.used.has(elementId) &&
             /^[1-9]/.test(elementId.slice(state.P.length))
           ) {
@@ -1938,7 +1938,7 @@ function createEditRuntime(
             if (elementId === oldHandle) continue;
             if (
               elementId === null ||
-              (value3(elementId) && state.elOf.get(elementId) !== element)
+              (hasOwnedId(elementId) && state.elOf.get(elementId) !== element)
             ) {
               element.setAttribute("id", oldHandle);
               continue;
@@ -1950,7 +1950,7 @@ function createEditRuntime(
           }
           if (
             elementId !== null &&
-            !(value3(elementId) && state.elOf.get(elementId) !== element)
+            !(hasOwnedId(elementId) && state.elOf.get(elementId) !== element)
           )
             continue;
           if (
@@ -1983,50 +1983,50 @@ function createEditRuntime(
     };
     state.clean = (
       entry?: Dynamic,
-      ..._extraArguments106: Dynamic[]
+      ..._unusedCleanArgs: Dynamic[]
     ): Dynamic => {
       serializeElement(entry.el);
-      let clone2: Dynamic = entry.el.cloneNode(true);
+      let clonedElement: Dynamic = entry.el.cloneNode(true);
       let elements: Dynamic = [entry.el, ...entry.el.querySelectorAll("*")];
-      let clonedElements: Dynamic = [clone2, ...clone2.querySelectorAll("*")];
+      let clonedElements: Dynamic = [clonedElement, ...clonedElement.querySelectorAll("*")];
       if (
         (elements.forEach(
           (
-            input?: Dynamic,
-            options?: Dynamic,
-            ..._extraArguments107: Dynamic[]
+            element?: Dynamic,
+            index?: Dynamic,
+            ..._unusedCallbackArgs: Dynamic[]
           ): Dynamic => {
-            if (!clonedElements[options] || options === 0) return;
-            if (state.origId.has(input))
-              clonedElements[options].setAttribute(
+            if (!clonedElements[index] || index === 0) return;
+            if (state.origId.has(element))
+              clonedElements[index].setAttribute(
                 "id",
-                state.origId.get(input),
+                state.origId.get(element),
               );
             else if (
-              state.kOf.get(input) !== undefined &&
-              clonedElements[options].getAttribute("id") ===
-                state.kOf.get(input)
+              state.kOf.get(element) !== undefined &&
+              clonedElements[index].getAttribute("id") ===
+                state.kOf.get(element)
             )
-              clonedElements[options].removeAttribute("id");
-            else if (value3(clonedElements[options].getAttribute("id")))
-              clonedElements[options].removeAttribute("id");
+              clonedElements[index].removeAttribute("id");
+            else if (hasOwnedId(clonedElements[index].getAttribute("id")))
+              clonedElements[index].removeAttribute("id");
           },
         ),
         entry.rootId === null || entry.rootId === undefined)
       ) {
-        if (entry.made) clone2.setAttribute("id", entry.id);
-        else clone2.removeAttribute("id");
-      } else clone2.setAttribute("id", entry.rootId);
-      if (!entry.hadSection) clone2.removeAttribute("data-section");
-      let html: Dynamic = clone2.outerHTML;
+        if (entry.made) clonedElement.setAttribute("id", entry.id);
+        else clonedElement.removeAttribute("id");
+      } else clonedElement.setAttribute("id", entry.rootId);
+      if (!entry.hadSection) clonedElement.removeAttribute("data-section");
+      let html: Dynamic = clonedElement.outerHTML;
       return entry.hadTbody ? html : html.replace(/<\/?tbody>/g, "");
     };
     state.text = state.clean;
     state.ensure = (
-      input?: Dynamic,
-      ..._extraArguments108: Dynamic[]
-    ): Dynamic => input;
-    state.view = (id?: Dynamic, ..._extraArguments109: Dynamic[]): Dynamic => {
+      id?: Dynamic,
+      ..._unusedCallbackArgs: Dynamic[]
+    ): Dynamic => id;
+    state.view = (id?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic => {
       let entry: Dynamic = state.slides.get(id);
       if (!entry || entry.removed) return null;
       serializeElement(entry.el);
@@ -2037,7 +2037,7 @@ function createEditRuntime(
     };
     state.list = (
       since?: Dynamic,
-      ..._extraArguments110: Dynamic[]
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic => {
       let rows: Dynamic = [];
       for (let element of state.rows) {
@@ -2065,7 +2065,7 @@ function createEditRuntime(
     state.attr = "id";
     state.seen = (
       elements?: Dynamic,
-      ..._extraArguments111: Dynamic[]
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic => {
       if (state.previewing) return elements;
       for (
@@ -2096,43 +2096,43 @@ function createEditRuntime(
     let find: Dynamic = jquery.find;
     jquery.find = Object.assign(function (
       this: Dynamic,
-      ..._extraArguments112: Dynamic[]
+      ..._unusedCallbackArgs: Dynamic[]
     ): Dynamic {
       return state.seen(find.apply(this, arguments));
     }, find);
     let clone: Dynamic = jquery.fn.clone;
     jquery.fn.clone = function (
       this: Dynamic,
-      ..._extraArguments113: Dynamic[]
+      ..._unusedCloneArgs: Dynamic[]
     ): Dynamic {
-      let value23: Dynamic = clone.apply(this, arguments);
+      let clones: Dynamic = clone.apply(this, arguments);
       this.each(
         (
-          input?: Dynamic,
-          options?: Dynamic,
-          ..._extraArguments114: Dynamic[]
+          cloneIndex?: Dynamic,
+          sourceElement?: Dynamic,
+          ..._unusedCallbackArgs: Dynamic[]
         ): Dynamic => {
-          let entry: Dynamic = state.entryOf.get(options);
-          if (entry && !entry.removed && value23[input]) {
-            if ((state.copyOf.set(value23[input], entry.id), !entry.hadSection))
-              value23[input].removeAttribute("data-section");
+          let entry: Dynamic = state.entryOf.get(sourceElement);
+          if (entry && !entry.removed && clones[cloneIndex]) {
+            if ((state.copyOf.set(clones[cloneIndex], entry.id), !entry.hadSection))
+              clones[cloneIndex].removeAttribute("data-section");
           }
         },
       );
-      return value23;
+      return clones;
     };
-    let value7: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      ..._extraArguments115: Dynamic[]
+    let validateIdChange: Dynamic = (
+      element?: Dynamic,
+      nextId?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      if (input === container) throw Error("#container keeps its id");
-      let entry: Dynamic = state.entryOf.get(input);
+      if (element === container) throw Error("#container keeps its id");
+      let entry: Dynamic = state.entryOf.get(element);
       if (
         entry &&
         !entry.removed &&
-        input.parentNode === container &&
-        options !== entry.id
+        element.parentNode === container &&
+        nextId !== entry.id
       )
         throw Error(
           'a file keeps its id ("' +
@@ -2142,69 +2142,69 @@ function createEditRuntime(
     };
     jquery.attrHooks.id = {
       set: (
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments116: Dynamic[]
+        element?: Dynamic,
+        id?: Dynamic,
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic => {
-        value7(input, String(options));
-        input.setAttribute("id", String(options));
-        return options;
+        validateIdChange(element, String(id));
+        element.setAttribute("id", String(id));
+        return id;
       },
     };
     let removeAttr: Dynamic = jquery.fn.removeAttr;
     jquery.fn.removeAttr = function (
       this: Dynamic,
-      input?: Dynamic,
-      ..._extraArguments117: Dynamic[]
+      styleValue?: Dynamic,
+      ..._unusedRemoveAttrArgs: Dynamic[]
     ): Dynamic {
-      if (/(^|\s)id(\s|$)/i.test(String(input)))
+      if (/(^|\s)id(\s|$)/i.test(String(styleValue)))
         this.each(
           (
-            input2?: Dynamic,
-            options?: Dynamic,
-            ..._extraArguments118: Dynamic[]
-          ): Dynamic => value7(options, null),
+            id?: Dynamic,
+            fallback?: Dynamic,
+            ..._unusedCallbackArgs: Dynamic[]
+          ): Dynamic => validateIdChange(fallback, null),
         );
       return removeAttr.apply(this, arguments);
     };
-    let value8: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments119: Dynamic[]
+    let removeElements: Dynamic = (
+      elements?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      for (let index: Dynamic = 0; index < input.length; index++)
+      for (let index: Dynamic = 0; index < elements.length; index++)
         if (
-          input[index] === container ||
-          input[index] === documentRoot ||
-          input[index] === head
+          elements[index] === container ||
+          elements[index] === documentRoot ||
+          elements[index] === head
         )
           throw Error(
             "change the files, not the page: $('#id')… for one file, $('body > *')… for all of them",
           );
     };
-    for (let value23 of ["empty", "replaceWith", "remove", "detach"]) {
-      let value24: Dynamic = jquery.fn[value23];
-      jquery.fn[value23] = function (
+    for (let method of ["empty", "replaceWith", "remove", "detach"]) {
+      let originalMethod: Dynamic = jquery.fn[method];
+      jquery.fn[method] = function (
         this: Dynamic,
-        ..._extraArguments120: Dynamic[]
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic {
-        value8(this);
-        return value24.apply(this, arguments);
+        removeElements(this);
+        return originalMethod.apply(this, arguments);
       };
     }
-    for (let value23 of ["html", "text"]) {
-      let value24: Dynamic = jquery.fn[value23];
-      jquery.fn[value23] = function (
+    for (let method of ["html", "text"]) {
+      let originalMethod: Dynamic = jquery.fn[method];
+      jquery.fn[method] = function (
         this: Dynamic,
-        ..._extraArguments121: Dynamic[]
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic {
-        if (arguments.length) value8(this);
-        return value24.apply(this, arguments);
+        if (arguments.length) removeElements(this);
+        return originalMethod.apply(this, arguments);
       };
     }
-    for (let value23 of ["write", "writeln", "open", "close"])
-      document[value23] = (..._extraArguments122: Dynamic[]): Dynamic => {
+    for (let method of ["write", "writeln", "open", "close"])
+      document[method] = (..._unusedCallbackArgs: Dynamic[]): Dynamic => {
         throw Error(
-          "document." + value23 + " is not available: change the elements",
+          "document." + method + " is not available: change the elements",
         );
       };
     document.title = state.title;
@@ -2213,13 +2213,13 @@ function createEditRuntime(
     state.rehandled.clear();
     state.kN += 1e5;
     state.started = true;
-    for (let value23 of state.slides.values())
-      if (!value23.removed) {
-        value23.last = state.clean(value23);
-        value23.raw = value23.el.outerHTML;
+    for (let slide of state.slides.values())
+      if (!slide.removed) {
+        slide.last = state.clean(slide);
+        slide.raw = slide.el.outerHTML;
       }
-    state.prev = value6();
-    state.settle = (..._extraArguments123: Dynamic[]): Dynamic => {
+    state.prev = setOrder();
+    state.settle = (..._unusedSettleArgs: Dynamic[]): Dynamic => {
       let operations: Dynamic = [];
       let frames: Dynamic = [];
       let problems: Dynamic = [];
@@ -2245,30 +2245,30 @@ function createEditRuntime(
         problems.push("body cannot be replaced; put back");
       }
       let restoreOrder: Dynamic = (
-        input?: Dynamic,
-        ..._extraArguments124: Dynamic[]
+        order?: Dynamic,
+        ..._unusedArgs: Dynamic[]
       ): Dynamic => {
-        for (let value24 of input)
-          container.appendChild(state.slides.get(value24).el);
+        for (let slideId of order)
+          container.appendChild(state.slides.get(slideId).el);
       };
       let rollbackStructure: Dynamic = (
-        input?: Dynamic,
-        options: Dynamic = "; the files are as they were",
-        ..._extraArguments125: Dynamic[]
+        problem?: Dynamic,
+        suffix: Dynamic = "; the files are as they were",
+        ..._unusedArgs: Dynamic[]
       ): Dynamic => {
-        for (let value24 of [...container.children])
-          if (!state.entryOf.get(value24) || state.entryOf.get(value24).removed)
-            container.removeChild(value24);
+        for (let child of [...container.children])
+          if (!state.entryOf.get(child) || state.entryOf.get(child).removed)
+            container.removeChild(child);
         restoreOrder(state.prev);
-        problems.push(input + options);
+        problems.push(problem + suffix);
       };
       let children: Dynamic = [...container.children];
       let newElements: Dynamic = [];
       let activeEntry: Dynamic = (
-        input?: Dynamic,
-        ..._extraArguments126: Dynamic[]
+        slideId?: Dynamic,
+        ..._unusedArgs: Dynamic[]
       ): Dynamic => {
-        let entry: Dynamic = state.slides.get(input);
+        let entry: Dynamic = state.slides.get(slideId);
         return entry && !entry.removed ? entry : null;
       };
       for (let expectedOrder of children) {
@@ -2281,33 +2281,33 @@ function createEditRuntime(
             else {
               let mapped: Dynamic = [...expectedOrder.attributes].map(
                 (
-                  input?: Dynamic,
-                  ..._extraArguments127: Dynamic[]
-                ): Dynamic => [input.name, input.value],
+                  attribute?: Dynamic,
+                  ..._unusedCallbackArgs: Dynamic[]
+                ): Dynamic => [attribute.name, attribute.value],
               );
-              for (let [value25] of mapped)
-                expectedOrder.removeAttribute(value25);
+              for (let [attributeName] of mapped)
+                expectedOrder.removeAttribute(attributeName);
               mapped.splice(Math.min(mintId.idAt, mapped.length), 0, [
                 "id",
                 mintId.id,
               ]);
-              for (let [value25, value26] of mapped)
-                expectedOrder.setAttribute(value25, value26);
+              for (let [attributeName, attributeValue] of mapped)
+                expectedOrder.setAttribute(attributeName, attributeValue);
             }
             problems.push('a file keeps its id ("' + mintId.id + '")');
           }
           continue;
         }
-        let value24: Dynamic = actualOrder !== null && activeEntry(actualOrder);
-        if (value24 && value24.el.parentNode !== container) {
-          value5(value24, expectedOrder);
+        let activeSlide: Dynamic = actualOrder !== null && activeEntry(actualOrder);
+        if (activeSlide && activeSlide.el.parentNode !== container) {
+          registerElement(activeSlide, expectedOrder);
           continue;
         }
         newElements.push(expectedOrder);
       }
       let removedIds: Dynamic = state.prev.filter(
-        (input?: Dynamic, ..._extraArguments128: Dynamic[]): Dynamic =>
-          activeEntry(input) && activeEntry(input).el.parentNode !== container,
+        (slideId?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          activeEntry(slideId) && activeEntry(slideId).el.parentNode !== container,
       );
       let PLAIN_FILE_ID: Dynamic = /^[A-Za-z][A-Za-z0-9_-]{0,23}$/;
       let RESERVED_HANDLE_ID: Dynamic = /^k[a-z]{0,2}\d{1,6}$/;
@@ -2322,65 +2322,65 @@ function createEditRuntime(
       ];
       let proposedId: Dynamic = (
         element?: Dynamic,
-        ..._extraArguments129: Dynamic[]
+        ..._unusedArgs: Dynamic[]
       ): Dynamic => {
         let attribute: Dynamic = element.getAttribute("id");
         return attribute === state.copyOf.get(element) ? null : attribute;
       };
       let validateNewFileId: Dynamic = (
-        input?: Dynamic,
-        ..._extraArguments130: Dynamic[]
+        proposedSlideId?: Dynamic,
+        ..._unusedValidationArgs: Dynamic[]
       ): Dynamic => {
-        let value24: Dynamic = proposedId(input);
-        let value25: Dynamic = value24 !== null && state.slides.get(value24);
-        let value26: Dynamic = (
-          input2?: Dynamic,
-          options?: Dynamic,
-          ..._extraArguments131: Dynamic[]
+        let slideId: Dynamic = proposedId(proposedSlideId);
+        let existingSlide: Dynamic = slideId !== null && state.slides.get(slideId);
+        let createError: Dynamic = (
+          errorCode?: Dynamic,
+          message?: Dynamic,
+          ..._unusedArgs: Dynamic[]
         ): Dynamic => [
-          options,
+          message,
           Object.assign(
             {
-              code: input2,
+              code: errorCode,
             },
-            input2 !== "not_plain" && validFileId.test(value24)
+            errorCode !== "not_plain" && validFileId.test(slideId)
               ? {
-                  id: value24,
+                  id: slideId,
                 }
               : {},
           ),
         ];
-        return value24 === null
+        return slideId === null
           ? null
-          : value25 && value25.removed && value25.el
-            ? value26(
+          : existingSlide && existingSlide.removed && existingSlide.el
+            ? createError(
                 "removed",
                 "#" +
-                  value24 +
+                  slideId +
                   " was removed earlier in this reply; its id is free again in the next reply.",
               )
-            : value25
-              ? value26(
+            : existingSlide
+              ? createError(
                   "exists",
                   "#" +
-                    value24 +
+                    slideId +
                     " exists. Write to it to change it, or pick another id.",
                 )
-              : RESERVED_NAMES.includes(value24.toLowerCase()) ||
-                  RESERVED_HANDLE_ID.test(value24)
-                ? value26(
+              : RESERVED_NAMES.includes(slideId.toLowerCase()) ||
+                  RESERVED_HANDLE_ID.test(slideId)
+                ? createError(
                     "own",
                     "#" +
-                      value24 +
+                      slideId +
                       " is one of the page's own names. Pick another id.",
                   )
-                : PLAIN_FILE_ID.test(value24)
+                : PLAIN_FILE_ID.test(slideId)
                   ? null
-                  : value26(
+                  : createError(
                       "not_plain",
                       "#" +
                         truncate(
-                          value24.replace(
+                          slideId.replace(
                             /[\x00-\x1f\x7f-\x9f\u2028\u2029]/g,
                             "",
                           ),
@@ -2416,143 +2416,143 @@ function createEditRuntime(
             " left in this run (a remove is free)",
         );
       else {
-        for (let value24 of removedIds) {
-          let value25: Dynamic = activeEntry(value24);
-          value25.removed = true;
+        for (let slideId of removedIds) {
+          let slide: Dynamic = activeEntry(slideId);
+          slide.removed = true;
           operations.push({
             op: "remove",
-            id: value24,
+            id: slideId,
           });
         }
         let expectedOrder: Dynamic = state.prev.filter(
-          (input?: Dynamic, ..._extraArguments132: Dynamic[]): Dynamic =>
-            !removedIds.includes(input),
+          (slideId?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+            !removedIds.includes(slideId),
         );
         let mintId: Dynamic = (
-          input?: Dynamic,
-          options?: Dynamic,
-          ..._extraArguments133: Dynamic[]
+          sourceId?: Dynamic,
+          prefix?: Dynamic,
+          ..._unusedArgs: Dynamic[]
         ): Dynamic => {
-          if (proposedId(input) !== null) return [proposedId(input), false];
-          let value24: Dynamic = options
-            ? (/^[A-Za-z]/.test(options) ? options.slice(0, 16) : "file") +
+          if (proposedId(sourceId) !== null) return [proposedId(sourceId), false];
+          let baseId: Dynamic = prefix
+            ? (/^[A-Za-z]/.test(prefix) ? prefix.slice(0, 16) : "file") +
               "-copy"
             : "new";
-          let value25: Dynamic = value24;
+          let candidateId: Dynamic = baseId;
           for (
             let count: Dynamic = 2;
-            state.slides.has(value25) || !PLAIN_FILE_ID.test(value25);
+            state.slides.has(candidateId) || !PLAIN_FILE_ID.test(candidateId);
             count++
           )
-            value25 = value24 + "-" + count;
-          return [value25, true];
+            candidateId = baseId + "-" + count;
+          return [candidateId, true];
         };
-        for (let value24 of [...container.children]) {
-          if (!newElements.includes(value24)) continue;
-          let value25: Dynamic =
-            state.copyOf.get(value24) && activeEntry(state.copyOf.get(value24))
-              ? state.copyOf.get(value24)
+        for (let child of [...container.children]) {
+          if (!newElements.includes(child)) continue;
+          let childEntry: Dynamic =
+            state.copyOf.get(child) && activeEntry(state.copyOf.get(child))
+              ? state.copyOf.get(child)
               : null;
-          let [value26, value27]: Dynamic = mintId(value24, value25);
-          value24.setAttribute("id", value26);
-          let record2: Dynamic = {
-            id: value26,
+          let [newId, wasMinted]: Dynamic = mintId(child, childEntry);
+          child.setAttribute("id", newId);
+          let slideRecord: Dynamic = {
+            id: newId,
             text: "",
             holder: container,
-            el: value24,
+            el: child,
             last: null,
             removed: false,
-            hadTbody: value25
-              ? state.slides.get(value25).hadTbody
-              : /<tbody[\s>]/i.test(value24.outerHTML),
+            hadTbody: childEntry
+              ? state.slides.get(childEntry).hadTbody
+              : /<tbody[\s>]/i.test(child.outerHTML),
             made: true,
             born: state.n,
             rootId: null,
             section: null,
             hadSection: false,
             raw: null,
-            title: value25 ? state.slides.get(value25).title : "",
+            title: childEntry ? state.slides.get(childEntry).title : "",
           };
-          state.slides.set(value26, record2);
-          value5(record2, value24);
-          let value28: Dynamic =
-            value24.previousElementSibling &&
-            state.fileOf(value24.previousElementSibling);
-          let value29: Dynamic =
-            value24.nextElementSibling &&
-            state.fileOf(value24.nextElementSibling);
-          let entry: Dynamic = state.whereOf.get(value24);
-          let value30: Dynamic = value25
+          state.slides.set(newId, slideRecord);
+          registerElement(slideRecord, child);
+          let afterId: Dynamic =
+            child.previousElementSibling &&
+            state.fileOf(child.previousElementSibling);
+          let beforeId: Dynamic =
+            child.nextElementSibling &&
+            state.fileOf(child.nextElementSibling);
+          let entry: Dynamic = state.whereOf.get(child);
+          let operation: Dynamic = childEntry
             ? {
                 op: "duplicate",
-                id: value25,
-                newId: value26,
+                id: childEntry,
+                newId: newId,
               }
             : Object.assign(
                 {
                   op: "add",
                   html: "",
-                  id: value26,
+                  id: newId,
                 },
                 entry
                   ? {
                       where: entry,
                     }
-                  : value28
+                  : afterId
                     ? {
-                        after: value28,
+                        after: afterId,
                       }
-                    : value29
+                    : beforeId
                       ? {
-                          before: value29,
+                          before: beforeId,
                         }
                       : {},
               );
-          if (value25 && entry) value30.where = entry;
-          if (value27) value30.minted = true;
+          if (childEntry && entry) operation.where = entry;
+          if (wasMinted) operation.minted = true;
           if (
-            (operations.push(value30),
-            (record2.op = value30),
-            (record2.src = value25),
-            value25)
+            (operations.push(operation),
+            (slideRecord.op = operation),
+            (slideRecord.src = childEntry),
+            childEntry)
           )
             expectedOrder.splice(
-              expectedOrder.indexOf(value25) + 1,
+              expectedOrder.indexOf(childEntry) + 1,
               0,
-              value26,
+              newId,
             );
-          else if (value28 && expectedOrder.includes(value28))
+          else if (afterId && expectedOrder.includes(afterId))
             expectedOrder.splice(
-              expectedOrder.indexOf(value28) + 1,
+              expectedOrder.indexOf(afterId) + 1,
               0,
-              value26,
+              newId,
             );
-          else if (value29 && expectedOrder.includes(value29))
-            expectedOrder.splice(expectedOrder.indexOf(value29), 0, value26);
-          else expectedOrder.push(value26);
+          else if (beforeId && expectedOrder.includes(beforeId))
+            expectedOrder.splice(expectedOrder.indexOf(beforeId), 0, newId);
+          else expectedOrder.push(newId);
         }
-        let actualOrder: Dynamic = value6();
+        let actualOrder: Dynamic = setOrder();
         if (actualOrder.join() !== expectedOrder.join()) {
           let match: Dynamic = actualOrder.find(
-            (input?: Dynamic, ..._extraArguments134: Dynamic[]): Dynamic =>
+            (candidateMovedId?: Dynamic, ..._unusedFilterArgs: Dynamic[]): Dynamic =>
               actualOrder
                 .filter(
                   (
-                    input2?: Dynamic,
-                    ..._extraArguments135: Dynamic[]
-                  ): Dynamic => input2 !== input,
+                    slideId?: Dynamic,
+                    ..._unusedArgs: Dynamic[]
+                  ): Dynamic => slideId !== candidateMovedId,
                 )
                 .join() ===
               expectedOrder
                 .filter(
                   (
-                    input2?: Dynamic,
-                    ..._extraArguments136: Dynamic[]
-                  ): Dynamic => input2 !== input,
+                    slideId?: Dynamic,
+                    ..._unusedArgs: Dynamic[]
+                  ): Dynamic => slideId !== candidateMovedId,
                 )
                 .join(),
           );
-          let value24: Dynamic = actualOrder.indexOf(match);
+          let matchIndex: Dynamic = actualOrder.indexOf(match);
           operations.push(
             match !== undefined && actualOrder.length > 1
               ? Object.assign(
@@ -2560,9 +2560,9 @@ function createEditRuntime(
                     op: "move",
                     id: match,
                   },
-                  value24 > 0
+                  matchIndex > 0
                     ? {
-                        after: actualOrder[value24 - 1],
+                        after: actualOrder[matchIndex - 1],
                       }
                     : {
                         before: actualOrder[1],
@@ -2580,18 +2580,18 @@ function createEditRuntime(
       for (let expectedOrder of state.prev) {
         let mintId: Dynamic = state.slides.get(expectedOrder);
         if (mintId.el.outerHTML === mintId.raw) continue;
-        let value24: Dynamic;
+        let html: Dynamic;
         try {
-          value24 = state.clean(mintId);
-        } catch (value25: Dynamic) {
-          problems.push(String(value25));
+          html = state.clean(mintId);
+        } catch (error: Dynamic) {
+          problems.push(String(error));
           continue;
         }
         if (
           ((mintId.raw = mintId.el.outerHTML),
           mintId.born === state.n && mintId.op)
         ) {
-          if (value24.length > limits.maxHtml) {
+          if (html.length > limits.maxHtml) {
             problems.push(
               'the text of the file "' +
                 expectedOrder +
@@ -2601,11 +2601,11 @@ function createEditRuntime(
             );
             continue;
           }
-          if (((mintId.last = value24), mintId.op.op === "add"))
-            mintId.op.html = value24;
+          if (((mintId.last = html), mintId.op.op === "add"))
+            mintId.op.html = html;
           else {
             let entry: Dynamic = state.slides.get(mintId.src);
-            let value25: Dynamic =
+            let normalizedHtml: Dynamic =
               entry.rootId === null
                 ? entry.last.replace(
                     /^(<[a-z][a-z0-9-]*)/i,
@@ -2615,12 +2615,12 @@ function createEditRuntime(
                     'id="' + entry.rootId + '"',
                     'id="' + expectedOrder + '"',
                   );
-            if (value24 !== value25) mintId.op.html = value24;
+            if (html !== normalizedHtml) mintId.op.html = html;
           }
           continue;
         }
-        if (value24 === mintId.last) continue;
-        if (value24.length > limits.maxHtml) {
+        if (html === mintId.last) continue;
+        if (html.length > limits.maxHtml) {
           problems.push(
             'the text of the file "' +
               expectedOrder +
@@ -2630,10 +2630,10 @@ function createEditRuntime(
           );
           continue;
         }
-        mintId.last = value24;
+        mintId.last = html;
         frames.push({
           id: expectedOrder,
-          html: value24,
+          html: html,
         });
       }
       for (let expectedOrder of state.prev) {
@@ -2647,13 +2647,13 @@ function createEditRuntime(
             mintId.op.html = mintId.last;
         }
       }
-      let value23: Dynamic = String(document.title || "");
-      if (value23 !== state.title)
-        if (value23.trim() && value23.length <= 300) {
-          state.title = value23;
+      let documentTitle: Dynamic = String(document.title || "");
+      if (documentTitle !== state.title)
+        if (documentTitle.trim() && documentTitle.length <= 300) {
+          state.title = documentTitle;
           operations.push({
             op: "title",
-            title: value23.trim(),
+            title: documentTitle.trim(),
           });
         } else {
           document.title = state.title;
@@ -2692,8 +2692,8 @@ function createEditRuntime(
         mintId.raw = mintId.el.outerHTML;
       }
       let removalCount: Dynamic = operations.filter(
-        (input?: Dynamic, ..._extraArguments137: Dynamic[]): Dynamic =>
-          input.op === "remove",
+        (operation?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+          operation.op === "remove",
       ).length;
       if (operations.length - removalCount > state.opsLeft) {
         problems.push(
@@ -2708,432 +2708,432 @@ function createEditRuntime(
         problems: problems,
       };
     };
-    let value9: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments138: Dynamic[]
+    let findEntry: Dynamic = (
+      slideId?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      let entry: Dynamic = state.slides.get(input);
+      let entry: Dynamic = state.slides.get(slideId);
       return Object.freeze({
-        id: input,
-        path: state.pathOf.has(input) ? state.pathOf.get(input) : null,
+        id: slideId,
+        path: state.pathOf.has(slideId) ? state.pathOf.get(slideId) : null,
         title: (entry && entry.title) || "",
       });
     };
-    for (let value23 of metadata.slides) {
-      let entry: Dynamic = state.slides.get(String(value23 && value23.id));
+    for (let slideMetadata of metadata.slides) {
+      let entry: Dynamic = state.slides.get(String(slideMetadata && slideMetadata.id));
       if (entry)
-        entry.title = String((value23 && value23.title) || "").slice(0, 300);
+        entry.title = String((slideMetadata && slideMetadata.title) || "").slice(0, 300);
     }
-    let value10: Dynamic = (..._extraArguments139: Dynamic[]): Dynamic =>
+    let errorList: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic =>
       state.order().join(", ");
-    let value11: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments140: Dynamic[]
+    let resolveEntry: Dynamic = (
+      slideId?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      let value23: Dynamic =
-        typeof input === "string" && state.paths.has(input)
-          ? state.paths.get(input)
-          : input;
-      let value24: Dynamic =
-        typeof value23 === "string" ? state.slides.get(value23) : null;
-      if (!value24 || value24.removed || value24.el.parentNode !== container)
+      let normalizedId: Dynamic =
+        typeof slideId === "string" && state.paths.has(slideId)
+          ? state.paths.get(slideId)
+          : slideId;
+      let entry: Dynamic =
+        typeof normalizedId === "string" ? state.slides.get(normalizedId) : null;
+      if (!entry || entry.removed || entry.el.parentNode !== container)
         throw Error(
           "no file " +
-            JSON.stringify(input === undefined ? null : input).slice(0, 80) +
-            (value10()
-              ? "; the files are: " + value10()
+            JSON.stringify(slideId === undefined ? null : slideId).slice(0, 80) +
+            (errorList()
+              ? "; the files are: " + errorList()
               : "; there is no file yet"),
         );
-      return value24;
+      return entry;
     };
-    let value12: Dynamic = (
-      input?: Dynamic,
+    let decorateElement: Dynamic = (
+      entryInput?: Dynamic,
       entry?: Dynamic,
-      ..._extraArguments141: Dynamic[]
+      ..._unusedArgs: Dynamic[]
     ): Dynamic =>
-      Object.defineProperties(input, {
+      Object.defineProperties(entryInput, {
         id: {
           value: entry.id,
         },
         path: {
-          value: value9(entry.id).path,
+          value: findEntry(entry.id).path,
         },
         title: {
-          value: value9(entry.id).title,
+          value: findEntry(entry.id).title,
         },
       });
-    let value13: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments142: Dynamic[]
+    let getEntryById: Dynamic = (
+      slideId?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      let value23: Dynamic = value11(input);
-      return value12(state.seen(jquery(value23.el)), value23);
+      let entry: Dynamic = resolveEntry(slideId);
+      return decorateElement(state.seen(jquery(entry.el)), entry);
     };
-    let value14: Dynamic = (..._extraArguments143: Dynamic[]): Dynamic =>
+    let selectSlides: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic =>
       state.seen(
         jquery().pushStack(
           state
             .order()
             .map(
-              (input?: Dynamic, ..._extraArguments144: Dynamic[]): Dynamic =>
-                state.slides.get(input).el,
+              (slideId?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                state.slides.get(slideId).el,
             ),
         ),
       );
-    let value15: Dynamic = (...input: Dynamic[]): Dynamic => {
+    let selectByInput: Dynamic = (...selection: Dynamic[]): Dynamic => {
       let items: Dynamic = [];
-      for (let value23 of input.length ? input : [undefined]) {
-        if (typeof value23 !== "number" && typeof value23 !== "string")
+      for (let selectionValue of selection.length ? selection : [undefined]) {
+        if (typeof selectionValue !== "number" && typeof selectionValue !== "string")
           throw Error(
             'handles are numbers or strings: k(7), k(3, 5), k("k7 k9")',
           );
-        for (let value24 of typeof value23 === "number"
-          ? [String(value23)]
-          : value23.split(/[\s,#]+/).filter(Boolean)) {
+        for (let slideId of typeof selectionValue === "number"
+          ? [String(selectionValue)]
+          : selectionValue.split(/[\s,#]+/).filter(Boolean)) {
           if (items.length >= 200)
             throw Error("at most 200 handles in one call");
-          let value25: Dynamic = /^\d{1,6}$/.test(value24)
-            ? state.P + value24
-            : value24;
-          let value26: Dynamic = state.elOf.has(value25)
-            ? state.elOf.get(value25)
+          let normalizedSlideId: Dynamic = /^\d{1,6}$/.test(slideId)
+            ? state.P + slideId
+            : slideId;
+          let element: Dynamic = state.elOf.has(normalizedSlideId)
+            ? state.elOf.get(normalizedSlideId)
             : null;
-          if (!value26 || !state.fileOf(value26))
+          if (!element || !state.fileOf(element))
             throw Error(
               "no element " +
-                value24.slice(0, 20) +
+                slideId.slice(0, 20) +
                 " (handles look like " +
                 state.P +
                 "1, " +
                 state.P +
                 "2 …; a removed element's handle is not given again)",
             );
-          items.push(value26);
+          items.push(element);
         }
       }
       return state.seen(jquery().pushStack(items));
     };
-    let value16: Dynamic = (
-      input?: Dynamic,
-      ..._extraArguments145: Dynamic[]
+    let validateOptions: Dynamic = (
+      styleProperties?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic =>
-      input !== null &&
-      typeof input === "object" &&
-      !Array.isArray(input) &&
-      Object.keys(input).length <= 100 &&
-      Object.keys(input).every(
-        (input2?: Dynamic, ..._extraArguments146: Dynamic[]): Dynamic =>
-          typeof input[input2] === "string" ||
-          (typeof input[input2] === "number" &&
-            input[input2] === input[input2]),
+      styleProperties !== null &&
+      typeof styleProperties === "object" &&
+      !Array.isArray(styleProperties) &&
+      Object.keys(styleProperties).length <= 100 &&
+      Object.keys(styleProperties).every(
+        (key?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+          typeof styleProperties[key] === "string" ||
+          (typeof styleProperties[key] === "number" &&
+            styleProperties[key] === styleProperties[key]),
       );
-    let value17: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value23?: Dynamic,
-      ..._extraArguments147: Dynamic[]
+    let validateHandleMap: Dynamic = (
+      handles?: Dynamic,
+      methodName?: Dynamic,
+      validateValue?: Dynamic,
+      onHandle?: Dynamic,
+      ..._unusedHandleArgs: Dynamic[]
     ): Dynamic => {
-      if (!input || typeof input !== "object" || Array.isArray(input))
-        throw Error(options + " takes { k7: … }");
-      let value24: Dynamic = Object.keys(input);
-      if (value24.length > 200)
-        throw Error(options + ": at most 200 handles in one call");
-      let mapped: Dynamic = value24.map(
-        (input2?: Dynamic, ..._extraArguments148: Dynamic[]): Dynamic => {
-          if (!context(input[input2]))
+      if (!handles || typeof handles !== "object" || Array.isArray(handles))
+        throw Error(methodName + " takes { k7: … }");
+      let handleKeys: Dynamic = Object.keys(handles);
+      if (handleKeys.length > 200)
+        throw Error(methodName + ": at most 200 handles in one call");
+      let mapped: Dynamic = handleKeys.map(
+        (handleKey?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic => {
+          if (!validateValue(handles[handleKey]))
             throw Error(
-              options +
+              methodName +
                 ": the value for " +
-                input2.slice(0, 20) +
+                handleKey.slice(0, 20) +
                 " must be " +
-                (options === "style"
+                (methodName === "style"
                   ? "an object like { color: '#fff', 'font-size': 40 }"
                   : "a string"),
             );
-          return [value15(input2), input[input2]];
+          return [selectByInput(handleKey), handles[handleKey]];
         },
       );
-      for (let [value25, value26] of mapped) value23(value25, value26);
+      for (let [key, handleValue] of mapped) onHandle(key, handleValue);
     };
-    let value18: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      ..._extraArguments149: Dynamic[]
+    let insertElements: Dynamic = (
+      element?: Dynamic,
+      position?: Dynamic,
+      relativeTo?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      if (options === undefined) {
-        if (context) jquery(context).after(input);
-        else container.appendChild(input);
+      if (position === undefined) {
+        if (relativeTo) jquery(relativeTo).after(element);
+        else container.appendChild(element);
         return;
       }
-      if (!options || typeof options !== "object" || Array.isArray(options))
+      if (!position || typeof position !== "object" || Array.isArray(position))
         throw Error(
           "the place is {before: name}, {after: name}, or a flat object the page understands",
         );
-      let value23: Dynamic = Object.keys(options);
+      let positionKeys: Dynamic = Object.keys(position);
       if (
-        value23.length === 1 &&
-        (value23[0] === "before" || value23[0] === "after")
+        positionKeys.length === 1 &&
+        (positionKeys[0] === "before" || positionKeys[0] === "after")
       ) {
-        let el: Dynamic = value11(options[value23[0]]).el;
-        if (el === input) throw Error("a file cannot go next to itself");
-        if (value23[0] === "before") jquery(el).before(input);
-        else jquery(el).after(input);
+        let el: Dynamic = resolveEntry(position[positionKeys[0]]).el;
+        if (el === element) throw Error("a file cannot go next to itself");
+        if (positionKeys[0] === "before") jquery(el).before(element);
+        else jquery(el).after(element);
         return;
       }
-      let record2: Dynamic = {};
-      if (!value23.length || value23.length > 8)
+      let positionRecord: Dynamic = {};
+      if (!positionKeys.length || positionKeys.length > 8)
         throw Error(
           "the place is {before: name}, {after: name}, or a flat object of short strings / numbers",
         );
-      for (let value24 of value23) {
-        let value25: Dynamic = options[value24];
+      for (let key of positionKeys) {
+        let positionValue: Dynamic = position[key];
         if (
-          !/^[A-Za-z][\w-]{0,31}$/.test(value24) ||
-          value24 === "before" ||
-          value24 === "after" ||
+          !/^[A-Za-z][\w-]{0,31}$/.test(key) ||
+          key === "before" ||
+          key === "after" ||
           !(
-            (typeof value25 === "string" && value25.length <= 100) ||
-            (typeof value25 === "number" && value25 === value25)
+            (typeof positionValue === "string" && positionValue.length <= 100) ||
+            (typeof positionValue === "number" && positionValue === positionValue)
           )
         )
           throw Error(
             "the place is {before: name}, {after: name}, or a flat object of short strings / numbers",
           );
-        record2[value24] = value25;
+        positionRecord[key] = positionValue;
       }
-      if ((state.whereOf.set(input, record2), input.parentNode !== container))
-        if (context) jquery(context).after(input);
-        else container.appendChild(input);
-      return record2;
+      if ((state.whereOf.set(element, positionRecord), element.parentNode !== container))
+        if (relativeTo) jquery(relativeTo).after(element);
+        else container.appendChild(element);
+      return positionRecord;
     };
-    let value19: Dynamic = (
+    let parseElement: Dynamic = (
       element?: Dynamic,
-      ..._extraArguments150: Dynamic[]
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
       if (element && element.jquery) element = element[0];
       if (typeof element === "string") {
         if (element.length > limits.maxHtml)
           throw Error("the new file is over " + limits.maxHtml + " characters");
-        let value23: Dynamic = document.createElement("div");
+        let parsedElement: Dynamic = document.createElement("div");
         if (
-          ((value23.innerHTML = element.trim()), value23.children.length !== 1)
+          ((parsedElement.innerHTML = element.trim()), parsedElement.children.length !== 1)
         )
           throw Error("add(html) takes ONE element");
-        element = value23.children[0];
+        element = parsedElement.children[0];
       }
       if (!element || element.nodeType !== 1)
         throw Error("add(html) takes ONE element, as text or as a jQuery set");
       return element;
     };
-    let value20: Dynamic = (..._extraArguments151: Dynamic[]): Dynamic => {
+    let refreshOrder: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic => {
       if (state.halted) throw Error("the reply ended at undo()");
     };
     let record: Dynamic = {
-      file: value13,
-      files: value14,
-      all: (input?: Dynamic, ..._extraArguments152: Dynamic[]): Dynamic =>
-        input === undefined ? value14() : select(input),
-      k: value15,
-      fileOf: (input?: Dynamic, ..._extraArguments153: Dynamic[]): Dynamic => {
-        let value23: Dynamic = input && input.jquery ? input[0] : input;
-        let value24: Dynamic =
-          value23 && value23.nodeType === 1 ? state.fileOf(value23) : null;
-        if (!value24)
+      file: getEntryById,
+      files: selectSlides,
+      all: (selection?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+        selection === undefined ? selectSlides() : select(selection),
+      k: selectByInput,
+      fileOf: (element?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic => {
+        let domElement: Dynamic = element && element.jquery ? element[0] : element;
+        let entry: Dynamic =
+          domElement && domElement.nodeType === 1 ? state.fileOf(domElement) : null;
+        if (!entry)
           throw Error(
             "fileOf takes an element (or a set) that is inside a file",
           );
-        return value9(value24);
+        return findEntry(entry);
       },
       add: (
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments154: Dynamic[]
+        element?: Dynamic,
+        position?: Dynamic,
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic => {
-        value20();
-        let value23: Dynamic = value19(input);
-        value18(value23, options);
-        return jquery(value23);
+        refreshOrder();
+        let insertedElement: Dynamic = parseElement(element);
+        insertElements(insertedElement, position);
+        return jquery(insertedElement);
       },
       copy: (
-        input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        ..._extraArguments155: Dynamic[]
+        element?: Dynamic,
+        requestedId?: Dynamic,
+        relativeTo?: Dynamic,
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic => {
         if (
-          (value20(),
-          options !== null &&
-            typeof options === "object" &&
-            context === undefined)
+          (refreshOrder(),
+          requestedId !== null &&
+            typeof requestedId === "object" &&
+            relativeTo === undefined)
         ) {
-          context = options;
-          options = undefined;
+          relativeTo = requestedId;
+          requestedId = undefined;
         }
-        let value23: Dynamic = value11(input);
-        let value24: Dynamic = jquery(value23.el).clone();
-        if (options !== undefined) {
+        let sourceEntry: Dynamic = resolveEntry(element);
+        let clonedElement: Dynamic = jquery(sourceEntry.el).clone();
+        if (requestedId !== undefined) {
           if (
-            typeof options !== "string" ||
-            !validFileId.test(options) ||
-            state.slides.has(options)
+            typeof requestedId !== "string" ||
+            !validFileId.test(requestedId) ||
+            state.slides.has(requestedId)
           )
             throw Error(
               "the new id must be letters, digits, - or _ (at most 64) and not taken",
             );
-          value24.attr("id", options);
+          clonedElement.attr("id", requestedId);
         }
-        value18(value24[0], context, value23.el);
-        return value24;
+        insertElements(clonedElement[0], relativeTo, sourceEntry.el);
+        return clonedElement;
       },
       move: (
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments156: Dynamic[]
+        element?: Dynamic,
+        id?: Dynamic,
+        ..._unusedCallbackArgs: Dynamic[]
       ): Dynamic => {
-        value20();
-        let value23: Dynamic = value11(input);
-        let value24: Dynamic = value18(
-          value23.el,
-          options === undefined ? null : options,
+        refreshOrder();
+        let sourceEntry: Dynamic = resolveEntry(element);
+        let positionRecord: Dynamic = insertElements(
+          sourceEntry.el,
+          id === undefined ? null : id,
         );
-        if (value24) {
-          state.whereOf.delete(value23.el);
+        if (positionRecord) {
+          state.whereOf.delete(sourceEntry.el);
           state.ops.push({
             op: {
               op: "move",
-              id: value23.id,
-              where: value24,
+              id: sourceEntry.id,
+              where: positionRecord,
             },
             entry: null,
           });
         }
       },
-      remove: (input?: Dynamic, ..._extraArguments157: Dynamic[]): Dynamic => {
-        value20();
-        jquery(value11(input).el).remove();
+      remove: (slideId?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic => {
+        refreshOrder();
+        jquery(resolveEntry(slideId).el).remove();
       },
       index: Object.freeze({
         get title(): Dynamic {
           return String(document.title);
         },
-        set title(input: Dynamic) {
-          if (typeof input !== "string" || !input.trim() || input.length > 300)
+        set title(title: Dynamic) {
+          if (typeof title !== "string" || !title.trim() || title.length > 300)
             throw Error("the title takes 1 to 300 characters");
-          document.title = input;
+          document.title = title;
         },
-        sections: (..._extraArguments158: Dynamic[]): Dynamic =>
+        sections: (..._unusedSectionArgs: Dynamic[]): Dynamic =>
           state
             .order()
             .map(
-              (input?: Dynamic, ..._extraArguments159: Dynamic[]): Dynamic =>
-                state.slides.get(input),
+              (slideId?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+                state.slides.get(slideId),
             )
             .filter(
-              (input?: Dynamic, ..._extraArguments160: Dynamic[]): Dynamic =>
-                input.el.getAttribute("data-section") !== null &&
-                !input.hadSection,
+              (sectionEntry?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+                sectionEntry.el.getAttribute("data-section") !== null &&
+                !sectionEntry.hadSection,
             )
             .map(
-              (entry?: Dynamic, ..._extraArguments161: Dynamic[]): Dynamic => ({
+              (entry?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic => ({
                 start: entry.id,
                 title: entry.el.getAttribute("data-section"),
               }),
             ),
         section: (
-          input?: Dynamic,
-          options?: Dynamic,
-          ..._extraArguments162: Dynamic[]
+          slideId?: Dynamic,
+          sectionTitle?: Dynamic,
+          ..._unusedSectionArgs: Dynamic[]
         ): Dynamic => {
-          let value23: Dynamic = value11(input);
-          let value24: Dynamic = Object.freeze({
-            start: value23.id,
+          let entry: Dynamic = resolveEntry(slideId);
+          let sectionRecord: Dynamic = Object.freeze({
+            start: entry.id,
             get title(): Dynamic {
-              return value23.el.getAttribute("data-section");
+              return entry.el.getAttribute("data-section");
             },
             rename: (
-              input2?: Dynamic,
-              ..._extraArguments163: Dynamic[]
+              title?: Dynamic,
+              ..._unusedArgs: Dynamic[]
             ): Dynamic => {
               if (
-                typeof input2 !== "string" ||
-                !input2.trim() ||
-                input2.length > 300
+                typeof title !== "string" ||
+                !title.trim() ||
+                title.length > 300
               )
                 throw Error("a section title takes 1 to 300 characters");
-              if (value23.el.getAttribute("data-section") === null)
-                throw Error('no section starts at "' + value23.id + '"');
-              value23.el.setAttribute("data-section", input2.trim());
+              if (entry.el.getAttribute("data-section") === null)
+                throw Error('no section starts at "' + entry.id + '"');
+              entry.el.setAttribute("data-section", title.trim());
             },
-            remove: (..._extraArguments164: Dynamic[]): Dynamic => {
-              if (value23.el.getAttribute("data-section") === null)
-                throw Error('no section starts at "' + value23.id + '"');
-              value23.el.removeAttribute("data-section");
+            remove: (..._unusedArgs: Dynamic[]): Dynamic => {
+              if (entry.el.getAttribute("data-section") === null)
+                throw Error('no section starts at "' + entry.id + '"');
+              entry.el.removeAttribute("data-section");
             },
           });
-          if (options === undefined) {
-            if (value23.el.getAttribute("data-section") === null)
-              throw Error('no section starts at "' + value23.id + '"');
-            return value24;
+          if (sectionTitle === undefined) {
+            if (entry.el.getAttribute("data-section") === null)
+              throw Error('no section starts at "' + entry.id + '"');
+            return sectionRecord;
           }
           if (
-            typeof options !== "string" ||
-            !options.trim() ||
-            options.length > 300
+            typeof sectionTitle !== "string" ||
+            !sectionTitle.trim() ||
+            sectionTitle.length > 300
           )
             throw Error("a section title takes 1 to 300 characters");
-          if (value23.el.getAttribute("data-section") !== null)
+          if (entry.el.getAttribute("data-section") !== null)
             throw Error(
-              'a section already starts at "' + value23.id + '"; rename it',
+              'a section already starts at "' + entry.id + '"; rename it',
             );
-          value23.el.setAttribute("data-section", options.trim());
-          return value24;
+          entry.el.setAttribute("data-section", sectionTitle.trim());
+          return sectionRecord;
         },
       }),
-      style: (input?: Dynamic, ..._extraArguments165: Dynamic[]): Dynamic =>
-        value17(
-          input,
+      style: (styleValue?: Dynamic, ..._unusedStyleArgs: Dynamic[]): Dynamic =>
+        validateHandleMap(
+          styleValue,
           "style",
-          value16,
+          validateOptions,
           (
-            input2?: Dynamic,
-            options?: Dynamic,
-            ..._extraArguments166: Dynamic[]
-          ): Dynamic => input2.css(Object.assign({}, options)),
+            element?: Dynamic,
+            styleOptions?: Dynamic,
+            ..._unusedArgs: Dynamic[]
+          ): Dynamic => element.css(Object.assign({}, styleOptions)),
         ),
-      text: (input?: Dynamic, ..._extraArguments167: Dynamic[]): Dynamic =>
-        value17(
-          input,
+      text: (textContent?: Dynamic, ..._unusedTextArgs: Dynamic[]): Dynamic =>
+        validateHandleMap(
+          textContent,
           "text",
-          (input2?: Dynamic, ..._extraArguments168: Dynamic[]): Dynamic =>
-            typeof input2 === "string" ||
-            (typeof input2 === "number" && input2 === input2),
+          (candidateValue?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+            typeof candidateValue === "string" ||
+            (typeof candidateValue === "number" && candidateValue === candidateValue),
           (
-            input2?: Dynamic,
-            options?: Dynamic,
-            ..._extraArguments169: Dynamic[]
-          ): Dynamic => input2.text(String(options)),
+            element?: Dynamic,
+            textValue?: Dynamic,
+            ..._unusedArgs: Dynamic[]
+          ): Dynamic => element.text(String(textValue)),
         ),
       read: state.log,
       document: document,
-      layout: (input?: Dynamic, ..._extraArguments170: Dynamic[]): Dynamic => {
+      layout: (layoutName?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic => {
         if (
-          typeof input !== "string" ||
-          !Object.prototype.hasOwnProperty.call(state.layouts, input)
+          typeof layoutName !== "string" ||
+          !Object.prototype.hasOwnProperty.call(state.layouts, layoutName)
         )
           throw Error(
             "no layout named " +
-              JSON.stringify(input) +
+              JSON.stringify(layoutName) +
               "; the layouts are: " +
               Object.keys(state.layouts).join(", "),
           );
-        return state.layouts[input];
+        return state.layouts[layoutName];
       },
-      layouts: (..._extraArguments171: Dynamic[]): Dynamic =>
+      layouts: (..._unusedArgs: Dynamic[]): Dynamic =>
         Object.keys(state.layouts),
-      undo: (..._extraArguments172: Dynamic[]): Dynamic => {
-        value20();
+      undo: (..._unusedArgs: Dynamic[]): Dynamic => {
+        refreshOrder();
         state.ops.push({
           op: {
             op: "undo",
@@ -3143,16 +3143,16 @@ function createEditRuntime(
         state.halted = true;
       },
       askClaude: (
-        input?: Dynamic,
-        ..._extraArguments173: Dynamic[]
+        prompt?: Dynamic,
+        ..._unusedArgs: Dynamic[]
       ): Dynamic => {
-        value20();
+        refreshOrder();
         state.ops.push({
           op:
-            typeof input === "string" && input.trim()
+            typeof prompt === "string" && prompt.trim()
               ? {
                   op: "askClaude",
-                  prompt: input.trim().slice(0, 1000),
+                  prompt: prompt.trim().slice(0, 1000),
                 }
               : {
                   op: "askClaude",
@@ -3169,10 +3169,10 @@ function createEditRuntime(
       duplicate: record.copy,
       move: record.move,
       remove: record.remove,
-      title: (input?: Dynamic, ..._extraArguments174: Dynamic[]): Dynamic =>
-        input === undefined
+      title: (title?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+        title === undefined
           ? record.index.title
-          : void (record.index.title = input),
+          : void (record.index.title = title),
       section: record.index.section,
       sections: record.index.sections,
       layout: record.layout,
@@ -3182,9 +3182,9 @@ function createEditRuntime(
       undo: record.undo,
       get slides(): Dynamic {
         return state.order().map(
-          (input?: Dynamic, ..._extraArguments175: Dynamic[]): Dynamic => ({
-            id: input,
-            title: value9(input).title,
+          (slideId?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic => ({
+            id: slideId,
+            title: findEntry(slideId).title,
           }),
         );
       },
@@ -3192,578 +3192,578 @@ function createEditRuntime(
         return currentFileId;
       },
     });
-    state.me = (..._extraArguments176: Dynamic[]): Dynamic => {
-      let value23: Dynamic = currentFileId
+    state.me = (..._unusedArgs: Dynamic[]): Dynamic => {
+      let currentEntry: Dynamic = currentFileId
         ? state.slides.get(currentFileId)
         : null;
-      if (value23 && !value23.removed && value23.el.parentNode === container)
-        return value12(jquery(value23.el), value23);
+      if (currentEntry && !currentEntry.removed && currentEntry.el.parentNode === container)
+        return decorateElement(jquery(currentEntry.el), currentEntry);
       state.goneMsg = currentFileId
         ? "this file was removed"
         : "there is no current file: say which, $('#goals h2'), or every file, $('h2'), or a handle, $('#k7')";
       return state.ghost;
     };
-    let value21: Dynamic = Object.assign({}, DEFAULT_SDK_NAMES);
-    let value22: Dynamic = (sdk && sdk.names) || {};
-    for (let value23 of Object.keys(value22))
-      if (value22[value23] === null) delete value21[value23];
+    let sdkNames: Dynamic = Object.assign({}, DEFAULT_SDK_NAMES);
+    let customNames: Dynamic = (sdk && sdk.names) || {};
+    for (let name of Object.keys(customNames))
+      if (customNames[name] === null) delete sdkNames[name];
       else if (
-        /^[A-Za-z_$][\w$]{0,30}$/.test(value23) &&
-        !["$", "slide", "deck", "log"].includes(value23) &&
-        Object.prototype.hasOwnProperty.call(record, value22[value23])
+        /^[A-Za-z_$][\w$]{0,30}$/.test(name) &&
+        !["$", "slide", "deck", "log"].includes(name) &&
+        Object.prototype.hasOwnProperty.call(record, customNames[name])
       )
-        value21[value23] = value22[value23];
-    state.pub = Object.keys(value21);
+        sdkNames[name] = customNames[name];
+    state.pub = Object.keys(sdkNames);
     try {
       Function(...state.pub, "");
-    } catch (value23: Dynamic) {
+    } catch (ignoredError: Dynamic) {
       state.pub = Object.keys(DEFAULT_SDK_NAMES);
-      Object.assign(value21, DEFAULT_SDK_NAMES);
+      Object.assign(sdkNames, DEFAULT_SDK_NAMES);
     }
     state.pubVals = state.pub.map(
-      (input?: Dynamic, ..._extraArguments177: Dynamic[]): Dynamic =>
-        record[value21[input]],
+      (sdkName?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+        record[sdkNames[sdkName]],
     );
   }
   function executeFileStatement(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments178: Dynamic[]
+    statement?: Dynamic,
+    compiledStatement?: Dynamic,
+    compileContext?: Dynamic,
+    ..._unusedExecuteArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = String(input);
-    let value3: Dynamic = project;
-    let value4: Dynamic = ++value3.n;
-    let value5: Dynamic = truncate(value2, limits.maxStmt);
-    if (((value3.logged = 0), (value3.ops = []), value3.halted)) {
+    let statementText: Dynamic = String(statement);
+    let projectState: Dynamic = project;
+    let statementNumber: Dynamic = ++projectState.n;
+    let shortStatement: Dynamic = truncate(statementText, limits.maxStmt);
+    if (((projectState.logged = 0), (projectState.ops = []), projectState.halted)) {
       emit({
         kind: "done" as const,
         seq: sequence++,
-        n: value4,
-        stmt: value5,
+        n: statementNumber,
+        stmt: shortStatement,
         changed: [],
         logged: 0,
         skipped: true,
       });
       return false;
     }
-    let value6: Dynamic = null;
-    if (!options)
+    let error: Dynamic = null;
+    if (!compiledStatement)
       try {
-        options = compileStatement(value2, context);
-      } catch (value9: Dynamic) {
-        value6 = String(value9);
+        compiledStatement = compileStatement(statementText, compileContext);
+      } catch (compileError: Dynamic) {
+        error = String(compileError);
       }
-    if (((executingStatement = value2), options))
+    if (((executingStatement = statementText), compiledStatement))
       try {
         invokeStatement(
-          options,
-          [select, value3.me(), deckApi, value3.log, ...value3.pubVals],
-          context,
+          compiledStatement,
+          [select, projectState.me(), deckApi, projectState.log, ...projectState.pubVals],
+          compileContext,
         );
-      } catch (value9: Dynamic) {
-        value6 = String(value9);
+      } catch (runtimeCompileError: Dynamic) {
+        error = String(runtimeCompileError);
       }
-    let value7: Dynamic;
+    let executionResult: Dynamic;
     try {
-      value7 = value3.settle();
-    } catch (value9: Dynamic) {
-      value7 = {
+      executionResult = projectState.settle();
+    } catch (executionFailure: Dynamic) {
+      executionResult = {
         frames: [],
         ops: [],
         problems: [
           "the box could not read the document after this statement: " +
-            String(value9),
+            String(executionFailure),
         ],
       };
     }
-    if (value6 !== null) emitError(value6, value2);
-    let mapped: Dynamic = value7.problems.map(
-      (input2?: Dynamic, ..._extraArguments179: Dynamic[]): Dynamic =>
-        [].concat(input2),
+    if (error !== null) emitError(error, statementText);
+    let mapped: Dynamic = executionResult.problems.map(
+      (items?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+        [].concat(items),
     );
-    let value8: Dynamic = mapped.length > 6;
-    for (let [value9, value10] of value8
+    let hasManyOperations: Dynamic = mapped.length > 6;
+    for (let [problemCode, problemDetail] of hasManyOperations
       ? [
           ...mapped.filter(
-            (input2?: Dynamic, ..._extraArguments180: Dynamic[]): Dynamic =>
-              input2[1],
+            (item?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+              item[1],
           ),
           ...mapped.filter(
-            (input2?: Dynamic, ..._extraArguments181: Dynamic[]): Dynamic =>
-              !input2[1],
+            (item?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+              !item[1],
           ),
         ].slice(0, 5)
       : mapped)
-      emitError(value9, value2, value10);
-    if (value8)
+      emitError(problemCode, statementText, problemDetail);
+    if (hasManyOperations)
       emitError(
         "and " + (mapped.length - 5) + " more problems in this statement",
-        value2,
+        statementText,
       );
-    if (value6 === null && mapped.length) value6 = mapped[0][0];
-    for (let value9 of value3.ops)
-      if (value9.op.op === "undo" || value9.op.op === "askClaude")
-        value7.ops.push(value9.op);
-      else if (value3.opsLeft > 0) {
-        value3.opsLeft--;
-        value7.ops.push(value9.op);
+    if (error === null && mapped.length) error = mapped[0][0];
+    for (let operation of projectState.ops)
+      if (operation.op.op === "undo" || operation.op.op === "askClaude")
+        executionResult.ops.push(operation.op);
+      else if (projectState.opsLeft > 0) {
+        projectState.opsLeft--;
+        executionResult.ops.push(operation.op);
       }
     if (!pace)
-      for (let value9 of value7.frames)
+      for (let frame of executionResult.frames)
         emit({
           kind: "html" as const,
           seq: sequence++,
-          slideId: value9.id,
-          html: value9.html,
-          stmt: value5,
+          slideId: frame.id,
+          html: frame.html,
+          stmt: shortStatement,
         });
     else {
-      for (let value9 of value7.frames)
-        queuedFrames.set(value9.id, {
-          html: value9.html,
-          stmt: value5,
+      for (let frame of executionResult.frames)
+        queuedFrames.set(frame.id, {
+          html: frame.html,
+          stmt: shortStatement,
         });
-      for (let value9 of value7.ops)
-        if (value9 && value9.op === "remove" && queuedFrames.has(value9.id)) {
-          let entry: Dynamic = queuedFrames.get(value9.id);
-          queuedFrames.delete(value9.id);
+      for (let operation of executionResult.ops)
+        if (operation && operation.op === "remove" && queuedFrames.has(operation.id)) {
+          let entry: Dynamic = queuedFrames.get(operation.id);
+          queuedFrames.delete(operation.id);
           emit({
             kind: "html" as const,
             seq: sequence++,
-            slideId: value9.id,
+            slideId: operation.id,
             html: entry.html,
             stmt: entry.stmt,
           });
         }
       sendQueuedFrames(false);
     }
-    for (let value9 of value7.ops) {
-      let value10: Dynamic = Object.assign({}, value9);
-      delete value10.where;
+    for (let operation of executionResult.ops) {
+      let normalizedOperation: Dynamic = Object.assign({}, operation);
+      delete normalizedOperation.where;
       emit({
         kind: "op" as const,
         seq: sequence++,
-        stmt: value5,
-        op: value9.where
-          ? Object.assign(value10, {
-              where: value9.where,
+        stmt: shortStatement,
+        op: operation.where
+          ? Object.assign(normalizedOperation, {
+              where: operation.where,
             })
-          : value10,
+          : normalizedOperation,
       });
     }
     let record: DoneMessage = {
       kind: "done" as const,
       seq: sequence++,
-      n: value4,
-      stmt: value5,
-      changed: value7.frames.map(
-        (entry?: Dynamic, ..._extraArguments182: Dynamic[]): Dynamic =>
+      n: statementNumber,
+      stmt: shortStatement,
+      changed: executionResult.frames.map(
+        (entry?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
           entry.id,
       ),
-      logged: value3.logged,
+      logged: projectState.logged,
     };
-    if (value3.rehandled.size) {
+    if (projectState.rehandled.size) {
       if (
-        ((record.handles = [...value3.rehandled].filter(
-          (input2?: Dynamic, ..._extraArguments183: Dynamic[]): Dynamic =>
-            value3.slides.get(input2) && !value3.slides.get(input2).removed,
+        ((record.handles = [...projectState.rehandled].filter(
+          (slideId?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+            projectState.slides.get(slideId) && !projectState.slides.get(slideId).removed,
         )),
-        value3.rehandled.clear(),
+        projectState.rehandled.clear(),
         !record.handles.length)
       )
         delete record.handles;
     }
-    if (value6 !== null)
+    if (error !== null)
       record.threw = {
-        message: formatError(value6),
+        message: formatError(error),
       };
     emit(record);
-    return value6 === null;
+    return error === null;
   }
   function sendFileView(
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments184: Dynamic[]
+    fileId?: Dynamic,
+    requestOptions?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     if (!initialized || !project || !project.v3) return;
-    input = project.paths.has(input) ? project.paths.get(input) : String(input);
-    let value2: Dynamic = project.view(input);
+    fileId = project.paths.has(fileId) ? project.paths.get(fileId) : String(fileId);
+    let fileView: Dynamic = project.view(fileId);
     emit({
       kind: "view" as const,
-      req: options,
-      slideId: input,
+      req: requestOptions,
+      slideId: fileId,
       attr: "id",
       prefix: project.P,
-      html: value2 === null ? "" : value2,
+      html: fileView === null ? "" : fileView,
     });
   }
   function sendHandles(
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments185: Dynamic[]
+    count?: Dynamic,
+    requestOptions?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     if (!initialized || !project || !project.v3) return;
     emit({
       kind: "handles" as const,
-      req: options,
+      req: requestOptions,
       attr: "id",
       prefix: project.P,
-      rows: project.list(Number.isInteger(input) && input > 0 ? input : 0),
+      rows: project.list(Number.isInteger(count) && count > 0 ? count : 0),
     });
   }
   function executeSlideStatement(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    ..._extraArguments186: Dynamic[]
+    statement?: Dynamic,
+    compiledStatement?: Dynamic,
+    compileContext?: Dynamic,
+    ..._unusedSlideArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = String(input);
-    let value3: Dynamic = project;
-    let value4: Dynamic = ++value3.n;
-    let value5: Dynamic = truncate(value2, limits.maxStmt);
-    if (((value3.logged = 0), (value3.ops = []), value3.halted)) {
+    let statementText: Dynamic = String(statement);
+    let projectState: Dynamic = project;
+    let statementNumber: Dynamic = ++projectState.n;
+    let shortStatement: Dynamic = truncate(statementText, limits.maxStmt);
+    if (((projectState.logged = 0), (projectState.ops = []), projectState.halted)) {
       emit({
         kind: "done" as const,
         seq: sequence++,
-        n: value4,
-        stmt: value5,
+        n: statementNumber,
+        stmt: shortStatement,
         changed: [],
         logged: 0,
         skipped: true,
       });
       return false;
     }
-    let value6: Dynamic = null;
-    if (!options)
+    let executionError: Dynamic = null;
+    if (!compiledStatement)
       try {
-        options = compileStatement(value2, context);
-      } catch (value8: Dynamic) {
-        value6 = String(value8);
+        compiledStatement = compileStatement(statementText, compileContext);
+      } catch (compileError: Dynamic) {
+        executionError = String(compileError);
       }
-    if (((executingStatement = value2), options))
+    if (((executingStatement = statementText), compiledStatement))
       try {
         invokeStatement(
-          options,
+          compiledStatement,
           [
             select,
-            value3.currentRemoved ? value3.ghost : jquery(currentElement),
+            projectState.currentRemoved ? projectState.ghost : jquery(currentElement),
             deckApi,
-            value3.log,
+            projectState.log,
           ],
-          context,
+          compileContext,
         );
-      } catch (value8: Dynamic) {
-        value6 = String(value8);
+      } catch (runtimeCompileError: Dynamic) {
+        executionError = String(runtimeCompileError);
       }
-    if (value6 !== null) emitError(value6, value2);
+    if (executionError !== null) emitError(executionError, statementText);
     let items: Dynamic = [];
-    let value7: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
-      ..._extraArguments187: Dynamic[]
+    let emitOperation: Dynamic = (
+      slideId?: Dynamic,
+      html?: Dynamic,
+      appendContext?: Dynamic,
+      ..._unusedArgs: Dynamic[]
     ): Dynamic => {
-      if (options2.length > limits.maxHtml) {
+      if (html.length > limits.maxHtml) {
         emitError(
           'the text of the slide "' +
-            input2 +
+            slideId +
             '" is over ' +
             limits.maxHtml +
             " characters; not sent",
-          value2,
+          statementText,
         );
         return;
       }
-      context2(options2);
-      items.push(input2);
+      appendContext(html);
+      items.push(slideId);
       emit({
         kind: "html" as const,
         seq: sequence++,
-        slideId: input2,
-        html: options2,
-        stmt: value5,
+        slideId: slideId,
+        html: html,
+        stmt: shortStatement,
       });
     };
-    if (!value3.currentRemoved)
+    if (!projectState.currentRemoved)
       try {
-        let value8: Dynamic = serializeCurrentSlide();
-        if (value8 !== null && value8 !== lastHtml)
-          value7(
-            value3.current,
-            value8,
-            (input2?: Dynamic, ..._extraArguments188: Dynamic[]): Dynamic => {
-              lastHtml = input2;
-              value3.slides.get(value3.current).last = input2;
+        let serializedSlide: Dynamic = serializeCurrentSlide();
+        if (serializedSlide !== null && serializedSlide !== lastHtml)
+          emitOperation(
+            projectState.current,
+            serializedSlide,
+            (serializedHtml?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic => {
+              lastHtml = serializedHtml;
+              projectState.slides.get(projectState.current).last = serializedHtml;
             },
           );
-      } catch (value8: Dynamic) {
-        emitError(String(value8), value2);
+      } catch (error: Dynamic) {
+        emitError(String(error), statementText);
       }
-    for (let value8 of value3.order()) {
-      let value9: Dynamic = value8 && value3.slides.get(value8);
+    for (let slideId of projectState.order()) {
+      let entry: Dynamic = slideId && projectState.slides.get(slideId);
       if (
-        !value9 ||
-        value8 === value3.current ||
-        !value9.holder ||
-        value9.removed ||
-        value9.born === value4
+        !entry ||
+        slideId === projectState.current ||
+        !entry.holder ||
+        entry.removed ||
+        entry.born === statementNumber
       )
         continue;
       try {
-        let value10: Dynamic = value3.text(value9);
-        if (value10 !== value9.last)
-          value7(
-            value8,
-            value10,
-            (input2?: Dynamic, ..._extraArguments189: Dynamic[]): Dynamic => {
-              value9.last = input2;
+        let slideHtml: Dynamic = projectState.text(entry);
+        if (slideHtml !== entry.last)
+          emitOperation(
+            slideId,
+            slideHtml,
+            (serializedHtml?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic => {
+              entry.last = serializedHtml;
             },
           );
-      } catch (value10: Dynamic) {
-        emitError(String(value10), value2);
+      } catch (error: Dynamic) {
+        emitError(String(error), statementText);
       }
     }
-    for (let value8 of value3.ops) {
-      let op: Dynamic = value8.op;
-      if (value8.entry && value8.entry.born === value4 && !value8.entry.removed)
+    for (let operation of projectState.ops) {
+      let op: Dynamic = operation.op;
+      if (operation.entry && operation.entry.born === statementNumber && !operation.entry.removed)
         try {
-          let value9: Dynamic = value3.text(value8.entry);
-          if (value9 !== value8.entry.last)
-            if (value9.length > limits.maxHtml)
+          let operationHtml: Dynamic = projectState.text(operation.entry);
+          if (operationHtml !== operation.entry.last)
+            if (operationHtml.length > limits.maxHtml)
               emitError(
                 'the text of the slide "' +
-                  value8.entry.id +
+                  operation.entry.id +
                   '" is over ' +
                   limits.maxHtml +
                   " characters; not sent",
-                value2,
+                statementText,
               );
             else {
               op = Object.assign({}, op, {
-                html: value9,
+                html: operationHtml,
               });
-              value8.entry.last = value9;
+              operation.entry.last = operationHtml;
             }
-        } catch (value9: Dynamic) {
-          emitError(String(value9), value2);
+        } catch (error: Dynamic) {
+          emitError(String(error), statementText);
         }
       emit({
         kind: "op" as const,
         seq: sequence++,
-        stmt: value5,
+        stmt: shortStatement,
         op: op,
       });
     }
-    value3.ops = [];
+    projectState.ops = [];
     let record: DoneMessage = {
       kind: "done" as const,
       seq: sequence++,
-      n: value4,
-      stmt: value5,
+      n: statementNumber,
+      stmt: shortStatement,
       changed: items,
-      logged: value3.logged,
+      logged: projectState.logged,
     };
-    if (value6 !== null)
+    if (executionError !== null)
       record.threw = {
-        message: formatError(value6),
+        message: formatError(executionError),
       };
     emit(record);
-    return value6 === null;
+    return executionError === null;
   }
   function initializeDomDeck(
     state?: Dynamic,
-    ..._extraArguments190: Dynamic[]
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = document.createElement("main");
-    let value3: Dynamic = String(state.current);
-    let value4: Dynamic = new Set();
+    let deckElement: Dynamic = document.createElement("main");
+    let currentSlideId: Dynamic = String(state.current);
+    let seenIds: Dynamic = new Set();
     if (
-      (value2.setAttribute("id", "deck"),
-      currentElement.getAttribute("id") !== value3)
+      (deckElement.setAttribute("id", "deck"),
+      currentElement.getAttribute("id") !== currentSlideId)
     )
-      currentElement.setAttribute("id", value3);
-    for (let value5 of state.slides) {
-      let value6: Dynamic = String(value5 && value5.id);
-      if (!validFileId.test(value6) || value4.has(value6)) continue;
-      if ((value4.add(value6), value6 === value3)) {
-        value2.appendChild(currentElement);
+      currentElement.setAttribute("id", currentSlideId);
+    for (let slide of state.slides) {
+      let slideId: Dynamic = String(slide && slide.id);
+      if (!validFileId.test(slideId) || seenIds.has(slideId)) continue;
+      if ((seenIds.add(slideId), slideId === currentSlideId)) {
+        deckElement.appendChild(currentElement);
         continue;
       }
-      let value7: Dynamic = document.createElement("section");
-      value7.setAttribute("id", value6);
-      value7.setAttribute("data-shell", "");
-      value7.setAttribute(
+      let sectionElement: Dynamic = document.createElement("section");
+      sectionElement.setAttribute("id", slideId);
+      sectionElement.setAttribute("data-shell", "");
+      sectionElement.setAttribute(
         "data-title",
-        String((value5 && value5.title) || "").slice(0, 300),
+        String((slide && slide.title) || "").slice(0, 300),
       );
-      value7.setAttribute("data-src", value6);
-      value2.appendChild(value7);
+      sectionElement.setAttribute("data-src", slideId);
+      deckElement.appendChild(sectionElement);
     }
-    if (currentElement.parentNode !== value2) {
-      value2.appendChild(currentElement);
-      value4.add(value3);
+    if (currentElement.parentNode !== deckElement) {
+      deckElement.appendChild(currentElement);
+      seenIds.add(currentSlideId);
     }
     document.body.innerHTML = "";
-    document.body.appendChild(value2);
+    document.body.appendChild(deckElement);
     domDeck = {
-      main: value2,
-      current: value3,
-      initial: value4,
+      main: deckElement,
+      current: currentSlideId,
+      initial: seenIds,
       last: "",
     };
   }
-  function findCurrentSection(..._extraArguments191: Dynamic[]): Dynamic {
+  function findCurrentSection(..._unusedArgs: Dynamic[]): Dynamic {
     if (!domDeck) return document.body.querySelector("section");
     if (currentElement && currentElement.parentNode === domDeck.main)
       return currentElement;
-    for (let value2 of domDeck.main.children)
+    for (let section of domDeck.main.children)
       if (
-        value2.tagName === "SECTION" &&
-        value2.getAttribute("id") === domDeck.current
+        section.tagName === "SECTION" &&
+        section.getAttribute("id") === domDeck.current
       )
-        return value2;
+        return section;
     return null;
   }
   let invalidDeck: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments192: Dynamic[]
+    message?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => ({
     ok: false,
-    message: input,
+    message: message,
   });
-  function validateDomDeck(..._extraArguments193: Dynamic[]): Dynamic {
+  function validateDomDeck(..._unusedValidationArgs: Dynamic[]): Dynamic {
     let main: Dynamic = domDeck.main;
     if (main.parentNode !== document.body || main.getAttribute("id") !== "deck")
       return invalidDeck(
         "main#deck itself cannot be removed, moved or renamed",
       );
-    let value2: Dynamic = findCurrentSection();
-    if (value2 && value2.getAttribute("id") !== domDeck.current)
+    let currentSection: Dynamic = findCurrentSection();
+    if (currentSection && currentSection.getAttribute("id") !== domDeck.current)
       return invalidDeck(
         'the current slide keeps its id "' + domDeck.current + '"',
       );
     let items: Dynamic = [];
-    let items2: Dynamic = [];
-    let items3: Dynamic = [];
-    let value3: Dynamic = new Set();
+    let addedSlides: Dynamic = [];
+    let clonedSlides: Dynamic = [];
+    let seenIds: Dynamic = new Set();
     let index: Dynamic = 0;
-    for (let value4 of main.children) {
-      if (value4.tagName !== "SECTION") continue;
-      let value5: Dynamic = value4.getAttribute("id") || "";
-      if (!validFileId.test(value5))
+    for (let section of main.children) {
+      if (section.tagName !== "SECTION") continue;
+      let slideId: Dynamic = section.getAttribute("id") || "";
+      if (!validFileId.test(slideId))
         return invalidDeck(
           "every slide <section> needs an id of letters, digits, - or _ (at most 64 characters)",
         );
-      if (value3.has(value5))
+      if (seenIds.has(slideId))
         return invalidDeck(
           'two slides have the id "' +
-            value5 +
+            slideId +
             '": give the new one its own id',
         );
-      if ((value3.add(value5), items.push(value5), items.length > 500))
+      if ((seenIds.add(slideId), items.push(slideId), items.length > 500))
         return invalidDeck("a deck holds at most 500 slides");
-      if (value4 === value2 || domDeck.initial.has(value5)) continue;
-      if (items2.length + items3.length >= 8)
+      if (section === currentSection || domDeck.initial.has(slideId)) continue;
+      if (addedSlides.length + clonedSlides.length >= 8)
         return invalidDeck("at most 8 new slides in one run");
       if (
-        value4.hasAttribute("data-shell") &&
-        domDeck.initial.has(value4.getAttribute("data-src") || "")
+        section.hasAttribute("data-shell") &&
+        domDeck.initial.has(section.getAttribute("data-src") || "")
       ) {
-        items3.push({
-          id: value5,
-          cloneOf: value4.getAttribute("data-src"),
+        clonedSlides.push({
+          id: slideId,
+          cloneOf: section.getAttribute("data-src"),
         });
         continue;
       }
-      let value6: Dynamic = serializeElement(value4);
-      if (value6.length > limits.maxHtml || (index += value6.length) > 1e6)
+      let serializedHtml: Dynamic = serializeElement(section);
+      if (serializedHtml.length > limits.maxHtml || (index += serializedHtml.length) > 1e6)
         return invalidDeck(
           "a new slide is over " + limits.maxHtml + " characters",
         );
-      items2.push({
-        id: value5,
-        html: value6,
+      addedSlides.push({
+        id: slideId,
+        html: serializedHtml,
       });
     }
     let filtered: Dynamic = [...domDeck.initial].filter(
-      (input?: Dynamic, ..._extraArguments194: Dynamic[]): Dynamic =>
-        !value3.has(input),
+      (slideId?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic =>
+        !seenIds.has(slideId),
     );
     return {
       ok: true,
       state: {
         order: items,
-        added: items2,
-        clones: items3,
+        added: addedSlides,
+        clones: clonedSlides,
         removed: filtered,
       },
     };
   }
   function restoreDomDeck(
-    input?: Dynamic,
-    ..._extraArguments195: Dynamic[]
+    html?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     if (
-      ((document.body.innerHTML = input),
+      ((document.body.innerHTML = html),
       (domDeck.main = document.body.querySelector("main")),
       (currentElement = null),
       (currentElement = findCurrentSection()),
       currentElement)
     ) {
-      for (let value2 of [
+      for (let element of [
         currentElement,
         ...currentElement.querySelectorAll("[style]"),
       ])
-        if (value2.getAttribute("style") !== null)
-          originalStyles.set(value2, value2.getAttribute("style"));
+        if (element.getAttribute("style") !== null)
+          originalStyles.set(element, element.getAttribute("style"));
     }
   }
   function serializeElement(
-    input?: Dynamic,
-    ..._extraArguments196: Dynamic[]
+    element?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    settleStyles(input);
-    for (let value2 of [
-      input,
-      ...input.querySelectorAll('[style], [class=""]'),
+    settleStyles(element);
+    for (let descendant of [
+      element,
+      ...element.querySelectorAll('[style], [class=""]'),
     ]) {
       if (
-        value2.getAttribute("style") !== null &&
-        value2.getAttribute("style").trim() === ""
+        descendant.getAttribute("style") !== null &&
+        descendant.getAttribute("style").trim() === ""
       )
-        value2.removeAttribute("style");
-      if (value2.getAttribute("class") === "") value2.removeAttribute("class");
+        descendant.removeAttribute("style");
+      if (descendant.getAttribute("class") === "") descendant.removeAttribute("class");
     }
-    return input.outerHTML;
+    return element.outerHTML;
   }
-  function serializeCurrentSlide(..._extraArguments197: Dynamic[]): Dynamic {
-    let value2: Dynamic = findCurrentSection();
-    if (!value2 && domDeck) {
+  function serializeCurrentSlide(..._unusedArgs: Dynamic[]): Dynamic {
+    let currentSection: Dynamic = findCurrentSection();
+    if (!currentSection && domDeck) {
       currentElement = null;
       return null;
     }
-    if (!value2)
+    if (!currentSection)
       throw (
         (document.body.innerHTML = lastHtml),
-        (value2 = document.body.querySelector("section")),
-        (currentElement = value2),
+        (currentSection = document.body.querySelector("section")),
+        (currentElement = currentSection),
         Error("the slide <section> was removed; restored")
       );
-    currentElement = value2;
-    let value3: Dynamic = serializeElement(value2);
-    return originalHadTbody ? value3 : value3.replace(/<\/?tbody>/g, "");
+    currentElement = currentSection;
+    let serializedHtml: Dynamic = serializeElement(currentSection);
+    return originalHadTbody ? serializedHtml : serializedHtml.replace(/<\/?tbody>/g, "");
   }
-  function resetPendingCode(..._extraArguments198: Dynamic[]): Dynamic {
+  function resetPendingCode(..._unusedArgs: Dynamic[]): Dynamic {
     pendingCode = "";
     pendingLineCount = 0;
     compiledPending = null;
   }
   let stripVariableDeclaration: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments199: Dynamic[]
+    statement?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
-    input.replace(
+    statement.replace(
       /^(\s*)(?:const|let|var)\s+(?=[A-Za-z_$][\w$]*\s*(?:=|,|;|$))/,
       "$1",
     );
@@ -3793,7 +3793,7 @@ function createEditRuntime(
   function compileStatement(
     code?: Dynamic,
     continuesPrevious?: Dynamic,
-    ..._extraArguments200: Dynamic[]
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     let argumentNames: Dynamic = [
       "$",
@@ -3826,14 +3826,14 @@ function createEditRuntime(
             `
 );`,
         );
-      } catch (value2: Dynamic) {}
+      } catch (error: Dynamic) {}
     return Function(...argumentNames, stripVariableDeclaration(code));
   }
   function invokeStatement(
     compiled?: Dynamic,
     argumentsForStatement?: Dynamic,
     continuesPrevious?: Dynamic,
-    ..._extraArguments201: Dynamic[]
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     if (
       continuesPrevious &&
@@ -3858,9 +3858,9 @@ function createEditRuntime(
     code?: Dynamic,
     compiled?: Dynamic,
     continuesPrevious?: Dynamic,
-    ..._extraArguments202: Dynamic[]
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = String(code);
+    let statement: Dynamic = String(code);
     if (!initialized) return false;
     if (project && project.one)
       return executeFileStatement(code, compiled, continuesPrevious);
@@ -3868,118 +3868,118 @@ function createEditRuntime(
       return executeSlideStatement(code, compiled, continuesPrevious);
     if (!compiled)
       try {
-        compiled = compileStatement(value2, continuesPrevious);
-      } catch (value6: Dynamic) {
-        emitError(String(value6), value2);
+        compiled = compileStatement(statement, continuesPrevious);
+      } catch (compileError: Dynamic) {
+        emitError(String(compileError), statement);
         return false;
       }
-    let value3: Dynamic = domDeck ? document.body.innerHTML : null;
-    let value4: Dynamic = null;
-    executingStatement = value2;
+    let originalDeckHtml: Dynamic = domDeck ? document.body.innerHTML : null;
+    let deckValidation: Dynamic = null;
+    executingStatement = statement;
     try {
       invokeStatement(
         compiled,
         [select, jquery(currentElement), deckApi || undefined, undefined],
         continuesPrevious,
       );
-    } catch (value6: Dynamic) {
-      if ((emitError(String(value6), value2), domDeck)) {
+    } catch (executionError: Dynamic) {
+      if ((emitError(String(executionError), statement), domDeck)) {
         if (
-          ((value4 = validateDomDeck()),
-          !value4.ok || JSON.stringify(value4.state) !== domDeck.last)
+          ((deckValidation = validateDomDeck()),
+          !deckValidation.ok || JSON.stringify(deckValidation.state) !== domDeck.last)
         )
-          restoreDomDeck(value3);
+          restoreDomDeck(originalDeckHtml);
       }
       try {
         serializeCurrentSlide();
-      } catch (value7: Dynamic) {}
+      } catch (_ignoredSerializationError: Dynamic) {}
       return false;
     }
     if (domDeck) {
-      if (((value4 = validateDomDeck()), !value4.ok)) {
-        emitError(value4.message + "; undone", value2);
-        restoreDomDeck(value3);
+      if (((deckValidation = validateDomDeck()), !deckValidation.ok)) {
+        emitError(deckValidation.message + "; undone", statement);
+        restoreDomDeck(originalDeckHtml);
         return false;
       }
     }
-    let value5: Dynamic;
+    let slideHtml: Dynamic;
     try {
-      value5 = serializeCurrentSlide();
-    } catch (value6: Dynamic) {
-      emitError(String(value6), value2);
+      slideHtml = serializeCurrentSlide();
+    } catch (serializationError: Dynamic) {
+      emitError(String(serializationError), statement);
       return false;
     }
-    if (value5 !== null && value5.length > limits.maxHtml) {
+    if (slideHtml !== null && slideHtml.length > limits.maxHtml) {
       emitError(
         "the slide text is over " + limits.maxHtml + " characters; not sent",
-        value2,
+        statement,
       );
       return false;
     }
-    if (value5 !== null && value5 !== lastHtml) {
-      lastHtml = value5;
+    if (slideHtml !== null && slideHtml !== lastHtml) {
+      lastHtml = slideHtml;
       emit({
         kind: "html" as const,
         seq: sequence++,
-        html: value5,
-        stmt: truncate(value2, limits.maxStmt),
+        html: slideHtml,
+        stmt: truncate(statement, limits.maxStmt),
       });
     }
-    if (value4) {
-      let value6: Dynamic = JSON.stringify(value4.state);
-      if (value6 !== domDeck.last) {
-        domDeck.last = value6;
+    if (deckValidation) {
+      let serializedDeckState: Dynamic = JSON.stringify(deckValidation.state);
+      if (serializedDeckState !== domDeck.last) {
+        domDeck.last = serializedDeckState;
         emit(
           Object.assign(
             {
               kind: "deck" as const,
               seq: sequence++,
-              stmt: truncate(value2, limits.maxStmt),
+              stmt: truncate(statement, limits.maxStmt),
             },
-            value4.state,
+            deckValidation.state,
           ),
         );
       }
     }
     return true;
   }
-  function executePending(..._extraArguments203: Dynamic[]): Dynamic {
+  function executePending(..._unusedArgs: Dynamic[]): Dynamic {
     if ((clearTimeout(idleTimer), !compiledPending)) return;
-    let value2: Dynamic = compiledPending;
-    let value3: Dynamic = pendingCode;
+    let compiledStatement: Dynamic = compiledPending;
+    let statement: Dynamic = pendingCode;
     resetPendingCode();
-    execute(value3, value2);
+    execute(statement, compiledStatement);
   }
   function acceptLine(
-    input?: Dynamic,
-    ..._extraArguments204: Dynamic[]
+    line?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    if (((input = input.replace(/\r$/, "")), CODE_FENCE.test(input))) {
+    if (((line = line.replace(/\r$/, "")), CODE_FENCE.test(line))) {
       flushPending();
       insideCodeFence = insideCodeFence !== true;
       return;
     }
     if (insideCodeFence === false) return;
     if (compiledPending)
-      if (CHAIN_CONTINUATION.test(input)) compiledPending = null;
+      if (CHAIN_CONTINUATION.test(line)) compiledPending = null;
       else executePending();
-    if (!pendingCode && input.trim() === "") return;
+    if (!pendingCode && line.trim() === "") return;
     pendingCode +=
       (pendingCode
         ? `
 `
-        : "") + input;
+        : "") + line;
     pendingLineCount++;
     compilePending(false);
   }
   function compilePending(
-    input?: Dynamic,
-    ..._extraArguments205: Dynamic[]
+    runImmediately?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     try {
       compiledPending = compileStatement(pendingCode);
       hasSeenCode = true;
-    } catch (value2: Dynamic) {
+    } catch (compileError: Dynamic) {
       if (
         ((compiledPending = null),
         !hasSeenCode &&
@@ -3991,38 +3991,38 @@ function createEditRuntime(
         return;
       }
       if (
-        !input &&
-        value2 instanceof SyntaxError &&
+        !runImmediately &&
+        compileError instanceof SyntaxError &&
         pendingLineCount < limits.maxLines &&
         pendingCode.length < limits.maxChars
       )
         return;
-      emitStatementError(String(value2), pendingCode);
+      emitStatementError(String(compileError), pendingCode);
       resetPendingCode();
       return;
     }
-    if (input) executePending();
+    if (runImmediately) executePending();
     else if (limits.idleRunMs > 0) {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(executePending, limits.idleRunMs);
     }
   }
-  function flushPending(..._extraArguments206: Dynamic[]): Dynamic {
+  function flushPending(..._unusedArgs: Dynamic[]): Dynamic {
     if (compiledPending) executePending();
     else if (pendingCode) compilePending(true);
   }
   function acceptLineChunk(
-    input?: Dynamic,
-    ..._extraArguments207: Dynamic[]
+    lineChunk?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    lineTail += String(input);
-    let value2: Dynamic;
+    lineTail += String(lineChunk);
+    let newlineIndex: Dynamic;
     while (
-      (value2 = lineTail.indexOf(`
+      (newlineIndex = lineTail.indexOf(`
 `)) >= 0
     ) {
-      let slice: Dynamic = lineTail.slice(0, value2);
-      lineTail = lineTail.slice(value2 + 1);
+      let slice: Dynamic = lineTail.slice(0, newlineIndex);
+      lineTail = lineTail.slice(newlineIndex + 1);
       acceptLine(slice);
     }
     if (
@@ -4040,88 +4040,88 @@ function createEditRuntime(
       lineTail = "";
     }
   }
-  function endLineInput(..._extraArguments208: Dynamic[]): Dynamic {
+  function endLineInput(..._unusedArgs: Dynamic[]): Dynamic {
     if (lineTail) {
-      let value2: Dynamic = lineTail;
+      let finalLine: Dynamic = lineTail;
       lineTail = "";
-      acceptLine(value2);
+      acceptLine(finalLine);
     }
     flushPending();
   }
-  function createSplitter(..._extraArguments209: Dynamic[]): Dynamic {
+  function createSplitter(..._unusedArgs: Dynamic[]): Dynamic {
     return statementStream.createStatementStream({
       joinChains: !chainMode,
-      onStatement(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
+      onStatement(statement: Dynamic, _statementIndex: Dynamic, metadata: Dynamic): Dynamic {
         hasSeenCode = true;
-        execute(input, undefined, chainMode && !!(context && context.chain));
+        execute(statement, undefined, chainMode && !!(metadata && metadata.chain));
       },
-      onError(input: Dynamic): Dynamic {
-        if (input && input.code === "INCOMPLETE")
+      onError(error: Dynamic): Dynamic {
+        if (error && error.code === "INCOMPLETE")
           emitStatementError(
-            "the reply ended inside a statement (open: " + input.open + ")",
-            input.tail,
+            "the reply ended inside a statement (open: " + error.open + ")",
+            error.tail,
           );
         else
           emitError(
-            "splitter: " + String((input && input.message) || input),
+            "splitter: " + String((error && error.message) || error),
             "",
           );
       },
     });
   }
   let isCompilable: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments210: Dynamic[]
+    statement?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
     try {
-      compileStatement(input);
+      compileStatement(statement);
       return true;
-    } catch (value2: Dynamic) {
+    } catch (_compileError: Dynamic) {
       return false;
     }
   };
   let isProse: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments211: Dynamic[]
+    line?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic =>
-    !input.includes("$(") && !CODE_LIKE.test(input) && !isCompilable(input);
+    !line.includes("$(") && !CODE_LIKE.test(line) && !isCompilable(line);
   let skippedLineCount: Dynamic = 0;
   let reportSkippedProse: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments212: Dynamic[]
+    skippedLine?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic => {
-    if (input.trim() && skippedLineCount++ < 5)
+    if (skippedLine.trim() && skippedLineCount++ < 5)
       emit({
         kind: "log" as const,
-        message: truncate("skipped, not code: " + input.trim(), 200),
+        message: truncate("skipped, not code: " + skippedLine.trim(), 200),
       });
   };
-  let insideTemplate: Dynamic = (..._extraArguments213: Dynamic[]): Dynamic => {
-    let value2: Dynamic = stream ? stream.tail() : "";
+  let insideTemplate: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic => {
+    let pendingStatement: Dynamic = stream ? stream.tail() : "";
     let index: Dynamic = 0;
-    for (let index2: Dynamic = 0; index2 < value2.length; index2++)
-      if (value2[index2] === "\\") index2++;
-      else if (value2[index2] === "`") index++;
+    for (let characterIndex: Dynamic = 0; characterIndex < pendingStatement.length; characterIndex++)
+      if (pendingStatement[characterIndex] === "\\") characterIndex++;
+      else if (pendingStatement[characterIndex] === "`") index++;
     return index % 2 === 1;
   };
   function pushStream(
-    input?: Dynamic,
-    ..._extraArguments214: Dynamic[]
+    streamChunk?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     try {
-      stream.push(input);
-    } catch (value3: Dynamic) {
+      stream.push(streamChunk);
+    } catch (_streamError: Dynamic) {
       useLineSplitter = true;
-      let value4: Dynamic = stream.tail();
+      let pendingTail: Dynamic = stream.tail();
       stream = null;
-      acceptLineChunk(value4 + input);
+      acceptLineChunk(pendingTail + streamChunk);
       return;
     }
-    let value2: Dynamic = stream.tail();
+    let pendingStatement: Dynamic = stream.tail();
     if (
-      value2.length > limits.maxChars ||
-      (value2.length > limits.maxLines &&
-        value2.split(`
+      pendingStatement.length > limits.maxChars ||
+      (pendingStatement.length > limits.maxLines &&
+        pendingStatement.split(`
 `).length > limits.maxLines)
     ) {
       emitStatementError(
@@ -4130,34 +4130,34 @@ function createEditRuntime(
           " lines / " +
           limits.maxChars +
           " characters; dropped",
-        value2,
+        pendingStatement,
       );
       stream.reset();
     }
   }
-  function restartStream(..._extraArguments215: Dynamic[]): Dynamic {
+  function restartStream(..._unusedArgs: Dynamic[]): Dynamic {
     if (stream) {
       stream.end();
       stream = createSplitter();
     }
   }
   function acceptStreamChunk(
-    input?: Dynamic,
-    ..._extraArguments216: Dynamic[]
+    streamChunk?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    for (let index: Dynamic = 0; index < input.length; ) {
-      let value2: Dynamic = input.indexOf(
+    for (let index: Dynamic = 0; index < streamChunk.length; ) {
+      let newlineIndex: Dynamic = streamChunk.indexOf(
         `
 `,
         index,
       );
-      let value3: Dynamic =
-        value2 < 0 ? input.slice(index) : input.slice(index, value2 + 1);
-      index += value3.length;
-      incomingLine += value3;
-      let value4: Dynamic = value3.endsWith(`
+      let lineFragment: Dynamic =
+        newlineIndex < 0 ? streamChunk.slice(index) : streamChunk.slice(index, newlineIndex + 1);
+      index += lineFragment.length;
+      incomingLine += lineFragment;
+      let completesLine: Dynamic = lineFragment.endsWith(`
 `);
-      let value5: Dynamic = incomingLine.trimStart()[0];
+      let firstCharacter: Dynamic = incomingLine.trimStart()[0];
       if (
         !recognizedCode &&
         insideCodeFence !== true &&
@@ -4165,33 +4165,33 @@ function createEditRuntime(
         CODE_START.test(incomingLine)
       )
         recognizedCode = true;
-      let value6: Dynamic =
+      let holdForLineClassification: Dynamic =
         insideCodeFence === false ||
         (!recognizedCode && insideCodeFence !== true) ||
-        value5 === undefined ||
-        value5 === "`";
+        firstCharacter === undefined ||
+        firstCharacter === "`";
       if (useLineSplitter) {
         acceptLineChunk(incomingLine.slice(consumedLineChars));
         consumedLineChars = incomingLine.length;
-      } else if (!value6) {
+      } else if (!holdForLineClassification) {
         pushStream(incomingLine.slice(consumedLineChars));
         consumedLineChars = incomingLine.length;
       }
-      if (!value4) continue;
+      if (!completesLine) continue;
       if (consumedLineChars === 0 && !useLineSplitter) {
-        let value7: Dynamic = incomingLine.replace(/\r?\n$/, "");
-        if (CODE_FENCE.test(value7) && !insideTemplate()) {
+        let completedLine: Dynamic = incomingLine.replace(/\r?\n$/, "");
+        if (CODE_FENCE.test(completedLine) && !insideTemplate()) {
           if (
             (restartStream(),
             (insideCodeFence = insideCodeFence !== true),
             insideCodeFence)
           )
             recognizedCode = true;
-        } else if (insideCodeFence === false) reportSkippedProse(value7);
-        else if (!recognizedCode && insideCodeFence !== true && isProse(value7))
-          reportSkippedProse(value7);
+        } else if (insideCodeFence === false) reportSkippedProse(completedLine);
+        else if (!recognizedCode && insideCodeFence !== true && isProse(completedLine))
+          reportSkippedProse(completedLine);
         else {
-          if (value7.trim()) recognizedCode = true;
+          if (completedLine.trim()) recognizedCode = true;
           pushStream(incomingLine);
         }
       }
@@ -4202,9 +4202,9 @@ function createEditRuntime(
   let previewState: Dynamic = null;
   let previewElement: Dynamic = null;
   let quotedStringPattern: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments217: Dynamic[]
-  ): Dynamic => `(['"])((?:\\\\.|(?!\\` + input + ")[^\\\\\\n])*)\\" + input;
+    captureGroupIndex?: Dynamic,
+    ..._unusedArgs: Dynamic[]
+  ): Dynamic => `(['"])((?:\\\\.|(?!\\` + captureGroupIndex + ")[^\\\\\\n])*)\\" + captureGroupIndex;
   let PREVIEW_PATTERNS: Dynamic = {
     assign: /^(?:(?:var|let|const)\s+)?(?:[A-Za-z_$][\w$]*\s*=\s*)?/,
     sel: new RegExp("^\\$\\(\\s*" + quotedStringPattern(1) + "\\s*\\)"),
@@ -4223,30 +4223,30 @@ function createEditRuntime(
     make: /^(?:\$|(?:deck\.)?add)\(\s*(?=['"`])/,
   };
   let unescapeSelector: Dynamic = (
-    input?: Dynamic,
-    ..._extraArguments218: Dynamic[]
-  ): Dynamic => input.replace(/\\(.)/g, "$1");
+    selector?: Dynamic,
+    ..._unusedArgs: Dynamic[]
+  ): Dynamic => selector.replace(/\\(.)/g, "$1");
   function parsePreviewForm(
     code?: Dynamic,
-    ..._extraArguments219: Dynamic[]
+    ..._unusedPreviewFormArgs: Dynamic[]
   ): Dynamic {
     let offset: Dynamic = (code.match(/^\s*/) || [""])[0].length;
     offset += (code.slice(offset).match(PREVIEW_PATTERNS.assign) || [""])[0]
       .length;
-    let remaining: Dynamic = (..._extraArguments220: Dynamic[]): Dynamic =>
+    let remaining: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic =>
       code.slice(offset);
     let match: Dynamic;
     if ((match = remaining().match(PREVIEW_PATTERNS.make))) {
-      let value2: Dynamic = offset + match[0].length;
-      let value3: Dynamic = match[0][0] === "$";
-      let value4: Dynamic = readStringLiteral(code, value2);
-      if (!value4) return null;
-      let value5: Dynamic = (value4.value.match(/^\s*(\S)/) || [])[1];
-      if (value5 === undefined) return value4.closed ? null : undefined;
-      if (!value3 || value5 === "<")
+      let literalOffset: Dynamic = offset + match[0].length;
+      let usesJquery: Dynamic = match[0][0] === "$";
+      let literal: Dynamic = readStringLiteral(code, literalOffset);
+      if (!literal) return null;
+      let firstCharacter: Dynamic = (literal.value.match(/^\s*(\S)/) || [])[1];
+      if (firstCharacter === undefined) return literal.closed ? null : undefined;
+      if (!usesJquery || firstCharacter === "<")
         return {
-          method: value3 ? "create" : "add",
-          at: value2,
+          method: usesJquery ? "create" : "add",
+          at: literalOffset,
           steps: null,
         };
     }
@@ -4255,12 +4255,12 @@ function createEditRuntime(
       steps.push(["prev"]);
       match = [""];
     } else if ((match = remaining().match(PREVIEW_PATTERNS.sel))) {
-      let value2: Dynamic = readStringLiteral(
+      let selectorLiteral: Dynamic = readStringLiteral(
         code,
         offset + match[0].indexOf(match[1]),
       );
-      if (!value2 || !value2.closed || /^\s*</.test(value2.value)) return null;
-      steps.push(["$", value2.value]);
+      if (!selectorLiteral || !selectorLiteral.closed || /^\s*</.test(selectorLiteral.value)) return null;
+      steps.push(["$", selectorLiteral.value]);
     } else if ((match = remaining().match(PREVIEW_PATTERNS.all)))
       steps.push(["files"]);
     else if ((match = remaining().match(PREVIEW_PATTERNS.me)))
@@ -4301,7 +4301,7 @@ function createEditRuntime(
   function readStringLiteral(
     code?: Dynamic,
     start?: Dynamic,
-    ..._extraArguments221: Dynamic[]
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
     let quote: Dynamic = code[start];
     let escapes: Dynamic = {
@@ -4314,42 +4314,42 @@ function createEditRuntime(
       v: "\v",
       0: "\x00",
     };
-    let value2: Dynamic = "";
+    let literalText: Dynamic = "";
     for (let index: Dynamic = start + 1; index < code.length; index++) {
       let character: Dynamic = code[index];
       if (character === "\\") {
-        let escape2: Dynamic = code[++index];
-        if (escape2 === undefined) break;
-        if (escape2 === "u" || escape2 === "x") {
-          let hexLength: Dynamic = escape2 === "x" ? 2 : 4;
+        let escapedCharacter: Dynamic = code[++index];
+        if (escapedCharacter === undefined) break;
+        if (escapedCharacter === "u" || escapedCharacter === "x") {
+          let hexLength: Dynamic = escapedCharacter === "x" ? 2 : 4;
           let hexDigits: Dynamic = code.slice(index + 1, index + 1 + hexLength);
           if (code[index + 1] === "{") {
             let braceEnd: Dynamic = code.indexOf("}", index);
             if (braceEnd < 0) break;
-            value2 += String.fromCodePoint(
+            literalText += String.fromCodePoint(
               parseInt(code.slice(index + 2, braceEnd), 16) || 65533,
             );
             index = braceEnd;
             continue;
           }
           if (hexDigits.length < hexLength) break;
-          value2 += String.fromCharCode(parseInt(hexDigits, 16) || 65533);
+          literalText += String.fromCharCode(parseInt(hexDigits, 16) || 65533);
           index += hexLength;
           continue;
         }
-        value2 +=
-          escape2 ===
+        literalText +=
+          escapedCharacter ===
           `
 `
             ? ""
-            : escapes[escape2] !== undefined
-              ? escapes[escape2]
-              : escape2;
+            : escapes[escapedCharacter] !== undefined
+              ? escapes[escapedCharacter]
+              : escapedCharacter;
         continue;
       }
       if (character === quote)
         return {
-          value: value2,
+          value: literalText,
           closed: true,
           end: index,
         };
@@ -4364,43 +4364,43 @@ function createEditRuntime(
 `
       )
         return null;
-      value2 += character;
+      literalText += character;
     }
     return {
-      value: value2,
+      value: literalText,
       closed: false,
     };
   }
   function sanitizePreviewHtml(
-    input?: Dynamic,
-    ..._extraArguments222: Dynamic[]
+    html?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = false;
+    let insideTag: Dynamic = false;
     let text: Dynamic = "";
     let index: Dynamic = 0;
-    for (let index2: Dynamic = 0; index2 < input.length; index2++) {
-      let value5: Dynamic = input[index2];
-      if (!value2) {
-        if (value5 === "<") {
-          value2 = true;
-          index = index2;
+    for (let characterIndex: Dynamic = 0; characterIndex < html.length; characterIndex++) {
+      let character: Dynamic = html[characterIndex];
+      if (!insideTag) {
+        if (character === "<") {
+          insideTag = true;
+          index = characterIndex;
           text = "";
         }
       } else if (text) {
-        if (value5 === text) text = "";
-      } else if (value5 === '"' || value5 === "'") text = value5;
-      else if (value5 === ">") value2 = false;
+        if (character === text) text = "";
+      } else if (character === '"' || character === "'") text = character;
+      else if (character === ">") insideTag = false;
     }
-    let value3: Dynamic =
-      value2 && previewState && previewState.form && previewState.form.steps
-        ? completeSvgDataUrl(input, index)
+    let completedSvgTag: Dynamic =
+      insideTag && previewState && previewState.form && previewState.form.steps
+        ? completeSvgDataUrl(html, index)
         : null;
-    let value4: Dynamic =
-      value3 !== null
-        ? input.slice(0, index) + value3
-        : (value2 ? input.slice(0, index) : input).replace(/&[#\w]{0,12}$/, "");
+    let completeHtml: Dynamic =
+      completedSvgTag !== null
+        ? html.slice(0, index) + completedSvgTag
+        : (insideTag ? html.slice(0, index) : html).replace(/&[#\w]{0,12}$/, "");
     if (!previewElement) previewElement = document.createElement("div");
-    previewElement.innerHTML = value4;
+    previewElement.innerHTML = completeHtml;
     let innerHTML: Dynamic = previewElement.innerHTML;
     previewElement.innerHTML = "";
     return innerHTML;
@@ -4429,39 +4429,39 @@ function createEditRuntime(
   function completeSvgDataUrl(
     html?: Dynamic,
     tagStart?: Dynamic,
-    ..._extraArguments223: Dynamic[]
+    ..._unusedCompleteSvgArgs: Dynamic[]
   ): Dynamic {
     let scanner: Dynamic = previewState.g;
     if (scanner === null) return null;
-    let abandon: Dynamic = (..._extraArguments224: Dynamic[]): Dynamic => {
+    let abandon: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic => {
       previewState.g = null;
       return null;
     };
     if (scanner && scanner.from !== tagStart) return abandon();
     if (!scanner) {
-      let value2: Dynamic =
+      let attributeMatch: Dynamic =
         /^<([A-Za-z][\w-]*)((?:\s+[\w:-]+(?:=(?:"[^"]*"|'[^']*'))?)*)\s+[\w:-]+=(["'])/.exec(
           html.slice(tagStart),
         );
-      if (!value2) return html.length - tagStart > 400 ? abandon() : null;
-      let value3: Dynamic = tagStart + value2[0].length;
-      let slice: Dynamic = html.slice(value3);
-      if (slice.includes(value2[3])) return abandon();
-      let value4: Dynamic =
+      if (!attributeMatch) return html.length - tagStart > 400 ? abandon() : null;
+      let attributeStart: Dynamic = tagStart + attributeMatch[0].length;
+      let slice: Dynamic = html.slice(attributeStart);
+      if (slice.includes(attributeMatch[3])) return abandon();
+      let svgUrlMatch: Dynamic =
         /url\(\s*(&quot;|&#39;|&apos;|'|")data:image\/svg\+xml((?:;[\w=-]+)*),/i.exec(
           slice,
         );
-      if (!value4) return slice.length > 2000 ? abandon() : null;
+      if (!svgUrlMatch) return slice.length > 2000 ? abandon() : null;
       if (
-        /;base64/i.test(value4[2]) ||
-        /url\(/i.test(slice.slice(0, value4.index))
+        /;base64/i.test(svgUrlMatch[2]) ||
+        /url\(/i.test(slice.slice(0, svgUrlMatch.index))
       )
         return abandon();
       scanner = previewState.g = {
         from: tagStart,
-        i: value3 + value4.index + value4[0].length,
-        Q: value4[1],
-        aq: value2[3],
+        i: attributeStart + svgUrlMatch.index + svgUrlMatch[0].length,
+        Q: svgUrlMatch[1],
+        aq: attributeMatch[3],
         depth: 0,
         tag: 0,
         q: "",
@@ -4472,40 +4472,40 @@ function createEditRuntime(
         done: false,
         was: -2,
         out: null,
-        s0: value3 + value4.index + value4[0].length,
+        s0: attributeStart + svgUrlMatch.index + svgUrlMatch[0].length,
         tail:
-          value4[1] +
+          svgUrlMatch[1] +
           ")" +
-          value2[3] +
+          attributeMatch[3] +
           ">" +
-          (VOID_ELEMENTS.has(value2[1].toLowerCase())
+          (VOID_ELEMENTS.has(attributeMatch[1].toLowerCase())
             ? ""
-            : "</" + value2[1] + ">"),
+            : "</" + attributeMatch[1] + ">"),
       };
     }
     while (scanner.i < html.length && !scanner.done) {
-      let value2: Dynamic = html[scanner.i];
+      let decodedCharacter: Dynamic = html[scanner.i];
       let count: Dynamic = 1;
-      let value3: Dynamic = value2;
-      if (value2 === "&") {
+      let sourceToken: Dynamic = decodedCharacter;
+      if (decodedCharacter === "&") {
         let match: Dynamic = Object.keys(HTML_ENTITIES).find(
-          (input?: Dynamic, ..._extraArguments225: Dynamic[]): Dynamic =>
-            html.startsWith(input, scanner.i),
+          (entity?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+            html.startsWith(entity, scanner.i),
         );
         if (match) {
-          value2 = HTML_ENTITIES[match];
+          decodedCharacter = HTML_ENTITIES[match];
           count = match.length;
-          value3 = match;
+          sourceToken = match;
         } else if (html.length - scanner.i < 6) break;
       }
-      if (value3 === scanner.Q || value3 === scanner.aq) return abandon();
+      if (sourceToken === scanner.Q || sourceToken === scanner.aq) return abandon();
       if (scanner.i - scanner.s0 > 12000) return abandon();
       if (!scanner.tag) {
-        if (value2 === "<") {
-          let value4: Dynamic = /^(\/?)([A-Za-z][\w:.-]*)(?=[\s/>]|&gt;)/.exec(
+        if (decodedCharacter === "<") {
+          let svgTagMatch: Dynamic = /^(\/?)([A-Za-z][\w:.-]*)(?=[\s/>]|&gt;)/.exec(
             html.slice(scanner.i + count, scanner.i + count + 40),
           );
-          if (!value4) {
+          if (!svgTagMatch) {
             if (
               html.length - scanner.i - count < 40 &&
               /^\/?[\w:.-]*$/.test(html.slice(scanner.i + count))
@@ -4514,8 +4514,8 @@ function createEditRuntime(
             return abandon();
           }
           if (
-            ((scanner.name = value4[2].toLowerCase()),
-            (scanner.closing = value4[1] === "/"),
+            ((scanner.name = svgTagMatch[2].toLowerCase()),
+            (scanner.closing = svgTagMatch[1] === "/"),
             UNSAFE_SVG_ELEMENTS.has(scanner.name) ||
               (scanner.depth === 0 &&
                 (scanner.closing || scanner.name !== "svg")))
@@ -4523,14 +4523,14 @@ function createEditRuntime(
             return abandon();
           scanner.tag = 1;
           scanner.slash = false;
-          scanner.i += count + value4[0].length;
+          scanner.i += count + svgTagMatch[0].length;
           continue;
         }
       } else if (scanner.q) {
-        if (value2 === scanner.q) scanner.q = "";
-      } else if (value2 === '"' || value2 === "'") scanner.q = value2;
-      else if (value2 === "<") return abandon();
-      else if (value2 === ">") {
+        if (decodedCharacter === scanner.q) scanner.q = "";
+      } else if (decodedCharacter === '"' || decodedCharacter === "'") scanner.q = decodedCharacter;
+      else if (decodedCharacter === "<") return abandon();
+      else if (decodedCharacter === ">") {
         if (((scanner.tag = 0), scanner.closing)) scanner.depth--;
         else if (!scanner.slash) scanner.depth++;
         if (scanner.depth < 0) return abandon();
@@ -4539,7 +4539,7 @@ function createEditRuntime(
           scanner.cut = scanner.i + count;
           scanner.done = true;
         }
-      } else scanner.slash = value2 === "/";
+      } else scanner.slash = decodedCharacter === "/";
       scanner.i += count;
     }
     if (scanner.cut < 0) return null;
@@ -4553,83 +4553,83 @@ function createEditRuntime(
     return scanner.out;
   }
   function resolvePreviewTarget(
-    input?: Dynamic,
-    ..._extraArguments226: Dynamic[]
+    selectionSteps?: Dynamic,
+    ..._unusedArgs: Dynamic[]
   ): Dynamic {
-    let value2: Dynamic = project;
-    let value3: Dynamic = value2 && value2.one;
-    let value4: Dynamic;
-    if (value2) value2.previewing = true;
+    let projectState: Dynamic = project;
+    let usesFileMode: Dynamic = projectState && projectState.one;
+    let selection: Dynamic;
+    if (projectState) projectState.previewing = true;
     try {
-      for (let [value6, value7] of input)
-        if (value6 === "prev") {
+      for (let [method, argument] of selectionSteps)
+        if (method === "prev") {
           if (!(previousValue instanceof jquery)) return null;
-          value4 = previousValue;
-        } else if (value6 === "$") value4 = jquery(value7);
-        else if (value6 === "files")
-          value4 = value3
+          selection = previousValue;
+        } else if (method === "$") selection = jquery(argument);
+        else if (method === "files")
+          selection = usesFileMode
             ? jquery(document.body).children()
             : jquery(currentElement);
-        else if (value6 === "me") {
-          let value8: Dynamic = value3 ? null : currentElement;
-          if (!value8) return null;
-          value4 = jquery(value8);
-        } else if (value6 === "k") {
-          if (!value3) return null;
-          let filtered: Dynamic = String(value7)
+        else if (method === "me") {
+          let slideElement: Dynamic = usesFileMode ? null : currentElement;
+          if (!slideElement) return null;
+          selection = jquery(slideElement);
+        } else if (method === "k") {
+          if (!usesFileMode) return null;
+          let filtered: Dynamic = String(argument)
             .split(/[\s,]+/)
             .filter(Boolean)
             .map(
-              (input2?: Dynamic, ..._extraArguments227: Dynamic[]): Dynamic =>
-                value2.elOf.get(
-                  /^\d+$/.test(input2) ? value2.P + input2 : input2,
+              (elementKey?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                projectState.elOf.get(
+                  /^\d+$/.test(elementKey) ? projectState.P + elementKey : elementKey,
                 ),
             )
             .filter(
-              (input2?: Dynamic, ..._extraArguments228: Dynamic[]): Dynamic =>
-                input2 && value2.fileOf(input2),
+              (element?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
+                element && projectState.fileOf(element),
             );
-          value4 = jquery().pushStack(filtered);
-        } else if (value6 === "file") {
-          if (!value2) return null;
-          let value8: Dynamic =
-            value2.paths && value2.paths.has(value7)
-              ? value2.paths.get(value7)
-              : value7;
-          let entry: Dynamic = value2.slides.get(value8);
+          selection = jquery().pushStack(filtered);
+        } else if (method === "file") {
+          if (!projectState) return null;
+          let fileId: Dynamic =
+            projectState.paths && projectState.paths.has(argument)
+              ? projectState.paths.get(argument)
+              : argument;
+          let entry: Dynamic = projectState.slides.get(fileId);
           if (
             !entry ||
             entry.removed ||
-            !(value8 === value2.current ? currentElement : entry.el)
+            !(fileId === projectState.current ? currentElement : entry.el)
           )
             return null;
-          value4 = jquery(
-            value8 === value2.current && !value3 ? currentElement : entry.el,
+          selection = jquery(
+            fileId === projectState.current && !usesFileMode ? currentElement : entry.el,
           );
         } else
-          value4 =
-            value7 === undefined ? value4[value6]() : value4[value6](value7);
-    } catch (value6: Dynamic) {
+          selection =
+            argument === undefined ? selection[method]() : selection[method](argument);
+    } catch (_selectionError: Dynamic) {
       return null;
     } finally {
-      if (value2) value2.previewing = false;
+      if (projectState) projectState.previewing = false;
     }
-    let value5: Dynamic = value4 && value4[0];
-    if (!value5 || value5.nodeType !== 1) return null;
-    if (value3 && value5 === document.body)
+    let targetElement: Dynamic = selection && selection[0];
+    if (!targetElement || targetElement.nodeType !== 1) return null;
+    if (usesFileMode && targetElement === document.body)
       return {
         root: true,
       };
     return {
-      file: value3
-        ? value2.fileOf(value5)
-        : value2
-          ? value2.current || null
+      file: usesFileMode
+        ? projectState.fileOf(targetElement)
+        : projectState
+          ? projectState.current || null
           : null,
-      id: value5.getAttribute("id"),
+      id: targetElement.getAttribute("id"),
     };
   }
-  function previewPending(..._extraArguments229: Dynamic[]): Dynamic {
+  function previewPending(..._unusedArgs: Dynamic[]): Dynamic {
     if (
       !(limits.previewMs >= 0) ||
       finished ||
@@ -4637,7 +4637,7 @@ function createEditRuntime(
       (project && project.halted)
     )
       return;
-    let value2: Dynamic = useLineSplitter
+    let pendingStatement: Dynamic = useLineSplitter
       ? (pendingCode
           ? pendingCode +
             `
@@ -4646,19 +4646,19 @@ function createEditRuntime(
       : stream
         ? stream.tail()
         : "";
-    if (!value2.trim()) {
+    if (!pendingStatement.trim()) {
       previewState = null;
       return;
     }
-    let value3: Dynamic = stream ? stream.count : 0;
+    let statementCount: Dynamic = stream ? stream.count : 0;
     if (
       !previewState ||
-      previewState.key !== value3 ||
-      !value2.startsWith(previewState.head)
+      previewState.key !== statementCount ||
+      !pendingStatement.startsWith(previewState.head)
     )
       previewState = {
-        key: value3,
-        head: value2.slice(0, Math.min(value2.length, 24)),
+        key: statementCount,
+        head: pendingStatement.slice(0, Math.min(pendingStatement.length, 24)),
         form: undefined,
         dead: false,
         at: 0,
@@ -4669,31 +4669,31 @@ function createEditRuntime(
     if (previewState.dead) return;
     if (previewState.form === undefined) {
       if (
-        ((previewState.form = parsePreviewForm(value2)),
+        ((previewState.form = parsePreviewForm(pendingStatement)),
         previewState.form === null ||
-          (previewState.form === undefined && value2.length > 400))
+          (previewState.form === undefined && pendingStatement.length > 400))
       )
         previewState.dead = true;
       if (!previewState.form) return;
     }
-    let value4: Dynamic = readStringLiteral(value2, previewState.form.at);
-    if (!value4) {
+    let literal: Dynamic = readStringLiteral(pendingStatement, previewState.form.at);
+    if (!literal) {
       previewState.dead = true;
       return;
     }
-    if (value4.closed) {
-      let value7: Dynamic = (value2.slice(value4.end + 1).match(/^\s*(\S)/) ||
+    if (literal.closed) {
+      let trailingCharacter: Dynamic = (pendingStatement.slice(literal.end + 1).match(/^\s*(\S)/) ||
         [])[1];
-      if (value7 === undefined) return;
-      if (value7 !== ")" && value7 !== ",") {
+      if (trailingCharacter === undefined) return;
+      if (trailingCharacter !== ")" && trailingCharacter !== ",") {
         previewState.dead = true;
         return;
       }
     }
-    let value5: Dynamic = Date.now();
+    let now: Dynamic = Date.now();
     if (
-      !value4.closed &&
-      value5 - previewState.at <
+      !literal.closed &&
+      now - previewState.at <
         (pace
           ? Math.max(
               limits.previewMs,
@@ -4730,67 +4730,67 @@ function createEditRuntime(
       };
       previewState.target = null;
     }
-    let value6: Dynamic = truncate(
-      sanitizePreviewHtml(value4.value),
+    let previewHtml: Dynamic = truncate(
+      sanitizePreviewHtml(literal.value),
       limits.maxHtml,
     );
-    if (value4.closed) previewState.dead = true;
+    if (literal.closed) previewState.dead = true;
     if (
-      value6 === previewState.last ||
-      !value6 ||
-      (!value4.closed && value6.length < previewState.last.length)
+      previewHtml === previewState.last ||
+      !previewHtml ||
+      (!literal.closed && previewHtml.length < previewState.last.length)
     )
       return;
-    previewState.last = value6;
-    previewState.at = value5;
+    previewState.last = previewHtml;
+    previewState.at = now;
     previewCount++;
     emit({
       kind: "preview" as const,
       seq: sequence++,
       method: previewState.form.method,
       target: previewState.target || null,
-      html: value6,
-      head: value2.trimStart().slice(0, 80),
+      html: previewHtml,
+      head: pendingStatement.trimStart().slice(0, 80),
     });
   }
-  function chunk(input?: Dynamic, ..._extraArguments230: Dynamic[]): Dynamic {
+  function chunk(textChunk?: Dynamic, ..._unusedArgs: Dynamic[]): Dynamic {
     if (finished || !initialized) return;
     if (queuedFrames.size) sendQueuedFrames(false);
-    if (((input = String(input)), useLineSplitter && !incomingLine)) {
-      acceptLineChunk(input);
+    if (((textChunk = String(textChunk)), useLineSplitter && !incomingLine)) {
+      acceptLineChunk(textChunk);
       previewPending();
       return;
     }
     if (!stream && !useLineSplitter) stream = createSplitter();
     if (
       limits.previewMs >= 0 &&
-      input.includes(`
+      textChunk.includes(`
 `)
     ) {
-      for (let index: Dynamic = 0; index < input.length; ) {
-        let value2: Dynamic = input.indexOf(
+      for (let index: Dynamic = 0; index < textChunk.length; ) {
+        let newlineIndex: Dynamic = textChunk.indexOf(
           `
 `,
           index,
         );
-        let value3: Dynamic =
-          value2 < 0 ? input.slice(index) : input.slice(index, value2);
-        if (value3) {
-          acceptStreamChunk(value3);
+        let lineFragment: Dynamic =
+          newlineIndex < 0 ? textChunk.slice(index) : textChunk.slice(index, newlineIndex);
+        if (lineFragment) {
+          acceptStreamChunk(lineFragment);
           previewPending();
         }
-        if (value2 < 0) break;
+        if (newlineIndex < 0) break;
         acceptStreamChunk(`
 `);
-        index = value2 + 1;
+        index = newlineIndex + 1;
       }
       previewPending();
       return;
     }
-    acceptStreamChunk(input);
+    acceptStreamChunk(textChunk);
     previewPending();
   }
-  function value(..._extraArguments231: Dynamic[]): Dynamic {
+  function endInput(..._unusedArgs: Dynamic[]): Dynamic {
     if (finished || !initialized) return;
     if (incomingLine)
       acceptStreamChunk(`
@@ -4802,7 +4802,7 @@ function createEditRuntime(
     }
     finish();
   }
-  function flush(..._extraArguments232: Dynamic[]): Dynamic {
+  function flush(..._unusedArgs: Dynamic[]): Dynamic {
     if (finished || !initialized) return;
     if (queuedFrames.size) sendQueuedFrames(false);
     if (useLineSplitter) {
@@ -4811,7 +4811,7 @@ function createEditRuntime(
     }
     if (stream && stream.tail().trim() === "") restartStream();
   }
-  function finish(..._extraArguments233: Dynamic[]): Dynamic {
+  function finish(..._unusedArgs: Dynamic[]): Dynamic {
     if (finished || !initialized) return;
     if (((finished = true), clearTimeout(idleTimer), queuedFrames.size))
       sendQueuedFrames(true);
@@ -4835,7 +4835,7 @@ function createEditRuntime(
   return {
     init: initialize,
     chunk: chunk,
-    end: value,
+    end: endInput,
     flush: flush,
     exec: execute,
     finish: finish,
